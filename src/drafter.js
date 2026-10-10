@@ -52,7 +52,7 @@ const rewardBook = (book, p) => {
  * seed deletes it before replacing rows and writes it last. The collections can then be read together. */
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { admitInput, checkInputAdmission, finishInputAdmission } from "./input-admission.js";
+import { admitInput, checkInputAdmission, finishInputAdmission, queueWithdrawalKey } from "./input-admission.js";
 
 export async function readBook(db) {
   const rows = async (c) => {
@@ -167,7 +167,9 @@ export const HANDOVER = POSITION_ENGINE.HANDOVER;
 export const CORRECTABLE = POSITION_ENGINE.CORRECTABLE;
 const CORRECT_REQUIRED = POSITION_ENGINE.CORRECT_REQUIRED;
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/* A date is a REAL day in YYYY-MM-DD: the shape alone let 2026-02-30 and 2026-13-01 through the queue road to a
+ * row nothing could date-order. The Counter's inputs (maker-inputs.js, maker.js) already read it this way. */
+const DATE_RE = { test: (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v };
 
 /* Each field checked against the book it is going onto, so a correction is refused for the same
  * reasons a new row is: an unknown product cannot be costed, an unknown code cannot be credited.
@@ -629,6 +631,9 @@ const BUY_KINDS = ["Payment", "Receipt", "Default"];
 export function draftRow(entry, book) {
   const pay = entry && entry.payload;
   if (!pay || typeof pay !== "object") return { skip: "the entry carries no payload the desk can read" };
+  /* ONE DATE GATE FOR EVERY MODE: a count, loss, loan, gift, redemption and the rest read pay.date unchecked, so an
+   * impossible day (2026-02-30) drafted, was approved and reached the fold. */
+  if (pay.date != null && pay.date !== "" && !DATE_RE.test(String(pay.date))) return { skip: `the date is not a date in YYYY-MM-DD: ${pay.date}` };
   /* THE REASON HAS TO NAME THE ACTUAL CASE. This once answered "amends an existing row" for
      every mode that was not `new`, so an ADDID, which registers a party and amends nothing,
      was reported as an amendment. That reads as a bug in the entry rather than a category the
@@ -1249,6 +1254,27 @@ export function draftRow(entry, book) {
   /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, one customer or every proposal at once, and since v646 one for
      each product, code to product to level, a null clearing a product's tier. Codes, products and level names only, the
      names checked against the ones the desk's PRICING snapshot carries. */
+  /* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. The row is a roster row for someone already on the roster: the fold
+     appoints them on the R2 stream with their -R account if they are no associate yet, and files them in `partners`, which the
+     engine quotes at the floor. No name travels; the code is the whole of it. */
+  if (pay.mode === "partner") {
+    const code = String(pay.code || "").trim().toUpperCase();
+    const roster = (book.state && book.state.roster) || [];
+    const associates = (book.state && book.state.associates) || [];
+    const partners = (book.state && book.state.partners) || [];
+    if (!code || !roster.includes(code)) return { skip: `${code || "the code"} is not on the roster, so there is no one to make a partner` };
+    if (code[0] !== "C" || POSITION_ENGINE.isBucket(code) || /-Gen$/.test(code) || /-d+-/.test(code)) return { skip: `${code} is not a customer's own code: a partner is a person, never a supplier, a resale account or an end buyer` };
+    if (partners.includes(code)) return { skip: `${code} is already a partner` };
+    const resell = POSITION_ENGINE.appointBucket("reseller", code), isAssoc = associates.includes(code);
+    return {
+      collection: "roster",
+      row: { code, kind: "reseller", parent: null, note: null, partner: true },
+      flags: [],
+      reasoning: `Makes ${code} a PARTNER. A partner pays cost: every quote to them, on every book, becomes the floor itself to the sen (COGS times the size), no profit and no rounding up to the ten, and the Drift card sets no drift for them.`
+        + (isAssoc ? " They are an associate already, so nothing is appointed twice." : ` They are no associate yet, so this APPOINTS them on the R2 stream${resell && !roster.includes(resell) ? `, and ${resell} joins the roster as their resell account` : ""}: the associate credit cap, hurdles and bench come with it.`)
+        + " It moves no stock and no cash, and carries no name.",
+    };
+  }
   if (pay.mode === "tierset") {
     const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
     const tiers = isObj(pay.tiers) ? pay.tiers : {};
@@ -1916,6 +1942,12 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
 
   const keysRead = [];
   const byAt = await queueEntries(env, keysRead);
+  const withdrawalRows = await env.SALT_LEDGER.prepare(
+    "SELECT id FROM maker_request WHERE operation='queue-withdraw'"
+  ).all();
+  const withdrawn = new Set((withdrawalRows.results || []).map((row) =>
+    row.id.slice("queue-withdraw:".length)));
+  for (const at of withdrawn) byAt.delete(at);
   /* 06 Oct 2026: the invocation's one read (bookOnce), when the caller holds one; a pass of its own reads */
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* NO SNAPSHOT, NO DRAFTING (26 Sep 2026, fold 2.2 of the streamlining plan). The seed deletes the snapshot row
@@ -1968,6 +2000,9 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
   const out = { ok: true, at: now(), considered: 0, drafted: 0, raced: 0, skipped: [], already: 0, committed: 0, approved: [], differs: [] };
   for (const at of [...byAt.keys()].sort()) {
     const entry = byAt.get(at);
+    if (await env.SALT_LEDGER.prepare(
+      "SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'"
+    ).bind(queueWithdrawalKey(at)).first()) continue;
     if (mark && at <= mark && already.has(at)) { out.committed++; continue; }
     out.considered++;
     if (already.has(at)) { out.already++; continue; }
@@ -1978,6 +2013,9 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
     const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, [], d.flags) : null;
     if (tf) d = { skip: tf };
     if (d.skip) {
+      if (await env.SALT_LEDGER.prepare(
+        "SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'"
+      ).bind(queueWithdrawalKey(at)).first()) continue;
       out.skipped.push({ at, why: d.skip });
       /* RECORDED SO IT CAN BE SEEN, never so it can be approved. See migrations/0003. */
       await env.SALT_LEDGER.prepare(
@@ -1993,7 +2031,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
       `INSERT OR IGNORE INTO draft
          (id,status,collection,entry,row,reasoning,flags,party,product,date,qty,total,cost,
           amends,amend_kind,drafter,drafted_at)
-       VALUES (?1,'pending',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)`
+       SELECT ?1,'pending',?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16
+       WHERE NOT EXISTS (SELECT 1 FROM maker_request WHERE id=?17 AND operation='queue-withdraw')`
     ).bind(
       at, d.collection, JSON.stringify(entry), JSON.stringify(d.row), d.reasoning,
       JSON.stringify(d.flags), d.row.customer || d.row.supplier || null,
@@ -2002,8 +2041,14 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
       /* NULL on a new row, set on an amendment. The commit run reads these to know whether to
          APPEND the row or apply a change to the one `amends` names. */
       d.amends || null, d.amendKind || null,
-      "cloud-drafter", now()
+      "cloud-drafter", now(), queueWithdrawalKey(at)
     ).run();
+    if ((!made || !made.meta || !made.meta.changes) && await env.SALT_LEDGER.prepare(
+      "SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'"
+    ).bind(queueWithdrawalKey(at)).first()) {
+      await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id=?1").bind(at).run();
+      continue;
+    }
     /* If this id was refused on an earlier pass and now drafts, the refusal is stale the
        moment the row exists. Clearing it here keeps one entry from appearing in both lists. */
     await env.SALT_LEDGER.prepare("DELETE FROM refused WHERE id=?1").bind(at).run();

@@ -1,0 +1,113 @@
+[
+  {
+    "name": "count confirmed cache not released",
+    "file": "stmt/owner.js",
+    "find": "},true,function(){ at=null; signature=''; });",
+    "replace": "},true,function(){});"
+  },
+  {
+    "name": "tier confirmed cache not released",
+    "file": "stmt/owner.js",
+    "find": "},true,function(){ tierAt=null; tierSignature=''; });",
+    "replace": "},true,function(){});"
+  },
+  {
+    "name": "house confirmed cache not released",
+    "file": "stmt/owner.js",
+    "find": "},true,function(){ houseAt=null; houseSignature=''; });",
+    "replace": "},true,function(){});"
+  },
+  {
+    "name": "hush confirmed cache not released",
+    "file": "stmt/owner.js",
+    "find": "},true,function(){ tipAt=null; tipSignature=''; });",
+    "replace": "},true,function(){});"
+  },
+  {
+    "name": "offset bypasses immutable sender",
+    "file": "stmt/owner.js",
+    "find": "await send('/all/maker/inputs/offset',{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value});",
+    "replace": "await refs('/all/maker/inputs/offset',{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value});"
+  },
+  {
+    "name": "count wrong generated body",
+    "file": "stmt/owner.js",
+    "find": "qty:qty.value===''?null:Number(qty.value)",
+    "replace": "qty:qty.value===''?null:Number(qty.value)+1"
+  },
+  {
+    "name": "tier wrong generated body",
+    "file": "stmt/owner.js",
+    "find": "var body={code:tierCode.value,product:tierProduct.value,tier:level};",
+    "replace": "var body={code:'CX2-ZED',product:tierProduct.value,tier:level};"
+  },
+  {
+    "name": "house wrong generated body",
+    "file": "stmt/owner.js",
+    "find": "hide:houseTicks.filter(function(t){ return !t.checked; }).map(function(t){ return Number(t.value); })",
+    "replace": "hide:[]"
+  },
+  {
+    "name": "hush wrong generated body",
+    "file": "stmt/owner.js",
+    "find": "{at:tipAt,id:tipId.value,until:until}",
+    "replace": "{at:tipAt,id:'margin:other',until:until}"
+  },
+  {
+    "name": "offset wrong generated body",
+    "file": "stmt/owner.js",
+    "find": "{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value}",
+    "replace": "{at:new Date().toISOString(),code:offer.code,rid:'tx2',date:offerDate.value}"
+  },
+  {
+    "name": "request not stored before transport",
+    "file": "stmt/owner.js",
+    "find": "makerSave(pending);",
+    "replace": "/* mutation: skip device persistence */"
+  },
+  {
+    "name": "lost answer discards request",
+    "file": "stmt/owner.js",
+    "find": "/* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */",
+    "replace": "makerClear(path); /* mutation: discard a lost answer */"
+  },
+  {
+    "name": "retry mutates full exact body",
+    "file": "stmt/owner.js",
+    "find": "makerSave(pending);",
+    "replace": "pending.body.at=new Date().toISOString();makerSave(pending);"
+  },
+  {
+    "name": "edits replace uncertain request",
+    "file": "stmt/owner.js",
+    "find": "var changed=function(){if(!pending||!makerSaved(pending.path))pending=null;};",
+    "replace": "var changed=function(){if(pending)makerClear(pending.path);pending=null;};"
+  },
+  {
+    "name": "unconfirmed 200 treated as completion",
+    "file": "stmt/owner.js",
+    "find": "if(!result||result.ok!==true)throw new Error('The input completion was not confirmed. Its request is kept.');",
+    "replace": "if(!result)throw new Error('The input completion was not confirmed. Its request is kept.');"
+  },
+  {
+    "name": "generated hush loses TIP_ID dependency",
+    "file": "tools/maker-geosync.mjs",
+    "find": " + constant(\"TIP_ID\") + \"\\n\" + fn(\"vaultPendingOk\")",
+    "replace": " + fn(\"vaultPendingOk\")"
+  },
+  {
+    "name": "offset omitted from generated retained paths",
+    "find": "|all\\/maker\\/inputs\\/offset|vault\\/pair",
+    "replace": "|vault\\/pair"
+  },
+  {
+    "name": "offset arbitrary metadata admitted",
+    "find": "if(/\\/offset$/.test(record.path)&&(Object.keys(record).some",
+    "replace": "if(false&&(Object.keys(record).some"
+  },
+  {
+    "name": "generated hush accepts invalid tip id",
+    "find": "||key==='id'&&TIP_ID.test(v)",
+    "replace": "||key==='id'"
+  }
+]

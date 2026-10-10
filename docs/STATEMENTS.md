@@ -282,7 +282,7 @@ of the master (a master stating none stops the publish): the last day it can be 
 open; `now.due` is the soonest. A part is `late`, and listed in **overdue**, once that day has passed,
 whatever its amount (D9's RM 100 line is retired); an undated part is never overdue. The page also counts a part
 late once its `due` day has passed on the phone's own Kuala Lumpur day (`lateNow`), since only the Actions chain
-publishes, hourly at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
+publishes, every two hours at best; it only ever adds, so a phone's date set back lifts no sealed late. The desk's Credit age
 breach and its chase on Today count the same way (his answer of 28 Sep 2026): past the term from the handover the chase
 is Now and carries the reminder, inside it This week, and the suite holds the desk's breaches to the parties `payDue`
 seals overdue that day. The desk's pricing profile keeps `RULES.creditDays`, ten days from the order date, for its own
@@ -564,7 +564,7 @@ engine prices: the publish opens the master in jsdom for the desk's PRICING inpu
 drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
 `cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what
 a customer sees. `--no-prices` on the publish leaves the list out.
-**The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the hourly publish moves:
+**The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the scheduled publish moves:
 `priceDigest` in `tools/pricelist.mjs`, keyed under `STMT_KEY` over the username and each product's sizes and
 prices, sealed inside the list and in the clear beside it as `prices.digest`. **Place carries the stamp of the
 list the page opened** (4.2): one that differs from the record's is answered 409 `prices moved` with the record's
@@ -1058,7 +1058,9 @@ no entry, row or note reads it, and a rating queues no stage (`orderWork`). A wo
 at, msgs[], quiet?}`, folded in the order book from `tsay` and `tmark` events under oid `thread`, one row an account in
 its own table `thr`, written behind to `thr:<username>` in the week of reading both. The KV road has no reader: there a
 line is refused (`e.threadOff`, 503) and the read is empty. Routes: `GET` and `POST /thread` on their session (a line
-under its device-minted `rid`, so a retry lands once), and `GET /orders` carries `thread` beside the orders; `GET
+under its device-minted `rid`, so a retry lands once), and `GET /orders` carries `thread` beside the orders (the orders,
+the claims and the thread read from the book in ONE round trip, the book's `mine` through `accountBook`, since 06 Oct 2026;
+it was three, every ten seconds for every open page); `GET
 /desk/threads` (every thread, newest first) and `POST /desk/threads/<u>` `{message}` or `{noReply: true}` on the desk key.
 Theirs: 200 characters, 20 a Kuala Lumpur day (`e.threadCap`); his uncapped; the last 200 lines kept. A line of theirs marks
 `last-said` and touches no order; his wakes them as kind `message` (`Counter says:` and his words in quotation marks, tag
@@ -1188,7 +1190,7 @@ list and one `kv bulk get`, falling back to a get per link, with a warning, when
 command does not answer as text; and the three lists that feed only the retirement not at all
 under `--no-retire`. Every intended real account is verified by a separate bulk read, falling
 back to individual reads with a warning if the bulk read fails or has an invalid shape. With eight
-links and up to a hundred accounts, the hourly run spawns eleven processes, including the two
+links and up to a hundred accounts, the scheduled run spawns eleven processes, including the two
 test-account reads and the real-account verification.
 
 Both steps stand down while `wrangler.stmt.jsonc` still carries `PLACEHOLDER_STMT_KV_ID`, so
@@ -1419,14 +1421,36 @@ and `/words` private routes carry the Maker review's offered-again stages and th
 decisions use `handleDraftDecide`, so double decisions and site-order effects retain the normal
 checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/tier-accept-all`, `inputs/house-sizes`, `inputs/hush`,
 `inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`
-and `inputs/place`. They use the existing Position Engine constructors and drafter checks, go
+and `inputs/place`. On the drift book, `inputs/tier-set` accepts the existing `tierset` shape with a
+numeric `-1..+1` override rounded to two decimals like the Desk (zero is held) or `null` to restore
+automatic record drift; supplier codes
+and resale buckets are excluded; level books retain their tier and band shapes, and fixed books
+remain refused. The Counter shows held versus automatic drift from the seeded snapshot and offers
+no control on fixed books. Add ID is separate: drift books offer Automatic by default, the active
+rule's presets and a typed `-1..+1` starting drift; a valid choice travels in the existing `addid`
+entry and pair-vault route, while an invalid typed value is refused before vault preparation.
+Automatic leaves the drift unset. No pricing is done on either road. These inputs use the existing
+Position Engine constructors and drafter checks, go
 through the existing queue and wait for review. Loans and repayments retain their loan rows; gifts
 use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
 eligible advance through a Correction before creating an in-kind redemption; IDs and placement use
 the existing roster/rename/place entries. Request bodies are fixed field lists, never generic
-entries or unchecked notes. Each input button disables its controls while sending and persists the
+entries or unchecked notes.
+Trade refusals distinguish an unknown buyer, supplier, associate, referrer and end buyer, pointing
+to Counter Admin > Add ID before selecting the code. An R2 end buyer may instead remain Not named;
+an arbitrary code is never accepted. Date and inventory-cost requirements remain unchanged.
+Each input button disables its controls while sending and persists the
 whole request (including timestamp and ciphertext) before transport. A retained input must be
 retried, reviewed or explicitly cancelled; editing the form does not replace that request.
+Record count, Send tier for review, Hush tip and Send board sizes for review release their
+timestamp/signature cache only on confirmed completion, including the button's direct retained
+retry. A subsequent intentional action with the same values gets a fresh timestamp. Automatic
+offsets use that same retained sender, not a date-keyed request rebuilt from the form: after a
+lost answer, a changed date still retries the original full body. A 200 without `ok: true` is
+uncertain, not completion. The offset device record carries only `at`, `code`, `rid` and `date`;
+unsupported metadata is refused before transport. The generated device validator includes the
+Desk's `TIP_ID` constant, so Hush can validate the tip and reach transport without weakening its
+id check. These are device recovery rules, not changes to the Worker, drafter, fold or pricing.
 Migration `0013_maker_requests.sql` adds durable request receipts: the
 Desk compares a canonical operation/body digest, replays completed requests even after the mirror
 moves, and refuses changed content under an old timestamp. An incomplete non-vault receipt
@@ -1435,6 +1459,31 @@ their draft still fail closed; they do not claim the input succeeded.
 Counter notes are disabled because these specific paths cannot prove arbitrary prose is
 free of names and places. `GET inputs` returns the active-book and roster catalog, including open
 loans for repayment selection.
+
+On **Amend a ledger row**, Cancellation hides and disables the movement fields and sends no
+cash or units. Its After reading comes from the private input catalog: the Desk mirror's
+Position Engine `txStat` / `poStat` on the cancelled row, and `refundOnCancel` for a sale's
+refund payable. A paid, unmoved sale reads Refund due, Undelivered, Cancelled and names what
+was paid; an unpaid pending sale reads Unpaid, Cancelled and names no refund. The browser
+renders this reading without deriving a pay state or a refund. An unavailable preview is
+explicit. This seeded preview authorizes nothing: sending re-reads the mirror through the
+native amendment and drafter checks, so goods moved since that reading still stop Cancellation.
+
+Counter Admin's Record cash holds the tapped amount on its card for ten seconds before any POST.
+Undo cancels that hold and sends nothing. Hiding or leaving the page flushes every unsent hold
+once with `keepalive`; expiry cannot send it again. The card disables other moves while cash is
+held or sending. Once sent, Undo is gone: a lost or refused answer offers Retry cash with the
+same immutable amount and `rid`, not another editable cash tap. Only a confirmed answer frees
+the next tap to mint a new request **after a fresh review includes that cash**. A confirmed POST
+with a failed or not-yet-incorporated review says **Recorded, refresh pending** and offers
+Refresh cash, never another payment. Before POST, the exact request bytes, order id and prior
+paid amount are retained in this device's local storage (non-vault trade metadata, as with
+other retained inputs). Confirmation is retained separately from an uncertain answer. Reload
+recovers an uncertain request as Retry cash with its original bytes and id, never Undo; a
+confirmed receipt offers only Refresh cash until a read includes the amount. Storage failure
+prevents transport, and an unreadable retained record gates new cash explicitly. These are
+the Desk's twelve Cash Undo/flush parity behaviors,
+not an approved difference; Desk inputs remain until owner acceptance.
 
 The only vault reads are the sealed name envelope (`GET /all/maker/vault`) and sealed places
 envelope (`GET /all/maker/vault/addr`), through their exact Desk read routes. Add ID and Amend ID
@@ -1447,6 +1496,20 @@ Map placement decrypts the places envelope
 on the device and sends only code-to-point pairs rounded to 0.01 degrees. Addresses and plaintext
 names are never sent to Counter or Desk. There is no generic entry writer or arbitrary queue
 forwarding on this bridge.
+
+Maker's Reward redemption lists the held balance and native eligible action per holder,
+net of durable reservations. Departed balances stay visible without a spend; returning
+restores the offer, and a customer's action needs one whole unit. An unpaid advance offers
+Offset on its oldest row. Sale cover is an unticked choice on the first or extra book,
+read from `POST /all/maker/trade-cover` and sent only as `cover: true`. The Desk rechecks
+the shared engine decision against that customer's own card, shelf cost and available
+reward; delivery is outside the gap. Covered batches use all-or-none durable admission
+before queue transport, not an exception to the ordinary trade-batch resource refusal.
+Within a batch, an identical timestamp reserves once; conflicting bytes at that timestamp
+refuse the whole batch before insertion. A reseed releases only source ownership acquired
+by that transaction, not an identical retry's retained source.
+Native approval and fold remain required. No pricing rule, board or floor is changed,
+and these controls do not establish owner acceptance or retire the Desk controls.
 
 The Counter's `DESK_MAKER` binding and the Desk's `/_internal/maker/` routes form a dedicated
 Counter-to-Desk capability. `COUNTER_MAKER_KEY` must be a high-entropy value of at least 32
@@ -1536,6 +1599,13 @@ the official locality point rounded to 0.01 degrees. Ambiguous or unlisted local
 refused and directed to Desk. Amend ID preserves descendant place keys and `_base`, can file
 a new encrypted address, and queues a placement when the code stays the same but its
 official point changes.
+
+Add ID alone also accepts a blank locality, matching Desk and the laptop panel: the code
+uses the deterministic `TBC` suffix (with the existing name-letter clash handling), and the
+encrypted name says `(to be confirmed)`. No locality or approximate point is invented or
+sent. An optional valid Maps/Waze point still goes only into the encrypted places envelope.
+A supplied locality must still resolve officially; a supplied map link must still parse.
+Amend ID and Network placement keep their existing locality requirements. Desk inputs remain.
 
 Legacy KV mode has two non-atomic envelope writes. The pair
 mode supplies all-writer CAS and a durable ID/place outbox. Its schema and code shipped in

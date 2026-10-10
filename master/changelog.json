@@ -1,5 +1,211 @@
 [
  {
+  "v": "v1053",
+  "d": "10 Oct 2026",
+  "t": "S248 TOTAL CORRECTED FROM RM120 TO RM110 FOR CS6-BS",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Order s248 for CS6-BS, 1 unit, dated 10 Oct, has its total cut from RM120 to RM110 with delivery set to RM0. The desk decided it on 10 Oct. The row is patched by the fold, not rewritten by the drafter.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The drafter flagged the rate as 10% above the party's usual RM100 a unit. The dossier cites 21 orders in that flag but the party record shows 15. No cash or stock moves, so inventory stays at 12.14 units and stock cost at RM56."
+  ]
+ },
+ {
+  "v": "v1052",
+  "d": "10 Oct 2026",
+  "t": "ONE FULFILMENT SETTLES CM4-MK'S ORDER IN FULL",
+  "n": [
+   "<b>FOLDED:</b> one fulfilment on s243, dated 10 Oct, for CM4-MK. RM90 cash comes in against RM90 outstanding, so the order is settled in full. No unit moves, as the unit was already delivered on 09 Oct.",
+   "<b>INVENTORY:</b> nothing moved. Stock stays at 12.14 units and the cost basis is unchanged."
+  ]
+ },
+ {
+  "v": "v1051",
+  "d": "10 Oct 2026",
+  "t": "CORRECTION TO S248: TOTAL RM130 TO RM120, NO STOCK MOVED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The 10 Oct order of 1 unit to CS6-BS (s248) has its total cut from RM130 to RM120 and its delivery set from unset to RM0. It was preapproved by phone. The row itself is patched by the fold, not rewritten here.",
+   "<b>NOTHING UNUSUAL, INVENTORY UNMOVED.</b> The drafter flagged RM120 as 20% above the party's usual rate, but it sits under the ask. No cash or stock moves, and the stock stays at 12.14 units with the cost basis unchanged."
+  ]
+ },
+ {
+  "v": "v1050",
+  "d": "10 Oct 2026",
+  "t": "ONE PENDING SALT SALE TO CS6-BS; NOTHING MOVED",
+  "n": [
+   "<b>FOLDED: ONE NEW SALT SALE, PENDING.</b> 1 unit to CS6-BS at RM130, nothing paid and nothing handed over, preapproved by phone. The drafter flagged the rate against the party's usual; the desk's own ladder answers it, as RM130 sits between the floor and the ask for 1 unit.",
+   "<b>INVENTORY UNCHANGED.</b> A pending row draws no stock and books no revenue until something moves. The stock stays at 12.14 units, last counted 3 Oct 2026, and the cost basis is untouched."
+  ]
+ },
+ {
+  "v": "v1049",
+  "d": "10 Oct 2026",
+  "t": "ONE PENDING SALT SALE TO CZ5-TM, NO STOCK MOVED",
+  "n": [
+   "<b>FOLDED:</b> one new sale, 2 units of salt to CZ5-TM at RM190, dated 10 Oct 2026, ordered on the statements site and preapproved by phone. Nothing was paid and nothing handed over, so the row is pending. It draws no stock and books no revenue until something moves. The drafter costed it off the latest purchase, p036, and the fold keeps that cost.",
+   "<b>UNUSUAL:</b> the price is RM95 a unit where CZ5-TM has paid RM110 on every earlier order. It sits above the desk's floor and below its ask for 2 units. The order was placed at RM240 and priced at RM190 on this order. <b>INVENTORY:</b> unchanged, as no unit has left."
+  ]
+ },
+ {
+  "v": "v1048",
+  "d": "09 Oct 2026",
+  "t": "FREE REDEMPTION OF 0.86 UNIT SALT FOR CR3-DAM, BOOKED AS COST",
+  "n": [
+   "<b>FOLDED: ONE ROW.</b> A salt redemption for CR3-DAM, 0.86 unit, RM48.16 of goods, dated 09 Oct and approved by the desk. It is settled by the reward with no cash, and it is booked as an expense rather than revenue, on his ruling of 11 Sep 2026, because the row carries goodwill as well as rebate. It is appended to sales with its note.",
+   "<b>UNUSUAL: THE REWARD BALANCE IS THE DESK'S WORD.</b> The desk says CR3-DAM held 0.86 unit earned and unredeemed, from 2 earned and 1.14 already used. The drafter cannot check this, as rewards are worked out on the desk. <b>INVENTORY:</b> the salt leaves the shelf by 0.86 unit and the cost basis does not move."
+  ]
+ },
+ {
+  "v": "v1047",
+  "d": "09 Oct 2026",
+  "t": "FULFILMENT OF RM0.40 SETTLES S245 IN FULL",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A cash fulfilment of RM0.4 on CR3-DAM's order s245, preapproved by phone, which the drafter flagged as settling the order in full. It moves no units, so the inventory did not change and no lot landed."
+  ]
+ },
+ {
+  "v": "v1046",
+  "d": "09 Oct 2026",
+  "t": "CORRECTION ON S245: REWARD OFFSET RECORDED, NO CASH OR STOCK MOVED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> It patches CR3-DAM's order s245 of 0.5 unit for RM70, dated 09 Oct, to show RM19.60 settled in kind against a reward of 0.14 unit. Nothing else is in the batch. The offset was raised automatically against that day's order, and the fold applies the patch rather than rewriting the row by hand.",
+   "<b>UNUSUAL: THE RATE.</b> The drafter flagged RM140 a unit on s245, 75% above CR3-DAM's usual RM80, and the history does not answer it. <b>INVENTORY UNCHANGED.</b> The correction moves no cash and no stock; it changes only what the row says about itself. Stock stays at 13 and the cost basis at RM56 a unit."
+  ]
+ },
+ {
+  "v": "v1045",
+  "d": "09 Oct 2026",
+  "t": "CORRECTION ON S245: SALT COLLECTED BY CR3-DAM",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> s245, CR3-DAM's SELL of 0.5 unit for RM70 dated 09 Oct, now reads 0.5 unit delivered on 09 Oct and handed over as collected. It was preapproved by phone. It moves no cash and changes no price. The row's trail of 2 steps no longer adds up to the corrected figure, and the correction is recorded beside it saying so.",
+   "<b>INVENTORY.</b> Salt rolls by 0.5 unit, out to CR3-DAM, the difference the correction states. No lot landed, so the cost basis is unchanged. The last salt count was on 03 Oct. The RM20 still unpaid on s245 is left open as an advance."
+  ]
+ },
+ {
+  "v": "v1044",
+  "d": "09 Oct 2026",
+  "t": "FULFILMENT OF 2.5 UNIT ON CE4-CHE'S ORDER S238 SETTLES IT IN FULL",
+  "n": [
+   "<b>ONE AMENDMENT FOLDED.</b> A fulfilment on s238, CE4-CHE's salt order of 2.5 unit for RM240, paid in full on 06 Oct and collected. The desk recorded 2.5 unit moving on 07 Oct, decided on 09 Oct. The row itself is applied by the master's own amend routine, not recomputed in this fold.",
+   "<b>NOTHING UNUSUAL, STOCK MOVES ONCE.</b> The order is left with RM0 and 0 unit outstanding. The only inventory move is salt out, 2.5 unit on 07 Oct, to CE4-CHE. No lot landed, so the cost basis stays where it was."
+  ]
+ },
+ {
+  "v": "v1043",
+  "d": "09 Oct 2026",
+  "t": "TWO FULFILMENTS ON SALT ORDERS: CM4-TO COLLECTION AND CR3-DAM PART PAYMENT",
+  "n": [
+   "<b>TWO AMENDMENTS FOLDED, BOTH FULFILMENTS.</b> The first hands 3 unit to CM4-TO on 08 Oct against s194, which was already paid in full. The second takes RM50 from CR3-DAM on 09 Oct against s245, by QR via Maybank, preapproved by phone. Neither carries a drafter flag. CM4-TO still has 6.5 unit to collect and CR3-DAM still owes RM20 and 0.5 unit.",
+   "<b>INVENTORY.</b> Only the 3 unit leaving on 08 Oct moves salt stock. The RM50 payment moves no unit. No lot landed, so the cost basis stands."
+  ]
+ },
+ {
+  "v": "v1042",
+  "d": "09 Oct 2026",
+  "t": "ONE PENDING SALT SALE TO CR3-DAM, NO STOCK MOVED",
+  "n": [
+   "<b>FOLDED:</b> one salt sale, 0.5 unit for RM70 to CR3-DAM, dated 09 Oct, preapproved by phone. Nothing was paid and nothing was handed over, so the row is pending. It is appended to sales with its note, draws no stock and books no revenue until something moves.",
+   "<b>UNUSUAL:</b> the drafter flagged the rate as 75% above CR3-DAM's usual, and the history does not answer it. The inventory did nothing: stock stays at 19, with 12 owed out and none promised, and the cost basis stays at RM56 a unit."
+  ]
+ },
+ {
+  "v": "v1041",
+  "d": "09 Oct 2026",
+  "t": "A PHONE CONTROL TO SET A PARTNER, AND CM4-TO AN ASSOCIATE",
+  "n": [
+   "<b>Make partner.</b> The Drift card carries a Make partner button on every customer who is none yet. One tap queues a name-free partner entry and the desk shows the standing at once: their card drops to the floor and they join the bench. It waits under Approve, where its card reads Make a partner, pays cost, and the Drift row reads waiting under Approve. The fold files the code in partners and, if they are no associate yet, appoints them on the R2 stream with their -R account, so a partner keeps every associate property. It travels as a roster row, so no migration, and it is no Add ID, so the pair vault's gate does not meet it.",
+   "<b>CM4-TO is an associate.</b> A partner since v1029, now appointed with CM4-TO-R on the roster, by hand. A partner can also be an associate already: nothing is appointed twice. Counter Admin's Add ID has no partner option; the Drift card is the one control."
+  ]
+ },
+ {
+  "v": "v1040",
+  "d": "09 Oct 2026",
+  "t": "THREE FULFILMENTS ON CR3-DAM SETTLE S202, S214 AND S220 IN FULL",
+  "n": [
+   "<b>THREE PAYMENTS FOLDED, ALL FOR CR3-DAM.</b> RM20 on s202, RM110 on s214 and RM110 on s220, each paid by QR via Maybank on 09 Oct and preapproved by phone. Each settles its order in full, and the drafter's single flag on each says so. Unusual: all three were claimed together against the account, so the three rows share one claim.",
+   "<b>INVENTORY UNCHANGED.</b> No unit moved on any of the three, since the goods left on earlier dates. Stock stays at 19 and the cost basis is untouched."
+  ]
+ },
+ {
+  "v": "v1039",
+  "d": "09 Oct 2026",
+  "t": "THE DRIFT CARD NAMES A PARTNER, AND THE PARTNER RULE IS RECORDED",
+  "n": [
+   "<b>Drift card.</b> A partner's row reads Partner, at cost, the floor to the sen, with the prices it quotes, and offers no drift to set: no drift moves a partner's price, so a box to set one would have done nothing. Everyone else's row is unchanged.",
+   "<b>Recorded.</b> The rule is in the repo's CLAUDE.md under the price rule and in MEMORY.md; test/partner.mjs gains the Drift card case, proved red on its own. No price moved."
+  ]
+ },
+ {
+  "v": "v1038",
+  "d": "09 Oct 2026",
+  "t": "ONE SALT SALE TO CJ4-BJ, RM100 LEFT OPEN",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A salt sale of 6.25 unit to CJ4-BJ for RM500, dated 09 Oct, delivered the same day with RM400 cash in. It is an advance with RM100 unpaid. The drafter flagged the rate against his usual and the credit cap, and the desk's reward cover of RM80.7 is on the desk's word. Nothing else was folded.",
+   "<b>INVENTORY.</b> Salt goes down by 6.25 unit. The cost basis does not move, as no lot landed. Stock is now under the reorder point of 38.25."
+  ]
+ },
+ {
+  "v": "v1037",
+  "d": "09 Oct 2026",
+  "t": "ONE SALT ADVANCE TO CM4-MK, BELOW HIS RANGE AND AT HIS CREDIT CAP",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A salt sell dated 09 Oct to CM4-MK, 1 unit for RM80 plus RM10 delivery, delivered with no cash in, so RM90 stays open. It is unusual because the rate is under his lowest rate on record, and it takes his credit to the cap.",
+   "<b>INVENTORY.</b> Salt goes out by 1 unit. No lot landed, so the cost basis does not move. Stock is still below the reorder level of 40.45."
+  ]
+ },
+ {
+  "v": "v1036",
+  "d": "08 Oct 2026",
+  "t": "ONE OIL SALE FOLDED, PAID AND COLLECTED; SALT UNTOUCHED",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A sale of 50 units of oil to CA7-AMP for RM450, dated 08 Oct, paid in cash and collected on the day. It is appended to sales with its note, and nothing stays open on it. The cost is the drafter's COGS off the latest purchase, kept as drafted.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The rate of RM9 a unit is below this party's usual RM10.65 and median of RM13, though it meets the ask for 50 units. Oil leaves the book by 50 units. Nothing landed, so the cost basis does not move."
+  ]
+ },
+ {
+  "v": "v1035",
+  "d": "08 Oct 2026",
+  "t": "ONE OIL PURCHASE FROM SP7-PUD, PAID AND RECEIVED IN FULL",
+  "n": [
+   "<b>FOLDED:</b> one row, a purchase of 70 unit of oil from SP7-PUD for RM532 on 08 Oct, with RM12 freight beside it. It was paid in cash and collected on the day, so nothing stays open. The drafter raised no flags, and approval was given by Counter Admin on 08 Oct.",
+   "<b>UNUSUAL AND INVENTORY:</b> nothing unusual. The rate of RM7.6 a unit sits inside the party's range of RM7 to RM8 and on its median. The dossier shows 70 unit of oil landed, but it gives no oil cost basis, so none is restated here. The salt position is untouched."
+  ]
+ },
+ {
+  "v": "v1034",
+  "d": "08 Oct 2026",
+  "t": "CANCELLATION OF CS6-PER ORDER S240, NO STOCK MOVED",
+  "n": [
+   "<b>ONE CANCELLATION FOLDED:</b> s240, CS6-PER's salt order of 1.5 units for RM210 dated 06 Oct, was withdrawn by the desk on 08 Oct. Nothing had been delivered or paid on it, so it now counts nowhere. The master's own amendment routine applies the change, not this fold.",
+   "<b>INVENTORY UNCHANGED:</b> no unit moved and no lot landed, so stock stays at 26.25 and the cost basis is untouched. The 1.5 units promised on the position are a matter for the desk; the dossier does not say whether they relate to this order."
+  ]
+ },
+ {
+  "v": "v1033",
+  "d": "08 Oct 2026",
+  "t": "ONE CANDY SALE FOLDED, PAID AND COLLECTED",
+  "n": [
+   "<b>FOLDED:</b> one new candy sale to CE4-CHE, 1 unit for RM50, dated 08 Oct, paid in cash and collected the same day. It was approved by the desk. The drafter flagged that CE4-CHE has no committed candy order on the book, so no rate of theirs exists to compare against.",
+   "<b>INVENTORY:</b> candy falls by 1 unit. Salt is untouched, with stock at 26.25 unit and the count dated 03 Oct. No lot landed, so the cost basis does not move."
+  ]
+ },
+ {
+  "v": "v1032",
+  "d": "07 Oct 2026",
+  "t": "CORRECTION ON CS6-PER SALT ORDER: DELIVERY CHARGE REMOVED",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> Row s240, CS6-PER, order 20261005120619-nmopxq, 1.5 unit of salt at RM140 a unit, dated 06 Oct. The correction sets delivery from RM10 to RM0 and keeps the total at RM210. It was preapproved by phone. It moves no cash and no stock, and the row stays pending with nothing paid and nothing handed over.",
+   "<b>UNUSUAL, AND THE INVENTORY.</b> The drafter flagged the rate as 69.2% above CS6-PER's usual. The correction leaves the rate untouched, so the flag stands. The inventory did not move: stock stays 26.25 unit, cost basis RM56.1905 a unit, and the 1.5 unit promised remains promised."
+  ]
+ },
+ {
+  "v": "v1031",
+  "d": "07 Oct 2026",
+  "t": "SALT LOT LANDED, ONE PENDING SALE BOOKED, ONE PENDING ORDER CANCELLED",
+  "n": [
+   "<b>THREE ROWS FOLDED.</b> A salt purchase of 25 unit from SA5-BTR landed on 06 Oct, a pending salt sale of 1.5 unit to CS6-PER was booked, and CH5-KLC's pending order s226 was cancelled. Unusual: the CS6-PER rate is RM140 a unit, above his median of RM85.52 and above the top of his range, though preapproved by phone.",
+   "<b>INVENTORY.</b> The 25 unit lot rolls onto the shelf. The sale and the cancellation draw no stock, as both are pending and nothing moved."
+  ]
+ },
+ {
   "v": "v1030",
   "d": "06 Oct 2026",
   "t": "THREE COUNTS ON 06 OCT: OIL SHORT BY 20, RICE SHORT BY 5, CANDY EXACT",

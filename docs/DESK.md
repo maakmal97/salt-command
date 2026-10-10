@@ -52,6 +52,20 @@
   Approve decides every pending row of the trip** (`tripStmts`, in the tapped row's own batch), never a claim or a site order's
   row. The statement says "plus delivery RM x for one trip of n orders" on the carrier row. A
   lone trip row is no fault: it is the convention the four earlier hand-folded trips used.
+  Counter Admin's Add another book carries the same extra-book figures through its dedicated
+  sale/purchase inputs. `makerTradeBatch` checks every book before retaining the immutable
+  entries; `queueSale` writes the complete fixed trade batch in one queue document, then the
+  native drafter makes the rows. A retry resumes all retained entries, not merely the first
+  draft. Order review names Approve trip/Reject trip and shows the sibling readings; the native
+  decision still uses `tripStmts`. No delivery or a purchase mints no trip, as on the Workbench.
+  Stream offers No associate, R2 resell and R3 refer on sales only. R2 hides Party,
+  takes the associate as the party and offers an optional End customer; every extra books
+  to the associate's `-R` bucket, never to that buyer. R3 keeps Buyer (referred) and credits
+  the associate on the first row alone. The associate list reads the same bench sources
+  as `associateIds`, minus standing bans; R2 offers only a filed resale bucket.
+  The confirmed-success hook releases the trade's timestamp/signature only after the
+  whole-batch answer is confirmed. An uncertain send retains its exact original request,
+  including every extra, even when the controls have been edited.
 - **The ask IS the ladder's last level since v656** (his decision of 15 Sep 2026), so the line
   above describes the DERIVED figure, which is kept beside it as `priceLadder().derived`.
   `pxPolicy` carries `tierRule`; the override is the one line in `priceLadder`, and row zero of
@@ -70,7 +84,7 @@
   is the levels his customers are actually on, and the prudent end of that range is the lowest
   level any of them is quoted. Off Bronze the IAS 2.9 test could never bind.
 - **Ambassador** pays the floor, up to the ten, on his word alone and earning no free units.
-- **Partner** (v1029, his decision of 06 Oct 2026) pays cost: the floor itself, to the sen, at every size on every book, no profit and no ten-rounding. Above Ambassador; a co-founder's or CBDO's equal. `partners` in `ledger/book.json`; the engine's `quoteAt` and `quoteGrid` take `d` of `'partner'`, the desk's `cardQuote` (`isPartner`), the snapshot's `partners` and `drift`, and `tools/pricelist.mjs` and `src/orders.js` `quoteOff` pass it on. Not a Drift card level and no level a customer sees. `test/partner.mjs`.
+$1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make partner queues `partnerEntry` (`mode: 'partner'`, the code alone, not an Add ID so the pair vault's gate does not meet it); the drafter returns a `roster` row with `partner: true` and `kind: 'reseller'`; the fold files the code in `partners` and appoints an associate with their -R account if they are none, so a partner keeps every associate property. The desk shows the standing at once and the card reads waiting under Approve. `test/partner-control.mjs`.
 - **What the inventory is carried at is DERIVED, and it is not pricing** (his instruction of 26 Sep
   2026). Each book's stock, counted or walked, is allocated newest-first onto its received lots
   (units leave oldest first), and the rate is the units-weighted goods rate of those allocations,
@@ -180,7 +194,8 @@
   dispatched only after the Counter Worker verifies Cloudflare Access identity and the owner
   email; its handler receives that verified identity, not a request-supplied address. The Counter
   uses the `DESK_MAKER` service binding and a dedicated `COUNTER_MAKER_KEY` to call only
-  `/_internal/maker/drafts`, draft decisions, named order-stage actions, and typed
+  `/_internal/maker/drafts`, `/_internal/maker/queue` and its timestamped withdraw action,
+  draft decisions, named order-stage actions, and typed
   `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/tier-accept-all`, `inputs/house-sizes`, `inputs/hush`, `inputs/loan`,
   `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id` and
   `inputs/place` and `inputs/ledger-amend` operations. `vault` and `vault/addr` are read-only envelope routes; Add/Amend ID
@@ -201,6 +216,38 @@
   shared admission and drafter; success requires the matching real draft, never just a queue
   write. Concurrent retries share one admission and one primary-keyed draft. If the book no
   longer permits the retained entry, recovery refuses explicitly rather than rebuilding it.
+  The Counter's server-held queue review derives the owning device by finding exactly one
+  `q:<device>` record; it never accepts a device chosen by the caller. Identified device uploads
+  keep an immutable `queue-owner:<at>` receipt in `maker_request`; the same-origin Desk recovery
+  route `POST /queue/<at>/withdraw` requires that existing device id and the entry fingerprint.
+  The Counter route infers the same owner from the server-held queue. Both roads recheck under the
+  per-device lock, bind the timestamp, entry fingerprint and owner in `maker_request`, remove only
+  that device's copy, and clear its resource-admission source plus a racing drafter reservation.
+  The durable `queue-withdraw:<at>` tombstone also blocks a delayed queue POST, resource admission and the
+  drafter's atomic draft insert. Only a saved `withdrawn` receipt, or a matching owner/fingerprint
+  readback of an already rejected draft with no remaining server copy, confirms completion;
+  retries replay the same result. If the Desk's submitted fingerprint differs, `409 entry-changed`
+  includes `serverFingerprint` only while the unique current device queue row agrees with its
+  durable owner receipt; that response makes no change and requires a separate confirmation tap.
+  No fingerprint is returned when the queue copy or ownership agreement is absent. A pending draft
+  remains under native Reject; an approved or committed row cannot be withdrawn. Refusal reason,
+  source and seen time come from the Desk
+  mirror. The Counter cannot read the phone's unsent local queue: Cancel retained input is
+  device-local and is not server withdrawal.
+  Reward redemption shows the native held balance per holder, net of durable reservations:
+  a departed holder keeps their earnings visible without an action, returning restores the
+  offer, and a customer needs one whole unit. An unpaid advance offers Offset, otherwise Redeem.
+  Sale cover is an unticked choice on the first or an extra book. The read-only
+  `POST /all/maker/trade-cover` bridge reads the party's own snapshot card and the shared
+  Position Engine `coverPlan`: goods only, shelf cost, capped to available reward and floored
+  to hundredths of a unit. Delivery, the floor and the board are unchanged. The request carries
+  only `cover: true`; the Desk builds the native cover fields and checks eligibility again.
+  Covered multi-book requests take a dedicated resource road: one conditional D1 insertion
+  admits all claims or none, with durable `orders` ownership before queue transport, and the
+  exact `queue-withdraw:<at>` fence. Phone queues use the same batch admission with
+  `device:<id>` ownership. Ordinary trade batches still refuse resource entries. A reseed
+  during admission releases only new ownership; an uncertain transport keeps the original
+  whole batch and reservation for retry. No new migration or live acceptance is implied.
   `0014_input_admission.sql` adds atomic resource receipts, claims and per-road ownership for
   loan repayments and reward draws; both migrations were applied individually on 03 Oct 2026,
   with readback preserving the existing draft indexes. The shared admission

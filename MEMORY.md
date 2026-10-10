@@ -3,6 +3,9 @@
 ## Worker
 - Deployed at `https://salt-command.qyts8mh72kyg.workers.dev`.
 
+## Fold dispatch
+- The Worker starts `cloud-commit.yml` on each approval as the GitHub App `salt-desk-dispatch-mk` (App ID 5222854, Actions read and write, installed on this repo only), key in the Worker secret `GH_APP_KEY` (PKCS#8). `SALT_GITHUB_TOKEN` lapsed about 02 Oct 2026 (401, then 400 from 05 Oct); while it failed every fold waited on GitHub's hourly schedule. Proof of health: Worker log `stage dispatch: 204`.
+
 ## Access
 - `REQUIRE_ACCESS` = `"1"` since 06 Oct 2026, `ACCESS_TEAM` `maakmal`, `ACCESS_AUD` `14a921e2…60fecf`: one owner Access application covers the Desk host and the Counter's `/all`; the CI service token `salt-desk-ci` reads `/rev` and rings `/push/send` only.
 - Since 04 Oct 2026 a hostname Access policy, set outside the repo's config, fronts the Desk Worker: an unauthenticated `/rev` answers 302.
@@ -15,6 +18,9 @@
 - `0012` indexes `draft` on `committed_at` and on `(status, committed_at)`.
 - `0017_preapproval_amend.sql` rebuilds `preapproval` with `amend` in its stage CHECK (restateOrder's yes), keeping rows and both indexes. Live D1 carried 0011's narrow CHECK, so every amend tap answered 500; 0017 applied alone on 06 Oct 2026, schema, both indexes and the 71 rows by stage and status read back after.
 - `0013_maker_requests.sql`, `0014_input_admission.sql`, `0015_vault_pair.sql` and `0016_vault_write_gate.sql` applied individually on 03 Oct 2026, with schema readback after each. Both `0012` indexes remain. Pair bootstrap/readback is revision 1; write gate reopened with zero active writers and pending outbox.
+
+## Partner
+- `partners` in `ledger/book.json` = CM4-TO since v1029 (06 Oct 2026): pays the floor to the sen on every book. The CBDO role stays unheld, his answer. The Drift card's Make partner sets one (09 Oct 2026) and a partner is always an associate with a -R account; CM4-TO was made one by hand in the same version.
 
 ## Disabled automation
 - `Salt fold (manual backup)` = `trig_01UrnjQMWA3f6GXN5R6Dzi4S`, disabled.
@@ -39,6 +45,7 @@
 - The endpoints above are keyed via `X-Salt-Key` except `/stmt/rev`, which uses `X-Stmt-Desk`.
 
 ## Counter maker
+- The count, tier, hush and printed-size forms retain timestamp/signature caches independently of the input button's durable body. Their completion hooks must run on the initial confirmed send and on the button's direct retained retry. Automatic offsets previously bypassed that sender; their device record needs the exact offset shape in `vaultPendingOk`. The generated Hush validator also lacked its `TIP_ID` dependency and threw before transport. Generated-page lifecycle checks and independent implementation mutations cover these prerequisites; this is not owner acceptance or clearance to retire Desk inputs.
 - `/all/maker/*` is Counter Admin behind verified Access identity and the exact owner email.
 - `POST /orders/<id>/amend` is the customer-session amendment path; Admin inputs stay under `/all/maker/inputs/*`.
 - Desk maker operations use the separate `DESK_MAKER` binding and `COUNTER_MAKER_KEY`; name and places vault reads return ciphertext only.
@@ -53,3 +60,5 @@
 - A2 landed on master (offsets, `makerOffsetOffers`/`makerOffset`). Cloud commit `37393081534` re-seeded `REWARD` into the mirror and read it back byte for byte. The fold had refused every reward spend since `aed7523c` ("no configured reward": `book.json` holds no `REWARD`); `tools/fold.mjs` now reads the scheme from the extract's `ledger.REWARD` (`--ledger`).
 - Owner Access is proved: on 06 Oct 2026 the owner signed in through Access at `/desk` and at the Counter's `/all`. This proves only the login. Each Counter Admin control still needs his own acceptance, and Desk input controls stay until then.
 - Maker order moves (Ready, Decline, Cancel, reply, No reply needed, Not found) take an immutable `rid` kept by the order book; Cancel is allowed from Maker only while nothing is paid (his decision of 05 Oct 2026). On origin/master as `4ba301c` (05 Oct 2026, after v1013), no version bump; live deployment not verified.
+- The accepted Counter Admin stream includes #75–84; #79's multi-book trade and shared-trip approval was at `ba456eb6`, the starting tip for this withdrawal prerequisite. #83 is `a99b06e0`; #84 is `dea7469b` and its Cloud commit, deployed-tree suites and suite notice completed successfully. #62 remains open. Its parent owns the Desk-origin unsent-queue boundary, while this child owns only Counter server-held queue/refusal review and guarded device-owned withdrawal. No owner acceptance is implied.
+- Withdrawal runtime source remains `d05554de57773c1d61cda96fe62bfd281b88dccc`; its two-ordering tests and mutation manifest remain intact through refresh. The original source/test proof and CI on `6d17817dc699c17e0bb36cef9aa07cc0c110eaa2` are historical and do not certify the refreshed merge result. The refresh merge-base was `dea7469b849d344819ed90e24a07ea749a18e370`; the incoming `origin/master` delta to `045242d1` was only the seven fold/generated paths (`ledger/book.json`, `ledger/ledger.json`, `ledger/schema.json`, `master/changelog.json`, `master/salt_command.html`, `public/desk.html`, `public/rev.json`), with no `src`, `stmt`, `engine`, `tools` or `test` changes. The ordinary merge retained this branch's source/tests; its only conflicts were `public/desk.html` and `public/rev.json`, regenerated from the merged master. On the merged tree, withdrawal passed 28/0 at 09:16:09.8340835–09:16:11.2325989Z, log `C:\Users\maakm\.copilot\session-state\320c8d6d-3ff4-41c0-a8a1-37aa43670739\files\refresh-withdrawal-28.log`; resource admission passed 11/0 at 09:16:11.2548565–09:16:13.4651309Z, log `C:\Users\maakm\.copilot\session-state\320c8d6d-3ff4-41c0-a8a1-37aa43670739\files\refresh-admission-11.log`. Final build passed 09:16:44.0030046–09:16:44.4809386Z and gate passed 09:16:44.4941246–09:16:48.1925430Z, build id `660475fc427c7b1c`, logs `refresh-final-build.log` and `refresh-final-gate.log`. Exact-head Actions must be checked on the pushed merge result; the earlier run is not proof of it. PR #85 remains draft. No deployment or owner acceptance.

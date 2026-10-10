@@ -1,0 +1,8 @@
+[
+  {
+    "name": "owner receipt conflict leaves a new resource admission behind",
+    "file": "src/worker.js",
+    "find": "for (const id of admissionSources) await withdrawInputAdmission(env.SALT_LEDGER, id, \"device:\" + payload.device);",
+    "replace": "void admissionSources;"
+  }
+]

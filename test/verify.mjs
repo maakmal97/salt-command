@@ -1433,13 +1433,16 @@ await (async () => {
      statements the Worker actually issues, and throws on anything else rather than
      quietly returning nothing, which is how a mock hides a broken query. */
   class D1 {
-    constructor() { this.rows = new Map(); this.refusals = new Map(); }
+    constructor() { this.rows = new Map(); this.refusals = new Map(); this.makerRequests = new Map(); }
     prepare(sql) {
       const self = this, s = sql.replace(/\s+/g, " ").trim();
       let binds = [];
       const api = {
         bind(...a) { binds = a; return api; },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
+          if (/^SELECT operation,fingerprint,entry FROM maker_request WHERE id=\?1$/.test(s))
+            return self.makerRequests.get(binds[0]) || null;
           if (/^SELECT id FROM input_admission WHERE id=/.test(s)) return null;
           if (/^SELECT status FROM draft WHERE id=/.test(s) || /^SELECT status,committed_at FROM draft WHERE id=/.test(s)) {
             return self.rows.get(binds[0]) || null;
@@ -1454,6 +1457,7 @@ await (async () => {
         async all() {
           if (/^SELECT .* FROM refused/.test(s)) return { results: [...self.refusals.values()] };
           if (/^SELECT id FROM input_admission_source WHERE source=/.test(s)) return { results: [] };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           if (!/^SELECT .* FROM draft/.test(s)) throw new Error("unmocked all(): " + s);
           let out = [...self.rows.values()];
           if (/status=\?/.test(s)) out = out.filter(r => r.status === binds[0]);
@@ -1461,6 +1465,15 @@ await (async () => {
           return { results: out };
         },
         async run() {
+          if (/^INSERT OR REPLACE INTO maker_request\(id,operation,fingerprint,entry\) SELECT .*'queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^DELETE FROM maker_request WHERE id=\?1 AND operation='queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^INSERT OR IGNORE INTO maker_request\(id,operation,fingerprint,entry\) VALUES \(\?1,'queue-owner',\?2,\?3\)/.test(s)) {
+            if (self.makerRequests.has(binds[0])) return { meta: { changes: 0 } };
+            self.makerRequests.set(binds[0], { operation: "queue-owner", fingerprint: binds[1], entry: binds[2] });
+            return { meta: { changes: 1 } };
+          }
           if (/^INSERT OR REPLACE INTO refused/.test(s)) {
             self.refusals.set(binds[0], {
               id: binds[0], entry: binds[1], why: binds[2], party: binds[3], source: binds[4], seen_at: binds[5]
@@ -1590,6 +1603,46 @@ await (async () => {
     globalThis.fetch = async () => { throw new Error("github is down"); };
     d = await decide(await draftNo(4), "approve", armed);
     ok(d.status === 200 && d.j.draft.status === "approved", "a dispatch fault never fails the approval");
+
+    /* 07 Oct 2026: THE GITHUB APP. With GH_APP_KEY the Worker signs as the app, trades the JWT for an
+       installation token, holds it, and dispatches with it; the PAT is ignored. */
+    {
+      const { generateKeyPairSync, createVerify } = await import("node:crypto");
+      const pair = generateKeyPairSync("rsa", { modulusLength: 2048 });
+      const pk8 = pair.privateKey.export({ type: "pkcs8", format: "pem" });
+      const appEnv = { ...armed, GH_APP_KEY: pk8 };
+      const seen = [], logs = [], realL = console.log;
+      globalThis.fetch = async (u, o = {}) => {
+        u = String(u); seen.push({ url: u, auth: o.headers && o.headers.authorization, body: o.body });
+        if (/\/repos\/maakmal97\/salt-command\/installation$/.test(u)) return Response.json({ id: 77 });
+        if (/\/app\/installations\/77\/access_tokens$/.test(u)) return Response.json({ token: "ghs-app", expires_at: new Date(Date.now() + 3600000).toISOString() }, { status: 201 });
+        return new Response(null, { status: 204 });
+      };
+      console.log = (...x) => logs.push(x.join(" "));
+      try {
+        await decide(await draftNo(5), "approve", appEnv);
+        await decide(await draftNo(6), "approve", appEnv);
+      } finally { console.log = realL; }
+      const jwt = (seen[0] && seen[0].auth || "").replace(/^Bearer /, "").split(".");
+      const claims = jwt.length === 3 ? JSON.parse(Buffer.from(jwt[1], "base64url").toString()) : {};
+      const signed = jwt.length === 3 && createVerify("RSA-SHA256").update(jwt[0] + "." + jwt[1]).verify(pair.publicKey, Buffer.from(jwt[2], "base64url"));
+      const disp = seen.filter((s) => /\/dispatches$/.test(s.url));
+      ok(signed && claims.iss === "5222854" && claims.exp - claims.iat <= 600,
+         "with GH_APP_KEY the Worker signs an RS256 JWT as app 5222854 that the app's public key verifies, inside GitHub's ten minutes: " + JSON.stringify(claims));
+      ok(seen.filter((s) => /access_tokens$/.test(s.url)).length === 1 && seen[1] && JSON.parse(seen[1].body).permissions.actions === "write"
+         && disp.length === 2 && disp.every((s) => s.auth === "Bearer ghs-app"),
+         "two approvals dispatch twice with the installation token, minted once and held, scoped to Actions write; the PAT is not used: " + JSON.stringify(seen.map((s) => [s.url.replace(/^https:\/\/api\.github\.com/, ""), s.auth && s.auth.slice(0, 12)])) + " " + JSON.stringify(logs));
+      globalThis.fetch = async () => new Response('{"message":"Unexpected inputs provided"}', { status: 422 });
+      logs.length = 0; console.log = (...x) => logs.push(x.join(" "));
+      try { await decide(await draftNo(7), "approve", appEnv); } finally { console.log = realL; }
+      ok(logs.some((l) => /^stage dispatch: 422 .*Unexpected inputs provided/.test(l)),
+         "a refused dispatch logs GitHub's reason beside its status: " + JSON.stringify(logs));
+      const pk1 = pair.privateKey.export({ type: "pkcs1", format: "pem" });
+      logs.length = 0; console.log = (...x) => logs.push(x.join(" "));
+      try { await decide(await draftNo(8), "approve", { ...own, GH_APP_KEY: pk1 }); } finally { console.log = realL; }
+      ok(logs.some((l) => /stage dispatch FAILED.*PKCS#1.*openssl pkcs8/.test(l)),
+         "a PKCS#1 key, as GitHub downloads it, fails saying to convert it, and needs no PAT to be armed: " + JSON.stringify(logs));
+    }
     globalThis.fetch = realFetch;
 
     /* the workflow's half, read as text because YAML cannot be run here */
@@ -2766,7 +2819,9 @@ await (async () => {
     const dcv = read("coverStats()");
     /* v824: the engine supplies free and the trigger's shortfall; the rate and the cover are the book's restock plan's */
     const rp = read("restockFor(PROD)");
-    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy && dcv.rate === rp.base && dcv.days === rp.coverDays, `${p}: cover agrees`);
+    /* a free shelf that outlasts the plan's horizon has no coverDays; the desk then reads free over the rate (v1035: oil's 70 units) */
+    const wantDays = rp.coverDays != null ? rp.coverDays : +(Math.max(0, dcv.free) / rp.base).toFixed(1);
+    ok(cv.free === dcv.free && cv.shortBy === dcv.shortBy && dcv.rate === rp.base && dcv.days === wantDays, `${p}: cover agrees (${dcv.days} days, plan ${rp.coverDays})`);
     const c2 = X.commitments(read("pSales(PROD)"), mine.currentStock), f = read("forecast()");
     ok(c2.commitUnits === f.commitUnits && c2.shortUnits === f.shortUnits && c2.owedUnits === f.owedUnits && c2.promUnits === f.promUnits, `${p}: the commitments agree with the forecast`);
   }
@@ -3650,7 +3705,7 @@ await (async () => {
     /* 27 Sep 2026: READ IN THE CLOSING ROW, NEVER AS A BARE SUBSTRING OF THE PAGE. Salt's 5.5 unit at oil's RM 8 is 44, which
        the page prints inside 15,449 and 10.44%, so "never at another book's" went red on a shelf valued rightly (run
        36254718923). The row's CY cell is the figure and its caption the rate, each held to this book's and not another's. */
-    const closing = (fin.match(/<td class="l">Closing inventory<div[\s\S]*?<\/tr>/) || [""])[0];
+    const closing = (fin.match(/<td class="l[^"]*">Closing inventory<div[\s\S]*?<\/tr>/) || [""])[0];
     const cell = (/<td class="fy">([^<]*)<\/td><\/tr>$/.exec(closing) || [])[1];
     ok(cell === right && closing.includes(html("fmt(stockCostFor(PROD))") + "/unit"),
        `${pr}: closing stock is valued at this book's own shelf rate (${right}, the row printing ${cell})`);
@@ -4579,8 +4634,8 @@ await (async () => {
 
   /* sixty of them on the Whiteboard, each one dismissing or deferring a finding, in a row
      beside a .navlink that has been 44px since v392. */
-  ok(/\.obsbtn\{[^}]*min-height:var\(--tap\)/.test(m),
-    "the Whiteboard's hush controls read --tap, not the 27px they carried");
+  ok(/class="obsbtn salt-ghost"/.test(m) && !/\.obsbtn\{[^}]*min-height/.test(m),
+    "the Whiteboard's hush controls are the ghost recipe, which reads --tap (the Ghosts section reads it off the cascade), not the 27px they carried");
 
   /* v387 retired the phone app: /desk is the one surface, and the laptop copy of Approve
      was still sending the reader to a second one. */
@@ -5016,6 +5071,9 @@ await (async () => {
       const g0 = text.indexOf("/* ==== GEO: generated"), g1 = text.indexOf("/* ==== END GEO ==== */");
       if (g0 >= 0 && g1 > g0) text = text.slice(0, g0) + text.slice(g1);
     }
+    /* 10 Oct 2026: a fold-made order id (14 digits, a dash, six base-36 characters) is data, never an identifier;
+       v1050's order id ended in a digit and five letters starting with the two banned ones, and read as an identifier */
+    text = text.replace(/\b\d{14}-[0-9a-z]{6}\b/g, "");
     for (const m of text.matchAll(/[A-Za-z_$][A-Za-z0-9_$]*/g)) {
       if (bannedWord(m[0])) offenders.push(f + ": " + m[0]);
     }
@@ -5158,7 +5216,7 @@ await (async () => {
       "the thirty-field sheet is still there, closed, one fold below the panel");
     ok(w.eval("!!document.getElementById('ed_party') && !!document.getElementById('ed_cost')"),
       "and every EDFORM control is still in the DOM for edSubmit to read");
-    ok(w.eval("getComputedStyle(document.querySelector('.updchip')).minHeight") === "44px",
+    ok(w.eval("getComputedStyle(document.querySelector('.updchip')).minHeight") === "var(--salt-tap)" && /--salt-tap: 44px;/.test(rf(M, "utf8")),
       "the chips meet the 44px tap contract");
   }
   for (const f of [M, B]) { try { rm(f); } catch (e) { /* best effort */ } }
@@ -6357,11 +6415,12 @@ await (async () => {
      PAID must both reconcile to the book, row by row, with the gift rule the only permitted
      difference and that rule stated explicitly here rather than trusted. */
   const { stmtRows } = await import("../tools/make_statements.mjs");
+  const POS = (await import("../engine/position.mjs")).default;
   /* THE SAME OPTIONS THE TOOL ITSELF PASSES. stmtRows takes three inclusion flags and a window,
      and with none of them every row is filtered out: calling it bare returns an empty array and
      every check over it passes on nothing. The "both branches exercised" assertion below is what
      caught that, which is the whole reason it is there. */
-  const SO = { from: null, to: "2026-09-01", completed: true, open: true, pending: true, dates: true };
+  const SO = { from: null, to: null, completed: true, open: true, pending: true, dates: true };
   const bookM = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
   const parties = [...new Set((bookM.sales || []).map((x) => x.customer).filter(Boolean))];
   ok(parties.length > 5, `the book carries ${parties.length} customers to check`);
@@ -6369,6 +6428,10 @@ await (async () => {
   const bad = [], gifts = [], charged = [];
   for (const party of parties) {
     const rows = stmtRows(party, SO);
+    const missingRids = (bookM.sales || []).filter((src) => POS.ownsCode(party, src.customer)
+      && src.rid && !rows.some((r) => r.rid === src.rid)).map((src) => src.rid);
+    ok(missingRids.length === 0,
+      `${party}'s statement includes every RID in its sales rows: ` + JSON.stringify(missingRids));
     for (const r of rows) {
       /* MATCHED BY rid, because party+date+quantity is AMBIGUOUS on this book: CH4-MAL has two
          orders on 14 August of one unit each, RM 110 and RM 11.50. The first version of this check
@@ -8254,6 +8317,302 @@ await (async () => {
   for (const f of [TMP, TMPB, TMP + ".run.html"]) { try { rm(f); } catch (e) { /* best effort */ } }
 })();
 
+section("Fields: the system's .salt-fields recipe owns the material of every input, select and textarea");
+await (async () => {
+  /* 06 Oct 2026: the fields group of the migration (CLAUDE.md rule 6). The body carries the system's `.salt-fields`
+     scope, so every native field takes the well, the hairline, the ink, the brass focus ring, the placeholder and the
+     option colours from the recipe; the desk's own rules keep SIZE only (padding, font, width, weight). */
+  const mF = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bF = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  ok(/<body class="salt-fields">/.test(mF) && /<body class="salt-fields">/.test(bF), "the body carries .salt-fields, in the master and in the build");
+  ok(/\.salt-fields :is\(input:not/.test(mF), "and the recipe it names is in the DESIGN base block");
+  const a = mF.indexOf("<style>"), b = mF.indexOf("</style>", a);
+  const own = mF.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").replace(/:where\([^)]*\)/g, "").replace(/@[a-z-]+[^{]*\{[^{}]*\{[^{}]*\}\s*\}/g, "");
+  const MATERIAL = /(^|;)\s*(background(-color)?|border(-color|-radius)?|color|outline|box-shadow)\s*:/;
+  const FIELD = /(^|[\s>+~])(input|select|textarea|option|optgroup)(:(?:focus|hover|checked|disabled)|::placeholder)?$/;
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sels = m[1].split(",").map((x) => x.trim()).filter((x) => FIELD.test(x) && !/\[type=/.test(x) && !/(^|\s)(button|label|\.menu|\.appop)/.test(x));
+    if (sels.length && MATERIAL.test(m[2])) restated.push(sels[0]);
+  }
+  ok(restated.length === 0, `no desk rule restates a field's material, which the recipe owns (found ${restated.join(" | ") || "none"})`);
+  /* an inline style on a field outranks the recipe, so none writes a material or a size under 16px */
+  const inl = [];
+  for (const t of mF.matchAll(/<(?:input|select|textarea)\b[^>]*?style="([^"]*)"/g)) {
+    const st = t[1];
+    if (/(^|;)\s*(background(-color)?|border(-color|-radius)?|color)\s*:/.test(st) || /font-size:\s*(\d+(?:\.\d+)?)px/.test(st) && +/font-size:\s*(\d+(?:\.\d+)?)px/.exec(st)[1] < 16) inl.push(st.slice(0, 50));
+  }
+  ok(inl.length === 0, `no inline style on a field paints its material or sets it under 16px (found ${inl.join(" | ") || "none"})`);
+  /* 09 Oct 2026: a field with no inner padding of its own sat its text on the brass edge; the drift box and the map's two
+     dates take 10px, read off the cascade in the desk's own window (jsdom applies no width query: this is the desktop) */
+  {
+    const { openMaster: omF } = await import("../tools/payload.mjs");
+    const { w: wF } = await omF(process.env.SALT_MASTER || undefined);
+    const padOf = (sel) => { const e = wF.document.querySelector(sel); return e ? parseFloat(wF.getComputedStyle(e).paddingLeft) : -1; };
+    wF.eval("setProd('salt');recompute();switchTab('concentration');");
+    const pd = padOf('input[id^="driftIn_"]');
+    wF.eval("switchTab('map');");
+    const pf = padOf(".mapfrom"), pt = padOf(".mapto");
+    ok(pd >= 8 && pf >= 8 && pt >= 8, `the drift box and the map's dates keep their text off the edge (padding ${pd}, ${pf}, ${pt}px)`);
+  }
+  for (const k of ["const box='", "const bx='"]) { const at = mF.indexOf(k); const q = mF.slice(at, mF.indexOf("';", at)); ok(!/border|background|color/.test(q) && /font-size:16px/.test(q), `${k.slice(6, 9)} (the editor's and the update box's field style) sets size only, at 16px`); }
+})();
+
+section("Tier pill: the system's .salt-tier recipe owns the pill's material");
+await (async () => {
+  /* 09 Oct 2026: the tier pill group of the migration (CLAUDE.md rule 6). tierPill() carries the system's `.salt-tier`
+     recipe beside the desk's own `.tierpill`, which keeps only the pill's place (the margin beside the name) and its measured 10.5px face, under the system's 11px floor;
+     the hairline, the tint, the glow, the dot, the weight and the spacing are the recipe's. */
+  const mT = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bT = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const mark = (s) => /class="tierpill salt-tier \$\{cls\}"/.test(s) && /<span class="salt-tier__dot">/.test(s)
+    && /'salt-tier--1'/.test(s) && /'salt-tier--2'/.test(s) && /'salt-tier--3'/.test(s);
+  ok(mark(mT) && mark(bT), "the pill's markup carries .salt-tier, its dot and its tier modifier, in the master and in the build");
+  ok(/\.salt-tier--1 \{/.test(mT) && /\.salt-tier__dot \{/.test(mT), "and the recipe it names is in the DESIGN base block");
+  const a = mT.indexOf("<style>"), b = mT.indexOf("</style>", a);
+  const own = mT.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "");
+  const restated = [];
+  for (const m of css.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+    if (!/\.tierpill|\.salt-tier/.test(m[1])) continue;
+    const props = m[2].split(";").map((x) => x.split(":")[0].trim()).filter((x) => x && !/^(margin-(left|right)|flex|font-size)$/.test(x));
+    if (props.length) restated.push(`${m[1].trim().slice(0, 40)} {${props.join(",")}}`);
+  }
+  ok(restated.length === 0, `no desk rule restates the pill's material, which the recipe owns (found ${restated.join(" | ") || "none"})`);
+  ok(!/@keyframes tierglow|animation:\s*tierglow/.test(css), "the retired glow animation is not carried in the desk's own layers");
+  const { openMaster: omT } = await import("../tools/payload.mjs");
+  const { w: wT } = await omT(process.env.SALT_MASTER || undefined);
+  wT.eval("setProd('salt');recompute();");
+  const by = wT.eval("(()=>{const r={};for(const id of [...new Set(pricedSales.map(s=>s.customer))]){const t=custTier(id);if(t&&!r[t.code])r[t.code]=id}return r})()");
+  const seen = {};
+  for (const [code, id] of Object.entries(by)) {
+    const host = wT.document.createElement("div");
+    host.innerHTML = wT.eval(`tierPill(${JSON.stringify(id)})`);
+    wT.document.body.appendChild(host);
+    const e = host.firstElementChild, cs = wT.getComputedStyle(e);
+    seen[code] = { e, cs, cls: e.className, dot: wT.getComputedStyle(e.firstElementChild) };
+  }
+  ok(["T1", "T2", "T3"].every((c) => seen[c] && seen[c].cls === `tierpill salt-tier salt-tier--${c[1]}`), `each tier draws its own modifier (${Object.entries(seen).map(([c, s]) => `${c} ${s.cls}`).join("; ")})`);
+  const same = (k, v) => Object.values(seen).every((s) => s.cs[k] === v);
+  ok(same("fontSize", "10.5px") && same("fontWeight", "500") && same("textTransform", "uppercase") && same("letterSpacing", "1.47px") && same("paddingLeft", "9px") && same("whiteSpace", "nowrap"),
+    `the cascade gives every pill the desk's measured face and padding (${seen.T1?.cs.fontSize}, ${seen.T1?.cs.fontWeight}, ${seen.T1?.cs.letterSpacing}, ${seen.T1?.cs.paddingLeft})`);
+  ok(same("marginLeft", "8px") && same("animationName", "none"), "and the desk's own place beside the name, with no animation");
+  ok(seen.T1.cs.color === "var(--salt-salt)" && seen.T2.cs.color === "var(--salt-brass-soft)" && seen.T3.cs.color === "var(--salt-brass)", "tier one is salt, two soft brass and three brass");
+  ok(/55%/.test(seen.T1.cs.boxShadow) && seen.T2.cs.boxShadow === "none" && seen.T3.cs.boxShadow === "none" && seen.T1.cs.opacity === "1" && seen.T3.cs.opacity === "0.85", "only the first tier glows, and the third is dimmed");
+  ok(Object.values(seen).every((s) => s.dot.width === "5px" && s.dot.borderRadius === "50%"), "the dot is the recipe's 5px circle");
+})();
+
+section("Product bands: the system's .salt-product and .salt-producttag recipes own the band and the stamp");
+await (async () => {
+  /* 09 Oct 2026: the product bands and tags group of the migration (CLAUDE.md rule 6). The heading that says which book a
+     block draws is the system's .salt-product (a dot in the book's hue, the name in mono caps, a rule running out) and the
+     stamp on a row its .salt-producttag; the desk's own rules keep only the ledger's bare stamp. The book's accent reaches
+     the recipe through --salt-hue, a custom property, never a colour written in the desk's CSS. */
+  const mP = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bP = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  for (const [nm, src] of [["master", mP], ["build", bP]]) {
+    ok(/<div class="prodhd salt-product" style="--salt-hue:\$\{P\.accent\}">`\s*\+`<span class="salt-product__dot"><\/span>/.test(src), `${nm}: a book's band carries .salt-product, its dot, and the accent as --salt-hue`);
+    ok(/<div class="prodhd salt-product"><span class="salt-product__dot"[^>]*><\/span>\$\{t\}[\s\S]{0,120}salt-product__rule/.test(src), `${nm}: the consolidated band (every book) carries the recipe's dot and rule`);
+    ok(/<span class="prodtag salt-producttag" style="--salt-hue:\$\{P\.accent\}"[^>]*>`\s*\+`<span class="salt-producttag__dot" aria-hidden="true"><\/span>/.test(src), `${nm}: a row's stamp carries .salt-producttag, its dot element and the accent as --salt-hue`);
+    ok(!src.includes('class="prodhd">') && !src.includes('class="gl"') && !src.includes('<span class="rule"></span></div>${builder'), `${nm}: no band or stamp is drawn from the desk's own classes alone (prodhd bare, gl, rule)`);
+  }
+  /* no desk rule restates what the recipes draw: the older layers and design/desk.css, the generated blocks out */
+  const a = mP.indexOf("<style>"), b = mP.indexOf("</style>", a);
+  const own = mP.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "");
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) for (const sel of m[1].split(",").map((x) => x.trim())) {
+    if (/\.prodhd\b|\.prodtag\b|\.salt-product|\.salt-producttag/.test(sel) && sel !== ".ledwrap .prodtag" && !(sel === ".prodtag" && /^\s*font-size:10px;\s*$/.test(m[2]))) restated.push(sel);
+  }
+  ok(restated.length === 0, `no desk rule styles .prodhd, .prodtag or the recipes' own classes but the ledger's bare stamp (found ${restated.join(" | ") || "none"})`);
+  const led = [...css.matchAll(/\.ledwrap \.prodtag\s*\{([^{}]*)\}/g)];
+  ok(led.length === 1 && /border:0/.test(led[0][1]) && /padding:0/.test(led[0][1]), "and that one bare stamp is declared once, with its reason beside it in desk.css");
+  /* what the recipes draw, read off the cascade in the desk's window: a higher-specificity older rule would outrank them */
+  const { openMaster: omB } = await import("../tools/payload.mjs");
+  const { w: wB } = await omB(process.env.SALT_MASTER || undefined);
+  const dom = wB.document, host = dom.createElement("div");
+  host.innerHTML = wB.eval("consoHd('Every book')") + wB.eval("prodTag({type:'SELL',product:'oil'})") + `<div class="ledwrap">${wB.eval("prodTag({type:'SELL',product:'oil'})")}</div>`;
+  dom.body.appendChild(host);
+  const cs = (sel) => { const e = host.querySelector(sel); return e ? wB.getComputedStyle(e) : {}; };
+  const band = cs(".prodhd"), tag = cs(".prodtag"), dot = cs(".salt-product__dot"), tdot = cs(".salt-producttag__dot");
+  ok(band.fontSize === "12.5px" && band.fontWeight === "500" && band.letterSpacing === "1.75px" && band.textTransform === "uppercase", `the band is the recipe's mono caps (${band.fontSize}, ${band.fontWeight}, ${band.letterSpacing}, ${band.textTransform})`);
+  ok(band.marginBottom === "10px" && band.display === "flex" && dot.width === "9px" && dot.height === "9px", "and its dot is 9px on a flex row with the recipe's margin");
+  ok(tag.fontSize === "10px" && tag.paddingTop === "3px" && tag.paddingLeft === "9px" && tag.borderRadius === "6px" && tag.letterSpacing === "1.4px", `the stamp is the recipe's 10px, 3px 9px, 6px radius (${tag.fontSize}, ${tag.paddingTop} ${tag.paddingLeft}, ${tag.borderRadius})`);
+  ok(tdot.width === "7px" && tdot.height === "7px", "and its dot is 7px");
+  const bare = cs(".ledwrap .prodtag");
+  ok(bare.paddingLeft === "0px" && bare.borderTopWidth === "0px", `inside the ledger the stamp is bare (padding ${bare.paddingLeft}, border ${bare.borderTopWidth})`);
+  const stl = (host.querySelector(".prodtag") || dom.body).getAttribute("style") || "";
+  ok(stl.includes("--salt-hue:") && !/(^|;)\s*color\s*:/.test(stl), "the book's accent is --salt-hue on the stamp, and no inline colour paints it");
+  host.remove();
+})();
+
+section("Actions: the system's .salt-action recipe owns the Today action card");
+await (async () => {
+  /* 09 Oct 2026: the actions group of the migration (CLAUDE.md rule 6). The card carries the system's .salt-action classes
+     beside the desk's own (.act, .actk, .actt, .actw, .actm, .actb, .actbar); the recipe draws the grid, the rail, the kind,
+     the title, the why, the money and the bar, and the desk keeps only the bar's settle (motion). The Journal has no desk
+     markup since v802, so its recipe has nothing to carry. */
+  const mA = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const PAIRS = [["act", "salt-action"], ["actk", "salt-action__kind"], ["actt", "salt-action__title"], ["actw", "salt-action__why"],
+    ["actm", "salt-action__money"], ["actb", "salt-action__go"], ["actbar", "salt-action__bar"]];
+  /* two templates draw a card (the action list's row and the shelf call), so each pair is in both; the bar only in the row */
+  for (const [o, n] of PAIRS) ok((mA.match(new RegExp(`class="${o} ${n}[" $]`, "g")) || []).length >= (o === "actbar" ? 1 : 2), `the action markup carries ${n} beside ${o}, in the row and in the shelf call`);
+  ok(/<div class="salt-action__body">/.test(mA) && /--salt-sev:\$\{ACTSEV\[x\.sev\]\.c\}/.test(mA), "the body is the recipe's and the row sets the recipe's severity variable");
+  const a = mA.indexOf("<style>"), b = mA.indexOf("</style>", a);
+  const own = mA.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").replace(/:where\([^)]*\)/g, "");
+  const CARD = /(^|[\s>+~])\.(act|actk|actt|actw|actm|actb|actbar)(\.nil)?(\s+(b|i))?$/;
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sels = m[1].split(",").map((x) => x.trim()).filter((x) => CARD.test(x));
+    const decl = m[2].split(";").map((x) => x.split(":")[0].trim()).filter(Boolean);
+    /* the bar's settle is the desk's own; a flex item's min-width:0 is a guard, not a drawing */
+    if (sels.length && !decl.every((d) => /^(animation|transform-origin|min-width)$/.test(d))) restated.push(sels[0] + " {" + decl.join(",") + "}");
+  }
+  ok(restated.length === 0, `no desk rule draws what the .salt-action recipe draws (found ${restated.join(" | ") || "none"})`);
+  /* behaviour, read off the cascade in the desk's own window: the grid and the radius are the recipe's, the severity the row sets
+     is the variable the kind, the bar and the rule chips read (a chip reading the old --sev lost its colour once) */
+  const { openMaster: omA } = await import("../tools/payload.mjs");
+  const { w: wA } = await omA(process.env.SALT_MASTER || undefined);
+  wA.eval("setProd('salt');recompute();switchTab('today');");
+  const doc = wA.document, cs = (e, p) => wA.getComputedStyle(e)[p];
+  const acts = [...doc.querySelectorAll(".act")];
+  ok(acts.length > 0 && acts.every((e) => e.classList.contains("salt-action") && e.style.getPropertyValue("--salt-sev")), `every action card is a .salt-action with its severity set (${acts.length} cards)`);
+  const c0 = acts[0];
+  ok(cs(c0, "gridTemplateColumns") === "66px minmax(0, 1fr) auto auto" && cs(c0, "borderRadius") === "var(--salt-radius-sm)", `the card's grid and radius come from the recipe (${cs(c0, "gridTemplateColumns")}, ${cs(c0, "borderRadius")})`);
+  ok(/var\(--salt-sev/.test(cs(c0.querySelector(".actk"), "color")), "the kind reads the severity variable");
+  const bar = doc.querySelector(".act .actbar");
+  ok(!!bar && cs(bar, "height") === "4px" && /var\(--salt-sev/.test(cs(bar.querySelector("i"), "background")), "the bar is the recipe's 4px and its fill reads the severity variable");
+  const chips = [...doc.querySelectorAll(".act .rchip")];
+  const unbound = chips.filter((c) => { const v = /var\((--[\w-]+)/.exec(cs(c, "color")); return !v || !c.closest(".act").style.getPropertyValue(v[1]); });
+  ok(chips.length > 0 && unbound.length === 0, `every rule chip reads a severity variable its card sets (${chips.length} chips, ${unbound.length} unbound)`);
+  ok(!/class="[^"]*\bsalt-journal\b/.test(mA.slice(0, mA.indexOf("<style>")) + mA.slice(mA.indexOf("</style>"))), "the desk draws no Journal entry markup, so the Journal recipe has nothing to carry");
+})();
+
+section("Ghosts: the system's .salt-ghost recipe owns the material of every quiet button");
+await (async () => {
+  /* 09 Oct 2026: the ghost group of the migration (CLAUDE.md rule 6). The desk's quiet buttons (.navlink, .ubtn, .obsbtn,
+     .updchip) carry the system's `.salt-ghost` beside their own name, so the edge, the ink, the type, the 44px tap, the hover
+     and the pressed state are the recipe's; the desk keeps each placement's padding, the hush row's 10.5px and the brass
+     tone of an Undo or Clear. .lqb had no markup and its rules are gone. */
+  const GH = ["navlink", "ubtn", "obsbtn", "updchip"];
+  const mG = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bG = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const markup = (t) => { const out = []; for (const m of t.slice(t.indexOf("</style>")).matchAll(/class=(["'])([^"']*?)\1/g)) { const c = m[2].split(/\s+/); if (c.some((x) => GH.includes(x))) out.push(c); } return out; };
+  const mk = markup(mG), bk = markup(bG);
+  ok(mk.length >= 15 && mk.every((c) => c.includes("salt-ghost")), `every class attribute naming a desk ghost also carries salt-ghost (${mk.length} in the master)`);
+  ok(bk.length === mk.length, `and the build carries the same ${bk.length}`);
+  /* no desk rule restates what the recipe draws: the edge, the ink, the type, the tap and the fill belong to .salt-ghost */
+  const a = mG.indexOf("<style>"), b = mG.indexOf("</style>", a);
+  const own = mG.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").replace(/:where\([^)]*\)/g, "").replace(/@[a-z-]+[^{]*\{[^{}]*\{[^{}]*\}\s*\}/g, "");
+  const MATERIAL = /(^|;)\s*(background(-color)?|border(-[a-z]+)*|color|outline|box-shadow|text-transform|letter-spacing|min-height|min-width|font-weight|text-decoration)\s*:/;
+  const GHOSTSEL = /(^|[\s>+~])\.(navlink|ubtn|obsbtn|updchip|lqb)(\.on|:hover|:focus-visible)?$/;
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sels = m[1].split(",").map((x) => x.trim()).filter((x) => GHOSTSEL.test(x));
+    if (sels.length && MATERIAL.test(m[2])) restated.push(sels[0]);
+  }
+  ok(restated.length === 0, `no desk rule restates a ghost's material, which the recipe owns (found ${restated.join(" | ") || "none"})`);
+  ok(!/\.lqb\b/.test(css), ".lqb, a class no markup makes, has no rule left");
+  ok(/--salt-tap: 44px;/.test(mG), "and the recipe's tap token is the 44px, so min-height and min-width on every ghost are 44 both ways");
+  /* read off the cascade in the desk's own window: each ghost draws what a bare .salt-ghost draws, to the 44px tap */
+  const { openMaster: omG } = await import("../tools/payload.mjs");
+  const { w: wG } = await omG(process.env.SALT_MASTER || undefined);
+  const dG = wG.document;
+  const make = (c) => { const e = dG.createElement("button"); e.className = c; dG.body.appendChild(e); return e; };
+  const SAME = ["color", "minHeight", "minWidth", "borderRadius", "textTransform", "fontWeight", "cursor", "letterSpacing"];
+  const refG = wG.getComputedStyle(make("salt-ghost"));
+  const bad = [];
+  for (const c of GH) {
+    const cs = wG.getComputedStyle(make(c + " salt-ghost"));
+    for (const p of SAME) if (cs[p] !== refG[p] && !(c === "obsbtn" && p === "letterSpacing")) bad.push(`${c}.${p} ${cs[p]} vs ${refG[p]}`);
+    if (cs.minHeight !== "var(--salt-tap)" || cs.minWidth !== "var(--salt-tap)") bad.push(`${c} tap ${cs.minHeight} x ${cs.minWidth}`);
+  }
+  ok(bad.length === 0, `every desk ghost draws the recipe's ink, tap, radius, case and weight (differs: ${bad.join(" | ") || "none"})`);
+  const tone = (c) => wG.getComputedStyle(make(c + " salt-ghost")).getPropertyValue("--salt-ghost-tone").trim();
+  ok(tone("ubtn") === "var(--salt-brass)" && ["navlink", "obsbtn", "updchip"].every((c) => tone(c) === "var(--salt-mist)"), "an Undo or Clear binds the recipe's tone to brass; the others keep its mist");
+  const press = make("updchip salt-ghost"); press.setAttribute("aria-pressed", "true");
+  ok(wG.getComputedStyle(press).color === "var(--salt-salt)", "a chip with aria-pressed=true reads the recipe's pressed ink");
+  /* the update panel's chips say which is chosen through aria-pressed, which the recipe reads, and move it with the choice */
+  const rid = wG.eval("(sales.filter(function(s){return !s.cancelled&&s.rid;})[0]||{}).rid");
+  ok(!!rid, "a sale exists to open the update panel on");
+  if (rid) {
+    wG.eval("ledEdit(" + JSON.stringify(rid) + ",'SELL');");
+    const chips = () => [...dG.querySelectorAll(".updchips .updchip")];
+    const pressed = () => chips().map((x, i) => x.getAttribute("aria-pressed") === "true" ? i : -1).filter((i) => i >= 0);
+    ok(chips().length >= 2 && chips().every((x) => x.classList.contains("salt-ghost") && x.getAttribute("aria-pressed") === "false"), `the panel's ${chips().length} chips start unpressed, as ghosts`);
+    chips()[0].click();
+    const p1 = pressed(), on1 = chips().map((x, i) => x.classList.contains("on") ? i : -1).filter((i) => i >= 0);
+    chips()[1].click();
+    const p2 = pressed();
+    ok(p1.join() === "0" && on1.join() === "0" && p2.join() === "1", `choosing a chip presses that one alone and moves with the choice (${p1} then ${p2}; class on ${on1})`);
+  }
+})();
+
+section("Tables: the system's .salt-table recipe owns the material of every data table");
+await (async () => {
+  /* 09 Oct 2026: the tables group of the migration (CLAUDE.md rule 6). Every data table carries the recipe's `salt-table`
+     beside its own classes and every label cell `salt-table__label` beside `l`; the mist caps head, the salt figures, the faint
+     hairline, the opaque warm panel under the sticky head and label column and the total row's wash layered over it are the
+     recipe's (design/salt-ds.css). The desk keeps the sticky geometry, the statements' gutters and the cells it owns. */
+  const mT = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const bT = readFileSync(join(REPO, "public", "desk.html"), "utf8");
+  const dsT = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
+  ok(/\.salt-table \.salt-table__label \{[^}]*background: var\(--salt-panel\)/.test(mT) && /\.salt-table thead th \{/.test(mT), "the recipe is in the DESIGN base block");
+  /* the markup: every <table> after the style block, but the calendar popover's two key-and-value lists (not data tables) */
+  const tail = (h) => h.slice(h.indexOf("END DESIGN desk"));
+  const tabs = (h) => [...tail(h).matchAll(/<table\b[^>]*>/g)];
+  const bare = tabs(mT).filter((m) => !/class="[^"]*\bsalt-table\b/.test(m[0]));
+  const inPop = bare.filter((m) => /class="appop ap\$\{side\}"/.test(tail(mT).slice(Math.max(0, m.index - 2500), m.index)));
+  ok(tabs(mT).length > 50 && bare.length === inPop.length && inPop.length === 2, `every data table carries salt-table; the two popover lists do not (${tabs(mT).length} tables, ${bare.length} without, ${inPop.length} in the popover)`);
+  const lbl = [...tail(mT).matchAll(/<(?:th|td) class="l(?:[ "])[^>]*>/g)];
+  const lblBad = lbl.filter((m) => !/\bsalt-table__label\b/.test(m[0]));
+  ok(lbl.length > 200 && lblBad.length === 0, `and every label cell carries salt-table__label beside l (${lbl.length} cells, ${lblBad.length} without${lblBad[0] ? ": " + lblBad[0][0] : ""})`);
+  ok(tabs(bT).length === tabs(mT).length && [...tail(bT).matchAll(/salt-table__label/g)].length === [...tail(mT).matchAll(/salt-table__label/g)].length, "and the build carries the same");
+  /* the desk's own CSS, the generated blocks taken out, the way the Fields section reads it */
+  const a = mT.indexOf("<style>"), b = mT.indexOf("</style>", a);
+  const own = mT.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  const css = own.replace(/\/\*[\s\S]*?\*\//g, "").replace(/@media[^{]*\{/g, "").replace(/@[a-z-]+[^{]*\{[^{}]*\{[^{}]*\}\s*\}/g, "");
+  const BARE = /^(?:table|thead(?: th)?|tbody(?: td)?|tr\.tot td(?:\.l)?|tbody tr:hover td(?::not\(\.l\))?|th(?:\.l)?|td(?:\.l)?)$/;
+  const MATERIAL = /(^|;)\s*(background(-color|-image)?|border(-[a-z]+)*|color|font-(size|weight|family|variant-numeric)|letter-spacing|text-transform|text-align|padding(-[a-z]+)?|white-space|width)\s*:/;
+  const restated = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sels = m[1].split(",").map((x) => x.trim()).filter((x) => BARE.test(x));
+    if (sels.length && MATERIAL.test(m[2])) restated.push(sels[0]);
+  }
+  ok(restated.length === 0, `no rule on a bare table, head, cell or total row restates the recipe's material (found ${restated.join(" | ") || "none"})`);
+  /* what the recipe cannot own stays the page's: the sticky head and the pinned label column, which the tables scroll under */
+  ok(/(^|\n)thead th\{position:sticky;top:0;\}/.test(mT) && /(^|\n)th\.l,td\.l\{position:sticky;left:0;\}/.test(mT), "the page keeps the sticky head and the pinned label column");
+  /* the cascade, read in the desk's own window: jsdom takes the last declaration and keeps a custom property as itself, and
+     drops a background it cannot resolve, so the fills are proved above from the recipe and here the rest of the recipe is shown
+     to REACH real cells: caps, weight and the ink on a head, a left label in its ink on the pinned column, and the page's
+     sticky geometry on both. A cell without the class, or a later desk rule restating it, reads otherwise. */
+  const { openMaster: omT } = await import("../tools/payload.mjs");
+  const { w: wT } = await omT(process.env.SALT_MASTER || undefined);
+  const q = JSON.parse(wT.eval(`JSON.stringify((function(){var out={heads:0,labels:0,tots:0,badHead:[],badLabel:[],badTot:[],sticky:[],plain:0};
+    ["financials","pricing","receivables","concentration"].forEach(function(p){switchTab(p);});
+    [].forEach.call(document.querySelectorAll('table.salt-table'),function(t){
+      [].forEach.call(t.querySelectorAll('thead th'),function(c){out.heads++;var s=getComputedStyle(c);
+        if(s.textTransform!=='uppercase'||s.fontWeight!=='500')out.badHead.push(c.textContent.trim().slice(0,12)+':'+s.textTransform+'/'+s.fontWeight);
+        if(s.position!=='sticky'&&!c.classList.contains('hs'))out.sticky.push('th');});
+      [].forEach.call(t.querySelectorAll('td.salt-table__label'),function(c){var s=getComputedStyle(c),tot=c.parentNode.classList.contains('tot');
+        if(tot)out.tots++;else out.labels++;
+        if(s.textAlign!=='left'||(s.color!=='var(--salt-mist-light)'&&!c.parentNode.classList.contains('grp'))||s.fontWeight!=='500'||s.whiteSpace!=='normal')(tot?out.badTot:out.badLabel).push(c.textContent.trim().slice(0,12)+':'+s.textAlign+'/'+s.color+'/'+s.fontWeight+'/'+s.whiteSpace);
+        if(c.classList.contains('l')&&s.position!=='sticky')out.sticky.push('td.l');});});
+    out.plain=document.querySelectorAll('table:not(.salt-table):not(.appop table)').length;return out;})())`));
+  ok(q.heads > 20 && q.labels > 50 && q.tots > 3, `the cascade was read on real tables (${q.heads} heads, ${q.labels} label cells, ${q.tots} total-row labels)`);
+  ok(q.badHead.length === 0 && q.badLabel.length === 0 && q.badTot.length === 0, `every head is mist caps in the recipe's weight and every label cell is left, in its ink, in the recipe's weight (${[...q.badHead, ...q.badLabel, ...q.badTot].slice(0, 3).join(" | ") || "none out"})`);
+  ok(q.sticky.length === 0, `and every head and every pinned label cell is still sticky (${q.sticky.slice(0, 3).join(", ") || "none out"})`);
+  ok(q.plain === 0, `and no table in the desk's window is without the recipe but the popover's lists (${q.plain})`);
+  /* the statements keep their own gutters and rule, scoped to `.fintab` and `.istmt` in the layer */
+  const dk = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  ok(/\.fintab th,\.fintab td\{padding:7px 9px;\}/.test(dk) && /\.istmt td\{padding:6px 9px;\}/.test(dk) && /\.fintab tbody td\{border-bottom-color:var\(--salt-line\);\}/.test(dk), "the statements keep their denser gutters and brass hairline, scoped to .fintab and .istmt");
+  /* a phone: the recipe closes the gutters up to 7px 8px, as the desk drew them */
+  ok(/@media \(max-width: 560px\) \{ \.salt-table th, \.salt-table td \{ padding: 7px 8px; \} \}/.test(dsT), "the recipe closes the gutters up on a phone");
+})();
+
 section("v472: the desk in the Salt identity");
 await (async () => {
   /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as
@@ -8287,7 +8646,7 @@ await (async () => {
   /* the books' hues come from the identity, through the book, which is where the extract reads them */
   const bk472 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   ok(bk472.PRODUCTS.salt.accent === "var(--salt-product-salt)" && bk472.PRODUCTS.oil.accent === "var(--salt-product-oil)", "salt is the pale book and oil the golden one, declared in ledger/book.json");
-  ok(m472.includes("D.font.family=\"'JetBrains Mono','Cascadia Mono',Consolas,monospace\"") && m472.includes("D.borderColor='rgba(197,160,89,0.14)'"), "Chart.js is told once that figures are mono and hairlines are brass");
+  ok(m472.includes("D.font.family=\"'JetBrains Mono','Cascadia Mono',Consolas,monospace\"") && m472.includes("D.borderColor=tcol('brass',0.14)"), "Chart.js is told once that figures are mono and hairlines are brass");
   /* the built desk and the install surface carry it too */
   const built472 = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   ok(built472.includes("/* ==== END DESIGN desk ==== */") && built472.includes('aria-label="Salt crystal"'), "the built desk carries the layer and the mark");
@@ -8296,25 +8655,35 @@ await (async () => {
   ok(i512.length > 60000 && Buffer.compare(i512, im) === 0, "the home-screen icons are the brand plate, the same bytes for any and maskable");
 })();
 
-section("v2 design: the theme follows the clock (Dawn, Dusk, Night; Day held back)");
+section("one theme: Night, the time of day retired (09 Oct 2026)");
 await (async () => {
-  /* His approval of the version 2 design, 05 Oct 2026, step 1: the tokens and the time of day. The identity's
-     tokens became roles a theme re-points (Code/salt-ds src/styles.css), salt-time.js sets data-time on <html>
-     before the first paint, and the desk's own literal colours read the tokens, so Night renders as it did
-     (renderdiff: 34 of 34 shots the same) and Dawn and Dusk follow. Day, the light theme, is held back by
-     data-time-day="off" until the desk's remaining white and black tints are tokens too. Each check below was
-     proved red on a SALT_MASTER copy (or a changed design/desk.css) before its green was trusted. */
+  /* His word of 09 Oct 2026: remove the four themes, keep one default. Night is the design system's :root as drawn;
+     the Dawn, Day and Dusk blocks, salt-time.js, the DESIGN time block and the rail's picker are gone (Code/salt-ds
+     and here). Each check below was proved red on a SALT_MASTER copy (or a changed design file) before its green was
+     trusted. */
   const MV2 = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
   const m = readFileSync(MV2, "utf8");
   let dchk = "";
   try { dchk = execFileSync("node", [join(REPO, "tools", "designsync.mjs"), "--check"], { encoding: "utf8", env: { ...process.env, SALT_MASTER: "" } }); }
   catch (e) { dchk = String((e && e.stdout) || e); }
-  ok(/ok\s+time:/.test(dchk), "tools/designsync.mjs --check: the DESIGN time block in the master is design/salt-time.js");
-  const headAt = m.indexOf("<head>"), timeAt = m.indexOf("/* ==== DESIGN time:"), styleAt = m.indexOf("<style>");
-  ok(headAt > 0 && timeAt > headAt && timeAt < styleAt && m.lastIndexOf("<script>", timeAt) > headAt,
-    "the time script is in <head>, inside a <script>, before the stylesheet: the theme is set before the first paint");
-  ok(/<html [^>]*data-time-day="off"/.test(m.slice(0, headAt)), "Day is held back on the desk (<html data-time-day=\"off\") until its own tints are tokens");
-  ok(/:root\[data-time="dawn"\]/.test(m) && /:root\[data-time="dusk"\]/.test(m) && /--salt-ink-on-accent:/.test(m), "the four themes and the pill's own ink are in the design system's block");
+  ok(!/FAIL/.test(dchk) && /ok\s+base:/.test(dchk) && !/\btime:/.test(dchk), "tools/designsync.mjs --check passes and carries no time block");
+  const THEME = /data-time|salt-time|saltTime|railtheme|salt-theming|theme-fade|DESIGN time/;
+  const dsCss = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"), deskCss0 = readFileSync(join(REPO, "design", "desk.css"), "utf8");
+  ok(!THEME.test(m), `the master carries no theme machinery: no clock script, no data-time rule, no picker (read ${(m.match(THEME) || ["none"])[0]})`);
+  ok(!THEME.test(dsCss) && !THEME.test(deskCss0), "nor do design/salt-ds.css and design/desk.css");
+  ok(!existsSync(join(REPO, "design", "salt-time.js")), "design/salt-time.js is gone");
+  {
+    /* Night's text colours on its ground and its slate, measured off design/salt-ds.css itself */
+    const ds = dsCss.replace(/\/\*[\s\S]*?\*\//g, ""), rootB = (ds.match(/:root\s*\{([^}]*)\}/) || ["", ""])[1];
+    const decl = Object.fromEntries([...rootB.matchAll(/--salt-([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map((x) => [x[1], x[2]])), tok = (k) => decl[k];
+    const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const grounds = ["obsidian", "slate"].map(tok), TEXT = ["salt", "mist", "mist-light", "brass", "copper", "ember", "verdigris", "steel", "amber", "alarm", "brass-soft",
+      "product-salt", "product-oil", "product-candy", "product-rice", "product-spare"];
+    const weak = TEXT.filter((k) => !tok(k) || grounds.some((g) => !g || ratio(tok(k), g) < 4.5)).map((k) => k + " " + (tok(k) ? Math.min(...grounds.map((g) => ratio(tok(k), g))).toFixed(2) : "missing"));
+    ok(grounds.every(Boolean) && weak.length === 0, `every Night text colour holds 4.5:1 on the ground and the slate (short: ${weak.join(", ") || "none"})`);
+  }
+  ok(/--salt-ink-on-accent:/.test(m), "the pill's own ink is in the design system's block");
   /* the desk's own CSS reads the identity through its tokens: no identity colour is written as a literal any more */
   const TRIP = ["197,160,89", "212,105,76", "184,115,51", "111,174,151", "142,162,182", "122,134,144", "11,18,21", "5,8,10", "242,244,245"];
   const litIn = (css) => {
@@ -8329,25 +8698,121 @@ await (async () => {
   const lit1 = litIn(ownCss), lit2 = litIn(readFileSync(join(REPO, "design", "desk.css"), "utf8"));
   ok(lit1.length === 0, `the desk's own stylesheet writes no identity colour as a literal (found ${lit1.join(" ") || "none"})`);
   ok(lit2.length === 0, `nor does design/desk.css (found ${lit2.join(" ") || "none"})`);
-  /* the picker: five radios at the rail's foot, Day hidden while it is held back */
-  const pick = (m.match(/<div class="railtheme"[\s\S]*?<\/div>/) || [""])[0];
-  const sets = (pick.match(/data-time-set="(\w+)"/g) || []).map((x) => x.slice(15, -1));
-  ok(/role="radiogroup"/.test(pick) && sets.join(",") === "auto,dawn,day,dusk,night", `the rail carries the theme picker: Auto, Dawn, Day, Dusk, Night (read ${sets.join(",") || "none"})`);
-  ok(/html\[data-time-day="off"\] \.railtheme \[data-time-set="day"\]\{display:none;\}/.test(m), "and Day's button is hidden while the desk holds Day back");
-  /* behaviour, in the desk's own window */
+  /* the white and black tints and the light text hexes are tokens too (the fold before Day shows): a white tint is the
+     theme's salt, a black one its ink, ice and the ember text mix from their roles. The print block is paper and stays. */
+  const noPrint = (css) => { let out = css.replace(/\/\*[\s\S]*?\*\//g, ""), at;
+    while ((at = out.search(/@media\s+print\s*\{/)) >= 0) { let d = 0, i = out.indexOf("{", at); for (; i < out.length; i++) { if (out[i] === "{") d++; else if (out[i] === "}" && --d === 0) break; } out = out.slice(0, at) + out.slice(i + 1); }
+    return out.replace(/\s+/g, ""); };
+  const RAW = /rgba\((255,255,255|0,0,0|228,233,236|216,199,156),|#(e4e9ec|e08a72|1c2628|ffffff[0-9a-f]{2}|140b26cc|000|c9d3d8)\b/gi;
+  /* a --desk-* token's own value is where its literal lives (the charts' grid and the map's steps, 06 Oct 2026); a
+     literal anywhere else is a fault */
+  const deskCss = noPrint(readFileSync(join(REPO, "design", "desk.css"), "utf8"));
+  const raw1 = noPrint(ownCss).match(RAW) || [],
+    raw2 = deskCss.replace(/--desk-[\w-]+:[^;}]+;?/g, "").match(RAW) || [];
+  ok(raw1.length === 0, `the desk's own stylesheet writes no white or black tint and no light text hex as a literal (found ${raw1.join(" ") || "none"})`);
+  ok(raw2.length === 0, `nor does design/desk.css (found ${raw2.join(" ") || "none"})`);
+  /* the system's desk bar reads its material from three tokens on :root (09 Oct 2026), and no raw fill is left */
+  const dsBase = dsCss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
+  const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1];
+  const barB = (dsBase.match(/\.salt-deskbar\{([^}]*)\}/) || ["", ""])[1];
+  const barToks = ["sheen", "fill", "solid"].filter((k) => !rootB.includes(`--salt-deskbar-${k}:`));
+  const barRaw = dsBase.replace(/--salt-deskbar-\w+:[^;}]+;?/g, "").match(/rgba?\((13,11,9|18,15,12)[,)]/g) || [];
+  ok(barToks.length === 0 && barB.includes("background:var(--salt-deskbar-sheen),var(--salt-deskbar-fill)") && barRaw.length === 0,
+    `the desk bar's material is three tokens on :root, the bar reading them (missing ${barToks.join(" ") || "none"}, raw ${barRaw.join(" ") || "none"})`);
+  /* behaviour, in the desk's own window: nothing sets a theme, and Night is what is drawn */
   const { openMaster: omV2 } = await import("../tools/payload.mjs");
-  const { w: wV2 } = await omV2();
-  const st = String(wV2.eval("document.documentElement.getAttribute('data-time')"));
-  /* which theme it opens on depends on the hour the suite runs; that Day never shows is the held-Day check below */
-  ok(["dawn", "dusk", "night"].includes(st), `the desk sets a theme on <html> as it opens (read ${st})`);
-  wV2.eval("window.saltTime.set('day')");
-  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dawn", "Day held by hand reads Dawn on the desk while Day is held back");
-  wV2.eval("window.saltTime.set('dusk')");
-  ok(String(wV2.eval("document.documentElement.getAttribute('data-time')")) === "dusk", "Dusk held by hand holds");
-  wV2.eval("window.saltTime.set('auto')");
+  const { w: wV2 } = await omV2(MV2);
+  ok(wV2.eval("document.documentElement.getAttribute('data-time')") === null && String(wV2.eval("typeof window.saltTime")) === "undefined",
+    "the desk opens with no data-time on <html> and no saltTime: one theme, set by nothing");
+  ok(wV2.document.querySelector(".railtheme") === null && wV2.document.querySelector("[data-time-set]") === null, "and the rail carries no theme picker");
   /* the bar's colour: the build's default is obsidian, never the violet retired at v472 */
   const built = readFileSync(join(REPO, "public", "desk.html"), "utf8");
-  ok(built.includes('<meta name="theme-color" content="#05080a">') && !built.includes("#180f2c"), "the built desk's theme-color starts at obsidian; salt-time.js sets it to the theme's ground");
+  ok(built.includes('<meta name="theme-color" content="#05080a">') && !built.includes("#180f2c"), "the built desk's theme-color is obsidian, the one theme's ground");
+})();
+
+section("v2 design: the charts and the map read the tokens");
+await (async () => {
+  /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
+     which is what held Day back. They read tcol(), a token off <html> at draw time, and a theme change draws the part
+     showing again. Proved in the desk's own window with a recording Chart: at Night every colour is the literal it was
+     (the set below, read off the build before this change: 43 charts over eleven parts on two books); with every
+     token stubbed to a colour of its own no literal is drawn at all. One theme since 09 Oct 2026, so no theme change
+     to redraw on. Each check was proved red by a mutation of the master. */
+  const MD = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+  const { openMaster: omD } = await import("../tools/payload.mjs");
+  const NIGHT = ["#6fae97", "#8ea2b6", "#b87333", "#c5a059", "#d4694c", "#d8c79c", "#e4e9ec", "#f2f4f5", "#7b86cc", "#cf8fb4",
+    "rgba(111,174,151,0.35)", "rgba(142,162,182,0.45)", "rgba(142,162,182,0.55)", "rgba(197,160,89,0.5)", "rgba(197,160,89,0.55)",
+    "rgba(212,105,76,0.35)", "rgba(212,105,76,0.55)", "rgba(228,233,236,0.1)", "rgba(228,233,236,0.45)", "rgba(228,233,236,0.5)",
+    "rgba(228,233,236,0.55)", "rgba(242,244,245,0.4)", "rgba(242,244,245,0.66)", "rgba(255,255,255,0.07)"];
+  const norm = (c) => String(c).replace(/\s/g, "").replace(/rgba\((\d+),(\d+),(\d+),([0-9.]+)\)/, (m, r, g, b, a) => `rgba(${r},${g},${b},${+a})`).toLowerCase();
+  const PARTS = ["today", "forward", "receivables", "financials", "inventory", "sourcing", "pricing", "concentration", "network", "ledger", "analysis"];
+  const { w } = await omD(MD);
+  /* the library is a recording stub; its defaults are the shape chartTheme writes into */
+  w.eval(`window.__cfgs=[];window.Chart=function(c,cfg){window.__cfgs.push(cfg);this.destroy=function(){};};window.Chart.register=function(){};
+    window.Chart.defaults={font:{},animation:{},plugins:{tooltip:{},legend:{labels:{}}},elements:{line:{},point:{}}};
+    window.__walk=function(o,out,d){if(d>12||o==null)return;if(typeof o==='string'){if(/^#[0-9a-f]{3,8}$/i.test(o)||/^rgba?\\(/.test(o))out.push(o);return;}
+      if(typeof o==='function')return;if(Array.isArray(o)){o.forEach(function(x){window.__walk(x,out,d+1);});return;}
+      if(typeof o==='object')Object.keys(o).forEach(function(k){if(k==='labels'&&typeof o.generateLabels==='function'){try{window.__walk(o.generateLabels(),out,d+1);}catch(e){}}window.__walk(o[k],out,d+1);});};
+    window.__ink=function(){var o=[];window.__cfgs.forEach(function(c){window.__walk(c.data,o,0);window.__walk(c.options,o,0);});return o;};`);
+  const drawAll = () => {
+    const seen = [];
+    for (const pr of ["salt", "oil"]) for (const p of PARTS) {
+      w.eval(`window.__cfgs=[];setProd('${pr}');recompute();switchTab('${p}');`);
+      seen.push(...JSON.parse(w.eval("JSON.stringify(window.__ink())")));
+    }
+    return seen.map(norm);
+  };
+  const setOf = (a) => [...new Set(a)].sort();
+  const root = (k, v) => w.eval(`document.documentElement.style.setProperty('${k}','${v}')`);
+  const unroot = (k) => w.eval(`document.documentElement.style.removeProperty('--${k}')`);
+
+  const nightSeen = drawAll();
+  ok(nightSeen.length > 300, `the eleven parts on two books draw their charts and every colour is read (${nightSeen.length} values)`);
+  const nightSet = setOf(nightSeen), want = setOf(NIGHT.map(norm));
+  ok(JSON.stringify(nightSet) === JSON.stringify(want),
+    `at Night every chart colour is the literal it was (foreign: ${nightSet.filter((c) => !want.includes(c)).join(" ") || "none"}; missing: ${want.filter((c) => !nightSet.includes(c)).join(" ") || "none"})`);
+  /* Chart.js's own defaults: text, border and the tooltip's glass */
+  const defs = () => JSON.parse(w.eval("JSON.stringify({c:Chart.defaults.color,b:Chart.defaults.borderColor,t:Chart.defaults.plugins.tooltip})"));
+  let dn = defs();
+  ok(norm(dn.c) === "rgba(242,244,245,0.66)" && norm(dn.b) === "rgba(197,160,89,0.14)" && norm(dn.t.backgroundColor) === "rgba(5,8,10,0.92)"
+    && norm(dn.t.borderColor) === "rgba(197,160,89,0.45)" && norm(dn.t.titleColor) === "#f2f4f5" && norm(dn.t.bodyColor) === "rgba(242,244,245,0.85)",
+    "and the library's defaults (text, border, the tooltip) are the Night values: " + JSON.stringify(dn));
+
+  /* every token stubbed to its own colour: nothing a chart draws may be a literal */
+  const STUB = { "salt-salt": "#0a0b01", "salt-brass": "#0a0b02", "salt-copper": "#0a0b03", "salt-verdigris": "#0a0b04", "salt-ember": "#0a0b05",
+    "salt-steel": "#0a0b06", "salt-product-salt": "#0a0b07", "salt-mist-light": "#0a0b08", "salt-brass-soft": "#0a0b09", "salt-obsidian": "#0a0b0a",
+    "salt-slate": "#0a0b0b", "salt-product-oil": "#0a0b0c", "salt-product-candy": "#0a0b0d", "salt-product-rice": "#0a0b0e", "salt-product-spare": "#0a0b0f",
+    "desk-chart-grid": "rgba(1,2,3,0.07)" };
+  for (const [k, v] of Object.entries(STUB)) root("--" + k, v);
+  const stubSeen = drawAll();
+  const foreign = setOf(stubSeen).filter((c) => !/^#0a0b0[0-9a-f]$/.test(c) && !/^rgba\(10,11,\d+,[0-9.]+\)$/.test(c) && c !== "rgba(1,2,3,0.07)");
+  ok(stubSeen.length === nightSeen.length && foreign.length === 0 && setOf(stubSeen).length >= 15, `with every token stubbed no chart draws a literal (${stubSeen.length} values; foreign: ${foreign.join(" ") || "none"})`);
+  ok(setOf(stubSeen).includes("rgba(1,2,3,0.07)") && setOf(stubSeen).some((c) => /^rgba\(10,11,2,/.test(c)), "the grid and the brass series are the stubbed tokens");
+  dn = defs();
+  ok(norm(dn.c) === "rgba(10,11,1,0.66)" && norm(dn.t.backgroundColor) === "rgba(10,11,10,0.92)" && norm(dn.t.borderColor) === "rgba(10,11,2,0.45)" && norm(dn.t.titleColor) === "#0a0b01",
+    "and the tooltip and the text defaults follow them too: " + JSON.stringify(dn));
+  Object.keys(STUB).forEach(unroot);
+
+  /* a book's own hue is its product token: candy's rose and rice's indigo */
+  ok(nightSet.includes("#7b86cc") && nightSet.includes("#cf8fb4"), "the product hues are PRODUCTS.accent");
+
+  /* THE MAP: the fills and strokes read the tokens, the ground behind it and the legend too */
+  const mapInk = () => JSON.parse(w.eval(`(function(){var s=document.querySelector('.sec.on'),o=[];
+    [].forEach.call(s.querySelectorAll('svg *'),function(e){['fill','stroke'].forEach(function(a){var v=e.getAttribute(a);if(v&&v!=='none')o.push(v);});});
+    [].forEach.call(s.querySelectorAll('svg'),function(e){(e.getAttribute('style')||'').replace(/#[0-9a-f]{6}/gi,function(m){o.push(m);});});
+    [].forEach.call(s.querySelectorAll('.maplegend span span'),function(e){o.push(e.style.background);});return JSON.stringify(o);})()`)).map(norm);
+  const drawMap = () => { w.eval("setProd('salt');recompute();MAP_VIEW='*';MAP_PICK=null;switchTab('map');"); return mapInk(); };
+  const MAPN = ["#05080a", "#0b1215", "#34454d", "#56697a", "#6f8398", "#8ea2b6", "#a6afb5", "#c5a059", "#d4694c", "#e6ebee", "#ffffff05",
+    "rgb(142,162,182)", "rgb(197,160,89)", "rgb(212,105,76)", "rgb(52,69,77)", "rgb(86,105,122)"];
+  const mapNight = drawMap(), fillsN = setOf(mapNight);
+  ok(mapNight.length > 40 && fillsN.every((c) => MAPN.includes(c)) && ["#34454d", "#56697a", "#6f8398", "#e6ebee", "#0b1215", "#05080a", "#ffffff05", "#a6afb5"].every((c) => fillsN.includes(c)),
+    `at Night the map is the colours it was: the steps, the states, the names, the ground (${fillsN.join(" ")})`);
+  const MSTUB = { ...STUB, "desk-map-0": "#0a0b10", "desk-map-1": "#0a0b11", "desk-map-edge": "#0a0b12", "desk-map-name": "#0a0b13", "desk-map-state": "#0a0b14", "desk-map-void": "#0a0b15", "desk-map-core": "#0a0b16" };
+  for (const [k, v] of Object.entries(MSTUB)) root("--" + k, v);
+  const mapStub = drawMap();
+  const mfor = setOf(mapStub).filter((c) => !/^#0a0b[0-9a-f]{2}$/.test(c) && !/^rgb\(10,11,\d+\)$/.test(c));
+  ok(mapStub.length === mapNight.length && mfor.length === 0, `with every token stubbed the map draws no literal (foreign: ${mfor.join(" ") || "none"})`);
+  Object.keys(MSTUB).forEach(unroot);
 })();
 
 section("v1022 hang: a tool that opens the desk and never closes it still exits");
@@ -8358,10 +8823,10 @@ await (async () => {
   const MH = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
   const r = spawnSync(process.execPath, ["--input-type=module", "-e",
     'const { openMaster } = await import("./tools/payload.mjs"); const { w } = await openMaster(process.argv[1]);'
-    + ' console.log(w.document.documentElement.getAttribute("data-time") || "");', MH],
+    + ' console.log(w.document.documentElement.getAttribute("data-time") === null ? "none" : "set");', MH],
     { cwd: REPO, encoding: "utf8", timeout: 60000 });
   ok(!r.error && r.status === 0, "a tool that opens the desk and leaves the window open exits on its own (" + (r.error ? r.error.code : "status " + r.status) + ")");
-  ok(/^(dawn|day|dusk|night)$/.test(String(r.stdout).trim()), "…and the desk's time script still sets a theme in that window (" + String(r.stdout).trim() + ")");
+  ok(String(r.stdout).trim() === "none", "…and nothing in that window sets a theme: one theme, no clock script (" + String(r.stdout).trim() + ")");
 })();
 
 section("v479: the retired price lock no longer breaks a rule; a lot that moves the rate is a watch");
@@ -11189,10 +11654,14 @@ await (async () => {
   const w = S.costsFrom(syn, { gone: 50, fresh: 1234.4, a: 3, b: "slow" });
   ok(JSON.stringify(w) === JSON.stringify({ a: 10, fresh: 1230 }), "--write-costs keeps only the sections verify.mjs has, in its order, in whole tens of milliseconds: " + JSON.stringify(w));
 
-  /* the shard count: three asked, three on four cores and two on two; the laptop's own counts as they were */
-  const got = { four: S.jobsFor(["--jobs", "3"], 4), two: S.jobsFor(["--jobs", "3"], 2), laptop12: S.jobsFor(["--jobs", "12"], 16), laptop: S.jobsFor([], 16), runner: S.jobsFor([], 4) };
-  ok(JSON.stringify(got) === JSON.stringify({ four: 3, two: 2, laptop12: 12, laptop: 8, runner: 2 }),
-    "three shards asked run three on four cores and two on two, and the laptop's own counts are unchanged: " + JSON.stringify(got));
+  /* the shard count: three asked, three on four cores and two on two; unasked, the fewest the cores, the memory and the memory
+     free allow (09 Oct 2026): the laptop four, beside two runs two, a 24-core 128 GB machine ten, a runner two */
+  const gb = (total, free) => ({ total: total * S.GB, free: free * S.GB });
+  const got = { four: S.jobsFor(["--jobs", "3"], 4), two: S.jobsFor(["--jobs", "3"], 2), laptop12: S.jobsFor(["--jobs", "12"], 16),
+    laptop: S.jobsFor([], 16, gb(31.5, 20)), busy: S.jobsFor([], 16, gb(31.5, 4)), big: S.jobsFor([], 24, gb(128, 100)),
+    mid: S.jobsFor([], 16, gb(64, 50)), runner: S.jobsFor([], 4, gb(16, 14)) };
+  ok(JSON.stringify(got) === JSON.stringify({ four: 3, two: 2, laptop12: 12, laptop: 4, busy: 2, big: 10, mid: 8, runner: 2 }),
+    "asked counts hold to the cores; unasked, the laptop runs four, two beside other runs, a big machine ten, a runner two: " + JSON.stringify(got));
 
   /* both suite steps ask for three, and the file reaches the runner */
   const runs = (f) => (readFileSync(join(REPO, ".github", "workflows", f), "utf8").replace(/\r\n/g, "\n").match(/^\s+run: npm (?:test|run test)\b.*$/gm) || []).map((l) => l.trim());
@@ -11798,9 +12267,11 @@ await (async () => {
           if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(b.state).map((k) => ({ key: k, doc: JSON.stringify(b.state[k]) })).concat([{ key: "PRICING", doc: JSON.stringify(b.pricing) }]) };
           if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
           if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused.keys()].map((id) => ({ id })) };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           throw new Error("unmocked all(): " + s);
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           throw new Error("unmocked first(): " + s);
@@ -12217,20 +12688,20 @@ await (async () => {
     const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/.exec(s || "");
     return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null;
   };
+  /* 09 Oct 2026: the tables moved onto the system's .salt-table (the Tables section below), so the fills are read out of the
+     recipe in design/salt-ds.css; the desk layer no longer declares them */
   const ruleBg = (sel) => {
-    const i = desk7.indexOf(sel + "{");
-    if (i < 0) return null;
-    const body = desk7.slice(i + sel.length + 1, desk7.indexOf("}", i));
-    const m = /background:\s*([^;]+);/.exec(body);
-    return m ? m[1].trim() : null;
+    const m = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*\\{([^}]*)\\}").exec(ds7);
+    const b = m ? /background:\s*([^;]+);/.exec(m[1]) : null;
+    return b ? b[1].trim() : null;
   };
-  for (const [sel, why] of [["thead th", "every table head"], ["th.l,td.l", "every label column"]]) {
+  for (const [sel, why] of [[".salt-table thead th", "every table head"], [".salt-table .salt-table__label", "every label column"]]) {
     const bg = ruleBg(sel);
     ok(!!bg, `${sel} declares a background (${bg || "none found"})`);
     const varName = (/var\(--([\w-]+)\)/.exec(bg || "") || [])[1];
     ok(!!varName, `and takes it from a token rather than a literal (${bg})`);
-    const c = rgba(tok(varName));
-    ok(!!c, `and the token --${varName} resolves to an rgba in the design layer (${tok(varName)})`);
+    const c = rgba(tok(varName, ds7));
+    ok(!!c, `and the token --${varName} resolves to an rgba in the design layer (${tok(varName, ds7)})`);
     /* THE FAULT WAS THE HUE, NOT THE WEIGHT. --salt-veil is rgba(5,8,10,.86): b above r, a cold
        near-black, and the identity documents it for surfaces that float OVER content. These sit
        INSIDE a card the aurora lights warm, so they must be warm too. Red before: 5 > 10 is false. */
@@ -12256,9 +12727,9 @@ await (async () => {
      over the panel rather than stand in for it. Found by computing all 232 sticky cells in a
      browser; reading this file would not have shown it, and the assertion below is a reminder of
      the rule rather than the instrument that catches the next one. */
-  const totL = ruleBg("tr.tot td.l");
-  ok(!!totL, `the total row restates the label column's fill rather than dropping it (${totL || "no tr.tot td.l rule"})`);
-  ok(!!totL && /var\(--panel\)/.test(totL), `and layers its wash over the opaque panel (${totL})`);
+  const totL = ruleBg(".salt-table tr.tot .salt-table__label");
+  ok(!!totL, `the total row restates the label column's fill rather than dropping it (${totL || "no tot label rule"})`);
+  ok(!!totL && /var\(--salt-panel\)/.test(totL), `and layers its wash over the opaque panel (${totL})`);
   ok(/\.menu\{[^}]*background:var\(--salt-veil\)/.test(desk7),
     "and --salt-veil keeps the one job it is documented for, the menu that really does float over the page");
 
@@ -12938,9 +13409,11 @@ await (async () => {
           if (/^SELECT key,doc FROM state/.test(s)) return { results: Object.keys(state).map((k) => ({ key: k, doc: JSON.stringify(state[k]) })) };
           if (/^SELECT id FROM draft/.test(s)) return { results: [...self.drafts.keys()].map((id) => ({ id })) };
           if (/^SELECT id,source FROM refused/.test(s)) return { results: [...self.refused].map(([id, r]) => ({ id, source: r.source })) };
+          if (/^SELECT id FROM maker_request WHERE operation='queue-withdraw'$/.test(s)) return { results: [] };
           throw new Error("unmocked all(): " + s);
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: "vX", stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           throw new Error("unmocked first(): " + s);
@@ -15482,7 +15955,9 @@ await (async () => {
     ok(card46 && card46.PSs && lead46(card46.PSs) === "proposed" && card46.PSo === null
       && card46.NBs && card46.NBs.sel === "" && card46.NBs.state === "not set" && card46.NBo === null,
       "the Tiers card lists a customer who has bought nothing yet, reads not set where nobody has bought or set, and draws no oil tier: " + JSON.stringify(card46));
-    const acc46 = rd46("(function(){queue=[];tierAcceptAll();var e=queue[queue.length-1];return e?e.payload.tiers:null;})()");
+    /* 10 Oct 2026: Accept reads the rules (ruleProposal), and a live slowdown on salt (his rule 4, counted back from today) lifts
+       every proposal a level; held off here, so this reads only which products are proposed, whatever the day */
+    const acc46 = rd46("(function(){var kS=slowdown;slowdown=function(){return {on:false,since:null,lastLot:null};};try{queue=[];tierAcceptAll();var e=queue[queue.length-1];return e?e.payload.tiers:null;}finally{slowdown=kS;}})()");
     ok(acc46 && acc46["CZ9-PS"] && acc46["CZ9-PS"].salt === pr46.salt && !("oil" in acc46["CZ9-PS"]) && !("CZ9-NB" in acc46),
       "and Accept takes only the proposals there are, passing over a product proposed nothing: " + JSON.stringify(acc46 && acc46["CZ9-PS"]));
     const set46 = rd46("(function(){queue=[];TIER_OF['CZ9-PS']={salt:'Gold'};render();var s=function(p,v){document.getElementById('tierSel_CZ9-PS_'+p).value=v;};var out=[];"
@@ -17159,11 +17634,14 @@ await (async () => {
        unit and Silver at twelve and a half; the same profile on a customer HOLDING Gold is quoted Gold at both. No orders, so no
        rate of their own lowers either price and the level binds. */
     const live = rd71("(function(){['CZ9-RUL','CZ9-HLD'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});TIER_OF['CZ9-HLD']={salt:'Gold'};setProd('salt');recompute();"
-      + "var kT=tierProposal,kB=buyerProfile;tierProposal=function(){return 'Gold';};"
+      + "var kT=tierProposal,kB=buyerProfile,kS=slowdown,kL=lateOf;tierProposal=function(){return 'Gold';};"
+      /* 10 Oct 2026: the slowdown and the late payer held off too, as __ask71 does, so a live slowdown (counted back from
+         today) does not lift the small band and turn this red on a quiet week */
+      + "slowdown=function(){return {on:false,since:null,lastLot:null};};lateOf=function(){return {on:false};};"
       + "buyerProfile=function(){return {name:'small and often',orders:9,frequent:true,small:true,loyal:false,bigger:false,rare:false};};"
       + "try{var row=function(q){return PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());};"
       + "return {rul1:cardQuote('CZ9-RUL',1),rul12:cardQuote('CZ9-RUL',12.5),hld12:cardQuote('CZ9-HLD',12.5),gold1:row(1).prices[3],gold12:row(12.5).prices[3],silver12:row(12.5).prices[4]};"
-      + "}finally{tierProposal=kT;buyerProfile=kB;delete TIER_OF['CZ9-HLD'];}})()");
+      + "}finally{tierProposal=kT;buyerProfile=kB;slowdown=kS;lateOf=kL;delete TIER_OF['CZ9-HLD'];}})()");
     ok(live.rul1 === live.gold1 && live.rul12 === live.silver12 && live.hld12 === live.gold12 && live.silver12 > live.gold12,
       "the rule reaches a proposed customer's live quote, Gold at a unit and Silver at twelve and a half, and leaves a held Gold customer at Gold: " + JSON.stringify(live));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w71.close(); } catch (e) { /* best effort */ } }
@@ -33497,7 +33975,7 @@ await (async () => {
     state: { roster: ["CC9-OKR", "SA5-BTR"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" }
   };
   const mirrorN = (b) => {
-    const self = { drafts: new Map(), refused: new Map() };
+    const self = { drafts: new Map(), refused: new Map(), makerRequests: new Map() };
     self.prepare = (sql) => {
       const s = sql.replace(/\s+/g, " ").trim(); let binds = [];
       const api = {
@@ -33510,12 +33988,24 @@ await (async () => {
           return { results: [] };
         },
         async first() {
+          if (/^SELECT id FROM maker_request WHERE id=\?1 AND operation='queue-withdraw'$/.test(s)) return null;
+          if (/^SELECT operation,fingerprint,entry FROM maker_request WHERE id=\?1$/.test(s))
+            return self.makerRequests.get(binds[0]) || null;
           if (/^SELECT v,stamped FROM snapshot/.test(s)) return { v: b.version, stamped: null };
           if (/^SELECT MAX\(committed_at\)/.test(s)) return { t: null };
           if (/COUNT\(\*\)/.test(s)) return { n: 0 };
           return null;
         },
         async run() {
+          if (/^INSERT OR REPLACE INTO maker_request\(id,operation,fingerprint,entry\) SELECT .*'queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^DELETE FROM maker_request WHERE id=\?1 AND operation='queue-device-lock'/.test(s))
+            return { meta: { changes: 1 } };
+          if (/^INSERT OR IGNORE INTO maker_request\(id,operation,fingerprint,entry\) VALUES \(\?1,'queue-owner',\?2,\?3\)/.test(s)) {
+            if (self.makerRequests.has(binds[0])) return { meta: { changes: 0 } };
+            self.makerRequests.set(binds[0], { operation: "queue-owner", fingerprint: binds[1], entry: binds[2] });
+            return { meta: { changes: 1 } };
+          }
           if (/^INSERT OR IGNORE INTO draft/.test(s)) { self.drafts.set(binds[0], binds[3]); return { meta: { changes: 1 } }; }
           if (/^INSERT OR REPLACE INTO refused/.test(s)) { self.refused.set(binds[0], binds[2]); return { meta: { changes: 1 } }; }
           return { meta: { changes: 0 } };
@@ -49914,6 +50404,78 @@ await (async () => {
   bk3.book.run("drop", { u: U });
   ok(bk3.db.prepare("SELECT COUNT(*) AS n FROM thr").get().n === 0, "an account unmade takes its thread with it");
 })();
+
+section("Perf (06 Oct 2026): GET /orders reads a customer's orders, claims and thread from the order book in one round trip, answering the same bytes");
+await (async () => {
+  /* The page polls GET /orders every ten seconds while open, and the route made three round trips to the one Durable
+     Object: orders, claims, thread. accountBook asks the book once (`mine`); each list is what its own reader answers. */
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the one-call read was not driven through the order book"); return; }
+  const O = await import("../stmt/orders.js");
+  const T = await import("../stmt/testfix.js");
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const H = await import("../test/orderbook-harness.mjs");
+  const U = "pq7r-st8v", U2 = "vw9x-yz2a", rid = (s) => s.repeat(16).slice(0, 32);
+  const call = async (env, tok, path, body) => {
+    const h = tok === "desk" ? { "X-Stmt-Desk": "desk-key" } : { "X-Stmt-Session": tok };
+    const r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, body === undefined ? { headers: h }
+      : { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) }), env);
+    return { status: r.status, text: await r.text() };
+  };
+  /* the answer as the route composed it before, from the three readers it used, byte for byte */
+  const threeWay = async (env, u) => JSON.stringify(Object.assign({ ok: true },
+    await T.withExamples(env, u, (await O.ordersOf(env, u)).map(O.customerView), (await O.claimsOf(env, u)).map(O.claimView)),
+    { thread: O.threadView(await O.threadOf(env, u)) }));
+  const place = (i) => ({ product: "salt", qty: 1, mode: "collect", unit: 120, total: 120, rid: rid(i) });
+  const fill = async (env, tok, tok2, book) => {
+    for (const i of ["a1", "b2", "c3"]) await call(env, tok, "/orders", place(i));
+    const mine = JSON.parse((await call(env, tok, "/orders")).text).orders;
+    await call(env, tok, "/orders/" + mine[0].id + "/cancel", { rid: rid("d4") });
+    await call(env, "desk", "/desk/orders/" + U + "/" + mine[1].id, { status: "acknowledged" });
+    await call(env, tok, "/claims", { amount: 50, method: "tngbiz", rid: rid("e5") });
+    await call(env, tok2, "/orders", place("f6"));   /* another customer's, which must never ride along */
+    await call(env, tok2, "/claims", { amount: 30, method: "tngbiz", rid: rid("h8") });   /* and their claim, which must not either */
+    if (book) { await call(env, tok, "/thread", { text: "Open on Sunday?", rid: rid("g7") }); await call(env, "desk", "/desk/threads/" + U, { message: "Yes, from nine." }); }
+  };
+
+  /* THE OBJECT ROAD: one call to the book, the same bytes */
+  const kv = new KV(), bk = H.orderBook({});
+  const env = { STMT: kv, STMT_DESK_KEY: "desk-key", ORDERBOOK: bk.ns, ORDER_STORE: "object" };
+  const tok = await O.mintSession(env, U), tok2 = await O.mintSession(env, U2);
+  await fill(env, tok, tok2, true);
+  const was = await threeWay(env, U), c0 = bk.calls(), got = await call(env, tok, "/orders"), calls = bk.calls() - c0;
+  const body = JSON.parse(got.text);
+  ok(got.status === 200 && body.orders.length === 3 && body.claims.length === 1 && body.thread.msgs.length === 2 && body.orders.every((o) => o.u === U),
+    "the fixture is wide enough: three orders of theirs, one cancelled, a claim and a thread of two lines, and nothing of the other customer's: "
+    + JSON.stringify({ orders: body.orders.map((o) => o.status), claims: body.claims.length, thread: body.thread.msgs.length }));
+  ok(got.text === was, "on the object road GET /orders answers byte for byte what the three readers composed");
+  ok(calls === 1, "and asks the order book ONCE for it, not three times: " + calls + " call(s)");
+  const one = bk.book.run("mine", { u: U });
+  ok(JSON.stringify(one.orders) === JSON.stringify(bk.book.run("orders", { u: U }).orders) && JSON.stringify(one.claims) === JSON.stringify(bk.book.run("claims", { u: U }).claims)
+    && JSON.stringify(one.thread) === JSON.stringify(bk.book.run("thread", { u: U }).thread) && bk.book.run("claims", {}).claims.length === 2,
+    "the book's `mine` is its own three reads to the byte, and `claims` with no customer still lists every claim");
+
+  /* THE KV ROAD: both lists from KV, no thread, as the three readers answer there */
+  const kvB = new KV(), envB = { STMT: kvB, STMT_DESK_KEY: "desk-key" };
+  const tokB = await O.mintSession(envB, U), tokB2 = await O.mintSession(envB, U2);
+  await fill(envB, tokB, tokB2, false);
+  /* a thr: key left by the week of reading both is read by nothing on the KV road (Step 7) */
+  await kvB.put("thr:" + U, JSON.stringify({ id: "thread", u: U, at: "2026-10-06T01:00:00.000Z", msgs: [{ at: "2026-10-06T01:00:00.000Z", by: "customer", text: "Behind" }] }));
+  const gotB = await call(envB, tokB, "/orders"), bodyB = JSON.parse(gotB.text);
+  ok(gotB.status === 200 && bodyB.orders.length === 3 && bodyB.claims.length === 1 && bodyB.thread.msgs.length === 0 && gotB.text === await threeWay(envB, U),
+    "on the KV road GET /orders answers the same bytes as before: the two lists, and an empty thread whatever thr: holds");
+
+  /* THE WEEK OF READING BOTH with the book unreachable: KV answers all three, the thread from thr:<username> */
+  const down = { idFromName: () => ({}), get: () => ({ fetch: async () => { throw new Error("the object is unreachable"); } }) };
+  const envC = { STMT: kvB, STMT_DESK_KEY: "desk-key", ORDERBOOK: down, ORDER_STORE: "object+kv" };
+  const realLog = console.log; console.log = (...x) => { if (!/^orders: /.test(x.join(" "))) realLog(...x); };
+  let gotC, wasC;
+  try { gotC = await call(envC, tokB, "/orders"); wasC = await threeWay(envC, U); } finally { console.log = realLog; }
+  const bodyC = JSON.parse(gotC.text);
+  ok(gotC.status === 200 && bodyC.orders.length === 3 && bodyC.claims.length === 1 && bodyC.thread.msgs.length === 1 && bodyC.thread.msgs[0].text === "Behind" && gotC.text === wasC,
+    "with the book unreachable in the week of reading both, KV answers all three as the readers did, the thread included: " + JSON.stringify(bodyC.thread));
+})();
 section("D1 and D2 (29 Sep 2026): no part prints a stored date or an em dash; one dShow and one NIL");
 await (async () => {
   /* THE FAULT LIST'S D1 AND D2. The desk printed 2026-09-28 across Stock, Record, the Order book and Pricing, and an em
@@ -50363,18 +50925,34 @@ section("06 Oct 2026: a partner pays cost, the floor to the sen on every book, n
 await (async () => {
   await (await import("./partner.mjs")).run({ ok });
 })();
+section("09 Oct 2026: a partner is set from the phone and keeps every associate property");
+await (async () => {
+  await (await import("./partner-control.mjs")).run({ ok });
+})();
 section("05 Oct 2026: Negotiate price, a price asked, his offer filed as his yes, their Accept or No thanks");
 await (async () => {
   await (await import("./negotiate.mjs")).run({ ok, skip: skipOff });
+})();
+section("06 Oct 2026: a clipped line never ends on half an emoji");
+await (async () => {
+  await (await import("./clip-text.mjs")).run({ ok });
 })();
 section("Counter maker cash and received request ids; purchase lot amendments");
 await (async () => {
   await (await import("./maker-cash-purchase.mjs")).run({ ok });
   await (await import("./maker-claim-covered.mjs")).run({ ok });
 })();
+section("Counter maker cash Undo: ten seconds, hide and leave flush, immutable retry");
+await (async () => {
+  await (await import("./maker-cash-undo.mjs")).run({ ok });
+})();
 section("Counter maker corrects the order code; a defaulted row takes a Correction only");
 await (async () => {
   await (await import("./maker-ledger-fields.mjs")).run({ ok });
+})();
+section("Counter cancellation disclosure: v457 actual amendment form and native catalog");
+await (async () => {
+  await (await import("./maker-cancellation.mjs")).run({ ok, pageWork });
 })();
 section("Counter maker revives a cancelled order; only a clean revival, as the one Correction");
 await (async () => {
@@ -50385,6 +50963,26 @@ await (async () => {
   await (await import("./maker-reward-spend.mjs")).run({ ok });
 })();
 
+section("Counter reward parity: generated offers and covered resource batches");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter extra-book cover: generated control to approved native fold");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runExtra({ ok, pageWork });
+})();
+
+section("Counter cover recovery: durable source before queue transport");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runRecovery({ ok });
+})();
+
+section("Counter resource batches: atomic capacity, ownership and withdrawal fence");
+await (async () => {
+  await (await import("./maker-reward-parity.mjs")).runAdmission({ ok, worker });
+})();
+
 section("D1 reads fail closed: a wrangler refusal is never an empty answer");
 await (async () => {
   await (await import("./d1-fail-closed.mjs")).run({ ok });
@@ -50393,6 +50991,31 @@ await (async () => {
 section("Counter maker account claims and sealed slips");
 await (async () => {
   await (await import("./maker-claims.mjs")).run({ ok });
+})();
+
+section("Counter Admin salt drift set and clear: the held override, automatic record and fixed-book boundary");
+await (async () => {
+  await (await import("./maker-drift.mjs")).run({ ok });
+})();
+
+section("Counter input receipts: confirmed completion and immutable uncertain retries");
+await (async () => {
+  await (await import("./maker-input-receipts.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter multi-book trade: owner controls, shared trip and native fold");
+await (async () => {
+  await (await import("./maker-trades.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter blank-locality Add ID: owner device pair and real bridge");
+await (async () => {
+  await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter Add ID starting drift: automatic, rule presets, typed bounds, encrypted pair and real bridge");
+await (async () => {
+  await (await import("./maker-addid-drift.mjs")).run({ ok });
 })();
 
 section("Counter maker: verified owner, narrow Desk bridge and hours");
@@ -50425,7 +51048,8 @@ await (async () => {
     COUNTER_MAKER_KEY: key,
     DESK_MAKER: { fetch: async (request) => {
       calls.push({ path: new URL(request.url).pathname, method: request.method, key: request.headers.get("X-Counter-Maker-Key") });
-      return new Response(JSON.stringify({ ok: true, drafts: [], refused: [] }), { status: 200 });
+      return new Response(JSON.stringify(new URL(request.url).pathname === "/_internal/maker/queue"
+        ? { ok: true, entries: [] } : { ok: true, drafts: [], refused: [] }), { status: 200 });
     } }
   };
   const call = (path, method = "GET", body) => handleMaker(new Request("https://counter.test" + path, {
@@ -50434,8 +51058,10 @@ await (async () => {
   const reviewed = await call("/all/maker/review");
   const review = await reviewed.json();
   ok(reviewed.status === 200 && review.ok && review.orders.length === 0 && review.drafts.length === 0
-    && calls.length === 1 && calls[0].path === "/_internal/maker/drafts" && calls[0].key === key,
-    "the verified owner receives the unified order/draft review through the named Desk route");
+    && review.queue.length === 0 && calls.length === 2
+    && calls.some((item) => item.path === "/_internal/maker/drafts" && item.key === key)
+    && calls.some((item) => item.path === "/_internal/maker/queue" && item.key === key),
+    "the verified owner receives the unified order/draft/server-queue review through the two named Desk routes");
   const startCalls = calls.length;
   const denied = await handleMaker(new Request("https://counter.test/all/maker/review", {
     headers: { "X-User-Email": "maakmal97@icloud.com" }
@@ -51498,6 +52124,7 @@ await (async () => {
             parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
             tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
             loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }],
+            rewards: [{ code: "CX1-AB", held: 2, free: 2, associate: true, departed: false, action: "redeem" }],
             rows: [{ rid: "editor-sale", party: "CX1-AB", product: "salt", date: "2026-09-01", qty: 2, total: 200, open: true }],
             correctionFields: [{ field: "qty", kind: "number", required: true }, { field: "cash", kind: "number", required: true }]
           } }
@@ -51571,7 +52198,7 @@ await (async () => {
     tradeControls[7].value = "0";
     tradeControls[8].value = "";
     tradeControls[9].value = "0";
-    tradeSection.querySelector("button").click();
+    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send trade for review").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
     const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
@@ -51769,6 +52396,11 @@ await (async () => {
       && !Object.hasOwn(sentFor.body, "master") && !Object.hasOwn(sentFor.body, "note"),
       "on-behalf UI sends the quote and replay id only to its protected route");
   } finally { admin.window.close(); }
+})();
+
+section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
+await (async () => {
+  await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
 })();
 
 section("Counter amendments: atomic replacement, review reservation and session ownership");
@@ -52214,11 +52846,12 @@ await (async () => {
     w.eval("setProd('salt');sales.push({customer:'ZZ9-TST',qty:1000,total:1000,product:'salt',pending:true});recompute();EXPECTED_READ=true;EXPECTED={};");
     const rows = () => read("actions().filter(x=>x.kind==='plan')");
     ok(rows().length === 1 && rows()[0].sev === "soon" && /not set/.test(rows()[0].title) && rows()[0].tab === "orders", "a yellow light with no day raises Restock date: not set, This week: " + JSON.stringify(rows()));
-    /* 06 Oct 2026: oil's light was pinned green, which held only while the live book had oil on its shelf; v1030's count
-       emptied it and the check went red with nothing wrong. Each book is now held to the stated rule over its OWN shelf and
-       commitments (red when out, yellow when promised past the shelf, else green), and oil's figures must not be salt's. */
-    const lights = read("expLights()"), rule = (b) => b.shelf < 0.005 ? "red" : b.commit - b.shelf > 0.005 ? "yellow" : "green";
-    ok(lights.salt.light === "yellow" && !!lights.oil && lights.oil.commit !== lights.salt.commit && lights.oil.light === rule(lights.oil), "the card reads each book's own light off the engine");
+    /* the other books' lights are live data (oil counted out on 06 Oct 2026), so each is read against its own shelf and
+       commitments taken book by book, and none may carry salt's 1,000 promised units */
+    const L = read("expLights()"), own = read("(function(){var o={};Object.keys(expLights()).forEach(function(p){setProd(p);recompute();var c=POSITION_ENGINE.commitments(pSales(PROD),currentStock);o[p]={light:POSITION_ENGINE.restockLight(currentStock,c.commitUnits),shelf:currentStock,commit:c.commitUnits};});setProd('salt');recompute();return o;})()");
+    ok(L.salt.light === "yellow" && L.salt.commit >= 1000 && Object.keys(L).length >= 4
+      && Object.keys(L).every((p) => JSON.stringify(L[p]) === JSON.stringify(own[p]) && (p === "salt" || L[p].commit < 1000)),
+      "the card reads each book's own light off the engine: " + JSON.stringify(L));
     w.eval("EXPECTED={salt:'2099-01-01'};");
     ok(rows().length === 0, "and the row falls once a day ahead is set");
     w.eval("EXPECTED={salt:'2020-01-01'};");
@@ -52402,18 +53035,20 @@ await (async () => {
   ok(forced.p === Math.floor(2 * forced.floor / 10 + 1e-9) * 10 && forced.p < 500,
     `and on the desk a typed RM 500 at 10 unit of oil is held to RM ${forced.p}, the ten under twice its RM ${forced.floor} floor`);
   /* THE AFTER-LEAK FIGURE, INFORMATION ONLY, beside the floor on a book losing a quarter or more of what it buys */
-  const shown = {};
-  for (const b of live) {
-    w.eval(`setProd(${JSON.stringify(b.p)});recompute();switchTab('price');`);
-    const text = String(w.eval("(document.querySelector('.sec.on')||document.body).textContent"));
-    shown[b.p] = /After the leak/.test(text) && text.indexOf("nothing prices off it") >= 0;
-  }
+  /* which books lose a quarter is live data (the counts of 06 Oct 2026 took rice to 24.998%), so the line is driven at the
+     live quarter and at a line under every book's leak and over every book's: all shown, then none, whatever the book holds */
+  const shownAt = (from) => { const s = {}, was = w.eval("RULES.leakInfoFrom");
+    try { if (from != null) w.eval(`RULES.leakInfoFrom=${from};`);
+      for (const b of live) {
+        w.eval(`setProd(${JSON.stringify(b.p)});recompute();switchTab('price');`);
+        const text = String(w.eval("(document.querySelector('.sec.on')||document.body).textContent"));
+        s[b.p] = /After the leak/.test(text) && text.indexOf("nothing prices off it") >= 0;
+      } } finally { w.eval(`RULES.leakInfoFrom=${was};`); }
+    return s; };
+  const shown = shownAt(null), shownAll = shownAt(0), shownNone = shownAt(2);
   const high = live.filter((b) => b.shrink >= b.leakFrom).map((b) => b.p).sort().join();
-  /* 06 Oct 2026: the books were pinned as "oil,rice", which held only while the live book's leak said so; v1030's count moved
-     rice under a quarter and the check went red with nothing wrong. The rule is held on every book instead, with at least
-     one book over the line so the shown side is proved too. */
-  ok(high.length > 0 && live.every((b) => shown[b.p] === (b.shrink >= b.leakFrom)),
-    `the after-leak figure is printed as information on the books that lose a quarter or more, ${high}, and on no other: ${JSON.stringify(shown)}`);
+  ok(live.every((b) => b.leakFrom === 0.25 && shown[b.p] === (b.shrink >= b.leakFrom) && shownAll[b.p] && !shownNone[b.p]),
+    `the after-leak figure is printed as information on the books that lose a quarter or more, ${high || "none today"}, and on no other; every book at a line of 0, none at 2: ${JSON.stringify({ shown, shownAll, shownNone })}`);
   w.eval("setProd('salt');recompute();");
 })();
 
@@ -52504,10 +53139,10 @@ await (async () => {
   const a11 = rd("(function(){try{cloudMode=function(){return true;};}catch(e){};setProd('salt');recompute();switchTab('add');wbMode='addid';wbApply();"
     + "var s=document.getElementById('wbApTier_salt');if(!s)return {s:false};var opts=[].map.call(s.options,function(o){return o.value;}),sel=s.value,z=wbTiersChosen();"
     + "s.value='-0.3';var a=wbTiersChosen();s.value='typed';var t=document.getElementById('wbApDrift_salt');t.value='0.15';var b=wbTiersChosen();"
-    + "t.value='3';var c=wbTiersChosen();return {s:true,opts:opts,sel:sel,z:z,a:a,b:b,c:c};})()");
+    + "t.value='0.125';var precise=wbTiersChosen();t.value='3';var c=wbTiersChosen();return {s:true,opts:opts,sel:sel,z:z,a:a,b:b,precise:precise,c:c};})()");
   ok(a11.s && JSON.stringify(a11.opts) === '["","-0.3","0","0.3","typed"]' && a11.sel === "" && !(a11.z && "salt" in a11.z)
-    && a11.a.salt === -0.3 && a11.b.salt === 0.15 && !(a11.c && "salt" in a11.c),
-    "Add ID starts a customer on the automatic drift unless he picks Better, Standard, Higher or types one from -1 to +1: " + JSON.stringify(a11));
+    && a11.a.salt === -0.3 && a11.b.salt === 0.15 && a11.precise.salt === 0.125 && !(a11.c && "salt" in a11.c),
+    "Add ID starts a customer on the automatic drift unless he picks Better, Standard, Higher or types one from -1 to +1 without rounding: " + JSON.stringify(a11));
   /* 12. THE MIGRATION: no customer holds a salt level on the book, and nobody is proposed one */
   const bk12 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const held12 = Object.keys(bk12.TIER_OF || {}).filter((c) => bk12.TIER_OF[c] && "salt" in bk12.TIER_OF[c] && typeof bk12.TIER_OF[c].salt !== "number");
@@ -52728,6 +53363,28 @@ await (async () => {
   const diff = drafts().map((d) => { const again = draftRow(d.entry, freshBook); return JSON.stringify(again.row) === JSON.stringify(d.row) ? null : { id: d.id, stored: d.row, fresh: again.row }; }).filter(Boolean);
   ok(drafts().length === 2 && diff.length === 0,
     "every row drafted off the shared read equals the row drafted off a fresh read of the mirror: " + JSON.stringify(diff));
+})();
+
+section("Drafter: an impossible calendar day is refused in every mode and in a correction");
+await (async () => {
+  const { draftRow, checkCorrection } = await import("../src/drafter.js");
+  const shelf = { version: "v1", pricing: { v: "v1", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 79.5 } } } } },
+    purchases: [{ date: "2026-07-28", qty: 100, total: 4700, receivedOn: "2026-07-28" }], sales: [],
+    state: { roster: ["CC9-OKR"], PRODUCTS: { salt: { name: "Salt" } },
+      OPEN: { v: "vT", byKey: {}, position: { salt: { onHand: 8, owedOut: 0, promised: 0, free: 8 } }, countedOn: {} } } };
+  const bad = ["2026-02-30", "2026-13-01", "2026-00-10", "2026-04-31"];
+  const refused = (r) => /not a date in YYYY-MM-DD/.test((r && r.skip) || "");
+  for (const date of bad) {
+    ok(refused(draftRow({ at: "x", payload: { mode: "new", direction: "SELL", party: "CC9-OKR", qty: 1, total: 90, cash: 90, kg: 1, date } }, shelf)), "a new sale dated " + date + " is refused");
+    ok(refused(draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 8, date } }, shelf)), "a count dated " + date + " is refused");
+    ok(refused(draftRow({ at: "x", payload: { mode: "loss", product: "salt", kg: 1, why: "spillage", date } }, shelf)), "a loss dated " + date + " is refused");
+  }
+  for (const mode of ["amend", "loan", "repay", "lost", "redeem", "gift", "addid", "rename", "place", "tierset", "price"])
+    ok(refused(draftRow({ at: "x", payload: { mode, party: "CC9-OKR", product: "salt", qty: 1, total: 90, date: "2026-02-30" } }, shelf)), "a " + mode + " dated 2026-02-30 is refused");
+  ok(!refused(draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 8, date: "2026-02-28" } }, shelf)), "a real day still drafts a count");
+  ok(!refused(draftRow({ at: "x", payload: { mode: "count", product: "salt", qty: 8, date: "2028-02-29" } }, shelf)), "a leap day still drafts");
+  const chk = checkCorrection({ date: "2026-02-30" }, shelf, { date: "2026-07-28", qty: 100, total: 4700 }, false);
+  ok(/date in YYYY-MM-DD/.test(JSON.stringify(chk)), "a correction to an impossible day is refused: " + JSON.stringify(chk).slice(0, 120));
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

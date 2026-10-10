@@ -4,7 +4,7 @@
  * The desk is one self-contained page and loads nothing, so it cannot link the design
  * system's stylesheet. It carries the text instead, between markers, exactly as it carries
  * the engine, the book and the geography; this is the tool that puts it there and proves it
- * is still there unchanged. Two blocks, both at the foot of the master's <style>, because
+ * is still there unchanged. Three blocks, the base and the desk at the foot of the master's <style>, because
  * both are last-wins layers over the rules above them:
  *
  *   DESIGN base   design/salt-ds.css   the design system's stylesheet, vendored from
@@ -13,10 +13,6 @@
  *                                      deliberately not vendored: the CSP is self-only)
  *   DESIGN desk   design/desk.css      the desk's own layer, binding its class vocabulary
  *                                      to those tokens
- *   DESIGN time   design/salt-time.js  the time of day (05 Oct 2026): the design system's
- *                                      src/salt-time.js, which sets data-time on <html> so the
- *                                      four themes follow the viewer's clock; a script in <head>,
- *                                      after the viewport meta, so it runs before the first paint
  *   DESIGN fonts  design/fonts.css     the brand faces, self-hosted (22 Sep 2026): @font-face
  *                                      rules vendored from Code/salt-ds src/fonts-local.css,
  *                                      naming files --pull copies into design/fonts/ and --sync
@@ -40,7 +36,6 @@ const MASTER = resolve(REPO, "master", "salt_command.html");
 const DS_ROOT = resolve(process.env.SALT_DS || resolve(REPO, "..", "salt-ds"));
 const DS_SRC = resolve(DS_ROOT, "src", "styles.css");
 const DS_FONTS_CSS = resolve(DS_ROOT, "src", "fonts-local.css");
-const DS_TIME = resolve(DS_ROOT, "src", "salt-time.js");
 const DS_FONTS = resolve(DS_ROOT, "src", "fonts");   /* beside fonts-local.css since 22 Sep 2026 */
 const FONT_FILES = ["fraunces-latin.woff2", "jetbrains-mono-latin.woff2"];
 const FONTS_SRC = resolve(REPO, "design", "fonts");
@@ -55,13 +50,7 @@ const BLOCKS = [
   { name: "fonts", file: resolve(REPO, "design", "fonts.css"),
     begin: "/* ==== DESIGN fonts: generated from design/fonts.css, vendored from Code/salt-ds src/fonts-local.css, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */",
     end: "/* ==== END DESIGN fonts ==== */" },
-  { name: "time", file: resolve(REPO, "design", "salt-time.js"),
-    begin: "/* ==== DESIGN time: generated from design/salt-time.js, vendored from Code/salt-ds src/salt-time.js, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */",
-    end: "/* ==== END DESIGN time ==== */" },
 ];
-/* the time block is a script in <head>, after this line, so the theme is set before the body paints */
-const TIME_ANCHOR = '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">';
-
 const text = (f) => readFileSync(f, "utf8").replace(/\r\n/g, "\n").replace(/\n+$/, "");
 const blockFor = (b) => b.begin + "\n" + text(b.file) + "\n" + b.end;
 
@@ -87,17 +76,14 @@ if (mode === "--pull") {
   mkdirSync(FONTS_SRC, { recursive: true });
   for (const f of FONT_FILES) copyFileSync(resolve(DS_FONTS, f), resolve(FONTS_SRC, f));
   console.log(`  ok    pulled design/fonts.css and ${FONT_FILES.length} font files into design/fonts/`);
-  const tjs = text(DS_TIME);
-  if (/https?:\/\//.test(tjs.replace(/\/\*[\s\S]*?\*\//g, ""))) { console.log("  FAIL  the design system's salt-time.js names another origin"); process.exit(1); }
-  if (tjs.includes("</script")) { console.log("  FAIL  salt-time.js would close the master's <script> early"); process.exit(1); }
-  writeFileSync(BLOCKS[3].file, tjs + "\n", "utf8");
-  console.log(`  ok    pulled design/salt-time.js (${tjs.split("\n").length} lines)`);
   process.exit(0);
 }
 
 let master = readFileSync(MASTER, "utf8");
 if (mode === "--check") {
   let bad = 0;
+  /* 09 Oct 2026: the time of day is retired, one theme (Night); a DESIGN time block left in the master is a fault */
+  if (master.includes("/* ==== DESIGN time:")) { console.log("  FAIL  time: the retired DESIGN time block is still in the master"); bad++; }
   for (const b of BLOCKS) {
     const at = locate(master, b);
     if (!at) { console.log(`  FAIL  ${b.name}: no DESIGN ${b.name} block in the master. Run: node tools/designsync.mjs --sync`); bad++; continue; }
@@ -116,12 +102,6 @@ if (mode === "--sync") {
     const at = locate(master, b);
     const block = blockFor(b);
     if (at) master = master.slice(0, at.i) + block + master.slice(at.j);
-    else if (b.name === "time") {
-      const k = master.indexOf(TIME_ANCHOR);
-      if (k < 0 || master.indexOf(TIME_ANCHOR, k + 1) >= 0) throw new Error("time: the viewport meta is not one line in the master");
-      const after = k + TIME_ANCHOR.length;
-      master = master.slice(0, after) + "\n<script>\n" + block + "\n</script>" + master.slice(after);
-    }
     else {
       /* first time: a layer goes at the foot of the stylesheet, so it wins; the fonts go before
          the base, because the desk layer's place is the foot and the suite holds it there */

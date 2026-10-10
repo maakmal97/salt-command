@@ -113,11 +113,11 @@ export async function planPublish(root, key, now, existingKeys, storedIssue, pri
      unmakes them; the publish neither writes nor retires them, or every deploy would take away the
      accounts he keeps for trying the page out. stmt/testfix.js states the names. */
   const TEST_RECS = TEST_USERS.map((t) => "u:" + t);
-  /* v698: WRITING IS HOURLY, RETIRING IS NOT (his instruction of 18 Sep 2026 that prices always
-     follow the desk). The hourly refresh runs with --no-retire, because retiring an account whose
+  /* v698: WRITING IS SCHEDULED, RETIRING IS NOT (his instruction of 18 Sep 2026 that prices always
+     follow the desk). The scheduled refresh runs with --no-retire, because retiring an account whose
      record the newest issue does not carry is a judgement about a deploy he made, not about a
-     clock: a partial or botched issue read would otherwise take accounts down twenty-four times a
-     day rather than once. The puts are unchanged either way, so an hourly run still refreshes
+     clock: a partial or botched issue read would otherwise take accounts down twelve times a
+     day rather than once. The puts are unchanged either way, so a scheduled run still refreshes
      every sealed list, board and roster. */
   const retire = !(opts && opts.noRetire);
   if (r.records.length && retire) {
@@ -287,7 +287,7 @@ function readAccountWrites(expected, outDir, run = execFileSync) {
 /* v658: the guest links themselves, so a board can be written for each. They live in the site's own
    store under g:, which this tool already reads through wrangler's login.
    ONE LIST AND ONE BULK GET, NOT A GET PER LINK (fold 5.5, 26 Sep 2026): each link was a wrangler
-   process of its own, eight of the nineteen a publish spawned, and the publish runs every hour. The
+   process of its own, eight of the nineteen a publish spawned, and the publish runs every two hours. The
    ids go to <dir>/refs-keys.json, a hundred a call (the store's limit). `kv bulk get` is open beta in
    wrangler, so a failure, or an answer in a shape read here as anything but text or null for every
    key asked, falls back to one get per link with a warning: a link's board is never lost to it.
@@ -355,7 +355,7 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
     console.log("the statements store is not created yet (placeholder id in wrangler.stmt.jsonc); nothing published");
     return;
   }
-  /* the three lists feed only the retirement, so the hourly run, which retires nothing, does not
+  /* the three lists feed only the retirement, so the scheduled run, which retires nothing, does not
      spawn them (fold 5.5, 26 Sep 2026); the puts never read them */
   const noRetire = argv.includes("--no-retire");
   let existing = [], storedIssue = null, issueUnread = false;
