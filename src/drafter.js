@@ -72,6 +72,22 @@ export async function readBook(db) {
     pricing: state.PRICING || null
   };
 }
+/* 06 OCT 2026: ONE READ OF THE MIRROR AN INVOCATION. The book is four queries and every row of the mirror (299 rows,
+ * 378 KB of JSON on the live extract, about 2 ms of CPU to parse), and the mirror moves only when the deploy job seeds it,
+ * never inside one invocation; yet a minute that queued a stage read it twice (the reconcile, then the drafter), the
+ * quarter-hour three times, the minute after a fold four, and a tap on an order twice with its tail. `bookOnce(db)` is a
+ * reader: its first call reads, every later call answers the same book, and a read that failed is read again on the next
+ * call, so a caller's own catch keeps its meaning. The Worker's CPU budget is per invocation, so the reads a tick repeats
+ * are what it spends. A caller without a reader reads as before. THE ONE READ THAT IS NEVER SHARED WITH A CARD'S: where a
+ * tap draws the row and runs the drafter in one request (Accept, a taken offer, Received on a claim), the drafter reads for
+ * itself (D6, S11 11.11), so a mirror that moved under the tap drafts a row that differs from what he saw. */
+export function bookOnce(db) {
+  let p = null;
+  return () => {
+    if (!p) { p = readBook(db); p.catch(() => { p = null; }); }
+    return p;
+  };
+}
 /* 05 OCT 2026: THE LOTS DRAFTED AND NOT YET FOLDED, pending or approved, each tagged with its draft id, so a sale
    drafted after a purchase it follows (p035 and s232, one batch) is costed off that purchase, not the lot before it.
    Read by the drafting passes alone, once, just before their first draft (readBook's callers are timed against its
@@ -1920,7 +1936,7 @@ export async function settlePre(db, pre, book, now) {
  * later fold had moved the mark was counted as committed, never drafted, never refused, and the
  * phone then cleared it as folded. A sale vanished with no trace. Drafting it puts it to a
  * person; a twin already on the book is named by check 6b and rejected in one tap. */
-export async function runDrafter(env, { now = () => new Date().toISOString() } = {}) {
+export async function runDrafter(env, { now = () => new Date().toISOString(), mirror = null } = {}) {
   if (!env.SALT_LEDGER) return { ok: false, error: "no ledger binding" };
   if (!env.SALT_QUEUE) return { ok: false, error: "no queue binding" };
 
@@ -1932,7 +1948,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString() } =
   const withdrawn = new Set((withdrawalRows.results || []).map((row) =>
     row.id.slice("queue-withdraw:".length)));
   for (const at of withdrawn) byAt.delete(at);
-  const book = await readBook(env.SALT_LEDGER);
+  /* 06 Oct 2026: the invocation's one read (bookOnce), when the caller holds one; a pass of its own reads */
+  const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* NO SNAPSHOT, NO DRAFTING (26 Sep 2026, fold 2.2 of the streamlining plan). The seed deletes the snapshot row
      first and writes it last (tools/d1.mjs buildSeed), so a mirror without one is being seeded or was never
      seeded. Drafting against it refused every sale for want of a cost or, on a book half written, froze a card's

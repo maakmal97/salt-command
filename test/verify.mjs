@@ -2330,7 +2330,7 @@ await (async () => {
   /* DRAFT ON ARRIVAL. The cron alone loses the race against serve_desk.py's 60-second
      destructive drain, which was found by running it rather than by reasoning about it. */
   ok(/function draftOnArrival/.test(w), "the Worker drafts on arrival, not only on the cron");
-  ok(/draftOnArrival\(env, ctx\)/.test(w), "and the queue POST calls it");
+  ok(/draftOnArrival\(env, ctx, mirror\)/.test(w), "and the queue POST calls it, handing it the request's one read of the mirror");
   ok(/async fetch\(request, env, ctx\)/.test(w), "fetch takes ctx so waitUntil is available");
   const arr = w.slice(w.indexOf("function draftOnArrival"), w.indexOf("async function handleQueuePost"));
   ok(/waitUntil/.test(arr) && !/await runDrafter/.test(arr.split("waitUntil")[0]),
@@ -53417,6 +53417,105 @@ await (async () => {
   ok(JSON.stringify(read(key)) === JSON.stringify(hand(key)) && JSON.stringify(read(key, own)) === JSON.stringify(hand(key, own))
     && read(key).on === 80 && read(key, own).on === 50 && read(key).owes === 180,
     "a room handed the list answers as the room that read it: " + JSON.stringify(read(key)) + " / " + JSON.stringify(hand(key)));
+})();
+
+/* 06 OCT 2026, PERF 2: ONE READ OF THE MIRROR AN INVOCATION. readBook is four queries and every row of the mirror (299 rows and
+   378 KB of JSON on the live extract, about 2 ms of CPU to parse), and the mirror moves only when the deploy job seeds it, never
+   inside one invocation. A minute that queued a stage read it twice, the quarter-hour three times, the minute after a fold four,
+   an Accept tap twice and Collected with its tail twice. Each now takes one reader (bookOnce) through its steps. Driven on the
+   real migrations in node:sqlite with the real Counter as the site, counting the state table's reads, which only readBook makes.
+   Behaviour is the row written: the drafted row equals the row the drafter writes off a fresh read. Invented codes only. */
+section("Perf: a tick, a tap and its tail read the mirror once, and the row they write is the row a fresh read drafts");
+await (async () => {
+  let DatabaseSync = null;
+  try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
+  if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the mirror's reads were not counted against the real schema"); return; }
+  const D = await import("../tools/d1.mjs");
+  const { bookOnce, readBook, draftRow } = await import("../src/drafter.js");
+  const O = await import("../stmt/orders.js");
+  const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
+  const migrated = () => { const db = new DatabaseSync(":memory:");
+    for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
+    return db; };
+  /* the stand-in counts every query and the reads of the state table, which readBook alone makes; `fail` makes the next such read throw */
+  const asD1 = (db, n) => ({ prepare(sql) { const st = db.prepare(sql), isState = /^SELECT key,doc FROM state$/.test(sql.trim());
+    const count = () => { n.q++; if (isState) { n.state++; if (n.fail) { n.fail = false; throw new Error("the mirror is away"); } } };
+    const mk = (a) => ({ run() { count(); const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
+      first() { count(); const r = st.get(...a); return r === undefined ? null : r; }, all() { count(); return { results: st.all(...a) }; } });
+    const self = mk([]); self.bind = (...a) => mk(a); return self; }, batch: async (stmts) => { for (const s of stmts) await s.run(); return []; } });
+  const CODE = "CQ7-ZUV", U = "abcd-efgh";
+  const body = { v: "vP2", stamped: "06 Oct 2026, 09:00 KL", ledger: {
+    sales: [{ date: "2026-08-01", customer: CODE, qty: 1, total: 90, cash: 90, deliveredQty: 1 }],
+    purchases: [{ date: "2026-08-13", supplier: "SQ2-VOX", qty: 12.5, total: 700, receivedOn: "2026-08-13", receivedQty: 12.5 }],
+    PRICING: { v: "vP2", takenAt: "2026-10-06T01:00:00.000Z", byProduct: { salt: { stockCost: 56, replCost: 56, floors: { "1": { floor: 60 } } } } },
+    OPEN: { at: "2026-10-06T01:00:00.100Z", byKey: {}, position: {} },
+    roster: [CODE, "SQ2-VOX"], QUEUE_COMMITTED: "2026-08-14T00:00:00.000Z" } };
+
+  /* THE READER: one read however often it is asked, and a read that failed is read again */
+  const dbR = migrated(); dbR.exec(D.buildSeed(body).sql);
+  const nR = { q: 0, state: 0, fail: false }, once = bookOnce(asD1(dbR, nR));
+  const r1 = await once(), r2 = await once();
+  ok(r1 === r2 && r1.version === "vP2" && r1.sales.length === 1 && nR.state === 1,
+    "bookOnce answers the one book it read to every caller, the state table read once: " + JSON.stringify({ reads: nR.state, same: r1 === r2 }));
+  const nF = { q: 0, state: 0, fail: true }, again = bookOnce(asD1(dbR, nF));
+  let failed = null; try { await again(); } catch (e) { failed = String(e.message); }
+  let r3 = null; try { r3 = await again(); } catch (e) { r3 = null; }   /* a reader that kept the failure answers it again: caught, so the check speaks */
+  ok(failed === "the mirror is away" && r3 && r3.version === "vP2" && nF.state === 2,
+    "and a read that failed is read again on the next call, so a caller's catch keeps its meaning: " + JSON.stringify({ failed, reads: nF.state }));
+
+  /* THE WORLD: two orders on the site, one acknowledged and owing its row, the mirror on the real schema */
+  const skv = new KV(), senv = { STMT: skv, STMT_DESK_KEY: "desk-key" }, DESK = { "content-type": "application/json", "X-Stmt-Desk": "desk-key" };
+  await skv.put("u:" + U, JSON.stringify({ v: 1, issued: "2026-09-01", env: { v: 1, salt: "s", iv: "i", ct: "c" } }));
+  const place = async () => (await O.placeOrder(senv, U, { product: "salt", qty: 1, mode: "collect", unit: 90, total: 90, week: "" })).order;
+  const owed = await place(), fresh = await place();
+  await stmtW.fetch(new Request("https://site.test/desk/orders/" + U + "/" + owed.id, { method: "POST", headers: DESK, body: JSON.stringify({ status: "acknowledged", delivery: 0 }) }), senv);
+  const db = migrated(); db.exec(D.buildSeed(body).sql);
+  const n = { q: 0, state: 0, fail: false };
+  const dkv = new KV(); await dkv.put("stmt-users", JSON.stringify({ [U]: CODE }));
+  const env = { SALT_QUEUE: dkv, SALT_LEDGER: asD1(db, n), STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
+    STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+  const quiet = async (f) => { const realL = console.log, logs = []; console.log = (...x) => logs.push(x.join(" "));
+    try { return Object.assign({ logs }, await f()); } finally { console.log = realL; } };
+  const reads = () => { const s = n.state; n.state = 0; return s; };
+  const post = (path, b) => quiet(async () => { const waits = [];
+    const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST", headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(b) }),
+      env, { waitUntil: (p) => waits.push(p) });
+    const j = await r.json(); await Promise.all(waits); return { status: r.status, j }; });
+  const drafts = () => db.prepare("SELECT id,status,entry,row FROM draft ORDER BY id").all().map((r) => ({ id: r.id, status: r.status, entry: JSON.parse(r.entry), row: JSON.parse(r.row) }));
+
+  /* 1. THE QUARTER-HOUR TICK that queues the acknowledged order's row: the return leg, the reconcile, the desk pass and both drafter passes */
+  const tick = await quiet(async () => { const waits = [];
+    await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse("2026-10-06T02:15:00Z") }, env, { waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits); return {}; });
+  const tickReads = reads(), d1 = drafts();
+  const ran = (p) => { const l = tick.logs.find((x) => x.startsWith(p)); return l ? JSON.parse(l.slice(p.length)) : null; };
+  const first = ran("drafter (orders): "), net = ran("drafter: ");
+  ok(first && first.drafted === 1 && net && net.already === 1 && d1.length === 1 && d1[0].status === "pending" && d1[0].entry.orderId === owed.id,
+    "the tick queues the acknowledged order's row and drafts it, the quarter-hour net finding it drafted: " + JSON.stringify({ first, net, drafts: d1.length }));
+  ok(tickReads === 1, "and the whole tick read the mirror's state table once (it was four reads: the return leg, the reconcile and two drafter passes): " + tickReads);
+
+  /* 2. AN ACCEPT TAP: the preview, then the accept with its pre-approval spent where the row is drafted */
+  const pv = await post("/orders/" + fresh.id + "/preview", {});
+  reads();
+  const ac = await post("/orders/" + fresh.id + "/accept", { hash: pv.j.hash });
+  const acReads = reads(), d2 = drafts();
+  ok(pv.status === 200 && ac.status === 200 && ac.j.approved === true && d2.length === 2 && d2.some((d) => d.entry.orderId === fresh.id && d.status === "approved"),
+    "Accept drafts the row and his yes approves it where it is drafted: " + JSON.stringify({ preview: pv.status, accept: [ac.status, ac.j.approved], drafts: d2.map((d) => d.status) }));
+  /* D6 (S11 11.11): the drafter never drafts off the card's read, so Accept is two reads, the card's and the drafter's, and the yes shares the drafter's */
+  ok(acReads === 2, "and the Accept request read the mirror twice, the card's redraw and the drafter's own, the yes it tests sharing the drafter's: " + acReads);
+
+  /* 3. COLLECTED on the order whose row waits under Approve: the tap, then its tail (the reconcile, the desk pass) */
+  const hd = await post("/orders/" + owed.id + "/handed", { qty: 1 });
+  const hdReads = reads();
+  ok(hd.status === 200 && hd.j.ok && hd.j.preapproval && hd.j.preapproval.stage === "move" && hd.j.preapproval.waits === true,
+    "Collected records his yes on a row not yet on the book, booked when the row lands: " + JSON.stringify({ status: hd.status, pre: hd.j.preapproval && [hd.j.preapproval.stage, hd.j.preapproval.waits] }));
+  ok(hdReads === 1, "and the tap with its tail read the mirror once (it was two: the preview, then the tail's reconcile): " + hdReads);
+
+  /* 4. THE SAME ROW: what the shared read drafted is what a fresh read drafts, field for field */
+  const freshBook = await readBook(asD1(db, { q: 0, state: 0, fail: false }));
+  const diff = drafts().map((d) => { const again = draftRow(d.entry, freshBook); return JSON.stringify(again.row) === JSON.stringify(d.row) ? null : { id: d.id, stored: d.row, fresh: again.row }; }).filter(Boolean);
+  ok(drafts().length === 2 && diff.length === 0,
+    "every row drafted off the shared read equals the row drafted off a fresh read of the mirror: " + JSON.stringify(diff));
 })();
 
 section("Drafter: an impossible calendar day is refused in every mode and in a correction");
