@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1063",
+  "d": "10 Oct 2026",
+  "t": "THE RAIL BADGE COUNTS ARE KEPT AGAINST EVERY INPUT OF ACTIONS()",
+  "n": [
+   "<b>The rail counts once, not on every render.</b> The Today and Money badges walked every action on each render, about a fifth of a pass over the desk. railCounts keeps the two counts, numbers only, against badgeKey: the text of every input actions() reads, the book, the view, the date and each open offer's lapse, and the identity of the readers it stands on. Any change recomputes at once.",
+   "<b>A missed input fails the suite.</b> One check walks every mutable global actions() can reach and refuses one the key omits without a reason; another refuses an in-place write to a constant the key leaves out. Each input, changed in turn, moves the badge to the fresh figure and back. No row, price or stock figure moves."
+  ]
+ },
+ {
   "v": "v1062",
   "d": "10 Oct 2026",
   "t": "A COUNT OF ONE DAY SAYS 1 DAY",

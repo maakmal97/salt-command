@@ -27567,7 +27567,7 @@ await (async () => {
     }
     /* THE MIRROR TERM. A default he is owed counted one; money he owes back counted nothing. */
     const src8 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-    const navBlock = src8.slice(src8.indexOf("function navCounts()"), src8.indexOf("function navCounts()") + 900);
+    const navBlock = src8.slice(src8.indexOf("function railCounts()"), src8.indexOf("function railCounts()") + 1200);   /* fold 5: the formula moved out of navCounts */
     ok(/customerRefunds\.filter\(r=>!r\.paidOn\)\.length/.test(navBlock) && /supplierReceivable\.status==='recoverable'/.test(navBlock),
       "the rail counts an open refund beside the default it already counted, which is its mirror");
     /* AND THE TABLE CARRIES AN AGE, which was the one open figure on the page without one. */
@@ -47404,8 +47404,8 @@ await (async () => {
     var after=typeof RENDER_MEMO!=='undefined'&&RENDER_MEMO===null;
     Object.keys(keep).forEach(function(k){window[k]=keep[k];});
     return {n:n,keys:keys,live:liveBooks(),after:after};})())`));
-  ok(v.n.allNow === 1 && v.n.all >= 2 && v.n.act === v.live.length,
-    "one Today render walks every book's actions once, though tabToday and the badge each ask: " + JSON.stringify({ n: v.n, live: v.live }));
+  ok(v.n.allNow === 1 && v.n.all >= 1 && v.n.act === v.live.length,
+    "one Today render walks every book's actions once, however many ask (the badge keeps its figure from fold 5): " + JSON.stringify({ n: v.n, live: v.live }));
   const ks = Object.keys(v.keys);
   ok(ks.length >= 2 && v.n.splitNow === ks.length && ks.every((p) => v.keys[p] === 1 && v.live.indexOf(p) >= 0) && v.n.split > v.n.splitNow,
     "and approachSplit is made once a book inside it, however many readers ask: " + JSON.stringify({ split: v.n.split, made: v.keys }));
@@ -47619,6 +47619,182 @@ await (async () => {
     ok(b.n >= 10 && b.wrong === 0 && b.more > 0 && b.more < b.n && b.wired === b.more,
       "once every card is open, each table's fade is what measuring it gives, and each one that overflows follows its scroll: " + JSON.stringify(b));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("Perf: the rail badge is kept across renders against every input of actions(), and never stale");
+await (async () => {
+  /* Fold 5 (09 Oct 2026). navCounts ran allActions on every render, a fifth of a pass over the desk. railCounts keeps the Today
+     and Money counts against badgeKey, the text of every input allActions reads. Each mutation below changes one input, draws a
+     part, and the rail must read what a fresh walk of the book reads, with allActionsNow made once for it and not again. */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster();
+  try {
+    const v = JSON.parse(w.eval(`JSON.stringify((function(){
+      var rail=function(s){var b=document.querySelector('.tab[data-s="'+s+'"] .navct');return b?+b.textContent:0;};
+      var freshToday=function(){return allActionsNow().filter(function(x){return x.sev==='now';}).length;};
+      var freshOpen=function(){return sales.filter(function(t){var o=txStat(t).order;return o==='Pending'||/^Open/.test(o);}).length
+        +((supplierReceivable&&supplierReceivable.status==='recoverable')?1:0)+customerRefunds.filter(function(r){return !r.paidOn;}).length;};
+      var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
+      var oa=allActionsNow,made=0;allActionsNow=function(){made++;return oa.apply(this,arguments);};
+      var out={parts:parts.length};
+      try{
+        /* every part, twice, on the book as it stands: the rail is what a fresh walk reads, and the second pass makes nothing */
+        switchTab('today');
+        var bad=[];
+        parts.forEach(function(p){switchTab(p);if(rail('today')!==freshToday()||rail('money')!==freshOpen())bad.push(p);});
+        made=0;
+        parts.forEach(function(p){switchTab(p);});
+        var second=made-1;   /* the Today part draws its own list through the same walk, once */
+        parts.forEach(function(p){switchTab(p);if(rail('today')!==freshToday()||rail('money')!==freshOpen())bad.push(p);});
+        out.every={bad:bad,second:second};
+        /* one input at a time: the key moves, the rail is the fresh figure, the walk is made once and the next draw reuses it */
+        var step=function(name,mutate,restore){
+          switchTab('inventory');var before=[rail('today'),rail('money')],k0=badgeKey();
+          mutate();var k1=badgeKey();made=0;switchTab('inventory');var m1=made,after=[rail('today'),rail('money')];
+          var fresh=[freshToday(),freshOpen()];made=0;switchTab('network');var m2=made,again=[rail('today'),rail('money')];
+          restore();made=0;switchTab('inventory');var back=[rail('today'),rail('money')];
+          out[name]={moved:k0!==k1,before:before,after:after,fresh:fresh,again:again,back:back,made:m1,madeAgain:m2};
+        };
+        var day=function(n){var d=new Date(TODAY.getTime()+n*864e5);return d.toISOString().slice(0,10);};
+        var row=null;
+        step('row',function(){row={date:day(-10),customer:'ZT9-TST',qty:2,total:200,cash:0,deliveredQty:2,rid:'sZT9'};sales.push(row);},
+          function(){sales.splice(sales.indexOf(row),1);});
+        var rf=null;
+        step('refund',function(){rf={party:'ZT9-TST',amount:50,since:day(-3),note:'probe'};customerRefunds.push(rf);},
+          function(){customerRefunds.splice(customerRefunds.indexOf(rf),1);});
+        var keepOpen=ORD_OPEN;
+        step('order',function(){ORD_OPEN=[{id:'zt9',status:'placed',total:100,delivery:0,paid:0,at:new Date().toISOString(),code:'ZT9-TST'}];},
+          function(){ORD_OPEN=keepOpen;});
+        var t0=TODAY.getTime();
+        /* a sale handed over today and unpaid is within its term now and long past it in 400 days, so the date step moves the
+           Today count on any book: the live book alone may hold nothing a date moves (10 Oct 2026, after the re-merge) */
+        var dr={date:day(0),customer:'ZT9-TST',qty:2,total:200,cash:0,deliveredQty:2,rid:'sZT8'};sales.push(dr);
+        step('date',function(){TODAY.setTime(t0+400*864e5);},function(){TODAY.setTime(t0);});
+        sales.splice(sales.indexOf(dr),1);
+        var keepHush=HUSH;
+        step('hush',function(){HUSH={zt9:'2999-01-01'};},function(){HUSH=keepHush;});
+        var keepDr=AP_DRAFTS;
+        step('draft',function(){AP_DRAFTS=[{id:'d9',status:'pending',entry:{orderId:'zt9',status:'Payment',by:'customer'}}];},function(){AP_DRAFTS=keepDr;});
+        var q0=queue.length;
+        step('queue',function(){queue.push({at:'2999-01-01T00:00:00Z',raw:'probe',payload:{mode:'count',qty:1,date:day(0)}});},function(){queue.length=q0;});
+        var keepEx=EXPECTED;
+        step('expected',function(){EXPECTED={salt:day(5)};},function(){EXPECTED=keepEx;});
+        var keepP=PROD;
+        step('book',function(){setProd(PROD_IDS.filter(function(p){return p!==keepP&&prodLive(p);})[0]||keepP);},function(){setProd(keepP);});
+        step('override',function(){pxOver.party='ZT9';},function(){pxOver.party='';});
+        var ro=null;
+        step('roster',function(){roster.push('ZT9-TST');ro=roster.length-1;},function(){roster.splice(ro,1);});
+        /* an order edited in place (the array is the same, nothing added), as a read of the site's orders can leave it */
+        var o9={id:'zt9',status:'placed',total:100,delivery:0,paid:0,at:new Date().toISOString(),code:'ZT9-TST'};
+        step('orderEdit',function(){ORD_OPEN=[o9];switchTab('inventory');o9.status='cancelled';},function(){o9.status='placed';ORD_OPEN=keepOpen;});
+        /* an offer that lapses with nothing else changed: the wall clock is an input, so the key moves with it */
+        var of={id:'zt7',status:'placed',price:{state:'offered',offer:{until:new Date(Date.now()+600).toISOString()}},at:'2026-01-01'};
+        ORD_OPEN=[of];window.__lk0=badgeKey();window.__keepOpen=keepOpen;
+      }finally{allActionsNow=oa;}
+      return out;})())`));
+    await new Promise((r) => setTimeout(r, 900));
+    const lp = JSON.parse(w.eval(`JSON.stringify((function(){var k1=badgeKey();switchTab('inventory');
+      var b=document.querySelector('.tab[data-s="today"] .navct'),n=b?+b.textContent:0,f=allActionsNow().filter(function(x){return x.sev==='now';}).length;
+      var res={moved:k1!==window.__lk0,same:n===f};ORD_OPEN=window.__keepOpen;switchTab('inventory');return res;})())`));
+    ok(lp.moved && lp.same, "an offer that lapses with the data untouched moves the badge key, and the rail reads the fresh figure: " + JSON.stringify(lp));
+    ok(v.parts >= 15 && v.every.bad.length === 0 && v.every.second === 0,
+      "on the live book every part of every view draws the rail's Today and Money counts a fresh walk gives, and a second pass makes the walk only for Today's own list: " + JSON.stringify(v.every));
+    for (const k of ["row", "refund", "order", "date", "hush", "draft", "queue", "expected", "book", "override", "roster", "orderEdit"]) {
+      const s = v[k];
+      ok(s && s.moved && s.after[0] === s.fresh[0] && s.after[1] === s.fresh[1] && s.again[0] === s.fresh[0] && s.again[1] === s.fresh[1]
+        && s.back[0] === s.before[0] && s.back[1] === s.before[1],
+        "a changed " + k + " moves the badge key, and the rail reads the fresh figures at once, again on the next part, and the old ones when put back: " + JSON.stringify(s));
+      ok(s && s.made === 1 && s.madeAgain === 0, "and the walk is made once for it, and not again on the next draw: " + JSON.stringify({ made: s && s.made, again: s && s.madeAgain }));
+    }
+    ok(v.row.after[0] > v.row.before[0] && v.refund.after[0] === v.refund.before[0] + 1 && v.order.after[0] === v.order.before[0] + 1,
+      "a new unpaid sale raises the Today count, and an open refund and a placed order each by one: " + JSON.stringify({ row: [v.row.before, v.row.after], refund: [v.refund.before, v.refund.after], order: [v.order.before, v.order.after] }));
+    ok(v.row.after[1] === v.row.before[1] + 1 && v.refund.after[1] === v.refund.before[1] + 1,
+      "and the Money count by one for the sale and the refund: " + JSON.stringify({ row: v.row.after, refund: v.refund.after }));
+    ok(v.date.after[0] !== v.date.before[0], "advancing the date 400 days moves the Today count: " + JSON.stringify(v.date));
+    /* the saving, counted and timed: a pass over every part, kept and then made fresh on every draw */
+    const m = JSON.parse(w.eval(`JSON.stringify((function(){
+      var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
+      var oa=allActionsNow,ok=navCounts,made=0,nav=0;
+      allActionsNow=function(){made++;return oa.apply(this,arguments);};
+      navCounts=function(){var s=performance.now();try{return ok.apply(this,arguments);}finally{nav+=performance.now()-s;}};
+      var rc=railCounts;
+      var pass=function(){parts.forEach(function(p){switchTab(p);});};
+      try{
+        pass();made=0;nav=0;pass();pass();var kept={made:made,nav:nav};
+        railCounts=function(){return {open:0,today:allActions().filter(function(x){return x.sev==='now';}).length};};
+        made=0;nav=0;pass();pass();var fresh={made:made,nav:nav};
+        return {parts:parts.length,kept:kept,fresh:fresh};
+      }finally{allActionsNow=oa;navCounts=ok;railCounts=rc;}})())`));
+    ok(m.fresh.made >= 2 * m.parts && m.kept.made <= 2 && m.kept.nav * 3 < m.fresh.nav,
+      "two passes over every part make the walk twice or less kept (Today's own list), once a draw fresh, and spend under a third of the time in the rail's counts: " + JSON.stringify(m));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("Perf: every mutable global actions() can reach is in the rail badge's key, or allowed with a reason");
+await (async () => {
+  /* Fold 5 structural check. The key is only as good as its list, and the list was found by reading. This walks the master the
+     same way: every top-level `let`, the `function X(` calls followed transitively from actions, allActionsNow, ordActs,
+     boundaryScan and txStat, and each `let` the closure touches must be named in badgeKey's own text or allowed below. A new
+     mutable global read by actions() with no key term turns this red. Comments are stripped, so a name in prose counts for nothing. */
+  const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const code = [...src.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n")
+    .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;{}])\/\/[^\n]*/g, "$1");
+  const body = Object.create(null), lets = new Set(), consts = new Set();
+  let cur = null;
+  for (const l of code.split("\n")) {
+    const f = /^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/.exec(l), d = /^(let|var|const)\s+(.*)/.exec(l);
+    if (f) { cur = f[1]; body[cur] = l + "\n"; continue; }
+    if (d) {
+      cur = null;
+      if (d[1] === "const") { const m = /^([A-Za-z_$][\w$]*)/.exec(d[2]); if (m) consts.add(m[1]); }
+      if (d[1] === "let") {
+        let depth = 0, item = "";
+        const items = [];
+        for (const ch of d[2].split(";")[0]) {
+          if ("([{".includes(ch)) depth++;
+          if (")]}".includes(ch)) depth--;
+          if (ch === "," && !depth) { items.push(item); item = ""; } else item += ch;
+        }
+        items.push(item);
+        items.forEach((i) => { const m = /^\s*([A-Za-z_$][\w$]*)/.exec(i); if (m) lets.add(m[1]); });
+      }
+      continue;
+    }
+    if (cur) body[cur] += l + "\n";
+  }
+  const seen = new Set(), queue = ["actions", "allActionsNow", "ordActs", "boundaryScan", "txStat"], reached = new Set(), reachedC = new Set();
+  while (queue.length) {
+    const n = queue.shift();
+    if (seen.has(n)) continue;
+    seen.add(n);
+    for (const t of new Set((body[n] || "").match(/[A-Za-z_$][\w$]*/g) || [])) {
+      if (body[t] && !seen.has(t)) queue.push(t);
+      if (lets.has(t)) reached.add(t);
+      if (consts.has(t)) reachedC.add(t);
+    }
+  }
+  const keyText = body.badgeKey || "";
+  const ALLOWED = {
+    PRICE_TIERS: "rebuilt by recompute() from keyed inputs",
+    stockCounted: "set by recompute() from the walk of keyed inputs",
+    RENDER_MEMO: "the render's own memo, closed when it returns; holds only reads of keyed inputs",
+    vaultNames: "titles only; the cached figures are numbers", revealed: "titles only; the cached figures are numbers",
+    newIds: "titles only; the cached figures are numbers", newLocs: "titles only; the cached figures are numbers",
+  };
+  const missing = [...reached].filter((n) => !new RegExp("\\b" + n + "\\b").test(keyText) && !(n in ALLOWED)).sort();
+  ok(seen.size > 100 && reached.size >= 8 && keyText.length > 100,
+    "the walk reached the desk's readers and found its mutable globals, or this section proves nothing: " + JSON.stringify({ functions: seen.size, lets: [...reached].sort() }));
+  ok(missing.length === 0, "every mutable global actions() can reach is a term of badgeKey or allowed with a reason: " + JSON.stringify(missing));
+  /* a const is mutable in place: one the walk reaches and the key does not name must never be written to anywhere in the master */
+  const written = [...reachedC].filter((n) => !new RegExp(String.raw`\b${n.replace(/\$/g, String.raw`\$`)}\b`).test(keyText)).filter((n) => {
+    const q = n.replace(/\$/g, String.raw`\$`), X = String.raw`(?<![\w$.])${q}`;
+    return new RegExp([X + String.raw`\.[\w$]+\s*(?:[-+*/|&]|\*\*)?=(?!=)`, X + String.raw`\[[^\]\n]*\]\s*[-+*/|&]?=(?!=)`,
+      X + String.raw`\.(?:push|splice|pop|shift|unshift|sort|reverse|fill)\(`, X + String.raw`\.length\s*=(?!=)`,
+      String.raw`Object\.assign\(\s*${q}\b`, String.raw`delete\s+${q}\b`].join("|")).test(code);
+  }).sort();
+  ok(reachedC.size > 50, "the walk reached the desk's constants, or the check below proves nothing: " + reachedC.size);
+  ok(written.length === 0, "no constant actions() reaches and the key leaves out is ever written to in place: " + JSON.stringify(written));
+  ok(Object.keys(ALLOWED).every((n) => lets.has(n)), "and every allowed name is still a top-level let, so the list cannot go stale");
 })();
 
 section("Reward paid parts: a rebate row counts the part that was paid for, at the row's own unit cost");
