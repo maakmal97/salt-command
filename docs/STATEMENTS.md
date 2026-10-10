@@ -1099,6 +1099,8 @@ open and the desk showing. `public/sw.js` never caches `/threads` (`salt-shell-v
 cover `wrangler.stmt.jsonc`, so `tools/update.mjs` reports the phone current and ships nothing:
 `npx wrangler deploy -c wrangler.stmt.jsonc`.
 
+`wrangler.stmt.jsonc` sets `preview_urls` to `false` (09 Oct 2026, as the desk did on 03 Oct 2026), because a version's own preview address would sit outside the Access application that covers `/all` by hostname. Nothing used one (checked 09 Oct 2026: no reference in the repo or the workflows).
+
 **AND A PAYMENT THAT COMPLETES AN ORDER WAKES THE PHONE** (v700). It is the one customer move worth
 waking for, because it is the only one whose answer arrives after they have put the phone down;
 every other move of theirs happens with the page in front of them. The page's own words are his:

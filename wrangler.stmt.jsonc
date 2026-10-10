@@ -11,6 +11,10 @@
 	// the stronger version of the same idea, and goes in a "routes" block here when there is one.
 	"name": "k7m3p2",
 	"main": "stmt/worker.js",
+	// NO PREVIEW URLS (09 Oct 2026, as the desk since 03 Oct). A version's own workers.dev address sits
+	// outside the Access application, which lists this Worker's /all by hostname, so /all there skips
+	// the first lock. Nothing uses one (no reference in the repo or the workflows).
+	"preview_urls": false,
 	// COMPATIBILITY DATE, raised from 2026-08-08 on his instruction of 22 Sep 2026. Checked
 	// before moving it: not one JavaScript flag defaults on between those two dates, the only
 	// entry in the window being python_workers_314 on 2026-09-08, so this changes no
