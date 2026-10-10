@@ -11122,6 +11122,9 @@ await (async () => {
   const tag = pin("actions/checkout@v5"), sha = pin("actions/checkout@" + "a".repeat(40) + " # v5"), local = pin("./.github/actions/x");
   ok(tag.status === 1 && /actions\/checkout@v5` is not pinned to a full commit sha/.test(tag.stdout) && sha.status === 0 && local.status === 0,
     "the lint fails an action named by tag, and passes one pinned to a full commit sha and a local action: " + [tag.status, sha.status, local.status].join(" "));
+  /* 10 Oct 2026: a file GitHub cannot load must fail. `run-name: a: b` passed every line check above */
+  { const d = join(dirL, "parse"); mkdirSync(d, { recursive: true }); writeFileSync(join(d, "f.yml"), "run-name: a: b\n" + head); const r = lint(d);
+    ok(r.status === 1 && /f\.yml:1  is not valid YAML/.test(r.stdout), "the lint fails a workflow that does not parse as YAML: " + (r.stdout.split("\n").find((l) => /FAIL/.test(l)) || "passed").trim()); }
   rmSync(dirL, { recursive: true, force: true });
 })();
 
