@@ -1748,8 +1748,8 @@ async function redispatchStale(env, ctx, now) {
 
 /* PUBLISH ON CHANGE, NOT ON THE CLOCK (10 Oct 2026, his choice of the same day). Every Cloud commit run but the key probe
  * publishes the statements (rule 8), and a stage_only run is the one to ask for: it shares the chain's lock, so it never
- * publishes an older checkout over a newer one, and it is the run an approval sends, so a pending one replacing another
- * loses nothing. What a sealed statement or list reads from outside git asks for one here:
+ * publishes an older checkout over a newer one. It is never sent while a run waits in the group (cloudCommitWaiting): a
+ * newer pending run replaces the older, and a push run replaced by it would lose its deploy. What a sealed statement or list reads from outside git asks for one here:
  *   - a write road marks KV `publish:wanted` {at, reason} (wantPublish): today the restock date, /expected;
  *   - the Kuala Lumpur day asks once between 00:05 and 03:00 MYT, since the drift (days since the last order, the oldest
  *     overdue), the restock date's lapse and the week line move with the day alone. Outside that window it asks nothing, so a
@@ -1766,6 +1766,20 @@ async function wantPublish(env, reason, now = new Date()) {
   try { await env.SALT_QUEUE.put(PUBLISH_WANTED_KEY, JSON.stringify({ at: now.toISOString(), reason })); return true; }
   catch (e) { console.log("publish mark FAILED (" + reason + "): " + String((e && e.message) || e)); return false; }
 }
+/* the id of a Cloud commit run not yet started (queued, or pending on the lock), 0 for none, null when GitHub did not answer */
+const RUN_WAITING = ["queued", "pending", "waiting", "requested"];
+async function cloudCommitWaiting(env) {
+  try {
+    const token = env.GH_APP_KEY ? await appInstallToken(env) : env.SALT_GITHUB_TOKEN;
+    const r = await fetch("https://api.github.com/repos/" + STAGE_REPO + "/actions/workflows/cloud-commit.yml/runs?per_page=10", {
+      headers: { ...GH_HEADERS, authorization: "Bearer " + token } });
+    if (!r.ok) { console.log(await ghRefusal(r, "publish: the runs did not read:")); return null; }
+    const j = await r.json();
+    if (!j || !Array.isArray(j.workflow_runs)) { console.log("publish: the runs did not read: no workflow_runs"); return null; }
+    const w = j.workflow_runs.find((x) => RUN_WAITING.includes(x && x.status));
+    return w ? (w.id || 1) : 0;
+  } catch (e) { console.log("publish: the runs did not read: " + String((e && e.message) || e)); return null; }
+}
 async function publishWanted(env, ctx, now) {
   if (!env.SALT_QUEUE || !dispatchArmed(env)) return {};
   let want = null, sent = null;
@@ -1776,15 +1790,23 @@ async function publishWanted(env, ctx, now) {
   if (into >= PUBLISH_DAY_FROM_MIN && into < PUBLISH_DAY_UNTIL_MIN && !(want && want.reason === dayWhy)) {
     let last = null;
     try { last = await env.SALT_QUEUE.get(PUBLISH_DAY_KEY); } catch (e) { last = null; }
-    if (last !== day) {
+    /* the want first, the day after: a want that did not land is asked again next minute */
+    if (last !== day && await wantPublish(env, dayWhy, now)) {
+      want = { at: now.toISOString(), reason: dayWhy };
       await env.SALT_QUEUE.put(PUBLISH_DAY_KEY, day);
-      if (await wantPublish(env, dayWhy, now)) want = { at: now.toISOString(), reason: dayWhy };
     }
   }
   const wantAt = want ? Date.parse(want.at) : NaN, sentAt = sent ? Date.parse(sent.at) || 0 : 0;
   if (!Number.isFinite(wantAt) || wantAt <= sentAt) return {};
   if (now.getTime() - sentAt < PUBLISH_GAP_MIN * 60000) return { waiting: true, reason: want.reason };
-  await env.SALT_QUEUE.put(PUBLISH_SENT_KEY, JSON.stringify({ at: now.toISOString(), for: want.at, reason: want.reason }));
+  /* A RUN ALREADY WAITING PUBLISHES IT (review of 10 Oct 2026). GitHub keeps one pending run in the group and a newer one
+     replaces it: a dispatch here would cancel a pending PUSH run, which deploys, re-seeds and retires, for a stage_only one
+     that does none of those. A run that has not started reads everything when it starts, and every run publishes, so a
+     waiting one covers this mark. Unreadable, nothing is sent or marked, and the next minute asks again. */
+  const waiting = await cloudCommitWaiting(env);
+  if (waiting === null) return { unread: true, reason: want.reason };
+  await env.SALT_QUEUE.put(PUBLISH_SENT_KEY, JSON.stringify(Object.assign({ at: now.toISOString(), for: want.at, reason: want.reason }, waiting ? { covered: waiting } : {})));
+  if (waiting) return { covered: waiting, reason: want.reason };
   stageOnApproval(env, ctx, "publish: " + want.reason);
   return { did: true, reason: want.reason };
 }
@@ -1998,6 +2020,7 @@ export default {
         try {
           const pw = await publishWanted(env, ctx, new Date(event.scheduledTime || Date.now()));
           if (pw.did) console.log("publish dispatch: " + pw.reason);
+          if (pw.covered) console.log("publish covered by waiting run " + pw.covered + ": " + pw.reason);
         } catch (e) { console.log("publish dispatch FAILED: " + String((e && e.stack) || e)); }
         /* the drafter's net still runs on the quarter-hour, as it did when this schedule ran every fifteen minutes */
         if (new Date(event.scheduledTime || Date.now()).getUTCMinutes() % 15 === 0) {

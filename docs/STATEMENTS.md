@@ -402,9 +402,12 @@ reads, and what moves it:
 The desk Worker's `wantPublish` writes `publish:wanted` `{at, reason}`; `publishWanted`, on the minute cron, sends
 one `stage_only` dispatch named `publish: <reason>` when the mark is newer than the last such dispatch
 (`publish:dispatched`) and five minutes have passed since it, the dispatch mark written first. A `stage_only` run and
-not a new mode, because it shares the chain's lock (`cloud-commit`, never cancelled): a pending one that replaces a
-pending approval's loses nothing, since both stage and publish, and no older checkout publishes over a newer chain,
-which the Counter would then withhold on the build id. A failed dispatch is logged and not retried: the next write or
+not a new mode, because it shares the chain's lock (`cloud-commit`, never cancelled), so no older checkout publishes
+over a newer chain, which the Counter would then withhold on the build id. **It is never sent while a Cloud commit run
+waits in the group** (`cloudCommitWaiting`, one read of the workflow's runs): GitHub keeps one pending run and a newer one
+replaces it, so a pending push run, which deploys, re-seeds and retires, would be lost to a run that does none of those;
+the waiting run reads everything when it starts and publishes, so it covers the mark. GitHub unread, nothing is sent and
+the next minute asks again. A failed dispatch is logged and not retried: the next write or
 the four-a-day net publishes. **A new input outside git calls `wantPublish` at its write road.**
 
 **The rule states what is EXCLUDED, not what it is on.** A list of events goes stale the moment a

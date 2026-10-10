@@ -38780,10 +38780,12 @@ await (async () => {
   const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
   const WANT = "publish:wanted", SENT = "publish:dispatched", DAY = "publish:day";
   const DISP = /\/repos\/maakmal97\/salt-command\/actions\/workflows\/cloud-commit\.yml\/dispatches$/;
+  const RUNS = /\/repos\/maakmal97\/salt-command\/actions\/workflows\/cloud-commit\.yml\/runs\?/;
   /* one minute of the cron at a given UTC instant; the stand-in reads the SENT mark at the moment the dispatch goes */
   const tick = async (env, iso, how = {}) => {
-    const hits = [], logs = [], waits = [], realF = globalThis.fetch, realL = console.log;
+    const hits = [], logs = [], waits = [], lists = [], realF = globalThis.fetch, realL = console.log;
     globalThis.fetch = async (u, o) => {
+      if (RUNS.test(String(u))) { lists.push(String(u)); return how.runsDown ? new Response("{}", { status: 502 }) : Response.json({ workflow_runs: how.runs || [{ id: 9, status: "in_progress" }, { id: 8, status: "completed" }] }); }
       if (!DISP.test(String(u))) return new Response("{}", { status: 404 });
       hits.push({ sentThen: await env.SALT_QUEUE.get(SENT, "json"), body: JSON.parse(o.body) });
       if (how.throws) throw new Error("github is down");
@@ -38794,7 +38796,7 @@ await (async () => {
       await deskW.scheduled({ cron: "* * * * *", scheduledTime: Date.parse(iso) }, env, { waitUntil: (p) => waits.push(p) });
       for (let n = -1; n !== waits.length;) { n = waits.length; await Promise.allSettled(waits); }
     } finally { globalThis.fetch = realF; console.log = realL; }
-    return { n: hits.length, hits, said: logs.filter((l) => /^publish dispatch/.test(l)), want: await env.SALT_QUEUE.get(WANT, "json"), sent: await env.SALT_QUEUE.get(SENT, "json") };
+    return { n: hits.length, hits, lists: lists.length, said: logs.filter((l) => /^publish (dispatch|covered)/.test(l)), want: await env.SALT_QUEUE.get(WANT, "json"), sent: await env.SALT_QUEUE.get(SENT, "json") };
   };
   const say = (t) => JSON.stringify({ n: t.n, reasons: t.hits.map((h) => h.body.inputs.reason), said: t.said, want: t.want, sent: t.sent });
   const armed = (kv) => ({ SALT_QUEUE: kv, SALT_GITHUB_TOKEN: "ghp-test", REQUIRE_ACCESS: "0" });
@@ -38853,9 +38855,14 @@ await (async () => {
     const write = await tick(env, at(0, 11)), next = await tick(env, at(0, 30)), noon = await tick(env, at(12, 0));
     const kv2 = new KV(), env2 = armed(kv2);
     const lateOnly = await tick(env2, at(3, 0)), lastIn = await tick(env2, at(2, 59));
+    /* the want's write fails once: the day is not marked asked, so the next minute asks again */
+    const kv5 = new KV(), put5 = kv5.put.bind(kv5); let refuse = 1;
+    kv5.put = async (k, v, o) => { if (k === WANT && refuse-- > 0) throw new Error("kv down"); return put5(k, v, o); };
+    const lost = await tick(armed(kv5), at(0, 5)), kept = await tick(armed(kv5), at(0, 6));
     ok(early.n === 0 && early.want === null && go.n === 1 && go.hits[0].body.inputs.reason === "publish: the day 2026-10-10"
       && write.n === 1 && write.hits[0].body.inputs.reason === "publish: restock date"
-      && next.n === 0 && noon.n === 0 && (await kv.get(DAY)) === "2026-10-10" && lateOnly.n === 0 && lateOnly.want === null && lastIn.n === 1,
+      && next.n === 0 && noon.n === 0 && (await kv.get(DAY)) === "2026-10-10" && lateOnly.n === 0 && lateOnly.want === null && lastIn.n === 1
+      && lost.n === 0 && kept.n === 1 && kept.hits[0].body.inputs.reason === "publish: the day 2026-10-10",
       "the day asks for one publish from 00:05 MYT, none at 00:04 or from 03:00, and only once a day, a write in between included: "
       + JSON.stringify([say(early), say(go), say(write), say(next), say(noon), say(lateOnly), say(lastIn)]));
   }
@@ -38871,12 +38878,28 @@ await (async () => {
       "a dispatch that throws still counts, so the next minutes send nothing until a newer mark; unarmed, nothing is marked sent: " + JSON.stringify([say(f), say(g), say(bare)]));
   }
 
+  /* ---- 5b. A RUN ALREADY WAITING IN THE GROUP COVERS THE MARK: nothing is sent, since a dispatch would replace it (a push
+     run's deploy lost); GitHub unread, nothing is sent or marked and the next minute asks again ---- */
+  {
+    const kv = new KV(), env = armed(kv);
+    await kv.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const w = await tick(env, plus(1), { runs: [{ id: 7, status: "in_progress" }, { id: 77, status: "pending" }] }), w2 = await tick(env, plus(10));
+    const kv4 = new KV(), env4 = armed(kv4);
+    await kv4.put(WANT, JSON.stringify({ at: plus(0), reason: "restock date" }));
+    const d1 = await tick(env4, plus(1), { runsDown: true }), d2 = await tick(env4, plus(2));
+    ok(w.n === 0 && w.lists === 1 && w.sent && w.sent.covered === 77 && w.said.length === 1 && w2.n === 0
+      && d1.n === 0 && d1.lists === 1 && d1.sent === null && d2.n === 1 && d2.sent && d2.sent.covered === undefined,
+      "a Cloud commit run pending in the group covers the mark and nothing is sent; with GitHub unread nothing is sent or marked, and the next minute sends it: "
+      + JSON.stringify([say(w), say(w2), say(d1), say(d2)]));
+  }
+
   /* ---- 6. THE WORKFLOW'S HALF, read as text: the input is declared, named in run-name alone, and the net is four a day ---- */
   {
     const wf = readFileSync("./.github/workflows/cloud-commit.yml", "utf8");
     const runs = wf.split(/\n/).reduce((a, l) => { if (/^\s+run: \|/.test(l)) a.on = l.search(/\S/); else if (a.on >= 0 && l.trim() && l.search(/\S/) <= a.on) a.on = -1; if (a.on >= 0) a.body.push(l); return a; }, { on: -1, body: [] }).body.join("\n");
     ok(/\n      reason:\n        description: [^\n]+\n        type: string\n/.test(wf) && /\nrun-name: "\$\{\{ inputs\.reason && /.test(wf)
-      && /\n    - cron: '23 4,10,16,22 \* \* \*'\n/.test(wf) && runs.length > 1000 && !/inputs\.reason/.test(runs),
+      && /\n    - cron: '23 4,10,16,22 \* \* \*'\n/.test(wf) && runs.length > 1000 && !/inputs\.reason/.test(runs)
+      && wf.split(/\n/).filter((l) => !/^\s*#/.test(l) && /inputs\.reason/.test(l)).length === 1,
       "cloud-commit.yml declares reason as a string, names the run by it, never reads it in a step's shell, and keeps the four-a-day net");
   }
 })();
