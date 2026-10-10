@@ -22,7 +22,7 @@ import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
-import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerOrderOnce } from "./maker-request.js";
+import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finishInputAdmission, admissionDecision, hasInputAdmission,
@@ -384,6 +384,64 @@ async function offsetLock(db, rid) {
 async function offsetUnlock(db, rid) {
   await db.prepare("DELETE FROM maker_request WHERE id=?1 AND operation='offset-lock'").bind("offset-lock:" + rid).run();
 }
+const makerAppointmentKinds = Object.keys(POSITION_ENGINE.ADDID_APPOINTS);
+function isMakerAppointment(entry, code = null) {
+  const payload = entry && entry.payload;
+  return !!payload && payload.mode === "addid" && makerAppointmentKinds.includes(payload.kind)
+    && typeof payload.code === "string" && (code === null || payload.code === code);
+}
+async function makerAppointmentEntries(env) {
+  const queueResponse = await handleQueueGet(env, true);
+  const queueResult = await queueResponse.json();
+  if (!queueResponse.ok || queueResult.ok !== true || !Array.isArray(queueResult.queue))
+    throw new Error("The Desk queue could not be verified.");
+  const pending = queueResult.queue.slice();
+  const drafts = await env.SALT_LEDGER.prepare(
+    "SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+  if (!Array.isArray(drafts.results)) throw new Error("The Desk drafts could not be verified.");
+  for (const row of drafts.results) {
+    const entry = JSON.parse(row.entry);
+    if (!entry || typeof entry !== "object" || Array.isArray(entry))
+      throw new Error("A pending Desk draft has an invalid shape.");
+    pending.push(entry);
+  }
+  const requests = await env.SALT_LEDGER.prepare(`SELECT r.entry FROM maker_request r LEFT JOIN draft d ON d.id=r.id
+    WHERE r.operation='appoint-existing' AND r.entry IS NOT NULL
+      AND (d.id IS NULL OR d.committed_at IS NULL AND d.status IN ('pending','approved'))`).all();
+  if (!Array.isArray(requests.results)) throw new Error("The appointment receipts could not be verified.");
+  for (const row of requests.results) {
+    const entry = JSON.parse(row.entry);
+    if (!entry || typeof entry !== "object" || Array.isArray(entry))
+      throw new Error("An appointment receipt has an invalid shape.");
+    pending.push(entry);
+  }
+  const outbox = await env.SALT_LEDGER.prepare("SELECT entry FROM vault_outbox WHERE state='pending'").all();
+  if (!Array.isArray(outbox.results)) throw new Error("The encrypted-input outbox could not be verified.");
+  for (const row of outbox.results) {
+    const entry = JSON.parse(row.entry);
+    if (!entry || typeof entry !== "object" || Array.isArray(entry))
+      throw new Error("An encrypted-input outbox entry has an invalid shape.");
+    pending.push(entry);
+  }
+  return pending;
+}
+function makerAppointmentCandidates(book, parties, pending) {
+  const state = book.state || {};
+  const departed = new Set(((state.PEOPLE && state.PEOPLE.departed) || []).map((person) => person && person.id));
+  const banned = new Set(((state.PEOPLE && state.PEOPLE.banned) || [])
+    .filter((person) => person && !person.lifted).map((person) => person.id));
+  const suppliers = new Set((book.purchases || []).map((row) => row && row.supplier));
+  const appointments = new Set(pending.filter((entry) => isMakerAppointment(entry)).map((entry) => entry.payload.code));
+  return parties.filter((code) => {
+    if (typeof code !== "string" || POSITION_ENGINE.isBucket(code)
+      || suppliers.has(code) || departed.has(code) || banned.has(code)
+      || appointments.has(code)) return false;
+    return makerAppointmentKinds.some((kind) => {
+      const plan = POSITION_ENGINE.addIdPlan(code, kind, state.roster || [], state.associates || []);
+      return plan.known && plan.elevate && !plan.already && !!plan.resell;
+    });
+  }).sort();
+}
 async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, offsetLocked = false) {
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
     && p !== "/_internal/maker/queue"
@@ -396,7 +454,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
     && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
-    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
@@ -540,8 +598,21 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
       catch (error) { return json({ ok: false, error: "Confirmed Add IDs could not be verified against the vault receipts and outbox." }, 503); }
     }
+    const catalog = makerInputCatalog(book, await hushGet(env.SALT_QUEUE), await reservedInputs(env.SALT_LEDGER, book), registrations);
+    if (catalog.error) return json({ ok: false, error: catalog.error }, 503);
+    try {
+      catalog.appointmentCustomers = makerAppointmentCandidates(book, catalog.parties, await makerAppointmentEntries(env));
+      catalog.appointmentKinds = makerAppointmentKinds.map((kind) => ({
+        kind, stream: POSITION_ENGINE.ADDID_APPOINTS[kind]
+      }));
+    } catch (error) {
+      /* the appointment list alone is withheld: an unreadable queue key must not blank the trade catalogue */
+      catalog.appointmentCustomers = [];
+      catalog.appointmentKinds = [];
+      catalog.appointmentNotice = "Appointments are unavailable until the Desk queue can be read.";
+    }
     return json({ ok: true, products: Object.keys(book.state.PRODUCTS || {}).filter((product) => !book.state.PRODUCTS[product].retired),
-      catalog: makerInputCatalog(book, await hushGet(env.SALT_QUEUE), await reservedInputs(env.SALT_LEDGER, book), registrations) });
+      catalog });
   }
   if (p === "/_internal/maker/trade-cover") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -597,7 +668,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     return json({ ok: true, again: await againOf(env.SALT_LEDGER, list) });
   }
   if (p === "/_internal/maker/inputs/offset"
-    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|amend-id|place|ledger-amend)$/.test(p)) {
+    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)) {
     let body;
     try {
       const text = await request.text();
@@ -621,6 +692,23 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const previous = await makerRequestRead(env.SALT_LEDGER, body.at, operation, fingerprint);
     if (previous?.pending) return resumeMakerInput(env, previous.pending, fingerprint);
     if (previous) return json(previous.response || { ok: false, error: previous.error }, previous.response ? 200 : 409);
+    let appointmentPlan = null;
+    if (operation === "appoint-existing") {
+      if (Object.keys(body).length !== 3 || !Object.hasOwn(body, "code") || !Object.hasOwn(body, "kind")
+        || !/^[A-Z]{1,3}[0-9]{0,2}[A-Z0-9-]*$/.test(body.code)
+        || !makerAppointmentKinds.includes(body.kind))
+        return json({ ok: false, error: "An existing-customer appointment carries only its timestamp, code and role." }, 400);
+      try {
+        const candidates = makerAppointmentCandidates(book, makerInputCatalog(book).parties, await makerAppointmentEntries(env));
+        if (!candidates.includes(body.code))
+          return json({ ok: false, error: "Choose an eligible existing customer; that ID is no longer available for appointment." }, 409);
+        appointmentPlan = POSITION_ENGINE.addIdPlan(body.code, body.kind, book.state.roster || [], book.state.associates || []);
+        if (!appointmentPlan.elevate || appointmentPlan.already || !appointmentPlan.resell)
+          return json({ ok: false, error: "That customer cannot be appointed from the current roster state." }, 409);
+      } catch (error) {
+        return json({ ok: false, error: String(error && error.message || error) }, 503);
+      }
+    }
     if (operation === "stock-count"
       && !makerInputCatalog(book).products.some((item) => item.product === body.product))
       return json({ ok: false, error: "Choose an active book for the stock count." }, 400);
@@ -650,7 +738,10 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
       catch (error) { return json({ ok: false, error: "Confirmed Add IDs could not be verified against the vault receipts and outbox." }, 503); }
     }
-    const built = operation === "stock-count" ? makerStockCount(body)
+    const built = operation === "appoint-existing"
+      ? { entry: POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,
+        parent: null, rev: appointmentPlan.stream, geo: null, tiers: null }) }
+      : operation === "stock-count" ? makerStockCount(body)
       : operation === "tier-accept-all" ? makerTierAcceptAll(body, book, waitingTiers)
       : operation === "house-sizes" ? makerHouseSizes(body, book)
       : operation === "tier-set" ? makerTierSet(body, book)
@@ -745,6 +836,21 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const reservedFault = POSITION_ENGINE.entryReservationFault(entry,
       queuedEntries.concat((reservations.results || []).map((row) => JSON.parse(row.entry))), book);
     if (reservedFault) return json({ ok: false, error: reservedFault }, 409);
+    if (operation === "appoint-existing") {
+      let held;
+      try { held = await makerAppointmentEntries(env); }
+      catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
+      if (held.some((item) => isMakerAppointment(item, body.code)))
+        return json({ ok: false, error: "An appointment for this ID is already queued or waiting for approval." }, 409);
+      const claim = await makerAppointmentClaim(env.SALT_LEDGER, body.at, fingerprint, entry, body.code);
+      if (claim.existing) {
+        if (claim.existing.pending) return resumeMakerInput(env, claim.existing.pending, fingerprint);
+        if (claim.existing.response) return json(claim.existing.response);
+        return json({ ok: false, error: claim.existing.error || "Retry the original appointment request." }, 409);
+      }
+      if (claim.error) return json({ ok: false, error: claim.error }, 409);
+      return resumeMakerInput(env, entry, fingerprint);
+    }
     const admission = writesNameVault || body.addrVault
       ? await admitInput(env.SALT_LEDGER, entry, book, "orders") : {};
     if (admission.error) return json({ ok: false, error: admission.error }, admission.status);

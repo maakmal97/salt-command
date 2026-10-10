@@ -77,7 +77,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="a47282dca201d572";
+var SALT_BUILD_ID="6270ec955d6593e2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6202,6 +6202,12 @@ function tripFault(rows){
   return null;
 }
 function appointBucket(kind,code){return (ADDID_APPOINTS[kind]&&code)?code+BUCKET_SFX:null;}
+function addIdPlan(code,kind,roster=[],associates=[]){
+  const stream=ADDID_APPOINTS[kind]||null,known=!!code&&roster.indexOf(code)>=0;
+  const resell=appointBucket(kind,code);
+  return {stream,known,elevate:!!stream&&known,already:!!stream&&!!code&&associates.indexOf(code)>=0,
+    resell:resell&&roster.indexOf(resell)<0?resell:null};
+}
 /* ====== v611, HIS RULING OF 13 SEP 2026: AN R2 SALE BOOKS TO THE ASSOCIATE'S BUCKET ===============
    Whether or not the end buyer is named: R2 sales are parked under the -R account only, and a buyer
    whose name is known is noted on the row as downstream and credited nothing. The bucket is never a
@@ -6270,6 +6276,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
+  const appointment=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/appoint-existing$/.test(record.path);
   const safe=(v,key)=>{
     if(v===null||typeof v==='boolean')return true;
     if(typeof v==='number')return Number.isFinite(v);
@@ -6291,8 +6298,14 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
+  if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))
+    ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))
+    ||typeof record.body.at!=='string'||!Number.isFinite(Date.parse(record.body.at))
+    ||new Date(record.body.at).toISOString()!==record.body.at
+    ||typeof record.body.code!=='string'
+    ||!['reseller','referral'].includes(record.body.kind)))return false;
   if(/\/offset$/.test(record.path)&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==4||Object.keys(record.body).some(k=>!['at','code','rid','date'].includes(k))
     ||typeof record.body.at!=='string'||!Number.isFinite(Date.parse(record.body.at))||new Date(record.body.at).toISOString()!==record.body.at
@@ -6347,7 +6360,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
-        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
+        ADDID_APPOINTS:ADDID_APPOINTS,BUCKET_SFX:BUCKET_SFX,isBucket:isBucket,ownerCode:ownerCode,ownsCode:ownsCode,partyOwedRM:partyOwedRM,appointBucket:appointBucket,addIdPlan:addIdPlan,bookR2:bookR2,claimAlloc:claimAlloc,TRIP_RE:TRIP_RE,tripRows:tripRows,tripFault:tripFault,
         vaultPendingOk:vaultPendingOk,vaultRekeyMap:vaultRekeyMap,vaultMapMerge:vaultMapMerge,renamePairs:renamePairs,renameInBook:renameInBook,placeKey:placeKey,placeBare:placeBare,placeCandidates:placeCandidates};
 })();
 /* ==== END ENGINE position ==== */
@@ -9171,7 +9184,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1059","d":"10 Oct 2026","t":"CORRECTION: 2 UNITS OF SALT COLLECTED BY CZ5-TM ON 10 OCT","n":["<b>ONE CORRECTION FOLDED.</b> Order s247 for CZ5-TM, 2 units for RM190, is marked as collected on 10 Oct: delivered quantity 2, delivered on 10 Oct, handover collected. No cash moves. The drafter flagged that the row's trail of 3 steps will no longer add up to the corrected figure, and that RM95 a unit is below the party's usual rate.","<b>SHELF ROLLED.</b> Salt goes out by 2 units to CZ5-TM, the difference the correction states. The stated shelf of 12.14 units is rolled down by that amount by the tool, and the stock cost of RM56 is untouched."]}];
+const evolution=[{"v":"v1060","d":"10 Oct 2026","t":"AN EXISTING CUSTOMER CAN BE APPOINTED A RESELLER OR A REFERRAL FROM COUNTER ADMIN","n":["<b>Appoint, keeping the code.</b> Counter Admin carries a code-only choice of an existing customer and a role. The appointment goes through Add ID's own appointment and fold, keeps their roster code, names, place and statement username, and opens their -R account. Suppliers, buckets, departed or banned IDs and existing associates are not offered.","<b>Once only.</b> A retry carries the same immutable request and a claim per customer, so a changed or doubled tap cannot appoint twice, and Add ID still refuses a duplicate. An appointment writes no vault receipt, so the new associate can be picked for an R2 sale once it is folded. No row, price or stock figure moves."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9322,7 +9335,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 15:49 KL';
+const LAST_UPDATED='10 Oct 2026, 16:18 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -21441,14 +21454,7 @@ const ADDID_KIND_LABEL={customer:'Customer, buys direct',reseller:'Associate, re
    WHICH KIND APPOINTS IS THE ENGINE'S TABLE, not a fourth copy: the drafter and the fold read
    the same ADDID_APPOINTS, and the whole point of this version is that the Kind means the same
    thing at the form, at the gate and at the fold. */
-function addIdPlan(code,kind){
-  const stream=(POSITION_ENGINE.ADDID_APPOINTS||{})[kind]||null;
-  const known=!!code&&roster.indexOf(code)>=0;
-  const resell=POSITION_ENGINE.appointBucket(kind,code);   /* v610: every appointment mints the bucket */
-  return {stream:stream,known:known,elevate:!!stream&&known,
-    already:!!stream&&!!code&&associates.indexOf(code)>=0,
-    resell:(resell&&roster.indexOf(resell)<0)?resell:null};
-}
+function addIdPlan(code,kind){return POSITION_ENGINE.addIdPlan(code,kind,roster,associates);}
 /* v587: THE CODE THIS PANE WILL REGISTER. An appointment names someone on the roster, picked under Who; a
    bucket is its associate's -Gen, as Names & IDs makes it; everyone else is derived from the name and the
    place, a blank place being TBC, by the same deriveFreeCode the laptop calls, so a code minted here and

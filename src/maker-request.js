@@ -33,6 +33,37 @@ export async function makerRequestClaim(db, id, operation, fingerprint, entry = 
   return result.meta.changes === 1;
 }
 
+export async function makerAppointmentClaim(db, id, fingerprint, entry, code) {
+  const result = await db.prepare(`INSERT OR IGNORE INTO maker_request(id,operation,fingerprint,entry)
+    SELECT ?1,'appoint-existing',?2,?3
+    WHERE NOT EXISTS (
+      SELECT 1 FROM maker_request r LEFT JOIN draft d ON d.id=r.id
+      WHERE r.operation='appoint-existing' AND r.id<>?1 AND r.entry IS NOT NULL AND json_valid(r.entry)
+        AND json_extract(r.entry,'$.payload.mode')='addid'
+        AND json_extract(r.entry,'$.payload.code')=?4
+        AND json_extract(r.entry,'$.payload.kind') IN ('reseller','referral')
+        AND (d.id IS NULL OR d.committed_at IS NULL AND d.status IN ('pending','approved'))
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM draft d
+      WHERE d.id<>?1 AND d.committed_at IS NULL AND d.status IN ('pending','approved')
+        AND json_valid(d.entry) AND json_extract(d.entry,'$.payload.mode')='addid'
+        AND json_extract(d.entry,'$.payload.code')=?4
+        AND json_extract(d.entry,'$.payload.kind') IN ('reseller','referral')
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM vault_outbox v
+      WHERE v.state='pending' AND json_valid(v.entry)
+        AND json_extract(v.entry,'$.payload.mode')='addid'
+        AND json_extract(v.entry,'$.payload.code')=?4
+        AND json_extract(v.entry,'$.payload.kind') IN ('reseller','referral')
+    )`).bind(id, fingerprint, JSON.stringify(entry), code).run();
+  if (result.meta.changes === 1) return { claimed: true };
+  const existing = await makerRequestRead(db, id, "appoint-existing", fingerprint);
+  if (existing) return { existing };
+  return { error: "An appointment for this ID is already pending review." };
+}
+
 /* A Counter Admin stage tap (a handover, a close, a move offered again) under its immutable request id: the first
    answer that lands is kept and a retry under the id is answered from it; other content under the id is refused; a
    refusal is not kept, so the same request may be tried again and the native road judges it afresh. A claim left with no

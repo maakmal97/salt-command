@@ -13032,6 +13032,12 @@ await (async () => {
       ok(P.twice.already === true, "a code already on the bench reads as already an associate");
       ok(P.plain.stream === null && P.plain.elevate === false, "and the Customer kind confers nothing");
       ok(P.ref.stream === "R3" && P.ref.resell === "CZ8-APPT-R", "v610: the Referrer kind appoints on R3 and names the -R account it mints too");
+      const viaEngine = String(w570.eval("(function(){var o=POSITION_ENGINE.addIdPlan,seen;"
+        + "POSITION_ENGINE.addIdPlan=function(c,k,r,a){seen=[c,k,r===roster,a===associates];return {sentinel:1};};"
+        + "try{var got=addIdPlan('CZ8-APPT','reseller');return JSON.stringify({got:got,seen:seen});}"
+        + "finally{POSITION_ENGINE.addIdPlan=o;}})()"));
+      ok(viaEngine === JSON.stringify({ got: { sentinel: 1 }, seen: ["CZ8-APPT", "reseller", true, true] }),
+        "the Desk's addIdPlan is the engine's: it hands its code, kind, roster and associates to POSITION_ENGINE.addIdPlan and returns its answer: " + viaEngine);
 
       /* THE BUTTON IS THE CONTRACT. A preview that describes an appointment while Record stays
          disabled would be exactly the fault this version fixes, one layer up, so the state of
@@ -51293,6 +51299,11 @@ await (async () => {
 section("Counter input receipts: confirmed completion and immutable uncertain retries");
 await (async () => {
   await (await import("./maker-input-receipts.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter existing-customer appointment: selector, immutable retry and native fold");
+await (async () => {
+  await (await import("./maker-existing-appointment.mjs")).run({ ok });
 })();
 
 section("Counter multi-book trade: owner controls, shared trip and native fold");

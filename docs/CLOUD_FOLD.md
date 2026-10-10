@@ -77,7 +77,9 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
    approved Add ID, which is applied first regardless of staged order. Without that match, the trade
    is explicitly refused and the whole batch stays staged. Existing on-book approvals and unrelated
    hand-fold rows are unchanged. A batch staged before this change carries no `item.status`, so a
-   dependent trade in such a batch is refused; re-stage it. If anything is refused, report it
+   dependent trade in such a batch is refused; re-stage it. An existing-customer appointment
+   (`appoint-existing`) writes no vault receipt, so the new associate is not R2-selectable until the
+   appointment is folded. If anything is refused, report it
    and stop; do not edit the
    batch to get past it. A day with no commit is cheap and a wrong row is not.
 
