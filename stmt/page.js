@@ -3225,7 +3225,8 @@ const CLIENT_JS = `
       pin:draft.mode==='deliver'&&!draft.pool&&!draft.amend?draft.pin:null, pinKept:draft.mode==='deliver'&&!!draft.amend&&!!draft.pinKept, pinSealed:null,
       /* S4 4.4: the stamp of the list these prices were read from */
       digest:(prices&&prices.digest)||''};
-    if(draft.check.slot){ var cs=winOpen().filter(function(n){ return n.slot===draft.check.slot; })[0]; draft.check.span=cs?cs.span:''; }
+    /* from the list the form drew: the open windows, and an amendment's own window kept while it is still to end */
+    if(draft.check.slot){ var cs=winOpen().concat(draft.amend&&draft.ownSlot?[draft.ownSlot]:[]).filter(function(n){ return n.slot===draft.check.slot; })[0]; draft.check.span=cs?cs.span:''; }
     draft.step='check'; draft.snote=''; sheetDraw();
   }
   function sheetSum(c){ var t=0; c.lines.forEach(function(l){ t+=l.total; }); return +t.toFixed(2); }

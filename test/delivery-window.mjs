@@ -196,5 +196,9 @@ export async function run({ ok }) {
     const opts = () => [...d.querySelectorAll('#osheet [data-k^="win:"]')], own = () => opts().find((b) => b.getAttribute("aria-pressed") === "true");
     ok(await wait(() => opts().length === 8) && own() && own().getAttribute("data-k") !== "win:0" && new RegExp(", " + String(wNow).padStart(2, "0") + ":00 to ").test(own().textContent),
       "amending an order whose window has begun keeps that window chosen, never silently As soon as it can: " + JSON.stringify([running, [...d.querySelectorAll('#osheet [data-k^="win:"]')].map((b) => b.getAttribute("data-k") + "=" + b.getAttribute("aria-pressed"))]));
+    d.getElementById("oGo").click();
+    const check = (d.getElementById("osheet") || {}).textContent || "";
+    ok(check.includes(W.EN["sh.winRow"]) && new RegExp("between " + String(wNow).padStart(2, "0") + ":00 and ").test(check),
+      "and the check screen says that window, as Place sends it: " + check.slice(0, 300));
   } finally { await new Promise((r) => setTimeout(r, 80)); S3.w.close(); }
 }

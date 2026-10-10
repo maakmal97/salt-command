@@ -28,5 +28,6 @@
  {"name": "the hours are not read for the windows", "file": "stmt/page.js", "find": "function winCfg(){ return !hoursError&&counterHours&&counterHours.config||null; }", "replace": "function winCfg(){ return null; }"},
  {"name": "the hours landing leave the sheet as drawn", "file": "stmt/page.js", "find": "    if(before!==JSON.stringify([counterHours,hoursError])&&osh&&draft.step==='form') sheetDraw();\n", "replace": ""},
  {"name": "an amendment drops a begun window", "file": "stmt/page.js", "find": "&&Date.parse(winDay(own.slot)+'T00:00:00Z')+(+own.slot.slice(11,13)-4)*3600000>Date.now()) WO.unshift(own);", "replace": "&&false) WO.unshift(own);"},
- {"name": "the sheet forgets the order's window", "file": "stmt/page.js", "find": "    draft.ownSlot=amend&&amend.slot&&amend.slotSpan?{slot:amend.slot, span:amend.slotSpan}:null;", "replace": "    draft.ownSlot=null;"}
+ {"name": "the sheet forgets the order's window", "file": "stmt/page.js", "find": "    draft.ownSlot=amend&&amend.slot&&amend.slotSpan?{slot:amend.slot, span:amend.slotSpan}:null;", "replace": "    draft.ownSlot=null;"},
+ {"name": "the check reads the open windows alone", "file": "stmt/page.js", "find": "var cs=winOpen().concat(draft.amend&&draft.ownSlot?[draft.ownSlot]:[]).filter(", "replace": "var cs=winOpen().filter("}
 ]
