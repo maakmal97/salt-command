@@ -12,7 +12,7 @@
 # WHAT IS UNCHANGED. The credential does the mechanical things (read D1, deploy, mark
 # committed); the JUDGEMENT stays with the agent, which writes the notes and the version
 # entry. The stage still refuses to trample an unfolded batch. The deploy still proves the
-# phone is serving the build before any row is marked committed. The hourly net and the
+# phone is serving the build before any row is marked committed. The four-a-day net and the
 # daily ship check stand.
 #
 # THE FOLD IS ONE CALL (v521, step 3): tools/foldcall.mjs builds the dossier, asks Claude once
@@ -39,17 +39,27 @@
 #                                                 salt-desk-dispatch-mk's private key, PKCS#8, since 07 Oct 2026)
 #   SALT_GITHUB_TOKEN, a fine-grained token, is the fallback while GH_APP_KEY is unset.
 name: Cloud commit
+# WHY EACH RUN RAN (10 Oct 2026): a dispatch names its reason (the desk Worker sends approval, re-dispatch n of 3, or
+# publish: <what changed>); the clock and a push say so. Read here only, never in a step's shell.
+run-name: "${{ inputs.reason && format('Cloud commit: {0}', inputs.reason) || (github.event_name == 'schedule' && 'Cloud commit: the clock') || github.event.head_commit.message || 'Cloud commit' }}"
 
 on:
   schedule:
-    # HOURLY NET. Stages and folds anything an approval's dispatch missed. The clock is not
-    # the guard: the guard is in the job, which refuses to overwrite an unfolded batch.
+    # FOUR A DAY, ON THE KUALA LUMPUR DAY (10 Oct 2026, his choice; hourly to 09 Oct, then two-hourly). 04, 10, 16 and 22
+    # UTC are 12:23, 18:23, 00:23 and 06:23 MYT. This is the last net, and no longer the clock that keeps the statements
+    # fresh: the desk Worker asks for a publish (a stage_only dispatch) when something sealed changes outside git, and once
+    # between 00:05 and 03:00 MYT for what the day alone moves (the drift, the restock date's lapse, the week line); a
+    # version moves public/rev.json, and that push publishes. WHY NOT MORE: from 01 to 10 Oct GitHub fired 36 of about 216
+    # scheduled ticks, so the schedule was never a dependable clock, and it cost about 93 of some 1,680 billed minutes;
+    # pushes and dispatches, the suite above all, are the rest. THE TRADE-OFF: an approval that every dispatch and all
+    # three of the desk Worker's re-dispatches (15, 30 and 60 minutes) missed waits up to six hours for this net, and the
+    # day's publish waits for 00:23 or 06:23 MYT when the desk's own window was missed.
     # MINUTE 23, NOT 5 (26 Sep 2026). GitHub names the start of every hour as its high load, when a
     # scheduled run is delayed or dropped: at :05 this ran 3 to 7 times a day of 24 (15 to 24 Sep).
     # 23 is not a round minute, where schedules crowd, and is clear of the desk's quarter-hour
     # drafter net. The desk Worker's minute cron re-dispatches a stale approval first (15, 30 and
     # 60 minutes after it); this is the last net.
-    - cron: '23 * * * *'
+    - cron: '23 4,10,16,22 * * *'
   push:
     branches: [master]
     paths:
@@ -77,6 +87,12 @@ on:
         description: 'Prove the fold key with one cheap call, then stop'
         type: boolean
         default: false
+      # WHY THIS RUN (10 Oct 2026): words for the run-name and nothing else; no step reads it. Declared before the Worker
+      # sends it, since GitHub refuses (422) a dispatch carrying an input the workflow does not declare.
+      reason:
+        description: 'Why this run (shown as its name only)'
+        type: string
+        default: ''
 
 jobs:
   chain:
@@ -527,10 +543,10 @@ jobs:
       # 100 unit) or v655 (the best-rate rule) touched a statements path, so each left the customers'
       # pages on the lists sealed at v651 while the desk quoted something else, silently. The cost of
       # publishing anyway is one bulk call and about ten seconds of jsdom.
-      # v698: ON EVERY DEPLOY, AND ON EVERY HOUR. An hourly run passes --no-retire, because the
+      # v698: ON EVERY DEPLOY, AND ON EVERY SCHEDULED RUN. A scheduled run passes --no-retire, because the
       # publish retires an account whose record the newest issue does not carry, and that judgement
       # belongs to a deploy he made, not to a clock. A partial or botched issue read would otherwise
-      # retire accounts twenty-four times a day instead of once. Writing is hourly; retiring is not.
+      # retire accounts twelve times a day instead of once. Writing is scheduled; retiring is not.
       - name: Publish the statements, live
         if: steps.plan.outputs.publish == '1'
         # BOUNDED (05 Oct 2026, his word): the publish takes under a minute; v1022's run hung here

@@ -155,7 +155,7 @@ function describe(item) {
     case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.form === "cash" ? "RM " + r.valueRM + " in cash" : r.valueKg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
     case "repayment": return `REPAY ${r.form === "cash" ? "RM " + r.rm : r.kg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "to" : "from"} ${r.party} on loan ${r.loan}, ${r.date}${r.settles ? ", settling it" : ""}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
-    case "roster": return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
+    case "roster": if (r.partner) return `PARTNER ${r.code}: pays cost`; return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
     case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
     case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLevel(v)).join(" ")).join(", ")}`;
@@ -465,14 +465,19 @@ export function plan(book, staged, notes) {
          appointment mints it, a referrer's included. Their own buying and their buying to sell on
          are one stream for the reward and any associate may resell; the engine's appointBucket is
          the one answer this, the drafter and the Add ID preview all read. */
-      const appoints = !!APPOINTS[r.kind];
+      const partner = r.partner === true;
+      if (r.partner != null && !partner) { out.refused.push({ id: it.id, why: "partner is true or absent" }); continue; }
+      const appoints = !!APPOINTS[r.kind] && !(partner && (book.associates || []).includes(r.code));   // a partner already appointed is not appointed twice
       const onRoster = (book.roster || []).includes(r.code);
-      if (onRoster && !appoints) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
+      if (partner && (!APPOINTS[r.kind] || !onRoster)) { out.refused.push({ id: it.id, why: `${r.code} must be on the roster and appointed on an associate kind to be made a partner` }); continue; }
+      if (partner && (book.partners || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already a partner` }); continue; }
+      if (onRoster && !appoints && !partner) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
       const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => driftBooks().includes(p) ? !PRICING_ENGINE.driftOk(rt[p]) : !tierNames().includes(rt[p]));   /* 05 Oct 2026: a drift on a drift book, a level on any other */   // v645, per product since v646
       if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLevel(rt[p]) + (driftBooks().includes(p) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ")}` }); continue; }
-      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null };
+      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null, partner };
+      if (partner) entry.does.push(`make ${r.code} a partner: they pay cost, the floor to the sen, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
       if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life, on the next free spare account where there is one`);
@@ -1084,6 +1089,10 @@ export function apply(book, staged, notes, masterText) {
       if (rr.appoint) {
         book.associates = book.associates || [];
         if (!book.associates.includes(rr.code)) book.associates.push(rr.code);
+      }
+      if (rr.partner) {   // 09 Oct 2026: a partner pays cost
+        book.partners = book.partners || [];
+        if (!book.partners.includes(rr.code)) book.partners.push(rr.code);
       }
     } else if (it.priceset) {
       const ps = it.priceset;
