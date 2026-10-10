@@ -826,7 +826,9 @@ export function decideFix(order, f, at) {
 export function decideDesk(order, body, at) {
   if (!order) return { error: "no such order", status: 404 };
   if (body && body.reserveReview) {
-    const terms = body.reserveReview;
+    /* 10 Oct 2026: a desk that names no window reserves an order that has none: absent is nothing, as before windows */
+    const terms = body.reserveReview && typeof body.reserveReview === "object" && !Array.isArray(body.reserveReview) && !("slot" in body.reserveReview)
+      ? Object.assign({ slot: null }, body.reserveReview) : body.reserveReview;
     const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy", "slot"];
     if (order.status !== "placed" || !terms || typeof terms !== "object" || Array.isArray(terms)
       || Object.keys(terms).length !== fields.length || fields.some((key) => terms[key] !== (order[key] ?? null)))

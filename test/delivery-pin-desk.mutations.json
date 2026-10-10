@@ -17,5 +17,6 @@
  {"name": "filing drops the address", "find": "pm[code]=Object.assign(entry,{addr:(pm[code]&&pm[code].addr)||null});", "replace": "pm[code]=Object.assign(entry,{addr:null});"},
  {"name": "a friend's spot is filed", "find": "if(!o||!v||v.st!=='ok'||!o.code||o.forFriend||/-R$/.test(String(o.code)))return;", "replace": "if(!o||!v||v.st!=='ok'||!o.code||/-R$/.test(String(o.code)))return;"},
  {"name": "a friend's card offers the filing", "find": "const can=!same&&!!o.code&&!o.forFriend&&", "replace": "const can=!same&&!!o.code&&"},
- {"name": "the lock keeps the spots", "find": "  try{ORD_FEE={};WB_FEE=null;ORD_PIN={};}catch(e){}}", "replace": "  try{ORD_FEE={};WB_FEE=null;}catch(e){}}"}
+ {"name": "the lock keeps the spots", "find": "  try{ORD_FEE={};WB_FEE=null;ORD_PIN={};}catch(e){}}", "replace": "  try{ORD_FEE={};WB_FEE=null;}catch(e){}}"},
+ {"name": "an agreed order's spot is never opened", "find": "  if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>ordDraw());},0);return", "replace": "  if(!v){return"}
 ]

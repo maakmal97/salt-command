@@ -42,6 +42,13 @@ export async function run({ ok, KV, assets }) {
   const folded = Object.assign({}, base);
   O.applyEvent(folded, a1.ev);
   ok(folded.status === "acknowledged" && folded.slot === "2026-10-10T12" && folded.slotSpan === "12:00-16:00", "and the order carries it as their own window would be carried");
+  /* a desk that names no window reserves an order with none, as before windows; never one that has its own */
+  const terms = (o) => ({ status: "placed", product: null, qty: 1, total: 100, mode: "deliver", place: null, forFriend: null, wantBy: null, ...o });
+  const rv1 = O.decideDesk(Object.assign({}, base), { reserveReview: terms({}) }, at.toISOString()),
+    rv2 = O.decideDesk(Object.assign({}, base, { slot: "2026-10-10T12" }), { reserveReview: terms({}) }, at.toISOString()),
+    rv3 = O.decideDesk(Object.assign({}, base, { slot: "2026-10-10T12" }), { reserveReview: terms({ slot: "2026-10-10T12" }) }, at.toISOString());
+  ok(rv1.ev && rv1.ev.kind === "mark" && rv2.status === 409 && rv3.ev && rv3.ev.kind === "mark",
+    "the review is reserved with or without the window named, and refused when the order has a window the desk did not name: " + JSON.stringify([rv1.ev && rv1.ev.kind, rv2.status, rv3.ev && rv3.ev.kind]));
   /* a window gone by the time the row is approved is left off, and the order still moves */
   const kv = new KV(), past = { id: "20261009010000-pppp", u: "abcd-efgh", status: "placed", mode: "deliver", qty: 1, total: 100, at: "2026-10-09T01:00:00Z", history: [], msgs: [] };
   await kv.put("order:abcd-efgh:" + past.id, JSON.stringify(past));
@@ -72,8 +79,10 @@ export async function run({ ok, KV, assets }) {
     /* the Counter's hours: every day 09:00 to 18:00 */
     await skv.put("maker:hours", JSON.stringify({ schedule: { days: Array.from({ length: 7 }, () => ({ open: "09:00", close: "18:00" })) } }));
     await dkv.put("stmt-users", JSON.stringify({ [U1]: C1 }));
+    const reserves = [];
     const denv = { SALT_QUEUE: dkv, SALT_LEDGER: D1, STMT_DESK_KEY: "desk-key", SALT_WRITE_KEY: "k-fixture", REQUIRE_ACCESS: "0", ASSETS: assets,
-      STMT_SITE: { fetch: (url, init) => stmtW.fetch(new Request(url, init), senv) } };
+      STMT_SITE: { fetch: (url, init) => { try { const b = init && init.body ? JSON.parse(init.body) : null; if (b && b.reserveReview) reserves.push(b.reserveReview); } catch (e) { /* not JSON */ }
+        return stmtW.fetch(new Request(url, init), senv); } } };
     const call = async (path, body) => {
       const r = await deskW.fetch(new Request("https://salt-command.example" + path, { method: "POST",
         headers: { "content-type": "application/json", "X-Salt-Key": "k-fixture" }, body: JSON.stringify(body || {}) }), denv, { waitUntil() {} });
@@ -99,6 +108,8 @@ export async function run({ ok, KV, assets }) {
     const o5 = await place("deliver"), r5 = await accept(o5, {}), g5 = await orderOf(o5.id);
     ok(r4b.j.approved === true && g4.status === "acknowledged" && g4.slot === s12 && g4.slotSpan === "12:00-16:00" && r5.j.approved === true && g5.status === "acknowledged" && !g5.slot && !("slot" in shownOf(o5.id)),
       "their own window rides through Accept unchanged, and an Accept with none moves the order as it always did: " + JSON.stringify([g4.slot, g4.slotSpan, g5.slot]));
+    ok(reserves.length >= 4 && reserves.filter((r) => "slot" in r).length === 1 && reserves.some((r) => r.slot === s12),
+      "the desk names the window in its review only on the order that has one, so a Counter yet to carry windows still reserves the rest: " + JSON.stringify(reserves.map((r) => r.slot)));
   } else ok(true, "node:sqlite is unavailable here, so Accept was not driven against the real schema");
 
   /* 4. THE PAY-NOW WORDS: the banner's body on credit, and a sentence on an agreed order still owing */

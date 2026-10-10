@@ -113,19 +113,21 @@ export async function run({ ok }) {
   const prices = Object.assign({ at: list.at, week: list.week.monday, digest: list.digest }, await C.encryptWith(ck, JSON.stringify(list)));
   /* every day 09:00 to 10:00: one window is ever open, 08-12, at 09:00 to 10:00, whatever the clock */
   const narrow = week("09:00", "10:00");
-  const drive = async (hours) => {
+  const drive = async (hours, opt = {}) => {
     const posted = [];
     const body = { ok: true, wrap: await C.wrapKey(PASS, ck), session: "sess-win", prices,
       env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
     const dom = new JSDOM(landingPage(U, "nwin", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+      /* the page's ten-second poll, kept so a test can run it at once */
+      if (opt.poll) { const si = win.setInterval.bind(win); win.setInterval = (f, ms, ...a) => { if (ms === 10000) opt.poll.fn = f; return si(f, ms, ...a); }; }
       win.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
         const reply = (status, b) => ({ ok: status === 200, status, type: "basic", json: async () => b });
         if (p === "/open") return reply(200, body);
-        if (p === "/hours") return reply(200, Object.assign({ open: true, source: "schedule", nextChange: null, nextOpen: null }, { config: hours }));
-        if (p === "/orders" && m === "GET") return reply(200, { ok: true, orders: [] });
+        if (p === "/hours") { if (opt.failFirst && !opt.failed) { opt.failed = true; return reply(503, { ok: false }); } return reply(200, Object.assign({ open: true, source: "schedule", nextChange: null, nextOpen: null }, { config: hours })); }
+        if (p === "/orders" && m === "GET") return reply(200, { ok: true, orders: opt.orders || [] });
         if (p === "/orders" && m === "POST") { const j = JSON.parse(init.body); posted.push(j);
           return reply(200, { ok: true, order: { id: "20261010050000-wwww", product: "salt", qty: j.qty, status: "placed", mode: j.mode, at: "2026-10-10T05:00:00Z", total: j.total, history: [], msgs: [] } }); }
         return reply(404, { ok: false });
@@ -162,4 +164,37 @@ export async function run({ ok }) {
     ok(await wait(() => posted.length === 1) && posted[0].slot === nx.slot && !("wantBy" in posted[0]),
       "Place sends the window the sheet offered, and no day: " + JSON.stringify(posted[0] && [posted[0].slot, posted[0].wantBy]));
   } finally { await new Promise((r) => setTimeout(r, 80)); S.w.close(); }
+
+  /* 8. A SHEET OPENED WHILE THE HOURS COULD NOT BE READ is drawn again when a later read lands, so it offers only the windows
+     they leave */
+  const poll = {};
+  const S2 = await drive(narrow, { failFirst: true, poll });
+  try {
+    const { d } = S2;
+    d.getElementById("oNew").click();
+    d.querySelector('#osheet [data-k="mode:1"]').click();
+    const wins = () => [...d.querySelectorAll('#osheet [data-k^="win:"]')];
+    const early = wins().length;
+    if (poll.fn) poll.fn();
+    ok(early === 7 && await wait(() => wins().length === 2), "a sheet opened before the hours were read offers every window, then only those the hours leave once they land: "
+      + JSON.stringify([early, wins().length]));
+  } finally { await new Promise((r) => setTimeout(r, 80)); S2.w.close(); }
+
+  /* 9. AN AMENDMENT KEEPS THE ORDER'S OWN WINDOW while it is still to end, begun or not */
+  const klNow = new Date(Date.now() + 8 * 3600e3), wNow = Math.floor(klNow.getUTCHours() / 4) * 4;
+  const running = klNow.toISOString().slice(0, 10) + "T" + String(wNow).padStart(2, "0"), runSpan = String(wNow).padStart(2, "0") + ":00-" + String(wNow + 4).padStart(2, "0") + ":00";
+  const mine = { id: "20261010050000-amnd", at: new Date(Date.now() - 600000).toISOString(), product: "salt", qty: 1, unit: 100, total: 100, delivery: 0, mode: "deliver",
+    place: "Taman Contoh", slot: running, slotSpan: runSpan, paid: 0, moved: 0, status: "placed", history: [{ at: new Date(Date.now() - 600000).toISOString(), status: "placed", by: "customer" }], msgs: [] };
+  const S3 = await drive(null, { orders: [mine] });
+  try {
+    const { d } = S3;
+    await wait(() => d.querySelector('#pOrder [data-row="' + mine.id + '"]'));
+    d.querySelector('#pOrder [data-row="' + mine.id + '"]').click();
+    const amendBtn = () => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === W.EN["ord.amend"]);
+    await wait(() => amendBtn());
+    amendBtn().click();
+    const opts = () => [...d.querySelectorAll('#osheet [data-k^="win:"]')], own = () => opts().find((b) => b.getAttribute("aria-pressed") === "true");
+    ok(await wait(() => opts().length === 8) && own() && own().getAttribute("data-k") !== "win:0" && new RegExp(", " + String(wNow).padStart(2, "0") + ":00 to ").test(own().textContent),
+      "amending an order whose window has begun keeps that window chosen, never silently As soon as it can: " + JSON.stringify([running, [...d.querySelectorAll('#osheet [data-k^="win:"]')].map((b) => b.getAttribute("data-k") + "=" + b.getAttribute("aria-pressed"))]));
+  } finally { await new Promise((r) => setTimeout(r, 80)); S3.w.close(); }
 }

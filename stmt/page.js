@@ -2884,6 +2884,7 @@ const CLIENT_JS = `
     } else if(draft.slot==null) draft.slot='';
     /* 10 Oct 2026: the exact spot is asked afresh on every sheet and kept nowhere; an amendment keeps the order's own */
     draft.pin=null; draft.pinMsg=''; draft.pinLinkOpen=false; draft.pinBusy=false; draft.pinKept=!!(amend&&amend.pinned);
+    draft.ownSlot=amend&&amend.slot&&amend.slotSpan?{slot:amend.slot, span:amend.slotSpan}:null;
     var U=oUsual();
     if(product&&oSoldHas(product,q)){ draft.pick={}; draft.pick[product]=String(q); }
     else {
@@ -3137,7 +3138,10 @@ const CLIENT_JS = `
     /* 10 Oct 2026: A DELIVERY asks for a time: as soon as it can, or one of the windows open now, each its next occurrence;
        a window no longer open (the clock moved, or the hours) leaves the choice at as soon as it can */
     if(draft.mode==='deliver'){
-      var WO=winOpen(), opts=[['',tw('sh.soon')]];
+      var WO=winOpen(), opts=[['',tw('sh.soon')]], own=draft.amend&&draft.ownSlot;
+      /* an amendment keeps the order's own window while it is still to end, begun or not */
+      if(own&&!WO.some(function(n){ return n.slot===own.slot; })
+        &&Date.parse(winDay(own.slot)+'T00:00:00Z')+(+own.slot.slice(11,13)-4)*3600000>Date.now()) WO.unshift(own);
       if(draft.slot&&!WO.some(function(n){ return n.slot===draft.slot; })) draft.slot='';
       WO.forEach(function(n){ var w=+n.slot.slice(11,13); opts.push([n.slot,tw('sh.winAt',{d:ymdDay(winDay(n.slot)), a:winHm(w), b:winHm(w+4)})]); });
       B.appendChild(oChoice(tw('sh.when'),opts,draft.slot||'','win',function(v){ draft.slot=v; sheetDraw(); }));
@@ -4902,6 +4906,8 @@ const CLIENT_JS = `
       counterHours=result; hoursError=false;
     }catch(error){ hoursError=true; }
     if(before!==JSON.stringify([counterHours,hoursError])&&tab==='order'&&!view) drawOrder();
+    /* 10 Oct 2026: a sheet opened before the hours arrived offers the windows they leave, now they are here */
+    if(before!==JSON.stringify([counterHours,hoursError])&&osh&&draft.step==='form') sheetDraw();
   }
   async function refresh(){
     if(document.hidden) return;   /* a hidden page reads nothing, the bulletin included; its return re-reads (reread) */

@@ -33,5 +33,8 @@
  {"name": "Admin times an order with its own", "file": "stmt/owner.js", "find": "        if(deliver&&!order.slot&&!order.wantBy){\n          var wset=", "replace": "        if(deliver){\n          var wset="},
  {"name": "Admin's sheet lines send no window", "file": "stmt/owner.js", "find": "var wv=(follower?(makerWin[group[0].id]||{}).value:win.value)||'';", "replace": "var wv=win.value||'';"},
  {"name": "Admin offers a window begun", "file": "stmt/owner.js", "find": "s=Date.parse(d+'T00:00:00Z')+(w-8)*H; if(s<=now){ s+=24*H;", "replace": "s=Date.parse(d+'T00:00:00Z')+(w-8)*H; if(s+4*H<=now){ s+=24*H;"},
- {"name": "Admin does not say a spot was shared", "file": "stmt/owner.js", "find": "      if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','Location shared, sealed: the Desk opens it for the fee.'));\n", "replace": ""}
+ {"name": "Admin does not say a spot was shared", "file": "stmt/owner.js", "find": "      if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','Location shared, sealed: the Desk opens it for the fee.'));\n", "replace": ""},
+ {"name": "the desk always names the window", "file": "src/orders.js", "find": "\"wantBy\"].concat(o.slot ? [\"slot\"] : []);", "replace": "\"wantBy\", \"slot\"];"},
+ {"name": "the desk never names the window", "file": "src/orders.js", "find": "\"wantBy\"].concat(o.slot ? [\"slot\"] : []);", "replace": "\"wantBy\"];"},
+ {"name": "the Counter needs the window named", "file": "stmt/orders.js", "find": "      ? Object.assign({ slot: null }, body.reserveReview) : body.reserveReview;", "replace": "      ? body.reserveReview : body.reserveReview;"}
 ]

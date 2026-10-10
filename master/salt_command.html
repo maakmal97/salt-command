@@ -20823,7 +20823,10 @@ async function ordPinPoint(o){
 function ordPinLine(o){
   if(!o||!o.pin||o.mode!=='deliver'||!['placed','acknowledged','ready'].includes(o.status))return '';
   const v=ORD_PIN[o.id];
-  if(!v||!feeOpen())return '<p class="ordline ordpin">They shared their exact spot, sealed: show names to open it for the fee.</p>';
+  if(!feeOpen())return '<p class="ordline ordpin">They shared their exact spot, sealed: show names to open it for the fee.</p>';
+  if(!vaultSlipKey)return '<p class="ordline ordpin">They shared their exact spot, sealed to a key this device does not hold.</p>';
+  /* an agreed order's card reads no fee, so its spot is opened here, once, when the card is drawn unlocked */
+  if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>ordDraw());},0);return '<p class="ordline ordpin">Opening the spot they shared.</p>';}
   if(v.st==='looking')return '<p class="ordline ordpin">Opening the spot they shared.</p>';
   if(v.st!=='ok')return `<p class="ordline ordpin" role="status">${esc(v.msg)}</p>`;
   const had=feePt(vaultPlaces&&vaultPlaces[o.code]),same=!!had&&haversineKm(had,v.pt)<0.05;

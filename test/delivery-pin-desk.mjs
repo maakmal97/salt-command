@@ -119,6 +119,14 @@ export async function run({ ok }) {
     && filed.st.filed === true && /Filed as their place/.test(filed.line),
     "File as their place writes the spot into the places vault on this device, keeping the address filed: " + JSON.stringify(filed.m));
 
+  /* an agreed order's card reads no fee, so drawn unlocked it opens its spot itself */
+  const O6 = order("20261010050000-ffff", P1, { status: "acknowledged" });
+  const first = rd("ordPinLine(" + JSON.stringify(O6) + ")");
+  for (let i = 0; i < 100 && !(rd("ORD_PIN['" + O6.id + "']||null") || {}).pt; i++) await new Promise((r) => setTimeout(r, 15));
+  const opened = rd("{st:ORD_PIN['" + O6.id + "'],line:ordPinLine(" + JSON.stringify(O6) + ")}");
+  ok(/Opening the spot/.test(first) && opened.st && opened.st.st === "ok" && /open on this device/.test(opened.line),
+    "an acknowledged order's card, drawn unlocked, opens the spot they shared rather than asking for names already shown: " + JSON.stringify([first, opened.line]));
+
   /* the lock drops every spot */
   w.eval("lockVault();");
   ok(JSON.stringify(rd("ORD_PIN")) === "{}" && /show names to open it/.test(rd("ordPinLine(" + JSON.stringify(O1) + ")")), "the lock drops every spot opened");

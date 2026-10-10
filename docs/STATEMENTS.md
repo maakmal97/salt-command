@@ -731,7 +731,8 @@ as it can or one of six windows, 00-04 to 20-24 Kuala Lumpur, each its next occu
 is ahead (`slotNext`), and never a day. One rule on page and Worker (`stmt/window.js`, its ES5 carried into the page as
 text): a window the Counter's weekly Hours leave none of is not offered, and one they leave part of says "Delivery will be
 between x and y", the part inside (`slotSpan`, manual override included). The hours are Counter Admin's own (`maker:hours`,
-served with `GET /hours` as `config`); none set, every window is whole. The Worker's check at Place is `slotTake`: its end
+served with `GET /hours` as `config`, the weekly schedule and any override in the open, as the page already says them in
+words); none set, every window is whole. The Worker's check at Place is `slotTake`: its end
 ahead, its start at most eight days off, not wholly outside the hours read then; the order carries `slot`
 (`YYYY-MM-DDTHH`) and `slotSpan` (`HH:MM-HH:MM`), a request he manages, never on the row. **His Accept may answer an
 as-soon-as delivery with a window** (Q3), on the desk's card and Counter Admin's, a sheet's lines taking its first order's:

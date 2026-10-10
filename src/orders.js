@@ -490,7 +490,8 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
   delete pv.entry;
   if (pv.hash !== body.hash) return { ok: false, status: 409, differs: true, error: "the row has changed since the card drew it: look at it again before you accept", preview: pv };
   if (o.status === "placed") {
-    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy", "slot"];
+    /* the window is named only on an order that has one, so a Counter not yet carrying windows still reserves the rest */
+    const fields = ["status", "product", "qty", "total", "mode", "place", "forFriend", "wantBy"].concat(o.slot ? ["slot"] : []);
     const reserved = await moveOrder(env, o.u, id, { reserveReview: Object.fromEntries(fields.map((key) => [key, o[key] ?? null])) });
     if (!reserved.ok) return reserved;
   }
