@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1055",
+  "d": "10 Oct 2026",
+  "t": "PART PAYMENT OF RM100 ON CZ5-TM'S ORDER FOR 2 UNITS OF SALT",
+  "n": [
+   "<b>ONE PAYMENT FOLDED:</b> RM100 received on 10 Oct from CZ5-TM against order s247 (2 units, RM190), paid by QR via TNG, preapproved by phone. It leaves RM90 and 2 units outstanding. Nothing was unusual: the drafter raised no flags.",
+   "<b>INVENTORY UNMOVED:</b> no unit was handed over, so the salt stock stays at 12.14 and the cost basis is unchanged."
+  ]
+ },
+ {
   "v": "v1054",
   "d": "10 Oct 2026",
   "t": "ONE PENDING SALT SALE TO CH5-KLC; NO STOCK MOVES",
