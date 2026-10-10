@@ -61,7 +61,7 @@ import { sessKey } from "./signin.js";
 import { refusal, clip } from "./words.js";
 import { SLIP_ID_RE } from "./slip.js";
 import { accountRecord } from "./testfix.js";
-import { slotTake } from "./window.js";
+import { slotTake, SLOT_RE, SPAN_RE } from "./window.js";
 import { hoursConfig } from "./hours.js";
 
 export const SESSION_TTL = 900;
@@ -1016,6 +1016,10 @@ export function decideDesk(order, body, at) {
     ev.delivery = (ev.mode || order.mode) === "deliver" ? d : 0;
     /* V5b2: the desk decides paid in advance at Accept, from the book; its verdict is the order's from then on */
     if (body && typeof body.prepay === "boolean") ev.prepay = body.prepay;
+    /* 10 Oct 2026 (his Q3): the window he chose for a delivery that asked for none, its span cut to the hours by deskMove.
+       Anything else is left out, never refused: the row is approved already, and the acknowledgement must not stall */
+    if (body && typeof body.slot === "string" && SLOT_RE.test(body.slot) && typeof body.slotSpan === "string" && SPAN_RE.test(body.slotSpan)
+      && ev.delivery !== undefined && (ev.mode || order.mode) === "deliver" && !order.slot && !order.wantBy) { ev.slot = body.slot; ev.slotSpan = body.slotSpan; }
   }
   /* S11 11.7: a decline or a cancellation of his carries its reason, which their page reads beside Not taken or
      Cancelled by us; one line, as every line they read is. The desk's relay has put it through siteWords. */
@@ -1037,6 +1041,7 @@ export function applyEvent(order, ev) {
     if (ev.mode) order.mode = ev.mode;
     if (ev.delivery !== undefined) order.delivery = ev.delivery;
     if (ev.prepay === true) order.prepay = true; else if (ev.prepay === false) delete order.prepay;
+    if (ev.slot) { order.slot = ev.slot; order.slotSpan = ev.slotSpan; }
     /* Step 2: the goods at the price he set on this order, what they were quoted kept beside it as `asked` */
     if (isNum(ev.total)) { if (order.asked === undefined) order.asked = order.total; order.total = ev.total; }
     order.status = ev.status;
@@ -1386,11 +1391,20 @@ function settle(order, at) {
   return true;
 }
 
+/* 10 Oct 2026: a window sent with the acknowledgement, its span the part inside the hours read now; one wholly outside them
+   is his choice and stands whole; one already past is left off. Its own span is never taken from the desk. */
+async function ackSlot(env, body) {
+  const b = Object.assign({}, body), now = Date.now();
+  delete b.slot; delete b.slotSpan;
+  const t = slotTake(body.slot, await hoursConfig(env), now), k = t.error ? slotTake(body.slot, null, now) : t;
+  return k.error ? b : Object.assign(b, { slot: k.slot, slotSpan: k.span });
+}
 const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done: ["ready", "acknowledged"],
   declined: OPEN_STATES, cancelled: OPEN_STATES };
 
 /** The owner's moves, from the phone through the desk's Worker. Every change wakes the customer. */
 export async function deskMove(env, u, id, body) {
+  if (body && body.status === "acknowledged" && body.slot !== undefined) body = await ackSlot(env, body);
   if (onBook(env)) {
     const r = await bookMove(env, "desk", { u, id, body });
     if (r.error) return r;

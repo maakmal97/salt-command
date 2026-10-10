@@ -3745,6 +3745,8 @@ const CLIENT_JS = `
     else if(mv>0) put(d?'ow.partDeliveredOn':'ow.partCollectedOn',{a:sz(mv), b:sz(o.qty), d:went(function(L){ return ymdDay(o.movedOn,L); })});
     else if(s==='ready') put(d?'ow.readyDeliver':'ow.readyCollect',{d:Dd(oDay,firstAt(o,'ready'))});
     else put('ow.confirmed',{d:Dd(oDay,firstAt(o,'acknowledged'))});
+    /* 10 Oct 2026 (his Q4): his Accept reminds them to pay now, in words only; every term stands */
+    if(s==='acknowledged'&&!(mv>0)&&(+o.total||0)+(+o.delivery||0)-paid-oClaimed(o)>0.004){ p.appendChild(document.createTextNode(' ')); put(o.prepay?'ow.payNow':'ow.payNowCredit'); }
     /* 29 Sep 2026: the day they asked for, while it is still to come to them */
     if(o.wantBy&&!(mv>0)&&OPEN_ST.indexOf(s)>=0){ p.appendChild(document.createTextNode(' ')); put('ow.wantBy',{d:function(L){ return esch(ymdDay(o.wantBy,L)); }}); }
     /* 10 Oct 2026: the time asked for, while the goods are still to go */

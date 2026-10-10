@@ -20525,6 +20525,22 @@ async function ordTell(){
 let ORD_PV={},ORD_PV_GEN=0;
 /* S11 11.3: the charge he chose, or null while none is chosen or Other holds no figure */
 let ORD_CHIP={};
+/* 10 Oct 2026 (his Q3): the window he answers an as-soon-as delivery with, per order; none until he picks one */
+let ORD_WIN={};
+/* the next occurrence of each four-hour window, Kuala Lumpur time, its start ahead: the Counter cuts it to its hours */
+function ordWinPicks(now){
+  const H=36e5,day=x=>new Date(x+8*H).toISOString().slice(0,10),out=[];
+  for(const w of [0,4,8,12,16,20]){let d=day(now),s=Date.parse(d+'T00:00:00Z')+(w-8)*H;if(s<=now){s+=24*H;d=day(s);}
+    const p=n=>String(n).padStart(2,'0');out.push({slot:d+'T'+p(w),at:s,label:(+d.slice(8))+' '+MAP_MON[+d.slice(5,7)-1]+', '+p(w)+':00 to '+p(w+4)+':00'});}
+  return out.sort((a,b)=>a.at-b.at);
+}
+function ordWinUi(o){
+  const v=ORD_WIN[o.id]||'',picks=ordWinPicks(Date.now());
+  const opt=(val,w)=>`<label class="salt-option"><input type="radio" class="salt-option__input" name="win-${esc(o.id)}" value="${esc(val)}" data-winpick="${esc(o.id)}"${v===val?' checked':''}><span class="salt-option__face"><span class="salt-option__label">${esc(w)}</span></span></label>`;
+  return `<fieldset class="salt-options ordwin"><legend class="salt-options__legend">Delivery time</legend>
+    <div class="salt-options__grid salt-options__grid--2">${opt('','As soon as it can')+picks.map(p=>opt(p.slot,p.label)).join('')}</div>
+    <p class="salt-approve__reason">They asked for it as soon as it can. A window you choose goes with Accept and needs no yes of theirs.</p></fieldset>`;
+}
 /* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON ONE ORDER at Accept, the goods for that order alone, up or down and
    never under the floor, which the desk Worker checks. Kept per order while it waits; none set is the price they placed at.
    The board, their tier and the pricing state never move by it. */
@@ -21080,6 +21096,7 @@ function ordCard(o){
         <label class="salt-field ordother"${chip==='other'?'':' hidden'}><span class="salt-field__label">Other, RM</span>
           <input type="number" inputmode="decimal" min="0" step="0.5" value="${fCar?fOff.fee:chip==='other'&&ORD_PUT[o.id]!=null?ORD_PUT[o.id]:''}" class="salt-field__input salt-field__input--mono" data-fee="${esc(o.id)}"></label>
         ${fSay?`<p class="salt-approve__reason ordfeeby" data-feeby="${esc(o.id)}">${esc(fSay)}</p>`:''}</fieldset>` : '';
+  const winUi=o.status==='placed'&&o.mode==='deliver'&&!sSib&&!pa&&!yes&&!o.slot&&!o.wantBy?ordWinUi(o):'';
   /* 28 Sep 2026: the "Other amount" field for Cash received, the same shape as the fee's Other, RM box */
   const cash=cashNow
     ? `<label class="salt-field ordother"${cashPart?'':' hidden'}><span class="salt-field__label">Cash received, RM</span>
@@ -21102,7 +21119,7 @@ function ordCard(o){
       +cell('Handed over',moved>0?units(moved)+(moved<o.qty-0.004?' of '+units(o.qty):''):'nothing yet',moved>=o.qty-0.004&&rowed?'g':'')}</div>`}
     ${ordToldLine(o)}
     ${o.status==='placed'?'':`<div class="dsc">Paying by ${esc(pay)}. The ledger reads <b>${ledger}</b>${told}.</div>`}
-    ${fee}${rated}${thread}${reply}
+    ${fee}${winUi}${rated}${thread}${reply}
     ${cash}${hand}${o.prepay&&handable&&ordDue(o)>0.004?`<p class="salt-approve__reason ordprepay">Paid in advance: ${fmt(ordDue(o))} is still to pay before it is handed over.</p>`:''}${ordWhyBlock(o)}
     <div class="${acts?'ordfoot':'ordnofoot'}">${acts?`<div class="salt-approve__actions">${acts}</div>`:''}
       ${hold?`<p class="salt-approve__reason ordhold">Cash received, ${fmt(hold.amount)}: it goes in <span data-holdleft="${esc(o.id)}">${ordHoldLeft(o.id)}</span> s. Undo sends nothing.</p>`
@@ -21261,6 +21278,7 @@ function ordDraw(){
   box.querySelectorAll('button[data-whyoff]').forEach(b=>{b.onclick=()=>{delete ORD_WHY[b.dataset.whyoff];ordDraw();};});
   box.querySelectorAll('button[data-keep]').forEach(b=>{b.onclick=()=>ordQuickKeep(b.dataset.keep);});
   box.querySelectorAll('input[data-chip]').forEach(i=>{i.onchange=()=>{ORD_CHIP[i.dataset.chip]=i.value;ordDraw();};});
+  box.querySelectorAll('input[data-winpick]').forEach(i=>{i.onchange=()=>{ORD_WIN[i.dataset.winpick]=i.value;ordDraw();};});
   const ab=document.getElementById('ordAllBtn');
   /* the switch lives outside the box this redraws, so it is re-enabled here: disabled on the tap
      and left that way, one tap would be all it ever took */
@@ -21295,7 +21313,10 @@ async function ordAct(b){
     if(d==null)return refuse('Choose the delivery charge first; nothing moved.');
     const pv=ORD_PV[id];
     const pr=ordPriceNow(o);
-    body=JSON.stringify(Object.assign({delivery:d,hash:sheetHash!==undefined?sheetHash:(pv&&pv.st==='ok'&&ordPvFits(pv,d,o)&&pv.j&&pv.j.hash)||null},pr!=null?{total:pr}:{}));
+    /* 10 Oct 2026: the window he chose, the lead's for every line of a sheet, on a delivery that asked for none */
+    const win=b.dataset.sheetwin!=null?b.dataset.sheetwin:(ORD_WIN[id]||''),winOn=!!win&&o.mode==='deliver'&&!o.slot&&!o.wantBy&&!ordAgainAck(o);
+    if(winOn&&Date.parse(win.slice(0,10)+'T00:00:00Z')+(+win.slice(11,13)-4)*36e5<=Date.now())return refuse('That window has passed: choose another; nothing moved.');
+    body=JSON.stringify(Object.assign({delivery:d,hash:sheetHash!==undefined?sheetHash:(pv&&pv.st==='ok'&&ordPvFits(pv,d,o)&&pv.j&&pv.j.hash)||null},pr!=null?{total:pr}:{},winOn?{slot:win}:{}));
     url='orders/'+encodeURIComponent(id)+'/accept';
   }else if(st==='offer'){
     /* Negotiate: the goods he typed (or the automatic price), the charge, and the digest of the row the card drew at them */
@@ -21441,7 +21462,7 @@ async function ordSheetAct(b){
   try{
     for(const x of G){
       const ds=Object.assign({},b.dataset,{id:x.id,u:x.u});delete ds.sheet;
-      if(st==='acknowledged'){ds.sheetfee=String(x.id===o.id?fee:0);ds.sheethash=hs[x.id];}
+      if(st==='acknowledged'){ds.sheetfee=String(x.id===o.id?fee:0);ds.sheethash=hs[x.id];ds.sheetwin=ORD_WIN[o.id]||'';}
       const ok=await ordAct({dataset:ds,closest:()=>null});
       said.push(ordName(x)+': '+(ORD_SAID&&ORD_SAID.id===x.id?ORD_SAID.t:(ok?'done.':'nothing moved.')));
       if(!ok)break;n++;

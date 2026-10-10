@@ -34800,7 +34800,7 @@ await (async () => {
   ok(JSON.stringify(bodies) === JSON.stringify([
     "Order on its way / Your payment is waiting for us to confirm it. / order-" + id,
     "Order collected / Thank you. Your order is now complete. / order-" + id,
-    "Order acknowledged / Payment is due when it is ready to collect or on its way, or when you receive it. / order-" + id,
+    "Order acknowledged / Please pay now if you can. Payment is due when it is ready to collect or on its way, or when you receive it. / order-" + id,
     "Order acknowledged / Please make your payment now. / order-" + id,
     "Counter says: / “Come after five” / m-" + id + "-2026-09-28T10:00:00.000Z",
     "Order not taken / Out of stock this week. / order-" + id,
@@ -51448,6 +51448,10 @@ await (async () => {
 section("10 Oct 2026: the desk opens a delivery's exact spot with the one unlock, measures the fee to it and may file it as their place");
 await (async () => {
   await (await import("./delivery-pin-desk.mjs")).run({ ok });
+})();
+section("10 Oct 2026: his Accept carries the window on a delivery asked for as soon as it can, and reminds them to pay now");
+await (async () => {
+  await (await import("./delivery-accept-window.mjs")).run({ ok, KV, assets });
 })();
 section("06 Oct 2026: a clipped line never ends on half an emoji");
 await (async () => {
