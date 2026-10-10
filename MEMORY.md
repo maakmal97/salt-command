@@ -36,6 +36,7 @@
 - `POST /draft-now?dry=1`
 - `POST /orders/<id>/preview` (the row an Accept would make, stored nowhere, never the dry run)
 - `/accept|handed|cash|received|notfound|again` (the card's taps)
+- `POST /orders/<id>/offer|withdraw` (Negotiate's offer, and since 10 Oct 2026 his Accept sent for their yes; Counter Admin reaches both through `/all/maker/orders/<id>/offer|withdraw`)
 - `/claims/<id>/preview|received|notfound`
 - `GET /threads` and `POST /threads/<username>` (Step 7: his Chat; `{message}`, checked by siteWords, or `{noReply: true}`)
 - `GET /slips/<username>/<id>` (F13: a slip's ciphertext, relayed from the Counter's `slip:` KV, never cached by `sw.js`)

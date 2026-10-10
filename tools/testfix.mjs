@@ -201,6 +201,16 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   O.push(order(oid(0, "42"), list, T(0, 4), { product: "oil", qty: 1, mode: "deliver", place: "Taman Rekaan", slot: next(8) }, [], HOURS));
   O.push(order(oid(1, "43"), list, T(1, 4), { product: "candy", qty: 1, mode: "deliver", place: "Taman Rekaan" }, [
     [T(1, 30), "desk", { status: "acknowledged", delivery: 4, slot: next(12), slotSpan: "12:00-16:00" }]]));
+  /* VERSION 2 (10 Oct 2026): HIS ACCEPT FOR THEIR YES. A raise waiting on them, another window waiting on them, and an offer
+     that lapsed, the order then agreed at their own terms */
+  const yesAt = (at, id, x) => [at, "desk", { offer: Object.assign({ id, kind: "accept", delivery: 4, slot: null,
+    until: new Date(Date.parse(at) + 48 * 3600e3).toISOString() }, x) }];
+  O.push(order(oid(1, "44"), list, T(1, 4), { product: "salt", qty: 2, mode: "deliver", place: "Taman Rekaan" },
+    [yesAt(T(0, 20), "fex44", { total: priceOf(list, "salt", 2) + 20 })]));
+  O.push(order(oid(1, "45"), list, T(1, 5), { product: "oil", qty: 1, mode: "deliver", place: "Taman Rekaan", slot: next(8) },
+    [yesAt(T(0, 21), "fex45", { total: priceOf(list, "oil", 1), slot: next(16), slotSpan: "16:00-20:00" })]));
+  O.push(order(oid(4, "46"), list, T(4, 3), { product: "candy", qty: 1, mode: "deliver", place: "Taman Rekaan" }, [
+    yesAt(T(4, 20), "fex46", { total: priceOf(list, "candy", 1) + 10 }), [T(1, 30), "desk", { status: "acknowledged", delivery: 4 }]]));
 
   /* A GROUP ORDER (the pool): one open with the account joined (the order it made carries the pool's id, and the units in are the
      account's with invented others, `seedUnits`), and one he closed whose joined order is acknowledged. The order is made by the
@@ -307,6 +317,8 @@ const has = (f, p) => f.orders.some(p);
 /* a window's whole four hours, as its span reads when the hours leave all of it */
 const spanWhole = (slot) => { const w = +String(slot).slice(11, 13), p = (n) => String(n).padStart(2, "0"); return p(w) + ":00-" + p(w + 4) + ":00"; };
 const hist = (o, p) => (o.history || []).some(p);
+/* his Accept for their yes, open at the fixture's moment */
+const accYes = (o, f) => !!(o.price && o.price.from === "accept" && o.price.state === "offered" && String(o.price.offer.until) > f.at);
 export const FEATURES = [
   ["order placed, waiting on him", (f) => has(f, (o) => o.status === "placed")],
   ["order replaced before acknowledgement, both kept in history", (f) => has(f, (o) => o.status === "cancelled"
@@ -381,6 +393,10 @@ export const FEATURES = [
   ["their exact spot shared, sealed (10 Oct 2026)", (f) => has(f, (o) => o.status === "placed" && o.mode === "deliver" && /^[0-9a-f]{32}$/.test(o.pin || ""))],
   ["his window at Accept, and the pay-now reminder (10 Oct 2026)", (f) => has(f, (o) => o.status === "acknowledged" && o.mode === "deliver" && !!o.slot
     && !(+o.moved > 0) && +o.total + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
+  ["a raise waiting on their yes (10 Oct 2026)", (f) => has(f, (o) => o.status === "placed" && accYes(o, f) && o.price.offer.total > o.total + 0.004)],
+  ["another window waiting on their yes (10 Oct 2026)", (f) => has(f, (o) => o.status === "placed" && accYes(o, f) && !!o.slot && !!o.price.offer.slot && o.price.offer.slot !== o.slot)],
+  ["an offer for their yes lapsed, then agreed at their terms (10 Oct 2026)", (f) => has(f, (o) => o.status === "acknowledged" && o.price && o.price.from === "accept"
+    && o.price.state === "offered" && Math.abs(o.price.offer.total - o.total) > 0.004)],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];

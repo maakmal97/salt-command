@@ -877,7 +877,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     await makerRequestFinish(env.SALT_LEDGER, body.at, fingerprint, { ...response, queued: false });
     return json(response);
   }
-  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.exec(p);
+  const orderMatch = /^\/_internal\/maker\/orders\/([0-9]{14}-[a-z0-9]{1,8})\/(preview|accept|offer|withdraw|handed|cash|received|again|amend|notfound|move|restate|take)$/.exec(p);
   if (orderMatch) {
     let body;
     try {
@@ -915,6 +915,9 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         }
       }
       else if (action === "preview") result = await previewOrder(env, id, body);
+      /* version 2: his Accept for their yes, and its withdrawal, the Desk's own roads */
+      else if (action === "offer") result = await offerOrder(env, id, body, "Counter Admin");
+      else if (action === "withdraw") result = await withdrawOffer(env, id, body);
       else if (action === "accept") {
         result = await acceptOrder(env, id, body, "Counter Admin");
         const others = ((result.drafted && result.drafted.approved) || []).filter((x) => x !== result.draft);

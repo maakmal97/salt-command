@@ -4,5 +4,8 @@
  {"name": "the fixture places with no hours", "file": "tools/testfix.mjs", "find": "{ steps: priceSteps(list), hours: hours || null });", "replace": "{ steps: priceSteps(list) });"},
  {"name": "no window at Accept in the fixture", "file": "tools/testfix.mjs", "find": "{ status: \"acknowledged\", delivery: 4, slot: next(12), slotSpan: \"12:00-16:00\" }", "replace": "{ status: \"acknowledged\", delivery: 4 }"},
  {"name": "a window asked for reads a past day", "file": "tools/testfix.mjs", "find": "&& o.slot > klDay(new Date(f.at)))],", "replace": "&& o.slot < klDay(new Date(f.at)))],"},
- {"name": "the fixture's windows ask for none", "file": "tools/testfix.mjs", "find": "  const next = (w) => slotNext(w, null, now.getTime()).slot;", "replace": "  const next = (w) => undefined;"}
+ {"name": "the fixture's windows ask for none", "file": "tools/testfix.mjs", "find": "  const next = (w) => slotNext(w, null, now.getTime()).slot;", "replace": "  const next = (w) => undefined;"},
+ {"name": "no raise waiting on their yes in the fixture", "file": "tools/testfix.mjs", "find": "{ total: priceOf(list, \"salt\", 2) + 20 }", "replace": "{ total: priceOf(list, \"salt\", 2) }"},
+ {"name": "no other window waiting on their yes in the fixture", "file": "tools/testfix.mjs", "find": ", slot: next(16), slotSpan: \"16:00-20:00\" }", "replace": " }"},
+ {"name": "no lapsed offer agreed at their terms in the fixture", "file": "tools/testfix.mjs", "find": "    yesAt(T(4, 20), \"fex46\", { total: priceOf(list, \"candy\", 1) + 10 }), [T(1, 30)", "replace": "    [T(1, 30)"}
 ]
