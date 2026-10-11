@@ -27965,6 +27965,65 @@ await (async () => {
   ok(!/drawLinks\(/.test(page9) && !/getElementById\('glist'\)/.test(page9) && !/\/all\/refs/.test(page9),
     "and nothing of his links panel is in it: not the drawing, not its element, not his route");
 })();
+section("Stress R2 (11 Oct 2026): a Withdraw that fails says so under the links in the customer's words, and a Withdraw that works clears the line");
+await (async () => {
+  /* The stress triage's R2. Withdraw wrote a line only for a dropped connection (status 0), so a server error or a refusal
+     said nothing and the link stayed live under the customer's eyes: an access-control tap that looked as if it had worked.
+     Make a link, two lines below it, says any failure; Withdraw now does too, and a success takes the line away. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-r2", ck = await C.contentKey("s9r2", u);
+  const cardDoc = { at: "2026-09-18T00:00:00Z", products: [{ product: "salt", name: "Salt", unit: "unit",
+    summary: { bought: 100, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null, lines: [{ date: "2026-09-01", kind: "own", qty: 1, rm: 100 }] }] };
+  const body = { ok: true, assoc: true, wrap: await C.wrapKey(pass, ck), session: "sess-r2-abcdefghij",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>x</p>" }] })),
+    card: Object.assign({ at: cardDoc.at }, await C.encryptWith(ck, JSON.stringify(cardDoc))) };
+  let state = "open", mode = "500", work;
+  const revokes = [];
+  const dom = new JSDOM(landingPage(u, "nr2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {}; win.confirm = () => true;
+    win.fetch = async (path) => { const q = String(path);
+      const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+      if (q === "/open") return ans(200, body);
+      if (q === "/orders") return ans(200, { ok: true, orders: [] });
+      if (q === "/my/refs") return ans(200, { ok: true, max: 10, refs: [{ id: "aaaa-bbbb", url: "https://site.test/g/aaaa-bbbb", qr: "data:image/svg+xml,x",
+        made: "2026-09-18T00:00:00Z", opens: 2, last: "2026-09-19T00:00:00Z", state }] });
+      if (q === "/my/refs/aaaa-bbbb/revoke") { revokes.push(mode);
+        if (mode === "offline") throw new Error("offline");
+        if (mode === "500") return ans(500, { ok: false });
+        if (mode === "404") return ans(404, { ok: false, error: "not found" });
+        state = "withdrawn"; return ans(200, { ok: true }); }
+      return ans(404, { ok: false }); };
+    work = pageWork(win);
+  } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const card = () => D.getElementById("pCard").textContent;
+  const withdraw = () => [...D.querySelectorAll("#pCard button")].filter((b) => b.textContent === "Withdraw");
+  const tap = async (m) => { mode = m; const n = revokes.length; withdraw()[0].click(); await until(() => revokes.length > n); await work.quiet(); };
+  try {
+    D.getElementById("un").value = u; D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !D.getElementById("tCard").hidden);
+    D.querySelector('button[data-t="card"]').click();
+    await until(() => withdraw().length === 1); await work.quiet();
+    ok(withdraw().length === 1 && /Open/.test(card()), "the fixture: one open link, with Withdraw beside it: " + JSON.stringify(card().slice(0, 120)));
+    await tap("500");
+    ok(/The site is busy just now\. Try again in a minute\./.test(card()) && withdraw().length === 1,
+      "a Withdraw the site answers with a server error says so under the links, and the link is still listed with Withdraw beside it: " + JSON.stringify(card()));
+    await tap("404");
+    ok(/That link was not withdrawn\./.test(card()) && !/busy just now/.test(card()),
+      "a refusal that carries no words of its own says the link was not withdrawn, and the last line is replaced: " + JSON.stringify(card()));
+    await tap("offline");
+    ok(/Not sent\. Check your connection and try again\./.test(card()), "and a dropped connection still says Not sent, as it did: " + JSON.stringify(card()));
+    await tap("ok");
+    ok(/Withdrawn/.test(card()) && !/not withdrawn|busy just now|Not sent/.test(card()) && withdraw().length === 0,
+      "a Withdraw that works shows the link withdrawn and takes the failure's line away: " + JSON.stringify(card()));
+  } finally { W.close(); }
+})();
 section("S3 3.3: the link page spends nothing until Continue, names its account, sends an app's own browser to Safari or Chrome, and a lost answer is tried again for two minutes");
 await (async () => {
   /* S3 fix: a session is filed under its hash, so the page's own orders read is a digest away, and the jsdom this
@@ -35542,6 +35601,67 @@ await (async () => {
     + JSON.stringify([/<div class="dsc ordrated">[^]*?<\/div>/.exec(rated), /<div class="dsc ordrated">[^]*?<\/div>/.exec(asked)].map((m) => m && m[0])));
 })();
 
+section("Stress R7 (11 Oct 2026): a rating tapped on the order screen shows its answer or its refusal at once, with the focus kept, though the tapped star holds the focus");
+await (async () => {
+  /* The stress triage's R7. rateSend wrote its line and called oSync, which leaves a part alone while it holds the focus (the
+     next poll draws it once the focus has gone), and the star just tapped is inside the rate part: a failed rating said
+     nothing, with the stars offered again, and a rating that stood still read How was your order?. Home's card redraws and
+     was never affected. A desktop browser focuses the star it is tapped on, so the section does the same before it taps. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-r7", ck = await C.contentKey("test-secret", u);
+  const day = (n) => new Date(Date.now() - n * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const pay = { term: 10, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const OLD = "20260901030000-oldr";
+  let orders = [{ id: OLD, at: "2026-09-01T03:00:00Z", product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 1, paid: 110, total: 110, status: "done", history: [], msgs: [], movedOn: day(20) }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-r7-rate",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay }) };
+  const sent = [];
+  let work, mode = "500", gate = null;   /* gate holds the page's re-read of its orders while the section looks */
+  const dom = new JSDOM(landingPage(u, "nr7", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.fetch = async (path, init) => { const p = String(path);
+      if (p === "/orders" && gate) { gate.asked = true; await gate.open; }
+      let j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true }, status = 200;
+      const m = /^\/orders\/([^/]+)\/rate$/.exec(p);
+      if (m) { const b = JSON.parse(init.body); sent.push({ id: m[1], stars: b.stars, mode });
+        if (mode === "500") { j = { ok: false }; status = 500; }
+        else { orders = orders.map((o) => (o.id === m[1] ? { ...o, rating: { stars: b.stars, at: "2026-09-28T03:00:00Z" } } : o)); j = { ok: true, order: orders[0] }; } }
+      return { ok: status < 300, status, json: async () => j }; };
+    work = pageWork(win);
+  } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const rate = () => D.querySelector('#pOrder .oscreen [data-part="rate"]') || D.createElement("div");
+  const tapStar = async (n, m) => { mode = m; const b = rate().querySelector('[data-star="' + n + '"]'), k = sent.length; b.focus(); b.click();
+    await until(() => sent.length > k); await work.quiet(); };
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => D.querySelector("#pOrder [data-olist]")); await work.quiet();
+    const later = D.querySelector("#pOrder .olater"); if (later) later.click();
+    D.querySelector('#pOrder [data-row="' + OLD + '"]').click();
+    ok(rate().querySelectorAll("[data-star]").length === 5 && /How was your order\?/.test(rate().textContent), "the fixture: the order screen asks How was your order? with five stars");
+    gate = { asked: false, released: false }; gate.open = new Promise((r) => { gate.release = () => { gate.released = true; r(); }; });
+    const first = rate().querySelector('[data-star="3"]'); mode = "500"; first.focus(); first.click();
+    const said = await until(() => /The site is busy just now\. Try again in a minute\./.test(rate().textContent));
+    ok(said && sent.length === 1 && gate.asked && !gate.released && rate().querySelectorAll("[data-star]").length === 5,
+      "a rating the site refuses says so under the stars at once, before the page has its orders back, with the stars still offered: " + JSON.stringify({ said, asked: gate.asked, text: rate().textContent }));
+    gate.release(); gate = null; await work.quiet();
+    ok(rate().contains(D.activeElement) && D.activeElement.getAttribute("data-star") === "3",
+      "and the focus is on the third star again, the one that was tapped, so a keyboard retry is one press away: " + JSON.stringify(D.activeElement && D.activeElement.outerHTML.slice(0, 80)));
+    await tapStar(3, "ok");
+    ok(sent.length === 2 && /Rated 3 of 5/.test(rate().textContent) && rate().querySelectorAll("[data-star]").length === 0 && !/busy just now/.test(rate().textContent),
+      "a rating that stands reads Rated 3 of 5 at once, with no star left to tap and the failure's line gone: " + JSON.stringify(rate().textContent));
+    ok(rate().contains(D.activeElement) && D.activeElement.classList.contains("rgave"),
+      "and the focus moves to the marks, not to the page: " + JSON.stringify(D.activeElement && D.activeElement.outerHTML.slice(0, 80)));
+  } finally { W.close(); }
+})();
 section("S12 fix: a banner tapped on a page whose session has lapsed opens that order after Continue, never the list drawn last");
 await (async () => {
   /* S12-R2, 24 Sep 2026: a session is a flat fifteen minutes and a banner comes hours later, so the tap's re-read

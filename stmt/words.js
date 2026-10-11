@@ -385,6 +385,7 @@ export const EN = {
   "lnk.next": "A new link stays shut until we approve it. Once it is open it shows whoever you give it to a price list and nothing else, and you share it from here.",
   "lnk.make": "Make a link",
   "lnk.notMade": "That link was not made.",
+  "lnk.notWithdrawn": "That link was not withdrawn.",
   /* ---- PRICES ---- */
   /* HIS INSTRUCTION OF 27 SEP 2026: Prices never states a customer's own rate, and never says that one customer's prices
      differ from another's. Gone: "Your rate: {rm} per {u}, from your last {n} orders" and its one-order twin, "Your own
