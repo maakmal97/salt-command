@@ -145,4 +145,224 @@ export async function run({ ok, pageWork, KV }) {
   const older = await call("/pay/accounts", TS);
   ok(JSON.stringify(sealedAns.b.accounts) === JSON.stringify({ maybank: { number: ZERO } }) && JSON.stringify(older.b.accounts) === "{}",
     "the Worker answers the sealed fixture's number, and a fixture sealed at an earlier version is not served until the publish seals it again: " + hide(JSON.stringify([sealedAns.b, older.b])));
+
+  /* ---- 3: the sheet, through the generated page in jsdom with a stubbed fetch */
+  const { landingPage } = await import("../stmt/page.js");
+  const { payHref, PAY_ACCOUNTS } = await import("../stmt/pay.js");
+  const { JSDOM } = await import("jsdom");
+  const { webcrypto } = await import("node:crypto");
+  const BUILD = "a".repeat(16), UN = "abcd-efgh", NUMBER = DIG("5550", "1234", "5678", "9"), GROUPED = "5550 1234 5678 9";
+  const kl = (k) => new Date(Date.now() + 8 * 3600e3 + k * 864e5).toISOString().slice(0, 10);
+  const tx = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg").forEach((x) => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
+  const until = async (f, n = 300) => { for (let i = 0; i < n && !f(); i++) await new Promise((r) => setTimeout(r, 15)); return f(); };
+  const part = (i) => ({ date: kl(-9 + i), since: kl(-1), due: kl(2), late: false, rm: 100 + i, whole: 100 + i, product: "salt", qty: 1 + i, got: 1 + i, gotOn: kl(-1),
+    resale: false, goods: 100 + i, deliv: 0, less: 0, rate: 100 });
+  const wins = [];
+  /* a customer's page signed in on an invented account owing three parts, 303 in all; `numbers` is what GET /pay/accounts answers, `down`
+     a Worker that cannot be reached for it. `calls` is every request the page made, `copied` every string put on the clipboard. */
+  const openPage = async ({ numbers = {}, down = false } = {}) => {
+    const pass = "fixture-pass-7b", ck = await CR.contentKey("test-secret", UN), list = [part(0), part(1), part(2)], sum = 303;
+    const pay = { term: 1, hide: 3, lock: 4, window: 60, now: { rm: sum, due: list[0].due, parts: list }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+    const stamped = { at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: sum, pay, buildId: BUILD };
+    const body = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-7b", liveStatus: "current",
+      live: Object.assign({ at: stamped.at, buildId: BUILD }, await CR.encryptWith(ck, JSON.stringify(stamped))),
+      env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
+    const calls = [], copied = []; let work, isDown = down;
+    const dom = new JSDOM(landingPage(UN, "n7b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+      if (!win.TextEncoder) win.TextEncoder = TextEncoder;
+      if (!win.TextDecoder) win.TextDecoder = TextDecoder;
+      win.scrollTo = () => {}; win.open = () => null;
+      Object.defineProperty(win.navigator, "clipboard", { value: { writeText: async (s) => { copied.push(String(s)); } }, configurable: true });
+      win.fetch = async (path, init) => {
+        const p = String(path), m = (init && init.method) || "GET", b = init && init.body ? JSON.parse(init.body) : null;
+        calls.push({ p, m, b });
+        const res = (status, j) => ({ ok: status === 200, status, json: async () => j });
+        if (p === "/open" || p === "/account") return res(200, body);
+        if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: [], claims: [] });
+        if (p === "/pay/accounts") return isDown ? res(500, { ok: false }) : res(200, { ok: true, accounts: numbers });
+        if (p === "/account/claim" && m === "POST") return res(200, { ok: true, claim: { id: "c1" } });
+        return res(404, { ok: false });
+      };
+      work = pageWork(win);
+    } });
+    wins.push(dom.window);
+    const d = dom.window.document;
+    d.getElementById("un").value = UN; d.getElementById("pw").value = pass;
+    d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => !d.getElementById("tabs").hidden && !!d.getElementById("payNow"));
+    await work.quiet();
+    const w = dom.window;
+    const pick = (key) => { const r = d.querySelector('#payBody input[name="payInto"][value="' + key + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+    const way = (v) => { const r = d.querySelector('#payBody input[name="payHow"][value="' + v + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
+    const go = () => d.getElementById("payGo");
+    return { w, d, work, calls, copied, sum, pick, way, go, up: () => { isDown = false; }, open: () => d.getElementById("payNow").click(), asked: () => calls.filter((c) => c.p === "/pay/accounts").length,
+      posts: () => calls.filter((c) => c.m === "POST" && c.p === "/account/claim"), q: () => { try { return JSON.parse(w.localStorage.getItem("salt-stmt-payq") || "null"); } catch (e) { return null; } } };
+  };
+  const kind = (e) => (e ? e.tagName + (e.disabled ? " disabled" : "") : "(none)");
+  try {
+    /* the order of the sheet, none chosen, the pill waiting, What this pays shut */
+    const A = await openPage({ numbers: { maybank: { number: NUMBER } } });
+    A.open();
+    const body = A.d.getElementById("payBody"), kids = [...body.children], at = (sel) => kids.findIndex((n) => n.matches(sel));
+    const idx = ["#payInto", ".salt-kpi", ".payseg", "#payWhat", ".payhow", ".payref"].map(at);
+    const tiles = [...body.querySelectorAll('#payInto input[name="payInto"]')], what = A.d.getElementById("payWhat");
+    ok(idx.every((i) => i >= 0) && idx.every((i, k) => k === 0 || i > idx[k - 1]),
+      "the sheet runs in this order: his banks, the figure, All or Part, What this pays, the way, then the reference: " + JSON.stringify(idx));
+    ok(tiles.length === PAY_ACCOUNTS.filter((a) => payHref(a.key, "transfer", A.sum, UN)).length && tiles.length > 5 && tiles.every((r) => !r.checked) && kind(A.go()) === "BUTTON disabled" && tx(A.go()) === "Show the account number",
+      "his banks stand first as tiles, every one the link would open and none chosen, and the pill waits: " + JSON.stringify([tiles.length, kind(A.go()), tx(A.go())]));
+    ok(!!what && !what.open && what.tagName === "DETAILS" && what.classList.contains("salt-plan") && tx(what.querySelector("summary")) === "What this pays"
+      && what.querySelectorAll(".inv > .salt-ledger__row:not(.invt):not(.invtot)").length === 3,
+      "What this pays is the Plan recipe's fold, shut, and holds the invoice's three lines: " + JSON.stringify([!!what, what && what.open]));
+
+    /* the pill lights as soon as a bank is chosen, and with its number the sheet shows it grouped, with Copy for digits alone */
+    A.pick("maybank");
+    const row = A.d.getElementById("payAcctNo"), rows = [...A.d.querySelectorAll("#payBody .payref > .salt-ledger__row")];
+    const copyNo = row && row.querySelector("button"), copyRef = rows[1] && rows[1].querySelector("button");
+    ok(kind(A.go()) === "BUTTON" && tx(A.go()) === "I have paid" && A.go().classList.contains("salt-pill") && !!row && rows.length === 2 && rows[0] === row
+      && tx(row.querySelector(".salt-ledger__label")) === "Account number" && tx(row.querySelector(".salt-ledger__value")) === GROUPED && tx(row.querySelector(".salt-ledger__flag")) === "Maybank"
+      && tx(rows[1].querySelector(".salt-ledger__label")) === "Reference" && tx(rows[1].querySelector(".salt-ledger__value")) === UN,
+      "choosing a bank lights the pill as I have paid, and Transfer shows two rows: the account number in groups of four with the bank's name, then the reference: "
+      + JSON.stringify([kind(A.go()), tx(A.go()), row && tx(row.querySelector(".salt-ledger__value")), rows.length]));
+    if (copyNo) copyNo.click();
+    await until(() => A.copied.length >= 1 && !!tx(A.d.querySelector("#payBody .payref + .msg")), 40);
+    const afterNo = A.copied.slice();
+    if (copyRef) copyRef.click();
+    await until(() => A.copied.length >= 2, 40);
+    ok(afterNo.join() === NUMBER && !/\s/.test(afterNo[0] || " ") && A.copied.join() === NUMBER + "," + UN && copyNo.getAttribute("aria-label") === "Copy the account number" && tx(A.d.querySelector("#payBody .payref + .msg")) === "Copied.",
+      "Copy puts the digits alone on the clipboard, with no space, the reference's Copy puts the username, and the sheet says Copied: " + JSON.stringify(A.copied).replace(/[0-9]{6,}/g, "#"));
+
+    /* a tap is 44px both ways: the tiles, Copy, the pill and the ghosts hold the design system's tap size */
+    const cs = (e) => A.w.getComputedStyle(e);
+    const opn = A.d.getElementById("payOpen");
+    const tap = { tile: cs(A.d.querySelector("#payInto .salt-option__face")).minHeight, copy: cs(copyNo).minHeight + "|" + cs(copyNo).minWidth, pill: cs(A.go()).minHeight,
+      open: opn ? cs(opn).minHeight : "(none)", summary: cs(what.querySelector("summary")).minHeight };
+    ok(tap.tile === "var(--salt-tap)" && tap.copy === "var(--salt-tap)|var(--salt-tap)" && tap.pill === "var(--salt-tap)" && tap.open === "var(--salt-tap)" && tap.summary === "var(--salt-tap)",
+      "a tap is 44px both ways on the bank tiles, both Copy buttons, the pill, the ghost link and the fold's summary: " + JSON.stringify(tap));
+
+    /* with the number: the ghost link stays (D8), the claim is asked at I have paid (D7) with no blur or focus, and posts the same body */
+    const openLink = A.d.getElementById("payOpen");
+    ok(!!openLink && openLink.tagName === "A" && tx(openLink) === "Open the payment page" && openLink.classList.contains("salt-ghost") && openLink.getAttribute("href") === payHref("maybank", "transfer", 303, UN)
+      && openLink.target === "_blank" && !A.d.getElementById("payReturn"),
+      "beside I have paid a ghost keeps the link into the pay page, at that bank, way and figure, and there is no I am back: " + JSON.stringify([!!openLink, openLink && openLink.getAttribute("href")]));
+    A.go().click();
+    const asked = { q: tx(A.d.querySelector("#payBody .paycheck h3")), yes: tx(A.d.getElementById("paySent")), posted: A.posts().length, sheet: !A.d.getElementById("paySheet").hidden, q1: A.q() };
+    ok(asked.q === "Did you send RM 303.00?" && asked.yes === "Yes, I sent RM 303.00" && asked.posted === 0 && asked.sheet,
+      "I have paid goes straight to Did you send, asked once and with nothing posted, though the window never lost or regained focus: " + JSON.stringify(asked));
+    const kept = asked.q1;
+    ok(!!kept && Object.keys(kept).join() === "who,at,kind,id,away" && Object.keys(kept.away).join() === "amt,rail,acct" && kept.away.amt === 303 && kept.away.rail === "transfer" && kept.away.acct === "maybank"
+      && !JSON.stringify(kept).includes(UN),
+      "and the question is kept on the device as it always was, the way, the bank and the figure, never the username: " + JSON.stringify(kept));
+    [...A.d.querySelectorAll("#payFoot button")].find((b) => tx(b) === "Not yet").click();
+    ok(A.q() === null && tx(A.go()) === "I have paid" && !!A.d.getElementById("payAcctNo") && A.posts().length === 0,
+      "Not yet goes back to the sheet with the number still there and nothing recorded, and the kept question is dropped");
+    A.go().click();
+    A.d.getElementById("paySent").click();
+    await until(() => A.posts().length === 1 && A.d.getElementById("paySheet").hidden);
+    const claim = A.posts()[0] && A.posts()[0].b;
+    ok(A.posts().length === 1 && !!claim && Object.keys(claim).sort().join() === "account,amount,method,rid" && claim.amount === 303 && claim.method === "transfer" && claim.account === "maybank" && !!claim.rid,
+      "Yes posts the claim as it always did, the figure, the way, the bank and an id, to the account: " + JSON.stringify(claim));
+
+    /* Part of it: the figure typed is the figure the question asks and the claim carries */
+    A.open(); A.pick("maybank");
+    [...A.d.querySelectorAll("#payBody .payseg button")].find((b) => tx(b) === "Part of it").click();
+    const amt = A.d.getElementById("payAmt"); amt.value = "40"; amt.dispatchEvent(new A.w.Event("input", { bubbles: true }));
+    A.go().click();
+    const partQ = tx(A.d.querySelector("#payBody .paycheck h3"));
+    A.d.getElementById("paySent").click();
+    await until(() => A.posts().length === 2);
+    ok(partQ === "Did you send RM 40.00?" && A.posts()[1].b.amount === 40, "Part of it asks for the part and claims it: " + JSON.stringify([partQ, A.posts()[1] && A.posts()[1].b.amount]));
+
+    /* the link, as before, still works on its own: Open the payment page, then back through the window's own blur and focus */
+    A.open(); A.pick("maybank");
+    A.d.getElementById("payOpen").click();
+    A.w.dispatchEvent(new A.w.Event("blur")); A.w.dispatchEvent(new A.w.Event("focus"));
+    ok(!!A.d.getElementById("paySent"), "and the ghost link, then the window losing and regaining focus, still turns the sheet to the question");
+    A.d.getElementById("payX").click();
+
+    /* a bank with no number filed: the filled pill is the link as today, and I am back moves to the question without waiting on focus */
+    const B = await openPage({ numbers: { maybank: { number: NUMBER } } });
+    B.open(); B.pick("ambank");
+    const back = B.d.getElementById("payReturn");
+    ok(!B.d.getElementById("payAcctNo") && kind(B.go()) === "A" && tx(B.go()) === "Show the account number" && B.go().getAttribute("href") === payHref("ambank", "transfer", 303, UN)
+      && !!back && back.tagName === "BUTTON" && back.classList.contains("salt-ghost") && tx(back) === "I am back" && !B.d.getElementById("payOpen")
+      && tx(B.d.querySelector("#payBody .payref .salt-ledger__label")) === "Reference",
+      "a bank with no number filed shows the reference alone, the filled pill is the link as before, and a ghost reads I am back: " + JSON.stringify([kind(B.go()), tx(B.go()), !!back]));
+    /* the link as it always worked: followed, then the window loses and regains focus; Not yet goes back to the sheet */
+    B.go().click(); B.w.dispatchEvent(new B.w.Event("blur")); B.w.dispatchEvent(new B.w.Event("focus"));
+    const viaFocus = !!B.d.getElementById("paySent") && !!B.q();
+    if (B.d.getElementById("paySent")) [...B.d.querySelectorAll("#payFoot button")].find((b) => tx(b) === "Not yet").click();
+    ok(viaFocus && !B.d.getElementById("paySent") && kind(B.go()) === "A", "the link pill, followed and then the window losing and regaining focus, still turns the sheet to the question, and Not yet comes back to it");
+    B.d.getElementById("payReturn").click();
+    ok(tx(B.d.querySelector("#payBody .paycheck h3")) === "Did you send RM 303.00?" && B.posts().length === 0, "I am back goes to the question at once, with nothing posted and no blur or focus");
+    B.d.getElementById("paySent").click();
+    await until(() => B.posts().length === 1);
+    ok(JSON.stringify(Object.keys(B.posts()[0].b).sort()) === '["account","amount","method","rid"]' && B.posts()[0].b.account === "ambank" && B.posts()[0].b.amount === 303,
+      "and Yes posts the same claim for that bank: " + JSON.stringify(B.posts()[0] && B.posts()[0].b));
+    B.d.getElementById("payX").click();
+
+    /* the Worker cannot be reached, or sends a number that is not 10 to 15 digits: the same, no number */
+    const D = await openPage({ down: true, numbers: { maybank: { number: NUMBER } } }), E = await openPage({ numbers: { maybank: { number: "12345678" } } });
+    D.open(); D.pick("maybank"); E.open(); E.pick("maybank");
+    ok(!D.d.getElementById("payAcctNo") && kind(D.go()) === "A" && !!D.d.getElementById("payReturn") && !E.d.getElementById("payAcctNo") && kind(E.go()) === "A" && !!E.d.getElementById("payReturn"),
+      "with the Worker unreachable, or a number the page will not draw, the sheet shows no number and falls back to the link and I am back: " + JSON.stringify([kind(D.go()), kind(E.go())]));
+    await D.work.quiet();
+    const askedDown = D.asked();
+    D.d.getElementById("payX").click(); E.d.getElementById("payX").click();
+    /* and an answer that did not come is asked for again at the next open, so the number appears once the Worker is back */
+    D.up(); D.open(); await until(() => D.asked() > askedDown, 60); await D.work.quiet(); D.pick("maybank");
+    ok(askedDown >= 1 && D.asked() === askedDown + 1 && !!D.d.getElementById("payAcctNo") && tx(D.go()) === "I have paid",
+      "a failed ask is made again at the next open, and the number shows once the Worker answers: " + JSON.stringify([askedDown, D.asked(), !!D.d.getElementById("payAcctNo")]));
+    D.d.getElementById("payX").click();
+
+    /* Scan a code: the bank's number is not shown, whatever is filed */
+    const F = await openPage({ numbers: { maybank: { number: NUMBER } } });
+    F.open(); F.way("qr"); F.pick("maybank");
+    const scanTiles = [...F.d.querySelectorAll('#payInto input[name="payInto"]')].map((r) => r.value);
+    ok(!F.d.getElementById("payAcctNo") && !new RegExp(NUMBER.slice(0, 8)).test(F.d.getElementById("paySheet").textContent.replace(/\s/g, "")) && kind(F.go()) === "A" && tx(F.go()) === "Show the code"
+      && F.go().getAttribute("href") === payHref("maybank", "qr", 303, UN) && !!F.d.getElementById("payReturn") && !scanTiles.includes("wise") && scanTiles.includes("maybank"),
+      "on Scan a code the tiles are the accounts with a code, no number is shown, and the filled pill is the link with I am back beside it: " + JSON.stringify([kind(F.go()), tx(F.go()), scanTiles.length]));
+    F.d.getElementById("payReturn").click();
+    ok(tx(F.d.querySelector("#payBody .paycheck h3")) === "Did you send RM 303.00?" && F.d.getElementById("payBody").textContent.indexOf("code") >= 0, "and I am back asks the question there too");
+    F.d.getElementById("payX").click();
+
+    /* What this pays stays as they left it across a redraw, and the numbers are asked once a visit */
+    const G = await openPage({ numbers: { maybank: { number: NUMBER } } });
+    G.open();
+    let toggled = false; G.d.getElementById("payWhat").addEventListener("toggle", () => { toggled = true; });
+    G.d.getElementById("payWhat").querySelector("summary").click();
+    await until(() => toggled, 60);
+    G.pick("maybank");
+    const kept2 = G.d.getElementById("payWhat");
+    G.d.getElementById("payX").click(); G.open(); G.d.getElementById("payX").click(); G.open();
+    ok(!!kept2 && kept2.open && !G.d.getElementById("payWhat").open && G.asked() === 1,
+      "What this pays stays open across a redraw of the sheet and opens shut with the sheet, and across three openings the numbers were asked once: " + JSON.stringify([kept2 && kept2.open, G.d.getElementById("payWhat").open, G.asked()]));
+
+    /* his read-only view of an account asks nothing, on the page his route spliced in */
+    const ow = await ownerView();
+    ok(ow.opened && ow.calls.some((c) => /^GET \/all\/orders\//.test(c)) && !ow.calls.some((c) => c.includes("/pay/accounts")) && !ow.payNow,
+      "his read-only view signs in with no session and asks for no account numbers, and has no Pay: " + JSON.stringify(ow.calls));
+  } finally { for (const w of wins) { try { w.close(); } catch (e) { /* jsdom */ } } }
+
+  /* the owner's page: a master sign-in is a view, no session, the orders from his own route */
+  async function ownerView() {
+    const ck = await CR.contentKey("probe-secret", UN), calls = [];
+    const body = { ok: true, byMaster: true, session: "", assoc: false, wrapMaster: await CR.wrapKey("fixture-master", ck),
+      env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>S</p>" }] })) };
+    const dom = new JSDOM(landingPage("", "n7b-owner", { master: "fixture-master", accounts: [{ code: "CX1-ZED", username: UN }] }), {
+      url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
+      beforeParse(w) {
+        Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true });
+        w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder; w.scrollTo = () => {};
+        w.fetch = async (p, init) => { calls.push(((init && init.method) || "GET") + " " + p); const j = p === "/open" ? body : { ok: true, orders: [], claims: [], refs: [] }; return { ok: true, status: 200, json: async () => j }; };
+      } });
+    try {
+      const d = dom.window.document, work = pageWork(dom.window);
+      d.getElementById("un").value = UN; d.getElementById("pw").value = "fixture-master";
+      d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await until(() => calls.some((c) => /^GET \/all\/orders\//.test(c)));
+      await work.quiet();
+      return { calls, opened: calls.includes("POST /open"), payNow: !!d.getElementById("payNow") };
+    } finally { dom.window.close(); }
+  }
 }
