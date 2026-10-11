@@ -80,6 +80,9 @@ export async function run({ ok, pageWork }) {
       && J(rb.map((b) => [b.dataset.look, b.textContent, b.getAttribute("data-act"), b.type])) === J([["night", EN["look.night"], "look.night", "button"], ["tide", EN["look.tide"], "look.tide", "button"]])
       && row.textContent.includes(EN["look.h"]),
       "its section holds the customer's Look row, Night and Tide, each button with its act, once on the page, named Look: " + J(rb.map((b) => b.getAttribute("data-act"))));
+    const lead = sec && sec.querySelector("p.lead");
+    ok(lead && lead.textContent === "Night or Tide for Salt Account on this device. Kept on this device; the Desk keeps its own.",
+      "its lead says the choice is kept on this device and that the Desk keeps its own, not the Counter, whose pages on this device read the same key: " + J(lead && lead.textContent));
     const grp = row && row.querySelector('[role="group"]');
     ok(grp && p.d.getElementById(grp.getAttribute("aria-labelledby")).textContent.trim() === EN["look.h"], "the pair is grouped and named Look");
     const sh = p.d.getElementById("lookSheet"), tiles = sh ? [...sh.querySelectorAll("[data-look]")] : [];

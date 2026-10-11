@@ -549,9 +549,10 @@ their next sign-in and can change it under Account.
 
 ### His look: Salt Account chooses its own Night or Tide (11 Oct 2026, his decision)
 
-The same two themes, kept per device and **Tide until one is chosen**, with a choice of its own: `salt-look` in localStorage on the
-Counter's origin, which is also the origin of `/all`, so it is separate from the Desk's (another origin). The customer's pages are on
-that origin too and read the same key: a browser that uses both wears one choice on both, there being no second key.
+The same two themes, kept per device and **Tide until one is chosen**, chosen on Salt Account itself: `salt-look` in localStorage on
+the Counter's origin, which is also the origin of `/all`. It is apart from the Desk's (another origin) and shared with the Counter's
+own pages on that device: the customer's pages (View as them, a test account) read the same key, so a browser that uses both wears
+one choice on both, there being no second key.
 
 - **The Sheet.** The first time Salt Account opens on a device whose store is readable and holds no choice, the customer's Sheet
   (`lookSheet(true)` in `stmt/page.js`; the same recipe, markup and script, with the acts below and one line that names Shop, "You can

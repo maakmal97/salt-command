@@ -327,8 +327,9 @@ picker stay retired (the suite fails if any returns): nothing keys on a clock, t
 His decision, final: the same two themes on the customer's site (`stmt/`), the same rule as the Desk. Night is the design system's
 `:root` and Tide its `:root[data-theme="tide"]`, kept per device in localStorage `salt-look`, Tide until a device chooses. Salt
 Account (the owner's `/all`) takes the head script below and so opens in the stored theme; since the same day it also has the choice
-Sheet on a first open and a Look row in Shop > This device, drawn by the same `lookSheet(true)` and `lookRow(true)` and kept in its
-own origin's `salt-look` (`docs/STATEMENTS.md`, "His look"). How a customer chooses is there too ("The customer's look").
+Sheet on a first open and a Look row in Shop > This device, drawn by the same `lookSheet(true)` and `lookRow(true)` and kept in the Counter
+origin's `salt-look`, shared with the Counter's pages on that device and apart from the Desk's (`docs/STATEMENTS.md`, "His look"). How a
+customer chooses is there too ("The customer's look").
 
 - **Tokens.** `tools/stmt-style.mjs` `saltTokens()` returns the design system's `:root` and `:root[data-theme="tide"]` blocks, and
   `--sync` writes both into `stmt/statement-css.js`; `--check` is in the gate. The Counter carries no Tide-only rule beyond the

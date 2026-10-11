@@ -1223,10 +1223,10 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead">One still notice on every customer account. Set wakes their phones; clear does not.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
-        /* 11 Oct 2026, his word: Salt Account has its own Night or Tide, chosen on this device (its origin's localStorage salt-look,
-           apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
+        /* 11 Oct 2026, his word: Salt Account has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
+           shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
         + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle">This device</h2>'
-        + '<p class="lead">Night or Tide for Salt Account on this device. It is kept here only; the Desk and the Counter keep their own.</p>'
+        + '<p class="lead">Night or Tide for Salt Account on this device. Kept on this device; the Desk keeps its own.</p>'
         + lookRow(true) + "</section>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
@@ -2569,8 +2569,8 @@ const CLIENT_JS = `
      first time a signed-in page opens on a device that has kept nothing, a Sheet asks (lookAsk, from enter): choosing keeps it and
      closes the Sheet, and closing it any other way keeps Tide and stores nothing, so the next open asks again. A store that cannot
      be read is never asked, because the answer could not be kept. His page asks once when it opens, on the same terms (stmt/owner.js
-     calls lookAsk with own set; landingPage draws its Sheet and its row in Shop > This device, and its choice is kept in its own
-     origin's store), and a read-only view of an account on it asks nothing. A test account's sealed bundle says look:'asked', so it
+     calls lookAsk with own set; landingPage draws its Sheet and its row in Shop > This device, and its choice is kept in the Counter
+     origin's store, shared with the customer's pages on that device), and a read-only view of an account on it asks nothing. A test account's sealed bundle says look:'asked', so it
      asks at every sign-in and the Sheet can be tried again whatever the device holds. Every read and write of the store is guarded. */
   var LOOK_KEY='salt-look', lookAsked=false, lookBack=null,
       lookSheetEl=document.getElementById('lookSheet'), lookScrim=document.getElementById('lookScrim'), lookRow=document.getElementById('lookRow');
