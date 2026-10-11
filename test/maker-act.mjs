@@ -105,9 +105,14 @@ const links = () => [
   link("r1", { by: U1, approved: true, revoked: true, level: "Gold", tier: 2 }), link("o1", { label: "A shop", tier: 2, opens: 2, last: ISO })
 ];
 
-/* hash opens the page at an address; review changes what the review answers, for a test that wants other orders than the busy day's */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null }) {
-  const posts = [], timers = [], store = new Map();
+/* hash opens the page at an address; review, claims, threads, hours, bulletin and sheet change what each answers (each a function of the answer), for a test that wants
+   other orders than the busy day's (links is the guest links). The page's intervals are kept, so a test fires the 30-second read itself; hold(route) keeps the answer to the
+   next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
+   that fail to be reached; lapse(true) answers every read 401, as Access does when his sign-in has ended. */
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [] }) {
+  const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [];
+  const hold = (route) => { let release; gates.set(route, new Promise((r) => { release = r; })); return () => release(); };
+  const via = (fn) => fn || ((j) => j);
   const ck = await C.contentKey("maker-act-secret", U1);
   const list = { at: ISO, week: { monday: "2026-10-05", label: "This week" }, soon: [], digest: "maker-act-list",
     products: [{ product: "salt", unit: "unit", basis: "tier", sizes: [{ q: 1, price: 100 }, { q: 5, price: 450 }] }] };
@@ -116,8 +121,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
   const ok200 = (value) => ({ ok: true, status: 200, json: async () => value });
   const answer = (route, init) => {
     if (route === "/open") return open;
-    if (route === "/all/sheet") return { ok: true, at: ISO, issue: "2026-10-01", accounts: sheet(), desk: { n: 2, at: ISO, moved: false }, stranger: "Silver" };
-    if (route === "/all/refs") return { ok: true, refs: links(), tiers: ["Ambassador", "Platinum", "Gold", "Silver", "Bronze"] };
+    if (route === "/all/sheet") return via(sheetAnswer)({ ok: true, at: ISO, issue: "2026-10-01", accounts: sheet(), desk: { n: 2, at: ISO, moved: false }, stranger: "Silver" });
+    if (route === "/all/refs") return via(linksAnswer)({ ok: true, refs: links(), tiers: ["Ambassador", "Platinum", "Gold", "Silver", "Bronze"] });
     if (route.startsWith("/all/account/")) return { ok: true, log: [{ how: "link", at: ISO, where: "An iPhone" }],
       devices: [{ id: "dev-1", label: "An iPhone", kept: true, at: ISO, last: ISO }] };
     if (route.startsWith("/all/signin/")) return { ok: true, msg: "Your link", url: "https://example.test/s/abc" };
@@ -131,17 +136,17 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       floor: 150, margin: { rm: 50, pct: 25 }, cost: { total: 150 }, usual: { rate: 100 }, flags: [], row: { qty: 2, total: 200 } };
     if (route === "/all/maker/inputs") return { ok: true, products: ["salt", "oil"], catalog: catalog() };
     if (route === "/all/maker/offsets") return { ok: true, offers: [{ code: "AX1-ZED", units: 1, rm: 100, saleDate: "2026-10-01", rid: "off-1" }] };
-    if (route === "/all/maker/claims") return { ok: true, claims: [{ id: "c-1", u: U1, amount: 50, state: "waiting", slip: "s-1" },
-      { id: "c-2", u: U1, amount: 20, state: "waiting" }] };
-    if (route === "/all/maker/threads") return { ok: true, threads: [{ u: U1, msgs: [{ by: "customer", at: ISO, text: "Hello" }], quiet: null }] };
-    if (route === "/all/maker/bulletin") return { ok: true, lines: ["Open late"] };
+    if (route === "/all/maker/claims") return via(claims)({ ok: true, claims: [{ id: "c-1", u: U1, amount: 50, state: "waiting", slip: "s-1" },
+      { id: "c-2", u: U1, amount: 20, state: "waiting" }] });
+    if (route === "/all/maker/threads") return via(threads)({ ok: true, threads: [{ u: U1, msgs: [{ by: "customer", at: ISO, text: "Hello" }], quiet: null }] });
+    if (route === "/all/maker/bulletin") return via(bulletin)({ ok: true, lines: ["Open late"] });
     if (route === "/all/maker/pools") return { ok: true, pools: [{ id: "p-1", product: "salt", q: 1, target: 10, unitsIn: 3, joins: [1], state: "open", closeLeft: [] },
       { id: "p-2", product: "salt", q: 1, target: 10, unitsIn: 10, joins: [1], state: "closed", closeLeft: [{ id: "o-9", why: "No stock" }] }] };
-    if (route === "/all/maker/hours") return { ok: true, config: { schedule: { days: [null, { open: "09:00", close: "17:00" }, null, null, null, null, null] }, manual: null },
-      status: { open: true, source: "schedule" } };
+    if (route === "/all/maker/hours") return via(hours)({ ok: true, config: { schedule: { days: [null, { open: "09:00", close: "17:00" }, null, null, null, null, null] }, manual: null },
+      status: { open: true, source: "schedule" } });
     return { ok: true, accounts: [], refs: [], tiers: [], claims: [], threads: [], pools: [], lines: [] };
   };
-  let failCash = false;
+  let failCash = false, lapsed = false;
   const dom = new JSDOM(landingPage("", "maker-act-nonce", { master: "fixture-master", accounts: sheet().filter((a) => !a.test) }), {
     url: "https://counter.fixture.test/all" + hash, runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(w) {
@@ -149,7 +154,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder; w.scrollTo = () => {}; w.confirm = () => true;
       w.setTimeout = (f, ms) => { timers.push({ f, ms, off: false }); return timers.length; };
       w.clearTimeout = (id) => { if (timers[id - 1]) timers[id - 1].off = true; };
-      w.setInterval = () => 0; w.clearInterval = () => {};
+      w.setInterval = (f, ms) => { intervals.push({ f, ms, off: false }); return intervals.length; };
+      w.clearInterval = (id) => { if (intervals[id - 1]) intervals[id - 1].off = true; };
       /* a retained loan and two kept quick replies on this device, so the page draws the retained-input section and the replies */
       w.localStorage.setItem("saltMakerPending:/all/maker/inputs/loan", JSON.stringify({ path: "/all/maker/inputs/loan",
         body: { at: ISO, form: "cash", direction: "in", code: "CX1-ZED", date: "2026-10-01", amount: 5 } }));
@@ -159,7 +165,12 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
         if (init && init.method === "POST") posts.push({ route, body: init.body ? JSON.parse(init.body) : null });
         if (failCash && route.endsWith("/cash")) throw new Error("fixture: the answer was lost");
         if (failInputs && route === "/all/maker/inputs") throw new Error("fixture: the Desk could not be reached");
-        return ok200(answer(route, init));
+        if (fail.has(route)) throw new Error("fixture: the Desk could not be reached");
+        if (!(init && init.method === "POST")) reads.push(route);
+        if (lapsed) return { ok: false, status: 401, type: "basic", json: async () => ({}) };
+        const body = answer(route, init);
+        if (gates.has(route)) { const held = gates.get(route); gates.delete(route); await held; }
+        return ok200(body);
       };
     }
   });
@@ -167,7 +178,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
   const card = (key) => [...d.querySelectorAll("[data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === key);
   const click = async (control) => { control.click(); await work.quiet(); };
   const type = (control, value) => { control.value = value; control.dispatchEvent(new w.Event("input", { bubbles: true })); control.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  return { dom, w, d, work, posts, timers, card, click, type, failCash: (v) => { failCash = v; } };
+  return { dom, w, d, work, posts, timers, intervals, hold, fail, reads, card, click, type, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
 }
 
 /* every stage, every card and every form drawn once: the page a person would have in front of them on the busiest day */

@@ -265,6 +265,8 @@ const assets = {
 };
 const mkEnv = (kv, requireAccess = "0") => ({ SALT_QUEUE: kv, ASSETS: assets, REQUIRE_ACCESS: requireAccess });
 const req = (path, opts = {}) => new Request("https://salt-command.example" + path, opts);
+/* PHASE 1b: Needs you's cards are the Action recipe; their words are the body's, the kind word and the age being the recipe's */
+const needText = (c) => (c.querySelector(".salt-action__body") || c).textContent;
 const postQ = (body, extraHeaders = {}) => req("/queue", {
   method: "POST", headers: { "content-type": "application/json", ...extraHeaders }, body: JSON.stringify(body)
 });
@@ -19667,12 +19669,12 @@ await (async () => {
     const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
     ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
       "his page opens on Needs you");
-    ok(await until(() => /4 things/.test(D.getElementById("nCount").textContent)),
-      "four things wait on him, and the line says so: " + D.getElementById("nCount").textContent);
-    ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["l:" + lid, "k:" + uL, "n:" + uN, "s"].join(","),
-      "a card each, in the order link, locked out, no account, to send: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
-    ok(cards().every((x) => x.classList.contains("salt-approve") && x.querySelector(".salt-approve__head .salt-approve__party")),
-      "each drawn with the system's Approve card");
+    ok(await until(() => /^1 now, 3 soon, as at [0-9]{2}:[0-9]{2}[.]/.test(D.getElementById("nCount").textContent)),
+      "one waits now and three soon, and the line says so: " + D.getElementById("nCount").textContent);
+    ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["k:" + uL, "s", "l:" + lid, "n:" + uN].join(","),
+      "a card each, Now before Soon and the oldest first: the locked account, then to send, the link, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
+    ok(cards().every((x) => x.classList.contains("salt-action") && x.querySelector(".salt-action__kind") && x.querySelector(".need-who")),
+      "each drawn on the system's Action recipe, with its kind word and who");
 
     /* the waiting link: Approve on the card moves it, and the card says so where he tapped */
     const lc = card("l:" + lid);
@@ -19680,12 +19682,12 @@ await (async () => {
       "the link's card names the associate by code and carries the tier it quotes, Approve and Decline");
     btn(lc, "Approve").click();
     ok(await until(async () => JSON.parse(await kv.get("g:" + lid)).approved === true) && await until(() => /Approved[.] It opens now/.test((card("l:" + lid) || {}).textContent || ""))
-      && await until(() => /3 things/.test(D.getElementById("nCount").textContent)),
+      && await until(() => /^1 now, 2 soon/.test(D.getElementById("nCount").textContent)),
       "Approve on the card opens the link, the card says so and the count drops: " + JSON.stringify([(card("l:" + lid) || {}).textContent, D.getElementById("nCount").textContent]));
 
     /* the account refused at an address: why, and a link in two taps, so the share never waits on the making */
     const kc = card("k:" + uL);
-    ok(/refused at one address/.test(kc.querySelector(".salt-approve__entry").textContent) && !/locked/i.test(kc.textContent)
+    ok(/refused at one address/.test(kc.querySelector(".need-what").textContent) && !/locked out/i.test(kc.querySelector(".salt-action__body").textContent)
       && /Ten wrong passwords from one address, refused there until \d\d:\d\d[.] If it was them, a sign-in link lets them in[.] Last got in by link, 02 Sep 2026[.]/.test(kc.textContent),
       "the card says an address is refused, never that the customer is locked out, with when it opens and how they last got in: " + kc.textContent);
     const sl = btn(kc, "Send a sign-in link");
@@ -19715,7 +19717,7 @@ await (async () => {
 
     /* the accounts nobody has been sent */
     const sc = card("s");
-    ok(/^1 to send/.test(sc.textContent) && /CX2-FR has an account and no sign-in yet[.]/.test(sc.textContent) && !/CX1-AS|CX0-LK/.test(sc.textContent),
+    ok(/^1 to send/.test(needText(sc)) && /CX2-FR has an account and no sign-in yet[.]/.test(sc.textContent) && !/CX1-AS|CX0-LK/.test(sc.textContent),
       "the to-send card names only the account with no tick and no open: " + sc.textContent);
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -19774,8 +19776,8 @@ await (async () => {
       "five places, Needs you, Orders, Customers, Record and Shop (Maker is retired on screen), in the App bar and Desk rail: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
     const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
     ok(current() === "needs", "Needs you is the place he opens on: " + current());
-    ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
-      "and it carries the count of what waits there on both bars: " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
+    ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "1")),
+      "and it carries the count of what is Now there on both bars, the refused account (the ID with no account and the account not sent are Soon): " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
 
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const rows = () => [...D.querySelectorAll("#rlist [data-u]")];
@@ -19942,30 +19944,30 @@ await (async () => {
     const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
     const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
     const minted = async () => (await kv.list({ prefix: "ot:" })).keys.length;
-    ok(await until(() => btn("Send them in turn")) && /^3 to send/.test(card().textContent), "three accounts wait to be sent, and the card offers Send them in turn");
+    ok(await until(() => btn("Send them in turn")) && /^3 to send/.test(needText(card())), "three accounts wait to be sent, and the card offers Send them in turn");
     btn("Send them in turn").click();
-    ok(await until(() => btn("Share") && !btn("Share").disabled) && /^1 of 3/.test(card().textContent) && /CX0-A1: their link is made/.test(card().textContent)
+    ok(await until(() => btn("Share") && !btn("Share").disabled) && /^1 of 3/.test(needText(card())) && /CX0-A1: their link is made/.test(needText(card()))
       && (await minted()) === 1 && shared.length === 0,
       "the first turn opens with its link already made and nothing shared: " + JSON.stringify({ text: card().textContent.slice(0, 120), minted: await minted() }));
     ok(btn("Share").classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1, "Share is the one filled control");
     btn("Share").click();
-    ok(await until(async () => (await ticked(us[0])) && /^2 of 3/.test(card().textContent)) && shared.length === 1 && /[/]s[/]/.test(shared[0]),
+    ok(await until(async () => (await ticked(us[0])) && /^2 of 3/.test(needText(card()))) && shared.length === 1 && /[/]s[/]/.test(shared[0]),
       "Share hands over their sign-in link and ticks them sent before the next turn opens");
     ok([...card().querySelectorAll(".salt-status")].some((x) => x.textContent === "CX0-A1, sent"), "and the card shows them ticked");
     await until(() => btn("Share") && !btn("Share").disabled);
     share.refuse = true;
     btn("Share").click();
-    ok(await until(() => /Not shared/.test(card().textContent)) && !(await ticked(us[1])) && /^2 of 3/.test(card().textContent),
+    ok(await until(() => /Not shared/.test(needText(card()))) && !(await ticked(us[1])) && /^2 of 3/.test(needText(card())),
       "a share he closes ticks nothing and keeps the turn: " + card().textContent.slice(0, 160));
     share.refuse = false;
     btn("Skip").click();
-    ok(await until(() => /^3 of 3/.test(card().textContent) && btn("Share") && !btn("Share").disabled), "Skip moves to the next with its own link made");
+    ok(await until(() => /^3 of 3/.test(needText(card())) && btn("Share") && !btn("Share").disabled), "Skip moves to the next with its own link made");
     btn("Share").click();
-    ok(await until(() => /^All done/.test(card().textContent)) && await ticked(us[2]) && !(await ticked(us[1])) && /2 of 3 sent/.test(card().textContent),
+    ok(await until(() => /^All done/.test(needText(card()))) && await ticked(us[2]) && !(await ticked(us[1])) && /2 of 3 sent/.test(needText(card())),
       "the last is shared and ticked, the skipped one is not, and the card says so: " + card().textContent.slice(0, 160));
     ok((D.getElementById("scount") || {}).textContent === "2 of 3 sent", "Accounts counts the ticks as they land: " + (D.getElementById("scount") || {}).textContent);
     btn("Done").click();
-    ok(await until(() => /^1 to send/.test(card().textContent) && /CX1-B2 has an account/.test(card().textContent)),
+    ok(await until(() => /^1 to send/.test(needText(card())) && /CX1-B2 has an account/.test(needText(card()))),
       "and Done leaves the skipped one waiting on Needs you");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -20148,9 +20150,10 @@ await (async () => {
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
-    const line = win.document.getElementById("nDesk");
-    ok(await until(() => !line.hidden && /^1 thing waits on the desk, as at [0-9]{2}:[0-9]{2}[.]$/.test(line.textContent)) && !line.querySelector("a") && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(line.textContent),
-      "Needs you says one thing waits on the desk and when the desk counted it, with no link and no name: " + JSON.stringify(line.textContent));
+    const watch = () => win.document.querySelector('#nlist [data-need="w:desk"]'), line = () => watch() && watch().querySelector(".salt-action__why");
+    ok(await until(() => line() && /^1 thing waits on the desk, as at [0-9]{2}:[0-9]{2}[.]$/.test(line().textContent)) && !watch().querySelector("a") && !watch().querySelector("button")
+      && watch().getAttribute("data-sev") === "watch" && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(watch().textContent),
+      "Needs you says one thing waits on the desk and when the desk counted it, a Watch card with no link, no action and no name: " + JSON.stringify(watch() && watch().textContent));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 
   /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
@@ -20258,7 +20261,7 @@ await (async () => {
     ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
     /* two taps back to back on the one button */
     const s1 = btn("Share"); s1.click(); s1.click();
-    ok(await until(async () => (await ticked(us[0])) && /^2 of 3/.test(card().textContent) && btn("Share") && !btn("Share").disabled)
+    ok(await until(async () => (await ticked(us[0])) && /^2 of 3/.test(needText(card())) && btn("Share") && !btn("Share").disabled)
       && shared.length === 1 && /CX1-B2: their link is made/.test(card().textContent),
       "two taps on Share share the first account once and open the second: " + JSON.stringify({ shared: shared.length, text: card().textContent.slice(0, 100) }));
     /* the tick held in flight: the buttons drawn then are off, and taps on the ones drawn before do nothing */
@@ -20270,11 +20273,11 @@ await (async () => {
     s2.click(); k2.click();
     await new Promise((r) => setTimeout(r, 60));
     hold.open(); hold.gate = null;
-    ok(await until(async () => (await ticked(us[1])) && /^3 of 3/.test(card().textContent) && btn("Share") && !btn("Share").disabled)
+    ok(await until(async () => (await ticked(us[1])) && /^3 of 3/.test(needText(card())) && btn("Share") && !btn("Share").disabled)
       && shared.length === 2 && /CX2-C3: their link is made/.test(card().textContent),
       "and once it lands the second is ticked and the third opens, none shared twice and none skipped: " + JSON.stringify({ shared: shared.length, text: card().textContent.slice(0, 100) }));
     btn("Share").click();
-    ok(await until(() => /^All done/.test(card().textContent)) && await ticked(us[2]) && /3 of 3 sent/.test(card().textContent)
+    ok(await until(() => /^All done/.test(needText(card()))) && await ticked(us[2]) && /3 of 3 sent/.test(needText(card()))
       && /Each has their link, and each is ticked sent[.]/.test(card().textContent) && shared.length === 3,
       "the end says all three are sent only because all three are ticked: " + card().textContent.slice(0, 160));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -20330,11 +20333,11 @@ await (async () => {
     ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
     btn("Share").click();
     const note = () => (card().querySelector(".nnote") || {}).textContent || "";
-    ok(await until(() => /^2 of 2/.test(card().textContent) && btn("Share") && !btn("Share").disabled) && shared.length === 1
-      && /^CX0-A1 was shared, but the tick did not save: that is not this issue/.test(note()) && /0 of 2 sent/.test(card().textContent),
+    ok(await until(() => /^2 of 2/.test(needText(card())) && btn("Share") && !btn("Share").disabled) && shared.length === 1
+      && /^CX0-A1 was shared, but the tick did not save: that is not this issue/.test(note()) && /0 of 2 sent/.test(needText(card())),
       "the next turn's card says which account was shared without a tick, and why: " + JSON.stringify(note()));
     btn("Skip").click();
-    ok(await until(() => /^All done/.test(card().textContent)) && note() === "", "and a step of his own clears it");
+    ok(await until(() => /^All done/.test(needText(card()))) && note() === "", "and a step of his own clears it");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix R7: with no share sheet, Send them in turn copies the message and ticks the account only on his Sent it");
@@ -20390,11 +20393,11 @@ await (async () => {
     ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
     btn("Share").click();
     ok(await until(() => btn("Sent it") && !btn("Sent it").disabled) && copied.length === 1 && /[/]s[/]/.test(copied[0])
-      && !(await ticked(us[0])) && /^1 of 2/.test(card().textContent) && /CX0-A1: their message is copied[.]/.test(card().textContent)
+      && !(await ticked(us[0])) && /^1 of 2/.test(needText(card())) && /CX0-A1: their message is copied[.]/.test(needText(card()))
       && /then tap Sent it/.test(card().querySelector(".nnote").textContent),
       "Share copies the message, ticks nothing and keeps the turn, offering Sent it: " + card().textContent.slice(0, 160));
     btn("Sent it").click();
-    ok(await until(async () => (await ticked(us[0])) && /^2 of 2/.test(card().textContent) && btn("Share") && !btn("Share").disabled) && copied.length === 1,
+    ok(await until(async () => (await ticked(us[0])) && /^2 of 2/.test(needText(card())) && btn("Share") && !btn("Share").disabled) && copied.length === 1,
       "his Sent it ticks the account and opens the next turn on Share: " + card().textContent.slice(0, 120));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -21019,7 +21022,7 @@ await (async () => {
     } }).window;
     const D = win.document, pane = D.getElementById("nopen");
     const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
-    const party = (key) => card(key) && card(key).querySelector(".salt-approve__head .salt-approve__party");
+    const party = (key) => card(key) && card(key).querySelector('[data-act="need.open"]');
     ok(await until(() => card("l:" + lid) && card("k:" + uL) && card("n:" + uN) && !pane.hidden),
       "on a desk, Needs you opens with an account open beside it");
     /* his decision 7 of 11 Oct 2026: LOOKING MAKES NO LINK. The first card about an account is drawn on load, and its story read is the
@@ -21030,12 +21033,13 @@ await (async () => {
     ok(D.getElementById("mHome").classList.contains("open") && /CX0-LK/.test((pane.querySelector(".scard .srow") || {}).textContent || "")
       && card("k:" + uL).getAttribute("aria-current") === "true",
       "the first card about an account, and that card is marked the open one: " + ((pane.querySelector(".scard .srow") || {}).textContent));
-    ok(party("k:" + uL).tagName === "BUTTON" && party("n:" + uN).tagName === "BUTTON" && party("l:" + lid).tagName === "SPAN",
-      "a card about an account carries its code as a button; the link card's associate does not");
+    ok(party("k:" + uL).tagName === "BUTTON" && party("n:" + uN).tagName === "BUTTON" && party("l:" + lid).tagName === "BUTTON"
+      && card("k:" + uL).hasAttribute("data-u") && card("n:" + uN).hasAttribute("data-u") && !card("l:" + lid).hasAttribute("data-u"),
+    "every card carries Open as a button, and a card about an account is the one the pane beside the list is drawn from; the link card's is not");
     party("n:" + uN).click();
     ok(/CX3-NO/.test(pane.querySelector(".scard .srow").textContent) && /Made at the next laptop update/.test(pane.textContent)
       && card("n:" + uN).getAttribute("aria-current") === "true" && !card("k:" + uL).hasAttribute("aria-current"),
-      "a tap on another card's code opens that account beside the list instead: " + pane.querySelector(".scard .srow").textContent);
+      "a tap on another card's Open opens that account beside the list instead: " + pane.querySelector(".scard .srow").textContent);
     const open = pane.querySelector(".scard");
     [...card("l:" + lid).querySelectorAll("button")].find((b) => b.textContent === "Approve").click();
     ok(await until(() => /Approved[.]/.test(card("l:" + lid).textContent)) && pane.querySelector(".scard") === open,
@@ -21045,7 +21049,7 @@ await (async () => {
     party("k:" + uL).click();
     ok(D.getElementById("mHome").hidden && !D.getElementById("oAccts").hidden && !D.getElementById("aopen").hidden
       && /CX0-LK/.test(D.querySelector("#aopen .scard .srow").textContent) && !!D.querySelector('#aopen button[data-back="accounts"]'),
-      "on a phone a card's code opens that account on Accounts, with the way back");
+      "on a phone a card's Open opens that account on Accounts, with the way back");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 9.3: an account opens with no link made, its first tap makes one and its second shares it inside the tap, and says how they got in and on what kind of device, never an address");
@@ -22271,9 +22275,9 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
     } }).window;
     try {
-      const el = win.document.getElementById("nDesk");
-      for (let i = 0; i < 200 && el.hidden; i++) await new Promise((r) => setTimeout(r, 20));
-      return el.textContent;
+      const el = () => win.document.querySelector('#nlist [data-need="w:desk"] .salt-action__why');
+      for (let i = 0; i < 200 && !el(); i++) await new Promise((r) => setTimeout(r, 20));
+      return el() ? el().textContent : "";
     } finally { win.close(); }
   };
   try {
@@ -53784,6 +53788,11 @@ await (async () => {
 section("Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)");
 await (async () => {
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 30 seconds");
+await (async () => {
+  await (await import("./admin-needs.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

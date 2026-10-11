@@ -80,8 +80,8 @@
  {
   "name": "Customers carries no count",
   "file": "stmt/owner.js",
-  "find": "setCount('customers', links.filter(waitingLink).length);",
-  "replace": "setCount('orders', links.filter(waitingLink).length);"
+  "find": "setCount('customers', makerThreads",
+  "replace": "setCount('orders', makerThreads"
  },
  {
   "name": "a part shows only what names it, not its place",
@@ -308,8 +308,8 @@
  {
   "name": "Needs you reads the threads",
   "file": "stmt/owner.js",
-  "find": "needs:function(){ drawNeeds(); },",
-  "replace": "needs:function(){ drawNeeds(); loadMakerThreads(false); },"
+  "find": "needs:function(){ drawNeeds(); readNeeds(); },",
+  "replace": "needs:function(){ drawNeeds(); readNeeds(); loadMakerThreads(false); },"
  },
  {
   "name": "entering a place does not read it again",
@@ -346,5 +346,17 @@
   "file": "stmt/page.js",
   "find": "'<div id=\"roster\" class=\"gate adm\">'",
   "replace": "'<div id=\"roster\" class=\"gate\">'"
+ },
+ {
+  "name": "a shared rule is moved under .adm (the customer's lead)",
+  "file": "stmt/page.js",
+  "find": ".gate p.lead{color:var(--salt-text-muted);",
+  "replace": ".adm p.lead{color:var(--salt-text-muted);"
+ },
+ {
+  "name": "a shared rule is moved under .adm (the panel's lead)",
+  "file": "stmt/page.js",
+  "find": ".panel p.lead{color:var(--salt-text-muted);",
+  "replace": ".adm .panel p.lead{color:var(--salt-text-muted);"
  }
 ]
