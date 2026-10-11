@@ -1,0 +1,104 @@
+[
+ {
+  "name": "This device is drawn after the statement",
+  "file": "stmt/page.js",
+  "find": "+ (owner ? \"\" : thisDevice())\n    + '<div class=\"acct__main\">'\n    + '<div id=\"stmtBack\" class=\"stmtback\" hidden><p id=\"stmtBackT\"></p>'\n    + wt(\"button\", 'type=\"button\" class=\"salt-ghost\" id=\"stmtBackGo\"', \"acct.back\") + \"</div>\"\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '<div id=\"stmtFoot\" class=\"stmtfoot\" hidden></div></div>'",
+  "replace": "+ '<div class=\"acct__main\">'\n    + '<div id=\"stmtBack\" class=\"stmtback\" hidden><p id=\"stmtBackT\"></p>'\n    + wt(\"button\", 'type=\"button\" class=\"salt-ghost\" id=\"stmtBackGo\"', \"acct.back\") + \"</div>\"\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '<div id=\"stmtFoot\" class=\"stmtfoot\" hidden></div></div>'\n    + (owner ? \"\" : thisDevice())"
+ },
+ {
+  "name": "Messages falls under This device",
+  "file": "stmt/page.js",
+  "find": "<div id=\"acct\" class=\"acct\"><div id=\"aThread\"></div>'\n    + (owner ? \"\" : thisDevice())",
+  "replace": "<div id=\"acct\" class=\"acct\">'\n    + (owner ? \"\" : thisDevice())\n    + '<div id=\"aThread\"></div>'"
+ },
+ {
+  "name": "Sign out falls to the foot of the card",
+  "file": "stmt/page.js",
+  "find": "+ wt(\"button\", 'type=\"button\" class=\"salt-ghost devout\" id=\"lock\" aria-live=\"polite\"', \"dev.out\")\n    + '<div id=\"devSlot\"></div>' + keepPage()",
+  "replace": "+ '<div id=\"devSlot\"></div>' + keepPage()\n    + wt(\"button\", 'type=\"button\" class=\"salt-ghost devout\" id=\"lock\" aria-live=\"polite\"', \"dev.out\")"
+ },
+ {
+  "name": "The install guide comes before the other devices",
+  "file": "stmt/page.js",
+  "find": "+ '<div id=\"devSlot\"></div>' + keepPage()",
+  "replace": "+ keepPage() + '<div id=\"devSlot\"></div>'"
+ },
+ {
+  "name": "The Look comes before the notifications",
+  "file": "stmt/page.js",
+  "find": "+ '<div id=\"devRows\" class=\"salt-ledger salt-ledger--plain\"></div>'\n    + lookRow()",
+  "replace": "+ lookRow()\n    + '<div id=\"devRows\" class=\"salt-ledger salt-ledger--plain\"></div>'"
+ },
+ {
+  "name": "The parts of Account have no gap",
+  "file": "stmt/page.js",
+  "find": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}",
+  "replace": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:0}"
+ },
+ {
+  "name": "A margin stands in for the gap",
+  "file": "stmt/page.js",
+  "find": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}",
+  "replace": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:0}\n.acct__main{margin-top:28px}"
+ },
+ {
+  "name": "Account is not a column",
+  "file": "stmt/page.js",
+  "find": ".acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}",
+  "replace": ".acct{max-width:620px;margin:0 auto;display:block;gap:28px}"
+ },
+ {
+  "name": "The install guide's heading is a page's first level again",
+  "file": "stmt/page.js",
+  "find": "wt(\"h3\", 'id=\"keepHead\"', \"keep.h\")",
+  "replace": "wt(\"h1\", 'id=\"keepHead\"', \"keep.h\")"
+ },
+ {
+  "name": "Sign out signs out on the first tap",
+  "file": "stmt/page.js",
+  "find": "if(lockArm){ lockRest(); logOut(); return; }",
+  "replace": "if(true){ lockRest(); logOut(); return; }"
+ },
+ {
+  "name": "A second tap does not sign out",
+  "file": "stmt/page.js",
+  "find": "if(lockArm){ lockRest(); logOut(); return; }",
+  "replace": "if(lockArm){ lockRest(); return; }"
+ },
+ {
+  "name": "The arm never lets go",
+  "file": "stmt/page.js",
+  "find": "lockArm=setTimeout(lockRest, LOCK_MS);",
+  "replace": "lockArm=1;"
+ },
+ {
+  "name": "The arm lets go but the words stay",
+  "file": "stmt/page.js",
+  "find": "if(!OWNER) setW(lockEl,'dev.out'); }",
+  "replace": " }"
+ },
+ {
+  "name": "The first tap says nothing",
+  "file": "stmt/page.js",
+  "find": "setW(lockEl,'dev.outAsk'); lockArm=",
+  "replace": "lockArm="
+ },
+ {
+  "name": "The words are not announced",
+  "file": "stmt/page.js",
+  "find": " id=\"lock\" aria-live=\"polite\"",
+  "replace": " id=\"lock\""
+ },
+ {
+  "name": "Sign out asks the browser first",
+  "file": "stmt/page.js",
+  "find": "setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);",
+  "replace": "try{ confirm('x'); }catch(e){} setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);"
+ },
+ {
+  "name": "His Back to accounts is armed like Sign out",
+  "file": "stmt/page.js",
+  "find": "if(OWNER){ logOut(); return; }",
+  "replace": ""
+ }
+]

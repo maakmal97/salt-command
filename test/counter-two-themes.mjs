@@ -214,7 +214,7 @@ export async function run({ ok }) {
     /* 5b. a visit asks once: signing out and in again in the same page does not ask a second time */
     const e4 = await open({});
     press(e4.w, "Escape");
-    e4.d.getElementById("lock").click();
+    e4.d.getElementById("lock").click(); e4.d.getElementById("lock").click();   /* a tap and a tap again */
     await wait(() => e4.d.getElementById("tabs").hidden && !e4.d.getElementById("gate").hidden);
     e4.d.getElementById("un").value = U; e4.d.getElementById("pw").value = PASS;
     e4.d.getElementById("f").dispatchEvent(new e4.w.Event("submit", { bubbles: true, cancelable: true }));
@@ -223,7 +223,7 @@ export async function run({ ok }) {
       `a visit asks once: after the Sheet was closed, signing out and in again in the same page does not ask again (${JSON.stringify(e4.state())})`);
     const e5 = await open({});
     ok(e5.state().sheet, "though a sign-out with the Sheet still open takes it down");
-    e5.d.getElementById("lock").click();
+    e5.d.getElementById("lock").click(); e5.d.getElementById("lock").click();
     await wait(() => e5.d.getElementById("tabs").hidden);
     ok(e5.d.getElementById("tabs").hidden && !e5.state().sheet && !e5.state().scrim, `so the door is never left under it (${JSON.stringify(e5.state())})`);
 

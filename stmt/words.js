@@ -201,6 +201,7 @@ export const EN = {
   "look.tide": "Tide",
   "look.note": "You can change this under Account.",
   "dev.out": "Sign out of this {dev}",
+  "dev.outAsk": "Tap again to sign out of this {dev}",
   "dev.another": "Sign in another device",
   "dev.scan": "On the other device, scan this with its camera to open Salt Counter, then type the code where it asks for one.",
   "dev.qrAlt": "A code that opens Salt Counter",

@@ -193,7 +193,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .btn.lnk{text-align:center;line-height:1.4}
 /* Optional install guide under This device; its steps draw the browser's own marks. */
 .keeppage{margin:20px 0 0;padding:0}
-.keeppage h1{margin:0 0 10px;font-size:var(--salt-text-2xl);line-height:1.15}
+/* the guide is a part of the compact This device card, so its heading is the card's own third level and not a page's first (11 Oct 2026) */
+.keeppage h3{margin:0 0 10px;font-family:var(--salt-font-display);font-size:var(--salt-text-lg);font-weight:600;line-height:1.2}
 .keeppage .kline{margin:14px 0 0}
 .keeppage b{color:var(--salt-text);font-weight:600}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
@@ -316,8 +317,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
 .mfnote:empty{display:none}
 /* S7 7.3: ACCOUNT. The month filter is the system's tab strip, every pill a 44px tap, placed on the list it filters;
-   the earlier statements close the statement; This device follows it, and stands beside it from 1080px */
-.acct{max-width:620px;margin:0 auto}
+   the earlier statements close the statement. 11 Oct 2026 (Phase 7d part 2, his yes): THE DEVICE COMES FIRST. Messages, then the
+   compact This device card, then the statement under a gap of its own (28px, a gap and never a margin, so a part that is not drawn
+   leaves none); from 1080px This device stands beside, as it did */
+.acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+#aThread:empty{display:none}
 .mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 
 .stmtback{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 18px}
@@ -325,15 +329,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .stmtfoot{margin:30px 0 0;padding-top:18px;border-top:1px solid var(--salt-line)}
 .stmtfoot .sub2{margin:6px 0 12px}
 .stmtissues{display:flex;flex-wrap:wrap;gap:8px}
-.devcard{margin:30px 0 0}
+.devcard{margin:0}
 .devcard .salt-ledger{margin-top:6px}
 .devcard .salt-ledger__row:last-child{border-bottom:0}
 .devcard .salt-ledger__label{flex:1 1 auto}
 .devcard .salt-ledger__flag .glyph{vertical-align:-0.3em;margin:0 3px}
 .devout{width:100%;margin-top:14px}
 @media (min-width:1080px){
-  .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;align-items:start}
-  .devcard{margin:0}
+  .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;row-gap:28px;align-items:start}
+  #aThread,.acct__main{grid-column:1}
+  .devcard{grid-column:2;grid-row:1 / span 2}
 }
 /* S6 6.2: To pay now, Home's first answer since S7 7.1, its parts on the plain Ledger list */
 .payhead[hidden]{display:none}
@@ -833,7 +838,7 @@ function replaceAsk() {
    the optional install guide carries an iPhone's sign-in across to the app's separate storage. */
 function keepPage() {
   return '<section id="keepCard" class="keeppage" aria-labelledby="keepHead" hidden>'
-    + wt("h1", 'id="keepHead"', "keep.h")
+    + wt("h3", 'id="keepHead"', "keep.h")
     + wt("p", 'class="lead" id="keepLead"', "keep.lead")
     + '<div id="keepIos" hidden><ol class="keepsteps">'
     + "<li>" + wt("span", "", "keep.s1", 22) + "</li>"
@@ -852,16 +857,18 @@ function keepPage() {
     + wt("p", 'class="kline" id="keepDroid" hidden', "keep.droid", 22)
     + "</section>";
 }
-/* S7 7.3: THIS DEVICE, in Account, ONE CARD: its notifications (drawDevice, where the bell's plain tap lands), the
-   optional Home Screen install guide, the account's phones and computers with Sign in another device and Sign out
-   other devices in #devSlot (S9 9.9, drawDev), and signing out of this one, the customer's one Log out (#lock). */
+/* S7 7.3: THIS DEVICE, in Account, ONE CARD: its notifications (drawDevice, where the bell's plain tap lands), the Look, signing
+   out of this one, the customer's one Log out (#lock), then the account's phones and computers with Sign in another device and
+   Sign out other devices in #devSlot (S9 9.9, drawDev) and the optional Home Screen install guide. 11 Oct 2026 (Phase 7d part 2):
+   the card sits above the statement, so what a device is asked for is first and Sign out is within a thumb of the top; every
+   control keeps its id, request and behaviour. Sign out is a tap and a tap again (the page's script, lockEl). */
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
     + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
     + lookRow()
+    + wt("button", 'type="button" class="salt-ghost devout" id="lock" aria-live="polite"', "dev.out")
     + '<div id="devSlot"></div>' + keepPage()
-    + wt("button", 'type="button" class="salt-ghost devout" id="lock"', "dev.out")
     + "</section>";
 }
 /* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
@@ -1357,15 +1364,17 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div></div>'
     /* PHASE 7A: the foot holding To pay now and its Pay, last in Home so it stays above the bar the whole way down (drawPayHead) */
     + '<div id="homeFoot" class="payfoot" hidden></div></div>'
-    /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
-       beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
-    + '<div id="pStmt" hidden><div id="acct" class="acct"><div class="acct__main"><div id="aThread"></div>'
+    /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
+       statement (its one month filter placed beside the list it filters, the earlier statements at its foot) under a gap of its
+       own; This device stands beside them from 1080px */
+    + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aThread"></div>'
+    + (owner ? "" : thisDevice())
+    + '<div class="acct__main">'
     + '<div id="stmtBack" class="stmtback" hidden><p id="stmtBackT"></p>'
     + wt("button", 'type="button" class="salt-ghost" id="stmtBackGo"', "acct.back") + "</div>"
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
     + '<div id="out"></div>'
     + '<div id="stmtFoot" class="stmtfoot" hidden></div></div>'
-    + (owner ? "" : thisDevice())
     + "</div></div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
@@ -2296,7 +2305,16 @@ const CLIENT_JS = `
     var reg=await navigator.serviceWorker.getRegistration();
     return reg&&reg.pushManager?await reg.pushManager.getSubscription():null;
   }
-  document.getElementById('lock').addEventListener('click', logOut);
+  /* 11 Oct 2026 (Phase 7d part 2, his yes): SIGN OUT IS A TAP AND A TAP AGAIN, on the one control and never the browser's confirm. The
+     first tap arms it and says so in its own words; a second inside LOCK_MS signs out exactly as it did (logOut); left alone the
+     arm lets go by itself and the words come back. His own way back to his list, which shares the id on his page, is a plain tap. */
+  var LOCK_MS=4000, lockEl=document.getElementById('lock'), lockArm=null;
+  function lockRest(){ if(lockArm){ clearTimeout(lockArm); lockArm=null; } if(!OWNER) setW(lockEl,'dev.out'); }
+  lockEl.addEventListener('click', function(){
+    if(OWNER){ logOut(); return; }
+    if(lockArm){ lockRest(); logOut(); return; }
+    setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);
+  });
   /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW, where the fifteen minutes had run out in
      silence. S3 3.5, HIS D1 OF 24 SEP 2026: IT REOPENS ITSELF FROM THE REMEMBERED PHONE. api() asks the phone's own
      memory for a fresh session, once, and repeats the request, so nobody is stranded on a page that looks alive.
