@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="decaa3d48e941ba6";
+var SALT_BUILD_ID="e22e08010f3769fe";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9339,7 +9339,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1071","d":"10 Oct 2026","t":"CANDY HANDOVER RECORDED FOR CI4-OKR'S ORDER OF 2 UNITS","n":["<b>ONE CORRECTION FOLDED.</b> It records that the 2 units of candy on s251 for CI4-OKR, RM120, were collected on 10 Oct 2026, preapproved by phone. Unusual: the row carries a trail of 2 steps, which the direct figure will no longer match; the correction is recorded beside them. No cash moves.","<b>INVENTORY.</b> The shelf rolls by 2 units of candy out to CI4-OKR. Salt stock is unchanged at 8.14 units, last counted on 3 Oct 2026, and the salt cost basis does not move."]}];
+const evolution=[{"v":"v1072","d":"11 Oct 2026","t":"THE DESK WEARS NIGHT OR TIDE, CHOSEN ON EACH DEVICE","n":["<b>TWO THEMES, HIS WORD OF 11 OCT 2026.</b> The desk wears Night or Tide. The choice is kept on each device and Tide shows until one is chosen: a first open asks once, in a sheet, and a device that has chosen is never asked again. A switch at the foot of the rail, two options of 44 px, changes it whenever he likes. The charts and the map draw again in the chosen look. This version is the Desk alone; the Counter and QR Command follow. Nothing prices.","<b>HOW IT IS BUILT.</b> Tide is pulled from salt-ds, the desk's own layer carries its values as tokens, and the inline identity tints read tokens, not literals. A script in the head sets the look before the first paint, and the theme-color meta follows it. A store that cannot be read opens Tide and does not ask. Lowest text contrast: Night 4.98:1, Tide 4.91:1. The suite proves the choice, the switch, the sheet and both looks, each assertion red by mutation first."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9490,7 +9490,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='10 Oct 2026, 22:55 KL';
+const LAST_UPDATED='11 Oct 2026, 12:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
