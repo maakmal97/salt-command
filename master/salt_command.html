@@ -4364,8 +4364,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordstep{display:flex;align-items:stretch;gap:8px;}
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
 /* 06 Oct 2026: THE CHARTS' GRID AND THE MAP'S OWN STEPS, as tokens, so the script reads them at draw time (tcol() in the
-   master). The identity holds no token for them. One theme since 09 Oct 2026 (Night). To be promoted into Code/salt-ds,
-   then pulled. */
+   master). The identity holds no token for them. These are Night's; Tide restates each below (11 Oct 2026). To be promoted
+   into Code/salt-ds, then pulled. */
 :root{
   --desk-chart-grid:rgba(255,255,255,0.07);  /* the gridline: white on a dark ground */
   --desk-map-0:#34454d;     /* the map's two quietest steps, under steel, brass and ember */
@@ -4375,6 +4375,24 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-state:#6f8398; /* a state's outline */
   --desk-map-void:#ffffff05; /* an area with nothing in it */
   --desk-map-core:#ffffff08; /* a district on the place picker */
+}
+
+/* 11 Oct 2026: TWO THEMES, NIGHT AND TIDE (his word, chosen on each device, Tide until chosen). Night is :root above and in the
+   design system; Tide is :root[data-theme="tide"] there. Every colour this layer holds for Night has its Tide value here, and the
+   rest of the layer reads the system's tokens, so it follows. The values are Night's moved the way the system moves its own:
+   the gridline is Tide's salt at 7%, as Night's is white at 7%, the map's steps and state outline are Tide's steel-teal, the area name is Tide's salt
+   (4.6:1 on the lighter step, as Night's is 4.7:1), the district edge is a shade over Tide's ground. The select's chevron is a
+   data URL and cannot read a token, so it is restated in Tide's brass. */
+:root[data-theme="tide"]{
+  --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%237fd1c0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --desk-chart-grid:rgba(234,246,246,0.07);
+  --desk-map-0:#244a54;
+  --desk-map-1:#3f7684;
+  --desk-map-edge:#0d2b34;
+  --desk-map-name:#eaf6f6;
+  --desk-map-state:#5f98a6;
+  --desk-map-void:#ffffff05;
+  --desk-map-core:#ffffff08;
 }
 /* ==== END DESIGN desk ==== */
 </style>
@@ -13819,7 +13837,7 @@ function renderEditor(){
      take focus programmatically without joining the Tab order in its own right. */
   pn.setAttribute('role','dialog');pn.setAttribute('aria-modal','true');
   pn.setAttribute('aria-label','Edit the entry');pn.setAttribute('tabindex','-1');
-  bd.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;inset:0;background:rgba(5,8,10,.55);z-index:89');
+  bd.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;inset:0;background:var(--salt-scrim);z-index:89');
   pn.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;top:0;right:0;height:100dvh;padding-top:var(--safetop);padding-bottom:var(--safebot);width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
   pn.setAttribute('aria-label',edNew?'New order':'Edit the entry');
   if(!edOpen()){pn.innerHTML='';return;}
@@ -17083,12 +17101,12 @@ function renderReveal(){
   /* 12 Sep 2026: lit only while a name is actually showing, which is namesShown()'s question. On the
      cloud desk `revealed` defaults to true with every name still sealed, so the key glowed all day. */
   el.innerHTML=`<button id="idBtn" class="fabtn salt-orb idfix${(idOpen||namesShown())?' on salt-orb--on':''}" type="button" title="Names &amp; IDs" aria-label="Names and IDs">${key}</button>
-  <div id="idBackdrop" style="display:${idOpen?'block':'none'};position:fixed;inset:0;background:rgba(5,8,10,.55);z-index:79"></div>
+  <div id="idBackdrop" style="display:${idOpen?'block':'none'};position:fixed;inset:0;background:var(--salt-scrim);z-index:79"></div>
   <div id="idPanel" style="display:${idOpen?'block':'none'};position:fixed;top:0;right:0;height:100dvh;padding-top:var(--safetop);padding-bottom:var(--safebot);width:min(430px,92vw);z-index:80;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px;box-shadow:-18px 0 40px rgba(0,0,0,.45)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">Names &amp; IDs</div><button id="idClose" aria-label="Close" style="background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer">&times;</button></div>
     ${cloudMode()?`
     <div class="note" style="margin:0 0 10px">Read only on this device. The directory is edited on the laptop, where it lives; this copy exists so a code on screen can be turned into a name when you need one.</div>
-    <div class="note warn" style="margin:0 0 10px;border-color:rgba(142,162,182,.35);background:rgba(142,162,182,.08)"><b>Encrypted.</b> Only the sealed envelope ever reaches this phone: the plaintext directory is refused at the server and never ships. The passphrase is typed here, used here, and never sent anywhere. Names hide themselves the moment the app leaves the foreground.
+    <div class="note warn" style="margin:0 0 10px;border-color:color-mix(in srgb,var(--salt-steel) 35%,transparent);background:color-mix(in srgb,var(--salt-steel) 8%,transparent)"><b>Encrypted.</b> Only the sealed envelope ever reaches this phone: the plaintext directory is refused at the server and never ships. The passphrase is typed here, used here, and never sent anywhere. Names hide themselves the moment the app leaves the foreground.
       <br><b style="color:var(--amber)">The sealed file is reachable by anyone with the address.</b> Cloudflare Access is off by your decision, so the passphrase is the only thing between that file and a real name. Make it a long one.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
       ${namesShown()
@@ -17101,7 +17119,7 @@ function renderReveal(){
     `:`
     <div class="note" style="margin:0 0 10px">One box per party. Type whatever you know, in any order: name (location), phone, address, email, a handle. The desk reads it back and shows what it recognised, and the separate boxes get built later out of what actually turns up.
       ${NAME_VAULT?'<b>An old encrypted vault is still on file.</b> Import it once to bring those names across.':''}</div>
-    <div class="note warn" style="margin:0 0 10px;border-color:rgba(184,115,51,.3);background:rgba(184,115,51,.08)"><b>Not encrypted.</b> This is kept in salt_bio.json in the clear, by your instruction. The desk file itself stays clean and the published mirror carries none of it. The phone is a different matter: it only ever receives the sealed envelope and asks for the passphrase.</div>
+    <div class="note warn" style="margin:0 0 10px;border-color:color-mix(in srgb,var(--salt-copper) 30%,transparent);background:color-mix(in srgb,var(--salt-copper) 8%,transparent)"><b>Not encrypted.</b> This is kept in salt_bio.json in the clear, by your instruction. The desk file itself stays clean and the published mirror carries none of it. The phone is a different matter: it only ever receives the sealed envelope and asks for the passphrase.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
       <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),#6f8398)':'transparent'};color:${revealed?'#fff':'var(--vio)'}">${revealed?'Hide':'Show and edit'}</button>
       ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:var(--salt-ink-on-accent)">Save</button>':''}
@@ -20168,7 +20186,7 @@ function apCard(d){
      drafter wrote. Same class of fact as the drafter's own stale-snapshot flag. Not drawn on
      a roster draft, where a code the book does not hold is the whole point of the row. */
   const apGone=(col==='sales'||col==='purchases')&&d.party&&roster.indexOf(d.party)<0
-    ?`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)"><b>Read here, not from the draft.</b> ${esc(codeOf(d.party))} is not on the roster this book holds. The row was drafted ${esc((d.draftedAt||'').slice(0,10)||'earlier')} and the code has been retired or renamed since. Do not approve it against a code the book no longer has.</div>`:'';
+    ?`<div class="warnpill" style="display:block;margin:8px 0 0;background:color-mix(in srgb,var(--salt-ember) 14%,transparent);border-color:var(--crim);color:var(--crim)"><b>Read here, not from the draft.</b> ${esc(codeOf(d.party))} is not on the roster this book holds. The row was drafted ${esc((d.draftedAt||'').slice(0,10)||'earlier')} and the code has been retired or renamed since. Do not approve it against a code the book no longer has.</div>`:'';
   /* S11 (D6): A ROW OTHER THAN HE SAID YES TO ON THE ORDER CARD waits here, marked in the Worker's words, with what he
      was shown beside it (GET /drafts carries it as `preapproval`), so he compares before he approves */
   const pa=d.preapproval&&d.preapproval.state==='differs'?d.preapproval:null,sh=(pa&&pa.shown)||{},fg=sh.figures||{};
@@ -20184,7 +20202,7 @@ function apCard(d){
   return `<div class="card" style="margin-top:10px" data-id="${esc(d.id)}">
     <div style="font-size:14px">${head}</div>${apDiffers}${apTrip}
     <div class="kpis k4" style="margin-top:10px">${grid}</div>
-    ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:rgba(184,115,51,.14);border-color:var(--amber);color:var(--gold)">&#9888; ${esc(f)}</div>`).join('')}
+    ${(d.flags||[]).map(f=>`<div class="warnpill" style="display:block;margin:8px 0 0;background:color-mix(in srgb,var(--salt-copper) 14%,transparent);border-color:var(--amber);color:var(--gold)">&#9888; ${esc(f)}</div>`).join('')}
     ${apGone}
     ${d.reasoning?`<div class="dsc" style="margin-top:8px">${esc(d.reasoning)}</div>`:''}
     ${d.entry&&d.entry.claim&&!pa
@@ -20200,7 +20218,7 @@ function apDraw(){
   apBadge();
   if(!box)return;
   if(apNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the drafts and it was not accepted. Reload to be asked again. <b>This is not an empty queue: rows may be waiting.</b></div>';
-  else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-apretry="1" style="margin-top:8px">Retry</button>';
+  else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:color-mix(in srgb,var(--salt-ember) 14%,transparent);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-apretry="1" style="margin-top:8px">Retry</button>';
   else if(!AP_DRAFTS.length)box.innerHTML=apClock(AP_CLOCK)+'<div class="card"><div class="dsc">Nothing waiting. Every drafted row has been decided.</div></div>';
   else box.innerHTML=apClock(AP_CLOCK)+AP_DRAFTS.map(apCard).join('');
   box.querySelectorAll('button[data-ap]').forEach(b=>{b.onclick=()=>apDecide(b.dataset.id,b.dataset.ap,b);});
@@ -21299,7 +21317,7 @@ function ordDraw(){
   const gone=ORD_SAID&&!ORD_OPEN.some(o=>o&&o.id===ORD_SAID.id)?`<p class="dsc ordsaid" role="status" data-msg="${esc(ORD_SAID.id)}">${ORD_SAID.name?'<b>'+esc(ORD_SAID.name)+'.</b> ':''}${esc(ORD_SAID.t)}</p>`:'';
   if(lead&&!ordNeedKey&&!ordUnread)lead.textContent=acts.length?acts.length+', oldest first.':'Nothing waiting on you.';
   if(ordNeedKey)box.innerHTML='<div class="warnpill" style="display:block">The write key is needed to read the orders and it was not accepted. Reload to be asked again. <b>This is not an empty book: orders may be waiting.</b></div>';
-  else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:rgba(212,105,76,.14);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-ordretry="1" style="margin-top:8px">Retry</button>';
+  else if(ordUnread)box.innerHTML='<div class="warnpill" style="display:block;background:color-mix(in srgb,var(--salt-ember) 14%,transparent);border-color:var(--crim);color:var(--crim)">The orders could not be read: '+esc(ordUnread)+'. <b>This is not an empty book.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-ordretry="1" style="margin-top:8px">Retry</button>';
   else if(!ORD_OPEN.length)box.innerHTML=gone+'<div class="card"><div class="dsc">'+(ordAll?'This site has taken no orders at all yet.':'No open orders. A customer\'s order lands here the moment it is placed.')+'</div></div>';
   else{
     if(ORD_WAKE&&acts.length){ORD_SEL=acts[acts.length-1].o.id;ORD_OPENED=true;ORD_FILTER='all';ORD_WAKE=false;}
@@ -21786,7 +21804,7 @@ function tabWorkbench(){
       </div>
       <div id="wbAssocWrap" style="margin-bottom:4px">
         <label style="font-size:12px;color:var(--mut);display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="wbAssoc" style="width:auto"> Sold through an associate?</label>
-        <div class="dsc" id="wbAssocAuto" style="display:none;margin-top:7px;padding:9px 11px;border-radius:8px;background:rgba(197,160,89,.08);border:1px solid rgba(197,160,89,.28)"></div>
+        <div class="dsc" id="wbAssocAuto" style="display:none;margin-top:7px;padding:9px 11px;border-radius:8px;background:color-mix(in srgb,var(--salt-brass) 8%,transparent);border:1px solid color-mix(in srgb,var(--salt-brass) 28%,transparent)"></div>
         <div id="wbAssocBox" style="display:none;margin-top:8px">
           <div class="qrow" style="margin-bottom:10px">
             <div class="qfield"><label>Associate</label><select id="wbAssocSel"><option value="">Choose an associate…</option>${aopts}</select></div>
@@ -22571,7 +22589,7 @@ function tabPricing(){
         :badT1&&badT2?' <span class="tag salt-status def">both under floor</span>'
         :badT2?' <span class="tag salt-status def">'+(T1on?'Tier 2 under floor':'under floor')+'</span>'
         :badT1?' <span class="tag salt-status def">Tier 1 under floor</span>':'';
-      return `<tr${badT1||badT2||badOver?' style="background:rgba(212,105,76,.07)"':''}><td class="l salt-table__label">${units(r.q)}${r.off?'<div class="iref">off the board</div>':''}`
+      return `<tr${badT1||badT2||badOver?' style="background:color-mix(in srgb,var(--salt-ember) 7%,transparent)"':''}><td class="l salt-table__label">${units(r.q)}${r.off?'<div class="iref">off the board</div>':''}`
       +tag+`</td>`
       +`<td class="mono" style="color:var(--dim)">${fmt0(L.cogs)}</td>`
       /* v552: effective cost, which IS break-even and IS the floor, moved in front of the margin and
@@ -22973,7 +22991,7 @@ function tabPricing(){
       const sm=marg(bandsNow.small.kg,bandsNow.small.perUnit),
             md=marg(bandsNow.mid.kg,bandsNow.mid.perUnit),
             bk=marg(C.unitsEx,C.perUnitEx);
-      return `<tr${L.now?' style="background:rgba(197,160,89,.06)"':''}><td class="l salt-table__label">${L.pct}%${L.now?' <span class="tag salt-status salt-status--dashed prov">now</span>':` <span style="color:var(--dim)">${esc(L.label)}</span>`}</td>
+      return `<tr${L.now?' style="background:color-mix(in srgb,var(--salt-brass) 6%,transparent)"':''}><td class="l salt-table__label">${L.pct}%${L.now?' <span class="tag salt-status salt-status--dashed prov">now</span>':` <span style="color:var(--dim)">${esc(L.label)}</span>`}</td>
         <td>${fmt(eff)}</td>
         <td style="color:var(--grn)">${cell(sm)}</td><td style="color:var(--grn)">${cell(md)}</td>
         <td style="color:${(bk!=null&&bk<0)?'var(--crim)':'var(--grn)'}"><b>${cell(bk)}</b></td>

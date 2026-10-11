@@ -719,8 +719,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .ordstep{display:flex;align-items:stretch;gap:8px;}
 .ordstep .salt-field__input{flex:0 1 140px;text-align:center;}
 /* 06 Oct 2026: THE CHARTS' GRID AND THE MAP'S OWN STEPS, as tokens, so the script reads them at draw time (tcol() in the
-   master). The identity holds no token for them. One theme since 09 Oct 2026 (Night). To be promoted into Code/salt-ds,
-   then pulled. */
+   master). The identity holds no token for them. These are Night's; Tide restates each below (11 Oct 2026). To be promoted
+   into Code/salt-ds, then pulled. */
 :root{
   --desk-chart-grid:rgba(255,255,255,0.07);  /* the gridline: white on a dark ground */
   --desk-map-0:#34454d;     /* the map's two quietest steps, under steel, brass and ember */
@@ -730,4 +730,22 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-state:#6f8398; /* a state's outline */
   --desk-map-void:#ffffff05; /* an area with nothing in it */
   --desk-map-core:#ffffff08; /* a district on the place picker */
+}
+
+/* 11 Oct 2026: TWO THEMES, NIGHT AND TIDE (his word, chosen on each device, Tide until chosen). Night is :root above and in the
+   design system; Tide is :root[data-theme="tide"] there. Every colour this layer holds for Night has its Tide value here, and the
+   rest of the layer reads the system's tokens, so it follows. The values are Night's moved the way the system moves its own:
+   the gridline is Tide's salt at 7%, as Night's is white at 7%, the map's steps and state outline are Tide's steel-teal, the area name is Tide's salt
+   (4.6:1 on the lighter step, as Night's is 4.7:1), the district edge is a shade over Tide's ground. The select's chevron is a
+   data URL and cannot read a token, so it is restated in Tide's brass. */
+:root[data-theme="tide"]{
+  --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1.4 1.6 6 6.2l4.6-4.6' fill='none' stroke='%237fd1c0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --desk-chart-grid:rgba(234,246,246,0.07);
+  --desk-map-0:#244a54;
+  --desk-map-1:#3f7684;
+  --desk-map-edge:#0d2b34;
+  --desk-map-name:#eaf6f6;
+  --desk-map-state:#5f98a6;
+  --desk-map-void:#ffffff05;
+  --desk-map-core:#ffffff08;
 }
