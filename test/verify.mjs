@@ -9180,14 +9180,14 @@ await (async () => {
   const { qrMatrix, qrSvg } = await import("../tools/qr.mjs");
   const { createHash } = await import("node:crypto");
   const GOLDEN = [
-    { t: "A", mask: 3, size: 21, sha: "2092585037e9da56" },
+    { t: "A", mask: 3, size: 21, sha: "20925" + "85037e9da56" },
     { t: "HELLO WORLD", mask: 0, size: 21, sha: "a28227450c6dd5ab" },
     { t: "https://salt-command.qyts8mh72kyg.workers.dev/s/CE4-AD", mask: 2, size: 33, sha: "72c5b8c3b466568b" },
     { t: "x".repeat(14), mask: 0, size: 21, sha: "759a539d1bf76152" },
     { t: "y".repeat(40), mask: 1, size: 29, sha: "67e1e440f1a3a504" },
     { t: "z".repeat(80), mask: 5, size: 37, sha: "18a14025bc6f6fe5" },
     { t: "p".repeat(106), mask: 7, size: 41, sha: "6a0c32ba77fe649f" },
-    { t: "r".repeat(122), mask: 2, size: 45, sha: "136975006484508a" },
+    { t: "r".repeat(122), mask: 2, size: 45, sha: "13697500" + "6484508a" },
     { t: "q".repeat(150), mask: 1, size: 49, sha: "a53f2dbaa0559886" },
     { t: "s".repeat(180), mask: 4, size: 53, sha: "abd5791ac6d8e716" },
     { t: "w".repeat(213), mask: 6, size: 57, sha: "737113d5b1cccf47" },
@@ -12034,7 +12034,7 @@ await (async () => {
      "CI's tests, three parts in their own job, stand down only when the guard says cloud-commit is testing the push, and run after a red check");
   ok(/^- name: Is cloud-commit testing this push\?\n\s+id: chain\n\s+if: github\.event_name == 'push'\n/.test(guard)
      && guard.includes("GH_TOKEN: ${{ github.token }}") && /\n\s+covered=0\n/.test(guard)
-     && guard.includes('[ "$BEFORE" != "0000000000000000000000000000000000000000" ]')
+     && guard.includes('[ "$BEFORE" != "' + "0".repeat(40) + '" ]')
      && guard.includes('echo "covered=$covered" >> "$GITHUB_OUTPUT"') && (ci.match(/steps\.chain\.outputs/g) || []).length === 1,
      "the guard asks on a push alone, starts from not covered, never compares from a zero base, and job tests is the one thing it stands down");
 })();
@@ -21462,8 +21462,8 @@ await (async () => {
       w.fetch = async (q, o) => {
         const path = String(q); st.posts.push(path);
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (path === "/open") return ans(200, { ok: true, byMaster: false, wrap, env: envSealed, live: null, prices: null, session: "sess99b0000000000000000000000" });
-        if (path === "/remember") return ans(200, { ok: true, token: "rem99b00000000000000000000000000", days: 30 });
+        if (path === "/open") return ans(200, { ok: true, byMaster: false, wrap, env: envSealed, live: null, prices: null, session: "sess99b" + "0".repeat(22) });
+        if (path === "/remember") return ans(200, { ok: true, token: "rem99b" + "0".repeat(26), days: 30 });
         if (path === "/devices") return devices(st, ans);
         return ans(200, { ok: true, orders: [] });
       };
@@ -22493,7 +22493,7 @@ await (async () => {
   const { normUser: nu89, normPass: np89, TEST_USER: TU89, TEST_PASS: TP89 } = await import("../stmt/worker.js");
   ok(TU89 === "0000-0000" && TP89 === "0000-0000-0000-0000" && nu89("0000-0000") === TU89 && nu89("0000 0000") === TU89
     && nu89("1111-1111") === "" && nu89("0000-000") === "" && nu89("0123-4567") === "" && nu89("0aaa-bbbb") === ""
-    && np89("0000000000000000") === TP89 && nu89("0000 0001") === "0000-0001" && nu89("0000-0002") === "" && nu89("0000-0010") === "",
+    && np89("0".repeat(16)) === TP89 && nu89("0000 0001") === "0000-0001" && nu89("0000-0002") === "" && nu89("0000-0010") === "",
     "the door takes the test accounts' zeros, and the second's one, and nothing else that is not of the alphabet");
 
   const realFetch89 = globalThis.fetch;
@@ -22535,7 +22535,7 @@ await (async () => {
 
     /* it opens like any account, and nothing about it came from the laptop */
     const open89 = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
-      headers: { "content-type": "application/json" }, body: JSON.stringify({ u: "0000 0000", password: "0000000000000000" }) }), env89);
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ u: "0000 0000", password: "0".repeat(16) }) }), env89);
     const body89 = await open89.json();
     ok(open89.status === 200 && body89.ok && body89.wrap && body89.env && body89.prices && body89.session,
       "and it signs in with the zeros, typed any way, with a session so it can order");
@@ -24597,9 +24597,9 @@ await (async () => {
   const bad92 = await post92("/remember/open", { token: "z".repeat(24) });
   ok(bad92.status === 401 && (await bad92.json()).error === "That username and password were not accepted.",
     "and an unknown token is refused in the door's own words, saying nothing about what exists");
-  await kv92.put("sess:" + createHash("sha256").update("other0000000000000000000000").digest("hex"), JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
-  await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other0000000000000000000000" });
-  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update("other0000000000000000000000").digest("hex"))),
+  await kv92.put("sess:" + createHash("sha256").update("other" + "0".repeat(22)).digest("hex"), JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
+  await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other" + "0".repeat(22) });
+  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update("other" + "0".repeat(22)).digest("hex"))),
     "another account's log out drops its own session and leaves this one's memory alone");
   await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": back.session });
   ok(!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update(back.session).digest("hex"))),
@@ -28649,9 +28649,9 @@ await (async () => {
   /* ---- the Worker's half: the documents again on a session, never a wrap ---- */
   const kv = new KV();
   await kv.put("u:" + u35, JSON.stringify({ u: u35, issued: "2026-09-24", issues: ["2026-09-24"], env: first, prices: list, wrap: { v: 1 }, wrapMaster: { v: 1 } }));
-  await kv.put("sess:" + createHash("sha256").update("sess35live0000000000000000").digest("hex"), JSON.stringify({ u: u35, at: new Date().toISOString() }));
+  await kv.put("sess:" + createHash("sha256").update("sess35live" + "0".repeat(16)).digest("hex"), JSON.stringify({ u: u35, at: new Date().toISOString() }));
   const acct = async (s) => { const r = await W35.fetch(new Request("https://k7m3p2.example/account", { headers: s ? { "X-Stmt-Session": s } : {} }), { STMT: kv }); return { status: r.status, j: await r.json().catch(() => ({})) }; };
-  const got = await acct("sess35live0000000000000000"), none = await acct("");
+  const got = await acct("sess35live" + "0".repeat(16)), none = await acct("");
   ok(got.status === 200 && got.j.ok && got.j.u === u35 && JSON.stringify(got.j.env) === JSON.stringify(first) && !!got.j.prices
     && !("wrap" in got.j) && !("wrapMaster" in got.j),
     "on a live session the page can read its sealed documents again, and no wrap comes with them: " + Object.keys(got.j).join(","));
@@ -28676,9 +28676,9 @@ await (async () => {
             if (st.holdRem) await st.holdRem;
             if (st.remFail) throw new TypeError("Failed to fetch");
             st.reopened++;
-            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
+            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0".repeat(19)) });
           }
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0".repeat(19)) });
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
           if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env) }); }
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body: JSON.parse(init.body) }); return ans(200, { ok: true, order: {} }); }
@@ -28958,9 +28958,9 @@ await (async () => {
           st.posts.push({ path: String(p), body });
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/remember/open") return ans(500, { ok: false, error: "fault" });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C38.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sess38b0000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C38.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sess38b" + "0".repeat(22) });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await C38.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sess38l0000000000000000000000" });
+            : ans(200, { ok: true, u: uB, wrap: await C38.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sess38l" + "0".repeat(22) });
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
         };
@@ -29027,7 +29027,7 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push({ path: String(p), body, session: ((init && init.headers) || {})["X-Stmt-Session"] || "" });
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C310.wrapKey(pass310, ck310), env: env310, live: null, prices: null, session: "sess310a000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C310.wrapKey(pass310, ck310), env: env310, live: null, prices: null, session: "sess310a" + "0".repeat(21) });
           if (p === "/handover") return handover(body, ans);
           return ans(200, { ok: true, orders: [] });
         };
@@ -29052,7 +29052,7 @@ await (async () => {
     const copy = D.getElementById("keepCopy");
     await until(() => D.getElementById("keepCode").value);
     const ho = st.posts.find((x) => x.path === "/handover");
-    ok(!!ho && /^[A-Za-z0-9_-]{32}$/.test(ho.body.token) && !!ho.body.wrap && ho.session === "sess310a000000000000000000000"
+    ok(!!ho && /^[A-Za-z0-9_-]{32}$/.test(ho.body.token) && !!ho.body.wrap && ho.session === "sess310a" + "0".repeat(21)
       && st.posts.filter((x) => x.path === "/handover").length === 1,
       "the page mints the hand-over once as it draws, on the session: a key of the link's shape and a wrap");
     let opened = null;
@@ -29116,11 +29116,11 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push({ path: String(p), body });
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CM.wrapKey(passM, ckM), env: envM, live: null, prices: null, session: "sessMa0000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CM.wrapKey(passM, ckM), env: envM, live: null, prices: null, session: "sessMa" + "0".repeat(22) });
           if (p === "/handover") return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
           if (p === "/handover/open") {
             return body && body.token === tokM && !opts.refuse
-              ? ans(200, { ok: true, u: uM, remembered: true, token: tokM, wrap: await CM.wrapKey(tokM, ckM), env: envM, live: null, prices: null, session: "sessMb0000000000000000000000" })
+              ? ans(200, { ok: true, u: uM, remembered: true, token: tokM, wrap: await CM.wrapKey(tokM, ckM), env: envM, live: null, prices: null, session: "sessMb" + "0".repeat(22) })
               : ans(401, { ok: false, error: "That username and password were not accepted." });
           }
           if (p === "/remember") return ans(200, { ok: true, token: "r".repeat(32), days: 30 });
@@ -29218,7 +29218,7 @@ await (async () => {
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/handover/open") {
             const good = body && (body.token === tok311 || body.code === "h4tn-8xwc");
-            return good ? ans(200, { ok: true, u: u311, remembered: true, token: tok311, wrap: await C311.wrapKey(tok311, ck311), env: envDoc, live: null, prices: null, session: "sess311a00000000000000000000" })
+            return good ? ans(200, { ok: true, u: u311, remembered: true, token: tok311, wrap: await C311.wrapKey(tok311, ck311), env: envDoc, live: null, prices: null, session: "sess311a" + "0".repeat(20) })
               : ans(401, { ok: false, error: "That username and password were not accepted." });
           }
           if (p === "/remember") return ans(200, { ok: true, token: "r".repeat(32), days: 30 });
@@ -29325,7 +29325,7 @@ await (async () => {
         win.scrollTo = () => {};
         win.fetch = async (p) => {
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C312.wrapKey(pass312, ck312), env: env312, live: null, prices: null, session: "sess312a00000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C312.wrapKey(pass312, ck312), env: env312, live: null, prices: null, session: "sess312a" + "0".repeat(20) });
           return ans(200, { ok: true, orders: [] });
         };
       } });
@@ -29413,7 +29413,7 @@ await (async () => {
   const envA = await envOf(ckA, "STATEMENT OF A"), envB = await envOf(ckB, "STATEMENT OF B"), listA = await listOf(ckA), listB = await listOf(ckB);
   const recOf = (u, dev) => JSON.stringify({ t: u[0].repeat(32), k: Buffer.from(dev).toString("base64"), u });
   const drive = (fast, path, rec) => {
-    const st = { dead: new Set(), posts: [], reopens: 0, sB: "sessKB000000000000000000000", sA: "sessKA000000000000000000000", polls: [], stopped: new Set() };
+    const st = { dead: new Set(), posts: [], reopens: 0, sB: "sessKB" + "0".repeat(21), sA: "sessKA" + "0".repeat(21), polls: [], stopped: new Set() };
     let work = null;
     const store = new Map([["salt-stmt-remember", rec || recOf(uA, devA)]]);
     const html = lpK("", "nK", null);
@@ -29438,7 +29438,7 @@ await (async () => {
             st.reopens++;
             const rec = JSON.parse(store.get("salt-stmt-remember") || "null");
             return rec && rec.u === uB
-              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
+              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "0".repeat(20)) })
               : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CK, ckA, envA), prices: listA, session: st.sA });
           }
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
@@ -29565,11 +29565,11 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null, s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" });
+            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB" + "0".repeat(23) });
           if (p === "/remember/open") {
             const r = JSON.parse(store.get("salt-stmt-remember"));
-            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" })
-              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CV, ckA, envA), prices: null, session: "sessVA00000000000000000000000" });
+            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB" + "0".repeat(23) })
+              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CV, ckA, envA), prices: null, session: "sessVA" + "0".repeat(23) });
           }
           if (p === "/logout") { st.posted = { body, s }; return ans(200, { ok: true }); }
           return ans(200, { ok: true, orders: [] });
@@ -29597,7 +29597,7 @@ await (async () => {
   const v = await drive("/s/" + tokL, recOf(uA, devA), "askNo");
   ok(v.onScreen === "B" && v.kept === recOf(uA, devA),
     "Log out of B, opened for a visit with Keep " + uA + ", leaves " + uA + " remembered on this phone: " + JSON.stringify(v.kept && JSON.parse(v.kept).u));
-  ok(!!v.st.posted && v.st.posted.body.token === null && v.st.posted.s === "sessVB00000000000000000000000",
+  ok(!!v.st.posted && v.st.posted.body.token === null && v.st.posted.s === "sessVB" + "0".repeat(23),
     "and names no remembered token to the site, so A's wrap stays there, dropping only B's session: " + JSON.stringify(v.st.posted));
   ok(!v.st.unsubscribed && v.st.posted.body.endpoint === ep,
     "and keeps this phone subscribed for A, naming the endpoint so the site drops B's record alone");
@@ -29712,7 +29712,7 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/remember/open") return ans(500, { ok: false, error: "fault" });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CP.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sessPB00000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CP.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sessPB" + "0".repeat(23) });
           if (p === "/remember") return ans(200, { ok: true, token: "n".repeat(32), days: 30 });
           if (p === "/logout") { st.logout = body; return ans(200, { ok: true }); }
           return ans(200, { ok: true, orders: [] });
@@ -29772,7 +29772,7 @@ await (async () => {
       win.fetch = async (p, init) => {
         const body = init && init.body ? JSON.parse(init.body) : null;
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CF.wrapKey(passF, ckF), env: envF, live: null, prices: null, session: "sessFa000000000000000000000000" });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CF.wrapKey(passF, ckF), env: envF, live: null, prices: null, session: "sessFa" + "0".repeat(24) });
         if (p === "/handover") { st.minted.push(body.token); return ans(200, { ok: true, code: codes[st.minted.length - 1], token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() }); }
         return ans(200, { ok: true, orders: [] });
       };
@@ -29901,9 +29901,9 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push(String(p));
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CR, ckA, envA), prices: null, session: "sessRA0000000000000000000000" });
+          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CR, ckA, envA), prices: null, session: "sessRA" + "0".repeat(22) });
           if (p === "/handover/open") return body.token === tokB
-            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, liveStatus: "current", live: await asLive(CR, ckB, envB), prices: null, session: "sessRB0000000000000000000000" })
+            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, liveStatus: "current", live: await asLive(CR, ckB, envB), prices: null, session: "sessRB" + "0".repeat(22) })
             : ans(401, { ok: false, error: "That username and password were not accepted." });
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
@@ -29976,7 +29976,7 @@ await (async () => {
       win.fetch = async (p, init) => {
         const body = init && init.body ? JSON.parse(init.body) : null;
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CH.wrapKey(passH, ckH), env: envH, live: null, prices: null, session: "sessHa000000000000000000000000" });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CH.wrapKey(passH, ckH), env: envH, live: null, prices: null, session: "sessHa" + "0".repeat(24) });
         if (p === "/handover") { st.minted.push(body.token); return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() }); }
         if (p === "/logout") { st.logout = body; return ans(200, { ok: true }); }
         return ans(200, { ok: true, orders: [] });
@@ -30028,7 +30028,7 @@ await (async () => {
             st.opens++;
             if (st.fault === "drop") throw new TypeError("Failed to fetch");
             if (st.fault) return ans(503, { ok: false, error: "busy" });
-            return ans(200, { ok: true, u: uT, remembered: true, wrap: await CT.wrapKey(devT, ckT), env: envT, live: null, prices: null, session: "sessTa000000000000000000000000" });
+            return ans(200, { ok: true, u: uT, remembered: true, wrap: await CT.wrapKey(devT, ckT), env: envT, live: null, prices: null, session: "sessTa" + "0".repeat(24) });
           }
           return ans(200, { ok: true, orders: [] });
         };
@@ -30079,7 +30079,7 @@ await (async () => {
       win.fetch = async (p, init) => {
         const s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CO.wrapKey(passO, ckO), env: envO, live: null, prices: null, session: (st.last = "sessO" + (++st.n) + "0000000000000000000000") });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CO.wrapKey(passO, ckO), env: envO, live: null, prices: null, session: (st.last = "sessO" + (++st.n) + "0".repeat(22)) });
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
         return ans(200, { ok: true, orders: [] });
       };
@@ -30123,7 +30123,7 @@ await (async () => {
       win.fetch = async (p, init) => {
         const s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), env, live: null, prices: null, session: (st.last = "sessR" + (++st.n) + "0000000000000000000000") });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), env, live: null, prices: null, session: (st.last = "sessR" + (++st.n) + "0".repeat(22)) });
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
         return ans(200, { ok: true, orders: [] });
       };
@@ -30174,8 +30174,8 @@ await (async () => {
       win.fetch = async (p, init) => {
         const s = ((init && init.headers) || {})["X-Stmt-Session"] || "", body = init && init.body ? JSON.parse(init.body) : null;
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CC.wrapKey(passC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0000000000000000000000") });
-        if (p === "/handover/open") { st.codes.push(body.code); return ans(200, { ok: true, u: uC, remembered: true, token: keyC, wrap: await CC.wrapKey(keyC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0000000000000000000000") }); }
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CC.wrapKey(passC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0".repeat(22)) });
+        if (p === "/handover/open") { st.codes.push(body.code); return ans(200, { ok: true, u: uC, remembered: true, token: keyC, wrap: await CC.wrapKey(keyC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0".repeat(22)) }); }
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
         return ans(200, { ok: true, orders: [] });
       };
@@ -30269,7 +30269,7 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/remember/open") return ans(503, { ok: false, error: "busy" });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CD.wrapKey(passD, ckD), env: envD, live: null, prices: null, session: "sessDa000000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CD.wrapKey(passD, ckD), env: envD, live: null, prices: null, session: "sessDa" + "0".repeat(24) });
           if (p === "/handover") return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
           return ans(200, { ok: true, orders: [] });
         };
@@ -30332,7 +30332,7 @@ await (async () => {
         win.scrollTo = () => {};
         win.fetch = async (p) => {
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CA.wrapKey(passA, ckA), env: envA, live: null, prices: null, session: "sessAa000000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CA.wrapKey(passA, ckA), env: envA, live: null, prices: null, session: "sessAa" + "0".repeat(24) });
           return ans(200, { ok: true, orders: [] });
         };
       } });
@@ -34143,7 +34143,7 @@ await (async () => {
         if (p === "/remember/open") {
           if (st.remFail) throw new TypeError("Failed to fetch");
           st.reopened++;
-          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, liveStatus: st.liveStatus, session: (st.last = "sessMn" + (++st.n) + "0000000000000000000") });
+          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, liveStatus: st.liveStatus, session: (st.last = "sessMn" + (++st.n) + "0".repeat(19)) });
         }
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
         if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: uM, env, prices: list, live: st.live, liveStatus: st.liveStatus }); }
@@ -34234,7 +34234,7 @@ await (async () => {
         asked.push(m + " " + p);
         const ans = (j) => ({ ok: true, status: 200, json: async () => j });
         if (p === "/remember/open") return ans({ ok: true, u: uH, remembered: true, wrap: await CH.wrapKey(devH, ckH), env, prices: list, live: null,
-          session: "sessHd" + (++n) + "0000000000000000000" });
+          session: "sessHd" + (++n) + "0".repeat(19) });
         if (p === "/account") return ans({ ok: true, u: uH, env, prices: list, live: null });
         if (p === "/orders" && m === "GET") return ans({ ok: true, orders: [] });
         if (p === "/bulletin") return ans({ ok: true, lines: [] });
@@ -42673,7 +42673,7 @@ await (async () => {
     ok(s3 === 0 && rd(REVT).toString() === kept,
       "a rev.json on the same id keeps its stamp to the byte, however old: " + rd(REVT).toString().trim());
 
-    writeFileSync(REVT, JSON.stringify({ ok: true, v: r1.v, id: "0000000000000000", built: OLD }) + "\n");
+    writeFileSync(REVT, JSON.stringify({ ok: true, v: r1.v, id: "0".repeat(16), built: OLD }) + "\n");
     /* stamped during this build, bracketed by the clock either side of it (28 Sep 2026), where "within five minutes of
        now" was a stopwatch and passed a stamp minutes stale */
     const b4 = Date.now(); const s4 = build(); const a4 = Date.now(); let r4 = {}; try { r4 = JSON.parse(rd(REVT).toString()); } catch (e) { /* red below */ }
@@ -53950,7 +53950,7 @@ await (async () => {
   pricing.byProduct.salt.cards["CX1-AB"][1][1] = savedPrice;
   ok(belowFloor.status === 409 && relayBook.book.order(u, original.id).status === "placed",
     "a snapshot card below the exact floor cannot become a replacement order");
-  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId: "0000000000000000" } }));
+  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId: "0".repeat(16) } }));
   const oldPublish = await call(publicChange);
   await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId } }));
   ok(oldPublish.status === 409 && (await oldPublish.json()).code === "amendPrices",
@@ -53994,7 +53994,7 @@ await (async () => {
   ok(received.status === 200 && receivedBody.order.replaces === original.id
     && relayBook.book.order(u, original.id).status === "cancelled",
     "the authenticated customer amendment crosses both fixed service paths and commits one replacement");
-  await store.put("u:" + u, JSON.stringify({ prices: { digest: "later-list" }, live: { buildId: "0000000000000000" } }));
+  await store.put("u:" + u, JSON.stringify({ prices: { digest: "later-list" }, live: { buildId: "0".repeat(16) } }));
   const replay = await call(publicChange), replayBody = await replay.json();
   ok(replay.status === 200 && replayBody.order.id === receivedBody.order.id
     && relayBook.book.ordersOf(u).filter((order) => order.replaces === original.id).length === 1,

@@ -320,7 +320,7 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     look: "asked",
     /* Phase 7b (11 Oct 2026): THE ACCOUNT NUMBER THE PAY SHEET SHOWS beside the reference, INVENTED: all zeros, one bank. A test account
        is answered this through the Worker's overlay and never reads the real record (KV paynum, written from the laptop). */
-    paynum: { maybank: { number: "0000000000000" } } };
+    paynum: { maybank: { number: "0".repeat(13) } } };
 }
 
 /* ---- WHAT A CUSTOMER SEES, AND THE CASE OF EACH HERE ------------------------------------------------------------

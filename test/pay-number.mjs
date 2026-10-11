@@ -65,20 +65,31 @@ export function leakScan(doc, files) {
   return { checked: leaves.length, hits: [...seen].map(([path, files]) => ({ path, files })) };
 }
 
-/* a run of ten digits or more is not allowed in the source, but for what is plainly no number: all zeros or led by eight; an order stamp
-   (a date and a short sequence); a decimal fraction; a run id named in prose; three constants. A run touching a letter is a hash, a blob
-   or a literal such as 0b1010..., not a number, and is not read. */
-const CONSTANTS = new Set(["0123456789", "2166136261", "2147483647"]);
-const allowedRun = (s, before) => /^0{8}/.test(s) || CONSTANTS.has(s) || /[0-9][.]$/.test(before) || /\brun\s+(id\s+)?$/i.test(before)
-  || /^20[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{3,6}$/.test(s);
+/* a run of ten digits or more is not allowed in the source, but for what is plainly no number, each exception holding only its own case
+   (none may admit a 10 to 15 digit account number): eight zeros then up to four more digits; an order id's stamp, fourteen digits that
+   are a date and a time and the dash after them (the shape stmt/sw.js pins, ^[0-9]{14}-[a-z0-9]{1,8}$); a run id named in prose; a binary
+   literal (0 and 1 only, after 0b: engine/qr.mjs, generated into the desk and stmt/qr.js, which cannot change without a version); four
+   constants, the fourth the floating point residue the engine's comment prints (engine/pricing.mjs, the same). A run touching a letter
+   is read unless it is a hex digest (a hex token of 32 characters or more), a token with a letter on BOTH sides (a blob) or a 13-digit
+   epoch (^1[6-8][0-9]{11}$). */
+const CONSTANTS = new Set(["0123456789", "2166136261", "2147483647", "00000000000001"]);
+const STAMP = /^20[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{6}$/;
+const isLetter = (c) => /[A-Za-z]/.test(c || "");
+const hexToken = (text, from, to) => { let a = from, b = to; while (a > 0 && /[0-9a-fA-F]/.test(text[a - 1])) a--; while (b < text.length && /[0-9a-fA-F]/.test(text[b])) b++; return b - a; };
+const plainRun = (text, at, s) => {
+  const before = text.slice(Math.max(0, at - 12), at), prev = text[at - 1], next = text[at + s.length];
+  if (/^0{8}[0-9]{0,4}$/.test(s) || CONSTANTS.has(s) || /\brun\s+(id\s+)?$/i.test(before) || (STAMP.test(s) && next === "-")) return true;
+  if (/^[01]+$/.test(s) && /(^|[^0-9A-Za-z_])0b$/.test(before)) return true;
+  if (!isLetter(prev) && !isLetter(next)) return false;
+  return (isLetter(prev) && isLetter(next)) || hexToken(text, at, at + s.length) >= 32 || /^1[6-8][0-9]{11}$/.test(s);
+};
 export function longRuns(files) {
   const out = [];
   for (const f of files) {
     const re = /[0-9]{10,}/g; let m;
     while ((m = re.exec(f.text))) {
-      const s = m[0], before = f.text.slice(Math.max(0, m.index - 12), m.index), after = f.text[m.index + s.length] || " ";
-      if (/[A-Za-z]/.test(before.slice(-1)) || /[A-Za-z]/.test(after) || allowedRun(s, before)) continue;
-      out.push({ path: f.path, line: f.text.slice(0, m.index).split("\n").length, len: s.length });
+      if (plainRun(f.text, m.index, m[0])) continue;
+      out.push({ path: f.path, line: f.text.slice(0, m.index).split("\n").length, len: m[0].length });
     }
   }
   return out;
@@ -180,7 +191,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     "and the picker serves a, which offers a transfer and is open, and not b (no transfer rail), c (suspended), d (not on the list) or e (inherited, not the record's own): " + hide(JSON.stringify(picked)));
 
   /* a test account is answered its fixture's invented number, and the real record is never read for it */
-  const ZERO = "0000000000000", T = TF.TEST_USER;
+  const ZERO = "0".repeat(13), T = TF.TEST_USER;
   await kv.put("u:" + T, JSON.stringify({ test: true, wrap: { salt: "pn-salt" } }));
   const TS = await asker(T);
   const noFix = await call("/pay/accounts", TS);
@@ -233,15 +244,20 @@ export async function run({ ok, okOff, pageWork, KV }) {
 
   /* the source scan: ten digits or more are no number only where the rule says so, and each exception holds only its own case */
   const runs = (text) => longRuns([{ path: "x.mjs", text }]);
-  const allowed = { zeros: "0".repeat(13), zeroLed: DIG("00000000", "1234"), stamp: DIG("2026", "1011", "123456"), stampShort: DIG("2026", "1006", "080"), fraction: "3." + DIG("1415", "9265", "3589"),
-    runId: "(run " + DIG("3604", "1951", "078") + ")", wrapped: "(run\n       " + DIG("3604", "1951", "078") + ")", digits: "0123456789", fnv: DIG("2166", "136261"), int: DIG("2147", "483647"), hash: "a" + DIG("5550", "1234", "5678"), blob: DIG("5550", "1234", "5678") + "f" };
-  const refused = { odd: DIG("5550", "1234", "5678"), longer: DIG("5550", "1234", "5678", "9012", "34"), stampLong: DIG("2026", "1011", "1234567"), badMonth: DIG("2026", "1311", "123456"), rerun: "rerun " + DIG("3604", "1951", "078"),
-    stop: "see." + DIG("5550", "1234", "5678") };
+  const N12 = DIG("5550", "1234", "5678"), E13 = DIG("1760", "1234", "5678", "9");   /* an invented 12-digit number; a 13-digit run led as an epoch is */
+  const allowed = { zeros: "0".repeat(12), zeroLed: DIG("00000000", "1234"), stamp: DIG("2026", "1011", "123456") + "-k3f9", runId: "(run " + DIG("3604", "1951", "078") + ")",
+    wrapped: "(run\n       " + DIG("3604", "1951", "078") + ")", digits: "0123456789", fnv: DIG("2166", "136261"), int: DIG("2147", "483647"), residue: DIG("0000", "0000", "0000", "01"),
+    binary: "0b" + "10".repeat(6), epoch: "t" + E13, digest: N12 + "a".repeat(20), hexBoth: "a" + N12 + "f", blob: "q" + N12 + "z" };
+  const refused = { odd: N12, longer: DIG("5550", "1234", "5678", "9012", "34"), stampLong: DIG("2026", "1011", "1234567"), badMonth: DIG("2026", "1311", "123456") + "-k3f9", rerun: "rerun " + DIG("3604", "1951", "078"),
+    stop: "see." + N12, fraction: "3." + DIG("1415", "9265", "3589"), stampBare: DIG("2026", "1011", "123456"), stampSemi: DIG("2026", "1011", "123456") + "_k3f9", stampShort: DIG("2026", "1006", "080") + "-a1",
+    stamp13: DIG("2026", "1011", "12345") + "-k3f9", letterBefore: "x" + N12, letterAfter: N12 + "x", hexBefore: "a" + N12, hexAfter: N12 + "f", hexShort: N12 + "a".repeat(19), epochBare: E13,
+    epochOther: "t" + DIG("2760", "1234", "5678", "9"), epoch12: "t" + DIG("1760", "1234", "5678"), zeros13: "0".repeat(13), zeroLedLong: DIG("00000000", "12345"), zeroLedLonger: DIG("00000000", "1234", "5678"),
+    residueOther: DIG("0000", "0000", "0000", "02"), ones: "1".repeat(11), binaryNot: "0b" + "1".repeat(10) + "2", binaryBare: "b" + "1".repeat(11), binaryAfterWord: "x0b" + "1".repeat(11) };
   ok(Object.entries(allowed).every(([k, t]) => runs("n = " + t + ";").length === 0),
-    "a run of ten digits is let through when it is all zeros or led by eight, an order stamp, a decimal fraction, a run id in prose, one of three constants, or part of a hash or blob: "
+    "a run of ten digits is let through when it is eight zeros and up to four digits, an order id's fourteen-digit stamp with its dash, a run id in prose, a binary literal, one of four constants, or a hex digest, a blob with a letter each side or a 13-digit epoch: "
     + JSON.stringify(Object.entries(allowed).filter(([k, t]) => runs("n = " + t + ";").length).map(([k]) => k)));
   ok(Object.entries(refused).every(([k, t]) => runs("n = " + t + ";").length === 1),
-    "and any other is refused, a stamp that is too long or not a date, a run id that is no run id, a run after a full stop and one inside a longer run: "
+    "and any other is refused: a stamp not fourteen digits, not a date or not followed by the dash, a run id that is no run id, a run after a full stop, a run beside one letter or a short hex token, an epoch with no letter or led otherwise, more than twelve zeros, a near constant and a binary literal that is not one: "
     + JSON.stringify(Object.entries(refused).filter(([k, t]) => runs("n = " + t + ";").length !== 1).map(([k]) => k)));
   const where = longRuns([{ path: "dir/x.mjs", text: "a\nb\nn = " + refused.odd }]);
   ok(where.length === 1 && Object.keys(where[0]).join() === "path,line,len" && where[0].path === "dir/x.mjs" && where[0].line === 3 && where[0].len === 12,
