@@ -148,9 +148,9 @@ export async function run({ ok, KV, assets }) {
       return t;
     };
     const cred = await said(ORDERS[0].id), prep = await said(ORDERS[1].id), paid = await said(ORDERS[2].id), plcd = await said(ORDERS[3].id);
-    ok(/Acknowledged on .*Please pay now if you can\./.test(cred) && /Please make your payment now\./.test(prep) && !/Please (pay now|make your payment)/.test(cred.replace(/Please pay now if you can\./, "x")),
+    ok(/Confirmed on .*Please pay now if you can\./.test(cred) && /Please make your payment now\./.test(prep) && !/Please (pay now|make your payment)/.test(cred.replace(/Please pay now if you can\./, "x")),
       "an agreed order still owing asks them to pay now, on credit if they can and in advance plainly: " + JSON.stringify([cred.slice(0, 200), prep.slice(0, 200)]));
-    ok(!/Please (pay now|make your payment)/.test(paid) && !/Please (pay now|make your payment)/.test(plcd) && /Acknowledged on/.test(paid),
+    ok(!/Please (pay now|make your payment)/.test(paid) && !/Please (pay now|make your payment)/.test(plcd) && /Confirmed on/.test(paid),
       "a paid order is not asked, nor one still placed: " + JSON.stringify([paid.slice(0, 160), plcd.slice(0, 160)]));
   } finally { await new Promise((r) => setTimeout(r, 60)); dom.window.close(); }
 

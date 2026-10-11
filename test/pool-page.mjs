@@ -93,7 +93,7 @@ export async function page({ ok }) {
     ok(posted.length === 1 && j.path === "/pools/" + P1.id + "/join" && j.j.q === 2 && j.j.total === 200 && j.j.unit === 100 && j.j.digest === "dp1"
       && /^[0-9a-f]{32}$/.test(j.j.rid) && j.j.forFriend === false && Object.keys(j.j).sort().join() === "digest,forFriend,q,rid,total,unit",
       "Join sends the size, their own price and unit, the list's digest, a request id and who it is for, and nothing else: " + JSON.stringify(j));
-    ok(await wait(() => /Sent|sent/.test(text(d.getElementById("osheet")))) && await wait(() => !!d.querySelector('#hPool [data-pool="' + P1.id + '"] .salt-inbox-row__main') && !d.querySelector("[data-pool-join]")),
+    ok(await wait(() => /Order placed/.test(text(d.getElementById("osheet")))) && await wait(() => !!d.querySelector('#hPool [data-pool="' + P1.id + '"] .salt-inbox-row__main') && !d.querySelector("[data-pool-join]")),
       "and Home reads the join at once: the Join is gone and the row says they are in");
   } finally { await new Promise((r) => setTimeout(r, 80)); B.w.close(); }
 
