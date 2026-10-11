@@ -153,7 +153,7 @@ export const OWNER_JS = `
     if(!a.t||!a.flag) return waitLine();
     var t=a.t;
     if(a.flag==='owes') return FLAGW.owes+' '+rm(t.owed);
-    if(a.flag==='goods') return FLAGW.goods+' '+unitsOf(Math.round(t.toGet*100)/100);
+    if(a.flag==='goods') return FLAGW.goods+' '+units(Math.round(t.toGet*100)/100);
     if(a.flag==='refund') return FLAGW.refund+' '+rm(t.refund);
     if(a.flag==='pend') return FLAGW.pend+' '+rm(t.pend);
     return FLAGW.clear;
@@ -867,7 +867,7 @@ export const OWNER_JS = `
     go.classList.toggle('salt-ghost--danger',!q.plain);
   }
   /* a claim's rows, one line each, as the card and the Received sheet show them */
-  function makerClaimRowLine(row){ return (row.date||'undated')+' · '+rm(row.rm)+' of '+rm(row.owed)+' · '+(row.rid||row.key); }
+  function makerClaimRowLine(row){ return (fmtWhen(row.date)||'undated')+' · '+rm(row.rm)+' of '+rm(row.owed)+' · '+(row.rid||row.key); }
   function makerClaimCard(root,claim,key){
     var card=makerCard(root,'claim:'+key), route='/all/maker/claims/'+claim.u+'/'+claim.id, acts=el('div','maker-foot__acts'), who=codeByUser(claim.u);
     var turn=0, preview=null, said=el('p','salt-insight'), note=el('div','maker-quote');
@@ -1280,9 +1280,9 @@ export const OWNER_JS = `
   function makerReading(parent, reading, key){
     if(reading.cost!=null){
       var cost=typeof reading.cost==='object'?reading.cost.total:reading.cost;
-      parent.appendChild(el('p','maker-facts','Cost RM '+Number(cost).toFixed(2)));
+      parent.appendChild(el('p','maker-facts','Cost '+rm(cost)));
     }
-    if(reading.margin) parent.appendChild(el('p','maker-facts','Margin RM '+Number(reading.margin.rm).toFixed(2)+' · '+reading.margin.pct+'%'));
+    if(reading.margin) parent.appendChild(el('p','maker-facts','Margin '+rm(reading.margin.rm)+' · '+reading.margin.pct+'%'));
     if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
     (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
     if(reading.row){
@@ -1687,7 +1687,7 @@ export const OWNER_JS = `
         offerStatus.textContent=read.offers.length?read.offers.length+' offered.':'No offset is offered.';
         read.offers.forEach(function(offer){
           var row=el('div','maker-offer'); row.setAttribute('data-key',offer.rid);
-          row.appendChild(el('p','maker-facts',offer.code+' · '+offer.units+' unit · RM '+offer.rm.toFixed(2)+' against the '+(offer.saleDate||'undated')+' order '+offer.rid));
+          row.appendChild(el('p','maker-facts',offer.code+' · '+units(offer.units)+' · '+rm(offer.rm)+' against the '+(fmtWhen(offer.saleDate)||'undated')+' order '+offer.rid));
           makerButton(row,['Send offset for review','record.offset.send'],async function(send){
             offerStatus.textContent='Sending to the Desk…';
             try{
@@ -2238,7 +2238,7 @@ export const OWNER_JS = `
     var L=el('div','salt-ledger salt-ledger--plain'), r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
     lab.appendChild(mtile(order.product,order.qty)); lab.appendChild(el('span',null,codeByUser(order.u)));
     l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(Number(order.total||0)+Number(order.delivery||0)))); r.appendChild(l);
-    r.appendChild(el('span','salt-ledger__flag',unitsOf(order.qty)+', '+String((ORD_STAGE[order.status]||['',order.status])[1]).toLowerCase()));
+    r.appendChild(el('span','salt-ledger__flag',units(order.qty)+', '+String((ORD_STAGE[order.status]||['',order.status])[1]).toLowerCase()));
     L.appendChild(r); return L;
   }
   /* the control that asks carries its data-yn from the moment it is drawn, so a card redrawn while its sheet is open still has the control to give focus back to */
@@ -2330,7 +2330,7 @@ export const OWNER_JS = `
       var can=makerButton(acts,['Cancel order','order.cancel'],function(){
         var why=makerWhy(order);
         makerAsk(order,can,'cancel',{title:'Cancel this order?', go:'Cancel order', keep:'Keep the order', extra:why.nodes,
-          say:[+order.paid>0?'RM '+(+order.paid).toFixed(2)+' is paid on it, so a refund to the customer opens for you to return.':'Nothing is paid on it.'],
+          say:[+order.paid>0?rm(+order.paid)+' is paid on it, so a refund to the customer opens for you to return.':'Nothing is paid on it.'],
           yes:function(){ makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.'); }});
       },false);
       makerAskTag(order,can,'cancel');
@@ -2827,7 +2827,7 @@ export const OWNER_JS = `
       if(!choices.length) throw new Error('No priced size is on their list.');
       note.textContent='One order, on their current list. Acknowledgement is still checked against the Desk row.';
       var label=el('label','maker-field','Size and price'), pick=actOn(el('select','fld salt-field__input'),'orderfor.size');
-      choices.forEach(function(choice,index){ var option=el('option',null,pshape(choice.product)+' '+unitsOf(choice.qty)+' · '+rm(choice.total));
+      choices.forEach(function(choice,index){ var option=el('option',null,pshape(choice.product)+' '+units(choice.qty)+' · '+rm(choice.total));
         option.value=String(index); pick.appendChild(option); }); label.appendChild(pick); box.appendChild(label);
       var modeLabel=el('label','maker-field','Collected or delivered'), mode=actOn(el('select','fld salt-field__input'),'orderfor.mode');
       [['collect','Collected'],['deliver','Delivered']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; mode.appendChild(option); });
@@ -2922,7 +2922,7 @@ export const OWNER_JS = `
       if(orderAsked(o)) t.appendChild(chip('copper','Asked'));
       if(ordPays(o).length) t.appendChild(chip('ember','Says sent'));
       if(o.again&&o.again.length) t.appendChild(chip('brass','Offer again'));
-      main.appendChild(el('span','salt-inbox-row__what',[unitsOf(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')));
+      main.appendChild(el('span','salt-inbox-row__what',[units(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
     }else t.appendChild(el('span',null,e.id));
@@ -2984,7 +2984,7 @@ export const OWNER_JS = `
      and the same empty body, and the ghost, the close control, the scrim and Escape send nothing. What is approved is the ROW AS DRAFTED, never recomputed. */
   function deskAskRow(item){
     var e=item.entry||{};
-    return askRow(e.party||'no code', rm(item.total), [e.type||'Entry', item.qty==null?'':unitsOf(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null?mtile(item.product,item.qty):null);
+    return askRow(e.party||'no code', rm(item.total), [e.type||'Entry', item.qty==null?'':units(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null?mtile(item.product,item.qty):null);
   }
   function deskAskRows(draft){ var sibs=tripRows(draft); return (sibs.length?sibs:[draft]).map(deskAskRow); }
   /* THE ONE APPROVE of a Desk row, Record > Approve's button and Needs you's pill alike: the same question, the same request, the same
@@ -3057,12 +3057,12 @@ export const OWNER_JS = `
     var open=makerOpenOrders;
     {
       var card=makerCard(root,order.id), head=el('h3','',order.id), acts=el('div','maker-foot__acts'), cashed=false; card.appendChild(head); card.setAttribute('data-in',orderPartsOf(order));
-      var ownerLine=el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status);
+      var ownerLine=el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+units(order.qty)+' · '+order.status);
       card.appendChild(ownerLine);
-      card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
+      card.appendChild(el('p','maker-facts',rm(order.total)+(order.delivery?' · delivery '+rm(order.delivery):'')));
       /* 10 Oct 2026: the delivery time they asked for, the part of its window inside the hours, while goods are still to go */
       if(order.mode==='deliver'&&order.slot&&order.slotSpan&&!((+order.moved||0)>=(+order.qty||0)-0.004))
-        card.appendChild(el('p','maker-facts','Delivery wanted between '+String(order.slotSpan).replace('-',' and ')+' on '+String(order.slot).slice(0,10)));
+        card.appendChild(el('p','maker-facts','Delivery wanted between '+String(order.slotSpan).replace('-',' and ')+' on '+fmtWhen(String(order.slot).slice(0,10))));
       /* 10 Oct 2026: their exact spot is sealed to his key: the Desk opens it, this page only says it was shared */
       if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','Location shared, sealed: the Desk opens it for the fee.'));
       var againAck=makerAgainAck(order), quoteStart=null;
@@ -3070,7 +3070,7 @@ export const OWNER_JS = `
         var ap=order.price, apf=ap.offer||{};
         card.appendChild(el('p','maker-facts',(ap.state==='taken'?'They said yes to ':'Sent for their yes: ')+'goods '+rm(apf.total)
           +(order.mode==='deliver'?', delivery '+rm(apf.delivery||0):'')+(apf.slot&&apf.slotSpan?', between '+String(apf.slotSpan).replace('-',' and ')+' on '+mwDayLabel(String(apf.slot).slice(0,10)):'')
-          +(ap.state==='taken'?'. Its row is drafted at it.':', open until '+String(apf.until).slice(0,16).replace('T',' ')+' UTC.')));
+          +(ap.state==='taken'?'. Its row is drafted at it.':', open until '+fmtWhen(apf.until)+'.')));
         if(ap.state!=='taken') makerButton(acts,['Withdraw the offer','order.withdraw-offer'],function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false).setAttribute('data-withdraw','');
       }else if(order.status==='placed'){
         var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','maker-fields');
@@ -3296,8 +3296,8 @@ export const OWNER_JS = `
   function orderPlainCard(root,e){
     var order=e.order, again=null, acts=el('div','maker-foot__acts'), cashed=false, card=makerCard(root,e.id); card.setAttribute('data-in',e.parts); card.appendChild(el('h3','',e.id));
     if(order){
-      card.appendChild(el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status));
-      card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
+      card.appendChild(el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+units(order.qty)+' · '+order.status));
+      card.appendChild(el('p','maker-facts',rm(order.total)+(order.delivery?' · delivery '+rm(order.delivery):'')));
       if(makerAgainAck(order)) again=makerAcceptAgain(card,order,acts);
       makerAgain(card,order,acts);
       if(orderAsked(order)) makerOrderMoves(card,order,true);
@@ -3314,8 +3314,8 @@ export const OWNER_JS = `
      with one Approve. Both moves ask on the page's Sheet. */
   function approveReading(card,reading,key){
     var facts=[];
-    if(reading.cost!=null) facts.push('Cost RM '+Number(typeof reading.cost==='object'?reading.cost.total:reading.cost).toFixed(2));
-    if(reading.margin) facts.push('Margin RM '+Number(reading.margin.rm).toFixed(2)+' · '+reading.margin.pct+'%');
+    if(reading.cost!=null) facts.push('Cost '+rm(typeof reading.cost==='object'?reading.cost.total:reading.cost));
+    if(reading.margin) facts.push('Margin '+rm(reading.margin.rm)+' · '+reading.margin.pct+'%');
     if(facts.length) card.appendChild(el('p','maker-facts',facts.join(' · ')));
     var flags=reading.flags||[];
     if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',String(flag))); }); card.appendChild(chips); }
@@ -3329,15 +3329,15 @@ export const OWNER_JS = `
     pendingRows.forEach(function(draft){
       var card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve'), entry=draft.entry||{}, head=el('div','salt-approve__head');
       head.appendChild(el('span','salt-approve__party',entry.party||'no code'));
-      head.appendChild(el('span','salt-approve__entry',(entry.type||'Entry')+' · '+(entry.date||entry.payload&&entry.payload.date||'')));
+      head.appendChild(el('span','salt-approve__entry',(entry.type||'Entry')+' · '+fmtWhen(entry.date||entry.payload&&entry.payload.date||'')));
       card.appendChild(head);
-      card.appendChild(el('p','maker-facts',(draft.product||'')+' · '+(draft.qty==null?'':draft.qty+' units')+' · RM '+Number(draft.total||0).toFixed(2)));
+      card.appendChild(el('p','maker-facts',(draft.product||'')+' · '+(draft.qty==null?'':units(draft.qty))+' · '+rm(draft.total)));
       approveReading(card,draft,draft.id);
       var trip=tripOf(draft), siblings=tripRows(draft);
       if(siblings.length){
         card.appendChild(el('p','salt-insight','Trip '+trip+' · '+siblings.length+' rows waiting. This tap decides every row of the trip.'));
         siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){
-          card.appendChild(el('p','maker-facts',(item.product||'salt')+' · '+item.qty+' units · RM '+Number(item.total||0).toFixed(2)));
+          card.appendChild(el('p','maker-facts',(item.product||'salt')+' · '+units(item.qty)+' · '+rm(item.total)));
           approveReading(card,item,item.id);
         });
       }
@@ -3530,6 +3530,14 @@ export const OWNER_JS = `
   /* a moment today is its time, any other its day */
   function when(iso){ var t=dayMon(iso); return t===dayMon(new Date().toISOString())?hm(iso):t; }
   function andList(xs){ return xs.length<2?xs.join(''):xs.slice(0,-1).join(', ')+' and '+xs[xs.length-1]; }
+  /* PHASE 3 (12 Oct 2026, 3a): THREE WORDS FOR A DAY, A SIZE AND A SUM, so no card prints one its own way. fmtWhen: a day is DD Mon YYYY and a moment is
+     DD Mon YYYY, HH:MM in Kuala Lumpur, 24 hours, never ISO and never UTC; units: 1 unit, 2.5 units; rm is the page's own (stmt/page.js), RM and two places. */
+  function fmtWhen(v){
+    var s=String(v||'');
+    if(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s)) return dmyOf({day:s.slice(8), month:s.slice(5,7), year:s.slice(0,4)}, 'en');
+    return stamp(s, 'en');
+  }
+  function units(n){ return unitsOf(Number(n)||0); }
   function ghost(t, lit){ var L=labOf(t), b=actOn(el('button','salt-ghost'+(lit?' salt-ghost--lit':''),L[0]),L[1],L[2]); b.type='button'; return b; }
   function pill(t){ var L=labOf(t), b=actOn(el('button','salt-pill salt-pill--md',L[0]),L[1],L[2]); b.type='button'; return b; }
   /* an age in the hours a customer has waited: minutes under the first, days from the third */
@@ -3716,7 +3724,7 @@ export const OWNER_JS = `
   function ordWaits(o){ return orderPartsOf(o).indexOf('orders.waiting')>=0; }
   /* an order's Open goes to Orders > Waiting on you with that order's card open (Phase 1c) */
   function orderOpener(id){ return function(){ showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }
-  function orderWhat(o){ return (o.product||'')+', '+unitsOf(o.qty)+', '+rm(o.total); }
+  function orderWhat(o){ return (o.product||'')+', '+units(o.qty)+', '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
   /* a Desk row to approve: the same tap, the same question and the same request as Approve row on Record > Approve (approveDraft). A row
@@ -3725,7 +3733,7 @@ export const OWNER_JS = `
   function rowNeed(d){
     var e=d.entry||{}, claim=e.claim||(e.fulfil&&e.fulfil.claim), sibs=tripRows(d), said=needSaid['d:'+d.id];
     return item('soon','rows','Row','d:'+d.id, isoAt(d.id), {who:e.party||'no code',
-      what:[e.type, d.product, d.qty==null?'':unitsOf(d.qty), rm(d.total)].filter(Boolean).join(', '),
+      what:[e.type, d.product, d.qty==null?'':units(d.qty), rm(d.total)].filter(Boolean).join(', '),
       why:claim?'A customer claim is answered through Received on its order, not by approving its row.'
         :sibs.length?'Trip '+tripOf(d)+', '+sibs.length+(sibs.length===1?' row':' rows')+' waiting. One tap decides every row of the trip.':'',
       open:goPlace('record','approve')}, function(c){

@@ -50,7 +50,7 @@
  {
   "name": "a row says nothing of the units",
   "file": "stmt/owner.js",
-  "find": "[unitsOf(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')",
+  "find": "[units(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')",
   "replace": "[o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')"
  },
  {

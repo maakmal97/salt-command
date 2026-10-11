@@ -36,7 +36,7 @@
  {"name":"the place line is offered on a collection","file":"stmt/owner.js","find":"return w[0]!=='place'||order.mode==='deliver'; })","replace":"return true; })"},
  {"name":"a Decline does not carry the reason","file":"stmt/owner.js","find":"makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.')","replace":"makerMove(order,{status:'declined'},'Order declined.')"},
  {"name":"a Cancel does not carry the reason","file":"stmt/owner.js","find":"makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.')","replace":"makerMove(order,{status:'cancelled'},'Order cancelled.')"},
- {"name":"Cancel does not say what is paid","file":"stmt/owner.js","find":"say:[+order.paid>0?'RM '+","replace":"say:[+order.paid<0?'RM '+"},
+ {"name":"Cancel does not say what is paid","file":"stmt/owner.js","find":"say:[+order.paid>0?rm(+order.paid)+","replace":"say:[+order.paid<0?rm(+order.paid)+"},
  {"name":"the sheet does not restate the order","file":"stmt/owner.js","find":"body:[makerAskRow(order)].concat(","replace":"body:[].concat("},
  {"name":"the one action carries no act","file":"stmt/owner.js","find":"actOn(go,'order.ask-go',order.id); ","replace":""},
  {"name":"the close control carries no act","file":"stmt/owner.js","find":" actOn(document.getElementById('ynX'),'order.ask-close',order.id);","replace":""},

@@ -80,7 +80,7 @@ export async function run({ ok, pageWork }) {
       && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].every((x) => x.classList.contains("salt-approve")),
     "each Desk row to approve is an article on the system's Approve recipe (salt-approve), beside the page's own card class and in place of the glass card");
     const head = c.querySelector(":scope > .salt-approve__head");
-    ok(!!head && head.querySelector(".salt-approve__party").textContent === "CX1-ZED" && head.querySelector(".salt-approve__entry").textContent === "SELL · 2026-10-10",
+    ok(!!head && head.querySelector(".salt-approve__party").textContent === "CX1-ZED" && head.querySelector(".salt-approve__entry").textContent === "SELL · 10 Oct 2026",
       "its head is the recipe's: the party's code, and the entry as typed beside it: " + (head && head.textContent));
     const facts = [...c.querySelectorAll(":scope > .maker-facts")], flags = c.querySelector(":scope > .salt-approve__flags"), reason = c.querySelector(":scope > .salt-approve__reason");
     const figures = facts.find((x) => /Cost RM 56\.00/.test(x.textContent));
@@ -99,7 +99,7 @@ export async function run({ ok, pageWork }) {
     ok(!byAct(c, "draft.approve").disabled && !byAct(c, "draft.reject").disabled, "and neither is shut on a row that is not a claim's");
     const t2 = p.row("d-2"), t3 = p.row("d-3");
     ok(!!t2 && !!t3 && /Trip t1 · 2 rows waiting/.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve trip" && byAct(t2, "draft.reject").textContent === "Reject trip"
-      && /oil · 1 units · RM 100\.00/.test(t2.textContent) && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
+      && /oil · 1 unit · RM 100\.00/.test(t2.textContent) && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
     "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
     /* the page's own rules for the recipe's classes restate none of what the recipe draws: no surface, edge, padding, shadow, gap or type */
     const taken = ["background", "background-color", "border", "border-radius", "padding", "box-shadow", "display", "flex-direction", "gap", "font-family", "font-size", "color", "margin"];

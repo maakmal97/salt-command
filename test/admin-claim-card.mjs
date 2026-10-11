@@ -50,7 +50,7 @@ export async function run({ ok, pageWork }) {
     ok(one.length === 1 && one[0].route === "/all/maker/claims/" + U + "/c-1/preview" && same(one[0].body, {}) && !!p.card(C1) && !p.card(C2)
       && byAct(d, "claim.open", C1).getAttribute("aria-expanded") === "true" && byAct(d, "claim.open", C2).getAttribute("aria-expanded") === "false",
       "opening a claim reads its rows once, at their own route, and its card stands under its row: " + JSON.stringify(one));
-    ok(/2026-10-08 · RM 50\.00 of RM 60\.00 · s-fixture-1/.test(p.card(C1).textContent) && /These rows are answered together/.test(p.card(C1).textContent)
+    ok(/08 Oct 2026 · RM 50\.00 of RM 60\.00 · s-fixture-1/.test(p.card(C1).textContent) && /These rows are answered together/.test(p.card(C1).textContent)
       && !p.in("claim.received").disabled && p.in("claim.received-booked").disabled,
       "its rows are listed with what they settle, and Received is live: " + p.card(C1).textContent.slice(0, 160));
     ok(!p.in("claim.preview") && ![...d.querySelectorAll("#makerClaims button")].some((b) => /^Preview/.test(b.textContent)),
