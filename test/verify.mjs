@@ -51965,6 +51965,11 @@ await (async () => {
   await (await import("./maker-trades.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Borrow or lend: a double tap books once, a booked twin is asked about");
+await (async () => {
+  await (await import("./maker-loan-twin.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter approved registration staging: actual mixed-status SQLite selection");
 await (async () => {
   await (await import("./maker-registration.mjs")).runApprovedSelection({ ok });

@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { makerTradeEntry, makerTierSet, makerQueuedTradeFault, makerLedgerInput } from "../src/maker-inputs.js";
+import { makerTradeEntry, makerTierSet, makerQueuedTradeFault, makerQueuedLoanCheck, makerLedgerInput } from "../src/maker-inputs.js";
 
 export async function run({ ok, KV } = {}) {
   const check = ok || ((condition, message) => { if (!condition) throw new Error(message); });
@@ -186,6 +186,39 @@ export async function run({ ok, KV } = {}) {
   check(!!makerLedgerInput("loan", { at, form: "cash", direction: "in", code: "CX1-ZED",
     date: "2026-10-01", amount: 5, note: "unchecked text" }, book()).error,
     "loan inputs reject arbitrary notes and unknown fields.");
+  /* a loan sent twice books once (the admin stress triage of 11 Oct 2026, row 6): a booked twin is asked about, a queued one refused */
+  const loanIn = { at, form: "salt", direction: "out", product: "salt", code: "CX1-ZED", date: "2026-10-01", amount: 2 };
+  const withLoan = (patch = {}) => { const b = book(); b.state.loans.push({ rid: "l002", party: "CX1-ZED", direction: "out",
+    form: "salt", product: "salt", valueKg: 2, valueRM: null, date: "2026-10-01", status: "open", ...patch }); return b; };
+  const queues = (patch = {}, b = book()) => makerLedgerInput("loan", { ...loanIn, ...patch }, b).entry?.payload.mode === "loan";
+  const askedLoan = makerLedgerInput("loan", loanIn, withLoan());
+  check(!askedLoan.entry && askedLoan.twin?.second === "l002" && /already booked/.test(askedLoan.error),
+    "a loan matching a booked one by party, direction, book, amount and date is asked about with the booked row's id, never queued silently.");
+  check(queues({ second: "l002" }, withLoan()), "a booked twin confirmed with its own id is a separate loan and queues as any loan.");
+  check(!queues({ second: "l003" }, withLoan()) && !queues({ second: true }, withLoan()),
+    "a confirmation naming another row than the booked twin is refused.");
+  check(queues({ second: true }, withLoan({ rid: undefined })), "a booked twin that carries no id is confirmed with true.");
+  check(!queues({ second: "l002" }, book()), "a confirmation with no booked twin is refused: the twin has changed.");
+  for (const [what, patch] of [["party", { code: "CX2-ZED" }], ["direction", { direction: "in" }], ["date", { date: "2026-10-02" }],
+    ["amount", { amount: 3 }], ["book", { product: "oil" }], ["form", { form: "cash", product: undefined }]])
+    check(queues(patch, withLoan()), "a loan differing from a booked one in its " + what + " is no twin and queues at once.");
+  check(!queues({ amount: 120, form: "cash", product: undefined }, withLoan({ form: "cash", product: null, valueKg: null, valueRM: 120 })),
+    "a cash loan is matched to a booked cash loan by its ringgit.");
+  check(queues({ amount: 130, form: "cash", product: undefined }, withLoan({ form: "cash", product: null, valueKg: null, valueRM: 120 })),
+    "a cash loan of other ringgit than a booked cash loan is no twin.");
+  const loanA = makerLedgerInput("loan", loanIn, book()).entry;
+  const loanB = (patch = {}) => makerLedgerInput("loan", { ...loanIn, at: "2026-10-01T08:00:07.000Z", ...patch }, book()).entry;
+  check(makerQueuedLoanCheck(loanB(), [loanA]).queuedTwin?.at === at && /already queued/.test(makerQueuedLoanCheck(loanB(), [loanA]).error),
+    "a loan queued or waiting under Approve is refused when the same one comes under a new request moment.");
+  check(makerQueuedLoanCheck(loanA, [loanA]).retry === true && !makerQueuedLoanCheck(loanA, [loanA]).error,
+    "one request retried under its own moment is no twin of itself.");
+  for (const [what, patch] of [["party", { code: "CX2-ZED" }], ["direction", { direction: "in" }], ["date", { date: "2026-10-02" }],
+    ["amount", { amount: 3 }], ["book", { product: "oil" }], ["form", { form: "cash", product: undefined }]])
+    check(!makerQueuedLoanCheck(loanB(patch), [loanA]).error, "a loan differing from a queued one in its " + what + " is no twin.");
+  const cashA = makerLedgerInput("loan", { ...loanIn, form: "cash", product: undefined, amount: 120 }, book()).entry;
+  check(makerQueuedLoanCheck(loanB({ form: "cash", product: undefined, amount: 120 }), [cashA]).queuedTwin?.at === at
+    && !makerQueuedLoanCheck(loanB({ form: "cash", product: undefined, amount: 130 }), [cashA]).error,
+  "queued cash loans are twins by their ringgit, and a loan of other ringgit is none.");
   const repayment = makerLedgerInput("repay", { at, loan: "loan-test-1", date: "2026-10-01", amount: 2 }, book());
   check(repayment.draft?.collection === "repayment" && repayment.entry.payload.loan === "loan-test-1"
     && repayment.entry.payload.kg === 2,

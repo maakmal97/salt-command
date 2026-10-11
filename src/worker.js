@@ -21,7 +21,7 @@ import { runDrafter, dryRunDrafter, readBook, bookOnce, draftRow, tripCheck } fr
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
+import { makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -833,8 +833,11 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       if (checked.error) return json({ ok: false, ...checked }, 409);
     }
     const reservations = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
-    const reservedFault = POSITION_ENGINE.entryReservationFault(entry,
-      queuedEntries.concat((reservations.results || []).map((row) => JSON.parse(row.entry))), book);
+    const waitingEntries = queuedEntries.concat((reservations.results || []).map((row) => JSON.parse(row.entry)));
+    /* a loan already queued or waiting under Approve is not queued twice: a double tap, or a second device */
+    const twinned = operation === "loan" ? makerQueuedLoanCheck(entry, waitingEntries) : {};
+    if (twinned.error) return json({ ok: false, ...twinned }, 409);
+    const reservedFault = POSITION_ENGINE.entryReservationFault(entry, waitingEntries, book);
     if (reservedFault) return json({ ok: false, error: reservedFault }, 409);
     if (operation === "appoint-existing") {
       let held;

@@ -155,8 +155,9 @@ export function makerTradeBatch(operation, body, book, pending = [], registratio
   return fault ? { error: fault } : { entries, drafts, trip };
 }
 
-export function makerQueuedTradeCheck(entry, queue) {
-  const p = entry.payload;
+/** An input already queued or waiting under Approve with the same content (a double tap, or a second device) is refused;
+    the same request moment with the same content is one request retried, and passes. */
+function queuedTwinCheck(entry, queue, same, words) {
   const entries = queue || [];
   const sameStamp = entries.find((queued) => queued && queued.at === entry.at);
   if (sameStamp) {
@@ -165,13 +166,23 @@ export function makerQueuedTradeCheck(entry, queue) {
     return { error: "This request timestamp already carries another entry. Read its draft instead.",
       queuedTwin: { at: sameStamp.at } };
   }
-  const twin = entries.find((queued) => {
-    const q = queued && queued.payload;
-    return q && q.mode === "new" && q.direction === p.direction && (q.product || "salt") === p.product
-      && q.party === p.party && q.date === p.date && +q.qty === p.qty && +q.total === p.total;
-  });
-  return twin ? { error: "The same order is already queued. Read its draft instead.",
-    queuedTwin: { at: twin.at } } : {};
+  const twin = entries.find((queued) => queued && queued.payload && same(queued.payload));
+  return twin ? { error: words, queuedTwin: { at: twin.at } } : {};
+}
+
+export function makerQueuedTradeCheck(entry, queue) {
+  const p = entry.payload;
+  return queuedTwinCheck(entry, queue, (q) => q.mode === "new" && q.direction === p.direction
+    && (q.product || "salt") === p.product && q.party === p.party && q.date === p.date
+    && +q.qty === p.qty && +q.total === p.total, "The same order is already queued. Read its draft instead.");
+}
+
+/** A loan with the same party, direction, book, amount and date (units or ringgit), queued or waiting under Approve. */
+export function makerQueuedLoanCheck(entry, queue) {
+  const p = entry.payload;
+  return queuedTwinCheck(entry, queue, (q) => q.mode === "loan" && q.party === p.party && q.direction === p.direction
+    && q.date === p.date && (q.product || null) === (p.product || null)
+    && +q.qty === +p.qty && +q.total === +p.total, "The same loan is already queued. Read its draft instead.");
 }
 
 export function makerQueuedTradeFault(entry, queue) {
@@ -656,13 +667,21 @@ export function makerLedgerInput(operation, body, book, pending = []) {
   if (!timestamp(body && body.at)) return { error: "The input needs its canonical request timestamp." };
   let entry;
   if (operation === "loan") {
-    if (!exact(body, ["at", "form", "direction", "product", "code", "date", "amount"]))
-      return { error: "A loan carries only its timestamp, form, direction, product, code, date and amount." };
+    if (!exact(body, ["at", "form", "direction", "product", "code", "date", "amount", "second"]))
+      return { error: "A loan carries only its timestamp, form, direction, product, code, date, amount and booked-twin confirmation." };
     if (!date(body.date) || !realCode(body.code, roster) || !["in", "out"].includes(body.direction)
       || !["cash", "salt"].includes(body.form) || !figure(body.amount) || !(body.amount > 0))
       return { error: "Choose a roster party, direction, real date and positive amount." };
     if (body.form === "salt" && !active(body.product, book)) return { error: "Choose an active book for an in-kind loan." };
     if (body.form === "cash" && body.product != null) return { error: "A cash loan has no book." };
+    /* a loan already on the book with this party, direction, book, amount and date is asked about, as a booked trade is */
+    const twin = (book.state.loans || []).find((row) => row && row.party === body.code && row.direction === body.direction
+      && row.date === body.date && (body.form === "cash" ? Math.abs((+row.valueRM || 0) - body.amount) < 0.005
+        : Math.abs((+row.valueKg || 0) - body.amount) < 0.005 && (row.product || "salt") === (body.product || "salt")));
+    const second = twin ? twin.rid || true : null;
+    if (twin && body.second !== second)
+      return { error: "A loan with this party, book, amount and date is already booked. Confirm a separate loan.", twin: { second } };
+    if (!twin && body.second != null) return { error: "The booked twin has changed. Read the loan again." };
     entry = POSITION_ENGINE.loanEntry({ at: body.at, product: body.product || "salt", direction: body.direction,
       party: body.code, date: body.date, form: body.form, amount: body.amount });
   } else if (operation === "repay") {
