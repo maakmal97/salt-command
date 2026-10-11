@@ -17,9 +17,10 @@
  *   3  the sheet, in jsdom
  *   (each check below was proved red by its own mutation: test/pay-number.mutations.json, run with tools/section.mjs) */
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-import { readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { dirname, join, delimiter } from "node:path";
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { execFileSync, spawnSync } from "node:child_process";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
 /* an invented number, joined at run time */
@@ -146,6 +147,41 @@ export async function run({ ok, okOff, pageWork, KV }) {
   ok(!!put && put.args.join(" ") === "wrangler kv key put paynum --path x.json --binding STMT --remote -c wrangler.stmt.jsonc" && put.opts.cwd === REPO && put.opts.shell === (process.platform === "win32")
     && !!get && get.args.join(" ") === "wrangler kv key get paynum --binding STMT --remote -c wrangler.stmt.jsonc",
     "the write is wrangler kv key put on the Counter's STMT binding, key paynum, from a file, and the readback is the get of the same: " + JSON.stringify([put && put.args, get && get.args]));
+
+  /* every error the tool prints, through the real tool in a child process: a pay store of invented accounts in a temp folder, and a stand-in for npx
+     (never wrangler) that answers what the case needs. Each case puts a number where its error is read from, a key in the store, wrangler's own
+     line, the Counter's answer, the parser's quotation of a file, and none may reach the screen; a case shows "#" where the number was. */
+  const tmp = mkdtempSync(join(tmpdir(), "paysync-test-")), SECRET = DIG("5550", "7777", "4321");
+  const PATHKEY = Object.keys(process.env).find((k) => k.toUpperCase() === "PATH") || "PATH";
+  const lay = (store, npx) => {   /* npx = [the stream it speaks on, what it says, its exit code] */
+    const data = join(tmp, "data"), repo = join(tmp, "repo"), bin = join(tmp, "bin");
+    for (const d of [data, repo, bin]) mkdirSync(d, { recursive: true });
+    writeFileSync(join(data, "accounts.json"), store); writeFileSync(join(repo, "wrangler.jsonc"), '{\n  "name": "invented-pay"\n}\n');
+    writeFileSync(join(bin, "out.txt"), npx[1]);
+    if (process.platform === "win32") writeFileSync(join(bin, "npx.cmd"), '@type "%~dp0out.txt"' + (npx[0] === "err" ? " 1>&2" : "") + "\r\n@exit /b " + npx[2] + "\r\n");
+    else { writeFileSync(join(bin, "npx"), '#!/bin/sh\ncat "$(dirname "$0")/out.txt"' + (npx[0] === "err" ? " >&2" : "") + "\nexit " + npx[2] + "\n"); chmodSync(join(bin, "npx"), 0o755); }
+    return { QR_MASTER: data, QR_REPO: repo, [PATHKEY]: bin + delimiter + (process.env[PATHKEY] || "") };
+  };
+  const tool = (args, env) => { const r = spawnSync(process.execPath, [join(REPO, "tools", "paysync.mjs"), ...args], { cwd: REPO, env: Object.assign({}, process.env, { NODE_OPTIONS: "--no-warnings" }, env), encoding: "utf8", timeout: 60000 });   /* node's own notice names a process id */
+    return { code: r.status, said: String(r.stdout) + String(r.stderr) }; };
+  const goodStore = JSON.stringify({ accounts: [{ key: "maybank", name: "Maybank", bank: "Maybank", sub: n1 }] });
+  const cases = {};
+  try {
+    cases.key = tool(["--numbers", "--dry"], lay(JSON.stringify({ accounts: [{ key: "k" + SECRET, name: "Odd", bank: "Odd Bank", sub: n1 }] }), ["out", "", 0]));
+    cases.wrangler = tool(["--check-numbers"], lay(goodStore, ["err", "[ERROR] A request to the API failed for " + SECRET + " (code 10000)\n", 1]));
+    cases.notJson = tool(["--check-numbers"], lay(goodStore, ["out", "x" + SECRET, 0]));
+    cases.differs = tool(["--check-numbers"], lay(goodStore, ["out", JSON.stringify({ v: 1, accounts: { ["k" + SECRET]: { number: n2 } } }), 0]));
+    cases.push = tool(["--numbers"], lay(goodStore, ["err", "[ERROR] The write for " + SECRET + " was refused\n", 1]));
+    cases.parse = tool(["--numbers", "--dry"], lay("x" + SECRET, ["out", "", 0]));
+  } finally { try { rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* the system's temp folder */ } }
+  const clean = (r) => !/[0-9]{5}/.test(r.said) && r.said.includes("#");
+  ok(PS.hide("a" + n1 + " b" + n1.slice(-4)) === "a# b" + n1.slice(-4),
+    "the mask takes any run of five digits and leaves four: " + PS.hide("a" + n1 + " b" + n1.slice(-4)));
+  ok(Object.values(cases).every((r) => r.code === 1 && clean(r)) && /STOPPED: nothing was written/.test(cases.key.said) && /STOPPED: wrangler could not read/.test(cases.wrangler.said)
+    && /STOPPED: wrangler could not read/.test(cases.notJson.said) && /FAIL +KV `paynum` differs/.test(cases.differs.said) && /\.\.\.\.\.5678/.test(cases.differs.said)
+    && /PUSH FAILED/.test(cases.push.said) && /SyntaxError/.test(cases.parse.said),
+    "every error the tool prints hides a run of five digits, a key in the store, wrangler's line, a Counter answer that is not JSON, one that differs, a failed write and a store that will not parse, and the last four digits still show: "
+    + JSON.stringify(Object.fromEntries(Object.entries(cases).map(([k, r]) => [k, [r.code, clean(r)]]))));
 
   /* ---- 2: the route, GET /pay/accounts, through the real Worker on a stand-in KV */
   const stmtW = (await import("../stmt/worker.js")).default;

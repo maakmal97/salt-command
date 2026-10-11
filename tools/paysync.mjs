@@ -128,6 +128,11 @@ export const PAYNUM_KEY = "paynum";
 export const NUM_RE = /^[0-9]{10,15}$/;
 export const lastFour = (n) => String(n).slice(-4);
 const shown = (n) => "....." + lastFour(n);
+/* EVERY ERROR THIS TOOL PRINTS LOSES ANY RUN OF FIVE DIGITS. A parser quotes the text it choked on ("Unexpected token 'x', "x55501..." is not
+   valid JSON"), wrangler quotes what the Counter answered, and a key in the store is whatever its owner typed; none of them may put a number on
+   the screen. The last four digits a line names are four digits, and stay. */
+export const hide = (s) => String(s).replace(/[0-9]{5,}/g, "#");
+const fail = (s) => console.error(hide(s));
 
 /** { accounts: {key: {number}}, refused: ["key: why"] } from the pay store's record; `known` is the set of keys stmt/pay.js names. */
 export function pickNumbers(doc, known) {
@@ -177,17 +182,17 @@ async function numbersMain(argv) {
   const { PAY_ACCOUNTS } = await import(pathToFileURL(OUT).href);
   const doc = JSON.parse(readFileSync(join(PAY_MASTER, "accounts.json"), "utf8").replace(/^\uFEFF/, ""));
   const { accounts, refused } = pickNumbers(doc, new Set(PAY_ACCOUNTS.map((a) => a.key)));
-  if (refused.length) { console.error("STOPPED: nothing was written.\n  " + refused.join("\n  ")); process.exit(1); }
+  if (refused.length) { fail("STOPPED: nothing was written.\n  " + refused.join("\n  ")); process.exit(1); }
   const rec = numbersRecord(accounts);
   if (argv.includes("--check-numbers")) {
     let live;
     try { live = JSON.parse(wrGetNumbers()); } catch (e) {
-      console.error(/ - 404:/.test(wranglerSaid(e)) ? "FAIL  the Counter holds no `paynum`; run: node tools/paysync.mjs --numbers" : "STOPPED: wrangler could not read the Counter's KV: " + wranglerSaid(e));
+      fail(/ - 404:/.test(wranglerSaid(e)) ? "FAIL  the Counter holds no `paynum`; run: node tools/paysync.mjs --numbers" : "STOPPED: wrangler could not read the Counter's KV: " + wranglerSaid(e));
       process.exit(1);
     }
     const diff = numbersDiff(rec, live);
     if (!diff.length && live && live.v === 1) { console.log("  ok    KV `paynum` is what the pay master produces (" + Object.keys(accounts).length + " accounts)\n" + numbersTable(accounts).join("\n")); return; }
-    console.error("  FAIL  KV `paynum` differs from the pay master; run: node tools/paysync.mjs --numbers\n" + diff.join("\n"));
+    fail("  FAIL  KV `paynum` differs from the pay master; run: node tools/paysync.mjs --numbers\n" + diff.join("\n"));
     process.exit(1);
   }
   console.log((dry ? "would write " : "writing ") + "KV `paynum`, " + Object.keys(accounts).length + " accounts:\n" + numbersTable(accounts).join("\n"));
@@ -197,7 +202,7 @@ async function numbersMain(argv) {
     writeFileSync(file, JSON.stringify(rec));
     wrPutNumbers(file);
     console.log("wrote KV `paynum` on the Counter. Check it: node tools/paysync.mjs --check-numbers");
-  } catch (e) { console.error("PUSH FAILED: wrangler could not write the Counter's KV: " + wranglerSaid(e)); process.exitCode = 1; }
+  } catch (e) { fail("PUSH FAILED: wrangler could not write the Counter's KV: " + wranglerSaid(e)); process.exitCode = 1; }
   finally { try { rmSync(dir, { recursive: true, force: true }); } catch (e) { /* the system's temp folder */ } }
 }
 
@@ -220,5 +225,5 @@ async function main() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main().catch((e) => { console.error(String((e && e.stack) || e)); process.exit(1); });
+  main().catch((e) => { fail((e && e.stack) || e); process.exit(1); });
 }

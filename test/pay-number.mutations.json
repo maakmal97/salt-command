@@ -152,5 +152,14 @@
  {"name":"the shut page carries a number","file":"stmt/page.js","find":"wd(\"shut.p\") + \"</p>\", nonce, esc(EN[\"shut.title\"]));","replace":"wd(\"shut.p\") + \" 55501234</p>\", nonce, esc(EN[\"shut.title\"]));"},
  {"name":"a guest page carries a script","file":"stmt/page.js","find":"<div class=\"panel\">' + inner + \"</div></body></html>\";","replace":"<div class=\"panel\">' + inner + \"</div><script></script></body></html>\";"},
  {"name":"a guest page admits script","file":"stmt/worker.js","find":"style-src 'nonce-\" + nonce + \"'; script-src 'none'\"","replace":"style-src 'nonce-\" + nonce + \"'; script-src 'self'\""},
- {"name":"the guest board draws no price","file":"stmt/page.js","find":"esc(rm(r.price))","replace":"esc(rm(0))"}
+ {"name":"the guest board draws no price","file":"stmt/page.js","find":"esc(rm(r.price))","replace":"esc(rm(0))"},
+ {"name":"a key in the store is printed whole","file":"tools/paysync.mjs","find":"fail(\"STOPPED: nothing was written.","replace":"console.error(\"STOPPED: nothing was written."},
+ {"name":"wrangler's line is printed whole","file":"tools/paysync.mjs","find":"fail(/ - 404:/.test(wranglerSaid(e))","replace":"console.error(/ - 404:/.test(wranglerSaid(e))"},
+ {"name":"a difference is printed whole","file":"tools/paysync.mjs","find":"fail(\"  FAIL  KV","replace":"console.error(\"  FAIL  KV"},
+ {"name":"a failed write is printed whole","file":"tools/paysync.mjs","find":"fail(\"PUSH FAILED:","replace":"console.error(\"PUSH FAILED:"},
+ {"name":"a store that will not parse is printed whole","file":"tools/paysync.mjs","find":"fail((e && e.stack) || e);","replace":"console.error(String((e && e.stack) || e));"},
+ {"name":"the mask leaves a long run","file":"tools/paysync.mjs","find":"export const hide = (s) => String(s).replace(/[0-9]{5,}/g, \"#\");","replace":"export const hide = (s) => String(s).replace(/[0-9]{13,}/g, \"#\");"},
+ {"name":"the mask leaves a run of twelve","file":"tools/paysync.mjs","find":"export const hide = (s) => String(s).replace(/[0-9]{5,}/g, \"#\");","replace":"export const hide = (s) => String(s).replace(/[0-9]{5,11}/g, \"#\");"},
+ {"name":"the mask takes the last four digits too","file":"tools/paysync.mjs","find":"export const hide = (s) => String(s).replace(/[0-9]{5,}/g, \"#\");","replace":"export const hide = (s) => String(s).replace(/[0-9]{4,}/g, \"#\");"},
+ {"name":"the mask is not applied","file":"tools/paysync.mjs","find":"const fail = (s) => console.error(hide(s));","replace":"const fail = (s) => console.error(String(s));"}
 ]
