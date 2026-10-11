@@ -18768,7 +18768,7 @@ await (async () => {
     ok(!cB.querySelector("[data-story]"), "the card with no account reads no story of how they got in");
     const cA = cardOf(uA);
     ok(!!cA && await until(() => btn(cA, five[0]) && !btn(cA, five[0]).disabled) && ["Show a code, in person", "View as them", "Sign out everywhere"].every((t) => btn(cA, t) && !btn(cA, t).disabled),
-      "and on a card with an account they stay on, its link made as it opens: " + JSON.stringify(five.map((t) => [t, cA && btn(cA, t) && btn(cA, t).disabled])));
+      "and on a card with an account they stay on, its link not yet made: " + JSON.stringify(five.map((t) => [t, cA && btn(cA, t) && btn(cA, t).disabled])));
 
     /* ---- the Worker: his correct master on a username with no account is never a miss ---- */
     const from = { "content-type": "application/json", "CF-Connecting-IP": "203.0.113.22" };
@@ -18973,7 +18973,7 @@ await (async () => {
     throw new Error("the Access gate reached for " + x);
   };
   const until = async (f) => { for (let i = 0; i < 150 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
-  let win = null;
+  let win = null, work = null;
   const clip = { ok: false, got: [] };
   try {
     const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
@@ -18987,6 +18987,7 @@ await (async () => {
       Object.defineProperty(w.navigator, "clipboard", { value: { writeText: (t) => clip.ok ? (clip.got.push(t), Promise.resolve()) : Promise.reject(new Error("NotAllowedError")) }, configurable: true });
       Object.defineProperty(w.navigator, "share", { value: () => Promise.reject(Object.assign(new Error("Share canceled"), { name: "AbortError" })), configurable: true });
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+      work = pageWork(w);
     } }).window;
     const D = win.document;
     /* S9 9.2: the card is the account's, opened from its row on Accounts */
@@ -18994,12 +18995,17 @@ await (async () => {
     ok(await until(() => D.querySelector("#rlist [data-u]")), "Accounts lists the account");
     D.querySelector("#rlist [data-u]").click();
     const btnOf = (t) => [...D.querySelectorAll("#aopen .scard button")].find((b) => b.textContent === t);
-    /* S9 9.3: Copy message left with the Send card. The account's one Send a sign-in link is made as it opens, so a
-       share sheet he closes leaves that link made and says so, and a browser with no share sheet copies it, or says not */
+    /* S9 9.3: Copy message left with the Send card. The account's one Send a sign-in link is made by its first tap (his
+       decision 7 of 11 Oct 2026), so a share sheet he closes on the second leaves that link made and says so, and a browser
+       with no share sheet copies it, or says not */
     const pill = () => D.querySelector("#aopen .scard .apill");
     const note = () => ((D.querySelector("#aopen .scard .anote") || {}).textContent || "");
     for (let i = 0; i < 400 && !(pill() && !pill().disabled); i++) await new Promise((r) => setTimeout(r, 25));
-    ok(pill() && !pill().disabled, "its row opens the account, its link made: " + note() + " " + (pill() ? pill().textContent : "no pill"));
+    ok(pill() && !pill().disabled && await work.quiet() && pill().textContent === "Send a sign-in link" && (await kv.list({ prefix: "ot:" })).keys.length === 0,
+      "its row opens the account, its link not made: " + note() + " " + (pill() ? pill().textContent : "no pill"));
+    pill().click();
+    ok(await until(() => pill().textContent === "Share the link") && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+      "its first tap makes the link: " + (pill() ? pill().textContent : "no pill"));
     pill().click();
     ok(await until(() => /Not shared/.test(note())) && !pill().disabled && (await kv.list({ prefix: "ot:" })).keys.length === 1,
       "a share sheet he closes says Not shared and keeps the one link made, never making a second: " + note());
@@ -19007,7 +19013,7 @@ await (async () => {
     pill().click();
     ok(await until(() => /Not copied/.test(note())), "with no share sheet and a clipboard that refuses, it says Not copied: " + note());
     clip.ok = true; pill().click();
-    ok(await until(() => /^Copied[.]/.test(note())) && clip.got.some((t) => t.includes("/s/")) && (await kv.list({ prefix: "ot:" })).keys.length === 1,
+    ok(await until(() => /^Copied[.]/.test(note())) && await work.quiet() && clip.got.some((t) => t.includes("/s/")) && (await kv.list({ prefix: "ot:" })).keys.length === 1,
       "and with one that takes it, Copied, with that same link on the clipboard: " + JSON.stringify({ note: note(), copied: clip.got.length }));
     clip.ok = false;
     D.querySelector('button[data-m="links"]').click();
@@ -20664,7 +20670,8 @@ await (async () => {
     throw new Error("the Access gate reached for " + x);
   };
   const until = async (f) => { for (let i = 0; i < 250 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
-  let win = null;
+  let win = null, work = null;
+  const hits = [];
   const view = { wide: true };
   try {
     const claims = { iss: "https://" + TEAM + ".cloudflareaccess.com", aud: [AUD], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
@@ -20675,14 +20682,24 @@ await (async () => {
     const from = { "content-type": "application/json", "CF-Connecting-IP": "198.51.100.97" };
     for (let i = 0; i < 10; i++) await site("/open", { method: "POST", headers: from, body: JSON.stringify({ u: uL, password: "zzzz-zzzz-zzzz-zzzz" }) });
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
+      try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
+      if (!w.TextEncoder) w.TextEncoder = TextEncoder;
+      if (!w.TextDecoder) w.TextDecoder = TextDecoder;
       w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*1080px/.test(q) && view.wide, addListener() {}, removeListener() {} });
-      w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+      w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
+        return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
+      work = pageWork(w);
     } }).window;
     const D = win.document, pane = D.getElementById("nopen");
     const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
     const party = (key) => card(key) && card(key).querySelector(".salt-approve__head .salt-approve__party");
     ok(await until(() => card("l:" + lid) && card("k:" + uL) && card("n:" + uN) && !pane.hidden),
       "on a desk, Needs you opens with an account open beside it");
+    /* his decision 7 of 11 Oct 2026: LOOKING MAKES NO LINK. The first card about an account is drawn on load, and its story read is the
+       sign that the draw ran: once the page is quiet, nothing it sent writes and no link is filed */
+    ok(await until(() => hits.includes("GET /all/account/" + uL)) && await work.quiet()
+      && hits.filter((x) => !/^GET /.test(x)).length === 0 && (await kv.list({ prefix: "ot:" })).keys.length === 0,
+      "from 1080px the account drawn beside Needs you on load sends no request that writes and files no link: " + JSON.stringify(hits.filter((x) => !/^GET /.test(x))));
     ok(D.getElementById("mHome").classList.contains("open") && /CX0-LK/.test((pane.querySelector(".scard .srow") || {}).textContent || "")
       && card("k:" + uL).getAttribute("aria-current") === "true",
       "the first card about an account, and that card is marked the open one: " + ((pane.querySelector(".scard .srow") || {}).textContent));
@@ -20704,7 +20721,7 @@ await (async () => {
       "on a phone a card's code opens that account on Accounts, with the way back");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S9 9.3: an account opens with its sign-in link made, so Send shares inside the tap, and says how they got in and on what kind of device, never an address");
+section("S9 9.3: an account opens with no link made, its first tap makes one and its second shares it inside the tap, and says how they got in and on what kind of device, never an address");
 await (async () => {
   /* THE PLAN'S f13 AND ITS MUST-NOT-SHIP LIST: one filled Send a sign-in link, its key made as the account opens, so the
      share sheet is the tap's first act and never waits on a key derivation and a fetch; and How they got in, each link,
@@ -20782,9 +20799,9 @@ await (async () => {
     ok(aj.ok && aj.log.length === 2 && aj.log.every((x) => Object.keys(x).sort().join() === "at,how,kind,where"),
       "and it hands over each way in, its moment and the device, nothing else: " + JSON.stringify(aj.log[0]));
 
-    /* ---- the page: the link is made as the account opens, and the tap shares it before anything waits ---- */
+    /* ---- the page, his decision 7 of 11 Oct 2026: looking makes no link; the first tap makes it, the second shares it before anything waits ---- */
     const hits = [], shared = [];
-    let inTap = null;
+    let inTap = null, work = null;
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": jwt } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       if (!w.TextEncoder) w.TextEncoder = TextEncoder;
@@ -20792,6 +20809,7 @@ await (async () => {
       Object.defineProperty(w.navigator, "share", { value: (d) => { shared.push(d.text); return Promise.resolve(); }, configurable: true });
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": jwt }), body: o.body }); };
+      work = pageWork(w);
     } }).window;
     const D = win.document;
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
@@ -20802,18 +20820,28 @@ await (async () => {
     const pill = () => card() && card().querySelector(".apill");
     /* the links not yet used: the one opened above stays two minutes, spent, for the page that spent it */
     const links = async () => { let n = 0; for (const k of (await kv.list({ prefix: "ot:" })).keys) if (!JSON.parse(await kv.get(k.name)).spent) n++; return n; };
-    ok(await until(() => pill() && !pill().disabled) && await links() === 1 && hits.some((x) => x === "POST /all/signin/" + u),
-      "the account opens with its sign-in link already made, before any tap: " + JSON.stringify(hits.filter((x) => /signin|open$/.test(x))));
-    ok(pill().textContent === "Send a sign-in link" && pill().classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1,
+    /* the story read is the sign the card was drawn; once the page is quiet, nothing it sent writes and no link is filed */
+    ok(await until(() => pill() && !pill().disabled && hits.includes("GET /all/account/" + u)) && await work.quiet()
+      && hits.filter((x) => !/^GET /.test(x)).length === 0 && await links() === 0 && pill().textContent === "Send a sign-in link",
+      "an account opened sends no request that writes and files no link: " + JSON.stringify(hits.filter((x) => !/^GET /.test(x))));
+    ok(pill().classList.contains("salt-pill") && card().querySelectorAll(".salt-pill").length === 1,
       "Send a sign-in link is the account's one filled control");
+    const signins = () => hits.filter((x) => x === "POST /all/signin/" + u).length;
+    pill().click();
+    ok(await until(() => pill().textContent === "Share the link") && await work.quiet() && await links() === 1 && signins() === 1 && shared.length === 0,
+      "the first tap makes exactly one link and shares nothing: " + JSON.stringify({ label: pill().textContent, links: await links(), signins: signins(), shared: shared.length }));
     const before = hits.length;
     pill().click();
     inTap = shared.length;
     ok(inTap === 1 && /[/]s[/]/.test(shared[0]) && hits.length === before,
-      "the tap shares the link as its first act, with no fetch before it: " + JSON.stringify({ inTap, fetched: hits.slice(before) }));
-    ok(await until(() => hits.includes("POST /all/sent/" + u)) && await until(async () => (await links()) === 2)
-      && await until(() => /Sent[.] It signs them in once/.test(card().textContent) && card().querySelector(".tick input").checked),
-      "a share that goes through ticks the account sent and makes a fresh link for the next: " + JSON.stringify({ links: await links(), text: card() && card().querySelector(".anote").textContent }));
+      "the second tap shares the link as its first act, with no fetch before it: " + JSON.stringify({ inTap, fetched: hits.slice(before) }));
+    ok(await until(() => hits.includes("POST /all/sent/" + u))
+      && await until(() => /Sent[.] It signs them in once/.test(card().textContent) && card().querySelector(".tick input").checked)
+      && await work.quiet() && await links() === 1 && signins() === 1 && pill().textContent === "Send a sign-in link",
+      "a share that goes through ticks the account sent and makes no link for the next: " + JSON.stringify({ links: await links(), signins: signins(), text: card() && card().querySelector(".anote").textContent }));
+    pill().click();
+    ok(await until(() => pill().textContent === "Share the link") && await work.quiet() && await links() === 2 && signins() === 2,
+      "the next tap makes a new one: " + JSON.stringify({ label: pill().textContent, links: await links() }));
     /* ---- how they got in, drawn ---- */
     const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
     ok(await until(() => /How they got in/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
@@ -20951,10 +20979,11 @@ await (async () => {
     outOf("Windows computer, Edge").click();
     ok(await until(() => /Phones and computers1/.test(story()) && !/Windows computer, Edge/.test(story().split("Phones and computers")[1])), "one tap on a device's Sign out ends it and the list follows: " + JSON.stringify(story()));
     const pill = () => card().querySelector(".apill");
-    ok(await until(() => pill() && !pill().disabled), "the account's link is made as it opened");
+    pill().click();
+    ok(await until(() => pill() && pill().textContent === "Share the link"), "the account's link is made by its first tap");
     const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
     sob().click(); sob().click();
-    ok(await until(() => /Signed out: 1 device[.]/.test(card().textContent) && /Phones and computers/.test(story()) && /None signed in/.test(story())) && !pill().disabled,
+    ok(await until(() => /Signed out: 1 device[.]/.test(card().textContent) && /Phones and computers/.test(story()) && /None signed in/.test(story())) && !pill().disabled && pill().textContent === "Share the link",
       "Sign out everywhere says what it ended, the list empties, and Send a sign-in link still has its link: " + JSON.stringify((card().querySelector(".agrid + .anote") || {}).textContent));
     /* ---- an account closed while its link and its story are still on their way: their landing throws nothing ----
        28 Sep 2026: jsdom from 30.1.0 keeps a closed window's document, so the late answers draw into it, harmlessly; what
@@ -20963,7 +20992,7 @@ await (async () => {
     const errs = [], onRej = (e) => errs.push(String((e && e.message) || e));
     process.on("unhandledRejection", onRej);
     try {
-      const gate = { go: null, open: false, landed: [] };
+      const gate = { go: null, open: false, landed: [], seen: [] };
       let work = null;
       const w3 = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
         try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
@@ -20971,6 +21000,7 @@ await (async () => {
         if (!w.TextDecoder) w.TextDecoder = TextDecoder;
         w.fetch = async (q, o) => { o = o || {};
           const held = String(q).match(/^[/]all[/](account|signin)[/]/);
+          if (held && !gate.open) gate.seen.push(held[1]);
           if (held && !gate.open) await new Promise((r) => { const was = gate.go; gate.go = () => { if (was) was(); r(); }; });
           const r = await site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body });
           if (held && gate.open) gate.landed.push(held[1]);
@@ -20982,7 +21012,9 @@ await (async () => {
       D3.querySelector('button[data-m="accounts"]').click();
       await until(() => D3.querySelector('#rlist [data-u="' + u + '"]'));
       D3.querySelector('#rlist [data-u="' + u + '"]').click();
-      ok(await until(() => !!gate.go), "the account opened, its story is on its way");
+      ok(await until(() => gate.seen.includes("account") && !!D3.querySelector("#aopen .apill")), "the account opened, its story is on its way");
+      D3.querySelector("#aopen .apill").click();
+      ok(await until(() => gate.seen.includes("signin")), "and so is the link its first tap makes");
       w3.close();
       gate.open = true; gate.go();
       ok(await work.quiet() && gate.landed.includes("account") && gate.landed.includes("signin"),
@@ -21126,7 +21158,7 @@ await (async () => {
 })();
 section("S9 fix S9R-1: a link copied or shared from any card is dropped from the page, so Sign out everywhere ends it with the rest");
 await (async () => {
-  /* Sign out everywhere spares the link his page holds, made as the account opened and not yet sent. A link copied on a
+  /* Sign out everywhere spares the link his page holds, made by his tap and not yet sent. A link copied on a
      browser with no share sheet, or shared from a Needs you card, stayed the one held, so the forwarded link the button
      answers was the one link it spared, and the next Send handed the same link out again. */
   const W = (await import("../stmt/worker.js")).default;
@@ -21185,10 +21217,14 @@ await (async () => {
 
     /* ---- the account's own Send, copied ---- */
     await openAcct(u);
-    ok(await until(() => pill(u) && !pill(u).disabled), "the account opens with its link made");
+    ok(await until(() => pill(u) && !pill(u).disabled && pill(u).textContent === "Send a sign-in link"), "the account opens with no link made");
     pill(u).click();
-    ok(await until(() => clip.length === 1 && /Copied[.]/.test(card(u).textContent)), "Send copies the message: " + clip.length);
-    ok(await until(() => pill(u) && !pill(u).disabled), "and a fresh link is made for the next Send");
+    ok(await until(() => pill(u).textContent === "Share the link") && clip.length === 0, "its first tap makes the link and copies nothing");
+    pill(u).click();
+    ok(await until(() => clip.length === 1 && /Copied[.]/.test(card(u).textContent)), "its second copies the message: " + clip.length);
+    ok(await until(() => pill(u) && !pill(u).disabled && pill(u).textContent === "Send a sign-in link"), "and the copied link is dropped, the next tap making a fresh one");
+    pill(u).click();
+    ok(await until(() => pill(u).textContent === "Share the link") && clip.length === 1, "which that tap makes and copies nothing");
     pill(u).click();
     ok(await until(() => clip.length === 2) && clip[1].split("/s/")[1] !== clip[0].split("/s/")[1],
       "the next Send copies a new link, never the one already copied");
@@ -21205,15 +21241,15 @@ await (async () => {
     nbtn("Share the link").click();
     ok(await until(() => clip.length === 3), "and the second copies it");
     await openAcct(uL);
-    ok(await until(() => pill(uL) && !pill(uL).disabled), "the account opened after it has a link to send");
+    ok(await until(() => pill(uL) && !pill(uL).disabled && pill(uL).textContent === "Send a sign-in link"), "the account opened after it offers a fresh link, none made unasked");
     ok(await signOutAll(uL) && await opens(clip[2]) === 401,
       "and Sign out everywhere on it ends the link Needs you handed out, which the page no longer holds");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S9 fix S9R-6: a sign-in link that could not be made as the account opened is made again from the pill, as Try again");
+section("S9 fix S9R-6: a sign-in link that could not be made is made again from the pill, as Try again");
 await (async () => {
-  /* The link is made as the account opens. When that failed the pill stayed off under the error, and only reopening the
-     account made it again; before 9.3 a second tap retried. */
+  /* The link is made by the pill's first tap (his decision 7 of 11 Oct 2026). When that failed the pill stayed off under the
+     error, and only reopening the account made it again; before 9.3 a second tap retried. */
   const W = (await import("../stmt/worker.js")).default;
   const C = await import("../tools/stmt-crypto.mjs");
   const { JSDOM } = await import("jsdom");
@@ -21241,7 +21277,7 @@ await (async () => {
   };
   const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
   const tries = [], shared = [];
-  let win = null;
+  let win = null, work = null;
   try {
     win = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
@@ -21252,6 +21288,7 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {};
         if (/^[/]all[/]signin[/]/.test(String(q)) && tries.push(q) === 1) return new Response(JSON.stringify({ ok: false, error: "the site did not answer" }), { status: 503, headers: { "content-type": "application/json" } });
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+      work = pageWork(w);
     } }).window;
     const D = win.document;
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
@@ -21261,12 +21298,15 @@ await (async () => {
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
     const pill = () => card() && card().querySelector(".apill");
     const note = () => ((card() && card().querySelector(".apill + .anote")) || {}).textContent || "";
-    ok(await until(() => tries.length === 1 && /Could not make a link/.test(note())), "the link could not be made as the account opened: " + note());
+    ok(await until(() => pill() && !pill().disabled) && await work.quiet() && tries.length === 0 && pill().textContent === "Send a sign-in link",
+      "the account opens and makes nothing: " + JSON.stringify([pill() && pill().textContent, tries.length]));
+    pill().click();
+    ok(await until(() => tries.length === 1 && /Could not make a link/.test(note())), "the link could not be made by the first tap: " + note());
     ok(pill().textContent === "Try again" && !pill().disabled, "and the pill stays on, as Try again: " + JSON.stringify([pill().textContent, pill().disabled]));
     pill().click();
     ok(await until(() => tries.length === 2) && shared.length === 0, "its tap makes the link again and shares nothing: " + JSON.stringify({ tries: tries.length, shared: shared.length }));
-    ok(await until(() => pill().textContent === "Send a sign-in link" && !pill().disabled && note() === ""),
-      "once made, it is Send a sign-in link again and the error has gone: " + JSON.stringify([pill().textContent, note()]));
+    ok(await until(() => pill().textContent === "Share the link" && !pill().disabled && note() === ""),
+      "once made, it is Share the link and the error has gone: " + JSON.stringify([pill().textContent, note()]));
     pill().click();
     ok(await until(() => shared.length === 1 && /[/]s[/]/.test(shared[0])), "and the next tap sends it");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -21377,10 +21417,10 @@ await (async () => {
     ok(await orders(s2) === 401 && await orders(s1) === 401, "and the sessions it names, the newest included, read nothing after");
   } finally { globalThis.fetch = realFetch; }
 })();
-section("S9 fix S9R-4: Sign out everywhere counts the links that left a page, burns the ones made as an account opened uncounted, and never spares one sent");
+section("S9 fix S9R-4: Sign out everywhere counts the links that left a page, burns the ones made and never sent uncounted, and never spares one sent");
 await (async () => {
-  /* Every opening of an account makes a live link, and from 1080px Salt Account opens one by itself on each load, so the
-     answer's "links and codes not yet used" counted links nobody was ever sent, and read as links out in the world. */
+  /* A link he makes by a tap and never sends is live, so the answer's "links and codes not yet used" must not count it, or it
+     reads as a link out in the world (before his decision 7 of 11 Oct 2026 every opening made one, and from 1080px each load). */
   const W = (await import("../stmt/worker.js")).default;
   const S = await import("../stmt/signin.js");
   const C = await import("../tools/stmt-crypto.mjs");
@@ -21433,12 +21473,14 @@ await (async () => {
     /* ---- the page: a link shared is marked; one made by an earlier load is burnt and not counted ---- */
     const load = async () => {
       const shared = [];
+      let work = null;
       const w = new JSDOM(await (await site("/all", { headers: A })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(x) {
         try { Object.defineProperty(x, "crypto", { value: crypto, configurable: true }); } catch (e) { x.crypto = crypto; }
         if (!x.TextEncoder) x.TextEncoder = TextEncoder;
         if (!x.TextDecoder) x.TextDecoder = TextDecoder;
         Object.defineProperty(x.navigator, "share", { value: (d) => { shared.push(d.text); return Promise.resolve(); }, configurable: true });
         x.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
+        work = pageWork(x);
       } }).window;
       wins.push(w);
       const D = w.document;
@@ -21450,28 +21492,35 @@ await (async () => {
       const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
       const pill = () => card() && card().querySelector(".apill");
       await until(() => pill() && !pill().disabled);
+      const make = async () => { pill().click(); return until(() => pill().textContent === "Share the link"); };
       const signOutAll = async () => {
         const sob = () => [...card().querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again/.test(b.textContent));
         sob().click(); sob().click();
         await until(() => /Signed out|Nothing was signed in/.test((card().querySelector(".agrid + .anote") || {}).textContent || ""));
         return (card().querySelector(".agrid + .anote") || {}).textContent || "";
       };
-      return { shared, pill, until, signOutAll };
+      return { shared, pill, until, make, signOutAll, quiet: () => work.quiet() };
     };
     await post("/all/signout", { u }, A);
     const p1 = await load();
+    ok(await p1.quiet() && await live() === 0, "the first page, opened, has made no link: " + await live());
+    ok(await p1.make() && await live() === 1, "it makes its link on a tap");
     p1.pill().click();
-    ok(await p1.until(() => p1.shared.length === 1 && !p1.pill().disabled), "the first page shares its link and makes a fresh one");
+    ok(await p1.until(() => p1.shared.length === 1 && !p1.pill().disabled) && await p1.quiet() && await live() === 1,
+      "and shares it on the next, which makes no link for the one after: " + await live());
+    ok(await p1.make() && await live() === 2, "a tap after makes a fresh one");
     const ptr = async () => JSON.parse((await kv.get("dev:" + u + ":" + (await S.idOf("ot:" + (await S.idOf(p1.shared[0].split("/s/")[1].split(/\s/)[0])))))) || "{}");
     ok(await p1.until(async () => (await ptr()).out === true), "and marks the one it shared as sent: " + JSON.stringify(await ptr()));
     const said1 = await p1.signOutAll();
     ok(said1 === "Signed out: 1 link or code not yet used.", "Sign out everywhere counts the link it shared, and not the fresh one it holds: " + said1);
     wins.pop().close();
     const p2 = await load();
-    /* the second page's link is written as it opens: wait on that, never read it once (it raced under a loaded suite) */
+    ok(await p2.quiet() && await live() === 1, "a second load makes nothing: " + await live());
+    /* the second page's link is written by its tap: wait on that, never read it once (it raced under a loaded suite) */
+    await p2.make();
     await p2.until(async () => (await live()) >= 2);
     const before = await live();
-    ok(before === 2, "a second load has made its own link, the first page's still live: " + before);
+    ok(before === 2, "the second page has made its own link, the first page's still live: " + before);
     const said2 = await p2.signOutAll();
     ok(said2 === "Nothing was signed in." && await live() === 1,
       "and its Sign out everywhere burns the first page's link, never sent, without counting it: " + said2);
