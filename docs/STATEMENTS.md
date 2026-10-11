@@ -521,6 +521,32 @@ another never signs the other in; the other device opens Salt Counter from the Q
 account normally; Account > This device keeps the optional install steps and, on an iPhone, a hand-over code for a separately
 stored Home Screen app. A browser can continue using the account without installing.
 
+### The customer's look: Night or Tide, chosen on each device (11 Oct 2026, his decision)
+
+Two themes on every surface, kept per device, **Tide until one is chosen**; the design is in `docs/DESIGN.md`. A customer chooses on
+their next sign-in and can change it under Account.
+
+- **Kept** in localStorage `salt-look`, `night` or `tide`, on the device and nowhere else: not on the site, in no record and in no
+  statement. Anything else, or a store that cannot be read, is nothing chosen and the page is Tide. Every read and write is in a try.
+- **The Sheet** (`lookSheet()` in `stmt/page.js`, opened by `lookAsk` from `enter`): the first time a signed-in customer page opens
+  on a device whose store is readable and holds no choice, the system's Sheet asks over the page, which is already Tide behind it.
+  Two large Option tiles, Night and Tide, each with a swatch of its own ground and accent, and one line, "You can change this under
+  Account." Choosing applies at once (`data-theme` and the browser bar's colour, through `saltLook`), keeps the choice and closes the
+  Sheet, with no reload. Escape, Close or a tap on the scrim keeps Tide, stores nothing and asks again on the next open. Focus goes
+  into the Sheet and Tab stays in it. **A visit asks once**: signing out and in again in the same page does not ask a second time, and
+  a sign-out with the Sheet open takes it down. A store that cannot be read is never asked, because the answer could not be kept.
+  Once chosen, a device is never asked again.
+- **Look, under Account**: This device holds a Look row of two ghosts, Night and Tide, the held one `aria-pressed`, 44px both ways.
+  It applies at once, keeps the choice and needs no reload; on a store that refuses the write it holds for the visit.
+- **Not on his page.** Salt Account (`/all`, and View as them on it) opens in the stored theme from the same head script and asks
+  nothing: no Sheet, no Look row, no switch. Its switch belongs to its redesign.
+- **Not on a page with no script**: a guest board, the shut page and the maintenance page are Tide, always.
+- **Words**: `look.h` (Look), `look.sheetH` (Choose your look), `look.night`, `look.tide`, `look.note`, in `stmt/words.js`; no
+  product word and no brand, and a customer is never told a level.
+- **The test accounts** (fixture version 8) show it: their sealed bundle carries `look: "asked"` (`tools/testfix.mjs`, a line in
+  `FEATURES` and the case in `build()`), and a bundle that says so asks at every sign-in whatever the device holds, so the Sheet can
+  be tried again; the Look row is the same as anyone's. A real account's bundle says nothing and is asked once.
+
 ## The price list and the order book (06 Sep 2026, his instruction)
 
 Three things sit behind the one password since v499: the statements, a **price list** for
