@@ -945,8 +945,19 @@ export function shutPage(nonce) {
    to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
    the customer's, a guest board, a shut link and Salt Account. */
-const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8">'
-  + '<meta name="google" content="notranslate">';
+/* 11 OCT 2026, HIS WORD: TWO THEMES, NIGHT AND TIDE, ON EVERY SURFACE, KEPT ON EACH DEVICE, TIDE UNTIL ONE IS CHOSEN. Night is
+   the design system's :root and Tide its :root[data-theme="tide"], both carried in the page's stylesheet (tools/stmt-style.mjs).
+   Every page opens Tide: data-theme="tide" is on the root as served and the browser bar starts at Tide's ground. A page that
+   runs script then reads localStorage salt-look before its stylesheet and first paint (LOOK_HEAD, a nonce'd script at the top of
+   the head, every read in a try), and a page that cannot run one (a guest board, the shut page) stays Tide, since no device's
+   choice can be read there. The two grounds are the system's obsidian at each theme; the suite holds them equal to it. */
+const GROUND = { night: "#05080a", tide: "#03141a" };
+const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=\"theme-color\"]');"
+  + "document.documentElement.setAttribute('data-theme',t);if(m)m.setAttribute('content',t==='night'?'" + GROUND.night + "':'" + GROUND.tide + "');return t;}"
+  + "(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();";
+const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="tide"><head><meta charset="utf-8">'
+  + '<meta name="google" content="notranslate">'
+  + '<meta name="theme-color" content="' + GROUND.tide + '">';
 function guestPage(inner, nonce, title) {
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
@@ -1021,6 +1032,7 @@ function placesBar() {
 export function landingPage(user, nonce, owner, bulletin) {
   const u = esc(user || "");
   return DOC_OPEN
+    + '<script nonce="' + nonce + '">' + LOOK_HEAD + "</script>"
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
@@ -1037,7 +1049,6 @@ export function landingPage(user, nonce, owner, bulletin) {
     + (owner ? '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">'
       : '<link rel="manifest" href="/manifest.webmanifest">')
     + '<link rel="apple-touch-icon" href="' + (owner ? "/icon-key.png" : "/icon.png") + '">'
-    + '<meta name="theme-color" content="#05080a">'
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'

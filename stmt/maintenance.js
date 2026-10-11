@@ -5,8 +5,14 @@
 export const MACHINE = { paths: ["/all"], prefixes: ["/all/"], headers: ["x-stmt-desk", "x-counter-maker-key"] };
 const TEXT = "The store is currently under maintenance. We are open for business again at 00:01 midnight of October 5.";
 const esc = (s) => s.replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
-const page = (text) => '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-  + "<title>Maintenance</title><style>body{margin:0;padding:24px;font:18px/1.5 system-ui,sans-serif;max-width:30em}</style></head><body><p>"
+/* 11 Oct 2026, his word: two themes on every surface, Tide until a device chooses. This page runs no script (its policy is closed)
+   and loads no stylesheet, so no choice can be read here and it is drawn Tide, in Tide's ground and salt from the design system
+   (the suite holds the two hexes equal to design/salt-ds.css). */
+const TIDE = { ground: "#03141a", text: "#eaf6f6" };
+const page = (text) => '<!doctype html><html lang="en-GB" data-theme="tide"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+  + '<meta name="theme-color" content="' + TIDE.ground + '">'
+  + "<title>Maintenance</title><style>html{background:" + TIDE.ground + ";color:" + TIDE.text + ";color-scheme:dark}"
+  + "body{margin:0;padding:24px;font:18px/1.5 system-ui,sans-serif;max-width:30em}</style></head><body><p>"
   + esc(text) + "</p></body></html>";
 
 export function maintenance(request, env, machine = MACHINE, now = Date.now()) {
