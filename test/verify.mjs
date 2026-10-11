@@ -54605,6 +54605,32 @@ await (async () => {
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   ok(/the prices follow that customer, never past the board every stranger sees/.test(pg17) && !/two levels above/.test(pg17),
     "the guest-link lead says the prices follow that customer, never past the board every stranger sees, and no longer two levels above");
+  /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
+     The snapshot leaves a drift book out of tierOf and carries its drifts apart (byProduct.salt.drift, the hand winning), so no
+     reader meets a number where it looks for a level. First the contract over the book as it stands, whoever holds what; then
+     the mixed entry forced on the first customer with none, so it is proved with no such customer on the book. */
+  const driftBooks18 = Object.entries(snap.byProduct).filter(([, b]) => b.inputs && b.inputs.policy && b.inputs.policy.tierRule && b.inputs.policy.tierRule.drift).map(([p]) => p);
+  const held18 = Object.entries(snap.tierOf || {}).flatMap(([c, t]) => Object.entries(t).map(([p, v]) => [c, p, v]));
+  const badTier18 = held18.filter(([, p, v]) => driftBooks18.includes(p) || !E.levelShapeOk(v, snap.tierNames));
+  const drifts18 = driftBooks18.flatMap((p) => Object.entries(snap.byProduct[p].drift || {}));
+  const badDrift18 = drifts18.filter(([, v]) => v !== "partner" && !E.driftOk(v));
+  ok(driftBooks18.includes("salt") && held18.length > 0 && !badTier18.length && drifts18.length > 20 && !badDrift18.length,
+    "the snapshot's tierOf holds a level shape on a level-named book and nothing on a drift book, whose drifts all travel apart as a number from -1 to +1 or partner: "
+    + JSON.stringify({ driftBooks: driftBooks18, levels: held18.length, badTier: badTier18.slice(0, 3), drifts: drifts18.length, badDrift: badDrift18.slice(0, 3) }));
+  const id18 = String(w.eval(free)), at18 = JSON.stringify(id18), keep18 = rd("TIER_OF[" + at18 + "]||null");
+  let s18 = null, d18 = null;
+  try {
+    w.eval("TIER_OF[" + at18 + "]={oil:'Platinum',salt:-0.7};recompute();");
+    s18 = pricingSnapshot(w);
+    d18 = rd("driftOf(" + at18 + ",'salt').d");
+  } finally { w.eval((keep18 ? "TIER_OF[" + at18 + "]=" + JSON.stringify(keep18) : "delete TIER_OF[" + at18 + "]") + ";recompute();"); }
+  const sS18 = s18 && s18.byProduct.salt, C18 = sS18 && E.costStack(sS18.inputs.cost);
+  const list18 = s18 && PL.priceList(id18, bk12, s18, new Date()), salt18 = list18 && list18.products.find((p) => p.product === "salt"), oil18 = list18 && list18.products.find((p) => p.product === "oil");
+  ok(id18 && s18 && JSON.stringify(s18.tierOf[id18]) === '{"oil":"Platinum"}' && sS18.drift[id18] === -0.7 && d18 === -0.7
+    && sS18.cards[id18].length > 5 && sS18.cards[id18].every(([q, x]) => x === E.driftAt(q, C18, sS18.inputs.policy, -0.7).p)
+    && salt18 && salt18.basis === "card" && salt18.tier === null && JSON.stringify(salt18.sizes.map((x) => [x.q, x.price])) === JSON.stringify(sS18.cards[id18])
+    && oil18 && oil18.basis === "board",
+    "a customer holding a drift on salt and a level on oil is carded salt at the Set Price moved by -0.7, size for size, with the level left on oil's stated board: " + JSON.stringify({ tierOf: s18 && s18.tierOf[id18], drift: sS18 && sS18.drift[id18], d: d18, cards: sS18 && sS18.cards[id18].slice(0, 2) }));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
