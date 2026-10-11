@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 import POSITION_ENGINE from "../engine/position.mjs";
-import { makerTradeEntry, makerTierSet, makerQueuedTradeFault, makerQueuedLoanCheck, makerLedgerInput } from "../src/maker-inputs.js";
+import { makerTradeEntry, makerTierSet, makerQueuedTradeFault, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput } from "../src/maker-inputs.js";
 
 export async function run({ ok, KV } = {}) {
   const check = ok || ((condition, message) => { if (!condition) throw new Error(message); });
@@ -272,6 +272,38 @@ export async function run({ ok, KV } = {}) {
   check(!!makerLedgerInput("gift", { at, product: "salt", code: "CX1-ZED", date: "2026-10-01",
     qty: 1, movedUnits: 1, handover: "collected", note: "unchecked text" }, book()).error,
     "gift inputs reject arbitrary notes.");
+  /* a gift sent twice books once (the admin stress triage of 11 Oct 2026, row 7): a booked twin is asked about, a queued one refused */
+  const giftIn = { at, product: "salt", code: "CX1-ZED", date: "2026-10-01", qty: 1, movedUnits: 1, handover: "collected" };
+  const withGift = (patch = {}) => { const b = book(); b.sales.push({ rid: "s300", customer: "CX1-ZED", qty: 1, total: 40, cost: 40,
+    cash: 0, settledRM: 40, goodwill: true, deliveredQty: 1, date: "2026-10-01", ...patch }); return b; };
+  const gives = (patch = {}, b = book()) => makerLedgerInput("gift", { ...giftIn, ...patch }, b).entry?.payload.mode === "gift";
+  const askedGift = makerLedgerInput("gift", giftIn, withGift());
+  check(!askedGift.entry && askedGift.twin?.second === "s300" && /already booked/.test(askedGift.error),
+    "a gift the fold would read as a booked row's replay is asked about with the booked row's id, never queued silently.");
+  const confirmedGift = makerLedgerInput("gift", { ...giftIn, second: "s300" }, withGift());
+  check(confirmedGift.entry?.payload.mode === "gift" && confirmedGift.entry.payload.second === "s300",
+    "a booked twin confirmed with its own id is a separate gift, and the entry carries the confirmation the fold's replay guard reads.");
+  check(!gives({ second: "s301" }, withGift()) && !gives({ second: true }, withGift()),
+    "a confirmation naming another row than the booked twin is refused.");
+  check(makerLedgerInput("gift", { ...giftIn, second: true }, withGift({ rid: undefined })).entry?.payload.second === true,
+    "a booked twin that carries no id is confirmed with true.");
+  check(!gives({ second: "s300" }), "a confirmation with no booked twin is refused: the twin has changed.");
+  check(!Object.hasOwn(makerLedgerInput("gift", giftIn, book()).entry.payload, "second"),
+    "a gift with no booked twin carries no confirmation.");
+  for (const [what, patch, row] of [["party", { code: "CX2-ZED" }, {}], ["date", { date: "2026-10-02" }, {}], ["units", { qty: 2, movedUnits: 2 }, {}],
+    ["book", {}, { product: "oil" }], ["cost", {}, { total: 50 }], ["units at one total", {}, { qty: 2 }]])
+    check(gives(patch, withGift(row)), "a gift differing from a booked row in its " + what + " is no twin and queues at once.");
+  check(!gives({}, withGift({ goodwill: undefined, settledRM: undefined, cost: undefined })),
+    "the booked row is matched as the fold matches it, by party, book, date, units and total, whatever it is.");
+  const giftA = makerLedgerInput("gift", giftIn, book()).entry;
+  const giftB = (patch = {}) => makerLedgerInput("gift", { ...giftIn, at: "2026-10-01T08:00:07.000Z", ...patch }, book()).entry;
+  check(makerQueuedGiftCheck(giftB(), [giftA]).queuedTwin?.at === at && /already queued/.test(makerQueuedGiftCheck(giftB(), [giftA]).error),
+    "a gift queued or waiting under Approve is refused when the same one comes under a new request moment.");
+  check(makerQueuedGiftCheck(giftA, [giftA]).retry === true && !makerQueuedGiftCheck(giftA, [giftA]).error,
+    "one request retried under its own moment is no twin of itself.");
+  for (const [what, patch] of [["party", { code: "CX2-ZED" }], ["date", { date: "2026-10-02" }],
+    ["units", { qty: 2, movedUnits: 2 }], ["book", { product: "oil" }]])
+    check(!makerQueuedGiftCheck(giftB(patch), [giftA]).error, "a gift differing from a queued one in its " + what + " is no twin.");
 
   const internal = POSITION_ENGINE.tradeEntry({
     at, product: "salt", direction: "SELL", party: "CX1-ZED", date: "2026-10-01", qty: 2, total: 120,

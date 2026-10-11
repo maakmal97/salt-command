@@ -1100,6 +1100,8 @@ export const OWNER_JS = `
         makerClear(pending.path);pending=null;cancel.hidden=true;if(onSuccess)onSuccess();return result;
       },function(error){
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
+        /* a gift the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
+        if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/gift'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
@@ -1361,7 +1363,7 @@ export const OWNER_JS = `
       var body={at:new Date().toISOString(),product:giftProduct.value,code:giftParty.value,date:giftDate.value,
         qty:Number(giftQty.value),movedUnits:Number(giftQty.value),handover:giftHandover.value||null};
       giftStatus.textContent='Sending to the Desk…';
-      try{await send('/all/maker/inputs/gift',body);giftStatus.textContent='Sent for review. It changes nothing until approved and folded.';loadMaker();}
+      try{await makerSecond(send,'/all/maker/inputs/gift',body,'gift');giftStatus.textContent='Sent for review. It changes nothing until approved and folded.';loadMaker();}
       catch(error){giftStatus.textContent=error.message;}
     },true);
     var repay=el('section','maker-input');repay.appendChild(el('h3',null,'Repayment'));

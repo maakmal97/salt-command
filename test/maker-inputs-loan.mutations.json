@@ -1,8 +1,8 @@
 [
   { "name": "booked twin not asked", "file": "src/maker-inputs.js",
-    "find": "    if (twin && body.second !== second)", "replace": "    if (false && twin && body.second !== second)" },
+    "find": "    if (twin && body.second !== second)\n      return { error: \"A loan with", "replace": "    if (false && twin && body.second !== second)\n      return { error: \"A loan with" },
   { "name": "any confirmation accepted", "file": "src/maker-inputs.js",
-    "find": "    if (twin && body.second !== second)", "replace": "    if (twin && !body.second)" },
+    "find": "    if (twin && body.second !== second)\n      return { error: \"A loan with", "replace": "    if (twin && !body.second)\n      return { error: \"A loan with" },
   { "name": "stale confirmation accepted", "file": "src/maker-inputs.js",
     "find": "    if (!twin && body.second != null) return { error: \"The booked twin has changed. Read the loan again.\" };", "replace": "    /* mutated */" },
   { "name": "booked twin ignores party", "file": "src/maker-inputs.js",

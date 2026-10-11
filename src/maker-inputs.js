@@ -170,6 +170,13 @@ function queuedTwinCheck(entry, queue, same, words) {
   return twin ? { error: words, queuedTwin: { at: twin.at } } : {};
 }
 
+/** A gift with the same party, book, date and units, queued or waiting under Approve. */
+export function makerQueuedGiftCheck(entry, queue) {
+  const p = entry.payload;
+  return queuedTwinCheck(entry, queue, (q) => q.mode === "gift" && q.party === p.party && q.product === p.product
+    && q.date === p.date && +q.qty === +p.qty, "The same gift is already queued. Read its draft instead.");
+}
+
 export function makerQueuedTradeCheck(entry, queue) {
   const p = entry.payload;
   return queuedTwinCheck(entry, queue, (q) => q.mode === "new" && q.direction === p.direction
@@ -697,8 +704,8 @@ export function makerLedgerInput(operation, body, book, pending = []) {
     entry = POSITION_ENGINE.repaymentEntry({ at: body.at, loan, party: loan.party, date: body.date,
       form: cash ? "cash" : "salt", product: loan.product || "salt", amount: body.amount });
   } else if (operation === "gift") {
-    if (!exact(body, ["at", "product", "code", "date", "qty", "movedUnits", "handover"]))
-      return { error: "A gift carries only its timestamp, book, code, date, units and handover." };
+    if (!exact(body, ["at", "product", "code", "date", "qty", "movedUnits", "handover", "second"]))
+      return { error: "A gift carries only its timestamp, book, code, date, units, handover and booked-twin confirmation." };
     if (!active(body.product, book) || !realCode(body.code, roster) || !date(body.date)
       || !figure(body.qty) || !(body.qty > 0)
       || (body.movedUnits !== undefined && (!figure(body.movedUnits) || body.movedUnits > body.qty))
@@ -707,6 +714,20 @@ export function makerLedgerInput(operation, body, book, pending = []) {
     if (!(costFor(book, body.product).cost > 0)) return { error: "This book has no inventory cost yet." };
     entry = POSITION_ENGINE.giftEntry({ at: body.at, product: body.product, party: body.code,
       date: body.date, qty: body.qty, movedUnits: body.movedUnits, handover: body.handover });
+    /* a gift already on the book as the fold reads it (party, book, date, units and cost) is asked about, as a booked trade is.
+       The one he confirms carries `second`, which is what the fold's replay guard looks for. */
+    const made = proposed(entry, book);
+    if (made.error) return made;
+    const row = made.draft.row;
+    const twin = (book.sales || []).find((sale) => sale && sale.customer === row.customer
+      && (sale.product || "salt") === (row.product || "salt") && (sale.date || null) === (row.date || null)
+      && +sale.total === +row.total && +sale.qty === +row.qty);
+    const second = twin ? twin.rid || true : null;
+    if (twin && body.second !== second)
+      return { error: "A gift with this party, book, units and date is already booked. Confirm a separate gift.", twin: { second } };
+    if (!twin && body.second != null) return { error: "The booked twin has changed. Read the gift again." };
+    if (twin) entry.payload.second = second;
+    return made;
   } else if (operation === "redeem") {
     if (!exact(body, ["at", "code", "date"]) || !realCode(body.code, roster) || POSITION_ENGINE.isBucket(body.code)
       || !date(body.date)) return { error: "A redemption carries only its timestamp, party code and date." };
