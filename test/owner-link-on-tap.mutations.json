@@ -1,0 +1,26 @@
+[
+ {
+  "name": "M1 build-time mint restored",
+  "file": "stmt/owner.js",
+  "find": "    paintPill(b);\n    b.addEventListener('click', function(){\n      var m=madeLink[u]||{};",
+  "replace": "    paintPill(b); makeLink(a);\n    b.addEventListener('click', function(){\n      var m=madeLink[u]||{};"
+ },
+ {
+  "name": "M2 post-share mint restored",
+  "file": "stmt/owner.js",
+  "find": "        linkMoved(u);\n      }, function(){ m.note=navigator.share?",
+  "replace": "        makeLink(a); linkMoved(u);\n      }, function(){ m.note=navigator.share?"
+ },
+ {
+  "name": "M4 first tap makes nothing",
+  "file": "stmt/owner.js",
+  "find": "      if(!m.j){ makeLink(a); linkMoved(u); return; }\n      var msg=m.j.msg, p;",
+  "replace": "      if(!m.j){ return; }\n      var msg=m.j.msg, p;"
+ },
+ {
+  "name": "M5 a fetch before the share",
+  "file": "stmt/owner.js",
+  "find": "      var msg=m.j.msg, p;\n      /* the tap's first act, before anything that waits",
+  "replace": "      var msg=m.j.msg, p; fetch('/all/account/'+encodeURIComponent(u));\n      /* the tap's first act, before anything that waits"
+ }
+]

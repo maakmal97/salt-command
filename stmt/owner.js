@@ -202,20 +202,23 @@ export const OWNER_JS = `
   /* ---- AN ACCOUNT (S9 9.3, the plan's f13) ----------------------------------------------------------
      What a row opens: its code and username, the chips, ONE filled Send a sign-in link with its answer under it, and
      beside it the other ways, Show a code in person, View as them, Copy password and Sign out everywhere; then how
-     they got in. THE LINK IS MADE AS THE ACCOUNT OPENS (the plan's must-not-ship list: never a key derivation and a
-     fetch inside the share's tap), so the tap shares and does nothing before it. It is kept by username with Needs
-     you's (madeLink), so a redraw, or the same account's card on Needs you, never makes a second; a share that goes
-     through ticks the account sent, and a link shared or copied from any card is dropped and a fresh one made
-     (retire). A username with no account makes nothing and posts nothing, and every control says why it is off. The password is opened on its own tap, straight to the
-     clipboard, never into the page. */
+     they got in. LOOKING MAKES NO LINK (his decision 7 of 11 Oct 2026): a card drawn, on Accounts or beside Needs you, sends
+     nothing that writes. THE FIRST TAP MAKES IT and the second shares it, so the share sheet never waits on a key
+     derivation and a fetch (the plan's must-not-ship list): the share is the second tap's first act. It is kept by
+     username with Needs you's (madeLink), so a redraw, or the same account's card on Needs you, keeps the one made and
+     never makes a second; a share that goes through ticks the account sent, and a link shared or copied from any card
+     is dropped (retire), the next tap making a fresh one. A username with no account makes nothing and posts nothing,
+     and every control says why it is off. The password is opened on its own tap, straight to the clipboard, never into
+     the page. */
   var story={};
   /* the link moved: every Send a sign-in link drawn for that account is painted from madeLink, including one a redraw
      put in the place of the button that asked (a sheet read lands while the link is being made), and Needs you with it */
-  /* S9 fix: a link that could not be made leaves the pill on, as Try again, whose tap makes it again and shares nothing */
+  /* his decision 7 of 11 Oct 2026: Send a sign-in link makes the link, Share the link shares it, and a link that could
+     not be made says Try again, whose tap makes it again and shares nothing */
   function paintPill(b){
     var m=madeLink[b.getAttribute('data-pill')]||{}, again=!m.j&&!m.busy&&!!m.fail;
-    b.disabled=b.getAttribute('data-none')==='1'||(!m.j&&!again);
-    b.textContent=m.busy?'Making the link...':again?'Try again':'Send a sign-in link';
+    b.disabled=b.getAttribute('data-none')==='1'||!!m.busy;
+    b.textContent=m.busy?'Making the link...':m.j?'Share the link':again?'Try again':'Send a sign-in link';
     if(b.note){ b.note.textContent=m.note||''; b.note.className='anote'+(m.bad?' bad':''); }
   }
   function paintPills(u){ [].slice.call(document.querySelectorAll('[data-pill]')).forEach(function(b){ if(b.getAttribute('data-pill')===u) paintPill(b); }); }
@@ -232,10 +235,12 @@ export const OWNER_JS = `
     var u=a.username, b=el('button','salt-pill salt-pill--md apill','Send a sign-in link'); b.type='button';
     b.setAttribute('data-pill', u); b.note=note;
     if(a.account===false){ b.setAttribute('data-none','1'); b.title='No account behind this username yet'; }
-    paintPill(b); makeLink(a);
+    paintPill(b);
     b.addEventListener('click', function(){
-      var m=madeLink[u];
-      if(!m||!m.j){ if(m&&m.fail&&!m.busy){ makeLink(a); linkMoved(u); } return; }
+      var m=madeLink[u]||{};
+      if(m.busy||a.account===false) return;
+      /* the first tap makes it and shares nothing; a failed make is tried again by the next */
+      if(!m.j){ makeLink(a); linkMoved(u); return; }
       var msg=m.j.msg, p;
       /* the tap's first act, before anything that waits: the share sheet, or with none the clipboard */
       try{ p=navigator.share?navigator.share({text:msg}).then(function(){ return 'sent'; })
@@ -243,12 +248,12 @@ export const OWNER_JS = `
       catch(e){ p=Promise.reject(e); }
       p.then(async function(how){
         if(how==='copied'){ retire(a, 'Copied. Paste it into a message to them, then tick Sent.'); linkMoved(u); return; }
-        var said=madeLink[u]={note:'Sent. It signs them in once; the next tap sends a new one.'};
+        var said=madeLink[u]={note:'Sent. It signs them in once; the next tap makes a new one.'};
         markOut(u, m.j); linkMoved(u);
         try{ var r=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true}); a.sent=r.sent; countSent(); drawRoster(); onSent(); }
         catch(e){ said.note='Sent, but the tick did not save: '+e.message; said.bad=true; }
-        makeLink(a); linkMoved(u);
-      }, function(){ m.note=navigator.share?'Not shared. Tap Send a sign-in link again.':'Not copied: this browser refused the clipboard.'; m.bad=true; linkMoved(u); });
+        linkMoved(u);
+      }, function(){ m.note=navigator.share?'Not shared. Tap Share the link again.':'Not copied: this browser refused the clipboard.'; m.bad=true; linkMoved(u); });
     });
     return b;
   }
@@ -2879,12 +2884,11 @@ export const OWNER_JS = `
      link (the next tap minting a second) and took the code off the screen. They are kept here by username. */
   var madeLink={}, silverOpen={};
   /* S9 fix: A LINK THAT HAS LEFT THE PAGE IS NEVER THE ONE KEPT. Sign out everywhere spares the link this page holds
-     (linkId), so a link shared or copied, from any card, is dropped here, and a fresh one made wherever a Send a
-     sign-in link is drawn for the account; a forwarded link is then ended with the rest. */
+     (linkId), so a link shared or copied, from any card, is dropped here and the next tap makes a fresh one (his decision 7
+     of 11 Oct 2026: nothing is made unasked, so retire makes none); a forwarded link is then ended with the rest. */
   function retire(a, note){
     var u=a.username, was=madeLink[u]; madeLink[u]={note:note};
     if(was&&was.j) markOut(u, was.j);
-    if([].some.call(document.querySelectorAll('[data-pill]'), function(b){ return b.getAttribute('data-pill')===u; })) makeLink(a);
   }
   function linkButton(a, note){
     var u=a.username, b=ghost('', true);
