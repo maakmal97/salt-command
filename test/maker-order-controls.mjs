@@ -262,7 +262,7 @@ export async function run({ ok }) {
     beforeParse(window) {
       Object.defineProperty(window, "crypto", { value: { getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID(), subtle: webcrypto.subtle } });
       window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder;
-      window.scrollTo = () => {}; window.confirm = () => true;
+      window.scrollTo = () => {}; window.confirm = (said) => { (window.__asked = window.__asked || []).push(String(said)); return true; };
       window.HTMLElement.prototype.scrollIntoView = function (options) { scrolls.push({ id: this.getAttribute("data-maker-say"), options }); };
       window.fetch = async (path, init) => {
         if (init && init.method === "POST" && String(path).startsWith("/all/maker/orders/")) {
@@ -294,6 +294,8 @@ export async function run({ ok }) {
       return wrap && wrap.querySelector("input");
     };
     const settle = async (n) => { await until(() => posts.length >= n); await new Promise((resolve) => setTimeout(resolve, 40)); };
+    /* his decision 4 of 11 Oct 2026: a yes or no on the card is the page's Sheet; its one action is what the native confirm's OK was */
+    const sheetGo = () => doc.getElementById("ynGo").click();
     /* an answer lands in the foot of the card it was asked of; #makerReviewStatus keeps the list's own words */
     const say = (id) => card(id)?.querySelector("[data-maker-say]");
     const list = () => doc.getElementById("makerReviewStatus").textContent;
@@ -324,14 +326,14 @@ export async function run({ ok }) {
       "A refusal made on the page itself, before anything is sent, is said on the card it was made on");
     failNext = 1;
     field("20261003090002-rdy", "Units handed over").value = "2";
-    button("20261003090002-rdy", "Close at these units").click(); await settle(2);
+    button("20261003090002-rdy", "Close at these units").click(); sheetGo(); await settle(2);
     await until(() => /did not answer/.test(say("20261003090002-rdy")?.textContent || ""));
     ok(say("20261003090002-rdy")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
       && !say("20261003090001-ack")?.textContent.includes("did not answer"),
       "A refused action says so in the foot of its own card, beside the buttons it was tapped on, and not on the list's line");
     await until(() => button("20261003090002-rdy", "Close at these units"));
     field("20261003090002-rdy", "Units handed over").value = "2";
-    button("20261003090002-rdy", "Close at these units").click(); await settle(3);
+    button("20261003090002-rdy", "Close at these units").click(); sheetGo(); await settle(3);
     ok(posts[1].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[1].body.qty === 2 && posts[1].body.close === true
       && /^[0-9a-f]{32}$/.test(posts[1].body.rid) && posts[2].body.rid === posts[1].body.rid,
       "Close at these units sends a close at the units in the box, and its retry after a failure carries the same request id: "
@@ -345,19 +347,29 @@ export async function run({ ok }) {
     await until(() => button("20261003090004-can", "Offer the cancellation again"));
     ok(!!card("20261003090005-gone") && card("20261003090005-gone").querySelectorAll("button, input").length === 0,
       "A closed order with nothing rejected has a card of its figures and nothing to move it by (it had none at all before Phase 1c).");
-    button("20261003090004-can", "Offer the cancellation again").click(); await settle(5);
+    button("20261003090004-can", "Offer the cancellation again").click();
+    ok(!!doc.getElementById("ynSheet") && posts.length === 4, "Offering a stage again asks on the Sheet, and sends nothing until its action is tapped");
+    sheetGo(); await settle(5);
     ok(posts[4].path === "/all/maker/orders/20261003090004-can/again" && posts[4].body.stage === "cancel" && /^[0-9a-f]{32}$/.test(posts[4].body.rid),
       "A cancelled order carrying a rejected cancellation offers it again, under a request id: " + JSON.stringify(posts[4]));
 
-    await until(() => button("20261003090003-del", "We cannot deliver there."));
-    ok(!!button("20261003090003-del", "We cannot deliver there.") && !button("20261003090001-ack", "We cannot deliver there.")
-      && !!button("20261003090001-ack", "Our prices have changed."),
-      "The reason for a place delivery cannot reach is offered only on an order to be delivered.");
-    button("20261003090003-del", "We do not have enough in hand this week.").click(); await new Promise((resolve) => setTimeout(resolve, 20));
-    ok(field("20261003090003-del", "Reason to the customer (Decline or Cancel, optional)").value === "We do not have enough in hand this week.",
+    /* the reasons are asked on the sheet a Decline or a Cancel opens, as option tiles and a field of his own words */
+    const tilesOf = () => [...doc.querySelectorAll("#ynSheet .salt-option__label")].map((l) => l.textContent);
+    await until(() => button("20261003090003-del", "Decline"));
+    button("20261003090003-del", "Decline").click();
+    const tilesDel = tilesOf();
+    doc.getElementById("ynKeep").click();
+    button("20261003090001-ack", "Cancel order").click();
+    const tilesAck = tilesOf();
+    doc.getElementById("ynKeep").click();
+    ok(tilesDel.includes("We cannot deliver there.") && !tilesAck.includes("We cannot deliver there.") && tilesAck.includes("Our prices have changed.") && posts.length === 5,
+      "The reason for a place delivery cannot reach is offered only on an order to be delivered, and neither sheet sent anything: " + JSON.stringify([tilesDel, tilesAck]));
+    button("20261003090003-del", "Decline").click();
+    [...doc.querySelectorAll("#ynSheet .salt-option input")].find((r) => r.getAttribute("data-act") === "order.reason-stock").click();
+    ok(doc.querySelector('#ynSheet [data-act="order.reason"]').value === "We do not have enough in hand this week.",
       "A reason picked fills the reason box.");
     reviewBody.orders = reviewBody.orders.filter((o) => o.id !== "20261003090003-del");   /* the Desk's next read no longer lists it */
-    button("20261003090003-del", "Decline").click(); await settle(6);
+    sheetGo(); await settle(6);
     ok(posts[5].body.status === "declined" && posts[5].body.note === "We do not have enough in hand this week.",
       "Decline sends the reason picked: " + JSON.stringify(posts[5]));
     await until(() => /Order declined/.test(list()));
@@ -392,5 +404,8 @@ export async function run({ ok }) {
       "A quick reply is offered on every card once kept, and picking it fills the reply box.");
     button("20261003090002-rdy", "Forget this quick reply").click();
     ok(JSON.parse(window.localStorage.getItem("saltQuickReplies")).length === 0, "Forget this quick reply drops it from the device.");
+    /* Approve's own confirm (approveDraft) is not the order card's, and is as it was */
+    const asked = (browser.window.__asked || []).filter((said) => !/^Approve /.test(said));
+    ok(asked.length === 0, "no native confirm was asked on the order card: it asks on the page's Sheet (his decision 4 of 11 Oct 2026): " + JSON.stringify(asked));
   } finally { browser.window.close(); }
 }

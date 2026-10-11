@@ -123,7 +123,7 @@ export async function run({ ok }) {
       };
       Object.defineProperty(window, "crypto", { value: { getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID(), subtle: webcrypto.subtle } });
       window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder;
-      window.scrollTo = () => {}; window.confirm = () => true;
+      window.scrollTo = () => {};
       window.fetch = async (path, init) => {
         const where = String(path);
         if (init && init.method === "POST" && (where.startsWith("/all/maker/orders/") || where === "/all/maker/inputs/ledger-amend")) {

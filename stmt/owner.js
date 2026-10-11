@@ -2045,10 +2045,12 @@ export const OWNER_JS = `
   var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
   function makerAgain(card,order,acts){
     (order.again||[]).filter(function(stage){ return MAKER_AGAIN[stage]; }).forEach(function(stage){
-      makerButton(acts,['Offer the '+MAKER_AGAIN[stage]+' again','order.again-'+stage],function(){
-        if(!window.confirm('Offer the rejected '+MAKER_AGAIN[stage]+' on this order again?')) return;
-        makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is offered again to the Desk.');
-      },false).setAttribute('data-again',stage);
+      var offer=makerButton(acts,['Offer the '+MAKER_AGAIN[stage]+' again','order.again-'+stage],function(){
+        makerAsk(order,offer,'again-'+stage,{title:'Offer the '+MAKER_AGAIN[stage]+' again?', plain:true, go:'Offer it again', keep:'Not now',
+          say:['The '+MAKER_AGAIN[stage]+' you rejected goes back to the Desk as it was, to be approved again.'],
+          yes:function(){ makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is offered again to the Desk.'); }});
+      },false);
+      offer.setAttribute('data-again',stage); makerAskTag(order,offer,'again-'+stage);
     });
   }
   /* a pending row he rejected on an agreed order is offered again by Accept against a fresh preview, at the charge and
@@ -2098,12 +2100,47 @@ export const OWNER_JS = `
   }
   /* the Desk's reasons for Decline and Cancel; delivery only on an order to be delivered */
   var MAKER_WHY=[['stock','We do not have enough in hand this week.'],['place','We cannot deliver there.'],['price','Our prices have changed.']];
+  /* 12 Oct 2026 (Phase 2a, his decision 4 of 11 Oct): A YES OR NO ON THE ORDER CARD IS THE PAGE'S SHEET, never a native confirm. makerAsk opens
+     ynOpen, the Sheet the customer's Cancel and Withdraw use, over the page: it restates the order by its mark, its code, its size and its figure,
+     says what follows, and has one action that sends what the old confirm let through, with the ghost, the close control, the scrim and Escape
+     sending nothing and focus going back to the control that asked (found again by its data-yn if a redraw replaced it). The request, its body
+     and its request id are the caller's, untouched. q: title, say (lines), extra (nodes), go, keep, plain (not a danger action), yes. */
+  function makerAskRow(order){
+    var L=el('div','salt-ledger salt-ledger--plain'), r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
+    lab.appendChild(mtile(order.product,order.qty)); lab.appendChild(el('span',null,codeByUser(order.u)));
+    l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(Number(order.total||0)+Number(order.delivery||0)))); r.appendChild(l);
+    r.appendChild(el('span','salt-ledger__flag',unitsOf(order.qty)+', '+String((ORD_STAGE[order.status]||['',order.status])[1]).toLowerCase()));
+    L.appendChild(r); return L;
+  }
+  /* the control that asks carries its data-yn from the moment it is drawn, so a card redrawn while its sheet is open still has the control to give focus back to */
+  function makerAskKey(order,kind){ return 'order:'+order.id+':'+kind; }
+  function makerAskTag(order,btn,kind){ btn.setAttribute('data-yn',makerAskKey(order,kind)); return btn; }
+  function makerAsk(order,opener,kind,q){
+    ynOpen({title:q.title, opener:opener, again:ynFind(makerAskKey(order,kind)), go:q.go, keep:q.keep, yes:q.yes,
+      body:[makerAskRow(order)].concat(q.say.map(function(s){ return el('p',null,s); })).concat(q.extra||[])});
+    var go=document.getElementById('ynGo');
+    actOn(go,'order.ask-go',order.id); actOn(document.getElementById('ynKeep'),'order.ask-keep',order.id); actOn(document.getElementById('ynX'),'order.ask-close',order.id);
+    if(q.plain) go.classList.remove('salt-ghost--danger');
+  }
+  /* the reason a Decline or a Cancel gives the customer, optional: the Desk's lines as the system's Option tiles (the place line only on an order to be
+     delivered) and a field for his own words; a tile fills the field, typing clears the pick. note() is what rides with the request. */
+  function makerWhy(order){
+    var set=el('fieldset','salt-options'), grid=el('div','salt-options__grid'), wrap=el('label','salt-field'), field=el('input','salt-field__input');
+    set.appendChild(el('legend','salt-options__legend','Reason to give the customer, if any'));
+    MAKER_WHY.filter(function(w){ return w[0]!=='place'||order.mode==='deliver'; }).forEach(function(w){
+      var label=el('label','salt-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face');
+      radio.type='radio'; radio.name='makerWhy-'+order.id; radio.value=w[0]; actOn(radio,'order.reason-'+w[0],order.id);
+      radio.addEventListener('change',function(){ field.value=w[1]; });
+      face.appendChild(el('span','salt-option__label',w[1])); label.appendChild(radio); label.appendChild(face); grid.appendChild(label);
+    });
+    set.appendChild(grid);
+    field.type='text'; actOn(field,'order.reason',order.id);
+    field.addEventListener('input',function(){ [].forEach.call(grid.querySelectorAll('input'),function(r){ r.checked=false; }); });
+    wrap.appendChild(el('span','salt-field__label','Or in your own words')); wrap.appendChild(field);
+    return {nodes:[set,wrap], note:function(){ var v=field.value.trim(); return v?{note:v}:{}; }};
+  }
   /* replyOnly is a closed order: only his answer to their question, and no Decline, Cancel or reason */
   function makerOrderMoves(card,order,replyOnly,acts){
-    var reason=replyOnly?null:makerField(card,['Reason to the customer (Decline or Cancel, optional)','order.reason'],'text','');
-    if(!replyOnly) MAKER_WHY.filter(function(w){ return w[0]!=='place'||order.mode==='deliver'; }).forEach(function(w){
-      makerButton(card,[w[1],'order.reason-'+w[0]],function(){ reason.value=w[1]; },false).setAttribute('data-why',w[0]);
-    });
     var said=makerField(card,['Reply to the customer','order.reply-text'],'text','');
     makerQuick().forEach(function(line,i){
       makerButton(card,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
@@ -2120,17 +2157,24 @@ export const OWNER_JS = `
       makerMove(order,{message:said.value.trim()},'Reply sent.');
     },false);
     makerButton(card,['No reply needed','order.no-reply'],function(){ makerMove(order,{noReply:true},'No reply needed recorded.'); },false);
-    var note=function(){ var t=reason.value.trim(); return t?{note:t}:{}; };
-    if(order.status==='placed')
-      makerButton(acts,['Decline','order.decline'],function(){
-        if(!window.confirm('Decline this order?')) return;
-        makerMove(order,Object.assign({status:'declined'},note()),'Order declined.');
+    /* his decision 4 of 11 Oct 2026: a Decline or a Cancel asks on the page's Sheet, and the reason is asked there, on tiles */
+    if(order.status==='placed'){
+      var dec=makerButton(acts,['Decline','order.decline'],function(){
+        var why=makerWhy(order);
+        makerAsk(order,dec,'decline',{title:'Decline this order?', go:'Decline order', keep:'Keep the order', extra:why.nodes,
+          say:['It is declined and goes no further. The customer is told, with your reason if you give one.'],
+          yes:function(){ makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.'); }});
       },false);
-    else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&!(+order.moved>0))
-      makerButton(acts,['Cancel order','order.cancel'],function(){
-        if(!window.confirm(+order.paid>0?'Cancel this order? RM '+(+order.paid).toFixed(2)+' is paid on it, so a refund to the customer opens for you to return.':'Cancel this order? Nothing is paid on it.')) return;
-        makerMove(order,Object.assign({status:'cancelled'},note()),'Order cancelled.');
+      makerAskTag(order,dec,'decline');
+    }else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&!(+order.moved>0)){
+      var can=makerButton(acts,['Cancel order','order.cancel'],function(){
+        var why=makerWhy(order);
+        makerAsk(order,can,'cancel',{title:'Cancel this order?', go:'Cancel order', keep:'Keep the order', extra:why.nodes,
+          say:[+order.paid>0?'RM '+(+order.paid).toFixed(2)+' is paid on it, so a refund to the customer opens for you to return.':'Nothing is paid on it.'],
+          yes:function(){ makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.'); }});
       },false);
+      makerAskTag(order,can,'cancel');
+    }
   }
   /* PHASE 1c (11 Oct 2026): RECORD'S FORMS ARE A MENU. Entry, Customers and Pricing each list their forms by name, a row of the system's
      Inbox row for each, and a row opens that form alone with a way back. The forms are the sections they were, moved and never drawn
@@ -2999,12 +3043,16 @@ export const OWNER_JS = `
           makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.');
         },true);
         /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
-        if(!order.test) makerButton(card,['Close at these units','order.close'],function(){
-          var n=Number(qty.value);
-          if(!(n>0&&n<Number(order.qty))){ makerSay(order.id,'A close is above 0 and under the '+order.qty+' units ordered.'); return; }
-          if(!window.confirm('Close this order at '+n+' of '+order.qty+' units?')) return;
-          makerTap(order,'handed',{qty:n,close:true},'Close sent to the Desk.');
-        },false).setAttribute('data-close','');
+        if(!order.test){
+          var closeBtn=makerButton(card,['Close at these units','order.close'],function(){
+            var n=Number(qty.value);
+            if(!(n>0&&n<Number(order.qty))){ makerSay(order.id,'A close is above 0 and under the '+order.qty+' units ordered.'); return; }
+            makerAsk(order,closeBtn,'close',{title:'Close this order at '+n+' of '+order.qty+' units?', plain:true, go:'Close the order', keep:'Not yet',
+              say:['The order ends at '+n+' units, and the Desk restates its total.'],
+              yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Close sent to the Desk.'); }});
+          },false);
+          closeBtn.setAttribute('data-close',''); makerAskTag(order,closeBtn,'close');
+        }
       }
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){

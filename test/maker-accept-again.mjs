@@ -20,7 +20,7 @@ export async function run({ ok }) {
     beforeParse(window) {
       Object.defineProperty(window, "crypto", { value: { getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID(), subtle: webcrypto.subtle } });
       window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder;
-      window.scrollTo = () => {}; window.confirm = () => true;
+      window.scrollTo = () => {};
       window.fetch = async (path, init) => {
         if (init && init.method === "POST" && String(path).startsWith("/all/maker/orders/")) {
           posts.push({ path: String(path), body: JSON.parse(init.body) });

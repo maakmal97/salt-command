@@ -1594,6 +1594,16 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   the claims, Received, Amend, the close at fewer units and the cash controls (`makerCashControls`, which is untouched). **Cash held for an
   order shuts the card's controls, the foot's too**; Undo opens them. A foot with moves is sticky, clear of the App bar on a phone and along the
   card's own foot from 860px, with a gutter at its right for the + orb; a closed order's foot is its answer line alone.
+  **The card asks on the page's Sheet, never a native confirm** (his decision 4 of 11 Oct 2026): Decline, Cancel order, Close at these units and
+  Offer the rejected stage again each open `ynOpen`, the Sheet the customer's Cancel and Withdraw use, restating the order by its mark, its code, its
+  size and its figure and saying what follows. One action sends the request the confirm let through, the same route, body and request id; the
+  ghost, the close control, the scrim and Escape send nothing (`order.ask-go`, `order.ask-keep`, `order.ask-close`), and focus goes back to the control
+  that asked, found again by its `data-yn` if a redraw replaced it. Tab inside a sheet visits its tiles and its field as well as its buttons
+  (`ynTabs`, which every yes or no sheet shares). **Decline and Cancel ask the
+  reason on the sheet**: the Desk's three lines as the system's Option tiles (`order.reason-stock`, `-price`, and `-place` on an order to be
+  delivered only) and a field for his own words (`order.reason`); a tile fills the field and typing clears the pick, the reason is optional and
+  rides as `note`, checked by `siteWords` on the Desk. The money taps (handover, cash, Received) are guarded once, as they were, with no sheet,
+  and Approve's confirm (`approveDraft`) is not the card's and is as it was.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a
@@ -2209,25 +2219,28 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `notice.text` | Notice | The notice, one line a sentence. |
 | `order.accept` | Order card (key: the order id), once its figures are read | Accepts the order at the price read. |
 | `order.accept-again` | Same card, once its figures are read | Accepts again at the order's own price. |
-| `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected amendment again. |
-| `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected cancellation again. |
-| `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected cash again. |
-| `order.again-move` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected handover again. |
-| `order.again-pay` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected payment again. |
+| `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected amendment again. |
+| `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cancellation again. |
+| `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cash again. |
+| `order.again-move` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected handover again. |
+| `order.again-pay` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected payment again. |
 | `order.amend` | Same card | Sends the amendment for approval. |
 | `order.amend-delivery` | Same card | The amended delivery charge, in RM. |
 | `order.amend-total` | Same card | The amended goods price, in RM. |
 | `order.amend-units` | Order card (key: the order id), acknowledged or ready | The amended units. |
+| `order.ask-close` | The sheet an order card asks on (key: the order id) | Closes the sheet, sending nothing. |
+| `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close or the offer again. |
+| `order.ask-keep` | Same sheet | Leaves the order as it was, sending nothing. |
 | `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
-| `order.cancel` | Order card (key: the order id), acknowledged or ready | Cancels the order. |
+| `order.cancel` | Order card (key: the order id), acknowledged or ready | Asks on a sheet, with a reason, then cancels the order. |
 | `order.cash` | Order card (key: the order id), ready | Holds the cash for ten seconds, then records it. |
 | `order.cash-amount` | Order card (key: the order id), ready | Cash received, in RM. |
 | `order.cash-retry` | Order card (key: the order id), when the answer was lost | Sends the same cash again, or refreshes the card. |
 | `order.cash-undo` | Order card (key: the order id), while the cash is held | Undoes it, sending nothing. |
 | `order.claim-not-found` | Same card | Answers that claim Not found. |
 | `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Confirms the money they say they sent. |
-| `order.close` | Order card (key: the order id), ready | Closes the order at the units typed. |
-| `order.decline` | Order card (key: the order id), placed | Declines the order. |
+| `order.close` | Order card (key: the order id), ready | Asks on a sheet, then closes the order at the units typed. |
+| `order.decline` | Order card (key: the order id), placed | Asks on a sheet, with a reason, then declines the order. |
 | `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |
 | `order.fee-10` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 10. |
 | `order.fee-15` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 15. |
@@ -2241,10 +2254,10 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.quick-reply` | Same card, one for each kept line (key: its place in the list) | Fills the reply with that line. |
 | `order.ready-collect` | Order card (key: the order id), acknowledged | Marks the order ready to collect. |
 | `order.ready-deliver` | Order card (key: the order id), acknowledged | Marks the order ready to deliver. |
-| `order.reason` | Order card (key: the order id) | The reason sent to the customer with a Decline or a Cancel. |
-| `order.reason-place` | Same card | Fills the reason with the place line. |
-| `order.reason-price` | Same card | Fills the reason with the price line. |
-| `order.reason-stock` | Same card | Fills the reason with the stock line. |
+| `order.reason` | The sheet a Decline or a Cancel asks on (key: the order id) | The reason sent to the customer, in his words. |
+| `order.reason-place` | Same sheet, an order to be delivered | Picks the place line as the reason. |
+| `order.reason-price` | Same sheet | Picks the price line as the reason. |
+| `order.reason-stock` | Same sheet | Picks the stock line as the reason. |
 | `order.received` | Same card | Confirms that payment. |
 | `order.received-amount` | Order card (key: the order id), acknowledged or ready | Another payment received, in RM. |
 | `order.reply` | Same card | Sends the reply. |

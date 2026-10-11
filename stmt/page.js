@@ -3289,11 +3289,22 @@ const CLIENT_JS = `
      data-yn if a redraw replaced it); Tab stays inside. A lapse or a log out takes it down (ynShut, in lapsed and lock), so it is
      never left over the door. Built from the page's own nodes at the root of the body, last, so it lies over the order sheet. */
   var yn=null;
+  /* the controls of the sheet in the order Tab visits them: its buttons, and a field or a tile (a group of tiles is one stop, the one picked or the first) */
+  function ynTabs(box){
+    return [].filter.call(box.querySelectorAll('button,input,select,textarea'),function(x){
+      if(x.disabled||x.type==='hidden') return false;
+      if(x.type==='radio'&&x.name){
+        var g=[].filter.call(box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
+        return x===(g.filter(function(r){ return r.checked; })[0]||g[0]);
+      }
+      return true;
+    });
+  }
   function ynKeys(ev){
     if(!yn) return;
     if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); ynShut(); return; }
     if(ev.key!=='Tab') return;
-    var f=[].slice.call(yn.box.querySelectorAll('button')), i=f.indexOf(document.activeElement);
+    var f=ynTabs(yn.box), i=f.indexOf(document.activeElement);
     if(!f.length) return;
     if(i<0&&!yn.box.contains(document.activeElement)&&document.activeElement!==yn.box){ ev.preventDefault(); f[ev.shiftKey?f.length-1:0].focus(); }
     else if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }

@@ -7,6 +7,8 @@
  *      while it is out, nothing read for a delivery with no charge chosen, no Preview button, and Accept again read on opening too
  *   2  the stage foot: the moves of the card's stage stand together at its foot, the filled one first, the answer line under them, shut while cash
  *      is held for the order, and standing along the card's foot as it scrolls
+ *   3  the sheets: Decline, Cancel order, Close at these units and Offer again each ask on the page's Sheet with a native confirm never asked, the reason
+ *      on option tiles, one action sending the request the confirm let through, the four ways out sending nothing, and Tab kept inside
  * Drawn by the maker harness (test/maker-act.mjs), whose hold(route) keeps an answer back until it is let go. */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
@@ -141,5 +143,134 @@ export async function run({ ok, pageWork }) {
     const base = ruleOf(".adm .maker-foot.has")[0], wide = ruleOf(".adm #makerReview .maker-foot.has", "(min-width:860px)")[0];
     ok(!!base && base.getPropertyValue("position") === "sticky" && /--salt-bar-h/.test(base.getPropertyValue("bottom")) && !!wide && wide.getPropertyValue("bottom") === "0px",
       "the foot of a card with moves is sticky, clear of the App bar, and from 860px sticks to the card's own foot: " + (base && base.cssText));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* 3. THE CARD ASKS ON THE PAGE'S SHEET, NEVER A NATIVE CONFIRM (his decision 4 of 11 Oct 2026) */
+  const calls = [];
+  const PAID = { "ord-r1": { paid: 40, qty: 3 } };
+  p = await richOwnerPage({ pageWork, review: (j) => { for (const o of j.orders) Object.assign(o, PAID[o.id] || {}); return j; } });
+  try {
+    const d = p.d, w = p.w;
+    w.confirm = () => { calls.push("confirm"); return true; };
+    w.alert = () => { calls.push("alert"); };
+    w.prompt = () => { calls.push("prompt"); return ""; };
+    await p.work.quiet();
+    const sheetOf = () => d.getElementById("ynSheet");
+    const inSheet = (act, key) => (sheetOf() ? byAct(sheetOf(), act, key) : null);
+    const tapRow = async (id) => { const r = byAct(d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
+    const part = async (name) => { byAct(d, "part.orders." + name).click(); await p.work.quiet(); };
+    const sends = (suffix) => p.posts.filter((x) => x.route.endsWith(suffix));
+    const key = (target, k, extra = {}) => { const e = new w.KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true, ...extra }); target.dispatchEvent(e); return e; };
+    byAct(d, "nav.orders").click(); await p.work.quiet();
+
+    /* Decline: the sheet restates the order, asks the reason on tiles, and sends only on its one action */
+    await tapRow("ord-p1");
+    byAct(d, "order.decline", "ord-p1").click(); await p.work.quiet();
+    const sh = sheetOf();
+    ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && sends("/move").length === 0 && calls.length === 0,
+      "Decline opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
+    ok(/Decline this order/.test(sh.querySelector(".salt-sheet__title").textContent) && /CX1-ZED/.test(sh.textContent) && /2 units/.test(sh.textContent) && /RM 200\.00/.test(sh.textContent) && !!sh.querySelector(".mtile"),
+      "the Sheet restates the order, by its code, its mark, its size and its figure: " + sh.textContent);
+    const tiles = [...sh.querySelectorAll(".salt-option input[type=radio]")].map((r) => r.getAttribute("data-act"));
+    ok(same(tiles, ["order.reason-stock", "order.reason-price"]) && !!inSheet("order.reason", "ord-p1") && !!inSheet("order.ask-go", "ord-p1") && !!inSheet("order.ask-keep", "ord-p1") && !!inSheet("order.ask-close", "ord-p1"),
+      "the reason is asked on the system's option tiles, the place line only on an order to be delivered, and the sheet's controls carry their acts: " + JSON.stringify(tiles));
+    inSheet("order.reason-stock", "ord-p1").click();
+    const reason = inSheet("order.reason", "ord-p1");
+    ok(reason.value === "We do not have enough in hand this week." && inSheet("order.reason-stock").checked, "a tile fills the reason with the Desk's line: " + reason.value);
+    reason.value = "Sold out until Friday."; reason.dispatchEvent(new w.Event("input", { bubbles: true }));
+    ok([...sh.querySelectorAll(".salt-option input[type=radio]")].every((r) => !r.checked), "and typing his own words clears the tile");
+    ok(!!sh.querySelector("fieldset.salt-options .salt-options__legend") && sh.querySelector(".salt-sheet__foot").contains(inSheet("order.ask-go")) && inSheet("order.ask-go").classList.contains("salt-ghost--danger"),
+      "Decline order is the one danger action, in the Sheet's foot");
+
+    /* Tab stays inside the sheet, across its tiles and its field */
+    const focusables = [...sh.querySelectorAll("button, input")].filter((x) => !(x.type === "radio" && !x.checked && [...sh.querySelectorAll("input[type=radio]")].some((r) => r.checked && r.name === x.name)));
+    const first = sh.querySelector("#ynX"), last = sh.querySelector("#ynKeep");
+    last.focus(); const tabOut = key(last, "Tab");
+    ok(tabOut.defaultPrevented && d.activeElement === first, "Tab from the last control wraps to the first");
+    first.focus(); const shiftBack = key(first, "Tab", { shiftKey: true });
+    ok(shiftBack.defaultPrevented && d.activeElement === last, "Shift+Tab from the first wraps to the last");
+    inSheet("order.reason", "ord-p1").focus(); const inner = key(inSheet("order.reason"), "Tab", { shiftKey: true });
+    ok(!inner.defaultPrevented, "and Shift+Tab inside the sheet, from its field, is left to the browser, which goes to the tiles: " + focusables.length);
+
+    /* the four ways out send nothing, and focus returns to the control that opened it */
+    for (const [name, close] of [["Keep the order", () => inSheet("order.ask-keep").click()], ["the close control", () => inSheet("order.ask-close").click()],
+      ["the scrim", () => d.getElementById("ynScrim").click()], ["Escape", () => key(d.body, "Escape")]]) {
+      if (!sheetOf()) { byAct(d, "order.decline", "ord-p1").click(); await p.work.quiet(); }
+      close(); await p.work.quiet();
+      ok(!sheetOf() && sends("/move").length === 0 && d.activeElement === byAct(d, "order.decline", "ord-p1"), name + " closes the sheet, sends nothing, and gives focus back to Decline");
+    }
+    /* a card redrawn while its sheet is open (a read that changed) takes the control that asked away: focus goes to the one that replaced it */
+    byAct(d, "order.decline", "ord-p1").click(); await p.work.quiet();
+    const asker = byAct(d, "order.decline", "ord-p1");
+    byAct(d, "order.open", "ord-p1").click(); await p.work.quiet();
+    const asker2 = byAct(d, "order.decline", "ord-p1");
+    inSheet("order.ask-keep").click(); await p.work.quiet();
+    ok(!!asker2 && asker2 !== asker && !asker.isConnected && d.activeElement === asker2 && sends("/move").length === 0,
+      "a card redrawn while its sheet is open still gets focus back, on the control that replaced the one that asked");
+    /* the one action sends the request the confirm let through: the same route and body, under one request id */
+    byAct(d, "order.decline", "ord-p1").click(); await p.work.quiet();
+    inSheet("order.reason-price").click(); inSheet("order.ask-go").click(); await p.work.quiet();
+    const dec = sends("/move");
+    ok(dec.length === 1 && dec[0].route === "/all/maker/orders/ord-p1/move" && same(Object.keys(dec[0].body).sort(), ["note", "rid", "status"]) && dec[0].body.status === "declined"
+      && dec[0].body.note === "Our prices have changed." && /^[0-9a-f]{32}$/.test(dec[0].body.rid) && !sheetOf(),
+      "the one action sends the Decline, the same route and body with the reason picked, and closes the sheet: " + JSON.stringify(dec));
+    ok(calls.length === 0, "and no native confirm, alert or prompt was asked on the way");
+
+    /* a delivery's reasons include the place line; no reason sends no note */
+    await tapRow("ord-p2");
+    byAct(d, "order.decline", "ord-p2").click(); await p.work.quiet();
+    ok(same([...sheetOf().querySelectorAll(".salt-option input[type=radio]")].map((r) => r.getAttribute("data-act")), ["order.reason-stock", "order.reason-place", "order.reason-price"]),
+      "an order to be delivered is also offered the place line");
+    inSheet("order.ask-go").click(); await p.work.quiet();
+    ok(sends("/move").length === 2 && same(Object.keys(sends("/move")[1].body).sort(), ["rid", "status"]), "and a Decline with no reason sends none: " + JSON.stringify(sends("/move")[1] && sends("/move")[1].body));
+
+    /* Cancel: what is lost and what becomes of the money is said, and a retry carries the request id it had */
+    await part("agreed"); await tapRow("ord-a1");
+    byAct(d, "order.cancel", "ord-a1").click(); await p.work.quiet();
+    ok(/Cancel this order/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && /Nothing is paid on it/.test(sheetOf().textContent) && sends("/move").length === 2,
+      "Cancel on an unpaid order says nothing is paid on it, and sends nothing as it opens");
+    inSheet("order.ask-keep").click(); await p.work.quiet();
+    await part("ready"); await tapRow("ord-r1");
+    byAct(d, "order.cancel", "ord-r1").click(); await p.work.quiet();
+    ok(/RM 40\.00 is paid on it, so a refund to the customer opens for you to return/.test(sheetOf().textContent), "and on a paid one says what the refund is: " + sheetOf().textContent);
+    p.fail.add("/all/maker/orders/ord-r1/move");
+    inSheet("order.reason-price").click(); inSheet("order.ask-go").click(); await p.work.quiet();
+    p.fail.delete("/all/maker/orders/ord-r1/move");
+    byAct(d, "order.cancel", "ord-r1").click(); await p.work.quiet();
+    inSheet("order.reason-price").click(); inSheet("order.ask-go").click(); await p.work.quiet();
+    const can = sends("/move").filter((x) => x.route.includes("ord-r1"));
+    ok(can.length === 2 && can[0].body.status === "cancelled" && can[1].body.rid === can[0].body.rid && can[1].body.status === "cancelled",
+      "a Cancel that failed is sent again from the sheet under the request id it had: " + JSON.stringify(can));
+    ok(can.every((x) => x.body.note === "Our prices have changed."), "and a Cancel carries the reason picked on its sheet, as a Decline does: " + JSON.stringify(can.map((x) => x.body.note)));
+
+    /* Close at these units: a figure that is not a close is said on the card, one that is asks on the sheet */
+    await tapRow("ord-r1");
+    const units = byAct(d, "order.handed-units", "ord-r1");
+    units.value = "3"; byAct(d, "order.close", "ord-r1").click(); await p.work.quiet();
+    ok(!sheetOf() && /A close is above 0 and under the 3 units ordered/.test(d.querySelector("#makerReview [data-maker-say]").textContent), "a figure that is not a close opens no sheet and is said on the card");
+    units.value = "2"; byAct(d, "order.close", "ord-r1").click(); await p.work.quiet();
+    ok(/Close this order at 2 of 3 units/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && !inSheet("order.ask-go").classList.contains("salt-ghost--danger") && sends("/handed").length === 0,
+      "a close asks on the sheet, naming the units, and sends nothing as it opens");
+    inSheet("order.ask-go").click(); await p.work.quiet();
+    const closed = sends("/handed");
+    ok(closed.length === 1 && closed[0].route === "/all/maker/orders/ord-r1/handed" && closed[0].body.qty === 2 && closed[0].body.close === true && /^[0-9a-f]{32}$/.test(closed[0].body.rid),
+      "and sends the close it sent, the same route and body: " + JSON.stringify(closed));
+
+    /* Offer again: a stage he rejected, asked on the sheet, sent under a request id */
+    await part("closed"); await tapRow("ord-x1");
+    byAct(d, "order.again-pay", "ord-x1").click(); await p.work.quiet();
+    ok(/Offer the payment again/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("salt-ghost--danger"),
+      "offering a stage again asks on the sheet and sends nothing as it opens");
+    inSheet("order.ask-go").click(); await p.work.quiet();
+    const again = sends("/again");
+    ok(again.length === 1 && again[0].route === "/all/maker/orders/ord-x1/again" && again[0].body.stage === "pay" && /^[0-9a-f]{32}$/.test(again[0].body.rid),
+      "and sends the offer, the same route and body: " + JSON.stringify(again));
+
+    /* the money taps are guarded once, as they were: no sheet */
+    await part("ready"); await tapRow("ord-r1");
+    const before = sends("/handed").length;
+    byAct(d, "order.handed", "ord-r1").click(); await p.work.quiet();
+    ok(sends("/handed").length === before + 1 && !sheetOf(), "Record handover sends at once, with no sheet: it is a money tap guarded once, as it was");
+    ok(calls.length === 0, "and no native confirm, alert or prompt was asked on any order card: " + JSON.stringify(calls));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }
