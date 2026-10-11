@@ -26,8 +26,6 @@ html[data-tod="register"],:root{
      a colour the headings also speak in. The colour is --salt-alarm, IN THE IDENTITY since 22 Sep 2026
      (it was defined here until then); --rose keeps ember and has no reader. ---- */
   --rose:var(--salt-ember);--crim:var(--salt-alarm);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
-  /* the deeper end of a solid steel or verdigris button's gradient: the accent drawn a fifth toward the ground, so each theme moves it (11 Oct 2026) */
-  --vio-deep:color-mix(in srgb,var(--salt-steel) 80%,var(--salt-obsidian));--grn-deep:color-mix(in srgb,var(--salt-verdigris) 80%,var(--salt-obsidian));
   --acc:var(--salt-brass);--accB:var(--salt-copper);
   --glass:var(--salt-glass);--glass-2:var(--salt-glass-hover);
   --brd:var(--salt-line);--brd-2:var(--salt-line-strong);
@@ -733,6 +731,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-void:#ffffff05; /* an area with nothing in it */
   --desk-map-core:#ffffff08; /* a district on the place picker */
   --desk-on-solid:#fff;      /* text on the desk's solid steel button and its alarm pill; Tide's accent is lighter, so Tide takes the ink */
+  --desk-vio-deep:#6f8398;   /* the deeper end of the steel button's gradient (Hide names), Night's own hex as it was drawn */
+  --desk-grn-deep:#4f8f7a;   /* and of the verdigris buttons' (Save, Record) */
 }
 
 /* 11 Oct 2026: TWO THEMES, NIGHT AND TIDE (his word, chosen on each device, Tide until chosen). Night is :root above and in the
@@ -752,6 +752,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-void:#ffffff05;
   --desk-map-core:#ffffff08;
   --desk-on-solid:var(--salt-ink-on-accent);
+  --desk-vio-deep:#7c97b2;   /* Tide's steel (#9ab8d8) and verdigris (#8ee0a8) drawn a fifth toward its ground; the ink holds 6.1:1 and 7.8:1 on them */
+  --desk-grn-deep:#72b78c;
 }
 /* what each theme's tile shows in the choice sheet: its own ground and accent, so a tile reads true under the other theme. They
    are the design system's obsidian and brass at Night and its Tide values, held equal to the system by the suite, and no theme

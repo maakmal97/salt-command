@@ -8805,9 +8805,15 @@ await (async () => {
      What stays literal is not an inline style: the crystal mark's stops, the dormant tier colours, and the price board's print sheet and PNG, which are the customer's own paper */
   const hexLit = (body.match(/(?:style="[^"]*|linear-gradient\((?:[^()]|\([^()]*\))*)(?<![&\w])#[0-9a-f]{3,8}\b/gi) || []).map((x) => x.slice(x.lastIndexOf("#")));
   ok(hexLit.length === 0, `the desk's script templates write no hex colour in an inline style or a gradient (found ${hexLit.join(" ") || "none"})`);
-  ok(/--vio-deep:color-mix\(in srgb,var\(--salt-steel\)/.test(m) && /--grn-deep:color-mix\(in srgb,var\(--salt-verdigris\)/.test(m)
-    && /linear-gradient\(135deg,var\(--vio\),var\(--vio-deep\)\)/.test(body) && /id="wbRec" style="[^"]*linear-gradient\(135deg,var\(--grn\),var\(--grn-deep\)\)/.test(body),
-    "so the solid steel and verdigris buttons are a token and the same token drawn deeper, which each theme moves");
+  ok(/linear-gradient\(135deg,var\(--vio\),var\(--desk-vio-deep\)\)/.test(body) && /id="vsave"[^>]*linear-gradient\(135deg,var\(--grn\),var\(--desk-grn-deep\)\)/.test(body)
+    && /id="wbRec" style="[^"]*linear-gradient\(135deg,var\(--grn\),var\(--desk-grn-deep\)\)/.test(body) && !/--(vio|grn)-deep\b/.test(m),
+    "so the solid steel and verdigris buttons end their gradient on a desk token each, and nothing mixes one in the shared layer");
+  /* a literal can be checked and a mix cannot (jsdom computes no color-mix): Night's two are the exact hexes drawn before this follow-up, Tide's are its own and carry the ink */
+  const deepOf = (D) => ["desk-vio-deep", "desk-grn-deep"].map((k) => D[k]);
+  ok(DN["desk-vio-deep"] === "#6f8398" && DN["desk-grn-deep"] === "#4f8f7a", `Night's gradient ends are the exact hexes the buttons drew before, #6f8398 and #4f8f7a (read ${deepOf(DN).join(" ")})`);
+  const inkOn = deepOf(DT).concat([TIDE.steel, TIDE.verdigris]).map((h) => HEX.test(h || "") ? ratio(TIDE["ink-on-accent"], h) : 0);
+  ok(deepOf(DT).every((h, i) => HEX.test(h || "") && h !== deepOf(DN)[i]) && Math.min(...inkOn) >= 4.5,
+    `Tide's are its own, not Night's, and its ink holds 4.5:1 on both and on the accents they deepen (read ${deepOf(DT).join(" ")}; lowest ${Math.min(...inkOn).toFixed(2)})`);
   /* the system's desk bar reads its material from three tokens on :root, and no raw fill is left */
   const dsBase = dsC.replace(/\s+/g, "");
   const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1];
