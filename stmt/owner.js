@@ -109,6 +109,8 @@ export const OWNER_JS = `
     if(!inChat()) stopMakerChat();
     /* the picture is let go when Waiting on you is left, the unlocked key only when Orders is left, as the old Maker page kept it */
     if(!inClaims()) makerSlipClose();
+    /* so is the claim opened, and the line of the last answer: the claims are drawn again, every card shut, so a part left shows as it will be found */
+    if(!inClaims()&&(makerClaimOpen||makerClaimSaid)){ makerClaimOpen=null; makerClaimSaid=''; drawMakerClaims(); }
     if(placeNow!=='orders') makerSlipLock();
     [].forEach.call(document.querySelectorAll('.place[data-m]'), function(b){
       if(b.getAttribute('data-m')===placeNow) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
@@ -771,25 +773,31 @@ export const OWNER_JS = `
   function makerNeedsYes(order,total,slot){ return (total>(+order.total||0)+0.004)||(!!slot&&!!order.slot&&slot!==order.slot); }
   /* his Accept sent for their yes, open or said yes to: the order waits on them, or on its row */
   function makerAccHeld(order){ var p=order&&order.price; return !!p&&p.from==='accept'&&(p.state==='taken'||(p.state==='offered'&&!!p.offer&&new Date().toISOString()<=String(p.offer.until))); }
-  var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[];
+  var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[], makerSlipDraw=null;
+  /* 12 Oct 2026 (Phase 2b, his decisions 3, 4 and 6 of 11 Oct): THE CLAIM CARD. A waiting account claim is a row of the system's Inbox row and the one
+     opened is its card under it, one at a time. The card reads the claim's rows ITSELF when it is opened (the Desk's preview through the Counter, stored
+     nowhere), never a row, and reads them afresh each time it is drawn; the Preview rows button is retired. Received and Not found ask on the page's
+     Sheet. The slip is a thumbnail drawn only from the slip key the page already holds. */
+  var makerClaimOpen=null, makerClaimSaid='';
   function makerSlipClose(){
     makerSlipGeneration++;
     makerSlipUrls.forEach(function(url){ URL.revokeObjectURL(url); }); makerSlipUrls=[];
     document.querySelectorAll('[data-maker-slip]').forEach(function(node){ node.remove(); });
   }
-  function makerSlipLock(){ makerSlipClose(); makerSlipPrivate=null; }
+  /* the lock lets the picture and the key go together, and the slip block of the card open says it is sealed again */
+  function makerSlipLock(){ makerSlipClose(); makerSlipPrivate=null; if(makerSlipDraw) makerSlipDraw(); }
   document.addEventListener('visibilitychange',function(){ if(document.hidden) makerSlipLock(); });
   function makerClaimButton(parent,label,action,primary){
     var L=labOf(label), button=actOn(el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);
     button.type='button'; button.onclick=function(){ return action(button); }; parent.appendChild(button); return button;
   }
-  /* PHASE 1b: Needs you reads the claims too (placeNow is then needs and nothing is drawn here). A poll leaves a claim card he has begun on
-     (a field open, a preview shown, a slip open) alone, and one that finds the same answer draws nothing. */
+  /* PHASE 1b: Needs you reads the claims too (placeNow is then needs and nothing is drawn here). A poll leaves a claim he has opened (its rows read, a field
+     open, a slip showing) alone, and one that finds the same answer draws nothing. */
   var claimsReading=false;
   async function loadMakerClaims(quiet){
     var root=document.getElementById('makerClaims'), show=placeNow==='orders', poll=quiet===true, apply=false;
     if(!root||(!show&&!(poll&&placeNow==='needs'))) return;
-    if(poll&&(claimsReading||(show&&(dirty.makerClaims||makerSlipUrls.length)))) return;
+    if(poll&&(claimsReading||(show&&(dirty.makerClaims||makerClaimOpen||makerSlipUrls.length)))) return;
     claimsReading=true;
     if(show&&!poll){ makerSlipClose(); root.textContent='Reading account claims…'; }
     try{
@@ -797,61 +805,167 @@ export const OWNER_JS = `
       if(!changed('claims', makerClaims)&&poll) return;
       apply=true;
       if(!show||!root.isConnected||placeNow!=='orders') return;
-      dirty.makerClaims=false; root.textContent='';
-      var waiting=makerClaims.filter(function(c){ return c.state==='waiting'; });
-      if(!waiting.length) root.appendChild(el('p','rnone','No account claims waiting.'));
-      waiting.forEach(function(claim){
-        var card=makerCard(root), preview=null; card.setAttribute('data-key',claim.u+':'+claim.id);
-        card.appendChild(el('h3',null,claim.u+' · '+rm(claim.amount)));
-        card.appendChild(el('p','maker-facts',claim.id+(claim.test?' · Test, counts nowhere':'')));
-        var note=el('div','maker-quote'); card.appendChild(note);
-        var route='/all/maker/claims/'+claim.u+'/'+claim.id;
-        var receipt=makerClaimButton(card,['Received','claim.received'],function(button){ return decideMakerClaim(false,false,button); },true);
-        var covered=makerClaimButton(card,['Received, on the book already','claim.received-booked'],function(button){ return decideMakerClaim(true,false,button); },false);
-        receipt.disabled=true; covered.disabled=true;
-        makerClaimButton(card,['Preview rows','claim.preview'],async function(button){
-          button.disabled=true;
-          try{
-            preview=await refs(route+'/preview',{}); note.textContent='';
-            (preview.rows||[]).forEach(function(row){
-              note.appendChild(el('p','maker-row',(row.date||'undated')+' · '+rm(row.rm)+' of '+rm(row.owed)+' · '+(row.rid||row.key)));
-              (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?flag:JSON.stringify(flag))); });
-            });
-            note.appendChild(el('p','salt-insight',preview.booked?'Already booked. Received tells the customer again without booking.':
-              preview.left>0.004?rm(preview.left)+' exceeds the rows. Do not book it again if already recorded.':'These rows are answered together.'));
-            receipt.disabled=preview.left>0.004; covered.disabled=!(preview.left>0.004);
-          }catch(error){ note.textContent=error.message; }
-          button.disabled=false;
-        },false);
-        makerClaimButton(card,['Not found','claim.not-found'],function(button){ return decideMakerClaim(false,true,button); },false);
-        async function decideMakerClaim(onBook,notFound,button){
-          if(!notFound&&!preview) return;
-          var key=claim.u+':'+claim.id, pending=makerClaimRequests[key];
-          var body=notFound?{amount:claim.amount}:{hash:preview.hash};
-          if(onBook) body.covered=true;
-          var action=notFound?'notfound':'received', intended=JSON.stringify({action:action,body:body});
-          if(pending&&pending.intended!==intended){ note.textContent='Read the retained decision before choosing another answer.'; return; }
-          if(!pending){
-            if(!window.confirm(notFound?'Record this claim as Not found?':'Confirm the amount and rows shown?')) return;
-            pending={intended:intended,action:action,body:Object.assign({rid:crypto.randomUUID()},body),busy:false};
-            makerClaimRequests[key]=pending;
-          }
-          if(pending.busy) return; pending.busy=true; button.disabled=true;
-          try{
-            await refs(route+'/'+pending.action,pending.body); delete makerClaimRequests[key]; await loadMakerClaims(); await loadMaker();
-          }catch(error){ note.textContent='Confirmation not received. Retry this same answer: '+error.message; }
-          pending.busy=false; button.disabled=false;
-        }
-        if(claim.slip) makerSlipControl(card,claim.u,claim.slip);
-      });
+      drawMakerClaims();
     }catch(error){ nGot('claims', error); apply=true; if(show&&!poll) root.textContent=error.message; }
     finally{ claimsReading=false; if(apply) drawNeeds(); }
   }
-  function makerSlipControl(parent,u,id){
-    var pass=makerField(parent,['Vault passphrase','claim.passphrase'],'password',''), note=el('p','msg'); parent.appendChild(note);
-    pass.autocomplete='off';
-    makerClaimButton(parent,['View slip','claim.view-slip'],async function(button){
-      var generation=++makerSlipGeneration, secret=pass.value; pass.value=''; button.disabled=true;
+  /* the claims drawn from the read that stands: a row each, and the card of the one opened under its row. A redraw lets every picture go first, and
+     a claim answered meanwhile closes its card. */
+  function drawMakerClaims(){
+    var root=document.getElementById('makerClaims'); if(!root) return;
+    makerSlipClose(); makerSlipDraw=null; dirty.makerClaims=false; root.textContent='';
+    var waiting=makerClaims.filter(function(c){ return c.state==='waiting'; });
+    if(makerClaimOpen&&!waiting.some(function(c){ return c.u+':'+c.id===makerClaimOpen; })) makerClaimOpen=null;
+    if(makerClaimSaid){ var said=el('p','salt-insight',makerClaimSaid); said.setAttribute('role','status'); root.appendChild(said); }
+    if(!waiting.length) root.appendChild(el('p','rnone','No account claims waiting.'));
+    waiting.forEach(function(claim){
+      var key=claim.u+':'+claim.id; root.appendChild(makerClaimRow(claim,key));
+      if(makerClaimOpen===key) makerClaimCard(root,claim,key);
+    });
+  }
+  /* a row reads nothing: who, that they say they sent it, the slip if one is attached, how long ago and how much */
+  function makerClaimRow(claim,key){
+    var b=el('button','salt-inbox-row'), main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
+    b.type='button'; actOn(b,'claim.open',key); b.setAttribute('aria-expanded',makerClaimOpen===key?'true':'false');
+    if(makerClaimOpen===key) b.setAttribute('aria-current','true');
+    t.appendChild(el('span',null,codeByUser(claim.u))); t.appendChild(chip('ember','Says sent'));
+    if(claim.test) t.appendChild(chip('mist','Practice'));
+    main.appendChild(t); main.appendChild(el('span','salt-inbox-row__what',claim.slip?'Slip attached':'No slip'));
+    if(ageOf(claim.at)) side.appendChild(el('span','salt-inbox-row__age',ageOf(claim.at)));
+    side.appendChild(el('span','salt-inbox-row__action',rm(claim.amount)));
+    b.appendChild(main); b.appendChild(side);
+    b.addEventListener('click',function(){ makerClaimToggle(key); });
+    return b;
+  }
+  /* a tap on a row opens its card, which reads its rows afresh, and a tap on the row open closes it; one is open at a time, and the card that closes lets its picture go */
+  function makerClaimToggle(key){
+    var was=makerClaimOpen===key;
+    makerClaimOpen=was?null:key; makerClaimSaid='';
+    drawMakerClaims();
+    try{
+      var rows=document.querySelectorAll('#makerClaims [data-act="claim.open"]'), row=[].filter.call(rows,function(r){ return r.getAttribute('data-key')===key; })[0];
+      if(row&&row.focus) row.focus({preventScroll:true});
+      var card=document.querySelector('#makerClaims [data-maker-card]'); if(!was&&card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});
+    }catch(x){}
+  }
+  /* the claim as a sheet restates it: who, how much, and that they say they sent it */
+  function makerClaimAskRow(claim){
+    var L=el('div','salt-ledger salt-ledger--plain'), r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label');
+    lab.appendChild(el('span',null,codeByUser(claim.u)));
+    l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(claim.amount))); r.appendChild(l);
+    r.appendChild(el('span','salt-ledger__flag','Says they sent it'+(claim.test?', practice':'')));
+    L.appendChild(r); return L;
+  }
+  /* the Sheet a claim's Received or Not found asks on, in place of the native confirm. As makerAsk's: one action sends what the confirm let through, and
+     the ghost, the close control, the scrim and Escape send nothing. q: title, say (lines), extra (nodes), go, keep, plain, yes. */
+  function makerClaimAsk(claim,key,opener,kind,q){
+    ynOpen({title:q.title, opener:opener, again:ynFind('claim:'+key+':'+kind), go:q.go, keep:q.keep, yes:q.yes,
+      body:[makerClaimAskRow(claim)].concat(q.say.map(function(s){ return el('p',null,s); })).concat(q.extra||[])});
+    var go=document.getElementById('ynGo');
+    actOn(go,'claim.ask-go',key); actOn(document.getElementById('ynKeep'),'claim.ask-keep',key); actOn(document.getElementById('ynX'),'claim.ask-close',key);
+    go.classList.toggle('salt-ghost--danger',!q.plain);
+  }
+  /* a claim's rows, one line each, as the card and the Received sheet show them */
+  function makerClaimRowLine(row){ return (row.date||'undated')+' · '+rm(row.rm)+' of '+rm(row.owed)+' · '+(row.rid||row.key); }
+  function makerClaimCard(root,claim,key){
+    var card=makerCard(root,'claim:'+key), route='/all/maker/claims/'+claim.u+'/'+claim.id, acts=el('div','maker-foot__acts'), who=codeByUser(claim.u);
+    var turn=0, preview=null, said=el('p','salt-insight'), note=el('div','maker-quote');
+    card.setAttribute('data-key',key);
+    card.appendChild(el('h3',null,who+' · '+rm(claim.amount)));
+    card.appendChild(el('p','maker-facts',claim.id+(claim.test?' · Test, counts nowhere':'')));
+    said.setAttribute('role','status'); card.appendChild(said); card.appendChild(note);
+    if(claim.slip) makerSlipControl(card,claim.u,claim.slip,key);
+    var receipt=makerClaimButton(acts,['Received','claim.received',key],function(){ return claimAsk(false,false); },true);
+    var covered=makerClaimButton(acts,['Received, on the book already','claim.received-booked',key],function(){ return claimAsk(true,false); },false);
+    var lost=makerClaimButton(acts,['Not found','claim.not-found',key],function(){ return claimAsk(false,true); },false);
+    receipt.disabled=true; covered.disabled=true;
+    receipt.setAttribute('data-yn','claim:'+key+':received'); covered.setAttribute('data-yn','claim:'+key+':received-booked'); lost.setAttribute('data-yn','claim:'+key+':notfound');
+    makerCardFoot(card,acts,'claim:'+key,false,true);
+    var answer=card.querySelector('.maker-foot .maker-say');
+    function claimShow(result){
+      preview=result; said.className='salt-insight'; said.textContent='Rows read. Check them before you answer.';
+      note.textContent='';
+      (result.rows||[]).forEach(function(row){
+        note.appendChild(el('p','maker-row',makerClaimRowLine(row)));
+        (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?flag:JSON.stringify(flag))); });
+      });
+      note.appendChild(el('p','salt-insight',result.booked?'Already booked. Received tells the customer again without booking.':
+        result.left>0.004?rm(result.left)+' exceeds the rows. Do not book it again if already recorded.':'These rows are answered together.'));
+      receipt.disabled=result.left>0.004; covered.disabled=!(result.left>0.004);
+    }
+    /* the rows are read when the card is drawn, which is when it is opened, and again by Read the rows again when that failed; Received waits for them */
+    function claimRead(){
+      var mine=++turn; preview=null;
+      said.className='salt-insight'; said.textContent='Reading the rows.'; note.textContent='';
+      refs(route+'/preview',{}).then(function(result){
+        if(mine!==turn||!card.isConnected) return;
+        claimShow(result);
+      }).catch(function(error){
+        if(mine!==turn||!card.isConnected) return;
+        said.className='msg'; said.textContent=error.message;
+        makerClaimButton(note,['Read the rows again','claim.reread',key],claimRead,false);
+      });
+    }
+    async function claimPost(pending){
+      if(pending.busy) return; pending.busy=true; [receipt,covered,lost].forEach(function(b){ b.disabled=true; });
+      try{
+        await refs(route+'/'+pending.action,pending.body); delete makerClaimRequests[key];
+        makerClaimSaid=pending.action==='notfound'?'Answered Not found. '+who+' is told.':pending.body.covered?'Recorded as on the book already. '+who+' is told.':'Recorded. '+who+' is told.';
+        makerClaimOpen=null; await loadMakerClaims(); await loadMaker();
+      }catch(error){ answer.textContent='Confirmation not received. Retry this same answer: '+error.message; lost.disabled=false; if(preview) claimShow(preview); }
+      pending.busy=false;
+    }
+    /* the answer asks once, on the Sheet; the same answer again after a lost reply is sent at once under the request id it had, as the confirm was not asked twice */
+    function claimAsk(onBook,notFound){
+      if(!notFound&&!preview) return;
+      var body=notFound?{amount:claim.amount}:{hash:preview.hash}; if(onBook) body.covered=true;
+      var action=notFound?'notfound':'received', kind=notFound?'notfound':onBook?'received-booked':'received', intended=JSON.stringify({action:action,body:body}), pending=makerClaimRequests[key];
+      if(pending&&pending.intended!==intended){ answer.textContent='Read the retained decision before choosing another answer.'; return; }
+      if(pending){ claimPost(pending); return; }
+      var lines=notFound?['The claim is answered Not found and nothing is booked. '+who+' is told.']:onBook?
+        [rm(claim.amount)+' is more than these rows owe, so it is on the book already. Nothing more is booked, and '+who+' is told it arrived.']:
+        [preview.booked?'These rows are booked already. Nothing more is booked, and '+who+' is told it arrived.':rm(claim.amount)+' is booked against the rows below, and '+who+' is told it arrived.'];
+      var rows=notFound?[]:(preview.rows||[]).map(function(row){ return el('p','maker-row',makerClaimRowLine(row)); });
+      makerClaimAsk(claim,key,{received:receipt,'received-booked':covered,notfound:lost}[kind],kind,{
+        title:notFound?'Not found '+rm(claim.amount)+' from '+who+'?':onBook?'Received, on the book already?':'Received '+rm(claim.amount)+' from '+who+'?',
+        plain:!notFound, go:notFound?'Not found':onBook?'Yes, on the book already':'Yes, received', keep:'Not yet', say:lines, extra:rows,
+        yes:function(){
+          var req=makerClaimRequests[key]||(makerClaimRequests[key]={intended:intended,action:action,body:Object.assign({rid:crypto.randomUUID()},body),busy:false});
+          claimPost(req);
+        }});
+    }
+    claimRead();
+  }
+  /* THE SLIP of a claim: sealed until the page holds the slip key, a thumbnail once it does, and the thumbnail is the control that enlarges it. The
+     picture is a blob: URL, let go on the lock, on a page hidden, and when its card closes; the ciphertext is fetched only once there is a key to open it. */
+  function makerSlipControl(parent,u,id,key){
+    var box=el('div','maker-slipbox'), note=el('p','msg'); parent.appendChild(box);
+    note.setAttribute('role','status');
+    function slipSealed(){
+      box.textContent=''; box.classList.remove('open');
+      note.textContent='The slip is sealed. Unlock it with the vault passphrase to see it on this device only.'; box.appendChild(note);
+      var pass=makerField(box,['Vault passphrase','claim.passphrase',key],'password',''); pass.autocomplete='off';
+      makerClaimButton(box,['Unlock and view slip','claim.view-slip',key],function(button){ return slipView(button,pass); },false);
+    }
+    function slipOpening(text){
+      box.textContent=''; box.classList.remove('open');
+      note.textContent=text; box.appendChild(note);
+      makerClaimButton(box,['Open the slip again','claim.view-slip',key],function(button){ return slipView(button,null); },false);
+    }
+    function slipPaint(url){
+      box.textContent=''; box.classList.remove('open');
+      var pic=el('button','maker-slip-open'), image=el('img','maker-slip');
+      pic.type='button'; actOn(pic,'claim.slip',key); pic.setAttribute('data-maker-slip','');
+      pic.setAttribute('aria-expanded','false'); pic.setAttribute('aria-label','Enlarge the slip');
+      image.src=url; image.alt='Payment slip'; pic.appendChild(image);
+      pic.addEventListener('click',function(){
+        var on=box.classList.toggle('open'); pic.setAttribute('aria-expanded',on?'true':'false'); pic.setAttribute('aria-label',on?'Shrink the slip':'Enlarge the slip');
+      });
+      box.appendChild(pic); note.textContent='Opened on this device only. Tap the picture to enlarge it.'; box.appendChild(note);
+      makerClaimButton(box,['Close and lock slip','claim.lock-slip',key],function(){ makerSlipLock(); note.textContent='Slip locked. It is sealed again: unlock it with the vault passphrase to see it.'; },false);
+    }
+    async function slipView(button,pass){
+      var generation=++makerSlipGeneration, secret=pass?pass.value:''; if(pass) pass.value=''; if(button) button.disabled=true;
       try{
         if(!makerSlipPrivate){
           if(!secret) throw new Error('Unlock the slip key with the vault passphrase.');
@@ -864,25 +978,26 @@ export const OWNER_JS = `
           if(generation!==makerSlipGeneration) return;
           makerSlipPrivate=imported;
         }
-        var privateKey=makerSlipPrivate, sealed=(await refs('/all/maker/slips/'+u+'/'+id)).slip;
+        var privateKey=makerSlipPrivate, sealedSlip=(await refs('/all/maker/slips/'+u+'/'+id)).slip;
         if(generation!==makerSlipGeneration) return;
-        if(!sealed||sealed.v!==1) throw new Error('The sealed slip is malformed.');
-        var epk=await crypto.subtle.importKey('raw',makerFrom64(sealed.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
+        if(!sealedSlip||sealedSlip.v!==1) throw new Error('The sealed slip is malformed.');
+        var epk=await crypto.subtle.importKey('raw',makerFrom64(sealedSlip.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
         var bits=await crypto.subtle.deriveBits({name:'ECDH',public:epk},privateKey,256);
         var hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
-        var key=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},
+        var aes=await crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt:new Uint8Array(0),info:new TextEncoder().encode('salt-slip v1')},
           hk,{name:'AES-GCM',length:256},false,['decrypt']);
-        var bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:makerFrom64(sealed.iv)},key,makerFrom64(sealed.ct));
+        var bytes=await crypto.subtle.decrypt({name:'AES-GCM',iv:makerFrom64(sealedSlip.iv)},aes,makerFrom64(sealedSlip.ct));
         if(generation!==makerSlipGeneration||!parent.isConnected||!inClaims()||document.hidden) return;
         var url=URL.createObjectURL(new Blob([bytes],{type:'image/jpeg'}));
         if(generation!==makerSlipGeneration){ URL.revokeObjectURL(url); return; }
-        makerSlipUrls.push(url);
-        var image=el('img','maker-slip'); image.src=url; image.alt='Payment slip'; image.setAttribute('data-maker-slip','');
-        parent.appendChild(image); note.textContent='Opened on this device only.';
-      }catch(error){ if(generation===makerSlipGeneration) note.textContent='Slip could not be opened: '+error.message; }
-      finally{ secret=''; button.disabled=false; }
-    },false);
-    makerClaimButton(parent,['Close and lock slip','claim.lock-slip'],function(){ makerSlipLock(); pass.value=''; note.textContent='Slip locked.'; },false);
+        makerSlipUrls.push(url); slipPaint(url);
+      }catch(error){
+        if(generation===makerSlipGeneration){ var said='Slip could not be opened: '+error.message; if(makerSlipPrivate) slipOpening(said); else note.textContent=said; }
+      }
+      finally{ secret=''; if(button) button.disabled=false; }
+    }
+    makerSlipDraw=function(){ if(makerSlipPrivate) slipOpening('Opening the slip.'); else slipSealed(); };
+    if(makerSlipPrivate){ slipOpening('Opening the slip.'); slipView(null,null); } else slipSealed();
   }
   var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
   function stopMakerChat(){
@@ -2917,7 +3032,11 @@ export const OWNER_JS = `
         function makerPlacedInvalidate(){
           previewTurn++;
           delete makerQuotes[order.id]; delete makerPv[order.id];
-          makerPlacedSay(makerPlacedDelivery()==null?'Choose the delivery charge, and the figures read themselves.':'The figures are read again when you finish.');
+          var chosen=makerPlacedDelivery()!=null;
+          makerPlacedSay(chosen?'The figures are read again when you finish.':'Choose the delivery charge, and the figures read themselves.');
+          /* 12 Oct 2026: an edit put back to what it was fires no change, so the read it waits for would never come: the card offers it, and nothing is left
+             waiting on an event that may not happen (Accept stays away until the figures are read) */
+          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
         }
         /* what the figures stand on: the goods total, the charge, and the window, which decides whether Accept goes to them for their yes */
         function makerPlacedWin(){ return order.mode==='deliver'?((follower?(makerWin[group[0].id]||{}).value:win.value)||''):''; }
@@ -3059,13 +3178,25 @@ export const OWNER_JS = `
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           /* a claim above what the order still owes is money he recorded another way: the Desk's Received, on the book already */
           var onBook=Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004;
-          makerButton(card,[onBook?'Received, on the book already '+rm(payment.amount):'Receive claimed '+rm(payment.amount),'order.claim-received',payment.at],function(){
-            makerTap(order,'received',onBook?{amount:payment.amount,claim:payment.at,covered:true}:{amount:payment.amount,claim:payment.at},
-              onBook?'Received, on the book already: nothing more is booked.':'Claim confirmation sent to the Desk.');
+          /* 12 Oct 2026 (Phase 2b, his decision 4 of 11 Oct): a claim's Received and its Not found ask on the page's Sheet, restating who and how much, and
+             one action sends what the tap sent, the same route, body and request id */
+          var got=makerButton(card,[onBook?'Received, on the book already '+rm(payment.amount):'Receive claimed '+rm(payment.amount),'order.claim-received',payment.at],function(){
+            makerAsk(order,got,'claim-'+payment.at,{title:onBook?'Received, on the book already '+rm(payment.amount)+'?':'Received '+rm(payment.amount)+' from '+codeByUser(order.u)+'?', plain:true,
+              go:onBook?'Yes, on the book already':'Yes, received', keep:'Not yet',
+              say:[onBook?rm(payment.amount)+' is more than this order still owes, so you recorded it another way. Nothing more is booked, and the customer is told it arrived.'
+                :'The Desk books '+rm(payment.amount)+' against this order, and the customer is told it arrived.'],
+              yes:function(){
+                makerTap(order,'received',onBook?{amount:payment.amount,claim:payment.at,covered:true}:{amount:payment.amount,claim:payment.at},
+                  onBook?'Received, on the book already: nothing more is booked.':'Claim confirmation sent to the Desk.');
+              }});
           },false);
-          makerButton(card,['Not found '+rm(payment.amount),'order.claim-not-found',payment.at],function(){
-            makerMove(order,{claim:payment.at,amount:payment.amount},'Claim answered Not found.');
+          makerAskTag(order,got,'claim-'+payment.at);
+          var lost=makerButton(card,['Not found '+rm(payment.amount),'order.claim-not-found',payment.at],function(){
+            makerAsk(order,lost,'lost-'+payment.at,{title:'Not found '+rm(payment.amount)+' from '+codeByUser(order.u)+'?', go:'Not found', keep:'Not yet',
+              say:['The claim is answered Not found and nothing is booked. The customer is told.'],
+              yes:function(){ makerMove(order,{claim:payment.at,amount:payment.amount},'Claim answered Not found.'); }});
           },false);
+          makerAskTag(order,lost,'lost-'+payment.at);
         });
         var received=makerField(card,['Other payment received (RM)','order.received-amount'],'number','');
         makerButton(card,['Confirm received','order.received'],function(){

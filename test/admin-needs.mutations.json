@@ -414,9 +414,9 @@
   "replace": "(makerBusy||Object.keys(makerCashHeld).length)"
  },
  {
-  "name": "a claim he is previewing is redrawn",
+  "name": "a claim he is reading is redrawn",
   "file": "stmt/owner.js",
-  "find": "(show&&(dirty.makerClaims||makerSlipUrls.length))",
+  "find": "(show&&(dirty.makerClaims||makerClaimOpen||makerSlipUrls.length))",
   "replace": "(show&&(makerSlipUrls.length))"
  },
  {

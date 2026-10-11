@@ -524,6 +524,17 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
 .adm .maker-slip{display:block;max-width:100%;height:auto}
+/* 12 OCT 2026 (PHASE 2b): THE CLAIM CARD. A waiting claim is a row of the system's Inbox row and the one opened is its card under it. Its slip is a thumbnail
+   that is itself the control (44px at least both ways), enlarged in place by a tap and shrunk by the next */
+.adm #makerClaims{display:flex;flex-direction:column;gap:8px}
+.adm #makerClaims .salt-inbox-row__title{gap:6px}
+.adm #makerClaims .rnone{margin:0}
+.adm .maker-slipbox{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.adm .maker-slipbox>*{margin:0}
+.adm .maker-slip-open{display:block;min-width:var(--salt-tap);min-height:var(--salt-tap);max-width:100%;padding:0;background:var(--salt-well);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);overflow:hidden;line-height:0;cursor:zoom-in}
+.adm .maker-slip-open .maker-slip{max-height:120px;width:auto}
+.adm .maker-slipbox.open .maker-slip-open{width:100%;cursor:zoom-out}
+.adm .maker-slipbox.open .maker-slip-open .maker-slip{max-height:none;width:100%}
 @media(max-width:440px){.adm .maker-day{grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}.adm .maker-day-name{grid-column:2 / 4}.adm .maker-day input[type=time]{grid-row:2}.adm .maker-day input[type=time]:nth-last-child(2){grid-column:2}.adm .maker-day input[type=time]:last-child{grid-column:3}}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in (the class is set on the body by his script alone) */
 body.ended>*:not(#aEnded){display:none}

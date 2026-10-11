@@ -64,6 +64,20 @@ export async function run({ ok, pageWork }) {
     byAct(d, "maker.refresh").click(); await p.work.quiet();
     ok(previews(p).length === seen && !!p.accept() && p.cardOf("ord-p1") && /Figures read/.test(p.say()),
       "a redraw of the card keeps its figures and its Accept and reads nothing again: " + previews(p).length + " of " + seen);
+    /* an edit put back to what it was fires no change, and the read it waits for would never come: the card offers it (12 Oct 2026, Phase 2b) */
+    const total = byAct(d, "order.total", "ord-p1"), typed = (v) => { total.value = v; total.dispatchEvent(new p.w.Event("input", { bubbles: true })); };
+    const reread = () => d.querySelector('#makerReview [data-act="order.reread"]');
+    typed("250"); typed("200");
+    ok(!p.accept() && /read again when you finish/.test(p.say()) && !!reread() && previews(p, "ord-p1").length === 2,
+      "a total edited and put back before it is finished takes Accept away and offers Read the figures again, reading nothing by itself: " + p.say());
+    reread().click(); await p.work.quiet();
+    const again = previews(p, "ord-p1");
+    ok(again.length === 3 && same(again[2].body, { total: 200, delivery: 0 }) && !!p.accept() && !reread() && /Figures read/.test(p.say()),
+      "and that control reads the figures as they stand, Accept comes back, and the control goes: " + JSON.stringify(again[2]));
+    typed("250");
+    ok(!!reread(), "a total edited again offers it again");
+    total.dispatchEvent(new p.w.Event("change", { bubbles: true })); await p.work.quiet();
+    ok(previews(p, "ord-p1").length === 4 && !reread() && !!p.accept(), "and finishing the edit as it always did reads at once, with the control gone");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* a read that is still out when the card is drawn again is waited on, never asked for twice */

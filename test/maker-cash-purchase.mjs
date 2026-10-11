@@ -183,7 +183,8 @@ export async function run({ ok }) {
 
     /* Receive claimed and Confirm received: each its own id, the claim named */
     await until(() => button((t) => t.startsWith("Receive claimed")));
-    button((t) => t.startsWith("Receive claimed")).click(); await settle(4);
+    /* 12 Oct 2026 (Phase 2b): the claim's Received asks on the page's Sheet, whose one action sends it */
+    button((t) => t.startsWith("Receive claimed")).click(); await until(() => doc.getElementById("ynGo")); doc.getElementById("ynGo").click(); await settle(4);
     ok(posts[3].path === "/all/maker/orders/" + id + "/received" && posts[3].body.amount === 40 && posts[3].body.claim === claimAt
       && isRid(posts[3].body.rid) && posts[3].body.rid !== posts[2].body.rid,
       "Receive claimed sends the claim's amount and moment under its own request id: " + JSON.stringify(posts[3]));

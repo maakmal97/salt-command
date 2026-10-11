@@ -367,12 +367,12 @@ export async function run({ ok, pageWork }) {
     ok(!!d.querySelector('#makerOrderList [data-order="ord-new"]'), "his own Refresh draws what came meanwhile");
     p.reads.length = 0; await p.tick();
     ok(p.reads.includes(ROUTES.review) && p.reads.includes(ROUTES.claims), "and the next tick reads again, he having finished");
-    const preview = byAct(d, "claim.preview");
-    preview.click(); await p.work.quiet();
-    const note = () => d.querySelector("#makerClaims .maker-quote").textContent;
+    /* 12 Oct 2026 (Phase 2b): the rows are read when the claim is opened, so a claim open is the claim he is reading */
+    byAct(d, "claim.open").click(); await p.work.quiet();
+    const note = () => (d.querySelector("#makerClaims .maker-quote") || { textContent: "" }).textContent;
     const before = note();
     p.reads.length = 0; await p.tick();
-    ok(before !== "" && note() === before && !p.reads.includes(ROUTES.claims), "a claim whose rows he is previewing is left alone: " + JSON.stringify(p.reads));
+    ok(before !== "" && note() === before && !p.reads.includes(ROUTES.claims), "a claim whose rows he is reading is left alone: " + JSON.stringify(p.reads));
   } finally { p.w.close(); }
 
   /* 9c. WHEN HIS ACCESS SIGN-IN ENDS MID-POLL, THE POLL ENDS WITH IT */
