@@ -595,7 +595,7 @@ export const OWNER_JS = `
         catch(e){ copy.textContent='Copy failed'; }
         setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
       });
-      var rev=el('button',null,r.revoked?'Restore':'Withdraw'); rev.type='button';
+      var rev=el('button',null,r.revoked?'Restore':'Withdraw'); rev.type='button'; rev.setAttribute('data-move','');
       rev.addEventListener('click', function(){ moveLink(r, r.revoked?'restore':'revoke'); });
       row.appendChild(copy); row.appendChild(rev);
       /* v709: his word on one an associate minted, and the tier he may change on it. A tier he
@@ -604,11 +604,11 @@ export const OWNER_JS = `
         if(r.approved===false&&!r.revoked){
           /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline;
              a withdrawn one has neither, Restore being the way back */
-          var ap=el('button',null,'Approve'); ap.type='button';
+          var ap=el('button',null,'Approve'); ap.type='button'; ap.setAttribute('data-move','');
           ap.addEventListener('click', function(){ moveLink(r,'approve'); });
           row.appendChild(ap);
           if(!declined){
-            var de=el('button',null,'Decline'); de.type='button';
+            var de=el('button',null,'Decline'); de.type='button'; de.setAttribute('data-move','');
             de.addEventListener('click', function(){ moveLink(r,'decline'); });
             row.appendChild(de);
           }
@@ -991,7 +991,9 @@ export const OWNER_JS = `
           var result=await refs('/all/maker/bulletin',{lines:lines,confirmed:true});
           current.textContent=(result.lines||[]).join(' · ')||'No notice.';
           intended=null;retained.hidden=true;
-          status.textContent=lines.length?'Notice set.'+makerPushResult(result.push):'Notice cleared. No notification sent.';
+          /* 11 Oct 2026: a notice set empties its box, so a second tap has nothing to send, and the same one set again says so */
+          if(lines.length&&!result.unchanged) text.value='';
+          status.textContent=lines.length?(result.unchanged?'That notice is already up. No phone was woken.':'Notice set.'+makerPushResult(result.push)):'Notice cleared. No notification sent.';
         }catch(error){
           needsRead=true;status.textContent=error.message+' Read the current notice before another change; the result may already be recorded.';
           retained.hidden=false;retained.textContent='';
@@ -2776,7 +2778,7 @@ export const OWNER_JS = `
     makerButton(root,'Save weekly hours',function(){
       var result={days:[]};
       [].forEach.call(schedule.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
-      refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Weekly hours saved.'; })
+      return refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Weekly hours saved.'; })
         .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
     },true);
     var override=el('div','maker-fields'), kind=el('select','fld salt-field__input');
@@ -2786,12 +2788,12 @@ export const OWNER_JS = `
     makerButton(root,'Set temporary override',function(){
       var when=Date.parse(until.value+'+08:00');
       if(!Number.isFinite(when)){ document.getElementById('makerHoursMessage').textContent='Choose an end time.'; return; }
-      refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})
+      return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})
         .then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Temporary hours saved.'; })
         .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
     },false);
     makerButton(root,'Clear temporary override',function(){
-      refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Temporary override cleared.'; })
+      return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Temporary override cleared.'; })
         .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
     },false);
   }
@@ -2810,7 +2812,15 @@ export const OWNER_JS = `
     }catch(e){ linkSaid={id:r.id, t:e.message, bad:true}; }
     drawLinks(); drawNeeds(); say('');
   }
+  /* 11 Oct 2026: A MOVE ON A LINK IS SENT ONCE. While it is out the card's move buttons are off, on Needs you and on Links,
+     and a second tap, on a button a redraw put in their place, sends nothing. */
+  var moving={};
+  function moveLock(id, on){
+    [].forEach.call(document.querySelectorAll('[data-link="'+id+'"] button[data-move], [data-need="l:'+id+'"] button[data-move]'), function(b){ b.disabled=on; });
+  }
   async function moveLink(r, how){
+    if(moving[r.id]) return;
+    moving[r.id]=true; moveLock(r.id, true);
     linkSaid=null;
     try{
       /* THE BODY IS WHAT MAKES IT A POST (24 Sep 2026): refs() sends a GET when it is given none,
@@ -2827,6 +2837,7 @@ export const OWNER_JS = `
       var mc=document.querySelector('[data-link="'+j.ref.id+'"]');
       if(mc&&mc.scrollIntoView&&!oLinks.hidden) mc.scrollIntoView({block:'center'});
     }catch(e){ linkSaid={id:r.id, t:e.message, bad:true}; drawLinks(); drawNeeds(); say(''); }
+    finally{ delete moving[r.id]; moveLock(r.id, false); }
   }
   /* ---- NEEDS YOU (S9 9.1, the plan's section 5) -------------------------------------------------
      His home: one card a thing that waits on him, each with the one action it needs, in the system's Approve
@@ -2930,6 +2941,7 @@ export const OWNER_JS = `
       f.appendChild(lab); f.appendChild(sel); c.appendChild(f);
     }
     var row=el('div','salt-approve__actions'), ap=ghost('Approve', true), de=ghost('Decline');
+    ap.setAttribute('data-move',''); de.setAttribute('data-move','');
     ap.addEventListener('click', function(){ moveLink(r,'approve'); });
     de.addEventListener('click', function(){ moveLink(r,'decline'); });
     row.appendChild(ap); row.appendChild(de); c.appendChild(row);

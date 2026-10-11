@@ -288,6 +288,15 @@ export async function run({ ok }) {
     const publicNotice = await counter.fetch(new Request("https://counter.fixture.test/bulletin"), env);
     ok(unconfirmed.status === 400 && notice.status === 200 && (await publicNotice.json()).lines[0] === "Collection tomorrow."
       && pushes.length === beforeNotice + 1, "Confirmed Notice Set uses the incumbent authenticated handler, reaches customers and wakes every phone.");
+    /* 11 Oct 2026, the stress test: the notice already up, set again, stores nothing and wakes nobody, and the answer says so */
+    const beforeSame = pushes.length, storedNotice = await store.get("bulletin");
+    const sameNotice = await owner("/all/maker/bulletin", "POST", { lines: ["Collection tomorrow."], confirmed: true });
+    const sameBody = await sameNotice.json();
+    ok(sameNotice.status === 200 && sameBody.unchanged === true && pushes.length === beforeSame && (await store.get("bulletin")) === storedNotice,
+      "The same notice set again stores nothing, wakes nobody and answers that it is unchanged.");
+    const changedNotice = await owner("/all/maker/bulletin", "POST", { lines: ["Collection tomorrow, 10:00."], confirmed: true });
+    ok(changedNotice.status === 200 && !(await changedNotice.json()).unchanged && pushes.length === beforeSame + 1,
+      "A different notice is still a notice and wakes every phone.");
     const beforeForbidden = pushes.length;
     const forbiddenNotice = await owner("/all/maker/bulletin", "POST", { lines: ["Gold"], confirmed: true });
     ok(forbiddenNotice.status === 400 && pushes.length === beforeForbidden, "Notice uses authoritative siteWords before any write or wake.");
@@ -296,7 +305,7 @@ export async function run({ ok }) {
     ok(cleared.status === 200 && !(await (await counter.fetch(new Request("https://counter.fixture.test/bulletin"), env)).json()).lines.length
       && pushes.length === beforeClear, "Notice Clear removes the customer notice and wakes nobody.");
     const fakePolls = new Map(); let nextPoll = 100000, visiblePage = true, failRead = false, loseReply = false,
-      loseNotice = false, confirmations = false;
+      loseNotice = false, confirmations = false, hoursHold = null, hoursHeld = 0;
     const html = await (await owner("/all")).text();
     let reloadData = null, chatStorageKey = null;
     const pageOptions = { url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
@@ -319,6 +328,7 @@ export async function run({ ok }) {
         window.fetch = async (path, init = {}) => {
           const body = init.body === undefined ? undefined : JSON.parse(init.body);
           if (path === "/all/maker/threads" && failRead) throw new Error("fixture offline");
+          if (path === "/all/maker/hours" && init.method === "POST" && hoursHold) { hoursHeld++; await hoursHold; }
           const response = await owner(path, init.method || "GET", body);
           if (String(path).startsWith("/all/maker/threads/") && loseReply) { loseReply = false; throw new Error("fixture lost confirmation"); }
           if (path === "/all/maker/bulletin" && init.method === "POST" && loseNotice) { loseNotice = false; throw new Error("fixture lost notice confirmation"); }
@@ -417,6 +427,17 @@ export async function run({ ok }) {
     ok(posts.filter((item) => item.path === "/all/maker/bulletin").length === beforeConfirmedSet + 1
       && (await (await counter.fetch(new Request("https://counter.fixture.test/bulletin"), env)).json()).lines[0] === "A still notice.",
       "The actual owner Notice Set button changes the customer's public notice.");
+    /* 11 Oct 2026: the box is empty once the notice is set, and the same notice set again says so and wakes nobody */
+    ok(noticeText.value === "", "Notice set empties its text box, so a second tap has nothing to send.");
+    const beforeAgain = pushes.length, storedAgain = await store.get("bulletin");
+    noticeText.value = "A still notice."; tap("#makerBulletin", "Set notice");
+    await until(() => /already up/.test(doc.getElementById("makerBulletinStatus").textContent));
+    ok(doc.getElementById("makerBulletinStatus").textContent === "That notice is already up. No phone was woken."
+      && pushes.length === beforeAgain && (await store.get("bulletin")) === storedAgain,
+      "The same notice set again says it is already up, stores nothing and wakes nobody.");
+    noticeText.value = "";
+    const noticeStyle = page.getComputedStyle(doc.getElementById("makerBulletinCurrent"));
+    ok(noticeStyle.getPropertyValue("overflow-wrap") === "anywhere", "A long word in the current notice wraps instead of widening the page: " + noticeStyle.getPropertyValue("overflow-wrap"));
     noticeText.value = "Kept notice draft."; loseNotice = true; tap("#makerBulletin", "Set notice");
     await until(() => /result may already be recorded/.test(doc.getElementById("makerBulletinStatus").textContent));
     const afterLostNotice = posts.filter((item) => item.path === "/all/maker/bulletin").length;
@@ -443,6 +464,26 @@ export async function run({ ok }) {
       && doc.getElementById("makerBulletin").textContent.includes("Kept notice draft.")
       && /notification outcome is unknown/.test(doc.getElementById("makerBulletinStatus").textContent),
       "Notice readback distinguishes another concurrent notice while preserving the original intended body and notification uncertainty.");
+    /* 11 Oct 2026: each of the three hours buttons stays off until its answer lands, where its callback let go at once */
+    const hoursBtn = (label) => [...doc.querySelectorAll("#makerSchedule button")].find((button) => button.textContent === label);
+    const holdHours = async (label, ready, saved) => {
+      await until(() => hoursBtn(label));
+      doc.getElementById("makerHoursMessage").textContent = "";
+      if (ready) ready();
+      let release; hoursHold = new Promise((resolve) => { release = resolve; }); hoursHeld = 0;
+      const button = hoursBtn(label); button.click();
+      const out = await until(() => hoursHeld === 1), off = button.disabled;
+      release(); hoursHold = null;
+      const back = await until(() => saved.test(doc.getElementById("makerHoursMessage").textContent) && hoursBtn(label) && !hoursBtn(label).disabled);
+      return { out, off, back };
+    };
+    for (const [label, ready, saved] of [
+      ["Save weekly hours", () => { const day = doc.querySelector("#makerSchedule .maker-day input[type=checkbox]"); day.checked = true; day.dispatchEvent(new page.Event("change", { bubbles: true })); }, /Weekly hours saved/],
+      ["Set temporary override", () => { doc.querySelector('#makerSchedule input[type="datetime-local"]').value = new Date(Date.now() + 3 * 86400000 + 8 * 3600000).toISOString().slice(0, 16); }, /Temporary hours saved/],
+      ["Clear temporary override", null, /Temporary override cleared/]]) {
+      const held = await holdHours(label, ready, saved);
+      ok(held.out && held.off && held.back, label + " keeps its button off until the answer, then frees it: " + JSON.stringify(held));
+    }
     doc.querySelector('[data-thread="' + user + '"]').click();
     doc.querySelector('[data-m="accounts"]').click();
     ok(fakePolls.size === 0, "Leaving Maker stops an open Chat poll.");

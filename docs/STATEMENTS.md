@@ -1184,7 +1184,9 @@ payment page, the open orders reaching or leaving the limit) draws the tab again
 its check; only the sheet's limit step, which holds nothing typed, follows the orders. A subscription filed before its keys gets a payload-free wake and the
 fixed words (Order update), so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
-the public `bulletin` (v761). On an
+the public `bulletin` (v761). The lines already up, set again, store nothing and wake nobody
+(`unchanged` in the answer; Salt Account says "That notice is already up. No phone was woken."),
+and Salt Account's Notice box empties once a notice is set (11 Oct 2026). On an
 iPhone the page has to be on the Home Screen first; the copy says so. A subscription is filed at
 `push:<username>:<endpoint hash>` with the phone's two keys, `p256dh` and `auth`, when the page sends
 them (`pushKeys` in `stmt/push.js`); a pair that is not one is dropped and the record kept without it,
