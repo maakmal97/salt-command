@@ -1,0 +1,50 @@
+[
+  {
+    "name": "an answer is written to the list's line again, not the card's foot",
+    "file": "stmt/owner.js",
+    "find": "if(line){ line.textContent=text; if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }\n    else if(list) list.textContent=text;",
+    "replace": "if(list) list.textContent=text;"
+  },
+  {
+    "name": "a refused action is written to the list's line again",
+    "file": "stmt/owner.js",
+    "find": "makerSay(key,error.message);",
+    "replace": "var status=document.getElementById('makerReviewStatus'); if(status) status.textContent=error.message;"
+  },
+  {
+    "name": "a page-side refusal is written to the list's line again",
+    "file": "stmt/owner.js",
+    "find": "makerSay(order.id,'Change a figure first.');",
+    "replace": "document.getElementById('makerReviewStatus').textContent='Change a figure first.';"
+  },
+  {
+    "name": "an answer is written before the redraw that replaces the card",
+    "file": "stmt/owner.js",
+    "find": "return loadMaker().then(function(){\n        makerSay(key,result.differs",
+    "replace": "loadMaker();return Promise.resolve().then(function(){\n        makerSay(key,result.differs"
+  },
+  {
+    "name": "an answer whose card has gone is lost",
+    "file": "stmt/owner.js",
+    "find": "\n    else if(list) list.textContent=text;",
+    "replace": ""
+  },
+  {
+    "name": "the foot is not a polite live region",
+    "file": "stmt/owner.js",
+    "find": "say.setAttribute('role','status'); say.setAttribute('aria-live','polite');",
+    "replace": "say.setAttribute('role','status');"
+  },
+  {
+    "name": "a Desk row's answer is not keyed to its own card",
+    "file": "stmt/owner.js",
+    "find": "'Row approved.','draft:'+draft.id);",
+    "replace": "'Row approved.');"
+  },
+  {
+    "name": "a foot below the screen is not scrolled to",
+    "file": "stmt/owner.js",
+    "find": "if(line.scrollIntoView) line.scrollIntoView({block:'nearest'});",
+    "replace": ""
+  }
+]
