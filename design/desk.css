@@ -732,6 +732,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-state:#6f8398; /* a state's outline */
   --desk-map-void:#ffffff05; /* an area with nothing in it */
   --desk-map-core:#ffffff08; /* a district on the place picker */
+  --desk-on-solid:#fff;      /* text on the desk's solid steel button and its alarm pill; Tide's accent is lighter, so Tide takes the ink */
 }
 
 /* 11 Oct 2026: TWO THEMES, NIGHT AND TIDE (his word, chosen on each device, Tide until chosen). Night is :root above and in the
@@ -750,6 +751,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-state:#5f98a6;
   --desk-map-void:#ffffff05;
   --desk-map-core:#ffffff08;
+  --desk-on-solid:var(--salt-ink-on-accent);
 }
 /* what each theme's tile shows in the choice sheet: its own ground and accent, so a tile reads true under the other theme. They
    are the design system's obsidian and brass at Night and its Tide values, held equal to the system by the suite, and no theme

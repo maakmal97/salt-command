@@ -8911,6 +8911,20 @@ await (async () => {
     draws = 0;
     en.w.document.querySelector('.look-switch [data-look="night"]').click();
     ok(draws === 1 && en.errs.length === 0, `while a part with a chart is open the same switch draws it once, so the chart takes the new tokens (draws ${draws}; errors ${en.errs.join(" | ") || "none"})`);
+    /* 5c. the solid buttons' text: Night draws exactly what it drew before this follow-up (Hide names white, Save and Record the system's ink, which is obsidian
+       there), and Tide, whose accents are lighter, takes its ink. The colour is read off the rendered button and resolved through each theme's tokens. */
+    const nm = await open({ "salt-look": "night" });
+    nm.w.eval("idOpen=true;revealed=true;renderReveal();");
+    const painted = (id) => { const e = nm.w.document.getElementById(id), c = e && /(?:^|;)\s*color:\s*([^;]+)/.exec(e.getAttribute("style") || ""); return c ? c[1].trim() : ""; };
+    const DTIDE = { ...DN, ...DT };
+    const resolve = (v, T, D) => { let x = v; for (let i = 0; i < 6; i++) { const r = /^var\(--([\w-]+)\)$/.exec(x || ""); if (!r) break; x = r[1].startsWith("desk-") ? D[r[1]] : T[r[1].replace(/^salt-/, "")]; } return x; };
+    const hide = painted("vreveal"), save = painted("vsave"), white = /^#(fff|ffffff)$/i;
+    ok(hide === "var(--desk-on-solid)" && white.test(resolve(hide, NIGHT, DN)) && resolve(hide, TIDE, DTIDE) === TIDE["ink-on-accent"] && !white.test(TIDE["ink-on-accent"]),
+      `Hide names reads white at Night and Tide's ink at Tide (painted ${hide}; Night ${resolve(hide, NIGHT, DN)}, Tide ${resolve(hide, TIDE, DTIDE)})`);
+    ok(save === "var(--salt-ink-on-accent)" && resolve(save, NIGHT, DN) === NIGHT.obsidian && resolve(save, TIDE, DTIDE) === TIDE["ink-on-accent"],
+      `and Save keeps the system's ink in each theme, Night's obsidian as before (painted ${save}; Night ${resolve(save, NIGHT, DN)}, Tide ${resolve(save, TIDE, DTIDE)})`);
+    ok((body.match(/var\(--desk-on-solid\)/g) || []).length === 3 && /background:var\(--crim\);color:var\(--desk-on-solid\)">Cancelled/.test(body) && /color:var\(--desk-on-solid\)">Hide names<\/button>/.test(body),
+      "and the cloud branch's Hide names and the Cancelled pill read the same token, so the three places agree");
     /* 6. a store that cannot be read: Tide, no error, no sheet (the answer could not be kept), and the session still switches */
     const { JSDOM } = await import("jsdom");
     const bare = new JSDOM('<!doctype html><html><head><meta name="theme-color" content="#000000"></head><body></body></html>', { runScripts: "outside-only",
