@@ -133,7 +133,7 @@ export async function run({ ok }) {
   const picture = await slipSeal(await webcrypto.subtle.exportKey("jwk", keys.publicKey), new Uint8Array([255, 216, 255, 217]));
   let visible = true, releaseKey, keyWait = false, created = 0, revoked = 0;
   let slipWait = false, releaseSlip = null, decryptWait = false, releaseDecrypt = null, slipMode = "ok";
-  const imports = [];
+  const imports = [], posts = [], fetched = { key: 0, slip: 0 }, asked = [];
   let derives = 0;
   const subtle = new Proxy(webcrypto.subtle, { get(target, name) {
     if (name === "deriveBits") return async (...args) => { derives++; return target.deriveBits(...args); };
@@ -149,23 +149,31 @@ export async function run({ ok }) {
     return typeof value === "function" ? value.bind(target) : value;
   } });
   const browserCrypto = { subtle, getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID() };
+  const ids = [claim.id, "a20261003070000-ex2"];
   const browser = new JSDOM(landingPage("", "fixture", { master: "local-master", accounts: [] }), {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
       Object.defineProperty(window, "crypto", { value: browserCrypto });
       window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder;
-      window.scrollTo = () => {}; window.confirm = () => true;
+      window.scrollTo = () => {}; window.confirm = () => { asked.push("confirm"); return true; };
       Object.defineProperty(window.document, "hidden", { get: () => !visible });
       window.URL.createObjectURL = () => { created++; return "blob:fixture-" + created; };
       window.URL.revokeObjectURL = () => { revoked++; };
-      window.fetch = async (path) => {
+      window.fetch = async (path, init) => {
+        if (init && init.method === "POST" && String(path).startsWith("/all/maker/claims/")) {
+          posts.push({ route: String(path), body: JSON.parse(init.body) });
+          if (/[/]preview$/.test(String(path))) return Response.json({ ok: true, hash: "h".repeat(64), rows: [{ date: "2026-10-01", rm: 30, owed: 40, rid: "x1" }], left: 0 });
+          return Response.json({ ok: true });
+        }
         if (path === "/all/maker/claims") return Response.json({ ok: true, claims: [{ ...claim, slip: "0".repeat(32), test: true },
-          { ...claim, id: "a20261003070000-ex2", slip: "1".repeat(32), test: true }] });
+          { ...claim, id: ids[1], slip: "1".repeat(32), test: true }] });
         if (path === "/all/maker/vault/key") {
+          fetched.key++;
           if (keyWait) await new Promise((resolve) => { releaseKey = resolve; });
           return Response.json({ ok: true, vault: envelope });
         }
         if (String(path).startsWith("/all/maker/slips/")) {
+          fetched.slip++;
           if (slipWait) { slipWait = false; await new Promise((resolve) => { releaseSlip = resolve; }); }
           if (slipMode === "missing") return Response.json({ ok: false, error: "no such slip" }, { status: 404 });
           if (slipMode === "version") return Response.json({ ok: true, slip: { ...picture, v: 2 } });
@@ -187,88 +195,118 @@ export async function run({ ok }) {
       for (let i = 0; i < 150 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 60));
+    /* a claim is a row, and its card stands under it once the row is tapped (Phase 2b); only one is open at a time */
+    const rowOf = (n) => doc.querySelector('#makerClaims [data-act="claim.open"][data-key="' + u + ":" + ids[n] + '"]');
+    const card = (n) => doc.querySelector('#makerClaims [data-maker-card="claim:' + u + ":" + ids[n] + '"]');
+    const inCard = (act) => doc.querySelector('#makerClaims [data-act="' + act + '"]');
+    const field = () => doc.querySelector("#makerClaims input[type=password]");
+    const thumb = () => inCard("claim.slip");
+    const said = () => doc.querySelector("#makerClaims p.msg")?.textContent || "";
+    const lock = () => { visible = false; doc.dispatchEvent(new window.Event("visibilitychange")); visible = true; };
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => doc.querySelector("#makerClaims input[type=password]"));
-    const input = doc.querySelector("#makerClaims input[type=password]");
-    const button = (text) => [...doc.querySelectorAll("#makerClaims button")].find((b) => b.textContent === text);
-    ok(!!input && !!button("Preview rows") && button("Received").disabled && !!button("Not found"),
-      "Actual owner script exposes distinct claim preview/Received/Not found controls with Received gated.");
-    keyWait = true; input.value = pass; button("View slip").click();
+    await until(() => rowOf(0) && rowOf(1));
+    ok(!!rowOf(0) && !!rowOf(1) && [...doc.querySelectorAll("#makerClaims [data-act]")].every((e) => e.getAttribute("data-act") === "claim.open")
+      && posts.length === 0 && fetched.key === 0 && fetched.slip === 0,
+      "Waiting claims are a row each, with no control and no read behind it: nothing is previewed and no slip is asked for until a claim is opened");
+    rowOf(0).click();
+    await until(() => inCard("claim.received") && !inCard("claim.received").disabled);
+    ok(!!card(0) && !card(1) && !!inCard("claim.received-booked") && !!inCard("claim.not-found") && !inCard("claim.preview")
+      && !!field() && /sealed/.test(card(0).textContent) && fetched.key === 0 && fetched.slip === 0
+      && posts.filter((p) => /[/]preview$/.test(p.route)).length === 1,
+      "Opening a claim reads its rows once and offers Received and Not found with no Preview rows button; its slip says it is sealed and fetches nothing it cannot open");
+    const input = field();
+    keyWait = true; input.value = pass; inCard("claim.view-slip").click();
     await until(() => releaseKey);
-    visible = false; doc.dispatchEvent(new window.Event("visibilitychange")); visible = true;
+    lock();
     releaseKey();
-    await until(() => !button("View slip").disabled);
-    ok(created === 0 && !doc.querySelector("[data-maker-slip]") && input.value === "",
+    await until(() => !!field() && field() !== input);
+    await settle();
+    ok(created === 0 && imports.length === 0 && !doc.querySelector("[data-maker-slip]") && field().value === "" && /sealed/.test(card(0).textContent),
       "Held key-fetch completion after visibility lock cannot import/paint an old slip unlock.");
-    keyWait = false; input.value = pass; button("View slip").click();
-    await until(() => doc.querySelector("[data-maker-slip]"));
-    ok(created === 1 && !!doc.querySelector("[data-maker-slip]"),
-      "Actual owner device opens the unchanged ECDH/HKDF sealed JPEG locally.");
+    keyWait = false; field().value = pass; inCard("claim.view-slip").click();
+    await until(() => thumb());
+    ok(created === 1 && !!doc.querySelector("[data-maker-slip]") && thumb().tagName === "BUTTON" && /^blob:/.test(thumb().querySelector("img").src),
+      "Actual owner device opens the unchanged ECDH/HKDF sealed JPEG locally and draws it as a thumbnail that is a control.");
     ok(imports.length === 1 && imports[0].extractable === false && JSON.stringify(imports[0].usages) === '["deriveBits"]',
       "The unlocked slip key is imported non-extractable for deriveBits only: " + JSON.stringify(imports));
-    button("Close and lock slip").click();
-    ok(revoked === 1 && !doc.querySelector("[data-maker-slip]"),
-      "Close-and-lock revokes the actual picture URL and removes its rendered image.");
-    const all = (text) => [...doc.querySelectorAll("#makerClaims button")].filter((b) => b.textContent === text);
-    const passes = () => [...doc.querySelectorAll("#makerClaims input[type=password]")];
-    const settle = () => new Promise((resolve) => setTimeout(resolve, 60));
-    slipWait = true; passes()[0].value = pass; all("View slip")[0].click();
+    const small = thumb().getAttribute("aria-expanded") === "false" && !card(0).querySelector(".maker-slipbox").classList.contains("open");
+    thumb().click();
+    const large = thumb().getAttribute("aria-expanded") === "true" && card(0).querySelector(".maker-slipbox").classList.contains("open");
+    thumb().click();
+    ok(small && large && thumb().getAttribute("aria-expanded") === "false" && created === 1,
+      "Tapping the thumbnail opens the full slip in place and the next tap shrinks it, with no second picture made: " + JSON.stringify([small, large]));
+    inCard("claim.lock-slip").click();
+    ok(revoked === 1 && !doc.querySelector("[data-maker-slip]") && !!field() && /sealed/.test(card(0).textContent),
+      "Close-and-lock revokes the actual picture URL, removes its rendered image, and the card says the slip is sealed again.");
+    slipWait = true; field().value = pass; inCard("claim.view-slip").click();
     await until(() => releaseSlip);
-    visible = false; doc.dispatchEvent(new window.Event("visibilitychange")); visible = true;
-    passes()[1].value = pass; all("View slip")[1].click();
+    lock();
+    field().value = pass; inCard("claim.view-slip").click();
     await until(() => doc.querySelectorAll("[data-maker-slip]").length === 1);
     const derivedBefore = derives;
-    releaseSlip(); await until(() => !all("View slip")[0].disabled); await settle();
+    releaseSlip(); await settle();
     ok(created === 2 && doc.querySelectorAll("[data-maker-slip]").length === 1 && derives === derivedBefore,
       "A slip read held across lock and a new unlock cannot use the key or paint under the newer session: "
       + created + "/" + (derives - derivedBefore));
+    const drawn = created, shut = revoked;
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => all("View slip").length === 2 && !doc.querySelector("[data-maker-slip]"));
-    ok(revoked === 2 && !doc.querySelector("[data-maker-slip]"),
-      "Redrawing the claims revokes every rendered slip URL: " + revoked);
-    decryptWait = true; all("View slip")[0].click();
+    await until(() => created === drawn + 1 && !!thumb());
+    ok(revoked === shut + 1 && doc.querySelectorAll("[data-maker-slip]").length === 1 && thumb().querySelector("img").src === "blob:fixture-" + created,
+      "Redrawing the claims revokes the picture rendered, and the card still open draws its slip again from the key the page holds: " + revoked);
+    const closedAt = revoked;
+    rowOf(0).click();
+    ok(revoked === closedAt + 1 && !card(0) && !doc.querySelector("[data-maker-slip]"),
+      "Closing the card lets its picture go: its URL is revoked and no image is left on the page");
+    decryptWait = true; rowOf(0).click();
     await until(() => releaseDecrypt);
-    visible = false; doc.dispatchEvent(new window.Event("visibilitychange")); visible = true;
-    releaseDecrypt(); await until(() => !all("View slip")[0].disabled); await settle();
-    ok(created === 2 && !doc.querySelector("[data-maker-slip]"),
+    const heldAt = created;
+    lock();
+    releaseDecrypt(); await settle();
+    ok(created === heldAt && !doc.querySelector("[data-maker-slip]") && !!field(),
       "A slip decryption held across lock cannot create or paint a picture URL: " + created);
+    field().value = pass; inCard("claim.view-slip").click();
+    await until(() => thumb());
     const refusal = async (mode) => {
-      slipMode = mode; const before = created; passes()[0].value = pass; all("View slip")[0].click();
-      await until(() => /could not be opened/.test(doc.querySelector("#makerClaims p.msg")?.textContent || ""));
-      const said = doc.querySelector("#makerClaims p.msg").textContent;
-      doc.querySelector("#makerClaims p.msg").textContent = "";
-      await until(() => !all("View slip")[0].disabled);
-      return created === before && !doc.querySelector("[data-maker-slip]") ? said : "painted";
+      slipMode = mode; const before = created;
+      rowOf(0).click(); rowOf(0).click();
+      await until(() => /could not be opened/.test(said()));
+      const text = said();
+      return created === before && !doc.querySelector("[data-maker-slip]") && !!inCard("claim.view-slip") ? text : "painted";
     };
     const missing = await refusal("missing"), version = await refusal("version"), tampered = await refusal("tampered");
     ok(/no such slip/.test(missing) && /malformed/.test(version) && /could not be opened/.test(tampered),
       "Missing or expired, wrong-version and tampered slips are refused on the device without a picture: "
       + JSON.stringify([missing, version, tampered]));
     /* 11 Oct 2026, the five places: the unlocked slip key stays while he moves between the parts of Orders, as it did on the one Maker
-       page, the picture is let go when Waiting on you is left, and the key goes only when Orders is left */
+       page, the picture is let go when Waiting on you is left, and the key goes only when Orders is left (12 Oct 2026: the claim opened is
+       shut with it, and opened again it draws its slip from the key with no passphrase) */
     slipMode = "ok";
-    const said = () => doc.querySelector("#makerClaims p.msg")?.textContent || "";
-    const view = async (secret) => {
-      const before = created; passes()[0].value = secret; all("View slip")[0].click();
-      await until(() => !all("View slip")[0].disabled && (created > before || /could not be opened/.test(said())));
-      return created > before;
-    };
-    button("Close and lock slip").click();
-    const unlocked = await view(pass);
+    rowOf(0).click(); rowOf(0).click();
+    await until(() => thumb());
+    const unlocked = !!thumb();
     doc.querySelector('[data-act="part.orders.agreed"]').click();
     const letGo = !doc.querySelector("[data-maker-slip]");
     doc.querySelector('[data-act="part.orders.waiting"]').click();
-    const keptKey = await view("");
-    ok(unlocked && letGo && keptKey,
-      "An unlocked slip key survives a move between the parts of Orders, the picture is let go on leaving Waiting on you, and the next View slip asks for no passphrase: "
-      + JSON.stringify([unlocked, letGo, keptKey]));
+    const shutOnReturn = !card(0) && !!rowOf(0);
+    rowOf(0).click();
+    const keptKey = await until(() => thumb()) && !field();
+    ok(unlocked && letGo && shutOnReturn && keptKey,
+      "An unlocked slip key survives a move between the parts of Orders, the picture is let go and the card shut on leaving Waiting on you, and the next claim opened draws its slip with no passphrase: "
+      + JSON.stringify([unlocked, letGo, shutOnReturn, keptKey]));
     doc.querySelector('[data-act="nav.customers"]').click();
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => all("View slip").length === 2);
-    const afterLeaving = await view("");
-    ok(!afterLeaving && /Unlock the slip key/.test(said()),
-      "and it is dropped on leaving Orders: the next View slip asks for the passphrase again: " + JSON.stringify([afterLeaving, said()]));
-  } finally { browser.window.close(); }
+    await until(() => rowOf(0));
+    const slips = fetched.slip;
+    rowOf(0).click();
+    await until(() => !!card(0));
+    await settle();
+    const sealedAgain = !thumb() && !!field() && /sealed/.test(card(0).textContent) && fetched.slip === slips;
+    inCard("claim.view-slip").click(); await settle();
+    ok(sealedAgain && !thumb() && /Unlock the slip key/.test(said()) && fetched.slip === slips,
+      "and it is dropped on leaving Orders: the next claim opened says its slip is sealed, fetches no ciphertext, and asks for the passphrase again: " + JSON.stringify([sealedAgain, said()]));
+    ok(asked.length === 0, "and no native confirm was asked on the way: " + JSON.stringify(asked));
+  } catch (e) { ok(false, "the page test stopped on an error: " + (e && e.message)); } finally { browser.window.close(); }
   harness.db.close();
   await concurrentFixture(ok);
   await deskFailures(ok);

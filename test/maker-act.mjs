@@ -9,6 +9,23 @@ import { webcrypto } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { landingPage } from "../stmt/page.js";
 import * as C from "../tools/stmt-crypto.mjs";
+import { slipSeal } from "../tools/seed-vault.mjs";
+
+/* ONE SLIP KEY, as the vault holds it (12 Oct 2026, Phase 2b): an ECDH P-256 pair whose private half is sealed under an invented passphrase exactly as the vault seals
+   it (PBKDF2 150,000 rounds, AES-GCM), and a four-byte JPEG sealed to its public half by the laptop's own slipSeal. Made once and kept, since the key takes a moment. */
+let slipFix = null;
+export async function slipFixture() {
+  if (slipFix) return slipFix;
+  const keys = await webcrypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const pass = "invented-local-pass", jwk = await webcrypto.subtle.exportKey("jwk", keys.privateKey);
+  const salt = webcrypto.getRandomValues(new Uint8Array(16)), iv = webcrypto.getRandomValues(new Uint8Array(12));
+  const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  const aes = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+  const ct = await webcrypto.subtle.encrypt({ name: "AES-GCM", iv }, aes, new TextEncoder().encode(JSON.stringify(jwk)));
+  const b64 = (v) => Buffer.from(v).toString("base64");
+  const sealed = await slipSeal(await webcrypto.subtle.exportKey("jwk", keys.publicKey), new Uint8Array([255, 216, 255, 217]));
+  return (slipFix = { pass, envelope: { v: 1, salt: b64(salt), iv: b64(iv), ct: b64(ct) }, sealed });
+}
 
 /* what a card, or an item of a list, is told apart by */
 export const ACT_KEYS = ["data-key", "data-maker-card", "data-u", "data-need", "data-link", "data-acct", "data-thread", "data-reward-holder"];
@@ -126,8 +143,10 @@ const links = () => [
    other orders than the busy day's (links is the guest links). The page's intervals are kept, so a test fires the 30-second read itself; hold(route) keeps the answer to the
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; lapse(true) answers every read 401, as Access does when his sign-in has ended. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [] }) {
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [] }) {
   const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [];
+  /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls */
+  const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
   const hold = (route) => { let release; gates.set(route, new Promise((r) => { release = r; })); return () => release(); };
   const via = (fn) => fn || ((j) => j);
   const ck = await C.contentKey("maker-act-secret", U1);
@@ -149,6 +168,10 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       draft("d-2", { row: { qty: 1, total: 100, trip: "t1" } }), draft("d-3", { row: { qty: 1, total: 50, trip: "t1" }, product: "oil" })],
     refused: [{ why: "Refused for the fixture" }],
     queue: [{ id: "q-1", state: "held", canWithdraw: true, fingerprint: "f1" }, { id: "q-2", state: "refused", canRetry: true, fingerprint: "f2", why: "x" }] });
+    /* a claim's rows, as the Desk's preview answers them: the rows its amount would settle, and what is left over */
+    if (/^\/all\/maker\/claims\/[^/]+\/[^/]+\/preview$/.test(route)) return via(claimPreview)({ ok: true, hash: "c".repeat(64), rows: [{ date: "2026-10-08", rm: 50, owed: 60, rid: "s-fixture-1" }], left: 0, booked: false });
+    if (fix && route === "/all/maker/vault/key") return { ok: true, vault: fix.envelope };
+    if (fix && route.startsWith("/all/maker/slips/")) return { ok: true, slip: fix.sealed };
     if (route.endsWith("/preview")) return { ok: true, hash: "a".repeat(64), offerHash: "b".repeat(64), quote: 200, delivery: 10, card: 200,
       floor: 150, margin: { rm: 50, pct: 25 }, cost: { total: 150 }, usual: { rate: 100 }, flags: [], row: { qty: 2, total: 200 } };
     if (route === "/all/maker/inputs") return { ok: true, products: ["salt", "oil"], catalog: catalog() };
@@ -169,6 +192,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
     beforeParse(w) {
       Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true });
       w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder; w.scrollTo = () => {}; w.confirm = () => true;
+      w.URL.createObjectURL = () => { const u = "blob:fixture-" + (urls.made.length + 1); urls.made.push(u); return u; };
+      w.URL.revokeObjectURL = (u) => { urls.revoked.push(u); };
       w.setTimeout = (f, ms) => { timers.push({ f, ms, off: false }); return timers.length; };
       w.clearTimeout = (id) => { if (timers[id - 1]) timers[id - 1].off = true; };
       w.setInterval = (f, ms) => { intervals.push({ f, ms, off: false }); return intervals.length; };
@@ -196,7 +221,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
   const snaps = [], snap = (name) => { snaps.push([name, actAudit(d)]); };
   const click = async (control) => { control.click(); await work.quiet(); };
   const type = (control, value) => { control.value = value; control.dispatchEvent(new w.Event("input", { bubbles: true })); control.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  return { dom, w, d, work, posts, timers, intervals, hold, fail, reads, card, snaps, snap, click, type, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
+  return { dom, w, d, work, posts, timers, intervals, hold, fail, reads, card, snaps, snap, click, type, urls, slipPass: fix && fix.pass, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
 }
 
 /* every stage, every card and every form drawn once: the page a person would have in front of them on the busiest day */
@@ -221,6 +246,18 @@ export async function drawEverything(p) {
   /* a cash hold, and a cash tap whose answer was lost, which offers Retry. A cash tap draws the card again, and a card is drawn for the order
      opened alone (Phase 1c), so each is audited as it stands. Orders is entered for the last time before the previews: entering it reads the review again */
   await click(byAct(d, "nav.orders"));
+  /* the account claims (Phase 2b): a row each, and the one opened is its card, which reads its rows, keeps its slip sealed until the passphrase opens the slip key and then draws
+     it as a thumbnail, and asks on the Sheet; a claim whose rows could not be read offers them again */
+  const c1 = "abcd-efgh:c-1", c2 = "abcd-efgh:c-2";
+  p.snap("the account claims, a row each");
+  await click(byAct(d, "claim.open", c1)); p.snap("a claim opened, its slip sealed");
+  type(byAct(d, "claim.passphrase", c1), p.slipPass); await click(byAct(d, "claim.view-slip", c1)); p.snap("a claim opened, its slip drawn");
+  await click(byAct(d, "claim.received", c1)); p.snap("a claim's Received, asking on the sheet"); await click(byAct(d, "claim.ask-keep"));
+  await click(byAct(d, "claim.not-found", c1)); p.snap("a claim's Not found, asking on the sheet"); await click(byAct(d, "claim.ask-keep"));
+  p.fail.add("/all/maker/claims/abcd-efgh/c-2/preview");
+  await click(byAct(d, "claim.open", c2)); p.snap("a claim whose rows could not be read");
+  p.fail.delete("/all/maker/claims/abcd-efgh/c-2/preview");
+  await click(byAct(d, "claim.open", c2));
   type(byAct(card("ord-r2"), "order.cash-amount"), "50"); await click(byAct(card("ord-r2"), "order.cash"));
   p.snap("a cash hold, with its Undo");
   type(byAct(card("ord-r3"), "order.cash-amount"), "50"); await click(byAct(card("ord-r3"), "order.cash"));
@@ -260,7 +297,7 @@ export async function drawEverything(p) {
    could not be read. Each is audited as it stands. */
 export async function auditStates({ pageWork }) {
   const states = [];
-  const p = await richOwnerPage({ pageWork });
+  const p = await richOwnerPage({ pageWork, slip: true });
   try {
     await drawEverything(p);
     states.push(...p.snaps);   /* the order cards, each as it stood when opened: a card is drawn for the order opened alone */

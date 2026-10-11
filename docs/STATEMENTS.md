@@ -1505,9 +1505,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   when his Access sign-in ends**: the read that meets the lapse gives the page way to Sign in again (`ended()`), which clears the poll, and
   nothing sets it again on that page, so no further request goes to the login. No read
   starts while another of its kind is out (the newest review wins), a read that finds what it found last time draws nothing, and on
-  Orders a poll leaves a part he has begun on (a field open, a preview shown, a slip open, cash held, a tap in flight) alone. **A tap inside
-  Orders that redraws nothing (Preview rows, View slip, Close and lock slip) holds the Orders poll off that part until he leaves Orders or
-  taps Refresh**: what it shows may be stale, and is never disrupted. No route,
+  Orders a poll leaves a part he has begun on (a field open, a claim opened, a slip open, cash held, a tap in flight) alone. **A tap inside
+  Orders that redraws nothing (View slip, Close and lock slip) holds the Orders poll off that part until he leaves Orders or
+  taps Refresh, and a claim's card opened holds the claims off until it is closed**: what it shows may be stale, and is never disrupted. No route,
   body, request id, retained send, vault or cash rule changed.
 - **Salt Account opens on Needs you** (S9 9.1, the plan's section 5): a card a thing that waits
   on him, its action on the card, the tap answered there. A card about an account opens it with its Open:
@@ -1602,8 +1602,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`ynTabs`, which every yes or no sheet shares). **Decline and Cancel ask the
   reason on the sheet**: the Desk's three lines as the system's Option tiles (`order.reason-stock`, `-price`, and `-place` on an order to be
   delivered only) and a field for his own words (`order.reason`); a tile fills the field and typing clears the pick, the reason is optional and
-  rides as `note`, checked by `siteWords` on the Desk. The money taps (handover, cash, Received) are guarded once, as they were, with no sheet,
-  and Approve's confirm (`approveDraft`) is not the card's and is as it was.
+  rides as `note`, checked by `siteWords` on the Desk. The money taps (handover, cash, and Confirm received for another amount) are guarded once, as
+  they were, with no sheet; **a claim's Received and Not found are not guarded once, they ask on the Sheet** (Phase 2b, below), and Approve's confirm
+  (`approveDraft`) is not the card's and is as it was.
   **An edit put back to what it was offers its read** (Phase 2b, Fable's follow-up to 2a): the total's `input` takes the quote and Accept away, and
   only a `change` reads again, which a value put back before the field is left never fires, so the card said the figures would be read when he
   finished and showed no control. From the moment the total, or the charge typed as Other, is edited, the card offers Read the figures again
@@ -1612,6 +1613,30 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   label, so its input is now the `--salt-tap` token both ways, laid unseen over the 18px box drawn beside it (`.tickbox`, which shows ticked and
   unticked and takes the focus ring). A real click at each corner of the input toggles it, at 1280 and at 375 in Chromium; the suite, with no layout
   in jsdom, holds the CSS rules and the markup (`test/admin-order-card.mjs`, section 4).
+- **The claim card reads its own rows, shows the slip, and asks on the Sheet** (Phase 2b, 12 Oct 2026, his decisions 3, 4 and 6 of 11 Oct;
+  `test/admin-claim-card.mjs`, its mutations in `test/admin-claim-card.mutations.json`, and `test/maker-claims.mjs` for the slip's crypto). **A waiting
+  account claim is a row** of the system's Inbox row (`claim.open`, key the username and the claim id): its code, that they say they sent it, a slip
+  if one is attached, how long ago and how much; **the row opened is its card, under it, one at a time**, and a tap on the row open closes it.
+  **The card reads the claim's rows when it is opened** (`makerClaimCard`, the Desk's preview through `/all/maker/claims/<u>/<id>/preview`, stored
+  nowhere), never a row and never by listing, afresh each time it is drawn, and **the Preview rows button is retired** (`claim.preview`). Received
+  and Received, on the book already, wait for the rows and open by what they say (`left` over the rows or not); Not found does not wait. A read that
+  fails says why, leaves Received shut and offers Read the rows again (`claim.reread`). A poll leaves the claims alone while a card is open
+  (`makerClaimOpen`), and leaving Waiting on you, or Orders, draws them again with every card shut. No route, body or request id changed.
+  **The slip is a thumbnail drawn only once the page holds the slip key** (his decision 3: one unlock, on this device, cleared on hide). With no
+  key held the card says the slip is sealed and offers the unlock (`claim.passphrase`, `claim.view-slip`), the vault passphrase opening the key as it
+  always did; **no ciphertext is fetched that the page cannot open**. With the key held, a card opened draws its slip at once, from the key, with
+  no second passphrase. The picture is a `blob:` URL on a button (`claim.slip`, the 44px token both ways) that a tap enlarges in place and the next
+  shrinks, as the Desk's View slip draws it whole. **The URL is revoked on the lock** (`claim.lock-slip`, which seals the card again), **on the page
+  hidden, and when the card closes**; a read held across any of them paints nothing (`makerSlipGeneration`). The unlocked key survives a move
+  between the parts of Orders and goes when Orders is left, as before.
+  **Received and Not found ask on the page's Sheet, never a native confirm** (his decision 4), on an account's claim and on an order's own claim
+  (Receive claimed, Received on the book already, Not found, each a Sheet naming who and how much). An account claim's Sheet restates the claim as
+  a line (`makerClaimAskRow`), lists the rows Received would settle and says what follows; one action (`claim.ask-go`) sends the request the confirm
+  let through, the same route and body under the request id the claim keeps until it lands (`makerClaimRequests`), and the ghost, the close control,
+  the scrim and Escape send nothing (`claim.ask-keep`, `claim.ask-close`). An answer sent again after a lost reply goes at once under the id it had,
+  with no second question, as the confirm was not asked twice; a second tap on a Sheet already closed sends nothing, since the Sheet is shut before
+  the request goes. An answered claim leaves the list and its line stands in its place ("Recorded. CX4-ABC is told."). An order's claim uses
+  `makerAsk`, so its Sheet restates the order, and `makerTap` and `makerMove` still carry its request id and the Desk's single flight.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a
@@ -2159,13 +2184,18 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `chat.open-retained` | Open thread | Opens the reply kept encrypted on this device. |
 | `chat.reply` | Open thread (key: the username) | The reply to send. |
 | `chat.send` | Open thread | Sends the reply, or sends the same one again. |
+| `claim.ask-close` | The Sheet a claim's Received or Not found asks on (key: the username and claim id) | Closes it and sends nothing. |
+| `claim.ask-go` | Same sheet | Sends what it asked: Received, Received on the book already, or Not found. |
+| `claim.ask-keep` | Same sheet | Keeps the claim waiting and sends nothing. |
 | `claim.lock-slip` | Same card | Closes the slip and locks the key. |
-| `claim.not-found` | Same card | Answers the claim Not found. |
-| `claim.passphrase` | Account claim card with a slip (key: the username and claim id) | The vault passphrase that unlocks the slip key, cleared when read. |
-| `claim.preview` | Same card | Reads the rows the claim would answer. |
-| `claim.received` | Same card | Confirms the amount and the rows shown. |
-| `claim.received-booked` | Same card | Confirms it when the money is on the book already. |
-| `claim.view-slip` | Same card | Opens the sealed slip on this device only. |
+| `claim.not-found` | Same card | Asks, on the Sheet, whether to answer the claim Not found. |
+| `claim.open` | Account claims, a row for each waiting claim (key: the username and claim id) | Opens the claim's card under its row, which reads its rows; a tap on the row open closes it. |
+| `claim.passphrase` | Account claim card with a slip, while the slip key is not held (key: the username and claim id) | The vault passphrase that unlocks the slip key, cleared when read. |
+| `claim.received` | Same card | Asks, on the Sheet, whether to confirm the amount and the rows shown. |
+| `claim.received-booked` | Same card | Asks, on the Sheet, whether to confirm it when the money is on the book already. |
+| `claim.reread` | Same card, after a read of the rows that failed | Reads the rows again. |
+| `claim.slip` | Same card, once the slip is drawn | The thumbnail of the slip, which a tap enlarges in place and the next shrinks. |
+| `claim.view-slip` | Same card | Unlocks the slip key with the passphrase and opens the sealed slip on this device only; with the key held, opens it again after a failure. |
 | `code.close` | Code sheet | Closes the sheet. |
 | `code.value` | Code sheet | The eight-symbol code, read only. |
 | `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
@@ -2237,7 +2267,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.amend-total` | Same card | The amended goods price, in RM. |
 | `order.amend-units` | Order card (key: the order id), acknowledged or ready | The amended units. |
 | `order.ask-close` | The sheet an order card asks on (key: the order id) | Closes the sheet, sending nothing. |
-| `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close or the offer again. |
+| `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close, the offer again, or a claim's Received or Not found. |
 | `order.ask-keep` | Same sheet | Leaves the order as it was, sending nothing. |
 | `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Asks on a sheet, with a reason, then cancels the order. |
@@ -2245,8 +2275,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.cash-amount` | Order card (key: the order id), ready | Cash received, in RM. |
 | `order.cash-retry` | Order card (key: the order id), when the answer was lost | Sends the same cash again, or refreshes the card. |
 | `order.cash-undo` | Order card (key: the order id), while the cash is held | Undoes it, sending nothing. |
-| `order.claim-not-found` | Same card | Answers that claim Not found. |
-| `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Confirms the money they say they sent. |
+| `order.claim-not-found` | Same card | Asks, on the Sheet, whether to answer that claim Not found. |
+| `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Asks, on the Sheet, whether to confirm the money they say they sent. |
 | `order.close` | Order card (key: the order id), ready | Asks on a sheet, then closes the order at the units typed. |
 | `order.decline` | Order card (key: the order id), placed | Asks on a sheet, with a reason, then declines the order. |
 | `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |

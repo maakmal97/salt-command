@@ -97,10 +97,21 @@ export async function run({ ok }) {
     ok(!!button("20261004090001-cov", (t) => t.startsWith("Received, on the book already")) && !button("20261004090001-cov", (t) => t.startsWith("Receive claimed"))
       && !!button("20261004090002-own", (t) => t.startsWith("Receive claimed")) && !button("20261004090002-own", (t) => t.startsWith("Received, on the book already")),
       "A claim above what the order still owes offers Received, on the book already, in place of Receive claimed, and a claim the order owes offers Receive claimed");
+    /* 12 Oct 2026 (Phase 2b, his decision 4 of 11 Oct): each asks on the page's Sheet, restating who and how much, and one action sends it */
+    const sheet = () => doc.getElementById("ynSheet");
+    const go = () => doc.getElementById("ynGo");
     button("20261004090001-cov", (t) => t.startsWith("Received, on the book already")).click();
+    await new Promise((r) => setTimeout(r, 50));
+    ok(!!sheet() && posts.length === 0 && /Received, on the book already RM 70\.00/.test(sheet().textContent) && /CX1-AB|abcd-efgh/.test(sheet().textContent) && /Nothing more is booked/.test(sheet().textContent),
+      "Received, on the book already, asks on the page's Sheet, naming the amount and who, and sends nothing as it opens: " + (sheet() && sheet().textContent));
+    go().click();
     await until(() => posts.length >= 1); await new Promise((r) => setTimeout(r, 150));
     await until(() => button("20261004090002-own", (t) => t.startsWith("Receive claimed")));
     button("20261004090002-own", (t) => t.startsWith("Receive claimed")).click();
+    await new Promise((r) => setTimeout(r, 50));
+    ok(!!sheet() && posts.length === 1 && /Received RM 70\.00 from/.test(sheet().querySelector(".salt-sheet__title").textContent),
+      "Receive claimed asks on the Sheet too, and sends nothing as it opens: " + (sheet() && sheet().textContent));
+    go().click();
     await until(() => posts.length >= 2);
     ok(posts[0].path.endsWith("/20261004090001-cov/received") && posts[0].body.covered === true && posts[0].body.claim === claimAt && posts[0].body.amount === 70
       && /^[0-9a-f]{32}$/.test(posts[0].body.rid) && !Object.hasOwn(posts[1].body, "covered") && posts[1].body.claim === claim2,

@@ -53857,6 +53857,11 @@ await (async () => {
   await (await import("./admin-order-card.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
+await (async () => {
+  await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
