@@ -8,6 +8,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { webcrypto } from "node:crypto";
+import { cardOf } from "./maker-act.mjs";
 
 const REPO = join(import.meta.dirname, "..");
 const H = 3600e3;
@@ -234,7 +235,7 @@ export async function run({ ok, KV, assets }) {
   });
   try {
     const doc = browser.window.document;
-    const acard = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    const acard = (id) => cardOf(doc, id);
     const button = (id, text) => acard(id) && [...acard(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const radio = (id, name, label) => { const opt = acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest(".salt-option").textContent === label); return opt; };
     const wins = (id) => acard(id) ? [...acard(id).querySelectorAll('input[name="makerWin-' + id + '"]')].map((r) => r.closest(".salt-option").textContent) : [];

@@ -3,6 +3,7 @@
    request id, the Desk's own route, the Desk's refusals (collection, floor, paid, claim, size under what is out), the order
    book's restate event, an acceptance order in its fixture alone, and the owner page's control. */
 import { webcrypto } from "node:crypto";
+import { cardOf } from "./maker-act.mjs";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { JSDOM } from "jsdom";
@@ -222,7 +223,7 @@ export async function run({ ok }) {
       for (let i = 0; i < 200 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    const card = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    const card = (id) => cardOf(doc, id);
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const field = (id, label) => {
       const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl") && l.querySelector(".lbl").textContent === label);

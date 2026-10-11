@@ -1,5 +1,6 @@
 /* Counter Admin's Received, on the book already, on an order's own claim: the Desk's native road, a request id kept, and the owner page naming it. */
 import { webcrypto } from "node:crypto";
+import { cardOf } from "./maker-act.mjs";
 import { JSDOM } from "jsdom";
 import desk from "../src/worker.js";
 import counter from "../stmt/worker.js";
@@ -89,7 +90,7 @@ export async function run({ ok }) {
   try {
     const doc = browser.window.document;
     const until = async (p) => { for (let i = 0; i < 200 && !p(); i++) await new Promise((r) => setTimeout(r, 10)); return !!p(); };
-    const card = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    const card = (id) => cardOf(doc, id);
     const button = (id, test) => card(id) && [...card(id).querySelectorAll("button")].find((b) => test(b.textContent));
     doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => card("20261004090002-own") && button("20261004090002-own", (t) => t.startsWith("Receive claimed")));

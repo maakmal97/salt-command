@@ -176,7 +176,7 @@
  {
   "name": "an order opens the Desk rows",
   "file": "stmt/owner.js",
-  "find": "to=goPlace('orders','waiting'), pays=ordPays(o);",
+  "find": "to=orderOpener(o.id), pays=ordPays(o);",
   "replace": "to=goPlace('record','approve'), pays=ordPays(o);"
  },
  {

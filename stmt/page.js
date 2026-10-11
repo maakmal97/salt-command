@@ -547,6 +547,36 @@ body.ended>*:not(#aEnded){display:none}
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
   .adm #nopen{display:none}
 }
+/* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
+   card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
+   and has its way back. From 860px up to the rail's 1080 the page widens for Orders alone, the other places keeping their 600px column. */
+.adm .ordlist{display:flex;flex-direction:column;gap:8px}
+.adm .ordlist .salt-inbox-row__title{gap:6px}
+.adm .ordlist .rnone{margin:0}
+.adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px}
+@media (max-width:859.98px){
+  .adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus{display:none}
+}
+@media (min-width:860px){
+  .adm #oOrders{max-width:none}
+  .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
+  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+  .adm #makerReview .aback{display:none}
+}
+@media (min-width:860px) and (max-width:1079.98px){
+  /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
+  .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  .gate.adm{max-width:none}
+  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oRecord,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
+}
+/* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
+   the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the
+   orb's and its gap, so nothing is covered. Record's forms are rows of the system's Inbox row, one list a part. */
+.adm #oAdd{position:fixed;right:16px;bottom:calc(var(--salt-bar-h) + 16px + env(safe-area-inset-bottom,0px));z-index:40}
+@media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}
+@media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}
+.adm .formlist{display:flex;flex-direction:column;gap:8px}
+.adm .formrow .salt-inbox-row__title{gap:6px}
 /* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
@@ -1105,6 +1135,7 @@ const ADMIN_ICONS = {
   customers: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
   record: '<path d="M4.6 19.4 L5.4 15.4 L15.4 5.4 A1.6 1.6 0 0 1 17.7 5.4 L18.6 6.3 A1.6 1.6 0 0 1 18.6 8.6 L8.6 18.6 Z M13.4 7.4 L16.6 10.6"/>',
   shop: '<path d="M4 9.6 L5.6 4.6 H18.4 L20 9.6 M4 9.6 A2.67 2.67 0 0 0 9.33 9.6 A2.67 2.67 0 0 0 14.67 9.6 A2.67 2.67 0 0 0 20 9.6 M5.6 12.4 V19.4 H18.4 V12.4 M10 19.4 V15 H14 V19.4"/>',
+  add: '<path d="M12 5.5 V18.5 M5.5 12 H18.5"/>',
   key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
 };
 const aico = (n) => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" '
@@ -1193,7 +1224,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '</div><div id="nopen" hidden></div></div>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
-           (#makerReview); Order for them, opened from an account, stands at the head of the place. */
+           (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
+           below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Orders</h1>"
@@ -1201,9 +1233,9 @@ export function landingPage(user, nonce, owner, bulletin) {
         + adminParts("orders")
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
-        + '<section data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
+        + '<section id="oSplit" data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
         + '<p class="lead" id="makerReviewStatus">Reading orders…</p>'
-        + '<div id="makerReview"></div></section>'
+        + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
         + '<section data-in="orders.waiting" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Account claims</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
         + '<p class="lead">A product and size customers can join, with a target. Reaching it closes nothing: Close does, and sends each joined order for acknowledgement.</p>'
@@ -1292,6 +1324,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '" data-act="nav.' + m + '">'
           + '<span class="salt-appbar__icon">' + aico(m) + '</span><span class="salt-appbar__label">' + w + "</span>"
           + '<span class="salt-appbar__count" data-count="' + m + '"></span></button>').join("") + "</nav>"
+        /* PHASE 1c: one + orb, on every place but Record, opens Record's menu of entries (it is shown and hidden by the owner's script) */
+        + '<button type="button" class="salt-orb salt-orb--raised" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + aico("add") + "</button>"
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
         + '<div id="aEnded" class="gate" hidden><h1>Your admin sign-in has ended</h1>'

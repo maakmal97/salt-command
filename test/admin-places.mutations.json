@@ -158,8 +158,8 @@
  {
   "name": "a closed order is not listed in Closed",
   "file": "stmt/owner.js",
-  "find": "closedRows.setAttribute('data-in','orders.closed');",
-  "replace": "closedRows.setAttribute('data-in','orders.agreed');"
+  "find": "      t.push('orders.closed');",
+  "replace": "      t.push('orders.agreed');"
  },
  {
   "name": "an empty Agreed part says nothing",
@@ -314,8 +314,8 @@
  {
   "name": "entering a place does not read it again",
   "file": "stmt/owner.js",
-  "find": "var fresh=!!o.fresh||place!==placeNow;",
-  "replace": "var fresh=false;"
+  "find": "var fresh=!!o.fresh||place!==placeNow, moved2=place!==placeNow||part!==partNow;",
+  "replace": "var fresh=false, moved2=place!==placeNow||part!==partNow;"
  },
  {
   "name": "the order card's rule loses .adm",

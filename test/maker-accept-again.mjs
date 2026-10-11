@@ -3,6 +3,7 @@
    as the Desk's own card does; the preview sends nothing and the accept sends only the preview's digest; a done order
    whose pending row he rejected keeps its card with the same control. */
 import { webcrypto } from "node:crypto";
+import { cardOf } from "./maker-act.mjs";
 import { JSDOM } from "jsdom";
 import { landingPage } from "../stmt/page.js";
 
@@ -41,7 +42,7 @@ export async function run({ ok }) {
       for (let i = 0; i < 200 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    const card = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    const card = (id) => cardOf(doc, id);
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const texts = (id) => card(id) ? [...card(id).querySelectorAll("button")].map((b) => b.textContent) : [];
     doc.querySelector('[data-act="nav.orders"]').click();
