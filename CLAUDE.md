@@ -31,8 +31,9 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    `salt_vault.json`, `menu_secret.txt` and the queue files stay in the project folder. The suite
    searches the public desk, comments and version notes included, for every directory name and
    place: illustrate with codes and invented words.
-3. **This repo is private.** It carries the real trading ledger; no real name is ever committed,
-   in any form, hashed included.
+3. **Visibility follows the Actions minutes**: private while Pro's 3,000 a month last, public when they
+   run out (his decision of 10 Oct 2026). It carries the real trading ledger; no real name, key or
+   password is ever committed, in any form, hashed included.
 4. **No third-party loads at runtime.** Inline CSS and JS, no CDN; the build fails on an external
    `src`, `url(` or `@import`. CSP is self-only, so Fraunces and JetBrains Mono are self-hosted
    files from `Code\salt-ds\fonts`, carried by each surface's own sync.
