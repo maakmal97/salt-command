@@ -207,6 +207,7 @@ export async function drawEverything(p) {
   await click(byAct(d, "nav.shop"));
   await click(byAct(d, "part.shop.notice"));
   await click(byAct(d, "part.shop.practice"));
+  await click(byAct(d, "part.shop.device"));
   await click(byAct(d, "nav.customers"));
   await click(byAct(d, "part.customers.associates"));
   await click(byAct(d, "part.customers.links"));

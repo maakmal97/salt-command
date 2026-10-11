@@ -809,12 +809,15 @@ function thisDevice() {
 }
 /* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
    held one aria-pressed, applied at once with no reload. The page opens Tide until a device chooses (LOOK_HEAD). */
-function lookRow() {
+function lookRow(owner) {
+  /* 11 Oct 2026: Salt Account draws the same row in Shop, This device, and its controls carry the acts the owner's page names every
+     control by (docs/STATEMENTS.md); the customer's row is drawn as it was, with none */
+  const act = (a) => (owner ? ' data-act="' + a + '"' : "");
   return '<div id="lookRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + wt("span", 'class="salt-ledger__label" id="lookH"', "look.h")
     + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="lookH">'
-    + wt("button", 'type="button" class="salt-ghost" data-look="night" aria-pressed="false"', "look.night")
-    + wt("button", 'type="button" class="salt-ghost" data-look="tide" aria-pressed="true"', "look.tide")
+    + wt("button", 'type="button" class="salt-ghost" data-look="night" aria-pressed="false"' + act("look.night"), "look.night")
+    + wt("button", 'type="button" class="salt-ghost" data-look="tide" aria-pressed="true"' + act("look.tide"), "look.tide")
     + "</span></div></div></div>";
 }
 /* The choice Sheet, over a signed-in page on a device that has chosen nothing: the system's Sheet, its two tiles the Option face as a
@@ -1028,7 +1031,7 @@ const ADMIN_PARTS = {
   orders: [["waiting", "Waiting on you"], ["agreed", "Agreed"], ["ready", "Ready"], ["group", "Group"], ["closed", "Closed"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
-  shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"]]
+  shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* a place's parts strip: every part is a control with an act of its own, part.<place>.<part> (docs/STATEMENTS.md) */
 const adminParts = (p) => '<div class="salt-tabs aparts" role="tablist" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
@@ -1209,7 +1212,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Shop</h1>"
-        + '<p class="lead">The counter itself: its hours, the notice and the practice accounts.</p>'
+        + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop")
         + '<div class="abody">'
         + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Operating hours</h2>'
@@ -1219,6 +1222,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead">One still notice on every customer account. Set wakes their phones; clear does not.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
+        /* 11 Oct 2026, his word: Salt Account has its own Night or Tide, chosen on this device (its origin's localStorage salt-look,
+           apart from the Desk's), the same row the customer has under Account > This device. */
+        + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle">This device</h2>'
+        + '<p class="lead">Night or Tide for Salt Account on this device. It is kept here only; the Desk and the Counter keep their own.</p>'
+        + lookRow(true) + "</section>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
         + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '" data-act="nav.' + m + '">'

@@ -1369,7 +1369,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   claims under Waiting on you, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
   Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Approve, Entry,
   Customers, Pricing: the Desk's rows waiting and the entries the server holds, then the forms by the part they belong to) and
-  **Shop** (Hours, Notice, Practice: the operating hours, the notice, the two test accounts). `data-in` on a section, a card or a
+  **Shop** (Hours, Notice, Practice, This device: the operating hours, the notice, the two test accounts, and this device's Look,
+  see "His look" below). `data-in` on a section, a card or a
   form names the places and parts it shows in (`orders` is every part of Orders, `orders.group` that part alone) and the owner's
   script hides the rest. **Each place reads only what it shows, on entering it, and a part on entering the part**: Orders reads the
   orders and the claims (the stages are one list, so moving between them reads nothing), Record the Desk's rows and the forms, and
@@ -1943,6 +1944,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
 | `link.tier` | Same card | Sets the tier it quotes. |
 | `link.withdraw` | Link card | Withdraws the link. |
+| `look.night` | Shop, This device, Look | Night for Salt Account on this device, at once, kept here. |
+| `look.tide` | Shop, This device, Look | Tide for Salt Account on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice | Makes or deletes the two test accounts. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
@@ -2037,6 +2040,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours, reading them. |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
+| `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Account, reading nothing. |
 | `pool.close` | Group order card (key: the pool id) | Closes it and sends each joined order for acknowledgement, or sends the ones left again. |
 | `pool.closes-on` | Group orders | The day it closes, optional. |
 | `pool.open` | Group orders | Opens the group order. |

@@ -30,7 +30,6 @@
  {"name":"the setting's held button is never marked","file":"stmt/page.js","find":"b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow()));","replace":""},
  {"name":"the theme in force always reads Tide","file":"stmt/page.js","find":"return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide'; }","replace":"return 'tide'; }"},
  {"name":"Salt Account carries the Sheet","file":"stmt/page.js","find":"devSheet() + threadSheet() + lookSheet())","replace":"devSheet() + threadSheet()) + lookSheet()"},
- {"name":"Salt Account carries the setting","file":"stmt/page.js","find":"+ (owner ? \"\" : thisDevice())","replace":"+ thisDevice()"},
  {"name":"This device leaves the setting out","file":"stmt/page.js","find":"    + lookRow()\n    + '<div id=\"devSlot\"></div>'","replace":"    + '<div id=\"devSlot\"></div>'"},
  {"name":"a tile has no swatch","file":"stmt/page.js","find":"'<span class=\"look-swatch look-swatch--' + k + '\" aria-hidden=\"true\"></span><span class=\"salt-option__text\">'","replace":"'<span class=\"salt-option__text\">'"},
  {"name":"the Sheet is not modal","file":"stmt/page.js","find":"<div id=\"lookSheet\" class=\"salt-sheet\" role=\"dialog\" aria-modal=\"true\"","replace":"<div id=\"lookSheet\" class=\"salt-sheet\" role=\"dialog\""},

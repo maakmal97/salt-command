@@ -22,11 +22,11 @@ const PARTS = {
   orders: [["waiting", "Waiting on you"], ["agreed", "Agreed"], ["ready", "Ready"], ["group", "Group"], ["closed", "Closed"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
-  shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"]]
+  shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* the sections that stand for a place or a part, and so show or do not */
 const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerReview", "makerClaims", "makerPools", "oAccts", "makerChatList", "oLinks",
-  "oCards", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest"];
+  "oCards", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook"];
 const SHOWS = {
   needs: "mHome",
   "orders/waiting": "oOrders makerReview makerClaims", "orders/agreed": "oOrders makerReview", "orders/ready": "oOrders makerReview",
@@ -35,7 +35,7 @@ const SHOWS = {
   "customers/associates": "oCustomers oCards",
   "record/approve": "oRecord makerDrafts makerQueueReview", "record/entry": "oRecord makerInputs", "record/customers": "oRecord makerInputs",
   "record/pricing": "oRecord makerInputs",
-  "shop/hours": "oShop makerSchedule", "shop/notice": "oShop makerBulletin", "shop/practice": "oShop mTest"
+  "shop/hours": "oShop makerSchedule", "shop/notice": "oShop makerBulletin", "shop/practice": "oShop mTest", "shop/device": "oShop oLook"
 };
 /* the forms of Record, by the part each belongs to (the page also draws a Retained input for the loan this device kept) */
 const FORMS = {
@@ -197,6 +197,7 @@ export async function run({ ok, pageWork }) {
       await step("nav.shop", reads("hours"));
       await step("part.shop.notice", reads("bulletin"));
       await step("part.shop.practice", reads());
+      await step("part.shop.device", reads());
       await step("part.shop.hours", reads("hours"));
       await step("nav.orders", reads("review", "claims"));
       for (const part of ["agreed", "ready", "closed", "waiting"]) await step("part.orders." + part, reads());
