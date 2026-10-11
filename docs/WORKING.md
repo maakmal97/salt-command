@@ -170,6 +170,9 @@ Each of these stayed green, or read clean, through a real fault.
   one-time restatement touched (read them off `git show <sha>:ledger/book.json`), and express a
   position as a difference (drop the row, recompute, assert what moved). The hourly runs run no
   suite, so such a red stays red until the next fold or push.
+  The same for a hand-set salt drift (CS6-BS since v1075, a number in `TIER_OF`): `levelWindow` sets the book's salt drifts aside
+  when it puts the level rule back, and a test of the drift takes the first customer with none (`driftOf(c, 'salt').hand == null`),
+  never `tierCustomers()[0]`. The held-drift proof is run on a master copy holding more of them (`tools/section.mjs --master`).
 - **A clock in the check** (28 Sep 2026, his instruction). Beside another session's suite, a
   stopwatch goes red with nothing wrong (v521's 10 s over a whole fold, the banner proof, S3 3.8,
   S3's lapse control), and a pause before an absence check goes green with nothing proved. Time only
