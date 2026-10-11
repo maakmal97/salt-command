@@ -8961,6 +8961,11 @@ await (async () => {
   await (await import("./counter-two-themes.mjs")).run({ ok });
 })();
 
+section("Home leads with the one action: a sticky foot holds To pay now and its Pay above the bar, and the lines show three and fold the rest (11 Oct 2026)");
+await (async () => {
+  await (await import("./home-pay-foot.mjs")).run({ ok, pageWork });
+})();
+
 section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
