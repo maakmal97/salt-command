@@ -447,7 +447,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    with the customer's: the system's recipes, the rail's name and place, the ring, the guest link's card, and the bar over an
    account he views as them, which stands in the customer's shell and not in his roster. */
 .adm .rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
-.adm h1{margin-top:0}
+.adm .amain h1{margin-top:0}
 /* FIVE PLACES (his decision of 11 Oct 2026): Needs you, Orders, Customers, Record, Shop. A place is a head (the eyebrow, its name,
    a line), its parts as the system's tab strip, and a body whose sections the parts show and hide. The body is a column, so a section
    a part has hidden leaves no gap behind it. */
@@ -487,7 +487,7 @@ body.ended>*:not(#aEnded){display:none}
    system's switch at 1080px; this page decides the column, the room kept clear above the bar, and where the
    open account stands: beside the list on a desk, in its place on a phone, with a way back. */
 .gate.adm{max-width:600px;margin-top:32px;padding-bottom:calc(var(--salt-bar-h) + 32px + env(safe-area-inset-bottom))}
-.adm .salt-eyebrow{margin:0 0 6px}
+.adm .amain .salt-eyebrow{margin:0 0 6px}
 .aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-well)}
 .aring svg{width:22px;height:22px}
@@ -586,7 +586,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
-.adm button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;
+.adm .amain button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;
   background:none;border:0;color:var(--salt-brass);cursor:pointer;text-align:left;
   font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;text-transform:uppercase}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address

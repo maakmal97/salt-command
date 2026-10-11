@@ -246,5 +246,12 @@ export async function run({ ok, pageWork }) {
     ok(rules.length > 100 && his.length > 40 && loose.length === 0 && /\bclass="[^"]*\badm\b/.test(body(ownerHtml)),
       "every rule of PAGE_CSS that styles something only his page draws sits under .adm, so the customer's page and a guest's are drawn as they were ("
         + his.length + " of " + rules.length + " rules)" + (loose.length ? ", and these do not: " + JSON.stringify(loose) : ""));
+    /* and the other way (Phase 1b, the reviewer's instrument): a rule under .adm that names nothing only his page draws is a shared rule moved under it, and the
+       customer's page and a guest's would lose it. Every rule under .adm carries a class or an id that his page draws and the customer's page and its script do not. */
+    const under = rules.flatMap(split).filter((sel) => /^[.]adm([\s.#:\[>+~]|$)/.test(sel));
+    const moved = under.filter((sel) => !tokens(sel).some((t) => t !== "adm" && ownerOnly(t)));
+    ok(under.length > 60 && moved.length === 0,
+      "every rule under .adm names a class or an id only his page draws, so none is a shared rule moved under it (" + under.length + " rules)"
+        + (moved.length ? ", and these name none: " + JSON.stringify(moved) : ""));
   } finally { w.close(); }
 }
