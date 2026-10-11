@@ -70,7 +70,8 @@ try {
       isMobile: width < 600, hasTouch: width < 600
     });
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "domcontentloaded" });
-    await page.locator('button[data-m="maker"]:visible').last().click();
+    await page.locator('[data-act="nav.record"]:visible').last().click();
+    await page.locator('[data-act="part.record.approve"]:visible').click();
     await page.locator("#makerQueueReview .maker-queue-action").waitFor();
     const baseline = await measure(page);
     const baselineOk = baseline.visible && baseline.offset.width >= 44 && baseline.offset.height >= 44

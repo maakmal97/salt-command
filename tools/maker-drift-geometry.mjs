@@ -152,9 +152,9 @@ try {
       isMobile: width < 600, hasTouch: width < 600
     });
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "domcontentloaded" });
-    await page.locator('button[data-m="maker"]:visible').last().click();
+    await page.locator('[data-act="nav.record"]:visible').last().click();
+    await page.locator('[data-act="part.record.pricing"]:visible').click();
     await page.getByRole("heading", { name: "Customer drift" }).waitFor();
-    await page.getByRole("heading", { name: "Add ID" }).waitFor();
 
     const buttons = await measureButtons(page);
     report(buttons.every((item) => item.visible && item.offset.width >= 44 && item.offset.height >= 44
@@ -177,6 +177,9 @@ try {
         .evaluate((element) => element.removeAttribute("data-geometry-test"));
     }
 
+    /* 11 Oct 2026: Add ID is Record, Customers; the drift form above is Record, Pricing */
+    await page.locator('[data-act="part.record.customers"]:visible').click();
+    await page.getByRole("heading", { name: "Add ID" }).waitFor();
     for (const role of ["customer", "reseller", "referral"]) {
       await prepareAddId(page, role);
       const targets = await measureAddId(page);
