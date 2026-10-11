@@ -1543,6 +1543,62 @@ details.obs>summary{min-height:var(--tap);}
   color-scheme: dark;
 }
 
+/* ---- Tide: the second theme ----
+   Added 11 Oct 2026, chosen per device. It is set as data-theme="tide" on <html>; Night is :root above, needs
+   no attribute, and data-theme="night" gives it too, since nothing here overrides it. No clock, no cross-fade:
+   the attribute is the whole mechanism (the four times of day were retired on 09 Oct 2026 and stay retired).
+   Tide restates the colour tokens and nothing else, so every recipe and every consumer that reads a token
+   follows it. What it does not restate is shared with Night, by design: the amber warning, the five product
+   hues, the black shadows and wells, the desk bar's white sheen, and the QR's field and ink (a code always
+   scans). Every text token holds 4.5:1 on the ground, the glass, the slate, the pane, the panel and the desk bar, which
+   scripts/contrast.mjs measures for both themes. The attribute sits on <html>: the aliases declared in :root
+   (the prose, the text and the title gradient) resolve there. ---- */
+:root[data-theme="tide"] {
+  --salt-obsidian: #03141a;
+  --salt-slate: #082028;
+  --salt-slate-light: #0c2730;
+  --salt-brass: #7fd1c0;
+  --salt-copper: #62b6cc;
+  --salt-salt: #eaf6f6;
+  --salt-mist: #7f969c;
+  --salt-mist-light: #a4bbbf;
+  --salt-mist-bright: #b8cbce;
+  --salt-edge-field: #4f9c90;
+  --salt-verdigris: #8ee0a8;
+  --salt-ember: #ff8a65;
+  --salt-steel: #9ab8d8;
+  --salt-brass-soft: #b9e8e0;
+  --salt-alarm: #ff5a6e;
+
+  --salt-glass: rgba(255, 255, 255, 0.045);
+  --salt-glass-faint: rgba(255, 255, 255, 0.03);
+  --salt-line: rgba(127, 209, 192, 0.22);
+  --salt-line-faint: rgba(255, 255, 255, 0.07);
+  --salt-line-strong: rgba(127, 209, 192, 0.46);
+  --salt-glass-hover: rgba(255, 255, 255, 0.08);
+  --salt-highlight: rgba(255, 255, 255, 0.1);
+  --salt-veil: rgba(3, 20, 26, 0.86);
+  --salt-scrim: rgba(3, 20, 26, 0.55);
+  --salt-pane: rgba(6, 32, 38, 0.74);
+  --salt-panel: rgb(11, 38, 46);
+
+  --salt-gradient: linear-gradient(135deg, #8be0cc, #5a9fd6);
+  --salt-gradient-title: linear-gradient(135deg, var(--salt-salt) 30%, var(--salt-brass) 100%);
+  --salt-deskbar-fill: rgba(3, 18, 24, 0.58);
+  --salt-deskbar-solid: rgb(5, 26, 33);
+  --salt-ink-on-accent: #03161b;
+
+  /* Tokens Night does not define. A rule that drew a literal brass, copper or tint reads one of these with Night's own
+     value as the fallback, so Night is unchanged and Tide's pill glow, table total and orb glow follow its accent. */
+  --salt-brass-rgb: 127, 209, 192;
+  --salt-copper-rgb: 98, 182, 204;
+  --salt-tint: rgba(127, 209, 192, 0.1);
+  /* The aurora: teal upper left, blue lower right, at half strength. */
+  --salt-aurora-1: #1d8c86;
+  --salt-aurora-2: #3a64ad;
+  --salt-aurora-opacity: 0.5;
+}
+
 /* ---- Root ---- */
 
 .salt-root {
@@ -1600,6 +1656,11 @@ details.obs>summary{min-height:var(--tap);}
 /* Pinned to the viewport for a page that scrolls, as the desk's is; the blobs then need no
    positioned ancestor and the page keeps its own overflow. */
 .salt-aurora--fixed { position: fixed; }
+/* Tide's aurora is teal and blue and brighter than Night's; the blur stays each variant's own. The three tokens
+   are Tide's alone (an unset Night keeps the copper and brass blobs above), and the selector out-weighs every variant. */
+:root[data-theme="tide"] .salt-aurora__blob { opacity: var(--salt-aurora-opacity); }
+:root[data-theme="tide"] .salt-aurora__blob--copper { background: var(--salt-aurora-1); }
+:root[data-theme="tide"] .salt-aurora__blob--brass { background: var(--salt-aurora-2); }
 
 /* ---- Glass card ---- */
 
@@ -1810,13 +1871,13 @@ details.obs>summary{min-height:var(--tap);}
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3);
+  box-shadow: 0 8px 24px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.3);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .salt-pill--md { padding: 16px 40px; font-size: 0.875rem; }
 .salt-pill--sm { padding: 10px 20px; font-size: 0.71875rem; }
-.salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(184, 115, 51, 0.4); }
-.salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(184, 115, 51, 0.3); }
+.salt-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.4); }
+.salt-pill:active { transform: translateY(0); box-shadow: 0 8px 24px rgba(var(--salt-copper-rgb, 184, 115, 51), 0.3); }
 .salt-pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 3px; }
 .salt-pill:disabled {
   opacity: 0.45;
@@ -2541,8 +2602,8 @@ label.salt-field__label {
 }
 .salt-table .salt-table__label { text-align: left; background: var(--salt-panel); color: var(--salt-mist-light); font-weight: 500; white-space: normal; overflow-wrap: break-word; }
 .salt-table tbody td { color: var(--salt-salt); font-weight: 400; border-bottom: 1px solid var(--salt-line-faint); }
-.salt-table tr.tot td { font-weight: 500; background: rgba(197, 160, 89, 0.07); }
-.salt-table tr.tot .salt-table__label { background: linear-gradient(rgba(197, 160, 89, 0.07), rgba(197, 160, 89, 0.07)), var(--salt-panel); }
+.salt-table tr.tot td { font-weight: 500; background: var(--salt-tint, rgba(197, 160, 89, 0.07)); }
+.salt-table tr.tot .salt-table__label { background: linear-gradient(var(--salt-tint, rgba(197, 160, 89, 0.07)), var(--salt-tint, rgba(197, 160, 89, 0.07))), var(--salt-panel); }
 .salt-table tbody tr:hover td:not(.salt-table__label) { background: var(--salt-glass); }
 /* a phone: the gutters close up, as the desk draws them (7px 8px) */
 @media (max-width: 560px) { .salt-table th, .salt-table td { padding: 7px 8px; } }
@@ -3550,18 +3611,18 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   border-color: var(--salt-line);
   box-shadow: inset 0 1px 0 var(--salt-highlight), 0 10px 30px -12px rgba(0, 0, 0, 0.8);
 }
-.salt-orb--raised:hover { border-color: rgba(197, 160, 89, 0.55); background: var(--salt-pane); }
+.salt-orb--raised:hover { border-color: rgba(var(--salt-brass-rgb, 197, 160, 89), 0.55); background: var(--salt-pane); }
 .salt-orb--lit {
   background: var(--salt-glass);
   border-color: var(--salt-line);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 0 18px -4px rgba(197, 160, 89, 0.4), 0 10px 30px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 var(--salt-highlight);
+  box-shadow: 0 0 18px -4px rgba(var(--salt-brass-rgb, 197, 160, 89), 0.4), 0 10px 30px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 var(--salt-highlight);
 }
 .salt-orb--lit:hover {
   background: var(--salt-glass-hover);
-  border-color: rgba(197, 160, 89, 0.6);
-  box-shadow: 0 0 26px -2px rgba(197, 160, 89, 0.5), 0 12px 34px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 var(--salt-highlight);
+  border-color: rgba(var(--salt-brass-rgb, 197, 160, 89), 0.6);
+  box-shadow: 0 0 26px -2px rgba(var(--salt-brass-rgb, 197, 160, 89), 0.5), 0 12px 34px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 var(--salt-highlight);
 }
 
 /* ---- Where the frost cannot be drawn ----
