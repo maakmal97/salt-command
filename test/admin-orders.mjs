@@ -149,15 +149,17 @@ export async function run({ ok, pageWork }) {
     ok(same(p.cardsIn(), ["ord-p1"]) && byAct(d, "order.open", "ord-p1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open")
       && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current"),
     "a row opens that order's card alone, marks itself current and stands the list and the card side by side: " + JSON.stringify(p.cardsIn()));
-    const want = ["order.total", "order.preview", "order.reason", "order.reason-stock", "order.reason-price", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
-      "order.reply", "order.no-reply", "order.decline"];
+    const want = ["order.total", "order.reason", "order.reason-stock", "order.reason-price", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
+      "order.reply", "order.no-reply", "order.decline", "order.accept"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had: " + JSON.stringify(got));
-    p.reads.length = 0;
-    byAct(d, "order.preview", "ord-p1").click(); await p.work.quiet();
+    /* his decision 6 of 11 Oct 2026: the card reads its own preview on opening, once, and has no Preview button */
     const pv = p.posts.filter((x) => /preview$/.test(x.route));
-    ok(pv.length === 1 && pv[0].route === "/all/maker/orders/ord-p1/preview" && same(pv[0].body, { total: 200, delivery: 0 }) && !!d.querySelector("#makerReview [data-accept]"),
-      "and sends the request it sent, the same route and body, and then offers Accept: " + JSON.stringify(pv));
+    ok(pv.length === 1 && pv[0].route === "/all/maker/orders/ord-p1/preview" && same(pv[0].body, { total: 200, delivery: 0 }) && !!d.querySelector("#makerReview [data-accept]")
+      && !p.acts("ord-p1").includes("order.preview"),
+      "and opening it sends the request the Preview button sent, the same route and body, once, and then offers Accept, with no Preview button: " + JSON.stringify(pv));
+    await p.tick();
+    ok(p.posts.filter((x) => /preview$/.test(x.route)).length === 1 && !!d.querySelector("#makerReview [data-accept]"), "and a read that finds the order the same reads nothing again, and keeps Accept");
     await p.tapRow("ord-p3");
     ok(same(p.cardsIn(), ["ord-p3"]) && byAct(d, "order.open", "ord-p3").getAttribute("aria-current") === "true" && !byAct(d, "order.open", "ord-p1").hasAttribute("aria-current"),
       "another row replaces the card: only the order opened has one: " + JSON.stringify(p.cardsIn()));

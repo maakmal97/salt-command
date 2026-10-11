@@ -1,7 +1,8 @@
 /* test/maker-accept-again.mjs: Counter Admin's Accept again, driven in the actual owner script. An agreed order whose pending
-   row he rejected offers Preview Accept again and then Accept again, in place of Ready, the handover, cash, claims and Amend,
-   as the Desk's own card does; the preview sends nothing and the accept sends only the preview's digest; a done order
-   whose pending row he rejected keeps its card with the same control. */
+   row he rejected reads its preview when it is opened (his decision 6 of 11 Oct 2026: there is no Preview button) and then offers
+   Accept again, in place of Ready, the handover, cash, claims and Amend, as the Desk's own card does; the preview sends nothing and the
+   accept sends only the preview's digest; a row of the list reads nothing; a done order whose pending row he rejected keeps its card
+   with the same control. */
 import { webcrypto } from "node:crypto";
 import { cardOf } from "./maker-act.mjs";
 import { JSDOM } from "jsdom";
@@ -46,24 +47,27 @@ export async function run({ ok }) {
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const texts = (id) => card(id) ? [...card(id).querySelectorAll("button")].map((b) => b.textContent) : [];
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => button("20261006090001-aga", "Preview Accept again") && button("20261006090002-ack", "Ready to collect"));
+    await until(() => doc.querySelector('[data-act="order.open"]'));
+    ok(posts.length === 0, "Listing the orders reads no preview: a row has none.");
+    await until(() => button("20261006090002-ack", "Ready to collect"));
+    const ack = texts("20261006090002-ack");
+    ok(posts.length === 0, "and an order with nothing rejected reads none when it is opened.");
 
-    const aga = texts("20261006090001-aga");
-    ok(aga.includes("Preview Accept again")
-      && !aga.some((t) => /^Ready to|^Record handover|^Record cash|^Confirm received|^Amend order/.test(t))
-      && !!button("20261006090002-ack", "Ready to collect") && !texts("20261006090002-ack").includes("Preview Accept again"),
-      "An agreed order whose pending row he rejected offers Preview Accept again in place of Ready, the handover, cash, claims and Amend; another does not: " + JSON.stringify(aga));
-
-    button("20261006090001-aga", "Preview Accept again").click();
     await until(() => button("20261006090001-aga", "Accept again"));
+    const aga = texts("20261006090001-aga");
+    ok(aga.includes("Accept again") && !aga.some((t) => /Preview/.test(t))
+      && !aga.some((t) => /^Ready to|^Record handover|^Record cash|^Confirm received|^Amend order/.test(t))
+      && !ack.includes("Accept again"),
+      "An agreed order whose pending row he rejected reads its preview when opened, with no Preview button, and offers Accept again in place of Ready, the handover, cash, claims and Amend; another does not: " + JSON.stringify(aga));
+
     button("20261006090001-aga", "Accept again").click();
     await until(() => posts.length >= 2);
     ok(posts.length === 2 && posts[0].path === "/all/maker/orders/20261006090001-aga/preview" && JSON.stringify(posts[0].body) === "{}"
       && posts[1].path === "/all/maker/orders/20261006090001-aga/accept" && JSON.stringify(posts[1].body) === JSON.stringify({ hash: "h-1" }),
-      "Preview Accept again sends nothing priced, and Accept again sends only the preview's digest: " + JSON.stringify(posts));
+      "Opening it sent one preview with nothing priced, and Accept again sends only the preview's digest: " + JSON.stringify(posts));
 
-    await until(() => button("20261006090003-don", "Preview Accept again"));
-    ok(!!button("20261006090003-don", "Preview Accept again"),
-      "A done order whose pending row he rejected keeps its card with Preview Accept again.");
+    await until(() => button("20261006090003-don", "Accept again"));
+    ok(!!button("20261006090003-don", "Accept again"),
+      "A done order whose pending row he rejected keeps its card with Accept again, read when it is opened.");
   } finally { browser.window.close(); }
 }

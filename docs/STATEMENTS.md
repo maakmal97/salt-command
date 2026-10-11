@@ -1578,6 +1578,15 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`stmt/page.js` splices it in at the end of the page script), so a name it declares at the top must not be one the customer's code declares:
   `oOpen` was both, and View as them met "oOpen is not a function" until the owner's became `ordOpened`; `test/admin-orders.mjs` section 9 compares
   the two lists, every declarator of a `var` list included (the owner's `HOW`, which overwrote the customer's pay ways, is `HOW_IN`).
+- **The order card reads its own preview** (Phase 2a, 12 Oct 2026, his decision 6 of 11 Oct; `test/admin-order-card.mjs`, its mutations in
+  `test/admin-order-card.mutations.json`). **A placed order reads its preview when its detail is opened**, once, and again when an input is
+  changed: choosing a delivery charge or a window reads at once, and the goods total reads when the field is finished (`change`), taking
+  Accept away as it is typed. **The Preview button is retired** (`order.preview`, and `order.preview-again` on an order with a rejected pending
+  row, which reads its Accept again on opening). A row of the list, and listing, read nothing: only the opened order draws a card, so the Desk is
+  asked once for an order he opens, and again each time he opens it. A redraw of the card (a read that changed, a tap) keeps the figures it has
+  (`makerQuotes`, held against the order as it stood) or waits on the read that is out (`makerPv`), and never asks twice for the same figures.
+  A delivery with no charge chosen reads nothing and says to choose one. A read that fails leaves no Accept, says why, and offers Read the figures
+  again (`order.reread`). Nothing the request carries has changed: the route, the body `{total, delivery}`, Accept's digest and its single flight.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a
@@ -2191,8 +2200,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `notice.read` | Notice | Reads the notice now up. |
 | `notice.set` | Notice | Sets the notice and wakes every phone. |
 | `notice.text` | Notice | The notice, one line a sentence. |
-| `order.accept` | Order card (key: the order id), after a preview | Accepts the order at the previewed price. |
-| `order.accept-again` | Same card, after that preview | Accepts again at the order's own price. |
+| `order.accept` | Order card (key: the order id), once its figures are read | Accepts the order at the price read. |
+| `order.accept-again` | Same card, once its figures are read | Accepts again at the order's own price. |
 | `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected amendment again. |
 | `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected cancellation again. |
 | `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected cash again. |
@@ -2221,8 +2230,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.handed-units` | Order card (key: the order id), ready | The units handed over. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
 | `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
-| `order.preview` | Order card (key: the order id), placed | Reads the row Accept would make. |
-| `order.preview-again` | Order card (key: the order id), a rejected pending row | Previews Accept again. |
 | `order.quick-keep` | Same card | Keeps the reply as a quick reply on this device, or forgets it. |
 | `order.quick-reply` | Same card, one for each kept line (key: its place in the list) | Fills the reply with that line. |
 | `order.ready-collect` | Order card (key: the order id), acknowledged | Marks the order ready to collect. |
@@ -2235,8 +2242,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.received-amount` | Order card (key: the order id), acknowledged or ready | Another payment received, in RM. |
 | `order.reply` | Same card | Sends the reply. |
 | `order.reply-text` | Same card | The reply to the customer. |
-| `order.send-yes` | Order card (key: the order id), after a preview that raises the price or changes the window | Sends it to them for their yes instead. |
-| `order.total` | Order card (key: the order id), placed | The order total, in RM, to preview. |
+| `order.reread` | Order card (key: the order id), placed or with a rejected pending row, after a read that failed | Reads the figures again. |
+| `order.send-yes` | Order card (key: the order id), once its figures are read, when they raise the price or change the window | Sends it to them for their yes instead. |
+| `order.total` | Order card (key: the order id), placed | The order total, in RM; finishing a change reads the figures again. |
 | `order.window-<hh>` | Same card, one for each window ahead (named by its starting hour) | Offers that four-hour window. |
 | `order.window-day` | Order card (key: the order id), placed for delivery with no time asked | The day of the delivery window he offers. |
 | `order.window-own` | Same card | Keeps their window, or as soon as it can. |

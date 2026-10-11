@@ -229,12 +229,16 @@ export async function drawEverything(p) {
   p.snap("a cash tap whose answer was lost");
   card("ord-r1"); p.snap("a ready order");
   /* an order placed, a delivery with its charge, one raised for their yes, one offered again, one waiting on an offer, one with claims, a closed one */
-  await click(byAct(card("ord-p1"), "order.preview")); p.snap("a placed order, previewed");
-  await click(byAct(card("ord-p2"), "order.fee-10")); await click(byAct(card("ord-p2"), "order.preview")); p.snap("a delivery, previewed");
-  type(byAct(card("ord-p3"), "order.total"), "150"); await click(byAct(card("ord-p3"), "order.preview")); p.snap("a raise, previewed");
+  /* a card reads its own preview when its order is opened, and again when an input is changed (his decision 6 of 11 Oct 2026) */
+  card("ord-p1"); await work.quiet(); p.snap("a placed order, previewed");
+  await click(byAct(card("ord-p2"), "order.fee-10")); p.snap("a delivery, previewed");
+  p.fail.add("/all/maker/orders/ord-p3/preview");
+  type(byAct(card("ord-p3"), "order.total"), "150"); await work.quiet(); p.snap("a read that could not be made");
+  p.fail.delete("/all/maker/orders/ord-p3/preview");
+  await click(byAct(card("ord-p3"), "order.reread")); p.snap("a raise, previewed");
   card("ord-p4"); p.snap("an offer sent for their yes");
   card("ord-a1"); p.snap("an agreed order with claims waiting");
-  await click(byAct(card("ord-a2"), "order.preview-again")); p.snap("an agreed order offered again");
+  card("ord-a2"); await work.quiet(); p.snap("an agreed order offered again");
   card("ord-x1"); p.snap("a closed order with a stage he rejected");
   /* the group orders, the shop's three parts, the guest links and the report card */
   await click(byAct(d, "part.orders.group"));

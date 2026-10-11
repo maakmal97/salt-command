@@ -743,7 +743,7 @@ export const OWNER_JS = `
     if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }
     return j;
   }
-  var makerData=null, makerQuotes={}, makerFee={}, makerWin={}, makerHours=null, makerBusy=false;
+  var makerData=null, makerQuotes={}, makerPv={}, makerFee={}, makerWin={}, makerHours=null, makerBusy=false;
   /* PHASE 1b: a part he has begun on is left alone by a poll. Opening a field or tapping a button inside the order cards or the claims marks it
      (in the capture phase, so a redraw its own tap makes clears the mark afterwards); the redraw of that part clears it. */
   var dirty={makerReview:false, makerClaims:false};
@@ -2046,19 +2046,34 @@ export const OWNER_JS = `
      goods the order already carries (the customer was told them), as the Desk's own Accept again: nothing priced is sent */
   function makerAgainAck(order){ return ['acknowledged','ready','done'].indexOf(order.status)>=0&&(order.again||[]).indexOf('ack')>=0; }
   function makerAcceptAgain(card,order){
-    var route='/all/maker/orders/'+encodeURIComponent(order.id);
-    makerButton(card,['Preview Accept again','order.preview-again'],function(){
-      refs(route+'/preview',{}).then(function(result){
-        if(!card.isConnected) return;
-        var note=card.querySelector('.maker-quote'); if(!note){ note=el('div','maker-quote'); card.appendChild(note); }
-        note.textContent=''; note.appendChild(el('p','salt-insight','Preview ready. Check the row before accepting it again.'));
-        makerReading(note,result,'preview');
-        var old=card.querySelector('[data-accept-again]'); if(old) old.remove();
-        makerButton(card,['Accept again','order.accept-again'],function(){
-          makerAction(route+'/accept',{hash:result.hash},'Order sent to the Desk for acknowledgement again.',order.id);
-        },true).setAttribute('data-accept-again','');
-      }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
-    },true).setAttribute('data-preview-again','');
+    var route='/all/maker/orders/'+encodeURIComponent(order.id), key=order.id+':again', sig=JSON.stringify(order), turn=0;
+    var said=el('p','salt-insight'), figs=el('div','maker-quote');
+    said.setAttribute('role','status'); card.appendChild(said); card.appendChild(figs);
+    /* 12 Oct 2026 (his decision 6 of 11 Oct): its figures read themselves when the order is opened, as a placed order's do, and Preview Accept again is retired */
+    function show(result){
+      said.className='salt-insight'; said.textContent='Figures read. Check the row before accepting it again.';
+      figs.textContent=''; makerReading(figs,result,'preview');
+      var old=card.querySelector('[data-accept-again]'); if(old) old.remove();
+      makerButton(card,['Accept again','order.accept-again'],function(){
+        makerAction(route+'/accept',{hash:result.hash},'Order sent to the Desk for acknowledgement again.',order.id);
+      },true).setAttribute('data-accept-again','');
+    }
+    function read(){
+      var mine=++turn, old=card.querySelector('[data-accept-again]'); if(old) old.remove();
+      said.className='salt-insight'; said.textContent='Reading the figures.'; figs.textContent='';
+      var pv=makerPv[key]; if(!pv) pv=makerPv[key]={p:refs(route+'/preview',{})};
+      pv.p.then(function(result){
+        if(makerPv[key]===pv) delete makerPv[key];
+        if(mine!==turn||!card.isConnected) return;
+        makerQuotes[key]={sig:sig,result:result}; show(result);
+      }).catch(function(error){
+        if(makerPv[key]===pv) delete makerPv[key];
+        if(mine!==turn||!card.isConnected) return;
+        said.className='msg'; said.textContent=error.message;
+        makerButton(figs,['Read the figures again','order.reread'],read,false);
+      });
+    }
+    return function(){ var held=makerQuotes[key]; if(held&&held.sig===sig) show(held.result); else read(); };
   }
   /* his quick replies, six at most, kept on this device under the Desk's own key; each is checked when it is sent */
   var MAKER_QUICK='saltQuickReplies';
@@ -2725,6 +2740,8 @@ export const OWNER_JS = `
   function openOrder(id){
     var e=ordEntries[id];
     if(!e||placeNow!=='orders'||!ordInPart(e)) return;
+    /* an order opened reads its figures afresh: the card draws from no earlier quote */
+    [id,id+':again'].forEach(function(k){ delete makerQuotes[k]; delete makerPv[k]; });
     ordOpened=id; drawOrderPane(); sweep();
     /* below 860px the card takes the list's place and has its way back showing, so he is taken to the top of it; from 860px the list is the
        page's scroll and the card stands beside it, sticky, so a tap on a low row leaves the page where it is and only brings the card into view */
@@ -2812,7 +2829,7 @@ export const OWNER_JS = `
         card.appendChild(el('p','maker-facts','Delivery wanted between '+String(order.slotSpan).replace('-',' and ')+' on '+String(order.slot).slice(0,10)));
       /* 10 Oct 2026: their exact spot is sealed to his key: the Desk opens it, this page only says it was shared */
       if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','Location shared, sealed: the Desk opens it for the fee.'));
-      var againAck=makerAgainAck(order);
+      var againAck=makerAgainAck(order), quoteStart=null;
       if(order.status==='placed'&&makerAccHeld(order)){
         var ap=order.price, apf=ap.offer||{};
         card.appendChild(el('p','maker-facts',(ap.state==='taken'?'They said yes to ':'Sent for their yes: ')+'goods '+rm(apf.total)
@@ -2820,7 +2837,7 @@ export const OWNER_JS = `
           +(ap.state==='taken'?'. Its row is drafted at it.':', open until '+String(apf.until).slice(0,16).replace('T',' ')+' UTC.')));
         if(ap.state!=='taken') makerButton(card,['Withdraw the offer','order.withdraw-offer'],function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false).setAttribute('data-withdraw','');
       }else if(order.status==='placed'){
-        var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');
+        var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','maker-fields');
         var total=makerField(form,['Order total (RM)','order.total'],'number',quote.total==null?order.total:quote.total);
         card.appendChild(form);
         /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
@@ -2829,17 +2846,74 @@ export const OWNER_JS = `
         var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
         var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
-        var otherField=null, previewTurn=0, previewBtn=null;
+        var otherField=null, previewTurn=0, sig=JSON.stringify(order);
+        /* 12 Oct 2026 (his decision 6 of 11 Oct): THE CARD READS ITS OWN PREVIEW, once, when its order is opened, and again when an input is
+           changed; the Preview button is retired. A row of the list reads nothing (only the opened order draws a card), so the Desk is asked
+           once for an order he opens. A redraw of the card (a read that changed, a tap) keeps the quote it has, or waits on the one in
+           flight, and never asks again for the same figures. */
+        var qsay=el('p','salt-insight'), qfigs=el('div','maker-quote');
+        qsay.setAttribute('role','status');
+        function makerPlacedSay(text,bad){
+          qsay.className=bad?'msg':'salt-insight'; qsay.textContent=text; qfigs.textContent='';
+          var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
+        }
         /* any failed or in-flight preview, and any changed input, clears the usable quote/hash and takes Accept away:
            none of it is usable until a fresh exact-input preview succeeds (immediate safety requirement) */
         function makerPlacedInvalidate(){
           previewTurn++;
+          delete makerQuotes[order.id]; delete makerPv[order.id];
+          makerPlacedSay(makerPlacedDelivery()==null?'Choose the delivery charge, and the figures read themselves.':'The figures are read again when you finish.');
+        }
+        /* what the figures stand on: the goods total, the charge, and the window, which decides whether Accept goes to them for their yes */
+        function makerPlacedWin(){ return order.mode==='deliver'?((follower?(makerWin[group[0].id]||{}).value:win.value)||''):''; }
+        function makerPlacedKey(){
+          var d=makerPlacedDelivery();
+          return d==null?'':JSON.stringify([{total:Number(total.value),delivery:d},makerPlacedWin()]);
+        }
+        function makerPlacedShow(q){
+          qsay.className='salt-insight'; qsay.textContent='Figures read. Check the row before accepting.';
+          qfigs.textContent=''; makerPlacedReading(qfigs,q.result);
+          var old=card.querySelector('[data-accept]'); if(old) old.remove();
+          /* a sheet's lines take its first order's window, as they take its one delivery charge */
+          var wv=makerPlacedWin(), yes=makerNeedsYes(order,q.total,wv);
+          var accept=makerButton(card,[(yes?'Send for their yes at ':'Accept order at ')+rm(q.result.quote)+', delivery '+rm(q.result.delivery),yes?'order.send-yes':'order.accept'],function(){
+            var s=makerQuotes[order.id]; if(!s||!s.hash) return;
+            /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
+            if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
+              makerTap(order,'offer',ob,'Sent to them for their yes.'); return; }
+            var body={total:s.total,delivery:s.delivery,hash:s.hash};
+            if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
+            makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Order sent to the Desk for acknowledgement.',order.id);
+          },true); accept.setAttribute('data-accept','');
+        }
+        function makerPlacedRead(){
+          var delivery=makerPlacedDelivery();
+          if(delivery==null){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }
+          var payload={total:Number(total.value),delivery:delivery}, key=makerPlacedKey(), turn=++previewTurn;
+          /* an in-flight preview is not yet usable: clear any existing quote/Accept at once, not only on success */
           delete makerQuotes[order.id];
-          var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
-          var old=card.querySelector('.maker-quote'); if(old) old.remove();
-          if(previewBtn) previewBtn.disabled=deliver&&!chip.value;
+          makerPlacedSay('Reading the figures.');
+          var pv=makerPv[order.id];
+          if(!pv||pv.key!==key) pv=makerPv[order.id]={key:key,payload:payload,p:refs('/all/maker/orders/'+encodeURIComponent(order.id)+'/preview',payload)};
+          pv.p.then(function(result){
+            if(makerPv[order.id]===pv) delete makerPv[order.id];
+            if(turn!==previewTurn||!card.isConnected) return;
+            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash,offerHash:result.offerHash,result:result,key:key,sig:sig};
+            makerPlacedShow(makerQuotes[order.id]);
+          }).catch(function(error){
+            if(makerPv[order.id]===pv) delete makerPv[order.id];
+            if(turn!==previewTurn||!card.isConnected) return;
+            delete makerQuotes[order.id];
+            makerPlacedSay(error.message,true);
+            makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
+          });
         }
         total.addEventListener('input',makerPlacedInvalidate);
+        total.addEventListener('change',makerPlacedRead);
+        quoteStart=function(){
+          var held=makerQuotes[order.id];
+          if(held&&held.sig===sig&&held.key===makerPlacedKey()) makerPlacedShow(held); else makerPlacedRead();
+        };
         if(deliver){
           /* S11 11.3 on the Counter: the delivery charge is chosen where the order is agreed, RM 0, 10, 15 or his own
              figure, and NONE is chosen until he chooses, so a delivery is never agreed at a charge nobody set */
@@ -2852,7 +2926,7 @@ export const OWNER_JS = `
             radio.addEventListener('change',function(){
               chip.value=opt[0];
               if(otherField) otherField.closest('label').hidden=opt[0]!=='other';
-              makerPlacedInvalidate();
+              makerPlacedInvalidate(); makerPlacedRead();
             });
             face.appendChild(text); label.appendChild(radio); label.appendChild(face); grid.appendChild(label);
           });
@@ -2860,6 +2934,7 @@ export const OWNER_JS = `
           otherField=makerField(fieldset,['Other, RM','order.fee-other-amount'],'number',chip.other);
           otherField.closest('label').hidden=chip.value!=='other';
           otherField.addEventListener('input',function(){ chip.other=otherField.value; makerPlacedInvalidate(); });
+          otherField.addEventListener('change',makerPlacedRead);
           card.appendChild(fieldset);
         }
         /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
@@ -2880,8 +2955,8 @@ export const OWNER_JS = `
               var label=el('label','salt-option'), radio=el('input','salt-option__input'),
                   face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
               radio.type='radio'; radio.name='makerWin-'+order.id; radio.value=opt[0]; radio.checked=win.value===opt[0]; actOn(radio,opt[0]===''?'order.window-own':'order.window-'+opt[0].slice(11));
-              /* a window decides whether Accept goes to them for their yes, so a change asks for a fresh preview */
-              radio.addEventListener('change',function(){ win.value=opt[0]; makerPlacedInvalidate(); });
+              /* a window decides whether Accept goes to them for their yes, so a change reads the figures again */
+              radio.addEventListener('change',function(){ win.value=opt[0]; makerPlacedInvalidate(); makerPlacedRead(); });
               face.appendChild(text); label.appendChild(radio); label.appendChild(face); wgrid.appendChild(label);
             });
           }
@@ -2898,45 +2973,9 @@ export const OWNER_JS = `
           if(chip.value==='0'||chip.value==='10'||chip.value==='15') return Number(chip.value);
           return null;
         }
-        previewBtn=makerButton(card,['Preview','order.preview'],function(){
-          var delivery=makerPlacedDelivery();
-          if(delivery==null){ makerSay(order.id,'Choose the delivery charge first.'); return; }
-          var payload={total:Number(total.value),delivery:delivery}, turn=++previewTurn;
-          /* an in-flight preview is not yet usable: clear any existing quote/Accept at once, not only on success */
-          delete makerQuotes[order.id];
-          var oldAccept=card.querySelector('[data-accept]'); if(oldAccept) oldAccept.remove();
-          var oldNote=card.querySelector('.maker-quote'); if(oldNote) oldNote.remove();
-          refs('/all/maker/orders/'+encodeURIComponent(order.id)+'/preview',payload).then(function(result){
-            if(turn!==previewTurn||!card.isConnected) return;
-            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash,offerHash:result.offerHash};
-            var note=card.querySelector('.maker-quote'); if(!note){ note=el('div','maker-quote'); card.appendChild(note); }
-            note.textContent=''; note.appendChild(el('p','salt-insight','Preview ready. Check the row before accepting.'));
-            makerPlacedReading(note,result);
-            /* a sheet's lines take its first order's window, as they take its one delivery charge */
-            var wv=(follower?(makerWin[group[0].id]||{}).value:win.value)||'';
-            var yes=makerNeedsYes(order,payload.total,order.mode==='deliver'?wv:'');
-            var accept=card.querySelector('[data-accept]'); if(!accept){
-              accept=makerButton(card,[(yes?'Send for their yes at ':'Accept order at ')+rm(result.quote)+', delivery '+rm(result.delivery),yes?'order.send-yes':'order.accept'],function(){
-                var q=makerQuotes[order.id]; if(!q||!q.hash) return;
-                /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
-                if(yes){ var ob={total:q.total,delivery:q.delivery,hash:q.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
-                  makerTap(order,'offer',ob,'Sent to them for their yes.'); return; }
-                var body={total:q.total,delivery:q.delivery,hash:q.hash};
-                if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
-                makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Order sent to the Desk for acknowledgement.',order.id);
-              },true); accept.setAttribute('data-accept','');
-            }
-          }).catch(function(error){
-            if(turn!==previewTurn) return;
-            delete makerQuotes[order.id];
-            var stale=card.querySelector('[data-accept]'); if(stale) stale.remove();
-            var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); }
-            note.textContent=error.message;
-          });
-        },true);
-        if(deliver&&!chip.value) previewBtn.disabled=true;
+        card.appendChild(qsay); card.appendChild(qfigs);
       }else if(againAck){
-        makerAcceptAgain(card,order);
+        quoteStart=makerAcceptAgain(card,order);
       }else if(order.status==='acknowledged'){
         /* Ready says how the goods go, as the Desk's card does; the order book records the mode at Ready */
         [['collect','Ready to collect'],['deliver','Ready to deliver']].forEach(function(m){
@@ -2992,22 +3031,24 @@ export const OWNER_JS = `
       makerOrderMoves(card,order);
       if(order.status==='ready'&&!againAck)makerCashControls(card,order);
       makerFoot(card,order.id);
+      if(quoteStart) quoteStart();
       return card;
     }
   }
   /* the card of an order that is not open: one with a stage he rejected keeps its card until that stage is offered again or left; a closed
      order has its figures, and a question of theirs he has not answered its reply; cash held for it keeps its Undo (or its Retry) */
   function orderPlainCard(root,e){
-    var order=e.order, card=makerCard(root,e.id); card.setAttribute('data-in',e.parts); card.appendChild(el('h3','',e.id));
+    var order=e.order, again=null, card=makerCard(root,e.id); card.setAttribute('data-in',e.parts); card.appendChild(el('h3','',e.id));
     if(order){
       card.appendChild(el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status));
       card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
-      if(makerAgainAck(order)) makerAcceptAgain(card,order);
+      if(makerAgainAck(order)) again=makerAcceptAgain(card,order);
       makerAgain(card,order);
       if(orderAsked(order)) makerOrderMoves(card,order,true);
     }else card.setAttribute('data-key',e.id);
     if(makerCashHeld[e.id]) makerCashControls(card,order||{id:e.id});
     makerFoot(card,e.id);
+    if(again) again();
     return card;
   }
   /* the Desk's rows waiting for him and the entries the server holds, on Record > Approve */
