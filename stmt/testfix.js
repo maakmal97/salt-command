@@ -23,6 +23,7 @@
  */
 import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove, joinLive, poolUnits, POOL_ON_KV } from "./orders.js";
 import { refusal } from "./words.js";
+import { numbersOf } from "./paynum.js";
 
 export const TEST_USER = "0000-0000";
 export const TEST_LOCKED = "0000-0001";
@@ -31,7 +32,7 @@ export const TEST_PASS = "0000-0000-0000-0000";
 export const TESTS = { [TEST_USER]: "open", [TEST_LOCKED]: "locked" };
 export const TEST_USERS = Object.keys(TESTS);
 export const isTest = (u) => Object.prototype.hasOwnProperty.call(TESTS, String(u || ""));
-export const FIX_VERSION = 8;   /* 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
+export const FIX_VERSION = 9;   /* 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
 export const fixKey = (u) => "testfix:" + u;
 
 /** The fixture for this account as read, or null: a test account's alone, and only the one it was sealed for. */
@@ -261,6 +262,13 @@ export async function exampleRevoke(env, u, id) {
   r.revoked = true;
   await keep(env, u, fix);
   return { ref: r };
+}
+
+/** The invented account numbers the pay sheet shows a test account (Phase 7b): the fixture's `paynum`, {key: {number}}, through the
+ *  same whitelist as the real record, and {} with no fixture. The real record in KV `paynum` is never read for a test account. */
+export async function examplePaynum(env, u) {
+  const fix = await fixNow(env, u);
+  return numbersOf({ v: 1, accounts: (fix && fix.paynum) || null });
 }
 
 /** The fixture's bulletin, for a test account while he has none of his own set. */

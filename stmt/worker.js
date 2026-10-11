@@ -52,9 +52,10 @@ import { FONTS } from "./fonts.js";
 import { refusal, clip } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
+import { payNumbers } from "./paynum.js";
 import { takePin, keepPin, readPin } from "./pin.js";
 import { handleMaker, publicHours, customerAmend, takeNudge } from "./maker.js";
-import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, isExample,
+import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, examplePaynum, isExample,
   exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin, examplePlace } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
@@ -410,6 +411,14 @@ async function handleCustomer(request, env, p, m, ctx) {
   if (p === "/slip/key") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json({ ok: true, key: await slipPub(env) });
+  }
+  /* PHASE 7B (his yes of 11 Oct 2026): THE ACCOUNT NUMBERS THE PAY SHEET SHOWS beside the reference, from KV `paynum`, which only
+     `node tools/paysync.mjs --numbers` writes and git never holds (stmt/paynum.js whitelists it to `number` a key). On their
+     session alone, no-store; {} while none is filed. A test account is answered its fixture's invented number, and the real
+     record is never read for it. Not an /all route: the owner's read-only view never asks. */
+  if (p === "/pay/accounts") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    return json({ ok: true, accounts: isTest(u) ? await examplePaynum(env, u) : await payNumbers(env) });
   }
   /* S9 9.4, FOR THE CUSTOMER'S OWN THIS DEVICE CARD (9.9): their phones and computers, on their session, and signing the
      others out. The list carries no id and no address: the kind of device, when it came and was last used, whether it
@@ -1913,7 +1922,7 @@ export default {
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
     if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
-      || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
+      || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/pay/accounts" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
       || p === "/passkey/new" || p === "/passkey/save" || p === "/passkey/link" || p === "/passkey/wrap" || p === "/passkey/remove"
       || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m, ctx);
     /* v709: an associate's own links, on a session like the orders, and never under /all */

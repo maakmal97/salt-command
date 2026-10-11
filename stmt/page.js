@@ -347,7 +347,15 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .payseg{display:flex;gap:8px;margin-top:12px}
 .payseg .salt-ghost{flex:1 1 0;min-width:0}
 .payhow,.payinto,.payref{margin-top:18px}
-.payref .salt-ledger__value{display:inline-flex;align-items:center;gap:10px}
+.payref .salt-ledger__value{display:inline-flex;align-items:center;gap:10px;flex-wrap:nowrap}
+/* Phase 7b: the account number in fours, mono and tabular so the groups line up, on one line with its Copy (the label gives way and
+   wraps); his banks stand over the figure with the page's own gap; What this pays is the Plan recipe's fold, shut */
+.payref .acctno{font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.payinto+.salt-kpi{margin-top:18px}
+.paywhat{margin:14px 0 0}
+.paywhat>summary .salt-plan__title{grid-column:1 / -1}
+.paywhat .inv{margin-top:0}
+.paywhat .salt-ledger__row:last-child{border-bottom:0}
 .paycap{margin:0;flex-basis:100%;font-size:var(--salt-text-sm);line-height:1.5;color:var(--salt-prose)}
 #payFoot .salt-pill{flex:1 1 auto}
 /* S6 6.5: the one question on return, centred as the mockup draws it. S6 fix (rule 6): its heading is the Sheet's title
@@ -4783,9 +4791,33 @@ const CLIENT_JS = `
      then the two ways, Transfer or Scan a code, as the system's Option tiles. NO ACCOUNT IS CHOSEN FOR THEM: they
      choose which of his accounts to pay into, from the accounts payHref will link, so a suspended one is never
      offered. Their username is the reference, with Copy. Show the account number, or Show the code, opens the pay page
-     through payHref at that account, rail and figure; the Counter never carries a number and never names that page.
-     The figure is fixed as the sheet opens, so a poll landing while they pay cannot move it. */
+     through payHref at that account, rail and figure; the Counter never names that page.
+     PHASE 7B (his yes of 11 Oct 2026): HIS BANKS COME FIRST, then the figure, All or Part, and What this pays folded away, then the
+     way. With a bank chosen and Transfer, the sheet shows that bank's account number in fours with Copy (digits only) above the
+     reference. THE NUMBER COMES FROM THE COUNTER'S KV KEY paynum (GET /pay/accounts), written from his laptop by paysync --numbers,
+     NEVER FROM GIT: the repo is public, and stmt/pay.js holds names and rails only. With the number, I have paid goes straight to
+     Did you send and Open the payment page stays a ghost link; with none (or Scan a code) the filled pill is the link as before and
+     I am back moves to Did you send, so the question no longer waits on the page losing and regaining focus (blur and focus stay as
+     the fallback). The figure is fixed as the sheet opens, so a poll landing while they pay cannot move it. */
   var paySh=document.getElementById('paySheet'), payScr=document.getElementById('payScrim'), PS=null;
+  var PAYNUM={}, payNumAsked=false;
+  /* asked once a visit, on their own session (his read-only view has none and asks nothing); an answer that did not come lets the
+     next open ask again. The number shows only when it is 10 to 15 digits, whatever the Worker sent. */
+  function payNumLoad(){
+    if(payNumAsked||view||!session) return;
+    payNumAsked=true;
+    api('/pay/accounts').then(function(r){
+      var a=r.body&&r.body.ok&&r.body.accounts;
+      if(!a||typeof a!=='object'){ payNumAsked=false; return; }
+      PAYNUM=a;
+      if(PS&&PS.step==='pay'&&PS.acct) drawPay();
+    });
+  }
+  function numOf(key){
+    var x=PAYNUM[key], n=x&&typeof x.number==='string'?x.number:'';
+    return /^[0-9]{10,15}$/.test(n)?n:'';
+  }
+  function groupFours(n){ var o=[]; for(var i=0;i<n.length;i+=4) o.push(n.slice(i,i+4)); return o.join(' '); }
   var GL=__GLYPH__;
   function glyph(name,px){ var s=psym('_',px); s.setAttribute('class','psym glyph'); s.firstChild.setAttribute('d',GL[name]); return s; }
   /*__PAYHREF__*/
@@ -4802,7 +4834,8 @@ const CLIENT_JS = `
   function openPay(ctx){
     if(!paySh||view||!(ctx.fig>0.004)) return;
     /* S6 fix: Transfer is the way chosen as it opens, as the mockup draws it; the way is not the account, and no account is */
-    PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false};
+    PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false, what:false};
+    payNumLoad();
     payScr.hidden=false; paySh.hidden=false; drawPay();
     try{ paySh.focus(); }catch(e){}
   }
@@ -4910,12 +4943,21 @@ const CLIENT_JS = `
     if(PS.step==='check'){ drawPayCheck(); return; }
     var body=document.getElementById('payBody'), c=PS.ctx;
     body.textContent=''; payTitle();
-    body.appendChild(kpiTile('ember',tw(c.label),rm(c.fig),c.note()));
-    if(c.lines) body.appendChild(invNode(c.lines,true));
-    /* V5c: the pay sheet says in full what paying late can cost */
-    var lf=lateFull(); if(lf){ var lp=el('p','sub2',lf); lp.id='lateFull'; body.appendChild(lp); }
     if(c.kind==='order'&&PS.rail==='cod'&&readyDue(oFind(c.id))) PS.rail='transfer';
     var cash=PS.rail==='cod';
+    /* PHASE 7B: HIS BANKS FIRST, as the system's Option tiles, one tap each, none chosen; then the figure beside them */
+    if(PS.rail&&!cash){
+      var fi=el('fieldset','salt-options payinto'), gi=el('div','salt-options__grid salt-options__grid--2');
+      fi.id='payInto'; fi.appendChild(el('legend','salt-options__legend',tw('pay.into')));
+      payInto(PS.rail,payAmt()||c.fig).forEach(function(a){
+        var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'), tx=el('span','salt-option__text');
+        r.type='radio'; r.name='payInto'; r.value=a.key; r.checked=PS.acct===a.key;
+        r.addEventListener('change',function(){ PS.acct=a.key; drawPay(); });
+        tx.appendChild(el('span','salt-option__label',a.name)); face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); gi.appendChild(lab);
+      });
+      fi.appendChild(gi); body.appendChild(fi);
+    }
+    body.appendChild(kpiTile('ember',tw(c.label),rm(c.fig),c.note()));
     var seg=el('div','payseg');
     [[false,tw('pay.all',{rm:rm(c.fig)})],[true,tw('pay.part')]].forEach(function(x){
       var b=el('button','salt-ghost',x[1]); b.type='button'; b.setAttribute('aria-pressed',PS.part===x[0]?'true':'false');
@@ -4931,6 +4973,16 @@ const CLIENT_JS = `
       row.appendChild(inp); body.appendChild(row);
       body.appendChild(el('p','sub2',tw('pay.upTo',{rm:rm(c.fig)})));
     }
+    /* What this pays: the invoice's lines in the system's Plan recipe, shut, and as they left it across a redraw */
+    if(c.lines){
+      var wd=el('details','salt-plan paywhat'), ws=el('summary'), wb=el('div','salt-plan__body');
+      wd.id='payWhat'; wd.open=!!PS.what;
+      wd.addEventListener('toggle',function(){ if(PS) PS.what=wd.open; });
+      ws.appendChild(el('span','salt-plan__title',tw('pay.what')));
+      wb.appendChild(invNode(c.lines,true)); wd.appendChild(ws); wd.appendChild(wb); body.appendChild(wd);
+    }
+    /* V5c: the pay sheet says in full what paying late can cost */
+    var lf=lateFull(); if(lf){ var lp=el('p','sub2',lf); lp.id='lateFull'; body.appendChild(lp); }
     var fs=el('fieldset','salt-options payhow'), g=el('div','salt-options__grid');
     fs.appendChild(el('legend','salt-options__legend',tw('pay.how')));
     /* V2 (his C1): an order at Ready is due now, so its sheet offers no cash way, cash on handover chosen or not */
@@ -4945,29 +4997,29 @@ const CLIENT_JS = `
       face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); g.appendChild(lab);
     });
     fs.appendChild(g); body.appendChild(fs);
-    if(PS.rail&&!cash){
-      /* S6 fix: his accounts as the system's Option tiles, one tap each where a select took two or three, and none chosen */
-      var fi=el('fieldset','salt-options payinto'), gi=el('div','salt-options__grid salt-options__grid--2');
-      fi.id='payInto'; fi.appendChild(el('legend','salt-options__legend',tw('pay.into')));
-      payInto(PS.rail,payAmt()||c.fig).forEach(function(a){
-        var lab=el('label','salt-option'), r=el('input','salt-option__input'), face=el('span','salt-option__face'), tx=el('span','salt-option__text');
-        r.type='radio'; r.name='payInto'; r.value=a.key; r.checked=PS.acct===a.key;
-        r.addEventListener('change',function(){ PS.acct=a.key; drawPay(); });
-        tx.appendChild(el('span','salt-option__label',a.name)); face.appendChild(tx); lab.appendChild(r); lab.appendChild(face); gi.appendChild(lab);
+    /* the reference, and above it, with a bank chosen and Transfer, that bank's account number in fours; Copy puts digits alone
+       on the clipboard. The bank's name is the account's own from the rails (PAY), the one a banking app lists. */
+    var L=el('div','salt-ledger salt-ledger--plain payref'), said=statusLine(PS.said), ac=acct(PS.acct), num=PS.rail==='transfer'&&ac?numOf(PS.acct):'';
+    said.hidden=!PS.said;
+    function copyBtn(text,labelKey){
+      var b=el('button','salt-ghost'); b.type='button'; b.setAttribute('aria-label',tw(labelKey)); b.appendChild(glyph('copy',18));
+      b.addEventListener('click',async function(){
+        var t; try{ await navigator.clipboard.writeText(text); t=tw('pay.copied'); }catch(e){ t=tw('pay.copyFail'); }
+        if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
       });
-      fi.appendChild(gi); body.appendChild(fi);
+      return b;
     }
-    var L=el('div','salt-ledger salt-ledger--plain payref'), rr=lrow(tw('pay.ref'),user,tw('pay.refHint')),
-        cp=el('button','salt-ghost'); cp.type='button'; cp.setAttribute('aria-label',tw('pay.refCopy')); cp.appendChild(glyph('copy',18));
-    var said=statusLine(PS.said); said.hidden=!PS.said;
-    cp.addEventListener('click',async function(){
-      var t; try{ await navigator.clipboard.writeText(user); t=tw('pay.copied'); }catch(e){ t=tw('pay.copyFail'); }
-      if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
-    });
-    rr.querySelector('.salt-ledger__value').appendChild(cp);
+    if(num){
+      var nr=lrow(tw('pay.acctNo'),groupFours(num),ac.bank||ac.name); nr.id='payAcctNo';
+      var nv=nr.querySelector('.salt-ledger__value'); nv.className+=' acctno'; nv.appendChild(copyBtn(num,'pay.acctCopy')); L.appendChild(nr);
+    }
+    var rr=lrow(tw('pay.ref'),user,tw('pay.refHint')); rr.querySelector('.salt-ledger__value').appendChild(copyBtn(user,'pay.refCopy'));
     L.appendChild(rr); if(!cash){ body.appendChild(L); body.appendChild(said); }
     drawPayFoot();
   }
+  /* they have paid, or have been to the pay page and are back: the one question, with the figure, the way and the bank as they stand */
+  function payAway(a){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; payqPut(); }
+  function payAsk(a){ payAway(a); PS.step='check'; PS.said=''; drawPay(); }
   /* the one filled control, and above it what it opens or what is still to choose */
   function drawPayFoot(){
     var foot=document.getElementById('payFoot'), a=payAmt(), qr=PS.rail==='qr', word=tw(qr?'pay.showCode':'pay.showAcct'),
@@ -4980,11 +5032,26 @@ const CLIENT_JS = `
       if(PS.said){ var l=statusLine(PS.said); l.className+=' paysaid'; foot.appendChild(l); }
       return;
     }
-    foot.appendChild(el('p','paycap',href?tw(qr?'pay.opensCode':'pay.opensAcct')
+    /* PHASE 7B: THE PILL LIGHTS AS SOON AS A BANK IS CHOSEN. With its number on the sheet, I have paid goes straight to the question
+       and Open the payment page stays a ghost link; with none, and on Scan a code, the filled pill is the link as before and I am
+       back, a ghost, moves to the question without waiting on the page losing and regaining focus. */
+    var num=href&&PS.rail==='transfer'?numOf(PS.acct):'';
+    foot.appendChild(el('p','paycap',num?tw('pay.capNum'):href?tw(qr?'pay.opensCode':'pay.opensAcct')
       :!a?tw('pay.sayHowMuch',{rm:rm(PS.ctx.fig)}):tw(!PS.rail?'pay.chooseHow':'pay.chooseAcct')));
     var go;
-    if(href){ go=el('a','salt-pill salt-pill--md',word); go.href=href; go.target='_blank'; go.rel='noopener';
-      go.addEventListener('click',function(){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; payqPut(); }); }
+    if(num){
+      var op=el('a','salt-ghost',tw('pay.openPage')); op.id='payOpen'; op.href=href; op.target='_blank'; op.rel='noopener';
+      op.addEventListener('click',function(){ payAway(a); });
+      foot.appendChild(op);
+      go=el('button','salt-pill salt-pill--md',tw('pay.iPaid')); go.type='button';
+      go.addEventListener('click',function(){ payAsk(a); });
+    } else if(href){
+      var bk=el('button','salt-ghost',tw('pay.back')); bk.type='button'; bk.id='payReturn';
+      bk.addEventListener('click',function(){ payAsk(a); });
+      foot.appendChild(bk);
+      go=el('a','salt-pill salt-pill--md',word); go.href=href; go.target='_blank'; go.rel='noopener';
+      go.addEventListener('click',function(){ payAway(a); });
+    }
     else { go=el('button','salt-pill salt-pill--md',word); go.type='button'; go.disabled=true; }
     go.id='payGo'; foot.appendChild(go);
   }
@@ -5681,6 +5748,7 @@ const CLIENT_JS = `
     if(session){ await loadOrders(); await loadCounterHours(); if(stale()) return false; if(poll)clearInterval(poll); poll=setInterval(refresh, POLL_MS); if(TESTS.indexOf(user)>=0) bullRead(); }
     else if(view){ await loadView(user); if(stale()) return false; }   /* stmt/owner.js: his route alone carries it */
     setHold(); drawOrder(); drawPayHead();   /* S6 6.5 and 6.7: the claims come with the orders, and may lift the hold */
+    payNumLoad();   /* Phase 7b: the numbers the pay sheet shows, ready before it opens; asked on a session alone */
     if(session) payqBack();   /* S6 fix: a question the last open left unanswered */
     return true;
   }

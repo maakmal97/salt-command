@@ -8978,6 +8978,11 @@ await (async () => {
   await (await import("./counter-confirm-sheets.mjs")).run({ ok });
 })();
 
+section("Phase 7b: the pay sheet asks the bank first and shows the account number to copy, the number from the Counter's KV and never from git (11 Oct 2026)");
+await (async () => {
+  await (await import("./pay-number.mjs")).run({ ok, okOff, pageWork, KV });
+})();
+
 section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
@@ -10150,7 +10155,7 @@ await (async () => {
 
   /* THE RAILS SHIP WITHOUT A NUMBER. */
   const ship = shipAccounts({ accounts: [
-    { key: "x", name: "X", sub: "1234 5678", payload: "00020101021226", acct: "12345678", bank: "X Bank", mid: "123456", biller: "11445", ref1: "60111234567" },
+    { key: "x", name: "X", sub: "1234 5678", payload: "00020101", acct: "12345678", bank: "X Bank", mid: "123456", biller: "55511", ref1: "601112345" },
     { key: "y", name: "Y", bank: "Y Bank", maintenance: true }] });
   ok(ship.length === 2 && ship[0].qr && ship[0].transfer && ship[0].jompay && !ship[1].qr && ship[1].transfer && !ship[1].jompay && ship[1].maintenance,
     "a rail is derived from the record: a payload is a code, a bank is a transfer, a biller is JomPAY");
