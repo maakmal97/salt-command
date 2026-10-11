@@ -8956,6 +8956,11 @@ await (async () => {
     "the built desk carries one theme-color meta, the master's, starting at Tide's ground");
 })();
 
+section("the Counter wears Night or Tide, chosen per device (11 Oct 2026)");
+await (async () => {
+  await (await import("./counter-two-themes.mjs")).run({ ok });
+})();
+
 section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
