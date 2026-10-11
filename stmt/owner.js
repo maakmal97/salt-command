@@ -1102,6 +1102,8 @@ export const OWNER_JS = `
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
         if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
+        /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
+        if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
           cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
           if(error.detail.twin){makerClear(path);cancel.hidden=true;}
@@ -1320,6 +1322,15 @@ export const OWNER_JS = `
       items.forEach(function(item){var option=el('option',null,item.label);option.value=item.value;select.appendChild(option);});
       wrap.appendChild(title);wrap.appendChild(select);root.appendChild(wrap);return select;
     };
+    /* a row already booked with the same party, amount and date is asked about, as a trade is: he says it is a separate one, or nothing is sent */
+    var makerSecond=async function(send,path,body,what){
+      try{return await send(path,body);}
+      catch(error){
+        var twin=error.detail&&error.detail.twin&&error.detail.twin.second;
+        if(!twin||!window.confirm('A matching '+what+' is already booked. Record this as a separate '+what+'?'))throw error;
+        return send(path,Object.assign({},body,{at:new Date().toISOString(),second:twin}));
+      }
+    };
     var partyItems=parties.map(function(code){return {value:code,label:code};});
     var productItems=books.map(function(item){return {value:item.product,label:pshape(item.product)};});
     var loan=el('section','maker-input');loan.appendChild(el('h3',null,'Borrow or lend'));
@@ -1336,7 +1347,7 @@ export const OWNER_JS = `
       var body={at:new Date().toISOString(),form:loanForm.value,direction:loanDirection.value,
         code:loanParty.value,date:loanDate.value,amount:Number(loanAmount.value)};
       if(loanForm.value==='salt') body.product=loanProduct.value;
-      try{await send('/all/maker/inputs/loan',body);loanStatus.textContent='Sent for review. It changes the loan book only when approved and folded.';loadMaker();}
+      try{await makerSecond(send,'/all/maker/inputs/loan',body,'loan');loanStatus.textContent='Sent for review. It changes the loan book only when approved and folded.';loadMaker();}
       catch(error){loanStatus.textContent=error.message;}
     },true);
     var gift=el('section','maker-input');gift.appendChild(el('h3',null,'Gift'));
