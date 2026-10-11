@@ -17140,7 +17140,7 @@ await (async () => {
   const A = await drive(five);
   try {
     const lim = A.d.getElementById("oLimit");
-    ok(!!lim && lim.textContent === "You have 5 orders open, the most at one time. Cancel one, or wait for one to finish, and you can order again." && !A.d.getElementById("oNew"),
+    ok(!!lim && lim.textContent === "Five open orders is the most. Cancel one, or wait for one to finish, and you can order again." && !A.d.getElementById("oNew"),
       "at the limit the Order tab says so, in place of New order: " + JSON.stringify(lim && lim.textContent));
   } finally { A.w.close(); }
   /* one short of it, then refused because the fifth was filled from another phone */
@@ -17153,7 +17153,7 @@ await (async () => {
     /* F8 (Step 1a.2): the order is a tile, its figure under the mark, and its word stands beside the tile */
     const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => { const lab = r.querySelector(".salt-ledger__label"), tile = lab.querySelector(".mtile");
       return { tile: tile ? tile.querySelector(".sr").textContent + "|" + tile.querySelector(".mq").textContent : "", t: [...lab.children].filter((c) => c !== tile).map((c) => c.textContent).join(""), cancel: !!r.querySelector("button") }; });
-    ok(st.placed === 1 && /You have 5 orders open/.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
+    ok(st.placed === 1 && /^Five open orders is the most\./.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
       && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]" && rows.every((r) => r.tile === "Cube 1 unit|1")
       && rows.map((r) => r.t).join("|") === "Sent|Sent|Acknowledged|Acknowledged|Collected",
       "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));

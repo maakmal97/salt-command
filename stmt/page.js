@@ -3456,11 +3456,13 @@ const CLIENT_JS = `
      stmt/orders.js, carried here), and the refusal used to come after the form was filled and checked. With five open the
      sheet opens on the limit instead, naming the open orders, each with Cancel where the goods have not moved, and moves on
      to the form of its own accord once one is cancelled or finishes. */
-  function limitLine(n){ return tw('sh.limit',{n:n}); }
+  /* 11 Oct 2026: the limit is said in words, off the code's own MAX_OPEN ("Five open orders is the most"); past ten there is no word */
+  function numWord(n){ return has('en','num.'+n)?tw('num.'+n):String(n); }
+  function limitLine(){ return tw('sh.limit',{n:numWord(OMAX)}); }
   function drawLimit(){
     sheetHead(tw('sh.new'));
     var B=osh.body, open=oLive();
-    var say=el('p','salt-insight salt-insight--copper',limitLine(openN())); say.setAttribute('role','status'); B.appendChild(say);
+    var say=el('p','salt-insight salt-insight--copper',limitLine()); say.setAttribute('role','status'); B.appendChild(say);
     var L=el('div','salt-ledger salt-ledger--plain');
     open.forEach(function(o){
       var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
@@ -3705,7 +3707,7 @@ const CLIENT_JS = `
       /* S4 4.3: the form is a sheet now, laid over the page from here */
       top.appendChild(el('p','lead',tw('ord.lead')));
       var full=openN()>=OMAX;
-      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine(openN())); lim.id='oLimit'; top.appendChild(lim); }
+      if(full){ var lim=el('p','salt-insight salt-insight--copper',limitLine()); lim.id='oLimit'; top.appendChild(lim); }
       else {
         if(hoursError||counterHours&&!counterHours.open){
           top.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
