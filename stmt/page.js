@@ -1021,14 +1021,26 @@ function noticeCard(b) {
 }
 /* S9 9.2: SALT ACCOUNT'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
-const ADMIN_PLACES = [["needs", "Needs you"], ["accounts", "Accounts"], ["links", "Links"], ["maker", "Maker"], ["more", "More"]];
+/* 11 OCT 2026, HIS DECISION: FIVE PLACES, Needs you, Orders, Customers, Record and Shop. "Maker" is retired on screen. A place but Needs you has
+   its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
+const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
+const ADMIN_PARTS = {
+  orders: [["waiting", "Waiting on you"], ["agreed", "Agreed"], ["ready", "Ready"], ["group", "Group"], ["closed", "Closed"]],
+  customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
+  record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
+  shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"]]
+};
+/* a place's parts strip: every part is a control with an act of its own, part.<place>.<part> (docs/STATEMENTS.md) */
+const adminParts = (p) => '<div class="salt-tabs aparts" role="tablist" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
+  + ADMIN_PARTS[p].map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>";
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "Owes"], ["locked", "Refused"], ["none", "No account"]];
 const ADMIN_ICONS = {
   needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
-  accounts: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
-  links: '<path d="M10.2 13.8 L13.8 10.2 M8.6 11.4 L6.7 13.3 A3.3 3.3 0 0 0 11.4 18 L13.3 16.1 M10.7 7.9 L12.6 6 A3.3 3.3 0 0 1 17.3 10.7 L15.4 12.6"/>',
-  maker: '<path d="M5 4.5 H19 V19.5 H5 Z M8 8 H16 M8 11.5 H16 M8 15 H13"/>',
-  more: '<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>',
+  orders: '<path d="M5 4.5 H19 V19.5 H5 Z M8 8 H16 M8 11.5 H16 M8 15 H13"/>',
+  customers: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
+  record: '<path d="M4.6 19.4 L5.4 15.4 L15.4 5.4 A1.6 1.6 0 0 1 17.7 5.4 L18.6 6.3 A1.6 1.6 0 0 1 18.6 8.6 L8.6 18.6 Z M13.4 7.4 L16.6 10.6"/>',
+  shop: '<path d="M4 9.6 L5.6 4.6 H18.4 L20 9.6 M4 9.6 A2.67 2.67 0 0 0 9.33 9.6 A2.67 2.67 0 0 0 14.67 9.6 A2.67 2.67 0 0 0 20 9.6 M5.6 12.4 V19.4 H18.4 V12.4 M10 19.4 V15 H14 V19.4"/>',
   desk: '<rect x="3.4" y="5" width="17.2" height="11.6" rx="1.6"/><path d="M9 19.6 H15 M12 16.6 V19.6"/>',
   key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
 };
@@ -1093,7 +1105,8 @@ export function landingPage(user, nonce, owner, bulletin) {
     + (owner
       ? '<div id="roster" class="gate adm">'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
-           system's own switch): Needs you, Accounts, Links, More. A count beside a place is what waits there. */
+           system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
+           place is what waits there. */
         + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Account">'
         + '<div class="salt-rail__brand"><span class="aring">' + aico("key") + '</span><b class="salt-title">Salt Account</b></div>'
         + '<div class="salt-rail__group">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo place" data-m="' + m + '" data-act="nav.' + m + '">'
@@ -1101,8 +1114,11 @@ export function landingPage(user, nonce, owner, bulletin) {
           + '<span class="salt-rail__count" data-count="' + m + '"></span></button>').join("") + "</div>"
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
         + '<div class="amain">'
+        /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
+           ("orders" is every part of Orders, "orders.group" that part alone). The owner's script hides the rest (stmt/owner.js, go),
+           so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
-        + '<div id="mHome">'
+        + '<div id="mHome" data-in="needs">'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
@@ -1113,11 +1129,32 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="nwait" id="nDesk" hidden>' + aico("desk") + '<span id="nDeskT"></span></p>'
         + '</div><div id="nopen" hidden></div></div>'
         + "</div>"
-        /* S9 9.2: ACCOUNTS, one list for what Send and Review were: found by a word, narrowed by a filter, and a
-           row opens the account beside the list from 1080px, in its place below it on a phone */
-        + '<div id="oAccts" hidden>'
+        /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
+           (#makerReview); Order for them, opened from an account, stands at the head of the place. */
+        + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
-        + "<h1>Accounts</h1>"
+        + "<h1>Orders</h1>"
+        + '<p class="lead">Counter orders by stage. Each answer is checked by the Desk before it reaches the ledger.</p>'
+        + adminParts("orders")
+        + '<div class="abody">'
+        + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
+        + '<section data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
+        + '<p class="lead" id="makerReviewStatus">Reading orders…</p>'
+        + '<div id="makerReview"></div></section>'
+        + '<section data-in="orders.waiting" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Account claims</h2><div id="makerClaims" aria-live="polite"></div></section>'
+        + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
+        + '<p class="lead">A product and size customers can join, with a target. Reaching it closes nothing: Close does, and sends each joined order for acknowledgement.</p>'
+        + '<div id="makerPools" aria-live="polite"></div></section>'
+        + "</div></div>"
+        /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
+           filter, and a row opens the account beside the list from 1080px, in its place below it on a phone. */
+        + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + "<h1>Customers</h1>"
+        + '<p class="lead">The people on the site: their accounts, their messages, guest links and associates.</p>'
+        + adminParts("customers")
+        + '<div class="abody">'
+        + '<div id="oAccts" data-in="customers.accounts">'
         + '<p class="lead" id="scount"></p>'
         + '<div class="afind">'
         + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
@@ -1127,8 +1164,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "</div>"
         + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div></div>'
         + "</div>"
-        + '<div id="oLinks" hidden>'
-        + "<h1>Guest links</h1>"
+        + '<section data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Chat</h2>'
+        + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'
+        + '<div id="makerChatList"></div><div id="makerChatOpen" hidden></div></section>'
+        + '<div id="oLinks" data-in="customers.links">'
+        + "<h2>Guest links</h2>"
         + '<p class="lead">A link shows one board and nothing else: no statement, no '
         + "order, no account. The id in the link is what opens it, so it is the key.</p>"
         + '<p class="lead">Name the customer introducing them and '
@@ -1143,47 +1183,43 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake" data-act="link.make">Make a link</button>'
         + '<div id="glist"></div>'
         + "</div>"
-        + '<div id="oMore" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
-        + "<h1>More</h1>"
-        + '<p class="lead" id="mCount">' + owner.accounts.filter((a) => !a.test).length + " accounts on the site.</p>"
-        + '<div class="rlist" id="mItems">'
-        + '<button type="button" data-m="cards" data-act="more.cards">Associates report card'
-        + "<span>what each has brought you, and what they have earned</span></button>"
-        + "</div>"
-        + '<div id="mTest" class="mtest"></div>'
-        + "</div>"
-        + '<div id="oCards" hidden>'
-        + '<button type="button" data-back="more" data-act="more.back">' + "← More" + "</button>"
-        + "<h1>Associates report card</h1>"
+        + '<div id="oCards" data-in="customers.associates">'
+        + "<h2>Associates report card</h2>"
         + '<p class="lead" id="ccount"></p>'
         + '<div id="clist"></div>'
         + "</div>"
-        + '<div id="oMaker" hidden>'
-        + "<h1>Maker</h1>"
-        + '<p class="lead">Review Counter orders and Desk rows together. Changes are checked by the Desk before they reach the ledger.</p>'
-        + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
-        + '<section id="makerInputs" aria-label="Desk inputs"><h2>Desk inputs</h2></section>'
-        + '<section aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Chat</h2>'
-        + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'
-        + '<div id="makerChatList"></div><div id="makerChatOpen" hidden></div></section>'
-        + '<section aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle">Notice</h2>'
-        + '<p class="lead">One still notice on every customer account. Set wakes their phones; clear does not.</p>'
-        + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<section aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
-        + '<p class="lead">A product and size customers can join, with a target. Reaching it closes nothing: Close does, and sends each joined order for acknowledgement.</p>'
-        + '<div id="makerPools" aria-live="polite"></div></section>'
-        + '<section aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Operating hours</h2>'
-        + '<p class="lead" id="makerHoursStatus">Reading hours…</p>'
-        + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
-        + '<section aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
-        + '<p class="lead" id="makerReviewStatus">Reading orders and rows…</p>'
-        + '<div id="makerReview"></div>'
+        + "</div></div>"
+        /* RECORD: his own entries. Approve is the Desk's rows waiting for him and the entries the server holds; the other three parts
+           are the forms, which the Desk checks and holds for review before they change the book. */
+        + '<div id="oRecord" class="aplace" data-in="record" hidden>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + "<h1>Record</h1>"
+        + '<p class="lead">Your own entries. Each is checked by the Desk and waits for review before it changes the book.</p>'
+        + adminParts("record")
+        + '<div class="abody">'
+        + '<section data-in="record.approve" aria-labelledby="makerDraftTitle"><h2 id="makerDraftTitle">Desk rows</h2>'
+        + '<p class="lead" id="makerDraftStatus">Reading rows…</p>'
+        + '<div id="makerDrafts"></div>'
         + '<h3 id="makerQueueTitle">Server-held queue</h3>'
         + '<p class="lead">Only entries already uploaded to the Desk server appear here. The Counter cannot read a device’s unsent queue; Cancel retained input is local only, not server withdrawal.</p>'
         + '<div id="makerQueueReview" aria-live="polite"></div></section>'
-        + '<section aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Account claims</h2><div id="makerClaims" aria-live="polite"></div></section>'
-        + "</div>"
+        + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Desk inputs"><h2>Desk inputs</h2></section>'
+        + "</div></div>"
+        /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
+        + '<div id="oShop" class="aplace" data-in="shop" hidden>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + "<h1>Shop</h1>"
+        + '<p class="lead">The counter itself: its hours, the notice and the practice accounts.</p>'
+        + adminParts("shop")
+        + '<div class="abody">'
+        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Operating hours</h2>'
+        + '<p class="lead" id="makerHoursStatus">Reading hours…</p>'
+        + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
+        + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle">Notice</h2>'
+        + '<p class="lead">One still notice on every customer account. Set wakes their phones; clear does not.</p>'
+        + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
+        + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
+        + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
         + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '" data-act="nav.' + m + '">'
           + '<span class="salt-appbar__icon">' + aico(m) + '</span><span class="salt-appbar__label">' + w + "</span>"
@@ -2243,7 +2279,9 @@ const CLIENT_JS = `
      a place a reader was in is where the page opens again; only a tap writes it, and only over an address that is
      empty or a place's, never over a key the Keep Sheet wrote there (S3 3.10). ---- */
   function placeOf(h){ var m=/^#([a-z]+)$/.exec(h||''), p=m&&PLACES.filter(function(x){ return x[2]===m[1]; })[0]; return p?p[0]:''; }
-  var wantPlace=placeOf(location.hash);
+  /* 11 Oct 2026: on his page the address is his own (#orders, #record, ...), so a customer's place is never read off it, and the
+     account he opens to view always opens on Home */
+  var wantPlace=OWNER?'':placeOf(location.hash);
   function placeShow(t,tapped){
     if(!PANEL[t]||placeBtns(t)[0].hidden) t='home';
     sheetClose();
