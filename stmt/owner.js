@@ -3323,7 +3323,9 @@ export const OWNER_JS = `
      read, so a card and the place it opens never disagree: ordWaits is the Orders part Waiting on you. ---- */
   function ordOpen(o){ return ['placed','acknowledged','ready'].indexOf(o.status)>=0; }
   function ordPays(o){ return ordOpen(o)?(o.payments||[]).filter(function(p){ return p.claim==='waiting'; }):[]; }
-  function ordWaits(o){ return ordOpen(o)?orderPartsOf(o).indexOf('orders.waiting')>=0:!o.test&&!!(o.again&&o.again.length); }
+  function ordWaits(o){ return orderPartsOf(o).indexOf('orders.waiting')>=0; }
+  /* an order's Open goes to Orders > Waiting on you with that order's card open (Phase 1c) */
+  function orderOpener(id){ return function(){ showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }
   function orderWhat(o){ return (o.product||'')+', '+unitsOf(o.qty)+', '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
@@ -3444,8 +3446,13 @@ export const OWNER_JS = `
     var L=[], real=sheetRows.filter(function(a){ return !a.test; }), orders=makerData&&makerData.orders||[];
     needN=0;
     orders.filter(ordWaits).forEach(function(o){
-      var who=codeByUser(o.u), t=!!o.test, to=goPlace('orders','waiting'), pays=ordPays(o);
+      var who=codeByUser(o.u), t=!!o.test, to=orderOpener(o.id), pays=ordPays(o);
       if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, what:orderWhat(o), practice:t, open:to}));
+      /* a question of theirs on the order that he has not answered (the Worker's awaitingAnswer), as an account's thread is Now when asked */
+      if(orderAsked(o)){
+        var last=o.msgs[o.msgs.length-1];
+        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, what:cut(last.text), why:'On order '+o.id+'.', practice:t, open:to}));
+      }
       if(pays.length){
         var sum=pays.reduce(function(s,p){ return s+(+p.amount||0); },0), first=pays.map(function(p){ return p.at||''; }).filter(Boolean).sort()[0]||'';
         L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, what:'says they sent '+rm(sum)+', order '+o.id, practice:t, open:to}));
@@ -3548,6 +3555,8 @@ export const OWNER_JS = `
   }
   function tickPlace(){
     if(document.hidden||(placeNow!=='needs'&&placeNow!=='orders')){ needsWatch(); return; }
+    /* viewing an account as them hides this page (stmt/page.js): nothing is read for a page nobody is looking at, and the read goes on when he is back */
+    if(roster.hidden) return;
     if(placeNow==='needs') readNeeds(true);
     else { loadMaker(true); loadMakerClaims(true); }
   }

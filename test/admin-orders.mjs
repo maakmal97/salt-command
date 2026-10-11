@@ -65,6 +65,13 @@ export async function run({ ok, pageWork }) {
     p.tick = async () => { const t = p.live()[0]; if (t) t.f(); await p.work.quiet(); return !!t; };
     p.counts = () => Object.fromEntries([...d.querySelectorAll(".salt-rail [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.needs = () => [...d.querySelectorAll("#nlist [data-need]")].map((c) => c.getAttribute("data-need"));
+    p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
+    p.where = () => {
+      const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
+      const strip = d.querySelector('.aparts[data-place="' + place + '"]');
+      const part = strip && (strip.querySelector('[aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
+      return place + (part ? "/" + part : "");
+    };
     return p;
   };
 
@@ -196,5 +203,77 @@ export async function run({ ok, pageWork }) {
     const grid = d.querySelector("#oSplit .ordgrid");
     ok(!!grid && [...grid.children].map((c) => c.id).join() === "makerOrderList,makerReview" && !!d.querySelector("#oOrders #oSplit"),
       "the list comes first in the markup and the card second, in the section that Orders' four stages show: " + (grid && [...grid.children].map((c) => c.id).join()));
+  }
+
+  /* 5. A CUSTOMER'S QUESTION ON AN ORDER is a Now card on Needs you, counted as an account thread's is */
+  const base = await open(state());
+  const baseCount = { needs: +base.counts().needs, orders: +base.counts().orders, customers: base.counts().customers };
+  const baseLine = base.d.getElementById("nCount").textContent;
+  base.w.close();
+  const nowOf = (line) => +(/^([0-9]+) now/.exec(line) || [])[1];
+  st = state(); st.asked = true;
+  p = await open(st);
+  try {
+    const d = p.d, card = (k) => d.querySelector('#nlist [data-need="' + k + '"]');
+    const c1 = card("om:ord-r1"), c9 = card("om:ord-c9"), ex = card("om:ex-2");
+    ok(!!c1 && c1.getAttribute("data-sev") === "now" && c1.getAttribute("data-kind") === "messages" && c1.querySelector(".salt-action__kind").textContent === "Message"
+      && c1.querySelector(".need-who").textContent === "CX1-ZED" && c1.querySelector(".need-what").textContent === "Can it be before three?"
+      && /^On order ord-r1[.]$/.test(c1.querySelector(".salt-action__why").textContent) && c1.querySelector(".salt-action__money").textContent === "2 h",
+    "a question of theirs on an order, unanswered, is a Now card: the Message kind, who by code, their words, which order and how long: " + (c1 && c1.textContent));
+    ok(!!c9 && c9.getAttribute("data-sev") === "now" && c9.querySelector(".need-what").textContent === "Why was it declined?" && c9.querySelector(".salt-action__money").textContent === "1 h",
+      "and so is one on an order that is closed: " + (c9 && c9.textContent));
+    ok(!!ex && ex.hasAttribute("data-practice") && /Practice/.test(ex.querySelector(".need-who").parentElement.textContent),
+      "and a practice account's is drawn and labelled Practice");
+    const now = p.counts();
+    ok(+now.needs === baseCount.needs + 2 && +now.orders === baseCount.orders + 2 && now.customers === baseCount.customers,
+      "it is counted on Needs you and on Orders, the two real ones and not the practice one, and Customers (the threads) is as it was: " + JSON.stringify([baseCount, now]));
+    ok(nowOf(d.getElementById("nCount").textContent) === nowOf(baseLine) + 2, "the line under the title counts it: " + d.getElementById("nCount").textContent);
+    await p.tap("need.kind.messages");
+    ok(["om:ord-r1", "om:ord-c9", "om:ex-2"].every((k) => !!card(k)) && p.needs().every((k) => /^(m|om):/.test(k)), "the Messages chip shows it beside the account threads: " + p.needs().join());
+    await p.tap("need.kind.all");
+    ok(!!card("om:ord-r1"), "and All shows it again");
+    await p.tap("need.open", "om:ord-r1");
+    ok(p.where() === "orders/waiting" && same(p.cardsIn(), ["ord-r1"]) && byAct(d, "order.open", "ord-r1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open"),
+      "its Open goes to Orders, Waiting on you, with that order's card open and its row marked: " + p.where() + " " + JSON.stringify(p.cardsIn()));
+    ok(p.rowsShown().includes("ord-r1") && p.rowsShown().includes("ord-c9") && p.rowsShown().includes("ex-2")
+      && /Asked/.test(byAct(d, "order.open", "ord-r1").textContent) && /Asked/.test(byAct(d, "order.open", "ord-c9").textContent) && /Practice/.test(byAct(d, "order.open", "ex-2").textContent),
+    "Waiting on you lists the order with its question, marked Asked, the closed one as well, and the practice one marked Practice: " + p.rowsShown().join());
+    await p.tap("nav.needs");
+    await p.tap("need.open", "om:ord-c9");
+    const reply = p.acts("ord-c9");
+    ok(p.where() === "orders/waiting" && same(p.cardsIn(), ["ord-c9"]) && ["order.reply-text", "order.quick-keep", "order.reply", "order.no-reply"].every((a) => reply.includes(a))
+      && !reply.some((a) => ["order.reason", "order.decline", "order.cancel", "order.received", "order.amend", "order.handed", "order.close", "order.cash"].includes(a)),
+    "a closed order's card is his reply and No reply needed alone, nothing to decline, cancel or move: " + JSON.stringify(reply));
+    p.posts.length = 0;
+    byAct(d, "order.no-reply", "ord-c9").click(); await p.work.quiet();
+    const moves = p.posts.filter((x) => /orders[/]ord-c9[/]move$/.test(x.route));
+    ok(moves.length === 1 && moves[0].body.noReply === true && /^[0-9a-f]{32}$/.test(moves[0].body.rid),
+      "and No reply needed sends the move it sent, under a request id: " + JSON.stringify(moves));
+  } finally { p.w.close(); }
+  for (const [name, patch] of [["he has answered it", { answered: true }], ["he has marked it as needing no reply", { quiet: true }]]) {
+    st = state(); Object.assign(st, patch);
+    p = await open(st);
+    try {
+      const c = p.counts();
+      ok(!p.d.querySelector('#nlist [data-need="om:ord-r1"]') && +c.needs === baseCount.needs && +c.orders === baseCount.orders,
+        "no question is asked of him once " + name + ": no card, and no count (" + JSON.stringify(c) + ")");
+    } finally { p.w.close(); }
+  }
+
+  /* 6. THE 30-SECOND READ IS SILENT WHILE AN ACCOUNT IS VIEWED AS THEM: the page hides his own (stmt/page.js show()) and nobody is looking at it */
+  for (const place of ["needs", "orders"]) {
+    p = await open();
+    try {
+      const d = p.d, roster = d.getElementById("roster");
+      if (place === "orders") await p.enter();
+      ok(p.where().split("/")[0] === place && p.live().length === 1, place + " sets the one 30-second read: " + p.where());
+      p.reads.length = 0;
+      roster.hidden = true;
+      await p.tick(); await p.tick();
+      ok(p.reads.length === 0 && p.posts.length === 0, "while an account is viewed as them a tick on " + place + " reads nothing: " + JSON.stringify(p.reads));
+      roster.hidden = false;
+      await p.tick();
+      ok(p.reads.includes(ROUTES.review) && p.reads.includes(ROUTES.claims), "and it reads again the moment his page is back: " + JSON.stringify(p.reads));
+    } finally { p.w.close(); }
   }
 }

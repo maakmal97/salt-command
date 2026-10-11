@@ -160,5 +160,77 @@
   "file": "stmt/page.js",
   "find": "<div class=\"ordgrid\"><div id=\"makerOrderList\" class=\"ordlist\"></div><div id=\"makerReview\" class=\"ordopen\"></div></div>",
   "replace": "<div class=\"ordgrid\"><div id=\"makerReview\" class=\"ordopen\"></div><div id=\"makerOrderList\" class=\"ordlist\"></div></div>"
+ },
+ {
+  "name": "a question on an order is no card on Needs you",
+  "file": "stmt/owner.js",
+  "find": "        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, what:cut(last.text), why:'On order '+o.id+'.', practice:t, open:to}));",
+  "replace": ""
+ },
+ {
+  "name": "a question on an order is Soon, not Now",
+  "file": "stmt/owner.js",
+  "find": "L.push(item('now','messages','Message','om:'",
+  "replace": "L.push(item('soon','messages','Message','om:'"
+ },
+ {
+  "name": "a question on an order is not a Message",
+  "file": "stmt/owner.js",
+  "find": "L.push(item('now','messages','Message','om:'",
+  "replace": "L.push(item('now','orders','Order','om:'"
+ },
+ {
+  "name": "a practice order's question is counted",
+  "file": "stmt/owner.js",
+  "find": "why:'On order '+o.id+'.', practice:t,",
+  "replace": "why:'On order '+o.id+'.', practice:false,"
+ },
+ {
+  "name": "a question on a closed order is not asked of him",
+  "file": "stmt/owner.js",
+  "find": "      if(again||orderAsked(order)) t.push('orders.waiting');\n      t.push('orders.closed');",
+  "replace": "      if(again) t.push('orders.waiting');\n      t.push('orders.closed');"
+ },
+ {
+  "name": "a question on an open order does not wait on him",
+  "file": "stmt/owner.js",
+  "find": "||again||orderAsked(order)) t.push('orders.waiting');\n      if(order.status==='acknowledged')",
+  "replace": "||again) t.push('orders.waiting');\n      if(order.status==='acknowledged')"
+ },
+ {
+  "name": "an answered question is still asked",
+  "file": "stmt/owner.js",
+  "find": "return !!(last&&last.by==='customer'&&!(order.quiet",
+  "replace": "return !!(last&&!(order.quiet"
+ },
+ {
+  "name": "a question he marked as needing no reply is still asked",
+  "file": "stmt/owner.js",
+  "find": "last.by==='customer'&&!(order.quiet&&String(order.quiet)>=String(last.at)));",
+  "replace": "last.by==='customer');"
+ },
+ {
+  "name": "Open does not open the order's card",
+  "file": "stmt/owner.js",
+  "find": "showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }",
+  "replace": "showPlace('orders','waiting',{fresh:true, push:true}); }; }"
+ },
+ {
+  "name": "Open goes to the wrong part of Orders",
+  "file": "stmt/owner.js",
+  "find": "showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }",
+  "replace": "showPlace('orders','ready',{fresh:true, push:true}); openOrder(id); }; }"
+ },
+ {
+  "name": "the 30-second read goes on while an account is viewed as them",
+  "file": "stmt/owner.js",
+  "find": "    if(roster.hidden) return;\n",
+  "replace": ""
+ },
+ {
+  "name": "the 30-second read is silent on Needs you only",
+  "file": "stmt/owner.js",
+  "find": "    if(roster.hidden) return;\n",
+  "replace": "    if(roster.hidden&&placeNow==='needs') return;\n"
  }
 ]

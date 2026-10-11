@@ -1450,12 +1450,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   ledger, and an eyebrow carrying the name undid that.
 - **Needs you is a ranked inbox** (Phase 1b, 11 Oct 2026): every thing that waits on him is one card on the system's Action recipe
   (`salt-action`, coloured by its `--salt-sev`), headed Now, Soon or Watch, the oldest first in each. **Now** is a customer waiting:
-  an order placed, a payment they say they sent (on an order, summed and as old as its oldest, or against the account), a message asked,
-  an account refused at an address. **Soon** is his own work: a Desk row to approve, an entry that did not get through (the drafter's
+  an order placed, a payment they say they sent (on an order, summed and as old as its oldest, or against the account), a message asked
+  (an account's thread, or a question of theirs on an order, open or closed, that he has not answered and not marked No reply needed:
+  the Worker's `awaitingAnswer`, kind Messages, `om:<order>`, which is also what puts that order in Orders > Waiting on you), an account refused at an address. **Soon** is his own work: a Desk row to approve, an entry that did not get through (the drafter's
   refusal, a refused server-held entry), a stage he rejected under Approve, a guest link, an ID with no account, accounts nobody has been
   sent. **Watch** is the Desk's own count line, an override in force ("Closed until Fri 18:00") and a notice set. A card is its kind word,
   who (the code), what (book, units, RM), its age (minutes under the hour, hours to two days, then days) and one **Open** that goes to the
-  detail by `showPlace`: an order or a payment to Orders > Waiting on you, a message to Customers > Messages with that thread open, an
+  detail by `showPlace`: an order, a payment on an order or a question on an order to Orders > Waiting on you with that order's card open, a message to Customers > Messages with that thread open, an
   account beside the list on a desktop and on Accounts on a phone, a link to Customers > Links, a row or an entry to Record > Approve, the
   hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
   tap**: Approve row or Approve trip on a Desk row is Record > Approve's own function (`approveDraft`: the same question, the same request,
@@ -1469,7 +1470,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   what waits on him there (the orders and the account claims), Customers the threads asked and the links waiting, Record the rows waiting,
   Shop none, the same on the rail and the bar and never a practice item. **It is read on entering and again every 30 seconds while it
   shows**, as Orders is: the orders and rows, the claims, the threads, the hours, the notice, and (after the page has read them once) the
-  accounts and the links; the poll stops when another place shows or the page is hidden, and a page that comes back reads at once. **It also stops
+  accounts and the links; the poll stops when another place shows or the page is hidden, and a page that comes back reads at once. **A tick reads
+  nothing while an account is viewed as them**: the page hides his own then (`#roster` hidden), nobody is looking at it, and the read goes on the
+  moment he is back (`tickPlace`). **It also stops
   when his Access sign-in ends**: the read that meets the lapse gives the page way to Sign in again (`ended()`), which clears the poll, and
   nothing sets it again on that page, so no further request goes to the login. No read
   starts while another of its kind is out (the newest review wins), a read that finds what it found last time draws nothing, and on
@@ -2130,7 +2133,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.link-approve` | Same card | Approves the link, which then opens. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
-| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Shop. |
+| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Shop. |
 | `need.send-later` | Same card | Send, switched off until the account exists. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
