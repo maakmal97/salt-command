@@ -8895,6 +8895,22 @@ await (async () => {
     const a2 = state(r1.w);
     ok(a2.theme === "night" && a2.bar === NIGHT.obsidian && a2.kept === "night" && a2.held === "night", `and back to Night the same way (read ${JSON.stringify(a2)})`);
     ok(r1.w.document === doc && r1.w.__same === 1, "with no reload: the same document and the same window, and nothing asked");
+    /* 5b. on Enter a switch is CSS alone: the part is not drawn again, so what is typed stays. On a part that holds a chart or the map it is drawn once. */
+    const en = await open({ "salt-look": "night" });
+    let draws = 0;
+    const draw = en.w.render;
+    en.w.render = function () { draws++; return draw.apply(this, arguments); };
+    en.w.eval("setProd('salt');recompute();switchTab('add');");
+    const qty = en.w.document.getElementById("wbQty");
+    qty.value = "7.5";
+    draws = 0;
+    en.w.document.querySelector('.look-switch [data-look="tide"]').click();
+    ok(qty && en.w.document.documentElement.getAttribute("data-theme") === "tide" && draws === 0 && en.w.document.getElementById("wbQty") === qty && qty.value === "7.5",
+      `a switch while Enter is open does not draw it again: the typed quantity and its field are kept (draws ${draws}, kept ${en.w.document.getElementById("wbQty") === qty ? qty.value : "a new field"})`);
+    en.w.eval("switchTab('today')");
+    draws = 0;
+    en.w.document.querySelector('.look-switch [data-look="night"]').click();
+    ok(draws === 1 && en.errs.length === 0, `while a part with a chart is open the same switch draws it once, so the chart takes the new tokens (draws ${draws}; errors ${en.errs.join(" | ") || "none"})`);
     /* 6. a store that cannot be read: Tide, no error, no sheet (the answer could not be kept), and the session still switches */
     const { JSDOM } = await import("jsdom");
     const bare = new JSDOM('<!doctype html><html><head><meta name="theme-color" content="#000000"></head><body></body></html>', { runScripts: "outside-only",
