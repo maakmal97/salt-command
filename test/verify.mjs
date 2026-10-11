@@ -29593,6 +29593,57 @@ await (async () => {
     ok(order() === before, "after the Sheet and a Log out the door stands as it did, the form above I have a sign-in code: " + order());
   } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
 })();
+section("Stress R3 (11 Oct 2026): the door's password is cleared once it has signed them in, so a lapse opens the signed-out Sheet with the username and never the password");
+await (async () => {
+  /* The stress triage's R3. The submit read pw.value, opened the account and left the field as it was, so a phone that lapsed
+     with Keep me signed in off opened the signed-out Sheet with the username and the whole password filled in: the next
+     person to tap Sign in was in. Only Log out cleared it. A refusal keeps what was typed, to be corrected. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { JSDOM } = await import("jsdom");
+  const u = "aaaa-rrrr", pass = "2345-6789-abcd-efgr", ck = await C.contentKey("4".repeat(64), u);
+  const env = await C.encryptWith(ck, JSON.stringify({ v: 1, statements: [{ issued: "2026-09-24", label: "24 September 2026", body: "<p>Mine</p>" }] }));
+  const st = { dead: new Set(), n: 0, last: "" };
+  let work;
+  const dom = new JSDOM(landingPage(u, "nr3", null).replace("var POLL_MS=10000", "var POLL_MS=40"), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true,
+    beforeParse(win) {
+      try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
+      win.scrollTo = () => {};
+      win.fetch = async (p, init) => {
+        const s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
+        const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), env, live: null, prices: null, session: (st.last = "sessR" + (++st.n) + "0000000000000000000000") });
+        if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
+        return ans(200, { ok: true, orders: [] });
+      };
+      work = pageWork(win);
+    } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const pw = () => D.getElementById("pw"), un = () => D.getElementById("un");
+  const submit = () => D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+  try {
+    D.getElementById("rem").checked = false;
+    D.getElementById("pwShow").click();   /* Show is on, as a customer checking what they typed leaves it */
+    pw().value = "2345-6789-abcd-efgh"; submit();
+    await work.quiet();
+    ok(pw().value === "2345-6789-abcd-efgh", "the fixture and a refusal: a password that was not accepted stays in the field, to be corrected");
+    pw().value = pass; submit();
+    await until(() => !D.getElementById("barw").hidden); await work.quiet();
+    ok(pw().value === "" && pw().type === "password" && un().value === u,
+      "once the password has signed them in the field is empty and hidden again, and the username stays: " + JSON.stringify({ pw: pw().value.length, type: pw().type, un: un().value }));
+    st.dead.add(st.last);
+    await until(() => !D.getElementById("outSheet").hidden);
+    ok(!D.getElementById("outSheet").hidden && D.getElementById("outSheet").contains(D.getElementById("doorBox")) && un().value === u && pw().value === "",
+      "a lapse with nothing remembered opens the signed-out Sheet with the username filled and the password asked for: " + JSON.stringify({ un: un().value, pw: pw().value.length }));
+    /* and a password typed at the door and never used goes with the phone's sign out */
+    D.getElementById("outX").click();
+    pw().value = "typed-and-left"; D.getElementById("pwShow").click();
+    D.getElementById("lock").click();
+    await until(() => !D.getElementById("gate").hidden);
+    ok(pw().value === "" && pw().type === "password", "Sign out clears a password left in the field and hides it again: " + JSON.stringify({ pw: pw().value.length, type: pw().type }));
+  } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
+})();
 section("S3 fix: the signed-out Sheet carries the help line and I have a sign-in code, and a code opened there keeps what they were doing");
 await (async () => {
   /* S3R-6 (24 Sep 2026). The Sheet carried the password form alone, so a customer who came in by link and never had a

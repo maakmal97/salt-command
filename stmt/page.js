@@ -5181,6 +5181,8 @@ const CLIENT_JS = `
     var keep=!OWNER&&!!rem&&rem.checked&&(await askReplace(go, u));
     if(stale()) return;
     done();
+    /* used, so it goes: a phone that lapses later opens the signed-out Sheet with the username, never the password */
+    pw.value=''; showPw(false);
     enter(u, body, b, x, ck, !!(outSheet&&!outSheet.hidden));
     if(!(await follow(stale))) return;
     if(keep) await remember(u, ck);
