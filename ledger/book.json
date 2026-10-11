@@ -755,7 +755,8 @@
   },
   "TIER_OF": {
     "CS6-BS": {
-      "oil": "Platinum"
+      "oil": "Platinum",
+      "salt": -0.7
     },
     "CZ5-TM": {
       "oil": "Titanium"
@@ -878,7 +879,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-11T11:30:28.026Z",
+  "QUEUE_COMMITTED": "2026-10-11T12:34:36.200Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
