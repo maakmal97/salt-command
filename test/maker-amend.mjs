@@ -229,7 +229,7 @@ export async function run({ ok }) {
       return wrap && wrap.querySelector("input");
     };
     const settle = async (n) => { await until(() => posts.length >= n); await new Promise((resolve) => setTimeout(resolve, 40)); };
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => button("20261006090001-ack", "Amend order"));
     ok(!!field("20261006090001-ack", "Amend units") && !!field("20261006090001-ack", "Amend goods price (RM)") && !!field("20261006090001-ack", "Amend delivery (RM)")
       && !button("20261006090002-pla", "Amend order"),

@@ -125,7 +125,7 @@ export async function run({ ok }) {
   };
   try {
     const doc = dom.window.document;
-    doc.querySelector('button[data-m="maker"]').click();
+    doc.querySelector('button[data-act="nav.record"]').click();
     check(await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")]
       .some((heading) => heading.textContent === "Add ID")), "the generated Counter page opens Add ID");
     const section = [...doc.querySelectorAll("#makerInputs .maker-input")]

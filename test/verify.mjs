@@ -18694,7 +18694,7 @@ await (async () => {
     const until = async (f) => { for (let i = 0; i < 100 && !(await f()); i++) await new Promise((r) => setTimeout(r, 20)); return !!(await f()); };
     const tap = (label) => { const card = [...D.querySelectorAll("#glist .glink")].find((x) => x.textContent.includes(id));
       const b = card && [...card.querySelectorAll("button")].find((x) => x.textContent === label); if (b) b.click(); return !!b; };
-    D.querySelector('button[data-m="links"]').click();
+    D.querySelector('button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     ok(await until(() => [...D.querySelectorAll("#glist .glink")].some((x) => x.textContent.includes(id))),
       "the associate's link is drawn on his Links panel");
     ok(tap("Approve") && await until(async () => (await stored()).approved === true)
@@ -18794,7 +18794,7 @@ await (async () => {
     const cardOf = (id) => [...DA.querySelectorAll("#glist .glink")].find((x) => x.textContent.includes(id));
     /* the group a card sits in is the last heading before it */
     const groupOf = (id) => { let g = null; for (const n of DA.getElementById("glist").children) { if (n.classList.contains("ghead")) g = n.textContent; if (n === cardOf(id)) return g; } return null; };
-    DA.querySelector('button[data-m="links"]').click();
+    DA.querySelector('button[data-m="customers"]').click(); DA.querySelector('[data-act="part.customers.links"]').click();
     ok(await until(() => cardOf(keep) && cardOf(drop)) && groupOf(keep) === "Waiting on you" && groupOf(drop) === "Waiting on you",
       "both links wait on him before he decides: " + JSON.stringify([groupOf(keep), groupOf(drop)]));
     const de = cardOf(drop) && [...cardOf(drop).querySelectorAll("button")].find((b) => b.textContent === "Decline");
@@ -18894,7 +18894,7 @@ await (async () => {
         return new Response(JSON.stringify(j), { status: 200, headers: { "content-type": "application/json" } }); };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => [...D.querySelectorAll("#rlist button")].some((b) => b.textContent.includes("CX0-AA"))), "Accounts lists the account");
     /* S9 9.2: a row opens the account's card, and the card opens the account */
     [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes("CX0-AA")).click();
@@ -18971,7 +18971,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     /* ---- S9 9.2: Accounts, a row opening each account's card; the four controls on the one with no account ---- */
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     const rowOf = (u) => [...D.querySelectorAll("#rlist button")].find((b) => b.textContent.includes(u));
     ok(await until(() => rowOf(uB) && /No account/.test(rowOf(uB).textContent) && rowOf(uA)), "Accounts lists both usernames, and says the one has no account");
     const cardOf = (u) => { rowOf(u).click(); return [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u)); };
@@ -19131,7 +19131,7 @@ await (async () => {
           headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
       } }).window;
       wins.push(w);
-      w.document.querySelector('button[data-m="links"]').click();
+      w.document.querySelector('button[data-m="customers"]').click(); w.document.querySelector('[data-act="part.customers.links"]').click();
       await until(() => w.document.querySelectorAll("#glist .glink").length > 0);
       return w.document;
     };
@@ -19211,7 +19211,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     /* S9 9.2: the card is the account's, opened from its row on Accounts */
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => D.querySelector("#rlist [data-u]")), "Accounts lists the account");
     D.querySelector("#rlist [data-u]").click();
     const btnOf = (t) => [...D.querySelectorAll("#aopen .scard button")].find((b) => b.textContent === t);
@@ -19236,7 +19236,7 @@ await (async () => {
     ok(await until(() => /^Copied[.]/.test(note())) && await work.quiet() && clip.got.some((t) => t.includes("/s/")) && (await kv.list({ prefix: "ot:" })).keys.length === 1,
       "and with one that takes it, Copied, with that same link on the clipboard: " + JSON.stringify({ note: note(), copied: clip.got.length }));
     clip.ok = false;
-    D.querySelector('button[data-m="links"]').click();
+    D.querySelector('button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a tier");
     const [l1, l2] = [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link");
     l1.click();
@@ -19286,7 +19286,7 @@ await (async () => {
         finally { setTimeout(() => inflight--, 0); } };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     const head = () => (D.getElementById("scount") || {}).textContent;
     await until(() => inflight === 0);
     /* S9 9.2: the tick is on the account's own card, opened from its row */
@@ -19474,7 +19474,7 @@ await (async () => {
     "the owner's script is on his page and on no customer's: " + JSON.stringify(OWNERISH.filter((t) => cust87.includes(t))));
   ok(!cust87.includes("__OWNER_JS__") && !own87.includes("__OWNER_JS__") && !cust87.includes("mp87"),
     "the splice leaves no marker on either page, and no master on the customer's");
-  ok(/id="mHome"/.test(own87) && own87.includes('data-m="accounts"') && own87.includes('data-m="links"') && own87.includes('data-m="needs"'),
+  ok(/id="mHome"/.test(own87) && own87.includes('data-m="customers"') && own87.includes('data-m="orders"') && own87.includes('data-m="needs"'),
     "and the master page opens on its home, with its places beside it (S9 9.2)");
 
   /* ONE RULE FOR WHERE AN ACCOUNT STANDS (v687): the review sheet, the send sheet and the publish read it. */
@@ -19572,7 +19572,9 @@ await (async () => {
     try {
       ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oAccts").hidden === true,
         "the master page opens on its home, with Accounts closed");
-      D87.querySelector('button[data-m="accounts"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
+      /* 11 Oct 2026: the page's own first read of the sheet (it had no fetch yet) is let fail in the microtasks, so the tap reads it afresh, as a retry */
+      for (let i = 0; i < 30; i++) await Promise.resolve();
+      D87.querySelector('button[data-m="customers"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
       const list87 = D87.getElementById("rlist").textContent;
       ok(D87.getElementById("oAccts").hidden === false && D87.getElementById("mHome").hidden === true
@@ -19707,7 +19709,7 @@ await (async () => {
       "the to-send card names only the account with no tick and no open: " + sc.textContent);
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S9 9.2: Accounts is one list for Send and Review, found by a word, narrowed by a filter, a row opening its card, among four places");
+section("S9 9.2: Accounts is one list for Send and Review, found by a word, narrowed by a filter, a row opening its card, among five places");
 await (async () => {
   /* THE PLAN'S SECTION 5: Accounts replaces Send and Review with one list, chips for how and when each was
      opened, alerts, owes, locked and no account, a search and filters above it, and a row opening the account.
@@ -19758,18 +19760,18 @@ await (async () => {
     } }).window;
     const D = win.document;
     const places = (sel) => [...D.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m")).join(",");
-    ok(places(".salt-appbar") === "needs,accounts,links,maker,more" && places(".salt-rail") === "needs,accounts,links,maker,more",
-      "five places, including Maker, in the App bar and Desk rail: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
+    ok(places(".salt-appbar") === "needs,orders,customers,record,shop" && places(".salt-rail") === "needs,orders,customers,record,shop",
+      "five places, Needs you, Orders, Customers, Record and Shop (Maker is retired on screen), in the App bar and Desk rail: " + JSON.stringify([places(".salt-appbar"), places(".salt-rail")]));
     const current = () => [...new Set([...D.querySelectorAll(".place[aria-current='page']")].map((b) => b.getAttribute("data-m")))].join(",");
     ok(current() === "needs", "Needs you is the place he opens on: " + current());
     ok(await until(() => [...D.querySelectorAll('[data-count="needs"]')].every((x) => x.textContent === "3")),
       "and it carries the count of what waits there on both bars: " + JSON.stringify([...D.querySelectorAll('[data-count="needs"]')].map((x) => x.textContent)));
 
-    D.querySelector('.salt-appbar button[data-m="accounts"]').click();
+    D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const rows = () => [...D.querySelectorAll("#rlist [data-u]")];
     const rowOf = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
-    ok(D.getElementById("oAccts").hidden === false && D.getElementById("mHome").hidden === true && current() === "accounts",
-      "a tap on Accounts opens it and marks it the current place");
+    ok(D.getElementById("oAccts").hidden === false && D.getElementById("mHome").hidden === true && current() === "customers",
+      "a tap on Customers opens its Accounts and marks it the current place");
     ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
       "every roster account is a row, drawn with the system's Inbox row");
     const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
@@ -19801,9 +19803,13 @@ await (async () => {
     D.querySelector('#aopen button[data-back="accounts"]').click();
     ok(!D.getElementById("oAccts").classList.contains("open") && D.getElementById("aopen").hidden && !rowOf(uO).hasAttribute("aria-current"),
       "and the way back closes it");
-    D.querySelector('.salt-rail button[data-m="more"]').click();
-    ok(D.getElementById("oMore").hidden === false && current() === "more" && !!D.querySelector('#oMore button[data-m="cards"]') && !!D.getElementById("mTest"),
-      "More holds the report card and the test account");
+    D.querySelector('.salt-rail button[data-m="shop"]').click();
+    ok(D.getElementById("oShop").hidden === false && current() === "shop" && !!D.querySelector('#oShop [data-act="part.shop.practice"]') && !!D.getElementById("mTest"),
+      "Shop holds the test accounts, with the hours and the notice beside them");
+    D.querySelector('.salt-rail button[data-m="customers"]').click();
+    D.querySelector('[data-act="part.customers.associates"]').click();
+    ok(D.getElementById("oCards").hidden === false && D.getElementById("oAccts").hidden === true && current() === "customers",
+      "and Customers holds the associates' report card under Associates");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 9.5: View as them opens the customer's page read only, under a banner naming whose it is, and Back to accounts returns to that account");
@@ -19849,7 +19855,7 @@ await (async () => {
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const D = win.document;
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "the account is on Accounts");
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const view = [...D.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them");
@@ -20051,7 +20057,7 @@ await (async () => {
     /* the account he is viewing reads its orders through the same road */
     const W4 = page((q, o) => (q.startsWith("/all/orders/") ? OPAQUE(o) : null));
     const D4 = W4.document;
-    D4.querySelector('button[data-m="accounts"]').click();
+    D4.querySelector('button[data-m="customers"]').click();
     await until(() => D4.querySelector('#rlist [data-u="' + u + '"]'));
     D4.querySelector('#rlist [data-u="' + u + '"]').click();
     [...D4.querySelectorAll("#aopen button")].find((b) => b.textContent === "View as them").click();
@@ -20521,7 +20527,7 @@ await (async () => {
     ok(await until(() => /That link now quotes Gold[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
       "a tier pinned on the card is answered on the card: " + JSON.stringify(note(card())));
     /* the same in Links */
-    D.querySelector('.salt-appbar button[data-m="links"]').click();
+    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     const lcard = () => D.querySelector('#glist [data-link="' + lid + '"]');
     ok(await until(() => btn(lcard(), "Approve")), "Links lists the link with its Approve");
     cut.on = true;
@@ -20604,13 +20610,13 @@ await (async () => {
       "and the move lands once: " + JSON.stringify({ sent: sent("approve") }));
 
     /* ---- Links: Withdraw held in flight ---- */
-    D.querySelector('.salt-appbar button[data-m="links"]').click();
+    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     ok(await until(() => btn(lcard(), "Withdraw")), "Links lists the approved link with its Withdraw");
     holdNext("POST /all/refs/" + lid + "/revoke");
     const wd = btn(lcard(), "Withdraw");
     wd.click();
     ok(await until(() => hold.held === 1) && wd.disabled, "while Withdraw is out, its button in Links is off");
-    D.querySelector('.salt-appbar button[data-m="links"]').click();
+    D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     const wd2 = btn(lcard(), "Withdraw");
     ok(!!wd2 && wd2 !== wd, "a redraw put a new Withdraw on the card");
     wd2.click();
@@ -20669,7 +20675,7 @@ await (async () => {
     const kc = () => D.querySelector('#nlist [data-need="k:' + us[1] + '"]');
     ok(await until(() => kc() && /Last got in by a typed code, 03 Sep 2026[.]/.test(kc().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
-    D.querySelector('.salt-appbar button[data-m="accounts"]').click();
+    D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status")].map((x) => x.textContent) : []; };
     ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by a scanned code")) && chips(us[1]).includes("Opened 03 Sep 2026 by a typed code"),
       "Accounts says an open by a scanned code and one by a typed code: " + JSON.stringify([chips(us[0]), chips(us[1])]));
@@ -20940,7 +20946,7 @@ await (async () => {
     ok(await until(() => nc() && /Made at the next laptop update[.] Until then, show the Silver link[.]/.test(nc().textContent)
       && [...nc().querySelectorAll("button")].some((b) => b.textContent === "Show the Silver link")),
       "Needs you names the Silver link with only the sheet read: " + (nc() || {}).textContent);
-    D.querySelector('.salt-appbar button[data-m="accounts"]').click();
+    D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     ok(await until(() => row(uN) && row(uN).textContent.startsWith("CX3-NO")
       && row(uN).textContent.includes("Made at the next laptop update. Until then, show the Silver link.")
@@ -21124,7 +21130,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "Accounts lists the account");
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
@@ -21279,7 +21285,7 @@ await (async () => {
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
@@ -21320,7 +21326,7 @@ await (async () => {
       } }).window;
       const D3 = w3.document;
       await until(() => /as at/.test(D3.getElementById("mFoot").textContent));
-      D3.querySelector('button[data-m="accounts"]').click();
+      D3.querySelector('button[data-m="customers"]').click();
       await until(() => D3.querySelector('#rlist [data-u="' + u + '"]'));
       D3.querySelector('#rlist [data-u="' + u + '"]').click();
       ok(await until(() => gate.seen.includes("account") && !!D3.querySelector("#aopen .apill")), "the account opened, its story is on its way");
@@ -21516,7 +21522,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-    const openAcct = async (x) => { D.querySelector('button[data-m="accounts"]').click();
+    const openAcct = async (x) => { D.querySelector('button[data-m="customers"]').click();
       await until(() => D.querySelector('#rlist [data-u="' + x + '"]')); D.querySelector('#rlist [data-u="' + x + '"]').click(); };
     const card = (x) => D.querySelector('#aopen [data-acct="' + x + '"]');
     const pill = (x) => card(x) && card(x).querySelector(".apill");
@@ -21603,7 +21609,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
@@ -21797,7 +21803,7 @@ await (async () => {
       const D = w.document;
       const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
       await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-      D.querySelector('button[data-m="accounts"]').click();
+      D.querySelector('button[data-m="customers"]').click();
       await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
       D.querySelector('#rlist [data-u="' + u + '"]').click();
       const card = () => D.querySelector('#aopen [data-acct="' + u + '"]');
@@ -21899,7 +21905,7 @@ await (async () => {
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     const chip = () => D.querySelector('#rlist [data-u="' + u + '"]').textContent;
     ok(/by a typed code/.test(chip()), "Accounts says the last open was by a typed code: " + chip());
@@ -21954,7 +21960,7 @@ await (async () => {
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
@@ -22423,8 +22429,10 @@ await (async () => {
         : { ok: true, status: 200, json: async () => ({ ok: true, sent: "2026-09-18T03:00:00Z" }) });
       let copied = null;
       W88.navigator.clipboard = { writeText: async (t) => { copied = t; } };
+      /* 11 Oct 2026: the page's own first read of the sheet (it had no fetch yet) is let fail in the microtasks, so the tap reads it afresh, as a retry */
+      for (let i = 0; i < 30; i++) await Promise.resolve();
       /* S9 9.2: Send is Accounts now, and an account's card opens from its row */
-      D88.querySelector('button[data-m="accounts"]').dispatchEvent(new W88.Event("click", { bubbles: true }));
+      D88.querySelector('button[data-m="customers"]').dispatchEvent(new W88.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
       const open88 = (code) => { const r = [...D88.querySelectorAll("#rlist [data-u]")].find((x) => x.textContent.includes(code));
         if (r) r.dispatchEvent(new W88.Event("click", { bubbles: true })); return D88.querySelector("#aopen .scard"); };
@@ -23568,7 +23576,8 @@ await (async () => {
       W91.fetch = async (path) => (String(path) === "/all/assoc"
         ? { ok: true, status: 200, json: async () => cards91 }
         : { ok: true, status: 200, json: async () => ({ ok: true, accounts: [], at: null, issue: null }) });
-      D91.querySelector('button[data-m="cards"]').dispatchEvent(new W91.Event("click", { bubbles: true }));
+      D91.querySelector('button[data-m="customers"]').dispatchEvent(new W91.Event("click", { bubbles: true }));
+      D91.querySelector('[data-act="part.customers.associates"]').dispatchEvent(new W91.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
       const list91 = D91.getElementById("clist");
       const drawn = list91.querySelectorAll(".acard").length;
@@ -24476,7 +24485,7 @@ await (async () => {
     const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     /* S9 9.2: Send is Accounts now, and an account's card opens from its row, once the sheet is read so no second read redraws it */
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.click();
       return [...D.querySelectorAll("#aopen .scard")].find((k) => k.textContent.includes(x)); };
     const btnOf = (x) => { const k = cardOf(x); return k && [...k.querySelectorAll("button")].find((b) => /^Show a code/.test(b.textContent)); };
@@ -27678,8 +27687,10 @@ await (async () => {
     const Wd = dom.window, D = Wd.document;
     Wd.fetch = async (path) => (String(path) === "/all/sheet" ? { ok: true, status: 200, json: async () => sheetJ } : { ok: false, status: 404, json: async () => ({ ok: false, error: "no" }) });
     try {
+      /* 11 Oct 2026: the page's own first read of the sheet (it had no fetch yet) is let fail in the microtasks, so the tap reads it afresh, as a retry */
+      for (let i = 0; i < 30; i++) await Promise.resolve();
       /* S9 9.2: Review is Accounts now: its row, and the card the row opens */
-      D.querySelector('button[data-m="accounts"]').dispatchEvent(new Wd.Event("click", { bubbles: true }));
+      D.querySelector('button[data-m="customers"]').dispatchEvent(new Wd.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
       const rows = [...D.querySelectorAll("#rlist button")].map((b) => b.textContent);
       const ltrRow = rows.find((t) => t.startsWith("CZ9-LTR")) || "", wlkRow = rows.find((t) => t.startsWith("CZ9-WLK")) || "";
@@ -30505,7 +30516,7 @@ await (async () => {
     const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     /* S9 9.2: Send is Accounts now, and the card opens from its row once, after the sheet is read, so no redraw drops a tap */
     await until(() => /as at/.test(D.getElementById("mFoot").textContent));
-    D.querySelector('button[data-m="accounts"]').click();
+    D.querySelector('button[data-m="customers"]').click();
     const card = () => [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u));
     const btn = () => { let k = card(); if (!k) { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (r) r.click(); k = card(); }
       return k && [...k.querySelectorAll("button")].find((b) => /Sign out everywhere|Tap again|Signing out|Signed out|Nothing was|Could not sign out/.test(b.textContent)); };
@@ -53489,9 +53500,11 @@ await (async () => {
   });
   try {
     const doc = admin.window.document;
-    doc.querySelector('button[data-m="maker"]').click();
-    for (let i = 0; i < 100 && !doc.querySelector("#makerReview .maker-card"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
-    let cards = doc.querySelectorAll("#makerReview .maker-card");
+    /* 11 Oct 2026: the orders are Orders, the Desk's rows and the forms Record, so both are entered */
+    doc.querySelector('[data-act="nav.record"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
+    for (let i = 0; i < 100 && !doc.querySelector("#makerDrafts .maker-card"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    let cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");
     ok(cards.length === 2 && /Cost RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
       "the Admin review draws Desk row cost and frozen flags beside its decision");
     const o0 = { u: "abcd-efgh", product: "salt", qty: 1, total: 100 };
@@ -53508,8 +53521,8 @@ await (async () => {
       "Maker offers Cancel on an acknowledged or ready order, paid or not, unless claimed, closed or handed over");
     extraReviewOrders.length = 0;
     [...doc.querySelectorAll("#makerReview button")].find((b) => b.textContent === "Refresh").click();
-    for (let i = 0; i < 100 && doc.querySelectorAll("#makerReview .maker-card").length !== 2; i++) await new Promise((resolve) => setTimeout(resolve, 10));
-    cards = doc.querySelectorAll("#makerReview .maker-card");   /* the redraw replaced the cards read above */
+    for (let i = 0; i < 100 && doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card").length !== 2; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */
     ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Sale or purchase"
       && ["Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
@@ -53721,7 +53734,7 @@ await (async () => {
       && adminCalls.some((call) => call.route === "/all/maker/inputs/repay" && call.body.loan === "loan-1")
       && adminCalls.some((call) => call.route === "/all/maker/inputs/redeem" && call.body.code === "CX1-AB"),
       "loan, repayment, gift and reward forms send their typed ledger fields to the corresponding Desk constructors");
-    doc.querySelector('button[data-m="accounts"]').click();
+    doc.querySelector('button[data-m="customers"]').click();
     for (let i = 0; i < 100 && !doc.querySelector('#rlist [data-u]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     doc.querySelector('#rlist [data-u]').click();
     const forThem = [...doc.querySelectorAll("#aopen button")].find((button) => button.textContent === "Order for them");
@@ -53744,6 +53757,11 @@ await (async () => {
 section("Salt Account: every control carries a stable data-act");
 await (async () => {
   await (await import("./maker-act.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: five places, Needs you, Orders, Customers, Record and Shop, each part reading and showing only its own");
+await (async () => {
+  await (await import("./admin-places.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

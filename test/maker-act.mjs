@@ -14,6 +14,11 @@ import * as C from "../tools/stmt-crypto.mjs";
 export const ACT_KEYS = ["data-key", "data-maker-card", "data-u", "data-need", "data-link", "data-acct", "data-thread", "data-reward-holder"];
 
 /* the control inside root that has this act, and, with a key, inside the card (or as the list item) that carries it */
+/* a place and, with a part, that part of it, entered as he enters them: a tap on the place's item, then on the part's tab */
+export function enter(doc, place, part) {
+  byAct(doc, "nav." + place).click();
+  if (part) byAct(doc, "part." + place + "." + part).click();
+}
 export function byAct(root, act, key) {
   const all = [...root.querySelectorAll('[data-act="' + act + '"]')];
   if (key === undefined) return all[0] || null;
@@ -26,7 +31,7 @@ export const CONTROLS = 'button, input:not([type="hidden"]), select, textarea, s
 /* his page: the roster shell, the ended screen, the one control of his in a customer's view, and the sheet that shows a code */
 export const OWNER_ROOTS = "#roster, #aEnded, #lock, .salt-sheet.ho";
 const CARDS = ".maker-card, .maker-input, .maker-extra-trade, .maker-reward, .maker-offer, .oacct, [data-need], .glink, .salt-sheet, nav, #afil";
-const PANELS = "#mHome, #oAccts, #oLinks, #oMore, #oCards, #oMaker, #aEnded, #lock";
+const PANELS = "#mHome, #oOrders, #oCustomers, #oRecord, #oShop, #oAccts, #oLinks, #oCards, #aEnded, #lock";
 const where = (c) => {
   const at = c.closest(CARDS) || c.closest(PANELS);
   const key = at && ACT_KEYS.map((k) => at.getAttribute(k)).find(Boolean);
@@ -100,7 +105,8 @@ const links = () => [
   link("r1", { by: U1, approved: true, revoked: true, level: "Gold", tier: 2 }), link("o1", { label: "A shop", tier: 2, opens: 2, last: ISO })
 ];
 
-export async function richOwnerPage({ pageWork, failInputs = false }) {
+/* hash opens the page at an address; review changes what the review answers, for a test that wants other orders than the busy day's */
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null }) {
   const posts = [], timers = [], store = new Map();
   const ck = await C.contentKey("maker-act-secret", U1);
   const list = { at: ISO, week: { monday: "2026-10-05", label: "This week" }, soon: [], digest: "maker-act-list",
@@ -117,10 +123,10 @@ export async function richOwnerPage({ pageWork, failInputs = false }) {
     if (route.startsWith("/all/signin/")) return { ok: true, msg: "Your link", url: "https://example.test/s/abc" };
     if (route === "/all/handover") return { ok: true, qr: ["101", "010", "101"], code: "ABCD-EFGH", exp: LATER };
     if (route === "/all/assoc") return { ok: true, products: [], at: ISO };
-    if (route === "/all/maker/review") return { ok: true, orders: orders(), drafts: [draft("d-1"),
+    if (route === "/all/maker/review") return (review || ((j) => j))({ ok: true, orders: orders(), drafts: [draft("d-1"),
       draft("d-2", { row: { qty: 1, total: 100, trip: "t1" } }), draft("d-3", { row: { qty: 1, total: 50, trip: "t1" }, product: "oil" })],
     refused: [{ why: "Refused for the fixture" }],
-    queue: [{ id: "q-1", state: "held", canWithdraw: true, fingerprint: "f1" }, { id: "q-2", state: "refused", canRetry: true, fingerprint: "f2", why: "x" }] };
+    queue: [{ id: "q-1", state: "held", canWithdraw: true, fingerprint: "f1" }, { id: "q-2", state: "refused", canRetry: true, fingerprint: "f2", why: "x" }] });
     if (route.endsWith("/preview")) return { ok: true, hash: "a".repeat(64), offerHash: "b".repeat(64), quote: 200, delivery: 10, card: 200,
       floor: 150, margin: { rm: 50, pct: 25 }, cost: { total: 150 }, usual: { rate: 100 }, flags: [], row: { qty: 2, total: 200 } };
     if (route === "/all/maker/inputs") return { ok: true, products: ["salt", "oil"], catalog: catalog() };
@@ -137,7 +143,7 @@ export async function richOwnerPage({ pageWork, failInputs = false }) {
   };
   let failCash = false;
   const dom = new JSDOM(landingPage("", "maker-act-nonce", { master: "fixture-master", accounts: sheet().filter((a) => !a.test) }), {
-    url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
+    url: "https://counter.fixture.test/all" + hash, runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(w) {
       Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true });
       w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder; w.scrollTo = () => {}; w.confirm = () => true;
@@ -168,30 +174,42 @@ export async function richOwnerPage({ pageWork, failInputs = false }) {
 export async function drawEverything(p) {
   const { d, work, card, click, type } = p;
   await work.quiet();
-  await click(byAct(d, "nav.maker"));
+  /* an extra book on Record's Entry */
+  await click(byAct(d, "nav.record"));
+  await click(byAct(d, "part.record.entry"));
+  await click(byAct(d, "record.trade.add-book"));
+  /* the chat opened, an account card, the code sheet, an order placed for them (which stands Orders up, reading the review again) */
+  await click(byAct(d, "nav.customers"));
+  await click(byAct(d, "part.customers.messages"));
+  await click(byAct(d, "chat.open", U1));
+  await click(byAct(d, "part.customers.accounts"));
+  await click(byAct(d, "acct.open", U1));
+  await click(byAct(d.getElementById("aopen"), "acct.show-code"));
+  await click(byAct(d.getElementById("aopen"), "acct.order-for"));
+  /* a stranger's link */
+  await click(byAct(d, "nav.needs"));
+  await click(byAct(d, "need.show-link", U2));
   /* a cash hold, and a cash tap whose answer was lost, which offers Retry. A cash tap draws every card again, so the previews
-     below come after it, and after the order placed for an account, which reads the review again */
+     below come after it, and Orders is entered for the last time before them: entering it reads the review again */
+  await click(byAct(d, "nav.orders"));
   type(byAct(card("ord-r2"), "order.cash-amount"), "50"); await click(byAct(card("ord-r2"), "order.cash"));
   type(byAct(card("ord-r3"), "order.cash-amount"), "50"); await click(byAct(card("ord-r3"), "order.cash"));
   p.failCash(true);
   p.timers.filter((t) => t.ms === 10000 && !t.off).at(-1).f(); await work.quiet();
   p.failCash(false);
-  /* the chat opened, an account card, the code sheet, an order placed for them, a stranger's link, an extra book */
-  await click(byAct(d, "chat.open", U1));
-  await click(byAct(d, "nav.accounts"));
-  await click(byAct(d, "acct.open", U1));
-  await click(byAct(d.getElementById("aopen"), "acct.show-code"));
-  await click(byAct(d.getElementById("aopen"), "acct.order-for"));
-  await click(byAct(d, "nav.needs"));
-  await click(byAct(d, "need.show-link", U2));
-  await click(byAct(d, "record.trade.add-book"));
   /* an order placed, a delivery with its charge, one raised for their yes, one offered again */
   await click(byAct(card("ord-p1"), "order.preview"));
   await click(byAct(card("ord-p2"), "order.fee-10")); await click(byAct(card("ord-p2"), "order.preview"));
   type(byAct(card("ord-p3"), "order.total"), "150"); await click(byAct(card("ord-p3"), "order.preview"));
   await click(byAct(card("ord-a2"), "order.preview-again"));
-  await click(byAct(d, "nav.more"));
-  await click(byAct(d, "nav.links"));
+  /* the group orders, the shop's three parts, the guest links and the report card */
+  await click(byAct(d, "part.orders.group"));
+  await click(byAct(d, "nav.shop"));
+  await click(byAct(d, "part.shop.notice"));
+  await click(byAct(d, "part.shop.practice"));
+  await click(byAct(d, "nav.customers"));
+  await click(byAct(d, "part.customers.associates"));
+  await click(byAct(d, "part.customers.links"));
 }
 
 /* the states a page passes through that the busy page above is not in: sending an account its link in turn, to its end, and a Record that
@@ -210,7 +228,7 @@ export async function auditStates({ pageWork }) {
   const q = await richOwnerPage({ pageWork, failInputs: true });
   try {
     await q.work.quiet();
-    await q.click(byAct(q.d, "nav.maker"));
+    await q.click(byAct(q.d, "nav.record"));
     states.push(["a Record that could not be read", actAudit(q.d)]);
   } finally { q.w.close(); }
   return states;

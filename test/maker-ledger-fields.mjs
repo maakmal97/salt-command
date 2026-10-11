@@ -177,7 +177,7 @@ export async function run({ ok }) {
     const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Amend a ledger row");
     const press = (root, text) => [...root.querySelectorAll("button")].find((b) => b.textContent === text).click();
     const change = (node, value) => { node.value = value; node.dispatchEvent(new window.Event("change", { bubbles: true })); };
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.record"]').click();
     await until(() => editor());
     const ed = editor(), rowSel = fieldIn(ed, "Ledger row"), kindSel = fieldIn(ed, "Amendment");
     const kinds = () => [...kindSel.options].map((o) => o.value).join(",");

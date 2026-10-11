@@ -187,7 +187,7 @@ export async function run({ ok }) {
       for (let i = 0; i < 150 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => doc.querySelector("#makerClaims input[type=password]"));
     const input = doc.querySelector("#makerClaims input[type=password]");
     const button = (text) => [...doc.querySelectorAll("#makerClaims button")].find((b) => b.textContent === text);
@@ -222,7 +222,7 @@ export async function run({ ok }) {
     ok(created === 2 && doc.querySelectorAll("[data-maker-slip]").length === 1 && derives === derivedBefore,
       "A slip read held across lock and a new unlock cannot use the key or paint under the newer session: "
       + created + "/" + (derives - derivedBefore));
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => all("View slip").length === 2 && !doc.querySelector("[data-maker-slip]"));
     ok(revoked === 2 && !doc.querySelector("[data-maker-slip]"),
       "Redrawing the claims revokes every rendered slip URL: " + revoked);

@@ -1,0 +1,338 @@
+[
+ {
+  "name": "a place is named Maker again",
+  "file": "stmt/page.js",
+  "find": "[\"orders\", \"Orders\"], [\"customers\", \"Customers\"]",
+  "replace": "[\"orders\", \"Maker\"], [\"customers\", \"Customers\"]"
+ },
+ {
+  "name": "Record and Customers swap places",
+  "file": "stmt/page.js",
+  "find": "[\"customers\", \"Customers\"], [\"record\", \"Record\"]",
+  "replace": "[\"record\", \"Record\"], [\"customers\", \"Customers\"]"
+ },
+ {
+  "name": "Orders loses its Closed part",
+  "file": "stmt/page.js",
+  "find": "[\"group\", \"Group\"], [\"closed\", \"Closed\"]],",
+  "replace": "[\"group\", \"Group\"]],"
+ },
+ {
+  "name": "Shop loses its Practice part",
+  "file": "stmt/page.js",
+  "find": "[\"notice\", \"Notice\"], [\"practice\", \"Practice\"]]",
+  "replace": "[\"notice\", \"Notice\"]]"
+ },
+ {
+  "name": "a strip is no longer the system's tabs",
+  "file": "stmt/page.js",
+  "find": "<div class=\"salt-tabs aparts\" role=\"tablist\"",
+  "replace": "<div class=\"aparts\" role=\"tablist\""
+ },
+ {
+  "name": "a strip is no tablist",
+  "file": "stmt/page.js",
+  "find": "<div class=\"salt-tabs aparts\" role=\"tablist\"",
+  "replace": "<div class=\"salt-tabs aparts\""
+ },
+ {
+  "name": "a part's tab is no tab",
+  "file": "stmt/page.js",
+  "find": "<button type=\"button\" class=\"salt-tabs__pill\" role=\"tab\" data-part=\"",
+  "replace": "<button type=\"button\" class=\"salt-tabs__pill\" data-part=\""
+ },
+ {
+  "name": "a part's tab loses its act",
+  "file": "stmt/page.js",
+  "find": "\" data-act=\"part.' + p + \".\" + k",
+  "replace": "\" data-act=\"nav.' + p + \".\" + k"
+ },
+ {
+  "name": "every tab of the place is marked",
+  "file": "stmt/owner.js",
+  "find": "&&b.getAttribute('data-part')===partNow?'true':'false'",
+  "replace": "&&true?'true':'false'"
+ },
+ {
+  "name": "the place left is still marked",
+  "file": "stmt/owner.js",
+  "find": "else b.removeAttribute('aria-current'); });\n    [].forEach.call(document.querySelectorAll('.aparts button[data-part]')",
+  "replace": "else {} });\n    [].forEach.call(document.querySelectorAll('.aparts button[data-part]')"
+ },
+ {
+  "name": "a place opens on its last part",
+  "file": "stmt/owner.js",
+  "find": "else if(parts.indexOf(part)<0) part=parts[0];",
+  "replace": "else if(parts.indexOf(part)<0) part=parts[parts.length-1];"
+ },
+ {
+  "name": "Customers carries no count",
+  "file": "stmt/owner.js",
+  "find": "setCount('customers', links.filter(waitingLink).length);",
+  "replace": "setCount('orders', links.filter(waitingLink).length);"
+ },
+ {
+  "name": "a part shows only what names it, not its place",
+  "file": "stmt/owner.js",
+  "find": "return t===placeNow||t===placeNow+'.'+partNow;",
+  "replace": "return t===placeNow+'.'+partNow;"
+ },
+ {
+  "name": "a part shows what names its place or any part of it",
+  "file": "stmt/owner.js",
+  "find": "return t===placeNow||t===placeNow+'.'+partNow;",
+  "replace": "return t===placeNow||t.split('.')[0]===placeNow;"
+ },
+ {
+  "name": "the group orders show under Ready",
+  "file": "stmt/page.js",
+  "find": "<section data-in=\"orders.group\" aria-labelledby=\"makerPoolsTitle\">",
+  "replace": "<section data-in=\"orders.ready\" aria-labelledby=\"makerPoolsTitle\">"
+ },
+ {
+  "name": "the claims show in every part of Orders",
+  "file": "stmt/page.js",
+  "find": "<section data-in=\"orders.waiting\" aria-labelledby=\"makerClaimsTitle\">",
+  "replace": "<section data-in=\"orders\" aria-labelledby=\"makerClaimsTitle\">"
+ },
+ {
+  "name": "the Desk's rows show under Entry",
+  "file": "stmt/page.js",
+  "find": "<section data-in=\"record.approve\" aria-labelledby=\"makerDraftTitle\">",
+  "replace": "<section data-in=\"record.entry\" aria-labelledby=\"makerDraftTitle\">"
+ },
+ {
+  "name": "the tier form moves to Entry",
+  "file": "stmt/owner.js",
+  "find": "var tierSection=makerForm('pricing');",
+  "replace": "var tierSection=makerForm('entry');"
+ },
+ {
+  "name": "Add ID moves to Pricing",
+  "file": "stmt/owner.js",
+  "find": "var id=makerForm('customers');",
+  "replace": "var id=makerForm('pricing');"
+ },
+ {
+  "name": "a form shows in no part",
+  "file": "stmt/owner.js",
+  "find": "function makerForm(part){ var section=el('section','maker-input'); section.setAttribute('data-in','record.'+part); return section; }",
+  "replace": "function makerForm(part){ var section=el('section','maker-input'); return section; }"
+ },
+ {
+  "name": "the practice accounts show under Hours",
+  "file": "stmt/page.js",
+  "find": "<div id=\"mTest\" class=\"mtest\" data-in=\"shop.practice\">",
+  "replace": "<div id=\"mTest\" class=\"mtest\" data-in=\"shop.hours\">"
+ },
+ {
+  "name": "an agreed order is filed as ready",
+  "file": "stmt/owner.js",
+  "find": "if(order.status==='acknowledged') t.push('orders.agreed');",
+  "replace": "if(order.status==='acknowledged') t.push('orders.ready');"
+ },
+ {
+  "name": "a ready order is not filed as ready",
+  "file": "stmt/owner.js",
+  "find": "if(order.status==='ready') t.push('orders.ready');",
+  "replace": "if(order.status==='ready') t.push('orders.agreed');"
+ },
+ {
+  "name": "a payment claim does not wait on him",
+  "file": "stmt/owner.js",
+  "find": "(order.payments||[]).some(function(p){ return p.claim==='waiting'; })",
+  "replace": "false"
+ },
+ {
+  "name": "a closed order is not listed in Closed",
+  "file": "stmt/owner.js",
+  "find": "closedRows.setAttribute('data-in','orders.closed');",
+  "replace": "closedRows.setAttribute('data-in','orders.agreed');"
+ },
+ {
+  "name": "an empty Agreed part says nothing",
+  "file": "stmt/owner.js",
+  "find": "['agreed','No agreed orders.']",
+  "replace": "['agreed','']"
+ },
+ {
+  "name": "an empty Closed part says nothing",
+  "file": "stmt/owner.js",
+  "find": "['closed','No closed orders.']",
+  "replace": "['closed','']"
+ },
+ {
+  "name": "no Desk rows waiting says nothing",
+  "file": "stmt/owner.js",
+  "find": "draftRoot.appendChild(el('p','rnone','No Desk rows waiting.'));",
+  "replace": "draftRoot.appendChild(el('p','rnone',''));"
+ },
+ {
+  "name": "#maker no longer opens Orders",
+  "file": "stmt/owner.js",
+  "find": "maker:['orders','']",
+  "replace": "maker:['customers','']"
+ },
+ {
+  "name": "#more no longer opens Shop",
+  "file": "stmt/owner.js",
+  "find": "more:['shop','']",
+  "replace": "more:['orders','']"
+ },
+ {
+  "name": "#accounts no longer opens Accounts",
+  "file": "stmt/owner.js",
+  "find": "accounts:['customers','accounts']",
+  "replace": "accounts:['customers','links']"
+ },
+ {
+  "name": "#links no longer opens Links",
+  "file": "stmt/owner.js",
+  "find": "links:['customers','links']",
+  "replace": "links:['customers','accounts']"
+ },
+ {
+  "name": "#cards no longer opens the report card",
+  "file": "stmt/owner.js",
+  "find": "cards:['customers','associates']",
+  "replace": "cards:['customers','accounts']"
+ },
+ {
+  "name": "an address naming no place moves him home",
+  "file": "stmt/owner.js",
+  "find": "if(!Object.prototype.hasOwnProperty.call(ADDR,k)) return null;",
+  "replace": "if(!Object.prototype.hasOwnProperty.call(ADDR,k)) return {place:'needs', part:''};"
+ },
+ {
+  "name": "a page opened on an address ignores it",
+  "file": "stmt/owner.js",
+  "find": "showPlace(first.place, first.part, {fresh:true});",
+  "replace": "showPlace('needs','',{fresh:true});"
+ },
+ {
+  "name": "an address opened on is left as typed",
+  "file": "stmt/owner.js",
+  "find": "history.replaceState(null,'',addrFor(placeNow, partNow));",
+  "replace": "history.replaceState(null,'',location.hash);"
+ },
+ {
+  "name": "a tap writes no address",
+  "file": "stmt/owner.js",
+  "find": "if(o.push){ var to=addrFor(placeNow, partNow);",
+  "replace": "if(false){ var to=addrFor(placeNow, partNow);"
+ },
+ {
+  "name": "Back moves nothing",
+  "file": "stmt/owner.js",
+  "find": "window.addEventListener('popstate', fromAddress);",
+  "replace": "window.addEventListener('popstate', function(){});"
+ },
+ {
+  "name": "an address typed in moves nothing",
+  "file": "stmt/owner.js",
+  "find": "window.addEventListener('hashchange', fromAddress);",
+  "replace": "window.addEventListener('hashchange', function(){});"
+ },
+ {
+  "name": "Orders does not read the claims",
+  "file": "stmt/owner.js",
+  "find": "orders:function(){ loadMaker(); loadMakerClaims(); },",
+  "replace": "orders:function(){ loadMaker(); },"
+ },
+ {
+  "name": "Orders also reads the threads",
+  "file": "stmt/owner.js",
+  "find": "orders:function(){ loadMaker(); loadMakerClaims(); },",
+  "replace": "orders:function(){ loadMaker(); loadMakerClaims(); loadMakerThreads(false); },"
+ },
+ {
+  "name": "Record reads the review twice",
+  "file": "stmt/owner.js",
+  "find": "record:function(){ loadMakerInputs(); }",
+  "replace": "record:function(){ loadMakerInputs(); loadMaker(); }"
+ },
+ {
+  "name": "Record does not read the forms",
+  "file": "stmt/owner.js",
+  "find": "record:function(){ loadMakerInputs(); }",
+  "replace": "record:function(){ }"
+ },
+ {
+  "name": "Group does not read the pools",
+  "file": "stmt/owner.js",
+  "find": "'orders.group':function(){ loadMakerPools(); },",
+  "replace": "'orders.group':function(){ },"
+ },
+ {
+  "name": "Messages reads nothing",
+  "file": "stmt/owner.js",
+  "find": "'customers.messages':function(){ loadMakerThreads(false); },",
+  "replace": "'customers.messages':function(){ },"
+ },
+ {
+  "name": "the report card is read every time",
+  "file": "stmt/owner.js",
+  "find": "'customers.associates':function(){ if(!cards) loadCards(); else drawCards(); },",
+  "replace": "'customers.associates':function(){ loadCards(); },"
+ },
+ {
+  "name": "Practice reads the threads",
+  "file": "stmt/owner.js",
+  "find": "'shop.practice':function(){ if(sheet) drawTest(); else if(!sheetBusy) loadSheet(); }",
+  "replace": "'shop.practice':function(){ loadMakerThreads(false); }"
+ },
+ {
+  "name": "Notice reads the hours",
+  "file": "stmt/owner.js",
+  "find": "'shop.notice':function(){ loadMakerBulletin(); },",
+  "replace": "'shop.notice':function(){ loadMakerBulletin(); loadMakerHours(); },"
+ },
+ {
+  "name": "Hours reads nothing",
+  "file": "stmt/owner.js",
+  "find": "'shop.hours':function(){ loadMakerHours(); },",
+  "replace": "'shop.hours':function(){ },"
+ },
+ {
+  "name": "Needs you reads the threads",
+  "file": "stmt/owner.js",
+  "find": "needs:function(){ drawNeeds(); },",
+  "replace": "needs:function(){ drawNeeds(); loadMakerThreads(false); },"
+ },
+ {
+  "name": "entering a place does not read it again",
+  "file": "stmt/owner.js",
+  "find": "var fresh=!!o.fresh||place!==placeNow;",
+  "replace": "var fresh=false;"
+ },
+ {
+  "name": "the order card's rule loses .adm",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-card{margin:14px 0;padding:16px}",
+  "replace": ".maker-card{margin:14px 0;padding:16px}"
+ },
+ {
+  "name": "the guest link row loses .adm",
+  "file": "stmt/page.js",
+  "find": ".adm .grow{display:flex;gap:8px;margin-top:12px}",
+  "replace": ".grow{display:flex;gap:8px;margin-top:12px}"
+ },
+ {
+  "name": "the label rule loses .adm",
+  "file": "stmt/page.js",
+  "find": ".adm .lbl{display:block;",
+  "replace": ".lbl{display:block;"
+ },
+ {
+  "name": "a place's head rule loses .adm",
+  "file": "stmt/page.js",
+  "find": ".adm .aplace{min-width:0}",
+  "replace": ".aplace{min-width:0}"
+ },
+ {
+  "name": "his page is not marked .adm",
+  "file": "stmt/page.js",
+  "find": "'<div id=\"roster\" class=\"gate adm\">'",
+  "replace": "'<div id=\"roster\" class=\"gate\">'"
+ }
+]

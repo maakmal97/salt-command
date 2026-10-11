@@ -87,7 +87,7 @@ async function owner(wd, pageWork) {
       work = pageWork(win);
     }
   });
-  dom.window.document.querySelector('[data-m="maker"]').click(); await work.quiet();
+  dom.window.document.querySelector('[data-act="nav.record"]').click(); await work.quiet();
   const set = (root, name, value) => {
     const node = field(root, name); node.value = value;
     node.dispatchEvent(new dom.window.Event("input", { bubbles: true }));

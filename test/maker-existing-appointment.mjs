@@ -100,7 +100,7 @@ async function ownerPage(wd, { loseAppointmentAnswer = false, retained = [] } = 
       await new Promise((resolve) => setTimeout(resolve, 10));
     return predicate();
   };
-  dom.window.document.querySelector('button[data-m="maker"]').click();
+  dom.window.document.querySelector('button[data-act="nav.record"]').click();
   const loaded = await waitFor(() => [...dom.window.document.querySelectorAll("#makerInputs .maker-input h3")]
     .some((heading) => heading.textContent === "Appoint existing customer"));
   return { dom, requests, waitFor, loaded, pass, get catalog(){return catalog;} };

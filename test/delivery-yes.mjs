@@ -300,7 +300,7 @@ export async function run({ ok }) {
     const button = (id, text) => acard(id) && [...acard(id).querySelectorAll("button")].find((b) => b.textContent.indexOf(text) === 0);
     const radio = (id, name, label) => acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest(".salt-option").textContent === label);
     const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new Ev("change", { bubbles: true })); };
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => button(A, "Preview"));
     ok(/Sent for their yes: goods RM ?120\.00, delivery RM ?10\.00, open until /.test(acard(K).textContent) && !button(K, "Preview") && !!button(K, "Withdraw the offer"),
       "Counter Admin says an open offer and offers Withdraw, never a second Accept: " + acard(K).textContent.slice(0, 200));

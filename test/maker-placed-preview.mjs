@@ -60,7 +60,7 @@ export async function run({ ok }) {
     const total = (id) => card(id).querySelector(".maker-fields input[type=\"number\"]");
     const tile = (id, label) => [...card(id).querySelectorAll(".salt-kpi")].find((k) => k.querySelector(".salt-kpi__label") && k.querySelector(".salt-kpi__label").textContent === label);
     const id = "20261007090001-dlv";
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => button(id, "Preview"));
 
     /* no default delivery approval: none of RM 0, 10, 15 or Other is chosen, and Preview waits for a choice */

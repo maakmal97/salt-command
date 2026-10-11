@@ -172,7 +172,7 @@ export async function run({ ok }) {
     const pause = (ms = 40) => new Promise((resolve) => setTimeout(resolve, ms));
     const section = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Revive a cancelled row");
     const press = (root, text) => [...root.querySelectorAll("button")].find((b) => b.textContent === text).click();
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.record"]').click();
     await until(() => section());
     const sec = section(), select = sec.querySelector("select");
     ok(select && [...select.options].map((o) => o.value).join(",") === "rv-a",

@@ -96,7 +96,7 @@ export async function run({ ok, pageWork }) {
     const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")]
       .find((s) => s.querySelector("h3")?.textContent === "Amend a ledger row");
     const change = (node, value) => { node.value = value; node.dispatchEvent(new window.Event("change", { bubbles: true })); };
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.record"]').click();
     if (!await work.quiet() || !editor()) throw new Error("Cancellation editor did not load.");
     const ed = editor(), row = field(ed, "Ledger row"), kind = field(ed, "Amendment");
     const cash = field(ed, "RM moved"), units = field(ed, "Units moved");
