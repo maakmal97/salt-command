@@ -438,6 +438,18 @@
   "replace": "max-height:calc(100vh - 48px - env(safe-area-inset-bottom,0px))}"
  },
  {
+  "name": "the owner's script names a customer function second in a var list",
+  "file": "stmt/owner.js",
+  "find": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null;",
+  "replace": "  var placeNow='needs', partNow='', PARTS={}, fOpen=null, oFind=null;"
+ },
+ {
+  "name": "the owner's pay ways overwrite the customer's again",
+  "file": "stmt/owner.js",
+  "find": "  var HOW_IN={password:",
+  "replace": "  var HOW={password:"
+ },
+ {
   "name": "leaving the part keeps the form open",
   "file": "stmt/owner.js",
   "find": "    if(moved2) fOpen=null;\n",

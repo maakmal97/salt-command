@@ -1550,7 +1550,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   ride on the moved containers, so the map's selectors and the maker tests find them. **The owner's script shares the customer page's scope**
   (`stmt/page.js` splices it in at the end of the page script), so a name it declares at the top must not be one the customer's code declares:
   `oOpen` was both, and View as them met "oOpen is not a function" until the owner's became `ordOpened`; `test/admin-orders.mjs` section 9 compares
-  the two lists (the one name both hold, `HOW`, is left as it was).
+  the two lists, every declarator of a `var` list included (the owner's `HOW`, which overwrote the customer's pay ways, is `HOW_IN`).
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a

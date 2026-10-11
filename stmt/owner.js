@@ -549,8 +549,8 @@ export const OWNER_JS = `
      customer's own, copied across) and code (typed), and key where it was one word for the first two; a road this
      page does not know says no road, and only an open with none at all, from before v827 when the password was the
      one road recorded, was by password. */
-  var HOW={password:'by password', link:'by link', remembered:'on a remembered phone', qr:'by a scanned code', copy:'by a copied code', key:'by a code', code:'by a typed code', passkey:'with a passkey'};
-  function howOf(s){ return s.how?HOW[s.how]||'':HOW.password; }
+  var HOW_IN={password:'by password', link:'by link', remembered:'on a remembered phone', qr:'by a scanned code', copy:'by a copied code', key:'by a code', code:'by a typed code', passkey:'with a passkey'};
+  function howOf(s){ return s.how?HOW_IN[s.how]||'':HOW_IN.password; }
   /* the two test accounts, told apart by the state each stands in (his answer of 29 Sep 2026) */
   function testName(a){ return a.state==='locked'?'Test account, locked':'Test account, open'; }
   function chip(tone, t){ return el('span','salt-status salt-status--'+tone, t); }

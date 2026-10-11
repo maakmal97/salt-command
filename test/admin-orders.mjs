@@ -391,12 +391,38 @@ export async function run({ ok, pageWork }) {
   } finally { p.w.close(); }
 
   /* 9. THE OWNER'S SCRIPT IS SPLICED INTO THE CUSTOMER PAGE'S SCOPE (stmt/page.js splices it in at the end of the page script): a name it declares at the top is a name the
-     customer's code must not declare, or his page overwrites theirs and "View as them" meets oOpen is not a function. HOW is the one name both
-     already hold, left as it was. */
+     customer's code must not declare, or his page overwrites theirs and "View as them" meets oOpen is not a function. A top-level statement is read
+     whole: every declarator of a var, let or const list, split at the commas that stand outside any bracket, string, comment or regular expression,
+     on the line or on those that follow it (the owner's `HOW`, which overwrote the customer's pay ways, is `HOW_IN` now). */
   {
-    const names = (src) => new Set([...src.matchAll(/^  (?:async )?function ([A-Za-z_$][\w$]*)\(|^  (?:var|const|let) ([A-Za-z_$][\w$]*)/gm)].map((m) => m[1] || m[2]));
-    const mine = names(readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8")), theirs = names(readFileSync(new URL("../stmt/page.js", import.meta.url), "utf8"));
-    const both = [...mine].filter((n) => theirs.has(n) && n !== "HOW");
-    ok(mine.size > 200 && theirs.size > 400 && both.length === 0, "no name the owner's script declares is one the customer page declares: " + both.join());
+    const declared = (src) => {
+      const out = new Set();
+      for (const m of src.matchAll(/^  (?:async )?function ([A-Za-z_$][\w$]*)\(/gm)) out.add(m[1]);
+      for (const m of src.matchAll(/^  (?:var|let|const) /gm)) {
+        let i = m.index + m[0].length, depth = 0, start = i;
+        const parts = [];
+        for (; i < src.length && i - start < 4000; i++) {
+          const c = src[i];
+          if (c === "'" || c === '"') { for (i++; i < src.length && src[i] !== c; i++) if (src[i] === "\\") i++; continue; }
+          if (c === "/" && src[i + 1] === "*") { i = src.indexOf("*/", i + 2) + 1; continue; }
+          if (c === "/" && src[i + 1] === "/") { i = src.indexOf("\n", i) - 1; continue; }
+          if (c === "/" && /[=(,:[!&|?{;]\s*$/.test(src.slice(Math.max(start, i - 8), i))) {
+            for (i++; i < src.length && src[i] !== "/"; i++) { if (src[i] === "\\") i++; else if (src[i] === "[") for (i++; i < src.length && src[i] !== "]"; i++) if (src[i] === "\\") i++; }
+            continue;
+          }
+          if ("([{".includes(c)) depth++;
+          else if (")]}".includes(c)) depth--;
+          else if (c === "," && depth === 0) { parts.push(src.slice(start, i)); start = i + 1; }
+          else if (c === ";" && depth === 0) break;
+        }
+        parts.push(src.slice(start, i));
+        for (const part of parts) { const n = /^\s*([A-Za-z_$][\w$]*)/.exec(part); if (n) out.add(n[1]); }
+      }
+      return out;
+    };
+    const mine = declared(readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8")), theirs = declared(readFileSync(new URL("../stmt/page.js", import.meta.url), "utf8"));
+    const both = [...mine].filter((n) => theirs.has(n));
+    ok(mine.size > 280 && theirs.size > 600 && mine.has("fOpen") && mine.has("PARTS") && mine.has("HOW_IN") && both.length === 0,
+      "no name the owner's script declares, in any declarator of a list, is one the customer page declares: " + both.join());
   }
 }
