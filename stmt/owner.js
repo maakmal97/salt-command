@@ -15,8 +15,9 @@
  * action on it; Orders, the Counter's orders by stage, the payments customers say they sent and the group orders;
  * Customers, the accounts (one list, read off /all/sheet, the publish's account list merged with the opens this
  * Worker records, a row opening the account's card), their messages, guest links and the associates' report card;
- * Record, the Desk's rows waiting for him and his own entries; and Shop, the hours, the notice and the practice
- * accounts. View as them opens the account the customer's own way, through the form. */
+ * Record, the Desk's rows waiting for him and his own entries; and Shop, the hours, the notice, the practice
+ * accounts and This device, whose Look is Night or Tide for this page. View as them opens the account the customer's own way,
+ * through the form. */
 
 import { MAKER_GEO_JS } from "./maker-geo.js";
 
@@ -708,7 +709,10 @@ export const OWNER_JS = `
      the page gives way to Sign in again, which loads /all and so the Access login. A fetch that throws is the
      connection, and says so. */
   var ENDED='Your admin sign-in has ended.';
-  function ended(){ document.getElementById('aEnded').hidden=false; document.body.classList.add('ended'); }
+  function ended(){
+    lookShut();   /* 11 Oct 2026: the look Sheet gives way; the lapse is what he must see */
+    document.getElementById('aEnded').hidden=false; document.body.classList.add('ended');
+  }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
                  : {};
@@ -3330,4 +3334,9 @@ export const OWNER_JS = `
       try{ history.replaceState(null,'',addrFor(placeNow, partNow)); }catch(e){}
     }
   }
+  /* 11 Oct 2026, HIS WORD: SALT ACCOUNT HAS ITS OWN NIGHT OR TIDE, per device. The head script has set the stored theme (Tide until one is
+     chosen); the choice Sheet is the customer's (stmt/page.js, lookAsk), asked once when this page opens on a device that holds none, and
+     Shop > This device holds the switch. The rest of the look (kept in localStorage salt-look on this origin, applied at once, no
+     reload) is the page's own and is shared. An Access lapse, which ended() reads on a request's answer, takes the Sheet down. */
+  lookAsk(null, true);
 `;

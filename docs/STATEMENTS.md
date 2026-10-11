@@ -538,14 +538,43 @@ their next sign-in and can change it under Account.
   Once chosen, a device is never asked again.
 - **Look, under Account**: This device holds a Look row of two ghosts, Night and Tide, the held one `aria-pressed`, 44px both ways.
   It applies at once, keeps the choice and needs no reload; on a store that refuses the write it holds for the visit.
-- **Not on his page.** Salt Account (`/all`, and View as them on it) opens in the stored theme from the same head script and asks
-  nothing: no Sheet, no Look row, no switch. Its switch belongs to its redesign.
+- **His page has its own, below ("His look").** Salt Account (`/all`) opens in the stored theme from the same head script. View as
+  them on it asks nothing and shows no setting.
 - **Not on a page with no script**: a guest board, the shut page and the maintenance page are Tide, always.
 - **Words**: `look.h` (Look), `look.sheetH` (Choose your look), `look.night`, `look.tide`, `look.note`, in `stmt/words.js`; no
   product word and no brand, and a customer is never told a level.
 - **The test accounts** (fixture version 8) show it: their sealed bundle carries `look: "asked"` (`tools/testfix.mjs`, a line in
   `FEATURES` and the case in `build()`), and a bundle that says so asks at every sign-in whatever the device holds, so the Sheet can
   be tried again; the Look row is the same as anyone's. A real account's bundle says nothing and is asked once.
+
+### His look: Salt Account chooses its own Night or Tide (11 Oct 2026, his decision)
+
+The same two themes, kept per device and **Tide until one is chosen**, chosen on Salt Account itself: `salt-look` in localStorage on
+the Counter's origin, which is also the origin of `/all`. It is apart from the Desk's (another origin) and shared with the Counter's
+own pages on that device: the customer's pages (View as them, a test account) read the same key, so a browser that uses both wears
+one choice on both, there being no second key.
+
+- **The Sheet.** The first time Salt Account opens on a device whose store is readable and holds no choice, the customer's Sheet
+  (`lookSheet(true)` in `stmt/page.js`; the same recipe, markup and script, with the acts below and one line that names Shop, "You can
+  change this later under Shop, in This device.") asks over the page, which is already Tide behind it. The owner's script calls
+  `lookAsk(null, true)` once at the end of its setup; the customer's own call passes nothing and an owner's account view is refused, so
+  View as them never asks. Choosing applies at once through `saltLook` (the attribute and the browser bar), keeps the choice and closes
+  the Sheet with no reload. Escape, Close or a tap on the scrim keeps Tide, stores nothing and asks again on the next open. Focus goes
+  into the Sheet and Tab stays in it. A store that cannot be read is never asked, because the answer could not be kept.
+- **An Access lapse wins.** The Sheet and its scrim are children of the body beside `#aEnded`, so `body.ended` hides them with the rest
+  of the page, and `ended()` in `stmt/owner.js` takes the Sheet down first (`lookShut`), so a lapse never leaves the choice open over
+  "Your admin sign-in has ended". After signing in again the page asks again if nothing was chosen.
+- **Shop, This device, Look.** Shop's fourth part, `This device` (`part.shop.device`, address `#shop/device`, reading nothing), holds
+  the customer's Look row (`lookRow(true)`): two ghosts, Night and Tide, 44px both ways, the held one `aria-pressed`, acts `look.night`
+  and `look.tide`. A tap applies at once, keeps the choice on this device and needs no reload; on a store that refuses the write it holds
+  for the visit.
+- **What it shares and what it does not.** Markup (`lookRow`, `lookSheet`) and script (`lookSet`, `lookShut`, `lookMark`, the Sheet's
+  focus and key handling) are the customer's; with no argument they draw as they did. The owner's version adds the acts and its own
+  line. No new CSS: the look rules are the customer's and apply to both pages.
+- **The suite.** The section "Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)" (`test/admin-look.mjs`, its mutations in
+  `test/admin-look.mutations.json`) drives his page in a window with a store that holds nothing, either theme, a value that is not a
+  theme and one that throws, and with the Access login's 401; the customer's page is checked drawn as it was. `test/maker-act.mjs`
+  audits the Sheet's controls with the rest of his page.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
@@ -1369,7 +1398,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   claims under Waiting on you, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
   Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Approve, Entry,
   Customers, Pricing: the Desk's rows waiting and the entries the server holds, then the forms by the part they belong to) and
-  **Shop** (Hours, Notice, Practice: the operating hours, the notice, the two test accounts). `data-in` on a section, a card or a
+  **Shop** (Hours, Notice, Practice, This device: the operating hours, the notice, the two test accounts, and this device's Look,
+  see "His look" below). `data-in` on a section, a card or a
   form names the places and parts it shows in (`orders` is every part of Orders, `orders.group` that part alone) and the owner's
   script hides the rest. **Each place reads only what it shows, on entering it, and a part on entering the part**: Orders reads the
   orders and the claims (the stages are one list, so moving between them reads nothing), Record the Desk's rows and the forms, and
@@ -1943,6 +1973,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
 | `link.tier` | Same card | Sets the tier it quotes. |
 | `link.withdraw` | Link card | Withdraws the link. |
+| `look.night` | Shop, This device, Look | Night for Salt Account on this device, at once, kept here. |
+| `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
+| `look.sheet-night` | Same Sheet | Chooses Night, keeps it and closes the Sheet. |
+| `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
+| `look.tide` | Shop, This device, Look | Tide for Salt Account on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice | Makes or deletes the two test accounts. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
@@ -2037,6 +2072,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours, reading them. |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
+| `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Account, reading nothing. |
 | `pool.close` | Group order card (key: the pool id) | Closes it and sends each joined order for acknowledgement, or sends the ones left again. |
 | `pool.closes-on` | Group orders | The day it closes, optional. |
 | `pool.open` | Group orders | Opens the group order. |

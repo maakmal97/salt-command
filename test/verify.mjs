@@ -24493,9 +24493,10 @@ await (async () => {
       "each account's card carries Show a code, switched off where no account stands behind the username");
     const btn = btnOf(u);
     btn.click();
-    const sheet = () => D.querySelector(".salt-sheet[role=dialog]");
+    /* the hand-over Sheet is the one with .ho: his page also carries the look Sheet and its scrim, hidden, from the first paint */
+    const sheet = () => D.querySelector(".salt-sheet.ho[role=dialog]"), scrim = () => D.querySelector(".salt-sheet-scrim:not(#lookScrim)");
     ok(!!sheet() && sheet().getAttribute("aria-modal") === "true" && D.getElementById(sheet().getAttribute("aria-labelledby")).textContent === "Sign in on their phone"
-      && !!D.querySelector(".salt-sheet-scrim") && !!sheet().querySelector(".salt-orb.salt-sheet__close[aria-label=Close]")
+      && !!scrim() && !!sheet().querySelector(".salt-orb.salt-sheet__close[aria-label=Close]")
       && /Making a code/.test(sheet().textContent) && D.activeElement === sheet(),
       "the tap opens the system's Sheet at once, saying a code is being made, with focus inside it");
     ok(await until(() => !!D.getElementById("hoC")), "and the code is drawn once it is made");
@@ -24523,7 +24524,7 @@ await (async () => {
       "the code on his screen opens their account on their phone, once");
     /* Escape closes it and hands focus back */
     sheet().dispatchEvent(new win.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    ok(!sheet() && !D.querySelector(".salt-sheet-scrim") && D.activeElement === btn, "Escape closes the sheet and focus returns to Show a code");
+    ok(!sheet() && !scrim() && D.activeElement === btn, "Escape closes the sheet and focus returns to Show a code");
   } finally { globalThis.fetch = realFetch; if (win) { try { win.close(); } catch (e) { /* best effort */ } } }
 })();
 section("v692: the door says Log in, remembers a device without keeping a password, and Log out ends it");
@@ -53762,6 +53763,11 @@ await (async () => {
 section("Salt Account: five places, Needs you, Orders, Customers, Record and Shop, each part reading and showing only its own");
 await (async () => {
   await (await import("./admin-places.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)");
+await (async () => {
+  await (await import("./admin-look.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

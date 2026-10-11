@@ -20,8 +20,20 @@
  {
   "name": "Shop loses its Practice part",
   "file": "stmt/page.js",
-  "find": "[\"notice\", \"Notice\"], [\"practice\", \"Practice\"]]",
-  "replace": "[\"notice\", \"Notice\"]]"
+  "find": "[\"notice\", \"Notice\"], [\"practice\", \"Practice\"], [\"device\", \"This device\"]]",
+  "replace": "[\"notice\", \"Notice\"], [\"device\", \"This device\"]]"
+ },
+ {
+  "name": "the look row shows under Hours",
+  "file": "stmt/page.js",
+  "find": "<section id=\"oLook\" data-in=\"shop.device\"",
+  "replace": "<section id=\"oLook\" data-in=\"shop.hours\""
+ },
+ {
+  "name": "Shop loses its This device part",
+  "file": "stmt/page.js",
+  "find": "[\"notice\", \"Notice\"], [\"practice\", \"Practice\"], [\"device\", \"This device\"]]",
+  "replace": "[\"notice\", \"Notice\"], [\"practice\", \"Practice\"]]"
  },
  {
   "name": "a strip is no longer the system's tabs",

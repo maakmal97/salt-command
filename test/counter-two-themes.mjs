@@ -2,10 +2,10 @@
  *
  * Two themes on every surface, kept per device (localStorage salt-look, night or tide), Tide until one is chosen. A signed-in
  * customer page on a device that has chosen nothing asks once in a Sheet; Account holds a Look setting with the two options; Salt
- * Account (his page) opens in the stored theme and asks nothing, its switch being another part of the redesign; a guest board, the
- * shut page and the maintenance page run no script, so they are drawn Tide. Every assertion below observes a page's window or the
- * generated stylesheet's declared values, and each was proved red by its own mutation (test/counter-two-themes.mutations.json,
- * run with tools/section.mjs). Every code, name and password here is invented.
+ * Account (his page) opens in the stored theme from the same head script and has a switch of its own in Shop (test/admin-look.mjs);
+ * a guest board, the shut page and the maintenance page run no script, so they are drawn Tide. Every assertion below observes a
+ * page's window or the generated stylesheet's declared values, and each was proved red by its own mutation
+ * (test/counter-two-themes.mutations.json, run with tools/section.mjs). Every code, name and password here is invented.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -255,7 +255,7 @@ export async function run({ ok }) {
     if (thb) thb.click();
     ok(!!thb && th.d.documentElement.getAttribute("data-theme") === "night" && th.state().held === "night" && th.errs.length === 0, `and the setting still changes the visit, whose store refuses the write (errors ${th.errs.join(" | ") || "none"})`);
 
-    /* 8. Salt Account: the stored theme from the head script, and no Sheet and no switch */
+    /* 8. Salt Account: the stored theme from the head script (its own Sheet and switch are proved in test/admin-look.mjs) */
     const ownerPage = landingPage("", "nco", { master: "fixture-master", accounts: [] });
     for (const [stored, want] of [[undefined, "tide"], ["night", "night"], ["tide", "tide"], ["dusk", "tide"]]) {
       const dom = new JSDOM(ownerPage, { url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
@@ -263,9 +263,8 @@ export async function run({ ok }) {
         if (stored) w.localStorage.setItem("salt-look", stored);
       } });
       const dd = dom.window.document;
-      ok(dd.documentElement.getAttribute("data-theme") === want && dd.querySelector('meta[name="theme-color"]').getAttribute("content") === (want === "night" ? NIGHT.obsidian : TIDE.obsidian)
-        && !dd.getElementById("lookSheet") && !dd.getElementById("lookRow") && !dd.querySelector("[data-look]"),
-        `Salt Account opens ${want} for ${stored === undefined ? "a store with nothing" : "a store holding " + stored}, with no Sheet, no setting and no switch`);
+      ok(dd.documentElement.getAttribute("data-theme") === want && dd.querySelector('meta[name="theme-color"]').getAttribute("content") === (want === "night" ? NIGHT.obsidian : TIDE.obsidian),
+        `Salt Account opens ${want} for ${stored === undefined ? "a store with nothing" : "a store holding " + stored}, its bar at that theme's ground`);
       dom.window.close();
     }
     const oThrow = new JSDOM(ownerPage, { url: "https://site.test/all", runScripts: "dangerously", beforeParse(w) {
