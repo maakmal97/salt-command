@@ -63,11 +63,16 @@ const skipData = (m) => { console.log("  SKIP (no data): " + m); };
    (fiveTiers' multiples, levelAt, the proposal and its rules, the guest and standing boards) stays in the engine, the desk
    and the publish, so the sections that prove it put salt's last level rule back, in their own window (levelWindow) or
    their own copy of the pricing snapshot (levelSnap), and hand it the held levels they need. What the live book does is
-   proved in the drift section. */
+   proved in the drift section. A HELD DRIFT IS A NUMBER AND BELONGS TO THE DRIFT RULE (the book holds one since v1075, CS6-BS at
+   -0.7): on the level rule put back it is not a level, and production never reads it as one, since the snapshot leaves a drift
+   book out of tierOf and carries the drift apart. So the window sets the live book's salt drifts aside, then applies `held`;
+   whichever customer holds one next, the sections below see only the levels they hand in. */
 const LEVEL_SALT = { cogs: "quote", overhead: 0.5, multiples: [2.1, 2.1, 2.5, 2.5], round: ["down", "up", "down", "up"],
   decay: 0.09, from: 0.5, rungs: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5] };
 const levelWindow = (w, held) => {
-  w.eval("TIER_RULE.salt=" + JSON.stringify(LEVEL_SALT) + ";" + Object.entries(held || {}).map(([c, v]) =>
+  w.eval("TIER_RULE.salt=" + JSON.stringify(LEVEL_SALT) + ";"
+    + "Object.keys(TIER_OF).forEach(function(c){var t=TIER_OF[c];if(!t||typeof t.salt!=='number')return;t=Object.assign({},t);delete t.salt;if(Object.keys(t).length)TIER_OF[c]=t;else delete TIER_OF[c];});"
+    + Object.entries(held || {}).map(([c, v]) =>
     "TIER_OF[" + JSON.stringify(c) + "]=Object.assign({},TIER_OF[" + JSON.stringify(c) + "],{salt:" + JSON.stringify(v) + "});").join("")
     + "if(typeof recompute==='function')recompute();");
   return w;
@@ -54507,11 +54512,21 @@ await (async () => {
     + "tierCustomers().filter(function(id){return !isPartner(id);}).forEach(function(id){var d=driftOf(id,'salt').d;if(Math.abs(d)>0.0001)moved++;shownSizes('salt').forEach(function(q){n++;"
     + "var x=PRICING_ENGINE.driftAt(q,C,P,d).p;if(cardQuote(id,q)!==x)bad.push([id,q,cardQuote(id,q),x]);});});return {n:n,moved:moved,bad:bad.slice(0,3)};})()");
   ok(q6.n > 200 && q6.moved > 20 && !q6.bad.length, "every named customer is quoted the Set Price moved by their own drift at every size, " + q6.moved + " of them off nought: " + JSON.stringify(q6));
-  /* 7. HIS HAND-SET DRIFT WINS over the automatic one, which is still read beside it */
-  const h7 = rd("(function(){var id=tierCustomers()[0],keep=TIER_OF[id],a=driftOf(id,'salt'),q0=cardQuote(id,12.5);"
+  /* 7. HIS HAND-SET DRIFT WINS over the automatic one, which is still read beside it. The customer is the first with none set
+     (the book holds a hand-set drift since v1075, and the next customer to hold one must not move this): then the first reading
+     is the automatic drift itself, and the drift he sets in the test reads as the hand while the automatic stays what it was. */
+  const free = "tierCustomers().find(function(c){return !isPartner(c)&&driftOf(c,'salt').hand==null;})";
+  const h7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],a=driftOf(id,'salt'),q0=cardQuote(id,12.5);"
     + "TIER_OF[id]=Object.assign({},keep,{salt:1});var b=driftOf(id,'salt'),q1=cardQuote(id,12.5);if(keep)TIER_OF[id]=keep;else delete TIER_OF[id];"
-    + "return {auto:a.d,hand:b.hand,d:b.d,bAuto:b.auto,q0:q0,q1:q1,top:PRICING_ENGINE.driftAt(12.5,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),1).p};})()");
-  ok(h7.hand === 1 && h7.d === 1 && h7.bAuto === h7.auto && h7.q1 === h7.top && h7.q1 > h7.q0, "a drift he sets wins over the one read off the record, and quotes the top of the drift: " + JSON.stringify(h7));
+    + "return {id:id,first:a.hand,auto:a.auto,hand:b.hand,d:b.d,bAuto:b.auto,q0:q0,q1:q1,top:PRICING_ENGINE.driftAt(12.5,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),1).p};})()");
+  ok(h7.id && h7.first === null && h7.hand === 1 && h7.d === 1 && h7.bAuto === h7.auto && h7.q1 === h7.top && h7.q1 > h7.q0, "a drift he sets wins over the one read off the record, and quotes the top of the drift: " + JSON.stringify(h7));
+  /* and one he already holds is his word too: the book's own hand-set customers read the hand beside their automatic drift,
+     and what the desk quotes them is the Set Price moved by the hand (forced here, so it holds with none on the book) */
+  const k7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],o=null;TIER_OF[id]=Object.assign({},keep,{salt:-0.7});"
+    + "try{var d=driftOf(id,'salt');o={hand:d.hand,d:d.d,auto:d.auto,card:cardQuote(id,3),set:PRICING_ENGINE.driftAt(3,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),-0.7).p};}"
+    + "finally{if(keep)TIER_OF[id]=keep;else delete TIER_OF[id];}return o;})()");
+  ok(k7 && k7.hand === -0.7 && k7.d === -0.7 && k7.auto !== -0.7 && k7.card === k7.set,
+    "and a drift already held reads as the hand beside the automatic one, and is the drift the customer is quoted: " + JSON.stringify(k7));
   /* 8. A LATE PAYER IS PRICED UP (his decision), where the levels only offered one a level down */
   const l8 = rd("(function(){var id=tierCustomers().find(function(c){var x=driftOf(c,'salt');return x.hand==null&&x.B===0;}),k=lateOf,a,b,da,db;"
     + "try{lateOf=function(){return {on:false};};a=cardQuote(id,12.5);da=driftOf(id,'salt').d;"
@@ -54525,7 +54540,7 @@ await (async () => {
   ok(n9.rate != null && Math.abs(n9.rate - n9.low) < 0.0001 && n9.low < n9.set,
     "the shelf's NRV on the drift book is the lowest an automatic drift quotes, -0.5, under the Set Price, less the costs to sell: " + JSON.stringify(n9));
   /* 10. THE DRIFT CARD: Set queues his figure, one out of range is refused, Clear queues the clear */
-  const c10 = rd("(function(){setProdView('salt');switchTab('people');var id=tierCustomers()[0],el=document.getElementById('driftIn_'+id+'_salt');if(!el)return {el:false};"
+  const c10 = rd("(function(){setProdView('salt');switchTab('people');var id=" + free + ",el=document.getElementById('driftIn_'+id+'_salt');if(!el)return {el:false};"
     + "var n0=queue.length;el.value='0.4';driftSet(id,'salt');var q1=queue.length>n0?queue[queue.length-1].payload:null;"
     + "var n1=queue.length,el2=document.getElementById('driftIn_'+id+'_salt');el2.value='2';driftSet(id,'salt');var refused=queue.length===n1;"
     + "driftClear(id,'salt');var q2=queue[queue.length-1].payload;queue.splice(n0);render();"
@@ -54599,6 +54614,32 @@ await (async () => {
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   ok(/the prices follow that customer, never past the board every stranger sees/.test(pg17) && !/two levels above/.test(pg17),
     "the guest-link lead says the prices follow that customer, never past the board every stranger sees, and no longer two levels above");
+  /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
+     The snapshot leaves a drift book out of tierOf and carries its drifts apart (byProduct.salt.drift, the hand winning), so no
+     reader meets a number where it looks for a level. First the contract over the book as it stands, whoever holds what; then
+     the mixed entry forced on the first customer with none, so it is proved with no such customer on the book. */
+  const driftBooks18 = Object.entries(snap.byProduct).filter(([, b]) => b.inputs && b.inputs.policy && b.inputs.policy.tierRule && b.inputs.policy.tierRule.drift).map(([p]) => p);
+  const held18 = Object.entries(snap.tierOf || {}).flatMap(([c, t]) => Object.entries(t).map(([p, v]) => [c, p, v]));
+  const badTier18 = held18.filter(([, p, v]) => driftBooks18.includes(p) || !E.levelShapeOk(v, snap.tierNames));
+  const drifts18 = driftBooks18.flatMap((p) => Object.entries(snap.byProduct[p].drift || {}));
+  const badDrift18 = drifts18.filter(([, v]) => v !== "partner" && !E.driftOk(v));
+  ok(driftBooks18.includes("salt") && held18.length > 0 && !badTier18.length && drifts18.length > 20 && !badDrift18.length,
+    "the snapshot's tierOf holds a level shape on a level-named book and nothing on a drift book, whose drifts all travel apart as a number from -1 to +1 or partner: "
+    + JSON.stringify({ driftBooks: driftBooks18, levels: held18.length, badTier: badTier18.slice(0, 3), drifts: drifts18.length, badDrift: badDrift18.slice(0, 3) }));
+  const id18 = String(w.eval(free)), at18 = JSON.stringify(id18), keep18 = rd("TIER_OF[" + at18 + "]||null");
+  let s18 = null, d18 = null;
+  try {
+    w.eval("TIER_OF[" + at18 + "]={oil:'Platinum',salt:-0.7};recompute();");
+    s18 = pricingSnapshot(w);
+    d18 = rd("driftOf(" + at18 + ",'salt').d");
+  } finally { w.eval((keep18 ? "TIER_OF[" + at18 + "]=" + JSON.stringify(keep18) : "delete TIER_OF[" + at18 + "]") + ";recompute();"); }
+  const sS18 = s18 && s18.byProduct.salt, C18 = sS18 && E.costStack(sS18.inputs.cost);
+  const list18 = s18 && PL.priceList(id18, bk12, s18, new Date()), salt18 = list18 && list18.products.find((p) => p.product === "salt"), oil18 = list18 && list18.products.find((p) => p.product === "oil");
+  ok(id18 && s18 && JSON.stringify(s18.tierOf[id18]) === '{"oil":"Platinum"}' && sS18.drift[id18] === -0.7 && d18 === -0.7
+    && sS18.cards[id18].length > 5 && sS18.cards[id18].every(([q, x]) => x === E.driftAt(q, C18, sS18.inputs.policy, -0.7).p)
+    && salt18 && salt18.basis === "card" && salt18.tier === null && JSON.stringify(salt18.sizes.map((x) => [x.q, x.price])) === JSON.stringify(sS18.cards[id18])
+    && oil18 && oil18.basis === "board",
+    "a customer holding a drift on salt and a level on oil is carded salt at the Set Price moved by -0.7, size for size, with the level left on oil's stated board: " + JSON.stringify({ tierOf: s18 && s18.tierOf[id18], drift: sS18 && sS18.drift[id18], d: d18, cards: sS18 && sS18.cards[id18].slice(0, 2) }));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 
