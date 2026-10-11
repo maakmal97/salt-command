@@ -52,7 +52,7 @@ export function world() {
 const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
 const field = (root, label) => [...root.querySelectorAll("label")]
   .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
-async function ownerTrade(wd, pageWork) {
+async function ownerTrade(wd, pageWork, cover) {
   const sent = [];
   let work, loseAnswer = false, tick = Date.parse(AT);
   const dom = new JSDOM(landingPage("", "trade-nonce", { master: "fixture-master", accounts: [] }), {
@@ -64,6 +64,7 @@ async function ownerTrade(wd, pageWork) {
       win.Date = class extends NativeDate { constructor(...args) { super(...(args.length ? args : [tick += 100])); } };
       win.confirm = () => true;
       win.fetch = async (path, init = {}) => {
+        if (cover && String(path) === "/all/maker/trade-cover") return cover(JSON.parse(init.body));
         if (String(path).startsWith("/all/maker/inputs") || String(path).startsWith("/all/maker/drafts/")) {
           const input = init.body && JSON.parse(init.body);
           if (input) sent.push({ path: String(path), bytes: init.body, body: input });
@@ -387,4 +388,40 @@ export async function run({ ok, pageWork }) {
           JSON.stringify({ request, calls: refusedWorld.calls, counts, answer: page.section.querySelector('[role="status"]').textContent }));
     } finally { page.dom.window.close(); refusedWorld.sqlite.close(); }
   }
+}
+
+export async function runCoverRead({ ok, pageWork }) {
+  const wd = world(), reads = [];
+  let gate = null, mode = "offer";
+  const page = await ownerTrade(wd, pageWork, async (input) => {
+    reads.push(input);
+    if (gate) await gate.promise;
+    return mode === "fail" ? Response.json({ ok: false, error: "The Desk did not answer." }, { status: 503 })
+      : Response.json({ ok: true, cover: { rm: 30, units: 0.75, free: 1, ask: 130 } });
+  });
+  try {
+    const check = page.section.querySelector("[data-reward-cover]"), label = check.parentNode;
+    const note = () => label.parentNode.nextElementSibling.textContent;
+    page.change("Goods total (RM)", "130"); await page.work.quiet();
+    ok(!label.hidden && !check.disabled && !check.checked && /Cover RM 30[.]00 with 0[.]75 unit/.test(label.textContent) && reads.length === 1,
+      "cover read: the first answer offers an unticked cover, and the read asked for the typed figures " + JSON.stringify(reads));
+    check.checked = true;
+    let release; gate = { promise: new Promise((resolve) => { release = resolve; }) };
+    page.change("Goods total (RM)", "131");
+    const mid = { hidden: label.hidden, disabled: check.disabled, ticked: check.checked, reads: reads.length, words: label.textContent };
+    release(); gate = null; await page.work.quiet();
+    ok(mid.reads === 2 && mid.hidden === false && mid.disabled && !mid.ticked && /Checking cover/.test(mid.words)
+      && !label.hidden && !check.disabled && /Cover RM 30[.]00/.test(label.textContent),
+      "cover read: a read in flight keeps the offered box at its place, unticked and disabled, so the tap on Send beside it is not moved "
+        + JSON.stringify({ mid, now: label.textContent }));
+    mode = "fail"; page.change("Goods total (RM)", "132"); await page.work.quiet();
+    const retry = [...page.section.querySelectorAll("button")].find((e) => e.textContent === "Read cover again");
+    ok(retry && !retry.hidden && !retry.disabled && !label.hidden && check.disabled && !check.checked
+      && /Cover not read/.test(label.textContent) && note() === "The Desk did not answer." && reads.length === 3,
+      "cover read: a failed read keeps the box with its note and an enabled retry beside it");
+    mode = "offer"; retry?.click(); await page.work.quiet();
+    ok(retry && reads.length === 4 && JSON.stringify(reads[3]) === JSON.stringify(reads[2])
+      && !label.hidden && !check.disabled && retry.hidden && note() === "" && /Cover RM 30[.]00/.test(label.textContent),
+      "cover read: the retry reads the same figures again and, on an answer, offers the cover and drops itself");
+  } finally { page.dom.window.close(); wd.sqlite.close(); }
 }
