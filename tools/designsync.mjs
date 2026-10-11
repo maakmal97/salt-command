@@ -82,7 +82,7 @@ if (mode === "--pull") {
 let master = readFileSync(MASTER, "utf8");
 if (mode === "--check") {
   let bad = 0;
-  /* 09 Oct 2026: the time of day is retired, one theme (Night); a DESIGN time block left in the master is a fault */
+  /* 09 Oct 2026: the time of day is retired, and the look is chosen per device, Night or Tide (11 Oct 2026), never by the clock; a DESIGN time block left in the master is a fault */
   if (master.includes("/* ==== DESIGN time:")) { console.log("  FAIL  time: the retired DESIGN time block is still in the master"); bad++; }
   for (const b of BLOCKS) {
     const at = locate(master, b);
