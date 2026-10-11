@@ -53601,8 +53601,7 @@ await (async () => {
       && ["Sale or purchase", "Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
       "Maker exposes the remaining typed Enter and Network actions beside stock, trade and held-tier inputs");
-    const preview = [...cards[0].querySelectorAll("button")].find((button) => button.textContent === "Preview");
-    preview.click();
+    /* his decision 6 of 11 Oct 2026: the card read its own preview when it was opened; there is no Preview button to press */
     for (let i = 0; i < 100 && !doc.querySelector("[data-accept]"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     ok(/on RM 56\.00 cost/.test(cards[0].textContent) && /RM 44\.00/.test(cards[0].textContent) && /44%/.test(cards[0].textContent)
       && /Review preview flag/.test(cards[0].textContent) && !!doc.querySelector("[data-accept]"),
@@ -53611,10 +53610,10 @@ await (async () => {
     const total = cards[0].querySelector('input[type="number"]');
     total.value = "120"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));
     ok(!doc.querySelector("[data-accept]"), "editing an order price invalidates the preview and removes Accept");
-    holdPreview = true; preview.click();
+    holdPreview = true; total.dispatchEvent(new admin.window.Event("change", { bubbles: true }));
     for (let i = 0; i < 100 && !previewRelease; i++) await new Promise((resolve) => setTimeout(resolve, 10));
     total.value = "130"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));
-    previewRelease(); await new Promise((resolve) => setTimeout(resolve, 20));
+    previewRelease(); holdPreview = false; await new Promise((resolve) => setTimeout(resolve, 20));
     ok(!doc.querySelector("[data-accept]"), "a preview returning after a field edit cannot restore a stale Accept");
     const tradeSection = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Sale or purchase");
     const tradeControls = tradeSection.querySelectorAll("select, input");
@@ -53851,6 +53850,11 @@ await (async () => {
 section("Salt Account: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: the order card reads its preview on opening, asks on a sheet, keeps its moves at its foot, and its tick is a 44px target");
+await (async () => {
+  await (await import("./admin-order-card.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

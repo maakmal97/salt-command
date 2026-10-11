@@ -92,8 +92,8 @@
  {
   "name": "the card has no reply",
   "file": "stmt/owner.js",
-  "find": "      makerOrderMoves(card,order);\n      if(order.status==='ready'&&!againAck)makerCashControls(card,order);",
-  "replace": "      if(order.status==='ready'&&!againAck)makerCashControls(card,order);"
+  "find": "      makerOrderMoves(card,order,false,acts);\n      if(order.status==='ready'&&!againAck){ makerCashControls(card,order); cashed=true; }",
+  "replace": "      if(order.status==='ready'&&!againAck){ makerCashControls(card,order); cashed=true; }"
  },
  {
   "name": "Preview sends the total alone",

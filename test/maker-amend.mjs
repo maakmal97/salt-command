@@ -200,9 +200,11 @@ export async function run({ ok }) {
     beforeParse(window) {
       Object.defineProperty(window, "crypto", { value: { getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID(), subtle: webcrypto.subtle } });
       window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder;
-      window.scrollTo = () => {}; window.confirm = () => true;
+      window.scrollTo = () => {};
       window.fetch = async (path, init) => {
         if (init && init.method === "POST" && String(path).startsWith("/all/maker/orders/")) {
+          /* a placed order opened reads its own preview (his decision 6 of 11 Oct 2026); it is not an amendment and is not counted */
+          if (String(path).endsWith("/preview")) return Response.json({ ok: true, hash: "h", quote: 285, delivery: 0, flags: [] });
           posts.push({ path: String(path), body: JSON.parse(init.body) });
           if (failNext > 0) { failNext--; return Response.json({ ok: false, error: "The Desk did not answer." }, { status: 503 }); }
           return Response.json({ ok: true });

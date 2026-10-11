@@ -23,7 +23,7 @@ export async function run({ ok }) {
         for (const [key, value] of storage) w.localStorage.setItem(key, value);
         Object.defineProperty(w, "crypto", { value: webcrypto });
         w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder;
-        w.scrollTo = () => {}; w.confirm = () => true;
+        w.scrollTo = () => {};
         w.Date.now = () => now;
         w.setTimeout = (f, ms) => { timers.push({ f, ms, at: now + ms, off: false }); return timers.length; };
         w.clearTimeout = (id) => { if (timers[id - 1]) timers[id - 1].off = true; };

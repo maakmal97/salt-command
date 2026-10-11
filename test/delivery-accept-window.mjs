@@ -213,7 +213,7 @@ export async function run({ ok, KV, assets }) {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
       Object.defineProperty(window, "crypto", { value: { getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID(), subtle: webcrypto.subtle } });
-      window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder; window.scrollTo = () => {}; window.confirm = () => true;
+      window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder; window.scrollTo = () => {};
       window.fetch = async (path, init) => {
         if (init && init.method === "POST" && String(path).startsWith("/all/maker/orders/")) {
           const b = JSON.parse(init.body);
@@ -240,7 +240,7 @@ export async function run({ ok, KV, assets }) {
     const radio = (id, name, label) => { const opt = acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest(".salt-option").textContent === label); return opt; };
     const wins = (id) => acard(id) ? [...acard(id).querySelectorAll('input[name="makerWin-' + id + '"]')].map((r) => r.closest(".salt-option").textContent) : [];
     doc.querySelector('[data-act="nav.orders"]').click();
-    await wait(() => button(A, "Preview"));
+    await wait(() => doc.querySelector('[data-act="order.open"]'));
     const dNow = rd("ordWinDays(Date.now())"), deskOn = rd("ordWinOn('" + dNow[0] + "',Date.now())"), now2 = deskOn.map((p) => p.label);
     const tDay = s12w().slice(0, 10), tOn = rd("ordWinOn('" + tDay + "',Date.now())").filter((p) => p.slot !== s12w()).map((p) => p.label);
     const dayOpts = (id) => acard(id) ? [...acard(id).querySelectorAll("select[data-winday] option")].map((x) => x.value) : [];
@@ -250,7 +250,7 @@ export async function run({ ok, KV, assets }) {
       + JSON.stringify({ a: wins(A), b: wins(B), t: wins(T), desk: now2 }));
     const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
     /* an Accept reloads the review, so each card is found again once the reload has settled */
-    const acceptOf = async (id) => { await new Promise((r) => setTimeout(r, 250)); button(id, "Preview").click(); await wait(() => acard(id).querySelector("[data-accept]")); acard(id).querySelector("[data-accept]").click();
+    const acceptOf = async (id) => { await new Promise((r) => setTimeout(r, 250)); await wait(() => acard(id).querySelector("[data-accept]")); acard(id).querySelector("[data-accept]").click();
       await wait(() => posts.some((p) => p.kind === "accept" && p.path.includes(id))); return posts.filter((p) => p.kind === "accept" && p.path.includes(id)).pop().body; };
     pick(A, "makerFee", "RM 10"); pick(A, "makerWin", now2[0]);
     pick(T, "makerFee", "RM 0");

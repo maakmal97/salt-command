@@ -275,7 +275,7 @@ export async function run({ ok }) {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
       Object.defineProperty(window, "crypto", { value: { getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID(), subtle: webcrypto.subtle } });
-      window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder; window.scrollTo = () => {}; window.confirm = () => true;
+      window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder; window.scrollTo = () => {};
       window.fetch = async (path, init) => {
         if (init && init.method === "POST" && String(path).startsWith("/all/maker/orders/")) {
           const b = JSON.parse(init.body);
@@ -302,15 +302,14 @@ export async function run({ ok }) {
     const radio = (id, name, label) => acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest(".salt-option").textContent === label);
     const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new Ev("change", { bubbles: true })); };
     doc.querySelector('[data-act="nav.orders"]').click();
-    await wait(() => button(A, "Preview"));
-    ok(/Sent for their yes: goods RM ?120\.00, delivery RM ?10\.00, open until /.test(acard(K).textContent) && !button(K, "Preview") && !!button(K, "Withdraw the offer"),
+    await wait(() => doc.querySelector('[data-act="order.open"]'));
+    ok(/Sent for their yes: goods RM ?120\.00, delivery RM ?10\.00, open until /.test(acard(K).textContent) && !acard(K).querySelector("[data-accept]") && !posts.some((p) => p.kind === "preview" && p.path.includes(K)) && !!button(K, "Withdraw the offer"),
       "Counter Admin says an open offer and offers Withdraw, never a second Accept: " + acard(K).textContent.slice(0, 200));
     button(K, "Withdraw the offer").click();
     ok(await wait(() => posts.some((p) => p.kind === "withdraw")) && /^[A-Za-z0-9_-]{16,64}$/.test(posts.find((p) => p.kind === "withdraw").body.rid), "Withdraw posts under its tap's own id");
     await new Promise((r) => setTimeout(r, 250));
     pick(A, "makerFee", "RM 10");
-    const tot = acard(A).querySelector('.maker-fields input[type="number"]'); tot.value = "125"; tot.dispatchEvent(new Ev("input", { bubbles: true }));
-    button(A, "Preview").click();
+    const tot = acard(A).querySelector('.maker-fields input[type="number"]'); tot.value = "125"; tot.dispatchEvent(new Ev("input", { bubbles: true })); tot.dispatchEvent(new Ev("change", { bubbles: true }));
     await wait(() => button(A, "Send for their yes"));
     ok(!!button(A, "Send for their yes at RM 125.00"), "a raise previewed is sent for their yes, never accepted");
     button(A, "Send for their yes").click();
@@ -321,7 +320,6 @@ export async function run({ ok }) {
     pick(T, "makerFee", "RM 0");
     const other = [...acard(T).querySelectorAll('input[name="makerWin-' + T + '"]')].find((r) => r.value && r.value !== s12);
     other.checked = true; other.dispatchEvent(new Ev("change", { bubbles: true }));
-    button(T, "Preview").click();
     await wait(() => button(T, "Send for their yes"));
     button(T, "Send for their yes").click();
     await wait(() => posts.some((p) => p.kind === "offer" && p.path.includes(T)));

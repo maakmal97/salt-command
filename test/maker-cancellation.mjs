@@ -74,7 +74,7 @@ export async function run({ ok, pageWork }) {
     beforeParse(window) {
       Object.defineProperty(window, "crypto", { value: webcrypto });
       window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder;
-      window.scrollTo = () => {}; window.confirm = () => true;
+      window.scrollTo = () => {};
       window.fetch = async (path, init) => {
         const route = String(path);
         if (route === "/all/maker/inputs" || route === "/all/maker/inputs/ledger-amend") {

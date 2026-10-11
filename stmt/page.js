@@ -495,6 +495,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-card>*+*{margin-top:12px}
 .adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
 .adm .maker-card>.maker-say:empty{margin-top:0}
+/* 12 OCT 2026 (PHASE 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first and the quiet ones beside it, with
+   the card's answer line under them; a foot with moves stays along the card's foot as it scrolls (the page's, clear of the App bar, or the card's own from 860px).
+   The right gutter is the + orb's, which stands over the page at the corner. */
+.adm .maker-foot{display:flex;flex-direction:column;gap:8px}
+.adm .maker-foot.has{position:sticky;z-index:10;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);margin:16px -4px -4px;padding:12px 76px 8px 4px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
+.adm .maker-foot__acts{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.adm .maker-foot__acts:empty{display:none}
+.adm .maker-foot__acts .btn{margin-top:0;width:auto;flex:1 1 11rem}
+.adm .maker-foot .maker-say{margin:0}
+@media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}
 .adm .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
@@ -645,9 +655,17 @@ body.ended>*:not(#aEnded){display:none}
 .adm .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .anote:empty{display:none}
 .adm .anote.bad{color:var(--salt-ember)}
-.adm .oacct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
+/* 12 OCT 2026 (PHASE 2a): the tick's input is the tap, 44px both ways (his rule 6: a tap target is 44px, measured on the control, not on its label),
+   laid unseen over the 18px box drawn beside it, which shows the state: a ring, filled with a mark when ticked */
+.adm .oacct .tick{position:relative;display:flex;align-items:center;gap:0;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.adm .oacct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
+.adm .oacct .tick input{position:absolute;left:0;top:0;width:var(--salt-tap);height:var(--salt-tap);margin:0;opacity:0;cursor:pointer}
+.adm .oacct .tick .tickbox{flex:none;box-sizing:border-box;width:18px;height:18px;margin:13px;border:2px solid var(--salt-text-muted);border-radius:4px}
+.adm .oacct .tick input:checked+.tickbox{background:var(--salt-verdigris);border-color:var(--salt-verdigris)}
+.adm .oacct .tick input:checked+.tickbox::after{content:"";display:block;width:4px;height:8px;margin:0 0 0 4px;border:solid var(--salt-ink-on-accent);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.adm .oacct .tick input:focus-visible+.tickbox{outline:2px solid var(--salt-brass);outline-offset:2px}
+.adm .oacct .tick input:disabled+.tickbox{border-style:dashed}
+.adm .oacct .tick input:disabled{cursor:not-allowed}
 .adm .astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
 .adm .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
@@ -3279,11 +3297,22 @@ const CLIENT_JS = `
      data-yn if a redraw replaced it); Tab stays inside. A lapse or a log out takes it down (ynShut, in lapsed and lock), so it is
      never left over the door. Built from the page's own nodes at the root of the body, last, so it lies over the order sheet. */
   var yn=null;
+  /* the controls of the sheet in the order Tab visits them: its buttons, and a field or a tile (a group of tiles is one stop, the one picked or the first) */
+  function ynTabs(box){
+    return [].filter.call(box.querySelectorAll('button,input,select,textarea'),function(x){
+      if(x.disabled||x.type==='hidden') return false;
+      if(x.type==='radio'&&x.name){
+        var g=[].filter.call(box.querySelectorAll('input[type=radio]'),function(r){ return r.name===x.name; });
+        return x===(g.filter(function(r){ return r.checked; })[0]||g[0]);
+      }
+      return true;
+    });
+  }
   function ynKeys(ev){
     if(!yn) return;
     if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); ynShut(); return; }
     if(ev.key!=='Tab') return;
-    var f=[].slice.call(yn.box.querySelectorAll('button')), i=f.indexOf(document.activeElement);
+    var f=ynTabs(yn.box), i=f.indexOf(document.activeElement);
     if(!f.length) return;
     if(i<0&&!yn.box.contains(document.activeElement)&&document.activeElement!==yn.box){ ev.preventDefault(); f[ev.shiftKey?f.length-1:0].focus(); }
     else if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }
