@@ -1604,6 +1604,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   delivered only) and a field for his own words (`order.reason`); a tile fills the field and typing clears the pick, the reason is optional and
   rides as `note`, checked by `siteWords` on the Desk. The money taps (handover, cash, Received) are guarded once, as they were, with no sheet,
   and Approve's confirm (`approveDraft`) is not the card's and is as it was.
+  **An edit put back to what it was offers its read** (Phase 2b, Fable's follow-up to 2a): the total's `input` takes the quote and Accept away, and
+  only a `change` reads again, which a value put back before the field is left never fires, so the card said the figures would be read when he
+  finished and showed no control. From the moment the total, or the charge typed as Other, is edited, the card offers Read the figures again
+  (`order.reread`, as after a read that failed), which reads the figures as they stand; a `change` still reads at once and takes the control away.
   **The Sent tick on an account card is a 44px target** (rule 6, measured on the control, which a hit test reads): it measured 18 by 18 inside a 44px
   label, so its input is now the `--salt-tap` token both ways, laid unseen over the 18px box drawn beside it (`.tickbox`, which shows ticked and
   unticked and takes the focus ring). A real click at each corner of the input toggles it, at 1280 and at 375 in Chromium; the suite, with no layout
@@ -2266,7 +2270,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.received-amount` | Order card (key: the order id), acknowledged or ready | Another payment received, in RM. |
 | `order.reply` | Same card | Sends the reply. |
 | `order.reply-text` | Same card | The reply to the customer. |
-| `order.reread` | Order card (key: the order id), placed or with a rejected pending row, after a read that failed | Reads the figures again. |
+| `order.reread` | Order card (key: the order id), placed or with a rejected pending row, after a read that failed, and on a placed order from the moment its total or charge is edited until the figures are read | Reads the figures again. |
 | `order.send-yes` | Order card (key: the order id), once its figures are read, when they raise the price or change the window | Sends it to them for their yes instead. |
 | `order.total` | Order card (key: the order id), placed | The order total, in RM; finishing a change reads the figures again. |
 | `order.window-<hh>` | Same card, one for each window ahead (named by its starting hour) | Offers that four-hour window. |

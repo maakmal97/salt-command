@@ -2917,7 +2917,11 @@ export const OWNER_JS = `
         function makerPlacedInvalidate(){
           previewTurn++;
           delete makerQuotes[order.id]; delete makerPv[order.id];
-          makerPlacedSay(makerPlacedDelivery()==null?'Choose the delivery charge, and the figures read themselves.':'The figures are read again when you finish.');
+          var chosen=makerPlacedDelivery()!=null;
+          makerPlacedSay(chosen?'The figures are read again when you finish.':'Choose the delivery charge, and the figures read themselves.');
+          /* 12 Oct 2026: an edit put back to what it was fires no change, so the read it waits for would never come: the card offers it, and nothing is left
+             waiting on an event that may not happen (Accept stays away until the figures are read) */
+          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
         }
         /* what the figures stand on: the goods total, the charge, and the window, which decides whether Accept goes to them for their yes */
         function makerPlacedWin(){ return order.mode==='deliver'?((follower?(makerWin[group[0].id]||{}).value:win.value)||''):''; }
