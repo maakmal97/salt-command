@@ -1,6 +1,6 @@
 {
- "v": "v1079",
- "stamped": "12 Oct 2026, 01:52 KL",
+ "v": "v1080",
+ "stamped": "12 Oct 2026, 01:55 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 8.14,
+  "STATED_STOCK": 10.64,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -7326,6 +7326,18 @@
     "status": "settled",
     "rid": "l001",
     "settledOn": "2026-10-05"
+   },
+   {
+    "date": "2026-10-12",
+    "party": "CM4-TO",
+    "direction": "in",
+    "form": "salt",
+    "valueKg": 2.5,
+    "valueRM": null,
+    "status": "open",
+    "product": "salt",
+    "note": "<b>BORROWED IN ON 12 OCT: 2.5 UNITS OF SALT FROM CM4-TO, OWED BACK IN KIND.</b> Decided by the desk, status open, no money and no price attached, so there is no rate to set against the floor or the ask. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, RM0 outstanding and 0 units on credit before this; he is an associate on the roster. The loan carries no cost of its own, and the draft's cost is not an inventory rate to correct. The drafter raised no flags, so there is nothing for the figures to answer. Open: 2.5 units of salt owed back to CM4-TO.",
+    "rid": "l002"
    }
   ],
   "supplierReceivable": {
@@ -7857,9 +7869,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-11T17:13:26.138Z",
+  "QUEUE_COMMITTED": "2026-10-11T17:54:25.632Z",
   "PRICING": {
-   "takenAt": "2026-10-11T17:52:08.061Z",
+   "takenAt": "2026-10-11T17:55:24.380Z",
    "sizes": [
     0.5,
     1,
@@ -14726,10 +14738,10 @@
      ]
     }
    },
-   "v": "v1079"
+   "v": "v1080"
   },
   "OPEN": {
-   "at": "2026-10-11T17:52:08.839Z",
+   "at": "2026-10-11T17:55:24.947Z",
    "count": 10,
    "byKey": {
     "CK4-SEN|2026-10-11|98|rice": {
@@ -14897,14 +14909,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 8.14,
-     "free": 1.64,
+     "onHand": 10.64,
+     "free": 4.14,
      "owedOut": 6.5,
-     "coverDays": 0.3,
+     "coverDays": 0.8,
      "rate": 4.8,
      "owedToYou": 340,
      "promised": 11.5,
-     "short": 3.36
+     "short": 0.86
     },
     "oil": {
      "name": "Oil",
@@ -14958,7 +14970,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1079"
+   "v": "v1080"
   },
   "TERMS": {
    "ceiling": 250,
@@ -14966,7 +14978,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1079"
+   "v": "v1080"
   },
   "REWARD": {
    "stated": {
@@ -14978,7 +14990,7 @@
      }
     }
    },
-   "v": "v1079"
+   "v": "v1080"
   }
  }
 }

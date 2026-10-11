@@ -7374,6 +7374,7 @@ const PROD_OPENING={
     "stated": null
   }
 };
+/* ROLLED AT v1080: 2.5 unit from borrowed from CM4-TO on 2026-10-12, so 8.14 plus 2.5 is 10.64. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The borrowed 2.5 units of salt land on the stated inventory while the loan stays open. */
 /* ROLLED AT v1067: 2 unit to CF5-WM on 2026-10-10, so 10.14 less 2 is 8.14. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The shelf rolls by 2 units out to CF5-WM on the delivery correction. */
 /* ROLLED AT v1059: 2 unit to CZ5-TM on 2026-10-10, so 12.14 less 2 is 10.14. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Salt goes out by 2 units to CZ5-TM on this correction. */
 /* ROLLED AT v1048: 0.86 unit to CR3-DAM on 2026-10-09, so 13 less 0.86 is 12.14. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 0.86 unit is a free redemption, so it leaves the shelf with no revenue against it. */
@@ -7486,7 +7487,7 @@ const PROD_OPENING={
 /* ROLLED AT v439: 1 unit to CA7-JTR on 2026-09-01, 6 unit to CK4-SEN on 2026-09-01, 1 unit to CR3-DAM on 2026-09-01, so 8.25 less 8 is 0.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. Eight of the eight and a quarter unit on the shelf went out today across four rows, leaving 0.25 unit against 3 unit already promised: CE4-CHE's half unit owed out and CY2-NIL's 2.5 unit pending. The book is 2.75 unit short of its own commitments and sourcing is now the first decision on it. */
 /* ROLLED AT v404: 5 unit to CE4-AD on 2026-08-29, so 13.25 less 5 is 8.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
 /* ROLLED AT v399: 3 unit to CH4-KS on 2026-08-28, so 16.25 less 3 is 13.25. A ROLL AND NOT A COUNT; COUNT_ON is untouched. */
-const STATED_STOCK=8.14;
+const STATED_STOCK=10.64;
 const COUNT_ON={
   "salt": "2026-10-03",
   "oil": "2026-10-06",
@@ -7834,7 +7835,8 @@ const loans=[
   {"date":"2026-05-12","party":"CS6-PER","valueRM":650,"valueKg":6,"status":"settled","settledOn":"2026-07-14","preOpening":true,"note":"Offset against the package sale; predates the opening count."},
   {"date":"2026-09-08","party":"CM4-TO","direction":"in","valueKg":5.5,"valueRM":null,"status":"settled","product":"salt","note":"<b>5.5 UNIT OF SALT BORROWED FROM CH5-OUG on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 5.5 in the same fold. <b>RETURNED ON 11 SEP, ON HIS WORD.</b> The 5.5 unit went back to CH5-OUG in kind, unit for unit, so the loan is settled and the stated inventory rolled down by it at v583.","settledOn":"2026-09-11"},
   {"date":"2026-09-08","party":"CA2-SEN","direction":"in","valueKg":1.5,"valueRM":null,"status":"settled","product":"salt","note":"<b>1.5 UNIT OF SALT BORROWED FROM CA11-SEN on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 1.5 in the same fold. <b>RETURNED ON 11 SEP, ON HIS WORD.</b> The 1.5 unit went back to CA11-SEN in kind, unit for unit, so the loan is settled and the stated inventory rolled down by it at v583.","settledOn":"2026-09-11"},
-  {"party":"CM4-TO","direction":"in","valueRM":null,"form":"salt","note":"<b>LOAN IN BY HAND, 04 OCT: 3 UNITS OF SALT FROM CM4-TO.</b> Open and owed back in kind; it lands on the inventory. <b>REPAID IN KIND ON 05 OCT, ON HIS WORD.</b> The 3 unit went back to CM4-TO, unit for unit, so the loan is settled and the stated inventory rolled down by 3 at v1007.","product":"salt","date":"2026-10-04","valueKg":3,"status":"settled","rid":"l001","settledOn":"2026-10-05"}
+  {"party":"CM4-TO","direction":"in","valueRM":null,"form":"salt","note":"<b>LOAN IN BY HAND, 04 OCT: 3 UNITS OF SALT FROM CM4-TO.</b> Open and owed back in kind; it lands on the inventory. <b>REPAID IN KIND ON 05 OCT, ON HIS WORD.</b> The 3 unit went back to CM4-TO, unit for unit, so the loan is settled and the stated inventory rolled down by 3 at v1007.","product":"salt","date":"2026-10-04","valueKg":3,"status":"settled","rid":"l001","settledOn":"2026-10-05"},
+  {"date":"2026-10-12","party":"CM4-TO","direction":"in","form":"salt","valueKg":2.5,"valueRM":null,"status":"open","product":"salt","note":"<b>BORROWED IN ON 12 OCT: 2.5 UNITS OF SALT FROM CM4-TO, OWED BACK IN KIND.</b> Decided by the desk, status open, no money and no price attached, so there is no rate to set against the floor or the ask. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, RM0 outstanding and 0 units on credit before this; he is an associate on the roster. The loan carries no cost of its own, and the draft's cost is not an inventory rate to correct. The drafter raised no flags, so there is nothing for the figures to answer. Open: 2.5 units of salt owed back to CM4-TO.","rid":"l002"}
 ];
 const supplierReceivable={
   "party": "SF6-KLC",
@@ -8218,7 +8220,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-11T17:13:26.138Z";
+const QUEUE_COMMITTED="2026-10-11T17:54:25.632Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -9223,7 +9225,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1079","d":"12 Oct 2026","t":"CANCELLATION OF CM4-MK'S 11 OCT ORDER, NO STOCK MOVED","n":["<b>ONE CANCELLATION FOLDED.</b> The 11 Oct order s254 for CM4-MK, 6.25 units of salt at RM505 plus RM20 delivery, is withdrawn on 12 Oct. It had nothing paid and nothing delivered, so the master applies it and the row counts nowhere.","<b>INVENTORY UNCHANGED.</b> No goods had moved, so stock stays at 8.14 units and the cost basis is untouched. Nothing is left outstanding on this order; the RM525 shown before it was this order alone."]}];
+const evolution=[{"v":"v1080","d":"12 Oct 2026","t":"SALT BORROWED IN FROM CM4-TO, OWED BACK IN KIND","n":["<b>ONE LOAN FOLDED.</b> A borrow of 2.5 units of salt from CM4-TO on 12 Oct 2026, decided by the desk, goes to the loan book as borrowed in. It lands on the inventory while open and is owed back in kind. Nothing unusual: no flags, no cash, no price.","<b>INVENTORY.</b> Stated salt rolls up by 2.5 units from 8.14. No lot landed, so the cost basis stays put."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9374,7 +9376,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='12 Oct 2026, 01:52 KL';
+const LAST_UPDATED='12 Oct 2026, 01:55 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

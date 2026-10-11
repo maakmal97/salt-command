@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1080",
+  "d": "12 Oct 2026",
+  "t": "SALT BORROWED IN FROM CM4-TO, OWED BACK IN KIND",
+  "n": [
+   "<b>ONE LOAN FOLDED.</b> A borrow of 2.5 units of salt from CM4-TO on 12 Oct 2026, decided by the desk, goes to the loan book as borrowed in. It lands on the inventory while open and is owed back in kind. Nothing unusual: no flags, no cash, no price.",
+   "<b>INVENTORY.</b> Stated salt rolls up by 2.5 units from 8.14. No lot landed, so the cost basis stays put."
+  ]
+ },
+ {
   "v": "v1079",
   "d": "12 Oct 2026",
   "t": "CANCELLATION OF CM4-MK'S 11 OCT ORDER, NO STOCK MOVED",
