@@ -28420,6 +28420,61 @@ await (async () => {
       "and on a computer nothing says phone");
   } finally { desk.W.close(); }
 })();
+section("Stress R1 (11 Oct 2026): a second tap on Open with a passkey while the first waits does nothing, so the passkey the customer completes opens the door");
+await (async () => {
+  /* The stress triage's R1. pkDoor tested busy and never set it, so a second tap took the ticket from the first flow,
+     which then dropped the passkey the customer had just used (and Chromium refuses a second prompt while one is open,
+     so the second tap said nothing either): the door stood as it was and nothing said why. The browser is stubbed as
+     Chromium answers: one get() at a time, a second rejected with OperationError while the first is open. */
+  const { landingPage } = await import("../stmt/page.js");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const opens = [];
+  let gets = 0, open = 0, release, mode = "wait", work;
+  const dom = new JSDOM(landingPage("abcd-efgh", "nr1", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.scrollTo = () => {};
+    win.PublicKeyCredential = function PublicKeyCredential() {};
+    const bytes = (n) => new win.Uint8Array([n, n + 1, n + 2]).buffer;
+    const cred = { id: "cred-r1", response: { clientDataJSON: bytes(1), authenticatorData: bytes(4), signature: bytes(7) }, getClientExtensionResults: () => ({}) };
+    Object.defineProperty(win.navigator, "credentials", { configurable: true, value: { create() {}, get() {
+      gets++;
+      if (open) return Promise.reject(Object.assign(new Error("A request is already pending."), { name: "OperationError" }));
+      if (mode === "refuse") return Promise.reject(Object.assign(new Error("The operation was cancelled."), { name: "NotAllowedError" }));
+      open++;
+      return new Promise((res) => { release = () => { open--; res(cred); }; });
+    } } });
+    win.fetch = async (path, init) => { const p = String(path);
+      let j = { ok: true };
+      if (p === "/passkey/challenge") j = { ok: true, challenge: "AAAAAAAAAAAAAAAAAAAAAA" };
+      else if (p === "/passkey/open") { opens.push(JSON.parse(init.body)); j = { ok: true, once: true, u: "abcd-efgh", share: "AAAAAAAAAAAAAAAAAAAAAA" }; }
+      return { ok: true, status: 200, json: async () => j }; };
+    work = pageWork(win);
+  } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  try {
+    await work.quiet();
+    const go = D.getElementById("pkGo"), msg = () => D.getElementById("msg").textContent;
+    ok(!go.hidden, "the fixture: a browser that has passkeys shows Open with a passkey");
+    go.click();
+    await until(() => gets === 1);
+    go.click();   /* the second tap, while the first prompt is open */
+    await work.quiet();   /* whatever the second tap started has finished, or there was nothing to start */
+    release();
+    await until(() => /Your passkey is checked/.test(msg()));
+    await work.quiet();
+    ok(gets === 1 && opens.length === 1 && opens[0].id === "cred-r1" && /Your passkey is checked/.test(msg()),
+      "a second tap while the passkey prompt is open asks the browser nothing more, and the passkey the customer completes is sent and answered: "
+      + JSON.stringify({ gets, opens: opens.length, said: msg() }));
+    /* the tap is let go of on every road out: a prompt the customer turns down leaves Open ready to be tapped again */
+    mode = "refuse"; go.click();
+    await until(() => gets === 2); await work.quiet();
+    go.click();
+    await until(() => gets === 3); await work.quiet();
+    ok(gets === 3, "and Open with a passkey answers the next tap after a passkey was sent and after one was turned down: asked " + gets + " times");
+  } finally { W.close(); }
+})();
 section("S3 3.8: signing in as another account over a remembered one asks Replace first, beside the control, and Keep leaves the phone's own account remembered");
 await (async () => {
   /* S3 3.8, 24 SEP 2026. A shop with two accounts, or a phone handed over: the second sign-in overwrote the first
@@ -35391,6 +35446,72 @@ await (async () => {
   } finally { W.close(); }
 })();
 
+section("Stress R8 (11 Oct 2026): a double tap on a Home star rates one order, and the second tap never rates the order that slid into its place");
+await (async () => {
+  /* The stress triage's R8. Once the first answer is in, the rated card leaves Home and the next order's card slides under
+     the finger: a second tap of the same gesture landed on it and gave that order a star count its customer never chose,
+     which is never changed. The server cannot see it, for it is another order with its own rid. The stars stand still for a
+     second after an answer that took the card away, and only then. The page's clock is held still, and the section moves it on to prove the second ends. */
+  const { landingPage } = await import("../stmt/page.js");
+  const C = await import("../tools/stmt-crypto.mjs");
+  const { webcrypto } = await import("node:crypto");
+  const { JSDOM } = await import("jsdom");
+  const u = "abcd-efgh", pass = "fixture-pass-r8", ck = await C.contentKey("test-secret", u);
+  const day = (n) => new Date(Date.now() - n * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+  const pay = { term: 10, now: { rm: 0, parts: [] }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
+  const base = { product: "salt", qty: 1, mode: "collect", delivery: 0, moved: 1, paid: 110, total: 110, status: "done", history: [], msgs: [], movedOn: day(3) };
+  const A = "20260922030000-rata", B = "20260921030000-ratb", Z = "20260920030000-ratc";
+  let orders = [{ ...base, id: A, at: "2026-09-22T03:00:00Z" }, { ...base, id: B, at: "2026-09-21T03:00:00Z" }, { ...base, id: Z, at: "2026-09-20T03:00:00Z" }];
+  const body = { ok: true, wrap: await C.wrapKey(pass, ck), session: "sess-r8-rate",
+    env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })),
+    ...await sealCurrentLive(C, ck, { at: "2026-09-24T01:00:00Z", body: "<p>Live</p>", owed: 0, pay }) };
+  const sent = [];
+  let work, clock = Date.now();   /* the page reads this clock, and it moves only when the section moves it */
+  const dom = new JSDOM(landingPage(u, "nr8", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
+    try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
+    win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
+    win.Date.now = () => clock;
+    win.fetch = async (path, init) => { const p = String(path);
+      let j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true }, status = 200;
+      const m = /^\/orders\/([^/]+)\/rate$/.exec(p);
+      if (m) { const b = JSON.parse(init.body); sent.push({ id: m[1], stars: b.stars });
+        const gone = m[1] === B;   /* B was rated on another phone meanwhile: the Worker says rated already */
+        orders = orders.map((o) => (o.id === m[1] ? { ...o, rating: { stars: gone ? 5 : b.stars, at: "2026-09-28T03:00:00Z" } } : o));
+        if (gone) { j = { ok: false, error: "that order is rated already", code: "rated" }; status = 409; } else j = { ok: true, order: orders.find((o) => o.id === m[1]) }; }
+      return { ok: status < 300, status, json: async () => j }; };
+    work = pageWork(win);
+  } });
+  const W = dom.window, D = W.document;
+  const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
+  const cards = () => [...D.querySelectorAll("#hRate [data-row]")].map((r) => r.getAttribute("data-row"));
+  const tap = (n) => { const b = D.querySelector('#hRate [data-star="' + n + '"]'); if (b) b.click(); };   /* a card that is not there is a tap that lands on nothing */
+  try {
+    D.getElementById("pw").value = pass;
+    D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
+    await until(() => cards().length === 3);
+    await work.quiet();
+    ok(JSON.stringify(cards()) === JSON.stringify([A, B, Z]), "the fixture: Home asks about three orders, the first card on top: " + JSON.stringify(cards()));
+    tap(4);
+    await until(() => cards().length === 2);
+    tap(4);   /* the second tap of the double tap, on the card that has just slid into place */
+    await work.quiet();
+    ok(sent.length === 1 && sent[0].id === A && sent[0].stars === 4 && JSON.stringify(cards()) === JSON.stringify([B, Z]),
+      "a double tap on a star rates the order it was asked for once, and the second tap does nothing to the order that took its place: " + JSON.stringify({ sent, cards: cards() }));
+    clock += 1500;
+    tap(2);
+    await until(() => cards().length === 1);
+    tap(2);
+    await work.quiet();
+    ok(sent.length === 2 && sent[1].id === B && sent[1].stars === 2 && JSON.stringify(cards()) === JSON.stringify([Z]),
+      "a tap a second after an answer is a new tap and rates the card in front of it, and an answer of rated already holds the stars still as a rating does: " + JSON.stringify({ sent, cards: cards() }));
+    clock += 3000;
+    tap(3);
+    await until(() => sent.length === 3); await work.quiet();
+    ok(sent.length === 3 && sent[2].id === Z && sent[2].stars === 3 && cards().length === 0,
+      "and the hold lasts a second, not for good: the last card is rated by a tap after it: " + JSON.stringify({ sent, cards: cards() }));
+  } finally { W.close(); }
+})();
 section("F10: his Site orders card says their stars, or that they were asked and have not answered");
 await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");

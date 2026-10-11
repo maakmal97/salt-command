@@ -1654,8 +1654,15 @@ const CLIENT_JS = `
   }
   var pkGo=document.getElementById('pkGo');
   if(pkGo&&PKOK&&!OWNER){ pkGo.hidden=false; pkGo.addEventListener('click', pkDoor); }
+  /* a second tap while the first waits for the passkey does nothing: it would take the ticket from the first, which then
+     drops the passkey the customer completes, and the browser refuses a second prompt while one is open */
+  var pkBusy=false;
   async function pkDoor(){
-    if(busy) return;
+    if(busy||pkBusy) return;
+    pkBusy=true;
+    try{ await pkOpen(); } finally{ pkBusy=false; }
+  }
+  async function pkOpen(){
     var ch=pkFresh(pkCh)?pkCh:await pkPrime(); pkCh=null;
     if(!ch||!PKSALT){ say(tw('x.notSent'),'bad'); return; }
     var mine=++ticket, stale=function(){ return mine!==ticket; }, rec=pkGet(), cred;
@@ -4002,12 +4009,15 @@ const CLIENT_JS = `
     })(i);
     return g;
   }
+  /* A DOUBLE TAP RATES ONCE. When the answer is in, the rated card leaves Home and the next order's card slides under the
+     finger, so the gesture's second tap would land on it and give an order a rating nobody chose, and a rating is never
+     changed. The stars stand still for a second after an answer that took the card away (rated, or rated already). */
   async function rateSend(o,n){
-    if(view||draft.rating) return;
+    if(view||draft.rating||Date.now()<(draft.rateHold||0)) return;
     var key=o.id+':rate', mine=ticket;
     draft.rating=o.id;
     var r=await api('/orders/'+encodeURIComponent(o.id)+'/rate',{stars:n, rid:ridFor(key,String(n))});
-    draft.rating='';
+    draft.rating=''; if(r.body&&(r.body.ok||r.body.code==='rated')) draft.rateHold=Date.now()+1000;
     if(mine!==ticket) return;
     /* a refusal is said under the stars; a rating that stands (rated already, on a retry) draws its marks instead */
     var b=r.body||{};
