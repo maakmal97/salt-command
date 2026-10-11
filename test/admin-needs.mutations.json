@@ -1,0 +1,362 @@
+[
+ {
+  "name": "Soon comes before Now",
+  "file": "stmt/owner.js",
+  "find": "SEVS.forEach(function(s){",
+  "replace": "SEVS.slice().reverse().forEach(function(s){"
+ },
+ {
+  "name": "the newest comes first",
+  "file": "stmt/owner.js",
+  "find": "return (isFinite(ta)&&ta!==tb)?ta-tb:a.n-b.n;",
+  "replace": "return (isFinite(ta)&&ta!==tb)?tb-ta:a.n-b.n;"
+ },
+ {
+  "name": "what has no age comes first",
+  "file": "stmt/owner.js",
+  "find": "if(isFinite(ta)!==isFinite(tb)) return isFinite(ta)?-1:1;",
+  "replace": "if(isFinite(ta)!==isFinite(tb)) return isFinite(ta)?1:-1;"
+ },
+ {
+  "name": "a practice item ranks among the real ones",
+  "file": "stmt/owner.js",
+  "find": "d=(a.practice?1:0)-(b.practice?1:0);",
+  "replace": "d=0;"
+ },
+ {
+  "name": "a locked account is only Soon",
+  "file": "stmt/owner.js",
+  "find": "return item('now','accounts','Locked','k:'+a.username,",
+  "replace": "return item('soon','accounts','Locked','k:'+a.username,"
+ },
+ {
+  "name": "an order placed is only Soon",
+  "file": "stmt/owner.js",
+  "find": "L.push(item('now','orders','Order','o:'+o.id,",
+  "replace": "L.push(item('soon','orders','Order','o:'+o.id,"
+ },
+ {
+  "name": "a payment against the account is only Soon",
+  "file": "stmt/owner.js",
+  "find": "L.push(item('now','payments','Payment','c:'+c.u+':'+c.id,",
+  "replace": "L.push(item('soon','payments','Payment','c:'+c.u+':'+c.id,"
+ },
+ {
+  "name": "a payment on an order is only Soon",
+  "file": "stmt/owner.js",
+  "find": "L.push(item('now','payments','Payment','p:'+o.id,",
+  "replace": "L.push(item('soon','payments','Payment','p:'+o.id,"
+ },
+ {
+  "name": "a message asked is only Soon",
+  "file": "stmt/owner.js",
+  "find": "return item('now','messages','Message','m:'+t.u,",
+  "replace": "return item('soon','messages','Message','m:'+t.u,"
+ },
+ {
+  "name": "the Desk's line is Soon",
+  "file": "stmt/owner.js",
+  "find": "return item('watch','watch','Desk','w:desk',",
+  "replace": "return item('soon','watch','Desk','w:desk',"
+ },
+ {
+  "name": "the override in force is not shown",
+  "file": "stmt/owner.js",
+  "find": "if(manual) L.push(hoursNeed(manual));",
+  "replace": ""
+ },
+ {
+  "name": "the notice set is not shown",
+  "file": "stmt/owner.js",
+  "find": "if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));",
+  "replace": ""
+ },
+ {
+  "name": "the drafter's refusal is not shown",
+  "file": "stmt/owner.js",
+  "find": "(makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });",
+  "replace": ""
+ },
+ {
+  "name": "a held server entry is shown as refused",
+  "file": "stmt/owner.js",
+  "find": ".filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });",
+  "replace": ".forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });"
+ },
+ {
+  "name": "a stage he rejected is not shown",
+  "file": "stmt/owner.js",
+  "find": "if(o.again&&o.again.length) L.push(item('soon'",
+  "replace": "if(false) L.push(item('soon'"
+ },
+ {
+  "name": "a card is not the Action recipe",
+  "file": "stmt/owner.js",
+  "find": "var c=el('article','salt-action salt-action--'+o.sev+' need')",
+  "replace": "var c=el('article','salt-approve need')"
+ },
+ {
+  "name": "a card is not coloured by its severity",
+  "file": "stmt/owner.js",
+  "find": "var c=el('article','salt-action salt-action--'+o.sev+' need')",
+  "replace": "var c=el('article','salt-action need')"
+ },
+ {
+  "name": "a card has no kind word",
+  "file": "stmt/owner.js",
+  "find": "c.appendChild(el('span','salt-action__kind',o.word));",
+  "replace": "c.appendChild(el('span','x',o.word));"
+ },
+ {
+  "name": "an age is counted in minutes",
+  "file": "stmt/owner.js",
+  "find": "Math.floor(m/60)+' h'",
+  "replace": "m+' h'"
+ },
+ {
+  "name": "a lock is as old as its end",
+  "file": "stmt/owner.js",
+  "find": "new Date(held-900000).toISOString()",
+  "replace": "new Date(held).toISOString()"
+ },
+ {
+  "name": "a Desk row has no age",
+  "file": "stmt/owner.js",
+  "find": "return item('soon','rows','Row','d:'+d.id, isoAt(d.id),",
+  "replace": "return item('soon','rows','Row','d:'+d.id, '',"
+ },
+ {
+  "name": "a practice item is not labelled",
+  "file": "stmt/owner.js",
+  "find": "if(o.practice) title.appendChild(chip('mist','Practice'));",
+  "replace": ""
+ },
+ {
+  "name": "a practice item is counted in Needs you",
+  "file": "stmt/owner.js",
+  "find": "setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice; }).length);",
+  "replace": "setCount('needs', items.filter(function(i){ return i.sev==='now'; }).length);"
+ },
+ {
+  "name": "a practice order is counted in Orders",
+  "file": "stmt/owner.js",
+  "find": "return !o.test&&ordWaits(o);",
+  "replace": "return ordWaits(o);"
+ },
+ {
+  "name": "a practice claim is counted in Orders",
+  "file": "stmt/owner.js",
+  "find": "waitingClaims().filter(function(c){ return !c.test; }).length",
+  "replace": "waitingClaims().length"
+ },
+ {
+  "name": "a practice thread is counted in Customers",
+  "file": "stmt/owner.js",
+  "find": "makerThreads.filter(function(t){ return !t.test&&makerThreadAsked(t); }).length",
+  "replace": "makerThreads.filter(function(t){ return makerThreadAsked(t); }).length"
+ },
+ {
+  "name": "Customers does not count the links",
+  "file": "stmt/owner.js",
+  "find": "makerThreadAsked(t); }).length+links.filter(waitingLink).length);",
+  "replace": "makerThreadAsked(t); }).length);"
+ },
+ {
+  "name": "Record has no count",
+  "file": "stmt/owner.js",
+  "find": "setCount('record', pendingRows().length);",
+  "replace": ""
+ },
+ {
+  "name": "the line counts a practice item",
+  "file": "stmt/owner.js",
+  "find": "if(i.practice||!i.counts) return;",
+  "replace": "if(!i.counts) return;"
+ },
+ {
+  "name": "an order opens the Desk rows",
+  "file": "stmt/owner.js",
+  "find": "to=goPlace('orders','waiting'), pays=ordPays(o);",
+  "replace": "to=goPlace('record','approve'), pays=ordPays(o);"
+ },
+ {
+  "name": "a message opens no thread",
+  "file": "stmt/owner.js",
+  "find": "open:function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(t.u); }});",
+  "replace": "open:function(){ showPlace('customers','messages',{fresh:true, push:true}); }});"
+ },
+ {
+  "name": "a link opens Accounts",
+  "file": "stmt/owner.js",
+  "find": "open:goPlace('customers','links'), counts:",
+  "replace": "open:goPlace('customers','accounts'), counts:"
+ },
+ {
+  "name": "a row opens Orders",
+  "file": "stmt/owner.js",
+  "find": "open:goPlace('record','approve')}, function(c){\n      if(!claim){",
+  "replace": "open:goPlace('orders','waiting')}, function(c){\n      if(!claim){"
+ },
+ {
+  "name": "the accounts not sent open every account",
+  "file": "stmt/owner.js",
+  "find": "filterBy('unsent'); }}, function(c){\n      var go=pill(",
+  "replace": "}}, function(c){\n      var go=pill("
+ },
+ {
+  "name": "the Desk's line opens Orders",
+  "file": "stmt/owner.js",
+  "find": "{who:'Desk', why:deskWait.moved",
+  "replace": "{who:'Desk', open:goPlace('orders','waiting'), why:deskWait.moved"
+ },
+ {
+  "name": "an order has an Agree",
+  "file": "stmt/owner.js",
+  "find": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, what:orderWhat(o), practice:t, open:to}));",
+  "replace": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, what:orderWhat(o), practice:t, open:to}, function(c){ c._add(pill(['Agree','need.agree'])); }));"
+ },
+ {
+  "name": "a payment has a Received",
+  "file": "stmt/owner.js",
+  "find": "practice:!!c.test, open:goPlace('orders','waiting')}));",
+  "replace": "practice:!!c.test, open:goPlace('orders','waiting')}, function(c){ c._add(pill(['Received','need.received'])); }));"
+ },
+ {
+  "name": "a customer's claim row can be approved",
+  "file": "stmt/owner.js",
+  "find": "if(!claim){\n        var ap=pill(",
+  "replace": "if(true){\n        var ap=pill("
+ },
+ {
+  "name": "the pill skips the question",
+  "file": "stmt/owner.js",
+  "find": "approveDraft(d).then(function(ok){",
+  "replace": "makerAction('/all/maker/drafts/'+encodeURIComponent(d.id)+'/approve',{},'Row approved.','draft:'+d.id).then(function(ok){"
+ },
+ {
+  "name": "Approve row asks nothing",
+  "file": "stmt/owner.js",
+  "find": "if(!window.confirm(tripRows(draft).length?'Approve every proposed row of this trip shown here?':'Approve the proposed row shown here?')) return Promise.resolve();",
+  "replace": ""
+ },
+ {
+  "name": "the pill stays on while it is out",
+  "file": "stmt/owner.js",
+  "find": "          ap.disabled=true;\n          approveDraft(d)",
+  "replace": "          approveDraft(d)"
+ },
+ {
+  "name": "the answer is not kept on the card",
+  "file": "stmt/owner.js",
+  "find": "needSaid['d:'+d.id]={t:makerSaid['draft:'+d.id]||(ok?'Row approved.':'Not approved.'), bad:!ok, who:e.party||'no code'};",
+  "replace": ""
+ },
+ {
+  "name": "the answer outlives Needs you",
+  "file": "stmt/owner.js",
+  "find": "if(placeNow==='needs'&&place!=='needs') needSaid={};",
+  "replace": ""
+ },
+ {
+  "name": "a chip filters nothing",
+  "file": "stmt/owner.js",
+  "find": "shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });",
+  "replace": "shown=items;"
+ },
+ {
+  "name": "the chip tapped is not marked",
+  "file": "stmt/owner.js",
+  "find": "x.setAttribute('aria-selected', x===k?'true':'false');",
+  "replace": "x.setAttribute('aria-selected', 'false');"
+ },
+ {
+  "name": "a chip reads",
+  "file": "stmt/owner.js",
+  "find": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }",
+  "replace": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); readNeeds(true); return; }"
+ },
+ {
+  "name": "a chip has no act",
+  "file": "stmt/page.js",
+  "find": "'\" data-act=\"need.kind.' + k + '\" aria-selected=\"'",
+  "replace": "'\" aria-selected=\"'"
+ },
+ {
+  "name": "a failed read is not said",
+  "file": "stmt/owner.js",
+  "find": "+(bad.length?' Not read: '+andList(bad)+'.':'');",
+  "replace": "+'.';"
+ },
+ {
+  "name": "a failed review is not noted",
+  "file": "stmt/owner.js",
+  "find": "nGot('review', error); apply=true;\n      if(!poll)",
+  "replace": "apply=true;\n      if(!poll)"
+ },
+ {
+  "name": "a failed claims read is not noted",
+  "file": "stmt/owner.js",
+  "find": "}catch(error){ nGot('claims', error); apply=true;",
+  "replace": "}catch(error){ apply=true;"
+ },
+ {
+  "name": "a failed threads read is not noted",
+  "file": "stmt/owner.js",
+  "find": "}catch(error){ nGot('threads', error); apply=true; status.textContent=error.message; }",
+  "replace": "}catch(error){ apply=true; status.textContent=error.message; }"
+ },
+ {
+  "name": "a failed hours read is not noted",
+  "file": "stmt/owner.js",
+  "find": "catch(error){ nGot('hours', error); apply=true; }",
+  "replace": "catch(error){ apply=true; }"
+ },
+ {
+  "name": "Needs you does not read the hours",
+  "file": "stmt/owner.js",
+  "find": "loadMakerThreads(true), readShop()];",
+  "replace": "loadMakerThreads(true)];"
+ },
+ {
+  "name": "a field he opens is not noticed",
+  "file": "stmt/owner.js",
+  "find": "dirty[id]=true; }, true);",
+  "replace": "}, true);"
+ },
+ {
+  "name": "a card with an action keeps it beside the body",
+  "file": "stmt/owner.js",
+  "find": "c.classList.add('need--act'); ",
+  "replace": ""
+ },
+ {
+  "name": "a card with only Open sets its ways under the body",
+  "file": "stmt/owner.js",
+  "find": "if(o.practice) c.setAttribute('data-practice','');",
+  "replace": "if(o.practice) c.setAttribute('data-practice',''); c.classList.add('need--act');"
+ },
+ {
+  "name": "the chip tapped is marked as a ghost's pressed, which the tabs are not drawn by",
+  "file": "stmt/owner.js",
+  "find": "x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }",
+  "replace": "x.setAttribute('aria-pressed', x===k?'true':'false'); }); drawNeeds(); return; }"
+ },
+ {
+  "name": "the chips are not a tablist",
+  "file": "stmt/page.js",
+  "find": "role=\"tablist\" aria-label=\"Show\"",
+  "replace": "role=\"group\" aria-label=\"Show\""
+ },
+ {
+  "name": "a chip is not a tab",
+  "file": "stmt/page.js",
+  "find": "class=\"salt-tabs__pill\" role=\"tab\" data-chip=\"",
+  "replace": "class=\"salt-tabs__pill\" data-chip=\""
+ },
+ {
+  "name": "All is not selected at first",
+  "file": "stmt/page.js",
+  "find": "'\" data-act=\"need.kind.' + k + '\" aria-selected=\"' + (i ? \"false\" : \"true\")",
+  "replace": "'\" data-act=\"need.kind.' + k + '\" aria-selected=\"' + \"false\""
+ }
+]

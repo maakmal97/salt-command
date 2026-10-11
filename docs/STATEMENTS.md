@@ -1365,9 +1365,32 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 
 - **No brand** (his instruction, 10 Sep 2026): nothing a customer holds may point at the
   ledger, and an eyebrow carrying the name undid that.
-- **Salt Account opens on Needs you** (S9 9.1, the plan's section 5): one Approve card a thing that waits
-  on him, its action on the card, the tap answered there. A card about an account carries its code as a
-  button that opens it: from 1080px beside the list (the first such card's account until he picks one, the
+- **Needs you is a ranked inbox** (Phase 1b, 11 Oct 2026): every thing that waits on him is one card on the system's Action recipe
+  (`salt-action`, coloured by its `--salt-sev`), headed Now, Soon or Watch, the oldest first in each. **Now** is a customer waiting:
+  an order placed, a payment they say they sent (on an order, summed and as old as its oldest, or against the account), a message asked,
+  an account refused at an address. **Soon** is his own work: a Desk row to approve, an entry that did not get through (the drafter's
+  refusal, a refused server-held entry), a stage he rejected under Approve, a guest link, an ID with no account, accounts nobody has been
+  sent. **Watch** is the Desk's own count line, an override in force ("Closed until Fri 18:00") and a notice set. A card is its kind word,
+  who (the code), what (book, units, RM), its age (minutes under the hour, hours to two days, then days) and one **Open** that goes to the
+  detail by `showPlace`: an order or a payment to Orders > Waiting on you, a message to Customers > Messages with that thread open, an
+  account beside the list on a desktop and on Accounts on a phone, a link to Customers > Links, a row or an entry to Record > Approve, the
+  hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
+  tap**: Approve row or Approve trip on a Desk row is Record > Approve's own function (`approveDraft`: the same question, the same request,
+  the same answer line; a customer's claim row has none, it is answered through Received on its order), and the guest link, the refused
+  account and the accounts not sent keep the action they had. **Nothing in Needs you books money**: Agree, Yes received and Cash stay on
+  their cards in Orders. A practice account's order, claim or thread is drawn after the real ones in its severity, labelled Practice, and
+  counted nowhere. The line under the title is "N now, M soon, as at HH:MM", or "Nothing needs you", and **names what could not be read**
+  ("Not read: orders and rows and messages"), so a failed read is never taken for nothing waiting; the chips under it (All, Orders, Payments,
+  Messages, Rows, Accounts) filter the one list and read nothing; they are drawn as the parts strip is (a `tablist` of `tab` pills, the one in
+  force `aria-selected`), because the recipe draws a selected pill from `aria-selected` and `aria-pressed` is styled on a ghost alone. **Every item of the bars carries its count**: Needs you the Now, Orders
+  what waits on him there (the orders and the account claims), Customers the threads asked and the links waiting, Record the rows waiting,
+  Shop none, the same on the rail and the bar and never a practice item. **It is read on entering**, and not again
+  within 30 seconds of its last read: the orders and rows, the claims, the threads, the hours, the notice, and (after the page has read them
+  once) the accounts and the links. No read starts while another of its kind is out (the newest review wins), and a read that finds what it
+  found last time draws nothing. No route, body, request id, retained send, vault or cash rule changed.
+- **Salt Account opens on Needs you** (S9 9.1, the plan's section 5): a card a thing that waits
+  on him, its action on the card, the tap answered there. A card about an account opens it with its Open:
+  from 1080px beside the list (the first such card's account until he picks one, the
   pane drawn again only when its account changes or the sheet is read), on a phone on Accounts. An associate's waiting link (Approve, the tier
   it quotes, Decline); an account refused at an address after ten wrong passwords, which may be anybody holding
   the username and never says the customer is shut out, read off the `fail:` brake by `lockedOut` (how
@@ -1391,7 +1414,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   its two reads (Approve polls the drafts alone), the site stamps now less that, and a reading a minute older than the
   one held never replaces it, so a desk left open elsewhere cannot overwrite a newer one. The cron no longer
   counts: its recount (placed, or their line last) missed cash and payments and ignored No reply needed. So the
-  figure is as fresh as the desk's last read, and Needs you says when: "N things wait on the desk, as at 14:06." Once
+  figure is as fresh as the desk's last read, and Needs you (a Watch card) says when: "N things wait on the desk, as at 14:06." Once
   an order has moved since that reading (the site's `touched` mark later than `at`, `moved` on the sheet's `desk`) it
   says so in the past tense: "Nothing waited on the desk as at 09:00, and an order has moved since." The
   desk's page reads its orders with the count of
@@ -1399,7 +1422,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `approved === false` test), and its rail's foot says "N links wait in Salt Account".
 - **His places** (S9 9.2, made five on 11 Oct 2026): Needs you, Orders, Customers, Record and Shop; "Maker" is retired on
   screen. The system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting
-  (Needs you, and Customers for the links waiting). Each place but Needs you has its parts as the system's tab strip, the first
+  (Needs you, Orders, Customers and Record; Shop has none; see Needs you above). Each place but Needs you has its parts as the system's tab strip, the first
   open with the place: **Orders** (Waiting on you, Agreed, Ready, Group, Closed: the order review filtered by stage, the account
   claims under Waiting on you, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
   Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Approve, Entry,
@@ -1409,7 +1432,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   form names the places and parts it shows in (`orders` is every part of Orders, `orders.group` that part alone) and the owner's
   script hides the rest. **Each place reads only what it shows, on entering it, and a part on entering the part**: Orders reads the
   orders and the claims (the stages are one list, so moving between them reads nothing), Record the Desk's rows and the forms, and
-  the parts of Customers and Shop each their own; entering Shop reads no order and entering Orders reads no form. No route, body,
+  the parts of Customers and Shop each their own; entering Shop reads no order and entering Orders reads no form (Needs you reads what
+  its cards are drawn from, and not again within 30 seconds of its last read). No route, body,
   request id or retained send changed. **The addresses**: `#needs`, `#orders`, `#customers`, `#record`, `#shop` and a part
   as `#orders/ready`; the old ones stay (`#maker` Orders, `#more` Shop, `#accounts` and `#links` those parts of Customers, `#cards`
   the associates' report card). A tap writes the address, so Back and Forward move between places, and a customer's place is never
@@ -1991,11 +2015,18 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on Waiting on you, reading the orders and the claims again. |
 | `nav.record` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Record, on Approve. |
 | `nav.shop` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Shop, on Hours. |
+| `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Record > Approve's Approve row sends. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
+| `need.kind.accounts` | The chips under Needs you's title | Shows only the cards about accounts and guest links. Reads nothing. |
+| `need.kind.all` | The chips under Needs you's title | Shows every card again. Reads nothing. |
+| `need.kind.messages` | The chips under Needs you's title | Shows only the messages asked. Reads nothing. |
+| `need.kind.orders` | The chips under Needs you's title | Shows only the orders. Reads nothing. |
+| `need.kind.payments` | The chips under Needs you's title | Shows only the payments they say they sent. Reads nothing. |
+| `need.kind.rows` | The chips under Needs you's title | Shows only the Desk rows and the entries that did not get through. Reads nothing. |
 | `need.link-approve` | Same card | Approves the link, which then opens. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
-| `need.open` | Needs you card about an account (key: the card's data-u) | Opens that account, beside the list on a desktop and on Accounts on a phone. |
+| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Shop. |
 | `need.send-later` | Same card | Send, switched off until the account exists. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |

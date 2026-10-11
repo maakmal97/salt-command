@@ -520,19 +520,23 @@ body.ended>*:not(#aEnded){display:none}
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
   .adm #nopen{display:none}
 }
-/* a card's party opens its account: a quiet link at the full tap, its hit area kept off the card's rhythm */
-.adm button.salt-approve__party{display:inline-flex;align-items:center;min-height:var(--salt-tap);min-width:var(--salt-tap);
-  margin:-12px 0;padding:0;background:none;border:0;cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:3px}
-/* S9 9.1: NEEDS YOU, the system's Approve card a thing; this page decides only the gaps between them and
-   the line a tap is answered on, which sits on the card it answers */
+/* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
+   colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
+   tap is answered on, which sits on the card it answers */
 .adm #mHome .salt-eyebrow{margin:0 0 6px}
 .adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
 .adm .nlist .glink{margin:0}
+.adm .nlist .nsev{margin:8px 0 -4px}
+.adm .nchips{margin:0 0 16px}
+.adm .nchips .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
+.adm .need .salt-action__title{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.adm .need .salt-action__body>*+*{margin-top:8px}
+.adm .need .salt-action__go{display:flex;flex-wrap:wrap;gap:8px}
+@media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
 .adm .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .nnote:empty{display:none}
 .adm .nnote.bad{color:var(--salt-ember)}
-.adm .nwait{display:flex;align-items:center;gap:8px;margin:-8px 0 24px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.adm .nwait svg{width:16px;height:16px;flex:0 0 auto;color:var(--salt-brass)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
@@ -1063,6 +1067,8 @@ const ADMIN_PARTS = {
 const adminParts = (p) => '<div class="salt-tabs aparts" role="tablist" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
   + ADMIN_PARTS[p].map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
     + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>";
+/* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
+const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "Owes"], ["locked", "Refused"], ["none", "No account"]];
 const ADMIN_ICONS = {
   needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
@@ -1070,7 +1076,6 @@ const ADMIN_ICONS = {
   customers: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
   record: '<path d="M4.6 19.4 L5.4 15.4 L15.4 5.4 A1.6 1.6 0 0 1 17.7 5.4 L18.6 6.3 A1.6 1.6 0 0 1 18.6 8.6 L8.6 18.6 Z M13.4 7.4 L16.6 10.6"/>',
   shop: '<path d="M4 9.6 L5.6 4.6 H18.4 L20 9.6 M4 9.6 A2.67 2.67 0 0 0 9.33 9.6 A2.67 2.67 0 0 0 14.67 9.6 A2.67 2.67 0 0 0 20 9.6 M5.6 12.4 V19.4 H18.4 V12.4 M10 19.4 V15 H14 V19.4"/>',
-  desk: '<rect x="3.4" y="5" width="17.2" height="11.6" rx="1.6"/><path d="M9 19.6 H15 M12 16.6 V19.6"/>',
   key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
 };
 const aico = (n) => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" '
@@ -1151,11 +1156,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
+        + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
+          + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
         /* S9 fix: from 1080px the list stands beside the account a card is about, as Accounts does */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
-        /* S9 9.8: what waits on the desk, as the desk last told this site: a count, no link and no name */
-        + '<p class="nwait" id="nDesk" hidden>' + aico("desk") + '<span id="nDeskT"></span></p>'
         + '</div><div id="nopen" hidden></div></div>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list

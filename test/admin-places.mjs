@@ -108,8 +108,8 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.customers"); await p.tap("nav.orders");
     ok(p.where() === "orders orders/waiting", "and a place he comes back to opens on its first part again: " + p.where());
     const counts = [...d.querySelectorAll(".salt-rail [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
-    ok(counts.some((c) => c === "customers=1") && !counts.some((c) => /^(orders|record|shop)=/.test(c)),
-      "Customers carries the count of the guest links waiting on him, and no other place but Needs you has one: " + JSON.stringify(counts));
+    ok(counts.some((c) => c === "customers=2") && !counts.some((c) => /^shop=/.test(c)),
+      "Customers carries the threads asked and the guest links waiting, and Shop has none (the counts are proved in test/admin-needs.mjs): " + JSON.stringify(counts));
 
     /* 4. WHAT EACH PART SHOWS */
     const seen = {};
