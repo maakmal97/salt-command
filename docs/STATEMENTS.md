@@ -1387,11 +1387,12 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
   `alertsOn`), refused at an address and no account; a search and filters (Not sent, Not opened, Owes, Refused, No
   account) above it; a row opens the account, beside the list from 1080px.
-- **An account** (S9 9.3, the plan's f13): its code, username, chips and totals; ONE filled **Send a sign-in link**,
-  its link made as the account opens (`makeLink`, kept by username in `madeLink` with Needs you's), so the tap's first
-  act is the share sheet (or, with none, the clipboard) and no derivation or fetch sits before it; a share that goes
-  through ticks the account sent. A link shared or copied from any card is dropped from the page and a fresh one made
-  (`retire`), so the one Sign out everywhere spares has never left it. Beside it Show a code, in person; View as them; Copy password;
+- **An account** (S9 9.3, the plan's f13): its code, username, chips and totals; ONE filled **Send a sign-in link**.
+  Looking makes no link (his decision 7 of 11 Oct 2026): the first tap makes it (`makeLink`, kept by username in
+  `madeLink` with Needs you's, so a redraw keeps it) and the button says Share the link; the second tap shares it, the
+  share sheet (or, with none, the clipboard) the tap's first act with no derivation or fetch before it; a share that goes
+  through ticks the account sent. A link shared or copied from any card is dropped from the page (`retire`) and the next
+  tap makes a fresh one, so the one Sign out everywhere spares has never left it. Beside it Show a code, in person; View as them; Copy password;
   Sign out everywhere, on a second tap. Then **How they got in** (`GET /all/account/<username>`): the last ten ways in
   (link; a code scanned from his counter's QR, `qr`, copied across from the customer's own Keep Sheet, `copy`, or typed, `code`; password), each with its moment and the device in the site's own words (`deviceOf`
   in `stmt/signin.js`, from the browser's description at that open: "iPhone, Safari", never an address or a version),
@@ -1441,10 +1442,12 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   Applications, policies and `aud` tags are readable and writable through the Cloudflare API at
   `/accounts/{id}/access/apps`. A team rename moves the issuer: `ACCESS_TEAM` in
   `wrangler.stmt.jsonc` is a config edit, deployed by the push that carries it, and every device signs in again.
-- **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). Since S9 9.3 it is made AS THE ACCOUNT OPENS, never on a
-  draw of the list, so the tap only shares (the plan's must-not-ship rule): each opening, and from 1080px the
-  account Needs you opens beside itself on every load, files a live three-day record and pointer that nobody may
-  ever be sent, lapsing on its own or burnt, uncounted, by Sign out everywhere. His
+- **SIGN-IN LINK, ON EACH ACCOUNT'S CARD** (v710). **LOOKING MAKES NO LINK** (his decision 7 of 11 Oct 2026, replacing
+  S9 9.3's making it as the account opened, which filed a live three-day record for every card drawn, and from 1080px
+  for the account Needs you opens beside itself on every load). **The first tap makes it, the second shares it,
+  everywhere**, as Needs you's Send a sign-in link does: the share sheet is never behind a derivation and a round trip
+  (the plan's must-not-ship rule), and a card drawn, a share, a copy or a redraw sends nothing that writes. A link
+  made and not shared lapses in three days or is burnt, uncounted, by Sign out everywhere. His
   page opens the account under the master, wraps the content key under a fresh token, and posts the
   token and the wrap to `POST /all/signin/<username>`, which refuses a username the roster does not
   carry and refuses to hand back a link it could not file. What comes back is the finished message
