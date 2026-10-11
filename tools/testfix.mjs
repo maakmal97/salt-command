@@ -169,7 +169,7 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   /* WITHDRAWN by them */
   O.push(order(oid(14, "07"), list, T(14), { product: "rice", qty: 1, mode: "collect" }, [
     [T(14, 40), "customer", { action: "cancel" }]]));
-  /* NOT TAKEN by us, with his reason */
+  /* DECLINED by us, with his reason */
   O.push(order(oid(16, "08"), list, T(16), { product: "oil", qty: 1, mode: "collect" }, [
     [T(16, 30), "desk", { status: "declined", note: "None of this size this week." }]]));
   /* CANCELLED by us after agreeing it, with his reason */
@@ -341,9 +341,9 @@ const invoiceLines = (f) => {
 const accYes = (o, f) => !!(o.price && o.price.from === "accept" && o.price.state === "offered" && String(o.price.offer.until) > f.at);
 export const FEATURES = [
   ["order placed, waiting on him", (f) => has(f, (o) => o.status === "placed")],
-  ["order replaced before acknowledgement, both kept in history", (f) => has(f, (o) => o.status === "cancelled"
+  ["order replaced before it was confirmed, both kept in history", (f) => has(f, (o) => o.status === "cancelled"
     && o.replacement && has(f, (n) => n.id === o.replacement && n.replaces === o.id && n.status === "placed"))],
-  ["order agreed", (f) => has(f, (o) => o.status === "acknowledged")],
+  ["order confirmed", (f) => has(f, (o) => o.status === "acknowledged")],
   ["a day they want it by, placed ahead (29 Sep 2026)", (f) => has(f, (o) => o.status === "placed" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.wantBy || "")
     && o.wantBy > klDay(new Date(f.at)))],
   ["a day wanted, handed over early, its row on the handover's day (Step 2, 30 Sep 2026)", (f) => has(f, (o) => /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(o.wantBy || "")
@@ -351,18 +351,18 @@ export const FEATURES = [
     && !!f.live && f.live.pay.now.parts.some((p) => p.date === o.movedOn && Math.abs((+p.whole || 0) - (+o.total + (+o.delivery || 0))) < 0.005))],
   ["a group order open, joined (Pool)", (f) => (f.pools || []).some((p) => p.state === "open" && p.joins.some((j) => has(f, (o) => o.id === j.oid && o.pool === p.id))
     && p.closesOn >= klDay(new Date(f.at)))],
-  ["a group order closed, its order acknowledged (Pool)", (f) => (f.pools || []).some((p) => p.state === "closed"
+  ["a group order closed, its order confirmed (Pool)", (f) => (f.pools || []).some((p) => p.state === "closed"
     && p.joins.some((j) => has(f, (o) => o.id === j.oid && o.pool === p.id && ROWED.includes(o.status) && hist(o, (h) => h.status === "acknowledged"))))],
   ["order ready", (f) => has(f, (o) => o.status === "ready")],
   ["order complete, collected", (f) => has(f, (o) => o.status === "done" && o.mode === "collect")],
   ["order complete, delivered", (f) => has(f, (o) => o.status === "done" && o.mode === "deliver")],
   ["withdrawn by them", (f) => has(f, (o) => o.status === "cancelled" && hist(o, (h) => h.status === "cancelled" && h.by === "customer"))],
   ["cancelled by us, with his reason", (f) => has(f, (o) => o.status === "cancelled" && hist(o, (h) => h.status === "cancelled" && h.by === "desk" && h.note))],
-  ["not taken, with his reason", (f) => has(f, (o) => o.status === "declined" && hist(o, (h) => h.status === "declined" && h.note))],
+  ["declined, with his reason", (f) => has(f, (o) => o.status === "declined" && hist(o, (h) => h.status === "declined" && h.note))],
   ["closed at what was handed over", (f) => has(f, (o) => o.closed && o.closed.qty > o.qty)],
-  ["amended after the acknowledgement, the goods and the delivery restated (06 Oct 2026)", (f) => has(f, (o) => hist(o, (h) => h.by === "desk" && /^amended to /.test(h.note || "")))],
-  ["a price set at the acknowledgement, what they placed it at beside it (Step 2)", (f) => has(f, (o) => typeof o.asked === "number" && Math.abs(o.asked - o.total) > 0.004)],
-  ["a delivery fee, set by distance at the acknowledgement (F15)", (f) => has(f, (o) => +o.delivery > 0 && hist(o, (h) => h.status === "acknowledged"))],
+  ["amended after it was confirmed, the goods and the delivery restated (06 Oct 2026)", (f) => has(f, (o) => hist(o, (h) => h.by === "desk" && /^amended to /.test(h.note || "")))],
+  ["a price set when it was confirmed, what they placed it at beside it (Step 2)", (f) => has(f, (o) => typeof o.asked === "number" && Math.abs(o.asked - o.total) > 0.004)],
+  ["a delivery fee, set by distance when it was confirmed (F15)", (f) => has(f, (o) => +o.delivery > 0 && hist(o, (h) => h.status === "acknowledged"))],
   ["ready again for the rest after a part (Step 1b)", (f) => has(f, (o) => o.status === "ready" && +o.moved > 0 && o.moved < o.qty
     && (o.history || []).filter((h) => h.status === "ready" && h.by === "desk" && !h.note && !h.method).length > 1)],
   ["a slip sent with a claim (F13)", (f) => has(f, (o) => (o.payments || []).some((p) => p.claim === "waiting" && p.slip && Date.parse(f.at) - Date.parse(p.at) < 30 * 864e5))],

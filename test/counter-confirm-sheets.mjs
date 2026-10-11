@@ -127,9 +127,9 @@ export async function run({ ok }) {
 
     /* 3 and 4: what it says */
     const mt = sh.querySelector(".mtile"), say = t(sh);
-    ok(!!mt && t(mt.querySelector(".sr")) === "Cube 2.5 units" && t(mt.querySelector(".mq")) === "2.5" && t(mt.querySelector("svg.psym text.plet")) === PLET.salt,
-      "the Sheet restates the order by its mark with its letter, the shape and the size read aloud, and the figure under the mark: " + JSON.stringify(t(mt)));
-    ok(t(sh.querySelector(".salt-ledger__value")) === money(270) && /^Placed /.test(t(sh.querySelector(".salt-ledger__flag"))) && /Sent/.test(t(sh.querySelector(".salt-ledger__label"))),
+    ok(!!mt && t(mt.querySelector(".sr")) === "Cube 2.5 units" && t(mt.querySelector(".mq")) === "Cube, 2.5 units" && t(mt.querySelector("svg.psym text.plet")) === PLET.salt,
+      "the Sheet restates the order by its mark with its letter, the shape and the size read aloud, and the shape and the size under the mark (7c): " + JSON.stringify(t(mt)));
+    ok(t(sh.querySelector(".salt-ledger__value")) === money(270) && /^Placed /.test(t(sh.querySelector(".salt-ledger__flag"))) && /Placed$/.test(t(sh.querySelector(".salt-ledger__label"))),
       "and by its word and its figure and the day it was placed: " + JSON.stringify([t(sh.querySelector(".salt-ledger__label")), t(sh.querySelector(".salt-ledger__value")), t(sh.querySelector(".salt-ledger__flag"))]));
     ok(say.includes(W.EN["yn.orderLost"]) && say.includes(W.EN["yn.orderNone"]) && !say.includes("refunded"),
       "it says what is lost, and that nothing is paid on this one, so nothing is owed: " + JSON.stringify(say));
@@ -171,7 +171,7 @@ export async function run({ ok }) {
     cancelB.click();
     const shB = sheet(P), sayB = t(shB);
     ok(!!shB && t(shB.querySelector(".salt-ledger__value")) === money(15) && sayB.includes(W.fill(W.EN["yn.orderPaid"], { rm: money(12) }, "en")) && !sayB.includes(W.EN["yn.orderNone"])
-      && /Acknowledged/.test(t(shB.querySelector(".salt-ledger__label"))) && t(shB.querySelector(".mtile .sr")) === "Lozenge 1 unit",
+      && /Confirmed$/.test(t(shB.querySelector(".salt-ledger__label"))) && t(shB.querySelector(".mtile .sr")) === "Lozenge 1 unit",
       "an order paid before anything moved says its figure with the delivery, and the refund and not that nothing is paid: " + JSON.stringify(sayB));
     P.d.getElementById("ynKeep").click();
 

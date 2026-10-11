@@ -221,11 +221,11 @@ export async function findOrder(env, id) {
  * customer's own words. Each is [chip, sentence], and where the chip reads by the mode or by whose the
  * cancellation was, [collect or theirs, sentence, deliver or his, sentence]. No figure: the card draws the figures. */
 export const CUSTOMER_SEES = {
-  placed: ["Sent", "Waiting to be acknowledged"],
-  acknowledged: ["Acknowledged", "Acknowledged on"],
+  placed: ["Placed", "Waiting for us to confirm"],
+  acknowledged: ["Confirmed", "Confirmed on"],
   ready: ["Ready to collect", "Ready to collect, since", "Ready to deliver", "Ready to deliver, since"],
   done: ["Complete", "Your order is now complete"],
-  declined: ["Not taken", "Not taken"],   /* S11 11.7: his reason and "Nothing is owed" follow on the page */
+  declined: ["Declined", "We could not take this order"],   /* S11 11.7: his reason and "Nothing is owed" follow on the page */
   cancelled: ["Cancelled by you", "Cancelled before anything moved", "Cancelled by us", "Cancelled by us"]
 };
 export function toldOf(o) {

@@ -112,12 +112,20 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .sup-yellow{--sup:var(--salt-amber)}
 .sup-red{--sup:var(--salt-ember)}
 .pwith{display:inline-flex;align-items:center;gap:7px}
-/* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS FIGURE UNDER IT AND ALONE. The pressed ghost's edge and
-   glass, the mark at 28px, the figure in the mono face; nothing sits beside the mark. The statement's lines take it too. */
+/* 11 Oct 2026 (his decision 10): a mark is never alone; its shape word is drawn beside it, the screen reader's name said where it is seen */
+.pshape{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text);line-height:1.3}
+.psym+.pshape{margin-left:6px}
+.pwith .psym+.pshape{margin-left:0}
+.pmark .pshape{font-size:inherit;color:inherit;letter-spacing:inherit;vertical-align:middle}
+/* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS CAPTION UNDER IT. The pressed ghost's edge and glass, the mark at
+   28px, the caption in the mono face; since 11 Oct 2026 (his decision 10) it is the shape and the size in words, "Cube, 2.5 units",
+   which may break after its comma and never inside the size. The statement's lines take it too. */
 .mtile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;
   min-width:64px;padding:10px 10px 8px;border:1px solid var(--salt-edge-field);border-radius:var(--salt-radius-sm);
   background:var(--salt-glass);color:var(--salt-brass);line-height:1;vertical-align:middle}
 .mtile .psym,.mstack .psym{display:block}
+.mq .nb{white-space:nowrap}
+.mtile .mq{white-space:normal;text-align:center;max-width:11ch}
 .mq{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;
   color:var(--salt-text);white-space:nowrap;line-height:1.2}
 .mhero{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
@@ -731,12 +739,13 @@ export function psymSvg(product, px) {
     + (L ? '<text class="plet" x="12" y="' + L.y + '" font-size="' + L.s + '" text-anchor="middle" fill="currentColor">' + L.l + "</text>" : "")
     + "</svg>";
 }
-/** HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON AND ITS FIGURE SITS UNDER IT, ALONE ("number alone"), never
- *  a mark beside words or figures; the statement's lines are cards too. `fig` is the figure drawn; a reader hears the
- *  shape, then `said`, the size in words, and never the figure twice. The page's mtile is its twin. */
-export function mtileSvg(product, fig, said, px) {
-  return '<span class="mtile"><span class="sr">' + esc(PSHAPE[String(product || "").toLowerCase()] || PSHAPE._) + " " + esc(said)
-    + "</span>" + psymSvg(product, px || 28) + '<span class="mq" aria-hidden="true">' + esc(fig) + "</span></span>";
+/** IN A CARD THE MARK IS A BUTTON WITH ITS CAPTION UNDER IT (his note of 28 Sep 2026; the caption since his decision 10 of
+ *  11 Oct 2026): the shape word and the size in words, "Cube, 2.5 units", drawn, where it was the figure alone. A reader hears
+ *  the same once, without the comma (`.sr`). The statement's lines are cards too; the page's mtile is its twin. */
+export function mtileSvg(product, said, px) {
+  const shape = esc(PSHAPE[String(product || "").toLowerCase()] || PSHAPE._);
+  return '<span class="mtile"><span class="sr">' + shape + " " + esc(said)
+    + "</span>" + psymSvg(product, px || 28) + '<span class="mq" aria-hidden="true">' + shape + ', <span class="nb">' + esc(said) + "</span></span></span>";
 }
 
 /** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
@@ -1001,7 +1010,8 @@ export function boardPage(guest, nonce) {
   const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });   /* C5 */
   const body = products.length
     ? products.map((p) => '<div class="pane">'
-        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h2>"
+        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30)
+        + '<span class="pshape">' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + "</span></h2>"
         /* v787: a level is never named on a pane, on any book (his instruction, 22 Sep 2026). The board
            carries no name since v787, and this line draws none, so a name that reaches it is not drawn either. */
         + (p.fellBack ? '<p class="sub2">' + wd("board.only") + "</p>" : "")
@@ -1588,15 +1598,29 @@ const CLIENT_JS = `
   function withMark(product,text,px){
     var w=el('span','pwith'); w.appendChild(document.createTextNode(text));
     w.appendChild(psym(product,px||20));
-    var sr=el('span','sr',pshape(product)); w.appendChild(sr);
+    w.appendChild(el('span','pshape',pshape(product)));
     return w;
   }
-  /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON AND ITS FIGURE SITS UNDER IT, alone; a reader hears the shape
-     and the size in words, never the figure twice (mtileSvg's twin) */
+  /* a book's heading: its mark with its shape word beside it, named by the shape (and by its light, where it has one) */
+  function pmarkHead(tag,product){
+    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',pshape(product)));
+    return h;
+  }
+  /* a mark leading a note, its shape word beside it: the lines of a sheet that several products share */
+  function markLead(product,px){
+    var f=document.createDocumentFragment(); f.appendChild(psym(product,px)); f.appendChild(el('span','pshape',pshape(product))); f.appendChild(document.createTextNode(' '));
+    return f;
+  }
+  /* IN A CARD THE MARK IS A BUTTON AND ITS CAPTION SITS UNDER IT, the shape word and the size in words ("Cube, 2.5 units",
+     his decision 10 of 11 Oct 2026); a reader hears the shape and the size once (mtileSvg's twin) */
+  function mcap(product,words){
+    var f=el('span','mq'); f.setAttribute('aria-hidden','true');
+    f.appendChild(document.createTextNode(pshape(product)+', ')); f.appendChild(el('span','nb',words));
+    return f;
+  }
   function mtile(product,q,u,px){
-    var w=el('span','mtile'); w.appendChild(el('span','sr',pshape(product)+' '+unitsOf(q,u)));
-    w.appendChild(psym(product,px||28));
-    var f=el('span','mq',String(+q)); f.setAttribute('aria-hidden','true'); w.appendChild(f);
+    var w=el('span','mtile'), words=unitsOf(q,u); w.appendChild(el('span','sr',pshape(product)+' '+words));
+    w.appendChild(psym(product,px||28)); w.appendChild(mcap(product,words));
     return w;
   }
   var ALPHA=/[^23456789abcdefghjkmnpqrstvwxyz]/;
@@ -2718,7 +2742,7 @@ const CLIENT_JS = `
     box.appendChild(el('p','lead',tw('rew.lead')));
     card.products.forEach(function(p){
       var pane=el('div','pane');
-      var h3=el('h3','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
+      var h3=pmarkHead('h3',p.product);
       pane.appendChild(h3);
       /* THE REWARD IN UNITS, AND A BAR TO THE NEXT, first in the pane. No ringgit of margin anywhere near it. The bar is
          the system's Meter, its fill set from this nonce'd script, which the page's style policy allows. */
@@ -2919,7 +2943,7 @@ const CLIENT_JS = `
     return monthsIn(L)[+m[2]-1]+' '+m[1];
   }
   /* F4: THE LIGHT, a coloured border round the book's mark, its words in the heading's name and, on yellow or red with a day
-     set, "Expected by DD Mon" under it. Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
+     set, "More by DD Mon" under it. Sealed with the list, so it is as fresh as the last publish; nothing refuses an order. */
   function dmShort(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?m[3]+' '+mon3(L)[+m[2]-1]:''; }
   function supplyMark(h,pane,p){
     var s=p.supply; if(!s||!(s.light==='green'||s.light==='yellow'||s.light==='red')) return;
@@ -2948,7 +2972,7 @@ const CLIENT_JS = `
     sold().forEach(function(p){
       var pane=el('div','pane');
       /* C21: a board's mark is an h2 under the place's h1, never an h3 with nothing between */
-      var h3=el('h2','pmark'); h3.setAttribute('aria-label',pshape(p.product)); h3.appendChild(psym(p.product,28));
+      var h3=pmarkHead('h2',p.product);
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
          for it beside each product, never named; a customer now sees no level at all, in words or in a mark. The name
          still travels inside the sealed list, and nothing here reads it. 27 Sep 2026: a pane is its mark and its sizes. */
@@ -2968,7 +2992,7 @@ const CLIENT_JS = `
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
       var pane=el('div','pane');
-      var sh=el('h2','pmark'); sh.setAttribute('aria-label',pshape(p.product)); sh.appendChild(psym(p.product,28)); pane.appendChild(sh);
+      var sh=pmarkHead('h2',p.product); pane.appendChild(sh);
       pane.appendChild(el('p','sub2',tw('pr.soon')));
       grid.appendChild(pane);
     });
@@ -3567,7 +3591,7 @@ const CLIENT_JS = `
     var L=el('div','salt-ledger salt-ledger--plain');
     open.forEach(function(o){
       var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
-      /* the order as a card: its mark a button, the figure under it (his note of 28 Sep 2026) */
+      /* the order as a card: its mark a button, its caption under it (his notes of 28 Sep and 11 Oct 2026) */
       lab.appendChild(mtile(o.product,o.qty,oUnit(o)));
       /* the order's own word, stage 5's (stateWord, over oWord), as its row under Your orders says it; goods handed over in
          part keep an order open at ready, so they read as the banner's part word, never Ready over "part of it is with you" */
@@ -3615,7 +3639,7 @@ const CLIENT_JS = `
     if(c.pool) B.appendChild(el('p','salt-insight',tw('hp.ask',{q:unitsOf(a.q,a.unit)})));
     if(c.amend&&(hoursError||counterHours&&!counterHours.open))
       B.appendChild(el('p','salt-insight',tw(hoursError?'hours.unavailable':'hours.closed')));
-    /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and the figure under it, in
+    /* HIS NOTE OF 28 SEP 2026: what is ordered leads the check as a card, the mark a button and its caption under it, in
        place of a What line that set the mark beside its size; V4b: a card a line */
     var H=el('div','mhero'); c.lines.forEach(function(l){ H.appendChild(mtile(l.product,l.q,l.unit)); }); B.appendChild(H);
     var L=el('div','salt-ledger salt-ledger--plain');
@@ -3642,9 +3666,9 @@ const CLIENT_JS = `
        V4b: a line at a time, its mark leading when there are several */
     c.lines.forEach(function(l){
       if(l.was!=null){ var mv=el('p','salt-insight salt-insight--copper'); mv.setAttribute('role','status');
-        setW(mv,one?'sh.moved':'sh.movedLine',{now:esch(rm(l.total)), was:esch(rm(l.was))}); if(!one) mv.insertBefore(psym(l.product,20),mv.firstChild); B.appendChild(mv); }
+        setW(mv,one?'sh.moved':'sh.movedLine',{now:esch(rm(l.total)), was:esch(rm(l.was))}); if(!one) mv.insertBefore(markLead(l.product,20),mv.firstChild); B.appendChild(mv); }
       if(l.gone){ var gn=el('p','salt-insight salt-insight--copper',tw(one?'sh.gone':'sh.goneLine'));
-        gn.setAttribute('role','status'); if(!one) gn.insertBefore(psym(l.product,20),gn.firstChild); B.appendChild(gn); }
+        gn.setAttribute('role','status'); if(!one) gn.insertBefore(markLead(l.product,20),gn.firstChild); B.appendChild(gn); }
     });
     /* V5b2: a sheet likely paid in advance is checked beside what that means, and that the desk confirms it */
     if(lk&&c.lines.some(function(l){ return !l.placed; })) B.appendChild(el('p','salt-insight',tw('sh.prepayP')));
@@ -3831,8 +3855,8 @@ const CLIENT_JS = `
   }
 
   /* S5 5.3 (D11, his answer of 24 Sep 2026): WHERE AN ORDER IS, IN THE CUSTOMER'S WORDS. The record's states are the
-     desk's; they read Sent, Confirmed, Ready to collect or to deliver, Collected or Delivered once the goods are all
-     with them, Complete, Not taken, and Cancelled by you or by us, read off who cancelled it. Never Acknowledged,
+     desk's; they read Placed, Confirmed, Ready to collect or to deliver, Collected or Delivered once the goods are all
+     with them, Complete, Declined, and Cancelled by you or by us, read off who cancelled it. Never Acknowledged,
      Withdrawn or handed over. The tone follows the word: steel and dashed while it waits on us, brass ready,
      verdigris confirmed or moved, mist closed. */
   function oWord(st,o,by){
@@ -3941,7 +3965,7 @@ const CLIENT_JS = `
   function oRow(o,shown){
     var b=el('button','salt-inbox-row orow'); b.type='button'; b.setAttribute('data-row',o.id);
     if(o.id===shown) b.setAttribute('aria-current','true');
-    /* the order as a card: its mark a button, the figure under it, and its state beside (his note of 28 Sep 2026) */
+    /* the order as a card: its mark a button, its caption under it, and its state beside (his notes of 28 Sep and 11 Oct 2026) */
     b.appendChild(mtile(o.product,o.qty,oUnit(o)));
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
     t.appendChild(stateChip(o));
@@ -3990,7 +4014,7 @@ const CLIENT_JS = `
       if(document.getElementById('oArea')) oDraw();
     });
   }catch(e){ /* a browser that cannot say keeps the phone's one column */ }
-  /* ---- S5 5.2 (24 Sep 2026): AN ORDER'S OWN SCREEN. The goods on their own track (Sent, Confirmed, Ready, then
+  /* ---- S5 5.2 (24 Sep 2026): AN ORDER'S OWN SCREEN. The goods on their own track (Placed, Confirmed, Ready, then
      Collected or Delivered), so Paid can never run ahead of Delivered; the money on its own lines; ONE next action,
      the filled Pay while something is due and nothing filled when nothing is; the thread; what happened, folded;
      and Cancel at the foot while the goods have not moved. Built in named parts, each rebuilt on its own. ---- */
@@ -4005,7 +4029,7 @@ const CLIENT_JS = `
     return {k:k, t:tap?tap.t:''};
   }
   function oHead(o){
-    /* the order's head as a card: the mark a button with the figure under it, its state and how beside (his note of 28 Sep 2026) */
+    /* the order's head as a card: the mark a button with its caption under it, its state and how beside (his notes of 28 Sep and 11 Oct 2026) */
     var h=el('div','ohead'), t=el('h3'), side=el('div');
     t.appendChild(mtile(o.product,o.qty,oUnit(o)));
     h.appendChild(t);
@@ -4495,7 +4519,7 @@ const CLIENT_JS = `
   /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part not yet
      received says when it was ordered. A part to come is Coming up's own row (partRow, S7 polish) */
   /* S13: the mark as a slot, so the sentence round it is one of the table's; {mark} is the symbol with its shape's name */
-  function markHtml(pr,px){ var w=el('span'); w.appendChild(psym(pr,px)); w.appendChild(el('span','sr',pshape(pr))); return w.innerHTML; }
+  function markHtml(pr,px){ var w=el('span'); w.appendChild(psym(pr,px)); w.appendChild(el('span','pshape',pshape(pr))); return w.innerHTML; }
   function partSpan(p){
     var k=(+p.whole>+p.rm+0.004?'part.rest':'part.')+(p.gotOn?'Got':p.date?'Ordered':'Bare')+(p.resale?'F':'');
     return setW(el('span'),k,{mark:markHtml(p.product,20), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
@@ -5219,7 +5243,7 @@ const CLIENT_JS = `
      open, so a tap opens Account, whose statement carries the row. It was stage 6's plain Ledger line under the orders. */
   function partRow(p){
     var b=el('button','salt-inbox-row hpart'); b.type='button';
-    /* the part as a card: its mark a button and the figure under it, its due day beside (his note of 28 Sep 2026) */
+    /* the part as a card: its mark a button and its caption under it, its due day beside (his notes of 28 Sep and 11 Oct 2026) */
     b.appendChild(mtile(p.product,p.qty,unitFor(p.product)));
     var main=el('span','salt-inbox-row__main');
     main.appendChild(el('span','salt-inbox-row__what',tw(p.resale?'hc.dueOnReceiptF':'hc.dueOnReceipt')));
@@ -5266,10 +5290,10 @@ const CLIENT_JS = `
       var b=el('button','salt-option__face salt-option__face--tap htile'), t=el('span','salt-option__text mstack'), l=el('span','salt-option__label mstack');
       /* nothing of the book in an attribute: the tap reads the tile from its own closure (S7R-2 of the stage 7 review) */
       b.type='button';
-      /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and the figure under it, alone; a reader hears the
-         shape and the size in words */
+      /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and its caption under it (since 11 Oct 2026 the shape word and
+         the size, "Cube, 1 unit"); a reader hears the shape and the size in words, once */
       /* C19 (29 Sep 2026): the size under the mark says its unit, and the price is a figure in the mono face */
-      var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');
+      var fq=mcap(a.product,unitsOf(a.q,P.unit));
       l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(psym(a.product,28)); l.appendChild(fq);
       t.appendChild(l);
       t.appendChild(el('span','salt-option__detail'+(a.start?' mono':''),a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));
