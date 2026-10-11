@@ -1384,10 +1384,16 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   Messages, Rows, Accounts) filter the one list and read nothing; they are drawn as the parts strip is (a `tablist` of `tab` pills, the one in
   force `aria-selected`), because the recipe draws a selected pill from `aria-selected` and `aria-pressed` is styled on a ghost alone. **Every item of the bars carries its count**: Needs you the Now, Orders
   what waits on him there (the orders and the account claims), Customers the threads asked and the links waiting, Record the rows waiting,
-  Shop none, the same on the rail and the bar and never a practice item. **It is read on entering**, and not again
-  within 30 seconds of its last read: the orders and rows, the claims, the threads, the hours, the notice, and (after the page has read them
-  once) the accounts and the links. No read starts while another of its kind is out (the newest review wins), and a read that finds what it
-  found last time draws nothing. No route, body, request id, retained send, vault or cash rule changed.
+  Shop none, the same on the rail and the bar and never a practice item. **It is read on entering and again every 30 seconds while it
+  shows**, as Orders is: the orders and rows, the claims, the threads, the hours, the notice, and (after the page has read them once) the
+  accounts and the links; the poll stops when another place shows or the page is hidden, and a page that comes back reads at once. **It also stops
+  when his Access sign-in ends**: the read that meets the lapse gives the page way to Sign in again (`ended()`), which clears the poll, and
+  nothing sets it again on that page, so no further request goes to the login. No read
+  starts while another of its kind is out (the newest review wins), a read that finds what it found last time draws nothing, and on
+  Orders a poll leaves a part he has begun on (a field open, a preview shown, a slip open, cash held, a tap in flight) alone. **A tap inside
+  Orders that redraws nothing (Preview rows, View slip, Close and lock slip) holds the Orders poll off that part until he leaves Orders or
+  taps Refresh**: what it shows may be stale, and is never disrupted. No route,
+  body, request id, retained send, vault or cash rule changed.
 - **Salt Account opens on Needs you** (S9 9.1, the plan's section 5): a card a thing that waits
   on him, its action on the card, the tap answered there. A card about an account opens it with its Open:
   from 1080px beside the list (the first such card's account until he picks one, the

@@ -1,6 +1,7 @@
 /* test/admin-needs.mjs: NEEDS YOU, THE RANKED INBOX (11 Oct 2026, Phase 1b; docs/STATEMENTS.md "His places").
  *
- * Every thing that waits on him is a card on the system's Action recipe, ranked Now, Soon, Watch and oldest first in each. What is proved here, each check red under its own mutation (test/admin-needs.mutations.json):
+ * Every thing that waits on him is a card on the system's Action recipe, ranked Now, Soon, Watch and oldest first in each, read again every 30
+ * seconds while it is showing. What is proved here, each check red under its own mutation (test/admin-needs.mutations.json):
  *   1  the cards: which kind of thing is in which severity, with its kind word, who, what, age and Open
  *   2  the ranking: Now before Soon before Watch, the oldest first, a practice item after the real ones
  *   3  practice items: labelled, and counted nowhere, in the line under the title and on both bars
@@ -10,12 +11,14 @@
  *      no card in Needs you books money
  *   7  the kind chips: filters only, reading nothing
  *   8  a read that failed is said, never taken for nothing waiting
+ *   9  the 30-second read: only while Needs you or Orders shows and the page is visible, no read twice at once, nothing drawn when nothing
+ *      changed, a part he has begun on left alone, a tap in flight kept
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { SITE_RECIPES } from "../stmt/statement-css.js";
 
 const U1 = "abcd-efgh", U2 = "jkmn-pqrs", U3 = "tvwx-yz23", U4 = "4567-89ab", PRACTICE = "0000-0000";
 const NOW = Date.now(), ago = (h) => new Date(NOW - h * 3600000).toISOString();
-import { SITE_RECIPES } from "../stmt/statement-css.js";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threads: "/all/maker/threads", hours: "/all/maker/hours", bulletin: "/all/maker/bulletin",
   sheet: "/all/sheet", links: "/all/refs", pools: "/all/maker/pools", inputs: "/all/maker/inputs" };
@@ -79,6 +82,10 @@ export async function run({ ok, pageWork }) {
       const part = strip && (strip.querySelector('[aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
+    /* the 30-second read, as the page set it: the one live interval of that length */
+    p.live = () => p.intervals.filter((i) => i.ms === 30000 && !i.off);
+    p.tick = async () => { const t = p.live()[0]; if (t) t.f(); await p.work.quiet(); return !!t; };
+    p.hide = (on) => { Object.defineProperty(d, "hidden", { configurable: true, get: () => on }); d.dispatchEvent(new p.w.Event("visibilitychange")); };
     return p;
   };
   const state = () => ({ approved: new Set(), newOrder: null });
@@ -243,10 +250,146 @@ export async function run({ ok, pageWork }) {
     ok(/ Not read: orders and rows and messages[.]$/.test(line) && !p.card("o:ord-p1") && !p.card("m:" + U1) && p.card("c:" + U1 + ":c-1") && p.card("k:" + U3),
       "what could not be read is named under the title, and the cards of what could be read stand: " + line);
     ok(!/^Nothing needs you/.test(line), "and it never says nothing needs him");
+    p.fail.clear();
+    await p.tick();
+    ok(!/Not read/.test(d.getElementById("nCount").textContent) && p.card("o:ord-p1") && p.card("m:" + U1), "once the next read gets through, the cards come and the note goes: " + d.getElementById("nCount").textContent);
   } finally { p.w.close(); }
   p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin] });
   try {
     ok(/Not read: orders and rows, payments, messages, hours and the notice[.]$/.test(p.d.getElementById("nCount").textContent),
       "and every source that failed is named: " + p.d.getElementById("nCount").textContent);
+  } finally { p.w.close(); }
+
+  /* 9. THE 30-SECOND READ */
+  p = await open(state());
+  try {
+    const d = p.d;
+    ok(p.live().length === 1, "Needs you sets one read every 30 seconds: " + JSON.stringify(p.intervals.map((i) => i.ms)));
+    p.reads.length = 0;
+    await p.tick();
+    ok(same([...p.reads].sort(), [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin, ROUTES.sheet, ROUTES.links].sort()),
+      "a tick on Needs you reads the orders and rows, the claims, the threads, the hours, the notice, the accounts and the links, each once: " + JSON.stringify(p.reads));
+
+    /* nothing drawn when nothing changed */
+    const kept = { c: p.card("o:ord-p1"), s: p.card("l:w1"), r: d.querySelector("#makerReview .maker-card"), status: d.getElementById("makerReviewStatus").textContent };
+    const seen = [];
+    const watch = new p.w.MutationObserver((rs) => seen.push(...rs));
+    for (const id of ["nlist", "makerReview", "makerClaims", "makerDrafts", "makerChatList", "makerQueueReview", "oLinks", "glist"]) {
+      const n = d.getElementById(id); if (n) watch.observe(n, { childList: true, subtree: true, characterData: true, attributes: true });
+    }
+    await p.tick(); await p.tick();
+    seen.push(...watch.takeRecords());
+    ok(seen.length === 0 && p.card("o:ord-p1") === kept.c && p.card("l:w1") === kept.s && d.querySelector("#makerReview .maker-card") === kept.r
+      && d.getElementById("makerReviewStatus").textContent === kept.status,
+    "a tick that finds what it found last time draws nothing: no card, no list and no line of status is touched (" + seen.length + " changes)");
+    watch.disconnect();
+
+    /* a change is drawn and counted */
+    const s2 = state();
+    p.w.close();
+    p = await open(s2);
+    ok(!p.card("o:ord-new") && p.counts(".salt-rail").needs === "9", "(a day without the order)");
+    s2.newOrder = { id: "ord-new", u: U1, status: "placed", mode: "collect", qty: 3, total: 300, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: ago(0.1) };
+    await p.tick();
+    ok(p.card("o:ord-new") && p.card("o:ord-new").getAttribute("data-sev") === "now" && p.counts(".salt-rail").needs === "10" && p.counts(".salt-appbar").orders === "10"
+      && /^10 now/.test(p.d.getElementById("nCount").textContent), "an order placed since the last read is drawn at the next tick, and counted on both bars");
+
+    /* only while it shows, and the page is visible */
+    byAct(p.d, "nav.customers").click(); await p.work.quiet();
+    ok(p.live().length === 0, "entering Customers stops it");
+    byAct(p.d, "nav.shop").click(); await p.work.quiet();
+    ok(p.live().length === 0, "and Shop and Record are no different");
+    byAct(p.d, "nav.orders").click(); await p.work.quiet();
+    ok(p.live().length === 1, "Orders reads every 30 seconds too");
+    p.reads.length = 0; await p.tick();
+    ok(same([...p.reads].sort(), [ROUTES.claims, ROUTES.review].sort()), "and what it reads is the orders and the claims, nothing of the rest: " + JSON.stringify(p.reads));
+    byAct(p.d, "nav.needs").click(); await p.work.quiet();
+    p.hide(true);
+    ok(p.live().length === 0, "a hidden page stops it");
+    p.reads.length = 0;
+    const ghost = p.intervals.filter((i) => i.ms === 30000).pop();
+    if (ghost) ghost.f();
+    await p.work.quiet();
+    ok(p.reads.length === 0, "and a tick that still arrives while the page is hidden reads nothing");
+    p.hide(false);
+    await p.work.quiet();
+    ok(p.live().length === 1 && p.reads.includes(ROUTES.review), "a page that comes back reads at once and sets it again: " + JSON.stringify(p.reads));
+  } finally { p.w.close(); }
+
+  /* no read twice at once */
+  p = await open(state());
+  try {
+    const release = p.hold(ROUTES.review);
+    p.reads.length = 0;
+    const t = p.live()[0];
+    t.f(); t.f();
+    await new Promise((r) => setTimeout(r, 30));
+    t.f();
+    await new Promise((r) => setTimeout(r, 30));
+    ok(p.reads.filter((r) => r === ROUTES.review).length === 1 && p.reads.filter((r) => r === ROUTES.claims).length === 1,
+      "a tick while the last read is still out starts none: " + JSON.stringify(p.reads));
+    release(); await p.work.quiet();
+    p.reads.length = 0; await p.tick();
+    ok(p.reads.filter((r) => r === ROUTES.review).length === 1, "and once it has landed the next tick reads again");
+  } finally { p.w.close(); }
+
+  /* the newest read wins: a slow read that lands after a newer one never draws over it */
+  const s4 = state();
+  p = await open(s4);
+  try {
+    const d = p.d, waitFor = async (f) => { for (let i = 0; i < 400 && !f(); i++) await new Promise((r) => setTimeout(r, 10)); return !!f(); };
+    const release = p.hold(ROUTES.review);
+    p.reads.length = 0;
+    p.live()[0].f();
+    await waitFor(() => p.reads.includes(ROUTES.review));
+    s4.newOrder = { id: "ord-new", u: U1, status: "placed", mode: "collect", qty: 3, total: 300, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: ago(0.1) };
+    byAct(d, "nav.orders").click();
+    ok(await waitFor(() => d.querySelector('#makerReview [data-maker-card="ord-new"]')), "a read he asks for lands while the slow one is still out, and draws what came");
+    release(); await p.work.quiet();
+    byAct(d, "nav.needs").click(); await p.work.quiet();
+    ok(!!d.querySelector('#makerReview [data-maker-card="ord-new"]') && !!p.card("o:ord-new"), "and the slow one, landing last with the older answer, draws over nothing");
+  } finally { p.w.close(); }
+
+  /* a part he has begun on is left alone, a tap in flight kept */
+  const s3 = state();
+  p = await open(s3);
+  try {
+    const d = p.d;
+    byAct(d, "nav.orders").click(); await p.work.quiet();
+    const field = d.querySelector('#makerReview [data-maker-card="ord-p1"] [data-act="order.total"]');
+    field.value = "250"; field.dispatchEvent(new p.w.Event("input", { bubbles: true }));
+    s3.newOrder = { id: "ord-new", u: U1, status: "placed", mode: "collect", qty: 3, total: 300, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: ago(0.1) };
+    p.reads.length = 0; await p.tick();
+    ok(!p.reads.includes(ROUTES.review) && d.querySelector('#makerReview [data-maker-card="ord-p1"] [data-act="order.total"]').value === "250" && !d.querySelector('[data-maker-card="ord-new"]'),
+      "a tick finds the order card he has typed in and leaves the part as it is: nothing read, his 250 kept");
+    byAct(d, "maker.refresh").click(); await p.work.quiet();
+    ok(!!d.querySelector('[data-maker-card="ord-new"]'), "his own Refresh draws what came meanwhile");
+    p.reads.length = 0; await p.tick();
+    ok(p.reads.includes(ROUTES.review) && p.reads.includes(ROUTES.claims), "and the next tick reads again, he having finished");
+    const preview = byAct(d, "claim.preview");
+    preview.click(); await p.work.quiet();
+    const note = () => d.querySelector("#makerClaims .maker-quote").textContent;
+    const before = note();
+    p.reads.length = 0; await p.tick();
+    ok(before !== "" && note() === before && !p.reads.includes(ROUTES.claims), "a claim whose rows he is previewing is left alone: " + JSON.stringify(p.reads));
+  } finally { p.w.close(); }
+
+  /* 9c. WHEN HIS ACCESS SIGN-IN ENDS MID-POLL, THE POLL ENDS WITH IT */
+  p = await open(state());
+  try {
+    const d = p.d;
+    ok(p.live().length === 1, "the 30-second read is running before the lapse");
+    p.lapse(true);
+    p.reads.length = 0;
+    await p.tick();
+    const during = p.reads.length;
+    ok(d.body.classList.contains("ended") && !d.getElementById("aEnded").hidden && during > 0 && p.live().length === 0,
+      "a lapse met by a poll gives the page way to Sign in again and clears the 30-second read: " + JSON.stringify([d.body.className, during, p.live().length]));
+    p.reads.length = 0;
+    p.hide(true); p.hide(false); await p.work.quiet();
+    for (const i of p.live()) i.f();   /* the next 30 seconds, for any read still set */
+    await p.work.quiet();
+    ok(p.reads.length === 0 && p.live().length === 0,
+      "and a page hidden then shown again, or any later 30 seconds, sends nothing and sets nothing again: " + JSON.stringify([p.reads, p.live().length]));
   } finally { p.w.close(); }
 }

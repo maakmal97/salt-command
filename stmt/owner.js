@@ -107,6 +107,7 @@ export const OWNER_JS = `
     if(PART_READ[placeNow+'.'+partNow]) PART_READ[placeNow+'.'+partNow]();
     if(o.push){ var to=addrFor(placeNow, partNow); if(location.hash!==to){ try{ history.pushState(null,'',to); }catch(e){} } }
     if(fresh){ try{ window.scrollTo(0,0); }catch(e){} }
+    needsWatch();
   }
   /* Back, Forward and an address typed in: the place the address names, and nothing written back. Not while an account is viewed
      as them, which has the page's own bar and no places. */
@@ -715,6 +716,8 @@ export const OWNER_JS = `
   function ended(){
     lookShut();   /* 11 Oct 2026: the look Sheet gives way; the lapse is what he must see */
     document.getElementById('aEnded').hidden=false; document.body.classList.add('ended');
+    /* the 30-second read ends with the sign-in: every poll after a lapse would send seven requests to the login and fail each */
+    if(needsTimer){ clearInterval(needsTimer); needsTimer=null; }
   }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
@@ -3029,7 +3032,7 @@ export const OWNER_JS = `
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=30000;
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
-  var nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, makerNotice=null, shopReading=false;
+  var nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
   function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; }
   /* a read that finds what it found last time draws nothing: each keeps its last answer */
@@ -3441,6 +3444,18 @@ export const OWNER_JS = `
     shopReading=false;
     if(apply) drawNeeds();
   }
+  /* THE POLL runs only while Needs you or Orders is showing and the page is visible, and stops the moment either stops. */
+  function needsWatch(){
+    var on=!document.hidden&&!document.body.classList.contains('ended')&&(placeNow==='needs'||placeNow==='orders');
+    if(on&&needsTimer===null) needsTimer=setInterval(tickPlace, NEED_MS);
+    else if(!on&&needsTimer!==null){ clearInterval(needsTimer); needsTimer=null; }
+  }
+  function tickPlace(){
+    if(document.hidden||(placeNow!=='needs'&&placeNow!=='orders')){ needsWatch(); return; }
+    if(placeNow==='needs') readNeeds(true);
+    else { loadMaker(true); loadMakerClaims(true); }
+  }
+  document.addEventListener('visibilitychange', function(){ needsWatch(); if(!document.hidden&&needsTimer!==null) tickPlace(); });
   document.getElementById('gmake').addEventListener('click', async function(){
     var b=this, intro=document.getElementById('gintro').value,
         label=document.getElementById('glabel').value;

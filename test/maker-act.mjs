@@ -108,7 +108,7 @@ const links = () => [
 /* hash opens the page at an address; review, claims, threads, hours, bulletin and sheet change what each answers (each a function of the answer), for a test that wants
    other orders than the busy day's (links is the guest links). The page's intervals are kept, so a test fires the 30-second read itself; hold(route) keeps the answer to the
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
-   that fail to be reached. */
+   that fail to be reached; lapse(true) answers every read 401, as Access does when his sign-in has ended. */
 export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [] }) {
   const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [];
   const hold = (route) => { let release; gates.set(route, new Promise((r) => { release = r; })); return () => release(); };
@@ -146,7 +146,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       status: { open: true, source: "schedule" } });
     return { ok: true, accounts: [], refs: [], tiers: [], claims: [], threads: [], pools: [], lines: [] };
   };
-  let failCash = false;
+  let failCash = false, lapsed = false;
   const dom = new JSDOM(landingPage("", "maker-act-nonce", { master: "fixture-master", accounts: sheet().filter((a) => !a.test) }), {
     url: "https://counter.fixture.test/all" + hash, runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(w) {
@@ -167,6 +167,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
         if (failInputs && route === "/all/maker/inputs") throw new Error("fixture: the Desk could not be reached");
         if (fail.has(route)) throw new Error("fixture: the Desk could not be reached");
         if (!(init && init.method === "POST")) reads.push(route);
+        if (lapsed) return { ok: false, status: 401, type: "basic", json: async () => ({}) };
         const body = answer(route, init);
         if (gates.has(route)) { const held = gates.get(route); gates.delete(route); await held; }
         return ok200(body);
@@ -177,7 +178,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
   const card = (key) => [...d.querySelectorAll("[data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === key);
   const click = async (control) => { control.click(); await work.quiet(); };
   const type = (control, value) => { control.value = value; control.dispatchEvent(new w.Event("input", { bubbles: true })); control.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  return { dom, w, d, work, posts, timers, intervals, hold, fail, reads, card, click, type, failCash: (v) => { failCash = v; } };
+  return { dom, w, d, work, posts, timers, intervals, hold, fail, reads, card, click, type, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
 }
 
 /* every stage, every card and every form drawn once: the page a person would have in front of them on the busiest day */

@@ -53785,7 +53785,7 @@ await (async () => {
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars");
+section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 30 seconds");
 await (async () => {
   await (await import("./admin-needs.mjs")).run({ ok, pageWork });
 })();

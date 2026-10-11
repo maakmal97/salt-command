@@ -312,10 +312,112 @@
   "replace": "catch(error){ apply=true; }"
  },
  {
+  "name": "the read is not every 30 seconds",
+  "file": "stmt/owner.js",
+  "find": "needsTimer=setInterval(tickPlace, NEED_MS);",
+  "replace": "needsTimer=setInterval(tickPlace, 1000);"
+ },
+ {
+  "name": "the read runs on every place",
+  "file": "stmt/owner.js",
+  "find": "var on=!document.hidden&&!document.body.classList.contains('ended')&&(placeNow==='needs'||placeNow==='orders');",
+  "replace": "var on=!document.hidden&&!document.body.classList.contains('ended');"
+ },
+ {
+  "name": "the read runs on a hidden page",
+  "file": "stmt/owner.js",
+  "find": "var on=!document.hidden&&!document.body.classList.contains('ended')&&(placeNow==='needs'||placeNow==='orders');",
+  "replace": "var on=!document.body.classList.contains('ended')&&(placeNow==='needs'||placeNow==='orders');"
+ },
+ {
+  "name": "a tick reads on a hidden page",
+  "file": "stmt/owner.js",
+  "find": "if(document.hidden||(placeNow!=='needs'&&placeNow!=='orders')){ needsWatch(); return; }",
+  "replace": "if(placeNow!=='needs'&&placeNow!=='orders'){ needsWatch(); return; }"
+ },
+ {
+  "name": "a page that comes back does not read",
+  "file": "stmt/owner.js",
+  "find": "needsWatch(); if(!document.hidden&&needsTimer!==null) tickPlace(); });",
+  "replace": "needsWatch(); });"
+ },
+ {
+  "name": "Orders does not read",
+  "file": "stmt/owner.js",
+  "find": "else { loadMaker(true); loadMakerClaims(true); }",
+  "replace": "else {}"
+ },
+ {
+  "name": "Needs you does not read the accounts",
+  "file": "stmt/owner.js",
+  "find": "if(sheet&&!sheetBusy) jobs.push(loadSheet(true));",
+  "replace": ""
+ },
+ {
   "name": "Needs you does not read the hours",
   "file": "stmt/owner.js",
   "find": "loadMakerThreads(true), readShop()];",
   "replace": "loadMakerThreads(true)];"
+ },
+ {
+  "name": "a read starts while one is out",
+  "file": "stmt/owner.js",
+  "find": "    if(needsReading) return;\n",
+  "replace": ""
+ },
+ {
+  "name": "a slow read draws over a newer",
+  "file": "stmt/owner.js",
+  "find": "      if(gen!==makerGen) return;\n      nGot('review');",
+  "replace": "      nGot('review');"
+ },
+ {
+  "name": "an unchanged review is drawn",
+  "file": "stmt/owner.js",
+  "find": "if(!changed('review', reading)&&poll) return;",
+  "replace": ""
+ },
+ {
+  "name": "unchanged claims are drawn",
+  "file": "stmt/owner.js",
+  "find": "if(!changed('claims', makerClaims)&&poll) return;",
+  "replace": ""
+ },
+ {
+  "name": "unchanged threads are drawn",
+  "file": "stmt/owner.js",
+  "find": "if(!changed('threads', makerThreads)&&quiet===true) return;",
+  "replace": ""
+ },
+ {
+  "name": "an unchanged sheet is drawn",
+  "file": "stmt/owner.js",
+  "find": "if(!changed('sheet',[j.accounts,j.desk,j.stranger,j.issue])&&quiet===true) return;",
+  "replace": ""
+ },
+ {
+  "name": "unchanged links are drawn",
+  "file": "stmt/owner.js",
+  "find": "if(diff||!poll){ drawLinks(); drawNeeds(); if(!poll) say(''); }",
+  "replace": "if(true){ drawLinks(); drawNeeds(); if(!poll) say(''); }"
+ },
+ {
+  "name": "unchanged hours are drawn",
+  "file": "stmt/owner.js",
+  "find": "if(changed('hours', h)){ makerHours=h; apply=true; }",
+  "replace": "{ changed('hours', h); makerHours=h; apply=true; }"
+ },
+ {
+  "name": "an order card he has typed in is redrawn",
+  "file": "stmt/owner.js",
+  "find": "(makerBusy||dirty.makerReview||Object.keys(makerCashHeld).length)",
+  "replace": "(makerBusy||Object.keys(makerCashHeld).length)"
+ },
+ {
+  "name": "a claim he is previewing is redrawn",
+  "file": "stmt/owner.js",
+  "find": "(show&&(dirty.makerClaims||makerSlipUrls.length))",
+  "replace": "(show&&(makerSlipUrls.length))"
  },
  {
   "name": "a field he opens is not noticed",
@@ -358,5 +460,17 @@
   "file": "stmt/page.js",
   "find": "'\" data-act=\"need.kind.' + k + '\" aria-selected=\"' + (i ? \"false\" : \"true\")",
   "replace": "'\" data-act=\"need.kind.' + k + '\" aria-selected=\"' + \"false\""
+ },
+ {
+  "name": "a lapse leaves the 30-second read running",
+  "file": "stmt/owner.js",
+  "find": "if(needsTimer){ clearInterval(needsTimer); needsTimer=null; }",
+  "replace": ""
+ },
+ {
+  "name": "the 30-second read is set again on a page whose sign-in has ended",
+  "file": "stmt/owner.js",
+  "find": "!document.body.classList.contains('ended')&&(placeNow==='needs'",
+  "replace": "(placeNow==='needs'"
  }
 ]
