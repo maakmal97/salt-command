@@ -286,7 +286,7 @@ read the recipe.
 ## 11 Oct 2026: two themes, Night and Tide, chosen on each device
 
 His word: two themes on every surface, **Night** and **Tide**, kept per device, **Tide until one is chosen**. This is the
-Desk; the Counter follows in the next section (11 Oct 2026) and Salt Account's own switch with its redesign. Night is the design system's `:root`, the identity as drawn.
+Desk; the Counter follows in the next section (11 Oct 2026), and Salt Account has its own choice (below). Night is the design system's `:root`, the identity as drawn.
 Tide is `:root[data-theme="tide"]` in `design/salt-ds.css`, pulled from `Code\salt-ds` (acf486e): a teal and blue register
 of the same identity, colour tokens only, so every recipe follows. The four times of day, `salt-time.js` and the clock's
 picker stay retired (the suite fails if any returns): nothing keys on a clock, there is no cross-fade.
@@ -326,8 +326,9 @@ picker stay retired (the suite fails if any returns): nothing keys on a clock, t
 
 His decision, final: the same two themes on the customer's site (`stmt/`), the same rule as the Desk. Night is the design system's
 `:root` and Tide its `:root[data-theme="tide"]`, kept per device in localStorage `salt-look`, Tide until a device chooses. Salt
-Account (the owner's `/all`) takes the head script below and so opens in the stored theme; it has no sheet and no switch in this
-version, its own switch coming with its redesign. How a customer chooses is in `docs/STATEMENTS.md` ("The customer's look").
+Account (the owner's `/all`) takes the head script below and so opens in the stored theme; since the same day it also has the choice
+Sheet on a first open and a Look row in Shop > This device, drawn by the same `lookSheet(true)` and `lookRow(true)` and kept in its
+own origin's `salt-look` (`docs/STATEMENTS.md`, "His look"). How a customer chooses is there too ("The customer's look").
 
 - **Tokens.** `tools/stmt-style.mjs` `saltTokens()` returns the design system's `:root` and `:root[data-theme="tide"]` blocks, and
   `--sync` writes both into `stmt/statement-css.js`; `--check` is in the gate. The Counter carries no Tide-only rule beyond the

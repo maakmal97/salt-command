@@ -538,14 +538,42 @@ their next sign-in and can change it under Account.
   Once chosen, a device is never asked again.
 - **Look, under Account**: This device holds a Look row of two ghosts, Night and Tide, the held one `aria-pressed`, 44px both ways.
   It applies at once, keeps the choice and needs no reload; on a store that refuses the write it holds for the visit.
-- **Not on his page.** Salt Account (`/all`, and View as them on it) opens in the stored theme from the same head script and asks
-  nothing: no Sheet, no Look row, no switch. Its switch belongs to its redesign.
+- **His page has its own, below ("His look").** Salt Account (`/all`) opens in the stored theme from the same head script. View as
+  them on it asks nothing and shows no setting.
 - **Not on a page with no script**: a guest board, the shut page and the maintenance page are Tide, always.
 - **Words**: `look.h` (Look), `look.sheetH` (Choose your look), `look.night`, `look.tide`, `look.note`, in `stmt/words.js`; no
   product word and no brand, and a customer is never told a level.
 - **The test accounts** (fixture version 8) show it: their sealed bundle carries `look: "asked"` (`tools/testfix.mjs`, a line in
   `FEATURES` and the case in `build()`), and a bundle that says so asks at every sign-in whatever the device holds, so the Sheet can
   be tried again; the Look row is the same as anyone's. A real account's bundle says nothing and is asked once.
+
+### His look: Salt Account chooses its own Night or Tide (11 Oct 2026, his decision)
+
+The same two themes, kept per device and **Tide until one is chosen**, with a choice of its own: `salt-look` in localStorage on the
+Counter's origin, which is also the origin of `/all`, so it is separate from the Desk's (another origin). The customer's pages are on
+that origin too and read the same key: a browser that uses both wears one choice on both, there being no second key.
+
+- **The Sheet.** The first time Salt Account opens on a device whose store is readable and holds no choice, the customer's Sheet
+  (`lookSheet(true)` in `stmt/page.js`; the same recipe, markup and script, with the acts below and one line that names Shop, "You can
+  change this later under Shop, in This device.") asks over the page, which is already Tide behind it. The owner's script calls
+  `lookAsk(null, true)` once at the end of its setup; the customer's own call passes nothing and an owner's account view is refused, so
+  View as them never asks. Choosing applies at once through `saltLook` (the attribute and the browser bar), keeps the choice and closes
+  the Sheet with no reload. Escape, Close or a tap on the scrim keeps Tide, stores nothing and asks again on the next open. Focus goes
+  into the Sheet and Tab stays in it. A store that cannot be read is never asked, because the answer could not be kept.
+- **An Access lapse wins.** The Sheet and its scrim are children of the body beside `#aEnded`, so `body.ended` hides them with the rest
+  of the page, and `ended()` in `stmt/owner.js` takes the Sheet down first (`lookShut`), so a lapse never leaves the choice open over
+  "Your admin sign-in has ended". After signing in again the page asks again if nothing was chosen.
+- **Shop, This device, Look.** Shop's fourth part, `This device` (`part.shop.device`, address `#shop/device`, reading nothing), holds
+  the customer's Look row (`lookRow(true)`): two ghosts, Night and Tide, 44px both ways, the held one `aria-pressed`, acts `look.night`
+  and `look.tide`. A tap applies at once, keeps the choice on this device and needs no reload; on a store that refuses the write it holds
+  for the visit.
+- **What it shares and what it does not.** Markup (`lookRow`, `lookSheet`) and script (`lookSet`, `lookShut`, `lookMark`, the Sheet's
+  focus and key handling) are the customer's; with no argument they draw as they did. The owner's version adds the acts and its own
+  line. No new CSS: the look rules are the customer's and apply to both pages.
+- **The suite.** The section "Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)" (`test/admin-look.mjs`, its mutations in
+  `test/admin-look.mutations.json`) drives his page in a window with a store that holds nothing, either theme, a value that is not a
+  theme and one that throws, and with the Access login's 401; the customer's page is checked drawn as it was. `test/maker-act.mjs`
+  audits the Sheet's controls with the rest of his page.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
