@@ -11,6 +11,7 @@
  *   5  a customer's question on an order is a Now card, counted, opening that order's card, and a closed one has its reply alone
  *   6  the 30-second read is silent while an account is viewed as them
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
+import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct, cardOf } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
@@ -20,7 +21,13 @@ const U1 = "abcd-efgh";
 const NOW = Date.now(), ago = (h) => new Date(NOW - h * 3600000).toISOString();
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threads: "/all/maker/threads", hours: "/all/maker/hours", bulletin: "/all/maker/bulletin",
-  sheet: "/all/sheet", links: "/all/refs" };
+  sheet: "/all/sheet", links: "/all/refs", inputs: "/all/maker/inputs" };
+/* Record's forms by name, the part each is in, in the order the page draws them */
+const MENU = {
+  entry: ["Stock count", "Sale or purchase", "Borrow or lend", "Gift", "Repayment", "Reward redemption", "Automatic offsets", "Amend a ledger row", "Revive a cancelled row"],
+  customers: ["Add ID", "Appoint existing customer", "Amend ID", "Map placement"],
+  pricing: ["Customer tier", "Tips", "Customer drift", "Printed board sizes"]
+};
 const order = (id, status, patch = {}) => ({ id, u: U1, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100, status, ...patch });
 
 /* the busy day, with an age on each order, a practice order, a question on an agreed-and-ready order and one on a closed order */
@@ -49,6 +56,16 @@ function day(state) {
   };
 }
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
+/* the owner page's own stylesheet, read as rules (jsdom applies no media query, so a rule is looked up by its query and selector) */
+function ownerCss() {
+  const html = landingPage("", "orders-nonce", { master: "fixture-master", accounts: [] });
+  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
+  const media = [...sheet.cssRules].filter((r) => r.media).map((r) => ({ q: r.media.mediaText.replace(/\s+/g, ""), rules: [...r.cssRules].map((x) => x.selectorText + "{" + x.style.cssText + "}") }));
+  const at = (q, sel) => media.filter((m) => m.q === q).flatMap((m) => m.rules).filter((r) => r.startsWith(sel + "{"));
+  const top = (sel) => [...sheet.cssRules].filter((r) => r.selectorText === sel).map((r) => r.selectorText + "{" + r.style.cssText + "}");
+  return { html, media, at, top };
+}
 
 export async function run({ ok, pageWork }) {
   const state = () => ({ asked: false, answered: false, quiet: false, moved: false });
@@ -65,6 +82,9 @@ export async function run({ ok, pageWork }) {
     p.tick = async () => { const t = p.live()[0]; if (t) t.f(); await p.work.quiet(); return !!t; };
     p.counts = () => Object.fromEntries([...d.querySelectorAll(".salt-rail [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.needs = () => [...d.querySelectorAll("#nlist [data-need]")].map((c) => c.getAttribute("data-need"));
+    p.menu = () => [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-inbox-row__title").textContent);
+    p.formsOpen = () => [...d.querySelectorAll("#makerInputs section.maker-input[data-form]")].filter(shown).map((s) => s.getAttribute("data-form"));
+    p.retained = () => [...d.querySelectorAll("#makerInputs section[data-formmenu]")].filter(shown).map((s) => s.querySelector("h3").textContent);
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
       const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
@@ -187,11 +207,7 @@ export async function run({ ok, pageWork }) {
 
   /* 4. THE SPLIT, from 860px */
   {
-    const html = landingPage("", "orders-nonce", { master: "fixture-master", accounts: [] });
-    const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
-    const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
-    const media = [...sheet.cssRules].filter((r) => r.media).map((r) => ({ q: r.media.mediaText.replace(/\s+/g, ""), rules: [...r.cssRules].map((x) => x.selectorText + "{" + x.style.cssText + "}") }));
-    const at = (q, sel) => media.filter((m) => m.q === q).flatMap((m) => m.rules).filter((r) => r.startsWith(sel + "{"));
+    const { html, media, at } = ownerCss();
     const split = at("(min-width:860px)", ".adm .ordgrid")[0] || "";
     const phone = at("(max-width:859.98px)", ".adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus")[0] || "";
     const phoneAny = media.filter((m) => m.q === "(max-width:859.98px)").flatMap((m) => m.rules).join(" ");
@@ -275,5 +291,89 @@ export async function run({ ok, pageWork }) {
       await p.tick();
       ok(p.reads.includes(ROUTES.review) && p.reads.includes(ROUTES.claims), "and it reads again the moment his page is back: " + JSON.stringify(p.reads));
     } finally { p.w.close(); }
+  }
+
+  /* 7. THE + ORB opens Record's menu of entries */
+  p = await open();
+  try {
+    const d = p.d, add = d.getElementById("oAdd"), { at, top } = ownerCss();
+    ok(!!add && add.tagName === "BUTTON" && add.classList.contains("salt-orb") && add.getAttribute("data-act") === "nav.add" && add.getAttribute("aria-label") === "Record an entry"
+      && !!add.querySelector("svg") && d.getElementById("roster").contains(add) && !add.hasAttribute("data-m") && !add.hasAttribute("data-part") && byAct(d, "nav.add") === add,
+    "one + orb stands on Salt Account, found by its act and named by a label: " + (add && add.outerHTML.slice(0, 200)));
+    const there = [];
+    for (const place of ["needs", "orders", "customers", "shop"]) { await p.tap("nav." + place); there.push(shown(add)); }
+    ok(there.length === 4 && there.every(Boolean), "it stands on Needs you, Orders, Customers and Shop: " + there.join());
+    await p.tap("nav.record");
+    ok(!shown(add), "and not on Record, where the parts are one tap away");
+    await p.tap("nav.needs");
+    p.posts.length = 0;
+    await p.tap("nav.add");
+    ok(p.where() === "record/entry" && same(p.menu(), MENU.entry) && p.formsOpen().length === 0 && !shown(add) && p.posts.length === 0 && p.reads.includes(ROUTES.inputs),
+      "it opens Record on Entry, the menu of entries with no form open, sending nothing: " + p.where() + " " + JSON.stringify(p.menu()));
+    await p.tap("record.form", "gift");
+    await p.tap("nav.shop"); await p.tap("nav.add");
+    ok(p.where() === "record/entry" && p.formsOpen().length === 0 && same(p.menu(), MENU.entry), "and a form left open comes back as the menu: " + p.where() + JSON.stringify([p.formsOpen(), p.menu()]));
+    const orb = top(".adm #oAdd")[0] || "", wide = at("(min-width:1080px)", ".adm #oAdd")[0] || "", room = at("(max-width:1079.98px)", ".adm .amain")[0] || "";
+    ok(/position: fixed/.test(orb) && /right: 16px/.test(orb) && /z-index: 40/.test(orb) && /bottom: calc[(]var[(]--salt-bar-h[)] [+] 16px/.test(orb) && /right: 24px/.test(wide) && /bottom: 24px/.test(wide) && /padding-bottom: 72px/.test(room),
+      "the orb stands 16px above the App bar on a phone, in the corner from 1080px, under the bar and the sheets, and the room under the last section clears it: " + [orb, wide, room].join(" "));
+  } finally { p.w.close(); }
+
+  /* 8. RECORD'S FORMS ARE A MENU: a row for each form, one form at a time, the form itself moved and never drawn again */
+  p = await open();
+  try {
+    const d = p.d, LABEL = { entry: "Entry", customers: "Customers", pricing: "Pricing" };
+    await p.tap("nav.record");
+    const seen = {};
+    for (const part of ["entry", "customers", "pricing"]) { await p.tap("part.record." + part); seen[part] = [p.menu(), p.formsOpen(), p.retained()]; }
+    ok(same(seen, { entry: [MENU.entry, [], ["Retained input"]], customers: [MENU.customers, [], []], pricing: [MENU.pricing, [], []] }),
+      "Entry, Customers and Pricing are each a menu of their forms by name, no form shown, and the retained input kept on Entry: " + JSON.stringify(seen));
+    const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
+    ok(rows.length === 17 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && r.querySelector(".salt-inbox-row__action").textContent === "Open")
+      && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 17 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
+    "a row is the system's Inbox row, named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
+    const bad = [];
+    for (const part of ["entry", "customers", "pricing"]) {
+      await p.tap("part.record." + part);
+      for (const name of MENU[part]) {
+        const row = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).find((r) => r.querySelector(".salt-inbox-row__title").textContent === name);
+        if (!row) { bad.push(name + " (no row: " + p.where() + " " + JSON.stringify(p.menu()) + ")"); continue; }
+        const slug = row.getAttribute("data-key");
+        p.posts.length = 0; p.reads.length = 0;
+        row.click(); await p.work.quiet();
+        const back = d.getElementById("makerFormBack"), form = d.querySelector('#makerInputs [data-form="' + slug + '"]');
+        if (!(same(p.formsOpen(), [slug]) && form.querySelector("h3").textContent === name && p.menu().length === 0 && p.retained().length === 0 && shown(back)
+          && back.textContent === "← " + LABEL[part] && back.getAttribute("data-act") === "record.form-back" && p.posts.length === 0 && p.reads.length === 0 && d.activeElement === back)) bad.push(name);
+        back.click(); await p.work.quiet();
+        if (!(p.formsOpen().length === 0 && same(p.menu(), MENU[part]) && !shown(back) && d.activeElement === row)) bad.push(name + " (back)");
+      }
+    }
+    ok(bad.length === 0, "each of the 17 forms opens alone from its row, the menu and the retained input out of the way, a way back named for the part, nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
+    await p.tap("part.record.entry");
+    await p.tap("record.form", "sale-or-purchase");
+    const units = byAct(d, "record.trade.units"), form = units.closest("section");
+    units.value = "7"; units.dispatchEvent(new p.w.Event("input", { bubbles: true }));
+    await p.tap("record.form-back");
+    await p.tap("record.form", "sale-or-purchase");
+    ok(byAct(d, "record.trade.units") === units && units.closest("section") === form && units.value === "7" && form.getAttribute("data-form") === "sale-or-purchase",
+      "a form is the same node when opened again, what was typed in it kept: " + units.value);
+    ok(!!byAct(d, "record.count.send").closest('section[data-form="stock-count"]') && !!byAct(d, "record.retained.retry").closest("section[data-formmenu]"),
+      "the stock count's controls stand in a form of their own and a retained input's in its section, moved and not rebuilt");
+    await p.tap("record.form-back");
+    await p.tap("record.form", "gift");
+    await p.tap("part.record.customers"); await p.tap("part.record.entry");
+    ok(p.formsOpen().length === 0 && same(p.menu(), MENU.entry) && !shown(d.getElementById("makerFormBack")), "leaving the part closes the form open: " + JSON.stringify(p.formsOpen()));
+    await p.tap("record.form", "gift");
+    await p.tap("nav.orders"); await p.tap("nav.record"); await p.tap("part.record.entry");
+    ok(p.formsOpen().length === 0 && same(p.menu(), MENU.entry), "so does leaving the place: " + JSON.stringify(p.formsOpen()));
+  } finally { p.w.close(); }
+
+  /* 9. THE OWNER'S SCRIPT IS SPLICED INTO THE CUSTOMER PAGE'S SCOPE (stmt/page.js splices it in at the end of the page script): a name it declares at the top is a name the
+     customer's code must not declare, or his page overwrites theirs and "View as them" meets oOpen is not a function. HOW is the one name both
+     already hold, left as it was. */
+  {
+    const names = (src) => new Set([...src.matchAll(/^  (?:async )?function ([A-Za-z_$][\w$]*)\(|^  (?:var|const|let) ([A-Za-z_$][\w$]*)/gm)].map((m) => m[1] || m[2]));
+    const mine = names(readFileSync(new URL("../stmt/owner.js", import.meta.url), "utf8")), theirs = names(readFileSync(new URL("../stmt/page.js", import.meta.url), "utf8"));
+    const both = [...mine].filter((n) => theirs.has(n) && n !== "HOW");
+    ok(mine.size > 200 && theirs.size > 400 && both.length === 0, "no name the owner's script declares is one the customer page declares: " + both.join());
   }
 }

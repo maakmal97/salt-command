@@ -39,7 +39,7 @@ const SHOWS = {
 };
 /* the forms of Record, by the part each belongs to (the page also draws a Retained input for the loan this device kept) */
 const FORMS = {
-  entry: ["Retained input", "Sale or purchase", "Borrow or lend", "Gift", "Repayment", "Reward redemption", "Automatic offsets", "Amend a ledger row", "Revive a cancelled row"],
+  entry: ["Retained input", "Stock count", "Sale or purchase", "Borrow or lend", "Gift", "Repayment", "Reward redemption", "Automatic offsets", "Amend a ledger row", "Revive a cancelled row"],
   customers: ["Add ID", "Appoint existing customer", "Amend ID", "Map placement"],
   pricing: ["Customer tier", "Tips", "Customer drift", "Printed board sizes"]
 };
@@ -120,13 +120,18 @@ export async function run({ ok, pageWork }) {
     }
     const wrong = Object.keys(SHOWS).filter((k) => seen[k] !== SHOWS[k]);
     ok(wrong.length === 0, "each part shows its own sections and no other, and only its own place's: " + JSON.stringify(wrong.map((k) => [k, seen[k]])));
-    const formsIn = (part) => { const q = [...d.querySelectorAll("#makerInputs .maker-input")]; return q.filter(shown).map((f) => (f.querySelector("h3") || {}).textContent); };
+    /* a part shows a menu of its forms by name, and a retained input above it; a form is shown when its row is tapped (test/admin-orders.mjs) */
+    const formsIn = (part) => {
+      const kept = [...d.querySelectorAll("#makerInputs .maker-input")].filter(shown).map((f) => (f.querySelector("h3") || {}).textContent);
+      const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')].filter(shown).map((r) => r.querySelector(".salt-inbox-row__title").textContent);
+      return kept.concat(rows);
+    };
     const byPart = {};
     await p.tap("nav.record");
     for (const part of ["entry", "customers", "pricing"]) { await p.tap("part.record." + part); byPart[part] = formsIn(part); }
     const every = [...d.querySelectorAll("#makerInputs .maker-input")].length;
     ok(same(byPart, FORMS) && Object.values(byPart).flat().length === every,
-      "each form of Record shows in one part, Entry, Customers or Pricing, and in no other: " + JSON.stringify(byPart) + " of " + every);
+      "each form of Record is named in the menu of one part, Entry, Customers or Pricing, and in no other, a retained input above it: " + JSON.stringify(byPart) + " of " + every);
 
     /* 5. ORDERS BY STAGE */
     await p.tap("nav.orders");

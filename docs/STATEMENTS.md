@@ -1544,7 +1544,21 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   860 and 1080px, where the App bar still stands, the page widens for Orders alone; the other places keep their 600px column. **Back,
   leaving the part, leaving the place, and the order leaving the part (agreed since) each close the card**; a read that finds the same
   leaves it, and tapping the part he is in does not redraw what he is typing in. The ids `#makerReview`, `#makerClaims` and `#makerPools`
-  ride on the moved containers, so the map's selectors and the maker tests find them.
+  ride on the moved containers, so the map's selectors and the maker tests find them. **The owner's script shares the customer page's scope**
+  (`stmt/page.js` splices it in at the end of the page script), so a name it declares at the top must not be one the customer's code declares:
+  `oOpen` was both, and View as them met "oOpen is not a function" until the owner's became `ordOpened`; `test/admin-orders.mjs` section 9 compares
+  the two lists (the one name both hold, `HOW`, is left as it was).
+- **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
+  row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
+  Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a
+  cancelled row), Customers (Add ID, Appoint existing customer, Amend ID, Map placement), Pricing (Customer tier, Tips, Customer drift, Printed
+  board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, "← Entry") that returns him
+  to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are
+  untouched, shown and hidden by `sweep` from `fOpen` (the form open, a slug), so what he has typed survives Back and opening another form.
+  The count's controls are a form of their own now (Stock count). A **Retained input stays on the menu**, above the rows, and goes while a form is
+  open. Opening a form reads and sends nothing. Leaving the part or the place closes the form. **The + orb** (`nav.add`, `#oAdd`, the system's raised
+  orb) stands over every place but Record, 16px above the App bar on a phone and in the corner from 1080px, under the bar and the sheets; it opens
+  Record on Entry, the menu of entries. The room under the last section on a phone is the orb's. No route, body, request id or retained send changed.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
@@ -2117,6 +2131,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.tide` | Shop, This device, Look | Tide for Salt Account on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice | Makes or deletes the two test accounts. |
+| `nav.add` | The + orb at the foot of the page, on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
 | `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Needs you. |
 | `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on Waiting on you, reading the orders and the claims again. |
@@ -2212,9 +2227,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.orders.ready` | The strip under Orders (tab: Ready) | Shows the orders marked ready. |
 | `part.orders.waiting` | The strip under Orders (tab: Waiting on you) | Shows what only he can move: placed orders, payments they say they sent, a stage he rejected. |
 | `part.record.approve` | The strip under Record (tab: Approve) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
-| `part.record.customers` | The strip under Record (tab: Customers) | Shows the forms that add, change or place a customer. |
-| `part.record.entry` | The strip under Record (tab: Entry) | Shows the forms for a sale or purchase, a count, a gift, a loan, a repayment, a reward, an offset, a correction and a revival. |
-| `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the forms for a customer's tier or drift, the printed board sizes and the tips. |
+| `part.record.customers` | The strip under Record (tab: Customers) | Shows the menu of the forms that add, change or place a customer, one form at a time. |
+| `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |
+| `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's tier or drift, the printed board sizes and the tips, one form at a time. |
 | `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours, reading them. |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
@@ -2264,6 +2279,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.drift.customer` | Record, customer drift | The customer. |
 | `record.drift.set` | Record, customer drift | Sets the held drift for review. |
 | `record.drift.value` | Record, customer drift | The drift, from -1 to +1. |
+| `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the menu's place, with a way back. Reads and sends nothing. |
+| `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |
 | `record.gift.date` | Record, gift | The date. |
 | `record.gift.handover` | Record, gift | Not stated, collected or delivered. |

@@ -53565,8 +53565,8 @@ await (async () => {
     for (let i = 0; i < 100 && doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     cardOf(doc, "20260929120000-makr");
     cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */
-    ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Sale or purchase"
-      && ["Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
+    ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Stock count"
+      && ["Sale or purchase", "Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
       "Maker exposes the remaining typed Enter and Network actions beside stock, trade and held-tier inputs");
     const preview = [...cards[0].querySelectorAll("button")].find((button) => button.textContent === "Preview");
@@ -53584,7 +53584,7 @@ await (async () => {
     total.value = "130"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));
     previewRelease(); await new Promise((resolve) => setTimeout(resolve, 20));
     ok(!doc.querySelector("[data-accept]"), "a preview returning after a field edit cannot restore a stale Accept");
-    const tradeSection = doc.querySelector("#makerInputs .maker-input");
+    const tradeSection = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Sale or purchase");
     const tradeControls = tradeSection.querySelectorAll("select, input");
     tradeControls[0].value = "sale";
     tradeControls[1].value = "salt";

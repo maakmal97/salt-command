@@ -567,6 +567,14 @@ body.ended>*:not(#aEnded){display:none}
   .gate.adm{max-width:none}
   .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oRecord,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
 }
+/* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
+   the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the
+   orb's and its gap, so nothing is covered. Record's forms are rows of the system's Inbox row, one list a part. */
+.adm #oAdd{position:fixed;right:16px;bottom:calc(var(--salt-bar-h) + 16px + env(safe-area-inset-bottom,0px));z-index:40}
+@media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}
+@media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}
+.adm .formlist{display:flex;flex-direction:column;gap:8px}
+.adm .formrow .salt-inbox-row__title{gap:6px}
 /* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
@@ -1125,6 +1133,7 @@ const ADMIN_ICONS = {
   customers: '<circle cx="9" cy="8.6" r="3.2"/><path d="M3.4 19.6 C4.2 16.4 6.4 14.8 9 14.8 C11.6 14.8 13.8 16.4 14.6 19.6 M15.2 5.6 A3 3 0 0 1 15.4 11.6 M17.4 14.9 C19 15.6 20.1 17.2 20.6 19.6"/>',
   record: '<path d="M4.6 19.4 L5.4 15.4 L15.4 5.4 A1.6 1.6 0 0 1 17.7 5.4 L18.6 6.3 A1.6 1.6 0 0 1 18.6 8.6 L8.6 18.6 Z M13.4 7.4 L16.6 10.6"/>',
   shop: '<path d="M4 9.6 L5.6 4.6 H18.4 L20 9.6 M4 9.6 A2.67 2.67 0 0 0 9.33 9.6 A2.67 2.67 0 0 0 14.67 9.6 A2.67 2.67 0 0 0 20 9.6 M5.6 12.4 V19.4 H18.4 V12.4 M10 19.4 V15 H14 V19.4"/>',
+  add: '<path d="M12 5.5 V18.5 M5.5 12 H18.5"/>',
   key: '<circle cx="12" cy="12" r="7.4"/><circle cx="12" cy="10.6" r="1.7"/><path d="M11.3 12.1 L10.8 15.2 H13.2 L12.7 12.1"/>'
 };
 const aico = (n) => '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" '
@@ -1313,6 +1322,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '" data-act="nav.' + m + '">'
           + '<span class="salt-appbar__icon">' + aico(m) + '</span><span class="salt-appbar__label">' + w + "</span>"
           + '<span class="salt-appbar__count" data-count="' + m + '"></span></button>').join("") + "</nav>"
+        /* PHASE 1c: one + orb, on every place but Record, opens Record's menu of entries (it is shown and hidden by the owner's script) */
+        + '<button type="button" class="salt-orb salt-orb--raised" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + aico("add") + "</button>"
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
         + '<div id="aEnded" class="gate" hidden><h1>Your admin sign-in has ended</h1>'

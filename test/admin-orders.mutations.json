@@ -68,19 +68,19 @@
  {
   "name": "a row opens no card",
   "file": "stmt/owner.js",
-  "find": "    oOpen=id; drawOrderPane(); sweep();",
-  "replace": "    oOpen=id; sweep();"
+  "find": "    ordOpened=id; drawOrderPane(); sweep();",
+  "replace": "    ordOpened=id; sweep();"
  },
  {
   "name": "a card is added to the card before it",
   "file": "stmt/owner.js",
-  "find": "    if(!root) return;\n    root.textContent=''; dirty.makerReview=false;\n    var e=oOpen",
-  "replace": "    if(!root) return;\n    dirty.makerReview=false;\n    var e=oOpen"
+  "find": "    if(!root) return;\n    root.textContent=''; dirty.makerReview=false;\n    var e=ordOpened",
+  "replace": "    if(!root) return;\n    dirty.makerReview=false;\n    var e=ordOpened"
  },
  {
   "name": "the row opened is not marked",
   "file": "stmt/owner.js",
-  "find": "      if(r.getAttribute('data-order')===oOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });\n  }",
+  "find": "      if(r.getAttribute('data-order')===ordOpened) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });\n  }",
   "replace": "      r.removeAttribute('aria-current'); });\n  }"
  },
  {
@@ -110,19 +110,19 @@
  {
   "name": "Back does nothing",
   "file": "stmt/owner.js",
-  "find": "else if(way==='orders') closeOrder(); return; }",
-  "replace": "else if(way==='orders'){} return; }"
+  "find": "else if(way==='orders') closeOrder(); else",
+  "replace": "else if(way==='orders'){} else"
  },
  {
   "name": "Back leaves him nowhere",
   "file": "stmt/owner.js",
-  "find": "if(row&&row.focus) row.focus(); }catch(x){}",
-  "replace": "}catch(x){}"
+  "find": "[data-order=\"'+was+'\"]'); if(row&&row.focus) row.focus(); }catch(x){}",
+  "replace": "[data-order=\"'+was+'\"]'); }catch(x){}"
  },
  {
   "name": "leaving the part or the place keeps the card",
   "file": "stmt/owner.js",
-  "find": "    if(moved2&&oOpen){ oOpen=null; drawOrderPane(); }",
+  "find": "    if(moved2&&ordOpened){ ordOpened=null; drawOrderPane(); }",
   "replace": ""
  },
  {
@@ -134,8 +134,8 @@
  {
   "name": "an order that left the part keeps its card",
   "file": "stmt/owner.js",
-  "find": "    if(e&&!ordInPart(e)) e=null;\n    if(!e) oOpen=null;",
-  "replace": "    if(!e) oOpen=null;"
+  "find": "    if(e&&!ordInPart(e)) e=null;\n    if(!e) ordOpened=null;",
+  "replace": "    if(!e) ordOpened=null;"
  },
  {
   "name": "a read that finds the same draws again",
@@ -232,5 +232,179 @@
   "file": "stmt/owner.js",
   "find": "    if(roster.hidden) return;\n",
   "replace": "    if(roster.hidden&&placeNow==='needs') return;\n"
+ },
+ {
+  "name": "the orb opens the wrong part of Record",
+  "file": "stmt/owner.js",
+  "find": "if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
+  "replace": "if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','pricing',{fresh:true,push:true}); });"
+ },
+ {
+  "name": "the orb opens nothing",
+  "file": "stmt/owner.js",
+  "find": "if(oAdd) oAdd.addEventListener('click', function(){ showPlace('record','entry',{fresh:true,push:true}); });",
+  "replace": ""
+ },
+ {
+  "name": "the orb stays on Record",
+  "file": "stmt/owner.js",
+  "find": "if(add) add.hidden=placeNow==='record';",
+  "replace": "if(add) add.hidden=false;"
+ },
+ {
+  "name": "the orb is gone from Orders",
+  "file": "stmt/owner.js",
+  "find": "if(add) add.hidden=placeNow==='record';",
+  "replace": "if(add) add.hidden=placeNow==='record'||placeNow==='orders';"
+ },
+ {
+  "name": "the orb has no act",
+  "file": "stmt/page.js",
+  "find": "id=\"oAdd\" data-act=\"nav.add\" aria-label",
+  "replace": "id=\"oAdd\" aria-label"
+ },
+ {
+  "name": "the orb has no name",
+  "file": "stmt/page.js",
+  "find": "data-act=\"nav.add\" aria-label=\"Record an entry\">",
+  "replace": "data-act=\"nav.add\">"
+ },
+ {
+  "name": "the orb stands in the page's flow",
+  "file": "stmt/page.js",
+  "find": ".adm #oAdd{position:fixed;",
+  "replace": ".adm #oAdd{position:static;"
+ },
+ {
+  "name": "the orb covers the App bar",
+  "file": "stmt/page.js",
+  "find": "env(safe-area-inset-bottom,0px));z-index:40}",
+  "replace": "env(safe-area-inset-bottom,0px));z-index:60}"
+ },
+ {
+  "name": "the last section is left under the orb",
+  "file": "stmt/page.js",
+  "find": "@media (max-width:1079.98px){.adm .amain{padding-bottom:72px}}",
+  "replace": ""
+ },
+ {
+  "name": "the orb keeps its phone offset on a desk",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}",
+  "replace": "@media (min-width:1080px){.adm #oAdd{right:24px}}"
+ },
+ {
+  "name": "a form is shown at the menu",
+  "file": "stmt/owner.js",
+  "find": "n.hidden=!here||n.getAttribute('data-form')!==fOpen;",
+  "replace": "n.hidden=!here;"
+ },
+ {
+  "name": "the menu stays while a form is open",
+  "file": "stmt/owner.js",
+  "find": "n.hidden=!here||!!fOpen;",
+  "replace": "n.hidden=!here;"
+ },
+ {
+  "name": "the way back stays when no form is open",
+  "file": "stmt/owner.js",
+  "find": "else n.hidden=!here||!fOpen;",
+  "replace": "else n.hidden=!here;"
+ },
+ {
+  "name": "the menu once hidden never comes back",
+  "file": "stmt/owner.js",
+  "find": "var here=!n.hasAttribute('data-in')||!n.hidden;",
+  "replace": "var here=!n.hidden;"
+ },
+ {
+  "name": "a retained input shows in a part that is not its own",
+  "file": "stmt/owner.js",
+  "find": "var here=!n.hasAttribute('data-in')||!n.hidden;",
+  "replace": "var here=true;"
+ },
+ {
+  "name": "a retained input stays while a form is open",
+  "file": "stmt/owner.js",
+  "find": "section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');",
+  "replace": "section.setAttribute('data-key',path.split('/').pop());"
+ },
+ {
+  "name": "the retained input stands below the menu",
+  "file": "stmt/owner.js",
+  "find": "    [].slice.call(box.children).forEach(function(n){ if(n.hasAttribute('data-formmenu')) anchor=n; });\n",
+  "replace": ""
+ },
+ {
+  "name": "a row opens the wrong form",
+  "file": "stmt/owner.js",
+  "find": "row.addEventListener('click', function(){ openForm(slug); });",
+  "replace": "row.addEventListener('click', function(){ openForm('gift'); });"
+ },
+ {
+  "name": "a row opens no form",
+  "file": "stmt/owner.js",
+  "find": "row.addEventListener('click', function(){ openForm(slug); });",
+  "replace": "row.addEventListener('click', function(){});"
+ },
+ {
+  "name": "the menu leaves a form out",
+  "file": "stmt/owner.js",
+  "find": "      lists[part].appendChild(row);",
+  "replace": "      if(slug!=='gift') lists[part].appendChild(row);"
+ },
+ {
+  "name": "the menu lists every form under Entry",
+  "file": "stmt/owner.js",
+  "find": "part=form.getAttribute('data-in').replace('record.','');",
+  "replace": "part='entry';"
+ },
+ {
+  "name": "the stock count is not named",
+  "file": "stmt/owner.js",
+  "find": "countForm.appendChild(el('h3',null,'Stock count'));",
+  "replace": "countForm.appendChild(el('h3',null,'Count'));"
+ },
+ {
+  "name": "opening a form reads",
+  "file": "stmt/owner.js",
+  "find": "    fOpen=slug; sweep();\n",
+  "replace": "    fOpen=slug; sweep(); refs('/all/maker/inputs').catch(function(){});\n"
+ },
+ {
+  "name": "the way back does nothing on a form",
+  "file": "stmt/owner.js",
+  "find": "else if(way==='form') closeForm(); return; }",
+  "replace": "else if(way==='form'){} return; }"
+ },
+ {
+  "name": "Back leaves him off the row he came from",
+  "file": "stmt/owner.js",
+  "find": "[data-key=\"'+was+'\"]'); if(row&&row.focus) row.focus(); }catch(x){}",
+  "replace": "[data-key=\"'+was+'\"]'); }catch(x){}"
+ },
+ {
+  "name": "an open form does not take the focus",
+  "file": "stmt/owner.js",
+  "find": "(tab?tab.textContent:'Back'); back.focus();",
+  "replace": "(tab?tab.textContent:'Back');"
+ },
+ {
+  "name": "the way back is not named for the part",
+  "file": "stmt/owner.js",
+  "find": "back.textContent='← '+(tab?tab.textContent:'Back');",
+  "replace": "back.textContent='← Entry';"
+ },
+ {
+  "name": "the owner's script names a variable the customer page names a function",
+  "file": "stmt/owner.js",
+  "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[];",
+  "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[];"
+ },
+ {
+  "name": "leaving the part keeps the form open",
+  "file": "stmt/owner.js",
+  "find": "    if(moved2) fOpen=null;\n",
+  "replace": ""
  }
 ]
