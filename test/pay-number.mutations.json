@@ -1,0 +1,21 @@
+[
+ {"name":"a number of one digit passes","file":"tools/paysync.mjs","find":"export const NUM_RE = /^[0-9]{10,15}$/;","replace":"export const NUM_RE = /^[0-9]{1,15}$/;"},
+ {"name":"a number of forty digits passes","file":"tools/paysync.mjs","find":"export const NUM_RE = /^[0-9]{10,15}$/;","replace":"export const NUM_RE = /^[0-9]{10,40}$/;"},
+ {"name":"a number with a letter passes","file":"tools/paysync.mjs","find":"export const NUM_RE = /^[0-9]{10,15}$/;","replace":"export const NUM_RE = /^[0-9a-z]{10,15}$/;"},
+ {"name":"the spaces of the store's number are kept","file":"tools/paysync.mjs","find":"sub.replace(/\\s+/g, \"\")","replace":"sub.replace(/zz/g, \"\")"},
+ {"name":"a suspended account's number is served","file":"tools/paysync.mjs","find":"if (!s.transfer || s.maintenance) return;","replace":"if (!s.transfer) return;"},
+ {"name":"an account with no bank is served","file":"tools/paysync.mjs","find":"if (!s.transfer || s.maintenance) return;","replace":"if (s.maintenance) return;"},
+ {"name":"a key stmt/pay.js lacks is let through","file":"tools/paysync.mjs","find":"if (!known.has(s.key)) {","replace":"if (false) {"},
+ {"name":"the record carries the holder","file":"tools/paysync.mjs","find":"accounts[s.key] = { number };","replace":"accounts[s.key] = { number, holder: (doc.accounts || [])[i].holder };"},
+ {"name":"the record carries the member number","file":"tools/paysync.mjs","find":"accounts[s.key] = { number };","replace":"accounts[s.key] = { number, mid: (doc.accounts || [])[i].mid };"},
+ {"name":"the record carries the payee","file":"tools/paysync.mjs","find":"export const numbersRecord = (accounts, at = new Date().toISOString()) => ({ v: 1, at, accounts });","replace":"export const numbersRecord = (accounts, at = new Date().toISOString()) => ({ v: 1, at, accounts, payee: \"Invented Payee Sdn Bhd\" });"},
+ {"name":"an empty store is written as an empty record","file":"tools/paysync.mjs","find":"if (!refused.length && !Object.keys(accounts).length) refused.push(","replace":"if (false) refused.push("},
+ {"name":"the screen shows the whole number","file":"tools/paysync.mjs","find":"const shown = (n) => \".....\" + lastFour(n);","replace":"const shown = (n) => \".....\" + String(n);"},
+ {"name":"the screen shows the first four digits","file":"tools/paysync.mjs","find":"export const lastFour = (n) => String(n).slice(-4);","replace":"export const lastFour = (n) => String(n).slice(0, 4);"},
+ {"name":"a refusal names the number","file":"tools/paysync.mjs","find":"refused.push(s.key + \": its account number is not 10 to 15 digits\");","replace":"refused.push(s.key + \": \" + number + \" is not 10 to 15 digits\");"},
+ {"name":"the readback passes a different number","file":"tools/paysync.mjs","find":"else if (h[k].number !== w[k].number) out.push(","replace":"else if (false) out.push("},
+ {"name":"the readback misses a number only on the Counter","file":"tools/paysync.mjs","find":"for (const k of Object.keys(h)) if (!w[k]) out.push(","replace":"for (const k of Object.keys(h)) if (false) out.push("},
+ {"name":"the write goes to the desk's KV","file":"tools/paysync.mjs","find":"\"kv\", \"key\", \"put\", PAYNUM_KEY, \"--path\", path, \"--binding\", \"STMT\"","replace":"\"kv\", \"key\", \"put\", PAYNUM_KEY, \"--path\", path, \"--binding\", \"SALT_QUEUE\""},
+ {"name":"the write is to another key","file":"tools/paysync.mjs","find":"export const PAYNUM_KEY = \"paynum\";","replace":"export const PAYNUM_KEY = \"paynumbers\";"},
+ {"name":"the write is to the local store","file":"tools/paysync.mjs","find":"\"--path\", path, \"--binding\", \"STMT\", \"--remote\"","replace":"\"--path\", path, \"--binding\", \"STMT\", \"--local\""}
+]

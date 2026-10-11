@@ -8978,6 +8978,11 @@ await (async () => {
   await (await import("./counter-confirm-sheets.mjs")).run({ ok });
 })();
 
+section("Phase 7b: the pay sheet asks the bank first and shows the account number to copy, the number from the Counter's KV and never from git (11 Oct 2026)");
+await (async () => {
+  await (await import("./pay-number.mjs")).run({ ok, pageWork });
+})();
+
 section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
