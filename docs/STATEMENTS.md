@@ -1362,8 +1362,22 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   desk's page reads its orders with the count of
   associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
   `approved === false` test), and its rail's foot says "N links wait in Salt Account".
-- **His places** (S9 9.2): Needs you, Accounts, Links and More (the report card and the test accounts), the
-  system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting.
+- **His places** (S9 9.2, made five on 11 Oct 2026): Needs you, Orders, Customers, Record and Shop; "Maker" is retired on
+  screen. The system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting
+  (Needs you, and Customers for the links waiting). Each place but Needs you has its parts as the system's tab strip, the first
+  open with the place: **Orders** (Waiting on you, Agreed, Ready, Group, Closed: the order review filtered by stage, the account
+  claims under Waiting on you, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
+  Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Approve, Entry,
+  Customers, Pricing: the Desk's rows waiting and the entries the server holds, then the forms by the part they belong to) and
+  **Shop** (Hours, Notice, Practice: the operating hours, the notice, the two test accounts). `data-in` on a section, a card or a
+  form names the places and parts it shows in (`orders` is every part of Orders, `orders.group` that part alone) and the owner's
+  script hides the rest. **Each place reads only what it shows, on entering it, and a part on entering the part**: Orders reads the
+  orders and the claims (the stages are one list, so moving between them reads nothing), Record the Desk's rows and the forms, and
+  the parts of Customers and Shop each their own; entering Shop reads no order and entering Orders reads no form. No route, body,
+  request id or retained send changed. **The addresses**: `#needs`, `#orders`, `#customers`, `#record`, `#shop` and a part
+  as `#orders/ready`; the old ones stay (`#maker` Orders, `#more` Shop, `#accounts` and `#links` those parts of Customers, `#cards`
+  the associates' report card). A tap writes the address, so Back and Forward move between places, and a customer's place is never
+  read off it. Every rule of the owner page in `PAGE_CSS` sits under `.adm`, the root of his page; the suite refuses one that does not.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
@@ -1513,7 +1527,7 @@ passes the identity object returned by `identity(request, env)` to `handleMaker`
 requires the verified email to match `maakmal97@icloud.com`, trimmed and case-insensitive. No
 client-supplied identity header is read.
 
-The Maker place combines open site orders with pending Desk rows. Order Accept uses the Desk's
+Orders (the Maker place until 11 Oct 2026) lists the open site orders by stage, and Record's Approve the pending Desk rows. Order Accept uses the Desk's
 existing preview-and-digest path; later handover, cash and Received actions use the existing
 order-stage functions. Ready, Decline, Cancel, a reply, No reply needed and Not found are
 `POST /all/maker/orders/<id>/move` (or `/notfound`) with an immutable `rid`: the Counter reads the
@@ -1886,7 +1900,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
 | `acct.find` | Accounts | Finds an account by a code or a username. |
 | `acct.open` | Accounts list, one row each (key: the username) | Opens that account's card. |
-| `acct.order-for` | Account card | Opens an order for them on Maker. |
+| `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
 | `acct.sent` | Account card | Ticks the account as sent. |
 | `acct.show-code` | Account card | Opens the sheet that shows a code for them in person. |
@@ -1929,15 +1943,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
 | `link.tier` | Same card | Sets the tier it quotes. |
 | `link.withdraw` | Link card | Withdraws the link. |
-| `maker.refresh` | Order review | Reads the orders and rows again. |
-| `more.back` | Associates report card | Takes him back to More. |
-| `more.cards` | More | Opens the associates report card. |
-| `more.test-accounts` | More | Makes or deletes the two test accounts. |
-| `nav.accounts` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the accounts place. |
-| `nav.links` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the links place. |
-| `nav.maker` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the maker place. |
-| `nav.more` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the more place. |
-| `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the needs place. |
+| `maker.refresh` | Orders, Order review | Reads the orders again. |
+| `more.test-accounts` | Shop, Practice | Makes or deletes the two test accounts. |
+| `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
+| `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Needs you. |
+| `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on Waiting on you, reading the orders and the claims again. |
+| `nav.record` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Record, on Approve. |
+| `nav.shop` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Shop, on Hours. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
 | `need.link-approve` | Same card | Approves the link, which then opens. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
@@ -2009,6 +2021,22 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `orderfor.place-order` | Order for a customer | Places it for them. |
 | `orderfor.size` | Order for a customer | The size and price from their list. |
 | `orderfor.want` | Order for a customer | The day it is wanted by, optional. |
+| `part.customers.accounts` | The strip under Customers (tab: Accounts) | Shows the accounts: the list, and the card of the one he opens. |
+| `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
+| `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |
+| `part.customers.associates` | The strip under Customers (tab: Associates) | Shows the associates' report card, reading it once. |
+| `part.orders.agreed` | The strip under Orders (tab: Agreed) | Shows the orders he has agreed and not yet marked ready. |
+| `part.orders.closed` | The strip under Orders (tab: Closed) | Shows the orders that are closed, and any with a stage he rejected. |
+| `part.orders.group` | The strip under Orders (tab: Group) | Shows the group orders, reading them. |
+| `part.orders.ready` | The strip under Orders (tab: Ready) | Shows the orders marked ready. |
+| `part.orders.waiting` | The strip under Orders (tab: Waiting on you) | Shows what only he can move: placed orders, payments they say they sent, a stage he rejected. |
+| `part.record.approve` | The strip under Record (tab: Approve) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
+| `part.record.customers` | The strip under Record (tab: Customers) | Shows the forms that add, change or place a customer. |
+| `part.record.entry` | The strip under Record (tab: Entry) | Shows the forms for a sale or purchase, a count, a gift, a loan, a repayment, a reward, an offset, a correction and a revival. |
+| `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the forms for a customer's tier or drift, the printed board sizes and the tips. |
+| `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours, reading them. |
+| `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
+| `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
 | `pool.close` | Group order card (key: the pool id) | Closes it and sends each joined order for acknowledgement, or sends the ones left again. |
 | `pool.closes-on` | Group orders | The day it closes, optional. |
 | `pool.open` | Group orders | Opens the group order. |
