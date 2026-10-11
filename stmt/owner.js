@@ -906,7 +906,7 @@ export const OWNER_JS = `
         makerClaimButton(note,['Read the rows again','claim.reread',key],claimRead,false);
       });
     }
-    async function claimSend(pending){
+    async function claimPost(pending){
       if(pending.busy) return; pending.busy=true; [receipt,covered,lost].forEach(function(b){ b.disabled=true; });
       try{
         await refs(route+'/'+pending.action,pending.body); delete makerClaimRequests[key];
@@ -921,7 +921,7 @@ export const OWNER_JS = `
       var body=notFound?{amount:claim.amount}:{hash:preview.hash}; if(onBook) body.covered=true;
       var action=notFound?'notfound':'received', kind=notFound?'notfound':onBook?'received-booked':'received', intended=JSON.stringify({action:action,body:body}), pending=makerClaimRequests[key];
       if(pending&&pending.intended!==intended){ answer.textContent='Read the retained decision before choosing another answer.'; return; }
-      if(pending){ claimSend(pending); return; }
+      if(pending){ claimPost(pending); return; }
       var lines=notFound?['The claim is answered Not found and nothing is booked. '+who+' is told.']:onBook?
         [rm(claim.amount)+' is more than these rows owe, so it is on the book already. Nothing more is booked, and '+who+' is told it arrived.']:
         [preview.booked?'These rows are booked already. Nothing more is booked, and '+who+' is told it arrived.':rm(claim.amount)+' is booked against the rows below, and '+who+' is told it arrived.'];
@@ -931,7 +931,7 @@ export const OWNER_JS = `
         plain:!notFound, go:notFound?'Not found':onBook?'Yes, on the book already':'Yes, received', keep:'Not yet', say:lines, extra:rows,
         yes:function(){
           var req=makerClaimRequests[key]||(makerClaimRequests[key]={intended:intended,action:action,body:Object.assign({rid:crypto.randomUUID()},body),busy:false});
-          claimSend(req);
+          claimPost(req);
         }});
     }
     claimRead();

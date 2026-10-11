@@ -17,7 +17,7 @@
  {"name":"Not found is not a danger action","file":"stmt/owner.js","find":"go.classList.toggle('salt-ghost--danger',!q.plain);","replace":"go.classList.toggle('salt-ghost--danger',false);"},
  {"name":"Received is a danger action","file":"stmt/owner.js","find":"go.classList.toggle('salt-ghost--danger',!q.plain);","replace":"go.classList.toggle('salt-ghost--danger',true);"},
  {"name":"the answer goes without a request id","file":"stmt/owner.js","find":"body:Object.assign({rid:crypto.randomUUID()},body),busy:false}","replace":"body:Object.assign({},body),busy:false}"},
- {"name":"a retry asks again in place of going at once","file":"stmt/owner.js","find":"      if(pending){ claimSend(pending); return; }\n","replace":"\n"},
+ {"name":"a retry asks again in place of going at once","file":"stmt/owner.js","find":"      if(pending){ claimPost(pending); return; }\n","replace":"\n"},
  {"name":"a retry tapped twice sends twice","file":"stmt/owner.js","find":"      if(pending.busy) return; pending.busy=true; [receipt,covered,lost]","replace":"      pending.busy=true; [receipt,covered,lost]"},
  {"name":"a sheet closed sends again on a second tap","file":"stmt/page.js","find":"go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });","replace":"go.addEventListener('click',function(){ ynShut(); q.yes(); });"},
  {"name":"an answered claim leaves no line in its place","file":"stmt/owner.js","find":"        makerClaimOpen=null; await loadMakerClaims(); await loadMaker();","replace":"        makerClaimSaid=''; makerClaimOpen=null; await loadMakerClaims(); await loadMaker();"},
