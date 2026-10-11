@@ -262,6 +262,7 @@
  "S9 fix R7: with no share sheet, Send them in turn copies the message and ticks the account only on his Sent it": 510,
  "S9 fix R4: a sign-in link made on a Needs you card, and the Silver link shown on one, outlive a redraw of Needs you": 460,
  "S9 fix UX-R2: a move on a link that fails, and a tier pinned, are answered on the card tapped, in Needs you and in Links": 350,
+ "11 Oct 2026: a move on a guest link is sent once, its card's buttons off while it is out, on Needs you and in Links": 430,
  "S9 fix R5: an open by a scanned or a typed code says so, an unknown road says no road, and only an open with none reads as the password": 470,
  "S9 fix SEC-1: who is shut out is read off the brake's listing, so fail: keys a stranger mints never cost /all/sheet a read each": 290,
  "2.5: Salt Account opens in two rounds of reads: the heads at once, every account's keys in bulk, no tick rewrite, each QR encoded once": 200,
