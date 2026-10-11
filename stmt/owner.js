@@ -1997,8 +1997,8 @@ export const OWNER_JS = `
       placeBusy=false;
     },true);
   }
-  function makerCard(parent,key){
-    var card=el('article','salt-glass-card maker-card');
+  function makerCard(parent,key,recipe){
+    var card=el('article',(recipe||'salt-glass-card')+' maker-card');
     if(key) card.setAttribute('data-maker-card',key);
     parent.appendChild(card); return card;
   }
@@ -3308,27 +3308,46 @@ export const OWNER_JS = `
     return card;
   }
   /* the Desk's rows waiting for him and the entries the server holds, on Record > Approve */
+  /* 12 Oct 2026 (Phase 2c): A ROW TO APPROVE IS THE SYSTEM'S APPROVE CARD (salt-approve, carried whole by SITE_RECIPES and restated nowhere). The card leads with what decides
+     it, read off the draft and computed nowhere: its code and the entry as typed in the head, the row's figure, cost and margin, the flags it was drafted with as chips (they
+     freeze at drafting), the drafter's reasoning, and the row itself folded; then the two moves, Approve filled and Reject the danger ghost. A trip's rows stand in one card
+     with one Approve. Both moves ask on the page's Sheet. */
+  function approveReading(card,reading,key){
+    var facts=[];
+    if(reading.cost!=null) facts.push('Cost RM '+Number(typeof reading.cost==='object'?reading.cost.total:reading.cost).toFixed(2));
+    if(reading.margin) facts.push('Margin RM '+Number(reading.margin.rm).toFixed(2)+' · '+reading.margin.pct+'%');
+    if(facts.length) card.appendChild(el('p','maker-facts',facts.join(' · ')));
+    var flags=reading.flags||[];
+    if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',String(flag))); }); card.appendChild(chips); }
+    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',reading.reasoning));
+    if(reading.row){
+      var detail=el('details',''), summary=actOn(el('summary','salt-ghost','Proposed row'),'row.proposed',key);
+      detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); card.appendChild(detail);
+    }
+  }
   function drawDeskRows(draftRoot,queueRoot,pendingRows){
     pendingRows.forEach(function(draft){
-      var card=makerCard(draftRoot,'draft:'+draft.id), entry=draft.entry||{};
-      card.appendChild(el('h3','',draft.id||'Desk row'));
-      card.appendChild(el('p','lead',(entry.type||'Entry')+' · '+(entry.party||'no code')+' · '+(entry.date||entry.payload&&entry.payload.date||'')));
+      var card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve'), entry=draft.entry||{}, head=el('div','salt-approve__head');
+      head.appendChild(el('span','salt-approve__party',entry.party||'no code'));
+      head.appendChild(el('span','salt-approve__entry',(entry.type||'Entry')+' · '+(entry.date||entry.payload&&entry.payload.date||'')));
+      card.appendChild(head);
       card.appendChild(el('p','maker-facts',(draft.product||'')+' · '+(draft.qty==null?'':draft.qty+' units')+' · RM '+Number(draft.total||0).toFixed(2)));
-      makerReading(card,draft,draft.id);
+      approveReading(card,draft,draft.id);
       var trip=tripOf(draft), siblings=tripRows(draft);
       if(siblings.length){
         card.appendChild(el('p','salt-insight','Trip '+trip+' · '+siblings.length+' rows waiting. This tap decides every row of the trip.'));
         siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){
           card.appendChild(el('p','maker-facts',(item.product||'salt')+' · '+item.qty+' units · RM '+Number(item.total||0).toFixed(2)));
-          makerReading(card,item,item.id);
+          approveReading(card,item,item.id);
         });
       }
       var claim=entry.claim||entry.fulfil&&entry.fulfil.claim;
       if(claim) card.appendChild(el('p','salt-insight','A customer claim is answered through Received on its order, not by approving its row.'));
-      var approve=makerButton(card,[siblings.length?'Approve trip':'Approve row','draft.approve'],function(){ approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);
+      var acts=el('div','salt-approve__actions'); card.appendChild(acts);
+      var approve=makerButton(acts,[siblings.length?'Approve trip':'Approve row','draft.approve'],function(){ approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);
       approve.disabled=!!claim; ynTag(approve,'draft:'+draft.id+':approve');
-      var reject=makerButton(card,[siblings.length?'Reject trip':'Reject row','draft.reject'],function(){ rejectDraft(draft,reject,'draft:'+draft.id+':reject'); },false);
-      ynTag(reject,'draft:'+draft.id+':reject');
+      var reject=makerButton(acts,[siblings.length?'Reject trip':'Reject row','draft.reject'],function(){ rejectDraft(draft,reject,'draft:'+draft.id+':reject'); },false);
+      reject.classList.add('salt-ghost--danger'); ynTag(reject,'draft:'+draft.id+':reject');
       makerFoot(card,'draft:'+draft.id);
     });
     (makerData.refused||[]).forEach(function(refused){

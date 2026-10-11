@@ -3,6 +3,8 @@
  * A Desk row waiting for him is a card on Record > Approve (and a pill on Needs you). His decisions of 11 Oct 2026 shape it: 4, a Sheet replaces every native confirm, and the phone leads a
  * draft with the cost and margin read off the draft and computes nothing, its flags frozen at drafting. What is proved here, each check red under its own mutation
  * (test/admin-approve-queue.mutations.json):
+ *   1  the row to approve wears the system's Approve recipe: its markup carries the recipe's classes, the page restates none of the recipe's rules, the figures lead the flags, the flags are chips,
+ *      Approve is the one filled pill and Reject the danger ghost, and a trip's rows stand in one card
  *   3  Approve, Reject, the trip's Approve, the Needs you pill, Withdraw server-held entry, Close the group order and Set and Clear the notice each ask on the page's Sheet: nothing is sent as it
  *      opens, the four ways out send nothing and give focus back, the one action sends the request the confirm let through (the same route and body), and a second tap sends nothing
  *   4  no native confirm is left in the owner's script, and none is asked on any road above
@@ -10,13 +12,27 @@
  * The twin at entry, the retained cancels, the chat retry and the vault conflict are driven through the same Sheet in their own sections (test/maker-gift-twin.mjs, maker-loan-twin.mjs, maker-trades.mjs,
  * maker-communications.mjs, maker-input-receipts.mjs and the admin section of test/verify.mjs). Drawn by the maker harness (test/maker-act.mjs). */
 import { readFileSync } from "node:fs";
+import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { landingPage } from "../stmt/page.js";
+import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
 
 const U = "abcd-efgh";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const J = JSON.stringify;
 const route = (verb, id) => "/all/maker/drafts/" + id + "/" + verb;
+
+/* the page's own stylesheet as rules, the recipes carried ahead of it cut away */
+function pageRules() {
+  const html = landingPage("", "approve-nonce", { master: "fixture-master", accounts: [] });
+  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
+  const out = [];
+  const walk = (rules) => { for (const r of rules) { if (r.selectorText) out.push([r.selectorText, r.style]); if (r.cssRules) walk(r.cssRules); } };
+  walk(sheet.cssRules);
+  return out;
+}
 
 export async function run({ ok, pageWork }) {
   const holder = {};
@@ -53,7 +69,45 @@ export async function run({ ok, pageWork }) {
   };
   const enterRecord = async (p) => { await p.tap("nav.record"); await p.tap("part.record.approve"); };
 
-  let p;
+  /* 1. THE ROW TO APPROVE IS THE SYSTEM'S APPROVE CARD */
+  let p = await open({ review: (j) => { j.drafts[0].reasoning = "Priced under their usual."; return j; } });
+  try {
+    const d = p.d;
+    await enterRecord(p);
+    const c = p.row("d-1");
+    ok(!!c && c.tagName === "ARTICLE" && c.classList.contains("salt-approve") && c.classList.contains("maker-card") && !c.classList.contains("salt-glass-card")
+      && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].every((x) => x.classList.contains("salt-approve")),
+    "each Desk row to approve is an article on the system's Approve recipe (salt-approve), beside the page's own card class and in place of the glass card");
+    const head = c.querySelector(":scope > .salt-approve__head");
+    ok(!!head && head.querySelector(".salt-approve__party").textContent === "CX1-ZED" && head.querySelector(".salt-approve__entry").textContent === "SELL · 2026-10-10",
+      "its head is the recipe's: the party's code, and the entry as typed beside it: " + (head && head.textContent));
+    const facts = [...c.querySelectorAll(":scope > .maker-facts")], flags = c.querySelector(":scope > .salt-approve__flags"), reason = c.querySelector(":scope > .salt-approve__reason");
+    const figures = facts.find((x) => /Cost RM 56\.00/.test(x.textContent));
+    ok(!!figures && figures.textContent === "Cost RM 56.00 · Margin RM 44.00 · 44%" && /RM 100\.00/.test(facts[0].textContent),
+      "the figures lead, read off the draft and computed nowhere: the row's total, then its cost and margin: " + facts.map((x) => x.textContent).join(" | "));
+    ok(!!flags && same([...flags.querySelectorAll(".salt-status.salt-status--ember")].map((x) => x.textContent), ["Check before deciding"]) && !c.querySelector(":scope > .salt-insight"),
+      "the flags it was drafted with are chips in the recipe's flag row, and not also a line of prose");
+    ok(!!figures && !!flags && !!reason && reason.textContent === "Priced under their usual."
+      && (figures.compareDocumentPosition(flags) & 4) && (flags.compareDocumentPosition(reason) & 4) && !!c.querySelector(":scope > details > summary[data-act='row.proposed']") && !c.querySelector(":scope > details").open,
+    "in the recipe's order, the figures, then the flags, then the drafter's reasoning, with the row itself folded shut");
+    const acts = c.querySelector(":scope > .salt-approve__actions"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
+    ok(!!acts && acts.contains(approve) && acts.contains(reject) && approve.textContent === "Approve row" && reject.textContent === "Reject row"
+      && approve.classList.contains("salt-pill") && !approve.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost--danger")
+      && [...acts.children].filter((x) => !x.hidden)[0] === approve,
+    "its moves stand in the recipe's actions: Approve the one filled pill, first, and Reject the danger ghost");
+    ok(!byAct(c, "draft.approve").disabled && !byAct(c, "draft.reject").disabled, "and neither is shut on a row that is not a claim's");
+    const t2 = p.row("d-2"), t3 = p.row("d-3");
+    ok(!!t2 && !!t3 && /Trip t1 · 2 rows waiting/.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve trip" && byAct(t2, "draft.reject").textContent === "Reject trip"
+      && /oil · 1 units · RM 100\.00/.test(t2.textContent) && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
+    "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
+    /* the page's own rules for the recipe's classes restate none of what the recipe draws: no surface, edge, padding, shadow, gap or type */
+    const taken = ["background", "background-color", "border", "border-radius", "padding", "box-shadow", "display", "flex-direction", "gap", "font-family", "font-size", "color", "margin"];
+    const mine = pageRules().filter(([sel]) => /salt-approve/.test(sel.replace(/:not\([^)]*\)/g, "")));   /* a rule that names it only to leave it out is not a rule for it */
+    const restated = mine.flatMap(([sel, style]) => taken.filter((k) => style.getPropertyValue(k) !== "" && !(k === "display" && style.getPropertyValue(k) === "none")).map((k) => sel + " " + k));
+    ok(SITE_RECIPES.includes(".salt-approve {") && SITE_RECIPES.includes(".salt-approve__head") && restated.length === 0,
+      "the page carries the recipe whole and restates none of it: its own rules naming it (" + mine.map((r) => r[0]).join(", ") + ") set " + (restated.length ? restated.join(", ") : "no property the recipe sets"));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
   /* 3. APPROVE AND REJECT ASK ON THE SHEET */
   p = await open();
   try {

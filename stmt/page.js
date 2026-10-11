@@ -491,10 +491,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 .adm .abody{display:flex;flex-direction:column;gap:28px}
 .adm .aplace input{max-width:100%}
-.adm .maker-card{margin:14px 0;padding:16px}
-.adm .maker-card>*+*{margin-top:12px}
+.adm .maker-card{margin:14px 0}
+.adm .maker-card:not(.salt-approve){padding:16px}
+.adm .maker-card:not(.salt-approve)>*+*{margin-top:12px}
 .adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
 .adm .maker-card>.maker-say:empty{margin-top:0}
+/* 12 OCT 2026 (PHASE 2c): a row to approve is the Approve recipe, whose own padding, gap and surface stand; the page adds only what its own column needs (no gap under an empty answer line) */
+.adm .salt-approve>.maker-say:empty{display:none}
 /* 12 OCT 2026 (PHASE 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first and the quiet ones beside it, with
    the card's answer line under them; a foot with moves stays along the card's foot as it scrolls (the page's, clear of the App bar, or the card's own from 860px).
    The right gutter is the + orb's, which stands over the page at the corner. */
