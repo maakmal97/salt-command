@@ -3357,7 +3357,9 @@ export const OWNER_JS = `
     if(!pendingRows.length&&!(makerData.refused||[]).length) draftRoot.appendChild(el('p','rnone','No Desk rows waiting.'));
     if(queueRoot){
       queueRoot.textContent='';
-      var held=makerData.queue||[];
+      var held=makerData.queue||[], counted=document.getElementById('makerQueueCount');
+      /* the queue is a fold shut by default, titled and counted, so it is never read as missing: its count is read off the entries the server holds */
+      if(counted) counted.textContent=String(held.length);
       if(!held.length) queueRoot.appendChild(el('p','rnone','No server-held device entries or cloud refusals.'));
       held.forEach(function(entry){
         var card=makerCard(queueRoot), title=entry.state==='refused'?'Refused server entry':'Server-held device entry'; card.setAttribute('data-key',entry.id);

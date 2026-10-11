@@ -496,8 +496,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-card:not(.salt-approve)>*+*{margin-top:12px}
 .adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
 .adm .maker-card>.maker-say:empty{margin-top:0}
-/* 12 OCT 2026 (PHASE 2c): a row to approve is the Approve recipe, whose own padding, gap and surface stand; the page adds only what its own column needs (no gap under an empty answer line) */
+/* 12 OCT 2026 (PHASE 2c): a row to approve is the Approve recipe, whose own padding, gap and surface stand; the page adds only what its own column needs (no gap under an
+   empty answer line) and the shut queue fold's body */
 .adm .salt-approve>.maker-say:empty{display:none}
+.adm #makerQueue .salt-plan__body>*+*{margin-top:12px}
+.adm #makerQueue .salt-plan__body .maker-card{margin:12px 0 0}
 /* 12 OCT 2026 (PHASE 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first and the quiet ones beside it, with
    the card's answer line under them; a foot with moves stays along the card's foot as it scrolls (the page's, clear of the App bar, or the card's own from 860px).
    The right gutter is the + orb's, which stands over the page at the corner. */
@@ -1336,9 +1339,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<section data-in="record.approve" aria-labelledby="makerDraftTitle"><h2 id="makerDraftTitle">Desk rows</h2>'
         + '<p class="lead" id="makerDraftStatus">Reading rows…</p>'
         + '<div id="makerDrafts"></div>'
-        + '<h3 id="makerQueueTitle">Server-held queue</h3>'
+        /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
+        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Server-held queue</span></summary>'
+        + '<div class="salt-plan__body">'
         + '<p class="lead">Only entries already uploaded to the Desk server appear here. The Counter cannot read a device’s unsent queue; Cancel retained input is local only, not server withdrawal.</p>'
-        + '<div id="makerQueueReview" aria-live="polite"></div></section>'
+        + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Desk inputs"><h2>Desk inputs</h2></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */

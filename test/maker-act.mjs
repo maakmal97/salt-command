@@ -250,10 +250,12 @@ export async function drawEverything(p) {
      The group order's Close and the notice's Set and Clear ask on it too, each below where its own part is entered. */
   await click(byAct(d, "part.record.approve"));
   const row = d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]');
-  p.snap("the rows to approve");
+  p.snap("the rows to approve, the queue shut");
   await click(byAct(row, "draft.approve")); p.snap("a Desk row's Approve, asking on the sheet"); await click(byAct(d, "ask.keep"));
   await click(byAct(row, "draft.reject")); p.snap("a Desk row's Reject, asking on the sheet"); await click(byAct(d, "ask.keep"));
+  await click(byAct(d, "record.queue-toggle")); p.snap("the queue opened");
   await click(byAct(d, "queue.withdraw", "q-1")); p.snap("a held entry's Withdraw, asking on the sheet"); await click(byAct(d, "ask.keep"));
+  await click(byAct(d, "record.queue-toggle"));
   /* the chat opened, an account card, the code sheet, an order placed for them (which stands Orders up, reading the review again) */
   await click(byAct(d, "nav.customers"));
   await click(byAct(d, "part.customers.messages"));

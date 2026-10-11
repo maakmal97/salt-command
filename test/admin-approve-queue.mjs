@@ -5,6 +5,7 @@
  * (test/admin-approve-queue.mutations.json):
  *   1  the row to approve wears the system's Approve recipe: its markup carries the recipe's classes, the page restates none of the recipe's rules, the figures lead the flags, the flags are chips,
  *      Approve is the one filled pill and Reject the danger ghost, and a trip's rows stand in one card
+ *   2  the queue is the system's Plan fold, shut, titled and counted, opened by a tap, and left as he set it by a redraw
  *   3  Approve, Reject, the trip's Approve, the Needs you pill, Withdraw server-held entry, Close the group order and Set and Clear the notice each ask on the page's Sheet: nothing is sent as it
  *      opens, the four ways out send nothing and give focus back, the one action sends the request the confirm let through (the same route and body), and a second tap sends nothing
  *   4  no native confirm is left in the owner's script, and none is asked on any road above
@@ -106,6 +107,35 @@ export async function run({ ok, pageWork }) {
     const restated = mine.flatMap(([sel, style]) => taken.filter((k) => style.getPropertyValue(k) !== "" && !(k === "display" && style.getPropertyValue(k) === "none")).map((k) => sel + " " + k));
     ok(SITE_RECIPES.includes(".salt-approve {") && SITE_RECIPES.includes(".salt-approve__head") && restated.length === 0,
       "the page carries the recipe whole and restates none of it: its own rules naming it (" + mine.map((r) => r[0]).join(", ") + ") set " + (restated.length ? restated.join(", ") : "no property the recipe sets"));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* 2. THE QUEUE IS A FOLD, SHUT, TITLED AND COUNTED */
+  p = await open();
+  try {
+    const d = p.d;
+    await enterRecord(p);
+    const fold = d.getElementById("makerQueue"), sum = fold && fold.querySelector(":scope > summary"), count = d.getElementById("makerQueueCount"), body = d.getElementById("makerQueueReview");
+    ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("salt-plan") && fold.open === false && !!sum && sum.getAttribute("data-act") === "record.queue-toggle",
+      "the server-held queue is the system's Plan fold, shut until he taps it, its summary a control with its own act");
+    ok(!!count && count.classList.contains("salt-plan__id") && count.textContent === "2" && d.getElementById("makerQueueTitle").textContent === "Server-held queue"
+      && sum.contains(count) && sum.contains(d.getElementById("makerQueueTitle")) && !!body && fold.contains(body),
+    "it is titled and counted, though shut, the count read off the entries the server holds: " + (sum && sum.textContent));
+    ok(byAct(body, "queue.withdraw", "q-1") && byAct(body, "queue.withdraw", "q-2") && fold.open === false,
+      "and its two entries are drawn inside it, so a shut fold hides them from the eye and reads nothing away");
+    sum.click(); await p.work.quiet();
+    ok(fold.open === true, "a tap on its summary opens it");
+    await p.tap("nav.orders"); await p.tap("nav.record");
+    ok(d.getElementById("makerQueue") === fold && fold.open === true && !!byAct(d.getElementById("makerQueueReview"), "queue.withdraw", "q-1"),
+      "and a redraw of the entries leaves it open: it is the fold, not the entries, that he set");
+    sum.click(); await p.work.quiet();
+    ok(fold.open === false, "the next tap shuts it again");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  const cut = (j) => ({ ...j, queue: [] });
+  p = await open({ review: cut });
+  try {
+    await enterRecord(p);
+    ok(p.d.getElementById("makerQueueCount").textContent === "0" && /No server-held device entries/.test(p.d.getElementById("makerQueueReview").textContent) && p.d.getElementById("makerQueue").open === false,
+      "with nothing held the fold is counted 0, says so inside, and stays shut");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 3. APPROVE AND REJECT ASK ON THE SHEET */
