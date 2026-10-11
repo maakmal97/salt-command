@@ -340,6 +340,8 @@ async function concurrentFixture(ok) {
   fix.orders = fix.orders.filter((o) => !o.price);
   /* and the delivery window cases (10 Oct 2026), for the same room */
   fix.orders = fix.orders.filter((o) => !o.slot);
+  /* and the order paid before anything moved (11 Oct 2026, Phase 7d part 1), the case Cancel's Sheet names a refund on, for the same room */
+  fix.orders = fix.orders.filter((o) => !/-ex47$/.test(o.id));
   const open = fix.orders.filter((o) => ["placed", "acknowledged", "ready"].includes(o.status));
   fix.orders = fix.orders.filter((o) => o !== open.at(-1));
   fix.salt = "concurrent-fixture"; fix.makerOrders = fix.orders; fix.makerBook = { sales: [] };

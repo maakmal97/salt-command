@@ -1,0 +1,350 @@
+[
+ {
+  "name": "a Sheet sends as it opens",
+  "file": "stmt/page.js",
+  "find": "yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};",
+  "replace": "q.yes(); yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};"
+ },
+ {
+  "name": "the ghost that keeps sends",
+  "file": "stmt/page.js",
+  "find": "keep.addEventListener('click',function(){ ynShut(); });",
+  "replace": "keep.addEventListener('click',function(){ ynShut(); q.yes(); });"
+ },
+ {
+  "name": "the close orb sends",
+  "file": "stmt/page.js",
+  "find": "x.addEventListener('click',function(){ ynShut(); });",
+  "replace": "x.addEventListener('click',function(){ ynShut(); q.yes(); });"
+ },
+ {
+  "name": "the scrim sends",
+  "file": "stmt/page.js",
+  "find": "scrim.addEventListener('click',function(){ ynShut(); });",
+  "replace": "scrim.addEventListener('click',function(){ ynShut(); q.yes(); });"
+ },
+ {
+  "name": "Escape does not close it",
+  "file": "stmt/page.js",
+  "find": "if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); ynShut(); return; }",
+  "replace": "if(false){ ev.preventDefault(); ev.stopPropagation(); ynShut(); return; }"
+ },
+ {
+  "name": "the scrim does not close it",
+  "file": "stmt/page.js",
+  "find": "scrim.addEventListener('click',function(){ ynShut(); });",
+  "replace": "scrim.addEventListener('click',function(){});"
+ },
+ {
+  "name": "the close orb does not close it",
+  "file": "stmt/page.js",
+  "find": "x.addEventListener('click',function(){ ynShut(); });",
+  "replace": "x.addEventListener('click',function(){});"
+ },
+ {
+  "name": "the ghost that keeps does not close it",
+  "file": "stmt/page.js",
+  "find": "keep.addEventListener('click',function(){ ynShut(); });",
+  "replace": "keep.addEventListener('click',function(){});"
+ },
+ {
+  "name": "the danger action leaves the Sheet open",
+  "file": "stmt/page.js",
+  "find": "go.addEventListener('click',function(){ ynShut(); q.yes(); });",
+  "replace": "go.addEventListener('click',function(){ q.yes(); });"
+ },
+ {
+  "name": "the danger action sends nothing",
+  "file": "stmt/page.js",
+  "find": "go.addEventListener('click',function(){ ynShut(); q.yes(); });",
+  "replace": "go.addEventListener('click',function(){ ynShut(); });"
+ },
+ {
+  "name": "the danger action asks the browser as well",
+  "file": "stmt/page.js",
+  "find": "go.addEventListener('click',function(){ ynShut(); q.yes(); });",
+  "replace": "go.addEventListener('click',function(){ if(!confirm('x')) return; ynShut(); q.yes(); });"
+ },
+ {
+  "name": "the ghost that keeps asks the browser first",
+  "file": "stmt/page.js",
+  "find": "keep.addEventListener('click',function(){ ynShut(); });",
+  "replace": "keep.addEventListener('click',function(){ try{ confirm('x'); }catch(e){} ynShut(); });"
+ },
+ {
+  "name": "the close orb tells the browser",
+  "file": "stmt/page.js",
+  "find": "x.addEventListener('click',function(){ ynShut(); });",
+  "replace": "x.addEventListener('click',function(){ try{ alert('x'); }catch(e){} ynShut(); });"
+ },
+ {
+  "name": "the focus is not given back",
+  "file": "stmt/page.js",
+  "find": "try{ if(b&&b.focus) b.focus({preventScroll:true}); }catch(e){}",
+  "replace": "try{ }catch(e){}"
+ },
+ {
+  "name": "a control a redraw replaced is not found again",
+  "file": "stmt/page.js",
+  "find": "if(!(b&&b.isConnected)&&q.again) b=q.again();",
+  "replace": ""
+ },
+ {
+  "name": "the Sheet does not take the focus",
+  "file": "stmt/page.js",
+  "find": "document.addEventListener('keydown',ynKeys,true);\n    try{ box.focus({preventScroll:true}); }catch(e){}",
+  "replace": "document.addEventListener('keydown',ynKeys,true);"
+ },
+ {
+  "name": "Tab does not wrap to the first control",
+  "file": "stmt/page.js",
+  "find": "else if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }\n    else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }",
+  "replace": "else if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }"
+ },
+ {
+  "name": "Shift+Tab does not wrap to the last control",
+  "file": "stmt/page.js",
+  "find": "else if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }",
+  "replace": ""
+ },
+ {
+  "name": "a Tab from outside is not pulled in",
+  "file": "stmt/page.js",
+  "find": "if(i<0&&!yn.box.contains(document.activeElement)&&document.activeElement!==yn.box){",
+  "replace": "if(false){"
+ },
+ {
+  "name": "every Tab is held",
+  "file": "stmt/page.js",
+  "find": "else if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }\n    else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }",
+  "replace": "else if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }\n    else if(!ev.shiftKey){ ev.preventDefault(); f[0].focus(); }"
+ },
+ {
+  "name": "the Sheet's scrim lies under the order sheet",
+  "file": "stmt/page.js",
+  "find": "#ynScrim{z-index:72}",
+  "replace": "#ynScrim{z-index:70}"
+ },
+ {
+  "name": "the Sheet lies under its scrim",
+  "file": "stmt/page.js",
+  "find": ".ynsheet{z-index:73}",
+  "replace": ".ynsheet{z-index:71}"
+ },
+ {
+  "name": "shutting it shuts the order sheet too",
+  "file": "stmt/page.js",
+  "find": "document.removeEventListener('keydown',ynKeys,true);\n    if(q.wrap.parentNode)",
+  "replace": "document.removeEventListener('keydown',ynKeys,true); sheetClose();\n    if(q.wrap.parentNode)"
+ },
+ {
+  "name": "a lapse leaves it open",
+  "file": "stmt/page.js",
+  "find": "    ynShut(true);   /* 11 Oct 2026: a question open when the session lapses goes with it, never left over the door */\n",
+  "replace": ""
+ },
+ {
+  "name": "a log out leaves it open",
+  "file": "stmt/page.js",
+  "find": "closeDevSheet(); lookShut(); ynShut(true); devN++;",
+  "replace": "closeDevSheet(); lookShut(); devN++;"
+ },
+ {
+  "name": "the order's Cancel sends a new id each time",
+  "file": "stmt/page.js",
+  "find": "var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});",
+  "replace": "var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:mintRid()});"
+ },
+ {
+  "name": "the order's Cancel sends a field more",
+  "file": "stmt/page.js",
+  "find": "var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});",
+  "replace": "var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel',''), via:'sheet'});"
+ },
+ {
+  "name": "the limit's Cancel sends a field more",
+  "file": "stmt/page.js",
+  "find": "var mine=ticket, r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});",
+  "replace": "var mine=ticket, r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel',''), via:'sheet'});"
+ },
+ {
+  "name": "the link's Withdraw sends a body",
+  "file": "stmt/page.js",
+  "find": "'/revoke',{});\n              /* any failure",
+  "replace": "'/revoke',{via:'sheet'});\n              /* any failure"
+ },
+ {
+  "name": "the order Sheet draws no mark",
+  "file": "stmt/page.js",
+  "find": "lab.appendChild(mtile(o.product,o.qty,oUnit(o))); lab.appendChild(el('span',null,stateWord(o)));",
+  "replace": "lab.appendChild(el('span',null,stateWord(o)));"
+ },
+ {
+  "name": "the order Sheet gives no word for the order",
+  "file": "stmt/page.js",
+  "find": "lab.appendChild(mtile(o.product,o.qty,oUnit(o))); lab.appendChild(el('span',null,stateWord(o)));",
+  "replace": "lab.appendChild(mtile(o.product,o.qty,oUnit(o)));"
+ },
+ {
+  "name": "the order Sheet leaves the delivery out of the figure",
+  "file": "stmt/page.js",
+  "find": "l.appendChild(el('span','salt-ledger__value',rm((+o.total||0)+(+o.delivery||0)))); r.appendChild(l);\n    r.appendChild(el('span','salt-ledger__flag',tw('sh.placed'",
+  "replace": "l.appendChild(el('span','salt-ledger__value',rm((+o.total||0)))); r.appendChild(l);\n    r.appendChild(el('span','salt-ledger__flag',tw('sh.placed'"
+ },
+ {
+  "name": "the order Sheet gives no day",
+  "file": "stmt/page.js",
+  "find": "    r.appendChild(el('span','salt-ledger__flag',tw('sh.placed',{t:Dd(stamp,o.at)})));\n    L.appendChild(r); return L;",
+  "replace": "    L.appendChild(r); return L;"
+ },
+ {
+  "name": "the order Sheet does not say what is lost",
+  "file": "stmt/page.js",
+  "find": "body:[ynOrderRow(o), el('p',null,tw('yn.orderLost')), el('p',",
+  "replace": "body:[ynOrderRow(o), el('p',"
+ },
+ {
+  "name": "the order Sheet always says nothing is paid",
+  "file": "stmt/page.js",
+  "find": "paid>0?tw('yn.orderPaid',{rm:rm(paid)}):tw('yn.orderNone')",
+  "replace": "tw('yn.orderNone')"
+ },
+ {
+  "name": "the order Sheet always names a refund",
+  "file": "stmt/page.js",
+  "find": "paid>0?tw('yn.orderPaid',{rm:rm(paid)}):tw('yn.orderNone')",
+  "replace": "tw('yn.orderPaid',{rm:rm(paid)})"
+ },
+ {
+  "name": "the order Sheet names the product",
+  "file": "stmt/words.js",
+  "find": "\"yn.orderLost\": \"It is withdrawn and goes no further. To have it, you place a new order.\",",
+  "replace": "\"yn.orderLost\": \"It is withdrawn and goes no further. To have more salt, you place a new order.\","
+ },
+ {
+  "name": "the link Sheet gives no state",
+  "file": "stmt/page.js",
+  "find": "l.appendChild(el('span','salt-ledger__value',tw(st[0]))); row.appendChild(l);",
+  "replace": "row.appendChild(l);"
+ },
+ {
+  "name": "the link Sheet gives no day",
+  "file": "stmt/page.js",
+  "find": "l.appendChild(el('span','salt-ledger__label',r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours')));\n    l.appendChild(el('span','salt-ledger__value',tw(st[0])));",
+  "replace": "l.appendChild(el('span','salt-ledger__label',tw('lnk.yours')));\n    l.appendChild(el('span','salt-ledger__value',tw(st[0])));"
+ },
+ {
+  "name": "the link Sheet says nothing of what it has done",
+  "file": "stmt/page.js",
+  "find": "    row.appendChild(el('span','salt-ledger__flag',linkLine(r)));\n    L.appendChild(row); return L;",
+  "replace": "    L.appendChild(row); return L;"
+ },
+ {
+  "name": "the link Sheet repeats the address",
+  "file": "stmt/page.js",
+  "find": "    row.appendChild(el('span','salt-ledger__flag',linkLine(r)));\n    L.appendChild(row); return L;",
+  "replace": "    row.appendChild(el('span','salt-ledger__flag',linkLine(r)+' '+r.url));\n    L.appendChild(row); return L;"
+ },
+ {
+  "name": "the link Sheet does not say what is lost",
+  "file": "stmt/page.js",
+  "find": "body:[ynLinkRow(r), el('p',null,tw('yn.linkLost'))],",
+  "replace": "body:[ynLinkRow(r)],"
+ },
+ {
+  "name": "the Sheet carries a style attribute",
+  "file": "stmt/page.js",
+  "find": "x.type='button'; x.id='ynX';",
+  "replace": "x.type='button'; x.id='ynX'; x.setAttribute('style','color:red');"
+ },
+ {
+  "name": "the danger action is not the system's danger ghost",
+  "file": "stmt/page.js",
+  "find": "var go=el('button','salt-ghost salt-ghost--danger',q.go);",
+  "replace": "var go=el('button','salt-ghost',q.go);"
+ },
+ {
+  "name": "the ghost that keeps is a danger ghost too",
+  "file": "stmt/page.js",
+  "find": "var keep=el('button','salt-ghost',q.keep);",
+  "replace": "var keep=el('button','salt-ghost salt-ghost--danger',q.keep);"
+ },
+ {
+  "name": "the ghost that keeps is not the system's ghost",
+  "file": "stmt/page.js",
+  "find": "var keep=el('button','salt-ghost',q.keep);",
+  "replace": "var keep=el('button','btn',q.keep);"
+ },
+ {
+  "name": "the close control is not the system's orb",
+  "file": "stmt/page.js",
+  "find": "var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.id='ynX';",
+  "replace": "var x=el('button','salt-ghost salt-sheet__close'); x.type='button'; x.id='ynX';"
+ },
+ {
+  "name": "the danger tone is a literal",
+  "file": "stmt/page.js",
+  "find": ".ynsheet .salt-ghost--danger{--salt-ghost-tone:var(--salt-ember);",
+  "replace": ".ynsheet .salt-ghost--danger{--salt-ghost-tone:#d4694c;"
+ },
+ {
+  "name": "the danger tone is not set",
+  "file": "stmt/page.js",
+  "find": ".ynsheet .salt-ghost--danger{--salt-ghost-tone:var(--salt-ember);",
+  "replace": ".ynsheet .salt-ghost--dangerx{--salt-ghost-tone:var(--salt-ember);"
+ },
+ {
+  "name": "the limit is said in digits",
+  "file": "stmt/page.js",
+  "find": "function numWord(n){ return has('en','num.'+n)?tw('num.'+n):String(n); }",
+  "replace": "function numWord(n){ return String(n); }"
+ },
+ {
+  "name": "the limit is the number open, not the limit",
+  "file": "stmt/page.js",
+  "find": "function limitLine(){ return tw('sh.limit',{n:numWord(OMAX)}); }",
+  "replace": "function limitLine(){ return tw('sh.limit',{n:numWord(openN())}); }"
+ },
+ {
+  "name": "the word for five is wrong",
+  "file": "stmt/words.js",
+  "find": "\"num.5\": \"Five\",",
+  "replace": "\"num.5\": \"Fiv\","
+ },
+ {
+  "name": "the old browser question's key is back",
+  "file": "stmt/words.js",
+  "find": "\"yn.keepLink\": \"Keep this link\",",
+  "replace": "\"yn.keepLink\": \"Keep this link\",\n  \"lnk.withdrawAsk\": \"Withdraw this link? Whoever holds it will not be able to open it.\","
+ },
+ {
+  "name": "the limit list draws no mark",
+  "file": "stmt/page.js",
+  "find": "      /* the order as a card: its mark a button, the figure under it (his note of 28 Sep 2026) */\n      lab.appendChild(mtile(o.product,o.qty,oUnit(o)));\n",
+  "replace": "      /* the order as a card: its mark a button, the figure under it (his note of 28 Sep 2026) */\n"
+ },
+ {
+  "name": "the limit list leaves the delivery out of the figure",
+  "file": "stmt/page.js",
+  "find": "l.appendChild(el('span','salt-ledger__value',rm(o.total+(+o.delivery||0)))); r.appendChild(l);\n      if(!(+o.moved>0)){",
+  "replace": "l.appendChild(el('span','salt-ledger__value',rm(o.total))); r.appendChild(l);\n      if(!(+o.moved>0)){"
+ },
+ {
+  "name": "the fixture's paid order is not paid",
+  "file": "tools/testfix.mjs",
+  "find": "[T(1, 55), \"desk\", { verdict: { kind: \"received\", claim: T(1, 50), amount: 12 } }]]));",
+  "replace": "[T(1, 55), \"customer\", { action: \"say\", text: \"Thank you.\" }]]));"
+ },
+ {
+  "name": "the paid line is met by any order",
+  "file": "tools/testfix.mjs",
+  "find": "&& +o.paid > 0.004 && !(+o.moved > 0) && !(o.payments || []).some((p) => p.claim === \"waiting\"))],",
+  "replace": "&& true && !(+o.moved > 0) && !(o.payments || []).some((p) => p.claim === \"waiting\"))],"
+ },
+ {
+  "name": "the limit line is met with nothing open",
+  "file": "tools/testfix.mjs",
+  "find": "return openCount(open) >= MAX_OPEN && open.some((o) => !(+o.moved > 0)); }],",
+  "replace": "return true; }],"
+ }
+]

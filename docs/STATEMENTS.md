@@ -576,6 +576,41 @@ one choice on both, there being no second key.
   theme and one that throws, and with the Access login's 401; the customer's page is checked drawn as it was. `test/maker-act.mjs`
   audits the Sheet's controls with the rest of his page.
 
+### A yes or no is a Sheet (Phase 7d part 1, 11 Oct 2026, his decision 4)
+
+The customer's page calls no native `confirm()`, `alert()` or `prompt()`. The three questions it asked that way, **Cancel this order**, the same
+Cancel in the order limit's list, and **Withdraw** a link, each open the system's Sheet over the page (`ynOpen` in `stmt/page.js`: the scrim, the
+grabber, a title, a close orb, a body and a foot), built from the page's own nodes at the root of the body, last, and given its own stacking
+(`#ynScrim` 72, `.ynsheet` 73, over the system's 70 and 71), because a later place in the page is not enough to lie over the order sheet at
+the limit: its scrim sat under that sheet's body until it had a number of its own. It restates what goes:
+
+- **An order**: its mark (the product's mark with his letter, the size under it, the shape and the size read aloud, never a product word), the
+  order's own word (Sent, Acknowledged), its figure (goods plus delivery, as the limit's list draws it) and the day it was placed; then what is
+  lost (`yn.orderLost`) and the money: `yn.orderNone` where nothing is paid, or `yn.orderPaid` with the refund where something is.
+- **A link**: the day it was made, its state (Open, Waiting) and what it has done (Opened 2 times, last 19 Sep 2026), then what is lost
+  (`yn.linkLost`). Its address is never repeated.
+- **Two answers.** One danger action, the system's danger ghost with its ember tone (`.ynsheet .salt-ghost--danger`, a token of the system),
+  first; a ghost that keeps below it. Both are full width and 44 px; the close orb is the system's.
+
+**The Sheet only replaces the yes or no in front of the call.** The danger action closes the Sheet and runs the call the confirm let through,
+with the same path, the same body (an order's cancel sends the id alone, `ridFor(id:cancel)`, the same on every retry and dropped once recorded;
+a link's revoke sends `{}`) and the same ways of answering. Nothing is sent before it. The ghost, the close orb, the scrim and Escape each close
+it and send nothing, and the focus goes back to the control that opened it, found again by its `data-yn` (`cancel:<id>`, `limit:<id>`,
+`link:<id>`) if a redraw replaced it while the Sheet was open. Focus starts in the Sheet and Tab stays in it, both ways, a Tab from outside pulled
+in; the key handler is on `document` in the capture phase and runs only while the Sheet is open, so Escape at the limit shuts this Sheet and
+leaves the order sheet under it open. **A lapse of the session or a log out takes it down** (`ynShut(true)` in `lapsed()` and `lock()`), so it is
+never left over the signed-out Sheet or the door. The Sheet shows the order as it stood when it was opened; the Worker is still the check on what
+can be cancelled, and a refusal is said beside the control as it was.
+
+The words are keys (`yn.*`, `num.1` to `num.10`, `sh.limit` with its `{n}` slot); the three browser questions' keys (`ord.cancelAsk`,
+`ord.cancelAskPaid`, `lnk.withdrawAsk`) are gone. Salt Account (`stmt/owner.js`) keeps its own questions, another lane's.
+
+**The test accounts show every Sheet**: they hold more than five open orders (the limit's list and each Cancel there), an order agreed and paid
+before anything moved (`ex47`, so the Sheet names a refund), and an open and a waiting link (`tools/testfix.mjs` `FEATURES`). The suite section
+"Cancelling and withdrawing ask in a Sheet that says what goes" (`test/counter-confirm-sheets.mjs`, its mutations in
+`test/counter-confirm-sheets.mutations.json`) drives all three controls through the generated page in jsdom, with `confirm`, `alert` and
+`prompt` made to throw and count. The 44 px and both themes are measured in a real browser and recorded in the pull request.
+
 ## The price list and the order book (06 Sep 2026, his instruction)
 
 Three things sit behind the one password since v499: the statements, a **price list** for
@@ -689,11 +724,11 @@ closes the sheet and opens the order's own screen (S5 5.2). New order stands abo
 of their column, so on a desk the open order beside it starts at the top of the place and the Notifications pane is left to
 Account's This device (S7-R3); on a desk,
 while it stands beside an open order, that order's Pay is the lit ghost, one filled control a screen, and Pay is filled
-wherever nothing else is (the limit in New order's place, the payment page, a phone). **Five open orders are said before the form** (S4 4.6; `MAX_OPEN` is exported from
+wherever nothing else is (the limit in New order's place, the payment page, a phone). **Five open orders are said before the form**, in words (S4 4.6; since 11 Oct 2026 "Five open orders is the most", the number's word read by key, `num.<n>`, off the code's own `MAX_OPEN` and never off the count open; `MAX_OPEN` is exported from
 `stmt/orders.js` and carried into the page, the Worker still the one that refuses): the Order tab says so in place of
 New order, and the sheet opens on the open orders, each in stage 5's word for it (goods handed over in part say so),
 Cancel on each whose goods have not moved, going on to the form once
-one is gone; a refusal those orders explain turns the sheet to the same list. **Every size on Prices is one tap to
+one is gone (each Cancel asks in a Sheet of its own, below); a refusal those orders explain turns the sheet to the same list. **Every size on Prices is one tap to
 the sheet at that size** (S4 4.8, rows of the plain ledger), and the list says **"Prices as at 24 Sep 2026, 11:59" (C17: every Counter date DD Mon YYYY, a weekday only before a due date)**
 in Kuala Lumpur off its own `at`; a list sealed without one keeps "For the week of". **One delivery sentence**
 (`DELIVERY` in `stmt/page.js`, S4 4.9) wherever the charge is explained: Prices, a delivery's check and a guest's
