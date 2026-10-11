@@ -46157,6 +46157,7 @@ await (async () => {
       beforeParse(win) {
         try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
         win.scrollTo = () => {}; win.open = () => null;
+        try { win.localStorage.setItem("salt-look", "tide"); } catch (e) { /* the look is kept, so its Sheet does not stand over the page this check reads */ }
         /* the page's clock, which a check may move on: a Date that reads now plus the shift */
         const RD = win.Date;
         class FD extends RD { constructor(...a) { if (a.length) super(...a); else super(RD.now() + shift); } static now() { return RD.now() + shift; } }

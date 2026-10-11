@@ -2125,13 +2125,13 @@ const CLIENT_JS = `
   var devFrom=null;
   function openDevSheet(from){
     if(!devSheetEl||!curCk) return;
-    devFrom=from; devScrim.hidden=false; devSheetEl.hidden=false;
+    devFrom=from; devScrim.hidden=false; devSheetEl.hidden=false; behind();
     try{ devSheetEl.focus(); }catch(e){}
     mintDev();
   }
   function closeDevSheet(){
     if(!devSheetEl||devSheetEl.hidden) return;
-    devSheetEl.hidden=true; devScrim.hidden=true; devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
+    devSheetEl.hidden=true; devScrim.hidden=true; behind(); devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
     try{ if(devFrom&&devFrom.isConnected) devFrom.focus(); }catch(e){}
     drawDev();   /* S9 fix: the device the code signed in is on the list as the Sheet closes */
   }
@@ -2360,12 +2360,12 @@ const CLIENT_JS = `
     document.getElementById('outForm').appendChild(doorBox);
     if(user) un.value=user;
     say('');
-    outScrim.hidden=false; outSheet.hidden=false;
+    outScrim.hidden=false; outSheet.hidden=false; behind();
     try{ pw.focus(); }catch(e){}
   }
   function closeSignedOut(){
     if(!outSheet||outSheet.hidden) return;
-    outSheet.hidden=true; outScrim.hidden=true;
+    outSheet.hidden=true; outScrim.hidden=true; behind();
     /* S3 fix: back where it came from, and the code screen too if the Sheet took it */
     gate.insertBefore(doorBox, doorNext); doorBox.hidden=false;
     if(codeHome&&outSheet.contains(codeBox)){ codeHome.p.insertBefore(codeBox, codeHome.n); codeBox.hidden=true; }
@@ -2610,12 +2610,12 @@ const CLIENT_JS = `
     document.getElementById('bellIos').hidden=!IOS;
     document.getElementById('bellDroid').hidden=IOS||!ANDROID;
     document.getElementById('bellDesk').hidden=IOS||ANDROID;
-    bellScrim.hidden=false; bellSheetEl.hidden=false;
+    bellScrim.hidden=false; bellSheetEl.hidden=false; behind();
     try{ bellSheetEl.focus(); }catch(e){}
   }
   function closeBell(){
     if(!bellSheetEl||bellSheetEl.hidden) return;
-    bellSheetEl.hidden=true; bellScrim.hidden=true;
+    bellSheetEl.hidden=true; bellScrim.hidden=true; behind();
     try{ bellEl.focus(); }catch(e){}
   }
   if(bellBoxEl){
@@ -2686,7 +2686,7 @@ const CLIENT_JS = `
   }
   function lookShut(){
     if(!lookSheetEl||lookSheetEl.hidden) return;
-    lookSheetEl.hidden=true; lookScrim.hidden=true;
+    lookSheetEl.hidden=true; lookScrim.hidden=true; behind();
     try{ if(lookBack&&lookBack.focus) lookBack.focus(); }catch(e){}
   }
   function lookAsk(b, own){
@@ -2694,7 +2694,7 @@ const CLIENT_JS = `
     var kept=lookStore();
     if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;
     lookAsked=true; lookBack=document.activeElement;
-    lookScrim.hidden=false; lookSheetEl.hidden=false;
+    lookScrim.hidden=false; lookSheetEl.hidden=false; behind();
     try{ lookSheetEl.focus(); }catch(e){}
   }
   if(lookRow) lookRow.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t) lookSet(t.getAttribute('data-look')); });
@@ -3174,6 +3174,7 @@ const CLIENT_JS = `
       box.addEventListener('keydown',sheetKeys);
       wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
       osh={wrap:wrap, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
+      behind();
       try{ box.focus({preventScroll:true}); }catch(e){}
     }
     sheetDraw();
@@ -3195,6 +3196,7 @@ const CLIENT_JS = `
     dropPlaced(false);
     var s=osh; osh=null; draft.step=''; draft.check=null; draft.amend=''; draft.pool='';
     s.wrap.parentNode.removeChild(s.wrap);
+    behind();
     try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
   }
   /* the customer's own ways out (the scrim, Close, Escape) wait while Place is on its way: closed then, the answer had
@@ -3212,6 +3214,28 @@ const CLIENT_JS = `
     var at=document.activeElement;
     if(ev.shiftKey&&(at===all[0]||at===osh.box)){ ev.preventDefault(); all[all.length-1].focus(); }
     else if(!ev.shiftKey&&at===all[all.length-1]){ ev.preventDefault(); all[0].focus(); }
+  }
+  /* ---- THE PAGE BEHIND A SHEET CANNOT BE REACHED (11 Oct 2026, Phase 7d part 2, Fable's note on #133) ------------------------
+     While any Sheet is open, everything else at the root of the body is inert, so a screen reader or a Tab cannot walk the page
+     under a modal; the Sheet's own scrim and body stay live. It is read off the DOM every time (a dialog that is aria-modal and
+     not hidden is open) and never held as a flag, so no way of closing a Sheet can leave the page shut. Every open calls it, and
+     every close calls it before focus goes back, so the control that opened the Sheet can take it; a lapse and a log out reach it
+     through the closes they already make (lapsed, lock). A yes or no over the order sheet shuts that sheet too. What it
+     shuts it marks (data-behind), so another use of inert is left alone. His page draws Sheets of its own and is left as it was. */
+  function behind(){
+    if(OWNER) return;
+    var open=[].filter.call(document.querySelectorAll('[role=dialog][aria-modal=true]'),function(d){ return !d.hidden; }), keep=[];
+    var ask=document.getElementById('ynSheet');
+    (ask&&!ask.hidden?[ask]:open).forEach(function(d){
+      if(d.parentNode!==document.body){ keep.push(d.parentNode); return; }   /* a built Sheet: its wrapper, scrim and all */
+      keep.push(d);
+      var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);   /* a drawn Sheet: itself and its scrim */
+    });
+    [].forEach.call(document.body.children,function(c){
+      if(c.tagName==='SCRIPT'||c.tagName==='STYLE') return;
+      if(open.length&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }
+      else if(c.hasAttribute('data-behind')){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }
+    });
   }
   /* ---- A YES OR NO IS A SHEET (11 Oct 2026, Phase 7d part 1, his decision 4: no native confirm on this page) ----------------
      Cancel this order, the same step at the order limit, and Withdraw a link each ask in the system's Sheet over the page, which
@@ -3237,6 +3261,7 @@ const CLIENT_JS = `
     var q=yn; yn=null;
     document.removeEventListener('keydown',ynKeys,true);
     if(q.wrap.parentNode) q.wrap.parentNode.removeChild(q.wrap);
+    behind();
     if(quiet) return;
     var b=q.opener; if(!(b&&b.isConnected)&&q.again) b=q.again();
     try{ if(b&&b.focus) b.focus({preventScroll:true}); }catch(e){}
@@ -3256,12 +3281,13 @@ const CLIENT_JS = `
     x.appendChild(oGlyph('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
     q.body.forEach(function(n){ body.appendChild(n); });
     var go=el('button','salt-ghost salt-ghost--danger',q.go); go.type='button'; go.id='ynGo';
-    go.addEventListener('click',function(){ ynShut(); q.yes(); });
+    go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });
     var keep=el('button','salt-ghost',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
     foot.appendChild(go); foot.appendChild(keep);
     box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
     wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
     yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};
+    behind();
     document.addEventListener('keydown',ynKeys,true);
     try{ box.focus({preventScroll:true}); }catch(e){}
   }
@@ -4882,10 +4908,10 @@ const CLIENT_JS = `
     /* S6 fix: Transfer is the way chosen as it opens, as the mockup draws it; the way is not the account, and no account is */
     PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false, what:false};
     payNumLoad();
-    payScr.hidden=false; paySh.hidden=false; drawPay();
+    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();
     try{ paySh.focus(); }catch(e){}
   }
-  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; PS=null; payqDrop(); }
+  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; behind(); PS=null; payqDrop(); }
   /* ---- F13 (29 Sep 2026): A SLIP, SEALED ON THIS PHONE. On Did you send, a picture of the payment may go with the claim,
      one a claim: re-encoded here to 1,600 px JPEG under SLIP_BYTES, then sealed to the public half of his slip key
      (GET /slip/key) before it leaves, so only ciphertext reaches the site (rule 2) and only his vault opens it. The
@@ -5122,7 +5148,7 @@ const CLIENT_JS = `
     var w=q.away||{}, ctx=q.kind==='order'?(oFind(q.id)?orderCtx(q.id):null):acctCtx();
     if(q.who!==payqWho(user)||!(Date.now()-q.at<2*3600e3)||!ctx||!(ctx.fig>0.004)||!(w.amt>0)||!acct(w.acct)){ payqDrop(); return; }
     PS={ctx:ctx, part:false, amt:'', rail:w.rail, acct:w.acct, said:'', step:'check', away:{amt:w.amt, rail:w.rail, acct:w.acct, gone:false}, busy:false};
-    payScr.hidden=false; paySh.hidden=false; drawPay();
+    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();
     try{ paySh.focus(); }catch(e){}
   }
   function payGone(){ if(PS&&PS.away) PS.away.gone=true; }
@@ -5460,7 +5486,7 @@ const CLIENT_JS = `
   function thOpen(from){
     if(!thSheetEl||!session||view) return;
     thFrom=from||null; thFromId=from&&from.closest&&from.closest('#aThread')?'aThread':'hThread'; draft.thSince=seenGet().o[thKey()]||'';
-    thScrim.hidden=false; thSheetEl.hidden=false;
+    thScrim.hidden=false; thSheetEl.hidden=false; behind();
     try{ thSheetEl.focus(); }catch(e){}
     if(draft.thDraft&&!thIn.value) thIn.value=draft.thDraft;
     thLines(true); thSeen(); thHome();
@@ -5471,7 +5497,7 @@ const CLIENT_JS = `
   function thClose(){
     if(thTimer){ clearInterval(thTimer); thTimer=null; }
     if(!thSheetEl||thSheetEl.hidden) return;
-    thSheetEl.hidden=true; thScrim.hidden=true; thSay('');
+    thSheetEl.hidden=true; thScrim.hidden=true; behind(); thSay('');
     try{ var f=thFrom&&thFrom.isConnected?thFrom:(document.getElementById(thFromId)||document).querySelector('.throw'); if(f) f.focus(); }catch(e){}
   }
   /* read only while the Sheet is open and the page is showing; a read that a later one overtook is let go */

@@ -56,6 +56,7 @@ export async function run({ ok, pageWork }) {
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
       if (!win.TextDecoder) win.TextDecoder = TextDecoder;
       win.scrollTo = () => {}; win.open = () => null;
+      try { win.localStorage.setItem("salt-look", "tide"); } catch (e) { /* the look is kept, so its Sheet does not stand over the page this check reads */ }
       win.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
         const j = (p === "/open" || p === "/account") ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: [], claims } : null;

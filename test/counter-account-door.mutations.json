@@ -142,5 +142,125 @@
   "file": "stmt/page.js",
   "find": "+ wt(\"p\", 'class=\"salt-insight\"', \"door.help\")",
   "replace": "+ '<p class=\"salt-insight\"><a href=\"/ask\">' + wd(\"door.help\") + \"</a></p>\""
+ },
+ {
+  "name": "The danger action has no guard",
+  "file": "stmt/page.js",
+  "find": "if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes();",
+  "replace": "ynShut(); q.yes();"
+ },
+ {
+  "name": "The danger action guards only on a Sheet being open",
+  "file": "stmt/page.js",
+  "find": "if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes();",
+  "replace": "if(!yn) return; ynShut(); q.yes();"
+ },
+ {
+  "name": "A Sheet leaves the page open",
+  "file": "stmt/page.js",
+  "find": "if(open.length&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }",
+  "replace": "if(false&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }"
+ },
+ {
+  "name": "The page stays shut after a close",
+  "file": "stmt/page.js",
+  "find": "else if(c.hasAttribute('data-behind')){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }",
+  "replace": "else if(false){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }"
+ },
+ {
+  "name": "A drawn Sheet is shut itself",
+  "file": "stmt/page.js",
+  "find": "keep.push(d);\n      var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);",
+  "replace": "var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);"
+ },
+ {
+  "name": "A drawn Sheet's scrim is shut",
+  "file": "stmt/page.js",
+  "find": "if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);",
+  "replace": ""
+ },
+ {
+  "name": "A built Sheet's wrapper is shut",
+  "file": "stmt/page.js",
+  "find": "if(d.parentNode!==document.body){ keep.push(d.parentNode); return; }",
+  "replace": "if(d.parentNode!==document.body){ return; }"
+ },
+ {
+  "name": "A yes or no leaves the order sheet open",
+  "file": "stmt/page.js",
+  "find": "(ask&&!ask.hidden?[ask]:open).forEach(",
+  "replace": "open.forEach("
+ },
+ {
+  "name": "His page is shut too",
+  "file": "stmt/page.js",
+  "find": "if(OWNER) return;\n    var open=",
+  "replace": "var open="
+ },
+ {
+  "name": "The look Sheet opens and the page stays open",
+  "file": "stmt/page.js",
+  "find": "lookScrim.hidden=false; lookSheetEl.hidden=false; behind();",
+  "replace": "lookScrim.hidden=false; lookSheetEl.hidden=false;"
+ },
+ {
+  "name": "The look Sheet closes and the page stays shut",
+  "file": "stmt/page.js",
+  "find": "lookSheetEl.hidden=true; lookScrim.hidden=true; behind();",
+  "replace": "lookSheetEl.hidden=true; lookScrim.hidden=true;"
+ },
+ {
+  "name": "The yes or no opens and the page stays open",
+  "file": "stmt/page.js",
+  "find": "behind();\n    document.addEventListener('keydown',ynKeys,true);",
+  "replace": "document.addEventListener('keydown',ynKeys,true);"
+ },
+ {
+  "name": "The yes or no closes and the page stays shut",
+  "file": "stmt/page.js",
+  "find": "q.wrap.parentNode.removeChild(q.wrap);\n    behind();\n    if(quiet) return;",
+  "replace": "q.wrap.parentNode.removeChild(q.wrap);\n    if(quiet) return;"
+ },
+ {
+  "name": "The signed-out Sheet opens and the page stays open",
+  "file": "stmt/page.js",
+  "find": "outScrim.hidden=false; outSheet.hidden=false; behind();",
+  "replace": "outScrim.hidden=false; outSheet.hidden=false;"
+ },
+ {
+  "name": "The signed-out Sheet closes and the page stays shut",
+  "file": "stmt/page.js",
+  "find": "outSheet.hidden=true; outScrim.hidden=true; behind();",
+  "replace": "outSheet.hidden=true; outScrim.hidden=true;"
+ },
+ {
+  "name": "The order sheet opens and the page stays open",
+  "file": "stmt/page.js",
+  "find": "foot:foot, opener:opener||document.activeElement};\n      behind();",
+  "replace": "foot:foot, opener:opener||document.activeElement};"
+ },
+ {
+  "name": "The order sheet closes and the page stays shut",
+  "file": "stmt/page.js",
+  "find": "s.wrap.parentNode.removeChild(s.wrap);\n    behind();",
+  "replace": "s.wrap.parentNode.removeChild(s.wrap);"
+ },
+ {
+  "name": "The pay Sheet opens and the page stays open",
+  "file": "stmt/page.js",
+  "find": "payNumLoad();\n    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();",
+  "replace": "payNumLoad();\n    payScr.hidden=false; paySh.hidden=false; drawPay();"
+ },
+ {
+  "name": "The pay Sheet closes and the page stays shut",
+  "file": "stmt/page.js",
+  "find": "paySh.hidden=true; payScr.hidden=true; behind(); PS=null;",
+  "replace": "paySh.hidden=true; payScr.hidden=true; PS=null;"
+ },
+ {
+  "name": "A return from the bank opens the pay Sheet and the page stays open",
+  "file": "stmt/page.js",
+  "find": "payScr.hidden=false; paySh.hidden=false; behind(); drawPay();\n    try{ paySh.focus(); }catch(e){}\n  }\n  function payGone",
+  "replace": "payScr.hidden=false; paySh.hidden=false; drawPay();\n    try{ paySh.focus(); }catch(e){}\n  }\n  function payGone"
  }
 ]
