@@ -2726,7 +2726,14 @@ export const OWNER_JS = `
     var e=ordEntries[id];
     if(!e||placeNow!=='orders'||!ordInPart(e)) return;
     ordOpened=id; drawOrderPane(); sweep();
-    try{ var back=document.querySelector('#makerReview [data-back="orders"]'); if(back&&back.focus) back.focus(); window.scrollTo(0,0); }catch(x){}
+    /* below 860px the card takes the list's place and has its way back showing, so he is taken to the top of it; from 860px the list is the
+       page's scroll and the card stands beside it, sticky, so a tap on a low row leaves the page where it is and only brings the card into view */
+    try{
+      var back=document.querySelector('#makerReview [data-back="orders"]'), card=document.getElementById('makerReview');
+      if(back&&back.focus) back.focus();
+      if(back&&window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);
+      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});
+    }catch(x){}
   }
   function closeOrder(){
     var was=ordOpened; ordOpened=null; drawOrderPane(); sweep();

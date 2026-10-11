@@ -402,6 +402,24 @@
   "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[];"
  },
  {
+  "name": "a row tap always takes him to the top",
+  "file": "stmt/owner.js",
+  "find": "      if(back&&window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
+  "replace": "      window.scrollTo(0,0);"
+ },
+ {
+  "name": "the card is not brought into view from 860px",
+  "file": "stmt/owner.js",
+  "find": "\n      else if(card&&card.scrollIntoView) card.scrollIntoView({block:'nearest'});",
+  "replace": ""
+ },
+ {
+  "name": "a row tap scrolls the wrong way round",
+  "file": "stmt/owner.js",
+  "find": ".display!=='none') window.scrollTo(0,0);",
+  "replace": ".display==='none') window.scrollTo(0,0);"
+ },
+ {
   "name": "leaving the part keeps the form open",
   "file": "stmt/owner.js",
   "find": "    if(moved2) fOpen=null;\n",

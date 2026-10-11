@@ -205,6 +205,25 @@ export async function run({ ok, pageWork }) {
       "an order that has left the part (agreed since) closes its card and its row goes from the list: " + JSON.stringify([p.cardsIn(), p.rowsShown()]));
   } finally { p.w.close(); }
 
+  /* 3b. SCROLLING: a tap on a row takes him to the top only while the card's way back shows (below 860px, where the card takes the list's place);
+     from 860px the list is the page's scroll and the card stands beside it, so the page stays where it is and the card is brought into view */
+  p = await open();
+  try {
+    const d = p.d, w = p.w, tops = [], into = [];
+    w.scrollTo = (x, y) => tops.push([x, y]);
+    w.HTMLElement.prototype.scrollIntoView = function (o) { into.push([this.id, JSON.stringify(o)]); };
+    await p.enter();
+    tops.length = 0;
+    await p.tapRow("ord-p3");
+    ok(same(tops, [[0, 0]]) && into.length === 0, "below 860px a row tap takes him to the top of the card, its way back showing: " + JSON.stringify([tops, into]));
+    byAct(d, "order.back").click(); await p.work.quiet();
+    tops.length = 0; into.length = 0;
+    const wide = d.createElement("style"); wide.textContent = ".adm #makerReview .aback{display:none}"; d.head.appendChild(wide);
+    await p.tapRow("ord-p3");
+    ok(tops.length === 0 && same(into, [["makerReview", '{"block":"nearest"}']]),
+      "from 860px, the way back hidden, a tap on a low row leaves the page where it is and brings the card into view: " + JSON.stringify([tops, into]));
+  } catch (e) { ok(false, "scrolling stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
   /* 4. THE SPLIT, from 860px */
   {
     const { html, media, at } = ownerCss();

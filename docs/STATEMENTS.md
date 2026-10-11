@@ -1545,7 +1545,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   takes the list's place and has a way back** (`order.back`, the head of the card, which also returns him to the row he came from). Between
   860 and 1080px, where the App bar still stands, the page widens for Orders alone; the other places keep their 600px column. **Back,
   leaving the part, leaving the place, and the order leaving the part (agreed since) each close the card**; a read that finds the same
-  leaves it, and tapping the part he is in does not redraw what he is typing in. The ids `#makerReview`, `#makerClaims` and `#makerPools`
+  leaves it, and tapping the part he is in does not redraw what he is typing in. A row tap takes him to the top only while the card's way back
+  shows (below 860px); from 860px the list is the page's scroll and the card is sticky, so the page stays where it is and the card is brought into view. The ids `#makerReview`, `#makerClaims` and `#makerPools`
   ride on the moved containers, so the map's selectors and the maker tests find them. **The owner's script shares the customer page's scope**
   (`stmt/page.js` splices it in at the end of the page script), so a name it declares at the top must not be one the customer's code declares:
   `oOpen` was both, and View as them met "oOpen is not a function" until the owner's became `ordOpened`; `test/admin-orders.mjs` section 9 compares
