@@ -1543,7 +1543,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   held for an order keeps its Undo or Retry on a row of its own. Waiting on you also holds an order with such a question. **From 860px the
   list stands beside the card** (a grid of 280 to 360px and the rest, the card sticky and scrolling inside itself); **below it the card
   takes the list's place and has a way back** (`order.back`, the head of the card, which also returns him to the row he came from). Between
-  860 and 1080px, where the App bar still stands, the page widens for Orders alone; the other places keep their 600px column. **Back,
+  860 and 1080px, where the App bar still stands, the page widens for Orders alone, the other places keep their 600px column, and the sticky card's height gives up the bar's (it was 40px under the fixed bar at 1024x768; now 24px clear). **Back,
   leaving the part, leaving the place, and the order leaving the part (agreed since) each close the card**; a read that finds the same
   leaves it, and tapping the part he is in does not redraw what he is typing in. A row tap takes him to the top only while the card's way back
   shows (below 860px); from 860px the list is the page's scroll and the card is sticky, so the page stays where it is and the card is brought into view. The ids `#makerReview`, `#makerClaims` and `#makerPools`

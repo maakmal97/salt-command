@@ -420,6 +420,24 @@
   "replace": ".display==='none') window.scrollTo(0,0);"
  },
  {
+  "name": "the sticky card's foot goes under the App bar",
+  "file": "stmt/page.js",
+  "find": "  .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
+  "replace": ""
+ },
+ {
+  "name": "the card keeps the bar's room from 1080px too",
+  "file": "stmt/page.js",
+  "find": "  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}",
+  "replace": "  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px - var(--salt-bar-h));overflow-y:auto}"
+ },
+ {
+  "name": "the card gives up the bar's room by too little",
+  "file": "stmt/page.js",
+  "find": "max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
+  "replace": "max-height:calc(100vh - 48px - env(safe-area-inset-bottom,0px))}"
+ },
+ {
   "name": "leaving the part keeps the form open",
   "file": "stmt/owner.js",
   "find": "    if(moved2) fOpen=null;\n",

@@ -564,6 +564,8 @@ body.ended>*:not(#aEnded){display:none}
   .adm #makerReview .aback{display:none}
 }
 @media (min-width:860px) and (max-width:1079.98px){
+  /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
+  .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   .gate.adm{max-width:none}
   .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oRecord,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
 }

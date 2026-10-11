@@ -234,6 +234,10 @@ export async function run({ ok, pageWork }) {
       "from 860px the list and the card stand side by side, the list 280 to 360px: " + split);
     ok(/\.adm #oSplit\.open \.ordlist/.test(phoneAny) && /display: none/.test(phoneAny) && /#makerReview/.test(phoneAny),
       "below 860px an open card takes the list's place, and with none open the card's place is not shown: " + phoneAny.slice(0, 200));
+    /* the App bar stays fixed along the foot until 1080px, so in that band the sticky card's foot is kept above it: its height gives up the bar's */
+    const band = at("(min-width:860px)and(max-width:1079.98px)", ".adm #makerReview")[0] || "", plain = at("(min-width:860px)", ".adm #makerReview")[0] || "";
+    ok(/max-height: calc[(]100vh - 48px - var[(]--salt-bar-h[)]/.test(band) && /max-height: calc[(]100vh - 48px[)]/.test(plain) && !/salt-bar-h/.test(plain),
+      "between 860 and 1080px, where the App bar is still fixed, the sticky card's height gives up the bar's, and from 1080px it does not: " + band + " | " + plain);
     const d = new JSDOM(html).window.document;
     const grid = d.querySelector("#oSplit .ordgrid");
     ok(!!grid && [...grid.children].map((c) => c.id).join() === "makerOrderList,makerReview" && !!d.querySelector("#oOrders #oSplit"),
