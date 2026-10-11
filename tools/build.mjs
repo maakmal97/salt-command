@@ -73,7 +73,8 @@ function requireOnce(name, needle, why) {
 /* ---- P2 head block: PWA + a per-device id + service-worker registration ---------- */
 const PWA_BLOCK = [
   '<!-- BEGIN cloud/PWA: injected by tools/build.mjs; do NOT hand-edit this built file -->',
-  '<meta name="theme-color" content="#05080a">',
+  /* the theme-color meta is the master's since 11 Oct 2026 (two themes): its head script sets it to the theme's ground
+     before the first paint, so a second one here would be read first or last by the browser and fight it */
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
@@ -219,6 +220,11 @@ const PWA_BLOCK = [
 requireOnce("P1 viewport-fit (master-owned since v276)",
   'content="width=device-width, initial-scale=1, viewport-fit=cover"',
   'The master must carry viewport-fit=cover on its viewport meta. Without it the phone is letterboxed on a notched screen and the safe-area padding added at v276 resolves to zero.');
+
+/* The master owns the browser bar's colour too (11 Oct 2026): one theme-color meta, which its head script moves with the theme. */
+requireOnce("P1b theme-color (master-owned since the two themes)",
+  '<meta name="theme-color" content=',
+  'The master must carry one theme-color meta for its head script to set. Without it the browser bar stays one colour whichever theme is chosen.');
 
 replaceOnce("P2 head PWA block",
   '<title>Salt Command</title>',

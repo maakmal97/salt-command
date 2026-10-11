@@ -12,6 +12,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#03141a">
+<script>
+/* TWO THEMES, NIGHT AND TIDE, CHOSEN ON EACH DEVICE (his word of 11 Oct 2026). This runs before the stylesheet, so the first paint is
+   the right one: it sets data-theme on <html> from localStorage salt-look and the browser bar's colour to that theme's ground.
+   Tide when nothing is stored, or the store cannot be read. saltLook() is the one place either is written; lookSet() in the
+   page's own script calls it. No clock, no fade. */
+function saltLook(t){var m=document.querySelector('meta[name="theme-color"]');
+  document.documentElement.setAttribute('data-theme',t);if(m)m.setAttribute('content',t==='night'?'#05080a':'#03141a');return t;}
+(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();
+</script>
 <title>Salt Command</title>
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <!-- Chart.js is NOT loaded here (v176). It used to sit in the head as a BLOCKING request
@@ -4394,6 +4404,27 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-void:#ffffff05;
   --desk-map-core:#ffffff08;
 }
+/* what each theme's tile shows in the choice sheet: its own ground and accent, so a tile reads true under the other theme. They
+   are the design system's obsidian and brass at Night and its Tide values, held equal to the system by the suite, and no theme
+   restates them */
+:root{
+  --desk-look-night-ground:#05080a;--desk-look-night-accent:#c5a059;
+  --desk-look-tide-ground:#03141a;--desk-look-tide-accent:#7fd1c0;
+}
+
+/* ---- 12. THE THEME SWITCH AND THE CHOICE SHEET (11 Oct 2026). The switch sits in the rail where the times-of-day picker sat: two
+   ghosts (the system's recipe, 44px both ways, the held one read off aria-pressed), side by side. The sheet is the system's Sheet
+   with its tiles as Option faces; the desk adds the swatch and the layering, since the desk's floating buttons sit at 96 and 97
+   and the sheet must lie over them. ---- */
+.look-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;}
+.look-switch .salt-ghost{padding-left:8px;padding-right:8px;}
+.look-scrim{z-index:120;}
+.look-sheet{z-index:121;}
+.look-tile{flex-direction:column;align-items:stretch;gap:var(--salt-space-3);min-height:128px;}
+.look-swatch{display:block;height:56px;border-radius:var(--salt-radius-sm);border:1px solid var(--salt-edge-field);}
+.look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--desk-look-night-accent) 0 13px,transparent 14px),var(--desk-look-night-ground);}
+.look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--desk-look-tide-accent) 0 13px,transparent 14px),var(--desk-look-tide-ground);}
+.look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose);}
 /* ==== END DESIGN desk ==== */
 </style>
 </head>
@@ -4425,6 +4456,11 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
       <button class="tab salt-rail__tab" data-s="enter">Enter</button>
     </div>
     <div class="railfoot salt-rail__foot">
+    </div>
+    <!-- 11 Oct 2026: the theme, kept on this device (lookSet). Two ghosts, the held one aria-pressed; Tide until one is chosen. -->
+    <div class="look-switch" role="group" aria-label="Theme">
+      <button type="button" class="salt-ghost" data-look="night" aria-pressed="false">Night</button>
+      <button type="button" class="salt-ghost" data-look="tide" aria-pressed="true">Tide</button>
     </div>
   </nav>
   <main class="main">
@@ -25538,6 +25574,21 @@ function railSubs(){
     d.innerHTML=[V.lead].concat(V.parts).map(p=>`<button class="sub salt-rail__part${(V.id===curTab&&p===cur)?' on':''}" aria-current="${(V.id===curTab&&p===cur)?'page':'false'}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('');});
 }
 function render(){RENDER_MEMO={};try{renderNow();}finally{RENDER_MEMO=null;}}   /* fold 4.1: the memo lives for one render */
+/* 11 Oct 2026: TWO THEMES, NIGHT AND TIDE, CHOSEN ON EACH DEVICE (his word). The head script set data-theme before the first paint;
+   lookSet is the change: the attribute and the browser bar (saltLook), the key, the switch's held state and a redraw. A chart
+   holds the colours it was built with and the map is a string, so the part showing is rendered once more in the new tokens; a
+   part with no chart and no map follows through CSS alone and is left alone (rendering Enter's forms would lose what is typed).
+   Every storage read and write is guarded: a store that cannot be read leaves Tide and the choice lasts the session. */
+const LOOK_KEY='salt-look';
+function lookNow(){return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide';}
+function lookStore(){try{const v=localStorage.getItem(LOOK_KEY);return v==='night'||v==='tide'?v:'';}catch(e){return null;}}   /* '' nothing chosen, null unreadable */
+function lookMark(){document.querySelectorAll('.look-switch [data-look]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.look===lookNow())));}
+function lookSet(t){
+  if(t!=='night'&&t!=='tide')return;
+  saltLook(t);
+  try{localStorage.setItem(LOOK_KEY,t);}catch(e){}
+  lookMark();
+}
 function renderNow(){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
@@ -25929,6 +25980,48 @@ window.addEventListener('hashchange',()=>{
     setTimeout(function(){ centre(t); },250);
   },true);
   window.addEventListener('load',function(){ setTimeout(follow,120); });
+})();
+
+/* 11 Oct 2026: the theme switch in the rail, and the choice sheet on a device's first open. The sheet is asked once the store
+   is readable and holds no choice; choosing stores it, applies it at once and closes the sheet, and Escape, Close or the
+   scrim close it with Tide kept, to be asked again next open. A store that cannot be read is never asked, since the answer
+   could not be kept. */
+(function(){
+  var sw=document.querySelector('.look-switch');
+  if(sw)sw.addEventListener('click',function(e){var b=e.target.closest('[data-look]');if(b)lookSet(b.getAttribute('data-look'));});
+  lookMark();
+  if(lookStore()!=='')return;
+  var back=document.activeElement,bd=document.createElement('div'),sh=document.createElement('div');
+  var tile=function(k,name,what){return '<div class="salt-option"><button type="button" class="salt-option__face salt-option__face--tap look-tile" data-look="'+k+'">'
+    +'<span class="look-swatch look-swatch--'+k+'" aria-hidden="true"></span><span class="salt-option__text"><span class="salt-option__label">'+name+'</span>'
+    +'<span class="salt-option__detail">'+what+'</span></span></button></div>';};
+  bd.className='salt-sheet-scrim look-scrim';
+  sh.id='lookSheet';sh.className='salt-sheet look-sheet';sh.tabIndex=-1;
+  sh.setAttribute('role','dialog');sh.setAttribute('aria-modal','true');sh.setAttribute('aria-labelledby','lookTitle');
+  sh.innerHTML='<div class="salt-sheet__grab"></div>'
+    +'<div class="salt-sheet__head"><div class="salt-sheet__title" id="lookTitle">Choose a theme</div>'
+    +'<button type="button" class="salt-ghost salt-sheet__close" data-look-close>Close</button></div>'
+    +'<div class="salt-sheet__body"><div class="salt-options__grid salt-options__grid--2">'+tile('night','Night','Obsidian and brass')+tile('tide','Tide','Deep teal')+'</div>'
+    +'<p class="look-note">Change it any time in the rail.</p></div>';
+  function shut(){
+    document.removeEventListener('keydown',key,true);bd.remove();sh.remove();
+    try{if(back&&back.focus)back.focus();}catch(e){}
+  }
+  function key(e){
+    if(e.key==='Escape'){e.preventDefault();e.stopPropagation();shut();return;}
+    if(e.key!=='Tab')return;
+    var f=[].slice.call(sh.querySelectorAll('button')),i=f.indexOf(document.activeElement);
+    if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus();}
+    else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus();}
+  }
+  sh.addEventListener('click',function(e){
+    var b=e.target.closest('[data-look]');
+    if(b){lookSet(b.getAttribute('data-look'));shut();}
+    else if(e.target.closest('[data-look-close]'))shut();
+  });
+  bd.addEventListener('click',shut);
+  document.addEventListener('keydown',key,true);
+  document.body.appendChild(bd);document.body.appendChild(sh);sh.focus();
 })();
 
 </script>

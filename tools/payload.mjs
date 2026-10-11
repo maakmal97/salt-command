@@ -39,7 +39,7 @@ const MASTER = process.env.SALT_MASTER || DEFAULT_MASTER;
    harness would drift, and a build that priced a lot against a subtly different DOM is
    exactly the class of fault this repo keeps writing tests about. */
 export const opened = new Set();   // every window opened here; the suite closes a section's when it ends
-export async function openMaster(masterPath = MASTER) {
+export async function openMaster(masterPath = MASTER, opts = {}) {
   const html = readFileSync(masterPath, "utf8");
 
   /* The desk expects a real document and a few browser APIs. Storage is stubbed rather
@@ -61,6 +61,11 @@ export async function openMaster(masterPath = MASTER) {
       };
       Object.defineProperty(w, "localStorage", { value: stub, configurable: true });
       Object.defineProperty(w, "sessionStorage", { value: stub, configurable: true });
+      /* 11 Oct 2026, two themes: a window opens as a device that has chosen Night, the look every section was written against, so the
+         choice sheet is not asked and nothing reads Tide's colours by accident. { fresh: true } leaves the store empty, a device's first
+         open; { before(w, store) } runs once the stub is in place, to seed it or to wrap it. */
+      if (!opts.fresh) store.set("salt-look", "night");
+      if (opts.before) opts.before(w, store);
       w.fetch = () => Promise.reject(new Error("no network during a payload build"));
       w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() { }, removeListener() { }, addEventListener() { }, removeEventListener() { } }));
       w.scrollTo = () => { };
