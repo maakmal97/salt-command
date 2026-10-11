@@ -25344,7 +25344,8 @@ await (async () => {
     ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") }));
   /* a card's mark: in a button (an mtile, or Order again's stacked face) whose own visible words are its letter and one figure */
   /* C19 (29 Sep 2026): Home's start and again tiles say the unit under the mark, the size and its word alone */
-  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && /^[A-Z]?(Cube|Droplet|Lozenge|Capsule|Ring),[\d,]+(\.\d+)?units?$/.test(seen8(t).replace(/\s+/g, "")); };
+  const shapes8 = new RegExp("^[A-Z]?(" + Object.values(P8.PSHAPE).join("|") + "),[\\d,]+(\\.\\d+)?units?$");
+  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && shapes8.test(seen8(t).replace(/\s+/g, "")); };
   const all8 = [];
   try {
     D8.getElementById("un").value = u8; D8.getElementById("pw").value = pass8;
@@ -54385,7 +54386,7 @@ await (async () => {
     ok(/sup-yellow/.test(panes[0].cls) && /Limited/.test(panes[0].aria) && /More by 14 Oct/.test(panes[0].text), "yellow: a yellow border, Limited in its name, More by 14 Oct under it: " + JSON.stringify(panes[0]));
     ok(/sup-red/.test(panes[1].cls) && /Out for now/.test(panes[1].aria) && !/More by/.test(panes[1].text), "red with no day: a red border and no More by");
     ok(/sup-green/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/More by/.test(panes[2].text), "green: a green border, and no day even when one is sealed");
-    ok(!/sup/.test(panes[3].cls) && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/Expected|Limited|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
+    ok(!/sup/.test(panes[3].cls) && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/More by|Limited|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
     ok(!/\bstock\b|\bsalt\b|\boil\b|Salt Command/i.test(panes.map((p) => p.aria + p.text.replace(/RM[^A-Za-z]*/g, "")).join(" ")), "no customer sentence names stock, a product or the desk");
   } finally { wd.close(); }
   const css = lpF("abcd-efgh", "nf4", null), tokens = /:root\s*{[\s\S]*?\n}/.exec(css);
