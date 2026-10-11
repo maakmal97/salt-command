@@ -6,7 +6,7 @@
  *   2  the strips: which parts, in which order, as the system's tabs, each with its act; none on Needs you
  *   3  the tabs follow him: the place and the part he is in are the ones marked
  *   4  what each part shows: the sections and the forms it names, and nothing of another part
- *   5  Orders by stage: a card in the stage the order stands at, a closed order a line in Closed, an empty part saying so
+ *   5  Orders by stage: a row in the stage the order stands at, a closed order a row in Closed, an empty part saying so
  *   6  the old addresses, an address opening the page, the new ones, and Back and Forward between places
  *   7  what each place and part reads when he enters it: each route once, nothing of another place
  *   8  every rule of his page in PAGE_CSS sits under .adm, so the customer's page and a guest's are drawn as they were
@@ -25,12 +25,12 @@ const PARTS = {
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* the sections that stand for a place or a part, and so show or do not */
-const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerReview", "makerClaims", "makerPools", "oAccts", "makerChatList", "oLinks",
+const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerOrderList", "makerReview", "makerClaims", "makerPools", "oAccts", "makerChatList", "oLinks",
   "oCards", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook"];
 const SHOWS = {
   needs: "mHome",
-  "orders/waiting": "oOrders makerReview makerClaims", "orders/agreed": "oOrders makerReview", "orders/ready": "oOrders makerReview",
-  "orders/group": "oOrders makerPools", "orders/closed": "oOrders makerReview",
+  "orders/waiting": "oOrders makerOrderList makerReview makerClaims", "orders/agreed": "oOrders makerOrderList makerReview", "orders/ready": "oOrders makerOrderList makerReview",
+  "orders/group": "oOrders makerPools", "orders/closed": "oOrders makerOrderList makerReview",
   "customers/accounts": "oCustomers oAccts", "customers/messages": "oCustomers makerChatList", "customers/links": "oCustomers oLinks",
   "customers/associates": "oCustomers oCards",
   "record/approve": "oRecord makerDrafts makerQueueReview", "record/entry": "oRecord makerInputs", "record/customers": "oRecord makerInputs",
@@ -130,20 +130,19 @@ export async function run({ ok, pageWork }) {
 
     /* 5. ORDERS BY STAGE */
     await p.tap("nav.orders");
-    const cards = () => [...d.querySelectorAll("#makerReview article")].filter(shown).map((a) => a.querySelector("h3").textContent).join();
-    const lines = () => [...d.querySelectorAll("#makerReview .maker-row")].filter(shown).map((r) => r.textContent.split(" ")[0]).join();
+    const rows = () => [...d.querySelectorAll("#makerOrderList .ordrow")].filter(shown).map((r) => r.getAttribute("data-order")).join();
     const stage = {};
-    for (const [part] of PARTS.orders) { await p.tap("part.orders." + part); stage[part] = cards() + "|" + lines(); }
-    ok(stage.waiting === "ord-p1,ord-p2,ord-p3,ord-p4,ord-a1,ord-a2,ord-x1|" && stage.agreed === "ord-a1,ord-a2|" && stage.ready === "ord-r1,ord-r2,ord-r3|"
-      && stage.group === "|" && stage.closed === "ord-x1|ord-c1,ord-c2",
-    "an order is a card in the stage it stands at (a placed one, or one with a claim or a stage he rejected, waits on him), and a closed one a line in Closed: " + JSON.stringify(stage));
+    for (const [part] of PARTS.orders) { await p.tap("part.orders." + part); stage[part] = rows(); }
+    ok(stage.waiting === "ord-p1,ord-p2,ord-p3,ord-p4,ord-a1,ord-a2,ord-x1" && stage.agreed === "ord-a1,ord-a2" && stage.ready === "ord-r1,ord-r2,ord-r3"
+      && stage.group === "" && stage.closed === "ord-x1,ord-c1,ord-c2",
+    "an order is a row in the stage it stands at (a placed one, or one with a claim or a stage he rejected, waits on him), and a closed one a row in Closed: " + JSON.stringify(stage));
     const empty = await drawn({ pageWork, review: () => ({ ok: true, orders: [], drafts: [], refused: [], queue: [] }) });
     try {
       await empty.tap("nav.orders");
       const none = {};
       for (const [part] of PARTS.orders.filter(([k]) => k !== "group")) {
         await empty.tap("part.orders." + part);
-        none[part] = [...empty.d.querySelectorAll("#makerReview .rnone")].filter(shown).map((e) => e.textContent).join();
+        none[part] = [...empty.d.querySelectorAll("#makerOrderList .rnone")].filter(shown).map((e) => e.textContent).join();
       }
       await empty.tap("nav.record");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();

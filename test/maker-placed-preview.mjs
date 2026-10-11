@@ -4,6 +4,7 @@
    failed or in-flight preview, or any changed input, clears the usable quote and takes Accept away; and a retried Accept,
    unchanged since its preview, sends the same body twice over. */
 import { webcrypto } from "node:crypto";
+import { cardOf } from "./maker-act.mjs";
 import { JSDOM } from "jsdom";
 import { landingPage } from "../stmt/page.js";
 
@@ -50,7 +51,7 @@ export async function run({ ok }) {
       for (let i = 0; i < 200 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    const card = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    const card = (id) => cardOf(doc, id);
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const accept = (id) => card(id) && card(id).querySelector("[data-accept]");
     const radio = (id, label) => {

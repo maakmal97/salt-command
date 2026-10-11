@@ -14,7 +14,7 @@
  *   9  the 30-second read: only while Needs you or Orders shows and the page is visible, no read twice at once, nothing drawn when nothing
  *      changed, a part he has begun on left alone, a tap in flight kept
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
-import { richOwnerPage, byAct } from "./maker-act.mjs";
+import { richOwnerPage, byAct, cardOf } from "./maker-act.mjs";
 import { SITE_RECIPES } from "../stmt/statement-css.js";
 
 const U1 = "abcd-efgh", U2 = "jkmn-pqrs", U3 = "tvwx-yz23", U4 = "4567-89ab", PRACTICE = "0000-0000";
@@ -271,15 +271,15 @@ export async function run({ ok, pageWork }) {
       "a tick on Needs you reads the orders and rows, the claims, the threads, the hours, the notice, the accounts and the links, each once: " + JSON.stringify(p.reads));
 
     /* nothing drawn when nothing changed */
-    const kept = { c: p.card("o:ord-p1"), s: p.card("l:w1"), r: d.querySelector("#makerReview .maker-card"), status: d.getElementById("makerReviewStatus").textContent };
+    const kept = { c: p.card("o:ord-p1"), s: p.card("l:w1"), r: d.querySelector("#makerOrderList .ordrow"), status: d.getElementById("makerReviewStatus").textContent };
     const seen = [];
     const watch = new p.w.MutationObserver((rs) => seen.push(...rs));
-    for (const id of ["nlist", "makerReview", "makerClaims", "makerDrafts", "makerChatList", "makerQueueReview", "oLinks", "glist"]) {
+    for (const id of ["nlist", "makerOrderList", "makerReview", "makerClaims", "makerDrafts", "makerChatList", "makerQueueReview", "oLinks", "glist"]) {
       const n = d.getElementById(id); if (n) watch.observe(n, { childList: true, subtree: true, characterData: true, attributes: true });
     }
     await p.tick(); await p.tick();
     seen.push(...watch.takeRecords());
-    ok(seen.length === 0 && p.card("o:ord-p1") === kept.c && p.card("l:w1") === kept.s && d.querySelector("#makerReview .maker-card") === kept.r
+    ok(seen.length === 0 && p.card("o:ord-p1") === kept.c && p.card("l:w1") === kept.s && d.querySelector("#makerOrderList .ordrow") === kept.r
       && d.getElementById("makerReviewStatus").textContent === kept.status,
     "a tick that finds what it found last time draws nothing: no card, no list and no line of status is touched (" + seen.length + " changes)");
     watch.disconnect();
@@ -344,10 +344,10 @@ export async function run({ ok, pageWork }) {
     await waitFor(() => p.reads.includes(ROUTES.review));
     s4.newOrder = { id: "ord-new", u: U1, status: "placed", mode: "collect", qty: 3, total: 300, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: ago(0.1) };
     byAct(d, "nav.orders").click();
-    ok(await waitFor(() => d.querySelector('#makerReview [data-maker-card="ord-new"]')), "a read he asks for lands while the slow one is still out, and draws what came");
+    ok(await waitFor(() => d.querySelector('#makerOrderList [data-order="ord-new"]')), "a read he asks for lands while the slow one is still out, and draws what came");
     release(); await p.work.quiet();
     byAct(d, "nav.needs").click(); await p.work.quiet();
-    ok(!!d.querySelector('#makerReview [data-maker-card="ord-new"]') && !!p.card("o:ord-new"), "and the slow one, landing last with the older answer, draws over nothing");
+    ok(!!d.querySelector('#makerOrderList [data-order="ord-new"]') && !!p.card("o:ord-new"), "and the slow one, landing last with the older answer, draws over nothing");
   } finally { p.w.close(); }
 
   /* a part he has begun on is left alone, a tap in flight kept */
@@ -356,14 +356,15 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d;
     byAct(d, "nav.orders").click(); await p.work.quiet();
+    cardOf(d, "ord-p1");
     const field = d.querySelector('#makerReview [data-maker-card="ord-p1"] [data-act="order.total"]');
     field.value = "250"; field.dispatchEvent(new p.w.Event("input", { bubbles: true }));
     s3.newOrder = { id: "ord-new", u: U1, status: "placed", mode: "collect", qty: 3, total: 300, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], at: ago(0.1) };
     p.reads.length = 0; await p.tick();
-    ok(!p.reads.includes(ROUTES.review) && d.querySelector('#makerReview [data-maker-card="ord-p1"] [data-act="order.total"]').value === "250" && !d.querySelector('[data-maker-card="ord-new"]'),
+    ok(!p.reads.includes(ROUTES.review) && d.querySelector('#makerReview [data-maker-card="ord-p1"] [data-act="order.total"]').value === "250" && !d.querySelector('#makerOrderList [data-order="ord-new"]'),
       "a tick finds the order card he has typed in and leaves the part as it is: nothing read, his 250 kept");
     byAct(d, "maker.refresh").click(); await p.work.quiet();
-    ok(!!d.querySelector('[data-maker-card="ord-new"]'), "his own Refresh draws what came meanwhile");
+    ok(!!d.querySelector('#makerOrderList [data-order="ord-new"]'), "his own Refresh draws what came meanwhile");
     p.reads.length = 0; await p.tick();
     ok(p.reads.includes(ROUTES.review) && p.reads.includes(ROUTES.claims), "and the next tick reads again, he having finished");
     const preview = byAct(d, "claim.preview");

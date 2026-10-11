@@ -547,6 +547,26 @@ body.ended>*:not(#aEnded){display:none}
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
   .adm #nopen{display:none}
 }
+/* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
+   card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
+   and has its way back. From 860px up to the rail's 1080 the page widens for Orders alone, the other places keeping their 600px column. */
+.adm .ordlist{display:flex;flex-direction:column;gap:8px}
+.adm .ordlist .salt-inbox-row__title{gap:6px}
+.adm .ordlist .rnone{margin:0}
+.adm .ordlist>.salt-ghost{align-self:flex-start;margin-top:8px}
+@media (max-width:859.98px){
+  .adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus{display:none}
+}
+@media (min-width:860px){
+  .adm #oOrders{max-width:none}
+  .adm .ordgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
+  .adm #makerReview{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+  .adm #makerReview .aback{display:none}
+}
+@media (min-width:860px) and (max-width:1079.98px){
+  .gate.adm{max-width:none}
+  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oRecord,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
+}
 /* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
@@ -1193,7 +1213,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '</div><div id="nopen" hidden></div></div>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
-           (#makerReview); Order for them, opened from an account, stands at the head of the place. */
+           (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
+           below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Orders</h1>"
@@ -1201,9 +1222,9 @@ export function landingPage(user, nonce, owner, bulletin) {
         + adminParts("orders")
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
-        + '<section data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
+        + '<section id="oSplit" data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
         + '<p class="lead" id="makerReviewStatus">Reading orders…</p>'
-        + '<div id="makerReview"></div></section>'
+        + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
         + '<section data-in="orders.waiting" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Account claims</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
         + '<p class="lead">A product and size customers can join, with a target. Reaching it closes nothing: Close does, and sends each joined order for acknowledgement.</p>'

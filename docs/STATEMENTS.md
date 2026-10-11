@@ -1527,6 +1527,21 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   as `#orders/ready`; the old ones stay (`#maker` Orders, `#more` Shop, `#accounts` and `#links` those parts of Customers, `#cards`
   the associates' report card). A tap writes the address, so Back and Forward move between places, and a customer's place is never
   read off it. Every rule of the owner page in `PAGE_CSS` sits under `.adm`, the root of his page; the suite refuses one that does not.
+- **Orders are a list and a detail** (Phase 1c, 11 Oct 2026, his decision 9): each part of Orders is a list of rows in `#makerOrderList`, the
+  system's Inbox row (`orderRow`): the mark with its units, who by code, the stage as a chip (Placed, Agreed, Ready, Done, Declined, Cancelled)
+  with what is asked of him beside it (Says sent, Offer again, Asked, Cash held, Practice), the units and delivery or collect, the age and the
+  figure (goods and delivery). A row carries no preview, which is a read the Desk charges for. A row (`order.open`, key the order id) opens
+  that order's card in `#makerReview`, **today's card with every control, request, request id and guard it had**, drawn for the order opened
+  and for no other (`drawOrderPane`, from the read that stands; a tap that redraws keeps the order open). A closed order's card has its
+  figures and nothing to move it by; one with a stage he rejected keeps its Offer again; one with a question of theirs he has not answered
+  (the Worker's `awaitingAnswer`, read by `orderAsked`) has the reply and No reply needed alone, with no Decline, Cancel or reason; and cash
+  held for an order keeps its Undo or Retry on a row of its own. Waiting on you also holds an order with such a question. **From 860px the
+  list stands beside the card** (a grid of 280 to 360px and the rest, the card sticky and scrolling inside itself); **below it the card
+  takes the list's place and has a way back** (`order.back`, the head of the card, which also returns him to the row he came from). Between
+  860 and 1080px, where the App bar still stands, the page widens for Orders alone; the other places keep their 600px column. **Back,
+  leaving the part, leaving the place, and the order leaving the part (agreed since) each close the card**; a read that finds the same
+  leaves it, and tapping the part he is in does not redraw what he is typing in. The ids `#makerReview`, `#makerClaims` and `#makerPools`
+  ride on the moved containers, so the map's selectors and the maker tests find them.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
@@ -2139,6 +2154,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.amend-delivery` | Same card | The amended delivery charge, in RM. |
 | `order.amend-total` | Same card | The amended goods price, in RM. |
 | `order.amend-units` | Order card (key: the order id), acknowledged or ready | The amended units. |
+| `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Cancels the order. |
 | `order.cash` | Order card (key: the order id), ready | Holds the cash for ten seconds, then records it. |
 | `order.cash-amount` | Order card (key: the order id), ready | Cash received, in RM. |
@@ -2156,6 +2172,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.handed` | Order card (key: the order id), ready | Records the handover. |
 | `order.handed-units` | Order card (key: the order id), ready | The units handed over. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
+| `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
 | `order.preview` | Order card (key: the order id), placed | Reads the row Accept would make. |
 | `order.preview-again` | Order card (key: the order id), a rejected pending row | Previews Accept again. |
 | `order.quick-keep` | Same card | Keeps the reply as a quick reply on this device, or forgets it. |

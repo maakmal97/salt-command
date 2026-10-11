@@ -53537,11 +53537,13 @@ await (async () => {
     }
   });
   try {
-    const doc = admin.window.document;
+    const doc = admin.window.document, { cardOf } = await import("./maker-act.mjs");
     /* 11 Oct 2026: the orders are Orders, the Desk's rows and the forms Record, so both are entered */
     doc.querySelector('[data-act="nav.record"]').click();
     doc.querySelector('[data-act="nav.orders"]').click();
     for (let i = 0; i < 100 && !doc.querySelector("#makerDrafts .maker-card"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    /* a card is drawn for the order opened alone (Phase 1c): open the placed one, as he does from its row */
+    cardOf(doc, "20260929120000-makr");
     let cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");
     ok(cards.length === 2 && /Cost RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
       "the Admin review draws Desk row cost and frozen flags beside its decision");
@@ -53550,16 +53552,18 @@ await (async () => {
       { ...o0, id: "20260929120000-ca03", status: "ready", closed: { qty: 1 } }, { ...o0, id: "20260929120000-ca04", status: "acknowledged", claimed: 30 },
       { ...o0, id: "20260929120000-ca05", status: "ready", moved: 1 }, { ...o0, id: "20260929120000-ca06", status: "declined" },
       { ...o0, id: "20260929120000-ca07", status: "cancelled" }, { ...o0, id: "20260929120000-ca08", status: "placed" });
-    [...doc.querySelectorAll("#makerReview button")].find((b) => b.textContent === "Refresh").click();
-    for (let i = 0; i < 100 && ![...doc.querySelectorAll("#makerReview h3")].some((h) => /ca01/.test(h.textContent)); i++) await new Promise((resolve) => setTimeout(resolve, 10));
-    const cancelOf = (suffix) => { const h = [...doc.querySelectorAll("#makerReview h3")].find((x) => x.textContent.endsWith(suffix));
-      return h ? [...h.parentElement.querySelectorAll("button")].some((b) => b.textContent === "Cancel order") : null; };
+    [...doc.querySelectorAll("#makerOrderList button")].find((b) => b.textContent === "Refresh").click();
+    for (let i = 0; i < 100 && !doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    /* a closed order has a card with its figures and no Cancel (it had none at all before Phase 1c: false is as null was) */
+    const cancelOf = (suffix) => { const c = cardOf(doc, "20260929120000-" + suffix);
+      return c ? [...c.querySelectorAll("button")].some((b) => b.textContent === "Cancel order") : null; };
     ok(cancelOf("ca01") === true && cancelOf("ca02") === true && cancelOf("ca03") === false && cancelOf("ca04") === false
-      && cancelOf("ca05") === false && cancelOf("ca06") === null && cancelOf("ca07") === null && cancelOf("ca08") === false,
+      && cancelOf("ca05") === false && cancelOf("ca06") === false && cancelOf("ca07") === false && cancelOf("ca08") === false,
       "Maker offers Cancel on an acknowledged or ready order, paid or not, unless claimed, closed or handed over");
     extraReviewOrders.length = 0;
-    [...doc.querySelectorAll("#makerReview button")].find((b) => b.textContent === "Refresh").click();
-    for (let i = 0; i < 100 && doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card").length !== 2; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    [...doc.querySelectorAll("#makerOrderList button")].find((b) => b.textContent === "Refresh").click();
+    for (let i = 0; i < 100 && doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    cardOf(doc, "20260929120000-makr");
     cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */
     ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Sale or purchase"
       && ["Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
@@ -53810,6 +53814,11 @@ await (async () => {
 section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 30 seconds");
 await (async () => {
   await (await import("./admin-needs.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: Orders open by stage, a list beside the order, and Record a menu");
+await (async () => {
+  await (await import("./admin-orders.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

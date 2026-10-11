@@ -3,6 +3,7 @@
    on a closed order; and the owner page's own controls (Ready to collect or deliver, Close at these units, Offer again,
    the reasons and quick replies), driven in the actual owner script. */
 import { webcrypto } from "node:crypto";
+import { cardOf } from "./maker-act.mjs";
 import { JSDOM } from "jsdom";
 import desk from "../src/worker.js";
 import counter from "../stmt/worker.js";
@@ -285,7 +286,8 @@ export async function run({ ok }) {
       for (let i = 0; i < 200 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    const card = (id) => [...doc.querySelectorAll("#makerReview article, #makerDrafts article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    /* an order's card is drawn for the order opened alone (Phase 1c), so asking for it opens it; a Desk row's card is Record > Approve's and stands */
+    const card = (id) => cardOf(doc, id) || [...doc.querySelectorAll("#makerDrafts article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const field = (id, label) => {
       const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl") && l.querySelector(".lbl").textContent === label);
@@ -341,7 +343,8 @@ export async function run({ ok }) {
       "Record handover carries its own request id: " + JSON.stringify(posts[3]));
 
     await until(() => button("20261003090004-can", "Offer the cancellation again"));
-    ok(!card("20261003090005-gone"), "A closed order with nothing rejected gets no card.");
+    ok(!!card("20261003090005-gone") && card("20261003090005-gone").querySelectorAll("button, input").length === 0,
+      "A closed order with nothing rejected has a card of its figures and nothing to move it by (it had none at all before Phase 1c).");
     button("20261003090004-can", "Offer the cancellation again").click(); await settle(5);
     ok(posts[4].path === "/all/maker/orders/20261003090004-can/again" && posts[4].body.stage === "cancel" && /^[0-9a-f]{32}$/.test(posts[4].body.rid),
       "A cancelled order carrying a rejected cancellation offers it again, under a request id: " + JSON.stringify(posts[4]));

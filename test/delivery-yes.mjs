@@ -7,6 +7,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { webcrypto } from "node:crypto";
+import { cardOf } from "./maker-act.mjs";
 import { orderBook } from "./orderbook-harness.mjs";
 import { Store } from "./maker-order-controls.mjs";
 
@@ -296,7 +297,7 @@ export async function run({ ok }) {
   });
   try {
     const doc = browser.window.document, Ev = browser.window.Event;
-    const acard = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    const acard = (id) => cardOf(doc, id);
     const button = (id, text) => acard(id) && [...acard(id).querySelectorAll("button")].find((b) => b.textContent.indexOf(text) === 0);
     const radio = (id, name, label) => acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest(".salt-option").textContent === label);
     const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new Ev("change", { bubbles: true })); };

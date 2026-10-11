@@ -1,0 +1,164 @@
+[
+ {
+  "name": "a row has no mark",
+  "file": "stmt/owner.js",
+  "find": "      b.appendChild(mtile(o.product,o.qty));\n      t.appendChild(el('span',null,codeByUser(o.u)));",
+  "replace": "      t.appendChild(el('span',null,codeByUser(o.u)));"
+ },
+ {
+  "name": "a row names no one",
+  "file": "stmt/owner.js",
+  "find": "      t.appendChild(el('span',null,codeByUser(o.u)));\n      t.appendChild(chip(st[0],st[1]));",
+  "replace": "      t.appendChild(chip(st[0],st[1]));"
+ },
+ {
+  "name": "a row does not say its stage",
+  "file": "stmt/owner.js",
+  "find": "      t.appendChild(chip(st[0],st[1]));\n      if(o.test)",
+  "replace": "      if(o.test)"
+ },
+ {
+  "name": "a row does not say a payment is sent",
+  "file": "stmt/owner.js",
+  "find": "      if(ordPays(o).length) t.appendChild(chip('ember','Says sent'));",
+  "replace": ""
+ },
+ {
+  "name": "a row does not say a stage is rejected",
+  "file": "stmt/owner.js",
+  "find": "      if(o.again&&o.again.length) t.appendChild(chip('brass','Offer again'));",
+  "replace": ""
+ },
+ {
+  "name": "a practice order is not marked",
+  "file": "stmt/owner.js",
+  "find": "      if(o.test) t.appendChild(chip('mist','Practice'));",
+  "replace": ""
+ },
+ {
+  "name": "a row shows no age",
+  "file": "stmt/owner.js",
+  "find": "      side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));",
+  "replace": ""
+ },
+ {
+  "name": "a row's figure leaves out the delivery",
+  "file": "stmt/owner.js",
+  "find": "rm(Number(o.total||0)+Number(o.delivery||0))));\n    }else t.appendChild",
+  "replace": "rm(Number(o.total||0))));\n    }else t.appendChild"
+ },
+ {
+  "name": "a row says nothing of the units",
+  "file": "stmt/owner.js",
+  "find": "[unitsOf(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')",
+  "replace": "[o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')"
+ },
+ {
+  "name": "listing the orders previews each",
+  "file": "stmt/owner.js",
+  "find": "    entries.forEach(function(e){ list.appendChild(orderRow(e)); });",
+  "replace": "    entries.forEach(function(e){ list.appendChild(orderRow(e)); refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{}).catch(function(){}); });"
+ },
+ {
+  "name": "a closed order is not listed in Closed here",
+  "file": "stmt/owner.js",
+  "find": "      if(again||orderAsked(order)) t.push('orders.waiting');\n      t.push('orders.closed');",
+  "replace": "      if(again||orderAsked(order)) t.push('orders.waiting');"
+ },
+ {
+  "name": "a row opens no card",
+  "file": "stmt/owner.js",
+  "find": "    oOpen=id; drawOrderPane(); sweep();",
+  "replace": "    oOpen=id; sweep();"
+ },
+ {
+  "name": "a card is added to the card before it",
+  "file": "stmt/owner.js",
+  "find": "    if(!root) return;\n    root.textContent=''; dirty.makerReview=false;\n    var e=oOpen",
+  "replace": "    if(!root) return;\n    dirty.makerReview=false;\n    var e=oOpen"
+ },
+ {
+  "name": "the row opened is not marked",
+  "file": "stmt/owner.js",
+  "find": "      if(r.getAttribute('data-order')===oOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });\n  }",
+  "replace": "      r.removeAttribute('aria-current'); });\n  }"
+ },
+ {
+  "name": "the list is not set beside the card",
+  "file": "stmt/owner.js",
+  "find": "    if(split) split.classList.toggle('open', !!e);",
+  "replace": ""
+ },
+ {
+  "name": "the card has no reply",
+  "file": "stmt/owner.js",
+  "find": "      makerOrderMoves(card,order);\n      if(order.status==='ready'&&!againAck)makerCashControls(card,order);",
+  "replace": "      if(order.status==='ready'&&!againAck)makerCashControls(card,order);"
+ },
+ {
+  "name": "Preview sends the total alone",
+  "file": "stmt/owner.js",
+  "find": "var payload={total:Number(total.value),delivery:delivery}",
+  "replace": "var payload={total:Number(total.value)}"
+ },
+ {
+  "name": "the card has no way back",
+  "file": "stmt/owner.js",
+  "find": "    root.appendChild(back);\n    if(e.order&&ordOpen(e.order))",
+  "replace": "    if(e.order&&ordOpen(e.order))"
+ },
+ {
+  "name": "Back does nothing",
+  "file": "stmt/owner.js",
+  "find": "else if(way==='orders') closeOrder(); return; }",
+  "replace": "else if(way==='orders'){} return; }"
+ },
+ {
+  "name": "Back leaves him nowhere",
+  "file": "stmt/owner.js",
+  "find": "if(row&&row.focus) row.focus(); }catch(x){}",
+  "replace": "}catch(x){}"
+ },
+ {
+  "name": "leaving the part or the place keeps the card",
+  "file": "stmt/owner.js",
+  "find": "    if(moved2&&oOpen){ oOpen=null; drawOrderPane(); }",
+  "replace": ""
+ },
+ {
+  "name": "tapping the part he is in closes the card",
+  "file": "stmt/owner.js",
+  "find": "moved2=place!==placeNow||part!==partNow;",
+  "replace": "moved2=true;"
+ },
+ {
+  "name": "an order that left the part keeps its card",
+  "file": "stmt/owner.js",
+  "find": "    if(e&&!ordInPart(e)) e=null;\n    if(!e) oOpen=null;",
+  "replace": "    if(!e) oOpen=null;"
+ },
+ {
+  "name": "a read that finds the same draws again",
+  "file": "stmt/owner.js",
+  "find": "      if(!changed('review', reading)&&poll) return;",
+  "replace": "      changed('review', reading);"
+ },
+ {
+  "name": "the split starts at 1080px",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:860px){\n  .adm #oOrders{max-width:none}",
+  "replace": "@media (min-width:1080px){\n  .adm #oOrders{max-width:none}"
+ },
+ {
+  "name": "below 860px the card does not take the list's place",
+  "file": "stmt/page.js",
+  "find": "  .adm #oSplit.open .ordlist,.adm #oSplit:not(.open) #makerReview,.adm #oSplit.open #makerReviewStatus{display:none}",
+  "replace": "  .adm #oSplit.open #makerReviewStatus{display:none}"
+ },
+ {
+  "name": "the card stands before the list",
+  "file": "stmt/page.js",
+  "find": "<div class=\"ordgrid\"><div id=\"makerOrderList\" class=\"ordlist\"></div><div id=\"makerReview\" class=\"ordopen\"></div></div>",
+  "replace": "<div class=\"ordgrid\"><div id=\"makerReview\" class=\"ordopen\"></div><div id=\"makerOrderList\" class=\"ordlist\"></div></div>"
+ }
+]
