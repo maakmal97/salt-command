@@ -1,6 +1,6 @@
 {
-  "v": "v1076",
-  "derivedFrom": "8b0187aa56aafd5b",
+  "v": "v1080",
+  "derivedFrom": "94b37ce78225d43b",
   "tables": {
     "sales": {
       "rows": 253,
@@ -14,7 +14,7 @@
           ]
         },
         "amend": {
-          "present": 127,
+          "present": 129,
           "of": 253,
           "optional": true,
           "types": [
@@ -22,7 +22,7 @@
           ]
         },
         "cancelled": {
-          "present": 17,
+          "present": 19,
           "of": 253,
           "optional": true,
           "types": [
@@ -30,7 +30,7 @@
           ]
         },
         "cancelledOn": {
-          "present": 13,
+          "present": 15,
           "of": 253,
           "optional": true,
           "types": [
@@ -437,43 +437,43 @@
       }
     },
     "loans": {
-      "rows": 4,
+      "rows": 5,
       "fields": {
         "date": {
-          "present": 4,
-          "of": 4,
+          "present": 5,
+          "of": 5,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "direction": {
-          "present": 3,
-          "of": 4,
+          "present": 4,
+          "of": 5,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "form": {
-          "present": 1,
-          "of": 4,
+          "present": 2,
+          "of": 5,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "note": {
-          "present": 4,
-          "of": 4,
+          "present": 5,
+          "of": 5,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "party": {
-          "present": 4,
-          "of": 4,
+          "present": 5,
+          "of": 5,
           "optional": false,
           "types": [
             "string"
@@ -481,23 +481,23 @@
         },
         "preOpening": {
           "present": 1,
-          "of": 4,
+          "of": 5,
           "optional": true,
           "types": [
             "boolean"
           ]
         },
         "product": {
-          "present": 3,
-          "of": 4,
+          "present": 4,
+          "of": 5,
           "optional": true,
           "types": [
             "string"
           ]
         },
         "rid": {
-          "present": 1,
-          "of": 4,
+          "present": 2,
+          "of": 5,
           "optional": true,
           "types": [
             "string"
@@ -505,31 +505,31 @@
         },
         "settledOn": {
           "present": 4,
-          "of": 4,
-          "optional": false,
+          "of": 5,
+          "optional": true,
           "types": [
             "string"
           ]
         },
         "status": {
-          "present": 4,
-          "of": 4,
+          "present": 5,
+          "of": 5,
           "optional": false,
           "types": [
             "string"
           ]
         },
         "valueKg": {
-          "present": 4,
-          "of": 4,
+          "present": 5,
+          "of": 5,
           "optional": false,
           "types": [
             "number"
           ]
         },
         "valueRM": {
-          "present": 4,
-          "of": 4,
+          "present": 5,
+          "of": 5,
           "optional": false,
           "types": [
             "null",

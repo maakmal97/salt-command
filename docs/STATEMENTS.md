@@ -1009,8 +1009,10 @@ sent on an order whose row is one of its parts (matched by `rowOn` and the whole
 against the account that reaches its row, the lines walked as `claimAlloc` takes them (since V2: the rows with goods out
 oldest first, then the orders at Ready with nothing handed over; an order at Ready with no `rowOn` takes none). The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped (the suite holds `stmt/pay.js` to no run of five digits, and, on the laptop, holds every
-tracked file free of every private value of the pay store, count only; `stmt/`, `docs/`, `tools/testfix.mjs` and the suite's own files hold no
-run of ten digits but zeros, order stamps and a few named constants, so a number joined from parts is how a test invents one). **`payHref` in it is the one link builder** (D8, 24 Sep
+tracked file free of every private value of the pay store, count only; every tracked text file but `master/`, `public/`, `ledger/` and `MEMORY.md` holds no
+run of ten digits but a run of zeros, eight zeros and up to four digits, an order id's fourteen-digit stamp and its dash, a binary literal, a whole UUID, a hex digest, a blob or a 13-digit epoch beside a letter,
+and four named constants, so a number joined from parts is how a test invents one; `tools/paysync.mjs` masks any run of five digits in every error it prints, and takes its executable from
+`PAYSYNC_NPX` when set, which the suite points at a stand-in so no test can reach the real wrangler). **`payHref` in it is the one link builder** (D8, 24 Sep
 2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
 and `PAY`, the names `CLIENT_JS` declares, so the page carries `payHref.toString()` as it is. The suite reads the link
@@ -1477,12 +1479,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   ledger, and an eyebrow carrying the name undid that.
 - **Needs you is a ranked inbox** (Phase 1b, 11 Oct 2026): every thing that waits on him is one card on the system's Action recipe
   (`salt-action`, coloured by its `--salt-sev`), headed Now, Soon or Watch, the oldest first in each. **Now** is a customer waiting:
-  an order placed, a payment they say they sent (on an order, summed and as old as its oldest, or against the account), a message asked,
-  an account refused at an address. **Soon** is his own work: a Desk row to approve, an entry that did not get through (the drafter's
+  an order placed, a payment they say they sent (on an order, summed and as old as its oldest, or against the account), a message asked
+  (an account's thread, or a question of theirs on an order, open or closed, that he has not answered and not marked No reply needed:
+  the Worker's `awaitingAnswer`, kind Messages, `om:<order>`, which is also what puts that order in Orders > Waiting on you), an account refused at an address. **Soon** is his own work: a Desk row to approve, an entry that did not get through (the drafter's
   refusal, a refused server-held entry), a stage he rejected under Approve, a guest link, an ID with no account, accounts nobody has been
   sent. **Watch** is the Desk's own count line, an override in force ("Closed until Fri 18:00") and a notice set. A card is its kind word,
   who (the code), what (book, units, RM), its age (minutes under the hour, hours to two days, then days) and one **Open** that goes to the
-  detail by `showPlace`: an order or a payment to Orders > Waiting on you, a message to Customers > Messages with that thread open, an
+  detail by `showPlace`: an order, a payment on an order or a question on an order to Orders > Waiting on you with that order's card open, a message to Customers > Messages with that thread open, an
   account beside the list on a desktop and on Accounts on a phone, a link to Customers > Links, a row or an entry to Record > Approve, the
   hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
   tap**: Approve row or Approve trip on a Desk row is Record > Approve's own function (`approveDraft`: the same question, the same request,
@@ -1496,7 +1499,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   what waits on him there (the orders and the account claims), Customers the threads asked and the links waiting, Record the rows waiting,
   Shop none, the same on the rail and the bar and never a practice item. **It is read on entering and again every 30 seconds while it
   shows**, as Orders is: the orders and rows, the claims, the threads, the hours, the notice, and (after the page has read them once) the
-  accounts and the links; the poll stops when another place shows or the page is hidden, and a page that comes back reads at once. **It also stops
+  accounts and the links; the poll stops when another place shows or the page is hidden, and a page that comes back reads at once. **A tick reads
+  nothing while an account is viewed as them**: the page hides his own then (`#roster` hidden), nobody is looking at it, and the read goes on the
+  moment he is back (`tickPlace`). **It also stops
   when his Access sign-in ends**: the read that meets the lapse gives the page way to Sign in again (`ended()`), which clears the poll, and
   nothing sets it again on that page, so no further request goes to the login. No read
   starts while another of its kind is out (the newest review wins), a read that finds what it found last time draws nothing, and on
@@ -1554,6 +1559,36 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   as `#orders/ready`; the old ones stay (`#maker` Orders, `#more` Shop, `#accounts` and `#links` those parts of Customers, `#cards`
   the associates' report card). A tap writes the address, so Back and Forward move between places, and a customer's place is never
   read off it. Every rule of the owner page in `PAGE_CSS` sits under `.adm`, the root of his page; the suite refuses one that does not.
+- **Orders are a list and a detail** (Phase 1c, 11 Oct 2026, his decision 9): each part of Orders is a list of rows in `#makerOrderList`, the
+  system's Inbox row (`orderRow`): the mark with its units, who by code, the stage as a chip (Placed, Agreed, Ready, Done, Declined, Cancelled)
+  with what is asked of him beside it (Says sent, Offer again, Asked, Cash held, Practice), the units and delivery or collect, the age and the
+  figure (goods and delivery). A row carries no preview, which is a read the Desk charges for. A row (`order.open`, key the order id) opens
+  that order's card in `#makerReview`, **today's card with every control, request, request id and guard it had**, drawn for the order opened
+  and for no other (`drawOrderPane`, from the read that stands; a tap that redraws keeps the order open). A closed order's card has its
+  figures and nothing to move it by; one with a stage he rejected keeps its Offer again; one with a question of theirs he has not answered
+  (the Worker's `awaitingAnswer`, read by `orderAsked`) has the reply and No reply needed alone, with no Decline, Cancel or reason; and cash
+  held for an order keeps its Undo or Retry on a row of its own. Waiting on you also holds an order with such a question. Closed lists at most fifty closed orders with nothing else asked of him, and every one that also waits on him (never dropped); its note counts what it shows against every closed order ("51 of 56 closed orders are shown."). **From 860px the
+  list stands beside the card** (a grid of 280 to 360px and the rest, the card sticky and scrolling inside itself); **below it the card
+  takes the list's place and has a way back** (`order.back`, the head of the card, which also returns him to the row he came from). Between
+  860 and 1080px, where the App bar still stands, the page widens for Orders alone, the other places keep their 600px column, and the sticky card's height gives up the bar's (it was 40px under the fixed bar at 1024x768; now 24px clear). **Back,
+  leaving the part, leaving the place, and the order leaving the part (agreed since) each close the card**; a read that finds the same
+  leaves it, and tapping the part he is in does not redraw what he is typing in. A row tap takes him to the top only while the card's way back
+  shows (below 860px); from 860px the list is the page's scroll and the card is sticky, so the page stays where it is and the card is brought into view. The ids `#makerReview`, `#makerClaims` and `#makerPools`
+  ride on the moved containers, so the map's selectors and the maker tests find them. **The owner's script shares the customer page's scope**
+  (`stmt/page.js` splices it in at the end of the page script), so a name it declares at the top must not be one the customer's code declares:
+  `oOpen` was both, and View as them met "oOpen is not a function" until the owner's became `ordOpened`; `test/admin-orders.mjs` section 9 compares
+  the two lists, every declarator of a `var` list included (the owner's `HOW`, which overwrote the customer's pay ways, is `HOW_IN`).
+- **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
+  row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
+  Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a
+  cancelled row), Customers (Add ID, Appoint existing customer, Amend ID, Map placement), Pricing (Customer tier, Tips, Customer drift, Printed
+  board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, "← Entry") that returns him
+  to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are
+  untouched, shown and hidden by `sweep` from `fOpen` (the form open, a slug), so what he has typed survives Back and opening another form.
+  The count's controls are a form of their own now (Stock count). A **Retained input stays on the menu**, above the rows, and goes while a form is
+  open. Opening a form reads and sends nothing. Leaving the part or the place closes the form. **The + orb** (`nav.add`, `#oAdd`, the system's raised
+  orb) stands over every place but Record, 16px above the App bar on a phone and in the corner from 1080px, under the bar and the sheets; it opens
+  Record on Entry, the menu of entries. The room under the last section on a phone is the orb's. No route, body, request id or retained send changed.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
@@ -2126,6 +2161,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.tide` | Shop, This device, Look | Tide for Salt Account on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice | Makes or deletes the two test accounts. |
+| `nav.add` | The + orb at the foot of the page, on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
 | `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Needs you. |
 | `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on Waiting on you, reading the orders and the claims again. |
@@ -2142,7 +2178,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.link-approve` | Same card | Approves the link, which then opens. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
-| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Shop. |
+| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Shop. |
 | `need.send-later` | Same card | Send, switched off until the account exists. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
@@ -2166,6 +2202,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.amend-delivery` | Same card | The amended delivery charge, in RM. |
 | `order.amend-total` | Same card | The amended goods price, in RM. |
 | `order.amend-units` | Order card (key: the order id), acknowledged or ready | The amended units. |
+| `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Cancels the order. |
 | `order.cash` | Order card (key: the order id), ready | Holds the cash for ten seconds, then records it. |
 | `order.cash-amount` | Order card (key: the order id), ready | Cash received, in RM. |
@@ -2183,6 +2220,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.handed` | Order card (key: the order id), ready | Records the handover. |
 | `order.handed-units` | Order card (key: the order id), ready | The units handed over. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
+| `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
 | `order.preview` | Order card (key: the order id), placed | Reads the row Accept would make. |
 | `order.preview-again` | Order card (key: the order id), a rejected pending row | Previews Accept again. |
 | `order.quick-keep` | Same card | Keeps the reply as a quick reply on this device, or forgets it. |
@@ -2219,9 +2257,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.orders.ready` | The strip under Orders (tab: Ready) | Shows the orders marked ready. |
 | `part.orders.waiting` | The strip under Orders (tab: Waiting on you) | Shows what only he can move: placed orders, payments they say they sent, a stage he rejected. |
 | `part.record.approve` | The strip under Record (tab: Approve) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
-| `part.record.customers` | The strip under Record (tab: Customers) | Shows the forms that add, change or place a customer. |
-| `part.record.entry` | The strip under Record (tab: Entry) | Shows the forms for a sale or purchase, a count, a gift, a loan, a repayment, a reward, an offset, a correction and a revival. |
-| `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the forms for a customer's tier or drift, the printed board sizes and the tips. |
+| `part.record.customers` | The strip under Record (tab: Customers) | Shows the menu of the forms that add, change or place a customer, one form at a time. |
+| `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |
+| `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's tier or drift, the printed board sizes and the tips, one form at a time. |
 | `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours, reading them. |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
@@ -2271,6 +2309,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.drift.customer` | Record, customer drift | The customer. |
 | `record.drift.set` | Record, customer drift | Sets the held drift for review. |
 | `record.drift.value` | Record, customer drift | The drift, from -1 to +1. |
+| `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the menu's place, with a way back. Reads and sends nothing. |
+| `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |
 | `record.gift.date` | Record, gift | The date. |
 | `record.gift.handover` | Record, gift | Not stated, collected or delivered. |

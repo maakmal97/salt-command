@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { webcrypto } from "node:crypto";
 import { landingPage } from "../stmt/page.js";
-import { byAct } from "./maker-act.mjs";
+import { byAct, cardOf } from "./maker-act.mjs";
 
 export const cashReview = { ok: true, drafts: [], orders: [
   { id: "cash-fixture-1", u: "abcd-efgh", product: "salt", qty: 1, total: 100, paid: 0,
@@ -50,13 +50,13 @@ export async function run({ ok }) {
     const w = dom.window, d = w.document;
     const quiet = async () => { for (let i = 0; i < 40; i++) await Promise.resolve(); };
     byAct(d, "nav.orders").click(); await quiet();
-    const card = () => [...d.querySelectorAll("#makerReview article")].find((n) => n.querySelector("h3")?.textContent === "cash-fixture-1");
+    const card = () => cardOf(d, "cash-fixture-1");
     /* 11 Oct 2026: Record cash, Undo and the cash field are found by what they do (test/maker-act.mjs), so a change of their words leaves
        this test where it was; Retry cash and Refresh cash are one control whose words are the behaviour under test, and keep theirs */
     const ACTS = { "Record cash": "order.cash", Undo: "order.cash-undo" };
-    const button = (text) => ACTS[text] ? byAct(d, ACTS[text], "cash-fixture-1") : [...(card()?.querySelectorAll("button") || [])].find((n) => n.textContent === text);
+    const button = (text) => ACTS[text] ? (card(), byAct(d, ACTS[text], "cash-fixture-1")) : [...(card()?.querySelectorAll("button") || [])].find((n) => n.textContent === text);
     const note = () => card()?.querySelector("[data-maker-cash-status]")?.textContent || "";
-    const cash = () => byAct(d, "order.cash-amount", "cash-fixture-1");
+    const cash = () => (card(), byAct(d, "order.cash-amount", "cash-fixture-1"));
     const tap = async (amount) => {
       const input = cash(), record = button("Record cash");
       if (!input || !record) return;

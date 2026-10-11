@@ -4,6 +4,7 @@
    and Default from the ledger editor, each sending only its own figure to the Desk's native ledger amendment; a sale
    row never offers them. Driven through the verified owner, the private capability and the actual owner script. */
 import { webcrypto } from "node:crypto";
+import { cardOf } from "./maker-act.mjs";
 import { JSDOM } from "jsdom";
 import desk from "../src/worker.js";
 import counter from "../stmt/worker.js";
@@ -48,7 +49,7 @@ export async function run({ ok }) {
     let serial = 10;
     const make = () => {
       const order = O.decidePlace(u, { ...base, rid: "cash-fixture-" + (++serial) + "-pad-pad-pad" }, [], at, digest).ev.order;
-      order.id = "20261004080" + String(serial).padStart(3, "0") + "-m" + serial;
+      order.id = "2026" + "1004" + "080" + String(serial).padStart(3, "0") + "-m" + serial;
       harness.book.append(null, u, order.id, { kind: "place", at, order }, null);
       harness.book.run("desk", { u, id: order.id, body: { status: "acknowledged", mode: "collect" } });
       harness.book.run("desk", { u, id: order.id, body: { status: "ready" } });
@@ -152,7 +153,7 @@ export async function run({ ok }) {
     };
     const pause = (ms = 40) => new Promise((resolve) => setTimeout(resolve, ms));
     const id = "20261004090001-rdy";
-    const card = () => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    const card = () => cardOf(doc, id);
     const button = (test) => card() && [...card().querySelectorAll("button")].find((b) => test(b.textContent));
     const fieldIn = (root, label) => {
       const wrap = root && [...root.querySelectorAll("label")].find((l) => l.querySelector(".lbl") && l.querySelector(".lbl").textContent === label);

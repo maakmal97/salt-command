@@ -26,6 +26,22 @@ export function byAct(root, act, key) {
   return all.find((c) => { for (let e = c; e && e !== root; e = e.parentElement) if (holds(e)) return true; return false; }) || null;
 }
 
+/* THE CARD OF AN ORDER, as he gets it (Phase 1c of 11 Oct 2026): a card is drawn for the order opened and for no other, so a test that wants
+   an order's card gets the card standing for it, else enters the part its row is in (when that part is not showing) and taps the row. A
+   card already standing is the same card, so a field typed in it is kept; asking for another order's closes this one, as it does for him. */
+export function cardOf(doc, id) {
+  const find = () => [...doc.querySelectorAll("[data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === String(id)) || null;
+  const there = find();
+  if (there) return there;
+  const row = [...doc.querySelectorAll('[data-act="order.open"]')].find((r) => r.getAttribute("data-key") === String(id));
+  if (!row) return null;
+  const parts = row.getAttribute("data-in").split(" ").map((t) => t.replace(/^orders[.]/, ""));
+  const here = doc.querySelector('.place[data-m="orders"][aria-current="page"]'), now = doc.querySelector('.aparts[data-place="orders"] [aria-selected="true"]');
+  if (!here || !now || !parts.includes(now.getAttribute("data-part"))) { const tab = doc.querySelector('[data-act="part.orders.' + parts[0] + '"]'); if (tab) tab.click(); }
+  row.click();
+  return find();
+}
+
 /* ---- the audit ---- */
 export const CONTROLS = 'button, input:not([type="hidden"]), select, textarea, summary, a[href], [role="button"], [role="tab"]';
 /* his page: the roster shell, the ended screen, the one control of his in a customer's view, the sheet that shows a code, and the look Sheet */
@@ -175,10 +191,11 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
     }
   });
   const w = dom.window, d = w.document, work = pageWork(w);
-  const card = (key) => [...d.querySelectorAll("[data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === key);
+  const card = (key) => cardOf(d, key);
+  const snaps = [], snap = (name) => { snaps.push([name, actAudit(d)]); };
   const click = async (control) => { control.click(); await work.quiet(); };
   const type = (control, value) => { control.value = value; control.dispatchEvent(new w.Event("input", { bubbles: true })); control.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  return { dom, w, d, work, posts, timers, intervals, hold, fail, reads, card, click, type, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
+  return { dom, w, d, work, posts, timers, intervals, hold, fail, reads, card, snaps, snap, click, type, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
 }
 
 /* every stage, every card and every form drawn once: the page a person would have in front of them on the busiest day */
@@ -200,19 +217,25 @@ export async function drawEverything(p) {
   /* a stranger's link */
   await click(byAct(d, "nav.needs"));
   await click(byAct(d, "need.show-link", U2));
-  /* a cash hold, and a cash tap whose answer was lost, which offers Retry. A cash tap draws every card again, so the previews
-     below come after it, and Orders is entered for the last time before them: entering it reads the review again */
+  /* a cash hold, and a cash tap whose answer was lost, which offers Retry. A cash tap draws the card again, and a card is drawn for the order
+     opened alone (Phase 1c), so each is audited as it stands. Orders is entered for the last time before the previews: entering it reads the review again */
   await click(byAct(d, "nav.orders"));
   type(byAct(card("ord-r2"), "order.cash-amount"), "50"); await click(byAct(card("ord-r2"), "order.cash"));
+  p.snap("a cash hold, with its Undo");
   type(byAct(card("ord-r3"), "order.cash-amount"), "50"); await click(byAct(card("ord-r3"), "order.cash"));
   p.failCash(true);
   p.timers.filter((t) => t.ms === 10000 && !t.off).at(-1).f(); await work.quiet();
   p.failCash(false);
-  /* an order placed, a delivery with its charge, one raised for their yes, one offered again */
-  await click(byAct(card("ord-p1"), "order.preview"));
-  await click(byAct(card("ord-p2"), "order.fee-10")); await click(byAct(card("ord-p2"), "order.preview"));
-  type(byAct(card("ord-p3"), "order.total"), "150"); await click(byAct(card("ord-p3"), "order.preview"));
-  await click(byAct(card("ord-a2"), "order.preview-again"));
+  p.snap("a cash tap whose answer was lost");
+  card("ord-r1"); p.snap("a ready order");
+  /* an order placed, a delivery with its charge, one raised for their yes, one offered again, one waiting on an offer, one with claims, a closed one */
+  await click(byAct(card("ord-p1"), "order.preview")); p.snap("a placed order, previewed");
+  await click(byAct(card("ord-p2"), "order.fee-10")); await click(byAct(card("ord-p2"), "order.preview")); p.snap("a delivery, previewed");
+  type(byAct(card("ord-p3"), "order.total"), "150"); await click(byAct(card("ord-p3"), "order.preview")); p.snap("a raise, previewed");
+  card("ord-p4"); p.snap("an offer sent for their yes");
+  card("ord-a1"); p.snap("an agreed order with claims waiting");
+  await click(byAct(card("ord-a2"), "order.preview-again")); p.snap("an agreed order offered again");
+  card("ord-x1"); p.snap("a closed order with a stage he rejected");
   /* the group orders, the shop's three parts, the guest links and the report card */
   await click(byAct(d, "part.orders.group"));
   await click(byAct(d, "nav.shop"));
@@ -231,6 +254,7 @@ export async function auditStates({ pageWork }) {
   const p = await richOwnerPage({ pageWork });
   try {
     await drawEverything(p);
+    states.push(...p.snaps);   /* the order cards, each as it stood when opened: a card is drawn for the order opened alone */
     states.push(["the busy page", actAudit(p.d)]);
     await p.click(byAct(p.d, "need.send-turn"));
     states.push(["sending in turn", actAudit(p.d)]);
@@ -260,7 +284,8 @@ export async function run({ ok, pageWork }) {
   const lacking = states.flatMap(([name, a]) => a.missing.map((m) => name + ": " + m));
   const clashing = states.flatMap(([name, a]) => a.clashes.map((m) => name + ": " + m));
   const drawn = new Set(states.flatMap(([, a]) => [...a.acts]).map(tabulated).filter(Boolean));
-  ok(states[0][1].controls > 400 && states.every(([, a]) => a.controls > 100) && lacking.length === 0,
+  const busiest = states.find(([name]) => name === "the busy page")[1].controls;
+  ok(busiest > 300 && states.every(([, a]) => a.controls > 100) && lacking.length === 0,
     "every control on Salt Account, drawn as the maker harness draws its busiest day, carries a non-empty data-act ("
       + states.map(([name, a]) => name + ": " + a.controls).join(", ") + ")" + (lacking.length ? ", and these do not: " + JSON.stringify(lacking) : ""));
   ok(clashing.length === 0, "no two controls in one card share an act unless they are the same control drawn twice"

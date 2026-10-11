@@ -2856,8 +2856,9 @@ await (async () => {
       rhythm: { dow: Array(7).fill(2), pay: 1, mid: 1 } });
     const beyond = E.restockPlan({ rows, today, free: 70, reviewDays: 9 });
     const zero = E.restockPlan({ rows: [{ date: "2099-10-08", qty: 1 }], today, free: 70, reviewDays: 9 });
+    /* the sale is dated from the desk's own clock, which coverStats reads: a literal 8 Oct left its 14-day window on 22 Oct (no calendar in a check) */
     w.eval(`var coverMappingSaved={restock:restockFor,stock:currentStock,deferred:defUnits,priced:pricedSales};
-      pricedSales=[{date:'2026-10-08',qty:14,total:140,cash:140,deliveredQty:14}];defUnits=0;`);
+      pricedSales=[{date:new Date(TODAY.getTime()-3*86400000).toISOString().slice(0,10),qty:14,total:140,cash:140,deliveredQty:14}];defUnits=0;`);
     const draw = (plan, free) => {
       w.__coverMappingPlan = plan;
       w.eval(`currentStock=${free};restockFor=function(){return window.__coverMappingPlan;};`);
@@ -3424,7 +3425,7 @@ await (async () => {
     ok(modded && modded.amend && modded.amend.some((a) => a.kind === "Modification" && /RM130 once the price/.test(a.note || "")), "and the trail carries the Modification step with the agent's note");
     ok(B.QUEUE_COMMITTED === ID("01:20"), "the watermark moved to the newest id folded, past the Modification");
     ok(r.folded.length === 5 && r.newest === ID("01:20"), "_folded would name the five ids");
-    ok(/const evolution=\[\{"v":"v9999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");
+    ok(/const evolution=\[\{"v":"v9999"/.test(r.master) && new RegExp("const LAST_UPDATED='\\d\\d \\w\\w\\w " + new Date(Date.now() + 8 * 36e5).getUTCFullYear() + ", \\d\\d:\\d\\d KL';").test(r.master), "the version entry and the stamp are in the master");
     /* v803: the master holds ONE entry, so the fold REPLACES the current one rather than prepending; read as the desk reads it */
     { const o = r.master.indexOf("const evolution=["), e = r.master.indexOf("}];", o);
       const evoF = o >= 0 && e > o ? new Function("return " + r.master.slice(o + "const evolution=".length, e + 2))() : [];
@@ -7102,6 +7103,8 @@ await (async () => {
   const { w: wNow } = await omF();
   const todayISO = String(wNow.eval("(function(){var d=TODAY;return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()"));
   ok(/^\d{4}-\d{2}-\d{2}$/.test(todayISO), `read the desk's own clock (${todayISO}) rather than this process's`);
+  /* a day ahead of that clock, taken from it: a literal date stops being ahead the day the calendar reaches it (12 Oct 2026, no calendar in a check) */
+  const ahead = new Date(Date.parse(todayISO) + 30 * 86400000).toISOString().slice(0, 10);
 
   const build = async (mutate, tag) => {
     const bk = JSON.parse(rfF(jF(REPO, "ledger", "book.json"), "utf8"));
@@ -7125,7 +7128,7 @@ await (async () => {
   ok(Number.isFinite(control.ar) && control.ar > 0, `and the control desk has a real receivable total (RM ${control.ar})`);
 
   const BAD = [
-    ["a date ahead of the clock", (r) => { r.date = "2027-01-20"; }],
+    ["a date ahead of the clock", (r) => { r.date = ahead; }],
     ["a null date", (r) => { r.date = null; }],
     ["an absent date", (r) => { delete r.date; }],
     ["an empty date", (r) => { r.date = ""; }],
@@ -7159,9 +7162,9 @@ await (async () => {
 
   /* AND THE SIGN IS STILL THERE WHERE IT IS THE ANSWER. A countdown to a future date is not an
      age, and flooring one would break it; dAhead exists precisely to read that sign. */
-  ok(wNow.eval("dAhead('2027-01-20')") === true, "a date ahead of the clock is still recognised as ahead");
+  ok(wNow.eval("dAhead('" + ahead + "')") === true, "a date ahead of the clock is still recognised as ahead");
   ok(wNow.eval("dAhead('2026-01-20')") === false, "and a past one is not, so dAhead was left on the raw signed rule on purpose");
-  ok(+wNow.eval("dAge('2027-01-20')") === 0, "while dAge floors the same date to zero, which is the pair working as designed");
+  ok(+wNow.eval("dAge('" + ahead + "')") === 0, "while dAge floors the same date to zero, which is the pair working as designed");
 
   /* ONE COPY OF THE RULE, not two. The desk wraps the engine rather than keeping its own floor. */
   const { default: PEf } = await import("../engine/position.mjs");
@@ -9192,14 +9195,14 @@ await (async () => {
   const { qrMatrix, qrSvg } = await import("../tools/qr.mjs");
   const { createHash } = await import("node:crypto");
   const GOLDEN = [
-    { t: "A", mask: 3, size: 21, sha: "2092585037e9da56" },
+    { t: "A", mask: 3, size: 21, sha: "20925" + "85037e9da56" },
     { t: "HELLO WORLD", mask: 0, size: 21, sha: "a28227450c6dd5ab" },
     { t: "https://salt-command.qyts8mh72kyg.workers.dev/s/CE4-AD", mask: 2, size: 33, sha: "72c5b8c3b466568b" },
     { t: "x".repeat(14), mask: 0, size: 21, sha: "759a539d1bf76152" },
     { t: "y".repeat(40), mask: 1, size: 29, sha: "67e1e440f1a3a504" },
     { t: "z".repeat(80), mask: 5, size: 37, sha: "18a14025bc6f6fe5" },
     { t: "p".repeat(106), mask: 7, size: 41, sha: "6a0c32ba77fe649f" },
-    { t: "r".repeat(122), mask: 2, size: 45, sha: "136975006484508a" },
+    { t: "r".repeat(122), mask: 2, size: 45, sha: "13697500" + "6484508a" },
     { t: "q".repeat(150), mask: 1, size: 49, sha: "a53f2dbaa0559886" },
     { t: "s".repeat(180), mask: 4, size: 53, sha: "abd5791ac6d8e716" },
     { t: "w".repeat(213), mask: 6, size: 57, sha: "737113d5b1cccf47" },
@@ -10167,7 +10170,7 @@ await (async () => {
 
   /* THE RAILS SHIP WITHOUT A NUMBER. */
   const ship = shipAccounts({ accounts: [
-    { key: "x", name: "X", sub: "1234 5678", payload: "00020101", acct: "12345678", bank: "X Bank", mid: "123456", biller: "55511", ref1: "601112345" },
+    { key: "x", name: "X", sub: "1234 5678", payload: "00020101", acct: "12345678", bank: "X Bank", mid: "123456", biller: "biller-x", ref1: "601112345" },
     { key: "y", name: "Y", bank: "Y Bank", maintenance: true }] });
   ok(ship.length === 2 && ship[0].qr && ship[0].transfer && ship[0].jompay && !ship[1].qr && ship[1].transfer && !ship[1].jompay && ship[1].maintenance,
     "a rail is derived from the record: a payload is a code, a bank is a transfer, a biller is JomPAY");
@@ -12046,7 +12049,7 @@ await (async () => {
      "CI's tests, three parts in their own job, stand down only when the guard says cloud-commit is testing the push, and run after a red check");
   ok(/^- name: Is cloud-commit testing this push\?\n\s+id: chain\n\s+if: github\.event_name == 'push'\n/.test(guard)
      && guard.includes("GH_TOKEN: ${{ github.token }}") && /\n\s+covered=0\n/.test(guard)
-     && guard.includes('[ "$BEFORE" != "0000000000000000000000000000000000000000" ]')
+     && guard.includes("zero=$(printf '%040d' 0)") && guard.includes('[ "$BEFORE" != "$zero" ]')
      && guard.includes('echo "covered=$covered" >> "$GITHUB_OUTPUT"') && (ci.match(/steps\.chain\.outputs/g) || []).length === 1,
      "the guard asks on a push alone, starts from not covered, never compares from a zero base, and job tests is the one thing it stands down");
 })();
@@ -12227,6 +12230,11 @@ await (async () => {
     "end to end on v532: a master mutation of the unknown verdict, run through SALT_MASTER, turns that one named check red and the run exits 0: " + JSON.stringify(r1.out.trim().slice(0, 400)));
   ok(r2.code === 1 && /^unmutated: \d+ passed, 0 failed/m.test(r2.out) && !!u2 && u2.state === "UNNOTICED" && u2.fails.length === 0,
     "and a mutation no check notices is named and fails the run: " + JSON.stringify(r2.out.trim().slice(0, 400)));
+})();
+
+section("12 Oct 2026: every mutation needle still finds its line, exactly once, in every manifest");
+await (async () => {
+  await (await import("./mutation-needles.mjs")).run({ ok, REPO });
 })();
 
 section("28 Sep 2026: drain --status lists what is folded or decided apart, and offers --forget only for what is still to reach the ledger");
@@ -19095,7 +19103,8 @@ await (async () => {
   ok((await post("/open", { u, password: pw })).status === 200 && (await seen()).opens === 1 && (await seen()).how === "password",
     "a password open counts, as it always did, and says so: " + JSON.stringify(await seen()));
   const rem = "rem" + "a".repeat(29);
-  await kv.put("rem:" + rem, JSON.stringify({ u, wrap: await C.wrapKey("device-key", ck), at: "2026-09-21T00:00:00Z" }));
+  /* a phone last opened three days ago: it is remembered for thirty days from its last open, so a literal 21 Sep lapsed on 21 Oct (no calendar in a check) */
+  await kv.put("rem:" + rem, JSON.stringify({ u, wrap: await C.wrapKey("device-key", ck), at: new Date(Date.now() - 3 * 86400000).toISOString() }));
   const r1 = await post("/remember/open", { token: rem });
   ok(r1.status === 200 && (await seen()).opens === 2 && (await seen()).how === "remembered",
     "a remembered phone's open counts too: " + JSON.stringify(await seen()));
@@ -21474,8 +21483,8 @@ await (async () => {
       w.fetch = async (q, o) => {
         const path = String(q); st.posts.push(path);
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (path === "/open") return ans(200, { ok: true, byMaster: false, wrap, env: envSealed, live: null, prices: null, session: "sess99b0000000000000000000000" });
-        if (path === "/remember") return ans(200, { ok: true, token: "rem99b00000000000000000000000000", days: 30 });
+        if (path === "/open") return ans(200, { ok: true, byMaster: false, wrap, env: envSealed, live: null, prices: null, session: "sess99b" + "0".repeat(22) });
+        if (path === "/remember") return ans(200, { ok: true, token: "rem99b" + "0".repeat(26), days: 30 });
         if (path === "/devices") return devices(st, ans);
         return ans(200, { ok: true, orders: [] });
       };
@@ -22505,7 +22514,7 @@ await (async () => {
   const { normUser: nu89, normPass: np89, TEST_USER: TU89, TEST_PASS: TP89 } = await import("../stmt/worker.js");
   ok(TU89 === "0000-0000" && TP89 === "0000-0000-0000-0000" && nu89("0000-0000") === TU89 && nu89("0000 0000") === TU89
     && nu89("1111-1111") === "" && nu89("0000-000") === "" && nu89("0123-4567") === "" && nu89("0aaa-bbbb") === ""
-    && np89("0000000000000000") === TP89 && nu89("0000 0001") === "0000-0001" && nu89("0000-0002") === "" && nu89("0000-0010") === "",
+    && np89("0".repeat(16)) === TP89 && nu89("0000 0001") === "0000-0001" && nu89("0000-0002") === "" && nu89("0000-0010") === "",
     "the door takes the test accounts' zeros, and the second's one, and nothing else that is not of the alphabet");
 
   const realFetch89 = globalThis.fetch;
@@ -22547,7 +22556,7 @@ await (async () => {
 
     /* it opens like any account, and nothing about it came from the laptop */
     const open89 = await stmtWorker.fetch(new Request("https://k7m3p2.example/open", { method: "POST",
-      headers: { "content-type": "application/json" }, body: JSON.stringify({ u: "0000 0000", password: "0000000000000000" }) }), env89);
+      headers: { "content-type": "application/json" }, body: JSON.stringify({ u: "0000 0000", password: "0".repeat(16) }) }), env89);
     const body89 = await open89.json();
     ok(open89.status === 200 && body89.ok && body89.wrap && body89.env && body89.prices && body89.session,
       "and it signs in with the zeros, typed any way, with a session so it can order");
@@ -24609,9 +24618,9 @@ await (async () => {
   const bad92 = await post92("/remember/open", { token: "z".repeat(24) });
   ok(bad92.status === 401 && (await bad92.json()).error === "That username and password were not accepted.",
     "and an unknown token is refused in the door's own words, saying nothing about what exists");
-  await kv92.put("sess:" + createHash("sha256").update("other0000000000000000000000").digest("hex"), JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
-  await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other0000000000000000000000" });
-  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update("other0000000000000000000000").digest("hex"))),
+  await kv92.put("sess:" + createHash("sha256").update("other" + "0".repeat(22)).digest("hex"), JSON.stringify({ u: "cccc-dddd", at: new Date().toISOString() }));
+  await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": "other" + "0".repeat(22) });
+  ok(!!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update("other" + "0".repeat(22)).digest("hex"))),
     "another account's log out drops its own session and leaves this one's memory alone");
   await post92("/logout", { token: remOut.token }, { "X-Stmt-Session": back.session });
   ok(!(await kv92.get(remKey)) && !(await kv92.get("sess:" + createHash("sha256").update(back.session).digest("hex"))),
@@ -28662,9 +28671,9 @@ await (async () => {
   /* ---- the Worker's half: the documents again on a session, never a wrap ---- */
   const kv = new KV();
   await kv.put("u:" + u35, JSON.stringify({ u: u35, issued: "2026-09-24", issues: ["2026-09-24"], env: first, prices: list, wrap: { v: 1 }, wrapMaster: { v: 1 } }));
-  await kv.put("sess:" + createHash("sha256").update("sess35live0000000000000000").digest("hex"), JSON.stringify({ u: u35, at: new Date().toISOString() }));
+  await kv.put("sess:" + createHash("sha256").update("sess35live" + "0".repeat(16)).digest("hex"), JSON.stringify({ u: u35, at: new Date().toISOString() }));
   const acct = async (s) => { const r = await W35.fetch(new Request("https://k7m3p2.example/account", { headers: s ? { "X-Stmt-Session": s } : {} }), { STMT: kv }); return { status: r.status, j: await r.json().catch(() => ({})) }; };
-  const got = await acct("sess35live0000000000000000"), none = await acct("");
+  const got = await acct("sess35live" + "0".repeat(16)), none = await acct("");
   ok(got.status === 200 && got.j.ok && got.j.u === u35 && JSON.stringify(got.j.env) === JSON.stringify(first) && !!got.j.prices
     && !("wrap" in got.j) && !("wrapMaster" in got.j),
     "on a live session the page can read its sealed documents again, and no wrap comes with them: " + Object.keys(got.j).join(","));
@@ -28689,9 +28698,9 @@ await (async () => {
             if (st.holdRem) await st.holdRem;
             if (st.remFail) throw new TypeError("Failed to fetch");
             st.reopened++;
-            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0000000000000000000") });
+            return ans(200, { ok: true, u: u35, remembered: true, wrap: await C35.wrapKey(dev35, ck35), env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35n" + (++st.n) + "0".repeat(19)) });
           }
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0000000000000000000") });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C35.wrapKey(pass35, ck35), wrapMaster: null, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env), session: (st.last = "sess35p" + (++st.n) + "0".repeat(19)) });
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
           if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: u35, env: st.env, prices: list, liveStatus: "current", live: await asLive(C35, ck35, st.env) }); }
           if (p === "/orders" && m === "POST") { st.posts.push({ s, body: JSON.parse(init.body) }); return ans(200, { ok: true, order: {} }); }
@@ -28971,9 +28980,9 @@ await (async () => {
           st.posts.push({ path: String(p), body });
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/remember/open") return ans(500, { ok: false, error: "fault" });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C38.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sess38b0000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C38.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sess38b" + "0".repeat(22) });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await C38.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sess38l0000000000000000000000" });
+            : ans(200, { ok: true, u: uB, wrap: await C38.wrapKey(tokL, ckB), env: envB, live: null, prices: null, session: "sess38l" + "0".repeat(22) });
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
         };
@@ -29040,7 +29049,7 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push({ path: String(p), body, session: ((init && init.headers) || {})["X-Stmt-Session"] || "" });
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C310.wrapKey(pass310, ck310), env: env310, live: null, prices: null, session: "sess310a000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C310.wrapKey(pass310, ck310), env: env310, live: null, prices: null, session: "sess310a" + "0".repeat(21) });
           if (p === "/handover") return handover(body, ans);
           return ans(200, { ok: true, orders: [] });
         };
@@ -29065,7 +29074,7 @@ await (async () => {
     const copy = D.getElementById("keepCopy");
     await until(() => D.getElementById("keepCode").value);
     const ho = st.posts.find((x) => x.path === "/handover");
-    ok(!!ho && /^[A-Za-z0-9_-]{32}$/.test(ho.body.token) && !!ho.body.wrap && ho.session === "sess310a000000000000000000000"
+    ok(!!ho && /^[A-Za-z0-9_-]{32}$/.test(ho.body.token) && !!ho.body.wrap && ho.session === "sess310a" + "0".repeat(21)
       && st.posts.filter((x) => x.path === "/handover").length === 1,
       "the page mints the hand-over once as it draws, on the session: a key of the link's shape and a wrap");
     let opened = null;
@@ -29129,11 +29138,11 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push({ path: String(p), body });
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CM.wrapKey(passM, ckM), env: envM, live: null, prices: null, session: "sessMa0000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CM.wrapKey(passM, ckM), env: envM, live: null, prices: null, session: "sessMa" + "0".repeat(22) });
           if (p === "/handover") return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
           if (p === "/handover/open") {
             return body && body.token === tokM && !opts.refuse
-              ? ans(200, { ok: true, u: uM, remembered: true, token: tokM, wrap: await CM.wrapKey(tokM, ckM), env: envM, live: null, prices: null, session: "sessMb0000000000000000000000" })
+              ? ans(200, { ok: true, u: uM, remembered: true, token: tokM, wrap: await CM.wrapKey(tokM, ckM), env: envM, live: null, prices: null, session: "sessMb" + "0".repeat(22) })
               : ans(401, { ok: false, error: "That username and password were not accepted." });
           }
           if (p === "/remember") return ans(200, { ok: true, token: "r".repeat(32), days: 30 });
@@ -29231,7 +29240,7 @@ await (async () => {
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/handover/open") {
             const good = body && (body.token === tok311 || body.code === "h4tn-8xwc");
-            return good ? ans(200, { ok: true, u: u311, remembered: true, token: tok311, wrap: await C311.wrapKey(tok311, ck311), env: envDoc, live: null, prices: null, session: "sess311a00000000000000000000" })
+            return good ? ans(200, { ok: true, u: u311, remembered: true, token: tok311, wrap: await C311.wrapKey(tok311, ck311), env: envDoc, live: null, prices: null, session: "sess311a" + "0".repeat(20) })
               : ans(401, { ok: false, error: "That username and password were not accepted." });
           }
           if (p === "/remember") return ans(200, { ok: true, token: "r".repeat(32), days: 30 });
@@ -29338,7 +29347,7 @@ await (async () => {
         win.scrollTo = () => {};
         win.fetch = async (p) => {
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C312.wrapKey(pass312, ck312), env: env312, live: null, prices: null, session: "sess312a00000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C312.wrapKey(pass312, ck312), env: env312, live: null, prices: null, session: "sess312a" + "0".repeat(20) });
           return ans(200, { ok: true, orders: [] });
         };
       } });
@@ -29426,7 +29435,7 @@ await (async () => {
   const envA = await envOf(ckA, "STATEMENT OF A"), envB = await envOf(ckB, "STATEMENT OF B"), listA = await listOf(ckA), listB = await listOf(ckB);
   const recOf = (u, dev) => JSON.stringify({ t: u[0].repeat(32), k: Buffer.from(dev).toString("base64"), u });
   const drive = (fast, path, rec) => {
-    const st = { dead: new Set(), posts: [], reopens: 0, sB: "sessKB000000000000000000000", sA: "sessKA000000000000000000000", polls: [], stopped: new Set() };
+    const st = { dead: new Set(), posts: [], reopens: 0, sB: "sessKB" + "0".repeat(21), sA: "sessKA" + "0".repeat(21), polls: [], stopped: new Set() };
     let work = null;
     const store = new Map([["salt-stmt-remember", rec || recOf(uA, devA)]]);
     const html = lpK("", "nK", null);
@@ -29451,7 +29460,7 @@ await (async () => {
             st.reopens++;
             const rec = JSON.parse(store.get("salt-stmt-remember") || "null");
             return rec && rec.u === uB
-              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "00000000000000000000") })
+              ? ans(200, { ok: true, u: uB, remembered: true, wrap: await CK.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CK, ckB, envB), prices: listB, session: (st.sB = "sessKB" + st.reopens + "0".repeat(20)) })
               : ans(200, { ok: true, u: uA, remembered: true, wrap: await CK.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CK, ckA, envA), prices: listA, session: st.sA });
           }
           if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
@@ -29578,11 +29587,11 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null, s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/open-link") return body.peek ? ans(200, { ok: true, u: uB })
-            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" });
+            : ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(tokL, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB" + "0".repeat(23) });
           if (p === "/remember/open") {
             const r = JSON.parse(store.get("salt-stmt-remember"));
-            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB00000000000000000000000" })
-              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CV, ckA, envA), prices: null, session: "sessVA00000000000000000000000" });
+            return r.u === uB ? ans(200, { ok: true, u: uB, wrap: await CV.wrapKey(devB, ckB), env: envB, liveStatus: "current", live: await asLive(CV, ckB, envB), prices: null, session: "sessVB" + "0".repeat(23) })
+              : ans(200, { ok: true, u: uA, wrap: await CV.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CV, ckA, envA), prices: null, session: "sessVA" + "0".repeat(23) });
           }
           if (p === "/logout") { st.posted = { body, s }; return ans(200, { ok: true }); }
           return ans(200, { ok: true, orders: [] });
@@ -29610,7 +29619,7 @@ await (async () => {
   const v = await drive("/s/" + tokL, recOf(uA, devA), "askNo");
   ok(v.onScreen === "B" && v.kept === recOf(uA, devA),
     "Log out of B, opened for a visit with Keep " + uA + ", leaves " + uA + " remembered on this phone: " + JSON.stringify(v.kept && JSON.parse(v.kept).u));
-  ok(!!v.st.posted && v.st.posted.body.token === null && v.st.posted.s === "sessVB00000000000000000000000",
+  ok(!!v.st.posted && v.st.posted.body.token === null && v.st.posted.s === "sessVB" + "0".repeat(23),
     "and names no remembered token to the site, so A's wrap stays there, dropping only B's session: " + JSON.stringify(v.st.posted));
   ok(!v.st.unsubscribed && v.st.posted.body.endpoint === ep,
     "and keeps this phone subscribed for A, naming the endpoint so the site drops B's record alone");
@@ -29725,7 +29734,7 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/remember/open") return ans(500, { ok: false, error: "fault" });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CP.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sessPB00000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CP.wrapKey(passB, ckB), env: envB, live: null, prices: null, session: "sessPB" + "0".repeat(23) });
           if (p === "/remember") return ans(200, { ok: true, token: "n".repeat(32), days: 30 });
           if (p === "/logout") { st.logout = body; return ans(200, { ok: true }); }
           return ans(200, { ok: true, orders: [] });
@@ -29785,7 +29794,7 @@ await (async () => {
       win.fetch = async (p, init) => {
         const body = init && init.body ? JSON.parse(init.body) : null;
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CF.wrapKey(passF, ckF), env: envF, live: null, prices: null, session: "sessFa000000000000000000000000" });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CF.wrapKey(passF, ckF), env: envF, live: null, prices: null, session: "sessFa" + "0".repeat(24) });
         if (p === "/handover") { st.minted.push(body.token); return ans(200, { ok: true, code: codes[st.minted.length - 1], token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() }); }
         return ans(200, { ok: true, orders: [] });
       };
@@ -29914,9 +29923,9 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           st.posts.push(String(p));
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CR, ckA, envA), prices: null, session: "sessRA0000000000000000000000" });
+          if (p === "/remember/open") return ans(200, { ok: true, u: uA, remembered: true, wrap: await CR.wrapKey(devA, ckA), env: envA, liveStatus: "current", live: await asLive(CR, ckA, envA), prices: null, session: "sessRA" + "0".repeat(22) });
           if (p === "/handover/open") return body.token === tokB
-            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, liveStatus: "current", live: await asLive(CR, ckB, envB), prices: null, session: "sessRB0000000000000000000000" })
+            ? ans(200, { ok: true, u: uB, remembered: true, token: tokB, wrap: await CR.wrapKey(tokB, ckB), env: envB, liveStatus: "current", live: await asLive(CR, ckB, envB), prices: null, session: "sessRB" + "0".repeat(22) })
             : ans(401, { ok: false, error: "That username and password were not accepted." });
           if (p === "/remember") return ans(200, { ok: true, token: "b".repeat(32), days: 30 });
           return ans(200, { ok: true, orders: [] });
@@ -29989,7 +29998,7 @@ await (async () => {
       win.fetch = async (p, init) => {
         const body = init && init.body ? JSON.parse(init.body) : null;
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CH.wrapKey(passH, ckH), env: envH, live: null, prices: null, session: "sessHa000000000000000000000000" });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CH.wrapKey(passH, ckH), env: envH, live: null, prices: null, session: "sessHa" + "0".repeat(24) });
         if (p === "/handover") { st.minted.push(body.token); return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() }); }
         if (p === "/logout") { st.logout = body; return ans(200, { ok: true }); }
         return ans(200, { ok: true, orders: [] });
@@ -30041,7 +30050,7 @@ await (async () => {
             st.opens++;
             if (st.fault === "drop") throw new TypeError("Failed to fetch");
             if (st.fault) return ans(503, { ok: false, error: "busy" });
-            return ans(200, { ok: true, u: uT, remembered: true, wrap: await CT.wrapKey(devT, ckT), env: envT, live: null, prices: null, session: "sessTa000000000000000000000000" });
+            return ans(200, { ok: true, u: uT, remembered: true, wrap: await CT.wrapKey(devT, ckT), env: envT, live: null, prices: null, session: "sessTa" + "0".repeat(24) });
           }
           return ans(200, { ok: true, orders: [] });
         };
@@ -30092,7 +30101,7 @@ await (async () => {
       win.fetch = async (p, init) => {
         const s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CO.wrapKey(passO, ckO), env: envO, live: null, prices: null, session: (st.last = "sessO" + (++st.n) + "0000000000000000000000") });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CO.wrapKey(passO, ckO), env: envO, live: null, prices: null, session: (st.last = "sessO" + (++st.n) + "0".repeat(22)) });
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
         return ans(200, { ok: true, orders: [] });
       };
@@ -30136,7 +30145,7 @@ await (async () => {
       win.fetch = async (p, init) => {
         const s = ((init && init.headers) || {})["X-Stmt-Session"] || "";
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), env, live: null, prices: null, session: (st.last = "sessR" + (++st.n) + "0000000000000000000000") });
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await C.wrapKey(pass, ck), env, live: null, prices: null, session: (st.last = "sessR" + (++st.n) + "0".repeat(22)) });
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
         return ans(200, { ok: true, orders: [] });
       };
@@ -30187,8 +30196,8 @@ await (async () => {
       win.fetch = async (p, init) => {
         const s = ((init && init.headers) || {})["X-Stmt-Session"] || "", body = init && init.body ? JSON.parse(init.body) : null;
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CC.wrapKey(passC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0000000000000000000000") });
-        if (p === "/handover/open") { st.codes.push(body.code); return ans(200, { ok: true, u: uC, remembered: true, token: keyC, wrap: await CC.wrapKey(keyC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0000000000000000000000") }); }
+        if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CC.wrapKey(passC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0".repeat(22)) });
+        if (p === "/handover/open") { st.codes.push(body.code); return ans(200, { ok: true, u: uC, remembered: true, token: keyC, wrap: await CC.wrapKey(keyC, ckC), env: envC, live: null, prices: list, session: (st.last = "sessC" + (++st.n) + "0".repeat(22)) }); }
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
         return ans(200, { ok: true, orders: [] });
       };
@@ -30282,7 +30291,7 @@ await (async () => {
           const body = init && init.body ? JSON.parse(init.body) : null;
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
           if (p === "/remember/open") return ans(503, { ok: false, error: "busy" });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CD.wrapKey(passD, ckD), env: envD, live: null, prices: null, session: "sessDa000000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CD.wrapKey(passD, ckD), env: envD, live: null, prices: null, session: "sessDa" + "0".repeat(24) });
           if (p === "/handover") return ans(200, { ok: true, code: "h4tn-8xwc", token: body.token, exp: new Date(Date.now() + 15 * 60000).toISOString() });
           return ans(200, { ok: true, orders: [] });
         };
@@ -30345,7 +30354,7 @@ await (async () => {
         win.scrollTo = () => {};
         win.fetch = async (p) => {
           const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
-          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CA.wrapKey(passA, ckA), env: envA, live: null, prices: null, session: "sessAa000000000000000000000000" });
+          if (p === "/open") return ans(200, { ok: true, byMaster: false, wrap: await CA.wrapKey(passA, ckA), env: envA, live: null, prices: null, session: "sessAa" + "0".repeat(24) });
           return ans(200, { ok: true, orders: [] });
         };
       } });
@@ -34156,7 +34165,7 @@ await (async () => {
         if (p === "/remember/open") {
           if (st.remFail) throw new TypeError("Failed to fetch");
           st.reopened++;
-          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, liveStatus: st.liveStatus, session: (st.last = "sessMn" + (++st.n) + "0000000000000000000") });
+          return ans(200, { ok: true, u: uM, remembered: true, wrap: await CM.wrapKey(devM, ckM), env, prices: list, live: st.live, liveStatus: st.liveStatus, session: (st.last = "sessMn" + (++st.n) + "0".repeat(19)) });
         }
         if (st.dead.has(s)) return ans(401, { ok: false, error: "Sign in again to see your orders.", session: false });
         if (p === "/account") { st.accounts++; return ans(200, { ok: true, u: uM, env, prices: list, live: st.live, liveStatus: st.liveStatus }); }
@@ -34247,7 +34256,7 @@ await (async () => {
         asked.push(m + " " + p);
         const ans = (j) => ({ ok: true, status: 200, json: async () => j });
         if (p === "/remember/open") return ans({ ok: true, u: uH, remembered: true, wrap: await CH.wrapKey(devH, ckH), env, prices: list, live: null,
-          session: "sessHd" + (++n) + "0000000000000000000" });
+          session: "sessHd" + (++n) + "0".repeat(19) });
         if (p === "/account") return ans({ ok: true, u: uH, env, prices: list, live: null });
         if (p === "/orders" && m === "GET") return ans({ ok: true, orders: [] });
         if (p === "/bulletin") return ans({ ok: true, lines: [] });
@@ -42686,7 +42695,7 @@ await (async () => {
     ok(s3 === 0 && rd(REVT).toString() === kept,
       "a rev.json on the same id keeps its stamp to the byte, however old: " + rd(REVT).toString().trim());
 
-    writeFileSync(REVT, JSON.stringify({ ok: true, v: r1.v, id: "0000000000000000", built: OLD }) + "\n");
+    writeFileSync(REVT, JSON.stringify({ ok: true, v: r1.v, id: "0".repeat(16), built: OLD }) + "\n");
     /* stamped during this build, bracketed by the clock either side of it (28 Sep 2026), where "within five minutes of
        now" was a stopwatch and passed a stamp minutes stale */
     const b4 = Date.now(); const s4 = build(); const a4 = Date.now(); let r4 = {}; try { r4 = JSON.parse(rd(REVT).toString()); } catch (e) { /* red below */ }
@@ -47739,6 +47748,8 @@ await (async () => {
   }
   const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
   ok(v.heads.every((h) => /Every book/.test(h) && !/Both books/.test(h)), "the Financials and Receivables heads read Every book: " + JSON.stringify(v.heads));
+  /* the year's own column reads "CY 2027, nothing yet" from 1 Jan until the book has a sale in the year: the label moves, not the columns */
+  for (const x of [v.salt, v.candy]) if (x) x.head = x.head.map((h) => h.replace(/, nothing yet$/, ""));
   /* the columns he asked for, from the calendar: the last six months from the book's first, this year's quarters and halves begun and traded in, then CY */
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const want = (x) => { const y = +x.today.slice(0, 4), m = +x.today.slice(5, 7), ms = [];
@@ -47748,15 +47759,26 @@ await (async () => {
       p("Q1", "01", "03"), p("Q2", "04", "06"), p("Q3", "07", "09"), p("Q4", "10", "12"), p("H1", "01", "06"), p("H2", "07", "12"), ["CY " + y]); };
   ok(v.salt && JSON.stringify(v.salt.head) === JSON.stringify(want(v.salt)) && v.salt.head.length >= 8,
     "salt's columns are its months, then quarters, then halves, then CY: " + JSON.stringify(v.salt && v.salt.head));
-  ok(v.candy && JSON.stringify(v.candy.head) === JSON.stringify(want(v.candy)) && v.candy.head.length < v.salt.head.length,
+  /* "less history" is the book's own and the calendar moves it: candy fills the six-month window six months after its first month,
+     and then its head is salt's. The head is always checked against the calendar; the shorter-than-salt clause only while it holds. */
+  const inWindow = (x) => [5, 4, 3, 2, 1, 0].map((i) => new Date(Date.UTC(+x.today.slice(0, 4), +x.today.slice(5, 7) - 1 - i, 1)).toISOString().slice(0, 7)).filter((m) => m >= x.first).length;
+  const lessHistory = !!v.candy && inWindow(v.candy) < inWindow(v.salt);
+  if (!lessHistory) skipData("candy has as many of the last six months as salt, so a book with less history than salt was not drawn");
+  ok(v.candy && JSON.stringify(v.candy.head) === JSON.stringify(want(v.candy)) && (!lessHistory || v.candy.head.length < v.salt.head.length),
     "a book with less history shows only the months it has: " + JSON.stringify(v.candy && v.candy.head));
   /* the sums, off the cells: each quarter and half is its months, and CY is the two halves */
   const at = (x, lab) => x.rev[x.head.indexOf(lab)];
   const sumM = (x, labs) => labs.reduce((a, l) => a + (x.head.includes(l) ? at(x, l) : 0), 0);
   const s = v.salt;
-  ok(Math.abs(at(s, "Q3") - sumM(s, ["Jul", "Aug", "Sep"])) < 1.5 && Math.abs(at(s, "H2") - (at(s, "Q3") + at(s, "Q4"))) < 1.5
-     && Math.abs(at(s, "CY " + s.today.slice(0, 4)) - (at(s, "H1") + at(s, "H2"))) < 1.5,
-    "Q3 is July to September, H2 is Q3 plus Q4 to date, and CY is the two halves, read off the cells: " + JSON.stringify(s.rev));
+  /* from the calendar, never a fixed quarter: a quarter is checked when every month it has begun is a column (the six-month window
+     holds the current quarter's whole, and the earlier ones that fit), a half is its quarters and CY its halves, whichever are present */
+  const QM = { Q1: ["Jan", "Feb", "Mar"], Q2: ["Apr", "May", "Jun"], Q3: ["Jul", "Aug", "Sep"], Q4: ["Oct", "Nov", "Dec"] }, mNow = +s.today.slice(5, 7);
+  const here = (lab) => (s.head.includes(lab) ? at(s, lab) : 0);
+  const quarters = Object.keys(QM).filter((q) => s.head.includes(q) && QM[q].filter((m) => MON.indexOf(m) < mNow).every((m) => s.head.includes(m)));
+  ok(quarters.length >= 1 && quarters.every((q) => Math.abs(at(s, q) - sumM(s, QM[q])) < 1.5)
+     && Math.abs(here("H1") - (here("Q1") + here("Q2"))) < 1.5 && Math.abs(here("H2") - (here("Q3") + here("Q4"))) < 1.5
+     && Math.abs(at(s, "CY " + s.today.slice(0, 4)) - (here("H1") + here("H2"))) < 1.5,
+    "each quarter that fits the window is its months, H1 and H2 are their quarters, and CY is the two halves, read off the cells (" + quarters.join(" ") + "): " + JSON.stringify(s.rev));
   ok(s.rm === 0 && s.head[0] === "RM" && /\bfg-pm\b/.test(s.cls) && s.pold === Math.max(0, s.head.filter((h) => /^[A-Z][a-z]{2}( \d\d)?$/.test(h)).length - 3),
     "RM is said once in the corner and no figure cell repeats it, and a phone holds the latest three months: " + JSON.stringify({ rm: s.rm, pold: s.pold, cls: s.cls }));
   try { w.close(); } catch (e) { /* best effort */ }
@@ -53547,11 +53569,13 @@ await (async () => {
     }
   });
   try {
-    const doc = admin.window.document;
+    const doc = admin.window.document, { cardOf } = await import("./maker-act.mjs");
     /* 11 Oct 2026: the orders are Orders, the Desk's rows and the forms Record, so both are entered */
     doc.querySelector('[data-act="nav.record"]').click();
     doc.querySelector('[data-act="nav.orders"]').click();
     for (let i = 0; i < 100 && !doc.querySelector("#makerDrafts .maker-card"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    /* a card is drawn for the order opened alone (Phase 1c): open the placed one, as he does from its row */
+    cardOf(doc, "20260929120000-makr");
     let cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");
     ok(cards.length === 2 && /Cost RM 56/.test(cards[1].textContent) && /Check before deciding/.test(cards[1].textContent),
       "the Admin review draws Desk row cost and frozen flags beside its decision");
@@ -53560,19 +53584,21 @@ await (async () => {
       { ...o0, id: "20260929120000-ca03", status: "ready", closed: { qty: 1 } }, { ...o0, id: "20260929120000-ca04", status: "acknowledged", claimed: 30 },
       { ...o0, id: "20260929120000-ca05", status: "ready", moved: 1 }, { ...o0, id: "20260929120000-ca06", status: "declined" },
       { ...o0, id: "20260929120000-ca07", status: "cancelled" }, { ...o0, id: "20260929120000-ca08", status: "placed" });
-    [...doc.querySelectorAll("#makerReview button")].find((b) => b.textContent === "Refresh").click();
-    for (let i = 0; i < 100 && ![...doc.querySelectorAll("#makerReview h3")].some((h) => /ca01/.test(h.textContent)); i++) await new Promise((resolve) => setTimeout(resolve, 10));
-    const cancelOf = (suffix) => { const h = [...doc.querySelectorAll("#makerReview h3")].find((x) => x.textContent.endsWith(suffix));
-      return h ? [...h.parentElement.querySelectorAll("button")].some((b) => b.textContent === "Cancel order") : null; };
+    [...doc.querySelectorAll("#makerOrderList button")].find((b) => b.textContent === "Refresh").click();
+    for (let i = 0; i < 100 && !doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    /* a closed order has a card with its figures and no Cancel (it had none at all before Phase 1c: false is as null was) */
+    const cancelOf = (suffix) => { const c = cardOf(doc, "20260929120000-" + suffix);
+      return c ? [...c.querySelectorAll("button")].some((b) => b.textContent === "Cancel order") : null; };
     ok(cancelOf("ca01") === true && cancelOf("ca02") === true && cancelOf("ca03") === false && cancelOf("ca04") === false
-      && cancelOf("ca05") === false && cancelOf("ca06") === null && cancelOf("ca07") === null && cancelOf("ca08") === false,
+      && cancelOf("ca05") === false && cancelOf("ca06") === false && cancelOf("ca07") === false && cancelOf("ca08") === false,
       "Maker offers Cancel on an acknowledged or ready order, paid or not, unless claimed, closed or handed over");
     extraReviewOrders.length = 0;
-    [...doc.querySelectorAll("#makerReview button")].find((b) => b.textContent === "Refresh").click();
-    for (let i = 0; i < 100 && doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card").length !== 2; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    [...doc.querySelectorAll("#makerOrderList button")].find((b) => b.textContent === "Refresh").click();
+    for (let i = 0; i < 100 && doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
+    cardOf(doc, "20260929120000-makr");
     cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */
-    ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Sale or purchase"
-      && ["Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
+    ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Stock count"
+      && ["Sale or purchase", "Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
       "Maker exposes the remaining typed Enter and Network actions beside stock, trade and held-tier inputs");
     const preview = [...cards[0].querySelectorAll("button")].find((button) => button.textContent === "Preview");
@@ -53590,7 +53616,7 @@ await (async () => {
     total.value = "130"; total.dispatchEvent(new admin.window.Event("input", { bubbles: true }));
     previewRelease(); await new Promise((resolve) => setTimeout(resolve, 20));
     ok(!doc.querySelector("[data-accept]"), "a preview returning after a field edit cannot restore a stale Accept");
-    const tradeSection = doc.querySelector("#makerInputs .maker-input");
+    const tradeSection = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Sale or purchase");
     const tradeControls = tradeSection.querySelectorAll("select, input");
     tradeControls[0].value = "sale";
     tradeControls[1].value = "salt";
@@ -53822,6 +53848,11 @@ await (async () => {
   await (await import("./admin-needs.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: Orders open by stage, a list beside the order, and Record a menu");
+await (async () => {
+  await (await import("./admin-orders.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
@@ -53965,7 +53996,7 @@ await (async () => {
   pricing.byProduct.salt.cards["CX1-AB"][1][1] = savedPrice;
   ok(belowFloor.status === 409 && relayBook.book.order(u, original.id).status === "placed",
     "a snapshot card below the exact floor cannot become a replacement order");
-  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId: "0000000000000000" } }));
+  await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId: "0".repeat(16) } }));
   const oldPublish = await call(publicChange);
   await store.put("u:" + u, JSON.stringify({ prices: { digest }, live: { buildId } }));
   ok(oldPublish.status === 409 && (await oldPublish.json()).code === "amendPrices",
@@ -54009,7 +54040,7 @@ await (async () => {
   ok(received.status === 200 && receivedBody.order.replaces === original.id
     && relayBook.book.order(u, original.id).status === "cancelled",
     "the authenticated customer amendment crosses both fixed service paths and commits one replacement");
-  await store.put("u:" + u, JSON.stringify({ prices: { digest: "later-list" }, live: { buildId: "0000000000000000" } }));
+  await store.put("u:" + u, JSON.stringify({ prices: { digest: "later-list" }, live: { buildId: "0".repeat(16) } }));
   const replay = await call(publicChange), replayBody = await replay.json();
   ok(replay.status === 200 && replayBody.order.id === receivedBody.order.id
     && relayBook.book.ordersOf(u).filter((order) => order.replaces === original.id).length === 1,
