@@ -350,6 +350,27 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .payslip p{flex-basis:100%;margin:0}
 .slipthumb{border-radius:6px;border:1px solid var(--salt-line)}
 .payhead .msg{margin:10px 0 0}
+/* PHASE 7A (his yes of 11 Oct 2026): HOME LEADS WITH THE ONE ACTION. To pay now's tile and its one filled Pay stand in a foot that
+   sticks above the App bar, the way the order sheet's foot holds its one action: last in Home, so it stays down the whole way,
+   on the bar's own slate so what scrolls under it is covered, its bottom edge the bar's height plus the safe area clear of the
+   screen (less the bar's own 1px edge, which it slides under, so no sliver of the page shows between them). The bar is fixed,
+   4rem (--salt-bar-h) above the safe area, so the pill is never under it. The tile and the pill share a row while the figure
+   fits, and the pill takes a row of its own, the width of the foot, when it does not. The look is the recipes' (KPI tile,
+   Pill); this lays them out. */
+.payfoot[hidden]{display:none}
+.payfoot{position:sticky;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);z-index:10;margin-top:24px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0 13px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
+.payfoot .salt-kpi{flex:1 1 8.5rem;padding:9px 14px 8px 18px}
+.payfoot .salt-kpi__value{margin-top:2px}
+.payfoot .salt-pill{flex:1 1 auto;padding-left:18px;padding-right:18px}
+/* from 1080px the bar is the rail, so there is nothing to clear: the foot heads the first column in the flow, above the notice
+   (the second column spans both rows beside it), where a column that runs long can never push it below the fold */
+@media (min-width:1080px){
+  .home{grid-template-rows:auto 1fr;row-gap:0}
+  .home>.hcol{grid-column:1;grid-row:2}
+  .home>.hcol+.hcol{grid-column:2;grid-row:1 / span 2}
+  .payfoot{position:static;grid-column:1;grid-row:1;margin:0 0 28px}
+}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -1295,7 +1316,9 @@ export function landingPage(user, nonce, owner, bulletin) {
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
     + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div></div>'
-    + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div></div></div>'
+    + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div></div>'
+    /* PHASE 7A: the foot holding To pay now and its Pay, last in Home so it stays above the bar the whole way down (drawPayHead) */
+    + '<div id="homeFoot" class="payfoot" hidden></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
        beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
     + '<div id="pStmt" hidden><div id="acct" class="acct"><div class="acct__main"><div id="aThread"></div>'
@@ -4569,18 +4592,14 @@ const CLIENT_JS = `
     /* C15: an account that could not be read leads with that, never with nothing to pay */
     if(bad) box.appendChild(unreadNode(bad,bad==='acct.unread'?retryAccount:null));
     if(lines.length){
-      box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
+      /* PHASE 7A: with something to pay, the tile and the one Pay stand in the foot above the bar (payFootNode), so the
+         pill is never under it; the head keeps the lines and what is said about them */
+      if(!payFootOn(lines,tot)) box.appendChild(kpiTile(tot>0.004?'ember':'verdigris',tw('pay.now'),rm(tot)));
       box.appendChild(invNode(lines,false));
       if(hold) box.appendChild(el('p','salt-insight salt-insight--copper',tw('pay.hold',{rm:rm(odLeft())})));
       /* V5c (his answer of 29 Sep 2026): what paying late costs, in few words, while something is to pay */
       var lk=lateKeep(); if(lk&&tot>0.004){ var kp=el('p','sub2',lk); kp.id='lateKeep'; box.appendChild(kp); }
       var sn=stageNote(); if(sn){ var sp=el('p','salt-insight salt-insight--copper'); sp.id='stageNote'; sp.textContent=sn; box.appendChild(sp); }
-      if(!view&&tot>0.004){
-        /* S6 6.4: it opens the pay sheet on what is to pay now, the one road for Home's Pay */
-        var pb=el('button','btn salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
-        pb.addEventListener('click',function(){ openPay(acctCtx()); });
-        box.appendChild(pb);
-      }
     }
     else if(fr) box.appendChild(kpiTile('verdigris',tw('pay.toPay'),rm(0),el('span',null,tw('acct.nothing'))));
     /* C18: nothing to pay is said once, never over RM 0 */
@@ -4592,7 +4611,26 @@ const CLIENT_JS = `
   function lateKeep(){ var P=payDue; if(!P||typeof P.term!=='number') return ''; return tw(P.term===1?'late.keepDay':'late.keep',{t:P.term}); }
   function lateFull(){ var P=payDue; if(!P||typeof P.term!=='number'||typeof P.lock!=='number'||typeof P.window!=='number') return '';
     return tw('late.full',{s:P.term+1, l:P.lock, w:P.window}); }
-  function drawPayHead(){ var was=document.getElementById('payHead'), n=payHeadNode(); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); }
+  /* PHASE 7A (his yes of 11 Oct 2026): HOME LEADS WITH THE ONE ACTION. Something to pay now, and not his read-only view of an
+     account (no Pay there), puts To pay now's tile and its one filled Pay in a sticky foot above the App bar, so the pill is never
+     under it and never below the fold. S6 6.4: the pill opens the pay sheet on what is to pay now, the one road for Home's Pay.
+     With nothing to pay now no foot is drawn: the tile stays in the head, as it was. */
+  function payFootOn(lines,tot){ return !view&&tot>0.004&&lines.length>0; }
+  function payFootNode(){
+    var f=el('div','payfoot'); f.id='homeFoot';
+    var lines=nowOf(), tot=invTotal(lines);
+    f.hidden=!bundle||!payFootOn(lines,tot);
+    if(f.hidden) return f;
+    f.appendChild(kpiTile('ember',tw('pay.now'),rm(tot)));
+    var pb=el('button','salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
+    pb.addEventListener('click',function(){ openPay(acctCtx()); });
+    f.appendChild(pb);
+    return f;
+  }
+  function drawPayHead(){
+    [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
+      var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+  }
   /* S6 6.2: WHAT IS COMING UP BEYOND THE ORDERS. Home's Coming up lists the site's orders agreed and not handed over; a
      part the publish sealed that no order of theirs accounts for (a row he entered on the desk) stands under them, with
      its due day and never a Pay. An order is its part when the part is on the day its row is (rowOn), of its mark and
