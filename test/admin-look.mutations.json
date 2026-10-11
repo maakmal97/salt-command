@@ -24,7 +24,7 @@
  {"name":"the browser bar is left alone when the theme changes","file":"stmt/page.js","find":"if(m)m.setAttribute('content',t==='night'?'\" + GROUND.night + \"':'\" + GROUND.tide + \"');return t;}","replace":"return t;}"},
  {"name":"the Sheet is asked on a device that chose","file":"stmt/page.js","find":"if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;","replace":"if(kept===null) return;"},
  {"name":"the Sheet is asked where the store cannot be read","file":"stmt/page.js","find":"if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;","replace":"if(kept!==''&&kept!==null&&!(b&&b.look==='asked')) return;"},
- {"name":"the Sheet takes no focus","file":"stmt/page.js","find":"lookSheetEl.hidden=false;\n    try{ lookSheetEl.focus(); }catch(e){}","replace":"lookSheetEl.hidden=false;"},
+ {"name":"the Sheet takes no focus","file":"stmt/page.js","find":"lookSheetEl.hidden=false; behind();\n    try{ lookSheetEl.focus(); }catch(e){}","replace":"lookSheetEl.hidden=false; behind();"},
  {"name":"the scrim is not drawn with the Sheet","file":"stmt/page.js","find":"lookScrim.hidden=false; lookSheetEl.hidden=false;","replace":"lookSheetEl.hidden=false;"},
  {"name":"Escape does not close the Sheet","file":"stmt/page.js","find":"document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') lookShut(); });","replace":""},
  {"name":"Close does nothing","file":"stmt/page.js","find":"document.getElementById('lookX').addEventListener('click',lookShut);","replace":""},

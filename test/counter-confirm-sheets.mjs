@@ -298,7 +298,7 @@ export async function run({ ok }) {
     const cG = await openOrder(G, A.id);
     cG.click();
     const upG = !!sheet(G);
-    G.d.getElementById("lock").click();
+    G.d.getElementById("lock").click(); G.d.getElementById("lock").click();   /* a tap and a tap again (7d part 2) */
     ok(upG && !sheet(G) && !G.d.getElementById("ynWrap") && !G.d.getElementById("f").closest("[hidden]") && sends(G) === 0,
       "Log out with the Sheet open takes it down, leaving the door and not the question: " + JSON.stringify({ upG }));
 

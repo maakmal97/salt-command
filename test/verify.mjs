@@ -206,6 +206,8 @@ const dropOrdersQueue = (kv) => { for (const k of [...kv.m.keys()]) if (isOrders
    In memory a section's moves land a millisecond or less apart: S1 1.27 failed so on the Cloud commit job's runner
    (run 36041951078) and passed in CI and on the laptop on the same commit. A section proving that a later move is
    seen waits here first, so the state it proves is forced and never the runner's speed. */
+/* SIGN OUT IS A TAP AND A TAP AGAIN (11 Oct 2026, Phase 7d part 2): the customer's #lock arms on the first tap and signs out on the second, so a test that signs a page out taps it twice; test/counter-account-door.mjs holds the two-step itself */
+const signOutTap = (d) => { const b = d.getElementById("lock"); b.click(); b.click(); };
 const clockPast = async (moment) => { while (new Date().toISOString() <= String(moment)) await new Promise((r) => setTimeout(r, 1)); };
 /* A PAGE'S WORK IS COUNTED, NEVER WAITED OUT (28 Sep 2026). "Wait 80 ms, then read the phone's memory" is a stopwatch:
    beside other suites the Counter's PBKDF2 (150,000 rounds) outran it, and S3 3.8 read the memory before the page wrote
@@ -8991,6 +8993,11 @@ await (async () => {
   await (await import("./counter-state-words.mjs")).run({ ok });
 })();
 
+section("Account leads with this device, and the door names the app: Messages, This device, then the statement under a gap; Sign out is a tap and a tap again (11 Oct 2026)");
+await (async () => {
+  await (await import("./counter-account-door.mjs")).run({ ok });
+})();
+
 section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
@@ -9460,7 +9467,7 @@ await (async () => {
       const e = g.paste(pw1, "Statement password: 2345-678A-bcde-FGHJ\n\nPlease keep it to yourself. It opens the statement at the link in the previous message.");
       ok(e.defaultPrevented && g.state().pw === "2345-678a-bcde-fghj",
         "the whole message pasted into the password keeps only the password: " + JSON.stringify(g.state().pw));
-      g.d.getElementById("lock").click();
+      signOutTap(g.d);
       ok(g.state().pw === "" && g.state().at === "pw", "Log out empties the password and waits in it");
       g.W.close();
     }
@@ -19885,7 +19892,7 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const cust = await (await site("/")).text();
-    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock" data-w="dev.out">Sign out of this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");
+    ok(!/Viewing as|Back to accounts|id="vas"/.test(cust) && /id="lock" aria-live="polite" data-w="dev.out">Sign out of this </.test(cust), "the customer's page carries no banner, and its one Log out is This device's Sign out");
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
@@ -21458,7 +21465,7 @@ await (async () => {
       "the second signs the iPhone out, says so under the controls, and the list keeps this one alone: " + JSON.stringify(rows()));
 
     /* ---- Log out burns the code the Sheet made, unused ---- */
-    D.getElementById("lock").click();
+    signOutTap(D);
     ok(await until(async () => (await kv.list({ prefix: "ho:" })).keys.length === 0) && card.hidden,
       "logging out burns the code the Sheet made and takes the card away");
     ok(!landingPage("", "n99o", { master: "x", accounts: [] }).includes('id="thisDevice"'), "and his own page carries no This device card");
@@ -23091,7 +23098,7 @@ await (async () => {
       && /Off[.]/.test(row("Notifications").textContent),
       "Turn off drops this phone's subscription and says Off on the row tapped: " + JSON.stringify(row("Notifications").textContent));
     /* signing out is on the card, and signing in again does not turn them back on by itself */
-    D.getElementById("lock").click();
+    signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden) && dev.hidden, "Sign out of this device signs out, and the card goes with the account");
     ok(await signIn() && await until(() => st.rem === 2) && await new Promise((r) => setTimeout(() => r(true), 150))
       && btnOf("Notifications").textContent === "Turn on" && st.key === 1 && st.subs === 1 && !st.subbed,
@@ -23099,7 +23106,7 @@ await (async () => {
     btnOf("Notifications").click();
     ok(await until(() => btnOf("Notifications") && btnOf("Notifications").textContent === "Turn off") && st.subs === 2 && st.subbed,
       "and Turn on files it again: " + JSON.stringify([st.subs, st.subbed]));
-    D.getElementById("lock").click();
+    signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden) && await signIn() && await until(() => st.subs === 3) && st.subbed,
       "and once it is on again, the next sign-in files the phone as it always did: " + JSON.stringify([st.rem, st.subs, st.subbed]));
   } finally { await new Promise((r) => setTimeout(r, 100)); try { W.close(); } catch (e) { /* best effort */ } }
@@ -23209,7 +23216,7 @@ await (async () => {
     D.dispatchEvent(new W.Event("visibilitychange"));
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && /could not be read/.test(head()) && /Please pay the overdue amount of RM 123[.]45/.test(head()),
       "a return whose live document will not open says so and keeps the hold on its last known state: " + JSON.stringify(head().slice(0, 160)));
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
 
     /* a missing fresh publish is explicit and cannot fall back to a sealed issue */
@@ -23218,7 +23225,7 @@ await (async () => {
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.updating"]')) && !D.querySelector("#out [data-unread] button")
       && !/ISSUE/.test(vis()) && /live statement is updating/.test(head()),
       "an account whose live document is not fresh says it is updating, with no Try again and no issue: " + JSON.stringify(outT().slice(0, 80)));
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
 
     st.open = [async () => answer(null, "unavailable")];
@@ -23226,7 +23233,7 @@ await (async () => {
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.unavailable"]')) && !D.querySelector("#out [data-unread] button")
       && !/ISSUE/.test(vis()) && /could not be verified/.test(head()),
       "an unavailable Desk revision is explicit, with no Try again and no issue as a fallback");
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
 
     const innerStampMismatch = Object.assign({ at: live.at, buildId: TEST_DESK_BUILD },
@@ -23235,7 +23242,7 @@ await (async () => {
     signIn();
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')) && !D.querySelector("#out .salt-lines"),
       "a sealed live document whose inner stamp disagrees with its record is never drawn as current");
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
 
     /* a failed read of orders that Try again answers with a claim waiting lifts the hold at once (D9), not at the next change */
@@ -23246,7 +23253,7 @@ await (async () => {
     D.querySelector("#hNeeds [data-unread] button").click();
     ok(await until(() => !D.querySelector('[data-unread="ord.unread"]')) && !/Please pay the overdue amount/.test(head()),
       "and Try again bringing a claim they sent lifts the hold there and then: " + JSON.stringify(head().slice(0, 160)));
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
 
     /* C13: a live document that opens is the whole account; the issue beside it is never drawn */
@@ -23263,7 +23270,7 @@ await (async () => {
     oArea().querySelector("[data-unread] button").click();
     ok(await until(() => oArea().textContent.includes(EN["ord.noneYet"])) && !D.querySelector('[data-unread="ord.unread"]'),
       "and Try again reads them, the line gone with the failure");
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
 
     /* C9 (Fable's review of fold 2): a month that leaves the refunds empty takes their heading with them, and All brings both back */
@@ -24165,7 +24172,7 @@ await (async () => {
   const W = dom.window, D = W.document;
   try {
     for (let i = 0; i < 200 && D.getElementById("barw").hidden; i++) await new Promise((r) => setTimeout(r, 25));
-    D.getElementById("lock").click();
+    signOutTap(D);
     for (let i = 0; i < 200 && !st.posted; i++) await new Promise((r) => setTimeout(r, 25));
     ok(st.unsubscribed && !!st.posted && st.posted.token === tok && st.posted.endpoint === ep,
       "Log out unsubscribes this phone and names its endpoint and token to the site: " + JSON.stringify({ unsubscribed: st.unsubscribed, posted: st.posted }));
@@ -24574,7 +24581,7 @@ await (async () => {
   const { landingPage: lp92 } = await import("../stmt/page.js");
   const C92 = await import("../tools/stmt-crypto.mjs");
   const door92 = lp92("", "n92", null);
-  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" data-w="dev.out">Sign out of this ')
+  ok(door92.includes("Keep me signed in on this") && door92.includes('type="submit" data-w="door.go">Sign in</button>') && door92.includes('id="lock" aria-live="polite" data-w="dev.out">Sign out of this ')
     && !door92.includes("three minutes") && !door92.includes("Locks in") && !/WINDOW_MS/.test(door92),
     "the door offers to keep them signed in, signs in and logs out, and nothing counts down (v692; S3 3.7's words)");
 
@@ -24665,7 +24672,7 @@ await (async () => {
       ok(!second.D.getElementById("barw").hidden && second.D.getElementById("gate").hidden
         && /Statement/.test(second.D.getElementById("out").textContent),
         "a remembered device opens the statement with no password typed");
-      second.D.getElementById("lock").dispatchEvent(new second.W.Event("click", { bubbles: true }));
+      for (let i = 0; i < 2; i++) second.D.getElementById("lock").dispatchEvent(new second.W.Event("click", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 60));
       ok(second.W.localStorage.getItem("salt-stmt-remember") === null && !second.D.getElementById("gate").hidden
         && second.D.getElementById("out").textContent === "",
@@ -25346,7 +25353,8 @@ await (async () => {
     ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") }));
   /* a card's mark: in a button (an mtile, or Order again's stacked face) whose own visible words are its letter and one figure */
   /* C19 (29 Sep 2026): Home's start and again tiles say the unit under the mark, the size and its word alone */
-  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && /^[A-Z]?(Cube|Droplet|Lozenge|Capsule|Ring),[\d,]+(\.\d+)?units?$/.test(seen8(t).replace(/\s+/g, "")); };
+  const shapes8 = new RegExp("^[A-Z]?(" + Object.values(P8.PSHAPE).join("|") + "),[\\d,]+(\\.\\d+)?units?$");
+  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && shapes8.test(seen8(t).replace(/\s+/g, "")); };
   const all8 = [];
   try {
     D8.getElementById("un").value = u8; D8.getElementById("pw").value = pass8;
@@ -29600,7 +29608,7 @@ await (async () => {
     await until(() => !D.getElementById("barw").hidden);
     await new Promise((r) => setTimeout(r, 60));
     const onScreen = D.getElementById("out").textContent.trim();
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => st.posted);
     await new Promise((r) => setTimeout(r, 40));
     const kept = store.get("salt-stmt-remember") || null, seen = store.get("salt-stmt-seen") || null;
@@ -29801,7 +29809,7 @@ await (async () => {
     D.getElementById("keepCopy").click();
     await until(() => st.clip.length);
     ok(st.minted.length === 1 && D.getElementById("keepCode").value === "H4TN 8XWC" && st.clip[0] === st.minted[0], "the fixture: the first opening mints and Copy copies that key");
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
     ok(!D.getElementById("keepCode").value && D.getElementById("keepCopy").disabled && !/Copied/.test(D.getElementById("keepMsg").textContent)
       && D.getElementById("keepCard").hidden,
@@ -30006,7 +30014,7 @@ await (async () => {
     await until(() => D.getElementById("keepCode").value);
     D.getElementById("keepCopy").click();
     ok(st.minted.length === 1 && W.location.hash === "#" + st.minted[0], "the fixture: the keep page's key minted, and copied into the address");
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => st.logout);
     ok(!!st.logout && JSON.stringify(st.logout.handover) === JSON.stringify(st.minted),
       "Log out names every key this page minted, for the site to burn: " + JSON.stringify(st.logout && st.logout.handover && st.logout.handover.length));
@@ -30113,7 +30121,7 @@ await (async () => {
     ok(D.getElementById("outSheet").contains(D.getElementById("doorBox")), "the fixture: a lapse with nothing remembered carries the form into the Sheet");
     await signIn();
     await until(() => D.getElementById("outSheet").hidden);
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
     ok(order() === before, "after the Sheet and a Log out the door stands as it did, the form above I have a sign-in code: " + order());
   } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
@@ -30164,7 +30172,7 @@ await (async () => {
     /* and a password typed at the door and never used goes with the phone's sign out */
     D.getElementById("outX").click();
     pw().value = "typed-and-left"; D.getElementById("pwShow").click();
-    D.getElementById("lock").click();
+    signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
     ok(pw().value === "" && pw().type === "password", "Sign out clears a password left in the field and hides it again: " + JSON.stringify({ pw: pw().value.length, type: pw().type }));
   } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
@@ -34408,7 +34416,7 @@ await (async () => {
     try { await go(w, d, signIn); } finally { w.close(); }
   };
   const rowText = (d) => (d.querySelector('#pOrder [data-row="' + O + '"]') || {}).textContent || "";
-  const logOut = async (d) => { d.getElementById("lock").click(); for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 10)); };
+  const logOut = async (d) => { signOutTap(d); for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 10)); };
   await drive(false, async (w, d, signIn) => {
     await signIn();
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
@@ -43838,7 +43846,7 @@ await (async () => {
     ok(await signIn() && await until(() => btn() && btn().textContent === "Turn off"), "signed in, This device offers Turn off");
     btn().click();
     ok(await until(() => st.unsub === 1) && btn().disabled, "Turn off shuts the buttons while the phone unsubscribes");
-    D.getElementById("lock").click();
+    signOutTap(D);
     ok(await until(() => !D.getElementById("gate").hidden), "and Sign out of this device signs out in that moment");
     ok(await signIn(), "then an account signs in on the same page");
     if (release) release();
@@ -44188,7 +44196,7 @@ await (async () => {
     const dom = new JSDOM(page.replace(css, () => at(w)), { url: "https://site.test/" });
     try {
       const W = dom.window, a = W.document.getElementById("acct"), cs = W.getComputedStyle(a);
-      return { display: cs.display, tracks: cs.gridTemplateColumns.split(/\s+(?![^(]*\))/).filter(Boolean).length,
+      return { display: cs.display, dir: cs.flexDirection, tracks: cs.gridTemplateColumns.split(/\s+(?![^(]*\))/).filter(Boolean).length,
         kids: [...a.children].map((n) => n.tagName.toLowerCase() + (n.id ? "#" + n.id : "." + n.className.split(" ")[0])).join(" "),
         /* jsdom keeps a shorthand as written, so each road to a column is read, and order, which moves auto-placement */
         placed: [...a.children].map((n) => { const c = W.getComputedStyle(n);
@@ -44199,10 +44207,11 @@ await (async () => {
     && [1280, 390].every((w) => !/@media/.test(at(w)) && !at(w).includes("background:#fff;color:#111")),
     "the page's own sheet is read, with its 1080px blocks; resolved at a width no @media is left, and the block for print is dropped");
   const wide = [1080, 1280].map(shape), narrow = [1079, 390, 320].map(shape);
-  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div.acct__main section#thisDevice" && s.placed === "auto/0 auto/0"),
-    "from 1080px Account is a grid of two columns, the statement first and This device placed by the grid into the second, beside it: " + JSON.stringify(wide));
-  ok(narrow.every((s) => s.display === "block" && s.kids === "div.acct__main section#thisDevice"),
-    "below 1080px it is one column, This device under the statement: " + JSON.stringify(narrow));
+  /* 11 Oct 2026 (Phase 7d part 2): the device comes first in the reading order, Messages, This device, then the statement, and the grid still puts Messages and the statement in the first column and This device in the second */
+  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div#aThread section#thisDevice div.acct__main" && s.placed === "1/0 2/0 1/0"),
+    "from 1080px Account is a grid of two columns, Messages and the statement placed in the first and This device placed by the grid into the second, beside them: " + JSON.stringify(wide));
+  ok(narrow.every((s) => s.display === "flex" && s.dir === "column" && s.kids === "div#aThread section#thisDevice div.acct__main"),
+    "below 1080px it is one column in reading order, Messages, then This device, then the statement: " + JSON.stringify(narrow));
 })();
 
 section("S7 polish: Home's Coming up is one list, a part he entered the same row as an order's");
@@ -46158,6 +46167,7 @@ await (async () => {
       beforeParse(win) {
         try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
         win.scrollTo = () => {}; win.open = () => null;
+        try { win.localStorage.setItem("salt-look", "tide"); } catch (e) { /* the look is kept, so its Sheet does not stand over the page this check reads */ }
         /* the page's clock, which a check may move on: a Date that reads now plus the shift */
         const RD = win.Date;
         class FD extends RD { constructor(...a) { if (a.length) super(...a); else super(RD.now() + shift); } static now() { return RD.now() + shift; } }
@@ -54407,7 +54417,7 @@ await (async () => {
     ok(/sup-yellow/.test(panes[0].cls) && /Limited/.test(panes[0].aria) && /More by 14 Oct/.test(panes[0].text), "yellow: a yellow border, Limited in its name, More by 14 Oct under it: " + JSON.stringify(panes[0]));
     ok(/sup-red/.test(panes[1].cls) && /Out for now/.test(panes[1].aria) && !/More by/.test(panes[1].text), "red with no day: a red border and no More by");
     ok(/sup-green/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/More by/.test(panes[2].text), "green: a green border, and no day even when one is sealed");
-    ok(!/sup/.test(panes[3].cls) && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/Expected|Limited|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
+    ok(!/sup/.test(panes[3].cls) && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/More by|Limited|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
     ok(!/\bstock\b|\bsalt\b|\boil\b|Salt Command/i.test(panes.map((p) => p.aria + p.text.replace(/RM[^A-Za-z]*/g, "")).join(" ")), "no customer sentence names stock, a product or the desk");
   } finally { wd.close(); }
   const css = lpF("abcd-efgh", "nf4", null), tokens = /:root\s*{[\s\S]*?\n}/.exec(css);

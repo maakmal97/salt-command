@@ -137,6 +137,8 @@ export const EN = {
   "shape.Ring": "Ring",
   /* ---- THE DOOR ---- */
   "door.h": "Sign in",
+  /* 11 Oct 2026 (Phase 7d part 2): the door names the app, the one name the site carries */
+  "door.app": "Salt Counter",
   "door.lead": "With the username and password we sent you.",
   "door.un": "Username",
   "door.unHint": "Two groups of four, like abcd-efgh.",
@@ -147,7 +149,8 @@ export const EN = {
   "door.go": "Sign in",
   "door.again": "Try again",
   "door.toCode": "I have a sign-in code",
-  "door.help": "Lost your password or your link? Ask us for a **new sign-in link**. It works straight away.",
+  /* a sentence, drawn as one: nothing in it is bold or brass, since a link is only ever a link (11 Oct 2026) */
+  "door.help": "Lost your password or your link? Ask us for a new sign-in link. It works straight away.",
   /* ---- OPENING, SIGNED OUT, AND ANOTHER ACCOUNT ON THIS PHONE ---- */
   "open.lead": "Opening your account...",
   "out.h": "You were signed out on this {dev}",
@@ -201,6 +204,7 @@ export const EN = {
   "look.tide": "Tide",
   "look.note": "You can change this under Account.",
   "dev.out": "Sign out of this {dev}",
+  "dev.outAsk": "Tap again to sign out of this {dev}",
   "dev.another": "Sign in another device",
   "dev.scan": "On the other device, scan this with its camera to open Salt Counter, then type the code where it asks for one.",
   "dev.qrAlt": "A code that opens Salt Counter",

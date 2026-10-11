@@ -50,20 +50,20 @@
  {
   "name": "the danger action leaves the Sheet open",
   "file": "stmt/page.js",
-  "find": "go.addEventListener('click',function(){ ynShut(); q.yes(); });",
-  "replace": "go.addEventListener('click',function(){ q.yes(); });"
+  "find": "go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });",
+  "replace": "go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; q.yes(); });"
  },
  {
   "name": "the danger action sends nothing",
   "file": "stmt/page.js",
-  "find": "go.addEventListener('click',function(){ ynShut(); q.yes(); });",
-  "replace": "go.addEventListener('click',function(){ ynShut(); });"
+  "find": "go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });",
+  "replace": "go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); });"
  },
  {
   "name": "the danger action asks the browser as well",
   "file": "stmt/page.js",
-  "find": "go.addEventListener('click',function(){ ynShut(); q.yes(); });",
-  "replace": "go.addEventListener('click',function(){ if(!confirm('x')) return; ynShut(); q.yes(); });"
+  "find": "go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });",
+  "replace": "go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; if(!confirm('x')) return; ynShut(); q.yes(); });"
  },
  {
   "name": "the ghost that keeps asks the browser first",

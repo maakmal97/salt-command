@@ -62,6 +62,8 @@ const PAGE_CSS = `
 .gate p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.75;margin:0 0 24px}
 /* S3 3.3: the link page, in the system's card, eyebrow, plain ledger and insight; the ring is the app's mark */
 .appmark{display:block;margin:0 0 14px}
+/* the door's name, the one line over Sign in (11 Oct 2026) */
+#gate>.salt-eyebrow{margin:0 0 8px}
 .gate .salt-glass-card{margin:0 0 4px}
 .gate .salt-ledger__label{display:flex;align-items:center;gap:10px}
 .gate .salt-ledger__row:last-child{border-bottom:0}
@@ -193,7 +195,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .btn.lnk{text-align:center;line-height:1.4}
 /* Optional install guide under This device; its steps draw the browser's own marks. */
 .keeppage{margin:20px 0 0;padding:0}
-.keeppage h1{margin:0 0 10px;font-size:var(--salt-text-2xl);line-height:1.15}
+/* the guide is a part of the compact This device card, so its heading is the card's own third level and not a page's first (11 Oct 2026) */
+.keeppage h3{margin:0 0 10px;font-family:var(--salt-font-display);font-size:var(--salt-text-lg);font-weight:600;line-height:1.2}
 .keeppage .kline{margin:14px 0 0}
 .keeppage b{color:var(--salt-text);font-weight:600}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
@@ -316,8 +319,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
 .mfnote:empty{display:none}
 /* S7 7.3: ACCOUNT. The month filter is the system's tab strip, every pill a 44px tap, placed on the list it filters;
-   the earlier statements close the statement; This device follows it, and stands beside it from 1080px */
-.acct{max-width:620px;margin:0 auto}
+   the earlier statements close the statement. 11 Oct 2026 (Phase 7d part 2, his yes): THE DEVICE COMES FIRST. Messages, then the
+   compact This device card, then the statement under a gap of its own (28px, a gap and never a margin, so a part that is not drawn
+   leaves none); from 1080px This device stands beside, as it did */
+.acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+#aThread:empty{display:none}
 .mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 
 .stmtback{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 18px}
@@ -325,15 +331,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .stmtfoot{margin:30px 0 0;padding-top:18px;border-top:1px solid var(--salt-line)}
 .stmtfoot .sub2{margin:6px 0 12px}
 .stmtissues{display:flex;flex-wrap:wrap;gap:8px}
-.devcard{margin:30px 0 0}
+.devcard{margin:0}
 .devcard .salt-ledger{margin-top:6px}
 .devcard .salt-ledger__row:last-child{border-bottom:0}
 .devcard .salt-ledger__label{flex:1 1 auto}
 .devcard .salt-ledger__flag .glyph{vertical-align:-0.3em;margin:0 3px}
 .devout{width:100%;margin-top:14px}
 @media (min-width:1080px){
-  .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;align-items:start}
-  .devcard{margin:0}
+  .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;row-gap:28px;align-items:start}
+  #aThread,.acct__main{grid-column:1}
+  .devcard{grid-column:2;grid-row:1 / span 2}
 }
 /* S6 6.2: To pay now, Home's first answer since S7 7.1, its parts on the plain Ledger list */
 .payhead[hidden]{display:none}
@@ -863,7 +870,7 @@ function replaceAsk() {
    the optional install guide carries an iPhone's sign-in across to the app's separate storage. */
 function keepPage() {
   return '<section id="keepCard" class="keeppage" aria-labelledby="keepHead" hidden>'
-    + wt("h1", 'id="keepHead"', "keep.h")
+    + wt("h3", 'id="keepHead"', "keep.h")
     + wt("p", 'class="lead" id="keepLead"', "keep.lead")
     + '<div id="keepIos" hidden><ol class="keepsteps">'
     + "<li>" + wt("span", "", "keep.s1", 22) + "</li>"
@@ -882,16 +889,18 @@ function keepPage() {
     + wt("p", 'class="kline" id="keepDroid" hidden', "keep.droid", 22)
     + "</section>";
 }
-/* S7 7.3: THIS DEVICE, in Account, ONE CARD: its notifications (drawDevice, where the bell's plain tap lands), the
-   optional Home Screen install guide, the account's phones and computers with Sign in another device and Sign out
-   other devices in #devSlot (S9 9.9, drawDev), and signing out of this one, the customer's one Log out (#lock). */
+/* S7 7.3: THIS DEVICE, in Account, ONE CARD: its notifications (drawDevice, where the bell's plain tap lands), the Look, signing
+   out of this one, the customer's one Log out (#lock), then the account's phones and computers with Sign in another device and
+   Sign out other devices in #devSlot (S9 9.9, drawDev) and the optional Home Screen install guide. 11 Oct 2026 (Phase 7d part 2):
+   the card sits above the statement, so what a device is asked for is first and Sign out is within a thumb of the top; every
+   control keeps its id, request and behaviour. Sign out is a tap and a tap again (the page's script, lockEl). */
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
     + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
     + lookRow()
+    + wt("button", 'type="button" class="salt-ghost devout" id="lock" aria-live="polite"', "dev.out")
     + '<div id="devSlot"></div>' + keepPage()
-    + wt("button", 'type="button" class="salt-ghost devout" id="lock"', "dev.out")
     + "</section>";
 }
 /* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
@@ -1336,6 +1345,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + lookSheet(true)
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
+    /* 11 Oct 2026 (Phase 7d part 2, his yes): THE DOOR NAMES THE APP, in its ring and its one name, above Sign in; his own page is Salt Account and carries none */
+    + (owner ? "" : '<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + wt("p", 'class="salt-eyebrow salt-eyebrow--copper"', "door.app"))
     + wt("h1", "", "door.h")
     + wt("p", 'class="lead"', "door.lead")
     /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can
@@ -1391,15 +1402,17 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div></div>'
     /* PHASE 7A: the foot holding To pay now and its Pay, last in Home so it stays above the bar the whole way down (drawPayHead) */
     + '<div id="homeFoot" class="payfoot" hidden></div></div>'
-    /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place: the statement with its one month filter (placed
-       beside the list it filters), the earlier statements at its foot, and This device beside it from 1080px */
-    + '<div id="pStmt" hidden><div id="acct" class="acct"><div class="acct__main"><div id="aThread"></div>'
+    /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
+       statement (its one month filter placed beside the list it filters, the earlier statements at its foot) under a gap of its
+       own; This device stands beside them from 1080px */
+    + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aThread"></div>'
+    + (owner ? "" : thisDevice())
+    + '<div class="acct__main">'
     + '<div id="stmtBack" class="stmtback" hidden><p id="stmtBackT"></p>'
     + wt("button", 'type="button" class="salt-ghost" id="stmtBackGo"', "acct.back") + "</div>"
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
     + '<div id="out"></div>'
     + '<div id="stmtFoot" class="stmtfoot" hidden></div></div>'
-    + (owner ? "" : thisDevice())
     + "</div></div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
@@ -2146,13 +2159,13 @@ const CLIENT_JS = `
   var devFrom=null;
   function openDevSheet(from){
     if(!devSheetEl||!curCk) return;
-    devFrom=from; devScrim.hidden=false; devSheetEl.hidden=false;
+    devFrom=from; devScrim.hidden=false; devSheetEl.hidden=false; behind();
     try{ devSheetEl.focus(); }catch(e){}
     mintDev();
   }
   function closeDevSheet(){
     if(!devSheetEl||devSheetEl.hidden) return;
-    devSheetEl.hidden=true; devScrim.hidden=true; devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
+    devSheetEl.hidden=true; devScrim.hidden=true; behind(); devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
     try{ if(devFrom&&devFrom.isConnected) devFrom.focus(); }catch(e){}
     drawDev();   /* S9 fix: the device the code signed in is on the list as the Sheet closes */
   }
@@ -2330,7 +2343,16 @@ const CLIENT_JS = `
     var reg=await navigator.serviceWorker.getRegistration();
     return reg&&reg.pushManager?await reg.pushManager.getSubscription():null;
   }
-  document.getElementById('lock').addEventListener('click', logOut);
+  /* 11 Oct 2026 (Phase 7d part 2, his yes): SIGN OUT IS A TAP AND A TAP AGAIN, on the one control and never the browser's confirm. The
+     first tap arms it and says so in its own words; a second inside LOCK_MS signs out exactly as it did (logOut); left alone the
+     arm lets go by itself and the words come back. His own way back to his list, which shares the id on his page, is a plain tap. */
+  var LOCK_MS=4000, lockEl=document.getElementById('lock'), lockArm=null;
+  function lockRest(){ if(lockArm){ clearTimeout(lockArm); lockArm=null; } if(!OWNER) setW(lockEl,'dev.out'); }
+  lockEl.addEventListener('click', function(){
+    if(OWNER){ logOut(); return; }
+    if(lockArm){ lockRest(); logOut(); return; }
+    setW(lockEl,'dev.outAsk'); lockArm=setTimeout(lockRest, LOCK_MS);
+  });
   /* S1 1.5, 24 SEP 2026: A LAPSED SESSION SAYS SO AT ONCE, IN VIEW, where the fifteen minutes had run out in
      silence. S3 3.5, HIS D1 OF 24 SEP 2026: IT REOPENS ITSELF FROM THE REMEMBERED PHONE. api() asks the phone's own
      memory for a fresh session, once, and repeats the request, so nobody is stranded on a page that looks alive.
@@ -2372,12 +2394,12 @@ const CLIENT_JS = `
     document.getElementById('outForm').appendChild(doorBox);
     if(user) un.value=user;
     say('');
-    outScrim.hidden=false; outSheet.hidden=false;
+    outScrim.hidden=false; outSheet.hidden=false; behind();
     try{ pw.focus(); }catch(e){}
   }
   function closeSignedOut(){
     if(!outSheet||outSheet.hidden) return;
-    outSheet.hidden=true; outScrim.hidden=true;
+    outSheet.hidden=true; outScrim.hidden=true; behind();
     /* S3 fix: back where it came from, and the code screen too if the Sheet took it */
     gate.insertBefore(doorBox, doorNext); doorBox.hidden=false;
     if(codeHome&&outSheet.contains(codeBox)){ codeHome.p.insertBefore(codeBox, codeHome.n); codeBox.hidden=true; }
@@ -2622,12 +2644,12 @@ const CLIENT_JS = `
     document.getElementById('bellIos').hidden=!IOS;
     document.getElementById('bellDroid').hidden=IOS||!ANDROID;
     document.getElementById('bellDesk').hidden=IOS||ANDROID;
-    bellScrim.hidden=false; bellSheetEl.hidden=false;
+    bellScrim.hidden=false; bellSheetEl.hidden=false; behind();
     try{ bellSheetEl.focus(); }catch(e){}
   }
   function closeBell(){
     if(!bellSheetEl||bellSheetEl.hidden) return;
-    bellSheetEl.hidden=true; bellScrim.hidden=true;
+    bellSheetEl.hidden=true; bellScrim.hidden=true; behind();
     try{ bellEl.focus(); }catch(e){}
   }
   if(bellBoxEl){
@@ -2698,7 +2720,7 @@ const CLIENT_JS = `
   }
   function lookShut(){
     if(!lookSheetEl||lookSheetEl.hidden) return;
-    lookSheetEl.hidden=true; lookScrim.hidden=true;
+    lookSheetEl.hidden=true; lookScrim.hidden=true; behind();
     try{ if(lookBack&&lookBack.focus) lookBack.focus(); }catch(e){}
   }
   function lookAsk(b, own){
@@ -2706,7 +2728,7 @@ const CLIENT_JS = `
     var kept=lookStore();
     if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;
     lookAsked=true; lookBack=document.activeElement;
-    lookScrim.hidden=false; lookSheetEl.hidden=false;
+    lookScrim.hidden=false; lookSheetEl.hidden=false; behind();
     try{ lookSheetEl.focus(); }catch(e){}
   }
   if(lookRow) lookRow.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t) lookSet(t.getAttribute('data-look')); });
@@ -3186,6 +3208,7 @@ const CLIENT_JS = `
       box.addEventListener('keydown',sheetKeys);
       wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
       osh={wrap:wrap, box:box, head:head, body:body, foot:foot, opener:opener||document.activeElement};
+      behind();
       try{ box.focus({preventScroll:true}); }catch(e){}
     }
     sheetDraw();
@@ -3207,6 +3230,7 @@ const CLIENT_JS = `
     dropPlaced(false);
     var s=osh; osh=null; draft.step=''; draft.check=null; draft.amend=''; draft.pool='';
     s.wrap.parentNode.removeChild(s.wrap);
+    behind();
     try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
   }
   /* the customer's own ways out (the scrim, Close, Escape) wait while Place is on its way: closed then, the answer had
@@ -3224,6 +3248,28 @@ const CLIENT_JS = `
     var at=document.activeElement;
     if(ev.shiftKey&&(at===all[0]||at===osh.box)){ ev.preventDefault(); all[all.length-1].focus(); }
     else if(!ev.shiftKey&&at===all[all.length-1]){ ev.preventDefault(); all[0].focus(); }
+  }
+  /* ---- THE PAGE BEHIND A SHEET CANNOT BE REACHED (11 Oct 2026, Phase 7d part 2, Fable's note on #133) ------------------------
+     While any Sheet is open, everything else at the root of the body is inert, so a screen reader or a Tab cannot walk the page
+     under a modal; the Sheet's own scrim and body stay live. It is read off the DOM every time (a dialog that is aria-modal and
+     not hidden is open) and never held as a flag, so no way of closing a Sheet can leave the page shut. Every open calls it, and
+     every close calls it before focus goes back, so the control that opened the Sheet can take it; a lapse and a log out reach it
+     through the closes they already make (lapsed, lock). A yes or no over the order sheet shuts that sheet too. What it
+     shuts it marks (data-behind), so another use of inert is left alone. His page draws Sheets of its own and is left as it was. */
+  function behind(){
+    if(OWNER) return;
+    var open=[].filter.call(document.querySelectorAll('[role=dialog][aria-modal=true]'),function(d){ return !d.hidden; }), keep=[];
+    var ask=document.getElementById('ynSheet');
+    (ask&&!ask.hidden?[ask]:open).forEach(function(d){
+      if(d.parentNode!==document.body){ keep.push(d.parentNode); return; }   /* a built Sheet: its wrapper, scrim and all */
+      keep.push(d);
+      var s=d.previousElementSibling; if(s&&s.classList.contains('salt-sheet-scrim')) keep.push(s);   /* a drawn Sheet: itself and its scrim */
+    });
+    [].forEach.call(document.body.children,function(c){
+      if(c.tagName==='SCRIPT'||c.tagName==='STYLE') return;
+      if(open.length&&keep.indexOf(c)<0){ c.setAttribute('inert',''); c.setAttribute('data-behind',''); }
+      else if(c.hasAttribute('data-behind')){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }
+    });
   }
   /* ---- A YES OR NO IS A SHEET (11 Oct 2026, Phase 7d part 1, his decision 4: no native confirm on this page) ----------------
      Cancel this order, the same step at the order limit, and Withdraw a link each ask in the system's Sheet over the page, which
@@ -3249,6 +3295,7 @@ const CLIENT_JS = `
     var q=yn; yn=null;
     document.removeEventListener('keydown',ynKeys,true);
     if(q.wrap.parentNode) q.wrap.parentNode.removeChild(q.wrap);
+    behind();
     if(quiet) return;
     var b=q.opener; if(!(b&&b.isConnected)&&q.again) b=q.again();
     try{ if(b&&b.focus) b.focus({preventScroll:true}); }catch(e){}
@@ -3268,12 +3315,13 @@ const CLIENT_JS = `
     x.appendChild(oGlyph('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
     q.body.forEach(function(n){ body.appendChild(n); });
     var go=el('button','salt-ghost salt-ghost--danger',q.go); go.type='button'; go.id='ynGo';
-    go.addEventListener('click',function(){ ynShut(); q.yes(); });
+    go.addEventListener('click',function(){ if(!yn||yn.wrap!==wrap) return; ynShut(); q.yes(); });
     var keep=el('button','salt-ghost',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
     foot.appendChild(go); foot.appendChild(keep);
     box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
     wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
     yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};
+    behind();
     document.addEventListener('keydown',ynKeys,true);
     try{ box.focus({preventScroll:true}); }catch(e){}
   }
@@ -4894,10 +4942,10 @@ const CLIENT_JS = `
     /* S6 fix: Transfer is the way chosen as it opens, as the mockup draws it; the way is not the account, and no account is */
     PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false, what:false};
     payNumLoad();
-    payScr.hidden=false; paySh.hidden=false; drawPay();
+    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();
     try{ paySh.focus(); }catch(e){}
   }
-  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; PS=null; payqDrop(); }
+  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; behind(); PS=null; payqDrop(); }
   /* ---- F13 (29 Sep 2026): A SLIP, SEALED ON THIS PHONE. On Did you send, a picture of the payment may go with the claim,
      one a claim: re-encoded here to 1,600 px JPEG under SLIP_BYTES, then sealed to the public half of his slip key
      (GET /slip/key) before it leaves, so only ciphertext reaches the site (rule 2) and only his vault opens it. The
@@ -5134,7 +5182,7 @@ const CLIENT_JS = `
     var w=q.away||{}, ctx=q.kind==='order'?(oFind(q.id)?orderCtx(q.id):null):acctCtx();
     if(q.who!==payqWho(user)||!(Date.now()-q.at<2*3600e3)||!ctx||!(ctx.fig>0.004)||!(w.amt>0)||!acct(w.acct)){ payqDrop(); return; }
     PS={ctx:ctx, part:false, amt:'', rail:w.rail, acct:w.acct, said:'', step:'check', away:{amt:w.amt, rail:w.rail, acct:w.acct, gone:false}, busy:false};
-    payScr.hidden=false; paySh.hidden=false; drawPay();
+    payScr.hidden=false; paySh.hidden=false; behind(); drawPay();
     try{ paySh.focus(); }catch(e){}
   }
   function payGone(){ if(PS&&PS.away) PS.away.gone=true; }
@@ -5472,7 +5520,7 @@ const CLIENT_JS = `
   function thOpen(from){
     if(!thSheetEl||!session||view) return;
     thFrom=from||null; thFromId=from&&from.closest&&from.closest('#aThread')?'aThread':'hThread'; draft.thSince=seenGet().o[thKey()]||'';
-    thScrim.hidden=false; thSheetEl.hidden=false;
+    thScrim.hidden=false; thSheetEl.hidden=false; behind();
     try{ thSheetEl.focus(); }catch(e){}
     if(draft.thDraft&&!thIn.value) thIn.value=draft.thDraft;
     thLines(true); thSeen(); thHome();
@@ -5483,7 +5531,7 @@ const CLIENT_JS = `
   function thClose(){
     if(thTimer){ clearInterval(thTimer); thTimer=null; }
     if(!thSheetEl||thSheetEl.hidden) return;
-    thSheetEl.hidden=true; thScrim.hidden=true; thSay('');
+    thSheetEl.hidden=true; thScrim.hidden=true; behind(); thSay('');
     try{ var f=thFrom&&thFrom.isConnected?thFrom:(document.getElementById(thFromId)||document).querySelector('.throw'); if(f) f.focus(); }catch(e){}
   }
   /* read only while the Sheet is open and the page is showing; a read that a later one overtook is let go */

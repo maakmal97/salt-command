@@ -202,8 +202,8 @@ the workings included, and goods, never the product's word; a refund row carries
 names what stays the whole account's; No orders yet, never a period; Refunds and Still to collect are h3; a book's day is
 written from its digits, never a clock. An issue keeps every word it was sent with. The page prints money as RM and two
 places, every date DD Mon YYYY with a weekday only before a due date, the bar is the Places landmark, and a guest page opens
-on its h1 (C5, C17, C19, C21, C22). **This device** follows (beside it from 1080px), ONE card: notifications on or
-off (where the bell's plain tap lands; Step 1b), Saved as an app, the account's other devices (S9 9.9, below), and Sign out. **Off is kept on the device** (`salt-push-off`): the
+on its h1 (C5, C17, C19, C21, C22). **This device** comes first, after Messages (and beside the statement from 1080px, `#thisDevice`, ONE compact card): notifications on or
+off (where the bell's plain tap lands; Step 1b), the Look, **Sign out** (a tap and a tap again, below), the account's other devices (S9 9.9, below) and Saved as an app, whose heading is the card's own third level. The statement follows under its own `h2`, 28 px below the card (the `.acct` container's gap, never a margin). **Off is kept on the device** (`salt-push-off`): the
 subscription is dropped there and the site told (`POST /push/unsubscribe`; a record it was not told of goes at the next
 wake it cannot deliver, 404 or 410), and a sign-in files the phone again only once a Turn on has cleared it.
 `drawAccount(el)` moves Account into a place and draws it.
@@ -647,6 +647,33 @@ The suite section "One word per state, and the shape beside the mark" (`test/cou
 `test/counter-state-words.mutations.json`) drives the generated page in jsdom over an order in each state and reads the text it renders (each state's
 chip, sentence, steps and history, the claim, Home, the order sheet and Place), builds each banner from the real wake through the service worker, sweeps
 every word the page is served for the family, and checks that every mark on every screen has its shape word and that none is a product's.
+
+### Account leads with this device, and the door names the app (Phase 7d part 2, 11 Oct 2026, his yes)
+
+**Account reads Messages, This device, then the statement** (`drawAccount`, `stmt/page.js`), each its own child of `#acct`, a flex column with a 28 px gap
+so a part not drawn leaves none (from 1080px a grid: the card in the second column beside Messages and the statement). Every control kept its id,
+data attributes, request and behaviour; only the order and the grouping moved. The install guide's heading is now an `h3` inside the card, so Account
+carries one second-level heading of its own, the statement's, and no stray first-level one. Measured in a real browser at 375 and 768, Night and Tide:
+the gap between the card and the statement's heading is 28 px (it was 0), Sign out sits at y 434 of 5,113 (it was 4,876 of 5,017), no sideways scroll,
+every control in the card 44 px tall.
+
+**Sign out is a tap and a tap again, on the same control.** The first tap arms it and says so in its own words (`dev.outAsk`, "Tap again to sign out of this
+{dev}", announced because the button is `aria-live=polite`) and sends nothing; a second within four seconds (`LOCK_MS`) signs out exactly as before; left alone
+it lets go by itself. Never the browser's `confirm()` (7d part 1). His own page shares the control as Back to accounts and keeps one tap.
+
+**The door names the app**: the ring and one eyebrow line, `door.app` (Salt Counter, the one name allowed), above Sign in; his own page carries none of it. The
+help line (`door.help`) is a plain sentence, nothing bold, brass or linked; the door holds no link. D3's rules are unchanged.
+
+**While any Sheet is open the page behind it is inert** (Fable's note on #133). `behind()` reads the DOM every time (a `[role=dialog][aria-modal=true]` that is not
+hidden is open) and marks everything else at the root of the body `inert` with `data-behind`; the Sheet's own wrapper or scrim and body stay live, and a yes or no
+over the order sheet shuts that sheet too. It is never a held flag, so no way of closing a Sheet can leave the page shut: every open and every close of the eight
+Sheets calls it (the pay Sheet at both its openings, an order's Pay and the return from the bank), a close before focus goes back, and a lapse or a log out reaches it
+through the closes they already make. A page that was shut by something else (Home's greyed stages) is left alone, since only `data-behind` is taken back. His page draws
+Sheets of its own and is left as it was. **The yes or no's danger action is guarded**: its handler returns unless its own Sheet is still the open one, so a second tap
+or a stale button cannot send a cancel twice. A device that has not chosen a look is asked at its first sign-in, so a test that reads `[inert]` stores a look first.
+
+The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
+`test/counter-account-door.mutations.json`) drives all of it through the generated page in jsdom.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
