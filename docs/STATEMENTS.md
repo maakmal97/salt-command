@@ -945,8 +945,9 @@ sent on an order whose row is one of its parts (matched by `rowOn` and the whole
 against the account that reaches its row, the lines walked as `claimAlloc` takes them (since V2: the rows with goods out
 oldest first, then the orders at Ready with nothing handed over; an order at Ready with no `rowOn` takes none). The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
 number, payload or reference shipped (the suite holds `stmt/pay.js` to no run of five digits, and, on the laptop, holds every
-tracked file free of every private value of the pay store, count only; `stmt/`, `docs/`, `tools/testfix.mjs` and the suite's own files hold no
-run of ten digits but zeros, order stamps and a few named constants, so a number joined from parts is how a test invents one). **`payHref` in it is the one link builder** (D8, 24 Sep
+tracked file free of every private value of the pay store, count only; every tracked text file but `master/`, `public/`, `ledger/` and `MEMORY.md` holds no
+run of ten digits but eight zeros and up to four digits, an order id's fourteen-digit stamp and its dash, a binary literal, a hex digest, a blob or a 13-digit epoch beside a letter,
+and four named constants, so a number joined from parts is how a test invents one; `tools/paysync.mjs` masks any run of five digits in every error it prints). **`payHref` in it is the one link builder** (D8, 24 Sep
 2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
 and `PAY`, the names `CLIENT_JS` declares, so the page carries `payHref.toString()` as it is. The suite reads the link
