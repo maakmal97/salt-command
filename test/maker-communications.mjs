@@ -342,7 +342,8 @@ export async function run({ ok }) {
       return !!condition();
     };
     const tap = (root, label) => [...doc.querySelectorAll(root + " button")].find((button) => button.textContent === label)?.click();
-    doc.querySelector('[data-m="maker"]').click();
+    /* 11 Oct 2026: the conversations are Customers, Messages */
+    doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.messages"]').click();
     await until(() => doc.querySelector('[data-thread="' + user + '"]'));
     doc.querySelector('[data-thread="' + user + '"]').click();
     ok(/^1 waiting/.test(doc.getElementById("makerChatStatus").textContent),
@@ -384,7 +385,8 @@ export async function run({ ok }) {
       "Pending Chat persists only ciphertext and fixed safe metadata, never the reply or master key.");
     tap("#makerChatOpen", "Close chat"); page.close();
     page = new JSDOM(html, pageOptions).window; doc = page.document;
-    doc.querySelector('[data-m="maker"]').click();
+    /* 11 Oct 2026: the conversations are Customers, Messages */
+    doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.messages"]').click();
     await until(() => doc.querySelector('[data-thread="' + user + '"]'));
     doc.querySelector('[data-thread="' + TEST_USER + '"]').click();
     const beforeSwitchedRetry = posts.length;
@@ -415,6 +417,9 @@ export async function run({ ok }) {
       "The actual owner retry button reuses the fixed immutable request and never adds a second customer line.");
     tap("#makerChatOpen", "Close chat");
     ok(fakePolls.size === 0, "Closing Chat stops its poll.");
+    /* the notice is Shop, Notice */
+    doc.querySelector('[data-act="nav.shop"]').click(); doc.querySelector('[data-act="part.shop.notice"]').click();
+    await until(() => doc.querySelector("#makerBulletin textarea"));
     const noticeText = doc.querySelector("#makerBulletin textarea"); noticeText.value = "A still notice.";
     const beforeSet = posts.filter((item) => item.path === "/all/maker/bulletin").length;
     tap("#makerBulletin", "Set notice");
@@ -464,7 +469,8 @@ export async function run({ ok }) {
       && doc.getElementById("makerBulletin").textContent.includes("Kept notice draft.")
       && /notification outcome is unknown/.test(doc.getElementById("makerBulletinStatus").textContent),
       "Notice readback distinguishes another concurrent notice while preserving the original intended body and notification uncertainty.");
-    /* 11 Oct 2026: each of the three hours buttons stays off until its answer lands, where its callback let go at once */
+    /* 11 Oct 2026: each of the three hours buttons stays off until its answer lands, where its callback let go at once (Shop, Hours) */
+    doc.querySelector('[data-act="part.shop.hours"]').click();
     const hoursBtn = (label) => [...doc.querySelectorAll("#makerSchedule button")].find((button) => button.textContent === label);
     const holdHours = async (label, ready, saved) => {
       await until(() => hoursBtn(label));
@@ -484,9 +490,11 @@ export async function run({ ok }) {
       const held = await holdHours(label, ready, saved);
       ok(held.out && held.off && held.back, label + " keeps its button off until the answer, then frees it: " + JSON.stringify(held));
     }
+    doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.messages"]').click();
+    await until(() => doc.querySelector('[data-thread="' + user + '"]'));
     doc.querySelector('[data-thread="' + user + '"]').click();
-    doc.querySelector('[data-m="accounts"]').click();
-    ok(fakePolls.size === 0, "Leaving Maker stops an open Chat poll.");
+    doc.querySelector('[data-act="part.customers.accounts"]').click();
+    ok(fakePolls.size === 0, "Leaving Messages stops an open Chat poll.");
     harness.book.run("drop", { u: TEST_USER });
     ok(harness.db.prepare("SELECT COUNT(*) AS n FROM fixture_thread WHERE u=?").get(TEST_USER).n === 0,
       "Unmaking a test account drops its isolated thread state and receipts.");

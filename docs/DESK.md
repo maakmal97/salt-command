@@ -190,7 +190,7 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
 
 ## The desk
 
-- **Counter maker bridge**: the owner works in Salt Account's Maker place. `/all/maker/*` is
+- **Counter maker bridge**: the owner works in Salt Account's Orders, Customers, Record and Shop places (one Maker place until 11 Oct 2026). `/all/maker/*` is
   dispatched only after the Counter Worker verifies Cloudflare Access identity and the owner
   email; its handler receives that verified identity, not a request-supplied address. The Counter
   uses the `DESK_MAKER` service binding and a dedicated `COUNTER_MAKER_KEY` to call only

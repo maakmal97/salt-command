@@ -160,7 +160,9 @@ export async function run({ ok }) {
     };
     const settle = async (n) => { await until(() => posts.length >= n); await pause(); };
     const isRid = (value) => /^[0-9a-f]{32}$/.test(value);
-    doc.querySelector('[data-m="maker"]').click();
+    /* 11 Oct 2026: the cards are in Orders and the ledger-row editor in Record, so both places are entered */
+    doc.querySelector('[data-act="nav.record"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => button((t) => t === "Record cash"));
 
     /* Record cash: one id, kept across a failure */

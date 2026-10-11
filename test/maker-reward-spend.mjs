@@ -173,7 +173,7 @@ export async function run({ ok }) {
     const accept = () => section() && [...section().querySelectorAll("button")].find((b) => b.textContent === "Accept tier proposals");
     const retained = () => Object.keys(window.localStorage).filter((k) => k.includes("tier-accept-all"));
     const press = async (n) => { await until(() => accept() && !accept().disabled); accept().click(); await until(() => posts.length >= n); await pause(); };
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.record"]').click();
     await until(() => accept());
     const isAt = (v) => typeof v === "string" && !Number.isNaN(Date.parse(v));
 

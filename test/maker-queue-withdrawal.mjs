@@ -468,13 +468,13 @@ export async function run({ ok, worker, handleMaker }) {
     });
     try {
       const doc = dom.window.document;
-      doc.querySelector('button[data-m="maker"]').click();
+      doc.querySelector('[data-act="nav.record"]').click();
       for (let i = 0; i < 100 && !doc.querySelector("#makerQueueReview .maker-queue-action"); i++)
         await new Promise((resolve) => setTimeout(resolve, 5));
       const action = doc.querySelector("#makerQueueReview .maker-queue-action");
-      const emptyUi = !doc.querySelector("#makerReview .maker-card button") && !action;
+      const emptyUi = !doc.querySelector("#makerReview .maker-card button, #makerDrafts .maker-card button") && !action;
       if (width === 1280) ok(!emptyUi && doc.querySelector("#makerQueueReview").textContent.includes("Server-held device entry")
-        && doc.querySelector("#oMaker").textContent.includes("cannot read a device’s unsent queue"),
+        && doc.querySelector("#oRecord").textContent.includes("cannot read a device’s unsent queue"),
       "the desktop Counter review names the origin boundary and draws an uploaded device entry, not an unsent local entry");
       const styles = [...doc.querySelectorAll("style")].map((style) => style.textContent).join("\n");
       const target = styles.match(/\.maker-queue-action\{([^}]+)\}/)?.[1] || "";
@@ -518,7 +518,7 @@ export async function run({ ok, worker, handleMaker }) {
   });
   try {
     const doc = emptyDom.window.document;
-    doc.querySelector('button[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.record"]').click();
     for (let i = 0; i < 100 && !doc.querySelector("#makerQueueReview .rnone"); i++)
       await new Promise((resolve) => setTimeout(resolve, 5));
     ok(doc.querySelector("#makerQueueReview .rnone")?.textContent === "No server-held device entries or cloud refusals."

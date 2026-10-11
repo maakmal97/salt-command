@@ -187,7 +187,7 @@ export async function run({ ok }) {
       for (let i = 0; i < 150 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => doc.querySelector("#makerClaims input[type=password]"));
     const input = doc.querySelector("#makerClaims input[type=password]");
     const button = (text) => [...doc.querySelectorAll("#makerClaims button")].find((b) => b.textContent === text);
@@ -222,7 +222,7 @@ export async function run({ ok }) {
     ok(created === 2 && doc.querySelectorAll("[data-maker-slip]").length === 1 && derives === derivedBefore,
       "A slip read held across lock and a new unlock cannot use the key or paint under the newer session: "
       + created + "/" + (derives - derivedBefore));
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => all("View slip").length === 2 && !doc.querySelector("[data-maker-slip]"));
     ok(revoked === 2 && !doc.querySelector("[data-maker-slip]"),
       "Redrawing the claims revokes every rendered slip URL: " + revoked);
@@ -244,6 +244,30 @@ export async function run({ ok }) {
     ok(/no such slip/.test(missing) && /malformed/.test(version) && /could not be opened/.test(tampered),
       "Missing or expired, wrong-version and tampered slips are refused on the device without a picture: "
       + JSON.stringify([missing, version, tampered]));
+    /* 11 Oct 2026, the five places: the unlocked slip key stays while he moves between the parts of Orders, as it did on the one Maker
+       page, the picture is let go when Waiting on you is left, and the key goes only when Orders is left */
+    slipMode = "ok";
+    const said = () => doc.querySelector("#makerClaims p.msg")?.textContent || "";
+    const view = async (secret) => {
+      const before = created; passes()[0].value = secret; all("View slip")[0].click();
+      await until(() => !all("View slip")[0].disabled && (created > before || /could not be opened/.test(said())));
+      return created > before;
+    };
+    button("Close and lock slip").click();
+    const unlocked = await view(pass);
+    doc.querySelector('[data-act="part.orders.agreed"]').click();
+    const letGo = !doc.querySelector("[data-maker-slip]");
+    doc.querySelector('[data-act="part.orders.waiting"]').click();
+    const keptKey = await view("");
+    ok(unlocked && letGo && keptKey,
+      "An unlocked slip key survives a move between the parts of Orders, the picture is let go on leaving Waiting on you, and the next View slip asks for no passphrase: "
+      + JSON.stringify([unlocked, letGo, keptKey]));
+    doc.querySelector('[data-act="nav.customers"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
+    await until(() => all("View slip").length === 2);
+    const afterLeaving = await view("");
+    ok(!afterLeaving && /Unlock the slip key/.test(said()),
+      "and it is dropped on leaving Orders: the next View slip asks for the passphrase again: " + JSON.stringify([afterLeaving, said()]));
   } finally { browser.window.close(); }
   harness.db.close();
   await concurrentFixture(ok);

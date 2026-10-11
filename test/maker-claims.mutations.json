@@ -1,0 +1,5 @@
+[
+ {"name": "the slip key is dropped on every part switch within Orders", "file": "stmt/owner.js", "find": "if(placeNow!=='orders') makerSlipLock();", "replace": "if(!inClaims()) makerSlipLock();"},
+ {"name": "the slip key is kept when Orders is left", "file": "stmt/owner.js", "find": "if(placeNow!=='orders') makerSlipLock();", "replace": "if(false) makerSlipLock();"},
+ {"name": "the slip picture stays on the page when Waiting on you is left", "file": "stmt/owner.js", "find": "if(!inClaims()) makerSlipClose();", "replace": "if(false) makerSlipClose();"}
+]

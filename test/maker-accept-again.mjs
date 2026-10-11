@@ -44,7 +44,7 @@ export async function run({ ok }) {
     const card = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const texts = (id) => card(id) ? [...card(id).querySelectorAll("button")].map((b) => b.textContent) : [];
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => button("20261006090001-aga", "Preview Accept again") && button("20261006090002-ack", "Ready to collect"));
 
     const aga = texts("20261006090001-aga");

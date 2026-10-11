@@ -238,7 +238,7 @@ export async function run({ ok, KV, assets }) {
     const button = (id, text) => acard(id) && [...acard(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const radio = (id, name, label) => { const opt = acard(id) && [...acard(id).querySelectorAll('input[name="' + name + '-' + id + '"]')].find((r) => r.closest(".salt-option").textContent === label); return opt; };
     const wins = (id) => acard(id) ? [...acard(id).querySelectorAll('input[name="makerWin-' + id + '"]')].map((r) => r.closest(".salt-option").textContent) : [];
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => button(A, "Preview"));
     const dNow = rd("ordWinDays(Date.now())"), deskOn = rd("ordWinOn('" + dNow[0] + "',Date.now())"), now2 = deskOn.map((p) => p.label);
     const tDay = s12w().slice(0, 10), tOn = rd("ordWinOn('" + tDay + "',Date.now())").filter((p) => p.slot !== s12w()).map((p) => p.label);

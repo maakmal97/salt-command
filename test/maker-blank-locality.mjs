@@ -90,7 +90,7 @@ export async function run({ ok, pageWork }) {
       }
     });
     try {
-      dom.window.document.querySelector('button[data-m="maker"]').click();
+      dom.window.document.querySelector('button[data-act="nav.record"]').click();
       if (!await work.quiet()) throw new Error("Maker inputs did not settle.");
       const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
         .find((s) => s.querySelector("h3").textContent === "Add ID");

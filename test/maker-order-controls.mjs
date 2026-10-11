@@ -285,7 +285,7 @@ export async function run({ ok }) {
       for (let i = 0; i < 200 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    const card = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    const card = (id) => [...doc.querySelectorAll("#makerReview article, #makerDrafts article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const field = (id, label) => {
       const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl") && l.querySelector(".lbl").textContent === label);
@@ -295,7 +295,7 @@ export async function run({ ok }) {
     /* an answer lands in the foot of the card it was asked of; #makerReviewStatus keeps the list's own words */
     const say = (id) => card(id)?.querySelector("[data-maker-say]");
     const list = () => doc.getElementById("makerReviewStatus").textContent;
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => button("20261003090001-ack", "Ready to deliver"));
 
     ok(!!button("20261003090001-ack", "Ready to collect") && !!button("20261003090001-ack", "Ready to deliver")

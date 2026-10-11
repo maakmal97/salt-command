@@ -92,7 +92,8 @@ try {
       isMobile: width < 600, hasTouch: width < 600
     });
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "domcontentloaded" });
-    await page.locator('button[data-m="maker"]:visible').last().click();
+    await page.locator('[data-act="nav.record"]:visible').last().click();
+    await page.locator('[data-act="part.record.customers"]:visible').click();
     await page.getByRole("heading", { name: "Appoint existing customer" }).waitFor();
 
     for (const target of TARGETS) {

@@ -91,7 +91,7 @@ export async function run({ ok }) {
     const until = async (p) => { for (let i = 0; i < 200 && !p(); i++) await new Promise((r) => setTimeout(r, 10)); return !!p(); };
     const card = (id) => [...doc.querySelectorAll("#makerReview article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
     const button = (id, test) => card(id) && [...card(id).querySelectorAll("button")].find((b) => test(b.textContent));
-    doc.querySelector('[data-m="maker"]').click();
+    doc.querySelector('[data-act="nav.orders"]').click();
     await until(() => card("20261004090002-own") && button("20261004090002-own", (t) => t.startsWith("Receive claimed")));
     ok(!!button("20261004090001-cov", (t) => t.startsWith("Received, on the book already")) && !button("20261004090001-cov", (t) => t.startsWith("Receive claimed"))
       && !!button("20261004090002-own", (t) => t.startsWith("Receive claimed")) && !button("20261004090002-own", (t) => t.startsWith("Received, on the book already")),

@@ -31,7 +31,8 @@ try {
     for (const mode of ["first", "extra"]) {
     const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: "reduce" });
     await page.goto("http://127.0.0.1:" + server.address().port);
-    await page.locator('button[data-m="maker"]:visible').last().click();
+    await page.locator('[data-act="nav.record"]:visible').last().click();
+    await page.locator('[data-act="part.record.entry"]:visible').click();
     const trade = page.locator(".maker-input").filter({ has: page.getByRole("heading", { name: "Sale or purchase", exact: true }) });
     await trade.getByLabel("Goods total (RM)", { exact: true }).fill(String(wd.ask - 30));
     if (mode === "extra") {

@@ -120,6 +120,7 @@ measurement of the desk.
   there to `@media all` (the phone frame's section, 28 Sep 2026). It also lets a LATER shorthand beat
   an earlier, more specific longhand (`margin:0 0 8px` over `…:last-child{margin-bottom:0}`), which
   no browser does: undo a shorthand with a shorthand, or measure in the Browser pane.
+- **Salt Account shows one part at a time, and jsdom ignores `hidden` in `querySelector` and `click()`** (11 Oct 2026, the five places). A test that only needs a control finds it with `byAct` after entering its place (`enter()` in `test/maker-act.mjs`); a test of what a part SHOWS asks whether any ancestor up to `#roster` is `hidden` (`shown()` in `test/admin-places.mjs`), and of what it READS counts the fetches the entry made (`drawn()` logs them). A page that installs `fetch` after `new JSDOM(...)` and taps at once finds its own first read of the sheet still in flight and skipped: flush the microtasks first, never a `setTimeout` (the suite counts those). A history step is awaited by polling the address, never a pause, and a missing control is a failed check, never a crash.
 - **Declaring things to the extract.** A new top-level object or array const in the master fails
   the extract until it is added to `NOT_LEDGER` (configuration) or `LEDGER_KEYS` (the book) in
   `tools/ledger.mjs`. A date field is drawn with `dateIn(id,val,attrs)`: the suite allows one

@@ -52,7 +52,8 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 900 }, reducedMotion: "reduce",
       deviceScaleFactor: 1, isMobile: width < 600, hasTouch: width < 600 });
     await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: "domcontentloaded" });
-    await page.locator('button[data-m="maker"]:visible').last().click();
+    await page.locator('[data-act="nav.record"]:visible').last().click();
+    await page.locator('[data-act="part.record.entry"]:visible').click();
     const editor = page.locator(".maker-input").filter({ has: page.getByRole("heading", { name: "Amend a ledger row", exact: true }) });
     await editor.waitFor();
     const field = (label) => editor.locator("label").filter({ has: page.locator(".lbl").filter({ hasText: new RegExp("^" + label + "$") }) }).locator("input,select");

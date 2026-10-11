@@ -91,7 +91,7 @@ export async function run({ ok, pageWork }) {
     const saved = () => win.localStorage.getItem("saltMakerPending:" + route);
     const values = (body) => { const copy = { ...body }; delete copy.at; return JSON.stringify(copy); };
     try {
-      doc.querySelector('button[data-m="maker"]').click();
+      doc.querySelector('button[data-act="nav.record"]').click();
       await waitFor(() => !!button());
       await work.quiet();
       edit(false);

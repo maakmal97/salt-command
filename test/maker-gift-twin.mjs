@@ -58,7 +58,7 @@ async function ownerGift(wd, pageWork) {
       work = pageWork(win);
     }
   });
-  dom.window.document.querySelector('button[data-m="maker"]').click(); await work.quiet();
+  dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Gift");
   const set = (label, value) => { field(section, label).value = value; };

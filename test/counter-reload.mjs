@@ -22,7 +22,7 @@ export async function run({ ok, html, record, transport, pageWork }) {
   let dom=boot();
   try{
     const doc=dom.window.document;
-    doc.querySelector('button[data-m="maker"]').click();await work.quiet();
+    doc.querySelector('button[data-act="nav.record"]').click();await work.quiet();
     const recovery=[...doc.querySelectorAll("#makerInputs .maker-input")]
       .find(section=>section.querySelector("h3")?.textContent==="Retained input");
     ok(!!recovery&&!saved.includes("Zora")&&!saved.includes("name-pass"),
@@ -42,7 +42,7 @@ export async function run({ ok, html, record, transport, pageWork }) {
       &&!dom.window.localStorage.getItem("saltMakerPending:"+record.path),
       "Counter reload unlocks and sends the original request byte-shape unchanged, clearing storage only on confirmed completion");
     dom.window.close();dom=boot();
-    dom.window.document.querySelector('button[data-m="maker"]').click();await work.quiet();
+    dom.window.document.querySelector('button[data-act="nav.record"]').click();await work.quiet();
     const reviewed=[...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
       .find(section=>section.querySelector("h3")?.textContent==="Retained input");
     if(!reviewed){ok(false,"reloaded Counter exposes conflict review for its retained encrypted intent");return;}
@@ -57,7 +57,7 @@ export async function run({ ok, html, record, transport, pageWork }) {
       &&!dom.window.localStorage.getItem("saltMakerPending:"+record.path),
       "reloaded Counter explicitly reviews encrypted intent against the latest pair, preserving remote entries under a new request identity");
     dom.window.close();dom=boot();
-    dom.window.document.querySelector('button[data-m="maker"]').click();await work.quiet();
+    dom.window.document.querySelector('button[data-act="nav.record"]').click();await work.quiet();
     const cancelled=[...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
       .find(section=>section.querySelector("h3")?.textContent==="Retained input");
     const cancel=[...(cancelled?.querySelectorAll("button")||[])].find(button=>button.textContent==="Cancel retained input");

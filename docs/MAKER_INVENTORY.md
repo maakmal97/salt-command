@@ -5,6 +5,8 @@ available until the replacements pass genuine owner acceptance. All Counter Admi
 remain under the existing verified-owner `/all` boundary. A generic input route is not a
 replacement for an absent control.
 
+"Maker" in the tables below names where a control began. Since 11 Oct 2026 Salt Account has no Maker place: the order review, the claims and the group orders stand in Orders, the Desk's rows, the queue and every form in Record, the chat in Customers (Messages), and the hours and the notice in Shop.
+
 ## Enter, ledger and Network
 
 | Incumbent action and source | Actual Counter control | Route and shared handler | Restriction or remaining work |

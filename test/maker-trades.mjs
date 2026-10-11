@@ -82,7 +82,7 @@ async function ownerTrade(wd, pageWork, cover) {
       work = pageWork(win);
     }
   });
-  dom.window.document.querySelector('button[data-m="maker"]').click(); await work.quiet();
+  dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
   button(section, "Add another book").click(); await work.quiet();
@@ -217,7 +217,7 @@ export async function run({ ok, pageWork }) {
     }
   });
   try {
-    dom.window.document.querySelector('button[data-m="maker"]').click(); await work.quiet();
+    dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
     const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
     const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
     button(section, "Add another book")?.click();

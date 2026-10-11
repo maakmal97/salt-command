@@ -133,7 +133,7 @@ export async function run({ ok } = {}) {
   };
   try {
     const doc = dom.window.document;
-    doc.querySelector('button[data-m="maker"]').click();
+    doc.querySelector('button[data-act="nav.record"]').click();
     const loaded = await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")]
       .some((heading) => heading.textContent === "Customer drift"));
     check(loaded, "the owner page renders the Counter customer drift controls");

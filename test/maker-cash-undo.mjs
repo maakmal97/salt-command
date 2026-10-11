@@ -49,7 +49,7 @@ export async function run({ ok }) {
     });
     const w = dom.window, d = w.document;
     const quiet = async () => { for (let i = 0; i < 40; i++) await Promise.resolve(); };
-    byAct(d, "nav.maker").click(); await quiet();
+    byAct(d, "nav.orders").click(); await quiet();
     const card = () => [...d.querySelectorAll("#makerReview article")].find((n) => n.querySelector("h3")?.textContent === "cash-fixture-1");
     /* 11 Oct 2026: Record cash, Undo and the cash field are found by what they do (test/maker-act.mjs), so a change of their words leaves
        this test where it was; Retry cash and Refresh cash are one control whose words are the behaviour under test, and keep theirs */
