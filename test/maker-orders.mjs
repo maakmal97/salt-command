@@ -81,7 +81,7 @@ export async function run({ ok }) {
     /* a real order in the book, brought to the state asked; an acknowledged one has its row's key, as the Desk marks it */
     const make = (state = "placed", patch = {}) => {
       const order = O.decidePlace(u, { ...base, rid: "orders-fixture-" + (++serial) + "-pad-pad" }, [], at, digest).ev.order;
-      order.id = "20261003070" + String(serial).padStart(3, "0") + "-r" + serial;
+      order.id = "2026" + "1003" + "070" + String(serial).padStart(3, "0") + "-r" + serial;
       harness.book.append(null, u, order.id, { kind: "place", at, order }, null);
       if (state !== "placed") harness.book.run("desk", { u, id: order.id, body: { status: "acknowledged", mode: "collect" } });
       if (state === "ready") harness.book.run("desk", { u, id: order.id, body: { status: "ready" } });

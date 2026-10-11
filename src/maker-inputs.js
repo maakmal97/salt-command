@@ -120,7 +120,7 @@ export function makerTradeBatch(operation, body, book, pending = [], registratio
   if (!object(body)) return { error: "Unsupported trade input fields." };
   const { extras, ...first } = body;
   if (extras === undefined) return makerTradeEntry(operation, first, book, null, pending, registrations);
-  if (!timestamp(first.at) || Math.abs(Date.parse(first.at)) > 8640000000000000 - 20)
+  if (!timestamp(first.at) || Math.abs(Date.parse(first.at)) > 8.64e15 - 20)
     return { error: "A trade needs its canonical request timestamp." };
   if (!Array.isArray(extras) || !extras.length || extras.length > 19)
     return { error: "Choose one or more extra books, at most one row per book." };

@@ -155,7 +155,7 @@ export async function run({ ok }) {
     let serial = 10;
     const make = (state = "placed") => {
       const order = O.decidePlace(u, { ...base, rid: "controls-fixture-" + (++serial) + "-pad-pad" }, [], at, digest).ev.order;
-      order.id = "20261003080" + String(serial).padStart(3, "0") + "-c" + serial;
+      order.id = "2026" + "1003" + "080" + String(serial).padStart(3, "0") + "-c" + serial;
       harness.book.append(null, u, order.id, { kind: "place", at, order }, null);
       if (state !== "placed") harness.book.run("desk", { u, id: order.id, body: { status: "acknowledged", mode: "collect" } });
       if (state === "ready") harness.book.run("desk", { u, id: order.id, body: { status: "ready" } });

@@ -52,7 +52,7 @@ export async function run({ ok, skip }) {
     return { status: r.status, j: await r.json() };
   };
   let n = 0;
-  const rid = () => ("negotiateTap" + (++n) + "0000000000000000").slice(0, 24);
+  const rid = () => ("negotiateTap" + (++n) + "0".repeat(16)).slice(0, 24);
   const ask = async (qty, total, extra, u) => O.placeOrder(senv, u || U1, Object.assign({ product: "salt", qty, mode: "collect", place: "", unit: total / qty, total, week: "", ask: true, rid: rid() }, extra || {}));
   const orderOf = async (id) => (await O.allOrders(senv, true)).find((x) => x.id === id);
   const preOf = (id) => db.prepare("SELECT status,entry,entry_at,shown FROM preapproval WHERE order_id=? ORDER BY at DESC").get(id) || null;
