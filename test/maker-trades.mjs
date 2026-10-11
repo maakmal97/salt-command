@@ -10,6 +10,7 @@ import { makerTradeBatch } from "../src/maker-inputs.js";
 import { plan } from "../tools/fold.mjs";
 import E from "../engine/position.mjs";
 import { openMaster } from "../tools/payload.mjs";
+import { answerSheets } from "./maker-act.mjs";
 
 const AT = "2099-10-05T01:00:00.000Z";
 const body = (patch = {}) => ({ at: AT, product: "salt", party: "CX1-ZED", date: "2099-10-05",
@@ -62,7 +63,6 @@ async function ownerTrade(wd, pageWork, cover) {
       win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder; win.scrollTo = () => {};
       const NativeDate = win.Date;
       win.Date = class extends NativeDate { constructor(...args) { super(...(args.length ? args : [tick += 100])); } };
-      win.confirm = () => true;
       win.fetch = async (path, init = {}) => {
         if (cover && String(path) === "/all/maker/trade-cover") return cover(JSON.parse(init.body));
         if (String(path).startsWith("/all/maker/inputs") || String(path).startsWith("/all/maker/drafts/")) {
@@ -82,6 +82,7 @@ async function ownerTrade(wd, pageWork, cover) {
       work = pageWork(win);
     }
   });
+  answerSheets(dom.window, [], () => true);   /* a twin is put to him on the page's Sheet (Phase 2c) and answered yes as it comes up */
   dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
@@ -206,7 +207,6 @@ export async function run({ ok, pageWork }) {
     beforeParse(win) {
       Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
       win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder; win.scrollTo = () => {};
-      win.confirm = () => true;
       win.fetch = (path, init = {}) => String(path).startsWith("/all/maker/inputs") || String(path).startsWith("/all/maker/drafts/")
         ? deviceWorld.call(String(path), init.body ? JSON.parse(init.body) : undefined)
         : String(path) === "/all/maker/review"
@@ -216,6 +216,7 @@ export async function run({ ok, pageWork }) {
       work = pageWork(win);
     }
   });
+  answerSheets(dom.window, [], () => true);
   try {
     dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
     const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");

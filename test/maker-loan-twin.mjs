@@ -3,6 +3,7 @@ import { webcrypto } from "node:crypto";
 import { landingPage } from "../stmt/page.js";
 import { runDrafter } from "../src/drafter.js";
 import { world } from "./maker-trades.mjs";
+import { answerSheets } from "./maker-act.mjs";
 
 /* A loan sent twice books once (the admin stress triage of 11 Oct 2026, row 6). Counter Admin's Borrow or lend keeps its
    values after "Sent for review", so a second tap is a new input under a fresh request moment; the Desk route now refuses
@@ -19,7 +20,7 @@ const button = (root, label) => [...root.querySelectorAll("button")].find((e) =>
 const field = (root, label) => [...root.querySelectorAll("label")]
   .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
 
-/* the real owner page, its Borrow or lend form, over the real Desk route; every confirm is recorded and answered */
+/* the real owner page, its Borrow or lend form, over the real Desk route; every question put on the Sheet is recorded and answered */
 async function ownerLoan(wd, pageWork) {
   const sent = [], asked = [];
   let work, answer = true, tick = Date.parse(stamp(0));
@@ -30,7 +31,6 @@ async function ownerLoan(wd, pageWork) {
       win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder; win.scrollTo = () => {};
       const NativeDate = win.Date;
       win.Date = class extends NativeDate { constructor(...args) { super(...(args.length ? args : [tick += 100])); } };
-      win.confirm = (message) => { asked.push(message); return answer; };
       win.fetch = async (path, init = {}) => {
         if (String(path).startsWith("/all/maker/inputs") || String(path).startsWith("/all/maker/drafts/")) {
           const input = init.body && JSON.parse(init.body);
@@ -45,6 +45,7 @@ async function ownerLoan(wd, pageWork) {
       work = pageWork(win);
     }
   });
+  answerSheets(dom.window, asked, () => answer);   /* a twin is put to him on the page's Sheet (Phase 2c); each is answered as it comes up */
   dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Borrow or lend");

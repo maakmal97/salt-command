@@ -1,14 +1,16 @@
 import { JSDOM } from "jsdom";
 import { webcrypto } from "node:crypto";
 import { vaultDecrypt } from "../tools/seed-vault.mjs";
+import { answerSheets } from "./maker-act.mjs";
 
 export async function run({ ok, html, record, transport, pageWork }) {
   const saved=JSON.stringify(record),calls=[];
   let work,choice=false;
-  const boot=()=>new JSDOM(html,{url:"https://site.test/all",runScripts:"dangerously",pretendToBeVisual:true,
+  /* the vault conflict asks on the page's Sheet (Phase 2c): `choice` is its answer, taken as it comes up */
+  const boot=()=>answered(new JSDOM(html,{url:"https://site.test/all",runScripts:"dangerously",pretendToBeVisual:true,
     beforeParse(win){
       Object.defineProperty(win,"crypto",{value:webcrypto,configurable:true});
-      win.TextEncoder=TextEncoder;win.TextDecoder=TextDecoder;win.scrollTo=()=>{};win.confirm=()=>choice;
+      win.TextEncoder=TextEncoder;win.TextDecoder=TextDecoder;win.scrollTo=()=>{};
       win.localStorage.setItem("saltMakerPending:"+record.path,saved);
       win.fetch=async(path,options)=>{
         if(path===record.path&&options?.method==="POST"){
@@ -18,7 +20,8 @@ export async function run({ ok, html, record, transport, pageWork }) {
         return transport(path,options);
       };
       work=pageWork(win);
-    }});
+    }}));
+  const answered=(dom)=>{answerSheets(dom.window,[],()=>choice);return dom;};
   let dom=boot();
   try{
     const doc=dom.window.document;

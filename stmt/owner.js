@@ -1133,11 +1133,13 @@ export const OWNER_JS = `
       }catch(error){draft.note=error.message;}
       finally{draft.busy=false;draft.redraw();}
     };
+    ynTag(cancel,'chat:'+user+':retry');
     cancel.onclick=function(){
-      if(confirm('Cancel this retry? A reply already sent is not removed.')){
+      ownerAsk(cancel,'chat:'+user+':retry',{title:'Cancel this retry?', say:['A reply already sent is not removed.'], go:'Cancel the retry', keep:'Keep it'}).then(function(yes){
+        if(!yes) return;
         try{localStorage.removeItem(draft.savedKey);draft.pending=null;draft.saved=null;delete draft.storageError;draft.note='This device retry was cancelled.';makerChatState();}
         catch(error){status.textContent='Retry not cancelled: '+error.message;}
-      }
+      });
     };
     close.onclick=function(){makerThreadUser=null;root.hidden=true;stopMakerChat();};
     if(draft.storageError) draft.note=draft.storageError;
@@ -1179,14 +1181,20 @@ export const OWNER_JS = `
       (p.closeLeft||[]).forEach(function(x){ card.appendChild(el('p','maker-row','Not acknowledged: '+x.id+' ('+x.why+')')); });
       if(p.state==='open'||(p.closeLeft||[]).length){
         var close=el('button','salt-ghost',p.state==='open'?'Close':'Close again'); close.type='button'; actOn(close,'pool.close',p.id);
-        close.onclick=async function(){
-          if(p.state==='open'&&!confirm('Close this group order and send each joined order for acknowledgement? Every joiner is told once.')) return;
+        ynTag(close,'pool:'+p.id);
+        var closePool=async function(){
           close.disabled=true;
           try{
             var r=await refs('/all/maker/pools/'+encodeURIComponent(p.id)+'/close',{});
             await loadMakerPools();
             var again=document.getElementById('makerPools'); if(again){ var m=el('p','msg',r.accepted.length+' sent for acknowledgement'+(r.left.length?', '+r.left.length+' left':'')+'.'); m.setAttribute('role','status'); again.insertBefore(m,again.firstChild); }
           }catch(error){ note.textContent=error.message; close.disabled=false; }
+        };
+        close.onclick=function(){
+          if(p.state!=='open'){ closePool(); return; }
+          ownerAsk(close,'pool:'+p.id,{title:'Close this group order?', row:askRow(p.product+' '+p.q+' each', p.unitsIn+' of '+p.target+' units', (p.joins||[]).length+' joined'),
+            say:['Each joined order is sent for acknowledgement, and every joiner is told once.'], go:'Close the group order', keep:'Keep it open'})
+            .then(function(yes){ if(yes) closePool(); });
         };
         card.appendChild(close);
       }
@@ -1205,7 +1213,7 @@ export const OWNER_JS = `
       var set=el('button','btn salt-pill salt-pill--md','Set notice'), clear=el('button','salt-ghost','Clear notice'),
         refresh=el('button','salt-ghost','Read current notice'), busy=false, needsRead=false, intended=null;
       [set,clear,refresh].forEach(function(button){button.type='button';root.appendChild(button);});
-      actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');
+      actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');ynTag(set,'notice:set');ynTag(clear,'notice:clear');
       function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;text.disabled=busy;}
       root.addEventListener('maker-notice-read',function(event){
         needsRead=false;
@@ -1219,7 +1227,10 @@ export const OWNER_JS = `
       });
       async function submit(lines){
         if(busy||needsRead) return;
-        if(!confirm(lines.length?'Set this notice and notify every customer?':'Clear the notice? No notification is sent.')) return;
+        var yes=await (lines.length
+          ?ownerAsk(set,'notice:set',{title:'Set this notice?', say:['Every customer is notified.'], extra:[el('p','maker-row',lines.join(String.fromCharCode(10)))], go:'Set the notice', keep:'Not yet', plain:true})
+          :ownerAsk(clear,'notice:clear',{title:'Clear the notice?', say:['No notification is sent.'], go:'Clear the notice', keep:'Keep it'}));
+        if(!yes||busy||needsRead) return;
         intended={lines:lines.slice()};
         busy=true;state();
         try{
@@ -1311,10 +1322,11 @@ export const OWNER_JS = `
     var L=labOf(label), b=actOn(el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);
     var busy=false, pending=null, cancel=el('button','salt-ghost','Cancel retained input');
     cancel.type='button';cancel.hidden=true;if(L[1]) actOn(cancel,L[1]+'.cancel-retained',L[2]);
+    ynTag(cancel,'retained:'+(L[1]||'input')+':'+(L[2]||''));
     cancel.onclick=function(){
-      if(pending&&confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){
-        makerClear(pending.path);pending=null;cancel.hidden=true;
-      }
+      if(pending) retainedCancel(cancel,'A server-committed input is not withdrawn.',function(){
+        if(pending){ makerClear(pending.path);pending=null;cancel.hidden=true; }
+      });
     };
     var message=function(){
       var section=parent.closest('.maker-input');
@@ -1349,13 +1361,14 @@ export const OWNER_JS = `
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
-          cancel.onclick=function(){if(confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){makerClear(path);pending=null;cancel.hidden=true;}};
+          cancel.onclick=function(){retainedCancel(cancel,'A server-committed input is not withdrawn.',function(){makerClear(path);pending=null;cancel.hidden=true;});};
           if(error.detail.twin){makerClear(path);cancel.hidden=true;}
           pending=null;
         }
         throw error;
       });
     };
+    send.button=b;   /* a question the action asks on the way (a twin) gives focus back to this button */
     b.type='button'; b.addEventListener('click',async function(){
       if(busy)return;
       busy=true;b.disabled=true;
@@ -1428,9 +1441,7 @@ export const OWNER_JS = `
             var button=actOn(el('button','salt-ghost',label),['record.retained.retry','record.retained.review','record.retained.cancel'][index]);button.type='button';
             button.onclick=async function(){
               if(index===2){
-                if(confirm('Cancel this retained request on this device? An input already committed on the server is not withdrawn.')){
-                  makerClear(path);section.remove();
-                }
+                retainedCancel(ynTag(button,'retained:'+path),'An input already committed on the server is not withdrawn.',function(){ makerClear(path);section.remove(); });
                 return;
               }
               var controls=section.querySelectorAll('button');controls.forEach(function(control){control.disabled=true;});
@@ -1485,7 +1496,8 @@ export const OWNER_JS = `
     var nextNames=makerGeo.merge(base.names,desired.names,names),nextPlaces=makerGeo.merge(base.places,desired.places,places);
     var conflicts=Array.from(new Set(nextNames.conflicts.concat(nextPlaces.conflicts)));
     if(conflicts.length){
-      if(!confirm('The vault changed for '+conflicts.join(', ')+'. Apply your retained edit over those changed entries? Cancel keeps this draft.'))
+      if(!(await ownerAsk(document.activeElement,'vault:conflict',{title:'Apply your edit over the changed entries?', say:['The vault changed for '+conflicts.join(', ')+'.','Keeping your draft applies nothing and leaves the form as it is.'],
+        go:'Apply my edit', keep:'Keep my draft'})))
         throw new Error('Conflict not applied. Your form is kept; review it before sending.');
       nextNames=makerGeo.merge(base.names,desired.names,names,conflicts);
       nextPlaces=makerGeo.merge(base.places,desired.places,places,conflicts);
@@ -1578,7 +1590,7 @@ export const OWNER_JS = `
       try{return await send(path,body);}
       catch(error){
         var twin=error.detail&&error.detail.twin&&error.detail.twin.second;
-        if(!twin||!window.confirm('A matching '+what+' is already booked. Record this as a separate '+what+'?'))throw error;
+        if(!twin||!(await ownerAsk(send.button,'twin:'+what,{title:'Record this as a separate '+what+'?', say:['A matching '+what+' is already booked.'], go:'Record it again', keep:'Do not record', plain:true})))throw error;
         return send(path,Object.assign({},body,{at:new Date().toISOString(),second:twin}));
       }
     };
@@ -2238,6 +2250,37 @@ export const OWNER_JS = `
     actOn(go,'order.ask-go',order.id); actOn(document.getElementById('ynKeep'),'order.ask-keep',order.id); actOn(document.getElementById('ynX'),'order.ask-close',order.id);
     if(q.plain) go.classList.remove('salt-ghost--danger');
   }
+  /* 12 Oct 2026 (Phase 2c, his decision 4 of 11 Oct): EVERY OTHER YES OR NO ON THIS PAGE IS THE SAME SHEET, and no native confirm is left in this script. ownerAsk opens
+     ynOpen and answers a promise: true when the one action is tapped, false on the ghost, the close control, the scrim, Escape or a lapse. The Sheet tells the promise it
+     has come down (the shut hook) a microtask later, so the action, which runs just after it, is read first; a flow that awaits the answer carries on as it did when the
+     confirm said no, and a second tap on the action finds the Sheet gone and answers nothing. key names what is asked: its opener carries it as data-yn (ynTag), so a card
+     redrawn meanwhile still has the control to give focus back to, and the Sheet's three controls carry it as their data-key. q: title, row (a node restating what is
+     asked), say (lines), extra (nodes), go, keep, plain (not a danger action). */
+  function ynTag(btn,key){ if(btn&&btn.setAttribute) btn.setAttribute('data-yn',key); return btn; }
+  function ownerAsk(opener,key,q){
+    return new Promise(function(resolve){
+      ynOpen({title:q.title, opener:opener, again:ynFind(key), go:q.go, keep:q.keep, yes:function(){ resolve(true); },
+        shut:function(){ Promise.resolve().then(function(){ resolve(false); }); },
+        body:(q.row?[q.row]:[]).concat((q.say||[]).map(function(s){ return el('p',null,s); })).concat(q.extra||[])});
+      var go=document.getElementById('ynGo');
+      actOn(go,'ask.go',key); actOn(document.getElementById('ynKeep'),'ask.keep',key); actOn(document.getElementById('ynX'),'ask.close',key);
+      go.classList.toggle('salt-ghost--danger',q.plain!==true);
+    });
+  }
+  /* what a Sheet restates: a mark if there is one, a label, a figure, and a line under them */
+  function askRow(label,value,flag,tile){
+    var L=el('div','salt-ledger salt-ledger--plain'), r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label'+(tile?' mlab':''));
+    if(tile) lab.appendChild(tile);
+    lab.appendChild(el('span',null,label)); l.appendChild(lab);
+    if(value) l.appendChild(el('span','salt-ledger__value',value));
+    r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
+    L.appendChild(r); return L;
+  }
+  /* Cancel retained input, wherever it is offered: the unsent copy on this device goes, and what the Desk server already holds does not. The opener carries its key (ynTag). */
+  function retainedCancel(opener,line,done){
+    ownerAsk(opener,opener.getAttribute('data-yn')||'retained',{title:'Cancel this retained request on this device?', say:[line], go:'Cancel the request', keep:'Keep it'})
+      .then(function(yes){ if(yes) done(); });
+  }
   /* the reason a Decline or a Cancel gives the customer, optional: the Desk's lines as the system's Option tiles (the place line only on an order to be
      delivered) and a field for his own words; a tile fills the field, typing clears the pick. note() is what rides with the request. */
   function makerWhy(order){
@@ -2549,7 +2592,7 @@ export const OWNER_JS = `
           tradeAnswer.textContent=error.message;
           var twin=error.detail&&error.detail.twin&&error.detail.twin.second;
           var index=error.detail&&error.detail.twin&&error.detail.twin.index||0;
-          if(twin&&!(confirmedTwin&&confirmedTwin[index])&&window.confirm('A matching row is already booked. Record this as a separate order?')){
+          if(twin&&!(confirmedTwin&&confirmedTwin[index])&&await ownerAsk(send.button,'twin:trade',{title:'Record this as a separate order?', say:['A matching row is already booked.'], go:'Record it again', keep:'Do not record', plain:true})){
             var confirmations=Object.assign({},confirmedTwin||{}); confirmations[index]=twin;
             tradeSignature=''; tradePending=false; await submitTrade(confirmations,send); return;
           }
@@ -2935,12 +2978,34 @@ export const OWNER_JS = `
     var trip=tripOf(draft);
     return trip?(makerData.drafts||[]).filter(function(item){ return item.status==='pending'&&item.collection==='sales'&&tripOf(item)===trip; }):[];
   }
+  /* 12 Oct 2026 (Phase 2c, his decision 4 of 11 Oct): A DESK ROW'S APPROVE AND REJECT ASK ON THE PAGE'S SHEET, never a native confirm. The Sheet restates the row (or every
+     row of the trip) by its mark, its code, its size and its figure and says what follows; its one action sends the request the confirm let through, the same route
+     and the same empty body, and the ghost, the close control, the scrim and Escape send nothing. What is approved is the ROW AS DRAFTED, never recomputed. */
+  function deskAskRow(item){
+    var e=item.entry||{};
+    return askRow(e.party||'no code', rm(item.total), [e.type||'Entry', item.qty==null?'':unitsOf(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null?mtile(item.product,item.qty):null);
+  }
+  function deskAskRows(draft){ var sibs=tripRows(draft); return (sibs.length?sibs:[draft]).map(deskAskRow); }
   /* THE ONE APPROVE of a Desk row, Record > Approve's button and Needs you's pill alike: the same question, the same request, the same
      answer line. It resolves true when the row was approved, false when it was not, and nothing when it was not asked (he declined, or a
-     tap is already out). */
-  function approveDraft(draft){
-    if(!window.confirm(tripRows(draft).length?'Approve every proposed row of this trip shown here?':'Approve the proposed row shown here?')) return Promise.resolve();
-    return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.','draft:'+draft.id);
+     tap is already out). opener is the control that asked and key what it asks (its data-yn); going is told when he says yes, before the request goes. */
+  function approveDraft(draft,opener,key,going){
+    var trip=tripRows(draft).length>0;
+    return ownerAsk(opener,key,{title:trip?'Approve every row of this trip?':'Approve this row?', extra:deskAskRows(draft), plain:true,
+      say:[trip?'Every row of the trip is approved as drafted, with the cost, margin and flags shown. This tap decides them all.':'The row is approved as drafted, with the cost, margin and flags shown.'],
+      go:trip?'Approve trip':'Approve row', keep:'Not yet'}).then(function(yes){
+      if(!yes) return;
+      if(going) going();
+      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.','draft:'+draft.id);
+    });
+  }
+  function rejectDraft(draft,opener,key){
+    var trip=tripRows(draft).length>0;
+    return ownerAsk(opener,key,{title:trip?'Reject every row of this trip?':'Reject this Desk row?', extra:deskAskRows(draft),
+      say:[trip?'Every row of the trip is rejected and none is booked.':'The row is rejected and nothing is booked.'], go:trip?'Reject trip':'Reject row', keep:'Keep it'}).then(function(yes){
+      if(!yes) return;
+      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.','draft:'+draft.id);
+    });
   }
   function drawMaker(){
     var root=document.getElementById('makerReview'), list=document.getElementById('makerOrderList'), status=document.getElementById('makerReviewStatus');
@@ -3259,12 +3324,10 @@ export const OWNER_JS = `
       }
       var claim=entry.claim||entry.fulfil&&entry.fulfil.claim;
       if(claim) card.appendChild(el('p','salt-insight','A customer claim is answered through Received on its order, not by approving its row.'));
-      var approve=makerButton(card,[siblings.length?'Approve trip':'Approve row','draft.approve'],function(){ approveDraft(draft); },true);
-      approve.disabled=!!claim;
-      makerButton(card,[siblings.length?'Reject trip':'Reject row','draft.reject'],function(){
-        if(!window.confirm(siblings.length?'Reject every row of this trip?':'Reject this Desk row?')) return;
-        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.','draft:'+draft.id);
-      },false);
+      var approve=makerButton(card,[siblings.length?'Approve trip':'Approve row','draft.approve'],function(){ approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);
+      approve.disabled=!!claim; ynTag(approve,'draft:'+draft.id+':approve');
+      var reject=makerButton(card,[siblings.length?'Reject trip':'Reject row','draft.reject'],function(){ rejectDraft(draft,reject,'draft:'+draft.id+':reject'); },false);
+      ynTag(reject,'draft:'+draft.id+':reject');
       makerFoot(card,'draft:'+draft.id);
     });
     (makerData.refused||[]).forEach(function(refused){
@@ -3289,23 +3352,30 @@ export const OWNER_JS = `
         if(entry.canWithdraw||entry.canRetry){
           var note=el('p','msg'); note.setAttribute('role','status'); card.appendChild(note);
           var action=makerClaimButton(card,[entry.canRetry?'Finish server withdrawal':'Withdraw server-held entry','queue.withdraw'],function(button){
-            if(entry.canWithdraw&&!window.confirm('Withdraw this uploaded entry from the Desk server queue? This does not withdraw an unsent device entry.')) return;
-            button.disabled=true;
-            refs('/all/maker/queue/'+encodeURIComponent(entry.id)+'/withdraw',{fingerprint:entry.fingerprint})
-              .then(function(result){
-                var confirmed=result&&result.ok===true&&result.withdrawn===entry.id
-                  && (result.state==='withdrawn'&&result.confirmedAbsent===undefined
-                    || result.state==='rejected'&&result.confirmedAbsent===true)
-                  && (result.again===undefined||result.again===true);
-                if(!confirmed) throw new Error('The server did not return a matching withdrawal receipt. Refresh and retry.');
-                return loadMaker().then(function(){
-                  var current=document.getElementById('makerDraftStatus');
-                  if(current) current.textContent=result.state==='rejected'
-                    ?'Desk rejection confirmed; server-held entry is gone.'
-                    :'Server-held entry withdrawal confirmed.';
-                });
-              }).catch(function(error){ note.textContent=error.message; button.disabled=false; });
+            /* his decision 4 of 11 Oct 2026: asked on the page's Sheet; finishing a withdrawal already begun asks nothing, as it did not */
+            function withdraw(){
+              button.disabled=true;
+              refs('/all/maker/queue/'+encodeURIComponent(entry.id)+'/withdraw',{fingerprint:entry.fingerprint})
+                .then(function(result){
+                  var confirmed=result&&result.ok===true&&result.withdrawn===entry.id
+                    && (result.state==='withdrawn'&&result.confirmedAbsent===undefined
+                      || result.state==='rejected'&&result.confirmedAbsent===true)
+                    && (result.again===undefined||result.again===true);
+                  if(!confirmed) throw new Error('The server did not return a matching withdrawal receipt. Refresh and retry.');
+                  return loadMaker().then(function(){
+                    var current=document.getElementById('makerDraftStatus');
+                    if(current) current.textContent=result.state==='rejected'
+                      ?'Desk rejection confirmed; server-held entry is gone.'
+                      :'Server-held entry withdrawal confirmed.';
+                  });
+                }).catch(function(error){ note.textContent=error.message; button.disabled=false; });
+            }
+            if(!entry.canWithdraw){ withdraw(); return; }
+            ownerAsk(button,'queue:'+entry.id,{title:'Withdraw this uploaded entry?', row:askRow(entry.id,'',(entry.date?entry.date+' · ':'')+entry.state),
+              say:['It is taken out of the Desk server queue. This does not withdraw an unsent device entry.'], go:'Withdraw entry', keep:'Keep it'})
+              .then(function(yes){ if(yes) withdraw(); });
           },false);
+          ynTag(action,'queue:'+entry.id);
           action.classList.add('maker-queue-action');
         }
       });
@@ -3639,10 +3709,12 @@ export const OWNER_JS = `
       open:goPlace('record','approve')}, function(c){
       if(!claim){
         var ap=pill([sibs.length?'Approve trip':'Approve row','need.approve-row']);
-        ap.disabled=!!makerBusy;
+        ap.disabled=!!makerBusy; ynTag(ap,'need:draft:'+d.id+':approve');
         ap.addEventListener('click', function(){
-          ap.disabled=true;
-          approveDraft(d).then(function(ok){
+          /* asked on the page's Sheet, with nothing shut until he says yes: a no leaves the pill and the card as they were */
+          var said=false;
+          approveDraft(d,ap,'need:draft:'+d.id+':approve',function(){ said=true; ap.disabled=true; }).then(function(ok){
+            if(!said) return;
             if(ok!==undefined) needSaid['d:'+d.id]={t:makerSaid['draft:'+d.id]||(ok?'Row approved.':'Not approved.'), bad:!ok, who:e.party||'no code'};
             drawNeeds();
           });

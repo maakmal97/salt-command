@@ -3333,6 +3333,7 @@ const CLIENT_JS = `
   function ynShut(quiet){
     if(!yn) return;
     var q=yn; yn=null;
+    if(q.shut) q.shut();   /* 12 Oct 2026: told it has come down, whichever way, the action's too, which runs just after: a caller awaiting the answer reads the action first (ownerAsk) */
     document.removeEventListener('keydown',ynKeys,true);
     if(q.wrap.parentNode) q.wrap.parentNode.removeChild(q.wrap);
     behind();
@@ -3341,7 +3342,7 @@ const CLIENT_JS = `
     try{ if(b&&b.focus) b.focus({preventScroll:true}); }catch(e){}
   }
   /* q: title, body (nodes), go and keep (the two answers' words), yes (what the danger action does), opener (the control to give
-     focus back to) and again (finds it afresh if a redraw took it away) */
+     focus back to), again (finds it afresh if a redraw took it away) and shut (told when the Sheet comes down, however) */
   function ynOpen(q){
     ynShut(true);
     var wrap=el('div'); wrap.id='ynWrap';
@@ -3361,6 +3362,7 @@ const CLIENT_JS = `
     box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
     wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
     yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};
+    yn.shut=q.shut||null;
     behind();
     document.addEventListener('keydown',ynKeys,true);
     try{ box.focus({preventScroll:true}); }catch(e){}

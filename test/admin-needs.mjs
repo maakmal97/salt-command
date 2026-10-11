@@ -184,20 +184,23 @@ export async function run({ ok, pageWork }) {
   const st = state();
   p = await open(st);
   try {
-    const d = p.d, id = ago(6), asked = [];
-    p.w.confirm = (m) => { asked.push(m); return false; };
+    /* 12 Oct 2026 (Phase 2c, his decision 4 of 11 Oct): the question is the page's Sheet, not a native confirm, and it is the same Sheet from either control */
+    const d = p.d, id = ago(6), sheet = () => d.getElementById("ynSheet");
+    const question = () => (sheet() ? sheet().querySelector(".salt-sheet__title").textContent + " | " + [...sheet().querySelectorAll(".salt-sheet__body > *")].map((e) => e.textContent).join(" | ") : null);
     byAct(p.card("d:" + id), "need.approve-row").click(); await p.work.quiet();
-    const needAsked = asked.slice();
-    ok(asked.length === 1 && p.posts.filter((x) => /approve$/.test(x.route)).length === 0, "he is asked first, and declining sends nothing: " + JSON.stringify(asked));
-    asked.length = 0;
+    const needAsked = question();
+    ok(!!needAsked && /^Approve this row?/.test(needAsked) && p.posts.filter((x) => /approve$/.test(x.route)).length === 0, "he is asked first, on the page's Sheet, and nothing is sent as it opens: " + needAsked);
+    byAct(sheet(), "ask.keep").click(); await p.work.quiet();
+    ok(!sheet() && p.posts.filter((x) => /approve$/.test(x.route)).length === 0, "declining sends nothing");
     byAct(d, "nav.record").click(); await p.work.quiet();
     const recordButton = [...d.querySelectorAll('#makerDrafts [data-maker-card="draft:' + id + '"] [data-act="draft.approve"]')][0];
     recordButton.click(); await p.work.quiet();
-    ok(same(needAsked, asked), "Record > Approve asks the very same question: " + JSON.stringify([needAsked, asked]));
+    ok(!!needAsked && same(needAsked, question()), "Record > Approve asks the very same question: " + JSON.stringify([needAsked, question()]));
+    byAct(sheet(), "ask.keep").click(); await p.work.quiet();
     byAct(d, "nav.needs").click(); await p.work.quiet();
-    p.w.confirm = () => true;
     const release = p.hold("/all/maker/drafts/" + encodeURIComponent(id) + "/approve");
-    byAct(p.card("d:" + id), "need.approve-row").click();
+    byAct(p.card("d:" + id), "need.approve-row").click(); await p.work.quiet();
+    byAct(sheet(), "ask.go").click();
     for (let i = 0; i < 100 && !p.work.inFlight(); i++) await new Promise((r) => setTimeout(r, 5));
     ok(p.posts.filter((x) => /approve$/.test(x.route)).length === 1 && p.posts.find((x) => /approve$/.test(x.route)).route === "/all/maker/drafts/" + encodeURIComponent(id) + "/approve"
       && same(p.posts.find((x) => /approve$/.test(x.route)).body, {}), "his yes sends the one request Record > Approve sends: the same route and an empty body");

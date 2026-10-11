@@ -1488,7 +1488,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   detail by `showPlace`: an order, a payment on an order or a question on an order to Orders > Waiting on you with that order's card open, a message to Customers > Messages with that thread open, an
   account beside the list on a desktop and on Accounts on a phone, a link to Customers > Links, a row or an entry to Record > Approve, the
   hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
-  tap**: Approve row or Approve trip on a Desk row is Record > Approve's own function (`approveDraft`: the same question, the same request,
+  tap**: Approve row or Approve trip on a Desk row is Record > Approve's own function (`approveDraft`: the same question, on the page's Sheet, the same request,
   the same answer line; a customer's claim row has none, it is answered through Received on its order), and the guest link, the refused
   account and the accounts not sent keep the action they had. **Nothing in Needs you books money**: Agree, Yes received and Cash stay on
   their cards in Orders. A practice account's order, claim or thread is drawn after the real ones in its severity, labelled Practice, and
@@ -1603,8 +1603,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   reason on the sheet**: the Desk's three lines as the system's Option tiles (`order.reason-stock`, `-price`, and `-place` on an order to be
   delivered only) and a field for his own words (`order.reason`); a tile fills the field and typing clears the pick, the reason is optional and
   rides as `note`, checked by `siteWords` on the Desk. The money taps (handover, cash, and Confirm received for another amount) are guarded once, as
-  they were, with no sheet; **a claim's Received and Not found are not guarded once, they ask on the Sheet** (Phase 2b, below), and Approve's confirm
-  (`approveDraft`) is not the card's and is as it was.
+  they were, with no sheet; **a claim's Received and Not found are not guarded once, they ask on the Sheet** (Phase 2b, below), and so do a Desk row's
+  Approve and Reject (`approveDraft`, Phase 2c, below).
   **An edit put back to what it was offers its read** (Phase 2b, Fable's follow-up to 2a): the total's `input` takes the quote and Accept away, and
   only a `change` reads again, which a value put back before the field is left never fires, so the card said the figures would be read when he
   finished and showed no control. From the moment the total, or the charge typed as Other, is edited, the card offers Read the figures again
@@ -2177,6 +2177,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.signin-link` | Account card (key: data-acct, the username) | First tap makes their one-time sign-in link, the next shares it. |
 | `acct.signout-all` | Account card | Signs them out everywhere, on a second tap within four seconds. |
 | `acct.view-as` | Account card | Opens their own page, read only. |
+| `ask.close` | The Sheet every other yes or no asks on: a Desk row's Approve or Reject, a held entry's Withdraw, a group order's Close, the notice, a twin, a retained input's Cancel, a chat retry's Cancel and a vault conflict (key: what is asked, as `draft:<id>:approve`, `queue:<id>`, `pool:<id>`, `notice:set`, `twin:<what>`, `retained:<route>`, `chat:<username>:retry`, `vault:conflict`) | Closes it and sends nothing. |
+| `ask.go` | Same sheet | Does what it asked, once: sends the request the confirm let through. |
+| `ask.keep` | Same sheet | Keeps things as they were and sends nothing. |
 | `chat.cancel-retry` | Open thread | Cancels the retry kept on this device. |
 | `chat.close` | Open thread | Closes the thread. |
 | `chat.no-reply` | Open thread | Records that no reply is needed. |

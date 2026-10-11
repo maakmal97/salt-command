@@ -8,6 +8,7 @@ import * as C from "../tools/stmt-crypto.mjs";
 import { TEST_USER, TEST_PASS, FIX_VERSION, fixKey, exampleThread } from "../stmt/testfix.js";
 import { build, sealFixture } from "../tools/testfix.mjs";
 import { allThreads, applyEvent, fixtureThreadMove } from "../stmt/orders.js";
+import { answerSheets } from "./maker-act.mjs";
 
 class Store {
   values = new Map();
@@ -317,7 +318,6 @@ export async function run({ ok }) {
         }
         Object.defineProperty(window, "crypto", { value: webcrypto });
         window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder; window.scrollTo = () => {};
-        window.confirm = () => confirmations;
         const interval = window.setInterval.bind(window), clear = window.clearInterval.bind(window);
         window.setInterval = (fn, ms, ...args) => {
           if (ms !== 2000) return interval(fn, ms, ...args);
@@ -337,6 +337,7 @@ export async function run({ ok }) {
       }
     };
     page = new JSDOM(html, pageOptions).window; let doc = page.document;
+    answerSheets(page, [], () => confirmations);   /* a notice asks on the page's Sheet (Phase 2c), answered as it comes up by `confirmations` */
     const until = async (condition) => {
       for (let i = 0; i < 100 && !condition(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!condition();
@@ -385,6 +386,7 @@ export async function run({ ok }) {
       "Pending Chat persists only ciphertext and fixed safe metadata, never the reply or master key.");
     tap("#makerChatOpen", "Close chat"); page.close();
     page = new JSDOM(html, pageOptions).window; doc = page.document;
+    answerSheets(page, [], () => confirmations);
     /* 11 Oct 2026: the conversations are Customers, Messages */
     doc.querySelector('[data-act="nav.customers"]').click(); doc.querySelector('[data-act="part.customers.messages"]').click();
     await until(() => doc.querySelector('[data-thread="' + user + '"]'));

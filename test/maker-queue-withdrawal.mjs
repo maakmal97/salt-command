@@ -452,7 +452,6 @@ export async function run({ ok, worker, handleMaker }) {
       beforeParse(window) {
         Object.defineProperty(window, "crypto", { value: webcrypto, configurable: true });
         window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder; window.scrollTo = () => {};
-        window.confirm = () => true;
         Object.defineProperty(window, "innerWidth", { value: width, configurable: true });
         window.fetch = async (path, init = {}) => {
           const route = String(path);
@@ -483,7 +482,12 @@ export async function run({ ok, worker, handleMaker }) {
         "the desktop withdrawal control has an independently declared 44-by-44-pixel target");
       else ok(/min-width:var\(--salt-tap\)/.test(target) && /min-height:var\(--salt-tap\)/.test(target) && tapToken,
         "the phone withdrawal control retains its independent 44-by-44-pixel target");
-      if (action) action.click();
+      /* the withdrawal asks on the page's Sheet (Phase 2c, his decision 4 of 11 Oct): nothing is sent as it opens, and its one action sends the request the confirm let through */
+      if (action) {
+        action.click();
+        ok(!!doc.getElementById("ynSheet") && !sent.some((item) => item.width === width), `the ${width}px withdrawal asks on the page's Sheet and sends nothing as it opens`);
+        doc.getElementById("ynGo").click();
+      }
       for (let i = 0; i < 100 && !sent.some((item) => item.width === width); i++)
         await new Promise((resolve) => setTimeout(resolve, 5));
       ok(sent.some((item) => item.width === width && item.body.fingerprint === uiEntry.fingerprint),
@@ -493,7 +497,10 @@ export async function run({ ok, worker, handleMaker }) {
           for (let i = 0; i < 100 && doc.querySelector("#makerQueueReview .maker-queue-action") === action; i++)
             await new Promise((resolve) => setTimeout(resolve, 5));
           const retryAction = doc.querySelector("#makerQueueReview .maker-queue-action");
-          retryAction.click();
+          const sentBefore = sent.length;
+          retryAction.click(); doc.getElementById("ynGo").click();
+          for (let i = 0; i < 100 && sent.length === sentBefore; i++)
+            await new Promise((resolve) => setTimeout(resolve, 5));
           for (let i = 0; i < 100 && retryAction.disabled; i++)
             await new Promise((resolve) => setTimeout(resolve, 5));
           ok(!retryAction.disabled && retryAction.textContent.includes("Withdraw")

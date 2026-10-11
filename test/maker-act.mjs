@@ -43,6 +43,20 @@ export function byAct(root, act, key) {
   return all.find((c) => { for (let e = c; e && e !== root; e = e.parentElement) if (holds(e)) return true; return false; }) || null;
 }
 
+/* A YES OR NO ON SALT ACCOUNT IS A SHEET (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct), never a native confirm. A section that once stubbed window.confirm to say yes or no to whatever the page asked has each
+   Sheet answered as it comes up instead: what it said (its title and its words) is put in asked, and answer() is read at that moment, true taking the one action and false the ghost, so a flow that
+   awaits the question carries on as the stub's return would have sent it. The page's own ynGo and ynKeep are what is tapped. */
+export function answerSheets(win, asked, answer = () => true) {
+  const doc = win.document;
+  new win.MutationObserver(() => {
+    const sheet = doc.getElementById("ynSheet");
+    if (!sheet || sheet.hasAttribute("data-answered")) return;
+    sheet.setAttribute("data-answered", "");
+    asked.push(sheet.querySelector(".salt-sheet__title").textContent + " " + sheet.textContent);
+    doc.getElementById(answer() ? "ynGo" : "ynKeep").click();
+  }).observe(doc.body, { childList: true });
+}
+
 /* THE CARD OF AN ORDER, as he gets it (Phase 1c of 11 Oct 2026): a card is drawn for the order opened and for no other, so a test that wants
    an order's card gets the card standing for it, else enters the part its row is in (when that part is not showing) and taps the row. A
    card already standing is the same card, so a field typed in it is kept; asking for another order's closes this one, as it does for him. */
@@ -232,6 +246,14 @@ export async function drawEverything(p) {
   await click(byAct(d, "nav.record"));
   await click(byAct(d, "part.record.entry"));
   await click(byAct(d, "record.trade.add-book"));
+  /* Record > Approve (Phase 2c): the Desk's rows are the Approve card and the queue is a fold, shut and counted; Approve, Reject and a held entry's Withdraw each ask on the page's Sheet, let go with Keep.
+     The group order's Close and the notice's Set and Clear ask on it too, each below where its own part is entered. */
+  await click(byAct(d, "part.record.approve"));
+  const row = d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]');
+  p.snap("the rows to approve");
+  await click(byAct(row, "draft.approve")); p.snap("a Desk row's Approve, asking on the sheet"); await click(byAct(d, "ask.keep"));
+  await click(byAct(row, "draft.reject")); p.snap("a Desk row's Reject, asking on the sheet"); await click(byAct(d, "ask.keep"));
+  await click(byAct(d, "queue.withdraw", "q-1")); p.snap("a held entry's Withdraw, asking on the sheet"); await click(byAct(d, "ask.keep"));
   /* the chat opened, an account card, the code sheet, an order placed for them (which stands Orders up, reading the review again) */
   await click(byAct(d, "nav.customers"));
   await click(byAct(d, "part.customers.messages"));

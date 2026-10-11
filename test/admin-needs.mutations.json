@@ -230,20 +230,20 @@
  {
   "name": "the pill skips the question",
   "file": "stmt/owner.js",
-  "find": "approveDraft(d).then(function(ok){",
-  "replace": "makerAction('/all/maker/drafts/'+encodeURIComponent(d.id)+'/approve',{},'Row approved.','draft:'+d.id).then(function(ok){"
+  "find": "approveDraft(d,ap,'need:draft:'+d.id+':approve',function(){ said=true; ap.disabled=true; }).then(function(ok){",
+  "replace": "(said=true,ap.disabled=true,makerAction('/all/maker/drafts/'+encodeURIComponent(d.id)+'/approve',{},'Row approved.','draft:'+d.id)).then(function(ok){"
  },
  {
-  "name": "Approve row asks nothing",
+  "name": "Approve row sends on a no",
   "file": "stmt/owner.js",
-  "find": "if(!window.confirm(tripRows(draft).length?'Approve every proposed row of this trip shown here?':'Approve the proposed row shown here?')) return Promise.resolve();",
-  "replace": ""
+  "find": "keep:'Not yet'}).then(function(yes){\n      if(!yes) return;\n      if(going) going();",
+  "replace": "keep:'Not yet'}).then(function(yes){\n      if(going) going();"
  },
  {
   "name": "the pill stays on while it is out",
   "file": "stmt/owner.js",
-  "find": "          ap.disabled=true;\n          approveDraft(d)",
-  "replace": "          approveDraft(d)"
+  "find": "function(){ said=true; ap.disabled=true; }",
+  "replace": "function(){ said=true; }"
  },
  {
   "name": "the answer is not kept on the card",
