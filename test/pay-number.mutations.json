@@ -35,5 +35,11 @@
  {"name":"a test account is answered the real record","file":"stmt/worker.js","find":"accounts: isTest(u) ? await examplePaynum(env, u) : await payNumbers(env) });","replace":"accounts: await payNumbers(env) });"},
  {"name":"a test account with no fixture is answered the real record","file":"stmt/testfix.js","find":"return numbersOf({ v: 1, accounts: (fix && fix.paynum) || null });","replace":"return numbersOf(fix ? { v: 1, accounts: fix.paynum } : await env.STMT.get(\"paynum\", \"json\"));"},
  {"name":"a test account is answered the fixture's holder","file":"stmt/testfix.js","find":"return numbersOf({ v: 1, accounts: (fix && fix.paynum) || null });","replace":"return (fix && fix.paynum) || {};"},
+ {"name":"the practice accounts hold no number","file":"tools/testfix.mjs","find":"paynum: { maybank: { number: \"0000000000000\" } } };","replace":"paynum: undefined };"},
+ {"name":"the practice accounts hold a number that is not all zeros","file":"tools/testfix.mjs","find":"paynum: { maybank: { number: \"0000000000000\" } } };","replace":"paynum: { maybank: { number: \"1000000000000\" } } };"},
+ {"name":"the fixture's line asks nothing","file":"tools/testfix.mjs","find":"(f) => !!f.paynum && Object.values(f.paynum).some((a) => /^0{10,15}$/.test(a && a.number))]","replace":"(f) => true]"},
+ {"name":"the fixture's line takes any number","file":"tools/testfix.mjs","find":"(f) => !!f.paynum && Object.values(f.paynum).some((a) => /^0{10,15}$/.test(a && a.number))]","replace":"(f) => !!f.paynum && Object.values(f.paynum).some((a) => /^[0-9]{10,15}$/.test(a && a.number))]"},
+ {"name":"the sealed fixture drops the number","file":"tools/testfix.mjs","find":"thread: fix.thread, pools: fix.pools, paynum: fix.paynum,","replace":"thread: fix.thread, pools: fix.pools,"},
+ {"name":"the fixture version stays where it was","file":"stmt/testfix.js","find":"export const FIX_VERSION = 9;","replace":"export const FIX_VERSION = 8;"},
  {"name":"the answer may be cached","file":"stmt/worker.js","find":"const HEADERS = {\n  \"cache-control\": \"no-store\",","replace":"const HEADERS = {\n  \"cache-control\": \"public, max-age=60\","}
 ]

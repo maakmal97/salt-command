@@ -125,4 +125,24 @@ export async function run({ ok, pageWork, KV }) {
   ok(noFix.status === 200 && JSON.stringify(noFix.b.accounts) === "{}", "a test account with no fixture sealed yet is answered an empty list, though the real record is filed: " + hide(noFix.raw));
   ok(fixed.status === 200 && JSON.stringify(fixed.b.accounts) === JSON.stringify({ maybank: { number: ZERO } }) && !fixed.raw.includes(n1) && !fixed.raw.includes(n2),
     "with its fixture it is answered the fixture's invented number through the same whitelist, and none of the real record's: " + hide(fixed.raw));
+
+  /* ---- 4: the practice accounts hold an invented number, sealed with the fixture, and a fixture sealed before is not served */
+  const TX = await import("../tools/testfix.mjs"), CR = await import("../tools/stmt-crypto.mjs");
+  const all = TX.buildAll(new Date("2026-10-11T04:00:00Z")), line = TX.FEATURES.map(([nm]) => nm).find((nm) => /bank account number beside the reference/.test(nm));
+  ok(Object.values(all).length === 2 && Object.values(all).every((f) => JSON.stringify(f.paynum) === JSON.stringify({ maybank: { number: ZERO } })) && !!line && !TX.missing(all).includes(line),
+    "each practice account carries the invented all-zero number for one bank, and the fixture's line for it is met: " + JSON.stringify(Object.values(all).map((f) => f.paynum)));
+  const bare = Object.fromEntries(Object.entries(all).map(([s, f]) => [s, Object.assign({}, f, { paynum: undefined })]));
+  const real = Object.fromEntries(Object.entries(all).map(([s, f]) => [s, Object.assign({}, f, { paynum: { maybank: { number: n1 } } })]));
+  ok(TX.missing(bare).includes(line) && TX.missing(real).includes(line),
+    "and a fixture without a number, or with one that is not all zeros, is red by its line: " + JSON.stringify([TX.missing(bare).includes(line), TX.missing(real).includes(line)]));
+  const ckT = await CR.contentKey("test-secret", T), recT = { test: true, wrap: await CR.wrapKey(TF.TEST_PASS, ckT) };
+  const sealed = await TX.sealFixture(all[T], recT, TF.TEST_PASS);
+  ok(JSON.stringify(sealed.paynum) === JSON.stringify({ maybank: { number: ZERO } }) && sealed.v === TF.FIX_VERSION && TF.FIX_VERSION >= 9,
+    "the sealed fixture carries it, at a fixture version past the one that held none, so the next publish seals every practice account afresh: " + JSON.stringify([sealed.v, TF.FIX_VERSION]));
+  await kv.put("u:" + T, JSON.stringify(recT)); await kv.put(TF.fixKey(T), JSON.stringify(sealed));
+  const sealedAns = await call("/pay/accounts", TS);
+  await kv.put(TF.fixKey(T), JSON.stringify(Object.assign({}, sealed, { v: TF.FIX_VERSION - 1 })));
+  const older = await call("/pay/accounts", TS);
+  ok(JSON.stringify(sealedAns.b.accounts) === JSON.stringify({ maybank: { number: ZERO } }) && JSON.stringify(older.b.accounts) === "{}",
+    "the Worker answers the sealed fixture's number, and a fixture sealed at an earlier version is not served until the publish seals it again: " + hide(JSON.stringify([sealedAns.b, older.b])));
 }

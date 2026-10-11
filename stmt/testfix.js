@@ -32,7 +32,7 @@ export const TEST_PASS = "0000-0000-0000-0000";
 export const TESTS = { [TEST_USER]: "open", [TEST_LOCKED]: "locked" };
 export const TEST_USERS = Object.keys(TESTS);
 export const isTest = (u) => Object.prototype.hasOwnProperty.call(TESTS, String(u || ""));
-export const FIX_VERSION = 8;   /* 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
+export const FIX_VERSION = 9;   /* 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
 export const fixKey = (u) => "testfix:" + u;
 
 /** The fixture for this account as read, or null: a test account's alone, and only the one it was sealed for. */

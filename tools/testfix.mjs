@@ -317,7 +317,10 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     bulletin: { lines: ["An example notice: the counter opens late on Friday."] },
     /* 11 Oct 2026: THE LOOK. A device is asked Night or Tide once, then never; a test account says "asked" in its sealed bundle, so
        the page asks at every sign-in whatever the device holds and the Sheet can be tried again. The setting under Account is the same. */
-    look: "asked" };
+    look: "asked",
+    /* Phase 7b (11 Oct 2026): THE ACCOUNT NUMBER THE PAY SHEET SHOWS beside the reference, INVENTED: all zeros, one bank. A test account
+       is answered this through the Worker's overlay and never reads the real record (KV paynum, written from the laptop). */
+    paynum: { maybank: { number: "0000000000000" } } };
 }
 
 /* ---- WHAT A CUSTOMER SEES, AND THE CASE OF EACH HERE ------------------------------------------------------------
@@ -421,6 +424,7 @@ export const FEATURES = [
   ["an order paid before anything moved, so Cancel this order asks in its Sheet and names the refund (Phase 7d, 11 Oct 2026)", (f) => has(f, (o) => ["placed", "acknowledged"].includes(o.status)
     && +o.paid > 0.004 && !(+o.moved > 0) && !(o.payments || []).some((p) => p.claim === "waiting"))],
   ["the look: the choice Sheet asked at every sign-in, and the setting under Account (11 Oct 2026)", (f) => f.look === "asked"],
+  ["the bank account number beside the reference on the pay sheet (Phase 7b)", (f) => !!f.paynum && Object.values(f.paynum).some((a) => /^0{10,15}$/.test(a && a.number))],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];
@@ -473,6 +477,6 @@ export async function sealFixture(fix, rec, pass) {
     env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [], look: fix.look }),
     prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest },
       Object.keys(priceSteps(fix.prices)).length ? { steps: priceSteps(fix.prices) } : {}, await seal(fix.prices)),
-    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread, pools: fix.pools,
+    card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread, pools: fix.pools, paynum: fix.paynum,
     makerBook: fix.book, makerOrders: fix.orders };
 }
