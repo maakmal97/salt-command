@@ -9223,7 +9223,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1076","d":"11 Oct 2026","t":"ONE PENDING SALT SALE TO CM4-MK, STOCK UNTOUCHED","n":["<b>FOLDED:</b> one new salt sale to CM4-MK, 6.25 units for RM505 with RM20 delivery, ordered on the statements site and preapproved by Counter Admin. Nothing was paid and nothing handed over, so the row is pending, books no revenue and draws no stock.","<b>UNUSUAL:</b> the rate of RM80.8 a unit is below the floor of RM362.5 for 6.25 units, and the drafter's flag of a rate 20% under his usual is not answered by the figures. The inventory did not move: stock stays at 8.14 units against 7 promised, and the cost basis is unchanged."]}];
+const evolution=[{"v":"v1077","d":"11 Oct 2026","t":"ONE WORD A STATE ON THE CUSTOMER'S PAGE, AND THE SHAPE BESIDE THE MARK","n":["<b>ONE WORD A STATE.</b> The customer's page, its banners and its sheets read an order as Placed, Confirmed, Ready, Collected or Delivered, or Complete, and a refusal of ours as Declined. A claim of theirs reads Waiting for us to confirm. Acknowledged, Sent and Not taken are gone from every word they read, and supply under a yellow mark reads More by 20 Oct where it read Expected by. The record's states and the table's keys do not move, so nothing folds differently. Nothing prices.","<b>THE SHAPE BESIDE THE MARK.</b> A mark is never alone: its shape word stands beside it, the same word the screen reader was given. A card's caption reads Cube, 2.5 units, and a heading, a size and a sentence carry the word after the mark. No shape word is a product's. The order card on this desk says what they see in the new words, and its Accept and Decline answers read Confirmed and Declined.","<b>THE PROOFS.</b> A new suite section drives the customer's page over an order in each state, builds each banner from the real wake through the service worker, and scans every screen for a mark without its word. Each new check was proved red by its own mutation, 37 of them, and the old word pins moved to the new values without weakening."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9374,7 +9374,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Oct 2026, 22:25 KL';
+const LAST_UPDATED='11 Oct 2026, 23:32 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
