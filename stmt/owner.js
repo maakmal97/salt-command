@@ -2034,13 +2034,18 @@ export const OWNER_JS = `
       tradeStream.addEventListener('change',fillAttribution);
       var coverChoices=[];
       function coverChoice(root,bookControl,unitsControl,goodsControl){
-        var wrap=el('label','maker-cover'), check=el('input'), words=el('span'), note=el('p','msg'), revision=0;
-        check.type='checkbox';check.setAttribute('data-reward-cover','');check.disabled=true;
-        wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(words);root.appendChild(wrap);root.appendChild(note);
+        /* 11 Oct 2026: a read never collapses a box it has shown (a tap on Send after typing blurs the field, the change
+           re-reads, and a box that hid moved Send up before the finger lifted: no click). Only an answer of no cover hides it;
+           a failed read keeps it, dead, with its note and a Read cover again beside it. */
+        var row=el('div','maker-cover-row'), wrap=el('label','maker-cover'), check=el('input'), words=el('span'),
+          retry=el('button','salt-ghost','Read cover again'), note=el('p','msg'), revision=0;
+        check.type='checkbox';check.setAttribute('data-reward-cover','');check.disabled=true;retry.type='button';retry.hidden=true;
+        wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(words);row.appendChild(wrap);row.appendChild(retry);
+        root.appendChild(row);root.appendChild(note);
         async function readCoverChoice(){
-          var ticket=++revision;check.checked=false;wrap.hidden=true;check.disabled=true;note.textContent='';
-          if(direction.value!=='sale'||tradeStream.value==='R2'||goodsControl.value===''||!(Number(unitsControl.value)>0))return;
-          note.textContent='Reading reward cover…';
+          var ticket=++revision;check.checked=false;check.disabled=true;retry.hidden=true;note.textContent='';
+          if(direction.value!=='sale'||tradeStream.value==='R2'||goodsControl.value===''||!(Number(unitsControl.value)>0)){wrap.hidden=true;return;}
+          if(wrap.hidden)note.textContent='Reading reward cover…';else words.textContent='Checking cover…';
           try{
             var result=await refs('/all/maker/trade-cover',{product:bookControl.value,party:tradeParty.value,
               qty:Number(unitsControl.value),total:Number(goodsControl.value),stream:tradeStream.value||null});
@@ -2050,9 +2055,12 @@ export const OWNER_JS = `
               words.textContent='Cover RM '+result.cover.rm.toFixed(2)+' with '+result.cover.units+' unit reward'
                 +' · '+result.cover.free+' unit available · own quote RM '+result.cover.ask.toFixed(2);
               check.disabled=false;wrap.hidden=false;
-            }
-          }catch(error){if(ticket===revision)note.textContent=error.message;}
+            }else wrap.hidden=true;
+          }catch(error){
+            if(ticket===revision){words.textContent='Cover not read';wrap.hidden=false;retry.hidden=false;note.textContent=error.message;}
+          }
         }
+        retry.addEventListener('click',readCoverChoice);
         var choice={check:check,read:readCoverChoice};coverChoices.push(choice);
         [bookControl,unitsControl,goodsControl,tradeParty,tradeStream,direction].forEach(function(control){
           control.addEventListener('input',readCoverChoice);control.addEventListener('change',readCoverChoice);
