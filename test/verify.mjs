@@ -63,11 +63,16 @@ const skipData = (m) => { console.log("  SKIP (no data): " + m); };
    (fiveTiers' multiples, levelAt, the proposal and its rules, the guest and standing boards) stays in the engine, the desk
    and the publish, so the sections that prove it put salt's last level rule back, in their own window (levelWindow) or
    their own copy of the pricing snapshot (levelSnap), and hand it the held levels they need. What the live book does is
-   proved in the drift section. */
+   proved in the drift section. A HELD DRIFT IS A NUMBER AND BELONGS TO THE DRIFT RULE (the book holds one since v1075, CS6-BS at
+   -0.7): on the level rule put back it is not a level, and production never reads it as one, since the snapshot leaves a drift
+   book out of tierOf and carries the drift apart. So the window sets the live book's salt drifts aside, then applies `held`;
+   whichever customer holds one next, the sections below see only the levels they hand in. */
 const LEVEL_SALT = { cogs: "quote", overhead: 0.5, multiples: [2.1, 2.1, 2.5, 2.5], round: ["down", "up", "down", "up"],
   decay: 0.09, from: 0.5, rungs: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5] };
 const levelWindow = (w, held) => {
-  w.eval("TIER_RULE.salt=" + JSON.stringify(LEVEL_SALT) + ";" + Object.entries(held || {}).map(([c, v]) =>
+  w.eval("TIER_RULE.salt=" + JSON.stringify(LEVEL_SALT) + ";"
+    + "Object.keys(TIER_OF).forEach(function(c){var t=TIER_OF[c];if(!t||typeof t.salt!=='number')return;t=Object.assign({},t);delete t.salt;if(Object.keys(t).length)TIER_OF[c]=t;else delete TIER_OF[c];});"
+    + Object.entries(held || {}).map(([c, v]) =>
     "TIER_OF[" + JSON.stringify(c) + "]=Object.assign({},TIER_OF[" + JSON.stringify(c) + "],{salt:" + JSON.stringify(v) + "});").join("")
     + "if(typeof recompute==='function')recompute();");
   return w;
