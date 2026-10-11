@@ -286,7 +286,7 @@ read the recipe.
 ## 11 Oct 2026: two themes, Night and Tide, chosen on each device
 
 His word: two themes on every surface, **Night** and **Tide**, kept per device, **Tide until one is chosen**. This is the
-Desk; the Counter and Salt Account follow in their own version. Night is the design system's `:root`, the identity as drawn.
+Desk; the Counter follows in the next section (11 Oct 2026) and Salt Account's own switch with its redesign. Night is the design system's `:root`, the identity as drawn.
 Tide is `:root[data-theme="tide"]` in `design/salt-ds.css`, pulled from `Code\salt-ds` (acf486e): a teal and blue register
 of the same identity, colour tokens only, so every recipe follows. The four times of day, `salt-time.js` and the clock's
 picker stay retired (the suite fails if any returns): nothing keys on a clock, there is no cross-fade.
@@ -321,6 +321,41 @@ picker stay retired (the suite fails if any returns): nothing keys on a clock, t
 - **Contrast** (WCAG 2.x, every text token on the ground and the slate): Night's lowest is copper, 5.30 and 4.98; Tide's is a
   book hue it shares with Night, rice, 5.47 and 4.91, and of Tide's own tokens mist, 6.03 and 5.41. The lit slate and the
   aurora's core stay advice, as in `Code\salt-ds` (`DESIGN.md`, `npm run contrast`).
+
+## 11 Oct 2026: the Counter wears Night or Tide, chosen on each device
+
+His decision, final: the same two themes on the customer's site (`stmt/`), the same rule as the Desk. Night is the design system's
+`:root` and Tide its `:root[data-theme="tide"]`, kept per device in localStorage `salt-look`, Tide until a device chooses. Salt
+Account (the owner's `/all`) takes the head script below and so opens in the stored theme; it has no sheet and no switch in this
+version, its own switch coming with its redesign. How a customer chooses is in `docs/STATEMENTS.md` ("The customer's look").
+
+- **Tokens.** `tools/stmt-style.mjs` `saltTokens()` returns the design system's `:root` and `:root[data-theme="tide"]` blocks, and
+  `--sync` writes both into `stmt/statement-css.js`; `--check` is in the gate. The Counter carries no Tide-only rule beyond the
+  tokens (the aurora's are not used there). The statement layer holds no colour that is not a token, bar the print block, which is
+  paper: the body's two corner glows read `--salt-copper-rgb` and `--salt-brass-rgb`, which Tide restates and Night falls back from, so
+  Night is the pixel it was. `stmt/page.js` holds no colour either, bar four swatch tokens (`--look-night-ground`, `-accent` and the
+  Tide pair): a choice tile must show the other theme's ground, which no token can, so they are the system's obsidian and brass at each
+  theme, held equal to `design/salt-ds.css` by the suite. Sealed issues and his sheets carry the Tide block and never set the attribute.
+- **Before paint.** Every page that runs script carries `LOOK_HEAD`, a nonce'd script at the top of the head, before the stylesheet:
+  it sets `data-theme` on `<html>` and the `theme-color` meta from `salt-look` (`night` or `tide`), Tide when it is unset, holds
+  anything else or cannot be read (every access in a try). The door, the signed-in page, `/app` and Salt Account all come from
+  `landingPage`. A page with `script-src 'none'` (a guest board, the shut page) is served `data-theme="tide"` and Tide's ground in the
+  meta, since no device's choice can be read there; the maintenance page does the same and writes Tide's ground and salt into its own
+  inline style (held equal to the system's by the suite). The installed app's manifest colour stays obsidian, being static, and the
+  QR's ink and field stay fixed so that a code scans.
+- **Left in the system, for `Code\salt-ds` (rule 6).** The recipes the Counter carries hold three literals that are Night's, not
+  tokens: the dashed edge of a drop area and `.salt-kpi--mist`'s tone, both `rgba(122,134,144,...)` (Night's mist, where Tide's is
+  `#7f969c`, a difference of a few counts), and the QR panel's `#ffffff`. The shadows are black and the white tints shared by design.
+  Nothing on the Counter's pages depends on them.
+- **Contrast** (WCAG 2.x, measured by the suite off the generated stylesheet: the 13 tokens the customer page sets as text, on the
+  ground and the slate): Night's lowest is copper, 4.98:1 on the slate; Tide's is mist, 5.41:1 on the slate. The ink on a filled
+  control holds 5.30:1 at Night and 6.49:1 at Tide on the ends of the accent gradient, and the QR panel's title 17.12:1 and 15.26:1 on
+  the panel's paper.
+- **The suite.** The section `the Counter wears Night or Tide, chosen per device (11 Oct 2026)` (`test/counter-two-themes.mjs`, its
+  mutations in `test/counter-two-themes.mutations.json`) drives the door, the signed-in page, Salt Account, a guest board, the shut
+  page and the maintenance page in a window, with a store that holds nothing, either theme, a value that is not a theme, and one that
+  throws. The Counter's other sections open with nothing stored, as a device that has not chosen, and are unaffected by the Sheet:
+  none of them measures a colour.
 
 ## 09 Oct 2026: one theme, Night (two themes since 11 Oct 2026, above)
 

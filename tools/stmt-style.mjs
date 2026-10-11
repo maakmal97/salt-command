@@ -5,6 +5,10 @@
  * and #ffc75a, so the one document a customer ever sees was the only surface not drawn in
  * the product's own material.
  *
+ * TWO THEMES (11 Oct 2026, his word): the :root block is Night and the :root[data-theme="tide"] block after it is Tide, both
+ * read the same way. The Counter sets data-theme on <html> from the device's choice (stmt/page.js); nothing below holds a
+ * colour that is not a token, bar the print block, which is paper.
+ *
  * ONE COPY OF THE TOKENS, NOT A SECOND. The :root block is read out of design/salt-ds.css at
  * generation time rather than transcribed, so a retune of the design system reaches the
  * statement with nothing to keep in step. What is NOT carried over is the rest of that file:
@@ -40,12 +44,16 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** The design system's own :root block, verbatim. */
+/** The design system's own :root block, verbatim, and after it the Tide block (11 Oct 2026, his word: two themes, Night and
+    Tide, on every surface). Night is :root; Tide is :root[data-theme="tide"], which restates colour tokens only, so a page
+    wears it by setting data-theme on <html> and every rule below follows. A document that sets no attribute stays Night:
+    the sealed issues and his sheets carry the Tide block unused. */
 export function saltTokens() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
-  const m = /:root\s*\{[\s\S]*?\n\}/.exec(css);
+  const m = /:root\s*\{[\s\S]*?\n\}/.exec(css), t = /:root\[data-theme="tide"\]\s*\{[\s\S]*?\n\}/.exec(css);
   if (!m) throw new Error("stmt-style: no :root block in design/salt-ds.css");
-  return m[0];
+  if (!t) throw new Error("stmt-style: no :root[data-theme=\"tide\"] block in design/salt-ds.css");
+  return m[0] + "\n\n" + t[0];
 }
 
 /** The brand faces' @font-face rules, vendored as design/fonts.css (22 Sep 2026): the page carries
@@ -122,8 +130,8 @@ body{
   margin:0;padding:44px 20px 60px;
   color:var(--salt-text);
   background:
-    radial-gradient(1200px 640px at 82% -12%, rgba(184,115,51,.16) 0%, transparent 62%),
-    radial-gradient(900px 560px at -10% 6%, rgba(197,160,89,.10) 0%, transparent 58%),
+    radial-gradient(1200px 640px at 82% -12%, rgba(var(--salt-copper-rgb,184,115,51),.16) 0%, transparent 62%),
+    radial-gradient(900px 560px at -10% 6%, rgba(var(--salt-brass-rgb,197,160,89),.10) 0%, transparent 58%),
     var(--salt-obsidian);
   background-attachment:fixed;
   font-family:var(--salt-font-display);

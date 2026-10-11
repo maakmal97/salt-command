@@ -8956,6 +8956,11 @@ await (async () => {
     "the built desk carries one theme-color meta, the master's, starting at Tide's ground");
 })();
 
+section("the Counter wears Night or Tide, chosen per device (11 Oct 2026)");
+await (async () => {
+  await (await import("./counter-two-themes.mjs")).run({ ok });
+})();
+
 section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
@@ -25883,7 +25888,7 @@ await (async () => {
   const pages = [["the door", await get("/")], ["the door with a username", await get("/?u=abcd-efgh")],
     ["a sign-in link", await get("/s/" + "a".repeat(24))], ["a guest board", await get("/g/" + open.id)],
     ["a shut link", await get("/g/zzzz-zzzz")], ["Salt Account", P.landingPage("", "n131", { master: "m131", accounts: [] })]];
-  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
+  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="tide"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
   const off = pages.filter(([, h]) => !root.test(h)).map(([w, h]) => w + ": " + h.slice(0, 80));
   ok(pages.every(([, h]) => h.length > 1000) && !off.length,
     "every page says translate=no on its root and carries Google's notranslate, before anything else: " + JSON.stringify(off));
@@ -43676,7 +43681,8 @@ await (async () => {
      passphrase on /all went the same way. Both are function replacements now. */
   const { landingPage } = await import("../stmt/page.js");
   const typed = ["Card or cash, $' accepted", "Promo $` here", "Save $& now", "Pay $$5 less"];
-  const script = (html) => { const m = /<script nonce="N">([\s\S]*?)<\/script>/.exec(html); return m ? m[1] : ""; };
+  /* the page's own script is the last: the head's theme script (11 Oct 2026) comes before it */
+  const script = (html) => { const m = [...html.matchAll(/<script nonce="N">([\s\S]*?)<\/script>/g)].pop(); return m ? m[1] : ""; };
   const parses = (js) => { try { new Function(js); return true; } catch (e) { return false; } };
   const cust = script(landingPage("", "N", null, { lines: typed }));
   const bull = /var BULL=(\{[^\n]*?\}), bullN=0;/.exec(cust);

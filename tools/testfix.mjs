@@ -307,7 +307,10 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   const book = { sales, customerRefunds: [] };
   return { v: FIX_VERSION, u, state, at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
     orders: O, claims, refs, card, assoc: true, thread, pools,
-    bulletin: { lines: ["An example notice: the counter opens late on Friday."] } };
+    bulletin: { lines: ["An example notice: the counter opens late on Friday."] },
+    /* 11 Oct 2026: THE LOOK. A device is asked Night or Tide once, then never; a test account says "asked" in its sealed bundle, so
+       the page asks at every sign-in whatever the device holds and the Sheet can be tried again. The setting under Account is the same. */
+    look: "asked" };
 }
 
 /* ---- WHAT A CUSTOMER SEES, AND THE CASE OF EACH HERE ------------------------------------------------------------
@@ -397,6 +400,7 @@ export const FEATURES = [
   ["another window waiting on their yes (10 Oct 2026)", (f) => has(f, (o) => o.status === "placed" && accYes(o, f) && !!o.slot && !!o.price.offer.slot && o.price.offer.slot !== o.slot)],
   ["an offer for their yes lapsed, then agreed at their terms (10 Oct 2026)", (f) => has(f, (o) => o.status === "acknowledged" && o.price && o.price.from === "accept"
     && o.price.state === "offered" && Math.abs(o.price.offer.total - o.total) > 0.004)],
+  ["the look: the choice Sheet asked at every sign-in, and the setting under Account (11 Oct 2026)", (f) => f.look === "asked"],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];
@@ -446,7 +450,7 @@ export async function sealFixture(fix, rec, pass) {
   /* the statement bundle of an account minted today: no sealed issue, the live document is the statement */
   return { v: fix.v, u: fix.u, at: fix.at, salt: rec.wrap.salt, assoc: true,
     live: fix.live ? Object.assign({ at: fix.live.at }, await seal(fix.live)) : null, orders: fix.orders.map(customerView), claims: fix.claims,
-    env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [] }),
+    env: await seal({ v: 1, issued: fix.at.slice(0, 10), statements: [], look: fix.look }),
     prices: Object.assign({ at: fix.prices.at, week: fix.prices.week.monday, digest: fix.prices.digest },
       Object.keys(priceSteps(fix.prices)).length ? { steps: priceSteps(fix.prices) } : {}, await seal(fix.prices)),
     card: Object.assign({ at: fix.card.at }, await seal(fix.card)), refs: fix.refs, bulletin: fix.bulletin, thread: fix.thread, pools: fix.pools,

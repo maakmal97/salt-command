@@ -194,6 +194,12 @@ export const EN = {
   "code.help": "No code? Open your sign-in link in **Safari**, and copy the code shown there.",
   /* ---- THIS DEVICE, in Account ---- */
   "dev.h": "This device",
+  /* ---- THE LOOK (11 Oct 2026, his word): Night or Tide, kept on this device, asked once in a Sheet and changed under Account ---- */
+  "look.h": "Look",
+  "look.sheetH": "Choose your look",
+  "look.night": "Night",
+  "look.tide": "Tide",
+  "look.note": "You can change this under Account.",
   "dev.out": "Sign out of this {dev}",
   "dev.another": "Sign in another device",
   "dev.scan": "On the other device, scan this with its camera to open Salt Counter, then type the code where it asks for one.",
