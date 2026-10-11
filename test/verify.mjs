@@ -8961,6 +8961,11 @@ await (async () => {
   await (await import("./counter-two-themes.mjs")).run({ ok });
 })();
 
+section("Home leads with the one action: a sticky foot holds To pay now and its Pay above the bar, and the lines show three and fold the rest (11 Oct 2026)");
+await (async () => {
+  await (await import("./home-pay-foot.mjs")).run({ ok, pageWork });
+})();
+
 section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
@@ -43244,9 +43249,11 @@ await (async () => {
     /* S7 merge: Home's To pay now is stage 6's (#payHead), its Pay #payNow */
     /* the words, not the drawing: a mark's letter (Step 1a.2) is aria-hidden */
     const ph71 = D.getElementById("payHead").cloneNode(true); ph71.querySelectorAll("svg").forEach((x) => x.remove());
-    const pay71 = ph71.textContent, go = D.getElementById("payNow");
-    ok(D.getElementById("pHome").contains(go) && /To pay nowRM 70.00Cube 1 unitRM 70.00/.test(pay71) && go && go.textContent === "Pay RM 70.00" && D.querySelectorAll("#pHome .salt-pill").length === 1,
-      "To pay now is the sealed RM 70.00, never the statement's RM 90.00, with what it is for and the one filled Pay: " + JSON.stringify(pay71.slice(0, 120)));
+    /* Phase 7a (11 Oct 2026): the figure and its Pay are the foot's, the line for what it is for the head's */
+    const pay71 = ph71.textContent, go = D.getElementById("payNow"), ft71 = D.getElementById("homeFoot"), tile71 = ft71.querySelector(".salt-kpi");
+    ok(D.getElementById("pHome").contains(go) && ft71.contains(go) && !ft71.hidden && !!tile71 && /^To pay now ?RM 70\.00$/.test(tile71.textContent.replace(/\s+/g, " ").trim())
+      && /^Cube 1 unitRM 70\.00/.test(pay71) && go && go.textContent === "Pay RM 70.00" && D.querySelectorAll("#pHome .salt-pill").length === 1,
+      "To pay now is the sealed RM 70.00, never the statement's RM 90.00, with what it is for and the one filled Pay: " + JSON.stringify([tile71 && tile71.textContent, pay71.slice(0, 120)]));
     const rows = (id) => [...D.querySelectorAll("#" + id + " [data-row]")].map((r) => r.getAttribute("data-row")).join(",");
     ok(rows("hNeeds") === "oR" && /A reply: Ready Thursday\./.test(D.getElementById("hNeeds").textContent)
       && rows("hComing") === "oC,oK,oP" && /RM 150.00 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
@@ -44045,7 +44052,7 @@ await (async () => {
     ok(c.indexOf("keepCard") < 0 && c.indexOf("payHead") >= 0 && c[c.indexOf("payHead") - 1] === "bull" && c.indexOf("hNeeds") === c.indexOf("payHead") + 1
       && !!k0 && !k0.closest("#pHome") && D.getElementById("thisDevice").contains(k0) && k0.hidden,
       "a new account's Home leads with To pay then Needs you; its install guide stays under This device and is hidden in the saved app: " + JSON.stringify(col(D)));
-    ok(!!sp && D.getElementById("hAgain").contains(sp) && before(D, tiles, sp) && !D.getElementById("payHead").querySelector(".salt-pill"),
+    ok(!!sp && D.getElementById("hAgain").contains(sp) && before(D, tiles, sp) && !D.getElementById("payHead").querySelector(".salt-pill") && D.getElementById("homeFoot").hidden,
       "and its one filled control, See all prices, follows the sizes to start from: " + JSON.stringify(D.getElementById("hAgain").textContent.slice(0, 120)));
   } finally { a.W.close(); }
   const b = await open(false, false);
@@ -44892,10 +44899,12 @@ await (async () => {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       for (let i = 0; i < 150 && d.getElementById("tabs").hidden; i++) await new Promise((r) => setTimeout(r, 100));
-      const h = d.getElementById("payHead"), c = d.getElementById("hComing");
+      /* Phase 7a (11 Oct 2026): the figure and its one filled Pay stand in the foot above the bar, the invoice lines in the head */
+      const h = d.getElementById("payHead"), c = d.getElementById("hComing"), f = d.getElementById("homeFoot");
       return { hidden: h.hidden, first: d.getElementById("pHome").contains(h) && !d.getElementById("pStmt").querySelector("#payHead"), shown: !d.getElementById("pHome").hidden,
-        tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => t(h.querySelector(".salt-kpi--ember " + s))),
-        pill: t(h.querySelector("button.salt-pill")), pills: h.querySelectorAll(".salt-pill").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
+        foot: !f.hidden && d.getElementById("pHome").contains(f) && f.contains(d.getElementById("payNow")),
+        tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((s) => t(f.querySelector(".salt-kpi--ember " + s))),
+        pill: t(f.querySelector("button.salt-pill")), pills: h.querySelectorAll(".salt-pill").length + f.querySelectorAll(".salt-pill").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
         rows: [...h.querySelectorAll(".salt-ledger__row"), ...c.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((s) => t(r.querySelector(s)))),
         late: [...h.querySelectorAll(".salt-ledger__row")].map((r) => r.querySelector(".salt-ledger__value").classList.contains("odue")),
         /* S7 polish: Coming up's part is the Inbox row its orders are; F8, its mark and size a card, the figure under the mark */
@@ -44913,7 +44922,7 @@ await (async () => {
     coming: { rm: 110, parts: [{ date: kl(-1), rm: 110, product: "salt", qty: 1, toCome: 1, resale: false }] } });
   /* V2 (28 Sep 2026, his "less words, but maximum impact"): the figure is the invoice's Total with no line under it; each
      thing due is a line beneath, its figure and when it is due in a word or three */
-  ok(one.shown && one.first && !one.hidden && one.tile[0] === "To pay now" && one.tile[1] === "RM 70.00" && one.tile[2] === ""
+  ok(one.shown && one.first && one.foot && !one.hidden && one.tile[0] === "To pay now" && one.tile[1] === "RM 70.00" && one.tile[2] === ""
     && JSON.stringify(one.rows) === JSON.stringify([["Cube 2.5 units", "RM 70.00", "Pay by " + said(kl(2))]])
     && one.pill === "Pay RM 70.00" && one.pills === 1,
     "To pay now heads Home: its figure, a line for what it is for with the day it is due, and the one filled Pay: "
@@ -44935,7 +44944,7 @@ await (async () => {
       part({ date: kl(-7), since: kl(-1), due: kl(2), rm: 120, qty: 1, got: 1, gotOn: kl(-1), resale: true })] },
     overdue: { rm: 180, parts: [part({ date: kl(-20), since: kl(-20), due: kl(-17), late: true, rm: 180, whole: 250, gotOn: kl(-20) })] },
     coming: { rm: 0, parts: [] } });
-  ok(two.tile[1] === "RM 300.00" && two.tile[2] === "" && two.pill === "Pay RM 300.00" && two.heads.join() === ""
+  ok(two.foot && two.tile[1] === "RM 300.00" && two.tile[2] === "" && two.pill === "Pay RM 300.00" && two.heads.join() === ""
     && JSON.stringify(two.rows) === JSON.stringify([["Cube 2.5 units", "RM 180.00", "Overdue by 20 days"], ["Cube 1 unit on behalf of a friend", "RM 120.00", "Pay by " + said(kl(2))]])
     && two.late.join() === "true,false",
     "of several parts, each is its own line, the late one overdue counted from the day its goods went and marked so, a friend's said to be one: "
@@ -45050,7 +45059,7 @@ await (async () => {
     const d = dom.window.document;
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-    await until(() => !d.getElementById("tabs").hidden && d.getElementById("pOrder").textContent && d.querySelector("#payHead .salt-kpi"));
+    await until(() => !d.getElementById("tabs").hidden && d.getElementById("pOrder").textContent && d.querySelector("#homeFoot .salt-kpi, #payHead .salt-kpi"));
     await new Promise((r) => setTimeout(r, 100));
     return dom;
   };
@@ -45076,12 +45085,14 @@ await (async () => {
     /* Step 1a.2's pins bind the invoice: a mark's width and its letter, as F8 counts them */
     const marks = (root) => [...root.querySelectorAll("svg.psym:not(.glyph)")].map((s) => +s.getAttribute("width") + ":" + [...s.querySelectorAll("text.plet")].map((x) => x.textContent).join(""));
     const homeMarks = marks(h);
-    const home = { tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((q) => t(h.querySelector(q))), rows: inv ? rowsOf(inv) : [],
-      pay: t(d.getElementById("payNow")), pills: d.querySelectorAll("#pHome .salt-pill").length, msgs: [...h.querySelectorAll(".msg")].map(t),
+    /* Phase 7a (11 Oct 2026): the Total and its one Pay stand in the foot above the bar; the lines stay in the head */
+    const foot = d.getElementById("homeFoot");
+    const home = { tile: [".salt-kpi__label", ".salt-kpi__value", ".salt-kpi__note"].map((q) => t(foot.querySelector(q))), rows: inv ? rowsOf(inv) : [],
+      pay: t(d.getElementById("payNow")), pills: d.querySelectorAll("#pHome .salt-pill").length, msgs: [...h.querySelectorAll(".msg")].map(t), inFoot: foot.contains(d.getElementById("payNow")),
       coming: [...d.querySelectorAll("#hComing [data-row]")].map((r) => r.getAttribute("data-row") + ":" + t(r.querySelector(".salt-inbox-row__what"))),
       needs: [...d.querySelectorAll("#hNeeds [data-row]")].map((r) => r.getAttribute("data-row") + ":" + t(r.querySelector(".salt-inbox-row__what"))) };
     ok(JSON.stringify(home.rows) === JSON.stringify(["Cube 2 units|RM 90.00|Pay by " + said(kl(1)), "Cube 2 units|RM 190.00|Due now", "Less sent|RM 120.00|Waiting for us to confirm"])
-      && home.tile.join("|") === "To pay now|RM 160.00|" && home.pay === "Pay RM 160.00" && home.pills === 1 && !home.msgs.length,
+      && home.tile.join("|") === "To pay now|RM 160.00|" && home.pay === "Pay RM 160.00" && home.inFoot && home.pills === 1 && !home.msgs.length,
       "Home's To pay now is the invoice's Total over a line a thing due, the order at Ready from the order itself and due now, then what was sent, and one Pay for the Total: "
       + JSON.stringify(home));
     ok(home.coming.join() === "20260927010000-v2kk:RM 95.00 still to pay, now or when you collect,20260926010000-v2pp:Paid"
@@ -45136,7 +45147,7 @@ await (async () => {
   const heldBy = async (parts) => {
     const dm = await open(parts, [oR], []), dd = dm.window.document;
     try { return { head: t(dd.querySelector("#pOrder h2")), form: !!dd.getElementById("oNew"), tile: t(dd.querySelector("#pOrder .pane .salt-kpi__value")),
-      hold: t(dd.querySelector("#payHead .salt-insight")), total: t(dd.querySelector("#payHead .salt-kpi__value")) }; }
+      hold: t(dd.querySelector("#payHead .salt-insight")), total: t(dd.querySelector("#homeFoot .salt-kpi__value, #payHead .salt-kpi__value")) }; }
     finally { dm.window.close(); }
   };
   const alone = await heldBy([]), beside = await heldBy([late]);
@@ -51148,8 +51159,8 @@ await (async () => {
     try {
       d.getElementById("un").value = u; d.getElementById("pw").value = pass;
       d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-      await until(() => read > 0 && !d.getElementById("tabs").hidden && d.querySelector("#payHead .salt-kpi"));
-      const h = d.getElementById("payHead");
+      await until(() => read > 0 && !d.getElementById("tabs").hidden && d.querySelector("#homeFoot .salt-kpi, #payHead .salt-kpi"));
+      const h = d.getElementById("homeFoot");   /* Phase 7a (11 Oct 2026): the figure and its Pay stand in the foot */
       return [".salt-kpi__label", ".salt-kpi__value"].map((q) => t(h.querySelector(q))).concat([t(d.getElementById("payNow"))]).join("|");
     } finally { try { dom.window.close(); } catch (x) { /* best effort */ } }
   };

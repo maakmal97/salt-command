@@ -594,7 +594,13 @@ the moment he taps Ready, and a line for each sealed part no order at Ready acco
 out oldest first, then the orders at Ready with nothing handed over), then Less sent, what was sent on those lines or
 against the account, spread in that order; the figure is the Total and its one filled Pay opens the pay sheet on the same
 invoice, drawn whole there with each line's rate, when, goods, delivery and paid, then the totals. Home draws a line a
-row with its due in a word or three, his "less words, but maximum impact". Over the line the overdue amount first, the
+row with its due in a word or three, his "less words, but maximum impact". **Home leads with the one action** (Phase 7a,
+his yes of 11 Oct 2026): the figure and its one filled Pay stand in a sticky foot (`#homeFoot`, `payFootNode`), the last
+child of `#pHome` and pinned just above the App bar, so the Pay is never under it; from 1080px the rail replaces the bar
+and the foot is static at the head of the first column. The head keeps the lines and the claim sentence, but only three
+lines show: the rest fold behind a native details reading "N more" (`inv.more`, `invMore`, its open state kept across
+redraws), and the pay sheet still draws every line. With nothing to pay now no foot is drawn and the head keeps the
+verdigris tile; at a closing stage the foot is not greyed, since To pay now is the one thing left live. Over the line the overdue amount first, the
 hold reading the sealed parts alone, so an order at Ready is due and never overdue; Orders is then the payment page),
 Needs you (a reply not yet shown on this device, goods ready to collect, goods with them unpaid) and Coming up (an order
 agreed or sent and not handed over, an order at Ready still owing excepted, then any sealed part no order accounts for,

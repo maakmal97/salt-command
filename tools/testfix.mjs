@@ -320,6 +320,13 @@ const has = (f, p) => f.orders.some(p);
 /* a window's whole four hours, as its span reads when the hours leave all of it */
 const spanWhole = (slot) => { const w = +String(slot).slice(11, 13), p = (n) => String(n).padStart(2, "0"); return p(w) + ":00-" + p(w + 4) + ":00"; };
 const hist = (o, p) => (o.history || []).some(p);
+/* the lines the page draws under To pay now (stmt/page.js nowOf): each part the publish sealed, and each order at Ready still owing
+   that no part accounts for (its part is the one on its row's day, of its whole figure and the friend's bucket or not) */
+const invoiceLines = (f) => {
+  const parts = f.live.pay.now.parts, rowOn = (o) => String(o.ledgerKey || "").split("|")[1], owing = (o) => +o.total + (+o.delivery || 0) - (+o.paid || 0);
+  return parts.length + f.orders.filter((o) => o.status === "ready" && owing(o) > 0.004
+    && !parts.some((p) => p.date === rowOn(o) && Math.abs((+p.whole || 0) - (+o.total + (+o.delivery || 0))) < 0.005 && !!p.resale === !!o.forFriend)).length;
+};
 /* his Accept for their yes, open at the fixture's moment */
 const accYes = (o, f) => !!(o.price && o.price.from === "accept" && o.price.state === "offered" && String(o.price.offer.until) > f.at);
 export const FEATURES = [
@@ -364,6 +371,7 @@ export const FEATURES = [
   ["what paying late costs, off the sealed term, lock and window (V5c)", (f) => { const P = f.live && f.live.pay;
     return !!P && typeof P.term === "number" && typeof P.lock === "number" && typeof P.window === "number" && P.now.rm > 0.004; }],
   ["coming up: agreed and not handed over", (f) => f.live && f.live.pay.coming.parts.length > 0],
+  ["To pay now over more than three lines, Home showing three and the rest under N more (Phase 7a, 11 Oct 2026)", (f) => !!f.live && invoiceLines(f) > 3],
   ["due at Ready", (f) => has(f, (o) => o.status === "ready" && +o.total + (+o.delivery || 0) - (+o.paid || 0) > 0.004)],
   ["paid in advance, the desk's verdict at Accept (V5b2a)", (f) => has(f, (o) => o.prepay === true)],
   ["the ceiling sealed with the list, for the sheet's forecast (V5b2b)", (f) => typeof f.prices.ceiling === "number"],
