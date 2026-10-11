@@ -1322,7 +1322,7 @@ export async function testStatement() {
     + '<div class="salt-lines__date" role="columnheader">Date</div><div class="salt-lines__what" role="columnheader">Quantity</div>'
     + '<div class="salt-lines__amount" role="columnheader">Amount</div><div class="salt-lines__state" role="columnheader">Status</div></div>'
     + '<div class="salt-lines__row" role="row" data-m="' + day.slice(0, 7) + '"><div class="salt-lines__date" role="cell">' + dmy + "</div>"
-    + '<div class="salt-lines__what" role="cell">' + mtileSvg("salt", "1", "1 unit") + '</div><div class="salt-lines__amount" role="cell">RM 100.00</div>'
+    + '<div class="salt-lines__what" role="cell">' + mtileSvg("salt", "1 unit") + '</div><div class="salt-lines__amount" role="cell">RM 100.00</div>'
     + '<div class="salt-lines__state salt-lines__state--verdigris" role="cell">settled</div></div></div>';
   return { v: 1, issued: day, statements: [{ issued: day, label: "Test", body }] };
 }

@@ -370,8 +370,8 @@ function stmtDoc(party,rows,o){
   /* C11: the live document names no product in its prose, the goods being a mark; an issue is as it was sent */
   const goods=lines?'goods':'salt';
   /* HIS ANSWER OF 28 SEP 2026, "It will be rendered cards in the statement": each mark of the live document is a card, the
-     mark a button and its figure under it, alone, as on the Counter's own cards (mtileSvg) */
-  const lineTile=(p,q)=>mtileSvg(p,n2(q),units(q));
+     mark a button and its caption under it, the shape word and the size in words, as on the Counter's own cards (mtileSvg) */
+  const lineTile=(p,q)=>mtileSvg(p,units(q));
   const tiles=(ps,qOf)=>'<span class="mtiles">'+ps.map(p=>lineTile(p,qOf(p))).join('')+'</span>';
   const lineList=(label,heads,rowsHtml)=>'<div class="salt-lines" role="table" aria-label="'+label+'"><div class="salt-lines__head" role="row">'
     +['date','what','amount','state'].map((c,i)=>'<div class="salt-lines__'+c+'" role="columnheader">'+heads[i]+'</div>').join('')+'</div>'+rowsHtml+'</div>';
