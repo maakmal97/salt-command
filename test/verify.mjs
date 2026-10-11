@@ -51970,6 +51970,11 @@ await (async () => {
   await (await import("./maker-loan-twin.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter cover read: the offered box holds its place while a read is in flight, and a failed read offers a retry");
+await (async () => {
+  await (await import("./maker-trades.mjs")).runCoverRead({ ok, pageWork });
+})();
+
 section("Counter approved registration staging: actual mixed-status SQLite selection");
 await (async () => {
   await (await import("./maker-registration.mjs")).runApprovedSelection({ ok });

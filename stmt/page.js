@@ -444,6 +444,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .maker-field .lbl{margin-top:0}
 .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
 .maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
+.maker-cover-row{display:flex;align-items:center;gap:10px}
+.maker-cover-row .maker-cover{flex:1 1 auto}
+.maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
 .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .maker-hours{display:grid;gap:6px;margin:14px 0}
