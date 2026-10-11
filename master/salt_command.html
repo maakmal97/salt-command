@@ -4385,6 +4385,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-state:#6f8398; /* a state's outline */
   --desk-map-void:#ffffff05; /* an area with nothing in it */
   --desk-map-core:#ffffff08; /* a district on the place picker */
+  --desk-on-solid:#fff;      /* text on the desk's solid steel button and its alarm pill; Tide's accent is lighter, so Tide takes the ink */
+  --desk-vio-deep:#6f8398;   /* the deeper end of the steel button's gradient (Hide names), Night's own hex as it was drawn */
+  --desk-grn-deep:#4f8f7a;   /* and of the verdigris buttons' (Save, Record) */
 }
 
 /* 11 Oct 2026: TWO THEMES, NIGHT AND TIDE (his word, chosen on each device, Tide until chosen). Night is :root above and in the
@@ -4403,6 +4406,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   --desk-map-state:#5f98a6;
   --desk-map-void:#ffffff05;
   --desk-map-core:#ffffff08;
+  --desk-on-solid:var(--salt-ink-on-accent);
+  --desk-vio-deep:#7c97b2;   /* Tide's steel (#9ab8d8) and verdigris (#8ee0a8) drawn a fifth toward its ground; the ink holds 6.1:1 and 7.8:1 on them */
+  --desk-grn-deep:#72b78c;
 }
 /* what each theme's tile shows in the choice sheet: its own ground and accent, so a tile reads true under the other theme. They
    are the design system's obsidian and brass at Night and its Tide values, held equal to the system by the suite, and no theme
@@ -9213,7 +9219,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1072","d":"11 Oct 2026","t":"THE DESK WEARS NIGHT OR TIDE, CHOSEN ON EACH DEVICE","n":["<b>TWO THEMES, HIS WORD OF 11 OCT 2026.</b> The desk wears Night or Tide. The choice is kept on each device and Tide shows until one is chosen: a first open asks once, in a sheet, and a device that has chosen is never asked again. A switch at the foot of the rail, two options of 44 px, changes it whenever he likes. The charts and the map draw again in the chosen look. This version is the Desk alone; the Counter and QR Command follow. Nothing prices.","<b>HOW IT IS BUILT.</b> Tide is pulled from salt-ds, the desk's own layer carries its values as tokens, and the inline identity tints read tokens, not literals. A script in the head sets the look before the first paint, and the theme-color meta follows it. A store that cannot be read opens Tide and does not ask. Lowest text contrast: Night 4.98:1, Tide 4.91:1. The suite proves the choice, the switch, the sheet and both looks, each assertion red by mutation first."]}];
+const evolution=[{"v":"v1073","d":"11 Oct 2026","t":"TIDE REACHES THE NAMES PANEL'S BUTTONS, AND THE RENDER TOOL PICKS A THEME","n":["<b>TIDE, ALL THE WAY.</b> Hide names, Save and Record drew Night's steel and verdigris as fixed colours, and the Cancelled pill drew white text, so Tide showed Night's. Each gradient now ends on a desk token (Night's own hex, as drawn before; Tide's own shade), and the text on Hide names and on the Cancelled pill is a token: white at Night as before, the system's ink at Tide, whose accents are lighter. Night draws exactly as it did. Nothing prices.","<b>THE PROOFS.</b> The suite's inline-colour check now catches any hex colour in an inline style or a gradient. The render tool keeps a theme (SALT_LOOK, Night by default), so its shots are no longer Tide with the choice sheet over them. New proofs cover a stored value that is no theme, a store that cannot be read, and Enter keeping what is typed through a switch, each red by mutation first."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9364,7 +9370,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Oct 2026, 12:17 KL';
+const LAST_UPDATED='11 Oct 2026, 12:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -17146,7 +17152,7 @@ function renderReveal(){
       <br><b style="color:var(--amber)">The sealed file is reachable by anyone with the address.</b> Cloudflare Access is off by your decision, so the passphrase is the only thing between that file and a real name. Make it a long one.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
       ${namesShown()
-        ? `<button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:linear-gradient(135deg,var(--vio),#6f8398);color:#fff">Hide names</button>`
+        ? `<button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:linear-gradient(135deg,var(--vio),var(--desk-vio-deep));color:var(--desk-on-solid)">Hide names</button>`
         : `<input id="vrpass" type="password" autocomplete="current-password" placeholder="passphrase" style="min-width:150px;flex:1;padding:9px 10px;font-size:16px">
            <button id="vrgo" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:transparent;color:var(--vio)"${vaultRevealBusy?' disabled':''}>${vaultRevealBusy?'Opening…':'Show names'}</button>`}
     </div>
@@ -17157,8 +17163,8 @@ function renderReveal(){
       ${NAME_VAULT?'<b>An old encrypted vault is still on file.</b> Import it once to bring those names across.':''}</div>
     <div class="note warn" style="margin:0 0 10px;border-color:color-mix(in srgb,var(--salt-copper) 30%,transparent);background:color-mix(in srgb,var(--salt-copper) 8%,transparent)"><b>Not encrypted.</b> This is kept in salt_bio.json in the clear, by your instruction. The desk file itself stays clean and the published mirror carries none of it. The phone is a different matter: it only ever receives the sealed envelope and asks for the passphrase.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-      <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),#6f8398)':'transparent'};color:${revealed?'#fff':'var(--vio)'}">${revealed?'Hide':'Show and edit'}</button>
-      ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:var(--salt-ink-on-accent)">Save</button>':''}
+      <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),var(--desk-vio-deep))':'transparent'};color:${revealed?'var(--desk-on-solid)':'var(--vio)'}">${revealed?'Hide':'Show and edit'}</button>
+      ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,var(--grn),var(--desk-grn-deep));color:var(--salt-ink-on-accent)">Save</button>':''}
       ${NAME_VAULT?'<button id="vimport" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--gold);background:transparent;color:var(--gold)">Import old vault</button>':''}
     </div>`}
     ${NAME_VAULT?'<div id="vimpBox" style="display:none;gap:6px;margin-bottom:8px"><input id="vpass" type="password" placeholder="passphrase for the old vault" style="min-width:160px;padding:8px 9px;font-size:16px"><button id="vdoimp" class="vbtn salt-pill salt-pill--sm">Import</button></div>':''}
@@ -21964,7 +21970,7 @@ function tabWorkbench(){
          appear when there is something queued for them to act on, which is also when their words mean
          anything. Nothing is hidden that could have been used: each already refused an empty queue. -->
     <div style="margin-top:13px">
-      <button class="vbtn salt-pill salt-pill--sm" id="wbRec" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:var(--salt-ink-on-accent)">Record</button>
+      <button class="vbtn salt-pill salt-pill--sm" id="wbRec" style="border-color:var(--grn);background:linear-gradient(135deg,var(--grn),var(--desk-grn-deep));color:var(--salt-ink-on-accent)">Record</button>
       ${queue.length?`<button class="vbtn salt-pill salt-pill--sm" style="font-size:12px;margin-left:6px" onclick="if(queue.length&&confirm('Discard all '+queue.length+' uncommitted entries? The desk will fall back to the committed ledger.')){queue.length=0;saveQueue();applyOverlay();render();}">Clear queued</button>
       <button class="vbtn salt-pill salt-pill--sm" id="wbSave" style="font-size:12px;margin-left:6px">Save queue file</button>
       <button class="vbtn salt-pill salt-pill--sm" id="wbCopy" style="font-size:12px;margin-left:6px">Copy queue</button>`:''}
@@ -23717,7 +23723,7 @@ function wbPreview(){
       body=`<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)">`
         +`<span style="${lbl0()}">Now</span>`+wbPill(now.pay,wbPayCls(now.pay))+wbPill(now.deliv,wbPayCls(now.deliv))+wbPill(now.state,now.cls)
         +`<span style="color:var(--dim)">&rarr;</span>`
-        +(isCancel?`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+`<span class="pill" style="background:var(--crim);color:#fff">Cancelled</span>`
+        +(isCancel?`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+`<span class="pill" style="background:var(--crim);color:var(--desk-on-solid)">Cancelled</span>`
           :`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+wbPill(nxt.state,nxt.cls))
         +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; ${ID(t.who)} &middot; ${units(t.qty)} for ${fmt0(t.total)}: ${fmt0(sf.cash)} paid, ${units(+sf.kg.toFixed(2))} delivered so far.</div>`
         +(isCancel?`<div class="dsc" style="margin-top:6px">The row is marked <b>cancelled</b> outright${sf.cash>0.009?`, and the <b>${fmt0(sf.cash)} already paid becomes a refund payable</b> back to ${ID(t.who)}`:''}. Cash and units are not used here: what is owed back is what was paid.</div>`

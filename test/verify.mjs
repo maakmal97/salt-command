@@ -8801,6 +8801,19 @@ await (async () => {
   const body = m.slice(m.indexOf("</style>", a0)).replace(/\/\* ==== (ENGINE|BOOK|GEO)[\s\S]*?END \1[^=]*==== \*\//g, "");
   const wash = (body.match(/(?<!\w)rgba\((5,8,10|142,162,182|184,115,51|212,105,76|197,160,89),[\d.]+\)/g) || []).filter((x) => !/^rgba\(197,160,89,\.3\)$/.test(x));
   ok(wash.length === 0, `the desk's script templates write no identity wash as a literal (found ${wash.join(" ") || "none"})`);
+  /* nor a hex colour in an inline style or a gradient (11 Oct 2026): the Names and IDs panel's buttons, Record and the Cancelled pill drew Night's steel, verdigris and white at Tide.
+     What stays literal is not an inline style: the crystal mark's stops, the dormant tier colours, and the price board's print sheet and PNG, which are the customer's own paper */
+  const hexLit = (body.match(/(?:style="[^"]*|linear-gradient\((?:[^()]|\([^()]*\))*)(?<![&\w])#[0-9a-f]{3,8}\b/gi) || []).map((x) => x.slice(x.lastIndexOf("#")));
+  ok(hexLit.length === 0, `the desk's script templates write no hex colour in an inline style or a gradient (found ${hexLit.join(" ") || "none"})`);
+  ok(/linear-gradient\(135deg,var\(--vio\),var\(--desk-vio-deep\)\)/.test(body) && /id="vsave"[^>]*linear-gradient\(135deg,var\(--grn\),var\(--desk-grn-deep\)\)/.test(body)
+    && /id="wbRec" style="[^"]*linear-gradient\(135deg,var\(--grn\),var\(--desk-grn-deep\)\)/.test(body) && !/--(vio|grn)-deep\b/.test(m),
+    "so the solid steel and verdigris buttons end their gradient on a desk token each, and nothing mixes one in the shared layer");
+  /* a literal can be checked and a mix cannot (jsdom computes no color-mix): Night's two are the exact hexes drawn before this follow-up, Tide's are its own and carry the ink */
+  const deepOf = (D) => ["desk-vio-deep", "desk-grn-deep"].map((k) => D[k]);
+  ok(DN["desk-vio-deep"] === "#6f8398" && DN["desk-grn-deep"] === "#4f8f7a", `Night's gradient ends are the exact hexes the buttons drew before, #6f8398 and #4f8f7a (read ${deepOf(DN).join(" ")})`);
+  const inkOn = deepOf(DT).concat([TIDE.steel, TIDE.verdigris]).map((h) => HEX.test(h || "") ? ratio(TIDE["ink-on-accent"], h) : 0);
+  ok(deepOf(DT).every((h, i) => HEX.test(h || "") && h !== deepOf(DN)[i]) && Math.min(...inkOn) >= 4.5,
+    `Tide's are its own, not Night's, and its ink holds 4.5:1 on both and on the accents they deepen (read ${deepOf(DT).join(" ")}; lowest ${Math.min(...inkOn).toFixed(2)})`);
   /* the system's desk bar reads its material from three tokens on :root, and no raw fill is left */
   const dsBase = dsC.replace(/\s+/g, "");
   const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1];
@@ -8888,6 +8901,36 @@ await (async () => {
     const a2 = state(r1.w);
     ok(a2.theme === "night" && a2.bar === NIGHT.obsidian && a2.kept === "night" && a2.held === "night", `and back to Night the same way (read ${JSON.stringify(a2)})`);
     ok(r1.w.document === doc && r1.w.__same === 1, "with no reload: the same document and the same window, and nothing asked");
+    /* 5b. on Enter a switch is CSS alone: the part is not drawn again, so what is typed stays. On a part that holds a chart or the map it is drawn once. */
+    const en = await open({ "salt-look": "night" });
+    let draws = 0;
+    const draw = en.w.render;
+    en.w.render = function () { draws++; return draw.apply(this, arguments); };
+    en.w.eval("setProd('salt');recompute();switchTab('add');");
+    const qty = en.w.document.getElementById("wbQty");
+    qty.value = "7.5";
+    draws = 0;
+    en.w.document.querySelector('.look-switch [data-look="tide"]').click();
+    ok(qty && en.w.document.documentElement.getAttribute("data-theme") === "tide" && draws === 0 && en.w.document.getElementById("wbQty") === qty && qty.value === "7.5",
+      `a switch while Enter is open does not draw it again: the typed quantity and its field are kept (draws ${draws}, kept ${en.w.document.getElementById("wbQty") === qty ? qty.value : "a new field"})`);
+    en.w.eval("switchTab('today')");
+    draws = 0;
+    en.w.document.querySelector('.look-switch [data-look="night"]').click();
+    ok(draws === 1 && en.errs.length === 0, `while a part with a chart is open the same switch draws it once, so the chart takes the new tokens (draws ${draws}; errors ${en.errs.join(" | ") || "none"})`);
+    /* 5c. the solid buttons' text: Night draws exactly what it drew before this follow-up (Hide names white, Save and Record the system's ink, which is obsidian
+       there), and Tide, whose accents are lighter, takes its ink. The colour is read off the rendered button and resolved through each theme's tokens. */
+    const nm = await open({ "salt-look": "night" });
+    nm.w.eval("idOpen=true;revealed=true;renderReveal();");
+    const painted = (id) => { const e = nm.w.document.getElementById(id), c = e && /(?:^|;)\s*color:\s*([^;]+)/.exec(e.getAttribute("style") || ""); return c ? c[1].trim() : ""; };
+    const DTIDE = { ...DN, ...DT };
+    const resolve = (v, T, D) => { let x = v; for (let i = 0; i < 6; i++) { const r = /^var\(--([\w-]+)\)$/.exec(x || ""); if (!r) break; x = r[1].startsWith("desk-") ? D[r[1]] : T[r[1].replace(/^salt-/, "")]; } return x; };
+    const hide = painted("vreveal"), save = painted("vsave"), white = /^#(fff|ffffff)$/i;
+    ok(hide === "var(--desk-on-solid)" && white.test(resolve(hide, NIGHT, DN)) && resolve(hide, TIDE, DTIDE) === TIDE["ink-on-accent"] && !white.test(TIDE["ink-on-accent"]),
+      `Hide names reads white at Night and Tide's ink at Tide (painted ${hide}; Night ${resolve(hide, NIGHT, DN)}, Tide ${resolve(hide, TIDE, DTIDE)})`);
+    ok(save === "var(--salt-ink-on-accent)" && resolve(save, NIGHT, DN) === NIGHT.obsidian && resolve(save, TIDE, DTIDE) === TIDE["ink-on-accent"],
+      `and Save keeps the system's ink in each theme, Night's obsidian as before (painted ${save}; Night ${resolve(save, NIGHT, DN)}, Tide ${resolve(save, TIDE, DTIDE)})`);
+    ok((body.match(/var\(--desk-on-solid\)/g) || []).length === 3 && /background:var\(--crim\);color:var\(--desk-on-solid\)">Cancelled/.test(body) && /color:var\(--desk-on-solid\)">Hide names<\/button>/.test(body),
+      "and the cloud branch's Hide names and the Cancelled pill read the same token, so the three places agree");
     /* 6. a store that cannot be read: Tide, no error, no sheet (the answer could not be kept), and the session still switches */
     const { JSDOM } = await import("jsdom");
     const bare = new JSDOM('<!doctype html><html><head><meta name="theme-color" content="#000000"></head><body></body></html>', { runScripts: "outside-only",

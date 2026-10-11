@@ -35,6 +35,8 @@ const PW_ROOT = process.env.SALT_PW || resolve(REPO, "..", "salt-ds", ".ds-sync"
 const PARTS = ["today", "overview", "forward", "receivables", "financials", "inventory", "sourcing", "pricing",
   "concentration", "network", "map", "ledger", "journal", "analysis", "add", "approve", "plans"];
 const WIDTHS = [[1280, 900], [375, 812]];
+const LOOK = process.env.SALT_LOOK || "night";
+if (!/^(night|tide)$/.test(LOOK)) { console.log("  FAIL  SALT_LOOK is night or tide, not " + LOOK); process.exit(2); }
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".json": "application/json", ".png": "image/png", ".webmanifest": "application/manifest+json", ".css": "text/css" };
 
 function serve() {
@@ -56,9 +58,10 @@ async function shoot(label, only) {
   const b = await chromium.launch();
   for (const [w, h] of WIDTHS) {
     const page = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1, reducedMotion: "reduce", isMobile: w < 600, hasTouch: w < 600 });
-    /* SALT_TIME=dawn|day|dusk|night holds that theme on a build of 05 to 09 Oct 2026, which followed the clock, so a
-       shot of it does not depend on the hour; one theme since (Night), and any other build ignores it */
-    if (process.env.SALT_TIME) await page.addInitScript((t) => { try { localStorage.setItem("salt-time", t); } catch (e) {} }, process.env.SALT_TIME);
+    /* A fresh context has no choice kept, so the desk would open on Tide with the choice sheet over the page.
+       SALT_LOOK=night|tide (default night) is kept as the device's choice before the first script runs, so every
+       shot is that theme and clean; a build before 11 Oct 2026 has one theme and ignores the key */
+    await page.addInitScript((t) => { try { localStorage.setItem("salt-look", t); } catch (e) {} }, LOOK);
     await page.goto(`http://127.0.0.1:${port}/desk`, { waitUntil: "networkidle" });
     /* the stamp, the version chip, the entry counts and the version entries move on every build; nothing else may */
     await page.addStyleTag({ content: "#meta,#verChip,.ledct{visibility:hidden!important}.evo{display:none!important}*{caret-color:transparent!important}" });

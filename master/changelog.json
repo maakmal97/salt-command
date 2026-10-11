@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1073",
+  "d": "11 Oct 2026",
+  "t": "TIDE REACHES THE NAMES PANEL'S BUTTONS, AND THE RENDER TOOL PICKS A THEME",
+  "n": [
+   "<b>TIDE, ALL THE WAY.</b> Hide names, Save and Record drew Night's steel and verdigris as fixed colours, and the Cancelled pill drew white text, so Tide showed Night's. Each gradient now ends on a desk token (Night's own hex, as drawn before; Tide's own shade), and the text on Hide names and on the Cancelled pill is a token: white at Night as before, the system's ink at Tide, whose accents are lighter. Night draws exactly as it did. Nothing prices.",
+   "<b>THE PROOFS.</b> The suite's inline-colour check now catches any hex colour in an inline style or a gradient. The render tool keeps a theme (SALT_LOOK, Night by default), so its shots are no longer Tide with the choice sheet over them. New proofs cover a stored value that is no theme, a store that cannot be read, and Enter keeping what is typed through a switch, each red by mutation first."
+  ]
+ },
+ {
   "v": "v1072",
   "d": "11 Oct 2026",
   "t": "THE DESK WEARS NIGHT OR TIDE, CHOSEN ON EACH DEVICE",
