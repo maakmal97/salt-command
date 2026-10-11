@@ -54503,11 +54503,21 @@ await (async () => {
     + "tierCustomers().filter(function(id){return !isPartner(id);}).forEach(function(id){var d=driftOf(id,'salt').d;if(Math.abs(d)>0.0001)moved++;shownSizes('salt').forEach(function(q){n++;"
     + "var x=PRICING_ENGINE.driftAt(q,C,P,d).p;if(cardQuote(id,q)!==x)bad.push([id,q,cardQuote(id,q),x]);});});return {n:n,moved:moved,bad:bad.slice(0,3)};})()");
   ok(q6.n > 200 && q6.moved > 20 && !q6.bad.length, "every named customer is quoted the Set Price moved by their own drift at every size, " + q6.moved + " of them off nought: " + JSON.stringify(q6));
-  /* 7. HIS HAND-SET DRIFT WINS over the automatic one, which is still read beside it */
-  const h7 = rd("(function(){var id=tierCustomers()[0],keep=TIER_OF[id],a=driftOf(id,'salt'),q0=cardQuote(id,12.5);"
+  /* 7. HIS HAND-SET DRIFT WINS over the automatic one, which is still read beside it. The customer is the first with none set
+     (the book holds a hand-set drift since v1075, and the next customer to hold one must not move this): then the first reading
+     is the automatic drift itself, and the drift he sets in the test reads as the hand while the automatic stays what it was. */
+  const free = "tierCustomers().find(function(c){return !isPartner(c)&&driftOf(c,'salt').hand==null;})";
+  const h7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],a=driftOf(id,'salt'),q0=cardQuote(id,12.5);"
     + "TIER_OF[id]=Object.assign({},keep,{salt:1});var b=driftOf(id,'salt'),q1=cardQuote(id,12.5);if(keep)TIER_OF[id]=keep;else delete TIER_OF[id];"
-    + "return {auto:a.d,hand:b.hand,d:b.d,bAuto:b.auto,q0:q0,q1:q1,top:PRICING_ENGINE.driftAt(12.5,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),1).p};})()");
-  ok(h7.hand === 1 && h7.d === 1 && h7.bAuto === h7.auto && h7.q1 === h7.top && h7.q1 > h7.q0, "a drift he sets wins over the one read off the record, and quotes the top of the drift: " + JSON.stringify(h7));
+    + "return {id:id,first:a.hand,auto:a.auto,hand:b.hand,d:b.d,bAuto:b.auto,q0:q0,q1:q1,top:PRICING_ENGINE.driftAt(12.5,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),1).p};})()");
+  ok(h7.id && h7.first === null && h7.hand === 1 && h7.d === 1 && h7.bAuto === h7.auto && h7.q1 === h7.top && h7.q1 > h7.q0, "a drift he sets wins over the one read off the record, and quotes the top of the drift: " + JSON.stringify(h7));
+  /* and one he already holds is his word too: the book's own hand-set customers read the hand beside their automatic drift,
+     and what the desk quotes them is the Set Price moved by the hand (forced here, so it holds with none on the book) */
+  const k7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],o=null;TIER_OF[id]=Object.assign({},keep,{salt:-0.7});"
+    + "try{var d=driftOf(id,'salt');o={hand:d.hand,d:d.d,auto:d.auto,card:cardQuote(id,3),set:PRICING_ENGINE.driftAt(3,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),-0.7).p};}"
+    + "finally{if(keep)TIER_OF[id]=keep;else delete TIER_OF[id];}return o;})()");
+  ok(k7 && k7.hand === -0.7 && k7.d === -0.7 && k7.auto !== -0.7 && k7.card === k7.set,
+    "and a drift already held reads as the hand beside the automatic one, and is the drift the customer is quoted: " + JSON.stringify(k7));
   /* 8. A LATE PAYER IS PRICED UP (his decision), where the levels only offered one a level down */
   const l8 = rd("(function(){var id=tierCustomers().find(function(c){var x=driftOf(c,'salt');return x.hand==null&&x.B===0;}),k=lateOf,a,b,da,db;"
     + "try{lateOf=function(){return {on:false};};a=cardQuote(id,12.5);da=driftOf(id,'salt').d;"
@@ -54521,7 +54531,7 @@ await (async () => {
   ok(n9.rate != null && Math.abs(n9.rate - n9.low) < 0.0001 && n9.low < n9.set,
     "the shelf's NRV on the drift book is the lowest an automatic drift quotes, -0.5, under the Set Price, less the costs to sell: " + JSON.stringify(n9));
   /* 10. THE DRIFT CARD: Set queues his figure, one out of range is refused, Clear queues the clear */
-  const c10 = rd("(function(){setProdView('salt');switchTab('people');var id=tierCustomers()[0],el=document.getElementById('driftIn_'+id+'_salt');if(!el)return {el:false};"
+  const c10 = rd("(function(){setProdView('salt');switchTab('people');var id=" + free + ",el=document.getElementById('driftIn_'+id+'_salt');if(!el)return {el:false};"
     + "var n0=queue.length;el.value='0.4';driftSet(id,'salt');var q1=queue.length>n0?queue[queue.length-1].payload:null;"
     + "var n1=queue.length,el2=document.getElementById('driftIn_'+id+'_salt');el2.value='2';driftSet(id,'salt');var refused=queue.length===n1;"
     + "driftClear(id,'salt');var q2=queue[queue.length-1].payload;queue.splice(n0);render();"
