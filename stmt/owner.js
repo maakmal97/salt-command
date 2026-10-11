@@ -2062,7 +2062,7 @@ export const OWNER_JS = `
     var said=el('p','salt-insight'), figs=el('div','maker-quote');
     said.setAttribute('role','status'); card.appendChild(said); card.appendChild(figs);
     /* 12 Oct 2026 (his decision 6 of 11 Oct): its figures read themselves when the order is opened, as a placed order's do, and Preview Accept again is retired */
-    function show(result){
+    function againShow(result){
       said.className='salt-insight'; said.textContent='Figures read. Check the row before accepting it again.';
       figs.textContent=''; makerReading(figs,result,'preview');
       var old=card.querySelector('[data-accept-again]'); if(old) old.remove();
@@ -2071,22 +2071,22 @@ export const OWNER_JS = `
       },true);
       again.setAttribute('data-accept-again',''); acts.insertBefore(again,acts.firstChild);
     }
-    function read(){
+    function againRead(){
       var mine=++turn, old=card.querySelector('[data-accept-again]'); if(old) old.remove();
       said.className='salt-insight'; said.textContent='Reading the figures.'; figs.textContent='';
       var pv=makerPv[key]; if(!pv) pv=makerPv[key]={p:refs(route+'/preview',{})};
       pv.p.then(function(result){
         if(makerPv[key]===pv) delete makerPv[key];
         if(mine!==turn||!card.isConnected) return;
-        makerQuotes[key]={sig:sig,result:result}; show(result);
+        makerQuotes[key]={sig:sig,result:result}; againShow(result);
       }).catch(function(error){
         if(makerPv[key]===pv) delete makerPv[key];
         if(mine!==turn||!card.isConnected) return;
         said.className='msg'; said.textContent=error.message;
-        makerButton(figs,['Read the figures again','order.reread'],read,false);
+        makerButton(figs,['Read the figures again','order.reread'],againRead,false);
       });
     }
-    return function(){ var held=makerQuotes[key]; if(held&&held.sig===sig) show(held.result); else read(); };
+    return function(){ var held=makerQuotes[key]; if(held&&held.sig===sig) againShow(held.result); else againRead(); };
   }
   /* his quick replies, six at most, kept on this device under the Desk's own key; each is checked when it is sent */
   var MAKER_QUICK='saltQuickReplies';
