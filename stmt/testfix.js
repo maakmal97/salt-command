@@ -23,6 +23,7 @@
  */
 import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove, joinLive, poolUnits, POOL_ON_KV } from "./orders.js";
 import { refusal } from "./words.js";
+import { numbersOf } from "./paynum.js";
 
 export const TEST_USER = "0000-0000";
 export const TEST_LOCKED = "0000-0001";
@@ -261,6 +262,13 @@ export async function exampleRevoke(env, u, id) {
   r.revoked = true;
   await keep(env, u, fix);
   return { ref: r };
+}
+
+/** The invented account numbers the pay sheet shows a test account (Phase 7b): the fixture's `paynum`, {key: {number}}, through the
+ *  same whitelist as the real record, and {} with no fixture. The real record in KV `paynum` is never read for a test account. */
+export async function examplePaynum(env, u) {
+  const fix = await fixNow(env, u);
+  return numbersOf({ v: 1, accounts: (fix && fix.paynum) || null });
 }
 
 /** The fixture's bulletin, for a test account while he has none of his own set. */

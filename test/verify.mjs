@@ -8980,7 +8980,7 @@ await (async () => {
 
 section("Phase 7b: the pay sheet asks the bank first and shows the account number to copy, the number from the Counter's KV and never from git (11 Oct 2026)");
 await (async () => {
-  await (await import("./pay-number.mjs")).run({ ok, pageWork });
+  await (await import("./pay-number.mjs")).run({ ok, pageWork, KV });
 })();
 
 section("v2 design: the charts and the map read the tokens");

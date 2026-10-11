@@ -11,6 +11,7 @@
  * EVERY NUMBER, NAME AND CODE HERE IS INVENTED. The source holds no run of ten digits: a number is joined from parts at run time, so
  * the source scan (below) can hold this file to the same rule as the rest.
  *   1  the writer: the picker, its refusals, the whitelist, the last four digits alone on screen, the wrangler arguments
+ *   2  the route GET /pay/accounts: the session gate, the whitelist, no-store, the empty answer, a failed read, the test accounts' overlay
  *   (each check below was proved red by its own mutation: test/pay-number.mutations.json, run with tools/section.mjs) */
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -19,7 +20,7 @@ const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
 /* an invented number, joined at run time */
 const DIG = (...p) => p.join("");
 
-export async function run({ ok, pageWork }) {
+export async function run({ ok, pageWork, KV }) {
   const PS = await import("../tools/paysync.mjs");
 
   /* ---- 1: the writer, on an invented pay store */
@@ -67,4 +68,61 @@ export async function run({ ok, pageWork }) {
   ok(!!put && put.args.join(" ") === "wrangler kv key put paynum --path x.json --binding STMT --remote -c wrangler.stmt.jsonc" && put.opts.cwd === REPO && put.opts.shell === (process.platform === "win32")
     && !!get && get.args.join(" ") === "wrangler kv key get paynum --binding STMT --remote -c wrangler.stmt.jsonc",
     "the write is wrangler kv key put on the Counter's STMT binding, key paynum, from a file, and the readback is the get of the same: " + JSON.stringify([put && put.args, get && get.args]));
+
+  /* ---- 2: the route, GET /pay/accounts, through the real Worker on a stand-in KV */
+  const stmtW = (await import("../stmt/worker.js")).default;
+  const O = await import("../stmt/orders.js");
+  const TF = await import("../stmt/testfix.js");
+  const PN = await import("../stmt/paynum.js");
+  const kv = new KV();
+  const env = { STMT: kv, STMT_DESK_KEY: "desk-key" };
+  const asker = async (u) => ({ "X-Stmt-Session": await O.mintSession(env, u) });
+  const call = async (path, headers = {}, method = "GET", e = env) => {
+    let r; try { r = await stmtW.fetch(new Request("https://k7m3p2.example" + path, { method, headers }), e); } catch (err) { return { status: 0, cc: null, b: {}, raw: "{}", threw: String(err.message) }; }
+    let b = null; try { b = await r.json(); } catch (err) { b = null; }
+    return { status: r.status, cc: r.headers.get("cache-control"), b: b || {}, raw: JSON.stringify(b || {}) };
+  };
+  const hide = (s) => s.replace(/[0-9]{6,}/g, "#");
+  const S = await asker("abcd-efgh");
+  const none = await call("/pay/accounts", S);
+  ok(none.status === 200 && none.b.ok === true && JSON.stringify(none.b.accounts) === "{}" && none.cc === "no-store",
+    "with no paynum filed the route answers an empty list, never an error, and is no-store: " + JSON.stringify([none.status, none.b, none.cc]));
+  const anon = await call("/pay/accounts", {});
+  ok(anon.status === 401 && !("accounts" in anon.b), "without a session it is the site's usual refusal and carries no accounts: " + JSON.stringify([anon.status, anon.b]));
+
+  const record = () => JSON.stringify({ v: 1, at: "2026-10-11T00:00:00.000Z", payee: "Invented Payee Sdn Bhd", accounts: {
+    maybank: { number: n1, holder: "Invented Holder", owner: "Invented Owner", mid: "999111", payload: "000201INVENTED", bank: "Maybank" },
+    ambank: { number: n2 }, spay: { number: nSusp }, nokey: { number: n1 }, gx: { number: "12345678" }, wise: { number: n1.slice(0, 9) + "x" }, ryt: "not an object" } });
+  await kv.put("paynum", record());
+  const some = await call("/pay/accounts", S);
+  ok(some.status === 200 && some.b.ok === true && Object.keys(some.b.accounts).join() === "maybank,ambank"
+    && Object.values(some.b.accounts).every((a) => Object.keys(a).join() === "number") && some.b.accounts.maybank.number === n1 && some.b.accounts.ambank.number === n2,
+    "the route serves the accounts the page offers for a transfer, a well-formed number each, and passes over a suspended account, a key the rails lack, a short number, one with a letter and a malformed entry: " + hide(some.raw));
+  ok(!/Invented|INVENTED|holder|owner|payee|payload|mid|999111/i.test(some.raw.replace(/maybank|ambank/g, "")),
+    "and a field added to the record by mistake, a holder, owner, payee, member number or payload, never leaves: " + hide(some.raw));
+  const post = await call("/pay/accounts", { ...S, "content-type": "application/json" }, "POST");
+  ok(post.status === 405 && !("accounts" in post.b), "only a read is answered: " + post.status);
+  await kv.put("paynum", JSON.stringify({ ...JSON.parse(record()), v: 2 }));
+  ok(JSON.stringify((await call("/pay/accounts", S)).b.accounts) === "{}", "a record of another version is not served");
+  await kv.put("paynum", record());
+  const lame = { STMT: { get: async (k, t) => { if (k === "paynum") throw new Error("KV is down"); return kv.get(k, t); }, put: (k, v, o) => kv.put(k, v, o), delete: (k) => kv.delete(k) }, STMT_DESK_KEY: "desk-key" };
+  const down = await call("/pay/accounts", S, "GET", lame);
+  ok(down.status === 200 && JSON.stringify(down.b.accounts) === "{}", "and a KV read that fails answers an empty list, so the sheet falls back to the link: " + down.status);
+
+  /* the whitelist alone, on an invented list: only a transfer account that is not suspended, only its own key, never an inherited one */
+  const list = [{ key: "a", transfer: true, maintenance: false }, { key: "b", transfer: false, maintenance: false }, { key: "c", transfer: true, maintenance: true }, { key: "e", transfer: true, maintenance: false }];
+  const picked = PN.numbersOf({ v: 1, accounts: Object.assign(Object.create({ e: { number: n2 } }), { a: { number: n1, holder: "x" }, b: { number: n1 }, c: { number: n1 }, d: { number: n1 } }) }, list);
+  ok(JSON.stringify(picked) === JSON.stringify({ a: { number: n1 } }),
+    "and the picker serves a, which offers a transfer and is open, and not b (no transfer rail), c (suspended), d (not on the list) or e (inherited, not the record's own): " + hide(JSON.stringify(picked)));
+
+  /* a test account is answered its fixture's invented number, and the real record is never read for it */
+  const ZERO = "0000000000000", T = TF.TEST_USER;
+  await kv.put("u:" + T, JSON.stringify({ test: true, wrap: { salt: "pn-salt" } }));
+  const TS = await asker(T);
+  const noFix = await call("/pay/accounts", TS);
+  await kv.put(TF.fixKey(T), JSON.stringify({ v: TF.FIX_VERSION, salt: "pn-salt", at: "2026-10-11T00:00:00.000Z", paynum: { maybank: { number: ZERO, holder: "Invented Holder" }, nokey: { number: ZERO } } }));
+  const fixed = await call("/pay/accounts", TS);
+  ok(noFix.status === 200 && JSON.stringify(noFix.b.accounts) === "{}", "a test account with no fixture sealed yet is answered an empty list, though the real record is filed: " + hide(noFix.raw));
+  ok(fixed.status === 200 && JSON.stringify(fixed.b.accounts) === JSON.stringify({ maybank: { number: ZERO } }) && !fixed.raw.includes(n1) && !fixed.raw.includes(n2),
+    "with its fixture it is answered the fixture's invented number through the same whitelist, and none of the real record's: " + hide(fixed.raw));
 }
