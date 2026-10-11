@@ -718,6 +718,7 @@ export const EN = {
   "inv.lessPaid": "Less paid",
   "inv.lessSent": "Less sent",
   "inv.total": "Total",
+  "inv.more": "{n} more",
   "part.Got":"{mark} {u} you received {d}",
   "part.GotF": "{mark} {u} on behalf of a friend you received {d}",
   "part.restGot": "The rest of {mark} {u} you received {d}",

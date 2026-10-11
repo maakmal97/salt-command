@@ -355,8 +355,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    on the bar's own slate so what scrolls under it is covered, its bottom edge the bar's height plus the safe area clear of the
    screen (less the bar's own 1px edge, which it slides under, so no sliver of the page shows between them). The bar is fixed,
    4rem (--salt-bar-h) above the safe area, so the pill is never under it. The tile and the pill share a row while the figure
-   fits, and the pill takes a row of its own, the width of the foot, when it does not. The look is the recipes' (KPI tile,
-   Pill); this lays them out. */
+   fits, and the pill takes a row of its own, the width of the foot, when it does not. The Plan recipe's fold carries the lines
+   past the third. The look is the recipes' (KPI tile, Pill, Plan); this lays them out. */
 .payfoot[hidden]{display:none}
 .payfoot{position:sticky;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);z-index:10;margin-top:24px;
   display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0 13px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
@@ -371,6 +371,10 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   .home>.hcol+.hcol{grid-column:2;grid-row:1 / span 2}
   .payfoot{position:static;grid-column:1;grid-row:1;margin:0 0 28px}
 }
+.invmore{margin:8px 0 0}
+.invmore>summary .salt-plan__title{grid-column:1 / -1}
+.invmore .inv{margin-top:0}
+.invmore .salt-ledger__row:last-child{border-bottom:0}
 /* THE DOCUMENT KEEPS THE GEOMETRY IT WAS PROOFED IN. What is injected is the INSIDE of the
    statement's own .w wrapper, so without this the page rendered the tables full-bleed to the
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
@@ -4546,14 +4550,26 @@ const CLIENT_JS = `
     return at&&due?at+' '+due:at||due;
   }
   function ledLine(k,v){ var l=el('div','salt-ledger__line'); l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',v)); return l; }
+  /* the lines past the third, folded on Home under "N more" (the system's Plan recipe, a native details). Opened or shut stays
+     as they left it across a poll, which redraws the head only where it reads differently, an open one's attribute included */
+  var HOME_LINES=3, invMoreOpen=false;
+  function invMore(rest){
+    var d=el('details','salt-plan invmore'), sm=el('summary'), b=el('div','salt-plan__body');
+    d.id='invMore'; d.open=invMoreOpen;
+    d.addEventListener('toggle',function(){ invMoreOpen=d.open; });
+    sm.appendChild(el('span','salt-plan__title',tw('inv.more',{n:rest.children.length})));
+    b.appendChild(rest); d.appendChild(sm); d.appendChild(b);
+    return d;
+  }
   /* Home draws each line in one row, its figure and when (his "less words, but maximum impact"), then Less sent where
      something was sent, the figure above being the Total; the pay sheet draws the line whole with what it adds up from
      beneath it, then Goods, Delivery, Less paid, Less sent and the Total. A nil figure is left out, and a line of goods
      alone draws nothing beneath it. */
   function invNode(lines,full){
     var L=el('div','salt-ledger salt-ledger--plain inv'), T={goods:0,deliv:0,less:0,sent:0}, split=true,
+        rest=el('div','salt-ledger salt-ledger--plain inv invrest'),
         wait=lines.some(function(x){ return x.o&&oClaimed(x.o)>0.004&&x.own>0.004; })||(acctWaiting()>0.004&&lines.some(function(x){ return x.acct>0.004; }));
-    lines.forEach(function(x){
+    lines.forEach(function(x,i){
       var d=invOf(x), mk=markHtml(d.product,20), u=function(Lg){ return esch(unitsOf(d.q,unitFor(d.product),Lg)); },
           lab=full&&d.split&&d.rate>0?setW(el('span'),d.friend?'inv.lineF':'inv.line',{mark:mk, u:u, rate:esch(rm(d.rate))})
             :setW(el('span'),d.friend?'part.BareF':'part.Bare',{mark:mk, u:u});
@@ -4564,11 +4580,17 @@ const CLIENT_JS = `
       }
       /* his approval of 27 Sep 2026: the part their reward paid says so, with no amount, on Home and on the sheet */
       coverTo(r,x.p);
-      L.appendChild(r);
+      /* PHASE 7A (his yes of 11 Oct 2026): HOME SHOWS THREE LINES and the rest stand behind "N more"; the sheet shows all of them */
+      (!full&&i>=HOME_LINES?rest:L).appendChild(r);
       T.goods+=d.goods; T.deliv+=d.deliv; T.less+=d.less; T.sent+=x.own+x.acct; split=split&&d.split;
     });
     var sent=+T.sent.toFixed(2);
-    if(!full){ if(sent>0.004) L.appendChild(lrow(tw('inv.lessSent'),rm(sent),wait?tw('om.waiting'):'')); return L; }
+    if(!full){
+      invMoreOpen=invMoreOpen&&!!rest.firstChild;
+      if(rest.firstChild) L.appendChild(invMore(rest));
+      if(sent>0.004) L.appendChild(lrow(tw('inv.lessSent'),rm(sent),wait?tw('om.waiting'):''));
+      return L;
+    }
     var tr=el('div','salt-ledger__row invt');
     function tl(k,v,f){ tr.appendChild(ledLine(k,rm(v))); if(f) tr.appendChild(el('span','salt-ledger__flag',f)); }
     if(split){ tl(tw('om.goods'),T.goods); if(T.deliv>0.004) tl(tw('sh.delivery'),T.deliv); if(T.less>0.004) tl(tw('inv.lessPaid'),T.less); }
