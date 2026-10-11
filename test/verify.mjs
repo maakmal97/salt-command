@@ -53502,7 +53502,8 @@ await (async () => {
   const filedPlaces = { "CX1-AB": { addr: "Private Road", lat: 3.123, lng: 101.689 },
     "CX1-AB-R": { addr: "Private Lane", lat: 3.124, lng: 101.688 }, _base: { addr: "Home point", lat: 3.1, lng: 101.6 } };
   let placeEnvelope = await sealFixture(filedPlaces, "name-pass");
-  let devicePairRevision = null, devicePairConflict = false, deviceConflictChoice = false, deviceConflictPrompts = 0;
+  let devicePairRevision = null, devicePairConflict = false, deviceConflictChoice = false;
+  const deviceSheets = [];   /* each time the vault conflict is put to him on the page's Sheet (Phase 2c), answered by deviceConflictChoice as it comes up */
   const openFixture = async (envelope, pass) => {
     const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
     const key = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt: Buffer.from(envelope.salt, "base64"),
@@ -53517,7 +53518,6 @@ await (async () => {
       Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true });
       win.TextEncoder = TextEncoder; win.TextDecoder = TextDecoder;
       win.scrollTo = () => {};
-      win.confirm = () => { deviceConflictPrompts++; return deviceConflictChoice; };
       win.fetch = async (path, init) => {
         const route = String(path);
         adminCalls.push({ route, body: init && init.body ? JSON.parse(init.body) : null });
@@ -53569,7 +53569,8 @@ await (async () => {
     }
   });
   try {
-    const doc = admin.window.document, { cardOf } = await import("./maker-act.mjs");
+    const doc = admin.window.document, { cardOf, answerSheets } = await import("./maker-act.mjs");
+    answerSheets(admin.window, deviceSheets, () => deviceConflictChoice);
     /* 11 Oct 2026: the orders are Orders, the Desk's rows and the forms Record, so both are entered */
     doc.querySelector('[data-act="nav.record"]').click();
     doc.querySelector('[data-act="nav.orders"]').click();
@@ -53754,22 +53755,22 @@ await (async () => {
     const pairWritesBeforeReview = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length;
     addFields[2].value = "name-pass";addId.querySelector("button").click();
     ok(await adminWork.quiet(), "declining the device overlap review settles");
-    ok(deviceConflictPrompts === 1 && devicePairRevision === 11
+    ok(deviceSheets.length === 1 && devicePairRevision === 11
       && adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length === pairWritesBeforeReview
       && addFields[0].value === "Zora",
       "Counter device overlap Cancel keeps its retained intent and submits no replacement pair or input: "
-      + JSON.stringify({prompts:deviceConflictPrompts,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,
+      + JSON.stringify({prompts:deviceSheets.length,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,
         calls:adminCalls.slice(-6).map(c=>({route:c.route,revision:c.body?.pair?.expectedRevision}))}));
     deviceConflictChoice = true;addFields[2].value = "name-pass";addId.querySelector("button").click();
     ok(await adminWork.quiet(), "explicit device overlap approval writes the rebased pair");
     const reviewedPairInput = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id" && call.body?.pair).at(-1);
     const reviewedNames = reviewedPairInput?.body?.pair?.names ? await openFixture(reviewedPairInput.body.pair.names, "name-pass") : {};
-    ok(deviceConflictPrompts === 2 && devicePairRevision === 12
+    ok(deviceSheets.length === 2 && devicePairRevision === 12
       && reviewedPairInput?.body.at !== firstPairInput?.body.at && reviewedPairInput?.body.pair.expectedRevision === 11
       && reviewedNames["CZ4-PUD"] === "Zora (Pudu)" && reviewedNames["CX9-FIK"] === "Invented remote"
       && !JSON.stringify(reviewedPairInput.body).includes("Zora"),
       "Counter device overlap Apply uses a fresh request, preserves unrelated remote names and sends only the reviewed ciphertext intent: "
-      + JSON.stringify({prompts:deviceConflictPrompts,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,names:reviewedNames}));
+      + JSON.stringify({prompts:deviceSheets.length,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,names:reviewedNames}));
     devicePairRevision = null;
     const loanForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Borrow or lend");
     loanForm.querySelectorAll("select")[0].value = "cash";
@@ -53860,6 +53861,11 @@ await (async () => {
 section("Salt Account: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: rows to approve wear the approve card, the queue folds away, and no native confirm is left");
+await (async () => {
+  await (await import("./admin-approve-queue.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

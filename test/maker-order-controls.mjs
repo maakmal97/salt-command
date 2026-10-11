@@ -286,8 +286,8 @@ export async function run({ ok }) {
       for (let i = 0; i < 200 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    /* an order's card is drawn for the order opened alone (Phase 1c), so asking for it opens it; a Desk row's card is Record > Approve's and stands */
-    const card = (id) => cardOf(doc, id) || [...doc.querySelectorAll("#makerDrafts article")].find((a) => a.querySelector("h3") && a.querySelector("h3").textContent === id);
+    /* an order's card is drawn for the order opened alone (Phase 1c), so asking for it opens it; a Desk row's card is Record > Approve's, an Approve card (Phase 2c) found by its key, and stands */
+    const card = (id) => cardOf(doc, id) || doc.querySelector('#makerDrafts [data-maker-card="draft:' + id + '"]');
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const field = (id, label) => {
       const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl") && l.querySelector(".lbl").textContent === label);
@@ -376,7 +376,7 @@ export async function run({ ok }) {
     ok(!card("20261003090003-del") && list() === "Order declined.",
       "An answer whose card has gone, the order having left the open list, falls to the list's own line and is not lost: " + list());
     await until(() => button(draftId, "Approve row"));
-    button(draftId, "Approve row").click();
+    button(draftId, "Approve row").click(); sheetGo();   /* the row asks on the page's Sheet (Phase 2c), and his yes is its one action */
     await until(() => say(draftId)?.textContent);
     ok(say(draftId)?.textContent === "Row approved." && !/Row approved/.test(list()),
       "A Desk row's answer lands on the row's own card too: " + JSON.stringify({ card: say(draftId)?.textContent, list: list() }));

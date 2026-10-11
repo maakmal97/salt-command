@@ -320,8 +320,8 @@
  {
   "name": "the order card's rule loses .adm",
   "file": "stmt/page.js",
-  "find": ".adm .maker-card{margin:14px 0;padding:16px}",
-  "replace": ".maker-card{margin:14px 0;padding:16px}"
+  "find": ".adm .maker-card{margin:14px 0}",
+  "replace": ".maker-card{margin:14px 0}"
  },
  {
   "name": "the guest link row loses .adm",

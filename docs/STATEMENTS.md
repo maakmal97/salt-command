@@ -1488,7 +1488,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   detail by `showPlace`: an order, a payment on an order or a question on an order to Orders > Waiting on you with that order's card open, a message to Customers > Messages with that thread open, an
   account beside the list on a desktop and on Accounts on a phone, a link to Customers > Links, a row or an entry to Record > Approve, the
   hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
-  tap**: Approve row or Approve trip on a Desk row is Record > Approve's own function (`approveDraft`: the same question, the same request,
+  tap**: Approve row or Approve trip on a Desk row is Record > Approve's own function (`approveDraft`: the same question, on the page's Sheet, the same request,
   the same answer line; a customer's claim row has none, it is answered through Received on its order), and the guest link, the refused
   account and the accounts not sent keep the action they had. **Nothing in Needs you books money**: Agree, Yes received and Cash stay on
   their cards in Orders. A practice account's order, claim or thread is drawn after the real ones in its severity, labelled Practice, and
@@ -1603,8 +1603,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   reason on the sheet**: the Desk's three lines as the system's Option tiles (`order.reason-stock`, `-price`, and `-place` on an order to be
   delivered only) and a field for his own words (`order.reason`); a tile fills the field and typing clears the pick, the reason is optional and
   rides as `note`, checked by `siteWords` on the Desk. The money taps (handover, cash, and Confirm received for another amount) are guarded once, as
-  they were, with no sheet; **a claim's Received and Not found are not guarded once, they ask on the Sheet** (Phase 2b, below), and Approve's confirm
-  (`approveDraft`) is not the card's and is as it was.
+  they were, with no sheet; **a claim's Received and Not found are not guarded once, they ask on the Sheet** (Phase 2b, below), and so do a Desk row's
+  Approve and Reject (`approveDraft`, Phase 2c, below).
   **An edit put back to what it was offers its read** (Phase 2b, Fable's follow-up to 2a): the total's `input` takes the quote and Accept away, and
   only a `change` reads again, which a value put back before the field is left never fires, so the card said the figures would be read when he
   finished and showed no control. From the moment the total, or the charge typed as Other, is edited, the card offers Read the figures again
@@ -1637,6 +1637,26 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   with no second question, as the confirm was not asked twice; a second tap on a Sheet already closed sends nothing, since the Sheet is shut before
   the request goes. An answered claim leaves the list and its line stands in its place ("Recorded. CX4-ABC is told."). An order's claim uses
   `makerAsk`, so its Sheet restates the order, and `makerTap` and `makerMove` still carry its request id and the Desk's single flight.
+- **The rows to approve wear the approve card, the queue folds away, and no native confirm is left** (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct;
+  `test/admin-approve-queue.mjs`, its mutations in `test/admin-approve-queue.mutations.json`). **A Desk row to approve is the system's Approve recipe**
+  (`salt-approve`, carried whole by `SITE_RECIPES` and restated nowhere: the page's own rules naming it only take its empty answer line away and leave it out of
+  the glass card's padding, which the suite reads). The head is the row's code and the entry as typed; the figures that decide it follow, **read off the draft
+  and computed nowhere** (the row's total, its cost and margin); then the flags the row was drafted with as chips (they freeze at drafting), the drafter's
+  reasoning and the row itself, folded. Approve is the one filled pill, first, and Reject the danger ghost, in the recipe's actions; a trip's rows stand in
+  one card with one Approve and one Reject, as they did. What Approve approves, **the row as drafted, never recomputed**, and its route, empty body and single
+  flight (`makerBusy`) are as they were; a decided row still answers 409. **The queue is the system's Plan fold, shut** (`#makerQueue`, its summary
+  `record.queue-toggle`): titled Server-held queue and counted (the entries the server holds, drawn with them), opened by a tap and left as he set it by a
+  redraw; its entries and their Withdraw stand inside it, unchanged.
+  **No native confirm is left in `stmt/owner.js`**, and the suite scans for it. Every other yes or no is `ownerAsk`, over `ynOpen`: a promise that answers true on
+  the one action and false on the ghost, the close control, the scrim, Escape or a lapse (`ynOpen`'s `shut` hook, told as the Sheet comes down and read after
+  the action, which runs just after), so a flow that awaits it carries on as it did when the confirm said no; a second tap on the action finds the Sheet gone and
+  sends nothing. Its controls are `ask.go`, `ask.keep` and `ask.close`, keyed by what is asked, and focus goes back to the control that asked, found by its
+  `data-yn` if a redraw replaced it. It asks, in place of the confirm: a Desk row's Approve and Reject, and a trip's (every row listed; `approveDraft` and
+  `rejectDraft`, which shut nothing until his yes, so a no leaves the Needs you pill as it was); Withdraw server-held entry (Finish server withdrawal,
+  begun already, asked nothing before and asks nothing now); the group order's Close; the notice's Set and Clear; a twin at entry (`makerSecond` for a loan or
+  a gift, the trade's own); Cancel retained input, beside a form's button and on Record's retained input; Cancel reply retry on a chat; and the vault
+  conflict. Every request, body and request id is as it was. `ended()` now takes a Sheet left open down with the page, as `lapsed()` and `lock()` do. A test that
+  once stubbed `window.confirm` has each Sheet answered as it comes up (`answerSheets` in `test/maker-act.mjs`).
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a
@@ -2177,6 +2197,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.signin-link` | Account card (key: data-acct, the username) | First tap makes their one-time sign-in link, the next shares it. |
 | `acct.signout-all` | Account card | Signs them out everywhere, on a second tap within four seconds. |
 | `acct.view-as` | Account card | Opens their own page, read only. |
+| `ask.close` | The Sheet every other yes or no asks on: a Desk row's Approve or Reject, a held entry's Withdraw, a group order's Close, the notice, a twin, a retained input's Cancel, a chat retry's Cancel and a vault conflict (key: what is asked, as `draft:<id>:approve`, `queue:<id>`, `pool:<id>`, `notice:set`, `twin:<what>`, `retained:<route>`, `chat:<username>:retry`, `vault:conflict`) | Closes it and sends nothing. |
+| `ask.go` | Same sheet | Does what it asked, once: sends the request the confirm let through. |
+| `ask.keep` | Same sheet | Keeps things as they were and sends nothing. |
 | `chat.cancel-retry` | Open thread | Cancels the retry kept on this device. |
 | `chat.close` | Open thread | Closes the thread. |
 | `chat.no-reply` | Open thread | Records that no reply is needed. |
@@ -2400,6 +2423,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.place.party` | Record, map placement | The party with a filed point. |
 | `record.place.passphrase` | Record, map placement | The vault passphrase. |
 | `record.place.send` | Record, map placement | Queues the placement. |
+| `record.queue-toggle` | Record > Approve, the summary of the server-held queue, which is shut until it is tapped and carries its count | Opens or shuts the queue of entries the server holds. |
 | `record.redeem.date` | Record, reward redemption | The date. |
 | `record.redeem.read` | Record, reward redemption | Reads the reward offers again. |
 | `record.redeem.send` | Record, reward redemption, one for each holder (key: data-reward-holder) | Redeems or offsets that holder's reward for review. |

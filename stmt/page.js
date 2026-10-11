@@ -491,10 +491,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 .adm .abody{display:flex;flex-direction:column;gap:28px}
 .adm .aplace input{max-width:100%}
-.adm .maker-card{margin:14px 0;padding:16px}
-.adm .maker-card>*+*{margin-top:12px}
+.adm .maker-card{margin:14px 0}
+.adm .maker-card:not(.salt-approve){padding:16px}
+.adm .maker-card:not(.salt-approve)>*+*{margin-top:12px}
 .adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
 .adm .maker-card>.maker-say:empty{margin-top:0}
+/* 12 OCT 2026 (PHASE 2c): a row to approve is the Approve recipe, whose own padding, gap and surface stand; the page adds only what its own column needs (no gap under an
+   empty answer line) and the shut queue fold's body */
+.adm .salt-approve>.maker-say:empty{display:none}
+.adm #makerQueue .salt-plan__body>*+*{margin-top:12px}
+.adm #makerQueue .salt-plan__body .maker-card{margin:12px 0 0}
 /* 12 OCT 2026 (PHASE 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first and the quiet ones beside it, with
    the card's answer line under them; a foot with moves stays along the card's foot as it scrolls (the page's, clear of the App bar, or the card's own from 860px).
    The right gutter is the + orb's, which stands over the page at the corner. */
@@ -1333,9 +1339,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<section data-in="record.approve" aria-labelledby="makerDraftTitle"><h2 id="makerDraftTitle">Desk rows</h2>'
         + '<p class="lead" id="makerDraftStatus">Reading rows…</p>'
         + '<div id="makerDrafts"></div>'
-        + '<h3 id="makerQueueTitle">Server-held queue</h3>'
+        /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
+        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Server-held queue</span></summary>'
+        + '<div class="salt-plan__body">'
         + '<p class="lead">Only entries already uploaded to the Desk server appear here. The Counter cannot read a device’s unsent queue; Cancel retained input is local only, not server withdrawal.</p>'
-        + '<div id="makerQueueReview" aria-live="polite"></div></section>'
+        + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Desk inputs"><h2>Desk inputs</h2></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
@@ -3333,6 +3341,7 @@ const CLIENT_JS = `
   function ynShut(quiet){
     if(!yn) return;
     var q=yn; yn=null;
+    if(q.shut) q.shut();   /* 12 Oct 2026: told it has come down, whichever way, the action's too, which runs just after: a caller awaiting the answer reads the action first (ownerAsk) */
     document.removeEventListener('keydown',ynKeys,true);
     if(q.wrap.parentNode) q.wrap.parentNode.removeChild(q.wrap);
     behind();
@@ -3341,7 +3350,7 @@ const CLIENT_JS = `
     try{ if(b&&b.focus) b.focus({preventScroll:true}); }catch(e){}
   }
   /* q: title, body (nodes), go and keep (the two answers' words), yes (what the danger action does), opener (the control to give
-     focus back to) and again (finds it afresh if a redraw took it away) */
+     focus back to), again (finds it afresh if a redraw took it away) and shut (told when the Sheet comes down, however) */
   function ynOpen(q){
     ynShut(true);
     var wrap=el('div'); wrap.id='ynWrap';
@@ -3361,6 +3370,7 @@ const CLIENT_JS = `
     box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
     wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
     yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};
+    yn.shut=q.shut||null;
     behind();
     document.addEventListener('keydown',ynKeys,true);
     try{ box.focus({preventScroll:true}); }catch(e){}
