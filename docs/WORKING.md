@@ -194,6 +194,12 @@ Each of these stayed green, or read clean, through a real fault.
   it under load, never committed: CPU burners at below-normal priority, so a peer's run keeps
   precedence, and a preload delaying every `deriveKey` and `deriveBits`
   (`NODE_OPTIONS=--import=<file URL>`). The new check is green there and red by its mutation.
+  **A calendar date is a clock too** (12 Oct 2026: a hush `until` of 12 Oct went red at midnight; four checks on master and on every
+  PR). A literal day that the Desk, the Worker or a page compares with the real clock (a snooze, an expected day, a lapse, a day
+  "ahead of the clock") goes stale the day the calendar reaches it. Derive it from the clock the code under test reads (today in
+  Kuala Lumpur plus n days, taken once in the section), or pin both the day and the moment the code reads to the test's own fixed
+  clock (`at`, `T`, a frozen `now`). To find the rest, run the suite with the wall clock moved on in Node and in every jsdom window
+  (a `--require` file patching `Date`, never committed) and read what turns red.
 - **Fixtures.** Bare `{date, customer, qty, total}` rows read as Pending under `txStat`: a completed
   fixture carries `cash: total, deliveredQty: qty`, and `pricedOrder` or the drafter's filter is
   never loosened to pass one. A fixture wider than production proves nothing: push tests used
