@@ -76,7 +76,7 @@ const PAGE_CSS = `
 .ask .nocase{text-transform:none}
 /* a username or a code inside a sentence is a figure, and figures are mono (decision 3) */
 .mono{font-family:var(--salt-font-mono);color:var(--salt-text)}
-.lbl{display:block;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
+.adm .lbl{display:block;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
   color:var(--salt-copper);font-weight:700;margin:14px 0 6px;font-family:var(--salt-font-mono)}
 /* a well is black 28%, decision 4 */
 /* the field is the system's .salt-field__input (22 Sep 2026): a well, 16px so a phone never zooms,
@@ -416,49 +416,47 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 }
 
 @media print{.bar,.mos,.salt-appbar,.salt-rail{display:none}}
-/* THE OWNER'S ROSTER, in the gate's own geometry so the door looks like the door. One row per
-   account: the code leads because that is what he knows an account by, and the username follows
-   in mist because that is what is printed on the paper. A row is a tap target at the full 44px. */
-.rlist{margin-top:14px;max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.rlist button{display:flex;width:100%;gap:12px;align-items:baseline;justify-content:space-between;
-  min-height:var(--salt-tap);padding:11px 14px;margin:0 0 6px;cursor:pointer;text-align:left;
-  font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text);
-  background:var(--salt-glass);border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm)}
-.rlist button:hover{border-color:var(--salt-brass)}
-.rlist button span{color:var(--salt-mist);font-size:var(--salt-text-xs);letter-spacing:.06em}
-.rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
-/* THE MASTER ACCOUNT (v687). An item on More wraps to two lines, its name and what it is for. */
-.rlist button[data-m]{flex-wrap:wrap}
-.rlist button[data-m] span{flex:1 0 100%;margin-top:4px;color:var(--salt-text-muted)}
-#mHome h1,#oAccts h1,#oLinks h1,#oMore h1,#oMaker h1{margin-top:0}
-#oMaker{max-width:760px}
-#oMaker section+section{margin-top:28px}
-#oMaker input{max-width:100%}
-.maker-card{margin:14px 0;padding:16px}
-.maker-card>*+*{margin-top:12px}
-.maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
-.maker-card>.maker-say:empty{margin-top:0}
-.maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
-.maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
-.maker-field .lbl{margin-top:0}
-.maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
-.maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
-.maker-cover-row{display:flex;align-items:center;gap:10px}
-.maker-cover-row .maker-cover{flex:1 1 auto}
-.maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
-.maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.maker-hours{display:grid;gap:6px;margin:14px 0}
-.maker-day{display:grid;grid-template-columns:44px minmax(72px,1fr) minmax(90px,1fr) minmax(90px,1fr);gap:8px;align-items:center}
-.maker-day input[type=checkbox]{width:44px;height:44px;margin:0}
-.maker-day-name{font-size:var(--salt-text-sm)}
-.maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
-.maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
-#makerBulletinCurrent{overflow-wrap:anywhere}
-.maker-slip{display:block;max-width:100%;height:auto}
-@media(max-width:440px){.maker-day{grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}.maker-day-name{grid-column:2 / 4}.maker-day input[type=time]{grid-row:2}.maker-day input[type=time]:nth-last-child(2){grid-column:2}.maker-day input[type=time]:last-child{grid-column:3}}
-/* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in */
+/* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S, AND SITS UNDER .adm, THE ROOT OF HIS PAGE (#roster).
+   This stylesheet is the customer's and a guest board's too, so a rule of his with no .adm in front of it is a rule the customer's
+   page is handed and the suite refuses it (the Counter's own stylesheet check). What stays outside .adm is what his page shares
+   with the customer's: the system's recipes, the rail's name and place, the ring, the guest link's card, and the bar over an
+   account he views as them, which stands in the customer's shell and not in his roster. */
+.adm .rnone{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:14px 0 0}
+.adm h1{margin-top:0}
+/* FIVE PLACES (his decision of 11 Oct 2026): Needs you, Orders, Customers, Record, Shop. A place is a head (the eyebrow, its name,
+   a line), its parts as the system's tab strip, and a body whose sections the parts show and hide. The body is a column, so a section
+   a part has hidden leaves no gap behind it. */
+.adm .aplace{min-width:0}
+.adm #oOrders,.adm #oRecord{max-width:760px}
+.adm .aparts{margin:0 0 20px}
+.adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
+.adm .abody{display:flex;flex-direction:column;gap:28px}
+.adm .aplace input{max-width:100%}
+.adm .maker-card{margin:14px 0;padding:16px}
+.adm .maker-card>*+*{margin-top:12px}
+.adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
+.adm .maker-card>.maker-say:empty{margin-top:0}
+.adm .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
+.adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
+.adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
+.adm .maker-field .lbl{margin-top:0}
+.adm .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
+.adm .maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
+.adm .maker-cover-row{display:flex;align-items:center;gap:10px}
+.adm .maker-cover-row .maker-cover{flex:1 1 auto}
+.adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
+.adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
+.adm .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
+.adm .maker-hours{display:grid;gap:6px;margin:14px 0}
+.adm .maker-day{display:grid;grid-template-columns:44px minmax(72px,1fr) minmax(90px,1fr) minmax(90px,1fr);gap:8px;align-items:center}
+.adm .maker-day input[type=checkbox]{width:44px;height:44px;margin:0}
+.adm .maker-day-name{font-size:var(--salt-text-sm)}
+.adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
+.adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
+.adm #makerBulletinCurrent{overflow-wrap:anywhere}
+.adm .maker-slip{display:block;max-width:100%;height:auto}
+@media(max-width:440px){.adm .maker-day{grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}.adm .maker-day-name{grid-column:2 / 4}.adm .maker-day input[type=time]{grid-row:2}.adm .maker-day input[type=time]:nth-last-child(2){grid-column:2}.adm .maker-day input[type=time]:last-child{grid-column:3}}
+/* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in (the class is set on the body by his script alone) */
 body.ended>*:not(#aEnded){display:none}
 /* S9 9.2: HIS OWN PAGE'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
    system's switch at 1080px; this page decides the column, the room kept clear above the bar, and where the
@@ -472,98 +470,98 @@ body.ended>*:not(#aEnded){display:none}
    each rail's name needs about 148, so it broke onto two lines; at 1.2rem it fits with room */
 .salt-rail__brand .salt-title{font-size:1.2rem;white-space:nowrap}
 .salt-rail__tab .salt-appbar__place{color:inherit}
-#mFoot:empty{display:none}
-.afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
-.afil{display:flex;flex-wrap:wrap;gap:8px}
-.alist{display:flex;flex-direction:column;gap:8px}
-.alist .salt-inbox-row__title{gap:6px}
-.achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.adm #mFoot:empty{display:none}
+.adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
+.adm .afil{display:flex;flex-wrap:wrap;gap:8px}
+.adm .alist{display:flex;flex-direction:column;gap:8px}
+.adm .alist .salt-inbox-row__title{gap:6px}
+.adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
   .gate.adm{max-width:1180px;margin-top:24px;display:flex;gap:28px;align-items:flex-start;padding-bottom:48px}
   .adm .amain{flex:1 1 auto;min-width:0}
-  #mHome,#oLinks,#oMore,#oCards{max-width:600px}
-  #oAccts.open .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
-  #aopen{position:sticky;top:24px}
-  #aopen .aback{display:none}
+  .adm #mHome,.adm #oShop,.adm #oLinks,.adm #oCards{max-width:600px}
+  .adm #oAccts.open .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
+  .adm #aopen{position:sticky;top:24px}
+  .adm #aopen .aback{display:none}
   /* S9 fix: Needs you beside the account a card is about (the plan's f13w) */
-  #mHome.open{max-width:none}
-  #mHome.open .nsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
-  #nopen{position:sticky;top:24px}
+  .adm #mHome.open{max-width:none}
+  .adm #mHome.open .nsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
+  .adm #nopen{position:sticky;top:24px}
 }
 @media (max-width:1079.98px){
   /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
      after the shell's own rule, or that rule would win */
   .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h)}
-  #oAccts.open .afind,#oAccts.open .alist,#oAccts.open #scount{display:none}
-  #nopen{display:none}
+  .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
+  .adm #nopen{display:none}
 }
 /* a card's party opens its account: a quiet link at the full tap, its hit area kept off the card's rhythm */
-button.salt-approve__party{display:inline-flex;align-items:center;min-height:var(--salt-tap);min-width:var(--salt-tap);
+.adm button.salt-approve__party{display:inline-flex;align-items:center;min-height:var(--salt-tap);min-width:var(--salt-tap);
   margin:-12px 0;padding:0;background:none;border:0;cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:3px}
 /* S9 9.1: NEEDS YOU, the system's Approve card a thing; this page decides only the gaps between them and
    the line a tap is answered on, which sits on the card it answers */
-#mHome .salt-eyebrow{margin:0 0 6px}
-.nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
-.nlist .glink{margin:0}
-.nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.nnote:empty{display:none}
-.nnote.bad{color:var(--salt-ember)}
-.nwait{display:flex;align-items:center;gap:8px;margin:-8px 0 24px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.nwait svg{width:16px;height:16px;flex:0 0 auto;color:var(--salt-brass)}
+.adm #mHome .salt-eyebrow{margin:0 0 6px}
+.adm .nlist{display:flex;flex-direction:column;gap:12px;margin:0 0 24px}
+.adm .nlist .glink{margin:0}
+.adm .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.adm .nnote:empty{display:none}
+.adm .nnote.bad{color:var(--salt-ember)}
+.adm .nwait{display:flex;align-items:center;gap:8px;margin:-8px 0 24px;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.adm .nwait svg{width:16px;height:16px;flex:0 0 auto;color:var(--salt-brass)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
-.acard{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
+.adm .acard{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
   padding:14px 16px;margin:12px 0 0}
-.acard.off{opacity:.55}
+.adm .acard.off{opacity:.55}
 /* V5 (his answer of 29 Sep 2026): a locked account still sees Home and Rewards, greyed out and not to be tapped */
 .lockd{opacity:.45;pointer-events:none;user-select:none}
-.acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
-.acard .acell{min-width:0}
-.acard .acell .l{display:block;font-size:var(--salt-text-xs);letter-spacing:.12em;text-transform:uppercase;
+.adm .acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.adm .acard .acell{min-width:0}
+.adm .acard .acell .l{display:block;font-size:var(--salt-text-xs);letter-spacing:.12em;text-transform:uppercase;
   color:var(--salt-copper);font-family:var(--salt-font-mono)}
-.acard .acell b{display:block;margin-top:3px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
+.adm .acard .acell b{display:block;margin-top:3px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   color:var(--salt-text);font-variant-numeric:tabular-nums}
-.pbar{height:6px;margin:10px 0 6px;border:1px solid var(--salt-line);border-radius:999px;overflow:hidden;
+.adm .pbar{height:6px;margin:10px 0 6px;border:1px solid var(--salt-line);border-radius:999px;overflow:hidden;
   background:var(--salt-well)}
-.pbar i{display:block;height:100%;background:var(--salt-gradient)}
-#oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
+.adm .pbar i{display:block;height:100%;background:var(--salt-gradient)}
+.adm #oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
 /* v696: the five stand above anything minted against a customer, each under its own line */
-.ghead{margin:18px 0 6px;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);
+.adm .ghead{margin:18px 0 6px;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);
   letter-spacing:.18em;text-transform:uppercase;color:var(--salt-copper);font-weight:700}
-.ghead:first-child{margin-top:4px}
+.adm .ghead:first-child{margin-top:4px}
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
-.mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}
-.mtest p.lead{margin:0 0 10px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7}
-.mtest .btn{margin-top:0}
+.adm .mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}
+.adm .mtest p.lead{margin:0 0 10px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7}
+.adm .mtest .btn{margin-top:0}
 /* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
    filled Send a sign-in link across the column with its answer under it, the other ways two by two with theirs, the
    Sent tick, then how they got in. The two quiet ways that must not be tapped by accident are the system's danger ghost.
    S7 polish: its own name, .oacct. The customer's Account is .acct (S7 7.3), and this block's single column, coming
    after it, took that Account's two columns from 1080px when the stages were merged */
-.oacct{display:flex;flex-direction:column;gap:12px}
-.oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
-.oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
+.adm .oacct{display:flex;flex-direction:column;gap:12px}
+.adm .oacct .ahead h2{margin:0;font-size:var(--salt-text-2xl);line-height:1.15;overflow-wrap:anywhere}
+.adm .oacct .ahead .un{display:block;margin-top:4px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
   letter-spacing:.06em;color:var(--salt-text-muted)}
-.oacct .achips{margin:0}
-.oacct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.oacct .apill{width:100%;margin-top:4px}
-.agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.agrid .salt-ghost{width:100%;text-align:center}
-.anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.anote:empty{display:none}
-.anote.bad{color:var(--salt-ember)}
-.oacct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
+.adm .oacct .achips{margin:0}
+.adm .oacct .atot{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.adm .oacct .apill{width:100%;margin-top:4px}
+.adm .agrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.adm .agrid .salt-ghost{width:100%;text-align:center}
+.adm .anote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.adm .anote:empty{display:none}
+.adm .anote.bad{color:var(--salt-ember)}
+.adm .oacct .tick{display:flex;align-items:center;gap:8px;align-self:flex-start;min-height:var(--salt-tap);min-width:var(--salt-tap);
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.oacct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
-.astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.adm .oacct .tick input{width:18px;height:18px;accent-color:var(--salt-verdigris)}
+.adm .astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
-.astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
-.astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
+.adm .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
+.adm .astory .dcount{color:var(--salt-text-muted);letter-spacing:0}
 /* the way back is a quiet line, not a second filled control: the page has one of those and it is
    the one that opens an account */
-button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;
+.adm button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-tap);margin:0;padding:0;
   background:none;border:0;color:var(--salt-brass);cursor:pointer;text-align:left;
   font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;text-transform:uppercase}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
@@ -592,8 +590,8 @@ button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-t
 .rlinks .msg:empty{display:none}
 .rlinks .rlnext{margin:16px 0 10px}
 .rmeter{margin:10px 0 14px}
-.grow{display:flex;gap:8px;margin-top:12px}
-.grow button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);
+.adm .grow{display:flex;gap:8px;margin-top:12px}
+.adm .grow button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);
   font-size:var(--salt-text-xs);letter-spacing:.06em;color:var(--salt-text);background:none;
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
 /* 11 Oct 2026: THE LOOK, Night or Tide, chosen on each device. The sheet's two tiles are the system's Option face as a tap, each with a
