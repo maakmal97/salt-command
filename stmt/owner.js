@@ -2771,12 +2771,13 @@ export const OWNER_JS = `
     if(draftStatus) draftStatus.textContent=pendingRows.length+' Desk rows waiting';
     /* a row for each order of a part, a closed one (fifty at most) as well; an order whose cash is held stays in Waiting on you with its
        Undo, whatever else it is, and a held cash with no order on the read is a row of its own */
-    var held=Object.keys(makerCashHeld), entries=[], known={}, settled=0;
+    var held=Object.keys(makerCashHeld), entries=[], known={}, settled=0, closedAll=0;
     (makerData.orders||[]).forEach(function(o){
       known[o.id]=true;
       var parts=orderPartsOf(o);
       if(held.indexOf(o.id)>=0&&parts.indexOf('orders.waiting')<0) parts=(parts+' orders.waiting').trim();
       if(!parts) return;
+      if(parts.split(' ').indexOf('orders.closed')>=0) closedAll++;
       if(parts==='orders.closed'&&++settled>50) return;
       entries.push({id:o.id, order:o, parts:parts});
     });
@@ -2784,7 +2785,10 @@ export const OWNER_JS = `
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     list.textContent='';
     entries.forEach(function(e){ list.appendChild(orderRow(e)); });
-    if(settled>50){ var more=el('p','rnone','50 of '+settled+' closed orders are shown.'); more.setAttribute('data-in','orders.closed'); list.appendChild(more); }
+    /* what Closed lists is a closed order with nothing else asked of him (fifty at most) and one that is also Waiting on you, which is never
+       dropped; the note counts what the list shows against every closed order */
+    var closedShown=entries.filter(function(e){ return e.parts.split(' ').indexOf('orders.closed')>=0; }).length;
+    if(closedShown<closedAll){ var more=el('p','rnone',closedShown+' of '+closedAll+' closed orders are shown.'); more.setAttribute('data-in','orders.closed'); list.appendChild(more); }
     /* a part with nothing in it says so, so an empty part is never read as a fault */
     [['waiting',open.length?'Nothing waits on you.':'No open Counter orders.'],['agreed','No agreed orders.'],['ready','No orders ready.'],['closed','No closed orders.']].forEach(function(p){
       if(entries.some(function(e){ return e.parts.split(' ').indexOf('orders.'+p[0])>=0; })) return;

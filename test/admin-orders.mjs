@@ -52,6 +52,7 @@ function day(state) {
       r1.msgs = [{ by: "customer", at: ago(2), text: "Thanks" }]; r1.quiet = ago(2);
     }
     if (state.moved) { const p1 = j.orders.find((o) => o.id === "ord-p1"); p1.status = "acknowledged"; }
+    if (state.many) for (let i = 1; i <= 55; i++) j.orders.push(order("ord-z" + String(i).padStart(2, "0"), "declined", { at: ago(100 + i) }));
     return j;
   };
 }
@@ -68,7 +69,7 @@ function ownerCss() {
 }
 
 export async function run({ ok, pageWork }) {
-  const state = () => ({ asked: false, answered: false, quiet: false, moved: false });
+  const state = () => ({ asked: false, answered: false, quiet: false, moved: false, many: false });
   const open = async (st = state(), extra = {}) => {
     const p = await richOwnerPage({ pageWork, review: (j) => day(st)(j), ...extra });
     await p.work.quiet();
@@ -122,6 +123,20 @@ export async function run({ ok, pageWork }) {
       "listing the orders sends nothing and previews nothing: a row has no preview, which costs a read: " + JSON.stringify(p.posts));
     ok(["makerReview", "makerClaims", "makerPools", "makerOrderList"].every((id) => !!d.getElementById(id)),
       "the containers the maker tests and the map find are still there: #makerReview, #makerClaims, #makerPools");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* 1b. A LONG CLOSED LIST: fifty closed orders with nothing else asked of him, and one that is also Waiting on you is never dropped, so the note
+     counts what Closed shows against every closed order (fifty-one of fifty-six here, not fifty of fifty-five) */
+  st = state(); st.many = true;
+  p = await open(st);
+  try {
+    const d = p.d;
+    await p.enter("closed");
+    const shownClosed = p.rowsShown(), note = [...d.querySelectorAll("#makerOrderList .rnone")].filter(shown).map((e) => e.textContent);
+    ok(shownClosed.length === 51 && shownClosed.includes("ord-x1") && !shownClosed.includes("ord-z55") && same(note, ["51 of 56 closed orders are shown."]),
+      "Closed lists fifty closed orders and the one that also waits on you, and its note counts what it shows against every closed order: " + shownClosed.length + " " + JSON.stringify(note));
+    await p.tap("part.orders.waiting");
+    ok(p.rowsShown().includes("ord-x1") && !p.rowsShown().some((id) => /^ord-z/.test(id)), "and an order that waits on him is in Waiting on you whatever the cap: " + p.rowsShown().join());
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 2. A ROW OPENS ITS CARD */

@@ -450,6 +450,24 @@
   "replace": "  var HOW={password:"
  },
  {
+  "name": "the closed note counts only the closed orders with nothing else asked",
+  "file": "stmt/owner.js",
+  "find": "    if(closedShown<closedAll){ var more=el('p','rnone',closedShown+' of '+closedAll+' closed orders are shown.');",
+  "replace": "    if(settled>50){ var more=el('p','rnone','50 of '+settled+' closed orders are shown.');"
+ },
+ {
+  "name": "the closed note does not count an order that also waits on him",
+  "file": "stmt/owner.js",
+  "find": "      if(parts.split(' ').indexOf('orders.closed')>=0) closedAll++;\n",
+  "replace": ""
+ },
+ {
+  "name": "the closed list drops an order that also waits on him",
+  "file": "stmt/owner.js",
+  "find": "      if(parts==='orders.closed'&&++settled>50) return;",
+  "replace": "      if(parts.indexOf('orders.closed')>=0&&++settled>50) return;"
+ },
+ {
   "name": "leaving the part keeps the form open",
   "file": "stmt/owner.js",
   "find": "    if(moved2) fOpen=null;\n",
