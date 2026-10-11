@@ -6,13 +6,18 @@ import { pricingSnapshot } from "../tools/book.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { makerHush, makerInputCatalog, hushPut } from "../src/maker-inputs.js";
 
-const AT = "2026-10-05T08:00:00.000Z";   // 05 Oct 2026, 16:00 MYT
+const AT = "2026-10-05T08:00:00.000Z";   // 05 Oct 2026, 16:00 MYT: the fixed moment of every check that Maker alone reads
 const WK = "write-key-for-the-test";
 
 export async function run({ ok, KV, worker, handleMaker, REPO }) {
   const { DatabaseSync } = await import("node:sqlite");
   const { w } = await openMaster();
   const db = new DatabaseSync(":memory:");
+  /* NO CALENDAR IN A CHECK (docs/WORKING.md section 3). The Desk and its page read a hush against the real clock, so the one hush day
+     is a week on from today in Kuala Lumpur and the requests that set it carry the moment of this run; a check that only Maker reads
+     keeps AT and the days it was written against (Maker takes its day from the request). */
+  const NOW_AT = new Date().toISOString(), plus = (day, n) => new Date(Date.parse(day) + n * 86400000).toISOString().slice(0, 10);
+  const TODAY = new Date(Date.parse(NOW_AT) + 8 * 3600000).toISOString().slice(0, 10), DAY = plus(TODAY, 7), OTHER_DAY = plus(TODAY, 14);
   try {
     w.SALT_CLOUD = true;
     w.eval("queue=[];render=function(){};renderQueue=function(){};saveQueue=function(){return Promise.resolve(true);};");
@@ -28,7 +33,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
       && !POSITION_ENGINE.TIP_ID.test("nope") && !POSITION_ENGINE.TIP_ID.test("a:b c"),
       "every live tip id has the id shape, a dup id with a decimal total included");
     ok(POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/hush", body: { at: AT, id: "dup:CS6-BS-R:2026-09-16:2026-09-19:420.5", until: null } })
-      && POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/hush", body: { at: AT, id: id, until: "2026-10-12" } })
+      && POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/hush", body: { at: AT, id: id, until: DAY } })
       && !POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/hush-x", body: { at: AT } }),
       "a retained hush request is a valid record, decimal ids included, and only at its own path");
 
@@ -80,12 +85,12 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
       "the Desk's /hush refuses what Maker refuses, a past day, a day past a year and any field but id, until and clear, by the same check");
 
     /* 3. a hush set in Maker hides the tip on the Desk */
-    const set = await call({ at: AT, id, until: "2026-10-12" }), setBody = await set.json();
+    const set = await call({ at: NOW_AT, id, until: DAY }), setBody = await set.json();
     ok(set.status === 200 && setBody.ok && setBody.hushed === id && bridged[0] === "/_internal/maker/inputs/hush"
-      && stored()[id] === "2026-10-12" && db.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 0 && ![...deskEnv.SALT_QUEUE.m.keys()].some((k) => k.startsWith("q:")),
+      && stored()[id] === DAY && db.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 0 && ![...deskEnv.SALT_QUEUE.m.keys()].some((k) => k.startsWith("q:")),
       "Maker's hush writes the KV hush map through the bridge, with no queue entry and no draft");
     await reload();
-    ok(!live().includes(id) && hushed().includes(id) && w.eval("obsState(" + JSON.stringify(id) + ")").until === "2026-10-12",
+    ok(!live().includes(id) && hushed().includes(id) && w.eval("obsState(" + JSON.stringify(id) + ")").until === DAY,
       "and the Desk, reading the hushes, shows that tip as hushed to that day");
 
     /* 4. a hush set on the Desk is read back by Maker, and Bring back clears it */
@@ -93,14 +98,14 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     w.eval("obsAct(" + JSON.stringify(other) + ",'dismiss')");
     await new Promise((r) => setTimeout(r, 50));
     const cat = makerInputCatalog({ version: 1, sales: [], purchases: [], pricing: snap, state: { PRODUCTS: { salt: { name: "salt" } }, roster: [] } }, stored());
-    ok(stored()[other] === null && cat.tips.find((t) => t.id === other).hush === null && cat.tips.find((t) => t.id === id).hush === "2026-10-12"
+    ok(stored()[other] === null && cat.tips.find((t) => t.id === other).hush === null && cat.tips.find((t) => t.id === id).hush === DAY
       && cat.tips.every((t) => Object.keys(t).sort().join() === "hush,id,sev,title"),
       "the Desk's own hush reaches the same store, and Maker's list reads both back");
     w.eval("obsAct(" + JSON.stringify(other) + ",'restore')");
     await new Promise((r) => setTimeout(r, 50));
-    ok(!(other in stored()) && stored()[id] === "2026-10-12", "Bring back on the Desk clears only its own tip from the store");
+    ok(!(other in stored()) && stored()[id] === DAY, "Bring back on the Desk clears only its own tip from the store");
     const route = await handleMaker(new Request("https://counter.test/all/maker/inputs", { method: "GET" }), counter, "/all/maker/inputs", owner);
-    ok(route.status === 200 && (await route.json()).catalog.tips.find((t) => t.id === id).hush === "2026-10-12",
+    ok(route.status === 200 && (await route.json()).catalog.tips.find((t) => t.id === id).hush === DAY,
       "Maker's input catalog carries each tip's current hush");
 
     /* once the cloud's hushes are read they alone decide; the device's own queue decides only before */
@@ -111,7 +116,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
       "a local dismissal holds until the cloud's hushes are read, then the cloud's answer decides");
     w.eval("queue=[];");
 
-    /* 5. pruning, on the Desk's write and on Maker's */
+    /* 5. pruning, on the Desk's write and on Maker's (Maker's own days below are pinned to the request's AT, so they hold on any date) */
     deskEnv.SALT_QUEUE.m.set("hush", JSON.stringify({ old: "2020-01-01", keep: "2099-01-01", dis: null }));
     const pruned = await desk("/hush", "POST", { id, until: null }), prunedBody = await pruned.json();
     ok(JSON.stringify(prunedBody.hush) === JSON.stringify({ keep: "2099-01-01", dis: null, [id]: null }) && !("old" in stored()),
@@ -122,7 +127,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     ok(JSON.stringify(Object.keys(stored()).sort()) === JSON.stringify(["fine", ids[2]].sort()),
       "Maker's write prunes by the request's own day: yesterday and today go, a later day stays");
 
-    /* 6. Maker's refusals and its auth */
+    /* 6. Maker's refusals and its auth (every day here is judged against AT, Maker's own clock, never the real one) */
     deskEnv.SALT_QUEUE.m.set("hush", "{}");
     const n0 = bridged.length;
     const denied = await call({ at: AT, id, until: null }, { email: "other@example.com" }), none = await call({ at: AT, id, until: null }, null);
@@ -139,12 +144,12 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
       "an unknown tip, a snooze not after today or past a year, a missing until, an extra field and a loose timestamp are refused");
 
     /* 7. idempotent by request id: a retry after the Desk moved the tip does not hush it again */
-    const first = await call({ at: AT, id, until: "2026-10-12" });
+    const first = await call({ at: NOW_AT, id, until: DAY });
     await desk("/hush", "POST", { id, clear: true });
-    const retry = await call({ at: AT, id, until: "2026-10-12" }), retryBody = await retry.json();
+    const retry = await call({ at: NOW_AT, id, until: DAY }), retryBody = await retry.json();
     ok(first.status === 200 && retry.status === 200 && retryBody.ok && retryBody.hushed === id && !(id in stored()) && db.prepare("SELECT COUNT(*) AS n FROM maker_request").get().n >= 1,
       "a retry under the same request id answers the first result and writes nothing again");
-    const clash = await call({ at: AT, id, until: "2026-10-20" });
+    const clash = await call({ at: NOW_AT, id, until: OTHER_DAY });
     ok(clash.status === 409 && !(id in stored()), "the same request id carrying other content is refused");
     const unknown = await call({ at: "2026-10-05T08:05:00.000Z", id: "px:unknown:salt", until: null });
     ok(unknown.status === 400, "a tip the Desk is not showing is refused");

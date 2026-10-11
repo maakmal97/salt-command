@@ -2854,8 +2854,9 @@ await (async () => {
       rhythm: { dow: Array(7).fill(2), pay: 1, mid: 1 } });
     const beyond = E.restockPlan({ rows, today, free: 70, reviewDays: 9 });
     const zero = E.restockPlan({ rows: [{ date: "2099-10-08", qty: 1 }], today, free: 70, reviewDays: 9 });
+    /* the sale is dated from the desk's own clock, which coverStats reads: a literal 8 Oct left its 14-day window on 22 Oct (no calendar in a check) */
     w.eval(`var coverMappingSaved={restock:restockFor,stock:currentStock,deferred:defUnits,priced:pricedSales};
-      pricedSales=[{date:'2026-10-08',qty:14,total:140,cash:140,deliveredQty:14}];defUnits=0;`);
+      pricedSales=[{date:new Date(TODAY.getTime()-3*86400000).toISOString().slice(0,10),qty:14,total:140,cash:140,deliveredQty:14}];defUnits=0;`);
     const draw = (plan, free) => {
       w.__coverMappingPlan = plan;
       w.eval(`currentStock=${free};restockFor=function(){return window.__coverMappingPlan;};`);
@@ -3422,7 +3423,7 @@ await (async () => {
     ok(modded && modded.amend && modded.amend.some((a) => a.kind === "Modification" && /RM130 once the price/.test(a.note || "")), "and the trail carries the Modification step with the agent's note");
     ok(B.QUEUE_COMMITTED === ID("01:20"), "the watermark moved to the newest id folded, past the Modification");
     ok(r.folded.length === 5 && r.newest === ID("01:20"), "_folded would name the five ids");
-    ok(/const evolution=\[\{"v":"v9999"/.test(r.master) && /const LAST_UPDATED='\d\d \w\w\w 2026, \d\d:\d\d KL';/.test(r.master), "the version entry and the stamp are in the master");
+    ok(/const evolution=\[\{"v":"v9999"/.test(r.master) && new RegExp("const LAST_UPDATED='\\d\\d \\w\\w\\w " + new Date(Date.now() + 8 * 36e5).getUTCFullYear() + ", \\d\\d:\\d\\d KL';").test(r.master), "the version entry and the stamp are in the master");
     /* v803: the master holds ONE entry, so the fold REPLACES the current one rather than prepending; read as the desk reads it */
     { const o = r.master.indexOf("const evolution=["), e = r.master.indexOf("}];", o);
       const evoF = o >= 0 && e > o ? new Function("return " + r.master.slice(o + "const evolution=".length, e + 2))() : [];
@@ -7100,6 +7101,8 @@ await (async () => {
   const { w: wNow } = await omF();
   const todayISO = String(wNow.eval("(function(){var d=TODAY;return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})()"));
   ok(/^\d{4}-\d{2}-\d{2}$/.test(todayISO), `read the desk's own clock (${todayISO}) rather than this process's`);
+  /* a day ahead of that clock, taken from it: a literal date stops being ahead the day the calendar reaches it (12 Oct 2026, no calendar in a check) */
+  const ahead = new Date(Date.parse(todayISO) + 30 * 86400000).toISOString().slice(0, 10);
 
   const build = async (mutate, tag) => {
     const bk = JSON.parse(rfF(jF(REPO, "ledger", "book.json"), "utf8"));
@@ -7123,7 +7126,7 @@ await (async () => {
   ok(Number.isFinite(control.ar) && control.ar > 0, `and the control desk has a real receivable total (RM ${control.ar})`);
 
   const BAD = [
-    ["a date ahead of the clock", (r) => { r.date = "2027-01-20"; }],
+    ["a date ahead of the clock", (r) => { r.date = ahead; }],
     ["a null date", (r) => { r.date = null; }],
     ["an absent date", (r) => { delete r.date; }],
     ["an empty date", (r) => { r.date = ""; }],
@@ -7157,9 +7160,9 @@ await (async () => {
 
   /* AND THE SIGN IS STILL THERE WHERE IT IS THE ANSWER. A countdown to a future date is not an
      age, and flooring one would break it; dAhead exists precisely to read that sign. */
-  ok(wNow.eval("dAhead('2027-01-20')") === true, "a date ahead of the clock is still recognised as ahead");
+  ok(wNow.eval("dAhead('" + ahead + "')") === true, "a date ahead of the clock is still recognised as ahead");
   ok(wNow.eval("dAhead('2026-01-20')") === false, "and a past one is not, so dAhead was left on the raw signed rule on purpose");
-  ok(+wNow.eval("dAge('2027-01-20')") === 0, "while dAge floors the same date to zero, which is the pair working as designed");
+  ok(+wNow.eval("dAge('" + ahead + "')") === 0, "while dAge floors the same date to zero, which is the pair working as designed");
 
   /* ONE COPY OF THE RULE, not two. The desk wraps the engine rather than keeping its own floor. */
   const { default: PEf } = await import("../engine/position.mjs");
@@ -12220,6 +12223,11 @@ await (async () => {
     "end to end on v532: a master mutation of the unknown verdict, run through SALT_MASTER, turns that one named check red and the run exits 0: " + JSON.stringify(r1.out.trim().slice(0, 400)));
   ok(r2.code === 1 && /^unmutated: \d+ passed, 0 failed/m.test(r2.out) && !!u2 && u2.state === "UNNOTICED" && u2.fails.length === 0,
     "and a mutation no check notices is named and fails the run: " + JSON.stringify(r2.out.trim().slice(0, 400)));
+})();
+
+section("12 Oct 2026: every mutation needle still finds its line, exactly once, in every manifest");
+await (async () => {
+  await (await import("./mutation-needles.mjs")).run({ ok, REPO });
 })();
 
 section("28 Sep 2026: drain --status lists what is folded or decided apart, and offers --forget only for what is still to reach the ledger");
@@ -19088,7 +19096,8 @@ await (async () => {
   ok((await post("/open", { u, password: pw })).status === 200 && (await seen()).opens === 1 && (await seen()).how === "password",
     "a password open counts, as it always did, and says so: " + JSON.stringify(await seen()));
   const rem = "rem" + "a".repeat(29);
-  await kv.put("rem:" + rem, JSON.stringify({ u, wrap: await C.wrapKey("device-key", ck), at: "2026-09-21T00:00:00Z" }));
+  /* a phone last opened three days ago: it is remembered for thirty days from its last open, so a literal 21 Sep lapsed on 21 Oct (no calendar in a check) */
+  await kv.put("rem:" + rem, JSON.stringify({ u, wrap: await C.wrapKey("device-key", ck), at: new Date(Date.now() - 3 * 86400000).toISOString() }));
   const r1 = await post("/remember/open", { token: rem });
   ok(r1.status === 200 && (await seen()).opens === 2 && (await seen()).how === "remembered",
     "a remembered phone's open counts too: " + JSON.stringify(await seen()));
@@ -47729,6 +47738,8 @@ await (async () => {
   }
   const v = JSON.parse(w.eval("JSON.stringify((" + probe.toString() + ")())"));
   ok(v.heads.every((h) => /Every book/.test(h) && !/Both books/.test(h)), "the Financials and Receivables heads read Every book: " + JSON.stringify(v.heads));
+  /* the year's own column reads "CY 2027, nothing yet" from 1 Jan until the book has a sale in the year: the label moves, not the columns */
+  for (const x of [v.salt, v.candy]) if (x) x.head = x.head.map((h) => h.replace(/, nothing yet$/, ""));
   /* the columns he asked for, from the calendar: the last six months from the book's first, this year's quarters and halves begun and traded in, then CY */
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const want = (x) => { const y = +x.today.slice(0, 4), m = +x.today.slice(5, 7), ms = [];
@@ -47738,15 +47749,26 @@ await (async () => {
       p("Q1", "01", "03"), p("Q2", "04", "06"), p("Q3", "07", "09"), p("Q4", "10", "12"), p("H1", "01", "06"), p("H2", "07", "12"), ["CY " + y]); };
   ok(v.salt && JSON.stringify(v.salt.head) === JSON.stringify(want(v.salt)) && v.salt.head.length >= 8,
     "salt's columns are its months, then quarters, then halves, then CY: " + JSON.stringify(v.salt && v.salt.head));
-  ok(v.candy && JSON.stringify(v.candy.head) === JSON.stringify(want(v.candy)) && v.candy.head.length < v.salt.head.length,
+  /* "less history" is the book's own and the calendar moves it: candy fills the six-month window six months after its first month,
+     and then its head is salt's. The head is always checked against the calendar; the shorter-than-salt clause only while it holds. */
+  const inWindow = (x) => [5, 4, 3, 2, 1, 0].map((i) => new Date(Date.UTC(+x.today.slice(0, 4), +x.today.slice(5, 7) - 1 - i, 1)).toISOString().slice(0, 7)).filter((m) => m >= x.first).length;
+  const lessHistory = !!v.candy && inWindow(v.candy) < inWindow(v.salt);
+  if (!lessHistory) skipData("candy has as many of the last six months as salt, so a book with less history than salt was not drawn");
+  ok(v.candy && JSON.stringify(v.candy.head) === JSON.stringify(want(v.candy)) && (!lessHistory || v.candy.head.length < v.salt.head.length),
     "a book with less history shows only the months it has: " + JSON.stringify(v.candy && v.candy.head));
   /* the sums, off the cells: each quarter and half is its months, and CY is the two halves */
   const at = (x, lab) => x.rev[x.head.indexOf(lab)];
   const sumM = (x, labs) => labs.reduce((a, l) => a + (x.head.includes(l) ? at(x, l) : 0), 0);
   const s = v.salt;
-  ok(Math.abs(at(s, "Q3") - sumM(s, ["Jul", "Aug", "Sep"])) < 1.5 && Math.abs(at(s, "H2") - (at(s, "Q3") + at(s, "Q4"))) < 1.5
-     && Math.abs(at(s, "CY " + s.today.slice(0, 4)) - (at(s, "H1") + at(s, "H2"))) < 1.5,
-    "Q3 is July to September, H2 is Q3 plus Q4 to date, and CY is the two halves, read off the cells: " + JSON.stringify(s.rev));
+  /* from the calendar, never a fixed quarter: a quarter is checked when every month it has begun is a column (the six-month window
+     holds the current quarter's whole, and the earlier ones that fit), a half is its quarters and CY its halves, whichever are present */
+  const QM = { Q1: ["Jan", "Feb", "Mar"], Q2: ["Apr", "May", "Jun"], Q3: ["Jul", "Aug", "Sep"], Q4: ["Oct", "Nov", "Dec"] }, mNow = +s.today.slice(5, 7);
+  const here = (lab) => (s.head.includes(lab) ? at(s, lab) : 0);
+  const quarters = Object.keys(QM).filter((q) => s.head.includes(q) && QM[q].filter((m) => MON.indexOf(m) < mNow).every((m) => s.head.includes(m)));
+  ok(quarters.length >= 1 && quarters.every((q) => Math.abs(at(s, q) - sumM(s, QM[q])) < 1.5)
+     && Math.abs(here("H1") - (here("Q1") + here("Q2"))) < 1.5 && Math.abs(here("H2") - (here("Q3") + here("Q4"))) < 1.5
+     && Math.abs(at(s, "CY " + s.today.slice(0, 4)) - (here("H1") + here("H2"))) < 1.5,
+    "each quarter that fits the window is its months, H1 and H2 are their quarters, and CY is the two halves, read off the cells (" + quarters.join(" ") + "): " + JSON.stringify(s.rev));
   ok(s.rm === 0 && s.head[0] === "RM" && /\bfg-pm\b/.test(s.cls) && s.pold === Math.max(0, s.head.filter((h) => /^[A-Z][a-z]{2}( \d\d)?$/.test(h)).length - 3),
     "RM is said once in the corner and no figure cell repeats it, and a phone holds the latest three months: " + JSON.stringify({ rm: s.rm, pold: s.pold, cls: s.cls }));
   try { w.close(); } catch (e) { /* best effort */ }
