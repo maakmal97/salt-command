@@ -92,7 +92,9 @@ export const OWNER_JS = `
     var fresh=!!o.fresh||place!==placeNow;
     placeNow=place; partNow=part;
     if(!inChat()) stopMakerChat();
-    if(!inClaims()) makerSlipLock();
+    /* the picture is let go when Waiting on you is left, the unlocked key only when Orders is left, as the old Maker page kept it */
+    if(!inClaims()) makerSlipClose();
+    if(placeNow!=='orders') makerSlipLock();
     [].forEach.call(document.querySelectorAll('.place[data-m]'), function(b){
       if(b.getAttribute('data-m')===placeNow) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     [].forEach.call(document.querySelectorAll('.aparts button[data-part]'), function(b){
