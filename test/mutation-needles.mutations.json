@@ -1,0 +1,38 @@
+[
+ {
+  "name": "a needle's line is reworded, so it finds nothing",
+  "file": "test/owner-notice-hours.mutations.json",
+  "find": "#makerBulletinCurrent{overflow-wrap:anywhere}",
+  "replace": "#makerBulletinCurrent{overflow-wrap:break-word}"
+ },
+ {
+  "name": "a needle is cut back to a phrase the file holds three times",
+  "file": "test/owner-notice-hours.mutations.json",
+  "find": "\"find\": \"#makerBulletinCurrent{overflow-wrap:anywhere}\"",
+  "replace": "\"find\": \"overflow-wrap:anywhere\""
+ },
+ {
+  "name": "an entry names a file that is not there",
+  "file": "test/owner-notice-hours.mutations.json",
+  "find": "\"name\": \"N2 the box keeps its text after Notice set\",\n  \"file\": \"stmt/owner.js\"",
+  "replace": "\"name\": \"N2 the box keeps its text after Notice set\",\n  \"file\": \"stmt/gone.js\""
+ },
+ {
+  "name": "two entries share a name",
+  "file": "test/owner-notice-hours.mutations.json",
+  "find": "\"name\": \"N3 an unchanged notice says Notice set\"",
+  "replace": "\"name\": \"N2 the box keeps its text after Notice set\""
+ },
+ {
+  "name": "an entry's replacement is its own needle",
+  "file": "test/owner-notice-hours.mutations.json",
+  "find": "\"replace\": \"('Notice set.'+makerPushResult(result.push))\"",
+  "replace": "\"replace\": \"(result.unchanged?'That notice is already up. No phone was woken.':'Notice set.'+makerPushResult(result.push))\""
+ },
+ {
+  "name": "a manifest stops being JSON",
+  "file": "test/owner-notice-hours.mutations.json",
+  "find": "[\n {\n  \"name\": \"N1",
+  "replace": "[\n {\n  \"name\" \"N1"
+ }
+]
