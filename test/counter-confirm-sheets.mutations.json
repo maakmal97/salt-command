@@ -320,8 +320,8 @@
  {
   "name": "the limit list draws no mark",
   "file": "stmt/page.js",
-  "find": "      /* the order as a card: its mark a button, the figure under it (his note of 28 Sep 2026) */\n      lab.appendChild(mtile(o.product,o.qty,oUnit(o)));\n",
-  "replace": "      /* the order as a card: its mark a button, the figure under it (his note of 28 Sep 2026) */\n"
+  "find": "      /* the order as a card: its mark a button, its caption under it (his notes of 28 Sep and 11 Oct 2026) */\n      lab.appendChild(mtile(o.product,o.qty,oUnit(o)));\n",
+  "replace": "      /* the order as a card: its mark a button, its caption under it (his notes of 28 Sep and 11 Oct 2026) */\n"
  },
  {
   "name": "the limit list leaves the delivery out of the figure",

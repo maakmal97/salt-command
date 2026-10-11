@@ -21,8 +21,8 @@
  {"name":"Close does nothing","file":"stmt/page.js","find":"document.getElementById('lookX').addEventListener('click',lookShut);","replace":""},
  {"name":"the scrim does nothing","file":"stmt/page.js","find":"lookScrim.addEventListener('click',lookShut);","replace":""},
  {"name":"a chosen tile leaves the Sheet open","file":"stmt/page.js","find":"lookSet(t.getAttribute('data-look')); lookShut(); } });","replace":"lookSet(t.getAttribute('data-look')); } });"},
- {"name":"Tab does not wrap forward","file":"stmt/page.js","find":"else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }","replace":""},
- {"name":"Shift+Tab does not wrap back","file":"stmt/page.js","find":"if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }","replace":"if(false){}"},
+ {"name":"Tab does not wrap forward","file":"stmt/page.js","find":"lookSheetEl.querySelectorAll('button')), i=f.indexOf(document.activeElement);\n      if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }\n      else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }","replace":"lookSheetEl.querySelectorAll('button')), i=f.indexOf(document.activeElement);\n      if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }"},
+ {"name":"Shift+Tab does not wrap back","file":"stmt/page.js","find":"lookSheetEl.querySelectorAll('button')), i=f.indexOf(document.activeElement);\n      if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }","replace":"lookSheetEl.querySelectorAll('button')), i=f.indexOf(document.activeElement);\n      if(false){}"},
  {"name":"a choice is not kept","file":"stmt/page.js","find":"try{ localStorage.setItem(LOOK_KEY,t); }catch(e){ /* for this visit only */ }","replace":""},
  {"name":"a write to a store that refuses is not guarded","file":"stmt/page.js","find":"try{ localStorage.setItem(LOOK_KEY,t); }catch(e){ /* for this visit only */ }","replace":"localStorage.setItem(LOOK_KEY,t);"},
  {"name":"a choice always applies Night","file":"stmt/page.js","find":"if(typeof saltLook==='function') saltLook(t); else","replace":"if(typeof saltLook==='function') saltLook('night'); else"},
@@ -40,7 +40,7 @@
  {"name":"a Night text colour falls under 4.5:1","file":"stmt/statement-css.js","find":"--salt-mist: #7a8690;","replace":"--salt-mist: #3a4048;"},
  {"name":"the maintenance page is not Tide","file":"stmt/maintenance.js","find":"<html lang=\"en-GB\" data-theme=\"tide\">","replace":"<html lang=\"en-GB\">"},
  {"name":"the maintenance page's ground is not Tide's","file":"stmt/maintenance.js","find":"const TIDE = { ground: \"#03141a\", text: \"#eaf6f6\" };","replace":"const TIDE = { ground: \"#000000\", text: \"#eaf6f6\" };"},
- {"name":"the fixture has no case of the look","file":"tools/testfix.mjs","find":"    look: \"asked\" };","replace":"    };"},
+ {"name":"the fixture has no case of the look","file":"tools/testfix.mjs","find":"    look: \"asked\",\n","replace":""},
  {"name":"the sealed bundle drops the look","file":"tools/testfix.mjs","find":"statements: [], look: fix.look }","replace":"statements: [] }"},
  {"name":"the note names the wrong place","file":"stmt/words.js","find":"\"look.note\": \"You can change this under Account.\"","replace":"\"look.note\": \"You can change this under Salt Counter.\""}
 ]
