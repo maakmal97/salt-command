@@ -9215,7 +9215,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1072","d":"11 Oct 2026","t":"THE DESK WEARS NIGHT OR TIDE, CHOSEN ON EACH DEVICE","n":["<b>TWO THEMES, HIS WORD OF 11 OCT 2026.</b> The desk wears Night or Tide. The choice is kept on each device and Tide shows until one is chosen: a first open asks once, in a sheet, and a device that has chosen is never asked again. A switch at the foot of the rail, two options of 44 px, changes it whenever he likes. The charts and the map draw again in the chosen look. This version is the Desk alone; the Counter and QR Command follow. Nothing prices.","<b>HOW IT IS BUILT.</b> Tide is pulled from salt-ds, the desk's own layer carries its values as tokens, and the inline identity tints read tokens, not literals. A script in the head sets the look before the first paint, and the theme-color meta follows it. A store that cannot be read opens Tide and does not ask. Lowest text contrast: Night 4.98:1, Tide 4.91:1. The suite proves the choice, the switch, the sheet and both looks, each assertion red by mutation first."]}];
+const evolution=[{"v":"v1073","d":"11 Oct 2026","t":"TIDE REACHES THE NAMES PANEL'S BUTTONS, AND THE RENDER TOOL PICKS A THEME","n":["<b>TIDE, ALL THE WAY.</b> Hide names, Save and Record drew Night's steel and verdigris as fixed colours, and the Cancelled pill drew white text, so Tide showed Night's. Each is now the accent and the same accent drawn deeper, and the text on a solid button is the system's ink, so each theme moves them. Night's text on those buttons turns from white to ink, which reads better on steel, verdigris and the alarm red. Nothing prices.","<b>THE PROOFS.</b> The suite's inline-colour check now catches any hex colour in an inline style or a gradient. The render tool keeps a theme (SALT_LOOK, Night by default), so its shots are no longer Tide with the choice sheet over them. New proofs cover a stored value that is no theme, a store that cannot be read, and Enter keeping what is typed through a switch, each red by mutation first."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9366,7 +9366,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='11 Oct 2026, 12:17 KL';
+const LAST_UPDATED='11 Oct 2026, 12:51 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
