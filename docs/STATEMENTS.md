@@ -862,7 +862,8 @@ the id alone (`slipOf`), the first 16 bytes of its SHA-256 in hex, so the paymen
 `slip: <id>`; ONLY ONCE THE CLAIM IS RECORDED AND NAMES IT does `keepSlip` file the ciphertext at `slip:<username>:<id>` for
 30 days, so a refused claim stores nothing. Only a claim carries one: on any other move no claim names it, so it is never filed. The desk reads
 it keyed at `GET /desk/slips/<username>/<id>`, 404 once lapsed. Nothing on the site can open a slip, and nothing
-deletes one: it lapses with its 30 days. The page says Slip sent on the order while its claim waits, and
+deletes one: it lapses with its 30 days. Salt Account draws one as a `blob:` URL, so the owner page's policy alone adds
+`blob:` to its `img-src`; the customer page's stays `'self' data:`. The page says Slip sent on the order while its claim waits, and
 Slip no longer kept after the 30 days.
 **His answer reaches them** (S6 11.14): Received wakes them "Payment received" (or complete); **Not found** files the
 claim's row rejected as `notfound` FIRST, under the id it has or will have, and drops it from every queue, then the site
