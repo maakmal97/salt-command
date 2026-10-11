@@ -89,7 +89,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     && POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/house-sizes", body: { at: AT, product: "salt", hide: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25] } })
     && !POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/house-sizes", body: { at: AT, product: "salt", hide: ["1"] } })
     && !POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/house-sizes", body: { at: AT, product: "salt", hide: new Array(51).fill(1) } })
-    && owner_js.includes("makerButton(houseSection,'Send board sizes for review'") && owner_js.includes("'/all/maker/inputs/house-sizes',body")
+    && owner_js.includes("makerButton(houseSection,['Send board sizes for review','record.house.send']") && owner_js.includes("'/all/maker/inputs/house-sizes',body")
     && owner_js.includes("if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}"),
     "the Counter Admin carries a Printed board sizes control whose retained request is a valid record and clears on a 400");
   ok(!/[\\`]/.test(owner_js.slice(owner_js.indexOf("A6: the Desk's Make it the house board"),

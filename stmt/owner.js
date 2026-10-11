@@ -26,6 +26,16 @@ export const OWNER_JS = `
       sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, deskWait=null;
   /* S9 9.2: Needs you, Accounts, Links, Maker and More; the report card is a page of More */
   var PLACE={accounts:'accounts', links:'links', maker:'maker', more:'more', cards:'more'};
+  /* 11 Oct 2026: EVERY CONTROL CARRIES A STABLE data-act, "<place>.<thing>", named by what the control does and never by its words, so a
+     later change of label, class or layout leaves whatever finds a control by its act where it was (docs/STATEMENTS.md). A control drawn
+     once for each item of a list also carries the item's id as data-key. Where a helper makes the control, its label may be
+     [words, act, key]: the words it shows and the act it is found by sit side by side. */
+  function actOn(e, name, key){
+    if(name) e.setAttribute('data-act', name);
+    if(name&&key!=null&&key!=='') e.setAttribute('data-key', String(key));
+    return e;
+  }
+  function labOf(x){ return Array.isArray(x)?x:[x]; }
   function panel(which){
     if(which==='needs') which=null;
     mHome.hidden=!!which;
@@ -161,7 +171,7 @@ export const OWNER_JS = `
     box.setAttribute('aria-labelledby','hoT'); box.tabIndex=-1;
     box.appendChild(el('div','salt-sheet__grab'));
     var head=el('div','salt-sheet__head'), title=el('h2','salt-sheet__title','Sign in on their phone'); title.id='hoT';
-    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close');
+    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.setAttribute('aria-label','Close'); actOn(x,'code.close');
     var xg=svgEl('svg', {width:16, height:16, viewBox:'0 0 16 16', fill:'none', stroke:'currentColor', 'stroke-width':'1.5', 'stroke-linecap':'round', 'aria-hidden':'true'});
     xg.appendChild(svgEl('path', {d:'M3.5 3.5l9 9M12.5 3.5l-9 9'})); x.appendChild(xg);
     head.appendChild(title); head.appendChild(x); box.appendChild(head);
@@ -188,7 +198,7 @@ export const OWNER_JS = `
       var p=klBits(j.exp);
       var cf=el('div','salt-field salt-code');
       var lab=el('label','salt-code__label','Or type this code where Salt Counter asks for one'); lab.htmlFor='hoC';
-      var inp=el('input','salt-field__input salt-field__input--code'); inp.id='hoC'; inp.readOnly=true;
+      var inp=el('input','salt-field__input salt-field__input--code'); inp.id='hoC'; inp.readOnly=true; actOn(inp,'code.value');
       inp.setAttribute('autocomplete','off'); inp.setAttribute('spellcheck','false');
       inp.value=String(j.code||'').replace('-',' ');
       cf.appendChild(lab); cf.appendChild(inp);
@@ -233,7 +243,7 @@ export const OWNER_JS = `
   }
   function sendPill(a, note, onSent){
     var u=a.username, b=el('button','salt-pill salt-pill--md apill','Send a sign-in link'); b.type='button';
-    b.setAttribute('data-pill', u); b.note=note;
+    b.setAttribute('data-pill', u); b.note=note; actOn(b,'acct.signin-link');
     if(a.account===false){ b.setAttribute('data-none','1'); b.title='No account behind this username yet'; }
     paintPill(b);
     b.addEventListener('click', function(){
@@ -294,7 +304,7 @@ export const OWNER_JS = `
     box.appendChild(dh);
     var dl=el('div','salt-ledger salt-ledger--plain');
     devs.forEach(function(d){
-      var so=ghost('Sign out');
+      var so=ghost(['Sign out','acct.device-signout',d.id]);
       so.addEventListener('click', function(){ endOne(a, d, so); });
       dl.appendChild(lineRow(d.label||'A device named before this list began', so, d.kept
         ?'Kept signed in since '+dayMon(d.at)+', last used '+when(d.last)+'.'
@@ -348,12 +358,12 @@ export const OWNER_JS = `
     if(a.test) c.appendChild(el('p','atot','Counts nowhere; nothing on the book is behind it.'));
     else if(none) c.appendChild(el('p','atot',waitLine()));
     else if(a.tot) c.appendChild(el('p','atot',a.tot));
-    var box=document.createElement('input');
+    var box=actOn(document.createElement('input'),'acct.sent');
     var pn=el('p','anote'); pn.setAttribute('role','status');
     c.appendChild(sendPill(a, pn, function(){ box.checked=!!a.sent; chips(); }));
     c.appendChild(pn);
     var grid=el('div','agrid'), gn=el('p','anote'); gn.setAttribute('role','status');
-    var hob=ghost('Show a code, in person'), open=ghost('View as them'), pwb=ghost('Copy password'), sob=ghost('Sign out everywhere'), orderFor=ghost('Order for them');
+    var hob=ghost(['Show a code, in person','acct.show-code']), open=ghost(['View as them','acct.view-as']), pwb=ghost(['Copy password','acct.password']), sob=ghost(['Sign out everywhere','acct.signout-all']), orderFor=ghost(['Order for them','acct.order-for']);
     pwb.classList.add('salt-ghost--danger'); sob.classList.add('salt-ghost--danger');
     [hob, open, orderFor, pwb, sob].forEach(function(b){ if(none){ b.disabled=true; b.title=why; } grid.appendChild(b); });
     if(!none&&!a.pwMaster){ pwb.disabled=true; pwb.title='Not sealed yet: run tools/stmt-seal.mjs on the laptop'; }
@@ -475,7 +485,7 @@ export const OWNER_JS = `
     return out;
   }
   function rowOf(a){
-    var b=el('button','salt-inbox-row'); b.type='button'; b.setAttribute('data-u', a.username);
+    var b=el('button','salt-inbox-row'); b.type='button'; b.setAttribute('data-u', a.username); actOn(b,'acct.open',a.username);
     if(aOpen===a.username) b.setAttribute('aria-current','true');
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
     t.appendChild(el('span',null,a.test?testName(a):(a.code||a.username)));
@@ -516,7 +526,7 @@ export const OWNER_JS = `
     [].slice.call(rlist.querySelectorAll('[data-u]')).forEach(function(r){
       if(r.getAttribute('data-u')===aOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
     if(!a) return;
-    var back=el('button','aback','← Accounts'); back.type='button'; back.setAttribute('data-back','accounts');
+    var back=el('button','aback','← Accounts'); back.type='button'; back.setAttribute('data-back','accounts'); actOn(back,'acct.back');
     aopen.appendChild(back);
     acctPane(aopen, a);
     try{ window.scrollTo(0,0); }catch(e){}
@@ -589,13 +599,13 @@ export const OWNER_JS = `
       img.src=r.qr; img.alt='QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
       card.appendChild(img);
       var row=el('div','grow');
-      var copy=el('button',null,'Copy link'); copy.type='button';
+      var copy=el('button',null,'Copy link'); copy.type='button'; actOn(copy,'link.copy');
       copy.addEventListener('click', async function(){
         try{ await navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
         catch(e){ copy.textContent='Copy failed'; }
         setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
       });
-      var rev=el('button',null,r.revoked?'Restore':'Withdraw'); rev.type='button'; rev.setAttribute('data-move','');
+      var rev=el('button',null,r.revoked?'Restore':'Withdraw'); rev.type='button'; rev.setAttribute('data-move',''); actOn(rev,r.revoked?'link.restore':'link.withdraw');
       rev.addEventListener('click', function(){ moveLink(r, r.revoked?'restore':'revoke'); });
       row.appendChild(copy); row.appendChild(rev);
       /* v709: his word on one an associate minted, and the tier he may change on it. A tier he
@@ -604,17 +614,17 @@ export const OWNER_JS = `
         if(r.approved===false&&!r.revoked){
           /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline;
              a withdrawn one has neither, Restore being the way back */
-          var ap=el('button',null,'Approve'); ap.type='button'; ap.setAttribute('data-move','');
+          var ap=el('button',null,'Approve'); ap.type='button'; ap.setAttribute('data-move',''); actOn(ap,'link.approve');
           ap.addEventListener('click', function(){ moveLink(r,'approve'); });
           row.appendChild(ap);
           if(!declined){
-            var de=el('button',null,'Decline'); de.type='button'; de.setAttribute('data-move','');
+            var de=el('button',null,'Decline'); de.type='button'; de.setAttribute('data-move',''); actOn(de,'link.decline');
             de.addEventListener('click', function(){ moveLink(r,'decline'); });
             row.appendChild(de);
           }
         }
         if(tiers.length){
-          var sel=el('select','fld'); sel.setAttribute('aria-label','The tier this link quotes');
+          var sel=el('select','fld'); sel.setAttribute('aria-label','The tier this link quotes'); actOn(sel,'link.tier');
           var o0=el('option',null,'Follows the associate'); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
           /* Ambassador is the floor and never a guest's, so the picker starts at the first of five */
           tiers.slice(1,6).forEach(function(t){ var o=el('option',null,t); o.value=t; if(r.level===t)o.selected=true; sel.appendChild(o); });
@@ -674,7 +684,7 @@ export const OWNER_JS = `
   function makerSlipLock(){ makerSlipClose(); makerSlipPrivate=null; }
   document.addEventListener('visibilitychange',function(){ if(document.hidden) makerSlipLock(); });
   function makerClaimButton(parent,label,action,primary){
-    var button=el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',label);
+    var L=labOf(label), button=actOn(el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);
     button.type='button'; button.onclick=function(){ return action(button); }; parent.appendChild(button); return button;
   }
   async function loadMakerClaims(){
@@ -687,15 +697,15 @@ export const OWNER_JS = `
       var waiting=makerClaims.filter(function(c){ return c.state==='waiting'; });
       if(!waiting.length) root.appendChild(el('p','rnone','No account claims waiting.'));
       waiting.forEach(function(claim){
-        var card=makerCard(root), preview=null;
+        var card=makerCard(root), preview=null; card.setAttribute('data-key',claim.u+':'+claim.id);
         card.appendChild(el('h3',null,claim.u+' · '+rm(claim.amount)));
         card.appendChild(el('p','maker-facts',claim.id+(claim.test?' · Test, counts nowhere':'')));
         var note=el('div','maker-quote'); card.appendChild(note);
         var route='/all/maker/claims/'+claim.u+'/'+claim.id;
-        var receipt=makerClaimButton(card,'Received',function(button){ return decideMakerClaim(false,false,button); },true);
-        var covered=makerClaimButton(card,'Received, on the book already',function(button){ return decideMakerClaim(true,false,button); },false);
+        var receipt=makerClaimButton(card,['Received','claim.received'],function(button){ return decideMakerClaim(false,false,button); },true);
+        var covered=makerClaimButton(card,['Received, on the book already','claim.received-booked'],function(button){ return decideMakerClaim(true,false,button); },false);
         receipt.disabled=true; covered.disabled=true;
-        makerClaimButton(card,'Preview rows',async function(button){
+        makerClaimButton(card,['Preview rows','claim.preview'],async function(button){
           button.disabled=true;
           try{
             preview=await refs(route+'/preview',{}); note.textContent='';
@@ -709,7 +719,7 @@ export const OWNER_JS = `
           }catch(error){ note.textContent=error.message; }
           button.disabled=false;
         },false);
-        makerClaimButton(card,'Not found',function(button){ return decideMakerClaim(false,true,button); },false);
+        makerClaimButton(card,['Not found','claim.not-found'],function(button){ return decideMakerClaim(false,true,button); },false);
         async function decideMakerClaim(onBook,notFound,button){
           if(!notFound&&!preview) return;
           var key=claim.u+':'+claim.id, pending=makerClaimRequests[key];
@@ -733,9 +743,9 @@ export const OWNER_JS = `
     }catch(error){ root.textContent=error.message; }
   }
   function makerSlipControl(parent,u,id){
-    var pass=makerField(parent,'Vault passphrase','password',''), note=el('p','msg'); parent.appendChild(note);
+    var pass=makerField(parent,['Vault passphrase','claim.passphrase'],'password',''), note=el('p','msg'); parent.appendChild(note);
     pass.autocomplete='off';
-    makerClaimButton(parent,'View slip',async function(button){
+    makerClaimButton(parent,['View slip','claim.view-slip'],async function(button){
       var generation=++makerSlipGeneration, secret=pass.value; pass.value=''; button.disabled=true;
       try{
         if(!makerSlipPrivate){
@@ -767,7 +777,7 @@ export const OWNER_JS = `
       }catch(error){ if(generation===makerSlipGeneration) note.textContent='Slip could not be opened: '+error.message; }
       finally{ secret=''; button.disabled=false; }
     },false);
-    makerClaimButton(parent,'Close and lock slip',function(){ makerSlipLock(); pass.value=''; note.textContent='Slip locked.'; },false);
+    makerClaimButton(parent,['Close and lock slip','claim.lock-slip'],function(){ makerSlipLock(); pass.value=''; note.textContent='Slip locked.'; },false);
   }
   var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
   function stopMakerChat(){
@@ -800,7 +810,7 @@ export const OWNER_JS = `
       var list=document.getElementById('makerChatList'); list.textContent='';
       makerThreads.forEach(function(thread){
         var button=el('button','salt-ghost',thread.u+(thread.test?' · Test account':'')+(makerThreadAsked(thread)?' · Asked':' · Chat'));
-        button.type='button';button.setAttribute('data-thread',thread.u);
+        button.type='button';button.setAttribute('data-thread',thread.u);actOn(button,'chat.open',thread.u);
         button.onclick=function(){ openMakerThread(thread.u); };list.appendChild(button);
       });
       status.textContent=makerThreads.length?makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);}).length+' waiting for a reply.':'No account conversations.';
@@ -821,7 +831,7 @@ export const OWNER_JS = `
   function openMakerThread(user){
     makerThreadUser=user;
     var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';
-    root.appendChild(el('h3','',user));
+    root.setAttribute('data-key',user);root.appendChild(el('h3','',user));
     var lines=el('div','');lines.id='makerChatLines';root.appendChild(lines);
     var draft=makerChatDrafts[user], savedPrefix='saltMakerChat:'+user+':';
     if(!draft){
@@ -839,13 +849,14 @@ export const OWNER_JS = `
     }
     var label=el('label','maker-field');label.appendChild(el('span','lbl','Reply'));
     var text=el('textarea','fld salt-field__input');text.maxLength=200;text.value=draft.text;
-    text.setAttribute('data-thread-reply',user);text.oninput=function(){draft.text=text.value;};
+    text.setAttribute('data-thread-reply',user);actOn(text,'chat.reply');text.oninput=function(){draft.text=text.value;};
     label.appendChild(text);root.appendChild(label);
     var status=el('p','msg');status.setAttribute('role','status');root.appendChild(status);
     var send=el('button','btn salt-pill salt-pill--md','Send reply'),
       quiet=el('button','salt-ghost','No reply needed'),cancel=el('button','salt-ghost','Cancel reply retry'),
       restore=el('button','salt-ghost','Open retained reply'),close=el('button','salt-ghost','Close chat');
     [send,quiet,restore,cancel,close].forEach(function(button){button.type='button';root.appendChild(button);});
+    actOn(send,'chat.send');actOn(quiet,'chat.no-reply');actOn(restore,'chat.open-retained');actOn(cancel,'chat.cancel-retry');actOn(close,'chat.close');
     function makerChatState(){
       var busy=!!draft.busy;
       status.textContent=draft.note||(busy?'Sending reply...':'');
@@ -922,13 +933,13 @@ export const OWNER_JS = `
     root.textContent='';
     var note=el('p','msg',''); note.setAttribute('role','status');
     function field(label,type,attrs){
-      var l=el('label','maker-field'); l.appendChild(el('span','lbl',label));
-      var i=el('input','fld salt-field__input'); i.type=type; Object.keys(attrs||{}).forEach(function(k){ i.setAttribute(k,attrs[k]); });
+      var L=labOf(label), l=el('label','maker-field'); l.appendChild(el('span','lbl',L[0]));
+      var i=actOn(el('input','fld salt-field__input'),L[1],L[2]); i.type=type; Object.keys(attrs||{}).forEach(function(k){ i.setAttribute(k,attrs[k]); });
       l.appendChild(i); root.appendChild(l); return i;
     }
-    var product=field('Product','text',{maxlength:'20',autocomplete:'off'}), size=field('Size each, in units','number',{min:'0',step:'any'}),
-        target=field('Target, in units','number',{min:'0',step:'any'}), closes=field('Closes on, optional','date',{});
-    var open=el('button','btn salt-pill salt-pill--md','Open group order'); open.type='button';
+    var product=field(['Product','pool.product'],'text',{maxlength:'20',autocomplete:'off'}), size=field(['Size each, in units','pool.size'],'number',{min:'0',step:'any'}),
+        target=field(['Target, in units','pool.target'],'number',{min:'0',step:'any'}), closes=field(['Closes on, optional','pool.closes-on'],'date',{});
+    var open=el('button','btn salt-pill salt-pill--md','Open group order'); open.type='button'; actOn(open,'pool.open');
     open.onclick=async function(){
       open.disabled=true;
       try{
@@ -940,11 +951,12 @@ export const OWNER_JS = `
     root.appendChild(open); root.appendChild(note);
     (result.pools||[]).forEach(function(p){
       var card=el('article','salt-glass-card maker-card');
+      card.setAttribute('data-key',p.id);
       card.appendChild(el('p','maker-row',p.product+' '+p.q+' each, '+p.unitsIn+' of '+p.target+' units in, '+(p.joins||[]).length+' joined'
         +(p.closesOn?', closes '+p.closesOn:'')+', '+p.state));
       (p.closeLeft||[]).forEach(function(x){ card.appendChild(el('p','maker-row','Not acknowledged: '+x.id+' ('+x.why+')')); });
       if(p.state==='open'||(p.closeLeft||[]).length){
-        var close=el('button','salt-ghost',p.state==='open'?'Close':'Close again'); close.type='button';
+        var close=el('button','salt-ghost',p.state==='open'?'Close':'Close again'); close.type='button'; actOn(close,'pool.close',p.id);
         close.onclick=async function(){
           if(p.state==='open'&&!confirm('Close this group order and send each joined order for acknowledgement? Every joiner is told once.')) return;
           close.disabled=true;
@@ -965,12 +977,13 @@ export const OWNER_JS = `
     var text=root.querySelector('textarea');
     if(!text){
       var label=el('label','maker-field');label.appendChild(el('span','lbl','Notice, one line per sentence'));
-      text=el('textarea','fld salt-field__input');text.rows=4;label.appendChild(text);root.appendChild(label);
+      text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;label.appendChild(text);root.appendChild(label);
       var current=el('div','');current.id='makerBulletinCurrent';root.appendChild(current);
       var retained=el('div','');retained.hidden=true;root.appendChild(retained);
       var set=el('button','btn salt-pill salt-pill--md','Set notice'), clear=el('button','salt-ghost','Clear notice'),
         refresh=el('button','salt-ghost','Read current notice'), busy=false, needsRead=false, intended=null;
       [set,clear,refresh].forEach(function(button){button.type='button';root.appendChild(button);});
+      actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');
       function state(){set.disabled=busy||needsRead;clear.disabled=busy||needsRead;refresh.disabled=busy;text.disabled=busy;}
       root.addEventListener('maker-notice-read',function(event){
         needsRead=false;
@@ -1030,7 +1043,7 @@ export const OWNER_JS = `
     return error.message.indexOf('Not sent.')===0
       ?'Confirmation not received. Check the connection; the result may already be recorded.':error.message;
   }
-  function makerReading(parent, reading){
+  function makerReading(parent, reading, key){
     if(reading.cost!=null){
       var cost=typeof reading.cost==='object'?reading.cost.total:reading.cost;
       parent.appendChild(el('p','maker-facts','Cost RM '+Number(cost).toFixed(2)));
@@ -1039,7 +1052,7 @@ export const OWNER_JS = `
     if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
     (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
     if(reading.row){
-      var detail=el('details',''), summary=el('summary','salt-ghost','Proposed row');
+      var detail=el('details',''), summary=actOn(el('summary','salt-ghost','Proposed row'),'row.proposed',key);
       detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); parent.appendChild(detail);
     }
   }
@@ -1073,9 +1086,9 @@ export const OWNER_JS = `
         +(result.prepay?' They are asked to pay before it is handed over.':'')));
   }
   function makerButton(parent, label, action, primary, onSuccess){
-    var b=el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',label);
+    var L=labOf(label), b=actOn(el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);
     var busy=false, pending=null, cancel=el('button','salt-ghost','Cancel retained input');
-    cancel.type='button';cancel.hidden=true;
+    cancel.type='button';cancel.hidden=true;if(L[1]) actOn(cancel,L[1]+'.cancel-retained',L[2]);
     cancel.onclick=function(){
       if(pending&&confirm('Cancel this retained request on this device? A server-committed input is not withdrawn.')){
         makerClear(pending.path);pending=null;cancel.hidden=true;
@@ -1161,8 +1174,8 @@ export const OWNER_JS = `
         var keys=Object.keys(localStorage).filter(function(key){return key.indexOf('saltMakerPending:')===0;});
         keys.forEach(function(key){
           var path=key.slice('saltMakerPending:'.length),saved;
-          var section=el('section','maker-input');section.appendChild(el('h3',null,'Retained input'));
-          var status=makerStatus(section),pass=makerField(section,'Vault passphrase','password','');
+          var section=el('section','maker-input');section.setAttribute('data-key',path.split('/').pop());section.appendChild(el('h3',null,'Retained input'));
+          var status=makerStatus(section),pass=makerField(section,['Vault passphrase','record.retained.passphrase'],'password','');
           parent.appendChild(section);
           try{saved=makerSaved(path);status.textContent=path.split('/').pop()+' · retained on this device. Retry is unchanged; Review starts a new request.';}
           catch(error){status.textContent=error.message;}
@@ -1190,7 +1203,7 @@ export const OWNER_JS = `
             }catch(error){pass.value='';status.textContent=error.message;}
           };
           ['Retry unchanged','Review latest','Cancel retained input'].forEach(function(label,index){
-            var button=el('button','salt-ghost',label);button.type='button';
+            var button=actOn(el('button','salt-ghost',label),['record.retained.retry','record.retained.review','record.retained.cancel'][index]);button.type='button';
             button.onclick=async function(){
               if(index===2){
                 if(confirm('Cancel this retained request on this device? An input already committed on the server is not withdrawn.')){
@@ -1205,7 +1218,7 @@ export const OWNER_JS = `
         });
       }
   function makerField(parent, label, type, value, step){
-    var wrap=el('label','maker-field'), title=el('span','lbl',label), input=el('input','fld salt-field__input');
+    var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
     input.type=type; input.value=value==null?'':String(value);
     if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; }
     wrap.appendChild(title); wrap.appendChild(input); parent.appendChild(wrap); return input;
@@ -1290,8 +1303,8 @@ export const OWNER_JS = `
     parent.appendChild(status); return status;
   }
   var makerPlaceListId=0;
-  function makerLocalityField(parent){
-    var input=makerField(parent,'Locality (device only)','text','');
+  function makerLocalityField(parent, act){
+    var input=makerField(parent,['Locality (device only)',act],'text','');
     var list=el('datalist'), key='makerPlaces'+(++makerPlaceListId);
     list.id=key;input.setAttribute('list',key);
     makerGeo.picks().forEach(function(point,label){
@@ -1327,7 +1340,7 @@ export const OWNER_JS = `
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
     var books=catalog.products||[];
     var addSelect=function(root,label,items){
-      var wrap=el('label','maker-field'), title=el('span','lbl',label), select=el('select','fld salt-field__input');
+      var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl',L[0]), select=actOn(el('select','fld salt-field__input'),L[1],L[2]);
       items.forEach(function(item){var option=el('option',null,item.label);option.value=item.value;select.appendChild(option);});
       wrap.appendChild(title);wrap.appendChild(select);root.appendChild(wrap);return select;
     };
@@ -1345,12 +1358,12 @@ export const OWNER_JS = `
     var loan=el('section','maker-input');loan.appendChild(el('h3',null,'Borrow or lend'));
     loan.appendChild(el('p','msg','Cash and in-kind loans use the ledger’s loan rows. Notes are disabled here: free text could disclose names or places.'));
     parent.appendChild(loan);
-    var loanForm=addSelect(loan,'Form',[{value:'salt',label:'In kind'},{value:'cash',label:'Cash'}]);
-    var loanDirection=addSelect(loan,'Direction',[{value:'in',label:'Borrow'},{value:'out',label:'Lend'}]);
-    var loanParty=addSelect(loan,'Party',partyItems), loanProduct=addSelect(loan,'Book',productItems);
-    var loanDate=makerField(loan,'Date','date',today), loanAmount=makerField(loan,'Units or RM','number','1');
+    var loanForm=addSelect(loan,['Form','record.loan.form'],[{value:'salt',label:'In kind'},{value:'cash',label:'Cash'}]);
+    var loanDirection=addSelect(loan,['Direction','record.loan.direction'],[{value:'in',label:'Borrow'},{value:'out',label:'Lend'}]);
+    var loanParty=addSelect(loan,['Party','record.loan.party'],partyItems), loanProduct=addSelect(loan,['Book','record.loan.book'],productItems);
+    var loanDate=makerField(loan,['Date','record.loan.date'],'date',today), loanAmount=makerField(loan,['Units or RM','record.loan.amount'],'number','1');
     var loanStatus=makerStatus(loan);
-    makerButton(loan,'Send loan for review',async function(send){
+    makerButton(loan,['Send loan for review','record.loan.send'],async function(send){
       if(!loanStatus) return;
       loanStatus.textContent='Sending to the Desk…';
       var body={at:new Date().toISOString(),form:loanForm.value,direction:loanDirection.value,
@@ -1362,11 +1375,11 @@ export const OWNER_JS = `
     var gift=el('section','maker-input');gift.appendChild(el('h3',null,'Gift'));
     gift.appendChild(el('p','msg','The Desk costs this from the inventory and books goodwill, not a reward redemption. No note field is sent.'));
     parent.appendChild(gift);
-    var giftParty=addSelect(gift,'Party',partyItems), giftProduct=addSelect(gift,'Book',productItems);
-    var giftDate=makerField(gift,'Date','date',today), giftQty=makerField(gift,'Units','number','1');
-    var giftHandover=addSelect(gift,'Handover',[{value:'',label:'Not stated'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
+    var giftParty=addSelect(gift,['Party','record.gift.party'],partyItems), giftProduct=addSelect(gift,['Book','record.gift.book'],productItems);
+    var giftDate=makerField(gift,['Date','record.gift.date'],'date',today), giftQty=makerField(gift,['Units','record.gift.units'],'number','1');
+    var giftHandover=addSelect(gift,['Handover','record.gift.handover'],[{value:'',label:'Not stated'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
     var giftStatus=makerStatus(gift);
-    makerButton(gift,'Send gift for review',async function(send){
+    makerButton(gift,['Send gift for review','record.gift.send'],async function(send){
       var body={at:new Date().toISOString(),product:giftProduct.value,code:giftParty.value,date:giftDate.value,
         qty:Number(giftQty.value),movedUnits:Number(giftQty.value),handover:giftHandover.value||null};
       giftStatus.textContent='Sending to the Desk…';
@@ -1377,9 +1390,9 @@ export const OWNER_JS = `
     repay.appendChild(el('p','msg','Choose an open loan. The Desk checks the remaining amount and whether it is due in units or RM.'));
     parent.appendChild(repay);
     var loanItems=(catalog.loans||[]).map(function(item){return {value:item.rid,label:item.party+' · '+item.rid+' · '+item.remaining+' '+(item.form==='cash'?'RM':'unit')};});
-    var repayLoan=addSelect(repay,'Open loan',loanItems), repayDate=makerField(repay,'Date','date',today),
-      repayAmount=makerField(repay,'Amount','number','1'), repayStatus=makerStatus(repay);
-    makerButton(repay,'Send repayment for review',async function(send){
+    var repayLoan=addSelect(repay,['Open loan','record.repay.loan'],loanItems), repayDate=makerField(repay,['Date','record.repay.date'],'date',today),
+      repayAmount=makerField(repay,['Amount','record.repay.amount'],'number','1'), repayStatus=makerStatus(repay);
+    makerButton(repay,['Send repayment for review','record.repay.send'],async function(send){
       repayStatus.textContent='Sending to the Desk…';
       try{await send('/all/maker/inputs/repay',{at:new Date().toISOString(),loan:repayLoan.value,
         date:repayDate.value,amount:Number(repayAmount.value)});
@@ -1389,7 +1402,7 @@ export const OWNER_JS = `
     var redeem=el('section','maker-input');redeem.appendChild(el('h3',null,'Reward redemption'));
     redeem.appendChild(el('p','msg','The Desk derives the balance. An outstanding advance is offset first; otherwise the reward is redeemed in kind.'));
     parent.appendChild(redeem);
-    var redeemDate=makerField(redeem,'Date','date',today), redeemStatus=makerStatus(redeem),
+    var redeemDate=makerField(redeem,['Date','record.redeem.date'],'date',today), redeemStatus=makerStatus(redeem),
       redeemList=el('div','maker-rewards');
     redeem.appendChild(redeemList);
     function drawMakerRewards(rewards){
@@ -1401,7 +1414,7 @@ export const OWNER_JS = `
           +(offer.departed?' while departed':offer.free<offer.held?' · '+offer.free+' unit available after reservations':'')));
         if(offer.action){
           var status=makerStatus(row);
-          makerButton(row,offer.action+' '+(offer.action==='Redeem'&&!offer.associate?'1 unit':'reward')+' for '+offer.code,async function(send){
+          makerButton(row,[offer.action+' '+(offer.action==='Redeem'&&!offer.associate?'1 unit':'reward')+' for '+offer.code,'record.redeem.send'],async function(send){
             status.textContent='Checking the reward on the Desk…';
             try{
               await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:offer.code,date:redeemDate.value});
@@ -1414,14 +1427,14 @@ export const OWNER_JS = `
       });
     }
     drawMakerRewards(catalog.rewards||[]);
-    makerButton(redeem,'Read reward offers',async function(){
+    makerButton(redeem,['Read reward offers','record.redeem.read'],async function(){
       try{var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);redeemStatus.textContent='Reward offers read.';}
       catch(error){redeemStatus.textContent=error.message;}
     },false);
     var offsets=el('section','maker-input');offsets.appendChild(el('h3',null,'Automatic offsets'));
     offsets.appendChild(el('p','msg','What the Desk offers an associate holding a reward and an unpaid advance: one unit against the oldest order. A departed holder is never offered. Each tap waits for approval.'));
     parent.appendChild(offsets);
-    var offerDate=makerField(offsets,'Date','date',today), offerStatus=makerStatus(offsets),
+    var offerDate=makerField(offsets,['Date','record.offset.date'],'date',today), offerStatus=makerStatus(offsets),
       offerList=el('div','maker-offers');
     offsets.appendChild(offerList);
     var offerLoad=async function(){
@@ -1431,9 +1444,9 @@ export const OWNER_JS = `
         offerList.textContent='';
         offerStatus.textContent=read.offers.length?read.offers.length+' offered.':'No offset is offered.';
         read.offers.forEach(function(offer){
-          var row=el('div','maker-offer');
+          var row=el('div','maker-offer'); row.setAttribute('data-key',offer.rid);
           row.appendChild(el('p','maker-facts',offer.code+' · '+offer.units+' unit · RM '+offer.rm.toFixed(2)+' against the '+(offer.saleDate||'undated')+' order '+offer.rid));
-          makerButton(row,'Send offset for review',async function(send){
+          makerButton(row,['Send offset for review','record.offset.send'],async function(send){
             offerStatus.textContent='Sending to the Desk…';
             try{
               await send('/all/maker/inputs/offset',{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value});
@@ -1452,15 +1465,15 @@ export const OWNER_JS = `
     parent.appendChild(editor);
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
       label:row.rid+' · '+row.party+' · '+pshape(row.product)+' · '+(row.date||'Undated')+' · '+row.qty+' unit · RM '+row.total+(row.defaulted?' · Defaulted':'')};});
-    var editRow=addSelect(editor,'Ledger row',rowItems),
-      editKind=addSelect(editor,'Amendment',[{value:'Correction',label:'Correction'},
+    var editRow=addSelect(editor,['Ledger row','record.amend.row'],rowItems),
+      editKind=addSelect(editor,['Amendment','record.amend.kind'],[{value:'Correction',label:'Correction'},
         {value:'Fulfilment',label:'Fulfilment'},{value:'Cancellation',label:'Cancellation'}]),
-      editDate=makerField(editor,'Recorded on','date',today);
+      editDate=makerField(editor,['Recorded on','record.amend.date'],'date',today);
     var movement=el('div','maker-fields');editor.appendChild(movement);
-    var editCash=makerField(movement,'RM moved','number','0'), editUnits=makerField(movement,'Units moved','number','0');
+    var editCash=makerField(movement,['RM moved','record.amend.cash'],'number','0'), editUnits=makerField(movement,['Units moved','record.amend.units'],'number','0');
     var patch=el('div','maker-fields');editor.appendChild(patch);
     var definitions=catalog.correctionFields||[];
-    var editField=addSelect(patch,'Field',definitions.map(function(item){return {value:item.field,label:item.field};}));
+    var editField=addSelect(patch,['Field','record.amend.field'],definitions.map(function(item){return {value:item.field,label:item.field};}));
     var valueBox=el('div','maker-fields');patch.appendChild(valueBox);
     var editValue=null, changes={}, patchList=el('p','msg');patch.appendChild(patchList);
     var editStatus=makerStatus(editor);
@@ -1474,11 +1487,11 @@ export const OWNER_JS = `
           :definition.kind==='product'?productItems
             :definition.kind==='stream'?[{value:'R2',label:'R2'},{value:'R3',label:'R3'}]
               :definition.kind==='handover'?[{value:'delivered',label:'Delivered'},{value:'collected',label:'Collected'}]:null;
-      if(choices)editValue=addSelect(valueBox,'Set to',choices);
-      else editValue=makerField(valueBox,'Set to',definition.kind==='date'?'date':definition.kind==='text'?'text':'number','');
+      if(choices)editValue=addSelect(valueBox,['Set to','record.amend.value'],choices);
+      else editValue=makerField(valueBox,['Set to','record.amend.value'],definition.kind==='date'?'date':definition.kind==='text'?'text':'number','');
     };
     editField.addEventListener('change',drawValue);drawValue();
-    makerButton(patch,'Add field change',function(){
+    makerButton(patch,['Add field change','record.amend.add-change'],function(){
       var definition=definitions.find(function(item){return item.field===editField.value;});
       if(!definition||!editValue)return;
       if(!editValue.value.trim())throw new Error('Choose a value. Use Clear field to remove an optional value.');
@@ -1487,7 +1500,7 @@ export const OWNER_JS = `
       patchList.textContent=Object.keys(changes).join(', ')+' ready to send.';
       editor.dispatchEvent(new Event('input',{bubbles:true}));
     });
-    makerButton(patch,'Clear field',function(){
+    makerButton(patch,['Clear field','record.amend.clear-field'],function(){
       var definition=definitions.find(function(item){return item.field===editField.value;});
       if(!definition||definition.required)throw new Error('This field is required; set a replacement value.');
       changes[definition.field]=null;patchList.textContent=Object.keys(changes).join(', ')+' ready to send.';
@@ -1517,7 +1530,7 @@ export const OWNER_JS = `
           +'. Cash and units are not used here: what is owed back is what was paid.'));
       }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
-    var editorButton=makerButton(editor,'Send amendment for review',async function(send){
+    var editorButton=makerButton(editor,['Send amendment for review','record.amend.send'],async function(send){
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
       if(body.kind==='Correction')body.fields=Object.assign({},changes);
       if(body.kind==='Fulfilment'){body.cash=Number(editCash.value);body.movedUnits=Number(editUnits.value);}
@@ -1534,10 +1547,10 @@ export const OWNER_JS = `
     revive.appendChild(el('p','msg','Puts a cancelled order back on the book: cancelled off and its date cleared, as one Correction for approval. Only a row with nothing paid and nothing moved is offered; a paid cancel is a refund, closed by hand.'));
     parent.appendChild(revive);
     var revivable=(catalog.revivable||[]).filter(function(row){return !(row.paid>0.009)&&!(row.movedUnits>0.009);});
-    var reviveRow=addSelect(revive,'Cancelled row',revivable.map(function(row){return {value:row.rid,
+    var reviveRow=addSelect(revive,['Cancelled row','record.revive.row'],revivable.map(function(row){return {value:row.rid,
       label:row.rid+' · '+row.party+' · '+pshape(row.product)+' · '+(row.date||'Undated')+' · '+row.qty+' unit · RM '+row.total+(row.cancelledOn?' · Cancelled '+row.cancelledOn:'')};}));
-    var reviveDate=makerField(revive,'Recorded on','date',today), reviveStatus=makerStatus(revive);
-    var reviveButton=makerButton(revive,'Send revival for review',async function(send){
+    var reviveDate=makerField(revive,['Recorded on','record.revive.date'],'date',today), reviveStatus=makerStatus(revive);
+    var reviveButton=makerButton(revive,['Send revival for review','record.revive.send'],async function(send){
       reviveStatus.textContent='Checking the ledger row…';
       await send('/all/maker/inputs/ledger-amend',{at:new Date().toISOString(),rid:reviveRow.value,kind:'Correction',date:reviveDate.value,
         fields:{cancelled:false,cancelledOn:null}});
@@ -1549,18 +1562,18 @@ export const OWNER_JS = `
     var id=el('section','maker-input');id.appendChild(el('h3',null,'Add ID'));
     id.appendChild(el('p','msg','Name and locality stay in this device until encrypted. Only the derived code, role and sealed envelope leave it. A name/place note is never sent.'));
     parent.appendChild(id);
-    var idKind=addSelect(id,'Role',[{value:'customer',label:'Customer'},{value:'supplier',label:'Supplier'},
+    var idKind=addSelect(id,['Role','record.add-id.role'],[{value:'customer',label:'Customer'},{value:'supplier',label:'Supplier'},
       {value:'reseller',label:'Reseller'},{value:'referral',label:'Referral'},
       {value:'downstream',label:'Downstream buyer'},{value:'bucket',label:'Resale account'}]);
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
-    var idParent=addSelect(id,'Parent / associate',idParentItems);
-    var idName=makerField(id,'Name (device only)','text',''), idPlace=makerLocalityField(id);
+    var idParent=addSelect(id,['Parent / associate','record.add-id.parent'],idParentItems);
+    var idName=makerField(id,['Name (device only)','record.add-id.name'],'text',''), idPlace=makerLocalityField(id,'record.add-id.place');
     idPlace.closest('label').appendChild(el('span','msg','Optional. Blank gives TBC until the locality is confirmed.'));
-    var idPass=makerField(id,'Vault passphrase','password','');
-    var idLink=makerField(id,'Maps / Waze link (device only)','text','');
+    var idPass=makerField(id,['Vault passphrase','record.add-id.passphrase'],'password','');
+    var idLink=makerField(id,['Maps / Waze link (device only)','record.add-id.link'],'text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
     var tierNames=catalog.tierNames||[], idTiers=tierBooks.map(function(item){
-      var sel=addSelect(id,'Starting tier, '+pshape(item.product),[{value:'',label:'Not set'}]
+      var sel=addSelect(id,['Starting tier, '+pshape(item.product),'record.add-id.tier',item.product],[{value:'',label:'Not set'}]
         .concat(tierNames.map(function(name){return {value:name,label:name};})));
       sel.value=tierNames.length?tierNames[tierNames.length-1]:'';
       return {product:item.product,select:sel};
@@ -1568,11 +1581,11 @@ export const OWNER_JS = `
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var product=pshape(item.product), presets=item.driftPresets||[];
-      var select=addSelect(id,'Starting drift, '+product,[{value:'',label:product+': automatic'}]
+      var select=addSelect(id,['Starting drift, '+product,'record.add-id.drift',item.product],[{value:'',label:product+': automatic'}]
         .concat(presets.map(function(preset){return {value:String(preset.value),
           label:product+': '+preset.name+', '+(preset.value>0?'+':'')+Number(preset.value).toFixed(2)};}))
         .concat([{value:'typed',label:product+': typed'}]));
-      var typed=makerField(id,'Typed starting drift, '+product,'number','',0.05);
+      var typed=makerField(id,['Typed starting drift, '+product,'record.add-id.drift-value',item.product],'number','',0.05);
       typed.min='-1';typed.max='1';typed.step='0.05';typed.placeholder='-1 to 1';typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
       return {product:item.product,select:select,typed:typed};
@@ -1590,7 +1603,7 @@ export const OWNER_JS = `
     var idDraft=null;
     id.addEventListener('input',function(event){if(event.target!==idPass)idDraft=null;});
     id.addEventListener('change',function(event){if(event.target!==idPass)idDraft=null;});
-    makerButton(id,'Encrypt and send Add ID',async function(send){
+    makerButton(id,['Encrypt and send Add ID','record.add-id.send'],async function(send){
       if(idBusy)return;idBusy=true;idStatus.textContent='Preparing the device-side vault…';
       var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
       var tiers={};
@@ -1651,14 +1664,14 @@ export const OWNER_JS = `
     var appointmentCustomers=(catalog.appointmentCustomers||[]).filter(function(code){return typeof code==='string';});
     var appointmentCustomerItems=[{value:'',label:appointmentCustomers.length?'Choose an existing customer':catalog.appointmentNotice?'Appointments unavailable':'No eligible customer'}]
       .concat(appointmentCustomers.map(function(code){return {value:code,label:code};}));
-    var appointmentCustomer=addSelect(appointment,'Existing customer',appointmentCustomerItems);
+    var appointmentCustomer=addSelect(appointment,['Existing customer','record.appoint.customer'],appointmentCustomerItems);
     var appointmentKinds=(catalog.appointmentKinds||[]).map(function(item){
       return {value:item.kind,label:item.kind.charAt(0).toUpperCase()+item.kind.slice(1)+' · '+item.stream};
     });
     var appointmentRoleItems=[{value:'',label:'Choose an appointment role'}].concat(appointmentKinds);
-    var appointmentRole=addSelect(appointment,'Appointment role',appointmentRoleItems);
+    var appointmentRole=addSelect(appointment,['Appointment role','record.appoint.role'],appointmentRoleItems);
     var appointmentStatus=makerStatus(appointment);
-    makerButton(appointment,'Send appointment for review',async function(send){
+    makerButton(appointment,['Send appointment for review','record.appoint.send'],async function(send){
       var code=appointmentCustomer.value, kind=appointmentRole.value;
       if(!code||!kind){appointmentStatus.textContent='Choose an existing customer and appointment role.';return;}
       await send('/all/maker/inputs/appoint-existing',{at:new Date().toISOString(),code:code,kind:kind});
@@ -1671,14 +1684,14 @@ export const OWNER_JS = `
     var amend=el('section','maker-input');amend.appendChild(el('h3',null,'Amend ID'));
     amend.appendChild(el('p','msg','Names and filed addresses are re-keyed and encrypted here. Choose the locality; an optional map link replaces the encrypted address. Only codes and the rounded locality point are queued.'));
     parent.appendChild(amend);
-    var amendParty=addSelect(amend,'Party',partyItems), amendName=makerField(amend,'Name (device only)','text',''),
-      amendPlace=makerLocalityField(amend), amendPass=makerField(amend,'Vault passphrase','password',''),
+    var amendParty=addSelect(amend,['Party','record.amend-id.party'],partyItems), amendName=makerField(amend,['Name (device only)','record.amend-id.name'],'text',''),
+      amendPlace=makerLocalityField(amend,'record.amend-id.place'), amendPass=makerField(amend,['Vault passphrase','record.amend-id.passphrase'],'password',''),
       amendStatus=makerStatus(amend), amendBusy=false;
-    var amendLink=makerField(amend,'Maps / Waze link (device only)','text','');
+    var amendLink=makerField(amend,['Maps / Waze link (device only)','record.amend-id.link'],'text','');
     var amendDraft=null;
     amend.addEventListener('input',function(event){if(event.target!==amendPass)amendDraft=null;});
     amend.addEventListener('change',function(event){if(event.target!==amendPass)amendDraft=null;});
-    makerButton(amend,'Encrypt and send Amend ID',async function(send){
+    makerButton(amend,['Encrypt and send Amend ID','record.amend-id.send'],async function(send){
       if(amendBusy)return;amendBusy=true;amendStatus.textContent='Preparing the device-side vault…';
       var from=amendParty.value, kind=from.charAt(0)==='S'?'supplier':'customer';
       var name=amendName.value.trim(), locality=amendPlace.value.trim(), to=makerDerivedCode(name,locality,kind,catalog.parties||[],from);
@@ -1705,13 +1718,13 @@ export const OWNER_JS = `
     var placement=el('section','maker-input');placement.appendChild(el('h3',null,'Map placement'));
     placement.appendChild(el('p','msg','Keep the filed point, or choose a locality and paste a new map link. Exact points and addresses stay encrypted; the queue receives only the rounded point and code.'));
     parent.appendChild(placement);
-    var placeParty=addSelect(placement,'Party with a filed point',partyItems),
-      placePass=makerField(placement,'Vault passphrase','password',''), placeStatus=makerStatus(placement), placeBusy=false;
-    var placeLocality=makerLocalityField(placement), placeLink=makerField(placement,'New Maps / Waze link (device only)','text','');
+    var placeParty=addSelect(placement,['Party with a filed point','record.place.party'],partyItems),
+      placePass=makerField(placement,['Vault passphrase','record.place.passphrase'],'password',''), placeStatus=makerStatus(placement), placeBusy=false;
+    var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New Maps / Waze link (device only)','record.place.link'],'text','');
     var placeDraft=null;
     placement.addEventListener('input',function(event){if(event.target!==placePass)placeDraft=null;});
     placement.addEventListener('change',function(event){if(event.target!==placePass)placeDraft=null;});
-    makerButton(placement,'Queue map placement',async function(send){
+    makerButton(placement,['Queue map placement','record.place.send'],async function(send){
       if(placeBusy)return;placeBusy=true;placeStatus.textContent='Opening the encrypted places vault on this device…';
       try{
         var pass=placePass.value;if(!pass) throw new Error('Enter the vault passphrase on this device.');
@@ -1885,10 +1898,10 @@ export const OWNER_JS = `
         note.appendChild(document.createTextNode('Cash received, '+rm(held.amount)+': it goes in '));
         var left=el('span',null,String(makerCashLeft(order.id)));left.setAttribute('data-maker-cash-left',order.id);
         note.appendChild(left);note.appendChild(document.createTextNode(' s. Undo sends nothing.'));
-        makerClaimButton(card,'Undo',function(){makerCashUndo(order.id);},true).setAttribute('data-maker-cash-undo','');
+        makerClaimButton(card,['Undo','order.cash-undo'],function(){makerCashUndo(order.id);},true).setAttribute('data-maker-cash-undo','');
       }else{
         note.textContent=makerCashSaid[order.id]||'Sending.';
-        var retry=makerClaimButton(card,held.confirmed?'Refresh cash':'Retry cash',function(){
+        var retry=makerClaimButton(card,[held.confirmed?'Refresh cash':'Retry cash','order.cash-retry'],function(){
           return held.confirmed?loadMaker():makerCashGo(order.id);
         },true);
         retry.disabled=held.busy;retry.setAttribute('data-maker-cash-retry','');
@@ -1897,8 +1910,8 @@ export const OWNER_JS = `
       card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
       note.textContent=makerCashStorageError;
     }else{
-      var cash=makerField(card,'Cash received (RM)','number','');
-      makerButton(card,'Record cash',function(){makerCashHold(order,Number(cash.value));},false);
+      var cash=makerField(card,['Cash received (RM)','order.cash-amount'],'number','');
+      makerButton(card,['Record cash','order.cash'],function(){makerCashHold(order,Number(cash.value));},false);
       note.textContent=makerCashSaid[order.id]||'';
     }
     card.appendChild(note);
@@ -1907,7 +1920,7 @@ export const OWNER_JS = `
   var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
   function makerAgain(card,order){
     (order.again||[]).filter(function(stage){ return MAKER_AGAIN[stage]; }).forEach(function(stage){
-      makerButton(card,'Offer the '+MAKER_AGAIN[stage]+' again',function(){
+      makerButton(card,['Offer the '+MAKER_AGAIN[stage]+' again','order.again-'+stage],function(){
         if(!window.confirm('Offer the rejected '+MAKER_AGAIN[stage]+' on this order again?')) return;
         makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is offered again to the Desk.');
       },false).setAttribute('data-again',stage);
@@ -1918,14 +1931,14 @@ export const OWNER_JS = `
   function makerAgainAck(order){ return ['acknowledged','ready','done'].indexOf(order.status)>=0&&(order.again||[]).indexOf('ack')>=0; }
   function makerAcceptAgain(card,order){
     var route='/all/maker/orders/'+encodeURIComponent(order.id);
-    makerButton(card,'Preview Accept again',function(){
+    makerButton(card,['Preview Accept again','order.preview-again'],function(){
       refs(route+'/preview',{}).then(function(result){
         if(!card.isConnected) return;
         var note=card.querySelector('.maker-quote'); if(!note){ note=el('div','maker-quote'); card.appendChild(note); }
         note.textContent=''; note.appendChild(el('p','salt-insight','Preview ready. Check the row before accepting it again.'));
-        makerReading(note,result);
+        makerReading(note,result,'preview');
         var old=card.querySelector('[data-accept-again]'); if(old) old.remove();
-        makerButton(card,'Accept again',function(){
+        makerButton(card,['Accept again','order.accept-again'],function(){
           makerAction(route+'/accept',{hash:result.hash},'Order sent to the Desk for acknowledgement again.',order.id);
         },true).setAttribute('data-accept-again','');
       }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
@@ -1945,34 +1958,34 @@ export const OWNER_JS = `
   /* the Desk's reasons for Decline and Cancel; delivery only on an order to be delivered */
   var MAKER_WHY=[['stock','We do not have enough in hand this week.'],['place','We cannot deliver there.'],['price','Our prices have changed.']];
   function makerOrderMoves(card,order){
-    var reason=makerField(card,'Reason to the customer (Decline or Cancel, optional)','text','');
+    var reason=makerField(card,['Reason to the customer (Decline or Cancel, optional)','order.reason'],'text','');
     MAKER_WHY.filter(function(w){ return w[0]!=='place'||order.mode==='deliver'; }).forEach(function(w){
-      makerButton(card,w[1],function(){ reason.value=w[1]; },false).setAttribute('data-why',w[0]);
+      makerButton(card,[w[1],'order.reason-'+w[0]],function(){ reason.value=w[1]; },false).setAttribute('data-why',w[0]);
     });
-    var said=makerField(card,'Reply to the customer','text','');
-    makerQuick().forEach(function(line){
-      makerButton(card,line,function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
+    var said=makerField(card,['Reply to the customer','order.reply-text'],'text','');
+    makerQuick().forEach(function(line,i){
+      makerButton(card,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
     });
-    var keep=makerButton(card,'Keep as a quick reply',function(){
+    var keep=makerButton(card,['Keep as a quick reply','order.quick-keep'],function(){
       makerSay(order.id,makerQuickKeep(said.value));
       keepWord();
     },false);
     keep.setAttribute('data-keep','');
     function keepWord(){ var t=said.value.trim().replace(/[ ]+/g,' '); keep.textContent=t&&makerQuick().indexOf(t)>=0?'Forget this quick reply':'Keep as a quick reply'; }
     said.addEventListener('input',keepWord);
-    makerButton(card,'Send reply',function(){
+    makerButton(card,['Send reply','order.reply'],function(){
       if(!said.value.trim()) return;
       makerMove(order,{message:said.value.trim()},'Reply sent.');
     },false);
-    makerButton(card,'No reply needed',function(){ makerMove(order,{noReply:true},'No reply needed recorded.'); },false);
+    makerButton(card,['No reply needed','order.no-reply'],function(){ makerMove(order,{noReply:true},'No reply needed recorded.'); },false);
     var note=function(){ var t=reason.value.trim(); return t?{note:t}:{}; };
     if(order.status==='placed')
-      makerButton(card,'Decline',function(){
+      makerButton(card,['Decline','order.decline'],function(){
         if(!window.confirm('Decline this order?')) return;
         makerMove(order,Object.assign({status:'declined'},note()),'Order declined.');
       },false);
     else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&!(+order.moved>0))
-      makerButton(card,'Cancel order',function(){
+      makerButton(card,['Cancel order','order.cancel'],function(){
         if(!window.confirm(+order.paid>0?'Cancel this order? RM '+(+order.paid).toFixed(2)+' is paid on it, so a refund to the customer opens for you to return.':'Cancel this order? Nothing is paid on it.')) return;
         makerMove(order,Object.assign({status:'cancelled'},note()),'Order cancelled.');
       },false);
@@ -1985,12 +1998,12 @@ export const OWNER_JS = `
       makerRecovery(box);
       if(!Array.isArray(context.products)||!context.products.length) throw new Error('No active book is available.');
       note.textContent='Inputs are checked by the Desk and wait for review before they change the book.';
-      var label=el('label','maker-field','Book'), product=el('select','fld salt-field__input');
+      var label=el('label','maker-field','Book'), product=actOn(el('select','fld salt-field__input'),'record.count.book');
       context.products.forEach(function(code){ var option=el('option',null,pshape(code)); option.value=code; product.appendChild(option); });
       label.appendChild(product); box.appendChild(label);
-      var date=makerField(box,'Counted on','date',''), qty=makerField(box,'Stock count: units','number','', '0.01');
+      var date=makerField(box,['Counted on','record.count.date'],'date',''), qty=makerField(box,['Stock count: units','record.count.units'],'number','', '0.01');
       var pending=false, at=null, signature='', answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
-      var button=makerButton(box,'Record count',async function(send){
+      var button=makerButton(box,['Record count','record.count.send'],async function(send){
         if(pending) return;
         var body={product:product.value,date:date.value,qty:qty.value===''?null:Number(qty.value)};
         var now=JSON.stringify(body); if(now!==signature){ signature=now; at=new Date().toISOString(); }
@@ -2003,32 +2016,32 @@ export const OWNER_JS = `
       tradeSection.appendChild(el('h3',null,'Sale or purchase'));
       tradeSection.appendChild(el('p','msg','Goods and carriage stay separate. Notes are disabled here: this route cannot safely prove arbitrary prose contains no names or places.'));
       box.appendChild(tradeSection);
-      var direction=el('select','fld salt-field__input');
+      var direction=actOn(el('select','fld salt-field__input'),'record.trade.direction');
       [['sale','Sale'],['purchase','Purchase']].forEach(function(item){
         var option=el('option',null,item[1]); option.value=item[0]; direction.appendChild(option);
       });
       var directionLabel=el('label','maker-field','Entry');
       directionLabel.appendChild(direction); tradeSection.appendChild(directionLabel);
-      var tradeProduct=el('select','fld salt-field__input'), tradeParty=el('select','fld salt-field__input');
+      var tradeProduct=actOn(el('select','fld salt-field__input'),'record.trade.book'), tradeParty=actOn(el('select','fld salt-field__input'),'record.trade.party');
       var productLabel=el('label','maker-field','Book'), partyLabel=el('label','maker-field','Party');
       productLabel.appendChild(tradeProduct); partyLabel.appendChild(tradeParty);
       tradeSection.appendChild(productLabel); tradeSection.appendChild(partyLabel);
-      var tradeDate=makerField(tradeSection,'Date','date',''), tradeQty=makerField(tradeSection,'Units','number','1','0.01');
-      var tradeTotal=makerField(tradeSection,'Goods total (RM)','number','','0.01');
-      var tradeCash=makerField(tradeSection,'Cash recorded (RM)','number','0','0.01');
-      var tradeMoved=makerField(tradeSection,'Units moved','number','0','0.01');
-      var handover=el('select','fld salt-field__input');
+      var tradeDate=makerField(tradeSection,['Date','record.trade.date'],'date',''), tradeQty=makerField(tradeSection,['Units','record.trade.units'],'number','1','0.01');
+      var tradeTotal=makerField(tradeSection,['Goods total (RM)','record.trade.total'],'number','','0.01');
+      var tradeCash=makerField(tradeSection,['Cash recorded (RM)','record.trade.cash'],'number','0','0.01');
+      var tradeMoved=makerField(tradeSection,['Units moved','record.trade.moved'],'number','0','0.01');
+      var handover=actOn(el('select','fld salt-field__input'),'record.trade.handover');
       [['','Not stated'],['collected','Collected'],['delivered','Delivered']].forEach(function(item){
         var option=el('option',null,item[1]); option.value=item[0]; handover.appendChild(option);
       });
       var handoverLabel=el('label','maker-field','Handover'); handoverLabel.appendChild(handover); tradeSection.appendChild(handoverLabel);
-      var carriage=makerField(tradeSection,'Delivery (RM)','number','0','0.01');
-      var attribution=el('div','maker-trade-attribution'), tradeStream=el('select','fld salt-field__input');
+      var carriage=makerField(tradeSection,['Delivery (RM)','record.trade.delivery'],'number','0','0.01');
+      var attribution=el('div','maker-trade-attribution'), tradeStream=actOn(el('select','fld salt-field__input'),'record.trade.stream');
       [['','No associate'],['R2','R2 resell'],['R3','R3 refer']].forEach(function(item){
         var option=el('option',null,item[1]); option.value=item[0]; tradeStream.appendChild(option);
       });
       var streamLabel=el('label','maker-field','Stream'); streamLabel.appendChild(tradeStream); attribution.appendChild(streamLabel);
-      var tradeAssoc=el('select','fld salt-field__input'), tradeDown=el('select','fld salt-field__input');
+      var tradeAssoc=actOn(el('select','fld salt-field__input'),'record.trade.associate'), tradeDown=actOn(el('select','fld salt-field__input'),'record.trade.end-customer');
       var assocLabel=el('label','maker-field','Associate'), downLabel=el('label','maker-field','End customer');
       assocLabel.appendChild(tradeAssoc); downLabel.appendChild(tradeDown);
       attribution.appendChild(assocLabel); attribution.appendChild(downLabel);
@@ -2054,12 +2067,12 @@ export const OWNER_JS = `
       });
       tradeStream.addEventListener('change',fillAttribution);
       var coverChoices=[];
-      function coverChoice(root,bookControl,unitsControl,goodsControl){
+      function coverChoice(root,bookControl,unitsControl,goodsControl,acts){
         /* 11 Oct 2026: a read never collapses a box it has shown (a tap on Send after typing blurs the field, the change
            re-reads, and a box that hid moved Send up before the finger lifted: no click). Only an answer of no cover hides it;
            a failed read keeps it, dead, with its note and a Read cover again beside it. */
-        var row=el('div','maker-cover-row'), wrap=el('label','maker-cover'), check=el('input'), words=el('span'),
-          retry=el('button','salt-ghost','Read cover again'), note=el('p','msg'), revision=0;
+        var row=el('div','maker-cover-row'), wrap=el('label','maker-cover'), check=actOn(el('input'),acts[0]), words=el('span'),
+          retry=actOn(el('button','salt-ghost','Read cover again'),acts[1]), note=el('p','msg'), revision=0;
         check.type='checkbox';check.setAttribute('data-reward-cover','');check.disabled=true;retry.type='button';retry.hidden=true;
         wrap.hidden=true;wrap.appendChild(check);wrap.appendChild(words);row.appendChild(wrap);row.appendChild(retry);
         root.appendChild(row);root.appendChild(note);
@@ -2088,8 +2101,8 @@ export const OWNER_JS = `
         });
         return choice;
       }
-      var firstCover=coverChoice(tradeSection,tradeProduct,tradeQty,tradeTotal);
-      var extraBooks=el('div','maker-extra-books'), extraTrades=[];
+      var firstCover=coverChoice(tradeSection,tradeProduct,tradeQty,tradeTotal,['record.trade.cover','record.trade.cover-retry']);
+      var extraBooks=el('div','maker-extra-books'), extraTrades=[], extraSeq=0;
       tradeSection.appendChild(extraBooks);
       var tripNote=el('p','msg','Extra books share the party, date and handover. Each has its own goods, cash and units moved. Delivery sits on the first row alone; with a delivery, Approve takes the trip in one tap.');
       tradeSection.appendChild(tripNote);
@@ -2102,17 +2115,17 @@ export const OWNER_JS = `
         });
         if(Array.from(select.options).some(function(option){return option.value===kept;})) select.value=kept;
       }
-      makerButton(tradeSection,'Add another book',function(){
-        var row=el('section','maker-extra-trade'); row.appendChild(el('h4',null,'Extra book'));
-        var label=el('label','maker-field','Book'), select=el('select','fld salt-field__input');
+      makerButton(tradeSection,['Add another book','record.trade.add-book'],function(){
+        var row=el('section','maker-extra-trade'); row.setAttribute('data-key','extra'+(++extraSeq)); row.appendChild(el('h4',null,'Extra book'));
+        var label=el('label','maker-field','Book'), select=actOn(el('select','fld salt-field__input'),'record.trade.extra-book');
         label.appendChild(select); row.appendChild(label); extraChoices(select);
-        var extra={row:row,product:select,qty:makerField(row,'Units','number','1','0.01'),
-          total:makerField(row,'Goods total (RM)','number','','0.01'),
-          cash:makerField(row,'Cash recorded (RM)','number','0','0.01'),
-          movedUnits:makerField(row,'Units moved','number','0','0.01')};
+        var extra={row:row,product:select,qty:makerField(row,['Units','record.trade.extra-units'],'number','1','0.01'),
+          total:makerField(row,['Goods total (RM)','record.trade.extra-total'],'number','','0.01'),
+          cash:makerField(row,['Cash recorded (RM)','record.trade.extra-cash'],'number','0','0.01'),
+          movedUnits:makerField(row,['Units moved','record.trade.extra-moved'],'number','0','0.01')};
         extraTrades.push(extra); extraBooks.appendChild(row);
-        extra.cover=coverChoice(row,select,extra.qty,extra.total);
-        makerButton(row,'Remove book',function(){
+        extra.cover=coverChoice(row,select,extra.qty,extra.total,['record.trade.extra-cover','record.trade.extra-cover-retry']);
+        makerButton(row,['Remove book','record.trade.remove-book'],function(){
           extraTrades.splice(extraTrades.indexOf(extra),1);coverChoices.splice(coverChoices.indexOf(extra.cover),1);row.remove();
         },false);
       },false);
@@ -2195,7 +2208,7 @@ export const OWNER_JS = `
         }
         tradePending=false;
       }
-      makerButton(tradeSection,'Send trade for review',function(send){ return submitTrade(null,send); },true,function(){
+      makerButton(tradeSection,['Send trade for review','record.trade.send'],function(send){ return submitTrade(null,send); },true,function(){
         tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
       var tierSection=el('section','maker-input');
@@ -2206,7 +2219,7 @@ export const OWNER_JS = `
       if(!tierCodes.length||!tierBooks.length||!(catalog.tierNames||[]).length){
         tierSection.appendChild(el('p','msg','No tiered customer input is available.'));
       }else{
-        var tierCode=el('select','fld salt-field__input'), tierProduct=el('select','fld salt-field__input'), tierValue=el('select','fld salt-field__input');
+        var tierCode=actOn(el('select','fld salt-field__input'),'record.tier.customer'), tierProduct=actOn(el('select','fld salt-field__input'),'record.tier.book'), tierValue=actOn(el('select','fld salt-field__input'),'record.tier.level');
         tierCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; tierCode.appendChild(option); });
         tierBooks.forEach(function(item){ var option=el('option',null,pshape(item.product)); option.value=item.product; tierProduct.appendChild(option); });
         [['','Clear held tier']].concat((catalog.tierNames||[]).map(function(name){ return [name,name]; }),[['__bands','Small, mid and big bands']]).forEach(function(item){
@@ -2218,12 +2231,12 @@ export const OWNER_JS = `
         var bandBox=el('div','maker-bands'), bandSel={};
         bandBox.hidden=true;
         [['small','Small sizes'],['mid','Mid sizes'],['big','Big sizes']].forEach(function(item){
-          var s=el('select','fld salt-field__input'); s.setAttribute('aria-label',item[1]+' tier');
+          var s=actOn(el('select','fld salt-field__input'),'record.tier.band-'+item[0]); s.setAttribute('aria-label',item[1]+' tier');
           (catalog.tierNames||[]).forEach(function(name){ var option=el('option',null,name); option.value=name; s.appendChild(option); });
           bandSel[item[0]]=s; var wrap=el('label','maker-field',item[1]); wrap.appendChild(s); bandBox.appendChild(wrap);
         });
         tierSection.appendChild(bandBox);
-        var tierState=el('p','msg'), useProposal=el('button','salt-ghost','Use the proposal'), useOffer=el('button','salt-ghost','Use the late-payer offer');
+        var tierState=el('p','msg'), useProposal=actOn(el('button','salt-ghost','Use the proposal'),'record.tier.use-proposal'), useOffer=actOn(el('button','salt-ghost','Use the late-payer offer'),'record.tier.use-offer');
         useProposal.type='button'; useOffer.type='button';
         tierSection.appendChild(tierState); tierSection.appendChild(useProposal); tierSection.appendChild(useOffer);
         function tierPut(level){
@@ -2253,7 +2266,7 @@ export const OWNER_JS = `
         tierRefresh();
         var tierAnswer=el('p','msg'); tierAnswer.setAttribute('role','status'); tierSection.appendChild(tierAnswer);
         var tierPending=false, tierAt=null, tierSignature='';
-        makerButton(tierSection,'Send tier for review',async function(send){
+        makerButton(tierSection,['Send tier for review','record.tier.send'],async function(send){
           if(tierPending) return;
           var level=tierValue.value==='__bands'?{small:bandSel.small.value,mid:bandSel.mid.value,big:bandSel.big.value}:(tierValue.value||null);
           var body={code:tierCode.value,product:tierProduct.value,tier:level};
@@ -2267,7 +2280,7 @@ export const OWNER_JS = `
            Each new Accept is its own request; a retry is the button's retained request, which keeps the id it was sent under. */
         var allAnswer=el('p','msg'); allAnswer.setAttribute('role','status'); tierSection.appendChild(allAnswer);
         var allPending=false;
-        makerButton(tierSection,'Accept tier proposals',async function(send){
+        makerButton(tierSection,['Accept tier proposals','record.tier.accept-all'],async function(send){
           if(allPending) return;
           allPending=true;
           try{ await send('/all/maker/inputs/tier-accept-all',{at:new Date().toISOString()});
@@ -2284,13 +2297,13 @@ export const OWNER_JS = `
       if(!driftCodes.length||!driftBooks.length){
         driftSection.appendChild(el('p','msg','No drift customer input is available.'));
       }else{
-        var driftCode=el('select','fld salt-field__input'), driftProduct=el('select','fld salt-field__input');
+        var driftCode=actOn(el('select','fld salt-field__input'),'record.drift.customer'), driftProduct=actOn(el('select','fld salt-field__input'),'record.drift.book');
         driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
         driftBooks.forEach(function(item){ var option=el('option',null,pshape(item.product)); option.value=item.product; driftProduct.appendChild(option); });
         [['Customer',driftCode],['Book',driftProduct]].forEach(function(item){
           var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); driftSection.appendChild(wrap);
         });
-        var driftValue=makerField(driftSection,'Drift from -1 to +1','number','','0.05');
+        var driftValue=makerField(driftSection,['Drift from -1 to +1','record.drift.value'],'number','','0.05');
         driftValue.min='-1'; driftValue.max='1';
         var driftState=el('p','msg'); driftSection.appendChild(driftState);
         var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
@@ -2309,7 +2322,7 @@ export const OWNER_JS = `
         }
         driftCode.addEventListener('change',driftRefresh); driftProduct.addEventListener('change',driftRefresh);
         var driftActions=el('div','maker-drift-actions'); driftSection.appendChild(driftActions);
-        makerButton(driftActions,'Set drift for review',async function(send){
+        makerButton(driftActions,['Set drift for review','record.drift.set'],async function(send){
           if(driftPending) return;
           var raw=driftValue.value.trim(), value=Number(raw);
           if(!raw||!Number.isFinite(value)||value < -1||value > 1){
@@ -2324,7 +2337,7 @@ export const OWNER_JS = `
           catch(error){ driftAnswer.textContent=error.message; }
           driftPending=false;
         },true,driftReceiptComplete);
-        var clearDrift=makerButton(driftActions,'Clear held drift',async function(send){
+        var clearDrift=makerButton(driftActions,['Clear held drift','record.drift.clear'],async function(send){
           if(driftPending) return;
           var body={code:driftCode.value,product:driftProduct.value,tier:null};
           var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
@@ -2343,7 +2356,7 @@ export const OWNER_JS = `
       if(!houseBooks.length){
         houseSection.appendChild(el('p','msg','No board has sizes to choose between.'));
       }else{
-        var houseProduct=el('select','fld salt-field__input'), houseBoxes=el('div','maker-field');
+        var houseProduct=actOn(el('select','fld salt-field__input'),'record.house.book'), houseBoxes=el('div','maker-field');
         houseBooks.forEach(function(item){ var option=el('option',null,pshape(item.product)); option.value=item.product; houseProduct.appendChild(option); });
         var houseWrap=el('label','maker-field','Book'); houseWrap.appendChild(houseProduct); houseSection.appendChild(houseWrap);
         houseSection.appendChild(houseBoxes);
@@ -2351,7 +2364,7 @@ export const OWNER_JS = `
         function fillHouse(){
           var board=catalog.houseBoards[houseProduct.value]; houseBoxes.textContent=''; houseTicks=[];
           board.sizes.forEach(function(size){
-            var label=el('label','maker-field'), tick=el('input'); tick.type='checkbox';
+            var label=el('label','maker-field'), tick=actOn(el('input'),'record.house.size',size); tick.type='checkbox';
             tick.checked=board.hidden.every(function(h){ return Math.abs(h-size)>=0.009; }); tick.value=String(size);
             label.appendChild(tick); label.appendChild(el('span','lbl',' '+size+' unit')); houseBoxes.appendChild(label); houseTicks.push(tick);
           });
@@ -2359,7 +2372,7 @@ export const OWNER_JS = `
         houseProduct.addEventListener('change',fillHouse); fillHouse();
         var houseAnswer=el('p','msg'); houseAnswer.setAttribute('role','status'); houseSection.appendChild(houseAnswer);
         var housePending=false, houseAt=null, houseSignature='';
-        makerButton(houseSection,'Send board sizes for review',async function(send){
+        makerButton(houseSection,['Send board sizes for review','record.house.send'],async function(send){
           if(housePending) return;
           var body={product:houseProduct.value,hide:houseTicks.filter(function(t){ return !t.checked; }).map(function(t){ return Number(t.value); })};
           var check=JSON.stringify(body); if(check!==houseSignature){ houseSignature=check; houseAt=new Date().toISOString(); }
@@ -2379,13 +2392,13 @@ export const OWNER_JS = `
       if(!tips.length){
         tipSection.appendChild(el('p','msg','The Desk is showing no tip to hush.'));
       }else{
-        var tipId=el('select','fld salt-field__input'), tipFor=el('select','fld salt-field__input');
+        var tipId=actOn(el('select','fld salt-field__input'),'record.tip.tip'), tipFor=actOn(el('select','fld salt-field__input'),'record.tip.for');
         tips.forEach(function(tip){ var option=el('option',null,tip.id+' | '+tip.title+(tip.hush===null?' | dismissed':tip.hush?' | snoozed to '+tip.hush:'')); option.value=tip.id; tipId.appendChild(option); });
         [['7','Snooze 7 days'],['30','Snooze 30 days'],['','Dismiss']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; tipFor.appendChild(option); });
         [['Tip',tipId],['Hush for',tipFor]].forEach(function(item){ var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); tipSection.appendChild(wrap); });
         var tipAnswer=el('p','msg'); tipAnswer.setAttribute('role','status'); tipSection.appendChild(tipAnswer);
         var tipPending=false, tipAt=null, tipSignature='';
-        makerButton(tipSection,'Hush tip',async function(send){
+        makerButton(tipSection,['Hush tip','record.tip.send'],async function(send){
           if(tipPending) return;
           var check=tipId.value+'|'+tipFor.value; if(check!==tipSignature){ tipSignature=check; tipAt=new Date().toISOString(); }
           var until=tipFor.value===''?null:new Date(Date.parse(tipAt)+8*3600000+Number(tipFor.value)*86400000).toISOString().slice(0,10);
@@ -2397,7 +2410,7 @@ export const OWNER_JS = `
       }
       makerOtherInputs(box,catalog,refreshMakerTradeCatalog);
     }catch(error){ note.textContent=error.message; note.dataset.retry='true';
-      makerButton(box,'Try again',function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
+      makerButton(box,['Try again','record.retry'],function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
   }
   async function makerForAccount(account){
     panel('maker');
@@ -2419,17 +2432,17 @@ export const OWNER_JS = `
       }); });
       if(!choices.length) throw new Error('No priced size is on their list.');
       note.textContent='One order, on their current list. Acknowledgement is still checked against the Desk row.';
-      var label=el('label','maker-field','Size and price'), pick=el('select','fld salt-field__input');
+      var label=el('label','maker-field','Size and price'), pick=actOn(el('select','fld salt-field__input'),'orderfor.size');
       choices.forEach(function(choice,index){ var option=el('option',null,pshape(choice.product)+' '+unitsOf(choice.qty)+' · '+rm(choice.total));
         option.value=String(index); pick.appendChild(option); }); label.appendChild(pick); box.appendChild(label);
-      var modeLabel=el('label','maker-field','Collected or delivered'), mode=el('select','fld salt-field__input');
+      var modeLabel=el('label','maker-field','Collected or delivered'), mode=actOn(el('select','fld salt-field__input'),'orderfor.mode');
       [['collect','Collected'],['deliver','Delivered']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; mode.appendChild(option); });
       modeLabel.appendChild(mode); box.appendChild(modeLabel);
-      var place=makerField(box,'Delivery locality','text',''), want=makerField(box,'Wanted by (optional)','date','');
-      var friendLabel=el('label','tick'), friend=el('input'); friend.type='checkbox';
+      var place=makerField(box,['Delivery locality','orderfor.place'],'text',''), want=makerField(box,['Wanted by (optional)','orderfor.want'],'date','');
+      var friendLabel=el('label','tick'), friend=actOn(el('input'),'orderfor.friend'); friend.type='checkbox';
       friendLabel.appendChild(friend); friendLabel.appendChild(document.createTextNode('For a friend')); friendLabel.hidden=!result.assoc; box.appendChild(friendLabel);
       var answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
-      var sent=false, pending=false, button=makerButton(box,'Place for them',async function(){
+      var sent=false, pending=false, button=makerButton(box,['Place for them','orderfor.place-order'],async function(){
         if(pending||sent) return;
         var choice=choices[Number(pick.value)];
         var body={product:choice.product,qty:choice.qty,total:choice.total,unit:+(choice.total/choice.qty).toFixed(2),
@@ -2484,10 +2497,10 @@ export const OWNER_JS = `
         card.appendChild(el('p','maker-facts',(ap.state==='taken'?'They said yes to ':'Sent for their yes: ')+'goods '+rm(apf.total)
           +(order.mode==='deliver'?', delivery '+rm(apf.delivery||0):'')+(apf.slot&&apf.slotSpan?', between '+String(apf.slotSpan).replace('-',' and ')+' on '+mwDayLabel(String(apf.slot).slice(0,10)):'')
           +(ap.state==='taken'?'. Its row is drafted at it.':', open until '+String(apf.until).slice(0,16).replace('T',' ')+' UTC.')));
-        if(ap.state!=='taken') makerButton(card,'Withdraw the offer',function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false).setAttribute('data-withdraw','');
+        if(ap.state!=='taken') makerButton(card,['Withdraw the offer','order.withdraw-offer'],function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false).setAttribute('data-withdraw','');
       }else if(order.status==='placed'){
         var quote=makerQuotes[order.id]||{}, form=el('div','maker-fields');
-        var total=makerField(form,'Order total (RM)','number',quote.total==null?order.total:quote.total);
+        var total=makerField(form,['Order total (RM)','order.total'],'number',quote.total==null?order.total:quote.total);
         card.appendChild(form);
         /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
            the others hide the chips and send nought */
@@ -2514,7 +2527,7 @@ export const OWNER_JS = `
           [['0','RM 0'],['10','RM 10'],['15','RM 15'],['other','Other']].forEach(function(opt){
             var label=el('label','salt-option'), radio=el('input','salt-option__input'),
                 face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
-            radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0];
+            radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0]; actOn(radio,'order.fee-'+opt[0]);
             radio.addEventListener('change',function(){
               chip.value=opt[0];
               if(otherField) otherField.closest('label').hidden=opt[0]!=='other';
@@ -2523,7 +2536,7 @@ export const OWNER_JS = `
             face.appendChild(text); label.appendChild(radio); label.appendChild(face); grid.appendChild(label);
           });
           fieldset.appendChild(grid);
-          otherField=makerField(fieldset,'Other, RM','number',chip.other);
+          otherField=makerField(fieldset,['Other, RM','order.fee-other-amount'],'number',chip.other);
           otherField.closest('label').hidden=chip.value!=='other';
           otherField.addEventListener('input',function(){ chip.other=otherField.value; makerPlacedInvalidate(); });
           card.appendChild(fieldset);
@@ -2536,7 +2549,7 @@ export const OWNER_JS = `
           var wset=el('fieldset','salt-options'), wgrid=el('div','salt-options__grid salt-options__grid--2');
           wset.appendChild(el('legend','salt-options__legend','Delivery time'));
           var dl=el('label','salt-field'), ds=el('select','salt-field__input');
-          dl.appendChild(el('span','salt-field__label','Day')); ds.setAttribute('data-winday','');
+          dl.appendChild(el('span','salt-field__label','Day')); ds.setAttribute('data-winday',''); actOn(ds,'order.window-day');
           days.forEach(function(d){ var op=el('option','',mwDayLabel(d)); op.value=d; op.selected=d===win.day; ds.appendChild(op); });
           dl.appendChild(ds); wset.appendChild(dl);
           var own=order.slot&&order.slotSpan?'Theirs, '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(theirs):'As soon as it can';
@@ -2545,7 +2558,7 @@ export const OWNER_JS = `
             [['',own]].concat(makerWinOn(win.day,Date.now()).filter(function(x){ return x[0]!==order.slot; })).forEach(function(opt){
               var label=el('label','salt-option'), radio=el('input','salt-option__input'),
                   face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
-              radio.type='radio'; radio.name='makerWin-'+order.id; radio.value=opt[0]; radio.checked=win.value===opt[0];
+              radio.type='radio'; radio.name='makerWin-'+order.id; radio.value=opt[0]; radio.checked=win.value===opt[0]; actOn(radio,opt[0]===''?'order.window-own':'order.window-'+opt[0].slice(11));
               /* a window decides whether Accept goes to them for their yes, so a change asks for a fresh preview */
               radio.addEventListener('change',function(){ win.value=opt[0]; makerPlacedInvalidate(); });
               face.appendChild(text); label.appendChild(radio); label.appendChild(face); wgrid.appendChild(label);
@@ -2564,7 +2577,7 @@ export const OWNER_JS = `
           if(chip.value==='0'||chip.value==='10'||chip.value==='15') return Number(chip.value);
           return null;
         }
-        previewBtn=makerButton(card,'Preview',function(){
+        previewBtn=makerButton(card,['Preview','order.preview'],function(){
           var delivery=makerPlacedDelivery();
           if(delivery==null){ makerSay(order.id,'Choose the delivery charge first.'); return; }
           var payload={total:Number(total.value),delivery:delivery}, turn=++previewTurn;
@@ -2582,7 +2595,7 @@ export const OWNER_JS = `
             var wv=(follower?(makerWin[group[0].id]||{}).value:win.value)||'';
             var yes=makerNeedsYes(order,payload.total,order.mode==='deliver'?wv:'');
             var accept=card.querySelector('[data-accept]'); if(!accept){
-              accept=makerButton(card,(yes?'Send for their yes at ':'Accept order at ')+rm(result.quote)+', delivery '+rm(result.delivery),function(){
+              accept=makerButton(card,[(yes?'Send for their yes at ':'Accept order at ')+rm(result.quote)+', delivery '+rm(result.delivery),yes?'order.send-yes':'order.accept'],function(){
                 var q=makerQuotes[order.id]; if(!q||!q.hash) return;
                 /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
                 if(yes){ var ob={total:q.total,delivery:q.delivery,hash:q.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
@@ -2606,17 +2619,17 @@ export const OWNER_JS = `
       }else if(order.status==='acknowledged'){
         /* Ready says how the goods go, as the Desk's card does; the order book records the mode at Ready */
         [['collect','Ready to collect'],['deliver','Ready to deliver']].forEach(function(m){
-          makerButton(card,m[1],function(){
+          makerButton(card,[m[1],'order.ready-'+m[0]],function(){
             makerMove(order,{status:'ready',mode:m[0]},'Order marked '+m[1].toLowerCase()+'.');
           },(order.mode||'collect')===m[0]).setAttribute('data-mode',m[0]);
         });
       }else if(order.status==='ready'){
-        var qty=makerField(card,'Units handed over','number',order.qty);
-        makerButton(card,'Record handover',function(){
+        var qty=makerField(card,['Units handed over','order.handed-units'],'number',order.qty);
+        makerButton(card,['Record handover','order.handed'],function(){
           makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.');
         },true);
         /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
-        if(!order.test) makerButton(card,'Close at these units',function(){
+        if(!order.test) makerButton(card,['Close at these units','order.close'],function(){
           var n=Number(qty.value);
           if(!(n>0&&n<Number(order.qty))){ makerSay(order.id,'A close is above 0 and under the '+order.qty+' units ordered.'); return; }
           if(!window.confirm('Close this order at '+n+' of '+order.qty+' units?')) return;
@@ -2627,24 +2640,24 @@ export const OWNER_JS = `
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           /* a claim above what the order still owes is money he recorded another way: the Desk's Received, on the book already */
           var onBook=Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004;
-          makerButton(card,onBook?'Received, on the book already '+rm(payment.amount):'Receive claimed '+rm(payment.amount),function(){
+          makerButton(card,[onBook?'Received, on the book already '+rm(payment.amount):'Receive claimed '+rm(payment.amount),'order.claim-received',payment.at],function(){
             makerTap(order,'received',onBook?{amount:payment.amount,claim:payment.at,covered:true}:{amount:payment.amount,claim:payment.at},
               onBook?'Received, on the book already: nothing more is booked.':'Claim confirmation sent to the Desk.');
           },false);
-          makerButton(card,'Not found '+rm(payment.amount),function(){
+          makerButton(card,['Not found '+rm(payment.amount),'order.claim-not-found',payment.at],function(){
             makerMove(order,{claim:payment.at,amount:payment.amount},'Claim answered Not found.');
           },false);
         });
-        var received=makerField(card,'Other payment received (RM)','number','');
-        makerButton(card,'Confirm received',function(){
+        var received=makerField(card,['Other payment received (RM)','order.received-amount'],'number','');
+        makerButton(card,['Confirm received','order.received'],function(){
           makerTap(order,'received',{amount:Number(received.value)},'Payment confirmation sent to the Desk.');
         },false);
       }
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
-        var aq=makerField(card,'Amend units','number',order.qty), at=makerField(card,'Amend goods price (RM)','number',order.total), ad=makerField(card,'Amend delivery (RM)','number',order.delivery||0);
+        var aq=makerField(card,['Amend units','order.amend-units'],'number',order.qty), at=makerField(card,['Amend goods price (RM)','order.amend-total'],'number',order.total), ad=makerField(card,['Amend delivery (RM)','order.amend-delivery'],'number',order.delivery||0);
         [aq,at,ad].forEach(function(f){ f.setAttribute('data-amend-field',''); });
-        makerButton(card,'Amend order',function(){
+        makerButton(card,['Amend order','order.amend'],function(){
           var body={}, q=Number(aq.value), t=Number(at.value), d=Number(ad.value);
           if(q!==Number(order.qty)) body.qty=q;
           if(t!==Number(order.total)) body.total=t;
@@ -2660,7 +2673,7 @@ export const OWNER_JS = `
       makerFoot(card,order.id);
     });
     Object.keys(makerCashHeld).filter(function(id){return !open.some(function(o){return o.id===id;});}).forEach(function(id){
-      var card=makerCard(root);card.appendChild(el('h3',null,id));
+      var card=makerCard(root);card.setAttribute('data-key',id);card.appendChild(el('h3',null,id));
       makerCashControls(card,{id:id});
     });
     /* a closed order with a stage he rejected keeps its card until that stage is offered again or left */
@@ -2676,7 +2689,7 @@ export const OWNER_JS = `
       card.appendChild(el('h3','',draft.id||'Desk row'));
       card.appendChild(el('p','lead',(entry.type||'Entry')+' · '+(entry.party||'no code')+' · '+(entry.date||entry.payload&&entry.payload.date||'')));
       card.appendChild(el('p','maker-facts',(draft.product||'')+' · '+(draft.qty==null?'':draft.qty+' units')+' · RM '+Number(draft.total||0).toFixed(2)));
-      makerReading(card,draft);
+      makerReading(card,draft,draft.id);
       var trip=!entry.orderId&&!entry.claim&&!(entry.fulfil&&entry.fulfil.claim)&&draft.row&&draft.row.trip, siblings=trip?(makerData.drafts||[]).filter(function(item){
         return item.status==='pending'&&item.collection==='sales'&&item.row&&item.row.trip===trip
           &&!(item.entry||{}).orderId&&!((item.entry||{}).claim||item.entry&&item.entry.fulfil&&item.entry.fulfil.claim);
@@ -2685,17 +2698,17 @@ export const OWNER_JS = `
         card.appendChild(el('p','salt-insight','Trip '+trip+' · '+siblings.length+' rows waiting. This tap decides every row of the trip.'));
         siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){
           card.appendChild(el('p','maker-facts',(item.product||'salt')+' · '+item.qty+' units · RM '+Number(item.total||0).toFixed(2)));
-          makerReading(card,item);
+          makerReading(card,item,item.id);
         });
       }
       var claim=entry.claim||entry.fulfil&&entry.fulfil.claim;
       if(claim) card.appendChild(el('p','salt-insight','A customer claim is answered through Received on its order, not by approving its row.'));
-      var approve=makerButton(card,siblings.length?'Approve trip':'Approve row',function(){
+      var approve=makerButton(card,[siblings.length?'Approve trip':'Approve row','draft.approve'],function(){
         if(!window.confirm(siblings.length?'Approve every proposed row of this trip shown here?':'Approve the proposed row shown here?')) return;
         makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.','draft:'+draft.id);
       },true);
       approve.disabled=!!claim;
-      makerButton(card,siblings.length?'Reject trip':'Reject row',function(){
+      makerButton(card,[siblings.length?'Reject trip':'Reject row','draft.reject'],function(){
         if(!window.confirm(siblings.length?'Reject every row of this trip?':'Reject this Desk row?')) return;
         makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.','draft:'+draft.id);
       },false);
@@ -2710,7 +2723,7 @@ export const OWNER_JS = `
       var held=makerData.queue||[];
       if(!held.length) queueRoot.appendChild(el('p','rnone','No server-held device entries or cloud refusals.'));
       held.forEach(function(entry){
-        var card=makerCard(queueRoot), title=entry.state==='refused'?'Refused server entry':'Server-held device entry';
+        var card=makerCard(queueRoot), title=entry.state==='refused'?'Refused server entry':'Server-held device entry'; card.setAttribute('data-key',entry.id);
         card.appendChild(el('h4','',title));
         card.appendChild(el('p','maker-facts',entry.id+(entry.date?' · '+entry.date:'')+' · '+entry.state));
         if(entry.device) card.appendChild(el('p','maker-facts','Device '+entry.device));
@@ -2721,7 +2734,7 @@ export const OWNER_JS = `
         if(entry.unavailable) card.appendChild(el('p','msg',entry.unavailable));
         if(entry.canWithdraw||entry.canRetry){
           var note=el('p','msg'); note.setAttribute('role','status'); card.appendChild(note);
-          var action=makerClaimButton(card,entry.canRetry?'Finish server withdrawal':'Withdraw server-held entry',function(button){
+          var action=makerClaimButton(card,[entry.canRetry?'Finish server withdrawal':'Withdraw server-held entry','queue.withdraw'],function(button){
             if(entry.canWithdraw&&!window.confirm('Withdraw this uploaded entry from the Desk server queue? This does not withdraw an unsent device entry.')) return;
             button.disabled=true;
             refs('/all/maker/queue/'+encodeURIComponent(entry.id)+'/withdraw',{fingerprint:entry.fingerprint})
@@ -2743,7 +2756,7 @@ export const OWNER_JS = `
         }
       });
     }
-    makerButton(root,'Refresh',loadMaker,false);
+    makerButton(root,['Refresh','maker.refresh'],loadMaker,false);
   }
   function klInputValue(iso){
     if(!iso) return '';
@@ -2766,33 +2779,33 @@ export const OWNER_JS = `
     var days=(makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days)||[];
     var schedule=el('div','maker-hours');
     names.forEach(function(name,i){
-      var row=el('div','maker-day'), enabled=el('input',''); enabled.type='checkbox'; enabled.checked=!!days[i];
+      var row=el('div','maker-day'), enabled=actOn(el('input',''),'hours.day-open',name); enabled.type='checkbox'; enabled.checked=!!days[i];
       enabled.setAttribute('aria-label',name+' is open');
       row.appendChild(enabled); row.appendChild(el('span','maker-day-name',name));
-      var open=el('input','fld salt-field__input'); open.type='time'; open.value=days[i]?days[i].open:'09:00'; open.disabled=!enabled.checked;
-      var close=el('input','fld salt-field__input'); close.type='time'; close.value=days[i]?days[i].close:'17:00'; close.disabled=!enabled.checked;
+      var open=actOn(el('input','fld salt-field__input'),'hours.day-from',name); open.type='time'; open.value=days[i]?days[i].open:'09:00'; open.disabled=!enabled.checked;
+      var close=actOn(el('input','fld salt-field__input'),'hours.day-to',name); close.type='time'; close.value=days[i]?days[i].close:'17:00'; close.disabled=!enabled.checked;
       enabled.addEventListener('change',function(){ open.disabled=!enabled.checked; close.disabled=!enabled.checked; });
       row.appendChild(open); row.appendChild(close); row._hours={enabled:enabled,open:open,close:close}; schedule.appendChild(row);
     });
     root.appendChild(schedule);
-    makerButton(root,'Save weekly hours',function(){
+    makerButton(root,['Save weekly hours','hours.save'],function(){
       var result={days:[]};
       [].forEach.call(schedule.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
       return refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Weekly hours saved.'; })
         .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
     },true);
-    var override=el('div','maker-fields'), kind=el('select','fld salt-field__input');
+    var override=el('div','maker-fields'), kind=actOn(el('select','fld salt-field__input'),'hours.override-state');
     [['false','Closed'],['true','Open']].forEach(function(x){ var option=el('option','',x[1]); option.value=x[0]; kind.appendChild(option); });
-    var until=makerField(override,'Override until (Kuala Lumpur)','datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
+    var until=makerField(override,['Override until (Kuala Lumpur)','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
     override.insertBefore(kind,override.firstChild); root.appendChild(override);
-    makerButton(root,'Set temporary override',function(){
+    makerButton(root,['Set temporary override','hours.override-set'],function(){
       var when=Date.parse(until.value+'+08:00');
       if(!Number.isFinite(when)){ document.getElementById('makerHoursMessage').textContent='Choose an end time.'; return; }
       return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})
         .then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Temporary hours saved.'; })
         .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
     },false);
-    makerButton(root,'Clear temporary override',function(){
+    makerButton(root,['Clear temporary override','hours.override-clear'],function(){
       return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Temporary override cleared.'; })
         .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
     },false);
@@ -2853,13 +2866,13 @@ export const OWNER_JS = `
   /* a moment today is its time, any other its day */
   function when(iso){ var t=dayMon(iso); return t===dayMon(new Date().toISOString())?hm(iso):t; }
   function andList(xs){ return xs.length<2?xs.join(''):xs.slice(0,-1).join(', ')+' and '+xs[xs.length-1]; }
-  function ghost(t, lit){ var b=el('button','salt-ghost'+(lit?' salt-ghost--lit':''),t); b.type='button'; return b; }
+  function ghost(t, lit){ var L=labOf(t), b=actOn(el('button','salt-ghost'+(lit?' salt-ghost--lit':''),L[0]),L[1],L[2]); b.type='button'; return b; }
   function needCard(key, party, entry, reason, u){
     var c=el('article','salt-approve need'); c.setAttribute('data-need', key);
     var h=el('div','salt-approve__head');
     /* S9 fix: a card about an account opens it, beside the list from 1080px and on Accounts on a phone */
     var p=el(u?'button':'span','salt-approve__party',party);
-    if(u){ p.type='button'; p.setAttribute('aria-label','Open '+party); c.setAttribute('data-u', u); p.addEventListener('click', function(){ openNeed(u); }); }
+    if(u){ p.type='button'; actOn(p,'need.open'); p.setAttribute('aria-label','Open '+party); c.setAttribute('data-u', u); p.addEventListener('click', function(){ openNeed(u); }); }
     h.appendChild(p); h.appendChild(el('span','salt-approve__entry',entry));
     c.appendChild(h);
     if(reason) c.appendChild(el('p','salt-approve__reason',reason));
@@ -2902,7 +2915,7 @@ export const OWNER_JS = `
     if(was&&was.j) markOut(u, was.j);
   }
   function linkButton(a, note){
-    var u=a.username, b=ghost('', true);
+    var u=a.username, b=ghost(['','need.signin-link'], true);
     function paint(){
       var m=madeLink[u]||{};
       b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||'';
@@ -2933,14 +2946,14 @@ export const OWNER_JS = `
     if(moved&&moved.id===r.id){ noteOf(c).textContent=moved.t; return c; }
     if(tiers.length){
       var f=el('div','salt-field'), lab=el('label','salt-field__label','Their friend is quoted'), sel=el('select','fld salt-field__input');
-      sel.id='npin'+r.id; lab.htmlFor=sel.id;
+      sel.id='npin'+r.id; lab.htmlFor=sel.id; actOn(sel,'need.link-tier');
       var o0=el('option',null,'Follows '+who); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
       /* Ambassador is the floor and never a guest's */
       tiers.slice(1).forEach(function(t){ var o=el('option',null,t); o.value=t; if(r.level===t)o.selected=true; sel.appendChild(o); });
       sel.addEventListener('change', function(){ setLevel(r, sel.value); });
       f.appendChild(lab); f.appendChild(sel); c.appendChild(f);
     }
-    var row=el('div','salt-approve__actions'), ap=ghost('Approve', true), de=ghost('Decline');
+    var row=el('div','salt-approve__actions'), ap=ghost(['Approve','need.link-approve'], true), de=ghost(['Decline','need.link-decline']);
     ap.setAttribute('data-move',''); de.setAttribute('data-move','');
     ap.addEventListener('click', function(){ moveLink(r,'approve'); });
     de.addEventListener('click', function(){ moveLink(r,'decline'); });
@@ -2961,13 +2974,13 @@ export const OWNER_JS = `
     c.appendChild(row);
     row.appendChild(linkButton(a, noteOf(c)));
     /* and Show a code, in person, stage 3's hand-over (showHandover), for a customer at his counter */
-    var sc=ghost('Show a code'); sc.addEventListener('click', function(){ showHandover(a, sc); }); row.appendChild(sc);
+    var sc=ghost(['Show a code','need.show-code']); sc.addEventListener('click', function(){ showHandover(a, sc); }); row.appendChild(sc);
     return c;
   }
   function bareNeed(a){
     var lv=stranger||"stranger's";
     var c=needCard('n:'+a.username, a.code||a.username, 'no account yet', waitLine(), a.username);
-    var row=el('div','salt-approve__actions'), sh=ghost('Show the '+lv+' link', true), off=ghost('Send, after the update');
+    var row=el('div','salt-approve__actions'), sh=ghost(['Show the '+lv+' link','need.show-link'], true), off=ghost(['Send, after the update','need.send-later']);
     off.disabled=true; off.title='No account behind this username yet';
     row.appendChild(sh); row.appendChild(off); c.appendChild(row);
     var note=noteOf(c);
@@ -2975,7 +2988,7 @@ export const OWNER_JS = `
       var r=strangerLink();
       if(!r){ note.textContent='The '+lv+' link is not made yet. Open Links once, then try again.'; return; }
       silverOpen[a.username]=true;
-      var box=el('div','glink'), img=document.createElement('img'), cp=ghost('Copy link');
+      var box=el('div','glink'), img=document.createElement('img'), cp=ghost(['Copy link','need.copy-link']);
       box.appendChild(el('code','gu',r.url));
       img.src=r.qr; img.alt='QR to the '+lv+' guest price list'; img.width=180; img.height=180; box.appendChild(img);
       cp.addEventListener('click', async function(){
@@ -2993,7 +3006,7 @@ export const OWNER_JS = `
     var named=codes.length>6?codes.slice(0,5).concat([(codes.length-5)+' more']):codes;
     var c=needCard('s', rows.length+' to send', first?'ready since '+dayMon(first):'',
       andList(named)+(rows.length===1?' has an account':' have accounts')+' and no sign-in yet.');
-    var row=el('div','salt-approve__actions'), go=ghost('Send them in turn', true);
+    var row=el('div','salt-approve__actions'), go=ghost(['Send them in turn','need.send-turn'], true);
     go.addEventListener('click', function(){ turn={rows:rows.slice(), i:0, sent:[], j:null, why:''}; turnStep(); });
     row.appendChild(go); c.appendChild(row);
     return c;
@@ -3046,10 +3059,10 @@ export const OWNER_JS = `
       ticks.appendChild(chip(did?'verdigris':(k===t.i?'brass':'mist'), (x.code||x.username)+(did?', sent':''))); });
     c.appendChild(ticks);
     var row=el('div','salt-approve__actions');
-    if(fin){ var dn=ghost('Done', true); dn.addEventListener('click', function(){ turn=null; drawNeeds(); }); row.appendChild(dn); }
+    if(fin){ var dn=ghost(['Done','need.turn-done'], true); dn.addEventListener('click', function(){ turn=null; drawNeeds(); }); row.appendChild(dn); }
     else {
-      var sh=el('button','salt-pill salt-pill--md',t.copied?'Sent it':'Share'); sh.type='button'; sh.disabled=!t.j||!!t.busy; sh.addEventListener('click', turnShare);
-      var sk=ghost('Skip'); sk.disabled=!!t.busy; sk.addEventListener('click', function(){ if(turn.busy) return; turn.i++; turnStep(); });
+      var sh=el('button','salt-pill salt-pill--md',t.copied?'Sent it':'Share'); sh.type='button'; actOn(sh,'need.turn-share'); sh.disabled=!t.j||!!t.busy; sh.addEventListener('click', turnShare);
+      var sk=ghost(['Skip','need.turn-skip']); sk.disabled=!!t.busy; sk.addEventListener('click', function(){ if(turn.busy) return; turn.i++; turnStep(); });
       row.appendChild(sh); row.appendChild(sk);
     }
     c.appendChild(row);
@@ -3182,7 +3195,7 @@ export const OWNER_JS = `
       ? 'Two test accounts are live. '+TEST_LINE+' They are on no list that counts, and nothing they do is booked.'
       : have.length ? 'Only test account '+have[0]+' is live. One tap makes the other.'
       : 'No test accounts. One tap makes two you can open anywhere, that count nowhere: one that can order, one locked.'));
-    var b=el('button','btn quiet salt-ghost', on?'Delete the test accounts':'Make the test accounts'); b.type='button';
+    var b=el('button','btn quiet salt-ghost', on?'Delete the test accounts':'Make the test accounts'); b.type='button'; actOn(b,'more.test-accounts');
     b.addEventListener('click', async function(){
       b.disabled=true; say(on?'Deleting...':'Making...','wait');
       try{

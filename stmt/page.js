@@ -1051,7 +1051,7 @@ export function landingPage(user, nonce, owner, bulletin) {
            system's own switch): Needs you, Accounts, Links, More. A count beside a place is what waits there. */
         + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Account">'
         + '<div class="salt-rail__brand"><span class="aring">' + aico("key") + '</span><b class="salt-title">Salt Account</b></div>'
-        + '<div class="salt-rail__group">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo place" data-m="' + m + '">'
+        + '<div class="salt-rail__group">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo place" data-m="' + m + '" data-act="nav.' + m + '">'
           + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(m) + "</span><span>" + w + "</span></span>"
           + '<span class="salt-rail__count" data-count="' + m + '"></span></button>').join("") + "</div>"
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
@@ -1076,9 +1076,9 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead" id="scount"></p>'
         + '<div class="afind">'
         + '<input class="fld salt-field__input salt-field__input--mono" id="rq" type="search" autocapitalize="none" autocorrect="off" '
-        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account">'
+        + 'spellcheck="false" placeholder="A code or a username" aria-label="Find an account" data-act="acct.find">'
         + '<div class="afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
-          '<button type="button" class="salt-ghost" data-f="' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
+          '<button type="button" class="salt-ghost" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
         + "</div>"
         + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div></div>'
         + "</div>"
@@ -1091,11 +1091,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "Move that customer up and every link they gave out moves with them.</p>"
         + '<label class="lbl" for="gintro">Who is introducing them</label>'
         + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
-        + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer introducing them">'
+        + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer introducing them" data-act="link.introducer">'
         + '<label class="lbl" for="glabel">Who it is for</label>'
         + '<input class="fld salt-field__input" id="glabel" type="text" maxlength="60" '
-        + 'placeholder="a shop, a name, a note" aria-label="Who the link is for">'
-        + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake">Make a link</button>'
+        + 'placeholder="a shop, a name, a note" aria-label="Who the link is for" data-act="link.label">'
+        + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake" data-act="link.make">Make a link</button>'
         + '<div id="glist"></div>'
         + "</div>"
         + '<div id="oMore" hidden>'
@@ -1103,13 +1103,13 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "<h1>More</h1>"
         + '<p class="lead" id="mCount">' + owner.accounts.filter((a) => !a.test).length + " accounts on the site.</p>"
         + '<div class="rlist" id="mItems">'
-        + '<button type="button" data-m="cards">Associates report card'
+        + '<button type="button" data-m="cards" data-act="more.cards">Associates report card'
         + "<span>what each has brought you, and what they have earned</span></button>"
         + "</div>"
         + '<div id="mTest" class="mtest"></div>'
         + "</div>"
         + '<div id="oCards" hidden>'
-        + '<button type="button" data-back="more">' + "← More" + "</button>"
+        + '<button type="button" data-back="more" data-act="more.back">' + "← More" + "</button>"
         + "<h1>Associates report card</h1>"
         + '<p class="lead" id="ccount"></p>'
         + '<div id="clist"></div>'
@@ -1140,14 +1140,14 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<section aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Account claims</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + "</div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
-        + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '">'
+        + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '" data-act="nav.' + m + '">'
           + '<span class="salt-appbar__icon">' + aico(m) + '</span><span class="salt-appbar__label">' + w + "</span>"
           + '<span class="salt-appbar__count" data-count="' + m + '"></span></button>').join("") + "</nav>"
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
         + '<div id="aEnded" class="gate" hidden><h1>Your admin sign-in has ended</h1>'
         + '<p class="lead">Sign in again to carry on.</p>'
-        + '<a class="salt-pill salt-pill--md btn" href="/all">Sign in again</a></div>'
+        + '<a class="salt-pill salt-pill--md btn" href="/all" data-act="ended.sign-in">Sign in again</a></div>'
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     + wt("h1", "", "door.h")
@@ -1190,7 +1190,7 @@ export function landingPage(user, nonce, owner, bulletin) {
        read only, and its one control takes him back to that account on Accounts. A customer's Log out is This
        device's, on Account (S7 7.1), so their bar holds nothing until it has a lapse to say */
     + (owner ? '<span><b id="whoacct"></b><span id="cd"></span><span id="vas">Viewing as <b id="vasU"></b>, read only</span></span>'
-      + '<button type="button" id="lock">Back to accounts</button>' : "")
+      + '<button type="button" id="lock" data-act="view.back">Back to accounts</button>' : "")
     /* S1 1.5: a lapsed session says so where the reader is, with the one way back: a second row of the bar */
     + '<div id="lapse" class="lapse" role="alert" hidden><span id="lapseT"></span>' + wt("button", 'type="button" id="lapseGo"', "link.go") + "</div>"
     + "</div></div>"
