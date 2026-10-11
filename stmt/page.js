@@ -436,6 +436,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 #oMaker input{max-width:100%}
 .maker-card{margin:14px 0;padding:16px}
 .maker-card>*+*{margin-top:12px}
+.maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
+.maker-card>.maker-say:empty{margin-top:0}
 .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}

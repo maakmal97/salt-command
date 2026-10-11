@@ -1733,26 +1733,39 @@ export const OWNER_JS = `
       placeBusy=false;
     },true);
   }
-  function makerCard(parent){
+  function makerCard(parent,key){
     var card=el('article','salt-glass-card maker-card');
+    if(key) card.setAttribute('data-maker-card',key);
     parent.appendChild(card); return card;
   }
-  function makerAction(path, body, message){
+  /* 11 Oct 2026: a card's answer lands in its own foot, beside its buttons, and #makerReviewStatus keeps the list's own words
+     (the read, the count). The card is found by its key when the answer comes, since a redraw replaces it; a card that has gone
+     (the order left the open list, the row was decided) hands its answer to the list's line, so it is never lost. A foot below
+     the screen (a tall card, a tap near its head) is scrolled to, clear of the bottom bar, so the answer is seen. */
+  function makerFoot(card,key){
+    var say=el('p','maker-say'); say.setAttribute('role','status'); say.setAttribute('aria-live','polite');
+    say.setAttribute('data-maker-say',key); card.appendChild(say); return say;
+  }
+  function makerSay(key,text){
+    var line=null, list=document.getElementById('makerReviewStatus');
+    [].forEach.call(document.querySelectorAll('#makerReview [data-maker-say]'),function(node){ if(node.getAttribute('data-maker-say')===key) line=node; });
+    if(line){ line.textContent=text; if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }
+    else if(list) list.textContent=text;
+  }
+  function makerAction(path, body, message, key){
     if(makerBusy) return Promise.resolve();
     makerBusy=true;
     return refs(path,body).then(function(result){
       makerBusy=false;
-      var status=document.getElementById('makerReviewStatus');
       return loadMaker().then(function(){
-        if(status) status.textContent=result.differs?'The row differs from the preview and waits for review.'
+        makerSay(key,result.differs?'The row differs from the preview and waits for review.'
           :result.waiting?'The row is being drafted; acknowledgement is still waiting.'
-          :result.preapproval&&result.preapproval.says?result.preapproval.says:message||'Saved.';
+          :result.preapproval&&result.preapproval.says?result.preapproval.says:message||'Saved.');
         return true;
       });
     },function(error){
       makerBusy=false;
-      var status=document.getElementById('makerReviewStatus');
-      if(status) status.textContent=error.message;
+      makerSay(key,error.message);
       return false;
     });
   }
@@ -1761,13 +1774,13 @@ export const OWNER_JS = `
   function makerMove(order,body,message){
     var key=order.id+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+(body.claim?'notfound':'move'),
-      Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
+      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; });
   }
   /* a handover, a close, cash, a Received or a move offered again, under one request id until it lands, as a move is */
   function makerTap(order,action,body,message){
     var key=order.id+action+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+action,
-      Object.assign({rid:rid},body),message).then(function(done){ if(done) delete makerRids[key]; });
+      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; });
   }
   var MAKER_CASH_MS=10000, makerCashHeld={}, makerCashSaid={};
   var MAKER_CASH_PREFIX='saltMakerCash:', makerCashStorageError='';
@@ -1904,7 +1917,7 @@ export const OWNER_JS = `
         makerReading(note,result);
         var old=card.querySelector('[data-accept-again]'); if(old) old.remove();
         makerButton(card,'Accept again',function(){
-          makerAction(route+'/accept',{hash:result.hash},'Order sent to the Desk for acknowledgement again.');
+          makerAction(route+'/accept',{hash:result.hash},'Order sent to the Desk for acknowledgement again.',order.id);
         },true).setAttribute('data-accept-again','');
       }).catch(function(error){ var note=card.querySelector('.maker-quote'); if(!note){ note=el('p','msg maker-quote'); card.appendChild(note); } note.textContent=error.message; });
     },true).setAttribute('data-preview-again','');
@@ -1932,8 +1945,7 @@ export const OWNER_JS = `
       makerButton(card,line,function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
     });
     var keep=makerButton(card,'Keep as a quick reply',function(){
-      var note=makerQuickKeep(said.value), status=document.getElementById('makerReviewStatus');
-      if(status) status.textContent=note;
+      makerSay(order.id,makerQuickKeep(said.value));
       keepWord();
     },false);
     keep.setAttribute('data-keep','');
@@ -2440,7 +2452,7 @@ export const OWNER_JS = `
     if(status) status.textContent=open.length+' open orders · '+(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).length+' Desk rows waiting';
     if(!open.length) root.appendChild(el('p','rnone','No open Counter orders.'));
     open.forEach(function(order){
-      var card=makerCard(root), head=el('h3','',order.id); card.appendChild(head);
+      var card=makerCard(root,order.id), head=el('h3','',order.id); card.appendChild(head);
       var ownerLine=el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status);
       card.appendChild(ownerLine);
       card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
@@ -2536,8 +2548,8 @@ export const OWNER_JS = `
           return null;
         }
         previewBtn=makerButton(card,'Preview',function(){
-          var delivery=makerPlacedDelivery(), status=document.getElementById('makerReviewStatus');
-          if(delivery==null){ if(status) status.textContent='Choose the delivery charge first.'; return; }
+          var delivery=makerPlacedDelivery();
+          if(delivery==null){ makerSay(order.id,'Choose the delivery charge first.'); return; }
           var payload={total:Number(total.value),delivery:delivery}, turn=++previewTurn;
           /* an in-flight preview is not yet usable: clear any existing quote/Accept at once, not only on success */
           delete makerQuotes[order.id];
@@ -2560,7 +2572,7 @@ export const OWNER_JS = `
                   makerTap(order,'offer',ob,'Sent to them for their yes.'); return; }
                 var body={total:q.total,delivery:q.delivery,hash:q.hash};
                 if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
-                makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Order sent to the Desk for acknowledgement.');
+                makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Order sent to the Desk for acknowledgement.',order.id);
               },true); accept.setAttribute('data-accept','');
             }
           }).catch(function(error){
@@ -2588,8 +2600,8 @@ export const OWNER_JS = `
         },true);
         /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
         if(!order.test) makerButton(card,'Close at these units',function(){
-          var n=Number(qty.value), status=document.getElementById('makerReviewStatus');
-          if(!(n>0&&n<Number(order.qty))){ if(status) status.textContent='A close is above 0 and under the '+order.qty+' units ordered.'; return; }
+          var n=Number(qty.value);
+          if(!(n>0&&n<Number(order.qty))){ makerSay(order.id,'A close is above 0 and under the '+order.qty+' units ordered.'); return; }
           if(!window.confirm('Close this order at '+n+' of '+order.qty+' units?')) return;
           makerTap(order,'handed',{qty:n,close:true},'Close sent to the Desk.');
         },false).setAttribute('data-close','');
@@ -2616,18 +2628,19 @@ export const OWNER_JS = `
         var aq=makerField(card,'Amend units','number',order.qty), at=makerField(card,'Amend goods price (RM)','number',order.total), ad=makerField(card,'Amend delivery (RM)','number',order.delivery||0);
         [aq,at,ad].forEach(function(f){ f.setAttribute('data-amend-field',''); });
         makerButton(card,'Amend order',function(){
-          var body={}, q=Number(aq.value), t=Number(at.value), d=Number(ad.value), status=document.getElementById('makerReviewStatus');
+          var body={}, q=Number(aq.value), t=Number(at.value), d=Number(ad.value);
           if(q!==Number(order.qty)) body.qty=q;
           if(t!==Number(order.total)) body.total=t;
           if(d!==Number(order.delivery||0)) body.delivery=d;
           if(body.qty!==undefined&&body.total===undefined) body.total=t;
-          if(!Object.keys(body).length){ if(status) status.textContent='Change a figure first.'; return; }
+          if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }
           makerTap(order,'restate',body,'Amendment sent to the Desk for approval.');
         },false).setAttribute('data-amend','');
       }
       makerAgain(card,order);
       makerOrderMoves(card,order);
       if(order.status==='ready'&&!againAck)makerCashControls(card,order);
+      makerFoot(card,order.id);
     });
     Object.keys(makerCashHeld).filter(function(id){return !open.some(function(o){return o.id===id;});}).forEach(function(id){
       var card=makerCard(root);card.appendChild(el('h3',null,id));
@@ -2635,13 +2648,14 @@ export const OWNER_JS = `
     });
     /* a closed order with a stage he rejected keeps its card until that stage is offered again or left */
     (makerData.orders||[]).filter(function(o){ return open.indexOf(o)<0&&!o.test&&o.again&&o.again.length; }).forEach(function(order){
-      var card=makerCard(root); card.appendChild(el('h3','',order.id));
+      var card=makerCard(root,order.id); card.appendChild(el('h3','',order.id));
       card.appendChild(el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status));
       if(makerAgainAck(order)) makerAcceptAgain(card,order);
       makerAgain(card,order);
+      makerFoot(card,order.id);
     });
     (makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }).forEach(function(draft){
-      var card=makerCard(root), entry=draft.entry||{};
+      var card=makerCard(root,'draft:'+draft.id), entry=draft.entry||{};
       card.appendChild(el('h3','',draft.id||'Desk row'));
       card.appendChild(el('p','lead',(entry.type||'Entry')+' · '+(entry.party||'no code')+' · '+(entry.date||entry.payload&&entry.payload.date||'')));
       card.appendChild(el('p','maker-facts',(draft.product||'')+' · '+(draft.qty==null?'':draft.qty+' units')+' · RM '+Number(draft.total||0).toFixed(2)));
@@ -2661,13 +2675,14 @@ export const OWNER_JS = `
       if(claim) card.appendChild(el('p','salt-insight','A customer claim is answered through Received on its order, not by approving its row.'));
       var approve=makerButton(card,siblings.length?'Approve trip':'Approve row',function(){
         if(!window.confirm(siblings.length?'Approve every proposed row of this trip shown here?':'Approve the proposed row shown here?')) return;
-        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.');
+        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.','draft:'+draft.id);
       },true);
       approve.disabled=!!claim;
       makerButton(card,siblings.length?'Reject trip':'Reject row',function(){
         if(!window.confirm(siblings.length?'Reject every row of this trip?':'Reject this Desk row?')) return;
-        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.');
+        makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.','draft:'+draft.id);
       },false);
+      makerFoot(card,'draft:'+draft.id);
     });
     (makerData.refused||[]).forEach(function(refused){
       var card=makerCard(root); card.appendChild(el('h3','','Refused entry'));
