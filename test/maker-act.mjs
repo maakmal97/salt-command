@@ -28,8 +28,8 @@ export function byAct(root, act, key) {
 
 /* ---- the audit ---- */
 export const CONTROLS = 'button, input:not([type="hidden"]), select, textarea, summary, a[href], [role="button"], [role="tab"]';
-/* his page: the roster shell, the ended screen, the one control of his in a customer's view, and the sheet that shows a code */
-export const OWNER_ROOTS = "#roster, #aEnded, #lock, .salt-sheet.ho";
+/* his page: the roster shell, the ended screen, the one control of his in a customer's view, the sheet that shows a code, and the look Sheet */
+export const OWNER_ROOTS = "#roster, #aEnded, #lock, .salt-sheet.ho, #lookSheet";
 const CARDS = ".maker-card, .maker-input, .maker-extra-trade, .maker-reward, .maker-offer, .oacct, [data-need], .glink, .salt-sheet, nav, #afil";
 const PANELS = "#mHome, #oOrders, #oCustomers, #oRecord, #oShop, #oAccts, #oLinks, #oCards, #aEnded, #lock";
 const where = (c) => {

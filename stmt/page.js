@@ -822,17 +822,18 @@ function lookRow(owner) {
 }
 /* The choice Sheet, over a signed-in page on a device that has chosen nothing: the system's Sheet, its two tiles the Option face as a
    tap, each with a swatch of its own ground and accent, and one line saying where to change it. The script opens it (lookAsk). */
-function lookSheet() {
-  const tile = (k) => '<div class="salt-option"><button type="button" class="salt-option__face salt-option__face--tap look-tile" data-look="' + k + '">'
+function lookSheet(owner) {
+  const act = (a) => (owner ? ' data-act="' + a + '"' : "");
+  const tile = (k) => '<div class="salt-option"><button type="button" class="salt-option__face salt-option__face--tap look-tile" data-look="' + k + '"' + act("look.sheet-" + k) + ">"
     + '<span class="look-swatch look-swatch--' + k + '" aria-hidden="true"></span><span class="salt-option__text">'
     + wt("span", 'class="salt-option__label"', "look." + k) + "</span></button></div>";
   return '<div id="lookScrim" class="salt-sheet-scrim" hidden></div>'
     + '<div id="lookSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="lookT" tabindex="-1" hidden>'
     + '<div class="salt-sheet__grab"></div>'
     + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="lookT"', "look.sheetH")
-    + '<button type="button" class="salt-orb salt-sheet__close" id="lookX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
+    + '<button type="button" class="salt-orb salt-sheet__close" id="lookX"' + act("look.sheet-close") + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
     + '<div class="salt-sheet__body"><div class="salt-options__grid salt-options__grid--2">' + tile("night") + tile("tide") + "</div>"
-    + wt("p", 'class="look-note"', "look.note") + "</div></div>";
+    + (owner ? '<p class="look-note">You can change this later under Shop, in This device.</p>' : wt("p", 'class="look-note"', "look.note")) + "</div></div>";
 }
 /* Step 1b (his Q3, his sentences 3.1 and 3.3): THE BELL, in the saved app's header on every view. Until notifications
    are on it is marked and its call sits beside it; a tap on either asks (the ask is still a tap: iOS requires one).
@@ -1223,7 +1224,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
         /* 11 Oct 2026, his word: Salt Account has its own Night or Tide, chosen on this device (its origin's localStorage salt-look,
-           apart from the Desk's), the same row the customer has under Account > This device. */
+           apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
         + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle">This device</h2>'
         + '<p class="lead">Night or Tide for Salt Account on this device. It is kept here only; the Desk and the Counter keep their own.</p>'
         + lookRow(true) + "</section>"
@@ -1237,6 +1238,9 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="aEnded" class="gate" hidden><h1>Your admin sign-in has ended</h1>'
         + '<p class="lead">Sign in again to carry on.</p>'
         + '<a class="salt-pill salt-pill--md btn" href="/all" data-act="ended.sign-in">Sign in again</a></div>'
+        /* the first-open choice Sheet, a child of the body like #aEnded: when the Access session has ended the page gives way to #aEnded
+           alone (body.ended), and the owner's script takes this down first (stmt/owner.js, ended) */
+        + lookSheet(true)
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     + wt("h1", "", "door.h")
@@ -2564,9 +2568,10 @@ const CLIENT_JS = `
      bar's colour, the choice is kept in localStorage salt-look, and the setting under Account is marked; nothing reloads. The
      first time a signed-in page opens on a device that has kept nothing, a Sheet asks (lookAsk, from enter): choosing keeps it and
      closes the Sheet, and closing it any other way keeps Tide and stores nothing, so the next open asks again. A store that cannot
-     be read is never asked, because the answer could not be kept. His page, and a read-only view of an account on it, ask nothing
-     and show no setting. A test account's sealed bundle says look:'asked', so it asks at every sign-in and the Sheet can be tried
-     again whatever the device holds. Every read and write of the store is guarded. */
+     be read is never asked, because the answer could not be kept. His page asks once when it opens, on the same terms (stmt/owner.js
+     calls lookAsk with own set; landingPage draws its Sheet and its row in Shop > This device, and its choice is kept in its own
+     origin's store), and a read-only view of an account on it asks nothing. A test account's sealed bundle says look:'asked', so it
+     asks at every sign-in and the Sheet can be tried again whatever the device holds. Every read and write of the store is guarded. */
   var LOOK_KEY='salt-look', lookAsked=false, lookBack=null,
       lookSheetEl=document.getElementById('lookSheet'), lookScrim=document.getElementById('lookScrim'), lookRow=document.getElementById('lookRow');
   function lookNow(){ return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide'; }
@@ -2586,8 +2591,8 @@ const CLIENT_JS = `
     lookSheetEl.hidden=true; lookScrim.hidden=true;
     try{ if(lookBack&&lookBack.focus) lookBack.focus(); }catch(e){}
   }
-  function lookAsk(b){
-    if(OWNER||view||lookAsked||!lookSheetEl) return;
+  function lookAsk(b, own){
+    if((OWNER&&!own)||view||lookAsked||!lookSheetEl) return;
     var kept=lookStore();
     if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;
     lookAsked=true; lookBack=document.activeElement;

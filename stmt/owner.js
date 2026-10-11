@@ -709,7 +709,10 @@ export const OWNER_JS = `
      the page gives way to Sign in again, which loads /all and so the Access login. A fetch that throws is the
      connection, and says so. */
   var ENDED='Your admin sign-in has ended.';
-  function ended(){ document.getElementById('aEnded').hidden=false; document.body.classList.add('ended'); }
+  function ended(){
+    lookShut();   /* 11 Oct 2026: the look Sheet gives way; the lapse is what he must see */
+    document.getElementById('aEnded').hidden=false; document.body.classList.add('ended');
+  }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
                  : {};
@@ -3331,4 +3334,9 @@ export const OWNER_JS = `
       try{ history.replaceState(null,'',addrFor(placeNow, partNow)); }catch(e){}
     }
   }
+  /* 11 Oct 2026, HIS WORD: SALT ACCOUNT HAS ITS OWN NIGHT OR TIDE, per device. The head script has set the stored theme (Tide until one is
+     chosen); the choice Sheet is the customer's (stmt/page.js, lookAsk), asked once when this page opens on a device that holds none, and
+     Shop > This device holds the switch. The rest of the look (kept in localStorage salt-look on this origin, applied at once, no
+     reload) is the page's own and is shared. An Access lapse, which ended() reads on a request's answer, takes the Sheet down. */
+  lookAsk(null, true);
 `;

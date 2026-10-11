@@ -1945,6 +1945,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.tier` | Same card | Sets the tier it quotes. |
 | `link.withdraw` | Link card | Withdraws the link. |
 | `look.night` | Shop, This device, Look | Night for Salt Account on this device, at once, kept here. |
+| `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
+| `look.sheet-night` | Same Sheet | Chooses Night, keeps it and closes the Sheet. |
+| `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
 | `look.tide` | Shop, This device, Look | Tide for Salt Account on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice | Makes or deletes the two test accounts. |
