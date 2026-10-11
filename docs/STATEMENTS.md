@@ -1862,12 +1862,12 @@ hyphens inside a part, named by **what the control does and never by what it say
 change; its act does not. A button, an input that is not hidden, a select, a textarea, a `summary`, a link and anything with
 `role="button"` or `role="tab"` is a control.
 
-- **Where.** The owner's shell (`landingPage`'s owner markup in `stmt/page.js`: the rail and bar, the filters, Links, More, the
+- **Where.** The owner's shell (`landingPage`'s owner markup in `stmt/page.js`: the rail and bar, the parts strips, the filters, the
   way back, the ended screen) and everything `stmt/owner.js` draws. Not the customer's own shell (the door, its places, its
   sheets) that View as them reuses: it is the customer's page, and its controls stay as they are. `#lock`, the one control of
   his in that view, is named (`view.back`).
 - **A card, and a list.** A control drawn once for each card shares its act with the same control on every other card and is told
-  apart by its card. The card carries its key: `data-maker-card` (an order's id, a Desk row's `draft:<id>`), `data-u`,
+  apart by its card. The card carries its key: `data-maker-card` (an order's id, a Desk row's `draft:<id>`; since the five places an order's card is drawn in `#makerReview` with its status line `#makerReviewStatus`, and a Desk row's and a refused entry's in `#makerDrafts` with `#makerDraftStatus`, so a map of the cards reads both roots), `data-u`,
   `data-need`, `data-link`, `data-acct`, or `data-key` (an account claim, `<username>:<claim id>`; a server-held entry; a
   group order; a retained input, by its route; an extra book, `extra<n>`; an offset, by its row; the open thread, by its
   username). A control drawn once for each item of a list (a quick reply, a weekday, a device, a house size, a claim waiting on an
