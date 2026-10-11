@@ -122,7 +122,7 @@ export async function run({ ok, pageWork }) {
       "listing the orders sends nothing and previews nothing: a row has no preview, which costs a read: " + JSON.stringify(p.posts));
     ok(["makerReview", "makerClaims", "makerPools", "makerOrderList"].every((id) => !!d.getElementById(id)),
       "the containers the maker tests and the map find are still there: #makerReview, #makerClaims, #makerPools");
-  } finally { p.w.close(); }
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 2. A ROW OPENS ITS CARD */
   p = await open();
@@ -157,7 +157,7 @@ export async function run({ ok, pageWork }) {
     const r1 = p.acts("ord-r1");
     ok(r1.includes("order.handed") && r1.includes("order.close") && r1.includes("order.cash") && r1.includes("order.cancel") && !r1.includes("order.preview"),
       "a ready order's card keeps the handover, the close and the cash: " + JSON.stringify(r1));
-  } finally { p.w.close(); }
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 3. BACK, AND WHAT CLOSES A CARD */
   p = await open();
@@ -187,7 +187,7 @@ export async function run({ ok, pageWork }) {
     field.value = "250"; field.dispatchEvent(new p.w.Event("input", { bubbles: true }));
     byAct(d, "part.orders.waiting").click(); await p.work.quiet();
     ok(d.querySelector('#makerReview [data-act="order.total"]') === field && field.value === "250", "tapping the part he is in again does not redraw the card he is typing in");
-  } finally { p.w.close(); }
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* an order that leaves the part closes its card, and a read that finds the same keeps it */
   st = state();
@@ -203,7 +203,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "maker.refresh").click(); await p.work.quiet();
     ok(p.cardsIn().length === 0 && !p.rowsShown().includes("ord-p1") && !d.getElementById("oSplit").classList.contains("open"),
       "an order that has left the part (agreed since) closes its card and its row goes from the list: " + JSON.stringify([p.cardsIn(), p.rowsShown()]));
-  } finally { p.w.close(); }
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 3b. SCROLLING: a tap on a row takes him to the top only while the card's way back shows (below 860px, where the card takes the list's place);
      from 860px the list is the page's scroll and the card stands beside it, so the page stays where it is and the card is brought into view */
@@ -288,7 +288,7 @@ export async function run({ ok, pageWork }) {
     const moves = p.posts.filter((x) => /orders[/]ord-c9[/]move$/.test(x.route));
     ok(moves.length === 1 && moves[0].body.noReply === true && /^[0-9a-f]{32}$/.test(moves[0].body.rid),
       "and No reply needed sends the move it sent, under a request id: " + JSON.stringify(moves));
-  } finally { p.w.close(); }
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   for (const [name, patch] of [["he has answered it", { answered: true }], ["he has marked it as needing no reply", { quiet: true }]]) {
     st = state(); Object.assign(st, patch);
     p = await open(st);
@@ -296,7 +296,7 @@ export async function run({ ok, pageWork }) {
       const c = p.counts();
       ok(!p.d.querySelector('#nlist [data-need="om:ord-r1"]') && +c.needs === baseCount.needs && +c.orders === baseCount.orders,
         "no question is asked of him once " + name + ": no card, and no count (" + JSON.stringify(c) + ")");
-    } finally { p.w.close(); }
+    } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 
   /* 6. THE 30-SECOND READ IS SILENT WHILE AN ACCOUNT IS VIEWED AS THEM: the page hides his own (stmt/page.js show()) and nobody is looking at it */
@@ -313,7 +313,7 @@ export async function run({ ok, pageWork }) {
       roster.hidden = false;
       await p.tick();
       ok(p.reads.includes(ROUTES.review) && p.reads.includes(ROUTES.claims), "and it reads again the moment his page is back: " + JSON.stringify(p.reads));
-    } finally { p.w.close(); }
+    } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 
   /* 7. THE + ORB opens Record's menu of entries */
@@ -339,7 +339,7 @@ export async function run({ ok, pageWork }) {
     const orb = top(".adm #oAdd")[0] || "", wide = at("(min-width:1080px)", ".adm #oAdd")[0] || "", room = at("(max-width:1079.98px)", ".adm .amain")[0] || "";
     ok(/position: fixed/.test(orb) && /right: 16px/.test(orb) && /z-index: 40/.test(orb) && /bottom: calc[(]var[(]--salt-bar-h[)] [+] 16px/.test(orb) && /right: 24px/.test(wide) && /bottom: 24px/.test(wide) && /padding-bottom: 72px/.test(room),
       "the orb stands 16px above the App bar on a phone, in the corner from 1080px, under the bar and the sheets, and the room under the last section clears it: " + [orb, wide, room].join(" "));
-  } finally { p.w.close(); }
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 8. RECORD'S FORMS ARE A MENU: a row for each form, one form at a time, the form itself moved and never drawn again */
   p = await open();
@@ -388,7 +388,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("record.form", "gift");
     await p.tap("nav.orders"); await p.tap("nav.record"); await p.tap("part.record.entry");
     ok(p.formsOpen().length === 0 && same(p.menu(), MENU.entry), "so does leaving the place: " + JSON.stringify(p.formsOpen()));
-  } finally { p.w.close(); }
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 9. THE OWNER'S SCRIPT IS SPLICED INTO THE CUSTOMER PAGE'S SCOPE (stmt/page.js splices it in at the end of the page script): a name it declares at the top is a name the
      customer's code must not declare, or his page overwrites theirs and "View as them" meets oOpen is not a function. A top-level statement is read
