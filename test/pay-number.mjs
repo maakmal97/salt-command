@@ -28,9 +28,12 @@ const DIG = (...p) => p.join("");
 /* ---- THE SCANS (rule 3: the repo is public). Both answer paths, lines and counts, never a value, so a failing run leaks nothing.
    leakScan holds every private value of the pay store absent from every tracked file; longRuns holds the source free of a number. */
 const BINARY = /[.](woff2?|ttf|otf|png|jpe?g|gif|webp|ico|pdf|zip|gz|wasm)$/i;
-export const trackedTexts = (only) => execFileSync("git", ["ls-files", "-z"], { cwd: REPO, maxBuffer: 1 << 28 }).toString().split("\0")
-  .filter((p) => p && !BINARY.test(p) && (!only || only.test(p)))
+export const trackedTexts = (only, except) => execFileSync("git", ["ls-files", "-z"], { cwd: REPO, maxBuffer: 1 << 28 }).toString().split("\0")
+  .filter((p) => p && !BINARY.test(p) && (!only || only.test(p)) && !(except && except.test(p)))
   .map((p) => { try { return { path: p, text: readFileSync(join(REPO, p), "utf8") }; } catch (e) { return null; } }).filter(Boolean);
+
+/* the source scan reads every tracked text file but the generated desk, its build and the book (master/, public/, ledger/) and the facts file */
+export const NOT_SCANNED = /^(master|public|ledger)\/|^MEMORY\.md$/;
 
 /* Every leaf of the pay store is private (an unknown field is searched for too) but the fields that are no identity: what stmt/pay.js ships on
    purpose (each account's key, name and bank) and what only draws the tile in QR Command (its brand and ring colours, the ids of its traced
@@ -276,10 +279,12 @@ export async function run({ ok, okOff, pageWork, KV }) {
     "and the page every shut link answers is the same: no script, no run of eight digits, no filed number: " + shutRes.status);
 
   /* ---- 7: the scans on the repository itself */
-  const srcFiles = trackedTexts(/^(docs\/|stmt\/|tools\/testfix\.mjs$|test\/[^/]*\.mjs$)/), srcPaths = new Set(srcFiles.map((f) => f.path));
+  const srcFiles = trackedTexts(null, NOT_SCANNED), srcPaths = new Set(srcFiles.map((f) => f.path));
   const dirty = longRuns(srcFiles);
-  ok(["stmt/page.js", "stmt/pay.js", "tools/testfix.mjs", "test/pay-number.mjs", "docs/STATEMENTS.md"].every((p) => srcPaths.has(p)) && dirty.length === 0,
-    "stmt/, docs/, tools/testfix.mjs and the suite's own files hold no run of ten digits that could be a number: " + srcFiles.length + " files read, " + dirty.length + " runs refused "
+  ok(["stmt/page.js", "stmt/pay.js", "src/maker-inputs.js", "engine/pricing.mjs", "tools/paysync.mjs", "tools/testfix.mjs", "test/pay-number.mjs", "test/pay-number.mutations.json", "docs/STATEMENTS.md",
+    ".github/workflows/ci.yml", "package.json"].every((p) => srcPaths.has(p)) && !["master/salt_command.html", "public/desk.html", "ledger/book.json", "MEMORY.md"].some((p) => srcPaths.has(p))
+    && srcFiles.length > 300 && dirty.length === 0,
+    "every tracked text file but master/, public/, ledger/ and MEMORY.md holds no run of ten digits that could be a number: " + srcFiles.length + " files read, " + dirty.length + " runs refused "
     + JSON.stringify(dirty.slice(0, 6)));
   if (PS.mastersPresent()) {
     const doc = JSON.parse(readFileSync(join(PS.PAY_MASTER, "accounts.json"), "utf8").replace(/^\uFEFF/, "")), tracked = trackedTexts(), found = leakScan(doc, tracked);

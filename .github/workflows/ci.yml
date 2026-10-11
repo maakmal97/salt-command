@@ -123,7 +123,8 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           covered=0
-          if [ "$BEFORE" != "0000000000000000000000000000000000000000" ]; then
+          zero=$(printf '%040d' 0)
+          if [ "$BEFORE" != "$zero" ]; then
             files=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --paginate --jq '.files[]?.filename') || files=""
             n=$(grep -c . <<< "$files" || true)
             if [ "$n" -lt 300 ] && grep -Eq '^(public/rev\.json|statements/.*|stmt/.*|wrangler\.stmt\.jsonc|tools/stmt-publish\.mjs|tools/make_statements\.mjs)$' <<< "$files"; then covered=1; fi

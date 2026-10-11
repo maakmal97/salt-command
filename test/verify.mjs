@@ -12034,7 +12034,7 @@ await (async () => {
      "CI's tests, three parts in their own job, stand down only when the guard says cloud-commit is testing the push, and run after a red check");
   ok(/^- name: Is cloud-commit testing this push\?\n\s+id: chain\n\s+if: github\.event_name == 'push'\n/.test(guard)
      && guard.includes("GH_TOKEN: ${{ github.token }}") && /\n\s+covered=0\n/.test(guard)
-     && guard.includes('[ "$BEFORE" != "' + "0".repeat(40) + '" ]')
+     && guard.includes("zero=$(printf '%040d' 0)") && guard.includes('[ "$BEFORE" != "$zero" ]')
      && guard.includes('echo "covered=$covered" >> "$GITHUB_OUTPUT"') && (ci.match(/steps\.chain\.outputs/g) || []).length === 1,
      "the guard asks on a push alone, starts from not covered, never compares from a zero base, and job tests is the one thing it stands down");
 })();
