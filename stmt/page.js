@@ -596,6 +596,17 @@ button[data-back]{display:inline-flex;align-items:center;min-height:var(--salt-t
 .grow button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);
   font-size:var(--salt-text-xs);letter-spacing:.06em;color:var(--salt-text);background:none;
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
+/* 11 Oct 2026: THE LOOK, Night or Tide, chosen on each device. The sheet's two tiles are the system's Option face as a tap, each with a
+   swatch of ITS OWN ground and accent, so a tile reads true under the other theme: these four are the system's obsidian and brass at
+   Night and at Tide, the one place this page writes a colour (held equal to design/salt-ds.css by the suite), and no theme restates them.
+   The setting under Account is two of the system's ghosts, 44px both ways. */
+:root{--look-night-ground:#05080a;--look-night-accent:#c5a059;--look-tide-ground:#03141a;--look-tide-accent:#7fd1c0}
+.look-tile{flex-direction:column;align-items:stretch;gap:var(--salt-space-3);min-height:128px}
+.look-swatch{display:block;height:56px;border-radius:var(--salt-radius-sm);border:1px solid var(--salt-edge-field)}
+.look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--look-night-accent) 0 13px,transparent 14px),var(--look-night-ground)}
+.look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--look-tide-accent) 0 13px,transparent 14px),var(--look-tide-ground)}
+.look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose)}
+.lookset{display:flex;gap:8px}
 `;
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -793,9 +804,34 @@ function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
     + '<div id="devRows" class="salt-ledger salt-ledger--plain"></div>'
+    + lookRow()
     + '<div id="devSlot"></div>' + keepPage()
     + wt("button", 'type="button" class="salt-ghost devout" id="lock"', "dev.out")
     + "</section>";
+}
+/* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
+   held one aria-pressed, applied at once with no reload. The page opens Tide until a device chooses (LOOK_HEAD). */
+function lookRow() {
+  return '<div id="lookRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
+    + wt("span", 'class="salt-ledger__label" id="lookH"', "look.h")
+    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="lookH">'
+    + wt("button", 'type="button" class="salt-ghost" data-look="night" aria-pressed="false"', "look.night")
+    + wt("button", 'type="button" class="salt-ghost" data-look="tide" aria-pressed="true"', "look.tide")
+    + "</span></div></div></div>";
+}
+/* The choice Sheet, over a signed-in page on a device that has chosen nothing: the system's Sheet, its two tiles the Option face as a
+   tap, each with a swatch of its own ground and accent, and one line saying where to change it. The script opens it (lookAsk). */
+function lookSheet() {
+  const tile = (k) => '<div class="salt-option"><button type="button" class="salt-option__face salt-option__face--tap look-tile" data-look="' + k + '">'
+    + '<span class="look-swatch look-swatch--' + k + '" aria-hidden="true"></span><span class="salt-option__text">'
+    + wt("span", 'class="salt-option__label"', "look." + k) + "</span></button></div>";
+  return '<div id="lookScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="lookSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="lookT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="lookT"', "look.sheetH")
+    + '<button type="button" class="salt-orb salt-sheet__close" id="lookX"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body"><div class="salt-options__grid salt-options__grid--2">' + tile("night") + tile("tide") + "</div>"
+    + wt("p", 'class="look-note"', "look.note") + "</div></div>";
 }
 /* Step 1b (his Q3, his sentences 3.1 and 3.3): THE BELL, in the saved app's header on every view. Until notifications
    are on it is marked and its call sits beside it; a tap on either asks (the ask is still a tap: iOS requires one).
@@ -1191,7 +1227,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="pkGo" type="button" hidden', "door.pk"))
     + wt("p", 'class="salt-insight"', "door.help")
     + "</div></div>"
-    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet())
+    + (owner ? "" : linkScreen() + codeScreen() + signedOutSheet() + replaceAsk() + bellSheet() + paySheet() + devSheet() + threadSheet() + lookSheet())
     /* S7 7.1 (his D11 of 24 Sep 2026): THE PLACES. Home opens first, and the places sit on the system's App bar under
        the thumb on a phone and on its rail beside the page from 1080px, the recipe's own switch. The bar of lines
        and the header live inside the shell, so what is hidden while signed out is hidden in one place. */
@@ -2101,7 +2137,7 @@ const CLIENT_JS = `
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
     keepReset(); closePay(); if(codeBox) codeBox.hidden=true;
-    closeDevSheet(); devN++; if(devSlot) devSlot.textContent='';
+    closeDevSheet(); lookShut(); devN++; if(devSlot) devSlot.textContent='';
     pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
@@ -2478,6 +2514,57 @@ const CLIENT_JS = `
     if(failed) devNote=tw('push.offFail');
     drawDevice(); drawOrder();
   }
+
+  /* ---- THE LOOK (11 Oct 2026, his word: Night or Tide, kept on each device, Tide until one is chosen) ---------------------
+     The head script set data-theme before the first paint. lookSet is the change: saltLook writes the attribute and the browser
+     bar's colour, the choice is kept in localStorage salt-look, and the setting under Account is marked; nothing reloads. The
+     first time a signed-in page opens on a device that has kept nothing, a Sheet asks (lookAsk, from enter): choosing keeps it and
+     closes the Sheet, and closing it any other way keeps Tide and stores nothing, so the next open asks again. A store that cannot
+     be read is never asked, because the answer could not be kept. His page, and a read-only view of an account on it, ask nothing
+     and show no setting. A test account's sealed bundle says look:'asked', so it asks at every sign-in and the Sheet can be tried
+     again whatever the device holds. Every read and write of the store is guarded. */
+  var LOOK_KEY='salt-look', lookAsked=false, lookBack=null,
+      lookSheetEl=document.getElementById('lookSheet'), lookScrim=document.getElementById('lookScrim'), lookRow=document.getElementById('lookRow');
+  function lookNow(){ return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide'; }
+  function lookStore(){ try{ var v=localStorage.getItem(LOOK_KEY); return v==='night'||v==='tide'?v:''; }catch(e){ return null; } }   /* '' nothing chosen, null unreadable */
+  function lookMark(){
+    if(!lookRow) return;
+    [].forEach.call(lookRow.querySelectorAll('[data-look]'),function(b){ b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow())); });
+  }
+  function lookSet(t){
+    if(t!=='night'&&t!=='tide') return;
+    if(typeof saltLook==='function') saltLook(t); else document.documentElement.setAttribute('data-theme',t);
+    try{ localStorage.setItem(LOOK_KEY,t); }catch(e){ /* for this visit only */ }
+    lookMark();
+  }
+  function lookShut(){
+    if(!lookSheetEl||lookSheetEl.hidden) return;
+    lookSheetEl.hidden=true; lookScrim.hidden=true;
+    try{ if(lookBack&&lookBack.focus) lookBack.focus(); }catch(e){}
+  }
+  function lookAsk(b){
+    if(OWNER||view||lookAsked||!lookSheetEl) return;
+    var kept=lookStore();
+    if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;
+    lookAsked=true; lookBack=document.activeElement;
+    lookScrim.hidden=false; lookSheetEl.hidden=false;
+    try{ lookSheetEl.focus(); }catch(e){}
+  }
+  if(lookRow) lookRow.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t) lookSet(t.getAttribute('data-look')); });
+  if(lookSheetEl){
+    lookSheetEl.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t){ lookSet(t.getAttribute('data-look')); lookShut(); } });
+    document.getElementById('lookX').addEventListener('click',lookShut);
+    lookScrim.addEventListener('click',lookShut);
+    document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') lookShut(); });
+    /* Tab stays inside the Sheet: the last control wraps to the first, and Shift+Tab from the first to the last */
+    lookSheetEl.addEventListener('keydown',function(ev){
+      if(ev.key!=='Tab') return;
+      var f=[].slice.call(lookSheetEl.querySelectorAll('button')), i=f.indexOf(document.activeElement);
+      if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }
+      else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }
+    });
+  }
+  lookMark();
 
   /* the statements a customer has: the first opens, the rest are at the foot */
   function show(b){
@@ -5372,6 +5459,7 @@ const CLIENT_JS = `
        unless that place has gone (Rewards, for an account no longer an associate) */
     if(!same){ var w=wantPlace; wantPlace=''; placeShow(w||'home'); }
     else if(placeBtns(t)[0].hidden) placeShow(t);
+    lookAsk(b);   /* 11 Oct 2026: a device that has chosen no look is asked, once a visit */
     if(same){
       if(mf&&mfil.querySelector('button[data-mf="'+mf+'"]')){ mfPick=mf; applyMonths(); }
       window.scrollTo(0,sy);
