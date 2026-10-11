@@ -1643,7 +1643,9 @@ export default {
     }
 
     /* Generated per request so the inline style and script carry a nonce rather than needing
-       'unsafe-inline'. One builder for the customer's door and the owner's. */
+       'unsafe-inline'. One builder for the customer's door and the owner's. The owner's page alone
+       adds blob: to img-src: it draws a decrypted payment slip as a blob: URL (stmt/owner.js), which
+       the self-only policy refused. The customer's page stays exactly as strict as it was. */
     const pageResponse = async (user, owner) => {
       const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
       return new Response(landingPage(user, nonce, owner, await readBulletin(env)), {
@@ -1651,7 +1653,7 @@ export default {
           "content-type": "text/html; charset=utf-8",
           "content-security-policy":
             "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
-            + "img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; "
+            + "img-src 'self' data:" + (owner ? " blob:" : "") + "; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; "
             + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
         }, HEADERS)
       });

@@ -30339,12 +30339,23 @@ await (async () => {
       "and his own app does not carry the desk's name, which never appears on this site: " + JSON.stringify(mf.name));
 
     /* ---- the page links the right one on each road ---- */
-    const ownerPage = await (await get("/all", true)).text();
-    const custPage = await (await get("/")).text();
+    const ownerRes = await get("/all", true), custRes = await get("/");
+    const ownerPage = await ownerRes.text();
+    const custPage = await custRes.text();
     ok(/<link rel="manifest" href="\/all\/manifest\.webmanifest" crossorigin="use-credentials">/.test(ownerPage),
       "his page links his manifest, fetched with his Access cookie (24 Sep 2026)");
     ok(/<link rel="manifest" href="\/manifest\.webmanifest">/.test(custPage) && !/\/all\//.test(custPage),
       "and a customer's page links the customer's and says nothing of the prefix at all");
+
+    /* ---- the slip: his page draws a decrypted payment slip as a blob: URL, which a policy with no blob: in
+       img-src refuses, so a slip never showed. HIS page's policy admits blob:; the customer's never does (rule 4).
+       The `'self'` check on each proves the img-src was found, so an empty match cannot pass for "no blob:". ---- */
+    const imgSrc = (res) => ((res.headers.get("content-security-policy") || "").match(/(?:^|; )img-src ([^;]*)/) || [null, ""])[1].split(" ");
+    const ownImg = imgSrc(ownerRes), custImg = imgSrc(custRes);
+    ok(ownImg.includes("'self'") && ownImg.includes("blob:") && ownerPage.includes("URL.createObjectURL"),
+      "his page draws a decrypted slip as a blob: URL and its policy's img-src admits blob: for it: " + ownImg.join(" "));
+    ok(custImg.includes("'self'") && custImg.includes("data:") && !custImg.includes("blob:"),
+      "while the customer's page keeps img-src to self and data: alone, no blob: (rule 4): " + custImg.join(" "));
   } finally { globalThis.fetch = realFetch; }
 })();
 section("the sell price and the carriage are two figures, and so are the buy price and the freight");
