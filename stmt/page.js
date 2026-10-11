@@ -155,6 +155,17 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .ototal .salt-kpi__value{margin-top:0}
 .ototal .sub2{display:block;margin-top:2px}
 .osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
+/* 11 Oct 2026: a yes or no in a Sheet. The look is the system's; here is where its pieces sit: the answers run the width, the danger
+   one first and in ember, the ghost that keeps below it */
+/* at the limit it lies over the order sheet, so its scrim covers that sheet and its body is above the scrim (the system's own Sheet is 70 and 71) */
+#ynScrim{z-index:72}
+.ynsheet{z-index:73}
+.ynsheet .salt-sheet__title{flex:1 1 auto}
+.ynsheet .salt-sheet__close{margin-left:auto}
+.ynsheet .salt-sheet__body > * + *{margin-top:14px}
+.ynsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
+.ynsheet .salt-sheet__foot .salt-ghost{width:100%}
+.ynsheet .salt-ghost--danger{--salt-ghost-tone:var(--salt-ember);border-color:var(--salt-ember)}
 .thsheet .salt-sheet__foot{display:block}
 .thsheet .salt-sheet__foot .msg{margin:8px 0 0}
 .thempty{margin:0}
@@ -2215,7 +2226,7 @@ const CLIENT_JS = `
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
     curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
     keepReset(); closePay(); if(codeBox) codeBox.hidden=true;
-    closeDevSheet(); lookShut(); devN++; if(devSlot) devSlot.textContent='';
+    closeDevSheet(); lookShut(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
     pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
     try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
@@ -2278,6 +2289,7 @@ const CLIENT_JS = `
        not open again until it is tapped (sheetOpen). What was chosen and typed in it stays in draft, and the same account
        let in again opens it again at the form (enter), so an order they were writing is kept, as S3 3.5 keeps it */
     if(osh&&!view&&(draft.step==='form'||draft.step==='check'||draft.step==='ask')) draft.sheetBack=true;
+    ynShut(true);   /* 11 Oct 2026: a question open when the session lapses goes with it, never left over the door */
     sheetClose();
     if(poll){ clearInterval(poll); poll=null; }
     if(!lapse.hidden) return;
@@ -2834,11 +2846,16 @@ const CLIENT_JS = `
       }
       if(r.state!=='withdrawn'&&!view){
         var wd=el('button','salt-ghost',tw('lnk.withdraw')); wd.type='button';
-        wd.addEventListener('click', async function(){
-          if(!confirm(tw('lnk.withdrawAsk'))) return;
-          var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
-          /* any failure is said, as Make a link says it: a link that stays live while nothing says so looks withdrawn */
-          if(mine!==ticket) return; myNote=rv.body.ok?'':wErr(rv.body,'lnk.notWithdrawn'); await loadMyLinks();
+        wd.setAttribute('data-yn','link:'+r.id);
+        wd.addEventListener('click', function(){
+          /* 11 Oct 2026: asked in a Sheet that says what the link is, not by the browser's confirm; a yes sends what it always sent */
+          ynOpen({title:tw('yn.linkH'), opener:wd, again:ynFind('link:'+r.id), go:tw('yn.linkGo'), keep:tw('yn.keepLink'),
+            body:[ynLinkRow(r), el('p',null,tw('yn.linkLost'))],
+            yes:async function(){
+              var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
+              /* any failure is said, as Make a link says it: a link that stays live while nothing says so looks withdrawn */
+              if(mine!==ticket) return; myNote=rv.body.ok?'':wErr(rv.body,'lnk.notWithdrawn'); await loadMyLinks();
+            }});
         });
         acts.appendChild(wd);
       }
@@ -3141,6 +3158,82 @@ const CLIENT_JS = `
     var at=document.activeElement;
     if(ev.shiftKey&&(at===all[0]||at===osh.box)){ ev.preventDefault(); all[all.length-1].focus(); }
     else if(!ev.shiftKey&&at===all[all.length-1]){ ev.preventDefault(); all[0].focus(); }
+  }
+  /* ---- A YES OR NO IS A SHEET (11 Oct 2026, Phase 7d part 1, his decision 4: no native confirm on this page) ----------------
+     Cancel this order, the same step at the order limit, and Withdraw a link each ask in the system's Sheet over the page, which
+     restates what goes: the order by its mark, its size, its word and its figure, the link by its day, its state and what it has
+     done. One danger action sends the request the old confirm sent, the same body and the same id; the ghost keeps. The Sheet closes
+     on the ghost, the close control, the scrim and Escape, and focus goes back to the control that opened it (found again by its
+     data-yn if a redraw replaced it); Tab stays inside. A lapse or a log out takes it down (ynShut, in lapsed and lock), so it is
+     never left over the door. Built from the page's own nodes at the root of the body, last, so it lies over the order sheet. */
+  var yn=null;
+  function ynKeys(ev){
+    if(!yn) return;
+    if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); ynShut(); return; }
+    if(ev.key!=='Tab') return;
+    var f=[].slice.call(yn.box.querySelectorAll('button')), i=f.indexOf(document.activeElement);
+    if(!f.length) return;
+    if(i<0&&!yn.box.contains(document.activeElement)&&document.activeElement!==yn.box){ ev.preventDefault(); f[ev.shiftKey?f.length-1:0].focus(); }
+    else if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }
+    else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }
+  }
+  /* shut it; quiet when the page is leaving it (a lapse, a log out) and focus has nowhere to go back to */
+  function ynShut(quiet){
+    if(!yn) return;
+    var q=yn; yn=null;
+    document.removeEventListener('keydown',ynKeys,true);
+    if(q.wrap.parentNode) q.wrap.parentNode.removeChild(q.wrap);
+    if(quiet) return;
+    var b=q.opener; if(!(b&&b.isConnected)&&q.again) b=q.again();
+    try{ if(b&&b.focus) b.focus({preventScroll:true}); }catch(e){}
+  }
+  /* q: title, body (nodes), go and keep (the two answers' words), yes (what the danger action does), opener (the control to give
+     focus back to) and again (finds it afresh if a redraw took it away) */
+  function ynOpen(q){
+    ynShut(true);
+    var wrap=el('div'); wrap.id='ynWrap';
+    var scrim=el('div','salt-sheet-scrim'); scrim.id='ynScrim'; scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',function(){ ynShut(); });
+    var box=el('div','salt-sheet ynsheet'); box.id='ynSheet'; box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+    box.setAttribute('aria-labelledby','ynT'); box.tabIndex=-1;
+    var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
+    var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');
+    var h=el('h2','salt-sheet__title',q.title); h.id='ynT'; head.appendChild(h);
+    var x=el('button','salt-orb salt-sheet__close'); x.type='button'; x.id='ynX'; x.setAttribute('aria-label',tw('x.close'));
+    x.appendChild(oGlyph('close')); x.addEventListener('click',function(){ ynShut(); }); head.appendChild(x);
+    q.body.forEach(function(n){ body.appendChild(n); });
+    var go=el('button','salt-ghost salt-ghost--danger',q.go); go.type='button'; go.id='ynGo';
+    go.addEventListener('click',function(){ ynShut(); q.yes(); });
+    var keep=el('button','salt-ghost',q.keep); keep.type='button'; keep.id='ynKeep'; keep.addEventListener('click',function(){ ynShut(); });
+    foot.appendChild(go); foot.appendChild(keep);
+    box.appendChild(grab); box.appendChild(head); box.appendChild(body); box.appendChild(foot);
+    wrap.appendChild(scrim); wrap.appendChild(box); document.body.appendChild(wrap);
+    yn={wrap:wrap, box:box, opener:q.opener||document.activeElement, again:q.again||null};
+    document.addEventListener('keydown',ynKeys,true);
+    try{ box.focus({preventScroll:true}); }catch(e){}
+  }
+  /* the control with this data-yn, found afresh after a redraw */
+  function ynFind(key){ return function(){ return [].filter.call(document.querySelectorAll('[data-yn]'),function(x){ return x.getAttribute('data-yn')===key; })[0]||null; }; }
+  /* the order as the limit list draws it: its mark with the size under it, its word, its figure and the day it was placed */
+  function ynOrderRow(o){
+    var L=el('div','salt-ledger salt-ledger--plain'), r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
+    lab.appendChild(mtile(o.product,o.qty,oUnit(o))); lab.appendChild(el('span',null,stateWord(o)));
+    l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm((+o.total||0)+(+o.delivery||0)))); r.appendChild(l);
+    r.appendChild(el('span','salt-ledger__flag',tw('sh.placed',{t:Dd(stamp,o.at)})));
+    L.appendChild(r); return L;
+  }
+  /* the link by what it is: the day it was made, its state, and what it has done; its address is never repeated */
+  function ynLinkRow(r){
+    var L=el('div','salt-ledger salt-ledger--plain'), row=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), st=LINK_STATE[r.state]||LINK_STATE.open;
+    l.appendChild(el('span','salt-ledger__label',r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours')));
+    l.appendChild(el('span','salt-ledger__value',tw(st[0]))); row.appendChild(l);
+    row.appendChild(el('span','salt-ledger__flag',linkLine(r)));
+    L.appendChild(row); return L;
+  }
+  /* Cancel this order: the order, what is lost and what becomes of the money; send is the call the old confirm let through */
+  function ynCancel(o,opener,key,send){
+    var paid=+o.paid||0;
+    ynOpen({title:tw('yn.orderH'), opener:opener, again:ynFind(key), go:tw('ord.cancel'), keep:tw('yn.keepOrder'), yes:send,
+      body:[ynOrderRow(o), el('p',null,tw('yn.orderLost')), el('p',null,paid>0?tw('yn.orderPaid',{rm:rm(paid)}):tw('yn.orderNone'))]});
   }
   /* one draw for every step; the control that had focus gets it back, found by its data-k */
   function sheetDraw(){
@@ -3475,8 +3568,8 @@ const CLIENT_JS = `
       l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(o.total+(+o.delivery||0)))); r.appendChild(l);
       if(!(+o.moved>0)){
         var row=el('div','olim'); row.appendChild(el('span','salt-ledger__flag',tw('sh.placed',{t:Dd(stamp,o.at)})));
-        var cb=el('button','salt-ghost',tw('ord.cancel')); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id);
-        cb.addEventListener('click',function(){ limitCancel(o); }); row.appendChild(cb); r.appendChild(row);
+        var cb=el('button','salt-ghost',tw('ord.cancel')); cb.type='button'; cb.setAttribute('data-k','cancel:'+o.id); cb.setAttribute('data-yn','limit:'+o.id);
+        cb.addEventListener('click',function(){ limitCancel(o,cb); }); row.appendChild(cb); r.appendChild(row);
       } else r.appendChild(el('span','salt-ledger__flag',tw(!part?'sh.withYou'
         :(+o.paid||0)<(+o.total||0)+(+o.delivery||0)-0.004?'sh.partOwed':'sh.part')));
       if(draft.limTap&&draft.limTap.id===o.id) r.appendChild(statusLine(draft.limTap.t));
@@ -3484,15 +3577,16 @@ const CLIENT_JS = `
     });
     B.appendChild(L);
   }
-  async function limitCancel(o){
-    var paid=+o.paid||0;
-    if(!confirm(paid>0?tw('ord.cancelAskPaid',{rm:rm(paid)}):tw('ord.cancelAsk'))) return;
-    var mine=ticket, r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
-    if(mine!==ticket) return;
-    if(r.body.ok) ridDone(o.id+':cancel');
-    draft.limTap=r.body.ok?null:{id:o.id, t:wErr(r.body,'ord.notCancelled')};
-    await loadOrders(); if(mine!==ticket) return;
-    drawOrder(); sheetDraw();
+  /* 11 Oct 2026: each Cancel here asks in a Sheet over the list, restating that order; its yes is the request it always sent */
+  function limitCancel(o,cb){
+    ynCancel(oFind(o.id)||o, cb, 'limit:'+o.id, async function(){
+      var mine=ticket, r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
+      if(mine!==ticket) return;
+      if(r.body.ok) ridDone(o.id+':cancel');
+      draft.limTap=r.body.ok?null:{id:o.id, t:wErr(r.body,'ord.notCancelled')};
+      await loadOrders(); if(mine!==ticket) return;
+      drawOrder(); sheetDraw();
+    });
   }
   /* a group order's Join: the sheet opens on the pool's own product and size; one who is asked who it is for (an associate) answers
      that first, anyone else is at the check at once, where Join sends it */
@@ -4162,15 +4256,16 @@ const CLIENT_JS = `
         });
         f.appendChild(amend);
       }
-      var wb=el('button','salt-ghost salt-ghost--danger',tw('ord.cancel')); wb.type='button';
-      wb.addEventListener('click', async function(){
-        var cur=oFind(o.id)||o, paid=+cur.paid||0;
-        if(!confirm(paid>0?tw('ord.cancelAskPaid',{rm:rm(paid)}):tw('ord.cancelAsk'))) return;
-        var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
-        if(mine!==ticket) return;
-        if(r.body.ok) ridDone(o.id+':cancel');
-        tapSaid(o,'withdraw',r.body.ok?'':wErr(r.body,'ord.notCancelled'));
-        await loadOrders(); if(mine!==ticket) return; oDraw();
+      var wb=el('button','salt-ghost salt-ghost--danger',tw('ord.cancel')); wb.type='button'; wb.setAttribute('data-yn','cancel:'+o.id);
+      wb.addEventListener('click', function(){
+        /* 11 Oct 2026: asked in a Sheet that restates the order, not by the browser's confirm; its yes is the request it always sent */
+        ynCancel(oFind(o.id)||o, wb, 'cancel:'+o.id, async function(){
+          var mine=ticket; var r=await api('/orders/'+encodeURIComponent(o.id)+'/cancel',{rid:ridFor(o.id+':cancel','')});
+          if(mine!==ticket) return;
+          if(r.body.ok) ridDone(o.id+':cancel');
+          tapSaid(o,'withdraw',r.body.ok?'':wErr(r.body,'ord.notCancelled'));
+          await loadOrders(); if(mine!==ticket) return; oDraw();
+        });
       });
       f.appendChild(wb);
       if((tp.k==='withdraw'||tp.k==='amend')&&tp.t) f.appendChild(statusLine(tp.t));

@@ -17117,7 +17117,7 @@ await (async () => {
       env: await CL.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
     const dom = new JDL(lpL(u, "ns46", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: wcL, configurable: true }); } catch (e) { win.crypto = wcL; }
-      win.scrollTo = () => {}; win.confirm = () => true;
+      win.scrollTo = () => {};
       win.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
         if (p === "/open") return { ok: true, status: 200, json: async () => body };
@@ -17158,9 +17158,11 @@ await (async () => {
       && rows.map((r) => r.t).join("|") === "Sent|Sent|Acknowledged|Acknowledged|Collected",
       "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
     const cb = d.querySelector("#osheet .olim button"); if (cb) cb.click();
+    const asked = !!d.getElementById("ynSheet") && st.cancels.length === 0;   /* Phase 7d: the Sheet asks first, and nothing is sent yet */
+    if (d.getElementById("ynGo")) d.getElementById("ynGo").click();
     for (let i = 0; i < 100 && !d.getElementById("oGo"); i++) await new Promise((r) => setTimeout(r, 30));
-    ok(st.cancels.length === 1 && st.cancels[0] === five[0].id && !!d.getElementById("oGo") && !d.querySelector("#osheet .olim"),
-      "Cancel withdraws that order, and the sheet goes on to the form of its own accord: " + JSON.stringify(st.cancels));
+    ok(asked && st.cancels.length === 1 && st.cancels[0] === five[0].id && !!d.getElementById("oGo") && !d.querySelector("#osheet .olim") && !d.getElementById("ynSheet"),
+      "Cancel asks in its Sheet, and its yes withdraws that order, and the sheet goes on to the form of its own accord: " + JSON.stringify({ asked, cancels: st.cancels }));
     void w;
   } finally { await new Promise((r) => setTimeout(r, 100)); B.w.close(); }
 })();
@@ -19363,10 +19365,9 @@ await (async () => {
       "the card lists their links");
     /* THE BOX IS REDRAWN AFTER THE PLACEMENT, by a withdrawal, or the check below would read the box
        drawn before any order and pass whatever the box draws */
-    win.confirm = () => true;
     const drawn = box();
     const wd = [...box().querySelectorAll("button")].find((b) => b.textContent === "Withdraw");
-    if (wd) wd.click();
+    if (wd) { wd.click(); D.getElementById("ynGo").click(); }   /* Phase 7d: Withdraw asks in a Sheet, its danger action sends */
     ok(!!wd && await until(() => box() && box() !== drawn && /Withdrawn/.test(box().textContent)), "a withdrawal redraws the box");
     ok(!/Placed/.test(box().textContent), "and the order's Placed is nowhere under Your links: " + JSON.stringify(box().textContent.slice(-80)));
     /* a link that is not made says so in its own box: the cap is reached from elsewhere before the tap */
@@ -28370,7 +28371,7 @@ await (async () => {
   const revokes = [];
   const dom = new JSDOM(landingPage(u, "nr2", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
-    win.scrollTo = () => {}; win.confirm = () => true;
+    win.scrollTo = () => {};
     win.fetch = async (path) => { const q = String(path);
       const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });
       if (q === "/open") return ans(200, body);
@@ -28389,7 +28390,7 @@ await (async () => {
   const until = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 25)); return f(); };
   const card = () => D.getElementById("pCard").textContent;
   const withdraw = () => [...D.querySelectorAll("#pCard button")].filter((b) => b.textContent === "Withdraw");
-  const tap = async (m) => { mode = m; const n = revokes.length; withdraw()[0].click(); await until(() => revokes.length > n); await work.quiet(); };
+  const tap = async (m) => { mode = m; const n = revokes.length; withdraw()[0].click(); D.getElementById("ynGo").click(); await until(() => revokes.length > n); await work.quiet(); };
   try {
     D.getElementById("un").value = u; D.getElementById("pw").value = pass;
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
@@ -32437,7 +32438,7 @@ await (async () => {
       try { Object.defineProperty(win, "crypto", { value: crypto, configurable: true }); } catch (e) { win.crypto = crypto; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
       if (!win.TextDecoder) win.TextDecoder = TextDecoder;
-      win.scrollTo = () => {}; win.confirm = () => true;
+      win.scrollTo = () => {};
       win.fetch = async (path, init) => {
         const p = String(path), mth = (init && init.method) || "GET", j = init && init.body ? JSON.parse(init.body) : null;
         if (p === "/open") return answer(200, body);
@@ -32452,7 +32453,8 @@ await (async () => {
   const btn = (t) => [...d.querySelectorAll("#pOrder button")].find((b) => b.textContent === t && !b.disabled);
   /* each tap waits for its answer to be drawn: Withdraw has no busy state, and a second tap while the first is in
      flight is the same tap, rightly under the same id, which is not what this counts */
-  const tap = async (t, k, n) => { await until(() => btn(t)); btn(t).click(); await until(() => sent[k].length === n);
+  const tap = async (t, k, n) => { await until(() => btn(t)); btn(t).click(); if (k === "cancel") d.getElementById("ynGo").click();   /* Phase 7d: Cancel asks in a Sheet, its danger action sends */
+    await until(() => sent[k].length === n);
     await new Promise((r) => setTimeout(r, 120)); await until(() => btn(t)); };
   try {
     d.getElementById("un").value = un; d.getElementById("pw").value = pw;
@@ -34422,7 +34424,7 @@ await (async () => {
     const html = landingPage(u, "nf3", null), fast = html.replace(/var POLL_MS=[0-9]+/, "var POLL_MS=120");
     const dom = new JSDOM(fast, { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
-      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {}; w.confirm = () => false;
+      w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
       w.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
         const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify([st.a, st.b])) } : { ok: true };
@@ -34446,7 +34448,7 @@ await (async () => {
   await drive(async (w, d, st) => {
     d.querySelector('#pOrder [data-row="' + A + '"]').click();
     const c = [...scr(d).querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
-    c.focus(); c.click();   /* the confirm answers no, and the focus stays on the button */
+    c.focus(); c.click(); d.getElementById("ynKeep").click();   /* the Sheet asks, the answer is keep, and the focus is back on the button */
     hand(st);
     await until(() => /Collected on/.test(part(d, "when")));
     const held = d.contains(c) && d.activeElement === c;
@@ -44330,7 +44332,7 @@ await (async () => {
     try { Object.defineProperty(win, "crypto", { value: wcH, configurable: true }); } catch (e) { win.crypto = wcH; }
     if (!win.TextEncoder) win.TextEncoder = TextEncoder;
     if (!win.TextDecoder) win.TextDecoder = TextDecoder;
-    win.scrollTo = () => {}; win.confirm = () => true; win.open = () => null;
+    win.scrollTo = () => {}; win.open = () => null;
     /* the saved app: the account opens only there (Step 1b) */
     win.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
     win.fetch = async (path, init) => {
@@ -44378,7 +44380,7 @@ await (async () => {
     d.getElementById("payX").click();
 
     openO("oB");
-    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click(); d.getElementById("ynGo").click();
     await until(() => said(d, "Refused by the fixture: withdraw"));
     const wdBtn = [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order");
     const wdLine = said(scr(), "Refused by the fixture: withdraw");
@@ -44407,7 +44409,7 @@ await (async () => {
     const lapseBefore = lapseOn();
     st.ordersDown = true;
     openO("oB");
-    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click();
+    [...scr().querySelectorAll("button")].find((b) => b.textContent === "Cancel this order").click(); d.getElementById("ynGo").click();
     await until(() => lapseOn());
     ok(!lapseBefore && lapseOn(),
       "and a 401 after a tap on the payment page is said on screen, in the bar: " + lapseBefore + " then " + lapseOn());

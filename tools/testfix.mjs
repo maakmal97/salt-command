@@ -16,7 +16,7 @@
  */
 import { createHash } from "node:crypto";
 import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, decideThread, applyEvent, MODES, METHODS, VERDICTS, OPEN_STATES,
-  ROWED, customerView, rateDue } from "../stmt/orders.js";
+  ROWED, customerView, rateDue, MAX_OPEN, openCount } from "../stmt/orders.js";
 import { PAY_ACCOUNTS } from "../stmt/pay.js";
 import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS } from "../stmt/testfix.js";
 import { unwrapKey, encryptWith } from "./stmt-crypto.mjs";
@@ -211,6 +211,13 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [yesAt(T(0, 21), "fex45", { total: priceOf(list, "oil", 1), slot: next(16), slotSpan: "16:00-20:00" })]));
   O.push(order(oid(4, "46"), list, T(4, 3), { product: "candy", qty: 1, mode: "deliver", place: "Taman Rekaan" }, [
     yesAt(T(4, 20), "fex46", { total: priceOf(list, "candy", 1) + 10 }), [T(1, 30), "desk", { status: "acknowledged", delivery: 4 }]]));
+
+  /* 11 Oct 2026 (Phase 7d part 1): PAID BEFORE ANYTHING MOVED, a transfer he received on an order agreed and not yet handed over, so
+     Cancel this order asks in its Sheet and the Sheet names the refund */
+  O.push(order(oid(1, "47"), list, T(1, 30), { product: "candy", qty: 1, mode: "collect" }, [
+    [T(1, 40), "desk", { status: "acknowledged" }], [T(1, 45), "customer", pay("transfer")],
+    [T(1, 50), "customer", Object.assign({ action: "pay", amount: 12 }, rail("transfer"))],
+    [T(1, 55), "desk", { verdict: { kind: "received", claim: T(1, 50), amount: 12 } }]]));
 
   /* A GROUP ORDER (the pool): one open with the account joined (the order it made carries the pool's id, and the units in are the
      account's with invented others, `seedUnits`), and one he closed whose joined order is acknowledged. The order is made by the
@@ -408,6 +415,11 @@ export const FEATURES = [
   ["another window waiting on their yes (10 Oct 2026)", (f) => has(f, (o) => o.status === "placed" && accYes(o, f) && !!o.slot && !!o.price.offer.slot && o.price.offer.slot !== o.slot)],
   ["an offer for their yes lapsed, then agreed at their terms (10 Oct 2026)", (f) => has(f, (o) => o.status === "acknowledged" && o.price && o.price.from === "accept"
     && o.price.state === "offered" && Math.abs(o.price.offer.total - o.total) > 0.004)],
+  ["orders open at the limit, so New order opens on the limit and each Cancel there asks in a Sheet (Phase 7d, 11 Oct 2026)", (f) => {
+    const open = f.orders.filter((o) => OPEN_STATES.includes(o.status));
+    return openCount(open) >= MAX_OPEN && open.some((o) => !(+o.moved > 0)); }],
+  ["an order paid before anything moved, so Cancel this order asks in its Sheet and names the refund (Phase 7d, 11 Oct 2026)", (f) => has(f, (o) => ["placed", "acknowledged"].includes(o.status)
+    && +o.paid > 0.004 && !(+o.moved > 0) && !(o.payments || []).some((p) => p.claim === "waiting"))],
   ["the look: the choice Sheet asked at every sign-in, and the setting under Account (11 Oct 2026)", (f) => f.look === "asked"],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
