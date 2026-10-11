@@ -12,15 +12,79 @@
  * the source scan (below) can hold this file to the same rule as the rest.
  *   1  the writer: the picker, its refusals, the whitelist, the last four digits alone on screen, the wrangler arguments
  *   2  the route GET /pay/accounts: the session gate, the whitelist, no-store, the empty answer, a failed read, the test accounts' overlay
+ *   4  the practice accounts' invented number, sealed with the fixture
+ *   5  the leak scan and the source scan, each on invented data, then 6 a guest board with the numbers filed, then 7 both on the repository
+ *   3  the sheet, in jsdom
  *   (each check below was proved red by its own mutation: test/pay-number.mutations.json, run with tools/section.mjs) */
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
 /* an invented number, joined at run time */
 const DIG = (...p) => p.join("");
 
-export async function run({ ok, pageWork, KV }) {
+/* ---- THE SCANS (rule 3: the repo is public). Both answer paths, lines and counts, never a value, so a failing run leaks nothing.
+   leakScan holds every private value of the pay store absent from every tracked file; longRuns holds the source free of a number. */
+const BINARY = /[.](woff2?|ttf|otf|png|jpe?g|gif|webp|ico|pdf|zip|gz|wasm)$/i;
+export const trackedTexts = (only) => execFileSync("git", ["ls-files", "-z"], { cwd: REPO, maxBuffer: 1 << 28 }).toString().split("\0")
+  .filter((p) => p && !BINARY.test(p) && (!only || only.test(p)))
+  .map((p) => { try { return { path: p, text: readFileSync(join(REPO, p), "utf8") }; } catch (e) { return null; } }).filter(Boolean);
+
+/* Every leaf of the pay store is private (an unknown field is searched for too) but the fields that are no identity: what stmt/pay.js ships on
+   purpose (each account's key, name and bank) and what only draws the tile in QR Command (its brand and ring colours, the ids of its traced
+   marks, a purpose label, the group an account sits in and the group names), and the store's own bookkeeping. A generic word of those is in half
+   the repository. */
+const PUBLIC_FIELDS = ["accounts[].key", "accounts[].name", "accounts[].bank", "accounts[].brand", "accounts[].ring", "accounts[].bankMark", "accounts[].holderMark",
+  "accounts[].tag", "accounts[].group", "accounts[].maintenance", "rev", "updated"];
+const publicField = (path) => PUBLIC_FIELDS.includes(path) || path === "groups" || path.startsWith("groups.") || path.startsWith("groups[");
+export function leavesOf(doc) {
+  const out = [];
+  const walk = (v, path) => {
+    if (Array.isArray(v)) v.forEach((x) => walk(x, path + "[]"));
+    else if (v && typeof v === "object") Object.keys(v).forEach((k) => walk(v[k], path ? path + "." + k : k));
+    else if ((typeof v === "string" || typeof v === "number") && !publicField(path)) {
+      const s = String(v).trim(); if (s.length >= 4 && !(/^[0-9 -]+$/.test(s) && s.replace(/[^0-9]/g, "").length < 5)) out.push({ path, s });   /* four digits is no identity */
+    }
+  };
+  walk(doc, "");
+  return out;
+}
+export function leakScan(doc, files) {
+  const leaves = leavesOf(doc), low = files.map((f) => f.text.toLowerCase());
+  const closed = low.map((t) => t.replace(/([0-9])[ -](?=[0-9])/g, "$1"));   /* a number written in groups or with dashes, closed up */
+  const seen = new Map();
+  for (const { path, s } of leaves) {
+    const d = s.replace(/[^0-9]/g, ""), isNumber = /^[0-9 -]+$/.test(s), raw = s.toLowerCase();
+    const bound = isNumber && d.length < 10 ? new RegExp("(?<![0-9])" + d + "(?![0-9])") : null;   /* a short code counts only as a whole number */
+    let n = 0;
+    low.forEach((t, i) => { if (isNumber ? (bound ? bound.test(closed[i]) : closed[i].includes(d)) : t.includes(raw)) n++; });
+    if (n) seen.set(path, (seen.get(path) || 0) + n);
+  }
+  return { checked: leaves.length, hits: [...seen].map(([path, files]) => ({ path, files })) };
+}
+
+/* a run of ten digits or more is not allowed in the source, but for what is plainly no number: all zeros or led by eight; an order stamp
+   (a date and a short sequence); a decimal fraction; a run id named in prose; three constants. A run touching a letter is a hash, a blob
+   or a literal such as 0b1010..., not a number, and is not read. */
+const CONSTANTS = new Set(["0123456789", "2166136261", "2147483647"]);
+const allowedRun = (s, before) => /^0{8}/.test(s) || CONSTANTS.has(s) || /[0-9][.]$/.test(before) || /\brun\s+(id\s+)?$/i.test(before)
+  || /^20[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{3,6}$/.test(s);
+export function longRuns(files) {
+  const out = [];
+  for (const f of files) {
+    const re = /[0-9]{10,}/g; let m;
+    while ((m = re.exec(f.text))) {
+      const s = m[0], before = f.text.slice(Math.max(0, m.index - 12), m.index), after = f.text[m.index + s.length] || " ";
+      if (/[A-Za-z]/.test(before.slice(-1)) || /[A-Za-z]/.test(after) || allowedRun(s, before)) continue;
+      out.push({ path: f.path, line: f.text.slice(0, m.index).split("\n").length, len: s.length });
+    }
+  }
+  return out;
+}
+
+export async function run({ ok, okOff, pageWork, KV }) {
   const PS = await import("../tools/paysync.mjs");
 
   /* ---- 1: the writer, on an invented pay store */
@@ -145,6 +209,68 @@ export async function run({ ok, pageWork, KV }) {
   const older = await call("/pay/accounts", TS);
   ok(JSON.stringify(sealedAns.b.accounts) === JSON.stringify({ maybank: { number: ZERO } }) && JSON.stringify(older.b.accounts) === "{}",
     "the Worker answers the sealed fixture's number, and a fixture sealed at an earlier version is not served until the publish seals it again: " + hide(JSON.stringify([sealedAns.b, older.b])));
+
+  /* ---- 5: the leak scan, on an invented pay store: a number as stored, closed up, regrouped, dashed or inside a longer run; a payload;
+          a name in any case; a short code only as a whole number; and a report that names a field and a count, never a value */
+  const store5 = { payee: "Invented Payee Sdn Bhd", owners: [{ name: "Invented Owner" }], accounts: [
+    { key: "maybank", name: "Maybank", bank: "Maybank", sub: n1.slice(0, 4) + " " + n1.slice(4, 8) + " " + n1.slice(8), payload: "000201INVENTED", mid: "99911", holder: "Invented Holder" },
+    { key: "ambank", name: "AmBank", bank: "AmBank", sub: n2, group: "Invented Group", tag: "Invented Tag", bankMark: "invmark", brand: "#123abc", maintenance: false }], groups: { biz: "Invented Group Label" }, seq: 5550, rev: 3, updated: "2026-10-11T04:00:00Z" };
+  const scan = (text) => leakScan(store5, [{ path: "doc.md", text }]), fields = (r) => r.hits.map((h) => h.path).sort().join();
+  const calm = scan("Maybank and AmBank are named, in the keys maybank and ambank; a figure of 1999112 and a count of 5550. The labels Invented Group, Invented Tag,"
+    + " invmark and Invented Group Label, and the colour #123abc, only draw a tile. Written 2026-10-11T04:00:00Z.");
+  ok(calm.checked === 7 && calm.hits.length === 0,
+    "the scan reads the seven private values of an invented store, and finds none in a file that names only the banks, their keys, the labels that draw a tile and figures that merely look alike: " + JSON.stringify(calm));
+  const forms = { stored: scan("pay into " + store5.accounts[0].sub + " today"), plain: scan("pay " + n1 + " today"), regrouped: scan("pay " + n1.slice(0, 4) + " " + n1.slice(4) + " today"),
+    dashed: scan("pay " + n1.slice(0, 6) + "-" + n1.slice(6)), inside: scan("x9" + n1 + "9"), other: scan("and " + n2) };
+  ok(Object.values(forms).every((r) => fields(r) === "accounts[].sub"),
+    "a number is found as stored in groups, closed up, regrouped, with a dash, inside a longer run and for the other account too: " + JSON.stringify(Object.fromEntries(Object.entries(forms).map(([k, r]) => [k, fields(r)]))));
+  const names = { owner: scan("Prepared by INVENTED OWNER Sdn."), payee: scan("invented payee sdn bhd"), holder: scan("the Invented Holder"), payload: scan("qr 000201invented"), code: scan("merchant 99911 at") };
+  ok(fields(names.owner) === "owners[].name" && fields(names.payee) === "payee" && fields(names.holder) === "accounts[].holder" && fields(names.payload) === "accounts[].payload" && fields(names.code) === "accounts[].mid",
+    "a name is found in any case, an owner, a payee and a holder each under its own field, with a payload and a short code as it stands: " + JSON.stringify(Object.fromEntries(Object.entries(names).map(([k, r]) => [k, fields(r)]))));
+  const said = JSON.stringify([forms.stored, names.owner, names.payload, names.code]);
+  ok(Object.keys(forms.stored.hits[0]).join() === "path,files" && Object.keys(forms.stored).join() === "checked,hits" && !said.includes(n1) && !/nvented|99911|000201|5550/.test(said),
+    "and what it reports is a field and a count of files, never a value: " + said.replace(/[0-9]{5,}/g, "#"));
+
+  /* the source scan: ten digits or more are no number only where the rule says so, and each exception holds only its own case */
+  const runs = (text) => longRuns([{ path: "x.mjs", text }]);
+  const allowed = { zeros: "0".repeat(13), zeroLed: DIG("00000000", "1234"), stamp: DIG("2026", "1011", "123456"), stampShort: DIG("2026", "1006", "080"), fraction: "3." + DIG("1415", "9265", "3589"),
+    runId: "(run " + DIG("3604", "1951", "078") + ")", wrapped: "(run\n       " + DIG("3604", "1951", "078") + ")", digits: "0123456789", fnv: DIG("2166", "136261"), int: DIG("2147", "483647"), hash: "a" + DIG("5550", "1234", "5678"), blob: DIG("5550", "1234", "5678") + "f" };
+  const refused = { odd: DIG("5550", "1234", "5678"), longer: DIG("5550", "1234", "5678", "9012", "34"), stampLong: DIG("2026", "1011", "1234567"), badMonth: DIG("2026", "1311", "123456"), rerun: "rerun " + DIG("3604", "1951", "078"),
+    stop: "see." + DIG("5550", "1234", "5678") };
+  ok(Object.entries(allowed).every(([k, t]) => runs("n = " + t + ";").length === 0),
+    "a run of ten digits is let through when it is all zeros or led by eight, an order stamp, a decimal fraction, a run id in prose, one of three constants, or part of a hash or blob: "
+    + JSON.stringify(Object.entries(allowed).filter(([k, t]) => runs("n = " + t + ";").length).map(([k]) => k)));
+  ok(Object.entries(refused).every(([k, t]) => runs("n = " + t + ";").length === 1),
+    "and any other is refused, a stamp that is too long or not a date, a run id that is no run id, a run after a full stop and one inside a longer run: "
+    + JSON.stringify(Object.entries(refused).filter(([k, t]) => runs("n = " + t + ";").length !== 1).map(([k]) => k)));
+  const where = longRuns([{ path: "dir/x.mjs", text: "a\nb\nn = " + refused.odd }]);
+  ok(where.length === 1 && Object.keys(where[0]).join() === "path,line,len" && where[0].path === "dir/x.mjs" && where[0].line === 3 && where[0].len === 12,
+    "a refused run is reported by its file, its line and its length, never its digits: " + JSON.stringify(where));
+
+  /* ---- 6: a guest board is a page of prices that forbids script outright, and no filed number reaches it, nor the shut page */
+  await kv.put("paynum", record());
+  await kv.put("g:aaaa-bbbb", JSON.stringify({ id: "aaaa-bbbb" }));
+  await kv.put("board:2", JSON.stringify({ week: { label: "Week of 05 Oct 2026" }, products: [{ product: "salt", unit: "unit", fellBack: false, sizes: [{ q: 1, price: 12.5 }, { q: 5, price: 55 }] }] }));
+  const board = await stmtW.fetch(new Request("https://k7m3p2.example/g/aaaa-bbbb"), env), boardHtml = await board.text();
+  const shutRes = await stmtW.fetch(new Request("https://k7m3p2.example/g/zzzz-zzzz"), env), shutHtml = await shutRes.text();
+  ok(board.status === 200 && /RM 12\.50/.test(boardHtml) && /script-src 'none'/.test(board.headers.get("content-security-policy") || "") && !/<script/.test(boardHtml)
+    && !/[0-9]{8}/.test(boardHtml) && !boardHtml.includes(n1.slice(0, 6)) && !boardHtml.includes("/pay/accounts"),
+    "a guest board, with the numbers filed, still draws its prices, forbids script outright and carries no run of eight digits nor any of the filed number: " + board.status);
+  ok(shutRes.status === 404 && /script-src 'none'/.test(shutRes.headers.get("content-security-policy") || "") && !/[0-9]{8}/.test(shutHtml) && !shutHtml.includes(n1.slice(0, 6)),
+    "and the page every shut link answers is the same: no script, no run of eight digits, no filed number: " + shutRes.status);
+
+  /* ---- 7: the scans on the repository itself */
+  const srcFiles = trackedTexts(/^(docs\/|stmt\/|tools\/testfix\.mjs$|test\/[^/]*\.mjs$)/), srcPaths = new Set(srcFiles.map((f) => f.path));
+  const dirty = longRuns(srcFiles);
+  ok(["stmt/page.js", "stmt/pay.js", "tools/testfix.mjs", "test/pay-number.mjs", "docs/STATEMENTS.md"].every((p) => srcPaths.has(p)) && dirty.length === 0,
+    "stmt/, docs/, tools/testfix.mjs and the suite's own files hold no run of ten digits that could be a number: " + srcFiles.length + " files read, " + dirty.length + " runs refused "
+    + JSON.stringify(dirty.slice(0, 6)));
+  if (PS.mastersPresent()) {
+    const doc = JSON.parse(readFileSync(join(PS.PAY_MASTER, "accounts.json"), "utf8").replace(/^\uFEFF/, "")), tracked = trackedTexts(), found = leakScan(doc, tracked);
+    ok(found.checked >= 5 && tracked.length > 100 && found.hits.length === 0,
+      "no private value of the pay store, a number, member number, biller, reference, payload, holder, payee or owner, is in any tracked file, closed up or grouped: "
+      + found.checked + " values read in " + tracked.length + " files, " + found.hits.length + " found " + JSON.stringify(found.hits));
+  } else okOff(true, "the pay store is not on this machine, so no tracked file is checked against it");
 
   /* ---- 3: the sheet, through the generated page in jsdom with a stubbed fetch */
   const { landingPage } = await import("../stmt/page.js");

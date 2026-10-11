@@ -175,7 +175,7 @@ async function numbersMain(argv) {
   const dry = argv.includes("--dry");
   if (!mastersPresent()) { console.log("paysync: the pay master or qr-command is not on this machine; nothing to do"); return; }
   const { PAY_ACCOUNTS } = await import(pathToFileURL(OUT).href);
-  const doc = JSON.parse(readFileSync(join(PAY_MASTER, "accounts.json"), "utf8").replace(/^﻿/, ""));
+  const doc = JSON.parse(readFileSync(join(PAY_MASTER, "accounts.json"), "utf8").replace(/^\uFEFF/, ""));
   const { accounts, refused } = pickNumbers(doc, new Set(PAY_ACCOUNTS.map((a) => a.key)));
   if (refused.length) { console.error("STOPPED: nothing was written.\n  " + refused.join("\n  ")); process.exit(1); }
   const rec = numbersRecord(accounts);
