@@ -244,21 +244,25 @@ export async function run({ ok }) {
   } finally { globalThis.fetch = originalFetch; }
 
   /* ---- the owner page's own controls, in the actual owner script ---- */
-  const posts = [];
+  const posts = [], scrolls = [];
   let failNext = 0;
   const orderOf = (id, status, patch = {}) => ({ id, u: "abcd-efgh", product: "salt", qty: 3, total: 285, status, mode: "collect", history: [], ...patch });
-  const reviewBody = { ok: true, drafts: [], orders: [
+  const draftId = "2026-10-03T09:00:00.000Z";
+  const reviewBody = { ok: true, orders: [
     orderOf("20261003090001-ack", "acknowledged"),
     orderOf("20261003090002-rdy", "ready"),
     orderOf("20261003090003-del", "placed", { mode: "deliver" }),
     orderOf("20261003090004-can", "cancelled", { again: ["cancel"] }),
-    orderOf("20261003090005-gone", "done")] };
+    orderOf("20261003090005-gone", "done")],
+  drafts: [{ id: draftId, status: "pending", collection: "sales", product: "salt", qty: 1, total: 130,
+    entry: { type: "SELL", party: "CX1-ZED", date: "2026-10-03" } }] };
   const browser = new JSDOM(landingPage("", "fixture", { master: "local-master", accounts: [] }), {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
       Object.defineProperty(window, "crypto", { value: { getRandomValues: (a) => webcrypto.getRandomValues(a), randomUUID: () => webcrypto.randomUUID(), subtle: webcrypto.subtle } });
       window.TextEncoder = TextEncoder; window.TextDecoder = TextDecoder;
       window.scrollTo = () => {}; window.confirm = () => true;
+      window.HTMLElement.prototype.scrollIntoView = function (options) { scrolls.push({ id: this.getAttribute("data-maker-say"), options }); };
       window.fetch = async (path, init) => {
         if (init && init.method === "POST" && String(path).startsWith("/all/maker/orders/")) {
           posts.push({ path: String(path), body: JSON.parse(init.body) });
@@ -288,6 +292,9 @@ export async function run({ ok }) {
       return wrap && wrap.querySelector("input");
     };
     const settle = async (n) => { await until(() => posts.length >= n); await new Promise((resolve) => setTimeout(resolve, 40)); };
+    /* an answer lands in the foot of the card it was asked of; #makerReviewStatus keeps the list's own words */
+    const say = (id) => card(id)?.querySelector("[data-maker-say]");
+    const list = () => doc.getElementById("makerReviewStatus").textContent;
     doc.querySelector('[data-m="maker"]').click();
     await until(() => button("20261003090001-ack", "Ready to deliver"));
 
@@ -298,15 +305,28 @@ export async function run({ ok }) {
     ok(posts[0] && posts[0].path === "/all/maker/orders/20261003090001-ack/move" && posts[0].body.status === "ready"
       && posts[0].body.mode === "deliver" && /^[0-9a-f]{32}$/.test(posts[0].body.rid),
       "Ready to deliver sends Ready with the deliver mode under a request id: " + JSON.stringify(posts[0]));
+    await until(() => say("20261003090001-ack")?.textContent);
+    ok(say("20261003090001-ack")?.textContent === "Order marked ready to deliver."
+      && say("20261003090001-ack").getAttribute("role") === "status" && say("20261003090001-ack").getAttribute("aria-live") === "polite"
+      && !/ready to deliver/.test(list()) && /open orders/.test(list()) && !say("20261003090002-rdy")?.textContent
+      && scrolls.some((s) => s.id === "20261003090001-ack" && s.options && s.options.block === "nearest"),
+      "An order's answer lands in the foot of the card tapped, a polite status line, not on the list's line and not on another card: "
+      + JSON.stringify({ card: say("20261003090001-ack")?.textContent, other: say("20261003090002-rdy")?.textContent, list: list() }));
 
     await until(() => button("20261003090002-rdy", "Close at these units"));
     const units = field("20261003090002-rdy", "Units handed over");
     units.value = "3"; button("20261003090002-rdy", "Close at these units").click();
     await new Promise((resolve) => setTimeout(resolve, 40));
     ok(posts.length === 1, "Close at the full size sends nothing: a close is under the units ordered.");
+    ok(say("20261003090002-rdy")?.textContent === "A close is above 0 and under the 3 units ordered." && !/A close is above/.test(list()),
+      "A refusal made on the page itself, before anything is sent, is said on the card it was made on");
     failNext = 1;
     field("20261003090002-rdy", "Units handed over").value = "2";
     button("20261003090002-rdy", "Close at these units").click(); await settle(2);
+    await until(() => /did not answer/.test(say("20261003090002-rdy")?.textContent || ""));
+    ok(say("20261003090002-rdy")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
+      && !say("20261003090001-ack")?.textContent.includes("did not answer"),
+      "A refused action says so in the foot of its own card, beside the buttons it was tapped on, and not on the list's line");
     await until(() => button("20261003090002-rdy", "Close at these units"));
     field("20261003090002-rdy", "Units handed over").value = "2";
     button("20261003090002-rdy", "Close at these units").click(); await settle(3);
@@ -333,11 +353,23 @@ export async function run({ ok }) {
     button("20261003090003-del", "We do not have enough in hand this week.").click(); await new Promise((resolve) => setTimeout(resolve, 20));
     ok(field("20261003090003-del", "Reason to the customer (Decline or Cancel, optional)").value === "We do not have enough in hand this week.",
       "A reason picked fills the reason box.");
+    reviewBody.orders = reviewBody.orders.filter((o) => o.id !== "20261003090003-del");   /* the Desk's next read no longer lists it */
     button("20261003090003-del", "Decline").click(); await settle(6);
     ok(posts[5].body.status === "declined" && posts[5].body.note === "We do not have enough in hand this week.",
       "Decline sends the reason picked: " + JSON.stringify(posts[5]));
-
+    await until(() => /Order declined/.test(list()));
+    ok(!card("20261003090003-del") && list() === "Order declined.",
+      "An answer whose card has gone, the order having left the open list, falls to the list's own line and is not lost: " + list());
+    await until(() => button(draftId, "Approve row"));
+    button(draftId, "Approve row").click();
+    await until(() => say(draftId)?.textContent);
+    ok(say(draftId)?.textContent === "Row approved." && !/Row approved/.test(list()),
+      "A Desk row's answer lands on the row's own card too: " + JSON.stringify({ card: say(draftId)?.textContent, list: list() }));
     await until(() => field("20261003090001-ack", "Reply to the customer"));
+    button("20261003090001-ack", "Amend order").click();
+    ok(say("20261003090001-ack")?.textContent === "Change a figure first." && !/Change a figure/.test(list()),
+      "Amend with no figure changed says so on its own card");
+    await until(() => !button("20261003090001-ack", "Keep as a quick reply").disabled);   /* the card's controls come back once the tap has run */
     const reply = field("20261003090001-ack", "Reply to the customer");
     reply.value = "Ready after five."; reply.dispatchEvent(new window.Event("input", { bubbles: true }));
     button("20261003090001-ack", "Keep as a quick reply").click();
@@ -345,7 +377,12 @@ export async function run({ ok }) {
     ok(JSON.parse(window.localStorage.getItem("saltQuickReplies")).includes("Ready after five.")
       && !!button("20261003090001-ack", "Forget this quick reply"),
       "Keep as a quick reply keeps the line on this device, and the button then offers to forget it.");
+    ok(say("20261003090001-ack")?.textContent === "Kept as a quick reply on this device." && !/Kept as/.test(list()),
+      "Keep as a quick reply answers on its own card");
     button("20261003090001-ack", "Send reply").click(); await settle(7);
+    await until(() => say("20261003090001-ack")?.textContent === "Reply sent.");
+    ok(say("20261003090001-ack")?.textContent === "Reply sent." && !/Reply sent/.test(list()),
+      "Send reply answers on the card replied on, after the redraw that follows it");
     await until(() => button("20261003090002-rdy", "Ready after five."));
     button("20261003090002-rdy", "Ready after five.").click(); await new Promise((resolve) => setTimeout(resolve, 20));
     ok(field("20261003090002-rdy", "Reply to the customer").value === "Ready after five.",
