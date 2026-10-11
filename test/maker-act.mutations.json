@@ -1,0 +1,50 @@
+[
+ {
+  "name": "A1 a card control loses its act: Approve on a link card",
+  "file": "stmt/owner.js",
+  "find": "ap.type='button'; ap.setAttribute('data-move',''); actOn(ap,'link.approve');",
+  "replace": "ap.type='button'; ap.setAttribute('data-move','');"
+ },
+ {
+  "name": "A2 every Cancel retained input loses its act (the table never names them, so only the presence check can see it)",
+  "file": "stmt/owner.js",
+  "find": "cancel.type='button';cancel.hidden=true;if(L[1]) actOn(cancel,L[1]+'.cancel-retained',L[2]);",
+  "replace": "cancel.type='button';cancel.hidden=true;"
+ },
+ {
+  "name": "A3 the owner's static markup loses an act: Make a link",
+  "file": "stmt/page.js",
+  "find": "type=\"button\" id=\"gmake\" data-act=\"link.make\">",
+  "replace": "type=\"button\" id=\"gmake\">"
+ },
+ {
+  "name": "A4 a control made by hand loses its act: Clear notice",
+  "file": "stmt/owner.js",
+  "find": "actOn(set,'notice.set');actOn(clear,'notice.clear');actOn(refresh,'notice.read');",
+  "replace": "actOn(set,'notice.set');actOn(refresh,'notice.read');"
+ },
+ {
+  "name": "B1 two controls in one card share an act: Send reply and No reply needed",
+  "file": "stmt/owner.js",
+  "find": "makerButton(card,['No reply needed','order.no-reply'],",
+  "replace": "makerButton(card,['No reply needed','order.reply'],"
+ },
+ {
+  "name": "B2 the quick replies lose their key, so two in one card share an act and nothing tells them apart (the table is unchanged)",
+  "file": "stmt/owner.js",
+  "find": "makerButton(card,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false)",
+  "replace": "makerButton(card,[line,'order.quick-reply'],function(){ said.value=line; keepWord(); },false)"
+ },
+ {
+  "name": "C1 an act is renamed in the page and not in the table",
+  "file": "stmt/owner.js",
+  "find": "var box=actOn(document.createElement('input'),'acct.sent');",
+  "replace": "var box=actOn(document.createElement('input'),'acct.ticked');"
+ },
+ {
+  "name": "C2 the table loses a row for an act the page draws",
+  "file": "docs/STATEMENTS.md",
+  "find": "| `acct.sent` | Account card | Ticks the account as sent. |\n",
+  "replace": ""
+ }
+]
