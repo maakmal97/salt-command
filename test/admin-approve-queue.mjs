@@ -6,6 +6,7 @@
  *   3  Approve, Reject, the trip's Approve, the Needs you pill, Withdraw server-held entry, Close the group order and Set and Clear the notice each ask on the page's Sheet: nothing is sent as it
  *      opens, the four ways out send nothing and give focus back, the one action sends the request the confirm let through (the same route and body), and a second tap sends nothing
  *   4  no native confirm is left in the owner's script, and none is asked on any road above
+ *   5  a lapse takes a Sheet left open down with the page
  * The twin at entry, the retained cancels, the chat retry and the vault conflict are driven through the same Sheet in their own sections (test/maker-gift-twin.mjs, maker-loan-twin.mjs, maker-trades.mjs,
  * maker-communications.mjs, maker-input-receipts.mjs and the admin section of test/verify.mjs). Drawn by the maker harness (test/maker-act.mjs). */
 import { readFileSync } from "node:fs";
@@ -270,4 +271,18 @@ export async function run({ ok, pageWork }) {
   const found = [...owner.matchAll(/\bconfirm\s*\(/g)].map((m) => owner.slice(Math.max(0, m.index - 30), m.index + 40).replace(/\s+/g, " "));
   ok(owner.length > 100000 && found.length === 0, "the owner's script calls no confirm, as itself or as window.confirm" + (found.length ? ": " + J(found) : ""));
 
+  /* 5. A LAPSE TAKES A SHEET LEFT OPEN DOWN WITH THE PAGE */
+  p = await open();
+  try {
+    const d = p.d;
+    const pill = byAct(d.querySelector('#nlist [data-need="d:d-1"]'), "need.approve-row");
+    pill.click(); await p.work.quiet();
+    ok(!!p.sheet() && !d.body.classList.contains("ended"), "a Sheet is open over Needs you, and the page has not lapsed");
+    p.lapse(true);
+    const tick = p.intervals.filter((i) => i.ms === 30000 && !i.off)[0];
+    if (tick) tick.f();
+    await p.work.quiet();
+    ok(!!tick && d.body.classList.contains("ended") && !d.getElementById("aEnded").hidden && !p.sheet() && !d.getElementById("ynWrap") && p.posted(route("approve", "d-1")).length === 0,
+      "when his Access sign-in ends the page gives way to Sign in again and the Sheet goes with it, sending nothing, never left over the lapse screen");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

@@ -731,6 +731,7 @@ export const OWNER_JS = `
   var ENDED='Your admin sign-in has ended.';
   function ended(){
     lookShut();   /* 11 Oct 2026: the look Sheet gives way; the lapse is what he must see */
+    ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */
     document.getElementById('aEnded').hidden=false; document.body.classList.add('ended');
     /* the 30-second read ends with the sign-in: every poll after a lapse would send seven requests to the login and fail each */
     if(needsTimer){ clearInterval(needsTimer); needsTimer=null; }

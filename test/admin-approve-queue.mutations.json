@@ -29,5 +29,6 @@
  {"name":"a native confirm comes back, in code nothing here runs","file":"stmt/owner.js","find":"function ynTag(btn,key){ if(btn&&btn.setAttribute)","replace":"function ynTag(btn,key){ if(false) window.confirm('x'); if(btn&&btn.setAttribute)"},
  {"name":"a native confirm is asked before Approve","file":"stmt/owner.js","find":"    var trip=tripRows(draft).length>0;\n    return ownerAsk(opener,key,{title:trip?'Approve every row","replace":"    var trip=tripRows(draft).length>0; window.confirm('Approve?');\n    return ownerAsk(opener,key,{title:trip?'Approve every row"},
  {"name":"the Needs pill is off before his yes","file":"stmt/owner.js","find":"var said=false;\n          approveDraft(","replace":"var said=false; ap.disabled=true;\n          approveDraft("},
- {"name":"the Needs pill stays on after his yes","file":"stmt/owner.js","find":"function(){ said=true; ap.disabled=true; }","replace":"function(){ said=true; }"}
+ {"name":"the Needs pill stays on after his yes","file":"stmt/owner.js","find":"function(){ said=true; ap.disabled=true; }","replace":"function(){ said=true; }"},
+ {"name":"a lapse leaves the Sheet up","file":"stmt/owner.js","find":"    ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */\n","replace":""}
 ]
