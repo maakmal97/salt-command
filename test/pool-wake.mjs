@@ -68,7 +68,7 @@ export async function wake({ ok, KV, skipOff }) {
   ok(wk && wk.k === "pool-closed" && wa === null && wo === null, "the book's own wake for a close is pool-closed, and none for an open or a retry: " + JSON.stringify([wk, wa, wo]));
 
   /* THE BANNER: its words are the table's, and it is a banner of its own beside the order's */
-  ok(Object.prototype.hasOwnProperty.call(S.NEWS, "pool-closed") && S.NEWS["pool-closed"] === "Group order closed" && W.EN["news.pool-closed.b"] === "Your order is in. We acknowledge it next.",
+  ok(Object.prototype.hasOwnProperty.call(S.NEWS, "pool-closed") && S.NEWS["pool-closed"] === "Group order closed" && W.EN["news.pool-closed.b"] === "Your order is in. We confirm it next.",
     "the service worker has words for the kind: " + JSON.stringify(S.NEWS["pool-closed"]));
   const shown = [];
   const handlers = {}, ctx = { URL, Promise, fetch: async () => ({ ok: false }), setTimeout, clients: {},
@@ -78,7 +78,7 @@ export async function wake({ ok, KV, skipOff }) {
   const push = async (n) => { let p; handlers.push({ data: { json: () => n }, waitUntil: (x) => { p = x; } }); await p; };
   await push({ k: "pool-closed", o: j1.r.order.id }); await push({ k: "confirmed-credit", o: j1.r.order.id });
   const [b1, b2] = shown;
-  ok(b1[0] === "Group order closed" && b1[1].body === "Your order is in. We acknowledge it next." && b1[1].tag === "pool-" + j1.r.order.id && b2[1].tag === "order-" + j1.r.order.id
+  ok(b1[0] === "Group order closed" && b1[1].body === "Your order is in. We confirm it next." && b1[1].tag === "pool-" + j1.r.order.id && b2[1].tag === "order-" + j1.r.order.id
     && b1[1].data.order === j1.r.order.id && /#o=/.test(b1[1].data.url),
     "the banner reads Group order closed, Your order is in, under a tag of its own and opens the order, while the acknowledgement keeps the order's: " + JSON.stringify([b1[0], b1[1].tag, b2[1].tag]));
 }

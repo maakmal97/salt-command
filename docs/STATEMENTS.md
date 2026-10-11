@@ -442,13 +442,13 @@ in English and together no product word. `psymSvg` and the page's `psym` draw it
 `__PLET__`); there is no switch. **No mark is drawn under 20 px**, where the letter, a third of the mark, is too small to
 read: every smaller mark was raised, the statement's 13 px ones among them.
 
-**In a card the mark is a button with its figure alone under it** (his note on the sheet of the raised marks, 28 Sep
+**In a card the mark is a button with its shape and size under it** (his note on the sheet of the raised marks, 28 Sep
 2026: a card never sets the glyph beside words or figures; then "number alone", and "It will be rendered cards in the
 statement"). `mtileSvg` in `stmt/page.js` and the page's `mtile`: the mark at 28 px on the pressed ghost's edge and
-glass, the figure in the mono face under it, and a reader told the shape and the size in words, once. Check your order
+glass, the caption in the mono face under it (since 11 Oct 2026 "Cube, 2.5 units", the shape word and the size; see Phase 7c below), and a reader told the shape and the size in words, once. Check your order
 leads with it and carries no What line; an order's row (Your orders, and Home's rows, which are the same row), an
 order's own screen, Home's part rows under Coming up and the open orders at the limit take it; Order again's face is
-itself the button, the mark and the figure stacked on it. The live statement's lines, its totals and its Still to
+itself the button, the mark and the caption stacked on it. The live statement's lines, its totals and its Still to
 collect are cards too. A sentence (a part of an order, the pay sheet's note) keeps its mark beside the size, at 20 px;
 a mark alone (Prices, Rewards, the guest board, the order sheet's choice of book and its heading) keeps its size; an
 issue's table keeps its mark beside the size, at 20 px. Sealed issues and archives keep what they were issued with (an
@@ -585,7 +585,7 @@ grabber, a title, a close orb, a body and a foot), built from the page's own nod
 the limit: its scrim sat under that sheet's body until it had a number of its own. It restates what goes:
 
 - **An order**: its mark (the product's mark with his letter, the size under it, the shape and the size read aloud, never a product word), the
-  order's own word (Sent, Acknowledged), its figure (goods plus delivery, as the limit's list draws it) and the day it was placed; then what is
+  order's own word (Placed, Confirmed), its figure (goods plus delivery, as the limit's list draws it) and the day it was placed; then what is
   lost (`yn.orderLost`) and the money: `yn.orderNone` where nothing is paid, or `yn.orderPaid` with the refund where something is.
 - **A link**: the day it was made, its state (Open, Waiting) and what it has done (Opened 2 times, last 19 Sep 2026), then what is lost
   (`yn.linkLost`). Its address is never repeated.
@@ -610,6 +610,43 @@ before anything moved (`ex47`, so the Sheet names a refund), and an open and a w
 "Cancelling and withdrawing ask in a Sheet that says what goes" (`test/counter-confirm-sheets.mjs`, its mutations in
 `test/counter-confirm-sheets.mutations.json`) drives all three controls through the generated page in jsdom, with `confirm`, `alert` and
 `prompt` made to throw and count. The 44 px and both themes are measured in a real browser and recorded in the pull request.
+
+**One word per state, and the shape beside the mark** (Phase 7c of the Salt Account and Counter redesign, his decision 10 of 11 Oct 2026). The
+page named one step four ways (Sent, Acknowledged, agreed, your yes) and drew a mark with a hidden name. Now an order is one of six words, a
+claim of theirs has its own, and a mark is never alone. **The record's states do not move** (`placed`, `acknowledged`, `ready`, `done`,
+`declined`, `cancelled`; the fold, the drafter and the order book read them); **the keys of `stmt/words.js` do not move** (S13 13.3 reads the
+table by key); only the customer's words do.
+
+| Was | Now | Key |
+|---|---|---|
+| Sent | **Placed** | `st.placed`, `sh.lineSent`, `sh.sent` ("Order placed") |
+| Acknowledged | **Confirmed** | `st.acknowledged`, `ow.confirmed`, `news.confirmed` and `news.confirmed-credit` ("Order confirmed") |
+| Not taken | **Declined** | `st.declined`, `ow.declined`, `ow.declinedWhy`, `news.declined` ("Order declined") |
+| Waiting to be acknowledged | **Waiting for us to confirm** (an order placed, and a claim of theirs) | `ow.placed`, `why.placed`, `hc.placed`, `om.waiting` |
+| Expected by DD Mon | **More by DD Mon** (supply, yellow with a day) | `sup.by` |
+| we acknowledge / acknowledged it | we confirm / confirmed it | `deliv`, `sh.setOnConfirm`, `om.set`, `om.placedAt`, `hp.closed`, `news.pool-closed.b`, the refusals `e.payEarly`, `e.methodEarly`, `e.cancelDeclined` |
+
+Ready to collect or deliver, Collected or Delivered, Complete and the two cancellations are as they were, and a claim of theirs still reads
+Waiting for us to confirm. No value of the table, and no markup or quoted string in the page's script, holds *acknowledg*, *Not taken* or
+*Expected by* (`stmt/owner.js`, Salt Account's own page, is another lane's and keeps its own words).
+
+**The shape word is drawn beside the mark** (his word: "Cube, 2.5 units"), the same word the screen reader was given (`PSHAPE`, by key `shape.<Shape>`),
+so a mark is never alone and the reader's name is said where it is seen. In a card (`mtile`, `mtileSvg`) the caption under the mark is the shape word,
+a comma and the size in words; it may break after the comma and never inside the size (`.mq .nb` no-wrap, `.mtile .mq` at 11 ch), and the
+reader still hears "Cube 2.5 units" once, from the hidden `.sr`. Elsewhere the word follows the mark as `.pshape`: a book's heading
+(`pmarkHead`, Prices and Rewards, the guest board), a size with its mark (`withMark`, the order sheet's legends and lines), a mark leading a note
+(`markLead`) and a mark in a sentence (`markHtml`, which the invoice lines and the pay sheet's note share; the pay sheet's markup is Phase 7b's). A heading's
+`aria-label` is still the shape, with the light where the book has one. **No shape word is a product's**: Cube, Droplet, Lozenge, Capsule and Ring name
+nothing, and the product-word and level-word scans (v695, v704, `siteWords`, the Desk's `siteSafe`) pass them and every sentence of the new words; the suite drives that both ways.
+
+**What follows on the Desk**: the order card's `ordTold` and `toldOf` in `src/orders.js` (`CUSTOMER_SEES`) say what they see in these words, the Accept and
+Decline answers read "They see Confirmed" and "They read Declined", the reasons legend says "Why it is declined", and the restock card says More by. The
+practice accounts' feature labels follow (`tools/testfix.mjs`, the pool fixture), with no new `FEATURES` line.
+
+The suite section "One word per state, and the shape beside the mark" (`test/counter-state-words.mjs`, its mutations in
+`test/counter-state-words.mutations.json`) drives the generated page in jsdom over an order in each state and reads the text it renders (each state's
+chip, sentence, steps and history, the claim, Home, the order sheet and Place), builds each banner from the real wake through the service worker, sweeps
+every word the page is served for the family, and checks that every mark on every screen has its shape word and that none is a product's.
 
 ## The price list and the order book (06 Sep 2026, his instruction)
 
@@ -705,8 +742,8 @@ complete), declined (the owner), cancelled (either side, at any stage until the 
 order he closes at what was handed over** (S11 11.9) is restated there: the size becomes the units handed
 over, the goods' total follows at the agreed rate, the old figures kept as `closed`, and its row is a
 Correction whose new total renames it.
-**The customer reads them in their own words** (S5 5.3, his answer to D11): Sent, Confirmed, Ready to
-collect or deliver, Collected or Delivered once the goods are all with them, Complete, Not taken,
+**The customer reads them in their own words** (S5 5.3, his answer to D11; one word a state since 11 Oct 2026): Placed, Confirmed, Ready to
+collect or deliver, Collected or Delivered once the goods are all with them, Complete, Declined,
 Cancelled by you or by us; "units" above one; and every refusal of a move of theirs says it so. His
 reason for a decline or a cancellation (S11 11.7) follows its word, on the order and in its history; a
 close short says on the order and on its Goods line what was handed over of what was ordered.
@@ -719,7 +756,7 @@ request id: the check draws that copy and Place sends it, and while the check is
 field, so nothing typed can reach the order unseen. Units above one, unit at one, a guest's board included (one `unitsOf`). A 409 `prices moved` (above;
 S4 4.4) brings the account's list as it stands, sealed, which the page opens with the key it already holds
 (`openList` keeps it on the list, unenumerable) and draws in the check: "This size is now RM X (was RM Y). Place at RM X?", one tap, a new request id; a list with nothing left to order, or none, is taken as a sign-in takes it, and the check says so with Place held. The page reads the figure off
-the list; it compares and prices nothing. **Sent answers in the sheet** (S4 4.5); since Step 1b the bell asks for notifications, on every view of the saved app until they are on, only from a tap (nothing is asked on the way in since S4, where v693 asked; a sign-in files a phone already on again); See the order
+the list; it compares and prices nothing. **Order placed answers in the sheet** (S4 4.5); since Step 1b the bell asks for notifications, on every view of the saved app until they are on, only from a tap (nothing is asked on the way in since S4, where v693 asked; a sign-in files a phone already on again); See the order
 closes the sheet and opens the order's own screen (S5 5.2). New order stands above Your orders, stage 5's rows, at the head
 of their column, so on a desk the open order beside it starts at the top of the place and the Notifications pane is left to
 Account's This device (S7-R3); on a desk,
@@ -732,7 +769,7 @@ one is gone (each Cancel asks in a Sheet of its own, below); a refusal those ord
 the sheet at that size** (S4 4.8, rows of the plain ledger), and the list says **"Prices as at 24 Sep 2026, 11:59" (C17: every Counter date DD Mon YYYY, a weekday only before a due date)**
 in Kuala Lumpur off its own `at`; a list sealed without one keeps "For the week of". **One delivery sentence**
 (`DELIVERY` in `stmt/page.js`, S4 4.9) wherever the charge is explained: Prices, a delivery's check and a guest's
-board: "Delivery is charged by distance. We tell you the charge when we acknowledge your order, before you pay, and you
+board: "Delivery is charged by distance. We tell you the charge when we confirm your order, before you pay, and you
 can cancel then at no cost."
 
 **A RETRY LANDS ONCE** (24 Sep 2026). Every move the page sends carries a request id it mints per
@@ -1273,10 +1310,10 @@ For a closed page the site has its own Web Push pair. **The banner is a plain se
 by `wakes` in `stmt/orders.js` off the event and the order it folded into, so the KV road and the order
 book send the same kind for the same move, sealed
 for that one phone by `sealFor` in `stmt/push.js` (RFC 8291 aes128gcm, WebCrypto, one record), and
-the service worker at `/sw.js` shows the kind's title and body from `news.*` in `stmt/words.js`: acknowledged (pay now on
+the service worker at `/sw.js` shows the kind's title and body from `news.*` in `stmt/words.js`: confirmed (pay now on
 an order paid in advance, `prepay`; on credit otherwise, due at Ready), ready to collect or on its way, his line (`Counter says:`,
 his words in quotation marks), payment received or not found yet, payment due, delivered or collected (in part or in full),
-complete, not taken or cancelled with his reason. **Never an amount, a product or a name**; the suite reads every word.
+complete, declined or cancelled with his reason. **Never an amount, a product or a name**; the suite reads every word.
 One banner an order: the notification's tag and a sealed wake's push `Topic` are per order (the topic a
 digest of the id), so news of one order never replaces another's on the lock screen or at the push service; a line
 of his takes a tag and a `Topic` of its own (over the order and the line's moment), so none of his words is replaced
@@ -1948,7 +1985,7 @@ KV road refuses it, `POOL_ON_KV`, as it does the account's thread):
   order at `placed` runs the Desk's own `/_internal/maker/orders/<id>/preview` and `/accept` with the preview's hash, in turn. A
   `differs` or any error is written on the pool as `closeLeft [{id, why}]` and the rest carry on; **Close again retries only
   those**, and clears them as they land. Closing under the target still accepts.
-- **Banners at close, in order:** `pool-closed` ("Group order closed", "Your order is in. We acknowledge it next."), then the
+- **Banners at close, in order:** `pool-closed` ("Group order closed", "Your order is in. We confirm it next."), then the
   order's own `confirmed` from the Desk's accept.
 - **Fixture** (`tools/testfix.mjs`): one pool open with the account joined, one closed whose order is acknowledged, each with
   invented others (`seedUnits`); sealed with the fixture (`pools`). The account is over the five-order limit in the fixture, so a

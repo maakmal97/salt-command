@@ -8983,6 +8983,11 @@ await (async () => {
   await (await import("./pay-number.mjs")).run({ ok, okOff, pageWork, KV });
 })();
 
+section("One word per state, and the shape beside the mark: Placed, Confirmed, Declined, More by, on the page, the banners and the Desk (11 Oct 2026)");
+await (async () => {
+  await (await import("./counter-state-words.mjs")).run({ ok });
+})();
+
 section("v2 design: the charts and the map read the tokens");
 await (async () => {
   /* 06 Oct 2026: the charts' series, axes, grid and tooltip and the Coverage map's fills and strokes were literals,
@@ -16648,8 +16653,8 @@ await (async () => {
       return { prices: d.getElementById("pPrices").textContent, order: d.getElementById("pOrder").textContent + " " + (sh ? sh.textContent : ""),
         marks: [...d.querySelectorAll("#pPrices h2.pmark")].map((h) => h.getAttribute("aria-label")),
         priced: [...d.querySelectorAll("#pPrices .pane")].filter((x) => x.querySelector(".salt-ledger .szrow")).length,
-        /* V4b: each product's sizes sit under its mark, the fieldset's legend, and the shape is said in the legend's words */
-        products: [...d.querySelectorAll("#osheet fieldset.salt-options legend .pwith")].filter((x) => x.querySelector("svg.psym")).map((x) => x.querySelector(".sr").textContent),
+        /* V4b: each product's sizes sit under its mark, the fieldset's legend, and the shape is said in the legend's words, beside the mark (7c) */
+        products: [...d.querySelectorAll("#osheet fieldset.salt-options legend .pwith")].filter((x) => x.querySelector("svg.psym")).map((x) => x.querySelector(".pshape").textContent),
         orderable: !!nw && !!d.querySelector('#osheet input[name="osize"]') };
     } finally { dom.window.close(); }
   };
@@ -17072,7 +17077,7 @@ await (async () => {
     d.getElementById("oNew").click();
     d.getElementById("oGo").click();
     d.getElementById("oPlace").click();
-    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order sent/.test(d.getElementById("osheet").textContent) && d.querySelector('#pOrder [data-row]')); i++) await new Promise((r) => setTimeout(r, 30));
+    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order placed/.test(d.getElementById("osheet").textContent) && d.querySelector('#pOrder [data-row]')); i++) await new Promise((r) => setTimeout(r, 30));
     return { w, d, st };
   };
   const A = await drive(true);
@@ -17080,8 +17085,8 @@ await (async () => {
     const { w, d, st } = A;
     const sh = () => d.getElementById("osheet");
     const bellBox = d.getElementById("bellBox"), call = d.getElementById("bellCall"), bell = d.getElementById("bell");
-    ok(!!sh() && /Order sent/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-row="' + placed.id + '"]'),
-      "Place answers in the sheet, Order sent, and the order is a row of Your orders behind it (S5 5.1): " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
+    ok(!!sh() && /Order placed/.test(sh().textContent) && !d.getElementById("oPlace") && !!d.querySelector('#pOrder [data-row="' + placed.id + '"]'),
+      "Place answers in the sheet, Order placed, and the order is a row of Your orders behind it (S5 5.1): " + JSON.stringify(sh() && sh().textContent.slice(0, 80)));
     ok(!/notification|buzz/i.test(sh().textContent) && !bellBox.hidden && bellBox.classList.contains("cbell--off") && !call.hidden
       && call.textContent === "Turn on notifications" && bell.getAttribute("aria-label") === "Notifications are off" && st.asked === 0,
       "Sent asks nothing about notifications; the bell is marked with its call beside it, and drawing them asks the browser nothing: " + st.asked);
@@ -17164,8 +17169,8 @@ await (async () => {
     const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => { const lab = r.querySelector(".salt-ledger__label"), tile = lab.querySelector(".mtile");
       return { tile: tile ? tile.querySelector(".sr").textContent + "|" + tile.querySelector(".mq").textContent : "", t: [...lab.children].filter((c) => c !== tile).map((c) => c.textContent).join(""), cancel: !!r.querySelector("button") }; });
     ok(st.placed === 1 && /^Five open orders is the most\./.test((d.querySelector("#osheet .salt-insight") || {}).textContent || "") && !d.getElementById("oPlace") && rows.length === 5
-      && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]" && rows.every((r) => r.tile === "Cube 1 unit|1")
-      && rows.map((r) => r.t).join("|") === "Sent|Sent|Acknowledged|Acknowledged|Collected",
+      && JSON.stringify(rows.map((r) => r.cancel)) === "[true,true,true,true,false]" && rows.every((r) => r.tile === "Cube 1 unit|Cube, 1 unit")
+      && rows.map((r) => r.t).join("|") === "Placed|Placed|Confirmed|Confirmed|Collected",
       "a refusal the open orders explain turns the sheet to the limit, naming each open order with Cancel where the goods have not moved: " + JSON.stringify(rows));
     const cb = d.querySelector("#osheet .olim button"); if (cb) cb.click();
     const asked = !!d.getElementById("ynSheet") && st.cancels.length === 0;   /* Phase 7d: the Sheet asks first, and nothing is sent yet */
@@ -17225,7 +17230,7 @@ await (async () => {
     const forRow = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "For");
     ok(!!forRow && forRow.querySelector(".salt-ledger__value").textContent === "A friend", "the check says who it is for");
     d.getElementById("oPlace").click();
-    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order sent/.test(d.getElementById("osheet").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
+    for (let i = 0; i < 100 && !(d.getElementById("osheet") && /Order placed/.test(d.getElementById("osheet").textContent)); i++) await new Promise((r) => setTimeout(r, 30));
     ok(st.posted.length === 1 && st.posted[0].forFriend === true, "and Place carries it: " + JSON.stringify(st.posted.map((x) => x.forFriend)));
     d.getElementById("oNew").click();
     ok(JSON.stringify(who(d)) === '["Me=false","A friend=false"]' && d.getElementById("oGo").disabled, "the next order asks again: " + JSON.stringify(who(d)));
@@ -17286,7 +17291,7 @@ await (async () => {
     /* V4b: the size is chosen under its product's mark, and it is the one line on the sheet */
     const picked = sh ? [...sh.querySelectorAll("input.salt-option__input")].filter((r) => r.checked) : [];
     const on = picked.map((r) => r.value);
-    const prod = picked.map((r) => { const f = r.closest("fieldset"), x = f && f.querySelector("legend .sr"); return x ? x.textContent : ""; });
+    const prod = picked.map((r) => { const f = r.closest("fieldset"), x = f && f.querySelector("legend .pshape"); return x ? x.textContent : ""; });
     ok(!!sh && on.join() === "3" && prod.join() === "Droplet" && /^RM 120/.test(sh.querySelector(".salt-sheet__foot").textContent),
       "a tap on a size opens the order sheet on that product at that size: " + JSON.stringify({ on, prod }));
     void w;
@@ -17356,7 +17361,7 @@ await (async () => {
   const C9 = await import("../tools/stmt-crypto.mjs");
   const { webcrypto: wc9 } = await import("node:crypto");
   const { JSDOM: JD9 } = await import("jsdom");
-  const ONE = "Delivery is charged by distance. We tell you the charge when we acknowledge your order, before you pay, and you can cancel then at no cost.";
+  const ONE = "Delivery is charged by distance. We tell you the charge when we confirm your order, before you pay, and you can cancel then at no cost.";
   ok(PG.DELIVERY === ONE, "the sentence is the plan's, word for word");
   const board = PG.boardPage({ prices: { week: { label: "21 to 27 Sep 2026" }, products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] } }, "n49");
   ok(board.includes(ONE) && !/quoted when you order|charged separately/.test(board), "a guest's board says it, and no longer says the charge is quoted when they order");
@@ -17387,7 +17392,7 @@ await (async () => {
     d.getElementById("oGo").click();
     const says = [...d.querySelectorAll("#osheet .salt-insight")].map((x) => x.textContent);
     const row = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "Delivery");
-    ok(says.includes(ONE) && row && row.querySelector(".salt-ledger__value").textContent === "Set when we acknowledge it",
+    ok(says.includes(ONE) && row && row.querySelector(".salt-ledger__value").textContent === "Set when we confirm it",
       "the check of a delivery says it beside the order, and its Delivery line says when: " + JSON.stringify(says));
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Change").click();
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "I will collect").click();
@@ -17426,7 +17431,7 @@ await (async () => {
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 30));
     d.getElementById("oNew").click(); d.getElementById("oGo").click();
     const pl = d.getElementById("oPlace"); pl.focus(); pl.click();
-    for (let i = 0; i < 100 && !/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
+    for (let i = 0; i < 100 && !/Order placed/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
     await new Promise((r) => setTimeout(r, 60));
     const at = d.activeElement;
     ok(!!d.getElementById("osheet") && d.getElementById("osheet").contains(at), "with Place gone, focus is on the sheet and not the page behind it: " + (at && at.tagName));
@@ -17536,8 +17541,8 @@ await (async () => {
       tap("#osheet .salt-sheet-scrim"), tap("#osheet .salt-sheet__close")];
     ok(held.join() === "true,true,true", "and Escape, the scrim and Close leave the sheet open: " + JSON.stringify(held));
     st.release();
-    for (let i = 0; i < 100 && !/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
-    ok(/Order sent/.test((d.getElementById("osheet") || {}).textContent || ""), "so the answer is drawn in the sheet where Place was tapped");
+    for (let i = 0; i < 100 && !/Order placed/.test((d.getElementById("osheet") || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
+    ok(/Order placed/.test((d.getElementById("osheet") || {}).textContent || ""), "so the answer is drawn in the sheet where Place was tapped");
     d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     ok(!d.getElementById("osheet"), "and once it is answered, Escape closes it again");
   } finally { await new Promise((r) => setTimeout(r, 100)); w.close(); }
@@ -17684,7 +17689,7 @@ await (async () => {
     const rows = [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => ({
       word: [...r.querySelector(".salt-ledger__label").children].filter((c) => !c.classList.contains("mtile")).map((c) => c.textContent).join(""),
       flag: [...r.querySelectorAll(".salt-ledger__flag")].map((f) => f.textContent).filter((t) => !/^Placed /.test(t)).join("") }));
-    ok(rows.map((r) => r.word).join("|") === "Sent|Sent|Delivered|Part delivered|Part collected",
+    ok(rows.map((r) => r.word).join("|") === "Placed|Placed|Delivered|Part delivered|Part collected",
       "a handover reads as what happened to the goods, in part where only some moved, never Ready: " + JSON.stringify(rows.map((r) => r.word)));
     ok(rows[2] && rows[2].flag === "The goods are with you, so this one finishes when it is paid."
       && rows[3] && rows[3].flag === "Part of it is with you, so this one finishes once the rest is with you and it is paid."
@@ -18931,7 +18936,7 @@ await (async () => {
     pOrder.querySelector("[data-row]").click();
     const scr = pOrder.querySelector(".oscreen") || pOrder;
     const words = [...pOrder.querySelectorAll("button, a")].filter((b) => !b.hasAttribute("data-row") && !b.classList.contains("oback") && !b.classList.contains("olater")).map((b) => b.textContent);
-    ok(/RM\s*150/.test(scr.textContent) && /When can I collect/.test(scr.textContent) && /Acknowledged/.test(scr.textContent) && !/None yet/.test(pOrder.textContent),
+    ok(/RM\s*150/.test(scr.textContent) && /When can I collect/.test(scr.textContent) && /Confirmed/.test(scr.textContent) && !/None yet/.test(pOrder.textContent),
       "the order reads as their page shows it, with its thread and its state: " + JSON.stringify(scr.textContent.replace(/\s+/g, " ").slice(0, 200)));
     ok(!pOrder.querySelector("input, select, textarea") && !words.some((t) => /Review this order|Place|Notify me|Confirm|I have paid|Pay RM|Cancel|Withdraw|Send/.test(t))
       && ![...pOrder.querySelectorAll("h3")].some((x) => /Notifications/.test(x.textContent)),
@@ -19368,7 +19373,7 @@ await (async () => {
     const place = () => D.getElementById("oPlace");
     ok(await until(() => place()), "Review shows Place order");
     place().click();
-    ok(await until(() => D.getElementById("osheet") && /Order sent/.test(D.getElementById("osheet").textContent)), "the order is placed and the sheet says so");
+    ok(await until(() => D.getElementById("osheet") && /Order placed/.test(D.getElementById("osheet").textContent)), "the order is placed and the sheet says so");
     D.getElementById("tCard").click();
     const box = () => [...pCard.querySelectorAll(".pane")].find((x) => /Your links/.test(x.textContent));
     ok(await until(() => box() && box().querySelectorAll(".glink").length === RF.MAX_PER_ASSOC - 1),
@@ -22636,7 +22641,7 @@ await (async () => {
   const each = (fn) => Object.fromEntries(Object.entries(all).map(([s, f]) => [s, fn(f)]));
   const noDecl = missing(each((f) => Object.assign({}, f, { orders: f.orders.filter((o) => o.status !== "declined") })));
   const noLock = missing({ [TU]: all[TU], [TL]: all[TU] });
-  ok(noDecl.includes("state declined") && noDecl.includes("not taken, with his reason") && noLock.join() === "locked, only for paying (V5)"
+  ok(noDecl.includes("state declined") && noDecl.includes("declined, with his reason") && noLock.join() === "locked, only for paying (V5)"
     && missing(each((f) => Object.assign({}, f, { bulletin: { lines: [] } }))).join() === "the bulletin",
     "and a fixture without a case is red, by its line and off the code, the locked account included: " + JSON.stringify([noDecl, noLock]));
 
@@ -22982,11 +22987,11 @@ await (async () => {
     if (!/<div class="salt-lines" role="table" aria-label="Your orders">/.test(d.body) || /<th class="l">Date<\/th><th>Quantity<\/th>/.test(d.body)) tabled++;
     const rows = [...d.body.split('aria-label="Refunds"')[0].matchAll(/<div class="salt-lines__row[^"]*" role="row"( data-m="\d{4}-\d{2}")?><div class="salt-lines__date" role="cell">(\d\d [A-Z][a-z]{2} \d{4})?/g)];
     untagged += rows.filter((m) => !!m[2] !== !!m[1]).length;
-    /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): the line's size is a card, its figure alone
-       under the mark, and the words a reader hears carry the unit */
-    for (const m of d.body.matchAll(/<div class="salt-lines__what" role="cell"><span class="mtile"><span class="sr">[A-Z][a-z]+ ([\d.,]+) (units?)<\/span><svg[\s\S]*?<\/svg><span class="mq" aria-hidden="true">([\d.,]+)<\/span>/g)) {
+    /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): the line's size is a card, its shape and size
+       under the mark (7c, 11 Oct 2026), and the words a reader hears carry the unit */
+    for (const m of d.body.matchAll(/<div class="salt-lines__what" role="cell"><span class="mtile"><span class="sr">[A-Z][a-z]+ ([\d.,]+) (units?)<\/span><svg[\s\S]*?<\/svg><span class="mq" aria-hidden="true">[A-Z][a-z]+, <span class="nb">([\d.,]+) (units?)<\/span><\/span>/g)) {
       const q = +m[1].replace(/,/g, "");
-      if ((q > 1) !== (m[2] === "units") || m[3] !== m[1]) wrongWord.push(p + " " + m[1] + " " + m[2] + " under " + m[3]); else if (q > 1) plural++;
+      if ((q > 1) !== (m[2] === "units") || m[3] !== m[1] || m[4] !== m[2]) wrongWord.push(p + " " + m[1] + " " + m[2] + " under " + m[3] + " " + m[4]); else if (q > 1) plural++;
     }
   }
   ok(docs > 10 && !tabled, "every live statement lists its orders as Statement lines, not a table: " + docs + " statements, " + tabled + " still a table");
@@ -25163,9 +25168,9 @@ await (async () => {
     d95.getElementById("oNew").click();
     /* V4b (his point 5 of 28 Sep 2026): the segment went with the one-product sheet; each product's sizes sit under its mark */
     const legOf95 = () => [...d95.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym"));
-    const onOf95 = () => legOf95().map((f) => (f.querySelector("input:checked") ? f.querySelector("legend .sr").textContent : "")).filter(Boolean);
+    const onOf95 = () => legOf95().map((f) => (f.querySelector("input:checked") ? f.querySelector("legend .pshape").textContent : "")).filter(Boolean);
     const leg95 = legOf95(), on95 = onOf95();
-    ok(leg95.length === 2 && leg95.map((f) => f.querySelector("legend .sr").textContent).join(",") === "Cube,Droplet" && on95.length === 1,
+    ok(leg95.length === 2 && leg95.map((f) => f.querySelector("legend .pshape").textContent).join(",") === "Cube,Droplet" && on95.length === 1,
       "each product's sizes are drawn under its mark, the one they order most chosen: it was a dropdown, then a segment: " + JSON.stringify(on95));
     const other95 = leg95.find((f) => !f.querySelector("input:checked"));
     if (other95) other95.querySelector("input").click();
@@ -25284,14 +25289,14 @@ await (async () => {
 
   /* ---- mtileSvg, the card: the mark a button, the figure under it and nothing else to see; a reader hears the shape and
      the size in words, the figure once ---- */
-  const td8 = new JD8("<body>" + P8.mtileSvg("salt", "2.5", "2.5 units") + P8.mtileSvg("spare", "1", "1 unit") + "</body>").window.document;
+  const td8 = new JD8("<body>" + P8.mtileSvg("salt", "2.5 units") + P8.mtileSvg("spare", "1 unit") + "</body>").window.document;
   const seen8 = (n) => [...n.childNodes].filter((c) => !(c.classList && c.classList.contains("sr"))).map((c) => c.textContent).join("").trim();
   const [tS8, tR8] = [...td8.querySelectorAll(".mtile")];
   ok(!!tS8 && tS8.querySelectorAll("svg.psym").length === 1 && tS8.querySelector("svg.psym").getAttribute("width") === "28"
-    && tS8.querySelector("svg text.plet").textContent === "I" && seen8(tS8) === "I2.5"
+    && tS8.querySelector("svg text.plet").textContent === "I" && seen8(tS8) === "ICube, 2.5 units"
     && tS8.querySelector(".mq").getAttribute("aria-hidden") === "true" && tS8.querySelector(".sr").textContent === "Cube 2.5 units"
-    && !!tR8 && !tR8.querySelector("text") && tR8.querySelector(".sr").textContent === "Ring 1 unit",
-    "a card's mark is a button at 28px with its letter, the figure alone under it, and a reader hears the shape and the size once: "
+    && !!tR8 && !tR8.querySelector("text") && tR8.querySelector(".sr").textContent === "Ring 1 unit" && seen8(tR8) === "Ring, 1 unit",
+    "a card's mark is a button at 28px with its letter, the shape and the size under it, and a reader hears the shape and the size once: "
     + JSON.stringify([tS8 && seen8(tS8), tS8 && tS8.querySelector(".sr").textContent]));
 
   /* ---- the page, served and driven: an associate with three books priced, rice and the spare book not yet, a card, an order ---- */
@@ -25332,7 +25337,7 @@ await (async () => {
     ring: RING8.test(s.querySelector("path").getAttribute("d")), lets: [...s.querySelectorAll("text.plet")].map((t) => t.textContent).join("") }));
   /* a card's mark: in a button (an mtile, or Order again's stacked face) whose own visible words are its letter and one figure */
   /* C19 (29 Sep 2026): Home's start and again tiles say the unit under the mark, the size and its word alone */
-  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && (t.closest(".htile") ? /^[A-Z]?[\d,]+(\.\d+)?units?$/ : /^[A-Z]?[\d,]+(\.\d+)?$/).test(seen8(t).replace(/\s+/g, "")); };
+  const inCard8 = (s) => { const t = s.closest(".mtile, .htile .mstack"); return !!t && /^[A-Z]?(Cube|Droplet|Lozenge|Capsule|Ring),[\d,]+(\.\d+)?units?$/.test(seen8(t).replace(/\s+/g, "")); };
   const all8 = [];
   try {
     D8.getElementById("un").value = u8; D8.getElementById("pw").value = pass8;
@@ -25381,7 +25386,7 @@ await (async () => {
     const cards8 = { again: home8.again, homeRows: home8.rows, row: row8, screen: screen8, check: check8 };
     const loose8 = Object.entries(cards8).filter(([, l]) => !l.length || !l.every(inCard8)).map(([k]) => k);
     ok(!loose8.length && !checkRows8.length && choice8.length >= 3,
-      "in every card the mark is a button with its figure alone under it, Home's tiles its unit too (C19): Order again, Home's rows, the order's row and its screen, and the check, whose lines carry no mark: "
+      "in every card the mark is a button with its shape and its size in words under it, Home's tiles too (C19, 7c): Order again, Home's rows, the order's row and its screen, and the check, whose lines carry no mark: "
       + JSON.stringify({ loose: loose8, checkRows: checkRows8.length }));
   } finally { try { dom8.window.close(); } catch (e) { /* best effort */ } }
 
@@ -25416,7 +25421,7 @@ await (async () => {
   }
   const sbad8 = sm8s.filter((m) => m.px < 20 || (m.ring ? m.lets !== "" : m.lets.length !== 1));
   ok(docs8 > 3 && sm8s.length > docs8 && !sbad8.length && !loose8s.length,
-    "the live statement's every mark is a card, lettered and none under 20px, its figure alone under it: " + JSON.stringify({ docs8, marks: sm8s.length, bad: sbad8.slice(0, 3), loose: loose8s.length }));
+    "the live statement's every mark is a card, lettered and none under 20px, its shape and size under it: " + JSON.stringify({ docs8, marks: sm8s.length, bad: sbad8.slice(0, 3), loose: loose8s.length }));
   /* a new issue's table keeps its mark beside the size, lettered, and raised from the 13px it had to 20 */
   const oI8 = { from: null, to: "2026-09-28", completed: true, open: true, pending: true, dates: true, issued: "28 Sep 2026" };
   const im8 = [];
@@ -28715,7 +28720,7 @@ await (async () => {
     await until(() => g1.D.getElementById("oPlace"));
     g1.D.getElementById("oPlace").click();
     await until(() => g1.st.posts.length);
-    const sent = () => !!g1.D.getElementById("osheet") && /Order sent/.test(g1.D.getElementById("osheet").textContent);
+    const sent = () => !!g1.D.getElementById("osheet") && /Order placed/.test(g1.D.getElementById("osheet").textContent);
     await until(sent);
     ok(g1.st.reopened === before + 1 && g1.st.posts.length === 1 && !g1.st.dead.has(g1.st.posts[0].s) && sent(),
       "a lapse met by Place reopens from the remembered phone and the order goes once, on the new session: " + JSON.stringify({ reopened: g1.st.reopened - before, posts: g1.st.posts.length }));
@@ -33727,7 +33732,7 @@ await (async () => {
 
     ok(open(ADV), "the delivered, unpaid order opens");
     const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
-    ok(steps.map((s) => s.textContent).join("|") === "Sent|Acknowledged|Ready|Delivered"
+    ok(steps.map((s) => s.textContent).join("|") === "Placed|Confirmed|Ready|Delivered"
       && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[3].getAttribute("aria-current") === "step"
       && !/pa(y|id)/i.test(part("steps").textContent),
       "the goods are on their own track, at Delivered, with nothing about money on it: " + JSON.stringify(steps.map((s) => s.className)));
@@ -33817,21 +33822,21 @@ await (async () => {
     d.querySelector('#tabs button[data-t="order"]').click();
     const fold = d.querySelector("#pOrder .olater"); if (fold) fold.click();
     const words = orders.map((x) => chip(x.id));
-    ok(JSON.stringify(words) === JSON.stringify(["Sent", "Acknowledged", "Ready to collect", "Ready to deliver", "Delivered", "Complete", "Not taken", "Cancelled by you", "Cancelled by us"]),
+    ok(JSON.stringify(words) === JSON.stringify(["Placed", "Confirmed", "Ready to collect", "Ready to deliver", "Delivered", "Complete", "Declined", "Cancelled by you", "Cancelled by us"]),
       "each state reads in their words, the goods all with them reading Delivered and a cancellation saying whose it was: " + JSON.stringify(words));
-    ok(!/Withdrawn|Declined|Completed|Placed|handed over/i.test(d.querySelector("#pOrder [data-olist]").textContent),
-      "and none of the desk's words is left on the list");
+    ok(!/Withdrawn|Completed|handed over|Acknowledged|Not taken|Sent\b/.test(d.querySelector("#pOrder [data-olist]").textContent),
+      "and none of the desk's words, nor the words this page used to say, is left on the list");
     ok(/0[.]5 unit(?!s)/.test(row("20260929000000-a1").textContent) && /2[.]5 units/.test(row("20260927000000-a3").textContent) && /1 unit(?!s)/.test(row("20260928000000-a2").textContent),
       "units above one, unit at one and under: " + JSON.stringify([row("20260929000000-a1").textContent, row("20260927000000-a3").textContent]));
     row("20260924000000-a6").click();
     const hist = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
-    ok(JSON.stringify(hist) === JSON.stringify(["Sent", "Acknowledged", "You chose to pay by cash on handover", "You paid RM 70.00 by cash on handover",
+    ok(JSON.stringify(hist) === JSON.stringify(["Placed", "Confirmed", "You chose to pay by cash on handover", "You paid RM 70.00 by cash on handover",
       "We recorded a payment of RM 20.00", "1 unit collected", "Complete"]),
       "what happened reads a step a line in their words, the desk's shorthand turned into sentences: " + JSON.stringify(hist));
     d.querySelector("#pOrder .oback").click();
     row("20260923000000-a7").click();
     const h7 = [...d.querySelectorAll('#pOrder .oscreen [data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
-    ok(h7[1] === "Not taken: None this week", "his reason stays with the step it came with: " + JSON.stringify(h7));
+    ok(h7[1] === "Declined: None this week", "his reason stays with the step it came with: " + JSON.stringify(h7));
   } finally { w.close(); }
 
   /* ---- the refusals the site hands the page ---- */
@@ -33842,8 +33847,8 @@ await (async () => {
     O.decideCustomer({ status: "acknowledged", moved: 1, qty: 1 }, "cancel", {}, [], at).error,
     O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "method", { method: "cod" }, [], at).error,
     O.decideCustomer({ status: "placed", moved: 0, qty: 1, total: 90 }, "pay", { amount: 10 }, [], at).error];
-  ok(JSON.stringify(said) === JSON.stringify(["this order is complete, so it cannot be cancelled here", "this order is not taken, so it cannot be cancelled here",
-    "the goods are already with you, so this cannot be cancelled here", "payment is chosen once the order is acknowledged", "payment is recorded once the order is acknowledged"]),
+  ok(JSON.stringify(said) === JSON.stringify(["this order is complete, so it cannot be cancelled here", "this order is declined, so it cannot be cancelled here",
+    "the goods are already with you, so this cannot be cancelled here", "payment is chosen once the order is confirmed", "payment is recorded once the order is confirmed"]),
     "every refusal of a customer's move says it in their words, never the state's name: " + JSON.stringify(said));
 })();
 section("S5 5.4: a line on an order shows where it is, Return sends it, and his lines are New until seen");
@@ -35440,7 +35445,7 @@ await (async () => {
   ok(bodies.length >= 20 && bodies.every(sentence) && !sentence("RM 45 is due.") && !sentence("Your salt is ready."),
     "and every body is a plain sentence of his: " + JSON.stringify(bodies.filter((t) => !sentence(t))));
   ok(NEWS.due === "Payment due" && NEWS["ready-collect"] === "Order ready to collect" && NEWS.reply === "Counter says:"
-    && NEWS.paid === "Payment received" && NEWS.confirmed === "Order acknowledged" && NEWS["confirmed-credit"] === "Order acknowledged",
+    && NEWS.paid === "Payment received" && NEWS.confirmed === "Order confirmed" && NEWS["confirmed-credit"] === "Order confirmed",
     "and the titles he was asked about read as he settled them on 28 Sep 2026");
 })();
 section("S12 12.2: the banner shows its kind's words, and a tap opens that order, telling a page already open to re-read");
@@ -35494,10 +35499,10 @@ await (async () => {
   ok(JSON.stringify(bodies) === JSON.stringify([
     "Order on its way / Your payment is waiting for us to confirm it. / order-" + id,
     "Order collected / Thank you. Your order is now complete. / order-" + id,
-    "Order acknowledged / Please pay now if you can. Payment is due when it is ready to collect or on its way, or when you receive it. / order-" + id,
-    "Order acknowledged / Please make your payment now. / order-" + id,
+    "Order confirmed / Please pay now if you can. Payment is due when it is ready to collect or on its way, or when you receive it. / order-" + id,
+    "Order confirmed / Please make your payment now. / order-" + id,
     "Counter says: / “Come after five” / m-" + id + "-2026-09-28T10:00:00.000Z",
-    "Order not taken / Out of stock this week. / order-" + id,
+    "Order declined / Out of stock this week. / order-" + id,
     "Order cancelled / Open Salt Counter to see it. / order-" + id,
     "Payment received / Thank you. / order-" + id,
     "Counter says: / “" + "x".repeat(200) + "” / order-" + id,
@@ -36757,7 +36762,7 @@ await (async () => {
     "their usual, with which way this order sits from it and whether it is as far as the flag's line: " + JSON.stringify(j.usual));
   ok(j.card === 190 && /^Gold at 2 unit$/.test(j.cardNote),
     "their card at this size, the desk's own cardQuote carried in the snapshot, beside the RM 160 their page quoted: " + JSON.stringify({ card: j.card, note: j.cardNote }));
-  ok(j.told === "They see Sent: Waiting to be acknowledged." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
+  ok(j.told === "They see Placed: Waiting for us to confirm." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
     && /^[0-9a-f]{64}$/.test(j.hash) && !("entry" in j),
     "what their page says, the pricing version and the digest an Accept sends back: " + JSON.stringify({ told: j.told, pricing: j.pricing, hash: j.hash }));
 
@@ -37364,7 +37369,7 @@ await (async () => {
       const r = [...D.querySelectorAll(".oscreen .salt-ledger__row")].find((x) => /Goods/.test(x.textContent));
       return r ? r.textContent.replace(/\s+/g, " ").trim() : ""; };
     const set = goods(SET), none = goods(NONE);
-    ok(/RM ?90/.test(set) && /Set when we acknowledged it\. You placed it at RM ?100/.test(set) && /RM ?100/.test(none) && !/placed it at/.test(none),
+    ok(/RM ?90/.test(set) && /Set when we confirmed it\. You placed it at RM ?100/.test(set) && /RM ?100/.test(none) && !/placed it at/.test(none),
       "the order priced at the acknowledgement reads its price with what they placed it at beside the goods; one not priced so says nothing more: " + JSON.stringify({ set, none }));
   } finally { W.close(); }
 })();
@@ -40602,7 +40607,7 @@ await (async () => {
     const card = (x) => { const d = w.document.createElement("div"); d.innerHTML = String(w.eval("ordCard(" + JSON.stringify(Object.assign({}, base, x)) + ")"));
       const t = d.querySelector(".ordtold"); return t ? t.textContent.replace(/\s+/g, " ").trim() : ""; };
     const placed = card({ id: "a", status: "placed", mode: "collect", at: "2026-09-24T02:00:00.000Z", history: [{ at: "2026-09-24T02:00:00.000Z", status: "placed", by: "customer" }] });
-    ok(placed === "They see Sent, waiting to be acknowledged, since 24 Sep, 10:00.", "a new order: what their page says, and since when: " + placed);
+    ok(placed === "They see Placed, waiting for us to confirm, since 24 Sep, 10:00.", "a new order: what their page says, and since when: " + placed);
     const acked = card({ id: "b", status: "ready", mode: "deliver", at: "2026-09-20T02:00:00.000Z",
       history: [{ at: "2026-09-20T02:00:00.000Z", status: "placed", by: "customer" }, { at: "2026-09-23T03:30:00.000Z", status: "acknowledged", by: "desk" },
         { at: "2026-09-24T03:30:00.000Z", status: "ready", by: "desk" }] });
@@ -40891,8 +40896,8 @@ await (async () => {
       const h = [...s.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
       return [s.querySelector(".state").textContent, s.querySelector('[data-part="when"] .salt-insight').textContent, h[h.length - 1]];
     };
-    ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Not taken", "Not taken. Out of stock this week. Nothing is owed.", "Not taken: Out of stock this week"]),
-      "a decline reads Not taken, with his reason, on the order and in what happened: " + JSON.stringify(said(dec.id)));
+    ok(JSON.stringify(said(dec.id)) === JSON.stringify(["Declined", "We could not take this order. Out of stock this week. Nothing is owed.", "Declined: Out of stock this week"]),
+      "a decline reads Declined, with his reason, on the order and in what happened: " + JSON.stringify(said(dec.id)));
     ok(JSON.stringify(said(can.id)) === JSON.stringify(["Cancelled by us", "Cancelled by us. Prices have changed. Nothing is owed.", "Cancelled by us: Prices have changed"]),
       "a cancellation of his reads Cancelled by us, with his reason, on the order and in what happened: " + JSON.stringify(said(can.id)));
     ok(said(wd.id) && said(wd.id)[0] === "Cancelled by you" && /^Cancelled before anything moved/.test(said(wd.id)[1]) && said(wd.id)[2] === "Cancelled by you",
@@ -40937,7 +40942,7 @@ await (async () => {
     go().click();
     await settle();
     ok(moves().length === 1 && JSON.stringify(moves()[0].body) === '{"status":"declined","note":"We do not have enough in hand this week."}'
-      && /They read Not taken: We do not have enough in hand this week\./.test(card().querySelector('[data-msg="p1"]').textContent),
+      && /They read Declined: We do not have enough in hand this week\./.test(card().querySelector('[data-msg="p1"]').textContent),
       "a chosen reason goes with the decline, and the card says what they read: " + JSON.stringify(moves()));
     const told = String(w.eval("ordToldLine(" + JSON.stringify(Object.assign({}, base, { id: "c1", status: "cancelled", at: "2026-09-20T02:00:00.000Z",
       history: [{ at: "2026-09-24T02:00:00.000Z", status: "cancelled", by: "desk", note: "Prices have changed" }] })) + ")"));
@@ -41100,7 +41105,7 @@ await (async () => {
     ok(/ Closed at 2 units of the 5 ordered, RM 200.00 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
     const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => x.textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
     const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-ledger__row')].map((x) => x.textContent) : [];
-    ok(JSON.stringify(steps) === JSON.stringify(["Sent", "Acknowledged", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
+    ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
       && goods[0] === "GoodsRM 200.002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200.00The goods are with you$/.test(g)),
       "its goods stand at Collected, all of what was kept being with them, and the money is billed for the 2 units, saying so: " + JSON.stringify({ steps, goods }));
     const h = [...scr.querySelectorAll('[data-part="hist"] li')].map((li) => li.textContent.replace(/^.*?, [0-9:]+  /, ""));
@@ -41372,7 +41377,7 @@ await (async () => {
     const pend = db.prepare("SELECT status FROM draft").all().map((d) => d.status);
     const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
     const msg1 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
-    ok(pend.join() === "approved" && site1.status === "acknowledged" && /^Accepted\. They see Acknowledged, and the row you saw is approved\./.test(msg1),
+    ok(pend.join() === "approved" && site1.status === "acknowledged" && /^Accepted\. They see Confirmed, and the row you saw is approved\./.test(msg1),
       "Accept approves the row it drew, moves the order, and says so: " + JSON.stringify({ pend, st: site1.status, msg1 }));
 
     const coll = card().querySelector('button[data-ord="handover"][data-full="1"]');
@@ -41391,8 +41396,8 @@ await (async () => {
     D.querySelector('.ordcard[data-id="' + o2.id + '"] .ordfoot button[data-ord="acknowledged"]').click();
     for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || ""); i++) await settle();
     const msg3 = (D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || "";
-    ok(/waits under Approve, marked, and they still see Sent/.test(msg3) && !/They see Acknowledged/.test(msg3),
-      "a row that came out other than shown is said as waiting under Approve, the customer still reading Sent: " + msg3);
+    ok(/waits under Approve, marked, and they still see Placed/.test(msg3) && !/They see Confirmed/.test(msg3),
+      "a row that came out other than shown is said as waiting under Approve, the customer still reading Placed: " + msg3);
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -43279,7 +43284,7 @@ await (async () => {
     ok(rows("hNeeds") === "oR" && /A reply: Ready Thursday\./.test(D.getElementById("hNeeds").textContent)
       && rows("hComing") === "oC,oK,oP" && /RM 150.00 still to pay, now or when it arrives/.test(D.getElementById("hComing").textContent)
       && /RM 90.00 still to pay, now or when you collect/.test(D.getElementById("hComing").textContent)
-      && /Waiting to be acknowledged/.test(D.getElementById("hComing").textContent),
+      && /Waiting for us to confirm/.test(D.getElementById("hComing").textContent),
       "Needs you holds the reply not yet shown, and Coming up the orders agreed or sent and not handed over, with what is still to pay and when, by the way it comes: "
       + JSON.stringify([rows("hNeeds"), rows("hComing"), D.getElementById("hComing").textContent]));
     ok([...D.querySelectorAll('#tabs [data-n="order"]')].map((c) => c.textContent).join(",") === "3,3" && !D.querySelector('#tabs [data-n="home"]').textContent,
@@ -43465,19 +43470,19 @@ await (async () => {
   const a = await open({});
   try {
     const { D, posts } = a;
-    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|1 unit|RM 110.00, delivered to Marlow Row", "Cube 2 units|2 units|RM 200.00, delivered to Veloria", "Cube 1 unit|1 unit|RM 110.00, collected"])
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|Cube, 1 unit|RM 110.00, delivered to Marlow Row", "Cube 2 units|Cube, 2 units|RM 200.00, delivered to Veloria", "Cube 1 unit|Cube, 1 unit|RM 110.00, collected"])
       && /Order again/.test(D.getElementById("hAgain").textContent),
       "Home offers each size, way and place once, newest first, at today's price, and never a cancelled order or a size off the list: " + JSON.stringify(tiles(D)));
     /* the second: its place is not the last order's, which is where a sheet would otherwise start */
     D.querySelectorAll("#hAgain button.htile")[1].click();
     const sheet = () => (D.getElementById("osheet") || { textContent: "" }).textContent;
     const hero = () => D.querySelector("#osheet .mhero .mtile");
-    ok(/Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
+    ok(/Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|Cube, 2 units" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
       && !/Side gate/.test(sheet()) && D.getElementById("oPlace") && D.getElementById("oPlace").textContent === "Place order",
       "a tap opens the check with the same size, way and place at today's price, and not the old order's note: " + JSON.stringify(sheet().slice(0, 140)));
     D.getElementById("oPlace").click();
-    /* waited to Order sent, so nothing the answer draws lands on a closed window */
-    for (let i = 0; i < 200 && !/Order sent/.test(sheet()); i++) await new Promise((r) => setTimeout(r, 20));
+    /* waited to Order placed, so nothing the answer draws lands on a closed window */
+    for (let i = 0; i < 200 && !/Order placed/.test(sheet()); i++) await new Promise((r) => setTimeout(r, 20));
     const pb = posts[0] || {};
     ok(posts.length === 1 && pb.product === "salt" && pb.qty === 2 && pb.mode === "deliver" && pb.place === "Veloria" && pb.total === 200 && pb.digest === "d74",
       "and the second tap places it, as the check showed it: " + JSON.stringify(pb));
@@ -43485,7 +43490,7 @@ await (async () => {
   const b = await open({ fresh: true });
   try {
     const { D } = b;
-    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|1 unit|RM 110.00", "Cube 2 units|2 units|RM 200.00"]) && /Start your first order/.test(D.getElementById("hAgain").textContent)
+    ok(JSON.stringify(tiles(D)) === JSON.stringify(["Cube 1 unit|Cube, 1 unit|RM 110.00", "Cube 2 units|Cube, 2 units|RM 200.00"]) && /Start your first order/.test(D.getElementById("hAgain").textContent)
       && [...D.querySelectorAll("#hAgain button.htile .salt-option__detail")].every((x) => x.classList.contains("mono")),
       "a new account is offered its list's first sizes, each saying its unit and its price in the mono face (C19): " + JSON.stringify(tiles(D)));
     D.querySelectorAll("#hAgain button.htile")[1].click();
@@ -44230,7 +44235,7 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 200 && !D.querySelector("#hComing [data-row]"); i++) await new Promise((r) => setTimeout(r, 25));
     const box = D.getElementById("hComing"), kids = [...box.children];
-    /* F8 (Step 1a.2): the mark and size are the row's card, its figure alone under the mark, and the size in the words a
+    /* F8 (Step 1a.2): the mark and size are the row's card, its shape and size under the mark (7c), and the size in the words a
        reader hears; an order's title is its state, and a part has none */
     const rows = kids.slice(1).map((r) => { const tile = r.querySelector(":scope > .mtile");
       return { tag: r.tagName, row: r.classList.contains("salt-inbox-row"), id: r.getAttribute("data-row") || "",
@@ -44242,8 +44247,8 @@ await (async () => {
       "every entry is the system's Inbox row, a tap, with its mark and size, its day and its figure: " + JSON.stringify(rows));
     ok(rows.map((r) => r.id).join(",") === "oA,oP,," && rows.filter((r) => r.bits[2] === "18 " + MON3[8] + " 2026").length === 1,
       "the part the site's order accounts for is drawn once, as that order; the two it does not follow the orders: " + JSON.stringify(rows.map((r) => [r.id, r.bits[2]])));
-    ok(JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])) === JSON.stringify([["Cube 2.5 units|2.5", "", "Due when you receive it", "16 " + MON3[8] + " 2026", "RM 250.00"],
-      ["Cube 1 unit|1", "", "On behalf of a friend. Due when you receive it", "17 " + MON3[8] + " 2026", "RM 120.00"]]) && !/salt|Gold|Silver/i.test(t(box)),
+    ok(JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])) === JSON.stringify([["Cube 2.5 units|Cube, 2.5 units", "", "Due when you receive it", "16 " + MON3[8] + " 2026", "RM 250.00"],
+      ["Cube 1 unit|Cube, 1 unit", "", "On behalf of a friend. Due when you receive it", "17 " + MON3[8] + " 2026", "RM 120.00"]]) && !/salt|Gold|Silver/i.test(t(box)),
       "a part he entered says it is due when they receive it, never offers to pay now, and names no product: " + JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])));
     box.querySelectorAll(".salt-inbox-row")[2].click();
     ok(!D.getElementById("pStmt").hidden && D.getElementById("pHome").hidden,
@@ -44806,7 +44811,7 @@ await (async () => {
     const lead = [...d.querySelectorAll("#pPrices p.lead")].map((p) => p.textContent).find((t) => /delivery/i.test(t)) || "";
     /* S4 4.9 (his "all recommended" of 24 Sep 2026) and Step 1b: the one delivery sentence, in the customer's word for that
        step, acknowledge; still never "marked ready" */
-    ok(/We tell you the charge when we acknowledge your order, before you pay/.test(lead) && !/marked ready/.test(lead),
+    ok(/We tell you the charge when we confirm your order, before you pay/.test(lead) && !/marked ready/.test(lead),
       "the Prices lead puts the delivery charge at the acknowledgement, where v694 moved it, in the customer's word: " + lead.slice(0, 160));
   } finally { w.close(); }
 })();
@@ -44928,7 +44933,7 @@ await (async () => {
         pill: t(f.querySelector("button.salt-pill")), pills: h.querySelectorAll(".salt-pill").length + f.querySelectorAll(".salt-pill").length, heads: [...h.querySelectorAll("h3"), ...c.querySelectorAll("h2")].map(t),
         rows: [...h.querySelectorAll(".salt-ledger__row"), ...c.querySelectorAll(".salt-ledger__row")].map((r) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((s) => t(r.querySelector(s)))),
         late: [...h.querySelectorAll(".salt-ledger__row")].map((r) => r.querySelector(".salt-ledger__value").classList.contains("odue")),
-        /* S7 polish: Coming up's part is the Inbox row its orders are; F8, its mark and size a card, the figure under the mark */
+        /* S7 polish: Coming up's part is the Inbox row its orders are; F8, its mark and size a card, its shape and size under the mark */
         coming: [...c.querySelectorAll(".salt-inbox-row")].map((r) => { const m = r.querySelector(":scope > .mtile");
           return [m ? t(m.querySelector(".sr")) + "|" + t(m.querySelector(".mq")) : ""].concat(["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s)))); }),
         marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c) };
@@ -44956,7 +44961,7 @@ await (async () => {
     "on its last day the line says to pay today, with no date beside it: " + JSON.stringify(today.rows));
   const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1] + " " + s.slice(0, 4);
   ok(one.heads.join() === "Coming up" && one.coming.length === 1
-    && one.coming[0].join("|") === "Cube 1 unit|1||Due when you receive it|" + age(kl(-1)) + "|RM 110.00"
+    && one.coming[0].join("|") === "Cube 1 unit|Cube, 1 unit||Due when you receive it|" + age(kl(-1)) + "|RM 110.00"
     && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
     "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word, and no Overdue list stands under To pay now: "
     + JSON.stringify([one.heads, one.coming]));
@@ -45869,7 +45874,7 @@ await (async () => {
     ok(empty[0] === "" && empty[1] === true, "a sheet with every line taken off has no total and Review waits: " + JSON.stringify(empty));
     d.getElementById("oGo").click();
     /* a row read as its label, value and flag, the mark's drawing left out and its shape said once */
-    const clean = (e) => { const c = e.cloneNode(true); c.querySelectorAll("svg, .sr").forEach((x) => x.remove()); return t(c); };
+    const clean = (e) => { const c = e.cloneNode(true); c.querySelectorAll("svg, .sr, .pshape").forEach((x) => x.remove()); return t(c); };
     const rows = () => [...d.querySelectorAll("#osheet .salt-ledger__row")].map((r) => [...r.querySelectorAll(".salt-ledger__label, .salt-ledger__value, .salt-ledger__flag")].map(clean).filter(Boolean).join(" "));
     const r1 = rows();
     ok(r1.includes("2 units RM 190.00") && r1.includes("10 units RM 95.00") && r1.includes("Total RM 285.00") && d.querySelectorAll("#osheet .mhero > *").length === 2,
@@ -45882,8 +45887,8 @@ await (async () => {
     d.getElementById("oPlace").click();
     await until(() => posted.length === 3 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     const part = rows();
-    ok(posted.length === 3 && part.includes("2 units RM 190.00 Sent") && !d.getElementById("oBack").disabled,
-      "a line refused after one placed leaves the placed line said as sent, and the check still theirs to change: " + JSON.stringify(part));
+    ok(posted.length === 3 && part.includes("2 units RM 190.00 Placed") && !d.getElementById("oBack").disabled,
+      "a line refused after one placed leaves the placed line said as placed, and the check still theirs to change: " + JSON.stringify(part));
     d.getElementById("oPlace").click();
     await until(() => posted.length === 4 && !!d.querySelector("#osheet .osent"));
     const sheetIds = new Set(posted.map((x) => x.sheet));
@@ -45891,7 +45896,7 @@ await (async () => {
       "Place again sends only the line still to go, under the request id it was refused under: " + JSON.stringify(posted.map((x) => [x.product, x.rid.slice(0, 6)])));
     ok(sheetIds.size === 1 && /^[A-Za-z0-9_-]{16,64}$/.test(posted[0].sheet) && posted[1].rid !== posted[2].rid && posted[2].total === 99 && posted.slice(1).every((x) => x.digest === "d2"),
       "every line goes under the one sheet id, each its own request id, at the list Place answered with: " + JSON.stringify(posted.map((x) => [x.product, x.sheet, x.total, x.digest])));
-    ok(!!d.querySelector("#osheet .osent"), "and a retry the Worker says is on the sheet already is placed, and the sheet answers Sent");
+    ok(!!d.querySelector("#osheet .osent"), "and a retry the Worker says is on the sheet already is placed, and the sheet answers Order placed");
     /* the next sheet keeps what they picked, and is a sheet of its own, each line under its own request id */
     d.querySelector('#osheet [data-k="close"]').click();
     d.getElementById("oNew").click();
@@ -46656,13 +46661,13 @@ await (async () => {
   const body = String(doc && doc.body);
   const i = body.indexOf('<div class="owed">'), block = i < 0 ? "" : body.slice(i, body.indexOf("</div>", i));
   /* F8 (his answer of 28 Sep 2026, "It will be rendered cards in the statement"): a line a book is a card a book, the
-     mark a button and its figure alone under it, the unit in the words a reader hears */
+     mark a button and its shape and size under it (7c), the unit in the words a reader hears */
   const lines = block.split('<span class="mtile">').slice(1);
   const txt = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const said = (h) => ((h.match(/<span class="sr">([^<]*)<\/span>/) || [])[1] || "") + "|" + ((h.match(/<span class="mq" aria-hidden="true">([^<]*)<\/span>/) || [])[1] || "");
+  const said = (h) => ((h.match(/<span class="sr">([^<]*)<\/span>/) || [])[1] || "") + "|" + ((h.match(/<span class="mq" aria-hidden="true">([\s\S]*?)<\/span><\/span>/) || [])[1] || "").replace(/<[^>]+>/g, "");
   ok(i >= 0 && lines.length === 2, "the block has one card a book: " + lines.length + " cards");
-  ok(lines.length === 2 && /<svg class="psym"/.test(lines[0]) && said(lines[0]) === "Cube 2 units|2"
-    && /<svg class="psym"/.test(lines[1]) && said(lines[1]) === "Droplet 1.5 units|1.5",
+  ok(lines.length === 2 && /<svg class="psym"/.test(lines[0]) && said(lines[0]) === "Cube 2 units|Cube, 2 units"
+    && /<svg class="psym"/.test(lines[1]) && said(lines[1]) === "Droplet 1.5 units|Droplet, 1.5 units",
     "each card carries its book's mark and its own figure, salt first: " + lines.map(said).join(" | "));
   ok(i >= 0 && !/3\.5/.test(txt(block)), "and the sum of two books, 3.5, is nowhere in it: " + txt(block));
   /* an archive keeps the one figure it was issued with, a dated record not being corrected in place */
@@ -52681,8 +52686,8 @@ await (async () => {
     for (let i = 0; i < 120 && !doc.getElementById("oNew"); i++) await new Promise((resolve) => setTimeout(resolve, 20));
     const notice = doc.querySelector("#pOrder .salt-insight");
     ok(!!doc.getElementById("oNew") && notice && /Counter is closed/.test(notice.textContent)
-      && /acknowledgement may be delayed/.test(notice.textContent),
-      "a closed-hours customer still sees New order and the delayed-acknowledgement notice");
+      && /confirmation may be delayed/.test(notice.textContent),
+      "a closed-hours customer still sees New order and the delayed-confirmation notice");
     doc.getElementById("oNew").click();
     const size = doc.querySelector('#osheet input[name="osize"][value="1"]');
     if (size) { size.checked = true; size.dispatchEvent(new page.Event("change", { bubbles: true })); }
@@ -54067,8 +54072,8 @@ await (async () => {
     doc.getElementById("oGo").click();
     ok(doc.querySelector("#osheet").textContent.includes("RM 190")
       && sizeCount === 2
-      && doc.querySelector("#osheet").textContent.includes("acknowledgement may be delayed"),
-      "customer amendment reviews one product at its sealed quote and repeats the closed-hours notice");
+      && doc.querySelector("#osheet").textContent.includes("confirmation may be delayed"),
+      "customer amendment reviews one product at its sealed quote and repeats the closed-hours notice, in the new word");
     doc.getElementById("oPlace").click();
     for (let i = 0; i < 100 && !posts.length; i++) await new Promise((resolve) => setTimeout(resolve, 20));
     ok(posts.length === 1 && posts[0].path === "/orders/" + original.id + "/amend"
@@ -54368,9 +54373,9 @@ await (async () => {
     d.getElementById("f").dispatchEvent(new wd.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 80 && !d.querySelector("#pPrices .pmark"); i++) await new Promise((r) => setTimeout(r, 50));
     const panes = [...d.querySelectorAll("#pPrices .pane")].map((p) => ({ cls: p.querySelector(".pmark").className, aria: p.querySelector(".pmark").getAttribute("aria-label"), text: p.textContent }));
-    ok(/sup-yellow/.test(panes[0].cls) && /Limited/.test(panes[0].aria) && /Expected by 14 Oct/.test(panes[0].text), "yellow: a yellow border, Limited in its name, Expected by 14 Oct under it: " + JSON.stringify(panes[0]));
-    ok(/sup-red/.test(panes[1].cls) && /Out for now/.test(panes[1].aria) && !/Expected by/.test(panes[1].text), "red with no day: a red border and no Expected by");
-    ok(/sup-green/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/Expected by/.test(panes[2].text), "green: a green border, and no day even when one is sealed");
+    ok(/sup-yellow/.test(panes[0].cls) && /Limited/.test(panes[0].aria) && /More by 14 Oct/.test(panes[0].text), "yellow: a yellow border, Limited in its name, More by 14 Oct under it: " + JSON.stringify(panes[0]));
+    ok(/sup-red/.test(panes[1].cls) && /Out for now/.test(panes[1].aria) && !/More by/.test(panes[1].text), "red with no day: a red border and no More by");
+    ok(/sup-green/.test(panes[2].cls) && /Available/.test(panes[2].aria) && !/More by/.test(panes[2].text), "green: a green border, and no day even when one is sealed");
     ok(!/sup/.test(panes[3].cls) && panes[3].aria === d.querySelectorAll("#pPrices .pmark")[3].getAttribute("aria-label") && !/Expected|Limited|Available/.test(panes[3].text), "a list sealed with no light draws the mark as it was");
     ok(!/\bstock\b|\bsalt\b|\boil\b|Salt Command/i.test(panes.map((p) => p.aria + p.text.replace(/RM[^A-Za-z]*/g, "")).join(" ")), "no customer sentence names stock, a product or the desk");
   } finally { wd.close(); }

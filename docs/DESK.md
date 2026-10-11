@@ -391,7 +391,7 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
   capability and remains Desk-to-Counter only.
 - **Operating hours**: Salt Account writes `maker:hours` in the Counter KV. The public `/hours`
   route returns only the open/closed status and timing; its schedule uses Kuala Lumpur time.
-  Customers can still place orders while closed, and the order form tells them acknowledgement may
+  Customers can still place orders while closed, and the order form tells them confirmation may
   be delayed. A temporary open or closed override expires within 14 days; clearing it returns to
   the weekly schedule.
 - **The rail** (v622): the destinations with no heading above them, and the open one's pages
@@ -658,4 +658,4 @@ charges today's ladder to each order's month, so a change of ladder restates the
 - `engine/position.mjs` `restockLight(shelf, commitUnits)`: red when the shelf is under half a hundredth, yellow the moment the commitments (owed out plus agreed, nothing moved) exceed the shelf, that is free stock below what is agreed (the engine's `coverable` false), else green. `restockSupply` adds the day, kept only while the light is not green and the day is not past.
 - Enter's Restock date card (and the Today row "Restock date: not set", Now on red, This week on yellow) sets one day a book through the keyed `/expected`, relayed to the Counter's KV `expected` (`{<book>: "YYYY-MM-DD"}`). The name is `expected` because `restock` is the engine's reorder plan.
 - The publish (`tools/book.mjs` `supplySnapshot`, `tools/pricelist.mjs` `supplyLights`) seals `{light, by}` on each product of every customer's list, outside the digest. A date set shows at the next publish, within the hour.
-- The Counter draws a coloured border on the book's mark (verdigris, amber, ember; amber is the design system's warning token, since brass is the mark's own colour and the focus colour) with Available, Limited or Out for now in its name, and "Expected by DD Mon" under it on yellow or red.
+- The Counter draws a coloured border on the book's mark (verdigris, amber, ember; amber is the design system's warning token, since brass is the mark's own colour and the focus colour) with Available, Limited or Out for now in its name, and "More by DD Mon" under it on yellow or red.

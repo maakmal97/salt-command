@@ -5,7 +5,7 @@ import { rig, U1, sqlite } from "./pool.mjs";
 export async function fixture({ ok, KV, skipOff }) {
   const T = await import("../tools/testfix.mjs"), TF = await import("../stmt/testfix.js"), O = await import("../stmt/orders.js"), C = await import("../tools/stmt-crypto.mjs");
   const now = new Date("2026-10-05T04:00:00Z"), all = T.buildAll(now), f = all[TF.TEST_USER];
-  const names = ["a group order open, joined (Pool)", "a group order closed, its order acknowledged (Pool)"];
+  const names = ["a group order open, joined (Pool)", "a group order closed, its order confirmed (Pool)"];
   const lines = T.FEATURES.filter(([n]) => names.includes(n));
   ok(lines.length === 2 && lines.every(([, t]) => Object.values(all).some((x) => t(x))) && !T.missing(all).some((n) => names.includes(n)),
     "the fixture holds a case of each group order line the suite asks of it: " + JSON.stringify(T.missing(all)));
@@ -13,7 +13,7 @@ export async function fixture({ ok, KV, skipOff }) {
   const order = (p) => f.orders.find((o) => o.id === p.joins[0].oid);
   ok(f.pools.length === 2 && open && shut && f.pools.every((p) => O.isPoolId(p.id) && p.joins.length === 1 && p.joins[0].u === TF.TEST_USER && order(p).pool === p.id && order(p).mode === "collect")
     && order(open).status === "placed" && open.closesOn > "2026-10-05" && order(shut).status === "acknowledged" && shut.closedAt && !!shut.seedUnits && !!open.seedUnits && open.seedUnits + open.q < open.target,
-    "one pool is open with the account's placed order in it and a closing day ahead, one closed with its order acknowledged, each order collected and carrying its pool: " + JSON.stringify(f.pools.map((p) => [p.state, order(p).status])));
+    "one pool is open with the account's placed order in it and a closing day ahead, one closed with its order confirmed, each order collected and carrying its pool: " + JSON.stringify(f.pools.map((p) => [p.state, order(p).status])));
   const view = O.customerView(order(open));
   ok(view.pool === open.id && Object.values(all).every((x) => x.pools.length === 2), "the order's view carries the pool, and the locked account has the same two");
   /* the lines are the suite's: a fixture with no pools fails them */
