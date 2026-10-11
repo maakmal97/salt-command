@@ -486,7 +486,8 @@ export const OWNER_JS = `
         a.sent=j.sent; chips(); say(''); countSent(); drawRoster(); drawNeeds();
       }catch(e){ box.checked=!want; say(e.message,'bad'); }
     });
-    tick.appendChild(box); tick.appendChild(el('span',null,'Sent'));
+    /* 12 Oct 2026 (Phase 2a): the input is the 44px target, laid unseen over the box drawn beside it, so the control measures what the label did */
+    tick.appendChild(box); tick.appendChild(el('span','tickbox')); tick.appendChild(el('span',null,'Sent'));
     c.appendChild(tick);
     var st=el('div','astory'); st.setAttribute('data-story', u);
     if(!none){ c.appendChild(st); drawStory(st, a); loadStory(a); }

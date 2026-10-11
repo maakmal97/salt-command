@@ -9,11 +9,22 @@
  *      is held for the order, and standing along the card's foot as it scrolls
  *   3  the sheets: Decline, Cancel order, Close at these units and Offer again each ask on the page's Sheet with a native confirm never asked, the reason
  *      on option tiles, one action sending the request the confirm let through, the four ways out sending nothing, and Tab kept inside
+ *   4  the tick: Sent on an account card is an input of the 44px token both ways over the box drawn beside it (settled in Chromium by a hit test,
+ *      the four corners of the input each toggling it; jsdom has no layout, so this reads the page's own CSS rules)
  * Drawn by the maker harness (test/maker-act.mjs), whose hold(route) keeps an answer back until it is let go. */
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const previews = (p, id) => p.posts.filter((x) => /[/]preview$/.test(x.route) && (!id || x.route.includes("/" + id + "/")));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+/* the page's own CSS as jsdom parsed it: ruleOf(selector, media) is the declarations of each rule with exactly that selector (and media, with no spaces) */
+const cssRules = (w) => {
+  const rules = [];
+  for (const sheetCss of w.document.styleSheets) for (const r of sheetCss.cssRules) {
+    if (r.selectorText) rules.push(["", r.selectorText, r.style]);
+    else if (r.media) for (const x of r.cssRules) if (x.selectorText) rules.push([r.media.mediaText.replace(/\s+/g, ""), x.selectorText, x.style]);
+  }
+  return (sel, media = "") => rules.filter((r) => r[0] === media && r[1] === sel).map((r) => r[2]);
+};
 
 export async function run({ ok, pageWork }) {
   const open = async () => {
@@ -134,13 +145,8 @@ export async function run({ ok, pageWork }) {
     await p.tapRow("ord-c1");
     ok(!!foot() && !foot().classList.contains("has") && moves().length === 0, "a closed order has no moves, and its foot does not stand along the card: " + JSON.stringify(moves()));
     /* the foot stands along the card's foot as the card scrolls: the page's, clear of the App bar, and from 860px the card's own */
-    const rules = [];
-    for (const sheetCss of p.w.document.styleSheets) for (const r of sheetCss.cssRules) {
-      if (r.selectorText) rules.push(["", r.selectorText, r.style]);
-      else if (r.media) for (const x of r.cssRules) if (x.selectorText) rules.push([r.media.mediaText.replace(/\s+/g, ""), x.selectorText, x.style]);
-    }
-    const ruleOf = (sel, media = "") => rules.filter((r) => r[0] === media && r[1] === sel).map((r) => r[2]);
-    const base = ruleOf(".adm .maker-foot.has")[0], wide = ruleOf(".adm #makerReview .maker-foot.has", "(min-width:860px)")[0];
+    const ruleOf = cssRules(p.w);
+    const base =ruleOf(".adm .maker-foot.has")[0], wide = ruleOf(".adm #makerReview .maker-foot.has", "(min-width:860px)")[0];
     ok(!!base && base.getPropertyValue("position") === "sticky" && /--salt-bar-h/.test(base.getPropertyValue("bottom")) && !!wide && wide.getPropertyValue("bottom") === "0px",
       "the foot of a card with moves is sticky, clear of the App bar, and from 860px sticks to the card's own foot: " + (base && base.cssText));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
@@ -272,5 +278,25 @@ export async function run({ ok, pageWork }) {
     byAct(d, "order.handed", "ord-r1").click(); await p.work.quiet();
     ok(sends("/handed").length === before + 1 && !sheetOf(), "Record handover sends at once, with no sheet: it is a money tap guarded once, as it was");
     ok(calls.length === 0, "and no native confirm, alert or prompt was asked on any order card: " + JSON.stringify(calls));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* 4. THE TICK IS A 44px TARGET (his rule 6: a tap target is 44px in both dimensions, measured on the control, which is what a hit test reads) */
+  p = await richOwnerPage({ pageWork });
+  try {
+    const d = p.d;
+    await p.work.quiet();
+    byAct(d, "nav.customers").click(); await p.work.quiet();
+    byAct(d, "part.customers.accounts").click(); await p.work.quiet();
+    byAct(d, "acct.open", "abcd-efgh").click(); await p.work.quiet();
+    const sent = byAct(d.getElementById("aopen"), "acct.sent"), label = sent && sent.closest("label.tick");
+    ok(!!sent && sent.type === "checkbox" && !!label && [...label.querySelectorAll("input")].length === 1 && !!sent.nextElementSibling && sent.nextElementSibling.classList.contains("tickbox"),
+      "Sent is one checkbox in its label, with the box that shows its state drawn right after it");
+    const ruleOf = cssRules(p.w), prop = (r, name) => (r ? r.getPropertyValue(name) : "");
+    const tick = ruleOf(".adm .oacct .tick")[0], input = ruleOf(".adm .oacct .tick input")[0], drawn = ruleOf(".adm .oacct .tick .tickbox")[0];
+    ok(!!input && prop(input, "width") === "var(--salt-tap)" && prop(input, "height") === "var(--salt-tap)" && prop(input, "position") === "absolute" && !/none|hidden/.test(prop(input, "display") + prop(input, "visibility")),
+      "the input measures the tap: the 44px token both ways, laid over the drawn box and never taken out of the page: " + (input && input.cssText));
+    ok(!!tick && prop(tick, "position") === "relative" && prop(tick, "min-height") === "var(--salt-tap)" && prop(tick, "min-width") === "var(--salt-tap)"
+      && !!drawn && prop(drawn, "width") === "18px" && prop(drawn, "height") === "18px",
+      "its label is a 44px target as well, round the 18px box it draws: " + (tick && tick.cssText));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

@@ -1604,6 +1604,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   delivered only) and a field for his own words (`order.reason`); a tile fills the field and typing clears the pick, the reason is optional and
   rides as `note`, checked by `siteWords` on the Desk. The money taps (handover, cash, Received) are guarded once, as they were, with no sheet,
   and Approve's confirm (`approveDraft`) is not the card's and is as it was.
+  **The Sent tick on an account card is a 44px target** (rule 6, measured on the control, which a hit test reads): it measured 18 by 18 inside a 44px
+  label, so its input is now the `--salt-tap` token both ways, laid unseen over the 18px box drawn beside it (`.tickbox`, which shows ticked and
+  unticked and takes the focus ring). A real click at each corner of the input toggles it, at 1280 and at 375 in Chromium; the suite, with no layout
+  in jsdom, holds the CSS rules and the markup (`test/admin-order-card.mjs`, section 4).
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a
