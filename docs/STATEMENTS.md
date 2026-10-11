@@ -1587,6 +1587,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`makerQuotes`, held against the order as it stood) or waits on the read that is out (`makerPv`), and never asks twice for the same figures.
   A delivery with no charge chosen reads nothing and says to choose one. A read that fails leaves no Accept, says why, and offers Read the figures
   again (`order.reread`). Nothing the request carries has changed: the route, the body `{total, delivery}`, Accept's digest and its single flight.
+  **The stage foot** (Phase 2a): the moves of the card's stage stand together at its foot (`makerCardFoot`, `.maker-foot`), the filled one first and the
+  quiet ones beside it, then the card's answer line: a placed order's Accept (Send for their yes, when the figures raise the price or change the
+  window) and Decline, or Withdraw the offer while an offer is out; Accept again, with the stages he rejected offered again; Ready to collect and
+  Ready to deliver, with Cancel order, on an agreed order; Record handover, with Cancel order, on a ready one. The fields stay in the body, with
+  the claims, Received, Amend, the close at fewer units and the cash controls (`makerCashControls`, which is untouched). **Cash held for an
+  order shuts the card's controls, the foot's too**; Undo opens them. A foot with moves is sticky, clear of the App bar on a phone and along the
+  card's own foot from 860px, with a gutter at its right for the + orb; a closed order's foot is its answer line alone.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a

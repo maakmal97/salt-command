@@ -495,6 +495,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-card>*+*{margin-top:12px}
 .adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
 .adm .maker-card>.maker-say:empty{margin-top:0}
+/* 12 OCT 2026 (PHASE 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first and the quiet ones beside it, with
+   the card's answer line under them; a foot with moves stays along the card's foot as it scrolls (the page's, clear of the App bar, or the card's own from 860px).
+   The right gutter is the + orb's, which stands over the page at the corner. */
+.adm .maker-foot{display:flex;flex-direction:column;gap:8px}
+.adm .maker-foot.has{position:sticky;z-index:10;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);margin:16px -4px -4px;padding:12px 76px 8px 4px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
+.adm .maker-foot__acts{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.adm .maker-foot__acts:empty{display:none}
+.adm .maker-foot__acts .btn{margin-top:0;width:auto;flex:1 1 11rem}
+.adm .maker-foot .maker-say{margin:0}
+@media (min-width:860px){.adm #makerReview .maker-foot.has{bottom:0}}
 .adm .maker-queue-action{min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}

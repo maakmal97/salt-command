@@ -150,7 +150,7 @@ export async function run({ ok, pageWork }) {
       && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current"),
     "a row opens that order's card alone, marks itself current and stands the list and the card side by side: " + JSON.stringify(p.cardsIn()));
     const want = ["order.total", "order.reason", "order.reason-stock", "order.reason-price", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
-      "order.reply", "order.no-reply", "order.decline", "order.accept"];
+      "order.reply", "order.no-reply", "order.accept", "order.decline"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had: " + JSON.stringify(got));
     /* his decision 6 of 11 Oct 2026: the card reads its own preview on opening, once, and has no Preview button */

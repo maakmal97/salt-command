@@ -1881,6 +1881,15 @@ export const OWNER_JS = `
     var say=el('p','maker-say'); say.setAttribute('role','status'); say.setAttribute('aria-live','polite');
     say.setAttribute('data-maker-say',key); card.appendChild(say); return say;
   }
+  /* 12 Oct 2026 (Phase 2a): THE STAGE FOOT. The moves of the card's stage stand together at its foot, the filled one first (Accept, Accept again, Ready,
+     Record handover) and the quiet ones beside it (Decline, Cancel order, Offer again, Withdraw the offer), and the card's answer line under them.
+     Cash held for the order shuts every control of the card (makerCashControls), the foot's too. The class has marks a foot with moves, or one whose
+     Accept is still being read, which stands along the card's foot as it scrolls. */
+  function makerCardFoot(card,acts,key,cashed,pending){
+    var foot=el('div','maker-foot'); foot.appendChild(acts); card.appendChild(foot); makerFoot(foot,key);
+    if(acts.children.length||pending) foot.classList.add('has');
+    if(cashed&&(makerCashHeld[key]||makerCashStorageError)) [].forEach.call(acts.querySelectorAll('button,input,select'),function(n){ n.disabled=true; });
+  }
   /* the last answer a card was given, kept by its key: Needs you reads a Desk row's, which its own card is gone to hear */
   var makerSaid={};
   function makerSay(key,text){
@@ -2034,9 +2043,9 @@ export const OWNER_JS = `
   }
   /* a stage he rejected under Approve, offered again by the Desk's own againOrder */
   var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
-  function makerAgain(card,order){
+  function makerAgain(card,order,acts){
     (order.again||[]).filter(function(stage){ return MAKER_AGAIN[stage]; }).forEach(function(stage){
-      makerButton(card,['Offer the '+MAKER_AGAIN[stage]+' again','order.again-'+stage],function(){
+      makerButton(acts,['Offer the '+MAKER_AGAIN[stage]+' again','order.again-'+stage],function(){
         if(!window.confirm('Offer the rejected '+MAKER_AGAIN[stage]+' on this order again?')) return;
         makerTap(order,'again',{stage:stage},'The '+MAKER_AGAIN[stage]+' is offered again to the Desk.');
       },false).setAttribute('data-again',stage);
@@ -2045,7 +2054,7 @@ export const OWNER_JS = `
   /* a pending row he rejected on an agreed order is offered again by Accept against a fresh preview, at the charge and
      goods the order already carries (the customer was told them), as the Desk's own Accept again: nothing priced is sent */
   function makerAgainAck(order){ return ['acknowledged','ready','done'].indexOf(order.status)>=0&&(order.again||[]).indexOf('ack')>=0; }
-  function makerAcceptAgain(card,order){
+  function makerAcceptAgain(card,order,acts){
     var route='/all/maker/orders/'+encodeURIComponent(order.id), key=order.id+':again', sig=JSON.stringify(order), turn=0;
     var said=el('p','salt-insight'), figs=el('div','maker-quote');
     said.setAttribute('role','status'); card.appendChild(said); card.appendChild(figs);
@@ -2054,9 +2063,10 @@ export const OWNER_JS = `
       said.className='salt-insight'; said.textContent='Figures read. Check the row before accepting it again.';
       figs.textContent=''; makerReading(figs,result,'preview');
       var old=card.querySelector('[data-accept-again]'); if(old) old.remove();
-      makerButton(card,['Accept again','order.accept-again'],function(){
+      var again=makerButton(acts,['Accept again','order.accept-again'],function(){
         makerAction(route+'/accept',{hash:result.hash},'Order sent to the Desk for acknowledgement again.',order.id);
-      },true).setAttribute('data-accept-again','');
+      },true);
+      again.setAttribute('data-accept-again',''); acts.insertBefore(again,acts.firstChild);
     }
     function read(){
       var mine=++turn, old=card.querySelector('[data-accept-again]'); if(old) old.remove();
@@ -2089,7 +2099,7 @@ export const OWNER_JS = `
   /* the Desk's reasons for Decline and Cancel; delivery only on an order to be delivered */
   var MAKER_WHY=[['stock','We do not have enough in hand this week.'],['place','We cannot deliver there.'],['price','Our prices have changed.']];
   /* replyOnly is a closed order: only his answer to their question, and no Decline, Cancel or reason */
-  function makerOrderMoves(card,order,replyOnly){
+  function makerOrderMoves(card,order,replyOnly,acts){
     var reason=replyOnly?null:makerField(card,['Reason to the customer (Decline or Cancel, optional)','order.reason'],'text','');
     if(!replyOnly) MAKER_WHY.filter(function(w){ return w[0]!=='place'||order.mode==='deliver'; }).forEach(function(w){
       makerButton(card,[w[1],'order.reason-'+w[0]],function(){ reason.value=w[1]; },false).setAttribute('data-why',w[0]);
@@ -2112,12 +2122,12 @@ export const OWNER_JS = `
     makerButton(card,['No reply needed','order.no-reply'],function(){ makerMove(order,{noReply:true},'No reply needed recorded.'); },false);
     var note=function(){ var t=reason.value.trim(); return t?{note:t}:{}; };
     if(order.status==='placed')
-      makerButton(card,['Decline','order.decline'],function(){
+      makerButton(acts,['Decline','order.decline'],function(){
         if(!window.confirm('Decline this order?')) return;
         makerMove(order,Object.assign({status:'declined'},note()),'Order declined.');
       },false);
     else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&!(+order.moved>0))
-      makerButton(card,['Cancel order','order.cancel'],function(){
+      makerButton(acts,['Cancel order','order.cancel'],function(){
         if(!window.confirm(+order.paid>0?'Cancel this order? RM '+(+order.paid).toFixed(2)+' is paid on it, so a refund to the customer opens for you to return.':'Cancel this order? Nothing is paid on it.')) return;
         makerMove(order,Object.assign({status:'cancelled'},note()),'Order cancelled.');
       },false);
@@ -2820,7 +2830,7 @@ export const OWNER_JS = `
   function orderCard(root,order){
     var open=makerOpenOrders;
     {
-      var card=makerCard(root,order.id), head=el('h3','',order.id); card.appendChild(head); card.setAttribute('data-in',orderPartsOf(order));
+      var card=makerCard(root,order.id), head=el('h3','',order.id), acts=el('div','maker-foot__acts'), cashed=false; card.appendChild(head); card.setAttribute('data-in',orderPartsOf(order));
       var ownerLine=el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status);
       card.appendChild(ownerLine);
       card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
@@ -2835,7 +2845,7 @@ export const OWNER_JS = `
         card.appendChild(el('p','maker-facts',(ap.state==='taken'?'They said yes to ':'Sent for their yes: ')+'goods '+rm(apf.total)
           +(order.mode==='deliver'?', delivery '+rm(apf.delivery||0):'')+(apf.slot&&apf.slotSpan?', between '+String(apf.slotSpan).replace('-',' and ')+' on '+mwDayLabel(String(apf.slot).slice(0,10)):'')
           +(ap.state==='taken'?'. Its row is drafted at it.':', open until '+String(apf.until).slice(0,16).replace('T',' ')+' UTC.')));
-        if(ap.state!=='taken') makerButton(card,['Withdraw the offer','order.withdraw-offer'],function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false).setAttribute('data-withdraw','');
+        if(ap.state!=='taken') makerButton(acts,['Withdraw the offer','order.withdraw-offer'],function(){ makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.'); },false).setAttribute('data-withdraw','');
       }else if(order.status==='placed'){
         var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','maker-fields');
         var total=makerField(form,['Order total (RM)','order.total'],'number',quote.total==null?order.total:quote.total);
@@ -2876,7 +2886,7 @@ export const OWNER_JS = `
           var old=card.querySelector('[data-accept]'); if(old) old.remove();
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
           var wv=makerPlacedWin(), yes=makerNeedsYes(order,q.total,wv);
-          var accept=makerButton(card,[(yes?'Send for their yes at ':'Accept order at ')+rm(q.result.quote)+', delivery '+rm(q.result.delivery),yes?'order.send-yes':'order.accept'],function(){
+          var accept=makerButton(acts,[(yes?'Send for their yes at ':'Accept order at ')+rm(q.result.quote)+', delivery '+rm(q.result.delivery),yes?'order.send-yes':'order.accept'],function(){
             var s=makerQuotes[order.id]; if(!s||!s.hash) return;
             /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
             if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
@@ -2884,7 +2894,7 @@ export const OWNER_JS = `
             var body={total:s.total,delivery:s.delivery,hash:s.hash};
             if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Order sent to the Desk for acknowledgement.',order.id);
-          },true); accept.setAttribute('data-accept','');
+          },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);
         }
         function makerPlacedRead(){
           var delivery=makerPlacedDelivery();
@@ -2975,17 +2985,17 @@ export const OWNER_JS = `
         }
         card.appendChild(qsay); card.appendChild(qfigs);
       }else if(againAck){
-        quoteStart=makerAcceptAgain(card,order);
+        quoteStart=makerAcceptAgain(card,order,acts);
       }else if(order.status==='acknowledged'){
         /* Ready says how the goods go, as the Desk's card does; the order book records the mode at Ready */
         [['collect','Ready to collect'],['deliver','Ready to deliver']].forEach(function(m){
-          makerButton(card,[m[1],'order.ready-'+m[0]],function(){
+          makerButton(acts,[m[1],'order.ready-'+m[0]],function(){
             makerMove(order,{status:'ready',mode:m[0]},'Order marked '+m[1].toLowerCase()+'.');
           },(order.mode||'collect')===m[0]).setAttribute('data-mode',m[0]);
         });
       }else if(order.status==='ready'){
         var qty=makerField(card,['Units handed over','order.handed-units'],'number',order.qty);
-        makerButton(card,['Record handover','order.handed'],function(){
+        makerButton(acts,['Record handover','order.handed'],function(){
           makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.');
         },true);
         /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
@@ -3027,10 +3037,10 @@ export const OWNER_JS = `
           makerTap(order,'restate',body,'Amendment sent to the Desk for approval.');
         },false).setAttribute('data-amend','');
       }
-      makerAgain(card,order);
-      makerOrderMoves(card,order);
-      if(order.status==='ready'&&!againAck)makerCashControls(card,order);
-      makerFoot(card,order.id);
+      makerAgain(card,order,acts);
+      makerOrderMoves(card,order,false,acts);
+      if(order.status==='ready'&&!againAck){ makerCashControls(card,order); cashed=true; }
+      makerCardFoot(card,acts,order.id,cashed,!!quoteStart);
       if(quoteStart) quoteStart();
       return card;
     }
@@ -3038,16 +3048,16 @@ export const OWNER_JS = `
   /* the card of an order that is not open: one with a stage he rejected keeps its card until that stage is offered again or left; a closed
      order has its figures, and a question of theirs he has not answered its reply; cash held for it keeps its Undo (or its Retry) */
   function orderPlainCard(root,e){
-    var order=e.order, again=null, card=makerCard(root,e.id); card.setAttribute('data-in',e.parts); card.appendChild(el('h3','',e.id));
+    var order=e.order, again=null, acts=el('div','maker-foot__acts'), cashed=false, card=makerCard(root,e.id); card.setAttribute('data-in',e.parts); card.appendChild(el('h3','',e.id));
     if(order){
       card.appendChild(el('p','lead',(order.u||'')+' · '+(order.product||'')+' · '+order.qty+' units · '+order.status));
       card.appendChild(el('p','maker-facts','RM '+Number(order.total||0).toFixed(2)+(order.delivery?' · delivery RM '+Number(order.delivery).toFixed(2):'')));
-      if(makerAgainAck(order)) again=makerAcceptAgain(card,order);
-      makerAgain(card,order);
+      if(makerAgainAck(order)) again=makerAcceptAgain(card,order,acts);
+      makerAgain(card,order,acts);
       if(orderAsked(order)) makerOrderMoves(card,order,true);
     }else card.setAttribute('data-key',e.id);
-    if(makerCashHeld[e.id]) makerCashControls(card,order||{id:e.id});
-    makerFoot(card,e.id);
+    if(makerCashHeld[e.id]){ makerCashControls(card,order||{id:e.id}); cashed=true; }
+    makerCardFoot(card,acts,e.id,cashed,!!again);
     if(again) again();
     return card;
   }
