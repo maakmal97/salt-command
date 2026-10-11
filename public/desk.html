@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="fb72f676889766a1";
+var SALT_BUILD_ID="decaa3d48e941ba6";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -18914,11 +18914,12 @@ function ensureChart(cb){
   document.head.appendChild(s);
 }
 /* 06 Oct 2026: THE CHARTS AND THE MAP READ THE THEME, NEVER A LITERAL. tcol(role) is a colour of the identity read off
-   the page's tokens when it is drawn, so the Dawn, Dusk and Night themes (and Day, when it is let in) each draw
-   their own; tcol(role,a) is the same colour at alpha a. A role is the short name below, or any --token without its
-   dashes. The tokens at Night are the identity's hexes, so a chart at Night is the pixel it was. The chart ink and
-   the map's own steps are the desk's tokens in design/desk.css (--desk-chart-grid, --desk-map-*), since the
-   identity holds no token for them. A page with no stylesheet reads '' and Chart.js keeps its own default. */
+   the page's tokens when it is drawn, so Night and Tide (11 Oct 2026) each draw their own; tcol(role,a) is the same
+   colour at alpha a. A role is the short name below, or any --token without its dashes. The tokens at Night are the
+   identity's hexes, so a chart at Night is the pixel it was, and at Tide they are TIDE_COLOURS in Code/salt-ds. The chart
+   ink and the map's own steps are the desk's tokens in design/desk.css (--desk-chart-grid, --desk-map-*), each restated
+   for Tide there, since the identity holds no token for them. A page with no stylesheet reads '' and Chart.js keeps its
+   own default. */
 function tcol(role,a){
   const R={ink:'salt-salt',brass:'salt-brass',copper:'salt-copper',verdigris:'salt-verdigris',ember:'salt-ember',steel:'salt-steel',
     ice:'salt-product-salt',mist:'salt-mist-light',soft:'salt-brass-soft',obsidian:'salt-obsidian',slate:'salt-slate',
@@ -18940,7 +18941,7 @@ function chartTheme(){
   try{   /* the colours are read again on every call, so a theme that changed since the last draw is the one drawn */
     const D=Chart.defaults,T=D.plugins.tooltip;
     D.color=tcol('ink',0.66);D.borderColor=tcol('brass',0.14);
-    T.backgroundColor=tcol('obsidian',0.92);T.borderColor=tcol('brass',0.45);T.titleColor=tcol('ink');T.bodyColor=tcol('ink',0.85);
+    T.backgroundColor=tcol('obsidian',0.92);T.borderColor=tcol('salt-line-strong');T.titleColor=tcol('ink');T.bodyColor=tcol('ink',0.85);   /* the tooltip's edge is the system's lifted hairline: brass at 45% at Night, Tide's teal at 46% (TIDE_CHART_THEME) */
   }catch(e){}
   if(Chart.__salted)return; Chart.__salted=true;
   try{
@@ -25707,14 +25708,19 @@ function render(){RENDER_MEMO={};try{renderNow();}finally{RENDER_MEMO=null;}}   
    part with no chart and no map follows through CSS alone and is left alone (rendering Enter's forms would lose what is typed).
    Every storage read and write is guarded: a store that cannot be read leaves Tide and the choice lasts the session. */
 const LOOK_KEY='salt-look';
+const THEME_PARTS=new Set(['today','overview','forward','receivables','financials','inventory','sourcing','pricing','concentration','network','map','ledger','analysis']);
 function lookNow(){return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide';}
 function lookStore(){try{const v=localStorage.getItem(LOOK_KEY);return v==='night'||v==='tide'?v:'';}catch(e){return null;}}   /* '' nothing chosen, null unreadable */
 function lookMark(){document.querySelectorAll('.look-switch [data-look]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.look===lookNow())));}
+function lookRedraw(){
+  try{chartTheme();if(typeof curTab==='undefined'||!THEME_PARTS.has(partOf(curTab)))return;render();}
+  catch(e){try{console.error('lookRedraw threw',e);}catch(_){}}
+}
 function lookSet(t){
   if(t!=='night'&&t!=='tide')return;
   saltLook(t);
   try{localStorage.setItem(LOOK_KEY,t);}catch(e){}
-  lookMark();
+  lookMark();lookRedraw();
 }
 function renderNow(){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;

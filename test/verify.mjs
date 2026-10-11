@@ -8793,8 +8793,8 @@ await (async () => {
      which is what held Day back. They read tcol(), a token off <html> at draw time, and a theme change draws the part
      showing again. Proved in the desk's own window with a recording Chart: at Night every colour is the literal it was
      (the set below, read off the build before this change: 43 charts over eleven parts on two books); with every
-     token stubbed to a colour of its own no literal is drawn at all. One theme since 09 Oct 2026, so no theme change
-     to redraw on. Each check was proved red by a mutation of the master. */
+     token stubbed to a colour of its own no literal is drawn at all. Two themes since 11 Oct 2026 (Night and Tide): the same checks at Tide,
+     and a switch in the rail draws the part showing again. Each check was proved red by a mutation of the master. */
   const MD = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
   const { openMaster: omD } = await import("../tools/payload.mjs");
   const NIGHT = ["#6fae97", "#8ea2b6", "#b87333", "#c5a059", "#d4694c", "#d8c79c", "#e4e9ec", "#f2f4f5", "#7b86cc", "#cf8fb4",
@@ -8839,14 +8839,14 @@ await (async () => {
   const STUB = { "salt-salt": "#0a0b01", "salt-brass": "#0a0b02", "salt-copper": "#0a0b03", "salt-verdigris": "#0a0b04", "salt-ember": "#0a0b05",
     "salt-steel": "#0a0b06", "salt-product-salt": "#0a0b07", "salt-mist-light": "#0a0b08", "salt-brass-soft": "#0a0b09", "salt-obsidian": "#0a0b0a",
     "salt-slate": "#0a0b0b", "salt-product-oil": "#0a0b0c", "salt-product-candy": "#0a0b0d", "salt-product-rice": "#0a0b0e", "salt-product-spare": "#0a0b0f",
-    "desk-chart-grid": "rgba(1,2,3,0.07)" };
+    "salt-line-strong": "rgba(10,11,2,0.45)", "desk-chart-grid": "rgba(1,2,3,0.07)" };
   for (const [k, v] of Object.entries(STUB)) root("--" + k, v);
   const stubSeen = drawAll();
   const foreign = setOf(stubSeen).filter((c) => !/^#0a0b0[0-9a-f]$/.test(c) && !/^rgba\(10,11,\d+,[0-9.]+\)$/.test(c) && c !== "rgba(1,2,3,0.07)");
   ok(stubSeen.length === nightSeen.length && foreign.length === 0 && setOf(stubSeen).length >= 15, `with every token stubbed no chart draws a literal (${stubSeen.length} values; foreign: ${foreign.join(" ") || "none"})`);
   ok(setOf(stubSeen).includes("rgba(1,2,3,0.07)") && setOf(stubSeen).some((c) => /^rgba\(10,11,2,/.test(c)), "the grid and the brass series are the stubbed tokens");
   dn = defs();
-  ok(norm(dn.c) === "rgba(10,11,1,0.66)" && norm(dn.t.backgroundColor) === "rgba(10,11,10,0.92)" && norm(dn.t.borderColor) === "rgba(10,11,2,0.45)" && norm(dn.t.titleColor) === "#0a0b01",
+  ok(norm(dn.c) === "rgba(10,11,1,0.66)" && norm(dn.t.backgroundColor) === "rgba(10,11,10,0.92)" && norm(dn.t.borderColor) === "rgba(10,11,2,0.45)" && norm(dn.t.titleColor) === "#0a0b01",   /* the edge is --salt-line-strong, stubbed beside the rest */
     "and the tooltip and the text defaults follow them too: " + JSON.stringify(dn));
   Object.keys(STUB).forEach(unroot);
 
@@ -8870,6 +8870,52 @@ await (async () => {
   const mfor = setOf(mapStub).filter((c) => !/^#0a0b[0-9a-f]{2}$/.test(c) && !/^rgb\(10,11,\d+\)$/.test(c));
   ok(mapStub.length === mapNight.length && mfor.length === 0, `with every token stubbed the map draws no literal (foreign: ${mfor.join(" ") || "none"})`);
   Object.keys(MSTUB).forEach(unroot);
+  /* TIDE (11 Oct 2026, the second theme). saltLook is the head script's one writer of data-theme. At Tide every colour a chart draws is Tide's: the Night set
+     with each identity colour swapped for its Tide value (ice and the books' hues are shared, and oil's brass stays brass); the library's defaults are
+     TIDE_CHART_THEME; with every token stubbed no literal is drawn; and the map's fills are Tide's steps. */
+  const T_HEX = { "#6fae97": "#8ee0a8", "#8ea2b6": "#9ab8d8", "#b87333": "#62b6cc", "#c5a059": "#7fd1c0", "#d4694c": "#ff8a65", "#d8c79c": "#b9e8e0", "#f2f4f5": "#eaf6f6" };
+  const T_RGB = { "111,174,151": "142,224,168", "142,162,182": "154,184,216", "197,160,89": "127,209,192", "212,105,76": "255,138,101", "242,244,245": "234,246,246", "255,255,255": "234,246,246" };
+  const toTide = (c) => T_HEX[c] || c.replace(/^rgba\((\d+,\d+,\d+),/, (x, t) => "rgba(" + (T_RGB[t] || t) + ",");
+  w.eval("saltLook('tide')");
+  const tideSeen = drawAll(), tideSet = setOf(tideSeen), wantT = setOf(NIGHT.map(norm).map(toTide));
+  const nightOnly = want.filter((c) => toTide(c) !== c && c !== "#c5a059");
+  ok(tideSeen.length === nightSeen.length && tideSet.every((c) => wantT.includes(c) || c === "#c5a059") && wantT.every((c) => tideSet.includes(c)),
+    `at Tide every chart colour is Tide's (foreign: ${tideSet.filter((c) => !wantT.includes(c) && c !== "#c5a059").join(" ") || "none"}; missing: ${wantT.filter((c) => !tideSet.includes(c)).join(" ") || "none"})`);
+  ok(nightOnly.length > 5 && !tideSet.some((c) => nightOnly.includes(c)), `and no colour Night alone draws is left (still drawn: ${tideSet.filter((c) => nightOnly.includes(c)).join(" ") || "none"})`);
+  dn = defs();
+  ok(norm(dn.c) === "rgba(234,246,246,0.66)" && norm(dn.b) === "rgba(127,209,192,0.14)" && norm(dn.t.backgroundColor) === "rgba(3,20,26,0.92)"
+    && norm(dn.t.borderColor) === "rgba(127,209,192,0.46)" && norm(dn.t.titleColor) === "#eaf6f6" && norm(dn.t.bodyColor) === "rgba(234,246,246,0.85)",
+    "and the library's defaults (text, border, the tooltip) are TIDE_CHART_THEME: " + JSON.stringify(dn));
+  for (const [k, v] of Object.entries(STUB)) root("--" + k, v);
+  const stubTide = drawAll();
+  const foreignT = setOf(stubTide).filter((c) => !/^#0a0b0[0-9a-f]$/.test(c) && !/^rgba\(10,11,\d+,[0-9.]+\)$/.test(c) && c !== "rgba(1,2,3,0.07)");
+  ok(stubTide.length === tideSeen.length && foreignT.length === 0 && setOf(stubTide).length >= 15, `with every token stubbed no chart draws a literal at Tide either (${stubTide.length} values; foreign: ${foreignT.join(" ") || "none"})`);
+  Object.keys(STUB).forEach(unroot);
+  const T_MAP = { "#05080a": "#03141a", "#0b1215": "#082028", "#34454d": "#244a54", "#56697a": "#3f7684", "#6f8398": "#5f98a6", "#8ea2b6": "#9ab8d8", "#a6afb5": "#a4bbbf", "#c5a059": "#7fd1c0",
+    "#d4694c": "#ff8a65", "#e6ebee": "#eaf6f6", "rgb(142,162,182)": "rgb(154,184,216)", "rgb(197,160,89)": "rgb(127,209,192)", "rgb(212,105,76)": "rgb(255,138,101)", "rgb(52,69,77)": "rgb(36,74,84)", "rgb(86,105,122)": "rgb(63,118,132)" };
+  const MAPT = MAPN.map((c) => T_MAP[c] || c);
+  const mapTide = drawMap(), fillsT = setOf(mapTide);
+  ok(mapTide.length > 40 && fillsT.every((c) => MAPT.includes(c)) && ["#244a54", "#3f7684", "#5f98a6", "#eaf6f6", "#082028", "#03141a", "#ffffff05", "#a4bbbf"].every((c) => fillsT.includes(c)),
+    `at Tide the map is Tide's: the steps, the states, the names, the ground (${fillsT.join(" ")})`);
+  for (const [k, v] of Object.entries(MSTUB)) root("--" + k, v);
+  const mapStubT = drawMap();
+  const mforT = setOf(mapStubT).filter((c) => !/^#0a0b[0-9a-f]{2}$/.test(c) && !/^rgb\(10,11,\d+\)$/.test(c));
+  ok(mapStubT.length === mapTide.length && mforT.length === 0, `with every token stubbed the map draws no literal at Tide either (foreign: ${mforT.join(" ") || "none"})`);
+  Object.keys(MSTUB).forEach(unroot);
+
+  /* a switch in the rail draws the part showing again in the new theme's tokens, with no reload: the charts, and the map, are not left in the old colours */
+  w.eval("saltLook('night');window.__cfgs=[];setProd('salt');recompute();switchTab('today');");
+  const sw0 = setOf(JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm));
+  w.eval("window.__cfgs=[];");
+  w.document.querySelector('.look-switch [data-look="tide"]').click();
+  const sw1 = setOf(JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm));
+  ok(sw0.includes("#d4694c") && sw0.includes("rgba(242,244,245,0.66)") && sw1.length > 3 && sw1.includes("#ff8a65") && sw1.includes("rgba(234,246,246,0.66)") && !sw1.includes("#d4694c") && !sw1.includes("rgba(242,244,245,0.66)"),
+    `the switch to Tide draws the charts showing again in Tide's colours (${sw0.length} colours before, ${sw1.length} after; Night's ember left: ${sw1.includes("#d4694c")})`);
+  w.eval("saltLook('night');MAP_VIEW='*';MAP_PICK=null;setProd('salt');recompute();switchTab('map');");
+  const mp0 = setOf(mapInk());
+  w.document.querySelector('.look-switch [data-look="tide"]').click();
+  const mp1 = setOf(mapInk());
+  ok(mp0.includes("#34454d") && mp1.includes("#244a54") && !mp1.includes("#34454d") && !mp1.includes("#6f8398"), `and draws the map again in Tide's: steps ${mp0.includes("#34454d")} at Night, ${mp1.includes("#244a54")} at Tide, Night's left ${mp1.includes("#34454d")}`);
 })();
 
 section("v1022 hang: a tool that opens the desk and never closes it still exits");
