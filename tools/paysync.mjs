@@ -169,11 +169,16 @@ export function numbersDiff(want, have) {
 /* the Counter's KV through its own config, as seed-vault files the slip key's public half: a temporary file for the value so no
    quoting is in play, and it lives outside the repo. `exec` is the seam the suite drives; it never reaches wrangler there. */
 const WR = { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" };
+/* THE ONE SEAM TO THE EXECUTABLE (his word of 12 Oct 2026). Both wrangler calls start `npx` from here and nowhere else: PAYSYNC_NPX is an
+   absolute path (the suite's child-process cases set it to a stand-in that only prints), else plain `npx`. A suite that found a stand-in by PATH
+   alone could, on a logged-in laptop where it was not found, write an invented number to the LIVE Counter's `paynum`. Quoted for the Windows
+   shell, so a path with a space still runs. */
+const npx = () => { const p = process.env.PAYSYNC_NPX; return !p ? "npx" : WR.shell ? '"' + p + '"' : p; };
 export function wrPutNumbers(path, exec = execFileSync) {
-  return againIfLapsed(() => exec("npx", ["wrangler", "kv", "key", "put", PAYNUM_KEY, "--path", path, "--binding", "STMT", "--remote", "-c", "wrangler.stmt.jsonc"], WR));
+  return againIfLapsed(() => exec(npx(), ["wrangler", "kv", "key", "put", PAYNUM_KEY, "--path", path, "--binding", "STMT", "--remote", "-c", "wrangler.stmt.jsonc"], WR));
 }
 export function wrGetNumbers(exec = execFileSync) {
-  return againIfLapsed(() => exec("npx", ["wrangler", "kv", "key", "get", PAYNUM_KEY, "--binding", "STMT", "--remote", "-c", "wrangler.stmt.jsonc"], WR));
+  return againIfLapsed(() => exec(npx(), ["wrangler", "kv", "key", "get", PAYNUM_KEY, "--binding", "STMT", "--remote", "-c", "wrangler.stmt.jsonc"], WR));
 }
 
 async function numbersMain(argv) {

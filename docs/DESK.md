@@ -559,7 +559,7 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
   shows its non-required `Workers Builds` check. From `preview_urls: false` (3 Oct 2026) such a
   version still uploads but serves no preview address.
 - **Watch paths (set 26 Sep 2026, read back through the API):** the `master` trigger
-  (`1ea7ed86-00d5-4e4e-8967-…64b4`) keeps `path_includes: ["*"]` and has `path_excludes:
+  (`1ea7ed86-00d5-4e4e-8967-8074061264b4`) keeps `path_includes: ["*"]` and has `path_excludes:
   ["master/_to_fold.json", "master/_folded.json", "docs/*", "test/*", "statements/*"]`, so a stage,
   clear, docs, test or statements commit builds nothing; a commit touching any other path still
   builds, and a push of 20 or more commits builds regardless. The Actions job deploys every

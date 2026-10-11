@@ -161,5 +161,19 @@
  {"name":"the mask leaves a long run","file":"tools/paysync.mjs","find":"export const hide = (s) => String(s).replace(/[0-9]{5,}/g, \"#\");","replace":"export const hide = (s) => String(s).replace(/[0-9]{13,}/g, \"#\");"},
  {"name":"the mask leaves a run of twelve","file":"tools/paysync.mjs","find":"export const hide = (s) => String(s).replace(/[0-9]{5,}/g, \"#\");","replace":"export const hide = (s) => String(s).replace(/[0-9]{5,11}/g, \"#\");"},
  {"name":"the mask takes the last four digits too","file":"tools/paysync.mjs","find":"export const hide = (s) => String(s).replace(/[0-9]{5,}/g, \"#\");","replace":"export const hide = (s) => String(s).replace(/[0-9]{4,}/g, \"#\");"},
- {"name":"the mask is not applied","file":"tools/paysync.mjs","find":"const fail = (s) => console.error(hide(s));","replace":"const fail = (s) => console.error(String(s));"}
+ {"name":"the mask is not applied","file":"tools/paysync.mjs","find":"const fail = (s) => console.error(hide(s));","replace":"const fail = (s) => console.error(String(s));"},
+ {"name":"the seam is removed, so npx is found by PATH and the decoy is reached","file":"tools/paysync.mjs","find":"const npx = () => { const p = process.env.PAYSYNC_NPX; return !p ? \"npx\" : WR.shell ? '\"' + p + '\"' : p; };","replace":"const npx = () => \"npx\";"},
+ {"name":"the seam is ignored when it is set","file":"tools/paysync.mjs","find":"const p = process.env.PAYSYNC_NPX; return !p ?","replace":"const p = \"\"; return !p ?"},
+ {"name":"the stand-in is set to nothing","file":"test/pay-number.mjs","find":"PAYSYNC_NPX: standin, [PATHKEY]: decoyDir }","replace":"PAYSYNC_NPX: \"\", [PATHKEY]: decoyDir }"},
+ {"name":"the stand-in is set to the decoy","file":"test/pay-number.mjs","find":"PAYSYNC_NPX: standin, [PATHKEY]: decoyDir }","replace":"PAYSYNC_NPX: join(decoyDir, WIN ? \"npx.cmd\" : \"npx\"), [PATHKEY]: decoyDir }"},
+ {"name":"the stand-in is set outside the temp folder","file":"test/pay-number.mjs","find":"PAYSYNC_NPX: standin, [PATHKEY]: decoyDir }","replace":"PAYSYNC_NPX: join(REPO, \"package.json\"), [PATHKEY]: decoyDir }"},
+ {"name":"the child keeps the Cloudflare credentials","file":"test/pay-number.mjs","find":".filter(([k]) => !/^(CLOUDFLARE|CF)_/i.test(k))","replace":".filter(([k]) => true)"},
+ {"name":"a run of zeros alone is refused","file":"test/pay-number.mjs","find":"if (/^0+$/.test(s)) return true;","replace":""},
+ {"name":"a run of ones is let through as zeros","file":"test/pay-number.mjs","find":"/^0+$/.test(s)","replace":"/^[01]+$/.test(s)"},
+ {"name":"any repeated digit is let through as zeros","file":"test/pay-number.mjs","find":"/^0+$/.test(s)","replace":"/^(.)\\1+$/.test(s)"},
+ {"name":"the uuid rule is gone","file":"test/pay-number.mjs","find":"  if (UUID.test(tokenAt(text, at, at + s.length))) return true;","replace":""},
+ {"name":"a uuid may have a longer last group","file":"test/pay-number.mjs","find":"-[0-9a-f]{12}$/i;","replace":"-[0-9a-f]{12,}$/i;"},
+ {"name":"a uuid may have a shorter first group","file":"test/pay-number.mjs","find":"^[0-9a-f]{8}(-","replace":"^[0-9a-f]{7,8}(-"},
+ {"name":"a uuid may hold any letter","file":"test/pay-number.mjs","find":"-[0-9a-f]{12}$/i;","replace":"-[0-9a-z]{12}$/i;"},
+ {"name":"a uuid may sit inside a longer token","file":"test/pay-number.mjs","find":"const tokenAt = (text, from, to) => { let a = from, b = to; while (a > 0 && /[0-9A-Za-z-]/.test(text[a - 1])) a--; while (b < text.length && /[0-9A-Za-z-]/.test(text[b])) b++; return text.slice(a, b); };","replace":"const tokenAt = (text, from, to) => { let a = from, b = to; while (a > 0 && /[0-9a-f-]/.test(text[a - 1])) a--; while (b < text.length && /[0-9a-f-]/.test(text[b])) b++; return text.slice(a, b); };"}
 ]
