@@ -1,0 +1,63 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-11T14:25:21.074Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-MK",
+    "qty": 6.25,
+    "total": 505,
+    "cash": 0,
+    "delivery": 20,
+    "date": "2026-10-11",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261011142425-0xphja, acknowledged, to be delivered, delivery RM 20, priced at RM 505 on this order, placed at RM 600. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 6.25 unit of salt to CM4-MK for RM 505, with RM 20 of delivery beside it, RM 525 owed, RM 80.8/unit. Costed at RM 58/unit from COGS off the latest purchase p036 landed 2026-10-06: RM 1400 quote plus RM 50 freight over 25 unit, so RM 142.5 on the goods at 28.2%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-11 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CM4-MK typically pays about RM 101/unit for salt across 13 orders; this one is RM 80.8, 20% below that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-11T14:25:21.074Z",
+    "type": "SELL",
+    "party": "CM4-MK",
+    "qty": 6.25,
+    "total": 505,
+    "status": "Pending",
+    "raw": "SELL CM4-MK 6.25 salt RM 525, nothing paid, nothing moved (order 20261011142425-0xphja)",
+    "orderKey": "CM4-MK|2026-10-11|525",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-MK",
+     "newId": null,
+     "date": "2026-10-11",
+     "qty": 6.25,
+     "total": 505,
+     "delivery": 20,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261011142425-0xphja, acknowledged, to be delivered, delivery RM 20, priced at RM 505 on this order, placed at RM 600. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261011142425-0xphja",
+    "prepay": true
+   },
+   "decidedAt": "2026-10-11T14:25:22.755Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
