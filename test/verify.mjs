@@ -53764,6 +53764,11 @@ await (async () => {
   await (await import("./admin-places.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)");
+await (async () => {
+  await (await import("./admin-look.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
