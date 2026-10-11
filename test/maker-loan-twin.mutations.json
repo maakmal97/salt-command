@@ -1,10 +1,10 @@
 [
   { "name": "booked twin not asked", "file": "src/maker-inputs.js",
-    "find": "    if (twin && body.second !== second)", "replace": "    if (false && twin && body.second !== second)" },
+    "find": "    if (twin && body.second !== second)\n      return { error: \"A loan with", "replace": "    if (false && twin && body.second !== second)\n      return { error: \"A loan with" },
   { "name": "queued twin ignores units", "file": "src/maker-inputs.js",
     "find": "\n    && +q.qty === +p.qty && +q.total === +p.total, \"The same loan", "replace": "\n    && +q.total === +p.total, \"The same loan" },
   { "name": "route ignores a queued loan twin", "file": "src/worker.js",
-    "find": "const twinned = operation === \"loan\" ? makerQueuedLoanCheck(entry, waitingEntries) : {};", "replace": "const twinned = {};" },
+    "find": "operation === \"loan\" ? makerQueuedLoanCheck(entry, waitingEntries)", "replace": "false ? makerQueuedLoanCheck(entry, waitingEntries)" },
   { "name": "pending drafts not counted", "file": "src/worker.js",
     "find": "status IN ('pending','approved')\").all();\n    const waitingEntries", "replace": "status IN ('approved')\").all();\n    const waitingEntries" },
   { "name": "approved drafts not counted", "file": "src/worker.js",

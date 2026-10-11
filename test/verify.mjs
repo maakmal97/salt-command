@@ -51990,6 +51990,11 @@ await (async () => {
   await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Gift: a double tap books once, a booked twin is asked about and folds as a second");
+await (async () => {
+  await (await import("./maker-gift-twin.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter Add ID starting drift: automatic, rule presets, typed bounds, encrypted pair and real bridge");
 await (async () => {
   await (await import("./maker-addid-drift.mjs")).run({ ok });
