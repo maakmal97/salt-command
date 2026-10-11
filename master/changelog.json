@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1072",
+  "d": "11 Oct 2026",
+  "t": "THE DESK WEARS NIGHT OR TIDE, CHOSEN ON EACH DEVICE",
+  "n": [
+   "<b>TWO THEMES, HIS WORD OF 11 OCT 2026.</b> The desk wears Night or Tide. The choice is kept on each device and Tide shows until one is chosen: a first open asks once, in a sheet, and a device that has chosen is never asked again. A switch at the foot of the rail, two options of 44 px, changes it whenever he likes. The charts and the map draw again in the chosen look. This version is the Desk alone; the Counter and QR Command follow. Nothing prices.",
+   "<b>HOW IT IS BUILT.</b> Tide is pulled from salt-ds, the desk's own layer carries its values as tokens, and the inline identity tints read tokens, not literals. A script in the head sets the look before the first paint, and the theme-color meta follows it. A store that cannot be read opens Tide and does not ask. Lowest text contrast: Night 4.98:1, Tide 4.91:1. The suite proves the choice, the switch, the sheet and both looks, each assertion red by mutation first."
+  ]
+ },
+ {
   "v": "v1071",
   "d": "10 Oct 2026",
   "t": "CANDY HANDOVER RECORDED FOR CI4-OKR'S ORDER OF 2 UNITS",

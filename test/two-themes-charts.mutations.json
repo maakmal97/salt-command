@@ -1,0 +1,8 @@
+[
+ {"name":"a chart colour is a literal again","find":"COL={collect:tcol('ember')","replace":"COL={collect:'#d4694c'"},
+ {"name":"the tooltip's edge is Night's brass at Tide too","find":"T.borderColor=tcol('salt-line-strong');","replace":"T.borderColor=tcol('brass',0.45);"},
+ {"name":"a switch does not draw the part again","find":"  lookMark();lookRedraw();","replace":"  lookMark();"},
+ {"name":"the chart's grid is Night's at Tide","find":"--desk-chart-grid:rgba(234,246,246,0.07);","replace":"--desk-chart-grid:rgba(255,255,255,0.07);"},
+ {"name":"Tide's map keeps a Night step","find":"--desk-map-0:#244a54;","replace":"--desk-map-0:#34454d;"},
+ {"name":"the map ignores the theme's state outline","find":"stroke=\"${tcol('mstate')}\" stroke-width=\"1.6\"","replace":"stroke=\"#6f8398\" stroke-width=\"1.6\""}
+]

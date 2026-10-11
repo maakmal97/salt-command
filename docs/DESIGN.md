@@ -283,7 +283,46 @@ read the recipe.
   which is compositing rounding. After any type change probe `document.documentElement.scrollWidth`
   per part at 375px.
 
-## 09 Oct 2026: one theme, Night
+## 11 Oct 2026: two themes, Night and Tide, chosen on each device
+
+His word: two themes on every surface, **Night** and **Tide**, kept per device, **Tide until one is chosen**. This is the
+Desk; the Counter and Salt Account follow in their own version. Night is the design system's `:root`, the identity as drawn.
+Tide is `:root[data-theme="tide"]` in `design/salt-ds.css`, pulled from `Code\salt-ds` (acf486e): a teal and blue register
+of the same identity, colour tokens only, so every recipe follows. The four times of day, `salt-time.js` and the clock's
+picker stay retired (the suite fails if any returns): nothing keys on a clock, there is no cross-fade.
+
+- **The choice.** localStorage `salt-look`, `night` or `tide`; Tide when it is unset, unreadable or throwing, every read and
+  write in a try. A head script, before the stylesheet, sets `data-theme` on `<html>` and the `theme-color` meta to the
+  theme's ground (Night `#05080a`, Tide `#03141a`), so the first paint is the right one. `saltLook()` there is the one writer
+  of both; `lookSet()` in the page calls it, stores the choice, marks the switch and draws the part showing again. The master
+  owns the one `theme-color` meta: `tools/build.mjs` no longer injects its own and checks the master's (`P1b`).
+  The installed app's manifest colour stays obsidian, being static.
+- **The choice sheet.** Over a device's first open (the store readable and holding no choice): the system's Sheet, its two
+  tiles the Option face as a tap, each with a swatch of its own ground and accent (`--desk-look-*` in `design/desk.css`, held
+  equal to the system's obsidian and brass by the suite, since the tile must read true under the other theme). Choosing
+  stores, applies at once and closes. Escape, Close and the scrim keep Tide and store nothing, so the next open asks again.
+  A store that cannot be read is never asked, because the answer could not be kept. Focus goes in, Tab wraps, and the
+  sheet lies over the desk's floating buttons (z-index 120 and 121; they sit at 96 and 97).
+- **The switch.** The rail's foot, where the times-of-day picker sat: two `salt-ghost` buttons, Night and Tide, the held one
+  `aria-pressed`, 44px both ways (measured at 1280 and 375). On a phone it sits at the foot of the rail the menu button
+  floats out. It applies at once, stores, and needs no reload.
+- **The desk's own colours.** Every colour `design/desk.css` holds for Night has its Tide value in the same file: the chart
+  gridline, the map's steps, state outline, district edge and area name (4.6:1 on the lighter step, as Night's is 4.7:1), and
+  the select's chevron, a data URL that cannot read a token. The inline tints in the script templates (the warning pills, the
+  Names and IDs notes, the scrim) are `color-mix` of the system's tokens, which is the pixel they were at Night.
+- **Charts and the map.** `tcol()` reads the tokens when it draws, so Tide draws Tide's hexes (`TIDE_COLOURS`); the tooltip's
+  edge reads `--salt-line-strong` (`TIDE_CHART_THEME`). A switch renders the part showing again, as the clock's change used to;
+  a part with no chart and no map is left alone, because rendering Enter's forms would lose what is typed. Oil stays brass
+  at Tide, as every book hue is shared.
+- **The suite.** The section `two themes: Night and Tide, chosen per device` holds the contrast of both themes off the files
+  themselves, Tide restating every colour token, the choice, the sheet, the switch and a store that throws; the charts section
+  repeats its Night checks at Tide. `openMaster` opens as a device that has chosen Night unless it is given `{ fresh: true }`,
+  so the sections written against Night keep measuring it and no sheet is asked.
+- **Contrast** (WCAG 2.x, every text token on the ground and the slate): Night's lowest is copper, 5.30 and 4.98; Tide's is a
+  book hue it shares with Night, rice, 5.47 and 4.91, and of Tide's own tokens mist, 6.03 and 5.41. The lit slate and the
+  aurora's core stay advice, as in `Code\salt-ds` (`DESIGN.md`, `npm run contrast`).
+
+## 09 Oct 2026: one theme, Night (two themes since 11 Oct 2026, above)
 
 His word: remove the four themes and keep one default. Night is the design system's `:root`, the identity as
 drawn. Retired in `Code\salt-ds`: the Dawn, Day and Dusk blocks (the desk bar's Day tokens with them), the

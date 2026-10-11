@@ -96,11 +96,14 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    the system's class beside the desk's own, `design/desk.css` holds no rule for a migrated
    recipe, and a colour the layer needs is a token in `Code\salt-ds` first, pulled by
    `designsync --pull`. The remaining geometry (ghosts, fields, tables, tiers, product bands,
-   actions) migrates in one version, one commit per group (his word of 09 Oct 2026). **One theme:
-   Night**, the design system's `:root` (his word of 09 Oct 2026; the four times of day, `salt-time.js`
-   and the picker are retired, and the suite fails if any returns): a colour in the desk's own CSS is a
-   token, never a literal, and every text colour holds 4.5:1 on the ground and the slate, which the
-   suite measures (`docs/DESIGN.md`). The Counter takes the tokens and five
+   actions) migrates in one version, one commit per group (his word of 09 Oct 2026). **Two themes,
+   Night and Tide, chosen per device, and Tide until one is chosen** (his word of 11 Oct 2026): Night
+   is the design system's `:root`, Tide its `:root[data-theme="tide"]`, set on `<html>` by a head
+   script from localStorage `salt-look` before the first paint, with a choice sheet over a device's
+   first open and a switch in the rail. The four times of day, `salt-time.js` and the clock's picker
+   stay retired, and the suite fails if any returns. A colour in the desk's own CSS is a token, never
+   a literal, with its Tide value in `design/desk.css`, and every text colour holds 4.5:1 on each
+   theme's ground and slate, which the suite measures (`docs/DESIGN.md`). The Counter takes the tokens and five
    recipes through `tools/stmt-style.mjs` (`SITE_RECIPES`); QR Command through its own
    `tools/designsync.mjs`. **A tap target is 44px in both dimensions**, settled by a hit test.
 7. **Git: never from a mounted sandbox**: it leaves `.git/*.lock` and `tmp_obj_*` behind and

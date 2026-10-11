@@ -24,8 +24,8 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 /* reachable only once something has loaded it: the page guards each use */
 export const LOADED_LATER = { Chart: "public/assets/chart.umd.js, loaded by ensureChart when a chart is first drawn" };
 
-/* the page's one classic inline script, and the master line it starts on */
-export function inlineScript(html) {
+/* the page's classic inline scripts, and the master line each starts on: the head's theme script (11 Oct 2026) and the page's own */
+export function inlineScripts(html) {
   const found = [];
   for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
     if (/\bsrc\s*=/.test(m[1])) continue;
@@ -33,27 +33,30 @@ export function inlineScript(html) {
     if (type && !/javascript/i.test(type)) continue;
     found.push({ code: m[2], line0: html.slice(0, m.index + m[0].indexOf(">") + 1).split("\n").length });
   }
-  if (found.length !== 1) throw new Error("expected one classic inline script, found " + found.length);
-  return found[0];
+  if (!found.length || found.length > 2) throw new Error("expected the head script and the page's own, found " + found.length + " classic inline scripts");
+  return found;
 }
 
-/* every name the checker cannot find, with the master lines it is used on */
+/* every name the checker cannot find, with the master lines it is used on. Each script is read as its own global script, and a name the other
+   one declares (the head's saltLook) is asked of the loaded page like any other, where it is reachable. */
 export function undeclared(html) {
-  const { code, line0 } = inlineScript(html);
-  const dir = mkdtempSync(join(tmpdir(), "freenames-")), file = join(dir, "page.js");
+  const dir = mkdtempSync(join(tmpdir(), "freenames-")), out = new Map();
   try {
-    writeFileSync(file, code);
-    const prog = ts.createProgram([file], {
-      allowJs: true, checkJs: true, noEmit: true, noResolve: true, skipLibCheck: true, types: [],
-      target: ts.ScriptTarget.ES2022, lib: ["lib.es2022.d.ts", "lib.dom.d.ts", "lib.dom.iterable.d.ts"],
+    inlineScripts(html).forEach(({ code, line0 }, i) => {
+      const file = join(dir, "page" + i + ".js");
+      writeFileSync(file, code);
+      const prog = ts.createProgram([file], {
+        allowJs: true, checkJs: true, noEmit: true, noResolve: true, skipLibCheck: true, types: [],
+        target: ts.ScriptTarget.ES2022, lib: ["lib.es2022.d.ts", "lib.dom.d.ts", "lib.dom.iterable.d.ts"],
+      });
+      const sf = prog.getSourceFile(file);
+      for (const d of prog.getSemanticDiagnostics(sf)) {
+        const m = /^Cannot find name '([^']+)'/.exec(ts.flattenDiagnosticMessageText(d.messageText, " "));
+        if (!m) continue;
+        if (!out.has(m[1])) out.set(m[1], []);
+        out.get(m[1]).push(line0 + sf.getLineAndCharacterOfPosition(d.start).line);
+      }
     });
-    const sf = prog.getSourceFile(file), out = new Map();
-    for (const d of prog.getSemanticDiagnostics(sf)) {
-      const m = /^Cannot find name '([^']+)'/.exec(ts.flattenDiagnosticMessageText(d.messageText, " "));
-      if (!m) continue;
-      if (!out.has(m[1])) out.set(m[1], []);
-      out.get(m[1]).push(line0 + sf.getLineAndCharacterOfPosition(d.start).line);
-    }
     return out;
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }

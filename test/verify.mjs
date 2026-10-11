@@ -8712,12 +8712,13 @@ await (async () => {
   ok(i512.length > 60000 && Buffer.compare(i512, im) === 0, "the home-screen icons are the brand plate, the same bytes for any and maskable");
 })();
 
-section("one theme: Night, the time of day retired (09 Oct 2026)");
+section("two themes: Night and Tide, chosen per device (11 Oct 2026)");
 await (async () => {
-  /* His word of 09 Oct 2026: remove the four themes, keep one default. Night is the design system's :root as drawn;
-     the Dawn, Day and Dusk blocks, salt-time.js, the DESIGN time block and the rail's picker are gone (Code/salt-ds
-     and here). Each check below was proved red on a SALT_MASTER copy (or a changed design file) before its green was
-     trusted. */
+  /* His word of 11 Oct 2026: two themes, Night and Tide, kept per device (localStorage salt-look), Tide until one is chosen, and a choice sheet
+     over a device's first open; a switch in the rail changes it later. This section is the Desk; the Counter and Salt Account follow. The four times
+     of day (05 Oct 2026, retired 09 Oct 2026) stay retired: no clock, no cross-fade, no picker of times, and the checks that fail if any returns are
+     kept. Night is the design system's :root as drawn, Tide its :root[data-theme="tide"]. Each check below was proved red by its own mutation
+     (test/two-themes.mutations.json, run with tools/section.mjs). */
   const MV2 = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
   const m = readFileSync(MV2, "utf8");
   let dchk = "";
@@ -8726,25 +8727,54 @@ await (async () => {
   ok(!/FAIL/.test(dchk) && /ok\s+base:/.test(dchk) && !/\btime:/.test(dchk), "tools/designsync.mjs --check passes and carries no time block");
   const THEME = /data-time|salt-time|saltTime|railtheme|salt-theming|theme-fade|DESIGN time/;
   const dsCss = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"), deskCss0 = readFileSync(join(REPO, "design", "desk.css"), "utf8");
-  ok(!THEME.test(m), `the master carries no theme machinery: no clock script, no data-time rule, no picker (read ${(m.match(THEME) || ["none"])[0]})`);
+  ok(!THEME.test(m), `the master carries no theme machinery of the clock: no clock script, no data-time rule, no picker of times (read ${(m.match(THEME) || ["none"])[0]})`);
   ok(!THEME.test(dsCss) && !THEME.test(deskCss0), "nor do design/salt-ds.css and design/desk.css");
   ok(!existsSync(join(REPO, "design", "salt-time.js")), "design/salt-time.js is gone");
-  {
-    /* Night's text colours on its ground and its slate, measured off design/salt-ds.css itself */
-    const ds = dsCss.replace(/\/\*[\s\S]*?\*\//g, ""), rootB = (ds.match(/:root\s*\{([^}]*)\}/) || ["", ""])[1];
-    const decl = Object.fromEntries([...rootB.matchAll(/--salt-([\w-]+):\s*(#[0-9a-f]{6})\s*;/gi)].map((x) => [x[1], x[2]])), tok = (k) => decl[k];
-    const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
-    const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-    const grounds = ["obsidian", "slate"].map(tok), TEXT = ["salt", "mist", "mist-light", "brass", "copper", "ember", "verdigris", "steel", "amber", "alarm", "brass-soft",
-      "product-salt", "product-oil", "product-candy", "product-rice", "product-spare"];
-    const weak = TEXT.filter((k) => !tok(k) || grounds.some((g) => !g || ratio(tok(k), g) < 4.5)).map((k) => k + " " + (tok(k) ? Math.min(...grounds.map((g) => ratio(tok(k), g))).toFixed(2) : "missing"));
-    ok(grounds.every(Boolean) && weak.length === 0, `every Night text colour holds 4.5:1 on the ground and the slate (short: ${weak.join(", ") || "none"})`);
-  }
+
+  /* the design system's two themes, read off design/salt-ds.css itself: Night is :root, Tide restates tokens on :root[data-theme="tide"] */
+  const dsC = dsCss.replace(/\/\*[\s\S]*?\*\//g, "");
+  const toks = (re) => Object.fromEntries([...((dsC.match(re) || ["", ""])[1]).matchAll(/--salt-([\w-]+):\s*([^;]+);/g)].map((x) => [x[1], x[2].trim()]));
+  const NIGHT = toks(/:root\s*\{([^}]*)\}/), TIDE_OVER = toks(/:root\[data-theme="tide"\]\s*\{([^}]*)\}/), TIDE = { ...NIGHT, ...TIDE_OVER };
+  const lum = (hx) => { const c = [1, 3, 5].map((i) => parseInt(hx.slice(i, i + 2), 16) / 255).map((v) => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  const HEX = /^#[0-9a-f]{6}$/i, TEXT = ["salt", "mist", "mist-light", "brass", "copper", "ember", "verdigris", "steel", "amber", "alarm", "brass-soft",
+    "product-salt", "product-oil", "product-candy", "product-rice", "product-spare"];
+  const lowest = (T) => {   /* every text colour against the ground and the slate: the lowest ratio of each, and the ones under 4.5 */
+    const grounds = ["obsidian", "slate"].map((k) => T[k]), rows = TEXT.map((k) => [k, HEX.test(T[k] || "") && grounds.every((g) => HEX.test(g || "")) ? Math.min(...grounds.map((g) => ratio(T[k], g))) : 0]);
+    return { grounds, weak: rows.filter((r) => r[1] < 4.5).map((r) => r[0] + " " + (r[1] ? r[1].toFixed(2) : "missing")), min: Math.min(...rows.map((r) => r[1])) };
+  };
+  const ln = lowest(NIGHT), lt = lowest(TIDE);
+  ok(ln.grounds.every(Boolean) && ln.weak.length === 0, `every Night text colour holds 4.5:1 on the ground and the slate (lowest ${ln.min.toFixed(2)}; short: ${ln.weak.join(", ") || "none"})`);
+  ok(lt.grounds.every(Boolean) && lt.weak.length === 0, `every Tide text colour holds 4.5:1 on Tide's ground and slate (lowest ${lt.min.toFixed(2)}; short: ${lt.weak.join(", ") || "none"})`);
+  /* Tide restates every colour Night declares as a literal, bar the ones the two share by design (the warning, the books' hues, the black shadows and
+     wells, the bar's white sheen, the QR): a token left out would quietly stay Night's on a Tide ground */
+  const SHARED = ["amber", "product-salt", "product-oil", "product-candy", "product-rice", "product-spare", "shadow", "shadow-desk", "well", "well-hover", "deskbar-sheen", "qr-field", "qr-ink"];
+  const unrestated = Object.keys(NIGHT).filter((k) => /#[0-9a-f]{3,8}\b|rgba?\(/i.test(NIGHT[k]) && !/^var\(/.test(NIGHT[k]) && !(k in TIDE_OVER) && !SHARED.includes(k));
+  ok(Object.keys(TIDE_OVER).length > 20 && unrestated.length === 0, `Tide restates every colour token Night declares, bar the shared ones (left out: ${unrestated.join(" ") || "none"})`);
   ok(/--salt-ink-on-accent:/.test(m), "the pill's own ink is in the design system's block");
-  /* the desk's own CSS reads the identity through its tokens: no identity colour is written as a literal any more */
+
+  /* the desk's own layer: Night's tokens in design/desk.css each have a Tide value, and the area's name holds 4.5:1 on the map's two quieter steps in both */
+  const deskC = deskCss0.replace(/\/\*[\s\S]*?\*\//g, ""), TIDE_DESK_RE = /:root\[data-theme="tide"\]\s*\{([^}]*)\}/;
+  const tideDesk = (deskC.match(TIDE_DESK_RE) || ["", ""])[1], nightDesk = deskC.replace(TIDE_DESK_RE, "");
+  const dtok = (b) => Object.fromEntries([...b.matchAll(/--(desk-[\w-]+):\s*([^;]+);/g)].map((x) => [x[1], x[2].trim()]));
+  const DN = dtok(nightDesk), DT = dtok(tideDesk);
+  const own = Object.keys(DN).filter((k) => !k.startsWith("desk-look-")), lackTide = own.filter((k) => !(k in DT)).concat(/--chevron:/.test(tideDesk) ? [] : ["chevron"]);
+  ok(own.length >= 8 && lackTide.length === 0, `design/desk.css gives each colour token it holds for Night a Tide value (${own.length} tokens and the chevron; left out: ${lackTide.join(" ") || "none"})`);
+  ok(tideDesk.includes("%23" + TIDE.brass.slice(1)) && nightDesk.includes("%23" + NIGHT.brass.slice(1)), "and the select's chevron is brass in each theme's own brass");
+  const nameOn = (D) => ["desk-map-0", "desk-map-1"].map((k) => HEX.test(D["desk-map-name"] || "") && HEX.test(D[k] || "") ? ratio(D["desk-map-name"], D[k]) : 0);
+  ok(Math.min(...nameOn(DN)) >= 4.5, `at Night an area's name holds 4.5:1 on the map's two quieter steps (lowest ${Math.min(...nameOn(DN)).toFixed(2)})`);
+  ok(Math.min(...nameOn(DT)) >= 4.5, `and at Tide (lowest ${Math.min(...nameOn(DT)).toFixed(2)})`);
+  ok(DN["desk-look-night-ground"] === NIGHT.obsidian && DN["desk-look-night-accent"] === NIGHT.brass && DN["desk-look-tide-ground"] === TIDE.obsidian && DN["desk-look-tide-accent"] === TIDE.brass,
+    "the choice sheet's two swatches are each theme's own ground and accent in the design system");
+  const head = m.match(/<meta name="theme-color" content="(#[0-9a-f]{6})">\s*<script>([\s\S]*?)<\/script>/) || [];
+  ok(head[1] === TIDE.obsidian && (head[2] || "").includes("'" + NIGHT.obsidian + "'") && (head[2] || "").includes("'" + TIDE.obsidian + "'"),
+    "the browser bar's two colours, in the head script and the meta it starts from, are the two themes' grounds in the design system");
+
+  /* no identity colour is written as a literal in the desk's own CSS any more: each is a token, so each theme follows */
   const TRIP = ["197,160,89", "212,105,76", "184,115,51", "111,174,151", "142,162,182", "122,134,144", "11,18,21", "5,8,10", "242,244,245"];
   const litIn = (css) => {
-    const bare = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
+    /* a --desk-* token's own value is where its literal lives (the charts' grid, the map's steps, the choice sheet's swatches) */
+    const bare = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--desk-[\w-]+:[^;}]+;?/g, "").replace(/\s+/g, "");
     return TRIP.filter((t) => bare.includes("rgba(" + t + ",")).concat(["#c5a059", "#b87333", "#d4694c", "#6fae97", "#8ea2b6", "#0b1215", "#05080a"].filter((h) => {
       /* a data: URL (the select chevron) writes brass as %23c5a059, never #c5a059, so a plain hex is a declaration */
       return bare.toLowerCase().includes(h);
@@ -8752,39 +8782,135 @@ await (async () => {
   };
   const a0 = m.indexOf("<style>"), b0 = m.indexOf("</style>", a0);
   const ownCss = m.slice(a0, b0).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "");
-  const lit1 = litIn(ownCss), lit2 = litIn(readFileSync(join(REPO, "design", "desk.css"), "utf8"));
+  const lit1 = litIn(ownCss), lit2 = litIn(deskCss0);
   ok(lit1.length === 0, `the desk's own stylesheet writes no identity colour as a literal (found ${lit1.join(" ") || "none"})`);
   ok(lit2.length === 0, `nor does design/desk.css (found ${lit2.join(" ") || "none"})`);
-  /* the white and black tints and the light text hexes are tokens too (the fold before Day shows): a white tint is the
-     theme's salt, a black one its ink, ice and the ember text mix from their roles. The print block is paper and stays. */
+  /* the white and black tints and the light text hexes are tokens too: a white tint is the theme's salt, a black one its ink, ice and the ember text mix
+     from their roles. The print block is paper and stays. */
   const noPrint = (css) => { let out = css.replace(/\/\*[\s\S]*?\*\//g, ""), at;
     while ((at = out.search(/@media\s+print\s*\{/)) >= 0) { let d = 0, i = out.indexOf("{", at); for (; i < out.length; i++) { if (out[i] === "{") d++; else if (out[i] === "}" && --d === 0) break; } out = out.slice(0, at) + out.slice(i + 1); }
     return out.replace(/\s+/g, ""); };
   const RAW = /rgba\((255,255,255|0,0,0|228,233,236|216,199,156),|#(e4e9ec|e08a72|1c2628|ffffff[0-9a-f]{2}|140b26cc|000|c9d3d8)\b/gi;
-  /* a --desk-* token's own value is where its literal lives (the charts' grid and the map's steps, 06 Oct 2026); a
-     literal anywhere else is a fault */
-  const deskCss = noPrint(readFileSync(join(REPO, "design", "desk.css"), "utf8"));
+  const deskCss = noPrint(deskCss0);
   const raw1 = noPrint(ownCss).match(RAW) || [],
     raw2 = deskCss.replace(/--desk-[\w-]+:[^;}]+;?/g, "").match(RAW) || [];
   ok(raw1.length === 0, `the desk's own stylesheet writes no white or black tint and no light text hex as a literal (found ${raw1.join(" ") || "none"})`);
   ok(raw2.length === 0, `nor does design/desk.css (found ${raw2.join(" ") || "none"})`);
-  /* the system's desk bar reads its material from three tokens on :root (09 Oct 2026), and no raw fill is left */
-  const dsBase = dsCss.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, "");
+  /* the inline tints in the desk's script templates read the tokens too: an ember, brass, copper or steel wash is a mix of its token, and the scrim is the
+     system's own, so Tide's washes are teal and its scrim is Tide's ground */
+  const body = m.slice(m.indexOf("</style>", a0)).replace(/\/\* ==== (ENGINE|BOOK|GEO)[\s\S]*?END \1[^=]*==== \*\//g, "");
+  const wash = (body.match(/(?<!\w)rgba\((5,8,10|142,162,182|184,115,51|212,105,76|197,160,89),[\d.]+\)/g) || []).filter((x) => !/^rgba\(197,160,89,\.3\)$/.test(x));
+  ok(wash.length === 0, `the desk's script templates write no identity wash as a literal (found ${wash.join(" ") || "none"})`);
+  /* the system's desk bar reads its material from three tokens on :root, and no raw fill is left */
+  const dsBase = dsC.replace(/\s+/g, "");
   const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1];
   const barB = (dsBase.match(/\.salt-deskbar\{([^}]*)\}/) || ["", ""])[1];
   const barToks = ["sheen", "fill", "solid"].filter((k) => !rootB.includes(`--salt-deskbar-${k}:`));
   const barRaw = dsBase.replace(/--salt-deskbar-\w+:[^;}]+;?/g, "").match(/rgba?\((13,11,9|18,15,12)[,)]/g) || [];
   ok(barToks.length === 0 && barB.includes("background:var(--salt-deskbar-sheen),var(--salt-deskbar-fill)") && barRaw.length === 0,
     `the desk bar's material is three tokens on :root, the bar reading them (missing ${barToks.join(" ") || "none"}, raw ${barRaw.join(" ") || "none"})`);
-  /* behaviour, in the desk's own window: nothing sets a theme, and Night is what is drawn */
-  const { openMaster: omV2 } = await import("../tools/payload.mjs");
-  const { w: wV2 } = await omV2(MV2);
-  ok(wV2.eval("document.documentElement.getAttribute('data-time')") === null && String(wV2.eval("typeof window.saltTime")) === "undefined",
-    "the desk opens with no data-time on <html> and no saltTime: one theme, set by nothing");
-  ok(wV2.document.querySelector(".railtheme") === null && wV2.document.querySelector("[data-time-set]") === null, "and the rail carries no theme picker");
-  /* the bar's colour: the build's default is obsidian, never the violet retired at v472 */
+
+  /* behaviour, in the desk's own window. A fresh store is a device's first open; the harness otherwise opens as a device that chose Night. */
+  const { openMaster: omL } = await import("../tools/payload.mjs");
+  const openLook = async (store, wrap) => {
+    const errs = [], r = await omL(MV2, { fresh: true, before: (w, s) => { w.addEventListener("error", (e) => errs.push(String(e.message))); for (const [k, v] of Object.entries(store || {})) s.set(k, v); if (wrap) wrap(w, s); } });
+    return { ...r, errs };
+  };
+  const state = (w) => ({ theme: w.document.documentElement.getAttribute("data-theme"), bar: w.document.querySelector('meta[name="theme-color"]').getAttribute("content"),
+    sheet: !!w.document.getElementById("lookSheet"), kept: w.localStorage.getItem("salt-look"),
+    held: [...w.document.querySelectorAll(".look-switch [data-look]")].filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.dataset.look).join("+") });
+  const snap = (w) => Object.fromEntries(Array.from({ length: w.localStorage.length }, (_, i) => { const k = w.localStorage.key(i); return [k, w.localStorage.getItem(k)]; }));
+  const press = (w, key, o = {}) => w.document.dispatchEvent(new w.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...o }));
+  const wins = [];
+  const open = async (...a) => { const r = await openLook(...a); wins.push(r.w); return r; };
+  try {
+    /* 1. nothing stored: Tide, its bar, the sheet over it, and the switch holding Tide */
+    const f = await open({});
+    const s0 = state(f.w);
+    ok(s0.theme === "tide", `with nothing stored the desk opens Tide (read ${s0.theme})`);
+    ok(s0.bar === TIDE.obsidian, `and the browser bar takes Tide's ground, ${TIDE.obsidian} (read ${s0.bar})`);
+    ok(s0.sheet && s0.kept === null, `and the choice sheet is over it, with nothing yet kept (sheet ${s0.sheet}, kept ${s0.kept})`);
+    ok(s0.held === "tide", `and the rail's switch holds Tide (read ${s0.held})`);
+    const sh = f.w.document.getElementById("lookSheet");
+    ok(sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && f.w.document.getElementById(sh.getAttribute("aria-labelledby")).textContent.trim() !== ""
+      && [...sh.querySelectorAll("[data-look]")].map((b) => b.dataset.look).join() === "night,tide" && sh.querySelector(".look-swatch--night") && sh.querySelector(".look-swatch--tide") && /rail/.test(sh.textContent),
+      "the sheet is a modal dialog with a heading, a tile for Night and one for Tide each with its swatch, and a line pointing to the rail");
+    ok(f.errs.length === 0, `no error is raised opening the desk (${f.errs.join(" | ") || "none"})`);
+    const fb = sh ? [...sh.querySelectorAll("button")] : [], fd = f.w.document;
+    ok(sh && fd.activeElement === sh, "the sheet takes focus as it opens");
+    if (fb.length) fb[fb.length - 1].focus();
+    press(f.w, "Tab");
+    ok(fb.length === 3 && fd.activeElement === fb[0], "Tab from the sheet's last control wraps to its first, so focus stays inside it");
+    press(f.w, "Tab", { shiftKey: true });
+    ok(fb.length === 3 && fd.activeElement === fb[fb.length - 1], "and Shift+Tab from the first wraps to the last");
+    /* 2. a choice stored: that theme, and no sheet */
+    const n1 = state((await open({ "salt-look": "night" })).w), t1 = state((await open({ "salt-look": "tide" })).w);
+    ok(n1.theme === "night" && n1.bar === NIGHT.obsidian && n1.held === "night", `with night stored the desk opens Night, its bar ${NIGHT.obsidian} and the switch on Night (read ${JSON.stringify(n1)})`);
+    ok(!n1.sheet && !t1.sheet, "and a stored choice is never asked again: no sheet over either theme");
+    ok(t1.theme === "tide" && t1.bar === TIDE.obsidian, "with tide stored it opens Tide");
+    const g1 = await open({ "salt-look": "dusk" }), gs = state(g1.w);
+    ok(gs.theme === "tide" && gs.sheet, `a value that is not a theme counts as nothing stored: Tide and the sheet (read ${JSON.stringify(gs)})`);
+    /* 3. choosing on the sheet applies at once, stores it and closes the sheet */
+    const c1 = await open({});
+    c1.w.document.querySelector('#lookSheet [data-look="night"]').click();
+    const cn = state(c1.w);
+    ok(cn.theme === "night" && cn.bar === NIGHT.obsidian && cn.held === "night", `choosing Night on the sheet applies it at once, bar and switch with it (read ${JSON.stringify(cn)})`);
+    ok(cn.kept === "night", `and stores it (read ${cn.kept})`);
+    ok(!cn.sheet && !c1.w.document.querySelector(".look-scrim"), "and closes the sheet and its scrim");
+    const c2 = await open({});
+    c2.w.document.querySelector('#lookSheet [data-look="tide"]').click();
+    ok(state(c2.w).kept === "tide" && !state(c2.w).sheet && state(c2.w).theme === "tide", "choosing Tide stores it too, and a device that has chosen it is not asked again");
+    /* 4. leaving without choosing keeps Tide, stores nothing, and asks again on the next open */
+    const e1 = await open({});
+    press(e1.w, "Escape");
+    const es = state(e1.w);
+    ok(!es.sheet && es.theme === "tide" && es.kept === null, `Escape closes the sheet with Tide kept and nothing stored (read ${JSON.stringify(es)})`);
+    const again = state((await open(snap(e1.w))).w);
+    ok(again.sheet && again.theme === "tide", "and the next open on that device asks again");
+    const e2 = await open({});
+    e2.w.document.querySelector("#lookSheet [data-look-close]").click();
+    ok(!state(e2.w).sheet && state(e2.w).kept === null && state(e2.w).theme === "tide", "the Close button does the same");
+    const e3 = await open({});
+    e3.w.document.querySelector(".look-scrim").click();
+    ok(!state(e3.w).sheet && state(e3.w).kept === null && state(e3.w).theme === "tide", "and so does a tap on the scrim");
+    /* 5. the rail's switch: at once, stored, no reload */
+    const r1 = await open({ "salt-look": "night" }), doc = r1.w.document;
+    r1.w.__same = 1;
+    const sw = [...doc.querySelectorAll(".look-switch [data-look]")];
+    ok(sw.length === 2 && sw.map((b) => b.dataset.look + ":" + b.textContent.trim()).join() === "night:Night,tide:Tide" && sw.every((b) => b.classList.contains("salt-ghost") && b.type === "button")
+      && doc.querySelector(".look-switch").closest(".rail") && doc.querySelector(".look-switch").getAttribute("role") === "group",
+      "the rail holds a switch of two ghost buttons, Night and Tide, on the system's 44px recipe");
+    sw[1].click();
+    const a1 = state(r1.w);
+    ok(a1.theme === "tide" && a1.bar === TIDE.obsidian && a1.held === "tide", `the switch to Tide changes data-theme, the bar and the held button at once (read ${JSON.stringify(a1)})`);
+    ok(a1.kept === "tide", `and stores it (read ${a1.kept})`);
+    sw[0].click();
+    const a2 = state(r1.w);
+    ok(a2.theme === "night" && a2.bar === NIGHT.obsidian && a2.kept === "night" && a2.held === "night", `and back to Night the same way (read ${JSON.stringify(a2)})`);
+    ok(r1.w.document === doc && r1.w.__same === 1, "with no reload: the same document and the same window, and nothing asked");
+    /* 6. a store that cannot be read: Tide, no error, no sheet (the answer could not be kept), and the session still switches */
+    const { JSDOM } = await import("jsdom");
+    const bare = new JSDOM('<!doctype html><html><head><meta name="theme-color" content="#000000"></head><body></body></html>', { runScripts: "outside-only",
+      beforeParse(w) { Object.defineProperty(w, "localStorage", { get() { throw new Error("SecurityError"); } }); } });
+    let threw = "";
+    try { bare.window.eval(head[2]); } catch (e) { threw = String(e.message || e); }
+    ok(!threw && bare.window.document.documentElement.getAttribute("data-theme") === "tide" && bare.window.document.querySelector('meta[name="theme-color"]').getAttribute("content") === TIDE.obsidian,
+      `the head script on a store that throws on access still opens Tide, bar and all, without an error (${threw || "none"})`);
+    bare.window.close();
+    const th = await open({ "salt-look": "night" }, (w) => {
+      const real = w.localStorage, deny = (k) => { if (k === "salt-look") throw new Error("denied"); };
+      Object.defineProperty(w, "localStorage", { configurable: true, value: { getItem: (k) => { deny(k); return real.getItem(k); }, setItem: (k, v) => { deny(k); real.setItem(k, v); },
+        removeItem: (k) => real.removeItem(k), clear: () => real.clear(), key: (i) => real.key(i), get length() { return real.length; } } });
+    });
+    const ts = state({ document: th.w.document, localStorage: { getItem: () => null } });
+    ok(ts.theme === "tide" && ts.bar === TIDE.obsidian && !ts.sheet && th.errs.length === 0, `a desk whose store throws opens Tide with no error and no sheet (read ${JSON.stringify(ts)}; errors ${th.errs.join(" | ") || "none"})`);
+    th.w.document.querySelector('.look-switch [data-look="night"]').click();
+    ok(th.w.document.documentElement.getAttribute("data-theme") === "night" && th.errs.length === 0, `and the switch still works for the session, whose store refuses the write (errors ${th.errs.join(" | ") || "none"})`);
+  } finally { for (const w of wins) { try { w.close(); } catch (e) { /* jsdom */ } } }
+  /* the build: one theme-color meta, the master's, in Tide's ground */
   const built = readFileSync(join(REPO, "public", "desk.html"), "utf8");
-  ok(built.includes('<meta name="theme-color" content="#05080a">') && !built.includes("#180f2c"), "the built desk's theme-color is obsidian, the one theme's ground");
+  ok((built.match(/<meta name="theme-color"/g) || []).length === 1 && built.includes(`<meta name="theme-color" content="${TIDE.obsidian}">`) && !built.includes("#180f2c"),
+    "the built desk carries one theme-color meta, the master's, starting at Tide's ground");
 })();
 
 section("v2 design: the charts and the map read the tokens");
@@ -8793,8 +8919,8 @@ await (async () => {
      which is what held Day back. They read tcol(), a token off <html> at draw time, and a theme change draws the part
      showing again. Proved in the desk's own window with a recording Chart: at Night every colour is the literal it was
      (the set below, read off the build before this change: 43 charts over eleven parts on two books); with every
-     token stubbed to a colour of its own no literal is drawn at all. One theme since 09 Oct 2026, so no theme change
-     to redraw on. Each check was proved red by a mutation of the master. */
+     token stubbed to a colour of its own no literal is drawn at all. Two themes since 11 Oct 2026 (Night and Tide): the same checks at Tide,
+     and a switch in the rail draws the part showing again. Each check was proved red by a mutation of the master. */
   const MD = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
   const { openMaster: omD } = await import("../tools/payload.mjs");
   const NIGHT = ["#6fae97", "#8ea2b6", "#b87333", "#c5a059", "#d4694c", "#d8c79c", "#e4e9ec", "#f2f4f5", "#7b86cc", "#cf8fb4",
@@ -8839,14 +8965,14 @@ await (async () => {
   const STUB = { "salt-salt": "#0a0b01", "salt-brass": "#0a0b02", "salt-copper": "#0a0b03", "salt-verdigris": "#0a0b04", "salt-ember": "#0a0b05",
     "salt-steel": "#0a0b06", "salt-product-salt": "#0a0b07", "salt-mist-light": "#0a0b08", "salt-brass-soft": "#0a0b09", "salt-obsidian": "#0a0b0a",
     "salt-slate": "#0a0b0b", "salt-product-oil": "#0a0b0c", "salt-product-candy": "#0a0b0d", "salt-product-rice": "#0a0b0e", "salt-product-spare": "#0a0b0f",
-    "desk-chart-grid": "rgba(1,2,3,0.07)" };
+    "salt-line-strong": "rgba(10,11,2,0.45)", "desk-chart-grid": "rgba(1,2,3,0.07)" };
   for (const [k, v] of Object.entries(STUB)) root("--" + k, v);
   const stubSeen = drawAll();
   const foreign = setOf(stubSeen).filter((c) => !/^#0a0b0[0-9a-f]$/.test(c) && !/^rgba\(10,11,\d+,[0-9.]+\)$/.test(c) && c !== "rgba(1,2,3,0.07)");
   ok(stubSeen.length === nightSeen.length && foreign.length === 0 && setOf(stubSeen).length >= 15, `with every token stubbed no chart draws a literal (${stubSeen.length} values; foreign: ${foreign.join(" ") || "none"})`);
   ok(setOf(stubSeen).includes("rgba(1,2,3,0.07)") && setOf(stubSeen).some((c) => /^rgba\(10,11,2,/.test(c)), "the grid and the brass series are the stubbed tokens");
   dn = defs();
-  ok(norm(dn.c) === "rgba(10,11,1,0.66)" && norm(dn.t.backgroundColor) === "rgba(10,11,10,0.92)" && norm(dn.t.borderColor) === "rgba(10,11,2,0.45)" && norm(dn.t.titleColor) === "#0a0b01",
+  ok(norm(dn.c) === "rgba(10,11,1,0.66)" && norm(dn.t.backgroundColor) === "rgba(10,11,10,0.92)" && norm(dn.t.borderColor) === "rgba(10,11,2,0.45)" && norm(dn.t.titleColor) === "#0a0b01",   /* the edge is --salt-line-strong, stubbed beside the rest */
     "and the tooltip and the text defaults follow them too: " + JSON.stringify(dn));
   Object.keys(STUB).forEach(unroot);
 
@@ -8870,6 +8996,52 @@ await (async () => {
   const mfor = setOf(mapStub).filter((c) => !/^#0a0b[0-9a-f]{2}$/.test(c) && !/^rgb\(10,11,\d+\)$/.test(c));
   ok(mapStub.length === mapNight.length && mfor.length === 0, `with every token stubbed the map draws no literal (foreign: ${mfor.join(" ") || "none"})`);
   Object.keys(MSTUB).forEach(unroot);
+  /* TIDE (11 Oct 2026, the second theme). saltLook is the head script's one writer of data-theme. At Tide every colour a chart draws is Tide's: the Night set
+     with each identity colour swapped for its Tide value (ice and the books' hues are shared, and oil's brass stays brass); the library's defaults are
+     TIDE_CHART_THEME; with every token stubbed no literal is drawn; and the map's fills are Tide's steps. */
+  const T_HEX = { "#6fae97": "#8ee0a8", "#8ea2b6": "#9ab8d8", "#b87333": "#62b6cc", "#c5a059": "#7fd1c0", "#d4694c": "#ff8a65", "#d8c79c": "#b9e8e0", "#f2f4f5": "#eaf6f6" };
+  const T_RGB = { "111,174,151": "142,224,168", "142,162,182": "154,184,216", "197,160,89": "127,209,192", "212,105,76": "255,138,101", "242,244,245": "234,246,246", "255,255,255": "234,246,246" };
+  const toTide = (c) => T_HEX[c] || c.replace(/^rgba\((\d+,\d+,\d+),/, (x, t) => "rgba(" + (T_RGB[t] || t) + ",");
+  w.eval("saltLook('tide')");
+  const tideSeen = drawAll(), tideSet = setOf(tideSeen), wantT = setOf(NIGHT.map(norm).map(toTide));
+  const nightOnly = want.filter((c) => toTide(c) !== c && c !== "#c5a059");
+  ok(tideSeen.length === nightSeen.length && tideSet.every((c) => wantT.includes(c) || c === "#c5a059") && wantT.every((c) => tideSet.includes(c)),
+    `at Tide every chart colour is Tide's (foreign: ${tideSet.filter((c) => !wantT.includes(c) && c !== "#c5a059").join(" ") || "none"}; missing: ${wantT.filter((c) => !tideSet.includes(c)).join(" ") || "none"})`);
+  ok(nightOnly.length > 5 && !tideSet.some((c) => nightOnly.includes(c)), `and no colour Night alone draws is left (still drawn: ${tideSet.filter((c) => nightOnly.includes(c)).join(" ") || "none"})`);
+  dn = defs();
+  ok(norm(dn.c) === "rgba(234,246,246,0.66)" && norm(dn.b) === "rgba(127,209,192,0.14)" && norm(dn.t.backgroundColor) === "rgba(3,20,26,0.92)"
+    && norm(dn.t.borderColor) === "rgba(127,209,192,0.46)" && norm(dn.t.titleColor) === "#eaf6f6" && norm(dn.t.bodyColor) === "rgba(234,246,246,0.85)",
+    "and the library's defaults (text, border, the tooltip) are TIDE_CHART_THEME: " + JSON.stringify(dn));
+  for (const [k, v] of Object.entries(STUB)) root("--" + k, v);
+  const stubTide = drawAll();
+  const foreignT = setOf(stubTide).filter((c) => !/^#0a0b0[0-9a-f]$/.test(c) && !/^rgba\(10,11,\d+,[0-9.]+\)$/.test(c) && c !== "rgba(1,2,3,0.07)");
+  ok(stubTide.length === tideSeen.length && foreignT.length === 0 && setOf(stubTide).length >= 15, `with every token stubbed no chart draws a literal at Tide either (${stubTide.length} values; foreign: ${foreignT.join(" ") || "none"})`);
+  Object.keys(STUB).forEach(unroot);
+  const T_MAP = { "#05080a": "#03141a", "#0b1215": "#082028", "#34454d": "#244a54", "#56697a": "#3f7684", "#6f8398": "#5f98a6", "#8ea2b6": "#9ab8d8", "#a6afb5": "#a4bbbf", "#c5a059": "#7fd1c0",
+    "#d4694c": "#ff8a65", "#e6ebee": "#eaf6f6", "rgb(142,162,182)": "rgb(154,184,216)", "rgb(197,160,89)": "rgb(127,209,192)", "rgb(212,105,76)": "rgb(255,138,101)", "rgb(52,69,77)": "rgb(36,74,84)", "rgb(86,105,122)": "rgb(63,118,132)" };
+  const MAPT = MAPN.map((c) => T_MAP[c] || c);
+  const mapTide = drawMap(), fillsT = setOf(mapTide);
+  ok(mapTide.length > 40 && fillsT.every((c) => MAPT.includes(c)) && ["#244a54", "#3f7684", "#5f98a6", "#eaf6f6", "#082028", "#03141a", "#ffffff05", "#a4bbbf"].every((c) => fillsT.includes(c)),
+    `at Tide the map is Tide's: the steps, the states, the names, the ground (${fillsT.join(" ")})`);
+  for (const [k, v] of Object.entries(MSTUB)) root("--" + k, v);
+  const mapStubT = drawMap();
+  const mforT = setOf(mapStubT).filter((c) => !/^#0a0b[0-9a-f]{2}$/.test(c) && !/^rgb\(10,11,\d+\)$/.test(c));
+  ok(mapStubT.length === mapTide.length && mforT.length === 0, `with every token stubbed the map draws no literal at Tide either (foreign: ${mforT.join(" ") || "none"})`);
+  Object.keys(MSTUB).forEach(unroot);
+
+  /* a switch in the rail draws the part showing again in the new theme's tokens, with no reload: the charts, and the map, are not left in the old colours */
+  w.eval("saltLook('night');window.__cfgs=[];setProd('salt');recompute();switchTab('today');");
+  const sw0 = setOf(JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm));
+  w.eval("window.__cfgs=[];");
+  w.document.querySelector('.look-switch [data-look="tide"]').click();
+  const sw1 = setOf(JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm));
+  ok(sw0.includes("#d4694c") && sw0.includes("rgba(242,244,245,0.66)") && sw1.length > 3 && sw1.includes("#ff8a65") && sw1.includes("rgba(234,246,246,0.66)") && !sw1.includes("#d4694c") && !sw1.includes("rgba(242,244,245,0.66)"),
+    `the switch to Tide draws the charts showing again in Tide's colours (${sw0.length} colours before, ${sw1.length} after; Night's ember left: ${sw1.includes("#d4694c")})`);
+  w.eval("saltLook('night');MAP_VIEW='*';MAP_PICK=null;setProd('salt');recompute();switchTab('map');");
+  const mp0 = setOf(mapInk());
+  w.document.querySelector('.look-switch [data-look="tide"]').click();
+  const mp1 = setOf(mapInk());
+  ok(mp0.includes("#34454d") && mp1.includes("#244a54") && !mp1.includes("#34454d") && !mp1.includes("#6f8398"), `and draws the map again in Tide's: steps ${mp0.includes("#34454d")} at Night, ${mp1.includes("#244a54")} at Tide, Night's left ${mp1.includes("#34454d")}`);
 })();
 
 section("v1022 hang: a tool that opens the desk and never closes it still exits");
@@ -8883,7 +9055,7 @@ await (async () => {
     + ' console.log(w.document.documentElement.getAttribute("data-time") === null ? "none" : "set");', MH],
     { cwd: REPO, encoding: "utf8", timeout: 60000 });
   ok(!r.error && r.status === 0, "a tool that opens the desk and leaves the window open exits on its own (" + (r.error ? r.error.code : "status " + r.status) + ")");
-  ok(String(r.stdout).trim() === "none", "…and nothing in that window sets a theme: one theme, no clock script (" + String(r.stdout).trim() + ")");
+  ok(String(r.stdout).trim() === "none", "…and no clock script sets a time of day in that window (" + String(r.stdout).trim() + ")");
 })();
 
 section("v479: the retired price lock no longer breaks a rule; a lot that moves the rate is a watch");
