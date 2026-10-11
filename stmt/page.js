@@ -1654,8 +1654,15 @@ const CLIENT_JS = `
   }
   var pkGo=document.getElementById('pkGo');
   if(pkGo&&PKOK&&!OWNER){ pkGo.hidden=false; pkGo.addEventListener('click', pkDoor); }
+  /* a second tap while the first waits for the passkey does nothing: it would take the ticket from the first, which then
+     drops the passkey the customer completes, and the browser refuses a second prompt while one is open */
+  var pkBusy=false;
   async function pkDoor(){
-    if(busy) return;
+    if(busy||pkBusy) return;
+    pkBusy=true;
+    try{ await pkOpen(); } finally{ pkBusy=false; }
+  }
+  async function pkOpen(){
     var ch=pkFresh(pkCh)?pkCh:await pkPrime(); pkCh=null;
     if(!ch||!PKSALT){ say(tw('x.notSent'),'bad'); return; }
     var mine=++ticket, stale=function(){ return mine!==ticket; }, rec=pkGet(), cred;
@@ -2645,7 +2652,8 @@ const CLIENT_JS = `
         wd.addEventListener('click', async function(){
           if(!confirm(tw('lnk.withdrawAsk'))) return;
           var mine=ticket; var rv=await api('/my/refs/'+encodeURIComponent(r.id)+'/revoke',{});
-          if(mine!==ticket) return; if(rv.status===0) myNote=wErr(rv.body,'x.notSent'); await loadMyLinks();
+          /* any failure is said, as Make a link says it: a link that stays live while nothing says so looks withdrawn */
+          if(mine!==ticket) return; myNote=rv.body.ok?'':wErr(rv.body,'lnk.notWithdrawn'); await loadMyLinks();
         });
         acts.appendChild(wd);
       }
@@ -4002,19 +4010,34 @@ const CLIENT_JS = `
     })(i);
     return g;
   }
+  /* A DOUBLE TAP RATES ONCE. When the answer is in, the rated card leaves Home and the next order's card slides under the
+     finger, so the gesture's second tap would land on it and give an order a rating nobody chose, and a rating is never
+     changed. The stars stand still for a second after an answer that took the card away (rated, or rated already). */
   async function rateSend(o,n){
-    if(view||draft.rating) return;
+    if(view||draft.rating||Date.now()<(draft.rateHold||0)) return;
     var key=o.id+':rate', mine=ticket;
     draft.rating=o.id;
     var r=await api('/orders/'+encodeURIComponent(o.id)+'/rate',{stars:n, rid:ridFor(key,String(n))});
-    draft.rating='';
+    draft.rating=''; if(r.body&&(r.body.ok||r.body.code==='rated')) draft.rateHold=Date.now()+1000;
     if(mine!==ticket) return;
     /* a refusal is said under the stars; a rating that stands (rated already, on a retry) draws its marks instead */
     var b=r.body||{};
     if(b.ok) ridDone(key);
     tapSaid(o,'rate',b.ok?'':wErr(b,'rt.notSent'));
+    if(!b.ok) rateDraw(o.id,n);   /* a refusal is said where the stars stand, before the re-read */
     await oReread(); if(mine!==ticket) return;
-    oSync([o.id]); drawHome();
+    rateDraw(o.id,n); oSync([o.id]); drawHome();
+  }
+  /* The rate part drawn again, and the focus kept. oSync leaves a part that holds the focus, and the star just tapped is
+     inside this one: its answer or its refusal showed nothing until the focus went. The focus goes back to the star that
+     was tapped, or to the marks once it is rated. */
+  function rateDraw(id,n){
+    var at=function(){ return pOrder.querySelector('.oscreen[data-order="'+id+'"] [data-part="rate"]'); }, s=at(), had=!!s&&s.contains(document.activeElement);
+    oPart(id,'rate');
+    if(!had) return;
+    s=at();
+    var f=s&&(s.querySelector('[data-star="'+n+'"]')||s.querySelector('.rgave'));
+    if(f){ if(f.tagName!=='BUTTON') f.setAttribute('tabindex','-1'); try{ f.focus({preventScroll:true}); }catch(e){} }
   }
   function oRate(o){
     var w=el('div','orate');
