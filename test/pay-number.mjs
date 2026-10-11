@@ -18,8 +18,9 @@
  *   (each check below was proved red by its own mutation: test/pay-number.mutations.json, run with tools/section.mjs) */
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, chmodSync, rmSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { execFileSync, spawnSync } from "node:child_process";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
 /* an invented number, joined at run time */
@@ -28,9 +29,12 @@ const DIG = (...p) => p.join("");
 /* ---- THE SCANS (rule 3: the repo is public). Both answer paths, lines and counts, never a value, so a failing run leaks nothing.
    leakScan holds every private value of the pay store absent from every tracked file; longRuns holds the source free of a number. */
 const BINARY = /[.](woff2?|ttf|otf|png|jpe?g|gif|webp|ico|pdf|zip|gz|wasm)$/i;
-export const trackedTexts = (only) => execFileSync("git", ["ls-files", "-z"], { cwd: REPO, maxBuffer: 1 << 28 }).toString().split("\0")
-  .filter((p) => p && !BINARY.test(p) && (!only || only.test(p)))
+export const trackedTexts = (only, except) => execFileSync("git", ["ls-files", "-z"], { cwd: REPO, maxBuffer: 1 << 28 }).toString().split("\0")
+  .filter((p) => p && !BINARY.test(p) && (!only || only.test(p)) && !(except && except.test(p)))
   .map((p) => { try { return { path: p, text: readFileSync(join(REPO, p), "utf8") }; } catch (e) { return null; } }).filter(Boolean);
+
+/* the source scan reads every tracked text file but the generated desk, its build and the book (master/, public/, ledger/) and the facts file */
+export const NOT_SCANNED = /^(master|public|ledger)\/|^MEMORY\.md$/;
 
 /* Every leaf of the pay store is private (an unknown field is searched for too) but the fields that are no identity: what stmt/pay.js ships on
    purpose (each account's key, name and bank) and what only draws the tile in QR Command (its brand and ring colours, the ids of its traced
@@ -65,20 +69,36 @@ export function leakScan(doc, files) {
   return { checked: leaves.length, hits: [...seen].map(([path, files]) => ({ path, files })) };
 }
 
-/* a run of ten digits or more is not allowed in the source, but for what is plainly no number: all zeros or led by eight; an order stamp
-   (a date and a short sequence); a decimal fraction; a run id named in prose; three constants. A run touching a letter is a hash, a blob
-   or a literal such as 0b1010..., not a number, and is not read. */
-const CONSTANTS = new Set(["0123456789", "2166136261", "2147483647"]);
-const allowedRun = (s, before) => /^0{8}/.test(s) || CONSTANTS.has(s) || /[0-9][.]$/.test(before) || /\brun\s+(id\s+)?$/i.test(before)
-  || /^20[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{3,6}$/.test(s);
+/* a run of ten digits or more is not allowed in the source, but for what is plainly no number, each exception holding only its own case
+   (none may admit a 10 to 15 digit account number): a run of zeros alone, which holds no number, or eight zeros then up to four more digits;
+   an order id's stamp, fourteen digits that are a date and a time and the dash after them (the shape stmt/sw.js pins,
+   ^[0-9]{14}-[a-z0-9]{1,8}$); a run id named in prose; a binary literal (0 and 1 only, after 0b: engine/qr.mjs, generated into the desk and
+   stmt/qr.js, which cannot change without a version); a UUID (36 characters, 8-4-4-4-12 hex with dashes, as a whole token: a Cloudflare id
+   in the docs); four constants, the fourth the floating point residue the engine's comment prints (engine/pricing.mjs, the same). A run
+   touching a letter is read unless it is a hex digest (a hex token of 32 characters or more), a token with a letter on BOTH sides (a blob)
+   or a 13-digit epoch (^1[6-8][0-9]{11}$). */
+const CONSTANTS = new Set(["0123456789", "2166136261", "2147483647", "00000000000001"]);
+const STAMP = /^20[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{6}$/;
+const UUID = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const isLetter = (c) => /[A-Za-z]/.test(c || "");
+const hexToken = (text, from, to) => { let a = from, b = to; while (a > 0 && /[0-9a-fA-F]/.test(text[a - 1])) a--; while (b < text.length && /[0-9a-fA-F]/.test(text[b])) b++; return b - a; };
+const tokenAt = (text, from, to) => { let a = from, b = to; while (a > 0 && /[0-9A-Za-z-]/.test(text[a - 1])) a--; while (b < text.length && /[0-9A-Za-z-]/.test(text[b])) b++; return text.slice(a, b); };
+const plainRun = (text, at, s) => {
+  const before = text.slice(Math.max(0, at - 12), at), prev = text[at - 1], next = text[at + s.length];
+  if (/^0+$/.test(s)) return true;   /* a run of zeros holds no number */
+  if (/^0{8}[0-9]{0,4}$/.test(s) || CONSTANTS.has(s) || /\brun\s+(id\s+)?$/i.test(before) || (STAMP.test(s) && next === "-")) return true;
+  if (/^[01]+$/.test(s) && /(^|[^0-9A-Za-z_])0b$/.test(before)) return true;
+  if (UUID.test(tokenAt(text, at, at + s.length))) return true;
+  if (!isLetter(prev) && !isLetter(next)) return false;
+  return (isLetter(prev) && isLetter(next)) || hexToken(text, at, at + s.length) >= 32 || /^1[6-8][0-9]{11}$/.test(s);
+};
 export function longRuns(files) {
   const out = [];
   for (const f of files) {
     const re = /[0-9]{10,}/g; let m;
     while ((m = re.exec(f.text))) {
-      const s = m[0], before = f.text.slice(Math.max(0, m.index - 12), m.index), after = f.text[m.index + s.length] || " ";
-      if (/[A-Za-z]/.test(before.slice(-1)) || /[A-Za-z]/.test(after) || allowedRun(s, before)) continue;
-      out.push({ path: f.path, line: f.text.slice(0, m.index).split("\n").length, len: s.length });
+      if (plainRun(f.text, m.index, m[0])) continue;
+      out.push({ path: f.path, line: f.text.slice(0, m.index).split("\n").length, len: m[0].length });
     }
   }
   return out;
@@ -133,6 +153,62 @@ export async function run({ ok, okOff, pageWork, KV }) {
     && !!get && get.args.join(" ") === "wrangler kv key get paynum --binding STMT --remote -c wrangler.stmt.jsonc",
     "the write is wrangler kv key put on the Counter's STMT binding, key paynum, from a file, and the readback is the get of the same: " + JSON.stringify([put && put.args, get && get.args]));
 
+  /* every error the tool prints, through the real tool in a child process: a pay store of invented accounts in a temp folder, and a stand-in for npx
+     (never wrangler) that answers what the case needs. Each case puts a number where its error is read from, a key in the store, wrangler's own
+     line, the Counter's answer, the parser's quotation of a file, and none may reach the screen; a case shows "#" where the number was.
+     THE TOOL CAN NEVER REACH THE REAL wrangler FROM HERE (his word of 12 Oct 2026: on a logged-in laptop it would write an invented number to the
+     LIVE Counter's `paynum`). Four locks: the tool takes its executable from PAYSYNC_NPX, set here to the stand-in's absolute path; the child's PATH
+     holds one folder, a decoy `npx` that only leaves a mark if it is ever run, so no real npx is on it; the Cloudflare credentials are left out of
+     its environment; and tool() refuses, without starting anything, unless PAYSYNC_NPX names a file in this temp folder that carries the stand-in's
+     own first line. The stand-in and the decoy use shell builtins alone (type and exit; printf and exit), since PATH holds nothing else. */
+  const tmp = mkdtempSync(join(tmpdir(), "paysync-test-")), SECRET = DIG("5550", "7777", "4321"), WIN = process.platform === "win32";
+  const PATHKEY = Object.keys(process.env).find((k) => k.toUpperCase() === "PATH") || "PATH", MARK = "paysync-test stand-in";
+  const standin = join(tmp, "standin", WIN ? "paysync-npx.cmd" : "paysync-npx"), decoyDir = join(tmp, "decoy"), reached = join(decoyDir, "reached.txt");
+  const lay = (store, npx) => {   /* npx = [the stream it speaks on, what it says, its exit code] */
+    const data = join(tmp, "data"), repo = join(tmp, "repo");
+    for (const d of [data, repo, join(tmp, "standin"), decoyDir]) mkdirSync(d, { recursive: true });
+    writeFileSync(join(data, "accounts.json"), store); writeFileSync(join(repo, "wrangler.jsonc"), '{\n  "name": "invented-pay"\n}\n');
+    const to = npx[0] === "err" ? 1 : 0;
+    if (WIN) {
+      writeFileSync(join(tmp, "standin", "out.txt"), npx[1]);
+      writeFileSync(standin, "@rem " + MARK + "\r\n" + '@type "%~dp0out.txt"' + (to ? " 1>&2" : "") + "\r\n@exit /b " + npx[2] + "\r\n");
+      writeFileSync(join(decoyDir, "npx.cmd"), '@echo reached> "%~dp0reached.txt"\r\n@exit /b 99\r\n');
+    } else {
+      writeFileSync(standin, "#!/bin/sh\n# " + MARK + "\nprintf '%s' '" + npx[1].replace(/'/g, "'\\''") + "'" + (to ? " >&2" : "") + "\nexit " + npx[2] + "\n"); chmodSync(standin, 0o755);
+      writeFileSync(join(decoyDir, "npx"), '#!/bin/sh\necho reached > "${0%/*}/reached.txt"\nexit 99\n'); chmodSync(join(decoyDir, "npx"), 0o755);
+    }
+    return { QR_MASTER: data, QR_REPO: repo, PAYSYNC_NPX: standin, [PATHKEY]: decoyDir };
+  };
+  const inPlace = (p) => { try { return !!p && p.startsWith(tmp) && readFileSync(p, "utf8").includes(MARK); } catch (e) { return false; } };
+  const kept = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(CLOUDFLARE|CF)_/i.test(k)));
+  const tool = (args, env) => {
+    if (!inPlace(env.PAYSYNC_NPX)) return { code: null, said: "", refused: true };   /* nothing is started without the stand-in */
+    const r = spawnSync(process.execPath, [join(REPO, "tools", "paysync.mjs"), ...args], { cwd: REPO, env: Object.assign({}, kept, { NODE_OPTIONS: "--no-warnings" }, env), encoding: "utf8", timeout: 60000 });   /* node's own notice names a process id */
+    return { code: r.status, said: String(r.stdout) + String(r.stderr) };
+  };
+  const goodStore = JSON.stringify({ accounts: [{ key: "maybank", name: "Maybank", bank: "Maybank", sub: n1 }] });
+  const cases = {}; let decoyReached = false;
+  try {
+    cases.key = tool(["--numbers", "--dry"], lay(JSON.stringify({ accounts: [{ key: "k" + SECRET, name: "Odd", bank: "Odd Bank", sub: n1 }] }), ["out", "", 0]));
+    cases.wrangler = tool(["--check-numbers"], lay(goodStore, ["err", "[ERROR] A request to the API failed for " + SECRET + " (code 10000)\n", 1]));
+    cases.notJson = tool(["--check-numbers"], lay(goodStore, ["out", "x" + SECRET, 0]));
+    cases.differs = tool(["--check-numbers"], lay(goodStore, ["out", JSON.stringify({ v: 1, accounts: { ["k" + SECRET]: { number: n2 } } }), 0]));
+    cases.push = tool(["--numbers"], lay(goodStore, ["err", "[ERROR] The write for " + SECRET + " was refused\n", 1]));
+    cases.parse = tool(["--numbers", "--dry"], lay("x" + SECRET, ["out", "", 0]));
+    decoyReached = existsSync(reached);
+  } finally { try { rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* the system's temp folder */ } }
+  const clean = (r) => !/[0-9]{5}/.test(r.said) && r.said.includes("#");
+  ok(PS.hide("a" + n1 + " b" + n1.slice(-4)) === "a# b" + n1.slice(-4),
+    "the mask takes any run of five digits and leaves four: " + PS.hide("a" + n1 + " b" + n1.slice(-4)));
+  ok(Object.keys(cases).length === 6 && !Object.values(cases).some((r) => r.refused) && !decoyReached && !Object.keys(kept).some((k) => /^(CLOUDFLARE|CF)_/i.test(k)),
+    "the tool was started only with its stand-in for npx, named by absolute path, never reached the decoy that stands where PATH would look for npx, and carried no Cloudflare credential: "
+    + JSON.stringify({ refused: Object.entries(cases).filter(([k, r]) => r.refused).map(([k]) => k), decoyReached }));
+  ok(Object.values(cases).every((r) => r.code === 1 && clean(r)) && /STOPPED: nothing was written/.test(cases.key.said) && /STOPPED: wrangler could not read/.test(cases.wrangler.said)
+    && /STOPPED: wrangler could not read/.test(cases.notJson.said) && /FAIL +KV `paynum` differs/.test(cases.differs.said) && /\.\.\.\.\.5678/.test(cases.differs.said)
+    && /PUSH FAILED/.test(cases.push.said) && /SyntaxError/.test(cases.parse.said),
+    "every error the tool prints hides a run of five digits, a key in the store, wrangler's line, a Counter answer that is not JSON, one that differs, a failed write and a store that will not parse, and the last four digits still show: "
+    + JSON.stringify(Object.fromEntries(Object.entries(cases).map(([k, r]) => [k, [r.code, clean(r)]]))));
+
   /* ---- 2: the route, GET /pay/accounts, through the real Worker on a stand-in KV */
   const stmtW = (await import("../stmt/worker.js")).default;
   const O = await import("../stmt/orders.js");
@@ -180,7 +256,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     "and the picker serves a, which offers a transfer and is open, and not b (no transfer rail), c (suspended), d (not on the list) or e (inherited, not the record's own): " + hide(JSON.stringify(picked)));
 
   /* a test account is answered its fixture's invented number, and the real record is never read for it */
-  const ZERO = "0000000000000", T = TF.TEST_USER;
+  const ZERO = "0".repeat(13), T = TF.TEST_USER;
   await kv.put("u:" + T, JSON.stringify({ test: true, wrap: { salt: "pn-salt" } }));
   const TS = await asker(T);
   const noFix = await call("/pay/accounts", TS);
@@ -233,15 +309,22 @@ export async function run({ ok, okOff, pageWork, KV }) {
 
   /* the source scan: ten digits or more are no number only where the rule says so, and each exception holds only its own case */
   const runs = (text) => longRuns([{ path: "x.mjs", text }]);
-  const allowed = { zeros: "0".repeat(13), zeroLed: DIG("00000000", "1234"), stamp: DIG("2026", "1011", "123456"), stampShort: DIG("2026", "1006", "080"), fraction: "3." + DIG("1415", "9265", "3589"),
-    runId: "(run " + DIG("3604", "1951", "078") + ")", wrapped: "(run\n       " + DIG("3604", "1951", "078") + ")", digits: "0123456789", fnv: DIG("2166", "136261"), int: DIG("2147", "483647"), hash: "a" + DIG("5550", "1234", "5678"), blob: DIG("5550", "1234", "5678") + "f" };
-  const refused = { odd: DIG("5550", "1234", "5678"), longer: DIG("5550", "1234", "5678", "9012", "34"), stampLong: DIG("2026", "1011", "1234567"), badMonth: DIG("2026", "1311", "123456"), rerun: "rerun " + DIG("3604", "1951", "078"),
-    stop: "see." + DIG("5550", "1234", "5678") };
+  const N12 = DIG("5550", "1234", "5678"), E13 = DIG("1760", "1234", "5678", "9");   /* an invented 12-digit number; a 13-digit run led as an epoch is */
+  const UU = "1ea7ed86-00d5-4e4e-8967-";   /* an invented UUID's first four groups */
+  const allowed = { zeros: "0".repeat(12), zerosLong: "0".repeat(13), zerosForty: "0".repeat(40), zeroLed: DIG("00000000", "1234"), uuid: UU + DIG("8074", "0612", "64") + "b4", uuidDigits: UU + N12, stamp: DIG("2026", "1011", "123456") + "-k3f9", runId: "(run " + DIG("3604", "1951", "078") + ")",
+    wrapped: "(run\n       " + DIG("3604", "1951", "078") + ")", digits: "0123456789", fnv: DIG("2166", "136261"), int: DIG("2147", "483647"), residue: DIG("0000", "0000", "0000", "01"),
+    binary: "0b" + "10".repeat(6), epoch: "t" + E13, digest: N12 + "a".repeat(20), hexBoth: "a" + N12 + "f", blob: "q" + N12 + "z" };
+  const refused = { odd: N12, longer: DIG("5550", "1234", "5678", "9012", "34"), stampLong: DIG("2026", "1011", "1234567"), badMonth: DIG("2026", "1311", "123456") + "-k3f9", rerun: "rerun " + DIG("3604", "1951", "078"),
+    stop: "see." + N12, fraction: "3." + DIG("1415", "9265", "3589"), stampBare: DIG("2026", "1011", "123456"), stampSemi: DIG("2026", "1011", "123456") + "_k3f9", stampShort: DIG("2026", "1006", "080") + "-a1",
+    stamp13: DIG("2026", "1011", "12345") + "-k3f9", letterBefore: "x" + N12, letterAfter: N12 + "x", hexBefore: "a" + N12, hexAfter: N12 + "f", hexShort: N12 + "a".repeat(19), epochBare: E13,
+    epochOther: "t" + DIG("2760", "1234", "5678", "9"), epoch12: "t" + DIG("1760", "1234", "5678"), uuidLong: UU + N12 + "b4", uuidShortFirst: "1ea7ed8-00d5-4e4e-8967-" + N12, uuidPrefixed: "x" + UU + N12, uuidSuffixed: UU + N12 + "-1",
+    uuidNonHex: UU + DIG("5550", "1234", "56") + "g8", onesLong: "1".repeat(40), zeroLedLong: DIG("00000000", "12345"), zeroLedLonger: DIG("00000000", "1234", "5678"),
+    residueOther: DIG("0000", "0000", "0000", "02"), ones: "1".repeat(11), binaryNot: "0b" + "1".repeat(10) + "2", binaryBare: "b" + "1".repeat(11), binaryAfterWord: "x0b" + "1".repeat(11) };
   ok(Object.entries(allowed).every(([k, t]) => runs("n = " + t + ";").length === 0),
-    "a run of ten digits is let through when it is all zeros or led by eight, an order stamp, a decimal fraction, a run id in prose, one of three constants, or part of a hash or blob: "
+    "a run of ten digits is let through when it is all zeros or eight zeros and up to four digits, an order id's fourteen-digit stamp with its dash, a run id in prose, a binary literal, a UUID, one of four constants, or a hex digest, a blob with a letter each side or a 13-digit epoch: "
     + JSON.stringify(Object.entries(allowed).filter(([k, t]) => runs("n = " + t + ";").length).map(([k]) => k)));
   ok(Object.entries(refused).every(([k, t]) => runs("n = " + t + ";").length === 1),
-    "and any other is refused, a stamp that is too long or not a date, a run id that is no run id, a run after a full stop and one inside a longer run: "
+    "and any other is refused: a stamp not fourteen digits, not a date or not followed by the dash, a run id that is no run id, a run after a full stop, a run beside one letter or a short hex token, an epoch with no letter or led otherwise, zeros that end in another digit past twelve, a run of ones, a near constant, a binary literal that is not one and an id that is not a whole UUID: "
     + JSON.stringify(Object.entries(refused).filter(([k, t]) => runs("n = " + t + ";").length !== 1).map(([k]) => k)));
   const where = longRuns([{ path: "dir/x.mjs", text: "a\nb\nn = " + refused.odd }]);
   ok(where.length === 1 && Object.keys(where[0]).join() === "path,line,len" && where[0].path === "dir/x.mjs" && where[0].line === 3 && where[0].len === 12,
@@ -260,10 +343,12 @@ export async function run({ ok, okOff, pageWork, KV }) {
     "and the page every shut link answers is the same: no script, no run of eight digits, no filed number: " + shutRes.status);
 
   /* ---- 7: the scans on the repository itself */
-  const srcFiles = trackedTexts(/^(docs\/|stmt\/|tools\/testfix\.mjs$|test\/[^/]*\.mjs$)/), srcPaths = new Set(srcFiles.map((f) => f.path));
+  const srcFiles = trackedTexts(null, NOT_SCANNED), srcPaths = new Set(srcFiles.map((f) => f.path));
   const dirty = longRuns(srcFiles);
-  ok(["stmt/page.js", "stmt/pay.js", "tools/testfix.mjs", "test/pay-number.mjs", "docs/STATEMENTS.md"].every((p) => srcPaths.has(p)) && dirty.length === 0,
-    "stmt/, docs/, tools/testfix.mjs and the suite's own files hold no run of ten digits that could be a number: " + srcFiles.length + " files read, " + dirty.length + " runs refused "
+  ok(["stmt/page.js", "stmt/pay.js", "src/maker-inputs.js", "engine/pricing.mjs", "tools/paysync.mjs", "tools/testfix.mjs", "test/pay-number.mjs", "test/pay-number.mutations.json", "docs/STATEMENTS.md",
+    ".github/workflows/ci.yml", "package.json"].every((p) => srcPaths.has(p)) && !["master/salt_command.html", "public/desk.html", "ledger/book.json", "MEMORY.md"].some((p) => srcPaths.has(p))
+    && srcFiles.length > 300 && dirty.length === 0,
+    "every tracked text file but master/, public/, ledger/ and MEMORY.md holds no run of ten digits that could be a number: " + srcFiles.length + " files read, " + dirty.length + " runs refused "
     + JSON.stringify(dirty.slice(0, 6)));
   if (PS.mastersPresent()) {
     const doc = JSON.parse(readFileSync(join(PS.PAY_MASTER, "accounts.json"), "utf8").replace(/^\uFEFF/, "")), tracked = trackedTexts(), found = leakScan(doc, tracked);

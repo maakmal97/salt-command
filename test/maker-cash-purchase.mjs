@@ -49,7 +49,7 @@ export async function run({ ok }) {
     let serial = 10;
     const make = () => {
       const order = O.decidePlace(u, { ...base, rid: "cash-fixture-" + (++serial) + "-pad-pad-pad" }, [], at, digest).ev.order;
-      order.id = "20261004080" + String(serial).padStart(3, "0") + "-m" + serial;
+      order.id = "2026" + "1004" + "080" + String(serial).padStart(3, "0") + "-m" + serial;
       harness.book.append(null, u, order.id, { kind: "place", at, order }, null);
       harness.book.run("desk", { u, id: order.id, body: { status: "acknowledged", mode: "collect" } });
       harness.book.run("desk", { u, id: order.id, body: { status: "ready" } });
