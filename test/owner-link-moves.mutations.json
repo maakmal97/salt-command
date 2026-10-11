@@ -1,0 +1,14 @@
+[
+ {
+  "name": "G1 no guard: a second move on a link is sent",
+  "file": "stmt/owner.js",
+  "find": "    if(moving[r.id]) return;\n    moving[r.id]=true; moveLock(r.id, true);",
+  "replace": "    moving[r.id]=true; moveLock(r.id, true);"
+ },
+ {
+  "name": "G2 the card's buttons stay on while the move is out",
+  "file": "stmt/owner.js",
+  "find": "    moving[r.id]=true; moveLock(r.id, true);\n    linkSaid=null;",
+  "replace": "    moving[r.id]=true;\n    linkSaid=null;"
+ }
+]

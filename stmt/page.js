@@ -455,6 +455,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .maker-day-name{font-size:var(--salt-text-sm)}
 .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
+#makerBulletinCurrent{overflow-wrap:anywhere}
 .maker-slip{display:block;max-width:100%;height:auto}
 @media(max-width:440px){.maker-day{grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}.maker-day-name{grid-column:2 / 4}.maker-day input[type=time]{grid-row:2}.maker-day input[type=time]:nth-last-child(2){grid-column:2}.maker-day input[type=time]:last-child{grid-column:3}}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in */

@@ -942,6 +942,11 @@ async function handleDesk(request, env, p, m) {
     if (!body) return json({ ok: false, error: "send JSON" }, 400);
     const b = checkBulletin(body);
     if (!b.lines.length) { await env.STMT.delete(BULL_KEY); return json({ ok: true, lines: [], mode: b.mode, at: null, cleared: true }); }
+    /* 11 Oct 2026 (the stress test): the lines already up, set again, store nothing and wake nobody; the answer says so,
+       and the owner's page tells him. Only a different notice is a notice. */
+    const cur = await readBulletin(env);
+    if (cur.lines.length === b.lines.length && cur.lines.every((s, i) => s === b.lines[i]))
+      return json({ ok: true, lines: cur.lines, mode: cur.mode, at: cur.at, unchanged: true });
     const rec = { lines: b.lines, mode: b.mode, at: new Date().toISOString() };
     await env.STMT.put(BULL_KEY, JSON.stringify(rec));
     /* v761, his instruction of 21 Sep 2026: the notice reaches them as well, and not only on the
