@@ -922,12 +922,21 @@ it does with the quoted total. An associate with no bucket on the roster is refu
 **MONEY AND GOODS ARE TWO TRACKS** (v694). `payments[]` is what the customer says they
 sent and `paid` what he has received (S6), `moved` and `movedOn` what he says he handed over, and either may lead. Payment is offered
 **from the acknowledgement**, in **one pay sheet for every Pay** (To pay now, an order, the held page;
-S6 6.4, his D8 as amended): the figure and what it is for, All or Part, then two ways, Transfer or Scan
-a code, Transfer chosen as it opens (the way, never the account), **with no account chosen for them**: they choose,
-one Option tile a tap, which of his accounts to pay into from those
-`payHref` links, a suspended one never offered, and their username is the reference. Show the account
-number, or Show the code, hands over one link into QR Command, which the Counter never names or carries
-a number of. **On return the sheet asks once** (S6 6.5, his D7), and after a reload too (kept on the device two hours as
+S6 6.4, his D8 as amended, then Phase 7b of 11 Oct 2026): **his banks first**, one Option tile a tap, **none chosen for them**
+(from those `payHref` links, a suspended one never offered); then the figure, All or Part, and What this pays, the invoice's
+lines in a shut Plan fold; then two ways, Transfer or Scan a code, Transfer chosen as it opens (the way, never the account). Their
+username is the reference. **With a bank chosen on Transfer the sheet shows two rows: the account number, in groups of four for
+reading with Copy (digits alone to the clipboard) and the bank's name, then the reference with its Copy.** Scan a code shows no
+number. **The number is never in git** (rule 3): it is Counter KV `paynum`, `{v: 1, at, accounts: {<key>: {number}}}`, written from
+the laptop by `node tools/paysync.mjs --numbers` (the pay store's number with its spaces stripped, refused unless 10 to 15 digits
+or if `stmt/pay.js` lacks the key, nothing else carried, each key shown by its last four digits) and read back by `--check-numbers`.
+It is served on a customer's session at `GET /pay/accounts`, whitelisted to `number` and to the accounts the page offers for a
+transfer, `no-store`, `{ok: true, accounts: {}}` when none is filed or the read fails; the page asks once a visit, and never on
+his read-only view. **The practice accounts are answered their fixture's invented all-zero number** through the test-account
+overlay (`paynum` in `tools/testfix.mjs`, `FIX_VERSION` 9) and never the real record. **With a number** the filled pill is I have
+paid, straight to Did you send, and a ghost Open the payment page keeps the `payHref` link; **with none, and on Scan a code**, the
+filled pill is the link as it was (Show the account number, or Show the code) and a ghost I am back moves to the same question, the
+window's blur and focus staying as the fallback. **On return the sheet asks once** (S6 6.5, his D7), and after a reload too (kept on the device two hours as
 `salt-stmt-payq`, never the username): "Did you send RM 70?", with Not yet, never a tap
 beside the number; Yes posts a CLAIM (an order's to `/orders/<id>/pay`, To pay now's to `/account/claim`), which
 reads "sent, waiting for us to confirm" on the order, its row and To pay now until his Received or Not found, each
@@ -935,7 +944,9 @@ shown when it comes; Pay then asks only for what no claim covers, **never the sa
 sent on an order whose row is one of its parts (matched by `rowOn` and the whole figure), and the order nets what was sent
 against the account that reaches its row, the lines walked as `claimAlloc` takes them (since V2: the rows with goods out
 oldest first, then the orders at Ready with nothing handed over; an order at Ready with no `rowOn` takes none). The accounts it may name are `stmt/pay.js`, generated from the pay master by `node tools/paysync.mjs --sync` with no
-number, payload or reference shipped. **`payHref` in it is the one link builder** (D8, 24 Sep
+number, payload or reference shipped (the suite holds `stmt/pay.js` to no run of five digits, and, on the laptop, holds every
+tracked file free of every private value of the pay store, count only; `stmt/`, `docs/`, `tools/testfix.mjs` and the suite's own files hold no
+run of ten digits but zeros, order stamps and a few named constants, so a number joined from parts is how a test invents one). **`payHref` in it is the one link builder** (D8, 24 Sep
 2026): `#<key>/<rail>/<amount>/<reference>`, Transfer or Scan a code, the figure to the sen, the
 username as the reference, and "" for anything QR Command would not open. It reads only `PAY_SITE`
 and `PAY`, the names `CLIENT_JS` declares, so the page carries `payHref.toString()` as it is. The suite reads the link
