@@ -28,5 +28,8 @@
  {"name":"the Tide chevron stays Night's brass","file":"design/desk.css","find":"stroke='%237fd1c0'","replace":"stroke='%23c5a059'"},
  {"name":"Tide's area name is unreadable on the map","file":"design/desk.css","find":"--desk-map-name:#eaf6f6;","replace":"--desk-map-name:#5f98a6;"},
  {"name":"a swatch drifts from the system","file":"design/desk.css","find":"--desk-look-tide-accent:#7fd1c0;","replace":"--desk-look-tide-accent:#7fd1c1;"},
- {"name":"the desk layer writes brass as a literal","file":"design/desk.css","find":"border:1px solid var(--salt-edge-field);}\n.look-swatch--night","replace":"border:1px solid #c5a059;}\n.look-swatch--night"}
+ {"name":"the desk layer writes brass as a literal","file":"design/desk.css","find":"border:1px solid var(--salt-edge-field);}\n.look-swatch--night","replace":"border:1px solid #c5a059;}\n.look-swatch--night"},
+ {"name":"the names panel's Hide button is Night's steel as a literal again","find":"linear-gradient(135deg,var(--vio),var(--vio-deep));color:var(--salt-ink-on-accent)\">Hide names","replace":"linear-gradient(135deg,var(--vio),#6f8398);color:var(--salt-ink-on-accent)\">Hide names"},
+ {"name":"Record is Night's verdigris as a literal again","find":"id=\"wbRec\" style=\"border-color:var(--grn);background:linear-gradient(135deg,var(--grn),var(--grn-deep))","replace":"id=\"wbRec\" style=\"border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a)"},
+ {"name":"the Cancelled pill's text is white as a literal again","find":"background:var(--crim);color:var(--salt-ink-on-accent)\">Cancelled","replace":"background:var(--crim);color:#fff\">Cancelled"}
 ]

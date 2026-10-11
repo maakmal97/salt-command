@@ -26,6 +26,8 @@ html[data-tod="register"],:root{
      a colour the headings also speak in. The colour is --salt-alarm, IN THE IDENTITY since 22 Sep 2026
      (it was defined here until then); --rose keeps ember and has no reader. ---- */
   --rose:var(--salt-ember);--crim:var(--salt-alarm);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
+  /* the deeper end of a solid steel or verdigris button's gradient: the accent drawn a fifth toward the ground, so each theme moves it (11 Oct 2026) */
+  --vio-deep:color-mix(in srgb,var(--salt-steel) 80%,var(--salt-obsidian));--grn-deep:color-mix(in srgb,var(--salt-verdigris) 80%,var(--salt-obsidian));
   --acc:var(--salt-brass);--accB:var(--salt-copper);
   --glass:var(--salt-glass);--glass-2:var(--salt-glass-hover);
   --brd:var(--salt-line);--brd-2:var(--salt-line-strong);

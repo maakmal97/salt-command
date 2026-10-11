@@ -8801,6 +8801,13 @@ await (async () => {
   const body = m.slice(m.indexOf("</style>", a0)).replace(/\/\* ==== (ENGINE|BOOK|GEO)[\s\S]*?END \1[^=]*==== \*\//g, "");
   const wash = (body.match(/(?<!\w)rgba\((5,8,10|142,162,182|184,115,51|212,105,76|197,160,89),[\d.]+\)/g) || []).filter((x) => !/^rgba\(197,160,89,\.3\)$/.test(x));
   ok(wash.length === 0, `the desk's script templates write no identity wash as a literal (found ${wash.join(" ") || "none"})`);
+  /* nor a hex colour in an inline style or a gradient (11 Oct 2026): the Names and IDs panel's buttons, Record and the Cancelled pill drew Night's steel, verdigris and white at Tide.
+     What stays literal is not an inline style: the crystal mark's stops, the dormant tier colours, and the price board's print sheet and PNG, which are the customer's own paper */
+  const hexLit = (body.match(/(?:style="[^"]*|linear-gradient\((?:[^()]|\([^()]*\))*)(?<![&\w])#[0-9a-f]{3,8}\b/gi) || []).map((x) => x.slice(x.lastIndexOf("#")));
+  ok(hexLit.length === 0, `the desk's script templates write no hex colour in an inline style or a gradient (found ${hexLit.join(" ") || "none"})`);
+  ok(/--vio-deep:color-mix\(in srgb,var\(--salt-steel\)/.test(m) && /--grn-deep:color-mix\(in srgb,var\(--salt-verdigris\)/.test(m)
+    && /linear-gradient\(135deg,var\(--vio\),var\(--vio-deep\)\)/.test(body) && /id="wbRec" style="[^"]*linear-gradient\(135deg,var\(--grn\),var\(--grn-deep\)\)/.test(body),
+    "so the solid steel and verdigris buttons are a token and the same token drawn deeper, which each theme moves");
   /* the system's desk bar reads its material from three tokens on :root, and no raw fill is left */
   const dsBase = dsC.replace(/\s+/g, "");
   const rootB = (dsBase.match(/(?:^|\}):root\{([^}]*)\}/) || ["", ""])[1];

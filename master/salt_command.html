@@ -3681,6 +3681,8 @@ html[data-tod="register"],:root{
      a colour the headings also speak in. The colour is --salt-alarm, IN THE IDENTITY since 22 Sep 2026
      (it was defined here until then); --rose keeps ember and has no reader. ---- */
   --rose:var(--salt-ember);--crim:var(--salt-alarm);--grn:var(--salt-verdigris);--vio:var(--salt-steel);
+  /* the deeper end of a solid steel or verdigris button's gradient: the accent drawn a fifth toward the ground, so each theme moves it (11 Oct 2026) */
+  --vio-deep:color-mix(in srgb,var(--salt-steel) 80%,var(--salt-obsidian));--grn-deep:color-mix(in srgb,var(--salt-verdigris) 80%,var(--salt-obsidian));
   --acc:var(--salt-brass);--accB:var(--salt-copper);
   --glass:var(--salt-glass);--glass-2:var(--salt-glass-hover);
   --brd:var(--salt-line);--brd-2:var(--salt-line-strong);
@@ -17146,7 +17148,7 @@ function renderReveal(){
       <br><b style="color:var(--amber)">The sealed file is reachable by anyone with the address.</b> Cloudflare Access is off by your decision, so the passphrase is the only thing between that file and a real name. Make it a long one.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
       ${namesShown()
-        ? `<button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:linear-gradient(135deg,var(--vio),#6f8398);color:#fff">Hide names</button>`
+        ? `<button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:linear-gradient(135deg,var(--vio),var(--vio-deep));color:var(--salt-ink-on-accent)">Hide names</button>`
         : `<input id="vrpass" type="password" autocomplete="current-password" placeholder="passphrase" style="min-width:150px;flex:1;padding:9px 10px;font-size:16px">
            <button id="vrgo" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:transparent;color:var(--vio)"${vaultRevealBusy?' disabled':''}>${vaultRevealBusy?'Opening…':'Show names'}</button>`}
     </div>
@@ -17157,8 +17159,8 @@ function renderReveal(){
       ${NAME_VAULT?'<b>An old encrypted vault is still on file.</b> Import it once to bring those names across.':''}</div>
     <div class="note warn" style="margin:0 0 10px;border-color:color-mix(in srgb,var(--salt-copper) 30%,transparent);background:color-mix(in srgb,var(--salt-copper) 8%,transparent)"><b>Not encrypted.</b> This is kept in salt_bio.json in the clear, by your instruction. The desk file itself stays clean and the published mirror carries none of it. The phone is a different matter: it only ever receives the sealed envelope and asks for the passphrase.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-      <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),#6f8398)':'transparent'};color:${revealed?'#fff':'var(--vio)'}">${revealed?'Hide':'Show and edit'}</button>
-      ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:var(--salt-ink-on-accent)">Save</button>':''}
+      <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),var(--vio-deep))':'transparent'};color:${revealed?'var(--salt-ink-on-accent)':'var(--vio)'}">${revealed?'Hide':'Show and edit'}</button>
+      ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,var(--grn),var(--grn-deep));color:var(--salt-ink-on-accent)">Save</button>':''}
       ${NAME_VAULT?'<button id="vimport" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--gold);background:transparent;color:var(--gold)">Import old vault</button>':''}
     </div>`}
     ${NAME_VAULT?'<div id="vimpBox" style="display:none;gap:6px;margin-bottom:8px"><input id="vpass" type="password" placeholder="passphrase for the old vault" style="min-width:160px;padding:8px 9px;font-size:16px"><button id="vdoimp" class="vbtn salt-pill salt-pill--sm">Import</button></div>':''}
@@ -21964,7 +21966,7 @@ function tabWorkbench(){
          appear when there is something queued for them to act on, which is also when their words mean
          anything. Nothing is hidden that could have been used: each already refused an empty queue. -->
     <div style="margin-top:13px">
-      <button class="vbtn salt-pill salt-pill--sm" id="wbRec" style="border-color:var(--grn);background:linear-gradient(135deg,#6fae97,#4f8f7a);color:var(--salt-ink-on-accent)">Record</button>
+      <button class="vbtn salt-pill salt-pill--sm" id="wbRec" style="border-color:var(--grn);background:linear-gradient(135deg,var(--grn),var(--grn-deep));color:var(--salt-ink-on-accent)">Record</button>
       ${queue.length?`<button class="vbtn salt-pill salt-pill--sm" style="font-size:12px;margin-left:6px" onclick="if(queue.length&&confirm('Discard all '+queue.length+' uncommitted entries? The desk will fall back to the committed ledger.')){queue.length=0;saveQueue();applyOverlay();render();}">Clear queued</button>
       <button class="vbtn salt-pill salt-pill--sm" id="wbSave" style="font-size:12px;margin-left:6px">Save queue file</button>
       <button class="vbtn salt-pill salt-pill--sm" id="wbCopy" style="font-size:12px;margin-left:6px">Copy queue</button>`:''}
@@ -23717,7 +23719,7 @@ function wbPreview(){
       body=`<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--mut)">`
         +`<span style="${lbl0()}">Now</span>`+wbPill(now.pay,wbPayCls(now.pay))+wbPill(now.deliv,wbPayCls(now.deliv))+wbPill(now.state,now.cls)
         +`<span style="color:var(--dim)">&rarr;</span>`
-        +(isCancel?`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+`<span class="pill" style="background:var(--crim);color:#fff">Cancelled</span>`
+        +(isCancel?`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+`<span class="pill" style="background:var(--crim);color:var(--salt-ink-on-accent)">Cancelled</span>`
           :`<span style="${lbl0()}">After</span>`+wbPill(nxt.pay,wbPayCls(nxt.pay))+wbPill(nxt.deliv,wbPayCls(nxt.deliv))+wbPill(nxt.state,nxt.cls))
         +`</div><div style="font-size:13px;color:var(--mut);margin-top:6px">${o.code} &middot; ${ID(t.who)} &middot; ${units(t.qty)} for ${fmt0(t.total)}: ${fmt0(sf.cash)} paid, ${units(+sf.kg.toFixed(2))} delivered so far.</div>`
         +(isCancel?`<div class="dsc" style="margin-top:6px">The row is marked <b>cancelled</b> outright${sf.cash>0.009?`, and the <b>${fmt0(sf.cash)} already paid becomes a refund payable</b> back to ${ID(t.who)}`:''}. Cash and units are not used here: what is owed back is what was paid.</div>`
