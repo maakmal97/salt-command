@@ -152,7 +152,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
 
   /* the control */
   const owner_js = readFileSync(join(REPO, "stmt", "owner.js"), "utf8");
-  ok(owner_js.includes("makerButton(tipSection,'Hush tip'") && owner_js.includes("send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until})")
+  ok(owner_js.includes("makerButton(tipSection,['Hush tip','record.tip.send']") && owner_js.includes("send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until})")
     && owner_js.includes("when it next reads the hushes")
     && owner_js.includes("tip.hush===null?' | dismissed':tip.hush?' | snoozed to '+tip.hush") && !owner_js.includes("from its queue"),
     "the Counter Admin carries a Hush tip control that says what happens: the Desk reads the hushes, not a queue");

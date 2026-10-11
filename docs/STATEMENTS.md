@@ -1814,6 +1814,300 @@ pause; it is not a vault authority switch. A maintenance refusal retains the bro
 Neither this release nor Access configuration alone proves owner acceptance or authorizes
 removing an incumbent Desk control.
 
+### Every Salt Account control has a stable name: `data-act` (11 Oct 2026)
+
+Salt Account is redesigned in phases, and the third rewrites its words. So that no test and no code finds a control by its
+label, its class or its place on the page, every control on the owner page carries `data-act="<place>.<thing>"`: lower case,
+hyphens inside a part, named by **what the control does and never by what it says**. A label, a class, an id or the layout may
+change; its act does not. A button, an input that is not hidden, a select, a textarea, a `summary`, a link and anything with
+`role="button"` or `role="tab"` is a control.
+
+- **Where.** The owner's shell (`landingPage`'s owner markup in `stmt/page.js`: the rail and bar, the filters, Links, More, the
+  way back, the ended screen) and everything `stmt/owner.js` draws. Not the customer's own shell (the door, its places, its
+  sheets) that View as them reuses: it is the customer's page, and its controls stay as they are. `#lock`, the one control of
+  his in that view, is named (`view.back`).
+- **A card, and a list.** A control drawn once for each card shares its act with the same control on every other card and is told
+  apart by its card. The card carries its key: `data-maker-card` (an order's id, a Desk row's `draft:<id>`), `data-u`,
+  `data-need`, `data-link`, `data-acct`, or `data-key` (an account claim, `<username>:<claim id>`; a server-held entry; a
+  group order; a retained input, by its route; an extra book, `extra<n>`; an offset, by its row; the open thread, by its
+  username). A control drawn once for each item of a list (a quick reply, a weekday, a device, a house size, a claim waiting on an
+  order) carries the item's own `data-key`. No two controls in one card share an act unless they are the same control drawn
+  twice (the rail and the bar draw each place; one of them shows).
+- **How it is written.** `actOn(node, act, key)` in `owner.js` sets it. The helpers that make controls (`ghost`,
+  `makerButton`, `makerClaimButton`, `makerField`, `addSelect`, and the group order's `field`) take their label as
+  `[words, act, key]`, so the words and the act sit side by side and a change of words moves nothing else. A control made by hand
+  calls `actOn`; the owner's static markup in `page.js` carries the attribute itself.
+- **The retained-input Cancel.** `makerButton` draws a hidden Cancel retained input beside every button, used by the Record
+  forms. Its act is its button's act and `.cancel-retained` (`record.loan.send.cancel-retained`). They are not tabulated below.
+- **A test finds a control by** `byAct(root, act, key)` in `test/maker-act.mjs`: the control with that act, and with a key,
+  inside the card or list item that carries it. Tests written before this still find controls by their words; the redesign's third
+  phase moves them to acts.
+- **The guard.** The suite's section "Salt Account: every control carries a stable data-act" draws the owner page with the richest
+  fixture the maker harness has (orders at every stage, an account claim with a slip, links waiting, an account card open, the hand-over sheet,
+  every Record form, a chat, a group order, the notice, the hours, a turn of sending links) and fails on a control with no act, on
+  two with one act in one card, and on this table naming an act the page does not draw or leaving out one it does (a window's hour is
+  the one pattern: `order.window-<hh>`). A new control gets its act and its row here in the same change.
+
+| Act | Where | What it does |
+|---|---|---|
+| `acct.back` | Accounts, an open card on a phone | Takes the card back to the list. |
+| `acct.device-signout` | Account card, Phones and computers (key: the device id) | Signs that one device out. |
+| `acct.filter-all` | Accounts, the filter bar | Shows every account. |
+| `acct.filter-locked` | Accounts, the filter bar | Shows accounts with an address refused. |
+| `acct.filter-none` | Accounts, the filter bar | Shows IDs with no account yet. |
+| `acct.filter-owes` | Accounts, the filter bar | Shows accounts that owe or are owed goods. |
+| `acct.filter-unopened` | Accounts, the filter bar | Shows accounts never opened. |
+| `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
+| `acct.find` | Accounts | Finds an account by a code or a username. |
+| `acct.open` | Accounts list, one row each (key: the username) | Opens that account's card. |
+| `acct.order-for` | Account card | Opens an order for them on Maker. |
+| `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
+| `acct.sent` | Account card | Ticks the account as sent. |
+| `acct.show-code` | Account card | Opens the sheet that shows a code for them in person. |
+| `acct.signin-link` | Account card (key: data-acct, the username) | First tap makes their one-time sign-in link, the next shares it. |
+| `acct.signout-all` | Account card | Signs them out everywhere, on a second tap within four seconds. |
+| `acct.view-as` | Account card | Opens their own page, read only. |
+| `chat.cancel-retry` | Open thread | Cancels the retry kept on this device. |
+| `chat.close` | Open thread | Closes the thread. |
+| `chat.no-reply` | Open thread | Records that no reply is needed. |
+| `chat.open` | Chat, one per account (key: the username) | Opens that account's thread. |
+| `chat.open-retained` | Open thread | Opens the reply kept encrypted on this device. |
+| `chat.reply` | Open thread (key: the username) | The reply to send. |
+| `chat.send` | Open thread | Sends the reply, or sends the same one again. |
+| `claim.lock-slip` | Same card | Closes the slip and locks the key. |
+| `claim.not-found` | Same card | Answers the claim Not found. |
+| `claim.passphrase` | Account claim card with a slip (key: the username and claim id) | The vault passphrase that unlocks the slip key, cleared when read. |
+| `claim.preview` | Same card | Reads the rows the claim would answer. |
+| `claim.received` | Same card | Confirms the amount and the rows shown. |
+| `claim.received-booked` | Same card | Confirms it when the money is on the book already. |
+| `claim.view-slip` | Same card | Opens the sealed slip on this device only. |
+| `code.close` | Code sheet | Closes the sheet. |
+| `code.value` | Code sheet | The eight-symbol code, read only. |
+| `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
+| `draft.reject` | Same card | Rejects it, or the trip. |
+| `ended.sign-in` | Shown when the Access session has ended | Loads /all again, which is the Access login. |
+| `hours.day-from` | Same row | The hour it opens. |
+| `hours.day-open` | Operating hours, one a weekday (key: the weekday) | Whether that day is open. |
+| `hours.day-to` | Same row | The hour it closes. |
+| `hours.override-clear` | Operating hours | Clears it. |
+| `hours.override-set` | Operating hours | Sets the temporary override. |
+| `hours.override-state` | Operating hours | Whether the override holds the shop open or closed. |
+| `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
+| `hours.save` | Operating hours | Saves the weekly hours. |
+| `link.approve` | Link card of an associate's link | Approves it, which opens it. |
+| `link.copy` | Link card (key: data-link, the link id) | Copies the link. |
+| `link.decline` | Same card | Declines it, which keeps it shut. |
+| `link.introducer` | Links | The customer introducing the guest. |
+| `link.label` | Links | Who the link is for. |
+| `link.make` | Links | Makes a guest link. |
+| `link.restore` | Link card of a withdrawn link | Restores the link. |
+| `link.tier` | Same card | Sets the tier it quotes. |
+| `link.withdraw` | Link card | Withdraws the link. |
+| `maker.refresh` | Order review | Reads the orders and rows again. |
+| `more.back` | Associates report card | Takes him back to More. |
+| `more.cards` | More | Opens the associates report card. |
+| `more.test-accounts` | More | Makes or deletes the two test accounts. |
+| `nav.accounts` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the accounts place. |
+| `nav.links` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the links place. |
+| `nav.maker` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the maker place. |
+| `nav.more` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the more place. |
+| `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens the needs place. |
+| `need.copy-link` | Same card, once the link is shown | Copies that link. |
+| `need.link-approve` | Same card | Approves the link, which then opens. |
+| `need.link-decline` | Same card | Declines the link, which stays shut. |
+| `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
+| `need.open` | Needs you card about an account (key: the card's data-u) | Opens that account, beside the list on a desktop and on Accounts on a phone. |
+| `need.send-later` | Same card | Send, switched off until the account exists. |
+| `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
+| `need.show-code` | Same card | Shows a sign-in code for them in person. |
+| `need.show-link` | Needs you card for an ID with no account yet | Shows the stranger's standing guest link and its QR until the account is made. |
+| `need.signin-link` | Needs you card for an account with an address refused | Makes their one-time sign-in link, then shares it. |
+| `need.turn-done` | Same card, when every turn is over | Closes the card. |
+| `need.turn-share` | Same card, mid-turn | Shares the link made for the account whose turn it is, then ticks it sent. |
+| `need.turn-skip` | Same card, mid-turn | Leaves that account unticked and moves to the next. |
+| `notice.clear` | Notice | Clears it, waking nothing. |
+| `notice.read` | Notice | Reads the notice now up. |
+| `notice.set` | Notice | Sets the notice and wakes every phone. |
+| `notice.text` | Notice | The notice, one line a sentence. |
+| `order.accept` | Order card (key: the order id), after a preview | Accepts the order at the previewed price. |
+| `order.accept-again` | Same card, after that preview | Accepts again at the order's own price. |
+| `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected amendment again. |
+| `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected cancellation again. |
+| `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected cash again. |
+| `order.again-move` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected handover again. |
+| `order.again-pay` | Order card (key: the order id), a stage he rejected under Approve | Offers the rejected payment again. |
+| `order.amend` | Same card | Sends the amendment for approval. |
+| `order.amend-delivery` | Same card | The amended delivery charge, in RM. |
+| `order.amend-total` | Same card | The amended goods price, in RM. |
+| `order.amend-units` | Order card (key: the order id), acknowledged or ready | The amended units. |
+| `order.cancel` | Order card (key: the order id), acknowledged or ready | Cancels the order. |
+| `order.cash` | Order card (key: the order id), ready | Holds the cash for ten seconds, then records it. |
+| `order.cash-amount` | Order card (key: the order id), ready | Cash received, in RM. |
+| `order.cash-retry` | Order card (key: the order id), when the answer was lost | Sends the same cash again, or refreshes the card. |
+| `order.cash-undo` | Order card (key: the order id), while the cash is held | Undoes it, sending nothing. |
+| `order.claim-not-found` | Same card | Answers that claim Not found. |
+| `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Confirms the money they say they sent. |
+| `order.close` | Order card (key: the order id), ready | Closes the order at the units typed. |
+| `order.decline` | Order card (key: the order id), placed | Declines the order. |
+| `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |
+| `order.fee-10` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 10. |
+| `order.fee-15` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 15. |
+| `order.fee-other` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of his own figure. |
+| `order.fee-other-amount` | Order card (key: the order id), placed for delivery | His own delivery charge, in RM. |
+| `order.handed` | Order card (key: the order id), ready | Records the handover. |
+| `order.handed-units` | Order card (key: the order id), ready | The units handed over. |
+| `order.no-reply` | Same card | Records that no reply is needed. |
+| `order.preview` | Order card (key: the order id), placed | Reads the row Accept would make. |
+| `order.preview-again` | Order card (key: the order id), a rejected pending row | Previews Accept again. |
+| `order.quick-keep` | Same card | Keeps the reply as a quick reply on this device, or forgets it. |
+| `order.quick-reply` | Same card, one for each kept line (key: its place in the list) | Fills the reply with that line. |
+| `order.ready-collect` | Order card (key: the order id), acknowledged | Marks the order ready to collect. |
+| `order.ready-deliver` | Order card (key: the order id), acknowledged | Marks the order ready to deliver. |
+| `order.reason` | Order card (key: the order id) | The reason sent to the customer with a Decline or a Cancel. |
+| `order.reason-place` | Same card | Fills the reason with the place line. |
+| `order.reason-price` | Same card | Fills the reason with the price line. |
+| `order.reason-stock` | Same card | Fills the reason with the stock line. |
+| `order.received` | Same card | Confirms that payment. |
+| `order.received-amount` | Order card (key: the order id), acknowledged or ready | Another payment received, in RM. |
+| `order.reply` | Same card | Sends the reply. |
+| `order.reply-text` | Same card | The reply to the customer. |
+| `order.send-yes` | Order card (key: the order id), after a preview that raises the price or changes the window | Sends it to them for their yes instead. |
+| `order.total` | Order card (key: the order id), placed | The order total, in RM, to preview. |
+| `order.window-<hh>` | Same card, one for each window ahead (named by its starting hour) | Offers that four-hour window. |
+| `order.window-day` | Order card (key: the order id), placed for delivery with no time asked | The day of the delivery window he offers. |
+| `order.window-own` | Same card | Keeps their window, or as soon as it can. |
+| `order.withdraw-offer` | Order card (key: the order id), with an offer out | Withdraws the offer. |
+| `orderfor.friend` | Order for a customer, an associate's | Whether it is for a friend. |
+| `orderfor.mode` | Order for a customer | Collected or delivered. |
+| `orderfor.place` | Order for a customer | The delivery locality. |
+| `orderfor.place-order` | Order for a customer | Places it for them. |
+| `orderfor.size` | Order for a customer | The size and price from their list. |
+| `orderfor.want` | Order for a customer | The day it is wanted by, optional. |
+| `pool.close` | Group order card (key: the pool id) | Closes it and sends each joined order for acknowledgement, or sends the ones left again. |
+| `pool.closes-on` | Group orders | The day it closes, optional. |
+| `pool.open` | Group orders | Opens the group order. |
+| `pool.product` | Group orders | The product the group order is for. |
+| `pool.size` | Group orders | The size each joiner takes, in units. |
+| `pool.target` | Group orders | The target, in units. |
+| `queue.withdraw` | Server-held entry card (key: the entry id) | Withdraws the uploaded entry, or finishes a withdrawal begun. |
+| `record.add-id.drift` | Record, Add ID, one for each drift book (key: the book) | The starting drift: automatic, a preset or typed. |
+| `record.add-id.drift-value` | Record, Add ID, one for each drift book (key: the book) | The typed starting drift, from -1 to +1. |
+| `record.add-id.link` | Record, Add ID | A Maps or Waze link, read on this device. |
+| `record.add-id.name` | Record, Add ID | The name, which never leaves this device in the clear. |
+| `record.add-id.parent` | Record, Add ID | The parent or associate, for a downstream buyer or a resale account. |
+| `record.add-id.passphrase` | Record, Add ID | The vault passphrase, typed on this device. |
+| `record.add-id.place` | Record, Add ID | The locality, from the official list. |
+| `record.add-id.role` | Record, Add ID | Customer, supplier, reseller, referral, downstream buyer or resale account. |
+| `record.add-id.send` | Record, Add ID | Encrypts on this device and sends the ID for review. |
+| `record.add-id.tier` | Record, Add ID, one for each tiered book (key: the book) | The starting tier. |
+| `record.amend-id.link` | Record, Amend ID | A Maps or Waze link, read on this device. |
+| `record.amend-id.name` | Record, Amend ID | The new name, kept on this device. |
+| `record.amend-id.party` | Record, Amend ID | The party to re-key. |
+| `record.amend-id.passphrase` | Record, Amend ID | The vault passphrase. |
+| `record.amend-id.place` | Record, Amend ID | The new locality. |
+| `record.amend-id.send` | Record, Amend ID | Encrypts on this device and sends the re-key for review. |
+| `record.amend.add-change` | Record, amend a ledger row | Adds that field change to the request. |
+| `record.amend.cash` | Record, amend a ledger row | The RM moved. |
+| `record.amend.clear-field` | Record, amend a ledger row | Clears an optional field in the request. |
+| `record.amend.date` | Record, amend a ledger row | The day recorded. |
+| `record.amend.field` | Record, amend a ledger row | The field a Correction changes. |
+| `record.amend.kind` | Record, amend a ledger row | Correction, Fulfilment, Cancellation or, on a purchase lot, Payment, Receipt or Default. |
+| `record.amend.row` | Record, amend a ledger row | The ledger row. |
+| `record.amend.send` | Record, amend a ledger row | Sends the amendment for review. |
+| `record.amend.units` | Record, amend a ledger row | The units moved. |
+| `record.amend.value` | Record, amend a ledger row | The value it is set to. |
+| `record.appoint.customer` | Record, appoint existing customer | The existing customer. |
+| `record.appoint.role` | Record, appoint existing customer | The appointment role. |
+| `record.appoint.send` | Record, appoint existing customer | Sends the appointment for review. |
+| `record.count.book` | Record, stock count | The book counted. |
+| `record.count.date` | Record, stock count | The day counted. |
+| `record.count.send` | Record, stock count | Records the count. |
+| `record.count.units` | Record, stock count | The units counted. |
+| `record.drift.book` | Record, customer drift | The book. |
+| `record.drift.clear` | Record, customer drift | Clears it, returning the customer to automatic drift. |
+| `record.drift.customer` | Record, customer drift | The customer. |
+| `record.drift.set` | Record, customer drift | Sets the held drift for review. |
+| `record.drift.value` | Record, customer drift | The drift, from -1 to +1. |
+| `record.gift.book` | Record, gift | The book. |
+| `record.gift.date` | Record, gift | The date. |
+| `record.gift.handover` | Record, gift | Not stated, collected or delivered. |
+| `record.gift.party` | Record, gift | The party. |
+| `record.gift.send` | Record, gift | Sends the gift for review. |
+| `record.gift.units` | Record, gift | The units. |
+| `record.house.book` | Record, printed board sizes | The book. |
+| `record.house.send` | Record, printed board sizes | Sends the sizes for review. |
+| `record.house.size` | Record, printed board sizes (key: the size) | Ticks a size the board prints. |
+| `record.loan.amount` | Record, borrow or lend | The units or RM. |
+| `record.loan.book` | Record, borrow or lend | The book, for an in-kind loan. |
+| `record.loan.date` | Record, borrow or lend | The date. |
+| `record.loan.direction` | Record, borrow or lend | Borrow or lend. |
+| `record.loan.form` | Record, borrow or lend | In kind or cash. |
+| `record.loan.party` | Record, borrow or lend | The party. |
+| `record.loan.send` | Record, borrow or lend | Sends the loan for review. |
+| `record.offset.date` | Record, automatic offsets | The date. |
+| `record.offset.send` | Record, automatic offsets, one for each offer (key: the row id) | Sends that offset for review. |
+| `record.place.link` | Record, map placement | A new Maps or Waze link. |
+| `record.place.locality` | Record, map placement | The locality. |
+| `record.place.party` | Record, map placement | The party with a filed point. |
+| `record.place.passphrase` | Record, map placement | The vault passphrase. |
+| `record.place.send` | Record, map placement | Queues the placement. |
+| `record.redeem.date` | Record, reward redemption | The date. |
+| `record.redeem.read` | Record, reward redemption | Reads the reward offers again. |
+| `record.redeem.send` | Record, reward redemption, one for each holder (key: data-reward-holder) | Redeems or offsets that holder's reward for review. |
+| `record.repay.amount` | Record, repayment | The amount. |
+| `record.repay.date` | Record, repayment | The date. |
+| `record.repay.loan` | Record, repayment | The open loan. |
+| `record.repay.send` | Record, repayment | Sends the repayment for review. |
+| `record.retained.cancel` | Record, retained input | Cancels the retained request on this device. |
+| `record.retained.passphrase` | Record, retained input (key: its route) | The vault passphrase that unlocks a retained ciphertext. |
+| `record.retained.retry` | Record, retained input | Sends the retained request unchanged. |
+| `record.retained.review` | Record, retained input | Starts a new request on the vault as it stands. |
+| `record.retry` | Record, when the Desk could not be read | Reads the inputs again. |
+| `record.revive.date` | Record, revive a cancelled row | The day recorded. |
+| `record.revive.row` | Record, revive a cancelled row | The cancelled row. |
+| `record.revive.send` | Record, revive a cancelled row | Sends the revival for review. |
+| `record.tier.accept-all` | Record, customer tier | Sends every proposal for review. |
+| `record.tier.band-big` | Record, customer tier | The level for the big sizes. |
+| `record.tier.band-mid` | Record, customer tier | The level for the mid sizes. |
+| `record.tier.band-small` | Record, customer tier | The level for the small sizes. |
+| `record.tier.book` | Record, customer tier | The book. |
+| `record.tier.customer` | Record, customer tier | The customer. |
+| `record.tier.level` | Record, customer tier | The held level, or clear it, or the three bands. |
+| `record.tier.send` | Record, customer tier | Sends the tier for review. |
+| `record.tier.use-offer` | Record, customer tier | Fills the level from the late-payer offer. |
+| `record.tier.use-proposal` | Record, customer tier | Fills the level from the proposal. |
+| `record.tip.for` | Record, tips | How long: seven or thirty days, or dismiss. |
+| `record.tip.send` | Record, tips | Hushes the tip. |
+| `record.tip.tip` | Record, tips | The tip to hush. |
+| `record.trade.add-book` | Record, sale or purchase | Adds another book to the same trip. |
+| `record.trade.associate` | Record, sale or purchase | The associate. |
+| `record.trade.book` | Record, sale or purchase | The book. |
+| `record.trade.cash` | Record, sale or purchase | The cash recorded, in RM. |
+| `record.trade.cover` | Record, sale or purchase | Takes the reward cover offered on this book. |
+| `record.trade.cover-retry` | Record, sale or purchase | Reads the cover again after a failed read. |
+| `record.trade.date` | Record, sale or purchase | The date. |
+| `record.trade.delivery` | Record, sale or purchase | The delivery charge, or the freight on a purchase. |
+| `record.trade.direction` | Record, sale or purchase | Sale or purchase. |
+| `record.trade.end-customer` | Record, sale or purchase | The end customer on an R2 sale, optional. |
+| `record.trade.extra-book` | Record, sale or purchase, an extra book (key: extra<n>) | The extra book. |
+| `record.trade.extra-cash` | Record, sale or purchase, an extra book (key: extra<n>) | Its cash recorded, in RM. |
+| `record.trade.extra-cover` | Record, sale or purchase, an extra book (key: extra<n>) | Takes the reward cover offered on it. |
+| `record.trade.extra-cover-retry` | Record, sale or purchase, an extra book (key: extra<n>) | Reads its cover again. |
+| `record.trade.extra-moved` | Record, sale or purchase, an extra book (key: extra<n>) | Its units moved. |
+| `record.trade.extra-total` | Record, sale or purchase, an extra book (key: extra<n>) | Its goods total, in RM. |
+| `record.trade.extra-units` | Record, sale or purchase, an extra book (key: extra<n>) | Its units. |
+| `record.trade.handover` | Record, sale or purchase | Collected or delivered. |
+| `record.trade.moved` | Record, sale or purchase | The units moved. |
+| `record.trade.party` | Record, sale or purchase | The party. |
+| `record.trade.remove-book` | Record, sale or purchase, an extra book (key: extra<n>) | Removes the extra book. |
+| `record.trade.send` | Record, sale or purchase | Sends the trade for review. |
+| `record.trade.stream` | Record, sale or purchase | No associate, R2 resell or R3 refer. |
+| `record.trade.total` | Record, sale or purchase | The goods total, in RM. |
+| `record.trade.units` | Record, sale or purchase | The units. |
+| `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the proposed row as the drafter made it. |
+| `view.back` | Bar over an account viewed as them | Takes him back to Accounts. |
+
+
 ## Before committing
 
 **Statements carry desk CODES and never a real name.** That is checked, not assumed: the

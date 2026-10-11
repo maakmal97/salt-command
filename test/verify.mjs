@@ -53692,6 +53692,11 @@ await (async () => {
   } finally { admin.window.close(); }
 })();
 
+section("Salt Account: every control carries a stable data-act");
+await (async () => {
+  await (await import("./maker-act.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
