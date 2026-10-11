@@ -199,7 +199,9 @@ Each of these stayed green, or read clean, through a real fault.
   "ahead of the clock") goes stale the day the calendar reaches it. Derive it from the clock the code under test reads (today in
   Kuala Lumpur plus n days, taken once in the section), or pin both the day and the moment the code reads to the test's own fixed
   clock (`at`, `T`, a frozen `now`). To find the rest, run the suite with the wall clock moved on in Node and in every jsdom window
-  (a `--require` file patching `Date`, never committed) and read what turns red.
+  (a `--require` file patching `Date`, never committed) and read what turns red. A mutation manifest is code that moves under it:
+  `test/mutation-needles.mjs` puts every `*.mutations.json` needle through `tools/section.mjs`'s own `mutate` in the suite, so a
+  needle that finds nothing or finds two lines fails the day it goes stale.
 - **Fixtures.** Bare `{date, customer, qty, total}` rows read as Pending under `txStat`: a completed
   fixture carries `cash: total, deliveredQty: qty`, and `pricedOrder` or the drafter's filter is
   never loosened to pass one. A fixture wider than production proves nothing: push tests used

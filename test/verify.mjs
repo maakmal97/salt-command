@@ -12225,6 +12225,11 @@ await (async () => {
     "and a mutation no check notices is named and fails the run: " + JSON.stringify(r2.out.trim().slice(0, 400)));
 })();
 
+section("12 Oct 2026: every mutation needle still finds its line, exactly once, in every manifest");
+await (async () => {
+  await (await import("./mutation-needles.mjs")).run({ ok, REPO });
+})();
+
 section("28 Sep 2026: drain --status lists what is folded or decided apart, and offers --forget only for what is still to reach the ledger");
 await (async () => {
   /* 28 Sep 2026: --status listed every entry in the device keys under the --forget advice, and a device's key keeps an
