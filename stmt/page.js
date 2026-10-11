@@ -62,6 +62,8 @@ const PAGE_CSS = `
 .gate p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.75;margin:0 0 24px}
 /* S3 3.3: the link page, in the system's card, eyebrow, plain ledger and insight; the ring is the app's mark */
 .appmark{display:block;margin:0 0 14px}
+/* the door's name, the one line over Sign in (11 Oct 2026) */
+#gate>.salt-eyebrow{margin:0 0 8px}
 .gate .salt-glass-card{margin:0 0 4px}
 .gate .salt-ledger__label{display:flex;align-items:center;gap:10px}
 .gate .salt-ledger__row:last-child{border-bottom:0}
@@ -1309,6 +1311,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + lookSheet(true)
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
+    /* 11 Oct 2026 (Phase 7d part 2, his yes): THE DOOR NAMES THE APP, in its ring and its one name, above Sign in; his own page is Salt Account and carries none */
+    + (owner ? "" : '<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + wt("p", 'class="salt-eyebrow salt-eyebrow--copper"', "door.app"))
     + wt("h1", "", "door.h")
     + wt("p", 'class="lead"', "door.lead")
     /* S3 3.7, HIS D3 OF 24 SEP 2026: ONE FIELD FOR EACH SECRET, named as a password manager reads them, so one can

@@ -11,7 +11,9 @@
  *      keeps its id; the install guide's heading is the card's own third level, not a page's first
  *   3  Sign out is a tap and a tap again on the same control: the first tap arms it, says so in its own words and sends nothing; a second
  *      inside the window signs out exactly as before (the request, the door); left alone the arm lets go by itself, and a tap after that
- *      only arms again; it is never the browser's confirm */
+ *      only arms again; it is never the browser's confirm
+ *   4  the door names the app, Salt Counter, in its ring and one eyebrow line above Sign in, and his own page carries none of it
+ *   5  the help line is a sentence, with nothing bold, brass or linked in it; the door holds no link at all */
 import { webcrypto } from "node:crypto";
 
 export async function run({ ok }) {
@@ -128,6 +130,21 @@ export async function run({ ok }) {
     back.click();
     ok(backWords === "Back to accounts" && t(back) === backWords && !back.hasAttribute("data-w") && placeBefore && !od.getElementById("oCustomers").hidden,
       "his Back to accounts is a plain tap: one tap does its work and the control never reads as armed: " + JSON.stringify({ backWords, now: t(back), customersShown: !od.getElementById("oCustomers").hidden }));
+    /* ---- 4 and 5: the door, as served */
+    const door = new JSDOM(landingPage(u, "n7d2d", null), { url: "https://site.test/" });
+    wins.push(door.window);
+    const dd = door.window.document, gate = dd.getElementById("gate"), h1 = gate.querySelector("h1"), appName = gate.querySelector('[data-w="door.app"]');
+    ok(!!appName && t(appName) === "Salt Counter" && t(appName) === W.EN["door.app"] && appName.tagName === "P" && appName.classList.contains("salt-eyebrow")
+      && before(appName, h1) && t(h1) === W.EN["door.h"] && !!gate.querySelector(".appmark svg") && before(gate.querySelector(".appmark"), appName)
+      && gate.querySelector(".appmark svg").getAttribute("aria-hidden") === "true",
+      "the door names the app, Salt Counter, in its ring and one eyebrow line above Sign in, which stays the page's one heading: " + JSON.stringify({ name: t(appName), h1: t(h1) }));
+    const ownerGate = new JSDOM(landingPage("", "n7d2e", { master: "fixture-master", accounts: [] }), { url: "https://counter.fixture.test/all" }).window.document.getElementById("gate");
+    ok(!!ownerGate && !ownerGate.querySelector('[data-w="door.app"]') && !ownerGate.querySelector(".appmark"),
+      "his own page, which is Salt Account, carries no copy of the customer's door name");
+    const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /Lost your password or your link\?/.test(x.textContent));
+    ok(!!help && help.children.length === 0 && help.innerHTML === W.fillHtml(W.EN["door.help"], {}, "en") && !/[*]/.test(W.EN["door.help"]) && !/[*]/.test(gate.textContent)
+      && gate.querySelectorAll("a, [role=link], b, strong").length === 0 && /Ask us for a new sign-in link\./.test(t(help)),
+      "the help line is a sentence: plain words with nothing bold, brass or linked in it, and the door holds no link at all: " + JSON.stringify(help && help.innerHTML));
     ok(native.length === 0, "no confirm, alert or prompt was called across the flows above: " + JSON.stringify(native));
   } finally { for (const w of wins) { try { w.close(); } catch (e) { /* jsdom */ } } }
 }

@@ -100,5 +100,47 @@
   "file": "stmt/page.js",
   "find": "if(OWNER){ logOut(); return; }",
   "replace": ""
+ },
+ {
+  "name": "The door names nothing",
+  "file": "stmt/page.js",
+  "find": "+ (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))",
+  "replace": "+ \"\""
+ },
+ {
+  "name": "The name comes after Sign in",
+  "file": "stmt/page.js",
+  "find": "+ (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))\n    + wt(\"h1\", \"\", \"door.h\")",
+  "replace": "+ wt(\"h1\", \"\", \"door.h\")\n    + (owner ? \"\" : '<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\"))"
+ },
+ {
+  "name": "The name is a heading",
+  "file": "stmt/page.js",
+  "find": "wt(\"p\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\")",
+  "replace": "wt(\"h2\", 'class=\"salt-eyebrow salt-eyebrow--copper\"', \"door.app\")"
+ },
+ {
+  "name": "The door names the desk instead",
+  "file": "stmt/words.js",
+  "find": "\"door.app\": \"Salt Counter\"",
+  "replace": "\"door.app\": \"Salt Command\""
+ },
+ {
+  "name": "His own page carries the door name",
+  "file": "stmt/page.js",
+  "find": "+ (owner ? \"\" : '<span class=\"appmark\">'",
+  "replace": "+ (false ? \"\" : '<span class=\"appmark\">'"
+ },
+ {
+  "name": "The help line is bold and brass again",
+  "file": "stmt/words.js",
+  "find": "Ask us for a new sign-in link. It works straight away.\",",
+  "replace": "Ask us for a **new sign-in link**. It works straight away.\","
+ },
+ {
+  "name": "The help line is a link",
+  "file": "stmt/page.js",
+  "find": "+ wt(\"p\", 'class=\"salt-insight\"', \"door.help\")",
+  "replace": "+ '<p class=\"salt-insight\"><a href=\"/ask\">' + wd(\"door.help\") + \"</a></p>\""
  }
 ]
