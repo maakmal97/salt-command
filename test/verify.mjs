@@ -53905,6 +53905,11 @@ await (async () => {
   await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: the bar of five places is fixed to the screen's foot, nothing frames it in the screen's place, and the shell keeps its height clear");
+await (async () => {
+  await (await import("./admin-bar-foot.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
