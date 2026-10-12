@@ -1686,6 +1686,15 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   act table below and the audit are as they were. **What a form sends is the value it always sent**: no route, body, field, request id, retained send,
   timestamp or signature cache, completion hook or `entryFault` changed. A **party, a row, a loan, a field or a reminder, a list as long as the book, stays
   a select**, and so does a code in a correction.
+  **The printed sizes are a grid of tiles** (Phase 4a, `test/admin-sizes-hours.mjs`, its mutations in `test/admin-sizes-hours.mutations.json`): a size is a tile of the
+  same recipe, a checkbox in `salt-option` with its face saying the size in words, in a fieldset (`maker-sizes`, legend "Sizes to print") whose grid runs in as many
+  columns of 88px or more as the pane holds, ticked while the size is printed. Each tick keeps `record.house.size`, keyed by the size, and the body is as it was: the
+  book and the sizes left unticked as numbers (`hide`). **The weekly hours are a table** (Shop, Hours): its head names three columns, Day (the tick, its label the day's
+  name), Opens and Closes, a row for each weekday in order, each control named for its day and its column, a closed day's times shut, the columns sharing the width so
+  the head stands over them at 375px as at 1280. The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
+  `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
+  `{manual: {open, until}}` or `{clearManual: true}`. `tools/maker-forms-geometry.mjs` measures the pane, every form's tiles, the size grid and the hours table in a
+  real browser at 1280 and 375px, and proves a 20px tile red.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
@@ -2247,7 +2256,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.day-to` | Same row | The hour it closes. |
 | `hours.override-clear` | Operating hours | Clears it. |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
-| `hours.override-state` | Operating hours | Whether the override holds the shop open or closed. |
+| `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
 | `hours.save` | Operating hours | Saves the weekly hours. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
@@ -2425,7 +2434,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.gift.units` | Record, gift | The units. |
 | `record.house.book` | Record, printed board sizes | The book. |
 | `record.house.send` | Record, printed board sizes | Sends the sizes for review. |
-| `record.house.size` | Record, printed board sizes (key: the size) | Ticks a size the board prints. |
+| `record.house.size` | Record, printed board sizes (key: the size) | Ticks a size tile the board prints. |
 | `record.loan.amount` | Record, borrow or lend | The units or RM. |
 | `record.loan.book` | Record, borrow or lend | The book, for an in-kind loan. |
 | `record.loan.date` | Record, borrow or lend | The date. |

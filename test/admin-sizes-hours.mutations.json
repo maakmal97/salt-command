@@ -1,0 +1,182 @@
+[
+ {
+  "name": "the sizes have no legend",
+  "file": "stmt/owner.js",
+  "find": "houseBoxes.appendChild(el('legend','salt-options__legend lbl','Sizes to print')); houseBoxes.appendChild(houseGrid);",
+  "replace": "houseBoxes.appendChild(houseGrid);"
+ },
+ {
+  "name": "a size is not in the recipe's label",
+  "file": "stmt/owner.js",
+  "find": "var tile=el('label','salt-option'), tick=actOn(",
+  "replace": "var tile=el('div','salt-option'), tick=actOn("
+ },
+ {
+  "name": "a size tile has no face",
+  "file": "stmt/owner.js",
+  "find": "face=el('span','salt-option__face'); tick.type='checkbox';",
+  "replace": "face=el('span','salt-option__plain'); tick.type='checkbox';"
+ },
+ {
+  "name": "a size is a radio",
+  "file": "stmt/owner.js",
+  "find": "tick.type='checkbox';\n            tick.checked=board.hidden.every(",
+  "replace": "tick.type='radio';\n            tick.checked=board.hidden.every("
+ },
+ {
+  "name": "a hidden size shows ticked",
+  "file": "stmt/owner.js",
+  "find": "tick.checked=board.hidden.every(function(h){ return Math.abs(h-size)>=0.009; });",
+  "replace": "tick.checked=true;"
+ },
+ {
+  "name": "a size says nothing of itself",
+  "file": "stmt/owner.js",
+  "find": "face.appendChild(el('span','salt-option__label',units(size)));",
+  "replace": "face.appendChild(el('span','salt-option__label',''));"
+ },
+ {
+  "name": "the ticks lose their size",
+  "file": "stmt/owner.js",
+  "find": "tick.value=String(size);\n            face.appendChild(",
+  "replace": "tick.value='1';\n            face.appendChild("
+ },
+ {
+  "name": "the other book keeps the first book's sizes",
+  "file": "stmt/owner.js",
+  "find": "houseProduct.addEventListener('change',fillHouse); fillHouse();",
+  "replace": "fillHouse();"
+ },
+ {
+  "name": "the sizes sent are the ticked ones",
+  "file": "stmt/owner.js",
+  "find": "hide:houseTicks.filter(function(t){ return !t.checked; })",
+  "replace": "hide:houseTicks.filter(function(t){ return t.checked; })"
+ },
+ {
+  "name": "a size has no act",
+  "file": "stmt/owner.js",
+  "find": "actOn(el('input','salt-option__input'),'record.house.size',size)",
+  "replace": "el('input','salt-option__input')"
+ },
+ {
+  "name": "the sizes run in one column",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-sizes .salt-options__grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}",
+  "replace": ".adm .maker-sizes .salt-options__grid{grid-template-columns:minmax(0,1fr)}"
+ },
+ {
+  "name": "the sizes do not take the row of their form",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-sizes{flex:1 1 100%;min-width:0}",
+  "replace": ".adm .maker-sizes{min-width:0}"
+ },
+ {
+  "name": "the table has no head",
+  "file": "stmt/owner.js",
+  "find": "schedule.appendChild(el('thead')).appendChild(head); schedule.appendChild(weekdays);",
+  "replace": "schedule.appendChild(weekdays);"
+ },
+ {
+  "name": "the opening column is named another way",
+  "file": "stmt/owner.js",
+  "find": "['Day','Opens','Closes']",
+  "replace": "['Day','From','Closes']"
+ },
+ {
+  "name": "a head cell is not a column head",
+  "file": "stmt/owner.js",
+  "find": "th.setAttribute('scope','col'); head.appendChild(th);",
+  "replace": "head.appendChild(th);"
+ },
+ {
+  "name": "a day's name is not its tick's label",
+  "file": "stmt/owner.js",
+  "find": "pick=el('label','maker-day-pick')",
+  "replace": "pick=el('div','maker-day-pick')"
+ },
+ {
+  "name": "the closing time comes before the opening time",
+  "file": "stmt/owner.js",
+  "find": "row.appendChild(el('td')).appendChild(open); row.appendChild(el('td')).appendChild(close); row._hours",
+  "replace": "row.appendChild(el('td')).appendChild(close); row.appendChild(el('td')).appendChild(open); row._hours"
+ },
+ {
+  "name": "the opening time is not named for its day",
+  "file": "stmt/owner.js",
+  "find": "open.setAttribute('aria-label',name+' opens');",
+  "replace": ""
+ },
+ {
+  "name": "the closing time is not named for its day",
+  "file": "stmt/owner.js",
+  "find": "close.setAttribute('aria-label',name+' closes');",
+  "replace": ""
+ },
+ {
+  "name": "a closed day's opening time stays open",
+  "file": "stmt/owner.js",
+  "find": "open.disabled=!enabled.checked; open.setAttribute",
+  "replace": "open.disabled=false; open.setAttribute"
+ },
+ {
+  "name": "the weekly hours are sent from the other end of the week",
+  "file": "stmt/owner.js",
+  "find": "result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null);",
+  "replace": "result.days.unshift(d.enabled.checked?{open:d.open.value,close:d.close.value}:null);"
+ },
+ {
+  "name": "Closed and Open send each other's value",
+  "file": "stmt/owner.js",
+  "find": "[{value:'false',label:'Closed'},{value:'true',label:'Open'}]",
+  "replace": "[{value:'true',label:'Closed'},{value:'false',label:'Open'}]"
+ },
+ {
+  "name": "the shop's tiles are not named",
+  "file": "stmt/owner.js",
+  "find": "['The shop, for now','hours.override-state']",
+  "replace": "['For now','hours.override-state']"
+ },
+ {
+  "name": "the shop's tiles have another act",
+  "file": "stmt/owner.js",
+  "find": "['The shop, for now','hours.override-state']",
+  "replace": "['The shop, for now','hours.override-mode']"
+ },
+ {
+  "name": "the field always says Closed until",
+  "file": "stmt/owner.js",
+  "find": "untilWord.textContent=kind.value==='true'?'Open until':'Closed until';",
+  "replace": "untilWord.textContent='Closed until';"
+ },
+ {
+  "name": "the field is not called Closed until",
+  "file": "stmt/owner.js",
+  "find": "makerField(override,['Closed until','hours.override-until']",
+  "replace": "makerField(override,['Until','hours.override-until']"
+ },
+ {
+  "name": "an open override is sent as closed",
+  "file": "stmt/owner.js",
+  "find": "{manual:{open:kind.value==='true',until:new Date(when).toISOString()}}",
+  "replace": "{manual:{open:kind.value!=='true',until:new Date(when).toISOString()}}"
+ },
+ {
+  "name": "the table does not share its width",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-hours{width:100%;table-layout:fixed;",
+  "replace": ".adm .maker-hours{width:100%;table-layout:auto;"
+ },
+ {
+  "name": "a day's tick is not 44px",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-day input[type=checkbox]{flex:none;width:44px;height:44px;margin:0}",
+  "replace": ".adm .maker-day input[type=checkbox]{flex:none;width:20px;height:20px;margin:0}"
+ },
+ {
+  "name": "a day goes back to a row of bare controls",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-hours th:first-child{width:38%}",
+  "replace": ".adm .maker-day{display:grid;grid-template-columns:44px 1fr 1fr 1fr}\n.adm .maker-hours th:first-child{width:38%}"
+ }
+]

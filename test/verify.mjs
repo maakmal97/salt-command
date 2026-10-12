@@ -53893,6 +53893,11 @@ await (async () => {
   await (await import("./admin-tiles.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: the printed sizes are a grid of tiles, and the weekly hours a table with labelled columns and a Closed until field");
+await (async () => {
+  await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });

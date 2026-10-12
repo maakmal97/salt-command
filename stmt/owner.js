@@ -2955,15 +2955,17 @@ export const OWNER_JS = `
       if(!houseBooks.length){
         houseSection.appendChild(el('p','msg','No book has sizes to choose between.'));
       }else{
-        var houseProduct=makerTilesIn(houseSection,['Book','record.house.book'],houseBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; })), houseBoxes=el('div','maker-field');
+        var houseProduct=makerTilesIn(houseSection,['Book','record.house.book'],houseBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; })), houseBoxes=el('fieldset','salt-options maker-sizes'), houseGrid=el('div','salt-options__grid');
+        /* 12 Oct 2026 (PHASE 4a): the sizes are a grid of the system's Option tiles, a size a tile, ticked while it is printed; the same ticks, acts and body as the list was */
+        houseBoxes.appendChild(el('legend','salt-options__legend lbl','Sizes to print')); houseBoxes.appendChild(houseGrid);
         houseSection.appendChild(houseBoxes);
         var houseTicks=[];
         function fillHouse(){
-          var board=catalog.houseBoards[houseProduct.value]; houseBoxes.textContent=''; houseTicks=[];
+          var board=catalog.houseBoards[houseProduct.value]; houseGrid.textContent=''; houseTicks=[];
           board.sizes.forEach(function(size){
-            var label=el('label','maker-field'), tick=actOn(el('input'),'record.house.size',size); tick.type='checkbox';
+            var tile=el('label','salt-option'), tick=actOn(el('input','salt-option__input'),'record.house.size',size), face=el('span','salt-option__face'); tick.type='checkbox';
             tick.checked=board.hidden.every(function(h){ return Math.abs(h-size)>=0.009; }); tick.value=String(size);
-            label.appendChild(tick); label.appendChild(el('span','lbl',' '+units(size))); houseBoxes.appendChild(label); houseTicks.push(tick);
+            face.appendChild(el('span','salt-option__label',units(size))); tile.appendChild(tick); tile.appendChild(face); houseGrid.appendChild(tile); houseTicks.push(tick);
           });
         }
         houseProduct.addEventListener('change',fillHouse); fillHouse();
@@ -3640,28 +3642,33 @@ export const OWNER_JS = `
       +(state.source==='default'?' · No weekly hours set.':'');
     var names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     var days=(makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days)||[];
-    var schedule=el('div','maker-hours');
+    /* 12 Oct 2026 (PHASE 4a): the week is a table whose head names its three columns, the day with its tick, when it opens and when it closes; the same ticks, times, acts and body as the rows of bare controls were */
+    var schedule=el('table','maker-hours'), head=el('tr'), weekdays=el('tbody');
+    ['Day','Opens','Closes'].forEach(function(word){ var th=el('th','lbl',word); th.setAttribute('scope','col'); head.appendChild(th); });
+    schedule.appendChild(el('thead')).appendChild(head); schedule.appendChild(weekdays);
     names.forEach(function(name,i){
-      var row=el('div','maker-day'), enabled=actOn(el('input',''),'hours.day-open',name); enabled.type='checkbox'; enabled.checked=!!days[i];
+      var row=el('tr','maker-day'), pick=el('label','maker-day-pick'), enabled=actOn(el('input',''),'hours.day-open',name); enabled.type='checkbox'; enabled.checked=!!days[i];
       enabled.setAttribute('aria-label',name+' is open');
-      row.appendChild(enabled); row.appendChild(el('span','maker-day-name',name));
-      var open=actOn(el('input','fld salt-field__input'),'hours.day-from',name); open.type='time'; open.value=days[i]?days[i].open:'09:00'; open.disabled=!enabled.checked;
-      var close=actOn(el('input','fld salt-field__input'),'hours.day-to',name); close.type='time'; close.value=days[i]?days[i].close:'17:00'; close.disabled=!enabled.checked;
+      pick.appendChild(enabled); pick.appendChild(el('span','maker-day-name',name)); row.appendChild(el('td')).appendChild(pick);
+      var open=actOn(el('input','fld salt-field__input'),'hours.day-from',name); open.type='time'; open.value=days[i]?days[i].open:'09:00'; open.disabled=!enabled.checked; open.setAttribute('aria-label',name+' opens');
+      var close=actOn(el('input','fld salt-field__input'),'hours.day-to',name); close.type='time'; close.value=days[i]?days[i].close:'17:00'; close.disabled=!enabled.checked; close.setAttribute('aria-label',name+' closes');
       enabled.addEventListener('change',function(){ open.disabled=!enabled.checked; close.disabled=!enabled.checked; });
-      row.appendChild(open); row.appendChild(close); row._hours={enabled:enabled,open:open,close:close}; schedule.appendChild(row);
+      row.appendChild(el('td')).appendChild(open); row.appendChild(el('td')).appendChild(close); row._hours={enabled:enabled,open:open,close:close}; weekdays.appendChild(row);
     });
     root.appendChild(schedule);
     makerButton(root,['Save the weekly hours','hours.save'],function(){
       var result={days:[]};
-      [].forEach.call(schedule.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
+      [].forEach.call(weekdays.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
       return refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Weekly hours saved.'; })
         .catch(function(error){ refusal(document.getElementById('makerHoursMessage'),error); });
     },true);
-    var override=el('div','maker-fields'), kind=actOn(el('select','fld salt-field__input'),'hours.override-state');
-    kind.setAttribute('aria-label','Close or open the shop for now');
-    [['false','Close the shop until'],['true','Open the shop until']].forEach(function(x){ var option=el('option','',x[1]); option.value=x[0]; kind.appendChild(option); });
-    var until=makerField(override,['Until (Kuala Lumpur time)','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
-    override.insertBefore(kind,override.firstChild); root.appendChild(override);
+    /* the shop held for now is two tiles over the field that says what the one chosen does: Closed until, or Open until; Kuala Lumpur time */
+    var override=el('div','maker-fields'), kind=makerTilesIn(override,['The shop, for now','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
+    var until=makerField(override,['Closed until','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
+    var untilWord=until.parentNode.querySelector('.lbl');
+    until.parentNode.appendChild(el('span','msg','Kuala Lumpur time'));
+    kind.addEventListener('change',function(){ untilWord.textContent=kind.value==='true'?'Open until':'Closed until'; });
+    root.appendChild(override);
     makerButton(root,['Set it','hours.override-set'],function(){
       var when=Date.parse(until.value+'+08:00');
       if(!Number.isFinite(when)){ document.getElementById('makerHoursMessage').textContent='Choose an end time.'; return; }

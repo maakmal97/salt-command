@@ -1,5 +1,5 @@
 [
- {"name": "an old word comes back in the hours", "file": "stmt/owner.js", "find": "'Close the shop until'", "replace": "'Set temporary override'"},
+ {"name": "an old word comes back in the hours", "file": "stmt/owner.js", "find": "{value:'false',label:'Closed'}", "replace": "{value:'false',label:'Set temporary override'}"},
  {"name": "an old word comes back on the weekly hours", "file": "stmt/owner.js", "find": "'Back to the weekly hours'", "replace": "'Clear temporary override'"},
  {"name": "an old section title comes back on the page", "file": "stmt/page.js", "find": "<h2 id=\"makerClaimsTitle\">Payments they say they sent</h2>", "replace": "<h2 id=\"makerClaimsTitle\">No account claims waiting.</h2>"},
  {"name": "fmtWhen prints a day as ISO", "file": "stmt/owner.js", "find": "return dmyOf({day:s.slice(8), month:s.slice(5,7), year:s.slice(0,4)}, 'en');", "replace": "return s;"},
