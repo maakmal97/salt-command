@@ -114,6 +114,54 @@
   "replace": "  .adm #unsentBar{max-width:none}\n  .adm .nlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}\n"
  },
  {
+  "name": "Shop is 600px again on a laptop",
+  "file": "stmt/page.js",
+  "find": "  .adm #oShop{max-width:760px}\n",
+  "replace": "  .adm #oShop{max-width:600px}\n"
+ },
+ {
+  "name": "the rows to approve are one column on a laptop",
+  "file": "stmt/page.js",
+  "find": "  .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}\n",
+  "replace": ""
+ },
+ {
+  "name": "the rows to approve keep a 600px section on a laptop",
+  "file": "stmt/page.js",
+  "find": "  .adm #oRecord>.abody>section:not(#makerInputs){max-width:none}\n",
+  "replace": ""
+ },
+ {
+  "name": "the thread does not stand beside the thread list on a laptop",
+  "file": "stmt/page.js",
+  "find": "  .adm .chatgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:0 20px;align-items:start}\n",
+  "replace": ""
+ },
+ {
+  "name": "the messages section is not the grid",
+  "file": "stmt/page.js",
+  "find": "<section class=\"chatgrid\" data-in=\"customers.messages\"",
+  "replace": "<section data-in=\"customers.messages\""
+ },
+ {
+  "name": "the open thread does not scroll inside itself",
+  "file": "stmt/page.js",
+  "find": "  .adm #makerChatOpen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
+  "replace": "  .adm #makerChatOpen{position:sticky;top:24px}\n"
+ },
+ {
+  "name": "a thread opens hidden",
+  "file": "stmt/owner.js",
+  "find": "var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';",
+  "replace": "var root=document.getElementById('makerChatOpen');root.hidden=true;root.textContent='';"
+ },
+ {
+  "name": "Messages opens the first thread by itself",
+  "file": "stmt/owner.js",
+  "find": "      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);",
+  "replace": "      if(!makerThreadUser&&makerThreads[0]) openMakerThread(makerThreads[0].u);\n      if(makerThreadUser) drawMakerThreadLines();\n    }catch(error){ nGot('threads', error);"
+ },
+ {
   "name": "a form beside its menu lies two up from 860px",
   "file": "stmt/page.js",
   "find": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",

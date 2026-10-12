@@ -575,7 +575,7 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:1080px){
   .gate.adm{max-width:1180px;margin-top:24px;display:flex;gap:28px;align-items:flex-start;padding-bottom:48px}
   .adm .amain{flex:1 1 auto;min-width:0}
-  .adm #oShop{max-width:600px}
+  .adm #oShop{max-width:760px}
 }
 @media (max-width:1079.98px){
   /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
@@ -651,6 +651,19 @@ body.ended>*:not(#aEnded){display:none}
 }
 @media (min-width:860px) and (max-width:1079.98px){
   .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+}
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): FROM 1080px THE PAGE USES THE LAPTOP'S WIDTH. Shop is one column of 760px (it was 600), the rows to approve lie two up (the
+   queue's fold, under them, keeps the whole width), and Messages stands the thread beside the thread list, sticky and scrolling inside itself, as Customers stands an account
+   beside its list. Nothing opens by itself: the column beside the threads is empty until a tap. */
+@media (min-width:1080px){
+  .adm #oRecord>.abody>section:not(#makerInputs){max-width:none}
+  .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+  .adm #makerDrafts>.maker-card{margin:0}
+  .adm #makerDrafts>.rnone{grid-column:1/-1}
+  .adm .chatgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:0 20px;align-items:start}
+  .adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus{grid-column:1/-1}
+  .adm #makerChatList{display:flex;flex-direction:column;gap:8px}
+  .adm #makerChatOpen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
    the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the
@@ -1389,7 +1402,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "</div>"
         + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div><p class="rnone panenone">Tap a card</p></div>'
         + "</div>"
-        + '<section data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
+        + '<section class="chatgrid" data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
         + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'
         + '<div id="makerChatList"></div><div id="makerChatOpen" hidden></div></section>'
         + '<div id="oLinks" data-in="customers.links">'

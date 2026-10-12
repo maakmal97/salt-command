@@ -125,4 +125,32 @@ export async function run({ ok, pageWork }) {
         "the sale and new customer forms mark the short fields, a number, a date or a time, and no text or select field: " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
     } catch (e) { ok(false, "the form stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
+
+  /* 6. FROM 1080px, THE LAPTOP: Shop is one column of 760px, the rows to approve lie two up, and Messages stands the thread beside the thread list */
+  {
+    const q = "(min-width:1080px)";
+    const shop = at(q, ".adm #oShop"), wide = at(q, ".adm #oRecord>.abody>section:not(#makerInputs)"), narrow = at("(min-width:860px)", ".adm #oRecord>.abody>section:not(#makerInputs)");
+    ok(/max-width: 760px/.test(shop) && /max-width: none/.test(wide) && /max-width: 600px/.test(narrow),
+      "from 1080px Shop is one column of 760px and the rows to approve have the width for two, and from 860px they keep their 600px column: " + [shop, wide, narrow].join(" | "));
+    const two = at(q, ".adm #makerDrafts"), card = at(q, ".adm #makerDrafts>.maker-card"), note = at(q, ".adm #makerDrafts>.rnone");
+    ok(/display: grid/.test(two) && /grid-template-columns: repeat\(2, ?minmax\(0, ?1fr\)\)/.test(two) && /margin: 0/.test(card) && /grid-column: 1 ?\/ ?-1/.test(note),
+      "and the rows to approve lie two up, a row's own margin giving way to the grid's gap and the line that says none wait across both: " + [two, card, note].join(" | "));
+    const chat = at(q, ".adm .chatgrid"), heads = at(q, ".adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus"), list = at(q, ".adm #makerChatList"), open = at(q, ".adm #makerChatOpen");
+    ok(/display: grid/.test(chat) && /grid-template-columns: minmax\(280px, ?360px\) minmax\(0, ?1fr\)/.test(chat) && /grid-column: 1 ?\/ ?-1/.test(heads) && /flex-direction: column/.test(list)
+      && /position: sticky/.test(open) && /overflow-y: auto/.test(open) && /max-height: calc[(]100vh - 48px[)]/.test(open) && !/salt-bar-h/.test(open),
+    "Messages stands the thread list, 280 to 360px, beside the thread, which is sticky and scrolls inside itself: " + [chat, heads, list, open].join(" | "));
+    const sec = d.querySelector('section[data-in="customers.messages"]');
+    ok(!!sec && sec.classList.contains("chatgrid") && [...sec.children].map((c) => c.id || c.tagName.toLowerCase()).join() === "makerChatTitle,makerChatStatus,makerChatList,makerChatOpen" && sec.querySelector("#makerChatOpen").hidden,
+      "the thread list and the thread are two columns of one section, the thread empty until a tap: " + (sec && [...sec.children].map((c) => c.id || c.tagName.toLowerCase()).join()));
+    const p = await richOwnerPage({ pageWork });
+    try {
+      await p.work.quiet();
+      const page = p.d, tap = async (act, key) => { const c = byAct(page, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
+      await tap("nav.customers"); await tap("part.customers.messages");
+      const room = page.getElementById("makerChatOpen"), before = room.hidden && room.textContent === "";
+      await tap("chat.open", "abcd-efgh");
+      ok(before && !room.hidden && room.getAttribute("data-key") === "abcd-efgh" && room.parentElement === page.querySelector('section[data-in="customers.messages"]') && ![...page.querySelectorAll(".salt-sheet")].some((x) => !x.hidden && x.id !== "lookSheet"),
+        "a thread opens in its own place in the section, beside the list from 1080px and never in a Sheet, and nothing was open before the tap: " + [before, room.hidden, room.getAttribute("data-key")]);
+    } catch (e) { ok(false, "Messages stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  }
 }
