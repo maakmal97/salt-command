@@ -1,7 +1,7 @@
 [
  {"name":"Shop loses its This device part","file":"stmt/page.js","find":"[\"practice\", \"Practice\"], [\"device\", \"This device\"]]","replace":"[\"practice\", \"Practice\"]]"},
  {"name":"a part's tab loses its act","file":"stmt/page.js","find":"\" data-act=\"part.' + p + \".\" + k","replace":"\" data-act=\"nav.' + p + \".\" + k"},
- {"name":"the Look row is left out of This device","file":"stmt/page.js","find":"+ lookRow(true) + \"</section>\"","replace":"+ \"</section>\""},
+ {"name":"the Look row is left out of This device","file":"stmt/page.js","find":"+ lookRow(true) + vaultRow() + \"</section>\"","replace":"+ vaultRow() + \"</section>\""},
  {"name":"the lead says the Counter keeps its own","file":"stmt/page.js","find":"Kept on this device; the Desk keeps its own.</p>","replace":"It is kept here only; the Desk and the Counter keep their own.</p>"},
  {"name":"the Look section shows under Hours","file":"stmt/page.js","find":"<section id=\"oLook\" data-in=\"shop.device\"","replace":"<section id=\"oLook\" data-in=\"shop.hours\""},
  {"name":"the Look section shows in every part of Shop","file":"stmt/page.js","find":"<section id=\"oLook\" data-in=\"shop.device\" aria-labelledby","replace":"<section id=\"oLook\" aria-labelledby"},
@@ -10,7 +10,7 @@
  {"name":"the pair is not a group","file":"stmt/page.js","find":"<span class=\"salt-ledger__value lookset\" role=\"group\" aria-labelledby=\"lookH\">","replace":"<span class=\"salt-ledger__value lookset\" aria-labelledby=\"lookH\">"},
  {"name":"the Sheet's tiles have no acts","file":"stmt/page.js","find":"data-look=\"' + k + '\"' + act(\"look.sheet-\" + k) + \">\"","replace":"data-look=\"' + k + '\"' + \">\""},
  {"name":"Close has no act","file":"stmt/page.js","find":"id=\"lookX\"' + act(\"look.sheet-close\") + wl(\"x.close\")","replace":"id=\"lookX\"' + wl(\"x.close\")"},
- {"name":"Salt Account carries no Sheet","file":"stmt/page.js","find":"        + lookSheet(true)\n","replace":""},
+ {"name":"Salt Account carries no Sheet","file":"stmt/page.js","find":"        + lookSheet(true) + vaultSheet()\n","replace":"        + vaultSheet()\n"},
  {"name":"his Sheet speaks in the customer's words","file":"stmt/page.js","find":"+ (owner ? '<p class=\"look-note\">You can change this later under Shop, in This device.</p>' : wt(","replace":"+ (false ? '<p class=\"look-note\">You can change this later under Shop, in This device.</p>' : wt("},
  {"name":"the customer's Sheet speaks in his words","file":"stmt/page.js","find":"+ (owner ? '<p class=\"look-note\">You can change this later under Shop, in This device.</p>' : wt(","replace":"+ (true ? '<p class=\"look-note\">You can change this later under Shop, in This device.</p>' : wt("},
  {"name":"the customer's row carries his acts","file":"stmt/page.js","find":"const act = (a) => (owner ? ' data-act=\"' + a + '\"' : \"\");\n  return '<div id=\"lookRow\"","replace":"const act = (a) => (true ? ' data-act=\"' + a + '\"' : \"\");\n  return '<div id=\"lookRow\""},

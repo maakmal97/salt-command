@@ -18,13 +18,18 @@ export async function slipFixture() {
   if (slipFix) return slipFix;
   const keys = await webcrypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
   const pass = "invented-local-pass", jwk = await webcrypto.subtle.exportKey("jwk", keys.privateKey);
-  const salt = webcrypto.getRandomValues(new Uint8Array(16)), iv = webcrypto.getRandomValues(new Uint8Array(12));
   const base = await webcrypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
-  const aes = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
-  const ct = await webcrypto.subtle.encrypt({ name: "AES-GCM", iv }, aes, new TextEncoder().encode(JSON.stringify(jwk)));
   const b64 = (v) => Buffer.from(v).toString("base64");
+  const seal = async (value) => {
+    const salt = webcrypto.getRandomValues(new Uint8Array(16)), iv = webcrypto.getRandomValues(new Uint8Array(12));
+    const aes = await webcrypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+    const ct = await webcrypto.subtle.encrypt({ name: "AES-GCM", iv }, aes, new TextEncoder().encode(JSON.stringify(value)));
+    return { v: 1, salt: b64(salt), iv: b64(iv), ct: b64(ct) };
+  };
   const sealed = await slipSeal(await webcrypto.subtle.exportKey("jwk", keys.publicKey), new Uint8Array([255, 216, 255, 217]));
-  return (slipFix = { pass, envelope: { v: 1, salt: b64(salt), iv: b64(iv), ct: b64(ct) }, sealed });
+  /* the vault's other two envelopes, under the same password: an invented name and an invented place for the first customer's code (CX1-ZED) and nothing for the others */
+  const nameOf = { "CX1-ZED": "Invented Person (Pudu)" }, placeOf = { "CX1-ZED": { addr: "Invented Lane", lat: 3.1, lng: 101.7, src: "waze" }, _base: { addr: "Invented base", lat: 3.1, lng: 101.6 } };
+  return (slipFix = { pass, envelope: await seal(jwk), sealed, names: await seal(nameOf), places: await seal(placeOf), nameOf, placeOf });
 }
 
 /* what a card, or an item of a list, is told apart by */
@@ -53,6 +58,17 @@ export function tile(root, label, value) {
   const g = tileGroup(root, label), r = g && [...g.querySelectorAll("input")].find((x) => x.value === String(value));
   if (r) r.click();
   return !!r;
+}
+
+/* THE ONE UNLOCK (Phase 4b, 12 Oct 2026, his decision 3 of 11 Oct): one Sheet with one password field opens names, places and the slip key for the whole page. The Unlock in Shop > This device
+   (vault.unlock, which is in the page whichever place shows) opens it, the password is typed into vault.passphrase and vault.open sends it. unlockPage does that and says whether the page settled;
+   a form that used to take its own password field is now driven by calling this once, before it. */
+export async function unlockPage(win, work, pass) {
+  const doc = win.document;
+  byAct(doc, "vault.unlock").click();
+  byAct(doc, "vault.passphrase").value = pass;
+  byAct(doc, "vault.open").click();
+  return work.quiet();
 }
 
 /* A YES OR NO ON SALT ACCOUNT IS A SHEET (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct), never a native confirm. A section that once stubbed window.confirm to say yes or no to whatever the page asked has each
@@ -87,9 +103,9 @@ export function cardOf(doc, id) {
 
 /* ---- the audit ---- */
 export const CONTROLS = 'button, input:not([type="hidden"]), select, textarea, summary, a[href], [role="button"], [role="tab"]';
-/* his page: the roster shell, the ended screen, the one control of his in a customer's view, the sheet that shows a code, the look Sheet, and the
-   yes or no Sheet an order card asks on */
-export const OWNER_ROOTS = "#roster, #aEnded, #lock, .salt-sheet.ho, #lookSheet, #ynSheet";
+/* his page: the roster shell, the ended screen, the one control of his in a customer's view, the sheet that shows a code, the look Sheet, the
+   yes or no Sheet an order card asks on, and the Sheet of the one unlock */
+export const OWNER_ROOTS = "#roster, #aEnded, #lock, .salt-sheet.ho, #lookSheet, #ynSheet, #vaultSheet";
 const CARDS = ".maker-card, .maker-input, .maker-extra-trade, .maker-reward, .maker-offer, .oacct, [data-need], .glink, .salt-sheet, nav, #afil";
 const PANELS = "#mHome, #oOrders, #oCustomers, #oRecord, #oShop, #oAccts, #oLinks, #oCards, #aEnded, #lock";
 const where = (c) => {
@@ -170,9 +186,9 @@ const links = () => [
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
    sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, and inputsAnswer what Record's forms are told (the books, the customers, the rows, the tips), as the others change theirs. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null }) {
-  const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {};
-  /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls */
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false }) {
+  const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {}, wire = [];
+  /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls; noKey: true files the names and places but no slip key; retained is extra [key, value] pairs kept in localStorage; cryptoImpl is the page's crypto; p.wire is every request that left the page */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
   const hold = (route) => { let release; gates.set(route, new Promise((r) => { release = r; })); return () => release(); };
   const via = (fn) => fn || ((j) => j);
@@ -197,7 +213,9 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
     queue: [{ id: "q-1", state: "held", canWithdraw: true, fingerprint: "f1" }, { id: "q-2", state: "refused", canRetry: true, fingerprint: "f2", why: "x" }] });
     /* a claim's rows, as the Desk's preview answers them: the rows its amount would settle, and what is left over */
     if (/^\/all\/maker\/claims\/[^/]+\/[^/]+\/preview$/.test(route)) return via(claimPreview)({ ok: true, hash: "c".repeat(64), rows: [{ date: "2026-10-08", rm: 50, owed: 60, rid: "s-fixture-1" }], left: 0, booked: false });
-    if (fix && route === "/all/maker/vault/key") return { ok: true, vault: fix.envelope };
+    if (fix && route === "/all/maker/vault/key") return { ok: true, vault: noKey ? null : fix.envelope };
+    if (fix && route === "/all/maker/vault") return { ok: true, vault: fix.names };
+    if (fix && route === "/all/maker/vault/addr") return { ok: true, vault: fix.places };
     if (fix && route.startsWith("/all/maker/slips/")) return { ok: true, slip: fix.sealed };
     if (route.endsWith("/preview")) return { ok: true, hash: "a".repeat(64), offerHash: "b".repeat(64), quote: 200, delivery: 10, card: 200,
       floor: 150, margin: { rm: 50, pct: 25 }, cost: { total: 150 }, usual: { rate: 100 }, flags: [], row: { qty: 2, total: 200 } };
@@ -218,7 +236,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
   const dom = new JSDOM(probe ? html.replace("  function fmtWhen(v){", "  window.__owner=function(s){return eval(s);};\n  function fmtWhen(v){") : html, {
     url: "https://counter.fixture.test/all" + hash, runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(w) {
-      Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true });
+      Object.defineProperty(w, "crypto", { value: cryptoImpl, configurable: true });
       w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder; w.scrollTo = () => {}; w.confirm = () => true;
       w.URL.createObjectURL = () => { const u = "blob:fixture-" + (urls.made.length + 1); urls.made.push(u); return u; };
       w.URL.revokeObjectURL = (u) => { urls.revoked.push(u); };
@@ -230,8 +248,11 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       w.localStorage.setItem("saltMakerPending:/all/maker/inputs/loan", JSON.stringify({ path: "/all/maker/inputs/loan",
         body: { at: ISO, form: "cash", direction: "in", code: "CX1-ZED", date: "2026-10-01", amount: 5 } }));
       w.localStorage.setItem("saltQuickReplies", JSON.stringify(["On my way", "Thank you"]));
+      retained.forEach(([k, v]) => w.localStorage.setItem(k, v));
       w.fetch = async (path, init) => {
         const route = String(path);
+        /* everything that leaves the page: the address, the method, the headers and the body, as a test reads them back */
+        wire.push(String(path) + " " + ((init && init.method) || "GET") + " " + JSON.stringify((init && init.headers) || {}) + " " + ((init && init.body) || ""));
         if (init && init.method === "POST") posts.push({ route, body: init.body ? JSON.parse(init.body) : null });
         if (failCash && route.endsWith("/cash")) throw new Error("fixture: the answer was lost");
         if (failInputs && route === "/all/maker/inputs") throw new Error("fixture: the Desk could not be reached");
@@ -250,7 +271,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
   const snaps = [], snap = (name) => { snaps.push([name, actAudit(d)]); };
   const click = async (control) => { control.click(); await work.quiet(); };
   const type = (control, value) => { control.value = value; control.dispatchEvent(new w.Event("input", { bubbles: true })); control.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  return { dom, w, d, work, posts, timers, intervals, hold, fail, refuse, reads, card, snaps, snap, click, type, urls, slipPass: fix && fix.pass, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
+  return { dom, w, d, work, posts, wire, timers, intervals, hold, fail, refuse, reads, card, snaps, snap, click, type, urls, slipPass: fix && fix.pass, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
 }
 
 /* every stage, every card and every form drawn once: the page a person would have in front of them on the busiest day */
@@ -290,7 +311,16 @@ export async function drawEverything(p) {
   const c1 = "abcd-efgh:c-1", c2 = "abcd-efgh:c-2";
   p.snap("the account claims, a row each");
   await click(byAct(d, "claim.open", c1)); p.snap("a claim opened, its slip sealed");
-  type(byAct(d, "claim.passphrase", c1), p.slipPass); await click(byAct(d, "claim.view-slip", c1)); p.snap("a claim opened, its slip drawn");
+  /* the one unlock (Phase 4b): the Sheet opened from the card's Unlock, then the password sent; a slip that could not be read offers to be opened again; Lock seals it */
+  await click(byAct(d, "vault.unlock", c1)); p.snap("the one unlock, asking for the password");
+  type(byAct(d, "vault.passphrase"), "not-the-password"); await click(byAct(d, "vault.open")); p.snap("the one unlock, refused");
+  type(byAct(d, "vault.passphrase"), p.slipPass); await click(byAct(d, "vault.open")); p.snap("a claim opened, its slip drawn");
+  await click(byAct(d, "claim.open", c1));
+  p.fail.add("/all/maker/slips/abcd-efgh/s-1");
+  await click(byAct(d, "claim.open", c1)); p.snap("a slip that could not be read, offering to open it again");
+  p.fail.delete("/all/maker/slips/abcd-efgh/s-1");
+  await click(byAct(d, "claim.view-slip", c1));
+  await click(byAct(d, "vault.lock", c1)); p.snap("a claim opened, its slip locked again");
   await click(byAct(d, "claim.received", c1)); p.snap("a claim's Received, asking on the sheet"); await click(byAct(d, "claim.ask-keep"));
   await click(byAct(d, "claim.not-found", c1)); p.snap("a claim's Not found, asking on the sheet"); await click(byAct(d, "claim.ask-keep"));
   p.fail.add("/all/maker/claims/abcd-efgh/c-2/preview");

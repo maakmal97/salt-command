@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { webcrypto } from "node:crypto";
 import { vaultDecrypt } from "../tools/seed-vault.mjs";
-import { answerSheets } from "./maker-act.mjs";
+import { answerSheets, unlockPage } from "./maker-act.mjs";
 
 export async function run({ ok, html, record, transport, pageWork }) {
   const saved=JSON.stringify(record),calls=[];
@@ -35,11 +35,13 @@ export async function run({ ok, html, record, transport, pageWork }) {
     retry.click();await work.quiet();
     ok(calls.length===0&&dom.window.localStorage.getItem("saltMakerPending:"+record.path)===saved,
       "Counter reload refuses a locked retry and retains its exact ciphertext and timestamp");
-    recovery.querySelector('input[type="password"]').value="wrong-pass";
+    /* the one unlock (Phase 4b) replaces the unsent entry's own field: a password that opens nothing leaves the page locked, so the entry is neither sent nor cleared */
+    await unlockPage(dom.window,work,"wrong-pass");
     retry.click();await work.quiet();
-    ok(calls.length===0&&dom.window.localStorage.getItem("saltMakerPending:"+record.path)===saved,
-      "Counter reload proves the passphrase opens retained ciphertext before sending; a wrong passphrase neither sends nor clears it");
-    recovery.querySelector('input[type="password"]').value="name-pass";
+    ok(calls.length===0&&dom.window.localStorage.getItem("saltMakerPending:"+record.path)===saved
+      &&/Locked/.test(recovery.textContent)&&/did not open/.test(doc.getElementById("vaultSay").textContent),
+      "Counter reload proves the password opens the vault before sending; a wrong password leaves the page locked and neither sends nor clears the entry");
+    await unlockPage(dom.window,work,"name-pass");
     retry.click();await work.quiet();
     ok(calls.length===1&&JSON.stringify(calls[0])===JSON.stringify(record.body)
       &&!dom.window.localStorage.getItem("saltMakerPending:"+record.path),
@@ -50,10 +52,10 @@ export async function run({ ok, html, record, transport, pageWork }) {
       .find(section=>section.querySelector("h3")?.textContent==="Unsent entry");
     if(!reviewed){ok(false,"reloaded Counter exposes conflict review for its retained encrypted intent");return;}
     const review=[...reviewed.querySelectorAll("button")].find(button=>button.textContent==="Update and send");
-    reviewed.querySelector('input[type="password"]').value="name-pass";review.click();await work.quiet();
+    await unlockPage(dom.window,work,"name-pass");review.click();await work.quiet();
     ok(calls.length===1&&dom.window.localStorage.getItem("saltMakerPending:"+record.path)===saved,
       "reloaded Counter overlap Cancel retains its encrypted intent and submits no replacement request");
-    choice=true;reviewed.querySelector('input[type="password"]').value="name-pass";review.click();await work.quiet();
+    choice=true;review.click();await work.quiet();
     const rebased=calls[1],names=rebased?await vaultDecrypt("name-pass",rebased.pair.names):{};
     ok(calls.length===2&&rebased.at!==record.body.at&&rebased.pair.expectedRevision===11
       &&names["CZ4-PUD"]==="Zora (Pudu)"&&names["CX9-FIK"]==="Invented remote"

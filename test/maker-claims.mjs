@@ -200,7 +200,9 @@ export async function run({ ok }) {
     const rowOf = (n) => doc.querySelector('#makerClaims [data-act="claim.open"][data-key="' + u + ":" + ids[n] + '"]');
     const card = (n) => doc.querySelector('#makerClaims [data-maker-card="claim:' + u + ":" + ids[n] + '"]');
     const inCard = (act) => doc.querySelector('#makerClaims [data-act="' + act + '"]');
-    const field = () => doc.querySelector("#makerClaims input[type=password]");
+    /* the slip is sealed while the page is locked (Phase 4b): the card says Locked and offers the one Unlock, which opens the Sheet; a password typed there and sent opens it */
+    const unlockBtn = () => inCard("vault.unlock");
+    const unlockWith = (word) => { unlockBtn().click(); doc.getElementById("vaultPass").value = word; doc.getElementById("vaultGo").click(); };
     const thumb = () => inCard("claim.slip");
     const said = () => doc.querySelector("#makerClaims p.msg")?.textContent || "";
     const lock = () => { visible = false; doc.dispatchEvent(new window.Event("visibilitychange")); visible = true; };
@@ -212,19 +214,18 @@ export async function run({ ok }) {
     rowOf(0).click();
     await until(() => inCard("claim.received") && !inCard("claim.received").disabled);
     ok(!!card(0) && !card(1) && !!inCard("claim.received-booked") && !!inCard("claim.not-found") && !inCard("claim.preview")
-      && !!field() && /locked/.test(card(0).textContent) && fetched.key === 0 && fetched.slip === 0
+      && !!unlockBtn() && !doc.querySelector("#makerClaims input[type=password]") && /Locked/.test(card(0).textContent) && fetched.key === 0 && fetched.slip === 0
       && posts.filter((p) => /[/]preview$/.test(p.route)).length === 1,
-      "Opening a claim reads its rows once and offers Received and Not found with no Preview rows button; its slip says it is sealed and fetches nothing it cannot open");
-    const input = field();
-    keyWait = true; input.value = pass; inCard("claim.view-slip").click();
+      "Opening a claim reads its rows once and offers Received and Not found with no Preview rows button; its slip says Locked, offers the one Unlock and fetches nothing it cannot open");
+    keyWait = true; unlockWith(pass);
     await until(() => releaseKey);
     lock();
     releaseKey();
-    await until(() => !!field() && field() !== input);
     await settle();
-    ok(created === 0 && imports.length === 0 && !doc.querySelector("[data-maker-slip]") && field().value === "" && /locked/.test(card(0).textContent),
+    ok(created === 0 && imports.length === 0 && !doc.querySelector("[data-maker-slip]") && doc.getElementById("vaultPass").value === "" && doc.getElementById("vaultSheet").hidden
+      && !!unlockBtn() && /Locked/.test(card(0).textContent),
       "Held key-fetch completion after visibility lock cannot import/paint an old slip unlock.");
-    keyWait = false; field().value = pass; inCard("claim.view-slip").click();
+    keyWait = false; unlockWith(pass);
     await until(() => thumb());
     ok(created === 1 && !!doc.querySelector("[data-maker-slip]") && thumb().tagName === "BUTTON" && /^blob:/.test(thumb().querySelector("img").src),
       "Actual owner device opens the unchanged ECDH/HKDF sealed JPEG locally and draws it as a thumbnail that is a control.");
@@ -236,13 +237,14 @@ export async function run({ ok }) {
     thumb().click();
     ok(small && large && thumb().getAttribute("aria-expanded") === "false" && created === 1,
       "Tapping the thumbnail opens the full slip in place and the next tap shrinks it, with no second picture made: " + JSON.stringify([small, large]));
-    inCard("claim.lock-slip").click();
-    ok(revoked === 1 && !doc.querySelector("[data-maker-slip]") && !!field() && /locked/.test(card(0).textContent),
-      "Close-and-lock revokes the actual picture URL, removes its rendered image, and the card says the slip is sealed again.");
-    slipWait = true; field().value = pass; inCard("claim.view-slip").click();
+    inCard("vault.lock").click();
+    ok(revoked === 1 && !doc.querySelector("[data-maker-slip]") && !!unlockBtn() && /Locked/.test(card(0).textContent),
+      "Lock revokes the actual picture URL, removes its rendered image, and the card says Locked again.");
+    slipWait = true; unlockWith(pass);
     await until(() => releaseSlip);
     lock();
-    field().value = pass; inCard("claim.view-slip").click();
+    await settle();
+    unlockWith(pass);
     await until(() => doc.querySelectorAll("[data-maker-slip]").length === 1);
     const derivedBefore = derives;
     releaseSlip(); await settle();
@@ -263,9 +265,9 @@ export async function run({ ok }) {
     const heldAt = created;
     lock();
     releaseDecrypt(); await settle();
-    ok(created === heldAt && !doc.querySelector("[data-maker-slip]") && !!field(),
+    ok(created === heldAt && !doc.querySelector("[data-maker-slip]") && !!unlockBtn(),
       "A slip decryption held across lock cannot create or paint a picture URL: " + created);
-    field().value = pass; inCard("claim.view-slip").click();
+    unlockWith(pass);
     await until(() => thumb());
     const refusal = async (mode) => {
       slipMode = mode; const before = created;
@@ -278,10 +280,11 @@ export async function run({ ok }) {
     ok(/no longer held/.test(missing) && /cannot be read/.test(version) && /could not be opened/.test(tampered),
       "Missing or expired, wrong-version and tampered slips are refused on the device without a picture: "
       + JSON.stringify([missing, version, tampered]));
-    /* 11 Oct 2026, the five places: the unlocked slip key stays while he moves between the parts of Orders, as it did on the one Maker
-       page, the picture is let go when Waiting on you is left, and the key goes only when Orders is left (12 Oct 2026: the claim opened is
-       shut with it, and opened again it draws its slip from the key with no passphrase) */
+    /* 11 Oct 2026, the five places: the unlocked slip key stays while he moves between the parts of Orders, the picture is let go when Waiting on you is left
+       (12 Oct 2026: the claim opened is shut with it, and opened again it draws its slip from the key with no passphrase). Since Phase 4b the unlock is the
+       page's, not Orders': it stays when Orders is left too, and goes only with the lock (a page hidden, the sign-in ended, a lapse, Lock) */
     slipMode = "ok";
+    const keysAtUnlock = fetched.key;
     rowOf(0).click(); rowOf(0).click();
     await until(() => thumb());
     const unlocked = !!thumb();
@@ -290,7 +293,7 @@ export async function run({ ok }) {
     doc.querySelector('[data-act="part.orders.waiting"]').click();
     const shutOnReturn = !card(0) && !!rowOf(0);
     rowOf(0).click();
-    const keptKey = await until(() => thumb()) && !field();
+    const keptKey = await until(() => thumb()) && !unlockBtn();
     ok(unlocked && letGo && shutOnReturn && keptKey,
       "An unlocked slip key survives a move between the parts of Orders, the picture is let go and the card shut on leaving Waiting on you, and the next claim opened draws its slip with no passphrase: "
       + JSON.stringify([unlocked, letGo, shutOnReturn, keptKey]));
@@ -301,10 +304,9 @@ export async function run({ ok }) {
     rowOf(0).click();
     await until(() => !!card(0));
     await settle();
-    const sealedAgain = !thumb() && !!field() && /locked/.test(card(0).textContent) && fetched.slip === slips;
-    inCard("claim.view-slip").click(); await settle();
-    ok(sealedAgain && !thumb() && /Unlock names and places first/.test(said()) && fetched.slip === slips,
-      "and it is dropped on leaving Orders: the next claim opened says its slip is sealed, fetches no ciphertext, and asks for the passphrase again: " + JSON.stringify([sealedAgain, said()]));
+    const keptAcrossPlaces = await until(() => thumb()) && !unlockBtn() && !/Locked/.test(card(0).textContent) && fetched.slip === slips + 1;
+    ok(keptAcrossPlaces && fetched.key === keysAtUnlock,
+      "and it is kept when Orders is left: the next claim opened draws its slip with no unlock asked and the key not fetched again: " + JSON.stringify([keptAcrossPlaces, fetched.key, keysAtUnlock]));
     ok(asked.length === 0, "and no native confirm was asked on the way: " + JSON.stringify(asked));
   } catch (e) { ok(false, "the page test stopped on an error: " + (e && e.message)); } finally { browser.window.close(); }
   harness.db.close();
