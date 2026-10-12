@@ -3985,10 +3985,12 @@ await (async () => {
   /* his call 2: replacement is the trailing 30-day quantity-weighted average, per book.
      The expectation is computed here from the page's own lots and TODAY, never typed, so
      the assertion holds whichever day the suite runs. */
-  /* v504: THE WINDOW IS THE LAST THREE LOTS RECEIVED, his instruction of 07 Sep 2026. */
+  /* v504: THE WINDOW IS THE LAST THREE LOTS RECEIVED, his instruction of 07 Sep 2026. RECEIVED MEANS LANDED (the page's
+     pxWindowLots, 08 Sep 2026): a lot with nothing received, in transit or at receivedQty 0, is not one of the three. Read
+     off each lot by the suite's own suiteLanded, never the page's poLive or poRecvUnits, and never the date or the clock. */
   const expRepl = (p) => {
     w.eval(`setProd(${JSON.stringify(p)});recompute();`);
-    const rows = read("pPurch(PROD).filter(x=>poLive(x)&&x.qty>0&&x.total>0&&(x.receivedOn||x.date))");
+    const rows = read("pPurch(PROD)").filter((x) => suiteLanded(x) > 0 && x.qty > 0 && x.total > 0 && (x.receivedOn || x.date));
     const win = rows.slice().sort((a, b) => ((a.receivedOn || a.date) < (b.receivedOn || b.date) ? -1 : 1)).slice(-3);
     const k = win.reduce((a, x) => a + x.qty, 0);
     return k > 0 ? +(win.reduce((a, x) => a + x.total, 0) / k).toFixed(2) : null;
@@ -4003,6 +4005,17 @@ await (async () => {
     const goods = top ? +(top.x.total / top.x.qty).toFixed(2) : null, cogs = top ? +((top.x.total + (+top.x.freight || 0)) / top.x.qty).toFixed(2) : null;
     ok(read("pxCost().repl") === goods && goods !== want, `${p}: and the cost stack prices off the latest lot's goods rate, ${goods}, not the trailing ${want}`);
     ok(read("replCost()") === cogs, `${p}: and replCost() is that lot's COGS, quote plus freight over its units, ${cogs}`);
+  }
+  /* A LOT IN TRANSIT MOVES NO RATE, WHATEVER THE BOOK HOLDS TODAY (12 Oct 2026: v1081 booked one and the loop above, which counted it,
+     went red). The loop only meets that case while the book carries such a lot; this lays one down, the newest and priced far from
+     the rest, and the window must not move. */
+  for (const p of ["salt", "oil"]) {
+    w.eval(`setProd(${JSON.stringify(p)});recompute();`);
+    const before = read("pxInputs().repl");
+    w.eval(`purchases.push(Object.assign({rid:'zTR1',supplier:'SZ9-TRN',date:'2099-12-31',qty:10,total:1000,cash:1000,status:'paid',receivedQty:0,inTransit:true},${p === "salt" ? "{}" : JSON.stringify({ product: p })}));recompute();`);
+    const withIt = read("pxInputs().repl"), want = expRepl(p);
+    w.eval("purchases.splice(purchases.findIndex(function(x){return x.rid==='zTR1';}),1);recompute();");
+    ok(withIt === before && want === before && before !== null, `${p}: a newer lot with nothing received leaves the window where it was, ${before} (${withIt} with it, ${want} worked from the rows)`);
   }
   /* the engine's fallback order: an absent repl falls to the lot rate, never undefined */
   {
