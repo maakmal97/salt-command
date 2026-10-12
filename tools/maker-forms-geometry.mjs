@@ -14,7 +14,7 @@ import { landingPage } from "../stmt/page.js";
 import { contentKey, wrapKey } from "./stmt-crypto.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const PW_ROOT = process.env.SALT_PW || resolve(REPO, "..", "..", "..", "salt-ds", ".ds-sync", "node_modules");
+const PW_ROOT = process.env.SALT_PW || resolve(REPO, "..", "salt-ds", ".ds-sync", "node_modules");
 const { chromium } = createRequire(join(PW_ROOT, "x.js"))("playwright");
 const adminOpen = { ok: true, byMaster: true, session: "", wrapMaster: await wrapKey("fixture-master", await contentKey("4".repeat(64), "maker-forms-geometry")) };
 const catalog = {

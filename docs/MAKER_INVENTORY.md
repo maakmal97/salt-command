@@ -76,13 +76,11 @@ items. A roster registration's association is not permission to accept a Linked 
 | Links: approve/decline/revoke/restore/level | `/all/refs` and `/all/refs/<id>/approve`, `/decline`, `/revoke`, `/restore`, `/level` | Guest-link management, distinct from customer held tiers |
 | Account access/devices/signout/handover | `/all/account/<u>`, `/all/signout`, `/all/handover`, `/all/signin/<u>` | Existing owner account operations, not a new Network trading input |
 
-`node tools/maker-drift-geometry.mjs` measures the rendered Set and Clear controls at 1280px and
-375px with center and 21px offset hit tests. Its independent 20x20 CSS mutation must fail at both
-widths; the manual probe uses Playwright and an installed browser.
-
-`node tools/maker-reward-geometry.mjs` measures holder actions, Read reward offers and both
-cover placements at 1280px and 390px: 44x44 minimum, center and 21px offset hits. The independent
-20x20 clipped CSS mutation must fail for every measured control at both widths.
+Six per-control probes (appointment, cancellation, drift, queue, registration, reward) were retired on
+12 Oct 2026, his word, after the redesign rebuilt their screens. Salt Account's tap targets are measured
+in a real browser by `node tools/maker-forms-geometry.mjs` (Record's forms and Shop's hours, Night and
+Tide, the saved app) and by each redesign phase's whole-page probe, its numbers in the PR body
+(#151, #153, #154: 0 targets under 44px).
 
 ## Retirement gates
 
