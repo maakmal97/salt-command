@@ -781,16 +781,16 @@ body.ended>*:not(#aEnded){display:none}
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px; on Salt Account
    a sheet is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px (a landscape iPad). Only placement is written here (position, inset, width,
    how it arrives), and the colour, type, corners and surface stay the system's (the dialog keeps the bottom sheet's rounded top and square foot). The sheets of this page carry .adm beside
-   .salt-sheet (its Sheets are appended to the body, outside #roster), and the customer's carry none. CANDIDATE FOR salt-ds: a dialog variant between 768 and 859px and
+   .asheet (its Sheets are appended to the body, outside #roster), and the customer's carry neither. CANDIDATE FOR salt-ds: a dialog variant between 768 and 859px and
    the drawer's breakpoint at 860px, which would take this whole block out of the page. */
 @media (min-width:768px) and (max-width:859.98px){
-  .adm.salt-sheet{top:50%;right:auto;bottom:auto;left:50%;width:min(560px,calc(100% - 32px));max-height:calc(100% - 64px);transform:translate(-50%,-50%);animation-name:salt-sheet-fade}
-  .adm.salt-sheet .salt-sheet__grab{display:none}
+  .adm.asheet{top:50%;right:auto;bottom:auto;left:50%;width:min(560px,calc(100% - 32px));max-height:calc(100% - 64px);transform:translate(-50%,-50%);animation-name:salt-sheet-fade}
+  .adm.asheet .salt-sheet__grab{display:none}
 }
 @media (min-width:860px) and (max-width:1079.98px){
-  .adm.salt-sheet{top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}
-  .adm.salt-sheet .salt-sheet__grab{display:none}
-  .adm.salt-sheet .salt-sheet__head{padding-top:var(--salt-space-5)}
+  .adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}
+  .adm.asheet .salt-sheet__grab{display:none}
+  .adm.asheet .salt-sheet__head{padding-top:var(--salt-space-5)}
 }
 `;
 
@@ -1021,7 +1021,7 @@ function vaultRow() {
 }
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="vaultSheet" class="salt-sheet adm vaultsheet" role="dialog" aria-modal="true" aria-labelledby="vaultT" tabindex="-1" hidden>'
+    + '<div id="vaultSheet" class="salt-sheet adm asheet vaultsheet" role="dialog" aria-modal="true" aria-labelledby="vaultT" tabindex="-1" hidden>'
     + '<div class="salt-sheet__grab"></div>'
     + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="vaultT">Unlock names and places</h2>'
     + '<button type="button" class="salt-orb salt-sheet__close" id="vaultX" data-act="vault.close"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
@@ -1040,7 +1040,7 @@ function lookSheet(owner) {
     + '<span class="look-swatch look-swatch--' + k + '" aria-hidden="true"></span><span class="salt-option__text">'
     + wt("span", 'class="salt-option__label"', "look." + k) + "</span></button></div>";
   return '<div id="lookScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="lookSheet" class="salt-sheet' + (owner ? " adm" : "") + '" role="dialog" aria-modal="true" aria-labelledby="lookT" tabindex="-1" hidden>'
+    + '<div id="lookSheet" class="salt-sheet' + (owner ? " adm asheet" : "") + '" role="dialog" aria-modal="true" aria-labelledby="lookT" tabindex="-1" hidden>'
     + '<div class="salt-sheet__grab"></div>'
     + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="lookT"', "look.sheetH")
     + '<button type="button" class="salt-orb salt-sheet__close" id="lookX"' + act("look.sheet-close") + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
@@ -3396,6 +3396,8 @@ const CLIENT_JS = `
      data-yn if a redraw replaced it); Tab stays inside. A lapse or a log out takes it down (ynShut, in lapsed and lock), so it is
      never left over the door. Built from the page's own nodes at the root of the body, last, so it lies over the order sheet. */
   var yn=null;
+  /* the owner script, where it is spliced in, sets this to mark each Sheet this opens as its own page's (stmt/owner.js); the customer's page leaves it null */
+  var sheetOwn=null;
   /* the controls of the sheet in the order Tab visits them: its buttons, and a field or a tile (a group of tiles is one stop, the one picked or the first) */
   function ynTabs(box){
     return [].filter.call(box.querySelectorAll('button,input,select,textarea'),function(x){
@@ -3435,7 +3437,7 @@ const CLIENT_JS = `
     ynShut(true);
     var wrap=el('div'); wrap.id='ynWrap';
     var scrim=el('div','salt-sheet-scrim'); scrim.id='ynScrim'; scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',function(){ ynShut(); });
-    var box=el('div','salt-sheet ynsheet'+(OWNER?' adm':'')); box.id='ynSheet'; box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+    var box=el('div','salt-sheet ynsheet'); box.id='ynSheet'; if(sheetOwn) sheetOwn(box); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
     box.setAttribute('aria-labelledby','ynT'); box.tabIndex=-1;
     var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
     var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');

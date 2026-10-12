@@ -44,7 +44,7 @@
  {
   "name": "the tablet dialog is a rule for every Sheet, the customer's too",
   "file": "stmt/page.js",
-  "find": "  .adm.salt-sheet{top:50%;right:auto;",
+  "find": "  .adm.asheet{top:50%;right:auto;",
   "replace": "  .salt-sheet{top:50%;right:auto;"
  },
  {
@@ -56,32 +56,32 @@
  {
   "name": "the tablet dialog paints a ground of its own",
   "file": "stmt/page.js",
-  "find": "  .adm.salt-sheet{top:50%;right:auto;",
-  "replace": "  .adm.salt-sheet{background:var(--salt-obsidian);top:50%;right:auto;"
+  "find": "  .adm.asheet{top:50%;right:auto;",
+  "replace": "  .adm.asheet{background:var(--salt-obsidian);top:50%;right:auto;"
  },
  {
-  "name": "the Yes or No sheet carries no .adm",
-  "file": "stmt/page.js",
-  "find": "el('div','salt-sheet ynsheet'+(OWNER?' adm':''))",
-  "replace": "el('div','salt-sheet ynsheet')"
- },
- {
-  "name": "the sign-in code sheet carries no .adm",
+  "name": "the Yes or No sheet carries no .adm or .asheet",
   "file": "stmt/owner.js",
-  "find": "el('div','salt-sheet ho adm')",
+  "find": "  sheetOwn=function(box){ box.classList.add('adm','asheet'); };",
+  "replace": ""
+ },
+ {
+  "name": "the sign-in code sheet carries neither .adm nor .asheet",
+  "file": "stmt/owner.js",
+  "find": "el('div','salt-sheet ho adm asheet')",
   "replace": "el('div','salt-sheet ho')"
  },
  {
-  "name": "the choice sheet of Salt Account carries no .adm",
+  "name": "the choice sheet of Salt Account carries neither .adm nor .asheet",
   "file": "stmt/page.js",
-  "find": "class=\"salt-sheet' + (owner ? \" adm\" : \"\") + '\" role=\"dialog\"",
+  "find": "class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"",
   "replace": "class=\"salt-sheet\" role=\"dialog\""
  },
  {
-  "name": "the customer's choice sheet carries .adm",
+  "name": "the customer's choice sheet carries .adm and .asheet",
   "file": "stmt/page.js",
-  "find": "class=\"salt-sheet' + (owner ? \" adm\" : \"\") + '\" role=\"dialog\"",
-  "replace": "class=\"salt-sheet adm\" role=\"dialog\""
+  "find": "class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"",
+  "replace": "class=\"salt-sheet adm asheet\" role=\"dialog\""
  },
  {
   "name": "the portrait tablet's column is 600px",

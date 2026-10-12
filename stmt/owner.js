@@ -254,7 +254,7 @@ export const OWNER_JS = `
   async function showHandover(a, from){
     closeHo();
     var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true');
-    var box=el('div','salt-sheet ho adm'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+    var box=el('div','salt-sheet ho adm asheet'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
     box.setAttribute('aria-labelledby','hoT'); box.tabIndex=-1;
     box.appendChild(el('div','salt-sheet__grab'));
     var head=el('div','salt-sheet__head'), title=el('h2','salt-sheet__title','Sign in on their phone'); title.id='hoT';
@@ -2689,6 +2689,8 @@ export const OWNER_JS = `
      redrawn meanwhile still has the control to give focus back to, and the Sheet's three controls carry it as their data-key. q: title, row (a node restating what is
      asked), say (lines), extra (nodes), go, keep, plain (not a danger action). */
   function ynTag(btn,key){ if(btn&&btn.setAttribute) btn.setAttribute('data-yn',key); return btn; }
+  /* a Sheet this page opens carries .adm beside .asheet, which is how the page's CSS places it on a tablet (the Sheets stand at the body's root, outside #roster) */
+  sheetOwn=function(box){ box.classList.add('adm','asheet'); };
   function ownerAsk(opener,key,q){
     return new Promise(function(resolve){
       ynOpen({title:q.title, opener:opener, again:ynFind(key), go:q.go, keep:q.keep, yes:function(){ resolve(true); },
