@@ -19,6 +19,9 @@ import { SITE_RECIPES } from "../stmt/statement-css.js";
 
 const U1 = "abcd-efgh", U2 = "jkmn-pqrs", U3 = "tvwx-yz23", U4 = "4567-89ab", PRACTICE = "0000-0000";
 const NOW = Date.now(), ago = (h) => new Date(NOW - h * 3600000).toISOString();
+/* the page says a moment today by its time and any other by its day, in Kuala Lumpur (owner.js when()), so what an age reads depends on the hour the suite runs */
+const klDay = (iso) => new Date(Date.parse(iso) + 8 * 3600000).toISOString().slice(0, 10);
+const MADE_20H = klDay(ago(20)) === klDay(new Date(NOW).toISOString()) ? /^guest link, made \d\d:\d\d$/ : /^guest link, made \d\d \w{3} \d{4}$/;
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threads: "/all/maker/threads", hours: "/all/maker/hours", bulletin: "/all/maker/bulletin",
   sheet: "/all/sheet", links: "/all/refs", pools: "/all/maker/pools", inputs: "/all/maker/inputs" };
@@ -113,7 +116,7 @@ export async function run({ ok, pageWork }) {
     ok(msg.kind === "Message" && msg.who === "CX1-ZED" && msg.what === "Hello" && msg.age === "4 h" && lock.kind === "Locked" && /^locked out until \d\d:\d\d$/.test(lock.what) && lock.age === "5 min",
       "a message asked carries their words, a locked account the addresses refused and its age: " + JSON.stringify([msg, lock]));
     const row = p.words(p.card("d:" + ago(6))), link = p.words(p.card("l:w1"));
-    ok(row.kind === "Row" && row.who === "CX1-ZED" && row.what === "Sale, 1 unit, RM 100.00" && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(row.mark) && row.age === "6 h" && link.kind === "Link" && /^guest link, made \d\d \w{3} \d{4}$/.test(link.what) && link.age === "20 h",
+    ok(row.kind === "Row" && row.who === "CX1-ZED" && row.what === "Sale, 1 unit, RM 100.00" && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(row.mark) && row.age === "6 h" && link.kind === "Link" && MADE_20H.test(link.what) && link.age === "20 h",
       "a Desk row to approve is Soon, with its party, what and age, and so is a guest link: " + JSON.stringify([row, link]));
     ok(p.card("x:0") && p.card("q:q-2") && p.card("q:q-1") === null && p.card("x:0").getAttribute("data-sev") === "soon" && /Refused for the fixture/.test(p.card("x:0").textContent)
       && p.card("q:q-2").getAttribute("data-kind") === "rows" && p.card("a:ord-a2") && p.card("a:ord-a2").getAttribute("data-sev") === "soon",
