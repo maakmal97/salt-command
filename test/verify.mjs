@@ -21019,7 +21019,7 @@ await (async () => {
       "and its Accounts row says the same, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S9 fix UX-R3: from 1080px Needs you stands beside the account a card is about, and on a phone a card's code opens it on Accounts");
+section("S9 fix UX-R3: from 860px Needs you stands beside the account a card is about and opens nothing by itself, and on a phone a card's code opens it on Accounts");
 await (async () => {
   /* The brief's f13w: the list beside the open card. Needs you was one 600px column with nothing on a card opening
      its account, so he went to Accounts and found the code there. The width is the page's own matchMedia. */
@@ -21067,7 +21067,7 @@ await (async () => {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       if (!w.TextEncoder) w.TextEncoder = TextEncoder;
       if (!w.TextDecoder) w.TextDecoder = TextDecoder;
-      w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*1080px/.test(q) && view.wide, addListener() {}, removeListener() {} });
+      w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*860px/.test(q) && view.wide, addListener() {}, removeListener() {} });
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
       work = pageWork(w);
@@ -21075,16 +21075,22 @@ await (async () => {
     const D = win.document, pane = D.getElementById("nopen");
     const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
     const party = (key) => card(key) && card(key).querySelector('[data-act="need.open"]');
-    ok(await until(() => card("l:" + lid) && card("k:" + uL) && card("n:" + uN) && !pane.hidden),
-      "on a desk, Needs you opens with an account open beside it");
-    /* his decision 7 of 11 Oct 2026: LOOKING MAKES NO LINK. The first card about an account is drawn on load, and its story read is the
+    /* his decision 9 of 11 Oct 2026: NOTHING OPENS BY ITSELF. On a desk the cards are drawn and the pane stays empty: no account is read, no card is marked current, and
+       the column beside the list says Tap a card (a first card picked for him opened an account he had not asked for, and read its story) */
+    ok(await until(() => card("l:" + lid) && card("k:" + uL) && card("n:" + uN)) && await work.quiet()
+      && pane.hidden && pane.textContent === "" && !D.getElementById("mHome").classList.contains("open") && !D.querySelector("#nlist [aria-current]")
+      && !hits.some((x) => /^GET \/all\/account\//.test(x)) && /^Tap a card$/.test((D.querySelector("#mHome .panenone") || {}).textContent || ""),
+    "on a desk, Needs you draws its cards and opens nothing by itself: the pane is empty, no card is marked current, no account is read, and the column says Tap a card: "
+      + JSON.stringify([pane.hidden, pane.textContent, !!D.querySelector("#nlist [aria-current]"), hits.filter((x) => /account/.test(x))]));
+    /* his decision 7 of 11 Oct 2026: LOOKING MAKES NO LINK. The account a tap opens is drawn beside the list, and its story read is the
        sign that the draw ran: once the page is quiet, nothing it sent writes and no link is filed */
+    party("k:" + uL).click();
     ok(await until(() => hits.includes("GET /all/account/" + uL)) && await work.quiet()
       && hits.filter((x) => !/^GET /.test(x)).length === 0 && (await kv.list({ prefix: "ot:" })).keys.length === 0,
-      "from 1080px the account drawn beside Needs you on load sends no request that writes and files no link: " + JSON.stringify(hits.filter((x) => !/^GET /.test(x))));
+      "from 860px the account a tap draws beside Needs you sends no request that writes and files no link: " + JSON.stringify(hits.filter((x) => !/^GET /.test(x))));
     ok(D.getElementById("mHome").classList.contains("open") && /CX0-LK/.test((pane.querySelector(".scard .srow") || {}).textContent || "")
-      && card("k:" + uL).getAttribute("aria-current") === "true",
-      "the first card about an account, and that card is marked the open one: " + ((pane.querySelector(".scard .srow") || {}).textContent));
+      && card("k:" + uL).getAttribute("aria-current") === "true" && !card("n:" + uN).hasAttribute("aria-current"),
+      "the card tapped is the one opened and the only one marked current: " + ((pane.querySelector(".scard .srow") || {}).textContent));
     ok(party("k:" + uL).tagName === "BUTTON" && party("n:" + uN).tagName === "BUTTON" && party("l:" + lid).tagName === "BUTTON"
       && card("k:" + uL).hasAttribute("data-u") && card("n:" + uN).hasAttribute("data-u") && !card("l:" + lid).hasAttribute("data-u"),
     "every card carries Open as a button, and a card about an account is the one the pane beside the list is drawn from; the link card's is not");
@@ -53882,6 +53888,11 @@ await (async () => {
 section("Salt Account: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account uses the width: two panes from 860px with nothing open by itself, and every rule of it under .adm (12 Oct 2026)");
+await (async () => {
+  await (await import("./admin-tablet.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: the order card reads its preview on opening, asks on a sheet, keeps its moves at its foot, and its tick is a 44px target");

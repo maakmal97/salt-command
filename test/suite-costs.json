@@ -268,7 +268,7 @@
  "2.5: Salt Account opens in two rounds of reads: the heads at once, every account's keys in bulk, no tick rewrite, each QR encoded once": 200,
  "5.3: POST /open reads its four brakes at once, and the guest links are read in bulk, 100 keys a chunk, in the order they always came": 140,
  "S9 fix R2: an ID with no account reads the stranger's level off the sheet, on Needs you and on its Accounts row, whether or not the links have loaded": 270,
- "S9 fix UX-R3: from 1080px Needs you stands beside the account a card is about, and on a phone a card's code opens it on Accounts": 290,
+ "S9 fix UX-R3: from 860px Needs you stands beside the account a card is about and opens nothing by itself, and on a phone a card's code opens it on Accounts": 290,
  "S9 9.3: an account opens with no link made, its first tap makes one and its second shares it inside the tap, and says how they got in and on what kind of device, never an address": 560,
  "S9 9.4: an account lists its phones and computers by the kind of device, and Sign out everywhere ends every device, unused link and code and alert, and says how many": 700,
  "S9 9.9: the customer's This device card lists their devices with this one marked, signs the others out, and signs in another device by a code made as its Sheet opens": 670,

@@ -532,6 +532,15 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-day-pick{display:flex;align-items:center;gap:4px;min-height:44px}
 .adm .maker-day input[type=checkbox]{flex:none;width:44px;height:44px;margin:0}
 .adm .maker-day-name{font-size:var(--salt-text-sm);min-width:0;overflow-wrap:anywhere}
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): THE WEEKLY HOURS FIT A PHONE OF 320 TO 371px. The statement's stylesheet holds every bare table at 340px (on the statement a table sits in a box that scrolls),
+   so this one, in a column of 288px at 320, was 52px wider than its place and the page scrolled sideways. Here it takes the column's width; the day's tick stands over its name, so the day's column
+   needs the longest name's width and not the tick's and the name's together, and the two time fields keep the room their own content needs. */
+@media (max-width:371.98px){
+  .adm .maker-hours{min-width:0}
+  .adm .maker-hours th:first-child{width:28%}
+  .adm .maker-hours td input[type=time]{padding-inline:4px}
+  .adm .maker-day-pick{flex-direction:column;align-items:flex-start;gap:0}
+}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
@@ -575,21 +584,29 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:1080px){
   .gate.adm{max-width:1180px;margin-top:24px;display:flex;gap:28px;align-items:flex-start;padding-bottom:48px}
   .adm .amain{flex:1 1 auto;min-width:0}
-  .adm #mHome,.adm #oShop,.adm #oLinks,.adm #oCards{max-width:600px}
-  .adm #oAccts.open .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
-  .adm #aopen{position:sticky;top:24px}
-  .adm #aopen .aback{display:none}
-  /* S9 fix: Needs you beside the account a card is about (the plan's f13w) */
-  .adm #mHome.open{max-width:none}
-  .adm #mHome.open .nsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
-  .adm #nopen{position:sticky;top:24px}
+  .adm #oShop{max-width:760px}
 }
 @media (max-width:1079.98px){
   /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
      after the shell's own rule, or that rule would win */
   .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h)}
+}
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
+   (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself; nothing opens by itself, so until a tap the
+   column says Tap a card (.panenone, drawn only beside the list, and never beside an account that is open). Below 860px an account opened takes the list's place
+   (Customers) or is not drawn (Needs you, whose Open then goes to Customers) */
+.adm .panenone{display:none;margin:0}
+@media (max-width:859.98px){
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
   .adm #nopen{display:none}
+}
+@media (min-width:860px){
+  .adm #oLinks,.adm #oCards{max-width:600px}
+  .adm .nsplit,.adm .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
+  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+  .adm #aopen .aback{display:none}
+  .adm .panenone{display:block}
+  .adm #nopen:not([hidden])~.panenone,.adm #aopen:not([hidden])~.panenone{display:none}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
    card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
@@ -610,8 +627,19 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  .adm #nopen,.adm #aopen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   .gate.adm{max-width:none}
-  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
+  .adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
+}
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): A PORTRAIT TABLET, 768 to 859px, is the phone frame tidied. The column is 620px, centred (the shell's own auto margins), and a form's
+   short fields (a number, a date or a time, which makerField marks .maker-field--short: units, price, date, delivery, cash) lie two up, everything else in the form across both
+   columns. Needs you cards and order rows are not forms and keep one column: a card is read, not scanned. */
+@media (min-width:768px) and (max-width:859.98px){
+  .gate.adm{max-width:620px}
+  .adm #unsentBar{max-width:none}
+  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}
+  .adm .maker-input>*{grid-column:1/-1}
+  .adm .maker-input>.maker-field--short{grid-column:auto}
 }
 /* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
    #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
@@ -632,6 +660,19 @@ body.ended>*:not(#aEnded){display:none}
 }
 @media (min-width:860px) and (max-width:1079.98px){
   .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+}
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): FROM 1080px THE PAGE USES THE LAPTOP'S WIDTH. Shop is one column of 760px (it was 600), the rows to approve lie two up (the
+   queue's fold, under them, keeps the whole width), and Messages stands the thread beside the thread list, sticky and scrolling inside itself, as Customers stands an account
+   beside its list. Nothing opens by itself: the column beside the threads is empty until a tap. */
+@media (min-width:1080px){
+  .adm #oRecord>.abody>section:not(#makerInputs){max-width:none}
+  .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+  .adm #makerDrafts>.maker-card{margin:0}
+  .adm #makerDrafts>.rnone{grid-column:1/-1}
+  .adm .chatgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:0 20px;align-items:start}
+  .adm .chatgrid>h2,.adm .chatgrid>#makerChatStatus{grid-column:1/-1}
+  .adm #makerChatList{display:flex;flex-direction:column;gap:8px}
+  .adm #makerChatOpen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
    the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the
@@ -759,6 +800,20 @@ body.ended>*:not(#aEnded){display:none}
 .adm.vaultsheet .salt-sheet__body > * + *{margin-top:14px}
 .adm.vaultsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
 .adm.vaultsheet .salt-sheet__foot .btn,.adm.vaultsheet .salt-sheet__foot .salt-ghost{width:100%}
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px; on his page
+   a sheet is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px (a landscape iPad). Only placement is written here (position, inset, width,
+   how it arrives), and the colour, type, corners and surface stay the system's (the dialog keeps the bottom sheet's rounded top and square foot). The sheets of this page carry .adm beside
+   .asheet (its Sheets are appended to the body, outside #roster), and the customer's carry neither. CANDIDATE FOR salt-ds: a dialog variant between 768 and 859px and
+   the drawer's breakpoint at 860px, which would take this whole block out of the page. */
+@media (min-width:768px) and (max-width:859.98px){
+  .adm.asheet{top:50%;right:auto;bottom:auto;left:50%;width:min(560px,calc(100% - 32px));max-height:calc(100% - 64px);transform:translate(-50%,-50%);animation-name:salt-sheet-fade}
+  .adm.asheet .salt-sheet__grab{display:none}
+}
+@media (min-width:860px) and (max-width:1079.98px){
+  .adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}
+  .adm.asheet .salt-sheet__grab{display:none}
+  .adm.asheet .salt-sheet__head{padding-top:var(--salt-space-5)}
+}
 `;
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -988,7 +1043,7 @@ function vaultRow() {
 }
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="vaultSheet" class="salt-sheet adm vaultsheet" role="dialog" aria-modal="true" aria-labelledby="vaultT" tabindex="-1" hidden>'
+    + '<div id="vaultSheet" class="salt-sheet adm asheet vaultsheet" role="dialog" aria-modal="true" aria-labelledby="vaultT" tabindex="-1" hidden>'
     + '<div class="salt-sheet__grab"></div>'
     + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="vaultT">Unlock names and places</h2>'
     + '<button type="button" class="salt-orb salt-sheet__close" id="vaultX" data-act="vault.close"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
@@ -1007,7 +1062,7 @@ function lookSheet(owner) {
     + '<span class="look-swatch look-swatch--' + k + '" aria-hidden="true"></span><span class="salt-option__text">'
     + wt("span", 'class="salt-option__label"', "look." + k) + "</span></button></div>";
   return '<div id="lookScrim" class="salt-sheet-scrim" hidden></div>'
-    + '<div id="lookSheet" class="salt-sheet" role="dialog" aria-modal="true" aria-labelledby="lookT" tabindex="-1" hidden>'
+    + '<div id="lookSheet" class="salt-sheet' + (owner ? " adm asheet" : "") + '" role="dialog" aria-modal="true" aria-labelledby="lookT" tabindex="-1" hidden>'
     + '<div class="salt-sheet__grab"></div>'
     + '<div class="salt-sheet__head">' + wt("h2", 'class="salt-sheet__title" id="lookT"', "look.sheetH")
     + '<button type="button" class="salt-orb salt-sheet__close" id="lookX"' + act("look.sheet-close") + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
@@ -1315,10 +1370,10 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
           + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
-        /* S9 fix: from 1080px the list stands beside the account a card is about, as Accounts does */
+        /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
-        + '</div><div id="nopen" hidden></div></div>'
+        + '</div><div id="nopen" hidden></div><p class="rnone panenone">Tap a card</p></div>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
@@ -1339,7 +1394,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="makerPools" aria-live="polite"></div></section>'
         + "</div></div>"
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
-           filter, and a row opens the account beside the list from 1080px, in its place below it on a phone. */
+           filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Customers</h1>"
@@ -1354,9 +1409,9 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div class="afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
           '<button type="button" class="salt-ghost" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
         + "</div>"
-        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div></div>'
+        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div><p class="rnone panenone">Tap a card</p></div>'
         + "</div>"
-        + '<section data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
+        + '<section class="chatgrid" data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
         + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'
         + '<div id="makerChatList"></div><div id="makerChatOpen" hidden></div></section>'
         + '<div id="oLinks" data-in="customers.links">'
@@ -3363,6 +3418,8 @@ const CLIENT_JS = `
      data-yn if a redraw replaced it); Tab stays inside. A lapse or a log out takes it down (ynShut, in lapsed and lock), so it is
      never left over the door. Built from the page's own nodes at the root of the body, last, so it lies over the order sheet. */
   var yn=null;
+  /* the owner script, where it is spliced in, sets this to mark each Sheet this opens as its own page's (stmt/owner.js); the customer's page leaves it null */
+  var sheetOwn=null;
   /* the controls of the sheet in the order Tab visits them: its buttons, and a field or a tile (a group of tiles is one stop, the one picked or the first) */
   function ynTabs(box){
     return [].filter.call(box.querySelectorAll('button,input,select,textarea'),function(x){
@@ -3402,7 +3459,7 @@ const CLIENT_JS = `
     ynShut(true);
     var wrap=el('div'); wrap.id='ynWrap';
     var scrim=el('div','salt-sheet-scrim'); scrim.id='ynScrim'; scrim.setAttribute('aria-hidden','true'); scrim.addEventListener('click',function(){ ynShut(); });
-    var box=el('div','salt-sheet ynsheet'); box.id='ynSheet'; box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+    var box=el('div','salt-sheet ynsheet'); box.id='ynSheet'; if(sheetOwn) sheetOwn(box); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
     box.setAttribute('aria-labelledby','ynT'); box.tabIndex=-1;
     var grab=el('div','salt-sheet__grab'); grab.setAttribute('aria-hidden','true');
     var head=el('div','salt-sheet__head'), body=el('div','salt-sheet__body'), foot=el('div','salt-sheet__foot');
