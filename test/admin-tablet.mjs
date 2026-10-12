@@ -8,6 +8,9 @@
  *   1  every rule at 768px, 860px and below them is under .adm
  *   2  Needs you and Customers: the list beside the account from 860px, the account sticky and scrolling inside itself, its foot above the App bar to 1080px
  *   3  nothing opens by itself: the column beside the list says Tap a card, and is drawn only while no account is open
+ *   4  Sheets: a centred 560px dialog from 768px, the 460px drawer from 860px, placement only     5  a 620px column and short fields two up from 768px
+ *   6  from 1080px Shop is 760px, the rows to approve lie two up, Messages stands the thread beside its list
+ *   7  Shop's hours fit a phone of 320 to 371px
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
@@ -32,11 +35,11 @@ export async function run({ ok, pageWork }) {
 
   /* 1. EVERY RULE AT THE TABLET WIDTHS IS UNDER .adm */
   {
-    const fam = media.filter((m) => /(^|[^0-9.])(768|860)px|(767|859)\.98px/.test(m.q));
+    const fam = media.filter((m) => /(^|[^0-9.])(768|860)px|(767|859|371)\.98px/.test(m.q));
     const sels = fam.flatMap((m) => m.rules.map((r) => r.sel));
     const loose = sels.filter((s) => s.split(",").some((x) => !/\.adm\b/.test(x)));
-    ok(sels.length >= 26 && !loose.length,
-      "every rule at 768px, 860px and the widths below them is under .adm, which the customer's page shares this stylesheet without: " + sels.length + " rules, outside .adm: " + (loose.join(" | ") || "none"));
+    ok(sels.length >= 30 && !loose.length,
+      "every rule at 768px, 860px, 372px and the widths below them is under .adm, which the customer's page shares this stylesheet without: " + sels.length + " rules, outside .adm: " + (loose.join(" | ") || "none"));
   }
 
   /* 2. NEEDS YOU AND CUSTOMERS: A LIST AND A DETAIL FROM 860px */
@@ -152,5 +155,15 @@ export async function run({ ok, pageWork }) {
       ok(before && !room.hidden && room.getAttribute("data-key") === "abcd-efgh" && room.parentElement === page.querySelector('section[data-in="customers.messages"]') && ![...page.querySelectorAll(".salt-sheet")].some((x) => !x.hidden && x.id !== "lookSheet"),
         "a thread opens in its own place in the section, beside the list from 1080px and never in a Sheet, and nothing was open before the tap: " + [before, room.hidden, room.getAttribute("data-key")]);
     } catch (e) { ok(false, "Messages stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  }
+
+  /* 7. SHOP'S HOURS FIT A PHONE OF 320 TO 371px: the statement's stylesheet holds every bare table at 340px, and a column of a 372px phone is exactly 340px */
+  {
+    const q = "(max-width:371.98px)";
+    const floor = (STATEMENT_CSS.match(/table\s*\{[^}]*min-width:\s*(\d+)px/) || [])[1];
+    const t = at(q, ".adm .maker-hours"), day = at(q, ".adm .maker-hours th:first-child"), time = at(q, ".adm .maker-hours td input[type=time]"), pick = at(q, ".adm .maker-day-pick");
+    ok(floor === "340" && /min-width: 0/.test(t), "the table's own 340px floor from the statement's stylesheet gives way to the column below 372px, where the column is narrower than it (a 372px phone's is 340px): " + [floor, t].join(" | "));
+    ok(/width: 28%/.test(day) && /padding-inline: 4px/.test(time) && /flex-direction: column/.test(pick),
+      "and the day's column takes 28%, the tick stands over its name, and a time field gives up 4px of padding on each side: " + [day, time, pick].join(" | "));
   }
 }

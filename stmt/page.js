@@ -532,6 +532,15 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-day-pick{display:flex;align-items:center;gap:4px;min-height:44px}
 .adm .maker-day input[type=checkbox]{flex:none;width:44px;height:44px;margin:0}
 .adm .maker-day-name{font-size:var(--salt-text-sm);min-width:0;overflow-wrap:anywhere}
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): THE WEEKLY HOURS FIT A PHONE OF 320 TO 371px. The statement's stylesheet holds every bare table at 340px (on the statement a table sits in a box that scrolls),
+   so this one, in a column of 288px at 320, was 52px wider than its place and the page scrolled sideways. Here it takes the column's width; the day's tick stands over its name, so the day's column
+   needs the longest name's width and not the tick's and the name's together, and the two time fields keep the room their own content needs. */
+@media (max-width:371.98px){
+  .adm .maker-hours{min-width:0}
+  .adm .maker-hours th:first-child{width:28%}
+  .adm .maker-hours td input[type=time]{padding-inline:4px}
+  .adm .maker-day-pick{flex-direction:column;align-items:flex-start;gap:0}
+}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}

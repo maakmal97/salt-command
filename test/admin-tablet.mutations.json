@@ -166,5 +166,41 @@
   "file": "stmt/page.js",
   "find": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
   "replace": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n  .adm .maker-input{display:grid}\n"
+ },
+ {
+  "name": "the hours table keeps the statement's 340px floor on a phone",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-hours{min-width:0}",
+  "replace": ".adm .maker-hours{min-width:340px}"
+ },
+ {
+  "name": "the hours rule stops short of a 371px phone",
+  "file": "stmt/page.js",
+  "find": "@media (max-width:371.98px){",
+  "replace": "@media (max-width:339.98px){"
+ },
+ {
+  "name": "the day's column keeps 38% on a phone",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-hours th:first-child{width:28%}",
+  "replace": ".adm .maker-hours th:first-child{width:38%}"
+ },
+ {
+  "name": "the time field keeps 8px of padding on a phone",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-hours td input[type=time]{padding-inline:4px}",
+  "replace": ".adm .maker-hours td input[type=time]{padding-inline:8px}"
+ },
+ {
+  "name": "the tick stands beside the name on a phone",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-day-pick{flex-direction:column;align-items:flex-start;gap:0}",
+  "replace": ".adm .maker-day-pick{align-items:flex-start;gap:0}"
+ },
+ {
+  "name": "a phone's hours rule is not under .adm",
+  "file": "stmt/page.js",
+  "find": "  .adm .maker-hours td input[type=time]{padding-inline:4px}",
+  "replace": "  .maker-hours td input[type=time]{padding-inline:4px}"
  }
 ]
