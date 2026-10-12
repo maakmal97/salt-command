@@ -1622,13 +1622,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   and Received, on the book already, wait for the rows and open by what they say (`left` over the rows or not); Not found does not wait. A read that
   fails says why, leaves Received shut and offers Read the rows again (`claim.reread`). A poll leaves the claims alone while a card is open
   (`makerClaimOpen`), and leaving Waiting on you, or Orders, draws them again with every card shut. No route, body or request id changed.
-  **The slip is a thumbnail drawn only once the page holds the slip key** (his decision 3: one unlock, on this device, cleared on hide). With no
-  key held the card says the slip is sealed and offers the unlock (`claim.passphrase`, `claim.view-slip`), the vault passphrase opening the key as it
-  always did; **no ciphertext is fetched that the page cannot open**. With the key held, a card opened draws its slip at once, from the key, with
-  no second passphrase. The picture is a `blob:` URL on a button (`claim.slip`, the 44px token both ways) that a tap enlarges in place and the next
-  shrinks, as the Desk's View slip draws it whole. **The URL is revoked on the lock** (`claim.lock-slip`, which seals the card again), **on the page
-  hidden, and when the card closes**; a read held across any of them paints nothing (`makerSlipGeneration`). The unlocked key survives a move
-  between the parts of Orders and goes when Orders is left, as before.
+  **The slip is a thumbnail drawn only once the page holds the slip key**, which is the one unlock (Phase 4b, below). With the page locked the card says
+  the slip is sealed and offers the one Unlock (`vault.unlock`, keyed by the claim), never a password field of its own; **no ciphertext is fetched that the
+  page cannot open**. With the key held, a card opened draws its slip at once, from the key. The picture is a `blob:` URL on a button (`claim.slip`, the
+  44px token both ways) that a tap enlarges in place and the next shrinks, as the Desk's View slip draws it whole. **The URL is revoked on the lock**
+  (`vault.lock` on the card is the lock, which seals the card again), **on the page hidden, and when the card closes**; a read held across any of them paints
+  nothing (`makerSlipGeneration`). A slip that could not be opened offers Open the slip again (`claim.view-slip`). **The unlock is the page's, not Orders'**:
+  it survives a move between the parts of Orders and leaving Orders, going only with the lock; leaving Waiting on you lets the picture go and shuts the card,
+  and a card opened again draws its slip from the key at once. A vault with no slip key filed still opens the names and places, and the card says no key is filed.
   **Received and Not found ask on the page's Sheet, never a native confirm** (his decision 4), on an account's claim and on an order's own claim
   (Receive claimed, Received on the book already, Not found, each a Sheet naming who and how much). An account claim's Sheet restates the claim as
   a line (`makerClaimAskRow`), lists the rows Received would settle and says what follows; one action (`claim.ask-go`) sends the request the confirm
@@ -1637,6 +1638,34 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   with no second question, as the confirm was not asked twice; a second tap on a Sheet already closed sends nothing, since the Sheet is shut before
   the request goes. An answered claim leaves the list and its line stands in its place ("Recorded. CX4-ABC is told."). An order's claim uses
   `makerAsk`, so its Sheet restates the order, and `makerTap` and `makerMove` still carry its request id and the Desk's single flight.
+- **One unlock opens the names, the places and the slip key, every place reads it, and hiding the page locks them all** (Phase 4b, 12 Oct 2026, his decision
+  3 of 11 Oct: one unlock per page for names, places and the slip key, on the device only, cleared on hide; `test/admin-one-unlock.mjs`, its mutations in
+  `test/admin-one-unlock.mutations.json`). **One Sheet with one password field** (`#vaultSheet`; acts `vault.passphrase`, `vault.open`, `vault.cancel`,
+  `vault.close`) opens all three envelopes through the roads that already read them (`GET /all/maker/vault`, `/vault/pair` or `/vault/addr`, and
+  `/vault/key`): the names and places under the one password, then the slip key sealed under it. A wrong password opens none and leaves the page locked with
+  the field emptied. The Sheet is a dialog, closes on Escape, its close control, Not now and the scrim, sends nothing when closed or empty, clears the field
+  whenever it closes and keeps Tab inside. **Shop > This device holds the control that is always in reach** (`vault.unlock`, and `vault.lock` once open) with
+  the state beside it. **What is held, in the page's memory and nowhere else:** the password as a PBKDF2 base key imported NON-EXTRACTABLE (it derives the key
+  of any envelope from that envelope's own salt, so a newly salted seal needs no password string kept), the names and places as the vault opened them, and the
+  slip key imported non-extractable for `deriveBits`. The password is read from its field, the field cleared, and the string never kept; every key the page
+  derives is non-extractable and none is exported. **Nothing here is sent, logged or written** to localStorage, sessionStorage, IndexedDB or a cookie, and no
+  request carries the password or a plaintext name or place: the unlock only reads ciphertext, and what Add ID, Amend ID and Place on the map send is what they
+  sent (`makerVaultOpen` and `makerVaultSeal` now take the held base key where they took the password; the sealed device retries still take the master, as
+  before). What a send keeps on the device for a retry is the ciphertext and codes `makerGeo.pendingOk` allows, as before.
+  **Every place that asked for a password of its own reads the unlock** (`makerVaultGate`): Add ID, Amend ID, Place on the map, an unsent name or place (the
+  Unsent entry, which carries the gate only when its body holds an envelope) and a claim's slip. Locked, each says Locked and offers the same Unlock
+  (`vault.unlock`), never a field; open, each says names and places are open on this phone, and Place on the map adds whether a place is filed for the party
+  chosen, from the held places, never where. A send from a locked page is refused where it stands ("Unlock names and places first."), before any request and
+  with the form kept. **A name stands beside its code** wherever the page draws one for an account (`data-who`, set by `whoTag` only on a value shaped like a
+  code, and painted by `makerVaultPaint`, which a redraw reaches through an observer): the roster row, the account card, an order's row and head, a claim's row
+  and head, a chat's list and head, and a Needs card. A code the vault holds no name for shows alone, and codes are all there is once locked.
+  **The lock lets all of it go together** (`makerVaultLock`): the keys, the names and places, every slip picture (its `blob:` URL revoked, the image removed), the
+  Sheet with whatever was typed in it, and the gates, the Shop row and the card read Locked again. It fires **on the page hidden** (`visibilitychange`), **on
+  `ended()`** (Access has ended), **on a lapse** (`lapseHooks`, which `lapsed()` runs first: the customer's page holds an empty list and the owner's script adds the
+  lock, so a customer's page names nothing of his) and **on Lock** (Shop, or the slip card's own). An unlock still being read when the lock comes lands on nothing
+  (`makerVaultTurn`). The claim card's own unlock and lock (`claim.passphrase`, `claim.lock-slip`) and the password fields of Add ID, Amend ID, Place on the map
+  and the unsent entry (`record.add-id.passphrase`, `record.amend-id.passphrase`, `record.place.passphrase`, `record.retained.passphrase`) are retired from the
+  act table. No route, body or request id changed; the Desk's own vault code is untouched, and no route writes `vault-key`.
 - **The rows to approve wear the approve card, the queue folds away, and no native confirm is left** (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct;
   `test/admin-approve-queue.mjs`, its mutations in `test/admin-approve-queue.mutations.json`). **A Desk row to approve is the system's Approve recipe**
   (`salt-approve`, carried whole by `SITE_RECIPES` and restated nowhere: the page's own rules naming it only take its empty answer line away and leave it out of
@@ -1925,9 +1954,9 @@ not an approved difference; Desk inputs remain until owner acceptance.
 
 The only vault reads are the sealed name envelope (`GET /all/maker/vault`) and sealed places
 envelope (`GET /all/maker/vault/addr`), through their exact Desk read routes. Add ID and Amend ID
-derive codes and encrypt the name map on the device with the vault passphrase; the bridge receives
+derive codes and encrypt the name map on the device with the key the one unlock holds (Phase 4b); the bridge receives
 only codes, role/parent metadata and `{v,salt,iv,ct}`. Amend ID opens both envelopes with the same
-passphrase and re-keys their matching code prefixes, including descendants, preserving exact
+key and re-keys their matching code prefixes, including descendants, preserving exact
 points and `_base` only inside a newly sealed `addrVault`. Both envelopes are filed before the
 rename is queued. It does not change a filed address when locality text changes.
 Map placement decrypts the places envelope
@@ -2237,15 +2266,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `claim.ask-close` | The Sheet a claim's Received or Not found asks on (key: the username and claim id) | Closes it and sends nothing. |
 | `claim.ask-go` | Same sheet | Sends what it asked: Received, Received on the book already, or Not found. |
 | `claim.ask-keep` | Same sheet | Keeps the claim waiting and sends nothing. |
-| `claim.lock-slip` | Same card | Closes the slip and locks the key. |
 | `claim.not-found` | Same card | Asks, on the Sheet, whether to answer the claim Not found. |
 | `claim.open` | Account claims, a row for each waiting claim (key: the username and claim id) | Opens the claim's card under its row, which reads its rows; a tap on the row open closes it. |
-| `claim.passphrase` | Account claim card with a slip, while the slip key is not held (key: the username and claim id) | The vault passphrase that unlocks the slip key, cleared when read. |
 | `claim.received` | Same card | Asks, on the Sheet, whether to confirm the amount and the rows shown. |
 | `claim.received-booked` | Same card | Asks, on the Sheet, whether to confirm it when the money is on the book already. |
 | `claim.reread` | Same card, after a read of the rows that failed | Reads the rows again. |
 | `claim.slip` | Same card, once the slip is drawn | The thumbnail of the slip, which a tap enlarges in place and the next shrinks. |
-| `claim.view-slip` | Same card | Unlocks the slip key with the passphrase and opens the sealed slip on this device only; with the key held, opens it again after a failure. |
+| `claim.view-slip` | Same card, while its slip is being opened or could not be | Opens the sealed slip again with the slip key the page holds, on this device only. |
 | `code.close` | Code sheet | Closes the sheet. |
 | `code.value` | Code sheet | The eight-symbol code, read only. |
 | `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
@@ -2391,7 +2418,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.add-id.link` | Record, Add ID | A Maps or Waze link, read on this device. |
 | `record.add-id.name` | Record, Add ID | The name, which never leaves this device in the clear. |
 | `record.add-id.parent` | Record, Add ID | The parent or associate, for a downstream buyer or a resale account. |
-| `record.add-id.passphrase` | Record, Add ID | The vault passphrase, typed on this device. |
 | `record.add-id.place` | Record, Add ID | The locality, from the official list. |
 | `record.add-id.role` | Record, Add ID | Customer, supplier, reseller, referral, downstream buyer or resale account. |
 | `record.add-id.send` | Record, Add ID | Encrypts on this device and sends the ID for review. |
@@ -2399,7 +2425,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.amend-id.link` | Record, Amend ID | A Maps or Waze link, read on this device. |
 | `record.amend-id.name` | Record, Amend ID | The new name, kept on this device. |
 | `record.amend-id.party` | Record, Amend ID | The party to re-key. |
-| `record.amend-id.passphrase` | Record, Amend ID | The vault passphrase. |
 | `record.amend-id.place` | Record, Amend ID | The new locality. |
 | `record.amend-id.send` | Record, Amend ID | Encrypts on this device and sends the re-key for review. |
 | `record.amend.add-change` | Record, amend a ledger row | Adds that field change to the request. |
@@ -2447,7 +2472,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.place.link` | Record, map placement | A new Maps or Waze link. |
 | `record.place.locality` | Record, map placement | The locality. |
 | `record.place.party` | Record, map placement | The party with a filed point. |
-| `record.place.passphrase` | Record, map placement | The vault passphrase. |
 | `record.place.send` | Record, map placement | Queues the placement. |
 | `record.queue-toggle` | Record > Approve, the summary of the server-held queue, which is shut until it is tapped and carries its count | Opens or shuts the queue of entries the server holds. |
 | `record.redeem.date` | Record, reward redemption | The date. |
@@ -2458,7 +2482,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.repay.loan` | Record, repayment | The open loan. |
 | `record.repay.send` | Record, repayment | Sends the repayment for review. |
 | `record.retained.cancel` | Record, retained input | Cancels the retained request on this device. |
-| `record.retained.passphrase` | Record, retained input (key: its route) | The vault passphrase that unlocks a retained ciphertext. |
 | `record.retained.retry` | Record, retained input | Sends the retained request unchanged. |
 | `record.retained.review` | Record, retained input | Starts a new request on the vault as it stands. |
 | `record.retry` | Record, when the Desk could not be read | Reads the inputs again. |
@@ -2505,6 +2528,12 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.units` | Record, sale or purchase | The units. |
 | `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
 | `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the proposed row as the drafter made it. |
+| `vault.cancel` | The one unlock's Sheet | Closes it and sends nothing; whatever was typed is cleared. |
+| `vault.close` | Same Sheet | Closes it, as Not now does. |
+| `vault.lock` | Shop, This device, Names and places, once open; a claim card's slip, once drawn (key: the username and claim id) | Locks the one unlock: every key, name, place and slip picture is let go. |
+| `vault.open` | The one unlock's Sheet | Opens the names, the places and the slip key together on the password typed. |
+| `vault.passphrase` | Same Sheet | The password for names and places, typed on this phone and cleared when read; never kept. |
+| `vault.unlock` | Shop, This device, Names and places; Add ID, Amend ID, Place on the map and an unsent name or place while locked; a claim card's slip while locked (key: the username and claim id) | Opens the one unlock's Sheet. |
 | `view.back` | Bar over an account viewed as them | Takes him back to Accounts. |
 
 
