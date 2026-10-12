@@ -1724,6 +1724,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
   `{manual: {open, until}}` or `{clearManual: true}`. `tools/maker-forms-geometry.mjs` measures the pane, every form's tiles, the size grid and the hours table in a
   real browser at 1280 and 375px, and proves a 20px tile red.
+  **The bar of five places stands on the screen's foot** (12 Oct 2026, his iPhone report that on Record it did not; `test/admin-bar-foot.mjs`, its mutations in
+  `test/admin-bar-foot.mutations.json`): the system's `.salt-appbar` is `position: fixed` against the screen's left, right and bottom, a child of the shell
+  (`#roster`), and no rule of the page frames it, the shell, the body and the root carrying no transform, filter, perspective, containment, will-change or container.
+  What moves it is not a rule of its own: **a fixed bar is laid out against the layout viewport and drawn on the visible one, and a phone's layout viewport grows to hold
+  anything wider than the phone**, so the bar then stands off the foot (measured: a 1200px section at 375px puts it 1,822px below the screen). The weekly hours table
+  is such a thing on a phone narrower than 356px (its columns need 340px, and the page's gutter is 16px); Record's menu and its seventeen forms are not, down to 260px.
+  `tools/maker-forms-geometry.mjs` reads the bar's bottom against the visible viewport on every place, Record's four parts and each of its forms, at 375 and 768, Night and
+  Tide, with the page not scrolling sideways and the last control clear of the bar, and proves a lifted bar and a page wider than the phone red.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens

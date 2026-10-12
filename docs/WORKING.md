@@ -257,7 +257,10 @@ Each of these stayed green, or read clean, through a real fault.
 - **An entry animation** with `fill-mode:backwards` holds its from-state wherever the timeline does
   not advance (a hidden pane, capture tools): invisible and undersized, yet passing a hit test. The
   element's own style must be its resting state.
-- **Emulated phones.** Playwright's `fullPage` screenshot turns `(pointer:coarse)` off for good:
+- **Emulated phones.** A fixed bar is only measured on a phone with `isMobile` and `hasTouch`: a plain
+  viewport never grows its layout viewport for something wider than the phone, so the bar stays at the foot
+  whatever overflows (12 Oct 2026, Salt Account's bar). Read its bottom against `visualViewport.offsetTop +
+  height` as well as `innerHeight`, which grows with the layout viewport. Playwright's `fullPage` screenshot turns `(pointer:coarse)` off for good:
   grow the viewport and take a plain shot. Browser-pane phone screenshots go black once scrolled:
   measure with script. The design layer stretches selects to 100%: set `width:auto` in a flex row.
 
