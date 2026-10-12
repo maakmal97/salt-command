@@ -121,6 +121,7 @@ export const OWNER_JS = `
       b.setAttribute('aria-selected', b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow?'true':'false'); });
     sweep();
     say('');
+    unsentPaint();
     if(fresh&&PLACE_READ[placeNow]) PLACE_READ[placeNow]();
     if(PART_READ[placeNow+'.'+partNow]) PART_READ[placeNow+'.'+partNow]();
     if(o.push){ var to=addrFor(placeNow, partNow); if(location.hash!==to){ try{ history.pushState(null,'',to); }catch(e){} } }
@@ -1725,7 +1726,46 @@ export const OWNER_JS = `
         if(!makerGeo.pendingOk(record))throw new Error('This saved entry cannot be sent. Discard it.');
         localStorage.setItem('saltMakerPending:'+record.path,JSON.stringify(record));
       }
-      function makerClear(path){localStorage.removeItem('saltMakerPending:'+path);}
+      function makerClear(path){localStorage.removeItem('saltMakerPending:'+path);unsentPaint();}
+      /* ---- THE UNSENT ENTRIES (PHASE 4c, 12 Oct 2026, the plan's retained-send words) -------------------------------------------------
+         An entry that left this page and was not confirmed is kept on this phone, whole, until the Desk confirms it or he discards it (makerSave, above). He should not
+         have to open Record to learn that one waits: a banner over every place says how many and opens them, and each is a Soon card on Needs you. Both only READ the
+         phone's own storage and send nothing; Send again, Update and send and Discard stay Record's, on the entry's own section, exactly as they were. */
+      var UNSENT_WORD={'add-id':'new customer','appoint-existing':'appointment','amend-id':'change of name or place','place':'map placement','stock-count':'stock count','sale':'sale','purchase':'purchase',
+        'tier-set':'price setting','tier-accept-all':'set of price levels','house-sizes':'set of printed sizes','hush':'reminder','loan':'loan','repay':'repayment','gift':'gift','redeem':'reward','ledger-amend':'correction','offset':'offset'};
+      /* what one kept entry is, from its storage key: never a name or a place, which a kept entry holds only sealed; a record that will not read is still an entry */
+      function unsentRead(storageKey){
+        var path=storageKey.slice('saltMakerPending:'.length), body=null;
+        try{ var saved=JSON.parse(localStorage.getItem(storageKey)); body=saved&&saved.body&&typeof saved.body==='object'?saved.body:null; }catch(e){}
+        var code=body?String(body.party||body.code||body.from||''):'';
+        return {path:path, key:path.split('/').pop(), at:body?isoAt(body.at):'', who:/^[A-Z]+[0-9]+-[A-Z0-9-]+$/.test(code)?code:''};
+      }
+      /* every entry kept on this phone, the oldest first */
+      function unsentList(){
+        var list=[];
+        try{ Object.keys(localStorage).filter(function(k){ return k.indexOf('saltMakerPending:')===0; }).forEach(function(k){ list.push(unsentRead(k)); }); }catch(e){}
+        return list.sort(function(a,b){ var x=a.at||'~', y=b.at||'~'; return x<y?-1:x>y?1:(a.path<b.path?-1:1); });
+      }
+      function unsentWord(u){ return UNSENT_WORD[u.key]||'entry'; }
+      function unsentSaid(u){
+        var w=unsentWord(u);
+        return (/^[aeiou]/.test(w)?'An ':'A ')+w+' you sent'+(u.at?' on '+fmtWhen(u.at):'')+' was not confirmed.';
+      }
+      /* Open: Record, on the part the entry belongs to, where its section stands above the menu */
+      function unsentOpen(u){ showPlace('record', retainedPart(u.path), {fresh:true, push:true}); }
+      function unsentPaint(){
+        try{
+          var bar=document.getElementById('unsentBar'); if(!bar) return;
+          var list=unsentList(), n=list.length;
+          bar.textContent=''; bar.hidden=!n;
+          if(!n) return;
+          var one=n===1, c=needCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent', at:list[0].at, act:'unsent.open', who:n+' unsent '+(one?'entry':'entries'), what:'on this phone',
+            why:one?unsentSaid(list[0])+' Open it to send it again, update it or discard it.':'They were sent from this phone and not confirmed. Open them to send them again, update them or discard them.',
+            open:function(){ unsentOpen(list[0]); }});
+          c.removeAttribute('data-need'); c.removeAttribute('data-kind');
+          bar.appendChild(c);
+        }catch(e){}
+      }
       function makerRecovery(parent){
         var keys=Object.keys(localStorage).filter(function(key){return key.indexOf('saltMakerPending:')===0;});
         keys.forEach(function(key){
@@ -1733,7 +1773,7 @@ export const OWNER_JS = `
           var section=makerForm(retainedPart(path));section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');section.appendChild(el('h3',null,'Unsent entry'));
           var status=makerStatus(section);
           parent.appendChild(section);
-          try{saved=makerSaved(path);status.textContent='An entry you sent'+(saved.body&&saved.body.at?' on '+fmtWhen(saved.body.at):'')+' was not confirmed. Send it again, or update it first.';}
+          try{saved=makerSaved(path);status.textContent=unsentSaid(unsentRead(key))+' Send it again, or update it first.';}
           catch(error){refusal(status,error);}
           /* an unsent name or place opens on the one unlock before it is sent again or updated; any other entry needs none */
           if(saved&&saved.body&&(saved.body.pair||saved.body.vault||saved.body.addrVault))makerVaultGate(section);
@@ -3972,7 +4012,7 @@ export const OWNER_JS = `
     if(o.why) body.appendChild(el('p','salt-action__why',o.why));
     c.appendChild(body);
     c.appendChild(el('span','salt-action__money salt-action__money--nil',ageOf(o.at)));
-    if(o.open){ op=ghost(['Open','need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); }
+    if(o.open){ op=ghost(['Open',o.act||'need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); }
     c.appendChild(go);
     /* a card with an action of its own sets its ways on a row under the body, so a wide button never squeezes what it says */
     c._body=body; c._add=function(b){ c.classList.add('need--act'); go.insertBefore(b, op); };
@@ -4155,6 +4195,12 @@ export const OWNER_JS = `
     return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', what:'did not get through',
       why:r.why||'The Desk could not take this entry.', open:goPlace('record','approve')});
   }
+  /* an entry kept on this phone and not confirmed (Phase 4c): Soon, his own work; its Open is Record, on the entry's own section, where Send again, Update and send and Discard are */
+  function unsentNeed(u){
+    var w=unsentWord(u);
+    return item('soon','rows','Unsent','u:'+u.path, u.at, {who:u.who||'This phone', what:w.charAt(0).toUpperCase()+w.slice(1),
+      why:unsentSaid(u)+' Open it to send it again, update it or discard it.', open:function(){ unsentOpen(u); }});
+  }
   function threadNeed(t){
     var last=t.msgs[t.msgs.length-1];
     return item('now','messages','Message','m:'+t.u, last.at, {who:codeByUser(t.u), what:cut(last.text), practice:!!t.test,
@@ -4262,6 +4308,7 @@ export const OWNER_JS = `
     Object.keys(needSaid).filter(function(k){ return !rows.some(function(d){ return 'd:'+d.id===k; }); }).forEach(function(k){ L.push(decidedNeed(k, needSaid[k])); });
     (makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
+    unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
     /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
     links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); }).forEach(function(r){ L.push(linkNeed(r)); });
     real.filter(function(a){ return a.account===false; }).forEach(function(a){ L.push(bareNeed(a)); });

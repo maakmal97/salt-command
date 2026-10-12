@@ -2334,11 +2334,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.kind.messages` | The chips under Needs you's title | Shows only the messages asked. Reads nothing. |
 | `need.kind.orders` | The chips under Needs you's title | Shows only the orders. Reads nothing. |
 | `need.kind.payments` | The chips under Needs you's title | Shows only the payments they say they sent. Reads nothing. |
-| `need.kind.rows` | The chips under Needs you's title | Shows only the Desk rows and the entries that did not get through. Reads nothing. |
+| `need.kind.rows` | The chips under Needs you's title | Shows only the Desk rows, the entries that did not get through and the entries kept unsent on this phone. Reads nothing. |
 | `need.link-approve` | Same card | Approves the link, which then opens. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
-| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Shop. |
+| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
 | `need.show-link` | Needs you card for an ID with no account yet | Shows the guest price list (the stranger's standing guest link) and its QR until the account is made. |
@@ -2547,6 +2547,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.units` | Record, sale or purchase | The units. |
 | `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
 | `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the proposed row as the drafter made it. |
+| `unsent.open` | The banner over every place, while an entry waits unconfirmed on this phone | Goes to Record, on the part of the oldest such entry, where its Unsent entry section stands. |
 | `vault.cancel` | The one unlock's Sheet | Closes it and sends nothing; whatever was typed is cleared. |
 | `vault.close` | Same Sheet | Closes it, as Not now does. |
 | `vault.lock` | Shop, This device, Names and places, once open; a claim card's slip, once drawn (key: the username and claim id) | Locks the one unlock: every key, name, place and slip picture is let go. |
@@ -2581,6 +2582,19 @@ text is redrawn from state, so the next tap that clears the note clears them wit
 `mtile`), a heading is the mark with the name beside it (`bookHead`, for the associates' report card the name the answer carries), and a select, which cannot hold
 a mark, says the name alone. **The shape words (Cube, Droplet, Lozenge, Capsule) are the customer's page and are never drawn on Salt Account**, nor are the helpers
 that draw them (`pshape`, `mtile`, `pmarkHead`); the customer's page is as it was, and `test/admin-words.mjs` holds both.
+
+### Unsent entries say so, and every id and row keeps its detail behind Details (Phase 4c, 12 Oct 2026)
+
+**An entry sent from this phone and not confirmed says so on every place.** `makerButton` keeps a retained send whole in the phone's storage
+(`saltMakerPending:<route>`) until the Desk confirms it or he discards it; it used to be found only by opening Record. Now one banner (`#unsentBar`, over every
+place, the Action recipe at Soon, act `unsent.open`) says how many (*1 unsent entry*, *3 unsent entries*) and opens them, and each is a Soon card on Needs you under
+the Rows chip (key `u:<route>`, counted in the line under the title, who by code when the entry names a customer and *This phone* when it names nobody). Both
+sentences are the plan's: *A loan you sent on 10 Oct 2026, 16:00 was not confirmed. Open it to send it again, update it or discard it.*, the day in Kuala Lumpur
+time; the entry's own section in Record says the same, then *Send it again, or update it first*. **Open goes to Record, on the part the oldest entry belongs to**
+(`retainedPart`), where its Unsent entry section stands with Send again, Update and send and Discard, which are Record's alone. **Both only read the phone's
+storage and send nothing**; `makerButton`'s send, its caches and completion hooks, `vaultPendingOk` and `makerBusy` are untouched. A record that will not read is
+still one entry he can see and discard. The banner repaints when a place is shown and when an entry is cleared (`makerClear`), the cards at each draw of Needs
+you. `test/admin-unsent.mjs`.
 
 ## Before committing
 
