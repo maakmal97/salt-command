@@ -980,12 +980,16 @@ export const OWNER_JS = `
   var makerVault=null, makerVaultTurn=0, vaultBusy=false, vaultBack=null,
       vaultSheetEl=document.getElementById('vaultSheet'), vaultScrim=document.getElementById('vaultScrim'), vaultPass=document.getElementById('vaultPass'),
       vaultSay=document.getElementById('vaultSay'), vaultGo=document.getElementById('vaultGo');
+  /* PHASE 4c (Fable's note on #146): the three forms that prepare a pair of sealed maps (Add ID, Amend ID, Place on the map) each keep the last one prepared as a draft, and a
+     draft carries the places map in plain text until it is stripped. Each form lists how its draft is read and let go here, and the lock lets every one go with the keys. */
+  var pairDrafts=[];
   function makerVaultBase(){
     if(!makerVault) throw new Error('Unlock names and places first.');
     return makerVault.base;
   }
   function makerVaultLock(){
     makerVaultTurn++; makerVault=null;
+    pairDrafts.forEach(function(d){ d.clear(); });
     makerSlipClose(); vaultShut(true);
     makerVaultNotify(); if(makerSlipDraw) makerSlipDraw();
   }
@@ -1929,6 +1933,7 @@ export const OWNER_JS = `
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
   }
   async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
+    pairDrafts.length=0;
     makerGeo.configure(catalog.placed);
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
     var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
@@ -2200,6 +2205,7 @@ export const OWNER_JS = `
     });
     idKind.dispatchEvent(new Event('change'));
     var idDraft=null;
+    pairDrafts.push({draft:function(){return idDraft;},clear:function(){idDraft=null;}});
     id.addEventListener('input',function(){idDraft=null;});
     id.addEventListener('change',function(){idDraft=null;});
     makerButton(id,['Add the customer','record.add-id.send'],async function(send){
@@ -2286,6 +2292,7 @@ export const OWNER_JS = `
       amendStatus=makerStatus(amend), amendBusy=false;
     var amendLink=makerField(amend,['Maps or Waze link','record.amend-id.link'],'text','');
     var amendDraft=null;
+    pairDrafts.push({draft:function(){return amendDraft;},clear:function(){amendDraft=null;}});
     amend.addEventListener('input',function(){amendDraft=null;});
     amend.addEventListener('change',function(){amendDraft=null;});
     makerButton(amend,['Save the change','record.amend-id.send'],async function(send){
@@ -2323,6 +2330,7 @@ export const OWNER_JS = `
       }), placeStatus=makerStatus(placement), placeBusy=false;
     var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New Maps or Waze link','record.place.link'],'text','');
     var placeDraft=null;
+    pairDrafts.push({draft:function(){return placeDraft;},clear:function(){placeDraft=null;}});
     placement.addEventListener('input',function(){placeDraft=null;});
     placement.addEventListener('change',function(){placeDraft=null;});
     placeParty.addEventListener('change',function(){makerVaultDraw(placeGate);});
@@ -2354,7 +2362,8 @@ export const OWNER_JS = `
         placeStatus.textContent='Sent. The exact address stays locked.';
         loadMaker();
       }catch(error){refusal(placeStatus,error);}
-      placeBusy=false;
+      /* a place that is not on the list throws after the pair is prepared, so the plain places map is stripped here whichever way the tap ended */
+      finally{ if(placeDraft) delete placeDraft.placeMap; placeBusy=false; }
     },true);
   }
   function makerCard(parent,key,recipe){

@@ -1660,7 +1660,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   code, and painted by `makerVaultPaint`, which a redraw reaches through an observer): the roster row, the account card, an order's row and head, a claim's row
   and head, a chat's list and head, and a Needs card. A code the vault holds no name for shows alone, and codes are all there is once locked.
   **The lock lets all of it go together** (`makerVaultLock`): the keys, the names and places, every slip picture (its `blob:` URL revoked, the image removed), the
-  Sheet with whatever was typed in it, and the gates, the Shop row and the card read Locked again. It fires **on the page hidden** (`visibilitychange`), **on
+  Sheet with whatever was typed in it, **the last pair Add ID, Amend ID and Place on the map prepared** (each lists its draft in `pairDrafts` and the lock clears
+  them; Phase 4c, 12 Oct 2026, Fable's note on #146: a prepared pair carries the plain places map until the form strips it, and Place on the map, which asks the
+  gazetteer for a locality after the pair is prepared, stripped it only on the way that reached the send, so it is stripped in a `finally` now;
+  `test/admin-place-drafts.mjs`, its mutations in `test/admin-place-drafts.mutations.json`), and the gates, the Shop row and the card read Locked again. It fires **on the page hidden** (`visibilitychange`), **on
   `ended()`** (Access has ended), **on a lapse** (`lapseHooks`, which `lapsed()` runs first: the customer's page holds an empty list and the owner's script adds the
   lock, so a customer's page names nothing of his) and **on Lock** (Shop, or the slip card's own). An unlock still being read when the lock comes lands on nothing
   (`makerVaultTurn`). The claim card's own unlock and lock (`claim.passphrase`, `claim.lock-slip`) and the password fields of Add ID, Amend ID, Place on the map

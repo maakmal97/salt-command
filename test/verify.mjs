@@ -53910,6 +53910,11 @@ await (async () => {
   await (await import("./admin-bar-foot.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: the place drafts hold no plain places map once a tap has failed, and the lock lets all three go (12 Oct 2026)");
+await (async () => {
+  await (await import("./admin-place-drafts.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
