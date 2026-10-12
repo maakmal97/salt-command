@@ -7,7 +7,8 @@
  *
  * TWO THEMES (11 Oct 2026, his word): the :root block is Night and the :root[data-theme="tide"] block after it is Tide, both
  * read the same way. The Counter sets data-theme on <html> from the device's choice (stmt/page.js); nothing below holds a
- * colour that is not a token, bar the print block, which is paper.
+ * colour that is not a token (12 Oct 2026, Phase 5b): the print block is drawn in the system's paper inks, --salt-paper-*,
+ * which are the same under both themes, and a tint is a mix of a token into transparent.
  *
  * ONE COPY OF THE TOKENS, NOT A SECOND. The :root block is read out of design/salt-ds.css at
  * generation time rather than transcribed, so a retune of the design system reaches the
@@ -36,7 +37,7 @@
  *
  * PRINT IS NOT AN AFTERTHOUGHT. These are printed and photographed, and a dark page prints as
  * a black rectangle or not at all, so the print block inverts to ink on white and keeps the
- * three semantic words legible as ink colours.
+ * three semantic words legible as ink colours (the --salt-paper-* tokens of the design system).
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
@@ -136,8 +137,8 @@ body{
   margin:0;padding:44px 20px 60px;
   color:var(--salt-text);
   background:
-    radial-gradient(1200px 640px at 82% -12%, rgba(var(--salt-copper-rgb,184,115,51),.16) 0%, transparent 62%),
-    radial-gradient(900px 560px at -10% 6%, rgba(var(--salt-brass-rgb,197,160,89),.10) 0%, transparent 58%),
+    radial-gradient(1200px 640px at 82% -12%, color-mix(in srgb, var(--salt-copper) 16%, transparent) 0%, transparent 62%),
+    radial-gradient(900px 560px at -10% 6%, color-mix(in srgb, var(--salt-brass) 10%, transparent) 0%, transparent 58%),
     var(--salt-obsidian);
   background-attachment:fixed;
   font-family:var(--salt-font-display);
@@ -261,20 +262,20 @@ b.short{color:var(--salt-ember)}
 @media (max-width:460px){.qrb{flex-direction:column;align-items:flex-start}}
 
 @media print{
-  body{background:#fff;color:#111;padding:24px}
-  .eyebrow,.whol,.owedl,.recl{color:#8a5a20}
-  .meta,.note,.sub2,.u,.nilamt,.cxn,.cx,.stpd,.recn,.qrt,.rsn,.nodt{color:#555}
-  .q,.mini td{color:#333}
-  .ok,.owedunits,.tr.big.clear span:last-child,.owedv{color:#1d6b52}
-  .due,.tr.big span:last-child,b.short{color:#a8442c}
-  .pend{color:#41586e}
-  .gift{color:#555}
-  td{border-color:#ddd}.rule,.tr.big{border-color:#c9ad74}
-  .tr{color:#333}.tr>span:last-child,.amt,.dt{color:#111}
-  .owed,.rec{background:#fbfaf7;border-color:#d8c79c}
-  .stpn{color:#8a5a20;border-color:#d8c79c}
-  .stpt{color:#111}
-  .qrb{border-color:#ddd}.qrt code{color:#8a5a20}
+  body{background:var(--salt-paper);color:var(--salt-paper-ink);padding:24px}
+  .eyebrow,.whol,.owedl,.recl{color:var(--salt-paper-copper)}
+  .meta,.note,.sub2,.u,.nilamt,.cxn,.cx,.stpd,.recn,.qrt,.rsn,.nodt{color:var(--salt-paper-ink-muted)}
+  .q,.mini td{color:var(--salt-paper-ink-soft)}
+  .ok,.owedunits,.tr.big.clear span:last-child,.owedv{color:var(--salt-paper-verdigris)}
+  .due,.tr.big span:last-child,b.short{color:var(--salt-paper-ember)}
+  .pend{color:var(--salt-paper-steel)}
+  .gift{color:var(--salt-paper-ink-muted)}
+  td{border-color:var(--salt-paper-rule)}.rule,.tr.big{border-color:var(--salt-paper-brass)}
+  .tr{color:var(--salt-paper-ink-soft)}.tr>span:last-child,.amt,.dt{color:var(--salt-paper-ink)}
+  .owed,.rec{background:var(--salt-paper-card);border-color:var(--salt-paper-edge)}
+  .stpn{color:var(--salt-paper-copper);border-color:var(--salt-paper-edge)}
+  .stpt{color:var(--salt-paper-ink)}
+  .qrb{border-color:var(--salt-paper-rule)}.qrt code{color:var(--salt-paper-copper)}
 }`;
 
 /** The whole stylesheet for a statement document. */
@@ -302,26 +303,26 @@ export const REVIEW_CSS = `
 .idx td.l{text-align:left}.idx td.r{text-align:right}
 .idx a{color:var(--salt-brass);text-decoration:none;font-weight:700}
 .idx a:hover{text-decoration:underline}
-.idx tr.f-owes{background:rgba(212,105,76,.07)}
-.idx tr.f-goods{background:rgba(111,174,151,.07)}
-.idx tr.f-pend{background:rgba(142,162,182,.07)}
+.idx tr.f-owes{background:color-mix(in srgb, var(--salt-ember) 7%, transparent)}
+.idx tr.f-goods{background:color-mix(in srgb, var(--salt-verdigris) 7%, transparent)}
+.idx tr.f-pend{background:color-mix(in srgb, var(--salt-steel) 7%, transparent)}
 /* v454's fourth flag: money owed back TO a customer. It is the owner's liability, so it takes
    ember like anything else he owes, and the row tint follows the same reading. */
-.idx tr.f-refund{background:rgba(212,105,76,.07)}
+.idx tr.f-refund{background:color-mix(in srgb, var(--salt-ember) 7%, transparent)}
 b.owe{color:var(--salt-ember)}b.gd{color:var(--salt-verdigris)}b.pd{color:var(--salt-steel)}
 b.rf{color:var(--salt-ember)}
 .pw{font-size:var(--salt-text-sm);color:var(--salt-brass);letter-spacing:.04em;white-space:nowrap}
 .cut{margin:0;border:0;border-top:1px dashed var(--salt-line);padding:0}
 .slab{max-width:960px;margin:34px auto 6px;font-size:var(--salt-text-xs);letter-spacing:.24em;
   text-transform:uppercase;color:var(--salt-copper);font-weight:700}
-.warn{max-width:960px;margin:0 auto 26px;border:1px solid rgba(212,105,76,.4);
-  border-radius:var(--salt-radius-md);padding:16px 20px;background:rgba(212,105,76,.08);
+.warn{max-width:960px;margin:0 auto 26px;border:1px solid color-mix(in srgb, var(--salt-ember) 40%, transparent);
+  border-radius:var(--salt-radius-md);padding:16px 20px;background:color-mix(in srgb, var(--salt-ember) 8%, transparent);
   color:var(--salt-mist-light);font-size:var(--salt-text-sm);line-height:1.7}
 .warn b{color:var(--salt-ember)}
 @media print{
-  .rv,.slab{color:#111}.idx a{color:#8a5a20}.sheet{page-break-after:always}
-  .rvs,.idx td{color:#333}.pw{color:#000}
-  .warn{background:#fdf4f1;border-color:#e0a894;color:#333}
+  .rv,.slab{color:var(--salt-paper-ink)}.idx a{color:var(--salt-paper-copper)}.sheet{page-break-after:always}
+  .rvs,.idx td{color:var(--salt-paper-ink-soft)}.pw{color:var(--salt-paper-ink)}
+  .warn{background:var(--salt-paper-warn);border-color:var(--salt-paper-edge-ember);color:var(--salt-paper-ink-soft)}
   .idx tr.f-owes,.idx tr.f-goods,.idx tr.f-pend{background:transparent}
 }`;
 

@@ -753,14 +753,13 @@ body.ended>*:not(#aEnded){display:none}
 .adm .grow{display:flex;gap:8px;margin-top:12px}
 .adm .grow .salt-ghost{flex:1}
 /* 11 Oct 2026: THE LOOK, Night or Tide, chosen on each device. The sheet's two tiles are the system's Option face as a tap, each with a
-   swatch of ITS OWN ground and accent, so a tile reads true under the other theme: these four are the system's obsidian and brass at
-   Night and at Tide, the one place this page writes a colour (held equal to design/salt-ds.css by the suite), and no theme restates them.
+   swatch of ITS OWN ground and accent, so a tile reads true under the other theme: these are the system's four swatch tokens (--salt-swatch-*, its
+   obsidian and brass at Night and at Tide, the same under either theme and held equal to them by its contrast check), so this page writes no colour.
    The setting under Account is two of the system's ghosts, 44px both ways. */
-:root{--look-night-ground:#05080a;--look-night-accent:#c5a059;--look-tide-ground:#03141a;--look-tide-accent:#7fd1c0}
 .look-tile{flex-direction:column;align-items:stretch;gap:var(--salt-space-3);min-height:128px}
 .look-swatch{display:block;height:56px;border-radius:var(--salt-radius-sm);border:1px solid var(--salt-edge-field)}
-.look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--look-night-accent) 0 13px,transparent 14px),var(--look-night-ground)}
-.look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--look-tide-accent) 0 13px,transparent 14px),var(--look-tide-ground)}
+.look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--salt-swatch-night-accent) 0 13px,transparent 14px),var(--salt-swatch-night-ground)}
+.look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--salt-swatch-tide-accent) 0 13px,transparent 14px),var(--salt-swatch-tide-ground)}
 .look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose)}
 .lookset{display:flex;gap:8px}
 .adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
