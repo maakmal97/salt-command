@@ -14,11 +14,11 @@
  {"name": "a name the page has no word for is printed as it is", "file": "stmt/owner.js", "find": "var s=String(k).replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1);", "replace": "return String(k);"},
  {"name": "a size is printed as a bare number", "file": "stmt/owner.js", "find": ")$/.test(k)?units(v):/^(total|cash|delivery", "replace": ")$/.test(k)?String(v):/^(total|cash|delivery"},
  {"name": "a sum is printed as a bare number", "file": "stmt/owner.js", "find": "?rm(v):String(v);", "replace": "?String(v):String(v);"},
- {"name": "a day is printed as it came", "file": "stmt/owner.js", "find": "(T|$)/.test(v)?fmtWhen(v):v;", "replace": "(T|$)/.test(v)?v:v;"},
- {"name": "a list is printed with its positions", "file": "stmt/owner.js", "find": "    if(Array.isArray(v)) return v.map(function(x){ return rowValue(k,x); }).join(', ');\n", "replace": ""},
- {"name": "a figure inside a figure is printed as JSON", "file": "stmt/owner.js", "find": "return Object.keys(v).map(function(n){ return rowKey(n)+': '+rowValue(n,v[n]); }).join(', ');", "replace": "return JSON.stringify(v);"},
+ {"name": "a day is printed as it came", "file": "stmt/owner.js", "find": "(T|$)/.test(v)?fmtWhen(v):(s==='The book'?'':s);", "replace": "(T|$)/.test(v)?v:(s==='The book'?'':s);"},
+ {"name": "a list is printed with its positions", "file": "stmt/owner.js", "find": "    if(Array.isArray(v)) return v.map(function(x){ return rowValue(k,x); }).filter(function(s){ return s!==''; }).join(', ');\n", "replace": ""},
+ {"name": "a figure inside a figure is printed as JSON", "file": "stmt/owner.js", "find": "return Object.keys(v).map(function(n){ var s=rowValue(n,v[n]); return s===''?'':rowKey(n)+': '+s; }).filter(Boolean).join(', ');", "replace": "return JSON.stringify(v);"},
  {"name": "a Details control is open when it is drawn", "file": "stmt/owner.js", "find": "    box.appendChild(actOn(el('summary','salt-ghost','Details'),act,key));", "replace": "    box.open=true; box.appendChild(actOn(el('summary','salt-ghost','Details'),act,key));"},
  {"name": "a Details control carries no key", "file": "stmt/owner.js", "find": "actOn(el('summary','salt-ghost','Details'),act,key)", "replace": "actOn(el('summary','salt-ghost','Details'),act)"},
  {"name": "a line with no value is listed", "file": "stmt/owner.js", "find": "      if(p[1]==null||p[1]==='') return;\n", "replace": ""},
- {"name": "a claim row's flag that is not a sentence is printed as JSON", "file": "stmt/owner.js", "find": "typeof flag==='string'?flag:rowValue('flag',flag)", "replace": "typeof flag==='string'?flag:JSON.stringify(flag)"}
+ {"name": "a claim row's flag that is not a sentence is printed as JSON", "file": "stmt/owner.js", "find": "typeof flag==='string'?noBook(flag):rowValue('flag',flag)", "replace": "typeof flag==='string'?flag:JSON.stringify(flag)"}
 ]

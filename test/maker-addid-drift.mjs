@@ -7,7 +7,7 @@ import { makerInputCatalog } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
 import { contentKey, wrapKey } from "../tools/stmt-crypto.mjs";
-import { tile, tileGroup } from "./maker-act.mjs";
+import { tile, tileGroup, legendLabel } from "./maker-act.mjs";
 
 export async function run({ ok }) {
   const check = ok || ((condition, message) => { if (!condition) throw new Error(message); });
@@ -133,10 +133,10 @@ export async function run({ ok }) {
       .find((item) => item.querySelector("h3")?.textContent === "New customer");
     const driftSelect = [...section.querySelectorAll("fieldset.maker-tiles")]
       .find((group) => group.querySelector("legend").textContent.startsWith("Starting price drift"));
-    const driftLabel = driftSelect && driftSelect.querySelector("legend").textContent;
+    const driftLabel = driftSelect && legendLabel(driftSelect.querySelector("legend"));   /* the words, then the book's code that its mark stands for: the page draws the mark alone */
     const pick = (value) => tile(section, driftLabel, value);   /* the drift is a group of tiles, and a tap on one is the change */
     const typed = [...section.querySelectorAll("input[type=number]")]
-      .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Drift,"));
+      .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Drift"));
     /* the form's own answer line is the last status in it; the first is the one unlock's (Phase 4b) */
     const status = [...section.querySelectorAll('[role="status"]')].at(-1);
     doc.querySelector('[data-act="vault.unlock"]').click();

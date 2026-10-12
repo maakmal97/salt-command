@@ -139,20 +139,22 @@ export async function run({ ok, pageWork }) {
     }
     ok(forms >= 10 && seen >= 25 && bad.length === 0, `every label on Record's ${forms} forms is the system's Field label, and every legend its label modifier (${seen} read; bare: ${bad.slice(0, 3).join(" | ") || "none"})`);
 
-    /* a book named on a row wears the Product tag, its words unchanged, its hue the book's own accent token, and no style attribute (the Counter's policy refuses one) */
+    /* a book on a row wears the Product tag, the book's mark in it and no word for the book (his word of 12 Oct 2026), its hue the book's own accent token, and no style attribute (the Counter's policy refuses one) */
     await click(byAct(d, "part.record.approve"));
-    const line = [...d.querySelectorAll("#makerDrafts .maker-facts")].find((x) => /oil/.test(x.textContent) && x.querySelector(".salt-producttag"));
+    const bare = (x) => { const g = x.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((t) => t.replaceWith("[tag]")); return g.textContent.trim(); };
+    const line = [...d.querySelectorAll("#makerDrafts .maker-facts")].find((x) => x.querySelector(".salt-producttag--oil"));
     const tag = line && line.querySelector(".salt-producttag");
-    ok(!!tag && tag.classList.contains("salt-producttag--oil") && tag.textContent === "oil" && /^1 unit oil, RM 100\.00$/.test(line.textContent.trim())
+    ok(!!tag && tag.classList.contains("salt-producttag--oil") && !!tag.querySelector("svg.psym") && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(tag.querySelector(".sr").textContent) && !/oil/i.test(tag.textContent)
+      && /^1 unit \[tag\], RM 100\.00$/.test(bare(line))
       && !!tag.querySelector(".salt-producttag__dot[aria-hidden='true']") && !tag.hasAttribute("style") && !tag.querySelector("[style]"),
-    "a book named on a row to approve wears the Product tag with its dot, the row reading as it did: " + (line ? line.textContent : "no line"));
+    "a book on a row to approve wears the Product tag with its dot and its mark, told to a reader by its shape and by no word for the book: " + (line ? line.textContent : "no line"));
     const figs = d.querySelector("#makerDrafts article.salt-approve > .salt-metrics.salt-metrics--sm");
     ok(!!figs && [...figs.children].every((c) => c.querySelector(".salt-metrics__label") && c.querySelector(".salt-metrics__value")) && figs.children.length === 2,
       "and the cost and margin under it are the Metric row, a label over its figure");
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.group"));
     const pool = [...d.querySelectorAll("#makerPools .maker-row")].find((x) => x.querySelector(".salt-producttag"));
-    ok(!!pool && pool.querySelector(".salt-producttag").classList.contains("salt-producttag--salt") && /^salt, 1 unit each\. 3 of 10 units in, 1 joined\./.test(pool.textContent),
-      "a group order's row names its book on the Product tag too, in the same words: " + (pool ? pool.textContent.slice(0, 60) : "no row"));
+    ok(!!pool && pool.querySelector(".salt-producttag").classList.contains("salt-producttag--salt") && /^\[tag\], 1 unit each\. 3 of 10 units in, 1 joined\./.test(bare(pool)) && !/salt/i.test(pool.textContent),
+      "a group order's row shows its book on the Product tag too, as a mark and no word: " + (pool ? bare(pool).slice(0, 60) : "no row"));
 
     /* the hours are the Table recipe, the day's cell its label cell */
     await click(byAct(d, "nav.shop")); await click(byAct(d, "part.shop.hours")); audit();

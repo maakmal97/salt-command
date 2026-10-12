@@ -907,7 +907,7 @@ export const OWNER_JS = `
     var detail,summary;
     if(!node||!error||!error.raw||!node.appendChild) return node;
     detail=el('details','rdet'); summary=actOn(el('summary','salt-ghost','Details'),'refusal.details');
-    detail.appendChild(summary); detail.appendChild(el('p','rraw',error.raw)); node.appendChild(detail);
+    detail.appendChild(summary); detail.appendChild(el('p','rraw',noBook(error.raw))); node.appendChild(detail);
     return node;
   }
   /* a refusal on a line: its words, a lead before them and a tail after, and Details when the server gave words */
@@ -1207,7 +1207,7 @@ export const OWNER_JS = `
       note.textContent='';
       (result.rows||[]).forEach(function(row){
         note.appendChild(el('p','maker-row',makerClaimRowLine(row)));
-        (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?flag:rowValue('flag',flag))); });
+        (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?noBook(flag):rowValue('flag',flag))); });
       });
       note.appendChild(el('p','salt-insight',result.booked?'Already recorded: Yes only tells them.':
         result.left>0.004?rm(result.left)+' more than the rows: do not record it twice.':'These rows are settled together.'));
@@ -1481,13 +1481,14 @@ export const OWNER_JS = `
       var i=actOn(el('input','fld salt-field__input'),L[1],L[2]); i.type=type; Object.keys(attrs||{}).forEach(function(k){ i.setAttribute(k,attrs[k]); });
       l.appendChild(i); root.appendChild(l); return i;
     }
-    var product=field(['Book','pool.product'],'text',{maxlength:'20',autocomplete:'off'}), size=field(['Units each','pool.size'],'number',{min:'0',step:'any'}),
+    /* the book is chosen by its mark, never typed: a name typed here would be a name drawn (his word of 12 Oct 2026); the books are the ones that have a mark */
+    var product=makerTilesIn(root,['Book','pool.product'],Object.keys(PLET).map(bookItem)), size=field(['Units each','pool.size'],'number',{min:'0',step:'any'}),
         target=field(['Target, units','pool.target'],'number',{min:'0',step:'any'}), closes=field(['Closes on (optional)','pool.closes-on'],'date',{});
     var open=el('button','btn salt-pill salt-pill--md','Open group order'); open.type='button'; actOn(open,'pool.open');
     open.onclick=async function(){
       open.disabled=true;
       try{
-        var body={product:product.value.trim().toLowerCase(),q:Number(size.value),target:Number(target.value)};
+        var body={product:product.value,q:Number(size.value),target:Number(target.value)};
         if(closes.value) body.closesOn=closes.value;
         await refs('/all/maker/pools',body); await loadMakerPools();
       }catch(error){ refusal(note,error); open.disabled=false; }
@@ -1500,7 +1501,7 @@ export const OWNER_JS = `
       pline.appendChild(document.createTextNode(', '+units(p.q)+' each. '+p.unitsIn+' of '+p.target+' units in, '+(p.joins||[]).length+' joined.'
         +(p.closesOn?' Closes '+fmtWhen(p.closesOn)+'.':'')+' '));
       pline.appendChild(chip(p.state==='open'?'verdigris':'mist',p.state==='open'?'Open':'Closed')); card.appendChild(pline);
-      (p.closeLeft||[]).forEach(function(x){ card.appendChild(el('p','maker-row','One order was not agreed: '+x.why+'.')); });
+      (p.closeLeft||[]).forEach(function(x){ card.appendChild(el('p','maker-row','One order was not agreed: '+noBook(x.why)+'.')); });
       if(p.state==='open'||(p.closeLeft||[]).length){
         var close=el('button','salt-ghost',p.state==='open'?'Close':'Close again'); close.type='button'; actOn(close,'pool.close',p.id);
         ynTag(close,'pool:'+p.id);
@@ -1514,7 +1515,7 @@ export const OWNER_JS = `
         };
         close.onclick=function(){
           if(p.state!=='open'){ closePool(); return; }
-          ownerAsk(close,'pool:'+p.id,{title:'Close this group order?', row:askRow(bookName(p.product)+', '+units(p.q)+' each', p.unitsIn+' of '+p.target+' units', (p.joins||[]).length+' joined'),
+          ownerAsk(close,'pool:'+p.id,{title:'Close this group order?', row:askRow('each', p.unitsIn+' of '+p.target+' units', (p.joins||[]).length+' joined', bookTile(p.product,p.q)),
             say:['Each joined order comes to you to agree, and every joiner is told once.'], go:'Close the group order', keep:'Keep it open'})
             .then(function(yes){ if(yes) closePool(); });
         };
@@ -1617,8 +1618,8 @@ export const OWNER_JS = `
   function makerReading(parent, reading, key){
     var figs=readingFigures(reading);
     if(figs.length) parent.appendChild(metrics(figs));
-    if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
-    (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
+    if(reading.reasoning) parent.appendChild(el('p','salt-insight',noBook(reading.reasoning)));
+    (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',noBook(flag))); });
     if(reading.row) parent.appendChild(detailBox('row.proposed',key,rowPairs(reading.row)));
   }
   /* the placed-order preview's own native comparison, mirroring ordPvBlock on the Desk: their card today, margin,
@@ -1631,9 +1632,9 @@ export const OWNER_JS = `
         usual=result.usual&&typeof result.usual.rate==='number'?result.usual.rate:null,
         quote=typeof result.quote==='number'?result.quote:null;
     /* every figure is the server's; the browser only words a comparison, it computes none */
-    if(card==null) tiles.appendChild(kpiTile('mist','Their price','-',note(result.cardNote||'no price for this size')));
+    if(card==null) tiles.appendChild(kpiTile('mist','Their price','-',note(noBook(result.cardNote||'no price for this size'))));
     else tiles.appendChild(kpiTile(quote==null||quote>=card?'steel':'copper','Their price',rm(card),
-      note('the quote is '+(quote==null?'not read':rm(quote))+(result.cardNote?' · '+result.cardNote:''))));
+      note('the quote is '+(quote==null?'not read':rm(quote))+(result.cardNote?' · '+noBook(result.cardNote):''))));
     if(margin==null) tiles.appendChild(kpiTile('mist','Your margin','-',note('no cost on this book')));
     else tiles.appendChild(kpiTile(margin.rm>0.004?'verdigris':'ember','Your margin',rm(margin.rm),note((result.cost&&typeof result.cost.total==='number'?'on '+rm(result.cost.total)+' cost · ':'')+margin.pct+'%')));
     if(floor==null) tiles.appendChild(kpiTile('mist','Floor','-',note('no floor for this size')));
@@ -1644,7 +1645,7 @@ export const OWNER_JS = `
     parent.appendChild(tiles);
     var flags=result.flags||[];
     parent.appendChild(el('p','salt-insight',flags.length?(flags.length===1?'1 thing':flags.length+' things')+' to check:':'Nothing to check.'));
-    flags.forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
+    flags.forEach(function(flag){ parent.appendChild(el('p','salt-insight',noBook(flag))); });
     if(result.owedWith!=null&&result.ceiling!=null){
       var over=result.owedWith>result.ceiling+0.004, lateRun=result.late&&typeof result.late.run==='number'&&typeof result.late.need==='number'?'paid late before, '+result.late.run+' of '+result.late.need+' on time since; ':'';
       parent.appendChild(el('p','salt-insight',result.prepay
@@ -1839,8 +1840,9 @@ export const OWNER_JS = `
      select's act, keyed by its value ('none' for the empty one) and, for a group drawn once for each book, by that book first. What a form sends is the value. */
   var tileSeq=0;
   function makerTiles(label,items,none){
-    var L=labOf(label), set=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq);
-    set.appendChild(el('legend','salt-options__legend salt-options__legend--label lbl',L[0])); set.appendChild(grid);
+    var L=labOf(label), set=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq), legend=el('legend','salt-options__legend salt-options__legend--label lbl',L[0]);
+    if(L[3]){ legend.appendChild(document.createTextNode(' ')); legend.appendChild(bookMark(L[3])); }   /* a legend about a book ends in its mark: [words, act, key, book] */
+    set.appendChild(legend); set.appendChild(grid);
     Object.defineProperty(set,'value',{
       get:function(){ var on=set.querySelector('input:checked'); return on?on.value:''; },
       set:function(v){ [].forEach.call(set.querySelectorAll('input'),function(r){ r.checked=r.value===String(v); }); }
@@ -1854,7 +1856,8 @@ export const OWNER_JS = `
         radio.type='radio'; radio.name=name; radio.value=String(item.value);
         actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
         radio.checked=offered?String(item.value)===kept:(!none&&i===0);
-        face.appendChild(el('span','salt-option__label',item.label)); lab.appendChild(radio); lab.appendChild(face); grid.appendChild(lab);
+        if(item.mark) face.appendChild(bookMark(item.mark,28)); else face.appendChild(el('span','salt-option__label',item.label));   /* a book's tile is its mark alone, named by its shape for a reader */
+        lab.appendChild(radio); lab.appendChild(face); grid.appendChild(lab);
       });
     };
     set.fill(items); return set;
@@ -1862,6 +1865,7 @@ export const OWNER_JS = `
   function makerTilesIn(root,label,items,none){ var set=makerTiles(label,items,none); root.appendChild(set); return set; }
   function makerField(parent, label, type, value, step){
     var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
+    if(L[3]){ title.appendChild(document.createTextNode(' ')); title.appendChild(bookMark(L[3])); }   /* a field about a book ends in its mark: [words, act, key, book] */
     input.type=type; input.value=value==null?'':String(value);
     if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; }
     wrap.appendChild(title); wrap.appendChild(input); parent.appendChild(wrap); return input;
@@ -2006,7 +2010,7 @@ export const OWNER_JS = `
       }
     };
     var partyItems=parties.map(function(code){return {value:code,label:code};});
-    var productItems=books.map(function(item){return {value:item.product,label:bookName(item.product)};});
+    var productItems=books.map(function(item){return bookItem(item.product);});
     var loan=makerForm('entry');loan.appendChild(el('h3',null,'Loan'));
     loan.appendChild(el('p','msg','Cash or goods lent or borrowed.'));
     parent.appendChild(loan);
@@ -2121,7 +2125,7 @@ export const OWNER_JS = `
     editor.appendChild(el('p','msg','Cancel the order: only while nothing has moved.'));
     parent.appendChild(editor);
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
-      label:row.party+', '+units(row.qty)+' '+bookName(row.product)+', '+rm(row.total)+', '+(fmtWhen(row.date)||'undated')+(row.defaulted?', defaulted':'')};});
+      label:optionBook(row.product)+row.party+', '+units(row.qty)+', '+rm(row.total)+', '+(fmtWhen(row.date)||'undated')+(row.defaulted?', defaulted':'')};});
     var editRow=addSelect(editor,['Which row','record.amend.row'],rowItems),
       editKind=makerTilesIn(editor,['What to do','record.amend.kind'],[{value:'Correction',label:KINDW.Correction},
         {value:'Fulfilment',label:KINDW.Fulfilment},{value:'Cancellation',label:KINDW.Cancellation}]),
@@ -2204,7 +2208,7 @@ export const OWNER_JS = `
     parent.appendChild(revive);
     var revivable=(catalog.revivable||[]).filter(function(row){return !(row.paid>0.009)&&!(row.movedUnits>0.009);});
     var reviveRow=addSelect(revive,['Which order','record.revive.row'],revivable.map(function(row){return {value:row.rid,
-      label:row.party+', '+units(row.qty)+' '+bookName(row.product)+', '+rm(row.total)+', '+(fmtWhen(row.date)||'undated')+(row.cancelledOn?', cancelled '+fmtWhen(row.cancelledOn):'')};}));
+      label:optionBook(row.product)+row.party+', '+units(row.qty)+', '+rm(row.total)+', '+(fmtWhen(row.date)||'undated')+(row.cancelledOn?', cancelled '+fmtWhen(row.cancelledOn):'')};}));
     var reviveDate=makerField(revive,['On','record.revive.date'],'date',today), reviveStatus=makerStatus(revive);
     var reviveButton=makerButton(revive,['Reopen the order','record.revive.send'],async function(send){
       reviveStatus.textContent='Sending.';
@@ -2229,19 +2233,19 @@ export const OWNER_JS = `
     var idLink=makerField(id,['Maps or Waze link','record.add-id.link'],'text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
     var tierNames=catalog.tierNames||[], idTiers=tierBooks.map(function(item){
-      var sel=makerTilesIn(id,['Starting level, '+bookName(item.product),'record.add-id.tier',item.product],[{value:'',label:'Not set'}]
+      var sel=makerTilesIn(id,['Starting level','record.add-id.tier',item.product,item.product],[{value:'',label:'Not set'}]
         .concat(tierNames.map(function(name){return {value:name,label:name};})));
       sel.value=tierNames.length?tierNames[tierNames.length-1]:'';
       return {product:item.product,select:sel};
     });
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
-      var product=bookName(item.product), presets=item.driftPresets||[];
-      var select=makerTilesIn(id,['Starting price drift, '+product,'record.add-id.drift',item.product],[{value:'',label:'Follows their record'}]
+      var presets=item.driftPresets||[];
+      var select=makerTilesIn(id,['Starting price drift','record.add-id.drift',item.product,item.product],[{value:'',label:'Follows their record'}]
         .concat(presets.map(function(preset){return {value:String(preset.value),
           label:preset.name+' ('+(preset.value>0?'+':'')+Number(preset.value).toFixed(2)+')'};}))
         .concat([{value:'typed',label:'Typed'}]));
-      var typed=makerField(id,['Drift, '+product,'record.add-id.drift-value',item.product],'number','',0.05);
+      var typed=makerField(id,['Drift','record.add-id.drift-value',item.product,item.product],'number','',0.05);
       typed.min='-1';typed.max='1';typed.step='0.05';typed.placeholder='-1 to 1';typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
       return {product:item.product,select:select,typed:typed};
@@ -2711,9 +2715,10 @@ export const OWNER_JS = `
   function rowValue(k,v){
     if(v===true||v===false) return v?'Yes':'No';
     if(typeof v==='number') return /^(qty|[a-z]+Qty|settledKg|rebateKg|coverUnits)$/.test(k)?units(v):/^(total|cash|delivery|freight|cost|settledRM|coverRM)$/.test(k)?rm(v):String(v);
-    if(typeof v==='string') return /^[0-9]{4}-[0-9]{2}-[0-9]{2}(T|$)/.test(v)?fmtWhen(v):v;
-    if(Array.isArray(v)) return v.map(function(x){ return rowValue(k,x); }).join(', ');
-    if(v&&typeof v==='object') return Object.keys(v).map(function(n){ return rowKey(n)+': '+rowValue(n,v[n]); }).join(', ');
+    /* a value that is a book's own name is left out (the card has its mark); a name inside a sentence becomes "the book" */
+    if(typeof v==='string'){ var s=noBook(v); return /^[0-9]{4}-[0-9]{2}-[0-9]{2}(T|$)/.test(v)?fmtWhen(v):(s==='The book'?'':s); }
+    if(Array.isArray(v)) return v.map(function(x){ return rowValue(k,x); }).filter(function(s){ return s!==''; }).join(', ');
+    if(v&&typeof v==='object') return Object.keys(v).map(function(n){ var s=rowValue(n,v[n]); return s===''?'':rowKey(n)+': '+s; }).filter(Boolean).join(', ');
     return '';
   }
   /* a Desk row as names and values, its reference first when it has one that is an id */
@@ -2854,7 +2859,7 @@ export const OWNER_JS = `
       if(!Array.isArray(context.products)||!context.products.length) throw new Error('The Desk is not ready. Try again in a minute.');
       note.textContent='Everything here waits for your approval under Approve.';
       var countFrom=box.children.length;
-      var product=makerTilesIn(box,['Book','record.count.book'],context.products.map(function(code){ return {value:code,label:bookName(code)}; }));
+      var product=makerTilesIn(box,['Book','record.count.book'],context.products.map(bookItem));
       var date=makerField(box,['Counted on','record.count.date'],'date',''), qty=makerField(box,['Units on the shelf','record.count.units'],'number','', '0.01');
       var pending=false, at=null, signature='', answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
       var button=makerButton(box,['Record the count','record.count.send'],async function(send){
@@ -2954,7 +2959,7 @@ export const OWNER_JS = `
       function extraChoices(tiles){
         tiles.fill((catalog.products||[]).filter(function(item){
           return item.product!==tradeProduct.value&&(direction.value==='sale'?item.saleReady:item.purchaseReady);
-        }).map(function(item){ return {value:item.product,label:bookName(item.product)}; }));
+        }).map(function(item){ return bookItem(item.product); }));
       }
       makerButton(tradeSection,['Another book on this visit','record.trade.add-book'],function(){
         var row=el('section','maker-extra-trade'); row.setAttribute('data-key','extra'+(++extraSeq)); row.appendChild(el('h4',null,'Another book'));
@@ -2974,7 +2979,7 @@ export const OWNER_JS = `
       function fillTradeChoices(){
         var isSale=direction.value==='sale';
         var keptParty=tradeParty.value;
-        tradeProduct.fill((catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return {value:item.product,label:bookName(item.product)}; }));
+        tradeProduct.fill((catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return bookItem(item.product); }));
         tradeParty.textContent='';
         (catalog.parties||[]).forEach(function(code){
           var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
@@ -3057,7 +3062,7 @@ export const OWNER_JS = `
         var tierCode=actOn(el('select','fld salt-field__input'),'record.tier.customer'), tierCodeWrap=el('label','maker-field','Customer');
         tierCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; tierCode.appendChild(option); });
         tierCodeWrap.appendChild(tierCode); tierSection.appendChild(tierCodeWrap);
-        var tierProduct=makerTilesIn(tierSection,['Book','record.tier.book'],tierBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; }));
+        var tierProduct=makerTilesIn(tierSection,['Book','record.tier.book'],tierBooks.map(function(item){ return bookItem(item.product); }));
         var tierValue=makerTilesIn(tierSection,['Level','record.tier.level'],[['','Let the Desk decide']].concat((catalog.tierNames||[]).map(function(name){ return [name,name]; }),[['__bands','A level by order size']])
           .map(function(item){ return {value:item[0],label:item[1]}; }));
         var bandBox=el('div','maker-bands'), bandSel={};
@@ -3085,7 +3090,7 @@ export const OWNER_JS = `
           if(c&&c.held) lines.push('Now: '+tierSay(c.held)+'.');
           else if(c&&c.proposed) lines.push('Suggested: '+tierSay(c.proposed)+', not applied.');
           else lines.push('No level set or suggested.');
-          if(c&&c.late) lines.push('Late payer: suggested '+c.late.level+(c.late.why?', '+c.late.why:'')+'.');
+          if(c&&c.late) lines.push('Late payer: suggested '+c.late.level+(c.late.why?', '+noBook(c.late.why):'')+'.');
           tierState.textContent=lines.join(' ');
           useProposal.hidden=!(c&&(c.proposed||c.held)); useOffer.hidden=!(c&&c.late);
         }
@@ -3121,7 +3126,7 @@ export const OWNER_JS = `
       }
       var driftSection=makerForm('pricing');
       driftSection.appendChild(el('h3',null,'Price drift'));
-      driftSection.appendChild(el('p','msg','Salt only. Moves one customer’s price up (+) or down (-); 0 fixes it at the set price; Clear lets it follow their record.'));
+      driftSection.appendChild(el('p','msg','Only on a book with price drift. Moves one customer’s price up (+) or down (-); 0 fixes it at the set price; Clear lets it follow their record.'));
       tradeSection.parentNode.insertBefore(driftSection,tierSection.nextSibling);
       var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
       if(!driftCodes.length||!driftBooks.length){
@@ -3130,7 +3135,7 @@ export const OWNER_JS = `
         var driftCode=actOn(el('select','fld salt-field__input'),'record.drift.customer'), driftCodeWrap=el('label','maker-field','Customer');
         driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
         driftCodeWrap.appendChild(driftCode); driftSection.appendChild(driftCodeWrap);
-        var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; }));
+        var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));
         var driftValue=makerField(driftSection,['Drift, -1 to +1','record.drift.value'],'number','','0.05');
         driftValue.min='-1'; driftValue.max='1';
         var driftState=el('p','msg'); driftSection.appendChild(driftState);
@@ -3184,7 +3189,7 @@ export const OWNER_JS = `
       if(!houseBooks.length){
         houseSection.appendChild(el('p','msg','No book has sizes to choose between.'));
       }else{
-        var houseProduct=makerTilesIn(houseSection,['Book','record.house.book'],houseBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; })), houseBoxes=el('fieldset','salt-options maker-sizes'), houseGrid=el('div','salt-options__grid');
+        var houseProduct=makerTilesIn(houseSection,['Book','record.house.book'],houseBooks.map(function(item){ return bookItem(item.product); })), houseBoxes=el('fieldset','salt-options maker-sizes'), houseGrid=el('div','salt-options__grid');
         /* 12 Oct 2026 (PHASE 4a): the sizes are a grid of the system's Option tiles, a size a tile, ticked while it is printed; the same ticks, acts and body as the list was */
         houseBoxes.appendChild(el('legend','salt-options__legend salt-options__legend--label lbl','Sizes to print')); houseBoxes.appendChild(houseGrid);
         houseSection.appendChild(houseBoxes);
@@ -3263,7 +3268,7 @@ export const OWNER_JS = `
       if(!choices.length) throw new Error('No priced size is on their list.');
       note.textContent='One order, at their current prices. You agree it next, under Orders.';
       var label=el('label','maker-field','Size and price'), pick=actOn(el('select','fld salt-field__input'),'orderfor.size');
-      choices.forEach(function(choice,index){ var option=el('option',null,units(choice.qty)+' '+bookName(choice.product)+', '+rm(choice.total));
+      choices.forEach(function(choice,index){ var option=el('option',null,optionBook(choice.product)+units(choice.qty)+', '+rm(choice.total));
         option.value=String(index); pick.appendChild(option); }); label.appendChild(pick); box.appendChild(label);
       var modeLabel=el('label','maker-field','Collect or deliver'), mode=actOn(el('select','fld salt-field__input'),'orderfor.mode');
       [['collect','Collected'],['deliver','Delivered']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; mode.appendChild(option); });
@@ -3496,7 +3501,8 @@ export const OWNER_JS = `
     var st=ORD_STAGE[order.status]||['mist',String(order.status||'')], line=el('p','lead');
     var orderTitle=el('h3','');
     orderTitle.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u)));
-    orderTitle.appendChild(document.createTextNode(', '+units(order.qty)+' '+bookName(order.product)+', '+rm(order.total)+(order.delivery?' + '+rm(order.delivery):'')));
+    orderTitle.appendChild(document.createTextNode(', ')); orderTitle.appendChild(bookMark(order.product));
+    orderTitle.appendChild(document.createTextNode(' '+units(order.qty)+', '+rm(order.total)+(order.delivery?' + '+rm(order.delivery):'')));
     card.appendChild(orderTitle);
     line.appendChild(chip(st[0],st[1])); card.appendChild(line);
     card.appendChild(metrics([['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
@@ -3782,8 +3788,8 @@ export const OWNER_JS = `
     var figs=readingFigures(reading);
     if(figs.length) card.appendChild(metrics(figs));
     var flags=reading.flags||[];
-    if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',String(flag))); }); card.appendChild(chips); }
-    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',reading.reasoning));
+    if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); }); card.appendChild(chips); }
+    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));
     /* the row's figures as names and values, the draft's reference first (Phase 4c); the key is the draft's id */
     card.appendChild(detailBox('row.proposed',key,rowPairs(reading.row,key)));
   }
@@ -3817,7 +3823,7 @@ export const OWNER_JS = `
     });
     (makerData.refused||[]).forEach(function(refused){
       var card=makerCard(draftRoot); card.appendChild(el('h3','','Entry not taken'));
-      card.appendChild(el('p','salt-insight',refused.why||'The Desk could not take this entry.'));
+      card.appendChild(el('p','salt-insight',noBook(refused.why||'The Desk could not take this entry.')));
     });
     if(!pendingRows.length&&!(makerData.refused||[]).length) draftRoot.appendChild(el('p','rnone','Nothing waits for your approval.'));
     if(queueRoot){
@@ -3832,7 +3838,7 @@ export const OWNER_JS = `
         card.appendChild(el('p','maker-facts',entryLine(entry)+', '+(entry.state==='refused'?'refused':'waiting for the Desk')+'.'));
         if(entry.device) card.appendChild(el('p','maker-facts','From another device.'));
         if(entry.seenAt) card.appendChild(el('p','maker-facts','Seen '+fmtWhen(entry.seenAt)+'.'));
-        if(entry.why) card.appendChild(el('p','salt-insight',entry.why));
+        if(entry.why) card.appendChild(el('p','salt-insight',noBook(entry.why)));
         card.appendChild(detailBox('queue.details',entry.id,[['Reference',entry.id],['Sent',fmtWhen(isoAt(entry.id)||entry.date)],['State',entry.state==='refused'?'Refused':'Waiting for the Desk']]));
         if(entry.unavailable) card.appendChild(el('p','msg',entry.unavailable));
         if(entry.canWithdraw||entry.canRetry){
@@ -4011,42 +4017,38 @@ export const OWNER_JS = `
     return stamp(s, 'en');
   }
   function units(n){ return unitsOf(Number(n)||0); }
-  /* the Desk's name for a book, and the word for the kind of entry a Desk row is (his decision 5 of 11 Oct 2026: one name for a book on his page) */
-  function bookName(product){ return String(product||''); }
-  /* THE BOOK NAMES (Phase 3, his decision 5 of 11 Oct 2026): where Salt Account names a book it says the Desk's name, salt, oil, candy or rice, with the book's
-     mark beside it. The shape words (Cube, Droplet, Lozenge, Capsule) are the customer's page and are never drawn here, so a book has one name on this page.
-     bookTile is mtile's twin for a card (the mark, and under it "salt, 2.5 units"), bookHead is pmarkHead's twin for a heading, name being the Desk's own where
-     the answer carries it. A select cannot hold a mark, so an option says the name alone. */
-  function bookTile(product,q){
-    var w=el('span','mtile'), words=units(q), cap=el('span','mq');
-    w.appendChild(el('span','sr',bookName(product)+' '+words));
-    w.appendChild(psym(product,28));
-    cap.setAttribute('aria-hidden','true'); cap.appendChild(document.createTextNode(bookName(product)+', ')); cap.appendChild(el('span','nb',words)); w.appendChild(cap);
-    return w;
+  /* NO BOOK HAS A NAME ON THIS PAGE (his word of 12 Oct 2026, "and even the name of the product", which took back decision 5 of 11 Oct): a book is its mark, with
+     his letter in it, and no word for it is drawn, not the Desk's (salt, oil, candy, rice) and not the shape's (Cube, Droplet, Lozenge, Capsule). A reader is told the
+     shape, as on the customer's page (pshape: a hidden .sr or an aria-label), never the product. The Desk keeps its names; this page does not. bookMark is a mark in
+     a line, bookTile mtile for a card (the mark, and under it "2.5 units"), bookTag the system's Product tag holding the mark, bookItem a tile of a form that is the
+     mark alone, and pmarkHead, the customer's, a heading that is the mark alone. A select cannot hold a mark, so an option says the book's letter in brackets, [I],
+     and nothing for a book with none. noBook takes a book's name out of a sentence the Desk or the Counter wrote, for the words that are not this page's to change. */
+  var BOOKS=/\\b(salt|oil|candy|rice|spare)\\b(?!\\s+(?:account|counter|command|desk)\\b)/gi;
+  function noBook(text){
+    return String(text==null?'':text).replace(BOOKS,function(w,k,at,all){ var before=all.slice(0,at); return /\\bthe\\s+$/i.test(before)?'book':/(^|[.!?]\\s)$/.test(before)?'The book':'the book'; });
   }
-  /* 12 Oct 2026 (Phase 5): A BOOK NAMED ON A ROW WEARS THE SYSTEM'S PRODUCT TAG, the Desk's name in it and the book's own accent as its hue (PRODUCTS.accent in
-     ledger/book.json is the system's --salt-product-<book> token, which the tag's modifier for the book reads). The words are the name alone, as they were; this page alone
-     draws one, a customer's page never naming a book. */
+  function bookLetter(product){ var k=String(product||'').toLowerCase(); return Object.prototype.hasOwnProperty.call(PLET,k)?PLET[k].l:''; }
+  function bookMark(product,px){ var w=el('span','pwith'); w.appendChild(psym(product,px||20)); w.appendChild(el('span','sr',pshape(product))); return w; }
+  function bookTile(product,q){ return mtile(product,Number(q)||0); }
+  function bookItem(product){ return {value:product,label:pshape(product),mark:product}; }
+  function optionBook(product){ var l=bookLetter(product); return l?'['+l+'] ':''; }
+  /* 12 Oct 2026 (Phase 5): A BOOK ON A ROW WEARS THE SYSTEM'S PRODUCT TAG, the book's mark in it and its own accent as its hue (PRODUCTS.accent in ledger/book.json is
+     the system's --salt-product-<book> token, which the tag's modifier for the book reads). The tag holds no words; this page alone draws one. */
   function bookTag(product){
-    var name=bookName(product), t=el('span','salt-producttag salt-producttag--'+name.replace(/[^a-z]/g,'')), dot=el('span','salt-producttag__dot');
-    dot.setAttribute('aria-hidden','true'); t.appendChild(dot); t.appendChild(document.createTextNode(name)); return t;
+    var t=el('span','salt-producttag salt-producttag--'+String(product||'').toLowerCase().replace(/[^a-z]/g,'')), dot=el('span','salt-producttag__dot');
+    dot.setAttribute('aria-hidden','true'); t.appendChild(dot); t.appendChild(bookMark(product,20)); return t;
   }
-  /* a quantity, its book and a sum on one line: 2 units oil, RM 100.00 */
+  /* a quantity, its book and a sum on one line: 2 units [its tag], RM 100.00 */
   function bookLine(qty,product,total){
     var p=el('p','maker-facts');
     if(qty==null){ p.appendChild(document.createTextNode(rm(total))); return p; }
     p.appendChild(document.createTextNode(units(qty)+(product?' ':''))); if(product) p.appendChild(bookTag(product));
     p.appendChild(document.createTextNode(', '+rm(total))); return p;
   }
-  function bookHead(tag,product,name){
-    var h=el(tag,'pmark'), said=name||bookName(product);
-    h.setAttribute('aria-label',said); h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',said));
-    return h;
-  }
   var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Price level', REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
   function entryWord(e){ return ENTRY_WORD[e&&e.type]||(e&&e.type)||'Entry'; }
-  /* what a Desk row is, in the order a person says it: the kind, the size and the book, the sum */
-  function rowWhat(d){ var e=d.entry||{}; return [entryWord(e), d.qty==null?'':units(d.qty)+(d.product?' '+bookName(d.product):''), rm(d.total)].filter(Boolean).join(', '); }
+  /* what a Desk row is, in the order a person says it: the kind, the size, the sum; its book is the mark its card draws before these words (needCard, mark) */
+  function rowWhat(d){ var e=d.entry||{}; return [entryWord(e), d.qty==null?'':units(d.qty), rm(d.total)].filter(Boolean).join(', '); }
   function ghost(t, lit){ var L=labOf(t), b=actOn(el('button','salt-ghost'+(lit?' salt-ghost--lit':''),L[0]),L[1],L[2]); b.type='button'; return b; }
   function pill(t){ var L=labOf(t), b=actOn(el('button','salt-pill salt-pill--md',L[0]),L[1],L[2]); b.type='button'; return b; }
   /* an age in the hours a customer has waited: minutes under the first, days from the third */
@@ -4079,7 +4081,7 @@ export const OWNER_JS = `
     c.appendChild(el('span','salt-action__kind',o.word));
     title.appendChild(whoTag(el('span','need-who',o.who),o.who));
     if(o.practice) title.appendChild(chip('mist','Practice'));
-    if(o.what) title.appendChild(el('span','need-what',o.what));
+    if(o.what||o.mark){ var what=el('span','need-what'); if(o.mark) what.appendChild(bookMark(o.mark)); if(o.what) what.appendChild(document.createTextNode((o.mark?' ':'')+o.what)); title.appendChild(what); }
     body.appendChild(title);
     if(o.why) body.appendChild(el('p','salt-action__why',o.why));
     c.appendChild(body);
@@ -4229,7 +4231,7 @@ export const OWNER_JS = `
   function ordWaits(o){ return orderPartsOf(o).indexOf('orders.waiting')>=0; }
   /* an order's Open goes to Orders > Waiting on you with that order's card open (Phase 1c) */
   function orderOpener(id){ return function(){ showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }
-  function orderWhat(o){ return units(o.qty)+' '+bookName(o.product)+', '+rm(o.total); }
+  function orderWhat(o){ return units(o.qty)+', '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
   /* a Desk row to approve: the same tap, the same question and the same request as Approve row on Record > Approve (approveDraft). A row
@@ -4238,7 +4240,7 @@ export const OWNER_JS = `
   function rowNeed(d){
     var e=d.entry||{}, claim=e.claim||(e.fulfil&&e.fulfil.claim), sibs=tripRows(d), said=needSaid['d:'+d.id];
     return item('soon','rows','Row','d:'+d.id, isoAt(d.id), {who:e.party||'no code',
-      what:rowWhat(d),
+      mark:d.qty==null?'':d.product, what:rowWhat(d),
       why:claim?'Answer this through the payment card.'
         :sibs.length?(sibs.length===2?'Two books, one trip. Approve decides both.':sibs.length+' books, one trip. Approve decides all of them.'):'',
       open:goPlace('record','approve')}, function(c){
@@ -4265,7 +4267,7 @@ export const OWNER_JS = `
   }
   function entryNeed(r, key){
     return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', what:'did not get through',
-      why:r.why||'The Desk could not take this entry.', open:goPlace('record','approve')});
+      why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('record','approve')});
   }
   /* an entry kept on this phone and not confirmed (Phase 4c): Soon, his own work; its Open is Record, on the entry's own section, where Send again, Update and send and Discard are */
   function unsentNeed(u){
@@ -4356,7 +4358,7 @@ export const OWNER_JS = `
     needN=0;
     orders.filter(ordWaits).forEach(function(o){
       var who=codeByUser(o.u), t=!!o.test, to=orderOpener(o.id), pays=ordPays(o);
-      if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, what:orderWhat(o), practice:t, open:to}));
+      if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o), practice:t, open:to}));
       /* a question of theirs on the order that he has not answered (the Worker's awaitingAnswer), as an account's thread is Now when asked */
       if(orderAsked(o)){
         var last=o.msgs[o.msgs.length-1];
@@ -4366,7 +4368,7 @@ export const OWNER_JS = `
         var sum=pays.reduce(function(s,p){ return s+(+p.amount||0); },0), first=pays.map(function(p){ return p.at||''; }).filter(Boolean).sort()[0]||'';
         L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, what:'says they paid '+rm(sum), practice:t, open:to}));
       }
-      if(o.again&&o.again.length) L.push(item('soon','orders','Order','a:'+o.id, o.at, {who:who, what:orderWhat(o),
+      if(o.again&&o.again.length) L.push(item('soon','orders','Order','a:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o),
         why:'A step you rejected waits to be sent again.', practice:t, open:to}));
     });
     waitingClaims().forEach(function(c){
@@ -4540,7 +4542,7 @@ export const OWNER_JS = `
     }
     if(head) head.textContent='As at '+(cards.at?stampDay(cards.at):'the last publish')+'.';
     cards.products.forEach(function(p){
-      wrap.appendChild(bookHead('h2',p.product,p.name));
+      wrap.appendChild(pmarkHead('h2',p.product));
       if(!p.rows.length){ wrap.appendChild(el('p','rnone','Nobody on this book yet.')); return; }
       p.rows.forEach(function(r){ wrap.appendChild(cardOf(r)); });
     });

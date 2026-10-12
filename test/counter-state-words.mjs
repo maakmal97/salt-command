@@ -1,24 +1,24 @@
-/* test/counter-state-words.mjs: ONE WORD PER STATE, AND THE SHAPE BESIDE THE MARK (Phase 7c of the Salt Account and Counter redesign,
- * his decision 10 of 11 Oct 2026: Confirmed for acknowledged, Placed for Sent, Declined for Not taken, and the shape word visible beside
- * the mark, "Cube, 2.5 units").
+/* test/counter-state-words.mjs: ONE WORD PER STATE, AND THE MARK ALONE (Phase 7c of the Salt Account and Counter redesign, his decision 10
+ * of 11 Oct 2026: Confirmed for acknowledged, Placed for Sent, Declined for Not taken; and his word of 12 Oct 2026, "Remove the shapes names
+ * in the Order page, and anywhere", which took back the shape word that 7c drew beside the mark).
  *
- * The customer's page named one step four ways (Sent, Acknowledged, agreed, your yes) and drew a mark with a hidden name. Now an order is
- * Placed, Confirmed, Ready, Collected or Delivered, Complete, or Declined; a claim of theirs is Waiting for us to confirm; the
- * acknowledgement family is gone from every word the customer reads, the banners included; and a mark is never alone: its shape word
- * stands beside it (a tile's caption, a heading's word, an inline word), the screen reader's name said where it is seen, and no shape
- * word is a product's. Every assertion observes the generated page in jsdom (the text it renders after each state is driven, the
- * banners the service worker builds from the real wake of each move) or the server's own markup; the table sweep below is only the net
- * under what cannot be driven. Each check was proved red by its own mutation (test/counter-state-words.mutations.json, run with
- * tools/section.mjs). Every code, name and password is invented.
+ * The customer's page named one step four ways (Sent, Acknowledged, agreed, your yes). Now an order is Placed, Confirmed, Ready,
+ * Collected or Delivered, Complete, or Declined; a claim of theirs is Waiting for us to confirm; the acknowledgement family is gone from
+ * every word the customer reads, the banners included; and a mark stands alone: no shape word (Cube, Droplet, Lozenge, Capsule, Ring) is
+ * drawn on any screen, beside a mark or under it, while the screen reader is still told the shape (the name of a heading, a tile, a legend
+ * and a line), and no shape word is a product's. Every assertion observes the generated page in jsdom (the text it renders after each
+ * state is driven, the banners the service worker builds from the real wake of each move) or the server's own markup; the table sweep
+ * below is only the net under what cannot be driven. Each check was proved red by its own mutation
+ * (test/counter-state-words.mutations.json, run with tools/section.mjs). Every code, name and password is invented.
  *   1  every state of an order, its list row, its own screen, its steps and the sentence under it: the one word of the table
  *   2  a claim of theirs waiting reads Waiting for us to confirm, and a placed order is waiting on the same words, on Orders and Home
  *   3  no word of the acknowledgement family, and no Not taken, in the text any screen renders, the order sheet and Place included
  *   4  the banner of each move, built by the service worker from the wake the move sends: its title and its body
  *   5  every word the page is served, swept for the family (the net under 3 and 4), and the keys all still there
  *   6  supply reads More by 20 Oct under a yellow mark, nothing under red or green, and never Expected by
- *   7  a mark is never alone: every mark on every screen has its shape word beside it, and it is the reader's name said aloud
- *   8  the tile's caption is the shape and the size in words, may break after its comma, and the same on the statement's server markup
- *   9  no shape word is a product's: the captions and headings scanned as the product words and the level words, on every screen
+ *   7  a mark stands alone: no screen draws a shape word, and every mark on every screen still has its shape as the reader's name
+ *   8  the tile's caption is the size in words alone, the same on the statement's server markup, and the page carries no rule for a shape word
+ *   9  no shape word is a product's: what the reader is told, scanned as the product words and the level words, on every screen
  *  10  his answers and his reasons that use the new words pass siteWords and the Desk's siteSafe, and the controls still refuse
  *  11  what the desk card says they see follows: Placed, Confirmed, Declined, off the page's own words
  *  12  the practice accounts show the new words on their orders, and their feature names carry none of the old */
@@ -109,14 +109,21 @@ export async function run({ ok }) {
     return { w, d, st };
   };
   const tab = (pg, k) => pg.d.querySelector('button[data-t="' + k + '"]').click();
-  /* a mark alone: its shape word is not beside it. A tile's is its caption (.mq), anywhere else the word that follows the mark. */
-  const lone = (d) => [...d.querySelectorAll("svg.psym:not(.glyph)")].filter((s) => {
-    const nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack"), cap = tile && tile.querySelector(".mq");
-    const word = nx && nx.classList.contains("pshape") ? t(nx) : cap ? t(cap).split(",")[0] : "";
-    return !SHAPES.includes(word);
+  /* what is DRAWN: every text node a person can see, which leaves out what the reader alone is told (.sr), a mark's own letter (it is in the svg)
+     and the page's script and style */
+  const drawnText = (root) => { const out = [], tw = root.ownerDocument.createTreeWalker(root, 4);
+    while (tw.nextNode()) { const n = tw.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) && !n.parentNode.closest(".sr, svg")) out.push(n.nodeValue); }
+    return out.join(" ").replace(/\s+/g, " "); };
+  /* the shape words drawn under root, each as many times as it stands (a mark whose shape word is drawn is a mark that is not alone) */
+  const shapesDrawn = (root) => { const s = drawnText(root); return SHAPES.flatMap((w) => s.match(new RegExp("\\b" + w + "\\b", "g")) || []); };
+  /* a mark with no name: the reader is told its shape by the heading's own label, by the .sr that follows it, or by its tile's .sr. A nameless mark is a hole. */
+  const nameless = (d) => [...d.querySelectorAll("svg.psym:not(.glyph)")].filter((s) => {
+    const host = s.closest("[aria-label]"), nx = s.nextElementSibling, tile = s.closest(".mtile, .mstack"), tsr = tile && tile.querySelector(".sr");
+    return !((host && SHAPES.some((x) => host.getAttribute("aria-label").startsWith(x)))
+      || (nx && nx.classList.contains("sr") && SHAPES.includes(t(nx))) || (tsr && SHAPES.some((x) => t(tsr).startsWith(x))));
   });
   const seen = { marks: 0 };
-  const marks = (d) => { seen.marks = Math.max(seen.marks, d.querySelectorAll("svg.psym:not(.glyph)").length); return lone(d); };
+  const marks = (d) => { seen.marks = Math.max(seen.marks, d.querySelectorAll("svg.psym:not(.glyph)").length); return nameless(d); };
 
   try {
     /* ---- 1 and 2: every state, on the list and on the order's own screen */
@@ -179,7 +186,8 @@ export async function run({ ok }) {
     const sentText = t(L.d.getElementById("osheet"));
     ok(sentText.startsWith("Order placed") && sentText.includes("We confirm it there, and you pay once it is confirmed.") && !FAMILY.test(sentText),
       "Place answers Order placed, and that we confirm it there: " + JSON.stringify(sentText.slice(0, 120)));
-    ok(marks(L.d).length === 0 && marks(S.d).length === 0, "and no screen of either page draws a mark without its shape word beside it (see 7)");
+    ok(marks(L.d).length === 0 && marks(S.d).length === 0 && shapesDrawn(L.d.body).length === 0 && shapesDrawn(S.d.body).length === 0,
+      "and no screen of either page draws a shape word, nor leaves a mark without its name (see 7)");
 
     /* ---- 4: the banner of each move, off the real wake and the service worker's own builder */
     const shown = [], handlers = {};
@@ -226,22 +234,25 @@ export async function run({ ok }) {
     ok(panes[0].aria === "Cube, Limited" && panes[0].by === "More by 20 Oct" && panes[1].aria === "Droplet, Out for now" && panes[1].by === "" && panes[2].aria === "Lozenge, Available" && panes[2].by === "" && !/Expected by/.test(priceText),
       "yellow with a day reads More by 20 Oct, red with none and green with one read nothing under the mark, and it never reads Expected by: " + JSON.stringify(panes));
 
-    /* ---- 7: a mark is never alone */
-    const looseP = marks(S.d), looseL = marks(L.d);
-    const heads = [...S.d.querySelectorAll("#pPrices h2.pmark")].map((h) => [h.getAttribute("aria-label").split(",")[0], t(h.querySelector(".pshape"))]);
-    ok(seen.marks >= 25 && looseP.length === 0 && looseL.length === 0 && heads.length === 4 && heads.every(([a, b]) => a === b),
-      "every mark drawn across Prices, Home, Your orders, each order's screen and the order sheet has its shape word beside it, and a heading's word is its name: " + JSON.stringify({ marks: seen.marks, lone: looseP.length + looseL.length, heads }));
+    /* ---- 7: a mark stands alone (his word of 12 Oct 2026): no shape word is drawn, and the reader is still told the shape */
+    const nameP = marks(S.d), nameL = marks(L.d);
+    const heads = [...S.d.querySelectorAll("#pPrices h2.pmark")].map((h) => [h.getAttribute("aria-label").split(",")[0], drawnText(h).trim()]);
+    ok(seen.marks >= 25 && shapesDrawn(S.d.body).length === 0 && shapesDrawn(L.d.body).length === 0 && nameP.length === 0 && nameL.length === 0
+      && heads.length === 4 && heads.every(([a, b]) => SHAPES.includes(a) && b === ""),
+      "no shape word is drawn across Prices, Home, Your orders, each order's screen and the order sheet, every mark is still named by its shape for the reader, and a heading is its mark alone: " + JSON.stringify({ marks: seen.marks, drawn: shapesDrawn(S.d.body).concat(shapesDrawn(L.d.body)), nameless: nameP.length + nameL.length, heads }));
     const checkL = await open({ orders: [] });
     tab(checkL, "order"); await until(() => checkL.d.getElementById("oNew")); checkL.d.getElementById("oNew").click();
-    const legs = [...checkL.d.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym")).map((f) => t(f.querySelector("legend .pshape")));
-    const more = [...checkL.d.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym") && !f.querySelector("input:checked"));
+    const legsAll = [...checkL.d.querySelectorAll("#osheet fieldset.salt-options")].filter((f) => f.querySelector("legend svg.psym"));
+    const legs = legsAll.map((f) => [t(f.querySelector("legend .sr")), drawnText(f.querySelector("legend")).trim()]);
+    const more = legsAll.filter((f) => !f.querySelector("input:checked"));
     more.forEach((f) => f.querySelector("input").click());
     checkL.d.getElementById("oGo").click();
-    const lines = [...checkL.d.querySelectorAll("#osheet .pwith")].map((x) => t(x));
-    ok(legs.length === 4 && legs.every((x) => SHAPES.includes(x)) && lines.length >= 2 && lines.every((x) => SHAPES.some((s) => x.endsWith(s))) && marks(checkL.d).length === 0,
-      "the order sheet names each book by its shape, in its legend and in each line of the check, beside the mark: " + JSON.stringify({ legs, lines }));
+    const lines = [...checkL.d.querySelectorAll("#osheet .pwith")].map((x) => [t(x.querySelector(".sr")), drawnText(x).trim()]);
+    ok(legs.length === 4 && legs.every(([said, drawn]) => SHAPES.includes(said) && drawn === "") && lines.length >= 2 && lines.every(([said, drawn]) => SHAPES.includes(said) && /^\d+(\.\d+)? units?$/.test(drawn))
+      && marks(checkL.d).length === 0 && shapesDrawn(checkL.d.body).length === 0,
+      "the order sheet names each book by its shape for the reader only, in its legend (the mark alone) and in each line of the check (the size, then the mark): " + JSON.stringify({ legs, lines }));
 
-    /* 7b: a sheet of two books whose list moved at Place: each line that moved leads with its mark and its shape word */
+    /* 7b: a sheet of two books whose list moved at Place: each line that moved leads with its mark, named by its shape for the reader only */
     const list2 = (digest, oil10) => ({ at: new Date().toISOString(), digest, week: { monday: "2026-10-05", label: "5 to 11 Oct 2026" }, soon: [],
       products: [{ product: "salt", unit: "unit", basis: "tier", tier: "Gold", sizes: [{ q: 1, price: 100 }, { q: 2, price: 190 }] },
         { product: "oil", unit: "unit", basis: "fixed", sizes: [{ q: 5, price: 50 }, { q: 10, price: oil10 }] }] });
@@ -255,46 +266,45 @@ export async function run({ ok }) {
     M.d.getElementById("oGo").click(); M.d.getElementById("oPlace").click();
     await until(() => M.d.querySelector("#osheet .salt-insight--copper"));
     const mv = M.d.querySelector("#osheet .salt-insight--copper"), mvKid = mv && mv.firstElementChild, mvNext = mvKid && mvKid.nextElementSibling;
-    ok(!!mv && /Now RM 99\.00 \(was RM 95\.00\)/.test(t(mv)) && !!mvKid && mvKid.classList.contains("psym") && !!mvNext && mvNext.classList.contains("pshape") && t(mvNext) === "Droplet" && marks(M.d).length === 0,
-      "a line of the check whose price moved at Place leads with its mark and its shape word, and no mark on that sheet is alone: " + JSON.stringify(mv && t(mv)));
+    ok(!!mv && /Now RM 99\.00 \(was RM 95\.00\)/.test(t(mv)) && !!mvKid && mvKid.classList.contains("psym") && !!mvNext && mvNext.classList.contains("sr") && t(mvNext) === "Droplet"
+      && shapesDrawn(mv).length === 0 && marks(M.d).length === 0,
+      "a line of the check whose price moved at Place leads with its mark, named by its shape for the reader and drawn with no shape word: " + JSON.stringify(mv && drawnText(mv)));
 
-    /* ---- 8: the tile's caption */
+    /* ---- 8: the tile's caption is the size alone */
     const tile = S.d.querySelector('#pOrder [data-row="' + A.id + '"] .mtile');
     const capOf = (tl) => t(tl.querySelector(".mq")), srOf = (tl) => t(tl.querySelector(".sr"));
     const tiles = [...S.d.querySelectorAll(".mtile")];
-    ok(!!tile && capOf(tile) === "Cube, 2.5 units" && srOf(tile) === "Cube 2.5 units" && tile.querySelector(".mq").getAttribute("aria-hidden") === "true" && t(tile.querySelector(".mq .nb")) === "2.5 units"
-      && tiles.length > 10 && tiles.every((tl) => capOf(tl) === srOf(tl).replace(/^(\S+) /, "$1, ")),
-      "a tile's caption is the shape and the size in words, Cube, 2.5 units, drawn and hidden from a reader who hears the same once; on every tile it is the reader's name with the comma: " + JSON.stringify([capOf(tile), srOf(tile)]));
-    const cs = (e) => S.w.getComputedStyle(e);
-    ok(cs(tile.querySelector(".mq")).whiteSpace === "normal" && cs(tile.querySelector(".mq .nb")).whiteSpace === "nowrap" && /\.mtile \.mq\{[^}]*max-width:11ch/.test(P.landingPage(u, "n7c4", null)),
-      "and it may break after its comma and never inside the size: " + JSON.stringify([cs(tile.querySelector(".mq")).whiteSpace, cs(tile.querySelector(".mq .nb")).whiteSpace]));
+    ok(!!tile && capOf(tile) === "2.5 units" && srOf(tile) === "Cube 2.5 units" && tile.querySelector(".mq").getAttribute("aria-hidden") === "true" && !tile.querySelector(".mq .nb")
+      && tiles.length > 10 && tiles.every((tl) => srOf(tl) === SHAPES.find((s) => srOf(tl).startsWith(s + " ")) + " " + capOf(tl)),
+      "a tile's caption is the size in words, 2.5 units, with no shape word, and a reader hears the shape and the size once; on every tile the reader's name is the shape, then the caption: " + JSON.stringify([capOf(tile), srOf(tile)]));
     const sv = new JSDOM("<body>" + P.mtileSvg("salt", "2.5 units") + P.mtileSvg("spare", "1 unit") + "</body>").window.document;
     const [t1, t2] = [...sv.querySelectorAll(".mtile")];
-    ok(!!t1 && !!t2 && capOf(t1) === "Cube, 2.5 units" && srOf(t1) === "Cube 2.5 units" && capOf(t2) === "Ring, 1 unit" && srOf(t2) === "Ring 1 unit" && t1.querySelector(".mq").getAttribute("aria-hidden") === "true"
-      && t1.querySelectorAll("svg.psym").length === 1 && t1.querySelector("svg text.plet").textContent === P.PLET.salt,
-      "the statement's server markup draws the same caption, the Ring for a book with no mark, and keeps its letter: " + JSON.stringify([capOf(t1), capOf(t2)]));
+    ok(!!t1 && !!t2 && capOf(t1) === "2.5 units" && srOf(t1) === "Cube 2.5 units" && capOf(t2) === "1 unit" && srOf(t2) === "Ring 1 unit" && t1.querySelector(".mq").getAttribute("aria-hidden") === "true"
+      && t1.querySelectorAll("svg.psym").length === 1 && t1.querySelector("svg text.plet").textContent === P.PLET.salt && shapesDrawn(sv.body).length === 0,
+      "the statement's server markup draws the same caption, the size alone, the Ring's name for a book with no mark, and keeps its letter: " + JSON.stringify([capOf(t1), capOf(t2)]));
+    const served8 = P.landingPage(u, "n7c4", null), css8 = (served8.match(/<style[^>]*>[\s\S]*?<\/style>/) || [""])[0];
+    ok(css8.includes(".mtile{") && !/\.pshape|\.mq \.nb|max-width:11ch/.test(css8), "and the page carries no rule for a shape word, nor for the caption's comma break");
     const board = new JSDOM(P.boardPage({ prices: { week: { label: "5 to 11 Oct 2026" }, products: [
       { product: "salt", unit: "unit", sizes: [{ q: 1, price: 130 }] }, { product: "oil", unit: "unit", sizes: [{ q: 1, price: 44 }] }, { product: "tin", unit: "unit", sizes: [{ q: 1, price: 9 }] }] } }, "n7c3")).window.document;
-    const bh = [...board.querySelectorAll("h2.pmark")].map((h) => [h.getAttribute("aria-label"), t(h.querySelector(".pshape")), !!h.querySelector("svg.psym")]);
-    ok(JSON.stringify(bh) === JSON.stringify([["Cube", "Cube", true], ["Droplet", "Droplet", true], ["Ring", "Ring", true]]),
-      "a guest's board names each mark beside it, the Ring for a book with none: " + JSON.stringify(bh));
+    const bh = [...board.querySelectorAll("h2.pmark")].map((h) => [h.getAttribute("aria-label"), drawnText(h).trim(), !!h.querySelector("svg.psym")]);
+    ok(JSON.stringify(bh) === JSON.stringify([["Cube", "", true], ["Droplet", "", true], ["Ring", "", true]]) && shapesDrawn(board.body).length === 0,
+      "a guest's board is each mark alone, named by its shape for the reader, the Ring for a book with none: " + JSON.stringify(bh));
 
-    /* ---- 9: no shape word is a product's, wherever it is drawn */
+    /* ---- 9: no shape word is a product's, wherever the reader is told it */
     /* the signed-in screens: the door and Account say the app's own name, Salt Counter, the one name the site may write (v704) */
     const screens = (d) => ["pHome", "pPrices", "pOrder", "pCard", "osheet", "ynSheet", "paySheet"].map((id) => d.getElementById(id)).filter(Boolean).map(words).join(" ");
     const bits9 = { page: screens(S.d), placed: screens(L.d), sheet: screens(checkL.d), board: words(board.body), tiles: t(sv.body) }, everyText = Object.values(bits9).join(" ");
     const where9 = Object.entries(bits9).filter(([, v]) => SO.wordsIn(v, PRODUCTS).length).map(([k, v]) => [k, (v.match(/.{0,30}\b(salt|oil|candy|rice|spare)\b.{0,30}/i) || [""])[0]]);
     ok(SO.wordsIn(everyText, PRODUCTS).length === 0 && !SHAPES.some((s) => SO.wordsIn(s, PRODUCTS).length) && !PRODUCTS.some((w) => new RegExp("(^|[^a-z])" + w, "i").test(SHAPES.join(" "))) && SHAPES.length === 5,
-      "no product word and no level word in the captions, headings and lines of any screen, and none among the five shape words: " + JSON.stringify(where9));
+      "no product word and no level word in the captions, headings and lines of any screen, what the reader is told included, and none among the five shape words: " + JSON.stringify(where9));
 
     /* ---- 10: his words, through both locks */
     const { w: desk } = await openMaster();
     const safe = (s) => JSON.parse(String(desk.eval("JSON.stringify(siteSafe(" + JSON.stringify(s) + "))")));
-    const newWords = ["Placed", "Confirmed", "Declined", "Waiting for us to confirm", "Order confirmed", "Order declined", "More by 20 Oct", "We could not take this order.",
-      "Your order is confirmed and placed: Cube, 2.5 units.", "Declined: Capsule, 1 unit, out of stock this week.", "Waiting for us to confirm your Lozenge, 2 units, and the Ring, 1 unit."]
-      .concat(SHAPES.map((s) => s + ", 2.5 units"), ["st.placed", "st.acknowledged", "st.declined", "ow.placed", "ow.confirmed", "ow.declined", "ow.declinedWhy", "hc.placed", "why.placed", "news.confirmed", "news.declined", "sup.by"].map((k) => W.EN[k]));
+    const newWords = ["Placed", "Confirmed", "Declined", "Waiting for us to confirm", "Order confirmed", "Order declined", "More by 20 Oct", "We could not take this order."]
+      .concat(SHAPES, ["st.placed", "st.acknowledged", "st.declined", "ow.placed", "ow.confirmed", "ow.declined", "ow.declinedWhy", "hc.placed", "why.placed", "news.confirmed", "news.declined", "sup.by"].map((k) => W.EN[k]));
     const bad = newWords.filter((x) => SO.siteWords(x) !== "" || SO.wordsIn(x, PRODUCTS).length || JSON.stringify(safe(x)) !== JSON.stringify({ refuse: "", warn: "" }));
-    ok(bad.length === 0 && newWords.length > 25, "every new word, and his answers and reasons made of them, pass siteWords on the Worker and siteSafe on the Desk: " + JSON.stringify(bad));
+    ok(bad.length === 0 && newWords.length > 20, "every new word, and his answers and reasons made of them, pass siteWords on the Worker and siteSafe on the Desk: " + JSON.stringify(bad));
     ok(SO.siteWords("you are Gold") !== "" && SO.siteWords("Placed at CX7-LUM") !== "" && safe("you are Gold").refuse !== "" && safe("Confirmed: your oil") .warn !== "" && safe("Placed at CX7-LUM").refuse !== "",
       "and the locks still refuse a level, a code and a product's word beside them, so the pass above is not a lock that opened");
 
