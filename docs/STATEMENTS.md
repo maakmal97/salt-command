@@ -2358,12 +2358,12 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cash again. |
 | `order.again-move` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected handover again. |
 | `order.again-pay` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected payment again. |
-| `order.amend` | Same card | Sends the amendment for approval. |
-| `order.amend-delivery` | Same card | The amended delivery charge, in RM. |
-| `order.amend-total` | Same card | The amended goods price, in RM. |
-| `order.amend-units` | Order card (key: the order id), acknowledged or ready | The amended units. |
+| `order.amend` | Order card, acknowledged or ready | Opens the Change the order Sheet: Units, Price (goods) and Delivery. |
+| `order.amend-delivery` | The Change the order Sheet (key: the order id) | The amended delivery charge, in RM. |
+| `order.amend-total` | Same sheet | The amended goods price, in RM. |
+| `order.amend-units` | Same sheet | The amended units. |
 | `order.ask-close` | The sheet an order card asks on (key: the order id) | Closes the sheet, sending nothing. |
-| `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close, the offer again, or a claim's Received or Not found. |
+| `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close, the offer again, a claim's Received or Not found, or the change to the order for approval. |
 | `order.ask-keep` | Same sheet | Leaves the order as it was, sending nothing. |
 | `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Asks on a sheet, with a reason, then cancels the order. |
@@ -2606,6 +2606,12 @@ row) and `queue.details` (Reference, Sent, State). **A row's Details are never J
 the identifier spaced out), a value through `rowValue` (a size in units, a sum in RM, a day as DD Mon YYYY, a yes as Yes or No, a list on one line, a figure inside a
 figure as *Price: RM 5.00*), and a claim row's flag that is not a sentence is worded the same way. Opening one reads and sends nothing; no request, body or request
 id of any card changed. `test/admin-details.mjs`.
+
+**Change the order is a Sheet.** An agreed or ready order's card has one control, Change the order (`order.amend`), in place of the three fields and the Send the change
+button down the card. It opens the page's Sheet (`amendOpen`, through `makerAsk`, so the order is restated at its head by its mark, code, size and figure) with Units,
+Price (goods) and Delivery as they stand, its one action Send the change and the other Not now. **The action sends what Send the change sent**: `POST /all/maker/orders/<id>/restate`,
+only the figures changed, the goods' price with a new size, under the request id that route minted until it lands; nothing changed says *Change a figure first.* on the card. What was typed is kept
+while the change has not landed (`amendMemo`, forgotten once it has), so a lost reply is opened again as he left it and retried as the same request. `test/maker-amend.mjs`.
 
 ## Before committing
 

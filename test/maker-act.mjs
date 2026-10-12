@@ -352,6 +352,8 @@ export async function drawEverything(p) {
   await click(byAct(card("ord-p3"), "order.reread"));
   card("ord-p4"); p.snap("an offer sent for their yes");
   card("ord-a1"); p.snap("an agreed order with claims waiting");
+  /* Change the order (Phase 4c, glossary 5.2) is a Sheet of Units, Price (goods) and Delivery, let go with Not now */
+  await click(byAct(card("ord-a1"), "order.amend")); p.snap("a Change the order, asking on the sheet with its figures"); await click(byAct(d, "order.ask-keep"));
   card("ord-a2"); await work.quiet(); p.snap("an agreed order offered again");
   card("ord-x1"); p.snap("a closed order with a stage he rejected");
   await click(byAct(card("ord-x1"), "order.again-pay")); p.snap("a stage offered again, asking on the sheet"); await click(byAct(d, "order.ask-keep"));

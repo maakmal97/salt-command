@@ -3707,18 +3707,8 @@ export const OWNER_JS = `
       }
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
-        card.appendChild(el('h4',null,'Change the order'));
-        var aq=makerField(card,['Units','order.amend-units'],'number',order.qty), at=makerField(card,['Price (goods)','order.amend-total'],'number',order.total), ad=makerField(card,['Delivery','order.amend-delivery'],'number',order.delivery||0);
-        [aq,at,ad].forEach(function(f){ f.setAttribute('data-amend-field',''); });
-        makerButton(card,['Send the change','order.amend'],function(){
-          var body={}, q=Number(aq.value), t=Number(at.value), d=Number(ad.value);
-          if(q!==Number(order.qty)) body.qty=q;
-          if(t!==Number(order.total)) body.total=t;
-          if(d!==Number(order.delivery||0)) body.delivery=d;
-          if(body.qty!==undefined&&body.total===undefined) body.total=t;
-          if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }
-          makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.');
-        },false).setAttribute('data-amend','');
+        var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
+        change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
       }
       makerAgain(card,order,acts);
       makerOrderMoves(card,order,false,acts);
@@ -3727,6 +3717,31 @@ export const OWNER_JS = `
       if(quoteStart) quoteStart();
       return card;
     }
+  }
+  /* 12 Oct 2026 (Phase 4c, glossary 5.2): CHANGE THE ORDER IS A SHEET of Units, Price (goods) and Delivery, opened from the card's Change the order (it was three fields and
+     a button down the card). Its one action sends exactly what Send the change sent: the same restate route, the same figures (only those changed, the goods' price with a
+     new size) and the same request id until it lands, so a lost reply is retried as itself. The card keeps what was typed while a change has not landed (amendMemo), so a
+     failed send is opened again as he left it; a change that landed is forgotten, as the redrawn card forgot it. */
+  var amendMemo={};
+  function amendOpen(order,opener){
+    var base=[order.qty,order.total,order.delivery||0].join(), memo=amendMemo[order.id], kept=memo&&memo.base===base?memo.vals:null;
+    function one(label,act,value){
+      var wrap=el('label','salt-field'), input=actOn(el('input','salt-field__input'),act,order.id);
+      input.type='number'; input.step='0.01'; input.min='0'; input.inputMode='decimal'; input.value=String(value); input.setAttribute('data-amend-field','');
+      wrap.appendChild(el('span','salt-field__label',label)); wrap.appendChild(input); return {wrap:wrap, input:input};
+    }
+    var aq=one('Units','order.amend-units',kept?kept[0]:order.qty), at=one('Price (goods)','order.amend-total',kept?kept[1]:order.total), ad=one('Delivery','order.amend-delivery',kept?kept[2]:order.delivery||0);
+    makerAsk(order,opener,'amend',{title:'Change the order', plain:true, go:'Send the change', keep:'Not now', say:['You approve the change next, under Approve.'], extra:[aq.wrap,at.wrap,ad.wrap],
+      yes:function(){
+        var body={}, q=Number(aq.input.value), t=Number(at.input.value), d=Number(ad.input.value);
+        if(q!==Number(order.qty)) body.qty=q;
+        if(t!==Number(order.total)) body.total=t;
+        if(d!==Number(order.delivery||0)) body.delivery=d;
+        if(body.qty!==undefined&&body.total===undefined) body.total=t;
+        if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }
+        amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value]};
+        makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.').then(function(){ if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id]; });
+      }});
   }
   /* the card of an order that is not open: one with a stage he rejected keeps its card until that stage is offered again or left; a closed
      order has its figures, and a question of theirs he has not answered its reply; cash held for it keeps its Undo (or its Retry) */
