@@ -2487,7 +2487,8 @@ Every word on Salt Account is the glossary's (`System\Code\Artifacts\counter-red
 noun for a heading, no engine word where a person's word exists (a sale, a purchase, a correction; not SELL, BUY, AMEND). The words live in `stmt/owner.js` and the
 owner-only strings of `stmt/page.js`; **nothing is added to `stmt/words.js` and the customer's words are untouched**. Three helpers print a day, a size and a
 sum, so no card prints one its own way: `fmtWhen` (a day is `10 Oct 2026`, a moment `10 Oct 2026, 17:20`, Kuala Lumpur, 24 hours, never ISO or UTC),
-`units` (`1 unit`, `2.5 units`) and `rm` (`RM 1,234.50`); they are the page's own, so a new card calls them and does not format.
+`units` (`1 unit`, `2.5 units`) and `rm` (`RM 1,234.50`); they are the page's own, so a new card calls them and does not format. How they signed in
+names a code once, *Code*, with the road it took (typed in, copied across, scanned at the counter) under its date, and an account's chip says *by code*.
 
 **A refusal is a plain sentence, the server's own words one tap away.** The Counter and the Desk refuse a move in their own words (`stmt/maker.js`,
 `src/maker-inputs.js`, `stmt/hours.js`, `src/orders.js`). `refs()` raises the plain sentence as the Error's message, the server's words in `.raw` and the

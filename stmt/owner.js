@@ -373,8 +373,7 @@ export const OWNER_JS = `
       'Too many wrong passwords'+(L.until?', locked out until '+hm(L.until):'')+'.'));
     var log=(s&&s.log)||[];
     log.forEach(function(x){
-      var way=lineRow(HOWW[x.how]||'Signed in', x.how==='password'||x.how==='passkey'?null:chip('verdigris','Used'), fmtWhen(x.at)+onWhat(x.where));
-      if(HOWT[x.how]) way.title=HOWT[x.how];
+      var way=lineRow(HOWW[x.how]||'Signed in', x.how==='password'||x.how==='passkey'?null:chip('verdigris','Used'), fmtWhen(x.at)+onWhat(x.where)+(HOWT[x.how]?'. '+HOWT[x.how]+'.':''));
       list.appendChild(way);
     });
     if(!s) list.appendChild(lineRow('Reading how they signed in.', null, ''));

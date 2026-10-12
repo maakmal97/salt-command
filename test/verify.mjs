@@ -18752,7 +18752,7 @@ await (async () => {
     const headOf = (c) => { let e = c; while (e && (e = e.previousElementSibling)) if (e.classList.contains("ghead")) return e.textContent; return ""; };
     const ac = cardOf(), acH = ac && ac.querySelector("h4").textContent, acT = ac && ac.querySelector(".gt").textContent;
     ok(noteOf() === "Approved. It opens now." && headOf(ac) === "Made by associates"
-      && acH === "Minted by " + u && acT === "Follows the associate",
+      && acH === "Made by " + u && acT === "Follows " + u,
       "an approved link says it is open on its own card, and stays under Made by associates, minted by its associate, never Tier 2 with no label: "
       + JSON.stringify({ note: noteOf(), head: headOf(ac), h4: acH, gt: acT }));
     ok(await until(() => [...D.querySelectorAll("#glist button")].some((b) => b.textContent === "Withdraw")) && tap("Withdraw")
@@ -19183,7 +19183,7 @@ await (async () => {
     /* ---- every tier's link made: four, and nothing said to be missing ---- */
     const D1 = await panel();
     const heads1 = [...D1.querySelectorAll("#glist .ghead")].map((x) => x.textContent), text1 = D1.getElementById("glist").textContent;
-    ok(D1.querySelectorAll("#glist .glink").length === 4 && heads1.includes("One for each of the 4 tiers") && !/five/i.test(text1) && !/Only \d/.test(text1),
+    ok(D1.querySelectorAll("#glist .glink").length === 4 && heads1.includes("One link per price level") && !/five/i.test(text1) && !/Only \d/.test(text1),
       "with a link for each of the four tiers the heading counts four off the list and nothing is said to be missing: " + JSON.stringify({ heads1, only: (/Only[^.]*\./.exec(text1) || [""])[0] }));
 
     /* ---- Bronze's kept link, and a pending link its associate withdrew ---- */
@@ -19197,8 +19197,8 @@ await (async () => {
     const groupOf = (id) => { let g = null; for (const n of D2.getElementById("glist").children) { if (n.classList.contains("ghead")) g = n.textContent; if (n === cardOf(id)) return g; } return null; };
     await until(() => cardOf(gone) && cardOf(still) && cardOf(bronze.id));
     const bh4 = cardOf(bronze.id) ? cardOf(bronze.id).querySelector("h4").textContent : "";
-    ok(!/quote Bronze/.test(bh4) && /board a stranger sees/.test(bh4),
-      "Bronze's kept link says it opens the board a stranger sees, not a level the book no longer has: " + JSON.stringify(bh4));
+    ok(!/quote Bronze/.test(bh4) && /An old link, kept/.test(bh4),
+      "Bronze's kept link is called an old link, kept, not a level the book no longer has: " + JSON.stringify(bh4));
     ok(groupOf(still) === "Waiting on you" && groupOf(gone) !== "Waiting on you",
       "a pending link its associate withdrew is not waiting on him, while the one still pending is: " + JSON.stringify([groupOf(still), groupOf(gone)]));
     ok(cardOf(gone) && ![...cardOf(gone).querySelectorAll("button")].some((b) => /Approve|Decline/.test(b.textContent))
@@ -20366,8 +20366,8 @@ await (async () => {
     btn("Share").click();
     const note = () => (card().querySelector(".nnote") || {}).textContent || "";
     ok(await until(() => /^2 of 2/.test(needText(card())) && btn("Share") && !btn("Share").disabled) && shared.length === 1
-      && /^CX0-A1 was shared, but the tick did not save: that is not this issue/.test(note()) && /0 of 2 sent/.test(needText(card())),
-      "the next turn's card says which account was shared without a tick, and why: " + JSON.stringify(note()));
+      && /^CX0-A1 was shared, but the tick did not save: The Counter could not do that\. Try again\./.test(note()) && /0 of 2 sent/.test(needText(card())),
+      "the next turn's card says which account was shared without a tick, in a plain sentence: " + JSON.stringify(note()));
     btn("Skip").click();
     ok(await until(() => /^All done/.test(needText(card()))) && note() === "", "and a step of his own clears it");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -20569,7 +20569,7 @@ await (async () => {
     cut.on = false;
     const sel = card().querySelector("select");
     sel.value = "Gold"; sel.dispatchEvent(new win.Event("change", { bubbles: true }));
-    ok(await until(() => /That link now quotes Gold[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
+    ok(await until(() => /That link now shows the Gold price list[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
       "a tier pinned on the card is answered on the card: " + JSON.stringify(note(card())));
     /* the same in Links */
     D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
@@ -20718,12 +20718,12 @@ await (async () => {
     } }).window;
     const D = win.document;
     const kc = () => D.querySelector('#nlist [data-need="k:' + us[1] + '"]');
-    ok(await until(() => kc() && /Last got in by a typed code, 03 Sep 2026[.]/.test(kc().textContent)),
+    ok(await until(() => kc() && /Last signed in by code, 03 Sep 2026[.]/.test(kc().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status")].map((x) => x.textContent) : []; };
-    ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by a scanned code")) && chips(us[1]).includes("Opened 03 Sep 2026 by a typed code"),
-      "Accounts says an open by a scanned code and one by a typed code: " + JSON.stringify([chips(us[0]), chips(us[1])]));
+    ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by code")) && chips(us[1]).includes("Opened 03 Sep 2026 by code"),
+      "Accounts says an open by a scanned code and one by a typed code, by code for both: " + JSON.stringify([chips(us[0]), chips(us[1])]));
     ok(chips(us[2]).includes("Opened 03 Sep 2026 by password") && chips(us[3]).includes("Opened 03 Sep 2026"),
       "an open with no road recorded is the password's, and a road it does not know says none: " + JSON.stringify([chips(us[2]), chips(us[3])]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -21207,9 +21207,9 @@ await (async () => {
       "the next tap makes a new one: " + JSON.stringify({ label: pill().textContent, links: await links() }));
     /* ---- how they got in, drawn ---- */
     const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
-    ok(await until(() => /How they got in/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
+    ok(await until(() => /How they signed in/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
       && /on Windows computer, Edge/.test(story())) && !story().includes(IP),
-      "How they got in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
+      "How they signed in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 9.4: an account lists its phones and computers by the kind of device, and Sign out everywhere ends every device, unused link and code and alert, and says how many");
@@ -21954,11 +21954,13 @@ await (async () => {
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     const chip = () => D.querySelector('#rlist [data-u="' + u + '"]').textContent;
-    ok(/by a typed code/.test(chip()), "Accounts says the last open was by a typed code: " + chip());
+    ok(/Opened [0-9]{2} \w{3} [0-9]{4} by code/.test(chip()), "Accounts says the last open was by code, one word for the three roads: " + chip());
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const rows = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__label')].map((x) => x.textContent);
-    ok(await until(() => rows().includes("Code, typed")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code, typed", "Code, copied across", "Password", "Code, scanned"]),
-      "and How they got in names each road: " + JSON.stringify(rows()));
+    const flags = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__flag')].map((x) => x.textContent);
+    ok(await until(() => rows().includes("Code")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code", "Code", "Password", "Code"])
+      && /Typed in[.]$/.test(flags()[0]) && /Copied across[.]$/.test(flags()[1]) && /Scanned at the counter[.]$/.test(flags()[3]),
+      "and How they signed in says Code for the three, the road each took under its line: " + JSON.stringify([rows(), flags()]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix S9R-9: an account whose ways in and devices come from before the list began says so with no date in it");
@@ -22010,7 +22012,7 @@ await (async () => {
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
-    ok(await until(() => /Last opened26 Sep 2026, by password[.] Earlier ways in were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
+    ok(await until(() => /Last opened26 Sep 2026, by password[.] Earlier sign-ins were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
       && !/25 Sep/.test(story()),
       "the last open and the device from before the list began are said with no date of the build in them: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -22940,7 +22942,7 @@ await (async () => {
     if (btnB27("Make the practice accounts")) btnB27("Make the practice accounts").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
     await until27(() => btnB27("Remove the practice accounts"));
     const recB27 = await kv27.get("u:" + TU27, "json");
-    ok(/Only test account 0000-0000 is live/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
+    ok(/Only practice account 0000-0000 is open[.] One tap makes the other[.]/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
       && !!(await kv27.get("u:0000-0001", "json")) && JSON.stringify(recB27.wrap) === JSON.stringify(rec27.wrap),
       "with only one of the pair live, his page says so and one tap makes the one missing, the other untouched: " + JSON.stringify([leadB27, postedB27.map((b) => b.u)]));
 
@@ -23629,10 +23631,10 @@ await (async () => {
       const drawn = list91.querySelectorAll(".acard").length;
       const rowsAll = snap91.products.reduce((a, p) => a + p.rows.length, 0);
       ok(drawn === rowsAll && list91.querySelectorAll("h2").length === snap91.products.length
-        && /Bought from you/.test(list91.textContent) && /Sold for you/.test(list91.textContent) && /Brought you/.test(list91.textContent),
+        && /Bought from you/.test(list91.textContent) && /Sold for you/.test(list91.textContent) && /Introduced/.test(list91.textContent),
         "the panel draws a card an associate under each book: " + drawn + " cards");
       /* F9 revised: a book with no reward draws the progress alone, every card of it, with no reward line and no bar */
-      const books91 = [...list91.children].reduce((a, n) => { if (n.tagName === "H2") a.push({ h: n.textContent, cards: [] });
+      const books91 = [...list91.children].reduce((a, n) => { if (n.tagName === "H2") a.push({ h: (n.querySelector(".pshape") || n).textContent, cards: [] });
         else if (a.length && n.classList.contains("acard")) a[a.length - 1].cards.push(n); return a; }, []);
       const bare91 = snap91.products.filter((p) => p.rows.length && p.rows.every((r) => !r.reward)).map((p) => p.name || p.product);
       const drawnBare91 = books91.filter((b) => bare91.includes(b.h));
@@ -42286,7 +42288,7 @@ await (async () => {
 
 section("S11 fix: the quick-reply button says Forget over a line already kept, and Keep over a new one");
 await (async () => {
-  /* Found on the rig: a saved reply tapped into the box and then "Save this line" forgot it, the label never saying
+  /* Found on the rig: a saved reply tapped into the box and then "Keep as a quick reply" forgot it, the label never saying
      that a second keep is a forget. The button now names what it will do with the line in the box. */
   const { openMaster: omO9 } = await import("../tools/payload.mjs");
   const { w } = await omO9();
@@ -42306,7 +42308,7 @@ await (async () => {
     box.value = "Ready at six.";
     box.dispatchEvent(new w.Event("input", { bubbles: true }));
     const onNew = keep();
-    ok(first === "Save this line" && onKept === "Forget it" && onNew === "Save this line",
+    ok(first === "Keep as a quick reply" && onKept === "Forget this quick reply" && onNew === "Keep as a quick reply",
       "the button names what it will do with the line in the box: " + JSON.stringify({ first, onKept, onNew }));
   } finally {
     await new Promise((r) => setTimeout(r, 100));
@@ -54690,8 +54692,8 @@ await (async () => {
     "a bucket owner's drift reads their whole history, the -R bucket's orders in it, and the bucket answers as its owner: " + JSON.stringify(s16));
   /* 17. HIS PAGE'S GUEST-LINK LEAD NAMES NO LEVEL: the prices follow the introducer, never past the stranger's board */
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(/the prices follow that customer, never past the board every stranger sees/.test(pg17) && !/two levels above/.test(pg17),
-    "the guest-link lead says the prices follow that customer, never past the board every stranger sees, and no longer two levels above");
+  ok(/A guest link opens one price list[.] The prices follow the customer you name[.]/.test(pg17) && !/two levels above/.test(pg17),
+    "the guest-link lead says the prices follow the customer he names, in the glossary's words, and no longer two levels above");
   /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
      The snapshot leaves a drift book out of tierOf and carries its drifts apart (byProduct.salt.drift, the hand winning), so no
      reader meets a number where it looks for a level. First the contract over the book as it stands, whoever holds what; then
