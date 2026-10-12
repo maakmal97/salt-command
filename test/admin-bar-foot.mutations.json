@@ -1,0 +1,104 @@
+[
+ {
+  "name": "the bar is not fixed to the screen",
+  "file": "stmt/statement-css.js",
+  "find": ".salt-appbar {\\n  position: fixed;\\n  left: 0;",
+  "replace": ".salt-appbar {\\n  position: sticky;\\n  left: 0;"
+ },
+ {
+  "name": "the bar is lifted off the foot",
+  "file": "stmt/statement-css.js",
+  "find": "  right: 0;\\n  bottom: 0;\\n  z-index: 50;\\n  display: grid;",
+  "replace": "  right: 0;\\n  bottom: 12px;\\n  z-index: 50;\\n  display: grid;"
+ },
+ {
+  "name": "the bar does not give way to the rail",
+  "file": "stmt/statement-css.js",
+  "find": "@media (min-width: 1080px) {\\n  .salt-appbar { display: none; }",
+  "replace": "@media (min-width: 1080px) {\\n  .salt-appbar { display: grid; }"
+ },
+ {
+  "name": "the shell frames the bar",
+  "file": "stmt/page.js",
+  "find": ".gate.adm{max-width:600px;margin-top:32px;padding-bottom:",
+  "replace": ".gate.adm{will-change:transform;max-width:600px;margin-top:32px;padding-bottom:"
+ },
+ {
+  "name": "the gate frames the bar",
+  "file": "stmt/page.js",
+  "find": ".gate{max-width:440px;margin:10vh auto 0;padding:0 4px}",
+  "replace": ".gate{transform:translateZ(0);max-width:440px;margin:10vh auto 0;padding:0 4px}"
+ },
+ {
+  "name": "the root frames the bar",
+  "file": "stmt/statement-css.js",
+  "find": "html{-webkit-text-size-adjust:100%}",
+  "replace": "html{filter:blur(0);-webkit-text-size-adjust:100%}"
+ },
+ {
+  "name": "the shell keeps no room for the bar on a phone",
+  "file": "stmt/page.js",
+  "find": ".gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h)}",
+  "replace": ".gate.adm{margin-top:0;padding-bottom:0}"
+ },
+ {
+  "name": "the shell forgets the safe area under the bar",
+  "file": "stmt/page.js",
+  "find": "padding-bottom:calc(var(--salt-bar-h) + 32px + env(safe-area-inset-bottom))}",
+  "replace": "padding-bottom:calc(var(--salt-bar-h) + 32px)}"
+ },
+ {
+  "name": "the body forgets its safe area on a phone",
+  "file": "stmt/page.js",
+  "find": "calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))",
+  "replace": "16px calc(16px + env(safe-area-inset-left,0px))"
+ },
+ {
+  "name": "the saved app is not told from Safari",
+  "file": "stmt/page.js",
+  "find": "try{if(navigator.standalone===true){var r=",
+  "replace": "try{if(true){var r="
+ },
+ {
+  "name": "the root is not marked in the saved app",
+  "file": "stmt/page.js",
+  "find": "r.setAttribute('data-app','1');",
+  "replace": ""
+ },
+ {
+  "name": "the screen's height is its shorter side upright",
+  "file": "stmt/page.js",
+  "find": "var a=Math.max(screen.width,screen.height),b=",
+  "replace": "var a=Math.min(screen.width,screen.height),b="
+ },
+ {
+  "name": "lying down reads the upright height",
+  "file": "stmt/page.js",
+  "find": "(window.innerWidth>window.innerHeight?b:a)",
+  "replace": "a"
+ },
+ {
+  "name": "a turn of the phone is not followed",
+  "file": "stmt/page.js",
+  "find": "r.setAttribute('data-app','1');f();window.addEventListener('resize',f);",
+  "replace": "r.setAttribute('data-app','1');f();"
+ },
+ {
+  "name": "the saved app's body is not held to the screen",
+  "file": "stmt/page.js",
+  "find": "html[data-app] body{min-height:100vh;min-height:var(--app-h,100vh)}",
+  "replace": "html[data-app] body{min-height:100vh}"
+ },
+ {
+  "name": "every browser's body is held to the screen",
+  "file": "stmt/page.js",
+  "find": "html[data-app] body{min-height:100vh;",
+  "replace": "body{min-height:100vh;"
+ },
+ {
+  "name": "the saved app's body has no fallback",
+  "file": "stmt/page.js",
+  "find": "html[data-app] body{min-height:100vh;min-height:var(",
+  "replace": "html[data-app] body{min-height:var("
+ }
+]

@@ -1724,6 +1724,22 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
   `{manual: {open, until}}` or `{clearManual: true}`. `tools/maker-forms-geometry.mjs` measures the pane, every form's tiles, the size grid and the hours table in a
   real browser at 1280 and 375px, and proves a 20px tile red.
+  **The bar of five places stands on the screen's foot** (12 Oct 2026, his iPhone report that on Record it did not; `test/admin-bar-foot.mjs`, its mutations in
+  `test/admin-bar-foot.mutations.json`): the system's `.salt-appbar` is `position: fixed` against the screen's left, right and bottom, a child of the shell
+  (`#roster`), and no rule of the page frames it, the shell, the body and the root carrying no transform, filter, perspective, containment, will-change or container.
+  What moves it is not a rule of its own: **a fixed bar is laid out against the layout viewport and drawn on the visible one, and a phone's layout viewport grows to hold
+  anything wider than the phone**, so the bar then stands off the foot (measured: a 1200px section at 375px puts it 1,822px below the screen). The weekly hours table
+  is such a thing on a phone narrower than 356px (its columns need 340px, and the page's gutter is 16px); Record's menu and its seventeen forms are not, down to 260px.
+  **In the iPhone's saved app a short document lifts it** (his screenshots, 12 Oct 2026, 393x852 pt, each page at its top, Safari never): Orders, a long page, had the bar on the
+  screen's foot; Record with one short card had it 20pt above; Needs you ("Nothing here.") 55pt above, the page ground showing under it. The shorter the page, the higher the bar,
+  so the fixed bar's frame there ends at the larger of the document and a layout viewport short of the screen. **So the document is the screen tall at least in the saved
+  app** (`html[data-app] body{min-height:100vh;min-height:var(--app-h,100vh)}` under 1080px, in the shared PAGE_CSS, so the customer's page has it too): the head script
+  (`LOOK_HEAD`) marks the root `data-app` when `navigator.standalone` is true (the iPhone's alone; Android's installed pages are not marked) and sets `--app-h` to the screen's
+  height, the longer side upright and the shorter lying down, again on a turn; the viewport units are not used, none being known to reach the screen's foot there.
+  The body is border-box, so its padding adds no scroll. **Unverified here (iOS is not reproducible on the laptop): his iPhone is the proof.** `tools/maker-forms-geometry.mjs` reads the bar's
+  bottom against the visible viewport on every place, Record's four parts and each of its forms, at 375 and 768, Night and Tide, as a browser and as the saved app (the
+  phone's `navigator.standalone` set), with the page not scrolling sideways, the last control clear of the bar and, in the saved app, the document the screen tall and a short
+  place scrolling by no more than a pixel, and proves a lifted bar, a page wider than the phone and a document shorter than the screen red.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens

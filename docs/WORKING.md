@@ -257,8 +257,13 @@ Each of these stayed green, or read clean, through a real fault.
 - **An entry animation** with `fill-mode:backwards` holds its from-state wherever the timeline does
   not advance (a hidden pane, capture tools): invisible and undersized, yet passing a hit test. The
   element's own style must be its resting state.
-- **Emulated phones.** Playwright's `fullPage` screenshot turns `(pointer:coarse)` off for good:
-  grow the viewport and take a plain shot. Browser-pane phone screenshots go black once scrolled:
+- **Emulated phones.** A fixed bar is only measured on a phone with `isMobile` and `hasTouch`: a plain
+  viewport never grows its layout viewport for something wider than the phone, so the bar stays at the foot
+  whatever overflows (12 Oct 2026, Salt Account's bar). Read its bottom against `visualViewport.offsetTop +
+  height` as well as `innerHeight`, which grows with the layout viewport. Playwright's `fullPage` screenshot turns `(pointer:coarse)` off for good:
+  grow the viewport and take a plain shot. **The iPhone's saved app is not Safari and cannot be driven here**: a short document lifted a
+  fixed bar there (20pt and 55pt on a 393x852 screen) and nowhere else, so a measured bar at the foot in Chromium proves nothing about it. The harness sets
+  `navigator.standalone` as the phone does and measures the document's height; his phone is the proof. Browser-pane phone screenshots go black once scrolled:
   measure with script. The design layer stretches selects to 100%: set `width:auto` in a flex row.
 
 ## 5. Desk traps

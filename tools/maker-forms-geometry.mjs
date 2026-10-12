@@ -1,8 +1,10 @@
 /* Measure Record's forms in a real browser (Phase 4a, 12 Oct 2026): the pane beside the menu from 860px and the form in the menu's place below it, the option tiles,
- * the printed-size grid and the hours table; and prove a tight tile fails.
+ * the printed-size grid and the hours table; and prove a tight tile fails. Then (12 Oct 2026, his iPhone report that the bar of places was not at the foot on Record)
+ * the bar of five places on every place, Record's four parts and each of its forms, at 375 and 768, Night and Tide: its bottom is the visible screen's bottom, it
+ * spans the screen, the page does not scroll sideways and the last control clears it; each proved red under a rule that breaks it.
  *
  * Run: node tools/maker-forms-geometry.mjs   (no build needed: the page is served from stmt/page.js)
- * Playwright is loaded from SALT_PW or the local Salt DS tool environment.
+ * Playwright is loaded from SALT_PW or the local Salt DS tool environment; from a worktree, SALT_PW=C:/Users/maakm/Claude/Code/salt-ds/.ds-sync/node_modules.
  */
 import { createServer } from "node:http";
 import { createRequire } from "node:module";
@@ -141,6 +143,65 @@ try {
       return { faces, until: [Math.round(u.width), Math.round(u.height)], overflow: document.documentElement.scrollWidth > innerWidth };
     });
     report(override.faces.length === 2 && override.faces.every((h) => h >= 44) && override.until[1] >= 44 && !override.overflow, `${width}px the shop's two tiles and its Closed until field are 44px`, JSON.stringify(override));
+    await page.close();
+  }
+
+  /* THE BAR AT THE FOOT. A fixed bar is laid out against the LAYOUT viewport and drawn on the VISIBLE one; they part when something is wider than the phone (the
+     layout viewport grows to hold it, and the bar then stands off the foot), so the bar's bottom is read against both. Mobile and touch, or that never shows. */
+  const foot = (page) => page.evaluate(() => {
+    const bar = [...document.querySelectorAll("nav.salt-appbar")].find((b) => b.getBoundingClientRect().height > 0);
+    if (!bar) return { error: "no bar is showing" };
+    window.scrollTo(0, document.documentElement.scrollHeight);
+    const r = bar.getBoundingClientRect(), v = window.visualViewport;
+    let low = 0;
+    for (const n of document.querySelectorAll("#roster button, #roster input, #roster select, #roster textarea, #roster a")) {
+      if (bar.contains(n) || n.closest("[hidden], #oAdd") || !n.getClientRects().length) continue;
+      low = Math.max(low, n.getBoundingClientRect().bottom);
+    }
+    return { bottom: r.bottom, left: r.left, right: r.right, seen: v.offsetTop + v.height, ih: innerHeight, iw: innerWidth, sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight, html: document.documentElement.getBoundingClientRect().height, clear: r.top - low };
+  });
+  /* IN THE SAVED APP (his iPhone, 12 Oct 2026: a fixed bar stood 20pt and 55pt above the foot on short places, never on a long one, never in Safari) the document is the
+     whole screen tall at least, and a short place scrolls by no more than a pixel. The page marks itself from navigator.standalone, which is set here as the phone sets it. */
+  const SHORT = ["start", "needs", "orders", "customers", "record", "record/approve"];
+  const atFoot = (m, app = false, label = "") => !m.error && Math.abs(m.bottom - m.seen) <= 1 && Math.abs(m.bottom - m.ih) <= 1 && Math.abs(m.left) <= 1 && Math.abs(m.right - m.iw) <= 1 && m.sw <= m.iw && m.clear >= 0
+    && (!app || (m.html >= m.ih - 1 && (!SHORT.includes(label) || m.sh - m.ih <= 1)));
+  for (const app of [false, true]) for (const theme of ["night", "tide"]) for (const [width, height] of [[375, 812], [768, 1024]]) {
+    const where = `${app ? "saved app " : ""}${theme} ${width}x${height}`;
+    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: "reduce", isMobile: true, hasTouch: true });
+    await page.addInitScript((t) => localStorage.setItem("salt-look", t), theme);
+    if (app) await page.addInitScript(() => Object.defineProperty(navigator, "standalone", { value: true, configurable: true }));
+    await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "domcontentloaded" });
+    const views = [], look = async (label) => { await page.waitForTimeout(120); views.push([label, await foot(page)]); };
+    await look("start");
+    for (const place of ["needs", "orders", "customers", "record", "shop"]) {
+      await page.locator(`[data-act="nav.${place}"]:visible`).last().click();
+      await look(place);
+    }
+    await page.locator('[data-act="nav.record"]:visible').last().click();
+    for (const part of ["approve", "entry", "customers", "pricing"]) {
+      await page.locator(`[data-act="part.record.${part}"]:visible`).first().click();
+      await look(`record/${part}`);
+      const rows = page.locator('[data-act="record.form"]:visible');
+      for (let i = 0, n = await rows.count(); i < n; i++) {
+        if (await page.locator("#makerFormBack:visible").count()) await page.locator("#makerFormBack:visible").click();   /* a form open stands in the menu's place */
+        const row = rows.nth(i), title = (await row.textContent()).replace(/Open$/, "").trim();
+        await row.click();
+        await look(`record/${part}/${title}`);
+      }
+    }
+    const off = views.filter(([label, m]) => !atFoot(m, app, label));
+    report(views.length >= 27 && off.length === 0, `${where}: the bar's bottom is the screen's bottom on all ${views.length} views, and nothing covers it or scrolls past it${app ? "; the document is the screen tall and a short place does not scroll" : ""}`,
+      JSON.stringify(off.length ? off.slice(0, 2) : views.find(([label]) => label === "record")[1]));
+    /* the same measure under a rule that breaks it is red: the bar lifted off the foot, and a page wider than the phone */
+    for (const [name, css, place] of [["a lifted bar", ".salt-appbar{bottom:24px!important}", "record"], ["a page wider than the phone", "#oRecord{min-width:1200px!important}", "record"],
+      ...(app ? [["a document shorter than the screen", "html[data-app] body{min-height:0!important}", "needs"]] : [])]) {
+      await page.locator(`[data-act="nav.${place}"]:visible`).last().click();
+      const style = await page.addStyleTag({ content: css });
+      await page.waitForTimeout(250);
+      const m = await foot(page);
+      report(!atFoot(m, app, place), `${where} independent mutation (${name}) is red`, JSON.stringify(m));
+      await style.evaluate((s) => s.remove());
+    }
     await page.close();
   }
 } finally {

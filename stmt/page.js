@@ -278,6 +278,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    shorthands, as the rules they undo are. */
 @media (max-width:1079.98px){
   body{padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
+  /* 12 OCT 2026 (HIS IPHONE): IN THE SAVED APP A FIXED BAR STANDS AT THE FOOT OF THE DOCUMENT WHEN THE DOCUMENT IS SHORTER THAN THE SCREEN. Measured on his phone,
+     393x852, each page at its top: Orders (long) had the bar on the screen's foot, Record (one short card) 20pt above it and Needs you ("Nothing here.") 55pt above it,
+     the page ground showing under it; Safari never did. So the document is the whole screen tall at least in the saved app: the head script marks the root data-app and
+     sets --app-h to the screen's height (the viewport units are not trusted there, none being known to reach the screen's foot), and the body's min-height is that.
+     The body's box is border-box, so its padding adds no scroll. Only the saved app, and under 1080px, where the bar shows. */
+  html[data-app] body{min-height:100vh;min-height:var(--app-h,100vh)}
   .cshell{padding-bottom:var(--salt-bar-h)}
   .gate{padding:0}
   .home .hcol{display:flex;flex-direction:column;gap:24px}
@@ -1189,7 +1195,11 @@ export function shutPage(nonce) {
 const GROUND = { night: "#05080a", tide: "#03141a" };
 const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=\"theme-color\"]');"
   + "document.documentElement.setAttribute('data-theme',t);if(m)m.setAttribute('content',t==='night'?'" + GROUND.night + "':'" + GROUND.tide + "');return t;}"
-  + "(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();";
+  + "(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();"
+  /* the iPhone's saved app marks the root before first paint (navigator.standalone is that app's alone; Android's installed pages have a viewport the screen is not) and
+     gives it the screen's height, the longer side of the screen upright and the shorter lying down; --app-h feeds the body's min-height under 1080px */
+  + "(function(){try{if(navigator.standalone===true){var r=document.documentElement,f=function(){var a=Math.max(screen.width,screen.height),b=Math.min(screen.width,screen.height);"
+  + "r.style.setProperty('--app-h',(window.innerWidth>window.innerHeight?b:a)+'px');};r.setAttribute('data-app','1');f();window.addEventListener('resize',f);}}catch(e){}})();";
 const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="tide"><head><meta charset="utf-8">'
   + '<meta name="google" content="notranslate">'
   + '<meta name="theme-color" content="' + GROUND.tide + '">';
