@@ -5,7 +5,7 @@ import { landingPage } from "../stmt/page.js";
 import { runDrafter } from "../src/drafter.js";
 import { plan } from "../tools/fold.mjs";
 import { world } from "./maker-trades.mjs";
-import { answerSheets } from "./maker-act.mjs";
+import { answerSheets, tile, tileGroup } from "./maker-act.mjs";
 
 /* A gift sent twice books once (the admin stress triage of 11 Oct 2026, row 7). Counter Admin's Gift keeps its values after
    "Sent for review", so a second tap is a new input under a fresh request moment. Both drafts could be approved, and the
@@ -62,7 +62,7 @@ async function ownerGift(wd, pageWork) {
   dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Gift");
-  const set = (label, value) => { field(section, label).value = value; };
+  const set = (label, value) => { if (tileGroup(section, label)) tile(section, label, value); else field(section, label).value = value; };
   for (const [label, value] of Object.entries({ Who: "CX1-ZED", Book: "salt", Date: "2099-10-05", Units: "2",
     Handover: "collected" })) set(label, value);
   const tap = async () => { button(section, "Send the gift").click(); await work.quiet(); };

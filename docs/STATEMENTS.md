@@ -1675,6 +1675,17 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (between 860 and 1080px its height gives up the App bar's, as Orders' card does), Record widens for its forms (the rows to approve keep their 600px column)
   and the way back is not drawn. **Below 860px** the form open takes the menu's place and has its way back, and the pane's invitation to choose one is not
   drawn. `sweep` no longer hides the menu while a form is open: the CSS decides by width, as it does for Orders.
+  **The few, fixed choices of a form are the system's Option tiles** (Phase 4a, 12 Oct 2026, `test/admin-tiles.mjs`, its mutations in
+  `test/admin-tiles.mutations.json`): where a form asked in a `<select>` for a book, a direction, a handover, a kind of entry, a role, a level, a drift, a
+  stream or a time to hide a reminder, it asks in `makerTiles` (`stmt/owner.js`), a fieldset (`salt-options maker-tiles`) whose legend is the field's label and
+  a real radio in each tile (`salt-option`, face 44px, the radio laid over the whole tile), so the group is one tab stop, the arrows move the choice and a
+  tile is a 44px target in both dimensions. The group answers where the select did: `.value` is the tile chosen (`''` when none is), `.disabled` shuts every
+  tile (a supplier has no starting level or drift), the radios' `change` and `input` bubble to it, and `fill(items)` draws the tiles again, keeping the choice
+  while it is still offered, else the first tile (the appointment's role starts with none chosen, as its select did). **Each radio keeps its select's act**,
+  keyed by its value (`none` for the empty one) and, for a group drawn once for each book, by that book first (`record.add-id.tier`, key `salt-Silver`), so the
+  act table below and the audit are as they were. **What a form sends is the value it always sent**: no route, body, field, request id, retained send,
+  timestamp or signature cache, completion hook or `entryFault` changed. A **party, a row, a loan, a field or a reminder, a list as long as the book, stays
+  a select**, and so does a code in a correction.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens

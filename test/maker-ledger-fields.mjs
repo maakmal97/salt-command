@@ -13,6 +13,7 @@ import { makerInputCatalog, makerLedgerAmendment } from "../src/maker-inputs.js"
 import { readBook } from "../tools/book.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { buildSeed } from "../tools/d1.mjs";
+import { tileValues } from "./maker-act.mjs";
 
 class Store {
   values = new Map();
@@ -179,8 +180,8 @@ export async function run({ ok }) {
     const change = (node, value) => { node.value = value; node.dispatchEvent(new window.Event("change", { bubbles: true })); };
     doc.querySelector('[data-act="nav.record"]').click();
     await until(() => editor());
-    const ed = editor(), rowSel = fieldIn(ed, "Which row"), kindSel = fieldIn(ed, "What to do");
-    const kinds = () => [...kindSel.options].map((o) => o.value).join(",");
+    const ed = editor(), rowSel = fieldIn(ed, "Which row");
+    const kinds = () => tileValues(ed, "What to do").join(",");
     change(rowSel, "row-default-01");
     const defaultKinds = kinds(), defaultLabel = rowSel.options[rowSel.selectedIndex].textContent;
     change(rowSel, "row-open-0001");

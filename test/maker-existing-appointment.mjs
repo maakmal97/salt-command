@@ -8,6 +8,7 @@ import E from "../engine/position.mjs";
 import { apply, mintUsernames, plan } from "../tools/fold.mjs";
 import { makerAppointmentClaim } from "../src/maker-request.js";
 import { world } from "./maker-trades.mjs";
+import { tile, tileValues } from "./maker-act.mjs";
 import { contentKey, wrapKey } from "../tools/stmt-crypto.mjs";
 
 const OWNER = { email: "maakmal97@icloud.com" };
@@ -146,22 +147,21 @@ export async function run({ ok }) {
     check(page.loaded, "the generated owner page renders the separate existing-customer appointment form");
     if (!page.loaded) return;
     const doc = page.dom.window.document, section = sectionOf(doc, "Make an associate");
-    const customer = field(section, "Who"), role = field(section, "As");
+    const customer = field(section, "Who"), roleValues = tileValues(section, "As");
     const submit = button(section, "Send the appointment");
     const visibleCodes = customer ? [...customer.options].map((option) => option.value).filter(Boolean) : [];
-    const roleValues = role ? [...role.options].map((option) => option.value).filter(Boolean) : [];
-    const selectorReady = !!customer && !!role && visibleCodes.includes("CJ4-RED") && visibleCodes.includes("CJ4-BLU")
+        const selectorReady = !!customer && !!roleValues && visibleCodes.includes("CJ4-RED") && visibleCodes.includes("CJ4-BLU")
       && visibleCodes.includes("SZ4-CUS") && visibleCodes.includes("HJ4-NOS") && !visibleCodes.includes("SJ4-SUP")
       && [...customer.options].filter((option) => option.value).every((option) => option.textContent.trim() === option.value)
       && !["DJ4-GON", "EJ4-BAN", "FJ4-ASS", "FJ4-ASS-R"].some((code) => visibleCodes.includes(code));
     check(selectorReady,
       "the server-backed selector lists every eligible roster customer, including S-prefixed ones and one with no sales row, as the Desk's Add ID does; codes: "
-        + JSON.stringify(visibleCodes) + "; roles: " + JSON.stringify(role ? [...role.options].map((option) => option.value) : [])
+        + JSON.stringify(visibleCodes) + "; roles: " + JSON.stringify(roleValues)
         + "; people: " + wd.sqlite.prepare("SELECT doc FROM state WHERE key='PEOPLE'").get()?.doc
         + "; candidates: " + JSON.stringify(page.catalog?.appointmentCustomers));
-    const roleReady = roleValues.join() === "reseller,referral";
+    const roleReady = roleValues.join() === "reseller,referral" && !section.querySelector("fieldset.maker-tiles input:checked[data-act=\"record.appoint.role\"]");
     check(roleReady,
-      "the appointment role selector offers the engine's reseller and referral kinds only");
+      "the appointment role tiles offer the engine's reseller and referral kinds only, with none chosen until he chooses");
     if (!selectorReady || !roleReady || !submit) return;
 
     const originalNames = wd.sqlite.prepare("SELECT names,places,revision FROM vault_pair WHERE one=1").get();
@@ -195,7 +195,7 @@ export async function run({ ok }) {
     }
 
     customer.value = "CJ4-RED";
-    role.value = "reseller";
+    tile(section, "As", "reseller");
     submit.click();
     await page.waitFor(() => page.requests.some((request) => request.path === "/all/maker/inputs/appoint-existing")
       && wd.drafts().length === 1 && !!page.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/appoint-existing"));
@@ -249,13 +249,13 @@ export async function run({ ok }) {
     const secondPage = await ownerPage(wd);
     try {
       const secondForm = sectionOf(secondPage.dom.window.document, "Make an associate");
-      const secondCustomer = field(secondForm, "Who"), secondRole = field(secondForm, "As");
-      if (!secondCustomer || !secondRole) {
+      const secondCustomer = field(secondForm, "Who");
+      if (!secondCustomer || !tileValues(secondForm, "As")) {
         check(false, "a fresh owner page renders the appointment selectors");
         return;
       }
       secondCustomer.value = "CJ4-BLU";
-      secondRole.value = "referral";
+      tile(secondForm, "As", "referral");
       button(secondForm, "Send the appointment").click();
       await secondPage.waitFor(() => secondPage.requests.some((request) =>
         request.path === "/all/maker/inputs/appoint-existing" && request.status !== undefined));

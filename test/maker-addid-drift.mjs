@@ -7,6 +7,7 @@ import { makerInputCatalog } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
 import { contentKey, wrapKey } from "../tools/stmt-crypto.mjs";
+import { tile, tileGroup } from "./maker-act.mjs";
 
 export async function run({ ok }) {
   const check = ok || ((condition, message) => { if (!condition) throw new Error(message); });
@@ -130,27 +131,28 @@ export async function run({ ok }) {
       .some((heading) => heading.textContent === "New customer")), "the generated Counter page opens Add ID");
     const section = [...doc.querySelectorAll("#makerInputs .maker-input")]
       .find((item) => item.querySelector("h3")?.textContent === "New customer");
-    const role = section.querySelector("select");
-    const driftSelect = [...section.querySelectorAll("select")]
-      .find((select) => select.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Starting price drift"));
+    const driftSelect = [...section.querySelectorAll("fieldset.maker-tiles")]
+      .find((group) => group.querySelector("legend").textContent.startsWith("Starting price drift"));
+    const driftLabel = driftSelect && driftSelect.querySelector("legend").textContent;
+    const pick = (value) => tile(section, driftLabel, value);   /* the drift is a group of tiles, and a tap on one is the change */
     const typed = [...section.querySelectorAll("input[type=number]")]
       .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Drift,"));
     const status = section.querySelector('[role="status"]');
     check(!!driftSelect && !!typed && driftSelect.value === "" && typed.closest("label").hidden
-      && [...driftSelect.options].map((option) => option.value).join() === ",-0.3,0,0.3,typed"
+      && [...driftSelect.querySelectorAll("input")].map((option) => option.value).join() === ",-0.3,0,0.3,typed"
       && typed.min === "-1" && typed.max === "1" && typed.step === "0.05",
     "generated Add ID offers automatic by default, the three rule presets, and a bounded typed drift: "
-      + [...section.querySelectorAll("select")].map((select) => select.closest("label")?.querySelector(".lbl")?.textContent).join("|"));
+      + [...section.querySelectorAll("fieldset.maker-tiles legend")].map((legend) => legend.textContent).join("|"));
     if (!driftSelect || !typed) throw new Error("Add ID did not render the starting drift controls.");
-    driftSelect.value = "typed"; driftSelect.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    pick("typed");
     check(!typed.closest("label").hidden, "the typed drift field appears only after choosing Typed");
-    driftSelect.value = ""; driftSelect.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    role.value = "supplier"; role.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    pick("");
+    tile(section, "Role", "supplier");
     check(driftSelect.disabled && typed.disabled, "Add ID disables starting drift for a supplier");
-    role.value = "customer"; role.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    tile(section, "Role", "customer");
 
     const submit = [...section.querySelectorAll("button")].find((button) => button.textContent === "Add the customer");
-    const fields = section.querySelectorAll("input");
+    const fields = section.querySelectorAll("input:not([type=radio])");
     const outcomes = [
       { name: "Ada", choice: "", expected: null },
       { name: "Bert", choice: "-0.3", expected: { salt: -0.3 } },
@@ -162,7 +164,7 @@ export async function run({ ok }) {
     ];
     for (const outcome of outcomes) {
       fields[0].value = outcome.name; fields[1].value = ""; fields[2].value = pass;
-      driftSelect.value = outcome.choice; driftSelect.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+      pick(outcome.choice);
       if (outcome.value !== undefined) typed.value = outcome.value;
       const before = bridged.length;
       submit.click();
@@ -185,7 +187,7 @@ export async function run({ ok }) {
     }
 
     fields[0].value = "Gopal"; fields[1].value = ""; fields[2].value = pass;
-    driftSelect.value = "typed"; driftSelect.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    pick("typed");
     typed.value = "3";
     const beforeInvalid = bridged.length, revisionBeforeInvalid = pair.revision;
     submit.click();

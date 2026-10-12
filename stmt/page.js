@@ -518,6 +518,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
 .adm .maker-field .lbl{margin-top:0}
+/* 12 OCT 2026 (PHASE 4a): the few, fixed choices of a form are the system's Option tiles (stmt/owner.js, makerTiles), a fieldset whose legend is the field's label.
+   The recipe sets the tile, its 44px and its chosen edge; the page only gives the group the row to itself in a row of fields. */
+.adm .maker-tiles{flex:1 1 100%;min-width:0}
 .adm .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
 .adm .maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
 .adm .maker-cover-row{display:flex;align-items:center;gap:10px}

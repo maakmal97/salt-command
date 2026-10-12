@@ -1645,6 +1645,34 @@ export const OWNER_JS = `
     var k=path.split('/').pop();
     return ['add-id','amend-id','appoint-existing','place'].indexOf(k)>=0?'customers':['house-sizes','hush','tier-set','tier-accept-all'].indexOf(k)>=0?'pricing':'entry';
   }
+  /* 12 Oct 2026 (PHASE 4a): OPTION TILES for the few, fixed choices of a form (a book, a direction, a handover, a kind, a role, a level, yes or no): the system's
+     Option recipe, a real radio each, so the group is one tab stop, the arrows move the choice and a tile is 44px. The group is a fieldset that answers where the
+     select it replaces did: .value is the tile chosen ('' when none is), .disabled is the fieldset's own and shuts every tile, the radios' change bubbles to it,
+     and fill(items) draws the tiles again, keeping the choice while it is still offered, else the first tile (or none, when none is true). Each radio keeps the
+     select's act, keyed by its value ('none' for the empty one) and, for a group drawn once for each book, by that book first. What a form sends is the value. */
+  var tileSeq=0;
+  function makerTiles(label,items,none){
+    var L=labOf(label), set=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq);
+    set.appendChild(el('legend','salt-options__legend lbl',L[0])); set.appendChild(grid);
+    Object.defineProperty(set,'value',{
+      get:function(){ var on=set.querySelector('input:checked'); return on?on.value:''; },
+      set:function(v){ [].forEach.call(set.querySelectorAll('input'),function(r){ r.checked=r.value===String(v); }); }
+    });
+    set.fill=function(list){
+      var on=set.querySelector('input:checked'), kept=on?on.value:null, offered=list.some(function(item){ return String(item.value)===kept; });
+      grid.textContent='';
+      grid.className='salt-options__grid'+(list.length!==3&&list.every(function(item){ return String(item.label).length<=14; })?' salt-options__grid--2':'');
+      list.forEach(function(item,i){
+        var lab=el('label','salt-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face');
+        radio.type='radio'; radio.name=name; radio.value=String(item.value);
+        actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));
+        radio.checked=offered?String(item.value)===kept:(!none&&i===0);
+        face.appendChild(el('span','salt-option__label',item.label)); lab.appendChild(radio); lab.appendChild(face); grid.appendChild(lab);
+      });
+    };
+    set.fill(items); return set;
+  }
+  function makerTilesIn(root,label,items,none){ var set=makerTiles(label,items,none); root.appendChild(set); return set; }
   function makerField(parent, label, type, value, step){
     var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
     input.type=type; input.value=value==null?'':String(value);
@@ -1795,9 +1823,9 @@ export const OWNER_JS = `
     var loan=makerForm('entry');loan.appendChild(el('h3',null,'Loan'));
     loan.appendChild(el('p','msg','Cash or goods lent or borrowed.'));
     parent.appendChild(loan);
-    var loanForm=addSelect(loan,['Goods or cash','record.loan.form'],[{value:'salt',label:'Goods'},{value:'cash',label:'Cash'}]);
-    var loanDirection=addSelect(loan,['Direction','record.loan.direction'],[{value:'in',label:'We borrowed'},{value:'out',label:'We lent'}]);
-    var loanParty=addSelect(loan,['Who','record.loan.party'],partyItems), loanProduct=addSelect(loan,['Book','record.loan.book'],productItems);
+    var loanForm=makerTilesIn(loan,['Goods or cash','record.loan.form'],[{value:'salt',label:'Goods'},{value:'cash',label:'Cash'}]);
+    var loanDirection=makerTilesIn(loan,['Direction','record.loan.direction'],[{value:'in',label:'We borrowed'},{value:'out',label:'We lent'}]);
+    var loanParty=addSelect(loan,['Who','record.loan.party'],partyItems), loanProduct=makerTilesIn(loan,['Book','record.loan.book'],productItems);
     var loanDate=makerField(loan,['Date','record.loan.date'],'date',today), loanAmount=makerField(loan,['Units','record.loan.amount'],'number','1');
     loanForm.addEventListener('change',function(){ loanAmount.parentNode.firstChild.textContent=loanForm.value==='cash'?'RM':'Units'; });
     var loanStatus=makerStatus(loan);
@@ -1813,9 +1841,9 @@ export const OWNER_JS = `
     var gift=makerForm('entry');gift.appendChild(el('h3',null,'Gift'));
     gift.appendChild(el('p','msg','A gift leaves stock at cost.'));
     parent.appendChild(gift);
-    var giftParty=addSelect(gift,['Who','record.gift.party'],partyItems), giftProduct=addSelect(gift,['Book','record.gift.book'],productItems);
+    var giftParty=addSelect(gift,['Who','record.gift.party'],partyItems), giftProduct=makerTilesIn(gift,['Book','record.gift.book'],productItems);
     var giftDate=makerField(gift,['Date','record.gift.date'],'date',today), giftQty=makerField(gift,['Units','record.gift.units'],'number','1');
-    var giftHandover=addSelect(gift,['Handover','record.gift.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
+    var giftHandover=makerTilesIn(gift,['Handover','record.gift.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
     var giftStatus=makerStatus(gift);
     makerButton(gift,['Send the gift','record.gift.send'],async function(send){
       var body={at:new Date().toISOString(),product:giftProduct.value,code:giftParty.value,date:giftDate.value,
@@ -1908,7 +1936,7 @@ export const OWNER_JS = `
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
       label:row.party+', '+units(row.qty)+' '+bookName(row.product)+', '+rm(row.total)+', '+(fmtWhen(row.date)||'undated')+(row.defaulted?', defaulted':'')};});
     var editRow=addSelect(editor,['Which row','record.amend.row'],rowItems),
-      editKind=addSelect(editor,['What to do','record.amend.kind'],[{value:'Correction',label:KINDW.Correction},
+      editKind=makerTilesIn(editor,['What to do','record.amend.kind'],[{value:'Correction',label:KINDW.Correction},
         {value:'Fulfilment',label:KINDW.Fulfilment},{value:'Cancellation',label:KINDW.Cancellation}]),
       editDate=makerField(editor,['On','record.amend.date'],'date',today);
     var movement=el('div','maker-fields');editor.appendChild(movement);
@@ -1929,7 +1957,8 @@ export const OWNER_JS = `
           :definition.kind==='product'?productItems
             :definition.kind==='stream'?[{value:'R2',label:'They resell'},{value:'R3',label:'They introduced the buyer'}]
               :definition.kind==='handover'?[{value:'delivered',label:'Delivered'},{value:'collected',label:'Collected'}]:null;
-      if(choices)editValue=addSelect(valueBox,['New value','record.amend.value'],choices);
+      var tiled=definition.kind==='boolean'||definition.kind==='stream'||definition.kind==='handover'||definition.kind==='product';
+      if(choices)editValue=(tiled?makerTilesIn:addSelect)(valueBox,['New value','record.amend.value'],choices);
       else editValue=makerField(valueBox,['New value','record.amend.value'],definition.kind==='date'?'date':definition.kind==='text'?'text':'number','');
     };
     editField.addEventListener('change',drawValue);drawValue();
@@ -1952,8 +1981,7 @@ export const OWNER_JS = `
     var kindsFor=function(){
       var row=rows.find(function(item){return item.rid===editRow.value;}), kept=editKind.value;
       var names=row&&row.defaulted?['Correction']:row&&row.direction==='BUY'?['Correction','Fulfilment','Cancellation','Payment','Receipt','Default']:['Correction','Fulfilment','Cancellation'];
-      editKind.replaceChildren();
-      names.forEach(function(name){var option=el('option',null,KINDW[name]||name);option.value=name;editKind.appendChild(option);});
+      editKind.fill(names.map(function(name){return {value:name,label:KINDW[name]||name};}));
       editKind.value=names.indexOf(kept)>=0?kept:'Correction';
     };
     var drawKind=function(){var k=editKind.value;
@@ -2003,7 +2031,7 @@ export const OWNER_JS = `
     var id=makerForm('customers');id.appendChild(el('h3',null,'New customer'));
     id.appendChild(el('p','msg','The name and place are locked on this phone before anything is sent; only a short code travels.'));
     parent.appendChild(id);
-    var idKind=addSelect(id,['Role','record.add-id.role'],[{value:'customer',label:'Customer'},{value:'supplier',label:'Supplier'},
+    var idKind=makerTilesIn(id,['Role','record.add-id.role'],[{value:'customer',label:'Customer'},{value:'supplier',label:'Supplier'},
       {value:'reseller',label:'Associate who resells'},{value:'referral',label:'Associate who introduces'},
       {value:'downstream',label:'Customer of an associate'},{value:'bucket',label:'Associate’s resale account'}]);
     var idParentItems=(catalog.associates||[]).map(function(item){return {value:item.code,label:item.code};});
@@ -2014,7 +2042,7 @@ export const OWNER_JS = `
     var idLink=makerField(id,['Maps or Waze link','record.add-id.link'],'text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
     var tierNames=catalog.tierNames||[], idTiers=tierBooks.map(function(item){
-      var sel=addSelect(id,['Starting level, '+bookName(item.product),'record.add-id.tier',item.product],[{value:'',label:'Not set'}]
+      var sel=makerTilesIn(id,['Starting level, '+bookName(item.product),'record.add-id.tier',item.product],[{value:'',label:'Not set'}]
         .concat(tierNames.map(function(name){return {value:name,label:name};})));
       sel.value=tierNames.length?tierNames[tierNames.length-1]:'';
       return {product:item.product,select:sel};
@@ -2022,7 +2050,7 @@ export const OWNER_JS = `
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var product=bookName(item.product), presets=item.driftPresets||[];
-      var select=addSelect(id,['Starting price drift, '+product,'record.add-id.drift',item.product],[{value:'',label:'Follows their record'}]
+      var select=makerTilesIn(id,['Starting price drift, '+product,'record.add-id.drift',item.product],[{value:'',label:'Follows their record'}]
         .concat(presets.map(function(preset){return {value:String(preset.value),
           label:preset.name+' ('+(preset.value>0?'+':'')+Number(preset.value).toFixed(2)+')'};}))
         .concat([{value:'typed',label:'Typed'}]));
@@ -2109,8 +2137,7 @@ export const OWNER_JS = `
     var appointmentKinds=(catalog.appointmentKinds||[]).map(function(item){
       return {value:item.kind,label:item.kind==='referral'?'Introducer':item.kind.charAt(0).toUpperCase()+item.kind.slice(1)};
     });
-    var appointmentRoleItems=[{value:'',label:'Choose a role'}].concat(appointmentKinds);
-    var appointmentRole=addSelect(appointment,['As','record.appoint.role'],appointmentRoleItems);
+    var appointmentRole=makerTilesIn(appointment,['As','record.appoint.role'],appointmentKinds,true);
     var appointmentStatus=makerStatus(appointment);
     makerButton(appointment,['Send the appointment','record.appoint.send'],async function(send){
       var code=appointmentCustomer.value, kind=appointmentRole.value;
@@ -2598,9 +2625,7 @@ export const OWNER_JS = `
       if(!Array.isArray(context.products)||!context.products.length) throw new Error('The Desk is not ready. Try again in a minute.');
       note.textContent='Everything here waits for your approval under Approve.';
       var countFrom=box.children.length;
-      var label=el('label','maker-field','Book'), product=actOn(el('select','fld salt-field__input'),'record.count.book');
-      context.products.forEach(function(code){ var option=el('option',null,bookName(code)); option.value=code; product.appendChild(option); });
-      label.appendChild(product); box.appendChild(label);
+      var product=makerTilesIn(box,['Book','record.count.book'],context.products.map(function(code){ return {value:code,label:bookName(code)}; }));
       var date=makerField(box,['Counted on','record.count.date'],'date',''), qty=makerField(box,['Units on the shelf','record.count.units'],'number','', '0.01');
       var pending=false, at=null, signature='', answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
       var button=makerButton(box,['Record the count','record.count.send'],async function(send){
@@ -2620,31 +2645,19 @@ export const OWNER_JS = `
       tradeSection.appendChild(el('h3',null,'Sale or purchase'));
       tradeSection.appendChild(el('p','msg','Goods and delivery are entered separately.'));
       box.appendChild(tradeSection);
-      var direction=actOn(el('select','fld salt-field__input'),'record.trade.direction');
-      [['sale','Sale'],['purchase','Purchase']].forEach(function(item){
-        var option=el('option',null,item[1]); option.value=item[0]; direction.appendChild(option);
-      });
-      var directionLabel=el('label','maker-field','Sale or purchase');
-      directionLabel.appendChild(direction); tradeSection.appendChild(directionLabel);
-      var tradeProduct=actOn(el('select','fld salt-field__input'),'record.trade.book'), tradeParty=actOn(el('select','fld salt-field__input'),'record.trade.party');
-      var productLabel=el('label','maker-field','Book'), partyLabel=el('label','maker-field','Who');
-      productLabel.appendChild(tradeProduct); partyLabel.appendChild(tradeParty);
-      tradeSection.appendChild(productLabel); tradeSection.appendChild(partyLabel);
+      var direction=makerTilesIn(tradeSection,['Sale or purchase','record.trade.direction'],[{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}]);
+      var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('select','fld salt-field__input'),'record.trade.party');
+      var partyLabel=el('label','maker-field','Who');
+      partyLabel.appendChild(tradeParty);
+      tradeSection.appendChild(partyLabel);
       var tradeDate=makerField(tradeSection,['Date','record.trade.date'],'date',''), tradeQty=makerField(tradeSection,['Units','record.trade.units'],'number','1','0.01');
       var tradeTotal=makerField(tradeSection,['Price (goods)','record.trade.total'],'number','','0.01');
       var tradeCash=makerField(tradeSection,['Cash received','record.trade.cash'],'number','0','0.01');
       var tradeMoved=makerField(tradeSection,['Units handed over','record.trade.moved'],'number','0','0.01');
-      var handover=actOn(el('select','fld salt-field__input'),'record.trade.handover');
-      [['','Not yet'],['collected','Collected'],['delivered','Delivered']].forEach(function(item){
-        var option=el('option',null,item[1]); option.value=item[0]; handover.appendChild(option);
-      });
-      var handoverLabel=el('label','maker-field','Handover'); handoverLabel.appendChild(handover); tradeSection.appendChild(handoverLabel);
+      var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'},{value:'delivered',label:'Delivered'}]);
       var carriage=makerField(tradeSection,['Delivery','record.trade.delivery'],'number','0','0.01');
-      var attribution=el('div','maker-trade-attribution'), tradeStream=actOn(el('select','fld salt-field__input'),'record.trade.stream');
-      [['','No'],['R2','They resell'],['R3','They introduced the buyer']].forEach(function(item){
-        var option=el('option',null,item[1]); option.value=item[0]; tradeStream.appendChild(option);
-      });
-      var streamLabel=el('label','maker-field','Through an associate?'); streamLabel.appendChild(tradeStream); attribution.appendChild(streamLabel);
+      var attribution=el('div','maker-trade-attribution');
+      var tradeStream=makerTilesIn(attribution,['Through an associate?','record.trade.stream'],[{value:'',label:'No'},{value:'R2',label:'They resell'},{value:'R3',label:'They introduced the buyer'}]);
       var tradeAssoc=actOn(el('select','fld salt-field__input'),'record.trade.associate'), tradeDown=actOn(el('select','fld salt-field__input'),'record.trade.end-customer');
       var assocLabel=el('label','maker-field','Which associate'), downLabel=el('label','maker-field','Their customer (optional)');
       assocLabel.appendChild(tradeAssoc); downLabel.appendChild(tradeDown);
@@ -2709,19 +2722,14 @@ export const OWNER_JS = `
       tradeSection.appendChild(extraBooks);
       var tripNote=el('p','msg','Same buyer, same day; delivery charged once; approved in one tap.');
       tradeSection.appendChild(tripNote);
-      function extraChoices(select){
-        var kept=select.value; select.textContent='';
-        (catalog.products||[]).filter(function(item){
+      function extraChoices(tiles){
+        tiles.fill((catalog.products||[]).filter(function(item){
           return item.product!==tradeProduct.value&&(direction.value==='sale'?item.saleReady:item.purchaseReady);
-        }).forEach(function(item){
-          var option=el('option',null,bookName(item.product)); option.value=item.product; select.appendChild(option);
-        });
-        if(Array.from(select.options).some(function(option){return option.value===kept;})) select.value=kept;
+        }).map(function(item){ return {value:item.product,label:bookName(item.product)}; }));
       }
       makerButton(tradeSection,['Another book on this visit','record.trade.add-book'],function(){
         var row=el('section','maker-extra-trade'); row.setAttribute('data-key','extra'+(++extraSeq)); row.appendChild(el('h4',null,'Another book'));
-        var label=el('label','maker-field','Book'), select=actOn(el('select','fld salt-field__input'),'record.trade.extra-book');
-        label.appendChild(select); row.appendChild(label); extraChoices(select);
+        var select=makerTilesIn(row,['Book','record.trade.extra-book'],[]); extraChoices(select);
         var extra={row:row,product:select,qty:makerField(row,['Units','record.trade.extra-units'],'number','1','0.01'),
           total:makerField(row,['Price (goods)','record.trade.extra-total'],'number','','0.01'),
           cash:makerField(row,['Cash received','record.trade.extra-cash'],'number','0','0.01'),
@@ -2736,12 +2744,8 @@ export const OWNER_JS = `
       var tradePending=false, tradeAt=null, tradeSignature='';
       function fillTradeChoices(){
         var isSale=direction.value==='sale';
-        var keptProduct=tradeProduct.value, keptParty=tradeParty.value;
-        tradeProduct.textContent='';
-        (catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).forEach(function(item){
-          var option=el('option',null,bookName(item.product)); option.value=item.product; tradeProduct.appendChild(option);
-        });
-        if(Array.from(tradeProduct.options).some(function(option){return option.value===keptProduct;}))tradeProduct.value=keptProduct;
+        var keptParty=tradeParty.value;
+        tradeProduct.fill((catalog.products||[]).filter(function(item){ return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return {value:item.product,label:bookName(item.product)}; }));
         tradeParty.textContent='';
         (catalog.parties||[]).forEach(function(code){
           var option=el('option',null,code); option.value=code; tradeParty.appendChild(option);
@@ -2821,21 +2825,16 @@ export const OWNER_JS = `
       if(!tierCodes.length||!tierBooks.length||!(catalog.tierNames||[]).length){
         tierSection.appendChild(el('p','msg','No customer has a level to set.'));
       }else{
-        var tierCode=actOn(el('select','fld salt-field__input'),'record.tier.customer'), tierProduct=actOn(el('select','fld salt-field__input'),'record.tier.book'), tierValue=actOn(el('select','fld salt-field__input'),'record.tier.level');
+        var tierCode=actOn(el('select','fld salt-field__input'),'record.tier.customer'), tierCodeWrap=el('label','maker-field','Customer');
         tierCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; tierCode.appendChild(option); });
-        tierBooks.forEach(function(item){ var option=el('option',null,bookName(item.product)); option.value=item.product; tierProduct.appendChild(option); });
-        [['','Let the Desk decide']].concat((catalog.tierNames||[]).map(function(name){ return [name,name]; }),[['__bands','A level by order size']]).forEach(function(item){
-          var option=el('option',null,item[1]); option.value=item[0]; tierValue.appendChild(option);
-        });
-        [['Customer',tierCode],['Book',tierProduct],['Level',tierValue]].forEach(function(item){
-          var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); tierSection.appendChild(wrap);
-        });
+        tierCodeWrap.appendChild(tierCode); tierSection.appendChild(tierCodeWrap);
+        var tierProduct=makerTilesIn(tierSection,['Book','record.tier.book'],tierBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; }));
+        var tierValue=makerTilesIn(tierSection,['Level','record.tier.level'],[['','Let the Desk decide']].concat((catalog.tierNames||[]).map(function(name){ return [name,name]; }),[['__bands','A level by order size']])
+          .map(function(item){ return {value:item[0],label:item[1]}; }));
         var bandBox=el('div','maker-bands'), bandSel={};
         bandBox.hidden=true;
         [['small','Small sizes'],['mid','Mid sizes'],['big','Big sizes']].forEach(function(item){
-          var s=actOn(el('select','fld salt-field__input'),'record.tier.band-'+item[0]); s.setAttribute('aria-label',item[1]+' level');
-          (catalog.tierNames||[]).forEach(function(name){ var option=el('option',null,name); option.value=name; s.appendChild(option); });
-          bandSel[item[0]]=s; var wrap=el('label','maker-field',item[1]); wrap.appendChild(s); bandBox.appendChild(wrap);
+          bandSel[item[0]]=makerTilesIn(bandBox,[item[1],'record.tier.band-'+item[0]],(catalog.tierNames||[]).map(function(name){ return {value:name,label:name}; }));
         });
         tierSection.appendChild(bandBox);
         var tierState=el('p','msg'), useProposal=actOn(el('button','salt-ghost','Use the suggestion'),'record.tier.use-proposal'), useOffer=actOn(el('button','salt-ghost','Use the late-payer level'),'record.tier.use-offer');
@@ -2899,12 +2898,10 @@ export const OWNER_JS = `
       if(!driftCodes.length||!driftBooks.length){
         driftSection.appendChild(el('p','msg','No customer has a drift to set.'));
       }else{
-        var driftCode=actOn(el('select','fld salt-field__input'),'record.drift.customer'), driftProduct=actOn(el('select','fld salt-field__input'),'record.drift.book');
+        var driftCode=actOn(el('select','fld salt-field__input'),'record.drift.customer'), driftCodeWrap=el('label','maker-field','Customer');
         driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
-        driftBooks.forEach(function(item){ var option=el('option',null,bookName(item.product)); option.value=item.product; driftProduct.appendChild(option); });
-        [['Customer',driftCode],['Book',driftProduct]].forEach(function(item){
-          var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); driftSection.appendChild(wrap);
-        });
+        driftCodeWrap.appendChild(driftCode); driftSection.appendChild(driftCodeWrap);
+        var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; }));
         var driftValue=makerField(driftSection,['Drift, -1 to +1','record.drift.value'],'number','','0.05');
         driftValue.min='-1'; driftValue.max='1';
         var driftState=el('p','msg'); driftSection.appendChild(driftState);
@@ -2958,9 +2955,7 @@ export const OWNER_JS = `
       if(!houseBooks.length){
         houseSection.appendChild(el('p','msg','No book has sizes to choose between.'));
       }else{
-        var houseProduct=actOn(el('select','fld salt-field__input'),'record.house.book'), houseBoxes=el('div','maker-field');
-        houseBooks.forEach(function(item){ var option=el('option',null,bookName(item.product)); option.value=item.product; houseProduct.appendChild(option); });
-        var houseWrap=el('label','maker-field','Book'); houseWrap.appendChild(houseProduct); houseSection.appendChild(houseWrap);
+        var houseProduct=makerTilesIn(houseSection,['Book','record.house.book'],houseBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; })), houseBoxes=el('div','maker-field');
         houseSection.appendChild(houseBoxes);
         var houseTicks=[];
         function fillHouse(){
@@ -2994,10 +2989,10 @@ export const OWNER_JS = `
       if(!tips.length){
         tipSection.appendChild(el('p','msg','The Desk is showing no reminder to hide.'));
       }else{
-        var tipId=actOn(el('select','fld salt-field__input'),'record.tip.tip'), tipFor=actOn(el('select','fld salt-field__input'),'record.tip.for');
+        var tipId=actOn(el('select','fld salt-field__input'),'record.tip.tip');
         tips.forEach(function(tip){ var option=el('option',null,tip.title+(tip.hush===null?' (hidden for good)':tip.hush?' (hidden until '+fmtWhen(tip.hush)+')':'')); option.value=tip.id; tipId.appendChild(option); });
-        [['7','7 days'],['30','30 days'],['','For good']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; tipFor.appendChild(option); });
-        [['Reminder',tipId],['Hide for',tipFor]].forEach(function(item){ var wrap=el('label','maker-field',item[0]); wrap.appendChild(item[1]); tipSection.appendChild(wrap); });
+        var tipWrap=el('label','maker-field','Reminder'); tipWrap.appendChild(tipId); tipSection.appendChild(tipWrap);
+        var tipFor=makerTilesIn(tipSection,['Hide for','record.tip.for'],[{value:'7',label:'7 days'},{value:'30',label:'30 days'},{value:'',label:'For good'}]);
         var tipAnswer=el('p','msg'); tipAnswer.setAttribute('role','status'); tipSection.appendChild(tipAnswer);
         var tipPending=false, tipAt=null, tipSignature='';
         makerButton(tipSection,['Hide it','record.tip.send'],async function(send){
