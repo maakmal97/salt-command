@@ -4099,8 +4099,9 @@ export const OWNER_JS = `
   }
   function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c._body.appendChild(m); return m; }
   /* S9 fix: FROM 860PX NEEDS YOU STANDS BESIDE AN ACCOUNT (the plan's f13w, his decision 9 of 11 Oct 2026), as Customers does: the one he
-     opened from a card, else the first card's about an account. The pane is drawn again only when its account changes or
-     the sheet is read again, so a redraw of the list never takes a tap in flight off the open card. wide() is the
+     opened from a card, and NOTHING OPENS BY ITSELF (the column says Tap a card until he taps, and only the card he tapped is marked
+     current). The pane is drawn again only when its account changes or the sheet is read again, so a redraw of the list never takes
+     a tap in flight off the open card. wide() is the
      two panes' width, which the page's CSS shares at 860px; the rail's 1080px is the system's own switch and nothing here reads it. */
   var nopen=document.getElementById('nopen'), nOpen=null;
   function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:860px)').matches); }
@@ -4109,7 +4110,6 @@ export const OWNER_JS = `
     nOpen=u; drawNeedOpen(true);
   }
   function drawNeedOpen(force){
-    if(!nOpen&&wide()){ var first=nlist.querySelector('[data-u]'); nOpen=first?first.getAttribute('data-u'):null; }
     var a=nOpen&&sheet&&sheet[nOpen];
     [].slice.call(nlist.querySelectorAll('[data-u]')).forEach(function(c){
       if(c.getAttribute('data-u')===nOpen) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });

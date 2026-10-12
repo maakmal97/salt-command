@@ -1,0 +1,44 @@
+[
+ {
+  "name": "a rule of the 860px width is not under .adm",
+  "file": "stmt/page.js",
+  "find": "  .adm #oLinks,.adm #oCards{max-width:600px}\n",
+  "replace": "  #oLinks,#oCards{max-width:600px}\n"
+ },
+ {
+  "name": "the account beside Needs you stops scrolling inside itself",
+  "file": "stmt/page.js",
+  "find": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
+  "replace": "  .adm #nopen,.adm #aopen{position:sticky;top:24px}\n"
+ },
+ {
+  "name": "the account's height forgets the App bar between 860 and 1080px",
+  "file": "stmt/page.js",
+  "find": "  .adm #nopen,.adm #aopen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
+  "replace": ""
+ },
+ {
+  "name": "the two panes wait for the rail",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:860px){\n  .adm #oLinks,.adm #oCards{max-width:600px}\n  .adm .nsplit,.adm .asplit{display:grid;",
+  "replace": "@media (min-width:860px){\n  .adm #oLinks,.adm #oCards{max-width:600px}\n}\n@media (min-width:1080px){\n  .adm .nsplit,.adm .asplit{display:grid;"
+ },
+ {
+  "name": "the invitation is drawn beside an account that is open",
+  "file": "stmt/page.js",
+  "find": "  .adm #nopen:not([hidden])~.panenone,.adm #aopen:not([hidden])~.panenone{display:none}\n",
+  "replace": ""
+ },
+ {
+  "name": "the invitation is drawn on a phone",
+  "file": "stmt/page.js",
+  "find": ".adm .panenone{display:none;margin:0}\n",
+  "replace": ".adm .panenone{margin:0}\n"
+ },
+ {
+  "name": "Customers' column does not say Tap a card",
+  "file": "stmt/page.js",
+  "find": "<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'",
+  "replace": "<div id=\"aopen\" hidden></div></div>'"
+ }
+]

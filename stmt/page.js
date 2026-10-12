@@ -583,8 +583,10 @@ body.ended>*:not(#aEnded){display:none}
   .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h)}
 }
 /* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
-   (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself. Below 860px an account opened takes the
-   list's place (Customers) or is not drawn (Needs you, whose Open then goes to Customers) */
+   (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself; nothing opens by itself, so until a tap the
+   column says Tap a card (.panenone, drawn only beside the list, and never beside an account that is open). Below 860px an account opened takes the list's place
+   (Customers) or is not drawn (Needs you, whose Open then goes to Customers) */
+.adm .panenone{display:none;margin:0}
 @media (max-width:859.98px){
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
   .adm #nopen{display:none}
@@ -594,6 +596,8 @@ body.ended>*:not(#aEnded){display:none}
   .adm .nsplit,.adm .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
   .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
   .adm #aopen .aback{display:none}
+  .adm .panenone{display:block}
+  .adm #nopen:not([hidden])~.panenone,.adm #aopen:not([hidden])~.panenone{display:none}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
    card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
@@ -1323,7 +1327,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
-        + '</div><div id="nopen" hidden></div></div>'
+        + '</div><div id="nopen" hidden></div><p class="rnone panenone">Tap a card</p></div>'
         + "</div>"
         /* ORDERS: the Counter's orders by stage, the payments customers say they sent, and the group orders. The stages filter one list
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
@@ -1359,7 +1363,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div class="afil" id="afil" role="group" aria-label="Show only">' + ADMIN_FILTERS.map(([f, w], k) =>
           '<button type="button" class="salt-ghost" data-f="' + f + '" data-act="acct.filter-' + f + '" aria-pressed="' + (k ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
         + "</div>"
-        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div></div>'
+        + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div><p class="rnone panenone">Tap a card</p></div>'
         + "</div>"
         + '<section data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
         + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'

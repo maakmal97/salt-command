@@ -1,0 +1,20 @@
+[
+ {
+  "name": "Needs you opens the first card's account by itself on a desk",
+  "file": "stmt/owner.js",
+  "find": "    var a=nOpen&&sheet&&sheet[nOpen];\n",
+  "replace": "    if(!nOpen&&wide()){ var first=nlist.querySelector('[data-u]'); nOpen=first?first.getAttribute('data-u'):null; }\n    var a=nOpen&&sheet&&sheet[nOpen];\n"
+ },
+ {
+  "name": "every account card in Needs you is marked current",
+  "file": "stmt/owner.js",
+  "find": "      if(c.getAttribute('data-u')===nOpen) c.setAttribute('aria-current','true'); else c.removeAttribute('aria-current'); });",
+  "replace": "      c.setAttribute('aria-current','true'); });"
+ },
+ {
+  "name": "the column beside Needs you does not say Tap a card",
+  "file": "stmt/page.js",
+  "find": "<div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'",
+  "replace": "<div id=\"nopen\" hidden></div></div>'"
+ }
+]
