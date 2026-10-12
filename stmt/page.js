@@ -800,7 +800,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm.vaultsheet .salt-sheet__body > * + *{margin-top:14px}
 .adm.vaultsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
 .adm.vaultsheet .salt-sheet__foot .btn,.adm.vaultsheet .salt-sheet__foot .salt-ghost{width:100%}
-/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px; on Salt Account
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px; on his page
    a sheet is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px (a landscape iPad). Only placement is written here (position, inset, width,
    how it arrives), and the colour, type, corners and surface stay the system's (the dialog keeps the bottom sheet's rounded top and square foot). The sheets of this page carry .adm beside
    .asheet (its Sheets are appended to the body, outside #roster), and the customer's carry neither. CANDIDATE FOR salt-ds: a dialog variant between 768 and 859px and
