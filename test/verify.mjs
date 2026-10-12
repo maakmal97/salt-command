@@ -8774,7 +8774,8 @@ await (async () => {
   /* Tide restates every colour Night declares as a literal, bar the ones the two share by design (the warning, the books' hues, the black shadows and
      wells, the bar's white sheen, the QR): a token left out would quietly stay Night's on a Tide ground */
   const SHARED = ["amber", "product-salt", "product-oil", "product-candy", "product-rice", "product-spare", "shadow", "shadow-desk", "well", "well-hover", "deskbar-sheen", "qr-field", "qr-ink"];
-  const unrestated = Object.keys(NIGHT).filter((k) => /#[0-9a-f]{3,8}\b|rgba?\(/i.test(NIGHT[k]) && !/^var\(/.test(NIGHT[k]) && !(k in TIDE_OVER) && !SHARED.includes(k));
+  /* 12 Oct 2026 (Phase 5b): the four look swatches and the paper inks are the same under both themes by design: a swatch shows its own theme while the other is on, and a sheet of paper is not a theme */
+  const unrestated = Object.keys(NIGHT).filter((k) => /#[0-9a-f]{3,8}\b|rgba?\(/i.test(NIGHT[k]) && !/^var\(/.test(NIGHT[k]) && !(k in TIDE_OVER) && !SHARED.includes(k) && !/^(swatch-(night|tide)-(ground|accent)|paper(-[a-z-]+)?)$/.test(k));
   ok(Object.keys(TIDE_OVER).length > 20 && unrestated.length === 0, `Tide restates every colour token Night declares, bar the shared ones (left out: ${unrestated.join(" ") || "none"})`);
   ok(/--salt-ink-on-accent:/.test(m), "the pill's own ink is in the design system's block");
 

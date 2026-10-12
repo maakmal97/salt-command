@@ -93,6 +93,12 @@ export const RECIPE_HEADS = [
   "/* ---- Glass card ---- */", "/* ---- Eyebrow ---- */", "/* ---- KPI tile:", "/* ---- Action:",
   "/* ---- Approve card:", "/* ---- Insight:", "/* ---- Meter:", "/* ---- Ledger list ---- */",
   "/* ---- Queue chip:", "/* ---- QR panel.", "/* ---- Desk rail", "/* ---- Plan:",
+  /* PHASE 5 OF THE SALT ACCOUNT REDESIGN (12 Oct 2026): the three recipes his page was drawing by hand. Metric row, a label over a
+     figure, which the approve card's figures were drawn on maker-facts lines for lack of (#142) and the report card's three
+     cells restated; Table, the hours grid; Product tag, the book's name on a row of his page, its hue the book's own accent
+     (PRODUCTS.accent in ledger/book.json, reached as the system's --salt-product-* token). Product tag is his page's alone:
+     no customer's page draws one, and the site's rule that a product is a mark and never a word stands. */
+  "/* ---- Metric row ---- */", "/* ---- Table (synced to the desk", "/* ---- Product tag:",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
