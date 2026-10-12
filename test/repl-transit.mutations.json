@@ -1,0 +1,3 @@
+[
+ {"name":"the replacement window counts a lot still in transit","find":"p.total>0&&(p.receivedOn||p.date)&&poRecvUnits(p)>0)","replace":"p.total>0&&(p.receivedOn||p.date))"}
+]
