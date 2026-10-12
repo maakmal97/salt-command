@@ -468,6 +468,20 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   /* the open order stands still while the list scrolls beside it, its thread in reach inside it */
   .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
 }
+/* 12 OCT 2026 (PHASE 7d, his yes of 11 Oct 2026, item 9): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px, so on a tablet
+   a sheet ran edge to edge (a 1000px window drew a 1000px sheet). Here it is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px, the width the lists
+   and panes turn on. Only placement is written (position, inset, width, how it arrives); colour, type, corners and surface stay the system's. The rules name .salt-sheet:not(.adm):
+   the sheets of his page carry .adm and take the placement written for them further down. CANDIDATE FOR salt-ds: a dialog variant between 768 and 859px and the drawer's
+   breakpoint at 860px, which would take this block out of the page. */
+@media (min-width:768px) and (max-width:859.98px){
+  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;width:min(560px,calc(100% - 32px));max-height:calc(100% - 64px);transform:translate(-50%,-50%);animation-name:salt-sheet-fade}
+  .salt-sheet:not(.adm) .salt-sheet__grab{display:none}
+}
+@media (min-width:860px) and (max-width:1079.98px){
+  .salt-sheet:not(.adm){top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}
+  .salt-sheet:not(.adm) .salt-sheet__grab{display:none}
+  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}
+}
 
 @media print{.bar,.mos,.salt-appbar,.salt-rail{display:none}}
 /* 11 OCT 2026: EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S, AND SITS UNDER .adm, THE ROOT OF HIS PAGE (#roster).

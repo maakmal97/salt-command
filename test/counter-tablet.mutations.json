@@ -1,0 +1,80 @@
+[
+ {
+  "name": "the dialog rule is dropped",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;width:min(560px,calc(100% - 32px));max-height:calc(100% - 64px);transform:translate(-50%,-50%);animation-name:salt-sheet-fade}\n",
+  "replace": ""
+ },
+ {
+  "name": "the dialog rule is under .adm",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:50%;right:auto;",
+  "replace": "  .adm.salt-sheet{top:50%;right:auto;"
+ },
+ {
+  "name": "the dialog is wider than 560px",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;width:min(560px,",
+  "replace": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;width:min(640px,"
+ },
+ {
+  "name": "the dialog is not centred across",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;",
+  "replace": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:0;"
+ },
+ {
+  "name": "the dialog starts at 800px",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:768px) and (max-width:859.98px){\n  .salt-sheet:not(.adm){top:50%;",
+  "replace": "@media (min-width:800px) and (max-width:859.98px){\n  .salt-sheet:not(.adm){top:50%;"
+ },
+ {
+  "name": "the dialog keeps its grabber",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm) .salt-sheet__grab{display:none}\n}\n@media (min-width:860px) and (max-width:1079.98px){",
+  "replace": "}\n@media (min-width:860px) and (max-width:1079.98px){"
+ },
+ {
+  "name": "the drawer rule is dropped",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}\n",
+  "replace": ""
+ },
+ {
+  "name": "the drawer rule is under .adm",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:0;left:auto;",
+  "replace": "  .adm .salt-sheet{top:0;left:auto;"
+ },
+ {
+  "name": "the drawer starts at 900px",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:860px) and (max-width:1079.98px){\n  .salt-sheet:not(.adm){top:0;",
+  "replace": "@media (min-width:900px) and (max-width:1079.98px){\n  .salt-sheet:not(.adm){top:0;"
+ },
+ {
+  "name": "the drawer is not 460px wide",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:0;left:auto;width:min(460px,",
+  "replace": "  .salt-sheet:not(.adm){top:0;left:auto;width:min(560px,"
+ },
+ {
+  "name": "the drawer keeps its grabber",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm) .salt-sheet__grab{display:none}\n  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n",
+  "replace": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n"
+ },
+ {
+  "name": "a sheet rule is also written under .adm, every wanted one still there",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n",
+  "replace": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n  .adm .salt-sheet .salt-sheet__head{padding-top:0}\n"
+ },
+ {
+  "name": "the drawer's head loses its top padding",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n",
+  "replace": ""
+ }
+]

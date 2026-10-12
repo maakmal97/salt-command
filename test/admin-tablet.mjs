@@ -5,7 +5,7 @@
  * measured behaviour (panes side by side from 860px, the rail from 1080px, a sticky pane's foot above the App bar, 44px targets, no sideways scroll, on both themes) is
  * the Chromium probe's, and its numbers are in the pull request. The stylesheet is the customer's too (stmt/page.js PAGE_CSS), so a rule of this phase that is not under
  * .adm is a rule the customer's page is handed. Every assertion was proved red by its own mutation (test/admin-tablet.mutations.json, run with tools/section.mjs).
- *   1  every rule at 768px, 860px and below them is under .adm
+ *   1  every rule of his page at 768px, 860px and below them is under .adm (the customer's own tablet rules come before his and are test/counter-tablet.mjs's)
  *   2  Needs you and Customers: the list beside the account from 860px, the account sticky and scrolling inside itself, its foot above the App bar to 1080px
  *   3  nothing opens by itself: the column beside the list says Tap a card, and is drawn only while no account is open
  *   4  Sheets: a centred 560px dialog from 768px, the 460px drawer from 860px, placement only     5  a 620px column and short fields two up from 768px
@@ -17,20 +17,23 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
 import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
 
-/* the owner page's own stylesheet, read as rules, by query (spaces taken out) and selector (a list is written "a,b") */
+/* the owner page's own stylesheet, read as rules, by query (spaces taken out) and selector (a list is written "a,b"). It starts where PAGE_CSS says the owner page's rules begin: what
+   comes before is the customer's, which has its own rules at 768px and 860px (test/counter-tablet.mjs) */
+const OWNER_MARK = "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S";
 function ownerCss() {
   const html = landingPage("", "tablet-nonce", { master: "fixture-master", accounts: [] });
-  const css = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const all = (html.match(/<style[^>]*>([\s\S]*?)<\/style>/) || [, ""])[1].slice((FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES).length);
+  const from = all.indexOf(OWNER_MARK), css = from < 0 ? "" : all.slice(all.lastIndexOf("/*", from));
   const sheet = new JSDOM("<style>" + css + "</style>").window.document.styleSheets[0];
   const sel = (r) => r.selectorText.replace(/\s*,\s*/g, ",");
   const media = [...sheet.cssRules].filter((r) => r.media).map((r) => ({ q: r.media.mediaText.replace(/\s+/g, ""), rules: [...r.cssRules].map((x) => ({ sel: sel(x), css: x.style.cssText })) }));
   const at = (q, s) => media.filter((m) => m.q === q).flatMap((m) => m.rules).filter((r) => r.sel === s).map((r) => r.css).join(" ");
   const top = (s) => [...sheet.cssRules].filter((r) => r.selectorText && sel(r) === s).map((r) => r.style.cssText).join(" ");
-  return { html, media, at, top };
+  return { html, media, at, top, from };
 }
 
 export async function run({ ok, pageWork }) {
-  const { html, media, at, top } = ownerCss();
+  const { html, media, at, top, from } = ownerCss();
   const d = new JSDOM(html).window.document;
 
   /* 1. EVERY RULE AT THE TABLET WIDTHS IS UNDER .adm */
@@ -38,8 +41,9 @@ export async function run({ ok, pageWork }) {
     const fam = media.filter((m) => /(^|[^0-9.])(768|860)px|(767|859|371)\.98px/.test(m.q));
     const sels = fam.flatMap((m) => m.rules.map((r) => r.sel));
     const loose = sels.filter((s) => s.split(",").some((x) => !/\.adm\b/.test(x)));
-    ok(sels.length >= 30 && !loose.length,
-      "every rule at 768px, 860px, 372px and the widths below them is under .adm, which the customer's page shares this stylesheet without: " + sels.length + " rules, outside .adm: " + (loose.join(" | ") || "none"));
+    ok(from > 0 && sels.length >= 30 && !loose.length,
+      "every rule of his page at 768px, 860px, 372px and the widths below them is under .adm, which the customer's page shares this stylesheet without (the rules before the one that marks where his begin are the customer's own, test/counter-tablet.mjs): "
+        + sels.length + " rules, outside .adm: " + (loose.join(" | ") || "none") + ", marker found: " + (from > 0));
   }
 
   /* 2. NEEDS YOU AND CUSTOMERS: A LIST AND A DETAIL FROM 860px */
