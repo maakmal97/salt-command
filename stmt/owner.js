@@ -544,7 +544,7 @@ export const OWNER_JS = `
   /* ---- ACCOUNTS (S9 9.2) -----------------------------------------------------------------------
      One list for what Send and Review were: the system's Inbox row an account, its code and chips for where it
      stands and how it has been reached, found by a word and narrowed by a filter. A row opens the account's
-     card, beside the list from 1080px and in its place on a phone with a way back; the card is Send's. */
+     card, beside the list from 860px and in its place on a phone with a way back; the card is Send's. */
   var aFilter='all', aOpen=null;
   var FILTER={
     all:function(){ return true; },
@@ -618,7 +618,12 @@ export const OWNER_JS = `
     var back=el('button','aback','← Accounts'); back.type='button'; back.setAttribute('data-back','accounts'); actOn(back,'acct.back');
     aopen.appendChild(back);
     acctPane(aopen, a);
-    try{ window.scrollTo(0,0); }catch(e){}
+    /* below 860px the account takes the list's place with its way back showing, so he is taken to the top of it; from 860px the list is the page's
+       scroll and the account stands beside it, sticky, so a tap on a low row leaves the page where it is and only brings the pane into view */
+    try{
+      if(window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);
+      else if(aopen.scrollIntoView) aopen.scrollIntoView({block:'nearest'});
+    }catch(e){}
   }
   /* an account as it opens (S9 9.3) */
   function acctPane(box, a){ box.appendChild(acctCard(a)); }
@@ -4093,11 +4098,12 @@ export const OWNER_JS = `
     return c;
   }
   function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c._body.appendChild(m); return m; }
-  /* S9 fix: FROM 1080PX NEEDS YOU STANDS BESIDE AN ACCOUNT (the plan's f13w), as Accounts does: the one he opened
-     from a card, else the first card's about an account. The pane is drawn again only when its account changes or
-     the sheet is read again, so a redraw of the list never takes a tap in flight off the open card. */
+  /* S9 fix: FROM 860PX NEEDS YOU STANDS BESIDE AN ACCOUNT (the plan's f13w, his decision 9 of 11 Oct 2026), as Customers does: the one he
+     opened from a card, else the first card's about an account. The pane is drawn again only when its account changes or
+     the sheet is read again, so a redraw of the list never takes a tap in flight off the open card. wide() is the
+     two panes' width, which the page's CSS shares at 860px; the rail's 1080px is the system's own switch and nothing here reads it. */
   var nopen=document.getElementById('nopen'), nOpen=null;
-  function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:1080px)').matches); }
+  function wide(){ return !!(window.matchMedia&&window.matchMedia('(min-width:860px)').matches); }
   function openNeed(u){
     if(!wide()){ showPlace('customers','accounts',{fresh:true,push:true}); openCard(u); return; }
     nOpen=u; drawNeedOpen(true);

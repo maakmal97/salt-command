@@ -21067,7 +21067,7 @@ await (async () => {
       try { Object.defineProperty(w, "crypto", { value: crypto, configurable: true }); } catch (e) { w.crypto = crypto; }
       if (!w.TextEncoder) w.TextEncoder = TextEncoder;
       if (!w.TextDecoder) w.TextDecoder = TextDecoder;
-      w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*1080px/.test(q) && view.wide, addListener() {}, removeListener() {} });
+      w.matchMedia = (q) => ({ media: q, matches: /min-width:\s*860px/.test(q) && view.wide, addListener() {}, removeListener() {} });
       w.fetch = async (q, o) => { o = o || {}; hits.push((o.method || "GET") + " " + String(q));
         return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
       work = pageWork(w);

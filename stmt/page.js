@@ -575,21 +575,25 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:1080px){
   .gate.adm{max-width:1180px;margin-top:24px;display:flex;gap:28px;align-items:flex-start;padding-bottom:48px}
   .adm .amain{flex:1 1 auto;min-width:0}
-  .adm #mHome,.adm #oShop,.adm #oLinks,.adm #oCards{max-width:600px}
-  .adm #oAccts.open .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
-  .adm #aopen{position:sticky;top:24px}
-  .adm #aopen .aback{display:none}
-  /* S9 fix: Needs you beside the account a card is about (the plan's f13w) */
-  .adm #mHome.open{max-width:none}
-  .adm #mHome.open .nsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
-  .adm #nopen{position:sticky;top:24px}
+  .adm #oShop{max-width:600px}
 }
 @media (max-width:1079.98px){
   /* the phone frame (28 Sep 2026): his shell starts at the body's 16px and clears the App bar by the same 16px; here,
      after the shell's own rule, or that rule would win */
   .gate.adm{margin-top:0;padding-bottom:var(--salt-bar-h)}
+}
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): NEEDS YOU AND CUSTOMERS ARE A LIST AND A DETAIL FROM 860px, as Orders and Record are. The account a card is about
+   (Needs you) or a row opened (Customers) stands in #nopen / #aopen beside the list, sticky and scrolling inside itself. Below 860px an account opened takes the
+   list's place (Customers) or is not drawn (Needs you, whose Open then goes to Customers) */
+@media (max-width:859.98px){
   .adm #oAccts.open .afind,.adm #oAccts.open .alist,.adm #oAccts.open #scount{display:none}
   .adm #nopen{display:none}
+}
+@media (min-width:860px){
+  .adm #oLinks,.adm #oCards{max-width:600px}
+  .adm .nsplit,.adm .asplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:20px;align-items:start}
+  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+  .adm #aopen .aback{display:none}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): ORDERS ARE A LIST AND A DETAIL. A row an order (the system's Inbox row) in #makerOrderList, the order's
    card in #makerReview. From 860px they stand side by side, the card sticky and scrolling inside itself; below it the card takes the list's place
@@ -610,8 +614,9 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  .adm #nopen,.adm #aopen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   .gate.adm{max-width:none}
-  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
+  .adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
 }
 /* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
    #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
@@ -1315,7 +1320,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
           + '" data-act="need.kind.' + k + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>"
-        /* S9 fix: from 1080px the list stands beside the account a card is about, as Accounts does */
+        /* S9 fix: from 860px the list stands beside the account a card is about, as Accounts does (Phase 6) */
         + '<div class="nsplit"><div>'
         + '<div id="nlist" class="nlist"></div>'
         + '</div><div id="nopen" hidden></div></div>'
@@ -1339,7 +1344,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="makerPools" aria-live="polite"></div></section>'
         + "</div></div>"
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
-           filter, and a row opens the account beside the list from 1080px, in its place below it on a phone. */
+           filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Customers</h1>"
