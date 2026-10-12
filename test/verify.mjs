@@ -54227,6 +54227,11 @@ await (async () => {
   for (const harness of [book, failedBook, frozenBook, relayBook]) harness.db.close();
 })();
 
+section("Failures on brand: the maintenance page is the Counter's frame with the ring, its sentence from the table and its time read from MAINTENANCE_UNTIL in Kuala Lumpur (12 Oct 2026)");
+await (async () => {
+  await (await import("./counter-maintenance.mjs")).run({ ok });
+})();
+
 section("Maintenance guard on both Workers");
 await (async () => {
   const TEXT = "The store is currently under maintenance. We are open for business again at 00:01 midnight of October 5.";
@@ -54241,8 +54246,9 @@ await (async () => {
     const page = await get("/", { accept: "text/html,application/xhtml+xml" }), body = page.body;
     ok(page.status === 503 && page.headers.get("retry-after") > 0 && page.headers.get("cache-control") === "no-store"
       && /^text\/html/.test(page.headers.get("content-type")), name + ": a page request before the window ends answers 503 with Retry-After and no-store");
-    ok(body.includes("<p>" + TEXT + "</p>") && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"')
-      && !/<script|https?:\/\//.test(body), name + ": the page carries the exact words, a title and language, no script and no external load");
+    /* the desk's page keeps its sentence; the Counter's says when it is back, read from the time in Kuala Lumpur (test/counter-maintenance.mjs) */
+    ok((name === "desk" ? body.includes("<p>" + TEXT + "</p>") : /<p>Back (at \d\d:\d\d|on \d\d [A-Z][a-z]{2} \d{4} at \d\d:\d\d)<\/p>/.test(body)) && body.includes("<title>Maintenance</title>") && body.includes('lang="en-GB"')
+      && !/<script|https?:\/\//.test(body), name + ": the page carries its words, a title and language, no script and no external load");
     ok(page.headers.get("content-security-policy") === "default-src 'none'; style-src 'unsafe-inline'", name + ": the page's CSP is the closed one");
     const js = await get("/queue", { accept: "application/json" });
     ok(js.status === 503 && /"error":"maintenance"/.test(js.body) && /^application\/json/.test(js.headers.get("content-type")), name + ": a non-HTML request gets JSON {ok:false,error:maintenance}");

@@ -1,0 +1,170 @@
+[
+ {
+  "name": "the sentence is the old default, not the time",
+  "file": "stmt/maintenance.js",
+  "find": "|| backWords(until, now)",
+  "replace": "|| \"The store is currently under maintenance.\""
+ },
+ {
+  "name": "the time is read in UTC",
+  "file": "stmt/maintenance.js",
+  "find": "timeZone: \"Asia/Kuala_Lumpur\"",
+  "replace": "timeZone: \"UTC\""
+ },
+ {
+  "name": "the day is never said",
+  "file": "stmt/maintenance.js",
+  "find": "if (u.day === n.day && u.month === n.month && u.year === n.year)",
+  "replace": "if (true)"
+ },
+ {
+  "name": "today is the UTC day",
+  "file": "stmt/maintenance.js",
+  "find": "n = klParts(now), t =",
+  "replace": "n = { day: new Date(now).toISOString().slice(8, 10), month: String(+new Date(now).toISOString().slice(5, 7)), year: new Date(now).toISOString().slice(0, 4) }, t ="
+ },
+ {
+  "name": "the minute is not rounded up",
+  "file": "stmt/maintenance.js",
+  "find": "Math.ceil(until / 60000) * 60000",
+  "replace": "until"
+ },
+ {
+  "name": "the page carries no ring",
+  "file": "stmt/maintenance.js",
+  "find": "\"</style></head><body><main>\" + RING\n",
+  "replace": "\"</style></head><body><main>\"\n"
+ },
+ {
+  "name": "the ring stands under the heading",
+  "file": "stmt/maintenance.js",
+  "find": "\"</style></head><body><main>\" + RING\n  + \"<h1>\" + esc(EN[\"maint.h\"]) + \"</h1><p>\"",
+  "replace": "\"</style></head><body><main>\"\n  + \"<h1>\" + esc(EN[\"maint.h\"]) + \"</h1>\" + RING + \"<p>\""
+ },
+ {
+  "name": "the ring is not the app's",
+  "file": "stmt/maintenance.js",
+  "find": "A7.8 7.8 0 1 1 11.99 4.2 Z",
+  "replace": "A7.8 7.8 0 1 1 11.99 4.3 Z"
+ },
+ {
+  "name": "the page has no heading",
+  "file": "stmt/maintenance.js",
+  "find": "\"<h1>\" + esc(EN[\"maint.h\"]) + \"</h1><p>\"",
+  "replace": "\"<p>\""
+ },
+ {
+  "name": "the text is dimmer than the system's",
+  "file": "stmt/maintenance.js",
+  "find": "soft: \"#a4bbbf\"",
+  "replace": "soft: \"#4a5a5e\""
+ },
+ {
+  "name": "the ring is not Tide's brass",
+  "file": "stmt/maintenance.js",
+  "find": "accent: \"#7fd1c0\"",
+  "replace": "accent: \"#c5a059\""
+ },
+ {
+  "name": "a corner glow is not Tide's",
+  "file": "stmt/maintenance.js",
+  "find": "glow: \"98,182,204\"",
+  "replace": "glow: \"98,182,205\""
+ },
+ {
+  "name": "the page runs a script",
+  "file": "stmt/maintenance.js",
+  "find": "<meta charset=\"utf-8\"><meta name=\"google\"",
+  "replace": "<meta charset=\"utf-8\"><script></script><meta name=\"google\""
+ },
+ {
+  "name": "the page loads a stylesheet",
+  "file": "stmt/maintenance.js",
+  "find": "<meta name=\"theme-color\" content=\"' + TIDE.ground + '\">'",
+  "replace": "<meta name=\"theme-color\" content=\"' + TIDE.ground + '\"><link rel=\"stylesheet\" href=\"/s.css\">'"
+ },
+ {
+  "name": "the page is open to the translator",
+  "file": "stmt/maintenance.js",
+  "find": "<html lang=\"en-GB\" translate=\"no\" data-theme=\"tide\"><head><meta charset=\"utf-8\"><meta name=\"google\" content=\"notranslate\">",
+  "replace": "<html lang=\"en-GB\" data-theme=\"tide\"><head><meta charset=\"utf-8\">"
+ },
+ {
+  "name": "the page has no viewport",
+  "file": "stmt/maintenance.js",
+  "find": "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,viewport-fit=cover\">",
+  "replace": ""
+ },
+ {
+  "name": "the words are not escaped",
+  "file": "stmt/maintenance.js",
+  "find": "\"</h1><p>\" + esc(text) + \"</p>",
+  "replace": "\"</h1><p>\" + text + \"</p>"
+ },
+ {
+  "name": "MAINTENANCE_TEXT no longer wins",
+  "file": "stmt/maintenance.js",
+  "find": "String((env && env.MAINTENANCE_TEXT) || \"\").trim() || backWords(until, now)",
+  "replace": "backWords(until, now)"
+ },
+ {
+  "name": "MAINTENANCE_TEXT is not trimmed",
+  "file": "stmt/maintenance.js",
+  "find": "String((env && env.MAINTENANCE_TEXT) || \"\").trim() || backWords(until, now)",
+  "replace": "String((env && env.MAINTENANCE_TEXT) || \"\") || backWords(until, now)"
+ },
+ {
+  "name": "the policy admits an image",
+  "file": "stmt/maintenance.js",
+  "find": "\"default-src 'none'; style-src 'unsafe-inline'\"",
+  "replace": "\"default-src 'none'; style-src 'unsafe-inline'; img-src 'self'\""
+ },
+ {
+  "name": "Retry-After is a second",
+  "file": "stmt/maintenance.js",
+  "find": "String(Math.max(1, Math.ceil((until - now) / 1000)))",
+  "replace": "\"1\""
+ },
+ {
+  "name": "the answer may be kept",
+  "file": "stmt/maintenance.js",
+  "find": "\"cache-control\": \"no-store\"",
+  "replace": "\"cache-control\": \"max-age=60\""
+ },
+ {
+  "name": "a request that is not HTML gets the page",
+  "file": "stmt/maintenance.js",
+  "find": "if (/text\\/html/i.test(request.headers.get(\"accept\") || \"\"))",
+  "replace": "if (true)"
+ },
+ {
+  "name": "the machine route /all is held",
+  "file": "stmt/maintenance.js",
+  "find": "if (machine.paths.includes(p) || machine.prefixes",
+  "replace": "if (machine.prefixes"
+ },
+ {
+  "name": "the heading names the app",
+  "file": "stmt/words.js",
+  "find": "\"maint.h\": \"Under maintenance\",",
+  "replace": "\"maint.h\": \"Salt Counter is under maintenance\","
+ },
+ {
+  "name": "the page names a product",
+  "file": "stmt/words.js",
+  "find": "\"maint.at\": \"Back at {t}\",",
+  "replace": "\"maint.at\": \"Oil back at {t}\","
+ },
+ {
+  "name": "the heading is not in the table",
+  "file": "stmt/words.js",
+  "find": "\"maint.h\": \"Under maintenance\",",
+  "replace": "\"maint.h\": \"Closed\","
+ },
+ {
+  "name": "the sentence for another day loses its on",
+  "file": "stmt/words.js",
+  "find": "\"maint.on\": \"Back on {d} at {t}\",",
+  "replace": "\"maint.on\": \"Back {d} at {t}\","
+ }
+]

@@ -686,6 +686,14 @@ line and brings the figure and its Pay back. A page that has not yet read once h
 with Try again). Sign-out and a new sign-in forget the time. The test accounts need no case: it is not data, so `FEATURES` asks for none (airplane mode shows
 it). `test/counter-offline-line.mjs`, its mutations in `test/counter-offline-line.mutations.json`.
 
+**The maintenance page is the Counter's frame** (`stmt/maintenance.js`, which imports `stmt/words.js` and nothing else; `src/maintenance.js` is the Desk's
+own and is untouched). The app's ring inline over a heading (`maint.h`) and one sentence, Tide (the page runs no script), under the same closed
+policy, `default-src 'none'; style-src 'unsafe-inline'`, so no face, image or script loads. The sentence is read from `MAINTENANCE_UNTIL` in Kuala Lumpur
+(`backWords`): `maint.at`, "Back at 14:30", or `maint.on`, "Back on 13 Oct 2026 at 00:01" once that is not today there; a moment past the minute is
+rounded up, so the page never promises a time before the guard lifts. `MAINTENANCE_TEXT`, when set, still replaces the sentence, trimmed and escaped. The old
+default sentence is retired. The answer is unchanged: 503, `retry-after`, `no-store`, JSON for a request that is not HTML, the machine routes in `MACHINE` passing.
+`test/counter-maintenance.mjs`, its mutations in `test/counter-maintenance.mutations.json`; the guard's own section is "Maintenance guard on both Workers".
+
 ## The price list and the order book (06 Sep 2026, his instruction)
 
 Three things sit behind the one password since v499: the statements, a **price list** for

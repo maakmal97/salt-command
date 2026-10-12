@@ -228,6 +228,11 @@ export const EN = {
   "shut.h": "This link is not open",
   "shut.p": "Ask the person who sent it to you.",
   "shut.title": "Link not open",
+  /* ---- THE MAINTENANCE PAGE (stmt/maintenance.js), which runs no script: the time is read from MAINTENANCE_UNTIL in Kuala Lumpur ---- */
+  "maint.title": "Maintenance",
+  "maint.h": "Under maintenance",
+  "maint.at": "Back at {t}",
+  "maint.on": "Back on {d} at {t}",
   "door.hide": "Hide",
   "door.unfitUn": "A username never uses 0, 1, i, l, o or u. Check the symbols you typed.",
   "door.unfitPw": "A password never uses 0, 1, i, l, o or u. Check the symbols you typed.",
