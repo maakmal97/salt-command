@@ -158,12 +158,18 @@ try {
       if (bar.contains(n) || n.closest("[hidden], #oAdd") || !n.getClientRects().length) continue;
       low = Math.max(low, n.getBoundingClientRect().bottom);
     }
-    return { bottom: r.bottom, left: r.left, right: r.right, seen: v.offsetTop + v.height, ih: innerHeight, iw: innerWidth, sw: document.documentElement.scrollWidth, clear: r.top - low };
+    return { bottom: r.bottom, left: r.left, right: r.right, seen: v.offsetTop + v.height, ih: innerHeight, iw: innerWidth, sw: document.documentElement.scrollWidth, sh: document.documentElement.scrollHeight, html: document.documentElement.getBoundingClientRect().height, clear: r.top - low };
   });
-  const atFoot = (m) => !m.error && Math.abs(m.bottom - m.seen) <= 1 && Math.abs(m.bottom - m.ih) <= 1 && Math.abs(m.left) <= 1 && Math.abs(m.right - m.iw) <= 1 && m.sw <= m.iw && m.clear >= 0;
-  for (const theme of ["night", "tide"]) for (const [width, height] of [[375, 812], [768, 1024]]) {
+  /* IN THE SAVED APP (his iPhone, 12 Oct 2026: a fixed bar stood 20pt and 55pt above the foot on short places, never on a long one, never in Safari) the document is the
+     whole screen tall at least, and a short place scrolls by no more than a pixel. The page marks itself from navigator.standalone, which is set here as the phone sets it. */
+  const SHORT = ["start", "needs", "orders", "customers", "record", "record/approve"];
+  const atFoot = (m, app = false, label = "") => !m.error && Math.abs(m.bottom - m.seen) <= 1 && Math.abs(m.bottom - m.ih) <= 1 && Math.abs(m.left) <= 1 && Math.abs(m.right - m.iw) <= 1 && m.sw <= m.iw && m.clear >= 0
+    && (!app || (m.html >= m.ih - 1 && (!SHORT.includes(label) || m.sh - m.ih <= 1)));
+  for (const app of [false, true]) for (const theme of ["night", "tide"]) for (const [width, height] of [[375, 812], [768, 1024]]) {
+    const where = `${app ? "saved app " : ""}${theme} ${width}x${height}`;
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: "reduce", isMobile: true, hasTouch: true });
     await page.addInitScript((t) => localStorage.setItem("salt-look", t), theme);
+    if (app) await page.addInitScript(() => Object.defineProperty(navigator, "standalone", { value: true, configurable: true }));
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: "domcontentloaded" });
     const views = [], look = async (label) => { await page.waitForTimeout(120); views.push([label, await foot(page)]); };
     await look("start");
@@ -183,16 +189,17 @@ try {
         await look(`record/${part}/${title}`);
       }
     }
-    const off = views.filter(([, m]) => !atFoot(m));
-    report(views.length >= 27 && off.length === 0, `${theme} ${width}x${height}: the bar's bottom is the screen's bottom on all ${views.length} views, and nothing covers it or scrolls past it`,
+    const off = views.filter(([label, m]) => !atFoot(m, app, label));
+    report(views.length >= 27 && off.length === 0, `${where}: the bar's bottom is the screen's bottom on all ${views.length} views, and nothing covers it or scrolls past it${app ? "; the document is the screen tall and a short place does not scroll" : ""}`,
       JSON.stringify(off.length ? off.slice(0, 2) : views.find(([label]) => label === "record")[1]));
     /* the same measure under a rule that breaks it is red: the bar lifted off the foot, and a page wider than the phone */
-    for (const [name, css] of [["a lifted bar", ".salt-appbar{bottom:24px!important}"], ["a page wider than the phone", "#oRecord{min-width:1200px!important}"]]) {
-      await page.locator('[data-act="nav.record"]:visible').last().click();
+    for (const [name, css, place] of [["a lifted bar", ".salt-appbar{bottom:24px!important}", "record"], ["a page wider than the phone", "#oRecord{min-width:1200px!important}", "record"],
+      ...(app ? [["a document shorter than the screen", "html[data-app] body{min-height:0!important}", "needs"]] : [])]) {
+      await page.locator(`[data-act="nav.${place}"]:visible`).last().click();
       const style = await page.addStyleTag({ content: css });
       await page.waitForTimeout(250);
       const m = await foot(page);
-      report(!atFoot(m), `${theme} ${width}px independent mutation (${name}) is red`, JSON.stringify(m));
+      report(!atFoot(m, app, place), `${where} independent mutation (${name}) is red`, JSON.stringify(m));
       await style.evaluate((s) => s.remove());
     }
     await page.close();
