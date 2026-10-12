@@ -111,11 +111,10 @@ export const OWNER_JS = `
     if(moved2) fOpen=null;
     var add=document.getElementById('oAdd'); if(add) add.hidden=placeNow==='record';
     if(!inChat()) stopMakerChat();
-    /* the picture is let go when Waiting on you is left, the unlocked key only when Orders is left, as the old Maker page kept it */
+    /* the picture is let go when Waiting on you is left; the one unlock is the page's and stays (PHASE 4b), going only with the lock */
     if(!inClaims()) makerSlipClose();
     /* so is the claim opened, and the line of the last answer: the claims are drawn again, every card shut, so a part left shows as it will be found */
     if(!inClaims()&&(makerClaimOpen||makerClaimSaid)){ makerClaimOpen=null; makerClaimSaid=''; drawMakerClaims(); }
-    if(placeNow!=='orders') makerSlipLock();
     [].forEach.call(document.querySelectorAll('.place[data-m]'), function(b){
       if(b.getAttribute('data-m')===placeNow) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     [].forEach.call(document.querySelectorAll('.aparts button[data-part]'), function(b){
@@ -438,7 +437,7 @@ export const OWNER_JS = `
     var u=a.username, none=a.account===false, why='No account yet';
     var c=el('section','oacct scard'); c.setAttribute('data-acct', u);
     var h=el('div','ahead srow');
-    h.appendChild(el('h2',null,a.test?testName(a):(a.code||u)));
+    h.appendChild(whoTag(el('h2',null,a.test?testName(a):(a.code||u)),a.test?'':a.code));
     h.appendChild(el('span','un',u));
     c.appendChild(h);
     var cs=el('div','achips');
@@ -578,7 +577,7 @@ export const OWNER_JS = `
     var b=el('button','salt-inbox-row'); b.type='button'; b.setAttribute('data-u', a.username); actOn(b,'acct.open',a.username);
     if(aOpen===a.username) b.setAttribute('aria-current','true');
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(el('span',null,a.test?testName(a):(a.code||a.username)));
+    t.appendChild(whoTag(el('span',null,a.test?testName(a):(a.code||a.username)),a.test?'':a.code));
     if(sheet) chipsOf(a).forEach(function(c){ t.appendChild(c); });
     main.appendChild(t);
     /* a code with no account says, on its row, when it is made and which link to show until then (D15) */
@@ -608,7 +607,6 @@ export const OWNER_JS = `
   }
   /* the open account: its chips, then Send's card, and on a phone the way back to the list above it */
   function openCard(u){
-    makerSlipLock();
     var a=u&&((sheet&&sheet[u])||OWNER.accounts.filter(function(x){ return x.username===u; })[0]);
     aOpen=a?u:null;
     oAccts.classList.toggle('open', !!a);
@@ -738,6 +736,7 @@ export const OWNER_JS = `
   function ended(){
     lookShut();   /* 11 Oct 2026: the look Sheet gives way; the lapse is what he must see */
     ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */
+    makerVaultLock();   /* and every key, name, place and picture the one unlock holds (Phase 4b) */
     document.getElementById('aEnded').hidden=false; document.body.classList.add('ended');
     /* the 30-second read ends with the sign-in: every poll after a lapse would send seven requests to the login and fail each */
     if(needsTimer){ clearInterval(needsTimer); needsTimer=null; }
@@ -958,7 +957,7 @@ export const OWNER_JS = `
   function makerNeedsYes(order,total,slot){ return (total>(+order.total||0)+0.004)||(!!slot&&!!order.slot&&slot!==order.slot); }
   /* his Accept sent for their yes, open or said yes to: the order waits on them, or on its row */
   function makerAccHeld(order){ var p=order&&order.price; return !!p&&p.from==='accept'&&(p.state==='taken'||(p.state==='offered'&&!!p.offer&&new Date().toISOString()<=String(p.offer.until))); }
-  var makerClaims=[], makerClaimRequests={}, makerSlipPrivate=null, makerSlipGeneration=0, makerSlipUrls=[], makerSlipDraw=null;
+  var makerClaims=[], makerClaimRequests={}, makerSlipGeneration=0, makerSlipUrls=[], makerSlipDraw=null;
   /* 12 Oct 2026 (Phase 2b, his decisions 3, 4 and 6 of 11 Oct): THE CLAIM CARD. A waiting account claim is a row of the system's Inbox row and the one
      opened is its card under it, one at a time. The card reads the claim's rows ITSELF when it is opened (the Desk's preview through the Counter, stored
      nowhere), never a row, and reads them afresh each time it is drawn; the Preview rows button is retired. Received and Not found ask on the page's
@@ -969,9 +968,138 @@ export const OWNER_JS = `
     makerSlipUrls.forEach(function(url){ URL.revokeObjectURL(url); }); makerSlipUrls=[];
     document.querySelectorAll('[data-maker-slip]').forEach(function(node){ node.remove(); });
   }
-  /* the lock lets the picture and the key go together, and the slip block of the card open says it is sealed again */
-  function makerSlipLock(){ makerSlipClose(); makerSlipPrivate=null; if(makerSlipDraw) makerSlipDraw(); }
-  document.addEventListener('visibilitychange',function(){ if(document.hidden) makerSlipLock(); });
+  /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct 2026): THE ONE UNLOCK. One password, typed once on the Sheet below, opens the names, the places and the slip
+     key, and every place that asked for its own password (Add ID, Amend ID, Place on the map, an unsent entry, a claim's slip) reads this instead; locked, each says
+     Locked and offers the same Unlock. What it holds, in this page's memory and nowhere else: the password as a PBKDF2 base key imported NON-EXTRACTABLE (it derives
+     the key of any envelope from that envelope's own salt and gives nothing back), the names and places as the vault opened them, and the slip key imported
+     non-extractable for deriveBits. The password itself is read from its field, the field cleared, and the string never kept. Nothing here is sent, logged or
+     written to localStorage, sessionStorage, IndexedDB or a cookie, and every read and write is the ciphertext road it was: makerVaultOpen and makerVaultSeal are
+     as they were, the one change being that they take the held base key where they took the password. THE LOCK lets all of it go together: the keys, the names
+     and places, every slip picture (its blob: URL revoked) and the Sheet with whatever was typed in it, on a page hidden, on ended(), on a lapse (lapseHooks, in
+     the customer's view) and on an explicit Lock; the page then shows codes again. An unlock still being read when the lock comes lands on nothing. */
+  var makerVault=null, makerVaultTurn=0, vaultBusy=false, vaultBack=null,
+      vaultSheetEl=document.getElementById('vaultSheet'), vaultScrim=document.getElementById('vaultScrim'), vaultPass=document.getElementById('vaultPass'),
+      vaultSay=document.getElementById('vaultSay'), vaultGo=document.getElementById('vaultGo');
+  function makerVaultBase(){
+    if(!makerVault) throw new Error('Unlock names and places first.');
+    return makerVault.base;
+  }
+  function makerVaultLock(){
+    makerVaultTurn++; makerVault=null;
+    makerSlipClose(); vaultShut(true);
+    makerVaultNotify(); if(makerSlipDraw) makerSlipDraw();
+  }
+  document.addEventListener('visibilitychange',function(){ if(document.hidden) makerVaultLock(); });
+  lapseHooks.push(makerVaultLock);
+  /* the vault's two envelopes, read as Add ID reads them: the names, and with a revision the pair that holds the places beside them */
+  async function makerVaultRead(){
+    var namesRead=await refs('/all/maker/vault'), pair=null;
+    if(namesRead.revision) pair=await refs('/all/maker/vault/pair');
+    var placesRead=pair?{vault:pair.places}:await refs('/all/maker/vault/addr');
+    return {pair:pair, names:pair?pair.names:namesRead.vault, places:placesRead.vault};
+  }
+  async function makerVaultUnlock(secret){
+    var turn=++makerVaultTurn, base, read, names, places, filed, slip=null;
+    try{
+      base=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),'PBKDF2',false,['deriveKey']); secret='';
+      read=await makerVaultRead();
+      if(turn!==makerVaultTurn) return false;
+      names=await makerVaultOpen(base,read.names); places=await makerVaultOpen(base,read.places);
+      filed=await refs('/all/maker/vault/key');
+      if(turn!==makerVaultTurn) return false;
+      if(filed.vault){
+        var jwk=await makerVaultOpen(base,filed.vault);
+        slip=await crypto.subtle.importKey('jwk',{kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y,d:jwk.d},{name:'ECDH',namedCurve:'P-256'},false,['deriveBits']);
+      }
+    }catch(error){
+      if(error&&error.name==='OperationError') throw new Error('That password did not open names, places and slips.');
+      throw error;
+    }
+    if(turn!==makerVaultTurn) return false;
+    makerVault={base:base, names:names, places:places, slip:slip};
+    makerVaultNotify(); if(makerSlipDraw) makerSlipDraw();
+    return true;
+  }
+  /* after a name or a place is filed, the held maps are read again so a new code is named at once; a read that fails leaves what is held */
+  async function makerVaultRefresh(){
+    var held=makerVault, turn=makerVaultTurn;
+    if(!held) return;
+    try{
+      var read=await makerVaultRead(), names=await makerVaultOpen(held.base,read.names), places=await makerVaultOpen(held.base,read.places);
+      if(turn!==makerVaultTurn||makerVault!==held) return;
+      held.names=names; held.places=places; makerVaultNotify();
+    }catch(error){ /* the names already held stand until the next unlock */ }
+  }
+  /* what a place that needs the vault draws: Locked and the one Unlock while it is shut, a line saying so once it is open. extra (optional) adds a line of its own. */
+  function makerVaultGate(parent,extra){
+    var gate=el('div','maker-lock'); gate.setAttribute('data-vault-gate',''); gate.extra=extra||null;
+    parent.appendChild(gate); makerVaultDraw(gate); return gate;
+  }
+  function makerVaultDraw(gate){
+    gate.textContent='';
+    var line=el('p','msg',makerVault?'Names and places are open on this phone.':'Locked'); line.setAttribute('role','status'); gate.appendChild(line);
+    if(!makerVault){
+      var ask=actOn(el('button','salt-ghost','Unlock'),'vault.unlock'); ask.type='button'; ask.onclick=function(){ vaultAsk(ask); }; gate.appendChild(ask);
+    }
+    if(gate.extra) gate.extra(gate);
+  }
+  /* every gate, the Shop row and the names beside the codes follow the lock */
+  function makerVaultNotify(){
+    [].forEach.call(document.querySelectorAll('[data-vault-gate]'),makerVaultDraw);
+    var state=document.getElementById('vaultState'), on=document.getElementById('vaultOn'), off=document.getElementById('vaultOff');
+    if(state) state.textContent=makerVault?'Open on this phone':'Locked';
+    if(on) on.hidden=!!makerVault;
+    if(off) off.hidden=!makerVault;
+    makerVaultPaint();
+  }
+  /* a name beside its code, wherever a code is drawn with data-who, until the lock; a code the vault has no name for shows alone. A redraw of the page is
+     painted at once by the observer, so a card opened after the unlock is named too. */
+  function makerVaultPaint(){
+    var names=makerVault&&makerVault.names;
+    [].forEach.call(document.querySelectorAll('[data-who]'),function(node){
+      var code=node.getAttribute('data-who'), name=names&&Object.hasOwn(names,code)&&typeof names[code]==='string'?names[code]:'', tag=node.querySelector('.maker-name');
+      if(!name){ if(tag) tag.remove(); return; }
+      if(!tag){ tag=el('span','maker-name'); node.appendChild(tag); }
+      if(tag.textContent!==name) tag.textContent=name;
+    });
+  }
+  new MutationObserver(function(){ if(makerVault) makerVaultPaint(); }).observe(document.body,{childList:true,subtree:true});
+  /* THE SHEET: the one field. It closes on the ghost, the close control, the scrim and Escape, sending nothing; Tab stays inside. */
+  function vaultShut(quiet){
+    if(!vaultSheetEl||vaultSheetEl.hidden) return;
+    vaultSheetEl.hidden=true; vaultScrim.hidden=true; vaultPass.value=''; vaultSay.textContent='';
+    if(!quiet){ try{ if(vaultBack&&vaultBack.isConnected&&vaultBack.focus) vaultBack.focus({preventScroll:true}); }catch(x){} }
+  }
+  function vaultAsk(opener){
+    if(makerVault||!vaultSheetEl) return;
+    vaultBack=opener||document.activeElement; vaultSay.textContent=''; vaultPass.value='';
+    vaultScrim.hidden=false; vaultSheetEl.hidden=false;
+    try{ vaultPass.focus({preventScroll:true}); }catch(x){}
+  }
+  async function vaultSubmit(){
+    if(vaultBusy) return;
+    var secret=vaultPass.value; vaultPass.value='';
+    if(!secret){ vaultSay.textContent='Enter the password for names and places.'; return; }
+    vaultBusy=true; vaultGo.disabled=true; vaultSay.textContent='Opening names, places and slips.';
+    try{ if(await makerVaultUnlock(secret)) vaultShut(false); }
+    catch(error){ refusal(vaultSay,error); }
+    finally{ secret=''; vaultBusy=false; vaultGo.disabled=false; }
+  }
+  if(vaultSheetEl){
+    vaultGo.addEventListener('click',vaultSubmit);
+    vaultPass.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); vaultSubmit(); } });
+    [document.getElementById('vaultX'),document.getElementById('vaultKeep'),vaultScrim].forEach(function(n){ n.addEventListener('click',function(){ vaultShut(false); }); });
+    document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') vaultShut(false); });
+    vaultSheetEl.addEventListener('keydown',function(ev){
+      if(ev.key!=='Tab') return;
+      var f=[].slice.call(vaultSheetEl.querySelectorAll('button,input')).filter(function(c){ return !c.disabled; }), i=f.indexOf(document.activeElement);
+      if(ev.shiftKey&&i<=0){ ev.preventDefault(); f[f.length-1].focus(); }
+      else if(!ev.shiftKey&&i===f.length-1){ ev.preventDefault(); f[0].focus(); }
+    });
+    /* Shop > This device holds the control that is always in reach: Unlock while shut, Lock while open */
+    document.getElementById('vaultOn').addEventListener('click',function(){ vaultAsk(this); });
+    document.getElementById('vaultOff').addEventListener('click',function(){ makerVaultLock(); });
+  }
   function makerClaimButton(parent,label,action,primary){
     var L=labOf(label), button=actOn(el('button',primary?'btn salt-pill salt-pill--md':'salt-ghost',L[0]),L[1],L[2]);
     button.type='button'; button.onclick=function(){ return action(button); }; parent.appendChild(button); return button;
@@ -1013,7 +1141,7 @@ export const OWNER_JS = `
     var b=el('button','salt-inbox-row'), main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
     b.type='button'; actOn(b,'claim.open',key); b.setAttribute('aria-expanded',makerClaimOpen===key?'true':'false');
     if(makerClaimOpen===key) b.setAttribute('aria-current','true');
-    t.appendChild(el('span',null,codeByUser(claim.u))); t.appendChild(chip('ember','Says sent'));
+    t.appendChild(whoTag(el('span',null,codeByUser(claim.u)),codeOfUser(claim.u))); t.appendChild(chip('ember','Says sent'));
     if(claim.test) t.appendChild(chip('mist','Practice'));
     main.appendChild(t); main.appendChild(el('span','salt-inbox-row__what',claim.slip?'Slip attached':'No slip'));
     if(ageOf(claim.at)) side.appendChild(el('span','salt-inbox-row__age',ageOf(claim.at)));
@@ -1056,7 +1184,8 @@ export const OWNER_JS = `
     var card=makerCard(root,'claim:'+key), route='/all/maker/claims/'+claim.u+'/'+claim.id, acts=el('div','maker-foot__acts'), who=codeByUser(claim.u);
     var turn=0, preview=null, said=el('p','salt-insight'), note=el('div','maker-quote');
     card.setAttribute('data-key',key);
-    card.appendChild(el('h3',null,who+' says they paid '+rm(claim.amount)));
+    var claimHead=el('h3'); claimHead.appendChild(whoTag(el('span',null,who),codeOfUser(claim.u))); claimHead.appendChild(document.createTextNode(' says they paid '+rm(claim.amount)));
+    card.appendChild(claimHead);
     card.appendChild(el('p','maker-facts','Sent '+fmtWhen(claim.at)+(ageOf(claim.at)?', '+ageOf(claim.at)+' ago':'')+(claim.test?'. A practice account.':'')));
     said.setAttribute('role','status'); card.appendChild(said); card.appendChild(note);
     if(claim.slip) makerSlipControl(card,claim.u,claim.slip,key);
@@ -1121,21 +1250,24 @@ export const OWNER_JS = `
     }
     claimRead();
   }
-  /* THE SLIP of a claim: sealed until the page holds the slip key, a thumbnail once it does, and the thumbnail is the control that enlarges it. The
-     picture is a blob: URL, let go on the lock, on a page hidden, and when its card closes; the ciphertext is fetched only once there is a key to open it. */
+  /* THE SLIP of a claim: sealed until the page holds the slip key (the one unlock, above), a thumbnail once it does, and the thumbnail is the control that enlarges
+     it. The picture is a blob: URL, let go on the lock, on a page hidden, and when its card closes; the ciphertext is fetched only once there is a key to open it. */
   function makerSlipControl(parent,u,id,key){
     var box=el('div','maker-slipbox'), note=el('p','msg'); parent.appendChild(box);
     note.setAttribute('role','status');
     function slipSealed(){
       box.textContent=''; box.classList.remove('open');
-      note.textContent='The slip is locked. Unlock it with your password for names and places; it is seen on this phone only.'; box.appendChild(note);
-      var pass=makerField(box,['Password for names and places','claim.passphrase',key],'password',''); pass.autocomplete='off';
-      makerClaimButton(box,['Unlock and see the slip','claim.view-slip',key],function(button){ return slipView(button,pass); },false);
+      note.textContent='Locked. Unlock names and places to see the slip; it is seen on this phone only.'; box.appendChild(note);
+      makerClaimButton(box,['Unlock','vault.unlock',key],function(button){ vaultAsk(button); },false);
+    }
+    function slipNone(){
+      box.textContent=''; box.classList.remove('open');
+      note.textContent='No slip key is filed, so this slip cannot be opened.'; box.appendChild(note);
     }
     function slipOpening(text){
       box.textContent=''; box.classList.remove('open');
       note.textContent=text; box.appendChild(note);
-      makerClaimButton(box,['Open the slip again','claim.view-slip',key],function(button){ return slipView(button,null); },false);
+      makerClaimButton(box,['Open the slip again','claim.view-slip',key],function(button){ return slipView(button); },false);
     }
     function slipPaint(url){
       box.textContent=''; box.classList.remove('open');
@@ -1147,23 +1279,14 @@ export const OWNER_JS = `
         var on=box.classList.toggle('open'); pic.setAttribute('aria-expanded',on?'true':'false'); pic.setAttribute('aria-label',on?'Shrink the slip':'Enlarge the slip');
       });
       box.appendChild(pic); note.textContent='Seen on this phone only. Tap the picture to enlarge it.'; box.appendChild(note);
-      makerClaimButton(box,['Lock','claim.lock-slip',key],function(){ makerSlipLock(); note.textContent='The slip is locked again. Unlock it to see it.'; },false);
+      makerClaimButton(box,['Lock','vault.lock',key],function(){ makerVaultLock(); },false);
     }
-    async function slipView(button,pass){
-      var generation=++makerSlipGeneration, secret=pass?pass.value:''; if(pass) pass.value=''; if(button) button.disabled=true;
+    async function slipView(button){
+      var generation=++makerSlipGeneration; if(button) button.disabled=true;
       try{
-        if(!makerSlipPrivate){
-          if(!secret) throw new Error('Unlock names and places first.');
-          var envelope=await refs('/all/maker/vault/key');
-          if(generation!==makerSlipGeneration) return;
-          if(!envelope.vault) throw new Error('No slip key is filed.');
-          var jwk=await makerVaultOpen(secret,envelope.vault); secret='';
-          var imported=await crypto.subtle.importKey('jwk',{kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y,d:jwk.d},
-            {name:'ECDH',namedCurve:'P-256'},false,['deriveBits']);
-          if(generation!==makerSlipGeneration) return;
-          makerSlipPrivate=imported;
-        }
-        var privateKey=makerSlipPrivate, sealedSlip=(await refs('/all/maker/slips/'+u+'/'+id)).slip;
+        if(!makerVault) throw new Error('Unlock names and places first.');
+        if(!makerVault.slip) throw new Error('No slip key is filed.');
+        var privateKey=makerVault.slip, sealedSlip=(await refs('/all/maker/slips/'+u+'/'+id)).slip;
         if(generation!==makerSlipGeneration) return;
         if(!sealedSlip||sealedSlip.v!==1) throw new Error('This slip cannot be read.');
         var epk=await crypto.subtle.importKey('raw',makerFrom64(sealedSlip.epk),{name:'ECDH',namedCurve:'P-256'},false,[]);
@@ -1177,12 +1300,16 @@ export const OWNER_JS = `
         if(generation!==makerSlipGeneration){ URL.revokeObjectURL(url); return; }
         makerSlipUrls.push(url); slipPaint(url);
       }catch(error){
-        if(generation===makerSlipGeneration){ var said='Slip could not be opened: '+error.message; if(makerSlipPrivate) slipOpening(said); else { note.textContent=said; withDetails(note,error); } }
+        if(generation===makerSlipGeneration){ var said='Slip could not be opened: '+error.message; if(makerVault&&makerVault.slip) slipOpening(said); else { note.textContent=said; withDetails(note,error); } }
       }
-      finally{ secret=''; if(button) button.disabled=false; }
+      finally{ if(button) button.disabled=false; }
     }
-    makerSlipDraw=function(){ if(makerSlipPrivate) slipOpening('Opening the slip.'); else slipSealed(); };
-    if(makerSlipPrivate){ slipOpening('Opening the slip.'); slipView(null,null); } else slipSealed();
+    /* the card follows the lock: sealed while shut, its slip drawn from the key once open, a word if none is filed */
+    makerSlipDraw=function(){
+      if(!box.isConnected) return;
+      if(!makerVault) slipSealed(); else if(!makerVault.slip) slipNone(); else { slipOpening('Opening the slip.'); slipView(null); }
+    };
+    makerSlipDraw();
   }
   var makerThreads=[], makerThreadUser=null, makerThreadTimer=null, makerThreadsReading=false, makerChatDrafts={};
   function stopMakerChat(){
@@ -1216,7 +1343,9 @@ export const OWNER_JS = `
       apply=true;
       var list=document.getElementById('makerChatList'); list.textContent='';
       makerThreads.forEach(function(thread){
-        var button=el('button','salt-ghost',codeByUser(thread.u)+(thread.test?' · Practice':'')+(makerThreadAsked(thread)?', waiting for your reply':''));
+        var button=el('button','salt-ghost');
+        button.appendChild(whoTag(el('span',null,codeByUser(thread.u)),codeOfUser(thread.u)));
+        button.appendChild(document.createTextNode((thread.test?' · Practice':'')+(makerThreadAsked(thread)?', waiting for your reply':'')));
         button.type='button';button.setAttribute('data-thread',thread.u);actOn(button,'chat.open',thread.u);
         button.onclick=function(){ openMakerThread(thread.u); };list.appendChild(button);
       });
@@ -1238,7 +1367,7 @@ export const OWNER_JS = `
   function openMakerThread(user){
     makerThreadUser=user;
     var root=document.getElementById('makerChatOpen');root.hidden=false;root.textContent='';
-    root.setAttribute('data-key',user);root.appendChild(el('h3','',codeByUser(user)));
+    root.setAttribute('data-key',user);root.appendChild(whoTag(el('h3','',codeByUser(user)),codeOfUser(user)));
     var lines=el('div','');lines.id='makerChatLines';root.appendChild(lines);
     var draft=makerChatDrafts[user], savedPrefix='saltMakerChat:'+user+':';
     if(!draft){
@@ -1598,19 +1727,21 @@ export const OWNER_JS = `
         keys.forEach(function(key){
           var path=key.slice('saltMakerPending:'.length),saved;
           var section=makerForm(retainedPart(path));section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');section.appendChild(el('h3',null,'Unsent entry'));
-          var status=makerStatus(section),pass=makerField(section,['Password for names and places','record.retained.passphrase'],'password','');
+          var status=makerStatus(section);
           parent.appendChild(section);
           try{saved=makerSaved(path);status.textContent='An entry you sent'+(saved.body&&saved.body.at?' on '+fmtWhen(saved.body.at):'')+' was not confirmed. Send it again, or update it first.';}
           catch(error){refusal(status,error);}
+          /* an unsent name or place opens on the one unlock before it is sent again or updated; any other entry needs none */
+          if(saved&&saved.body&&(saved.body.pair||saved.body.vault||saved.body.addrVault))makerVaultGate(section);
           var run=async function(review){
             try{
               if(!saved)throw new Error('This saved entry cannot be sent. Discard it.');
               if(saved.body.pair||saved.body.vault||saved.body.addrVault){
-                if(!pass.value)throw new Error('Unlock names and places first.');
-                await makerVaultOpen(pass.value,saved.body.pair?saved.body.pair.names:saved.body.vault||saved.body.addrVault);
+                var held=makerVaultBase();
+                await makerVaultOpen(held,saved.body.pair?saved.body.pair.names:saved.body.vault||saved.body.addrVault);
                 if(review){
                   if(!saved.body.pair)throw new Error('This saved entry cannot be sent. Discard it.');
-                  var prepared=await makerPairPrepare(pass.value,function(){},saved);
+                  var prepared=await makerPairPrepare(held,function(){},saved);
                   saved={path:saved.path,body:Object.assign({},saved.body,{at:new Date().toISOString(),
                     pair:{expectedRevision:prepared.revision,names:prepared.names,places:prepared.places}}),
                     base:prepared.base,desired:prepared.desired};
@@ -1619,11 +1750,11 @@ export const OWNER_JS = `
                   makerSave(saved);
                 }
               }else if(review)throw new Error('This saved entry cannot be sent. Discard it.');
-              pass.value='';
               var answer=await refs(saved.path,saved.body);
               if(!answer||answer.ok!==true)throw new Error('The Desk did not confirm. Nothing is lost; tap Send again.');
               makerClear(saved.path);section.remove();await loadMaker();
-            }catch(error){pass.value='';refusal(status,error);}
+              if(saved.body.pair||saved.body.vault||saved.body.addrVault)makerVaultRefresh();
+            }catch(error){refusal(status,error);}
           };
           ['Send again','Update and send','Discard'].forEach(function(label,index){
             var button=actOn(el('button','salt-ghost',label),['record.retained.retry','record.retained.review','record.retained.cancel'][index]);button.type='button';
@@ -1688,9 +1819,10 @@ export const OWNER_JS = `
     for(var i=0;i<text.length;i++) bytes[i]=text.charCodeAt(i);
     return bytes;
   }
+  /* pass is the password (the sealed device retries, under the master) or the one unlock's PBKDF2 base key (a CryptoKey): the derivation is the same either way */
   async function makerVaultOpen(pass, envelope){
     if(!envelope) return {};
-    var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+    var base=typeof pass==='string'?await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']):pass;
     var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:makerFrom64(envelope.salt),
       iterations:envelope.it||150000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
     var plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:makerFrom64(envelope.iv)},key,makerFrom64(envelope.ct));
@@ -1699,11 +1831,9 @@ export const OWNER_JS = `
     return value;
   }
   async function makerPairPrepare(pass,edit,previous){
-    var namesRead=await refs('/all/maker/vault'), pair=null, names,places;
-    if(namesRead.revision)pair=await refs('/all/maker/vault/pair');
-    var placesRead=pair?{vault:pair.places}:await refs('/all/maker/vault/addr');
-    names=await makerVaultOpen(pass,pair?pair.names:namesRead.vault);
-    places=await makerVaultOpen(pass,placesRead.vault);
+    var read=await makerVaultRead(), pair=read.pair, names,places;
+    names=await makerVaultOpen(pass,read.names);
+    places=await makerVaultOpen(pass,read.places);
     var base=previous?{names:await makerVaultOpen(pass,previous.base.names),places:await makerVaultOpen(pass,previous.base.places)}
       :{names:JSON.parse(JSON.stringify(names)),places:JSON.parse(JSON.stringify(places))};
     var desired=previous?{names:await makerVaultOpen(pass,previous.desired.names),places:await makerVaultOpen(pass,previous.desired.places)}
@@ -1729,7 +1859,7 @@ export const OWNER_JS = `
   }
   async function makerVaultSeal(pass, value){
     var salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
-    var base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+    var base=typeof pass==='string'?await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']):pass;
     var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:150000,hash:'SHA-256'},
       base,{name:'AES-GCM',length:256},false,['encrypt']);
     var cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(JSON.stringify(value)));
@@ -2038,7 +2168,7 @@ export const OWNER_JS = `
     var idParent=addSelect(id,['Their associate','record.add-id.parent'],idParentItems);
     var idName=makerField(id,['Name','record.add-id.name'],'text',''), idPlace=makerLocalityField(id,'record.add-id.place');
     idPlace.closest('label').appendChild(el('span','msg','Optional. Blank gives TBC until the place is confirmed.'));
-    var idPass=makerField(id,['Password for names and places','record.add-id.passphrase'],'password','');
+    var idGate=makerVaultGate(id);
     var idLink=makerField(id,['Maps or Waze link','record.add-id.link'],'text','');
     var tierBooks=books.filter(function(item){return item.tiered;});
     var tierNames=catalog.tierNames||[], idTiers=tierBooks.map(function(item){
@@ -2062,7 +2192,7 @@ export const OWNER_JS = `
     var idStatus=makerStatus(id), idBusy=false;
     idKind.addEventListener('change',function(){
       var bucket=idKind.value==='bucket', needsParent=bucket||idKind.value==='downstream';
-      idName.disabled=bucket;idPlace.disabled=bucket;idPass.disabled=bucket;idLink.disabled=bucket;
+      idName.disabled=bucket;idPlace.disabled=bucket;idGate.hidden=bucket;idLink.disabled=bucket;
       idParent.disabled=!needsParent;
       var canStart=idCanStart(idKind.value);
       idTiers.forEach(function(item){item.select.disabled=!canStart;});
@@ -2070,8 +2200,8 @@ export const OWNER_JS = `
     });
     idKind.dispatchEvent(new Event('change'));
     var idDraft=null;
-    id.addEventListener('input',function(event){if(event.target!==idPass)idDraft=null;});
-    id.addEventListener('change',function(event){if(event.target!==idPass)idDraft=null;});
+    id.addEventListener('input',function(){idDraft=null;});
+    id.addEventListener('change',function(){idDraft=null;});
     makerButton(id,['Add the customer','record.add-id.send'],async function(send){
       if(idBusy)return;idBusy=true;idStatus.textContent='Locking the name and place.';
       var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
@@ -2098,16 +2228,14 @@ export const OWNER_JS = `
       var envelope=null,addrEnvelope=null,geo=null;
       try{
         if(kind!=='bucket'){
-          var pass=idPass.value;
-          if(!pass) throw new Error('Enter the password for names and places.');
+          var held=makerVaultBase();
           if(locality)geo=await makerLocalityPoint(locality);
           var filed=await makerFiledLink(idLink.value);
-          idDraft=await makerPairPrepare(pass,function(maps){
+          idDraft=await makerPairPrepare(held,function(maps){
             if(Object.hasOwn(maps.names,code))throw new Error('That code is already in use. Check the name and place.');
             maps.names[code]=name+' ('+(locality||'to be confirmed')+')';if(filed)maps.places[code]=filed;
           },idDraft);
           envelope=idDraft.names;if(filed)addrEnvelope=idDraft.places;delete idDraft.placeMap;
-          idPass.value='';pass='';
         }
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
           parent:parentCode,tiers:tiers,vault:envelope};
@@ -2117,6 +2245,7 @@ export const OWNER_JS = `
         await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
         idName.value='';idPlace.value='';idLink.value='';
+        if(kind!=='bucket')makerVaultRefresh();
         try{
           await refreshTradeCatalog();
           idStatus.textContent='Sent. '+code+' waits under Approve, and can be chosen already.';
@@ -2124,7 +2253,7 @@ export const OWNER_JS = `
           idStatus.textContent='Sent. '+code+' waits under Approve, but the lists could not be refreshed: '+refreshError.message;
         }
         loadMaker();
-      }catch(error){idPass.value='';refusal(idStatus,error);}
+      }catch(error){refusal(idStatus,error);}
       idBusy=false;
     },true);
     var appointment=makerForm('customers');appointment.appendChild(el('h3',null,'Make an associate'));
@@ -2153,51 +2282,56 @@ export const OWNER_JS = `
     amend.appendChild(el('p','msg','The name and place are locked on this phone first. Only the short code and the rounded place travel.'));
     parent.appendChild(amend);
     var amendParty=addSelect(amend,['Who','record.amend-id.party'],partyItems), amendName=makerField(amend,['Name','record.amend-id.name'],'text',''),
-      amendPlace=makerLocalityField(amend,'record.amend-id.place'), amendPass=makerField(amend,['Password for names and places','record.amend-id.passphrase'],'password',''),
+      amendPlace=makerLocalityField(amend,'record.amend-id.place'), amendGate=makerVaultGate(amend),
       amendStatus=makerStatus(amend), amendBusy=false;
     var amendLink=makerField(amend,['Maps or Waze link','record.amend-id.link'],'text','');
     var amendDraft=null;
-    amend.addEventListener('input',function(event){if(event.target!==amendPass)amendDraft=null;});
-    amend.addEventListener('change',function(event){if(event.target!==amendPass)amendDraft=null;});
+    amend.addEventListener('input',function(){amendDraft=null;});
+    amend.addEventListener('change',function(){amendDraft=null;});
     makerButton(amend,['Save the change','record.amend-id.send'],async function(send){
       if(amendBusy)return;amendBusy=true;amendStatus.textContent='Locking the name and place.';
       var from=amendParty.value, kind=from.charAt(0)==='S'?'supplier':'customer';
       var name=amendName.value.trim(), locality=amendPlace.value.trim(), to=makerDerivedCode(name,locality,kind,catalog.parties||[],from);
       if(!to||!locality){amendStatus.textContent='Enter a name and place first.';amendBusy=false;return;}
       try{
-        var pass=amendPass.value;if(!pass) throw new Error('Enter the password for names and places.');
+        var held=makerVaultBase();
         var geo=await makerLocalityPoint(locality), filed=await makerFiledLink(amendLink.value);
-        amendDraft=await makerPairPrepare(pass,function(maps){
+        amendDraft=await makerPairPrepare(held,function(maps){
           maps.names=makerRekeyMap(maps.names,from,to);maps.places=makerRekeyMap(maps.places,from,to);
           maps.names[to]=name+' ('+locality+')';if(filed)maps.places[to]=filed;
         },amendDraft);
         delete amendDraft.placeMap;
-        amendPass.value='';pass='';
         var result=await send('/all/maker/inputs/amend-id',makerPairBody({at:new Date().toISOString(),from:from,to:to,geo:geo,
           vault:amendDraft.names,addrVault:amendDraft.places||undefined},amendDraft),amendDraft);
         amendDraft=null;
         amendName.value='';amendPlace.value='';amendLink.value='';
+        makerVaultRefresh();
         amendStatus.textContent=result.vaultOnly?'Saved. The code stays '+from+'.'
           :'Sent. The code changes from '+from+' to '+to+' once you approve it.';
         loadMaker();
-      }catch(error){amendPass.value='';refusal(amendStatus,error);}
+      }catch(error){refusal(amendStatus,error);}
       amendBusy=false;
     },true);
     var placement=makerForm('customers');placement.appendChild(el('h3',null,'Place on the map'));
     placement.appendChild(el('p','msg','Keep the filed point, or choose a place and paste a new map link.'));
     parent.appendChild(placement);
     var placeParty=addSelect(placement,['Who','record.place.party'],partyItems),
-      placePass=makerField(placement,['Password for names and places','record.place.passphrase'],'password',''), placeStatus=makerStatus(placement), placeBusy=false;
+      placeGate=makerVaultGate(placement,function(gate){
+        /* open, the gate says whether a place is filed for the one chosen, from the places the unlock holds; never where */
+        if(!makerVault||!placeParty.value) return;
+        gate.appendChild(el('p','msg',Object.hasOwn(makerVault.places,placeParty.value)?'A place is filed for them.':'No place is filed for them yet.'));
+      }), placeStatus=makerStatus(placement), placeBusy=false;
     var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New Maps or Waze link','record.place.link'],'text','');
     var placeDraft=null;
-    placement.addEventListener('input',function(event){if(event.target!==placePass)placeDraft=null;});
-    placement.addEventListener('change',function(event){if(event.target!==placePass)placeDraft=null;});
+    placement.addEventListener('input',function(){placeDraft=null;});
+    placement.addEventListener('change',function(){placeDraft=null;});
+    placeParty.addEventListener('change',function(){makerVaultDraw(placeGate);});
     makerButton(placement,['Place them','record.place.send'],async function(send){
       if(placeBusy)return;placeBusy=true;placeStatus.textContent='Opening the locked places.';
       try{
-        var pass=placePass.value;if(!pass) throw new Error('Enter the password for names and places.');
+        var held=makerVaultBase();
         var filed=await makerFiledLink(placeLink.value), coords, envelope;
-        placeDraft=await makerPairPrepare(pass,function(maps){if(filed)maps.places[placeParty.value]=filed;},placeDraft);
+        placeDraft=await makerPairPrepare(held,function(maps){if(filed)maps.places[placeParty.value]=filed;},placeDraft);
         var places=placeDraft.placeMap;
         if(filed){
           coords=await makerLocalityPoint(placeLocality.value.trim());
@@ -2210,16 +2344,16 @@ export const OWNER_JS = `
           coords=[Math.round(point.lat*100)/100,Math.round(point.lng*100)/100];
         }
         delete placeDraft.placeMap;
-        placePass.value='';pass='';
         var body={at:new Date().toISOString(),places:{[placeParty.value]:coords}};
         if(envelope)body.addrVault=envelope;
         makerPairBody(body,placeDraft);
         await send('/all/maker/inputs/place',body,placeDraft);
         placeDraft=null;
         placeLocality.value='';placeLink.value='';
+        makerVaultRefresh();
         placeStatus.textContent='Sent. The exact address stays locked.';
         loadMaker();
-      }catch(error){placePass.value='';refusal(placeStatus,error);}
+      }catch(error){refusal(placeStatus,error);}
       placeBusy=false;
     },true);
   }
@@ -3123,7 +3257,7 @@ export const OWNER_JS = `
     if(o){
       var st=ORD_STAGE[o.status]||['mist',String(o.status||'')];
       b.appendChild(bookTile(o.product,o.qty));
-      t.appendChild(el('span',null,codeByUser(o.u)));
+      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
       t.appendChild(chip(st[0],st[1]));
       if(o.test) t.appendChild(chip('mist','Practice'));
       if(orderAsked(o)) t.appendChild(chip('copper','Asked'));
@@ -3265,7 +3399,10 @@ export const OWNER_JS = `
   /* an order's head, as every card of an order says it: who by code, what and for how much; its stage as a chip, the four money words, and its reference small */
   function orderHead(card,order){
     var st=ORD_STAGE[order.status]||['mist',String(order.status||'')], line=el('p','lead');
-    card.appendChild(el('h3','',codeByUser(order.u)+', '+units(order.qty)+' '+bookName(order.product)+', '+rm(order.total)+(order.delivery?' + '+rm(order.delivery):'')));
+    var orderTitle=el('h3','');
+    orderTitle.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u)));
+    orderTitle.appendChild(document.createTextNode(', '+units(order.qty)+' '+bookName(order.product)+', '+rm(order.total)+(order.delivery?' + '+rm(order.delivery):'')));
+    card.appendChild(orderTitle);
     line.appendChild(chip(st[0],st[1])); card.appendChild(line);
     card.appendChild(el('p','maker-facts','Goods '+rm(order.total)+(order.delivery?' · Delivery '+rm(order.delivery):'')+(+order.paid>0?' · Paid '+rm(order.paid):'')));
     card.appendChild(el('p','maker-facts','Reference '+order.id));
@@ -3750,6 +3887,9 @@ export const OWNER_JS = `
   /* a read that finds what it found last time draws nothing: each keeps its last answer */
   function changed(name, value){ var s=JSON.stringify(value), was=nSeen[name]!==s; nSeen[name]=s; return was; }
   function codeByUser(u){ var a=OWNER.accounts.filter(function(x){ return x.username===u; })[0]; return (a&&a.code)||u||'An associate'; }
+  /* a code drawn where the one unlock may name it (Phase 4b): the node carries data-who, and the name is put beside it only while the vault is open */
+  function codeOfUser(u){ var a=OWNER.accounts.filter(function(x){ return x.username===u; })[0]; return (a&&a.code)||''; }
+  function whoTag(node,code){ if(typeof code==='string'&&/^[A-Z]+[0-9]+-[A-Z0-9-]+$/.test(code)) node.setAttribute('data-who',code); return node; }
   function hm(iso){ try{ var p=klBits(iso); return p.hour+':'+p.minute; }catch(e){ return ''; } }
   /* C17 (29 Sep 2026): his page's dates are the Counter's one form, DD Mon YYYY */
   function dayMon(iso){ try{ return dmyOf(klBits(iso),'en'); }catch(e){ return ''; } }
@@ -3816,7 +3956,7 @@ export const OWNER_JS = `
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
     c.appendChild(el('span','salt-action__kind',o.word));
-    title.appendChild(el('span','need-who',o.who));
+    title.appendChild(whoTag(el('span','need-who',o.who),o.who));
     if(o.practice) title.appendChild(chip('mist','Practice'));
     if(o.what) title.appendChild(el('span','need-what',o.what));
     body.appendChild(title);

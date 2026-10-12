@@ -555,6 +555,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-slip-open .maker-slip{max-height:120px;width:auto}
 .adm .maker-slipbox.open .maker-slip-open{width:100%;cursor:zoom-out}
 .adm .maker-slipbox.open .maker-slip-open .maker-slip{max-height:none;width:100%}
+/* 12 OCT 2026 (PHASE 4b): THE ONE UNLOCK. A place that needs it says Locked in the page's small line with the one Unlock beside it (44px, the ghost's own); a name put beside
+   a code is quieter than the code and wraps under it when the row is narrow */
+.adm .maker-lock{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.adm .maker-lock .msg{margin:0;min-height:0}
+.adm .maker-name{margin-left:8px;font-weight:400;color:var(--salt-text-muted)}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in (the class is set on the body by his script alone) */
 body.ended>*:not(#aEnded){display:none}
 /* S9 9.2: HIS OWN PAGE'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
@@ -766,6 +771,10 @@ body.ended>*:not(#aEnded){display:none}
 .look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--look-tide-accent) 0 13px,transparent 14px),var(--look-tide-ground)}
 .look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose)}
 .lookset{display:flex;gap:8px}
+.adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
+.adm.vaultsheet .salt-sheet__body > * + *{margin-top:14px}
+.adm.vaultsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
+.adm.vaultsheet .salt-sheet__foot .btn,.adm.vaultsheet .salt-sheet__foot .salt-ghost{width:100%}
 `;
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -983,6 +992,29 @@ function lookRow(owner) {
     + wt("button", 'type="button" class="salt-ghost" data-look="night" aria-pressed="false"' + act("look.night"), "look.night")
     + wt("button", 'type="button" class="salt-ghost" data-look="tide" aria-pressed="true"' + act("look.tide"), "look.tide")
     + "</span></div></div></div>";
+}
+/* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Account, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
+   the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
+function vaultRow() {
+  return '<div id="vaultRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
+    + '<span class="salt-ledger__label" id="vaultH">Names and places</span>'
+    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="vaultH"><span id="vaultState" role="status">Locked</span>'
+    + '<button type="button" class="salt-ghost" id="vaultOn" data-act="vault.unlock">Unlock</button>'
+    + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div></div>'
+    + '<span class="salt-ledger__flag">One password opens names, places and slips. Seen on this phone only; they lock again when the page is hidden.</span></div>';
+}
+function vaultSheet() {
+  return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
+    + '<div id="vaultSheet" class="salt-sheet adm vaultsheet" role="dialog" aria-modal="true" aria-labelledby="vaultT" tabindex="-1" hidden>'
+    + '<div class="salt-sheet__grab"></div>'
+    + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="vaultT">Unlock names and places</h2>'
+    + '<button type="button" class="salt-orb salt-sheet__close" id="vaultX" data-act="vault.close"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
+    + '<div class="salt-sheet__body"><p class="lead">One password opens names, places and slips. They are seen on this phone only, and lock again when the page is hidden.</p>'
+    + '<label class="maker-field"><span class="lbl">Password for names and places</span>'
+    + '<input class="fld salt-field__input" id="vaultPass" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-act="vault.passphrase"></label>'
+    + '<p class="msg" id="vaultSay" role="status" aria-live="polite"></p></div>'
+    + '<div class="salt-sheet__foot"><button type="button" class="btn salt-pill salt-pill--md" id="vaultGo" data-act="vault.open">Unlock</button>'
+    + '<button type="button" class="salt-ghost" id="vaultKeep" data-act="vault.cancel">Not now</button></div></div>';
 }
 /* The choice Sheet, over a signed-in page on a device that has chosen nothing: the system's Sheet, its two tiles the Option face as a
    tap, each with a swatch of its own ground and accent, and one line saying where to change it. The script opens it (lookAsk). */
@@ -1392,7 +1424,7 @@ export function landingPage(user, nonce, owner, bulletin) {
            shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
         + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle">This device</h2>'
         + '<p class="lead">Night or Tide for Salt Account on this device. Kept on this device; the Desk keeps its own.</p>'
-        + lookRow(true) + "</section>"
+        + lookRow(true) + vaultRow() + "</section>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
         + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '" data-act="nav.' + m + '">'
@@ -1407,7 +1439,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<a class="salt-pill salt-pill--md btn" href="/all" data-act="ended.sign-in">Sign in again</a></div>'
         /* the first-open choice Sheet, a child of the body like #aEnded: when the Access session has ended the page gives way to #aEnded
            alone (body.ended), and the owner's script takes this down first (stmt/owner.js, ended) */
-        + lookSheet(true)
+        + lookSheet(true) + vaultSheet()
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
     /* 11 Oct 2026 (Phase 7d part 2, his yes): THE DOOR NAMES THE APP, in its ring and its one name, above Sign in; his own page is Salt Account and carries none */
@@ -2437,7 +2469,10 @@ const CLIENT_JS = `
     if(!reopening) reopening=openRemembered(true).then(function(v){ reopening=null; return v; }, function(){ reopening=null; return false; });
     return reopening;
   }
+  /* what a lapse lets go besides the page's own: his script adds the one unlock's lock (stmt/owner.js), a customer's page adds nothing */
+  var lapseHooks=[];
   function lapsed(){
+    lapseHooks.forEach(function(f){ f(); });
     /* S4 fix: the order sheet lies over the bar, so a lapse closes it; Continue is then in reach, and the sheet will
        not open again until it is tapped (sheetOpen). What was chosen and typed in it stays in draft, and the same account
        let in again opens it again at the form (enter), so an order they were writing is kept, as S3 3.5 keeps it */
