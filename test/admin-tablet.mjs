@@ -96,4 +96,32 @@ export async function run({ ok, pageWork }) {
       ok(!!ho && ho.classList.contains("adm"), "so does the sheet that shows a sign-in code: " + (ho && ho.className));
     } catch (e) { ok(false, "the sheets stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
+
+  /* 5. A PORTRAIT TABLET, 768 to 859px: a 620px column, a form's short fields two up, cards and rows one column */
+  {
+    const q = "(min-width:768px)and(max-width:859.98px)";
+    const col = at(q, ".gate.adm"), grid = at(q, ".adm .maker-input"), full = at(q, ".adm .maker-input>*"), short = at(q, ".adm .maker-input>.maker-field--short");
+    ok(/max-width: 620px/.test(col), "from 768 to 859px the column is 620px, centred by the shell's own auto margins: " + col);
+    ok(/display: grid/.test(grid) && /grid-template-columns: repeat\(2, ?minmax\(0, ?1fr\)\)/.test(grid) && /grid-column: 1 ?\/ ?-1/.test(full) && /grid-column: auto/.test(short),
+      "a form is two columns there, a short field takes one and anything else across both: " + [grid, full, short].join(" | "));
+    const rules = media.filter((m) => m.q === q).flatMap((m) => m.rules.map((r) => r.sel));
+    ok(!rules.filter((s) => /need|nlist|ordrow|ordlist|makerOrderList|nopen|aopen/.test(s)).length && !at("(min-width:860px)", ".adm .maker-input"),
+      "Needs you cards and order rows keep one column there, and a form beside its menu from 860px keeps its own: " + rules.join(" | "));
+    const p = await richOwnerPage({ pageWork });
+    try {
+      await p.work.quiet();
+      const page = p.d, tap = async (act, key) => { const c = byAct(page, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
+      await tap("nav.record");
+      const fields = [];
+      for (const [part, slug] of [["entry", "sale-or-purchase"], ["customers", "new-customer"]]) {
+        await tap("part.record." + part); await tap("record.form", slug);
+        const form = page.querySelector('section.maker-input[data-form="' + slug + '"]');
+        if (form) fields.push(...[...form.children].filter((c) => c.matches("label.maker-field")));
+      }
+      const kind = (f) => (f.querySelector("input,select") || { type: "" }).type, SHORT = ["number", "date", "time"];
+      const marked = fields.filter((f) => f.classList.contains("maker-field--short")), others = fields.filter((f) => !f.classList.contains("maker-field--short"));
+      ok(marked.length >= 5 && marked.every((f) => SHORT.includes(kind(f))) && others.some((f) => kind(f) === "text") && others.every((f) => !SHORT.includes(kind(f))),
+        "the sale and new customer forms mark the short fields, a number, a date or a time, and no text or select field: " + JSON.stringify(fields.map((f) => [kind(f), f.classList.contains("maker-field--short")])));
+    } catch (e) { ok(false, "the form stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  }
 }

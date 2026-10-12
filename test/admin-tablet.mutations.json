@@ -82,5 +82,41 @@
   "file": "stmt/page.js",
   "find": "class=\"salt-sheet' + (owner ? \" adm\" : \"\") + '\" role=\"dialog\"",
   "replace": "class=\"salt-sheet adm\" role=\"dialog\""
+ },
+ {
+  "name": "the portrait tablet's column is 600px",
+  "file": "stmt/page.js",
+  "find": "  .gate.adm{max-width:620px}\n",
+  "replace": "  .gate.adm{max-width:600px}\n"
+ },
+ {
+  "name": "a form is one column on a portrait tablet",
+  "file": "stmt/page.js",
+  "find": "  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}\n",
+  "replace": ""
+ },
+ {
+  "name": "a short field is not marked",
+  "file": "stmt/owner.js",
+  "find": "    if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');",
+  "replace": ""
+ },
+ {
+  "name": "a text field is marked short",
+  "file": "stmt/owner.js",
+  "find": "    if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');",
+  "replace": "    wrap.classList.add('maker-field--short');"
+ },
+ {
+  "name": "Needs you cards lie two up on a portrait tablet",
+  "file": "stmt/page.js",
+  "find": "  .adm #unsentBar{max-width:none}\n",
+  "replace": "  .adm #unsentBar{max-width:none}\n  .adm .nlist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}\n"
+ },
+ {
+  "name": "a form beside its menu lies two up from 860px",
+  "file": "stmt/page.js",
+  "find": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
+  "replace": "  .adm #nopen,.adm #aopen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n  .adm .maker-input{display:grid}\n"
  }
 ]

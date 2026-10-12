@@ -1873,6 +1873,7 @@ export const OWNER_JS = `
     if(L[3]){ title.appendChild(document.createTextNode(' ')); title.appendChild(bookMark(L[3])); }   /* a field about a book ends in its mark: [words, act, key, book] */
     input.type=type; input.value=value==null?'':String(value);
     if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; }
+    if(type==='number'||type==='date'||type==='time') wrap.classList.add('maker-field--short');   /* a short field lies beside another on a portrait tablet (the page's CSS, 768 to 859px) */
     wrap.appendChild(title); wrap.appendChild(input); parent.appendChild(wrap); return input;
   }
   function makerBytes64(bytes){

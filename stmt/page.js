@@ -622,6 +622,16 @@ body.ended>*:not(#aEnded){display:none}
   .gate.adm{max-width:none}
   .adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
 }
+/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): A PORTRAIT TABLET, 768 to 859px, is the phone frame tidied. The column is 620px, centred (the shell's own auto margins), and a form's
+   short fields (a number, a date or a time, which makerField marks .maker-field--short: units, price, date, delivery, cash) lie two up, everything else in the form across both
+   columns. Needs you cards and order rows are not forms and keep one column: a card is read, not scanned. */
+@media (min-width:768px) and (max-width:859.98px){
+  .gate.adm{max-width:620px}
+  .adm #unsentBar{max-width:none}
+  .adm .maker-input{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px}
+  .adm .maker-input>*{grid-column:1/-1}
+  .adm .maker-input>.maker-field--short{grid-column:auto}
+}
 /* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
    #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
    the menu's place and has its way back, and the pane's invitation is not drawn. From 860px up to the rail's 1080 the page widens for Record's forms
