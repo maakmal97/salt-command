@@ -283,15 +283,21 @@
  },
  {
   "name": "the danger tone is a literal",
-  "file": "stmt/page.js",
-  "find": ".ynsheet .salt-ghost--danger{--salt-ghost-tone:var(--salt-ember);",
-  "replace": ".ynsheet .salt-ghost--danger{--salt-ghost-tone:#d4694c;"
+  "file": "stmt/statement-css.js",
+  "find": ".salt-ghost--danger { --salt-ghost-tone: var(--salt-alarm); }",
+  "replace": ".salt-ghost--danger { --salt-ghost-tone: #fa3c5a; }"
  },
  {
   "name": "the danger tone is not set",
+  "file": "stmt/statement-css.js",
+  "find": ".salt-ghost--danger { --salt-ghost-tone: var(--salt-alarm); }",
+  "replace": ".salt-ghost--dangerx { --salt-ghost-tone: var(--salt-alarm); }"
+ },
+ {
+  "name": "the sheet restates the danger tone itself",
   "file": "stmt/page.js",
-  "find": ".ynsheet .salt-ghost--danger{--salt-ghost-tone:var(--salt-ember);",
-  "replace": ".ynsheet .salt-ghost--dangerx{--salt-ghost-tone:var(--salt-ember);"
+  "find": ".ynsheet .salt-sheet__foot .salt-ghost{width:100%}",
+  "replace": ".ynsheet .salt-sheet__foot .salt-ghost{width:100%}\n.ynsheet .salt-ghost--danger{--salt-ghost-tone:var(--salt-ember)}"
  },
  {
   "name": "the limit is said in digits",

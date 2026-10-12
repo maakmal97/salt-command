@@ -8987,6 +8987,11 @@ await (async () => {
   await (await import("./counter-two-themes.mjs")).run({ ok });
 })();
 
+section("Salt Account wears the recipes: Table, Product tag and Metric row, no restated geometry, 4.5:1, 44px and 11px on both themes (12 Oct 2026)");
+await (async () => {
+  await (await import("./counter-page-css.mjs")).run({ ok, pageWork });
+})();
+
 section("Home leads with the one action: a sticky foot holds To pay now and its Pay above the bar, and the lines show three and fold the rest (11 Oct 2026)");
 await (async () => {
   await (await import("./home-pay-foot.mjs")).run({ ok, pageWork });
