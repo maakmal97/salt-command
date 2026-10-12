@@ -9,6 +9,7 @@ import { queueSale, queueResourceTrades } from "../src/orders.js";
 import { admitInputs } from "../src/input-admission.js";
 import E from "../engine/position.mjs";
 import { world } from "./maker-trades.mjs";
+import { tile, tileGroup } from "./maker-act.mjs";
 
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const seal = (text) => ({ v: 1, salt: Buffer.alloc(16, 1).toString("base64"),
@@ -89,6 +90,7 @@ async function owner(wd, pageWork) {
   });
   dom.window.document.querySelector('[data-act="nav.record"]').click(); await work.quiet();
   const set = (root, name, value) => {
+    if (tileGroup(root, name)) { tile(root, name, value); return; }   /* a few, fixed choices are tiles, and a tap on one is the change */
     const node = field(root, name); node.value = value;
     node.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
     if (node.tagName === "SELECT") node.dispatchEvent(new dom.window.Event("change", { bubbles: true }));

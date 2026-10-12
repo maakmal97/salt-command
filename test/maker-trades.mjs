@@ -10,7 +10,7 @@ import { makerTradeBatch } from "../src/maker-inputs.js";
 import { plan } from "../tools/fold.mjs";
 import E from "../engine/position.mjs";
 import { openMaster } from "../tools/payload.mjs";
-import { answerSheets } from "./maker-act.mjs";
+import { answerSheets, tile, tileGroup } from "./maker-act.mjs";
 
 const AT = "2099-10-05T01:00:00.000Z";
 const body = (patch = {}) => ({ at: AT, product: "salt", party: "CX1-ZED", date: "2099-10-05",
@@ -89,11 +89,13 @@ async function ownerTrade(wd, pageWork, cover) {
   button(section, "Another book on this visit").click(); await work.quiet();
   for (const [label, value] of Object.entries({ Date: "2099-10-05", Units: "1",
     "Price (goods)": "130", "Cash received": "0", "Units handed over": "1",
-    "Delivery": "40", Handover: "delivered" })) field(section, label).value = value;
+    "Delivery": "40" })) field(section, label).value = value;
+  tile(section, "Handover", "delivered");
   const extra = section.querySelector(".maker-extra-trade");
   for (const [label, value] of Object.entries({ Units: "2", "Price (goods)": "30",
     "Cash received": "0", "Units handed over": "2" })) field(extra, label).value = value;
   const change = (label, value) => {
+    if (tileGroup(section, label)) { tile(section, label, value); return; }   /* a few, fixed choices are tiles, and a tap on one is the change */
     const control = field(section, label); control.value = value;
     control.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
   };
@@ -227,8 +229,8 @@ export async function run({ ok, pageWork }) {
     if (extra) {
       const fields = section.querySelectorAll(":scope > label input");
       ["2099-10-05", "1", "130", "170", "1", "40"].forEach((value, i) => { fields[i].value = value; });
-      const selects = section.querySelectorAll(":scope > label select"); selects[3].value = "delivered";
-      ["2", "30", "30", "2"].forEach((value, i) => { extra.querySelectorAll("input")[i].value = value; });
+      tile(section, "Handover", "delivered");
+      ["2", "30", "30", "2"].forEach((value, i) => { extra.querySelectorAll("input:not([type=radio])")[i].value = value; });
       button(section, "Send the sale").click(); await work.quiet();
     }
     const rows = deviceWorld.drafts();
@@ -246,14 +248,13 @@ export async function run({ ok, pageWork }) {
     ok(extra && !section.querySelector(".maker-extra-trade"),
       "multi-book owner removal: Remove book actually removes its fields from the submitted trade");
     await work.quiet();
-    const direction = section.querySelector("select");
-    direction.value = "purchase"; direction.dispatchEvent(new dom.window.Event("change"));
+    tile(section, "Sale or purchase", "purchase");
     button(section, "Another book on this visit")?.click(); await work.quiet();
     const buyExtra = section.querySelector(".maker-extra-trade");
     if (buyExtra) {
       const fields = section.querySelectorAll(":scope > label input");
       ["2099-10-05", "1", "130", "130", "1", "0"].forEach((value, i) => { fields[i].value = value; });
-      ["2", "30", "30", "2"].forEach((value, i) => { buyExtra.querySelectorAll("input")[i].value = value; });
+      ["2", "30", "30", "2"].forEach((value, i) => { buyExtra.querySelectorAll("input:not([type=radio])")[i].value = value; });
       button(section, "Send the purchase").click(); await work.quiet();
     }
     const lots = deviceWorld.drafts().filter((r) => r.collection === "purchases");

@@ -518,6 +518,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-fields{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
 .adm .maker-field{display:flex;flex:1 1 180px;flex-direction:column;min-width:150px}
 .adm .maker-field .lbl{margin-top:0}
+/* 12 OCT 2026 (PHASE 4a): the few, fixed choices of a form are the system's Option tiles (stmt/owner.js, makerTiles), a fieldset whose legend is the field's label.
+   The recipe sets the tile, its 44px and its chosen edge; the page only gives the group the row to itself in a row of fields. */
+.adm .maker-tiles{flex:1 1 100%;min-width:0}
+.adm .maker-sizes{flex:1 1 100%;min-width:0}
+.adm .maker-sizes .salt-options__grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
 .adm .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}
 .adm .maker-cover input{width:44px;height:44px;min-width:44px;min-height:44px;accent-color:var(--salt-brass)}
 .adm .maker-cover-row{display:flex;align-items:center;gap:10px}
@@ -525,10 +530,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
-.adm .maker-hours{display:grid;gap:6px;margin:14px 0}
-.adm .maker-day{display:grid;grid-template-columns:44px minmax(72px,1fr) minmax(90px,1fr) minmax(90px,1fr);gap:8px;align-items:center}
-.adm .maker-day input[type=checkbox]{width:44px;height:44px;margin:0}
-.adm .maker-day-name{font-size:var(--salt-text-sm)}
+/* 12 OCT 2026 (PHASE 4a): THE WEEKLY HOURS ARE A TABLE. Its head names the three columns (the day with its tick, when it opens, when it closes) and the rows keep the
+   44px of the tick and of each time. The columns share the width, so the head stands over them at 375px as at 1280. */
+.adm .maker-hours{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0 6px;margin:8px 0}
+.adm .maker-hours th.lbl{display:table-cell;margin:0;padding:0 4px;text-align:left}
+.adm .maker-hours th:first-child{width:38%}
+.adm .maker-hours td{padding:0 4px;vertical-align:middle}
+.adm .maker-hours td input[type=time]{width:100%;min-width:0;padding-inline:8px}
+.adm .maker-day-pick{display:flex;align-items:center;gap:4px;min-height:44px}
+.adm .maker-day input[type=checkbox]{flex:none;width:44px;height:44px;margin:0}
+.adm .maker-day-name{font-size:var(--salt-text-sm);min-width:0;overflow-wrap:anywhere}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
@@ -544,7 +555,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-slip-open .maker-slip{max-height:120px;width:auto}
 .adm .maker-slipbox.open .maker-slip-open{width:100%;cursor:zoom-out}
 .adm .maker-slipbox.open .maker-slip-open .maker-slip{max-height:none;width:100%}
-@media(max-width:440px){.adm .maker-day{grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}.adm .maker-day-name{grid-column:2 / 4}.adm .maker-day input[type=time]{grid-row:2}.adm .maker-day input[type=time]:nth-last-child(2){grid-column:2}.adm .maker-day input[type=time]:last-child{grid-column:3}}
 /* S9 9.7: an ended admin sign-in leaves nothing on the page but the way back in (the class is set on the body by his script alone) */
 body.ended>*:not(#aEnded){display:none}
 /* S9 9.2: HIS OWN PAGE'S SHELL. The App bar and the Desk rail are the system's, and which one shows is the
@@ -604,7 +614,27 @@ body.ended>*:not(#aEnded){display:none}
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   .gate.adm{max-width:none}
-  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oRecord,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
+  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
+}
+/* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
+   #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
+   the menu's place and has its way back, and the pane's invitation is not drawn. From 860px up to the rail's 1080 the page widens for Record's forms
+   as it does for Orders, the rows to approve keeping their 600px column. */
+.adm .recgrid{display:block}
+.adm .recpane>.rnone{margin:0}
+@media (max-width:859.98px){
+  .adm .recgrid.open .reclist,.adm .recnone{display:none}
+}
+@media (min-width:860px){
+  .adm #oRecord{max-width:none}
+  .adm #oRecord>.abody>section:not(#makerInputs){max-width:600px}
+  .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
+  .adm .recgrid.open .recnone{display:none}
+  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+  .adm #makerFormBack{display:none}
+}
+@media (min-width:860px) and (max-width:1079.98px){
+  .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
    the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the

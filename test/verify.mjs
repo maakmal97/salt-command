@@ -53585,7 +53585,7 @@ await (async () => {
     }
   });
   try {
-    const doc = admin.window.document, { cardOf, answerSheets } = await import("./maker-act.mjs");
+    const doc = admin.window.document, { cardOf, answerSheets, tile } = await import("./maker-act.mjs");
     answerSheets(admin.window, deviceSheets, () => deviceConflictChoice);
     /* 11 Oct 2026: the orders are Orders, the Desk's rows and the forms Record, so both are entered */
     doc.querySelector('[data-act="nav.record"]').click();
@@ -53633,17 +53633,18 @@ await (async () => {
     previewRelease(); holdPreview = false; await new Promise((resolve) => setTimeout(resolve, 20));
     ok(!doc.querySelector("[data-accept]"), "a preview returning after a field edit cannot restore a stale Accept");
     const tradeSection = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Sale or purchase");
-    const tradeControls = tradeSection.querySelectorAll("select, input");
-    tradeControls[0].value = "sale";
-    tradeControls[1].value = "salt";
-    tradeControls[2].value = "CX1-AB";
-    tradeControls[3].value = "2026-10-01";
-    tradeControls[4].value = "1";
-    tradeControls[5].value = "100";
+    /* the few, fixed choices (sale or purchase, the book, the handover) are tiles, tapped; the select left is the party, then the figures in the order they stand */
+    const tradeControls = tradeSection.querySelectorAll("select, input:not([type=radio])");
+    tile(tradeSection, "Sale or purchase", "sale");
+    tile(tradeSection, "Book", "salt");
+    tradeControls[0].value = "CX1-AB";
+    tradeControls[1].value = "2026-10-01";
+    tradeControls[2].value = "1";
+    tradeControls[3].value = "100";
+    tradeControls[4].value = "0";
+    tradeControls[5].value = "0";
+    tile(tradeSection, "Handover", "");
     tradeControls[6].value = "0";
-    tradeControls[7].value = "0";
-    tradeControls[8].value = "";
-    tradeControls[9].value = "0";
     [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send the sale").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -53665,7 +53666,7 @@ await (async () => {
       && !Object.hasOwn(sentEdit.body, "raw") && !Object.hasOwn(sentEdit.body.fields, "note"),
       "the Admin ledger editor is usable and sends only the row id and selected typed changes, never prose or identity: "+editor.textContent);
     const addId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "New customer");
-    const addFields = addId.querySelectorAll("input");
+    const addFields = addId.querySelectorAll("input:not([type=radio])");
     addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
     addFields[3].value = "Secret Way https://waze.com/ul?ll=3.123456,101.654321";
     addId.querySelector("button").click();
@@ -53695,13 +53696,11 @@ await (async () => {
       "a new Waze address and exact point are filed on-device inside ciphertext only, keeping the base and queueing the official rounded locality");
     ok(addId.querySelector("datalist")?.options.length > 100,
       "Counter Add ID provides the incumbent official locality choices rather than a free-text-only place field");
-    const addKind = addId.querySelector("select");
-    addKind.value = "downstream"; addKind.dispatchEvent(new admin.window.Event("change"));
+    tile(addId, "Role", "downstream");
     addFields[0].value = "Ari"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
     addId.querySelector("button").click();
     ok(await adminWork.quiet(), "the downstream ID write finishes");
-    addKind.value = "bucket"; addKind.dispatchEvent(new admin.window.Event("change"));
-    addId.querySelector("select").value = "bucket";
+    tile(addId, "Role", "bucket");
     addId.querySelector("button").click();
     ok(await adminWork.quiet(), "the resale bucket write finishes");
     const addRequests = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id");
@@ -53754,7 +53753,7 @@ await (async () => {
       "Network placement can file a new Maps address and exact point encrypted while queueing only its official locality point");
     nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
     devicePairRevision = 10; devicePairConflict = true;
-    addKind.value = "customer"; addKind.dispatchEvent(new admin.window.Event("change"));
+    tile(addId, "Role", "customer");
     addFields[0].value = "Zora"; addFields[1].value = "Pudu"; addFields[2].value = "name-pass"; addFields[3].value = "";
     addId.querySelector("button").click();
     ok(await adminWork.quiet(), "the device CAS conflict returns without losing the form");
@@ -53789,7 +53788,7 @@ await (async () => {
       + JSON.stringify({prompts:deviceSheets.length,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,names:reviewedNames}));
     devicePairRevision = null;
     const loanForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Loan");
-    loanForm.querySelectorAll("select")[0].value = "cash";
+    tile(loanForm, "Goods or cash", "cash");
     const loanButton = loanForm.querySelector("button");
     holdLoan = true;
     loanButton.click(); loanButton.click();
@@ -53887,6 +53886,16 @@ await (async () => {
 section("Salt Account: rows to approve wear the approve card, the queue folds away, and no native confirm is left");
 await (async () => {
   await (await import("./admin-approve-queue.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: the few, fixed choices of Record's forms are option tiles, each sending the value its select did");
+await (async () => {
+  await (await import("./admin-tiles.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: the printed sizes are a grid of tiles, and the weekly hours a table with labelled columns and a Closed until field");
+await (async () => {
+  await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

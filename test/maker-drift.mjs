@@ -3,6 +3,7 @@ import { makerInputCatalog, makerTierSet } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
 import { JSDOM } from "jsdom";
+import { tileValues } from "./maker-act.mjs";
 import { webcrypto } from "node:crypto";
 import { contentKey, wrapKey } from "../tools/stmt-crypto.mjs";
 
@@ -144,8 +145,8 @@ export async function run({ ok } = {}) {
     const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Follow their record");
     check([...selects[0].options].map((option) => option.value).join() === "CX1-ZED,CX2-ZED",
       "the Counter drift selector uses the customer-only catalog and excludes suppliers");
-    check([...selects[1].options].map((option) => option.value).join() === "salt",
-      "the UI offers salt and omits fixed books from its drift selector");
+    check(selects.length === 1 && tileValues(drift, "Book").join() === "salt",
+      "the UI offers salt and omits fixed books from its drift tiles");
     check(value.min === "-1" && value.max === "1" && value.step === "0.05",
       "the UI bounds the numeric input to the drift range");
     check(drift.textContent.includes("Set by hand: +0.00 (scale -1 to +1)."),

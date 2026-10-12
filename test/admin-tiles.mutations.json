@@ -1,0 +1,302 @@
+[
+ {
+  "name": "a group has no legend",
+  "file": "stmt/owner.js",
+  "find": "set.appendChild(el('legend','salt-options__legend lbl',L[0])); set.appendChild(grid);",
+  "replace": "set.appendChild(grid);"
+ },
+ {
+  "name": "a group's legend is not in the form's label style",
+  "file": "stmt/owner.js",
+  "find": "el('legend','salt-options__legend lbl',L[0])",
+  "replace": "el('legend','salt-options__legend',L[0])"
+ },
+ {
+  "name": "a group is not the system's Options fieldset",
+  "file": "stmt/owner.js",
+  "find": "el('fieldset','salt-options maker-tiles')",
+  "replace": "el('fieldset','maker-tiles')"
+ },
+ {
+  "name": "a group is a div, not a fieldset",
+  "file": "stmt/owner.js",
+  "find": "el('fieldset','salt-options maker-tiles')",
+  "replace": "el('div','salt-options maker-tiles')"
+ },
+ {
+  "name": "a tile is a checkbox",
+  "file": "stmt/owner.js",
+  "find": "radio.type='radio'; radio.name=name;",
+  "replace": "radio.type='checkbox'; radio.name=name;"
+ },
+ {
+  "name": "the groups share one radio name",
+  "file": "stmt/owner.js",
+  "find": "radio.name=name; radio.value=String(item.value);",
+  "replace": "radio.name='tiles'; radio.value=String(item.value);"
+ },
+ {
+  "name": "a tile carries no act",
+  "file": "stmt/owner.js",
+  "find": "actOn(radio,L[1],(L[2]?L[2]+'-':'')+(String(item.value)===''?'none':item.value));",
+  "replace": ""
+ },
+ {
+  "name": "the empty tile is keyed by nothing",
+  "file": "stmt/owner.js",
+  "find": "(String(item.value)===''?'none':item.value)",
+  "replace": "item.value"
+ },
+ {
+  "name": "a tile is not in the recipe's label",
+  "file": "stmt/owner.js",
+  "find": "lab=el('label','salt-option')",
+  "replace": "lab=el('div','salt-option')"
+ },
+ {
+  "name": "a tile has no recipe face",
+  "file": "stmt/owner.js",
+  "find": "face=el('span','salt-option__face');\n        radio.type='radio'",
+  "replace": "face=el('span','salt-option__plain');\n        radio.type='radio'"
+ },
+ {
+  "name": "a tile's face names nothing",
+  "file": "stmt/owner.js",
+  "find": "face.appendChild(el('span','salt-option__label',item.label));",
+  "replace": "face.appendChild(el('span','salt-option__label',''));"
+ },
+ {
+  "name": "a tile is out of the tab order",
+  "file": "stmt/owner.js",
+  "find": "lab.appendChild(radio); lab.appendChild(face);",
+  "replace": "radio.setAttribute('tabindex','-1'); lab.appendChild(radio); lab.appendChild(face);"
+ },
+ {
+  "name": "the face comes before the radio",
+  "file": "stmt/owner.js",
+  "find": "lab.appendChild(radio); lab.appendChild(face);",
+  "replace": "lab.appendChild(face); lab.appendChild(radio);"
+ },
+ {
+  "name": "a group drawn again forgets its choice",
+  "file": "stmt/owner.js",
+  "find": "radio.checked=offered?String(item.value)===kept:(!none&&i===0);",
+  "replace": "radio.checked=!none&&i===0;"
+ },
+ {
+  "name": "a group that may have none chosen picks its first",
+  "file": "stmt/owner.js",
+  "find": ":(!none&&i===0);",
+  "replace": ":(i===0);"
+ },
+ {
+  "name": "a fresh group takes the empty value as its choice",
+  "file": "stmt/owner.js",
+  "find": "kept=on?on.value:null,",
+  "replace": "kept=on?on.value:'',"
+ },
+ {
+  "name": "a group with nothing chosen answers a value no tile has",
+  "file": "stmt/owner.js",
+  "find": "return on?on.value:''; }",
+  "replace": "return on?on.value:'x'; }"
+ },
+ {
+  "name": "setting a value checks every tile",
+  "file": "stmt/owner.js",
+  "find": "r.checked=r.value===String(v);",
+  "replace": "r.checked=true;"
+ },
+ {
+  "name": "a supplier's starting level stays open",
+  "file": "stmt/owner.js",
+  "find": "idTiers.forEach(function(item){item.select.disabled=!canStart;});",
+  "replace": "idTiers.forEach(function(item){item.select.disabled=false;});"
+ },
+ {
+  "name": "a supplier's starting drift stays open",
+  "file": "stmt/owner.js",
+  "find": "idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});",
+  "replace": "idDrifts.forEach(function(item){item.select.disabled=false;item.typed.disabled=!canStart;});"
+ },
+ {
+  "name": "the bands show for every level",
+  "file": "stmt/owner.js",
+  "find": "tierValue.addEventListener('change',function(){ bandBox.hidden=tierValue.value!=='__bands'; });",
+  "replace": "tierValue.addEventListener('change',function(){ bandBox.hidden=false; });"
+ },
+ {
+  "name": "a party is no longer a select",
+  "file": "stmt/owner.js",
+  "find": "actOn(el('select','fld salt-field__input'),'record.trade.party')",
+  "replace": "actOn(el('input','fld salt-field__input'),'record.trade.party')"
+ },
+ {
+  "name": "the count's book sends another word",
+  "file": "stmt/owner.js",
+  "find": "context.products.map(function(code){ return {value:code,label:bookName(code)}; })",
+  "replace": "context.products.map(function(code){ return {value:code+'x',label:bookName(code)}; })"
+ },
+ {
+  "name": "a purchase sends another word",
+  "file": "stmt/owner.js",
+  "find": "{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}",
+  "replace": "{value:'sale',label:'Sale'},{value:'buy',label:'Purchase'}"
+ },
+ {
+  "name": "the trade's book sends another word",
+  "file": "stmt/owner.js",
+  "find": "return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return {value:item.product,label:bookName(item.product)}; }));",
+  "replace": "return isSale?item.saleReady:item.purchaseReady; }).map(function(item){ return {value:item.product+'x',label:bookName(item.product)}; }));"
+ },
+ {
+  "name": "the trade's collected handover sends another word",
+  "file": "stmt/owner.js",
+  "find": "var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'}",
+  "replace": "var handover=makerTilesIn(tradeSection,['Handover','record.trade.handover'],[{value:'',label:'Not yet'},{value:'picked',label:'Collected'}"
+ },
+ {
+  "name": "the gift's collected handover sends another word",
+  "file": "stmt/owner.js",
+  "find": "var giftHandover=makerTilesIn(gift,['Handover','record.gift.handover'],[{value:'',label:'Not yet'},{value:'collected',label:'Collected'}",
+  "replace": "var giftHandover=makerTilesIn(gift,['Handover','record.gift.handover'],[{value:'',label:'Not yet'},{value:'picked',label:'Collected'}"
+ },
+ {
+  "name": "a resale sends another stream",
+  "file": "stmt/owner.js",
+  "find": "[{value:'',label:'No'},{value:'R2',label:'They resell'}",
+  "replace": "[{value:'',label:'No'},{value:'R2x',label:'They resell'}"
+ },
+ {
+  "name": "an introduction sends another stream",
+  "file": "stmt/owner.js",
+  "find": "{value:'R3',label:'They introduced the buyer'}]);\n      var tradeAssoc",
+  "replace": "{value:'R3x',label:'They introduced the buyer'}]);\n      var tradeAssoc"
+ },
+ {
+  "name": "a loan in goods sends another word",
+  "file": "stmt/owner.js",
+  "find": "[{value:'salt',label:'Goods'},{value:'cash',label:'Cash'}]",
+  "replace": "[{value:'goods',label:'Goods'},{value:'cash',label:'Cash'}]"
+ },
+ {
+  "name": "a loan lent sends another word",
+  "file": "stmt/owner.js",
+  "find": "{value:'out',label:'We lent'}",
+  "replace": "{value:'lent',label:'We lent'}"
+ },
+ {
+  "name": "the loan, gift and correction books send another word",
+  "file": "stmt/owner.js",
+  "find": "var productItems=books.map(function(item){return {value:item.product,label:bookName(item.product)};});",
+  "replace": "var productItems=books.map(function(item){return {value:item.product+'x',label:bookName(item.product)};});"
+ },
+ {
+  "name": "a level left to the Desk sends a word",
+  "file": "stmt/owner.js",
+  "find": "[['','Let the Desk decide']]",
+  "replace": "[['x','Let the Desk decide']]"
+ },
+ {
+  "name": "a level by size sends the small band for the mid",
+  "file": "stmt/owner.js",
+  "find": "{small:bandSel.small.value,mid:bandSel.mid.value,big:bandSel.big.value}",
+  "replace": "{small:bandSel.small.value,mid:bandSel.small.value,big:bandSel.big.value}"
+ },
+ {
+  "name": "the level's book sends another word",
+  "file": "stmt/owner.js",
+  "find": "tierBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; }));\n        var tierValue",
+  "replace": "tierBooks.map(function(item){ return {value:item.product+'x',label:bookName(item.product)}; }));\n        var tierValue"
+ },
+ {
+  "name": "the drift's book sends another word",
+  "file": "stmt/owner.js",
+  "find": "var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return {value:item.product,",
+  "replace": "var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return {value:item.product+'x',"
+ },
+ {
+  "name": "the printed sizes' book sends another word",
+  "file": "stmt/owner.js",
+  "find": "houseBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; })), houseBoxes",
+  "replace": "houseBooks.map(function(item){ return {value:item.product+'x',label:bookName(item.product)}; })), houseBoxes"
+ },
+ {
+  "name": "a reminder hidden for a week sends another number",
+  "file": "stmt/owner.js",
+  "find": "{value:'7',label:'7 days'}",
+  "replace": "{value:'8',label:'7 days'}"
+ },
+ {
+  "name": "a reminder hidden for good sends a number of days",
+  "file": "stmt/owner.js",
+  "find": "{value:'',label:'For good'}",
+  "replace": "{value:'0',label:'For good'}"
+ },
+ {
+  "name": "a fulfilment sends another word",
+  "file": "stmt/owner.js",
+  "find": ":['Correction','Fulfilment','Cancellation'];\n      editKind.fill(",
+  "replace": ":['Correction','Fulfilled','Cancellation'];\n      editKind.fill("
+ },
+ {
+  "name": "a correction's yes sends another word",
+  "file": "stmt/owner.js",
+  "find": "[{value:'true',label:'Yes'},{value:'false',label:'No'}]",
+  "replace": "[{value:'yes',label:'Yes'},{value:'false',label:'No'}]"
+ },
+ {
+  "name": "a correction's resale sends another stream",
+  "file": "stmt/owner.js",
+  "find": ":definition.kind==='stream'?[{value:'R2',label:'They resell'}",
+  "replace": ":definition.kind==='stream'?[{value:'R2x',label:'They resell'}"
+ },
+ {
+  "name": "a correction's delivered sends another word",
+  "file": "stmt/owner.js",
+  "find": ":definition.kind==='handover'?[{value:'delivered',label:'Delivered'}",
+  "replace": ":definition.kind==='handover'?[{value:'dropped',label:'Delivered'}"
+ },
+ {
+  "name": "a yes or no in a correction is a select",
+  "file": "stmt/owner.js",
+  "find": "var tiled=definition.kind==='boolean'||definition.kind==='stream'",
+  "replace": "var tiled=definition.kind==='stream'"
+ },
+ {
+  "name": "a downstream customer role sends another word",
+  "file": "stmt/owner.js",
+  "find": "{value:'downstream',label:'Customer of an associate'}",
+  "replace": "{value:'downstream2',label:'Customer of an associate'}"
+ },
+ {
+  "name": "a new customer's level that is not set sends a word",
+  "file": "stmt/owner.js",
+  "find": "'record.add-id.tier',item.product],[{value:'',label:'Not set'}]",
+  "replace": "'record.add-id.tier',item.product],[{value:'none',label:'Not set'}]"
+ },
+ {
+  "name": "a new customer's drift that follows their record sends a word",
+  "file": "stmt/owner.js",
+  "find": "'record.add-id.drift',item.product],[{value:'',label:'Follows their record'}]",
+  "replace": "'record.add-id.drift',item.product],[{value:'none',label:'Follows their record'}]"
+ },
+ {
+  "name": "an associate appointed sends the stream for the kind",
+  "file": "stmt/owner.js",
+  "find": "return {value:item.kind,label:item.kind==='referral'",
+  "replace": "return {value:item.stream,label:item.kind==='referral'"
+ },
+ {
+  "name": "an associate's role starts chosen",
+  "file": "stmt/owner.js",
+  "find": "appointmentKinds,true)",
+  "replace": "appointmentKinds)"
+ },
+ {
+  "name": "a group does not fill the row of its form",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-tiles{flex:1 1 100%;min-width:0}",
+  "replace": ".adm .maker-tiles{min-width:0}"
+ }
+]

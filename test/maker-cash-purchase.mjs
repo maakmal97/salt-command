@@ -4,7 +4,7 @@
    and Default from the ledger editor, each sending only its own figure to the Desk's native ledger amendment; a sale
    row never offers them. Driven through the verified owner, the private capability and the actual owner script. */
 import { webcrypto } from "node:crypto";
-import { cardOf } from "./maker-act.mjs";
+import { cardOf, tile, tileValues } from "./maker-act.mjs";
 import { JSDOM } from "jsdom";
 import desk from "../src/worker.js";
 import counter from "../stmt/worker.js";
@@ -202,8 +202,8 @@ export async function run({ ok }) {
     /* a purchase lot's own amendments, and a sale row's */
     const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Correct a row");
     await until(() => editor());
-    const rowSel = fieldIn(editor(), "Which row"), kindSel = fieldIn(editor(), "What to do");
-    const kinds = () => [...kindSel.options].map((o) => o.value).join(",");
+    const rowSel = fieldIn(editor(), "Which row");
+    const kinds = () => tileValues(editor(), "What to do").join(",");
     rowSel.value = "row-sell-0001"; rowSel.dispatchEvent(new window.Event("change", { bubbles: true }));
     const sellKinds = kinds();
     rowSel.value = "lot-buy-0001"; rowSel.dispatchEvent(new window.Event("change", { bubbles: true }));
@@ -211,9 +211,9 @@ export async function run({ ok }) {
     ok(sellKinds === "Correction,Fulfilment,Cancellation" && buyKinds === "Correction,Fulfilment,Cancellation,Payment,Receipt,Default",
       "A purchase lot offers Payment, Receipt and Default; a sale row never does: " + sellKinds + " / " + buyKinds);
     const sendLot = async (kind, cash, units, n) => {
-      const ed = editor(), rs = fieldIn(ed, "Which row"), ks = fieldIn(ed, "What to do");
+      const ed = editor(), rs = fieldIn(ed, "Which row");
       if (rs.value !== "lot-buy-0001") { rs.value = "lot-buy-0001"; rs.dispatchEvent(new window.Event("change", { bubbles: true })); }
-      ks.value = kind; ks.dispatchEvent(new window.Event("change", { bubbles: true }));
+      tile(ed, "What to do", kind);
       fieldIn(ed, "RM").value = cash; fieldIn(ed, "Units").value = units;
       [...ed.querySelectorAll("button")].find((b) => b.textContent === "Send the correction").click();
       await settle(n);

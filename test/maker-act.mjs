@@ -43,6 +43,18 @@ export function byAct(root, act, key) {
   return all.find((c) => { for (let e = c; e && e !== root; e = e.parentElement) if (holds(e)) return true; return false; }) || null;
 }
 
+/* THE OPTION TILES OF A FORM (Phase 4a, 12 Oct 2026): a group is a fieldset.maker-tiles whose legend is the field's label, and a tile a radio in it. tile() taps
+   one as he does and says whether there was one to tap; tileValue() is the value chosen ('' when none is), tileValues() the values offered, and tileGroup() the
+   fieldset, which answers .value as the select it replaced did. A form is told its choice by the radio's change, so a test drives the tile and not the group. */
+export function tileGroup(root, label) { return [...root.querySelectorAll("fieldset.maker-tiles")].find((f) => f.querySelector("legend").textContent === label) || null; }
+export function tileValues(root, label) { const g = tileGroup(root, label); return g ? [...g.querySelectorAll("input")].map((r) => r.value) : null; }
+export function tileValue(root, label) { const g = tileGroup(root, label); return g ? (g.querySelector("input:checked") || { value: "" }).value : null; }
+export function tile(root, label, value) {
+  const g = tileGroup(root, label), r = g && [...g.querySelectorAll("input")].find((x) => x.value === String(value));
+  if (r) r.click();
+  return !!r;
+}
+
 /* A YES OR NO ON SALT ACCOUNT IS A SHEET (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct), never a native confirm. A section that once stubbed window.confirm to say yes or no to whatever the page asked has each
    Sheet answered as it comes up instead: what it said (its title and its words) is put in asked, and answer() is read at that moment, true taking the one action and false the ghost, so a flow that
    awaits the question carries on as the stub's return would have sent it. The page's own ynGo and ynKeep are what is tapped. */
@@ -157,8 +169,8 @@ const links = () => [
    other orders than the busy day's (links is the guest links). The page's intervals are kept, so a test fires the 30-second read itself; hold(route) keeps the answer to the
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
-   sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, as the others change theirs. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null }) {
+   sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, and inputsAnswer what Record's forms are told (the books, the customers, the rows, the tips), as the others change theirs. */
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null }) {
   const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {};
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
@@ -189,7 +201,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
     if (fix && route.startsWith("/all/maker/slips/")) return { ok: true, slip: fix.sealed };
     if (route.endsWith("/preview")) return { ok: true, hash: "a".repeat(64), offerHash: "b".repeat(64), quote: 200, delivery: 10, card: 200,
       floor: 150, margin: { rm: 50, pct: 25 }, cost: { total: 150 }, usual: { rate: 100 }, flags: [], row: { qty: 2, total: 200 } };
-    if (route === "/all/maker/inputs") return { ok: true, products: ["salt", "oil"], catalog: catalog() };
+    if (route === "/all/maker/inputs") return via(inputsAnswer)({ ok: true, products: ["salt", "oil"], catalog: catalog() });
     if (route === "/all/maker/offsets") return { ok: true, offers: [{ code: "AX1-ZED", units: 1, rm: 100, saleDate: "2026-10-01", rid: "off-1" }] };
     if (route === "/all/maker/claims") return via(claims)({ ok: true, claims: [{ id: "c-1", u: U1, amount: 50, state: "waiting", slip: "s-1" },
       { id: "c-2", u: U1, amount: 20, state: "waiting" }] });

@@ -1664,10 +1664,37 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, "← Entry") that returns him
   to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are
   untouched, shown and hidden by `sweep` from `fOpen` (the form open, a slug), so what he has typed survives Back and opening another form.
-  The count's controls are a form of their own now (Stock count). A **Retained input stays on the menu**, above the rows, and goes while a form is
-  open. Opening a form reads and sends nothing. Leaving the part or the place closes the form. **The + orb** (`nav.add`, `#oAdd`, the system's raised
+  The count's controls are a form of their own now (Stock count). A **Retained input stays on the menu**, above the rows, and below 860px goes while a form
+  is open. Opening a form reads and sends nothing. Leaving the part or the place closes the form. **The + orb** (`nav.add`, `#oAdd`, the system's raised
   orb) stands over every place but Record, 16px above the App bar on a phone and in the corner from 1080px, under the bar and the sheets; it opens
   Record on Entry, the menu of entries. The room under the last section on a phone is the orb's. No route, body, request id or retained send changed.
+  **The form open is a pane** (Phase 4a, 12 Oct 2026, `test/admin-orders.mjs` section 4b, its mutations in `test/admin-orders.mutations.json`): the menu and a
+  retained input are one column (`.reclist`) and the forms the pane beside it (`.recpane`), both in `#makerFormGrid`, the nodes moved into them by
+  `recordMenu` and never drawn again, so a half-typed form survives Back and another form. **From 860px** the menu stays beside the form open (its row marked
+  `aria-current`, the grid carrying `open`), another form opens straight from its row with no Back between, the pane is sticky and scrolls inside itself
+  (between 860 and 1080px its height gives up the App bar's, as Orders' card does), Record widens for its forms (the rows to approve keep their 600px column)
+  and the way back is not drawn. **Below 860px** the form open takes the menu's place and has its way back, and the pane's invitation to choose one is not
+  drawn. `sweep` no longer hides the menu while a form is open: the CSS decides by width, as it does for Orders.
+  **The few, fixed choices of a form are the system's Option tiles** (Phase 4a, 12 Oct 2026, `test/admin-tiles.mjs`, its mutations in
+  `test/admin-tiles.mutations.json`): where a form asked in a `<select>` for a book, a direction, a handover, a kind of entry, a role, a level, a drift, a
+  stream or a time to hide a reminder, it asks in `makerTiles` (`stmt/owner.js`), a fieldset (`salt-options maker-tiles`) whose legend is the field's label and
+  a real radio in each tile (`salt-option`, face 44px, the radio laid over the whole tile), so the group is one tab stop, the arrows move the choice and a
+  tile is a 44px target in both dimensions. The group answers where the select did: `.value` is the tile chosen (`''` when none is), `.disabled` shuts every
+  tile (a supplier has no starting level or drift), the radios' `change` and `input` bubble to it, and `fill(items)` draws the tiles again, keeping the choice
+  while it is still offered, else the first tile (the appointment's role starts with none chosen, as its select did). **Each radio keeps its select's act**,
+  keyed by its value (`none` for the empty one) and, for a group drawn once for each book, by that book first (`record.add-id.tier`, key `salt-Silver`), so the
+  act table below and the audit are as they were. **What a form sends is the value it always sent**: no route, body, field, request id, retained send,
+  timestamp or signature cache, completion hook or `entryFault` changed. A **party, a row, a loan, a field or a reminder, a list as long as the book, stays
+  a select**, and so does a code in a correction.
+  **The printed sizes are a grid of tiles** (Phase 4a, `test/admin-sizes-hours.mjs`, its mutations in `test/admin-sizes-hours.mutations.json`): a size is a tile of the
+  same recipe, a checkbox in `salt-option` with its face saying the size in words, in a fieldset (`maker-sizes`, legend "Sizes to print") whose grid runs in as many
+  columns of 88px or more as the pane holds, ticked while the size is printed. Each tick keeps `record.house.size`, keyed by the size, and the body is as it was: the
+  book and the sizes left unticked as numbers (`hide`). **The weekly hours are a table** (Shop, Hours): its head names three columns, Day (the tick, its label the day's
+  name), Opens and Closes, a row for each weekday in order, each control named for its day and its column, a closed day's times shut, the columns sharing the width so
+  the head stands over them at 375px as at 1280. The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
+  `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
+  `{manual: {open, until}}` or `{clearManual: true}`. `tools/maker-forms-geometry.mjs` measures the pane, every form's tiles, the size grid and the hours table in a
+  real browser at 1280 and 375px, and proves a 20px tile red.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
@@ -2229,7 +2256,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.day-to` | Same row | The hour it closes. |
 | `hours.override-clear` | Operating hours | Clears it. |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
-| `hours.override-state` | Operating hours | Whether the override holds the shop open or closed. |
+| `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
 | `hours.save` | Operating hours | Saves the weekly hours. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
@@ -2397,7 +2424,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.drift.customer` | Record, customer drift | The customer. |
 | `record.drift.set` | Record, customer drift | Sets the held drift for review. |
 | `record.drift.value` | Record, customer drift | The drift, from -1 to +1. |
-| `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the menu's place, with a way back. Reads and sends nothing. |
+| `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the pane beside the menu from 860px and in the menu's place below it, with a way back. Reads and sends nothing. |
 | `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |
 | `record.gift.date` | Record, gift | The date. |
@@ -2407,7 +2434,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.gift.units` | Record, gift | The units. |
 | `record.house.book` | Record, printed board sizes | The book. |
 | `record.house.send` | Record, printed board sizes | Sends the sizes for review. |
-| `record.house.size` | Record, printed board sizes (key: the size) | Ticks a size the board prints. |
+| `record.house.size` | Record, printed board sizes (key: the size) | Ticks a size tile the board prints. |
 | `record.loan.amount` | Record, borrow or lend | The units or RM. |
 | `record.loan.book` | Record, borrow or lend | The book, for an in-kind loan. |
 | `record.loan.date` | Record, borrow or lend | The date. |

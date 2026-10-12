@@ -3,7 +3,7 @@ import { webcrypto } from "node:crypto";
 import { landingPage } from "../stmt/page.js";
 import { runDrafter } from "../src/drafter.js";
 import { world } from "./maker-trades.mjs";
-import { answerSheets } from "./maker-act.mjs";
+import { answerSheets, tile, tileGroup } from "./maker-act.mjs";
 
 /* A loan sent twice books once (the admin stress triage of 11 Oct 2026, row 6). Counter Admin's Borrow or lend keeps its
    values after "Sent for review", so a second tap is a new input under a fresh request moment; the Desk route now refuses
@@ -49,7 +49,7 @@ async function ownerLoan(wd, pageWork) {
   dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Loan");
-  const set = (label, value) => { field(section, label).value = value; };
+  const set = (label, value) => { if (tileGroup(section, label)) tile(section, label, value); else field(section, label).value = value; };
   for (const [label, value] of Object.entries({ "Goods or cash": "salt", Direction: "out", Who: "CX1-ZED", Book: "salt",
     Date: "2099-10-05", "Units": "2" })) set(label, value);
   const tap = async () => { button(section, "Send the loan").click(); await work.quiet(); };

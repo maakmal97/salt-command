@@ -5,6 +5,7 @@ import { JSDOM } from "jsdom";
 import { landingPage } from "../stmt/page.js";
 import { handleMaker } from "../stmt/maker.js";
 import worker from "../src/worker.js";
+import { tile } from "./maker-act.mjs";
 
 export async function run({ ok, pageWork }) {
   const pass = "invented-vault-pass", key = "blank-locality-fixture-capability";
@@ -95,9 +96,8 @@ export async function run({ ok, pageWork }) {
       const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
         .find((s) => s.querySelector("h3").textContent === "New customer");
       if (!section) throw new Error("Add ID was not drawn.");
-      const fields = section.querySelectorAll("input");
-      const role = section.querySelector("select");
-      role.value = kind; role.dispatchEvent(new dom.window.Event("change"));
+      const fields = section.querySelectorAll("input:not([type=radio])");
+      tile(section, "Role", kind);
       fields[0].value = name; fields[1].value = locality; fields[2].value = pass; fields[3].value = link;
       section.querySelector("button").click();
       if (!await work.quiet()) throw new Error("Add ID did not settle.");

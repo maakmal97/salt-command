@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { landingPage } from "../stmt/page.js";
 import { MAKER_GEO_JS } from "../stmt/maker-geo.js";
 import { makerGeoText } from "../tools/maker-geosync.mjs";
+import { tile, tileGroup } from "./maker-act.mjs";
 
 const context = {
   ok: true, products: ["salt"],
@@ -24,13 +25,13 @@ const cases = [
     } },
   { label: "Send the level", path: "tier-set",
     body: { code: "CX1-ZED", product: "salt", tier: "Gold" },
-    edit(root, changed) { const field = root.querySelectorAll("select")[2]; field.value = changed ? "Silver" : "Gold"; return field; } },
+    edit(root, changed) { tile(root, "Level", changed ? "Silver" : "Gold"); return tileGroup(root, "Level").querySelector("input:checked"); } },
   { label: "Send the sizes", path: "house-sizes",
     body: { product: "salt", hide: [0.5] },
     edit(root, changed) { const field = root.querySelector('input[type="checkbox"]'); field.checked = changed; return field; } },
   { label: "Hide it", path: "hush",
     body: { id: "margin:zero", until: null },
-    edit(root, changed) { const field = root.querySelectorAll("select")[1]; field.value = changed ? "30" : ""; return field; } },
+    edit(root, changed) { tile(root, "Hide for", changed ? "30" : ""); return tileGroup(root, "Hide for").querySelector("input:checked"); } },
   { label: "Send the offset", path: "offset",
     body: { code: "CX1-ZED", rid: "Tx_1", date: "2026-10-01" },
     edit(root, changed) { const field = root.querySelector('input[type="date"]'); field.value = changed ? "2026-10-02" : "2026-10-01"; return field; } }

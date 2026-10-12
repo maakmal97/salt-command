@@ -7,6 +7,7 @@ import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
 import { readBook } from "../tools/book.mjs";
 import { buildSeed } from "../tools/d1.mjs";
+import { tile, tileValue } from "./maker-act.mjs";
 
 class Store {
   values = new Map();
@@ -98,11 +99,11 @@ export async function run({ ok, pageWork }) {
     const change = (node, value) => { node.value = value; node.dispatchEvent(new window.Event("change", { bubbles: true })); };
     doc.querySelector('[data-act="nav.record"]').click();
     if (!await work.quiet() || !editor()) throw new Error("Cancellation editor did not load.");
-    const ed = editor(), row = field(ed, "Which row"), kind = field(ed, "What to do");
+    const ed = editor(), row = field(ed, "Which row");
     const cash = field(ed, "RM"), units = field(ed, "Units");
     const preview = () => ed.querySelector(".maker-cancellation");
     const states = () => preview().querySelector(".maker-facts")?.textContent || "";
-    const select = (rid) => { change(row, rid); change(kind, "Cancellation"); };
+    const select = (rid) => { change(row, rid); tile(ed, "What to do", "Cancellation"); };
     select("f18");
     ok(cash.disabled, "v457.1a Counter Cancellation disables cash");
     ok(units.disabled, "v457.1b Counter Cancellation disables units");
@@ -126,15 +127,15 @@ export async function run({ ok, pageWork }) {
     ok(/This order cannot be cancelled/.test(preview().textContent) && !/After:/.test(preview().textContent),
       "goods already moved do not get a confident cancellation preview");
     change(row, "f22");
-    ok(kind.value === "Correction" && preview().hidden && !preview().textContent,
+    ok(tileValue(ed, "What to do") === "Correction" && preview().hidden && !preview().textContent,
       "a defaulted row clears cancellation disclosure and remains Correction only");
     ok(![...row.options].some((o) => o.value === "f23"), "an already cancelled row is not offered for cancellation");
     select("f18");
-    change(kind, "Fulfilment");
+    tile(ed, "What to do", "Fulfilment");
     ok(!cash.disabled && !units.disabled && preview().hidden && !preview().textContent,
       "leaving Cancellation restores movement controls and clears its disclosure");
     cash.value = "400"; units.value = "1";
-    change(kind, "Cancellation");
+    tile(ed, "What to do", "Cancellation");
     cash.disabled = false; units.disabled = false;
     [...ed.querySelectorAll("button")].find((b) => b.textContent === "Send the correction").click();
     if (!await work.quiet()) throw new Error("Cancellation submission did not settle.");
@@ -152,7 +153,7 @@ export async function run({ ok, pageWork }) {
     ok(!!drafted && entry.total === null, "v457.4b native cancellation top total is null");
     const staleEditor = editor();
     change(field(staleEditor, "Which row"), "f25");
-    change(field(staleEditor, "What to do"), "Cancellation");
+    tile(staleEditor, "What to do", "Cancellation");
     const shown = staleEditor.querySelector(".maker-cancellation").textContent;
     const stored = f.db.prepare("SELECT seq,doc FROM entry WHERE collection='sales' AND json_extract(doc,'$.rid')='f25'").get();
     const moved = { ...JSON.parse(stored.doc), deliveredQty: 1 };
