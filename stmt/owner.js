@@ -1192,6 +1192,7 @@ export const OWNER_JS = `
     var claimHead=el('h3'); claimHead.appendChild(whoTag(el('span',null,who),codeOfUser(claim.u))); claimHead.appendChild(document.createTextNode(' says they paid '+rm(claim.amount)));
     card.appendChild(claimHead);
     card.appendChild(el('p','maker-facts','Sent '+fmtWhen(claim.at)+(ageOf(claim.at)?', '+ageOf(claim.at)+' ago':'')+(claim.test?'. A practice account.':'')));
+    card.appendChild(detailBox('claim.details',key,[['Reference',claim.id],['Sent',fmtWhen(claim.at)],['Slip',claim.slip?'Attached':'None'],['Practice',claim.test?'Yes':'']]));
     said.setAttribute('role','status'); card.appendChild(said); card.appendChild(note);
     if(claim.slip) makerSlipControl(card,claim.u,claim.slip,key);
     var receipt=makerClaimButton(acts,['Yes, received '+rm(claim.amount),'claim.received',key],function(){ return claimAsk(false,false); },true);
@@ -1206,7 +1207,7 @@ export const OWNER_JS = `
       note.textContent='';
       (result.rows||[]).forEach(function(row){
         note.appendChild(el('p','maker-row',makerClaimRowLine(row)));
-        (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?flag:JSON.stringify(flag))); });
+        (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?flag:rowValue('flag',flag))); });
       });
       note.appendChild(el('p','salt-insight',result.booked?'Already recorded: Yes only tells them.':
         result.left>0.004?rm(result.left)+' more than the rows: do not record it twice.':'These rows are settled together.'));
@@ -1604,10 +1605,7 @@ export const OWNER_JS = `
     if(reading.margin) parent.appendChild(el('p','maker-facts','Your margin '+rm(reading.margin.rm)+' · '+reading.margin.pct+'%'));
     if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
     (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
-    if(reading.row){
-      var detail=el('details',''), summary=actOn(el('summary','salt-ghost','Details'),'row.proposed',key);
-      detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); parent.appendChild(detail);
-    }
+    if(reading.row) parent.appendChild(detailBox('row.proposed',key,rowPairs(reading.row)));
   }
   /* the placed-order preview's own native comparison, mirroring ordPvBlock on the Desk: their card today, margin,
      floor and their usual, read off the preview the server drafted (src/orders.js previewAck), never raw row JSON */
@@ -2686,6 +2684,40 @@ export const OWNER_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     L.appendChild(r); return L;
   }
+  /* ---- DETAILS (PHASE 4c, 12 Oct 2026, glossary 5.2) -------------------------------------------------------------------------------------------
+     An id is for quoting, not for reading. A card says who, what and how much; its reference, its moment and what else it was made from stand behind ONE Details
+     control, shut, as a list of names and values (the system's plain Ledger list), never raw JSON and never a run-on line. detailBox is that control and its list
+     (act and key name it); rowPairs words a Desk row's own fields, so a row's Details is the same list wherever a row is shown. */
+  var ROWK={rid:'Row reference', customer:'Who', trip:'Trip', sheet:'Sheet'};
+  function rowKey(k){
+    if(ROWK[k]) return ROWK[k];
+    if(FIELDW[k]) return FIELDW[k];
+    var s=String(k).replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1);
+  }
+  function rowValue(k,v){
+    if(v===true||v===false) return v?'Yes':'No';
+    if(typeof v==='number') return /^(qty|[a-z]+Qty|settledKg|rebateKg|coverUnits)$/.test(k)?units(v):/^(total|cash|delivery|freight|cost|settledRM|coverRM)$/.test(k)?rm(v):String(v);
+    if(typeof v==='string') return /^[0-9]{4}-[0-9]{2}-[0-9]{2}(T|$)/.test(v)?fmtWhen(v):v;
+    if(Array.isArray(v)) return v.map(function(x){ return rowValue(k,x); }).join(', ');
+    if(v&&typeof v==='object') return Object.keys(v).map(function(n){ return rowKey(n)+': '+rowValue(n,v[n]); }).join(', ');
+    return '';
+  }
+  /* a Desk row as names and values, its reference first when it has one that is an id */
+  function rowPairs(row,ref){
+    var list=ref?[['Reference',ref]]:[];
+    Object.keys(row||{}).forEach(function(k){ var v=rowValue(k,row[k]); if(v!=='') list.push([rowKey(k),v]); });
+    return list;
+  }
+  function detailBox(act,key,pairs){
+    var box=el('details','rdet'), list=el('div','salt-ledger salt-ledger--plain');
+    box.appendChild(actOn(el('summary','salt-ghost','Details'),act,key));
+    pairs.forEach(function(p){
+      if(p[1]==null||p[1]==='') return;
+      var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
+      l.appendChild(el('span','salt-ledger__label',p[0])); l.appendChild(el('span','salt-ledger__value',String(p[1]))); r.appendChild(l); list.appendChild(r);
+    });
+    box.appendChild(list); return box;
+  }
   /* Cancel retained input, wherever it is offered: the unsent copy on this device goes, and what the Desk server already holds does not. The opener carries its key (ynTag). */
   function retainedCancel(opener,line,done){
     ownerAsk(opener,opener.getAttribute('data-yn')||'retained',{title:'Discard this unsent entry?', say:[line], go:'Discard it', keep:'Keep it'})
@@ -3454,7 +3486,7 @@ export const OWNER_JS = `
     card.appendChild(orderTitle);
     line.appendChild(chip(st[0],st[1])); card.appendChild(line);
     card.appendChild(el('p','maker-facts','Goods '+rm(order.total)+(order.delivery?' · Delivery '+rm(order.delivery):'')+(+order.paid>0?' · Paid '+rm(order.paid):'')));
-    card.appendChild(el('p','maker-facts','Reference '+order.id));
+    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));
   }
   /* the card of an open order: every control it had, on the order opened alone */
   function orderCard(root,order){
@@ -3700,7 +3732,7 @@ export const OWNER_JS = `
      order has its figures, and a question of theirs he has not answered its reply; cash held for it keeps its Undo (or its Retry) */
   function orderPlainCard(root,e){
     var order=e.order, again=null, acts=el('div','maker-foot__acts'), cashed=false, card=makerCard(root,e.id); card.setAttribute('data-in',e.parts);
-    if(!order){ card.appendChild(el('h3','','Cash held for an order not on this read')); card.appendChild(el('p','maker-facts','Reference '+e.id)); }
+    if(!order){ card.appendChild(el('h3','','Cash held for an order not on this read')); card.appendChild(detailBox('order.details',e.id,[['Reference',e.id]])); }
     if(order){
       orderHead(card,order);
       if(makerAgainAck(order)) again=makerAcceptAgain(card,order,acts);
@@ -3725,10 +3757,8 @@ export const OWNER_JS = `
     var flags=reading.flags||[];
     if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',String(flag))); }); card.appendChild(chips); }
     if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',reading.reasoning));
-    if(reading.row){
-      var detail=el('details',''), summary=actOn(el('summary','salt-ghost','Details'),'row.proposed',key);
-      detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); card.appendChild(detail);
-    }
+    /* the row's figures as names and values, the draft's reference first (Phase 4c); the key is the draft's id */
+    card.appendChild(detailBox('row.proposed',key,rowPairs(reading.row,key)));
   }
   /* an entry waiting for the Desk, by its moment when it has one: Entry of 09 Oct 2026, 14:11 */
   function entryLine(entry){ var at=isoAt(entry.id)||entry.date||''; return 'Entry'+(at?' of '+fmtWhen(at):''); }
@@ -3776,6 +3806,7 @@ export const OWNER_JS = `
         if(entry.device) card.appendChild(el('p','maker-facts','From another device.'));
         if(entry.seenAt) card.appendChild(el('p','maker-facts','Seen '+fmtWhen(entry.seenAt)+'.'));
         if(entry.why) card.appendChild(el('p','salt-insight',entry.why));
+        card.appendChild(detailBox('queue.details',entry.id,[['Reference',entry.id],['Sent',fmtWhen(isoAt(entry.id)||entry.date)],['State',entry.state==='refused'?'Refused':'Waiting for the Desk']]));
         if(entry.unavailable) card.appendChild(el('p','msg',entry.unavailable));
         if(entry.canWithdraw||entry.canRetry){
           var note=el('p','msg'); note.setAttribute('role','status'); card.appendChild(note);

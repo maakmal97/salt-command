@@ -53920,6 +53920,11 @@ await (async () => {
   await (await import("./admin-unsent.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: an id is behind Details, never read out, and a row's Details are names and values, never JSON (12 Oct 2026)");
+await (async () => {
+  await (await import("./admin-details.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });

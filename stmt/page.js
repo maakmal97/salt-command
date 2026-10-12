@@ -227,6 +227,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .msg.wait{color:var(--salt-text-muted)}
 /* Phase 3b: a refusal's Details, the server's own words under the plain sentence, to copy */
 .adm .rdet{margin:8px 0 0}
+/* Phase 4c: a Details control opens a list of names and values (an id, a moment, a row's figures); a long value wraps and stays at the right */
+.adm .rdet .salt-ledger{margin:8px 0 0}
+.adm .rdet .salt-ledger__value{white-space:normal;overflow-wrap:anywhere;text-align:right}
 .adm .rraw{margin:8px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text-muted);overflow-wrap:anywhere;user-select:all}
 /* a veil is obsidian 86%, decision 4 */
 /* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it

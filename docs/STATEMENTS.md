@@ -2285,6 +2285,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `claim.ask-close` | The Sheet a claim's Received or Not found asks on (key: the username and claim id) | Closes it and sends nothing. |
 | `claim.ask-go` | Same sheet | Sends what it asked: Received, Received on the book already, or Not found. |
 | `claim.ask-keep` | Same sheet | Keeps the claim waiting and sends nothing. |
+| `claim.details` | The claim's card (key: the username and claim id) | Opens the claim's reference, when it was sent, whether a slip is attached and whether it is a practice account, as a list of names and values. |
 | `claim.not-found` | Same card | Asks, on the Sheet, whether to answer the claim Not found. |
 | `claim.open` | Account claims, a row for each waiting claim (key: the username and claim id) | Opens the claim's card under its row, which reads its rows; a tap on the row open closes it. |
 | `claim.received` | Same card | Asks, on the Sheet, whether to confirm the amount and the rows shown. |
@@ -2374,6 +2375,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Asks, on the Sheet, whether to confirm the money they say they sent. |
 | `order.close` | Order card (key: the order id), ready | Asks on a sheet, then closes the order at the units typed. |
 | `order.decline` | Order card (key: the order id), placed | Asks on a sheet, with a reason, then declines the order. |
+| `order.details` | Every order card, and the card of cash held for an order not on the read (key: the order id) | Opens the order's reference, when it was placed and how it goes, as a list of names and values. |
 | `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |
 | `order.fee-10` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 10. |
 | `order.fee-15` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 15. |
@@ -2431,6 +2433,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `pool.product` | Group orders | The product the group order is for. |
 | `pool.size` | Group orders | The size each joiner takes, in units. |
 | `pool.target` | Group orders | The target, in units. |
+| `queue.details` | Server-held entry card (key: the entry id) | Opens the entry's reference, when it was sent and its state, as a list of names and values. |
 | `queue.withdraw` | Server-held entry card (key: the entry id) | Withdraws the uploaded entry, or finishes a withdrawal begun. |
 | `record.add-id.drift` | Record, Add ID, one for each drift book (key: the book) | The starting drift: automatic, a preset or typed. |
 | `record.add-id.drift-value` | Record, Add ID, one for each drift book (key: the book) | The typed starting drift, from -1 to +1. |
@@ -2546,7 +2549,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.total` | Record, sale or purchase | The goods total, in RM. |
 | `record.trade.units` | Record, sale or purchase | The units. |
 | `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
-| `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the proposed row as the drafter made it. |
+| `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the row's reference (a Desk row's) and its figures as a list of names and values, never JSON. |
 | `unsent.open` | The banner over every place, while an entry waits unconfirmed on this phone | Goes to Record, on the part of the oldest such entry, where its Unsent entry section stands. |
 | `vault.cancel` | The one unlock's Sheet | Closes it and sends nothing; whatever was typed is cleared. |
 | `vault.close` | Same Sheet | Closes it, as Not now does. |
@@ -2595,6 +2598,14 @@ time; the entry's own section in Record says the same, then *Send it again, or u
 storage and send nothing**; `makerButton`'s send, its caches and completion hooks, `vaultPendingOk` and `makerBusy` are untouched. A record that will not read is
 still one entry he can see and discard. The banner repaints when a place is shown and when an entry is cleared (`makerClear`), the cards at each draw of Needs
 you. `test/admin-unsent.mjs`.
+
+**An id is for quoting, not for reading: it stands behind Details.** An order's card no longer carries a grey *Reference* line; a claim's card, a Desk row's card and a
+held entry's card each have one Details control, shut, that opens a list of names and values (`detailBox`, the system's plain Ledger list, wrapping a long value):
+`order.details` (Reference, Placed, Way), `claim.details` (Reference, Sent, whether a slip is attached, Practice), `row.proposed` (the draft's Reference, then the
+row) and `queue.details` (Reference, Sent, State). **A row's Details are never JSON** (`rowPairs`): a name through `rowKey` (the page's `FIELDW`, a few of its own, else
+the identifier spaced out), a value through `rowValue` (a size in units, a sum in RM, a day as DD Mon YYYY, a yes as Yes or No, a list on one line, a figure inside a
+figure as *Price: RM 5.00*), and a claim row's flag that is not a sentence is worded the same way. Opening one reads and sends nothing; no request, body or request
+id of any card changed. `test/admin-details.mjs`.
 
 ## Before committing
 
