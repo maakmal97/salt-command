@@ -53905,7 +53905,7 @@ await (async () => {
   await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the bar of five places is fixed to the screen's foot, nothing frames it in the screen's place, and the shell keeps its height clear");
+section("Salt Account: the bar of five places is fixed to the screen's foot, nothing frames it in the screen's place, the shell keeps its height clear, and in the iPhone's saved app the document is the screen tall");
 await (async () => {
   await (await import("./admin-bar-foot.mjs")).run({ ok, pageWork });
 })();

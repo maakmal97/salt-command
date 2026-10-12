@@ -7,8 +7,12 @@
  *   2  nothing re-frames it: it is a child of the page's shell, and no rule of the page puts a transform, filter, perspective, containment, will-change or container on the
  *      shell, the body or the root, any of which makes that ancestor the bar's frame in the screen's place
  *   3  on a phone the shell keeps the bar's height clear beneath its last control, and the body its safe area
+ *   4  in the iPhone's saved app the document is the screen's height at least (his iPhone, 12 Oct 2026: a short place stood its bar 20pt and 55pt above the foot, a long one
+ *      and Safari never did): the head script marks the root and sets --app-h from the screen, upright or lying down, in that app alone, and the body's min-height is it
  * Drawn by the maker harness (test/maker-act.mjs). */
+import { JSDOM } from "jsdom";
 import { richOwnerPage } from "./maker-act.mjs";
+import { landingPage } from "../stmt/page.js";
 
 /* every rule of the page's sheets, with the media it stands in ("" for none) and its declarations */
 const rulesOf = (w) => {
@@ -54,5 +58,34 @@ export async function run({ ok, pageWork }) {
       && shellPhone.length === 1 && shellPhone[0].getPropertyValue("padding-bottom") === "var(--salt-bar-h)"
       && bodyPhone.length === 1 && /safe-area-inset-bottom/.test(bodyPhone[0].getPropertyValue("padding")),
     "the shell keeps the bar's height clear under its last control on a phone, and the body its safe area: " + JSON.stringify([shellBase, shellPhone, bodyPhone].map((r) => r[0] && r[0].cssText.slice(0, 110))));
+
+    /* 4. THE SAVED APP'S DOCUMENT IS THE SCREEN TALL */
+    const served = landingPage("", "bar-nonce", { master: "fixture-master", accounts: [] });
+    const script = (served.match(/<script nonce="bar-nonce">([\s\S]*?)<\/script>/) || [, ""])[1];
+    /* the page's head script run on an iPhone: the screen 393x852, the window upright or lying down, navigator.standalone as the phone sets it (true in the saved app,
+       false in Safari, and absent where nothing sets it) */
+    const iphone = ({ standalone, lying = false }) => {
+      const w = new JSDOM('<!doctype html><html><head><meta name="theme-color" content="x"></head><body></body></html>', { runScripts: "outside-only" }).window;
+      const set = (o, k, v) => Object.defineProperty(o, k, { value: v, configurable: true });
+      if (standalone !== undefined) set(w.navigator, "standalone", standalone);
+      set(w.screen, "width", 393); set(w.screen, "height", 852);
+      const turn = (l) => { set(w, "innerWidth", l ? 852 : 393); set(w, "innerHeight", l ? 393 : 852); };
+      turn(lying); w.eval(script);
+      const r = w.document.documentElement;
+      return { mark: () => r.getAttribute("data-app"), h: () => r.style.getPropertyValue("--app-h"), turn: (l) => { turn(l); w.dispatchEvent(new w.Event("resize")); } };
+    };
+    const up = iphone({ standalone: true }), down = iphone({ standalone: true, lying: true }), safari = iphone({ standalone: false }), other = iphone({});
+    const read = [up.mark(), up.h(), down.h()];
+    up.turn(true);
+    ok(JSON.stringify(read) === '["1","852px","393px"]' && up.h() === "393px" && safari.mark() === null && safari.h() === "" && other.mark() === null && other.h() === "",
+      "the head script marks the root and sets --app-h to the screen's height (852px upright, 393px lying down, and again when it turns) in the saved app alone, never in Safari or"
+        + " where navigator.standalone is not set: " + JSON.stringify([read, up.h(), safari.mark(), other.mark()]));
+    const bodyApp = pick("html[data-app] body", "(max-width:1079.98px)"), plain = pick("html[data-app] body");
+    ok(bodyApp.length === 1 && plain.length === 0 && /html\[data-app\] body\{min-height:100vh;min-height:var\(--app-h,100vh\)\}/.test([...d.querySelectorAll("style")].map((x) => x.textContent).join("")),
+      "under 1080px the saved app's body is at least --app-h tall, 100vh standing before it for a browser that lacks custom properties, and only the saved app's root is asked: " + (bodyApp[0] && bodyApp[0].cssText));
+    /* the customer's page carries the bar too and its short places stand as exposed, so it has the same script and the same rule; a guest board has no bar and no script */
+    const customer = landingPage("", "bar-nonce", undefined);
+    ok(customer.includes(script) && customer.includes("html[data-app] body{min-height:100vh;min-height:var(--app-h,100vh)}"),
+      "the customer's page has the same head script and the same rule, so a short place of theirs in the saved app is held as his is");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }
