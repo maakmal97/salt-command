@@ -1,6 +1,6 @@
 {
-  "v": "v1082",
-  "derivedFrom": "28787810a4cc1f56",
+  "v": "v1083",
+  "derivedFrom": "63fed18791979ad1",
   "tables": {
     "sales": {
       "rows": 257,
@@ -14,7 +14,7 @@
           ]
         },
         "amend": {
-          "present": 131,
+          "present": 133,
           "of": 257,
           "optional": true,
           "types": [
@@ -94,7 +94,7 @@
           ]
         },
         "deliveredOn": {
-          "present": 202,
+          "present": 205,
           "of": 257,
           "optional": true,
           "types": [
@@ -291,7 +291,7 @@
       "rows": 38,
       "fields": {
         "amend": {
-          "present": 6,
+          "present": 7,
           "of": 38,
           "optional": true,
           "types": [
@@ -346,14 +346,6 @@
             "string"
           ]
         },
-        "inTransit": {
-          "present": 1,
-          "of": 38,
-          "optional": true,
-          "types": [
-            "boolean"
-          ]
-        },
         "mod": {
           "present": 3,
           "of": 38,
@@ -395,7 +387,7 @@
           ]
         },
         "receivedOn": {
-          "present": 33,
+          "present": 34,
           "of": 38,
           "optional": true,
           "types": [
