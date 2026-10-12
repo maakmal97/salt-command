@@ -112,8 +112,8 @@ export async function run({ ok }) {
       `${name} runs no script and is drawn Tide: data-theme="tide" on the root and Tide's ground in the browser bar`);
   }
   const dsHex = (T, k) => T[k];
-  ok(maint.includes("background:" + dsHex(TIDE, "obsidian")) && maint.includes("color:" + dsHex(TIDE, "salt")) && ratio(TIDE.salt, TIDE.obsidian) >= 4.5,
-    "the maintenance page's own ground and text are Tide's obsidian and salt in the design system");
+  ok(new RegExp("background:[^}]*" + dsHex(TIDE, "obsidian") + ";background-attachment:fixed").test(maint) && !/html\{[^}]*background/.test(maint) && maint.includes("color:" + dsHex(TIDE, "salt")) && ratio(TIDE.salt, TIDE.obsidian) >= 4.5,
+    "the maintenance page's own ground, on the canvas, and text are Tide's obsidian and salt in the design system");
   for (const [name, html] of [["a guest board", guest], ["the shut page", shut], ["the 404 page", lost]]) {
     const dom = new JSDOM(html, { url: "https://site.test/g/x", runScripts: "dangerously", beforeParse(w) { w.localStorage.setItem("salt-look", "night"); } });
     ok(dom.window.document.documentElement.getAttribute("data-theme") === "tide", `${name} stays Tide on a device that chose Night: no script can read the choice`);

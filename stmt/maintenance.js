@@ -13,7 +13,8 @@ const esc = (s) => s.replace(/[&<>"']/g, (c) => "&#" + c.charCodeAt(0) + ";");
    (the suite holds each hex equal to design/salt-ds.css). The ring is the app's, inline: the policy admits no image. */
 const TIDE = { ground: "#03141a", text: "#eaf6f6", soft: "#a4bbbf", accent: "#7fd1c0", glow: "98,182,204", glow2: "127,209,192" };
 const RING = '<svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" focusable="false"><path d="M12 4.2 A7.8 7.8 0 1 1 11.99 4.2 Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
-const CSS = "html{background:" + TIDE.ground + ";color:" + TIDE.text + ";color-scheme:dark;-webkit-text-size-adjust:100%}"
+/* the body's background is the canvas's (the root has none), so the ground and its two glows fill the screen as the frame's do */
+const CSS = "html{color:" + TIDE.text + ";color-scheme:dark;-webkit-text-size-adjust:100%}"
   + "body{margin:0;padding:44px 20px 60px;font:0.9375rem/1.6 'Fraunces',Georgia,'Times New Roman',serif;"
   + "background:radial-gradient(1200px 640px at 82% -12%,rgba(" + TIDE.glow + ",.16) 0,transparent 62%),"
   + "radial-gradient(900px 560px at -10% 6%,rgba(" + TIDE.glow2 + ",.1) 0,transparent 58%) " + TIDE.ground + ";background-attachment:fixed}"
