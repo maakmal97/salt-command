@@ -50,8 +50,8 @@
  {
   "name": "the drawer is 500px wide",
   "file": "stmt/page.js",
-  "find": "width:min(460px,100%);max-height:none;",
-  "replace": "width:min(500px,100%);max-height:none;"
+  "find": ".adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;",
+  "replace": ".adm.asheet{top:0;left:auto;width:min(500px,100%);max-height:none;"
  },
  {
   "name": "the tablet dialog paints a ground of its own",
@@ -202,5 +202,11 @@
   "file": "stmt/page.js",
   "find": "  .adm .maker-hours td input[type=time]{padding-inline:4px}",
   "replace": "  .maker-hours td input[type=time]{padding-inline:4px}"
+ },
+ {
+  "name": "the sentence that marks where his rules begin is gone, so the check cannot tell his rules from the customer's",
+  "file": "stmt/page.js",
+  "find": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
+  "replace": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"
  }
 ]

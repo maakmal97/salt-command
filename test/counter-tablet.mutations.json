@@ -1,0 +1,182 @@
+[
+ {
+  "name": "the dialog rule is dropped",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;width:min(560px,calc(100% - 32px));max-height:calc(100% - 64px);transform:translate(-50%,-50%);animation-name:salt-sheet-fade}\n",
+  "replace": ""
+ },
+ {
+  "name": "the dialog rule is under .adm",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:50%;right:auto;",
+  "replace": "  .adm.salt-sheet{top:50%;right:auto;"
+ },
+ {
+  "name": "the dialog is wider than 560px",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;width:min(560px,",
+  "replace": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;width:min(640px,"
+ },
+ {
+  "name": "the dialog is not centred across",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:50%;",
+  "replace": "  .salt-sheet:not(.adm){top:50%;right:auto;bottom:auto;left:0;"
+ },
+ {
+  "name": "the dialog starts at 800px",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:768px) and (max-width:859.98px){\n  .salt-sheet:not(.adm){top:50%;",
+  "replace": "@media (min-width:800px) and (max-width:859.98px){\n  .salt-sheet:not(.adm){top:50%;"
+ },
+ {
+  "name": "the dialog keeps its grabber",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm) .salt-sheet__grab{display:none}\n}\n@media (min-width:860px) and (max-width:1079.98px){",
+  "replace": "}\n@media (min-width:860px) and (max-width:1079.98px){"
+ },
+ {
+  "name": "the drawer rule is dropped",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}\n",
+  "replace": ""
+ },
+ {
+  "name": "the drawer rule is under .adm",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:0;left:auto;",
+  "replace": "  .adm .salt-sheet{top:0;left:auto;"
+ },
+ {
+  "name": "the drawer starts at 900px",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:860px) and (max-width:1079.98px){\n  .salt-sheet:not(.adm){top:0;",
+  "replace": "@media (min-width:900px) and (max-width:1079.98px){\n  .salt-sheet:not(.adm){top:0;"
+ },
+ {
+  "name": "the drawer is not 460px wide",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm){top:0;left:auto;width:min(460px,",
+  "replace": "  .salt-sheet:not(.adm){top:0;left:auto;width:min(560px,"
+ },
+ {
+  "name": "the drawer keeps its grabber",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm) .salt-sheet__grab{display:none}\n  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n",
+  "replace": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n"
+ },
+ {
+  "name": "a sheet rule is also written under .adm, every wanted one still there",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n",
+  "replace": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n  .adm .salt-sheet .salt-sheet__head{padding-top:0}\n"
+ },
+ {
+  "name": "the drawer's head loses its top padding",
+  "file": "stmt/page.js",
+  "find": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n",
+  "replace": ""
+ },
+ {
+  "name": "the list beside the order waits for the rail's 1080px",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:860px){\n  .oplace{display:grid;",
+  "replace": "@media (min-width:1080px){\n  .oplace{display:grid;"
+ },
+ {
+  "name": "the open order stops scrolling inside itself",
+  "file": "stmt/page.js",
+  "find": "  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
+  "replace": "  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px)}\n"
+ },
+ {
+  "name": "the open order is not sticky",
+  "file": "stmt/page.js",
+  "find": "  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
+  "replace": "  .oscreen{max-height:calc(100vh - 48px);overflow-y:auto}\n"
+ },
+ {
+  "name": "the open order's way back is drawn beside the list",
+  "file": "stmt/page.js",
+  "find": "  .oback{display:none}\n",
+  "replace": ""
+ },
+ {
+  "name": "the open order takes the whole tab up to 1079px",
+  "file": "stmt/page.js",
+  "find": "@media (max-width:859.98px){#pOrder.o-open>:not(.oplace){display:none}",
+  "replace": "@media (max-width:1079px){#pOrder.o-open>:not(.oplace){display:none}"
+ },
+ {
+  "name": "the open order's foot goes under the App bar between 860 and 1080px",
+  "file": "stmt/page.js",
+  "find": "  .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
+  "replace": ""
+ },
+ {
+  "name": "the open order's height forgets the safe area",
+  "file": "stmt/page.js",
+  "find": "  .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
+  "replace": "  .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h))}\n"
+ },
+ {
+  "name": "Orders keeps its 620px column between 860 and 1080px",
+  "file": "stmt/page.js",
+  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
+  "replace": ""
+ },
+ {
+  "name": "the heading of Orders stays in the 620px column",
+  "file": "stmt/page.js",
+  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
+  "replace": "  #pOrder{max-width:none}\n"
+ },
+ {
+  "name": "a rule of Orders is also written under .adm, every wanted one still there",
+  "file": "stmt/page.js",
+  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
+  "replace": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n  .adm .oscreen{top:0}\n"
+ },
+ {
+  "name": "the script opens an order beside the list only from 1080px",
+  "file": "stmt/page.js",
+  "find": "function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 860px)').matches)",
+  "replace": "function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 1080px)').matches)"
+ },
+ {
+  "name": "the script drops the order it opened by itself only below 1080px",
+  "file": "stmt/page.js",
+  "find": "var oMq=window.matchMedia&&window.matchMedia('(min-width: 860px)');",
+  "replace": "var oMq=window.matchMedia&&window.matchMedia('(min-width: 1080px)');"
+ },
+ {
+  "name": "the shell stops naming the place it shows",
+  "file": "stmt/page.js",
+  "find": "    tab=t; tabs.setAttribute('data-place',t);\n",
+  "replace": "    tab=t;\n"
+ },
+ {
+  "name": "his dialog is 600px wide while the customer's is 560px",
+  "file": "stmt/page.js",
+  "find": "  .adm.asheet{top:50%;right:auto;bottom:auto;left:50%;width:min(560px,",
+  "replace": "  .adm.asheet{top:50%;right:auto;bottom:auto;left:50%;width:min(600px,"
+ },
+ {
+  "name": "his drawer arrives by the fade while the customer's slides",
+  "file": "stmt/page.js",
+  "find": "  .adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}",
+  "replace": "  .adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-fade}"
+ },
+ {
+  "name": "the order sheet's size tiles are one column",
+  "file": "stmt/page.js",
+  "find": "      var grid=el('div','salt-options__grid salt-options__grid--2');",
+  "replace": "      var grid=el('div','salt-options__grid');"
+ },
+ {
+  "name": "the order sheet's two ways are one column",
+  "file": "stmt/page.js",
+  "find": "    var g=el('div','salt-options__grid salt-options__grid--2');\n    /* data-k by position",
+  "replace": "    var g=el('div','salt-options__grid');\n    /* data-k by position"
+ }
+]
