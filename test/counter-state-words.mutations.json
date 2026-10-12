@@ -114,34 +114,52 @@
   "replace": "\"sh.lineSent\": \"Sent\","
  },
  {
-  "name": "a heading's mark has no shape word beside it",
+  "name": "a heading draws its shape word beside its mark",
   "file": "stmt/page.js",
-  "find": "h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',pshape(product)));",
-  "replace": "h.appendChild(psym(product,28));"
+  "find": "h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));\n    return h;",
+  "replace": "h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',pshape(product)));\n    return h;"
  },
  {
-  "name": "an inline mark has no shape word beside it",
+  "name": "a heading is nameless",
   "file": "stmt/page.js",
-  "find": "w.appendChild(el('span','pshape',pshape(product)));",
-  "replace": ""
+  "find": "h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));\n    return h;",
+  "replace": "h.appendChild(psym(product,28));\n    return h;"
  },
  {
-  "name": "a mark leading a note has no shape word beside it",
+  "name": "an inline mark draws its shape word",
   "file": "stmt/page.js",
-  "find": "f.appendChild(el('span','pshape',pshape(product))); ",
-  "replace": ""
+  "find": "    w.appendChild(el('span','sr',pshape(product)));\n    return w;",
+  "replace": "    w.appendChild(el('span','pshape',pshape(product)));\n    return w;"
  },
  {
-  "name": "a mark in a sentence has no shape word beside it",
+  "name": "an inline mark is nameless",
   "file": "stmt/page.js",
-  "find": "w.appendChild(el('span','pshape',pshape(pr))); return w.innerHTML;",
-  "replace": "return w.innerHTML;"
+  "find": "    w.appendChild(el('span','sr',pshape(product)));\n    return w;",
+  "replace": "    return w;"
  },
  {
-  "name": "a tile's caption has no shape word",
+  "name": "a mark leading a note draws its shape word",
   "file": "stmt/page.js",
-  "find": "f.appendChild(document.createTextNode(pshape(product)+', ')); ",
-  "replace": ""
+  "find": "f.appendChild(el('span','sr',pshape(product))); f.appendChild(document.createTextNode(' '));",
+  "replace": "f.appendChild(el('span','pshape',pshape(product))); f.appendChild(document.createTextNode(' '));"
+ },
+ {
+  "name": "a mark leading a note is nameless",
+  "file": "stmt/page.js",
+  "find": "f.appendChild(el('span','sr',pshape(product))); f.appendChild(document.createTextNode(' '));",
+  "replace": "f.appendChild(document.createTextNode(' '));"
+ },
+ {
+  "name": "a mark in a sentence draws its shape word",
+  "file": "stmt/page.js",
+  "find": "w.appendChild(el('span','sr',pshape(pr))); return w.innerHTML;",
+  "replace": "w.appendChild(el('span','pshape',pshape(pr))); return w.innerHTML;"
+ },
+ {
+  "name": "a tile's caption draws the shape word",
+  "file": "stmt/page.js",
+  "find": "var f=el('span','mq',words); f.setAttribute('aria-hidden','true'); w.appendChild(f);",
+  "replace": "var f=el('span','mq',pshape(product)+', '+words); f.setAttribute('aria-hidden','true'); w.appendChild(f);"
  },
  {
   "name": "a tile's reader hears no shape",
@@ -150,34 +168,28 @@
   "replace": "w.appendChild(el('span','sr',words));"
  },
  {
-  "name": "Order again's tile is a figure alone",
+  "name": "Order again's tile draws the shape word",
   "file": "stmt/page.js",
-  "find": "var fq=mcap(a.product,unitsOf(a.q,P.unit));",
-  "replace": "var fq=el('span','mq',unitsOf(a.q,P.unit));"
+  "find": "var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');",
+  "replace": "var fq=el('span','mq',pshape(a.product)+', '+unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');"
  },
  {
-  "name": "the statement's tile has no shape word",
+  "name": "the statement's tile draws the shape word",
   "file": "stmt/page.js",
-  "find": "'<span class=\"mq\" aria-hidden=\"true\">' + shape + ', <span class=\"nb\">'",
-  "replace": "'<span class=\"mq\" aria-hidden=\"true\"><span class=\"nb\">'"
+  "find": "'<span class=\"mq\" aria-hidden=\"true\">' + esc(said) + \"</span></span>\"",
+  "replace": "'<span class=\"mq\" aria-hidden=\"true\">' + esc(PSHAPE[String(product || \"\").toLowerCase()] || PSHAPE._) + \", \" + esc(said) + \"</span></span>\""
  },
  {
-  "name": "the guest board's heading has no shape word",
+  "name": "the guest board's heading draws its shape word",
   "file": "stmt/page.js",
-  "find": "+ '<span class=\"pshape\">' + esc(PSHAPE[String(p.product || \"\").toLowerCase()] || PSHAPE._) + \"</span></h2>\"",
-  "replace": "+ \"</h2>\""
+  "find": "+ psymSvg(p.product, 30) + \"</h2>\"",
+  "replace": "+ psymSvg(p.product, 30) + '<span class=\"pshape\">' + esc(PSHAPE[String(p.product || \"\").toLowerCase()] || PSHAPE._) + \"</span></h2>\""
  },
  {
-  "name": "a caption may break inside its size",
+  "name": "a rule for the shape word comes back",
   "file": "stmt/page.js",
-  "find": ".mq .nb{white-space:nowrap}",
-  "replace": ".mq .nb{white-space:normal}"
- },
- {
-  "name": "a caption has no width to break at",
-  "file": "stmt/page.js",
-  "find": ".mtile .mq{white-space:normal;text-align:center;max-width:11ch}",
-  "replace": ".mtile .mq{white-space:normal;text-align:center}"
+  "find": ".mtile .psym,.mstack .psym{display:block}",
+  "replace": ".mtile .psym,.mstack .psym{display:block}\n.pshape{font-family:var(--salt-font-mono)}"
  },
  {
   "name": "a shape word is a product's",

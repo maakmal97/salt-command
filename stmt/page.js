@@ -115,20 +115,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .sup-yellow{--sup:var(--salt-amber)}
 .sup-red{--sup:var(--salt-ember)}
 .pwith{display:inline-flex;align-items:center;gap:7px}
-/* 11 Oct 2026 (his decision 10): a mark is never alone; its shape word is drawn beside it, the screen reader's name said where it is seen */
-.pshape{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text);line-height:1.3}
-.psym+.pshape{margin-left:6px}
-.pwith .psym+.pshape{margin-left:0}
-.pmark .pshape{font-size:inherit;color:inherit;letter-spacing:inherit;vertical-align:middle}
 /* HIS NOTE OF 28 SEP 2026: IN A CARD THE MARK IS A BUTTON, ITS CAPTION UNDER IT. The pressed ghost's edge and glass, the mark at
-   28px, the caption in the mono face; since 11 Oct 2026 (his decision 10) it is the shape and the size in words, "Cube, 2.5 units",
-   which may break after its comma and never inside the size. The statement's lines take it too. */
+   28px, the caption in the mono face: the size in words, "2.5 units" (12 Oct 2026, his word: the mark stands alone, so no shape word
+   is drawn, here or beside any mark; the reader is told the shape in .sr). The statement's lines take it too. */
 .mtile{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;
   min-width:64px;padding:10px 10px 8px;border:1px solid var(--salt-edge-field);border-radius:var(--salt-radius-sm);
   background:var(--salt-glass);color:var(--salt-brass);line-height:1;vertical-align:middle}
 .mtile .psym,.mstack .psym{display:block}
-.mq .nb{white-space:nowrap}
-.mtile .mq{white-space:normal;text-align:center;max-width:11ch}
 .mq{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;
   color:var(--salt-text);white-space:nowrap;line-height:1.2}
 .mhero{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
@@ -844,13 +837,12 @@ export function psymSvg(product, px) {
     + (L ? '<text class="plet" x="12" y="' + L.y + '" font-size="' + L.s + '" text-anchor="middle" fill="currentColor">' + L.l + "</text>" : "")
     + "</svg>";
 }
-/** IN A CARD THE MARK IS A BUTTON WITH ITS CAPTION UNDER IT (his note of 28 Sep 2026; the caption since his decision 10 of
- *  11 Oct 2026): the shape word and the size in words, "Cube, 2.5 units", drawn, where it was the figure alone. A reader hears
- *  the same once, without the comma (`.sr`). The statement's lines are cards too; the page's mtile is its twin. */
+/** IN A CARD THE MARK IS A BUTTON WITH ITS CAPTION UNDER IT (his note of 28 Sep 2026): the size in words, "2.5 units", drawn, and
+ *  a reader told the shape and the size once (`.sr`). No shape word is drawn (his word of 12 Oct 2026: the mark stands alone).
+ *  The statement's lines are cards too; the page's mtile is its twin. */
 export function mtileSvg(product, said, px) {
-  const shape = esc(PSHAPE[String(product || "").toLowerCase()] || PSHAPE._);
-  return '<span class="mtile"><span class="sr">' + shape + " " + esc(said)
-    + "</span>" + psymSvg(product, px || 28) + '<span class="mq" aria-hidden="true">' + shape + ', <span class="nb">' + esc(said) + "</span></span></span>";
+  return '<span class="mtile"><span class="sr">' + esc(PSHAPE[String(product || "").toLowerCase()] || PSHAPE._) + " " + esc(said)
+    + "</span>" + psymSvg(product, px || 28) + '<span class="mq" aria-hidden="true">' + esc(said) + "</span></span>";
 }
 
 /** A size in words, units above one and unit at one (S4). The one copy: a guest's board calls it here, and the page's own
@@ -1140,8 +1132,7 @@ export function boardPage(guest, nonce) {
   const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });   /* C5 */
   const body = products.length
     ? products.map((p) => '<div class="pane salt-glass-card salt-glass-card--radius-md">'
-        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30)
-        + '<span class="pshape">' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + "</span></h2>"
+        + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h2>"
         /* v787: a level is never named on a pane, on any book (his instruction, 22 Sep 2026). The board
            carries no name since v787, and this line draws none, so a name that reaches it is not drawn either. */
         + (p.fellBack ? '<p class="sub2">' + wd("board.only") + "</p>" : "")
@@ -1739,29 +1730,25 @@ const CLIENT_JS = `
   function withMark(product,text,px){
     var w=el('span','pwith'); w.appendChild(document.createTextNode(text));
     w.appendChild(psym(product,px||20));
-    w.appendChild(el('span','pshape',pshape(product)));
+    w.appendChild(el('span','sr',pshape(product)));
     return w;
   }
-  /* a book's heading: its mark with its shape word beside it, named by the shape (and by its light, where it has one) */
+  /* a book's heading: its mark alone, named by the shape (and by its light, where it has one); no shape word is drawn (his word of 12 Oct 2026) */
   function pmarkHead(tag,product){
-    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',pshape(product)));
+    var h=el(tag,'pmark'); h.setAttribute('aria-label',pshape(product)); h.appendChild(psym(product,28));
     return h;
   }
-  /* a mark leading a note, its shape word beside it: the lines of a sheet that several products share */
+  /* a mark leading a note: the lines of a sheet that several products share; a reader is told the shape and nothing but the mark is drawn */
   function markLead(product,px){
-    var f=document.createDocumentFragment(); f.appendChild(psym(product,px)); f.appendChild(el('span','pshape',pshape(product))); f.appendChild(document.createTextNode(' '));
+    var f=document.createDocumentFragment(); f.appendChild(psym(product,px)); f.appendChild(el('span','sr',pshape(product))); f.appendChild(document.createTextNode(' '));
     return f;
   }
-  /* IN A CARD THE MARK IS A BUTTON AND ITS CAPTION SITS UNDER IT, the shape word and the size in words ("Cube, 2.5 units",
-     his decision 10 of 11 Oct 2026); a reader hears the shape and the size once (mtileSvg's twin) */
-  function mcap(product,words){
-    var f=el('span','mq'); f.setAttribute('aria-hidden','true');
-    f.appendChild(document.createTextNode(pshape(product)+', ')); f.appendChild(el('span','nb',words));
-    return f;
-  }
+  /* IN A CARD THE MARK IS A BUTTON AND ITS CAPTION SITS UNDER IT, the size in words ("2.5 units"); a reader hears the shape and the size
+     once (mtileSvg's twin). The shape word is never drawn (his word of 12 Oct 2026). */
   function mtile(product,q,u,px){
     var w=el('span','mtile'), words=unitsOf(q,u); w.appendChild(el('span','sr',pshape(product)+' '+words));
-    w.appendChild(psym(product,px||28)); w.appendChild(mcap(product,words));
+    w.appendChild(psym(product,px||28));
+    var f=el('span','mq',words); f.setAttribute('aria-hidden','true'); w.appendChild(f);
     return w;
   }
   var ALPHA=/[^23456789abcdefghjkmnpqrstvwxyz]/;
@@ -4711,7 +4698,7 @@ const CLIENT_JS = `
   /* "The rest of [cube] 2.5 units you received Wed 16 Sep": the rest where part of the order is paid; a part not yet
      received says when it was ordered. A part to come is Coming up's own row (partRow, S7 polish) */
   /* S13: the mark as a slot, so the sentence round it is one of the table's; {mark} is the symbol with its shape's name */
-  function markHtml(pr,px){ var w=el('span'); w.appendChild(psym(pr,px)); w.appendChild(el('span','pshape',pshape(pr))); return w.innerHTML; }
+  function markHtml(pr,px){ var w=el('span'); w.appendChild(psym(pr,px)); w.appendChild(el('span','sr',pshape(pr))); return w.innerHTML; }
   function partSpan(p){
     var k=(+p.whole>+p.rm+0.004?'part.rest':'part.')+(p.gotOn?'Got':p.date?'Ordered':'Bare')+(p.resale?'F':'');
     return setW(el('span'),k,{mark:markHtml(p.product,20), u:function(L){ return esch(unitsOf(p.qty,unitFor(p.product),L)); },
@@ -5482,10 +5469,10 @@ const CLIENT_JS = `
       var b=el('button','salt-option__face salt-option__face--tap htile'), t=el('span','salt-option__text mstack'), l=el('span','salt-option__label mstack');
       /* nothing of the book in an attribute: the tap reads the tile from its own closure (S7R-2 of the stage 7 review) */
       b.type='button';
-      /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and its caption under it (since 11 Oct 2026 the shape word and
-         the size, "Cube, 1 unit"); a reader hears the shape and the size in words, once */
+      /* HIS NOTE OF 28 SEP 2026: the tile is the button, the mark on it and its caption under it, the size in words ("1 unit", no shape
+         word drawn, 12 Oct 2026); a reader hears the shape and the size in words, once */
       /* C19 (29 Sep 2026): the size under the mark says its unit, and the price is a figure in the mono face */
-      var fq=mcap(a.product,unitsOf(a.q,P.unit));
+      var fq=el('span','mq',unitsOf(a.q,P.unit)); fq.setAttribute('aria-hidden','true');
       l.appendChild(el('span','sr',pshape(a.product)+' '+unitsOf(a.q,P.unit))); l.appendChild(psym(a.product,28)); l.appendChild(fq);
       t.appendChild(l);
       t.appendChild(el('span','salt-option__detail'+(a.start?' mono':''),a.start?rm(z.price):tw('ha.'+(a.mode==='deliver'?'deliv':'coll')+(a.forFriend?'F':''),{rm:rm(z.price), p:a.place})));

@@ -442,10 +442,10 @@ in English and together no product word. `psymSvg` and the page's `psym` draw it
 `__PLET__`); there is no switch. **No mark is drawn under 20 px**, where the letter, a third of the mark, is too small to
 read: every smaller mark was raised, the statement's 13 px ones among them.
 
-**In a card the mark is a button with its shape and size under it** (his note on the sheet of the raised marks, 28 Sep
+**In a card the mark is a button with its size under it** (his note on the sheet of the raised marks, 28 Sep
 2026: a card never sets the glyph beside words or figures; then "number alone", and "It will be rendered cards in the
 statement"). `mtileSvg` in `stmt/page.js` and the page's `mtile`: the mark at 28 px on the pressed ghost's edge and
-glass, the caption in the mono face under it (since 11 Oct 2026 "Cube, 2.5 units", the shape word and the size; see Phase 7c below), and a reader told the shape and the size in words, once. Check your order
+glass, the caption in the mono face under it (the size in words, "2.5 units"; no shape word is drawn, see Phase 7c below), and a reader told the shape and the size in words, once. Check your order
 leads with it and carries no What line; an order's row (Your orders, and Home's rows, which are the same row), an
 order's own screen, Home's part rows under Coming up and the open orders at the limit take it; Order again's face is
 itself the button, the mark and the caption stacked on it. The live statement's lines, its totals and its Still to
@@ -611,9 +611,9 @@ before anything moved (`ex47`, so the Sheet names a refund), and an open and a w
 `test/counter-confirm-sheets.mutations.json`) drives all three controls through the generated page in jsdom, with `confirm`, `alert` and
 `prompt` made to throw and count. The 44 px and both themes are measured in a real browser and recorded in the pull request.
 
-**One word per state, and the shape beside the mark** (Phase 7c of the Salt Account and Counter redesign, his decision 10 of 11 Oct 2026). The
-page named one step four ways (Sent, Acknowledged, agreed, your yes) and drew a mark with a hidden name. Now an order is one of six words, a
-claim of theirs has its own, and a mark is never alone. **The record's states do not move** (`placed`, `acknowledged`, `ready`, `done`,
+**One word per state, and the mark alone** (Phase 7c of the Salt Account and Counter redesign, his decision 10 of 11 Oct 2026; the shape word it drew
+beside the mark was taken back by his word of 12 Oct 2026, below). The page named one step four ways (Sent, Acknowledged, agreed, your yes). Now an
+order is one of six words and a claim of theirs has its own. **The record's states do not move** (`placed`, `acknowledged`, `ready`, `done`,
 `declined`, `cancelled`; the fold, the drafter and the order book read them); **the keys of `stmt/words.js` do not move** (S13 13.3 reads the
 table by key); only the customer's words do.
 
@@ -630,23 +630,24 @@ Ready to collect or deliver, Collected or Delivered, Complete and the two cancel
 Waiting for us to confirm. No value of the table, and no markup or quoted string in the page's script, holds *acknowledg*, *Not taken* or
 *Expected by* (`stmt/owner.js`, Salt Account's own page, is another lane's and keeps its own words).
 
-**The shape word is drawn beside the mark** (his word: "Cube, 2.5 units"), the same word the screen reader was given (`PSHAPE`, by key `shape.<Shape>`),
-so a mark is never alone and the reader's name is said where it is seen. In a card (`mtile`, `mtileSvg`) the caption under the mark is the shape word,
-a comma and the size in words; it may break after the comma and never inside the size (`.mq .nb` no-wrap, `.mtile .mq` at 11 ch), and the
-reader still hears "Cube 2.5 units" once, from the hidden `.sr`. Elsewhere the word follows the mark as `.pshape`: a book's heading
-(`pmarkHead`, Prices and Rewards, the guest board), a size with its mark (`withMark`, the order sheet's legends and lines), a mark leading a note
-(`markLead`) and a mark in a sentence (`markHtml`, which the invoice lines and the pay sheet's note share; the pay sheet's markup is Phase 7b's). A heading's
-`aria-label` is still the shape, with the light where the book has one. **No shape word is a product's**: Cube, Droplet, Lozenge, Capsule and Ring name
-nothing, and the product-word and level-word scans (v695, v704, `siteWords`, the Desk's `siteSafe`) pass them and every sentence of the new words; the suite drives that both ways.
+**The mark stands alone** (his word of 12 Oct 2026, "Remove the shapes names in the Order page, and anywhere", which took back the shape word 7c drew beside it, and
+then "and even the name of the product" for Salt Account, below). **No shape word is drawn, on any screen of the Counter**: in a card (`mtile`, `mtileSvg`) the caption
+under the mark is the size in words alone, "2.5 units", and a book's heading (`pmarkHead`, Prices and Rewards, the guest board), a size with its mark (`withMark`, the
+order sheet's legends and lines), a mark leading a note (`markLead`) and a mark in a sentence (`markHtml`, which the invoice lines and the pay sheet's note share) are the
+mark alone. **The reader is still told the shape** (`PSHAPE`, by key `shape.<Shape>`): a tile's hidden `.sr` reads "Cube 2.5 units", a heading's `aria-label` is the
+shape (with the light where the book has one), and an inline mark is followed by a hidden `.sr`; a control holding only a mark is named by its shape, never its product.
+**No shape word is a product's**: Cube, Droplet, Lozenge, Capsule and Ring name nothing, and the product-word and level-word scans (v695, v704, `siteWords`, the
+Desk's `siteSafe`) pass them and every sentence of the new words; the suite drives that both ways. The Desk never drew a shape word and keeps its book names.
 
 **What follows on the Desk**: the order card's `ordTold` and `toldOf` in `src/orders.js` (`CUSTOMER_SEES`) say what they see in these words, the Accept and
 Decline answers read "They see Confirmed" and "They read Declined", the reasons legend says "Why it is declined", and the restock card says More by. The
 practice accounts' feature labels follow (`tools/testfix.mjs`, the pool fixture), with no new `FEATURES` line.
 
-The suite section "One word per state, and the shape beside the mark" (`test/counter-state-words.mjs`, its mutations in
+The suite section "One word per state, and the mark alone" (`test/counter-state-words.mjs`, its mutations in
 `test/counter-state-words.mutations.json`) drives the generated page in jsdom over an order in each state and reads the text it renders (each state's
 chip, sentence, steps and history, the claim, Home, the order sheet and Place), builds each banner from the real wake through the service worker, sweeps
-every word the page is served for the family, and checks that every mark on every screen has its shape word and that none is a product's.
+every word the page is served for the family, and checks that no shape word is drawn on any screen, that every mark on every screen still has its shape as the
+reader's name, and that none is a product's.
 
 ### Account leads with this device, and the door names the app (Phase 7d part 2, 11 Oct 2026, his yes)
 
