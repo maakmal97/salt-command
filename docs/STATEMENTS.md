@@ -2497,7 +2497,9 @@ draws the sentence with a Details control (act `refusal.details`) that opens the
 comments: the server's sentence to a plain one, for the ones a person can act on.** Any other message, and an answer with no reason, is *The Counter could
 not do that. Try again.* with the words behind Details: a refusal is never nothing and never only the server's words. To plain a new message, add one line to
 the table; the suite (`test/admin-words.mjs`) walks every message of the map's source list. The page's own refusals (a connection that failed, a sign-in that
-ended) are its own sentences and carry no Details.
+ended) are its own sentences and carry no Details. **A note the page keeps in state** (a link that could not be made, a share whose tick did not save, a
+tier pinned on a link) holds the Error beside its text (`m.err`, `t.whyErr`, `linkSaid.err`) and is drawn through `withDetails`, so it has Details too; the
+text is redrawn from state, so the next tap that clears the note clears them with it.
 
 **A book has the Desk's name here, and the customer's mark.** Where Salt Account names a book (his decision 5 of 11 Oct 2026) it says what the Desk says, `salt`,
 `oil`, `candy` or `rice`, with the book's mark beside it: an order's tile is the mark with *salt, 2 units* under it (`bookTile`, the twin of the customer's

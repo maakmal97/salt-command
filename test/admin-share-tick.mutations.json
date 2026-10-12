@@ -1,0 +1,8 @@
+[
+ {"name": "a share whose tick was refused keeps no error behind its note", "file": "stmt/owner.js",
+  "find": "was shared, but the tick did not save: '+e.message; noteErr=e; }",
+  "replace": "was shared, but the tick did not save: '+e.message; }"},
+ {"name": "the turn card draws its note without Details", "file": "stmt/owner.js",
+  "find": "var tn=noteOf(c); tn.textContent=t.why; withDetails(tn,t.whyErr);",
+  "replace": "var tn=noteOf(c); tn.textContent=t.why;"}
+]

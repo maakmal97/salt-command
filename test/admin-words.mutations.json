@@ -31,5 +31,8 @@
  {"name": "a book is named in capitals", "file": "stmt/owner.js", "find": "function bookName(product){ return String(product||''); }", "replace": "function bookName(product){ return String(product||'').toUpperCase(); }"},
  {"name": "the heading says the shape", "file": "stmt/owner.js", "find": "h.appendChild(el('span','pshape',said));", "replace": "h.appendChild(el('span','pshape',pshape(product)));"},
  {"name": "the heading loses its mark", "file": "stmt/owner.js", "find": "h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',said));", "replace": "h.appendChild(el('span','pshape',said));"},
- {"name": "the report card is a plain heading again", "file": "stmt/owner.js", "find": "wrap.appendChild(bookHead('h2',p.product,p.name));", "replace": "wrap.appendChild(el('h2',null,p.name||p.product));"}
+ {"name": "the report card is a plain heading again", "file": "stmt/owner.js", "find": "wrap.appendChild(bookHead('h2',p.product,p.name));", "replace": "wrap.appendChild(el('h2',null,p.name||p.product));"},
+ {"name": "a note held in state is drawn without its Details", "file": "stmt/owner.js", "find": "b.note.className='anote'+(m.bad?' bad':''); withDetails(b.note,m.err); }", "replace": "b.note.className='anote'+(m.bad?' bad':''); }"},
+ {"name": "a link that could not be made keeps no error behind its note", "file": "stmt/owner.js", "find": "m.note='Could not make a link: '+e.message; m.err=e; linkMoved(u); });", "replace": "m.note='Could not make a link: '+e.message; linkMoved(u); });"},
+ {"name": "a retried link keeps the old Details", "file": "stmt/owner.js", "find": "if(m.fail){ m.fail=false; m.bad=false; m.note=''; m.err=null; }", "replace": "if(m.fail){ m.fail=false; m.bad=false; m.note=''; }"}
 ]

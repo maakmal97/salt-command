@@ -312,17 +312,17 @@ export const OWNER_JS = `
     var m=madeLink[b.getAttribute('data-pill')]||{}, again=!m.j&&!m.busy&&!!m.fail;
     b.disabled=b.getAttribute('data-none')==='1'||!!m.busy;
     b.textContent=m.busy?'Making the link...':m.j?'Share the link':again?'Try again':'Send a sign-in link';
-    if(b.note){ b.note.textContent=m.note||''; b.note.className='anote'+(m.bad?' bad':''); }
+    if(b.note){ b.note.textContent=m.note||''; b.note.className='anote'+(m.bad?' bad':''); withDetails(b.note,m.err); }
   }
   function paintPills(u){ [].slice.call(document.querySelectorAll('[data-pill]')).forEach(function(b){ if(b.getAttribute('data-pill')===u) paintPill(b); }); }
   function linkMoved(u){ paintPills(u); if(!mHome.hidden) drawNeeds(); }
   function makeLink(a){
     var u=a.username, m=madeLink[u]||(madeLink[u]={});
     if(m.j||m.busy||a.account===false) return;
-    if(m.fail){ m.fail=false; m.bad=false; m.note=''; }
+    if(m.fail){ m.fail=false; m.bad=false; m.note=''; m.err=null; }
     m.busy=true;
     mintLink(a).then(function(j){ m.j=j; m.busy=false; linkMoved(u); },
-      function(e){ m.busy=false; m.fail=m.bad=true; m.note='Could not make a link: '+e.message; linkMoved(u); });
+      function(e){ m.busy=false; m.fail=m.bad=true; m.note='Could not make a link: '+e.message; m.err=e; linkMoved(u); });
   }
   function sendPill(a, note, onSent){
     var u=a.username, b=el('button','salt-pill salt-pill--md apill','Send a sign-in link'); b.type='button';
@@ -344,7 +344,7 @@ export const OWNER_JS = `
         var said=madeLink[u]={note:'Sent. It signs them in once; the next tap makes a new one.'};
         markOut(u, m.j); linkMoved(u);
         try{ var r=await refs('/all/sent/'+u, {issue:sheetIssue, sent:true}); a.sent=r.sent; countSent(); drawRoster(); onSent(); }
-        catch(e){ said.note='Sent, but the tick did not save: '+e.message; said.bad=true; }
+        catch(e){ said.note='Sent, but the tick did not save: '+e.message; said.err=e; said.bad=true; }
         linkMoved(u);
       }, function(){ m.note=navigator.share?'Not shared. Tap Share the link again.':'Not copied: this browser refused the clipboard.'; m.bad=true; linkMoved(u); });
     });
@@ -630,7 +630,7 @@ export const OWNER_JS = `
   /* S9 fix: AND A TAP THAT FAILS, or a tier pinned, is answered on the card it was tapped on as well, in Needs you
      and in Links, where the page's own line sat under every card, off a phone's screen. The link keeps its buttons. */
   var linkSaid=null;
-  function saidOn(r, node){ if(linkSaid&&linkSaid.id===r.id){ node.textContent=linkSaid.t; node.className+=linkSaid.bad?' bad':''; } }
+  function saidOn(r, node){ if(linkSaid&&linkSaid.id===r.id){ node.textContent=linkSaid.t; node.className+=linkSaid.bad?' bad':''; withDetails(node,linkSaid.err); } }
   /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
   function waitingLink(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; }
   function stampDay(iso){
@@ -3682,7 +3682,7 @@ export const OWNER_JS = `
       var j=await refs('/all/refs/'+r.id+'/level', {level: level||null});
       for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
       linkSaid={id:r.id, t:level?('That link now shows the '+level+' price list.'):'That link follows its associate again.'};
-    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true}; }
+    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true, err:e}; }
     drawLinks(); drawNeeds(); say('');
   }
   /* 11 Oct 2026: A MOVE ON A LINK IS SENT ONCE. While it is out the card's move buttons are off, on Needs you and on Links,
@@ -3709,7 +3709,7 @@ export const OWNER_JS = `
       drawLinks(); drawNeeds(); say('');
       var mc=document.querySelector('[data-link="'+j.ref.id+'"]');
       if(mc&&mc.scrollIntoView&&!oLinks.hidden) mc.scrollIntoView({block:'center'});
-    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true}; drawLinks(); drawNeeds(); say(''); }
+    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true, err:e}; drawLinks(); drawNeeds(); say(''); }
     finally{ delete moving[r.id]; moveLock(r.id, false); }
   }
   /* ---- NEEDS YOU, THE INBOX (S9 9.1, and Phase 1b of 11 Oct 2026) ------------------------------------
@@ -3850,7 +3850,7 @@ export const OWNER_JS = `
     var u=a.username, b=pill(['','need.signin-link']);
     function paint(){
       var m=madeLink[u]||{};
-      b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||'';
+      b.disabled=!!m.busy; b.textContent=m.busy?'Making it...':m.j?'Share the link':'Send a sign-in link'; note.textContent=m.note||''; withDetails(note,m.err);
     }
     /* answered on this button, or on the one a redraw put in its place */
     function after(){ paintPills(u); if(b.isConnected) paint(); else drawNeeds(); }
@@ -3859,9 +3859,9 @@ export const OWNER_JS = `
       var m=madeLink[u]||(madeLink[u]={});
       if(m.busy) return;
       if(!m.j){
-        m.busy=true; m.note=''; paint();
+        m.busy=true; m.note=''; m.err=null; paint();
         try{ m.j=await mintLink(a); m.note='Made. It signs '+(a.code||a.username)+' in once.'; }
-        catch(e){ m.note='Could not make one: '+e.message; }
+        catch(e){ m.note='Could not make one: '+e.message; m.err=e; }
         m.busy=false; after(); return;
       }
       try{
@@ -4015,14 +4015,14 @@ export const OWNER_JS = `
   var turn=null;
   /* S9 fix: a note carried from the turn before (a share whose tick did not save) is drawn on the next turn's
      card; it was cleared here before anything drew it */
-  function turnStep(note){
+  function turnStep(note,err){
     var t=turn; if(!t) return;
-    t.j=null; t.copied=false; t.why=note||'';
+    t.j=null; t.copied=false; t.why=note||''; t.whyErr=err||null;
     drawNeeds();
     if(t.i>=t.rows.length) return;
     var at=t.i;
     mintLink(t.rows[at]).then(function(j){ if(turn===t&&t.i===at){ t.j=j; drawNeeds(); } },
-      function(e){ if(turn===t&&t.i===at){ t.why=(t.why?t.why+' ':'')+'Could not make their link: '+e.message; drawNeeds(); } });
+      function(e){ if(turn===t&&t.i===at){ t.why=(t.why?t.why+' ':'')+'Could not make their link: '+e.message; t.whyErr=e; drawNeeds(); } });
   }
   /* S9 fix: ONE SHARE AT A TIME. The tick is awaited after the share, and a second tap in that window shared the
      same link again and stepped twice, so the next account was never shared or ticked and the end said all were
@@ -4036,13 +4036,13 @@ export const OWNER_JS = `
     if(!t.copied){
       try{
         if(navigator.share){ await navigator.share({text:t.j.msg}); markOut(a.username, t.j); }
-        else { await navigator.clipboard.writeText(t.j.msg); markOut(a.username, t.j); t.copied=true; t.busy=false; t.why='Paste it into a message to them, then tap Sent it.'; drawNeeds(); return; }
-      }catch(e){ t.busy=false; t.why='Not shared. Tap Share again, or Skip.'; drawNeeds(); return; }
+        else { await navigator.clipboard.writeText(t.j.msg); markOut(a.username, t.j); t.copied=true; t.busy=false; t.why='Paste it into a message to them, then tap Sent it.'; t.whyErr=null; drawNeeds(); return; }
+      }catch(e){ t.busy=false; t.why='Not shared. Tap Share again, or Skip.'; t.whyErr=null; drawNeeds(); return; }
     }
-    var note='';
+    var note='', noteErr=null;
     try{ var r=await refs('/all/sent/'+a.username, {issue:sheetIssue, sent:true}); a.sent=r.sent; t.sent.push(a.username); }
-    catch(e){ note=(a.code||a.username)+' was shared, but the tick did not save: '+e.message; }
-    t.busy=false; t.i++; countSent(); drawRoster(); turnStep(note);
+    catch(e){ note=(a.code||a.username)+' was shared, but the tick did not save: '+e.message; noteErr=e; }
+    t.busy=false; t.i++; countSent(); drawRoster(); turnStep(note,noteErr);
   }
   function turnCard(counts){
     var t=turn, n=t.rows.length, fin=t.i>=n, a=t.rows[t.i];
@@ -4061,7 +4061,7 @@ export const OWNER_JS = `
         var sk=ghost(['Skip','need.turn-skip']); sk.disabled=!!t.busy; sk.addEventListener('click', function(){ if(turn.busy) return; turn.i++; turnStep(); });
         c._add(sh); c._add(sk);
       }
-      noteOf(c).textContent=t.why;
+      var tn=noteOf(c); tn.textContent=t.why; withDetails(tn,t.whyErr);
     });
   }
   /* every card there is, ranked: Now before Soon before Watch, a real one before a practice one, the oldest first, those with no age last */

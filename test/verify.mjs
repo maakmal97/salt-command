@@ -20366,8 +20366,9 @@ await (async () => {
     btn("Share").click();
     const note = () => (card().querySelector(".nnote") || {}).textContent || "";
     ok(await until(() => /^2 of 2/.test(needText(card())) && btn("Share") && !btn("Share").disabled) && shared.length === 1
-      && /^CX0-A1 was shared, but the tick did not save: The Counter could not do that\. Try again\./.test(note()) && /0 of 2 sent/.test(needText(card())),
-      "the next turn's card says which account was shared without a tick, in a plain sentence: " + JSON.stringify(note()));
+      && /^CX0-A1 was shared, but the tick did not save: The Counter could not do that\. Try again\./.test(note()) && /0 of 2 sent/.test(needText(card()))
+      && /that is not this issue/.test((card().querySelector(".nnote .rraw") || {}).textContent || ""),
+      "the next turn's card says which account was shared without a tick, in a plain sentence with the server's words under Details: " + JSON.stringify(note()));
     btn("Skip").click();
     ok(await until(() => /^All done/.test(needText(card()))) && note() === "", "and a step of his own clears it");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }

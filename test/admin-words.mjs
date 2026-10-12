@@ -308,6 +308,26 @@ export async function run({ ok, pageWork }) {
       "an unmapped refusal on the same card is the general sentence with the words under Details: " + (other ? other.textContent : "nothing drawn"));
   } finally { q.w.close(); }
 
+  /* 5b. A NOTE HELD IN STATE (a link that could not be made) IS DRAWN WITH ITS DETAILS TOO, and a fresh tap clears them with the note */
+  const s = await richOwnerPage({ pageWork });
+  try {
+    const { d, work } = s, aopen = () => d.getElementById("aopen");
+    await work.quiet();
+    byAct(d, "nav.customers").click(); await work.quiet();
+    byAct(d, "part.customers.accounts").click(); await work.quiet();
+    byAct(d, "acct.open", "abcd-efgh").click(); await work.quiet();
+    s.refuse["/all/signin/abcd-efgh"] = "the link maker would not start";
+    byAct(aopen(), "acct.signin-link").click(); await work.quiet();
+    const made = aopen().querySelector(".anote");
+    ok(!!made && made.firstChild.textContent === "Could not make a link: " + GENERAL_SENTENCE && made.querySelectorAll("details > .rraw").length === 1
+      && made.querySelector(".rraw").textContent === "the link maker would not start",
+    "a link that could not be made says so in a plain sentence on the account card, the server's words under Details: " + (made ? made.textContent : "nothing drawn"));
+    delete s.refuse["/all/signin/abcd-efgh"];
+    byAct(aopen(), "acct.signin-link").click(); await work.quiet();
+    ok(aopen().querySelectorAll(".anote .rraw").length === 0 && byAct(aopen(), "acct.signin-link").textContent === "Share the link",
+      "a tap after the refusal makes the link and the old Details go with the old note: " + aopen().querySelector(".anote").textContent);
+  } finally { s.w.close(); }
+
   /* 6. THE BOOK NAMES: THE DESK'S NAME WITH THE MARK BESIDE IT, NEVER THE CUSTOMER'S SHAPE WORD (his decision 5 of 11 Oct 2026) */
   const SHAPES = ["Cube", "Droplet", "Lozenge", "Capsule", "Ring"], BOOKS = /^(salt|oil|candy|rice)\b/;
   const reached = strip(OWNER_JS).match(/\b(pshape|mtile|pmarkHead|withMark|markLead|markHtml|mcap)\(/g) || [];
