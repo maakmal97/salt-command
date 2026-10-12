@@ -300,10 +300,10 @@
   "replace": "n.hidden=!here;"
  },
  {
-  "name": "the menu stays while a form is open",
+  "name": "a form open hides the menu",
   "file": "stmt/owner.js",
-  "find": "n.hidden=!here||!!fOpen;",
-  "replace": "n.hidden=!here;"
+  "find": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here;",
+  "replace": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here||!!fOpen;"
  },
  {
   "name": "the way back stays when no form is open",
@@ -416,8 +416,8 @@
  {
   "name": "a row tap scrolls the wrong way round",
   "file": "stmt/owner.js",
-  "find": ".display!=='none') window.scrollTo(0,0);",
-  "replace": ".display==='none') window.scrollTo(0,0);"
+  "find": "if(back&&window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);",
+  "replace": "if(back&&window.getComputedStyle(back).display==='none') window.scrollTo(0,0);"
  },
  {
   "name": "the sticky card's foot goes under the App bar",
@@ -434,8 +434,8 @@
  {
   "name": "the card gives up the bar's room by too little",
   "file": "stmt/page.js",
-  "find": "max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
-  "replace": "max-height:calc(100vh - 48px - env(safe-area-inset-bottom,0px))}"
+  "find": ".adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
+  "replace": ".adm #makerReview{max-height:calc(100vh - 48px - env(safe-area-inset-bottom,0px))}"
  },
  {
   "name": "the owner's script names a customer function second in a var list",
