@@ -154,5 +154,29 @@
   "file": "stmt/page.js",
   "find": "    tab=t; tabs.setAttribute('data-place',t);\n",
   "replace": "    tab=t;\n"
+ },
+ {
+  "name": "his dialog is 600px wide while the customer's is 560px",
+  "file": "stmt/page.js",
+  "find": "  .adm.asheet{top:50%;right:auto;bottom:auto;left:50%;width:min(560px,",
+  "replace": "  .adm.asheet{top:50%;right:auto;bottom:auto;left:50%;width:min(600px,"
+ },
+ {
+  "name": "his drawer arrives by the fade while the customer's slides",
+  "file": "stmt/page.js",
+  "find": "  .adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-slide}",
+  "replace": "  .adm.asheet{top:0;left:auto;width:min(460px,100%);max-height:none;animation-name:salt-sheet-fade}"
+ },
+ {
+  "name": "the order sheet's size tiles are one column",
+  "file": "stmt/page.js",
+  "find": "      var grid=el('div','salt-options__grid salt-options__grid--2');",
+  "replace": "      var grid=el('div','salt-options__grid');"
+ },
+ {
+  "name": "the order sheet's two ways are one column",
+  "file": "stmt/page.js",
+  "find": "    var g=el('div','salt-options__grid salt-options__grid--2');\n    /* data-k by position",
+  "replace": "    var g=el('div','salt-options__grid');\n    /* data-k by position"
  }
 ]

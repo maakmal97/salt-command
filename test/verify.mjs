@@ -53895,7 +53895,7 @@ await (async () => {
   await (await import("./admin-tablet.mjs")).run({ ok, pageWork });
 })();
 
-section("The Counter on a tablet: a dialog below 860px, the drawer and the list beside the open order from 860px, none of its rules under .adm (12 Oct 2026)");
+section("The Counter on a tablet: a dialog below 860px, the drawer and the list beside the open order from 860px, the order sheet's tiles two up, none of its rules under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-tablet.mjs")).run({ ok });
 })();
