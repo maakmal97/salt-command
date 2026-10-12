@@ -275,7 +275,7 @@ export async function run({ ok }) {
       return created === before && !doc.querySelector("[data-maker-slip]") && !!inCard("claim.view-slip") ? text : "painted";
     };
     const missing = await refusal("missing"), version = await refusal("version"), tampered = await refusal("tampered");
-    ok(/no such slip/.test(missing) && /cannot be read/.test(version) && /could not be opened/.test(tampered),
+    ok(/no longer held/.test(missing) && /cannot be read/.test(version) && /could not be opened/.test(tampered),
       "Missing or expired, wrong-version and tampered slips are refused on the device without a picture: "
       + JSON.stringify([missing, version, tampered]));
     /* 11 Oct 2026, the five places: the unlocked slip key stays while he moves between the parts of Orders, as it did on the one Maker

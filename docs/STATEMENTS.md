@@ -2476,6 +2476,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.stream` | Record, sale or purchase | No associate, R2 resell or R3 refer. |
 | `record.trade.total` | Record, sale or purchase | The goods total, in RM. |
 | `record.trade.units` | Record, sale or purchase | The units. |
+| `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
 | `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the proposed row as the drafter made it. |
 | `view.back` | Bar over an account viewed as them | Takes him back to Accounts. |
 
@@ -2487,6 +2488,15 @@ noun for a heading, no engine word where a person's word exists (a sale, a purch
 owner-only strings of `stmt/page.js`; **nothing is added to `stmt/words.js` and the customer's words are untouched**. Three helpers print a day, a size and a
 sum, so no card prints one its own way: `fmtWhen` (a day is `10 Oct 2026`, a moment `10 Oct 2026, 17:20`, Kuala Lumpur, 24 hours, never ISO or UTC),
 `units` (`1 unit`, `2.5 units`) and `rm` (`RM 1,234.50`); they are the page's own, so a new card calls them and does not format.
+
+**A refusal is a plain sentence, the server's own words one tap away.** The Counter and the Desk refuse a move in their own words (`stmt/maker.js`,
+`src/maker-inputs.js`, `stmt/hours.js`, `src/orders.js`). `refs()` raises the plain sentence as the Error's message, the server's words in `.raw` and the
+status and answer in `.status` and `.detail` (the code that reads a twin or a 409 reads those, never the message), and `refusal(node, error, lead, tail)`
+draws the sentence with a Details control (act `refusal.details`) that opens the words. **The map is `REFUSALS` in `stmt/owner.js`, between its two marker
+comments: the server's sentence to a plain one, for the ones a person can act on.** Any other message, and an answer with no reason, is *The Counter could
+not do that. Try again.* with the words behind Details: a refusal is never nothing and never only the server's words. To plain a new message, add one line to
+the table; the suite (`test/admin-words.mjs`) walks every message of the map's source list. The page's own refusals (a connection that failed, a sign-in that
+ended) are its own sentences and carry no Details.
 
 ## Before committing
 

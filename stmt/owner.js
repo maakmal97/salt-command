@@ -175,7 +175,7 @@ export const OWNER_JS = `
       /* the count is of accounts on the book: the test account is not one (v689) */
       var real=sheetRows.filter(function(a){ return !a.test; }).length;
       document.getElementById('mFoot').textContent=real+' accounts, as at '+hm(new Date().toISOString());
-    }catch(e){ nGot('sheet', e); if(quiet!==true) say(e.message,'bad'); }
+    }catch(e){ nGot('sheet', e); if(quiet!==true) sayFail(e); }
     finally{ sheetBusy=false; }
   }
   /* ---- SEND STATEMENT (v688) ---------------------------------------------------------------
@@ -289,7 +289,7 @@ export const OWNER_JS = `
       body.appendChild(cf);
     }catch(e){
       if(hoSheet!==me) return;
-      wait.className='salt-code__error'; wait.textContent='Could not make a code: '+e.message;
+      wait.className='salt-code__error'; refusal(wait,e,'Could not make a code: ');
     }
   }
   /* ---- AN ACCOUNT (S9 9.3, the plan's f13) ----------------------------------------------------------
@@ -489,7 +489,7 @@ export const OWNER_JS = `
       try{
         var j=await refs('/all/sent/'+u, {issue:sheetIssue, sent:want});
         a.sent=j.sent; chips(); say(''); countSent(); drawRoster(); drawNeeds();
-      }catch(e){ box.checked=!want; say(e.message,'bad'); }
+      }catch(e){ box.checked=!want; sayFail(e); }
     });
     /* 12 Oct 2026 (Phase 2a): the input is the 44px target, laid unseen over the box drawn beside it, so the control measures what the label did */
     tick.appendChild(box); tick.appendChild(el('span','tickbox')); tick.appendChild(el('span',null,'Sent'));
@@ -532,7 +532,7 @@ export const OWNER_JS = `
     var mine=ticket, j=null;
     /* through refs, so a lapsed Access session reads as one (S9 9.7) */
     try{ j=await refs('/all/orders/'+encodeURIComponent(u)); }
-    catch(e){ if(mine===ticket) say('Their orders could not be read: '+e.message,'bad'); }
+    catch(e){ if(mine===ticket) sayFail(e,'Their orders could not be read: '); }
     if(mine!==ticket) return;
     orders=(j&&j.orders)||[]; myLinks=(j&&j.refs)||[]; myMax=(j&&j.max)||0;
     claims=(j&&Array.isArray(j.claims))?j.claims:[];   /* S6 6.6: their account's claims, as their page reads them */
@@ -739,6 +739,184 @@ export const OWNER_JS = `
     /* the 30-second read ends with the sign-in: every poll after a lapse would send seven requests to the login and fail each */
     if(needsTimer){ clearInterval(needsTimer); needsTimer=null; }
   }
+  /* ---- A REFUSAL IS A PLAIN SENTENCE, THE SERVER'S OWN WORDS ONE TAP AWAY (Phase 3b, 12 Oct 2026) ---------------------------------
+     The Counter and the Desk refuse a move in their own words (stmt/maker.js, src/maker-inputs.js, stmt/hours.js, src/orders.js). This page maps the ones a
+     person can act on, the server's sentence to a plain one, the way the customer's page maps e.code; every other one is REFUSAL_GENERAL. refs() raises the plain
+     sentence as the Error's message and keeps the server's words in .raw, and refusal() draws the sentence with a Details control that opens them, so a
+     refusal is never nothing and never only the server's words. Owner only: none of it is in stmt/words.js and the customer's words are untouched.
+     The table below sits between two markers so the suite can read it as data. */
+  var REFUSAL_GENERAL='The Counter could not do that. Try again.';
+  /*REFUSALS*/
+  var REFUSALS={
+    'Say which figure changes.':'Change at least one of the units, the price or the delivery.',
+    'A size and a price are above nothing.':'Units and price must each be above zero.',
+    'A reply is 1 to 200 characters.':'A reply is 1 to 200 characters.',
+    'A reason goes only with Decline or Cancel, up to 140 characters.':'A reason goes only with Decline or Cancel, up to 140 characters.',
+    'Collected or delivered goes only with Ready.':'Collected or delivered goes only with Ready.',
+    'Atomic order storage is unavailable.':'The order book is not available just now. Try again shortly.',
+    'The amendment could not be recorded.':'The change could not be recorded. Try again.',
+    'Set a weekly schedule, a temporary open/closed override, or clear the override.':'Set the weekly hours, set an override, or go back to the weekly hours.',
+    'Admin access required':'Only you can do this. Sign in again.',
+    'The Desk claim list was unreadable.':'The payments they say they sent could not be read. Try again.',
+    'The Desk claim preview was unreadable.':'The rows for this payment could not be read. Try again.',
+    'That claim amount has changed.':'That payment changed. Read it again.',
+    'The acceptance rows changed. Preview them again.':'The rows changed; check them again.',
+    'Their rows owe all of it.':'Their rows owe all of this payment, so nothing is left over.',
+    'Part of this claim exceeds what the rows owe.':'This payment is for more than their rows owe.',
+    'Send only the short map link.':'Paste only the short map link.',
+    'The server-held queue was unreadable.':'The queue could not be read. Try again.',
+    'Not available on an example order.':'A practice order does not take this.',
+    'That claim is not waiting any more.':'That claim is not waiting any more.',
+    'The order book could not be read.':'The order book could not be read. Try again.',
+    'That request id already names different content.':'That move was already sent with different details. Read the order again.',
+    'A trade needs a real date in YYYY-MM-DD.':'Pick a real date.',
+    'The Desk mirror is being seeded.':'The Desk is catching up. Try again in a minute.',
+    'Choose an active product.':'Choose a book that is open.',
+    'Choose an active book.':'Choose a book that is open.',
+    'Trade figures must be finite, non-negative numbers.':'Figures cannot be negative.',
+    'Units must be above zero.':'Units must be above zero.',
+    'Carriage must be a finite, non-negative number.':'Delivery cannot be negative.',
+    'Handover is delivered, collected or not stated.':'Say whether it was delivered or collected, or leave it blank.',
+    'Choose a buyer on the roster. Register a new buyer under Counter Admin > Add ID first, then pick the code.':'Choose a customer from the list. A new customer is added under Record, New customer, first.',
+    'Choose a supplier on the roster. Register a new supplier under Counter Admin > Add ID first, then pick the code.':'Choose a supplier from the list. A new supplier is added under Record, New customer, first.',
+    'Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code.':'Choose their customer from the list, or leave it as Not named. A new customer is added under Record, New customer, first.',
+    'Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code.':'Choose who introduced the buyer from the list. A new one is added under Record, New customer, first.',
+    'Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code.':'Choose an associate from the list. A new one is added under Record, New customer, first.',
+    'Choose R2 or R3.':'Choose They resell or They introduced the buyer.',
+    'An attribution needs an associate and its stream.':'Choose the associate and how they were involved.',
+    "Register the associate's resale account first.":'Their resale account is not set up yet. Make them an associate first.',
+    'An R2 sale names its associate as the party.':'Book a resale under the associate.',
+    'This product has no inventory cost yet. Record the lot first.':'This book has no cost yet. Record a purchase first.',
+    'This book has no inventory cost yet.':'This book has no cost yet. Record a purchase first.',
+    'Cover is a choice, never a typed reward figure.':'Choose reward cover; an amount cannot be typed.',
+    'No reward cover is available for this sale. Read the offer again.':'No reward is available for this sale. Read the offer again.',
+    'A row with this party, date, units and total is already booked. Confirm a separate order.':'The same sale is already on the book.',
+    'A loan with this party, book, amount and date is already booked. Confirm a separate loan.':'The same loan is already on the book.',
+    'A gift with this party, book, units and date is already booked. Confirm a separate gift.':'The same gift is already on the book.',
+    'The booked twin has changed. Read the trade again.':'The book changed meanwhile. Check the sale again.',
+    "The party's confirmed Add ID is no longer available. Read the catalog again.":'That customer is no longer available. Open the form again.',
+    'Choose one or more extra books, at most one row per book.':'Choose each extra book once.',
+    'Choose each book once.':'Choose each book once.',
+    'This request timestamp already carries another entry. Read its draft instead.':'That entry was already sent. Look for it under Approve.',
+    'The same order is already queued. Read its draft instead.':'The same sale is already waiting for the Desk.',
+    'The same gift is already queued. Read its draft instead.':'The same gift is already waiting for the Desk.',
+    'The same loan is already queued. Read its draft instead.':'The same loan is already waiting for the Desk.',
+    'Choose an associate on the roster.':'Choose an associate from the list.',
+    'That offset is not on offer: the reward is spent or held, the order is settled, or it already has a correction waiting.':'That offset is no longer on offer. Read the offers again.',
+    'Choose a customer on the roster, not a resale account.':'Choose a customer, not a resale account.',
+    'This product has no customer tiers.':'This book has no price levels.',
+    'A supplier cannot hold customer drift.':'A supplier has no price drift.',
+    'Choose a drift from -1 to +1, or clear it.':'Choose a drift from -1 to +1, or clear it.',
+    'Choose a tier or a set of small, mid and big tiers.':'Choose a level, or a level for each order size.',
+    'There is no tier proposal to accept.':'There is no suggested level to accept.',
+    'Choose the sizes to hide from the board.':'Choose the sizes to leave off the printed list.',
+    "A size to hide must be one of this book's board sizes.":'Choose sizes from this book printed list.',
+    'Every size is unticked, so there is no board to make.':'Every size is unticked, so there is nothing to print.',
+    'A snooze is a real day, or null to dismiss.':'Pick a real day, or hide it for good.',
+    'A snooze ends after today and within a year.':'Pick a day after today and within a year.',
+    'Choose a tip the Desk is showing.':'Choose a reminder the Desk is showing.',
+    'Choose a ledger row, amendment kind and real date; identity and raw prose are not input fields.':'Choose a row, what to change and a real date.',
+    'A cancelled row takes only its revival: cancelled off and its date cleared.':'A cancelled order can only be reopened.',
+    'Payment, Receipt and Default are purchase-lot movements.':'Payment, Receipt and Default apply to purchases only.',
+    'Choose correctable typed fields; notes and settlement prose stay on Desk.':'Choose fields that can be corrected here. Notes stay on the Desk.',
+    'An order code is up to 16 letters, digits and hyphens.':'An order code is up to 16 letters, digits and hyphens.',
+    'Correction dates must be real dates.':'Use real dates.',
+    'Correction figures must be finite, non-negative numbers.':'Figures cannot be negative.',
+    'Choose a roster code; names and places are not correction values.':'Choose a code from the list. A name or place cannot be set here.',
+    'Choose a listed stream or handover.':'Choose a listed way they were involved, and a listed handover.',
+    'A movement or cancellation carries no row patch.':'A move or a cancellation changes nothing else on the row. Send it on its own.',
+    'This row is no longer open.':'This row is no longer open.',
+    'A payment is cash only, and above zero.':'A payment is cash only, and above zero.',
+    'A receipt is units only, and above zero.':'A receipt is units only, and above zero.',
+    'A default moves nothing, and a lot that has received units cannot default.':'A default moves nothing, and a purchase that has arrived cannot default.',
+    'A cancellation moves nothing and cannot cancel goods already handed over.':'A cancellation moves nothing, and goods already handed over cannot be cancelled.',
+    'A fulfilment needs non-negative cash and units, with at least one movement.':'Enter cash, units or both, and none below zero.',
+    'The open-order snapshot is unavailable. Reseed the mirror before amending.':'Open orders could not be read just now. Try again shortly.',
+    'The mirror changed or could not be read. Read the row again.':'The row changed or could not be read. Open it again.',
+    "The row's remaining money could not be confirmed.":'What this row can still take could not be confirmed. Try again.',
+    'Choose a roster party, direction, real date and positive amount.':'Choose a customer, a direction, a real date and an amount above zero.',
+    'Choose an open loan, real date and positive amount.':'Choose an open loan, a real date and an amount above zero.',
+    'That loan is settled or the amount exceeds what remains owing.':'That loan is settled, or the amount is more than is still owed.',
+    'Choose a valid book, roster party, date, amount and handover.':'Choose a book, a customer, a date, units and how it was handed over.',
+    'The reward is already spent or reserved by another input awaiting its fold.':'Their reward is already spent or waiting under Approve.',
+    'There is no whole reward unit available to redeem.':'They have no whole reward unit to use.',
+    'The available reward cannot offset this order.':'Their reward cannot be used on this order.',
+    'File the encrypted vault on this device before adding the ID.':'Save their name and place on this phone first. Unlock them with your password and try again.',
+    'That code is already on the roster.':'A customer with that name and place is already here.',
+    'Choose a parent already on the roster.':'Choose their associate from the list.',
+    'The map point is outside Malaysia or has invalid locality text.':'The map point must be inside Malaysia.',
+    'Only a customer, reseller or referral holds a starting tier.':'Only a customer, a reseller or an introducer starts with a price drift.',
+    'Starting tiers must name active tiered books.':'Start a drift only on a book that has price drift.',
+    'A starting drift is a number from -1 to +1, never a level.':'A starting drift is a number from -1 to +1.',
+    'Starting tiers must use active tiered books and current level names.':'Start a drift only on a book that has price drift.',
+    'Each map point must belong to a roster party and remain inside Malaysia.':'Each point must belong to a customer and sit inside Malaysia.',
+    'Set hours or mark closed for each day of the week.':'Set hours, or mark closed, for each day.',
+    'Each day must be closed or have opening and closing times.':'Each day is closed, or has an opening and a closing time.',
+    'Use valid 24-hour times, with closing later than opening on the same day.':'Use 24-hour times, with closing after opening.',
+    'Choose whether the Counter is open or closed.':'Choose open or closed.',
+    'Set an end time within the next 14 days.':'Choose an end time within the next 14 days.',
+    'An appointment for this ID is already queued or waiting for approval.':'That customer is already waiting for the Desk or for your approval.',
+    'choose the delivery charge first':'Choose the delivery charge first.',
+    'type your price for the goods first':'Type your price for the goods first.',
+    'the price has to be a figure above nothing':'The price must be above zero.',
+    'the row has changed since the card drew it: look at it again before you accept':'The order changed since you opened it. Open it again.',
+    'the row has changed since the card drew it: look at it again before you offer':'The order changed since you opened it. Open it again.',
+    'the row has changed since the card drew it: look at it again before you send it':'The order changed since you opened it. Open it again.',
+    'a yes of yours on this order is already on its way to its row':'Your yes on this order is already on its way.',
+    'the mirror is being seeded: try again in a minute':'The Desk is catching up. Try again in a minute.',
+    'they have taken your offer already: its row is drafted at it':'They have already taken your offer. Its row is drafted at that price.',
+    'this raises their price or changes their window: send it to them for their yes':'This raises their price or changes their window. Send it to them for their yes.',
+    'nothing here needs their yes: Accept it':'Nothing here needs their yes. Accept it.',
+    'no offer of yours is open on this order':'You have no offer open on this order.',
+    'this order has already been approved for a row and cannot be changed':'This order is already approved for a row and cannot be changed.',
+    'this order is already under review or agreed':'This order is already under review or agreed.',
+    'an offer is open on this order':'An offer is open on this order. Withdraw it first.',
+    'a time window is a day and one of the six four-hour windows':'Choose a day and one of the six four-hour windows.',
+    'only a delivery takes a time window':'Only a delivery takes a time window.',
+    'they chose their own day, and it stands':'They chose their own day, and it stands.',
+    'that window has passed or is more than a week off: choose another':'That window has passed or is more than a week off. Choose another.',
+    'the Desk revision is unavailable':'The Desk is updating. Try again in a minute.',
+    'the Desk mirror is updating':'The Desk is updating. Try again in a minute.',
+    'no such slip':'That slip is no longer held. Slips are kept for 30 days.',
+    'no such order':'That order is no longer there. Read the orders again.',
+    'order not found':'That order is no longer there. Read the orders again.',
+    'no such account':'That account was not found.',
+    'account not found':'That account was not found.'
+  };
+  /*END REFUSALS*/
+  /* the server's words to a plain sentence: the table above, then the two sentences the Desk composes around a figure, then the general one */
+  function plainRefusal(raw){
+    var s=String(raw==null?'':raw), left;
+    if(Object.prototype.hasOwnProperty.call(REFUSALS,s)) return REFUSALS[s];
+    if(s.indexOf('Money is already on its way to this row.')===0) return 'Money is already on its way to this row. Decide that first.';
+    left=/^This row can still take RM ([0-9][0-9,]*[.][0-9]+)/.exec(s);
+    if(left) return 'This row can only take RM '+left[1]+' more.';
+    return REFUSAL_GENERAL;
+  }
+  /* an Error for a refused move: the plain sentence is its message, the server's words .raw, and the status and the whole answer are kept for the code that reads them */
+  function refused(raw,answer,status){
+    var failure=new Error(plainRefusal(raw));
+    failure.raw=String(raw==null||raw===''?'The Counter answered '+status+' and gave no reason.':raw); failure.detail=answer; failure.status=status;
+    return failure;
+  }
+  /* Details under a line: the server's own words, to copy. Nothing is drawn for an error that has none (a connection that failed, a sign-in that ended). */
+  function withDetails(node,error){
+    var detail,summary;
+    if(!node||!error||!error.raw||!node.appendChild) return node;
+    detail=el('details','rdet'); summary=actOn(el('summary','salt-ghost','Details'),'refusal.details');
+    detail.appendChild(summary); detail.appendChild(el('p','rraw',error.raw)); node.appendChild(detail);
+    return node;
+  }
+  /* a refusal on a line: its words, a lead before them and a tail after, and Details when the server gave words */
+  function refusal(node,error,lead,tail){
+    node.textContent=(lead||'')+error.message+(tail||'');
+    return withDetails(node,error);
+  }
+  /* the same on the page's one status line */
+  function sayFail(error,lead){
+    say((lead||'')+error.message,'bad');
+    return withDetails(rmsg,error);
+  }
   async function refs(path, body){
     var o = body ? {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}
                  : {};
@@ -747,7 +925,7 @@ export const OWNER_JS = `
     try{ r = await fetch(path, o); }catch(e){ throw new Error('Not sent. Check the connection and try again.'); }
     if(r.type==='opaqueredirect'||r.status===401){ ended(); throw new Error(ENDED); }
     var j = await r.json().catch(function(){ return {}; });
-    if(!r.ok||!j.ok){ var failure=new Error(j.error||'that did not work'); failure.detail=j; failure.status=r.status; throw failure; }
+    if(!r.ok||!j.ok) throw refused(j.error, j, r.status);
     return j;
   }
   var makerData=null, makerQuotes={}, makerPv={}, makerFee={}, makerWin={}, makerHours=null, makerBusy=false;
@@ -810,7 +988,7 @@ export const OWNER_JS = `
       apply=true;
       if(!show||!root.isConnected||placeNow!=='orders') return;
       drawMakerClaims();
-    }catch(error){ nGot('claims', error); apply=true; if(show&&!poll) root.textContent=error.message; }
+    }catch(error){ nGot('claims', error); apply=true; if(show&&!poll) refusal(root,error); }
     finally{ claimsReading=false; if(apply) drawNeeds(); }
   }
   /* the claims drawn from the read that stands: a row each, and the card of the one opened under its row. A redraw lets every picture go first, and
@@ -906,7 +1084,7 @@ export const OWNER_JS = `
         claimShow(result);
       }).catch(function(error){
         if(mine!==turn||!card.isConnected) return;
-        said.className='msg'; said.textContent=error.message;
+        said.className='msg'; refusal(said,error);
         makerClaimButton(note,['Read the rows again','claim.reread',key],claimRead,false);
       });
     }
@@ -916,7 +1094,7 @@ export const OWNER_JS = `
         await refs(route+'/'+pending.action,pending.body); delete makerClaimRequests[key];
         makerClaimSaid=pending.action==='notfound'?'Answered Not found. '+who+' is told.':pending.body.covered?'Already recorded. '+who+' is told.':'Recorded. '+who+' is told.';
         makerClaimOpen=null; await loadMakerClaims(); await loadMaker();
-      }catch(error){ answer.textContent='Not confirmed. Try the same answer again: '+error.message; lost.disabled=false; if(preview) claimShow(preview); }
+      }catch(error){ refusal(answer,error,'Not confirmed. Try the same answer again: '); lost.disabled=false; if(preview) claimShow(preview); }
       pending.busy=false;
     }
     /* the answer asks once, on the Sheet; the same answer again after a lost reply is sent at once under the request id it had, as the confirm was not asked twice */
@@ -996,7 +1174,7 @@ export const OWNER_JS = `
         if(generation!==makerSlipGeneration){ URL.revokeObjectURL(url); return; }
         makerSlipUrls.push(url); slipPaint(url);
       }catch(error){
-        if(generation===makerSlipGeneration){ var said='Slip could not be opened: '+error.message; if(makerSlipPrivate) slipOpening(said); else note.textContent=said; }
+        if(generation===makerSlipGeneration){ var said='Slip could not be opened: '+error.message; if(makerSlipPrivate) slipOpening(said); else { note.textContent=said; withDetails(note,error); } }
       }
       finally{ secret=''; if(button) button.disabled=false; }
     }
@@ -1041,7 +1219,7 @@ export const OWNER_JS = `
       });
       status.textContent=makerThreads.length?makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);}).length+' waiting for your reply.':'No messages yet.';
       if(makerThreadUser) drawMakerThreadLines();
-    }catch(error){ nGot('threads', error); apply=true; status.textContent=error.message; }
+    }catch(error){ nGot('threads', error); apply=true; refusal(status,error); }
     finally{ makerThreadsReading=false; if(apply) drawNeeds(); }
   }
   function drawMakerThreadLines(){
@@ -1156,7 +1334,7 @@ export const OWNER_JS = `
   async function loadMakerPools(){
     var root=document.getElementById('makerPools'); if(!root||placeNow!=='orders') return;
     var result;
-    try{ result=await refs('/all/maker/pools'); }catch(error){ root.textContent=error.message; return; }
+    try{ result=await refs('/all/maker/pools'); }catch(error){ refusal(root,error); return; }
     if(!root.isConnected||placeNow!=='orders') return;
     root.textContent='';
     var note=el('p','msg',''); note.setAttribute('role','status');
@@ -1174,7 +1352,7 @@ export const OWNER_JS = `
         var body={product:product.value.trim().toLowerCase(),q:Number(size.value),target:Number(target.value)};
         if(closes.value) body.closesOn=closes.value;
         await refs('/all/maker/pools',body); await loadMakerPools();
-      }catch(error){ note.textContent=error.message; open.disabled=false; }
+      }catch(error){ refusal(note,error); open.disabled=false; }
     };
     root.appendChild(open); root.appendChild(note);
     (result.pools||[]).forEach(function(p){
@@ -1193,7 +1371,7 @@ export const OWNER_JS = `
             var r=await refs('/all/maker/pools/'+encodeURIComponent(p.id)+'/close',{});
             await loadMakerPools();
             var again=document.getElementById('makerPools'); if(again){ var m=el('p','msg',r.accepted.length+' sent to you to agree'+(r.left.length?', '+r.left.length+' left':'')+'.'); m.setAttribute('role','status'); again.insertBefore(m,again.firstChild); }
-          }catch(error){ note.textContent=error.message; close.disabled=false; }
+          }catch(error){ refusal(note,error); close.disabled=false; }
         };
         close.onclick=function(){
           if(p.state!=='open'){ closePool(); return; }
@@ -1246,7 +1424,7 @@ export const OWNER_JS = `
           if(lines.length&&!result.unchanged) text.value='';
           status.textContent=lines.length?(result.unchanged?'That notice is already up. Nobody was notified.':'Notice set.'+makerPushResult(result.push)):'Notice cleared. No notification sent.';
         }catch(error){
-          needsRead=true;status.textContent=error.message+' Read the notice again before another change; it may already be set.';
+          needsRead=true;refusal(status,error,'',' Read the notice again before another change; it may already be set.');
           retained.hidden=false;retained.textContent='';
           retained.appendChild(el('h3','','Unsent notice'));
           retained.appendChild(el('p','maker-row',intended.lines.length?intended.lines.join(String.fromCharCode(10)):'Clear notice'));
@@ -1260,7 +1438,7 @@ export const OWNER_JS = `
       clear.onclick=function(){submit([]);};
       refresh.onclick=async function(){
         if(busy)return;busy=true;state();
-        try{await read();}catch(error){status.textContent=error.message;}finally{busy=false;state();}
+        try{await read();}catch(error){refusal(status,error);}finally{busy=false;state();}
       };
     }
     async function read(){
@@ -1269,7 +1447,7 @@ export const OWNER_JS = `
       status.textContent='Notice read. Customers are notified only when you set one.';
       root.dispatchEvent(new CustomEvent('maker-notice-read',{detail:result}));
     }
-    try{await read();}catch(error){status.textContent=error.message;}
+    try{await read();}catch(error){refusal(status,error);}
   }
   function makerPushResult(push){
     if(!push) return ' It is not known whether notifications went out.';
@@ -1391,7 +1569,7 @@ export const OWNER_JS = `
         }else await action(send);
       }catch(error){
         var failure=message();
-        if(failure)failure.textContent=error.message;
+        if(failure)refusal(failure,error);
         else throw error;
       }
       finally{
@@ -1420,7 +1598,7 @@ export const OWNER_JS = `
           var status=makerStatus(section),pass=makerField(section,['Password for names and places','record.retained.passphrase'],'password','');
           parent.appendChild(section);
           try{saved=makerSaved(path);status.textContent='An entry you sent'+(saved.body&&saved.body.at?' on '+fmtWhen(saved.body.at):'')+' was not confirmed. Send it again, or update it first.';}
-          catch(error){status.textContent=error.message;}
+          catch(error){refusal(status,error);}
           var run=async function(review){
             try{
               if(!saved)throw new Error('This saved entry cannot be sent. Discard it.');
@@ -1442,7 +1620,7 @@ export const OWNER_JS = `
               var answer=await refs(saved.path,saved.body);
               if(!answer||answer.ok!==true)throw new Error('The Desk did not confirm. Nothing is lost; tap Send again.');
               makerClear(saved.path);section.remove();await loadMaker();
-            }catch(error){pass.value='';status.textContent=error.message;}
+            }catch(error){pass.value='';refusal(status,error);}
           };
           ['Send again','Update and send','Discard'].forEach(function(label,index){
             var button=actOn(el('button','salt-ghost',label),['record.retained.retry','record.retained.review','record.retained.cancel'][index]);button.type='button';
@@ -1627,7 +1805,7 @@ export const OWNER_JS = `
         code:loanParty.value,date:loanDate.value,amount:Number(loanAmount.value)};
       if(loanForm.value==='salt') body.product=loanProduct.value;
       try{await makerSecond(send,'/all/maker/inputs/loan',body,'loan');loanStatus.textContent='Sent. It waits under Approve.';loadMaker();}
-      catch(error){loanStatus.textContent=error.message;}
+      catch(error){refusal(loanStatus,error);}
     },true);
     var gift=makerForm('entry');gift.appendChild(el('h3',null,'Gift'));
     gift.appendChild(el('p','msg','A gift leaves stock at cost.'));
@@ -1641,7 +1819,7 @@ export const OWNER_JS = `
         qty:Number(giftQty.value),movedUnits:Number(giftQty.value),handover:giftHandover.value||null};
       giftStatus.textContent='Sending.';
       try{await makerSecond(send,'/all/maker/inputs/gift',body,'gift');giftStatus.textContent='Sent. It waits under Approve.';loadMaker();}
-      catch(error){giftStatus.textContent=error.message;}
+      catch(error){refusal(giftStatus,error);}
     },true);
     var repay=makerForm('entry');repay.appendChild(el('h3',null,'Repayment'));
     repay.appendChild(el('p','msg','Part or all of a loan, paid back.'));
@@ -1656,7 +1834,7 @@ export const OWNER_JS = `
       try{await send('/all/maker/inputs/repay',{at:new Date().toISOString(),loan:repayLoan.value,
         date:repayDate.value,amount:Number(repayAmount.value)});
         repayStatus.textContent='Sent. It waits under Approve.';loadMaker();}
-      catch(error){repayStatus.textContent=error.message;}
+      catch(error){refusal(repayStatus,error);}
     },true);
     var redeem=makerForm('entry');redeem.appendChild(el('h3',null,'Rewards'));
     redeem.appendChild(el('p','msg','A reward settles what they owe first; if nothing is owed it is given as goods.'));
@@ -1679,7 +1857,7 @@ export const OWNER_JS = `
               await send('/all/maker/inputs/redeem',{at:new Date().toISOString(),code:offer.code,date:redeemDate.value});
               redeemStatus.textContent='Sent. It waits under Approve.';
               var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);loadMaker();
-            }catch(error){status.textContent=error.message;}
+            }catch(error){refusal(status,error);}
           },true);
         }
         redeemList.appendChild(row);
@@ -1688,7 +1866,7 @@ export const OWNER_JS = `
     drawMakerRewards(catalog.rewards||[]);
     makerButton(redeem,['Read again','record.redeem.read'],async function(){
       try{var read=await refs('/all/maker/inputs');drawMakerRewards(read.catalog.rewards||[]);redeemStatus.textContent='Read.';}
-      catch(error){redeemStatus.textContent=error.message;}
+      catch(error){refusal(redeemStatus,error);}
     },false);
     var offsets=makerForm('entry');offsets.appendChild(el('h3',null,'Offsets'));
     offsets.appendChild(el('p','msg','One unit off the oldest unpaid order of someone holding a reward.'));
@@ -1712,11 +1890,11 @@ export const OWNER_JS = `
               await offerLoad();
               offerStatus.textContent='Sent. It waits under Approve.';
               loadMaker();
-            }catch(error){offerStatus.textContent=error.message;}
+            }catch(error){refusal(offerStatus,error);}
           },true);
           offerList.appendChild(row);
         });
-      }catch(error){offerStatus.textContent=error.message;}
+      }catch(error){refusal(offerStatus,error);}
     };
     offerLoad();
     var editor=makerForm('entry');editor.appendChild(el('h3',null,'Correct a row'));
@@ -1915,7 +2093,7 @@ export const OWNER_JS = `
           idStatus.textContent='Sent. '+code+' waits under Approve, but the lists could not be refreshed: '+refreshError.message;
         }
         loadMaker();
-      }catch(error){idPass.value='';idStatus.textContent=error.message;}
+      }catch(error){idPass.value='';refusal(idStatus,error);}
       idBusy=false;
     },true);
     var appointment=makerForm('customers');appointment.appendChild(el('h3',null,'Make an associate'));
@@ -1972,7 +2150,7 @@ export const OWNER_JS = `
         amendStatus.textContent=result.vaultOnly?'Saved. The code stays '+from+'.'
           :'Sent. The code changes from '+from+' to '+to+' once you approve it.';
         loadMaker();
-      }catch(error){amendPass.value='';amendStatus.textContent=error.message;}
+      }catch(error){amendPass.value='';refusal(amendStatus,error);}
       amendBusy=false;
     },true);
     var placement=makerForm('customers');placement.appendChild(el('h3',null,'Place on the map'));
@@ -2011,7 +2189,7 @@ export const OWNER_JS = `
         placeLocality.value='';placeLink.value='';
         placeStatus.textContent='Sent. The exact address stays locked.';
         loadMaker();
-      }catch(error){placePass.value='';placeStatus.textContent=error.message;}
+      }catch(error){placePass.value='';refusal(placeStatus,error);}
       placeBusy=false;
     },true);
   }
@@ -2039,12 +2217,12 @@ export const OWNER_JS = `
   }
   /* the last answer a card was given, kept by its key: Needs you reads a Desk row's, which its own card is gone to hear */
   var makerSaid={};
-  function makerSay(key,text){
+  function makerSay(key,text,error){
     makerSaid[key]=text;
     var line=null, list=document.getElementById(String(key).indexOf('draft:')===0?'makerDraftStatus':'makerReviewStatus');
     [].forEach.call(document.querySelectorAll('#makerReview [data-maker-say], #makerDrafts [data-maker-say]'),function(node){ if(node.getAttribute('data-maker-say')===key) line=node; });
-    if(line){ line.textContent=text; if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }
-    else if(list) list.textContent=text;
+    if(line){ line.textContent=text; withDetails(line,error); if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }
+    else if(list){ list.textContent=text; withDetails(list,error); }
   }
   function makerAction(path, body, message, key){
     if(makerBusy) return Promise.resolve();
@@ -2059,7 +2237,7 @@ export const OWNER_JS = `
       });
     },function(error){
       makerBusy=false;
-      makerSay(key,error.message);
+      makerSay(key,error.message,error);
       return false;
     });
   }
@@ -2147,7 +2325,7 @@ export const OWNER_JS = `
       });
       if(response.type==='opaqueredirect'||response.status===401){ended();throw new Error(ENDED);}
       var result=await response.json();
-      if(!response.ok||!result.ok)throw new Error(result.error||'The Desk did not take the cash.');
+      if(!response.ok||!result.ok)throw refused(result.error||'The Desk did not take the cash.',result,response.status);
       held.confirmed=true;
       makerCashSaid[id]='Recorded. Refresh to see it.';
       makerCashSave(id,held);
@@ -2228,7 +2406,7 @@ export const OWNER_JS = `
       }).catch(function(error){
         if(makerPv[key]===pv) delete makerPv[key];
         if(mine!==turn||!card.isConnected) return;
-        said.className='msg'; said.textContent=error.message;
+        said.className='msg'; refusal(said,error);
         makerButton(figs,['Read the figures again','order.reread'],againRead,false);
       });
     }
@@ -2415,7 +2593,7 @@ export const OWNER_JS = `
         var now=JSON.stringify(body); if(now!==signature){ signature=now; at=new Date().toISOString(); }
         body.at=at; pending=true; button.disabled=true; answer.textContent='Recording.';
         try{ await send('/all/maker/inputs/stock-count',body); answer.textContent='Recorded. It waits under Approve.'; loadMaker(); }
-        catch(error){ answer.textContent=error.message; }
+        catch(error){ refusal(answer,error); }
         pending=false; button.disabled=false;
       },true,function(){ at=null; signature=''; });
       /* the count's controls, moved into a form of their own so that Entry's menu can name it (Phase 1c) */
@@ -2500,7 +2678,7 @@ export const OWNER_JS = `
               check.disabled=false;wrap.hidden=false;
             }else wrap.hidden=true;
           }catch(error){
-            if(ticket===revision){words.textContent='Reward not read';wrap.hidden=false;retry.hidden=false;note.textContent=error.message;}
+            if(ticket===revision){words.textContent='Reward not read';wrap.hidden=false;retry.hidden=false;refusal(note,error);}
           }
         }
         retry.addEventListener('click',readCoverChoice);
@@ -2605,7 +2783,7 @@ export const OWNER_JS = `
           tradeAnswer.textContent='Sent. It waits under Approve.';
           loadMaker();
         }catch(error){
-          tradeAnswer.textContent=error.message;
+          refusal(tradeAnswer,error);
           var twin=error.detail&&error.detail.twin&&error.detail.twin.second;
           var index=error.detail&&error.detail.twin&&error.detail.twin.index||0;
           if(twin&&!(confirmedTwin&&confirmedTwin[index])&&await ownerAsk(send.button,'twin:trade',{title:'Record this '+direction.value+' again?', say:['You already recorded a '+direction.value+' like this'+(tradeDate.value?' on '+fmtWhen(tradeDate.value):'')+'. Record it again as a separate '+direction.value+'?'], go:'Record it again', keep:'Do not record', plain:true})){
@@ -2681,7 +2859,7 @@ export const OWNER_JS = `
           var check=JSON.stringify(body); if(check!==tierSignature){ tierSignature=check; tierAt=new Date().toISOString(); }
           body.at=tierAt; tierPending=true;
           try{ await send('/all/maker/inputs/tier-set',body); tierAnswer.textContent='Sent. The level changes once you approve it.'; loadMaker(); }
-          catch(error){ tierAnswer.textContent=error.message; }
+          catch(error){ refusal(tierAnswer,error); }
           tierPending=false;
         },true,function(){ tierAt=null; tierSignature=''; });
         /* A1: the Desk's Accept all. The Desk reads its own proposals; held tiers and tiers already waiting are left alone.
@@ -2693,7 +2871,7 @@ export const OWNER_JS = `
           allPending=true;
           try{ await send('/all/maker/inputs/tier-accept-all',{at:new Date().toISOString()});
             allAnswer.textContent='Sent. Levels already set do not change.'; loadMaker(); }
-          catch(error){ allAnswer.textContent=error.message; }
+          catch(error){ refusal(allAnswer,error); }
           allPending=false;
         },false);
       }
@@ -2742,7 +2920,7 @@ export const OWNER_JS = `
           var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
           body.at=driftAt; driftPending=true;
           try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. The drift changes once you approve it.'; loadMaker(); }
-          catch(error){ driftAnswer.textContent=error.message; }
+          catch(error){ refusal(driftAnswer,error); }
           driftPending=false;
         },true,driftReceiptComplete);
         var clearDrift=makerButton(driftActions,['Follow their record','record.drift.clear'],async function(send){
@@ -2751,7 +2929,7 @@ export const OWNER_JS = `
           var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
           body.at=driftAt; driftPending=true;
           try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their price follows their record once you approve it.'; loadMaker(); }
-          catch(error){ driftAnswer.textContent=error.message; }
+          catch(error){ refusal(driftAnswer,error); }
           driftPending=false;
         },false,driftReceiptComplete);
         driftRefresh();
@@ -2786,7 +2964,7 @@ export const OWNER_JS = `
           var check=JSON.stringify(body); if(check!==houseSignature){ houseSignature=check; houseAt=new Date().toISOString(); }
           body.at=houseAt; housePending=true;
           try{ await send('/all/maker/inputs/house-sizes',body); houseAnswer.textContent='Sent. The sizes change once you approve it. No price moves.'; loadMaker(); }
-          catch(error){ houseAnswer.textContent=error.message; }
+          catch(error){ refusal(houseAnswer,error); }
           housePending=false;
         },true,function(){ houseAt=null; houseSignature=''; });
       }
@@ -2812,13 +2990,13 @@ export const OWNER_JS = `
           var until=tipFor.value===''?null:new Date(Date.parse(tipAt)+8*3600000+Number(tipFor.value)*86400000).toISOString().slice(0,10);
           tipPending=true;
           try{ await send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until}); tipAnswer.textContent='Hidden. The Desk drops it next time it opens.'; loadMaker(); }
-          catch(error){ tipAnswer.textContent=error.message; }
+          catch(error){ refusal(tipAnswer,error); }
           tipPending=false;
         },true,function(){ tipAt=null; tipSignature=''; });
       }
       makerOtherInputs(box,catalog,refreshMakerTradeCatalog);
       recordMenu(box,note);
-    }catch(error){ note.textContent=error.message; note.dataset.retry='true';
+    }catch(error){ refusal(note,error); note.dataset.retry='true';
       makerButton(box,['Try again','record.retry'],function(){ while(box.children.length>1) box.lastChild.remove(); loadMakerInputs(); }); }
     finally{ sweep(); }
   }
@@ -2863,10 +3041,10 @@ export const OWNER_JS = `
         try{
           var placed=await refs('/all/maker/customers/'+account.username+'/orders',body);
           sent=true; answer.textContent='Placed. It waits for you to agree it.'; loadMaker();
-        }catch(error){ answer.textContent=error.message; }
+        }catch(error){ refusal(answer,error); }
         pending=false; button.disabled=sent;
       },true);
-    }catch(error){ note.textContent=error.message; }
+    }catch(error){ refusal(note,error); }
   }
   /* PHASE 1b: Needs you and Orders read this too. A poll (quiet true; a button hands this its own argument, never true) starts no read while
      one is out, nor on Orders while he has a field open, a tap in flight or cash held, and a poll that finds the same answer draws nothing.
@@ -2894,7 +3072,7 @@ export const OWNER_JS = `
     }catch(error){
       if(gen!==makerGen) return;
       nGot('review', error); apply=true;
-      if(!poll){ drawMaker();if(status) status.textContent=error.message; if(rows) rows.textContent=error.message; }
+      if(!poll){ drawMaker();if(status) refusal(status,error); if(rows) refusal(rows,error); }
     }finally{ if(gen===makerGen){ reviewReading=false; if(apply) drawNeeds(); } }
   }
   /* 11 Oct 2026: THE PARTS OF ORDERS an order shows in. Waiting on you holds what only he can move (a placed order, a payment they say
@@ -3114,8 +3292,8 @@ export const OWNER_JS = `
            flight, and never asks again for the same figures. */
         var qsay=el('p','salt-insight'), qfigs=el('div','maker-quote');
         qsay.setAttribute('role','status');
-        function makerPlacedSay(text,bad){
-          qsay.className=bad?'msg':'salt-insight'; qsay.textContent=text; qfigs.textContent='';
+        function makerPlacedSay(text,bad,error){
+          qsay.className=bad?'msg':'salt-insight'; qsay.textContent=text; withDetails(qsay,error); qfigs.textContent='';
           var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
         }
         /* any failed or in-flight preview, and any changed input, clears the usable quote/hash and takes Accept away:
@@ -3169,7 +3347,7 @@ export const OWNER_JS = `
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
             delete makerQuotes[order.id];
-            makerPlacedSay(error.message,true);
+            makerPlacedSay(error.message,true,error);
             makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
           });
         }
@@ -3419,7 +3597,7 @@ export const OWNER_JS = `
                       ?'The Desk rejected it. The entry is gone.'
                       :'Withdrawn. The entry is gone.';
                   });
-                }).catch(function(error){ note.textContent=error.message; button.disabled=false; });
+                }).catch(function(error){ refusal(note,error); button.disabled=false; });
             }
             if(!entry.canWithdraw){ withdraw(); return; }
             ownerAsk(button,'queue:'+entry.id,{title:'Withdraw this entry?', row:askRow(entryLine(entry),'',entry.state==='refused'?'refused':'waiting for the Desk'),
@@ -3440,7 +3618,7 @@ export const OWNER_JS = `
   async function loadMakerHours(){
     if(placeNow!=='shop') return;
     try{ makerHours=await refs('/all/maker/hours'); drawMakerHours(); }
-    catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) s.textContent=error.message; }
+    catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) refusal(s,error); }
   }
   function drawMakerHours(){
     var root=document.getElementById('makerSchedule'), status=document.getElementById('makerHoursStatus');
@@ -3466,7 +3644,7 @@ export const OWNER_JS = `
       var result={days:[]};
       [].forEach.call(schedule.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
       return refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Weekly hours saved.'; })
-        .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
+        .catch(function(error){ refusal(document.getElementById('makerHoursMessage'),error); });
     },true);
     var override=el('div','maker-fields'), kind=actOn(el('select','fld salt-field__input'),'hours.override-state');
     kind.setAttribute('aria-label','Close or open the shop for now');
@@ -3478,11 +3656,11 @@ export const OWNER_JS = `
       if(!Number.isFinite(when)){ document.getElementById('makerHoursMessage').textContent='Choose an end time.'; return; }
       return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})
         .then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Saved for now.'; })
-        .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
+        .catch(function(error){ refusal(document.getElementById('makerHoursMessage'),error); });
     },false);
     makerButton(root,['Back to the weekly hours','hours.override-clear'],function(){
       return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Back on the weekly hours.'; })
-        .catch(function(error){ document.getElementById('makerHoursMessage').textContent=error.message; });
+        .catch(function(error){ refusal(document.getElementById('makerHoursMessage'),error); });
     },false);
   }
   var tiers=[];
@@ -3496,7 +3674,7 @@ export const OWNER_JS = `
       links=j.refs||[]; tiers=j.tiers||[]; linksRead=true;
       if(diff||!poll){ drawLinks(); drawNeeds(); if(!poll) say(''); }
     }
-    catch(e){ nGot('links', e); if(!poll) say(e.message,'bad'); }
+    catch(e){ nGot('links', e); if(!poll) sayFail(e); }
     finally{ linksBusy=false; }
   }
   async function setLevel(r, level){
@@ -4002,7 +4180,7 @@ export const OWNER_JS = `
       document.getElementById('glabel').value='';
       document.getElementById('gintro').value='';
       say('Made. The QR opens it.');
-    }catch(e){ say(e.message,'bad'); }
+    }catch(e){ sayFail(e); }
     b.disabled=false;
   });
   /* ---- THE ASSOCIATES REPORT CARD (v691) ------------------------------------------------------
@@ -4013,7 +4191,7 @@ export const OWNER_JS = `
      snapshot carries one, a tiered book; any other book draws the progress alone, no reward line. */
   async function loadCards(){
     try{ cards=await refs('/all/assoc'); drawCards(); }
-    catch(e){ say(e.message,'bad'); }
+    catch(e){ sayFail(e); }
   }
   function bar(frac){
     var w=el('div','pbar'), f=document.createElement('i');
@@ -4099,7 +4277,7 @@ export const OWNER_JS = `
         else for(var i=0;i<need.length;i++) await refs('/all/test',await testKeys(need[i]));
         sheet=null; await loadSheet();
         say(on?'Gone, with everything they wrote.':'Made. '+TEST_LINE+' Their examples appear after the next update.');
-      }catch(e){ say(e.message,'bad'); }
+      }catch(e){ sayFail(e); }
       b.disabled=false; drawTest();
     });
     box.appendChild(b);

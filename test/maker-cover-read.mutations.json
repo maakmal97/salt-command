@@ -14,8 +14,8 @@
   {
     "name": "a failed read shows no retry",
     "file": "stmt/owner.js",
-    "find": "retry.hidden=false;note.textContent=error.message;",
-    "replace": "retry.hidden=true;note.textContent=error.message;"
+    "find": "retry.hidden=false;refusal(note,error);",
+    "replace": "retry.hidden=true;refusal(note,error);"
   },
   {
     "name": "the retry reads nothing",

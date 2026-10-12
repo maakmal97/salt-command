@@ -328,7 +328,7 @@ export async function run({ ok }) {
     field("20261003090002-rdy", "Units handed over").value = "2";
     button("20261003090002-rdy", "Finish at fewer units").click(); sheetGo(); await settle(2);
     await until(() => /did not answer/.test(say("20261003090002-rdy")?.textContent || ""));
-    ok(say("20261003090002-rdy")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
+    ok(say("20261003090002-rdy")?.firstChild.textContent === "The Counter could not do that. Try again." && say("20261003090002-rdy").querySelector(".rraw")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
       && !say("20261003090001-ack")?.textContent.includes("did not answer"),
       "A refused action says so in the foot of its own card, beside the buttons it was tapped on, and not on the list's line");
     await until(() => button("20261003090002-rdy", "Finish at fewer units"));

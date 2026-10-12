@@ -302,8 +302,8 @@
  {
   "name": "a failed threads read is not noted",
   "file": "stmt/owner.js",
-  "find": "}catch(error){ nGot('threads', error); apply=true; status.textContent=error.message; }",
-  "replace": "}catch(error){ apply=true; status.textContent=error.message; }"
+  "find": "}catch(error){ nGot('threads', error); apply=true; refusal(status,error); }",
+  "replace": "}catch(error){ apply=true; refusal(status,error); }"
  },
  {
   "name": "a failed hours read is not noted",

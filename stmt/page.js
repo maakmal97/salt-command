@@ -225,6 +225,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   color:var(--salt-text-muted)}
 .msg.bad{color:var(--salt-ember)}
 .msg.wait{color:var(--salt-text-muted)}
+/* Phase 3b: a refusal's Details, the server's own words under the plain sentence, to copy */
+.adm .rdet{margin:8px 0 0}
+.adm .rraw{margin:8px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text-muted);overflow-wrap:anywhere;user-select:all}
 /* a veil is obsidian 86%, decision 4 */
 /* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it
    had nowhere to stick and scrolled away with Log out; the wrapper sticks to the page and carries both lines.

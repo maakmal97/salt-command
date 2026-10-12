@@ -156,9 +156,10 @@ const links = () => [
 /* hash opens the page at an address; review, claims, threads, hours, bulletin and sheet change what each answers (each a function of the answer), for a test that wants
    other orders than the busy day's (links is the guest links). The page's intervals are kept, so a test fires the 30-second read itself; hold(route) keeps the answer to the
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
-   that fail to be reached; lapse(true) answers every read 401, as Access does when his sign-in has ended. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [] }) {
-  const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [];
+   that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
+   sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). */
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false }) {
+  const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {};
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
   const hold = (route) => { let release; gates.set(route, new Promise((r) => { release = r; })); return () => release(); };
@@ -201,7 +202,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
     return { ok: true, accounts: [], refs: [], tiers: [], claims: [], threads: [], pools: [], lines: [] };
   };
   let failCash = false, lapsed = false;
-  const dom = new JSDOM(landingPage("", "maker-act-nonce", { master: "fixture-master", accounts: sheet().filter((a) => !a.test) }), {
+  const html = landingPage("", "maker-act-nonce", { master: "fixture-master", accounts: sheet().filter((a) => !a.test) });
+  const dom = new JSDOM(probe ? html.replace("  function fmtWhen(v){", "  window.__owner=function(s){return eval(s);};\n  function fmtWhen(v){") : html, {
     url: "https://counter.fixture.test/all" + hash, runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(w) {
       Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true });
@@ -222,6 +224,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
         if (failCash && route.endsWith("/cash")) throw new Error("fixture: the answer was lost");
         if (failInputs && route === "/all/maker/inputs") throw new Error("fixture: the Desk could not be reached");
         if (fail.has(route)) throw new Error("fixture: the Desk could not be reached");
+        if (Object.prototype.hasOwnProperty.call(refuse, route)) return { ok: false, status: 409, type: "basic", json: async () => ({ ok: false, error: refuse[route] }) };
         if (!(init && init.method === "POST")) reads.push(route);
         if (lapsed) return { ok: false, status: 401, type: "basic", json: async () => ({}) };
         const body = answer(route, init);
@@ -235,7 +238,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
   const snaps = [], snap = (name) => { snaps.push([name, actAudit(d)]); };
   const click = async (control) => { control.click(); await work.quiet(); };
   const type = (control, value) => { control.value = value; control.dispatchEvent(new w.Event("input", { bubbles: true })); control.dispatchEvent(new w.Event("change", { bubbles: true })); };
-  return { dom, w, d, work, posts, timers, intervals, hold, fail, reads, card, snaps, snap, click, type, urls, slipPass: fix && fix.pass, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
+  return { dom, w, d, work, posts, timers, intervals, hold, fail, refuse, reads, card, snaps, snap, click, type, urls, slipPass: fix && fix.pass, failCash: (v) => { failCash = v; }, lapse: (v) => { lapsed = v; } };
 }
 
 /* every stage, every card and every form drawn once: the page a person would have in front of them on the busiest day */
@@ -301,6 +304,10 @@ export async function drawEverything(p) {
   type(byAct(card("ord-p3"), "order.total"), "150"); await work.quiet(); p.snap("a read that could not be made");
   p.fail.delete("/all/maker/orders/ord-p3/preview");
   await click(byAct(card("ord-p3"), "order.reread")); p.snap("a raise, previewed");
+  p.refuse["/all/maker/orders/ord-p3/preview"] = "The order book could not be read.";
+  type(byAct(card("ord-p3"), "order.total"), "160"); await work.quiet(); p.snap("a read the Desk refused, with its Details");
+  delete p.refuse["/all/maker/orders/ord-p3/preview"];
+  await click(byAct(card("ord-p3"), "order.reread"));
   card("ord-p4"); p.snap("an offer sent for their yes");
   card("ord-a1"); p.snap("an agreed order with claims waiting");
   card("ord-a2"); await work.quiet(); p.snap("an agreed order offered again");

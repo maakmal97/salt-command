@@ -53843,6 +53843,11 @@ await (async () => {
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account speaks plainly: the glossary's words, a refusal as a sentence with its Details, and the Desk's book names (12 Oct 2026)");
+await (async () => {
+  await (await import("./admin-words.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 30 seconds");
 await (async () => {
   await (await import("./admin-needs.mjs")).run({ ok, pageWork });
