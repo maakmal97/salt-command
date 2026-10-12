@@ -1664,10 +1664,17 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, "← Entry") that returns him
   to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are
   untouched, shown and hidden by `sweep` from `fOpen` (the form open, a slug), so what he has typed survives Back and opening another form.
-  The count's controls are a form of their own now (Stock count). A **Retained input stays on the menu**, above the rows, and goes while a form is
-  open. Opening a form reads and sends nothing. Leaving the part or the place closes the form. **The + orb** (`nav.add`, `#oAdd`, the system's raised
+  The count's controls are a form of their own now (Stock count). A **Retained input stays on the menu**, above the rows, and below 860px goes while a form
+  is open. Opening a form reads and sends nothing. Leaving the part or the place closes the form. **The + orb** (`nav.add`, `#oAdd`, the system's raised
   orb) stands over every place but Record, 16px above the App bar on a phone and in the corner from 1080px, under the bar and the sheets; it opens
   Record on Entry, the menu of entries. The room under the last section on a phone is the orb's. No route, body, request id or retained send changed.
+  **The form open is a pane** (Phase 4a, 12 Oct 2026, `test/admin-orders.mjs` section 4b, its mutations in `test/admin-orders.mutations.json`): the menu and a
+  retained input are one column (`.reclist`) and the forms the pane beside it (`.recpane`), both in `#makerFormGrid`, the nodes moved into them by
+  `recordMenu` and never drawn again, so a half-typed form survives Back and another form. **From 860px** the menu stays beside the form open (its row marked
+  `aria-current`, the grid carrying `open`), another form opens straight from its row with no Back between, the pane is sticky and scrolls inside itself
+  (between 860 and 1080px its height gives up the App bar's, as Orders' card does), Record widens for its forms (the rows to approve keep their 600px column)
+  and the way back is not drawn. **Below 860px** the form open takes the menu's place and has its way back, and the pane's invitation to choose one is not
+  drawn. `sweep` no longer hides the menu while a form is open: the CSS decides by width, as it does for Orders.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
   by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
   Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
@@ -2397,7 +2404,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.drift.customer` | Record, customer drift | The customer. |
 | `record.drift.set` | Record, customer drift | Sets the held drift for review. |
 | `record.drift.value` | Record, customer drift | The drift, from -1 to +1. |
-| `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the menu's place, with a way back. Reads and sends nothing. |
+| `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the pane beside the menu from 860px and in the menu's place below it, with a way back. Reads and sends nothing. |
 | `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |
 | `record.gift.date` | Record, gift | The date. |

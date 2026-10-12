@@ -65,8 +65,9 @@ export const OWNER_JS = `
     'shop.practice':function(){ if(sheet) drawTest(); else if(!sheetBusy) loadSheet(); }
   };
   /* every element that names where it shows is shown there and hidden elsewhere: a card, a form, a section or a whole place. Record's
-     forms are shown one at a time (fOpen, a form's slug): a form only while it is the one open, the menu and a retained input only
-     while none is, and the way back only while one is. */
+     forms are shown one at a time (fOpen, a form's slug): a form only while it is the one open, and the way back only while one is. The menu and
+     a retained input stay with their part; below 860px the grid's open class puts them out of the form's way and from 860px they stand beside it
+     (PHASE 4a, as Orders' list and card do). */
   function sweep(){
     [].forEach.call(roster.querySelectorAll('[data-in]'), function(n){
       n.hidden=!n.getAttribute('data-in').split(' ').some(function(t){ return t===placeNow||t===placeNow+'.'+partNow; });
@@ -74,9 +75,12 @@ export const OWNER_JS = `
     [].forEach.call(roster.querySelectorAll('[data-form],[data-formmenu],[data-formback]'), function(n){
       var here=!n.hasAttribute('data-in')||!n.hidden;
       if(n.hasAttribute('data-form')) n.hidden=!here||n.getAttribute('data-form')!==fOpen;
-      else if(n.hasAttribute('data-formmenu')) n.hidden=!here||!!fOpen;
+      else if(n.hasAttribute('data-formmenu')) n.hidden=!here;
       else n.hidden=!here||!fOpen;
     });
+    var grid=document.getElementById('makerFormGrid'); if(grid) grid.classList.toggle('open', !!fOpen);
+    [].forEach.call(document.querySelectorAll('#makerMenu [data-act="record.form"]'), function(r){
+      if(fOpen&&r.getAttribute('data-key')===fOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
   }
   function inClaims(){ return placeNow==='orders'&&partNow==='waiting'; }
   function inChat(){ return placeNow==='customers'&&partNow==='messages'; }
@@ -2559,13 +2563,26 @@ export const OWNER_JS = `
       row.addEventListener('click', function(){ openForm(slug); });
       lists[part].appendChild(row);
     });
+    /* PHASE 4a (12 Oct 2026): THE FORM OPEN IS A PANE. The retained input and the menu are one column and the forms the pane beside it, moved into
+       them and never drawn again; the grid is one column below 860px, where the form takes the menu's place and has its way back. */
+    var grid=el('div','recgrid'), list=el('div','reclist'), pane=el('div','recpane');
+    grid.id='makerFormGrid'; pane.appendChild(el('p','rnone recnone','Choose a form to open it here.'));
+    grid.appendChild(list); grid.appendChild(pane); box.insertBefore(grid,back.nextSibling);
+    [].slice.call(box.children).forEach(function(n){
+      if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
+    });
   }
   function openForm(slug){
-    if(!document.querySelector('#makerInputs [data-form="'+slug+'"]')) return;
+    var form=document.querySelector('#makerInputs [data-form="'+slug+'"]');
+    if(!form) return;
     fOpen=slug; sweep();
+    /* below 860px the form takes the menu's place and has its way back showing, so he is taken to the top of it; from 860px the menu is the
+       page's scroll and the form stands beside it, so a tap on a low row only brings the pane into view */
     try{
       var back=document.getElementById('makerFormBack'), tab=document.querySelector('.aparts[data-place="record"] [data-part="'+partNow+'"]');
-      back.textContent='← '+(tab?tab.textContent:'Back'); back.focus(); window.scrollTo(0,0);
+      back.textContent='← '+(tab?tab.textContent:'Back'); back.focus();
+      if(window.getComputedStyle(back).display!=='none') window.scrollTo(0,0);
+      else { var pane=form.parentNode; if(pane&&pane.scrollIntoView) pane.scrollIntoView({block:'nearest'}); }
     }catch(x){}
   }
   function closeForm(){

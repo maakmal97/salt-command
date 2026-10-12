@@ -604,7 +604,27 @@ body.ended>*:not(#aEnded){display:none}
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   .gate.adm{max-width:none}
-  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oRecord,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
+  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
+}
+/* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
+   #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
+   the menu's place and has its way back, and the pane's invitation is not drawn. From 860px up to the rail's 1080 the page widens for Record's forms
+   as it does for Orders, the rows to approve keeping their 600px column. */
+.adm .recgrid{display:block}
+.adm .recpane>.rnone{margin:0}
+@media (max-width:859.98px){
+  .adm .recgrid.open .reclist,.adm .recnone{display:none}
+}
+@media (min-width:860px){
+  .adm #oRecord{max-width:none}
+  .adm #oRecord>.abody>section:not(#makerInputs){max-width:600px}
+  .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
+  .adm .recgrid.open .recnone{display:none}
+  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+  .adm #makerFormBack{display:none}
+}
+@media (min-width:860px) and (max-width:1079.98px){
+  .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
 }
 /* 11 OCT 2026 (PHASE 1c, his decision 9): THE + ORB AND RECORD'S MENU. One raised orb stands over the page, above the App bar on a phone and in
    the corner from 1080px, below the bar and the sheets (z-index 40 against 50 and 70); the room kept under the last section on a phone is the

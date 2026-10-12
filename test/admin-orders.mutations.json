@@ -472,5 +472,83 @@
   "file": "stmt/owner.js",
   "find": "    if(moved2) fOpen=null;\n",
   "replace": ""
+ },
+ {
+  "name": "a form open leaves the grid unmarked",
+  "file": "stmt/owner.js",
+  "find": "if(grid) grid.classList.toggle('open', !!fOpen);",
+  "replace": "if(grid) grid.classList.toggle('open', false);"
+ },
+ {
+  "name": "the menu is put out of the way by the sweep while a form is open",
+  "file": "stmt/owner.js",
+  "find": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here;",
+  "replace": "else if(n.hasAttribute('data-formmenu')) n.hidden=!here||!!fOpen;"
+ },
+ {
+  "name": "the row of the form open is not marked",
+  "file": "stmt/owner.js",
+  "find": "if(fOpen&&r.getAttribute('data-key')===fOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });",
+  "replace": "r.removeAttribute('aria-current'); });"
+ },
+ {
+  "name": "the forms are left outside the pane",
+  "file": "stmt/owner.js",
+  "find": "if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);",
+  "replace": "if(n.hasAttribute('data-formmenu')) list.appendChild(n);"
+ },
+ {
+  "name": "the menu and the retained input are left outside the list",
+  "file": "stmt/owner.js",
+  "find": "if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);",
+  "replace": "if(n.hasAttribute('data-form')) pane.appendChild(n);"
+ },
+ {
+  "name": "a form open does not take the menu's place below 860px",
+  "file": "stmt/page.js",
+  "find": "  .adm .recgrid.open .reclist,.adm .recnone{display:none}",
+  "replace": "  .adm .recgrid.open .reclist,.adm .recnone{display:block}"
+ },
+ {
+  "name": "the pane's invitation is drawn on a phone",
+  "file": "stmt/page.js",
+  "find": "  .adm .recgrid.open .reclist,.adm .recnone{display:none}",
+  "replace": "  .adm .recgrid.open .reclist{display:none}"
+ },
+ {
+  "name": "the menu and the form do not stand side by side from 860px",
+  "file": "stmt/page.js",
+  "find": "  .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}",
+  "replace": "  .adm .recgrid{display:block}"
+ },
+ {
+  "name": "the way back still shows beside the menu",
+  "file": "stmt/page.js",
+  "find": "  .adm #makerFormBack{display:none}",
+  "replace": "  .adm #makerFormBack{display:inline-flex}"
+ },
+ {
+  "name": "Record keeps its narrow column from 860px",
+  "file": "stmt/page.js",
+  "find": "  .adm #oRecord{max-width:none}",
+  "replace": "  .adm #oRecord{max-width:760px}"
+ },
+ {
+  "name": "the rows to approve widen with the forms",
+  "file": "stmt/page.js",
+  "find": "  .adm #oRecord>.abody>section:not(#makerInputs){max-width:600px}\n",
+  "replace": ""
+ },
+ {
+  "name": "the pane does not scroll inside itself",
+  "file": "stmt/page.js",
+  "find": "  .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}",
+  "replace": "  .adm .recpane{position:sticky;top:24px}"
+ },
+ {
+  "name": "the pane's height ignores the App bar",
+  "file": "stmt/page.js",
+  "find": "  .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
+  "replace": "  .adm .recpane{max-height:calc(100vh - 48px)}"
  }
 ]

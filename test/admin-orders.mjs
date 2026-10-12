@@ -261,6 +261,37 @@ export async function run({ ok, pageWork }) {
       "the list comes first in the markup and the card second, in the section that Orders' four stages show: " + (grid && [...grid.children].map((c) => c.id).join()));
   }
 
+  /* 4b. RECORD'S FORM IS A PANE (Phase 4a): the menu and a retained input one column, the forms the pane beside it from 860px and in the menu's place below it */
+  {
+    const { html, media, at } = ownerCss();
+    const split = at("(min-width:860px)", ".adm .recgrid")[0] || "";
+    const phoneAny = media.filter((m) => m.q === "(max-width:859.98px)").flatMap((m) => m.rules).join(" ");
+    const phone = at("(max-width:859.98px)", ".adm .recgrid.open .reclist,.adm .recnone")[0] || "";
+    ok(/display: grid/.test(split) && /grid-template-columns: minmax\(280px,360px\) minmax\(0,1fr\)/.test(split),
+      "from 860px Record's menu and the form open stand side by side, the menu 280 to 360px: " + split);
+    ok(/display: none/.test(phone) && /\.adm \.recgrid\.open \.reclist/.test(phoneAny) && /\.adm \.recnone/.test(phoneAny),
+      "below 860px a form open takes the menu's place, and the pane's invitation to choose one is not drawn: " + phoneAny.slice(0, 240));
+    const pane = at("(min-width:860px)", ".adm .recpane")[0] || "", band = at("(min-width:860px)and(max-width:1079.98px)", ".adm .recpane")[0] || "";
+    ok(/position: sticky/.test(pane) && /overflow-y: auto/.test(pane) && /max-height: calc[(]100vh - 48px[)]/.test(pane) && !/salt-bar-h/.test(pane) && /salt-bar-h/.test(band),
+      "the pane is sticky and scrolls inside itself, and between 860 and 1080px its height gives up the App bar's: " + pane + " | " + band);
+    const back = at("(min-width:860px)", ".adm #makerFormBack")[0] || "", wide = at("(min-width:860px)", ".adm #oRecord")[0] || "";
+    const approve = at("(min-width:860px)", ".adm #oRecord>.abody>section:not(#makerInputs)")[0] || "";
+    ok(/display: none/.test(back) && /max-width: none/.test(wide) && /max-width: 600px/.test(approve),
+      "from 860px the way back is not drawn (the menu is beside the form), Record widens for its forms and the rows to approve keep their column: " + [back, wide, approve].join(" | "));
+    const d = new JSDOM(html).window.document;
+    ok(!!d.querySelector("#makerInputs") && d.querySelector("#makerInputs").getAttribute("data-in") === "record.entry record.customers record.pricing",
+      "the forms stand in Record's one section, which Entry, Customers and Pricing show");
+  }
+  p = await open();
+  try {
+    await p.tap("nav.record");
+    const grid = p.d.getElementById("makerFormGrid"), list = grid && grid.querySelector(".reclist"), pane = grid && grid.querySelector(".recpane");
+    ok(!!grid && !!list && !!pane && [...grid.children].map((c) => c.className).join() === "reclist,recpane" && grid.classList.contains("recgrid") && !grid.classList.contains("open")
+      && !!list.querySelector("#makerMenu") && !!list.querySelector("section[data-formmenu]") && pane.querySelectorAll("section.maker-input[data-form]").length === 17
+      && !list.querySelector("section[data-form]") && !!pane.querySelector(".recnone"),
+    "the menu and the retained input stand in one column and the 17 forms in the pane beside it, with an invitation to choose one: " + (grid && [...grid.children].map((c) => c.className).join()));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
   /* 5. A CUSTOMER'S QUESTION ON AN ORDER is a Now card on Needs you, counted as an account thread's is */
   const base = await open(state());
   const baseCount = { needs: +base.counts().needs, orders: +base.counts().orders, customers: base.counts().customers };
@@ -371,7 +402,7 @@ export async function run({ ok, pageWork }) {
     ok(rows.length === 17 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && r.querySelector(".salt-inbox-row__action").textContent === "Open")
       && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 17 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
     "a row is the system's Inbox row, named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
-    const bad = [];
+    const bad = [], gridOpen = () => d.getElementById("makerFormGrid").classList.contains("open");
     for (const part of ["entry", "customers", "pricing"]) {
       await p.tap("part.record." + part);
       for (const name of MENU[part]) {
@@ -381,13 +412,14 @@ export async function run({ ok, pageWork }) {
         p.posts.length = 0; p.reads.length = 0;
         row.click(); await p.work.quiet();
         const back = d.getElementById("makerFormBack"), form = d.querySelector('#makerInputs [data-form="' + slug + '"]');
-        if (!(same(p.formsOpen(), [slug]) && form.querySelector("h3").textContent === name && p.menu().length === 0 && p.retained().length === 0 && shown(back)
+        if (!(same(p.formsOpen(), [slug]) && form.querySelector("h3").textContent === name && same(p.menu(), MENU[part]) && gridOpen() && row.getAttribute("aria-current") === "true"
+          && d.querySelectorAll('#makerMenu [aria-current="true"]').length === 1 && shown(back)
           && back.textContent === "← " + LABEL[part] && back.getAttribute("data-act") === "record.form-back" && p.posts.length === 0 && p.reads.length === 0 && d.activeElement === back)) bad.push(name);
         back.click(); await p.work.quiet();
-        if (!(p.formsOpen().length === 0 && same(p.menu(), MENU[part]) && !shown(back) && d.activeElement === row)) bad.push(name + " (back)");
+        if (!(p.formsOpen().length === 0 && same(p.menu(), MENU[part]) && !gridOpen() && !row.hasAttribute("aria-current") && !shown(back) && d.activeElement === row)) bad.push(name + " (back)");
       }
     }
-    ok(bad.length === 0, "each of the 17 forms opens alone from its row, the menu and the retained input out of the way, a way back named for the part, nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
+    ok(bad.length === 0, "each of the 17 forms opens alone from its row and no other form shows, its row marked and the grid open, a way back named for the part, nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
     await p.tap("part.record.entry");
     await p.tap("record.form", "sale-or-purchase");
     const units = byAct(d, "record.trade.units"), form = units.closest("section");
@@ -396,6 +428,13 @@ export async function run({ ok, pageWork }) {
     await p.tap("record.form", "sale-or-purchase");
     ok(byAct(d, "record.trade.units") === units && units.closest("section") === form && units.value === "7" && form.getAttribute("data-form") === "sale-or-purchase",
       "a form is the same node when opened again, what was typed in it kept: " + units.value);
+    /* from 860px the menu stands beside the form, so another form is opened straight from its row, with no Back between: the first is hidden, not drawn again */
+    await p.tap("record.form", "gift");
+    ok(same(p.formsOpen(), ["gift"]) && gridOpen() && byAct(d, "record.form", "gift").getAttribute("aria-current") === "true" && !byAct(d, "record.form", "sale-or-purchase").hasAttribute("aria-current")
+      && form.hidden && units.value === "7", "another form opens straight from the menu, the first held as it was: " + JSON.stringify(p.formsOpen()) + " " + units.value);
+    await p.tap("record.form", "sale-or-purchase");
+    ok(byAct(d, "record.trade.units") === units && units.closest("section") === form && units.value === "7" && same(p.formsOpen(), ["sale-or-purchase"]),
+      "and coming back to the first finds the same node with what was typed in it: " + units.value);
     ok(!!byAct(d, "record.count.send").closest('section[data-form="stock-count"]') && !!byAct(d, "record.retained.retry").closest("section[data-formmenu]"),
       "the stock count's controls stand in a form of their own and a retained input's in its section, moved and not rebuilt");
     await p.tap("record.form-back");
