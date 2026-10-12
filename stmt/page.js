@@ -727,8 +727,8 @@ body.ended>*:not(#aEnded){display:none}
   font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;text-transform:uppercase}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
    is selectable text rather than a live link, because the thing he does with it is copy it. */
-/* .adm .glink as well: the door's rule for a glass card inside .gate (margin 0 0 4px) is as specific as .glink is not */
-.glink,.adm .glink{padding:14px 16px;margin:12px 0 0}
+/* #glist as well: the door's rule for a glass card inside .gate (margin 0 0 4px) is more specific than .glink alone */
+.glink,.adm #glist .glink{padding:14px 16px;margin:12px 0 0}
 .glink.off{opacity:.5}
 .glink h4{margin:0;font-size:var(--salt-text-md);font-weight:500}
 .glink .gt{margin:0 0 6px}
