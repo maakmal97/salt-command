@@ -86,8 +86,8 @@
   {
     "name": "unconfirmed 200 treated as completion",
     "file": "stmt/owner.js",
-    "find": "if(!result||result.ok!==true)throw new Error('The input completion was not confirmed. Its request is kept.');",
-    "replace": "if(!result)throw new Error('The input completion was not confirmed. Its request is kept.');"
+    "find": "if(!result||result.ok!==true)throw new Error('The Desk did not confirm. Nothing is lost; tap Send again.');",
+    "replace": "if(!result)throw new Error('The Desk did not confirm. Nothing is lost; tap Send again.');"
   },
   {
     "name": "generated hush loses TIP_ID dependency",

@@ -63,13 +63,13 @@ async function ownerGift(wd, pageWork) {
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Gift");
   const set = (label, value) => { field(section, label).value = value; };
-  for (const [label, value] of Object.entries({ Party: "CX1-ZED", Book: "salt", Date: "2099-10-05", Units: "2",
+  for (const [label, value] of Object.entries({ Who: "CX1-ZED", Book: "salt", Date: "2099-10-05", Units: "2",
     Handover: "collected" })) set(label, value);
-  const tap = async () => { button(section, "Send gift for review").click(); await work.quiet(); };
+  const tap = async () => { button(section, "Send the gift").click(); await work.quiet(); };
   return { dom, section, sent, asked, set, tap, answer: (value) => { answer = value; },
     status: () => section.querySelector('[role="status"]').textContent,
     retained: () => dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/gift"),
-    cancelShown: () => { const cancel = button(section, "Cancel retained input"); return !!cancel && !cancel.hidden; } };
+    cancelShown: () => { const cancel = button(section, "Discard"); return !!cancel && !cancel.hidden; } };
 }
 
 export async function run({ ok, pageWork }) {
@@ -134,13 +134,13 @@ export async function run({ ok, pageWork }) {
   const owner = world(), page = await ownerGift(owner, pageWork);
   try {
     await page.tap();
-    ok(/Sent for review/.test(page.status()) && owner.drafts().length === 1 && !page.retained(),
+    ok(/Sent[.] It waits under Approve/.test(page.status()) && owner.drafts().length === 1 && !page.retained(),
       "gift twin page: the first tap sends the gift for review and keeps no retained request");
     await page.tap();
     ok(/already queued/.test(page.status()) && owner.drafts().length === 1 && !page.cancelShown() && !page.retained(),
       "gift twin page: a second tap is refused in words, and the form is free again: no retained request, no Cancel to press");
     page.set("Units", "3"); await page.tap();
-    ok(/Sent for review/.test(page.status()) && owner.drafts().length === 2 && owner.drafts()[1].row.qty === 3,
+    ok(/Sent[.] It waits under Approve/.test(page.status()) && owner.drafts().length === 2 && owner.drafts()[1].row.qty === 3,
       "gift twin page: a different gift then sends at once, the refused twin not retried in its place");
   } finally { page.dom.window.close(); owner.sqlite.close(); }
 
@@ -149,9 +149,9 @@ export async function run({ ok, pageWork }) {
   try {
     await booked.tap();
     const bodies = booked.sent.filter((s) => s.path.endsWith("/gift")).map((s) => s.body);
-    ok(booked.asked.length === 1 && /already booked/.test(booked.asked[0]) && bodies.length === 2 && bodies[0].second === undefined
+    ok(booked.asked.length === 1 && /already recorded/.test(booked.asked[0]) && bodies.length === 2 && bodies[0].second === undefined
       && bodies[1].second === "s900" && bodies[1].at !== bodies[0].at && asking.drafts().length === 1
-      && asking.drafts()[0].entry.payload.second === "s900" && /Sent for review/.test(booked.status()),
+      && asking.drafts()[0].entry.payload.second === "s900" && /Sent[.] It waits under Approve/.test(booked.status()),
     "gift twin page: a booked twin is put to him as a question, and his yes resends it with the booked row's id under a fresh moment");
   } finally { booked.dom.window.close(); asking.sqlite.close(); }
 

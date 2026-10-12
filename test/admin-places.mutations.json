@@ -176,7 +176,7 @@
  {
   "name": "no Desk rows waiting says nothing",
   "file": "stmt/owner.js",
-  "find": "draftRoot.appendChild(el('p','rnone','No Desk rows waiting.'));",
+  "find": "draftRoot.appendChild(el('p','rnone','Nothing waits for your approval.'));",
   "replace": "draftRoot.appendChild(el('p','rnone',''));"
  },
  {

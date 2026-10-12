@@ -101,22 +101,22 @@ export async function run({ ok, pageWork }) {
   let ui;
   try {
     ui = await owner(wd, pageWork);
-    const rewards = () => section(ui.doc, "Reward redemption");
+    const rewards = () => section(ui.doc, "Rewards");
     const holder = (code) => rewards().querySelector('[data-reward-holder="' + code + '"]');
-    ok(button(holder("CX1-ZED"), "Redeem 1 unit for CX1-ZED") && !holder("CX2-ZED").querySelector("button")
+    ok(button(holder("CX1-ZED"), "Give CX1-ZED 1 unit") && !holder("CX2-ZED").querySelector("button")
       && /0.44 unit held/.test(holder("CX2-ZED").textContent),
     "generated owner offers one whole customer unit at two, and no action at .44");
-    ok(/2 unit held while departed/.test(holder("CX3-ZED").textContent) && !holder("CX3-ZED").querySelector("button"),
+    ok(/2 units held while away/.test(holder("CX3-ZED").textContent) && !holder("CX3-ZED").querySelector("button"),
       "generated owner keeps departed earnings visible and offers no spend");
-    ok(button(holder("CX4-ZED"), "Offset reward for CX4-ZED"),
+    ok(button(holder("CX4-ZED"), "Take 1 unit off what CX4-ZED owes"),
       "generated owner names Offset for the customer holding an advance");
     wd.sqlite.prepare("UPDATE state SET doc=? WHERE key='PEOPLE'").run(JSON.stringify({ departed: [], banned: [] }));
     wd.foldBook.PEOPLE = { departed: [], banned: [] };
-    button(rewards(), "Read reward offers").click(); await ui.work.quiet();
-    ok(button(holder("CX3-ZED"), "Redeem 1 unit for CX3-ZED"), "returning restores the actual generated redemption offer");
+    button(rewards(), "Read again").click(); await ui.work.quiet();
+    ok(button(holder("CX3-ZED"), "Give CX3-ZED 1 unit"), "returning restores the actual generated redemption offer");
     ui.set(rewards(), "Date", wd.date);
     const native = wd.nativeRedeem("CX4-ZED");
-    button(holder("CX4-ZED"), "Offset reward for CX4-ZED")?.click(); await ui.work.quiet();
+    button(holder("CX4-ZED"), "Take 1 unit off what CX4-ZED owes")?.click(); await ui.work.quiet();
     const offset = wd.drafts().find((d) => d.entry.payload.party === "CX4-ZED");
     ok(offset && JSON.stringify(offset.entry.payload) === JSON.stringify(native.payload)
       && offset.entry.payload.rid === "advance" && offset.status === "pending",
@@ -132,7 +132,7 @@ export async function run({ ok, pageWork }) {
     ok(offsetDraft && offsetResult.ok && offsetBook.sales.find((s) => s.rid === "advance").rebateKg === 1
       && JSON.stringify(offsetBook.sales.filter((s) => s.rid !== "advance")) === offsetBefore,
     "actual offset approval and fold spend one customer unit on that row and leave other sales unchanged");
-    button(holder("CX3-ZED"), "Redeem 1 unit for CX3-ZED")?.click();await ui.work.quiet();
+    button(holder("CX3-ZED"), "Give CX3-ZED 1 unit")?.click();await ui.work.quiet();
     const redemption = wd.drafts().find((d) => d.entry.payload.mode === "redeem" && d.entry.payload.party === "CX3-ZED");
     if (redemption) await wd.call("/all/maker/drafts/" + encodeURIComponent(redemption.id) + "/approve", {});
     const redeemDraft = wd.drafts().find((d) => d.id === redemption?.id && d.status === "approved");
@@ -148,25 +148,25 @@ export async function run({ ok, pageWork }) {
     "returned holder's generated redemption approves and folds exactly one whole unit, no other sales changed");
 
     const trade = section(ui.doc, "Sale or purchase");
-    for (const [name, value] of Object.entries({ Party: "CX1-ZED", Date: "2099-10-05", Units: "1",
-      "Goods total (RM)": String(wd.ask - 30), "Units moved": "1", "Delivery (RM)": "40", Handover: "delivered" }))
+    for (const [name, value] of Object.entries({ Who: "CX1-ZED", Date: "2099-10-05", Units: "1",
+      "Price (goods)": String(wd.ask - 30), "Units handed over": "1", "Delivery": "40", Handover: "delivered" }))
       ui.set(trade, name, value);
     await ui.work.quiet();
     const cover = () => trade.querySelector("[data-reward-cover]");
     ok(cover() && !cover().parentNode.hidden && !cover().checked
-      && trade.textContent.includes("Cover RM 30.00 with 0.75 unit reward")
+      && trade.textContent.includes("Use 0.75 unit of their reward: RM 30.00 off")
       && wd.nativeCover.kg === 0.75 && wd.nativeCover.rm === 30,
     "generated cover is unticked and matches the native own-card gap at cost, delivery excluded");
-    ui.set(trade, "Goods total (RM)", String(wd.ask)); await ui.work.quiet();
+    ui.set(trade, "Price (goods)", String(wd.ask)); await ui.work.quiet();
     ok(cover().parentNode.hidden, "a sale at its own quote generates no cover offer");
-    ui.set(trade, "Goods total (RM)", String(wd.ask - 30));await ui.work.quiet();
+    ui.set(trade, "Price (goods)", String(wd.ask - 30));await ui.work.quiet();
     ui.set(trade, "Book", "oil"); await ui.work.quiet();
     ok(cover().parentNode.hidden, "a fixed nonreward book generates no cover offer");
-    ui.set(trade, "Book", "salt");ui.set(trade, "Party", "CA1-ZED");await ui.work.quiet();
+    ui.set(trade, "Book", "salt");ui.set(trade, "Who", "CA1-ZED");await ui.work.quiet();
     ok(cover().parentNode.hidden, "an associate generates no customer cover offer");
-    ui.set(trade, "Party", "CX1-ZED"); ui.set(trade, "Goods total (RM)", String(wd.ask - 30));await ui.work.quiet();
+    ui.set(trade, "Who", "CX1-ZED"); ui.set(trade, "Price (goods)", String(wd.ask - 30));await ui.work.quiet();
     ui.set(trade, "Date", "2099-10-04");
-    button(trade, "Send trade for review").click();await ui.work.quiet();
+    button(trade, "Send the sale").click();await ui.work.quiet();
     const unmarked = wd.drafts().find((d) => d.entry.payload.mode === "new");
     ok(unmarked && !unmarked.row.coverUnits && !unmarked.entry.payload.more,
       "the generated unticked trade sends no cover and reserves no reward");
@@ -193,21 +193,21 @@ export async function run({ ok, pageWork }) {
     ok(reservation.status === 200 && wd.drafts().some((d) => d.id === reservationAt && d.status === "pending"),
       "an actual pending redemption reserves reward capacity before the covered trade batch");
     ui.set(trade, "Date", "2099-10-05");
-    button(trade, "Add another book").click();await ui.work.quiet();
+    button(trade, "Another book on this visit").click();await ui.work.quiet();
     const extra = trade.querySelector(".maker-extra-trade");
-    for (const [name, value] of Object.entries({ Units: "2", "Goods total (RM)": "30", "Units moved": "2" }))
+    for (const [name, value] of Object.entries({ Units: "2", "Price (goods)": "30", "Units handed over": "2" }))
       ui.set(extra, name, value);
     await ui.work.quiet();
     cover().checked = true;ui.lose();
-    button(trade, "Send trade for review").click();await ui.work.quiet();
+    button(trade, "Send the sale").click();await ui.work.quiet();
     const salePosts = () => ui.sent.filter((p) => p.path === "/all/maker/inputs/sale" && p.body.extras);
     const batch = wd.drafts().filter((d) => d.entry.payload.mode === "new" && d.row.trip);
     ok(batch.length === 2 && batch[0].row.coverUnits === 0.75 && batch[0].row.coverRM === 30
       && batch[0].entry.payload.coverFree === 1 && /covered by/.test(batch[0].entry.raw)
       && batch[0].row.delivery === 40 && !batch[1].row.delivery && batch[0].row.trip === batch[1].row.trip,
     "marked owner batch keeps pending reward reservations and one delivery on the unchanged trip carrier when verified registrations are present");
-    ui.set(trade, "Goods total (RM)", "999");
-    button(trade, "Send trade for review").click();await ui.work.quiet();
+    ui.set(trade, "Price (goods)", "999");
+    button(trade, "Send the sale").click();await ui.work.quiet();
     ok(salePosts().length === 2 && salePosts()[0].bytes === salePosts()[1].bytes
       && wd.drafts().filter((d) => d.entry.payload.mode === "new" && d.row.trip).length === 2 && !cover().checked,
     "lost-answer owner retry sends immutable whole-batch bytes once and clears the checkbox on confirmation");
@@ -227,16 +227,16 @@ export async function run({ ok, pageWork }) {
       && book.sales.some((s) => s.coverUnits === 0.75 && s.coverRM === 30 && s.total === wd.ask - 30),
     "native plan and apply fold the covered row without repricing it or changing any other sale: "
       + JSON.stringify({ refused: planned.refused, ok: folded.ok, problems: folded.problems }));
-    button(rewards(), "Read reward offers").click();await ui.work.quiet();
-    ok(!button(holder("CX1-ZED"), "Redeem 1 unit for CX1-ZED")
-      && /0.25 unit available after reservations/.test(holder("CX1-ZED").textContent),
+    button(rewards(), "Read again").click();await ui.work.quiet();
+    ok(!button(holder("CX1-ZED"), "Give CX1-ZED 1 unit")
+      && /0.25 unit free/.test(holder("CX1-ZED").textContent),
       "actual generated offers net approved cover and pending redemption reservations before offering another spend: "
         + JSON.stringify({ holder: holder("CX1-ZED").textContent, drafts: wd.drafts().map((d) => ({
           id: d.id, status: d.status, mode: d.entry.payload.mode, coverUnits: d.row.coverUnits,
           qty: d.row.qty, party: d.row.customer, product: d.row.product })) }));
     wd.sqlite.prepare("UPDATE state SET doc=? WHERE key='PRODUCTS'").run(JSON.stringify({
       salt: { reward: false }, oil: { reward: false } }));
-    button(rewards(), "Read reward offers").click();await ui.work.quiet();
+    button(rewards(), "Read again").click();await ui.work.quiet();
     ok(!rewards().querySelector("[data-reward-holder] button"),
       "a declared nonreward book exposes no generated redemption action");
   } finally { ui?.dom.window.close(); wd.source.w.close(); wd.sqlite.close(); }
@@ -248,17 +248,17 @@ export async function runExtra({ ok, pageWork }) {
   try {
     extraUi = await owner(extraCase, pageWork);
     const trade = section(extraUi.doc, "Sale or purchase");
-    for (const [name, value] of Object.entries({ Book: "oil", Party: "CX1-ZED", Date: "2099-10-05", Units: "2",
-      "Goods total (RM)": "30", "Units moved": "2", "Delivery (RM)": "40", Handover: "delivered" }))
+    for (const [name, value] of Object.entries({ Book: "oil", Who: "CX1-ZED", Date: "2099-10-05", Units: "2",
+      "Price (goods)": "30", "Units handed over": "2", "Delivery": "40", Handover: "delivered" }))
       extraUi.set(trade, name, value);
-    button(trade, "Add another book").click();await extraUi.work.quiet();
+    button(trade, "Another book on this visit").click();await extraUi.work.quiet();
     const extra = trade.querySelector(".maker-extra-trade");
-    extraUi.set(extra, "Goods total (RM)", String(extraCase.ask - 30));extraUi.set(extra, "Units moved", "1");
+    extraUi.set(extra, "Price (goods)", String(extraCase.ask - 30));extraUi.set(extra, "Units handed over", "1");
     await extraUi.work.quiet();
     const check = extra.querySelector("[data-reward-cover]");
-    ok(!check.parentNode.hidden && !check.checked && /Cover RM 30.00 with 0.75 unit/.test(extra.textContent),
+    ok(!check.parentNode.hidden && !check.checked && /Use 0.75 unit of their reward: RM 30.00 off/.test(extra.textContent),
       "the generated extra-book control offers native unticked cover when salt is not the trip carrier");
-    check.checked = true;button(trade, "Send trade for review").click();await extraUi.work.quiet();
+    check.checked = true;button(trade, "Send the sale").click();await extraUi.work.quiet();
     const drafts = extraCase.drafts();
     if (drafts[0]) await extraCase.call("/all/maker/drafts/" + encodeURIComponent(drafts[0].id) + "/approve", {});
     const approved = extraCase.drafts().filter((d) => d.status === "approved");

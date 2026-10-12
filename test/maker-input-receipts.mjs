@@ -15,23 +15,23 @@ const context = {
   }
 };
 const cases = [
-  { label: "Record count", path: "stock-count",
+  { label: "Record the count", path: "stock-count",
     body: { product: "salt", date: "2026-10-01", qty: 4 },
     edit(root, changed) {
       root.querySelector('input[type="date"]').value = "2026-10-01";
       root.querySelector('input[type="number"]').value = changed ? "9" : "4";
       return root.querySelector('input[type="number"]');
     } },
-  { label: "Send tier for review", path: "tier-set",
+  { label: "Send the level", path: "tier-set",
     body: { code: "CX1-ZED", product: "salt", tier: "Gold" },
     edit(root, changed) { const field = root.querySelectorAll("select")[2]; field.value = changed ? "Silver" : "Gold"; return field; } },
-  { label: "Send board sizes for review", path: "house-sizes",
+  { label: "Send the sizes", path: "house-sizes",
     body: { product: "salt", hide: [0.5] },
     edit(root, changed) { const field = root.querySelector('input[type="checkbox"]'); field.checked = changed; return field; } },
-  { label: "Hush tip", path: "hush",
+  { label: "Hide it", path: "hush",
     body: { id: "margin:zero", until: null },
     edit(root, changed) { const field = root.querySelectorAll("select")[1]; field.value = changed ? "30" : ""; return field; } },
-  { label: "Send offset for review", path: "offset",
+  { label: "Send the offset", path: "offset",
     body: { code: "CX1-ZED", rid: "Tx_1", date: "2026-10-01" },
     edit(root, changed) { const field = root.querySelector('input[type="date"]'); field.value = changed ? "2026-10-02" : "2026-10-01"; return field; } }
 ];
@@ -149,7 +149,7 @@ export async function run({ ok, pageWork }) {
         field.dispatchEvent(new win.Event("input", { bubbles: true }));
         const before = calls.length;
         await tap();
-        ok(calls.length === before && root().textContent.includes("unsupported metadata"),
+        ok(calls.length === before && root().textContent.includes("This saved entry cannot be sent"),
           item.label + ": the generated TIP_ID dependency refuses an invalid tip before transport");
       }
       if (item.path === "offset") {
@@ -162,7 +162,7 @@ export async function run({ ok, pageWork }) {
           b.click();
           await waitFor(() => !b.disabled);
           await work.quiet();
-          refused.push(calls.length === before && root().textContent.includes("The retained request is invalid."));
+          refused.push(calls.length === before && root().textContent.includes("This saved entry cannot be sent"));
         }
         ok(refused.every(Boolean), item.label + ": unsupported figures, prose, row id, timestamp and date are refused before transport");
       }

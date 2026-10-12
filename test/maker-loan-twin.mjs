@@ -48,15 +48,15 @@ async function ownerLoan(wd, pageWork) {
   answerSheets(dom.window, asked, () => answer);   /* a twin is put to him on the page's Sheet (Phase 2c); each is answered as it comes up */
   dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
-    .find((s) => s.querySelector("h3")?.textContent === "Borrow or lend");
+    .find((s) => s.querySelector("h3")?.textContent === "Loan");
   const set = (label, value) => { field(section, label).value = value; };
-  for (const [label, value] of Object.entries({ Form: "salt", Direction: "out", Party: "CX1-ZED", Book: "salt",
-    Date: "2099-10-05", "Units or RM": "2" })) set(label, value);
-  const tap = async () => { button(section, "Send loan for review").click(); await work.quiet(); };
+  for (const [label, value] of Object.entries({ "Goods or cash": "salt", Direction: "out", Who: "CX1-ZED", Book: "salt",
+    Date: "2099-10-05", "Units": "2" })) set(label, value);
+  const tap = async () => { button(section, "Send the loan").click(); await work.quiet(); };
   return { dom, section, sent, asked, set, tap, answer: (value) => { answer = value; },
     status: () => section.querySelector('[role="status"]').textContent,
     retained: () => dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/loan"),
-    cancelShown: () => { const cancel = button(section, "Cancel retained input"); return !!cancel && !cancel.hidden; } };
+    cancelShown: () => { const cancel = button(section, "Discard"); return !!cancel && !cancel.hidden; } };
 }
 
 export async function run({ ok, pageWork }) {
@@ -107,13 +107,13 @@ export async function run({ ok, pageWork }) {
   const owner = world(), page = await ownerLoan(owner, pageWork);
   try {
     await page.tap();
-    ok(/Sent for review/.test(page.status()) && owner.drafts().length === 1 && !page.retained(),
+    ok(/Sent[.] It waits under Approve/.test(page.status()) && owner.drafts().length === 1 && !page.retained(),
       "loan twin page: the first tap sends the loan for review and keeps no retained request");
     await page.tap();
     ok(/already queued/.test(page.status()) && owner.drafts().length === 1 && !page.cancelShown() && !page.retained(),
       "loan twin page: a second tap is refused in words, and the form is free again: no retained request, no Cancel to press");
-    page.set("Units or RM", "3"); await page.tap();
-    ok(/Sent for review/.test(page.status()) && owner.drafts().length === 2 && owner.drafts()[1].row.valueKg === 3,
+    page.set("Units", "3"); await page.tap();
+    ok(/Sent[.] It waits under Approve/.test(page.status()) && owner.drafts().length === 2 && owner.drafts()[1].row.valueKg === 3,
       "loan twin page: a different loan then sends at once, the refused twin not retried in its place");
   } finally { page.dom.window.close(); owner.sqlite.close(); }
 
@@ -122,9 +122,9 @@ export async function run({ ok, pageWork }) {
   try {
     await booked.tap();
     const bodies = booked.sent.filter((s) => s.path.endsWith("/loan")).map((s) => s.body);
-    ok(booked.asked.length === 1 && /already booked/.test(booked.asked[0]) && bodies.length === 2 && bodies[0].second === undefined
+    ok(booked.asked.length === 1 && /already recorded/.test(booked.asked[0]) && bodies.length === 2 && bodies[0].second === undefined
       && bodies[1].second === "l007" && bodies[1].at !== bodies[0].at && asking.drafts().length === 1
-      && /Sent for review/.test(booked.status()),
+      && /Sent[.] It waits under Approve/.test(booked.status()),
       "loan twin page: a booked twin is put to him as a question, and his yes resends it with the booked row's id under a fresh moment");
   } finally { booked.dom.window.close(); asking.sqlite.close(); }
 

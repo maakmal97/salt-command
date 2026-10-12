@@ -32,7 +32,7 @@ export async function run({ ok, REPO }) {
     "a resale bucket and a fixed board have no tier card");
 
   const owner = readFileSync(join(REPO, "stmt", "owner.js"), "utf8");
-  ok(owner.includes("Small, mid and big bands") && owner.includes("Use the late-payer offer") && owner.includes("'Late payer: offered '")
+  ok(owner.includes("A level by order size") && owner.includes("Use the late-payer level") && owner.includes("'Late payer: suggested '")
     && owner.includes("{small:bandSel.small.value,mid:bandSel.mid.value,big:bandSel.big.value}"),
     "the owner page offers bands, the proposal and the late-payer offer, and sends bands as small, mid and big");
 }

@@ -135,23 +135,23 @@ export async function run({ ok } = {}) {
     const doc = dom.window.document;
     doc.querySelector('button[data-act="nav.record"]').click();
     const loaded = await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")]
-      .some((heading) => heading.textContent === "Customer drift"));
+      .some((heading) => heading.textContent === "Price drift"));
     check(loaded, "the owner page renders the Counter customer drift controls");
     const drift = [...doc.querySelectorAll("#makerInputs .maker-input")]
-      .find((section) => section.querySelector("h3")?.textContent === "Customer drift");
+      .find((section) => section.querySelector("h3")?.textContent === "Price drift");
     const selects = drift.querySelectorAll("select"), value = drift.querySelector('input[type="number"]');
-    const setButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Set drift for review");
-    const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Clear held drift");
+    const setButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Send the drift");
+    const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Follow their record");
     check([...selects[0].options].map((option) => option.value).join() === "CX1-ZED,CX2-ZED",
       "the Counter drift selector uses the customer-only catalog and excludes suppliers");
     check([...selects[1].options].map((option) => option.value).join() === "salt",
       "the UI offers salt and omits fixed books from its drift selector");
     check(value.min === "-1" && value.max === "1" && value.step === "0.05",
       "the UI bounds the numeric input to the drift range");
-    check(drift.textContent.includes("Held override: +0.00."),
+    check(drift.textContent.includes("Set by hand: +0.00 (scale -1 to +1)."),
       "the UI labels a held zero as an override");
     selects[0].value = "CX2-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    check(drift.textContent.includes("Automatic from the record: +0.35.") && clearButton.hidden,
+    check(drift.textContent.includes("From their record: +0.35.") && clearButton.hidden,
       "automatic record drift is labeled separately and Clear is unavailable when no override is held");
     selects[0].value = "CX1-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
     value.value = "1.01"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();

@@ -145,7 +145,7 @@ export async function run({ ok, pageWork }) {
     ok(same(moves(), ["order.handed", "order.cancel"]) && !foot().contains(byAct(d, "order.handed-units")) && !foot().contains(byAct(d, "order.close")),
       "a ready order's foot holds Record handover and Cancel order, the units and the close staying in the body: " + JSON.stringify(moves()));
     byAct(d, "order.close", "ord-r1").click(); await p.work.quiet();
-    ok(!!foot().querySelector("[data-maker-say]") && /A close is above 0/.test(foot().querySelector("[data-maker-say]").textContent) && foot().lastElementChild === foot().querySelector("[data-maker-say]"),
+    ok(!!foot().querySelector("[data-maker-say]") && /Finish at more than 0/.test(foot().querySelector("[data-maker-say]").textContent) && foot().lastElementChild === foot().querySelector("[data-maker-say]"),
       "the card's answer lands in its foot, under its moves: " + (foot().querySelector("[data-maker-say]") || {}).textContent);
     /* cash held for the order shuts every control of the card, the foot's too, and Undo opens them again */
     await p.tapRow("ord-r2");
@@ -267,9 +267,9 @@ export async function run({ ok, pageWork }) {
     await tapRow("ord-r1");
     const units = byAct(d, "order.handed-units", "ord-r1");
     units.value = "3"; byAct(d, "order.close", "ord-r1").click(); await p.work.quiet();
-    ok(!sheetOf() && /A close is above 0 and under the 3 units ordered/.test(d.querySelector("#makerReview [data-maker-say]").textContent), "a figure that is not a close opens no sheet and is said on the card");
+    ok(!sheetOf() && /Finish at more than 0 and fewer than the 3 units ordered/.test(d.querySelector("#makerReview [data-maker-say]").textContent), "a figure that is not a close opens no sheet and is said on the card");
     units.value = "2"; byAct(d, "order.close", "ord-r1").click(); await p.work.quiet();
-    ok(/Close this order at 2 of 3 units/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && !inSheet("order.ask-go").classList.contains("salt-ghost--danger") && sends("/handed").length === 0,
+    ok(/Finish this order at 2 of 3 units/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && !inSheet("order.ask-go").classList.contains("salt-ghost--danger") && sends("/handed").length === 0,
       "a close asks on the sheet, naming the units, and sends nothing as it opens");
     inSheet("order.ask-go").click(); await p.work.quiet();
     const closed = sends("/handed");
@@ -279,7 +279,7 @@ export async function run({ ok, pageWork }) {
     /* Offer again: a stage he rejected, asked on the sheet, sent under a request id */
     await part("closed"); await tapRow("ord-x1");
     byAct(d, "order.again-pay", "ord-x1").click(); await p.work.quiet();
-    ok(/Offer the payment again/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("salt-ghost--danger"),
+    ok(/Send the payment again/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("salt-ghost--danger"),
       "offering a stage again asks on the sheet and sends nothing as it opens");
     inSheet("order.ask-go").click(); await p.work.quiet();
     const again = sends("/again");

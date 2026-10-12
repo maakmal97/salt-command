@@ -12,7 +12,7 @@
   { "name": "form never asks the booked question", "file": "stmt/owner.js",
     "find": "await makerSecond(send,'/all/maker/inputs/loan',body,'loan');", "replace": "await send('/all/maker/inputs/loan',body);" },
   { "name": "form resends without his yes", "file": "stmt/owner.js",
-    "find": "if(!twin||!(await ownerAsk(send.button,'twin:'+what,{title:'Record this as a separate '+what+'?', say:['A matching '+what+' is already booked.'], go:'Record it again', keep:'Do not record', plain:true})))throw error;", "replace": "if(!twin)throw error;" },
+    "find": "if(!twin||!(await ownerAsk(send.button,'twin:'+what,{title:'Record this '+what+' again?', say:['You already recorded a '+what+' like this. Record it again as a separate one?'], go:'Record it again', keep:'Do not record', plain:true})))throw error;", "replace": "if(!twin)throw error;" },
   { "name": "form resends without the booked row's id", "file": "stmt/owner.js",
     "find": "{at:new Date().toISOString(),second:twin}", "replace": "{at:new Date().toISOString()}" },
   { "name": "form resends under the refused moment", "file": "stmt/owner.js",

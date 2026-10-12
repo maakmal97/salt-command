@@ -80,11 +80,11 @@ export async function run({ ok, pageWork }) {
       && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].every((x) => x.classList.contains("salt-approve")),
     "each Desk row to approve is an article on the system's Approve recipe (salt-approve), beside the page's own card class and in place of the glass card");
     const head = c.querySelector(":scope > .salt-approve__head");
-    ok(!!head && head.querySelector(".salt-approve__party").textContent === "CX1-ZED" && head.querySelector(".salt-approve__entry").textContent === "SELL · 10 Oct 2026",
+    ok(!!head && head.querySelector(".salt-approve__party").textContent === "CX1-ZED" && head.querySelector(".salt-approve__entry").textContent === "Sale on 10 Oct 2026",
       "its head is the recipe's: the party's code, and the entry as typed beside it: " + (head && head.textContent));
     const facts = [...c.querySelectorAll(":scope > .maker-facts")], flags = c.querySelector(":scope > .salt-approve__flags"), reason = c.querySelector(":scope > .salt-approve__reason");
     const figures = facts.find((x) => /Cost RM 56\.00/.test(x.textContent));
-    ok(!!figures && figures.textContent === "Cost RM 56.00 · Margin RM 44.00 · 44%" && /RM 100\.00/.test(facts[0].textContent),
+    ok(!!figures && figures.textContent === "Cost RM 56.00 · Your margin RM 44.00 · 44%" && /RM 100\.00/.test(facts[0].textContent),
       "the figures lead, read off the draft and computed nowhere: the row's total, then its cost and margin: " + facts.map((x) => x.textContent).join(" | "));
     ok(!!flags && same([...flags.querySelectorAll(".salt-status.salt-status--ember")].map((x) => x.textContent), ["Check before deciding"]) && !c.querySelector(":scope > .salt-insight"),
       "the flags it was drafted with are chips in the recipe's flag row, and not also a line of prose");
@@ -92,14 +92,14 @@ export async function run({ ok, pageWork }) {
       && (figures.compareDocumentPosition(flags) & 4) && (flags.compareDocumentPosition(reason) & 4) && !!c.querySelector(":scope > details > summary[data-act='row.proposed']") && !c.querySelector(":scope > details").open,
     "in the recipe's order, the figures, then the flags, then the drafter's reasoning, with the row itself folded shut");
     const acts = c.querySelector(":scope > .salt-approve__actions"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
-    ok(!!acts && acts.contains(approve) && acts.contains(reject) && approve.textContent === "Approve row" && reject.textContent === "Reject row"
+    ok(!!acts && acts.contains(approve) && acts.contains(reject) && approve.textContent === "Approve" && reject.textContent === "Reject"
       && approve.classList.contains("salt-pill") && !approve.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost--danger")
       && [...acts.children].filter((x) => !x.hidden)[0] === approve,
     "its moves stand in the recipe's actions: Approve the one filled pill, first, and Reject the danger ghost");
     ok(!byAct(c, "draft.approve").disabled && !byAct(c, "draft.reject").disabled, "and neither is shut on a row that is not a claim's");
     const t2 = p.row("d-2"), t3 = p.row("d-3");
-    ok(!!t2 && !!t3 && /Trip t1 · 2 rows waiting/.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve trip" && byAct(t2, "draft.reject").textContent === "Reject trip"
-      && /oil · 1 unit · RM 100\.00/.test(t2.textContent) && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
+    ok(!!t2 && !!t3 && /Two books, one trip\. Approve decides both\./.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve both" && byAct(t2, "draft.reject").textContent === "Reject both"
+      && /1 unit oil, RM 100\.00/.test(t2.textContent) && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
     "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
     /* the page's own rules for the recipe's classes restate none of what the recipe draws: no surface, edge, padding, shadow, gap or type */
     const taken = ["background", "background-color", "border", "border-radius", "padding", "box-shadow", "display", "flex-direction", "gap", "font-family", "font-size", "color", "margin"];
@@ -117,7 +117,7 @@ export async function run({ ok, pageWork }) {
     const fold = d.getElementById("makerQueue"), sum = fold && fold.querySelector(":scope > summary"), count = d.getElementById("makerQueueCount"), body = d.getElementById("makerQueueReview");
     ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("salt-plan") && fold.open === false && !!sum && sum.getAttribute("data-act") === "record.queue-toggle",
       "the server-held queue is the system's Plan fold, shut until he taps it, its summary a control with its own act");
-    ok(!!count && count.classList.contains("salt-plan__id") && count.textContent === "2" && d.getElementById("makerQueueTitle").textContent === "Server-held queue"
+    ok(!!count && count.classList.contains("salt-plan__id") && count.textContent === "2" && d.getElementById("makerQueueTitle").textContent === "Sent, not yet drafted"
       && sum.contains(count) && sum.contains(d.getElementById("makerQueueTitle")) && !!body && fold.contains(body),
     "it is titled and counted, though shut, the count read off the entries the server holds: " + (sum && sum.textContent));
     ok(byAct(body, "queue.withdraw", "q-1") && byAct(body, "queue.withdraw", "q-2") && fold.open === false,
@@ -134,7 +134,7 @@ export async function run({ ok, pageWork }) {
   p = await open({ review: cut });
   try {
     await enterRecord(p);
-    ok(p.d.getElementById("makerQueueCount").textContent === "0" && /No server-held device entries/.test(p.d.getElementById("makerQueueReview").textContent) && p.d.getElementById("makerQueue").open === false,
+    ok(p.d.getElementById("makerQueueCount").textContent === "0" && /Nothing is waiting for the Desk/.test(p.d.getElementById("makerQueueReview").textContent) && p.d.getElementById("makerQueue").open === false,
       "with nothing held the fold is counted 0, says so inside, and stays shut");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
@@ -148,11 +148,11 @@ export async function run({ ok, pageWork }) {
     const sh = p.sheet();
     ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && approves() === 0 && p.confirms.length === 0,
       "Approve row opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
-    ok(p.title() === "Approve this row?" && /CX1-ZED/.test(sh.textContent) && /RM 100\.00/.test(sh.textContent) && /SELL, 1 unit/.test(sh.textContent) && /as drafted/.test(sh.textContent)
+    ok(p.title() === "Approve this row?" && /CX1-ZED/.test(sh.textContent) && /RM 100\.00/.test(sh.textContent) && /Sale, 1 unit/.test(sh.textContent) && /as drafted/.test(sh.textContent)
       && sh.querySelectorAll(".salt-ledger__row").length === 1,
     "the Sheet restates the row by its code, its size, its kind and its figure, and says it is approved as drafted: " + sh.textContent);
     ok(!!p.inSheet("ask.go", "draft:d-1:approve") && !!p.inSheet("ask.keep", "draft:d-1:approve") && !!p.inSheet("ask.close", "draft:d-1:approve")
-      && !p.inSheet("ask.go").classList.contains("salt-ghost--danger") && sh.querySelector(".salt-sheet__foot").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Approve row",
+      && !p.inSheet("ask.go").classList.contains("salt-ghost--danger") && sh.querySelector(".salt-sheet__foot").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Approve",
     "its controls carry their acts and the row's key, and Approve is not a danger action");
     const bad = await p.ways(() => approve().click(), approve, approves);
     ok(bad.length === 0, "the ghost, the close control, the scrim and Escape each close it, send nothing and give focus back to Approve row: " + bad.join(" | "));
@@ -175,7 +175,7 @@ export async function run({ ok, pageWork }) {
     /* a trip: one Sheet for the card, every row of it listed, one request */
     byAct(p.row("d-2"), "draft.approve").click(); await p.work.quiet();
     ok(p.title() === "Approve every row of this trip?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2 && (p.sheet().textContent.match(/RM 100\.00/g) || []).length === 2
-      && p.inSheet("ask.go").textContent === "Approve trip" && p.posted(route("approve", "d-2")).length === 0,
+      && p.inSheet("ask.go").textContent === "Approve both" && p.posted(route("approve", "d-2")).length === 0,
     "a trip's Approve asks once for the card and lists every row it decides: " + p.sheet().textContent);
     p.inSheet("ask.go").click(); await p.work.quiet();
     ok(p.posted(route("approve", "d-2")).length === 1 && same(p.posted(route("approve", "d-2"))[0].body, {}) && p.posted(route("approve", "d-3")).length === 0,
@@ -189,7 +189,7 @@ export async function run({ ok, pageWork }) {
     await enterRecord(p);
     const reject = () => byAct(p.row("d-1"), "draft.reject"), rejects = () => p.posted(route("reject", "d-1")).length;
     reject().click(); await p.work.quiet();
-    ok(p.title() === "Reject this Desk row?" && p.inSheet("ask.go").classList.contains("salt-ghost--danger") && p.inSheet("ask.go").textContent === "Reject row" && /CX1-ZED/.test(p.sheet().textContent)
+    ok(p.title() === "Reject this row?" && p.inSheet("ask.go").classList.contains("salt-ghost--danger") && p.inSheet("ask.go").textContent === "Reject" && /CX1-ZED/.test(p.sheet().textContent)
       && rejects() === 0 && p.confirms.length === 0 && !!p.inSheet("ask.go", "draft:d-1:reject"),
     "Reject row asks on the Sheet, a danger action naming the row, and sends nothing as it opens: " + (p.sheet() && p.sheet().textContent));
     const bad = await p.ways(() => reject().click(), reject, rejects);
@@ -200,7 +200,7 @@ export async function run({ ok, pageWork }) {
     ok(rejects() === 1 && same(p.posted(route("reject", "d-1"))[0].body, {}) && !p.sheet() && !p.row("d-1") && /Row rejected\./.test(d.getElementById("makerDraftStatus").textContent),
       "its one action sends the rejection, the same route and empty body, once however often it is tapped: " + J(p.posted(route("reject", "d-1"))));
     byAct(p.row("d-3"), "draft.reject").click(); await p.work.quiet();
-    ok(p.title() === "Reject every row of this trip?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2 && p.inSheet("ask.go").textContent === "Reject trip",
+    ok(p.title() === "Reject every row of this trip?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2 && p.inSheet("ask.go").textContent === "Reject both",
       "a trip's Reject asks once for the card and lists every row: " + p.title());
     p.inSheet("ask.keep").click(); await p.work.quiet();
     ok(p.posted(route("reject", "d-3")).length === 0 && p.confirms.length === 0, "and keeping it sends nothing");
@@ -214,7 +214,7 @@ export async function run({ ok, pageWork }) {
     ok(!!card() && !!pill(), "Needs you has the row's card and its Approve pill");
     const before = pill();
     pill().click(); await p.work.quiet();
-    ok(p.title() === "Approve this row?" && p.inSheet("ask.go").textContent === "Approve row" && !!p.inSheet("ask.go", "need:draft:d-1:approve") && p.posted(route("approve", "d-1")).length === 0 && p.confirms.length === 0,
+    ok(p.title() === "Approve this row?" && p.inSheet("ask.go").textContent === "Approve" && !!p.inSheet("ask.go", "need:draft:d-1:approve") && p.posted(route("approve", "d-1")).length === 0 && p.confirms.length === 0,
       "the pill opens the very Sheet Record > Approve asks on, and sends nothing as it opens");
     p.inSheet("ask.keep").click(); await p.work.quiet();
     ok(!p.sheet() && pill() === before && !pill().disabled && d.activeElement === pill() && p.posted(route("approve", "d-1")).length === 0,
@@ -237,9 +237,9 @@ export async function run({ ok, pageWork }) {
     await enterRecord(p);
     const w1 = () => byAct(d.getElementById("makerQueueReview"), "queue.withdraw", "q-1"), w2 = () => byAct(d.getElementById("makerQueueReview"), "queue.withdraw", "q-2");
     const sends = (id) => p.posted("/all/maker/queue/" + id + "/withdraw");
-    ok(w1().textContent === "Withdraw server-held entry" && w2().textContent === "Finish server withdrawal", "the held entry offers Withdraw and the refused one Finish");
+    ok(w1().textContent === "Withdraw this entry" && w2().textContent === "Finish the withdrawal", "the held entry offers Withdraw and the refused one Finish");
     w1().click(); await p.work.quiet();
-    ok(p.title() === "Withdraw this uploaded entry?" && /q-1/.test(p.sheet().textContent) && /held/.test(p.sheet().textContent) && /does not withdraw an unsent device entry/.test(p.sheet().textContent)
+    ok(p.title() === "Withdraw this entry?" && /waiting for the Desk/.test(p.sheet().textContent) && /still unsent on a phone is not affected/.test(p.sheet().textContent)
       && p.inSheet("ask.go").classList.contains("salt-ghost--danger") && !!p.inSheet("ask.go", "queue:q-1") && sends("q-1").length === 0 && p.confirms.length === 0,
     "Withdraw opens the Sheet, restating the entry and what it does not do, and sends nothing as it opens: " + (p.sheet() && p.sheet().textContent));
     const bad = await p.ways(() => w1().click(), w1, () => sends("q-1").length);
@@ -249,7 +249,7 @@ export async function run({ ok, pageWork }) {
     go.click(); go.click(); await p.work.quiet();
     ok(sends("q-1").length === 1 && same(sends("q-1")[0].body, { fingerprint: "f1" }) && !p.sheet(),
       "its one action sends the withdrawal with the entry's fingerprint, once however often it is tapped: " + J(sends("q-1")));
-    ok(/matching withdrawal receipt/.test(w1() ? w1().closest("article").textContent : "") , "and an answer that is no receipt is still refused on the entry's own line");
+    ok(/did not confirm the withdrawal/.test(w1() ? w1().closest("article").textContent : "") , "and an answer that is no receipt is still refused on the entry's own line");
     w2().click(); await p.work.quiet();
     ok(!p.sheet() && sends("q-2").length === 1 && same(sends("q-2")[0].body, { fingerprint: "f2" }) && p.confirms.length === 0,
       "Finish server withdrawal asks nothing, as it did not, and sends at once");
@@ -316,7 +316,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.record"); await p.tap("part.record.entry"); await p.tap("record.form", "gift");
     const send = () => byAct(d, "record.gift.send"), status = () => send().closest(".maker-input").querySelector("[role=status]").textContent;
     send().click(); await p.work.quiet();
-    ok(p.title() === "Record this as a separate gift?" && /A matching gift is already booked/.test(p.sheet().textContent) && !p.inSheet("ask.go").classList.contains("salt-ghost--danger")
+    ok(p.title() === "Record this gift again?" && /You already recorded a gift like this/.test(p.sheet().textContent) && !p.inSheet("ask.go").classList.contains("salt-ghost--danger")
       && !!p.inSheet("ask.go", "twin:gift") && gifts.length === 1 && p.confirms.length === 0,
     "a gift the Desk finds booked asks on the Sheet whether to record it again, and sends nothing more as it opens: " + (p.sheet() && p.sheet().textContent));
     p.inSheet("ask.keep").click(); await p.work.quiet();
@@ -341,7 +341,7 @@ export async function run({ ok, pageWork }) {
     const cancel = () => byAct(d, "chat.cancel-retry"), kept = () => Object.keys(p.w.localStorage).filter((k) => k.indexOf("saltMakerChat:") === 0).length;
     ok(!!cancel() && !cancel().hidden && kept() === 1 && p.posted(ROUTE).length === 1, "a reply the Desk could not be reached for is kept on this device, and Cancel reply retry is offered");
     cancel().click(); await p.work.quiet();
-    ok(p.title() === "Cancel this retry?" && /A reply already sent is not removed/.test(p.sheet().textContent) && !!p.inSheet("ask.go", "chat:" + U + ":retry") && kept() === 1 && p.confirms.length === 0,
+    ok(p.title() === "Discard this unsent reply?" && /A reply already sent stays sent/.test(p.sheet().textContent) && !!p.inSheet("ask.go", "chat:" + U + ":retry") && kept() === 1 && p.confirms.length === 0,
       "Cancel reply retry opens the Sheet, saying a reply already sent is not removed, and removes nothing as it opens");
     const bad = await p.ways(() => cancel().click(), cancel, () => 1 - kept());
     ok(bad.length === 0 && kept() === 1, "the four ways out remove nothing and give focus back to Cancel reply retry: " + bad.join(" | "));

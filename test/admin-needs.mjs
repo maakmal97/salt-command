@@ -101,19 +101,19 @@ export async function run({ ok, pageWork }) {
       && c.querySelector(".salt-action__kind") && c.querySelector(".need-who") && c.querySelector(".salt-action__money")),
     "every card is the system's Action recipe, coloured by its severity, with its kind word, who and age");
     const order = p.words(p.card("o:ord-p3")), pay = p.words(p.card("p:ord-a1")), claim = p.words(p.card("c:" + U1 + ":c-1")), msg = p.words(p.card("m:" + U1)), lock = p.words(p.card("k:" + U3));
-    ok(order.kind === "Order" && order.who === "CX1-ZED" && order.what === "salt, 1 unit, RM 100.00" && order.age === "26 h",
+    ok(order.kind === "Order" && order.who === "CX1-ZED" && order.what === "1 unit salt, RM 100.00" && order.age === "26 h",
       "a placed order says Order, who by code, what (book, units, RM) and its age in hours: " + JSON.stringify(order));
-    ok(pay.kind === "Payment" && pay.what === "says they sent RM 530.00, order ord-a1" && pay.age === "9 h" && claim.kind === "Payment" && claim.what === "says they sent RM 50.00, against the account" && claim.age === "7 h",
+    ok(pay.kind === "Payment" && pay.what === "says they paid RM 530.00" && pay.age === "9 h" && claim.kind === "Payment" && claim.what === "says they paid RM 50.00" && claim.age === "7 h",
       "a payment they say they sent, on an order (the sum, the oldest) or against the account, says Payment: " + JSON.stringify([pay, claim]));
-    ok(msg.kind === "Message" && msg.who === "CX1-ZED" && msg.what === "Hello" && msg.age === "4 h" && lock.kind === "Locked" && lock.what === "refused at 2 addresses" && lock.age === "5 min",
+    ok(msg.kind === "Message" && msg.who === "CX1-ZED" && msg.what === "Hello" && msg.age === "4 h" && lock.kind === "Locked" && /^locked out until \d\d:\d\d$/.test(lock.what) && lock.age === "5 min",
       "a message asked carries their words, a locked account the addresses refused and its age: " + JSON.stringify([msg, lock]));
     const row = p.words(p.card("d:" + ago(6))), link = p.words(p.card("l:w1"));
-    ok(row.kind === "Row" && row.who === "CX1-ZED" && row.what === "SELL, salt, 1 unit, RM 100.00" && row.age === "6 h" && link.kind === "Link" && link.age === "20 h",
+    ok(row.kind === "Row" && row.who === "CX1-ZED" && row.what === "Sale, 1 unit salt, RM 100.00" && row.age === "6 h" && link.kind === "Link" && /^guest link, made \d\d \w{3} \d{4}$/.test(link.what) && link.age === "20 h",
       "a Desk row to approve is Soon, with its party, what and age, and so is a guest link: " + JSON.stringify([row, link]));
     ok(p.card("x:0") && p.card("q:q-2") && p.card("q:q-1") === null && p.card("x:0").getAttribute("data-sev") === "soon" && /Refused for the fixture/.test(p.card("x:0").textContent)
       && p.card("q:q-2").getAttribute("data-kind") === "rows" && p.card("a:ord-a2") && p.card("a:ord-a2").getAttribute("data-sev") === "soon",
     "an entry that did not get through (the drafter's refusal, a refused server entry, not a held one) and a stage he rejected are Soon");
-    ok(/2 things wait on the desk, as at/.test(p.card("w:desk").textContent) && /Closed until Fri 18:00/.test(p.card("w:hours").textContent) && /Open late/.test(p.card("w:notice").textContent),
+    ok(/The Desk shows 2 for you, as of/.test(p.card("w:desk").textContent) && /Closed until Fri 18:00/.test(p.card("w:hours").textContent) && /Open late/.test(p.card("w:notice").textContent),
       "Watch says what the Desk counts, \"Closed until Fri 18:00\" for the override in force, and the notice set");
 
     /* 2. THE RANKING */
@@ -170,10 +170,10 @@ export async function run({ ok, pageWork }) {
     ok(p.cards().filter((c) => ["orders", "payments", "messages"].includes(c.getAttribute("data-kind"))).every((c) => same(p.buttons(c), ["Open"])),
       "no order, payment or message card has any control but Open, so nothing is booked from Needs you");
     ok(!p.cards().some((c) => p.buttons(c).some((t) => money.test(t))), "and no card of any kind carries Agree, Accept, Received or Cash");
-    ok(same(pills(p.card("d:" + ago(6))), ["Approve row"]) && same(pills(p.card("d:" + ago(3))), ["Approve trip"]) && pills(p.card("d:" + ago(0.5))).length === 0
-      && /answered through Received on its order/.test(p.card("d:" + ago(0.5)).textContent),
+    ok(same(pills(p.card("d:" + ago(6))), ["Approve"]) && same(pills(p.card("d:" + ago(3))), ["Approve both"]) && pills(p.card("d:" + ago(0.5))).length === 0
+      && /Answer this through the payment card/.test(p.card("d:" + ago(0.5)).textContent),
     "a Desk row has Approve row (Approve trip when it rides one) and a customer's claim row none, as on Record > Approve");
-    ok(same(pills(p.card("l:w1")), ["Approve"]) && same(pills(p.card("k:" + U3)), ["Send a sign-in link"]) && same(pills(p.card("s")), ["Send them in turn"]),
+    ok(same(pills(p.card("l:w1")), ["Approve"]) && same(pills(p.card("k:" + U3)), ["Send a sign-in link"]) && same(pills(p.card("s")), ["Send sign-in links one by one"]),
       "the guest link, the refused account and the accounts not sent keep the one filled action they had");
     ok(p.cards().every((c) => pills(c).length <= 1), "no card has more than one filled pill");
     ok(p.cards().every((c) => c.classList.contains("need--act") === p.buttons(c).some((t) => t !== "Open")),

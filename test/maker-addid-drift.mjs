@@ -127,14 +127,14 @@ export async function run({ ok }) {
     const doc = dom.window.document;
     doc.querySelector('button[data-act="nav.record"]').click();
     check(await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")]
-      .some((heading) => heading.textContent === "Add ID")), "the generated Counter page opens Add ID");
+      .some((heading) => heading.textContent === "New customer")), "the generated Counter page opens Add ID");
     const section = [...doc.querySelectorAll("#makerInputs .maker-input")]
-      .find((item) => item.querySelector("h3")?.textContent === "Add ID");
+      .find((item) => item.querySelector("h3")?.textContent === "New customer");
     const role = section.querySelector("select");
     const driftSelect = [...section.querySelectorAll("select")]
-      .find((select) => select.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Starting drift"));
+      .find((select) => select.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Starting price drift"));
     const typed = [...section.querySelectorAll("input[type=number]")]
-      .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Typed starting drift"));
+      .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Drift,"));
     const status = section.querySelector('[role="status"]');
     check(!!driftSelect && !!typed && driftSelect.value === "" && typed.closest("label").hidden
       && [...driftSelect.options].map((option) => option.value).join() === ",-0.3,0,0.3,typed"
@@ -149,7 +149,7 @@ export async function run({ ok }) {
     check(driftSelect.disabled && typed.disabled, "Add ID disables starting drift for a supplier");
     role.value = "customer"; role.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
 
-    const submit = [...section.querySelectorAll("button")].find((button) => button.textContent === "Encrypt and send Add ID");
+    const submit = [...section.querySelectorAll("button")].find((button) => button.textContent === "Add the customer");
     const fields = section.querySelectorAll("input");
     const outcomes = [
       { name: "Ada", choice: "", expected: null },
@@ -166,7 +166,7 @@ export async function run({ ok }) {
       if (outcome.value !== undefined) typed.value = outcome.value;
       const before = bridged.length;
       submit.click();
-      const sent = await waitFor(() => bridged.length === before + 1 && /queued for review/.test(status.textContent));
+      const sent = await waitFor(() => bridged.length === before + 1 && /waits under Approve/.test(status.textContent));
       const call = bridged.at(-1), body = call?.body || {};
       const entry = call && (await sqlite.prepare("SELECT entry,row FROM draft WHERE id=?").get(body.at));
       const draft = entry && JSON.parse(entry.entry);

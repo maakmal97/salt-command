@@ -168,7 +168,7 @@ export async function run({ ok }) {
 
     /* Record cash: one id, kept across a failure */
     failNext = 1;
-    fieldIn(card(), "Cash received (RM)").value = "60";
+    fieldIn(card(), "Cash received").value = "60";
     button((t) => t === "Record cash").click(); cashTimers.shift()(); await settle(1);
     await until(() => button((t) => t === "Retry cash") && !button((t) => t === "Retry cash").disabled);
     button((t) => t === "Retry cash").click(); await settle(2);
@@ -176,33 +176,33 @@ export async function run({ ok }) {
       && posts[1].body.rid === posts[0].body.rid && Object.keys(posts[0].body).sort().join() === "amount,rid",
       "Record cash sends the amount under a request id, and its retry after a failure carries the same id: " + JSON.stringify(posts.slice(0, 2)));
     await until(() => button((t) => t === "Record cash"));
-    fieldIn(card(), "Cash received (RM)").value = "60";
+    fieldIn(card(), "Cash received").value = "60";
     button((t) => t === "Record cash").click(); cashTimers.shift()(); await settle(3);
     ok(isRid(posts[2].body.rid) && posts[2].body.rid !== posts[0].body.rid,
       "Once cash has landed, the next Record cash is a new request with its own id: " + JSON.stringify(posts[2]));
 
     /* Receive claimed and Confirm received: each its own id, the claim named */
-    await until(() => button((t) => t.startsWith("Receive claimed")));
+    await until(() => button((t) => t.startsWith("Yes, I got")));
     /* 12 Oct 2026 (Phase 2b): the claim's Received asks on the page's Sheet, whose one action sends it */
-    button((t) => t.startsWith("Receive claimed")).click(); await until(() => doc.getElementById("ynGo")); doc.getElementById("ynGo").click(); await settle(4);
+    button((t) => t.startsWith("Yes, I got")).click(); await until(() => doc.getElementById("ynGo")); doc.getElementById("ynGo").click(); await settle(4);
     ok(posts[3].path === "/all/maker/orders/" + id + "/received" && posts[3].body.amount === 40 && posts[3].body.claim === claimAt
       && isRid(posts[3].body.rid) && posts[3].body.rid !== posts[2].body.rid,
       "Receive claimed sends the claim's amount and moment under its own request id: " + JSON.stringify(posts[3]));
-    await until(() => button((t) => t === "Confirm received"));
+    await until(() => button((t) => t === "Record payment"));
     failNext = 1;
-    fieldIn(card(), "Other payment received (RM)").value = "25";
-    button((t) => t === "Confirm received").click(); await settle(5);
-    await until(() => button((t) => t === "Confirm received"));
-    fieldIn(card(), "Other payment received (RM)").value = "25";
-    button((t) => t === "Confirm received").click(); await settle(6);
+    fieldIn(card(), "Payment received, RM").value = "25";
+    button((t) => t === "Record payment").click(); await settle(5);
+    await until(() => button((t) => t === "Record payment"));
+    fieldIn(card(), "Payment received, RM").value = "25";
+    button((t) => t === "Record payment").click(); await settle(6);
     ok(posts[4].path === "/all/maker/orders/" + id + "/received" && posts[4].body.amount === 25 && posts[4].body.claim === undefined
       && isRid(posts[4].body.rid) && posts[5].body.rid === posts[4].body.rid && posts[4].body.rid !== posts[3].body.rid,
       "Confirm received sends the amount under a request id that a retry keeps: " + JSON.stringify(posts.slice(4, 6)));
 
     /* a purchase lot's own amendments, and a sale row's */
-    const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Amend a ledger row");
+    const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Correct a row");
     await until(() => editor());
-    const rowSel = fieldIn(editor(), "Ledger row"), kindSel = fieldIn(editor(), "Amendment");
+    const rowSel = fieldIn(editor(), "Which row"), kindSel = fieldIn(editor(), "What to do");
     const kinds = () => [...kindSel.options].map((o) => o.value).join(",");
     rowSel.value = "row-sell-0001"; rowSel.dispatchEvent(new window.Event("change", { bubbles: true }));
     const sellKinds = kinds();
@@ -211,11 +211,11 @@ export async function run({ ok }) {
     ok(sellKinds === "Correction,Fulfilment,Cancellation" && buyKinds === "Correction,Fulfilment,Cancellation,Payment,Receipt,Default",
       "A purchase lot offers Payment, Receipt and Default; a sale row never does: " + sellKinds + " / " + buyKinds);
     const sendLot = async (kind, cash, units, n) => {
-      const ed = editor(), rs = fieldIn(ed, "Ledger row"), ks = fieldIn(ed, "Amendment");
+      const ed = editor(), rs = fieldIn(ed, "Which row"), ks = fieldIn(ed, "What to do");
       if (rs.value !== "lot-buy-0001") { rs.value = "lot-buy-0001"; rs.dispatchEvent(new window.Event("change", { bubbles: true })); }
       ks.value = kind; ks.dispatchEvent(new window.Event("change", { bubbles: true }));
-      fieldIn(ed, "RM moved").value = cash; fieldIn(ed, "Units moved").value = units;
-      [...ed.querySelectorAll("button")].find((b) => b.textContent === "Send amendment for review").click();
+      fieldIn(ed, "RM").value = cash; fieldIn(ed, "Units").value = units;
+      [...ed.querySelectorAll("button")].find((b) => b.textContent === "Send the correction").click();
       await settle(n);
       return posts[n - 1] || { path: null, body: {} };
     };

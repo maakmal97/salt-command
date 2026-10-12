@@ -24,9 +24,9 @@ const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threa
   sheet: "/all/sheet", links: "/all/refs", inputs: "/all/maker/inputs" };
 /* Record's forms by name, the part each is in, in the order the page draws them */
 const MENU = {
-  entry: ["Stock count", "Sale or purchase", "Borrow or lend", "Gift", "Repayment", "Reward redemption", "Automatic offsets", "Amend a ledger row", "Revive a cancelled row"],
-  customers: ["Add ID", "Appoint existing customer", "Amend ID", "Map placement"],
-  pricing: ["Customer tier", "Tips", "Customer drift", "Printed board sizes"]
+  entry: ["Stock count", "Sale or purchase", "Loan", "Gift", "Repayment", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
+  customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
+  pricing: ["Price level", "Desk reminders", "Price drift", "Printed sizes"]
 };
 const order = (id, status, patch = {}) => ({ id, u: U1, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100, status, ...patch });
 
@@ -117,7 +117,7 @@ export async function run({ ok, pageWork }) {
     ok(p2.querySelector(".salt-inbox-row__action").textContent === "RM 110.00" && /deliver/.test(p2.querySelector(".salt-inbox-row__what").textContent) && (p2.querySelector(".salt-inbox-row__age") || {}).textContent === "1 h",
       "and the figure is the goods and the delivery, the units say how it goes: " + p2.textContent);
     const chips = (id) => [...byAct(d, "order.open", id).querySelectorAll(".salt-status")].map((c) => c.textContent).join();
-    ok(chips("ord-p3") === "Placed" && chips("ord-a1") === "Agreed,Says sent" && chips("ord-a2") === "Agreed,Offer again" && chips("ex-1") === "Placed,Practice",
+    ok(chips("ord-p3") === "Waiting on you" && chips("ord-a1") === "Agreed,Says sent" && chips("ord-a2") === "Agreed,Send again" && chips("ex-1") === "Waiting on you,Practice",
       "and says what stands on it: a stage, a payment they say they sent, a stage he rejected, a practice order: " + JSON.stringify(["ord-p3", "ord-a1", "ord-a2", "ex-1"].map(chips)));
     ok(p.posts.length === 0 && !p.reads.some((r) => /preview/.test(r)),
       "listing the orders sends nothing and previews nothing: a row has no preview, which costs a read: " + JSON.stringify(p.posts));
@@ -274,7 +274,7 @@ export async function run({ ok, pageWork }) {
     const c1 = card("om:ord-r1"), c9 = card("om:ord-c9"), ex = card("om:ex-2");
     ok(!!c1 && c1.getAttribute("data-sev") === "now" && c1.getAttribute("data-kind") === "messages" && c1.querySelector(".salt-action__kind").textContent === "Message"
       && c1.querySelector(".need-who").textContent === "CX1-ZED" && c1.querySelector(".need-what").textContent === "Can it be before three?"
-      && /^On order ord-r1[.]$/.test(c1.querySelector(".salt-action__why").textContent) && c1.querySelector(".salt-action__money").textContent === "2 h",
+      && /^On their order[.]$/.test(c1.querySelector(".salt-action__why").textContent) && c1.querySelector(".salt-action__money").textContent === "2 h",
     "a question of theirs on an order, unanswered, is a Now card: the Message kind, who by code, their words, which order and how long: " + (c1 && c1.textContent));
     ok(!!c9 && c9.getAttribute("data-sev") === "now" && c9.querySelector(".need-what").textContent === "Why was it declined?" && c9.querySelector(".salt-action__money").textContent === "1 h",
       "and so is one on an order that is closed: " + (c9 && c9.textContent));
@@ -365,7 +365,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.record");
     const seen = {};
     for (const part of ["entry", "customers", "pricing"]) { await p.tap("part.record." + part); seen[part] = [p.menu(), p.formsOpen(), p.retained()]; }
-    ok(same(seen, { entry: [MENU.entry, [], ["Retained input"]], customers: [MENU.customers, [], []], pricing: [MENU.pricing, [], []] }),
+    ok(same(seen, { entry: [MENU.entry, [], ["Unsent entry"]], customers: [MENU.customers, [], []], pricing: [MENU.pricing, [], []] }),
       "Entry, Customers and Pricing are each a menu of their forms by name, no form shown, and the retained input kept on Entry: " + JSON.stringify(seen));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
     ok(rows.length === 17 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && r.querySelector(".salt-inbox-row__action").textContent === "Open")

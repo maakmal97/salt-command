@@ -258,7 +258,7 @@ export async function run({ ok, KV, assets }) {
     const want = deskOn[0].slot;
     ok(bA.slot === want && bB.slot === want && !("slot" in bT) && bA.delivery === 10 && bB.delivery === 0,
       "Counter Admin's Accept sends the window he picked, its sheet's other line the same, and an order with its own time none: " + JSON.stringify([bA, bB, bT]));
-    ok(/Location shared, sealed: the Desk opens it/.test(acard(PN).textContent) && !/Location shared/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),
+    ok(/They shared a pin[.] Open it on the Desk/.test(acard(PN).textContent) && !/They shared a pin/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),
       "Counter Admin says a spot was shared, never its id, and opens nothing: " + acard(PN).textContent.slice(0, 200));
   } finally { browser.window.close(); }
 }

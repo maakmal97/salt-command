@@ -2,14 +2,14 @@
   {
     "name": "a read in flight collapses the offered box again",
     "file": "stmt/owner.js",
-    "find": "if(wrap.hidden)note.textContent='Reading reward cover…';else words.textContent='Checking cover…';",
-    "replace": "wrap.hidden=true;note.textContent='Reading reward cover…';"
+    "find": "if(wrap.hidden)note.textContent='Reading.';else words.textContent='Checking.';",
+    "replace": "wrap.hidden=true;note.textContent='Reading.';"
   },
   {
     "name": "a failed read hides the box again",
     "file": "stmt/owner.js",
-    "find": "words.textContent='Cover not read';wrap.hidden=false;",
-    "replace": "words.textContent='Cover not read';wrap.hidden=true;"
+    "find": "words.textContent='Reward not read';wrap.hidden=false;",
+    "replace": "words.textContent='Reward not read';wrap.hidden=true;"
   },
   {
     "name": "a failed read shows no retry",

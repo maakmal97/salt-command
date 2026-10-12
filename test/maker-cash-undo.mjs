@@ -133,7 +133,7 @@ export async function run({ ok }) {
   try {
     retry.failure(true); await retry.tap(60); await retry.advance(10000);
     ok(retry.posts.length === 1 && retry.button("Retry cash") && !retry.button("Undo")
-      && !retry.button("Record cash") && retry.note().startsWith("Confirmation not received."),
+      && !retry.button("Record cash") && retry.note().startsWith("Not confirmed. Tap Retry cash."),
       "C13: after a lost answer cash has Retry, never Undo or a new editable cash tap");
     retry.failure(false); retry.defer(true);
     retry.button("Retry cash")?.click(); await retry.quiet();
@@ -155,7 +155,7 @@ export async function run({ ok }) {
     const kept = refresh.stored();
     staleRecord.click(); await refresh.advance(10000);
     ok(refresh.posts.length === 1 && !refresh.button("Record cash") && !refresh.button("Retry cash")
-      && refresh.button("Refresh cash") && refresh.note() === "Recorded, refresh pending."
+      && refresh.button("Refresh cash") && refresh.note() === "Recorded. Refresh to see it."
       && JSON.stringify(refresh.stored()) === JSON.stringify(kept),
       "C17: confirmed partial cash stays gated through a failed review; a stale second tap sends no new rid");
     refresh.backend.failRead = false; refresh.button("Refresh cash")?.click(); await refresh.quiet();
@@ -185,7 +185,7 @@ export async function run({ ok }) {
     const confirmedStorage = reopened.stored(); reopened.w.close();
     confirmed = await fixture({ storage: confirmedStorage, backend: lost.backend });
     const gated = !!confirmed.button("Refresh cash") && !confirmed.button("Retry cash") && !confirmed.button("Undo")
-      && !confirmed.button("Record cash") && confirmed.note() === "Recorded, refresh pending." && confirmed.posts.length === 0;
+      && !confirmed.button("Record cash") && confirmed.note() === "Recorded. Refresh to see it." && confirmed.posts.length === 0;
     confirmed.backend.failRead = false; confirmed.button("Refresh cash")?.click(); await confirmed.quiet();
     ok(gated && confirmed.posts.length === 0 && confirmed.button("Record cash") && confirmed.stored().length === 0
       && confirmed.note().includes("RM 60.00 still owed."),

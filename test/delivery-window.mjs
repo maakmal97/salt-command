@@ -103,7 +103,7 @@ export async function run({ ok }) {
   ok(/Delivery wanted between <b>09:00 and 12:00<\/b> on <b>2 Jan<\/b>/.test(card) && line(Object.assign({}, o, { moved: 1 })) === "" && line(Object.assign({}, o, { mode: "collect" })) === "",
     "the Desk's card says the span and the day while the goods are still to go: " + JSON.stringify(card));
   const { OWNER_JS } = await import("../stmt/owner.js");
-  ok(/Delivery wanted between '\+String\(order\.slotSpan\)\.replace\('-',' and '\)/.test(OWNER_JS), "Counter Admin's order card says the span too");
+  ok(/Wanted '\+String\(order\.slotSpan\)\.replace\('-',' to '\)/.test(OWNER_JS), "Counter Admin's order card says the span too");
 
   /* 7. THE SHEET: a delivery asks As soon as it can or a window open now, the span said, and Place sends the window */
   const C = await import("../tools/stmt-crypto.mjs"), { webcrypto } = await import("node:crypto"), { JSDOM } = await import("jsdom");

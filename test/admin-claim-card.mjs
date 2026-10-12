@@ -50,7 +50,7 @@ export async function run({ ok, pageWork }) {
     ok(one.length === 1 && one[0].route === "/all/maker/claims/" + U + "/c-1/preview" && same(one[0].body, {}) && !!p.card(C1) && !p.card(C2)
       && byAct(d, "claim.open", C1).getAttribute("aria-expanded") === "true" && byAct(d, "claim.open", C2).getAttribute("aria-expanded") === "false",
       "opening a claim reads its rows once, at their own route, and its card stands under its row: " + JSON.stringify(one));
-    ok(/08 Oct 2026 · RM 50\.00 of RM 60\.00 · s-fixture-1/.test(p.card(C1).textContent) && /These rows are answered together/.test(p.card(C1).textContent)
+    ok(/08 Oct 2026: RM 50\.00 of RM 60\.00/.test(p.card(C1).textContent) && /These rows are settled together/.test(p.card(C1).textContent)
       && !p.in("claim.received").disabled && p.in("claim.received-booked").disabled,
       "its rows are listed with what they settle, and Received is live: " + p.card(C1).textContent.slice(0, 160));
     ok(!p.in("claim.preview") && ![...d.querySelectorAll("#makerClaims button")].some((b) => /^Preview/.test(b.textContent)),
@@ -104,7 +104,7 @@ export async function run({ ok, pageWork }) {
     await p.enter();
     ok(slipReads(p) === 0 && keyReads(p) === 0, "listing the claims asks for no slip and no key");
     await p.tap("claim.open", C1);
-    ok(!thumb() && !!p.in("claim.passphrase") && !!p.in("claim.view-slip") && /sealed/.test(p.card(C1).textContent) && slipReads(p) === 0 && keyReads(p) === 0 && p.urls.made.length === 0,
+    ok(!thumb() && !!p.in("claim.passphrase") && !!p.in("claim.view-slip") && /locked/.test(p.card(C1).textContent) && slipReads(p) === 0 && keyReads(p) === 0 && p.urls.made.length === 0,
       "a claim with a slip, opened with no key held, says the slip is sealed and offers the unlock, and fetches no ciphertext it cannot open");
     p.type(p.in("claim.passphrase"), p.slipPass); await p.click(p.in("claim.view-slip"));
     ok(!!thumb() && thumb().tagName === "BUTTON" && !!thumb().querySelector("img") && /^blob:/.test(thumb().querySelector("img").src) && p.urls.made.length === 1
@@ -122,7 +122,7 @@ export async function run({ ok, pageWork }) {
       + JSON.stringify(p.urls));
     const before = p.urls.revoked.length;
     await lockByHide();
-    ok(p.urls.revoked.length === before + 1 && p.urls.revoked.includes("blob:fixture-2") && !p.in("claim.slip") && !!p.in("claim.passphrase") && /sealed/.test(p.card(C2).textContent),
+    ok(p.urls.revoked.length === before + 1 && p.urls.revoked.includes("blob:fixture-2") && !p.in("claim.slip") && !!p.in("claim.passphrase") && /locked/.test(p.card(C2).textContent),
       "a page hidden revokes the picture and drops the key: the card says the slip is sealed again");
     const reads = slipReads(p);
     await p.tap("claim.open", C2); await p.tap("claim.open", C2);
@@ -161,11 +161,11 @@ export async function run({ ok, pageWork }) {
     ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && answers(p, "c-1", "received").length === 0 && calls.length === 0,
       "Received opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
     ok(/Received RM 50\.00 from CX1-ZED\?/.test(sh.querySelector(".salt-sheet__title").textContent) && /CX1-ZED/.test(sh.textContent) && /RM 50\.00/.test(sh.textContent)
-      && /s-fixture-1/.test(sh.textContent) && /booked against the rows below/.test(sh.textContent),
+      && /08 Oct 2026: RM 50\.00 of RM 60\.00/.test(sh.textContent) && /recorded against the rows below/.test(sh.textContent),
       "the Sheet says who and how much, lists the rows and says what follows: " + sh.textContent);
     const lineOf = sh.querySelector(".salt-ledger__line");
     ok(!!lineOf && /CX1-ZED/.test(lineOf.querySelector(".salt-ledger__label").textContent) && lineOf.querySelector(".salt-ledger__value").textContent === "RM 50.00"
-      && /Says they sent it/.test(sh.querySelector(".salt-ledger__flag").textContent),
+      && /Says they paid it/.test(sh.querySelector(".salt-ledger__flag").textContent),
       "and restates the claim as a line of its own: the code, the figure, and that they say they sent it");
     ok(!!inSheet("claim.ask-go", C1) && !!inSheet("claim.ask-keep", C1) && !!inSheet("claim.ask-close", C1) && !inSheet("claim.ask-go").classList.contains("salt-ghost--danger")
       && sh.querySelector(".salt-sheet__foot").contains(inSheet("claim.ask-go")),
@@ -198,7 +198,7 @@ export async function run({ ok, pageWork }) {
     const nf = answers(p, "c-2", "notfound");
     ok(nf.length === 1 && same(Object.keys(nf[0].body).sort(), ["amount", "rid"]) && nf[0].body.amount === 20 && /^[0-9a-f-]{36}$/.test(nf[0].body.rid) && !sheet(),
       "a second tap on the action of a sheet that has closed sends nothing, so a double tap sends once: " + JSON.stringify(nf));
-    ok(/Confirmation not received/.test(byAct(p.card(C2), "claim.not-found").closest("article").querySelector(".maker-say").textContent) && !p.in("claim.not-found", C2).disabled,
+    ok(/Not confirmed/.test(byAct(p.card(C2), "claim.not-found").closest("article").querySelector(".maker-say").textContent) && !p.in("claim.not-found", C2).disabled,
       "an answer that was not received says so on the card and leaves Not found live");
     /* a retry after a lost answer goes at once, with no second question, under the request id it had */
     p.fail.delete("/all/maker/claims/" + U + "/c-2/notfound");
@@ -234,10 +234,10 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await p.enter();
     await p.tap("claim.open", C1);
-    ok(p.in("claim.received").disabled && !p.in("claim.received-booked").disabled && /RM 20\.00 exceeds the rows/.test(p.card(C1).textContent),
+    ok(p.in("claim.received").disabled && !p.in("claim.received-booked").disabled && /RM 20\.00 more than the rows/.test(p.card(C1).textContent),
       "a claim above its rows shuts Received and opens Received, on the book already");
     p.in("claim.received-booked", C1).click(); await p.work.quiet();
-    ok(/Received, on the book already\?/.test(d.getElementById("ynSheet").querySelector(".salt-sheet__title").textContent) && /Nothing more is booked/.test(d.getElementById("ynSheet").textContent)
+    ok(/Already recorded\?/.test(d.getElementById("ynSheet").querySelector(".salt-sheet__title").textContent) && /Nothing more is recorded/.test(d.getElementById("ynSheet").textContent)
       && answers(p, "c-1", "received").length === 0, "its Sheet says nothing more is booked, and sends nothing as it opens");
     byAct(d, "claim.ask-go").click(); await p.work.quiet();
     const sent = answers(p, "c-1", "received");
@@ -258,7 +258,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "order.open", "ord-a1").click(); await p.work.quiet();
     const card = () => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === "ord-a1");
     byAct(card(), "order.claim-received", ACLAIM).click(); await p.work.quiet();
-    ok(!!sheet() && /Received RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title").textContent) && /CX1-ZED/.test(sheet().textContent) && /books RM 30\.00 against this order/.test(sheet().textContent)
+    ok(!!sheet() && /Received RM 30\.00 from CX1-ZED\?/.test(sheet().querySelector(".salt-sheet__title").textContent) && /CX1-ZED/.test(sheet().textContent) && /records RM 30\.00 against this order/.test(sheet().textContent)
       && !byAct(sheet(), "order.ask-go").classList.contains("salt-ghost--danger") && sends("received").length === 0 && asked.length === 0,
       "an order's Receive claimed asks on the Sheet, naming the amount and who, and sends nothing as it opens: " + (sheet() && sheet().textContent));
     byAct(sheet(), "order.ask-keep").click(); await p.work.quiet();
@@ -269,7 +269,7 @@ export async function run({ ok, pageWork }) {
     ok(got.length === 1 && got[0].body.amount === 30 && got[0].body.claim === ACLAIM && !Object.hasOwn(got[0].body, "covered") && /^[0-9a-f]{32}$/.test(got[0].body.rid),
       "its one action sends the claim's amount and moment under a request id, as the tap did: " + JSON.stringify(got));
     byAct(card(), "order.claim-received", BCLAIM).click(); await p.work.quiet();
-    ok(/Received, on the book already RM 500\.00\?/.test(sheet().querySelector(".salt-sheet__title").textContent) && /Nothing more is booked/.test(sheet().textContent), "a claim above what the order owes asks as Received, on the book already");
+    ok(/Already recorded, RM 500\.00\?/.test(sheet().querySelector(".salt-sheet__title").textContent) && /Nothing more is recorded/.test(sheet().textContent), "a claim above what the order owes asks as Received, on the book already");
     byAct(sheet(), "order.ask-go").click(); await p.work.quiet();
     ok(sends("received").length === 2 && sends("received")[1].body.covered === true && sends("received")[1].body.claim === BCLAIM, "and sends covered: " + JSON.stringify(sends("received")[1]));
     byAct(card(), "order.claim-not-found", ACLAIM).click(); await p.work.quiet();

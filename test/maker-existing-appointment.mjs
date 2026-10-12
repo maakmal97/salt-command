@@ -102,7 +102,7 @@ async function ownerPage(wd, { loseAppointmentAnswer = false, retained = [] } = 
   };
   dom.window.document.querySelector('button[data-act="nav.record"]').click();
   const loaded = await waitFor(() => [...dom.window.document.querySelectorAll("#makerInputs .maker-input h3")]
-    .some((heading) => heading.textContent === "Appoint existing customer"));
+    .some((heading) => heading.textContent === "Make an associate"));
   return { dom, requests, waitFor, loaded, pass, get catalog(){return catalog;} };
 }
 
@@ -145,9 +145,9 @@ export async function run({ ok }) {
   try {
     check(page.loaded, "the generated owner page renders the separate existing-customer appointment form");
     if (!page.loaded) return;
-    const doc = page.dom.window.document, section = sectionOf(doc, "Appoint existing customer");
-    const customer = field(section, "Existing customer"), role = field(section, "Appointment role");
-    const submit = button(section, "Send appointment for review");
+    const doc = page.dom.window.document, section = sectionOf(doc, "Make an associate");
+    const customer = field(section, "Who"), role = field(section, "As");
+    const submit = button(section, "Send the appointment");
     const visibleCodes = customer ? [...customer.options].map((option) => option.value).filter(Boolean) : [];
     const roleValues = role ? [...role.options].map((option) => option.value).filter(Boolean) : [];
     const selectorReady = !!customer && !!role && visibleCodes.includes("CJ4-RED") && visibleCodes.includes("CJ4-BLU")
@@ -219,19 +219,19 @@ export async function run({ ok }) {
 
     const retryPage = await ownerPage(wd, { retained: [[retainedKey, retained]] });
     try {
-      const hasRecovery = await retryPage.waitFor(() => !!sectionOf(retryPage.dom.window.document, "Retained input"));
-      const recovery = sectionOf(retryPage.dom.window.document, "Retained input");
+      const hasRecovery = await retryPage.waitFor(() => !!sectionOf(retryPage.dom.window.document, "Unsent entry"));
+      const recovery = sectionOf(retryPage.dom.window.document, "Unsent entry");
       check(retryPage.loaded && hasRecovery && !!recovery, "a lost appointment answer reloads as a retained input");
-      const retry = button(recovery, "Retry unchanged");
+      const retry = button(recovery, "Send again");
       retry.click();
-      await retryPage.waitFor(() => !sectionOf(retryPage.dom.window.document, "Retained input"));
+      await retryPage.waitFor(() => !sectionOf(retryPage.dom.window.document, "Unsent entry"));
       const attempts = retryPage.requests.filter((request) => request.path === "/all/maker/inputs/appoint-existing");
       check(attempts.length === 1 && attempts[0].bytes === JSON.stringify(first.body)
         && wd.drafts().filter((draft) => draft.entry.payload.code === "CJ4-RED").length === 1
         && wd.sqlite.prepare("SELECT COUNT(*) AS n FROM maker_request").get().n === 1,
         "retry after an uncertain answer resends identical bytes and the server answers the same single draft");
-      const refreshed = sectionOf(retryPage.dom.window.document, "Appoint existing customer");
-      check(![...field(refreshed, "Existing customer").options].some((option) => option.value === "CJ4-RED"),
+      const refreshed = sectionOf(retryPage.dom.window.document, "Make an associate");
+      check(![...field(refreshed, "Who").options].some((option) => option.value === "CJ4-RED"),
         "the accepted appointment disappears from the live selector while it waits for approval");
     } finally {
       retryPage.dom.window.close();
@@ -248,15 +248,15 @@ export async function run({ ok }) {
 
     const secondPage = await ownerPage(wd);
     try {
-      const secondForm = sectionOf(secondPage.dom.window.document, "Appoint existing customer");
-      const secondCustomer = field(secondForm, "Existing customer"), secondRole = field(secondForm, "Appointment role");
+      const secondForm = sectionOf(secondPage.dom.window.document, "Make an associate");
+      const secondCustomer = field(secondForm, "Who"), secondRole = field(secondForm, "As");
       if (!secondCustomer || !secondRole) {
         check(false, "a fresh owner page renders the appointment selectors");
         return;
       }
       secondCustomer.value = "CJ4-BLU";
       secondRole.value = "referral";
-      button(secondForm, "Send appointment for review").click();
+      button(secondForm, "Send the appointment").click();
       await secondPage.waitFor(() => secondPage.requests.some((request) =>
         request.path === "/all/maker/inputs/appoint-existing" && request.status !== undefined));
       const secondRequest = secondPage.requests.find((request) => request.path === "/all/maker/inputs/appoint-existing");

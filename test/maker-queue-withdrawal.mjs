@@ -472,9 +472,9 @@ export async function run({ ok, worker, handleMaker }) {
         await new Promise((resolve) => setTimeout(resolve, 5));
       const action = doc.querySelector("#makerQueueReview .maker-queue-action");
       const emptyUi = !doc.querySelector("#makerReview .maker-card button, #makerDrafts .maker-card button") && !action;
-      if (width === 1280) ok(!emptyUi && doc.querySelector("#makerQueueReview").textContent.includes("Server-held device entry")
-        && doc.querySelector("#oRecord").textContent.includes("cannot read a device’s unsent queue"),
-      "the desktop Counter review names the origin boundary and draws an uploaded device entry, not an unsent local entry");
+      if (width === 1280) ok(!emptyUi && doc.querySelector("#makerQueueReview").textContent.includes("Entry waiting for the Desk")
+        && doc.querySelector("#makerQueueReview").textContent.includes("From another device.") && !/server-held/i.test(doc.querySelector("#oRecord").textContent),
+      "the desktop Counter review draws an uploaded device entry in plain words, from another device, with no note on the server's boundary");
       const styles = [...doc.querySelectorAll("style")].map((style) => style.textContent).join("\n");
       const target = styles.match(/\.maker-queue-action\{([^}]+)\}/)?.[1] || "";
       const tapToken = /--salt-tap:\s*44px/.test(styles);
@@ -504,7 +504,7 @@ export async function run({ ok, worker, handleMaker }) {
           for (let i = 0; i < 100 && retryAction.disabled; i++)
             await new Promise((resolve) => setTimeout(resolve, 5));
           ok(!retryAction.disabled && retryAction.textContent.includes("Withdraw")
-            && retryAction.parentNode.textContent.includes("matching withdrawal receipt"),
+            && retryAction.parentNode.textContent.includes("did not confirm the withdrawal"),
           "the phone UI retains the row and refuses a success-shaped response without the matching withdrawal receipt");
         }
     } finally {
@@ -528,9 +528,9 @@ export async function run({ ok, worker, handleMaker }) {
     doc.querySelector('[data-act="nav.record"]').click();
     for (let i = 0; i < 100 && !doc.querySelector("#makerQueueReview .rnone"); i++)
       await new Promise((resolve) => setTimeout(resolve, 5));
-    ok(doc.querySelector("#makerQueueReview .rnone")?.textContent === "No server-held device entries or cloud refusals."
+    ok(doc.querySelector("#makerQueueReview .rnone")?.textContent === "Nothing is waiting for the Desk."
       && !doc.querySelector("#makerQueueReview .maker-queue-action"),
-    "an empty server review states that no server-held entries or cloud refusals exist and exposes no withdrawal control");
+    "an empty queue says nothing is waiting for the Desk and exposes no withdrawal control");
   } finally {
     emptyDom.window.close();
   }

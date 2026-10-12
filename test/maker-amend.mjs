@@ -233,31 +233,31 @@ export async function run({ ok }) {
     };
     const settle = async (n) => { await until(() => posts.length >= n); await new Promise((resolve) => setTimeout(resolve, 40)); };
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => button("20261006090001-ack", "Amend order"));
-    ok(!!field("20261006090001-ack", "Amend units") && !!field("20261006090001-ack", "Amend goods price (RM)") && !!field("20261006090001-ack", "Amend delivery (RM)")
-      && !button("20261006090002-pla", "Amend order"),
+    await until(() => button("20261006090001-ack", "Send the change"));
+    ok(!!field("20261006090001-ack", "Units") && !!field("20261006090001-ack", "Price (goods)") && !!field("20261006090001-ack", "Delivery")
+      && !button("20261006090002-pla", "Send the change"),
       "An agreed order offers the size, the goods' price and the delivery to amend; an order not yet agreed does not.");
-    button("20261006090001-ack", "Amend order").click();
+    button("20261006090001-ack", "Send the change").click();
     await new Promise((resolve) => setTimeout(resolve, 40));
     ok(posts.length === 0, "Amend with no figure changed sends nothing.");
     failNext = 1;
-    field("20261006090001-ack", "Amend delivery (RM)").value = "12";
-    button("20261006090001-ack", "Amend order").click(); await settle(1);
-    await until(() => button("20261006090001-ack", "Amend order"));
-    field("20261006090001-ack", "Amend delivery (RM)").value = "12";
-    button("20261006090001-ack", "Amend order").click(); await settle(2);
+    field("20261006090001-ack", "Delivery").value = "12";
+    button("20261006090001-ack", "Send the change").click(); await settle(1);
+    await until(() => button("20261006090001-ack", "Send the change"));
+    field("20261006090001-ack", "Delivery").value = "12";
+    button("20261006090001-ack", "Send the change").click(); await settle(2);
     ok(posts[0].path === "/all/maker/orders/20261006090001-ack/restate" && JSON.stringify(Object.keys(posts[0].body).sort()) === '["delivery","rid"]'
       && posts[0].body.delivery === 12 && /^[0-9a-f]{32}$/.test(posts[0].body.rid) && posts[1].body.rid === posts[0].body.rid,
       "Amend sends only the figure changed, and its retry after a failure carries the same request id: " + JSON.stringify(posts));
-    await until(() => button("20261006090001-ack", "Amend order"));
-    field("20261006090001-ack", "Amend units").value = "4";
-    field("20261006090001-ack", "Amend goods price (RM)").value = "380";
-    button("20261006090001-ack", "Amend order").click(); await settle(3);
+    await until(() => button("20261006090001-ack", "Send the change"));
+    field("20261006090001-ack", "Units").value = "4";
+    field("20261006090001-ack", "Price (goods)").value = "380";
+    button("20261006090001-ack", "Send the change").click(); await settle(3);
     ok(posts[2].body.qty === 4 && posts[2].body.total === 380 && posts[2].body.delivery === undefined && posts[2].body.rid !== posts[0].body.rid,
       "A new size is sent with its goods' price, under a request id of its own: " + JSON.stringify(posts[2]));
-    await until(() => button("20261006090001-ack", "Amend order") && field("20261006090001-ack", "Amend units").value === "3");
-    field("20261006090001-ack", "Amend units").value = "5";
-    button("20261006090001-ack", "Amend order").click(); await settle(4);
+    await until(() => button("20261006090001-ack", "Send the change") && field("20261006090001-ack", "Units").value === "3");
+    field("20261006090001-ack", "Units").value = "5";
+    button("20261006090001-ack", "Send the change").click(); await settle(4);
     ok(posts[3].body.qty === 5 && posts[3].body.total === 285, "A size changed alone is sent with the goods' price in the box, which the Desk then holds to the floor: " + JSON.stringify(posts[3]));    const tall = [...card("20261006090001-ack").querySelectorAll("[data-amend-field]")];
     ok(tall.length === 3, "The three amend fields are drawn.");
   } finally { browser.window.close(); }

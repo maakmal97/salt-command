@@ -26,7 +26,7 @@
  {
   "name": "a row does not say a stage is rejected",
   "file": "stmt/owner.js",
-  "find": "      if(o.again&&o.again.length) t.appendChild(chip('brass','Offer again'));",
+  "find": "      if(o.again&&o.again.length) t.appendChild(chip('brass','Send again'));",
   "replace": ""
  },
  {
@@ -164,7 +164,7 @@
  {
   "name": "a question on an order is no card on Needs you",
   "file": "stmt/owner.js",
-  "find": "        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, what:cut(last.text), why:'On order '+o.id+'.', practice:t, open:to}));",
+  "find": "        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, what:cut(last.text), why:'On their order.', practice:t, open:to}));",
   "replace": ""
  },
  {
@@ -182,8 +182,8 @@
  {
   "name": "a practice order's question is counted",
   "file": "stmt/owner.js",
-  "find": "why:'On order '+o.id+'.', practice:t,",
-  "replace": "why:'On order '+o.id+'.', practice:false,"
+  "find": "why:'On their order.', practice:t,",
+  "replace": "why:'On their order.', practice:false,"
  },
  {
   "name": "a question on a closed order is not asked of him",
