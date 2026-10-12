@@ -149,10 +149,10 @@ export async function run({ ok, pageWork }) {
     ok(same(p.cardsIn(), ["ord-p1"]) && byAct(d, "order.open", "ord-p1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open")
       && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current"),
     "a row opens that order's card alone, marks itself current and stands the list and the card side by side: " + JSON.stringify(p.cardsIn()));
-    const want = ["order.total", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
+    const want = ["order.details", "order.total", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
       "order.reply", "order.no-reply", "order.accept", "order.decline"];
     const got = p.acts("ord-p1");
-    ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet: " + JSON.stringify(got));
+    ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet, and Details for its reference: " + JSON.stringify(got));
     /* his decision 6 of 11 Oct 2026: the card reads its own preview on opening, once, and has no Preview button */
     const pv = p.posts.filter((x) => /preview$/.test(x.route));
     ok(pv.length === 1 && pv[0].route === "/all/maker/orders/ord-p1/preview" && same(pv[0].body, { total: 200, delivery: 0 }) && !!d.querySelector("#makerReview [data-accept]")

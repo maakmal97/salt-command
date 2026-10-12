@@ -382,7 +382,7 @@ export async function run({ ok }) {
     ok(say(draftId)?.textContent === "Row approved." && !/Row approved/.test(list()),
       "A Desk row's answer lands on the row's own card too: " + JSON.stringify({ card: say(draftId)?.textContent, list: list() }));
     await until(() => field("20261003090001-ack", "Answer them"));
-    button("20261003090001-ack", "Send the change").click();
+    button("20261003090001-ack", "Change the order").click(); sheetGo();   /* the Change the order Sheet, its figures untouched */
     ok(say("20261003090001-ack")?.textContent === "Change a figure first." && !/Change a figure/.test(list()),
       "Amend with no figure changed says so on its own card");
     await until(() => !button("20261003090001-ack", "Save this line").disabled);   /* the card's controls come back once the tap has run */

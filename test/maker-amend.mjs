@@ -227,38 +227,54 @@ export async function run({ ok }) {
     };
     const card = (id) => cardOf(doc, id);
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
-    const field = (id, label) => {
-      const wrap = card(id) && [...card(id).querySelectorAll("label")].find((l) => l.querySelector(".lbl") && l.querySelector(".lbl").textContent === label);
+    /* Change the order is a Sheet (Phase 4c, glossary 5.2): its fields are found in the sheet, and the Sheet's own action is Send the change */
+    const sheet = () => doc.getElementById("ynSheet");
+    const field = (label) => {
+      const wrap = sheet() && [...sheet().querySelectorAll("label")].find((l) => l.querySelector(".salt-field__label") && l.querySelector(".salt-field__label").textContent === label);
       return wrap && wrap.querySelector("input");
     };
+    const sheetGo = () => doc.getElementById("ynGo").click();
+    const ACK = "20261006090001-ack", opened = (id) => { button(id, "Change the order").click(); return sheet(); };
     const settle = async (n) => { await until(() => posts.length >= n); await new Promise((resolve) => setTimeout(resolve, 40)); };
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => button("20261006090001-ack", "Send the change"));
-    ok(!!field("20261006090001-ack", "Units") && !!field("20261006090001-ack", "Price (goods)") && !!field("20261006090001-ack", "Delivery")
-      && !button("20261006090002-pla", "Send the change"),
-      "An agreed order offers the size, the goods' price and the delivery to amend; an order not yet agreed does not.");
-    button("20261006090001-ack", "Send the change").click();
+    await until(() => button(ACK, "Change the order"));
+    const first = opened(ACK);
+    ok(!!first && first.querySelector(".salt-sheet__title").textContent === "Change the order" && !!field("Units") && !!field("Price (goods)") && !!field("Delivery")
+      && field("Units").value === "3" && field("Price (goods)").value === "285" && field("Delivery").value === "5" && doc.getElementById("ynGo").textContent === "Send the change"
+      && !button("20261006090002-pla", "Change the order") && !button(ACK, "Send the change"),
+      "An agreed order offers Change the order, a Sheet of the size, the goods' price and the delivery as they stand and Send the change; an order not yet agreed does not, and nothing stands down the card.");
+    ok([...sheet().querySelectorAll("[data-amend-field]")].length === 3 && posts.length === 0, "The three amend fields are drawn in the Sheet and the card holds none.");
+    const notNow = doc.getElementById("ynKeep");
+    ok(notNow.textContent === "Not now", "The Sheet's other answer is Not now.");
+    notNow.click();
+    ok(!sheet() && card(ACK).querySelectorAll("[data-amend-field]").length === 0 && posts.length === 0, "Not now closes the Sheet and sends nothing.");
+    opened(ACK); sheetGo();
     await new Promise((resolve) => setTimeout(resolve, 40));
     ok(posts.length === 0, "Amend with no figure changed sends nothing.");
     failNext = 1;
-    field("20261006090001-ack", "Delivery").value = "12";
-    button("20261006090001-ack", "Send the change").click(); await settle(1);
-    await until(() => button("20261006090001-ack", "Send the change"));
-    field("20261006090001-ack", "Delivery").value = "12";
-    button("20261006090001-ack", "Send the change").click(); await settle(2);
+    opened(ACK); field("Delivery").value = "12"; sheetGo(); await settle(1);
+    await until(() => button(ACK, "Change the order"));
+    opened(ACK);
+    ok(field("Delivery").value === "12" && field("Units").value === "3", "A change whose answer was lost is opened again as he left it, not as the order stands: " + (field("Delivery") && field("Delivery").value));
+    sheetGo(); await settle(2);
     ok(posts[0].path === "/all/maker/orders/20261006090001-ack/restate" && JSON.stringify(Object.keys(posts[0].body).sort()) === '["delivery","rid"]'
       && posts[0].body.delivery === 12 && /^[0-9a-f]{32}$/.test(posts[0].body.rid) && posts[1].body.rid === posts[0].body.rid,
       "Amend sends only the figure changed, and its retry after a failure carries the same request id: " + JSON.stringify(posts));
-    await until(() => button("20261006090001-ack", "Send the change"));
-    field("20261006090001-ack", "Units").value = "4";
-    field("20261006090001-ack", "Price (goods)").value = "380";
-    button("20261006090001-ack", "Send the change").click(); await settle(3);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    await until(() => button(ACK, "Change the order"));
+    opened(ACK);
+    ok(field("Delivery").value === "5", "A change that landed is forgotten: the Sheet opens on the order's own figures again: " + (field("Delivery") && field("Delivery").value));
+    field("Units").value = "4";
+    field("Price (goods)").value = "380";
+    sheetGo(); await settle(3);
     ok(posts[2].body.qty === 4 && posts[2].body.total === 380 && posts[2].body.delivery === undefined && posts[2].body.rid !== posts[0].body.rid,
       "A new size is sent with its goods' price, under a request id of its own: " + JSON.stringify(posts[2]));
-    await until(() => button("20261006090001-ack", "Send the change") && field("20261006090001-ack", "Units").value === "3");
-    field("20261006090001-ack", "Units").value = "5";
-    button("20261006090001-ack", "Send the change").click(); await settle(4);
-    ok(posts[3].body.qty === 5 && posts[3].body.total === 285, "A size changed alone is sent with the goods' price in the box, which the Desk then holds to the floor: " + JSON.stringify(posts[3]));    const tall = [...card("20261006090001-ack").querySelectorAll("[data-amend-field]")];
-    ok(tall.length === 3, "The three amend fields are drawn.");
-  } finally { browser.window.close(); }
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    await until(() => button(ACK, "Change the order"));
+    opened(ACK);
+    ok(field("Units").value === "3", "and that landed too, so the Sheet shows the order's own size: " + field("Units").value);
+    field("Units").value = "5";
+    sheetGo(); await settle(4);
+    ok(posts[3].body.qty === 5 && posts[3].body.total === 285, "A size changed alone is sent with the goods' price in the box, which the Desk then holds to the floor: " + JSON.stringify(posts[3]));
+  } catch (e) { ok(false, "the owner page stopped on an error: " + (e && e.message)); } finally { browser.window.close(); }
 }

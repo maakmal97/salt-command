@@ -227,6 +227,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .msg.wait{color:var(--salt-text-muted)}
 /* Phase 3b: a refusal's Details, the server's own words under the plain sentence, to copy */
 .adm .rdet{margin:8px 0 0}
+/* Phase 4c: a Details control opens a list of names and values (an id, a moment, a row's figures); a long value wraps and stays at the right */
+.adm .rdet .salt-ledger{margin:8px 0 0}
+.adm .rdet .salt-ledger__value{white-space:normal;overflow-wrap:anywhere;text-align:right}
 .adm .rraw{margin:8px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text-muted);overflow-wrap:anywhere;user-select:all}
 /* a veil is obsidian 86%, decision 4 */
 /* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it
@@ -625,7 +628,7 @@ body.ended>*:not(#aEnded){display:none}
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
   .gate.adm{max-width:none}
-  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oShop{max-width:600px;margin-left:auto;margin-right:auto}
+  .adm .amain>#mHome,.adm .amain>#oCustomers,.adm .amain>#oShop,.adm .amain>#unsentBar{max-width:600px;margin-left:auto;margin-right:auto}
 }
 /* 12 OCT 2026 (PHASE 4a, his decision 3 of 11 Oct): RECORD'S FORM OPEN IS A PANE, as Orders' card is. The menu (and a retained input) is the column
    #makerFormGrid keeps in .reclist, the form open stands in .recpane beside it from 860px, sticky and scrolling inside itself; below it the form takes
@@ -668,6 +671,8 @@ body.ended>*:not(#aEnded){display:none}
 .adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .need .salt-action__body>*+*{margin-top:8px}
 .adm .need .salt-action__go{display:flex;flex-wrap:wrap;gap:8px}
+/* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
+.adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
 .adm .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .nnote:empty{display:none}
@@ -1327,6 +1332,8 @@ export function landingPage(user, nonce, owner, bulletin) {
           + '<span class="salt-rail__count" data-count="' + m + '"></span></button>').join("") + "</div>"
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
         + '<div class="amain">'
+        /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
+        + '<div id="unsentBar" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
            ("orders" is every part of Orders, "orders.group" that part alone). The owner's script hides the rest (stmt/owner.js, go),
            so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */

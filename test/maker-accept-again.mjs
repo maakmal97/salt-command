@@ -56,7 +56,7 @@ export async function run({ ok }) {
     await until(() => button("20261006090001-aga", "Check and agree again"));
     const aga = texts("20261006090001-aga");
     ok(aga.includes("Check and agree again") && !aga.some((t) => /Preview/.test(t))
-      && !aga.some((t) => /^Ready to|^Handed over|^Record cash|^Record payment|^Send the change/.test(t))
+      && !aga.some((t) => /^Ready to|^Handed over|^Record cash|^Record payment|^Change the order/.test(t))
       && !ack.includes("Check and agree again"),
       "An agreed order whose pending row he rejected reads its preview when opened, with no Preview button, and offers Accept again in place of Ready, the handover, cash, claims and Amend; another does not: " + JSON.stringify(aga));
 

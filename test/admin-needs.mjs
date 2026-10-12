@@ -60,6 +60,8 @@ function busyDay(state) {
 const NOW_KEYS = ["o:ord-p3", "p:ord-a1", "c:" + U1 + ":c-1", "o:ord-p1", "m:" + U1, "o:ord-p4", "c:" + U1 + ":c-2", "o:ord-p2", "k:" + U3,
   "m:" + PRACTICE, "c:" + PRACTICE + ":c-x", "o:ex-1"];
 const WATCH_KEYS = ["w:desk", "w:hours", "w:notice"];
+/* the loan the harness keeps unsent on this phone is a Soon card too (Phase 4c), between the accounts not sent and the guest link by its age */
+const UNSENT = "u:/all/maker/inputs/loan";
 
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
 
@@ -94,7 +96,7 @@ export async function run({ ok, pageWork }) {
   let p = await open(state());
   try {
     const d = p.d;
-    ok(same(p.keys("now"), NOW_KEYS) && same(p.keys("soon").slice(0, 2), ["s", "l:w1"]) && same(p.keys("watch"), WATCH_KEYS),
+    ok(same(p.keys("now"), NOW_KEYS) && same(p.keys("soon").slice(0, 3), ["s", UNSENT, "l:w1"]) && same(p.keys("watch"), WATCH_KEYS),
       "an order placed, a payment they say they sent, a message asked and a locked account are Now, the guest link and the accounts not sent Soon, and the Desk's line, "
       + "an override and a notice Watch: " + JSON.stringify([p.keys("now"), p.keys("soon"), p.keys("watch")]));
     ok(p.cards().every((c) => c.classList.contains("salt-action") && c.classList.contains("salt-action--" + c.getAttribute("data-sev"))
@@ -122,7 +124,7 @@ export async function run({ ok, pageWork }) {
     ok(order2.every((s, i) => i === 0 || sevOrder.indexOf(order2[i - 1]) <= sevOrder.indexOf(s)),
       "Now comes before Soon and Soon before Watch: " + JSON.stringify(order2));
     ok(same(p.keys("now"), NOW_KEYS), "within Now the oldest comes first, and the practice items after the real ones: " + JSON.stringify(p.keys("now")));
-    ok(same(p.keys("soon"), ["s", "l:w1", "d:" + ago(6), "d:" + ago(3), "d:" + ago(1), "d:" + ago(0.5), "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
+    ok(same(p.keys("soon"), ["s", UNSENT, "l:w1", "d:" + ago(6), "d:" + ago(3), "d:" + ago(1), "d:" + ago(0.5), "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
       "within Soon the oldest first, and what has no age after what has one: " + JSON.stringify(p.keys("soon")));
     ok([...d.querySelectorAll("#nlist > .nsev")].map((h) => h.textContent).join() === "Now,Soon,Watch", "each severity is headed by its word");
 
@@ -211,7 +213,7 @@ export async function run({ ok, pageWork }) {
     const done = p.card("d:" + id);
     ok(done && /Row approved[.]/.test(done.textContent) && !done.querySelector(".salt-pill") && done.getAttribute("data-sev") === "soon",
       "the answer stays on the card he tapped, though the row is no longer there: " + (done && done.textContent));
-    ok(/^9 now, 10 soon/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "3",
+    ok(/^9 now, 11 soon/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "3",
       "and the row is no longer counted: " + d.getElementById("nCount").textContent);
     byAct(d, "nav.customers").click(); await p.work.quiet();
     byAct(d, "nav.needs").click(); await p.work.quiet();
@@ -241,7 +243,7 @@ export async function run({ ok, pageWork }) {
     ok(SITE_RECIPES.includes(SELECTED + " {") && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED)).map((b) => b.getAttribute("data-chip")), ["rows"]),
       "and it alone matches the selector the system's tabs are drawn selected by, so it looks different from the other five");
     await p.tap("need.kind.all");
-    ok(p.cards().length === 12 + 11 + 3, "All shows every card again, Watch among them: " + p.cards().length);
+    ok(p.cards().length === 12 + 12 + 3, "All shows every card again, Watch among them: " + p.cards().length);
     await p.tap("need.kind.orders");
     ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "9"), "Watch shows under All only, and a filter changes no count");
   } finally { p.w.close(); }

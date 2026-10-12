@@ -1660,7 +1660,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   code, and painted by `makerVaultPaint`, which a redraw reaches through an observer): the roster row, the account card, an order's row and head, a claim's row
   and head, a chat's list and head, and a Needs card. A code the vault holds no name for shows alone, and codes are all there is once locked.
   **The lock lets all of it go together** (`makerVaultLock`): the keys, the names and places, every slip picture (its `blob:` URL revoked, the image removed), the
-  Sheet with whatever was typed in it, and the gates, the Shop row and the card read Locked again. It fires **on the page hidden** (`visibilitychange`), **on
+  Sheet with whatever was typed in it, **the last pair Add ID, Amend ID and Place on the map prepared** (each lists its draft in `pairDrafts` and the lock clears
+  them; Phase 4c, 12 Oct 2026, Fable's note on #146: a prepared pair carries the plain places map until the form strips it, and Place on the map, which asks the
+  gazetteer for a locality after the pair is prepared, stripped it only on the way that reached the send, so it is stripped in a `finally` now;
+  `test/admin-place-drafts.mjs`, its mutations in `test/admin-place-drafts.mutations.json`), and the gates, the Shop row and the card read Locked again. It fires **on the page hidden** (`visibilitychange`), **on
   `ended()`** (Access has ended), **on a lapse** (`lapseHooks`, which `lapsed()` runs first: the customer's page holds an empty list and the owner's script adds the
   lock, so a customer's page names nothing of his) and **on Lock** (Shop, or the slip card's own). An unlock still being read when the lock comes lands on nothing
   (`makerVaultTurn`). The claim card's own unlock and lock (`claim.passphrase`, `claim.lock-slip`) and the password fields of Add ID, Amend ID, Place on the map
@@ -2282,6 +2285,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `claim.ask-close` | The Sheet a claim's Received or Not found asks on (key: the username and claim id) | Closes it and sends nothing. |
 | `claim.ask-go` | Same sheet | Sends what it asked: Received, Received on the book already, or Not found. |
 | `claim.ask-keep` | Same sheet | Keeps the claim waiting and sends nothing. |
+| `claim.details` | The claim's card (key: the username and claim id) | Opens the claim's reference, when it was sent, whether a slip is attached and whether it is a practice account, as a list of names and values. |
 | `claim.not-found` | Same card | Asks, on the Sheet, whether to answer the claim Not found. |
 | `claim.open` | Account claims, a row for each waiting claim (key: the username and claim id) | Opens the claim's card under its row, which reads its rows; a tap on the row open closes it. |
 | `claim.received` | Same card | Asks, on the Sheet, whether to confirm the amount and the rows shown. |
@@ -2331,11 +2335,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.kind.messages` | The chips under Needs you's title | Shows only the messages asked. Reads nothing. |
 | `need.kind.orders` | The chips under Needs you's title | Shows only the orders. Reads nothing. |
 | `need.kind.payments` | The chips under Needs you's title | Shows only the payments they say they sent. Reads nothing. |
-| `need.kind.rows` | The chips under Needs you's title | Shows only the Desk rows and the entries that did not get through. Reads nothing. |
+| `need.kind.rows` | The chips under Needs you's title | Shows only the Desk rows, the entries that did not get through and the entries kept unsent on this phone. Reads nothing. |
 | `need.link-approve` | Same card | Approves the link, which then opens. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
-| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Shop. |
+| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
 | `need.show-link` | Needs you card for an ID with no account yet | Shows the guest price list (the stranger's standing guest link) and its QR until the account is made. |
@@ -2354,12 +2358,12 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cash again. |
 | `order.again-move` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected handover again. |
 | `order.again-pay` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected payment again. |
-| `order.amend` | Same card | Sends the amendment for approval. |
-| `order.amend-delivery` | Same card | The amended delivery charge, in RM. |
-| `order.amend-total` | Same card | The amended goods price, in RM. |
-| `order.amend-units` | Order card (key: the order id), acknowledged or ready | The amended units. |
+| `order.amend` | Order card, acknowledged or ready | Opens the Change the order Sheet: Units, Price (goods) and Delivery. |
+| `order.amend-delivery` | The Change the order Sheet (key: the order id) | The amended delivery charge, in RM. |
+| `order.amend-total` | Same sheet | The amended goods price, in RM. |
+| `order.amend-units` | Same sheet | The amended units. |
 | `order.ask-close` | The sheet an order card asks on (key: the order id) | Closes the sheet, sending nothing. |
-| `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close, the offer again, or a claim's Received or Not found. |
+| `order.ask-go` | Same sheet | Sends what it asked: the Decline, the Cancel, the close, the offer again, a claim's Received or Not found, or the change to the order for approval. |
 | `order.ask-keep` | Same sheet | Leaves the order as it was, sending nothing. |
 | `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Asks on a sheet, with a reason, then cancels the order. |
@@ -2371,6 +2375,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Asks, on the Sheet, whether to confirm the money they say they sent. |
 | `order.close` | Order card (key: the order id), ready | Asks on a sheet, then closes the order at the units typed. |
 | `order.decline` | Order card (key: the order id), placed | Asks on a sheet, with a reason, then declines the order. |
+| `order.details` | Every order card, and the card of cash held for an order not on the read (key: the order id) | Opens the order's reference, when it was placed and how it goes, as a list of names and values. |
 | `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |
 | `order.fee-10` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 10. |
 | `order.fee-15` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 15. |
@@ -2428,6 +2433,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `pool.product` | Group orders | The product the group order is for. |
 | `pool.size` | Group orders | The size each joiner takes, in units. |
 | `pool.target` | Group orders | The target, in units. |
+| `queue.details` | Server-held entry card (key: the entry id) | Opens the entry's reference, when it was sent and its state, as a list of names and values. |
 | `queue.withdraw` | Server-held entry card (key: the entry id) | Withdraws the uploaded entry, or finishes a withdrawal begun. |
 | `record.add-id.drift` | Record, Add ID, one for each drift book (key: the book) | The starting drift: automatic, a preset or typed. |
 | `record.add-id.drift-value` | Record, Add ID, one for each drift book (key: the book) | The typed starting drift, from -1 to +1. |
@@ -2543,7 +2549,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.total` | Record, sale or purchase | The goods total, in RM. |
 | `record.trade.units` | Record, sale or purchase | The units. |
 | `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
-| `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the proposed row as the drafter made it. |
+| `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the row's reference (a Desk row's) and its figures as a list of names and values, never JSON. |
+| `unsent.open` | The banner over every place, while an entry waits unconfirmed on this phone | Goes to Record, on the part of the oldest such entry, where its Unsent entry section stands. |
 | `vault.cancel` | The one unlock's Sheet | Closes it and sends nothing; whatever was typed is cleared. |
 | `vault.close` | Same Sheet | Closes it, as Not now does. |
 | `vault.lock` | Shop, This device, Names and places, once open; a claim card's slip, once drawn (key: the username and claim id) | Locks the one unlock: every key, name, place and slip picture is let go. |
@@ -2578,6 +2585,33 @@ text is redrawn from state, so the next tap that clears the note clears them wit
 `mtile`), a heading is the mark with the name beside it (`bookHead`, for the associates' report card the name the answer carries), and a select, which cannot hold
 a mark, says the name alone. **The shape words (Cube, Droplet, Lozenge, Capsule) are the customer's page and are never drawn on Salt Account**, nor are the helpers
 that draw them (`pshape`, `mtile`, `pmarkHead`); the customer's page is as it was, and `test/admin-words.mjs` holds both.
+
+### Unsent entries say so, and every id and row keeps its detail behind Details (Phase 4c, 12 Oct 2026)
+
+**An entry sent from this phone and not confirmed says so on every place.** `makerButton` keeps a retained send whole in the phone's storage
+(`saltMakerPending:<route>`) until the Desk confirms it or he discards it; it used to be found only by opening Record. Now one banner (`#unsentBar`, over every
+place, the Action recipe at Soon, act `unsent.open`) says how many (*1 unsent entry*, *3 unsent entries*) and opens them, and each is a Soon card on Needs you under
+the Rows chip (key `u:<route>`, counted in the line under the title, who by code when the entry names a customer and *This phone* when it names nobody). Both
+sentences are the plan's: *A loan you sent on 10 Oct 2026, 16:00 was not confirmed. Open it to send it again, update it or discard it.*, the day in Kuala Lumpur
+time; the entry's own section in Record says the same, then *Send it again, or update it first*. **Open goes to Record, on the part the oldest entry belongs to**
+(`retainedPart`), where its Unsent entry section stands with Send again, Update and send and Discard, which are Record's alone. **Both only read the phone's
+storage and send nothing**; `makerButton`'s send, its caches and completion hooks, `vaultPendingOk` and `makerBusy` are untouched. A record that will not read is
+still one entry he can see and discard. The banner repaints when a place is shown and when an entry is cleared (`makerClear`), the cards at each draw of Needs
+you. `test/admin-unsent.mjs`.
+
+**An id is for quoting, not for reading: it stands behind Details.** An order's card no longer carries a grey *Reference* line; a claim's card, a Desk row's card and a
+held entry's card each have one Details control, shut, that opens a list of names and values (`detailBox`, the system's plain Ledger list, wrapping a long value):
+`order.details` (Reference, Placed, Way), `claim.details` (Reference, Sent, whether a slip is attached, Practice), `row.proposed` (the draft's Reference, then the
+row) and `queue.details` (Reference, Sent, State). **A row's Details are never JSON** (`rowPairs`): a name through `rowKey` (the page's `FIELDW`, a few of its own, else
+the identifier spaced out), a value through `rowValue` (a size in units, a sum in RM, a day as DD Mon YYYY, a yes as Yes or No, a list on one line, a figure inside a
+figure as *Price: RM 5.00*), and a claim row's flag that is not a sentence is worded the same way. Opening one reads and sends nothing; no request, body or request
+id of any card changed. `test/admin-details.mjs`.
+
+**Change the order is a Sheet.** An agreed or ready order's card has one control, Change the order (`order.amend`), in place of the three fields and the Send the change
+button down the card. It opens the page's Sheet (`amendOpen`, through `makerAsk`, so the order is restated at its head by its mark, code, size and figure) with Units,
+Price (goods) and Delivery as they stand, its one action Send the change and the other Not now. **The action sends what Send the change sent**: `POST /all/maker/orders/<id>/restate`,
+only the figures changed, the goods' price with a new size, under the request id that route minted until it lands; nothing changed says *Change a figure first.* on the card. What was typed is kept
+while the change has not landed (`amendMemo`, forgotten once it has), so a lost reply is opened again as he left it and retried as the same request. `test/maker-amend.mjs`.
 
 ## Before committing
 

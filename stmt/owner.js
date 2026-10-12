@@ -121,6 +121,7 @@ export const OWNER_JS = `
       b.setAttribute('aria-selected', b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow?'true':'false'); });
     sweep();
     say('');
+    unsentPaint();
     if(fresh&&PLACE_READ[placeNow]) PLACE_READ[placeNow]();
     if(PART_READ[placeNow+'.'+partNow]) PART_READ[placeNow+'.'+partNow]();
     if(o.push){ var to=addrFor(placeNow, partNow); if(location.hash!==to){ try{ history.pushState(null,'',to); }catch(e){} } }
@@ -980,12 +981,16 @@ export const OWNER_JS = `
   var makerVault=null, makerVaultTurn=0, vaultBusy=false, vaultBack=null,
       vaultSheetEl=document.getElementById('vaultSheet'), vaultScrim=document.getElementById('vaultScrim'), vaultPass=document.getElementById('vaultPass'),
       vaultSay=document.getElementById('vaultSay'), vaultGo=document.getElementById('vaultGo');
+  /* PHASE 4c (Fable's note on #146): the three forms that prepare a pair of sealed maps (Add ID, Amend ID, Place on the map) each keep the last one prepared as a draft, and a
+     draft carries the places map in plain text until it is stripped. Each form lists how its draft is read and let go here, and the lock lets every one go with the keys. */
+  var pairDrafts=[];
   function makerVaultBase(){
     if(!makerVault) throw new Error('Unlock names and places first.');
     return makerVault.base;
   }
   function makerVaultLock(){
     makerVaultTurn++; makerVault=null;
+    pairDrafts.forEach(function(d){ d.clear(); });
     makerSlipClose(); vaultShut(true);
     makerVaultNotify(); if(makerSlipDraw) makerSlipDraw();
   }
@@ -1187,6 +1192,7 @@ export const OWNER_JS = `
     var claimHead=el('h3'); claimHead.appendChild(whoTag(el('span',null,who),codeOfUser(claim.u))); claimHead.appendChild(document.createTextNode(' says they paid '+rm(claim.amount)));
     card.appendChild(claimHead);
     card.appendChild(el('p','maker-facts','Sent '+fmtWhen(claim.at)+(ageOf(claim.at)?', '+ageOf(claim.at)+' ago':'')+(claim.test?'. A practice account.':'')));
+    card.appendChild(detailBox('claim.details',key,[['Reference',claim.id],['Sent',fmtWhen(claim.at)],['Slip',claim.slip?'Attached':'None'],['Practice',claim.test?'Yes':'']]));
     said.setAttribute('role','status'); card.appendChild(said); card.appendChild(note);
     if(claim.slip) makerSlipControl(card,claim.u,claim.slip,key);
     var receipt=makerClaimButton(acts,['Yes, received '+rm(claim.amount),'claim.received',key],function(){ return claimAsk(false,false); },true);
@@ -1201,7 +1207,7 @@ export const OWNER_JS = `
       note.textContent='';
       (result.rows||[]).forEach(function(row){
         note.appendChild(el('p','maker-row',makerClaimRowLine(row)));
-        (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?flag:JSON.stringify(flag))); });
+        (row.flags||[]).forEach(function(flag){ note.appendChild(el('p','salt-insight',typeof flag==='string'?flag:rowValue('flag',flag))); });
       });
       note.appendChild(el('p','salt-insight',result.booked?'Already recorded: Yes only tells them.':
         result.left>0.004?rm(result.left)+' more than the rows: do not record it twice.':'These rows are settled together.'));
@@ -1599,10 +1605,7 @@ export const OWNER_JS = `
     if(reading.margin) parent.appendChild(el('p','maker-facts','Your margin '+rm(reading.margin.rm)+' · '+reading.margin.pct+'%'));
     if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
     (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
-    if(reading.row){
-      var detail=el('details',''), summary=actOn(el('summary','salt-ghost','Details'),'row.proposed',key);
-      detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); parent.appendChild(detail);
-    }
+    if(reading.row) parent.appendChild(detailBox('row.proposed',key,rowPairs(reading.row)));
   }
   /* the placed-order preview's own native comparison, mirroring ordPvBlock on the Desk: their card today, margin,
      floor and their usual, read off the preview the server drafted (src/orders.js previewAck), never raw row JSON */
@@ -1721,7 +1724,46 @@ export const OWNER_JS = `
         if(!makerGeo.pendingOk(record))throw new Error('This saved entry cannot be sent. Discard it.');
         localStorage.setItem('saltMakerPending:'+record.path,JSON.stringify(record));
       }
-      function makerClear(path){localStorage.removeItem('saltMakerPending:'+path);}
+      function makerClear(path){localStorage.removeItem('saltMakerPending:'+path);unsentPaint();}
+      /* ---- THE UNSENT ENTRIES (PHASE 4c, 12 Oct 2026, the plan's retained-send words) -------------------------------------------------
+         An entry that left this page and was not confirmed is kept on this phone, whole, until the Desk confirms it or he discards it (makerSave, above). He should not
+         have to open Record to learn that one waits: a banner over every place says how many and opens them, and each is a Soon card on Needs you. Both only READ the
+         phone's own storage and send nothing; Send again, Update and send and Discard stay Record's, on the entry's own section, exactly as they were. */
+      var UNSENT_WORD={'add-id':'new customer','appoint-existing':'appointment','amend-id':'change of name or place','place':'map placement','stock-count':'stock count','sale':'sale','purchase':'purchase',
+        'tier-set':'price setting','tier-accept-all':'set of price levels','house-sizes':'set of printed sizes','hush':'reminder','loan':'loan','repay':'repayment','gift':'gift','redeem':'reward','ledger-amend':'correction','offset':'offset'};
+      /* what one kept entry is, from its storage key: never a name or a place, which a kept entry holds only sealed; a record that will not read is still an entry */
+      function unsentRead(storageKey){
+        var path=storageKey.slice('saltMakerPending:'.length), body=null;
+        try{ var saved=JSON.parse(localStorage.getItem(storageKey)); body=saved&&saved.body&&typeof saved.body==='object'?saved.body:null; }catch(e){}
+        var code=body?String(body.party||body.code||body.from||''):'';
+        return {path:path, key:path.split('/').pop(), at:body?isoAt(body.at):'', who:/^[A-Z]+[0-9]+-[A-Z0-9-]+$/.test(code)?code:''};
+      }
+      /* every entry kept on this phone, the oldest first */
+      function unsentList(){
+        var list=[];
+        try{ Object.keys(localStorage).filter(function(k){ return k.indexOf('saltMakerPending:')===0; }).forEach(function(k){ list.push(unsentRead(k)); }); }catch(e){}
+        return list.sort(function(a,b){ var x=a.at||'~', y=b.at||'~'; return x<y?-1:x>y?1:(a.path<b.path?-1:1); });
+      }
+      function unsentWord(u){ return UNSENT_WORD[u.key]||'entry'; }
+      function unsentSaid(u){
+        var w=unsentWord(u);
+        return (/^[aeiou]/.test(w)?'An ':'A ')+w+' you sent'+(u.at?' on '+fmtWhen(u.at):'')+' was not confirmed.';
+      }
+      /* Open: Record, on the part the entry belongs to, where its section stands above the menu */
+      function unsentOpen(u){ showPlace('record', retainedPart(u.path), {fresh:true, push:true}); }
+      function unsentPaint(){
+        try{
+          var bar=document.getElementById('unsentBar'); if(!bar) return;
+          var list=unsentList(), n=list.length;
+          bar.textContent=''; bar.hidden=!n;
+          if(!n) return;
+          var one=n===1, c=needCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent', at:list[0].at, act:'unsent.open', who:n+' unsent '+(one?'entry':'entries'), what:'on this phone',
+            why:one?unsentSaid(list[0])+' Open it to send it again, update it or discard it.':'They were sent from this phone and not confirmed. Open them to send them again, update them or discard them.',
+            open:function(){ unsentOpen(list[0]); }});
+          c.removeAttribute('data-need'); c.removeAttribute('data-kind');
+          bar.appendChild(c);
+        }catch(e){}
+      }
       function makerRecovery(parent){
         var keys=Object.keys(localStorage).filter(function(key){return key.indexOf('saltMakerPending:')===0;});
         keys.forEach(function(key){
@@ -1729,7 +1771,7 @@ export const OWNER_JS = `
           var section=makerForm(retainedPart(path));section.setAttribute('data-key',path.split('/').pop());section.setAttribute('data-formmenu','');section.appendChild(el('h3',null,'Unsent entry'));
           var status=makerStatus(section);
           parent.appendChild(section);
-          try{saved=makerSaved(path);status.textContent='An entry you sent'+(saved.body&&saved.body.at?' on '+fmtWhen(saved.body.at):'')+' was not confirmed. Send it again, or update it first.';}
+          try{saved=makerSaved(path);status.textContent=unsentSaid(unsentRead(key))+' Send it again, or update it first.';}
           catch(error){refusal(status,error);}
           /* an unsent name or place opens on the one unlock before it is sent again or updated; any other entry needs none */
           if(saved&&saved.body&&(saved.body.pair||saved.body.vault||saved.body.addrVault))makerVaultGate(section);
@@ -1929,6 +1971,7 @@ export const OWNER_JS = `
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
   }
   async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
+    pairDrafts.length=0;
     makerGeo.configure(catalog.placed);
     var today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'});
     var idCanStart=function(kind){return kind==='customer'||kind==='reseller'||kind==='referral';};
@@ -2200,6 +2243,7 @@ export const OWNER_JS = `
     });
     idKind.dispatchEvent(new Event('change'));
     var idDraft=null;
+    pairDrafts.push({draft:function(){return idDraft;},clear:function(){idDraft=null;}});
     id.addEventListener('input',function(){idDraft=null;});
     id.addEventListener('change',function(){idDraft=null;});
     makerButton(id,['Add the customer','record.add-id.send'],async function(send){
@@ -2286,6 +2330,7 @@ export const OWNER_JS = `
       amendStatus=makerStatus(amend), amendBusy=false;
     var amendLink=makerField(amend,['Maps or Waze link','record.amend-id.link'],'text','');
     var amendDraft=null;
+    pairDrafts.push({draft:function(){return amendDraft;},clear:function(){amendDraft=null;}});
     amend.addEventListener('input',function(){amendDraft=null;});
     amend.addEventListener('change',function(){amendDraft=null;});
     makerButton(amend,['Save the change','record.amend-id.send'],async function(send){
@@ -2323,6 +2368,7 @@ export const OWNER_JS = `
       }), placeStatus=makerStatus(placement), placeBusy=false;
     var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New Maps or Waze link','record.place.link'],'text','');
     var placeDraft=null;
+    pairDrafts.push({draft:function(){return placeDraft;},clear:function(){placeDraft=null;}});
     placement.addEventListener('input',function(){placeDraft=null;});
     placement.addEventListener('change',function(){placeDraft=null;});
     placeParty.addEventListener('change',function(){makerVaultDraw(placeGate);});
@@ -2354,7 +2400,8 @@ export const OWNER_JS = `
         placeStatus.textContent='Sent. The exact address stays locked.';
         loadMaker();
       }catch(error){refusal(placeStatus,error);}
-      placeBusy=false;
+      /* a place that is not on the list throws after the pair is prepared, so the plain places map is stripped here whichever way the tap ended */
+      finally{ if(placeDraft) delete placeDraft.placeMap; placeBusy=false; }
     },true);
   }
   function makerCard(parent,key,recipe){
@@ -2636,6 +2683,40 @@ export const OWNER_JS = `
     if(value) l.appendChild(el('span','salt-ledger__value',value));
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     L.appendChild(r); return L;
+  }
+  /* ---- DETAILS (PHASE 4c, 12 Oct 2026, glossary 5.2) -------------------------------------------------------------------------------------------
+     An id is for quoting, not for reading. A card says who, what and how much; its reference, its moment and what else it was made from stand behind ONE Details
+     control, shut, as a list of names and values (the system's plain Ledger list), never raw JSON and never a run-on line. detailBox is that control and its list
+     (act and key name it); rowPairs words a Desk row's own fields, so a row's Details is the same list wherever a row is shown. */
+  var ROWK={rid:'Row reference', customer:'Who', trip:'Trip', sheet:'Sheet'};
+  function rowKey(k){
+    if(ROWK[k]) return ROWK[k];
+    if(FIELDW[k]) return FIELDW[k];
+    var s=String(k).replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1);
+  }
+  function rowValue(k,v){
+    if(v===true||v===false) return v?'Yes':'No';
+    if(typeof v==='number') return /^(qty|[a-z]+Qty|settledKg|rebateKg|coverUnits)$/.test(k)?units(v):/^(total|cash|delivery|freight|cost|settledRM|coverRM)$/.test(k)?rm(v):String(v);
+    if(typeof v==='string') return /^[0-9]{4}-[0-9]{2}-[0-9]{2}(T|$)/.test(v)?fmtWhen(v):v;
+    if(Array.isArray(v)) return v.map(function(x){ return rowValue(k,x); }).join(', ');
+    if(v&&typeof v==='object') return Object.keys(v).map(function(n){ return rowKey(n)+': '+rowValue(n,v[n]); }).join(', ');
+    return '';
+  }
+  /* a Desk row as names and values, its reference first when it has one that is an id */
+  function rowPairs(row,ref){
+    var list=ref?[['Reference',ref]]:[];
+    Object.keys(row||{}).forEach(function(k){ var v=rowValue(k,row[k]); if(v!=='') list.push([rowKey(k),v]); });
+    return list;
+  }
+  function detailBox(act,key,pairs){
+    var box=el('details','rdet'), list=el('div','salt-ledger salt-ledger--plain');
+    box.appendChild(actOn(el('summary','salt-ghost','Details'),act,key));
+    pairs.forEach(function(p){
+      if(p[1]==null||p[1]==='') return;
+      var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
+      l.appendChild(el('span','salt-ledger__label',p[0])); l.appendChild(el('span','salt-ledger__value',String(p[1]))); r.appendChild(l); list.appendChild(r);
+    });
+    box.appendChild(list); return box;
   }
   /* Cancel retained input, wherever it is offered: the unsent copy on this device goes, and what the Desk server already holds does not. The opener carries its key (ynTag). */
   function retainedCancel(opener,line,done){
@@ -3405,7 +3486,7 @@ export const OWNER_JS = `
     card.appendChild(orderTitle);
     line.appendChild(chip(st[0],st[1])); card.appendChild(line);
     card.appendChild(el('p','maker-facts','Goods '+rm(order.total)+(order.delivery?' · Delivery '+rm(order.delivery):'')+(+order.paid>0?' · Paid '+rm(order.paid):'')));
-    card.appendChild(el('p','maker-facts','Reference '+order.id));
+    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));
   }
   /* the card of an open order: every control it had, on the order opened alone */
   function orderCard(root,order){
@@ -3626,18 +3707,8 @@ export const OWNER_JS = `
       }
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
-        card.appendChild(el('h4',null,'Change the order'));
-        var aq=makerField(card,['Units','order.amend-units'],'number',order.qty), at=makerField(card,['Price (goods)','order.amend-total'],'number',order.total), ad=makerField(card,['Delivery','order.amend-delivery'],'number',order.delivery||0);
-        [aq,at,ad].forEach(function(f){ f.setAttribute('data-amend-field',''); });
-        makerButton(card,['Send the change','order.amend'],function(){
-          var body={}, q=Number(aq.value), t=Number(at.value), d=Number(ad.value);
-          if(q!==Number(order.qty)) body.qty=q;
-          if(t!==Number(order.total)) body.total=t;
-          if(d!==Number(order.delivery||0)) body.delivery=d;
-          if(body.qty!==undefined&&body.total===undefined) body.total=t;
-          if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }
-          makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.');
-        },false).setAttribute('data-amend','');
+        var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
+        change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
       }
       makerAgain(card,order,acts);
       makerOrderMoves(card,order,false,acts);
@@ -3647,11 +3718,36 @@ export const OWNER_JS = `
       return card;
     }
   }
+  /* 12 Oct 2026 (Phase 4c, glossary 5.2): CHANGE THE ORDER IS A SHEET of Units, Price (goods) and Delivery, opened from the card's Change the order (it was three fields and
+     a button down the card). Its one action sends exactly what Send the change sent: the same restate route, the same figures (only those changed, the goods' price with a
+     new size) and the same request id until it lands, so a lost reply is retried as itself. The card keeps what was typed while a change has not landed (amendMemo), so a
+     failed send is opened again as he left it; a change that landed is forgotten, as the redrawn card forgot it. */
+  var amendMemo={};
+  function amendOpen(order,opener){
+    var base=[order.qty,order.total,order.delivery||0].join(), memo=amendMemo[order.id], kept=memo&&memo.base===base?memo.vals:null;
+    function one(label,act,value){
+      var wrap=el('label','salt-field'), input=actOn(el('input','salt-field__input'),act,order.id);
+      input.type='number'; input.step='0.01'; input.min='0'; input.inputMode='decimal'; input.value=String(value); input.setAttribute('data-amend-field','');
+      wrap.appendChild(el('span','salt-field__label',label)); wrap.appendChild(input); return {wrap:wrap, input:input};
+    }
+    var aq=one('Units','order.amend-units',kept?kept[0]:order.qty), at=one('Price (goods)','order.amend-total',kept?kept[1]:order.total), ad=one('Delivery','order.amend-delivery',kept?kept[2]:order.delivery||0);
+    makerAsk(order,opener,'amend',{title:'Change the order', plain:true, go:'Send the change', keep:'Not now', say:['You approve the change next, under Approve.'], extra:[aq.wrap,at.wrap,ad.wrap],
+      yes:function(){
+        var body={}, q=Number(aq.input.value), t=Number(at.input.value), d=Number(ad.input.value);
+        if(q!==Number(order.qty)) body.qty=q;
+        if(t!==Number(order.total)) body.total=t;
+        if(d!==Number(order.delivery||0)) body.delivery=d;
+        if(body.qty!==undefined&&body.total===undefined) body.total=t;
+        if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }
+        amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value]};
+        makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.').then(function(){ if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id]; });
+      }});
+  }
   /* the card of an order that is not open: one with a stage he rejected keeps its card until that stage is offered again or left; a closed
      order has its figures, and a question of theirs he has not answered its reply; cash held for it keeps its Undo (or its Retry) */
   function orderPlainCard(root,e){
     var order=e.order, again=null, acts=el('div','maker-foot__acts'), cashed=false, card=makerCard(root,e.id); card.setAttribute('data-in',e.parts);
-    if(!order){ card.appendChild(el('h3','','Cash held for an order not on this read')); card.appendChild(el('p','maker-facts','Reference '+e.id)); }
+    if(!order){ card.appendChild(el('h3','','Cash held for an order not on this read')); card.appendChild(detailBox('order.details',e.id,[['Reference',e.id]])); }
     if(order){
       orderHead(card,order);
       if(makerAgainAck(order)) again=makerAcceptAgain(card,order,acts);
@@ -3676,10 +3772,8 @@ export const OWNER_JS = `
     var flags=reading.flags||[];
     if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',String(flag))); }); card.appendChild(chips); }
     if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',reading.reasoning));
-    if(reading.row){
-      var detail=el('details',''), summary=actOn(el('summary','salt-ghost','Details'),'row.proposed',key);
-      detail.appendChild(summary); detail.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2))); card.appendChild(detail);
-    }
+    /* the row's figures as names and values, the draft's reference first (Phase 4c); the key is the draft's id */
+    card.appendChild(detailBox('row.proposed',key,rowPairs(reading.row,key)));
   }
   /* an entry waiting for the Desk, by its moment when it has one: Entry of 09 Oct 2026, 14:11 */
   function entryLine(entry){ var at=isoAt(entry.id)||entry.date||''; return 'Entry'+(at?' of '+fmtWhen(at):''); }
@@ -3727,6 +3821,7 @@ export const OWNER_JS = `
         if(entry.device) card.appendChild(el('p','maker-facts','From another device.'));
         if(entry.seenAt) card.appendChild(el('p','maker-facts','Seen '+fmtWhen(entry.seenAt)+'.'));
         if(entry.why) card.appendChild(el('p','salt-insight',entry.why));
+        card.appendChild(detailBox('queue.details',entry.id,[['Reference',entry.id],['Sent',fmtWhen(isoAt(entry.id)||entry.date)],['State',entry.state==='refused'?'Refused':'Waiting for the Desk']]));
         if(entry.unavailable) card.appendChild(el('p','msg',entry.unavailable));
         if(entry.canWithdraw||entry.canRetry){
           var note=el('p','msg'); note.setAttribute('role','status'); card.appendChild(note);
@@ -3963,7 +4058,7 @@ export const OWNER_JS = `
     if(o.why) body.appendChild(el('p','salt-action__why',o.why));
     c.appendChild(body);
     c.appendChild(el('span','salt-action__money salt-action__money--nil',ageOf(o.at)));
-    if(o.open){ op=ghost(['Open','need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); }
+    if(o.open){ op=ghost(['Open',o.act||'need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); }
     c.appendChild(go);
     /* a card with an action of its own sets its ways on a row under the body, so a wide button never squeezes what it says */
     c._body=body; c._add=function(b){ c.classList.add('need--act'); go.insertBefore(b, op); };
@@ -4146,6 +4241,12 @@ export const OWNER_JS = `
     return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', what:'did not get through',
       why:r.why||'The Desk could not take this entry.', open:goPlace('record','approve')});
   }
+  /* an entry kept on this phone and not confirmed (Phase 4c): Soon, his own work; its Open is Record, on the entry's own section, where Send again, Update and send and Discard are */
+  function unsentNeed(u){
+    var w=unsentWord(u);
+    return item('soon','rows','Unsent','u:'+u.path, u.at, {who:u.who||'This phone', what:w.charAt(0).toUpperCase()+w.slice(1),
+      why:unsentSaid(u)+' Open it to send it again, update it or discard it.', open:function(){ unsentOpen(u); }});
+  }
   function threadNeed(t){
     var last=t.msgs[t.msgs.length-1];
     return item('now','messages','Message','m:'+t.u, last.at, {who:codeByUser(t.u), what:cut(last.text), practice:!!t.test,
@@ -4253,6 +4354,7 @@ export const OWNER_JS = `
     Object.keys(needSaid).filter(function(k){ return !rows.some(function(d){ return 'd:'+d.id===k; }); }).forEach(function(k){ L.push(decidedNeed(k, needSaid[k])); });
     (makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
+    unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
     /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
     links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); }).forEach(function(r){ L.push(linkNeed(r)); });
     real.filter(function(a){ return a.account===false; }).forEach(function(a){ L.push(bareNeed(a)); });

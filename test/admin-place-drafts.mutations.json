@@ -1,0 +1,10 @@
+[
+ {"name": "a place that is not on the list leaves the plain places map in the draft", "file": "stmt/owner.js", "find": "finally{ if(placeDraft) delete placeDraft.placeMap; placeBusy=false; }", "replace": "finally{ placeBusy=false; }"},
+ {"name": "the lock keeps the drafts", "file": "stmt/owner.js", "find": "    pairDrafts.forEach(function(d){ d.clear(); });\n", "replace": ""},
+ {"name": "Add ID's draft is not listed with the page", "file": "stmt/owner.js", "find": "    pairDrafts.push({draft:function(){return idDraft;},clear:function(){idDraft=null;}});\n", "replace": ""},
+ {"name": "Amend ID's draft is not listed with the page", "file": "stmt/owner.js", "find": "    pairDrafts.push({draft:function(){return amendDraft;},clear:function(){amendDraft=null;}});\n", "replace": ""},
+ {"name": "Place on the map's draft is not listed with the page", "file": "stmt/owner.js", "find": "    pairDrafts.push({draft:function(){return placeDraft;},clear:function(){placeDraft=null;}});\n", "replace": ""},
+ {"name": "the lock leaves Add ID's draft", "file": "stmt/owner.js", "find": "clear:function(){idDraft=null;}", "replace": "clear:function(){}"},
+ {"name": "the lock leaves Amend ID's draft", "file": "stmt/owner.js", "find": "clear:function(){amendDraft=null;}", "replace": "clear:function(){}"},
+ {"name": "the lock leaves Place on the map's draft", "file": "stmt/owner.js", "find": "clear:function(){placeDraft=null;}", "replace": "clear:function(){}"}
+]

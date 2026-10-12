@@ -1,0 +1,20 @@
+[
+ {"name": "the banner stays hidden", "file": "stmt/owner.js", "find": "bar.textContent=''; bar.hidden=!n;", "replace": "bar.textContent=''; bar.hidden=true;"},
+ {"name": "the banner is not at Soon", "file": "stmt/owner.js", "find": "needCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent'", "replace": "needCard({sev:'now', kind:'rows', word:'Unsent', key:'unsent'"},
+ {"name": "the banner's Open has another act", "file": "stmt/owner.js", "find": "act:'unsent.open', who:n+' unsent '", "replace": "act:'need.open', who:n+' unsent '"},
+ {"name": "the banner counts one whatever waits", "file": "stmt/owner.js", "find": "who:n+' unsent '+(one?'entry':'entries')", "replace": "who:'1 unsent '+(one?'entry':'entries')"},
+ {"name": "the banner is not repainted when an entry is discarded", "file": "stmt/owner.js", "find": "localStorage.removeItem('saltMakerPending:'+path);unsentPaint();}", "replace": "localStorage.removeItem('saltMakerPending:'+path);}"},
+ {"name": "the banner is not repainted on a place", "file": "stmt/owner.js", "find": "    say('');\n    unsentPaint();\n", "replace": "    say('');\n"},
+ {"name": "the banner stands inside Needs you alone", "file": "stmt/page.js", "find": "+ '<div id=\"unsentBar\" hidden></div>'", "replace": "+ '<div id=\"unsentBar\" hidden data-in=\"needs\"></div>'"},
+ {"name": "reading the phone's store changes it", "file": "stmt/owner.js", "find": "try{ var saved=JSON.parse(localStorage.getItem(storageKey)); body=", "replace": "try{ localStorage.setItem(storageKey, localStorage.getItem(storageKey)+' '); var saved=JSON.parse(localStorage.getItem(storageKey)); body="},
+ {"name": "Open goes to Entry whatever the entry is", "file": "stmt/owner.js", "find": "function unsentOpen(u){ showPlace('record', retainedPart(u.path), {fresh:true, push:true}); }", "replace": "function unsentOpen(u){ showPlace('record', 'entry', {fresh:true, push:true}); }"},
+ {"name": "the newest is listed first", "file": "stmt/owner.js", "find": "return x<y?-1:x>y?1:(a.path<b.path?-1:1);", "replace": "return x>y?-1:x<y?1:(a.path<b.path?-1:1);"},
+ {"name": "a record that will not read is not counted", "file": "stmt/owner.js", "find": "list.push(unsentRead(k)); }); }catch(e){}", "replace": "var r=unsentRead(k); if(r.at) list.push(r); }); }catch(e){}"},
+ {"name": "needs you lists no unsent entries", "file": "stmt/owner.js", "find": "    unsentList().forEach(function(u){ L.push(unsentNeed(u)); });\n", "replace": ""},
+ {"name": "a card is Now", "file": "stmt/owner.js", "find": "return item('soon','rows','Unsent','u:'+u.path", "replace": "return item('now','rows','Unsent','u:'+u.path"},
+ {"name": "a card is under Orders", "file": "stmt/owner.js", "find": "return item('soon','rows','Unsent','u:'+u.path", "replace": "return item('soon','orders','Unsent','u:'+u.path"},
+ {"name": "a card never names the party", "file": "stmt/owner.js", "find": "who:/^[A-Z]+[0-9]+-[A-Z0-9-]+$/.test(code)?code:''}", "replace": "who:''}"},
+ {"name": "the sentence says A before a vowel", "file": "stmt/owner.js", "find": "return (/^[aeiou]/.test(w)?'An ':'A ')+w+' you sent'", "replace": "return 'A '+w+' you sent'"},
+ {"name": "the sentence leaves out the day", "file": "stmt/owner.js", "find": "' you sent'+(u.at?' on '+fmtWhen(u.at):'')+' was not confirmed.'", "replace": "' you sent was not confirmed.'"},
+ {"name": "the entry's own section says something else", "file": "stmt/owner.js", "find": "status.textContent=unsentSaid(unsentRead(key))+' Send it again, or update it first.'", "replace": "status.textContent='This entry was retained. Send it again, or update it first.'"}
+]

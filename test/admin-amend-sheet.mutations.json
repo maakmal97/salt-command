@@ -1,0 +1,15 @@
+[
+ {"name": "the Sheet has another title", "file": "stmt/owner.js", "find": "makerAsk(order,opener,'amend',{title:'Change the order',", "replace": "makerAsk(order,opener,'amend',{title:'Change order',"},
+ {"name": "the Sheet's action has another word", "file": "stmt/owner.js", "find": "go:'Send the change', keep:'Not now'", "replace": "go:'Send', keep:'Not now'"},
+ {"name": "the Sheet's other answer has another word", "file": "stmt/owner.js", "find": "go:'Send the change', keep:'Not now'", "replace": "go:'Send the change', keep:'Keep it'"},
+ {"name": "the Sheet opens on a size the order does not have", "file": "stmt/owner.js", "find": "one('Units','order.amend-units',kept?kept[0]:order.qty)", "replace": "one('Units','order.amend-units',kept?kept[0]:order.qty+1)"},
+ {"name": "the Sheet opens without the delivery", "file": "stmt/owner.js", "find": "ad=one('Delivery','order.amend-delivery',kept?kept[2]:order.delivery||0);", "replace": "ad=one('Delivery','order.amend-delivery',kept?kept[2]:0);"},
+ {"name": "the Sheet's fields are not marked", "file": "stmt/owner.js", "find": "input.inputMode='decimal'; input.value=String(value); input.setAttribute('data-amend-field','');", "replace": "input.inputMode='decimal'; input.value=String(value);"},
+ {"name": "a change that did not land is not kept", "file": "stmt/owner.js", "find": "        amendMemo[order.id]={base:base, vals:[aq.input.value,at.input.value,ad.input.value]};\n", "replace": ""},
+ {"name": "a failed change is opened again on the order's own figures", "file": "stmt/owner.js", "find": "kept=memo&&memo.base===base?memo.vals:null;", "replace": "kept=null;"},
+ {"name": "a change that landed is kept", "file": "stmt/owner.js", "find": "if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id];", "replace": ""},
+ {"name": "a change with no figure changed is sent", "file": "stmt/owner.js", "find": "if(!Object.keys(body).length){ makerSay(order.id,'Change a figure first.'); return; }", "replace": "if(false){ makerSay(order.id,'Change a figure first.'); return; }"},
+ {"name": "a delivery is sent whether or not it changed", "file": "stmt/owner.js", "find": "if(d!==Number(order.delivery||0)) body.delivery=d;", "replace": "body.delivery=d;"},
+ {"name": "a new size is sent without the goods' price", "file": "stmt/owner.js", "find": "if(body.qty!==undefined&&body.total===undefined) body.total=t;", "replace": ""},
+ {"name": "the order card still holds the fields", "file": "stmt/owner.js", "find": "change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');", "replace": "change.setAttribute('data-amend',''); makerAskTag(order,change,'amend'); makerField(card,['Units','order.amend-units'],'number',order.qty).setAttribute('data-amend-field','');"}
+]
