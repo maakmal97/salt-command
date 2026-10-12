@@ -676,6 +676,33 @@ or a stale button cannot send a cancel twice. A device that has not chosen a loo
 The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
 `test/counter-account-door.mutations.json`) drives all of it through the generated page in jsdom.
 
+### Failures and public pages on brand (Phase 7d part 4, 12 Oct 2026, his yes of 11 Oct)
+
+**A read that fails says when the page last read.** After the orders' read has worked once (`readAt`, stamped by `loadOrders` on a good answer), a read that
+fails, being offline or one the site refused, leads Home with `read.since`, "Not updated since 10:42" (Kuala Lumpur, 24 hours; the day as DD Mon once the
+last read was not today, by the Kuala Lumpur calendar), in place of the figure and the overdue sentence, and the pay foot, which holds the same figure,
+goes with it (`staleNow`, `staleNode`, `payHeadNode`, `payFootNode`). The time is the last GOOD read's, never the latest try. The next good read clears the
+line and brings the figure and its Pay back. A page that has not yet read once has nothing to date and keeps its figure and the orders' own line (`ord.unread`,
+with Try again). Sign-out and a new sign-in forget the time. The test accounts need no case: it is not data, so `FEATURES` asks for none (airplane mode shows
+it). `test/counter-offline-line.mjs`, its mutations in `test/counter-offline-line.mutations.json`.
+
+**The maintenance page is the Counter's frame** (`stmt/maintenance.js`, which imports `stmt/words.js` and nothing else; `src/maintenance.js` is the Desk's
+own and is untouched). The app's ring inline over a heading (`maint.h`) and one sentence, Tide (the page runs no script), under the same closed
+policy, `default-src 'none'; style-src 'unsafe-inline'`, so no face, image or script loads. The sentence is read from `MAINTENANCE_UNTIL` in Kuala Lumpur
+(`backWords`): `maint.at`, "Back at 14:30", or `maint.on`, "Back on 13 Oct 2026 at 00:01" once that is not today there; a moment past the minute is
+rounded up, so the page never promises a time before the guard lifts. `MAINTENANCE_TEXT`, when set, still replaces the sentence, trimmed and escaped. The old
+default sentence is retired. The answer is unchanged: 503, `retry-after`, `no-store`, JSON for a request that is not HTML, the machine routes in `MACHINE` passing.
+`test/counter-maintenance.mjs`, its mutations in `test/counter-maintenance.mutations.json`; the guard's own section is "Maintenance guard on both Workers".
+
+**The shut page and the site's 404 stand on the door's frame with the ring** (`onePage` in `stmt/page.js`: the app's ring in `.appmark`, one `h1` and one line, from
+`shut.*` and `nf.*` in the table). Both are Tide and run no script, under the guest board's policy (`guestHtml`: `default-src 'none'`, styles by nonce,
+`script-src 'none'`). **Every shut id still answers ONE page**, byte for byte the same but its nonce, status 404. The 404 is the plain `Not found` only for a request
+that does not ask for a page: `notFound()` marks its answer, and the Worker's door (the last lines of `stmt/worker.js`) swaps a marked answer for `lost()`, the
+styled page, when the request's Accept names `text/html` (a browser's address bar). A page's own fetch, a machine and a route that answers a 404 of its own in JSON keep
+what they had. The 404 says one thing and echoes nothing of the path or the query; an unknown path past the `/all` check is the same 404 as any other. Neither page
+names the app, a product, a shape or a level, in what it says or in its source. `test/counter-shut-404.mjs`, its mutations in `test/counter-shut-404.mutations.json`;
+the shut kinds themselves are also held by "S8 8.2".
+
 ## The price list and the order book (06 Sep 2026, his instruction)
 
 Three things sit behind the one password since v499: the statements, a **price list** for

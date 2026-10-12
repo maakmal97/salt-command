@@ -38,7 +38,7 @@
  * NO IMPORT FROM src/ OR tools/. The suite proves it: this Worker must bundle on its own, and
  * must never be able to reach the ledger's code even by accident.
  */
-import { landingPage, boardPage, shutPage, MON3, mtileSvg } from "./page.js";
+import { landingPage, boardPage, shutPage, notFoundPage, MON3, mtileSvg } from "./page.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import { maintenance } from "./maintenance.js";
@@ -85,9 +85,15 @@ const isAdminIdentity = (who) => !!who && typeof who.email === "string"
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
   status, headers: Object.assign({ "content-type": "application/json; charset=utf-8" }, HEADERS)
 });
-const notFound = () => new Response("Not found", {
-  status: 404, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS)
-});
+/* 12 Oct 2026 (Phase 7d part 4): the site's plain 404 is marked here, and a request that asks for a page (a browser's address bar, whose Accept
+   names text/html) is answered with the styled one at the door of the Worker (the end of this file); a page's own fetch, which asks for anything,
+   keeps the plain words. */
+const PLAIN404 = new WeakSet();
+const notFound = () => {
+  const r = new Response("Not found", { status: 404, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS) });
+  PLAIN404.add(r);
+  return r;
+};
 
 /* ---- THE TEST ACCOUNT (v689, his instruction of 18 Sep 2026) ---------------------------------
  * One account he can open anywhere, that counts nowhere, and that he can destroy with one tap. Its
@@ -1603,6 +1609,8 @@ const guestHtml = (html, nonce, status) => new Response(html, {
 });
 const guestNonce = () => b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
 const shut = () => { const n = guestNonce(); return guestHtml(shutPage(n), n, 404); };
+/* the same frame and the same policy for the site's 404, which says one thing and echoes nothing of the path or the query */
+const lost = () => { const n = guestNonce(); return guestHtml(notFoundPage(n), n, 404); };
 async function handleGuest(request, env, id) {
   if (!env.STMT) return shut();
   const rec = await readRef(env, id);
@@ -1642,7 +1650,7 @@ async function handleGuest(request, env, id) {
   return guestHtml(boardPage({ tier: rec.tier, prices }, nonce), nonce, 200);
 }
 
-export default {
+const worker = {
   async fetch(request, env, ctx) {
     const held = maintenance(request, env);
     if (held) return held;
@@ -2027,5 +2035,15 @@ export default {
         console.log("chase FAILED: " + String((e && e.stack) || e));
       }
     })());
+  }
+};
+
+/* the door of the Worker: the routes above answer, and a plain 404 asked for as a page is swapped for the styled one (an unknown path past the
+   /all check is the same 404 as any other, with a nonce of its own in the page) */
+export default {
+  ...worker,
+  async fetch(request, env, ctx) {
+    const res = await worker.fetch(request, env, ctx);
+    return PLAIN404.has(res) && /text\/html/i.test(request.headers.get("accept") || "") ? lost() : res;
   }
 };

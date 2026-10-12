@@ -346,8 +346,9 @@ customer chooses is there too ("The customer's look").
   it sets `data-theme` on `<html>` and the `theme-color` meta from `salt-look` (`night` or `tide`), Tide when it is unset, holds
   anything else or cannot be read (every access in a try). The door, the signed-in page, `/app` and Salt Account all come from
   `landingPage`. A page with `script-src 'none'` (a guest board, the shut page) is served `data-theme="tide"` and Tide's ground in the
-  meta, since no device's choice can be read there; the maintenance page does the same and writes Tide's ground and salt into its own
-  inline style (held equal to the system's by the suite). The installed app's manifest colour stays obsidian, being static, and the
+  meta, since no device's choice can be read there; the maintenance page does the same and writes Tide's ground, salt, mist-light and brass and its two corner glows into its own
+  inline style, with the app's ring inline over the heading (held equal to the system's by the suite); the closed policy admits no
+  face, so it falls back to the system's serif. The installed app's manifest colour stays obsidian, being static, and the
   QR's ink and field stay fixed so that a code scans.
 - **Left in the system, for `Code\salt-ds` (rule 6).** The recipes the Counter carries hold three literals that are Night's, not
   tokens: the dashed edge of a drop area and `.salt-kpi--mist`'s tone, both `rgba(122,134,144,...)` (Night's mist, where Tide's is

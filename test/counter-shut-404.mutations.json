@@ -1,0 +1,116 @@
+[
+ {
+  "name": "the shut page has no ring",
+  "file": "stmt/page.js",
+  "find": "export function shutPage(nonce) { return onePage(\"shut\", nonce); }",
+  "replace": "export function shutPage(nonce) { return guestPage('<h1 class=\"gh\">' + wd(\"shut.h\") + \"</h1>\" + '<p class=\"lead\">' + wd(\"shut.p\") + \"</p>\", nonce, esc(EN[\"shut.title\"])); }"
+ },
+ {
+  "name": "the 404 has no ring",
+  "file": "stmt/page.js",
+  "find": "export function notFoundPage(nonce) { return onePage(\"nf\", nonce); }",
+  "replace": "export function notFoundPage(nonce) { return guestPage('<h1 class=\"gh\">' + wd(\"nf.h\") + \"</h1>\" + '<p class=\"lead\">' + wd(\"nf.p\") + \"</p>\", nonce, esc(EN[\"nf.title\"])); }"
+ },
+ {
+  "name": "the ring is not the app's",
+  "file": "stmt/page.js",
+  "find": "'<span class=\"appmark\">' + glyphSvg(\"ring\", 40) + \"</span>\" + '<h1 class=\"gh\">' + wd(k + \".h\")",
+  "replace": "'<span class=\"appmark\">' + glyphSvg(\"home\", 40) + \"</span>\" + '<h1 class=\"gh\">' + wd(k + \".h\")"
+ },
+ {
+  "name": "the frame has no room for the ring",
+  "file": "stmt/page.js",
+  "find": ".appmark{display:block;margin:0 0 14px}\n",
+  "replace": ""
+ },
+ {
+  "name": "the 404 is the page for every request",
+  "file": "stmt/worker.js",
+  "find": "return PLAIN404.has(res) && /text\\/html/i.test(request.headers.get(\"accept\") || \"\") ? lost() : res;",
+  "replace": "return PLAIN404.has(res) ? lost() : res;"
+ },
+ {
+  "name": "the 404 is never the page",
+  "file": "stmt/worker.js",
+  "find": "return PLAIN404.has(res) && /text\\/html/i.test(request.headers.get(\"accept\") || \"\") ? lost() : res;",
+  "replace": "return res;"
+ },
+ {
+  "name": "a route's own JSON 404 becomes the page",
+  "file": "stmt/worker.js",
+  "find": "return PLAIN404.has(res) && /text\\/html/i.test(request.headers.get(\"accept\") || \"\") ? lost() : res;",
+  "replace": "return res.status === 404 && /text\\/html/i.test(request.headers.get(\"accept\") || \"\") ? lost() : res;"
+ },
+ {
+  "name": "the 404 echoes the path",
+  "file": "stmt/worker.js",
+  "find": "? lost() : res;",
+  "replace": "? new Response((await lost().text()).replace(\"</p>\", \"</p><p>\" + new URL(request.url).pathname + \"</p>\"), lost()) : res;"
+ },
+ {
+  "name": "the 404 echoes the query in a header",
+  "file": "stmt/worker.js",
+  "find": "? lost() : res;",
+  "replace": "? new Response(await lost().text(), { status: 404, headers: { \"content-type\": \"text/html\", \"x-asked\": new URL(request.url).search } }) : res;"
+ },
+ {
+  "name": "the 404 keeps one nonce",
+  "file": "stmt/worker.js",
+  "find": "const lost = () => { const n = guestNonce();",
+  "replace": "const lost = () => { const n = \"fixednonce0123456789ab\";"
+ },
+ {
+  "name": "the 404 answers 200",
+  "file": "stmt/worker.js",
+  "find": "notFoundPage(n), n, 404",
+  "replace": "notFoundPage(n), n, 200"
+ },
+ {
+  "name": "a site with no store answers the plain 404",
+  "file": "stmt/worker.js",
+  "find": "  if (!env.STMT) return shut();\n  const rec = await readRef(env, id);",
+  "replace": "  if (!env.STMT) return notFound();\n  const rec = await readRef(env, id);"
+ },
+ {
+  "name": "an id nobody holds answers another page",
+  "file": "stmt/worker.js",
+  "find": "  if (!rec || rec.revoked || rec.approved === false) return shut();",
+  "replace": "  if (!rec) return lost();\n  if (rec.revoked || rec.approved === false) return shut();"
+ },
+ {
+  "name": "the shut page admits a script",
+  "file": "stmt/worker.js",
+  "find": "style-src 'nonce-\" + nonce + \"'; script-src 'none'\"\n  }, HEADERS)\n});\nconst guestNonce",
+  "replace": "style-src 'nonce-\" + nonce + \"'; script-src 'self'\"\n  }, HEADERS)\n});\nconst guestNonce"
+ },
+ {
+  "name": "the shut page admits an image from anywhere",
+  "file": "stmt/worker.js",
+  "find": "+ \"img-src 'self' data:; font-src 'self'; style-src 'nonce-\" + nonce + \"'; script-src 'none'\"",
+  "replace": "+ \"img-src *; font-src 'self'; style-src 'nonce-\" + nonce + \"'; script-src 'none'\""
+ },
+ {
+  "name": "the 404 names the app",
+  "file": "stmt/words.js",
+  "find": "\"nf.h\": \"This page is not here\",",
+  "replace": "\"nf.h\": \"Salt Counter: this page is not here\","
+ },
+ {
+  "name": "the 404 names a product",
+  "file": "stmt/words.js",
+  "find": "\"nf.p\": \"Check the address and try again.\",",
+  "replace": "\"nf.p\": \"Check the oil address and try again.\","
+ },
+ {
+  "name": "the 404's tab is the bare words",
+  "file": "stmt/words.js",
+  "find": "\"nf.title\": \"Page not found\",",
+  "replace": "\"nf.title\": \"Not found\","
+ },
+ {
+  "name": "the shut page names a level",
+  "file": "stmt/words.js",
+  "find": "\"shut.p\": \"Ask the person who sent it to you.\",",
+  "replace": "\"shut.p\": \"Ask the person who sent it to you, Bronze.\","
+ }
+]

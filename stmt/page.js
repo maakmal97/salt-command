@@ -1230,10 +1230,14 @@ export function boardPage(guest, nonce) {
 /* S8 8.2: EVERY SHUT LINK ANSWERS THIS, WORD FOR WORD. Unknown, malformed, withdrawn, declined and
    waiting ids all get it, in the board's own look, so the door tells a stranger nothing about which
    it was and never leaves them on a bare "Not found". Its tab says so too, one title for every kind. */
-export function shutPage(nonce) {
-  return guestPage('<h1 class="gh">' + wd("shut.h") + "</h1>"
-    + '<p class="lead">' + wd("shut.p") + "</p>", nonce, esc(EN["shut.title"]));
+export function shutPage(nonce) { return onePage("shut", nonce); }
+/* 12 Oct 2026 (Phase 7d part 4, his yes of 11 Oct): A PAGE THAT SAYS ONE THING stands on the frame the door has, the app's ring over a heading and a line:
+   the shut link and the site's own 404. Neither says anything but its key's words (nf.* for the 404), so a path or a query never reaches it. */
+function onePage(k, nonce) {
+  return guestPage('<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + '<h1 class="gh">' + wd(k + ".h") + "</h1>"
+    + '<p class="lead">' + wd(k + ".p") + "</p>", nonce, esc(EN[k + ".title"]));
 }
+export function notFoundPage(nonce) { return onePage("nf", nonce); }
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
    to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
@@ -2617,6 +2621,22 @@ const CLIENT_JS = `
   /* C15 and C14 (29 Sep 2026): WHAT COULD NOT BE READ SAYS SO, with Try again, and is never drawn as an empty or an older
      account. The live document held for (bad), and orders whose read failed (ordersFailed, kept as they last stood). */
   var ordersFailed=false;
+  /* PHASE 7D4 (his yes of 11 Oct 2026): A READ THAT FAILS AFTER ONE THAT WORKED SAYS WHEN THE PAGE LAST READ, and leads Home in place of the
+     figure it can no longer vouch for: "Not updated since 10:42" in Kuala Lumpur, 24 hours, and the day as DD Mon once it is not today. The
+     orders' read keeps the time (every ten seconds and on a return), so being offline and a read the site refused both come to it; the next
+     good read clears the line and brings the figure and its Pay back. A page that has not yet read once has nothing to date, and says what
+     it said before (unreadNode). */
+  var readAt=0;
+  function staleNow(){ return !!session&&!view&&!OWNER&&ordersFailed&&readAt>0; }
+  function readSince(){
+    var then=klBits(new Date(readAt).toISOString()), now=klBits(new Date().toISOString());
+    return then.day===now.day&&then.month===now.month&&then.year===now.year?then.hour+':'+then.minute:then.day+' '+mon3()[+then.month-1];
+  }
+  function staleNode(){
+    var box=el('div','panel unread'); box.setAttribute('data-stale','');
+    var p=el('p','lead',tw('read.since',{t:readSince()})); p.setAttribute('role','status'); box.appendChild(p);
+    return box;
+  }
   function liveBad(){ var s=bundle&&bundle.statements.filter(function(x){ return x.live&&x.bad; })[0]; return s?s.bad:''; }
   function unreadNode(key,go){
     var box=el('div','panel unread'); box.setAttribute('data-unread',key);
@@ -4999,9 +5019,11 @@ const CLIENT_JS = `
   function payHeadNode(){
     var box=el('div','payhead'); box.id='payHead';
     var lines=nowOf(), tot=invTotal(lines), said=bundle?claimLines(lines):[], fr=fresh();
-    var bad=liveBad();
-    box.hidden=!bundle||!(bad||fr||payDue||lines.length||said.length);
+    var bad=liveBad(), old=staleNow();
+    box.hidden=!bundle||!(old||bad||fr||payDue||lines.length||said.length);
     if(box.hidden) return box;
+    /* 7D4: the figures are as of the last read, so the line stands where they would, and the foot below goes with them */
+    if(old){ box.appendChild(staleNode()); return box; }
     /* C15: an account that could not be read leads with that, never with nothing to pay */
     if(bad) box.appendChild(unreadNode(bad,bad==='acct.unread'?retryAccount:null));
     if(lines.length){
@@ -5032,7 +5054,7 @@ const CLIENT_JS = `
   function payFootNode(){
     var f=el('div','payfoot'); f.id='homeFoot';
     var lines=nowOf(), tot=invTotal(lines);
-    f.hidden=!bundle||!payFootOn(lines,tot);
+    f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);
     if(f.hidden) return f;
     f.appendChild(kpiTile('ember',tw('pay.now'),rm(tot)));
     var pb=el('button','salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
@@ -5577,7 +5599,7 @@ const CLIENT_JS = `
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
     /* C14: a read that failed keeps the list as it last stood and says so; it is never an empty list */
-    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; if('thread' in r.body&&!thTimer) thPut(r.body.thread); }
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; readAt=Date.now(); if('thread' in r.body&&!thTimer) thPut(r.body.thread); }
     else ordersFailed=true;
     /* a group order is read with the orders; a read that fails keeps the list as it stood, and says nothing: the card is an extra */
     var pr=await api('/pools');
@@ -6004,7 +6026,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
+    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;

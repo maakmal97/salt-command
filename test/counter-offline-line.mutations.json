@@ -1,0 +1,62 @@
+[
+ {
+  "name": "a good read does not stamp the time",
+  "file": "stmt/page.js",
+  "find": "ordersFailed=false; readAt=Date.now(); if('thread' in r.body",
+  "replace": "ordersFailed=false; if('thread' in r.body"
+ },
+ {
+  "name": "the line is not drawn in place of the figure",
+  "file": "stmt/page.js",
+  "find": "    if(old){ box.appendChild(staleNode()); return box; }\n",
+  "replace": ""
+ },
+ {
+  "name": "the pay foot stays under the line",
+  "file": "stmt/page.js",
+  "find": "f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);",
+  "replace": "f.hidden=!bundle||!payFootOn(lines,tot);"
+ },
+ {
+  "name": "the words do not say not updated",
+  "file": "stmt/words.js",
+  "find": "\"read.since\": \"Not updated since {t}\",",
+  "replace": "\"read.since\": \"Updated {t}\","
+ },
+ {
+  "name": "the day is never used in place of the time",
+  "file": "stmt/page.js",
+  "find": "return then.day===now.day&&then.month===now.month&&then.year===now.year?",
+  "replace": "return true?"
+ },
+ {
+  "name": "today is the UTC day, not Kuala Lumpur's",
+  "file": "stmt/page.js",
+  "find": "now=klBits(new Date().toISOString());\n    return then.day",
+  "replace": "now={day:new Date().toISOString().slice(8,10),month:String(+new Date().toISOString().slice(5,7)),year:new Date().toISOString().slice(0,4)};\n    return then.day"
+ },
+ {
+  "name": "a failed read stamps the time too",
+  "file": "stmt/page.js",
+  "find": "    else ordersFailed=true;\n",
+  "replace": "    else{ ordersFailed=true; readAt=Date.now(); }\n"
+ },
+ {
+  "name": "the line is drawn before any read has worked",
+  "file": "stmt/page.js",
+  "find": "return !!session&&!view&&!OWNER&&ordersFailed&&readAt>0;",
+  "replace": "return !!session&&!view&&!OWNER&&ordersFailed;"
+ },
+ {
+  "name": "the line is drawn with nothing failed",
+  "file": "stmt/page.js",
+  "find": "return !!session&&!view&&!OWNER&&ordersFailed&&readAt>0;",
+  "replace": "return !!session&&!view&&!OWNER&&readAt>0;"
+ },
+ {
+  "name": "a new sign-in keeps the last visit's time",
+  "file": "stmt/page.js",
+  "find": "payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose();",
+  "replace": "payDue=null; liveAt=''; ordersFailed=false; thClose();"
+ }
+]

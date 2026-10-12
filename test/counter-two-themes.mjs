@@ -3,7 +3,7 @@
  * Two themes on every surface, kept per device (localStorage salt-look, night or tide), Tide until one is chosen. A signed-in
  * customer page on a device that has chosen nothing asks once in a Sheet; Account holds a Look setting with the two options; Salt
  * Account (his page) opens in the stored theme from the same head script and has a switch of its own in Shop (test/admin-look.mjs);
- * a guest board, the shut page and the maintenance page run no script, so they are drawn Tide. Every assertion below observes a
+ * a guest board, the shut page, the site's 404 and the maintenance page run no script, so they are drawn Tide. Every assertion below observes a
  * page's window or the generated stylesheet's declared values, and each was proved red by its own mutation
  * (test/counter-two-themes.mutations.json, run with tools/section.mjs). Every code, name and password here is invented.
  */
@@ -16,7 +16,7 @@ const wait = async (f, n = 400) => { for (let i = 0; i < n && !f(); i++) await n
 const strip = (c) => c.replace(/\/\*[\s\S]*?\*\//g, "");
 
 export async function run({ ok }) {
-  const { landingPage, boardPage, shutPage } = await import("../stmt/page.js");
+  const { landingPage, boardPage, shutPage, notFoundPage } = await import("../stmt/page.js");
   const { STATEMENT_CSS, SITE_RECIPES } = await import("../stmt/statement-css.js");
   const { maintenance } = await import("../stmt/maintenance.js");
   const W = await import("../stmt/words.js"), C = await import("../tools/stmt-crypto.mjs"), TF = await import("../tools/testfix.mjs");
@@ -105,16 +105,16 @@ export async function run({ ok }) {
   ok(/<html lang="en" translate="no" data-theme="tide">/.test(pageHtml) && pageHtml.includes('<meta name="theme-color" content="' + TIDE.obsidian + '">')
     && (pageHtml.match(/<meta name="theme-color"/g) || []).length === 1,
     "and is served Tide, with one theme-color meta at Tide's ground, for whatever the script then finds");
-  const guest = boardPage({ tier: 1, prices: { products: [], week: { label: "this week" } } }, "ng"), shut = shutPage("ns");
+  const guest = boardPage({ tier: 1, prices: { products: [], week: { label: "this week" } } }, "ng"), shut = shutPage("ns"), lost = notFoundPage("nl");
   const maint = await (maintenance(new Request("https://k7m3p2.example/", { headers: { accept: "text/html" } }), { MAINTENANCE_UNTIL: new Date(Date.now() + 36e5).toISOString() })).text();
-  for (const [name, html] of [["a guest board", guest], ["the shut page", shut], ["the maintenance page", maint]]) {
+  for (const [name, html] of [["a guest board", guest], ["the shut page", shut], ["the 404 page", lost], ["the maintenance page", maint]]) {
     ok(/<html[^>]* data-theme="tide"/.test(html) && html.includes('<meta name="theme-color" content="' + TIDE.obsidian + '">') && !/<script/i.test(html),
       `${name} runs no script and is drawn Tide: data-theme="tide" on the root and Tide's ground in the browser bar`);
   }
   const dsHex = (T, k) => T[k];
-  ok(maint.includes("background:" + dsHex(TIDE, "obsidian")) && maint.includes("color:" + dsHex(TIDE, "salt")) && ratio(TIDE.salt, TIDE.obsidian) >= 4.5,
-    "the maintenance page's own ground and text are Tide's obsidian and salt in the design system");
-  for (const [name, html] of [["a guest board", guest], ["the shut page", shut]]) {
+  ok(new RegExp("background:[^}]*" + dsHex(TIDE, "obsidian") + ";background-attachment:fixed").test(maint) && !/html\{[^}]*background/.test(maint) && maint.includes("color:" + dsHex(TIDE, "salt")) && ratio(TIDE.salt, TIDE.obsidian) >= 4.5,
+    "the maintenance page's own ground, on the canvas, and text are Tide's obsidian and salt in the design system");
+  for (const [name, html] of [["a guest board", guest], ["the shut page", shut], ["the 404 page", lost]]) {
     const dom = new JSDOM(html, { url: "https://site.test/g/x", runScripts: "dangerously", beforeParse(w) { w.localStorage.setItem("salt-look", "night"); } });
     ok(dom.window.document.documentElement.getAttribute("data-theme") === "tide", `${name} stays Tide on a device that chose Night: no script can read the choice`);
     dom.window.close();

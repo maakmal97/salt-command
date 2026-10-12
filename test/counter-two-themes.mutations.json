@@ -41,8 +41,9 @@
  {"name":"the generated stylesheet drops a Tide token","file":"stmt/statement-css.js","find":"--salt-brass: #7fd1c0;","replace":""},
  {"name":"a Tide text colour falls under 4.5:1","file":"stmt/statement-css.js","find":"--salt-mist: #7f969c;","replace":"--salt-mist: #3a5559;"},
  {"name":"a Night text colour falls under 4.5:1","file":"stmt/statement-css.js","find":"--salt-mist: #7a8690;","replace":"--salt-mist: #3a4048;"},
- {"name":"the maintenance page is not Tide","file":"stmt/maintenance.js","find":"<html lang=\"en-GB\" data-theme=\"tide\">","replace":"<html lang=\"en-GB\">"},
- {"name":"the maintenance page's ground is not Tide's","file":"stmt/maintenance.js","find":"const TIDE = { ground: \"#03141a\", text: \"#eaf6f6\" };","replace":"const TIDE = { ground: \"#000000\", text: \"#eaf6f6\" };"},
+ {"name":"the maintenance page is not Tide","file":"stmt/maintenance.js","find":"<html lang=\"en-GB\" translate=\"no\" data-theme=\"tide\">","replace":"<html lang=\"en-GB\" translate=\"no\">"},
+ {"name":"the maintenance page's ground is not Tide's","file":"stmt/maintenance.js","find":"ground: \"#03141a\", text: \"#eaf6f6\"","replace":"ground: \"#000000\", text: \"#eaf6f6\""},
+ {"name":"the maintenance page's root hides the canvas, so its glows stop at the text","file":"stmt/maintenance.js","find":"\"html{color:\" + TIDE.text","replace":"\"html{background:\" + TIDE.ground + \";color:\" + TIDE.text"},
  {"name":"the fixture has no case of the look","file":"tools/testfix.mjs","find":"    look: \"asked\",\n","replace":""},
  {"name":"the sealed bundle drops the look","file":"tools/testfix.mjs","find":"statements: [], look: fix.look }","replace":"statements: [] }"},
  {"name":"the note names the wrong place","file":"stmt/words.js","find":"\"look.note\": \"You can change this under Account.\"","replace":"\"look.note\": \"You can change this under Salt Counter.\""}

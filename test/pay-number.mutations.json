@@ -149,7 +149,7 @@
  {"name":"the real scan reads an empty store","file":"test/pay-number.mjs","find":"const doc = JSON.parse(readFileSync(join(PS.PAY_MASTER, \"accounts.json\"), \"utf8\").replace(/^\\uFEFF/, \"\"))","replace":"const doc = {}"},
  {"name":"the real scan reads a few files","file":"test/pay-number.mjs","find":"tracked = trackedTexts(), found","replace":"tracked = trackedTexts(/^docs\\//), found"},
  {"name":"the guest board carries a number","file":"stmt/page.js","find":"wd(\"board.next\") + \"</p>\", nonce, esc(EN[\"board.h\"]));","replace":"wd(\"board.next\") + \" 55501234</p>\", nonce, esc(EN[\"board.h\"]));"},
- {"name":"the shut page carries a number","file":"stmt/page.js","find":"wd(\"shut.p\") + \"</p>\", nonce, esc(EN[\"shut.title\"]));","replace":"wd(\"shut.p\") + \" 55501234</p>\", nonce, esc(EN[\"shut.title\"]));"},
+ {"name":"the shut page carries a number","file":"stmt/page.js","find":"wd(k + \".p\") + \"</p>\", nonce, esc(EN[k + \".title\"]));","replace":"wd(k + \".p\") + \" 55501234</p>\", nonce, esc(EN[k + \".title\"]));"},
  {"name":"a guest page carries a script","file":"stmt/page.js","find":"<div class=\"panel\">' + inner + \"</div></body></html>\";","replace":"<div class=\"panel\">' + inner + \"</div><script></script></body></html>\";"},
  {"name":"a guest page admits script","file":"stmt/worker.js","find":"style-src 'nonce-\" + nonce + \"'; script-src 'none'\"","replace":"style-src 'nonce-\" + nonce + \"'; script-src 'self'\""},
  {"name":"the guest board draws no price","file":"stmt/page.js","find":"esc(rm(r.price))","replace":"esc(rm(0))"},
