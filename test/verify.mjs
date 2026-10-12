@@ -23654,10 +23654,13 @@ await (async () => {
         && /Bought from you/.test(list91.textContent) && /Sold for you/.test(list91.textContent) && /Introduced/.test(list91.textContent),
         "the panel draws a card an associate under each book: " + drawn + " cards");
       /* F9 revised: a book with no reward draws the progress alone, every card of it, with no reward line and no bar */
-      const books91 = [...list91.children].reduce((a, n) => { if (n.tagName === "H2") a.push({ h: (n.querySelector(".pshape") || n).textContent, cards: [] });
+      /* a book's heading is its mark alone (his word of 12 Oct 2026): no .pshape word, no text of its own, the shape as its aria-label; a book is found by its place in the list */
+      const books91 = [...list91.children].reduce((a, n) => { if (n.tagName === "H2") a.push({ h: a.length, alone: !n.querySelector(".pshape") && [...n.childNodes].every((c) => c.nodeType !== 3 || !c.textContent.trim()) && !!n.querySelector("svg.psym")
+          && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(n.getAttribute("aria-label")), cards: [] });
         else if (a.length && n.classList.contains("acard")) a[a.length - 1].cards.push(n); return a; }, []);
-      const bare91 = snap91.products.filter((p) => p.rows.length && p.rows.every((r) => !r.reward)).map((p) => p.name || p.product);
+      const bare91 = snap91.products.map((p, i) => [p, i]).filter(([p]) => p.rows.length && p.rows.every((r) => !r.reward)).map(([, i]) => i);
       const drawnBare91 = books91.filter((b) => bare91.includes(b.h));
+      ok(books91.length === snap91.products.length && books91.every((b) => b.alone), "each book's heading on the report card is its mark alone, named by its shape to a reader and by no word: " + JSON.stringify(books91.map((b) => b.alone)));
       ok(!/margin/i.test(list91.textContent) && bare91.length >= 1 && drawnBare91.length === bare91.length
         && drawnBare91.every((b) => b.cards.length && b.cards.every((c) => /Bought from you/.test(c.textContent)
           && !/Reward|reward/.test(c.textContent) && !c.querySelector(".pbar"))),
@@ -53866,7 +53869,7 @@ await (async () => {
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account speaks plainly: the glossary's words, a refusal as a sentence with its Details, and the Desk's book names (12 Oct 2026)");
+section("Salt Account speaks plainly: the glossary's words, a refusal as a sentence with its Details, and no book named, only its mark (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-words.mjs")).run({ ok, pageWork });
 })();

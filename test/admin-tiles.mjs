@@ -116,8 +116,12 @@ export async function run({ ok, pageWork }) {
     ok(radios.length > 60 && [...names.values()].every((gs) => gs.size === 1) && radios.every((r) => !!r.name && /^tiles[0-9]+$/.test(r.name)),
       "every group is one radio group of its own, so it is one tab stop and the arrows move the choice: " + radios.length + " tiles in " + names.size + " groups");
     ok(radios.every((r) => !r.disabled && r.getAttribute("tabindex") === null && r.closest("label.salt-option") && r.nextElementSibling && r.nextElementSibling.classList.contains("salt-option__face")
-      && r.nextElementSibling.querySelector(".salt-option__label").textContent.length > 0),
-    "each tile is a radio in the recipe's own label, followed by its face, in the tab order and not disabled");
+      && (r.nextElementSibling.querySelector(".salt-option__label") || { textContent: "" }).textContent.length + (r.nextElementSibling.querySelector("svg.psym") ? (r.nextElementSibling.querySelector(".sr") || { textContent: "" }).textContent.length : 0) > 0),
+    "each tile is a radio in the recipe's own label, followed by its face (its words, or for a book its mark, told to a reader by its shape), in the tab order and not disabled");
+    const books = radios.filter((r) => r.nextElementSibling.querySelector("svg.psym"));
+    ok(books.length >= 8 && books.every((r) => !r.nextElementSibling.querySelector(".salt-option__label") && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(r.nextElementSibling.querySelector(".sr").textContent)
+      && r.nextElementSibling.textContent.replace(r.nextElementSibling.querySelector(".sr").textContent, "").replace(/[A-Z]/g, "").trim() === ""),
+    "a book's tile is its mark alone: no label, no word for the book, the shape told to a reader (" + books.length + " tiles)");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.salt-option__face\s*\{[^}]*min-height:\s*var\(--salt-tap\)/.test(css) && /--salt-tap:\s*44px/.test(css)
       && /\.salt-option__input\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/.test(css),

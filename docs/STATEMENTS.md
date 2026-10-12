@@ -1697,8 +1697,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   card at its medium radius; the report card's figures, an approve card's cost and margin and an order's goods, delivery and paid are the Metric row, a label
   over its figure, with a space between the two so the words read as they did; a guest link's moves are ghosts, Withdraw and Decline the danger ghost, whose
   rest in the alarm is the system's own recipe (the sheet's copy of it and the desk's are gone); Rewards' months are the Tab strip; and a book named on a row
-  of his page (a row to approve, a group order) wears the **Product tag**, the Desk's name in it and the book's accent its hue, which is the system's
-  `--salt-product-<book>` token that `PRODUCTS.accent` names. The tag is drawn by this page's script alone: a customer's page draws no tag and no word for a book.
+  of his page (a row to approve, a group order) wears the **Product tag**, the book's mark in it (no word, his word of 12 Oct 2026) and the book's accent its hue, which is the
+  system's `--salt-product-<book>` token that `PRODUCTS.accent` names. The tag is drawn by this page's script alone: a customer's page draws no tag and no word for a book.
   What stays by design: `select.fld` (the system's select rule carries a `url(`, which the sync strips, so the chevron is drawn from two gradients), `.msg`
   and `.maker-say` (no recipe draws a sentence line), `.maker-facts` (a meta line) and the customer's invoice lines (Phase 7). **No colour is a literal** in the
   statement layer, its print block or `PAGE_CSS`: the print block is the system's `--salt-paper*` inks and the look swatches its `--salt-swatch-*` tokens
@@ -2596,11 +2596,16 @@ ended) are its own sentences and carry no Details. **A note the page keeps in st
 tier pinned on a link) holds the Error beside its text (`m.err`, `t.whyErr`, `linkSaid.err`) and is drawn through `withDetails`, so it has Details too; the
 text is redrawn from state, so the next tap that clears the note clears them with it.
 
-**A book has the Desk's name here, and the customer's mark.** Where Salt Account names a book (his decision 5 of 11 Oct 2026) it says what the Desk says, `salt`,
-`oil`, `candy` or `rice`, with the book's mark beside it: an order's tile is the mark with *salt, 2 units* under it (`bookTile`, the twin of the customer's
-`mtile`), a heading is the mark with the name beside it (`bookHead`, for the associates' report card the name the answer carries), and a select, which cannot hold
-a mark, says the name alone. **The shape words (Cube, Droplet, Lozenge, Capsule) are the customer's page and are never drawn on Salt Account**, nor are the helpers
-that draw them (`pshape`, `mtile`, `pmarkHead`); the customer's page is as it was, and `test/admin-words.mjs` holds both.
+**A book has no name here: its mark stands alone.** His word of 12 Oct 2026 ("and even the name of the product") took back decision 5 of 11 Oct, which had Salt
+Account say the Desk's name beside the mark. Where this page shows a book it draws the book's mark, his letter in it, and no word for it: not the Desk's name
+(`salt`, `oil`, `candy`, `rice`, `spare`) and not the shape (Cube, Droplet, Lozenge, Capsule, Ring). **A reader is told the shape**, as on the customer's page, through
+a hidden `.sr` or an `aria-label` (`pshape`), never the product. An order's tile is the mark with *2 units* under it (`bookTile`, the customer's `mtile`), a
+heading the mark alone (`pmarkHead`, the associates' report card), a row's Product tag the dot and the mark (`bookTag`), a legend or a field about a book ends in the
+mark (a fourth label element, `[words, act, key, book]`), a tile of a form is the mark alone (`bookItem`), and a select, which cannot hold a mark, says the book's
+letter in brackets (`optionBook`, `[I] `). A sentence the Desk or the Counter wrote that names a book reads *the book* (`noBook`: whole words, *The book* at a sentence
+start, the apps' own names *Salt Account*, *Salt Counter*, *Salt Command*, *Salt Desk* left alone), and a Details value that is only a book's name is left out. **The
+Desk keeps its book names; this page does not.** `test/admin-words.mjs` draws the whole page and fails on any book of `ledger/book.json` PRODUCTS in a word, an aria
+name or a title, and on any drawn shape word.
 
 ### Unsent entries say so, and every id and row keeps its detail behind Details (Phase 4c, 12 Oct 2026)
 

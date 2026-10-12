@@ -73,8 +73,11 @@ export async function run({ ok, pageWork }) {
     p.cards = () => [...d.querySelectorAll("#nlist [data-need]")];
     p.card = (k) => d.querySelector('#nlist [data-need="' + k + '"]');
     p.keys = (sev) => p.cards().filter((c) => c.getAttribute("data-sev") === sev).map((c) => c.getAttribute("data-need"));
-    p.words = (c) => ({ kind: c.querySelector(".salt-action__kind").textContent, who: c.querySelector(".need-who").textContent,
-      what: (c.querySelector(".need-what") || {}).textContent || "", age: c.querySelector(".salt-action__money").textContent });
+    /* what a card says is the words after its book's mark (the mark is a .pwith: the drawing, and the shape told to a reader), so the book is read as the mark it draws and never as a word */
+    p.words = (c) => { const w = c.querySelector(".need-what"), rest = w ? w.cloneNode(true) : null, mark = w ? w.querySelector(".pwith") : null;
+      if (rest) rest.querySelectorAll(".pwith").forEach((m) => m.remove());
+      return { kind: c.querySelector(".salt-action__kind").textContent, who: c.querySelector(".need-who").textContent, what: rest ? rest.textContent.trim() : "",
+        mark: mark && mark.querySelector("svg.psym") ? (mark.querySelector(".sr") || { textContent: "" }).textContent : "", age: c.querySelector(".salt-action__money").textContent }; };
     p.buttons = (c) => [...c.querySelectorAll("button")].map((b) => b.textContent);
     p.counts = (bar) => Object.fromEntries([...d.querySelectorAll(bar + " [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
@@ -103,14 +106,14 @@ export async function run({ ok, pageWork }) {
       && c.querySelector(".salt-action__kind") && c.querySelector(".need-who") && c.querySelector(".salt-action__money")),
     "every card is the system's Action recipe, coloured by its severity, with its kind word, who and age");
     const order = p.words(p.card("o:ord-p3")), pay = p.words(p.card("p:ord-a1")), claim = p.words(p.card("c:" + U1 + ":c-1")), msg = p.words(p.card("m:" + U1)), lock = p.words(p.card("k:" + U3));
-    ok(order.kind === "Order" && order.who === "CX1-ZED" && order.what === "1 unit salt, RM 100.00" && order.age === "26 h",
-      "a placed order says Order, who by code, what (book, units, RM) and its age in hours: " + JSON.stringify(order));
+    ok(order.kind === "Order" && order.who === "CX1-ZED" && order.what === "1 unit, RM 100.00" && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(order.mark) && order.age === "26 h",
+      "a placed order says Order, who by code, what (the book's mark, units, RM, and no word for the book) and its age in hours: " + JSON.stringify(order));
     ok(pay.kind === "Payment" && pay.what === "says they paid RM 530.00" && pay.age === "9 h" && claim.kind === "Payment" && claim.what === "says they paid RM 50.00" && claim.age === "7 h",
       "a payment they say they sent, on an order (the sum, the oldest) or against the account, says Payment: " + JSON.stringify([pay, claim]));
     ok(msg.kind === "Message" && msg.who === "CX1-ZED" && msg.what === "Hello" && msg.age === "4 h" && lock.kind === "Locked" && /^locked out until \d\d:\d\d$/.test(lock.what) && lock.age === "5 min",
       "a message asked carries their words, a locked account the addresses refused and its age: " + JSON.stringify([msg, lock]));
     const row = p.words(p.card("d:" + ago(6))), link = p.words(p.card("l:w1"));
-    ok(row.kind === "Row" && row.who === "CX1-ZED" && row.what === "Sale, 1 unit salt, RM 100.00" && row.age === "6 h" && link.kind === "Link" && /^guest link, made \d\d \w{3} \d{4}$/.test(link.what) && link.age === "20 h",
+    ok(row.kind === "Row" && row.who === "CX1-ZED" && row.what === "Sale, 1 unit, RM 100.00" && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(row.mark) && row.age === "6 h" && link.kind === "Link" && /^guest link, made \d\d \w{3} \d{4}$/.test(link.what) && link.age === "20 h",
       "a Desk row to approve is Soon, with its party, what and age, and so is a guest link: " + JSON.stringify([row, link]));
     ok(p.card("x:0") && p.card("q:q-2") && p.card("q:q-1") === null && p.card("x:0").getAttribute("data-sev") === "soon" && /Refused for the fixture/.test(p.card("x:0").textContent)
       && p.card("q:q-2").getAttribute("data-kind") === "rows" && p.card("a:ord-a2") && p.card("a:ord-a2").getAttribute("data-sev") === "soon",

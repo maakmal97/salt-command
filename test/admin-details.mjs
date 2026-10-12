@@ -69,7 +69,7 @@ export async function run({ ok, pageWork }) {
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* C. THE DESK ROW, and D. the held entry */
-  const ROW = { qty: 2.5, total: 280, cost: 150, rid: "s-77", customer: "CX1-ZED", date: "2026-10-10", cancelled: false, deliveredQty: 1, mixedKey: "x", books: ["salt", "oil"], nested: { total: 5, qty: 1 } };
+  const ROW = { qty: 2.5, total: 280, cost: 150, rid: "s-77", customer: "CX1-ZED", date: "2026-10-10", cancelled: false, deliveredQty: 1, mixedKey: "x", books: ["salt", "oil"], sizes: [1, 5, 10], nested: { total: 5, qty: 1 } };
   p = await open({ review: (j) => {
     j.drafts[0].row = ROW;
     j.queue = [{ id: "2026-10-09T14:11:05.000Z", state: "held", canWithdraw: true, fingerprint: "f1" }, { id: "q-2", state: "refused", canRetry: true, fingerprint: "f2", why: "x" }];
@@ -80,8 +80,9 @@ export async function run({ ok, pageWork }) {
     await p.click(byAct(d, "nav.record")); await p.click(byAct(d, "part.record.approve"));
     const row = d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]'), box = row && detailsOf(row, "row.proposed", "d-1");
     ok(!!box && !box.open && same(pairs(box), [["Reference", "d-1"], ["Units", "2.5 units"], ["Price", "RM 280.00"], ["Cost", "RM 150.00"], ["Row reference", "s-77"], ["Who", "CX1-ZED"],
-      ["Order date", "10 Oct 2026"], ["Cancelled", "No"], ["Units delivered", "1 unit"], ["Mixed key", "x"], ["Books", "salt, oil"], ["Nested", "Price: RM 5.00, Units: 1 unit"]]),
-    "a Desk row's Details is the draft's reference then the row's figures in his words (a size in units, a sum in RM, a day, a yes as Yes or No, a name with no word spaced out, a list on one line, a figure inside a figure on one line): " + JSON.stringify(box && pairs(box)));
+      ["Order date", "10 Oct 2026"], ["Cancelled", "No"], ["Units delivered", "1 unit"], ["Mixed key", "x"], ["Sizes", "1, 5, 10"], ["Nested", "Price: RM 5.00, Units: 1 unit"]]),
+    "a Desk row's Details is the draft's reference then the row's figures in his words (a size in units, a sum in RM, a day, a yes as Yes or No, a name with no word spaced out, a list on one line, a figure inside a figure on one line), and a field that is only a book's name is left out, since no book has a name on this page: " + JSON.stringify(box && pairs(box)));
+    ok(!!box && !/\b(salt|oil|candy|rice|spare)\b/i.test(box.textContent), "and no book's name is read out in it: " + (box && box.textContent));
     ok(!!row && !row.querySelector("pre") && !/[{}[\]"]/.test(box.textContent), "never JSON: no preformatted block and no brace or quote in it: " + (box && box.textContent));
     const trip = d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]');
     ok(!!trip && [...trip.querySelectorAll('summary[data-act="row.proposed"]')].map((s) => s.getAttribute("data-key")).sort().join() === "d-2,d-3"

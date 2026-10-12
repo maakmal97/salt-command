@@ -100,8 +100,13 @@ export async function run({ ok, pageWork }) {
     ok(!byAct(c, "draft.approve").disabled && !byAct(c, "draft.reject").disabled, "and neither is shut on a row that is not a claim's");
     const t2 = p.row("d-2"), t3 = p.row("d-3");
     ok(!!t2 && !!t3 && /Two books, one trip\. Approve decides both\./.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve both" && byAct(t2, "draft.reject").textContent === "Reject both"
-      && /1 unit oil, RM 100\.00/.test(t2.textContent) && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
+      && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
     "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
+    /* a row's book is the system's Product tag holding the book's mark, and no word for it: "1 unit [tag], RM 100.00", the tag told to a reader by its shape */
+    const factsOf = (card) => [...card.querySelectorAll(".maker-facts")].map((f) => { const g = f.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((x) => x.replaceWith("[tag]")); return g.textContent; });
+    const tagsOf = (card) => [...card.querySelectorAll(".maker-facts .salt-producttag")].map((x) => [!!x.querySelector("svg.psym"), (x.querySelector(".sr") || { textContent: "" }).textContent]);
+    ok(factsOf(t2).includes("1 unit [tag], RM 100.00") && tagsOf(t2).length === 2 && tagsOf(t2).every(([mark, said]) => mark && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(said)) && new Set(tagsOf(t2).map((x) => x[1])).size === 2,
+      "a trip's two rows each say 1 unit then their book's Product tag, a mark told to a reader by its shape, and no word for the book: " + JSON.stringify([factsOf(t2), tagsOf(t2)]));
     /* the page's own rules for the recipe's classes restate none of what the recipe draws: no surface, edge, padding, shadow, gap or type */
     const taken = ["background", "background-color", "border", "border-radius", "padding", "box-shadow", "display", "flex-direction", "gap", "font-family", "font-size", "color", "margin"];
     const mine = pageRules().filter(([sel]) => /salt-approve/.test(sel.replace(/:not\([^)]*\)/g, "")));   /* a rule that names it only to leave it out is not a rule for it */

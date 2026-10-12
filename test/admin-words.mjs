@@ -1,7 +1,7 @@
 /* test/admin-words.mjs: SALT ACCOUNT SPEAKS PLAINLY (Phase 3 of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "Salt Account speaks plainly").
  *
  * The words on the master's page are the redesign glossary's (3a), a refused move is a plain sentence with the server's own words under Details (3b), and a book
- * is named as the Desk names it (the book names). Every word lives in stmt/owner.js and the owner-only strings of stmt/page.js, outside stmt/words.js, so
+ * has no name at all (his word of 12 Oct 2026): its mark stands alone, named to a reader by its shape. Every word lives in stmt/owner.js and the owner-only strings of stmt/page.js, outside stmt/words.js, so
  * the customer's page is untouched. What is proved here, each check red under its own mutation (test/admin-words.mutations.json, run with tools/section.mjs):
  *   1  the glossary's old words are gone from the page the owner is served (comments left out: a comment is not drawn)
  *   2  the helpers print as specified: a day, a moment, a size and a sum
@@ -9,9 +9,12 @@
  *      person cannot act on, with the server's own words behind Details and the words of the Desk and the Counter beside a figure read as they are composed
  *   4  an unmapped message, and an answer with no reason, still say a sentence and carry Details; a failure of the connection or a sign-in that ended carry none
  *   5  end to end: a read the Desk refused, drawn by the page's own order card, shows the sentence and a Details control that opens the words
+ *   6  a tile, a sheet row and a report card heading are the book's mark with a size at most, the shape told to a reader and no word for the book drawn
+ *   7  the whole page drawn: no book of ledger/book.json PRODUCTS is named in any word, aria name or title, and no shape word is drawn
  * Drawn by the maker harness (test/maker-act.mjs), whose refuse[route] answers a route as the Counter refuses and whose probe: true leaves window.__owner(code),
  * a test seam that evaluates inside the page script's own scope, so the helpers are called as the page calls them. */
-import { richOwnerPage, byAct, cardOf } from "./maker-act.mjs";
+import { readFileSync } from "node:fs";
+import { richOwnerPage, byAct, cardOf, drawEverything } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
 import { OWNER_JS } from "../stmt/owner.js";
 
@@ -328,35 +331,80 @@ export async function run({ ok, pageWork }) {
       "a tap after the refusal makes the link and the old Details go with the old note: " + aopen().querySelector(".anote").textContent);
   } finally { s.w.close(); }
 
-  /* 6. THE BOOK NAMES: THE DESK'S NAME WITH THE MARK BESIDE IT, NEVER THE CUSTOMER'S SHAPE WORD (his decision 5 of 11 Oct 2026) */
-  const SHAPES = ["Cube", "Droplet", "Lozenge", "Capsule", "Ring"], BOOKS = /^(salt|oil|candy|rice)\b/;
-  const reached = strip(OWNER_JS).match(/\b(pshape|mtile|pmarkHead|withMark|markLead|markHtml|mcap)\(/g) || [];
+  /* 6. NO BOOK HAS A NAME ON THIS PAGE: A MARK, NAMED TO A READER BY ITS SHAPE (his word of 12 Oct 2026, "and even the name of the product", which took back decision 5 of 11 Oct) */
+  const SHAPES = ["Cube", "Droplet", "Lozenge", "Capsule", "Ring"];
   const SHAPE_WORD = new RegExp("\\b(" + SHAPES.join("|") + ")\\b");
-  ok(reached.length === 0 && !SHAPE_WORD.test(strip(OWNER_JS)),
-    "Salt Account's own script reaches for none of the customer's helpers that draw a shape word, and holds none of the words: " + JSON.stringify(reached));
-  ok(!strip(landingPage("", "words-nonce")).includes("function bookTile") && strip(landingPage("", "words-nonce")).includes("function mtile"),
-    "the customer's page is as it was: it draws its tiles with the shape words and carries none of Salt Account's book helpers");
+  const SIZE = /^[\d.,]+ units?$/, SHAPE_SIZE = new RegExp("^(" + SHAPES.join("|") + ") [\\d.,]+ units?$");
+  ok(!SHAPE_WORD.test(strip(OWNER_JS)) && !/\bbook(Name|Head)\b/.test(strip(OWNER_JS)),
+    "Salt Account's own script holds none of the shape words and none of the helpers that named a book (bookName, bookHead)");
+  const customerPage = strip(landingPage("", "words-nonce")), mtileSrc = customerPage.match(/function mtile[\s\S]*?\n  \}/);
+  ok(!!mtileSrc && !customerPage.includes("function bookTile") && !/pshape\(product\)\+', '/.test(mtileSrc[0]),
+    "the customer's page carries none of Salt Account's book helpers, and its tile caption is the size alone");
   const b = await richOwnerPage({ pageWork, assocAnswer: (j) => ({ ...j, products: [{ product: "oil", name: "oil", rows: [] }, { product: "salt", name: "salt", rows: [] }] }) });
   try {
     const { d, work } = b;
     await work.quiet();
     byAct(d, "nav.orders").click(); await work.quiet();
     const tiles = [...d.querySelectorAll(".mtile")];
-    const wrong = tiles.filter((t) => !BOOKS.test(t.querySelector(".mq")?.textContent || "") || !BOOKS.test(t.querySelector(".sr")?.textContent || "") || !t.querySelector("svg.psym")
-      || SHAPES.some((w) => t.textContent.includes(w))).map((t) => t.textContent);
+    const seen = (t) => t.textContent.replace(t.querySelector(".sr")?.textContent || "", "");
+    const wrong = tiles.filter((t) => !SIZE.test(t.querySelector(".mq")?.textContent || "") || !SHAPE_SIZE.test(t.querySelector(".sr")?.textContent || "") || !t.querySelector("svg.psym")
+      || t.querySelector(".mq")?.getAttribute("aria-hidden") !== "true" || SHAPE_WORD.test(seen(t)) || /[a-z]{3,}/i.test(seen(t).replace(/units?/g, ""))).map((t) => t.textContent);
     ok(tiles.length >= 4 && wrong.length === 0,
-      "each order tile on Orders is the book's mark with its name and size beneath, salt, 2 units, and never a shape: " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
+      "each order tile on Orders is the book's mark with its size beneath, 2 units, no word for the book and no shape word, and a reader is told the shape and the size: " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
     byAct(d, "nav.record").click(); await work.quiet();
     byAct(d, "part.record.approve").click(); await work.quiet();
     byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(); await work.quiet();
-    const sheet = [...d.querySelectorAll(".salt-sheet .mtile")].map((t) => t.querySelector(".mq")?.textContent);
-    ok(sheet.length === 2 && sheet.includes("oil, 1 unit") && sheet.includes("salt, 1 unit"),
-      "the sheet that asks on a trip names each of its rows by the Desk's book name, beside its mark: " + JSON.stringify(sheet));
+    const sheet = [...d.querySelectorAll(".salt-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
+    ok(sheet.length === 2 && sheet.every((s) => s[0] === "1 unit" && SHAPES.includes(s[1])) && new Set(sheet.map((s) => s[1])).size === 2,
+      "the sheet that asks on a trip draws each of its rows as a mark with 1 unit beneath, and a reader hears a different shape for each: " + JSON.stringify(sheet));
     byAct(d, "ask.keep").click(); await work.quiet();
     byAct(d, "nav.customers").click(); await work.quiet();
     byAct(d, "part.customers.associates").click(); await work.quiet();
-    const heads = [...d.querySelectorAll("#clist h2")].map((h) => [h.className, h.getAttribute("aria-label"), h.querySelector("svg.psym") ? "mark" : "", h.querySelector(".pshape")?.textContent]);
-    ok(JSON.stringify(heads) === JSON.stringify([["pmark", "oil", "mark", "oil"], ["pmark", "salt", "mark", "salt"]]),
-      "the report card's book headings are the mark with the Desk's name beside it, and never the shape: " + JSON.stringify(heads));
+    const heads = [...d.querySelectorAll("#clist h2")].map((h) => [h.className, SHAPES.includes(h.getAttribute("aria-label")), h.querySelector("svg.psym") ? "mark" : "", h.textContent, h.querySelector(".pshape") ? "word" : ""]);
+    ok(heads.length === 2 && heads.every((h) => h[0] === "pmark" && h[1] && h[2] === "mark" && h[3].replace(/[^a-z]/gi, "").length <= 1 && h[4] === "")
+      && new Set([...d.querySelectorAll("#clist h2")].map((h) => h.getAttribute("aria-label"))).size === 2,
+    "the report card's book headings are the mark alone, named by their shape to a reader and by no word for the book: " + JSON.stringify(heads));
   } finally { b.w.close(); }
+
+  /* 7. THE WHOLE PAGE, DRAWN: NO BOOK NAME IN ANY WORD, ARIA NAME OR TITLE, AND NO SHAPE WORD DRAWN (his word of 12 Oct 2026). The names are read off the book (ledger/book.json PRODUCTS),
+     so a sixth book is held to it unasked; "Salt Account", "Salt Counter" and the like are the apps' own names and are let through */
+  const BOOKS_OF = JSON.parse(readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8")).PRODUCTS;
+  const BOOK_NAMES = [...new Set(Object.entries(BOOKS_OF).flatMap(([k, v]) => [k, v.name]))].filter(Boolean);
+  const BOOK_NAMED = new RegExp("\\b(" + BOOK_NAMES.join("|") + ")\\b(?!\\s+(?:account|counter|command|desk)\\b)", "i");
+  const drawnWords = (root) => {
+    const out = [], walk = root.ownerDocument.createTreeWalker(root, 4);
+    while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
+    root.querySelectorAll("[aria-label],[title],[placeholder],[alt]").forEach((e) => ["aria-label", "title", "placeholder", "alt"].forEach((a) => { if (e.getAttribute(a)) out.push([e.getAttribute(a), a === "aria-label"]); }));
+    return out;
+  };
+  /* the Desk's own sentences name a book (src/drafter.js composes them, and the Desk keeps its words): a flag, a reason and a refusal here do, as they arrive */
+  const deskSpeaks = (j) => ({ ...j, drafts: j.drafts.map((x) => ({ ...x, flags: ["Salt is cheaper than its floor.", "Check the rice and the oil rows. The row carries RM 5/unit of cost from its old product. candy costs RM 46/unit, quoted."],
+    reasoning: "A sale of Spare, priced like salt." })), refused: [{ why: "Rice has no cost on the book." }] });
+  const all = await richOwnerPage({ pageWork, slip: true, probe: true, review: deskSpeaks, assocAnswer: (j) => ({ ...j, products: Object.keys(BOOKS_OF).map((k) => ({ product: k, name: BOOKS_OF[k].name, rows: [] })) }) });
+  try {
+    await drawEverything(all);
+    const seenWords = drawnWords(all.d.body);
+    const named = seenWords.filter(([t]) => BOOK_NAMED.test(t)).map(([t]) => t.slice(0, 80));
+    const shaped = seenWords.filter(([t, hidden]) => !hidden && SHAPE_WORD.test(t)).map(([t]) => t.slice(0, 80));
+    ok(seenWords.length > 400 && named.length === 0,
+      "no book is named anywhere on Salt Account, drawn text, aria names and titles included (" + BOOK_NAMES.join(", ") + "): " + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)));
+    /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Approve */
+    const sheets = [];
+    const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh)]); byAct(all.d, keep).click(); await all.work.quiet(); };
+    byAct(all.d, "nav.orders").click(); await all.work.quiet();
+    await asked(() => byAct(cardOf(all.d, "ord-r1"), "order.cancel").click(), "order.ask-keep");
+    byAct(all.d, "nav.record").click(); byAct(all.d, "part.record.approve").click(); await all.work.quiet();
+    await asked(() => byAct(all.d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(), "ask.keep");
+    ok(sheets.length === 2 && sheets.every(([tiles, said]) => tiles >= 1 && said.length > 3 && !said.some(([t]) => BOOK_NAMED.test(t))) && !sheets.flatMap(([, said]) => said).some(([t, hidden]) => !hidden && SHAPE_WORD.test(t)),
+      "the Sheets that ask draw a tile for the order or the rows they restate, and name no book and draw no shape word while they are open: " + JSON.stringify(sheets.map(([tiles, said]) => [tiles, said.length])));
+    const noBook = all.w.__owner("noBook");
+    ok(noBook("Salt is cheaper than its floor.") === "The book is cheaper than its floor." && noBook("old product. candy costs RM 46/unit") === "old product. The book costs RM 46/unit"
+      && noBook("Check the rice and the OIL rows") === "Check the book and the book rows" && noBook("Salt Account and the Salt Counter") === "Salt Account and the Salt Counter" && noBook("price, spared, ricer") === "price, spared, ricer"
+      && seenWords.some(([t]) => / old product[.] The book costs RM 46[/]unit, quoted[.]$/.test(t)) && seenWords.some(([t]) => /^A sale of the book, priced like the book[.]$/.test(t)),
+    "a sentence the Desk wrote names its book as 'the book', whole words only, the apps' own names left alone, and the Approve card draws it so: " + JSON.stringify(seenWords.map(([t]) => t).filter((t) => /book/.test(t) && /cost|sale of|cheaper/.test(t)).slice(0, 4)));
+    ok(shaped.length === 0 && all.d.querySelectorAll(".mtile").length > 0 && seenWords.some(([t, hidden]) => hidden && SHAPE_WORD.test(t)),
+      "no shape word is drawn on Salt Account, while a reader is still told the shape: " + JSON.stringify(shaped.slice(0, 5)));
+    ok(BOOK_NAMES.length >= 5 && BOOK_NAMED.test("Candy, 2 units") && BOOK_NAMED.test("the rice") && !BOOK_NAMED.test("Salt Account") && !BOOK_NAMED.test("a price of 5"),
+      "the scan itself reads the book's names as whole words and lets the apps' own names through: " + BOOK_NAMES.join(", "));
+  } finally { all.w.close(); }
 }

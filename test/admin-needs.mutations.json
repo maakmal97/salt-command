@@ -212,8 +212,8 @@
  {
   "name": "an order has an Agree",
   "file": "stmt/owner.js",
-  "find": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, what:orderWhat(o), practice:t, open:to}));",
-  "replace": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, what:orderWhat(o), practice:t, open:to}, function(c){ c._add(pill(['Agree','need.agree'])); }));"
+  "find": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o), practice:t, open:to}));",
+  "replace": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o), practice:t, open:to}, function(c){ c._add(pill(['Agree','need.agree'])); }));"
  },
  {
   "name": "a payment has a Received",
@@ -472,5 +472,17 @@
   "file": "stmt/owner.js",
   "find": "!document.body.classList.contains('ended')&&(placeNow==='needs'",
   "replace": "(placeNow==='needs'"
+ },
+ {
+  "name": "an order card says its book in words",
+  "file": "stmt/owner.js",
+  "find": "function orderWhat(o){ return units(o.qty)+', '+rm(o.total); }",
+  "replace": "function orderWhat(o){ return units(o.qty)+' '+o.product+', '+rm(o.total); }"
+ },
+ {
+  "name": "an order card loses its book's mark",
+  "file": "stmt/owner.js",
+  "find": "if(o.mark) what.appendChild(bookMark(o.mark));",
+  "replace": ""
  }
 ]
