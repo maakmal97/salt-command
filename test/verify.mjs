@@ -53892,7 +53892,7 @@ await (async () => {
 
 section("Salt Account uses the width: two panes from 860px with nothing open by itself, and every rule of it under .adm (12 Oct 2026)");
 await (async () => {
-  await (await import("./admin-tablet.mjs")).run({ ok });
+  await (await import("./admin-tablet.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: the order card reads its preview on opening, asks on a sheet, keeps its moves at its foot, and its tick is a 44px target");

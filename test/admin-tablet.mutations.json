@@ -40,5 +40,47 @@
   "file": "stmt/page.js",
   "find": "<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'",
   "replace": "<div id=\"aopen\" hidden></div></div>'"
+ },
+ {
+  "name": "the tablet dialog is a rule for every Sheet, the customer's too",
+  "file": "stmt/page.js",
+  "find": "  .adm.salt-sheet{top:50%;right:auto;",
+  "replace": "  .salt-sheet{top:50%;right:auto;"
+ },
+ {
+  "name": "the drawer is 500px wide",
+  "file": "stmt/page.js",
+  "find": "width:min(460px,100%);max-height:none;",
+  "replace": "width:min(500px,100%);max-height:none;"
+ },
+ {
+  "name": "the tablet dialog paints a ground of its own",
+  "file": "stmt/page.js",
+  "find": "  .adm.salt-sheet{top:50%;right:auto;",
+  "replace": "  .adm.salt-sheet{background:var(--salt-obsidian);top:50%;right:auto;"
+ },
+ {
+  "name": "the Yes or No sheet carries no .adm",
+  "file": "stmt/page.js",
+  "find": "el('div','salt-sheet ynsheet'+(OWNER?' adm':''))",
+  "replace": "el('div','salt-sheet ynsheet')"
+ },
+ {
+  "name": "the sign-in code sheet carries no .adm",
+  "file": "stmt/owner.js",
+  "find": "el('div','salt-sheet ho adm')",
+  "replace": "el('div','salt-sheet ho')"
+ },
+ {
+  "name": "the choice sheet of Salt Account carries no .adm",
+  "file": "stmt/page.js",
+  "find": "class=\"salt-sheet' + (owner ? \" adm\" : \"\") + '\" role=\"dialog\"",
+  "replace": "class=\"salt-sheet\" role=\"dialog\""
+ },
+ {
+  "name": "the customer's choice sheet carries .adm",
+  "file": "stmt/page.js",
+  "find": "class=\"salt-sheet' + (owner ? \" adm\" : \"\") + '\" role=\"dialog\"",
+  "replace": "class=\"salt-sheet adm\" role=\"dialog\""
  }
 ]

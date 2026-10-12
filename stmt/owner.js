@@ -254,7 +254,7 @@ export const OWNER_JS = `
   async function showHandover(a, from){
     closeHo();
     var scrim=el('div','salt-sheet-scrim'); scrim.setAttribute('aria-hidden','true');
-    var box=el('div','salt-sheet ho'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
+    var box=el('div','salt-sheet ho adm'); box.setAttribute('role','dialog'); box.setAttribute('aria-modal','true');
     box.setAttribute('aria-labelledby','hoT'); box.tabIndex=-1;
     box.appendChild(el('div','salt-sheet__grab'));
     var head=el('div','salt-sheet__head'), title=el('h2','salt-sheet__title','Sign in on their phone'); title.id='hoT';

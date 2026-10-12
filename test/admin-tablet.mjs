@@ -10,6 +10,7 @@
  *   3  nothing opens by itself: the column beside the list says Tap a card, and is drawn only while no account is open
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";
+import { richOwnerPage, byAct } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
 import { FONT_FACE_CSS, STATEMENT_CSS, SITE_RECIPES } from "../stmt/statement-css.js";
 
@@ -25,7 +26,7 @@ function ownerCss() {
   return { html, media, at, top };
 }
 
-export async function run({ ok }) {
+export async function run({ ok, pageWork }) {
   const { html, media, at, top } = ownerCss();
   const d = new JSDOM(html).window.document;
 
@@ -64,5 +65,35 @@ export async function run({ ok }) {
     const words = [...d.querySelectorAll(".panenone")].map((p) => p.textContent);
     ok(kids("nopen") === "|nopen|rnone panenone" && kids("aopen") === "rlist|aopen|rnone panenone" && words.length === 2 && words.every((w) => w === "Tap a card"),
       "Needs you's column and Customers' each hold the list, the account's pane and then the invitation, which says Tap a card: " + kids("nopen") + " , " + kids("aopen") + " " + JSON.stringify(words));
+  }
+
+  /* 4. SHEETS: a centred 560px dialog from 768 to 859px, the 460px drawer from 860px (the system's own from 1080px), placement only */
+  {
+    const dialog = at("(min-width:768px)and(max-width:859.98px)", ".adm.salt-sheet"), drawer = at("(min-width:860px)and(max-width:1079.98px)", ".adm.salt-sheet");
+    ok(/top: 50%/.test(dialog) && /left: 50%/.test(dialog) && /width: min\(560px/.test(dialog) && /transform: translate\(-50%, ?-50%\)/.test(dialog) && /animation-name: salt-sheet-fade/.test(dialog),
+      "from 768 to 859px a sheet is a dialog 560px wide in the middle of the screen, arriving by the system's fade: " + dialog);
+    ok(/top: 0/.test(drawer) && /left: auto/.test(drawer) && /width: min\(460px, ?100%\)/.test(drawer) && /max-height: none/.test(drawer) && /animation-name: salt-sheet-slide/.test(drawer),
+      "from 860px a sheet is the system's drawer, 460px, on the right, arriving by the system's slide: " + drawer);
+    const props = new Set([dialog, drawer, at("(min-width:768px)and(max-width:859.98px)", ".adm.salt-sheet .salt-sheet__grab"), at("(min-width:860px)and(max-width:1079.98px)", ".adm.salt-sheet .salt-sheet__grab"),
+      at("(min-width:860px)and(max-width:1079.98px)", ".adm.salt-sheet .salt-sheet__head")].join(";").split(";").map((x) => x.split(":")[0].trim()).filter(Boolean));
+    const free = ["top", "right", "bottom", "left", "width", "max-height", "transform", "animation-name", "display", "padding-top"];
+    const rest = [...props].filter((x) => !free.includes(x));
+    ok(props.size >= 9 && !rest.length, "and it writes placement only, no colour, no type and no surface: " + [...props].join() + (rest.length ? " | not placement: " + rest : ""));
+    const mine = (h) => new JSDOM(h).window.document;
+    const lone = mine(landingPage("", "n", null)).getElementById("lookSheet");
+    ok(d.getElementById("lookSheet").classList.contains("adm") && d.getElementById("vaultSheet").classList.contains("adm") && !!lone && !lone.classList.contains("adm"),
+      "the choice and unlock sheets of Salt Account carry .adm beside .salt-sheet, and the customer's choice sheet does not: " + d.getElementById("lookSheet").className + " | " + (lone && lone.className));
+    const p = await richOwnerPage({ pageWork });
+    try {
+      await p.work.quiet();
+      const page = p.d, tap = async (act, key) => { const c = byAct(page, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
+      await tap("nav.orders"); await tap("order.open", "ord-p1"); await tap("order.decline", "ord-p1");
+      const yn = page.getElementById("ynSheet");
+      ok(!!yn && yn.classList.contains("salt-sheet") && yn.classList.contains("adm"), "the sheet that asks Yes or No on Salt Account carries .adm: " + (yn && yn.className));
+      await tap("order.ask-keep", "ord-p1");
+      await tap("nav.customers"); await tap("part.customers.accounts"); await tap("acct.open", "abcd-efgh"); await tap("acct.show-code");
+      const ho = page.querySelector(".salt-sheet.ho");
+      ok(!!ho && ho.classList.contains("adm"), "so does the sheet that shows a sign-in code: " + (ho && ho.className));
+    } catch (e) { ok(false, "the sheets stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 }
