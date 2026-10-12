@@ -1,6 +1,6 @@
 {
- "v": "v1083",
- "stamped": "12 Oct 2026, 23:39 KL",
+ "v": "v1084",
+ "stamped": "12 Oct 2026, 23:42 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 31
+    "stated": 30
    },
    "spare": {
     "qty": 0,
@@ -7379,9 +7379,30 @@
     "cash": 0,
     "product": "rice",
     "date": "2026-10-12",
-    "deliveredQty": 0,
-    "note": "<b>NEW SALE ON 12 OCT: 1 UNIT OF RICE TO CK4-SEN FOR RM8.</b> Ordered on the statements site, order 20261012134225-exf2zw, acknowledged, to collect. Nothing paid and nothing handed over, preapproved by phone. At RM8 a unit it clears the floor of RM3.4 for that size and meets the ask of RM8; the ceiling is RM11. CK4-SEN has 8 orders, a median rate of RM80, a range of RM8 to RM94, RM0 outstanding and 0 units on credit against a cap of 1. The cost is COGS off the latest purchase, p028, and the fold keeps it. The drafter raised no flag. Open: RM8 to collect and 1 unit to deliver.",
-    "rid": "s258"
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON S258, 12 OCT: 1 UNIT OF RICE COLLECTED, RM8 UNPAID.</b> CK4-SEN collected the 1 unit ordered under 20261012134225-exf2zw. Delivered quantity moves from 0 to 1, delivered on is set to 12 Oct and handover to collected. At RM8 a unit the sale met the ask of RM8 and cleared the floor of RM3.4 for that size. CK4-SEN has 9 orders, a median rate of RM80, a range of RM8 to RM94, RM8 outstanding and 0 units on credit before this, against a cap of 1. The drafter flagged an advance with RM8 unpaid and asked for a check against the cap; the unit now on credit sits at that cap of 1. The cost is the sale's own, COGS off the latest purchase, p028. Open: RM8 to collect. <b>NEW SALE ON 12 OCT: 1 UNIT OF RICE TO CK4-SEN FOR RM8.</b> Ordered on the statements site, order 20261012134225-exf2zw, acknowledged, to collect. Nothing paid and nothing handed over, preapproved by phone. At RM8 a unit it clears the floor of RM3.4 for that size and meets the ask of RM8; the ceiling is RM11. CK4-SEN has 8 orders, a median rate of RM80, a range of RM8 to RM94, RM0 outstanding and 0 units on credit against a cap of 1. The cost is COGS off the latest purchase, p028, and the fold keeps it. The drafter raised no flag. Open: RM8 to collect and 1 unit to deliver.",
+    "rid": "s258",
+    "deliveredOn": "2026-10-12",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-12: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-12; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-12",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-12",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON S258, 12 OCT: 1 UNIT OF RICE COLLECTED, RM8 UNPAID.</b> CK4-SEN collected the 1 unit ordered under 20261012134225-exf2zw. Delivered quantity moves from 0 to 1, delivered on is set to 12 Oct and handover to collected. At RM8 a unit the sale met the ask of RM8 and cleared the floor of RM3.4 for that size. CK4-SEN has 9 orders, a median rate of RM80, a range of RM8 to RM94, RM8 outstanding and 0 units on credit before this, against a cap of 1. The drafter flagged an advance with RM8 unpaid and asked for a check against the cap; the unit now on credit sits at that cap of 1. The cost is the sale's own, COGS off the latest purchase, p028. Open: RM8 to collect.",
+      "cost": 3.4
+     }
+    ],
+    "cost": 3.4
    }
   ],
   "contacts": [
@@ -8036,9 +8057,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-12T13:48:25.780Z",
+  "QUEUE_COMMITTED": "2026-10-12T15:41:20.159Z",
   "PRICING": {
-   "takenAt": "2026-10-12T15:39:45.600Z",
+   "takenAt": "2026-10-12T15:42:06.379Z",
    "sizes": [
     0.5,
     1,
@@ -8434,16 +8455,16 @@
       "rare": false
      },
      "rice": {
-      "name": "consistent mid",
-      "orders": 2,
+      "name": "small and often",
+      "orders": 3,
       "tenureDays": 12,
-      "sinceLastDays": 1,
-      "perMonth": 2.03,
-      "unitsPerMonth": 3.04,
-      "smallShare": 0.5,
+      "sinceLastDays": 0,
+      "perMonth": 3.04,
+      "unitsPerMonth": 4.06,
+      "smallShare": 0.67,
       "bigShare": 0,
       "frequent": true,
-      "small": false,
+      "small": true,
       "bigger": false,
       "loyal": false,
       "rare": false
@@ -14061,15 +14082,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.1
+         "v": 0.09090909090909091
         }
        },
        "attrib": 1,
        "shrinkRate": 0.17,
        "avgDel": {
-        "n": 10,
-        "kg": 52,
-        "mean": 5.2
+        "n": 11,
+        "kg": 53,
+        "mean": 4.8182
        }
       },
       "policy": {
@@ -14910,10 +14931,10 @@
      ]
     }
    },
-   "v": "v1083"
+   "v": "v1084"
   },
   "OPEN": {
-   "at": "2026-10-12T15:39:46.432Z",
+   "at": "2026-10-12T15:42:07.208Z",
    "count": 9,
    "byKey": {
     "CK4-SEN|2026-10-12|8|rice": {
@@ -14923,13 +14944,16 @@
      "q": 1,
      "t": 8,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1,
+     "st": "dueMoney",
      "oweRM": 8,
-     "oweUnits": 1,
      "pr": "rice",
      "rid": "s258",
-     "key": "CK4-SEN|2026-10-12|8|rice"
+     "deliveredOn": "2026-10-12",
+     "handover": "collected",
+     "key": "CK4-SEN|2026-10-12|8|rice",
+     "age": 0,
+     "exp": 8
     },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
@@ -15099,13 +15123,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 31,
-     "free": 31,
+     "onHand": 30,
+     "free": 30,
      "owedOut": 0,
-     "coverDays": 13.2,
+     "coverDays": 13,
      "rate": 2.11,
-     "owedToYou": 15,
-     "promised": 1,
+     "owedToYou": 23,
+     "promised": 0,
      "short": 0
     },
     "spare": {
@@ -15127,7 +15151,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1083"
+   "v": "v1084"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15135,7 +15159,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1083"
+   "v": "v1084"
   },
   "REWARD": {
    "stated": {
@@ -15147,7 +15171,7 @@
      }
     }
    },
-   "v": "v1083"
+   "v": "v1084"
   }
  }
 }
