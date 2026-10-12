@@ -1230,10 +1230,14 @@ export function boardPage(guest, nonce) {
 /* S8 8.2: EVERY SHUT LINK ANSWERS THIS, WORD FOR WORD. Unknown, malformed, withdrawn, declined and
    waiting ids all get it, in the board's own look, so the door tells a stranger nothing about which
    it was and never leaves them on a bare "Not found". Its tab says so too, one title for every kind. */
-export function shutPage(nonce) {
-  return guestPage('<h1 class="gh">' + wd("shut.h") + "</h1>"
-    + '<p class="lead">' + wd("shut.p") + "</p>", nonce, esc(EN["shut.title"]));
+export function shutPage(nonce) { return onePage("shut", nonce); }
+/* 12 Oct 2026 (Phase 7d part 4, his yes of 11 Oct): A PAGE THAT SAYS ONE THING stands on the frame the door has, the app's ring over a heading and a line:
+   the shut link and the site's own 404. Neither says anything but its key's words (nf.* for the 404), so a path or a query never reaches it. */
+function onePage(k, nonce) {
+  return guestPage('<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + '<h1 class="gh">' + wd(k + ".h") + "</h1>"
+    + '<p class="lead">' + wd(k + ".p") + "</p>", nonce, esc(EN[k + ".title"]));
 }
+export function notFoundPage(nonce) { return onePage("nf", nonce); }
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
    to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:

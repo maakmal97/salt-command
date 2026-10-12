@@ -228,6 +228,9 @@ export const EN = {
   "shut.h": "This link is not open",
   "shut.p": "Ask the person who sent it to you.",
   "shut.title": "Link not open",
+  "nf.h": "This page is not here",
+  "nf.p": "Check the address and try again.",
+  "nf.title": "Page not found",
   /* ---- THE MAINTENANCE PAGE (stmt/maintenance.js), which runs no script: the time is read from MAINTENANCE_UNTIL in Kuala Lumpur ---- */
   "maint.title": "Maintenance",
   "maint.h": "Under maintenance",

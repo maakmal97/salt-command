@@ -694,6 +694,15 @@ rounded up, so the page never promises a time before the guard lifts. `MAINTENAN
 default sentence is retired. The answer is unchanged: 503, `retry-after`, `no-store`, JSON for a request that is not HTML, the machine routes in `MACHINE` passing.
 `test/counter-maintenance.mjs`, its mutations in `test/counter-maintenance.mutations.json`; the guard's own section is "Maintenance guard on both Workers".
 
+**The shut page and the site's 404 stand on the door's frame with the ring** (`onePage` in `stmt/page.js`: the app's ring in `.appmark`, one `h1` and one line, from
+`shut.*` and `nf.*` in the table). Both are Tide and run no script, under the guest board's policy (`guestHtml`: `default-src 'none'`, styles by nonce,
+`script-src 'none'`). **Every shut id still answers ONE page**, byte for byte the same but its nonce, status 404. The 404 is the plain `Not found` only for a request
+that does not ask for a page: `notFound()` marks its answer, and the Worker's door (the last lines of `stmt/worker.js`) swaps a marked answer for `lost()`, the
+styled page, when the request's Accept names `text/html` (a browser's address bar). A page's own fetch, a machine and a route that answers a 404 of its own in JSON keep
+what they had. The 404 says one thing and echoes nothing of the path or the query; an unknown path past the `/all` check is the same 404 as any other. Neither page
+names the app, a product, a shape or a level, in what it says or in its source. `test/counter-shut-404.mjs`, its mutations in `test/counter-shut-404.mutations.json`;
+the shut kinds themselves are also held by "S8 8.2".
+
 ## The price list and the order book (06 Sep 2026, his instruction)
 
 Three things sit behind the one password since v499: the statements, a **price list** for

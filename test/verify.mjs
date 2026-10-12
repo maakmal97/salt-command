@@ -54232,6 +54232,11 @@ await (async () => {
   await (await import("./counter-maintenance.mjs")).run({ ok });
 })();
 
+section("Failures on brand: the shut page and the site's 404 stand on the Counter's frame with the ring, the 404 echoes nothing of what was asked and is the page only where a page was asked for (12 Oct 2026)");
+await (async () => {
+  await (await import("./counter-shut-404.mjs")).run({ ok });
+})();
+
 section("Maintenance guard on both Workers");
 await (async () => {
   const TEXT = "The store is currently under maintenance. We are open for business again at 00:01 midnight of October 5.";
