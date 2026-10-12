@@ -13,6 +13,7 @@
  * a test seam that evaluates inside the page script's own scope, so the helpers are called as the page calls them. */
 import { richOwnerPage, byAct, cardOf } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
+import { OWNER_JS } from "../stmt/owner.js";
 
 /* the glossary's old words, as the page used to say them (a phrase each, none of them a word the glossary kept) */
 const OLD_WORDS = [
@@ -306,4 +307,36 @@ export async function run({ ok, pageWork }) {
     ok(!!other && other.firstChild.textContent === GENERAL_SENTENCE && other.querySelector(".rraw").textContent === "nobody mapped this one",
       "an unmapped refusal on the same card is the general sentence with the words under Details: " + (other ? other.textContent : "nothing drawn"));
   } finally { q.w.close(); }
+
+  /* 6. THE BOOK NAMES: THE DESK'S NAME WITH THE MARK BESIDE IT, NEVER THE CUSTOMER'S SHAPE WORD (his decision 5 of 11 Oct 2026) */
+  const SHAPES = ["Cube", "Droplet", "Lozenge", "Capsule", "Ring"], BOOKS = /^(salt|oil|candy|rice)\b/;
+  const reached = strip(OWNER_JS).match(/\b(pshape|mtile|pmarkHead|withMark|markLead|markHtml|mcap)\(/g) || [];
+  const SHAPE_WORD = new RegExp("\\b(" + SHAPES.join("|") + ")\\b");
+  ok(reached.length === 0 && !SHAPE_WORD.test(strip(OWNER_JS)),
+    "Salt Account's own script reaches for none of the customer's helpers that draw a shape word, and holds none of the words: " + JSON.stringify(reached));
+  ok(!strip(landingPage("", "words-nonce")).includes("function bookTile") && strip(landingPage("", "words-nonce")).includes("function mtile"),
+    "the customer's page is as it was: it draws its tiles with the shape words and carries none of Salt Account's book helpers");
+  const b = await richOwnerPage({ pageWork, assocAnswer: (j) => ({ ...j, products: [{ product: "oil", name: "oil", rows: [] }, { product: "salt", name: "salt", rows: [] }] }) });
+  try {
+    const { d, work } = b;
+    await work.quiet();
+    byAct(d, "nav.orders").click(); await work.quiet();
+    const tiles = [...d.querySelectorAll(".mtile")];
+    const wrong = tiles.filter((t) => !BOOKS.test(t.querySelector(".mq")?.textContent || "") || !BOOKS.test(t.querySelector(".sr")?.textContent || "") || !t.querySelector("svg.psym")
+      || SHAPES.some((w) => t.textContent.includes(w))).map((t) => t.textContent);
+    ok(tiles.length >= 4 && wrong.length === 0,
+      "each order tile on Orders is the book's mark with its name and size beneath, salt, 2 units, and never a shape: " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
+    byAct(d, "nav.record").click(); await work.quiet();
+    byAct(d, "part.record.approve").click(); await work.quiet();
+    byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(); await work.quiet();
+    const sheet = [...d.querySelectorAll(".salt-sheet .mtile")].map((t) => t.querySelector(".mq")?.textContent);
+    ok(sheet.length === 2 && sheet.includes("oil, 1 unit") && sheet.includes("salt, 1 unit"),
+      "the sheet that asks on a trip names each of its rows by the Desk's book name, beside its mark: " + JSON.stringify(sheet));
+    byAct(d, "ask.keep").click(); await work.quiet();
+    byAct(d, "nav.customers").click(); await work.quiet();
+    byAct(d, "part.customers.associates").click(); await work.quiet();
+    const heads = [...d.querySelectorAll("#clist h2")].map((h) => [h.className, h.getAttribute("aria-label"), h.querySelector("svg.psym") ? "mark" : "", h.querySelector(".pshape")?.textContent]);
+    ok(JSON.stringify(heads) === JSON.stringify([["pmark", "oil", "mark", "oil"], ["pmark", "salt", "mark", "salt"]]),
+      "the report card's book headings are the mark with the Desk's name beside it, and never the shape: " + JSON.stringify(heads));
+  } finally { b.w.close(); }
 }

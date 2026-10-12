@@ -157,8 +157,8 @@ const links = () => [
    other orders than the busy day's (links is the guest links). The page's intervals are kept, so a test fires the 30-second read itself; hold(route) keeps the answer to the
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
-   sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false }) {
+   sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, as the others change theirs. */
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null }) {
   const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {};
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
@@ -178,7 +178,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       devices: [{ id: "dev-1", label: "An iPhone", kept: true, at: ISO, last: ISO }] };
     if (route.startsWith("/all/signin/")) return { ok: true, msg: "Your link", url: "https://example.test/s/abc" };
     if (route === "/all/handover") return { ok: true, qr: ["101", "010", "101"], code: "ABCD-EFGH", exp: LATER };
-    if (route === "/all/assoc") return { ok: true, products: [], at: ISO };
+    if (route === "/all/assoc") return via(assocAnswer)({ ok: true, products: [], at: ISO });
     if (route === "/all/maker/review") return (review || ((j) => j))({ ok: true, orders: orders(), drafts: [draft("d-1"),
       draft("d-2", { row: { qty: 1, total: 100, trip: "t1" } }), draft("d-3", { row: { qty: 1, total: 50, trip: "t1" }, product: "oil" })],
     refused: [{ why: "Refused for the fixture" }],

@@ -2498,6 +2498,12 @@ not do that. Try again.* with the words behind Details: a refusal is never nothi
 the table; the suite (`test/admin-words.mjs`) walks every message of the map's source list. The page's own refusals (a connection that failed, a sign-in that
 ended) are its own sentences and carry no Details.
 
+**A book has the Desk's name here, and the customer's mark.** Where Salt Account names a book (his decision 5 of 11 Oct 2026) it says what the Desk says, `salt`,
+`oil`, `candy` or `rice`, with the book's mark beside it: an order's tile is the mark with *salt, 2 units* under it (`bookTile`, the twin of the customer's
+`mtile`), a heading is the mark with the name beside it (`bookHead`, for the associates' report card the name the answer carries), and a select, which cannot hold
+a mark, says the name alone. **The shape words (Cube, Droplet, Lozenge, Capsule) are the customer's page and are never drawn on Salt Account**, nor are the helpers
+that draw them (`pshape`, `mtile`, `pmarkHead`); the customer's page is as it was, and `test/admin-words.mjs` holds both.
+
 ## Before committing
 
 **Statements carry desk CODES and never a real name.** That is checked, not assumed: the

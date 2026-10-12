@@ -1788,7 +1788,7 @@ export const OWNER_JS = `
       }
     };
     var partyItems=parties.map(function(code){return {value:code,label:code};});
-    var productItems=books.map(function(item){return {value:item.product,label:pshape(item.product)};});
+    var productItems=books.map(function(item){return {value:item.product,label:bookName(item.product)};});
     var loan=makerForm('entry');loan.appendChild(el('h3',null,'Loan'));
     loan.appendChild(el('p','msg','Cash or goods lent or borrowed.'));
     parent.appendChild(loan);
@@ -2432,7 +2432,7 @@ export const OWNER_JS = `
      and its request id are the caller's, untouched. q: title, say (lines), extra (nodes), go, keep, plain (not a danger action), yes. */
   function makerAskRow(order){
     var L=el('div','salt-ledger salt-ledger--plain'), r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line'), lab=el('span','salt-ledger__label mlab');
-    lab.appendChild(mtile(order.product,order.qty)); lab.appendChild(el('span',null,codeByUser(order.u)));
+    lab.appendChild(bookTile(order.product,order.qty)); lab.appendChild(el('span',null,codeByUser(order.u)));
     l.appendChild(lab); l.appendChild(el('span','salt-ledger__value',rm(Number(order.total||0)+Number(order.delivery||0)))); r.appendChild(l);
     r.appendChild(el('span','salt-ledger__flag',units(order.qty)+', '+String((ORD_STAGE[order.status]||['',order.status])[1]).toLowerCase()));
     L.appendChild(r); return L;
@@ -3109,7 +3109,7 @@ export const OWNER_JS = `
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
     if(o){
       var st=ORD_STAGE[o.status]||['mist',String(o.status||'')];
-      b.appendChild(mtile(o.product,o.qty));
+      b.appendChild(bookTile(o.product,o.qty));
       t.appendChild(el('span',null,codeByUser(o.u)));
       t.appendChild(chip(st[0],st[1]));
       if(o.test) t.appendChild(chip('mist','Practice'));
@@ -3178,7 +3178,7 @@ export const OWNER_JS = `
      and the same empty body, and the ghost, the close control, the scrim and Escape send nothing. What is approved is the ROW AS DRAFTED, never recomputed. */
   function deskAskRow(item){
     var e=item.entry||{};
-    return askRow(e.party||'no code', rm(item.total), [entryWord(e), item.qty==null?'':units(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null?mtile(item.product,item.qty):null);
+    return askRow(e.party||'no code', rm(item.total), [entryWord(e), item.qty==null?'':units(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null?bookTile(item.product,item.qty):null);
   }
   function deskAskRows(draft){ var sibs=tripRows(draft); return (sibs.length?sibs:[draft]).map(deskAskRow); }
   /* a row's Approve and Reject, and a trip's: Approve, or Approve both for two books and Approve all for more */
@@ -3748,6 +3748,22 @@ export const OWNER_JS = `
   function units(n){ return unitsOf(Number(n)||0); }
   /* the Desk's name for a book, and the word for the kind of entry a Desk row is (his decision 5 of 11 Oct 2026: one name for a book on his page) */
   function bookName(product){ return String(product||''); }
+  /* THE BOOK NAMES (Phase 3, his decision 5 of 11 Oct 2026): where Salt Account names a book it says the Desk's name, salt, oil, candy or rice, with the book's
+     mark beside it. The shape words (Cube, Droplet, Lozenge, Capsule) are the customer's page and are never drawn here, so a book has one name on this page.
+     bookTile is mtile's twin for a card (the mark, and under it "salt, 2.5 units"), bookHead is pmarkHead's twin for a heading, name being the Desk's own where
+     the answer carries it. A select cannot hold a mark, so an option says the name alone. */
+  function bookTile(product,q){
+    var w=el('span','mtile'), words=units(q), cap=el('span','mq');
+    w.appendChild(el('span','sr',bookName(product)+' '+words));
+    w.appendChild(psym(product,28));
+    cap.setAttribute('aria-hidden','true'); cap.appendChild(document.createTextNode(bookName(product)+', ')); cap.appendChild(el('span','nb',words)); w.appendChild(cap);
+    return w;
+  }
+  function bookHead(tag,product,name){
+    var h=el(tag,'pmark'), said=name||bookName(product);
+    h.setAttribute('aria-label',said); h.appendChild(psym(product,28)); h.appendChild(el('span','pshape',said));
+    return h;
+  }
   var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Price level', REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
   function entryWord(e){ return ENTRY_WORD[e&&e.type]||(e&&e.type)||'Entry'; }
   /* what a Desk row is, in the order a person says it: the kind, the size and the book, the sum */
@@ -4238,7 +4254,7 @@ export const OWNER_JS = `
     }
     if(head) head.textContent='As at '+(cards.at?stampDay(cards.at):'the last publish')+'.';
     cards.products.forEach(function(p){
-      wrap.appendChild(el('h2',null,p.name||p.product));
+      wrap.appendChild(bookHead('h2',p.product,p.name));
       if(!p.rows.length){ wrap.appendChild(el('p','rnone','Nobody on this book yet.')); return; }
       p.rows.forEach(function(r){ wrap.appendChild(cardOf(r)); });
     });

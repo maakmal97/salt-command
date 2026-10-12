@@ -2,7 +2,7 @@
  {
   "name": "a row has no mark",
   "file": "stmt/owner.js",
-  "find": "      b.appendChild(mtile(o.product,o.qty));\n      t.appendChild(el('span',null,codeByUser(o.u)));",
+  "find": "      b.appendChild(bookTile(o.product,o.qty));\n      t.appendChild(el('span',null,codeByUser(o.u)));",
   "replace": "      t.appendChild(el('span',null,codeByUser(o.u)));"
  },
  {
