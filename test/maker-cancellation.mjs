@@ -94,12 +94,12 @@ export async function run({ ok, pageWork }) {
     const field = (root, name) => [...root.querySelectorAll("label")]
       .find((l) => l.querySelector(".lbl")?.textContent === name)?.querySelector("input,select");
     const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")]
-      .find((s) => s.querySelector("h3")?.textContent === "Amend a ledger row");
+      .find((s) => s.querySelector("h3")?.textContent === "Correct a row");
     const change = (node, value) => { node.value = value; node.dispatchEvent(new window.Event("change", { bubbles: true })); };
     doc.querySelector('[data-act="nav.record"]').click();
     if (!await work.quiet() || !editor()) throw new Error("Cancellation editor did not load.");
-    const ed = editor(), row = field(ed, "Ledger row"), kind = field(ed, "Amendment");
-    const cash = field(ed, "RM moved"), units = field(ed, "Units moved");
+    const ed = editor(), row = field(ed, "Which row"), kind = field(ed, "What to do");
+    const cash = field(ed, "RM"), units = field(ed, "Units");
     const preview = () => ed.querySelector(".maker-cancellation");
     const states = () => preview().querySelector(".maker-facts")?.textContent || "";
     const select = (rid) => { change(row, rid); change(kind, "Cancellation"); };
@@ -110,20 +110,20 @@ export async function run({ ok, pageWork }) {
     ok(/\bRefund due\b/.test(states()), "v457.2a paid cancellation preview reads Refund due");
     ok(/\bUndelivered\b/.test(states()), "v457.2b paid cancellation preview reads Undelivered");
     ok(/\bCancelled\b/.test(states()), "v457.2c paid cancellation preview reads Cancelled");
-    ok(/RM 450 already paid becomes a refund payable/.test(preview().textContent), "v457.2d paid cancellation discloses RM 450 refund payable");
-    ok(/Cash and units are not used here/.test(preview().textContent), "v457.1d Counter Cancellation says figures are not used");
+    ok(/RM 450[.]00 already paid becomes a refund you owe/.test(preview().textContent), "v457.2d paid cancellation discloses RM 450 refund payable");
+    ok(/The order is cancelled/.test(preview().textContent), "v457.1d Counter Cancellation says figures are not used");
     select("f19");
     ok(/\bUnpaid\b/.test(states()), "v457.5a pending cancellation preview reads Unpaid");
     ok(/\bCancelled\b/.test(states()), "v457.5b pending cancellation preview reads Cancelled");
-    ok(!/refund payable/.test(preview().textContent), "v457.5c pending cancellation names no refund payable");
+    ok(!/refund you owe/.test(preview().textContent), "v457.5c pending cancellation names no refund payable");
     select("f20");
-    ok(/Refund due/.test(preview().textContent) && /RM 150 already paid becomes a refund payable/.test(preview().textContent),
+    ok(/Refund due/.test(preview().textContent) && /RM 150[.]00 already paid becomes a refund you owe/.test(preview().textContent),
       "native cancellation disclosure includes value settled in kind, not total minus cash");
     select("f24");
-    ok(/Refund due.*Undelivered.*Cancelled/.test(preview().textContent) && !/refund payable/.test(preview().textContent),
+    ok(/Refund due.*Undelivered.*Cancelled/.test(preview().textContent) && !/refund you owe/.test(preview().textContent),
       "native purchase cancellation states do not invent a customer refund payable");
     select("f21");
-    ok(/Cancellation preview unavailable/.test(preview().textContent) && !/After/.test(preview().textContent),
+    ok(/This order cannot be cancelled/.test(preview().textContent) && !/After:/.test(preview().textContent),
       "goods already moved do not get a confident cancellation preview");
     change(row, "f22");
     ok(kind.value === "Correction" && preview().hidden && !preview().textContent,
@@ -136,7 +136,7 @@ export async function run({ ok, pageWork }) {
     cash.value = "400"; units.value = "1";
     change(kind, "Cancellation");
     cash.disabled = false; units.disabled = false;
-    [...ed.querySelectorAll("button")].find((b) => b.textContent === "Send amendment for review").click();
+    [...ed.querySelectorAll("button")].find((b) => b.textContent === "Send the correction").click();
     if (!await work.quiet()) throw new Error("Cancellation submission did not settle.");
     const sent = posts[0] || {}, drafted = f.db.prepare("SELECT entry FROM draft WHERE id=?").get(sent.at);
     const entry = drafted ? JSON.parse(drafted.entry) : {}, payload = entry.payload || {};
@@ -151,15 +151,15 @@ export async function run({ ok, pageWork }) {
     ok(!!drafted && entry.qty === null, "v457.4a native cancellation top quantity is null");
     ok(!!drafted && entry.total === null, "v457.4b native cancellation top total is null");
     const staleEditor = editor();
-    change(field(staleEditor, "Ledger row"), "f25");
-    change(field(staleEditor, "Amendment"), "Cancellation");
+    change(field(staleEditor, "Which row"), "f25");
+    change(field(staleEditor, "What to do"), "Cancellation");
     const shown = staleEditor.querySelector(".maker-cancellation").textContent;
     const stored = f.db.prepare("SELECT seq,doc FROM entry WHERE collection='sales' AND json_extract(doc,'$.rid')='f25'").get();
     const moved = { ...JSON.parse(stored.doc), deliveredQty: 1 };
     f.db.prepare("UPDATE entry SET doc=? WHERE collection='sales' AND seq=?").run(JSON.stringify(moved), stored.seq);
-    [...staleEditor.querySelectorAll("button")].find((b) => b.textContent === "Send amendment for review").click();
+    [...staleEditor.querySelectorAll("button")].find((b) => b.textContent === "Send the correction").click();
     if (!await work.quiet()) throw new Error("Stale cancellation refusal did not settle.");
-    ok(/Refund due/.test(shown) && /RM 450 already paid becomes a refund payable/.test(shown)
+    ok(/Refund due/.test(shown) && /RM 450[.]00 already paid becomes a refund you owe/.test(shown)
       && posts.length === 2 && posts[1].rid === "f25" && answers[1]?.status === 400
       && /cannot cancel goods already handed over/.test(answers[1]?.body.error || "")
       && /cannot cancel goods already handed over/.test(staleEditor.querySelector('[role="status"]').textContent)

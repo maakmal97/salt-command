@@ -212,7 +212,7 @@ export async function run({ ok }) {
     rowOf(0).click();
     await until(() => inCard("claim.received") && !inCard("claim.received").disabled);
     ok(!!card(0) && !card(1) && !!inCard("claim.received-booked") && !!inCard("claim.not-found") && !inCard("claim.preview")
-      && !!field() && /sealed/.test(card(0).textContent) && fetched.key === 0 && fetched.slip === 0
+      && !!field() && /locked/.test(card(0).textContent) && fetched.key === 0 && fetched.slip === 0
       && posts.filter((p) => /[/]preview$/.test(p.route)).length === 1,
       "Opening a claim reads its rows once and offers Received and Not found with no Preview rows button; its slip says it is sealed and fetches nothing it cannot open");
     const input = field();
@@ -222,7 +222,7 @@ export async function run({ ok }) {
     releaseKey();
     await until(() => !!field() && field() !== input);
     await settle();
-    ok(created === 0 && imports.length === 0 && !doc.querySelector("[data-maker-slip]") && field().value === "" && /sealed/.test(card(0).textContent),
+    ok(created === 0 && imports.length === 0 && !doc.querySelector("[data-maker-slip]") && field().value === "" && /locked/.test(card(0).textContent),
       "Held key-fetch completion after visibility lock cannot import/paint an old slip unlock.");
     keyWait = false; field().value = pass; inCard("claim.view-slip").click();
     await until(() => thumb());
@@ -237,7 +237,7 @@ export async function run({ ok }) {
     ok(small && large && thumb().getAttribute("aria-expanded") === "false" && created === 1,
       "Tapping the thumbnail opens the full slip in place and the next tap shrinks it, with no second picture made: " + JSON.stringify([small, large]));
     inCard("claim.lock-slip").click();
-    ok(revoked === 1 && !doc.querySelector("[data-maker-slip]") && !!field() && /sealed/.test(card(0).textContent),
+    ok(revoked === 1 && !doc.querySelector("[data-maker-slip]") && !!field() && /locked/.test(card(0).textContent),
       "Close-and-lock revokes the actual picture URL, removes its rendered image, and the card says the slip is sealed again.");
     slipWait = true; field().value = pass; inCard("claim.view-slip").click();
     await until(() => releaseSlip);
@@ -275,7 +275,7 @@ export async function run({ ok }) {
       return created === before && !doc.querySelector("[data-maker-slip]") && !!inCard("claim.view-slip") ? text : "painted";
     };
     const missing = await refusal("missing"), version = await refusal("version"), tampered = await refusal("tampered");
-    ok(/no such slip/.test(missing) && /malformed/.test(version) && /could not be opened/.test(tampered),
+    ok(/no longer held/.test(missing) && /cannot be read/.test(version) && /could not be opened/.test(tampered),
       "Missing or expired, wrong-version and tampered slips are refused on the device without a picture: "
       + JSON.stringify([missing, version, tampered]));
     /* 11 Oct 2026, the five places: the unlocked slip key stays while he moves between the parts of Orders, as it did on the one Maker
@@ -301,9 +301,9 @@ export async function run({ ok }) {
     rowOf(0).click();
     await until(() => !!card(0));
     await settle();
-    const sealedAgain = !thumb() && !!field() && /sealed/.test(card(0).textContent) && fetched.slip === slips;
+    const sealedAgain = !thumb() && !!field() && /locked/.test(card(0).textContent) && fetched.slip === slips;
     inCard("claim.view-slip").click(); await settle();
-    ok(sealedAgain && !thumb() && /Unlock the slip key/.test(said()) && fetched.slip === slips,
+    ok(sealedAgain && !thumb() && /Unlock names and places first/.test(said()) && fetched.slip === slips,
       "and it is dropped on leaving Orders: the next claim opened says its slip is sealed, fetches no ciphertext, and asks for the passphrase again: " + JSON.stringify([sealedAgain, said()]));
     ok(asked.length === 0, "and no native confirm was asked on the way: " + JSON.stringify(asked));
   } catch (e) { ok(false, "the page test stopped on an error: " + (e && e.message)); } finally { browser.window.close(); }

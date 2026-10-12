@@ -27,11 +27,11 @@ export async function run({ ok, html, record, transport, pageWork }) {
     const doc=dom.window.document;
     doc.querySelector('button[data-act="nav.record"]').click();await work.quiet();
     const recovery=[...doc.querySelectorAll("#makerInputs .maker-input")]
-      .find(section=>section.querySelector("h3")?.textContent==="Retained input");
+      .find(section=>section.querySelector("h3")?.textContent==="Unsent entry");
     ok(!!recovery&&!saved.includes("Zora")&&!saved.includes("name-pass"),
       "a fresh Counter page restores a ciphertext-only retained input without opened names or passphrase");
     if(!recovery)return;
-    const retry=[...recovery.querySelectorAll("button")].find(button=>button.textContent==="Retry unchanged");
+    const retry=[...recovery.querySelectorAll("button")].find(button=>button.textContent==="Send again");
     retry.click();await work.quiet();
     ok(calls.length===0&&dom.window.localStorage.getItem("saltMakerPending:"+record.path)===saved,
       "Counter reload refuses a locked retry and retains its exact ciphertext and timestamp");
@@ -47,9 +47,9 @@ export async function run({ ok, html, record, transport, pageWork }) {
     dom.window.close();dom=boot();
     dom.window.document.querySelector('button[data-act="nav.record"]').click();await work.quiet();
     const reviewed=[...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
-      .find(section=>section.querySelector("h3")?.textContent==="Retained input");
+      .find(section=>section.querySelector("h3")?.textContent==="Unsent entry");
     if(!reviewed){ok(false,"reloaded Counter exposes conflict review for its retained encrypted intent");return;}
-    const review=[...reviewed.querySelectorAll("button")].find(button=>button.textContent==="Review latest");
+    const review=[...reviewed.querySelectorAll("button")].find(button=>button.textContent==="Update and send");
     reviewed.querySelector('input[type="password"]').value="name-pass";review.click();await work.quiet();
     ok(calls.length===1&&dom.window.localStorage.getItem("saltMakerPending:"+record.path)===saved,
       "reloaded Counter overlap Cancel retains its encrypted intent and submits no replacement request");
@@ -62,8 +62,8 @@ export async function run({ ok, html, record, transport, pageWork }) {
     dom.window.close();dom=boot();
     dom.window.document.querySelector('button[data-act="nav.record"]').click();await work.quiet();
     const cancelled=[...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
-      .find(section=>section.querySelector("h3")?.textContent==="Retained input");
-    const cancel=[...(cancelled?.querySelectorAll("button")||[])].find(button=>button.textContent==="Cancel retained input");
+      .find(section=>section.querySelector("h3")?.textContent==="Unsent entry");
+    const cancel=[...(cancelled?.querySelectorAll("button")||[])].find(button=>button.textContent==="Discard");
     cancel?.click();await work.quiet();
     ok(!!cancel&&calls.length===2&&!dom.window.localStorage.getItem("saltMakerPending:"+record.path),
       "Counter explicit local cancellation clears a reloaded request without submitting or withdrawing a server row");

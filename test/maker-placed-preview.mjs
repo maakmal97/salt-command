@@ -83,18 +83,18 @@ export async function run({ ok }) {
       "Choosing a delivery charge reads the figures by itself, once, at that charge: " + JSON.stringify(previews(id)));
 
     /* displayed comparison fields: the native card/margin/floor/usual tiles, not raw row JSON */
-    ok(tile(id, "Their card today") && tile(id, "Their card today").querySelector(".salt-kpi__value").textContent === "RM 190.00"
-      && /the quote is RM 200\.00/.test(tile(id, "Their card today").querySelector(".salt-kpi__note").textContent)
-      && tile(id, "Margin") && tile(id, "Margin").querySelector(".salt-kpi__value").textContent === "RM 40.00"
-      && tile(id, "Margin").querySelector(".salt-kpi__note").textContent === "on RM 160.00 cost · 21%"
+    ok(tile(id, "Their price") && tile(id, "Their price").querySelector(".salt-kpi__value").textContent === "RM 190.00"
+      && /the quote is RM 200\.00/.test(tile(id, "Their price").querySelector(".salt-kpi__note").textContent)
+      && tile(id, "Your margin") && tile(id, "Your margin").querySelector(".salt-kpi__value").textContent === "RM 40.00"
+      && tile(id, "Your margin").querySelector(".salt-kpi__note").textContent === "on RM 160.00 cost · 21%"
       && tile(id, "Floor") && tile(id, "Floor").querySelector(".salt-kpi__value").textContent === "RM 150.00"
       && /the quote clears it/.test(tile(id, "Floor").querySelector(".salt-kpi__note").textContent)
       && tile(id, "Their usual") && tile(id, "Their usual").querySelector(".salt-kpi__value").textContent === "RM 95.00"
       && !card(id).querySelector("pre.maker-row"),
       "A successful preview shows the native card, margin, floor and usual tiles, not raw row JSON: " + card(id).textContent);
-    ok(/In advance: paid late before, 1 of 3 on time since; RM 300\.00 owed with this order, over RM 250\.00\./.test(card(id).textContent),
+    ok(/They pay first: paid late before, 1 of 3 on time since; RM 300\.00 owed and this takes them past RM 250\.00\./.test(card(id).textContent),
       "The prepay line carries the late-payer clause from the server's late run and need: " + card(id).textContent);
-    ok(accept(id).textContent === "Accept order at RM 200.00, delivery RM 10.00", "Accept is labelled with the server's quote and delivery: " + accept(id).textContent);
+    ok(accept(id).textContent === "Agree, RM 200.00 + RM 10.00", "Accept is labelled with the server's quote and delivery: " + accept(id).textContent);
 
     /* a redraw of the card keeps what it read, and asks the Desk for nothing more */
     const seen = previews().length;
@@ -107,15 +107,15 @@ export async function run({ ok }) {
     ok(!accept(id) && previews().length === seen, "Editing the goods total takes Accept away at once, and reads nothing until he finishes.");
     fire(total(id), "change");
     await until(() => accept(id));
-    ok(previews().length === seen + 1 && previews()[seen].body.total === 250 && accept(id).textContent === "Send for their yes at RM 250.00, delivery RM 10.00",
+    ok(previews().length === seen + 1 && previews()[seen].body.total === 250 && accept(id).textContent === "Ask them, RM 250.00 + RM 10.00",
       "Finishing the edit reads the figures again at the new total, and a raise goes for their yes: " + JSON.stringify(previews().slice(seen)) + accept(id).textContent);
     total(id).value = "200"; fire(total(id), "input"); fire(total(id), "change");
-    await until(() => accept(id) && accept(id).textContent === "Accept order at RM 200.00, delivery RM 10.00");
+    await until(() => accept(id) && accept(id).textContent === "Agree, RM 200.00 + RM 10.00");
     radio(id, "RM 15").checked = true;
     fire(radio(id, "RM 15"), "change");
     ok(!accept(id), "Choosing a different delivery charge takes Accept away at once.");
     await until(() => accept(id));
-    ok(/delivery RM 15\.00/.test(accept(id).textContent), "and reads the figures again at the new charge: " + accept(id).textContent);
+    ok(/\+ RM 15\.00/.test(accept(id).textContent), "and reads the figures again at the new charge: " + accept(id).textContent);
 
     /* success -> failed refresh: a later preview failing clears what the earlier success left usable, at once */
     previewFail = 1;

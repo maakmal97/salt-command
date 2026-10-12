@@ -1488,7 +1488,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   detail by `showPlace`: an order, a payment on an order or a question on an order to Orders > Waiting on you with that order's card open, a message to Customers > Messages with that thread open, an
   account beside the list on a desktop and on Accounts on a phone, a link to Customers > Links, a row or an entry to Record > Approve, the
   hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
-  tap**: Approve row or Approve trip on a Desk row is Record > Approve's own function (`approveDraft`: the same question, on the page's Sheet, the same request,
+  tap**: Approve (Approve both or Approve all on a trip) on a Desk row is Record > Approve's own function (`approveDraft`: the same question, on the page's Sheet, the same request,
   the same answer line; a customer's claim row has none, it is answered through Received on its order), and the guest link, the refused
   account and the accounts not sent keep the action they had. **Nothing in Needs you books money**: Agree, Yes received and Cash stay on
   their cards in Orders. A practice account's order, claim or thread is drawn after the real ones in its severity, labelled Practice, and
@@ -2254,7 +2254,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on Waiting on you, reading the orders and the claims again. |
 | `nav.record` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Record, on Approve. |
 | `nav.shop` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Shop, on Hours. |
-| `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Record > Approve's Approve row sends. |
+| `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Record > Approve's Approve sends. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
 | `need.kind.accounts` | The chips under Needs you's title | Shows only the cards about accounts and guest links. Reads nothing. |
 | `need.kind.all` | The chips under Needs you's title | Shows every card again. Reads nothing. |
@@ -2266,10 +2266,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
 | `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Shop. |
-| `need.send-later` | Same card | Send, switched off until the account exists. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
-| `need.show-link` | Needs you card for an ID with no account yet | Shows the stranger's standing guest link and its QR until the account is made. |
+| `need.show-link` | Needs you card for an ID with no account yet | Shows the guest price list (the stranger's standing guest link) and its QR until the account is made. |
 | `need.signin-link` | Needs you card for an account with an address refused | Makes their one-time sign-in link, then shares it. |
 | `need.turn-done` | Same card, when every turn is over | Closes the card. |
 | `need.turn-share` | Same card, mid-turn | Shares the link made for the account whose turn it is, then ticks it sent. |
@@ -2477,9 +2476,36 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.stream` | Record, sale or purchase | No associate, R2 resell or R3 refer. |
 | `record.trade.total` | Record, sale or purchase | The goods total, in RM. |
 | `record.trade.units` | Record, sale or purchase | The units. |
+| `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
 | `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the proposed row as the drafter made it. |
 | `view.back` | Bar over an account viewed as them | Takes him back to Accounts. |
 
+
+### Salt Account speaks plainly (Phase 3, 12 Oct 2026, the redesign glossary of 11 Oct 2026)
+
+Every word on Salt Account is the glossary's (`System\Code\Artifacts\counter-redesign\review\fable-review.md` section 5.2): the number first, a plain
+noun for a heading, no engine word where a person's word exists (a sale, a purchase, a correction; not SELL, BUY, AMEND). The words live in `stmt/owner.js` and the
+owner-only strings of `stmt/page.js`; **nothing is added to `stmt/words.js` and the customer's words are untouched**. Three helpers print a day, a size and a
+sum, so no card prints one its own way: `fmtWhen` (a day is `10 Oct 2026`, a moment `10 Oct 2026, 17:20`, Kuala Lumpur, 24 hours, never ISO or UTC),
+`units` (`1 unit`, `2.5 units`) and `rm` (`RM 1,234.50`); they are the page's own, so a new card calls them and does not format. How they signed in
+names a code once, *Code*, with the road it took (typed in, copied across, scanned at the counter) under its date, and an account's chip says *by code*.
+
+**A refusal is a plain sentence, the server's own words one tap away.** The Counter and the Desk refuse a move in their own words (`stmt/maker.js`,
+`src/maker-inputs.js`, `stmt/hours.js`, `src/orders.js`). `refs()` raises the plain sentence as the Error's message, the server's words in `.raw` and the
+status and answer in `.status` and `.detail` (the code that reads a twin or a 409 reads those, never the message), and `refusal(node, error, lead, tail)`
+draws the sentence with a Details control (act `refusal.details`) that opens the words. **The map is `REFUSALS` in `stmt/owner.js`, between its two marker
+comments: the server's sentence to a plain one, for the ones a person can act on.** Any other message, and an answer with no reason, is *The Counter could
+not do that. Try again.* with the words behind Details: a refusal is never nothing and never only the server's words. To plain a new message, add one line to
+the table; the suite (`test/admin-words.mjs`) walks every message of the map's source list. The page's own refusals (a connection that failed, a sign-in that
+ended) are its own sentences and carry no Details. **A note the page keeps in state** (a link that could not be made, a share whose tick did not save, a
+tier pinned on a link) holds the Error beside its text (`m.err`, `t.whyErr`, `linkSaid.err`) and is drawn through `withDetails`, so it has Details too; the
+text is redrawn from state, so the next tap that clears the note clears them with it.
+
+**A book has the Desk's name here, and the customer's mark.** Where Salt Account names a book (his decision 5 of 11 Oct 2026) it says what the Desk says, `salt`,
+`oil`, `candy` or `rice`, with the book's mark beside it: an order's tile is the mark with *salt, 2 units* under it (`bookTile`, the twin of the customer's
+`mtile`), a heading is the mark with the name beside it (`bookHead`, for the associates' report card the name the answer carries), and a select, which cannot hold
+a mark, says the name alone. **The shape words (Cube, Droplet, Lozenge, Capsule) are the customer's page and are never drawn on Salt Account**, nor are the helpers
+that draw them (`pshape`, `mtile`, `pmarkHead`); the customer's page is as it was, and `test/admin-words.mjs` holds both.
 
 ## Before committing
 

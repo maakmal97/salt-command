@@ -36,7 +36,7 @@
  {"name": "Accept all sends a sheet that needs their yes", "file": "master/salt_command.html", "find": "if(st==='acknowledged'&&G.some(x=>ordNeedsYes(", "replace": "if(st==='acknowledged'&&false&&G.some(x=>ordNeedsYes("},
  {"name": "Counter Admin hides an open offer", "file": "stmt/owner.js", "find": "if(order.status==='placed'&&makerAccHeld(order)){", "replace": "if(false){"},
  {"name": "Counter Admin's withdrawal has no id", "file": "stmt/owner.js", "find": "makerTap(order,'withdraw',{},'Offer withdrawn. The order stands as they placed it.');", "replace": "makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/withdraw',{},'Offer withdrawn.');"},
- {"name": "Counter Admin accepts a raise", "file": "stmt/owner.js", "find": "(yes?'Send for their yes at ':'Accept order at ')", "replace": "('Accept order at ')"},
+ {"name": "Counter Admin accepts a raise", "file": "stmt/owner.js", "find": "(yes?'Ask them, ':'Agree, ')", "replace": "('Agree, ')"},
  {"name": "Counter Admin sends Accept's digest", "file": "stmt/owner.js", "find": "hash:s.offerHash};", "replace": "hash:s.hash};"},
  {"name": "Counter Admin's offer drops the window", "file": "stmt/owner.js", "find": "if(order.mode==='deliver'&&wv) ob.slot=wv;", "replace": ""},
  {"name": "the desk reads the lapse on the Counter's clock", "file": "src/orders.js", "find": "const ACCEPT_GRACE = 60e3;", "replace": "const ACCEPT_GRACE = 0;"},

@@ -170,7 +170,7 @@ export async function run({ ok }) {
       return !!predicate();
     };
     const pause = (ms = 40) => new Promise((resolve) => setTimeout(resolve, ms));
-    const section = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Revive a cancelled row");
+    const section = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Reopen a cancelled order");
     const press = (root, text) => [...root.querySelectorAll("button")].find((b) => b.textContent === text).click();
     doc.querySelector('[data-act="nav.record"]').click();
     await until(() => section());
@@ -178,9 +178,9 @@ export async function run({ ok }) {
     ok(select && [...select.options].map((o) => o.value).join(",") === "rv-a",
       "the page offers only the cancelled rows with nothing paid and nothing moved: " + (select && [...select.options].map((o) => o.value).join(",")));
     failNext = 1;
-    press(sec, "Send revival for review");
+    press(sec, "Reopen the order");
     await until(() => posts.length >= 1); await pause();
-    press(sec, "Send revival for review");
+    press(sec, "Reopen the order");
     await until(() => posts.length >= 2); await pause();
     const [sent, resent] = [posts[0] || {}, posts[1] || {}];
     ok(sent.kind === "Correction" && sent.rid === "rv-a" && JSON.stringify(sent.fields) === JSON.stringify(REVIVE)

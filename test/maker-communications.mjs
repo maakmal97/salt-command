@@ -365,17 +365,17 @@ export async function run({ ok }) {
     const markupRead = await until(() => doc.getElementById("makerChatLines").textContent.includes("<img"));
     ok(markupRead && !doc.querySelector("#makerChatLines img") && page.makerLeak === undefined,
       "Owner Chat draws customer markup as text, never executable elements.");
-    loseReply = true; tap("#makerChatOpen", "Send reply");
-    tap("#makerChatOpen", "Close chat");
+    loseReply = true; tap("#makerChatOpen", "Send");
+    tap("#makerChatOpen", "Close");
     doc.querySelector('[data-thread="' + user + '"]').click();
     textarea = doc.querySelector('[data-thread-reply="' + user + '"]');
-    ok([...doc.querySelectorAll("#makerChatOpen button")].find((button) => button.textContent === "Retry reply").disabled,
+    ok([...doc.querySelectorAll("#makerChatOpen button")].find((button) => button.textContent === "Send again").disabled,
       "Closing and reopening an in-flight Chat cannot re-enable duplicate submits.");
-    await until(() => /original reply is kept/.test(doc.getElementById("makerChatOpen").textContent));
+    await until(() => /Your reply is kept/.test(doc.getElementById("makerChatOpen").textContent));
     const pendingReply = posts.filter((item) => item.path === "/all/maker/threads/" + user).at(-1).body;
     chatStorageKey = "saltMakerChat:" + user + ":" + pendingReply.rid;
     ok(textarea.value === "Kept typed reply." && textarea.disabled
-      && /may already be recorded/.test(doc.getElementById("makerChatOpen").textContent)
+      && /may have gone through/.test(doc.getElementById("makerChatOpen").textContent)
       && !/Not sent[.]/.test(doc.getElementById("makerChatOpen").textContent),
       "A lost reply confirmation keeps the original text and prevents a changed resubmission.");
     reloadData = page.localStorage.getItem(chatStorageKey);
@@ -384,7 +384,7 @@ export async function run({ ok }) {
       && !reloadData.includes("Kept typed reply.") && !reloadData.includes(env.STMT_MASTER)
       && Object.keys(encryptedRetry).sort().join(",") === "at,envelope,rid,u,v",
       "Pending Chat persists only ciphertext and fixed safe metadata, never the reply or master key.");
-    tap("#makerChatOpen", "Close chat"); page.close();
+    tap("#makerChatOpen", "Close"); page.close();
     page = new JSDOM(html, pageOptions).window; doc = page.document;
     answerSheets(page, [], () => confirmations);
     /* 11 Oct 2026: the conversations are Customers, Messages */
@@ -392,23 +392,23 @@ export async function run({ ok }) {
     await until(() => doc.querySelector('[data-thread="' + user + '"]'));
     doc.querySelector('[data-thread="' + TEST_USER + '"]').click();
     const beforeSwitchedRetry = posts.length;
-    tap("#makerChatOpen", "Open retained reply");
+    tap("#makerChatOpen", "Open unsent reply");
     const refusedSwitch = await until(() => /belongs to another account/.test(doc.getElementById("makerChatOpen").textContent));
-    tap("#makerChatOpen", "Send reply");
+    tap("#makerChatOpen", "Send");
     ok(refusedSwitch && posts.length === beforeSwitchedRetry && page.localStorage.getItem(chatStorageKey) === reloadData,
       "An encrypted retained request is bound to its original account even when moved into another account slot.");
     doc.querySelector('[data-thread="' + user + '"]').click();
     textarea = doc.querySelector('[data-thread-reply="' + user + '"]');
     ok(textarea.value === "" && textarea.disabled && page.localStorage.getItem(chatStorageKey) === reloadData,
       "Reload retains the original ciphertext without opening or resubmitting it automatically.");
-    tap("#makerChatOpen", "Open retained reply");
+    tap("#makerChatOpen", "Open unsent reply");
     await until(() => /Original reply opened/.test(doc.getElementById("makerChatOpen").textContent));
     ok(textarea.value === "Kept typed reply." && page.localStorage.getItem(chatStorageKey) === reloadData,
       "Explicit owner-context opening restores the unchanged encrypted request for review.");
     const beforeRetry = posts.filter((item) => item.path === "/all/maker/threads/" + user).length;
     const otherPendingKey = "saltMakerChat:" + user + ":zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
     page.localStorage.setItem(otherPendingKey, reloadData);
-    tap("#makerChatOpen", "Retry reply");
+    tap("#makerChatOpen", "Send again");
     const retryCompleted = await until(() => /Reply sent/.test(doc.getElementById("makerChatOpen").textContent));
     const lastReply = posts.filter((item) => item.path === "/all/maker/threads/" + user).at(-1).body;
     ok(retryCompleted && posts.filter((item) => item.path === "/all/maker/threads/" + user).length === beforeRetry + 1
@@ -417,19 +417,19 @@ export async function run({ ok }) {
       && page.localStorage.getItem(otherPendingKey) === reloadData
       && (await (await customer()).json()).thread.msgs.filter((line) => line.text === "Kept typed reply.").length === 1,
       "The actual owner retry button reuses the fixed immutable request and never adds a second customer line.");
-    tap("#makerChatOpen", "Close chat");
+    tap("#makerChatOpen", "Close");
     ok(fakePolls.size === 0, "Closing Chat stops its poll.");
     /* the notice is Shop, Notice */
     doc.querySelector('[data-act="nav.shop"]').click(); doc.querySelector('[data-act="part.shop.notice"]').click();
     await until(() => doc.querySelector("#makerBulletin textarea"));
     const noticeText = doc.querySelector("#makerBulletin textarea"); noticeText.value = "A still notice.";
     const beforeSet = posts.filter((item) => item.path === "/all/maker/bulletin").length;
-    tap("#makerBulletin", "Set notice");
+    tap("#makerBulletin", "Set the notice");
     await new Promise((resolve) => setTimeout(resolve, 20));
     ok(posts.filter((item) => item.path === "/all/maker/bulletin").length === beforeSet,
       "Notice Set refuses to submit when its notification confirmation is cancelled.");
     const beforeConfirmedSet = posts.filter((item) => item.path === "/all/maker/bulletin").length;
-    confirmations = true; tap("#makerBulletin", "Set notice");
+    confirmations = true; tap("#makerBulletin", "Set the notice");
     await until(() => /Notice set/.test(doc.getElementById("makerBulletinStatus").textContent));
     ok(posts.filter((item) => item.path === "/all/maker/bulletin").length === beforeConfirmedSet + 1
       && (await (await counter.fetch(new Request("https://counter.fixture.test/bulletin"), env)).json()).lines[0] === "A still notice.",
@@ -437,39 +437,39 @@ export async function run({ ok }) {
     /* 11 Oct 2026: the box is empty once the notice is set, and the same notice set again says so and wakes nobody */
     ok(noticeText.value === "", "Notice set empties its text box, so a second tap has nothing to send.");
     const beforeAgain = pushes.length, storedAgain = await store.get("bulletin");
-    noticeText.value = "A still notice."; tap("#makerBulletin", "Set notice");
+    noticeText.value = "A still notice."; tap("#makerBulletin", "Set the notice");
     await until(() => /already up/.test(doc.getElementById("makerBulletinStatus").textContent));
-    ok(doc.getElementById("makerBulletinStatus").textContent === "That notice is already up. No phone was woken."
+    ok(doc.getElementById("makerBulletinStatus").textContent === "That notice is already up. Nobody was notified."
       && pushes.length === beforeAgain && (await store.get("bulletin")) === storedAgain,
       "The same notice set again says it is already up, stores nothing and wakes nobody.");
     noticeText.value = "";
     const noticeStyle = page.getComputedStyle(doc.getElementById("makerBulletinCurrent"));
     ok(noticeStyle.getPropertyValue("overflow-wrap") === "anywhere", "A long word in the current notice wraps instead of widening the page: " + noticeStyle.getPropertyValue("overflow-wrap"));
-    noticeText.value = "Kept notice draft."; loseNotice = true; tap("#makerBulletin", "Set notice");
-    await until(() => /result may already be recorded/.test(doc.getElementById("makerBulletinStatus").textContent));
+    noticeText.value = "Kept notice draft."; loseNotice = true; tap("#makerBulletin", "Set the notice");
+    await until(() => /it may already be set/.test(doc.getElementById("makerBulletinStatus").textContent));
     const afterLostNotice = posts.filter((item) => item.path === "/all/maker/bulletin").length;
-    tap("#makerBulletin", "Set notice");
+    tap("#makerBulletin", "Set the notice");
     ok(noticeText.value === "Kept notice draft."
-      && [...doc.querySelectorAll("#makerBulletin button")].find((button) => button.textContent === "Set notice").disabled
+      && [...doc.querySelectorAll("#makerBulletin button")].find((button) => button.textContent === "Set the notice").disabled
       && posts.filter((item) => item.path === "/all/maker/bulletin").length === afterLostNotice,
       "An ambiguous Notice result retains its draft and blocks another write until readback.");
     const beforeReadback = pushes.length;
-    tap("#makerBulletin", "Read current notice");
+    tap("#makerBulletin", "Read it again");
     const reread = await until(() => ![...doc.querySelectorAll("#makerBulletin button")]
-      .find((button) => button.textContent === "Set notice").disabled);
+      .find((button) => button.textContent === "Set the notice").disabled);
     ok(reread && noticeText.value === "Kept notice draft." && pushes.length === beforeReadback
       && doc.getElementById("makerBulletinCurrent").textContent === "Kept notice draft."
-      && /matches the retained request/.test(doc.getElementById("makerBulletinStatus").textContent)
-      && /notification outcome is unknown/.test(doc.getElementById("makerBulletinStatus").textContent),
+      && /matches what you sent/.test(doc.getElementById("makerBulletinStatus").textContent)
+      && /whether the first one went out is not known/.test(doc.getElementById("makerBulletinStatus").textContent),
       "Notice readback unlocks controls without changing the typed draft or sending another wake.");
     await owner("/all/maker/bulletin", "POST", { lines: ["Another operator's notice."], confirmed: true });
     noticeText.value = "Another operator's notice.";
     const beforeDifferentRead = pushes.length;
-    tap("#makerBulletin", "Read current notice");
-    const differing = await until(() => /differs from the retained request/.test(doc.getElementById("makerBulletinStatus").textContent));
+    tap("#makerBulletin", "Read it again");
+    const differing = await until(() => /differs from what you sent/.test(doc.getElementById("makerBulletinStatus").textContent));
     ok(differing && noticeText.value === "Another operator's notice." && pushes.length === beforeDifferentRead
       && doc.getElementById("makerBulletin").textContent.includes("Kept notice draft.")
-      && /notification outcome is unknown/.test(doc.getElementById("makerBulletinStatus").textContent),
+      && /whether the first one went out is not known/.test(doc.getElementById("makerBulletinStatus").textContent),
       "Notice readback distinguishes another concurrent notice while preserving the original intended body and notification uncertainty.");
     /* 11 Oct 2026: each of the three hours buttons stays off until its answer lands, where its callback let go at once (Shop, Hours) */
     doc.querySelector('[data-act="part.shop.hours"]').click();
@@ -486,9 +486,9 @@ export async function run({ ok }) {
       return { out, off, back };
     };
     for (const [label, ready, saved] of [
-      ["Save weekly hours", () => { const day = doc.querySelector("#makerSchedule .maker-day input[type=checkbox]"); day.checked = true; day.dispatchEvent(new page.Event("change", { bubbles: true })); }, /Weekly hours saved/],
-      ["Set temporary override", () => { doc.querySelector('#makerSchedule input[type="datetime-local"]').value = new Date(Date.now() + 3 * 86400000 + 8 * 3600000).toISOString().slice(0, 16); }, /Temporary hours saved/],
-      ["Clear temporary override", null, /Temporary override cleared/]]) {
+      ["Save the weekly hours", () => { const day = doc.querySelector("#makerSchedule .maker-day input[type=checkbox]"); day.checked = true; day.dispatchEvent(new page.Event("change", { bubbles: true })); }, /Weekly hours saved/],
+      ["Set it", () => { doc.querySelector('#makerSchedule input[type="datetime-local"]').value = new Date(Date.now() + 3 * 86400000 + 8 * 3600000).toISOString().slice(0, 16); }, /Saved for now/],
+      ["Back to the weekly hours", null, /Back on the weekly hours/]]) {
       const held = await holdHours(label, ready, saved);
       ok(held.out && held.off && held.back, label + " keeps its button off until the answer, then frees it: " + JSON.stringify(held));
     }

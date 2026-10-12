@@ -14,7 +14,7 @@
  {
   "name": "N3 an unchanged notice says Notice set",
   "file": "stmt/owner.js",
-  "find": "(result.unchanged?'That notice is already up. No phone was woken.':'Notice set.'+makerPushResult(result.push))",
+  "find": "(result.unchanged?'That notice is already up. Nobody was notified.':'Notice set.'+makerPushResult(result.push))",
   "replace": "('Notice set.'+makerPushResult(result.push))"
  },
  {

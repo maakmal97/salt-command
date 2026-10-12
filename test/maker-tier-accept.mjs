@@ -32,10 +32,10 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
   const owner_js = readFileSync(join(REPO, "stmt", "owner.js"), "utf8");
   ok(POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/tier-accept-all", body: { at: AT } })
     && !POSITION_ENGINE.vaultPendingOk({ path: "/all/maker/inputs/tier-accept-all-x", body: { at: AT } })
-    && owner_js.includes("makerButton(tierSection,['Accept tier proposals','record.tier.accept-all']"),
+    && owner_js.includes("makerButton(tierSection,['Accept every suggestion','record.tier.accept-all']"),
     "the Counter Admin carries an Accept tier proposals control whose retained request is a valid record");
 
-  ok(owner_js.includes("failure.status=r.status;")
+  ok(owner_js.includes("failure.status=status;")
     && owner_js.includes("if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}"),
     "a 400 no-proposal answer clears the retained Accept all request and its Cancel control");
 

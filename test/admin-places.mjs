@@ -37,11 +37,11 @@ const SHOWS = {
   "record/pricing": "oRecord makerInputs",
   "shop/hours": "oShop makerSchedule", "shop/notice": "oShop makerBulletin", "shop/practice": "oShop mTest", "shop/device": "oShop oLook"
 };
-/* the forms of Record, by the part each belongs to (the page also draws a Retained input for the loan this device kept) */
+/* the forms of Record, by the part each belongs to (the page also draws an Unsent entry for the loan this device kept) */
 const FORMS = {
-  entry: ["Retained input", "Stock count", "Sale or purchase", "Borrow or lend", "Gift", "Repayment", "Reward redemption", "Automatic offsets", "Amend a ledger row", "Revive a cancelled row"],
-  customers: ["Add ID", "Appoint existing customer", "Amend ID", "Map placement"],
-  pricing: ["Customer tier", "Tips", "Customer drift", "Printed board sizes"]
+  entry: ["Unsent entry", "Stock count", "Sale or purchase", "Loan", "Gift", "Repayment", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
+  customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
+  pricing: ["Price level", "Desk reminders", "Price drift", "Printed sizes"]
 };
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", pools: "/all/maker/pools", inputs: "/all/maker/inputs", offsets: "/all/maker/offsets",
@@ -151,8 +151,8 @@ export async function run({ ok, pageWork }) {
       }
       await empty.tap("nav.record");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();
-      ok(none.waiting === "No open Counter orders." && none.agreed === "No agreed orders." && none.ready === "No orders ready." && none.closed === "No closed orders."
-        && none.rows === "No Desk rows waiting.",
+      ok(none.waiting === "No open orders." && none.agreed === "No agreed orders." && none.ready === "No orders ready." && none.closed === "No closed orders."
+        && none.rows === "Nothing waits for your approval.",
       "a part with nothing in it says so, and a part with something says nothing: " + JSON.stringify(none));
     } finally { empty.w.close(); }
 

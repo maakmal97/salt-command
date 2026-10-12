@@ -18765,7 +18765,7 @@ await (async () => {
     const headOf = (c) => { let e = c; while (e && (e = e.previousElementSibling)) if (e.classList.contains("ghead")) return e.textContent; return ""; };
     const ac = cardOf(), acH = ac && ac.querySelector("h4").textContent, acT = ac && ac.querySelector(".gt").textContent;
     ok(noteOf() === "Approved. It opens now." && headOf(ac) === "Made by associates"
-      && acH === "Minted by " + u && acT === "Follows the associate",
+      && acH === "Made by " + u && acT === "Follows " + u,
       "an approved link says it is open on its own card, and stays under Made by associates, minted by its associate, never Tier 2 with no label: "
       + JSON.stringify({ note: noteOf(), head: headOf(ac), h4: acH, gt: acT }));
     ok(await until(() => [...D.querySelectorAll("#glist button")].some((b) => b.textContent === "Withdraw")) && tap("Withdraw")
@@ -19038,7 +19038,7 @@ await (async () => {
     const before = hits.length;
     const cB = cardOf(uB);
     await new Promise((r) => setTimeout(r, 60));
-    ok(!!cB && five.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /Made at the next laptop update./.test(cB.textContent),
+    ok(!!cB && five.every((t) => btn(cB, t) && btn(cB, t).disabled && /No account/.test(btn(cB, t).title)) && /Their account comes with the next update[.]/.test(cB.textContent),
       "on the card with no account, Send a sign-in link and the four other ways are all off, each saying why: "
         + JSON.stringify(five.map((t) => [t, cB && btn(cB, t) && btn(cB, t).disabled])));
     ok(!hits.slice(before).some((x) => /[/]open$|[/]all[/](signin|account)[/]/.test(x)), "and opening its card makes nothing and posts nothing: " + JSON.stringify(hits.slice(before)));
@@ -19196,7 +19196,7 @@ await (async () => {
     /* ---- every tier's link made: four, and nothing said to be missing ---- */
     const D1 = await panel();
     const heads1 = [...D1.querySelectorAll("#glist .ghead")].map((x) => x.textContent), text1 = D1.getElementById("glist").textContent;
-    ok(D1.querySelectorAll("#glist .glink").length === 4 && heads1.includes("One for each of the 4 tiers") && !/five/i.test(text1) && !/Only \d/.test(text1),
+    ok(D1.querySelectorAll("#glist .glink").length === 4 && heads1.includes("One link per price level") && !/five/i.test(text1) && !/Only \d/.test(text1),
       "with a link for each of the four tiers the heading counts four off the list and nothing is said to be missing: " + JSON.stringify({ heads1, only: (/Only[^.]*\./.exec(text1) || [""])[0] }));
 
     /* ---- Bronze's kept link, and a pending link its associate withdrew ---- */
@@ -19210,8 +19210,8 @@ await (async () => {
     const groupOf = (id) => { let g = null; for (const n of D2.getElementById("glist").children) { if (n.classList.contains("ghead")) g = n.textContent; if (n === cardOf(id)) return g; } return null; };
     await until(() => cardOf(gone) && cardOf(still) && cardOf(bronze.id));
     const bh4 = cardOf(bronze.id) ? cardOf(bronze.id).querySelector("h4").textContent : "";
-    ok(!/quote Bronze/.test(bh4) && /board a stranger sees/.test(bh4),
-      "Bronze's kept link says it opens the board a stranger sees, not a level the book no longer has: " + JSON.stringify(bh4));
+    ok(!/quote Bronze/.test(bh4) && /An old link, kept/.test(bh4),
+      "Bronze's kept link is called an old link, kept, not a level the book no longer has: " + JSON.stringify(bh4));
     ok(groupOf(still) === "Waiting on you" && groupOf(gone) !== "Waiting on you",
       "a pending link its associate withdrew is not waiting on him, while the one still pending is: " + JSON.stringify([groupOf(still), groupOf(gone)]));
     ok(cardOf(gone) && ![...cardOf(gone).querySelectorAll("button")].some((b) => /Approve|Decline/.test(b.textContent))
@@ -19635,7 +19635,7 @@ await (async () => {
       await new Promise((r) => setTimeout(r, 60));
       const list87 = D87.getElementById("rlist").textContent;
       ok(D87.getElementById("oAccts").hidden === false && D87.getElementById("mHome").hidden === true
-        && /CX0-AA/.test(list87) && /Owes RM 272/.test(list87) && /Opened 14 Sep/.test(list87),
+        && /CX0-AA/.test(list87) && /They owe RM 272/.test(list87) && /Opened 14 Sep/.test(list87),
         "a tap on Accounts draws every account with its word and its last open: " + list87.replace(/\s+/g, " ").slice(0, 120));
       D87.querySelector('button[data-m="needs"]').dispatchEvent(new W87.Event("click", { bubbles: true }));
       ok(D87.getElementById("mHome").hidden === false && D87.getElementById("oAccts").hidden === true,
@@ -19732,9 +19732,9 @@ await (async () => {
 
     /* the account refused at an address: why, and a link in two taps, so the share never waits on the making */
     const kc = card("k:" + uL);
-    ok(/refused at one address/.test(kc.querySelector(".need-what").textContent) && !/locked out/i.test(kc.querySelector(".salt-action__body").textContent)
-      && /Ten wrong passwords from one address, refused there until \d\d:\d\d[.] If it was them, a sign-in link lets them in[.] Last got in by link, 02 Sep 2026[.]/.test(kc.textContent),
-      "the card says an address is refused, never that the customer is locked out, with when it opens and how they last got in: " + kc.textContent);
+    ok(/locked out until \d\d:\d\d/.test(kc.querySelector(".need-what").textContent)
+      && /Too many wrong passwords[.] If it was them, send a sign-in link[.] Last signed in by link, 02 Sep 2026[.]/.test(kc.textContent),
+      "the card says the customer is locked out and until when, with why and how they last signed in: " + kc.textContent);
     const sl = btn(kc, "Send a sign-in link");
     sl.click();
     ok(await until(() => sl.textContent === "Share the link") && shared.length === 0 && (await kv.list({ prefix: "ot:" })).keys.length === 1,
@@ -19753,16 +19753,16 @@ await (async () => {
 
     /* the code with no account: Send is off, and the stranger's link is there to show */
     const nc = card("n:" + uN);
-    ok(/Made at the next laptop update[.] Until then, show the Silver link[.]/.test(nc.textContent) && btn(nc, "Send, after the update").disabled,
-      "an ID with no account says when it is made, offers the Silver link and has Send switched off");
-    btn(nc, "Show the Silver link").click();
+    ok(/Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(nc.textContent) && !btn(nc, "Send, after the update"),
+      "an ID with no account says when it is made, offers the guest price list and has no Send at all");
+    btn(nc, "Show the guest price list").click();
     const silver = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"level":"Silver"/.test(v) && /"standing":true/.test(v)));
     ok(await until(() => nc.querySelector(".glink .gu") && nc.querySelector(".glink .gu").textContent.endsWith("/g/" + silver.id)),
-      "and Show the Silver link draws the standing Silver link on the card");
+      "and Show the guest price list draws the standing Silver link on the card");
 
     /* the accounts nobody has been sent */
     const sc = card("s");
-    ok(/^1 to send/.test(needText(sc)) && /CX2-FR has an account and no sign-in yet[.]/.test(sc.textContent) && !/CX1-AS|CX0-LK/.test(sc.textContent),
+    ok(/^1 account has not been sent their sign-in link/.test(needText(sc)) && /CX2-FR[.]/.test(sc.textContent) && !/CX1-AS|CX0-LK/.test(sc.textContent),
       "the to-send card names only the account with no tick and no open: " + sc.textContent);
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -19832,10 +19832,10 @@ await (async () => {
     ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
       "every roster account is a row, drawn with the system's Inbox row");
     const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
-    ok(chips(uO).includes("Owes RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Alerts on") && chips(uO).includes("Sent 03 Sep 2026"),
-      "a row's chips say what it owes, how and when it was last opened, that alerts are on and when it was sent: " + JSON.stringify(chips(uO)));
-    ok(chips(uL).some((t) => /^Refused at 1 address till \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account" && chips(uF).includes("Not opened"),
-      "an account refused at an address, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
+    ok(chips(uO).includes("They owe RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Notifications on") && chips(uO).includes("Sent 03 Sep 2026"),
+      "a row's chips say what they owe, how and when it was last opened, that notifications are on and when it was sent: " + JSON.stringify(chips(uO)));
+    ok(chips(uL).some((t) => /^Locked out until \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account yet" && chips(uF).includes("Not opened"),
+      "an account locked out, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
 
     /* a word, then each filter */
     const rq = D.getElementById("rq");
@@ -19989,8 +19989,8 @@ await (async () => {
     const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
     const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
     const minted = async () => (await kv.list({ prefix: "ot:" })).keys.length;
-    ok(await until(() => btn("Send them in turn")) && /^3 to send/.test(needText(card())), "three accounts wait to be sent, and the card offers Send them in turn");
-    btn("Send them in turn").click();
+    ok(await until(() => btn("Send sign-in links one by one")) && /^3 accounts have not been sent their sign-in link/.test(needText(card())), "three accounts wait to be sent, and the card offers Send them in turn");
+    btn("Send sign-in links one by one").click();
     ok(await until(() => btn("Share") && !btn("Share").disabled) && /^1 of 3/.test(needText(card())) && /CX0-A1: their link is made/.test(needText(card()))
       && (await minted()) === 1 && shared.length === 0,
       "the first turn opens with its link already made and nothing shared: " + JSON.stringify({ text: card().textContent.slice(0, 120), minted: await minted() }));
@@ -20012,7 +20012,7 @@ await (async () => {
       "the last is shared and ticked, the skipped one is not, and the card says so: " + card().textContent.slice(0, 160));
     ok((D.getElementById("scount") || {}).textContent === "2 of 3 sent", "Accounts counts the ticks as they land: " + (D.getElementById("scount") || {}).textContent);
     btn("Done").click();
-    ok(await until(() => /^1 to send/.test(needText(card())) && /CX1-B2 has an account/.test(needText(card()))),
+    ok(await until(() => /^1 account has not been sent their sign-in link/.test(needText(card())) && /CX1-B2[.]/.test(needText(card()))),
       "and Done leaves the skipped one waiting on Needs you");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -20101,7 +20101,7 @@ await (async () => {
     ok(await until(() => shown(W1, "aEnded")) && !shown(W1, "roster") && W1.document.body.classList.contains("ended"),
       "a request Access answers with its login gives way to the sign-in page, and nothing else is left on it");
     const e1 = W1.document.getElementById("aEnded"), a1 = e1.querySelector("a");
-    ok(/Your admin sign-in has ended/.test(e1.textContent) && a1 && a1.textContent === "Sign in again" && a1.getAttribute("href") === "/all",
+    ok(/Your sign-in has ended/.test(e1.textContent) && a1 && a1.textContent === "Sign in again" && a1.getAttribute("href") === "/all",
       "which says his sign-in has ended and offers Sign in again, back through Access: " + JSON.stringify(e1.textContent));
     ok(asked.length > 0 && asked.every((r) => r === "manual") && !/Failed to fetch/.test(W1.document.getElementById("rmsg").textContent + e1.textContent),
       "every request asks not to follow a redirect, so the lapse is read rather than failing: " + JSON.stringify(asked));
@@ -20196,9 +20196,9 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
     const watch = () => win.document.querySelector('#nlist [data-need="w:desk"]'), line = () => watch() && watch().querySelector(".salt-action__why");
-    ok(await until(() => line() && /^1 thing waits on the desk, as at [0-9]{2}:[0-9]{2}[.]$/.test(line().textContent)) && !watch().querySelector("a") && !watch().querySelector("button")
+    ok(await until(() => line() && /^The Desk shows 1 for you, as of [0-9]{2}:[0-9]{2}[.]$/.test(line().textContent)) && !watch().querySelector("a") && !watch().querySelector("button")
       && watch().getAttribute("data-sev") === "watch" && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(watch().textContent),
-      "Needs you says one thing waits on the desk and when the desk counted it, a Watch card with no link, no action and no name: " + JSON.stringify(watch() && watch().textContent));
+      "Needs you says what the Desk shows and when it counted it, a Watch card with no link, no action and no name: " + JSON.stringify(watch() && watch().textContent));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 
   /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
@@ -20301,8 +20301,8 @@ await (async () => {
     const card = () => D.querySelector('#nlist [data-need="s"]');
     const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
     const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
-    ok(await until(() => btn("Send them in turn")), "three accounts wait to be sent");
-    btn("Send them in turn").click();
+    ok(await until(() => btn("Send sign-in links one by one")), "three accounts wait to be sent");
+    btn("Send sign-in links one by one").click();
     ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
     /* two taps back to back on the one button */
     const s1 = btn("Share"); s1.click(); s1.click();
@@ -20373,14 +20373,15 @@ await (async () => {
     const D = win.document;
     const card = () => D.querySelector('#nlist [data-need="s"]');
     const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
-    ok(await until(() => btn("Send them in turn")), "two accounts wait to be sent");
-    btn("Send them in turn").click();
+    ok(await until(() => btn("Send sign-in links one by one")), "two accounts wait to be sent");
+    btn("Send sign-in links one by one").click();
     ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
     btn("Share").click();
     const note = () => (card().querySelector(".nnote") || {}).textContent || "";
     ok(await until(() => /^2 of 2/.test(needText(card())) && btn("Share") && !btn("Share").disabled) && shared.length === 1
-      && /^CX0-A1 was shared, but the tick did not save: that is not this issue/.test(note()) && /0 of 2 sent/.test(needText(card())),
-      "the next turn's card says which account was shared without a tick, and why: " + JSON.stringify(note()));
+      && /^CX0-A1 was shared, but the tick did not save: The Counter could not do that\. Try again\./.test(note()) && /0 of 2 sent/.test(needText(card()))
+      && /that is not this issue/.test((card().querySelector(".nnote .rraw") || {}).textContent || ""),
+      "the next turn's card says which account was shared without a tick, in a plain sentence with the server's words under Details: " + JSON.stringify(note()));
     btn("Skip").click();
     ok(await until(() => /^All done/.test(needText(card()))) && note() === "", "and a step of his own clears it");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -20433,8 +20434,8 @@ await (async () => {
     const card = () => D.querySelector('#nlist [data-need="s"]');
     const btn = (t) => card() && [...card().querySelectorAll("button")].find((b) => b.textContent === t);
     const ticked = async (u) => !!(await kv.get("sent:2026-09-01:" + u));
-    ok(typeof win.navigator.share === "undefined" && await until(() => btn("Send them in turn")), "a page with no share sheet, and two accounts to send");
-    btn("Send them in turn").click();
+    ok(typeof win.navigator.share === "undefined" && await until(() => btn("Send sign-in links one by one")), "a page with no share sheet, and two accounts to send");
+    btn("Send sign-in links one by one").click();
     ok(await until(() => btn("Share") && !btn("Share").disabled), "the first turn opens with its link made");
     btn("Share").click();
     ok(await until(() => btn("Sent it") && !btn("Sent it").disabled) && copied.length === 1 && /[/]s[/]/.test(copied[0])
@@ -20501,12 +20502,12 @@ await (async () => {
     const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
     const btn = (key, t) => card(key) && [...card(key).querySelectorAll("button")].find((b) => b.textContent === t);
     const ots = async () => (await kv.list({ prefix: "ot:" })).keys.length;
-    ok(await until(() => btn("k:" + uL, "Send a sign-in link") && btn("l:" + lid, "Approve") && btn("n:" + uN, "Show the Silver link")),
+    ok(await until(() => btn("k:" + uL, "Send a sign-in link") && btn("l:" + lid, "Approve") && btn("n:" + uN, "Show the guest price list")),
       "Needs you carries the locked card, the link card and the card with no account");
     btn("k:" + uL, "Send a sign-in link").click();
     ok(await until(() => btn("k:" + uL, "Share the link")) && (await ots()) === 1, "the first tap makes one link");
-    btn("n:" + uN, "Show the Silver link").click();
-    ok(await until(() => card("n:" + uN).querySelector(".glink")), "and Show the Silver link draws it");
+    btn("n:" + uN, "Show the guest price list").click();
+    ok(await until(() => card("n:" + uN).querySelector(".glink")), "and Show the guest price list draws it");
     btn("l:" + lid, "Approve").click();
     ok(await until(() => /Approved[.]/.test(card("l:" + lid).textContent)), "Approve on the link card redraws Needs you");
     ok(!!btn("k:" + uL, "Share the link") && /Made[.] It signs CX0-LK in once[.]/.test(card("k:" + uL).textContent),
@@ -20582,7 +20583,7 @@ await (async () => {
     cut.on = false;
     const sel = card().querySelector("select");
     sel.value = "Gold"; sel.dispatchEvent(new win.Event("change", { bubbles: true }));
-    ok(await until(() => /That link now quotes Gold[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
+    ok(await until(() => /That link now shows the Gold price list[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
       "a tier pinned on the card is answered on the card: " + JSON.stringify(note(card())));
     /* the same in Links */
     D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
@@ -20731,12 +20732,12 @@ await (async () => {
     } }).window;
     const D = win.document;
     const kc = () => D.querySelector('#nlist [data-need="k:' + us[1] + '"]');
-    ok(await until(() => kc() && /Last got in by a typed code, 03 Sep 2026[.]/.test(kc().textContent)),
+    ok(await until(() => kc() && /Last signed in by code, 03 Sep 2026[.]/.test(kc().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status")].map((x) => x.textContent) : []; };
-    ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by a scanned code")) && chips(us[1]).includes("Opened 03 Sep 2026 by a typed code"),
-      "Accounts says an open by a scanned code and one by a typed code: " + JSON.stringify([chips(us[0]), chips(us[1])]));
+    ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by code")) && chips(us[1]).includes("Opened 03 Sep 2026 by code"),
+      "Accounts says an open by a scanned code and one by a typed code, by code for both: " + JSON.stringify([chips(us[0]), chips(us[1])]));
     ok(chips(us[2]).includes("Opened 03 Sep 2026 by password") && chips(us[3]).includes("Opened 03 Sep 2026"),
       "an open with no road recorded is the password's, and a road it does not know says none: " + JSON.stringify([chips(us[2]), chips(us[3])]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -21001,14 +21002,14 @@ await (async () => {
     } }).window;
     const D = win.document;
     const nc = () => D.querySelector('#nlist [data-need="n:' + uN + '"]');
-    ok(await until(() => nc() && /Made at the next laptop update[.] Until then, show the Silver link[.]/.test(nc().textContent)
-      && [...nc().querySelectorAll("button")].some((b) => b.textContent === "Show the Silver link")),
+    ok(await until(() => nc() && /Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(nc().textContent)
+      && [...nc().querySelectorAll("button")].some((b) => b.textContent === "Show the guest price list")),
       "Needs you names the Silver link with only the sheet read: " + (nc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     ok(await until(() => row(uN) && row(uN).textContent.startsWith("CX3-NO")
-      && row(uN).textContent.includes("Made at the next laptop update. Until then, show the Silver link.")
-      && row(uF) && !row(uF).textContent.includes("laptop update")),
+      && row(uN).textContent.includes("Their account comes with the next update. Show them the guest price list meanwhile.")
+      && row(uF) && !row(uF).textContent.includes("next update")),
       "and its Accounts row says the same, where an account with one does not: " + JSON.stringify([(row(uN) || {}).textContent, (row(uF) || {}).textContent]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
@@ -21082,7 +21083,7 @@ await (async () => {
       && card("k:" + uL).hasAttribute("data-u") && card("n:" + uN).hasAttribute("data-u") && !card("l:" + lid).hasAttribute("data-u"),
     "every card carries Open as a button, and a card about an account is the one the pane beside the list is drawn from; the link card's is not");
     party("n:" + uN).click();
-    ok(/CX3-NO/.test(pane.querySelector(".scard .srow").textContent) && /Made at the next laptop update/.test(pane.textContent)
+    ok(/CX3-NO/.test(pane.querySelector(".scard .srow").textContent) && /Their account comes with the next update/.test(pane.textContent)
       && card("n:" + uN).getAttribute("aria-current") === "true" && !card("k:" + uL).hasAttribute("aria-current"),
       "a tap on another card's Open opens that account beside the list instead: " + pane.querySelector(".scard .srow").textContent);
     const open = pane.querySelector(".scard");
@@ -21220,9 +21221,9 @@ await (async () => {
       "the next tap makes a new one: " + JSON.stringify({ label: pill().textContent, links: await links() }));
     /* ---- how they got in, drawn ---- */
     const story = () => ((card() && card().querySelector("[data-story]")) || {}).textContent || "";
-    ok(await until(() => /How they got in/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
+    ok(await until(() => /How they signed in/.test(story()) && /Password/.test(story()) && /Sign-in link/.test(story()) && /on iPhone, Safari/.test(story())
       && /on Windows computer, Edge/.test(story())) && !story().includes(IP),
-      "How they got in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
+      "How they signed in lists each way in with the device it was used on, and no address: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 9.4: an account lists its phones and computers by the kind of device, and Sign out everywhere ends every device, unused link and code and alert, and says how many");
@@ -21967,11 +21968,13 @@ await (async () => {
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     const chip = () => D.querySelector('#rlist [data-u="' + u + '"]').textContent;
-    ok(/by a typed code/.test(chip()), "Accounts says the last open was by a typed code: " + chip());
+    ok(/Opened [0-9]{2} \w{3} [0-9]{4} by code/.test(chip()), "Accounts says the last open was by code, one word for the three roads: " + chip());
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const rows = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__label')].map((x) => x.textContent);
-    ok(await until(() => rows().includes("Code, typed")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code, typed", "Code, copied across", "Password", "Code, scanned"]),
-      "and How they got in names each road: " + JSON.stringify(rows()));
+    const flags = () => [...D.querySelectorAll('#aopen [data-story] .salt-ledger__flag')].map((x) => x.textContent);
+    ok(await until(() => rows().includes("Code")) && JSON.stringify(rows().slice(0, 4)) === JSON.stringify(["Code", "Code", "Password", "Code"])
+      && /Typed in[.]$/.test(flags()[0]) && /Copied across[.]$/.test(flags()[1]) && /Scanned at the counter[.]$/.test(flags()[3]),
+      "and How they signed in says Code for the three, the road each took under its line: " + JSON.stringify([rows(), flags()]));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
 section("S9 fix S9R-9: an account whose ways in and devices come from before the list began says so with no date in it");
@@ -22023,7 +22026,7 @@ await (async () => {
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
     const story = () => ((D.querySelector('#aopen [data-story="' + u + '"]')) || {}).textContent || "";
-    ok(await until(() => /Last opened26 Sep 2026, by password[.] Earlier ways in were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
+    ok(await until(() => /Last opened26 Sep 2026, by password[.] Earlier sign-ins were not kept[.]/.test(story()) && /A device named before this list beganSign out/.test(story()))
       && !/25 Sep/.test(story()),
       "the last open and the device from before the list began are said with no date of the build in them: " + JSON.stringify(story()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
@@ -22332,12 +22335,12 @@ await (async () => {
     const sj = await (await site("/all/sheet", { headers: A })).json();
     ok(sj.desk && sj.desk.n === 0 && sj.desk.moved === true, "the sheet says an order has moved since the desk's reading: " + JSON.stringify(sj.desk));
     const t1 = await line();
-    ok(/^Nothing waited on the desk as at ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4}), and an order has moved since[.]$/.test(t1) && !/Nothing waits/.test(t1),
+    ok(/^The Desk shows nothing for you, as of ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4}); an order has moved since[.]$/.test(t1),
       "Needs you says nothing waited then, and that an order has moved since, never that nothing waits: " + JSON.stringify(t1));
     /* the desk looks again */
     await tell(1, 0);
     const t2 = await line();
-    ok(/^1 thing waits on the desk, as at ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
+    ok(/^The Desk shows 1 for you, as of ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
   } finally { globalThis.fetch = realFetch; }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
@@ -22499,7 +22502,7 @@ await (async () => {
       const bareLink = bare && [...bare.querySelectorAll("button")].find((b) => b.textContent === "Send a sign-in link");
       /* HIS QUESTION OF 23 SEP 2026: the account is one live document, so nothing on this panel may
          speak of an issue, and a username with nothing behind it says so and offers no sign-in link */
-      ok(!!bare && /Made at the next laptop update./.test(bare.textContent) && !!bareLink && bareLink.disabled,
+      ok(!!bare && /Their account comes with the next update[.]/.test(bare.textContent) && !!bareLink && bareLink.disabled,
         "a code with no account says it cannot sign in, and its sign-in link is shut");
       ok(!/issue/i.test(D88.getElementById("oAccts").textContent),
         "and Accounts never says issue: " + JSON.stringify((D88.getElementById("oAccts").textContent.match(/.{0,30}issue.{0,30}/i) || [""])[0]));
@@ -22913,12 +22916,12 @@ await (async () => {
       } });
     wins27.push(dom27.window);
     const D27 = dom27.window.document;
-    const makeBtn27 = () => [...D27.querySelectorAll("#mTest button")].find((b) => b.textContent === "Make the test accounts");
+    const makeBtn27 = () => [...D27.querySelectorAll("#mTest button")].find((b) => b.textContent === "Make the practice accounts");
     await until27(() => makeBtn27());
     const pageBefore27 = rounds27.length;
     const mb27 = makeBtn27();
     if (mb27) mb27.dispatchEvent(new dom27.window.Event("click", { bubbles: true }));
-    await until27(() => [...D27.querySelectorAll("#mTest button")].some((b) => b.textContent === "Delete the test accounts"));
+    await until27(() => [...D27.querySelectorAll("#mTest button")].some((b) => b.textContent === "Remove the practice accounts"));
     const rec27 = await kv27.get("u:" + TU27, "json"), sent27 = posted27[0] || {};
     const recL27 = await kv27.get("u:0000-0001", "json"), sentL27 = posted27[1] || {};
     ok(posted27.length === 2 && sent27.u === TU27 && sentL27.u === "0000-0001" && !!rec27 && rec27.test === true && !!recL27 && recL27.test === true
@@ -22948,12 +22951,12 @@ await (async () => {
       } });
     wins27.push(domB27.window);
     const DB27 = domB27.window.document, btnB27 = (t) => [...DB27.querySelectorAll("#mTest button")].find((b) => b.textContent === t);
-    await until27(() => btnB27("Make the test accounts"));
+    await until27(() => btnB27("Make the practice accounts"));
     const leadB27 = (DB27.querySelector("#mTest .lead") || {}).textContent || "";
-    if (btnB27("Make the test accounts")) btnB27("Make the test accounts").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
-    await until27(() => btnB27("Delete the test accounts"));
+    if (btnB27("Make the practice accounts")) btnB27("Make the practice accounts").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
+    await until27(() => btnB27("Remove the practice accounts"));
     const recB27 = await kv27.get("u:" + TU27, "json");
-    ok(/Only test account 0000-0000 is live/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
+    ok(/Only practice account 0000-0000 is open[.] One tap makes the other[.]/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
       && !!(await kv27.get("u:0000-0001", "json")) && JSON.stringify(recB27.wrap) === JSON.stringify(rec27.wrap),
       "with only one of the pair live, his page says so and one tap makes the one missing, the other untouched: " + JSON.stringify([leadB27, postedB27.map((b) => b.u)]));
 
@@ -23642,10 +23645,10 @@ await (async () => {
       const drawn = list91.querySelectorAll(".acard").length;
       const rowsAll = snap91.products.reduce((a, p) => a + p.rows.length, 0);
       ok(drawn === rowsAll && list91.querySelectorAll("h2").length === snap91.products.length
-        && /Bought from you/.test(list91.textContent) && /Sold for you/.test(list91.textContent) && /Brought you/.test(list91.textContent),
+        && /Bought from you/.test(list91.textContent) && /Sold for you/.test(list91.textContent) && /Introduced/.test(list91.textContent),
         "the panel draws a card an associate under each book: " + drawn + " cards");
       /* F9 revised: a book with no reward draws the progress alone, every card of it, with no reward line and no bar */
-      const books91 = [...list91.children].reduce((a, n) => { if (n.tagName === "H2") a.push({ h: n.textContent, cards: [] });
+      const books91 = [...list91.children].reduce((a, n) => { if (n.tagName === "H2") a.push({ h: (n.querySelector(".pshape") || n).textContent, cards: [] });
         else if (a.length && n.classList.contains("acard")) a[a.length - 1].cards.push(n); return a; }, []);
       const bare91 = snap91.products.filter((p) => p.rows.length && p.rows.every((r) => !r.reward)).map((p) => p.name || p.product);
       const drawnBare91 = books91.filter((b) => bare91.includes(b.h));
@@ -27758,9 +27761,9 @@ await (async () => {
       const cardText = (code) => { const r = [...D.querySelectorAll("#rlist [data-u]")].find((b) => b.textContent.startsWith(code)); if (!r) return "";
         r.dispatchEvent(new Wd.Event("click", { bubbles: true })); return (D.querySelector("#aopen .scard") || {}).textContent || ""; };
       const ltrCard = cardText("CZ9-LTR"), wlkCard = cardText("CZ9-WLK");
-      ok(ltrRow.includes("Made at the next laptop update. Until then, show the Silver link.") && !!wlkRow && !wlkRow.includes("laptop update")
-        && ltrCard.includes("Made at the next laptop update. Until then, show the Silver link.") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("laptop update"),
-        "Salt Account says the waiting one is made at the next laptop update, and to show the Silver link until then, on its row and its card; the bound one does not: "
+      ok(ltrRow.includes("Their account comes with the next update. Show them the guest price list meanwhile.") && !!wlkRow && !wlkRow.includes("next update")
+        && ltrCard.includes("Their account comes with the next update. Show them the guest price list meanwhile.") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("next update"),
+        "Salt Account says the waiting one comes with the next update, and to show the guest price list until then, on its row and its card; the bound one does not: "
         + JSON.stringify({ ltrRow, wlkRow, ltrCard: ltrCard.slice(0, 120), wlkCard: wlkCard.slice(0, 120) }));
     } finally { try { Wd.close(); } catch (e) { /* best effort */ } }
   } finally {
@@ -53602,7 +53605,7 @@ await (async () => {
     for (let i = 0; i < 100 && !doc.querySelector('#makerOrderList [data-order$="ca01"]'); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     /* a closed order has a card with its figures and no Cancel (it had none at all before Phase 1c: false is as null was) */
     const cancelOf = (suffix) => { const c = cardOf(doc, "20260929120000-" + suffix);
-      return c ? [...c.querySelectorAll("button")].some((b) => b.textContent === "Cancel order") : null; };
+      return c ? [...c.querySelectorAll("button")].some((b) => b.textContent === "Cancel") : null; };
     ok(cancelOf("ca01") === true && cancelOf("ca02") === true && cancelOf("ca03") === false && cancelOf("ca04") === false
       && cancelOf("ca05") === false && cancelOf("ca06") === false && cancelOf("ca07") === false && cancelOf("ca08") === false,
       "Maker offers Cancel on an acknowledged or ready order, paid or not, unless claimed, closed or handed over");
@@ -53612,7 +53615,7 @@ await (async () => {
     cardOf(doc, "20260929120000-makr");
     cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */
     ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Stock count"
-      && ["Sale or purchase", "Customer tier", "Borrow or lend", "Repayment", "Gift", "Reward redemption", "Add ID", "Amend ID", "Map placement"]
+      && ["Sale or purchase", "Price level", "Loan", "Repayment", "Gift", "Rewards", "New customer", "Change a name or place", "Place on the map"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
       "Maker exposes the remaining typed Enter and Network actions beside stock, trade and held-tier inputs");
     /* his decision 6 of 11 Oct 2026: the card read its own preview when it was opened; there is no Preview button to press */
@@ -53641,7 +53644,7 @@ await (async () => {
     tradeControls[7].value = "0";
     tradeControls[8].value = "";
     tradeControls[9].value = "0";
-    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send trade for review").click();
+    [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send the sale").click();
     for (let i = 0; i < 100 && !adminCalls.some((call) => call.route === "/all/maker/inputs/sale"); i++)
       await new Promise((resolve) => setTimeout(resolve, 10));
     const sentSale = adminCalls.find((call) => call.route === "/all/maker/inputs/sale");
@@ -53649,19 +53652,19 @@ await (async () => {
       && sentSale.body.total === 100 && !Object.hasOwn(sentSale.body, "note"),
       "the Maker trade form sends typed figures and no free-text note to the named Desk operation: "+tradeSection.textContent);
     const editor = [...doc.querySelectorAll("#makerInputs .maker-input")]
-      .find((section) => section.querySelector("h3").textContent === "Amend a ledger row");
+      .find((section) => section.querySelector("h3").textContent === "Correct a row");
     const valueField = [...editor.querySelectorAll('input[type="number"]')].at(-1);
     valueField.value = "3";
-    [...editor.querySelectorAll("button")].find((button) => button.textContent === "Add field change").click();
+    [...editor.querySelectorAll("button")].find((button) => button.textContent === "Add").click();
     ok(await adminWork.quiet(), "the ledger field selection settles before its submit");
-    [...editor.querySelectorAll("button")].find((button) => button.textContent === "Send amendment for review").click();
+    [...editor.querySelectorAll("button")].find((button) => button.textContent === "Send the correction").click();
     ok(await adminWork.quiet(), "the typed ledger editor's Counter write finishes");
     const sentEdit = adminCalls.find((call) => call.route === "/all/maker/inputs/ledger-amend");
     ok(sentEdit && sentEdit.body.rid === "editor-sale" && sentEdit.body.kind === "Correction"
       && sentEdit.body.fields.qty === 3 && !Object.hasOwn(sentEdit.body, "party")
       && !Object.hasOwn(sentEdit.body, "raw") && !Object.hasOwn(sentEdit.body.fields, "note"),
       "the Admin ledger editor is usable and sends only the row id and selected typed changes, never prose or identity: "+editor.textContent);
-    const addId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Add ID");
+    const addId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "New customer");
     const addFields = addId.querySelectorAll("input");
     addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
     addFields[3].value = "Secret Way https://waze.com/ul?ll=3.123456,101.654321";
@@ -53710,7 +53713,7 @@ await (async () => {
     ok(JSON.stringify(addRequests[0].body.tiers) === '{"salt":"Silver"}' && addRequests[1].body.tiers === null
       && addRequests[2].body.tiers === null,
       "Counter Add ID offers a starting tier per tiered book, preselected as the Desk does, and sends none for a downstream or a resale account");
-    const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Amend ID");
+    const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Change a name or place");
     const amendFields = amendId.querySelectorAll("input");
     amendFields[0].value = "Ben"; amendFields[1].value = "Pudu"; amendFields[2].value = "name-pass";
     amendId.querySelector("button").click();
@@ -53726,7 +53729,7 @@ await (async () => {
       && !Object.hasOwn(movedPlaces, "CX1-AB") && !Object.hasOwn(movedPlaces, "CX1-AB-R")
       && !JSON.stringify(sentAmendId.body).includes("Private Road"),
       "Amend ID preserves exact points, addresses and base only inside the re-keyed ciphertext, including descendant codes");
-    const placement = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Map placement");
+    const placement = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Place on the map");
     placement.querySelector('input[type="password"]').value = "name-pass";
     placement.querySelector("button").click();
     ok(await adminWork.quiet(), "the encrypted map point opens and queues");
@@ -53785,7 +53788,7 @@ await (async () => {
       "Counter device overlap Apply uses a fresh request, preserves unrelated remote names and sends only the reviewed ciphertext intent: "
       + JSON.stringify({prompts:deviceSheets.length,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,names:reviewedNames}));
     devicePairRevision = null;
-    const loanForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Borrow or lend");
+    const loanForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Loan");
     loanForm.querySelectorAll("select")[0].value = "cash";
     const loanButton = loanForm.querySelector("button");
     holdLoan = true;
@@ -53813,7 +53816,7 @@ await (async () => {
     const repayForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Repayment");
     repayForm.querySelector("button").click();
     ok(await adminWork.quiet(), "the repayment form write finishes");
-    const redeemForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Reward redemption");
+    const redeemForm = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Rewards");
     redeemForm.querySelector("button").click();
     ok(await adminWork.quiet(), "the reward form write finishes");
     ok(sentLoan && sentLoan.body.form === "cash" && !Object.hasOwn(sentLoan.body, "product")
@@ -53854,6 +53857,11 @@ await (async () => {
 section("Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)");
 await (async () => {
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account speaks plainly: the glossary's words, a refusal as a sentence with its Details, and the Desk's book names (12 Oct 2026)");
+await (async () => {
+  await (await import("./admin-words.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 30 seconds");
@@ -54698,8 +54706,8 @@ await (async () => {
     "a bucket owner's drift reads their whole history, the -R bucket's orders in it, and the bucket answers as its owner: " + JSON.stringify(s16));
   /* 17. HIS PAGE'S GUEST-LINK LEAD NAMES NO LEVEL: the prices follow the introducer, never past the stranger's board */
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(/the prices follow that customer, never past the board every stranger sees/.test(pg17) && !/two levels above/.test(pg17),
-    "the guest-link lead says the prices follow that customer, never past the board every stranger sees, and no longer two levels above");
+  ok(/A guest link opens one price list[.] The prices follow the customer you name[.]/.test(pg17) && !/two levels above/.test(pg17),
+    "the guest-link lead says the prices follow the customer he names, in the glossary's words, and no longer two levels above");
   /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
      The snapshot leaves a drift book out of tierOf and carries its drifts apart (byProduct.salt.drift, the hand winning), so no
      reader meets a number where it looks for a level. First the contract over the book as it stands, whoever holds what; then

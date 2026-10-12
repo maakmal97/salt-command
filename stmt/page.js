@@ -225,6 +225,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   color:var(--salt-text-muted)}
 .msg.bad{color:var(--salt-ember)}
 .msg.wait{color:var(--salt-text-muted)}
+/* Phase 3b: a refusal's Details, the server's own words under the plain sentence, to copy */
+.adm .rdet{margin:8px 0 0}
+.adm .rraw{margin:8px 0 0;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-text-muted);overflow-wrap:anywhere;user-select:all}
 /* a veil is obsidian 86%, decision 4 */
 /* S1 1.32: THE WRAPPER STICKS, NOT THE BAR. #barw is exactly the bar's height, so a sticky bar inside it
    had nowhere to stick and scrolled away with Log out; the wrapper sticks to the page and carries both lines.
@@ -1172,7 +1175,7 @@ const adminParts = (p) => '<div class="salt-tabs aparts" role="tablist" aria-lab
     + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>";
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
-const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "Owes"], ["locked", "Refused"], ["none", "No account"]];
+const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account yet"]];
 const ADMIN_ICONS = {
   needs: '<path d="M3.8 13 L6.5 5 H17.5 L20.2 13 V19.5 H3.8 Z M3.8 13 H8.6 L9.9 15.6 H14.1 L15.4 13 H20.2"/>',
   orders: '<path d="M5 4.5 H19 V19.5 H5 Z M8 8 H16 M8 11.5 H16 M8 15 H13"/>',
@@ -1273,16 +1276,16 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Orders</h1>"
-        + '<p class="lead">Counter orders by stage. Each answer is checked by the Desk before it reaches the ledger.</p>'
+        + '<p class="lead">Orders from the Counter, by stage. The Desk checks each answer before it reaches the book.</p>'
         + adminParts("orders")
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
-        + '<section id="oSplit" data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Order review</h2>'
-        + '<p class="lead" id="makerReviewStatus">Reading orders…</p>'
+        + '<section id="oSplit" data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Orders</h2>'
+        + '<p class="lead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
-        + '<section data-in="orders.waiting" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Account claims</h2><div id="makerClaims" aria-live="polite"></div></section>'
+        + '<section data-in="orders.waiting" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
-        + '<p class="lead">A product and size customers can join, with a target. Reaching it closes nothing: Close does, and sends each joined order for acknowledgement.</p>'
+        + '<p class="lead">Customers join a bulk order. When you close it, each order comes to you to agree.</p>'
         + '<div id="makerPools" aria-live="polite"></div></section>'
         + "</div></div>"
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
@@ -1303,22 +1306,18 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "</div>"
         + '<div class="asplit"><div id="rlist" class="alist"></div><div id="aopen" hidden></div></div>'
         + "</div>"
-        + '<section data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Chat</h2>'
+        + '<section data-in="customers.messages" aria-labelledby="makerChatTitle"><h2 id="makerChatTitle">Messages</h2>'
         + '<p id="makerChatStatus" class="msg" role="status" aria-live="polite"></p>'
         + '<div id="makerChatList"></div><div id="makerChatOpen" hidden></div></section>'
         + '<div id="oLinks" data-in="customers.links">'
         + "<h2>Guest links</h2>"
-        + '<p class="lead">A link shows one board and nothing else: no statement, no '
-        + "order, no account. The id in the link is what opens it, so it is the key.</p>"
-        + '<p class="lead">Name the customer introducing them and '
-        + "the prices follow that customer, never past the board every stranger sees. "
-        + "Move that customer up and every link they gave out moves with them.</p>"
-        + '<label class="lbl" for="gintro">Who is introducing them</label>'
+        + '<p class="lead">A guest link opens one price list. The prices follow the customer you name.</p>'
+        + '<label class="lbl" for="gintro">Whose friend?</label>'
         + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
-        + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer introducing them" data-act="link.introducer">'
-        + '<label class="lbl" for="glabel">Who it is for</label>'
+        + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer">'
+        + '<label class="lbl" for="glabel">A note for you</label>'
         + '<input class="fld salt-field__input" id="glabel" type="text" maxlength="60" '
-        + 'placeholder="a shop, a name, a note" aria-label="Who the link is for" data-act="link.label">'
+        + 'placeholder="a shop, a name, a note" aria-label="A note for you" data-act="link.label">'
         + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake" data-act="link.make">Make a link</button>'
         + '<div id="glist"></div>'
         + "</div>"
@@ -1333,18 +1332,17 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
         + "<h1>Record</h1>"
-        + '<p class="lead">Your own entries. Each is checked by the Desk and waits for review before it changes the book.</p>'
+        + '<p class="lead">Everything here waits for your approval under Approve.</p>'
         + adminParts("record")
         + '<div class="abody">'
-        + '<section data-in="record.approve" aria-labelledby="makerDraftTitle"><h2 id="makerDraftTitle">Desk rows</h2>'
-        + '<p class="lead" id="makerDraftStatus">Reading rows…</p>'
+        + '<section data-in="record.approve" aria-labelledby="makerDraftTitle"><h2 id="makerDraftTitle">Rows to approve</h2>'
+        + '<p class="lead" id="makerDraftStatus">Reading.</p>'
         + '<div id="makerDrafts"></div>'
         /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
-        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Server-held queue</span></summary>'
+        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Sent, not yet drafted</span></summary>'
         + '<div class="salt-plan__body">'
-        + '<p class="lead">Only entries already uploaded to the Desk server appear here. The Counter cannot read a device’s unsent queue; Cancel retained input is local only, not server withdrawal.</p>'
         + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
-        + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Desk inputs"><h2>Desk inputs</h2></section>'
+        + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"><h2>Record</h2></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
@@ -1353,11 +1351,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop")
         + '<div class="abody">'
-        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Operating hours</h2>'
-        + '<p class="lead" id="makerHoursStatus">Reading hours…</p>'
+        + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Shop hours</h2>'
+        + '<p class="lead" id="makerHoursStatus">Reading.</p>'
         + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
         + '<section data-in="shop.notice" aria-labelledby="makerBulletinTitle"><h2 id="makerBulletinTitle">Notice</h2>'
-        + '<p class="lead">One still notice on every customer account. Set wakes their phones; clear does not.</p>'
+        + '<p class="lead">A line at the top of every customer account. Setting it also sends them a notification.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
         /* 11 Oct 2026, his word: Salt Account has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
@@ -1374,7 +1372,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<button type="button" class="salt-orb salt-orb--raised" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + aico("add") + "</button>"
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
-        + '<div id="aEnded" class="gate" hidden><h1>Your admin sign-in has ended</h1>'
+        + '<div id="aEnded" class="gate" hidden><h1>Your sign-in has ended</h1>'
         + '<p class="lead">Sign in again to carry on.</p>'
         + '<a class="salt-pill salt-pill--md btn" href="/all" data-act="ended.sign-in">Sign in again</a></div>'
         /* the first-open choice Sheet, a child of the body like #aEnded: when the Access session has ended the page gives way to #aEnded

@@ -169,8 +169,8 @@ export async function run({ ok }) {
       return !!predicate();
     };
     const pause = (ms = 40) => new Promise((resolve) => setTimeout(resolve, ms));
-    const section = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3") && s.querySelector("h3").textContent === "Customer tier");
-    const accept = () => section() && [...section().querySelectorAll("button")].find((b) => b.textContent === "Accept tier proposals");
+    const section = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3") && s.querySelector("h3").textContent === "Price level");
+    const accept = () => section() && [...section().querySelectorAll("button")].find((b) => b.textContent === "Accept every suggestion");
     const retained = () => Object.keys(window.localStorage).filter((k) => k.includes("tier-accept-all"));
     const press = async (n) => { await until(() => accept() && !accept().disabled); accept().click(); await until(() => posts.length >= n); await pause(); };
     doc.querySelector('[data-act="nav.record"]').click();
@@ -188,7 +188,7 @@ export async function run({ ok }) {
     answers.push([400, { ok: false, error: "There is no tier proposal to accept." }]);
     await press(4);
     await until(() => accept() && !accept().disabled);
-    const visibleCancels = [...section().querySelectorAll("button")].filter((b) => b.textContent === "Cancel retained input" && !b.hidden);
+    const visibleCancels = [...section().querySelectorAll("button")].filter((b) => b.textContent === "Discard" && !b.hidden);
     ok(retained().length === 0 && visibleCancels.length === 0 && /no tier proposal/.test(section().textContent),
       "a refusal with nothing to accept lets the request go, hides Cancel and says why: " + JSON.stringify({ retained: retained(), cancels: visibleCancels.length }));
     await press(5);

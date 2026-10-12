@@ -93,21 +93,21 @@ export async function run({ ok }) {
     const card = (id) => cardOf(doc, id);
     const button = (id, test) => card(id) && [...card(id).querySelectorAll("button")].find((b) => test(b.textContent));
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => card("20261004090002-own") && button("20261004090002-own", (t) => t.startsWith("Receive claimed")));
-    ok(!!button("20261004090001-cov", (t) => t.startsWith("Received, on the book already")) && !button("20261004090001-cov", (t) => t.startsWith("Receive claimed"))
-      && !!button("20261004090002-own", (t) => t.startsWith("Receive claimed")) && !button("20261004090002-own", (t) => t.startsWith("Received, on the book already")),
+    await until(() => card("20261004090002-own") && button("20261004090002-own", (t) => t.startsWith("Yes, I got")));
+    ok(!!button("20261004090001-cov", (t) => t.startsWith("Already recorded")) && !button("20261004090001-cov", (t) => t.startsWith("Yes, I got"))
+      && !!button("20261004090002-own", (t) => t.startsWith("Yes, I got")) && !button("20261004090002-own", (t) => t.startsWith("Already recorded")),
       "A claim above what the order still owes offers Received, on the book already, in place of Receive claimed, and a claim the order owes offers Receive claimed");
     /* 12 Oct 2026 (Phase 2b, his decision 4 of 11 Oct): each asks on the page's Sheet, restating who and how much, and one action sends it */
     const sheet = () => doc.getElementById("ynSheet");
     const go = () => doc.getElementById("ynGo");
-    button("20261004090001-cov", (t) => t.startsWith("Received, on the book already")).click();
+    button("20261004090001-cov", (t) => t.startsWith("Already recorded")).click();
     await new Promise((r) => setTimeout(r, 50));
-    ok(!!sheet() && posts.length === 0 && /Received, on the book already RM 70\.00/.test(sheet().textContent) && /CX1-AB|abcd-efgh/.test(sheet().textContent) && /Nothing more is booked/.test(sheet().textContent),
+    ok(!!sheet() && posts.length === 0 && /Already recorded, RM 70\.00/.test(sheet().textContent) && /CX1-AB|abcd-efgh/.test(sheet().textContent) && /Nothing more is recorded/.test(sheet().textContent),
       "Received, on the book already, asks on the page's Sheet, naming the amount and who, and sends nothing as it opens: " + (sheet() && sheet().textContent));
     go().click();
     await until(() => posts.length >= 1); await new Promise((r) => setTimeout(r, 150));
-    await until(() => button("20261004090002-own", (t) => t.startsWith("Receive claimed")));
-    button("20261004090002-own", (t) => t.startsWith("Receive claimed")).click();
+    await until(() => button("20261004090002-own", (t) => t.startsWith("Yes, I got")));
+    button("20261004090002-own", (t) => t.startsWith("Yes, I got")).click();
     await new Promise((r) => setTimeout(r, 50));
     ok(!!sheet() && posts.length === 1 && /Received RM 70\.00 from/.test(sheet().querySelector(".salt-sheet__title").textContent),
       "Receive claimed asks on the Sheet too, and sends nothing as it opens: " + (sheet() && sheet().textContent));

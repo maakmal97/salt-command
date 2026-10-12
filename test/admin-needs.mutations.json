@@ -206,8 +206,8 @@
  {
   "name": "the Desk's line opens Orders",
   "file": "stmt/owner.js",
-  "find": "{who:'Desk', why:deskWait.moved",
-  "replace": "{who:'Desk', open:goPlace('orders','waiting'), why:deskWait.moved"
+  "find": "{who:'Desk', why:'The Desk shows '",
+  "replace": "{who:'Desk', open:goPlace('orders','waiting'), why:'The Desk shows '"
  },
  {
   "name": "an order has an Agree",
@@ -302,8 +302,8 @@
  {
   "name": "a failed threads read is not noted",
   "file": "stmt/owner.js",
-  "find": "}catch(error){ nGot('threads', error); apply=true; status.textContent=error.message; }",
-  "replace": "}catch(error){ apply=true; status.textContent=error.message; }"
+  "find": "}catch(error){ nGot('threads', error); apply=true; refusal(status,error); }",
+  "replace": "}catch(error){ apply=true; refusal(status,error); }"
  },
  {
   "name": "a failed hours read is not noted",

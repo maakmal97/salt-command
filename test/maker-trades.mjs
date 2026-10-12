@@ -86,18 +86,18 @@ async function ownerTrade(wd, pageWork, cover) {
   dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
   const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
     .find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
-  button(section, "Add another book").click(); await work.quiet();
+  button(section, "Another book on this visit").click(); await work.quiet();
   for (const [label, value] of Object.entries({ Date: "2099-10-05", Units: "1",
-    "Goods total (RM)": "130", "Cash recorded (RM)": "0", "Units moved": "1",
-    "Delivery (RM)": "40", Handover: "delivered" })) field(section, label).value = value;
+    "Price (goods)": "130", "Cash received": "0", "Units handed over": "1",
+    "Delivery": "40", Handover: "delivered" })) field(section, label).value = value;
   const extra = section.querySelector(".maker-extra-trade");
-  for (const [label, value] of Object.entries({ Units: "2", "Goods total (RM)": "30",
-    "Cash recorded (RM)": "0", "Units moved": "2" })) field(extra, label).value = value;
+  for (const [label, value] of Object.entries({ Units: "2", "Price (goods)": "30",
+    "Cash received": "0", "Units handed over": "2" })) field(extra, label).value = value;
   const change = (label, value) => {
     const control = field(section, label); control.value = value;
     control.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
   };
-  const send = async () => { button(section, "Send trade for review").click(); await work.quiet(); };
+  const send = async () => { (button(section, "Send the sale") || button(section, "Send the purchase")).click(); await work.quiet(); };
   return { dom, section, sent, work, change, send, lose: () => { loseAnswer = true; } };
 }
 
@@ -221,7 +221,7 @@ export async function run({ ok, pageWork }) {
     dom.window.document.querySelector('button[data-act="nav.record"]').click(); await work.quiet();
     const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3")?.textContent === "Sale or purchase");
     const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
-    button(section, "Add another book")?.click();
+    button(section, "Another book on this visit")?.click();
     await work.quiet();
     const extra = section.querySelector(".maker-extra-trade");
     if (extra) {
@@ -229,32 +229,32 @@ export async function run({ ok, pageWork }) {
       ["2099-10-05", "1", "130", "170", "1", "40"].forEach((value, i) => { fields[i].value = value; });
       const selects = section.querySelectorAll(":scope > label select"); selects[3].value = "delivered";
       ["2", "30", "30", "2"].forEach((value, i) => { extra.querySelectorAll("input")[i].value = value; });
-      button(section, "Send trade for review").click(); await work.quiet();
+      button(section, "Send the sale").click(); await work.quiet();
     }
     const rows = deviceWorld.drafts();
     ok(extra && rows.length === 2 && rows[0].row.delivery === 40 && rows[1].row.product === "oil" && !rows[1].row.delivery
       && rows[1].row.qty === 2 && rows[1].row.cash === 30 && rows[1].row.deliveredQty === 2 && rows[1].entry.payload.second === "s900",
       "multi-book owner UI: actual generated controls submit independent second-book figures through the real bridge/drafter " +
         JSON.stringify({ rows: rows.map((r) => r.row), status: section?.querySelector('[role="status"]')?.textContent, calls: deviceWorld.calls }));
-    const approve = button(dom.window.document, "Approve trip");
-    ok(approve && /2 rows waiting/.test(dom.window.document.body.textContent) && /one tap/.test(section.textContent),
+    const approve = button(dom.window.document, "Approve both");
+    ok(approve && /Two books, one trip/.test(dom.window.document.body.textContent) && /one tap/.test(section.textContent),
       "multi-book owner review: the actual page labels the trip decision and shows the waiting siblings");
     if (approve) { approve.click(); await work.quiet(); }
     ok(!!approve && deviceWorld.drafts().length === 2 && deviceWorld.drafts().every((r) => r.status === "approved"),
       "multi-book owner tap: the generated Approve trip button decides both actual drafts");
-    button(section, "Remove book")?.click();
+    button(section, "Remove")?.click();
     ok(extra && !section.querySelector(".maker-extra-trade"),
       "multi-book owner removal: Remove book actually removes its fields from the submitted trade");
     await work.quiet();
     const direction = section.querySelector("select");
     direction.value = "purchase"; direction.dispatchEvent(new dom.window.Event("change"));
-    button(section, "Add another book")?.click(); await work.quiet();
+    button(section, "Another book on this visit")?.click(); await work.quiet();
     const buyExtra = section.querySelector(".maker-extra-trade");
     if (buyExtra) {
       const fields = section.querySelectorAll(":scope > label input");
       ["2099-10-05", "1", "130", "130", "1", "0"].forEach((value, i) => { fields[i].value = value; });
       ["2", "30", "30", "2"].forEach((value, i) => { buyExtra.querySelectorAll("input")[i].value = value; });
-      button(section, "Send trade for review").click(); await work.quiet();
+      button(section, "Send the purchase").click(); await work.quiet();
     }
     const lots = deviceWorld.drafts().filter((r) => r.collection === "purchases");
     ok(lots.length === 2 && lots.every((r) => r.status === "pending" && !r.row.trip && !r.row.delivery)
@@ -269,7 +269,7 @@ export async function run({ ok, pageWork }) {
   try {
     await receiptPage.send();
     const original = receiptPage.sent.find((s) => s.path.endsWith("/sale"));
-    const approve = button(receiptPage.dom.window.document, "Approve trip");
+    const approve = button(receiptPage.dom.window.document, "Approve both");
     if (approve) { approve.click(); await receiptPage.work.quiet(); }
     for (const [i, row] of foldRows(receiptWorld).items.entries())
       receiptWorld.sqlite.prepare("INSERT INTO entry(collection,seq,hash,doc) VALUES ('sales',?,?,?)")
@@ -291,8 +291,8 @@ export async function run({ ok, pageWork }) {
   try {
     lostPage.lose(); await lostPage.send();
     const saved = lostPage.dom.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/sale");
-    field(lostPage.section, "Goods total (RM)").value = "999";
-    field(lostPage.section, "Goods total (RM)").dispatchEvent(new lostPage.dom.window.Event("input", { bubbles: true }));
+    field(lostPage.section, "Price (goods)").value = "999";
+    field(lostPage.section, "Price (goods)").dispatchEvent(new lostPage.dom.window.Event("input", { bubbles: true }));
     await lostPage.send();
     const requests = lostPage.sent.filter((s) => s.path.endsWith("/sale"));
     ok(saved && requests.length === 2 && requests[0].bytes === requests[1].bytes && lostWorld.drafts().length === 2
@@ -304,12 +304,12 @@ export async function run({ ok, pageWork }) {
   for (const [stream, buyer] of [["R2", "CX1-ZED"], ["R2", ""], ["R3", null]]) {
     const attributed = world(), page = await ownerTrade(attributed, pageWork);
     try {
-      page.change("Stream", stream); page.change("Associate", "CA1-ZED");
-      if (stream === "R2") page.change("End customer", buyer);
-      const party = [...page.section.querySelectorAll(":scope > label")].find((e) => e.contains(field(page.section, stream === "R3" ? "Buyer (referred)" : "Party")));
-      ok((stream === "R2" ? party?.hidden && !field(page.section, "End customer").parentElement.hidden
-        : !party?.hidden && field(page.section, "End customer").parentElement.hidden)
-        && field(page.section, "Associate").value === "CA1-ZED",
+      page.change("Through an associate?", stream); page.change("Which associate", "CA1-ZED");
+      if (stream === "R2") page.change("Their customer (optional)", buyer);
+      const party = [...page.section.querySelectorAll(":scope > label")].find((e) => e.contains(field(page.section, stream === "R3" ? "Buyer" : "Who")));
+      ok((stream === "R2" ? party?.hidden && !field(page.section, "Their customer (optional)").parentElement.hidden
+        : !party?.hidden && field(page.section, "Their customer (optional)").parentElement.hidden)
+        && field(page.section, "Which associate").value === "CA1-ZED",
         "multi-book attribution controls: " + stream + " exposes its own party/end-customer conditions " + String(buyer));
       await page.send();
       const request = page.sent.find((s) => s.path.endsWith("/sale")), rows = attributed.drafts();
@@ -321,7 +321,7 @@ export async function run({ ok, pageWork }) {
             && rows[0].row.ref === "CA1-ZED" && !rows[1].row.ref),
         "multi-book attributed UI route: " + stream + " owner controls reach real bridge/Worker/native drafts " + String(buyer) +
           JSON.stringify({ request, rows: rows.map((r) => r.row), answer: page.section.textContent }));
-      const approve = button(page.dom.window.document, "Approve trip");
+      const approve = button(page.dom.window.document, "Approve both");
       if (approve) { approve.click(); await page.work.quiet(); }
       const folded = foldRows(attributed), sales = folded.items.map((item) => item.row);
       ok(approve && attributed.drafts().every((r) => r.status === "approved")
@@ -332,9 +332,9 @@ export async function run({ ok, pageWork }) {
           : sales.every((r) => r.customer === "CX1-ZED") && sales[0].ref === "CA1-ZED" && !sales[1].ref
             && E.partyOwedRM(sales, "CX1-ZED") === 200 && E.partyOwedRM(sales, "CA1-ZED") === 0),
         "multi-book attributed approval/fold: " + stream + " books the correct account and credits no downstream buyer " + String(buyer));
-      page.change("Entry", "purchase");
+      page.change("Sale or purchase", "purchase");
       ok(page.section.querySelector(".maker-trade-attribution").hidden
-        && !field(page.section, "Party").parentElement.hidden,
+        && !field(page.section, "Who").parentElement.hidden,
         "multi-book attribution purchase boundary: sale-only controls disappear and Party returns " + stream + String(buyer));
     } finally { page.dom.window.close(); attributed.sqlite.close(); }
   }
@@ -346,31 +346,36 @@ export async function run({ ok, pageWork }) {
     .run(JSON.stringify({ banned: [{ id: "SX1-ZED" }] }));
   const choicesPage = await ownerTrade(choicesWorld, pageWork);
   try {
-    choicesPage.change("Stream", "R2");
-    const r2Choices = [...field(choicesPage.section, "Associate").options].map((o) => o.value);
-    choicesPage.change("Stream", "R3");
-    const r3Choices = [...field(choicesPage.section, "Associate").options].map((o) => o.value);
+    choicesPage.change("Through an associate?", "R2");
+    const r2Choices = [...field(choicesPage.section, "Which associate").options].map((o) => o.value);
+    choicesPage.change("Through an associate?", "R3");
+    const r3Choices = [...field(choicesPage.section, "Which associate").options].map((o) => o.value);
     ok(!r2Choices.includes("CX1-ZED") && r3Choices.includes("CX1-ZED") && !r3Choices.includes("SX1-ZED"),
       "multi-book associate catalog: actual controls include the incumbent introduction bench, exclude bans and require an R2 bucket");
   } finally { choicesPage.dom.window.close(); choicesWorld.sqlite.close(); }
 
   for (const scenario of [
-    { name: "buyer", direction: "sale", field: "Party",
-      error: "Choose a buyer on the roster. Register a new buyer under Counter Admin > Add ID first, then pick the code." },
-    { name: "supplier", direction: "purchase", field: "Party",
-      error: "Choose a supplier on the roster. Register a new supplier under Counter Admin > Add ID first, then pick the code." },
-    { name: "end buyer", direction: "sale", stream: "R2", field: "End customer",
-      error: "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code." },
-    { name: "referrer", direction: "sale", stream: "R3", field: "Associate",
-      error: "Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code." },
-    { name: "associate", direction: "sale", stream: "R2", field: "Associate",
-      error: "Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code." }
+    { name: "buyer", direction: "sale", field: "Who",
+      error: "Choose a buyer on the roster. Register a new buyer under Counter Admin > Add ID first, then pick the code.",
+      plain: "Choose a customer from the list. A new customer is added under Record, New customer, first." },
+    { name: "supplier", direction: "purchase", field: "Who",
+      error: "Choose a supplier on the roster. Register a new supplier under Counter Admin > Add ID first, then pick the code.",
+      plain: "Choose a supplier from the list. A new supplier is added under Record, New customer, first." },
+    { name: "end buyer", direction: "sale", stream: "R2", field: "Their customer (optional)",
+      error: "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code.",
+      plain: "Choose their customer from the list, or leave it as Not named. A new customer is added under Record, New customer, first." },
+    { name: "referrer", direction: "sale", stream: "R3", field: "Which associate",
+      error: "Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code.",
+      plain: "Choose who introduced the buyer from the list. A new one is added under Record, New customer, first." },
+    { name: "associate", direction: "sale", stream: "R2", field: "Which associate",
+      error: "Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code.",
+      plain: "Choose an associate from the list. A new one is added under Record, New customer, first." }
   ]) {
     const refusedWorld = world(), page = await ownerTrade(refusedWorld, pageWork);
     try {
-      if (scenario.direction === "purchase") page.change("Entry", "purchase");
+      if (scenario.direction === "purchase") page.change("Sale or purchase", "purchase");
       if (scenario.stream) {
-        page.change("Stream", scenario.stream); page.change("Associate", "CA1-ZED");
+        page.change("Through an associate?", scenario.stream); page.change("Which associate", "CA1-ZED");
       }
       const forged = page.dom.window.document.createElement("option");
       forged.value = "CZ9-ZED"; forged.textContent = "CZ9-ZED";
@@ -380,10 +385,11 @@ export async function run({ ok, pageWork }) {
       const request = page.sent.find((s) => s.path.endsWith("/" + scenario.direction));
       const counts = ["maker_request", "input_admission", "input_admission_source", "draft"]
         .map((table) => refusedWorld.sqlite.prepare("SELECT COUNT(*) AS n FROM " + table).get().n);
-      ok(request && (scenario.field === "End customer" ? request.body.downstream
-        : scenario.field === "Associate" ? request.body.assoc : request.body.party) === "CZ9-ZED"
+      ok(request && (scenario.field === "Their customer (optional)" ? request.body.downstream
+        : scenario.field === "Which associate" ? request.body.assoc : request.body.party) === "CZ9-ZED"
         && refusedWorld.calls.includes("/_internal/maker/inputs/" + scenario.direction)
-        && page.section.querySelector('[role="status"]').textContent === scenario.error
+        && page.section.querySelector('[role="status"]').firstChild.textContent === scenario.plain
+        && page.section.querySelector('[role="status"] .rraw').textContent === scenario.error
         && counts.every((n) => n === 0) && refusedWorld.puts.length === 0,
         "trade unknown " + scenario.name + ": forged generated-owner input reaches the real bridge/Worker, shows precise Add ID guidance and writes no queue, draft or admission " +
           JSON.stringify({ request, calls: refusedWorld.calls, counts, answer: page.section.querySelector('[role="status"]').textContent }));
@@ -402,27 +408,27 @@ export async function runCoverRead({ ok, pageWork }) {
   });
   try {
     const check = page.section.querySelector("[data-reward-cover]"), label = check.parentNode;
-    const note = () => label.parentNode.nextElementSibling.textContent;
-    page.change("Goods total (RM)", "130"); await page.work.quiet();
-    ok(!label.hidden && !check.disabled && !check.checked && /Cover RM 30[.]00 with 0[.]75 unit/.test(label.textContent) && reads.length === 1,
+    const note = () => label.parentNode.nextElementSibling.firstChild?.textContent ?? "", raw = () => label.parentNode.nextElementSibling.querySelector(".rraw")?.textContent;
+    page.change("Price (goods)", "130"); await page.work.quiet();
+    ok(!label.hidden && !check.disabled && !check.checked && /Use 0[.]75 unit of their reward: RM 30[.]00 off/.test(label.textContent) && reads.length === 1,
       "cover read: the first answer offers an unticked cover, and the read asked for the typed figures " + JSON.stringify(reads));
     check.checked = true;
     let release; gate = { promise: new Promise((resolve) => { release = resolve; }) };
-    page.change("Goods total (RM)", "131");
+    page.change("Price (goods)", "131");
     const mid = { hidden: label.hidden, disabled: check.disabled, ticked: check.checked, reads: reads.length, words: label.textContent };
     release(); gate = null; await page.work.quiet();
-    ok(mid.reads === 2 && mid.hidden === false && mid.disabled && !mid.ticked && /Checking cover/.test(mid.words)
-      && !label.hidden && !check.disabled && /Cover RM 30[.]00/.test(label.textContent),
+    ok(mid.reads === 2 && mid.hidden === false && mid.disabled && !mid.ticked && /Checking[.]/.test(mid.words)
+      && !label.hidden && !check.disabled && /RM 30[.]00 off/.test(label.textContent),
       "cover read: a read in flight keeps the offered box at its place, unticked and disabled, so the tap on Send beside it is not moved "
         + JSON.stringify({ mid, now: label.textContent }));
-    mode = "fail"; page.change("Goods total (RM)", "132"); await page.work.quiet();
-    const retry = [...page.section.querySelectorAll("button")].find((e) => e.textContent === "Read cover again");
+    mode = "fail"; page.change("Price (goods)", "132"); await page.work.quiet();
+    const retry = [...page.section.querySelectorAll("button")].find((e) => e.textContent === "Read again");
     ok(retry && !retry.hidden && !retry.disabled && !label.hidden && check.disabled && !check.checked
-      && /Cover not read/.test(label.textContent) && note() === "The Desk did not answer." && reads.length === 3,
+      && /Reward not read/.test(label.textContent) && note() === "The Counter could not do that. Try again." && raw() === "The Desk did not answer." && reads.length === 3,
       "cover read: a failed read keeps the box with its note and an enabled retry beside it");
     mode = "offer"; retry?.click(); await page.work.quiet();
     ok(retry && reads.length === 4 && JSON.stringify(reads[3]) === JSON.stringify(reads[2])
-      && !label.hidden && !check.disabled && retry.hidden && note() === "" && /Cover RM 30[.]00/.test(label.textContent),
+      && !label.hidden && !check.disabled && retry.hidden && note() === "" && /RM 30[.]00 off/.test(label.textContent),
       "cover read: the retry reads the same figures again and, on an answer, offers the cover and drops itself");
   } finally { page.dom.window.close(); wd.sqlite.close(); }
 }

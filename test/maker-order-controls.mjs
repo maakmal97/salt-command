@@ -317,37 +317,38 @@ export async function run({ ok }) {
       "An order's answer lands in the foot of the card tapped, a polite status line, not on the list's line and not on another card: "
       + JSON.stringify({ card: say("20261003090001-ack")?.textContent, other: say("20261003090002-rdy")?.textContent, list: list() }));
 
-    await until(() => button("20261003090002-rdy", "Close at these units"));
+    await until(() => button("20261003090002-rdy", "Finish at fewer units"));
     const units = field("20261003090002-rdy", "Units handed over");
-    units.value = "3"; button("20261003090002-rdy", "Close at these units").click();
+    units.value = "3"; button("20261003090002-rdy", "Finish at fewer units").click();
     await new Promise((resolve) => setTimeout(resolve, 40));
     ok(posts.length === 1, "Close at the full size sends nothing: a close is under the units ordered.");
-    ok(say("20261003090002-rdy")?.textContent === "A close is above 0 and under the 3 units ordered." && !/A close is above/.test(list()),
+    ok(say("20261003090002-rdy")?.textContent === "Finish at more than 0 and fewer than the 3 units ordered." && !/Finish at more than/.test(list()),
       "A refusal made on the page itself, before anything is sent, is said on the card it was made on");
     failNext = 1;
     field("20261003090002-rdy", "Units handed over").value = "2";
-    button("20261003090002-rdy", "Close at these units").click(); sheetGo(); await settle(2);
+    button("20261003090002-rdy", "Finish at fewer units").click(); sheetGo(); await settle(2);
     await until(() => /did not answer/.test(say("20261003090002-rdy")?.textContent || ""));
-    ok(say("20261003090002-rdy")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
+    ok(say("20261003090002-rdy")?.firstChild.textContent === "The Counter could not do that. Try again." && say("20261003090002-rdy").querySelector(".rraw")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
       && !say("20261003090001-ack")?.textContent.includes("did not answer"),
       "A refused action says so in the foot of its own card, beside the buttons it was tapped on, and not on the list's line");
-    await until(() => button("20261003090002-rdy", "Close at these units"));
+    await until(() => button("20261003090002-rdy", "Finish at fewer units"));
     field("20261003090002-rdy", "Units handed over").value = "2";
-    button("20261003090002-rdy", "Close at these units").click(); sheetGo(); await settle(3);
+    button("20261003090002-rdy", "Finish at fewer units").click(); sheetGo(); await settle(3);
     ok(posts[1].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[1].body.qty === 2 && posts[1].body.close === true
       && /^[0-9a-f]{32}$/.test(posts[1].body.rid) && posts[2].body.rid === posts[1].body.rid,
-      "Close at these units sends a close at the units in the box, and its retry after a failure carries the same request id: "
+      "Finish at fewer units sends a close at the units in the box, and its retry after a failure carries the same request id: "
       + JSON.stringify(posts.slice(1, 3)));
-    await until(() => button("20261003090002-rdy", "Record handover"));
-    button("20261003090002-rdy", "Record handover").click(); await settle(4);
+    const handed = () => card("20261003090002-rdy") && card("20261003090002-rdy").querySelector('button[data-act="order.handed"]');
+    await until(() => handed());
+    handed().click(); await settle(4);
     ok(posts[3].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[3].body.close === undefined
       && /^[0-9a-f]{32}$/.test(posts[3].body.rid) && posts[3].body.rid !== posts[1].body.rid,
-      "Record handover carries its own request id: " + JSON.stringify(posts[3]));
+      "Handed over carries its own request id: " + JSON.stringify(posts[3]));
 
-    await until(() => button("20261003090004-can", "Offer the cancellation again"));
+    await until(() => button("20261003090004-can", "Send the cancellation again"));
     ok(!!card("20261003090005-gone") && card("20261003090005-gone").querySelectorAll("button, input").length === 0,
       "A closed order with nothing rejected has a card of its figures and nothing to move it by (it had none at all before Phase 1c).");
-    button("20261003090004-can", "Offer the cancellation again").click();
+    button("20261003090004-can", "Send the cancellation again").click();
     ok(!!doc.getElementById("ynSheet") && posts.length === 4, "Offering a stage again asks on the Sheet, and sends nothing until its action is tapped");
     sheetGo(); await settle(5);
     ok(posts[4].path === "/all/maker/orders/20261003090004-can/again" && posts[4].body.stage === "cancel" && /^[0-9a-f]{32}$/.test(posts[4].body.rid),
@@ -359,10 +360,10 @@ export async function run({ ok }) {
     button("20261003090003-del", "Decline").click();
     const tilesDel = tilesOf();
     doc.getElementById("ynKeep").click();
-    button("20261003090001-ack", "Cancel order").click();
+    button("20261003090001-ack", "Cancel").click();
     const tilesAck = tilesOf();
     doc.getElementById("ynKeep").click();
-    ok(tilesDel.includes("We cannot deliver there.") && !tilesAck.includes("We cannot deliver there.") && tilesAck.includes("Our prices have changed.") && posts.length === 5,
+    ok(tilesDel.includes("Cannot deliver there") && !tilesAck.includes("Cannot deliver there") && tilesAck.includes("Prices changed") && posts.length === 5,
       "The reason for a place delivery cannot reach is offered only on an order to be delivered, and neither sheet sent anything: " + JSON.stringify([tilesDel, tilesAck]));
     button("20261003090003-del", "Decline").click();
     [...doc.querySelectorAll("#ynSheet .salt-option input")].find((r) => r.getAttribute("data-act") === "order.reason-stock").click();
@@ -375,34 +376,34 @@ export async function run({ ok }) {
     await until(() => /Order declined/.test(list()));
     ok(!card("20261003090003-del") && list() === "Order declined.",
       "An answer whose card has gone, the order having left the open list, falls to the list's own line and is not lost: " + list());
-    await until(() => button(draftId, "Approve row"));
-    button(draftId, "Approve row").click(); sheetGo();   /* the row asks on the page's Sheet (Phase 2c), and his yes is its one action */
+    await until(() => button(draftId, "Approve"));
+    button(draftId, "Approve").click(); sheetGo();   /* the row asks on the page's Sheet (Phase 2c), and his yes is its one action */
     await until(() => say(draftId)?.textContent);
     ok(say(draftId)?.textContent === "Row approved." && !/Row approved/.test(list()),
       "A Desk row's answer lands on the row's own card too: " + JSON.stringify({ card: say(draftId)?.textContent, list: list() }));
-    await until(() => field("20261003090001-ack", "Reply to the customer"));
-    button("20261003090001-ack", "Amend order").click();
+    await until(() => field("20261003090001-ack", "Answer them"));
+    button("20261003090001-ack", "Send the change").click();
     ok(say("20261003090001-ack")?.textContent === "Change a figure first." && !/Change a figure/.test(list()),
       "Amend with no figure changed says so on its own card");
-    await until(() => !button("20261003090001-ack", "Keep as a quick reply").disabled);   /* the card's controls come back once the tap has run */
-    const reply = field("20261003090001-ack", "Reply to the customer");
+    await until(() => !button("20261003090001-ack", "Save this line").disabled);   /* the card's controls come back once the tap has run */
+    const reply = field("20261003090001-ack", "Answer them");
     reply.value = "Ready after five."; reply.dispatchEvent(new window.Event("input", { bubbles: true }));
-    button("20261003090001-ack", "Keep as a quick reply").click();
+    button("20261003090001-ack", "Save this line").click();
     await new Promise((resolve) => setTimeout(resolve, 20));
     ok(JSON.parse(window.localStorage.getItem("saltQuickReplies")).includes("Ready after five.")
-      && !!button("20261003090001-ack", "Forget this quick reply"),
+      && !!button("20261003090001-ack", "Forget it"),
       "Keep as a quick reply keeps the line on this device, and the button then offers to forget it.");
-    ok(say("20261003090001-ack")?.textContent === "Kept as a quick reply on this device." && !/Kept as/.test(list()),
+    ok(say("20261003090001-ack")?.textContent === "Saved as a quick reply on this phone." && !/Saved as/.test(list()),
       "Keep as a quick reply answers on its own card");
-    button("20261003090001-ack", "Send reply").click(); await settle(7);
+    button("20261003090001-ack", "Send").click(); await settle(7);
     await until(() => say("20261003090001-ack")?.textContent === "Reply sent.");
     ok(say("20261003090001-ack")?.textContent === "Reply sent." && !/Reply sent/.test(list()),
       "Send reply answers on the card replied on, after the redraw that follows it");
     await until(() => button("20261003090002-rdy", "Ready after five."));
     button("20261003090002-rdy", "Ready after five.").click(); await new Promise((resolve) => setTimeout(resolve, 20));
-    ok(field("20261003090002-rdy", "Reply to the customer").value === "Ready after five.",
+    ok(field("20261003090002-rdy", "Answer them").value === "Ready after five.",
       "A quick reply is offered on every card once kept, and picking it fills the reply box.");
-    button("20261003090002-rdy", "Forget this quick reply").click();
+    button("20261003090002-rdy", "Forget it").click();
     ok(JSON.parse(window.localStorage.getItem("saltQuickReplies")).length === 0, "Forget this quick reply drops it from the device.");
     /* Approve's own confirm (approveDraft) is not the order card's, and is as it was */
     const asked = (browser.window.__asked || []).filter((said) => !/^Approve /.test(said));

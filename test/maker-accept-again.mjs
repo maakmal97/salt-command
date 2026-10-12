@@ -53,21 +53,21 @@ export async function run({ ok }) {
     const ack = texts("20261006090002-ack");
     ok(posts.length === 0, "and an order with nothing rejected reads none when it is opened.");
 
-    await until(() => button("20261006090001-aga", "Accept again"));
+    await until(() => button("20261006090001-aga", "Check and agree again"));
     const aga = texts("20261006090001-aga");
-    ok(aga.includes("Accept again") && !aga.some((t) => /Preview/.test(t))
-      && !aga.some((t) => /^Ready to|^Record handover|^Record cash|^Confirm received|^Amend order/.test(t))
-      && !ack.includes("Accept again"),
+    ok(aga.includes("Check and agree again") && !aga.some((t) => /Preview/.test(t))
+      && !aga.some((t) => /^Ready to|^Handed over|^Record cash|^Record payment|^Send the change/.test(t))
+      && !ack.includes("Check and agree again"),
       "An agreed order whose pending row he rejected reads its preview when opened, with no Preview button, and offers Accept again in place of Ready, the handover, cash, claims and Amend; another does not: " + JSON.stringify(aga));
 
-    button("20261006090001-aga", "Accept again").click();
+    button("20261006090001-aga", "Check and agree again").click();
     await until(() => posts.length >= 2);
     ok(posts.length === 2 && posts[0].path === "/all/maker/orders/20261006090001-aga/preview" && JSON.stringify(posts[0].body) === "{}"
       && posts[1].path === "/all/maker/orders/20261006090001-aga/accept" && JSON.stringify(posts[1].body) === JSON.stringify({ hash: "h-1" }),
       "Opening it sent one preview with nothing priced, and Accept again sends only the preview's digest: " + JSON.stringify(posts));
 
-    await until(() => button("20261006090003-don", "Accept again"));
-    ok(!!button("20261006090003-don", "Accept again"),
+    await until(() => button("20261006090003-don", "Check and agree again"));
+    ok(!!button("20261006090003-don", "Check and agree again"),
       "A done order whose pending row he rejected keeps its card with Accept again, read when it is opened.");
   } finally { browser.window.close(); }
 }

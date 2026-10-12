@@ -174,29 +174,29 @@ export async function run({ ok }) {
       const wrap = root && [...root.querySelectorAll("label")].find((l) => l.querySelector(".lbl") && l.querySelector(".lbl").textContent === label);
       return wrap && wrap.querySelector("input, select");
     };
-    const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Amend a ledger row");
+    const editor = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3").textContent === "Correct a row");
     const press = (root, text) => [...root.querySelectorAll("button")].find((b) => b.textContent === text).click();
     const change = (node, value) => { node.value = value; node.dispatchEvent(new window.Event("change", { bubbles: true })); };
     doc.querySelector('[data-act="nav.record"]').click();
     await until(() => editor());
-    const ed = editor(), rowSel = fieldIn(ed, "Ledger row"), kindSel = fieldIn(ed, "Amendment");
+    const ed = editor(), rowSel = fieldIn(ed, "Which row"), kindSel = fieldIn(ed, "What to do");
     const kinds = () => [...kindSel.options].map((o) => o.value).join(",");
     change(rowSel, "row-default-01");
     const defaultKinds = kinds(), defaultLabel = rowSel.options[rowSel.selectedIndex].textContent;
     change(rowSel, "row-open-0001");
-    ok(defaultKinds === "Correction" && /· Defaulted$/.test(defaultLabel) && kinds().split(",").length === 6,
+    ok(defaultKinds === "Correction" && /, defaulted$/.test(defaultLabel) && kinds().split(",").length === 6,
       "a defaulted row is marked and offers a Correction only; an open lot keeps its kinds: " + defaultKinds + " / " + defaultLabel + " / " + kinds());
 
-    change(fieldIn(ed, "Field"), "orderCode");
-    const valueBox = fieldIn(ed, "Set to");
+    change(fieldIn(ed, "What to change"), "orderCode");
+    const valueBox = fieldIn(ed, "New value");
     ok(valueBox && valueBox.tagName === "INPUT" && valueBox.type === "text",
       "the order code is typed into a text box: " + (valueBox && valueBox.tagName + "/" + valueBox.type));
     valueBox.value = "  E226 ";
-    press(ed, "Add field change");
+    press(ed, "Add");
     failNext = 1;
-    press(ed, "Send amendment for review");
+    press(ed, "Send the correction");
     await until(() => posts.length >= 1); await pause();
-    press(ed, "Send amendment for review");
+    press(ed, "Send the correction");
     await until(() => posts.length >= 2); await pause();
     const [sent, resent] = [posts[0] || {}, posts[1] || {}];
     ok(sent.kind === "Correction" && sent.rid === "row-open-0001" && JSON.stringify(sent.fields) === JSON.stringify({ orderCode: "E226" })
@@ -204,10 +204,10 @@ export async function run({ ok }) {
       "the order code is sent trimmed, and the retry after a failure carries the same request id: " + JSON.stringify(posts.slice(0, 2)));
     await until(() => editor() && editor() !== ed); await pause();
     const ed2 = editor();
-    change(fieldIn(ed2, "Field"), "orderCode");
-    fieldIn(ed2, "Set to").value = "E226";
-    press(ed2, "Add field change");
-    press(ed2, "Send amendment for review");
+    change(fieldIn(ed2, "What to change"), "orderCode");
+    fieldIn(ed2, "New value").value = "E226";
+    press(ed2, "Add");
+    press(ed2, "Send the correction");
     await until(() => posts.length >= 3); await pause();
     ok(!!posts[2] && posts[2].at !== sent.at && JSON.stringify(posts[2].fields) === JSON.stringify({ orderCode: "E226" }),
       "once an amendment has landed, the same change sent again is a new request: " + JSON.stringify(posts[2]));

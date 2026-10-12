@@ -93,7 +93,7 @@ export async function run({ ok, pageWork }) {
       dom.window.document.querySelector('button[data-act="nav.record"]').click();
       if (!await work.quiet()) throw new Error("Maker inputs did not settle.");
       const section = [...dom.window.document.querySelectorAll("#makerInputs .maker-input")]
-        .find((s) => s.querySelector("h3").textContent === "Add ID");
+        .find((s) => s.querySelector("h3").textContent === "New customer");
       if (!section) throw new Error("Add ID was not drawn.");
       const fields = section.querySelectorAll("input");
       const role = section.querySelector("select");
@@ -109,7 +109,7 @@ export async function run({ ok, pageWork }) {
     const blank = await device({}, true);
     const filed = pair(), names = await crypt(JSON.parse(filed.names), true), places = await crypt(JSON.parse(filed.places), true);
     ok(blank.body?.code === "CT11-TBC" && names["CT11-TBC"] === "Test Person (to be confirmed)"
-      && blank.password === "" && /queued for review/.test(blank.status),
+      && blank.password === "" && /waits under Approve/.test(blank.status),
       "blank-locality device/pair: the actual owner script derives CT11-TBC and encrypts the incumbent to-be-confirmed name: "
         + JSON.stringify({ code: blank.body?.code, name: names["CT11-TBC"], cleared: blank.password === "", status: blank.status }));
     ok(blank.body && !Object.hasOwn(blank.body, "geo") && !Object.hasOwn(blank.body, "locality")
@@ -125,15 +125,15 @@ export async function run({ ok, pageWork }) {
       .find((section) => section.querySelector("h3")?.textContent === "Sale or purchase");
     const field = (label) => [...tradeSection.querySelectorAll("label")]
       .find((item) => item.firstChild.textContent === label)?.querySelector("input,select");
-    const party = field("Party"), tradeDate = field("Date");
+    const party = field("Who"), tradeDate = field("Date");
     const selectability = !!party && [...party.options].some((option) => option.value === "CT11-TBC");
     if (selectability) {
       party.value = "CT11-TBC";
       tradeDate.value = new Date().toISOString().slice(0, 10);
-      field("Units").value = "1"; field("Goods total (RM)").value = "130";
-      field("Cash recorded (RM)").value = "0"; field("Units moved").value = "0";
-      field("Delivery (RM)").value = "0";
-      [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send trade for review").click();
+      field("Units").value = "1"; field("Price (goods)").value = "130";
+      field("Cash received").value = "0"; field("Units handed over").value = "0";
+      field("Delivery").value = "0";
+      [...tradeSection.querySelectorAll("button")].find((button) => button.textContent === "Send the sale").click();
       if (!await blank.work.quiet()) throw new Error("The confirmed-ID trade did not settle.");
     }
     const trade = blank.body && sqlite.prepare("SELECT id,status,entry FROM draft WHERE collection='sales' AND id<>? ORDER BY drafted_at DESC LIMIT 1")
@@ -165,8 +165,8 @@ export async function run({ ok, pageWork }) {
     const unknown = await device({ name: "Test Unknown", locality: "Unknown invented locality" });
     const ambiguous = await device({ name: "Test Ambiguous", locality: "Bandar Baru" });
     const badLink = await device({ name: "Test Link", link: "https://evil.test/maps?ll=3,101" });
-    ok(!unknown.body && /not on the official list/.test(unknown.status)
-      && !ambiguous.body && /more than one place/.test(ambiguous.status)
+    ok(!unknown.body && /not on the list/.test(unknown.status)
+      && !ambiguous.body && /matches more than one/.test(ambiguous.status)
       && !badLink.body && /Maps or Waze/.test(badLink.status) && pair().revision === before,
       "blank-locality device/pair: supplied unknown/ambiguous locality and invalid exact link still refuse before writing: "
         + JSON.stringify([unknown.status, ambiguous.status, badLink.status]));
