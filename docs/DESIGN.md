@@ -333,11 +333,15 @@ customer chooses is there too ("The customer's look").
 
 - **Tokens.** `tools/stmt-style.mjs` `saltTokens()` returns the design system's `:root` and `:root[data-theme="tide"]` blocks, and
   `--sync` writes both into `stmt/statement-css.js`; `--check` is in the gate. The Counter carries no Tide-only rule beyond the
-  tokens (the aurora's are not used there). The statement layer holds no colour that is not a token, bar the print block, which is
-  paper: the body's two corner glows read `--salt-copper-rgb` and `--salt-brass-rgb`, which Tide restates and Night falls back from, so
-  Night is the pixel it was. `stmt/page.js` holds no colour either, bar four swatch tokens (`--look-night-ground`, `-accent` and the
-  Tide pair): a choice tile must show the other theme's ground, which no token can, so they are the system's obsidian and brass at each
-  theme, held equal to `design/salt-ds.css` by the suite. Sealed issues and his sheets carry the Tide block and never set the attribute.
+  tokens (the aurora's are not used there). **The statement layer holds no colour that is not a token (12 Oct 2026, Phase 5b), the print
+  block included**: the body's two corner glows are a `color-mix` of `--salt-copper` and `--salt-brass` into transparent, which Tide
+  restates, and the review page's row tints and warning are a mix of the ember, verdigris and steel tokens; the print block is drawn in
+  the system's `--salt-paper*` inks (a sheet is not a theme, so Tide restates none), each text ink 4.5:1 on the sheet and its panels.
+  `stmt/page.js` holds none either: a choice tile must show the other theme's ground, which no token that follows the theme can, so the
+  system has four `--salt-swatch-*` tokens (its obsidian and brass at Night and at Tide) and the tile reads those. The recipes the
+  layer carries are the system's own and are held to it in its repo (`npm run contrast`); the suite (`test/counter-two-themes.mjs`) reads
+  the statement layer and `PAGE_CSS` for a literal and measures the paper inks. Sealed issues and his sheets carry the Tide block and
+  never set the attribute.
 - **Before paint.** Every page that runs script carries `LOOK_HEAD`, a nonce'd script at the top of the head, before the stylesheet:
   it sets `data-theme` on `<html>` and the `theme-color` meta from `salt-look` (`night` or `tide`), Tide when it is unset, holds
   anything else or cannot be read (every access in a try). The door, the signed-in page, `/app` and Salt Account all come from

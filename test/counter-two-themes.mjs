@@ -75,17 +75,27 @@ export async function run({ ok }) {
   const qrN = ratio(resolve(NIGHT, "slate"), resolve(NIGHT, "qr-field")), qrT = ratio(resolve(TIDE, "slate"), resolve(TIDE, "qr-field"));
   ok(css3.some((c) => /\.salt-qr__title\s*\{[^}]*color:\s*var\(--salt-slate\)/.test(c)) && qrN >= 4.5 && qrT >= 4.5, `and the QR panel's title holds it on the panel's paper, which a code always scans on (Night ${qrN.toFixed(2)}, Tide ${qrT.toFixed(2)})`);
 
-  /* ---- no colour of the page's own is a literal: the statement layer and the page's CSS read tokens (the print block is paper) ---- */
+  /* ---- no colour of the page's own is a literal (12 Oct 2026, Phase 5b): the statement layer, its print block included, and the page's CSS read tokens.
+     The recipes are the system's own and are held to it in its repo (npm run contrast there). The token blocks are where a colour is declared. ---- */
   const LIT = /#[0-9a-fA-F]{3,8}\b|rgba?\((?!\s*var)[^)]*\)/g;
-  const litLayer = layer.match(LIT) || [], litPage = noPrint(pageCss).replace(/--look-[\w-]+:[^;}]+;?/g, "").match(LIT) || [];
-  ok(litLayer.length === 0, `the statement layer writes no colour as a literal outside its print block (found ${litLayer.join(" ") || "none"})`);
-  ok(litPage.length === 0, `nor does the page's own CSS, bar the four swatch tokens (found ${litPage.join(" ") || "none"})`);
-  ok(/rgba\(var\(--salt-copper-rgb,\s*184,\s*115,\s*51\),\.16\)/.test(layer.replace(/\s+/g, " ").replace(/,\s+/g, ",")) && /--salt-brass-rgb,\s*197,\s*160,\s*89/.test(layer) && TIDE_OVER["brass-rgb"] && TIDE_OVER["copper-rgb"],
-    "so the body's two corner glows read the token pair Tide restates, with Night's own value as the fallback");
-  /* the swatch tokens are the one place the page writes a colour: each theme's ground and accent in the system */
-  const sw = Object.fromEntries([...pageCss.matchAll(/--look-(night|tide)-(ground|accent):(#[0-9a-f]{6})/gi)].map((m) => [m[1] + "-" + m[2], m[3]]));
-  ok(sw["night-ground"] === NIGHT.obsidian && sw["night-accent"] === NIGHT.brass && sw["tide-ground"] === TIDE.obsidian && sw["tide-accent"] === TIDE.brass,
-    "the choice sheet's two swatches are each theme's own ground and accent in the design system: " + JSON.stringify(sw));
+  const layerAll = strip(STATEMENT_CSS).replace(NIGHT_RE, "").replace(TIDE_RE, "");
+  const litLayer = layerAll.match(LIT) || [], litPage = strip(pageCss).match(LIT) || [];
+  ok(litLayer.length === 0, `the statement layer writes no colour as a literal, its print block too (found ${litLayer.join(" ") || "none"})`);
+  ok(litPage.length === 0, `nor does the page's own CSS, the look swatches included (found ${litPage.join(" ") || "none"})`);
+  const flat = layerAll.replace(/\s+/g, " ");
+  ok(/color-mix\(in srgb, var\(--salt-copper\) 16%, transparent\)/.test(flat) && /color-mix\(in srgb, var\(--salt-brass\) 10%, transparent\)/.test(flat) && !/-rgb\b/.test(layerAll),
+    "so the body's two corner glows are a mix of the copper and brass tokens, which Tide restates, and read no pair of channels");
+  /* the swatches are the system's four tokens, each theme's ground and accent, the same under either theme; the page writes none and no theme restates them */
+  const SWATCHES = ["night-ground", "night-accent", "tide-ground", "tide-accent"];
+  ok(SWATCHES.every((k) => pageCss.includes("var(--salt-swatch-" + k + ")")) && !/--look-/.test(pageCss) && !Object.keys(TIDE_OVER).some((k) => /^swatch-/.test(k))
+    && NIGHT["swatch-night-ground"] === NIGHT.obsidian && NIGHT["swatch-night-accent"] === NIGHT.brass && NIGHT["swatch-tide-ground"] === TIDE.obsidian && NIGHT["swatch-tide-accent"] === TIDE.brass,
+    "the choice sheet's two swatches are each theme's own ground and accent, read from the system's four swatch tokens: " + JSON.stringify(SWATCHES.map((k) => NIGHT["swatch-" + k])));
+  /* the print block is drawn in the system's paper inks, the same under both themes (a sheet is not a theme): each text ink holds 4.5:1 on the sheet and on the panels on it */
+  const printOf = (css) => { let out = "", rest = strip(css), at; while ((at = rest.search(/@media\s+print\s*\{/)) >= 0) { let d = 0, i = rest.indexOf("{", at); const from = i; for (; i < rest.length; i++) { if (rest[i] === "{") d++; else if (rest[i] === "}" && --d === 0) break; } out += rest.slice(from + 1, i) + " "; rest = rest.slice(i + 1); } return out; };
+  const printInk = [...new Set([...printOf(STATEMENT_CSS).matchAll(/(?:^|[;{\s])color\s*:\s*var\(--salt-([\w-]+)\)/g)].map((m) => m[1]))], sheets = ["paper", "paper-card", "paper-warn"];
+  const weakPaper = printInk.filter((k) => !HEX.test(NIGHT[k] || "") || sheets.some((s) => !HEX.test(NIGHT[s] || "") || ratio(NIGHT[k], NIGHT[s]) < 4.5));
+  ok(printInk.length >= 6 && printInk.every((k) => /^paper-/.test(k)) && weakPaper.length === 0 && !Object.keys(TIDE_OVER).some((k) => /^paper/.test(k)),
+    `and the print block's text is the paper inks (${printInk.length}), the same under Tide, each holding 4.5:1 on the sheet and its panels (short: ${weakPaper.join(", ") || "none"})`);
 
   /* ---- before paint: the head script, and the pages that cannot run one ---- */
   const scripts = [...pageHtml.matchAll(/<script nonce="nct">([\s\S]*?)<\/script>/g)].map((m) => m[1]);

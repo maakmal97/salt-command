@@ -1689,6 +1689,21 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   a gift, the trade's own); Cancel retained input, beside a form's button and on Record's retained input; Cancel reply retry on a chat; and the vault
   conflict. Every request, body and request id is as it was. `ended()` now takes a Sheet left open down with the page, as `lapsed()` and `lock()` do. A test that
   once stubbed `window.confirm` has each Sheet answered as it comes up (`answerSheets` in `test/maker-act.mjs`).
+- **The page wears the recipes and restates none, and every colour is a token** (Phase 5, 12 Oct 2026; `test/counter-page-css.mjs`, its mutations in
+  `test/counter-page-css.mutations.json`). `RECIPE_HEADS` now carries **Metric row, Table and Product tag** beside the rest, and the sync tool still refuses two
+  recipes with one header. **What `PAGE_CSS` keeps is placement**: a form's label is the system's Field label (`salt-field__label`, or `salt-options__legend--label` on a
+  legend) beside `lbl`; the weekly hours are the Table (`salt-table`, the day's cell its `salt-table__label`); a pane, a guest link and the report card are the Glass
+  card at its medium radius; the report card's figures, an approve card's cost and margin and an order's goods, delivery and paid are the Metric row, a label
+  over its figure, with a space between the two so the words read as they did; a guest link's moves are ghosts, Withdraw and Decline the danger ghost, whose
+  rest in the alarm is the system's own recipe (the sheet's copy of it and the desk's are gone); Rewards' months are the Tab strip; and a book named on a row
+  of his page (a row to approve, a group order) wears the **Product tag**, the Desk's name in it and the book's accent its hue, which is the system's
+  `--salt-product-<book>` token that `PRODUCTS.accent` names. The tag is drawn by this page's script alone: a customer's page draws no tag and no word for a book.
+  What stays by design: `select.fld` (the system's select rule carries a `url(`, which the sync strips, so the chevron is drawn from two gradients), `.msg`
+  and `.maker-say` (no recipe draws a sentence line), `.maker-facts` (a meta line) and the customer's invoice lines (Phase 7). **No colour is a literal** in the
+  statement layer, its print block or `PAGE_CSS`: the print block is the system's `--salt-paper*` inks and the look swatches its `--salt-swatch-*` tokens
+  (`docs/DESIGN.md`). The suite reads `PAGE_CSS` for a restated recipe, for every text colour at 4.5:1 on obsidian, slate and a card's glass on both themes,
+  for a font under 11px and for a control under 44px, and draws Salt Account on its busiest day to read every label, link, card, table and tag. No route, body,
+  request id or send changed.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a

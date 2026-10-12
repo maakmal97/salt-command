@@ -314,10 +314,12 @@ export async function run({ ok }) {
     const cs = (e) => P.w.getComputedStyle(e);
     cancelB.click();
     const tap = { go: cs(P.d.getElementById("ynGo")).minHeight, keep: cs(P.d.getElementById("ynKeep")).minHeight, x: cs(P.d.getElementById("ynX")).width + "|" + cs(P.d.getElementById("ynX")).height };
-    const rules = [...P.d.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => r.selectorText === ".ynsheet .salt-ghost--danger");
+    /* 12 Oct 2026 (Phase 5): the danger ghost rests in the alarm in the SYSTEM's own recipe, and the sheet restates none of it */
+    const sheetRules = [...P.d.styleSheets].flatMap((s) => [...s.cssRules]);
+    const rules = sheetRules.filter((r) => r.selectorText === ".salt-ghost--danger"), restated = sheetRules.filter((r) => /\.ynsheet[^{]*salt-ghost--danger/.test(r.selectorText || ""));
     const tone = rules.length === 1 ? rules[0].style.getPropertyValue("--salt-ghost-tone") : "";
-    ok(tap.go === "var(--salt-tap)" && tap.keep === "var(--salt-tap)" && tap.x === "var(--salt-tap)|var(--salt-tap)" && tone === "var(--salt-ember)" && !/#[0-9a-f]{3,8}\b|rgb/i.test(rules.length ? rules[0].cssText : "#fff"),
-      "a tap is 44 px by the system's own token on both answers and the close orb, and the danger action's tone is the system's ember, never a literal: " + JSON.stringify({ tap, tone }));
+    ok(tap.go === "var(--salt-tap)" && tap.keep === "var(--salt-tap)" && tap.x === "var(--salt-tap)|var(--salt-tap)" && tone === "var(--salt-alarm)" && restated.length === 0 && !/#[0-9a-f]{3,8}\b|rgb/i.test(rules.length ? rules[0].cssText : "#fff"),
+      "a tap is 44 px by the system's own token on both answers and the close orb, and the danger action's tone is the system's alarm, never a literal and never restated by the sheet: " + JSON.stringify({ tap, tone, restated: restated.length }));
     P.d.getElementById("ynKeep").click();
 
     /* ---- 14 the practice accounts hold a case of each Sheet */

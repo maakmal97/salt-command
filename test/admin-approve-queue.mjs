@@ -82,10 +82,11 @@ export async function run({ ok, pageWork }) {
     const head = c.querySelector(":scope > .salt-approve__head");
     ok(!!head && head.querySelector(".salt-approve__party").textContent === "CX1-ZED" && head.querySelector(".salt-approve__entry").textContent === "Sale on 10 Oct 2026",
       "its head is the recipe's: the party's code, and the entry as typed beside it: " + (head && head.textContent));
+    /* 12 Oct 2026 (Phase 5): the cost and margin are the system's Metric row, a label over its figure, and not a line of the card's own */
     const facts = [...c.querySelectorAll(":scope > .maker-facts")], flags = c.querySelector(":scope > .salt-approve__flags"), reason = c.querySelector(":scope > .salt-approve__reason");
-    const figures = facts.find((x) => /Cost RM 56\.00/.test(x.textContent));
-    ok(!!figures && figures.textContent === "Cost RM 56.00 · Your margin RM 44.00 · 44%" && /RM 100\.00/.test(facts[0].textContent),
-      "the figures lead, read off the draft and computed nowhere: the row's total, then its cost and margin: " + facts.map((x) => x.textContent).join(" | "));
+    const figures = c.querySelector(":scope > .salt-metrics.salt-metrics--sm"), cells = figures ? [...figures.children].map((x) => [x.querySelector(".salt-metrics__label").textContent, x.querySelector(".salt-metrics__value").textContent]) : [];
+    ok(!!figures && JSON.stringify(cells) === JSON.stringify([["Cost", "RM 56.00"], ["Your margin", "RM 44.00 · 44%"]]) && figures.textContent.replace(/\s+/g, " ") === "Cost RM 56.00 Your margin RM 44.00 · 44%" && /RM 100\.00/.test(facts[0].textContent) && !facts.some((x) => /Cost RM/.test(x.textContent)),
+      "the figures lead, read off the draft and computed nowhere: the row's total, then its cost and margin as the system's Metric row: " + facts.map((x) => x.textContent).join(" | ") + " / " + JSON.stringify(cells));
     ok(!!flags && same([...flags.querySelectorAll(".salt-status.salt-status--ember")].map((x) => x.textContent), ["Check before deciding"]) && !c.querySelector(":scope > .salt-insight"),
       "the flags it was drafted with are chips in the recipe's flag row, and not also a line of prose");
     ok(!!figures && !!flags && !!reason && reason.textContent === "Priced under their usual."

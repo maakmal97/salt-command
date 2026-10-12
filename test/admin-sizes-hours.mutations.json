@@ -2,7 +2,7 @@
  {
   "name": "the sizes have no legend",
   "file": "stmt/owner.js",
-  "find": "houseBoxes.appendChild(el('legend','salt-options__legend lbl','Sizes to print')); houseBoxes.appendChild(houseGrid);",
+  "find": "houseBoxes.appendChild(el('legend','salt-options__legend salt-options__legend--label lbl','Sizes to print')); houseBoxes.appendChild(houseGrid);",
   "replace": "houseBoxes.appendChild(houseGrid);"
  },
  {
@@ -164,8 +164,8 @@
  {
   "name": "the table does not share its width",
   "file": "stmt/page.js",
-  "find": ".adm .maker-hours{width:100%;table-layout:fixed;",
-  "replace": ".adm .maker-hours{width:100%;table-layout:auto;"
+  "find": ".adm .maker-hours{table-layout:fixed;",
+  "replace": ".adm .maker-hours{table-layout:auto;"
  },
  {
   "name": "a day's tick is not 44px",

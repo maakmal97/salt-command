@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="6e0f53f6b10aa0e4";
+var SALT_BUILD_ID="2588d027693c6091";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -1670,12 +1670,41 @@ details.obs>summary{min-height:var(--tap);}
   --salt-radius-xl: 36px;
   --salt-radius-pill: 100px;
 
-  /* One theme (his word of 09 Oct 2026): the identity as drawn, obsidian ground and salt text. The four
-     times of day of 05 Oct 2026 are retired. Three tokens name a fixed use: the ink on a filled control
+  /* Two themes (11 Oct 2026): Night is this :root as drawn, obsidian ground and salt text; Tide is
+     :root[data-theme="tide"] below, chosen per device by the page (Tide until chosen). The four times of day,
+     the cross-fade and the clock's picker stay retired. Three tokens name a fixed use: the ink on a filled control
      (dark on the brass pill) and the QR's field and ink, light and dark so a code always scans. */
   --salt-ink-on-accent: var(--salt-obsidian);
   --salt-qr-field: #f2f4f5;
   --salt-qr-ink: #0b1215;
+
+  /* THE LOOK SWATCHES (12 Oct 2026, the Counter's choice Sheet). A tile that offers a theme must show THAT theme's ground and
+     accent while the other is on, which no token that follows the theme can: so each is its own token, the same under both
+     themes (Tide does not restate them). They repeat obsidian and brass at Night and at Tide, and are held equal to them. */
+  --salt-swatch-night-ground: #05080a;
+  --salt-swatch-night-accent: #c5a059;
+  --salt-swatch-tide-ground: #03141a;
+  --salt-swatch-tide-accent: #7fd1c0;
+
+  /* PAPER (12 Oct 2026). A statement is printed and photographed as often as it is read, and a dark page prints as a black
+     rectangle, so its print block is drawn in ink on paper. These are those inks: the same in both themes (a sheet of paper
+     is not a theme, so Tide does not restate them), each text ink holding 4.5:1 on the paper and the panels on it
+     (npm run contrast). The three hues are the desk's words as ink: copper the label, verdigris what is settled or owed to
+     the customer, ember what they owe, steel what is pending. */
+  --salt-paper: #ffffff;           /* the sheet */
+  --salt-paper-card: #fbfaf7;      /* a figure panel on it */
+  --salt-paper-warn: #fdf4f1;      /* a warning panel on it */
+  --salt-paper-ink: #111111;       /* text, and the figures */
+  --salt-paper-ink-soft: #333333;  /* running lines */
+  --salt-paper-ink-muted: #555555; /* captions and notes */
+  --salt-paper-copper: #8a5a20;
+  --salt-paper-verdigris: #1d6b52;
+  --salt-paper-ember: #a8442c;
+  --salt-paper-steel: #41586e;
+  --salt-paper-rule: #dddddd;      /* a table's hairline */
+  --salt-paper-brass: #c9ad74;     /* the brass rule */
+  --salt-paper-edge: #d8c79c;      /* a panel's edge */
+  --salt-paper-edge-ember: #e0a894; /* a warning panel's edge */
   color-scheme: dark;
 }
 
@@ -2467,6 +2496,16 @@ label.salt-field__label {
   font-weight: 500;
   color: var(--salt-prose);
 }
+/* a legend set as a field's label (12 Oct 2026): a form whose other fields are labelled in the eyebrow's mono caps (the field
+   label above, Salt Account's forms) puts its group of tiles under the same word, so a legend and a label read alike. Stated
+   after the legend, so it wins on weight of order alone. */
+.salt-options__legend--label {
+  font-family: var(--salt-font-mono);
+  font-size: var(--salt-text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--salt-copper);
+}
 .salt-options__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--salt-space-2); }
 .salt-options__grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .salt-option { position: relative; display: flex; min-width: 0; }
@@ -3146,6 +3185,11 @@ label.salt-field__label {
 .salt-ghost--lit { --salt-ghost-tone: var(--salt-brass); border-color: var(--salt-brass); }
 .salt-ghost--tight { min-width: 0; padding: 3px 9px; }
 .salt-ghost--sm { min-height: 32px; padding: 4px 12px; font-size: var(--salt-text-xs); }
+/* THE DANGER GHOST AT REST (12 Oct 2026). Decline, Cancel and Reject are the control that refuses, at the far end of a
+   card's foot, and a phone has no pointer to warm it, so it rests in the alarm, the system's word for refused. The desk
+   has bound this tone in its own layer since UX6 and the Counter restated it per sheet; it lives here now, on the same
+   edge as every ghost. The alarm holds 4.5:1 on every ground in both themes (npm run contrast). */
+.salt-ghost--danger { --salt-ghost-tone: var(--salt-alarm); }
 /* the danger ghost under a pointer lifts to full ember, above the resting edge as every lift is (24 Sep 2026: its
    0.55 ember ring had come to 2.39:1, under the 4.81:1 edge it rose from) */
 .salt-ghost--danger:hover { color: var(--salt-ember); border-color: var(--salt-ember); }
@@ -3997,10 +4041,9 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .badge{color:var(--salt-obsidian);background:var(--salt-brass);border-radius:999px;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
 .warnpill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;background:transparent;
   border:1px solid color-mix(in srgb, var(--salt-ember) 55%, transparent);color:var(--salt-ember);border-radius:999px;}
-/* UX6, 24 Sep 2026: A GHOST THAT ENDS SOMETHING SAYS SO AT REST. Decline, Cancel and Reject were the alarm until
-   S1 1.48 made them the system's danger ghost, which warms only under a pointer, so on his phone they read as any
-   quiet ghost. The recipe's own tone is bound to the alarm, as a tile's tone is bound; nothing is restated. */
-.salt-ghost--danger{--salt-ghost-tone:var(--salt-alarm);}
+/* UX6, 24 Sep 2026: A GHOST THAT ENDS SOMETHING SAYS SO AT REST. Decline, Cancel and Reject rest in the alarm through
+   the recipe's own tone. The desk bound it here until 12 Oct 2026, when it moved into the system (Code\salt-ds) so
+   the Counter reads it too; nothing is restated. */
 
 /* v604: THE ENTER FORM'S MESSAGES ARE A LIST, NOT A ROW OF PILLS. They borrowed `.warnpill`,
    which this layer sets in uppercase with letter-spacing, so a sentence of plain English came

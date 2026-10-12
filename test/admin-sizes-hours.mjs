@@ -90,7 +90,7 @@ export async function run({ ok, pageWork }) {
       && cells(r)[0].textContent.trim() === DAYS[i] && cells(r)[0].querySelector("label.maker-day-pick input[type=checkbox]") && cells(r)[1].querySelector("input[type=time]") && cells(r)[2].querySelector("input[type=time]")),
     "a row for each weekday in order, the day with its tick in the first cell (the name is the tick's label), when it opens in the second and when it closes in the third");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
-    ok(/\.adm \.maker-hours\s*\{[^}]*width:\s*100%[^}]*table-layout:\s*fixed/.test(css) && /\.adm \.maker-hours th:first-child\s*\{[^}]*width:\s*[0-9]+%/.test(css)
+    ok(table.classList.contains("salt-table") && /\.salt-table\s*\{[^}]*width:\s*100%/.test(css) && /\.adm \.maker-hours\s*\{[^}]*table-layout:\s*fixed/.test(css) && /\.adm \.maker-hours th:first-child\s*\{[^}]*width:\s*[0-9]+%/.test(css)
       && /\.adm \.maker-day input\[type=checkbox\]\s*\{[^}]*width:\s*44px[^}]*height:\s*44px/.test(css) && !/\.adm \.maker-day\s*\{[^}]*display:\s*grid/.test(css),
     "the table shares the width among its columns, so the head stands over them on a phone as on a desk, and a day's tick is 44px");
     ok(rows.every((r, i) => {

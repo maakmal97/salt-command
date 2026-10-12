@@ -8774,7 +8774,8 @@ await (async () => {
   /* Tide restates every colour Night declares as a literal, bar the ones the two share by design (the warning, the books' hues, the black shadows and
      wells, the bar's white sheen, the QR): a token left out would quietly stay Night's on a Tide ground */
   const SHARED = ["amber", "product-salt", "product-oil", "product-candy", "product-rice", "product-spare", "shadow", "shadow-desk", "well", "well-hover", "deskbar-sheen", "qr-field", "qr-ink"];
-  const unrestated = Object.keys(NIGHT).filter((k) => /#[0-9a-f]{3,8}\b|rgba?\(/i.test(NIGHT[k]) && !/^var\(/.test(NIGHT[k]) && !(k in TIDE_OVER) && !SHARED.includes(k));
+  /* 12 Oct 2026 (Phase 5b): the four look swatches and the paper inks are the same under both themes by design: a swatch shows its own theme while the other is on, and a sheet of paper is not a theme */
+  const unrestated = Object.keys(NIGHT).filter((k) => /#[0-9a-f]{3,8}\b|rgba?\(/i.test(NIGHT[k]) && !/^var\(/.test(NIGHT[k]) && !(k in TIDE_OVER) && !SHARED.includes(k) && !/^(swatch-(night|tide)-(ground|accent)|paper(-[a-z-]+)?)$/.test(k));
   ok(Object.keys(TIDE_OVER).length > 20 && unrestated.length === 0, `Tide restates every colour token Night declares, bar the shared ones (left out: ${unrestated.join(" ") || "none"})`);
   ok(/--salt-ink-on-accent:/.test(m), "the pill's own ink is in the design system's block");
 
@@ -8984,6 +8985,11 @@ await (async () => {
 section("the Counter wears Night or Tide, chosen per device (11 Oct 2026)");
 await (async () => {
   await (await import("./counter-two-themes.mjs")).run({ ok });
+})();
+
+section("Salt Account wears the recipes: Table, Product tag and Metric row, no restated geometry, 4.5:1, 44px and 11px on both themes (12 Oct 2026)");
+await (async () => {
+  await (await import("./counter-page-css.mjs")).run({ ok, pageWork });
 })();
 
 section("Home leads with the one action: a sticky foot holds To pay now and its Pay above the bar, and the lines show three and fold the rest (11 Oct 2026)");
@@ -27454,8 +27460,8 @@ await (async () => {
     "the place starts hidden and is shown to an associate alone");
   ok(/card:pCard\}/.test(page6) && /PANEL\[k\]\.hidden=k!==t;/.test(page6), "and its panel is switched with the other places");
   ok(/card=null; cardMonth=null;/.test(page6), "logging out forgets it, as it forgets the price list");
-  /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped */
-  ok(/min-height:var\(--salt-tap\);display:inline-flex/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
+  /* the month pill was 29px tall since v690, on a strip whose whole purpose is to be tapped; since 12 Oct 2026 (Phase 5) it is the system's tab pill, and the page states only its 44px */
+  ok(/\.mos \.salt-tabs__pill\{min-height:var\(--salt-tap\);min-width:var\(--salt-tap\)\}/.test(page6) && !/\.mos button/.test(page6) && !/cursor:pointer;min-height:auto/.test(page6),
     "and every month pill is a real tap target now, swept across the class rather than fixed on the one new strip");
 })();
 section("S14 14.1: the publish learns the pool, marks a spare in the clear, never retires one, and the door opens it for nobody");
@@ -44801,17 +44807,17 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const rows = () => d.querySelectorAll("#pCard tbody tr").length;
-  const pill = (t) => [...d.querySelectorAll("#pCard .mos button")].find((b) => b.textContent === t);
+  const pill = (t) => [...d.querySelectorAll("#pCard .mos .salt-tabs__pill")].find((b) => b.textContent === t), isOn = (b) => !!b && b.classList.contains("salt-tabs__pill--active");
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
     d.getElementById("f").dispatchEvent(new w.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 60 && !pill("All"); i++) await new Promise((r) => setTimeout(r, 50));
-    const opened = rows(), openedOn = (d.querySelector("#pCard .mos button.on") || {}).textContent;
+    const opened = rows(), openedOn = (d.querySelector("#pCard .mos .salt-tabs__pill--active") || {}).textContent;
     pill("All").click();
-    ok(opened === 1 && openedOn === "September 2026" && rows() === 3 && pill("All").className === "on",
+    ok(opened === 1 && openedOn === "September 2026" && rows() === 3 && isOn(pill("All")),
       "the card opens on the newest month, and All shows every line from the start: " + JSON.stringify({ opened, openedOn, all: rows() }));
     pill("August 2026").click();
-    ok(rows() === 1 && pill("August 2026").className === "on", "and a month is still one tap: " + rows());
+    ok(rows() === 1 && isOn(pill("August 2026")), "and a month is still one tap: " + rows());
   } finally { w.close(); }
 })();
 

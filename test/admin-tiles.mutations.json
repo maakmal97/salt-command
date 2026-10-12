@@ -2,13 +2,13 @@
  {
   "name": "a group has no legend",
   "file": "stmt/owner.js",
-  "find": "set.appendChild(el('legend','salt-options__legend lbl',L[0])); set.appendChild(grid);",
+  "find": "set.appendChild(el('legend','salt-options__legend salt-options__legend--label lbl',L[0])); set.appendChild(grid);",
   "replace": "set.appendChild(grid);"
  },
  {
   "name": "a group's legend is not in the form's label style",
   "file": "stmt/owner.js",
-  "find": "el('legend','salt-options__legend lbl',L[0])",
+  "find": "el('legend','salt-options__legend salt-options__legend--label lbl',L[0])",
   "replace": "el('legend','salt-options__legend',L[0])"
  },
  {
