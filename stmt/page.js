@@ -78,8 +78,9 @@ const PAGE_CSS = `
 .ask .nocase{text-transform:none}
 /* a username or a code inside a sentence is a figure, and figures are mono (decision 3) */
 .mono{font-family:var(--salt-font-mono);color:var(--salt-text)}
-.adm .lbl{display:block;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--salt-copper);font-weight:700;margin:14px 0 6px;font-family:var(--salt-font-mono)}
+/* 12 OCT 2026 (PHASE 5): a form's label is the system's Field label (salt-field__label, or the Option legend's label modifier), set beside lbl in the markup; what is left
+   here is where it stands */
+.adm .lbl{display:block;margin:14px 0 6px}
 /* a well is black 28%, decision 4 */
 /* the field is the system's .salt-field__input (22 Sep 2026): a well, 16px so a phone never zooms,
    44px tall; a code or a figure takes --mono and a sentence stays in the display face */
@@ -166,7 +167,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .ototal .sub2{display:block;margin-top:2px}
 .osheet .salt-sheet__foot .msg{flex:1 1 100%;margin:0}
 /* 11 Oct 2026: a yes or no in a Sheet. The look is the system's; here is where its pieces sit: the answers run the width, the danger
-   one first and in ember, the ghost that keeps below it */
+   one first and in the alarm (the system's danger ghost), the ghost that keeps below it */
 /* at the limit it lies over the order sheet, so its scrim covers that sheet and its body is above the scrim (the system's own Sheet is 70 and 71) */
 #ynScrim{z-index:72}
 .ynsheet{z-index:73}
@@ -175,7 +176,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .ynsheet .salt-sheet__body > * + *{margin-top:14px}
 .ynsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
 .ynsheet .salt-sheet__foot .salt-ghost{width:100%}
-.ynsheet .salt-ghost--danger{--salt-ghost-tone:var(--salt-ember);border-color:var(--salt-ember)}
 .thsheet .salt-sheet__foot{display:block}
 .thsheet .salt-sheet__foot .msg{margin:8px 0 0}
 .thempty{margin:0}
@@ -312,17 +312,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
    a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
    inside its card, so it starts at the card's edge: centred, it stood 170px in from everything else from 1080px */
-.mos{max-width:620px;margin:0 0 22px;display:flex;flex-wrap:wrap;gap:8px}
-.mos button{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.06em;
-  color:var(--salt-text-muted);background:none;border:1px solid var(--salt-line);
-  border-radius:var(--salt-radius-pill);padding:7px 14px;cursor:pointer;
-  /* v706: min-height was auto, so every month pill and every issue pill has been 29px tall since
-     v690, on a strip whose whole purpose is to be tapped on a phone. His bar is 44px in BOTH
-     dimensions, measured; swept across the class rather than fixed on the one new strip. */
-  min-height:var(--salt-tap);display:inline-flex;align-items:center}
-/* 24 Sep 2026: the chosen pill is what this comment always said, brass on a brass hairline; it was filled */
-.mos button.on{color:var(--salt-brass);border-color:var(--salt-brass);font-weight:700}
-.mos button small{margin-left:6px;font-weight:400;letter-spacing:.02em;text-transform:uppercase}
+.mos{max-width:620px;margin:0 0 22px}
+.mos .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* THE MONTH FILTER (v690): the same pill vocabulary as the issue strip, a step quieter, because it
    sits inside a statement rather than choosing between statements. The note under it says what the
    filter does and does not do, so a reader never takes a month's rows for the whole account. */
@@ -426,9 +417,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    window while the lock bar and the issue strip stayed pinned at 620px above them: on a laptop
    the osh the customer opens and the osh he was sent were different documents. */
 #out{max-width:620px;margin:0 auto}
-/* a pane is white 3% with a brass hairline */
-.pane{border:1px solid var(--salt-line);border-radius:var(--salt-radius-md);background:var(--salt-glass);
-  padding:16px 18px;margin:0 0 14px}
+/* a pane is the system's glass card (12 Oct 2026, Phase 5: salt-glass-card beside pane in the markup); here is its padding and its gap */
+.pane{padding:16px 18px;margin:0 0 14px}
 .pane h3,.pane .pmark{font-size:var(--salt-text-md);margin:0 0 2px;font-family:var(--salt-font-mono);letter-spacing:.04em}
 .pane .sub2{margin:0 0 10px}
 .pane table{min-width:0}
@@ -539,12 +529,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
-/* 12 OCT 2026 (PHASE 4a): THE WEEKLY HOURS ARE A TABLE. Its head names the three columns (the day with its tick, when it opens, when it closes) and the rows keep the
-   44px of the tick and of each time. The columns share the width, so the head stands over them at 375px as at 1280. */
-.adm .maker-hours{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0 6px;margin:8px 0}
-.adm .maker-hours th.lbl{display:table-cell;margin:0;padding:0 4px;text-align:left}
+/* 12 OCT 2026 (PHASE 4a, 5): THE WEEKLY HOURS ARE THE SYSTEM'S TABLE (salt-table, the day's cell its label cell). Its head names the three columns (the day with its tick, when it
+   opens, when it closes) and the rows keep the 44px of the tick and of each time. The columns share the width, so the head stands over them at 375px as at 1280. The cells hold
+   controls and not figures, so they stand left, and their gutters stay the 4px the times were fitted in. */
+.adm .maker-hours{table-layout:fixed;margin:8px 0}
+.adm .maker-hours th,.adm .maker-hours td{text-align:left;padding:2px 4px;vertical-align:middle}
 .adm .maker-hours th:first-child{width:38%}
-.adm .maker-hours td{padding:0 4px;vertical-align:middle}
 .adm .maker-hours td input[type=time]{width:100%;min-width:0;padding-inline:8px}
 .adm .maker-day-pick{display:flex;align-items:center;gap:4px;min-height:44px}
 .adm .maker-day input[type=checkbox]{flex:none;width:44px;height:44px;margin:0}
@@ -680,24 +670,18 @@ body.ended>*:not(#aEnded){display:none}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
    fill, because a percentage of a unit is a proportion and nothing more. */
-.adm .acard{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
-  padding:14px 16px;margin:12px 0 0}
+.adm .acard{padding:14px 16px;margin:12px 0 0}
 .adm .acard.off{opacity:.55}
 /* V5 (his answer of 29 Sep 2026): a locked account still sees Home and Rewards, greyed out and not to be tapped */
 .lockd{opacity:.45;pointer-events:none;user-select:none}
 .adm .acard .agrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
 .adm .acard .acell{min-width:0}
-.adm .acard .acell .l{display:block;font-size:var(--salt-text-xs);letter-spacing:.12em;text-transform:uppercase;
-  color:var(--salt-copper);font-family:var(--salt-font-mono)}
-.adm .acard .acell b{display:block;margin-top:3px;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);
-  color:var(--salt-text);font-variant-numeric:tabular-nums}
 .adm .pbar{height:6px;margin:10px 0 6px;border:1px solid var(--salt-line);border-radius:999px;overflow:hidden;
   background:var(--salt-well)}
 .adm .pbar i{display:block;height:100%;background:var(--salt-gradient)}
 .adm #oCards h2{margin:22px 0 0;font-size:var(--salt-text-md)}
 /* v696: the five stand above anything minted against a customer, each under its own line */
-.adm .ghead{margin:18px 0 6px;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);
-  letter-spacing:.18em;text-transform:uppercase;color:var(--salt-copper);font-weight:700}
+.adm .ghead{margin:18px 0 6px}
 .adm .ghead:first-child{margin-top:4px}
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
@@ -743,12 +727,11 @@ body.ended>*:not(#aEnded){display:none}
   font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;text-transform:uppercase}
 /* A GUEST LINK, as a card: who it is for leads, then the tier, then what it has done. The address
    is selectable text rather than a live link, because the thing he does with it is copy it. */
-.glink{border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-glass);
-  padding:14px 16px;margin:12px 0 0}
+/* .adm .glink as well: the door's rule for a glass card inside .gate (margin 0 0 4px) is as specific as .glink is not */
+.glink,.adm .glink{padding:14px 16px;margin:12px 0 0}
 .glink.off{opacity:.5}
-.glink h4{margin:0;font-size:var(--salt-text-md);font-weight:600}
-.glink .gt{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:.14em;
-  text-transform:uppercase;color:var(--salt-copper);font-weight:700;margin:0 0 6px}
+.glink h4{margin:0;font-size:var(--salt-text-md);font-weight:500}
+.glink .gt{margin:0 0 6px}
 .glink .gu{display:block;width:100%;margin:10px 0 0;padding:9px 11px;font-family:var(--salt-font-mono);
   font-size:var(--salt-text-xs);color:var(--salt-brass);background:var(--salt-well);
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);word-break:break-all}
@@ -768,9 +751,7 @@ body.ended>*:not(#aEnded){display:none}
 .rlinks .rlnext{margin:16px 0 10px}
 .rmeter{margin:10px 0 14px}
 .adm .grow{display:flex;gap:8px;margin-top:12px}
-.adm .grow button{flex:1;min-height:var(--salt-tap);font-family:var(--salt-font-mono);
-  font-size:var(--salt-text-xs);letter-spacing:.06em;color:var(--salt-text);background:none;
-  border:1px solid var(--salt-line);border-radius:var(--salt-radius-pill);cursor:pointer}
+.adm .grow .salt-ghost{flex:1}
 /* 11 Oct 2026: THE LOOK, Night or Tide, chosen on each device. The sheet's two tiles are the system's Option face as a tap, each with a
    swatch of ITS OWN ground and accent, so a tile reads true under the other theme: these four are the system's obsidian and brass at
    Night and at Tide, the one place this page writes a colour (held equal to design/salt-ds.css by the suite), and no theme restates them.
@@ -1021,7 +1002,7 @@ function vaultSheet() {
     + '<div class="salt-sheet__head"><h2 class="salt-sheet__title" id="vaultT">Unlock names and places</h2>'
     + '<button type="button" class="salt-orb salt-sheet__close" id="vaultX" data-act="vault.close"' + wl("x.close") + ">" + glyphSvg("close", 20) + "</button></div>"
     + '<div class="salt-sheet__body"><p class="lead">One password opens names, places and slips. They are seen on this phone only, and lock again when the page is hidden.</p>'
-    + '<label class="maker-field"><span class="lbl">Password for names and places</span>'
+    + '<label class="maker-field"><span class="lbl salt-field__label">Password for names and places</span>'
     + '<input class="fld salt-field__input" id="vaultPass" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-act="vault.passphrase"></label>'
     + '<p class="msg" id="vaultSay" role="status" aria-live="polite"></p></div>'
     + '<div class="salt-sheet__foot"><button type="button" class="btn salt-pill salt-pill--md" id="vaultGo" data-act="vault.open">Unlock</button>'
@@ -1159,7 +1140,7 @@ export function boardPage(guest, nonce) {
   const week = (b.week && b.week.label) || "";
   const rm = (n) => "RM " + Number(n || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 });   /* C5 */
   const body = products.length
-    ? products.map((p) => '<div class="pane">'
+    ? products.map((p) => '<div class="pane salt-glass-card salt-glass-card--radius-md">'
         + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30)
         + '<span class="pshape">' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + "</span></h2>"
         /* v787: a level is never named on a pane, on any book (his instruction, 22 Sep 2026). The board
@@ -1391,10 +1372,10 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="oLinks" data-in="customers.links">'
         + "<h2>Guest links</h2>"
         + '<p class="lead">A guest link opens one price list. The prices follow the customer you name.</p>'
-        + '<label class="lbl" for="gintro">Whose friend?</label>'
+        + '<label class="lbl salt-field__label" for="gintro">Whose friend?</label>'
         + '<input class="fld salt-field__input" id="gintro" type="text" maxlength="20" autocapitalize="off" '
         + 'spellcheck="false" placeholder="their username" aria-label="The username of the customer whose friend this is" data-act="link.introducer">'
-        + '<label class="lbl" for="glabel">A note for you</label>'
+        + '<label class="lbl salt-field__label" for="glabel">A note for you</label>'
         + '<input class="fld salt-field__input" id="glabel" type="text" maxlength="60" '
         + 'placeholder="a shop, a name, a note" aria-label="A note for you" data-act="link.label">'
         + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake" data-act="link.make">Make a link</button>'
@@ -2914,7 +2895,7 @@ const CLIENT_JS = `
     box.appendChild(el('h2',null,tw('rew.h')));
     box.appendChild(el('p','lead',tw('rew.lead')));
     card.products.forEach(function(p){
-      var pane=el('div','pane');
+      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
       var h3=pmarkHead('h3',p.product);
       pane.appendChild(h3);
       /* THE REWARD IN UNITS, AND A BAR TO THE NEXT, first in the pane. No ringgit of margin anywhere near it. The bar is
@@ -2947,9 +2928,9 @@ const CLIENT_JS = `
       /* the lines, with their own month strip */
       var months=cardMonths(p), pick=cardMonth==null?(months[0]||''):cardMonth;
       if(months.length>1){
-        var strip=el('div','mos mfil');
+        var strip=el('div','salt-tabs mos mfil');
         months.concat(['']).forEach(function(m){
-          var b=el('button',(m===pick?'on':'')); b.type='button';
+          var b=el('button','salt-tabs__pill'+(m===pick?' salt-tabs__pill--active':'')); b.type='button'; b.setAttribute('aria-pressed',m===pick?'true':'false');
           b.textContent=m?monthLabel(m):tw('acct.allPill');
           b.addEventListener('click',function(){ cardMonth=m; drawCard(); });
           strip.appendChild(b);
@@ -3002,7 +2983,7 @@ const CLIENT_JS = `
     return r.opens?tw('lnk.opened'+(r.opens===1?'1':'N')+(r.last?'Last':''),{n:r.opens, d:Dd(linkDay,r.last)}):tw('lnk.notOpened');
   }
   function drawMyLinks(into){
-    var box=el('div','pane rlinks');
+    var box=el('div','pane rlinks salt-glass-card salt-glass-card--radius-md');
     var head=el('div','rlhead'); head.appendChild(el('h3',null,tw('lnk.h')));
     var live=(myLinks||[]).filter(function(r){ return r.state!=='withdrawn'; }).length;
     if(myLinks&&myMax) head.appendChild(el('span','rlcount',tw('lnk.count',{n:live, m:myMax})));
@@ -3010,7 +2991,7 @@ const CLIENT_JS = `
     if(myLinks===null){ box.appendChild(el('p','sub2',tw('lnk.reading'))); into.appendChild(box); if(!view) loadMyLinks(); return; }
     if(!myLinks.length) box.appendChild(el('p','sub2',tw('lnk.none')));
     myLinks.forEach(function(r){
-      var row=el('div','glink');
+      var row=el('div','glink salt-glass-card salt-glass-card--radius-md');
       var top=el('div','gtop'), st=LINK_STATE[r.state]||LINK_STATE.open;
       top.appendChild(el('p','gh',r.made?tw('lnk.made',{d:Dd(oDay,r.made)}):tw('lnk.yours')));
       /* D13 (24 Sep 2026): a declined link is its own state, never "waiting" */
@@ -3143,7 +3124,7 @@ const CLIENT_JS = `
     /* S7 7.2: the books stand in a grid, two across from 1080px */
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
     sold().forEach(function(p){
-      var pane=el('div','pane');
+      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
       /* C21: a board's mark is an h2 under the place's h1, never an h3 with nothing between */
       var h3=pmarkHead('h2',p.product);
       /* S4 4.10, D11 (his "all recommended" of 24 Sep 2026): THE LEVEL LEAVES PRICES. v659 drew a symbol and a colour
@@ -3164,7 +3145,7 @@ const CLIENT_JS = `
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
-      var pane=el('div','pane');
+      var pane=el('div','pane salt-glass-card salt-glass-card--radius-md');
       var sh=pmarkHead('h2',p.product); pane.appendChild(sh);
       pane.appendChild(el('p','sub2',tw('pr.soon')));
       grid.appendChild(pane);
@@ -4016,7 +3997,7 @@ const CLIENT_JS = `
     if(view) top.appendChild(el('p','lead',tw('ord.view')));
     if(hold){
       /* S6 6.7: what is past its term, each part with the day it fell due, and one Pay for it */
-      var dueBox=el('div','pane'), od=odNow(), left=odLeft();
+      var dueBox=el('div','pane salt-glass-card salt-glass-card--radius-md'), od=odNow(), left=odLeft();
       dueBox.appendChild(kpiTile('ember',tw('pay.overdue'),rm(left),odNote(od)));
       dueBox.appendChild(el('p','lead',tw('pay.hold',{rm:rm(left)})));
       if(od.parts.length>1){

@@ -667,13 +667,13 @@ export const OWNER_JS = `
     if(assoc.length){ heads[seq.length]='Made by associates'; seq=seq.concat(assoc); }
     if(older.length){ heads[seq.length]='Older links'; seq=seq.concat(older); }
     seq.forEach(function(r,i){
-      if(heads[i]) glist.appendChild(el('p','ghead',heads[i]));
-      var card=el('div','glink'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
+      if(heads[i]) glist.appendChild(el('p','ghead salt-eyebrow salt-eyebrow--copper',heads[i]));
+      var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
       var declined=r.declined===true, pending=r.approved===false&&!declined;
       /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) is kept because it
          was handed out, and it opens the board a stranger sees, never the level it still carries */
       var retired=r.standing&&want.length&&want.indexOf(r.level)<0;
-      card.appendChild(el('p','gt',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):'Level '+r.tier)))))+(r.revoked?' \\u00b7 withdrawn':'')));
+      card.appendChild(el('p','gt salt-field__label',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):'Level '+r.tier)))))+(r.revoked?' \\u00b7 withdrawn':'')));
       card.appendChild(el('h4',null,retired?'An old link, kept'
         :r.standing?'For strangers'
         :declined?('Made by '+(r.by?codeByUser(r.by):'an associate')+', not approved, so it stays shut')
@@ -688,13 +688,13 @@ export const OWNER_JS = `
       img.src=r.qr; img.alt='QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
       card.appendChild(img);
       var row=el('div','grow');
-      var copy=el('button',null,'Copy link'); copy.type='button'; actOn(copy,'link.copy');
+      var copy=el('button','salt-ghost','Copy link'); copy.type='button'; actOn(copy,'link.copy');
       copy.addEventListener('click', async function(){
         try{ await navigator.clipboard.writeText(r.url); copy.textContent='Copied'; }
         catch(e){ copy.textContent='Copy failed'; }
         setTimeout(function(){ copy.textContent='Copy link'; }, 1500);
       });
-      var rev=el('button',null,r.revoked?'Restore':'Withdraw'); rev.type='button'; rev.setAttribute('data-move',''); actOn(rev,r.revoked?'link.restore':'link.withdraw');
+      var rev=el('button','salt-ghost'+(r.revoked?'':' salt-ghost--danger'),r.revoked?'Restore':'Withdraw'); rev.type='button'; rev.setAttribute('data-move',''); actOn(rev,r.revoked?'link.restore':'link.withdraw');
       rev.addEventListener('click', function(){ moveLink(r, r.revoked?'restore':'revoke'); });
       row.appendChild(copy); row.appendChild(rev);
       /* v709: his word on one an associate minted, and the tier he may change on it. A tier he
@@ -703,17 +703,17 @@ export const OWNER_JS = `
         if(r.approved===false&&!r.revoked){
           /* a declined link keeps Approve, which is how a decline is taken back, and loses Decline;
              a withdrawn one has neither, Restore being the way back */
-          var ap=el('button',null,'Approve'); ap.type='button'; ap.setAttribute('data-move',''); actOn(ap,'link.approve');
+          var ap=el('button','salt-ghost','Approve'); ap.type='button'; ap.setAttribute('data-move',''); actOn(ap,'link.approve');
           ap.addEventListener('click', function(){ moveLink(r,'approve'); });
           row.appendChild(ap);
           if(!declined){
-            var de=el('button',null,'Decline'); de.type='button'; de.setAttribute('data-move',''); actOn(de,'link.decline');
+            var de=el('button','salt-ghost salt-ghost--danger','Decline'); de.type='button'; de.setAttribute('data-move',''); actOn(de,'link.decline');
             de.addEventListener('click', function(){ moveLink(r,'decline'); });
             row.appendChild(de);
           }
         }
         if(tiers.length){
-          var sel=el('select','fld'); sel.setAttribute('aria-label','Price list their friend sees'); actOn(sel,'link.tier');
+          var sel=el('select','fld salt-field__input'); sel.setAttribute('aria-label','Price list their friend sees'); actOn(sel,'link.tier');
           var o0=el('option',null,'Follows '+codeByUser(r.by)); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
           /* Ambassador is the floor and never a guest's, so the picker starts at the first of five */
           tiers.slice(1,6).forEach(function(t){ var o=el('option',null,t); o.value=t; if(r.level===t)o.selected=true; sel.appendChild(o); });
@@ -1389,7 +1389,7 @@ export const OWNER_JS = `
         }
       }catch(error){draft.storageError=error.message;}
     }
-    var label=el('label','maker-field');label.appendChild(el('span','lbl','Answer them'));
+    var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','Answer them'));
     var text=el('textarea','fld salt-field__input');text.maxLength=200;text.value=draft.text;
     text.setAttribute('data-thread-reply',user);actOn(text,'chat.reply');text.oninput=function(){draft.text=text.value;};
     label.appendChild(text);root.appendChild(label);
@@ -1477,7 +1477,7 @@ export const OWNER_JS = `
     root.textContent='';
     var note=el('p','msg',''); note.setAttribute('role','status');
     function field(label,type,attrs){
-      var L=labOf(label), l=el('label','maker-field'); l.appendChild(el('span','lbl',L[0]));
+      var L=labOf(label), l=el('label','maker-field'); l.appendChild(el('span','lbl salt-field__label',L[0]));
       var i=actOn(el('input','fld salt-field__input'),L[1],L[2]); i.type=type; Object.keys(attrs||{}).forEach(function(k){ i.setAttribute(k,attrs[k]); });
       l.appendChild(i); root.appendChild(l); return i;
     }
@@ -1496,8 +1496,9 @@ export const OWNER_JS = `
     (result.pools||[]).forEach(function(p){
       var card=el('article','salt-glass-card maker-card');
       card.setAttribute('data-key',p.id);
-      var pline=el('p','maker-row',bookName(p.product)+', '+units(p.q)+' each. '+p.unitsIn+' of '+p.target+' units in, '+(p.joins||[]).length+' joined.'
-        +(p.closesOn?' Closes '+fmtWhen(p.closesOn)+'.':'')+' ');
+      var pline=el('p','maker-row'); pline.appendChild(bookTag(p.product));
+      pline.appendChild(document.createTextNode(', '+units(p.q)+' each. '+p.unitsIn+' of '+p.target+' units in, '+(p.joins||[]).length+' joined.'
+        +(p.closesOn?' Closes '+fmtWhen(p.closesOn)+'.':'')+' '));
       pline.appendChild(chip(p.state==='open'?'verdigris':'mist',p.state==='open'?'Open':'Closed')); card.appendChild(pline);
       (p.closeLeft||[]).forEach(function(x){ card.appendChild(el('p','maker-row','One order was not agreed: '+x.why+'.')); });
       if(p.state==='open'||(p.closeLeft||[]).length){
@@ -1527,7 +1528,7 @@ export const OWNER_JS = `
     if(!root) return;
     var text=root.querySelector('textarea');
     if(!text){
-      var label=el('label','maker-field');label.appendChild(el('span','lbl','Notice (one line each)'));
+      var label=el('label','maker-field');label.appendChild(el('span','lbl salt-field__label','Notice (one line each)'));
       text=actOn(el('textarea','fld salt-field__input'),'notice.text');text.rows=4;label.appendChild(text);root.appendChild(label);
       var current=el('div','');current.id='makerBulletinCurrent';root.appendChild(current);
       var retained=el('div','');retained.hidden=true;root.appendChild(retained);
@@ -1597,12 +1598,25 @@ export const OWNER_JS = `
     return error.message.indexOf('Not sent.')===0
       ?'No reply from the Counter. It may have gone through; read the thread before sending again.':error.message;
   }
+  /* 12 Oct 2026 (Phase 5): LABELLED FIGURES ARE THE SYSTEM'S METRIC ROW, the label over the figure, as the Desk draws them. #142 drew them on lines of a card's own
+     for lack of the recipe. A space sits between a label and its figure, so the words read as they did ("Cost RM 56.00") to a screen reader and to a copy. */
+  function metrics(pairs){
+    var row=el('div','salt-metrics salt-metrics--sm');
+    pairs.forEach(function(p,i){
+      var cell=el('div'); if(i) row.appendChild(document.createTextNode(' '));
+      cell.appendChild(el('span','salt-metrics__label',p[0])); cell.appendChild(document.createTextNode(' ')); cell.appendChild(el('span','salt-metrics__value',p[1])); row.appendChild(cell);
+    });
+    return row;
+  }
+  function readingFigures(reading){
+    var figs=[];
+    if(reading.cost!=null) figs.push(['Cost',rm(typeof reading.cost==='object'?reading.cost.total:reading.cost)]);
+    if(reading.margin) figs.push(['Your margin',rm(reading.margin.rm)+' · '+reading.margin.pct+'%']);
+    return figs;
+  }
   function makerReading(parent, reading, key){
-    if(reading.cost!=null){
-      var cost=typeof reading.cost==='object'?reading.cost.total:reading.cost;
-      parent.appendChild(el('p','maker-facts','Cost '+rm(cost)));
-    }
-    if(reading.margin) parent.appendChild(el('p','maker-facts','Your margin '+rm(reading.margin.rm)+' · '+reading.margin.pct+'%'));
+    var figs=readingFigures(reading);
+    if(figs.length) parent.appendChild(metrics(figs));
     if(reading.reasoning) parent.appendChild(el('p','salt-insight',reading.reasoning));
     (reading.flags||[]).forEach(function(flag){ parent.appendChild(el('p','salt-insight',String(flag))); });
     if(reading.row) parent.appendChild(detailBox('row.proposed',key,rowPairs(reading.row)));
@@ -1826,7 +1840,7 @@ export const OWNER_JS = `
   var tileSeq=0;
   function makerTiles(label,items,none){
     var L=labOf(label), set=el('fieldset','salt-options maker-tiles'), grid=el('div','salt-options__grid'), name='tiles'+(++tileSeq);
-    set.appendChild(el('legend','salt-options__legend lbl',L[0])); set.appendChild(grid);
+    set.appendChild(el('legend','salt-options__legend salt-options__legend--label lbl',L[0])); set.appendChild(grid);
     Object.defineProperty(set,'value',{
       get:function(){ var on=set.querySelector('input:checked'); return on?on.value:''; },
       set:function(v){ [].forEach.call(set.querySelectorAll('input'),function(r){ r.checked=r.value===String(v); }); }
@@ -1847,7 +1861,7 @@ export const OWNER_JS = `
   }
   function makerTilesIn(root,label,items,none){ var set=makerTiles(label,items,none); root.appendChild(set); return set; }
   function makerField(parent, label, type, value, step){
-    var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
+    var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]), input=actOn(el('input','fld salt-field__input'),L[1],L[2]);
     input.type=type; input.value=value==null?'':String(value);
     if(type==='number'){ input.step=step||'0.01'; input.min='0'; input.inputMode='decimal'; }
     wrap.appendChild(title); wrap.appendChild(input); parent.appendChild(wrap); return input;
@@ -1978,7 +1992,7 @@ export const OWNER_JS = `
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
     var books=catalog.products||[];
     var addSelect=function(root,label,items){
-      var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl',L[0]), select=actOn(el('select','fld salt-field__input'),L[1],L[2]);
+      var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]), select=actOn(el('select','fld salt-field__input'),L[1],L[2]);
       items.forEach(function(item){var option=el('option',null,item.label);option.value=item.value;select.appendChild(option);});
       wrap.appendChild(title);wrap.appendChild(select);root.appendChild(wrap);return select;
     };
@@ -3172,7 +3186,7 @@ export const OWNER_JS = `
       }else{
         var houseProduct=makerTilesIn(houseSection,['Book','record.house.book'],houseBooks.map(function(item){ return {value:item.product,label:bookName(item.product)}; })), houseBoxes=el('fieldset','salt-options maker-sizes'), houseGrid=el('div','salt-options__grid');
         /* 12 Oct 2026 (PHASE 4a): the sizes are a grid of the system's Option tiles, a size a tile, ticked while it is printed; the same ticks, acts and body as the list was */
-        houseBoxes.appendChild(el('legend','salt-options__legend lbl','Sizes to print')); houseBoxes.appendChild(houseGrid);
+        houseBoxes.appendChild(el('legend','salt-options__legend salt-options__legend--label lbl','Sizes to print')); houseBoxes.appendChild(houseGrid);
         houseSection.appendChild(houseBoxes);
         var houseTicks=[];
         function fillHouse(){
@@ -3485,7 +3499,7 @@ export const OWNER_JS = `
     orderTitle.appendChild(document.createTextNode(', '+units(order.qty)+' '+bookName(order.product)+', '+rm(order.total)+(order.delivery?' + '+rm(order.delivery):'')));
     card.appendChild(orderTitle);
     line.appendChild(chip(st[0],st[1])); card.appendChild(line);
-    card.appendChild(el('p','maker-facts','Goods '+rm(order.total)+(order.delivery?' · Delivery '+rm(order.delivery):'')+(+order.paid>0?' · Paid '+rm(order.paid):'')));
+    card.appendChild(metrics([['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
     card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));
   }
   /* the card of an open order: every control it had, on the order opened alone */
@@ -3765,10 +3779,8 @@ export const OWNER_JS = `
      freeze at drafting), the drafter's reasoning, and the row itself folded; then the two moves, Approve filled and Reject the danger ghost. A trip's rows stand in one card
      with one Approve. Both moves ask on the page's Sheet. */
   function approveReading(card,reading,key){
-    var facts=[];
-    if(reading.cost!=null) facts.push('Cost '+rm(typeof reading.cost==='object'?reading.cost.total:reading.cost));
-    if(reading.margin) facts.push('Your margin '+rm(reading.margin.rm)+' · '+reading.margin.pct+'%');
-    if(facts.length) card.appendChild(el('p','maker-facts',facts.join(' · ')));
+    var figs=readingFigures(reading);
+    if(figs.length) card.appendChild(metrics(figs));
     var flags=reading.flags||[];
     if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',String(flag))); }); card.appendChild(chips); }
     if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',reading.reasoning));
@@ -3784,13 +3796,13 @@ export const OWNER_JS = `
       var when1=fmtWhen(entry.date||entry.payload&&entry.payload.date||'');
       head.appendChild(el('span','salt-approve__entry',entryWord(entry)+(when1?' on '+when1:'')));
       card.appendChild(head);
-      card.appendChild(el('p','maker-facts',[draft.qty==null?'':units(draft.qty)+(draft.product?' '+bookName(draft.product):''), rm(draft.total)].filter(Boolean).join(', ')));
+      card.appendChild(bookLine(draft.qty,draft.product,draft.total));
       approveReading(card,draft,draft.id);
       var trip=tripOf(draft), siblings=tripRows(draft);
       if(siblings.length){
         card.appendChild(el('p','salt-insight',siblings.length===2?'Two books, one trip. Approve decides both.':siblings.length+' books, one trip. Approve decides all of them.'));
         siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){
-          card.appendChild(el('p','maker-facts',units(item.qty)+' '+bookName(item.product||'salt')+', '+rm(item.total)));
+          card.appendChild(bookLine(item.qty,item.product||'salt',item.total));
           approveReading(card,item,item.id);
         });
       }
@@ -3875,13 +3887,13 @@ export const OWNER_JS = `
     var names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     var days=(makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days)||[];
     /* 12 Oct 2026 (PHASE 4a): the week is a table whose head names its three columns, the day with its tick, when it opens and when it closes; the same ticks, times, acts and body as the rows of bare controls were */
-    var schedule=el('table','maker-hours'), head=el('tr'), weekdays=el('tbody');
-    ['Day','Opens','Closes'].forEach(function(word){ var th=el('th','lbl',word); th.setAttribute('scope','col'); head.appendChild(th); });
+    var schedule=el('table','maker-hours salt-table'), head=el('tr'), weekdays=el('tbody');
+    ['Day','Opens','Closes'].forEach(function(word,i){ var th=el('th',i?'':'salt-table__label',word); th.setAttribute('scope','col'); head.appendChild(th); });
     schedule.appendChild(el('thead')).appendChild(head); schedule.appendChild(weekdays);
     names.forEach(function(name,i){
       var row=el('tr','maker-day'), pick=el('label','maker-day-pick'), enabled=actOn(el('input',''),'hours.day-open',name); enabled.type='checkbox'; enabled.checked=!!days[i];
       enabled.setAttribute('aria-label',name+' is open');
-      pick.appendChild(enabled); pick.appendChild(el('span','maker-day-name',name)); row.appendChild(el('td')).appendChild(pick);
+      pick.appendChild(enabled); pick.appendChild(el('span','maker-day-name',name)); row.appendChild(el('td','salt-table__label')).appendChild(pick);
       var open=actOn(el('input','fld salt-field__input'),'hours.day-from',name); open.type='time'; open.value=days[i]?days[i].open:'09:00'; open.disabled=!enabled.checked; open.setAttribute('aria-label',name+' opens');
       var close=actOn(el('input','fld salt-field__input'),'hours.day-to',name); close.type='time'; close.value=days[i]?days[i].close:'17:00'; close.disabled=!enabled.checked; close.setAttribute('aria-label',name+' closes');
       enabled.addEventListener('change',function(){ open.disabled=!enabled.checked; close.disabled=!enabled.checked; });
@@ -4011,6 +4023,20 @@ export const OWNER_JS = `
     w.appendChild(psym(product,28));
     cap.setAttribute('aria-hidden','true'); cap.appendChild(document.createTextNode(bookName(product)+', ')); cap.appendChild(el('span','nb',words)); w.appendChild(cap);
     return w;
+  }
+  /* 12 Oct 2026 (Phase 5): A BOOK NAMED ON A ROW WEARS THE SYSTEM'S PRODUCT TAG, the Desk's name in it and the book's own accent as its hue (PRODUCTS.accent in
+     ledger/book.json is the system's --salt-product-<book> token, which the tag's modifier for the book reads). The words are the name alone, as they were; this page alone
+     draws one, a customer's page never naming a book. */
+  function bookTag(product){
+    var name=bookName(product), t=el('span','salt-producttag salt-producttag--'+name.replace(/[^a-z]/g,'')), dot=el('span','salt-producttag__dot');
+    dot.setAttribute('aria-hidden','true'); t.appendChild(dot); t.appendChild(document.createTextNode(name)); return t;
+  }
+  /* a quantity, its book and a sum on one line: 2 units oil, RM 100.00 */
+  function bookLine(qty,product,total){
+    var p=el('p','maker-facts');
+    if(qty==null){ p.appendChild(document.createTextNode(rm(total))); return p; }
+    p.appendChild(document.createTextNode(units(qty)+(product?' ':''))); if(product) p.appendChild(bookTag(product));
+    p.appendChild(document.createTextNode(', '+rm(total))); return p;
   }
   function bookHead(tag,product,name){
     var h=el(tag,'pmark'), said=name||bookName(product);
@@ -4172,7 +4198,7 @@ export const OWNER_JS = `
         var r=strangerLink();
         if(!r){ note.textContent='The guest link is not made yet. Open Links once, then try again.'; return; }
         silverOpen[a.username]=true;
-        var box=el('div','glink'), img=document.createElement('img'), cp=ghost(['Copy link','need.copy-link']);
+        var box=el('div','glink salt-glass-card salt-glass-card--radius-md'), img=document.createElement('img'), cp=ghost(['Copy link','need.copy-link']);
         box.appendChild(el('code','gu',r.url));
         img.src=r.qr; img.alt='QR to the guest price list'; img.width=180; img.height=180; box.appendChild(img);
         cp.addEventListener('click', async function(){
@@ -4475,7 +4501,7 @@ export const OWNER_JS = `
     w.appendChild(f); return w;
   }
   function cardOf(r){
-    var c=el('div','acard'+(r.departed?' off':''));
+    var c=el('div','acard salt-glass-card salt-glass-card--radius-md'+(r.departed?' off':''));
     var head=el('div','srow');
     head.appendChild(el('b',null,r.id));
     var marks=[];
@@ -4485,9 +4511,9 @@ export const OWNER_JS = `
     if(r.stars) marks.push(new Array(r.stars+1).join('\\u2605'));
     head.appendChild(el('span','un',marks.join(' \\u00b7 ')));
     c.appendChild(head);
-    var g=el('div','agrid');
+    var g=el('div','agrid salt-metrics salt-metrics--sm');
     [['Bought from you',rm(r.bought)],['Sold for you',rm(r.soldFor)],['Introduced',rm(r.introduced)]].forEach(function(p){
-      var cell=el('div','acell'); cell.appendChild(el('span','l',p[0])); cell.appendChild(el('b',null,p[1])); g.appendChild(cell);
+      var cell=el('div','acell'); cell.appendChild(el('span','salt-metrics__label',p[0])); cell.appendChild(el('span','salt-metrics__value',p[1])); g.appendChild(cell);
     });
     c.appendChild(g);
     var line=[];
