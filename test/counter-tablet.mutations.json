@@ -76,5 +76,83 @@
   "file": "stmt/page.js",
   "find": "  .salt-sheet:not(.adm) .salt-sheet__head{padding-top:var(--salt-space-5)}\n",
   "replace": ""
+ },
+ {
+  "name": "the list beside the order waits for the rail's 1080px",
+  "file": "stmt/page.js",
+  "find": "@media (min-width:860px){\n  .oplace{display:grid;",
+  "replace": "@media (min-width:1080px){\n  .oplace{display:grid;"
+ },
+ {
+  "name": "the open order stops scrolling inside itself",
+  "file": "stmt/page.js",
+  "find": "  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
+  "replace": "  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px)}\n"
+ },
+ {
+  "name": "the open order is not sticky",
+  "file": "stmt/page.js",
+  "find": "  .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}\n",
+  "replace": "  .oscreen{max-height:calc(100vh - 48px);overflow-y:auto}\n"
+ },
+ {
+  "name": "the open order's way back is drawn beside the list",
+  "file": "stmt/page.js",
+  "find": "  .oback{display:none}\n",
+  "replace": ""
+ },
+ {
+  "name": "the open order takes the whole tab up to 1079px",
+  "file": "stmt/page.js",
+  "find": "@media (max-width:859.98px){#pOrder.o-open>:not(.oplace){display:none}",
+  "replace": "@media (max-width:1079px){#pOrder.o-open>:not(.oplace){display:none}"
+ },
+ {
+  "name": "the open order's foot goes under the App bar between 860 and 1080px",
+  "file": "stmt/page.js",
+  "find": "  .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
+  "replace": ""
+ },
+ {
+  "name": "the open order's height forgets the safe area",
+  "file": "stmt/page.js",
+  "find": "  .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}\n",
+  "replace": "  .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h))}\n"
+ },
+ {
+  "name": "Orders keeps its 620px column between 860 and 1080px",
+  "file": "stmt/page.js",
+  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
+  "replace": ""
+ },
+ {
+  "name": "the heading of Orders stays in the 620px column",
+  "file": "stmt/page.js",
+  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
+  "replace": "  #pOrder{max-width:none}\n"
+ },
+ {
+  "name": "a rule of Orders is also written under .adm, every wanted one still there",
+  "file": "stmt/page.js",
+  "find": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n",
+  "replace": "  #pOrder,.cshell[data-place=order] .chead{max-width:none}\n  .adm .oscreen{top:0}\n"
+ },
+ {
+  "name": "the script opens an order beside the list only from 1080px",
+  "file": "stmt/page.js",
+  "find": "function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 860px)').matches)",
+  "replace": "function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 1080px)').matches)"
+ },
+ {
+  "name": "the script drops the order it opened by itself only below 1080px",
+  "file": "stmt/page.js",
+  "find": "var oMq=window.matchMedia&&window.matchMedia('(min-width: 860px)');",
+  "replace": "var oMq=window.matchMedia&&window.matchMedia('(min-width: 1080px)');"
+ },
+ {
+  "name": "the shell stops naming the place it shows",
+  "file": "stmt/page.js",
+  "find": "    tab=t; tabs.setAttribute('data-place',t);\n",
+  "replace": "    tab=t;\n"
  }
 ]

@@ -461,12 +461,19 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .rgave .rtx{margin-left:8px}
 .ohist ul{margin:0;padding:0;list-style:none}
 .ofoot .salt-ghost{width:100%}
-@media (max-width:1079px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
-@media (min-width:1080px){
+/* 12 OCT 2026 (PHASE 7d, his yes of 11 Oct 2026, item 9): THE LIST STANDS BESIDE THE OPEN ORDER FROM 860px, as Orders do on his page, and not from the rail's 1080px. Below 860px the open order is the
+   whole tab. Between 860px and 1079px the App bar still stands fixed along the foot, so the order's own height gives up the bar's and its foot stays above it (it was 40px under it at 1024x768
+   on his page), and the place takes the page's width where the other places keep their 620px column: Orders alone, which the shell marks on itself (data-place) */
+@media (max-width:859.98px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
+@media (min-width:860px){
   .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
   .oback{display:none}
   /* the open order stands still while the list scrolls beside it, its thread in reach inside it */
   .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
+}
+@media (min-width:860px) and (max-width:1079.98px){
+  .oscreen{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}
+  #pOrder,.cshell[data-place=order] .chead{max-width:none}
 }
 /* 12 OCT 2026 (PHASE 7d, his yes of 11 Oct 2026, item 9): SHEETS ON A TABLET. The system's Sheet is a bottom sheet to 1079px and its 460px drawer from 1080px, so on a tablet
    a sheet ran edge to edge (a 1000px window drew a 1000px sheet). Here it is a centred 560px dialog from 768px to 859px and the same 460px drawer from 860px, the width the lists
@@ -2582,7 +2589,7 @@ const CLIENT_JS = `
   function placeShow(t,tapped){
     if(!PANEL[t]||placeBtns(t)[0].hidden) t='home';
     sheetClose();
-    tab=t;
+    tab=t; tabs.setAttribute('data-place',t);
     [].forEach.call(tabs.querySelectorAll('button[data-t]'),function(b){ if(b.getAttribute('data-t')===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     Object.keys(PANEL).forEach(function(k){ PANEL[k].hidden=k!==t; });
     placeTitle();
@@ -4247,18 +4254,18 @@ const CLIENT_JS = `
     }
     return box;
   }
-  /* S5 5.6 (f12w): FROM 1080PX THE LIST STANDS BESIDE AN OPEN ORDER, so one is always open there: what needs them
+  /* S5 5.6 (f12w): FROM 860PX THE LIST STANDS BESIDE AN OPEN ORDER (Phase 7d: it was 1080px, the rail's, and is the width the style turns on), so one is always open there: what needs them
      first, else the newest. It is then the one open, so it stays put while the list moves under a poll. An order
-     opened this way is marked oAuto, and goes when the width drops below 1080px: on a phone nothing is open until
+     opened this way is marked oAuto, and goes when the width drops below 860px: on a phone nothing is open until
      it is tapped. */
-  function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 1080px)').matches); }catch(e){ return false; } }
+  function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 860px)').matches); }catch(e){ return false; } }
   function oShownId(){
     if(draft.oOpen&&!oFind(draft.oOpen)) draft.oOpen='';
     if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; draft.oAuto=true; }
     return draft.oOpen||'';
   }
   try{
-    var oMq=window.matchMedia&&window.matchMedia('(min-width: 1080px)');
+    var oMq=window.matchMedia&&window.matchMedia('(min-width: 860px)');
     if(oMq&&oMq.addEventListener) oMq.addEventListener('change',function(){
       if(!oWide()&&draft.oAuto){ draft.oOpen=''; draft.oAuto=false; }
       if(document.getElementById('oArea')) oDraw();

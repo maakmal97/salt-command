@@ -34118,7 +34118,7 @@ await (async () => {
     const dom = new JSDOM(landingPage(u, "n56", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
       w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
-      w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *860px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
       Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
         addEventListener: (t, f) => { if (t === "message") st.listen = f; }, getRegistration: async () => undefined } });
       w.fetch = async (path, init) => {
@@ -34354,7 +34354,7 @@ await (async () => {
       w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
       Object.defineProperty(w.navigator, "serviceWorker", { configurable: true, value: {
         addEventListener: (t, f) => { if (t === "message") sw.listen = f; }, getRegistration: async () => undefined } });
-      w.matchMedia = (q) => ({ get matches() { return mq.wide && /min-width: *1080px/.test(q); }, media: q,
+      w.matchMedia = (q) => ({ get matches() { return mq.wide && /min-width: *860px/.test(q); }, media: q,
         addEventListener(t, f) { if (t === "change") mq.fns.push(f); }, removeEventListener() {} });
       w.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
@@ -34634,7 +34634,7 @@ await (async () => {
     const dom = new JSDOM(landingPage(u, "nf5", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       try { Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true }); } catch (e) { w.crypto = webcrypto; }
       w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
-      w.matchMedia = (q) => ({ matches: wide && /min-width: *1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
+      w.matchMedia = (q) => ({ matches: wide && /min-width: *860px/.test(q), media: q, addEventListener() {}, removeEventListener() {} });
       w.fetch = async (path, init) => {
         const p = String(path), m = (init && init.method) || "GET";
         const j = p === "/open" ? body : (p === "/orders" && m === "GET") ? { ok: true, orders: JSON.parse(JSON.stringify(orders || list)) } : { ok: true };
@@ -44164,8 +44164,8 @@ await (async () => {
   const dom = new JSDOM(landingPage(u, "ns7f12", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
     win.scrollTo = () => {}; win.HTMLElement.prototype.scrollIntoView = () => {};
-    /* a desk: the page asks for 1080px and up */
-    win.matchMedia = (q) => ({ matches: /min-width: ?1080px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
+    /* a desk: the page asks for 860px and up (the list beside the open order) */
+    win.matchMedia = (q) => ({ matches: /min-width: ?860px/.test(q), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
     win.fetch = async (path) => { const p = String(path);
       const j = p === "/open" ? body : p === "/orders" ? { ok: true, orders } : { ok: true };
       return { ok: true, status: 200, json: async () => j }; };
@@ -53895,7 +53895,7 @@ await (async () => {
   await (await import("./admin-tablet.mjs")).run({ ok, pageWork });
 })();
 
-section("The Counter on a tablet: sheets a dialog below 860px and the drawer from 860px, none of its rules under .adm (12 Oct 2026)");
+section("The Counter on a tablet: a dialog below 860px, the drawer and the list beside the open order from 860px, none of its rules under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-tablet.mjs")).run({ ok });
 })();
