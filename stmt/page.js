@@ -2617,6 +2617,22 @@ const CLIENT_JS = `
   /* C15 and C14 (29 Sep 2026): WHAT COULD NOT BE READ SAYS SO, with Try again, and is never drawn as an empty or an older
      account. The live document held for (bad), and orders whose read failed (ordersFailed, kept as they last stood). */
   var ordersFailed=false;
+  /* PHASE 7D4 (his yes of 11 Oct 2026): A READ THAT FAILS AFTER ONE THAT WORKED SAYS WHEN THE PAGE LAST READ, and leads Home in place of the
+     figure it can no longer vouch for: "Not updated since 10:42" in Kuala Lumpur, 24 hours, and the day as DD Mon once it is not today. The
+     orders' read keeps the time (every ten seconds and on a return), so being offline and a read the site refused both come to it; the next
+     good read clears the line and brings the figure and its Pay back. A page that has not yet read once has nothing to date, and says what
+     it said before (unreadNode). */
+  var readAt=0;
+  function staleNow(){ return !!session&&!view&&!OWNER&&ordersFailed&&readAt>0; }
+  function readSince(){
+    var then=klBits(new Date(readAt).toISOString()), now=klBits(new Date().toISOString());
+    return then.day===now.day&&then.month===now.month&&then.year===now.year?then.hour+':'+then.minute:then.day+' '+mon3()[+then.month-1];
+  }
+  function staleNode(){
+    var box=el('div','panel unread'); box.setAttribute('data-stale','');
+    var p=el('p','lead',tw('read.since',{t:readSince()})); p.setAttribute('role','status'); box.appendChild(p);
+    return box;
+  }
   function liveBad(){ var s=bundle&&bundle.statements.filter(function(x){ return x.live&&x.bad; })[0]; return s?s.bad:''; }
   function unreadNode(key,go){
     var box=el('div','panel unread'); box.setAttribute('data-unread',key);
@@ -4999,9 +5015,11 @@ const CLIENT_JS = `
   function payHeadNode(){
     var box=el('div','payhead'); box.id='payHead';
     var lines=nowOf(), tot=invTotal(lines), said=bundle?claimLines(lines):[], fr=fresh();
-    var bad=liveBad();
-    box.hidden=!bundle||!(bad||fr||payDue||lines.length||said.length);
+    var bad=liveBad(), old=staleNow();
+    box.hidden=!bundle||!(old||bad||fr||payDue||lines.length||said.length);
     if(box.hidden) return box;
+    /* 7D4: the figures are as of the last read, so the line stands where they would, and the foot below goes with them */
+    if(old){ box.appendChild(staleNode()); return box; }
     /* C15: an account that could not be read leads with that, never with nothing to pay */
     if(bad) box.appendChild(unreadNode(bad,bad==='acct.unread'?retryAccount:null));
     if(lines.length){
@@ -5032,7 +5050,7 @@ const CLIENT_JS = `
   function payFootNode(){
     var f=el('div','payfoot'); f.id='homeFoot';
     var lines=nowOf(), tot=invTotal(lines);
-    f.hidden=!bundle||!payFootOn(lines,tot);
+    f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);
     if(f.hidden) return f;
     f.appendChild(kpiTile('ember',tw('pay.now'),rm(tot)));
     var pb=el('button','salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
@@ -5577,7 +5595,7 @@ const CLIENT_JS = `
     if(mine!==ticket) return;
     if(r.status===401) return;   /* api() has said so in the bar */
     /* C14: a read that failed keeps the list as it last stood and says so; it is never an empty list */
-    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; if('thread' in r.body&&!thTimer) thPut(r.body.thread); }
+    if(r.body.ok){ orders=r.body.orders||[]; claims=Array.isArray(r.body.claims)?r.body.claims:[]; ordersFailed=false; readAt=Date.now(); if('thread' in r.body&&!thTimer) thPut(r.body.thread); }
     else ordersFailed=true;
     /* a group order is read with the orders; a read that fails keeps the list as it stood, and says nothing: the card is an extra */
     var pr=await api('/pools');
@@ -6004,7 +6022,7 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
+    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;

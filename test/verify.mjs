@@ -53900,6 +53900,11 @@ await (async () => {
   await (await import("./counter-tablet.mjs")).run({ ok });
 })();
 
+section("Failures on brand: Home says Not updated since the last read in place of its figure when a read fails, and the next good read clears it (12 Oct 2026)");
+await (async () => {
+  await (await import("./counter-offline-line.mjs")).run({ ok });
+})();
+
 section("Salt Account: the order card reads its preview on opening, asks on a sheet, keeps its moves at its foot, and its tick is a 44px target");
 await (async () => {
   await (await import("./admin-order-card.mjs")).run({ ok, pageWork });

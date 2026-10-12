@@ -310,6 +310,7 @@ export const EN = {
   /* ---- ACCOUNT, and the month filter ---- */
   "acct.nothing": "Nothing on your account yet. Your orders will show here.",
   "acct.unread": "Your account could not be read just now. Try again in a minute.",
+  "read.since": "Not updated since {t}",
   "acct.later": "Your account will show here after the next update.",
   "acct.updating": "Your live statement is updating. Try again in a minute.",
   "acct.unavailable": "Your live statement could not be verified just now. Try again in a minute.",
