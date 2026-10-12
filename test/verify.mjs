@@ -24556,7 +24556,7 @@ await (async () => {
     const btn = btnOf(u);
     btn.click();
     /* the hand-over Sheet is the one with .ho: his page also carries the look Sheet and its scrim, hidden, from the first paint */
-    const sheet = () => D.querySelector(".salt-sheet.ho[role=dialog]"), scrim = () => D.querySelector(".salt-sheet-scrim:not(#lookScrim)");
+    const sheet = () => D.querySelector(".salt-sheet.ho[role=dialog]"), scrim = () => D.querySelector(".salt-sheet-scrim:not(#lookScrim):not(#vaultScrim)");
     ok(!!sheet() && sheet().getAttribute("aria-modal") === "true" && D.getElementById(sheet().getAttribute("aria-labelledby")).textContent === "Sign in on their phone"
       && !!scrim() && !!sheet().querySelector(".salt-orb.salt-sheet__close[aria-label=Close]")
       && /Making a code/.test(sheet().textContent) && D.activeElement === sheet(),
@@ -53585,7 +53585,7 @@ await (async () => {
     }
   });
   try {
-    const doc = admin.window.document, { cardOf, answerSheets, tile } = await import("./maker-act.mjs");
+    const doc = admin.window.document, { cardOf, answerSheets, tile, unlockPage } = await import("./maker-act.mjs");
     answerSheets(admin.window, deviceSheets, () => deviceConflictChoice);
     /* 11 Oct 2026: the orders are Orders, the Desk's rows and the forms Record, so both are entered */
     doc.querySelector('[data-act="nav.record"]').click();
@@ -53666,9 +53666,13 @@ await (async () => {
       && !Object.hasOwn(sentEdit.body, "raw") && !Object.hasOwn(sentEdit.body.fields, "note"),
       "the Admin ledger editor is usable and sends only the row id and selected typed changes, never prose or identity: "+editor.textContent);
     const addId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "New customer");
+    /* PHASE 4b: the forms below carry no password field; the one unlock opens the page for all of them (the password is typed once, on its Sheet) */
+    ok(await unlockPage(admin.window, adminWork, "name-pass") && /open on this phone/.test(addId.textContent)
+      && admin.window.document.getElementById("vaultPass").value === "",
+      "the one unlock opens Add ID, Amend ID and Place on the map together, and its password field is empty once it is read");
     const addFields = addId.querySelectorAll("input:not([type=radio])");
-    addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
-    addFields[3].value = "Secret Way https://waze.com/ul?ll=3.123456,101.654321";
+    addFields[0].value = "Amy"; addFields[1].value = "Kuala Lumpur";
+    addFields[2].value = "Secret Way https://waze.com/ul?ll=3.123456,101.654321";
     addId.querySelector("button").click();
     ok(await adminWork.quiet(), "the device-side Add ID encryption and Desk write finish");
     const sentAddId = adminCalls.find((call) => call.route === "/all/maker/inputs/add-id");
@@ -53685,7 +53689,7 @@ await (async () => {
     } catch (error) { openedNames = null; }
     ok(sentAddId && sentAddId.body.code === "CA3-KL" && !Object.hasOwn(sentAddId.body, "name")
       && !Object.hasOwn(sentAddId.body, "locality") && openedNames && openedNames["CA3-KL"] === "Amy (Kuala Lumpur)"
-      && addFields[2].value === "",
+      && admin.window.document.getElementById("vaultPass").value === "",
       "Add ID derives and encrypts the name on-device before sending only a code and sealed envelope");
     const newPlaces = sentAddId?.body.addrVault ? await openFixture(sentAddId.body.addrVault, "name-pass") : {};
     ok(newPlaces["CA3-KL"]?.lat === 3.123456 && newPlaces["CA3-KL"]?.lng === 101.654321
@@ -53697,7 +53701,7 @@ await (async () => {
     ok(addId.querySelector("datalist")?.options.length > 100,
       "Counter Add ID provides the incumbent official locality choices rather than a free-text-only place field");
     tile(addId, "Role", "downstream");
-    addFields[0].value = "Ari"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "name-pass";
+    addFields[0].value = "Ari"; addFields[1].value = "Kuala Lumpur"; addFields[2].value = "";
     addId.querySelector("button").click();
     ok(await adminWork.quiet(), "the downstream ID write finishes");
     tile(addId, "Role", "bucket");
@@ -53714,7 +53718,7 @@ await (async () => {
       "Counter Add ID offers a starting tier per tiered book, preselected as the Desk does, and sends none for a downstream or a resale account");
     const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Change a name or place");
     const amendFields = amendId.querySelectorAll("input");
-    amendFields[0].value = "Ben"; amendFields[1].value = "Pudu"; amendFields[2].value = "name-pass";
+    amendFields[0].value = "Ben"; amendFields[1].value = "Pudu";
     amendId.querySelector("button").click();
     ok(await adminWork.quiet(), "the device-side Amend ID encryption and Desk write finish");
     const sentAmendId = adminCalls.find((call) => call.route === "/all/maker/inputs/amend-id");
@@ -53729,14 +53733,12 @@ await (async () => {
       && !JSON.stringify(sentAmendId.body).includes("Private Road"),
       "Amend ID preserves exact points, addresses and base only inside the re-keyed ciphertext, including descendant codes");
     const placement = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Place on the map");
-    placement.querySelector('input[type="password"]').value = "name-pass";
     placement.querySelector("button").click();
     ok(await adminWork.quiet(), "the encrypted map point opens and queues");
     const sentPlacement = adminCalls.find((call) => call.route === "/all/maker/inputs/place");
     ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69] })
       && !JSON.stringify(sentPlacement.body).includes("Private Road"),
       "map placement decrypts on-device and queues only a point rounded to 0.01 degrees");
-    placement.querySelector('input[type="password"]').value = "name-pass";
     const placeTexts = placement.querySelectorAll('input[type="text"]');
     placeTexts[0].value = "Pudu";
     placeTexts[1].value = "https://www.google.com/maps/place/Invented+Road/data=!3d3.234567!4d101.765432";
@@ -53754,7 +53756,7 @@ await (async () => {
     nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
     devicePairRevision = 10; devicePairConflict = true;
     tile(addId, "Role", "customer");
-    addFields[0].value = "Zora"; addFields[1].value = "Pudu"; addFields[2].value = "name-pass"; addFields[3].value = "";
+    addFields[0].value = "Zora"; addFields[1].value = "Pudu"; addFields[2].value = "";
     addId.querySelector("button").click();
     ok(await adminWork.quiet(), "the device CAS conflict returns without losing the form");
     const firstPairInput = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id" && call.body?.pair).at(-1);
@@ -53768,7 +53770,7 @@ await (async () => {
       && addFields[1].value === "Pudu" && devicePairRevision === 11,
       "Counter device sends one consistent names/places revision and retains its form after a stale CAS");
     const pairWritesBeforeReview = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length;
-    addFields[2].value = "name-pass";addId.querySelector("button").click();
+    addId.querySelector("button").click();
     ok(await adminWork.quiet(), "declining the device overlap review settles");
     ok(deviceSheets.length === 1 && devicePairRevision === 11
       && adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id").length === pairWritesBeforeReview
@@ -53776,7 +53778,7 @@ await (async () => {
       "Counter device overlap Cancel keeps its retained intent and submits no replacement pair or input: "
       + JSON.stringify({prompts:deviceSheets.length,revision:devicePairRevision,status:addId.querySelector('[role=\"status\"]')?.textContent,
         calls:adminCalls.slice(-6).map(c=>({route:c.route,revision:c.body?.pair?.expectedRevision}))}));
-    deviceConflictChoice = true;addFields[2].value = "name-pass";addId.querySelector("button").click();
+    deviceConflictChoice = true;addId.querySelector("button").click();
     ok(await adminWork.quiet(), "explicit device overlap approval writes the rebased pair");
     const reviewedPairInput = adminCalls.filter((call) => call.route === "/all/maker/inputs/add-id" && call.body?.pair).at(-1);
     const reviewedNames = reviewedPairInput?.body?.pair?.names ? await openFixture(reviewedPairInput.body.pair.names, "name-pass") : {};
@@ -53881,6 +53883,11 @@ await (async () => {
 section("Salt Account: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: one unlock opens names, places and the slip key, every place reads it, and hiding the page locks them all (12 Oct 2026)");
+await (async () => {
+  await (await import("./admin-one-unlock.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: rows to approve wear the approve card, the queue folds away, and no native confirm is left");

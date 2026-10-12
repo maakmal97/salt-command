@@ -137,7 +137,13 @@ export async function run({ ok }) {
     const pick = (value) => tile(section, driftLabel, value);   /* the drift is a group of tiles, and a tap on one is the change */
     const typed = [...section.querySelectorAll("input[type=number]")]
       .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Drift,"));
-    const status = section.querySelector('[role="status"]');
+    /* the form's own answer line is the last status in it; the first is the one unlock's (Phase 4b) */
+    const status = [...section.querySelectorAll('[role="status"]')].at(-1);
+    doc.querySelector('[data-act="vault.unlock"]').click();
+    doc.getElementById("vaultPass").value = pass;
+    doc.getElementById("vaultGo").click();
+    check(await waitFor(() => /open on this phone/.test(section.textContent)) && doc.getElementById("vaultPass").value === "",
+      "the one unlock opens the page for Add ID, which has no password field of its own");
     check(!!driftSelect && !!typed && driftSelect.value === "" && typed.closest("label").hidden
       && [...driftSelect.querySelectorAll("input")].map((option) => option.value).join() === ",-0.3,0,0.3,typed"
       && typed.min === "-1" && typed.max === "1" && typed.step === "0.05",
@@ -163,7 +169,7 @@ export async function run({ ok }) {
       { name: "Gail", choice: "typed", value: "0.125", expected: { salt: 0.125 } }
     ];
     for (const outcome of outcomes) {
-      fields[0].value = outcome.name; fields[1].value = ""; fields[2].value = pass;
+      fields[0].value = outcome.name; fields[1].value = "";
       pick(outcome.choice);
       if (outcome.value !== undefined) typed.value = outcome.value;
       const before = bridged.length;
@@ -186,7 +192,7 @@ export async function run({ ok }) {
           "typed Add ID drift preserves 0.125 precision like the incumbent Desk");
     }
 
-    fields[0].value = "Gopal"; fields[1].value = ""; fields[2].value = pass;
+    fields[0].value = "Gopal"; fields[1].value = "";
     pick("typed");
     typed.value = "3";
     const beforeInvalid = bridged.length, revisionBeforeInvalid = pair.revision;

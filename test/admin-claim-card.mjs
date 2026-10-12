@@ -104,12 +104,14 @@ export async function run({ ok, pageWork }) {
     await p.enter();
     ok(slipReads(p) === 0 && keyReads(p) === 0, "listing the claims asks for no slip and no key");
     await p.tap("claim.open", C1);
-    ok(!thumb() && !!p.in("claim.passphrase") && !!p.in("claim.view-slip") && /locked/.test(p.card(C1).textContent) && slipReads(p) === 0 && keyReads(p) === 0 && p.urls.made.length === 0,
-      "a claim with a slip, opened with no key held, says the slip is sealed and offers the unlock, and fetches no ciphertext it cannot open");
-    p.type(p.in("claim.passphrase"), p.slipPass); await p.click(p.in("claim.view-slip"));
+    const unlock = async () => { await p.click(p.in("vault.unlock")); p.type(byAct(d, "vault.passphrase"), p.slipPass); await p.click(byAct(d, "vault.open")); };
+    ok(!thumb() && !!p.in("vault.unlock") && !p.in("claim.view-slip") && /Locked/.test(p.card(C1).textContent) && !d.querySelector("#makerClaims input[type=password]")
+      && slipReads(p) === 0 && keyReads(p) === 0 && p.urls.made.length === 0,
+      "a claim with a slip, opened with nothing unlocked, says Locked and offers the one Unlock with no password field of its own, and fetches no ciphertext it cannot open");
+    await unlock();
     ok(!!thumb() && thumb().tagName === "BUTTON" && !!thumb().querySelector("img") && /^blob:/.test(thumb().querySelector("img").src) && p.urls.made.length === 1
-      && slipReads(p) === 1 && keyReads(p) === 1 && !p.in("claim.passphrase"),
-      "the passphrase opens the slip key and the slip is drawn as a thumbnail that is a control, from a blob: URL, asking for the key once and the slip once");
+      && slipReads(p) === 1 && keyReads(p) === 1 && !p.in("vault.unlock") && d.getElementById("vaultSheet").hidden,
+      "the one unlock opens the slip key and the slip is drawn as a thumbnail that is a control, from a blob: URL, asking for the key once and the slip once");
     const box = () => p.card(C1).querySelector(".maker-slipbox");
     ok(thumb().getAttribute("aria-expanded") === "false" && !box().classList.contains("open"), "the thumbnail begins small");
     thumb().click();
@@ -117,21 +119,21 @@ export async function run({ ok, pageWork }) {
     thumb().click();
     ok(thumb().getAttribute("aria-expanded") === "false" && !box().classList.contains("open"), "and the next tap shrinks it");
     await p.tap("claim.open", C2);
-    ok(p.urls.revoked.includes("blob:fixture-1") && !p.card(C1) && !!p.in("claim.slip") && !p.in("claim.passphrase") && p.urls.made.length === 2 && slipReads(p) === 2 && keyReads(p) === 1,
+    ok(p.urls.revoked.includes("blob:fixture-1") && !p.card(C1) && !!p.in("claim.slip") && !p.in("vault.unlock") && p.urls.made.length === 2 && slipReads(p) === 2 && keyReads(p) === 1,
       "another claim opened draws its slip from the key the page holds, with no passphrase asked and the key not fetched again, and the picture of the card closed is revoked: "
       + JSON.stringify(p.urls));
     const before = p.urls.revoked.length;
     await lockByHide();
-    ok(p.urls.revoked.length === before + 1 && p.urls.revoked.includes("blob:fixture-2") && !p.in("claim.slip") && !!p.in("claim.passphrase") && /locked/.test(p.card(C2).textContent),
-      "a page hidden revokes the picture and drops the key: the card says the slip is sealed again");
+    ok(p.urls.revoked.length === before + 1 && p.urls.revoked.includes("blob:fixture-2") && !p.in("claim.slip") && !!p.in("vault.unlock") && /Locked/.test(p.card(C2).textContent),
+      "a page hidden revokes the picture and drops the key: the card says Locked again");
     const reads = slipReads(p);
     await p.tap("claim.open", C2); await p.tap("claim.open", C2);
-    ok(!p.in("claim.slip") && !!p.in("claim.passphrase") && slipReads(p) === reads, "and a card opened after that asks for the unlock again and fetches nothing");
-    p.type(p.in("claim.passphrase"), p.slipPass); await p.click(p.in("claim.view-slip"));
+    ok(!p.in("claim.slip") && !!p.in("vault.unlock") && slipReads(p) === reads, "and a card opened after that asks for the unlock again and fetches nothing");
+    await unlock();
     const shut = p.urls.revoked.length;
-    await p.tap("claim.lock-slip", C2);
-    ok(p.urls.revoked.length === shut + 1 && !p.in("claim.slip") && !!p.in("claim.passphrase"), "Close and lock slip revokes the picture and seals the card again");
-    p.type(p.in("claim.passphrase"), p.slipPass); await p.click(p.in("claim.view-slip"));
+    await p.tap("vault.lock", C2);
+    ok(p.urls.revoked.length === shut + 1 && !p.in("claim.slip") && !!p.in("vault.unlock"), "Lock revokes the picture and seals the card again");
+    await unlock();
     const open1 = p.urls.revoked.length;
     await p.tap("claim.open", C2);
     ok(p.urls.revoked.length === open1 + 1 && !p.card(C2) && !d.querySelector("[data-maker-slip]"), "closing the card revokes its picture and leaves no image on the page");

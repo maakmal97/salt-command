@@ -2,13 +2,13 @@
  {
   "name": "a row has no mark",
   "file": "stmt/owner.js",
-  "find": "      b.appendChild(bookTile(o.product,o.qty));\n      t.appendChild(el('span',null,codeByUser(o.u)));",
-  "replace": "      t.appendChild(el('span',null,codeByUser(o.u)));"
+  "find": "      b.appendChild(bookTile(o.product,o.qty));\n      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));",
+  "replace": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));"
  },
  {
   "name": "a row names no one",
   "file": "stmt/owner.js",
-  "find": "      t.appendChild(el('span',null,codeByUser(o.u)));\n      t.appendChild(chip(st[0],st[1]));",
+  "find": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));\n      t.appendChild(chip(st[0],st[1]));",
   "replace": "      t.appendChild(chip(st[0],st[1]));"
  },
  {
