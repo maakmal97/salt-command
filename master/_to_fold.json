@@ -1,0 +1,90 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-13T10:44:42.146Z",
+   "status": "approved",
+   "collection": "roster",
+   "row": {
+    "code": "CI5-PER",
+    "kind": "customer",
+    "parent": null,
+    "note": null,
+    "geo": [
+     3.1,
+     101.72
+    ],
+    "tiers": {
+     "salt": -0.3
+    }
+   },
+   "reasoning": "Registers CI5-PER as a customer. It starts them at Salt -0.3. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-13T10:44:42.146Z",
+    "type": "ADDID",
+    "party": "CI5-PER",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Add CI5-PER to the roster as customer",
+    "payload": {
+     "mode": "addid",
+     "code": "CI5-PER",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null,
+     "geo": [
+      3.1,
+      101.72
+     ],
+     "tiers": {
+      "salt": -0.3
+     }
+    }
+   },
+   "decidedAt": "2026-10-13T10:45:00.423Z",
+   "decidedBy": "Counter Admin",
+   "vaultReceipt": {
+    "id": "2026-10-13T10:44:42.146Z",
+    "fingerprint": "b13db4574f549383aaceea3ba39d63e01ac4202850e9cddbd738203ffe9766ad",
+    "request_fingerprint": "265135b440a1acec452e56aa2da182caaabcc9f01b00b82cf4825a1b2f66eb2b",
+    "revision": 2,
+    "operation": "add-id"
+   },
+   "vaultOutbox": {
+    "id": "2026-10-13T10:44:42.146Z",
+    "entry": {
+     "at": "2026-10-13T10:44:42.146Z",
+     "type": "ADDID",
+     "party": "CI5-PER",
+     "qty": null,
+     "total": null,
+     "status": "addid",
+     "raw": "Add CI5-PER to the roster as customer",
+     "payload": {
+      "mode": "addid",
+      "code": "CI5-PER",
+      "kind": "customer",
+      "parent": null,
+      "rev": null,
+      "note": null,
+      "geo": [
+       3.1,
+       101.72
+      ],
+      "tiers": {
+       "salt": -0.3
+      }
+     }
+    },
+    "state": "complete",
+    "completed_at": "2026-10-13T10:44:46.173Z"
+   }
+  }
+ ]
+}
