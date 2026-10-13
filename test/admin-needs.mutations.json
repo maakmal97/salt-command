@@ -484,5 +484,29 @@
   "file": "stmt/owner.js",
   "find": "if(o.mark) what.appendChild(bookMark(o.mark));",
   "replace": ""
+ },
+ {
+  "name": "a card has an Open button again",
+  "file": "stmt/owner.js",
+  "find": "if(o.open&&o.keepOpen){",
+  "replace": "if(o.open){"
+ },
+ {
+  "name": "Soon and Watch stand open",
+  "file": "stmt/owner.js",
+  "find": "if(nFoldOpen[s[0]]) box.open=true;",
+  "replace": "box.open=true;"
+ },
+ {
+  "name": "a fold he opened shuts on a redraw",
+  "file": "stmt/owner.js",
+  "find": "nFoldOpen[s[0]]=box.open;",
+  "replace": "0;"
+ },
+ {
+  "name": "every kind chip is drawn",
+  "file": "stmt/owner.js",
+  "find": "x.hidden=!(k==='all'||have[k]);",
+  "replace": "x.hidden=false;"
  }
 ]

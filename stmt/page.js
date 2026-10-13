@@ -718,6 +718,34 @@ body.ended>*:not(#aEnded){display:none}
 .adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .need .salt-action__body>*+*{margin-top:8px}
 .adm .need .salt-action__go{display:flex;flex-wrap:wrap;gap:8px}
+/* 14 OCT 2026: THE CARD IS THE TAP. The title is the one button, stretched over the card; the card's own actions sit above it. The age is the money column, a fixed width,
+   right-aligned and level with the kind word on every card; Soon and Watch fold behind a 44px heading. */
+.adm .ncard{position:relative}
+.adm .need .need-tap{all:unset;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;width:100%;min-height:var(--salt-tap);cursor:pointer;font:inherit;color:inherit}
+.adm .need .need-tap::after{content:"";position:absolute;inset:0}
+.adm .need .need-tap:focus-visible{outline:none}
+.adm .need .need-tap:focus-visible::after{outline:2px solid var(--salt-brass);outline-offset:2px;border-radius:inherit}
+.adm .ncard:hover{background:var(--salt-glass-hover)}
+.adm .need .salt-action__go{position:relative;z-index:1}
+.adm .ncard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
+.adm .need .salt-action__money{width:4.5rem;justify-self:end;padding-top:0}
+@media (max-width:860px){.adm .need .salt-action__kind{grid-column:1 / 2}}
+.adm .nfold{display:flex;flex-direction:column;gap:12px}
+.adm .nfold>summary.nsev{display:flex;align-items:center;min-height:var(--salt-tap);margin:0;cursor:pointer;list-style:none}
+.adm .nfold>summary.nsev::-webkit-details-marker{display:none}
+.adm .nfold>summary.nsev::before{content:"+";display:inline-block;width:1.2em}
+.adm .nfold[open]>summary.nsev::before{content:"-"}
+.adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
+.adm .nchips .salt-tabs__pill[hidden]{display:none}
+/* 14 OCT 2026: ORDERS ARE ROWS OF ONE GRID: the mark in a fixed column, the code and at most one pill over what it is, the age over the figure in a fixed column on the
+   right, every row the same height. The system's Inbox row keeps its class; the grid is this page's own container class. */
+.adm .ordrow{display:grid;grid-template-columns:76px minmax(0,1fr) 88px;align-items:center;gap:0 12px;min-height:76px}
+.adm .ordrow>.mtile{width:76px;box-sizing:border-box;align-self:center}
+.adm .ordrow .salt-inbox-row__main{flex:none}
+.adm .ordrow .salt-inbox-row__title{flex-wrap:nowrap}
+.adm .ordrow .salt-inbox-row__what{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .ordrow .salt-inbox-row__side{margin:0;align-items:flex-end;justify-content:center;text-align:right;gap:4px}
+.adm .ordrow .salt-inbox-row__action{margin-top:0;font-variant-numeric:tabular-nums}
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
 .adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
