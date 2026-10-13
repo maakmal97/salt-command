@@ -1,5 +1,20 @@
 [
- {"name":"the clock is never painted","find":"if(clock){tick();document","replace":"if(clock){document"},
- {"name":"the clock is not painted again on return","find":"document.addEventListener('visibilitychange',()=>{if(!document.hidden)paint();});}","replace":"}"},
- {"name":"a queue refusal reads as the server gone","find":"if(r.status>=400&&r.status<500){","replace":"if(false){"}
+ {
+  "name": "the clock is never painted",
+  "file": "master/salt_command.html",
+  "find": "if(clock){tick();document",
+  "replace": "if(clock){document"
+ },
+ {
+  "name": "the clock is not painted again on return",
+  "file": "master/salt_command.html",
+  "find": "document.addEventListener('visibilitychange',()=>{if(!document.hidden)paint();});}",
+  "replace": "}"
+ },
+ {
+  "name": "a queue refusal reads as the server gone",
+  "file": "master/salt_command.html",
+  "find": "if(r.status>=400&&r.status<500){",
+  "replace": "if(false){"
+ }
 ]
