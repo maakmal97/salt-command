@@ -1733,15 +1733,23 @@ export const OWNER_JS = `
       }
     }); parent.appendChild(b);parent.appendChild(cancel);return b;
   }
+      /* a locality is public when the official list carries it or this phone verified it (placeFromText) and kept the word */
+      var makerLocalWords=new Set();
+      try{JSON.parse(localStorage.getItem('saltMakerLocalWords')||'[]').forEach(function(w){makerLocalWords.add(w);});}catch(e){}
+      function makerPublicWord(word){
+        if(makerLocalWords.has(word))return true;
+        var found=false;makerGeo.picks().forEach(function(point,label){if(label.split(',')[0].trim()===word)found=true;});
+        return found;
+      }
       function makerSaved(path){
         var text=localStorage.getItem('saltMakerPending:'+path);
         if(!text)return null;
         var saved=JSON.parse(text);
-        if(!makerGeo.pendingOk(saved))throw new Error('This saved entry cannot be sent. Discard it.');
+        if(!makerGeo.pendingOk(saved,makerPublicWord))throw new Error('This saved entry cannot be sent. Discard it.');
         return saved;
       }
       function makerSave(record){
-        if(!makerGeo.pendingOk(record))throw new Error('This saved entry cannot be sent. Discard it.');
+        if(!makerGeo.pendingOk(record,makerPublicWord))throw new Error('This saved entry cannot be sent. Discard it.');
         localStorage.setItem('saltMakerPending:'+record.path,JSON.stringify(record));
       }
       function makerClear(path){localStorage.removeItem('saltMakerPending:'+path);unsentPaint();}
@@ -1979,7 +1987,12 @@ export const OWNER_JS = `
     if(!result.point)throw new Error(result.how==='ambiguous'
       ?'That place matches more than one. Choose its district from the list.'
       :'That place is not on the list. Place it on the Desk first.');
-    return result.point.map(function(number){return Math.round(number*100)/100;});
+    /* the point travels with its locality, the Desk's own geoWhere: a point is never filed without the words before the place's first comma */
+    var where=makerGeo.where(result.point.map(function(number){return Math.round(number*100)/100;}),value);
+    if(where.length!==3)throw new Error('That place has no locality to file with its point. Choose it from the list.');
+    makerLocalWords.add(where[2]);
+    try{localStorage.setItem('saltMakerLocalWords',JSON.stringify([...makerLocalWords].slice(-200)));}catch(e){}
+    return where;
   }
   async function makerFiledLink(value){
     if(!value.trim())return null;
@@ -2416,10 +2429,13 @@ export const OWNER_JS = `
           envelope=placeDraft.places;
         }else if(placeLocality.value.trim())coords=await makerLocalityPoint(placeLocality.value.trim());
         else{
-          var point=places[placeParty.value];
+          /* the point filed already, with the locality it was filed with; a point with none is not re-filed bare */
+          var point=places[placeParty.value], held2=(catalog.placed||{})[placeParty.value];
           if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lng))
             throw new Error('They have no place filed yet. Choose a place first.');
-          coords=[Math.round(point.lat*100)/100,Math.round(point.lng*100)/100];
+          if(!held2||typeof held2[2]!=='string'||!held2[2].trim())
+            throw new Error('Choose a place from the list: a point is filed with its locality.');
+          coords=[Math.round(point.lat*100)/100,Math.round(point.lng*100)/100,held2[2].trim()];
         }
         delete placeDraft.placeMap;
         var body={at:new Date().toISOString(),places:{[placeParty.value]:coords}};
