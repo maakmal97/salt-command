@@ -1,4 +1,4 @@
-/* A6: Maker's printed board sizes, against the Desk's own shQueueHouse. A print setting, never a price. */
+/* A6: Maker's printed board sizes, against the rungs the Desk's board table prints (shSizes, a read). A print setting, never a price. */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { openMaster } from "../tools/payload.mjs";
@@ -8,7 +8,6 @@ import { makerHouseSizes, houseRungs, makerInputCatalog } from "../src/maker-inp
 import { draftRow } from "../src/drafter.js";
 
 const AT = "2026-10-05T09:00:00.000Z";
-const strip = (e) => JSON.stringify({ ...e, at: null });
 
 export async function run({ ok, KV, worker, handleMaker, REPO }) {
   /* 1. equal to the Desk: the real master's shQueueHouse is driven with ticks for the sizes, and Maker is asked for the same hide */
@@ -17,32 +16,36 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
     w.eval("queue=[];render=function(){};renderQueue=function(){};saveQueue=function(){return Promise.resolve(true);};applyOverlay=function(){};");
     const book = (prod) => ({ version: "fixture", sales: [], purchases: [], pricing: pricingSnapshot(w),
       state: { PRODUCTS: JSON.parse(w.eval("JSON.stringify(PRODUCTS)")), roster: [], PRICE_SET: JSON.parse(w.eval("JSON.stringify(PRICE_SET)")) } });
-    const desk = (prod, hide) => JSON.parse(w.eval("(function(){queue=[];var H=" + JSON.stringify(hide) + ",P=" + JSON.stringify(prod) + ";"
-      + "var keep=pxEl;pxEl=function(p,id){if(id==='shOut')return {innerHTML:'',closest:function(){return null;}};"
-      + "var q=shSizes().find(function(s){return 'sh'+String(s).replace('.','_')+'s'===id;});"
-      + "return q==null?null:{checked:H.every(function(h){return Math.abs(h-q)>0.009;})};};"
-      + "pxProdOf=function(){return P;};try{shQueueHouse({});}finally{pxEl=keep;}"
-      + "return JSON.stringify(queue.length===1?Object.assign({},queue[0],{at:null}):null);})()"));
     for (const prod of ["salt", "oil"]) {
       w.eval("PROD=" + JSON.stringify(prod) + ";recompute();");
-      ;
-      ;
-      ;
+      const rungs = JSON.parse(w.eval("JSON.stringify(shSizes())")), b = book(prod);
+      ok(rungs.length > 2 && JSON.stringify(houseRungs(b, prod)) === JSON.stringify(rungs.slice().sort((a, c) => a - c)),
+        "the rungs Maker offers for " + prod + " are the sizes the Desk's own board table lists");
+      for (const hide of [[], [rungs[0]], [rungs[1], rungs[rungs.length - 1]]]) {
+        const made = makerHouseSizes({ at: AT, product: prod, hide }, b);
+        ok(made.entry && JSON.stringify(made.entry.payload.hide) === JSON.stringify(hide.slice().sort((a, c) => a - c)) && made.entry.payload.product === prod,
+          "Maker's board sizes for " + prod + " hiding " + JSON.stringify(hide) + " is an entry carrying exactly that hide list");
+      }
     }
     /* a board that prints fewer rungs than the book carries: the Desk's shSizes cuts to boardBy, and Maker offers the same */
     w.eval("PROD='salt';PRICE_ENGINE.boardBy={salt:[1,2,3,5]};recompute();");
-    ;
-    ;
-    ;
+    const cut = JSON.parse(w.eval("JSON.stringify(shSizes())")), bc = book("salt");
+    ok(JSON.stringify(cut) === "[1,2,3,5]" && JSON.stringify(houseRungs(bc, "salt")) === JSON.stringify(cut)
+      && makerHouseSizes({ at: AT, product: "salt", hide: [2] }, bc).entry?.payload.hide.join() === "2",
+      "with a board cut to some rungs, Maker offers exactly the Desk's shSizes and queues the entry for one of them");
+    ok(!makerHouseSizes({ at: AT, product: "salt", hide: [0.5] }, bc).entry, "a rung the board does not print cannot be hidden");
+    ok(JSON.stringify(bc.pricing.byProduct.salt.rungs) === JSON.stringify(cut), "the pricing snapshot carries the printed rungs, so Maker is not left to the sizes on the board");
     w.eval("PRICE_ENGINE.boardBy={};PROD='salt';recompute();");
-    /* 2. a print setting, never a price: the drafter reads it as the Desk's entry, and a price in it is refused */
+    /* 2. a print setting, never a price: the drafter reads it as a hide list, and a price in it is refused */
     const b = book("salt"), made = makerHouseSizes({ at: AT, product: "salt", hide: [0.5] }, b);
     ok(!!made.entry, "Maker's board sizes for salt hiding 0.5 are a proposed entry");
     const drafted = made.entry ? draftRow(made.entry, { ...b, state: { ...b.state, PRICING: b.pricing } }) : { row: { prices: { x: 1 }, hide: [] } };
-    ;
-    ;
-    ;
-    ;
+    ok(!!made.entry && Object.keys(made.entry.payload.prices).length === 0 && made.entry.total === null && made.entry.qty === null
+      && drafted.collection === "priceset" && Object.keys(drafted.row.prices).length === 0 && drafted.row.hide.length === 1 && /sets no price either/.test(drafted.reasoning),
+      "the entry carries no price figure and the drafter reads it as a hide list");
+    const priced = made.entry ? draftRow({ ...made.entry, payload: { mode: "price", product: "salt", prices: { 1: 100 }, hide: [0.5], clearing: true } }, { ...b, state: { ...b.state, PRICING: b.pricing } }) : {};
+    ok(!!priced.skip && /not folded/.test(priced.skip),
+      "the drafter refuses a stated price in this entry, so an input that added one could not reach a draft");
   } finally { w.close(); }
 
   /* 3. the constructor's refusals */

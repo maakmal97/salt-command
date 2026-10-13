@@ -19856,6 +19856,12 @@ function tabWorkbench(){
   ${wbVaultRetryMarkup()}
   <div id="queueBox" style="margin-top:8px"></div>`;
 }
+/* the rungs the board prints: the book's sizes cut to boardBy. A read: the snapshot carries it to Maker's printed-sizes input (tools/book.mjs) */
+function shSizes(){
+  const all=(PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;
+  const B=(PRICE_ENGINE.boardBy||{})[PROD];
+  return (Array.isArray(B)&&B.length)?all.filter(q=>B.some(b=>Math.abs(b-q)<0.009)):all;
+}
 /* ============ TAB: PRICING ============ */
 function pxMarket(){
   const c=pxCost();
