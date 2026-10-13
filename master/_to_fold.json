@@ -1,0 +1,52 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-13T22:45:05.506Z",
+   "status": "approved",
+   "collection": "repayment",
+   "row": {
+    "loan": "l002",
+    "party": "CM4-TO",
+    "direction": "in",
+    "form": "salt",
+    "date": "2026-10-14",
+    "kg": 2.5,
+    "rm": null,
+    "left": 0,
+    "settles": true,
+    "product": "salt",
+    "note": null
+   },
+   "reasoning": "Repays 2.5 unit of salt to CM4-TO against the loan of 2026-10-12, which settles it. The salt leaves the inventory.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-13T22:45:05.506Z",
+    "type": "REPAY",
+    "party": "CM4-TO",
+    "qty": 2.5,
+    "total": null,
+    "status": "open",
+    "raw": "Repaid 2.5 unit salt to CM4-TO against loan l002 on 2026-10-14",
+    "payload": {
+     "mode": "repay",
+     "loan": "l002",
+     "party": "CM4-TO",
+     "date": "2026-10-14",
+     "kg": 2.5,
+     "rm": null,
+     "qty": null,
+     "total": null,
+     "cash": null,
+     "note": null
+    },
+    "makerRequest": "ce86e86f6eecb35baaf5e75dfb5091813dcf7f4661a1ac4419a71291087132ee"
+   },
+   "decidedAt": "2026-10-13T22:45:58.900Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
