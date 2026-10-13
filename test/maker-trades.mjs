@@ -53,7 +53,7 @@ export function world() {
 const button = (root, label) => [...root.querySelectorAll("button")].find((e) => e.textContent === label);
 const field = (root, label) => [...root.querySelectorAll("label")]
   .find((e) => e.firstChild.textContent === label)?.querySelector("input,select");
-async function ownerTrade(wd, pageWork, cover) {
+export async function ownerTrade(wd, pageWork, cover) {
   const sent = [];
   let work, loseAnswer = false, tick = Date.parse(AT);
   const dom = new JSDOM(landingPage("", "trade-nonce", { master: "fixture-master", accounts: [] }), {
@@ -65,6 +65,7 @@ async function ownerTrade(wd, pageWork, cover) {
       win.Date = class extends NativeDate { constructor(...args) { super(...(args.length ? args : [tick += 100])); } };
       win.fetch = async (path, init = {}) => {
         if (cover && String(path) === "/all/maker/trade-cover") return cover(JSON.parse(init.body));
+        if (String(path) === "/all/maker/trade-reading") return wd.call(String(path), JSON.parse(init.body));
         if (String(path).startsWith("/all/maker/inputs") || String(path).startsWith("/all/maker/drafts/")) {
           const input = init.body && JSON.parse(init.body);
           if (input) sent.push({ path: String(path), bytes: init.body, body: input });
