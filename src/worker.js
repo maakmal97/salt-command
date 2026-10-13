@@ -17,11 +17,11 @@
  * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
 
-import { runDrafter, dryRunDrafter, readBook, bookOnce, draftRow, tripCheck } from "./drafter.js";
+import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, draftRow, tripCheck } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
+import { makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -447,7 +447,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && p !== "/_internal/maker/queue"
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
-    && p !== "/_internal/maker/trade-cover"
+    && p !== "/_internal/maker/trade-cover" && p !== "/_internal/maker/trade-reading"
     && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
     && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
     && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
@@ -628,6 +628,18 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
     return json({ ok: true, cover: makerCoverPlan(body, book, await reservedInputs(env.SALT_LEDGER, book)) });
+  }
+  if (p === "/_internal/maker/trade-reading") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "The Desk mirror is required." }, 503);
+    let body;
+    try { body = JSON.parse(await request.text()); }
+    catch { return json({ ok: false, error: "send JSON" }, 400); }
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
+    /* the lots drafted and not folded count, as the drafter's own COGS reads them: a purchase just sent is the latest */
+    const reading = makerTradeReading(body, await withDraftLots(env.SALT_LEDGER, book));
+    return reading.error ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
   }
   if (p === "/_internal/maker/offsets") {
     /* Counter Maker A2: what the Desk's autoOffsets would offer, derived here from the mirror and never priced (a read) */
