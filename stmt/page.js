@@ -257,6 +257,11 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .cshell{padding-bottom:calc(var(--salt-bar-h) + 24px + env(safe-area-inset-bottom))}
 .chead{max-width:620px;margin:0 auto 18px}
 .chead h1{margin:0;font-size:var(--salt-text-2xl);line-height:1.15}
+/* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header and beside Salt Account's name */
+.cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
+.cclock:empty{display:none}
+.clk{font-variant-numeric:tabular-nums}
+.clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
 .cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 /* a username is a credential, so the rail's capitals never reach it */
 .cfoot .mono{text-transform:none;letter-spacing:.02em}
@@ -1388,7 +1393,7 @@ export function landingPage(user, nonce, owner, bulletin) {
            so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
         + '<div id="mHome" data-in="needs">'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
@@ -1402,7 +1407,7 @@ export function landingPage(user, nonce, owner, bulletin) {
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Orders</h1>"
         + '<p class="lead">Orders from the Counter, by stage. The Desk checks each answer before it reaches the book.</p>'
         + adminParts("orders")
@@ -1419,7 +1424,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Customers</h1>"
         + '<p class="lead">The people on the site: their accounts, their messages, guest links and associates.</p>'
         + adminParts("customers")
@@ -1460,7 +1465,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* RECORD: his own entries. Approve is the Desk's rows waiting for him and the entries the server holds; the other three parts
            are the forms, which the Desk checks and holds for review before they change the book. */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Record</h1>"
         + '<p class="lead">Everything here waits for your approval under Approve.</p>'
         + adminParts("record")
@@ -1476,7 +1481,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Shop</h1>"
         + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop")
@@ -1558,7 +1563,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div></div>"
     /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
        sits in it, on every view of the saved app */
-    + '<header class="chead">' + (owner ? "" : bellBox()) + wt("h1", 'id="placeT"', "place.home")
+    + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock="date"></p>' + wt("h1", 'id="placeT"', "place.home")
     + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
@@ -1666,6 +1671,21 @@ const CLIENT_JS = `
   var assoc=false;
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
+  /* 14 Oct 2026 (his review): every [data-clock] shows the time in Kuala Lumpur, "date" ones the day before it; painted on the
+     minute and again whenever the page comes back into view, since a phone sleeps its timers */
+  (function(){
+    var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function paint(){
+      var p={};
+      try{ new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})
+        .formatToParts(new Date()).forEach(function(x){ p[x.type]=x.value; }); }catch(e){ return; }
+      var t=p.hour+':'+p.minute, d=p.day+' '+MON[+p.month-1]+', '+t;
+      [].forEach.call(document.querySelectorAll('[data-clock]'),function(n){ n.textContent=n.getAttribute('data-clock')==='date'?d:t; });
+    }
+    function tick(){ paint(); setTimeout(tick,60000-Date.now()%60000+50); }
+    tick();
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });
+  })();
   /* S3: the device, read once. The words say phone on a phone and computer on anything else (nothing says phone
      on a laptop), in the markup's .dev words and in every line the script writes. */
   var UA=navigator.userAgent||'';

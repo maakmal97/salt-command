@@ -50745,6 +50745,11 @@ await (async () => {
   await (await import("./desk-clock.mjs")).run({ ok });
 })();
 
+section("14 Oct 2026: the Counter and Salt Account show a live clock");
+await (async () => {
+  await (await import("./counter-clock.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");

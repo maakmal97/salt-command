@@ -1,0 +1,5 @@
+[
+ {"name":"the clock is never painted","find":"    tick();\n    document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });","replace":"    document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });"},
+ {"name":"the clock is not painted again on return","find":"document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });","replace":""},
+ {"name":"the Counter's clock drops the day","find":"n.getAttribute('data-clock')==='date'?d:t","replace":"t"}
+]
