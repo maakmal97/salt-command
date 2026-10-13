@@ -52455,6 +52455,11 @@ await (async () => {
   await (await import("./maker-trades.mjs")).runCoverRead({ ok, pageWork });
 })();
 
+section("Counter trade reading: cost, margin, floor and history before Send, equal to the Workbench's");
+await (async () => {
+  await (await import("./maker-trade-reading.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter approved registration staging: actual mixed-status SQLite selection");
 await (async () => {
   await (await import("./maker-registration.mjs")).runApprovedSelection({ ok });
