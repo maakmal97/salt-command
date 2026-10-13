@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ee53873d2859f261";
+var SALT_BUILD_ID="365cb0f7cc08b8d0";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9411,7 +9411,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1095","d":"13 Oct 2026","t":"FULFILMENT OF 1 UNIT OF SALT AGAINST S194 FOR CM4-TO","n":["<b>FOLDED:</b> One fulfilment on s194 for CM4-TO, 1 unit of salt on 12 Oct against the order of 12.5 units for RM750 agreed on 23 Sep. No cash moves, because the order was paid in full on 23 Sep. The drafter raised no flags, and the desk decided it. That leaves 5.5 units still to be handed over.","<b>UNUSUAL AND INVENTORY:</b> The stored note on s194 names CM3-OUG while the row is held under CM4-TO; the dossier gives no reason, so none is offered. Salt stock stands at 14.14 units after the 1 unit out, last counted on 3 Oct. Stock cost stays at RM56 a unit, as no lot landed. Replacement cost is RM58."]}];
+const evolution=[{"v":"v1096","d":"13 Oct 2026","t":"COST AND MARGIN BEFORE SEND ON THE COUNTER'S TRADE FORM","n":["<b>BEFORE SEND.</b> Counter Admin's trade form reads, before Send, the cost a unit (the latest purchase on or before the trade's date), the goods, the margin over cost in RM and %, the floor for the size with a line when the price is under it, and the party's recent prices on that book. A purchase reads its cost a unit against the current cost, with no margin. Read through the owner's own road from the one engine; nothing is written and nothing prices. B1 of #62.","<b>THE PROOFS.</b> The Counter trade reading section: the figures equal the Desk Workbench's and the drafter's for the same entry, a backdated sale and the rounding edge included; each check red under its own mutation (17). Fable reviewed it twice."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9562,7 +9562,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 17:16 KL';
+const LAST_UPDATED='13 Oct 2026, 18:14 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

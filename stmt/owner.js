@@ -2982,6 +2982,49 @@ export const OWNER_JS = `
         return choice;
       }
       var firstCover=coverChoice(tradeSection,tradeProduct,tradeQty,tradeTotal,['record.trade.cover','record.trade.cover-retry']);
+      /* B1 of #62: what the Workbench shows before Record, shown before Send (the Desk reads it from the same engine: cost a unit,
+         the goods, the margin over it, the floor and a refusal-style line when the goods are under it, their recent prices).
+         A purchase shows its cost a unit against the current cost and no margin. It is a read; Send is never held by it. */
+      var readingBox=el('div','maker-reading'), readingRevision=0;
+      readingBox.setAttribute('aria-live','polite'); readingBox.hidden=true; tradeSection.appendChild(readingBox);
+      function readingLine(text,bad){ var p=el('p',bad?'msg bad':'msg',text); readingBox.appendChild(p); return p; }
+      async function readTrade(){
+        var ticket=++readingRevision, isSale=direction.value==='sale';
+        readingBox.textContent='';
+        if(!(Number(tradeQty.value)>0)||tradeTotal.value===''||!tradeProduct.value){readingBox.hidden=true;return;}
+        readingBox.hidden=false; readingLine('Reading.');
+        var ask={direction:direction.value,product:tradeProduct.value,qty:Number(tradeQty.value),total:Number(tradeTotal.value)};
+        if(tradeDate.value)ask.date=tradeDate.value;
+        if(isSale){ if(tradeParty.value&&tradeStream.value!=='R2')ask.party=tradeParty.value; }
+        else if(carriage.value!=='')ask.freight=Number(carriage.value);
+        try{
+          var got=(await refs('/all/maker/trade-reading',ask)).reading;
+          if(ticket!==readingRevision||!readingBox.isConnected)return;
+          readingBox.textContent='';
+          var c=got.cogs||{};
+          readingLine(c.rate==null?'No cost to read against.':'Cost a unit '+rm(c.rate)+', from '+c.source+'.');
+          if(!isSale){
+            if(got.purchase.versusCogs!=null)readingLine('This buy costs '+rm(got.purchase.perUnit)+' a unit, '+(got.purchase.versusCogs>=0?rm(got.purchase.versusCogs)+' above':rm(-got.purchase.versusCogs)+' under')+' the current cost.');
+            return;
+          }
+          if(got.margin)readingLine('Goods '+rm(got.goods)+', '+rm(got.price)+' a unit: margin '+rm(got.margin.rm)+(got.margin.pct==null?'':' ('+Math.round(got.margin.pct)+'%)')+' over cost.',got.margin.belowCost);
+          if(got.margin&&got.margin.belowCost&&!(got.floor&&got.floor.warn))readingLine('Below cost: every unit loses '+rm(c.rate-got.price)+'.',true);
+          if(got.floor){
+            readingLine('Floor '+rm(got.floor.rm)+' for '+units(got.qty)+', cost times the size.');
+            if(got.floor.warn)readingLine(got.floor.warn,true);
+          }
+          var h=got.history;
+          if(h)readingLine('Their usual '+rm(h.median)+' a unit over '+h.count+' order'+(h.count===1?'':'s')+', '+rm(h.low)+' to '+rm(h.high)
+            +(h.offMedianPct==null?'':'; this is '+(h.offMedianPct>=0?h.offMedianPct+'% above':(-h.offMedianPct)+'% below'))+'. Recent: '
+            +h.recent.map(function(r){return rm(r.rate);}).join(', ')+'.');
+          else if(ask.party)readingLine('No earlier price of theirs on this book.');
+        }catch(error){
+          if(ticket===readingRevision){readingBox.textContent='';refusal(readingLine('',true),error,'Reading not available. ');}
+        }
+      }
+      [direction,tradeProduct,tradeQty,tradeTotal,carriage,tradeParty,tradeStream,tradeDate].forEach(function(control){
+        control.addEventListener('input',readTrade);control.addEventListener('change',readTrade);
+      });
       var extraBooks=el('div','maker-extra-books'), extraTrades=[], extraSeq=0;
       tradeSection.appendChild(extraBooks);
       var tripNote=el('p','msg','Same buyer, same day; delivery charged once; approved in one tap.');
@@ -3019,6 +3062,7 @@ export const OWNER_JS = `
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
         coverChoices.forEach(function(choice){choice.read();});
+        readTrade();
       }
       async function refreshMakerTradeCatalog(){
         var refreshed=await refs('/all/maker/inputs');
