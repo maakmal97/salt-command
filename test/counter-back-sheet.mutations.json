@@ -1,0 +1,224 @@
+[
+ {
+  "name": "a Sheet's entry is pushed at a new address",
+  "file": "stmt/page.js",
+  "find": "history.pushState({sheet:bkStack.length+1},'')",
+  "replace": "history.pushState({sheet:bkStack.length+1},'','#sheet')"
+ },
+ {
+  "name": "a Sheet's entry carries no mark in its state",
+  "file": "stmt/page.js",
+  "find": "history.pushState({sheet:bkStack.length+1},'')",
+  "replace": "history.pushState(null,'')"
+ },
+ {
+  "name": "Back closes no Sheet",
+  "file": "stmt/page.js",
+  "find": "        if(r.shut()===false){",
+  "replace": "        if(false){"
+ },
+ {
+  "name": "Back closes every Sheet, not the top one only",
+  "file": "stmt/page.js",
+  "find": "      while(bkStack.length>d){\n        var r=bkStack.pop();",
+  "replace": "      while(bkStack.length>0){\n        var r=bkStack.pop();"
+ },
+ {
+  "name": "Back closes the order sheet without giving the focus back",
+  "file": "stmt/page.js",
+  "find": "      bkOpen('o',sheetDismiss);\n",
+  "replace": "      bkOpen('o',function(){ if(draft.busy) return false; osh.opener=null; sheetClose(); });\n"
+ },
+ {
+  "name": "Back closes the order sheet and loses what was typed",
+  "file": "stmt/page.js",
+  "find": "      bkOpen('o',sheetDismiss);\n",
+  "replace": "      bkOpen('o',function(){ if(draft.busy) return false; draft.say=''; sheetClose(); });\n"
+ },
+ {
+  "name": "the order sheet takes no entry",
+  "file": "stmt/page.js",
+  "find": "      bkOpen('o',sheetDismiss);\n",
+  "replace": "\n"
+ },
+ {
+  "name": "the order sheet closed by its own controls keeps its entry",
+  "file": "stmt/page.js",
+  "find": "    bkDrop('o');\n",
+  "replace": "\n"
+ },
+ {
+  "name": "the question takes no entry",
+  "file": "stmt/page.js",
+  "find": "    bkOpen('yn',function(){ ynShut(); });\n",
+  "replace": "\n"
+ },
+ {
+  "name": "the question closed by its own controls keeps its entry",
+  "file": "stmt/page.js",
+  "find": "    bkDrop('yn');\n",
+  "replace": "\n"
+ },
+ {
+  "name": "the signed-out Sheet takes no entry",
+  "file": "stmt/page.js",
+  "find": " bkOpen('out',closeSignedOut);",
+  "replace": ""
+ },
+ {
+  "name": "the signed-out Sheet closed by its own controls keeps its entry",
+  "file": "stmt/page.js",
+  "find": " bkDrop('out');",
+  "replace": ""
+ },
+ {
+  "name": "Sign in another device takes no entry",
+  "file": "stmt/page.js",
+  "find": " bkOpen('dev',closeDevSheet);",
+  "replace": ""
+ },
+ {
+  "name": "Sign in another device closed by its own controls keeps its entry",
+  "file": "stmt/page.js",
+  "find": " bkDrop('dev'); devM++;",
+  "replace": " devM++;"
+ },
+ {
+  "name": "the bell takes no entry",
+  "file": "stmt/page.js",
+  "find": " bkOpen('bell',closeBell);",
+  "replace": ""
+ },
+ {
+  "name": "the bell closed by its own controls keeps its entry",
+  "file": "stmt/page.js",
+  "find": " bkDrop('bell');",
+  "replace": ""
+ },
+ {
+  "name": "the look choice takes no entry",
+  "file": "stmt/page.js",
+  "find": " bkOpen('look',lookShut);",
+  "replace": ""
+ },
+ {
+  "name": "the look choice closed by its own controls keeps its entry",
+  "file": "stmt/page.js",
+  "find": " bkDrop('look');",
+  "replace": ""
+ },
+ {
+  "name": "Pay takes no entry",
+  "file": "stmt/page.js",
+  "find": "back:key||''};\n    bkOpen('pay',closePay);\n",
+  "replace": "back:key||''};\n"
+ },
+ {
+  "name": "Pay, asked again after a reload, takes no entry",
+  "file": "stmt/page.js",
+  "find": "'pay:now'};\n    bkOpen('pay',closePay);\n",
+  "replace": "'pay:now'};\n"
+ },
+ {
+  "name": "Pay closed by its own controls keeps its entry",
+  "file": "stmt/page.js",
+  "find": " payqDrop(); bkDrop('pay');",
+  "replace": " payqDrop();"
+ },
+ {
+  "name": "the thread takes no entry",
+  "file": "stmt/page.js",
+  "find": "    bkOpen('th',thClose);\n",
+  "replace": ""
+ },
+ {
+  "name": "the thread closed by its own controls keeps its entry",
+  "file": "stmt/page.js",
+  "find": " bkDrop('th'); thSay('');",
+  "replace": " thSay('');"
+ },
+ {
+  "name": "a Sheet closed by its own controls goes back one entry too many",
+  "file": "stmt/page.js",
+  "find": "history.go(-k)",
+  "replace": "history.go(-k-1)"
+ },
+ {
+  "name": "a Sheet closed by its own controls forgets the entry owed",
+  "file": "stmt/page.js",
+  "find": "  function bkDrop(n){ var i=bkAt(n); if(i<0) return; bkStack[i].dead=true; bkTrim(); }\n",
+  "replace": "  function bkDrop(n){ var i=bkAt(n); if(i<0) return; bkStack.splice(i,1); }\n"
+ },
+ {
+  "name": "a Sheet opened straight after a close pushes an entry of its own",
+  "file": "stmt/page.js",
+  "find": "    if(bkOwe>0) bkOwe--;\n    else if(bkClean())",
+  "replace": "    if(false) bkOwe--;\n    else if(bkClean())"
+ },
+ {
+  "name": "a Sheet that refuses to close is closed for Back",
+  "file": "stmt/page.js",
+  "find": "  function sheetDismiss(){ if(draft.busy) return false; sheetClose(); }\n",
+  "replace": "  function sheetDismiss(){ if(draft.busy) return; sheetClose(); }\n"
+ },
+ {
+  "name": "a refused Back is not answered at all",
+  "file": "stmt/page.js",
+  "find": "        if(r.shut()===false){ bkStack.push(r); for(var i=d+1;i<=bkStack.length;i++) try{ history.pushState({sheet:i},''); }catch(e){} return; }\n",
+  "replace": "        r.shut();\n"
+ },
+ {
+  "name": "a refused Back does not put the entry back",
+  "file": "stmt/page.js",
+  "find": "for(var i=d+1;i<=bkStack.length;i++) try{ history.pushState({sheet:i},''); }catch(e){} return; }",
+  "replace": "return; }"
+ },
+ {
+  "name": "a reload with a Sheet open keeps the mark",
+  "file": "stmt/page.js",
+  "find": "    try{ var bs=history.state; if(bs&&typeof bs.sheet==='number') history.replaceState(null,''); }catch(e){}\n",
+  "replace": "\n"
+ },
+ {
+  "name": "a Forward onto an entry whose Sheet has gone is left there",
+  "file": "stmt/page.js",
+  "find": "      if(d>bkStack.length){ bkOwe+=d-bkStack.length; bkGo(); return; }\n",
+  "replace": "      if(d>bkStack.length) return;\n"
+ },
+ {
+  "name": "Salt Account's Sheets push",
+  "file": "stmt/page.js",
+  "find": "  function bkOpen(n,shut){\n    if(OWNER) return;\n",
+  "replace": "  function bkOpen(n,shut){\n"
+ },
+ {
+  "name": "any address is pushed",
+  "file": "stmt/page.js",
+  "find": "    else if(bkClean()){ try{",
+  "replace": "    else if(true){ try{"
+ },
+ {
+  "name": "any hash is trusted",
+  "file": "stmt/page.js",
+  "find": "&&(!h||!!placeOf(h)||h==='#thread'||!!orderIn(h));",
+  "replace": ";"
+ },
+ {
+  "name": "any path is trusted",
+  "file": "stmt/page.js",
+  "find": "    return (p==='/'||p==='/app')&&(!h",
+  "replace": "    return (p||true)&&(!h"
+ },
+ {
+  "name": "a place written into the address drops the mark of the Sheet's entry",
+  "file": "stmt/page.js",
+  "find": "history.replaceState(history.state,'',location.pathname+location.search+'#'+p[2]);",
+  "replace": "history.replaceState(null,'',location.pathname+location.search+'#'+p[2]);"
+ },
+ {
+  "name": "the shut page and the 404 carry a script",
+  "file": "stmt/page.js",
+  "find": "    + '<div class=\"panel\">' + inner + \"</div></body></html>\";\n}\n\n/** The landing page.",
+  "replace": "    + '<script nonce=\"' + nonce + '\">window.addEventListener(\"popstate\",function(){});</script><div class=\"panel\">' + inner + \"</div></body></html>\";\n}\n\n/** The landing page."
+ }
+]

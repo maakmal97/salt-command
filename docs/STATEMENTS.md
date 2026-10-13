@@ -683,6 +683,23 @@ keyboard keeps the focus**: `drawPay` rebuilds the sheet, so it reads the radio 
 one after. **The yes or no over the New order sheet closes alone** (`ynKeys` stops Escape, `ynOpen` shuts any question already open first): the stress run's "did not
 close" on Cancel this order there was its runner counting the order sheet, which correctly stays beneath, as a Sheet that would not close; the page was not changed for it.
 
+**Back closes the top Sheet** (13 Oct 2026, his yes: "Yes, Back closes the sheet"; stress triage R4; `test/counter-back-sheet.mjs`, its mutations in
+`test/counter-back-sheet.mutations.json`). Opening a Sheet pushes one history entry at the same address (no new hash), marked in its state (`{sheet:n}`, n the depth), through
+`bkOpen(name, close)` beside `behind()`; Back (a phone's button, a browser's swipe) is a `popstate` onto the entry below, which closes the top Sheet only through that Sheet's
+own close, so the draft stays and the focus goes back to the opener by `focusBack`. A close that refuses is refused for Back too: the order sheet while Place is on its way
+(`sheetDismiss` returns `false`), and the entry is pushed again. A Sheet closed by its own controls (the orb, the scrim, Escape, Keep it, an answer, a lapse or a lock) calls
+`bkDrop(name)`, and the entry it pushed is given back by one `history.go(-n)` made once the current work is done (`bkOwe`, `bkGo`): a Sheet opened straight after a close takes
+the entry over (the question opened twice, the signed-out Sheet a lapse draws after the order sheet it shuts), and Sheets that come down together go back once. After any open
+and close the page is at the entry it was at and one Back leaves as it would have without the Sheet; the entry that was left is a forward entry (the history's length is one
+more until the next push), and a Forward onto it is stepped off at once. A page that loads on an entry still marked (a reload with a Sheet open) clears the mark. **NOTHING IS
+PUSHED AT AN ADDRESS THAT CARRIES A KEY OR A TOKEN** (`bkClean`): the path must be `/` or `/app` and the hash empty, a place, `#thread` or an order (`#o=<id>`), so `/s/<token>`,
+`/app#<key>`, `/app#qr.<key>`, `/app#code` and anything else the hand-over or link road reads push nothing, and a Sheet there closes by its own controls alone (no entry was
+pushed, so none is given back). Every Sheet the customer's page draws has a way out of its own (the orb, the scrim, Escape or a button), so none is left that Back cannot
+close; the signed-out Sheet a lapse draws closes on Back too, and the page keeps its Continue line on the bar. The one Sheet whose own controls refuse is the order sheet while
+Place is on its way, and Back is held to the same. A browser that skips a history entry pushed before the person has touched the page (Chrome's history manipulation
+intervention) would let Back pass over a Sheet drawn on an untouched page, such as a lapse on a page left open (unverified: the test browser's Back ignores it). Salt Account pushes nothing (`bkOpen` returns for `OWNER`, and the
+`popstate` listener is the customer's alone), and the guest board, the shut page and the 404 run no script.
+
 The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
 `test/counter-account-door.mutations.json`) drives all of it through the generated page in jsdom.
 
