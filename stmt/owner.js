@@ -3544,7 +3544,7 @@ export const OWNER_JS = `
         var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
         var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
-        var otherField=null, previewTurn=0, sig=JSON.stringify(order);
+        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeRadios=[], winDraw=null;
         /* 12 Oct 2026 (his decision 6 of 11 Oct): THE CARD READS ITS OWN PREVIEW, once, when its order is opened, and again when an input is
            changed; the Preview button is retired. A row of the list reads nothing (only the opened order draws a card), so the Desk is asked
            once for an order he opens. A redraw of the card (a read that changed, a tap) keeps the quote it has, or waits on the one in
@@ -3588,6 +3588,20 @@ export const OWNER_JS = `
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Agreed and sent to the Desk.',order.id);
           },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);
         }
+        /* 13 Oct 2026 (stress, High): A CHOICE THAT DID NOT SAVE IS NOT SHOWN AS CHOSEN. The charge and the time are held on this card until the
+           figures are read; a read that fails (a 500, no connection) leaves the radio he just pressed ticked over figures nobody read. The choice
+           the last good read stood on is put back (chip.kept, win.kept), and the card's line says which did not save. The read itself is unchanged. */
+        function makerPlacedRevert(){
+          var k=chip.kept||{value:'',other:''}, said=[];
+          if(chip.value!==k.value||(chip.value==='other'&&chip.other!==k.other)){
+            chip.value=k.value; chip.other=k.other;
+            feeRadios.forEach(function(r){ r.checked=r.value===chip.value; });
+            if(otherField){ otherField.value=chip.other; otherField.closest('label').hidden=chip.value!=='other'; }
+            said.push('That charge did not save. '+(chip.value===''?'No charge is chosen.':'RM '+(chip.value==='other'?chip.other:chip.value)+' is still chosen.'));
+          }
+          if(winDraw&&win.value!==(win.kept||'')){ win.value=win.kept||''; winDraw(); said.push('That time did not save. The one before it stands.'); }
+          return said.length?said.join(' ')+' ':'';
+        }
         function makerPlacedRead(){
           var delivery=makerPlacedDelivery();
           if(delivery==null){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }
@@ -3601,13 +3615,15 @@ export const OWNER_JS = `
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
             makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash,offerHash:result.offerHash,result:result,key:key,sig:sig};
+            chip.kept={value:chip.value,other:chip.other}; win.kept=win.value;
             makerPlacedShow(makerQuotes[order.id]);
           }).catch(function(error){
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
             delete makerQuotes[order.id];
-            makerPlacedSay(error.message,true,error);
-            makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
+            var back=makerPlacedRevert();
+            makerPlacedSay(back+error.message,true,error);
+            if(makerPlacedDelivery()!=null) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
           });
         }
         total.addEventListener('input',makerPlacedInvalidate);
@@ -3624,7 +3640,7 @@ export const OWNER_JS = `
           [['0','RM 0'],['10','RM 10'],['15','RM 15'],['other','Other']].forEach(function(opt){
             var label=el('label','salt-option'), radio=el('input','salt-option__input'),
                 face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
-            radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0]; actOn(radio,'order.fee-'+opt[0]);
+            radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0]; actOn(radio,'order.fee-'+opt[0]); feeRadios.push(radio);
             radio.addEventListener('change',function(){
               chip.value=opt[0];
               if(otherField) otherField.closest('label').hidden=opt[0]!=='other';
@@ -3663,7 +3679,7 @@ export const OWNER_JS = `
             });
           }
           ds.addEventListener('change',function(){ win.day=ds.value; makerWinDraw(); });
-          makerWinDraw();
+          makerWinDraw(); winDraw=function(){ if(win.value) win.day=win.value.slice(0,10); ds.value=win.day; makerWinDraw(); };
           wset.appendChild(wgrid);
           wset.appendChild(el('p','salt-insight',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'. Choose another and they will be asked.'
             :'They want it as soon as it can; choose a window and it goes with Agree.'));

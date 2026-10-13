@@ -1,0 +1,7 @@
+[
+ {"name": "a failed read leaves the charge ticked", "file": "stmt/owner.js", "find": "            var back=makerPlacedRevert();\n", "replace": "            var back='';\n"},
+ {"name": "the last good read is not remembered", "file": "stmt/owner.js", "find": "            chip.kept={value:chip.value,other:chip.other}; win.kept=win.value;\n", "replace": "            win.kept=win.value;\n"},
+ {"name": "the figure typed under Other is not put back", "file": "stmt/owner.js", "find": "            chip.value=k.value; chip.other=k.other;\n", "replace": "            chip.value=k.value;\n"},
+ {"name": "a time that failed stays ticked", "file": "stmt/owner.js", "find": "          if(winDraw&&win.value!==(win.kept||'')){", "replace": "          if(false){"},
+ {"name": "the line does not say which did not save", "file": "stmt/owner.js", "find": "            said.push('That charge did not save. '+", "replace": "            said.push('That charge was not read. '+"}
+]
