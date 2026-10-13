@@ -2622,6 +2622,14 @@ export const OWNER_JS = `
       },false);
       offer.setAttribute('data-again',stage); makerAskTag(order,offer,'again-'+stage);
     });
+    if((order.again||[]).length){
+      var drop=makerButton(acts,['Not needed','order.again-drop'],function(){
+        makerAsk(order,drop,'again-drop',{title:'Not needed?', plain:true, go:'Not needed', keep:'Keep it',
+          say:['Use this when the sale is on the book another way. The steps you rejected are no longer offered, and nothing goes to the Desk.'],
+          yes:function(){ makerTap(order,'again',{drop:true},'Taken off. Nothing is sent again.'); }});
+      },false);
+      drop.setAttribute('data-again','drop'); makerAskTag(order,drop,'again-drop');
+    }
   }
   /* a pending row he rejected on an agreed order is offered again by Accept against a fresh preview, at the charge and
      goods the order already carries (the customer was told them), as the Desk's own Accept again: nothing priced is sent */

@@ -1271,7 +1271,7 @@ order (`sync` rejected) and spends any yes waiting on it, and the move is offere
 entry, a new moment and so a new draft id, the rejected id being refused for good: the stage's own tap
 (Accept on a pending row, against its preview and the charge the order already carries; Collected,
 Received or Cash received at the rejected figure) or `POST /orders/<id>/again {stage}` (pay, cash, move,
-cancel). The fresh entry keeps the move's figures and day, and is approved as it is drafted only if it
+cancel). Not needed (`{drop: true}`) files every stage he rejected on that order as `covered`, offering nothing again and drafting nothing. The fresh entry keeps the move's figures and day, and is approved as it is drafted only if it
 equals what he was shown. Cash offered again never raises the order twice. `GET /orders` carries `again`,
 the stages each order has to offer, read off the drafts, and `yes` where his Accept is given and not yet spent
 (`waiting` or `differs`), when the card offers no second Accept and says where it waits; a row dropped because they withdrew (11.10) is
@@ -2443,6 +2443,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.again-amend` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected amendment again. |
 | `order.again-cancel` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cancellation again. |
 | `order.again-cash` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected cash again. |
+| `order.again-drop` | Order card (key: the order id), any stage he rejected under Approve | Asks on a sheet, then files every rejected stage on the order as covered; nothing is offered or drafted. |
 | `order.again-move` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected handover again. |
 | `order.again-pay` | Order card (key: the order id), a stage he rejected under Approve | Asks on a sheet, then offers the rejected payment again. |
 | `order.amend` | Order card, acknowledged or ready | Opens the Change the order Sheet: Units, Price (goods) and Delivery. |

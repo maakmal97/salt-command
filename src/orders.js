@@ -1462,6 +1462,20 @@ export async function againOrder(env, id, body, by, now, mirror) {
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read and the preview's are one */
   const at = now || new Date();
   const stage = String((body && body.stage) || "");
+  /* a rejected step he says is on the book already is filed 'covered', so it is offered no more */
+  if (body && body.drop === true) {
+    const f = await findOrder(env, id);
+    if (!f.ok) return f;
+    if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be filed" };
+    const dropped = [];
+    for (const st of (await againOf(env.SALT_LEDGER, [id]))[id] || []) {
+      const d = await rejectedOf(env.SALT_LEDGER, id, st);
+      if (!d) continue;
+      await env.SALT_LEDGER.prepare("UPDATE draft SET decided_by='covered' WHERE id=?1 AND status='rejected'").bind(d.id).run();
+      dropped.push(st);
+    }
+    return { ok: true, order: f.order, dropped };
+  }
   if (!["pay", "cash", "move", "cancel", "amend"].includes(stage)) return { ok: false, status: 400, error: "offer again a pay, cash, move, cancel or amend; a pending row is offered again by Accept, against its preview" };
   const f = await findOrder(env, id);
   if (!f.ok) return f;

@@ -37854,6 +37854,20 @@ await (async () => {
     "a cancellation he rejected is offered again under a fresh entry, once however often it is tapped; a pending row is offered again only by Accept: "
     + JSON.stringify({ second: xG2.error, drafts: xs.map((x) => x.status) }));
 
+  /* F2. NOT NEEDED: a rejected stage the sale is booked another way for is filed covered, and offered no more */
+  const nh = await place(U2, 1, 108);
+  const nh1 = await accept(nh); land(nh1.j.draft);
+  await O.customerMove(senv, U2, nh.id, "cancel", {});
+  await reconcileOrders(denv); await runDrafter(denv);
+  await reject(drafts(nh.id, "Cancellation")[0].id);
+  const hBefore = await againOn(nh.id);
+  const hDrop = await againOrder(denv, nh.id, { drop: true }, "phone"), hDrop2 = await againOrder(denv, nh.id, { drop: true }, "phone");
+  const nhs = drafts(nh.id, "Cancellation");
+  ok(hBefore.includes("cancel") && hDrop.ok && hDrop.dropped.includes("cancel") && hDrop2.ok && hDrop2.dropped.length === 0
+    && nhs.length === 1 && nhs[0].decided_by === "covered" && !(await againOn(nh.id)).length,
+    "Not needed files the rejected stages covered, drafts nothing, and the order offers none again; a retry answers ok: "
+    + JSON.stringify({ before: hBefore, drop: hDrop.dropped, retry: hDrop2.dropped, by: nhs[0].decided_by }));
+
   /* G. A WITHDRAWAL'S DROP IS NOT HIS REJECTION, and offers nothing */
   const w = await place(U1, 1, 107);
   await O.deskMove(senv, U1, w.id, { status: "acknowledged", mode: "collect" });
@@ -52638,6 +52652,8 @@ await (async () => {
     && !!makerOrderFault("accept", { total: 100 })
     && !!makerOrderFault("handed", { qty: 1, note: "unsupported prose" }),
     "typed order fields reject string figures, missing digests and unsupported prose");
+  ok(!makerOrderFault("again", { drop: true, rid: "r".repeat(16) }) && !!makerOrderFault("again", { stage: "x", rid: "r".repeat(16) }) && !!makerOrderFault("again", { drop: true, rid: "r".repeat(16), other: 1 }),
+    "an again body may carry drop alone, and still needs a stage otherwise");
   let assetCalls = 0;
   const privateMiss = await worker.fetch(new Request("https://desk.test/_internal/maker/unknown"), {
     ASSETS: { fetch: async () => { assetCalls++; return new Response("asset"); } }

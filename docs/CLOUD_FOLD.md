@@ -150,6 +150,7 @@ tool in `tools/`, the test suite, and `master/_to_fold.json` if there was anythi
   "..."`, then `--approved > master/_to_fold.json` and the normal fold. Never touch the decided rows.
 - **Withdrawing an approved row** has no tool: an UPDATE on D1 through `wrangler d1 execute --file`
   with `decided_by` naming the reason, on his word, then `drain.mjs --forget <at>`.
+- **A site order's draft rejected by hand because the sale is booked another way** is filed `decided_by='covered'`, never prose, else the order's card offers it again (Counter Admin's Not needed does it).
 - **`drain.mjs --status` can fail in a Code shell** when wrangler's KV listing wants a token; the
   drafter drafts every arrival, so an empty `drafts.mjs --list` is the working proof that the queue
   is clear. Say the KV read failed.
