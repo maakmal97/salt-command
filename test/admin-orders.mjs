@@ -112,15 +112,24 @@ export async function run({ ok, pageWork }) {
     await byAct(d, "part.orders.placed").click(); await p.work.quiet();
     const row = byAct(d, "order.open", "ord-p3"), mark = row && row.querySelector(".mtile"), main = row && row.querySelector(".salt-inbox-row__main");
     ok(row && row.tagName === "BUTTON" && row.classList.contains("salt-inbox-row") && !!mark && !!mark.querySelector("svg.psym") && /^CX1-ZED/.test(main.querySelector(".salt-inbox-row__title").textContent)
-      && /1 unit/.test(main.querySelector(".salt-inbox-row__what").textContent) && row.querySelector(".salt-inbox-row__action").textContent === "RM 100.00"
+      && /1 unit/.test(mark.textContent) && row.querySelector(".salt-inbox-row__action").textContent === "RM 100.00"
       && (row.querySelector(".salt-inbox-row__age") || {}).textContent === "26 h",
     "a row is the system's Inbox row: the mark, who by code, the stage, the units, the figure and the age: " + (row && row.textContent));
     const p2 = byAct(d, "order.open", "ord-p2");
-    ok(p2.querySelector(".salt-inbox-row__action").textContent === "RM 110.00" && /deliver/.test(p2.querySelector(".salt-inbox-row__what").textContent) && (p2.querySelector(".salt-inbox-row__age") || {}).textContent === "1 h",
+    ok(p2.querySelector(".salt-inbox-row__action").textContent === "RM 110.00" && /Deliver/.test(p2.querySelector(".salt-inbox-row__what").textContent) && (p2.querySelector(".salt-inbox-row__age") || {}).textContent === "1 h",
       "and the figure is the goods and the delivery, the units say how it goes: " + p2.textContent);
     const chips = (id) => [...byAct(d, "order.open", id).querySelectorAll(".salt-status")].map((c) => c.textContent).join();
-    ok(chips("ord-p3") === "Waiting on you" && chips("ex-1") === "Waiting on you,Practice",
-      "and carries one pill when it waits on him, Waiting on you, and Practice for a practice order: " + JSON.stringify(["ord-p3", "ex-1"].map(chips)));
+    ok(chips("ord-p3") === "" && chips("ex-1") === "Practice" && !p.rowsShown().some((id) => /Waiting on you/.test(byAct(d, "order.open", id).textContent)),
+      "a Placed row carries no Waiting on you (Placed always waits on him), and Practice marks a practice order: " + JSON.stringify(["ord-p3", "ex-1"].map(chips)));
+    /* 14 Oct 2026: every row is the one grid, mark, main (code and at most one pill, then what it is), side (age over the figure) */
+    const shape = (id) => { const r = byAct(d, "order.open", id); return [...r.children].map((c) => c.className.split(" ").filter((x) => /mtile|inbox-row__(main|side)/.test(x)).join("")).join() + "|"
+      + [...r.querySelector(".salt-inbox-row__side").children].map((c) => c.className).join() + "|" + [...r.querySelector(".salt-inbox-row__main").children].map((c) => c.className.split(" ")[0]).join() + "|" + r.querySelectorAll(".salt-status").length; };
+    const shapes = p.rowsShown().map(shape);
+    ok(shapes.length === 5 && shapes.every((x) => /^mtile,salt-inbox-row__main,salt-inbox-row__side[|]salt-inbox-row__age,salt-inbox-row__action[|]salt-inbox-row__title,salt-inbox-row__what[|][01]$/.test(x)),
+      "every row has the same parts in the same order, the age above the figure, and at most one pill: " + JSON.stringify(shapes));
+    const css = ownerCss(), grid = css.top(".adm .ordrow").join(), side = css.top(".adm .ordrow .salt-inbox-row__side").join();
+    ok(/grid-template-columns:\s*76px minmax\(0,\s*1fr\)\s*88px/.test(grid) && /display:\s*grid/.test(grid) && /align-items:\s*flex-end/.test(side) && /text-align:\s*right/.test(side),
+      "the rows' columns are fixed (a 76px mark, the main, an 88px side) and the side is right-aligned, so no unit box moves the rest: " + grid);
     await byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
     const chipsC = (id) => [...byAct(d, "order.open", id).querySelectorAll(".salt-status")].map((c) => c.textContent).join();
     ok(chipsC("ord-a1") === "Waiting on you" && chipsC("ord-a2") === "Waiting on you" && /says sent/.test(byAct(d, "order.open", "ord-a1").textContent) && /send again/.test(byAct(d, "order.open", "ord-a2").textContent),

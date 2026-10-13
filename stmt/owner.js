@@ -1791,7 +1791,7 @@ export const OWNER_JS = `
           if(!n) return;
           var one=n===1, c=needCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent', at:list[0].at, act:'unsent.open', who:n+' unsent '+(one?'entry':'entries'), what:'on this phone',
             why:one?unsentSaid(list[0])+' Open it to send it again, update it or discard it.':'They were sent from this phone and not confirmed. Open them to send them again, update them or discard them.',
-            open:function(){ unsentOpen(list[0]); }});
+            open:function(){ unsentOpen(list[0]); }, keepOpen:true});
           c.removeAttribute('data-need'); c.removeAttribute('data-kind');
           bar.appendChild(c);
         }catch(e){}
@@ -3488,15 +3488,15 @@ export const OWNER_JS = `
       /* the stage is the part he is in, so the row carries one pill, Waiting on you, and says why in its line */
       b.appendChild(bookTile(o.product,o.qty));
       t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
-      if(e.waits) t.appendChild(chip('copper','Waiting on you'));
-      if(o.test) t.appendChild(chip('mist','Practice'));
+      /* ONE PILL AT MOST, and only a state the stage does not already say: Placed always waits on him, so its rows carry no Waiting on you; on any
+         other stage the pill says he is wanted there (a question, a payment they say they sent). Practice, then Cash held, then Waiting on you. */
+      var pillOf=o.test?['mist','Practice']:makerCashHeld[e.id]?['brass','Cash held']:(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;
+      if(pillOf) t.appendChild(chip(pillOf[0],pillOf[1]));
       var why=[orderAsked(o)?'asked a question':'', ordPays(o).length?'says sent':'', o.again&&o.again.length?'send again':'', o.status==='placed'?'to decide':''].filter(Boolean);
-      main.appendChild(el('span','salt-inbox-row__what',[[units(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')].concat(e.waits?why.slice(0,1):[]).join(', ')));
+      main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
-    }else t.appendChild(el('span',null,e.id));
-    if(makerCashHeld[e.id]) t.appendChild(chip('brass','Cash held'));
-    if(!o&&e.waits) t.appendChild(chip('copper','Waiting on you'));
+    }else{ t.appendChild(el('span',null,e.id)); if(e.waits) t.appendChild(chip('copper','Waiting on you')); }
     main.insertBefore(t,main.firstChild); b.appendChild(main); b.appendChild(side);
     b.addEventListener('click', function(){ openOrder(e.id); });
     return b;
@@ -4183,7 +4183,7 @@ export const OWNER_JS = `
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=30000;
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
-  var nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
+  var nFoldOpen={}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
   function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; }
   /* a read that finds what it found last time draws nothing: each keeps its last answer */
@@ -4262,8 +4262,12 @@ export const OWNER_JS = `
   /* the Action recipe's own parts: the kind word, the body (who and what, then why), the age in the money's place, the way there. A card
      about an account carries data-u, which the pane beside the list is drawn from. c._add puts an action before Open. */
   function needCard(o){
-    var c=el('article','salt-action salt-action--'+o.sev+' need'), body=el('div','salt-action__body'), title=el('div','salt-action__title'),
+    /* 14 Oct 2026: THE WHOLE CARD IS THE TAP. The title is the one real button (data-act need.open, keyboard and screen reader), its ::after
+       stretched over the card; a card's own actions stand above that. No Open button: a card with no way of its own has no go row. */
+    var tap=!!o.open&&!o.keepOpen;
+    var c=el('article','salt-action salt-action--'+o.sev+' need'+(tap?' ncard':'')), body=el('div','salt-action__body'), title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')),
       go=el('div','salt-action__go'), op=null;
+    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', o.open); }
     c.setAttribute('data-need', o.key); c.setAttribute('data-kind', o.kind); c.setAttribute('data-sev', o.sev);
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
@@ -4275,10 +4279,10 @@ export const OWNER_JS = `
     if(o.why) body.appendChild(el('p','salt-action__why',o.why));
     c.appendChild(body);
     c.appendChild(el('span','salt-action__money salt-action__money--nil',ageOf(o.at)));
-    if(o.open){ op=ghost(['Open',o.act||'need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); }
-    c.appendChild(go);
+    /* the banner over every place keeps its Open: it is not a list's card */
+    if(o.open&&o.keepOpen){ op=ghost(['Open',o.act||'need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); c.appendChild(go); }
     /* a card with an action of its own sets its ways on a row under the body, so a wide button never squeezes what it says */
-    c._body=body; c._add=function(b){ c.classList.add('need--act'); go.insertBefore(b, op); };
+    c._body=body; c._add=function(b){ if(!go.parentNode) c.appendChild(go); c.classList.add('need--act'); go.insertBefore(b, op); };
     return c;
   }
   function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c._body.appendChild(m); return m; }
@@ -4613,14 +4617,27 @@ export const OWNER_JS = `
     if(!nlist) return;
     var items=needItems(), shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });
     drawCounts(items); drawLead(items);
+    /* the chips are the kinds present, and All; one whose kind has gone leaves him on All */
+    if(needsReady()){
+      var have={}; items.forEach(function(i){ have[i.kind]=1; });
+      [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ var k=x.getAttribute('data-chip'); x.hidden=!(k==='all'||have[k]); });
+      if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x.getAttribute('data-chip')==='all'?'true':'false'); }); }
+    }
     nlist.textContent='';
     if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'?'Nothing needs you.':'Nothing here.'));
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
-      var h=el('p','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]); h.setAttribute('data-sev', s[0]);
-      nlist.appendChild(h);
-      group.forEach(function(i){ nlist.appendChild(i.make()); });
+      /* Now stands open; Soon and Watch are folded behind their heading and a count, kept as he leaves them across a redraw */
+      var h=el(s[0]==='now'?'p':'summary','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+(s[0]==='now'?'':' · '+group.length)); h.setAttribute('data-sev', s[0]);
+      var box=nlist;
+      if(s[0]!=='now'){
+        box=el('details','nfold'); box.setAttribute('data-sev', s[0]); if(nFoldOpen[s[0]]) box.open=true;
+        box.addEventListener('toggle', function(){ nFoldOpen[s[0]]=box.open; });
+        nlist.appendChild(box);
+      }
+      box.appendChild(h);
+      group.forEach(function(i){ box.appendChild(i.make()); });
     });
     drawNeedOpen(false);
   }

@@ -610,5 +610,29 @@
   "file": "stmt/owner.js",
   "find": "(order.payments||[]).some(function(p){ return p.claim==='waiting'; })",
   "replace": "false"
+ },
+ {
+  "name": "a Placed row says Waiting on you",
+  "file": "stmt/owner.js",
+  "find": "e.parts.indexOf('orders.placed')<0)?['copper'",
+  "replace": "true)?['copper'"
+ },
+ {
+  "name": "a practice order has no pill",
+  "file": "stmt/owner.js",
+  "find": "var pillOf=o.test?['mist','Practice']:",
+  "replace": "var pillOf="
+ },
+ {
+  "name": "the rows' columns follow their content",
+  "file": "stmt/page.js",
+  "find": "grid-template-columns:76px minmax(0,1fr) 88px",
+  "replace": "grid-template-columns:auto minmax(0,1fr) auto"
+ },
+ {
+  "name": "the side is not right-aligned",
+  "file": "stmt/page.js",
+  "find": "justify-content:center;text-align:right;gap:4px",
+  "replace": "justify-content:center;gap:4px"
  }
 ]
