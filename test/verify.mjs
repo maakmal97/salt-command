@@ -50740,6 +50740,11 @@ await (async () => {
   await (await import("./desk-dashboard.mjs")).run({ ok });
 })();
 
+section("14 Oct 2026: the Desk shows a live clock, and a queue refusal reads as the Worker's own words");
+await (async () => {
+  await (await import("./desk-clock.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");
