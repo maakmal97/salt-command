@@ -11,5 +11,7 @@
  {"name": "a link that could not be made says so on the page's one line", "file": "stmt/owner.js", "find": "}catch(e){ linkSay(e.message,'bad',e); }", "replace": "}catch(e){ sayFail(e); }"},
  {"name": "Refresh's refusal stays at the head of Orders", "file": "stmt/owner.js", "find": "var failed0=document.getElementById('makerRefreshSaid'); if(failed0){", "replace": "var failed0=null; if(failed0){"},
  {"name": "the figures stand after the time again", "file": "stmt/owner.js", "find": "          card.appendChild(wset);\n", "replace": "          card.appendChild(wset); card.appendChild(qsay); card.appendChild(qfigs);\n"},
- {"name": "an answer for a card that has gone is not brought into reach", "file": "stmt/owner.js", "find": " if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }", "replace": " }"}
+ {"name": "an answer for a card that has gone is not brought into reach", "file": "stmt/owner.js", "find": " if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }", "replace": " }"},
+ {"name": "For a friend is a bare box again", "file": "stmt/owner.js", "find": "friendLabel.appendChild(el('span','tickbox')); ", "replace": ""},
+ {"name": "the tick's rules are the account card's alone", "file": "stmt/page.js", "find": ".adm .tick input{position:absolute;", "replace": ".adm .oacct .tick input{position:absolute;"}
 ]

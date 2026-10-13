@@ -3286,7 +3286,7 @@ export const OWNER_JS = `
       var place=makerField(box,['Delivery place','orderfor.place'],'text',''), want=makerField(box,['Wanted by (optional)','orderfor.want'],'date','');
       var friendLabel=el('label','tick'), friend=actOn(el('input'),'orderfor.friend'); friend.type='checkbox';
       /* 13 Oct 2026 (stress, Low): the tick of the account card's Sent (the input is the 44px tap, the box beside it shows the state), where this was a bare box with a 19px label */
-      friendLabel.appendChild(friend); friendLabel.appendChild(document.createTextNode('For a friend')); friendLabel.hidden=!result.assoc; box.appendChild(friendLabel);
+      friendLabel.appendChild(friend); friendLabel.appendChild(el('span','tickbox')); friendLabel.appendChild(el('span',null,'For a friend')); friendLabel.hidden=!result.assoc; box.appendChild(friendLabel);
       var answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
       var sent=false, pending=false, button=makerButton(box,['Place for them','orderfor.place-order'],async function(){
         if(pending||sent) return;
