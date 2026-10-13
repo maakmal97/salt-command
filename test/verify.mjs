@@ -52482,7 +52482,7 @@ await (async () => {
 
 section("13 Oct 2026: B3 of #62, entries left in a Desk device queue are recovered by their own road, and the overlay of unsent entries is switchable");
 await (async () => {
-  await (await import("./desk-queue-recovery.mjs")).run({ ok });
+  await (await import("./desk-queue-recovery.mjs")).run({ ok, KV, worker });
 })();
 
 section("Counter maker: verified owner, narrow Desk bridge and hours");

@@ -3,7 +3,7 @@ import { openMaster } from "../tools/payload.mjs";
 import { vaultEncrypt } from "../tools/seed-vault.mjs";
 
 /* B3 of #62: entries left in a Desk device's queue are listed, sent by their own road or discarded, and the overlay can be switched. */
-export async function run({ ok }) {
+export async function run({ ok, KV, worker }) {
   const pass = "invented-recovery-pass", key = "invented-recovery-key-32-characters";
   const { w } = await openMaster();
   const BOOK = "2099-01-01T00:00:01.000Z", VAULT = "2099-01-01T00:00:02.000Z", NOTE = "2099-01-01T00:00:03.000Z";
@@ -111,5 +111,16 @@ export async function run({ ok }) {
     ok(w.eval("selfUseLog.length") === base + 1 && w.eval("provUnsent") === 0 && w.eval("provCount") === 1,
       "switch off: the unsent entry leaves every figure and the receipted one stays");
     ok(/None counts in any figure/.test(w.eval("renderRecovery()")), "and the panel says so");
+
+    /* ---- the Worker: a post that omits a held vault-kind entry does not withdraw it (pair mode) ---- */
+    const kv = new KV(), env = { SALT_QUEUE: kv, VAULT_STORE: "pair", REQUIRE_ACCESS: "0" };
+    const held = addId(VAULT), keep = loss(BOOK, 2);
+    await kv.put("q:dev1", JSON.stringify({ device: "dev1", queue: [keep, held] }));
+    const post = (queue) => worker.fetch(new Request("https://desk.test/queue", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ device: "dev1", queue }) }), env, { waitUntil() {} });
+    const r = await (await post([keep])).json();
+    const after = JSON.parse(await kv.get("q:dev1")).queue.map((e) => e.at);
+    ok(r.ok && after.includes(VAULT) && after.includes(BOOK) && r.entries === 1 && r.carried === 1,
+      "a post that omits a vault-kind entry this device filed on /queue leaves it in KV, carried and not counted as posted");
   } finally { w.close(); }
 }

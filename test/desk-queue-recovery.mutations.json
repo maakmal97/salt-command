@@ -1,13 +1,63 @@
 [
- {"name": "a receipt is granted without checking the Worker's count", "find": "if(j.ok&&j.entries===posted.length-out.length)qReceipt(", "replace": "if(j.ok)qReceipt("},
- {"name": "/queue carries the vault-kind entries too", "find": "return vaultPairVersion?queue.filter(q=>!qIsVaultKind(q)):queue;}", "replace": "return queue;}"},
- {"name": "Discard does not ask", "find": "if(!confirm('Discard this unsent entry?", "replace": "if(false&&!confirm('Discard this unsent entry?"},
- {"name": "the overlay switch off still folds unsent entries", "find": "if(!OVERLAY_UNSENT&&qIsUnsent(q))return;", "replace": "if(false)return;"},
- {"name": "a figure fed by an unsent entry is not counted as unsent", "find": "if(qIsUnsent(q)){provUnsent++;unsentAts.add(q.at);}", "replace": ""},
- {"name": "the bar does not say how many are unsent", "find": "(provUnsent?' <b>'+provUnsent+'</b> '+(provUnsent===1?'is':'are')+' <b>unsent</b>, held on this device only.':'')", "replace": "''"},
- {"name": "a refused vault input still removes the entry", "find": "if(why)msg='Not sent: '+why+' The entry is kept here.';", "replace": "if(why){msg='x';const i=queue.findIndex(x=>x&&x.at===at);if(i>=0)queue.splice(i,1);try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}}"},
- {"name": "a vault-kind entry is sent by the book road", "find": "if(!qIsVaultKind(q))return 'book';", "replace": "return 'book';"},
- {"name": "the vault input is sent under a fresh stamp", "find": "return {operation:'add-id',body:{at:q.at,code:p.code,", "replace": "return {operation:'add-id',body:{code:p.code,"},
- {"name": "a post after load settles an entry by the sent mark, not by its receipt", "find": "typeof qSentAtLoad==='string'&&qSentAtLoad&&q.at<=qSentAtLoad)return false;", "replace": "typeof qSentThrough==='string'&&qSentThrough&&q.at<=qSentThrough)return false;"},
- {"name": "the note-bearing Add ID is offered a Send", "find": "return (typeof p.code==='string'&&p.code&&!p.note)?'vault':'none';", "replace": "return (typeof p.code==='string'&&p.code)?'vault':'none';"}
+ {
+  "name": "a receipt is granted without checking the Worker's count",
+  "find": "if(j.ok&&j.entries===posted.length-out.length)qReceipt(",
+  "replace": "if(j.ok)qReceipt("
+ },
+ {
+  "name": "/queue carries the vault-kind entries too",
+  "find": "return vaultPairVersion?queue.filter(q=>!qIsVaultKind(q)):queue;}",
+  "replace": "return queue;}"
+ },
+ {
+  "name": "Discard does not ask",
+  "find": "if(!confirm('Discard this unsent entry?",
+  "replace": "if(false&&!confirm('Discard this unsent entry?"
+ },
+ {
+  "name": "the overlay switch off still folds unsent entries",
+  "find": "if(!OVERLAY_UNSENT&&qIsUnsent(q))return;",
+  "replace": "if(false)return;"
+ },
+ {
+  "name": "a figure fed by an unsent entry is not counted as unsent",
+  "find": "if(qIsUnsent(q)){provUnsent++;unsentAts.add(q.at);}",
+  "replace": ""
+ },
+ {
+  "name": "the bar does not say how many are unsent",
+  "find": "(provUnsent?' <b>'+provUnsent+'</b> '+(provUnsent===1?'is':'are')+' <b>unsent</b>, held on this device only.':'')",
+  "replace": "''"
+ },
+ {
+  "name": "a refused vault input still removes the entry",
+  "find": "if(why)msg='Not sent: '+why+' The entry is kept here.';",
+  "replace": "if(why){msg='x';const i=queue.findIndex(x=>x&&x.at===at);if(i>=0)queue.splice(i,1);try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}}"
+ },
+ {
+  "name": "a vault-kind entry is sent by the book road",
+  "find": "if(!qIsVaultKind(q))return 'book';",
+  "replace": "return 'book';"
+ },
+ {
+  "name": "the vault input is sent under a fresh stamp",
+  "find": "return {operation:'add-id',body:{at:q.at,code:p.code,",
+  "replace": "return {operation:'add-id',body:{code:p.code,"
+ },
+ {
+  "name": "a post after load settles an entry by the sent mark, not by its receipt",
+  "find": "typeof qSentAtLoad==='string'&&qSentAtLoad&&q.at<=qSentAtLoad)return false;",
+  "replace": "typeof qSentThrough==='string'&&qSentThrough&&q.at<=qSentThrough)return false;"
+ },
+ {
+  "name": "the note-bearing Add ID is offered a Send",
+  "find": "return (typeof p.code==='string'&&p.code&&!p.note)?'vault':'none';",
+  "replace": "return (typeof p.code==='string'&&p.code)?'vault':'none';"
+ },
+ {
+  "name": "a post omitting a held vault-kind entry withdraws it",
+  "find": "if (extra.length) { kept = kept.concat(extra); carried = extra.length; }",
+  "replace": "if (extra.length) { carried = 0; }",
+  "file": "src/worker.js"
+ }
 ]
