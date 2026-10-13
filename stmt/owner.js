@@ -82,7 +82,7 @@ export const OWNER_JS = `
     [].forEach.call(document.querySelectorAll('#makerMenu [data-act="record.form"]'), function(r){
       if(fOpen&&r.getAttribute('data-key')===fOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
   }
-  function inClaims(){ return placeNow==='orders'&&partNow==='waiting'; }
+  function inClaims(){ return placeNow==='orders'&&partNow==='payments'; }
   function inChat(){ return placeNow==='customers'&&partNow==='messages'; }
   function addrFor(place, part){ var p=PARTS[place]; return '#'+place+(part&&p&&part!==p[0]?'/'+part:''); }
   /* THE ADDRESSES. A place and a part have one each, #orders and #orders/ready; the old ones stay as addresses, each to where its
@@ -99,14 +99,17 @@ export const OWNER_JS = `
      Forward move between places */
   function showPlace(place, part, o){
     o=o||{};
+    var asked=part, prevPlace=placeNow;
     if(place!=='needs'&&!PARTS[place]) place='needs';
     var parts=PARTS[place]||[];
     if(!parts.length) part=''; else if(parts.indexOf(part)<0) part=parts[0];
     var fresh=!!o.fresh||place!==placeNow, moved2=place!==placeNow||part!==partNow;
     if(placeNow==='needs'&&place!=='needs') needSaid={};
     placeNow=place; partNow=part;
+    /* Orders opens on the first stage that has something waiting, found when the read lands (drawMaker); a stage he chose is his */
+    ordAuto=place==='orders'&&place!==prevPlace&&!asked;
     /* the order whose card is open is closed by leaving the place or the part (Phase 1c) */
-    if(moved2&&ordOpened){ ordOpened=null; drawOrderPane(); }
+    if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }
     /* so is the form open on Record: leaving the part or the place closes it; the + orb is not shown on Record, where the parts are one tap away */
     if(moved2) fOpen=null;
     var add=document.getElementById('oAdd'); if(add) add.hidden=placeNow==='record';
@@ -1130,7 +1133,7 @@ export const OWNER_JS = `
       if(!show||!root.isConnected||placeNow!=='orders') return;
       drawMakerClaims();
     }catch(error){ nGot('claims', error); apply=true; if(show&&!poll) refusal(root,error); }
-    finally{ claimsReading=false; if(apply) drawNeeds(); }
+    finally{ claimsReading=false; if(apply){ paintOrdCounts(); drawNeeds(); } }
   }
   /* the claims drawn from the read that stands: a row each, and the card of the one opened under its row. A redraw lets every picture go first, and
      a claim answered meanwhile closes its card. */
@@ -3373,7 +3376,7 @@ export const OWNER_JS = `
     finally{ sweep(); }
   }
   async function makerForAccount(account){
-    showPlace('orders','waiting',{fresh:true,push:true});
+    showPlace('orders','placed',{fresh:true,push:true});
     var box=document.getElementById('makerFor'); box.hidden=false; box.textContent='';
     box.appendChild(el('h2',null,'Order for '+(account.code||account.username)));
     var note=el('p','msg','Opening their price list.'); note.setAttribute('role','status'); box.appendChild(note);
@@ -3452,32 +3455,29 @@ export const OWNER_JS = `
       }
     }finally{ if(gen===makerGen){ reviewReading=false; if(apply) drawNeeds(); } }
   }
-  /* 11 Oct 2026: THE PARTS OF ORDERS an order shows in. Waiting on you holds what only he can move (a placed order, a payment they say
-     they sent, a stage he rejected under Approve); Agreed and Ready hold the stage the order stands at, so an order can show in two. A closed
-     order is in Closed, and a practice order that is closed in none; one with a stage he rejected, or a question of theirs he has not
-     answered (the Worker's awaitingAnswer), is in Waiting on you as well. */
+  /* 14 Oct 2026, HIS DECISION: THE PARTS OF ORDERS ARE THE CUSTOMER'S STAGES, Placed, Confirmed, Ready, Done and Ended (declined or cancelled), and an
+     order is in exactly ONE. What waits on him is no part but a mark on the order's row (orderWaits: a placed order, a payment they say they sent, a stage
+     he rejected, a question of theirs unanswered, the Worker's awaitingAnswer) and a count on its stage's pill. A closed practice order is in none. */
   function orderAsked(order){
     var m=(order&&order.msgs)||[], last=m[m.length-1];
     return !!(last&&last.by==='customer'&&!(order.quiet&&String(order.quiet)>=String(last.at)));
   }
+  function orderWaits(order){
+    var again=!!(order.again&&order.again.length);
+    if(ordOpen(order)) return order.status==='placed'||(order.payments||[]).some(function(p){ return p.claim==='waiting'; })||again||orderAsked(order);
+    return !order.test&&(again||orderAsked(order));
+  }
+  var STAGE_OF={placed:'placed', acknowledged:'confirmed', ready:'ready', done:'done'};
   function orderPartsOf(order){
-    var t=[], again=!!(order.again&&order.again.length);
-    if(ordOpen(order)){
-      if(order.status==='placed'||(order.payments||[]).some(function(p){ return p.claim==='waiting'; })||again||orderAsked(order)) t.push('orders.waiting');
-      if(order.status==='acknowledged') t.push('orders.agreed');
-      if(order.status==='ready') t.push('orders.ready');
-    }else if(!order.test){
-      if(again||orderAsked(order)) t.push('orders.waiting');
-      t.push('orders.closed');
-    }
-    return t.join(' ');
+    if(!ordOpen(order)&&order.test) return '';
+    return 'orders.'+(STAGE_OF[order.status]||'ended');
   }
   /* PHASE 1c (11 Oct 2026): ORDERS ARE A LIST AND A DETAIL. #makerOrderList holds a row for each order of the part showing, the system's
      Inbox row: who by code, the mark and its units, the stage and what is asked of him, the figure and the age. A row opens that order's
      card in #makerReview, today's card with every control, request and guard as it was, drawn for the order opened and no other. From 860px
      the list stands beside the card; below it the card takes the list's place, with a way back. A row has no preview: that read is the
      card's. Leaving the place or the part closes the card. */
-  var ordOpened=null, ordEntries={}, makerOpenOrders=[];
+  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false;
   var ORD_STAGE={placed:['copper','Waiting on you'], acknowledged:['brass','Agreed'], ready:['verdigris','Ready'], done:['mist','Done'], declined:['mist','Declined'], cancelled:['mist','Cancelled']};
   function ordInPart(e){ return e.parts.split(' ').indexOf('orders.'+partNow)>=0; }
   function orderRow(e){
@@ -3485,22 +3485,33 @@ export const OWNER_JS = `
     if(ordOpened===e.id) b.setAttribute('aria-current','true');
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
     if(o){
-      var st=ORD_STAGE[o.status]||['mist',String(o.status||'')];
+      /* the stage is the part he is in, so the row carries one pill, Waiting on you, and says why in its line */
       b.appendChild(bookTile(o.product,o.qty));
       t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
-      t.appendChild(chip(st[0],st[1]));
+      if(e.waits) t.appendChild(chip('copper','Waiting on you'));
       if(o.test) t.appendChild(chip('mist','Practice'));
-      if(orderAsked(o)) t.appendChild(chip('copper','Asked'));
-      if(ordPays(o).length) t.appendChild(chip('ember','Says sent'));
-      if(o.again&&o.again.length) t.appendChild(chip('brass','Send again'));
-      main.appendChild(el('span','salt-inbox-row__what',[units(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')));
+      var why=[orderAsked(o)?'asked a question':'', ordPays(o).length?'says sent':'', o.again&&o.again.length?'send again':'', o.status==='placed'?'to decide':''].filter(Boolean);
+      main.appendChild(el('span','salt-inbox-row__what',[[units(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')].concat(e.waits?why.slice(0,1):[]).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
     }else t.appendChild(el('span',null,e.id));
     if(makerCashHeld[e.id]) t.appendChild(chip('brass','Cash held'));
+    if(!o&&e.waits) t.appendChild(chip('copper','Waiting on you'));
     main.insertBefore(t,main.firstChild); b.appendChild(main); b.appendChild(side);
     b.addEventListener('click', function(){ openOrder(e.id); });
     return b;
+  }
+  /* a count on the pill of each stage whose orders wait on him, and on Payments for the payments they say they sent; a practice order is not counted, as the rail does not */
+  function paintOrdCounts(){
+    var n={};
+    Object.keys(ordEntries).forEach(function(k){ var e=ordEntries[k], st=e.parts.replace('orders.',''); if(e.waits&&e.order&&!e.order.test) n[st]=(n[st]||0)+1; });
+    n.payments=waitingClaims().filter(function(c){ return !c.test; }).length;
+    [].forEach.call(document.querySelectorAll('.aparts[data-place="orders"] [data-part]'), function(b){
+      var c=b.querySelector('.salt-tabs__count'), v=n[b.getAttribute('data-part')]||0;
+      if(!v){ if(c) c.remove(); return; }
+      if(!c){ c=el('span','salt-tabs__count'); b.appendChild(c); }
+      c.textContent=String(v);
+    });
   }
   function markOrderRows(){
     [].forEach.call(document.querySelectorAll('#makerOrderList [data-order]'), function(r){
@@ -3514,10 +3525,15 @@ export const OWNER_JS = `
     root.textContent=''; dirty.makerReview=false;
     var e=ordOpened&&placeNow==='orders'&&ordEntries[ordOpened];
     if(e&&!ordInPart(e)) e=null;
+    /* from 860px the detail column is never an empty invitation: the first order of the part opens in it */
+    if(!e&&placeNow==='orders'&&window.matchMedia&&window.matchMedia('(min-width:860px)').matches){
+      var first=Object.keys(ordEntries).map(function(k){ return ordEntries[k]; }).filter(function(x){ return ordInPart(x); })[0];
+      if(first){ e=first; ordOpened=first.id; [first.id,first.id+':again'].forEach(function(k){ delete makerQuotes[k]; delete makerPv[k]; }); }
+    }
     if(!e) ordOpened=null;
     if(split) split.classList.toggle('open', !!e);
     markOrderRows();
-    if(!e){ root.appendChild(el('p','rnone','Choose an order to see it here.')); return; }
+    if(!e) return;
     var back=el('button','aback','← Orders'); back.type='button'; back.setAttribute('data-back','orders'); back.setAttribute('data-in',e.parts); actOn(back,'order.back');
     root.appendChild(back);
     if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else orderPlainCard(root,e);
@@ -3596,34 +3612,45 @@ export const OWNER_JS = `
     makerOpenOrders=open;
     if(status) status.textContent=open.length+(open.length===1?' open order':' open orders');
     if(draftStatus) draftStatus.textContent=pendingRows.length+(pendingRows.length===1?' row':' rows')+' waiting for your approval';
-    /* a row for each order of a part, a closed one (fifty at most) as well; an order whose cash is held stays in Waiting on you with its
-       Undo, whatever else it is, and a held cash with no order on the read is a row of its own */
-    var held=Object.keys(makerCashHeld), entries=[], known={}, settled=0, closedAll=0;
+    /* a row for each order of its stage, a done or ended one (fifty a stage at most) as well; an order whose cash is held is marked Waiting on you
+       with its Undo, whatever else it is, and a held cash with no order on the read is a row of its own, in Placed */
+    var held=Object.keys(makerCashHeld), entries=[], known={}, settled={}, closedAll={}, STAGES=['placed','confirmed','ready','done','ended'];
     (makerData.orders||[]).forEach(function(o){
       known[o.id]=true;
       var parts=orderPartsOf(o);
-      if(held.indexOf(o.id)>=0&&parts.indexOf('orders.waiting')<0) parts=(parts+' orders.waiting').trim();
       if(!parts) return;
-      if(parts.split(' ').indexOf('orders.closed')>=0) closedAll++;
-      if(parts==='orders.closed'&&++settled>50) return;
-      entries.push({id:o.id, order:o, parts:parts});
+      var waits=orderWaits(o)||held.indexOf(o.id)>=0, stage=parts.replace('orders.','');
+      if(!ordOpen(o)){
+        closedAll[stage]=(closedAll[stage]||0)+1;
+        if(!waits&&(settled[stage]=(settled[stage]||0)+1)>50) return;
+      }
+      entries.push({id:o.id, order:o, parts:parts, waits:waits});
     });
-    held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, parts:'orders.waiting'}); });
+    held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, parts:'orders.placed', waits:true}); });
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     list.textContent='';
     entries.forEach(function(e){ list.appendChild(orderRow(e)); });
-    /* what Closed lists is a closed order with nothing else asked of him (fifty at most) and one that is also Waiting on you, which is never
-       dropped; the note counts what the list shows against every closed order */
-    var closedShown=entries.filter(function(e){ return e.parts.split(' ').indexOf('orders.closed')>=0; }).length;
-    if(closedShown<closedAll){ var more=el('p','rnone',closedShown+' of '+closedAll+' closed orders are shown.'); more.setAttribute('data-in','orders.closed'); list.appendChild(more); }
-    /* a part with nothing in it says so, so an empty part is never read as a fault */
-    [['waiting',open.length?'Nothing waits on you.':'No open orders.'],['agreed','No agreed orders.'],['ready','No orders ready.'],['closed','No closed orders.']].forEach(function(p){
-      if(entries.some(function(e){ return e.parts.split(' ').indexOf('orders.'+p[0])>=0; })) return;
+    /* a done or ended stage lists the orders with nothing asked of him (fifty at most) and every one that waits on him, which is never dropped; the note
+       counts what the list shows against every order of the stage */
+    ['done','ended'].forEach(function(st){
+      var shownN=entries.filter(function(e){ return e.parts==='orders.'+st; }).length;
+      if(shownN<(closedAll[st]||0)){ var more=el('p','rnone',shownN+' of '+closedAll[st]+' closed orders are shown.'); more.setAttribute('data-in','orders.'+st); list.appendChild(more); }
+    });
+    /* a stage with nothing in it says so, so an empty one is never read as a fault */
+    [['placed','No placed orders.'],['confirmed','No confirmed orders.'],['ready','No orders ready.'],['done','No done orders.'],['ended','No ended orders.']].forEach(function(p){
+      if(entries.some(function(e){ return e.parts==='orders.'+p[0]; })) return;
       var none=el('p','rnone',p[1]); none.setAttribute('data-in','orders.'+p[0]); list.appendChild(none);
     });
     makerButton(list,['Refresh','maker.refresh'],loadMaker,false);
     /* 13 Oct 2026 (stress, Medium): Refresh answers under itself; its refusal went to the list's line at the head of Orders, a screen above it */
     var refreshSaid=el('p','msg osaid'); refreshSaid.id='makerRefreshSaid'; refreshSaid.setAttribute('role','status'); refreshSaid.setAttribute('aria-live','polite'); list.appendChild(refreshSaid);
+    /* the first read after entering Orders opens the first stage with something waiting (Placed when nothing does), unless he has chosen one */
+    if(ordAuto&&placeNow==='orders'){
+      ordAuto=false;
+      var wait1=STAGES.filter(function(st){ return entries.some(function(e){ return e.waits&&e.parts==='orders.'+st; }); })[0];
+      if(wait1&&wait1!==partNow){ showPlace('orders',wait1,{}); try{ history.replaceState(null,'',addrFor('orders',wait1)); }catch(x){} }
+    }
+    paintOrdCounts();
     drawOrderPane();
     drawDeskRows(draftRoot,queueRoot,pendingRows);
     sweep();
@@ -4391,9 +4418,9 @@ export const OWNER_JS = `
      read, so a card and the place it opens never disagree: ordWaits is the Orders part Waiting on you. ---- */
   function ordOpen(o){ return ['placed','acknowledged','ready'].indexOf(o.status)>=0; }
   function ordPays(o){ return ordOpen(o)?(o.payments||[]).filter(function(p){ return p.claim==='waiting'; }):[]; }
-  function ordWaits(o){ return orderPartsOf(o).indexOf('orders.waiting')>=0; }
-  /* an order's Open goes to Orders > Waiting on you with that order's card open (Phase 1c) */
-  function orderOpener(id){ return function(){ showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }
+  function ordWaits(o){ return orderWaits(o); }
+  /* an order's Open goes to Orders, the stage it stands at, with that order's card open (Phase 1c) */
+  function orderOpener(id){ return function(){ var e=ordEntries[id], st=e?e.parts.replace('orders.',''):'placed'; showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }
   function orderWhat(o){ return units(o.qty)+', '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
@@ -4536,7 +4563,7 @@ export const OWNER_JS = `
     });
     waitingClaims().forEach(function(c){
       L.push(item('now','payments','Payment','c:'+c.u+':'+c.id, c.at, {who:codeByUser(c.u), what:'says they paid '+rm(c.amount),
-        practice:!!c.test, open:goPlace('orders','waiting')}));
+        practice:!!c.test, open:goPlace('orders','payments')}));
     });
     makerThreads.filter(makerThreadAsked).forEach(function(t){ L.push(threadNeed(t)); });
     real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ L.push(lockNeed(a)); });
@@ -4762,7 +4789,7 @@ export const OWNER_JS = `
   roster.addEventListener('click', function(ev){
     var bk=ev.target.closest('button[data-back]');
     if(bk){ var way=bk.getAttribute('data-back'); if(way==='accounts') openCard(null); else if(way==='orders') closeOrder(); else if(way==='form') closeForm(); return; }
-    var b=ev.target.closest('button[data-m]'); if(b){ showPlace(b.getAttribute('data-m'),'',{fresh:true,push:true}); return; }
+    var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); showPlace(mm, mm===placeNow?partNow:'', {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
     if(k){ nKind=k.getAttribute('data-chip'); [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }
     var t=ev.target.closest('button[data-part]'); if(t) showPlace(t.parentNode.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});

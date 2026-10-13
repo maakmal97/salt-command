@@ -101,6 +101,7 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d;
     await p.enter();
+    byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
     await p.tapRow("ord-a2");
     const a2 = previews(p, "ord-a2");
     ok(a2.length === 1 && same(a2[0].body, {}) && !!byAct(d, "order.accept-again", "ord-a2") && !byAct(d, "order.preview-again", "ord-a2"),
@@ -132,7 +133,7 @@ export async function run({ ok, pageWork }) {
     ok(same(moves(), ["order.accept", "order.decline"]), "and Accept joins it, first, once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
     await p.tapRow("ord-p4");
     ok(same(moves(), ["order.withdraw-offer", "order.decline"]), "an order with an offer out has Withdraw the offer in its foot, with Decline, and no Accept: " + JSON.stringify(moves()));
-    await part("agreed");
+    await part("confirmed");
     await p.tapRow("ord-a1");
     ok(same(moves(), ["order.ready-collect", "order.ready-deliver", "order.cancel"]), "an agreed order's foot holds Ready to collect and Ready to deliver, and Cancel order: " + JSON.stringify(moves()));
     ok(!foot().contains(byAct(d, "order.received")) && !foot().contains(byAct(d, "order.amend")) && !foot().contains(byAct(d, "order.claim-received")),
@@ -155,7 +156,7 @@ export async function run({ ok, pageWork }) {
       "while cash is held, every move in the foot is shut and only Undo is live");
     byAct(d, "order.cash-undo").click(); await p.work.quiet();
     ok(!byAct(d, "order.handed").disabled && !byAct(d, "order.cancel").disabled, "and Undo opens them again");
-    await part("closed");
+    await part("done");
     await p.tapRow("ord-c1");
     ok(!!foot() && !foot().classList.contains("has") && moves().length === 0, "a closed order has no moves, and its foot does not stand along the card: " + JSON.stringify(moves()));
     /* the foot stands along the card's foot as the card scrolls: the page's, clear of the App bar, and from 860px the card's own */
@@ -245,7 +246,7 @@ export async function run({ ok, pageWork }) {
     ok(sends("/move").length === 2 && same(Object.keys(sends("/move")[1].body).sort(), ["rid", "status"]), "and a Decline with no reason sends none: " + JSON.stringify(sends("/move")[1] && sends("/move")[1].body));
 
     /* Cancel: what is lost and what becomes of the money is said, and a retry carries the request id it had */
-    await part("agreed"); await tapRow("ord-a1");
+    await part("confirmed"); await tapRow("ord-a1");
     byAct(d, "order.cancel", "ord-a1").click(); await p.work.quiet();
     ok(/Cancel this order/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && /Nothing is paid on it/.test(sheetOf().textContent) && sends("/move").length === 2,
       "Cancel on an unpaid order says nothing is paid on it, and sends nothing as it opens");
@@ -277,7 +278,7 @@ export async function run({ ok, pageWork }) {
       "and sends the close it sent, the same route and body: " + JSON.stringify(closed));
 
     /* Offer again: a stage he rejected, asked on the sheet, sent under a request id */
-    await part("closed"); await tapRow("ord-x1");
+    await part("ended"); await tapRow("ord-x1");
     byAct(d, "order.again-pay", "ord-x1").click(); await p.work.quiet();
     ok(/Send the payment again/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && sends("/again").length === 0 && !inSheet("order.ask-go").classList.contains("salt-ghost--danger"),
       "offering a stage again asks on the sheet and sends nothing as it opens");

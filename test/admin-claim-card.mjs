@@ -1,6 +1,6 @@
 /* test/admin-claim-card.mjs: THE CLAIM CARD (Phase 2b of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "The claim card").
  *
- * A payment a customer says they sent is a row in Orders > Waiting on you, and the row opened is its card (stmt/owner.js makerClaimCard). His decisions of
+ * A payment a customer says they sent is a row in Orders > Payments, and the row opened is its card (stmt/owner.js makerClaimCard). His decisions of
  * 11 Oct 2026 shape it: 6, the card reads its own rows when it is opened and never on a row, with no Preview rows button; 3, the slip key is the one unlock the
  * page holds, device only, cleared on hide, so a slip is a thumbnail drawn only once the key is held; 4, Received and Not found ask on the page's Sheet, never a
  * native confirm, on an order's claim as on an account's. What is proved here, each check red under its own mutation (test/admin-claim-card.mutations.json):
@@ -29,7 +29,7 @@ export async function run({ ok, pageWork }) {
   const open = async (extra = {}) => {
     const p = await richOwnerPage({ pageWork, slip: true, ...extra });
     await p.work.quiet();
-    p.enter = async () => { byAct(p.d, "nav.orders").click(); await p.work.quiet(); };
+    p.enter = async () => { byAct(p.d, "nav.orders").click(); await p.work.quiet(); byAct(p.d, "part.orders.payments").click(); await p.work.quiet(); };
     p.tap = async (act, key) => { const e = byAct(p.d, act, key); if (e) e.click(); await p.work.quiet(); return !!e; };
     p.card = (key) => [...p.d.querySelectorAll("#makerClaims [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === "claim:" + key) || null;
     p.in = (act, key) => byAct(p.d.getElementById("makerClaims"), act, key);
@@ -256,7 +256,7 @@ export async function run({ ok, pageWork }) {
     const sheet = () => d.getElementById("ynSheet");
     const sends = (suffix) => p.posts.filter((x) => x.route === "/all/maker/orders/ord-a1/" + suffix);
     await p.enter();
-    byAct(d, "part.orders.agreed").click(); await p.work.quiet();
+    byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
     byAct(d, "order.open", "ord-a1").click(); await p.work.quiet();
     const card = () => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === "ord-a1");
     byAct(card(), "order.claim-received", ACLAIM).click(); await p.work.quiet();

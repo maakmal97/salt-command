@@ -1295,7 +1295,7 @@ function noticeCard(b) {
    its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
 const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
 const ADMIN_PARTS = {
-  orders: [["waiting", "Waiting on you"], ["agreed", "Agreed"], ["ready", "Ready"], ["group", "Group"], ["closed", "Closed"]],
+  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -1413,10 +1413,10 @@ export function landingPage(user, nonce, owner, bulletin) {
         + adminParts("orders")
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
-        + '<section id="oSplit" data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Orders</h2>'
+        + '<section id="oSplit" data-in="orders.placed orders.confirmed orders.ready orders.done orders.ended" aria-label="Orders">'
         + '<p class="lead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
-        + '<section data-in="orders.waiting" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
+        + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
         + '<p class="lead">Customers join a bulk order. When you close it, each order comes to you to agree.</p>'
         + '<div id="makerPools" aria-live="polite"></div></section>'

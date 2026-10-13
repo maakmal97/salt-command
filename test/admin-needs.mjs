@@ -160,7 +160,7 @@ export async function run({ ok, pageWork }) {
       return then ? then() : "";
     };
     const opens = [
-      await open1("o:ord-p1", "orders/waiting"), await open1("p:ord-a1", "orders/waiting"), await open1("c:" + U1 + ":c-1", "orders/waiting"),
+      await open1("o:ord-p1", "orders/placed"), await open1("p:ord-a1", "orders/confirmed"), await open1("c:" + U1 + ":c-1", "orders/payments"),
       await open1("m:" + U1, "customers/messages", () => (shown(d.getElementById("makerChatOpen")) && d.getElementById("makerChatOpen").getAttribute("data-key") === U1 ? "" : "the thread was not opened")),
       await open1("k:" + U3, "customers/accounts", () => (shown(d.getElementById("aopen")) && /CX3-ZED/.test(d.getElementById("aopen").textContent) ? "" : "the account was not opened")),
       await open1("d:" + ago(6), "record/approve"), await open1("x:0", "record/approve"), await open1("l:w1", "customers/links"),

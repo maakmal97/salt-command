@@ -146,8 +146,8 @@
  {
   "name": "a practice claim is counted in Orders",
   "file": "stmt/owner.js",
-  "find": "waitingClaims().filter(function(c){ return !c.test; }).length",
-  "replace": "waitingClaims().length"
+  "find": ".length+waitingClaims().filter(function(c){ return !c.test; }).length);",
+  "replace": ".length+waitingClaims().length);"
  },
  {
   "name": "a practice thread is counted in Customers",
@@ -218,8 +218,8 @@
  {
   "name": "a payment has a Received",
   "file": "stmt/owner.js",
-  "find": "practice:!!c.test, open:goPlace('orders','waiting')}));",
-  "replace": "practice:!!c.test, open:goPlace('orders','waiting')}, function(c){ c._add(pill(['Received','need.received'])); }));"
+  "find": "practice:!!c.test, open:goPlace('orders','payments')}));",
+  "replace": "practice:!!c.test, open:goPlace('orders','payments')}, function(c){ c._add(pill(['Received','need.received'])); }));"
  },
  {
   "name": "a customer's claim row can be approved",

@@ -8,26 +8,26 @@
  {
   "name": "a row names no one",
   "file": "stmt/owner.js",
-  "find": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));\n      t.appendChild(chip(st[0],st[1]));",
-  "replace": "      t.appendChild(chip(st[0],st[1]));"
+  "find": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));\n      if(e.waits) t.appendChild(chip('copper','Waiting on you'));",
+  "replace": "      if(e.waits) t.appendChild(chip('copper','Waiting on you'));"
  },
  {
-  "name": "a row does not say its stage",
+  "name": "a row does not say it waits on him",
   "file": "stmt/owner.js",
-  "find": "      t.appendChild(chip(st[0],st[1]));\n      if(o.test)",
-  "replace": "      if(o.test)"
+  "find": "      if(e.waits) t.appendChild(chip('copper','Waiting on you'));",
+  "replace": ""
  },
  {
   "name": "a row does not say a payment is sent",
   "file": "stmt/owner.js",
-  "find": "      if(ordPays(o).length) t.appendChild(chip('ember','Says sent'));",
-  "replace": ""
+  "find": "ordPays(o).length?'says sent':''",
+  "replace": "''"
  },
  {
   "name": "a row does not say a stage is rejected",
   "file": "stmt/owner.js",
-  "find": "      if(o.again&&o.again.length) t.appendChild(chip('brass','Send again'));",
-  "replace": ""
+  "find": "o.again&&o.again.length?'send again':''",
+  "replace": "''"
  },
  {
   "name": "a practice order is not marked",
@@ -60,10 +60,10 @@
   "replace": "    entries.forEach(function(e){ list.appendChild(orderRow(e)); refs('/all/maker/orders/'+encodeURIComponent(e.id)+'/preview',{}).catch(function(){}); });"
  },
  {
-  "name": "a closed order is not listed in Closed here",
+  "name": "a closed order is not listed in any stage",
   "file": "stmt/owner.js",
-  "find": "      if(again||orderAsked(order)) t.push('orders.waiting');\n      t.push('orders.closed');",
-  "replace": "      if(again||orderAsked(order)) t.push('orders.waiting');"
+  "find": "    return 'orders.'+(STAGE_OF[order.status]||'ended');\n  }",
+  "replace": "    if(!ordOpen(order)) return '';\n    return 'orders.'+(STAGE_OF[order.status]||'ended');\n  }"
  },
  {
   "name": "a row opens no card",
@@ -122,7 +122,7 @@
  {
   "name": "leaving the part or the place keeps the card",
   "file": "stmt/owner.js",
-  "find": "    if(moved2&&ordOpened){ ordOpened=null; drawOrderPane(); }",
+  "find": "    if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }",
   "replace": ""
  },
  {
@@ -134,8 +134,8 @@
  {
   "name": "an order that left the part keeps its card",
   "file": "stmt/owner.js",
-  "find": "    if(e&&!ordInPart(e)) e=null;\n    if(!e) ordOpened=null;",
-  "replace": "    if(!e) ordOpened=null;"
+  "find": "    if(e&&!ordInPart(e)) e=null;\n",
+  "replace": ""
  },
  {
   "name": "a read that finds the same draws again",
@@ -188,14 +188,14 @@
  {
   "name": "a question on a closed order is not asked of him",
   "file": "stmt/owner.js",
-  "find": "      if(again||orderAsked(order)) t.push('orders.waiting');\n      t.push('orders.closed');",
-  "replace": "      if(again) t.push('orders.waiting');\n      t.push('orders.closed');"
+  "find": "    return !order.test&&(again||orderAsked(order));",
+  "replace": "    return !order.test&&again;"
  },
  {
   "name": "a question on an open order does not wait on him",
   "file": "stmt/owner.js",
-  "find": "||again||orderAsked(order)) t.push('orders.waiting');\n      if(order.status==='acknowledged')",
-  "replace": "||again) t.push('orders.waiting');\n      if(order.status==='acknowledged')"
+  "find": "||again||orderAsked(order);\n    return !order.test",
+  "replace": "||again;\n    return !order.test"
  },
  {
   "name": "an answered question is still asked",
@@ -212,14 +212,14 @@
  {
   "name": "Open does not open the order's card",
   "file": "stmt/owner.js",
-  "find": "showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }",
-  "replace": "showPlace('orders','waiting',{fresh:true, push:true}); }; }"
+  "find": "showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }",
+  "replace": "showPlace('orders',st,{fresh:true, push:true}); }; }"
  },
  {
   "name": "Open goes to the wrong part of Orders",
   "file": "stmt/owner.js",
-  "find": "showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }",
-  "replace": "showPlace('orders','ready',{fresh:true, push:true}); openOrder(id); }; }"
+  "find": "showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }",
+  "replace": "showPlace('orders','done',{fresh:true, push:true}); openOrder(id); }; }"
  },
  {
   "name": "the 30-second read goes on while an account is viewed as them",
@@ -398,8 +398,8 @@
  {
   "name": "the owner's script names a variable the customer page names a function",
   "file": "stmt/owner.js",
-  "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[];",
-  "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[];"
+  "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false;",
+  "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false;"
  },
  {
   "name": "a row tap always takes him to the top",
@@ -452,20 +452,20 @@
  {
   "name": "the closed note counts only the closed orders with nothing else asked",
   "file": "stmt/owner.js",
-  "find": "    if(closedShown<closedAll){ var more=el('p','rnone',closedShown+' of '+closedAll+' closed orders are shown.');",
-  "replace": "    if(settled>50){ var more=el('p','rnone','50 of '+settled+' closed orders are shown.');"
+  "find": "      if(shownN<(closedAll[st]||0)){ var more=el('p','rnone',shownN+' of '+closedAll[st]+' closed orders are shown.');",
+  "replace": "      if(settled[st]>50){ var more=el('p','rnone','50 of '+settled[st]+' closed orders are shown.');"
  },
  {
   "name": "the closed note does not count an order that also waits on him",
   "file": "stmt/owner.js",
-  "find": "      if(parts.split(' ').indexOf('orders.closed')>=0) closedAll++;\n",
+  "find": "        closedAll[stage]=(closedAll[stage]||0)+1;\n",
   "replace": ""
  },
  {
   "name": "the closed list drops an order that also waits on him",
   "file": "stmt/owner.js",
-  "find": "      if(parts==='orders.closed'&&++settled>50) return;",
-  "replace": "      if(parts.indexOf('orders.closed')>=0&&++settled>50) return;"
+  "find": "if(!waits&&(settled[stage]=(settled[stage]||0)+1)>50) return;",
+  "replace": "if((settled[stage]=(settled[stage]||0)+1)>50) return;"
  },
  {
   "name": "leaving the part keeps the form open",
@@ -550,5 +550,65 @@
   "file": "stmt/page.js",
   "find": "  .adm .recpane{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}",
   "replace": "  .adm .recpane{max-height:calc(100vh - 48px)}"
+ },
+ {
+  "name": "an order stands in two stages",
+  "file": "stmt/owner.js",
+  "find": "    return 'orders.'+(STAGE_OF[order.status]||'ended');\n  }",
+  "replace": "    return 'orders.'+(STAGE_OF[order.status]||'ended')+(orderWaits(order)?' orders.placed':'');\n  }"
+ },
+ {
+  "name": "the count includes practice orders",
+  "file": "stmt/owner.js",
+  "find": "if(e.waits&&e.order&&!e.order.test) n[st]",
+  "replace": "if(e.waits&&e.order) n[st]"
+ },
+ {
+  "name": "no count is drawn on a stage pill",
+  "file": "stmt/owner.js",
+  "find": "      c.textContent=String(v);",
+  "replace": "      c.textContent='';"
+ },
+ {
+  "name": "Payments is not counted",
+  "file": "stmt/owner.js",
+  "find": "    n.payments=waitingClaims().filter(function(c){ return !c.test; }).length;",
+  "replace": "    n.payments=0;"
+ },
+ {
+  "name": "Orders opens on Placed whatever waits",
+  "file": "stmt/owner.js",
+  "find": "      if(wait1&&wait1!==partNow){",
+  "replace": "      if(false){"
+ },
+ {
+  "name": "Orders opens on the last stage that waits",
+  "file": "stmt/owner.js",
+  "find": "return e.waits&&e.parts==='orders.'+st; }); })[0];",
+  "replace": "return e.waits&&e.parts==='orders.'+st; }); }).pop();"
+ },
+ {
+  "name": "from 860px nothing opens by itself",
+  "file": "stmt/owner.js",
+  "find": "      if(first){ e=first;",
+  "replace": "      if(false){ e=first;"
+ },
+ {
+  "name": "the floating placeholder returns",
+  "file": "stmt/owner.js",
+  "find": "    if(!e) return;\n    var back=el('button'",
+  "replace": "    if(!e){ root.appendChild(el('p','rnone','Choose an order to see it here.')); return; }\n    var back=el('button'"
+ },
+ {
+  "name": "the repeated Orders heading returns",
+  "file": "stmt/page.js",
+  "find": "orders.ended\" aria-label=\"Orders\">'",
+  "replace": "orders.ended\" aria-labelledby=\"makerReviewTitle\"><h2 id=\"makerReviewTitle\">Orders</h2>'"
+ },
+ {
+  "name": "a payment claim does not wait on him",
+  "file": "stmt/owner.js",
+  "find": "(order.payments||[]).some(function(p){ return p.claim==='waiting'; })",
+  "replace": "false"
  }
 ]
