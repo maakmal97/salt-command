@@ -3,5 +3,13 @@
  {"name": "the last good read is not remembered", "file": "stmt/owner.js", "find": "            chip.kept={value:chip.value,other:chip.other}; win.kept=win.value;\n", "replace": "            win.kept=win.value;\n"},
  {"name": "the figure typed under Other is not put back", "file": "stmt/owner.js", "find": "            chip.value=k.value; chip.other=k.other;\n", "replace": "            chip.value=k.value;\n"},
  {"name": "a time that failed stays ticked", "file": "stmt/owner.js", "find": "          if(winDraw&&win.value!==(win.kept||'')){", "replace": "          if(false){"},
- {"name": "the line does not say which did not save", "file": "stmt/owner.js", "find": "            said.push('That charge did not save. '+", "replace": "            said.push('That charge was not read. '+"}
+ {"name": "the line does not say which did not save", "file": "stmt/owner.js", "find": "            said.push('That charge did not save. '+", "replace": "            said.push('That charge was not read. '+"},
+ {"name": "Save answers under the shop-for-now controls", "file": "stmt/owner.js", "find": "drawMakerHours(); hoursSaid('week','Weekly hours saved.'); })", "replace": "drawMakerHours(); hoursSaid('now','Weekly hours saved.'); })"},
+ {"name": "the hours answer is not brought into reach", "file": "stmt/owner.js", "find": "    if(mine.scrollIntoView) mine.scrollIntoView({block:'nearest'});\n", "replace": ""},
+ {"name": "Make a link answers on the page's one line", "file": "stmt/owner.js", "find": "      linkSay('Made. The QR opens it.');\n", "replace": "      say('Made. The QR opens it.');\n"},
+ {"name": "the new link is not brought into view", "file": "stmt/owner.js", "find": "if(fresh&&fresh.scrollIntoView) fresh.scrollIntoView({block:'nearest'});", "replace": "/* not brought into view */"},
+ {"name": "a link that could not be made says so on the page's one line", "file": "stmt/owner.js", "find": "}catch(e){ linkSay(e.message,'bad',e); }", "replace": "}catch(e){ sayFail(e); }"},
+ {"name": "Refresh's refusal stays at the head of Orders", "file": "stmt/owner.js", "find": "var failed0=document.getElementById('makerRefreshSaid'); if(failed0){", "replace": "var failed0=null; if(failed0){"},
+ {"name": "the figures stand after the time again", "file": "stmt/owner.js", "find": "          card.appendChild(wset);\n", "replace": "          card.appendChild(wset); card.appendChild(qsay); card.appendChild(qfigs);\n"},
+ {"name": "an answer for a card that has gone is not brought into reach", "file": "stmt/owner.js", "find": " if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }", "replace": " }"}
 ]

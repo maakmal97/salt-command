@@ -511,6 +511,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-card:not(.salt-approve){padding:16px}
 .adm .maker-card:not(.salt-approve)>*+*{margin-top:12px}
 .adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
+/* 13 Oct 2026 (stress): an answer drawn under the control that asked (Save, Make a link, Refresh) is scrolled to clear of the bar, as a card's own line is */
+.adm .said{scroll-margin:24px 0 112px}
 .adm .maker-card>.maker-say:empty{margin-top:0}
 /* 12 OCT 2026 (PHASE 2c): a row to approve is the Approve recipe, whose own padding, gap and surface stand; the page adds only what its own column needs (no gap under an
    empty answer line) and the shut queue fold's body */
@@ -1449,6 +1451,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<input class="fld salt-field__input" id="glabel" type="text" maxlength="60" '
         + 'placeholder="a shop, a name, a note" aria-label="A note for you" data-act="link.label">'
         + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake" data-act="link.make">Make a link</button>'
+        /* 13 Oct 2026 (stress): the answer to Make a link stands under it, where it went to the page's one line at the foot of Customers */
+        + '<p class="msg said" id="gmsg" role="status" aria-live="polite"></p>'
         + '<div id="glist"></div>'
         + "</div>"
         + '<div id="oCards" data-in="customers.associates">'

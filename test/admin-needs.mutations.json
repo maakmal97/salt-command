@@ -398,8 +398,8 @@
  {
   "name": "unchanged links are drawn",
   "file": "stmt/owner.js",
-  "find": "if(diff||!poll){ drawLinks(); drawNeeds(); if(!poll) say(''); }",
-  "replace": "if(true){ drawLinks(); drawNeeds(); if(!poll) say(''); }"
+  "find": "if(diff||!poll){ drawLinks(); drawNeeds(); if(!poll){ say(''); linkSay(''); } }",
+  "replace": "if(true){ drawLinks(); drawNeeds(); if(!poll){ say(''); linkSay(''); } }"
  },
  {
   "name": "unchanged hours are drawn",

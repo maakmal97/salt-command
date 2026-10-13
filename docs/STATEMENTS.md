@@ -1619,6 +1619,12 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `test/admin-stress-fixes.mutations.json`): the card holds the choice the last good read stood on (`chip.kept`, `win.kept`), and a read that fails (a 500, no
   connection, a refusal) puts the radios, and the figure typed under Other, back to it, with the card's line saying "That charge did not save" (or "That time")
   and what is still chosen; Read the figures again then reads for the choice put back, and with none chosen there is nothing to read.
+  **An answer stands beside the control that asked** (13 Oct 2026, the stress run's Medium finding; same test): Save on Shop's weekly hours answers in
+  `#makerHoursSaved` under it (`hoursSaid('week', ...)`; Set it and Back keep `#makerHoursMessage` under theirs), Make a link in `#gmsg` under it (`linkSay`)
+  with the new link scrolled into reach, Refresh in `#makerRefreshSaid` under it, and an order card's own line (the #120 status) stands under the delivery charge,
+  above the time and the figures, so that it is not a screen below the radio that asked. Each is a polite status line and is brought into reach (`block:
+  'nearest'`, clear of the bar by `.adm .said`'s scroll margin); an answer whose card has gone from the list scrolls the list's line instead. The page's one line
+  at the foot of Customers keeps the rest.
   **The stage foot** (Phase 2a): the moves of the card's stage stand together at its foot (`makerCardFoot`, `.maker-foot`), the filled one first and the
   quiet ones beside it, then the card's answer line: a placed order's Accept (Send for their yes, when the figures raise the price or change the
   window) and Decline, or Withdraw the offer while an offer is out; Accept again, with the stages he rejected offered again; Ready to collect and
