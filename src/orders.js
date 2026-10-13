@@ -1457,21 +1457,40 @@ export async function againOf(db, ids) {
   }
   return out;
 }
+/** What Not needed may cover on an order: { whole, stages }. Whole when his ack was rejected and no draft on the order is approved (no row on the book). */
+export async function dropMode(db, id) {
+  const all = await draftsOfOrders(db, [id]);
+  const stages = Object.keys(STATUS_OF_STAGE).filter((st) => rejectedByHim(all.find((r) => ofStage(r, st))));
+  return { whole: stages.includes("ack") && !all.some((r) => r.status === "approved"), stages };
+}
 /** POST /orders/<id>/again {stage}: a payment, cash payment, handover or cancellation he rejected, offered again. */
 export async function againOrder(env, id, body, by, now, mirror) {
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read and the preview's are one */
   const at = now || new Date();
   const stage = String((body && body.stage) || "");
-  /* a rejected step he says is on the book already is filed 'covered', so it is offered no more */
+  /* a rejected step he says is on the book already is filed 'covered', so it is offered no more. Whole-order mode: his ack was rejected and no
+     draft is approved, so the order has no row and every rejected stage but pay goes; with a row, only cancel, move or amend, named. All or none. */
   if (body && body.drop === true) {
     const f = await findOrder(env, id);
     if (!f.ok) return f;
-    if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be filed" };
+    const db = env.SALT_LEDGER;
+    if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be filed" };
+    const m = await dropMode(db, id);
+    let want;
+    if (m.whole) {
+      if (body.stage !== undefined && body.stage !== "") return { ok: false, status: 400, error: "this order has no row on the book: Not needed covers the whole order" };
+      if (m.stages.includes("pay")) return { ok: false, status: 409, error: "answer their payment claim with Received first: on the book already" };
+      want = m.stages;
+    } else {
+      if (!["cancel", "move", "amend"].includes(stage)) return { ok: false, status: 400, error: "pay and cash are answered by Received or Cash, on the book already; a pending row by Accept again" };
+      want = m.stages.includes(stage) ? [stage] : [];
+    }
+    for (const st of want) { const lv = await livePre(db, id, st); if (lv && (lv.status === "waiting" || lv.status === "differs")) return { ok: false, status: 409, error: "the " + STAGE_WORD[st] + " is offered again already: let it land first" }; }
     const dropped = [];
-    for (const st of (await againOf(env.SALT_LEDGER, [id]))[id] || []) {
-      const d = await rejectedOf(env.SALT_LEDGER, id, st);
+    for (const st of want) {
+      const d = await rejectedOf(db, id, st);
       if (!d) continue;
-      await env.SALT_LEDGER.prepare("UPDATE draft SET decided_by='covered' WHERE id=?1 AND status='rejected'").bind(d.id).run();
+      await db.prepare("UPDATE draft SET decided_by='covered' WHERE id=?1 AND status='rejected'").bind(d.id).run();
       dropped.push(st);
     }
     return { ok: true, order: f.order, dropped };

@@ -138,7 +138,7 @@ export async function run({ ok, pageWork }) {
     ok(!foot().contains(byAct(d, "order.received")) && !foot().contains(byAct(d, "order.amend")) && !foot().contains(byAct(d, "order.claim-received")),
       "while its claims, Received and Amend stay in the body of the card");
     await p.tapRow("ord-a2");
-    ok(moves()[0] === "order.accept-again" && moves().includes("order.again-pay") && moves().includes("order.again-drop") && moves().includes("order.cancel") && !moves().includes("order.ready-collect"),
+    ok(moves()[0] === "order.accept-again" && moves().includes("order.again-pay") && moves().includes("order.again-drop-cancel") && moves().includes("order.again-drop-move") && moves().includes("order.again-drop-amend") && !moves().includes("order.again-drop") && !moves().includes("order.again-drop-pay") && moves().includes("order.cancel") && !moves().includes("order.ready-collect"),
       "an order with a rejected pending row has Accept again first in its foot, with the stages he rejected offered again: " + JSON.stringify(moves()));
     await part("ready");
     await p.tapRow("ord-r1");

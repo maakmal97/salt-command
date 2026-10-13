@@ -37854,20 +37854,6 @@ await (async () => {
     "a cancellation he rejected is offered again under a fresh entry, once however often it is tapped; a pending row is offered again only by Accept: "
     + JSON.stringify({ second: xG2.error, drafts: xs.map((x) => x.status) }));
 
-  /* F2. NOT NEEDED: a rejected stage the sale is booked another way for is filed covered, and offered no more */
-  const nh = await place(U2, 1, 108);
-  const nh1 = await accept(nh); land(nh1.j.draft);
-  await O.customerMove(senv, U2, nh.id, "cancel", {});
-  await reconcileOrders(denv); await runDrafter(denv);
-  await reject(drafts(nh.id, "Cancellation")[0].id);
-  const hBefore = await againOn(nh.id);
-  const hDrop = await againOrder(denv, nh.id, { drop: true }, "phone"), hDrop2 = await againOrder(denv, nh.id, { drop: true }, "phone");
-  const nhs = drafts(nh.id, "Cancellation");
-  ok(hBefore.includes("cancel") && hDrop.ok && hDrop.dropped.includes("cancel") && hDrop2.ok && hDrop2.dropped.length === 0
-    && nhs.length === 1 && nhs[0].decided_by === "covered" && !(await againOn(nh.id)).length,
-    "Not needed files the rejected stages covered, drafts nothing, and the order offers none again; a retry answers ok: "
-    + JSON.stringify({ before: hBefore, drop: hDrop.dropped, retry: hDrop2.dropped, by: nhs[0].decided_by }));
-
   /* G. A WITHDRAWAL'S DROP IS NOT HIS REJECTION, and offers nothing */
   const w = await place(U1, 1, 107);
   await O.deskMove(senv, U1, w.id, { status: "acknowledged", mode: "collect" });
@@ -37876,6 +37862,68 @@ await (async () => {
   await reconcileOrders(denv);
   ok(drafts(w.id, "Pending")[0].decided_by === "withdrawn" && !(await againOn(w.id)).length,
     "a row dropped because they withdrew is not offered again: " + JSON.stringify({ draft: drafts(w.id, "Pending")[0].decided_by, again: await againOn(w.id) }));
+
+  /* F2. NOT NEEDED: a rejected step the sale is booked another way for is filed covered, and offered no more.
+     With a row on the book only a named cancel, move or amend goes; with none, one tap covers the order, but never a payment claim. */
+  let dn = 0;
+  const seedDraft = (oid, status, entryStatus, over) => {   /* a draft shaped as the drafter leaves one, status as given */
+    const base = db.prepare("SELECT * FROM draft WHERE id=?").get(nh1.j.draft), ent = Object.assign(JSON.parse(base.entry), { orderId: oid, status: entryStatus }, over || {});
+    delete ent.counter; if (over && over.counter) ent.counter = true;
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at,decided_by) VALUES (?,?,?,?,?,?,?,?,?)")
+      .run("2026-10-13T11:00:00." + String(++dn).padStart(3, "0") + "Z", status, base.collection, JSON.stringify(ent), base.row, "x", "fixture", "2026-10-13T11:00:00Z", status === "rejected" ? "desk" : null);
+  };
+  const decidedBy = (oid, es) => drafts(oid, es).map((d) => d.decided_by);
+  const noLive = (oid) => db.prepare("DELETE FROM preapproval WHERE order_id=?").run(oid);
+  /* with a row: an accepted order whose cancellation, payment and cash were rejected */
+  const nh = await place(U2, 1, 108);
+  const nh1 = await accept(nh); land(nh1.j.draft);
+  seedDraft(nh.id, "rejected", "Cancellation"); seedDraft(nh.id, "rejected", "Payment"); seedDraft(nh.id, "rejected", "Payment", { counter: true });
+  const rowStages = await againOn(nh.id);
+  const rPay = await againOrder(denv, nh.id, { drop: true, stage: "pay" }, "phone"), rCash = await againOrder(denv, nh.id, { drop: true, stage: "cash" }, "phone");
+  const rAck = await againOrder(denv, nh.id, { drop: true, stage: "ack" }, "phone"), rNone = await againOrder(denv, nh.id, { drop: true }, "phone");
+  ok(rowStages.includes("cancel") && rowStages.includes("pay") && rowStages.includes("cash")
+    && rPay.status === 400 && rCash.status === 400 && rAck.status === 400 && rNone.status === 400 && !decidedBy(nh.id, "Payment").includes("covered"),
+    "with a row on the book, Not needed refuses pay, cash and a pending row, and a bare drop, changing nothing: " + JSON.stringify([rPay.status, rCash.status, rAck.status, rNone.status, decidedBy(nh.id, "Payment")]));
+  const dOne = await againOrder(denv, nh.id, { drop: true, stage: "cancel" }, "phone"), dOne2 = await againOrder(denv, nh.id, { drop: true, stage: "cancel" }, "phone");
+  ok(dOne.ok && dOne.dropped.join() === "cancel" && dOne2.ok && dOne2.dropped.length === 0 && decidedBy(nh.id, "Cancellation")[0] === "covered"
+    && !(await againOn(nh.id)).includes("cancel") && (await againOn(nh.id)).includes("pay"),
+    "with a row, a named cancellation is filed covered and offered no more, a retry answers ok, and the payment is still offered: " + JSON.stringify([dOne, await againOn(nh.id)]));
+  /* a live yes on the stage refuses the drop, and nothing is changed */
+  seedDraft(nh.id, "rejected", "Handover", { deliveredQty: 1 });
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(nh.id + "|move|1", nh.id, U2, "move", "h", "{}", "{}", "waiting", "2026-10-13T11:05:00Z");
+  const rLive = await againOrder(denv, nh.id, { drop: true, stage: "move" }, "phone");
+  ok(rLive.status === 409 && /offered again already/.test(rLive.error) && decidedBy(nh.id, "Handover")[0] === "desk",
+    "a live yes on the stage refuses the drop and changes nothing: " + JSON.stringify(rLive));
+  noLive(nh.id);
+  /* no row: his pending row, a handover and a cash rejected, nothing approved */
+  const wo = await place(U1, 1, 109);
+  seedDraft(wo.id, "rejected", "Pending"); seedDraft(wo.id, "rejected", "Handover", { deliveredQty: 1 }); seedDraft(wo.id, "rejected", "Payment", { counter: true });
+  const woBefore = await againOn(wo.id);
+  const woDrop = await againOrder(denv, wo.id, { drop: true }, "phone");
+  ok(woBefore.length === 3 && woDrop.ok && woDrop.dropped.length === 3 && !(await againOn(wo.id)).length
+    && decidedBy(wo.id, "Pending")[0] === "covered" && decidedBy(wo.id, "Handover")[0] === "covered" && decidedBy(wo.id, "Payment")[0] === "covered",
+    "with no row on the book, one Not needed covers the pending row, the handover and the cash: " + JSON.stringify([woBefore, woDrop.dropped, await againOn(wo.id)]));
+  /* no row but a payment claim rejected: refused, nothing changed */
+  const wp = await place(U1, 1, 110);
+  seedDraft(wp.id, "rejected", "Pending"); seedDraft(wp.id, "rejected", "Payment"); seedDraft(wp.id, "rejected", "Handover", { deliveredQty: 1 });
+  const wpDrop = await againOrder(denv, wp.id, { drop: true }, "phone");
+  ok(wpDrop.status === 409 && /Received first/.test(wpDrop.error) && decidedBy(wp.id, "Pending")[0] === "desk" && decidedBy(wp.id, "Handover")[0] === "desk",
+    "with no row, a rejected payment claim refuses the whole drop and changes nothing: " + JSON.stringify([wpDrop, decidedBy(wp.id, "Pending")]));
+  /* a live yes on any stage refuses the whole drop before any is covered */
+  const wl = await place(U1, 1, 111);
+  seedDraft(wl.id, "rejected", "Pending"); seedDraft(wl.id, "rejected", "Handover", { deliveredQty: 1 }); seedDraft(wl.id, "approved", "Payment", { counter: true });
+  /* his pending row rejected, yet another draft of the order approved: the order has a row, so a bare drop is refused */
+  const wlRow = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(wlRow.status === 400 && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
+    "a rejected pending row beside an approved draft is an order with a row: a bare drop is refused: " + JSON.stringify([wlRow.status, decidedBy(wl.id, "Pending")]));
+  db.prepare("UPDATE draft SET status='rejected', decided_by='desk' WHERE status='approved' AND entry LIKE ?").run('%"orderId":"' + wl.id + '"%');
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wl.id + "|move|1", wl.id, U1, "move", "h", "{}", "{}", "waiting", "2026-10-13T11:05:00Z");
+  const wlDrop = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(wlDrop.status === 409 && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
+    "a live yes on one stage refuses the whole drop, and no stage is covered: " + JSON.stringify([wlDrop.status, decidedBy(wl.id, "Pending")]));
+  const listed = (await call("/orders?all=1", null, "GET")).j.orders, byId = (id) => listed.find((x) => x.id === id) || {};
+  ok(byId(wl.id).againWhole === true && !byId(nh.id).againWhole && !byId(wp.id).againWhole,
+    "the order list says an order is whole-droppable only when it has no row and no payment claim rejected: " + JSON.stringify([byId(wl.id).againWhole, byId(nh.id).againWhole, byId(wp.id).againWhole]));
 })();
 
 section("S11 11.16: his wakes name the kind of act and never a code or an amount, and a new order is never titled by older news");
@@ -52652,7 +52700,7 @@ await (async () => {
     && !!makerOrderFault("accept", { total: 100 })
     && !!makerOrderFault("handed", { qty: 1, note: "unsupported prose" }),
     "typed order fields reject string figures, missing digests and unsupported prose");
-  ok(!makerOrderFault("again", { drop: true, rid: "r".repeat(16) }) && !!makerOrderFault("again", { stage: "x", rid: "r".repeat(16) }) && !!makerOrderFault("again", { drop: true, rid: "r".repeat(16), other: 1 }),
+  ok(!makerOrderFault("again", { drop: true, rid: "r".repeat(16) }) && !makerOrderFault("again", { drop: true, stage: "move", rid: "r".repeat(16) }) && !!makerOrderFault("again", { drop: true, stage: "pay", rid: "r".repeat(16) }) && !!makerOrderFault("again", { stage: "x", rid: "r".repeat(16) }) && !!makerOrderFault("again", { drop: true, rid: "r".repeat(16), other: 1 }),
     "an again body may carry drop alone, and still needs a stage otherwise");
   let assetCalls = 0;
   const privateMiss = await worker.fetch(new Request("https://desk.test/_internal/maker/unknown"), {
