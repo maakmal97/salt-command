@@ -931,7 +931,11 @@ one**: the Site orders card, with the vault open, reads it keyed (`GET /pins/<us
 `/desk/pins/...`, never cached by `sw.js`), opens it with the slip key the one unlock holds (`ordPinPoint`), measures the
 fee to it ahead of `vault-addr` and `PLACED` (F15), names it and never its figures, and offers File as their place, which
 writes it into the places vault on the device through the vault's own road (`src: "pin"`, the address filed kept); never
-for a friend's order or a `-R` bucket. The lock drops every spot opened (`ORD_PIN`).
+for a friend's order or a `-R` bucket. **The batch** (his choice of 13 Oct 2026): above the order list, every spot opened
+whose customer has no point filed, the newest order's for each (`ordPinBatch`), is filed by one tap, File all, under one
+passphrase and one vault write (`ordPinFileAll`); the write decides again on the vault it has just read, so a point filed
+meanwhile stands and the answer says so. A customer whose filed point differs keeps the card's own tap. The lock drops
+every spot opened (`ORD_PIN`) and the batch's answer (`ORD_PIN_ALL`).
 
 **AN ORDER MAY BE WANTED BY A DAY** (29 Sep 2026, the plan's future-dated orders): the sheet asks When you want it, As
 soon as it can already chosen, or By a day, a date from tomorrow to `WANT_DAYS` (60) days on in Kuala Lumpur. The Worker's
