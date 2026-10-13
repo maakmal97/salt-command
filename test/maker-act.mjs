@@ -28,7 +28,7 @@ export async function slipFixture() {
   };
   const sealed = await slipSeal(await webcrypto.subtle.exportKey("jwk", keys.publicKey), new Uint8Array([255, 216, 255, 217]));
   /* the vault's other two envelopes, under the same password: an invented name and an invented place for the first customer's code (CX1-ZED) and nothing for the others */
-  const nameOf = { "CX1-ZED": "Invented Person (Pudu)" }, placeOf = { "CX1-ZED": { addr: "Invented Lane", lat: 3.1, lng: 101.7, src: "waze" }, _base: { addr: "Invented base", lat: 3.1, lng: 101.6 } };
+  const nameOf = { "CX1-ZED": "Invented Person (Pudu)" }, placeOf = { "CX1-ZED": { addr: "Invented Lane", lat: 3.1, lng: 101.7, src: "waze", at: "2026-10-03T16:30:00.000Z" }, _base: { addr: "Invented base", lat: 3.1, lng: 101.6 } };
   return (slipFix = { pass, envelope: await seal(jwk), sealed, names: await seal(nameOf), places: await seal(placeOf), nameOf, placeOf });
 }
 
