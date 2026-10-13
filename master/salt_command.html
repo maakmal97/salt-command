@@ -8149,7 +8149,8 @@ const PLACED={
   ],
   "CI5-PER": [
     3.1,
-    101.72
+    101.72,
+    "Permaisuri"
   ]
 };
 const TIER_OF={
@@ -9292,7 +9293,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1097","d":"13 Oct 2026","t":"CI5-PER REGISTERED AS A SALT CUSTOMER; NO STOCK MOVED","n":["<b>ONE ROW FOLDED.</b> CI5-PER is added to the roster as a customer at a salt tier of -0.3. Nothing unusual: the drafter raised no flags, and the row touches no sale, payment or price. The name and place stay in the directory at the laptop.","<b>INVENTORY UNCHANGED.</b> Salt stock stays at 13.14 units, counted on 3 Oct 2026, with a stock cost of RM56 a unit. No lot landed and nothing was sold, so the cost basis does not move."]}];
+const evolution=[{"v":"v1098","d":"13 Oct 2026","t":"CI5-PER'S LOCALITY FILED: PERMAISURI","n":["<b>A LOCALITY BESIDE THE POINT.</b> CI5-PER was registered from Counter Admin at 18:44 with its point and no locality, so the Coverage map could not say where they are in words. Permaisuri, the one listed locality at that point, is filed beside it on his word of 13 Oct 2026. Nothing prices; no stock or money moves. The road that dropped the locality is fixed separately.","<b>THE PROOFS.</b> The v680 section: every party filed carries a locality beside its point, red on v1097 and green here."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9443,7 +9444,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 18:45 KL';
+const LAST_UPDATED='13 Oct 2026, 19:14 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
