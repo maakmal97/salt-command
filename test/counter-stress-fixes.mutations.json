@@ -1,0 +1,11 @@
+[
+ {"name": "the pay sheet gives the focus back to nothing", "file": "stmt/page.js", "find": "    if(quiet!==true&&ps) focusBack(ps.from,ps.back?backFind(ps.back):null);\n", "replace": "\n"},
+ {"name": "a Pay replaced while the sheet was open is not found again", "file": "stmt/page.js", "find": "focusBack(ps.from,ps.back?backFind(ps.back):null)", "replace": "focusBack(ps.from,null)"},
+ {"name": "Home's Pay carries no key to be found by", "file": "stmt/page.js", "find": "    pb.setAttribute('data-back','pay:now');\n", "replace": "\n"},
+ {"name": "the overdue Pay carries no key to be found by", "file": "stmt/page.js", "find": "        hp.setAttribute('data-back','pay:od');\n", "replace": "\n"},
+ {"name": "an order's Pay carries no key to be found by", "file": "stmt/page.js", "find": "      pb.setAttribute('data-back','pay:'+o.id);\n", "replace": "\n"},
+ {"name": "the signed-out Sheet gives the focus to nothing", "file": "stmt/page.js", "find": "    if(quiet!==true) focusBack(null,function(){ return document.getElementById('lapseGo'); });\n", "replace": "\n"},
+ {"name": "Sign in another device gives the focus to nothing as it closes", "file": "stmt/page.js", "find": "    focusBack(devFrom,backFind('dev:another'));\n", "replace": "\n"},
+ {"name": "the list of devices drawn again drops the focus it held", "file": "stmt/page.js", "find": "    if(held&&(!document.activeElement||document.activeElement===document.body)) focusBack(null,backFind(held));\n", "replace": "\n"},
+ {"name": "Sign in another device carries no key to be found by", "file": "stmt/page.js", "find": "another.setAttribute('data-back','dev:another'); ", "replace": ""}
+]

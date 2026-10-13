@@ -53940,6 +53940,11 @@ await (async () => {
   await (await import("./admin-stress-fixes.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter: the stress run's findings: a Sheet gives the focus back to its opener, a Pay radio chosen by keyboard keeps it, and a question over the New order sheet closes alone (13 Oct 2026)");
+await (async () => {
+  await (await import("./counter-stress-fixes.mjs")).run({ ok });
+})();
+
 section("Salt Account: the bar of five places is fixed to the screen's foot, nothing frames it in the screen's place, the shell keeps its height clear, and in the iPhone's saved app the document is the screen tall");
 await (async () => {
   await (await import("./admin-bar-foot.mjs")).run({ ok, pageWork });

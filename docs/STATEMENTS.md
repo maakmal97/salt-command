@@ -673,6 +673,13 @@ through the closes they already make. A page that was shut by something else (Ho
 Sheets of its own and is left as it was. **The yes or no's danger action is guarded**: its handler returns unless its own Sheet is still the open one, so a second tap
 or a stale button cannot send a cancel twice. A device that has not chosen a look is asked at its first sign-in, so a test that reads `[inert]` stores a look first.
 
+**Every Sheet gives the focus back to the control that opened it, through one road** (13 Oct 2026, the stress run's cosmetic finding; `test/counter-stress-fixes.mjs`, its
+mutations in `test/counter-stress-fixes.mutations.json`): `focusBack(from, again)`, after `behind()`, focuses the opener, or, if a redraw replaced it, the control
+`again` finds (`backFind(key)`: the control carries `data-back`, as the yes or no's opener carries `data-yn`). The order sheet, the yes or no, the pay Sheet (Home's Pay
+`pay:now`, the overdue Pay `pay:od`, an order's `pay:<id>`), the signed-out Sheet (to Sign in on the bar), the bell, the look Sheet, the thread and Sign in another device
+(`dev:another`, whose list is drawn again as it closes, so `drawDev` hands the focus to the new button) all end there. A lock, a sign-in done or another account passes
+`quiet` (`=== true`; a close wired straight to an event gets the event and is not quiet) so focus is not sent to a page that is leaving.
+
 The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
 `test/counter-account-door.mutations.json`) drives all of it through the generated page in jsdom.
 

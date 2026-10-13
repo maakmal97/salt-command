@@ -8,7 +8,7 @@
  {"name":"a foot is drawn whatever is owed","file":"stmt/page.js","find":"f.hidden=!bundle||staleNow()||!payFootOn(lines,tot);","replace":"f.hidden=!bundle;"},
  {"name":"the tile leaves the head when nothing is owed","file":"stmt/page.js","find":"if(!payFootOn(lines,tot)) box.appendChild(kpiTile(","replace":"if(false) box.appendChild(kpiTile("},
  {"name":"a hidden foot is not shut by the page's own rule","file":"stmt/page.js","find":".payfoot[hidden]{display:none}","replace":".payfoot[hidden]{}"},
- {"name":"the Pay does nothing","file":"stmt/page.js","find":"pb.addEventListener('click',function(){ openPay(acctCtx()); });","replace":"pb.addEventListener('click',function(){});"},
+ {"name":"the Pay does nothing","file":"stmt/page.js","find":"pb.addEventListener('click',function(){ openPay(acctCtx(),pb,'pay:now'); });","replace":"pb.addEventListener('click',function(){});"},
  {"name":"the sheet is cut to three lines too","file":"stmt/page.js","find":"(!full&&i>=HOME_LINES?rest:L).appendChild(r);","replace":"(i>=HOME_LINES?rest:L).appendChild(r);"},
  {"name":"Home draws four lines before it folds","file":"stmt/page.js","find":"var HOME_LINES=3,","replace":"var HOME_LINES=4,"},
  {"name":"there is no fold","file":"stmt/page.js","find":"if(rest.firstChild) L.appendChild(invMore(rest));","replace":"if(false) L.appendChild(invMore(rest));"},
@@ -27,5 +27,5 @@
  {"name":"the fixture's line asks for ten lines","file":"tools/testfix.mjs","find":"(f) => !!f.live && invoiceLines(f) > 3]","replace":"(f) => !!f.live && invoiceLines(f) > 9]"},
  {"name":"the fixture's line is satisfied by any account","file":"tools/testfix.mjs","find":"(f) => !!f.live && invoiceLines(f) > 3]","replace":"(f) => !!f.live && invoiceLines(f) > -1]"},
  {"name":"the fold is not the Plan recipe's","file":"stmt/page.js","find":"el('details','salt-plan invmore')","replace":"el('details','invmore')"},
- {"name":"the Pay is not the filled pill","file":"stmt/page.js","find":"var pb=el('button','salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';\n    pb.addEventListener('click',function(){ openPay(acctCtx()); });\n    f.appendChild(pb);","replace":"var pb=el('button','btn',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';\n    pb.addEventListener('click',function(){ openPay(acctCtx()); });\n    f.appendChild(pb);"}
+ {"name":"the Pay is not the filled pill","file":"stmt/page.js","find":"var pb=el('button','salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';\n    pb.setAttribute('data-back','pay:now');\n    pb.addEventListener('click',function(){ openPay(acctCtx(),pb,'pay:now'); });\n    f.appendChild(pb);","replace":"var pb=el('button','btn',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';\n    pb.setAttribute('data-back','pay:now');\n    pb.addEventListener('click',function(){ openPay(acctCtx(),pb,'pay:now'); });\n    f.appendChild(pb);"}
 ]

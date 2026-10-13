@@ -2257,6 +2257,8 @@ const CLIENT_JS = `
       r={status:x.status, body:j||{ok:false}};
     }catch(e){ /* not sent: the card says so */ }
     if(n!==devN||!session) return;
+    /* the list is drawn afresh: a control in it that holds focus (Sign in another device, as its Sheet closes) is given it again */
+    var held=document.activeElement&&devSlot.contains(document.activeElement)?document.activeElement.getAttribute('data-back')||'':'';
     devSlot.textContent='';
     var list=el('div','salt-ledger salt-ledger--plain');
     var devs=(r.body&&r.body.devices)||[], others=devs.filter(function(d){ return !d.here; }).length;
@@ -2267,7 +2269,7 @@ const CLIENT_JS = `
     if(!r.body.ok) list.appendChild(devLine(tw('dev.yours'), null, r.status===401?tw('dev.signinSee'):tw('dev.unread')));
     devSlot.appendChild(list);
     var acts=el('div','dacts'), note=el('p','dnote'+(devSaid.bad?' bad':''),devSaid.t); note.setAttribute('role','status');
-    var another=devQuiet(tw('dev.another')); another.addEventListener('click', function(){ openDevSheet(another); });
+    var another=devQuiet(tw('dev.another')); another.setAttribute('data-back','dev:another'); another.addEventListener('click', function(){ openDevSheet(another); });
     acts.appendChild(another);
     if(others){
       var so=devQuiet(tw('dev.outOthers')), armed=null;
@@ -2301,6 +2303,7 @@ const CLIENT_JS = `
       }
     }
     devSlot.appendChild(acts); devSlot.appendChild(note);
+    if(held&&(!document.activeElement||document.activeElement===document.body)) focusBack(null,backFind(held));
     devSaid={t:'',bad:false};
   }
   function chipEl(tone, t){ return el('span','salt-status salt-status--'+tone,t); }
@@ -2332,7 +2335,7 @@ const CLIENT_JS = `
   function closeDevSheet(){
     if(!devSheetEl||devSheetEl.hidden) return;
     devSheetEl.hidden=true; devScrim.hidden=true; behind(); devM++; devHo=''; devCode.value=''; devCopy.disabled=true; dsay('');
-    try{ if(devFrom&&devFrom.isConnected) devFrom.focus(); }catch(e){}
+    focusBack(devFrom,backFind('dev:another'));
     drawDev();   /* S9 fix: the device the code signed in is on the list as the Sheet closes */
   }
   if(devSheetEl){
@@ -2469,8 +2472,8 @@ const CLIENT_JS = `
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
     pPrices.textContent=''; pOrder.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
-    curCk=null; closeSignedOut(); if(opening) opening.hidden=true;
-    keepReset(); closePay(); if(codeBox) codeBox.hidden=true;
+    curCk=null; closeSignedOut(true); if(opening) opening.hidden=true;
+    keepReset(); closePay(true); if(codeBox) codeBox.hidden=true;
     closeDevSheet(); lookShut(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
     pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
@@ -2566,16 +2569,18 @@ const CLIENT_JS = `
     outScrim.hidden=false; outSheet.hidden=false; behind();
     try{ pw.focus(); }catch(e){}
   }
-  function closeSignedOut(){
+  /* quiet (=== true) when the page is leaving it, a sign-in done or a log out: focus has nowhere to go back to. Otherwise back to the bar's Sign in, whichever way it closed */
+  function closeSignedOut(quiet){
     if(!outSheet||outSheet.hidden) return;
     outSheet.hidden=true; outScrim.hidden=true; behind();
     /* S3 fix: back where it came from, and the code screen too if the Sheet took it */
     gate.insertBefore(doorBox, doorNext); doorBox.hidden=false;
     if(codeHome&&outSheet.contains(codeBox)){ codeHome.p.insertBefore(codeBox, codeHome.n); codeBox.hidden=true; }
+    if(quiet!==true) focusBack(null,function(){ return document.getElementById('lapseGo'); });
   }
   if(outSheet){
-    document.getElementById('outX').addEventListener('click', function(){ closeSignedOut(); try{ document.getElementById('lapseGo').focus(); }catch(e){} });
-    outScrim.addEventListener('click', closeSignedOut);
+    document.getElementById('outX').addEventListener('click', function(){ closeSignedOut(); });
+    outScrim.addEventListener('click', function(){ closeSignedOut(); });
     document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closeSignedOut(); });
   }
   document.getElementById('lapseGo').addEventListener('click', async function(){
@@ -2835,7 +2840,7 @@ const CLIENT_JS = `
   function closeBell(){
     if(!bellSheetEl||bellSheetEl.hidden) return;
     bellSheetEl.hidden=true; bellScrim.hidden=true; behind();
-    try{ bellEl.focus(); }catch(e){}
+    focusBack(bellEl);
   }
   if(bellBoxEl){
     bellEl.addEventListener('click', bellTap);
@@ -2906,7 +2911,7 @@ const CLIENT_JS = `
   function lookShut(){
     if(!lookSheetEl||lookSheetEl.hidden) return;
     lookSheetEl.hidden=true; lookScrim.hidden=true; behind();
-    try{ if(lookBack&&lookBack.focus) lookBack.focus(); }catch(e){}
+    focusBack(lookBack);
   }
   function lookAsk(b, own){
     if((OWNER&&!own)||view||lookAsked||!lookSheetEl) return;
@@ -3416,7 +3421,7 @@ const CLIENT_JS = `
     var s=osh; osh=null; draft.step=''; draft.check=null; draft.amend=''; draft.pool='';
     s.wrap.parentNode.removeChild(s.wrap);
     behind();
-    try{ if(s.opener&&s.opener.isConnected) s.opener.focus({preventScroll:true}); }catch(e){}
+    focusBack(s.opener);
   }
   /* the customer's own ways out (the scrim, Close, Escape) wait while Place is on its way: closed then, the answer had
      nowhere to be drawn, an order landed unsaid or a refusal was dropped, and the same order could be placed again */
@@ -3456,6 +3461,14 @@ const CLIENT_JS = `
       else if(c.hasAttribute('data-behind')){ c.removeAttribute('inert'); c.removeAttribute('data-behind'); }
     });
   }
+  /* ---- ONE ROAD BACK TO THE CONTROL THAT OPENED A SHEET (13 Oct 2026, the stress run: focus fell to the page after Close, Escape or the scrim) ----------
+     Every Sheet's close ends here, after behind() has let the page go: focus returns to the control that opened it, or, if a redraw replaced that
+     control, to the one that again finds afresh (backFind: a control that stands for a Sheet's opener carries data-back). With neither it is left alone. */
+  function focusBack(from,again){
+    var b=from; if(!(b&&b.isConnected)&&again) b=again();
+    try{ if(b&&b.focus) b.focus({preventScroll:true}); }catch(e){}
+  }
+  function backFind(key){ return function(){ return [].filter.call(document.querySelectorAll('[data-back]'),function(x){ return x.getAttribute('data-back')===key; })[0]||null; }; }
   /* ---- A YES OR NO IS A SHEET (11 Oct 2026, Phase 7d part 1, his decision 4: no native confirm on this page) ----------------
      Cancel this order, the same step at the order limit, and Withdraw a link each ask in the system's Sheet over the page, which
      restates what goes: the order by its mark, its size, its word and its figure, the link by its day, its state and what it has
@@ -3496,8 +3509,7 @@ const CLIENT_JS = `
     if(q.wrap.parentNode) q.wrap.parentNode.removeChild(q.wrap);
     behind();
     if(quiet) return;
-    var b=q.opener; if(!(b&&b.isConnected)&&q.again) b=q.again();
-    try{ if(b&&b.focus) b.focus({preventScroll:true}); }catch(e){}
+    focusBack(q.opener,q.again);
   }
   /* q: title, body (nodes), go and keep (the two answers' words), yes (what the danger action does), opener (the control to give
      focus back to), again (finds it afresh if a redraw took it away) and shut (told when the Sheet comes down, however) */
@@ -4097,7 +4109,8 @@ const CLIENT_JS = `
       /* S6 6.4: one Pay, opening the pay sheet, where there were thirteen links naming the pay page */
       if(!view){
         var hp=el('button','btn salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(left)})); hp.type='button';
-        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:left, label:'pay.overdue', note:function(){ return odNote(od); }}); });
+        hp.setAttribute('data-back','pay:od');
+        hp.addEventListener('click',function(){ openPay({kind:'acct', fig:left, label:'pay.overdue', note:function(){ return odNote(od); }},hp,'pay:od'); });
         dueBox.appendChild(hp);
       }
       dueBox.appendChild(el('p','sub2',tw('ord.holdP')));
@@ -4426,7 +4439,8 @@ const CLIENT_JS = `
     var a=el('div','oact'), tp=oTap(o);
     if(!view&&oOwes(o)){
       var pb=el('button',oFormPill()?'salt-ghost salt-ghost--lit':'salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(oToPay(o))})); pb.type='button';
-      pb.addEventListener('click',function(){ openPay(orderCtx(o.id)); });
+      pb.setAttribute('data-back','pay:'+o.id);
+      pb.addEventListener('click',function(){ openPay(orderCtx(o.id),pb,'pay:'+o.id); });
       a.appendChild(pb);
     }
     if(tp.k==='pay'&&tp.t) a.appendChild(statusLine(tp.t));
@@ -5063,7 +5077,8 @@ const CLIENT_JS = `
     if(f.hidden) return f;
     f.appendChild(kpiTile('ember',tw('pay.now'),rm(tot)));
     var pb=el('button','salt-pill salt-pill--md',tw('pay.payRm',{rm:rm(tot)})); pb.type='button'; pb.id='payNow';
-    pb.addEventListener('click',function(){ openPay(acctCtx()); });
+    pb.setAttribute('data-back','pay:now');
+    pb.addEventListener('click',function(){ openPay(acctCtx(),pb,'pay:now'); });
     f.appendChild(pb);
     return f;
   }
@@ -5139,15 +5154,21 @@ const CLIENT_JS = `
       return setW(el('span'),movedAll(o)?'pn.orderedWithYou':'pn.ordered',{mark:markHtml(o.product,20),
         u:function(L){ return esch(unitsOf(o.qty,oUnit(o),L)); }, d:Dd(oDay,o.at)}); }};
   }
-  function openPay(ctx){
+  /* from: the Pay that opened it, and key: its data-back, to find it again if a redraw replaces it while the sheet is open (focusBack) */
+  function openPay(ctx,from,key){
     if(!paySh||view||!(ctx.fig>0.004)) return;
     /* S6 fix: Transfer is the way chosen as it opens, as the mockup draws it; the way is not the account, and no account is */
-    PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false, what:false};
+    PS={ctx:ctx, part:false, amt:'', rail:'transfer', acct:'', said:'', step:'pay', away:null, busy:false, what:false, from:from||null, back:key||''};
     payNumLoad();
     payScr.hidden=false; paySh.hidden=false; behind(); drawPay();
     try{ paySh.focus(); }catch(e){}
   }
-  function closePay(){ if(!paySh||paySh.hidden) return; paySh.hidden=true; payScr.hidden=true; behind(); PS=null; payqDrop(); }
+  /* quiet (=== true) when the page is leaving it (a lock, another account): focus has nowhere to go back to */
+  function closePay(quiet){
+    if(!paySh||paySh.hidden) return;
+    var ps=PS; paySh.hidden=true; payScr.hidden=true; behind(); PS=null; payqDrop();
+    if(quiet!==true&&ps) focusBack(ps.from,ps.back?backFind(ps.back):null);
+  }
   /* ---- F13 (29 Sep 2026): A SLIP, SEALED ON THIS PHONE. On Did you send, a picture of the payment may go with the claim,
      one a claim: re-encoded here to 1,600 px JPEG under SLIP_BYTES, then sealed to the public half of his slip key
      (GET /slip/key) before it leaves, so only ciphertext reaches the site (rule 2) and only his vault opens it. The
@@ -5383,7 +5404,8 @@ const CLIENT_JS = `
     if(!q) return;
     var w=q.away||{}, ctx=q.kind==='order'?(oFind(q.id)?orderCtx(q.id):null):acctCtx();
     if(q.who!==payqWho(user)||!(Date.now()-q.at<2*3600e3)||!ctx||!(ctx.fig>0.004)||!(w.amt>0)||!acct(w.acct)){ payqDrop(); return; }
-    PS={ctx:ctx, part:false, amt:'', rail:w.rail, acct:w.acct, said:'', step:'check', away:{amt:w.amt, rail:w.rail, acct:w.acct, gone:false}, busy:false};
+    PS={ctx:ctx, part:false, amt:'', rail:w.rail, acct:w.acct, said:'', step:'check', away:{amt:w.amt, rail:w.rail, acct:w.acct, gone:false}, busy:false,
+      from:null, back:q.kind==='order'?'pay:'+q.id:'pay:now'};
     payScr.hidden=false; paySh.hidden=false; behind(); drawPay();
     try{ paySh.focus(); }catch(e){}
   }
@@ -5734,7 +5756,7 @@ const CLIENT_JS = `
     if(thTimer){ clearInterval(thTimer); thTimer=null; }
     if(!thSheetEl||thSheetEl.hidden) return;
     thSheetEl.hidden=true; thScrim.hidden=true; behind(); thSay('');
-    try{ var f=thFrom&&thFrom.isConnected?thFrom:(document.getElementById(thFromId)||document).querySelector('.throw'); if(f) f.focus(); }catch(e){}
+    focusBack(thFrom,function(){ return (document.getElementById(thFromId)||document).querySelector('.throw'); });
   }
   /* read only while the Sheet is open and the page is showing; a read that a later one overtook is let go */
   async function thRead(){
@@ -6031,11 +6053,11 @@ const CLIENT_JS = `
     var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;
     prices=x.prices; assoc=x.assoc; card=x.card; curCk=ck||null;
     user=u; session=body.session||'';
-    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
+    if(!same){ orders=[]; pools=[]; claims=[]; draft={}; closePay(true); payDue=null; liveAt=''; ordersFailed=false; readAt=0; thClose(); thPut(null); thOut=[]; thSig=''; thWhy=''; }
     view=!!(OWNER&&body.byMaster);
     if(linkBox) linkBox.hidden=true;
     if(opening) opening.hidden=true;
-    lapse.hidden=true; closeSignedOut();
+    lapse.hidden=true; closeSignedOut(true);
     show(b);
     drawPrices();
     drawKeep();
