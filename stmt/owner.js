@@ -485,7 +485,7 @@ export const OWNER_JS = `
       loadStory(a);
     });
     c.appendChild(grid); c.appendChild(gn);
-    var tick=el('label','tick');
+    var tick=el('label','tick atick');
     box.type='checkbox'; box.checked=!!a.sent; box.disabled=none;
     box.addEventListener('change', async function(){
       var want=box.checked;
@@ -2456,8 +2456,10 @@ export const OWNER_JS = `
     makerSaid[key]=text;
     var line=null, list=document.getElementById(String(key).indexOf('draft:')===0?'makerDraftStatus':'makerReviewStatus');
     [].forEach.call(document.querySelectorAll('#makerReview [data-maker-say], #makerDrafts [data-maker-say]'),function(node){ if(node.getAttribute('data-maker-say')===key) line=node; });
+    /* 13 Oct 2026 (stress, Medium): a card that has gone (the order moved on, the row was decided) hands its answer to the list's line at the head of the
+       part, which the page may be scrolled well below: it is brought into reach, as a card's own line is */
     if(line){ line.textContent=text; withDetails(line,error); if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }
-    else if(list){ list.textContent=text; withDetails(list,error); }
+    else if(list){ list.textContent=text; withDetails(list,error); if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }
   }
   function makerAction(path, body, message, key){
     if(makerBusy) return Promise.resolve();
@@ -3282,8 +3284,9 @@ export const OWNER_JS = `
       [['collect','Collected'],['deliver','Delivered']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; mode.appendChild(option); });
       modeLabel.appendChild(mode); box.appendChild(modeLabel);
       var place=makerField(box,['Delivery place','orderfor.place'],'text',''), want=makerField(box,['Wanted by (optional)','orderfor.want'],'date','');
-      var friendLabel=el('label','tick'), friend=actOn(el('input'),'orderfor.friend'); friend.type='checkbox';
-      friendLabel.appendChild(friend); friendLabel.appendChild(document.createTextNode('For a friend')); friendLabel.hidden=!result.assoc; box.appendChild(friendLabel);
+      var friendLabel=el('label','tick atick'), friend=actOn(el('input'),'orderfor.friend'); friend.type='checkbox';
+      /* 13 Oct 2026 (stress, Low): the tick of the account card's Sent (the input is the 44px tap, the box beside it shows the state), where this was a bare box with a 19px label */
+      friendLabel.appendChild(friend); friendLabel.appendChild(el('span','tickbox')); friendLabel.appendChild(el('span',null,'For a friend')); friendLabel.hidden=!result.assoc; box.appendChild(friendLabel);
       var answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
       var sent=false, pending=false, button=makerButton(box,['Place for them','orderfor.place-order'],async function(){
         if(pending||sent) return;
@@ -3314,6 +3317,7 @@ export const OWNER_JS = `
     if(!poll){
       if(status) status.textContent='Reading.';
       if(rows) rows.textContent='Reading.';
+      var reading0=document.getElementById('makerRefreshSaid'); if(reading0) reading0.textContent='Reading.';
     }
     try{
       makerCashRestore();
@@ -3327,7 +3331,10 @@ export const OWNER_JS = `
     }catch(error){
       if(gen!==makerGen) return;
       nGot('review', error); apply=true;
-      if(!poll){ drawMaker();if(status) refusal(status,error); if(rows) refusal(rows,error); }
+      if(!poll){
+        drawMaker();if(status) refusal(status,error); if(rows) refusal(rows,error);
+        var failed0=document.getElementById('makerRefreshSaid'); if(failed0){ refusal(failed0,error); if(failed0.scrollIntoView) failed0.scrollIntoView({block:'nearest'}); }
+      }
     }finally{ if(gen===makerGen){ reviewReading=false; if(apply) drawNeeds(); } }
   }
   /* 11 Oct 2026: THE PARTS OF ORDERS an order shows in. Waiting on you holds what only he can move (a placed order, a payment they say
@@ -3500,6 +3507,8 @@ export const OWNER_JS = `
       var none=el('p','rnone',p[1]); none.setAttribute('data-in','orders.'+p[0]); list.appendChild(none);
     });
     makerButton(list,['Refresh','maker.refresh'],loadMaker,false);
+    /* 13 Oct 2026 (stress, Medium): Refresh answers under itself; its refusal went to the list's line at the head of Orders, a screen above it */
+    var refreshSaid=el('p','msg osaid'); refreshSaid.id='makerRefreshSaid'; refreshSaid.setAttribute('role','status'); refreshSaid.setAttribute('aria-live','polite'); list.appendChild(refreshSaid);
     drawOrderPane();
     drawDeskRows(draftRoot,queueRoot,pendingRows);
     sweep();
@@ -3544,7 +3553,7 @@ export const OWNER_JS = `
         var follower=group.length>1&&group.every(function(o){ return o.status==='placed'; })&&group[0].id!==order.id;
         var deliver=order.mode==='deliver'&&!follower;
         var chip=makerFee[order.id]||(makerFee[order.id]={value:'',other:''});
-        var otherField=null, previewTurn=0, sig=JSON.stringify(order);
+        var otherField=null, previewTurn=0, sig=JSON.stringify(order), feeRadios=[], winDraw=null;
         /* 12 Oct 2026 (his decision 6 of 11 Oct): THE CARD READS ITS OWN PREVIEW, once, when its order is opened, and again when an input is
            changed; the Preview button is retired. A row of the list reads nothing (only the opened order draws a card), so the Desk is asked
            once for an order he opens. A redraw of the card (a read that changed, a tap) keeps the quote it has, or waits on the one in
@@ -3588,6 +3597,20 @@ export const OWNER_JS = `
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Agreed and sent to the Desk.',order.id);
           },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);
         }
+        /* 13 Oct 2026 (stress, High): A CHOICE THAT DID NOT SAVE IS NOT SHOWN AS CHOSEN. The charge and the time are held on this card until the
+           figures are read; a read that fails (a 500, no connection) leaves the radio he just pressed ticked over figures nobody read. The choice
+           the last good read stood on is put back (chip.kept, win.kept), and the card's line says which did not save. The read itself is unchanged. */
+        function makerPlacedRevert(){
+          var k=chip.kept||{value:'',other:''}, said=[];
+          if(chip.value!==k.value||(chip.value==='other'&&chip.other!==k.other)){
+            chip.value=k.value; chip.other=k.other;
+            feeRadios.forEach(function(r){ r.checked=r.value===chip.value; });
+            if(otherField){ otherField.value=chip.other; otherField.closest('label').hidden=chip.value!=='other'; }
+            said.push('That charge did not save. '+(chip.value===''?'No charge is chosen.':'RM '+(chip.value==='other'?chip.other:chip.value)+' is still chosen.'));
+          }
+          if(winDraw&&win.value!==(win.kept||'')){ win.value=win.kept||''; winDraw(); said.push('That time did not save. The one before it stands.'); }
+          return said.length?said.join(' ')+' ':'';
+        }
         function makerPlacedRead(){
           var delivery=makerPlacedDelivery();
           if(delivery==null){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }
@@ -3601,13 +3624,15 @@ export const OWNER_JS = `
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
             makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash,offerHash:result.offerHash,result:result,key:key,sig:sig};
+            chip.kept={value:chip.value,other:chip.other}; win.kept=win.value;
             makerPlacedShow(makerQuotes[order.id]);
           }).catch(function(error){
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
             delete makerQuotes[order.id];
-            makerPlacedSay(error.message,true,error);
-            makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
+            var back=makerPlacedRevert();
+            makerPlacedSay(back+error.message,true,error);
+            if(makerPlacedDelivery()!=null) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);
           });
         }
         total.addEventListener('input',makerPlacedInvalidate);
@@ -3624,7 +3649,7 @@ export const OWNER_JS = `
           [['0','RM 0'],['10','RM 10'],['15','RM 15'],['other','Other']].forEach(function(opt){
             var label=el('label','salt-option'), radio=el('input','salt-option__input'),
                 face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
-            radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0]; actOn(radio,'order.fee-'+opt[0]);
+            radio.type='radio'; radio.name='makerFee-'+order.id; radio.value=opt[0]; radio.checked=chip.value===opt[0]; actOn(radio,'order.fee-'+opt[0]); feeRadios.push(radio);
             radio.addEventListener('change',function(){
               chip.value=opt[0];
               if(otherField) otherField.closest('label').hidden=opt[0]!=='other';
@@ -3639,6 +3664,10 @@ export const OWNER_JS = `
           otherField.addEventListener('change',makerPlacedRead);
           card.appendChild(fieldset);
         }
+        /* 13 Oct 2026 (stress, Medium): THE FIGURES STAND UNDER THE CHARGE, above the time. They were drawn after the whole Delivery time fieldset, 1,270px down a phone's
+           card, so a charge pressed there had its answer a screen away (the status line of a read, its figures, its failure). The time still re-reads them, and is a
+           fieldset's height below them. */
+        card.appendChild(qsay); card.appendChild(qfigs);
         /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
         var win=makerWin[order.id]||(makerWin[order.id]={value:'',day:''});
         if(deliver&&!order.wantBy){
@@ -3663,7 +3692,7 @@ export const OWNER_JS = `
             });
           }
           ds.addEventListener('change',function(){ win.day=ds.value; makerWinDraw(); });
-          makerWinDraw();
+          makerWinDraw(); winDraw=function(){ if(win.value) win.day=win.value.slice(0,10); ds.value=win.day; makerWinDraw(); };
           wset.appendChild(wgrid);
           wset.appendChild(el('p','salt-insight',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'. Choose another and they will be asked.'
             :'They want it as soon as it can; choose a window and it goes with Agree.'));
@@ -3675,7 +3704,6 @@ export const OWNER_JS = `
           if(chip.value==='0'||chip.value==='10'||chip.value==='15') return Number(chip.value);
           return null;
         }
-        card.appendChild(qsay); card.appendChild(qfigs);
       }else if(againAck){
         quoteStart=makerAcceptAgain(card,order,acts);
       }else if(order.status==='acknowledged'){
@@ -3917,9 +3945,11 @@ export const OWNER_JS = `
     makerButton(root,['Save the weekly hours','hours.save'],function(){
       var result={days:[]};
       [].forEach.call(weekdays.children,function(row){ var d=row._hours; result.days.push(d.enabled.checked?{open:d.open.value,close:d.close.value}:null); });
-      return refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Weekly hours saved.'; })
-        .catch(function(error){ refusal(document.getElementById('makerHoursMessage'),error); });
+      return refs('/all/maker/hours',{schedule:result}).then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('week','Weekly hours saved.'); })
+        .catch(function(error){ hoursSaid('week',null,error); });
     },true);
+    /* 13 Oct 2026 (stress, Medium): the answer to Save stands under Save. It lay under the shop-for-now controls below, a screen away at 1280px. */
+    var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
     /* the shop held for now is two tiles over the field that says what the one chosen does: Closed until, or Open until; Kuala Lumpur time */
     var override=el('div','maker-fields'), kind=makerTilesIn(override,['The shop, for now','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
     var until=makerField(override,['Closed until','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
@@ -3929,15 +3959,24 @@ export const OWNER_JS = `
     root.appendChild(override);
     makerButton(root,['Set it','hours.override-set'],function(){
       var when=Date.parse(until.value+'+08:00');
-      if(!Number.isFinite(when)){ document.getElementById('makerHoursMessage').textContent='Choose an end time.'; return; }
+      if(!Number.isFinite(when)){ hoursSaid('now','Choose an end time.'); return; }
       return refs('/all/maker/hours',{manual:{open:kind.value==='true',until:new Date(when).toISOString()}})
-        .then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Saved for now.'; })
-        .catch(function(error){ refusal(document.getElementById('makerHoursMessage'),error); });
+        .then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('now','Saved for now.'); })
+        .catch(function(error){ hoursSaid('now',null,error); });
     },false);
     makerButton(root,['Back to the weekly hours','hours.override-clear'],function(){
-      return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); document.getElementById('makerHoursMessage').textContent='Back on the weekly hours.'; })
-        .catch(function(error){ refusal(document.getElementById('makerHoursMessage'),error); });
+      return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })
+        .catch(function(error){ hoursSaid('now',null,error); });
     },false);
+  }
+  /* an answer on Shop's hours stands under the control that asked: the weekly save under Save, the shop held for now under Set it and Back to the weekly
+     hours (#makerHoursMessage, which sits right below them); the other line is cleared, so one answer is on screen, and it is scrolled into reach */
+  function hoursSaid(where,text,error){
+    var mine=document.getElementById(where==='week'?'makerHoursSaved':'makerHoursMessage'), other=document.getElementById(where==='week'?'makerHoursMessage':'makerHoursSaved');
+    if(other) other.textContent='';
+    if(!mine) return;
+    if(error) refusal(mine,error); else mine.textContent=text;
+    if(mine.scrollIntoView) mine.scrollIntoView({block:'nearest'});
   }
   var tiers=[];
   async function loadLinks(quiet){
@@ -3948,7 +3987,7 @@ export const OWNER_JS = `
       var j=await refs('/all/refs'); nGot('links');
       var diff=changed('links',[j.refs,j.tiers]);
       links=j.refs||[]; tiers=j.tiers||[]; linksRead=true;
-      if(diff||!poll){ drawLinks(); drawNeeds(); if(!poll) say(''); }
+      if(diff||!poll){ drawLinks(); drawNeeds(); if(!poll){ say(''); linkSay(''); } }
     }
     catch(e){ nGot('links', e); if(!poll) sayFail(e); }
     finally{ linksBusy=false; }
@@ -4485,17 +4524,26 @@ export const OWNER_JS = `
   document.getElementById('gmake').addEventListener('click', async function(){
     var b=this, intro=document.getElementById('gintro').value,
         label=document.getElementById('glabel').value;
-    if(!String(intro||'').trim()){ say('Name the customer whose friend it is.','bad'); return; }
-    b.disabled=true; say('Making it...','wait');
+    if(!String(intro||'').trim()){ linkSay('Name the customer whose friend it is.','bad'); return; }
+    b.disabled=true; linkSay('Making it...','wait');
     try{
       var j=await refs('/all/refs', {introducer:intro, label:label});
       links.unshift(j.ref); drawLinks();
       document.getElementById('glabel').value='';
       document.getElementById('gintro').value='';
-      say('Made. The QR opens it.');
-    }catch(e){ sayFail(e); }
+      linkSay('Made. The QR opens it.');
+      /* the new link is drawn among the older ones, below the standing five: it is brought into view, as the answer is */
+      var fresh=document.querySelector('#glist [data-link="'+j.ref.id+'"]'); if(fresh&&fresh.scrollIntoView) fresh.scrollIntoView({block:'nearest'});
+    }catch(e){ linkSay(e.message,'bad',e); }
     b.disabled=false;
   });
+  /* 13 Oct 2026 (stress, Medium): Make a link answers under its button (#gmsg), not on the page's one line at the foot of Customers, 4,000px away */
+  function linkSay(t,cls,error){
+    var m=document.getElementById('gmsg'); if(!m) return;
+    m.textContent=t||''; m.className='msg osaid'+(cls?' '+cls:'');
+    if(error) withDetails(m,error);
+    if(t&&m.scrollIntoView) m.scrollIntoView({block:'nearest'});
+  }
   /* ---- THE ASSOCIATES REPORT CARD (v691) ------------------------------------------------------
      One card an associate, per book: what they bought, what they sold for him, what they brought
      in, their share and their stars, and the reward in UNITS with a bar for how far through the

@@ -86,7 +86,7 @@
  {
   "name": "a control a redraw replaced is not found again",
   "file": "stmt/page.js",
-  "find": "if(!(b&&b.isConnected)&&q.again) b=q.again();",
+  "find": "if(!(b&&b.isConnected)&&again) b=again();",
   "replace": ""
  },
  {

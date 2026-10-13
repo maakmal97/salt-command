@@ -673,6 +673,16 @@ through the closes they already make. A page that was shut by something else (Ho
 Sheets of its own and is left as it was. **The yes or no's danger action is guarded**: its handler returns unless its own Sheet is still the open one, so a second tap
 or a stale button cannot send a cancel twice. A device that has not chosen a look is asked at its first sign-in, so a test that reads `[inert]` stores a look first.
 
+**Every Sheet gives the focus back to the control that opened it, through one road** (13 Oct 2026, the stress run's cosmetic finding; `test/counter-stress-fixes.mjs`, its
+mutations in `test/counter-stress-fixes.mutations.json`): `focusBack(from, again)`, after `behind()`, focuses the opener, or, if a redraw replaced it, the control
+`again` finds (`backFind(key)`: the control carries `data-back`, as the yes or no's opener carries `data-yn`). The order sheet, the yes or no, the pay Sheet (Home's Pay
+`pay:now`, the overdue Pay `pay:od`, an order's `pay:<id>`), the signed-out Sheet (to Sign in on the bar), the bell, the look Sheet, the thread and Sign in another device
+(`dev:another`, whose list is drawn again as it closes, so `drawDev` hands the focus to the new button) all end there. A lock, a sign-in done or another account passes
+`quiet` (`=== true`; a close wired straight to an event gets the event and is not quiet) so focus is not sent to a page that is leaving. **A Pay radio chosen by the
+keyboard keeps the focus**: `drawPay` rebuilds the sheet, so it reads the radio that holds focus (its name and value) before it clears the body and focuses the matching
+one after. **The yes or no over the New order sheet closes alone** (`ynKeys` stops Escape, `ynOpen` shuts any question already open first): the stress run's "did not
+close" on Cancel this order there was its runner counting the order sheet, which correctly stays beneath, as a Sheet that would not close; the page was not changed for it.
+
 The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
 `test/counter-account-door.mutations.json`) drives all of it through the generated page in jsdom.
 
@@ -1615,6 +1625,19 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`makerQuotes`, held against the order as it stood) or waits on the read that is out (`makerPv`), and never asks twice for the same figures.
   A delivery with no charge chosen reads nothing and says to choose one. A read that fails leaves no Accept, says why, and offers Read the figures
   again (`order.reread`). Nothing the request carries has changed: the route, the body `{total, delivery}`, Accept's digest and its single flight.
+  **A charge or a time that did not save is not shown as chosen** (13 Oct 2026, the stress run's High finding; `test/admin-stress-fixes.mjs`, its mutations in
+  `test/admin-stress-fixes.mutations.json`): the card holds the choice the last good read stood on (`chip.kept`, `win.kept`), and a read that fails (a 500, no
+  connection, a refusal) puts the radios, and the figure typed under Other, back to it, with the card's line saying "That charge did not save" (or "That time")
+  and what is still chosen; Read the figures again then reads for the choice put back, and with none chosen there is nothing to read.
+  **An answer stands beside the control that asked** (13 Oct 2026, the stress run's Medium finding; same test): Save on Shop's weekly hours answers in
+  `#makerHoursSaved` under it (`hoursSaid('week', ...)`; Set it and Back keep `#makerHoursMessage` under theirs), Make a link in `#gmsg` under it (`linkSay`)
+  with the new link scrolled into reach, Refresh in `#makerRefreshSaid` under it, and an order card's own line (the #120 status) stands under the delivery charge,
+  above the time and the figures, so that it is not a screen below the radio that asked. Each is a polite status line and is brought into reach (`block:
+  'nearest'`, clear of the bar by `.adm .osaid`'s scroll margin); an answer whose card has gone from the list scrolls the list's line instead. The page's one line
+  at the foot of Customers keeps the rest.
+  **For a friend is the tick Sent is** (13 Oct 2026, the stress run's Low finding; same test): the label draws the box beside the input (`tickbox`) and the rules
+  are `.adm .atick` (a class only his page draws, which the suite requires of a rule under `.adm`), not `.adm .oacct .tick`, so its input is the 44px tap and its label measures 44px, `width:fit-content` so a tap beside the words toggles
+  nothing. It was measured 102 by 19; the hit test in Chromium is in the pull request.
   **The stage foot** (Phase 2a): the moves of the card's stage stand together at its foot (`makerCardFoot`, `.maker-foot`), the filled one first and the
   quiet ones beside it, then the card's answer line: a placed order's Accept (Send for their yes, when the figures raise the price or change the
   window) and Decline, or Withdraw the offer while an offer is out; Accept again, with the stages he rejected offered again; Ready to collect and

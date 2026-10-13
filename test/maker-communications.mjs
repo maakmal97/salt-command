@@ -471,18 +471,18 @@ export async function run({ ok }) {
       && doc.getElementById("makerBulletin").textContent.includes("Kept notice draft.")
       && /whether the first one went out is not known/.test(doc.getElementById("makerBulletinStatus").textContent),
       "Notice readback distinguishes another concurrent notice while preserving the original intended body and notification uncertainty.");
-    /* 11 Oct 2026: each of the three hours buttons stays off until its answer lands, where its callback let go at once (Shop, Hours) */
+    /* 11 Oct 2026: each of the three hours buttons stays off until its answer lands, where its callback let go at once (Shop, Hours). 13 Oct 2026: Save answers on the line right under it (#makerHoursSaved), the other two on the one below them */
     doc.querySelector('[data-act="part.shop.hours"]').click();
     const hoursBtn = (label) => [...doc.querySelectorAll("#makerSchedule button")].find((button) => button.textContent === label);
     const holdHours = async (label, ready, saved) => {
       await until(() => hoursBtn(label));
-      doc.getElementById("makerHoursMessage").textContent = "";
+      doc.getElementById("makerHoursMessage").textContent = ""; if (doc.getElementById("makerHoursSaved")) doc.getElementById("makerHoursSaved").textContent = "";
       if (ready) ready();
       let release; hoursHold = new Promise((resolve) => { release = resolve; }); hoursHeld = 0;
       const button = hoursBtn(label); button.click();
       const out = await until(() => hoursHeld === 1), off = button.disabled;
       release(); hoursHold = null;
-      const back = await until(() => saved.test(doc.getElementById("makerHoursMessage").textContent) && hoursBtn(label) && !hoursBtn(label).disabled);
+      const back = await until(() => saved.test(doc.getElementById(label === "Save the weekly hours" ? "makerHoursSaved" : "makerHoursMessage").textContent) && hoursBtn(label) && !hoursBtn(label).disabled);
       return { out, off, back };
     };
     for (const [label, ready, saved] of [

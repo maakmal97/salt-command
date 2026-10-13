@@ -2,7 +2,7 @@
   {
     "name": "an answer is written to the list's line again, not the card's foot",
     "file": "stmt/owner.js",
-    "find": "if(line){ line.textContent=text; withDetails(line,error); if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }\n    else if(list){ list.textContent=text; withDetails(list,error); }",
+    "find": "if(line){ line.textContent=text; withDetails(line,error); if(line.scrollIntoView) line.scrollIntoView({block:'nearest'}); }\n    else if(list){ list.textContent=text; withDetails(list,error); if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }",
     "replace": "if(list) list.textContent=text;"
   },
   {
@@ -26,7 +26,7 @@
   {
     "name": "an answer whose card has gone is lost",
     "file": "stmt/owner.js",
-    "find": "\n    else if(list){ list.textContent=text; withDetails(list,error); }",
+    "find": "\n    else if(list){ list.textContent=text; withDetails(list,error); if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }",
     "replace": ""
   },
   {
