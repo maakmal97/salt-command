@@ -1,6 +1,6 @@
 {
- "v": "v1091",
- "stamped": "13 Oct 2026, 12:59 KL",
+ "v": "v1093",
+ "stamped": "13 Oct 2026, 16:39 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 15.14,
+  "STATED_STOCK": 14.14,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -7475,8 +7475,8 @@
     "total": 100,
     "cash": 100,
     "date": "2026-10-13",
-    "deliveredQty": 0,
-    "note": "<b>NEW SALE ON 13 OCT: 1 UNIT OF SALT TO CZ5-TM FOR RM100.</b> Ordered on the statements site, order 20261013035239-2wgevw, acknowledged, to collect, placed at RM130 and priced at RM100 on this order. Preapproved by phone. The rate of RM100 a unit is above the desk's floor of RM58 and below its ask of RM140 for 1 unit. CZ5-TM has 4 orders, a median rate of RM110, a range of RM95 to RM110, RM0 outstanding before and 0 units on credit, against a credit cap of 1 unit. The row carries the sale's own cost of RM58 a unit, set off the latest purchase, not the inventory's rate of RM56. The drafter raised no flags. Open: RM100 to collect and 1 unit to hand over.",
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON S260, 13 OCT: 1 UNIT OF SALT COLLECTED BY CZ5-TM.</b> For order 20261013035239-2wgevw, 1 unit for RM100, delivered quantity moves from 0 to 1, delivered on is set to 13 Oct and handover to collected. Preapproved by phone. The row was already paid, RM100 on 13 Oct, so the correction moves no cash. The rate of RM100 a unit is above the desk's floor of RM58 and below its ask of RM140 for 1 unit. CZ5-TM has 5 orders, a median rate of RM110, a range of RM95 to RM110, RM0 outstanding before and 0 units on credit. The row keeps its own cost. The drafter flagged that the row carries a trail of 2 steps which will no longer add up to the figure set directly; the correction is recorded beside them, so the flag is answered. Open: nothing. <b>NEW SALE ON 13 OCT: 1 UNIT OF SALT TO CZ5-TM FOR RM100.</b> Ordered on the statements site, order 20261013035239-2wgevw, acknowledged, to collect, placed at RM130 and priced at RM100 on this order. Preapproved by phone. The rate of RM100 a unit is above the desk's floor of RM58 and below its ask of RM140 for 1 unit. CZ5-TM has 4 orders, a median rate of RM110, a range of RM95 to RM110, RM0 outstanding before and 0 units on credit, against a credit cap of 1 unit. The row carries the sale's own cost of RM58 a unit, set off the latest purchase, not the inventory's rate of RM56. The drafter raised no flags. Open: RM100 to collect and 1 unit to hand over.",
     "rid": "s260",
     "amend": [
      {
@@ -7492,9 +7492,21 @@
       "cash": 100,
       "kg": 0,
       "note": "<b>PAYMENT ON 13 OCT: RM100 FROM CZ5-TM AGAINST ORDER s260.</b> Paid on the statements site, order 20261013035239-2wgevw, by qr via tng, preapproved by phone. The order is 1 unit for RM100, so cash moves from RM0 to RM100 and no units move. The sale's rate of RM100 a unit was set on the order itself, so this row adds no new rate to test against the desk's floor and ask. CZ5-TM has 5 orders, a median rate of RM110, a range of RM95 to RM110, RM100 outstanding before this payment and 0 units on credit, with RM0 defaulted. The row carries no cost of its own. The drafter raised no flags. Open: RM0 to collect and 1 unit to hand over."
+     },
+     {
+      "date": "2026-10-13",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON S260, 13 OCT: 1 UNIT OF SALT COLLECTED BY CZ5-TM.</b> For order 20261013035239-2wgevw, 1 unit for RM100, delivered quantity moves from 0 to 1, delivered on is set to 13 Oct and handover to collected. Preapproved by phone. The row was already paid, RM100 on 13 Oct, so the correction moves no cash. The rate of RM100 a unit is above the desk's floor of RM58 and below its ask of RM140 for 1 unit. CZ5-TM has 5 orders, a median rate of RM110, a range of RM95 to RM110, RM0 outstanding before and 0 units on credit. The row keeps its own cost. The drafter flagged that the row carries a trail of 2 steps which will no longer add up to the figure set directly; the correction is recorded beside them, so the flag is answered. Open: nothing.",
+      "cost": 58
      }
     ],
-    "paidOn": "2026-10-13"
+    "paidOn": "2026-10-13",
+    "deliveredOn": "2026-10-13",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-13: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-13; handover (unset) to collected",
+    "cost": 58
    }
   ],
   "contacts": [
@@ -8149,9 +8161,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-13T04:57:58.015Z",
+  "QUEUE_COMMITTED": "2026-10-13T08:37:38.403Z",
   "PRICING": {
-   "takenAt": "2026-10-13T04:59:30.132Z",
+   "takenAt": "2026-10-13T08:39:12.944Z",
    "sizes": [
     0.5,
     1,
@@ -8205,7 +8217,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "4 priced sales carry no cost of their own"
+     "title": "3 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -9459,15 +9471,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.32608695652173914
+         "v": 0.3225806451612903
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07986851599454824,
        "avgDel": {
-        "n": 206,
-        "kg": 522.56,
-        "mean": 2.5367
+        "n": 207,
+        "kg": 523.56,
+        "mean": 2.5293
        }
       },
       "policy": {
@@ -15023,26 +15035,12 @@
      ]
     }
    },
-   "v": "v1091"
+   "v": "v1093"
   },
   "OPEN": {
-   "at": "2026-10-13T04:59:30.598Z",
-   "count": 9,
+   "at": "2026-10-13T08:39:13.546Z",
+   "count": 8,
    "byKey": {
-    "CZ5-TM|2026-10-13|100": {
-     "d": "2026-10-13",
-     "p": "CZ5-TM",
-     "dir": "S",
-     "q": 1,
-     "t": 100,
-     "cash": 100,
-     "mv": 0,
-     "st": "oweStock",
-     "oweUnits": 1,
-     "rid": "s260",
-     "paidOn": "2026-10-13",
-     "key": "CZ5-TM|2026-10-13|100"
-    },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
      "p": "CJ4-BJ",
@@ -15178,13 +15176,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 15.14,
+     "onHand": 14.14,
      "free": 7.64,
-     "owedOut": 7.5,
+     "owedOut": 6.5,
      "coverDays": 1.4,
      "rate": 4.76,
      "owedToYou": 340,
-     "promised": 7.5,
+     "promised": 6.5,
      "short": 0
     },
     "oil": {
@@ -15239,7 +15237,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1091"
+   "v": "v1093"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15247,7 +15245,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1091"
+   "v": "v1093"
   },
   "REWARD": {
    "stated": {
@@ -15259,7 +15257,7 @@
      }
     }
    },
-   "v": "v1091"
+   "v": "v1093"
   }
  }
 }
