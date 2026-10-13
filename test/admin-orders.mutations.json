@@ -634,5 +634,35 @@
   "file": "stmt/page.js",
   "find": "justify-content:center;text-align:right;gap:4px",
   "replace": "justify-content:center;gap:4px"
+ },
+ {
+  "name": "every Entry row says Open again",
+  "file": "stmt/owner.js",
+  "find": "title.appendChild(el('span',null,name)); main.appendChild(title);\n      row.appendChild(main);",
+  "replace": "title.appendChild(el('span',null,name)); main.appendChild(title); main.appendChild(el('span','salt-inbox-row__action','Open'));\n      row.appendChild(main);"
+ },
+ {
+  "name": "a reward offset is listed as a customer's",
+  "file": "stmt/owner.js",
+  "find": "kind=offer.associate===false?'customer':'reward'",
+  "replace": "kind=offer.associate===false?'reward':'customer'"
+ },
+ {
+  "name": "the offsets instruction paragraph returns",
+  "file": "stmt/owner.js",
+  "find": "parent.appendChild(offsets);",
+  "replace": "parent.appendChild(offsets);offsets.appendChild(el('p','msg','One unit off the oldest unpaid order of someone holding a reward.'));"
+ },
+ {
+  "name": "the second Record heading returns over the forms",
+  "file": "stmt/page.js",
+  "find": "aria-label=\"Record\"></section>",
+  "replace": "aria-label=\"Record\"><h2>Record</h2></section>"
+ },
+ {
+  "name": "the offset button says Send the offset again",
+  "file": "stmt/owner.js",
+  "find": "makerButton(row,['Add','record.offset.send']",
+  "replace": "makerButton(row,['Send the offset','record.offset.send']"
  }
 ]

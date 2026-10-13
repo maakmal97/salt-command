@@ -78,16 +78,16 @@ export async function run({ ok, pageWork }) {
   try {
     const d = p.d;
     await p.click(byAct(d, "nav.record")); await p.click(byAct(d, "part.record.approve"));
-    const row = d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]'), box = row && detailsOf(row, "row.proposed", "d-1");
-    ok(!!box && !box.open && same(pairs(box), [["Reference", "d-1"], ["Units", "2.5 units"], ["Price", "RM 280.00"], ["Cost", "RM 150.00"], ["Row reference", "s-77"], ["Who", "CX1-ZED"],
+    const row = d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]'), box = row && row.querySelector(".rdet--row");
+    ok(!!box && box.hidden && same(pairs(box), [["Reference", "d-1"], ["Units", "2.5 units"], ["Price", "RM 280.00"], ["Cost", "RM 150.00"], ["Row reference", "s-77"], ["Who", "CX1-ZED"],
       ["Order date", "10 Oct 2026"], ["Cancelled", "No"], ["Units delivered", "1 unit"], ["Mixed key", "x"], ["Sizes", "1, 5, 10"], ["Nested", "Price: RM 5.00, Units: 1 unit"]]),
     "a Desk row's Details is the draft's reference then the row's figures in his words (a size in units, a sum in RM, a day, a yes as Yes or No, a name with no word spaced out, a list on one line, a figure inside a figure on one line), and a field that is only a book's name is left out, since no book has a name on this page: " + JSON.stringify(box && pairs(box)));
     ok(!!box && !/\b(salt|oil|candy|rice|spare)\b/i.test(box.textContent), "and no book's name is read out in it: " + (box && box.textContent));
     ok(!!row && !row.querySelector("pre") && !/[{}[\]"]/.test(box.textContent), "never JSON: no preformatted block and no brace or quote in it: " + (box && box.textContent));
     const trip = d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]');
-    ok(!!trip && [...trip.querySelectorAll('summary[data-act="row.proposed"]')].map((s) => s.getAttribute("data-key")).sort().join() === "d-2,d-3"
-      && same(pairs(detailsOf(trip, "row.proposed", "d-3")), [["Reference", "d-3"], ["Units", "1 unit"], ["Price", "RM 50.00"], ["Trip", "t1"]]),
-    "a trip's second row has its own Details, under its own reference: " + (trip && JSON.stringify(pairs(detailsOf(trip, "row.proposed", "d-3")))));
+    const tp = trip ? [...trip.querySelectorAll(".rdet--row")].map(pairs) : [];
+    ok(!!trip && tp.length === 2 && same(tp[1], [["Reference", "d-3"], ["Units", "1 unit"], ["Price", "RM 50.00"], ["Trip", "t1"]]) && !d.querySelector('#makerDrafts [data-maker-card="draft:d-3"]'),
+    "a trip's second row has its own detail, under its own reference, in the trip's one card: " + JSON.stringify(tp));
     const held = d.querySelector('#makerQueueReview [data-key="2026-10-09T14:11:05.000Z"]'), refused = d.querySelector('#makerQueueReview [data-key="q-2"]');
     const hb = held && detailsOf(held, "queue.details", "2026-10-09T14:11:05.000Z"), rb = refused && detailsOf(refused, "queue.details", "q-2");
     ok(!!hb && !hb.open && same(pairs(hb), [["Reference", "2026-10-09T14:11:05.000Z"], ["Sent", "09 Oct 2026, 22:11"], ["State", "Waiting for the Desk"]])
@@ -102,10 +102,11 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await p.click(byAct(d, "nav.record")); await p.click(byAct(d, "part.record.approve"));
     p.posts.length = 0;
-    const boxes = [...d.querySelectorAll("details.rdet")];
+    const boxes = [...d.querySelectorAll("details.rdet")], heads = [...d.querySelectorAll('#makerDrafts [data-act="row.proposed"]')];
     boxes.forEach((b) => { b.open = true; });
+    heads.forEach((h) => h.click());
     await p.work.quiet();
-    ok(boxes.length >= 5 && boxes.every((b) => b.querySelector("summary").getAttribute("data-act")) && p.posts.length === 0,
+    ok(boxes.length >= 2 && heads.length >= 2 && boxes.every((b) => b.querySelector("summary").getAttribute("data-act")) && p.posts.length === 0,
       "opening every Details on Record > Approve sends nothing, and each is a control with an act: " + boxes.length + " " + JSON.stringify(p.posts));
     ok(boxes.every((b) => b.querySelector(".salt-ledger") && b.querySelectorAll(".salt-ledger__row").length >= 1), "each holds a list of names and values");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }

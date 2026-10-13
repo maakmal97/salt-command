@@ -2125,21 +2125,25 @@ export const OWNER_JS = `
       catch(error){refusal(redeemStatus,error);}
     },false);
     var offsets=makerForm('entry');offsets.appendChild(el('h3',null,'Offsets'));
-    offsets.appendChild(el('p','msg','One unit off the oldest unpaid order of someone holding a reward.'));
     parent.appendChild(offsets);
     var offerDate=makerField(offsets,['Date','record.offset.date'],'date',today), offerStatus=makerStatus(offsets),
-      offerList=el('div','maker-offers');
-    offsets.appendChild(offerList);
+      /* two lists, never one: a customer's offset and an associate's reward offset. The Counter's answer names no kind; it offers only an associate's reward
+         (the holders of a reward), so an offer is a customer's only when it says associate:false */
+      offerLists={customer:el('div','maker-offers'), reward:el('div','maker-offers')};
+    offerLists.customer.setAttribute('data-offers','customer'); offerLists.reward.setAttribute('data-offers','reward');
+    [['customer','Customer offsets'],['reward','Associate reward offsets']].forEach(function(k){ offsets.appendChild(el('h4','maker-offers__head',k[1])); offsets.appendChild(offerLists[k[0]]); });
     var offerLoad=async function(){
       offerStatus.textContent='Reading.';
       try{
         var read=await refs('/all/maker/offsets');
-        offerList.textContent='';
-        offerStatus.textContent=read.offers.length?read.offers.length+' offered.':'No offsets to offer.';
+        offerLists.customer.textContent=''; offerLists.reward.textContent='';
+        offerStatus.textContent='';
         read.offers.forEach(function(offer){
-          var row=el('div','maker-offer'); row.setAttribute('data-key',offer.rid);
-          row.appendChild(el('p','maker-facts',offer.code+': '+units(offer.units)+' ('+rm(offer.rm)+') off the order of '+(fmtWhen(offer.saleDate)||'an undated day')+'.'));
-          makerButton(row,['Send the offset','record.offset.send'],async function(send){
+          var row=el('div','maker-offer'), kind=offer.associate===false?'customer':'reward'; row.setAttribute('data-key',offer.rid);
+          var facts=el('span','maker-offer__what'); facts.appendChild(el('span','maker-offer__code',offer.code));
+          facts.appendChild(el('span','maker-offer__fig',units(offer.units)+' ('+rm(offer.rm)+') off the order of '+(fmtWhen(offer.saleDate)||'an undated day')));
+          row.appendChild(facts);
+          makerButton(row,['Add','record.offset.send'],async function(send){
             offerStatus.textContent='Sending.';
             try{
               await send('/all/maker/inputs/offset',{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value});
@@ -2148,8 +2152,9 @@ export const OWNER_JS = `
               loadMaker();
             }catch(error){refusal(offerStatus,error);}
           },true);
-          offerList.appendChild(row);
+          offerLists[kind].appendChild(row);
         });
+        ['customer','reward'].forEach(function(k){ if(!offerLists[k].childElementCount) offerLists[k].appendChild(el('p','rnone','None to offer.')); });
       }catch(error){refusal(offerStatus,error);}
     };
     offerLoad();
@@ -2780,15 +2785,19 @@ export const OWNER_JS = `
     Object.keys(row||{}).forEach(function(k){ var v=rowValue(k,row[k]); if(v!=='') list.push([rowKey(k),v]); });
     return list;
   }
-  function detailBox(act,key,pairs){
-    var box=el('details','rdet'), list=el('div','salt-ledger salt-ledger--plain');
-    box.appendChild(actOn(el('summary','salt-ghost','Details'),act,key));
+  function detailList(pairs){
+    var list=el('div','salt-ledger salt-ledger--plain');
     pairs.forEach(function(p){
       if(p[1]==null||p[1]==='') return;
       var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
       l.appendChild(el('span','salt-ledger__label',p[0])); l.appendChild(el('span','salt-ledger__value',String(p[1]))); r.appendChild(l); list.appendChild(r);
     });
-    box.appendChild(list); return box;
+    return list;
+  }
+  function detailBox(act,key,pairs){
+    var box=el('details','rdet');
+    box.appendChild(actOn(el('summary','salt-ghost','Details'),act,key));
+    box.appendChild(detailList(pairs)); return box;
   }
   /* Cancel retained input, wherever it is offered: the unsent copy on this device goes, and what the Desk server already holds does not. The opener carries its key (ynTag). */
   function retainedCancel(opener,line,done){
@@ -2870,10 +2879,10 @@ export const OWNER_JS = `
       if(form.hasAttribute('data-formmenu')) return;
       var name=form.querySelector('h3').textContent, slug=formSlug(name), part=form.getAttribute('data-in').replace('record.','');
       form.setAttribute('data-form',slug);
-      var row=el('button','salt-inbox-row formrow'), main=el('span','salt-inbox-row__main'), title=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
+      var row=el('button','salt-inbox-row formrow'), main=el('span','salt-inbox-row__main'), title=el('span','salt-inbox-row__title');
       row.type='button'; actOn(row,'record.form',slug);
-      title.appendChild(el('span',null,name)); main.appendChild(title); side.appendChild(el('span','salt-inbox-row__action','Open'));
-      row.appendChild(main); row.appendChild(side);
+      title.appendChild(el('span',null,name)); main.appendChild(title);
+      row.appendChild(main);
       row.addEventListener('click', function(){ openForm(slug); });
       lists[part].appendChild(row);
     });
@@ -2904,13 +2913,13 @@ export const OWNER_JS = `
     try{ var row=was&&document.querySelector('#makerMenu [data-act="record.form"][data-key="'+was+'"]'); if(row&&row.focus) row.focus(); }catch(x){}
   }
   async function loadMakerInputs(){
-    var box=document.getElementById('makerInputs'); if(!box||box.childElementCount>1) return;
+    var box=document.getElementById('makerInputs'); if(!box||box.hasAttribute('data-read')) return; box.setAttribute('data-read','');
     var note=el('p','msg','Reading.'); note.setAttribute('role','status'); box.appendChild(note);
     try{
       var context=await refs('/all/maker/inputs');
       makerRecovery(box);
       if(!Array.isArray(context.products)||!context.products.length) throw new Error('The Desk is not ready. Try again in a minute.');
-      note.textContent='Everything here waits for your approval under Approve.';
+      note.remove();
       var countFrom=box.children.length;
       var product=makerTilesIn(box,['Book','record.count.book'],context.products.map(bookItem));
       var date=makerField(box,['Counted on','record.count.date'],'date',''), qty=makerField(box,['Units on the shelf','record.count.units'],'number','', '0.01');
@@ -3964,18 +3973,26 @@ export const OWNER_JS = `
      with one Approve. Both moves ask on the page's Sheet. */
   function approveReading(card,reading,key){
     var figs=readingFigures(reading);
-    if(figs.length) card.appendChild(metrics(figs));
+    if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); }
     var flags=reading.flags||[];
     if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); }); card.appendChild(chips); }
     if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));
     /* the row's figures as names and values, the draft's reference first (Phase 4c); the key is the draft's id */
-    card.appendChild(detailBox('row.proposed',key,rowPairs(reading.row,key)));
+    var panel=el('div','rdet rdet--row'); panel.hidden=true; panel.appendChild(detailList(rowPairs(reading.row,key))); card.appendChild(panel);
   }
   /* an entry waiting for the Desk, by its moment when it has one: Entry of 09 Oct 2026, 14:11 */
   function entryLine(entry){ var at=isoAt(entry.id)||entry.date||''; return 'Entry'+(at?' of '+fmtWhen(at):''); }
   function drawDeskRows(draftRoot,queueRoot,pendingRows){
+    var tripsDrawn={};
     pendingRows.forEach(function(draft){
-      var card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve'), entry=draft.entry||{}, head=el('div','salt-approve__head');
+      /* a trip is one card, drawn once, whichever of its rows comes first */
+      var tid=tripOf(draft); if(tid&&tripRows(draft).length){ if(tripsDrawn[tid]) return; tripsDrawn[tid]=true; }
+      var card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), entry=draft.entry||{}, head=el('button','salt-approve__head apphead');
+      /* the row's Details is the tap on the card: the head is its control, a tap anywhere on the card that is not a button of its own does the same */
+      head.type='button'; actOn(head,'row.proposed',draft.id); head.setAttribute('aria-expanded','false');
+      function toggle(){ var open=head.getAttribute('aria-expanded')!=='true'; head.setAttribute('aria-expanded',String(open)); [].forEach.call(card.querySelectorAll('.rdet--row'),function(n){ n.hidden=!open; }); }
+      head.addEventListener('click',function(ev){ ev.stopPropagation(); toggle(); });
+      card.addEventListener('click',function(ev){ if(!ev.target.closest('button,a,input,select,textarea,summary')) toggle(); });
       head.appendChild(el('span','salt-approve__party',entry.party||'no code'));
       var when1=fmtWhen(entry.date||entry.payload&&entry.payload.date||'');
       head.appendChild(el('span','salt-approve__entry',entryWord(entry)+(when1?' on '+when1:'')));
