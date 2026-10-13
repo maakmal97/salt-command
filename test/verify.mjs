@@ -53780,6 +53780,13 @@ await (async () => {
       && !JSON.stringify(newPlacement.body).includes("Invented Road")
       && !JSON.stringify(newPlacement.body).includes("3.234567"),
       "Network placement can file a new Maps address and exact point encrypted while queueing only its official locality point");
+    placeTexts[0].value = "Jalan Foo, Pudu";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the street-and-locality placement settles");
+    const streetPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
+    ok(JSON.stringify(streetPlacement?.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
+      && !(admin.window.localStorage.getItem("saltMakerLocalWords") || "").includes("Jalan Foo"),
+      "a typed street, Locality files the matched locality and the phone keeps no street word");
     nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
     devicePairRevision = 10; devicePairConflict = true;
     tile(addId, "Role", "customer");
