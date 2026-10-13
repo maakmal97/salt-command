@@ -52430,6 +52430,11 @@ await (async () => {
   await (await import("./maker-drift.mjs")).run({ ok });
 })();
 
+section("Counter Admin Make partner: the Desk entry, drift books only, owner and bridge key, one retained retry");
+await (async () => {
+  await (await import("./maker-partner.mjs")).run({ ok, KV, worker, handleMaker, REPO });
+})();
+
 section("Counter input receipts: confirmed completion and immutable uncertain retries");
 await (async () => {
   await (await import("./maker-input-receipts.mjs")).run({ ok, pageWork });

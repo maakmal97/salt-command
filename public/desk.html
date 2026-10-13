@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="35c648217bd5ea27";
+var SALT_BUILD_ID="216082b8c540daa2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6498,7 +6498,7 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))
@@ -9419,7 +9419,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1098","d":"13 Oct 2026","t":"CI5-PER'S LOCALITY FILED: PERMAISURI","n":["<b>A LOCALITY BESIDE THE POINT.</b> CI5-PER was registered from Counter Admin at 18:44 with its point and no locality, so the Coverage map could not say where they are in words. Permaisuri, the one listed locality at that point, is filed beside it on his word of 13 Oct 2026. Nothing prices; no stock or money moves. The road that dropped the locality is fixed separately.","<b>THE PROOFS.</b> The v680 section: every party filed carries a locality beside its point, red on v1097 and green here."]}];
+const evolution=[{"v":"v1099","d":"13 Oct 2026","t":"MAKE PARTNER ON THE COUNTER","n":["<b>MAKE PARTNER.</b> Counter Admin's pricing section offers Make partner on the drift books, beside Price drift: the same name-free entry the Desk's Drift card makes, drafted as a roster row the fold files in partners and, if they are none yet, appoints on R2 with their -R account. A partner is quoted the floor itself on every book. A party already a partner, or waiting to be one, is not offered it again, and a second tap is refused. The drafter now refuses an end-buyer code in this road as it was meant to. B2 of #62.","<b>THE PROOFS.</b> The Counter Admin Make partner section: the entry equals the Desk's, refused off a drift book, already a partner, or twice queued; owner and bridge key required; one retained retry; each check red under its own mutation (12). Fable reviewed it twice."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9570,7 +9570,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 19:14 KL';
+const LAST_UPDATED='13 Oct 2026, 19:20 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
