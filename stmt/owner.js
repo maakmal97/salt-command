@@ -2477,6 +2477,7 @@ export const OWNER_JS = `
       return loadMaker().then(function(){
         makerSay(key,result.differs?'The row differs from what you saw and waits under Approve.'
           :result.waiting?'The row is still being made. Check Approve in a moment.'
+          :result.dropped&&result.row?'Taken off. The money is on '+result.row+'.'
           :result.preapproval&&result.preapproval.says?result.preapproval.says:message||'Saved.');
         return true;
       });

@@ -1164,15 +1164,31 @@ async function inFlight(env, db, c, sales) {
   for (const o of done.values()) for (const p of o.payments || []) if (p && p.claim === "received" && p.queued) wait.push({ id: p.queued, k: ledgerKeyOf(o), rm: p.amount });
   const drafted = await draftedOf(db, wait.map((w) => w.id).filter(Boolean));
   for (const w of wait) if (!w.id || !drafted.has(w.id)) add(w.k, w.rm);
-  return claimOrderFlight(sales, all.orders, c.u, by);
+  return claimOrderFlight(sales, all.orders, c.u, by, await offBook(db, all.orders.filter((o) => o.u === c.u && o.ledgerKey && !done.has(o.id))));
 }
-function claimOrderFlight(sales, orders, u, by = {}) {
+/** Ids of the orders with no row on the book: the ack draft rejected (by him, covered or withdrawn) and no draft approved. One read of the rejected pending drafts; only
+    their orders are then read draft by draft. */
+export async function offBook(db, orders) {
+  const off = new Set();
+  if (!db || !orders.length) return off;
+  try {
+    const want = new Set(orders.map((o) => o.id));
+    const rs = await db.prepare("SELECT entry FROM draft WHERE status='rejected' AND entry LIKE ?1").bind('%"status":"Pending"%').all();
+    const ids = [...new Set((rs.results || []).map((r) => { try { return JSON.parse(r.entry).orderId; } catch (e) { return null; } }).filter((x) => x && want.has(x)))];
+    for (const id of ids) {
+      const all = await draftsOfOrders(db, [id]), ack = all.find((r) => ofStage(r, "ack"));
+      if (ack && ack.status === "rejected" && !all.some((r) => r.status === "approved")) off.add(id);
+    }
+  } catch (e) { /* unreadable: the order counts as it did */ }
+  return off;
+}
+export function claimOrderFlight(sales, orders, u, by = {}, off = new Set()) {
   const cash = {}, ready = [];
   const add = (k, rm) => { rm = +(+rm).toFixed(2); if (k && rm > 0.004) by[k] = +((by[k] || 0) + rm).toFixed(2); };
   const done = new Set(orders.filter((o) => o.u === u && o.status === "done").map((o) => o.id));
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
   for (const o of orders) {
-    if (o.u !== u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
+    if (o.u !== u || !o.ledgerKey || off.has(o.id) || ["cancelled", "declined"].includes(o.status)) continue;
     const lk = ledgerKeyOf(o);   /* V4a: the row's key as the book names it, whether or not the pass has reached the order */
     if (o.status === "ready") ready.push(lk);
     add(lk, done.has(o.id) ? (+o.paid || 0) - (+((o.queued || {}).paid) || 0) : (+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));
@@ -1486,14 +1502,26 @@ export async function againOrder(env, id, body, by, now, mirror) {
       want = m.stages.includes(stage) ? [stage] : [];
     }
     for (const st of want) { const lv = await livePre(db, id, st); if (lv && (lv.status === "waiting" || lv.status === "differs")) return { ok: false, status: 409, error: "the " + STAGE_WORD[st] + " is offered again already: let it land first" }; }
-    const dropped = [];
-    for (const st of want) {
-      const d = await rejectedOf(db, id, st);
-      if (!d) continue;
-      await db.prepare("UPDATE draft SET decided_by='covered' WHERE id=?1 AND status='rejected'").bind(d.id).run();
-      dropped.push(st);
+    const o = f.order;
+    let onRow = null;
+    if (m.whole && (+o.paid || 0) > 0) {
+      /* money paid on the site is on the book already, or Not needed would strand it: a cash Fulfilment covered never lands, and a paid cancellation owes a refund */
+      if (want.includes("cancel")) return { ok: false, status: 409, error: "a paid cancellation owes a refund; send it again" };
+      const book = await (mirror || bookOnce(db))().catch(() => null), party = partyOnBook(o, o.code), day = String(o.at || "").slice(0, 10);
+      onRow = ((book && book.sales) || []).find((r) => r && !r.cancelled && r.customer === party && (r.product || "salt") === (o.product || "salt")
+        && String(r.date || "") >= day && (+r.cash || 0) + 0.004 >= (+o.paid || 0)) || null;
+      if (!onRow) return { ok: false, status: 409, error: "record the cash on the row first" };
     }
-    return { ok: true, order: f.order, dropped };
+    const found = [];
+    for (const st of want) { const d = await rejectedOf(db, id, st); if (d) found.push([st, d.id]); }
+    /* one batch, each update refusing if a yes for any covered stage landed meanwhile, so a cover is all or none */
+    const stages = found.map(([st]) => "'" + st + "'").join(",");
+    if (found.length) {
+      const res = await db.batch(found.map(([, did]) => db.prepare("UPDATE draft SET decided_by='covered' WHERE id=?1 AND status='rejected' AND NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage IN (" + stages + ") AND status IN ('waiting','differs'))").bind(did, id)));
+      if (res.some((r) => !(r && r.meta && r.meta.changes > 0))) return { ok: false, status: 409, error: "a yes landed on one of those steps meanwhile: read the order again" };
+    }
+    const dropped = found.map(([st]) => st);
+    return Object.assign({ ok: true, order: f.order, dropped }, onRow ? { row: onRow.rid || null } : {});
   }
   if (!["pay", "cash", "move", "cancel", "amend"].includes(stage)) return { ok: false, status: 400, error: "offer again a pay, cash, move, cancel or amend; a pending row is offered again by Accept, against its preview" };
   const f = await findOrder(env, id);

@@ -37724,13 +37724,15 @@ await (async () => {
   try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so offering again was not driven against the real schema"); return; }
   const O = await import("../stmt/orders.js");
-  const { reconcileOrders, deskPass, againOrder } = await import("../src/orders.js");
+  const { reconcileOrders, deskPass, againOrder, offBook, claimOrderFlight } = await import("../src/orders.js");
   const { runDrafter } = await import("../src/drafter.js");
   const PE = (await import("../engine/position.mjs")).default;
   const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
   const db = new DatabaseSync(":memory:");
   for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
-  const D1 = { prepare(sql) { const st = db.prepare(sql);
+  let raceHook = null;   /* runs once as the covering update is prepared: a yes landing between the check and the write */
+  const D1 = { batch(stmts) { return Promise.resolve(stmts.map((x) => x.run())); }, prepare(sql) { const st = db.prepare(sql);
+    if (raceHook && sql.startsWith("UPDATE draft SET decided_by='covered'")) { const h = raceHook; raceHook = null; h(); }
     const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
       first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
     const self = mk([]); self.bind = (...a) => mk(a); return self; } };
@@ -37924,7 +37926,41 @@ await (async () => {
   const listed = (await call("/orders?all=1", null, "GET")).j.orders, byId = (id) => listed.find((x) => x.id === id) || {};
   ok(byId(wl.id).againWhole === true && !byId(nh.id).againWhole && !byId(wp.id).againWhole,
     "the order list says an order is whole-droppable only when it has no row and no payment claim rejected: " + JSON.stringify([byId(wl.id).againWhole, byId(nh.id).againWhole, byId(wp.id).againWhole]));
-})();
+
+
+  /* money paid on the site: Not needed covers the order only once the book holds a row for that party with the cash */
+  db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wl.id);
+  await O.deskMove(senv, U1, wl.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U1, wl.id, { cash: { amount: 8 } });
+  ok((await orderOf(wl.id)).paid === 8, "the fixture order has RM 8 paid on the site");
+  const day = new Date().toISOString().slice(0, 10);
+  const noRow = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(noRow.status === 409 && /record the cash on the row first/.test(noRow.error) && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
+    "a paid order with no row holding its cash is not covered, and nothing changes: " + JSON.stringify([noRow.status, noRow.error]));
+  putSale({ date: day, customer: C1, qty: 1, total: 16, cash: 5, rid: "s218" });
+  const lowRow = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(lowRow.status === 409 && decidedBy(wl.id, "Pending")[0] === "desk", "a row with less cash than the order is paid does not match: " + JSON.stringify(lowRow.status));
+  seedDraft(wl.id, "rejected", "Cancellation");
+  const payCancel = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(payCancel.status === 409 && /owes a refund/.test(payCancel.error) && decidedBy(wl.id, "Pending")[0] === "desk",
+    "a rejected cancellation on a paid order is not covered: it owes a refund: " + JSON.stringify([payCancel.status, payCancel.error]));
+  db.prepare("DELETE FROM draft WHERE json_extract(entry,'$.status')='Cancellation' AND json_extract(entry,'$.orderId')=?").run(wl.id);
+  putSale({ date: day, customer: C1, qty: 2, total: 16, cash: 16, rid: "s219" });
+  /* a yes that lands between the check and the write: the guarded update changes nothing and the answer is not a success */
+  raceHook = () => db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wl.id + "|move|9", wl.id, U1, "move", "h", "{}", "{}", "waiting", "2026-10-13T12:00:00Z");
+  const raced = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(raced.status === 409 && /meanwhile/.test(raced.error) && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
+    "a yes landing between the check and the write refuses the cover, and nothing is covered: " + JSON.stringify([raced.status, raced.error]));
+  db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wl.id);
+  const paidDrop = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(paidDrop.ok && paidDrop.row === "s219" && paidDrop.dropped.length >= 2 && decidedBy(wl.id, "Pending")[0] === "covered" && decidedBy(wl.id, "Handover")[0] === "covered",
+    "once a row for that party holds the cash, Not needed covers the order and names the row: " + JSON.stringify([paidDrop.ok, paidDrop.row, paidDrop.dropped]));
+  /* what is on its way: an order with no row counts nothing, one with a row still does */
+  const off = await offBook(D1, [{ id: wl.id }, { id: nh.id }, { id: wo.id }]);
+  ok(off.has(wl.id) && off.has(wo.id) && !off.has(nh.id), "an order whose pending row is rejected and with nothing approved is off the book; an order with an approved row is not: " + JSON.stringify([...off]));
+  const ords = [{ id: "o1", u: "u1", ledgerKey: "k1", status: "acknowledged", paid: 8 }];
+  const flyOff = claimOrderFlight([], ords, "u1", {}, new Set(["o1"])), flyOn = claimOrderFlight([], ords, "u1", {}, new Set());
+  ok(!flyOff.by.k1 && flyOn.by.k1 === 8, "money paid on an order with no row is not counted as on its way to a row: " + JSON.stringify([flyOff.by, flyOn.by]));})();
 
 section("S11 11.16: his wakes name the kind of act and never a code or an amount, and a new order is never titled by older news");
 await (async () => {
