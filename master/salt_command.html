@@ -15565,12 +15565,6 @@ function parityScan(){
     out.push({k:'uncounted',pr:pr,what:PRODUCTS[pr].name+' has never been counted, so its inventory is the ledger',
       why:'Stated rather than hidden: the count always wins on this desk, and where there is no count the ledger stands and the plug is nil. Take one and the shrinkage on this book becomes measurable.'});
   });
-  /* 4. THE FORM MUST BE ABLE TO REACH EVERY BOOK. If a product cannot be selected on the
-        Transaction tab it cannot be recorded, which is how oil went four versions with three
-        hand-written rows and no way to add a fourth. */
-  const reach=(typeof WB_NO_PROD!=='undefined');
-  if(!reach)out.push({k:'form',pr:null,what:'The Transaction page cannot say which book an entry is for',
-    why:'Every entry would book to '+((PRODUCTS[DEFAULT_PROD]||{}).name||DEFAULT_PROD)+' whatever the rail shows.'});
   /* 5. A PRODUCT DECLARED BUT ABSENT FROM THE BOOKS is not an error, but it is worth saying,
         because every per-product surface will draw an empty block for it. */
   PROD_IDS.forEach(pr=>{const d=per[pr];if(d&&d.sold===0&&d.bought===0)
@@ -15930,8 +15924,8 @@ function observations(){
   try{
     const PS=parityScan();
     PS.rows.forEach(r=>{
-      const sev=(r.k==='commit'||r.k==='empty'||r.k==='form')?'act':(r.k==='uncounted'?'watch':'note');
-      add({id:'parity:'+r.k+':'+(r.pr||'all'),fam:'upkeep',sev:sev,conf:'measured',rm:null,tab:r.k==='form'?'add':'inventory',
+      const sev=(r.k==='commit'||r.k==='empty')?'act':(r.k==='uncounted'?'watch':'note');
+      add({id:'parity:'+r.k+':'+(r.pr||'all'),fam:'upkeep',sev:sev,conf:'measured',rm:null,tab:'inventory',
         title:r.what,
         why:r.why+' The desk checks this itself on every load.',
         ev:PROD_IDS.map(pr=>{const d=PS.per[pr]||{};
@@ -17718,7 +17712,7 @@ function actions(){
   /* 9. entries typed into the desk and not yet in the book */
   const qn=qTx().length;
   if(qn)add('soon','queue',`${qn} entr${qn===1?'y':'ies'} queued and not yet in the book`,0,
-    'Typed into the Transaction tab and saved to the queue file. Until they are committed, no figure on this desk includes them.','add');
+    'Held on this device and listed under Entries. Until they are committed, only those the Worker has confirmed count in a figure.','add');
 
   return out.sort((a,b)=>ACTSEV[a.sev].r-ACTSEV[b.sev].r||b.rm-a.rm);
 }
@@ -17821,12 +17815,12 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
      drafter drafts an entry below the watermark that the draft table does not know, so once it
      reaches the cloud it is put to him under Approve like any entry. The old line told him to
      re-record the sale, which would have made a twin of a row the drafter was already drafting. */
-  const stuck=queueStuck?`<div class="dsc" style="margin-top:10px;color:var(--ember)"><b>&#9888; ${queueStuck} entr${queueStuck===1?'y was':'ies were'} not confirmed by the cloud</b> before the ledger was folded past ${queueStuck===1?'it':'them'}. ${queueStuck===1?'It is':'They are'} held here and counted in the figures below. The drafter still drafts ${queueStuck===1?'it once it reaches':'them once they reach'} the cloud: decide ${queueStuck===1?'it':'them'} under Approve, and once ${queueStuck===1?'its row is':'their rows are'} in the book, Undo the copy held here, or the figures count ${queueStuck===1?'it':'them'} twice.</div>`:'';
+  const stuck=queueStuck?`<div class="dsc" style="margin-top:10px;color:var(--ember)"><b>&#9888; ${queueStuck} entr${queueStuck===1?'y was':'ies were'} not confirmed by the cloud</b> before the ledger was folded past ${queueStuck===1?'it':'them'}. ${queueStuck===1?'It is':'They are'} held here and counted in no figure. The drafter still drafts ${queueStuck===1?'it once it reaches':'them once they reach'} the cloud: decide ${queueStuck===1?'it':'them'} on Counter Admin, and once ${queueStuck===1?'its row is':'their rows are'} in the book, discard the copy held here from the list above.</div>`:'';
   const rec=renderRecovery();
   if(!txq.length){b.innerHTML=rec+cleared+stuck;return;}
   b.innerHTML=rec+cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
-    +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk. Undo removes an entry and rebuilds; once committed it is in the ledger and can only be reversed by a new entry.</div>'
-    +'<table class="salt-table" style="margin-top:6px"><thead><tr><th class="l salt-table__label">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l salt-table__label" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||NIL}</td><td>${q.qty!=null?q.qty+'unit':NIL}</td><td>${q.total!=null?fmt0(q.total):NIL}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn salt-ghost" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
+    +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk until they are committed to the ledger.</div>'
+    +'<table class="salt-table" style="margin-top:6px"><thead><tr><th class="l salt-table__label">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l salt-table__label" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||NIL}</td><td>${q.qty!=null?q.qty+'unit':NIL}</td><td>${q.total!=null?fmt0(q.total):NIL}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td></tr>`).join('')+'</tbody></table>';}
 
 /* ============ CHARTS for tracker tabs ============ */
 /* Chart.js is vendored at assets/chart.umd.js and loaded ON DEMAND (v176), never from a
@@ -20187,252 +20181,8 @@ const wbErr=t=>`<span class="wbmsg wbmsg-err">${t}</span>`;
 const wbWarn=t=>`<span class="wbmsg wbmsg-warn">${t}</span>`;
 const wbGood=t=>`<span class="wbmsg wbmsg-ok">${t}</span>`;
 function tabWorkbench(){
-  const eopts=wbSellOrders().map(o=>`<option value="${o.code}">${o.code} &middot; ${ID(o.t.who)} &middot; ${o.t.qty} unit &middot; RM${o.t.total}</option>`).join('');
-  const a0=associateIds();
-  const aopts=byName(a0.length?a0:roster.filter(id=>!id.startsWith('S'))).map(id=>`<option value="${id}">${ID(id)}</option>`).join('');
-  /* end customers already seen on the book, PLUS every -Gen bucket on the roster (v199).
-     A bucket created for an associate who has not yet sold onward has no sale to be
-     harvested from, so listing only used downstreams made a freshly created bucket
-     invisible on the one form that needs it. */
-  const dopts=byName([...new Set([...sales.map(s=>s.downstream).filter(Boolean),
-                           ...roster.filter(id=>/-Gen$/.test(id))])])
-              .map(id=>`<option value="${id}">${ID(id)}</option>`).join('');
-  const lbl='font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)';
-  return `<h1>Transaction</h1>
-  <div class="dsc dsclead">Queued for approval, never booked here.</div>
-  <div class="card" id="wbCard">
-    <span class="viewsw" id="wbModeSw"><button data-m="new" class="on">New order</button><button data-m="amend">Amend an order</button><button data-m="count">Inventory count</button><button data-m="loan">Borrow or lend</button>${cloudMode()?'<button data-m="addid">Add ID</button><button data-m="amendid">Amend ID</button>':''}</span>
-    <!-- v275: WHICH BOOK THE ENTRY LANDS ON. Until now there was no such control and no
-         product on any payload, so prodOf() defaulted EVERY entry ever made here to salt:
-         the desk could not record oil at all, and the three oil rows on the book were
-         written into the data by hand. Built from PROD_IDS, so a third product appears here
-         by being declared in PRODUCTS and nothing on this form is touched.
-         It is hidden for the modes that have no product: an amendment inherits the product
-         of the order it attaches to, and an ID names a party, not goods. Showing it there
-         would invite a contradiction the desk would then have to resolve. -->
-    <!-- v789, HIS INSTRUCTION OF 22 SEP 2026: THE BOOK IS PICKED BY ITS MARK, not from a dropdown.
-         A tile a book, its dot in the book's own hue and its name beneath, lit when chosen. The
-         SELECT SURVIVES, hidden, as the value every reader already asks for: wbProdVal, wbApply,
-         the drafter's payload and the record path all go on reading #wbProd, so the control changed
-         and nothing downstream had to. The tiles set it and fire its own change event, which is the
-         same road setProdView was always reached by. -->
-    <div class="qrow" id="wbProdRow" style="margin-top:13px">
-      <div class="qfield" style="flex:1 1 100%">
-        <label>Product</label>
-        <div class="prodtiles" id="wbProdTiles" role="group" aria-label="Product"></div>
-        <select id="wbProd" style="display:none" tabindex="-1" aria-hidden="true"></select>
-      </div>
-      <div class="qfield" style="flex:1 1 100%"><div class="dsc" id="wbProdNote"></div></div>
-    </div>
-
-    <div id="wbPaneNew" style="margin-top:13px">
-      <!-- v385: THE FULLER SHEET SAYS SO ON THE FORM IT SUPERSEDES. v377 made entering an
-           order the same sheet as editing one, and put it behind the + in the bottom right,
-           which carries a title and an aria-label and no visible word. So the part whose
-           whole job is entering an order led with the smaller of the two ways to do it and
-           said nothing about the other. It is offered here, on the pane it belongs to.
-           SELL ONLY, and that is why wbApply hides it on Buy: edSubmitNew reads
-           edFields('SELL') and queues direction SELL, so offering it beside Buy would turn
-           a lot into an order without saying so. -->
-      <!-- v789, his instruction: THE FULL SHEET OPENS FROM THE CORNER. The panel it opens was
-           already a side drawer, fixed to the right at 100dvh; what sat in the flow was the button,
-           taking a line of the form to offer something most entries never need. It moves to the top
-           right corner of the card, out of the reading order of the fields and still one tap.
-           The button keeps the design system's pill recipe, which v784 put on it: the corner is
-           where the control sits, not what it is made of. -->
-      <div id="wbFullRow" class="wbcorner">
-        <button class="vbtn salt-pill salt-pill--sm" type="button" onclick="ledNew()">Open the full sheet</button>
-      </div>
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Direction</label><span class="viewsw" id="wbDirSw" style="display:flex"><button data-d="SELL" class="on">Sell</button><button data-d="BUY">Buy</button></span></div>
-        <!-- v789, HIS INSTRUCTION OF 22 SEP 2026: THE PARTY IS TYPED OR CHOSEN. A roster of fifty in a
-             dropdown is a scroll; typing three letters is not. The SELECT SURVIVES, hidden, and is
-             still the value: wbVal('wbParty') answers a CODE to every reader behind it, and the box
-             above it only ever writes a code into it. Typing something that is not a party leaves the
-             select EMPTY rather than guessing, so the form refuses it exactly as an unchosen party is
-             refused today, and says so in the preview. -->
-        <div class="qfield" id="wbPartyCell"><label id="wbPartyLbl">Party</label>
-          <input id="wbPartyTxt" list="wbPartyList" placeholder="type or choose" autocomplete="off" spellcheck="false">
-          <datalist id="wbPartyList"></datalist>
-          <select id="wbParty" style="display:none" tabindex="-1" aria-hidden="true"></select></div>
-        <div class="qfield" id="wbPartyNote" style="display:none"><label>Party</label><div class="dsc" style="padding-top:7px">Books to the <b>associate</b> below. Name the buyer under <b>End customer</b>.</div></div>
-        <div class="qfield"><label>Date</label>${dateIn('wbDate')}</div>
-      </div>
-      <div class="qrow" id="wbNewBox" style="display:none;margin-bottom:10px"></div>
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield qunits"><label>Quantity (unit)</label><input id="wbQty" type="number" step="0.5" min="0" inputmode="decimal"></div>
-        <!-- v728: THE FORM TYPES THE TWO FIGURES THE LEDGER STORES. v727 made a sale's total the GOODS
-             and put the carriage beside it, which is the shape a purchase has always had, but it never
-             reached this form: the box still said "Of which delivery" while nothing downstream subtracted
-             it any more, so the next delivered sale typed here would have been booked as owing its
-             carriage twice. Goods and carriage are two boxes now, as they are two columns on the row. -->
-        <div class="qfield qunits"><label id="wbTotalLbl">Goods (RM)</label><input id="wbTotal" type="number" step="1" min="0" inputmode="decimal"></div>
-        <div class="qfield qunits" id="wbDeliveryCell"><label id="wbDeliveryLbl">Delivery (RM)</label><input id="wbDelivery" type="number" step="0.5" min="0" value="0" inputmode="decimal"></div>
-        <div class="qfield qunits" id="wbFreightCell"><label id="wbFreightLbl">Freight (RM)</label><input id="wbFreight" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
-      </div>
-      <p class="dsc" id="wbFeeBy" role="status" style="display:none;margin:-4px 0 10px"></p>
-      <div class="qrow" style="margin-bottom:10px">
-        <!-- v387: THESE TWO WERE THE WRONG WAY ROUND AND THE COLUMNS CROSSED. .qrow is a fixed
-             three-column grid, so the field above each of these is the one in its own column:
-             Quantity (unit) sat above Cash (RM) and Total (RM) above Salt delivered (unit),
-             which put every figure diagonally from its own pair and made the eye cross to read
-             either one. Swapped, so column one is the UNIT column, ordered then moved, and
-             column two is the MONEY column, agreed then paid. Nothing but the order changed:
-             wbRecord and wbPreview read these by id. -->
-        <div class="qfield qunits"><label>Delivered now (unit)</label><input id="wbUnits" type="number" step="0.5" min="0" value="0" inputmode="decimal">
-          <span class="viewsw mini" id="wbUnitsQ" style="margin-top:6px"><button type="button" tabindex="-1" data-k="none">None</button><button type="button" tabindex="-1" data-k="all">All</button></span></div>
-        <div class="qfield qunits"><label>Cash received now (RM)</label><input id="wbCash" type="number" step="1" min="0" value="0" inputmode="decimal">
-          <span class="viewsw mini" id="wbCashQ" style="margin-top:6px"><button type="button" tabindex="-1" data-c="none">None</button><button type="button" tabindex="-1" data-c="half">Half</button><button type="button" tabindex="-1" data-c="full">Full</button></span></div>
-        <div class="qfield" id="wbHandCell"><label>Handover</label><select id="wbHand">
-          <option value="">Not stated</option><option value="collected">Collected</option><option value="delivered">Delivered</option></select></div>
-      </div>
-      <!-- v620: shown only when the buyer holds reward and the sale is under the board's ask; wbPreview fills the words -->
-      <!-- v733: A FREE UNIT IS A TICK ON THIS FORM, NOT A HAND FOLD. Every gift on the book was
-           written by a person at the laptop, because the only route that minted a goodwill row was
-           Redeem, which settles against a balance the customer EARNED. A gift is not that: it is
-           salt given away, booked at cost, out of revenue and, since v733, off the reward. It needs
-           no pane of its own, because a gift IS this form with the money taken out: the party, the
-           units, the day and a note are already here. -->
-      <div id="wbGiftWrap" style="margin-bottom:8px">
-        <label style="font-size:12px;color:var(--mut);display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="wbGift" style="width:auto"> A free unit, given: no price, no cash, booked at cost</label>
-      </div>
-      <div id="wbCoverWrap" style="display:none;margin-bottom:8px">
-        <label style="font-size:12px;color:var(--mut);display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="wbCover" style="width:auto"> <span id="wbCoverTxt"></span></label>
-      </div>
-      <div id="wbAssocWrap" style="margin-bottom:4px">
-        <label style="font-size:12px;color:var(--mut);display:inline-flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="wbAssoc" style="width:auto"> Sold through an associate?</label>
-        <div class="dsc" id="wbAssocAuto" style="display:none;margin-top:7px;padding:9px 11px;border-radius:8px;background:color-mix(in srgb,var(--salt-brass) 8%,transparent);border:1px solid color-mix(in srgb,var(--salt-brass) 28%,transparent)"></div>
-        <div id="wbAssocBox" style="display:none;margin-top:8px">
-          <div class="qrow" style="margin-bottom:10px">
-            <div class="qfield"><label>Associate</label><select id="wbAssocSel"><option value="">Choose an associate…</option>${aopts}</select></div>
-            <div class="qfield"><label>Stream</label><span class="viewsw" id="wbStreamSw" style="display:flex"><button data-r="R2" class="on">R2 resell</button><button data-r="R3">R3 refer</button></span></div>
-            <div class="qfield"></div>
-          </div>
-          <div class="qrow" id="wbDownRow">
-            <div class="qfield"><label>End customer</label><select id="wbDown"><option value="">Not named</option>${dopts}</select>
-              <div class="dsc" style="margin-top:6px;font-size:11px">It books to the associate&rsquo;s <b>-R account</b> either way. A name you pick is noted on the row, not credited.</div></div>
-            <div class="qfield"></div>
-            <div class="qfield"></div>
-          </div>
-          <div class="dsc" id="wbStreamNote" style="margin-top:2px"></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="wbPaneAmend" style="display:none;margin-top:13px">
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Side</label><span class="viewsw" id="wbASideSw" style="display:flex"><button data-s="SELL" class="on">Customer order</button><button data-s="BUY">Supplier lot</button></span></div>
-        <div class="qfield"><label>Order</label><select id="wbOrder"><option value="">Choose an order…</option>${eopts}</select></div>
-        <div class="qfield"><label>Kind</label><select id="wbKind"></select></div>
-      </div>
-      <div class="qrow" style="margin-bottom:10px">
-        <!-- v387: unit column then money column, the same way round as the new order pane
-             above, so a person who has learnt where to look on one does not relearn it here. -->
-        <div class="qfield qunits"><label id="wbAUnitsLbl">Units moved (unit)</label><input id="wbAUnits" type="number" step="0.5" min="0" value="0" inputmode="decimal"></div>
-        <div class="qfield qunits"><label id="wbACashLbl">Cash moved (RM)</label><input id="wbACash" type="number" step="1" min="0" value="0" inputmode="decimal"></div>
-        <div class="qfield"><label>Date</label>${dateIn('wbADate')}</div>
-      </div>
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbANote" placeholder="optional"></div>
-        <div class="qfield"></div><div class="qfield"></div>
-      </div>
-      <div class="qrow" id="wbLinkBox" style="display:none;margin-bottom:10px">
-        <div class="qfield"><label>Settles which order</label><select id="wbLinkTo"><option value="">Choose the order it settles…</option>${eopts}</select></div>
-        <div class="qfield"></div><div class="qfield"></div>
-      </div>
-    </div>
-
-    <div id="wbPaneCount" style="display:none;margin-top:13px">
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield qunits"><label>Unit on hand</label><input id="wbCountUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
-        <div class="qfield"><label>Date</label>${dateIn('wbCDate')}</div>
-        <div class="qfield"></div>
-      </div>
-      <div class="dsc">The count is authoritative; the gap against the ledger books as self-use.</div>
-    </div>
-
-    <div id="wbPaneLoan" style="display:none;margin-top:13px">
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>What happened</label><select id="wbLoanDir"><option value="in">Borrowed from them</option><option value="out">Lent to them</option><option value="repay">Repaid, in part or in full</option></select></div>
-        <div class="qfield" id="wbLoanFormCell"><label>What changed hands</label><select id="wbLoanForm"><option value="salt">Salt</option><option value="cash">Cash</option></select></div>
-        <div class="qfield" id="wbLoanPartyCell"><label>Party</label><select id="wbLoanParty"></select></div>
-        <div class="qfield" id="wbLoanWhichCell" style="display:none"><label>Which loan</label><select id="wbLoanWhich"></select></div>
-        <div class="qfield qunits" id="wbLoanUnitsCell"><label>Unit</label><input id="wbLoanUnits" type="number" step="0.01" min="0" inputmode="decimal"></div>
-        <div class="qfield" id="wbLoanRMCell" style="display:none"><label>RM</label><input id="wbLoanRM" type="number" step="0.01" min="0" inputmode="decimal"></div>
-        <div class="qfield"><label>Date</label>${dateIn('wbLoanDate')}</div>
-      </div>
-      <div class="qrow" style="margin-bottom:10px"><div class="qfield" style="flex:1"><label>Note (optional)</label><input id="wbLoanNote" type="text" placeholder="terms, if any"></div></div>
-      <div class="dsc">A salt loan is owed back in kind, unit for unit: borrowed salt sits on the inventory until it is returned, and lent salt leaves it. A cash loan is owed back in cash, and moves the cash flow while it is open. A repayment is in what was lent, in part or in full, and the loan settles when nothing is left owing.</div>
-    </div>
-
-    <!-- v343: ADD ID, ON THE CLOUD DESK. Names & IDs mints a code from a name and a place, and
-         it does that on the laptop only, because the directory never leaves it. The cloud desk
-         therefore had no way to register a party at all, while its own form said "use + Add ID".
-         This pane is the phone's route: a code (derived from the name and the place since v587, typed
-         by hand before), queued as an addid entry, drafted
-         into the roster by the cloud drafter, approved, folded. The name goes in the directory
-         at the laptop, later, and never travels. -->
-    <div id="wbPaneAddid" style="display:none;margin-top:13px">
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Kind</label><select id="wbApKind">
-          <option value="customer">Customer, buys direct</option>
-          <option value="reseller">Associate, resells for you (R2)</option>
-          <option value="referral">Referrer, introduces buyers (R3)</option>
-          <option value="downstream">An associate&rsquo;s end buyer</option>
-          <option value="bucket">An associate&rsquo;s -Gen bucket</option>
-          <option value="supplier">Supplier</option></select></div>
-        <div class="qfield" id="wbApWhoCell" style="display:none"><label>Who</label><select id="wbApWho"></select></div>
-        <div class="qfield" id="wbApParentCell" style="display:none"><label>Under which associate</label><select id="wbApParent"></select></div>
-        <div class="qfield" id="wbApNameCell"><label>Name</label><input id="wbApName" type="text" placeholder="as they are known" autocomplete="off"></div>
-        <div class="qfield" id="wbApPlaceCell"><label>Place</label><input id="wbApPlace" type="text" list="wbPlaces" placeholder="choose, or type a town or area; blank if to be confirmed" autocomplete="off"></div>
-        <div class="qfield" id="wbApLinkCell"><label>Maps or Waze link <span style="color:var(--dim)">optional</span></label><input id="wbApLink" type="text" inputmode="url" placeholder="paste the link; it stays in the vault" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-        <div class="qfield" id="wbApTierCell"><label>${tieredBooks().length&&tieredBooks().every(driftBook)?'Starting drift':'Starting tiers'}</label>${/* v780: THE LAST LEVEL IS PRESELECTED ONLY WHERE A BOOK CAN PRICE. Every book defaulted to Bronze, so the moment three books were opened every party registered picked up a starting tier on three books with no ladder, no cost and no way to price them: data that means nothing, written on every registration. A book with no TIER_RULE opens on "not set", which is what it is. */ ""}${tieredBooks().map(p=>driftBook(p)?driftPick(p):`<select id="wbApTier_${p}" aria-label="Starting tier for ${PRODUCTS[p].name}" style="min-height:var(--tap)"><option value="">${PRODUCTS[p].name}: not set</option>${TIER_NAMES.map(n=>`<option value="${n}"${(n===TIER_NAMES[TIER_NAMES.length-1])?' selected':''}>${PRODUCTS[p].name}: ${n}</option>`).join('')}</select>`).join(' ')}</div>
-        <div class="qfield" style="flex:1"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbApNote" type="text" placeholder="never the name or the place"></div>
-      </div>
-      <div class="dsc">The code is made from what you type, never typed itself: <b>C</b> for a customer or <b>S</b> for a supplier, the name&rsquo;s first letter and its length, then the place, its initials when it is several words and its first three letters when it is one. So a four-letter name starting with A is <b>CA4</b>, and with its place <b>CA4-DAM</b>; a blank place gives <b>TBC</b>. If the code is taken, it takes one more letter of the name, as <b>CAB4-DAM</b>. The name goes into the vault on this device, encrypted, and never into the queue. A Maps or Waze link is read on this device: its point and address go into the places vault beside the name, and the queue and the map keep only the place, to about a kilometre.<br>To <b>appoint someone already on the roster</b>, pick Associate or Referrer and choose them under <b>Who</b>: it confers the standing rather than registering a second time, asks for no name, and an associate is given their <b>-R</b> resell account with it.</div>
-    </div>
-
-    <!-- v628, AMEND ID, his instruction of 14 Sep 2026: a party's name or place is corrected here. The name is
-         filed in the vault, encrypted, as on Add ID; when the code it derives differs, the re-key goes through
-         Approve like every other write, and only codes travel. -->
-    <div id="wbPaneAmendid" style="display:none;margin-top:13px">
-      <div class="qrow" style="margin-bottom:10px">
-        <div class="qfield"><label>Who</label><select id="wbAmWho"></select></div>
-        <div class="qfield" id="wbAmNameCell"><label>Name</label><input id="wbAmName" type="text" placeholder="as they are known" autocomplete="off"></div>
-        <div class="qfield" id="wbAmPlaceCell"><label>Place</label><input id="wbAmPlace" type="text" list="wbPlaces" placeholder="choose, or type a town or area; blank if to be confirmed" autocomplete="off"></div>
-        <div class="qfield" id="wbAmLinkCell"><label>Maps or Waze link <span style="color:var(--dim)">optional</span></label><input id="wbAmLink" type="text" inputmode="url" placeholder="paste the link; it stays in the vault" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-      </div>
-      <div class="dsc">Type the name and the place as they should read. The code is derived again by the Add ID rule: if it comes out the same, only the vault changes; if it differs, the new code replaces the old one everywhere once you approve it. The statement username never changes. A Maps or Waze link files a new point in the places vault; left blank, the point on file stays and follows a new code. <b>Your base point</b> is the first choice under Who.</div>
-    </div>
-
-    <datalist id="wbPlaces">${[...placePicks().keys()].map(l=>`<option value="${esc(l)}">`).join('')}</datalist>
-    <!-- v783, his instruction: THE NOTE IS AT THE END. It sat in the middle of the figures row,
-         between the carriage and the freight, so the eye crossed a free-text box on the way from one
-         number to the next. It belongs after the entry is described, not inside the describing. -->
-    <div id="wbExtraRows"></div>
-    <div class="qrow" id="wbNoteRow" style="margin-bottom:10px">
-      <div class="qfield" style="flex:1 1 100%"><label>Note <span style="color:var(--dim)">optional</span></label><input id="wbNote" placeholder="anything the row should say"></div>
-    </div>
-    <div style="margin-top:13px;padding-top:11px;border-top:1px solid var(--line)">
-      <div style="${lbl}">Preview</div>
-      <div id="wbPrev" style="margin-top:7px"></div>
-      <div id="wbMsgs" style="margin-top:9px"></div>
-    </div>
-    <!-- v783, HIS INSTRUCTION OF 22 SEP 2026: FOUR BUTTONS WERE THREE TOO MANY. Record is the only
-         one that acts on what is on the form; Clear queued, Save queue file and Copy queue all act on
-         the QUEUE, and on an empty queue every one of them is a control that can do nothing. They
-         appear when there is something queued for them to act on, which is also when their words mean
-         anything. Nothing is hidden that could have been used: each already refused an empty queue. -->
-    <div style="margin-top:13px">
-      <button class="vbtn salt-pill salt-pill--sm" id="wbRec" style="border-color:var(--grn);background:linear-gradient(135deg,var(--grn),var(--desk-grn-deep));color:var(--salt-ink-on-accent)">Record</button>
-      ${queue.length?`<button class="vbtn salt-pill salt-pill--sm" style="font-size:12px;margin-left:6px" onclick="if(queue.length&&confirm('Discard all '+queue.length+' uncommitted entries? The desk will fall back to the committed ledger.')){queue.length=0;saveQueue();applyOverlay();render();}">Clear queued</button>
-      <button class="vbtn salt-pill salt-pill--sm" id="wbSave" style="font-size:12px;margin-left:6px">Save queue file</button>
-      <button class="vbtn salt-pill salt-pill--sm" id="wbCopy" style="font-size:12px;margin-left:6px">Copy queue</button>`:''}
-      <span id="wbOk"></span>
-    </div>
-    ${wbVaultRetryMarkup()}
-    <div class="note" style="margin-top:10px" id="wbSync">${qNote()}</div>
-  </div>
+  return `<h1>Entries</h1>
+  <div class="dsc dsclead">Entered on Counter Admin; this desk reads.</div>
   <div id="queueBox" style="margin-top:8px"></div>`;
 }
 /* ============ TAB: PRICING ============ */
@@ -23931,22 +23681,12 @@ function stripMethod(el){
     blocks.forEach(b=>{if(b!==keep&&!b.classList.contains('insight')&&b.parentNode)b.parentNode.removeChild(b);});
   });
 }
-function renderPart(tab,el,snap){
+function renderPart(tab,el){
   el.innerHTML=builders[tab]();
   /* D10: where the parts strip already names this part, its h1 says it to a screen reader alone, so the pill and a
      heading do not say the same word twice; the h1 stays in the page as its one heading */
   const pill=el.parentNode&&el.parentNode.querySelector(`.vnav .vpill[data-s="${tab}"]`),h1=el.querySelector('h1');
   if(pill&&h1&&h1.textContent.trim().toLowerCase()===pill.textContent.trim().toLowerCase())h1.classList.add('sr-only');
-  if(tab==='add'){
-    wireWorkbench();
-    if(snap){Object.keys(snap).forEach(id=>{const e=document.getElementById(id);if(!e)return;
-      if(e.type==='checkbox')e.checked=snap[id].c;else if(snap[id].v!==''&&snap[id].v!=null)e.value=snap[id].v;});}
-    const ab=document.getElementById('wbAssocBox'),ac=document.getElementById('wbAssoc');
-    if(ab&&ac)ab.style.display=ac.checked?'':'none';
-    const nb=document.getElementById('wbNewBox'),ps=document.getElementById('wbParty');
-    if(nb&&ps)nb.style.display=ps.value==='__new__'?'':'none';
-    wbApply();wbPreview();
-  }
   stripMethod(el);
   wireSwitchers(el);
   /* v384: AND THE OUTER CATCH WAS EMPTY TOO, WHICH IS THE WORSE OF THE PAIR. This one wraps the
@@ -24029,13 +23769,10 @@ function renderNow(){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
   const part=partOf(V.id), all=[V.lead].concat(V.parts);
-  /* the Workbench keeps what was typed across a re-render, exactly as before */
-  let snap=null;
-  if(part==='add'){snap={};el.querySelectorAll('input,select').forEach(e=>{if(e.id)snap[e.id]={v:e.value,c:e.checked};});}
   el.innerHTML=(all.length>1?`<div class="vnav" role="tablist">${all.map(p=>`<button class="vpill salt-tabs__pill${p===part?' on':''}" role="tab" aria-selected="${p===part}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('')}</div>`:'')
     +`<div class="vpart" data-tab="${part}"></div>`;
   el.querySelectorAll('.vpill').forEach(b=>{b.onclick=()=>switchTab(b.dataset.s);});
-  renderPart(part,el.querySelector('.vpart'),snap);
+  renderPart(part,el.querySelector('.vpart'));
   wireSwitchers(el);            // the parts strip: written here, not by renderPart
   renderQueue();renderProvBar();navCounts();railSubs();
   try{wrapTables();}catch(e){}}
@@ -24249,8 +23986,7 @@ function renderProvBar(){
     +(provRM>0.009?', <b>'+fmt0(provRM)+'</b> of cash':'')
     +': every figure below includes '+(provCount===1?'it':'them')+'.'
     +(provUnsent?' <b>'+provUnsent+'</b> '+(provUnsent===1?'is':'are')+' <b>unsent</b>, held on this device only.':'')+'</span>'
-    +'<button class="ubtn salt-ghost" onclick="undoLast()">Undo last</button>'
-    +'<button class="ubtn salt-ghost" onclick="switchTab(\'add\')">Review in Transaction</button>'
+    +'<button class="ubtn salt-ghost" onclick="switchTab(\'add\')">Review in Entries</button>'
     +(provNotes.length?'<span style="color:var(--crim)">'+esc(provNotes.join('; '))+'</span>':'')
     +'</div>';
 }
@@ -24262,11 +23998,6 @@ function undoEntry(at){
   const gone=queue[i];queue.splice(i,1);
   applyOverlay();saveQueue();render();
   qStatus('Undone: '+esc(gone.raw||'entry')+'.');
-}
-function undoLast(){
-  if(!queue.length)return;
-  const last=queue.slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).pop();
-  undoEntry(last.at);
 }
 /* v273: back to top. Shown once the page has moved a screen's worth, so it never sits over
    a tab that fits without scrolling. The threshold is read from the viewport rather than
