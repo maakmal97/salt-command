@@ -21,7 +21,7 @@ export async function run({ ok, pageWork }) {
   const fix = await slipFixture();
   const KEEP = "saltMakerPending:";
   /* two more kept entries beside the harness's loan: a map placement (the oldest, on Customers) and a stock count (on Entry) */
-  const place = { path: "/all/maker/inputs/place", body: { at: AT_PLACE, places: { "CX1-ZED": [3.1, 101.7] }, addrVault: fix.places } };
+  const place = { path: "/all/maker/inputs/place", body: { at: AT_PLACE, places: { "CX1-ZED": [3.1, 101.7, "Pudu"] }, addrVault: fix.places } };
   const count = { path: "/all/maker/inputs/stock-count", body: { at: AT_COUNT, product: "salt", date: "2026-10-09", qty: 12 } };
   const more = [[KEEP + place.path, JSON.stringify(place)], [KEEP + count.path, JSON.stringify(count)]];
   const open = async (retained = []) => {

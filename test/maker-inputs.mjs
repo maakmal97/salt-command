@@ -264,11 +264,24 @@ export async function run({ ok, KV } = {}) {
     geo: null, vault: envelope }, book());
   check(vaultOnly.vaultOnly === true && !vaultOnly.entry,
     "a same-code name correction updates only the encrypted vault.");
-  const placed = makerLedgerInput("place", { at, places: { "CX1-ZED": [3.13, 101.68] } }, book());
-  check(placed.draft?.collection === "place" && placed.entry.payload.places["CX1-ZED"].length === 2,
-    "map placement writes only the approximate coordinates for a roster code.");
-  check(!!makerLedgerInput("place", { at, places: { "CX1-ZED": [3.13, 101.68, "4 Example Road"] } }, book()).error,
+  const placed = makerLedgerInput("place", { at, places: { "CX1-ZED": [3.13, 101.68, "Pudu"] } }, book());
+  check(placed.draft?.collection === "place" && placed.entry.payload.places["CX1-ZED"].length === 3,
+    "map placement writes only the approximate coordinates and their locality for a roster code.");
+  check(!!makerLedgerInput("place", { at, places: { "CX1-ZED": [3.13, 101.68, "4 <Example> Road"] } }, book()).error,
     "placement locality rejects street-address detail before it can reach the Desk queue.");
+  /* a point is filed only with its locality: the Counter's input and the drafter, the last check, both refuse a bare one */
+  const bareAdd = makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7], tiers: null, vault: envelope }, book());
+  const fullAdd = makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7, "Pudu"], tiers: null, vault: envelope }, book());
+  check(!fullAdd.error && !!bareAdd.error, "an Add ID with a point and no locality is refused by the Counter input, the same with one is not: " + (fullAdd.error || ""));
+  check(!!makerLedgerInput("place", { at, places: { "CX1-ZED": [3.13, 101.68] } }, book()).error,
+    "a placement with a point and no locality is refused by the Counter input.");
+  const { draftRow } = await import("../src/drafter.js");
+  const bareEntry = (geo) => POSITION_ENGINE.addIdEntry({ at, code: "CZ4-TST", kind: "customer", parent: null, rev: null, geo, tiers: null });
+  check(!!draftRow(bareEntry([3.1, 101.7]), book()).skip && !draftRow(bareEntry([3.1, 101.7, "Pudu"]), book()).skip,
+    "the drafter refuses a roster entry whose point has no locality and drafts the same with one.");
+  const barePlace = (g) => POSITION_ENGINE.placeEntry({ at, places: { "CX1-ZED": g } });
+  check(!!draftRow(barePlace([3.1, 101.7]), book()).skip && !draftRow(barePlace([3.1, 101.7, "Pudu"]), book()).skip,
+    "the drafter refuses a place entry whose point has no locality and drafts the same with one.");
   check(!!makerLedgerInput("gift", { at, product: "salt", code: "CX1-ZED", date: "2026-10-01",
     qty: 1, movedUnits: 1, handover: "collected", note: "unchecked text" }, book()).error,
     "gift inputs reject arbitrary notes.");

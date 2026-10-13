@@ -30,6 +30,8 @@ const isNum = (v) => typeof v === "number" && Number.isFinite(v);
 const geoOf = (g) => (Array.isArray(g) && (g.length === 2 || (g.length === 3 && typeof g[2] === "string" && /^[^<>\u0000-\u001f]{1,60}$/.test(g[2].trim())))
   && isNum(g[0]) && isNum(g[1]) && g[0] > 0.8 && g[0] < 7.5 && g[1] > 99.5 && g[1] < 119.5)
   ? [Math.round(g[0] * 100) / 100, Math.round(g[1] * 100) / 100].concat(g.length === 3 ? [g[2].trim()] : []) : null;
+/* a point is filed only with its locality beside it (the Desk's geoWhere); a bare point is refused as the last check, 13 Oct 2026 */
+const geoFiled = (g) => { const x = geoOf(g); return x && x.length === 3 ? x : null; };
 /* v617: whether the book holds a party as departed. PEOPLE reaches the Worker in the mirror's state, as every book key does. */
 const isDepartedIn = (book, id) => !!id && ((book.state && book.state.PEOPLE && book.state.PEOPLE.departed) || []).some((d) => d && d.id === id);
 const prodOf = (r) => (r && r.product) || "salt";
@@ -1153,7 +1155,7 @@ export function draftRow(entry, book) {
     const kind = String(pay.kind || "customer");
     const parent = pay.parent || null;
     if (kind === "bucket" && !parent) return { skip: "a bucket sits under a party, and which party is a judgement" };
-    if (pay.geo != null && !geoOf(pay.geo)) return { skip: "the point given for the place is not in Malaysia" };   // v633
+    if (pay.geo != null && !geoFiled(pay.geo)) return { skip: geoOf(pay.geo) ? "the point given for the place has no locality beside it" : "the point given for the place is not in Malaysia" };   // v633
     /* v645: the starting tier chosen at Add ID, for each product since v646, checked against the book's products and the
        level names the desk's PRICING snapshot carries */
     const products = (book.state && book.state.PRODUCTS) || {};
@@ -1222,7 +1224,7 @@ export function draftRow(entry, book) {
     if (!/^[A-Z]{1,3}\d{0,2}[A-Z0-9-]*$/.test(to)) return { skip: `"${to}" does not look like a desk code. They run like CA4-DAM or SP7-PUD` };
     if (to === from) return { skip: "the code does not change, so there is nothing to approve: a new spelling of the name or the place is filed in the vault alone" };
     if (to[0] !== from[0]) return { skip: `${from} is a ${from[0] === "S" ? "supplier" : "customer"}, and ${to} would not be` };
-    if (pay.geo != null && !geoOf(pay.geo)) return { skip: "the point given for the place is not in Malaysia" };   // v633
+    if (pay.geo != null && !geoFiled(pay.geo)) return { skip: geoOf(pay.geo) ? "the point given for the place has no locality beside it" : "the point given for the place is not in Malaysia" };   // v633
     const pairs = POSITION_ENGINE.renamePairs(roster, from, to);
     const taken = pairs.map((p) => p[1]).filter((c) => roster.includes(c));
     if (taken.length) return { skip: `${taken.join(" and ")} already belongs to another party` };
@@ -1251,8 +1253,8 @@ export function draftRow(entry, book) {
     for (const c of codes) {
       if (!roster.includes(c)) return { skip: `${c} is not on the roster` };
       if (POSITION_ENGINE.isBucket(c)) return { skip: `${c} is a resale account, and it stands where its associate does` };
-      const g = geoOf(places[c]);
-      if (!g) return { skip: `the point for ${c} is not in Malaysia` };
+      const g = geoFiled(places[c]);
+      if (!g) return { skip: geoOf(places[c]) ? `the point for ${c} has no locality beside it` : `the point for ${c} is not in Malaysia` };
       row.places[c] = g;
     }
     const moves = codes.filter((c) => placed[c]);

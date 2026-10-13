@@ -15625,19 +15625,19 @@ await (async () => {
   /* ---- the drafter: the place travels as a point, and only inside Malaysia ---- */
   const mir31 = { sales: [], purchases: [], state: { roster: ["CZ9-PLA", "CZ9-PLB", "CZ9-PLA-R", "CZ9-OLD"], associates: [], PLACED: { "CZ9-PLB": [2.5, 101.5] } }, pricing: null };
   const en31 = (p) => ({ at: "2026-09-14T09:00:00.000Z", payload: p });
-  const pl31 = dr31(en31({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678], "CZ9-PLB": [2.7012, 101.9456] } }), mir31);
-  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57],"CZ9-PLB":[2.7,101.95]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /the point travels, with the locality/.test(pl31.reasoning),
+  const pl31 = dr31(en31({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678, "Testville"], "CZ9-PLB": [2.7012, 101.9456, "Testville"] } }), mir31);
+  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57,"Testville"],"CZ9-PLB":[2.7,101.95,"Testville"]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /the point travels, with the locality/.test(pl31.reasoning),
     "a place entry drafts as its own collection, each point to 0.01 degrees, flagging a party it moves: " + (pl31.skip || JSON.stringify(pl31.row) + " " + pl31.flags.join(" ")));
   for (const [p, why] of [[{ places: { "CZ9-NOT": [3.1, 101.6] } }, /CZ9-NOT is not on the roster/], [{ places: { "CZ9-PLA-R": [3.1, 101.6] } }, /resale account/],
     [{ places: { "CZ9-PLA": [51.5, -0.12] } }, /not in Malaysia/], [{ places: { "CZ9-PLA": "3.1,101.6" } }, /not in Malaysia/], [{ places: {} }, /names no party/]]) {
     const s = dr31(en31({ mode: "place", ...p }), mir31).skip || "";
     ok(why.test(s), "the drafter refuses the place entry " + JSON.stringify(p) + ": " + (s || "drafted"));
   }
-  const ad31 = dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [3.1234, 101.5678] }), mir31);
-  ok(!ad31.skip && JSON.stringify(ad31.row.geo) === "[3.12,101.57]", "a registration carries the point its place was found at: " + (ad31.skip || JSON.stringify(ad31.row)));
+  const ad31 = dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [3.1234, 101.5678, "Testville"] }), mir31);
+  ok(!ad31.skip && JSON.stringify(ad31.row.geo) === '[3.12,101.57,"Testville"]', "a registration carries the point its place was found at: " + (ad31.skip || JSON.stringify(ad31.row)));
   ok(/not in Malaysia/.test(dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [0, 0] }), mir31).skip || ""), "and is refused with a point outside Malaysia");
-  const rn31 = dr31(en31({ mode: "rename", from: "CZ9-OLD", to: "CZ9-ODD", geo: [2.7012, 101.9456] }), mir31);
-  ok(!rn31.skip && JSON.stringify(rn31.row.geo) === "[2.7,101.95]" && /place on the map moves with it/.test(rn31.reasoning), "a rename carries the new point, and its card says the place moves: " + (rn31.skip || JSON.stringify(rn31.row)));
+  const rn31 = dr31(en31({ mode: "rename", from: "CZ9-OLD", to: "CZ9-ODD", geo: [2.7012, 101.9456, "Testville"] }), mir31);
+  ok(!rn31.skip && JSON.stringify(rn31.row.geo) === '[2.7,101.95,"Testville"]' && /place on the map moves with it/.test(rn31.reasoning), "a rename carries the new point, and its card says the place moves: " + (rn31.skip || JSON.stringify(rn31.row)));
 
   /* ---- the fold: the point is filed on the book, and follows a rename ---- */
   const master31 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
@@ -52729,7 +52729,7 @@ await (async () => {
     ["redeem", { at: inputBody.at, code: "CX1-ZED", date: inputBody.date }],
     ["add-id", { at: inputBody.at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers: null, vault: sealed }],
     ["amend-id", { at: inputBody.at, from: "CX1-ZED", to: "CX2-TST", geo: null, vault: sealed }],
-    ["place", { at: inputBody.at, places: { "CX1-ZED": [3.13, 101.68] } }]
+    ["place", { at: inputBody.at, places: { "CX1-ZED": [3.13, 101.68, "Pudu"] } }]
   ];
   for (const [operation, body] of ledgerInputs)
     await inputCall("/all/maker/inputs/" + operation, "POST", body);
@@ -53210,11 +53210,11 @@ await (async () => {
         body: JSON.stringify(body)
       }), env, { waitUntil() {} });
     const addPairBody = { at: "2026-09-29T15:11:00.000Z", code: "CX6-ZED", kind: "customer",
-      parent: null, geo: [3.1, 101.7], tiers: null, vault: pairSeal("add-names"), addrVault: pairSeal("add-places"),
+      parent: null, geo: [3.1, 101.7, "Pudu"], tiers: null, vault: pairSeal("add-names"), addrVault: pairSeal("add-places"),
       pair: { expectedRevision: 1, names: pairSeal("add-names"), places: pairSeal("add-places") } };
     const addedPair = await pairInput("add-id", addPairBody);
     const addedReplay = await pairInput("add-id", addPairBody);
-    const changedPair = await pairInput("add-id", { ...addPairBody, geo: [3.2, 101.7] });
+    const changedPair = await pairInput("add-id", { ...addPairBody, geo: [3.2, 101.7, "Pudu"] });
     ok(addedPair.status === 200 && (await addedReplay.json()).replay && changedPair.status === 409
       && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 2
       && countDb.prepare("SELECT state FROM vault_outbox WHERE id=?").get(addPairBody.at)?.state === "complete"
@@ -53224,7 +53224,7 @@ await (async () => {
       vault: pairSeal("rename-names"), addrVault: pairSeal("rename-places"),
       pair: { expectedRevision: 2, names: pairSeal("rename-names"), places: pairSeal("rename-places") } };
     const renamedPair = await pairInput("amend-id", pairRename);
-    const pairPlace = { at: "2026-09-29T15:13:00.000Z", places: { "CX1-ZED": [3.2, 101.7] },
+    const pairPlace = { at: "2026-09-29T15:13:00.000Z", places: { "CX1-ZED": [3.2, 101.7, "Pudu"] },
       addrVault: pairSeal("file-place"), pair: { expectedRevision: 3, names: pairSeal("rename-names"), places: pairSeal("file-place") } };
     const placedPair = await pairInput("place", pairPlace);
     const stalePair = await pairInput("place", { ...pairPlace, at: "2026-09-29T15:14:00.000Z" });
@@ -53751,7 +53751,7 @@ await (async () => {
           : route === "/all/maker/vault/addr" ? { ok: true, vault: placeEnvelope }
           : route === "/all/maker/inputs" ? { ok: true, products: ["salt"], catalog: {
             products: [{ product: "salt", saleReady: true, purchaseReady: true, tiered: true }],
-            parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
+            parties: ["CX1-AB"], placed: { "CX1-AB": [3.12, 101.69, "Pudu"] }, associates: [{ code: "CX1-AB", resaleReady: false }],
             tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
             loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }],
             rewards: [{ code: "CX1-AB", held: 2, free: 2, associate: true, departed: false, action: "redeem" }],
@@ -53885,7 +53885,7 @@ await (async () => {
     ok(newPlaces["CA3-KL"]?.lat === 3.123456 && newPlaces["CA3-KL"]?.lng === 101.654321
       && newPlaces["CA3-KL"]?.addr === "Secret Way" && newPlaces["CA3-KL"]?.src === "waze"
       && JSON.stringify(newPlaces._base) === JSON.stringify(filedPlaces._base)
-      && sentAddId.body.geo?.length === 2 && !JSON.stringify(sentAddId.body).includes("Secret Way")
+      && sentAddId.body.geo?.length === 3 && !JSON.stringify(sentAddId.body).includes("Secret Way")
       && !JSON.stringify(sentAddId.body).includes("3.123456"),
       "a new Waze address and exact point are filed on-device inside ciphertext only, keeping the base and queueing the official rounded locality");
     ok(addId.querySelector("datalist")?.options.length > 100,
@@ -53926,7 +53926,7 @@ await (async () => {
     placement.querySelector("button").click();
     ok(await adminWork.quiet(), "the encrypted map point opens and queues");
     const sentPlacement = adminCalls.find((call) => call.route === "/all/maker/inputs/place");
-    ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69] })
+    ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69, "Pudu"] })
       && !JSON.stringify(sentPlacement.body).includes("Private Road"),
       "map placement decrypts on-device and queues only a point rounded to 0.01 degrees");
     const placeTexts = placement.querySelectorAll('input[type="text"]');
@@ -53939,10 +53939,26 @@ await (async () => {
     ok(mapFiled["CX1-AB"]?.addr === "Invented Road" && mapFiled["CX1-AB"]?.lat === 3.234567
       && mapFiled["CX1-AB"]?.lng === 101.765432
       && JSON.stringify(mapFiled._base) === JSON.stringify(filedPlaces._base)
-      && JSON.stringify(newPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72] })
+      && JSON.stringify(newPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
       && !JSON.stringify(newPlacement.body).includes("Invented Road")
       && !JSON.stringify(newPlacement.body).includes("3.234567"),
       "Network placement can file a new Maps address and exact point encrypted while queueing only its official locality point");
+    placeTexts[0].value = "Jalan Foo, Pudu";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the street-and-locality placement settles");
+    const streetPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
+    ok(JSON.stringify(streetPlacement?.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
+      && ![...Array(admin.window.localStorage.length).keys()].some((i) => admin.window.localStorage.getItem(admin.window.localStorage.key(i)).includes("Jalan Foo")),
+      "a typed street, Locality files the matched locality and the phone keeps no street word");
+    const placesBefore = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").length;
+    placeTexts[0].value = "Jalan Foo Cheras";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the street-only placement settles");
+    const cherasCalls = adminCalls.filter((call) => call.route === "/all/maker/inputs/place");
+    ok(cherasCalls.slice(placesBefore).every((call) => call.body.places["CX1-AB"][2] === "Cheras")
+      && ![...Array(admin.window.localStorage.length).keys()].some((i) => admin.window.localStorage.getItem(admin.window.localStorage.key(i)).includes("Jalan Foo"))
+      && !(admin.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/place") || "").includes("Jalan Foo"),
+      "a comma-less street text is never the locality: only the matched area is filed and the phone keeps no street word");
     nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
     devicePairRevision = 10; devicePairConflict = true;
     tile(addId, "Role", "customer");

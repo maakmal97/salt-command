@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1102",
+  "d": "13 Oct 2026",
+  "t": "EVERY POINT FILED CARRIES ITS LOCALITY",
+  "n": [
+   "<b>A POINT AND ITS LOCALITY.</b> Counter Admin's Add ID, Amend ID and Place filed a party's point without its locality, so the Coverage map could not say where they are in words (CI5-PER at v1097). They now file the locality with the point, read from the listed area the place resolves to, never the typed text; a street with no listed locality is refused, and the phone keeps nothing but ciphertext. The drafter refuses a point with no locality from any road. Nothing prices.",
+   "<b>THE PROOFS.</b> The Counter maker, blank-locality, one-unlock and v633 sections: the owner road files the locality, a typed street files the listed locality and nothing else is kept on the device, and the drafter refuses a bare point for a registration, a rename and a place; each check red under its own mutation. Fable reviewed it three times."
+  ]
+ },
+ {
   "v": "v1101",
   "d": "13 Oct 2026",
   "t": "NOT NEEDED: A REJECTED SITE-ORDER STEP ALREADY ON THE BOOK",
