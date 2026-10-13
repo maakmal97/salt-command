@@ -1215,7 +1215,6 @@ body.navopen .wrap{z-index:97;}
 .navbtn,.navbtn.salt-orb{display:none;}
 /* lit when a name is showing, which is the one state worth seeing at a glance */
 .idfix.on{border-color:var(--gold);box-shadow:0 0 12px -4px var(--gold),var(--gloss);}
-.orderbtn{right:calc(14px + var(--saferight));bottom:calc(14px + var(--safebot));font-size:24px;font-weight:400;line-height:1;}
 .navbtn .nbars{display:grid;gap:4px;}
 .navbtn .nbars span{display:block;width:18px;height:2px;border-radius:2px;background:currentColor;
   transform-origin:center;transition:transform .2s ease,opacity .15s ease;}
@@ -4481,8 +4480,6 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 <div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div><div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>
 <div id="pbSheet"></div>
 <div class="wrap">
-<button class="fabtn orderbtn salt-orb salt-orb--raised" id="orderbtn" type="button" title="Enter an order"
-  aria-label="Enter an order">+</button>
 <div class="navveil" id="navveil"></div>
 <h2 class="sr-only">Salt Command: one dashboard for inventory, margin, receivables, cost-linked pricing and transaction entry.</h2>
 <div class="shell">
@@ -9581,9 +9578,9 @@ let stockCounted=true;
    and a product with no count of its own falls back exactly as it did before. */
 let statedStockBy={},provCount=0,provNotes=[],provRM=0;
 /* B3 of #62 (13 Oct 2026): THE ONE SWITCH FOR UNSENT ENTRIES. true while the Desk still writes: an entry this device
-   holds but the Worker has not confirmed (qIsUnsent) folds into every figure and is marked Unsent. B5 sets it false when
-   the Desk's write controls go: such an entry then moves no figure and waits in the recovery panel to be sent or discarded. */
-let OVERLAY_UNSENT=true;
+   holds but the Worker has not confirmed (qIsUnsent) would fold into every figure and be marked Unsent. B5 of #62 set it false
+   because the Desk's write controls are gone: such an entry moves no figure and waits in the recovery panel to be sent or discarded. */
+let OVERLAY_UNSENT=false;
 let provUnsent=0,unsentAts=new Set();
 /* the count that applies to a product: a queued one first, then its declared opening
    figure, then the salt roll for salt. Null means nobody has counted this book. */
@@ -13120,35 +13117,6 @@ function mapPlay(){
     mapMonth(i);},1400);
   mapMonth(i);
 }
-/* v633: THE PARTIES ALREADY ON THE BOOK, PLACED FROM THEIR RECORDED PLACES IN ONE STEP. With the names open, each party
-   with no filed point and none queued has its place looked up as Add ID looks one up; those found go to Approve together,
-   as one entry of codes and points, and those not found are listed by code, for a tap through Amend ID.
-   v679: and each party whose LOCALITY is not filed, a point already filed kept as it is and the locality added to it. */
-let MAP_MSG='';
-async function mapPlaceFromVault(){
-  const names=vaultNames||{},places={},missed=[];
-  const queued=new Set([].concat(...queue.map(q=>(q&&q.payload&&q.payload.mode==='place')?Object.keys(q.payload.places||{}):[])));
-  for(const id of roster){
-    const had=PLACED[id];
-    if(POSITION_ENGINE.isBucket(id)||/-\d+-/.test(id)||(had&&had[2])||queued.has(id))continue;
-    const m=/^(.*?)\s*\((.*)\)\s*$/.exec(names[id]||''),pl=m?m[2].trim():'';
-    if(!pl||/^(location )?(to be confirmed|tbc)$/i.test(pl))continue;
-    const r=had?{point:[had[0],had[1]]}:await placeFromText(pl);
-    if(r.point)places[id]=geoWhere(r.point,pl);else missed.push(id);
-  }
-  const n=Object.keys(places).length;
-  let filed=false;
-  if(n&&vaultPairVersion){
-    const outcome={},why=await wbVaultFile(null,null,{operation:'place',body:{places}},outcome);
-    if(why){MAP_MSG=why+' Nothing placed.';render();return;}
-    filed=outcome.queued;
-  }
-  if(n&&!filed)queue.push(POSITION_ENGINE.placeEntry({at:new Date().toISOString(),places,
-    raw:'Place '+n+(n===1?' party':' parties')+' on the map from their recorded places: '+Object.keys(places).join(', ')}));
-  MAP_MSG=(n?n+(n===1?' party':' parties')+' queued for approval':'Nothing new to place')+(missed.length?'; not found, so tap each through Amend ID: '+missed.join(', '):'')+'.';
-  render();
-  if(n)Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
-}
 const AREA_SHAPES={};
 /* the encoded polyline areafetch.mjs writes, at 2e-4 degrees, longitude first */
 function decodeRing(s){
@@ -13355,7 +13323,6 @@ function tabMap(){
       <label style="display:inline-flex;align-items:center;gap:6px">From ${dateIn('mapFrom',MAP_FROM,' class="mapfrom" onchange="mapPeriod(this.value,MAP_TO)" style="min-height:var(--tap);padding-right:74px"')}</label>
       <label style="display:inline-flex;align-items:center;gap:6px">To ${dateIn('mapTo',MAP_TO,' class="mapto" onchange="mapPeriod(MAP_FROM,this.value)" style="min-height:var(--tap);padding-right:74px"')}</label>
     </div>`:''}
-    ${Object.keys(vaultNames||{}).length?`<div style="margin-bottom:10px"><button class="vbtn salt-pill salt-pill--sm" onclick="mapPlaceFromVault()">Place parties from their recorded places</button></div>`:''}${MAP_MSG?`<div class="mapmsg" style="margin-bottom:10px;font-size:12px;color:var(--mut)">${esc(MAP_MSG)}</div>`:''}
     <div class="maplegend" style="margin-bottom:9px">${legend}</div>
     ${MAP_NET?`<div class="mapnetnote" style="margin-bottom:9px;font-size:12px;color:var(--mut)">Network: ${net.length} line${net.length===1?'':'s'} from ${netAssoc} associate${netAssoc===1?'':'s'} to the customers they brought in${netMiss.length?`; ${netMiss.length} not drawn, a party with no point`:''}.</div>`:''}
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;background:linear-gradient(160deg,${tcol('slate')},${tcol('obsidian')});border:1px solid var(--line);border-radius:12px" role="img" aria-label="${MAP_METRICS[MAP_METRIC]} by ${dist?'area in '+esc(dist.name):'district'}, shaded deeper where the book is concentrated.">
@@ -13765,82 +13732,6 @@ function deskExit(){
   };
   try{Promise.resolve(qFlush()).then(bye,bye);}catch(e){bye();}
 }
-/* ============ THE ROW EDITOR (v361, widened to every attribute at v363) ============
-   Right-click any ledger row (a long press raises the same event) and every attribute a person
-   states is typeable again. His instruction of 25 Aug: "I need to be able to edit every attribute
-   of an entry on the ledger."
-
-   IT QUEUES, IT DOES NOT POST. Exactly like the update panel above, and like every other entry on this
-   desk: the correction becomes a queued entry, the drafter turns it into a proposed change with
-   its flags beside it, and it reaches the book only once it is approved. Nothing here writes to
-   the ledger. That is the whole architecture: an editor that wrote straight through would be the
-   one road into this book with no second look at it.
-
-   ONLY WHAT CHANGED IS SENT. The panel opens prefilled, so most fields go back untouched; sending
-   them all would make every correction look like it rewrote the row and would bury the one field
-   that actually moved. An emptied box is sent as null, which is how a value comes OFF a row
-   rather than being replaced by another wrong one. */
-
-/* THE FORM, AS DATA. Thirty editable fields is too many to hand-write: each would need its own
-   markup, its own read-back and its own diff line, and the three would drift apart. This spec is
-   the single description of the panel, and render, read-back and diff all walk it. Adding a field
-   to the engine's table plus a line here is the whole job.
-
-   `only` is 'S' for a sale and 'B' for a purchase, absent for both. `kind` decides the control
-   and how the value is read back: a number returns a number, a tick returns a boolean, and an
-   emptied box returns null. */
-const EDFORM=[
-  {g:'The trade'},
-  {k:'product', l:'Product',            kind:'product', hint:'Changing this recosts the row off the other inventory.'},
-  {k:'party',   l:'Buyer',              kind:'code', only:'S', hint:'Who the row books to. Moving it moves what each of them owes. On an R2 row, the end buyer if named; empty for none.'},
-  {k:'party',   l:'Supplier',           kind:'code', only:'B'},
-  {k:'qty',     l:'Quantity, unit',     kind:'num'},
-  {k:'total',   l:'Goods, RM',          kind:'num'},
-  {k:'freight', l:'Freight, RM',         kind:'num', only:'B', hint:'The trip this lot cost, typed per purchase. Beside the goods, so the lot rate stays the goods; it feeds collection per unit.'},
-  {k:'delivery',l:'Delivery, RM',        kind:'num', only:'S', hint:'The carriage, typed per order, standing BESIDE the goods since v727 rather than inside them. The rate per unit is the goods over the units; what they owe is the two together.'},
-  {k:'unpriced',l:'Price not agreed yet', kind:'bool', hint:'A zero total on an unpriced row is not the same as paid in full. This is what tells them apart.'},
-  {g:'Attribution', only:'S'},
-  {k:'assoc',     l:'Associate',  kind:'code', only:'S', hint:'Leave it empty to take an attribution off the row.'},
-  {k:'stream',    l:'Stream',     kind:'stream', only:'S', hint:'R2 books the row to the associate and keeps the buyer beside it. R3 leaves the buyer as the counterparty.'},
-  {k:'downstream',l:'Downstream', kind:'code', only:'S', hint:'The end buyer on an R2 row.'},
-  {k:'orderCode', l:'Order code', kind:'text'},
-  {g:'What has moved'},
-  {k:'cash',        l:'Cash in, RM',        kind:'num', only:'S'},
-  {k:'cash',        l:'Cash paid, RM',      kind:'num', only:'B'},
-  {k:'deliveredQty',l:'Handed over, unit',  kind:'num', only:'S'},
-  /* v728: THE SAME FIELD ANSWERS A PURCHASE, because the question is the same one from the other
-     side of the trade: collected is the buyer came, delivered is the seller drove, and on a lot the
-     buyer is him. only:'S' is gone, which the row editor needs in BOTH directions since edFields
-     filters the render and the collector alike; on a sale it decides the delivery charge and on a
-     lot the freight. The delivered share is still measured off sales alone (delShare reads pSales). */
-  {k:'handover',    l:'Handover',            kind:'handover', hint:'Who moved the goods. On a sale, delivered means he drove and it carries a delivery charge; on a lot, collected means he fetched it and it carries freight. Leaving it unanswered is not the same as saying collected: the delivered share is measured over the sales that answered.'},
-  {k:'receivedQty', l:'Received, unit',     kind:'num', only:'B', hint:'Empty on a settled lot means received in full; the book stores it that way. Type a figure only to state a partial receipt.'},
-  {k:'cost',        l:'Cost, RM',           kind:'num', only:'S', hint:'The cost of the whole order in RM, not per unit (v496). Typed here it overrides the inventory, and every margin on this row is measured against it.'},
-  {g:'Dates'},
-  {k:'date',        l:'Row date',     kind:'date', hint:'Empty for a pending row that has not moved.'},
-  {k:'agreedOn',    l:'Agreed on',    kind:'date'},
-  {k:'paidOn',      l:'Paid on',      kind:'date'},
-  {k:'deliveredOn', l:'Delivered on', kind:'date', only:'S'},
-  {k:'receivedOn',  l:'Received on',  kind:'date', only:'B'},
-  {g:'Settled other than in cash', fold:true},
-  {k:'settledRM', l:'Settled, RM',   kind:'num'},
-  {k:'settledKg', l:'Settled, unit', kind:'num'},
-  {k:'settle',    l:'In what',       kind:'text', hint:'What the settlement was made in.'},
-  {k:'rebate',    l:'Settled by rebate redemption', kind:'bool', hint:'A flag, not an amount. The unit redeemed is Rebate, unit, below.'},
-  {k:'rebateKg',  l:'Rebate, unit',  kind:'num'},
-  {k:'goodwill',  l:'A goodwill gift, not a sale', kind:'bool', hint:'Booked at cost, excluded from revenue everywhere, and since v733 charged against the party\'s reward by that cost. WITH Settled by rebate redemption it is a REDEMPTION instead, a unit they earned, which is netted at the reader and never charged here.'},
-  {k:'coverUnits',   l:'Reward covering, unit', kind:'num', only:'S', hint:'Units of their reward spent covering a lower margin on this sale (v620).'},
-  {k:'coverRM',   l:'Reward covering, RM',   kind:'num', only:'S', hint:'The ringgit those units covered, at cost when the sale was entered.'},
-  {g:'State', fold:true},
-  {k:'cancelled',  l:'Cancelled',              kind:'bool', hint:'This takes the row out of every figure on the desk.'},
-  {k:'cancelledOn',l:'Cancelled on',           kind:'date'},
-  {k:'pending',    l:'Pending, nothing moved', kind:'bool', only:'B'},
-  {k:'inTransit',  l:'In transit',             kind:'bool', only:'B'},
-  {k:'defaulted',  l:'Defaulted',              kind:'bool', hint:'On a sale, what they still owe is written off and provisioned in full; the goods stay handed over. Only an order with goods out and money owed can default: an order nothing has moved on is cancelled instead.'},
-  {g:'Note'},
-  {k:'note', l:'Row note', kind:'prose'},
-];
-const edFields=dir=>EDFORM.filter(f=>!f.only||f.only===(dir==='BUY'?'B':'S'));
 /* THE ROW AS A PERSON NAMES IT. On an R2 row the counterparty field holds the associate and the
    buyer is the downstream, so reading row.customer as "the buyer" would put the associate in the
    Buyer box and every diff line would be wrong. attributionOf is the one place that knows. */
@@ -13852,531 +13743,8 @@ function edView(row,dir){
     assoc:at.assoc,stream:at.stream,downstream:at.downstream});
 }
 const ridOf=t=>t.rid||(t._buy&&t._buy.rid)||null;
-let edRid=null,edType='SELL',edNew=false;
-const edOpen=()=>!!(edRid||edNew);
-/* v377: THE SAME SHEET WRITES A NEW ROW. His instruction: entering an order should be as
-   complete as editing one. It is the same panel, the same EDFORM table and the same
-   controls, opened on an empty row instead of a real one, and it queues mode:'new' rather
-   than a correction. The Workbench form stays where it is and still takes an amendment, a
-   count, a loss and the rest; what this replaces is having to reach it for the ONE thing
-   done most often, and having that form offer eleven fields where the editor offers thirty. */
-/* v430: a new order opened on salt whatever book the desk was on, because the empty row it builds
-   has no product and edView defaults one. The sheet follows the rail, as v409 made the Enter sheet
-   follow it. */
-let edSeed=null;
-function ledNew(){edNew=true;edRid=null;edType='SELL';edSeed={product:PROD};renderEditor();}
-function edRowOf(rid,type){return ovFind(type==='BUY'?purchases:sales,rid);}
-function ledEdit(rid,type){
-  if(!rid){alert('This row has no id yet, so nothing can name it for an edit. It will have one after the next fold.');return;}
-  edRid=rid;edType=type||'SELL';renderEditor();
-}
-function edClose(){edRid=null;edNew=false;renderEditor();}
-/* ============ v565: THE PEN FANS OUT, AND NOTHING CLIPS IT (his instruction, 09 Sep 2026) ============
-   "Better design maybe tapping the edit button, 4-5 button will appear floating from the edit
-   button, for the 4-5 most probable action."
-
-   WHAT HE PHOTOGRAPHED WAS ONE BOX READING PAID IN FULL, AND THE MENU WAS NOT THE FAULT. v547
-   appended it INSIDE the entry's card, and .lcard carries overflow:hidden. Measured in a real
-   browser at 1280: a folded entry is 72px and the menu 144px, so it was cut at the card's edge
-   and one item of three was painted. Worse, the two that were not painted were still in the
-   layout: a hit test at the centre of MODIFICATION reached the .lstate of the entry BELOW, so
-   the control did the wrong thing rather than nothing.
-
-   SO THE FAN LEAVES THE CARD: position:fixed at the pen's own coordinates, thrown upward when it
-   would run off the bottom, and closed on scroll, because a fixed element cannot follow the pen
-   that opened it. Each action is its own pill, staggered out of the pen's corner, so four or five
-   of them read as four or five buttons rather than as one block of rows.
-
-   THEY ARE RANKED ON HIS OWN BOOK RATHER THAN ON A GUESS. Of 117 settled sales 101 closed with
-   the cash and the goods on the SAME DATE, so Completed leads wherever both are outstanding; of
-   27 open sales 18 owe cash alone, so Paid in full leads where they do not. Four are drawn and
-   More is always the fifth, so it is four or five on every row he is likely to tap and three on a
-   settled one, which has only three real actions: a button the fold would refuse is not an action.
-   Every item is still a chip the editor already offers, on the editor's own conditions, with
-   updSet filling the outstanding figures, so a tap still cannot overpay. Completed keeps the
-   menu's stricter rule of both-outstanding rather than the editor's either-outstanding: where one
-   side is already settled, Completed and Paid in full are the same tap under two names. */
-function ledMenuClose(){const m=document.getElementById('ledMenu');if(m)m.remove();}
-/* FIXED MEANS THE PLACING IS THIS FUNCTION'S JOB. Right-aligned to the pen it came out of, under
-   it where there is room and above it where there is not, and measured off-screen first so the
-   fan is never painted at the wrong end of the page for a frame. */
-function ledMenuPlace(m,pen){
-  const r=pen&&pen.getBoundingClientRect?pen.getBoundingClientRect():null;
-  if(!r){m.style.top='20%';m.style.right='16px';return;}
-  m.style.top='-9999px';
-  const h=m.offsetHeight;
-  m.style.right=Math.max(8,Math.round(window.innerWidth-r.right))+'px';
-  if(h+12<=window.innerHeight-r.bottom){m.style.top=Math.round(r.bottom+6)+'px';m.style.bottom='auto';m.classList.remove('up');}
-  else{m.style.top='auto';m.style.bottom=Math.round(window.innerHeight-r.top+6)+'px';m.classList.add('up');}
-}
-function ledMenu(ev,rid,type){
-  if(ev){ev.preventDefault();ev.stopPropagation();}
-  const was=document.getElementById('ledMenu');
-  if(was&&was.getAttribute('data-rid')===rid){ledMenuClose();return;}
-  ledMenuClose();
-  const row=(type==='BUY'?purchases:sales).find(r=>r&&r.rid===rid);
-  if(!row){ledEdit(rid,type);return;}
-  const o=updOut(row,type), buy=type==='BUY', unpriced=!!row.unpriced, canc=!!row.cancelled;
-  const cash=!canc&&!unpriced&&o.cashLeft>0.009, unit=!canc&&o.unitLeft>0.009;
-  const via=(mode,c,k)=>()=>{ledEdit(rid,type);updSet(mode,c,k);};
-  const items=[
-    [cash&&unit, 'Completed', via(null,o.cashLeft,o.unitLeft)],
-    [cash, 'Paid in full', via(null,o.cashLeft,0)],
-    [unit, buy?'Received in full':'Delivered in full', via(null,0,o.unitLeft)],
-    [!canc&&(o.paid>0.009||o.moved>0.009), 'Back to pending', via('pending',null,null)],
-    [!canc&&buy&&!row.defaulted&&poRecvUnits(row)<=0.009, 'Defaulted', via('default',null,null)],
-    [!canc, 'Cancelled', via('cancel',null,null)]
-  ].filter(x=>x[0]).slice(0,4).map(x=>({lab:x[1],fn:x[2],cls:''}));
-  items.push({lab:'More',fn:()=>ledEdit(rid,type),cls:' lmore'});
-  const m=document.createElement('div');
-  m.id='ledMenu';m.className='lmenu';m.setAttribute('data-rid',rid);m.setAttribute('role','menu');
-  m.innerHTML=items.map((it,i)=>`<button type="button" role="menuitem" class="lmi${it.cls}" data-i="${i}">${it.lab}</button>`).join('');
-  m.addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();
-    const it=items[+b.getAttribute('data-i')];ledMenuClose();if(it)it.fn();});
-  document.body.appendChild(m);
-  const pen=ev&&ev.currentTarget&&ev.currentTarget.closest?ev.currentTarget:(ev&&ev.target?ev.target.closest('.lpen'):null);
-  ledMenuPlace(m,pen);
-  const first=m.querySelector('button');if(first)first.focus();
-}
-if(typeof document!=='undefined'&&!window.__lmenuBound){
-  window.__lmenuBound=1;
-  document.addEventListener('click',e=>{const m=document.getElementById('ledMenu');if(m&&!m.contains(e.target)&&!(e.target.closest&&e.target.closest('.lpen')))ledMenuClose();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')ledMenuClose();});
-  /* a fixed fan cannot follow the pen that opened it, so a scroll closes it rather than leaving it
-     hanging over an entry it has nothing to do with. Capturing, because the desk scrolls the
-     document here and a pane elsewhere. */
-  window.addEventListener('scroll',()=>{if(document.getElementById('ledMenu'))ledMenuClose();},true);
-  window.addEventListener('resize',()=>{if(document.getElementById('ledMenu'))ledMenuClose();});
-}
-function edEsc(v){return v==null?'':String(v).split('&').join('&amp;').split('"').join('&quot;').split('<').join('&lt;');}
-function renderEditor(){
-  let bd=document.getElementById('edBackdrop'),pn=document.getElementById('edPanel');
-  const wasOpen=!!(pn&&pn.style.display==='block');
-  if(!bd){bd=document.createElement('div');bd.id='edBackdrop';document.body.appendChild(bd);}
-  if(!pn){pn=document.createElement('div');pn.id='edPanel';document.body.appendChild(pn);}
-  /* v365: THE PHONE'S IDENTICAL SHEET ANNOUNCES ITSELF; THIS PANEL DID NOT. Same job, same
-     modal backdrop, same Cancel/Save pair, but no role, no aria-modal, no label, and focus
-     stayed wherever it already was when it opened. tabindex="-1" is what lets a plain div
-     take focus programmatically without joining the Tab order in its own right. */
-  pn.setAttribute('role','dialog');pn.setAttribute('aria-modal','true');
-  pn.setAttribute('aria-label','Edit the entry');pn.setAttribute('tabindex','-1');
-  bd.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;inset:0;background:var(--salt-scrim);z-index:89');
-  pn.setAttribute('style','display:'+(edOpen()?'block':'none')+';position:fixed;top:0;right:0;height:100dvh;padding-top:var(--safetop);padding-bottom:var(--safebot);width:min(470px,94vw);z-index:90;text-align:left;overflow-y:auto;background:linear-gradient(180deg,var(--card2),var(--card)),var(--bg0);border-left:1px solid var(--line);padding:15px 16px 30px;box-shadow:-18px 0 40px rgba(0,0,0,.45)');
-  pn.setAttribute('aria-label',edNew?'New order':'Edit the entry');
-  if(!edOpen()){pn.innerHTML='';return;}
-  const row=edNew?(edSeed||{}):edRowOf(edRid,edType);   /* v430: the seed carries the desk's product */
-  if(!row){pn.innerHTML='<div class="stand-note warn">That row could not be found. It may have been folded under a different id since this page loaded.</div>';return;}
-  const partyKey=edType==='BUY'?'supplier':'customer';
-  const canc=!!row.cancelled;
-  const v=edView(row,edType);
-  const codes=(roster||[]).slice().sort();
-  const box='width:100%;padding:9px 10px;font-size:16px';
-  const ctl=f=>{
-    const id='ed_'+f.k, val=v[f.k];
-    if(f.kind==='product')return '<select id="'+id+'" style="'+box+'">'+Object.keys(PRODUCTS).map(k=>'<option value="'+edEsc(k)+'"'+((val||'salt')===k?' selected':'')+'>'+edEsc(PRODUCTS[k].name)+'</option>').join('')+'</select>';
-    if(f.kind==='stream')return '<select id="'+id+'" style="'+box+'">'+[['','none'],['R2','R2, books to the associate'],['R3','R3, credits the introduction']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
-    /* v728, HIS INSTRUCTION OF 19 SEP 2026: shorten the prose to collected or delivered. The two
-       words carry the whole of it; by them and by us was the register of a longer sentence. It also
-       lets the SAME control answer a purchase, where the parties are the other way round: collected
-       is he fetched it and delivered is the supplier drove, which is exactly what the one word says
-       from each side of the trade. Dated records on rows already written keep their own prose. */
-    if(f.kind==='handover')return '<select id="'+id+'" style="'+box+'">'+[['','not stated'],['collected','Collected'],['delivered','Delivered']].map(o=>'<option value="'+o[0]+'"'+(String(val||'')===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select>';
-    if(f.kind==='code')return '<input id="'+id+'" list="edCodes" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
-    if(f.kind==='num')return '<input id="'+id+'" type="number" step="0.01" value="'+edEsc(val)+'" style="'+box+'">';
-    if(f.kind==='date')return dateIn(id,val,' style="'+box+';padding-right:74px"');
-    if(f.kind==='bool')return '<label class="edchk" style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);cursor:pointer"><input id="'+id+'" type="checkbox"'+(val?' checked':'')+' style="width:auto;min-height:0;accent-color:var(--gold)"> '+edEsc(f.l)+'</label>';
-    if(f.kind==='prose')return '<textarea id="'+id+'" rows="4" style="'+box+';font-size:16px;line-height:1.45;resize:vertical">'+edEsc(val)+'</textarea>';
-    return '<input id="'+id+'" value="'+edEsc(val)+'" placeholder="none" style="'+box+'">';
-  };
-  /* v365: A FOLD OPENS WHEN IT HAS SOMETHING TO SHOW, same reasoning and same fix as the
-     phone's edDraw(). Whether a group rendered collapsed used to depend only on whether it
-     was MARKED foldable, never on whether it actually carried a value. */
-  const edHasVal=(f,val)=>{
-    if(f.kind==='bool')return !!val;
-    if(f.kind==='num')return val!=null&&val!==''&&Number(val)!==0;
-    return val!=null&&String(val).trim()!=='';
-  };
-  const edFl=edFields(edType);
-  const foldOpen=[];let fgi=-1;
-  edFl.forEach(f=>{
-    if(f.g){fgi++;foldOpen[fgi]=false;return;}
-    if(fgi>=0&&edHasVal(f,v[f.k]))foldOpen[fgi]=true;
-  });
-  let html='',open=null;fgi=-1;
-  edFl.forEach(f=>{
-    if(f.g){
-      if(open)html+=(open.fold?'</details>':'')+'';
-      open=f;fgi++;
-      html+=f.fold
-        ? '<details style="margin:14px 0 4px"'+(foldOpen[fgi]?' open':'')+'><summary class="tapsum" style="cursor:pointer;font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin-bottom:8px">'+edEsc(f.g)+'</summary>'
-        : '<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);font-weight:700;margin:14px 0 8px">'+edEsc(f.g)+'</p>';
-      return;
-    }
-    html+='<div style="margin-bottom:11px">'
-      +(f.kind==='bool'?'':'<label for="ed_'+f.k+'" style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700;margin-bottom:4px">'+edEsc(f.l)+'</label>')
-      +ctl(f)
-      +(f.hint?'<div style="font-size:11px;color:var(--dim);margin-top:3px">'+f.hint+'</div>':'')
-      +'</div>';
-  });
-  if(open&&open.fold)html+='</details>';
-  const sheetSave=(canc?'':'<button id="edSave" class="vbtn salt-pill salt-pill--sm" style="width:100%;margin-top:16px">'+(edNew?'Queue the order':'Queue the correction')+'</button>')
-    +'<div id="edWhy" style="font-size:11.5px;color:var(--dim);margin-top:9px"></div>';
-  pn.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
-    +'<div style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:.3px">'+(edNew?'New order':'Edit the entry')+'</div>'
-    +'<button id="edX" class="edx" aria-label="Close">&times;</button></div>'
-    +'<div class="mono" style="font-size:11px;color:var(--dim);margin-bottom:10px">'+(edNew
-      ?'new &middot; SELL &middot; queued for approval, like every other entry'
-      :edEsc(edRid)+' &middot; '+edType+' &middot; '+(row.date||'undated')+' &middot; '+ID(row[partyKey]))+'</div>'
-    +(canc
-      ?'<div class="stand-note warn" style="margin:0 0 4px">This row is <b>cancelled</b>. Reviving one is a fold-level judgement, and the drafter refuses corrections against it, so there is nothing to queue from here.</div>'
-      :'<div class="stand-note" style="margin:0 0 4px">'+(edNew
-        ?'Queues an <b>order</b>. Drafted, checked and back at Approve for a tap.'
-        :'Tap a <b>state</b>, or type what moved. Drafted, checked and back at Approve for a tap.')+'</div>')
-    +'<datalist id="edCodes">'+codes.map(c=>'<option value="'+edEsc(c)+'"></option>').join('')+'</datalist>'
-    /* v408: the six states first, because they are what a row does. The thirty fields are
-       still here and still complete, one fold down, for the corrections a state cannot say. */
-    +(edNew?'':updBlock(row,edType,canc))
-    /* v448: HIS INSTRUCTION OF 02 SEP 2026, "way too complicated for no reason". The panel opened on
-       two forms and three buttons: the six chips with Queue the update, then the sheet's own
-       Queue the correction and a Cancel that sat one chip away from Cancel the order. It opens on
-       the chips and ONE button now. The sheet, its save and its reasons live behind one fold, shut,
-       and the cross in the corner is the only way out, so nothing on the panel says Cancel except
-       the state itself, which now reads Cancelled beside Completed and Defaulted. */
-    +(edNew?html+sheetSave:'<details class="updmore"><summary>Change something else</summary>'+html+sheetSave+'</details>');
-  document.getElementById('edX').onclick=edClose;
-  bd.onclick=edClose;
-  const sv=document.getElementById('edSave'); if(sv)sv.onclick=edSubmit;
-  /* v408: the update panel binds after its own markup lands, and the sentence recomputes on
-     every keystroke so nobody has to guess what a figure will do to the state. */
-  const ug=document.getElementById('updGo'); if(ug)ug.onclick=updQueue;
-  ['updCash','updUnit','updDate'].forEach(id=>{const e=document.getElementById(id);
-    if(e)e.oninput=function(){if(id!=='updDate')updMode=null;updSay();};});
-  if(document.getElementById('updSay')){updMode=null;updSay();}
-  /* v365: renderEditor only ever runs on open (ledEdit) or close (edClose), never mid-edit,
-     so moving focus here happens once per open (wasOpen reads the panel's OWN display style
-     from before this call, not edRid, which the caller has already overwritten) and never
-     steals it back from a field being typed into. */
-  if(edOpen()&&!wasOpen)try{pn.focus();}catch(e){}
-}
-/* THE NEW ROW. Everything the sheet holds, read straight rather than diffed: on an empty row
-   a diff would drop the product whenever it is salt, which is the default and therefore not a
-   change. The thirteen fields the queue contract already names travel as themselves and the
-   rest ride in `more`, which the drafter checks field by field against the same table a
-   correction goes through. Nothing here writes a row: it queues one, and it is drafted,
-   flagged and approved exactly as an entry typed on the Workbench is. */
-function edSubmitNew(){
-  const why=document.getElementById('edWhy');
-  const say=m=>{if(why)why.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
-  const blank=x=>x===undefined||x===null||String(x).trim()==='';
-  const all={};
-  edFields('SELL').forEach(f=>{
-    if(f.g)return;
-    const el=document.getElementById('ed_'+f.k);if(!el)return;
-    if(f.kind==='bool')all[f.k]=!!el.checked;
-    else if(f.kind==='num')all[f.k]=blank(el.value)?null:Number(el.value);
-    else all[f.k]=blank(el.value)?null:String(el.value).trim();
-  });
-  /* v524: an R2 row books to its associate; a blank date takes today when something moved */
-  if(all.stream==='R2'&&all.assoc&&!all.party)all.party=all.assoc;
-  if(!all.date&&((+all.cash||0)>0||(+all.deliveredQty||0)>0))all.date=TODAY.toISOString().slice(0,10);
-  /* v728: the handover travels into the refusal here too. This sheet is the OTHER road to a new row,
-     and it already put handover on the queue payload while never passing it to the gate, so it was the
-     one live way to queue a collected order carrying a delivery charge. */
-  const fault=entryFault({direction:'SELL',product:all.product||'salt',party:all.party,assoc:all.assoc,downstream:all.downstream,date:all.date,cash:all.cash,kg:all.deliveredQty,qty:all.qty,total:all.total,delivery:all.delivery,handover:all.handover||null,fresh:true});
-  if(fault)return say(fault);
-  if(!(all.qty>0))return say('An order needs a quantity above zero.');
-  /* v611: a resale books to the associate's bucket, so the bucket has to exist and a twin is a row in it */
-  const bucketE=(all.stream==='R2'&&all.assoc)?POSITION_ENGINE.ownerCode(all.assoc)+POSITION_ENGINE.BUCKET_SFX:null;
-  if(bucketE&&(roster||[]).indexOf(bucketE)<0)return say(esc(bucketE)+' is not on the roster. Register the resale account under Add ID first, then pick the code.');
-  const ra=replayAnswer('SELL',all.product||'salt',all.party,all.date||null,all.qty,all.total||0,bucketE);   /* v526 */
-  if(ra.fault)return say(ra.fault);
-  if(all.total==null&&!all.unpriced)return say('State a total, or tick that the price is not agreed yet.');
-  if(all.assoc&&!all.stream)return say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');
-  if(!all.assoc&&all.stream)return say('A stream with no associate credits nobody.');
-  const BASE=['product','party','qty','total','cash','deliveredQty','date','assoc','stream',
-              'downstream','orderCode','note','handover'];
-  const more={};
-  Object.keys(all).forEach(k=>{
-    if(BASE.indexOf(k)>=0)return;
-    const v=all[k];
-    if(v===null||v===false)return;      // an absent flag and false are the same thing here too
-    more[k]=v;
-  });
-  const today=TODAY.toISOString().slice(0,10);
-  queue.push({at:new Date().toISOString(),type:'SELL',party:codeOf(all.party),
-    qty:all.qty,total:all.total||0,
-    raw:'New order: '+codeOf(all.party)+' '+units(all.qty)+' for '+fmt0(all.total||0)
-        +(all.date?' on '+all.date:'')+', recorded '+today,
-    payload:{mode:'new',product:all.product||'salt',direction:'SELL',party:all.party,newId:null,
-      date:all.date||null,qty:all.qty,total:all.total||0,delivery:all.delivery||0,freight:all.freight||0,cash:all.cash||0,kg:all.deliveredQty||0,
-      assoc:all.assoc||null,stream:all.stream||null,downstream:all.downstream||null,
-      kind:null,orderCode:all.orderCode||null,linkTo:null,note:all.note||null,
-      handover:all.handover||null,second:ra.second||null,
-      more:Object.keys(more).length?more:null}});
-  edClose();
-  /* applyOverlay BEFORE render, the same order the correction path and wbRecord use: render()
-     recomputes but does not re-apply the queue over BASE, so a queued entry that skipped this
-     would count in the Transaction badge and change nothing on the books. */
-  applyOverlay();render();
-}
-/* ================= UPDATING A ROW IS ONE TAP, NOT THIRTY FIELDS (v408) =================
-   HIS INSTRUCTION, 31 Aug 2026: the states a row moves through should be one tap each and
-   should FILL THEIR OWN FIGURES; the date should already say today and be ready to edit; and
-   the partial cases should ASK for the one number they need. "As little need to type and
-   search through forms as possible" is the ethos, and it is now the shape of this panel.
-
-   WHAT IT REPLACES. The Ledger carried three buttons, Paid, Delivered and Completed, and they
-   rendered ON PENDING ROWS ONLY, so the part-paid order, which is the one most often updated,
-   had no quick action at all and went through the thirty-field sheet. Worse, they queued the
-   row's FULL TOTAL as a Fulfilment, and a Fulfilment is a DELTA the fold adds: tapping Paid on
-   a row already carrying RM 50 of RM 100 queued another RM 100 and took it to RM 150. Every
-   figure here is the OUTSTANDING one, computed from the row, so the same tap cannot overpay.
-
-   IT INVENTS NO KIND. A movement queues a Fulfilment, a cancellation queues a Cancellation and
-   a restatement queues a Correction, which are the three the drafter and the fold already take.
-   Nothing here writes a row: it queues, and it is drafted, flagged and approved like the rest. */
-function updOut(row,dir){
-  /* v413, ROUND EIGHT, MATERIAL AND MINE. A LOT IS NOT MEASURED LIKE A SALE. The book's
-     convention for a fully landed lot is an ABSENT receivedQty, and for a settled one an absent
-     cash beside status:"paid"; poRecvUnits and poCash are what read that, and the engine's own
-     walk already says buy?poCash(t):txPaid(t) at position.mjs:194. This read the raw fields, so
-     TEN of eighteen lots were wrong and FIVE offered their whole total as outstanding behind a
-     "Paid in full" chip: p001 to p005, RM 5,450 of liability that does not exist. Same shape as
-     the overpay v408 was written to fix, on the other direction of the book. */
-  /* v459: ONE RULER FOR WHAT HAS MOVED ON A SALE. The cancellation gate (v436), the whiteboard
-     and the engine's own walk read txEffDeliv; this and ovSeed read txDeliv, which leaves out
-     advanceUnits. Nothing writes that field today, so the two agree on every row that exists, and
-     that is exactly the condition under which a twin goes unnoticed until something does. */
-  const paid=dir==='BUY'?poCash(row):txPaid(row), moved=dir==='BUY'?poRecvUnits(row):txEffDeliv(row);
-  const total=dir==='BUY'?(+row.total||0):txOwed(row), qty=+row.qty||0;   /* v741: a sale's outstanding cash is the goods and the delivery less what was paid */
-  /* v422: A LOT'S OUTSTANDING QUANTITY IS poOpenUnits, WHICH KNOWS THINGS THIS SUBTRACTION CANNOT.
-     qty minus received is right until the lot is defaulted or cancelled, and then it is a promise
-     of goods that are not coming: on p003, whose supplier took RM 750 and delivered nothing, the
-     panel offered "Received in full" and told the reader the lot would read Completed, on a card
-     the Ledger itself labels Default. Asking the engine is also what fold 7 was about. */
-  return {paid,moved,total,qty,
-    cashLeft:+Math.max(0,total-paid).toFixed(2),
-    unitLeft:dir==='BUY'?poOpenUnits(row):+Math.max(0,qty-moved).toFixed(2)};
-}
-let updMode=null;                       /* null = a movement; else 'pending' | 'cancel' | 'default' */
-function updEl(id){return document.getElementById(id);}
-function updSet(mode,c,k){
-  updMode=mode;
-  const ci=updEl('updCash'), ki=updEl('updUnit');
-  if(ci)ci.value=c==null?'':String(c);
-  if(ki)ki.value=k==null?'':String(k);
-  const amt=updEl('updAmts'); if(amt)amt.style.display=mode?'none':'';
-  [].forEach.call(document.querySelectorAll('.updchip'),b=>{
-    const on=b.getAttribute('data-m')===(mode||'')+'|'+(c==null?'':c)+'|'+(k==null?'':k);
-    b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
-  updSay();
-}
-function updSay(){
-  const row=edRowOf(edRid,edType); const el=updEl('updSay'); if(!row||!el)return;
-  const o=updOut(row,edType);
-  const c=+((updEl('updCash')||{}).value||0)||0, k=+((updEl('updUnit')||{}).value||0)||0;
-  const d=(updEl('updDate')||{}).value||'';
-  const noun=edType==='BUY'?'lot':'order';
-  let t;
-  if(updMode==='cancel')
-    t=o.moved>0.009
-      ? '<b style="color:var(--crim)">The fold refuses this.</b> '+units(o.moved)+' has already moved on this '+noun+', and a cancelled row carrying a delivery contradicts itself. Restate the quantity by Modification first, then cancel the remainder.'
-      : 'Cancels this '+noun+'. It leaves every figure on the desk: the revenue, the inventory it drew and anything owed on it.';
-  else if(updMode==='pending')
-    t='Restates the '+noun+' as <b>pending</b>: nothing paid, nothing moved. It draws no inventory and books no revenue until it does. This is a correction, so it moves no cash and no goods, it says what is true.';
-  else if(updMode==='default')
-    t='Marks this lot <b>defaulted</b>. It stops counting as inventory to come, and the money against it is written down by the ladder.';
-  else if(c<=0.009&&k<=0.009)
-    t='Tap a state above, or type an amount. Nothing is queued yet.';
-  else{
-    const over=[];
-    if(c>o.cashLeft+0.009)over.push('<b style="color:var(--amber)">'+fmt0(c)+' is more than the '+fmt0(o.cashLeft)+' outstanding</b>, so this '+noun+' would be over-tendered');
-    if(k>o.unitLeft+0.009)over.push('<b style="color:var(--amber)">'+units(k)+' is more than the '+units(o.unitLeft)+' left to move</b>');
-    /* v413: txStat reads deliveredQty and settledKg and knows nothing about receivedQty, so on a
-       lot it called every receipt undelivered and printed "Pending" over a completed card. A lot
-       is described by what it has paid and received against its own total and quantity. */
-    let st;
-    if(edType==='BUY'){
-      const np=o.paid+c, nm=o.moved+k;
-      const payFull=o.total<=0.009||np>=o.total-0.009, recvFull=o.qty>0&&nm>=o.qty-0.009;
-      st={order:row.cancelled?'Cancelled':(payFull&&recvFull)?'Completed':(np<=0.009&&nm<=0.009)?'Pending':'Open'};
-    }else{
-      const proj=Object.assign({},row);
-      proj.cash=(+row.cash||0)+c;
-      proj.deliveredQty=(+row.deliveredQty||0)+k;
-      st=txStat(proj);
-    }
-    const bits=[];
-    if(c>0.009)bits.push(fmt0(c)+(edType==='BUY'?' paid':' received'));
-    if(k>0.009)bits.push(units(k)+(edType==='BUY'?' received':' handed over'));
-    t='Records <b>'+bits.join('</b> and <b>')+'</b> on '+(d||'<span style="color:var(--amber)">no date</span>')
-      +'. The '+noun+' reads <b>'+esc(st.order)+'</b> after it.'+(over.length?' '+over.join('; ')+'.':'');
-  }
-  el.innerHTML=t;
-}
-function updBlock(row,dir,canc){
-  if(canc)return '';
-  const o=updOut(row,dir), noun=dir==='BUY'?'lot':'order';
-  const today=TODAY.toISOString().slice(0,10);
-  const chip=(lab,mode,c,k,on)=>on?'<button type="button" class="updchip salt-ghost" aria-pressed="false" data-m="'+((mode||'')+'|'+(c==null?'':c)+'|'+(k==null?'':k))+'" onclick="updSet('+(mode?"'"+mode+"'":'null')+','+(c==null?'null':c)+','+(k==null?'null':k)+')">'+lab+'</button>':'';
-  /* v430: AN UNPRICED ROW CANNOT BE COMPLETED, and the chip said it could. A row whose price is not
-     agreed has a zero total, so the outstanding cash is zero and Completed was offered on the
-     quantity alone; tapping it delivered the goods and left the row reading Open, Advance, which is
-     what the panel's own sentence said one line below the chip promising Completed. Nothing can pay
-     what has not been priced, so neither chip is offered until it is. */
-  const unpriced=!!row.unpriced;
-  const chips=[
-    chip(dir==='BUY'?'Paid in full':'Paid in full',null,o.cashLeft,0,!unpriced&&o.cashLeft>0.009),
-    chip(dir==='BUY'?'Received in full':'Delivered in full',null,0,o.unitLeft,o.unitLeft>0.009),
-    chip('Completed',null,o.cashLeft,o.unitLeft,!unpriced&&(o.cashLeft>0.009||o.unitLeft>0.009)),
-    chip('Back to pending','pending',null,null,o.paid>0.009||o.moved>0.009),
-    chip('Cancelled','cancel',null,null,true),
-    /* v435: not offered on a lot that has arrived, because the fold refuses it and because the
-       flag would erase the goods. The panel does not offer what the book will not take. */
-    chip('Defaulted','default',null,null,dir==='BUY'&&!row.defaulted&&poRecvUnits(row)<=0.009),
-  ].filter(Boolean).join('');
-  const bx='width:100%;padding:9px 10px;font-size:16px';
-  const lb='display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);font-weight:700;margin-bottom:4px';
-  return '<div class="updbox">'
-    +'<p style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;margin:0 0 8px">Update</p>'
-    +'<div class="updchips">'+chips+'</div>'
-    +(unpriced?'<div style="font-size:11.5px;color:var(--amber);margin-top:8px">No price is agreed on this '+noun+' yet, so there is nothing to pay and it cannot be completed. Set the total on the sheet below first.</div>':'')
-    +'<div id="updAmts" style="display:flex;gap:10px;margin-top:11px">'
-      +'<div style="flex:1"><label for="updCash" style="'+lb+'">'+(dir==='BUY'?'Cash paid':'Cash received')+', RM</label>'
-        +'<input id="updCash" type="number" step="0.01" min="0" placeholder="0" style="'+bx+'">'
-        +'<div style="font-size:11px;color:var(--dim);margin-top:3px">'+fmt0(o.cashLeft)+' outstanding</div></div>'
-      +'<div style="flex:1"><label for="updUnit" style="'+lb+'">'+(dir==='BUY'?'Received':'Handed over')+', unit</label>'
-        +'<input id="updUnit" type="number" step="0.01" min="0" placeholder="0" style="'+bx+'">'
-        +'<div style="font-size:11px;color:var(--dim);margin-top:3px">'+units(o.unitLeft)+' left to move</div></div>'
-    +'</div>'
-    +'<div style="margin-top:11px"><label for="updDate" style="'+lb+'">Date</label>'
-      +dateIn('updDate',today,' style="'+bx+';padding-right:74px"')+'</div>'
-    +'<div id="updSay" style="font-size:12px;color:var(--dim);margin-top:10px;line-height:1.5"></div>'
-    +'<button id="updGo" class="vbtn salt-pill salt-pill--sm" style="width:100%;margin-top:10px">Queue the update</button>'
-    +'</div>';
-}
-function updQueue(){
-  const row=edRowOf(edRid,edType); if(!row)return;
-  const el=updEl('updSay');
-  const say=m=>{if(el)el.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
-  const o=updOut(row,edType), partyKey=edType==='BUY'?'supplier':'customer';
-  const d=(updEl('updDate')||{}).value||'';
-  if(!d)return say('A date is needed: it is when this is recorded as having happened.');
-  const who=row[partyKey], base={mode:'amend',direction:edType,party:who,rid:edRid,orderKey:ovKey(row),
-    assoc:null,downstream:null,orderCode:null,linkTo:null,sameDay:false,note:null};
-  let entry=null;
-  if(updMode==='cancel'){
-    if(o.moved>0.009)return say('The fold refuses to cancel a row that has already moved '+units(o.moved)+'. Restate the quantity first.');
-    entry={qty:0,total:0,raw:'Cancellation on '+codeOf(who)+' '+edRid+', recorded '+d,
-      payload:Object.assign({},base,{kind:'Cancellation',date:d,qty:0,total:0,cash:0,kg:0})};
-  }else if(updMode==='pending'||updMode==='default'){
-    /* v413: the chip is OFFERED on txPaid and txDeliv, which count settledRM and settledKg, and
-       the correction zeroed only cash and the moved quantity, so a row settled in kind was left
-       standing and was not pending at all. It clears what it is offered on. */
-    const fields=updMode==='pending'
-      /* v418: A LOT SAYS "NOTHING HAS HAPPENED YET" WITH pending, AND THE PAYLOAD DID NOT SET IT.
-         Zeroing cash alone leaves the row not pending, so poCash reads nothing paid while the total
-         still stands and the lot becomes an outstanding BILL: restating a settled RM 750 lot booked
-         a RM 750 payable for salt never bought. The fold and the walk both already honour pending;
-         only the payload was short of it. inTransit is left alone deliberately, because the walk
-         reads pending first and a second flag saying the same thing is a second thing to drift. */
-      ? (edType==='BUY'?{cash:0,receivedQty:0,pending:true}:{cash:0,deliveredQty:0,settledRM:0,settledKg:0})
-      : {defaulted:true};
-    const words=Object.keys(fields).map(k=>k+' to '+fields[k]);
-    entry={qty:0,total:0,raw:'Correction on '+codeOf(who)+' '+edRid+': '+words.join(', ')+', recorded '+d,
-      payload:Object.assign({},base,{kind:'Correction',date:d,fields:fields,qty:0,total:0,cash:0,kg:0})};
-  }else{
-    const c=+((updEl('updCash')||{}).value||0)||0, k=+((updEl('updUnit')||{}).value||0)||0;
-    if(c<=0.009&&k<=0.009)return say('Nothing stated, so there is nothing to queue. Tap a state above, or type an amount.');
-    if(c<0||k<0)return say('A movement cannot be negative. To take something back, correct the figure on the sheet below.');
-    entry={qty:k,total:c,status:c>0.009?'paid':'unpaid',
-      raw:'Fulfilment on '+codeOf(who)+' '+edRid+': '+[c>0.009?fmt0(c)+' cash':'',k>0.009?units(k)+' moved':''].filter(Boolean).join(', ')+', recorded '+d,
-      payload:Object.assign({},base,{kind:'Fulfilment',date:d,qty:k,total:c,cash:c,kg:k})};
-  }
-  queue.push(POSITION_ENGINE.ledgerAmendmentEntry({at:new Date().toISOString(),row,direction:edType,
-    kind:entry.payload.kind,date:d,cash:entry.payload.cash,movedUnits:entry.payload.kg,
-    fields:entry.payload.fields,raw:entry.raw,status:entry.status,sameDay:false}));
-  edClose();
-  applyOverlay();saveQueue();render();
-}
-function edSubmit(){
-  if(edNew)return edSubmitNew();
-  const row=edRowOf(edRid,edType);if(!row)return;
-  const partyKey=edType==='BUY'?'supplier':'customer';
-  const now=edView(row,edType);
-  const blank=x=>x===undefined||x===null||String(x).trim()==='';
-  const fields={};
-  edFields(edType).forEach(f=>{
-    if(f.g)return;
-    const el=document.getElementById('ed_'+f.k);if(!el)return;
-    let want;
-    if(f.kind==='bool')want=!!el.checked;
-    else if(f.kind==='num')want=blank(el.value)?null:Number(el.value);
-    else want=blank(el.value)?null:String(el.value).trim();
-    const raw=now[f.k]===undefined?null:now[f.k];
-    const was=f.kind==='bool'?!!raw:raw;
-    if(JSON.stringify(want)!==JSON.stringify(was))fields[f.k]=want;
-  });
-  const why=document.getElementById('edWhy');
-  const say=m=>{if(why)why.innerHTML='<span style="color:var(--amber)">'+m+'</span>';};
-  if(!Object.keys(fields).length)return say('Nothing changed, so there is nothing to queue.');
-  /* v385: THE FOLD REFUSES A FIELD CORRECTABLE DOES NOT HOLD, SO THE SCREEN SAYS SO FIRST.
-     v383 folded two corrections naming <code>customer</code> where the correctable field is
-     <code>party</code>: applyAmend wrote nothing and still built the mod line out of the keys it
-     was handed, so both rows recorded a re-key that never happened. EDFORM cannot emit that
-     today, its keys and CORRECTABLE's being the same set in both directions; this is for the
-     next control added to the sheet. Checked against the engine's own table rather than a copy
-     of it, because a second list is how the two came apart in the first place. */
-  const edStray=Object.keys(fields).filter(k=>(POSITION_ENGINE.CORRECTABLE||[]).indexOf(k)<0);
-  if(edStray.length)return say('This sheet offered <b>'+esc(edStray.join(', '))+'</b>, which the fold does not accept as a correction field. Nothing was queued.');
-  const has=k=>Object.prototype.hasOwnProperty.call(fields,k);
-  const fa=has('assoc')?fields.assoc:now.assoc, fs=has('stream')?fields.stream:now.stream;
-  if(fa&&!fs)return say('An associate needs a stream, R2 or R3, to say how the credit reaches them.');
-  if(!fa&&fs)return say('A stream with no associate credits nobody. Clear the stream or name an associate.');
-  /* 28 Sep 2026, s210 TO s212: AN R2 MOVE WITH THE BUYER CLEARED QUEUES WHAT THE DRAFTER TAKES. On an R2 row the Buyer is
-     the end buyer, and the row books to the associate's resale account whether or not one is named (bookR2, v611), so an
-     empty box means none. Queued as a cleared party, the drafter refused it, since a row cannot lose its party, and three
-     Corrections moving CE5-SA's rows to CE5-SA-R were refused and then swept from the queue by the next fold. The box is
-     read as the associate instead: left out where the row names them already, stated where it names somebody else, which
-     bookR2 reads as no end buyer. */
-  if(has('party')&&fields.party===null&&fa&&fs==='R2'){const own=POSITION_ENGINE.ownerCode(String(fa));if(now.party===own)delete fields.party;else fields.party=own;}
-  /* and what the drafter refuses, the sheet does not queue: a row without one of these is not a row (CORRECT_REQUIRED) */
-  const edBare=(POSITION_ENGINE.CORRECT_REQUIRED||[]).filter(k=>has(k)&&fields[k]===null);
-  if(edBare.length)return say('<b>'+esc(edBare.map(k=>(edFields(edType).find(f=>f.k===k)||{}).l||k).join(', '))+'</b> cannot be left empty, only changed. Nothing was queued.'
-    +(edBare.indexOf('party')>=0&&edType!=='BUY'?' To book the row to an associate\'s resale account, name the associate with Stream R2.':''));
-  if(!Object.keys(fields).length)return say('Nothing changed, so there is nothing to queue.');
-  const today=TODAY.toISOString().slice(0,10);
-  const words=Object.keys(fields).map(k=>k+' to '+(fields[k]===null?'(cleared)':fields[k]));
-  queue.push(POSITION_ENGINE.ledgerAmendmentEntry({at:new Date().toISOString(),row,direction:edType,
-    kind:'Correction',date:today,fields,sameDay:false,
-    raw:'Correction on '+codeOf(row[partyKey])+' '+edRid+': '+words.join(', ')+', recorded '+today}));
-  edClose();
-  /* applyOverlay BEFORE render, exactly as updQueue and wbRecord do. render() only recomputes;
-     it does not rebuild the rows from BASE and re-apply the queue, so a queued entry that
-     skipped this line would show in the Transaction count and change nothing on the books. */
-  applyOverlay();render();
-}
-/* Delegated and bound once, because the ledger repaints on every render and a listener on the
-   cards themselves would be thrown away with them. contextmenu is the right-click.
-   IT USED TO SAY a long press on a touch screen raises the same event, so there was no second
-   gesture to write. That is true of Android Chrome and it is NOT dependable on iOS Safari,
-   where a long press on a plain element raises the selection callout instead. So the desk was
-   reachable by right-click, and by Enter on a focused card, and on an iPhone by nothing at all:
-   the one row editor the owner would most want on a phone had no gesture there. The long press
-   below is written out rather than inherited, so it does not depend on a browser quirk. */
-const ED_HOLD=450;                              // long enough not to fire on a tap, short enough to feel deliberate
-const ED_SLOP=10;                               // a press that travels this far is a scroll, not a hold
-const ED_SETTLE=150;                            // the beat between the press taking and the editor arriving
-function edCardOf(e){const t=e&&e.target;return t&&t.closest?t.closest('.lcard[data-rid]'):null;}
 if(typeof document!=='undefined'&&!window.__edBound){
   window.__edBound=1;
-  document.addEventListener('contextmenu',function(e){
-    const card=edCardOf(e);
-    if(!card)return;
-    const rid=card.getAttribute('data-rid');if(!rid)return;
-    e.preventDefault();
-    ledEdit(rid,card.getAttribute('data-type')||'SELL');
-  });
   /* A TAP OPENS THE TRAIL (09 Sep 2026). A closed entry shows its first row alone and an open one its
      latest transaction; the rest of the lines come out on a tap anywhere on the entry that is not a
      control, and go back on the next. A long press that has just fired is not a tap. */
@@ -14386,73 +13754,6 @@ if(typeof document!=='undefined'&&!window.__edBound){
     if(!card||t.closest('button,a,select,textarea,input,details,.lmenu,.lpen'))return;
     if(card.classList.contains('lpressed')||card.classList.contains('lpressing'))return;
     card.classList.toggle('lexp');
-  });
-  /* THE LONG PRESS, WRITTEN OUT. A hold that has not moved opens the same editor a right-click
-     does. It cancels on movement, so scrolling a long ledger with a finger resting on a card
-     never opens anything, which is the failure that would make the gesture worse than none.
-     A press starting on a control inside the card is that control's, not the card's.
-     THE BUZZ IS ANDROID ONLY. navigator.vibrate is not implemented in Safari on iOS at all,
-     so the guard is not defensive coding, it is the actual state of things: the gesture works
-     on an iPhone and is silent, and there is no web API that would change that. */
-  let hold=null,settle=null,holdAt=null,holdCard=null,fired=false;
-  const holdOff=()=>{
-    if(hold)clearTimeout(hold);
-    hold=null;holdAt=null;
-    /* A RELEASE AFTER THE PRESS HAS TAKEN MUST NOT CANCEL IT. The finger comes off between the
-       confirmation and the editor, which is the normal way to use this, so touchend arrives
-       inside the settle window on nearly every successful press. Cancelling there would make
-       the gesture work only if you kept holding after it had already told you it was done. */
-    if(fired)return;
-    if(settle)clearTimeout(settle);settle=null;
-    if(holdCard){holdCard.classList.remove('lpressing','lpressed');holdCard=null;}
-  };
-  document.addEventListener('touchstart',function(e){
-    holdOff();                       // reads the PREVIOUS fired, so an open in flight survives
-    fired=false;
-    const card=edCardOf(e);
-    if(!card||!card.getAttribute('data-rid'))return;
-    if(e.target.closest('button,a,select,textarea,input,summary'))return;
-    const t=e.touches&&e.touches[0];if(!t)return;
-    holdAt={x:t.clientX,y:t.clientY};holdCard=card;
-    card.style.setProperty('--hold',ED_HOLD+'ms');   // the bar and the timer read one number
-    card.classList.add('lpressing');
-    hold=setTimeout(function(){
-      hold=null;fired=true;
-      card.classList.remove('lpressing');card.classList.add('lpressed');
-      try{if(navigator.vibrate)navigator.vibrate(12);}catch(_){}
-      settle=setTimeout(function(){
-        settle=null;holdCard=null;card.classList.remove('lpressed');
-        ledEdit(card.getAttribute('data-rid'),card.getAttribute('data-type')||'SELL');
-      },ED_SETTLE);
-    },ED_HOLD);
-  },{passive:true});
-  document.addEventListener('touchmove',function(e){
-    if(!hold||!holdAt)return;
-    const t=e.touches&&e.touches[0];if(!t)return;
-    if(Math.abs(t.clientX-holdAt.x)>ED_SLOP||Math.abs(t.clientY-holdAt.y)>ED_SLOP)holdOff();
-  },{passive:true});
-  document.addEventListener('touchend',holdOff,{passive:true});
-  document.addEventListener('touchcancel',holdOff,{passive:true});
-  /* the tap that ENDS a long press must not also be delivered as a click to whatever is now
-     under the finger, which after ledEdit is the editor panel. */
-  document.addEventListener('click',function(e){if(fired){fired=false;e.preventDefault();e.stopPropagation();}},true);
-  /* v365: THE ROW EDITOR HAD NO KEYBOARD ENTRY POINT AT ALL. Right-click and long-press were
-     the only roads in; tabbing through the page never landed on a row, and nothing here
-     answered a keydown. Enter on a focused card (tabindex is set where the card carries a
-     rid) opens the same editor a right-click does. Escape closes it, on either the panel or
-     anything inside it, which the panel could not do either. */
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Enter'){
-      const card=e.target&&e.target.closest?e.target.closest('.lcard[data-rid]'):null;
-      if(!card)return;
-      if(e.target.closest('button,a,select,textarea,input,details'))return;
-      e.preventDefault();
-      ledEdit(card.getAttribute('data-rid'),card.getAttribute('data-type')||'SELL');
-      return;
-    }
-    if(e.key==='Escape'&&edOpen()){
-      edClose();
-    }
   });
 }
 /* E-codes point at each other across the whole book, so half the targets now sit inside the
@@ -14909,10 +14210,7 @@ function tabLedger(){
         if(prev.kind==='Agreed'&&L.date===dOf(t.date)&&(L.units>0.0001||L.cash>0.0001))out[out.length-1]=L;
         else out.push(L);});
       return out;})();
-    const penRid=ridOf(t);
-    const pen=(finalState!=='Cancelled'&&penRid&&!provOf(t))
-      ?`<button type="button" class="lpen" onclick="ledMenu(event,'${penRid}','${t.type}')" title="Update this ${t.type==='BUY'?'lot':'order'}" aria-label="Update ${code}"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 0l.7.7a1.6 1.6 0 0 1 0 2.3L5.6 13.4 1.9 14.1l.7-3.7L11.3 1.7zm-8 8.9-.4 2.2 2.2-.4 7.6-7.6-1.8-1.8-7.6 7.6z" fill="currentColor"/></svg></button>`
-      :provOf(t)?`<span class="tag salt-status salt-status--dotted prov lpen lprov" title="${unsentAts.has(provOf(t))?'unsent: held on this device only, not confirmed by the Worker':'recorded but not yet committed'}">${unsentAts.has(provOf(t))?'Unsent':'Provisional'}</span>`:'';
+    const pen=provOf(t)?`<span class="tag salt-status salt-status--dotted prov lpen lprov" title="${unsentAts.has(provOf(t))?'unsent: held on this device only, not confirmed by the Worker':'recorded but not yet committed'}">${unsentAts.has(provOf(t))?'Unsent':'Provisional'}</span>`:'';
     /* v465: every line is the same cells, so the table's columns hold from the heading down: E, step,
        date, type, product, party, then the four figures. A cell a line has no use for stays in place,
        empty. v466: each cell names its area, so a narrower screen can re-flow the line. The step cell
@@ -16823,13 +16121,6 @@ async function bioLoad(){
     return true;
   }catch(e){ return false; }
 }
-async function bioSave(){
-  if(qSyncState!=='server')return false;
-  try{ const r=await fetch('bio',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({updated:new Date().toISOString(),bio:BIO,ids:newIds,locs:newLocs})});
-    return r.ok&&(await r.json()).ok;
-  }catch(e){ return false; }
-}
 let idOpen=false;
 /* ---- Names & IDs -----------------------------------------------------------
    Two states only.
@@ -16948,7 +16239,7 @@ async function vaultReveal(pass){
 }
 /* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other; F13: the slip key too */
 function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}try{slipShut();}catch(e){}
-  try{ORD_FEE={};WB_FEE=null;ORD_PIN={};ORD_PIN_ALL='';ORD_PIN_ALL_FOR='';}catch(e){}}   /* F15: a fee worked from the places goes with them, and a shared spot */
+  try{ORD_PIN={};ORD_PIN_ALL='';ORD_PIN_ALL_FOR='';}catch(e){}}   /* a shared spot goes with the places */
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
    is to RE-KEY the ledger, never to paint a new code over the old id: a hidden second
@@ -17018,117 +16309,6 @@ function deriveFreeCode(name,loc,kind,parent,except){
   for(let i=1;i<=more.length;i++){const c=head+more.slice(0,i)+tail;if(free(c))return c;}
   for(let i=2;;i++){if(free(base+i))return base+i;}
 }
-function addParty(){
-  const g=id=>{const e=document.getElementById(id);return e?e.value:'';};
-  const name=(g('apName')||'').trim(), loc=(g('apLoc')||'').trim();
-  const kind=g('apKind')||'customer', parent=g('apParent')||'';
-  const setM=(t,c)=>{const m=document.getElementById('apMsg');if(m){m.innerHTML=t;m.style.color=c||'var(--mut)';}};
-  /* v306: THE GUARD THAT KILLED THIS BUTTON. It used to refuse unless `vaultPass` was held,
-     which was right when the encrypted vault WAS the directory. It is not any more: names
-     live in BIO and are written to 06_Data\salt_bio.json by Save, and the vault is seeded
-     from that file afterwards. Worse, the two ways of opening the directory disagree: the
-     Names panel's own Unlock keeps the passphrase, but `vaultReveal()`, the ordinary "show
-     me the names" path, DELETES it on purpose ("not needed again"). So after the reveal
-     everybody uses, this button answered "Unlock the vault first" to a man looking at the
-     unlocked directory. Nothing here needs the passphrase, so nothing here asks for one. */
-  /* A GENERAL BUCKET IS THE ONE PARTY WITH NO NAME (v199). Every other kind is created by
-     naming it, because a code is derived from a name and a place. A bucket is the opposite
-     case by construction: an associate sold onward to somebody you never met, so there is
-     no name to encrypt and no place to abbreviate, and demanding either would be asking for
-     information whose absence is the very reason the bucket exists. It takes the associate
-     and nothing else, and it writes NO vault entry, so the vault keeps holding names only. */
-  if(kind==='bucket'){
-    if(!parent)return setM('Pick which associate the sale went through.','var(--crim)');
-    const bcode=codeOf(parent)+'-Gen';
-    if(roster.indexOf(bcode)>=0)return setM('<b>'+esc(bcode)+'</b> already exists and is selectable on the Transaction tab as an end customer.','var(--amber)');
-    addedParties.push({code:bcode,kind:'bucket',parent:parent,at:new Date().toISOString()});
-    const bWarn=apPersist(bcode);
-    roster.push(bcode);
-    queue.push(POSITION_ENGINE.addIdEntry({at:new Date().toISOString(),code:bcode,kind:'bucket',parent:parent,rev:null,
-      raw:'Add the general downsell bucket '+bcode+' under '+parent}));
-    apDone(kind,'<b>'+esc(bcode)+'</b> created. Record the sale on the <b>Transaction</b> tab with <b>'+esc(codeOf(parent))+'</b> as the associate on the <b>R2</b> stream, and pick this as the end customer. Nothing is written to the vault, because a bucket has no name to keep.'+bWarn,bWarn?'var(--amber)':'var(--grn)');
-    apSaved();
-    return;
-  }
-  if(!name)return setM('A name is needed.','var(--crim)');
-  /* v548, his instruction of 09 Sep 2026: a place still to be confirmed is an answer. A blank location
-     derives the suffix TBC and files "(to be confirmed)"; the map reads TBC as a place nobody has recorded
-     yet, and the code is re-keyed when it is. v587, his rule of 11 Sep 2026: a supplier's blank place is
-     TBC too; it used to take no suffix at all. */
-  const tbc=!loc;
-  if(kind==='downstream'&&!parent)return setM('Pick which associate this buyer sits under.','var(--crim)');
-  const code=deriveFreeCode(name,tbc?'TBC':loc,kind,parent);   // v587: a clash takes more of the name
-  if(!code)return setM('That does not derive a code. A downstream buyer needs an associate and a place.','var(--crim)');
-  if(roster.indexOf(code)>=0)return setM('The code <b>'+esc(code)+'</b> already belongs to someone. Change the name or the location so it derives a free one.','var(--crim)');
-  if(vaultPairVersion)return apFilePairId(code,kind,parent,name,loc,setM);
-  addedParties.push({code:code,kind:kind,parent:parent||null,at:new Date().toISOString()});
-  const mWarn=apPersist(code);
-  roster.push(code);
-  /* v306: THE NAME GOES INTO BIO, WHICH IS WHERE THE DIRECTORY ACTUALLY LIVES. It used to
-     be written to `vaultNames` alone, and that was the second half of why this never worked:
-     the textarea beside each code renders from bioRaw(id), and Save reads those textareas
-     back into BIO and DELETES any entry left empty. So the name typed here rendered nowhere
-     and was discarded by the very next Save. Writing BIO and deriving vaultNames from it is
-     the same direction the rest of the panel runs in, so the new party now behaves exactly
-     like every existing one. */
-  if(!BIO[code])BIO[code]={raw:'',photo:null};
-  BIO[code].raw=name+(loc?' ('+loc+')':(tbc?' (to be confirmed)':''));
-  syncBioNames();                                    // vaultNames follows BIO, never the reverse
-  /* only the CODE and its shape ride the queue. The name is deliberately absent: the queue
-     file is plaintext and is the one place a name must never appear. */
-  queue.push(POSITION_ENGINE.addIdEntry({at:new Date().toISOString(),code:code,kind:kind,parent:parent||null,
-    rev:kind==='reseller'?'R2':(kind==='referral'?'R3':null),
-    raw:'Add '+code+' to the roster as a '+(kind==='downstream'?('downstream of '+parent):kind)}));
-  apDone(kind,'<b>'+esc(code)+'</b> created and selectable now, with the name already filled in below. Press <b>Save</b> to write it to the directory, then record his first transaction against him directly: there is no placeholder and no re-key. The phone shows names only after the vault is re-seeded, which the sync pass does when the directory changes.'+mWarn,mWarn?'var(--amber)':'var(--grn)');
-  apSaved();
-}
-async function apFilePairId(code,kind,parent,name,loc,setM){
-  const geo=loc?geoWhere(wbGeoPoint(loc),loc):null,outcome={};
-  const why=await wbVaultFile(map=>{
-    const label=name+' ('+(loc||'to be confirmed')+')';
-    if(Object.hasOwn(map,code)&&map[code]!==label)throw new Error('That code already holds a different filed name. Keep this form and review its identity.');
-    map[code]=label;
-  },null,{operation:'add-id',body:{code,kind,parent:parent||null,geo,tiers:null}},outcome);
-  if(why){setM(esc(why),'var(--crim)');return;}
-  wbAddIdQueue(code,kind,parent,null,geo,null,outcome.queued);
-  apDone(kind,'<b>'+esc(code)+'</b> filed encrypted and queued for review. The name and place never ride the ledger queue.','var(--grn)');
-}
-/* THE CONFIRMATION USED TO BE DESTROYED BY ITS OWN SUCCESS (v199). addParty set the
-   message and then called renderReveal(), which rebuilds the panel from scratch: the
-   <details> collapsed and the freshly written message was thrown away with the node it
-   sat in. So creating a party looked exactly like creating nothing, on the one screen
-   where you most need to be told a code was minted. Re-render FIRST, then re-open the
-   box, restore the chosen kind so the fields do not snap back to Customer, and write the
-   message into the new node. */
-/* v385: FOUR SWALLOWED FAILURES ON THIS PANEL AND ALL FOUR STILL SAID "created". Minting a
-   party writes in two places and neither was checked: localStorage, so the code is selectable
-   before the fold, and the queue file, which is the only copy that reaches the ledger. A private
-   window and a full store both refuse the first; a dead server makes the second fall back to a
-   download. Both were caught and dropped, so the confirmation promised a save that had not
-   happened. The queue write is the graver of the two and it is asynchronous, so it is reported
-   by amending the confirmation when it answers rather than before it has. */
-function apPersist(code){
-  try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));return '';}
-  catch(e){return ' <b>'+esc(code)+'</b> is selectable now but was NOT remembered on this device, so it drops out of the pickers on the next load until the row is folded.';}
-}
-function apSaved(){
-  const say=t=>{const m=document.getElementById('apMsg');if(m){m.innerHTML+=t;m.style.color='var(--amber)';}};
-  const failed=e=>say(' The queue could not be saved: '+esc((e&&e.message)||e)+'. Record it again before closing the desk.');
-  try{
-    Promise.resolve(saveQueue()).then(res=>{
-      if(res===false)say(' Held in this tab, but NOT written to '+esc(QFILE)+'; a download was made instead.');
-    },failed);
-    renderQueue();
-  }catch(e){ failed(e); }
-}
-function apDone(kind,html,colour){
-  renderReveal();
-  const box=document.getElementById('apBox');if(box)box.open=true;
-  const k=document.getElementById('apKind');
-  if(k&&kind){k.value=kind;if(typeof k.onchange==='function')k.onchange();}
-  const m=document.getElementById('apMsg');
-  if(m){m.innerHTML=html;m.style.color=colour||'var(--mut)';}
-}
 /* v628: queueRename, which nothing called, is gone; Amend ID on the Enter view queues a rename now (wbAmendIdNamed) */
 /* codes for parties that lack one; existing ids are canonical and are left alone */
 function applyCodes(vn){
@@ -17194,11 +16374,8 @@ function renderReveal(){
          from BIO, which on the phone is always {}. Locked must mean locked. */
       ? '<div style="display:flex;gap:9px;align-items:flex-start">'+av
         +'<div style="flex:1">'
-        +'<textarea data-bio="'+id+'" class="vin" rows="2" placeholder="everything you know: name (location), phone, address, email, anything" '
-        +'style="width:100%;min-height:44px;resize:vertical;font-size:16px;line-height:1.45">'+raw+'</textarea>'
+        +'<div style="font-size:12.5px;color:var(--ink);line-height:1.45;white-space:pre-wrap">'+(raw||'<span style="color:var(--dim)">not on file</span>')+'</div>'
         +(chips?'<div style="margin-top:5px">'+chips+'</div>':'')
-        +'<button class="vbtn salt-pill salt-pill--sm" data-photo="'+id+'" style="margin-top:5px;font-size:10px;padding:3px 9px;min-height:0">'+(ph?'Replace photo':'Add photo')+'</button>'
-        +(ph?'<button class="vbtn salt-pill salt-pill--sm" data-unphoto="'+id+'" style="margin-top:5px;margin-left:5px;font-size:10px;padding:3px 9px;min-height:0">Remove</button>':'')
         +hint+'</div></div>'
       : '<div style="display:flex;gap:9px;align-items:center">'+av+'<span style="color:var(--dim);font-size:12px">&bull;&bull;&bull;&bull;&bull;&bull;</span></div>';
     return '<tr><td class="l salt-table__label mono" style="vertical-align:top;padding-top:11px">'+codeOf(id)+'</td><td class="l salt-table__label">'+cell+'</td><td style="vertical-align:top;padding-top:11px">'+kindOf(id)+'</td></tr>';
@@ -17222,62 +16399,18 @@ function renderReveal(){
     ${vaultRevealMsg?`<div style="font-size:12px;color:${/did not open|no vault|Enter the/.test(vaultRevealMsg)?'var(--crim)':'var(--mut)'};margin-bottom:7px">${esc(vaultRevealMsg)}</div>`:''}
     ${!NAME_VAULT?'<div class="dsc" style="margin-bottom:8px">No vault has synced to this device yet. Seed it from the laptop with <b>tools/seed-vault.mjs</b>.</div>':''}
     `:`
-    <div class="note" style="margin:0 0 10px">One box per party. Type whatever you know, in any order: name (location), phone, address, email, a handle. The desk reads it back and shows what it recognised, and the separate boxes get built later out of what actually turns up.
-      ${NAME_VAULT?'<b>An old encrypted vault is still on file.</b> Import it once to bring those names across.':''}</div>
+    <div class="note" style="margin:0 0 10px">Read only. Names change through Amend ID on Counter Admin.</div>
     <div class="note warn" style="margin:0 0 10px;border-color:color-mix(in srgb,var(--salt-copper) 30%,transparent);background:color-mix(in srgb,var(--salt-copper) 8%,transparent)"><b>Not encrypted.</b> This is kept in salt_bio.json in the clear, by your instruction. The desk file itself stays clean and the published mirror carries none of it. The phone is a different matter: it only ever receives the sealed envelope and asks for the passphrase.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-      <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),var(--desk-vio-deep))':'transparent'};color:${revealed?'var(--desk-on-solid)':'var(--vio)'}">${revealed?'Hide':'Show and edit'}</button>
-      ${revealed?'<button id="vsave" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--grn);background:linear-gradient(135deg,var(--grn),var(--desk-grn-deep));color:var(--salt-ink-on-accent)">Save</button>':''}
-      ${NAME_VAULT?'<button id="vimport" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--gold);background:transparent;color:var(--gold)">Import old vault</button>':''}
+      <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),var(--desk-vio-deep))':'transparent'};color:${revealed?'var(--desk-on-solid)':'var(--vio)'}">${revealed?'Hide':'Show'}</button>
     </div>`}
-    ${NAME_VAULT?'<div id="vimpBox" style="display:none;gap:6px;margin-bottom:8px"><input id="vpass" type="password" placeholder="passphrase for the old vault" style="min-width:160px;padding:8px 9px;font-size:16px"><button id="vdoimp" class="vbtn salt-pill salt-pill--sm">Import</button></div>':''}
     <div id="vmsg" style="font-size:12px;color:var(--mut);min-height:15px;margin-bottom:6px"></div>
-    ${(open&&!cloudMode())?`<details id="apBox" style="margin-bottom:9px;border:1px solid var(--line);border-radius:9px;padding:9px 10px">
-      <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--gold)">+ Add ID</summary>
-      <div class="dsc" style="margin:7px 0 8px">A party is created <b>here</b>, by naming it, because a proper code is derived from a name and a place and this is the only panel that holds names. The code minted is the one the ledger carries from its first transaction, so there is <b>no placeholder and no re-key</b>.</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <input id="apName" placeholder="name" style="padding:6px 8px;font-size:16px">
-        <input id="apLoc" placeholder="location; blank if to be confirmed" style="padding:6px 8px;font-size:16px">
-        <select id="apKind" style="padding:6px 30px 6px 8px;font-size:16px">
-          <option value="customer">Customer: buys direct</option>
-          <option value="reseller">Associate, resells for you: R2</option>
-          <option value="referral">Referrer, introduces buyers: R3</option>
-          <option value="downstream">An associate&rsquo;s end buyer: you delivered, so you know the name and place</option>
-          <option value="bucket">An associate&rsquo;s end buyer you know NOTHING about: his &ldquo;-Gen&rdquo; bucket</option>
-          <option value="supplier">Supplier</option>
-        </select>
-        <select id="apParent" style="display:none;padding:6px 30px 6px 8px;font-size:16px">
-          <option value="">Which associate…</option>${byName(roster.filter(id=>!id.startsWith('S'))).map(id=>`<option value="${id}">${codeOf(id)}</option>`).join('')}
-        </select>
-        <button id="apAdd" class="vbtn salt-pill salt-pill--sm" style="align-self:flex-start">Create the ID</button>
-      </div>
-      <div id="apMsg" style="font-size:12px;color:var(--mut);margin-top:7px;min-height:14px"></div>
-    </details>`:''}
     <div style="max-height:calc(100dvh - 250px - var(--safetop) - var(--safebot));overflow:auto;border:1px solid var(--line);border-radius:9px"><table class="salt-table"><thead><tr><th class="l salt-table__label">Code</th><th class="l salt-table__label">Real name</th><th>Role</th></tr></thead><tbody>${rows}</tbody></table></div>
-    ${qServed()?'<div class="dsc" style="margin-top:8px">Saved changes are written to <b>salt_vault.json</b> beside the desk, encrypted.</div>':'<textarea id="vout" readonly placeholder="encrypted blob (backup)" style="width:100%;margin-top:8px;min-height:44px;display:none;padding:8px;font-size:16px;font-family:ui-monospace,monospace"></textarea>'}
   </div>`;
   const btn=document.getElementById('idBtn');if(btn)btn.onclick=()=>{idOpen=!idOpen;renderReveal();};
   const cbtn=document.getElementById('idClose');if(cbtn)cbtn.onclick=()=>{idOpen=false;renderReveal();};
   const bd=document.getElementById('idBackdrop');if(bd)bd.onclick=()=>{idOpen=false;renderReveal();};
   if(!idOpen)return;
-  /* look the node up each time: a re-render replaces the panel, so a captured
-     reference would be detached and the message would vanish silently */
-  const setMsg=(t,c)=>{const m=document.getElementById('vmsg');if(m){m.innerHTML=t;m.style.color=c||'var(--mut)';}};
-
-  const apK=document.getElementById('apKind'),apP=document.getElementById('apParent');
-  /* the bucket kind needs the associate and NOTHING else, so the name and location
-     inputs are hidden rather than left on screen demanding what does not exist */
-  if(apK&&apP)apK.onchange=()=>{
-    const k=apK.value,isB=k==='bucket';
-    apP.style.display=(k==='downstream'||isB)?'':'none';
-    const nEl=document.getElementById('apName'),lEl=document.getElementById('apLoc');
-    if(nEl)nEl.style.display=isB?'none':'';
-    if(lEl)lEl.style.display=isB?'none':'';
-    const m=document.getElementById('apMsg');
-    if(m)m.innerHTML=isB?'A bucket has no name and no place, which is the whole point of it: it is where an associate&rsquo;s onward sale goes when you never meet the buyer. Pick the associate and the desk mints <b>&lt;associate&gt;-Gen</b>.':'';
-  };
-  const apA=document.getElementById('apAdd');if(apA)apA.onclick=addParty;
-
   const rv=document.getElementById('vreveal');
   /* v277: ON THE PHONE, HIDING IS A LOCK RATHER THAN A TOGGLE. Flipping `revealed` back
      would leave the decrypted names sitting in vaultNames, so a later re-render, or anything
@@ -17296,74 +16429,6 @@ function renderReveal(){
     if(vaultRevealMsg)setTimeout(()=>{try{rpass.focus();}catch(e){}},0);
   }
 
-  /* SAVE. One box per party, stored verbatim. bioName() reads the first line back out
-     as the old "Name (Location)" contract, so ID(), the statements and the entry parser
-     keep working without knowing the directory changed shape underneath them. */
-  const sb=document.getElementById('vsave');
-  if(sb)sb.onclick=async()=>{
-    document.querySelectorAll('textarea[data-bio]').forEach(t=>{
-      const id=t.dataset.bio,v=t.value.trim();
-      if(!BIO[id])BIO[id]={raw:'',photo:null};
-      BIO[id].raw=v;
-    });
-    Object.keys(BIO).forEach(id=>{if(!BIO[id].raw&&!BIO[id].photo)delete BIO[id];});
-    syncBioNames();
-    const wrote=await bioSave();
-    renderReveal();render();
-    const filled=roster.filter(id=>bioRaw(id)).length;
-    setMsg(wrote?('Saved to salt_bio.json. <b>'+filled+' of '+roster.length+'</b> filled.')
-                :('Held in this browser only: the desk is open without its server, so nothing reached the folder.'),
-           wrote?'var(--grn)':'var(--amber)');
-  };
-
-  /* PHOTO. Downscaled to 320px in the browser before it is stored, because a phone photo
-     is two megabytes and the directory is a JSON file that gets read on every load. */
-  document.querySelectorAll('button[data-photo]').forEach(btn=>{
-    btn.onclick=()=>{
-      const id=btn.dataset.photo;
-      const inp=document.createElement('input');inp.type='file';inp.accept='image/*';
-      inp.onchange=()=>{const f=inp.files&&inp.files[0];if(!f)return;
-        const fr=new FileReader();
-        fr.onload=()=>{const im=new Image();
-          im.onload=()=>{
-            const M=320,sc=Math.min(1,M/Math.max(im.width,im.height));
-            const c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);
-            c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-            if(!BIO[id])BIO[id]={raw:'',photo:null};
-            BIO[id].photo=c.toDataURL('image/jpeg',.8);
-            renderReveal();setMsg('Photo attached. Press <b>Save</b> to keep it.','var(--gold)');
-          };im.src=fr.result;};
-        fr.readAsDataURL(f);};
-      inp.click();
-    };
-  });
-  document.querySelectorAll('button[data-unphoto]').forEach(btn=>{
-    btn.onclick=()=>{const id=btn.dataset.unphoto;if(BIO[id])BIO[id].photo=null;renderReveal();setMsg('Photo removed. Press <b>Save</b> to keep the change.','var(--gold)');};
-  });
-
-  /* IMPORT, ONCE. The names he already has are inside an AES-GCM blob this desk can no
-     longer read by design, so removing the lock without this would strand all of them.
-     It decrypts with the old passphrase and writes straight into the directory. */
-  const ib=document.getElementById('vimport');
-  if(ib)ib.onclick=()=>{const bx=document.getElementById('vimpBox');if(bx)bx.style.display=bx.style.display==='flex'?'none':'flex';};
-  const di=document.getElementById('vdoimp');
-  if(di)di.onclick=async()=>{
-    const p=document.getElementById('vpass'),pass=p?p.value:'';
-    if(!pass){setMsg('Enter the old passphrase.','var(--crim)');return;}
-    try{
-      const d=await vaultDecrypt(pass,NAME_VAULT);
-      let n=0;
-      Object.keys(d).forEach(k=>{const id=k.replace(/^SLT-/,''),v=(''+(d[k]||'')).trim();
-        if(!v)return;
-        if(!BIO[id])BIO[id]={raw:'',photo:null};
-        if(!BIO[id].raw){BIO[id].raw=v;n++;}
-      });
-      syncBioNames();
-      const wrote=await bioSave();
-      revealed=true;renderReveal();render();
-      setMsg('<b>'+n+'</b> name'+(n===1?'':'s')+' imported into the directory'+(wrote?' and saved':' (browser only)')+'. The lock is no longer used.','var(--grn)');
-    }catch(e){setMsg('Wrong passphrase.','var(--crim)');}
-  };
 }
 function computeNewIds(vn){
   const g=id=>vn[id]!=null?vn[id]:vn['SLT-'+id];
@@ -18121,67 +17186,19 @@ function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
 /* v670: a band set is spelled out band by band, so a queued entry never reads [object Object] */
 function levelSay(v){return v==null?'not set':typeof v==='number'?'drift '+driftSay(v):typeof v==='string'?v:(['small','mid','big'].filter(k=>v[k]).map(k=>k+' '+v[k]).join(', ')||JSON.stringify(v));}
 function tierSay(t){return Object.keys(t).map(p=>(PRODUCTS[p]?PRODUCTS[p].name:p)+' '+levelSay(t[p])).join(', ');}
-function tierQueue(tiers){
-  const codes=Object.keys(tiers);if(!codes.length)return;
-  queue.push(POSITION_ENGINE.tierSetEntry({at:new Date().toISOString(),tiers,
-    raw:codes.length===1?'Set '+codes[0]+': '+tierSay(tiers[codes[0]]):'Set '+codes.length+' customers from their proposals: '+codes.map(c=>c+' '+tierSay(tiers[c])).join('; ')}));
-  render();
-  Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
-}
-/* Set queues only the products whose choice differs from the tier held or already waiting */
-function tierSet(code){
-  const held=TIER_OF[code]||{},wait=tierQueued()[code]||{},t={};
-  PROD_IDS.forEach(p=>{const el=document.getElementById('tierSel_'+code+'_'+p);if(!el)return;
-    /* v670: a product holding a band set shows "keep the bands" selected, and Set leaves it alone; without this, Set on a
-       banded customer read the unmatched dropdown as "not set" and queued a clear */
-    if(el.value==='__bands')return;
-    const v=TIER_NAMES.includes(el.value)?el.value:null,now=p in wait?wait[p]:(held[p]||null);
-    if(v!==now)t[p]=v;});
-  if(Object.keys(t).length)tierQueue({[code]:t});
-}
-function tierAcceptAll(){
-  const boards=tierBoards(),waiting=tierQueued(),t={};
-  tierCustomers().forEach(id=>tieredBooks().forEach(p=>{
-    if((TIER_OF[id]||{})[p]||(waiting[id]&&p in waiting[id]))return;
-    const pr=ruleProposal(id,p,boards);if(pr)(t[id]=t[id]||{})[p]=pr;}));   /* v671: the rules' proposal, band set or level */
-  tierQueue(t);
-}
 /* ============ 05 OCT 2026: THE DRIFT CARD ============
    One row a customer on each drift book: the drift read off their record (good and bad beside it), the one he has set if he
    has, what it quotes at 1, 3 and 12.5 unit, and a box to set or clear his. Set and Clear queue a `tierset` carrying the
    number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Set Price, so
    a row drifting up says the signal there is terms or prepayment. */
 function driftSay(d){return (d>0?'+':d<0?'\u2212':'')+Math.abs(d).toFixed(2);}
-function driftSet(code,p){
-  const el=document.getElementById('driftIn_'+code+'_'+p);if(!el)return;
-  const v=parseFloat(String(el.value).replace('\u2212','-'));
-  if(!PRICING_ENGINE.driftOk(v)){el.setCustomValidity('A drift runs from -1 to +1');el.reportValidity&&el.reportValidity();return;}
-  el.setCustomValidity('');
-  const wait=tierQueued()[code]||{},now=p in wait?wait[p]:((TIER_OF[code]||{})[p]);
-  if(typeof now==='number'&&Math.abs(now-v)<1e-9)return;
-  tierQueue({[code]:{[p]:+v.toFixed(2)}});
-}
-function driftClear(code,p){tierQueue({[code]:{[p]:null}});}
-/* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. One tap queues a name-free `partner` entry for a code already on the
-   roster; Approve is the confirmation. The desk shows the standing at once, as the fold will file it: the code in `partners`, and an
+/* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. It is made on Counter Admin (a name-free `partner` entry for a code already on the
+   roster). The desk shows the standing of one queued before B5 of #62 at once, as the fold will file it: the code in `partners`, and an
    associate (with the -R account) if they were none, so cardQuote reads the floor and the bench lists them before the fold lands. */
 function partnerQueued(code){return queue.some(q=>q&&q.payload&&q.payload.mode==='partner'&&q.payload.code===code);}
-function partnerBtn(id){
+function partnerNote(id){
   if(partners.indexOf(id)>=0||isBucket(id))return '';
-  if(partnerQueued(id))return '<span class="iref">Waiting under Approve: partner, pays cost</span>';
-  return `<button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);min-width:44px;background:transparent;color:var(--gold)" onclick="partnerMake('${id}')">Make partner</button>`;
-}
-function partnerMake(code){
-  if(partners.indexOf(code)>=0||partnerQueued(code))return;
-  const bucket=POSITION_ENGINE.appointBucket('reseller',code);
-  queue.push(POSITION_ENGINE.partnerEntry({at:new Date().toISOString(),code,
-    raw:'Make '+code+' a partner: pays cost, keeps every associate property'+(associates.indexOf(code)<0?', appointed an associate on the R2 stream with '+bucket+' as their resell account':'')}));
-  if(roster.indexOf(code)<0)roster.push(code);
-  if(bucket&&roster.indexOf(bucket)<0)roster.push(bucket);
-  if(associates.indexOf(code)<0)associates.push(code);
-  partners.push(code);
-  applyOverlay();render();
-  Promise.resolve(saveQueue()).then(()=>{try{renderQueue();}catch(e){}});
+  return partnerQueued(id)?'<span class="iref">Waiting under Approve: partner, pays cost</span>':'';
 }
 function driftCard(){
   const ids=tierCustomers(),books=tieredBooks().filter(driftBook);if(!ids.length||!books.length)return '';
@@ -18197,9 +17214,7 @@ function driftCard(){
       const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set '+driftSay(dr.hand)+', auto '+driftSay(dr.auto):'auto '+driftSay(dr.auto));
       const why='good '+dr.G.toFixed(2)+', bad '+dr.B.toFixed(2)+(dr.sig.late?' (late payer)':'')+(dr.sig.writtenOff>0.009?' (written off)':'');
       const terms=dr.d>0.0001?'<br><span class="iref">Up barely moves half a unit or one: there the signal is terms or prepayment.</span>':'';
-      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${driftSay(dr.d)}</b><br><span class="iref">${state}; ${why}</span><br><span class="iref">${at}</span>${terms}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px"><input id="driftIn_${id}_${p}" type="number" step="0.05" min="-1" max="1" inputmode="decimal" aria-label="${PRODUCTS[p].name} drift for ${codeOf(id)}" value="${dr.hand!=null?dr.hand:''}" placeholder="-1 to 1" style="min-height:var(--tap);min-width:44px;width:6em">
-        <button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);min-width:44px" onclick="driftSet('${id}','${p}')">Set</button>${dr.hand!=null&&!(w&&wv==null)?`<button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);min-width:44px;background:transparent;color:var(--gold)" onclick="driftClear('${id}','${p}')">Clear</button>`:''}${partnerBtn(id)}</div></td></tr>`);
+      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${driftSay(dr.d)}</b><br><span class="iref">${state}; ${why}</span><br><span class="iref">${at}</span>${terms}</div>${partnerNote(id)}</td></tr>`);
     });});}
   finally{PROD=keep;recompute();}
   return `<div class="card"><div class="cardh">Drift <span class="sub">each customer's price against the Set Price; read off their record unless you set one</span></div>
@@ -18223,11 +17238,10 @@ function tierCard(){
     const bands=shown&&typeof shown==='object';
     const bandLine=bands?`<br><span class="iref">${levelSay(shown)}</span>`:'';
     /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
-    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}${lateLine}</div><select id="tierSel_${id}_${p}" aria-label="${PRODUCTS[p].name} tier for ${codeOf(id)}" style="min-height:var(--tap);width:auto">${bands?'<option value="__bands" selected>Keep the bands</option>':''}<option value=""${shown?'':' selected'}>Not set</option>${TIER_NAMES.map(n=>`<option${n===shown?' selected':''}>${n}</option>`).join('')}</select></div>`;};
-  const body=ids.map(id=>`<tr><td class="l salt-table__label mono">${ID(id)}<br><button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);margin-top:6px" onclick="tierSet('${id}')">Set</button></td><td class="l salt-table__label">${tieredBooks().map(p=>cell(id,p)).join('')}</td></tr>`).join('');
+    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}${lateLine}</div><b>${shown?levelSay(shown):'not set'}</b></div>`;};
+  const body=ids.map(id=>`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label">${tieredBooks().map(p=>cell(id,p)).join('')}</td></tr>`).join('');
   return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product; it is what they are quoted</span></div>
     <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Tier for each product</th></tr></thead><tbody>${body}</tbody></table></div>
-    ${open?`<button class="vbtn salt-pill salt-pill--sm" style="min-height:var(--tap);margin-top:8px" onclick="tierAcceptAll()">Accept ${open} proposal${open===1?'':'s'}</button>`:''}
     <div class="insight salt-insight">${held} of ${ids.length*tieredBooks().length} product tiers are held; ${PROD_IDS.filter(p=>TIER_RULE[p]&&TIER_RULE[p].fixed).map(p=>PRODUCTS[p].name).join(', ')} are one price for everybody; a tier moves only when you approve it, and a product a customer has never bought is proposed nothing until you set it.</div></div>`;
 }
 
@@ -19512,7 +18526,7 @@ function tabConcentration(){
      every card header with a sub, so it is not fixed from this view. */
   const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}, whole ledger</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
     <table class="salt-table"><thead><tr><th class="l salt-table__label">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table>
-    ${cr.some(r=>r.free>=1-1e-9)?`<div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:8px">${cr.filter(r=>r.free>=1-1e-9).map(r=>`<button class="vbtn salt-pill salt-pill--sm" onclick="redeemRebate('${r.id}')">${sales.some(s=>s.customer===r.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} 1 unit for ${ID(r.id)}</button>`).join('')}</div>`:''}</div>`;
+    ${cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Counter Admin.</p>':''}</div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the
@@ -19700,48 +18714,6 @@ function offsetFor(s,free,cap){return POSITION_ENGINE.offsetFor(s,free,cap);}
    autoOffsets, the card's button and the Today prompt, and on the Worker the drafter's redemption and a
    correction that would offset their row. Returning is taking them off PEOPLE.departed, on his word. */
 function canRedeem(id){return !isDeparted(id);}
-/* v621, HIS RULING OF 14 SEP 2026: A CUSTOMER MAY REDEEM TOO, ON HIS WORD, once they hold a whole unit, and a tap takes one
-   whole unit, as salt or as an offset against their advance; covering a lower margin stays the main road (v620). An
-   associate is looked for first and still takes all they hold. The balance the card states is what they hold. */
-function redeemRebate(rid){if(!canRedeem(rid))return;const assoc=networkStats().find(x=>x.id===rid),cust=assoc?null:customerRewards().find(x=>x.id===rid),rst=assoc||cust;if(!rst)return;const applied=rebateApplied(rid);const held=+(rst.earned-applied).toFixed(2);const freeUnits=cust?(held>=1-1e-9?1:0):held;if(freeUnits<=0.009)return;
-  const today=TODAY.toISOString().slice(0,10);
-  const adv=sales.filter(s=>s.customer===rid&&txAdvance(s)>0.009).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-  if(adv.length){const s=adv[0],{offUnits,offRM}=offsetFor(s,freeUnits,freeUnits);
-    queue.push(POSITION_ENGINE.rebateOffsetEntry({at:new Date().toISOString(),party:rid,date:today,sale:s,units:offUnits,rm:offRM}));}
-  else{queue.push(POSITION_ENGINE.redeemEntry({at:new Date().toISOString(),product:PROD,party:rid,date:today,
-      qty:freeUnits,earned:rst.earned,applied,balance:held}));}
-  /* the draft is made on arrival, so the Approve part is read again once the post has landed */
-  saveQueue();switchTab('approve');
-  qPost().then(ok=>{if(ok)setTimeout(()=>{if(curAddr==='approve')apLoad(true);},3000);}).catch(()=>{});}
-/* v585, HIS INSTRUCTION OF 11 SEP 2026: AN ASSOCIATE'S REWARD IS OFFSET AGAINST THEIR ADVANCED DELIVERY ORDER,
-   UP TO 1 UNIT, AUTOMATICALLY, AND FOLDED INTO THE APPROVE TAB. So nobody presses anything: whenever Approve has
-   read the drafts, each associate holding an earned unit and an outstanding advance is offered an offset, capped
-   at 1 unit, as the same Correction the Offset button queues, and it waits in Approve for his tap like any row.
-   IT RUNS ONLY WHEN THE DRAFTS WERE READ, because the check that stops it offering the same offset twice reads
-   them, and a failed read would leave that check blind. It skips a row that already has an offset queued,
-   drafted or refused, so a refusal is not offered again on every load; once one folds, the row is settled in
-   kind and stops being an advance, which ends it. Salt only, because oil has no reward. */
-function autoOffsets(){try{
-  if(!rewards(PROD))return;
-  const today=TODAY.toISOString().slice(0,10);
-  const offered=s=>queue.some(q=>q&&q.payload&&q.payload.mode==='amend'&&q.payload.kind==='Correction'&&q.payload.rid===s.rid)
-    ||AP_DRAFTS.some(d=>d&&d.amendKind==='Correction'&&(d.amends===s.rid||d.amends===ovKey(s)))
-    ||AP_REFUSED.some(r=>r&&r.entry&&r.entry.payload&&r.entry.payload.rid===s.rid);
-  const made=[];
-  for(const r of networkStats()){
-    if(!canRedeem(r.id))continue;   // v617: a departed associate's reward is held, not offset
-    const free=+((+r.earned||0)-rebateApplied(r.id)).toFixed(2); if(free<=0.009)continue;
-    const adv=sales.filter(s=>s.customer===r.id&&(s.product||'salt')==='salt'&&txAdvance(s)>0.009).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-    const s=adv[0]; if(!s||!s.rid||offered(s))continue;
-    const {offUnits,offRM}=offsetFor(s,free,1);   // v594: priced on the goods, never more than is owed
-    if(!(offUnits>0.009))continue;
-    queue.push(POSITION_ENGINE.rebateOffsetEntry({at:new Date().toISOString(),party:codeOf(r.id),sale:s,date:today,units:offUnits,rm:offRM,auto:true,
-      raw:'Automatic offset: '+codeOf(r.id)+' reward, '+units(offUnits)+', against the '+(s.date||'undated')+' order, '+fmt(offRM)+' settled in kind',
-    }));
-    made.push(codeOf(r.id)+' '+units(offUnits));
-  }
-  if(made.length){saveQueue();qPost().catch(()=>{});apMsg='Offered an automatic offset for '+made.join(', ')+'. Each waits here for your tap once it is drafted.';}
-}catch(e){console.error('autoOffsets',e);}}
 /* one badge builder for every partner: level tag + Diamond gem-pill or star pill */
 /* PRINCIPAL. The founding partner is not a bigger associate, he is a different tier: he
    opened the network the rest of it hangs off. He carries his own title, held by him
@@ -19837,7 +18809,7 @@ function resellerCard(r){
     :`Brought-in business is <b>${r.share.toFixed(1)}%</b> of all revenue. The first &#9733; starts at ${starMin}%.`;
   const rebateLine=`<div class="insight salt-insight" style="margin-top:10px">${rated}</div>
     ${rewardTbl}
-    ${freeUnits>0.009&&!held?`<div style="margin-top:9px"><button class="vbtn salt-pill salt-pill--sm" onclick="redeemRebate('${r.id}')">${sales.some(s=>s.customer===r.id&&txAdvance(s)>0.009)?'Offset':'Redeem'} ${units(freeUnits)}</button></div>`:''}`;
+    ${freeUnits>0.009&&!held?'<div class="dsc" style="margin-top:9px">Redeem or offset on Counter Admin.</div>':''}`;
   // ---- three uniform ledgers ----
   const buys=sales.filter(s=>s.total!=null&&s.customer===r.id&&s.rev!=='R2');
   /* v365: was ${s.date} with no fallback, so a never-dated row (two real cancelled deals,
@@ -20177,7 +19149,6 @@ async function apLoad(quiet){
     if(r.ok){try{localStorage.setItem('saltRefusedAts',JSON.stringify(AP_REFUSED.map(x=>x.id)));}catch(e){}}   // v586: only a good read may say what is refused
     if(r.ok){AP_READ=true;AP_AT=Date.now();}
   }catch(e){ apUnread=NO_REPLY; AP_DRAFTS=[]; AP_REFUSED=[]; }
-  if(!apUnread&&!apNeedKey)autoOffsets();   // v585: only on a read that succeeded, or its duplicate check is blind
   apDraw();
   ordTell();   /* S9 9.8 fix */
   /* v765, his instruction of 21 Sep 2026: APPROVE KEEPS ITSELF CURRENT. Site orders has followed the
@@ -20630,8 +19601,6 @@ async function ordTell(){
    what Accept will send; its hash rides with Accept (11.3), and the Worker approves only an exact match.
    It is never /draft-now?dry=1, which drafts the whole queue and not this order. ---- */
 let ORD_PV={},ORD_PV_GEN=0;
-/* S11 11.3: the charge he chose, or null while none is chosen or Other holds no figure */
-let ORD_CHIP={};
 const ordDayLabel=d=>(+d.slice(8))+' '+MAP_MON[+d.slice(5,7)-1];
 /* the card is on screen: opened on the phone, or beside the list on a wide screen (the 1080px of the layout) */
 function ordSideBySide(){try{return window.matchMedia('(min-width:1080px)').matches;}catch(e){return false;}}
@@ -22225,45 +21194,7 @@ function tabPricing(){
          open inside the board card, which on a 375px phone put the thing he acts on, the
          board, above a screen and a half of controls he touches once a month. It is Do, so
          it stays on this card and one tap away; it is not the Ask, so it is shut. -->
-    <details class="obsec" style="margin-top:12px"><summary>Which sizes are on the board <span class="q">take a size off, or put one back</span><span class="ct">${tb.length} sizes</span></summary>
-      ${(()=>{
-        /* ============ IT WAS THE ONE PLACE A PRICE WAS TYPED, AND AT v656 IT IS NOT ============
-           Built at v356 as the only control that writes PRICE_SET, the twenty-seventh ledger key:
-           the engine read it as `stated` and it beat the derived ask at the size it named.
-           THE BOARD IS THE LADDER NOW, so a typed price would be a control that changes nothing,
-           which is worse than no control: the ask comes off the five-tier rule on live costs and
-           `stated` cannot reach it. The price column and its queue path are gone with it, and what
-           the table still does is the half that still works, which is choosing which sizes the
-           board prints. His hand on a single customer has not gone anywhere; it moved to the tier
-           he sets them on the Customers card, which is the level the ladder then prices. */
-        const ALL=shSizes();
-        const HID=hiddenFor(PROD);
-        const rows=ALL.map(qq=>{
-          const id='sh'+String(qq).replace('.','_');
-          const shown=!HID.some(h=>Math.abs(h-qq)<0.009);
-          let ask=null; try{ ask=priceLadder(qq).ask.total; }catch(e){}
-          const fl=floorTotal(qq,null,{collects:true});
-          return `<tr>
-            <td class="l salt-table__label">${units(qq)}</td>
-            <td><label style="display:flex;align-items:center;justify-content:center;min-height:var(--tap);margin:0;cursor:pointer"><input type="checkbox" id="${id}s" ${shown?'checked':''} onchange="shDirty(this)" style="width:20px;height:20px"></label></td>
-            <td class="mono">${ask!=null?fmt(ask):NIL}</td>
-            <td class="mono" style="color:var(--dim)">${fmt(fl)}</td></tr>`;
-        }).join('');
-        /* v385: the id sits on a plain wrapper and the class on the child. stripMethod removes
-           every standing .dsc on a part but the first, and this element is the whole feedback
-           channel: with the class on it, changing a price said nothing and neither did saving. */
-        return `<table class="salt-table pxboard" style="margin-bottom:9px"><thead><tr><th class="l salt-table__label">Size</th><th>On the board</th><th>Ask</th><th>Floor</th></tr></thead><tbody>${rows}</tbody></table>
-        <!-- round 5: was "the derived board", which the prefill stopped being the day a stated
-             price won: it is priceLadder's ask, stated where he has stated. "As it stands" is
-             true on both books; the reset button below still says derived because reset IS. -->
-        <div id="shOut" style="margin-bottom:8px"><div class="insight salt-insight">Untick a size to take it off the board, then <b>Make it the house board</b>.</div></div>`;})()}
-      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-        <button class="vbtn salt-pill salt-pill--sm" style="border-color:var(--acc)" onclick="shQueueHouse(this)">Make it the house board</button>
-        <button class="vbtn salt-pill salt-pill--sm" onclick="shReset()">Put every size back</button>
-      </div>
-      <div class="insight salt-insight" style="border-left-color:var(--gold)"><b>Taking a size off goes through the queue like a trade: drafted, approved and folded before it is the board.</b></div>
-      <div class="insight salt-insight">A size taken off stays priceable at the counter and off a quote; it simply stops being printed.</div>
-    </details>
+    <div class="dsc" style="margin-top:12px">Which sizes print on the board is set on Counter Admin.</div>
     </div>`;})()}
 
   <!-- ============ THE BOARD COMES BEFORE THE CALCULATOR ============
@@ -22609,67 +21540,6 @@ function pxScope(prod,fn){
   if(prod===PROD)return fn();
   const keep=PROD;PROD=prod;recompute();
   try{return fn();}finally{PROD=keep;recompute();}
-}
-/* ============ THE TYPED BOARD'S OWN FIGURES (v356) ============
-   shRows reads the Set the board table: what price each size would carry and which sizes appear
-   on the board at all. It is the single source for what gets queued, so the figure he typed is
-   the figure that reaches the ledger.
-   A PRICE UNDER ITS FLOOR IS REFUSED HERE, NOT LIFTED, and the board does the opposite on
-   purpose. A board must always answer, so ladderWalk lifts an ask to the next step above its
-   floor. Queueing a price is a statement, and quietly storing a different number from the one
-   he typed is worse than refusing to store it. */
-/* the rungs this product PRINTS, hidden ones included, so a size he has hidden can be ticked back
-   on. sizesFor() drops hidden sizes and shownSizes() is built on it, so neither of those will do. */
-function shSizes(){
-  const all=(PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;
-  const B=(PRICE_ENGINE.boardBy||{})[PROD];
-  return (Array.isArray(B)&&B.length)?all.filter(q=>B.some(b=>Math.abs(b-q)<0.009)):all;
-}
-/* v656: THE ROWS ARE THE TICKS. A price is no longer typed here, so a row is a size he has left on
-   the board and `under` is gone with the typing: nothing on this table can put a price under a
-   floor any more. The shape is kept ({rows,under}) because two callers read it. */
-function shRows(prod){
-  const p=prod||PROD;
-  const out=[];
-  shSizes().forEach(q=>{
-    const id='sh'+String(q).replace('.','_');
-    const sh=pxEl(p,id+'s');
-    if(!sh||!sh.checked)return;
-    out.push({q:q});
-  });
-  return {rows:out,under:[]};
-}
-/* v385: .insight, not .dsc, to match the placeholder it replaces. Nothing here is stripped
-   (stripMethod runs at render, not after a handler), but the two states must look alike. */
-function shDirty(el){shOut('<div class="insight salt-insight">Changed. <b>Make it the house board</b> queues these sizes; nothing moves until they are approved and folded.</div>',pxProdOf(el));}
-function shOut(html,prod){const el=pxEl(prod||PROD,'shOut');if(el)el.innerHTML=html;}
-function shReset(){render();}
-/* THE ONE CONTROL THAT WRITES PRICE_SET, WHICH SINCE v656 IS ITS HIDE LIST ALONE. The v354 road is
-   unchanged: queued, drafted, approved, folded, provisional on the board in the meantime. What it no
-   longer carries is prices. Oil sat at RM130 because of a figure typed here; it sits at the ladder's
-   Bronze now, on live costs, and the only price he sets by hand is a customer's tier. */
-function shQueueHouse(btn){
-  const prod=pxProdOf(btn);
-  const R=pxScope(prod,()=>shRows(prod));
-  if(!R.rows.length)return shOut('<div class="dsc" style="color:var(--crim)">Every size is unticked, so there is no board to make.</div>',prod);
-  /* v656: hide alone, and `clearing` so that putting every size back is an edit rather than an
-     empty payload the drafter skips as nothing to fold. */
-  const hide=[];
-  const shown={};R.rows.forEach(r=>{shown[String(r.q)]=1;});
-  pxScope(prod,()=>shSizes()).forEach(q=>{if(!shown[String(q)])hide.push(q);});
-  queue.push({at:new Date().toISOString(),type:'PRICE',party:null,qty:null,total:null,status:'price',
-    raw:'Board sizes on '+prod+': '+(hide.length?('hiding '+hide.map(h=>units(h)).join(', ')):'every size printed'),
-    payload:{mode:'price',product:prod,prices:{},hide:hide,clearing:true}});
-  try{saveQueue();renderQueue();}catch(e){}
-  try{applyOverlay();recompute();render();}catch(e){}
-  shOut('<div class="insight salt-insight"><b>Queued as the house board.</b> The board above already shows it, marked provisional. It reaches the ledger when it is approved and folded; withdraw the entry from the queue to undo it.</div>',prod);
-  /* v656: the prices themselves are not queued from here any more; the ladder asks and the tier he
-     sets a customer decides what that customer is quoted. */
-  /* v537: render() above rebuilt the part and CLOSED this section, so the confirmation and the
-     prices he typed sat inside a folded Set the board; on the phone that read as nothing
-     happening. Reopen it and bring the line into view. */
-  const o=pxEl(prod,'shOut'),det=o&&o.closest?o.closest('details'):null;
-  if(det){det.open=true;if(o.scrollIntoView)o.scrollIntoView({block:'nearest'});}
 }
 function pxSet(k,v){pxOver[k]=v;render();}
 function pxReset(){pxOver={cost:null,shrink:null,party:'',anyQ:pxOver.anyQ,tier:pxOver.tier,cap:pxOver.cap};render();}
@@ -25300,8 +24170,6 @@ document.getElementById('tabs').onclick=e=>{const s=e.target.dataset.s;if(s)swit
       if(t)try{t.focus();}catch(e){}}
   };
   b.onclick=()=>set(!document.body.classList.contains('navopen'));
-  const ob=document.getElementById('orderbtn');
-  if(ob)ob.onclick=()=>{set(false);ledNew();};
   v.onclick=()=>set(false);
   /* v684: when the menu layout ends with the menu open (a window widened, a keyboard docked, so the pointer is no
      longer coarse), it closes, or the frost would stay over a rail that has no button to take it away */
