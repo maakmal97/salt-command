@@ -177,7 +177,8 @@ async function readQueuePost(request) {
   if (!Array.isArray(body.queue)) throw new Error("expected {queue:[...]}");
   if (body.queue.length > 5000) throw new Error("queue too large");
   let device = typeof body.device === "string" && DEVICE_RE.test(body.device) ? body.device : "anon";
-  return { device, updated: body.updated || null, queue: body.queue };
+  return { device, updated: body.updated || null, queue: body.queue,
+    vaultHeld: Array.isArray(body.vaultHeld) ? body.vaultHeld.filter((a) => typeof a === "string").slice(0, 5000) : [] };
 }
 
 /* DRAFT ON ARRIVAL (v304), and it exists because the cron alone loses the race.
@@ -312,8 +313,15 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
     let held = [];
     try { held = JSON.parse(await env.SALT_QUEUE.get(QKEY(payload.device)) || "{}").queue || []; } catch (e) { held = []; }
     const vaultKind = (e) => ["rename", "place"].includes(e?.payload?.mode) || e?.payload?.mode === "addid" && e.payload.kind !== "bucket";
-    const extra = held.filter((e) => e && e.at && vaultKind(e) && !kept.some((k) => k && k.at === e.at)
-      && !gone.has(e.at) && !withdrawn.has(e.at));
+    /* only the stamps the client says it still holds: a Discard drops its stamp from vaultHeld and the Worker lets it go */
+    const asked = held.filter((e) => e && e.at && vaultKind(e) && payload.vaultHeld.includes(e.at) && !kept.some((k) => k && k.at === e.at));
+    const rej = await rejectedAmong(env, asked.map((e) => e.at));
+    const gone2 = new Set(rej);
+    if (env.SALT_LEDGER) for (const e of asked) {
+      const rc = await env.SALT_LEDGER.prepare("SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'").bind(queueWithdrawalKey(e.at)).first();
+      if (rc) gone2.add(e.at);
+    }
+    const extra = asked.filter((e) => !gone2.has(e.at));
     if (extra.length) { kept = kept.concat(extra); carried = extra.length; }
   }
   const reserved = kept.some((entry) => entry && entry.payload

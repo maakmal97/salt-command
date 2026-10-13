@@ -112,15 +112,24 @@ export async function run({ ok, KV, worker }) {
       "switch off: the unsent entry leaves every figure and the receipted one stays");
     ok(/None counts in any figure/.test(w.eval("renderRecovery()")), "and the panel says so");
 
-    /* ---- the Worker: a post that omits a held vault-kind entry does not withdraw it (pair mode) ---- */
+    /* ---- the Worker: in pair mode a post omitting a vault-kind entry the device still holds does not withdraw it ---- */
     const kv = new KV(), env = { SALT_QUEUE: kv, VAULT_STORE: "pair", REQUIRE_ACCESS: "0" };
     const held = addId(VAULT), keep = loss(BOOK, 2);
-    await kv.put("q:dev1", JSON.stringify({ device: "dev1", queue: [keep, held] }));
-    const post = (queue) => worker.fetch(new Request("https://desk.test/queue", { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ device: "dev1", queue }) }), env, { waitUntil() {} });
-    const r = await (await post([keep])).json();
-    const after = JSON.parse(await kv.get("q:dev1")).queue.map((e) => e.at);
-    ok(r.ok && after.includes(VAULT) && after.includes(BOOK) && r.entries === 1 && r.carried === 1,
-      "a post that omits a vault-kind entry this device filed on /queue leaves it in KV, carried and not counted as posted");
+    const reset = () => kv.put("q:dev1", JSON.stringify({ device: "dev1", queue: [keep, held] }));
+    const post = async (vaultHeld) => (await worker.fetch(new Request("https://desk.test/queue", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ device: "dev1", queue: [keep], vaultHeld }) }), env, { waitUntil() {} })).json();
+    const inKv = async () => JSON.parse(await kv.get("q:dev1")).queue.map((e) => e.at);
+    await reset();
+    const r = await post([VAULT]);
+    ok(r.ok && (await inKv()).includes(VAULT) && r.entries === 1 && r.carried === 1,
+      "a post that omits a vault-kind entry the device still holds leaves it in KV, carried and not counted as posted");
+    await post([]);
+    ok(!(await inKv()).includes(VAULT) && (await inKv()).includes(BOOK), "a discarded vault entry (no longer held) leaves KV on the next post");
+    const rejDb = { prepare: (sql) => { const st = { bind: () => st, first: async () => /FROM draft/.test(sql) ? { status: "rejected" } : null,
+      all: async () => ({ results: [] }), run: async () => ({ meta: { changes: 1 }, success: true }) }; return st; } };
+    await reset();
+    const rr = await (await worker.fetch(new Request("https://desk.test/queue", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ device: "dev1", queue: [keep], vaultHeld: [VAULT] }) }), { ...env, SALT_LEDGER: rejDb }, { waitUntil() {} })).json();
+    ok(rr.carried === undefined || rr.carried === 0 ? !(await inKv()).includes(VAULT) : false, "a vault entry whose draft was rejected is not carried back");
   } finally { w.close(); }
 }

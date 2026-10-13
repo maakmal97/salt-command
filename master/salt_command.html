@@ -25148,7 +25148,7 @@ function qKeepOnLoad(q,mark,sent,refused){try{
 function qFlagStuck(q,mark,refused){let n=0;const r=Array.isArray(refused)?refused:[];
   q.forEach(e=>{if(e&&e.at&&e.at<=mark&&!e.stuck&&r.indexOf(e.at)<0){e.stuck=true;n++;}});return n;}
 function qStuckCount(q,refused){const r=Array.isArray(refused)?refused:[];return q.filter(e=>e&&e.stuck&&r.indexOf(e.at)<0).length;}
-function qPayload(cloud){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,queue:cloud?qCloudQueue():queue},null,1);}
+function qPayload(cloud){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,queue:cloud?qCloudQueue():queue,vaultHeld:cloud&&vaultPairVersion?queue.filter(qIsVaultKind).map(q=>q.at):undefined},null,1);}
 /* B3 of #62: THE TWO ROADS. In pair mode the Worker refuses names, places, renames and a non-bucket Add ID on /queue (409 for
    the whole payload), so those go by the vault pair and /queue carries the rest. A receipt is the Worker's answer for one
    entry's stamp, kept in saltQueueReceipts; the sent mark below never counts for a vault-kind entry, which the post never carried. */

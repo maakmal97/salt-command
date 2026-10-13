@@ -55,9 +55,21 @@
   "replace": "return (typeof p.code==='string'&&p.code)?'vault':'none';"
  },
  {
+  "file": "src/worker.js",
   "name": "a post omitting a held vault-kind entry withdraws it",
   "find": "if (extra.length) { kept = kept.concat(extra); carried = extra.length; }",
-  "replace": "if (extra.length) { carried = 0; }",
-  "file": "src/worker.js"
+  "replace": "if (extra.length) { carried = 0; }"
+ },
+ {
+  "file": "src/worker.js",
+  "name": "the Worker carries a vault entry the client no longer holds",
+  "find": "payload.vaultHeld.includes(e.at) && ",
+  "replace": ""
+ },
+ {
+  "file": "src/worker.js",
+  "name": "a rejected vault entry is carried back",
+  "find": "const extra = asked.filter((e) => !gone2.has(e.at));",
+  "replace": "const extra = asked;"
  }
 ]
