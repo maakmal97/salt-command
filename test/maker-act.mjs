@@ -159,7 +159,7 @@ const draft = (id, patch = {}) => ({ id, status: "pending", collection: "sales",
 const catalog = () => ({
   products: [{ product: "salt", saleReady: true, purchaseReady: true, tiered: true, drift: true, driftPresets: [{ name: "Gentle", value: 0.25 }] },
     { product: "oil", saleReady: true, purchaseReady: true, tiered: false, drift: false }],
-  parties: ["CX1-ZED", "CX2-ZED", "SX1-ZED", "AX1-ZED", "AX1-ZED-R"],
+  placed: { "CX1-ZED": [3.1, 101.7, "Pudu"] }, parties: ["CX1-ZED", "CX2-ZED", "SX1-ZED", "AX1-ZED", "AX1-ZED-R"],
   associates: [{ code: "AX1-ZED", resaleReady: true }],
   tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], tierCustomers: ["CX1-ZED"],
   tierCards: [{ code: "CX1-ZED", product: "salt", held: "Gold", proposed: "Platinum", late: { level: "Silver", why: "paid late" } }],

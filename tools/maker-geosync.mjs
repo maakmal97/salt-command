@@ -31,7 +31,7 @@ export function makerGeoText(master) {
     + "let PLACED={},AREA_SHAPES={},AREA_KEYS=null,GAZ_INDEX=null;\n"
     + constant("placeTidy") + "\n" + constant("placeLocality") + "\n" + constant("geoWhere") + "\n" + constant("areaName") + "\n" + constant("gazIndex") + "\n"
     + functions + "\n" + fn("vaultMapMerge") + "\n" + fn("vaultRekeyMap") + "\n" + constant("TIP_ID") + "\n" + fn("vaultPendingOk")
-    + "\nreturn {configure:function(places){PLACED=places||{};},picks:placePicks,find:placeFromText,where:geoWhere,link:mapsLink,merge:vaultMapMerge,rekey:vaultRekeyMap,pendingOk:vaultPendingOk};\n})()";
+    + "\nreturn {configure:function(places){PLACED=places||{};},picks:placePicks,find:placeFromText,where:geoWhere,official:function(){return AREAS.map(function(a){return a.short;}).concat(AREAS.map(areaName),DISTRICTS.map(function(d){return d.name;}));},link:mapsLink,merge:vaultMapMerge,rekey:vaultRekeyMap,pendingOk:vaultPendingOk};\n})()";
   return "// GENERATED from the incumbent Desk geography by tools/maker-geosync.mjs; never edit.\n"
     + "export const MAKER_GEO_JS = " + JSON.stringify(script) + ";\n";
 }

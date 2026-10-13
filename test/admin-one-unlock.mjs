@@ -85,7 +85,7 @@ export async function run({ ok, pageWork }) {
 
   /* ---- ONE PAGE, FROM LOCKED TO SENT: the crypto, the storage and the wire watched throughout ---- */
   const spy = spyCrypto();
-  const record = { path: "/all/maker/inputs/place", body: { at: AT, places: { "CX1-ZED": [3.1, 101.7] }, addrVault: fix.places } };
+  const record = { path: "/all/maker/inputs/place", body: { at: AT, places: { "CX1-ZED": [3.1, 101.7, "Pudu"] }, addrVault: fix.places } };
   const p = await open({ retained: [["saltMakerPending:" + record.path, JSON.stringify(record)]], cryptoImpl: spy.impl });
   const d = p.d, store = spyStorage(p), stored = store.dump();
   spy.log.imports.length = 0; spy.log.derives.length = 0; spy.log.exports.length = 0;
@@ -224,7 +224,7 @@ export async function run({ ok, pageWork }) {
   type(partyOf, "CX1-ZED");
   await p.send(f2.place, "record.place.send");
   const sentPlace = p.posts.filter((x) => /[/]place$/.test(x.route)).at(-1);
-  ok(!!sentPlace && sentPlace.body.at !== AT && same(Object.keys(sentPlace.body), ["at", "places"]) && same(sentPlace.body.places, { "CX1-ZED": [3.1, 101.7] }) && !JSON.stringify(sentPlace.body).includes("Invented Lane"),
+  ok(!!sentPlace && sentPlace.body.at !== AT && same(Object.keys(sentPlace.body), ["at", "places"]) && same(sentPlace.body.places, { "CX1-ZED": [3.1, 101.7, "Pudu"] }) && !JSON.stringify(sentPlace.body).includes("Invented Lane"),
     "Place on the map, on the held places, sends only the rounded point of the party: " + JSON.stringify(sentPlace && sentPlace.body));
 
   /* Amend ID: the held names and places are re-keyed and sealed again on the device */

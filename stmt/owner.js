@@ -1736,14 +1736,12 @@ export const OWNER_JS = `
     }); parent.appendChild(b);parent.appendChild(cancel);return b;
   }
       /* a locality is public when the official list carries it or this phone verified it (placeFromText) and kept the word */
-      var makerLocalWords=new Set();
-      try{JSON.parse(localStorage.getItem('saltMakerLocalWords')||'[]').forEach(function(w){makerLocalWords.add(w);});}catch(e){}
+      /* a filed locality is always an official place name, so a saved entry is checked against the bundled official names; no word is stored */
       function makerPublicWord(word){
-        if(makerLocalWords.has(word))return true;
+        if(makerGeo.official().indexOf(word)>=0)return true;
         var found=false;makerGeo.picks().forEach(function(point,label){if(label.split(',')[0].trim()===word)found=true;});
         return found;
       }
-      function makerKeepWords(){try{localStorage.setItem('saltMakerLocalWords',JSON.stringify([...makerLocalWords].slice(-200)));}catch(e){}}
       function makerSaved(path){
         var text=localStorage.getItem('saltMakerPending:'+path);
         if(!text)return null;
@@ -1998,7 +1996,6 @@ export const OWNER_JS = `
     if(!said)throw new Error('That place has no locality to file with its point. Choose it from the list.');
     var where=makerGeo.where(result.point.map(function(number){return Math.round(number*100)/100;}),said);
     if(where.length!==3)throw new Error('That place has no locality to file with its point. Choose it from the list.');
-    makerLocalWords.add(where[2]);   /* kept on the phone only once a send has gone through (makerKeepWords) */
     return where;
   }
   async function makerFiledLink(value){
@@ -2338,7 +2335,7 @@ export const OWNER_JS = `
          if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
-        await send('/all/maker/inputs/add-id',idBody,idDraft);makerKeepWords();
+        await send('/all/maker/inputs/add-id',idBody,idDraft);
         idDraft=null;
         idName.value='';idPlace.value='';idLink.value='';
         if(kind!=='bucket')makerVaultRefresh();
@@ -2400,7 +2397,7 @@ export const OWNER_JS = `
         delete amendDraft.placeMap;
         var result=await send('/all/maker/inputs/amend-id',makerPairBody({at:new Date().toISOString(),from:from,to:to,geo:geo,
           vault:amendDraft.names,addrVault:amendDraft.places||undefined},amendDraft),amendDraft);
-        amendDraft=null;makerKeepWords();
+        amendDraft=null;
         amendName.value='';amendPlace.value='';amendLink.value='';
         makerVaultRefresh();
         amendStatus.textContent=result.vaultOnly?'Saved. The code stays '+from+'.'
@@ -2448,7 +2445,7 @@ export const OWNER_JS = `
         var body={at:new Date().toISOString(),places:{[placeParty.value]:coords}};
         if(envelope)body.addrVault=envelope;
         makerPairBody(body,placeDraft);
-        await send('/all/maker/inputs/place',body,placeDraft);makerKeepWords();
+        await send('/all/maker/inputs/place',body,placeDraft);
         placeDraft=null;
         placeLocality.value='';placeLink.value='';
         makerVaultRefresh();

@@ -15625,19 +15625,19 @@ await (async () => {
   /* ---- the drafter: the place travels as a point, and only inside Malaysia ---- */
   const mir31 = { sales: [], purchases: [], state: { roster: ["CZ9-PLA", "CZ9-PLB", "CZ9-PLA-R", "CZ9-OLD"], associates: [], PLACED: { "CZ9-PLB": [2.5, 101.5] } }, pricing: null };
   const en31 = (p) => ({ at: "2026-09-14T09:00:00.000Z", payload: p });
-  const pl31 = dr31(en31({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678], "CZ9-PLB": [2.7012, 101.9456] } }), mir31);
-  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57],"CZ9-PLB":[2.7,101.95]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /the point travels, with the locality/.test(pl31.reasoning),
+  const pl31 = dr31(en31({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678, "Testville"], "CZ9-PLB": [2.7012, 101.9456, "Testville"] } }), mir31);
+  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57,"Testville"],"CZ9-PLB":[2.7,101.95,"Testville"]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /the point travels, with the locality/.test(pl31.reasoning),
     "a place entry drafts as its own collection, each point to 0.01 degrees, flagging a party it moves: " + (pl31.skip || JSON.stringify(pl31.row) + " " + pl31.flags.join(" ")));
   for (const [p, why] of [[{ places: { "CZ9-NOT": [3.1, 101.6] } }, /CZ9-NOT is not on the roster/], [{ places: { "CZ9-PLA-R": [3.1, 101.6] } }, /resale account/],
     [{ places: { "CZ9-PLA": [51.5, -0.12] } }, /not in Malaysia/], [{ places: { "CZ9-PLA": "3.1,101.6" } }, /not in Malaysia/], [{ places: {} }, /names no party/]]) {
     const s = dr31(en31({ mode: "place", ...p }), mir31).skip || "";
     ok(why.test(s), "the drafter refuses the place entry " + JSON.stringify(p) + ": " + (s || "drafted"));
   }
-  const ad31 = dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [3.1234, 101.5678] }), mir31);
-  ok(!ad31.skip && JSON.stringify(ad31.row.geo) === "[3.12,101.57]", "a registration carries the point its place was found at: " + (ad31.skip || JSON.stringify(ad31.row)));
+  const ad31 = dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [3.1234, 101.5678, "Testville"] }), mir31);
+  ok(!ad31.skip && JSON.stringify(ad31.row.geo) === '[3.12,101.57,"Testville"]', "a registration carries the point its place was found at: " + (ad31.skip || JSON.stringify(ad31.row)));
   ok(/not in Malaysia/.test(dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [0, 0] }), mir31).skip || ""), "and is refused with a point outside Malaysia");
-  const rn31 = dr31(en31({ mode: "rename", from: "CZ9-OLD", to: "CZ9-ODD", geo: [2.7012, 101.9456] }), mir31);
-  ok(!rn31.skip && JSON.stringify(rn31.row.geo) === "[2.7,101.95]" && /place on the map moves with it/.test(rn31.reasoning), "a rename carries the new point, and its card says the place moves: " + (rn31.skip || JSON.stringify(rn31.row)));
+  const rn31 = dr31(en31({ mode: "rename", from: "CZ9-OLD", to: "CZ9-ODD", geo: [2.7012, 101.9456, "Testville"] }), mir31);
+  ok(!rn31.skip && JSON.stringify(rn31.row.geo) === '[2.7,101.95,"Testville"]' && /place on the map moves with it/.test(rn31.reasoning), "a rename carries the new point, and its card says the place moves: " + (rn31.skip || JSON.stringify(rn31.row)));
 
   /* ---- the fold: the point is filed on the book, and follows a rename ---- */
   const master31 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
@@ -53795,7 +53795,7 @@ await (async () => {
     ok(await adminWork.quiet(), "the street-and-locality placement settles");
     const streetPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
     ok(JSON.stringify(streetPlacement?.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
-      && !(admin.window.localStorage.getItem("saltMakerLocalWords") || "").includes("Jalan Foo"),
+      && ![...Array(admin.window.localStorage.length).keys()].some((i) => admin.window.localStorage.getItem(admin.window.localStorage.key(i)).includes("Jalan Foo")),
       "a typed street, Locality files the matched locality and the phone keeps no street word");
     const placesBefore = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").length;
     placeTexts[0].value = "Jalan Foo Cheras";
@@ -53803,7 +53803,7 @@ await (async () => {
     ok(await adminWork.quiet(), "the street-only placement settles");
     const cherasCalls = adminCalls.filter((call) => call.route === "/all/maker/inputs/place");
     ok(cherasCalls.slice(placesBefore).every((call) => call.body.places["CX1-AB"][2] === "Cheras")
-      && !(admin.window.localStorage.getItem("saltMakerLocalWords") || "").includes("Jalan Foo")
+      && ![...Array(admin.window.localStorage.length).keys()].some((i) => admin.window.localStorage.getItem(admin.window.localStorage.key(i)).includes("Jalan Foo"))
       && !(admin.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/place") || "").includes("Jalan Foo"),
       "a comma-less street text is never the locality: only the matched area is filed and the phone keeps no street word");
     nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
