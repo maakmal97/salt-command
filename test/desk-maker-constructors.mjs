@@ -18,10 +18,5 @@ export async function run({ ok }) {
   ok(refused === 5, "shared amendment construction refuses Linked, Rewarded, unknown kinds and purchase-only movements on sales");
   const { w } = await openMaster();
   try {
-    ;
-    ;
-    ;
-    ;
-    ;
   } finally { w.close(); }
 }

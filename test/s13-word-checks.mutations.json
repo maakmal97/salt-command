@@ -1,0 +1,4 @@
+[
+ {"name":"the Worker's lock lets Silver through","file":"src/orders.js","find":"if (wordsIn(t, LEVEL_WORDS).length) return \"that names a level, which a customer's page never does\";","replace":"if (wordsIn(t, LEVEL_WORDS.filter((w) => w !== \"silver\")).length) return \"that names a level, which a customer's page never does\";"},
+ {"name":"the Worker's lock refuses a product's word","file":"src/orders.js","find":"if (wordsIn(t, LEVEL_WORDS).length) return \"that names a level, which a customer's page never does\";\n  return \"\";","replace":"if (wordsIn(t, LEVEL_WORDS).length) return \"that names a level, which a customer's page never does\";\n  if (/oil/i.test(t)) return \"x\";\n  return \"\";"}
+]

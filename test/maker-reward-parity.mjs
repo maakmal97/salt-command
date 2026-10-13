@@ -117,10 +117,8 @@ export async function run({ ok, pageWork }) {
     button(rewards(), "Read again").click(); await ui.work.quiet();
     ok(button(holder("CX3-ZED"), "Give CX3-ZED 1 unit"), "returning restores the actual generated redemption offer");
     ui.set(rewards(), "Date", wd.date);
-    ;
     button(holder("CX4-ZED"), "Take 1 unit off what CX4-ZED owes")?.click(); await ui.work.quiet();
     const offset = wd.drafts().find((d) => d.entry.payload.party === "CX4-ZED");
-    ;
     if (offset) await wd.call("/all/maker/drafts/" + encodeURIComponent(offset.id) + "/approve", {});
     const offsetBook = copy(wd.foldBook), offsetBefore = JSON.stringify(offsetBook.sales.filter((s) => s.rid !== "advance"));
     const offsetDraft = wd.drafts().find((d) => d.id === offset?.id && d.status === "approved");

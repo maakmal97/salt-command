@@ -2471,19 +2471,12 @@ await (async () => {
      away from the hand that typed it. */
   const edform = master.slice(master.indexOf("const EDFORM=["), master.indexOf("const edFields="));
   const keys = [...new Set([...edform.matchAll(/k:'([a-zA-Z]+)'/g)].map(m => m[1]))];
-  ;
   const offeredNotCorrectable = keys.filter(k => X.CORRECTABLE.indexOf(k) < 0);
   ok(offeredNotCorrectable.length === 0,
     `every field the sheet offers is one the fold accepts; the fold would refuse ${offeredNotCorrectable.join(", ")}`);
-  const correctableNotOffered = X.CORRECTABLE.filter(k => keys.indexOf(k) < 0);
-  ;
 
   /* ONE TABLE, READ, NEVER COPIED. A second copy of the list is how the write and the record
      came apart in the first place, so the guard reads the engine's own export. */
-  const edSubmit = master.slice(master.indexOf("function edSubmit(){"), master.indexOf("function goEl("));
-  ;
-  ;
-  ;
   const afterEngine = master.slice(master.indexOf("==== END ENGINE position ===="));
   ok(!afterEngine.includes("const CORRECTABLE="), "and nothing outside the engine block keeps a second copy of the list");
 })();
@@ -2798,10 +2791,6 @@ await (async () => {
   {
     const { openMaster: omW } = await import("../tools/payload.mjs");
     const { w: wW } = await omW();
-    ;
-    ;
-    ;
-    ;
   }
 
   /* THE GATE: the desk's own inputs, both books, and the record comes back equal */
@@ -3363,8 +3352,6 @@ await (async () => {
     ok(gr.ok && gRow && gRow.cost === +(hShelf * 2).toFixed(2), `and a gift handed over keeps the shelf's cost (RM${gRow && gRow.cost} at RM${hShelf})` + (gr.ok ? "" : ": " + gr.problems.join("; ")));
     const { openMaster: omD } = await import("../tools/payload.mjs");
     const { w: wD } = await omD();
-    ;
-    ;
   }
   /* the plan refuses what it must and describes the rest */
   let p = plan(JSON.parse(JSON.stringify(book)), staged, null);
@@ -3517,10 +3504,7 @@ await (async () => {
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   ok(/const VIEW_PART=\{\}/.test(m) && /function railSubs\(\)/.test(m), "the master keeps the part each view shows and lists the parts under the rail");
   ok(/class="vnav"/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
-  ;
   /* v732: opening Site orders reads the bulletin and wires its card beside the orders, so the hook is a block */
-  ;
-  ;
   const idEngine = (await import("../engine/position.mjs")).default;
   const idEntry = idEngine.addIdEntry({at:"2026-10-01T00:00:00.000Z",code:"CX1-ZED",kind:"customer",parent:null});
   ok(idEntry.type === "ADDID" && idEntry.payload.mode === "addid" && idEntry.payload.code === "CX1-ZED"
@@ -4073,8 +4057,6 @@ await (async () => {
   ok(read("coverStats().reorderAt") === read("restockFor('salt').reorder.units"), "and salt's against salt's");
   /* the per-book credit totals PARTITION the old whole-book figure: proven for every
      customer on the book, so the split cannot drop or double a unit */
-  ;
-  ;
   /* his call 4(e): a suggested restock is priced at the book's own tier, lots bought whole */
   ok(JSON.stringify(read("restockQuote(7.25)")) === JSON.stringify({ qty: 12.5, total: 700, rate: 56, lots: 1, quoted: true }),
     "salt: 7.25 unit needed is covered by the 12.5 tier at its RM700 total, not 7.25 at a flat rate");
@@ -4307,7 +4289,6 @@ await (async () => {
     allHeads.push(...JSON.parse(w.eval("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on table.pxboard')).map(function(t){return [].slice.call(t.rows[0].cells).map(function(c){return c.textContent.replace(/[\\r\\n\\t ]+/g,' ').trim();});}))")));
   }
   const heads = allHeads.filter((h) => /^COGS/.test(h[1] || ""));
-  ;
   /* v564, HIS INSTRUCTION OF 10 SEP 2026: TWO TIERS, SO THE MARKUP COLUMN MOVED INTO THE ASKS.
      v554's rule is unchanged and is asserted in its new place: the multiple must say what it is OF,
      or "2.49x" reads as +249% to anyone who takes markup at its book meaning. It could not stay a
@@ -4665,7 +4646,6 @@ await (async () => {
   ok(/input,select,textarea\{font-size:max\(16px,1em\);\}/.test(m), "no field can be small enough to zoom the page");
   /* the three other 13px sites are a flex row, a bordered box and a label, none of them a
      field, which the browser confirmed: exactly one input was under 16px and it was vpass. */
-  ;
 
   /* 100vh IS WRONG ON iOS SAFARI, whose toolbar changes the viewport under the page. */
   /* v392: MATCH THE VALUE, NOT THE WORD. The first form of this searched the whole master for
@@ -4700,7 +4680,6 @@ await (async () => {
 
   /* sixty of them on the Whiteboard, each one dismissing or deferring a finding, in a row
      beside a .navlink that has been 44px since v392. */
-  ;
 
   /* v387 retired the phone app: /desk is the one surface, and the laptop copy of Approve
      was still sending the reader to a second one. */
@@ -4897,7 +4876,6 @@ await (async () => {
   ok(ref.querySelectorAll("button").length === 0, "a refusal this phone does not hold renders no button (v586)");
   ok(ref.querySelectorAll('button,input,select,textarea,a,[tabindex]:not([tabindex="-1"])').length === 0,
      "and nothing on it can be reached by a keyboard, so nothing there can be decided even by accident");
-  ;
   ok(w.eval("enterCount()") === w.eval("qTx().length + AP_DRAFTS.length"),
      "the Enter badge counts drafts and the local queue, never a refusal");
   ok(w.eval("enterCount()") === 1, "one pending draft and one refusal reads as one waiting");
@@ -5201,7 +5179,6 @@ await (async () => {
   ok(threw.length === 0, threw.length
     ? "parts threw on render: " + threw.join("; ")
     : "all " + tabs.length * 2 + " part renders complete without a throw");
-  ;
   ok(detached.length === 0, detached.length
     ? "structural detach — content outside its .prodblock: " + detached.join("; ")
     : "zero canvases or details sit outside a .prodblock on the six per-product parts");
@@ -5235,43 +5212,23 @@ await (async () => {
     execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
     const { w } = await openMaster(M);
     w.eval("setProd(" + JSON.stringify(seed.product || "salt") + ");recompute();");
-    const outstanding = +(seed.total - seed.cash).toFixed(2);
 
-    ;
     const chips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
-    ;
     ok(!chips.some((c) => /Defaulted/.test(c)), "Defaulted is not offered on a sale, because the engine reads it on lots only");
-    ;
 
     /* CLICK THE CHIP. Passing the outstanding into updSet() would assert this test's own
        arithmetic, not the panel's: a mutation that sent the row's TOTAL rode this check green
        until the chip was clicked instead. The control has to be the thing under test. */
-    ;
-    ;
-    ;
 
     const before = +w.eval("queue.length");
-    ;
-    const q = JSON.parse(w.eval("JSON.stringify(queue[queue.length-1]||{})"));
-    ;
-    ;
-    ;
 
     /* the panel refuses on screen what v407 made the fold refuse, so nobody queues a dead row */
     const dl = JSON.parse(w.eval("JSON.stringify((function(){var r=sales.filter(s=>!s.cancelled&&s.rid&&txDeliv(s)>0.009)[0];return r?{rid:r.rid}:null;})())"));
     if (dl) {
-      ;
-      ;
-      ;
       const qb = +w.eval("queue.length");
-      ;
       ok(+w.eval("queue.length") === qb, "and nothing is queued by it");
     }
 
-    ;
-    ;
-    ;
-    ;
   }
   for (const f of [M, B]) { try { rm(f); } catch (e) { /* best effort */ } }
 })();
@@ -5301,14 +5258,9 @@ await (async () => {
     /* an order on book B, entered while the desk is on book A, priced healthily for B */
     const qty = 2, total = +(replB * qty * 1.45).toFixed(2), rate = total / qty;
     w.eval("switchTab('add');");
-    ;
-    ;
-    ;
 
-    ;
     const prev = (w.eval("(document.getElementById('wbPrev')||{}).textContent||''") || "").replace(/\s+/g, " ");
     const m = prev.match(/margin\s*(-?\d+)%/);
-    ;
     if (m) {
       const shown = +m[1], wantB = Math.round((rate - replB) / rate * 100), wouldBeA = Math.round((rate - replA) / rate * 100);
       ok(Math.abs(shown - wantB) <= 1,
@@ -5329,19 +5281,12 @@ await (async () => {
     wc2.eval("setProdView(" + JSON.stringify(other) + ");");
     const stranger = JSON.parse(wc2.eval("JSON.stringify((function(){var here={};pSales(PROD).forEach(function(s){here[s.customer]=1;});var all=sales.filter(function(s){return !s.cancelled&&s.customer&&(s.total||0)>0;});for(var i=0;i<all.length;i++){if(!here[all[i].customer])return all[i].customer;}return null;})())"));
     if (stranger) {
-      ;
-      ;
-      ;
-      ;
-      ;
     } else skipData("every party has traded on both books, so the cross-book case cannot arise");
     /* A RATE BETWEEN THE TWO BOOKS' BEST, which is the only value that tells them apart: oil's best
        is RM 13 and the whole ledger's is RM 210, so RM 50 is a record on oil and unremarkable
        against salt. Asserting an impossible RM 99,999 would have passed either way, and did. */
     const mid = JSON.parse(wc2.eval("JSON.stringify((function(){var here=pSales(PROD).filter(function(s){return !s.cancelled&&s.qty>0&&s.total>0;}).map(function(s){return s.total/s.qty;});var all=sales.filter(function(s){return !s.cancelled&&s.qty>0&&s.total>0;}).map(function(s){return s.total/s.qty;});var hb=here.length?Math.max.apply(null,here):0;var ab=Math.max.apply(null,all);return ab>hb+1?(hb+ab)/2:null;})())"));
     if (mid) {
-      ;
-      ;
     } else skipData("the two books share a best rate, so this comparison cannot be told apart");
     wc2.eval("setProdView(" + JSON.stringify(prods2[0]) + ");");
   }
@@ -5518,15 +5463,12 @@ await (async () => {
   for (const p of (bk.purchases || [])) {
     if (!p.rid) continue;
     const q = JSON.stringify(p.rid);
-    ;
     const paid = +w.eval("poCash(purchases.find(x=>x.rid===" + q + "))");
     const recv = +w.eval("poRecvUnits(purchases.find(x=>x.rid===" + q + "))");
-    const wantC = +Math.max(0, (+p.total || 0) - paid).toFixed(2);
     /* v422: qty-minus-received was the contract until poOpenUnits learnt that a defaulted or
        cancelled lot has nothing coming. The panel must report what the ENGINE says is outstanding,
        not a subtraction retyped here, which is the same lesson as fold 7. */
     const wantU = +w.eval("poOpenUnits(purchases.find(x=>x.rid===" + q + "))");
-    ;
   }
   ok(wrong.length === 0,
     "every lot's outstanding is measured by the purchase convention -- " + wrong.slice(0, 4).join(" | "));
@@ -5535,7 +5477,6 @@ await (async () => {
   const settled = (bk.purchases || []).find((p) => p.rid && p.status === "paid" && p.cash == null
     && p.receivedQty == null && !p.pending && !p.inTransit && !p.defaulted);
   if (settled) {
-    ;
     const chips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
     ok(!chips.some((c) => /Paid in full|Received in full/.test(c)),
       "a settled and landed lot offers neither Paid in full nor Received in full (" + (chips.join(" / ") || "none") + ")");
@@ -5543,13 +5484,10 @@ await (async () => {
        and delivered nothing, and the panel offered to receive 12.5 unit of it. */
     const dRid = JSON.parse(w.eval("JSON.stringify((purchases.find(p=>p.defaulted)||{}).rid||null)"));
     if (dRid) {
-      ;
       const dChips = JSON.parse(w.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),b=>b.textContent))"));
       ok(!dChips.some((c) => /Received in full|Completed/.test(c)),
         "a defaulted lot is offered neither Received in full nor Completed (" + (dChips.join(" / ") || "none") + ")");
     }
-    ;
-    ;
   } else skipData("no settled landed lot on the book to check the panel against");
 
   /* 3. the fold, on lots it is handed rather than on its own source text */
@@ -5620,7 +5558,6 @@ await (async () => {
       wD.eval("setProd('salt');recompute();");
       const lRid = JSON.parse(wD.eval("JSON.stringify((purchases.find(function(p){return !p.defaulted&&!p.cancelled&&poRecvUnits(p)>0.009;})||{}).rid||null)"));
       if (lRid) {
-        ;
         const dChips2 = JSON.parse(wD.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),function(x){return x.textContent;}))"));
         ok(!dChips2.some((c) => /Defaulted/.test(c)),
           "and the panel does not offer Defaulted on a landed lot (" + dChips2.join(" / ") + ")");
@@ -5635,7 +5572,6 @@ await (async () => {
     wB.eval("setProd('salt');recompute();");
     const liveRid = JSON.parse(wB.eval("JSON.stringify((sales.find(function(s){return s.cancelled&&s.rid;})||{}).rid||null)"));
     if (liveRid) {
-      const before = wB.eval("JSON.stringify(sales.find(function(s){return s.rid===" + JSON.stringify(liveRid) + ";}))");
       wB.eval("ovAmend({kind:'Fulfilment',date:'2026-09-01',direction:'SELL',rid:" + JSON.stringify(liveRid) + ",cash:10,kg:1},{at:'b1'})");
       const after = JSON.parse(wB.eval("JSON.stringify(sales.find(function(s){return s.rid===" + JSON.stringify(liveRid) + ";}))"));
       ok(!((+after.deliveredQty || 0) > 0.009 && after.cancelled),
@@ -5696,17 +5632,12 @@ await (async () => {
   w2.eval("setProd('salt');recompute();");
   const lotRid = JSON.parse(w2.eval("JSON.stringify((purchases.find(p=>p.status==='paid'&&p.cash==null&&p.receivedQty==null&&!p.pending&&!p.defaulted)||{}).rid||null)"));
   if (lotRid) {
-    ;
-    ;
     const qn = +w2.eval("queue.length");
-    ;
-    ;
     const qp = JSON.parse(w2.eval("JSON.stringify((queue[queue.length-1]||{}).payload||{})"));
     const target = JSON.parse(w2.eval("JSON.stringify(purchases.find(p=>p.rid===" + JSON.stringify(lotRid) + "))"));
     applyAmend(target, { kind: "Correction", date: "2026-09-01", fields: qp.fields || {} }, "BUY", null);
     ok(bill(target) === 0,
       "and folding WHAT THE CHIP QUEUED books no payable (bill RM " + bill(target) + ", total RM " + target.total + ")");
-    ;
   } else skipData("no settled landed lot to drive the pending chip on");
 })();
 
@@ -5935,7 +5866,6 @@ await (async () => {
       }catch(e){return "threw: "+(e&&e.message);}
     })()`);
     if (drove === "no-order" || drove === "no-msgs" || /^threw/.test(String(drove))) {
-      ;
     } else {
       ok(/already been delivered/.test(String(drove)),
         "the Workbench pane refuses a Cancellation on a delivered order: " + String(drove).slice(0, 90));
@@ -6190,14 +6120,7 @@ await (async () => {
   const onBuy = +w8.eval("document.querySelectorAll('.sec.on .lcard[data-type=BUY] .lpen').length");
   const buyCards = +w8.eval("document.querySelectorAll('.sec.on .lcard[data-type=BUY]').length");
   ok(buyCards > 0, "the ledger renders purchase cards at all (" + buyCards + ")");
-  ;
-  ;
 
-  ;
-  ;
-  ;
-  ;
-  ;
 
   /* an unpriced row, built because the book has none */
   const bk8 = JSON.parse(rf8(j8(REPO, "ledger", "book.json"), "utf8"));
@@ -6207,17 +6130,11 @@ await (async () => {
   wf8(M8, rf8(j8(REPO, "master", "salt_command.html"), "utf8"));
   ex8("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B8, SALT_MASTER: M8 }, stdio: "pipe" });
   const { w: wu } = await om8(M8);
-  ;
   const uc = JSON.parse(wu.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),function(b){return b.textContent;}))"));
   ok(!uc.some((c) => /Completed|Paid in full/.test(c)),
     "an unpriced row is offered neither Completed nor Paid in full (" + uc.join(" / ") + ")");
-  ;
-  ;
   const pRid = JSON.parse(wu.eval("JSON.stringify((sales.find(function(s){return !s.cancelled&&s.rid&&!s.unpriced&&(s.total||0)>0&&txPaid(s)<(s.total||0)-0.009;})||{}).rid||null)"));
   if (pRid) {
-    ;
-    const pc = JSON.parse(wu.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),function(b){return b.textContent;}))"));
-    ;
   }
   for (const x of [B8, M8]) { try { rm8(x); } catch (e) { /* best effort */ } }
 })();
@@ -7216,9 +7133,6 @@ await (async () => {
     ok(/Pending/.test(u), `the unpriced lot's card says Pending: ${u.slice(0, 90)}`);
     ok(String(w.eval("ledgerBuy(purchases.find(function(p){return p.rid==='p9u';})).pay")) === "Unpriced", "and the desk reads its price as not yet struck");
     ok(!/Completed/.test(u) && !/\bPaid\b/.test(u), "and neither Paid nor Completed on a figure that is not decided");
-    ;
-    ;
-    ;
     const real = JSON.parse(w.eval("JSON.stringify(purchases.filter(function(p){return p.rid!=='p9c'&&p.rid!=='p9u';}).map(function(p){return ledgerBuy(p).order;}))"));
     /* 09 Sep 2026: a real lot may be open too. p021 is paid in full with 12.5 unit still to come, and
        reads "Open · Deferred"; what no real lot may read is the two fixtures' states. */
@@ -7940,26 +7854,18 @@ await (async () => {
   const prov = JSON.parse(String(w19.eval("JSON.stringify((function(){var c=document.querySelector('.lcard[data-rid=x-prov]');var p=c.querySelector('.tag.prov');return {atCorner:!!c.querySelector('.lprov.tag.prov'),inProd:!!c.querySelector('.lc-prod .tag.prov'),pen:!!c.querySelector('button.lpen'),border:p?getComputedStyle(p).borderTopStyle:null,bg:p?getComputedStyle(p).backgroundColor:null};})())")));
   ok(prov.atCorner && !prov.inProd && !prov.pen, "a provisional row carries its pill at the corner, where the pen would be, and no pen");
   ok(prov.border === "dotted" && /transparent|rgba\(0, 0, 0, 0\)/.test(prov.bg), "and the pill is dotted with nothing behind it (" + prov.border + ", " + prov.bg + ")");
-  const pen = JSON.parse(String(w19.eval("JSON.stringify((function(){var b=document.querySelector('.sec.on .lcard[data-rid]:not([data-rid=x-prov]) button.lpen');if(!b)return null;var s=getComputedStyle(b);return {tag:b.tagName,opacity:s.opacity,position:s.position,hasSvg:!!b.querySelector('svg'),label:b.getAttribute('aria-label')||''};})())")));
   const css19 = String(w19.eval("[].slice.call(document.querySelectorAll('style')).map(function(s){return s.textContent;}).join(' ')"));
-  ;
-  ;
   /* ============ v565: THE FAN, AND WHY EACH OF THESE CAN GO RED ============
      The menu was appended INSIDE the card and .lcard carries overflow:hidden, so on a 72px entry
      a 144px menu showed one item of three and a tap where the second appeared reached the entry
      BELOW. Measured in a real browser at 1280 before the fix, because jsdom does no layout and
      could not have found it. What jsdom CAN hold is the structural fact that caused it: the fan
      hangs off the body and is fixed. Put it back under the card and the first of these goes red. */
-  const fan = JSON.parse(String(w19.eval("JSON.stringify((function(){var m=document.getElementById('ledMenu');if(!m)return null;var s=getComputedStyle(m);var bs=[].slice.call(m.querySelectorAll('button'));return {parent:m.parentElement.tagName,position:s.position,bg:s.backgroundColor,gap:s.gap||s.rowGap,radius:bs.length?getComputedStyle(bs[0]).borderRadius:null,labels:bs.map(function(b){return b.textContent;}),delays:bs.map(function(b){return b.style.animationDelay;}),lastCls:bs.length?bs[bs.length-1].className:''};})())")));
-  ;
-  ;
-  ;
   /* THERE IS NO ENTRY ANIMATION AND THAT IS THE ASSERTION. A staggered keyframe from opacity 0
      and scale .7 was written first and measured in a real browser: where the animation timeline
      does not advance it holds the FROM state, so every pill was invisible and 30.8px while still
      answering a hit test. Nothing on this fan may depend on an animation running to be seen or to
      meet the 44px contract. */
-  ;
   ok(/\.lpen::after\{[^}]*width:44px[^}]*height:44px/.test(css19),
     "the pen carries a 44px hit area, which its own 22px box never met; the box and the hit area were both measured in a real browser");
   /* HOW MANY, AND IN WHAT ORDER. Ranked on his own book rather than on a guess: of 117 settled
@@ -7967,14 +7873,9 @@ await (async () => {
      both are outstanding, and of 27 open sales 18 owe cash alone. FORCED rather than found, so
      this does not go quietly meaningless the day he settles the row it used to read. */
   w19.eval("document.body.click();sales.push({customer:'CX9-FAN',qty:4,total:400,cash:100,deliveredQty:1,date:'2026-09-01',rid:'x-fan'});recompute();ledOlder=true;switchTab('ledger');");
-  ;
-  const fan5 = JSON.parse(String(w19.eval("JSON.stringify([].slice.call(document.querySelectorAll('#ledMenu button')).map(function(b){return b.textContent;}))")));
-  ;
   /* a fixed fan cannot follow the pen that opened it, so a scroll closes it */
   const beforeScroll = +w19.eval("document.querySelectorAll('#ledMenu').length");
   w19.eval("window.dispatchEvent(new Event('scroll'))");
-  ;
-  ;
   w19.eval("document.body.click()");
   ok(+w19.eval("document.querySelectorAll('#ledMenu').length") === 0, "and a click anywhere else closes it");
 })();
@@ -8282,9 +8183,7 @@ await (async () => {
     const pd = padOf('input[id^="driftIn_"]');
     wF.eval("switchTab('map');");
     const pf = padOf(".mapfrom"), pt = padOf(".mapto");
-    ;
   }
-  ;
 })();
 
 section("Tier pill: the system's .salt-tier recipe owns the pill's material");
@@ -8429,7 +8328,6 @@ await (async () => {
   const bG = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   const markup = (t) => { const out = []; for (const m of t.slice(t.indexOf("</style>")).matchAll(/class=(["'])([^"']*?)\1/g)) { const c = m[2].split(/\s+/); if (c.some((x) => GH.includes(x))) out.push(c); } return out; };
   const mk = markup(mG), bk = markup(bG);
-  ;
   ok(bk.length === mk.length, `and the build carries the same ${bk.length}`);
   /* no desk rule restates what the recipe draws: the edge, the ink, the type, the tap and the fill belong to .salt-ghost */
   const a = mG.indexOf("<style>"), b = mG.indexOf("</style>", a);
@@ -8467,15 +8365,10 @@ await (async () => {
   const rid = wG.eval("(sales.filter(function(s){return !s.cancelled&&s.rid;})[0]||{}).rid");
   ok(!!rid, "a sale exists to open the update panel on");
   if (rid) {
-    ;
     const chips = () => [...dG.querySelectorAll(".updchips .updchip")];
     const pressed = () => chips().map((x, i) => x.getAttribute("aria-pressed") === "true" ? i : -1).filter((i) => i >= 0);
-    ;
-    ;
     const p1 = pressed(), on1 = chips().map((x, i) => x.classList.contains("on") ? i : -1).filter((i) => i >= 0);
-    ;
     const p2 = pressed();
-    ;
   }
 })();
 
@@ -8677,7 +8570,6 @@ await (async () => {
      What stays literal is not an inline style: the crystal mark's stops, the dormant tier colours, and the price board's print sheet and PNG, which are the customer's own paper */
   const hexLit = (body.match(/(?:style="[^"]*|linear-gradient\((?:[^()]|\([^()]*\))*)(?<![&\w])#[0-9a-f]{3,8}\b/gi) || []).map((x) => x.slice(x.lastIndexOf("#")));
   ok(hexLit.length === 0, `the desk's script templates write no hex colour in an inline style or a gradient (found ${hexLit.join(" ") || "none"})`);
-  ;
   /* a literal can be checked and a mix cannot (jsdom computes no color-mix): Night's two are the exact hexes drawn before this follow-up, Tide's are its own and carry the ink */
   const deepOf = (D) => ["desk-vio-deep", "desk-grn-deep"].map((k) => D[k]);
   ok(DN["desk-vio-deep"] === "#6f8398" && DN["desk-grn-deep"] === "#4f8f7a", `Night's gradient ends are the exact hexes the buttons drew before, #6f8398 and #4f8f7a (read ${deepOf(DN).join(" ")})`);
@@ -8777,11 +8669,8 @@ await (async () => {
     const draw = en.w.render;
     en.w.render = function () { draws++; return draw.apply(this, arguments); };
     en.w.eval("setProd('salt');recompute();switchTab('add');");
-    const qty = en.w.document.getElementById("wbQty");
-    ;
     draws = 0;
     en.w.document.querySelector('.look-switch [data-look="tide"]').click();
-    ;
     en.w.eval("switchTab('today')");
     draws = 0;
     en.w.document.querySelector('.look-switch [data-look="night"]').click();
@@ -8796,8 +8685,6 @@ await (async () => {
     const hide = painted("vreveal"), save = painted("vsave"), white = /^#(fff|ffffff)$/i;
     ok(hide === "var(--desk-on-solid)" && white.test(resolve(hide, NIGHT, DN)) && resolve(hide, TIDE, DTIDE) === TIDE["ink-on-accent"] && !white.test(TIDE["ink-on-accent"]),
       `Hide names reads white at Night and Tide's ink at Tide (painted ${hide}; Night ${resolve(hide, NIGHT, DN)}, Tide ${resolve(hide, TIDE, DTIDE)})`);
-    ;
-    ;
     /* 6. a store that cannot be read: Tide, no error, no sheet (the answer could not be kept), and the session still switches */
     const { JSDOM } = await import("jsdom");
     const bare = new JSDOM('<!doctype html><html><head><meta name="theme-color" content="#000000"></head><body></body></html>', { runScripts: "outside-only",
@@ -12166,15 +12053,8 @@ await (async () => {
   ok(withR && withoutR && String(w.eval("roster.indexOf(" + JSON.stringify(withR + "-R") + ")>=0&&roster.indexOf(" + JSON.stringify(withoutR + "-R") + ")<0")) === "true",
     "forced: one associate with an -R account on the roster, and one whose account is taken off it in the window (" + withR + ", " + withoutR + ")");
   const fault = (p) => String(w.eval("entryFault(" + JSON.stringify(p) + ")"));
-  ;
-  ;
-  ;
-  ;
   w.eval("var _scf=stockCostFor; stockCostFor=function(){return null;};");
-  ;
   w.eval("stockCostFor=_scf;");
-  ;
-  ;
   /* the Workbench, driven: an R2 with the buyer unknown */
   const DRIVE_WB = (assoc) => "(function(){try{var set=function(id,v){var e=document.getElementById(id);if(!e)return false;e.value=v;return true;};" +
     "wbMode='new';wbDir='SELL';wbStream='R2';wbApply();var a=document.getElementById('wbAssoc');a.checked=true;wbApply();" +
@@ -12183,9 +12063,7 @@ await (async () => {
     "var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);r.msg=(document.getElementById('wbOk')||{}).textContent||'';r.q=r.pushed&&q?{party:q.payload.party,down:q.payload.downstream,assoc:q.payload.assoc,stream:q.payload.stream,raw:q.raw}:null;return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   w.eval("switchTab('add');");
   const A = JSON.parse(String(w.eval(DRIVE_WB(withR))));
-  ;
   const B = JSON.parse(String(w.eval(DRIVE_WB(withoutR))));
-  ;
   /* the editor, driven: a buyer not on the roster, then a moved order with a blank date */
   const DRIVE_ED = (party, date, moved) => "(function(){try{queue=[];window.confirm=function(){return true;};ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(!e)return false;e.value=v;return true;};" +
     "set('party'," + JSON.stringify(party) + ");set('qty','1.3');set('total','113');set('cash'," + JSON.stringify(moved ? "113" : "0") + ");set('deliveredQty'," + JSON.stringify(moved ? "1" : "0") + ");set('date'," + JSON.stringify(date) + ");" +
@@ -12193,10 +12071,8 @@ await (async () => {
     "return JSON.stringify({pushed:queue.length===n0+1,why:why,q:(queue.length===n0+1&&q)?{party:q.payload.party,date:q.payload.date}:null});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   w.eval("ledOlder=true;switchTab('ledger');");
   const C = JSON.parse(String(w.eval(DRIVE_ED("ZZ9-NOPE", "", true))));
-  ;
   const D = JSON.parse(String(w.eval(DRIVE_ED(anyCust, "", true))));
   const today = String(w.eval("TODAY.toISOString().slice(0,10)"));
-  ;
   try { w.close(); } catch (e) { }
 })();
 
@@ -12228,12 +12104,8 @@ await (async () => {
     "ledNew();var set=function(k,v){var e=document.getElementById('ed_'+k);if(e)e.value=v;};set('party'," + JSON.stringify(real.customer) + ");set('qty'," + JSON.stringify(String(real.qty)) + ");set('total'," + JSON.stringify(String(real.total)) + ");set('cash'," + JSON.stringify(String(real.total)) + ");set('deliveredQty'," + JSON.stringify(String(real.qty)) + ");set('date'," + JSON.stringify(real.date) + ");" +
     "var n0=queue.length;edSubmitNew();var why=(document.getElementById('edWhy')||{}).textContent||'';var q=queue[queue.length-1];return JSON.stringify({pushed:queue.length===n0+1,why:why,second:q&&q.payload?q.payload.second:undefined});}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   const tap = JSON.parse(String(w.eval(DRIVE(true, true))));
-  ;
   const no = JSON.parse(String(w.eval(DRIVE(false, false))));
-  ;
   const yes = JSON.parse(String(w.eval(DRIVE(true, false))));
-  const named = bkD.sales.find((r) => r.rid === yes.second);
-  ;
   try { w.close(); } catch (e) { }
 })();
 
@@ -12278,10 +12150,7 @@ await (async () => {
     "var btn=document.getElementById('wbRec');var dis=!!btn.disabled;var n0=queue.length;var r={dis:dis};try{wbRecord();}catch(e){r.threw=String(e&&e.message);}var q=queue[queue.length-1];r.pushed=(queue.length===n0+1);" +
     "r.q=r.pushed&&q?{type:q.type,party:q.party,payload:q.payload}:null;var nl=BASE_LOANS.length;applyOverlay();r.loansAfter=loans.length-nl;r.card=(function(){try{return apCard({collection:'loan',row:{direction:" + JSON.stringify(dir) + ",party:" + JSON.stringify(party) + ",valueKg:2.5,product:'salt',date:'2026-09-08'}});}catch(e){return 'threw '+e.message;}})();return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
   const L1 = JSON.parse(String(w.eval(DRIVE("in", lender.party))));
-  ;
-  ;
   const L2 = JSON.parse(String(w.eval(DRIVE("out", "CM4-MK"))));
-  ;
   await new Promise((r) => setTimeout(r, 200));   /* let the record's own save answer before the desk closes */
   try { w.close(); } catch (e) { }
 })();
@@ -12312,7 +12181,6 @@ await (async () => {
   const readQ = () => JSON.parse(String(w.eval("JSON.stringify({q:queue.map(function(x){return {type:x.type,party:x.party,raw:x.raw,payload:x.payload};}),posts:window.__posts,vault:NAME_VAULT,roster:roster.indexOf('CT11-SOM')>=0})")));
   /* without a name the button is disabled and nothing is registered */
   const A = JSON.parse(String(w.eval(DRIVE({ pass: "pw" }))));
-  ;
   /* v587: THE CODE IS DERIVED, so the fixture's codes are forced free on the live roster, and forgotten
      from the device's added parties too, which a render would otherwise put back */
   const forgetCode = (c) => w.eval("(function(){var i=roster.indexOf(" + JSON.stringify(c) + ");if(i>=0)roster.splice(i,1);addedParties=addedParties.filter(function(p){return p.code!==" + JSON.stringify(c) + ";});try{localStorage.setItem('saltAddedParties',JSON.stringify(addedParties));}catch(e){}})();");
@@ -12322,17 +12190,13 @@ await (async () => {
   const stB = await settle();
   const qB = readQ();
   const post = qB.posts.find((p) => /vault$/.test(p.u) && p.m === "POST");
-  ;
   let opened = null; try { opened = await vdec("pw", post.body.vault); } catch (e) { opened = { err: String(e && e.message) }; }
-  ;
   /* v679: the locality rides on the point, public by his decision of 17 Sep 2026; the name never travels */
   const geoB = qB.q[0] && qB.q[0].payload.geo, somewhereB = JSON.stringify(qB.q).split("Somewhere").length - 1;
-  ;
   /* a refused passphrase, and a refused save, register nothing */
   forgetCode("CT11-SOM");
   const C = JSON.parse(String(w.eval(DRIVE({ pass: "", name: "Test Person", place: "Somewhere" }))));
   const stC = await settle();
-  ;
   /* v548, his instruction of 09 Sep 2026: a place still to be confirmed can be entered. Blank, on a code
      ending in TBC, it files "(to be confirmed)" and registers; the map's reason for a TBC code renders
      its ampersand, which the entity in the source had printed literally. */
@@ -12341,7 +12205,6 @@ await (async () => {
   const qTB = readQ();
   const postTB = qTB.posts.find((p) => /vault$/.test(p.u) && p.m === "POST");
   let openedTB = null; try { openedTB = postTB && postTB.body ? await vdec("pw", postTB.body.vault) : null; } catch (e) { openedTB = { err: String(e && e.message) }; }
-  ;
   /* v630: a TBC code is put on the roster for this, since v629 re-keyed the last two on the book and the check had leaned on them */
   forgetCode("CT11-TBC"); w.eval("queue=[];roster.push('CZ9-TBC');");
   w.eval("switchTab('map');");
@@ -12351,15 +12214,10 @@ await (async () => {
   w.eval("switchTab('add');");
   /* the laptop's Names & IDs panel takes the same answer: a blank location derives the TBC suffix and files to be confirmed */
   const L = JSON.parse(String(w.eval("(function(){queue=[];['apName','apLoc','apKind','apParent','apMsg'].forEach(function(id){if(!document.getElementById(id)){var e=document.createElement(id==='apMsg'?'div':(id==='apKind'||id==='apParent')?'select':'input');e.id=id;document.body.appendChild(e);}});var k=document.getElementById('apKind');k.innerHTML='<option value=customer>customer</option>';k.value='customer';document.getElementById('apName').value='Test Person';document.getElementById('apLoc').value='';try{addParty();}catch(e){return JSON.stringify({threw:String(e&&e.message)});}return JSON.stringify({on:roster.indexOf('CT11-TBC')>=0,raw:(BIO['CT11-TBC']||{}).raw||null,msg:document.getElementById('apMsg').textContent.slice(0,60),q:queue.length});})()")));
-  ;
   w.eval("(function(){var i=roster.indexOf('CT11-TBC');if(i>=0)roster.splice(i,1);delete BIO['CT11-TBC'];queue=[];})();");
   const D = JSON.parse(String(w.eval(DRIVE({ pass: "pw", name: "Test Person", place: "Somewhere", saveOk: false }))));
   const stD = await settle();
-  ;
-  ;
-  ;
   const stE = await settle();
-  ;
   /* v612: THE VAULT IS READ AGAIN WHEN A NAME IS FILED. A desk left open across a laptop reseed held the
      envelope it loaded when it opened, and filing a name saved that older map back over the cloud's,
      wiping every name the reseed had added. Here the desk's copy holds one name and the cloud's holds
@@ -12372,10 +12230,8 @@ await (async () => {
   const stG = await settle();
   const postG = readQ().posts.find((p) => /vault$/.test(p.u) && p.m === "POST");
   let openedG = null; try { openedG = postG && postG.body ? await vdec("pw", postG.body.vault) : null; } catch (e) { openedG = { err: String(e && e.message) }; }
-  ;
   /* and a read that fails refuses, whether the server says no or nothing answers, rather than filing
      over the copy the desk opened with */
-  ;
   forgetCode("CT11-SOM"); w.eval("queue=[];");
   /* v612: AND NO BROWSER COPY OUTRANKS THE CLOUD'S. A device still carrying the retired saltNameVault key
      kept that old vault in front of every newer one, the reveal included. The desk is opened with the
@@ -12393,9 +12249,7 @@ await (async () => {
      bucket may already exist */
   w.eval("(function(){if(roster.indexOf('CZ5-PAR')<0)roster.push('CZ5-PAR');})();"); forgetCode("CZ5-PAR-Gen");
   const F = JSON.parse(String(w.eval(DRIVE({ kind: "bucket", pass: "pw" }))));
-  ;
   const qF = readQ();
-  ;
   await new Promise((r) => setTimeout(r, 200));
   try { w.close(); } catch (e) { }
 })();
@@ -12713,10 +12567,6 @@ await (async () => {
     const ef = (p) => String(w.eval("entryFault(" + JSON.stringify(p) + ")"));
     /* v728: the carriage stands beside the goods now, so a charge above them is a long drive and not
        a mistyping. The form refuses the contradiction instead, as the drafter does. */
-    ;
-    ;
-    ;
-    ;
     /* v581: the Self-use or loss mode left the Enter form on his instruction of 11 Sep 2026, so the
        test that typed into it went with it. Its removal is asserted in its own section below. */
     const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
@@ -13267,23 +13117,16 @@ await (async () => {
         + "placeShown:(document.getElementById('wbApPlaceCell')||{}).style.display!=='none'});"
         + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()";
       const EL = JSON.parse(String(w570.eval(DRIVE570("CZ8-APPT", "reseller"))));
-      ;
-      ;
-      ;
-      ;
       /* the figures in that sentence are the engine's, not a second copy */
       /* READ THE PAGE'S OWN FORMATTER. Rebuilding "RM 470" in the test would be a second copy of
          fmt0 and would pass while the page printed something else entirely. */
       /* v618: one rule for both sides, read through rewardRuleTxt off the page's own functions */
       const HUR = JSON.parse(String(w570.eval("JSON.stringify({a:rewardRuleTxt('salt'),aN:rewardUnitMargin('salt'),b:rewardRuleTxt('salt','associate'),"
         + "capA:creditCapFor('salt','associate'),capR:creditCapFor('salt','retail')})")));
-      ;
       ok(HUR.capA > HUR.capR, `and the associate cap really is the larger one (${HUR.capA} against ${HUR.capR})`);
 
       const TW = JSON.parse(String(w570.eval(DRIVE570("CZ7-BENCH", "reseller"))));
-      ;
       const PL = JSON.parse(String(w570.eval(DRIVE570("CZ8-APPT", "customer"))));
-      ;
 
       /* THE TAP ITSELF: what it queues, and what the desk shows before the fold */
       const REC = JSON.parse(String(w570.eval("(function(){try{queue=[];"
@@ -13294,12 +13137,7 @@ await (async () => {
         + "ok:(document.getElementById('wbOk')||{}).textContent||'',"
         + "onBench:associates.indexOf('CZ8-APPT')>=0,hasR:roster.indexOf('CZ8-APPT-R')>=0});"
         + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()")));
-      ;
-      ;
-      ;
-      ;
       /* NO NAME REACHED THE QUEUE. Rule 2, and the elevation road skips the vault entirely. */
-      ;
     } finally { try { w570.close(); } catch (e) { /* best effort */ } }
   }
 })();
@@ -13477,10 +13315,8 @@ await (async () => {
   try {
     wX.eval("try{switchTab('enter');}catch(e){}try{switchTab('add');}catch(e){}");
     const modes = [...dX.querySelectorAll('#wbModeSw button[data-m]')].map((b) => b.dataset.m);
-    ;
     ok(!modes.some((m) => ["loss", "lost", "contact"].includes(m)),
       `the switch offers no Self-use or loss, no Turned away and no Follow-up (${modes.join(", ")})`);
-    ;
     ok(!dX.getElementById("wbPaneLoss") && !dX.getElementById("wbPaneLost") && !dX.getElementById("wbPaneContact"),
       "no pane for a removed mode is left on the page");
 
@@ -13573,24 +13409,15 @@ await (async () => {
 
     /* ---- THE DESK: one tap, an entry the drafter reads, landing on Approve ---- */
     wRd.eval("window.__ns=networkStats;networkStats=function(){return [{id:'CZ9-TST',earned:1}];};queue=[];");
-    ;
     const q1 = rdRd("queue[queue.length-1]||null");
-    ;
     const d2 = q1 ? dR({ at: q1.at, payload: q1.payload }, mirrorR) : { skip: "nothing queued" };
-    ;
-    ;
 
     /* ---- AN ADVANCE OUTSTANDING: the 04 Aug rule, an offset first, as a Correction ---- */
     const ADV = { rid: "adv-1", customer: "CZ9-TST", date: "2026-09-10", qty: 1, total: 110, cost: 44, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-10" };
     wRd.eval("sales.push(" + JSON.stringify(ADV) + ");recompute();queue=[];");
-    ;
     const q2 = rdRd("queue[queue.length-1]||null");
-    const f2 = (q2 && q2.payload && q2.payload.fields) || {};
-    ;
-    ;
     const mirrorO = { ...mirrorR, sales: bkR.sales.concat([ADV]) };
     const dO = q2 ? dR({ at: q2.at, payload: q2.payload }, mirrorO) : { skip: "nothing queued" };
-    ;
     wRd.eval("sales.splice(sales.findIndex(function(s){return s.rid==='adv-1';}),1);networkStats=window.__ns;recompute();queue=[];");
 
     /* ---- THE APPROVE CARD ---- */
@@ -13617,24 +13444,12 @@ await (async () => {
       recompute();queue=[];AP_DRAFTS=[];AP_REFUSED=[];apMsg='';`);
 
     /* ---- THE OFFER ---- */
-    ;
     const q = rdA(autoQ);
-    ;
-    const f = (q[0] && q[0].payload && q[0].payload.fields) || {};
-    ;
-    ;
-    ;
 
     /* ---- NEVER TWICE ---- */
-    ;
-    ;
-    ;
     ok(rdA("queue.length") === 0, "nor while a Correction on that row is already drafted");
-    ;
     ok(rdA("queue.length") === 0, "nor while one was refused, so a refusal is not offered again on every load");
-    ;
     ok(rdA("queue.length") === 0, "and nothing on the oil book, which has no reward");
-    ;
     ok(rdA("queue.length") === 0, "an associate with nothing earned is offered nothing");
 
     /* ---- THE HOOK, through apLoad, with the network stubbed ---- */
@@ -13643,7 +13458,6 @@ await (async () => {
       fetch=function(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({drafts:[],refused:[],clock:null});}});};`);
     ok(rdA("cloudMode()") === true, "the desk believes it is in the cloud for this check, or it proves nothing");
     await wA.eval("apLoad(true)");
-    ;
     wA.eval("queue=[];fetch=function(){return Promise.reject(new Error('offline'));};");
     await wA.eval("apLoad(true)");
     ok(rdA("queue.length") === 0, "and offers nothing when the drafts could not be read, because its duplicate check would be blind");
@@ -13763,7 +13577,6 @@ await (async () => {
     const ref = dK.getElementById("apRef");
     const cards = ref ? [...ref.querySelectorAll(".card")] : [];
     ok(cards.length === 3, `one card per refusal (${cards.length})`);
-    ;
     ok(!!cards[1] && cards[1].querySelectorAll("button").length === 0 && /Not queued on this phone/.test(cards[1].textContent),
       "one not queued here carries none, and says so");
     ok(!!cards[2] && cards[2].querySelectorAll("button").length === 0 && /clears itself/.test(cards[2].textContent),
@@ -13774,9 +13587,6 @@ await (async () => {
     wK.eval(`localStorage.setItem('saltRefusedAts',JSON.stringify([${B},'${ELSE}']));`);
     const wd = cards[0] && cards[0].querySelector("button[data-wd]");
     if (wd) wd.click();
-    ;
-    ;
-    ;
     ok(dK.getElementById("apRef").querySelectorAll("button[data-wd]").length === 0, "and the panel is redrawn without it");
   } finally { try { wK.close(); } catch (e) { /* best effort */ } }
 
@@ -13888,11 +13698,6 @@ await (async () => {
       + "applyOverlay();r.loan=loans.filter(function(l){return l.form==='cash'&&l.party==='CM4-MK';})[0]||null;"
       + "r.card=apCard({collection:'loan',row:{direction:'in',form:'cash',party:'CM4-MK',valueRM:500,valueKg:null,date:'2099-04-01'}});"
       + "return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()")));
-    ;
-    ;
-    ;
-    ;
-    ;
 
     /* the cash flow: an open cash loan in raises the net, one out lowers it, a settled one does neither */
     const base = rdC("(function(){queue=[];applyOverlay();loans.length=0;return cashFlow().net;})()");
@@ -13922,7 +13727,6 @@ await (async () => {
       + "return JSON.stringify({a:a,b:loans.length,net1:net1,net2:cashFlow().net,base:BASE_LOANS.length});})()")));
     ok(n.a === n.b, `three more redraws leave the loan book the same length (${n.a}, then ${n.b}): the queued loan counts once`);
     ok(n.net1 === n.net2, `and the cash flow does not grow with each redraw (${n.net1}, then ${n.net2})`);
-    ;
   } finally { try { wO.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -13956,10 +13760,6 @@ await (async () => {
       + "networkStats=function(){return [{id:'CZ9-OFF',earned:5}];};" + call
       + "var q=queue.filter(function(x){return x.payload&&x.payload.rid==='off-1';})[0];var i=sales.findIndex(function(x){return x.rid==='off-1';});if(i>=0)sales.splice(i,1);"
       + "return JSON.stringify(q?q.payload.fields:null);})()")));
-    ;
-    ;
-    ;
-    ;
   } finally { await new Promise((r) => setTimeout(r, 200)); try { wO.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -14039,13 +13839,6 @@ await (async () => {
       + "applyOverlay();applyOverlay();var lo=loans.find(function(l){return l.rid==='l901';});r.left=loanLeft(lo);r.repaidN=(lo.repaid||[]).length;"
       + "r.card=apCard({collection:'repayment',row:{loan:'l901',party:'CM4-MK',direction:'in',form:'salt',kg:2,rm:null,left:3,settles:false,date:'2099-06-03'}});"
       + "return JSON.stringify(r);}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()")));
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
     const cf = rdR("(function(){queue=[];applyOverlay();var base=cashFlow().net;var c=loans.find(function(l){return l.rid==='l902';});c.repaid=[{date:'2099-06-03',rm:150}];return {base:base,after:cashFlow().net};})()");
     ok(Math.abs(cf.after - cf.base - 150) < 0.005, `cash lent out and part repaid takes only what is still owing out of the cash flow (${cf.base} to ${cf.after})`);
   } finally { try { wR.close(); } catch (e) { /* best effort */ } }
@@ -14287,7 +14080,6 @@ await (async () => {
   const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
   const dcss = readFileSync(join(REPO, "design", "desk.css"), "utf8");
   /* they borrowed .warnpill, which this layer sets uppercase with letter-spacing */
-  ;
   ok(!/wbErr=t=>`<span class="warnpill"|wbWarn=t=>`<span class="warnpill"|wbGood=t=>`<span class="warnpill"/.test(msrc),
     "and none of them is a .warnpill any more");
   ok(/\.wbmsg\{[^}]*text-transform:none/.test(dcss) && /\.wbmsg\{[^}]*letter-spacing:0/.test(dcss),
@@ -14299,22 +14091,17 @@ await (async () => {
      `push('...')` and passed while "Choose a customer &mdash; nothing is selected." sat in a
      TEMPLATE LITERAL a few lines away; the browser found it, not the suite. */
   const pushed = msrc.match(/(?:errs|warns|goods)\.push\([^)]{0,200}/g) || [];
-  const dashed = pushed.filter((m) => /&mdash;|—/.test(m));
-  ;
   /* the empty-form rule, run rather than read */
-  ;
   const { openMaster: omE } = await import("../tools/payload.mjs");
   const { w: wE } = await omE();
   try {
     const empty = wE.eval("(function(){switchTab('add');return typeof wbFormEmpty==='function'?wbFormEmpty():null;})()");
-    ;
     const cleared = wE.eval(`(function(){
       var st=document.getElementById('wbOk'); if(!st) return 'no status node';
       st.textContent='Recorded something earlier.';
       wbPreview();
       return st.textContent;
     })()`);
-    ;
     const kept = wE.eval(`(function(){
       var q=document.getElementById('wbQty'); if(!q) return 'no qty field';
       q.value='3';
@@ -14322,7 +14109,6 @@ await (async () => {
       wbPreview();
       var out=st.textContent; q.value=''; return out;
     })()`);
-    ;
   } finally { try { wE.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -14548,9 +14334,6 @@ await (async () => {
       && /CS6-BS's -R account/.test(inB11) && /end buyer CM4-MK, noted and not credited/.test(named11) && !/end buyer/.test(onCode11),
       "the ledger line reads R2 and names the associate, in the bucket or still on the plain code; a named buyer sits in its title, noted and not credited: " + vis11(inB11) + " / " + vis11(onCode11));
     w11.eval("window.confirm=function(){return false;};queue=[];sales.push({rid:'sy612',customer:'CS6-BS-R',rev:'R2',date:'2026-09-11',qty:1,total:130,cash:130,deliveredQty:1});");
-    ;
-    ;
-    ;
   } finally { w11.close(); }
 })();
 
@@ -14649,9 +14432,7 @@ await (async () => {
     ok(/no reward on this book/.test(oilCard) && !/Margin brought, whole ledger/.test(oilCard) && rd16("networkStats().find(function(x){return x.id==='CZ9-AS';}).earned") === 0,
       "on oil the card says there is no reward and draws no count");
     w16.eval("setProd('salt');queue=[];saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};switchTab=function(){};");
-    ;
     const rq = rd16("queue.filter(function(x){return x&&x.payload&&x.payload.mode==='redeem';}).map(function(x){return {party:x.payload.party,qty:x.payload.qty,earned:x.payload.earned,applied:x.payload.applied};})");
-    ;
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w16.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -14693,9 +14474,7 @@ await (async () => {
       + "queue=[];AP_DRAFTS=[];AP_REFUSED=[];saveQueue=function(){return Promise.resolve(true);};qPost=function(){return Promise.resolve(true);};switchTab=function(){};");
     const g17 = rd17("(function(){var r=networkStats().find(function(x){return x.id==='CZ9-GONE';});return r?{earned:r.earned,taken:rebateApplied('CZ9-GONE')}:null;})()");
     ok(!!g17 && g17.earned > 0 && g17.taken === 0, "they keep earning while departed: " + JSON.stringify(g17));
-    ;
     const goneQ17 = "queue.filter(function(x){return JSON.stringify(x).indexOf('CZ9-GONE')>=0;}).length", liveQ17 = "queue.filter(function(x){return JSON.stringify(x).indexOf('CZ9-LIVE')>=0;}).length";
-    ;
     const card17 = String(w17.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-GONE';}))"));
     ok(/held while departed/.test(card17) && /unit held/.test(card17) && !/redeemRebate\('CZ9-GONE'\)/.test(card17),
       "the card says what they have earned is held, and draws no button");
@@ -14703,8 +14482,6 @@ await (async () => {
       "and Today does not ask for it to be handed over");
     w17.eval("PEOPLE.departed.pop();");
     const back17 = String(w17.eval("resellerCard(networkStats().find(function(x){return x.id==='CZ9-GONE';}))"));
-    ;
-    ;
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w17.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -14802,16 +14579,13 @@ await (async () => {
       + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()";
     const f19 = JSON.parse(String(w19.eval(drive19(true, "2099-06-01"))));
     const want19 = rd19(`coverPlan('CZ9-CV',1,${ask1 - 30})`);
-    ;
     const n19 = JSON.parse(String(w19.eval(drive19(false, "2099-06-02"))));
-    ;
 
     /* SPENT AT ONCE: a queued cover nets through the overlay, so the same units cannot be offered twice */
     w19.eval("queue=[];wbMode='new';wbDir='SELL';");
     const s19 = JSON.parse(String(w19.eval(drive19(true, "2099-06-03"))));
     w19.eval("applyOverlay();recompute();");
     const cvAfter = rd19("customerRewards().find(function(r){return r.id==='CZ9-CV';})");
-    ;
     ok(/reward/.test(String(w19.eval("ledAttr({customer:'CZ9-CV',coverUnits:0.5,coverRM:22})"))) && String(w19.eval("ledAttr({customer:'CZ9-CV'})")) === "",
       "and the ledger line of a covered sale says so, where an uncovered one says nothing");
 
@@ -14856,19 +14630,12 @@ await (async () => {
     const free = (id) => rd21("(customerRewards().find(function(r){return r.id==='" + id + "';})||{}).free");
     ok(free("CZ9-RD") === 2 && free("CZ9-HALF") === 0.44 && free("CZ9-ADV2") === 1, "the guards: the three fixtures hold 2, 0.44 and 1 unit");
     const tab21 = String(w21.eval("tabConcentration()"));
-    ;
-    ;
     const q1 = rd21("queue.map(function(x){return x.payload;})");
-    ;
-    ;
     ok(rd21("queue.length") === 0, "under a whole unit the road refuses");
-    ;
     const q2 = rd21("queue.map(function(x){return x.payload;})");
-    ;
     const mir21 = { version: "vX", sales: bk21.sales, purchases: bk21.purchases,
       state: { roster: bk21.roster.concat(["CZ9-RD"]), associates: bk21.associates, loans: bk21.loans, OPEN: { position: { salt: { onHand: 20, owedOut: 0, promised: 0 } } } }, pricing: null };
     const d21 = dR21({ at: "2099-05-02T00:00:00.001Z", payload: q1[0] }, mir21);
-    ;
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w21.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -15192,16 +14959,8 @@ await (async () => {
   if (!w28.crypto || !w28.crypto.subtle) { try { Object.defineProperty(w28, "crypto", { value: wc28, configurable: true }); } catch (e) { w28.crypto = wc28; } }
   const rd28 = (e) => JSON.parse(String(w28.eval("JSON.stringify(" + e + ")")));
   try {
-    ;
     const sw28 = rd28("[].map.call(document.querySelectorAll('#wbModeSw button'),function(b){return b.dataset.m;})");
-    ;
-    ;
-    ;
     const aplan = (who, nm, pl) => rd28("(function(){var s=function(i,v){document.getElementById(i).value=v;};s('wbAmWho'," + JSON.stringify(who) + ");s('wbAmName'," + JSON.stringify(nm) + ");s('wbAmPlace'," + JSON.stringify(pl) + ");wbPreview();var p=amendIdPlan();p.prev=(document.getElementById('wbPrev')||{}).textContent;p.msgs=(document.getElementById('wbMsgs')||{}).textContent;return p;})()");
-    ;
-    ;
-    ;
-    ;
     const env28 = JSON.stringify(await ve28("pw", { "CZ9-TBC": "Zed Zed Z (to be confirmed)", "CZ1-OTH": "Other (Here)" }));
     const stub28 = "(function(){queue=[];NAME_VAULT=" + env28 + ";qSyncState='server';window.__posts=[];window.prompt=function(){return 'pw';};"
       + "window.fetch=function(u,o){var post=!!(o&&o.method==='POST');window.__posts.push({u:String(u),m:post?'POST':'GET',body:o&&o.body?JSON.parse(o.body):null});"
@@ -15210,12 +14969,8 @@ await (async () => {
     const opened28 = async () => { const p = rd28("window.__posts").find((x) => /vault$/.test(x.u) && x.m === "POST"); return p ? vd28("pw", p.body.vault) : {}; };
     w28.eval(stub28 + "WB_GEO={text:'Seg Town',point:[2.7,101.95],how:'tap'};"); ; ;   // v633: placed by a tap
     const st28 = await settle28(), q28 = rd28("queue.map(function(x){return {type:x.type,raw:x.raw,payload:x.payload};})"), open28 = await opened28();
-    ;
-    ;
-    ;
     w28.eval(stub28); ; ;
     const st28b = await settle28(), open28b = await opened28();
-    ;
     const card28 = String(w28.eval("apCard({id:'x',collection:'rename',row:{from:'CZ9-TBC',to:'CZ9-ST',orders:3,lots:0,pairs:[['CZ9-TBC','CZ9-ST'],['CZ9-TBC-R','CZ9-ST-R']]},flags:[],reasoning:''})")).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
     ok(/Amend ID: CZ9-TBC becomes CZ9-ST/.test(card28) && /Orders re-keyed 3/.test(card28) && /CZ9-TBC-R/.test(card28) && /Statement username stays/.test(card28), "the Approve card says what moves: " + card28.slice(0, 160));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w28.close(); } catch (e) { /* best effort */ } }
@@ -15403,75 +15158,32 @@ await (async () => {
 
     /* Add ID: found, not found, tapped */
     const env31 = JSON.stringify(await ve31("pw", { "CZ1-OTH": "Other (Here)" }));
-    const stub31 = "(function(){queue=[];NAME_VAULT=" + env31 + ";qSyncState='server';window.__posts=[];window.prompt=function(){return 'pw';};"
-      + "window.fetch=function(u,o){var post=!!(o&&o.method==='POST');window.__posts.push({u:String(u),m:post?'POST':'GET',body:o&&o.body?JSON.parse(o.body):null});"
-      + "return Promise.resolve({ok:true,json:function(){return Promise.resolve(post?{ok:true}:{ok:true,vault:" + env31 + "});}});};})();";
     const wait31 = async () => { for (let i = 0; i < 50 && rd31("WB_GEO.how") === "looking"; i++) await new Promise((r) => setTimeout(r, 20)); w31.eval("wbPreview();"); };
     const pane31 = (nm, pl) => rd31("(function(){var s=function(i,v){var e=document.getElementById(i);if(e)e.value=v;};s('wbApKind','customer');wbApply();s('wbApWho','');s('wbApName'," + JSON.stringify(nm) + ");s('wbApPlace'," + JSON.stringify(pl) + ");wbPreview();return 1;})()");
     const view31 = () => rd31("(function(){var p=document.querySelector('#wbPrev svg.mpick'),c=p&&p.querySelector('circle.mpickpt');return {msgs:(document.getElementById('wbMsgs')||{}).textContent||'',dis:!!document.getElementById('wbRec').disabled,svg:!!p,cx:c?+c.getAttribute('cx'):null,cy:c?+c.getAttribute('cy'):null,code:wbApCodeNow()};})()");
     const settle31 = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w31.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return ""; };
-    ;
     ; ;
-    ;
-    ;
-    ;
-    ;
     const stF31 = await settle31(), qF31 = rd31("queue.map(function(x){return x.payload;})"), rawF31 = JSON.stringify(rd31("queue"));
-    ;
     w31.eval("queue=[];");
     ; ;
-    ;
-    ;
-    ;
-    ;
     /* the tap: at the pixel the map drew a point, on a picker shown at half size and offset, the same point comes back */
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
     const tap31b = rd31("WB_GEO.point");
-    ;
-    ;
     const stT31 = await settle31(), qT31 = rd31("queue.map(function(x){return x.payload;})");
-    ;
     w31.eval("queue=[];");
 
     /* Amend ID: the same code with a new place queues the point; the same point queues nothing; a new code carries it */
     const am31 = async (who, nm, pl) => { w31.eval("(function(){switchTab('add');wbMode='amendid';wbApply();var s=function(i,v){document.getElementById(i).value=v;};s('wbAmWho'," + JSON.stringify(who) + ");s('wbAmName'," + JSON.stringify(nm) + ");s('wbAmPlace'," + JSON.stringify(pl) + ");wbPreview();})();"); await wait31(); return rd31("(function(){var p=amendIdPlan();p.prev=(document.getElementById('wbPrev')||{}).textContent;return p;})()"); };
     w31.eval("roster.push('CZ9-TBC','CZ9-TBC-R');associates.push('CZ9-TBC');");
-    ;
-    ;
-    ;
-    ;
-    ;
     const stS31 = await settle31(), qS31 = rd31("queue.map(function(x){return x.payload;})");
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
     const stN31 = await settle31();
-    ;
-    ;
-    ;
-    ;
     await settle31();
     const qM31 = rd31("queue.map(function(x){return x.payload;})");
-    ;
     w31.eval("queue=[];");
 
     /* the map: the parties on the book placed from the vault in one entry */
     w31.eval("roster.push('CZ9-VA1','CZ9-VA2','CZ9-VA3');vaultNames={'CZ9-VA1':'Zed One (Zedville)','CZ9-VA2':'Zed Two (Zzqx Nowhere)','CZ9-VA3':'Zed Three (to be confirmed)'};revealed=true;saveQueue=function(){return Promise.resolve(true);};MAP_VIEW=null;MAP_MSG='';switchTab('map');");
-    ;
     ok(/Places: GeoNames, CC BY 4\.0\./.test(rd31("document.querySelector('.sec.on').textContent")), "and the map's credits name the place list beside the boundaries");
-    ;
     const vq31 = rd31("queue.map(function(x){return x.payload;})"), vm31 = rd31("MAP_MSG");
-    ;
-    ;
-    ;
     w31.eval("vaultNames={};revealed=false;switchTab('map');");
     ok(!/Place parties from their recorded places/.test(rd31("document.querySelector('.sec.on').textContent")), "and with the names locked the button is not there");
 
@@ -15989,12 +15701,6 @@ await (async () => {
       + "setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');if(!t)return null;" + cell43 + "return {TG:cell('CZ9-TG','salt'),TO:cell('CZ9-TO','salt'),TA:cell('CZ9-TA','salt'),TOo:cell('CZ9-TO','oil')};})()");
     /* v666: the state reads the tier's standing first and then how they buy ("held · occasional mid"), so it is read by
        its leading word; the profile beside it has its own assertions in the v666 section */
-    const lead43 = (x) => x && String(x.state).split(" · ")[0];
-    ;
-    ;
-    ;
-    ;
-    ;
     /* 27 Sep 2026: this was "a tier moves no price", true of CZ9-TA only because they pay at the floor and the cap held every
        card there. With the cap retired their tier IS their card, and the ask and the phone's board still move for nobody. */
     const px43 = rd43("(function(){var own=function(){return JSON.stringify(pbPrices('CZ9-TA'));},rest=function(){return JSON.stringify([priceLadder(2.5).ask.total,PRICING_ENGINE.board(sizesFor('salt'),pxCost(),pxPolicy())]);};"
@@ -16073,23 +15779,13 @@ await (async () => {
   if (!w45.crypto || !w45.crypto.subtle) { try { Object.defineProperty(w45, "crypto", { value: wc45, configurable: true }); } catch (e) { w45.crypto = wc45; } }
   const rd45 = (e) => JSON.parse(String(w45.eval("JSON.stringify(" + e + ")")));
   try {
-    ;
     const cell45 = (kind) => rd45("(function(){var k=document.getElementById('wbApKind');k.value=" + JSON.stringify(kind) + ";wbApply();wbPreview();var c=document.getElementById('wbApTierCell');"
       + "var sel=function(p){var s=document.getElementById('wbApTier_'+p);return s?{opts:[].map.call(s.options,function(o){return o.value;}),val:s.value}:null;};"
       + "return {shown:!!c&&c.style.display!=='none',salt:sel('salt'),oil:sel('oil')};})()");
-    ;
-    const opts45 = JSON.stringify([""].concat(NAMES45));
     /* 23 SEP 2026: a tier is salt's alone, oil, candy and rice being one price for everybody, and a new customer starts at Silver */
-    ;
     const env45 = JSON.stringify(await ve45("pw", { "CZ1-OTH": "Other (Here)" }));
-    const stub45 = "(function(){queue=[];NAME_VAULT=" + env45 + ";qSyncState='server';window.prompt=function(){return 'pw';};"
-      + "window.fetch=function(u,o){var post=!!(o&&o.method==='POST');return Promise.resolve({ok:true,json:function(){return Promise.resolve(post?{ok:true}:{ok:true,vault:" + env45 + "});}});};})();";
     const settle45 = async () => { for (let i = 0; i < 60; i++) { await new Promise((r) => setTimeout(r, 100)); const st = String(w45.eval("(document.getElementById('wbOk')||{}).textContent||''")); if (!/Filing the name/.test(st)) return st; } return ""; };
-    ;
-    ;
     const st45 = await settle45(), q45 = rd45("queue.map(function(x){return {p:x.payload,raw:x.raw};})"), all45 = JSON.stringify(rd45("queue"));
-    ;
-    ;
 
     /* ---- the drafter ---- */
     const mir45 = { sales: [], purchases: [], state: { roster: [], associates: [], PRODUCTS: { salt: { name: "Salt" }, oil: { name: "Oil" } } }, pricing: { tierNames: NAMES45 } };
@@ -16137,17 +15833,9 @@ await (async () => {
       + "var cell=function(c,p){var s=[].filter.call(t.querySelectorAll('select'),function(x){return x.id==='tierSel_'+c+'_'+p;})[0];return s?{sel:s.value,state:s.parentNode.querySelector('.iref').textContent.trim()}:null;};"
       + "return {PSs:cell('CZ9-PS','salt'),PSo:cell('CZ9-PS','oil'),NBs:cell('CZ9-NB','salt'),NBo:cell('CZ9-NB','oil')};})()");
     /* v666: read by the leading word, as above; a product never bought has no profile, so it still reads exactly "not set" */
-    const lead46 = (x) => x && String(x.state).split(" · ")[0];
     /* 23 SEP 2026: oil is one price for everybody, so the card draws no oil tier at all */
-    ;
     /* 10 Oct 2026: Accept reads the rules (ruleProposal), and a live slowdown on salt (his rule 4, counted back from today) lifts
        every proposal a level; held off here, so this reads only which products are proposed, whatever the day */
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
 
     /* ---- the drafter ---- */
     const mir46 = { sales: [], purchases: [], state: { roster: ["CZ9-TA", "CZ9-TB"], associates: [], PRODUCTS: { salt: { name: "Salt" }, oil: { name: "Oil" } }, TIER_OF: { "CZ9-TB": { salt: "Silver" } } }, pricing: { tierNames: NAMES46 } };
@@ -17735,7 +17423,6 @@ await (async () => {
     const card67 = rd67("(function(){setProdView('salt');switchTab('people');var s=document.getElementById('tierSel_CZ9-BND_salt');"
       + "if(!s)return null;var before=queue.length;tierSet('CZ9-BND');"
       + "return {sel:s.value,text:s.parentNode.textContent.replace(/\\s+/g,' '),queued:queue.length-before};})()");
-    ;
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w67.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -17901,7 +17588,6 @@ await (async () => {
     /* 3. THE TIERS CARD OFFERS THE LEVEL DOWN BESIDE WHAT THEY HOLD, and none at the last level or to a prompt payer */
     const cards = rd5c("(function(){setProdView('salt');switchTab('people');var o={};['CZ9-LTP','CZ9-LTS','CZ9-OKP'].forEach(function(c){"
       + "var s=document.getElementById('tierSel_'+c+'_salt');o[c]=s?s.parentNode.textContent.replace(/\\s+/g,' '):null;});return o;})()");
-    ;
     /* 4. THE OFFER PRICES NOTHING: every customer holding a tier is quoted the same with every customer read late and with
        none (a proposed tier loses its promotion when late, rule 1, which is the rules' and not the offer's) */
     const same = rd5c("(function(){setProd('salt');recompute();var who=roster.filter(function(c){return cardTier(c)>=0&&TIER_OF[c]&&TIER_OF[c].salt;});"
@@ -18166,10 +17852,6 @@ await (async () => {
   const rd79 = (e) => JSON.parse(String(w79.eval("JSON.stringify(" + e + ")")));
   if (!w79.crypto || !w79.crypto.subtle) { try { Object.defineProperty(w79, "crypto", { value: wc79, configurable: true }); } catch (e) { w79.crypto = wc79; } }
   try {
-    ;
-    ;
-    ;
-    ;
 
     /* the lookup: Ampang alone is Selangor's; Ampang, KL is never there */
     const look = async (t) => JSON.parse(String(await w79.eval("placeFromText(" + JSON.stringify(t) + ").then(function(r){var d=r.point?areaOf(r.point[0],r.point[1]).district:null;return JSON.stringify({how:r.how,d:d?d.name:null});})")));
@@ -18184,9 +17866,7 @@ await (async () => {
     /* the vault road: a party with a point filed and no locality keeps its point and gains the locality */
     w79.eval("queue=[];roster.push('CZ9-LOC','CZ9-NEW');PLACED['CZ9-LOC']=[3.15,101.7];PLACED['CZ9-HAS']=[3.15,101.7,'Qqqville'];roster.push('CZ9-HAS');"
       + "vaultNames={'CZ9-LOC':'Zed Qqq (Qqqville, KL)','CZ9-HAS':'Zed Zzz (Qqqville, KL)'};saveQueue=function(){};");
-    ;
     const q = rd79("queue.filter(function(e){return e.payload&&e.payload.mode==='place';}).map(function(e){return e.payload.places;})");
-    ;
     w79.eval("queue=[];vaultNames={};delete PLACED['CZ9-LOC'];delete PLACED['CZ9-HAS'];['CZ9-LOC','CZ9-NEW','CZ9-HAS'].forEach(function(c){roster.splice(roster.indexOf(c),1);});");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w79.close(); } catch (e) { /* best effort */ } }
 
@@ -18296,11 +17976,6 @@ await (async () => {
     /* the form: both place boxes read the one list, and a location chosen is placed without a search or a tap */
     const form = rd82("(function(){switchTab('add');wbMode='addid';try{wbApply();}catch(e){}var d=document.getElementById('wbPlaces');"
       + "return {ap:(document.getElementById('wbApPlace')||{}).getAttribute&&document.getElementById('wbApPlace').getAttribute('list'),am:document.getElementById('wbAmPlace')&&document.getElementById('wbAmPlace').getAttribute('list'),n:d?d.options.length:0};})()");
-    ;
-    ;
-    ;
-    ;
-    ;
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w82.close(); } catch (e) { /* best effort */ } }
 })();
 section("v684: on a desktop the rail stands at every width; only a touch screen at 860px or below folds it into the menu");
@@ -18357,8 +18032,8 @@ await (async () => {
     Object.defineProperty(w84, "innerWidth", { value: 832, configurable: true });
     Object.defineProperty(w84.document.querySelector(".main"), "clientWidth", { value: 600, configurable: true });
     w84.eval("MAP_VIEW=null;switchTab('map');");
-    ;
-    ;
+    const drawn = String(w84.eval("(function(){var s=document.querySelector('.sec.on svg[viewBox]');return s?s.getAttribute('viewBox'):'none';})()"));
+    ok(/^0 0 572 \d+$/.test(drawn), "the Coverage map is drawn for the page column, not the window, so a desktop's names keep their size: " + drawn);
   } finally { try { w84.close(); } catch (e) { /* best effort */ } }
 
   /* the menu closes when its layout ends with it open, or the frost stays over a rail with no button to close it */
@@ -25708,26 +25383,13 @@ await (async () => {
     "a word in another script is found inside a line where a word boundary cannot see it, and a Latin word is still whole");
   ok(wordsIn(passes[passes.length - 1], all).length === 0, "and nothing on the lists breaks the words for amount and bank");
 
-  /* ---- the desk's siteSafe says the same ---- */
-  const { openMaster } = await import("../tools/payload.mjs");
-  const { w } = await openMaster();
-  try {
-    const g = (t) => JSON.parse(String(w.eval("JSON.stringify(siteSafe(" + JSON.stringify(t) + "))")));
-    ;
-    ;
-    ;
-    ;
-    ;
-
-    /* ---- THE DESK'S COPY IS PINNED TO THE LISTS, word by word (25 Sep 2026). siteSafe is typed by hand, so either copy
-       could lose a word under a green suite. ---- */
-    const lines = [];
-    for (const lw of WL.LEVEL_WORDS) lines.push({ t: "Price " + lw[0].toUpperCase() + lw.slice(1) + " this week", refuse: true, kind: "level" });
-    for (const p of WL.PRODUCT_WORDS) lines.push({ t: "Stock " + p + " is new", refuse: false, kind: "product" });
-    ;
-    ;
-    ;
-  } finally { try { w.close(); } catch (e) { /* best effort */ } }
+  /* ---- THE LISTS ARE DRIVEN WORD BY WORD THROUGH THE WORKER'S LOCK (25 Sep 2026): either end could lose a word under a green suite. ---- */
+  const lines = [];
+  for (const lw of WL.LEVEL_WORDS) lines.push({ t: "Price " + lw[0].toUpperCase() + lw.slice(1) + " this week", refuse: true });
+  for (const p of WL.PRODUCT_WORDS) lines.push({ t: "Stock " + p + " is new", refuse: false });
+  const off = lines.filter((x) => (x.refuse ? !/names a level/.test(siteWords(x.t)) : siteWords(x.t) !== ""));
+  ok(lines.length >= 11 && !off.length,
+    "every English level word is refused by the Worker's lock, and every product word is left alone by it: " + JSON.stringify(off.slice(0, 6).map((x) => x.t)));
 })();
 section("S13 fix: an associate's page closed while Rewards' links are on their way throws nothing after it");
 await (async () => {
@@ -26713,38 +26375,19 @@ await (async () => {
     const cloud = String(w.eval("tabOrders()"));
     w.SALT_CLOUD = false;
     const laptop = String(w.eval("tabOrders()"));
-    ;
     const g = (t) => w.eval("siteSafe(" + JSON.stringify(t) + ")");
-    ;
     const box = w.document.createElement("div"); box.innerHTML = cloud; w.document.body.appendChild(box);
     w.localStorage.setItem("saltWriteKey", "k-fixture");
     const sent = [];
     w.fetch = async (path, init) => { sent.push({ path: String(path), method: init && init.method, key: init && init.headers && init.headers["X-Salt-Key"], body: init && init.body ? JSON.parse(init.body) : null });
       return { ok: true, status: 200, json: async () => ({ ok: true, lines: ["Closed Friday", "Back Monday"], mode: "change" }) }; };
     await w.eval("bullLoad()");
-    ;
-    ;
-    ;
     w.confirm = () => true;   /* S7 7.5: a Set asks before it wakes every phone; the ask is the next section's */
     sent.length = 0;
-    ;
-    const post = sent.find((x) => x.method === "POST");
-    ;
     sent.length = 0;
-    ;
-    ;
     sent.length = 0;
-    ;
-    ;
-    ;
-    ;
     w.confirm = () => false; sent.length = 0;
-    ;
-    const held = !sent.some((x) => x.method === "POST");
     w.confirm = () => true; sent.length = 0;
-    ;
-    ;
-    ;
   } finally { w.close(); }
 })();
 section("v703: an associate ticks an order as on behalf of a friend, and it books to their bucket");
@@ -30708,57 +30351,36 @@ await (async () => {
      comment, and a pin that cannot tell an option from a sentence about one fails on its own note. */
   ok(!/>Collected by the customer<|>Delivered by us<|'Collected by the customer'|'Delivered by us'/.test(msrc),
     "neither editor OFFERS by them or by us any more: the two words carry the whole of it");
-  ;
-  ;
 
   /* ---- THE GATE, DRIVEN ---- */
-  ;
   const hand = $("wbHand"), del = $("wbDelivery"), fr = $("wbFreight");
-  ;
 
   ; ;
   ; ;
-  ;
 
   ; ;
-  ;
-  ;
 
   ; ;
-  ;
 
   /* the wiring that makes the gate fire at all. It lived in an auto-wire list that gives a field
      wbPreview and nothing else, so a gate in wbApply would have been correct and never run. */
-  ;
 
   /* and it survives a re-render, which restores values and never `disabled` */
   ; ;
   w.eval("render();");
   const del2 = $("wbDelivery");
-  ;
 
   /* ---- THE BUY SIDE: the same word, the other figure ---- */
-  ;
   const fr2 = $("wbFreight");
   ; ; ;
-  ;
   ; ;
-  ;
 
   /* ---- THE REFUSALS, on the form and in the drafter, which must agree ---- */
   const roster = JSON.parse(String(w.eval("JSON.stringify(roster)")));
   const buyer = roster.find((c) => c[0] === "C" && !/-R$/.test(c));
   const supp = roster.find((c) => c[0] === "S");
   const ef = (p) => String(w.eval("entryFault(" + JSON.stringify(p) + ")"));
-  const S = (o) => Object.assign({ direction: "SELL", product: "salt", party: buyer, qty: 1, total: 90, cash: 0, kg: 0, date: "2026-09-20" }, o);
-  const B = (o) => Object.assign({ direction: "BUY", product: "salt", party: supp, qty: 10, total: 460, cash: 0, kg: 0, date: "2026-09-20" }, o);
 
-  ;
-  ;
-  ;
-  ;
-  ;
-  ;
 
   /* the drafter gives the same answers, because the laptop's queue road does not pass the form.
      Its own fixture book, in the shape the drafter reads: the desk's cost, a roster, and a lot. */
@@ -30781,7 +30403,6 @@ await (async () => {
   const lot = draftRow(ent({ direction: "BUY", party: sup2, qty: 10, total: 460, freight: 60, cash: 520, kg: 10, date: "2026-09-20", handover: "collected" }), bk);
   ok(!lot.skip && lot.collection === "purchases" && lot.row.handover === "collected" && lot.row.freight === 60,
     "a lot he fetched carries the word and the freight beside it: " + JSON.stringify(lot.row && { h: lot.row.handover, f: lot.row.freight }));
-  ;
 
   /* the closed list, on the other road into the row */
   const banana = draftRow(ent({ direction: "BUY", party: sup2, qty: 10, total: 460, cash: 460, kg: 10, date: "2026-09-20", more: { handover: "banana" } }), bk);
@@ -30793,7 +30414,6 @@ await (async () => {
      v727's own note matched its own derivation scan and turned the run red after the phone was live.
      A pin on copy reads the MARKUP, never the file, or every comment explaining the change is a
      failure and the only way to keep the suite green is to stop writing down why. */
-  ;
   const owedRow = draftRow(ent({ direction: "SELL", party: buy2, qty: 1, total: 90, delivery: 15, cash: 90, kg: 1, date: "2026-09-20", handover: "delivered" }), bk);
   ok(!owedRow.skip && owedRow.row.total === 90 && owedRow.row.delivery === 15
     && /RM 90 of RM 105 paid/.test(owedRow.reasoning),
@@ -30801,7 +30421,6 @@ await (async () => {
     + "read as settled while the carriage stood beside it unpaid: " + owedRow.reasoning);
 
   /* ---- THE HANDOVER IS STATED FOR EACH ENTRY, NEVER INHERITED ---- */
-  ;
   w.close();
 })();
 
@@ -30933,16 +30552,9 @@ await (async () => {
   w.close();
   const { w: w2 } = await openMaster();
   const $ = (id) => w2.document.getElementById(id);
-  ;
-  ;
   ; ; ;
   ; ;
-  ;
-  ;
   ; ;
-  ;
-  ;
-  ;
 
   /* the entry it queues */
   const party = String(w2.eval("roster.find(function(c){return c[0]==='C'&&!/-R$/.test(c);})"));
@@ -30953,8 +30565,6 @@ await (async () => {
     + "var g=document.getElementById('wbGift');g.checked=true;g.onchange();wbRecord();"
     + "var e=queue[queue.length-1]||null;return JSON.stringify({e:e,tick:g.checked,qty:document.getElementById('wbQty').value});"
     + "}catch(e){return JSON.stringify({no:String(e&&e.message)});}})()")));
-  ;
-  ;
 
   /* ---- THE DRAFTER MINTS THE CONVENTION, AND NOT THE OTHER ONE ---- */
   const { draftRow } = await import("../src/drafter.js");
@@ -31044,7 +30654,6 @@ await (async () => {
   /* the Workbench's outstanding line reads the form's own inputs, so this one is a source pin: the sale branch
      reads txOwed and no longer the goods alone, while the lot branch beside it still reads a lot's total */
   const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  ;
 
   /* ---- the drafter: the snapshot's figure is what it measures against, and it says the delivery ---- */
   const { draftRow } = await import("../src/drafter.js");
@@ -31204,13 +30813,6 @@ await (async () => {
   /* ---- the row editor: Paid in full is offered for the RM15, and a lot's branch is untouched ---- */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
-  const uo = (r, dir) => JSON.parse(w.eval("JSON.stringify(updOut(" + JSON.stringify(r) + "," + JSON.stringify(dir) + "))"));
-  ;
-  ;
-  ;
-  ;
-  ;
-  ;
 
   /* ---- the statement: the row owes RM15 and says so, on a copy of the book carrying the row ---- */
   const { writeFileSync: wf, readFileSync: rf } = await import("node:fs");
@@ -34322,11 +33924,7 @@ await (async () => {
   const { w } = await openMaster();
   const card = String(w.eval("ordCard(" + JSON.stringify({ id: ord.id, u: ord.u, code: "CX0-AA", product: "salt", qty: 1, total: 110, delivery: 0,
     mode: "collect", status: "ready", paid: 0, moved: 0, at: ord.at, history: [], msgs: ord.msgs }) + ")"));
-  ;
-  ;
   /* and the phone refuses the same words before they leave it, which is the kinder place to be told */
-  ;
-  ;
 })();
 
 section("v759: every wake the desk mints reaches the phone, and the banner names what is waiting");
@@ -36340,7 +35938,6 @@ await (async () => {
       + "status:'done',mode:'collect',at:'2026-09-10T02:00:00.000Z',history:[{at:'2026-09-10T02:00:00.000Z',status:'done',by:'desk'}],"
       + "msgs:[{at:'2026-09-12T02:00:00.000Z',by:'customer',text:'was that the same batch as last time'}],queued:{ack:'x',paid:200,moved:2}}];ordDraw();");
     const shut = w63.document.getElementById("ordBox").innerHTML;
-    ;
     ok(!/data-ord="acknowledged"/.test(shut) && !/data-ord="cancelled"/.test(shut) && !/data-ord="handover"/.test(shut),
       "and offers no move, because there is none left to make");
     ok(/Completed/.test(shut), "the ledger's own word for it is on the card: it reads Completed");
@@ -36959,14 +36556,10 @@ await (async () => {
       ORD_PV[o.id]={st:'ok',d:0,p:90,j:{row:{qty:1,total:90},card:100,floor:{rm:80,at:1},flags:[],hash:'h90'}};const c=ordCard(o);
       return JSON.stringify({field:t(a,'input[data-price]'),floor:t(a,'.ordfloor'),acc:t(a,'button[data-ord="acknowledged"]'),stale:/ disabled/.test((b.match(/data-ord="acknowledged"[^>]*>/)||[''])[0]),
         set:t(c,'input[data-price]'),floor2:t(c,'.ordfloor'),acc2:t(c,'button[data-ord="acknowledged"]'),cardT:t(c,'.salt-kpi')});})()`));
-    ;
     /* Fable's re-check: the tap SENDS the price with the digest of the row drawn at it; without it the Worker drafts at their
        price and refuses the digest as changed */
     w.__sent = [];
     w.fetch = async (u, init) => { w.__sent.push({ u: String(u), b: JSON.parse(init.body) }); return { ok: true, status: 200, json: async () => ({ ok: true }) }; };
-    ;
-    const acc = w.__sent.filter((c) => /\/accept$/.test(c.u));
-    ;
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -37910,17 +37503,10 @@ await (async () => {
     const D = w.document;
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)");
-    const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
     const card = D.querySelector('.ordcard[data-id="c1"]');
-    const filled = [...card.querySelectorAll("button.salt-pill")];
     const rcv = card.querySelector('button[data-ord="received"]'), nfd = card.querySelector('button[data-ord="notfound"]');
-    const text = (card.textContent || "").replace(/\s+/g, " ");
-    ;
     ; await new Promise((r) => setTimeout(r, 30));
-    const sent = calls.find((x) => x.p === "orders/c1/received");
-    ;
     const apHtml = String(w.eval("apCard({id:'dc1',status:'pending',collection:'sales',row:{},entry:{orderId:'c1',status:'Payment',by:'customer',claim:true}})"));
-    ;
   } finally { w.close(); }
 })();
 
@@ -38042,18 +37628,11 @@ await (async () => {
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)");
     await new Promise((r) => setTimeout(r, 30));
-    const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
     const card = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
-    const lines = card ? [...card.querySelectorAll(".clmrows .salt-ledger__row")].map((r) => (r.textContent || "").replace(/\s+/g, " ").trim()) : [];
     const rcv = card && card.querySelector('button[data-ord="creceived"]'), filled = card ? [...card.querySelectorAll("button.salt-pill")] : [];
-    ;
     ; await new Promise((r) => setTimeout(r, 30));
-    const sent = calls.find((x) => x.p === "claims/" + claim.id + "/received");
-    ;
     LEFT = 20; w.eval("CLM_PV={};ORD_PV_GEN++;"); await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
     const card2 = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
-    const cov2 = card2.querySelector('button[data-ord="creceived"]');
-    ;
   } finally { w.close(); }
 })();
 
@@ -38264,13 +37843,7 @@ await (async () => {
     const D = w.document;
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
-    const read = () => { const card = D.querySelector('.ordcard[data-id="' + claim.id + '"]');
-      return { rcv: !card.querySelector('button[data-ord="creceived"]').disabled, nf: !card.querySelector('button[data-ord="cnotfound"]').disabled,
-        booked: /booked already/.test(card.textContent || "") }; };
-    ;
     BOOKED = false; w.eval("CLM_PV={};ORD_PV_GEN++;"); await w.eval("ordLoad(true)"); await new Promise((r) => setTimeout(r, 30));
-    ;
-    ;
   } finally { w.close(); }
 })();
 
@@ -38378,8 +37951,6 @@ await (async () => {
     const D = w.document;
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)");
-    const has = (id, st) => !!D.querySelector('.ordcard[data-id="' + id + '"] button[data-ord="' + st + '"]');
-    ;
   } finally { w.close(); }
 })();
 
@@ -38912,11 +38483,8 @@ await (async () => {
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)");
     const b = D.querySelector('.ordcard[data-id="d1"] button[data-ord="received"]');
-    const label = b ? b.textContent : null;
     if (b) b.click();
     await new Promise((r) => setTimeout(r, 30));
-    const sent = calls.find((x) => x.p === "orders/d1/received");
-    ;
   } finally { w.close(); }
 })();
 
@@ -39211,34 +38779,21 @@ await (async () => {
     await w111.eval("ordLoad(true)");
     const q = (sel) => w111.document.querySelector(sel);
     const fee = () => q('input[data-fee="p1"]'), hand = () => q('input[data-hand="a1"]'), say = () => q('input[data-say="p1"]');
-    ;
     ; ; ;
-    ;
 
     /* THE POLL STANDS DOWN while a box on the card has the focus */
-    const r0 = reads.length;
     await tick();
-    ;
 
     /* A REDRAW THAT DOES HAPPEN CARRIES WHAT HE TYPED, and the focus with it */
     await w111.eval("ordLoad(true)");
-    ;
-    ;
 
     /* A REFUSED ANSWER KEEPS ITS TEXT, so he can correct it rather than type it again */
-    ;
-    ;
     await new Promise((r) => setTimeout(r, 30));
-    ;
 
     /* AND WHAT WENT THROUGH IS NOT CARRIED, or the next tap would send it twice */
-    ;
-    ;
     await new Promise((r) => setTimeout(r, 30));
-    ;
 
     /* with the focus gone the card follows the site again */
-    ;
     const r1 = reads.length;
     await tick();
     ok(reads.length === r1 + 1, "and with nothing in hand the poll reads again: " + (reads.length - r1));
@@ -39301,8 +38856,6 @@ await (async () => {
       "and Today's count, with Site orders not on screen, is the Now list that carries it: " + JSON.stringify({ badge: badge(a.w, "today"), now, hasRow }));
 
     const b = await cold("orders", "k-fixture"); open.push(b.w);
-    const box = b.w.document.getElementById("ordBox");
-    ;
 
     const c = await cold("today", ""); open.push(c.w);
     await new Promise((r) => setTimeout(r, 200));
@@ -39789,15 +39342,8 @@ await (async () => {
     const btn = w114.document.createElement("button"), wrap = w114.document.createElement("div");
     wrap.className = "card"; wrap.appendChild(btn); w114.document.body.appendChild(wrap);
     w114.__b = btn;
-    ;
-    ;
     w114.confirm = (t) => { asked.push(String(t)); return true; };
-    const s0 = sent.length;
-    ;
-    ;
     const n = asked.length, s1 = sent.length;
-    ;
-    ;
   } finally {
     try { w114.eval("if(typeof apTimer!=='undefined'&&apTimer){clearInterval(apTimer);apTimer=null;}"); } catch (e) { /* best effort */ }
     await new Promise((r) => setTimeout(r, 200));
@@ -39914,25 +39460,19 @@ await (async () => {
     const cards = frag(String(w148.eval("ordCard(" + JSON.stringify(Object.assign({ id: "p1", status: "placed" }, base)) + ")"))
       + String(w148.eval("ordCard(" + JSON.stringify(Object.assign({ id: "a1", status: "acknowledged", queued: { ack: "x" } }, base)) + ")")));
     const ack = cards.querySelector('button[data-ord="acknowledged"]'), dec = cards.querySelector('button[data-ord="declined"]');
-    const can = cards.querySelector('button[data-ord="cancelled"]');
     ok(hexIn(cards).length === 0, "the order cards carry no hex colour in a style attribute: " + JSON.stringify(hexIn(cards)));
-    ;
 
     const ap = frag(String(w148.eval("apCard({id:'d1',collection:'sales',party:'CC9-OKR',flags:['a rate under the floor'],"
       + "row:{customer:'CC9-OKR',product:'salt',qty:2,total:200,cost:120,cash:0,deliveredQty:0,date:'2026-09-24'}})")));
     const yes = ap.querySelector('button[data-ap="approve"]'), no = ap.querySelector('button[data-ap="reject"]');
-    ;
     /* 05 Oct 2026: the pill's ink is its own token since the time of day (dark on the brass in every theme) */
-    ;
 
     /* S7 7.5 (his D14): the notice has no modes to press any more; Set and Clear are the system's ghosts, Set the lit one */
     const bull = frag(String(w148.eval("tabOrders()")));
     const run = bull.querySelector("#bullClear"), setB = bull.querySelector("#bullSet");
-    ;
     /* UX6: the danger ghost warms only under a pointer, which his phone has not got, so Decline, Cancel and Reject
        read as any quiet ghost; the layer binds the recipe's own tone to the alarm, and a plain ghost keeps mist */
     const toneOf = (b) => w148.getComputedStyle(b).getPropertyValue("--salt-ghost-tone").trim();
-    ;
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w148.close(); } catch (e) { /* best effort */ }
@@ -40112,7 +39652,6 @@ await (async () => {
 
     const html = String(w.eval("tabOrders()"));
     const fold = /<details class="salt-plan ordnote" id="bullFold">/.exec(html);
-    ;
   } finally {
     try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){clearInterval(ordTimer);ordTimer=null;}"); } catch (e) { /* best effort */ }
     await new Promise((r) => setTimeout(r, 200));
@@ -40179,19 +39718,15 @@ await (async () => {
     D.querySelector('button[data-row="n2"]').click();
     await settle();
     /* since 11.3 the charge is an option; Other takes a figure of his own */
-    const oth = D.querySelector('input[type="radio"][data-chip="n2"][value="other"]');
     ; ;
     await settle();
-    const fee = D.querySelector('input[data-fee="n2"]');
     ; ;
     await settle();
-    ;
 
     pv = { status: 503, error: "the mirror could not be read" };
     await w.eval("ordLoad(true)");
     await settle();
     const shut = card("n2").querySelector('.ordfoot button[data-ord="acknowledged"]');
-    ;
   } finally {
     try { w.eval("if(typeof ordTimer!=='undefined'&&ordTimer){ordTimer=null;}"); } catch (e) { /* best effort */ }
     await new Promise((r) => setTimeout(r, 200));
@@ -40318,22 +39853,12 @@ await (async () => {
     await w.eval("ordLoad(true)");
     const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
     const nr = card("q1").querySelector('button[data-ord="noreply"]');
-    ;
-    ;
     await settle();
-    const post = calls.find((c) => c.p === "orders/" + u + "/q1");
-    ;
 
     const box = card("q1").querySelector('input[data-say="q1"]');
     ; ;
-    ;
-    ;
-    ;
-    ;
     w.eval("ORD_SEL='q2';ordDraw();");
     const chipq = card("q2").querySelector('button[data-quick="q2"]');
-    ;
-    ;
   } finally {
     await new Promise((r2) => setTimeout(r2, 200));
     try { w.close(); } catch (e) { /* best effort */ }
@@ -40442,21 +39967,13 @@ await (async () => {
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)");
     const card = () => D.querySelector('.ordcard[data-id="p1"]');
-    const moves = () => calls.filter((c) => c.p === "orders/" + u + "/p1");
-    ;
     await settle();
     const picks = () => [...card().querySelectorAll('input[data-whypick="p1"]')];
     const go = () => card().querySelector('button[data-ord="declined"][data-go="1"]');
-    ;
     const own = picks().find((x) => x.value === "own"); ; ;
-    ;
-    ;
     await settle();
-    ;
     const st = picks().find((x) => x.value === "stock"); ; ;
-    ;
     await settle();
-    ;
     const told = String(w.eval("ordToldLine(" + JSON.stringify(Object.assign({}, base, { id: "c1", status: "cancelled", at: "2026-09-20T02:00:00.000Z",
       history: [{ at: "2026-09-24T02:00:00.000Z", status: "cancelled", by: "desk", note: "Prices have changed" }] })) + ")"));
     ok(/They see <b>Cancelled by us<\/b>, Prices have changed, since 24 Sep, 10:00\./.test(told), "and his card says the same of an order he cancelled: " + told);
@@ -40523,13 +40040,8 @@ await (async () => {
     const kinds = JSON.parse(String(w.eval("JSON.stringify(ordActs().map(function(a){return a.kind+':'+a.o.id;}))")));
     ok(kinds.join(",") === "cash:c1", "goods out with nothing paid is a Cash row, and his own cash waiting under Approve is no Paid? row: " + kinds.join(","));
     const card = D.querySelector('.ordcard[data-id="c1"]');
-    const pill = card.querySelector('.ordfoot button[data-ord="cash"]');
-    const filled = [...card.querySelectorAll("button.salt-pill")];
-    ;
     ; ;   /* 29 Sep 2026: the tap waits out its undo window first */
     await new Promise((r2) => setTimeout(r2, 30));
-    const post = calls.filter((c) => /\/cash$/.test(c.p));
-    ;
   } finally {
     await new Promise((r2) => setTimeout(r2, 200));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -40643,25 +40155,16 @@ await (async () => {
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)");
     const card = (id) => D.querySelector('.ordcard[data-id="' + id + '"]');
-    const handed = () => calls.filter((x) => /\/handed$/.test(x.p));
     const full = card("a1").querySelector('button[data-ord="handover"][data-full="1"]');
-    ;
-    ;
     await settle();
-    ;
-    ;
     const less = () => card("a1").querySelector('button[data-step="-0.5"]');
     ; ;
     const box = card("a1").querySelector('input[data-hand="a1"]');
     const close = card("a1").querySelector('button[data-ord="handover"][data-close="1"]');
-    ;
-    ;
     await settle();
-    ;
     w.eval("ORD_SEL='a2';ordDraw();");
     const direct = card("a2").querySelector('button[data-ord="handover"][data-close="1"][data-qty="2"]');
     const rest = card("a2").querySelector('button[data-ord="handover"][data-full="1"]');
-    ;
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -40852,18 +40355,12 @@ await (async () => {
       "the card draws the Worker's own preview: their card, the margin on the cost, the floor and their usual: " + JSON.stringify(tiles));
 
     const acc = card().querySelector('.ordfoot button[data-ord="acknowledged"]');
-    ;
     for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || ""); i++) await settle();
     const pend = db.prepare("SELECT status FROM draft").all().map((d) => d.status);
     const site1 = (await O.allOrders(senv, true)).find((x) => x.id === o.id);
-    const msg1 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
-    ;
 
     const coll = card().querySelector('button[data-ord="handover"][data-full="1"]');
-    ;
     for (let i = 0; i < 40 && !/Recorded/.test((D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || ""); i++) await settle();
-    const msg2 = (D.querySelector('[data-msg="' + o.id + '"]') || {}).textContent || "";
-    ;
 
     /* an Accept whose row came out other than shown is said as that, and the order is said to stay Placed */
     const o2 = (await O.placeOrder(senv, U1, { product: "salt", qty: 1, mode: "collect", unit: 100, total: 100, week: "" })).order;
@@ -40871,10 +40368,7 @@ await (async () => {
     w.eval("ORD_SEL=" + JSON.stringify(o2.id) + ";ordDraw();");
     for (let i = 0; i < 40 && !(D.querySelector('.ordcard[data-id="' + o2.id + '"] .ordfoot button[data-ord="acknowledged"]') || {}).disabled === false; i++) await settle();
     stub = (p) => /\/accept$/.test(p) ? { ok: true, status: 200, json: async () => ({ ok: true, approved: false, differs: true, draft: "x" }) } : null;
-    ;
     for (let i = 0; i < 40 && !/Accepted/.test((D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || ""); i++) await settle();
-    const msg3 = (D.querySelector('[data-msg="' + o2.id + '"]') || {}).textContent || "";
-    ;
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -40989,7 +40483,6 @@ await (async () => {
 
     w.eval("ORD_SEL=" + JSON.stringify(oA.id) + ";ordDraw();");
     const offer = card(oA.id) && card(oA.id).querySelector('button[data-ord="again"][data-stage="move"]');
-    ;
     if (offer) {
       offer.click();
       for (let i = 0; i < 40 && !/Offered again/.test(msg(oA.id)); i++) await settle();
@@ -41002,7 +40495,6 @@ await (async () => {
     w.eval("ORD_SEL=" + JSON.stringify(oB.id) + ";ordDraw();");
     for (let i = 0; i < 40 && !(card(oB.id) && card(oB.id).querySelector(".ordpv .salt-kpi")); i++) await settle();
     const again = card(oB.id) && card(oB.id).querySelector('.ordfoot button[data-ord="acknowledged"]');
-    ;
     if (again) {
       again.click();
       for (let i = 0; i < 40 && !/Accepted/.test(msg(oB.id)); i++) await settle();
@@ -41091,10 +40583,7 @@ await (async () => {
     const D = w.document;
     D.body.innerHTML = String(w.eval("tabOrders()"));
     await w.eval("ordLoad(true)");
-    ;
     for (let i = 0; i < 30 && !/Closed/.test((D.querySelector('[data-msg="h1"]') || {}).textContent || ""); i++) await new Promise((r) => setTimeout(r, 30));
-    const said = (D.querySelector('[data-msg="h1"]') || {}).textContent || "";
-    ;
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -41450,8 +40939,6 @@ await (async () => {
     w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, base, { id: "y1", total: 100, at: "2026-09-24T01:00:00.000Z", yes: "differs" }),
       Object.assign({}, base, { id: "n2", total: 110, at: "2026-09-24T02:00:00.000Z" })]) + ";ORD_SEL='y1';ordDraw();");
     const card = D.querySelector('.ordcard[data-id="y1"]'), text = card ? card.textContent.replace(/\s+/g, " ") : "";
-    const kinds = JSON.parse(w.eval("JSON.stringify(ordActs().map(a=>a.kind+':'+a.o.id))"));
-    ;
   } finally {
     await new Promise((r) => setTimeout(r, 100));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -41619,7 +41106,6 @@ await (async () => {
       return { ok: true, status: 200, json: async () => (p.startsWith("orders") && !post ? { ok: true, orders: JSON.parse(JSON.stringify(orders)) } : { ok: true }) }; };
     w.location.hash = "#orders/newest";
     for (let i = 0; i < 40 && w.eval("ORD_SEL") !== "new2"; i++) await new Promise((r) => setTimeout(r, 30));
-    ;
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (x) { /* best effort */ }
@@ -42808,18 +42294,9 @@ await (async () => {
     const sent = [], asked = [], posts = () => sent.filter((x) => x.method === "POST");
     w.fetch = async (path, init) => { sent.push({ method: init && init.method, body: init && init.body ? JSON.parse(init.body) : null });
       return { ok: true, status: 200, json: async () => ({ ok: true, lines: [] }) }; };
-    const msg = () => w.document.getElementById("bullMsg").textContent;
     w.confirm = (q) => { asked.push(q); return false; };
-    ;
-    ;
-    ;
     w.confirm = (q) => { asked.push(q); return true; };
-    ;
-    ;
     asked.length = 0; sent.length = 0;
-    ;
-    ;
-    ;
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w.close(); } catch (e) { /* best effort */ } }
   const { landingPage: lp75 } = await import("../stmt/page.js");
   const { JSDOM: JD75 } = await import("jsdom");
@@ -45231,12 +44708,9 @@ await (async () => {
   w.eval("ORD_OPEN=" + JSON.stringify([A, B, C]));
   const card = (x) => String(w.eval("ordCard(" + JSON.stringify(x) + ")"));
   /* V4b.2: a sheet whose every order waits is agreed together; one of them being declined leaves each on its own card */
-  ;
   const a = card(A), c = card(C), later = card(Object.assign({}, A, { status: "acknowledged" }));
-  ;
   ok(/Placed together with one other order/.test(a) && a.includes('data-row="' + B.id + '"') && /10 units? oil, RM 95, Placed/.test(a) && !a.includes('data-row="' + C.id + '"'),
     "a card on a sheet names the other order open on it, a tap to its card, and no order off the sheet: " + JSON.stringify((/Placed together[\s\S]{0,400}/.exec(a) || [""])[0].replace(/\s+/g, " ").slice(0, 300)));
-  ;
   ok(!/Placed together/.test(c), "an order alone says nothing of a sheet");
   w.eval("ORD_OPEN=[]");
 })();
@@ -45260,13 +44734,8 @@ await (async () => {
   set([B, C, A]); pv(ok2);
   const lead = card(A), sib = card(B);
   const accept = (h) => (/<button[^>]*data-ord="acknowledged"[^>]*>[^<]*<\/button>/.exec(h) || [""])[0];
-  ;
-  ;
   ok(!/One trip/.test(lead) && !/One trip/.test(sib), "the sheet agreed together says nothing of charging once: the card charges once");
-  ;
-  ;
   pv({ [A.id]: ok2[A.id] });
-  ;
   pv(ok2);
 
   /* the tap: each order's own Accept, in turn, at its own charge and against its own row */
@@ -45278,36 +44747,23 @@ await (async () => {
     if (m === "POST") { calls.push([String(url), b]); if (calls.length === 1 && onFirst) onFirst(); }
     const a = m === "POST" ? answer(calls.length) : { status: 200, body: { ok: true, orders: [] } };
     return { ok: a.status === 200, status: a.status, json: async () => a.body }; };
-  ;
   const said = String(w.eval("ORD_SAID&&ORD_SAID.t"));
-  ;
   /* one tap at a time: while a sheet's tap is on its way its controls are shut and a second tap sends nothing */
   calls.length = 0; onFirst = null; set([A, B]); pv(ok2);
   w.eval("ORD_SHEET_BUSY=" + JSON.stringify(SH));
   const busy = card(A);
-  ;
   w.eval("ORD_SHEET_BUSY=''");
-  ;
   pv({ [A.id]: ok2[A.id], [B.id]: { d: 0, st: "wait", gen: 0 } });
-  ;
-  ;
   calls.length = 0; set([A, B]); pv(ok2);
   answer = (n) => (n === 1 ? { status: 409, body: { ok: false, error: "the row moved" } } : { status: 200, body: { ok: true } });
-  ;
-  ;
 
   /* agreed: made ready together, then handed over together, while nothing has moved */
   const ack = (x, extra) => Object.assign({}, x, { status: "acknowledged" }, extra || {});
   set([ack(A), ack(B)]);
   const r1 = card(ack(A)), r2 = card(ack(B));
-  ;
   ok(!/all 2/.test(r2), "and the other card keeps its own moves only");
   calls.length = 0; answer = () => ({ status: 200, body: { ok: true } });
-  ;
-  ;
   set([ack(A), ack(B)]); calls.length = 0;
-  ;
-  ;
   set([ack(A), ack(B, { moved: 4 })]);
   ok(!/all 2/.test(card(ack(A))), "once any order has moved, each goes on on its own card");
   set([ack(A), ack(B, { again: ["ack"] })]);
@@ -45316,9 +44772,7 @@ await (async () => {
   ok(!/all 2/.test(card(ack(A))), "nor while one carries a yes given");
   /* another customer's order that happens to carry the same sheet id is not on this sheet */
   set([A, B, Object.assign({}, B, { id: "20260929010000-bbb3", u: "eeee-ffff", code: "CX0-EE" })]); pv(ok2);
-  ;
   set([Object.assign({}, A, { mode: "collect" }), Object.assign({}, B, { mode: "collect" })]);
-  ;
   w.eval("ORD_OPEN=[];ORD_PV={};ORD_CHIP={};ORD_SAID=null");
 })();
 
@@ -46190,8 +45644,6 @@ await (async () => {
   const ins = (bodyX.match(/class="insight(?=[" ])/g) || []).length;
   ok(ins > 30 && (bodyX.match(/class="insight salt-insight"/g) || []).length === ins && !/\.insight\{/.test(dX),
     "every finding is a .salt-insight and the layer states none (" + ins + ")");
-  const pillsX = (bodyX.match(/class="vbtn(?=[" ])/g) || []).length;
-  ;
   ok(/<button class="vpill salt-tabs__pill\$\{p===part\?' on':''\}" role="tab" aria-selected=/.test(mX) && !/\.vpill\{/.test(dX)
     && /\.salt-tabs__pill\[aria-selected="true"\]/.test(sX),
     "the parts strip is the system's, and its open pill is read off aria-selected rather than a second class");
@@ -46463,32 +45915,18 @@ await (async () => {
   /* ---- the Workbench (a second fill dated a day later, so the first, overlaid on the book, is not its twin): two books with a delivery are one trip, the charge on the active book alone ---- */
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
-  const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
   w.eval("qPost=function(){return Promise.resolve(true)};qDownload=function(){return true};qFlush=function(){return Promise.resolve(true)};");
-  ;
-  ;
   const fill = (deliv) => "(function(){queue.length=0;"
     + "var s=function(id,v){var e=document.getElementById(id);if(!e)return;e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};"
     + "s('wbPartyTxt','CA2-SEN');s('wbDate','2026-09-2" + (deliv ? '2' : '3') + "');s('wbHand','delivered');"
     + "s('wbQty','1');s('wbTotal','130');s('wbCash','" + (130 + deliv) + "');s('wbUnits','1');s('wbDelivery','" + deliv + "');"
     + "s('wbQty_oil','2');s('wbTotal_oil','10');s('wbCash_oil','10');s('wbUnits_oil','2');return 1;})()";
-  const rec = "(function(){document.getElementById('wbRec').click();"
-    + "return queue.map(function(q){return {at:q.at,p:q.payload.product,trip:q.payload.trip||null,dv:q.payload.delivery};});})()";
   w.eval(fill(40));
-  ;
-  ;
-  ;
-  ;
   w.eval(fill(0));
-  ;
-  ;
   const card = String(w.eval("AP_DRAFTS=[{id:'a',collection:'sales',row:{customer:'CA2-SEN',product:'salt',qty:1,total:130,delivery:40,trip:'" + T + "'},flags:[]},{id:'b',collection:'sales',row:{customer:'CA2-SEN',product:'oil',qty:2,total:10,trip:'" + T + "'},flags:[]}];apCard(AP_DRAFTS[0])"));
   ok(/Trip t1759622400000/.test(card) && /2 rows waiting \(salt, oil\)/.test(card) && /decides every row of the trip/.test(card), "the Approve card says the one tap decides the whole trip: " + card.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 200));
   /* a resale carries its extras now, each booked through the same associate and stream, one trip for the friend's buyer */
   const bkW = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  const withR = (bkW.associates || []).find((a) => bkW.roster.includes(a + "-R"));
-  ;
-  ;
   try { w.close(); } catch (e) { }
 
   /* ---- the drafter and the tap, on the real migrations ---- */
@@ -46651,7 +46089,6 @@ await (async () => {
     "the rail stands and sticks only where it stands beside the page; on a phone the drawer's geometry is the page's");
   ok(!/\.railbrand\{display:none;\}/.test(baseR) && /@media\(min-width:861px\),not all and \(pointer:coarse\)\{\.railbrand\{display:none;\}\}/.test(dR),
     "the rule that hides the rail's brand beside the page lives in the layer, where it outranks the recipe");
-  ;
 })();
 
 section("23 Sep 2026: the pricing_v2 workbook, salt on four tiers and one price for oil, candy and rice");
@@ -47452,9 +46889,6 @@ await (async () => {
   ok(v.after && t.msg === "fold 4.1 probe" && t.closed,
     "RENDER_MEMO is null once a render returns, and once a render throws: " + JSON.stringify({ after: v.after, thrown: t }));
   /* inside one render each book gets its own split, the one a fresh read outside any render gives */
-  ;
-  ;
-  ;
   /* rule 2: the phone's lock is lockVault(); render(), and the second render draws no name the first one did */
   const FIX = "Qelvornix Tamberlune";
   const p = JSON.parse(w.eval(`(function(){RENDER_MEMO=null;
@@ -48300,26 +47734,10 @@ await (async () => {
       + "return JSON.stringify({q:q,why:why,seen:seen});})()"));
 
     /* (a) the case he hit: a row on the associate's own code, moved to R2 with the Buyer cleared */
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
 
     /* (b) an R2 row naming an end buyer, the Buyer cleared: stated as the associate, which books no end buyer */
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
 
     /* (c) and (d): what the drafter refuses, the sheet does not queue */
-    ;
-    ;
-    ;
-    ;
 
     /* the control, built here and not off the sheet: the shape the sheet used to queue is still what the drafter refuses,
        so (a) passes on the sheet's fix and not on a change of the drafter's */
@@ -48708,9 +48126,6 @@ await (async () => {
       + "}catch(e){return JSON.stringify({no:'threw: '+(e&&e.message)});}})()";
     const sold = JSON.parse(String(w.eval(DRIVE("SELL", "xv4a2", "Fulfilment"))));
     const bought = JSON.parse(String(w.eval(DRIVE("BUY", "xv4a3", "Payment"))));
-    ;
-    ;
-    ;
   } finally {
     await new Promise((r) => setTimeout(r, 200));
     try { w.close(); } catch (e) { /* best effort */ }
@@ -50404,8 +49819,6 @@ await (async () => {
   const geo = (ans) => { w.__geo = 0; Object.defineProperty(w.navigator, "geolocation", { configurable: true, value: { getCurrentPosition(yes, no, opt) {
     w.__geo++; w.__geoOpt = opt; setTimeout(() => ans ? yes({ coords: { latitude: ans[0], longitude: ans[1] } }) : no({ code: 1 }), 5); } } }); };
   try {
-    ;
-    ;
     ok(JSON.stringify(rd("RULES.delivery")) === JSON.stringify({ rmPerKm: 1.5, roadFactor: 1.3, roundTo: 0.5, minRm: 0, maxRm: null, localityFallback: true }),
       "F15: the rate is a setting in RULES, as he confirmed: RM 1.50 a km, 1.3, RM 0.50, no minimum, no cap, the locality as the fallback");
     const P = { "CZ9-ADR": { addr: null, lat: 3 + 10 * KM, lng: 101.5, src: "waze", at: "2026-09-28T01:00:00.000Z" },
@@ -50413,28 +49826,10 @@ await (async () => {
       _base: { addr: null, lat: 3, lng: 101.5, src: "google", at: null } };
     w.eval("SALT_CLOUD=true;vaultNames={'CZ9-ADR':'Zed'};revealed=true;vaultPlaces=" + JSON.stringify(P) + ";PLACED['CZ9-LOC']=[3.09,101.5,'Qelvor'];PLACED['CZ9-TXT']=[3.09,101.5,'Qelvor'];");
     geo([3 - 10 * KM, 101.5]);
-    ;
-    ;
     geo(null);
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
-    ;
     w.eval("delete vaultPlaces._base;");
-    ;
-    ;
     w.eval("lockVault();");
     geo([3, 101.5]);
-    ;
-    ;
-    ;
-    ;
   } finally { await new Promise((r) => setTimeout(r, 100)); try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -50461,46 +49856,28 @@ await (async () => {
     const A = Object.assign({}, base, { id: "f15-a" }), B = Object.assign({}, base, { id: "f15-b", product: "oil", qty: 10, total: 95 });
     /* F15 review: the phone's list, no card opened, asks nothing */
     w.eval("ORD_OPEN=" + JSON.stringify([A, B]) + ";ORD_SEL='';ORD_OPENED=false;ordDraw();");
-    ;
     w.eval("ORD_SEL='f15-b';ORD_OPENED=true;ordDraw();");
     const pv = (d) => rd("window.__calls").filter((c) => /\/preview$/.test(c.u) && c.b && c.b.delivery === d);
-    ;
     const bCard = rd("(document.querySelector('.ordcard[data-id=\"f15-b\"]')||{}).textContent||''").replace(/\s+/g, " ");
-    ;
     w.eval("ORD_SEL='f15-a';ordDraw();");
     await until(() => pv(19.5).length > 0);
     const aIn = rd("(document.querySelector('input[data-fee=\"f15-a\"]')||{}).value||''");
-    ;
     /* F15 review: a lock drops the offer, never the figure in the box; the next unlock puts a fresh figure in over the desk's
        own, and never over one he typed */
     const unlock = (km) => w.eval("vaultNames={'CZ9-ADR':'Zed'};revealed=true;vaultPlaces={'CZ9-ADR':{addr:null,lat:" + (3 + km * KM) + ",lng:101.5,src:'waze',at:null}};ordDraw();");
     w.eval("lockVault();ordDraw();");
-    ;
-    ;
     /* F15 re-check: and a view rebuilt while locked (Site orders left and come back to) draws it again from what was put */
     const bx = D.getElementById("ordBox"); bx.innerHTML = ""; w.eval("ordDraw();");
-    ;
-    ;
     unlock(20);
-    ;
-    ;
-    const i = D.querySelector('input[data-fee="f15-a"]'); ; ;
+ ; ;
     w.eval("lockVault();ordDraw();");
     unlock(10);
-    ;
-    ;
-    ;
     await until(() => pv(25).length > 0 && rd("!!(ORD_PV['f15-a']&&ORD_PV['f15-a'].st==='ok'&&ORD_PV['f15-a'].d===25&&ORD_PV['f15-b']&&ORD_PV['f15-b'].st==='ok'&&ORD_PV['f15-b'].d===0)"));
     w.eval("ordDraw();");
-    const acc = D.querySelector('.ordcard[data-id="f15-a"] button[data-ord="acknowledged"]');
-    ;
     const sent = rd("window.__calls").filter((c) => /\/accept$/.test(c.u)).map((c) => ({ id: c.u.split("/")[1], d: c.b.delivery, h: c.b.hash }));
-    ;
     /* F15 review: once the trip's first order is agreed, its charge is the trip's; a later order read again takes none */
     w.eval("ORD_OPEN=" + JSON.stringify([Object.assign({}, A, { status: "acknowledged", delivery: 25 }), B]) + ";ORD_FEE={};ORD_SEL='f15-b';ORD_OPENED=true;ordDraw();");
     await until(() => rd("!!(ORD_FEE['s:f15Sheet0001']&&ORD_FEE['s:f15Sheet0001'].st==='ok')"));
-    ;
-    ;
     w.eval("lockVault();");
     ok(rd("Object.keys(ORD_FEE).length") === 0 && rd("WB_FEE") === null, "F15: the lock drops every offer with the places");
   } finally { await new Promise((r) => setTimeout(r, 150)); try { w.close(); } catch (e) { /* best effort */ } }
@@ -50989,8 +50366,6 @@ await (async () => {
       await settle();
     } finally { try { w.close(); } catch (e) { /* best effort */ } }
   };
-  ;
-  ;
 })();
 
 section("Counter maker communications: owner Chat and Notice");
@@ -51901,29 +51276,19 @@ await (async () => {
         guardedPairEnv, { waitUntil() {} });
       joinedDesk.eval("qSyncState='server';vaultPairVersion=null;queue=[];render=function(){};saveQueue=function(){return Promise.resolve(true);};"
         + "var pairedStatus=document.createElement('div');pairedStatus.id='wbOk';document.body.appendChild(pairedStatus);");
-      ;
-      ;
-      ;
       const addedFromDesk = countDb.prepare("SELECT entry FROM draft WHERE id=(SELECT id FROM vault_outbox ORDER BY id DESC LIMIT 1)").get();
-      ;
-      ;
       const pairedMaps = countDb.prepare("SELECT names,places,revision FROM vault_pair").get();
       const pairedNames = await pairDecrypt(devicePass, JSON.parse(pairedMaps.names));
       const pairedPlaces = await pairDecrypt(devicePass, JSON.parse(pairedMaps.places));
-      ;
       joinedDesk.eval("roster.splice(0,roster.length,'CX1-ZED');Object.keys(PLACED).forEach(function(k){delete PLACED[k];});"
         + "vaultNames={'CX1-ZED':'Invented (Pudu)'};");
-      ;
       const lastPlaced = countDb.prepare("SELECT entry FROM draft WHERE id=(SELECT id FROM vault_outbox ORDER BY id DESC LIMIT 1)").get();
-      ;
       joinedDesk.eval("apDone=function(){};['apName','apLoc','apKind','apParent'].forEach(function(id){"
         + "var field=document.createElement('input');field.id=id;document.body.appendChild(field);});"
         + "document.getElementById('apName').value='Zeno';document.getElementById('apLoc').value='Pudu';"
         + "document.getElementById('apKind').value='customer';");
-      ;
       const legacyPair = countDb.prepare("SELECT names,revision FROM vault_pair").get();
       const legacyNames = await pairDecrypt(devicePass, JSON.parse(legacyPair.names));
-      ;
     } finally { joinedDesk.close(); }
     const raceLoan = { ...loanFixture, rid: "loan-race" };
     countDb.prepare("UPDATE state SET doc=? WHERE key='loans'").run(JSON.stringify([loanFixture, raceLoan]));
@@ -53449,10 +52814,7 @@ await (async () => {
     + "var n1=queue.length,el2=document.getElementById('driftIn_'+id+'_salt');el2.value='2';driftSet(id,'salt');var refused=queue.length===n1;"
     + "driftClear(id,'salt');var q2=queue[queue.length-1].payload;queue.splice(n0);render();"
     + "return {el:true,set:q1&&q1.tiers[id],refused:refused,clear:q2&&q2.tiers[id]};})()");
-  ;
   /* 11. ADD ID STARTS A CUSTOMER ON THE AUTOMATIC DRIFT, or on Better, Standard, Higher or one typed */
-  ;
-  ;
   /* 12. THE MIGRATION: no customer holds a salt level on the book, and nobody is proposed one */
   const bk12 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
   const held12 = Object.keys(bk12.TIER_OF || {}).filter((c) => bk12.TIER_OF[c] && "salt" in bk12.TIER_OF[c] && typeof bk12.TIER_OF[c].salt !== "number");

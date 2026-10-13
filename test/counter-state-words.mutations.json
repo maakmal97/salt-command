@@ -224,5 +224,6 @@
   "file": "tools/testfix.mjs",
   "find": "[\"order confirmed\", (f) => has(f, (o) => o.status === \"acknowledged\")]",
   "replace": "[\"order acknowledged\", (f) => has(f, (o) => o.status === \"acknowledged\")]"
- }
+ },
+ {"name": "the Worker's lock refuses no level", "file": "src/orders.js", "find": "if (wordsIn(t, LEVEL_WORDS).length) return \"that names a level, which a customer's page never does\";", "replace": "if (false) return \"that names a level\";"}
 ]

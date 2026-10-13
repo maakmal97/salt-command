@@ -61,19 +61,11 @@ export async function run({ ok }) {
       "the extract carries the master's reward scheme, so the Worker's reward account is not refused as unconfigured");
 
     /* the live master first, then the scenario that makes the question real */
-    ;
 
     w.eval(`(function(){var rows=${JSON.stringify(SCENARIO)};rows.forEach(function(r){sales.push(JSON.parse(JSON.stringify(r)));
       BASE_SALES.push(JSON.parse(JSON.stringify(r)));});recompute();})()`);
     const book = mirror(SCENARIO);
-    ;
-    ;
-    ;
-    ;
-    ;
     const mine = makerOffset({ at: "2026-10-05T01:00:00.000Z", code: "CE4-AD", rid: "tx4", date: today }, book, []);
-    ;
-    ;
     const departed = makerOffset({ at: "2026-10-05T01:01:00.000Z", code: "CJ4-OKR", rid: "tx5", date: today }, book, []);
     ok(!!departed.error && !departed.entry, "a tap on a departed holder is refused");
     ok(!!makerOffset({ at: "2026-10-05T01:02:00.000Z", code: "CE4-AD", rid: "tx4", date: today, units: 5 }, book, []).error
@@ -83,17 +75,14 @@ export async function run({ ok }) {
     /* a standing ban leaves the bench on the Desk, and here */
     const banned = JSON.parse(JSON.stringify(book)); banned.state.PEOPLE.banned.push({ id: "CM4-TO", since: "2026-10-01" });
     w.eval("PEOPLE.banned.push({id:'CM4-TO',since:'2026-10-01'});recompute();");
-    ;
     w.eval("PEOPLE.banned.pop();recompute();");
 
     /* a correction already waiting on the row withdraws the offer, as the Desk's offered check does */
     const waiting = { at: "2026-10-05T00:30:00.000Z", payload: { mode: "amend", kind: "Correction", rid: "tx4", fields: { notes: 1 } } };
     const queuedHeld = { queued: [waiting] }, pendingHeld = { pending: [waiting] };
-    ;
     /* the Desk blocks on ANY refusal naming the row, a payment's included, and on a queued entry only if it is a correction */
     const refusedPayment = { payload: { mode: "amend", kind: "Fulfilment", rid: "tx4", cash: 5 } };
     const refusedHeld = { refused: [refusedPayment] }, queuedPayment = { queued: [refusedPayment] };
-    ;
 
     /* the road: the verified owner, the bridge, the queue, the drafter, once */
     const migrations = new URL("../migrations/", import.meta.url), db = new DatabaseSync(":memory:");
@@ -121,7 +110,6 @@ export async function run({ ok }) {
     const drafts = () => db.prepare("SELECT id,status,entry FROM draft ORDER BY id").all();
 
     const read = await call("/all/maker/offsets"), readBody = await read.json();
-    ;
     ok((await call("/all/maker/offsets", undefined, { email: "other@example.test" })).status === 403
       && (await call("/all/maker/inputs/offset", { at: "2026-10-05T02:00:00.000Z", code: "CE4-AD", rid: "tx4", date: today },
         { email: "other@example.test" })).status === 403 && drafts().length === 0,

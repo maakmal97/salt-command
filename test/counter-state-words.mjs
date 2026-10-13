@@ -19,7 +19,7 @@
  *   7  a mark stands alone: no screen draws a shape word, and every mark on every screen still has its shape as the reader's name
  *   8  the tile's caption is the size in words alone, the same on the statement's server markup, and the page carries no rule for a shape word
  *   9  no shape word is a product's: what the reader is told, scanned as the product words and the level words, on every screen
- *  10  his answers and his reasons that use the new words pass siteWords and the Desk's siteSafe, and the controls still refuse
+ *  10  his answers and his reasons that use the new words pass siteWords, and the locks still refuse
  *  11  what the desk card says they see follows: Placed, Confirmed, Declined, off the page's own words
  *  12  the practice accounts show the new words on their orders, and their feature names carry none of the old */
 import { webcrypto } from "node:crypto";
@@ -298,14 +298,14 @@ export async function run({ ok }) {
     ok(SO.wordsIn(everyText, PRODUCTS).length === 0 && !SHAPES.some((s) => SO.wordsIn(s, PRODUCTS).length) && !PRODUCTS.some((w) => new RegExp("(^|[^a-z])" + w, "i").test(SHAPES.join(" "))) && SHAPES.length === 5,
       "no product word and no level word in the captions, headings and lines of any screen, what the reader is told included, and none among the five shape words: " + JSON.stringify(where9));
 
-    /* ---- 10: his words, through both locks */
+    /* ---- 10: his words, through the Worker's lock */
     const { w: desk } = await openMaster();
-    const safe = (s) => JSON.parse(String(desk.eval("JSON.stringify(siteSafe(" + JSON.stringify(s) + "))")));
     const newWords = ["Placed", "Confirmed", "Declined", "Waiting for us to confirm", "Order confirmed", "Order declined", "More by 20 Oct", "We could not take this order."]
       .concat(SHAPES, ["st.placed", "st.acknowledged", "st.declined", "ow.placed", "ow.confirmed", "ow.declined", "ow.declinedWhy", "hc.placed", "why.placed", "news.confirmed", "news.declined", "sup.by"].map((k) => W.EN[k]));
-    ;
-    ;
-    ;
+    const bad = newWords.filter((x) => SO.siteWords(x) !== "" || SO.wordsIn(x, PRODUCTS).length);
+    ok(bad.length === 0 && newWords.length > 20, "every new word, and his answers and reasons made of them, pass siteWords on the Worker: " + JSON.stringify(bad));
+    ok(SO.siteWords("you are Gold") !== "" && SO.siteWords("Placed at CX7-LUM") !== "" && SO.wordsIn("Confirmed: your oil", PRODUCTS).length > 0,
+      "and the Worker's lock still refuses a level and a code, and finds a product's word beside them, so the pass above is not a lock that opened");
 
     /* ---- 11: what the desk card says they see */
     const told = ["placed", "acknowledged", "declined"].map((s) => SO.toldOf({ status: s, history: [{ status: s, by: "desk" }] }));

@@ -91,11 +91,9 @@ export async function run({ ok }) {
         expect: (e) => e.payload.mode === "redeem" && e.payload.qty === 1 }
     ];
     for (const c of cases) {
-      ;
       const res = await call("/all/maker/inputs/redeem", { at: c.at, code: c.code, date: today });
       const body = await res.json();
       const d = draftOf(c.at), mine = d && JSON.parse(d.entry);
-      ;
       const drafted = d && d.row && JSON.parse(d.row);
       const amends = mine && mine.payload.mode === "amend" ? "rs2" : null;
       ok(!!(d && d.status === "pending" && drafted && (amends || drafted.customer === c.code)),

@@ -241,23 +241,17 @@ export async function run({ ok }) {
   const raise = card(P, "ORD_PRICE['" + P.id + "']=120;"), plain = card(P, "ORD_PRICE['" + P.id + "']=90;"),
     winOwn = card(Object.assign({}, P, { slot: s12, slotSpan: "12:00-16:00" }), "ORD_WIN['" + P.id + "']='" + s8 + "';"),
     winAsap = card(P, "ORD_WIN['" + P.id + "']='" + s8 + "';");
-  ;
   const open = card(Object.assign({}, P, { price: { state: "offered", from: "accept", offer: { id: "x1", kind: "accept", total: 120, delivery: 10, slot: s8, slotSpan: "09:00-12:00", until: new Date(Date.now() + 20 * H).toISOString() } } }));
   const lapsed = card(Object.assign({}, P, { yes: "offer", price: { state: "offered", from: "accept", offer: { id: "x1", kind: "accept", total: 120, delivery: 10, until: new Date(Date.now() - H).toISOString() } } }));
-  ;
   mw.eval("window.__sent=[];window.fetch=function(u,o){window.__sent.push({u:String(u),b:o&&o.body?JSON.parse(o.body):null});return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({ok:true,offer:{kind:'accept',until:new Date(Date.now()+3600000).toISOString()}});}});};"
     + "ordLoad=function(){return Promise.resolve();};ordDraw=function(){};");
   const O2 = Object.assign({}, P, { slot: s12, slotSpan: "12:00-16:00" });
   mw.eval("ORD_OPEN=" + JSON.stringify([O2]) + ";ORD_PRICE={'" + P.id + "':120};ORD_WIN={'" + P.id + "':'" + s8 + "'};ORD_CHIP={'" + P.id + "':'10'};ordBusy={};"
     + "ORD_PV={'" + P.id + "':{st:'ok',d:10,p:120,gen:ORD_PV_GEN,j:{hash:'h1',offerHash:'oh1'}}};");
-  ;
   const sent = rd("window.__sent")[0];
-  ;
   const sib = (id, x) => Object.assign({}, P, { id, sheet: "shY" }, x || {});
   mw.eval("ORD_OPEN=" + JSON.stringify([sib("20261010050001-dyes"), sib("20261010050002-dyes")]) + ";ORD_PRICE={'20261010050002-dyes':150};ORD_WIN={};ORD_CHIP={'20261010050001-dyes':'10'};"
     + "window.__sent=[];ORD_SHEET_BUSY='';ORD_SAID=null;ORD_PV={};ORD_OPEN.forEach(function(x,i){ORD_PV[x.id]={st:'ok',d:i?0:10,p:i?150:null,j:{hash:'h'+i}};});");
-  ;
-  ;
 
   /* 6. COUNTER ADMIN: the same road, Send for their yes and Withdraw (#104 parity) */
   const posts = [];

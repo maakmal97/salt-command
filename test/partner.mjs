@@ -39,7 +39,5 @@ export async function run({ ok }) {
   ok(offList === 0 && offGrid === 0, "a partner's sealed list and grid are the floor on every book: " + offList + " sizes, " + offGrid + " grid points off");
   /* the Drift card names a partner as such and offers no drift to set; an associate who is no partner keeps theirs */
   const card = String(w.eval("(function(){setProd('salt');recompute();return driftCard();})()"));
-  const rowOf = (c) => (card.split("<tr>").find((r) => r.includes(">" + c + "<") || r.includes(c)) || "");
-  ;
   ok(moved === 0, "an associate who is no partner is still quoted off the board, never under the floor: " + moved + " books wrong");
 }

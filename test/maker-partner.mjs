@@ -39,9 +39,6 @@ export async function run({ ok, KV, worker, REPO } = {}) {
     const fit = (id) => /^C/.test(id) && !/-Gen$/.test(id) && !POSITION_ENGINE.isBucket(id) && !snap.partners.includes(id);
     const plain = snap.roster.find((id) => fit(id) && !snap.associates.includes(id)), member = snap.roster.find((id) => fit(id) && snap.associates.includes(id));
     for (const id of [plain, member]) {
-      ;
-      ;
-      ;
     }
     check(makerPartner({ at, code: snap.partners[0] }, real).error === snap.partners[0] + " is already a partner.", "the Desk's own partner is refused as already one");
   } finally { w.close(); }

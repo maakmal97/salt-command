@@ -11,7 +11,6 @@ import { webcrypto } from "node:crypto";
 import { cardOf } from "./maker-act.mjs";
 
 const REPO = join(import.meta.dirname, "..");
-const H = 3600e3;
 const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 15)); return f(); };
 
 export async function run({ ok, KV, assets }) {
@@ -159,16 +158,10 @@ export async function run({ ok, KV, assets }) {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w: mw } = await openMaster(process.env.SALT_MASTER || undefined);
   const rd = (e) => JSON.parse(String(mw.eval("JSON.stringify(" + e + ")")));
-  ;
-  ;
-  ;
-  ;
   const card = (o) => { mw.eval("ORD_OPEN=" + JSON.stringify([o]) + ";"); return String(mw.eval("ordCard(ORD_OPEN[0])")); };
   const P = { id: "20261010050000-dwin", u: "dwab-cdef", code: "CZ2-DW", status: "placed", mode: "deliver", product: "salt", qty: 1, total: 100, at: "2026-10-10T05:00:00Z", history: [], msgs: [] };
   const c1 = card(P), radios = (c1.match(/data-winpick="20261010050000-dwin"/g) || []).length;
-  ;
   const cOwn = card(Object.assign({}, P, { slot: s8(), slotSpan: "09:00-12:00" }));
-  ;
   function s8() { return Wn.slotNext(8, null, Date.now()).slot; }
   /* Accept sends the window he picked; a sheet's tap hands every line its first order's */
   mw.eval("window.__sent=[];window.fetch=function(u,o){window.__sent.push({u:String(u),b:o&&o.body?JSON.parse(o.body):null});return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({ok:true,approved:true});}});};"
@@ -178,16 +171,11 @@ export async function run({ ok, KV, assets }) {
     await mw.eval("ordAct({dataset:Object.assign({ord:'acknowledged',id:'" + o.id + "',u:'" + o.u + "',sheetfee:'10',sheethash:'h1'}," + JSON.stringify(ds || {}) + "),closest:function(){return null;}})");
     const s = rd("window.__sent"); return { body: s[0] && s[0].b, said: rd("ORD_SAID") };
   };
-  ;
   function s12w() { return Wn.slotNext(12, null, Date.now()).slot; }
-  ;
-  ;
   mw.eval("ORD_OPEN=" + JSON.stringify([P, Object.assign({}, P, { id: "20261010050001-dwin", sheet: "sh9" }), Object.assign({}, P, { id: "20261010050002-dwin", sheet: "sh9" })]) + ";");
   mw.eval("ORD_OPEN[0].sheet='sh9';ORD_WIN={'" + P.id + "':'" + s8() + "'};ORD_CHIP={'" + P.id + "':'10'};window.__sent=[];ordBusy={};ORD_SHEET_BUSY='';"
     + "ORD_PV={};ORD_OPEN.forEach(function(x,i){ORD_PV[x.id]={st:'ok',d:i?0:10,p:null,j:{hash:'h'+i}};});");
-  ;
   const sheetSent = rd("window.__sent").map((s) => s.b && s.b.slot);
-  ;
 
   /* 6. COUNTER ADMIN: the same six windows, sent with its Accept, a sheet's lines taking its first order's (#104 parity) */
   const posts = [];
@@ -227,10 +215,7 @@ export async function run({ ok, KV, assets }) {
     const wins = (id) => acard(id) ? [...acard(id).querySelectorAll('input[name="makerWin-' + id + '"]')].map((r) => r.closest(".salt-option").textContent) : [];
     doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => doc.querySelector('[data-act="order.open"]'));
-    ;
-    ;
     const dayOpts = (id) => acard(id) ? [...acard(id).querySelectorAll("select[data-winday] option")].map((x) => x.value) : [];
-    ;
     const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
     /* an Accept reloads the review, so each card is found again once the reload has settled */
     const acceptOf = async (id) => { await new Promise((r) => setTimeout(r, 250)); await wait(() => acard(id).querySelector("[data-accept]")); acard(id).querySelector("[data-accept]").click();
@@ -238,8 +223,6 @@ export async function run({ ok, KV, assets }) {
     pick(A, "makerFee", "RM 10"); ;
     pick(T, "makerFee", "RM 0");
     const bA = await acceptOf(A), bB = await acceptOf(B), bT = await acceptOf(T);
-    ;
-    ;
     ok(/They shared a pin[.] Open it on the Desk/.test(acard(PN).textContent) && !/They shared a pin/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),
       "Counter Admin says a spot was shared, never its id, and opens nothing: " + acard(PN).textContent.slice(0, 200));
   } finally { browser.window.close(); }

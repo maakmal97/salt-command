@@ -21,13 +21,8 @@ export async function run({ ok }) {
 
   /* the Desk's own Add ID, the live master, for the same input */
   const { w } = await openMaster();
-  let desk;
   try {
-    ;
   } finally { w.close(); }
-  ;
-  const core = (e) => JSON.stringify({ type: e.type, status: e.status, party: e.party, payload: e.payload });
-  ;
   const none = add({ tiers: null });
   ok(!none.error && none.entry.payload.tiers === null, "a registration with no starting tier is unchanged");
   ok(!!add({ tiers: { oil: "Silver" } }).error && !!add({ tiers: { salt: "Silver", oil: "Silver" } }).error,

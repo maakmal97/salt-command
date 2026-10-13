@@ -99,13 +99,8 @@ export async function run({ ok }) {
   ok(/no longer kept/.test(rd("ORD_PIN['" + O5.id + "'].msg")), "a spot no longer kept says so, and the fee falls back to their filed place");
 
   /* the fee: measured to the shared spot, ahead of the places vault */
-  ;
   await new Promise((r) => setTimeout(r, 30));
-  ;
-  ;
-  ;
   await new Promise((r) => setTimeout(r, 30));
-  ;
 
   /* filing it as their place: through the vault's own road, never for a friend's order */
   w.eval("window.__filed=null;wbVaultFile=function(edit,editPlaces){var m={'" + CODE + "':{addr:'Kedai Zqor',lat:3.2,lng:101.5,src:'waze',at:null}};editPlaces(m);window.__filed=m;return Promise.resolve(null);};");

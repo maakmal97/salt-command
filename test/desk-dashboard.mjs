@@ -35,7 +35,11 @@ export async function run({ ok }) {
     const answer = (body, status = 200) => ({ ok: status < 300, status, json: async () => body, text: async () => JSON.stringify(body) });
     w.fetch = async (path, options = {}) => {
       path = String(path); const method = (options.method || "GET").toUpperCase();
-      if (method !== "GET") { posts.push({ path, method, body: options.body || "", in: ctl.where }); return answer({ ok: true, revision: 1, entries: 1, droppedAts: [], sent: 0 }); }
+      if (method !== "GET") {
+        posts.push({ path, method, body: options.body || "", headers: options.headers || {}, in: ctl.where });
+        if (path === "queue" && ctl.first401) { ctl.first401 = false; return answer({ ok: false }, 401); }
+        return answer({ ok: true, revision: 1, entries: 1, droppedAts: [], sent: 0 });
+      }
       if (path.startsWith("drafts")) return answer({ ok: true, drafts, refused, clock: null });
       if (path.startsWith("orders")) return answer({ ok: true, orders, claims: [{ kind: "account", id: "k1", u: "abcd-efgh", code: "CC9-OKR", amount: 100, state: "waiting", at: NOW }], threads: [{ u: "abcd-efgh", code: "CC9-OKR", msgs: [{ by: "customer", at: NOW, text: "hello" }] }], links: 0 });
       if (path === "expected") return answer({ ok: true, expected: {} });
@@ -123,6 +127,18 @@ export async function run({ ok }) {
     await settle(); await settle();
     ok(!!send && posts.some((p) => p.path === "queue" && p.in === "recovery"),
       "the recovery panel's Send still posts the entry it holds to /queue: " + JSON.stringify(posts.map((p) => p.path)));
+    /* the road a missing or wrong key takes: the first post is answered 401, the key is asked for, and the same entry goes again with it */
+    posts.length = 0; ctl.first401 = true; w.prompt = () => "retry-key-invented-32-characters-long";
+    w.localStorage.removeItem("saltWriteKey");
+    w.eval("queue=" + JSON.stringify([{ at: "2099-01-01T00:00:02.000Z", type: "LOSS", party: null, qty: 1, total: null, status: "unpaid", raw: "Self-use 1 unit", payload: { mode: "loss", date: "2026-10-01", product: "salt", kg: 1, why: "other", note: "" } }])
+      + ";qSyncState='server';qRecBusy=false;qReceipts=new Set();qRecMsg='';applyOverlay();renderQueue();");
+    ctl.where = "recovery";
+    const send401 = D.querySelector("#qRecovery button[onclick^=\"qRecSend\"]");
+    if (send401) send401.click();
+    for (let i = 0; i < 100 && posts.filter((p) => p.path === "queue").length < 2; i++) await settle();
+    const qp = posts.filter((p) => p.path === "queue");
+    ok(!!send401 && qp.length === 2 && !qp[0].headers["X-Salt-Key"] && qp[1].headers["X-Salt-Key"] === "retry-key-invented-32-characters-long" && qp[0].body === qp[1].body,
+      "a 401 on the recovery Send asks for the write key and sends the same entry again with it: " + JSON.stringify(qp.map((p) => [p.headers["X-Salt-Key"] || null, p.body.length])));
     ok(w.eval("OVERLAY_UNSENT") === false,
       "unsent entries are switched out of every figure");
   } finally {

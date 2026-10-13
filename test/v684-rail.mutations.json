@@ -1,0 +1,3 @@
+[
+ {"name":"the Coverage map is drawn for the window, not the page column","find":"return (m&&m.clientWidth)||(((typeof window","replace":"return (((typeof window"}
+]

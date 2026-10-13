@@ -53,16 +53,13 @@ export async function run({ ok, pageWork }) {
     w.eval(`sales.splice(0,sales.length,...${JSON.stringify(HISTORY)});BASE_SALES.splice(0,BASE_SALES.length,...${JSON.stringify(HISTORY)});
       purchases.splice(0,purchases.length,${JSON.stringify(LOT)});BASE_PURCHASES.splice(0,BASE_PURCHASES.length,${JSON.stringify(LOT)});
       roster.splice(0,roster.length,'CX1-ZED');associates.splice(0,associates.length);INTRODUCTIONS.length=0;PROD='salt';recompute();`);
-    ;
     pricing = pricingSnapshot(w);
-    ;
   } finally { w.close(); }
   const book = { version: "reading-fixture", sales: HISTORY, purchases: [LOT], pricing,
     state: { PRODUCTS: { salt: {}, oil: {} }, roster: ["CX1-ZED", "SX1-ZED"] } };
   pricing.v = book.version;
   const read = (patch) => makerTradeReading({ direction: "sale", product: "salt", party: "CX1-ZED", qty: 1, total: 130, ...patch }, book);
 
-  ;
   const good = read(), low = read({ qty: 3, total: 100 });
   ok(good.margin.rm === 88 && good.goods === 130 && good.floor.under === false && good.floor.warn === null
     && low.margin.rm === -26 && low.floor.under === true && low.floor.short === 26

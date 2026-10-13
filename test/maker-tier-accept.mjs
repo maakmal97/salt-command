@@ -22,9 +22,7 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
         TIER_OF: JSON.parse(w.eval("JSON.stringify(TIER_OF)")) } });
     /* salt prices by each customer's drift since v1017 and the other books are stated boards, so the real book draws no tier proposal:
        the Desk's tierAcceptAll queues nothing and Maker answers the same, with no entry */
-    ;
     const madeAll = makerTierAcceptAll({ at: AT }, bookOf(), []);
-    ;
   } finally { w.close(); }
 
   /* the control: a retained request survives a reload only if the engine's record check names the path */
