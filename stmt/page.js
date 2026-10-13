@@ -512,7 +512,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-card:not(.salt-approve)>*+*{margin-top:12px}
 .adm .maker-say{margin-bottom:0;font-size:var(--salt-text-sm);line-height:1.6;color:var(--salt-text-muted);scroll-margin:24px 0 112px}
 /* 13 Oct 2026 (stress): an answer drawn under the control that asked (Save, Make a link, Refresh) is scrolled to clear of the bar, as a card's own line is */
-.adm .said{scroll-margin:24px 0 112px}
+.adm .osaid{scroll-margin:24px 0 112px}
 .adm .maker-card>.maker-say:empty{margin-top:0}
 /* 12 OCT 2026 (PHASE 2c): a row to approve is the Approve recipe, whose own padding, gap and surface stand; the page adds only what its own column needs (no gap under an
    empty answer line) and the shut queue fold's body */
@@ -763,17 +763,17 @@ body.ended>*:not(#aEnded){display:none}
 .adm .anote:empty{display:none}
 .adm .anote.bad{color:var(--salt-ember)}
 /* 12 OCT 2026 (PHASE 2a): the tick's input is the tap, 44px both ways (his rule 6: a tap target is 44px, measured on the control, not on its label),
-   laid unseen over the 18px box drawn beside it, which shows the state: a ring, filled with a mark when ticked. 13 OCT 2026 (stress): for every tick of his page,
+   laid unseen over the 18px box drawn beside it, which shows the state: a ring, filled with a mark when ticked. 13 OCT 2026 (stress): for every tick of his page (atick),
    not the account card's alone (For a friend, on Order for them, measured 102 by 19) */
-.adm .tick{position:relative;display:flex;align-items:center;gap:0;align-self:flex-start;width:fit-content;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;
+.adm .atick{position:relative;display:flex;align-items:center;gap:0;align-self:flex-start;width:fit-content;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;
   font-size:var(--salt-text-sm);color:var(--salt-text-muted);cursor:pointer}
-.adm .tick input{position:absolute;left:0;top:0;width:var(--salt-tap);height:var(--salt-tap);margin:0;opacity:0;cursor:pointer}
-.adm .tick .tickbox{flex:none;box-sizing:border-box;width:18px;height:18px;margin:13px;border:2px solid var(--salt-text-muted);border-radius:4px}
-.adm .tick input:checked+.tickbox{background:var(--salt-verdigris);border-color:var(--salt-verdigris)}
-.adm .tick input:checked+.tickbox::after{content:"";display:block;width:4px;height:8px;margin:0 0 0 4px;border:solid var(--salt-ink-on-accent);border-width:0 2px 2px 0;transform:rotate(45deg)}
-.adm .tick input:focus-visible+.tickbox{outline:2px solid var(--salt-brass);outline-offset:2px}
-.adm .tick input:disabled+.tickbox{border-style:dashed}
-.adm .tick input:disabled{cursor:not-allowed}
+.adm .atick input{position:absolute;left:0;top:0;width:var(--salt-tap);height:var(--salt-tap);margin:0;opacity:0;cursor:pointer}
+.adm .atick .tickbox{flex:none;box-sizing:border-box;width:18px;height:18px;margin:13px;border:2px solid var(--salt-text-muted);border-radius:4px}
+.adm .atick input:checked+.tickbox{background:var(--salt-verdigris);border-color:var(--salt-verdigris)}
+.adm .atick input:checked+.tickbox::after{content:"";display:block;width:4px;height:8px;margin:0 0 0 4px;border:solid var(--salt-ink-on-accent);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.adm .atick input:focus-visible+.tickbox{outline:2px solid var(--salt-brass);outline-offset:2px}
+.adm .atick input:disabled+.tickbox{border-style:dashed}
+.adm .atick input:disabled{cursor:not-allowed}
 .adm .astory{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 /* S9 9.4: the phones and computers under their own head, the count at its end */
 .adm .astory .dhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:14px}
@@ -1453,7 +1453,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + 'placeholder="a shop, a name, a note" aria-label="A note for you" data-act="link.label">'
         + '<button class="btn salt-pill salt-pill--md" type="button" id="gmake" data-act="link.make">Make a link</button>'
         /* 13 Oct 2026 (stress): the answer to Make a link stands under it, where it went to the page's one line at the foot of Customers */
-        + '<p class="msg said" id="gmsg" role="status" aria-live="polite"></p>'
+        + '<p class="msg osaid" id="gmsg" role="status" aria-live="polite"></p>'
         + '<div id="glist"></div>'
         + "</div>"
         + '<div id="oCards" data-in="customers.associates">'

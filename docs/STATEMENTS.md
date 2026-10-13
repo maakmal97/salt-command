@@ -1633,10 +1633,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `#makerHoursSaved` under it (`hoursSaid('week', ...)`; Set it and Back keep `#makerHoursMessage` under theirs), Make a link in `#gmsg` under it (`linkSay`)
   with the new link scrolled into reach, Refresh in `#makerRefreshSaid` under it, and an order card's own line (the #120 status) stands under the delivery charge,
   above the time and the figures, so that it is not a screen below the radio that asked. Each is a polite status line and is brought into reach (`block:
-  'nearest'`, clear of the bar by `.adm .said`'s scroll margin); an answer whose card has gone from the list scrolls the list's line instead. The page's one line
+  'nearest'`, clear of the bar by `.adm .osaid`'s scroll margin); an answer whose card has gone from the list scrolls the list's line instead. The page's one line
   at the foot of Customers keeps the rest.
   **For a friend is the tick Sent is** (13 Oct 2026, the stress run's Low finding; same test): the label draws the box beside the input (`tickbox`) and the rules
-  are `.adm .tick`, not `.adm .oacct .tick`, so its input is the 44px tap and its label measures 44px, `width:fit-content` so a tap beside the words toggles
+  are `.adm .atick` (a class only his page draws, which the suite requires of a rule under `.adm`), not `.adm .oacct .tick`, so its input is the 44px tap and its label measures 44px, `width:fit-content` so a tap beside the words toggles
   nothing. It was measured 102 by 19; the hit test in Chromium is in the pull request.
   **The stage foot** (Phase 2a): the moves of the card's stage stand together at its foot (`makerCardFoot`, `.maker-foot`), the filled one first and the
   quiet ones beside it, then the card's answer line: a placed order's Accept (Send for their yes, when the figures raise the price or change the

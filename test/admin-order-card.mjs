@@ -306,7 +306,7 @@ export async function run({ ok, pageWork }) {
     ok(!!sent && sent.type === "checkbox" && !!label && [...label.querySelectorAll("input")].length === 1 && !!sent.nextElementSibling && sent.nextElementSibling.classList.contains("tickbox"),
       "Sent is one checkbox in its label, with the box that shows its state drawn right after it");
     const ruleOf = cssRules(p.w), prop = (r, name) => (r ? r.getPropertyValue(name) : "");
-    const tick = ruleOf(".adm .tick")[0], input = ruleOf(".adm .tick input")[0], drawn = ruleOf(".adm .tick .tickbox")[0];
+    const tick = ruleOf(".adm .atick")[0], input = ruleOf(".adm .atick input")[0], drawn = ruleOf(".adm .atick .tickbox")[0];
     ok(!!input && prop(input, "width") === "var(--salt-tap)" && prop(input, "height") === "var(--salt-tap)" && prop(input, "position") === "absolute" && !/none|hidden/.test(prop(input, "display") + prop(input, "visibility")),
       "the input measures the tap: the 44px token both ways, laid over the drawn box and never taken out of the page: " + (input && input.cssText));
     ok(!!tick && prop(tick, "position") === "relative" && prop(tick, "min-height") === "var(--salt-tap)" && prop(tick, "min-width") === "var(--salt-tap)"

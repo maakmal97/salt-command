@@ -13,5 +13,5 @@
  {"name": "the figures stand after the time again", "file": "stmt/owner.js", "find": "          card.appendChild(wset);\n", "replace": "          card.appendChild(wset); card.appendChild(qsay); card.appendChild(qfigs);\n"},
  {"name": "an answer for a card that has gone is not brought into reach", "file": "stmt/owner.js", "find": " if(list.scrollIntoView) list.scrollIntoView({block:'nearest'}); }", "replace": " }"},
  {"name": "For a friend is a bare box again", "file": "stmt/owner.js", "find": "friendLabel.appendChild(el('span','tickbox')); ", "replace": ""},
- {"name": "the tick's rules are the account card's alone", "file": "stmt/page.js", "find": ".adm .tick input{position:absolute;", "replace": ".adm .oacct .tick input{position:absolute;"}
+ {"name": "the tick's rules are the account card's alone", "file": "stmt/page.js", "find": ".adm .atick input{position:absolute;", "replace": ".adm .oacct .atick input{position:absolute;"}
 ]

@@ -197,9 +197,9 @@ export async function run({ ok, pageWork }) {
     ok(!!friend && friend.type === "checkbox" && !!label && label.classList.contains("tick") && label.textContent.trim() === "For a friend" && !!friend.nextElementSibling && friend.nextElementSibling.classList.contains("tickbox"),
       "For a friend is one checkbox in a label of the tick class, the box that shows its state drawn right after it");
     const ruleOf = cssRules(p.w), prop = (r, name) => (r ? r.getPropertyValue(name) : "");
-    const tick = ruleOf(".adm .tick")[0], input = ruleOf(".adm .tick input")[0];
-    ok(label.matches(".adm .tick") && friend.matches(".adm .tick input") && friend.nextElementSibling.matches(".adm .tick .tickbox"),
-      "the rules for the tick apply to it, as they do to Sent, the account card's: " + [label.matches(".adm .tick"), friend.matches(".adm .tick input")]);
+    const tick = ruleOf(".adm .atick")[0], input = ruleOf(".adm .atick input")[0];
+    ok(label.matches(".adm .atick") && friend.matches(".adm .atick input") && friend.nextElementSibling.matches(".adm .atick .tickbox"),
+      "the rules for the tick apply to it, as they do to Sent, the account card's: " + [label.matches(".adm .atick"), friend.matches(".adm .atick input")]);
     ok(prop(input, "width") === "var(--salt-tap)" && prop(input, "height") === "var(--salt-tap)" && prop(tick, "min-height") === "var(--salt-tap)" && prop(tick, "min-width") === "var(--salt-tap)",
       "and they make its input and its label the 44px token both ways: " + (input && input.cssText));
     ok(prop(tick, "width") === "fit-content", "a label that fits its words, so a tap beside it toggles nothing: " + prop(tick, "width"));

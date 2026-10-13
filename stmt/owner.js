@@ -485,7 +485,7 @@ export const OWNER_JS = `
       loadStory(a);
     });
     c.appendChild(grid); c.appendChild(gn);
-    var tick=el('label','tick');
+    var tick=el('label','tick atick');
     box.type='checkbox'; box.checked=!!a.sent; box.disabled=none;
     box.addEventListener('change', async function(){
       var want=box.checked;
@@ -3284,7 +3284,7 @@ export const OWNER_JS = `
       [['collect','Collected'],['deliver','Delivered']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; mode.appendChild(option); });
       modeLabel.appendChild(mode); box.appendChild(modeLabel);
       var place=makerField(box,['Delivery place','orderfor.place'],'text',''), want=makerField(box,['Wanted by (optional)','orderfor.want'],'date','');
-      var friendLabel=el('label','tick'), friend=actOn(el('input'),'orderfor.friend'); friend.type='checkbox';
+      var friendLabel=el('label','tick atick'), friend=actOn(el('input'),'orderfor.friend'); friend.type='checkbox';
       /* 13 Oct 2026 (stress, Low): the tick of the account card's Sent (the input is the 44px tap, the box beside it shows the state), where this was a bare box with a 19px label */
       friendLabel.appendChild(friend); friendLabel.appendChild(el('span','tickbox')); friendLabel.appendChild(el('span',null,'For a friend')); friendLabel.hidden=!result.assoc; box.appendChild(friendLabel);
       var answer=el('p','msg'); answer.setAttribute('role','status'); box.appendChild(answer);
@@ -3508,7 +3508,7 @@ export const OWNER_JS = `
     });
     makerButton(list,['Refresh','maker.refresh'],loadMaker,false);
     /* 13 Oct 2026 (stress, Medium): Refresh answers under itself; its refusal went to the list's line at the head of Orders, a screen above it */
-    var refreshSaid=el('p','msg said'); refreshSaid.id='makerRefreshSaid'; refreshSaid.setAttribute('role','status'); refreshSaid.setAttribute('aria-live','polite'); list.appendChild(refreshSaid);
+    var refreshSaid=el('p','msg osaid'); refreshSaid.id='makerRefreshSaid'; refreshSaid.setAttribute('role','status'); refreshSaid.setAttribute('aria-live','polite'); list.appendChild(refreshSaid);
     drawOrderPane();
     drawDeskRows(draftRoot,queueRoot,pendingRows);
     sweep();
@@ -3949,7 +3949,7 @@ export const OWNER_JS = `
         .catch(function(error){ hoursSaid('week',null,error); });
     },true);
     /* 13 Oct 2026 (stress, Medium): the answer to Save stands under Save. It lay under the shop-for-now controls below, a screen away at 1280px. */
-    var weekSaid=el('p','msg said'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
+    var weekSaid=el('p','msg osaid'); weekSaid.id='makerHoursSaved'; weekSaid.setAttribute('role','status'); weekSaid.setAttribute('aria-live','polite'); root.appendChild(weekSaid);
     /* the shop held for now is two tiles over the field that says what the one chosen does: Closed until, or Open until; Kuala Lumpur time */
     var override=el('div','maker-fields'), kind=makerTilesIn(override,['The shop, for now','hours.override-state'],[{value:'false',label:'Closed'},{value:'true',label:'Open'}]);
     var until=makerField(override,['Closed until','hours.override-until'],'datetime-local',klInputValue(makerHours.config&&makerHours.config.manual&&makerHours.config.manual.until));
@@ -4540,7 +4540,7 @@ export const OWNER_JS = `
   /* 13 Oct 2026 (stress, Medium): Make a link answers under its button (#gmsg), not on the page's one line at the foot of Customers, 4,000px away */
   function linkSay(t,cls,error){
     var m=document.getElementById('gmsg'); if(!m) return;
-    m.textContent=t||''; m.className='msg said'+(cls?' '+cls:'');
+    m.textContent=t||''; m.className='msg osaid'+(cls?' '+cls:'');
     if(error) withDetails(m,error);
     if(t&&m.scrollIntoView) m.scrollIntoView({block:'nearest'});
   }
