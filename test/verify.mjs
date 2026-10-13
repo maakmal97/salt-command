@@ -1849,7 +1849,7 @@ await (async () => {
   const rowStarts = ["rows:sales:start", "rows:purchases:start"].map((event) => readEvents.indexOf(event));
   ok(stateEnd >= 0 && snapshotStart > stateEnd && snapshotEnd > snapshotStart && rowStarts.every((at) => at > snapshotEnd),
     "state remains ahead of the snapshot, which stays ahead of both collection reads");
-  ok(maxActiveRows === 2, "sales and purchases are fetched concurrently after the snapshot");
+  ok(maxActiveRows === 3, "sales, purchases and loans are fetched concurrently after the snapshot");
   ok(mirrorBook.version === "v302" && mirrorBook.sales[0].rid === "sales"
     && mirrorBook.purchases[0].rid === "purchases" && mirrorBook.pricing.v === "v302",
     "parallel reads preserve the complete book shape and pricing state");
@@ -53289,6 +53289,30 @@ await (async () => {
   const body = src.slice(src.indexOf("/* ==== END GEO ==== */"));
   const bare = [...body.matchAll(/\$\{(?:[^{}`]|\{\})+?\} (?:(?:public )?holiday |lead |review )?days?\b|[\w.)\]]+ ?\+ ?['"] ?days?\b/g)].map((m) => m[0].slice(-40));
   ok(!bare.length, "and no other printer in the master writes a count of days by itself: " + (bare.join(" | ") || "none"));
+})();
+
+section("readBook lifts loans from entry, so a repayment names a seeded loan");
+await (async () => {
+  const { readBook } = await import("../src/drafter.js");
+  const E = (await import("../engine/position.mjs")).default;
+  const loan = { date: "2026-10-12", party: "CM4-TO", direction: "in", form: "salt", valueKg: 2.5, valueRM: null, status: "open", product: "salt", rid: "l002" };
+  const stub = (stateRows) => ({ prepare(sql) {
+    const q = { bind(...v) { q.v = v; return q; },
+      async all() {
+        if (/FROM state/.test(sql)) return { results: stateRows };
+        return { results: q.v && q.v[0] === "loans" ? [{ doc: JSON.stringify(loan) }] : [] };
+      },
+      async first() { return null; } };
+    return q; } });
+  const book = await readBook(stub([]));
+  ok(Array.isArray(book.state.loans) && book.state.loans.length === 1 && book.state.loans[0].rid === "l002",
+    "readBook sets state.loans from the entry rows");
+  const repay = (kg) => ({ at: "2026-10-14T01:00:00.000Z", payload: { mode: "repay", loan: "l002", kg } });
+  ok(!E.entryReservationFault(repay(1), [], book), "a repayment naming a seeded loan passes the reservation check");
+  ok(!!E.entryReservationFault(repay(9), [], book), "and a repayment past the loan is still refused");
+  ok(!!E.entryReservationFault({ at: "x", payload: { mode: "repay", loan: "nope", kg: 1 } }, [], book), "an unknown loan is still refused");
+  const fromState = await readBook(stub([{ key: "loans", doc: JSON.stringify([{ ...loan, rid: "l009" }]) }]));
+  ok(fromState.state.loans.length === 1 && fromState.state.loans[0].rid === "l009", "a state.loans that arrived from the state table wins over the entry rows");
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
