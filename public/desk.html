@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="cff0e5b08b658e6b";
+var SALT_BUILD_ID="c6da2fea5e06040b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9698,6 +9698,11 @@ let stockCounted=true;
    inventory: the one figure this desk documents as always winning. It is now keyed by product,
    and a product with no count of its own falls back exactly as it did before. */
 let statedStockBy={},provCount=0,provNotes=[],provRM=0;
+/* B3 of #62 (13 Oct 2026): THE ONE SWITCH FOR UNSENT ENTRIES. true while the Desk still writes: an entry this device
+   holds but the Worker has not confirmed (qIsUnsent) folds into every figure and is marked Unsent. B5 sets it false when
+   the Desk's write controls go: such an entry then moves no figure and waits in the recovery panel to be sent or discarded. */
+let OVERLAY_UNSENT=true;
+let provUnsent=0,unsentAts=new Set();
 /* the count that applies to a product: a queued one first, then its declared opening
    figure, then the salt roll for salt. Null means nobody has counted this book. */
 function countedFor(pr){
@@ -9747,9 +9752,10 @@ function applyOverlay(){
      being rebuilt, so without this line the preview would keep a refund the queue no longer has. */
   customerRefunds.length=0;JSON.parse(JSON.stringify(BASE_REFUNDS)).forEach(r=>customerRefunds.push(r));
   loans.length=0;JSON.parse(JSON.stringify(BASE_LOANS)).forEach(l=>loans.push(l));   // v589: rebuilt each pass, so a queued loan counts once
-  statedStockBy={};provCount=0;provNotes=[];provRM=0;
+  statedStockBy={};provCount=0;provNotes=[];provRM=0;provUnsent=0;unsentAts=new Set();
   queue.slice().sort((a,b)=>(a.at||'')<(b.at||'')?-1:1).forEach(q=>{
     const p=q.payload;if(!p)return;
+    if(!OVERLAY_UNSENT&&qIsUnsent(q))return;
     try{
       if(p.mode==='new')ovNew(p,q);
       else if(p.mode==='amend')ovAmend(p,q);
@@ -9781,6 +9787,7 @@ function applyOverlay(){
       else if(p.mode==='plan'||p.mode==='obs')return;
       else return;
       provCount++;provRM+=Math.abs(+p.cash||0);
+      if(qIsUnsent(q)){provUnsent++;unsentAts.add(q.at);}
     }catch(e){provNotes.push('could not apply: '+(q.raw||'entry'));}
   });
 }
@@ -15023,7 +15030,7 @@ function tabLedger(){
     const penRid=ridOf(t);
     const pen=(finalState!=='Cancelled'&&penRid&&!provOf(t))
       ?`<button type="button" class="lpen" onclick="ledMenu(event,'${penRid}','${t.type}')" title="Update this ${t.type==='BUY'?'lot':'order'}" aria-label="Update ${code}"><svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M11.3 1.7a1.6 1.6 0 0 1 2.3 0l.7.7a1.6 1.6 0 0 1 0 2.3L5.6 13.4 1.9 14.1l.7-3.7L11.3 1.7zm-8 8.9-.4 2.2 2.2-.4 7.6-7.6-1.8-1.8-7.6 7.6z" fill="currentColor"/></svg></button>`
-      :provOf(t)?`<span class="tag salt-status salt-status--dotted prov lpen lprov" title="recorded but not yet committed">Provisional</span>`:'';
+      :provOf(t)?`<span class="tag salt-status salt-status--dotted prov lpen lprov" title="${unsentAts.has(provOf(t))?'unsent: held on this device only, not confirmed by the Worker':'recorded but not yet committed'}">${unsentAts.has(provOf(t))?'Unsent':'Provisional'}</span>`:'';
     /* v465: every line is the same cells, so the table's columns hold from the heading down: E, step,
        date, type, product, party, then the four figures. A cell a line has no use for stays in place,
        empty. v466: each cell names its area, so a narrower screen can re-flow the line. The step cell
@@ -18937,8 +18944,9 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
      reaches the cloud it is put to him under Approve like any entry. The old line told him to
      re-record the sale, which would have made a twin of a row the drafter was already drafting. */
   const stuck=queueStuck?`<div class="dsc" style="margin-top:10px;color:var(--ember)"><b>&#9888; ${queueStuck} entr${queueStuck===1?'y was':'ies were'} not confirmed by the cloud</b> before the ledger was folded past ${queueStuck===1?'it':'them'}. ${queueStuck===1?'It is':'They are'} held here and counted in the figures below. The drafter still drafts ${queueStuck===1?'it once it reaches':'them once they reach'} the cloud: decide ${queueStuck===1?'it':'them'} under Approve, and once ${queueStuck===1?'its row is':'their rows are'} in the book, Undo the copy held here, or the figures count ${queueStuck===1?'it':'them'} twice.</div>`:'';
-  if(!txq.length){b.innerHTML=cleared+stuck;return;}
-  b.innerHTML=cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
+  const rec=renderRecovery();
+  if(!txq.length){b.innerHTML=rec+cleared+stuck;return;}
+  b.innerHTML=rec+cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
     +'<div class="dsc" style="margin-top:5px">These are already folded into every figure on the desk. Undo removes an entry and rebuilds; once committed it is in the ledger and can only be reversed by a new entry.</div>'
     +'<table class="salt-table" style="margin-top:6px"><thead><tr><th class="l salt-table__label">Entry</th><th>Type</th><th>Party</th><th>Qty</th><th>RM</th><th>Status</th><th></th></tr></thead><tbody>'+txq.map(q=>`<tr><td class="l salt-table__label" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${q.type}</td><td class="mono">${esc(q.party)||NIL}</td><td>${q.qty!=null?q.qty+'unit':NIL}</td><td>${q.total!=null?fmt0(q.total):NIL}</td><td><span class="tag salt-status ${q.status==='paid'?'paid':q.status==='inkind'?'inkind':q.status==='modified'?'mod':q.status==='cancelled'?'def':q.status==='count'?'inkind':'unpaid'}">${({paid:'Paid',unpaid:'Unpaid',partial:'Partial',inkind:'In-Kind',modified:'Modified',cancelled:'Cancelled',credit:'Unpaid',count:'Count'})[q.status]||q.status}</span></td><td><button class="ubtn salt-ghost" onclick="undoEntry('${esc(q.at)}')">Undo</button></td></tr>`).join('')+'</tbody></table>';}
 
@@ -24486,7 +24494,7 @@ async function wbVaultPairFile(pass,edit,editPlaces,input,outcome){
       places=POSITION_ENGINE.vaultMapMerge(base.places,desired.places,latest.places,conflicts);
     }
     const namesEnvelope=await vaultEncrypt(pass,names.map),placesEnvelope=pair.places===null&&!Object.keys(places.map).length?null:await vaultEncrypt(pass,places.map);
-    const at=new Date().toISOString(),typed=previous?previous.input:input;
+    const typed=previous?previous.input:input,at=(typed&&typed.body&&typed.body.at)||new Date().toISOString();
     const path=typed?'vault/inputs/'+typed.operation:'vault/pair';
     const body=typed?{...typed.body,at,vault:typed.operation==='place'?undefined:namesEnvelope,
       addrVault:placesEnvelope||undefined,pair:{expectedRevision:pair.revision,names:namesEnvelope,places:placesEnvelope}}
@@ -25232,6 +25240,9 @@ let qSentThrough=(function(){
   const seed=QUEUE_COMMITTED||'';
   try{localStorage.setItem('saltQueueSent',seed);}catch(e){}
   return seed;})();
+/* B3: the mark as this device loaded it, which is all the unsent test trusts of the old inference: what a post after load acknowledged
+   is settled by that post's receipt, stamp by stamp, or not at all */
+let qSentAtLoad=qSentThrough;
 function qSentMark(v){qSentThrough=v;try{localStorage.setItem('saltQueueSent',v);}catch(e){}}
 /* 26 Sep 2026: A CHANGE THE CLOUD HAS NOT ACKNOWLEDGED. The ten-second tick used to post the whole queue
    whenever it held anything, so an entry already acknowledged, a refused one and a stuck one were each
@@ -25242,7 +25253,7 @@ function qSentMark(v){qSentThrough=v;try{localStorage.setItem('saltQueueSent',v)
    counts the change (qGen); a 2xx clears qDirty only when no save landed while that post was in flight. */
 let qDirty=false,qGen=0;
 /* the newest stamp the queue is carrying, which is what a payload delivers */
-function qNewestAt(){return queue.reduce((m,q)=>(q&&q.at&&q.at>m)?q.at:m,'');}
+function qNewestAt(list=queue){return list.reduce((m,q)=>(q&&q.at&&q.at>m)?q.at:m,'');}
 /* AN ENTRY GOES ONLY WHEN BOTH ARE TRUE: the ledger has folded past it, and this device saw
    it acknowledged. Named so the rule is RUN rather than grepped for, which is the v482
    lesson. A throw keeps the entry, because losing a sale is the fault being fixed. */
@@ -25263,7 +25274,69 @@ function qKeepOnLoad(q,mark,sent,refused){try{
 function qFlagStuck(q,mark,refused){let n=0;const r=Array.isArray(refused)?refused:[];
   q.forEach(e=>{if(e&&e.at&&e.at<=mark&&!e.stuck&&r.indexOf(e.at)<0){e.stuck=true;n++;}});return n;}
 function qStuckCount(q,refused){const r=Array.isArray(refused)?refused:[];return q.filter(e=>e&&e.stuck&&r.indexOf(e.at)<0).length;}
-function qPayload(){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,device:(typeof saltDeviceId==='function'?saltDeviceId():'anon'),queue},null,1);}
+function qPayload(cloud){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,device:(typeof saltDeviceId==='function'?saltDeviceId():'anon'),queue:cloud?qCloudQueue():queue},null,1);}
+/* B3 of #62: THE TWO ROADS. In pair mode the Worker refuses names, places, renames and a non-bucket Add ID on /queue (409 for
+   the whole payload), so those go by the vault pair and /queue carries the rest. A receipt is the Worker's answer for one
+   entry's stamp, kept in saltQueueReceipts; the sent mark below never counts for a vault-kind entry, which the post never carried. */
+const qIsVaultKind=q=>{const p=q&&q.payload;return !!p&&(p.mode==='rename'||p.mode==='place'||(p.mode==='addid'&&p.kind!=='bucket'));};
+function qCloudQueue(){return vaultPairVersion?queue.filter(q=>!qIsVaultKind(q)):queue;}
+let qReceipts=(function(){try{const a=JSON.parse(localStorage.getItem('saltQueueReceipts')||'[]');return new Set(Array.isArray(a)?a.filter(x=>typeof x==='string'):[]);}catch(e){return new Set();}})();
+function qReceipt(ats){ats.forEach(a=>qReceipts.add(a));
+  try{const live=new Set(queue.map(q=>q&&q.at));localStorage.setItem('saltQueueReceipts',JSON.stringify([...qReceipts].filter(a=>live.has(a)||ats.indexOf(a)>=0)));}catch(e){}}
+function qIsUnsent(q){try{
+  if(!q||!q.at)return false;
+  if(qReceipts.has(q.at))return false;
+  if(!qIsVaultKind(q)&&!q.stuck&&typeof qSentAtLoad==='string'&&qSentAtLoad&&q.at<=qSentAtLoad)return false;
+  return true;}catch(e){return true;}}
+/* which road an unsent entry can take, or none: a note on an Add ID has no cloud-safe check on the pair road */
+function qRoad(q){const p=q&&q.payload;
+  if(!q||!q.at||!p||typeof p!=='object'||typeof p.mode!=='string')return 'none';
+  if(!qIsVaultKind(q))return 'book';
+  if(p.mode==='addid')return (typeof p.code==='string'&&p.code&&!p.note)?'vault':'none';
+  if(p.mode==='rename')return (typeof p.from==='string'&&typeof p.to==='string'&&p.from&&p.to)?'vault':'none';
+  return (p.places&&typeof p.places==='object'&&Object.keys(p.places).length)?'vault':'none';}
+/* the typed input the pair road takes for a vault-kind entry, stamped with the entry's own `at` so a retry lands once */
+function qVaultInput(q){const p=q.payload;
+  if(p.mode==='addid')return {operation:'add-id',body:{at:q.at,code:p.code,kind:p.kind,parent:p.parent||null,geo:p.geo||null,tiers:p.tiers||null}};
+  if(p.mode==='rename')return {operation:'amend-id',body:{at:q.at,from:p.from,to:p.to,geo:p.geo||null}};
+  return {operation:'place',body:{at:q.at,places:p.places}};}
+/* the recovery panel's send: nothing leaves the queue on a failure, and a book entry stays in it (the post replaces this
+   device's key, so removing a sent one would withdraw it); a vault entry the pair has taken is the cloud's, so it goes */
+let qRecBusy=false,qRecMsg='';
+async function qRecSend(at){
+  if(qRecBusy)return;const q=queue.find(x=>x&&x.at===at);if(!q)return;
+  qRecBusy=true;let msg;
+  try{const road=qRoad(q);
+    if(road==='book'){
+      if(qSyncState!=='server')msg='The desk server is not answering, so nothing was sent. The entry is kept here.';
+      else{const ok=await qPost();
+        msg=ok&&qReceipts.has(at)?'Sent: the Worker confirmed this entry.':ok?'Posted, but the Worker did not confirm this entry. It is kept here.':'Not sent: the entry is kept here.';}
+    }else if(road==='vault'){
+      const input=qVaultInput(q),p=q.payload,outcome={};
+      const why=await wbVaultFile(p.mode==='rename'?(map=>{if(Object.hasOwn(map,p.from)&&!Object.hasOwn(map,p.to)&&p.from!==p.to){const m=POSITION_ENGINE.vaultRekeyMap(map,p.from,p.to);Object.keys(map).forEach(k=>delete map[k]);Object.assign(map,m);}}):null,null,input,outcome);
+      if(why)msg='Not sent: '+why+' The entry is kept here.';
+      else if(outcome.queued){qReceipt([at]);const i=queue.findIndex(x=>x&&x.at===at);if(i>=0)queue.splice(i,1);
+        try{localStorage.setItem('saltQueue',JSON.stringify(queue));}catch(e){}
+        applyOverlay();render();msg='Sent: the Worker confirmed this entry by the vault pair.';}
+      else msg='Not confirmed by the Worker. The entry is kept here.';
+    }else msg='This entry cannot be sent from this device. Discard it and record it again.';
+  }catch(e){msg='Not sent: '+((e&&e.message)||e)+' The entry is kept here.';}
+  finally{qRecBusy=false;}
+  qRecMsg=msg;try{renderQueue();}catch(e){}
+}
+function qRecDiscard(at){const q=queue.find(x=>x&&x.at===at);if(!q)return false;
+  if(!confirm('Discard this unsent entry?\n\n'+(q.raw||q.type||'entry')+'\n\nThe Worker never confirmed it and this is the only copy, so it is lost.'))return false;
+  qRecMsg='Discarded: '+(q.raw||q.type||'entry')+'.';undoEntry(at);return true;}
+function renderRecovery(){
+  const un=qTx().filter(qIsUnsent);
+  if(!un.length&&!qRecMsg)return '';
+  const way={book:'Book queue',vault:'Vault pair',none:'Cannot be sent'};
+  const rows=un.map(q=>{const road=qRoad(q),a=esc(q.at);
+    return `<tr><td class="l salt-table__label" style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.raw||'')}</td><td>${esc(q.type||'')}</td><td>${way[road]}</td><td>${road==='none'?'':`<button class="ubtn salt-ghost" onclick="qRecSend('${a}')">Send</button> `}<button class="ubtn salt-ghost" onclick="qRecDiscard('${a}')">Discard</button></td></tr>`;}).join('');
+  return `<div id="qRecovery" class="salt-insight" style="margin-top:12px"><div style="font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Unsent on this device (${un.length})</div>`
+    +`<div class="dsc" style="margin-top:5px">Held in this browser only: the Worker has not confirmed ${un.length===1?'it':'them'}. ${OVERLAY_UNSENT?'Each still counts in the figures, marked Unsent.':'None counts in any figure.'} An entry leaves this list when the Worker confirms it.</div>`
+    +(un.length?`<table class="salt-table" style="margin-top:6px"><thead><tr><th class="l salt-table__label">Entry</th><th>Type</th><th>Road</th><th></th></tr></thead><tbody>${rows}</tbody></table>`:'')
+    +(qRecMsg?`<div class="dsc" id="qRecMsg" role="status" style="margin-top:6px">${esc(qRecMsg)}</div>`:'')+'</div>';}
 /* ask the local server whether it accepts the queue; only meaningful when served */
 async function qInit(){
   if(location.protocol==='file:')return;
@@ -25376,14 +25449,18 @@ function qDropRejected(ats){
 async function qPost(){
   /* what THIS payload carries, read BEFORE the await: an entry recorded while the request is
      in flight is not covered by its answer, so it must not be marked by it. */
-  let sending=qNewestAt(),gen=qGen;                      // the change this payload carries, read beside it
-  try{ let r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()});
+  let sending=qNewestAt(qCloudQueue()),gen=qGen,posted=qCloudQueue().map(q=>q&&q.at);   // the change this payload carries, read beside it
+  try{ let r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload(true)});
     /* 401 means the gate is armed and this device has no key, or the wrong one. Ask, then
        try once more. Once only: a wrong key looping would just ask for ever. */
-    if(r.status===401&&saltAskWriteKey()){ sending=qNewestAt(); gen=qGen; r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload()}); }
+    if(r.status===401&&saltAskWriteKey()){ sending=qNewestAt(qCloudQueue()); gen=qGen; posted=qCloudQueue().map(q=>q&&q.at); r=await fetch('queue',{method:'POST',headers:qHeaders(),body:qPayload(true)}); }
     if(r.status===401){ qStatus('<b style="color:var(--crim)">The write key was not accepted</b>: the entry is held on this device. Reopen the desk to try again.'); return false; }
     if(!r.ok)throw new Error('server replied '+r.status);
     const j=await r.json();
+    /* B3: the Worker's answer is a receipt for each stamp it kept: the count it kept must be exactly what was posted less
+       what it dropped or withdrew, else no stamp is receipted */
+    {const out=[].concat(j.droppedAts||[],j.withdrawnAts||[]);
+     if(j.ok&&j.entries===posted.length-out.length)qReceipt(posted.filter(a=>a&&out.indexOf(a)<0));}
     if(sending&&sending>qSentThrough)qSentMark(sending);   // it is on the server; the load may now clear it once the fold passes it
     if(gen===qGen)qDirty=false;                            // a save while this was in flight is still owed to the cloud
     qDropRejected(j.droppedAts);                            // a rejection decided on another device leaves this one too
@@ -26065,7 +26142,8 @@ function renderProvBar(){
   if(!provCount){b.innerHTML='';return;}
   b.innerHTML='<div class="provbar"><span>&#9679; <b>'+provCount+'</b> entr'+(provCount===1?'y':'ies')+' recorded but <b>not yet committed</b>'
     +(provRM>0.009?', <b>'+fmt0(provRM)+'</b> of cash':'')
-    +': every figure below includes '+(provCount===1?'it':'them')+'.</span>'
+    +': every figure below includes '+(provCount===1?'it':'them')+'.'
+    +(provUnsent?' <b>'+provUnsent+'</b> '+(provUnsent===1?'is':'are')+' <b>unsent</b>, held on this device only.':'')+'</span>'
     +'<button class="ubtn salt-ghost" onclick="undoLast()">Undo last</button>'
     +'<button class="ubtn salt-ghost" onclick="switchTab(\'add\')">Review in Transaction</button>'
     +(provNotes.length?'<span style="color:var(--crim)">'+esc(provNotes.join('; '))+'</span>':'')
