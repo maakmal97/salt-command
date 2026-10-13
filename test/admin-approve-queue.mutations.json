@@ -1,11 +1,11 @@
 [
- {"name":"a Desk row is a glass card again, not the Approve recipe","file":"stmt/owner.js","find":"makerCard(draftRoot,'draft:'+draft.id,'salt-approve')","replace":"makerCard(draftRoot,'draft:'+draft.id)"},
+ {"name":"a Desk row is a glass card again, not the Approve recipe","file":"stmt/owner.js","find":"makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard')","replace":"makerCard(draftRoot,'draft:'+draft.id)"},
  {"name":"the party leaves the card's head","file":"stmt/owner.js","find":"      head.appendChild(el('span','salt-approve__party',entry.party||'no code'));\n","replace":""},
  {"name":"the cost is worked out from the total, not read off the draft","file":"stmt/owner.js","find":"rm(typeof reading.cost==='object'?reading.cost.total:reading.cost)","replace":"rm(Number(reading.total||0)*0.5)"},
  {"name":"the margin is not shown","file":"stmt/owner.js","find":"if(reading.margin) figs.push(","replace":"if(false) figs.push("},
  {"name":"the flags are prose again, not chips","file":"stmt/owner.js","find":"flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); });","replace":"flags.forEach(function(flag){ chips.appendChild(el('span','salt-insight',String(flag))); });"},
  {"name":"the drafter's reasoning leaves the card","file":"stmt/owner.js","find":"    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));\n","replace":""},
- {"name":"the proposed row is open on the card","file":"stmt/owner.js","find":"    card.appendChild(detailBox('row.proposed',key,rowPairs(reading.row,key)));\n","replace":"    var rd=detailBox('row.proposed',key,rowPairs(reading.row,key)); rd.open=true; card.appendChild(rd);\n"},
+ {"name":"the proposed row is open on the card","file":"stmt/owner.js","find":"panel.hidden=true; panel.appendChild(detailList(rowPairs(reading.row,key)));","replace":"panel.hidden=false; panel.appendChild(detailList(rowPairs(reading.row,key)));"},
  {"name":"Approve is a ghost, not the filled pill","file":"stmt/owner.js","find":"approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);","replace":"approveDraft(draft,approve,'draft:'+draft.id+':approve'); },false);"},
  {"name":"Reject is no danger ghost","file":"stmt/owner.js","find":"      reject.classList.add('salt-ghost--danger'); ynTag(reject,'draft:'+draft.id+':reject');","replace":"      ynTag(reject,'draft:'+draft.id+':reject');"},
  {"name":"the moves stand outside the recipe's actions","file":"stmt/owner.js","find":"var acts=el('div','salt-approve__actions'); card.appendChild(acts);","replace":"var acts=el('div','maker-actions'); card.appendChild(acts);"},
@@ -48,5 +48,8 @@
  {"name":"a native confirm comes back, in code nothing here runs","file":"stmt/owner.js","find":"function ynTag(btn,key){ if(btn&&btn.setAttribute)","replace":"function ynTag(btn,key){ if(false) window.confirm('x'); if(btn&&btn.setAttribute)"},
  {"name":"a native confirm is asked before Approve","file":"stmt/owner.js","find":"    var trip=tripRows(draft).length>0;\n    return ownerAsk(opener,key,{title:trip?'Approve every row","replace":"    var trip=tripRows(draft).length>0; window.confirm('Approve?');\n    return ownerAsk(opener,key,{title:trip?'Approve every row"},
  {"name":"the Needs pill is off before his yes","file":"stmt/owner.js","find":"var said=false;\n          approveDraft(","replace":"var said=false; ap.disabled=true;\n          approveDraft("},
- {"name":"the Needs pill stays on after his yes","file":"stmt/owner.js","find":"function(){ said=true; ap.disabled=true; }","replace":"function(){ said=true; }"}
+ {"name":"the Needs pill stays on after his yes","file":"stmt/owner.js","find":"function(){ said=true; ap.disabled=true; }","replace":"function(){ said=true; }"},
+ {"name":"a trip is drawn again for each of its rows","file":"stmt/owner.js","find":"if(tripsDrawn[tid]) return; tripsDrawn[tid]=true;","replace":"tripsDrawn[tid]=true;"},
+ {"name":"a tap on the card's body no longer opens its detail","file":"stmt/owner.js","find":"if(!ev.target.closest('button,a,input,select,textarea,summary')) toggle();","replace":""},
+ {"name":"the head is no longer a control","file":"stmt/owner.js","find":"head=el('button','salt-approve__head apphead');","replace":"head=el('div','salt-approve__head apphead');"}
 ]

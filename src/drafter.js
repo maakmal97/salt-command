@@ -63,9 +63,13 @@ export async function readBook(db) {
   };
   const rs = await db.prepare("SELECT key,doc FROM state").all();
   const snap = await db.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first();
-  const [sales, purchases] = await Promise.all([rows("sales"), rows("purchases")]);
+  const [sales, purchases, loans] = await Promise.all([rows("sales"), rows("purchases"), rows("loans")]);
   const state = {};
   for (const r of (rs.results || [])) { try { state[r.key] = JSON.parse(r.doc); } catch (e) { /* skip */ } }
+  /* 14 OCT 2026: LOANS LIVE IN `entry` (tools/d1.mjs seeds every COLLECTION there, none into `state`), so `state.loans`
+     was always undefined on the Worker and entryReservationFault refused every repayment ("The loan no longer exists").
+     A `state.loans` that did arrive from the state table wins; the entry rows fill it only when state lacks it. */
+  if (!Array.isArray(state.loans)) state.loans = loans;
   return {
     sales,
     purchases,

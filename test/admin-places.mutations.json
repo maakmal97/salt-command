@@ -12,10 +12,10 @@
   "replace": "[\"record\", \"Record\"], [\"customers\", \"Customers\"]"
  },
  {
-  "name": "Orders loses its Closed part",
+  "name": "Orders loses its Ended part",
   "file": "stmt/page.js",
-  "find": "[\"group\", \"Group\"], [\"closed\", \"Closed\"]],",
-  "replace": "[\"group\", \"Group\"]],"
+  "find": "[\"done\", \"Done\"], [\"ended\", \"Ended\"], [\"payments\", \"Payments\"]",
+  "replace": "[\"done\", \"Done\"], [\"payments\", \"Payments\"]"
  },
  {
   "name": "Shop loses its Practice part",
@@ -104,14 +104,14 @@
  {
   "name": "the claims show in every part of Orders",
   "file": "stmt/page.js",
-  "find": "<section data-in=\"orders.waiting\" aria-labelledby=\"makerClaimsTitle\">",
+  "find": "<section data-in=\"orders.payments\" aria-labelledby=\"makerClaimsTitle\">",
   "replace": "<section data-in=\"orders\" aria-labelledby=\"makerClaimsTitle\">"
  },
  {
   "name": "the Desk's rows show under Entry",
   "file": "stmt/page.js",
-  "find": "<section data-in=\"record.approve\" aria-labelledby=\"makerDraftTitle\">",
-  "replace": "<section data-in=\"record.entry\" aria-labelledby=\"makerDraftTitle\">"
+  "find": "<section data-in=\"record.approve\" aria-label=\"Rows to approve\">",
+  "replace": "<section data-in=\"record.entry\" aria-label=\"Rows to approve\">"
  },
  {
   "name": "the tier form moves to Entry",
@@ -138,40 +138,34 @@
   "replace": "<div id=\"mTest\" class=\"mtest\" data-in=\"shop.hours\">"
  },
  {
-  "name": "an agreed order is filed as ready",
+  "name": "a confirmed order is filed as ready",
   "file": "stmt/owner.js",
-  "find": "if(order.status==='acknowledged') t.push('orders.agreed');",
-  "replace": "if(order.status==='acknowledged') t.push('orders.ready');"
+  "find": "acknowledged:'confirmed', ready:'ready'",
+  "replace": "acknowledged:'ready', ready:'ready'"
  },
  {
   "name": "a ready order is not filed as ready",
   "file": "stmt/owner.js",
-  "find": "if(order.status==='ready') t.push('orders.ready');",
-  "replace": "if(order.status==='ready') t.push('orders.agreed');"
+  "find": "acknowledged:'confirmed', ready:'ready'",
+  "replace": "acknowledged:'confirmed', ready:'confirmed'"
  },
  {
-  "name": "a payment claim does not wait on him",
+  "name": "a declined order is filed as done",
   "file": "stmt/owner.js",
-  "find": "(order.payments||[]).some(function(p){ return p.claim==='waiting'; })",
-  "replace": "false"
+  "find": "STAGE_OF[order.status]||'ended'",
+  "replace": "STAGE_OF[order.status]||'done'"
  },
  {
-  "name": "a closed order is not listed in Closed",
+  "name": "an empty Confirmed part says nothing",
   "file": "stmt/owner.js",
-  "find": "      t.push('orders.closed');",
-  "replace": "      t.push('orders.agreed');"
+  "find": "['confirmed','No confirmed orders.']",
+  "replace": "['confirmed','']"
  },
  {
-  "name": "an empty Agreed part says nothing",
+  "name": "an empty Ended part says nothing",
   "file": "stmt/owner.js",
-  "find": "['agreed','No agreed orders.']",
-  "replace": "['agreed','']"
- },
- {
-  "name": "an empty Closed part says nothing",
-  "file": "stmt/owner.js",
-  "find": "['closed','No closed orders.']",
-  "replace": "['closed','']"
+  "find": "['ended','No ended orders.']",
+  "replace": "['ended','']"
  },
  {
   "name": "no Desk rows waiting says nothing",
@@ -358,5 +352,11 @@
   "file": "stmt/page.js",
   "find": ".panel p.lead{color:var(--salt-text-muted);",
   "replace": ".adm .panel p.lead{color:var(--salt-text-muted);"
+ },
+ {
+  "name": "tapping the place he is in goes back to its first stage",
+  "file": "stmt/owner.js",
+  "find": "showPlace(mm, mm===placeNow?partNow:'', {fresh:true,push:true}); return; }",
+  "replace": "showPlace(mm,'',{fresh:true,push:true}); return; }"
  }
 ]

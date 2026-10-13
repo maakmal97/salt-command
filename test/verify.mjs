@@ -1849,7 +1849,7 @@ await (async () => {
   const rowStarts = ["rows:sales:start", "rows:purchases:start"].map((event) => readEvents.indexOf(event));
   ok(stateEnd >= 0 && snapshotStart > stateEnd && snapshotEnd > snapshotStart && rowStarts.every((at) => at > snapshotEnd),
     "state remains ahead of the snapshot, which stays ahead of both collection reads");
-  ok(maxActiveRows === 2, "sales and purchases are fetched concurrently after the snapshot");
+  ok(maxActiveRows === 3, "sales, purchases and loans are fetched concurrently after the snapshot");
   ok(mirrorBook.version === "v302" && mirrorBook.sales[0].rid === "sales"
     && mirrorBook.purchases[0].rid === "purchases" && mirrorBook.pricing.v === "v302",
     "parallel reads preserve the complete book shape and pricing state");
@@ -19094,7 +19094,7 @@ await (async () => {
     const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
     ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
       "his page opens on Needs you");
-    ok(await until(() => /^1 now, 3 soon, as at [0-9]{2}:[0-9]{2}[.]/.test(D.getElementById("nCount").textContent)),
+    ok(await until(() => /^1 now, 3 soon[.]/.test(D.getElementById("nCount").textContent)),
       "one waits now and three soon, and the line says so: " + D.getElementById("nCount").textContent);
     ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["k:" + uL, "s", "l:" + lid, "n:" + uN].join(","),
       "a card each, Now before Soon and the oldest first: the locked account, then to send, the link, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
@@ -19211,10 +19211,11 @@ await (async () => {
       "a tap on Customers opens its Accounts and marks it the current place");
     ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
       "every roster account is a row, drawn with the system's Inbox row");
-    const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
-    ok(chips(uO).includes("They owe RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Notifications on") && chips(uO).includes("Sent 03 Sep 2026"),
-      "a row's chips say what they owe, how and when it was last opened, that notifications are on and when it was sent: " + JSON.stringify(chips(uO)));
-    ok(chips(uL).some((t) => /^Locked out until \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account yet" && chips(uF).includes("Not opened"),
+    /* a row is one state pill and a quiet line of facts, cut at its separators (the layout rework, 14 Oct 2026) */
+    const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status, .salt-inbox-row__what")].flatMap((x) => (x.classList.contains("salt-status") ? [x.textContent] : x.textContent.split(" · ")));
+    ok(chips(uO).includes("They owe RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Sent 03 Sep 2026"),
+      "a row's pill says what they owe and its quiet line how and when it was last opened and when it was sent: " + JSON.stringify(chips(uO)));
+    ok(chips(uL).some((t) => /^Locked out until \d\d:\d\d$/.test(t)) && chips(uN)[0] === "No account yet" && chips(uF).includes("Not opened"),
       "an account locked out, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
 
     /* a word, then each filter */
@@ -20115,7 +20116,7 @@ await (async () => {
     ok(await until(() => kc() && /Last signed in by code, 03 Sep 2026[.]/.test(kc().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
-    const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status")].map((x) => x.textContent) : []; };
+    const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status, .salt-inbox-row__what")].flatMap((x) => (x.classList.contains("salt-status") ? [x.textContent] : x.textContent.split(" · "))) : []; };
     ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by code")) && chips(us[1]).includes("Opened 03 Sep 2026 by code"),
       "Accounts says an open by a scanned code and one by a typed code, by code for both: " + JSON.stringify([chips(us[0]), chips(us[1])]));
     ok(chips(us[2]).includes("Opened 03 Sep 2026 by password") && chips(us[3]).includes("Opened 03 Sep 2026"),
@@ -20575,7 +20576,7 @@ await (async () => {
       work = pageWork(w);
     } }).window;
     const D = win.document;
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "Accounts lists the account");
     D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -20730,7 +20731,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -20771,7 +20772,7 @@ await (async () => {
         work = pageWork(w);
       } }).window;
       const D3 = w3.document;
-      await until(() => /as at/.test(D3.getElementById("mFoot").textContent));
+      await until(() => / accounts$/.test(D3.getElementById("mFoot").textContent));
       D3.querySelector('button[data-m="customers"]').click();
       await until(() => D3.querySelector('#rlist [data-u="' + u + '"]'));
       D3.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -20967,7 +20968,7 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
     } }).window;
     const D = win.document;
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     const openAcct = async (x) => { D.querySelector('button[data-m="customers"]').click();
       await until(() => D.querySelector('#rlist [data-u="' + x + '"]')); D.querySelector('#rlist [data-u="' + x + '"]').click(); };
     const card = (x) => D.querySelector('#aopen [data-acct="' + x + '"]');
@@ -21054,7 +21055,7 @@ await (async () => {
       work = pageWork(w);
     } }).window;
     const D = win.document;
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -21248,7 +21249,7 @@ await (async () => {
       wins.push(w);
       const D = w.document;
       const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-      await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+      await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
       D.querySelector('button[data-m="customers"]').click();
       await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
       D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -21350,7 +21351,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     const chip = () => D.querySelector('#rlist [data-u="' + u + '"]').textContent;
@@ -21407,7 +21408,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -22487,7 +22488,7 @@ await (async () => {
     pills[0].click();
     ok(new Set(shown()).size === months.length, "and All brings every line back");
     /* C13 (his yes of 29 Sep 2026, option a): the issues sealed beside it are off the Counter, kept on disk and on Salt Account */
-    ok(D.getElementById("stmtFoot").hidden && D.getElementById("stmtBack").hidden && !/ISSUE/.test(D.getElementById("pStmt").textContent),
+    ok(!D.getElementById("stmtFoot") && !D.getElementById("stmtBack") && !/ISSUE|Earlier statements/.test(D.getElementById("pStmt").textContent),
       "the issues sealed beside the live document are never drawn on the Counter");
     /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
     const dev = D.getElementById("thisDevice");
@@ -22606,7 +22607,7 @@ await (async () => {
     st.open = [async () => answer(await sealLive(overdueLive, other))];
     signIn();
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')), "a live document that will not open draws could not be read, with Try again");
-    ok(!/ISSUE/.test(vis()) && D.getElementById("stmtFoot").hidden && /could not be read/.test(head()),
+    ok(!/ISSUE/.test(vis()) && !D.getElementById("stmtFoot") && /could not be read/.test(head()),
       "and never the sealed issue in its place, nor at the foot; Home leads with the same line: " + JSON.stringify([outT().slice(0, 80), head().slice(0, 80)]));
     /* Try again: the re-read brings the live document, overdue part and all, and the hold with it */
     st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck), liveStatus: "current" })];
@@ -22662,7 +22663,7 @@ await (async () => {
     st.open = [async () => answer(await sealLive(live, ck), "current")];
     st.orders = [async () => js({ ok: false, error: "no KV binding" }, 500), async () => js({ ok: true, orders: [] })];
     signIn();
-    ok(await until(() => !!D.querySelector("#out .salt-lines")) && D.getElementById("stmtFoot").hidden && !/ISSUE|Earlier statements/.test(vis()),
+    ok(await until(() => !!D.querySelector("#out .salt-lines")) && !D.getElementById("stmtFoot") && !/ISSUE|Earlier statements/.test(vis()),
       "the Counter draws the live document alone: no earlier statements, no issue");
     /* C14: the first read of orders failed; the list and Home say so, never None yet, and Try again reads it */
     const oArea = () => D.getElementById("oArea");
@@ -23935,7 +23936,7 @@ await (async () => {
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     /* S9 9.2: Send is Accounts now, and an account's card opens from its row, once the sheet is read so no second read redraws it */
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.click();
       return [...D.querySelectorAll("#aopen .scard")].find((k) => k.textContent.includes(x)); };
@@ -29880,7 +29881,7 @@ await (async () => {
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     /* S9 9.2: Send is Accounts now, and the card opens from its row once, after the sheet is read, so no redraw drops a tap */
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     const card = () => [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u));
     const btn = () => { let k = card(); if (!k) { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (r) r.click(); k = card(); }
@@ -31814,7 +31815,8 @@ await (async () => {
   const d1 = (latency) => ({ prepare: (sql) => {
     const res = async () => { await advance(latency);
       return /FROM state/.test(sql) ? { results: [{ key: "OPEN", doc: JSON.stringify({ byKey: openByKey }) }] } : { results: [] }; };
-    return { bind: () => ({ all: res }), all: res, first: async () => { await advance(latency); return null; } };
+    /* 14 Oct 2026: readBook also reads loans; that read answers at once, so the races these instruments stage keep their timing */
+    return { bind: (c) => ({ all: c === "loans" ? async () => ({ results: [] }) : res }), all: res, first: async () => { await advance(latency); return null; } };
   } });
   const deskEnv = (loc) => ({ STMT_SITE: stmtSite(loc, 150), STMT_DESK_KEY: KEY, SALT_QUEUE: DESKQ.at(loc), SALT_LEDGER: d1(300) });
   const seedDesk = async () => { DESKQ.rateLimit = false; await DESKQ.at("CRON").put("stmt-users", JSON.stringify(CODES)); DESKQ.rateLimit = true; };
@@ -32290,7 +32292,8 @@ await (async () => {
   const d1 = (latency) => ({ prepare: (sql) => {
     const res = async () => { await advance(latency);
       return /FROM state/.test(sql) ? { results: [{ key: "OPEN", doc: JSON.stringify({ byKey: openByKey }) }] } : { results: [] }; };
-    return { bind: () => ({ all: res }), all: res, first: async () => { await advance(latency); return null; } };
+    /* 14 Oct 2026: readBook also reads loans; that read answers at once, so the races these instruments stage keep their timing */
+    return { bind: (c) => ({ all: c === "loans" ? async () => ({ results: [] }) : res }), all: res, first: async () => { await advance(latency); return null; } };
   } });
   const deskEnv = (loc) => ({ STMT_SITE: stmtSite(loc, 150), STMT_DESK_KEY: KEY, SALT_QUEUE: DESKQ.at(loc), SALT_LEDGER: d1(300) });
   const logs = [], realLog = console.log;
@@ -50740,6 +50743,16 @@ await (async () => {
   await (await import("./desk-dashboard.mjs")).run({ ok });
 })();
 
+section("14 Oct 2026: the Desk shows a live clock, and a queue refusal reads as the Worker's own words");
+await (async () => {
+  await (await import("./desk-clock.mjs")).run({ ok });
+})();
+
+section("14 Oct 2026: the Counter and Salt Account show a live clock");
+await (async () => {
+  await (await import("./counter-clock.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");
@@ -52232,6 +52245,11 @@ await (async () => {
   await (await import("./admin-details.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: Customers are rows with one state, a link is a row, and a card holds the customer's loans (14 Oct 2026)");
+await (async () => {
+  await (await import("./admin-customers.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");
 await (async () => {
   await (await import("./maker-queue-withdrawal.mjs")).run({ ok, worker, handleMaker });
@@ -53289,6 +53307,30 @@ await (async () => {
   const body = src.slice(src.indexOf("/* ==== END GEO ==== */"));
   const bare = [...body.matchAll(/\$\{(?:[^{}`]|\{\})+?\} (?:(?:public )?holiday |lead |review )?days?\b|[\w.)\]]+ ?\+ ?['"] ?days?\b/g)].map((m) => m[0].slice(-40));
   ok(!bare.length, "and no other printer in the master writes a count of days by itself: " + (bare.join(" | ") || "none"));
+})();
+
+section("readBook lifts loans from entry, so a repayment names a seeded loan");
+await (async () => {
+  const { readBook } = await import("../src/drafter.js");
+  const E = (await import("../engine/position.mjs")).default;
+  const loan = { date: "2026-10-12", party: "CM4-TO", direction: "in", form: "salt", valueKg: 2.5, valueRM: null, status: "open", product: "salt", rid: "l002" };
+  const stub = (stateRows) => ({ prepare(sql) {
+    const q = { bind(...v) { q.v = v; return q; },
+      async all() {
+        if (/FROM state/.test(sql)) return { results: stateRows };
+        return { results: q.v && q.v[0] === "loans" ? [{ doc: JSON.stringify(loan) }] : [] };
+      },
+      async first() { return null; } };
+    return q; } });
+  const book = await readBook(stub([]));
+  ok(Array.isArray(book.state.loans) && book.state.loans.length === 1 && book.state.loans[0].rid === "l002",
+    "readBook sets state.loans from the entry rows");
+  const repay = (kg) => ({ at: "2026-10-14T01:00:00.000Z", payload: { mode: "repay", loan: "l002", kg } });
+  ok(!E.entryReservationFault(repay(1), [], book), "a repayment naming a seeded loan passes the reservation check");
+  ok(!!E.entryReservationFault(repay(9), [], book), "and a repayment past the loan is still refused");
+  ok(!!E.entryReservationFault({ at: "x", payload: { mode: "repay", loan: "nope", kg: 1 } }, [], book), "an unknown loan is still refused");
+  const fromState = await readBook(stub([{ key: "loans", doc: JSON.stringify([{ ...loan, rid: "l009" }]) }]));
+  ok(fromState.state.loans.length === 1 && fromState.state.loans[0].rid === "l009", "a state.loans that arrived from the state table wins over the entry rows");
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

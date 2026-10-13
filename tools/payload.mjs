@@ -77,7 +77,9 @@ export async function openMaster(masterPath = MASTER, opts = {}) {
       const jsSet = w.setTimeout, jsClear = w.clearTimeout, long = new Map();
       let nextId = -1;
       w.setTimeout = function (fn, ms, ...args) {
-        if (!(Number(ms) > 60000)) return jsSet.call(w, fn, ms, ...args);
+        /* 14 Oct 2026: the desk's live clock re-arms each minute, so its timers are never over a minute; it marks them
+           `background` (they only paint), and a background timer is unref'd the same way */
+        if (!(Number(ms) > 60000) && !(fn && fn.background)) return jsSet.call(w, fn, ms, ...args);
         const id = nextId--;
         const h = setTimeout(() => { long.delete(id); typeof fn === "function" ? fn(...args) : w.eval(String(fn)); }, Number(ms));
         h.unref();

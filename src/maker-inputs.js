@@ -395,7 +395,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
       const cash = row.form === "cash";
       const paid = (row.repaid || []).reduce((sum, part) => sum + (+((cash ? part.rm : part.kg)) || 0), 0);
       return { rid: row.rid, party: row.party, date: row.date, product: row.product || "salt",
-        form: cash ? "cash" : "salt",
+        form: cash ? "cash" : "salt", value: +(cash ? +row.valueRM : +row.valueKg).toFixed(2) || 0, repaid: +paid.toFixed(2),
         remaining: +Math.max(0, (cash ? +row.valueRM : +row.valueKg) - paid).toFixed(2),
         direction: row.direction };
     })

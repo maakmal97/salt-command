@@ -1540,11 +1540,11 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`salt-action`, coloured by its `--salt-sev`), headed Now, Soon or Watch, the oldest first in each. **Now** is a customer waiting:
   an order placed, a payment they say they sent (on an order, summed and as old as its oldest, or against the account), a message asked
   (an account's thread, or a question of theirs on an order, open or closed, that he has not answered and not marked No reply needed:
-  the Worker's `awaitingAnswer`, kind Messages, `om:<order>`, which is also what puts that order in Orders > Waiting on you), an account refused at an address. **Soon** is his own work: a Desk row to approve, an entry that did not get through (the drafter's
+  the Worker's `awaitingAnswer`, kind Messages, `om:<order>`, which is also what marks that order Waiting on you in Orders), an account refused at an address. **Soon** is his own work: a Desk row to approve, an entry that did not get through (the drafter's
   refusal, a refused server-held entry), a stage he rejected under Approve, a guest link, an ID with no account, accounts nobody has been
   sent. **Watch** is the Desk's own count line, an override in force ("Closed until Fri 18:00") and a notice set. A card is its kind word,
   who (the code), what (book, units, RM), its age (minutes under the hour, hours to two days, then days) and one **Open** that goes to the
-  detail by `showPlace`: an order, a payment on an order or a question on an order to Orders > Waiting on you with that order's card open, a message to Customers > Messages with that thread open, an
+  detail by `showPlace`: an order, a payment on an order or a question on an order to Orders, the stage it stands at (payments they say they sent to Payments), with that order's card open, a message to Customers > Messages with that thread open, an
   account beside the list on a desktop and on Accounts on a phone, a link to Customers > Links, a row or an entry to Record > Approve, the
   hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
   tap**: Approve (Approve both or Approve all on a trip) on a Desk row is Record > Approve's own function (`approveDraft`: the same question, on the page's Sheet, the same request,
@@ -1603,8 +1603,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **His places** (S9 9.2, made five on 11 Oct 2026): Needs you, Orders, Customers, Record and Shop; "Maker" is retired on
   screen. The system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting
   (Needs you, Orders, Customers and Record; Shop has none; see Needs you above). Each place but Needs you has its parts as the system's tab strip, the first
-  open with the place: **Orders** (Waiting on you, Agreed, Ready, Group, Closed: the order review filtered by stage, the account
-  claims under Waiting on you, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
+  open with the place: **Orders** (Placed, Confirmed, Ready, Done, Ended, Payments, Group: the order review filtered by the customer's stages, an order in exactly one, and what waits on him a pill on its row and a count on its stage; opens on the first stage with something waiting; from 860px the first order of the stage opens in the detail column; the account
+  claims under Payments, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
   Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Approve, Entry,
   Customers, Pricing: the Desk's rows waiting and the entries the server holds, then the forms by the part they belong to) and
   **Shop** (Hours, Notice, Practice, This device: the operating hours, the notice, the two test accounts, and this device's Look,
@@ -1619,14 +1619,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   the associates' report card). A tap writes the address, so Back and Forward move between places, and a customer's place is never
   read off it. Every rule of the owner page in `PAGE_CSS` sits under `.adm`, the root of his page; the suite refuses one that does not.
 - **Orders are a list and a detail** (Phase 1c, 11 Oct 2026, his decision 9): each part of Orders is a list of rows in `#makerOrderList`, the
-  system's Inbox row (`orderRow`): the mark with its units, who by code, the stage as a chip (Placed, Agreed, Ready, Done, Declined, Cancelled)
+  system's Inbox row (`orderRow`): the mark with its units, who by code, the pill Waiting on you when it waits on him (the stage is the part he is in)
   with what is asked of him beside it (Says sent, Offer again, Asked, Cash held, Practice), the units and delivery or collect, the age and the
   figure (goods and delivery). A row carries no preview, which is a read the Desk charges for. A row (`order.open`, key the order id) opens
   that order's card in `#makerReview`, **today's card with every control, request, request id and guard it had**, drawn for the order opened
   and for no other (`drawOrderPane`, from the read that stands; a tap that redraws keeps the order open). A closed order's card has its
   figures and nothing to move it by; one with a stage he rejected keeps its Offer again; one with a question of theirs he has not answered
   (the Worker's `awaitingAnswer`, read by `orderAsked`) has the reply and No reply needed alone, with no Decline, Cancel or reason; and cash
-  held for an order keeps its Undo or Retry on a row of its own. Waiting on you also holds an order with such a question. Closed lists at most fifty closed orders with nothing else asked of him, and every one that also waits on him (never dropped); its note counts what it shows against every closed order ("51 of 56 closed orders are shown."). **From 860px the
+  held for an order keeps its Undo or Retry on a row of its own. An order with such a question is marked Waiting on you. Done and Ended each list at most fifty orders with nothing else asked of him, and every one that also waits on him (never dropped); its note counts what it shows against every closed order ("51 of 56 closed orders are shown."). **From 860px the
   list stands beside the card** (a grid of 280 to 360px and the rest, the card sticky and scrolling inside itself); **below it the card
   takes the list's place and has a way back** (`order.back`, the head of the card, which also returns him to the row he came from). Between
   860 and 1080px, where the App bar still stands, the page widens for Orders alone, the other places keep their 600px column, and the sticky card's height gives up the bar's (it was 40px under the fixed bar at 1024x768; now 24px clear). **Back,
@@ -1693,14 +1693,14 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   nowhere), never a row and never by listing, afresh each time it is drawn, and **the Preview rows button is retired** (`claim.preview`). Received
   and Received, on the book already, wait for the rows and open by what they say (`left` over the rows or not); Not found does not wait. A read that
   fails says why, leaves Received shut and offers Read the rows again (`claim.reread`). A poll leaves the claims alone while a card is open
-  (`makerClaimOpen`), and leaving Waiting on you, or Orders, draws them again with every card shut. No route, body or request id changed.
+  (`makerClaimOpen`), and leaving Payments, or Orders, draws them again with every card shut. No route, body or request id changed.
   **The slip is a thumbnail drawn only once the page holds the slip key**, which is the one unlock (Phase 4b, below). With the page locked the card says
   the slip is sealed and offers the one Unlock (`vault.unlock`, keyed by the claim), never a password field of its own; **no ciphertext is fetched that the
   page cannot open**. With the key held, a card opened draws its slip at once, from the key. The picture is a `blob:` URL on a button (`claim.slip`, the
   44px token both ways) that a tap enlarges in place and the next shrinks, as the Desk's View slip draws it whole. **The URL is revoked on the lock**
   (`vault.lock` on the card is the lock, which seals the card again), **on the page hidden, and when the card closes**; a read held across any of them paints
   nothing (`makerSlipGeneration`). A slip that could not be opened offers Open the slip again (`claim.view-slip`). **The unlock is the page's, not Orders'**:
-  it survives a move between the parts of Orders and leaving Orders, going only with the lock; leaving Waiting on you lets the picture go and shuts the card,
+  it survives a move between the parts of Orders and leaving Orders, going only with the lock; leaving Payments lets the picture go and shuts the card,
   and a card opened again draws its slip from the key at once. A vault with no slip key filed still opens the names and places, and the card says no key is filed.
   **Received and Not found ask on the page's Sheet, never a native confirm** (his decision 4), on an account's claim and on an order's own claim
   (Receive claimed, Received on the book already, Not found, each a Sheet naming who and how much). An account claim's Sheet restates the claim as
@@ -2352,6 +2352,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
 | `acct.find` | Accounts | Finds an account by a code or a username. |
 | `acct.open` | Accounts list, one row each (key: the username) | Opens that account's card. |
+| `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
 | `acct.sent` | Account card | Ticks the account as sent. |
@@ -2394,6 +2395,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
 | `hours.save` | Operating hours | Saves the weekly hours. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
+| `link.open` | Link row (key: the link id) | Opens or shuts the row: its address, QR and moves. |
 | `link.copy` | Link card (key: data-link, the link id) | Copies the link. |
 | `link.decline` | Same card | Declines it, which keeps it shut. |
 | `link.introducer` | Links | The customer introducing the guest. |
@@ -2412,7 +2414,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `nav.add` | The + orb at the foot of the page, on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
 | `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Needs you. |
-| `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on Waiting on you, reading the orders and the claims again. |
+| `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on the first stage with something waiting (Placed when none), reading the orders and the claims again. |
 | `nav.record` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Record, on Approve. |
 | `nav.shop` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Shop, on Hours. |
 | `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Record > Approve's Approve sends. |
@@ -2426,7 +2428,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.link-approve` | Same card | Approves the link, which then opens. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
-| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders > Waiting on you with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
+| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
+| `need.fold.soon` | Needs you, the Soon heading | Opens or folds the Soon cards; folded when drawn, and once opened it stays open across redraws (14 Oct 2026). |
+| `need.fold.watch` | Needs you, the Watch heading | Opens or folds the Watch cards, the same way. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
 | `need.show-link` | Needs you card for an ID with no account yet | Shows the guest price list (the stranger's standing guest link) and its QR until the account is made. |
@@ -2505,11 +2509,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
 | `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |
 | `part.customers.associates` | The strip under Customers (tab: Associates) | Shows the associates' report card, reading it once. |
-| `part.orders.agreed` | The strip under Orders (tab: Agreed) | Shows the orders he has agreed and not yet marked ready. |
-| `part.orders.closed` | The strip under Orders (tab: Closed) | Shows the orders that are closed, and any with a stage he rejected. |
-| `part.orders.group` | The strip under Orders (tab: Group) | Shows the group orders, reading them. |
+| `part.orders.placed` | The strip under Orders (tab: Placed) | Shows the placed orders, reading them. |
+| `part.orders.confirmed` | The strip under Orders (tab: Confirmed) | Shows the confirmed orders (agreed, not yet ready). |
 | `part.orders.ready` | The strip under Orders (tab: Ready) | Shows the orders marked ready. |
-| `part.orders.waiting` | The strip under Orders (tab: Waiting on you) | Shows what only he can move: placed orders, payments they say they sent, a stage he rejected. |
+| `part.orders.done` | The strip under Orders (tab: Done) | Shows the orders handed over and closed. |
+| `part.orders.ended` | The strip under Orders (tab: Ended) | Shows the declined and cancelled orders. |
+| `part.orders.payments` | The strip under Orders (tab: Payments) | Shows the payments they say they sent. |
+| `part.orders.group` | The strip under Orders (tab: Group) | Shows the group orders, reading them. |
 | `part.record.approve` | The strip under Record (tab: Approve) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
 | `part.record.customers` | The strip under Record (tab: Customers) | Shows the menu of the forms that add, change or place a customer, one form at a time. |
 | `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |

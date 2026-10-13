@@ -107,9 +107,10 @@ export async function run({ ok }) {
     ok(!!thread && t(thread.querySelector(".salt-inbox-row__title")) === W.EN["th.row"] && !!dev && !dev.hidden && !!head && t(head) === "Statement of account"
       && before(thread, dev) && before(dev, head) && before(dev, stmt) && dev.parentNode === d.getElementById("acct") && stmt.parentNode === d.getElementById("acct"),
       "Account reads Messages, then This device, then the statement under its own heading: " + JSON.stringify({ thread: !!thread, dev: !!dev, head: t(head) }));
-    const parts = ["stmtBack", "mfil", "mfnote", "out", "stmtFoot"].map((id) => d.getElementById(id));
-    ok(parts.every((x) => x && stmt.contains(x)) && !dev.contains(d.getElementById("out")) && !d.getElementById("aThread").closest(".acct__main"),
-      "the statement's parts (the way back, the month filter and its note, the list, the earlier statements) stay together after the card, and Messages is not among them");
+    const parts = ["mfil", "mfnote", "out"].map((id) => d.getElementById(id));
+    ok(parts.every((x) => x && stmt.contains(x)) && !dev.contains(d.getElementById("out")) && !d.getElementById("aThread").closest(".acct__main")
+      && !d.getElementById("stmtFoot") && !d.getElementById("stmtBack"),
+      "the statement's parts (the month filter and its note, the list) stay together after the card, Messages is not among them, and no earlier statement or way back to one is drawn (14 Oct 2026)");
     const acctRules = [...d.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => r.selectorText === ".acct");
     const rule = acctRules.length === 1 ? acctRules[0].cssText.replace(/\s+/g, "") : "";
     const gapRules = [...d.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => /^\.(acct__main|devcard|acct)$/.test(r.selectorText || "") && /margin(-top)?:\s*[1-9]/.test(r.cssText));

@@ -19,7 +19,7 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Shop"];
 const PARTS = {
-  orders: [["waiting", "Waiting on you"], ["agreed", "Agreed"], ["ready", "Ready"], ["group", "Group"], ["closed", "Closed"]],
+  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -29,8 +29,9 @@ const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerOrderLi
   "oCards", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook"];
 const SHOWS = {
   needs: "mHome",
-  "orders/waiting": "oOrders makerOrderList makerReview makerClaims", "orders/agreed": "oOrders makerOrderList makerReview", "orders/ready": "oOrders makerOrderList makerReview",
-  "orders/group": "oOrders makerPools", "orders/closed": "oOrders makerOrderList makerReview",
+  "orders/placed": "oOrders makerOrderList makerReview", "orders/confirmed": "oOrders makerOrderList makerReview", "orders/ready": "oOrders makerOrderList makerReview",
+  "orders/done": "oOrders makerOrderList makerReview", "orders/ended": "oOrders makerOrderList makerReview", "orders/payments": "oOrders makerClaims",
+  "orders/group": "oOrders makerPools",
   "customers/accounts": "oCustomers oAccts", "customers/messages": "oCustomers makerChatList", "customers/links": "oCustomers oLinks",
   "customers/associates": "oCustomers oCards",
   "record/approve": "oRecord makerDrafts makerQueueReview", "record/entry": "oRecord makerInputs", "record/customers": "oRecord makerInputs",
@@ -89,7 +90,7 @@ export async function run({ ok, pageWork }) {
     /* 2. THE STRIPS */
     const strips = [...d.querySelectorAll(".aparts")];
     const stripOf = (place) => strips.find((s) => s.getAttribute("data-place") === place);
-    const form = (place) => { const s = stripOf(place); return s ? [...s.querySelectorAll("button")].map((b) => b.getAttribute("data-part") + ":" + b.textContent + ":" + b.getAttribute("data-act")) : null; };
+    const form = (place) => { const s = stripOf(place); return s ? [...s.querySelectorAll("button")].map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent + ":" + b.getAttribute("data-act")) : null; };
     const wantParts = (place) => PARTS[place].map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
     ok(strips.length === 4 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
@@ -101,12 +102,12 @@ export async function run({ ok, pageWork }) {
     /* 3. THE TABS FOLLOW HIM */
     ok(p.where() === "needs", "the page opens on Needs you: " + p.where());
     await p.tap("nav.orders");
-    ok(p.where() === "orders orders/waiting", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
+    ok(p.where() === "orders orders/placed", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
     await p.tap("part.orders.ready");
     const pills = [...stripOf("orders").querySelectorAll("button")].map((b) => b.getAttribute("aria-selected")).join();
-    ok(p.where() === "orders orders/ready" && pills === "false,false,true,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
+    ok(p.where() === "orders orders/ready" && pills === "false,false,true,false,false,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
     await p.tap("nav.customers"); await p.tap("nav.orders");
-    ok(p.where() === "orders orders/waiting", "and a place he comes back to opens on its first part again: " + p.where());
+    ok(p.where() === "orders orders/placed", "and a place he comes back to opens on its first part again: " + p.where());
     const counts = [...d.querySelectorAll(".salt-rail [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
     ok(counts.some((c) => c === "customers=2") && !counts.some((c) => /^shop=/.test(c)),
       "Customers carries the threads asked and the guest links waiting, and Shop has none (the counts are proved in test/admin-needs.mjs): " + JSON.stringify(counts));
@@ -138,20 +139,20 @@ export async function run({ ok, pageWork }) {
     const rows = () => [...d.querySelectorAll("#makerOrderList .ordrow")].filter(shown).map((r) => r.getAttribute("data-order")).join();
     const stage = {};
     for (const [part] of PARTS.orders) { await p.tap("part.orders." + part); stage[part] = rows(); }
-    ok(stage.waiting === "ord-p1,ord-p2,ord-p3,ord-p4,ord-a1,ord-a2,ord-x1" && stage.agreed === "ord-a1,ord-a2" && stage.ready === "ord-r1,ord-r2,ord-r3"
-      && stage.group === "" && stage.closed === "ord-x1,ord-c1,ord-c2",
-    "an order is a row in the stage it stands at (a placed one, or one with a claim or a stage he rejected, waits on him), and a closed one a row in Closed: " + JSON.stringify(stage));
+    ok(stage.placed === "ord-p1,ord-p2,ord-p3,ord-p4" && stage.confirmed === "ord-a1,ord-a2" && stage.ready === "ord-r1,ord-r2,ord-r3"
+      && stage.done === "" && stage.ended === "ord-x1,ord-c1,ord-c2" && stage.payments === "" && stage.group === "",
+    "an order is a row in the one stage it stands at, a declined or cancelled one in Ended, and none in two: " + JSON.stringify(stage));
     const empty = await drawn({ pageWork, review: () => ({ ok: true, orders: [], drafts: [], refused: [], queue: [] }) });
     try {
       await empty.tap("nav.orders");
       const none = {};
-      for (const [part] of PARTS.orders.filter(([k]) => k !== "group")) {
+      for (const [part] of PARTS.orders.filter(([k]) => !["group", "payments"].includes(k))) {
         await empty.tap("part.orders." + part);
         none[part] = [...empty.d.querySelectorAll("#makerOrderList .rnone")].filter(shown).map((e) => e.textContent).join();
       }
       await empty.tap("nav.record");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();
-      ok(none.waiting === "No open orders." && none.agreed === "No agreed orders." && none.ready === "No orders ready." && none.closed === "No closed orders."
+      ok(none.placed === "No placed orders." && none.confirmed === "No confirmed orders." && none.ready === "No orders ready." && none.done === "No done orders." && none.ended === "No ended orders."
         && none.rows === "Nothing waits for your approval.",
       "a part with nothing in it says so, and a part with something says nothing: " + JSON.stringify(none));
     } finally { empty.w.close(); }
@@ -159,9 +160,9 @@ export async function run({ ok, pageWork }) {
     /* 6. ADDRESSES */
     const go = async (hash) => { const e = fires(w, "hashchange"); w.location.hash = hash; await e; await p.work.quiet(); return p.where(); };
     await p.tap("nav.shop");
-    const addresses = { "#maker": "orders orders/waiting", "#more": "shop shop/hours", "#accounts": "customers customers/accounts",
+    const addresses = { "#maker": "orders orders/placed", "#more": "shop shop/hours", "#accounts": "customers customers/accounts",
       "#links": "customers customers/links", "#cards": "customers customers/associates", "#needs": "needs", "#orders/ready": "orders orders/ready",
-      "#record/pricing": "record record/pricing", "#customers/messages": "customers customers/messages", "#orders/nowhere": "orders orders/waiting" };
+      "#record/pricing": "record record/pricing", "#customers/messages": "customers customers/messages", "#orders/nowhere": "orders orders/placed" };
     const got = {};
     for (const hash of Object.keys(addresses)) got[hash] = await go(hash);
     const badAddr = Object.keys(addresses).filter((h) => got[h] !== addresses[h]);
@@ -175,7 +176,7 @@ export async function run({ ok, pageWork }) {
     ok(viaPop === "record record/pricing" && viaHash === "shop shop/hours", "Back and Forward (popstate) and an address typed in (hashchange) each move him on their own: " + JSON.stringify([viaPop, viaHash]));
     const at = async (hash) => { const q = await drawn({ pageWork, hash }); try { return [q.where(), q.w.location.hash, q.gets()]; } finally { q.w.close(); } };
     const [a1, a2, a3] = [await at("#maker"), await at("#record/pricing"), await at("#cards")];
-    ok(a1[0] === "orders orders/waiting" && a1[1] === "#orders" && a2[0] === "record record/pricing" && a2[1] === "#record/pricing"
+    ok(a1[0] === "orders orders/placed" && a1[1] === "#orders" && a2[0] === "record record/pricing" && a2[1] === "#record/pricing"
       && a3[0] === "customers customers/associates" && a3[1] === "#customers/associates",
     "a page opened on an address is on the place and part it names, and its address is the new one: " + JSON.stringify([a1, a2, a3]));
 
@@ -187,8 +188,8 @@ export async function run({ ok, pageWork }) {
       /* the window leaves the address when it has gone, or never if there was nowhere to go: a bounded poll, then what stands */
       const travel = async (dir) => { const from = q.w.location.href; q.w.history[dir](); for (let i = 0; i < 300 && q.w.location.href === from; i++) await new Promise((r) => setTimeout(r, 10)); await q.work.quiet(); return q.where() + " " + q.w.location.hash; };
       const back1 = await travel("back"), back2 = await travel("back"), back3 = await travel("back"), fwd = await travel("forward");
-      ok(same(trail, ["#orders", "#orders/group", "#shop"]) && back1 === "orders orders/group #orders/group" && back2 === "orders orders/waiting #orders"
-        && back3 === "needs " && fwd === "orders orders/waiting #orders",
+      ok(same(trail, ["#orders", "#orders/group", "#shop"]) && back1 === "orders orders/group #orders/group" && back2 === "orders orders/placed #orders"
+        && back3 === "needs " && fwd === "orders orders/placed #orders",
       "a tap writes the place's address, and Back and Forward move between places: " + JSON.stringify([trail, back1, back2, back3, fwd]));
     } finally { q.w.close(); }
 
@@ -204,9 +205,9 @@ export async function run({ ok, pageWork }) {
       await step("part.shop.device", reads());
       await step("part.shop.hours", reads("hours"));
       await step("nav.orders", reads("review", "claims"));
-      for (const part of ["agreed", "ready", "closed", "waiting"]) await step("part.orders." + part, reads());
+      for (const part of ["confirmed", "ready", "done", "ended", "payments", "placed"]) await step("part.orders." + part, reads());
       await step("part.orders.group", reads("pools"));
-      await step("nav.orders", reads("review", "claims"));
+      await step("nav.orders", reads("review", "claims", "pools"));
       await step("nav.customers", reads());
       await step("part.customers.messages", reads("threads"));
       await step("part.customers.links", reads());

@@ -625,7 +625,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 .dhrole i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto;}
 .dhrole.live{color:var(--salt-verdigris);}
 .dhrole.ro{color:var(--salt-brass);}
-.dhupd::before{content:"\00b7";margin:0 8px;}
+.dhupd::before,.dhclock::before{content:"\00b7";margin:0 8px;}
+.dhclock{font-variant-numeric:tabular-nums;}
 .deskbar .dbtools{order:2;}
 /* the version is the system's .salt-version, bare (22 Sep 2026) */
 .deskbar>#provBar{order:3;flex:1 0 100%;}
@@ -641,7 +642,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
   /* the phone's 11px floor for a label (v401); the line keeps one row by dropping the as-at date
      and, while the desk is live, the status word, which the dot already says */
   .dhasat,.dhrole.live .dhword{display:none;}
-  .dhupd::before{content:none;}
+  /* 14 Oct 2026: the live clock takes the date's place; the stamp keeps its dot after it */
+  .dhclock::before{content:none;}
+  .dhupd::before{margin:0 6px;}
   .dhrole{margin-right:8px;}
 }
 /* ---- AN ENTRY IS TWO ROWS (09 Sep 2026): the corner tag, the pen and its menu, in the identity. ---- */

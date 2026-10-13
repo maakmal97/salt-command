@@ -82,7 +82,7 @@ export const OWNER_JS = `
     [].forEach.call(document.querySelectorAll('#makerMenu [data-act="record.form"]'), function(r){
       if(fOpen&&r.getAttribute('data-key')===fOpen) r.setAttribute('aria-current','true'); else r.removeAttribute('aria-current'); });
   }
-  function inClaims(){ return placeNow==='orders'&&partNow==='waiting'; }
+  function inClaims(){ return placeNow==='orders'&&partNow==='payments'; }
   function inChat(){ return placeNow==='customers'&&partNow==='messages'; }
   function addrFor(place, part){ var p=PARTS[place]; return '#'+place+(part&&p&&part!==p[0]?'/'+part:''); }
   /* THE ADDRESSES. A place and a part have one each, #orders and #orders/ready; the old ones stay as addresses, each to where its
@@ -99,14 +99,17 @@ export const OWNER_JS = `
      Forward move between places */
   function showPlace(place, part, o){
     o=o||{};
+    var asked=part, prevPlace=placeNow;
     if(place!=='needs'&&!PARTS[place]) place='needs';
     var parts=PARTS[place]||[];
     if(!parts.length) part=''; else if(parts.indexOf(part)<0) part=parts[0];
     var fresh=!!o.fresh||place!==placeNow, moved2=place!==placeNow||part!==partNow;
     if(placeNow==='needs'&&place!=='needs') needSaid={};
     placeNow=place; partNow=part;
+    /* Orders opens on the first stage that has something waiting, found when the read lands (drawMaker); a stage he chose is his */
+    ordAuto=place==='orders'&&place!==prevPlace&&!asked;
     /* the order whose card is open is closed by leaving the place or the part (Phase 1c) */
-    if(moved2&&ordOpened){ ordOpened=null; drawOrderPane(); }
+    if(moved2&&(ordOpened||placeNow==='orders')){ ordOpened=null; drawOrderPane(); }
     /* so is the form open on Record: leaving the part or the place closes it; the + orb is not shown on Record, where the parts are one tap away */
     if(moved2) fOpen=null;
     var add=document.getElementById('oAdd'); if(add) add.hidden=placeNow==='record';
@@ -178,7 +181,7 @@ export const OWNER_JS = `
       if(aOpen) openCard(aOpen);
       /* the count is of accounts on the book: the test account is not one (v689) */
       var real=sheetRows.filter(function(a){ return !a.test; }).length;
-      document.getElementById('mFoot').textContent=real+' accounts, as at '+hm(new Date().toISOString());
+      document.getElementById('mFoot').textContent=real+' accounts';   /* the time is the live clock beside the name (14 Oct 2026) */
     }catch(e){ nGot('sheet', e); if(quiet!==true) sayFail(e); }
     finally{ sheetBusy=false; }
   }
@@ -497,10 +500,64 @@ export const OWNER_JS = `
     /* 12 Oct 2026 (Phase 2a): the input is the 44px target, laid unseen over the box drawn beside it, so the control measures what the label did */
     tick.appendChild(box); tick.appendChild(el('span','tickbox')); tick.appendChild(el('span',null,'Sent'));
     c.appendChild(tick);
+    /* 14 OCT 2026 (his decision): everything related to a customer is on their card, so their loans and their reward stand here, read from the Desk's catalogue */
+    var books=el('div','abooks'); books.setAttribute('data-loans', u);
+    if(!none&&!a.test&&a.code){ c.appendChild(books); drawBooks(books, a); }
     var st=el('div','astory'); st.setAttribute('data-story', u);
     if(!none){ c.appendChild(st); drawStory(st, a); loadStory(a); }
     return c;
   }
+  /* the loans with this customer and their reward: the Desk's catalogue, the same read as Record's Repayment form, asked once a minute at most */
+  var partyRead=null, partyAt=0;
+  function readParty(){
+    if(partyRead&&Date.now()-partyAt<60000) return partyRead;
+    partyAt=Date.now();
+    partyRead=refs('/all/maker/inputs').then(function(j){ return (j&&j.catalog)||{}; });
+    partyRead.catch(function(){ partyRead=null; });
+    return partyRead;
+  }
+  function loanLine(item){
+    var cash=item.form==='cash', fmt=cash?rm:units, on=fmtWhen(item.date);
+    return (item.direction==='in'?'Borrowed':'Lent')+(on?' '+on:'')+(item.value!=null?', '+fmt(item.value):'');
+  }
+  function drawBooks(box, a){
+    box.textContent='';
+    box.appendChild(el('p','salt-eyebrow salt-eyebrow--copper','Loans and reward'));
+    var body=el('div','aloans'); box.appendChild(body); body.appendChild(el('p','anote','Reading.'));
+    readParty().then(function(cat){
+      if(!box.isConnected) return;
+      body.textContent='';
+      var mine=(cat.loans||[]).filter(function(item){ return item.party===a.code; });
+      var reward=(cat.rewards||[]).filter(function(item){ return item.code===a.code; })[0];
+      mine.forEach(function(item){
+        var cash=item.form==='cash', fmt=cash?rm:units, row=el('div','aloan'); row.setAttribute('data-loan', item.rid);
+        var txt=el('div','aloan__txt');
+        txt.appendChild(el('p','aloan__what',loanLine(item)));
+        var fig=el('div','aloan__fig');
+        [['Repaid',item.repaid],['Left',item.remaining]].forEach(function(p){
+          if(p[1]==null) return;
+          var f=el('span','aloan__f'); f.appendChild(el('span','aloan__k',p[0])); f.appendChild(el('span','aloan__v',fmt(p[1]))); fig.appendChild(f); });
+        txt.appendChild(fig); row.appendChild(txt);
+        var go=ghost(['Repayment','acct.repay']); go.setAttribute('data-key',item.rid);
+        go.addEventListener('click', function(){ repayFor(item.rid); });
+        row.appendChild(go); body.appendChild(row);
+      });
+      if(reward){
+        var rw=el('p','aloan__what','Reward: '+units(reward.held)+' held'+(reward.departed?' while away':reward.free<reward.held?', '+units(reward.free)+' free':'')); rw.setAttribute('data-reward',a.code); body.appendChild(rw); }
+      if(!mine.length&&!reward) body.appendChild(el('p','anote','No loans and no reward held.'));
+    }).catch(function(){ if(box.isConnected){ body.textContent=''; body.appendChild(el('p','anote bad','Their loans could not be read.')); } });
+  }
+  /* Repayment opens Record's own form for that loan: the form is the one that sends, so a repayment waits under Approve like any other. A form not built yet is
+     filled when it is (repayWant, applied once Record's forms are drawn). */
+  var repayWant=null;
+  function applyRepay(){
+    if(!repayWant) return;
+    var form=document.querySelector('#makerInputs [data-form="repayment"]'); if(!form) return;
+    var pick=form.querySelector('[data-act="record.repay.loan"]');
+    if(pick){ pick.value=repayWant; pick.dispatchEvent(new Event('change',{bubbles:true})); }
+    repayWant=null; openForm('repayment');
+  }
+  function repayFor(rid){ repayWant=rid; showPlace('record','entry',{fresh:true,push:true}); applyRepay(); }
   /* the test account is not part of a send, so it is out of both halves of the count (v689). A tick
      recounts as well as a draw (24 Sep 2026): the header sat on its first figure while he ticked. */
   function countSent(){
@@ -574,18 +631,32 @@ export const OWNER_JS = `
     if(a.sent) out.push(chip('verdigris','Sent '+dayMon(a.sent)));
     return out;
   }
+  /* 14 OCT 2026 (the layout rework): A ROW SHOWS ONE STATE, the most important, and the rest as one quiet line; the whole row is the tap. The order of
+     importance is no account, practice, locked out, then what they owe or are owed; Opened, Sent and Notifications stay on the card's chips. */
+  function stateOf(a){
+    if(a.test) return chip('mist','Practice');
+    if(a.account===false) return chip('alarm','No account yet');
+    if(a.locked) return chip('alarm','Locked out'+(a.locked.until?' until '+hm(a.locked.until):''));
+    if(a.flag&&a.flag!=='clear') return chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a));
+    return null;
+  }
+  function quietOf(a){
+    var bits=[a.username];
+    if(a.account===false) bits.push(waitLine());
+    else if(a.tot&&!a.test) bits.push(a.tot);
+    if(a.account!==false&&!a.test) bits.push(a.seen&&a.seen.opens?'Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not opened');
+    if(a.sent) bits.push('Sent '+dayMon(a.sent));
+        return bits.join(' \u00b7 ');
+  }
   function rowOf(a){
-    var b=el('button','salt-inbox-row'); b.type='button'; b.setAttribute('data-u', a.username); actOn(b,'acct.open',a.username);
+    var b=el('button','salt-inbox-row arow'); b.type='button'; b.setAttribute('data-u', a.username); actOn(b,'acct.open',a.username);
     if(aOpen===a.username) b.setAttribute('aria-current','true');
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(whoTag(el('span',null,a.test?testName(a):(a.code||a.username)),a.test?'':a.code));
-    if(sheet) chipsOf(a).forEach(function(c){ t.appendChild(c); });
+    t.appendChild(whoTag(el('span','acode',a.test?testName(a):(a.code||a.username)),a.test?'':a.code));
+    var st=sheet?stateOf(a):null; if(st){ st.className+=' astate'; t.appendChild(st); }
     main.appendChild(t);
-    /* a code with no account says, on its row, when it is made and which link to show until then (D15) */
-    main.appendChild(el('span','salt-inbox-row__what', a.username+(a.account===false?', '+waitLine():a.tot?', '+a.tot:'')));
+    main.appendChild(el('span','salt-inbox-row__what',quietOf(a)));
     b.appendChild(main);
-    var side=el('span','salt-inbox-row__side'); side.appendChild(el('span','salt-inbox-row__action','Open'));
-    b.appendChild(side);
     b.addEventListener('click', function(){ openCard(a.username); });
     return b;
   }
@@ -593,7 +664,13 @@ export const OWNER_JS = `
     if(!OWNER) return;
     var q=(rq.value||'').toLowerCase().replace(/\\s+/g,''), f=FILTER[aFilter]||FILTER.all;
     rlist.textContent='';
-    var hits=(sheet?sheetRows:OWNER.accounts).filter(function(a){
+    var pool=sheet?sheetRows:OWNER.accounts;
+    /* a filter shows only while some account is in the state it names (the layout rework); the one in use is let go when none is */
+    [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
+      var k=x.getAttribute('data-f'); x.hidden=k!=='all'&&!pool.some(FILTER[k]); });
+    if(aFilter!=='all'&&!pool.some(FILTER[aFilter])){ aFilter='all'; f=FILTER.all;
+      [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){ x.setAttribute('aria-pressed', x.getAttribute('data-f')==='all'?'true':'false'); }); }
+    var hits=pool.filter(function(a){
       return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
     });
     countSent();
@@ -637,7 +714,7 @@ export const OWNER_JS = `
   var moved=null;
   /* S9 fix: AND A TAP THAT FAILS, or a tier pinned, is answered on the card it was tapped on as well, in Needs you
      and in Links, where the page's own line sat under every card, off a phone's screen. The link keeps its buttons. */
-  var linkSaid=null;
+  var linkSaid=null, openLinks={};
   function saidOn(r, node){ if(linkSaid&&linkSaid.id===r.id){ node.textContent=linkSaid.t; node.className+=linkSaid.bad?' bad':''; withDetails(node,linkSaid.err); } }
   /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
   function waitingLink(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; }
@@ -673,22 +750,31 @@ export const OWNER_JS = `
     if(older.length){ heads[seq.length]='Older links'; seq=seq.concat(older); }
     seq.forEach(function(r,i){
       if(heads[i]) glist.appendChild(el('p','ghead salt-eyebrow salt-eyebrow--copper',heads[i]));
-      var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
+      var card=el('details','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
+      /* 14 OCT 2026 (the layout rework): A LINK IS ONE ROW, who it is for and what it has done, its state a pill only when it is one worth seeing; the address, its
+         QR and the moves open from the row. A row stays open across a redraw once it has been opened, and opens at once for the answer to a move made on it. */
+      card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id));
+      card.addEventListener('toggle', function(){ if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; });
       var declined=r.declined===true, pending=r.approved===false&&!declined;
       /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) is kept because it
          was handed out, and it opens the board a stranger sees, never the level it still carries */
       var retired=r.standing&&want.length&&want.indexOf(r.level)<0;
-      card.appendChild(el('p','gt salt-field__label',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):'Level '+r.tier)))))+(r.revoked?' \\u00b7 withdrawn':'')));
-      card.appendChild(el('h4',null,retired?'An old link, kept'
+      var sum=el('summary','gsum'); actOn(sum,'link.open',r.id);
+      var top=el('span','gtop');
+      top.appendChild(el('span','gt salt-field__label',r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):(r.label||'Level '+r.tier)))))));
+      if(r.revoked) top.appendChild(chip('mist','Withdrawn'));
+      sum.appendChild(top);
+      sum.appendChild(el('span','gs', (r.opens
+        ? 'Opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
+        : 'Never opened, made '+stampDay(r.made))));
+      card.appendChild(sum);
+      card.appendChild(el('h4','gwho',retired?'An old link, kept'
         :r.standing?'For strangers'
         :declined?('Made by '+(r.by?codeByUser(r.by):'an associate')+', not approved, so it stays shut')
         :(pending?('Made by '+(r.by?codeByUser(r.by):'an associate')+', shut until you approve it')
         :isAssoc(r)?('Made by '+codeByUser(r.by))
         :(r.label||'(no note)'))));
       card.appendChild(el('code','gu',r.url));
-      card.appendChild(el('p','gs', r.opens
-        ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
-        : 'never opened \\u00b7 made '+stampDay(r.made)));
       var img=document.createElement('img');
       img.src=r.qr; img.alt='QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
       card.appendChild(img);
@@ -1130,7 +1216,7 @@ export const OWNER_JS = `
       if(!show||!root.isConnected||placeNow!=='orders') return;
       drawMakerClaims();
     }catch(error){ nGot('claims', error); apply=true; if(show&&!poll) refusal(root,error); }
-    finally{ claimsReading=false; if(apply) drawNeeds(); }
+    finally{ claimsReading=false; if(apply){ paintOrdCounts(); drawNeeds(); } }
   }
   /* the claims drawn from the read that stands: a row each, and the card of the one opened under its row. A redraw lets every picture go first, and
      a claim answered meanwhile closes its card. */
@@ -1788,7 +1874,7 @@ export const OWNER_JS = `
           if(!n) return;
           var one=n===1, c=needCard({sev:'soon', kind:'rows', word:'Unsent', key:'unsent', at:list[0].at, act:'unsent.open', who:n+' unsent '+(one?'entry':'entries'), what:'on this phone',
             why:one?unsentSaid(list[0])+' Open it to send it again, update it or discard it.':'They were sent from this phone and not confirmed. Open them to send them again, update them or discard them.',
-            open:function(){ unsentOpen(list[0]); }});
+            open:function(){ unsentOpen(list[0]); }, keepOpen:true});
           c.removeAttribute('data-need'); c.removeAttribute('data-kind');
           bar.appendChild(c);
         }catch(e){}
@@ -2122,21 +2208,25 @@ export const OWNER_JS = `
       catch(error){refusal(redeemStatus,error);}
     },false);
     var offsets=makerForm('entry');offsets.appendChild(el('h3',null,'Offsets'));
-    offsets.appendChild(el('p','msg','One unit off the oldest unpaid order of someone holding a reward.'));
     parent.appendChild(offsets);
     var offerDate=makerField(offsets,['Date','record.offset.date'],'date',today), offerStatus=makerStatus(offsets),
-      offerList=el('div','maker-offers');
-    offsets.appendChild(offerList);
+      /* two lists, never one: a customer's offset and an associate's reward offset. The Counter's answer names no kind; it offers only an associate's reward
+         (the holders of a reward), so an offer is a customer's only when it says associate:false */
+      offerLists={customer:el('div','maker-offers'), reward:el('div','maker-offers')};
+    offerLists.customer.setAttribute('data-offers','customer'); offerLists.reward.setAttribute('data-offers','reward');
+    [['customer','Customer offsets'],['reward','Associate reward offsets']].forEach(function(k){ offsets.appendChild(el('h4','maker-offers__head',k[1])); offsets.appendChild(offerLists[k[0]]); });
     var offerLoad=async function(){
       offerStatus.textContent='Reading.';
       try{
         var read=await refs('/all/maker/offsets');
-        offerList.textContent='';
-        offerStatus.textContent=read.offers.length?read.offers.length+' offered.':'No offsets to offer.';
+        offerLists.customer.textContent=''; offerLists.reward.textContent='';
+        offerStatus.textContent='';
         read.offers.forEach(function(offer){
-          var row=el('div','maker-offer'); row.setAttribute('data-key',offer.rid);
-          row.appendChild(el('p','maker-facts',offer.code+': '+units(offer.units)+' ('+rm(offer.rm)+') off the order of '+(fmtWhen(offer.saleDate)||'an undated day')+'.'));
-          makerButton(row,['Send the offset','record.offset.send'],async function(send){
+          var row=el('div','maker-offer'), kind=offer.associate===false?'customer':'reward'; row.setAttribute('data-key',offer.rid);
+          var facts=el('span','maker-offer__what'); facts.appendChild(el('span','maker-offer__code',offer.code));
+          facts.appendChild(el('span','maker-offer__fig',units(offer.units)+' ('+rm(offer.rm)+') off the order of '+(fmtWhen(offer.saleDate)||'an undated day')));
+          row.appendChild(facts);
+          makerButton(row,['Add','record.offset.send'],async function(send){
             offerStatus.textContent='Sending.';
             try{
               await send('/all/maker/inputs/offset',{at:new Date().toISOString(),code:offer.code,rid:offer.rid,date:offerDate.value});
@@ -2145,8 +2235,9 @@ export const OWNER_JS = `
               loadMaker();
             }catch(error){refusal(offerStatus,error);}
           },true);
-          offerList.appendChild(row);
+          offerLists[kind].appendChild(row);
         });
+        ['customer','reward'].forEach(function(k){ if(!offerLists[k].childElementCount) offerLists[k].appendChild(el('p','rnone','None to offer.')); });
       }catch(error){refusal(offerStatus,error);}
     };
     offerLoad();
@@ -2777,15 +2868,19 @@ export const OWNER_JS = `
     Object.keys(row||{}).forEach(function(k){ var v=rowValue(k,row[k]); if(v!=='') list.push([rowKey(k),v]); });
     return list;
   }
-  function detailBox(act,key,pairs){
-    var box=el('details','rdet'), list=el('div','salt-ledger salt-ledger--plain');
-    box.appendChild(actOn(el('summary','salt-ghost','Details'),act,key));
+  function detailList(pairs){
+    var list=el('div','salt-ledger salt-ledger--plain');
     pairs.forEach(function(p){
       if(p[1]==null||p[1]==='') return;
       var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
       l.appendChild(el('span','salt-ledger__label',p[0])); l.appendChild(el('span','salt-ledger__value',String(p[1]))); r.appendChild(l); list.appendChild(r);
     });
-    box.appendChild(list); return box;
+    return list;
+  }
+  function detailBox(act,key,pairs){
+    var box=el('details','rdet');
+    box.appendChild(actOn(el('summary','salt-ghost','Details'),act,key));
+    box.appendChild(detailList(pairs)); return box;
   }
   /* Cancel retained input, wherever it is offered: the unsent copy on this device goes, and what the Desk server already holds does not. The opener carries its key (ynTag). */
   function retainedCancel(opener,line,done){
@@ -2867,10 +2962,10 @@ export const OWNER_JS = `
       if(form.hasAttribute('data-formmenu')) return;
       var name=form.querySelector('h3').textContent, slug=formSlug(name), part=form.getAttribute('data-in').replace('record.','');
       form.setAttribute('data-form',slug);
-      var row=el('button','salt-inbox-row formrow'), main=el('span','salt-inbox-row__main'), title=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
+      var row=el('button','salt-inbox-row formrow'), main=el('span','salt-inbox-row__main'), title=el('span','salt-inbox-row__title');
       row.type='button'; actOn(row,'record.form',slug);
-      title.appendChild(el('span',null,name)); main.appendChild(title); side.appendChild(el('span','salt-inbox-row__action','Open'));
-      row.appendChild(main); row.appendChild(side);
+      title.appendChild(el('span',null,name)); main.appendChild(title);
+      row.appendChild(main);
       row.addEventListener('click', function(){ openForm(slug); });
       lists[part].appendChild(row);
     });
@@ -2882,6 +2977,7 @@ export const OWNER_JS = `
     [].slice.call(box.children).forEach(function(n){
       if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
     });
+    applyRepay();
   }
   function openForm(slug){
     var form=document.querySelector('#makerInputs [data-form="'+slug+'"]');
@@ -2901,13 +2997,13 @@ export const OWNER_JS = `
     try{ var row=was&&document.querySelector('#makerMenu [data-act="record.form"][data-key="'+was+'"]'); if(row&&row.focus) row.focus(); }catch(x){}
   }
   async function loadMakerInputs(){
-    var box=document.getElementById('makerInputs'); if(!box||box.childElementCount>1) return;
+    var box=document.getElementById('makerInputs'); if(!box||box.hasAttribute('data-read')) return; box.setAttribute('data-read','');
     var note=el('p','msg','Reading.'); note.setAttribute('role','status'); box.appendChild(note);
     try{
       var context=await refs('/all/maker/inputs');
       makerRecovery(box);
       if(!Array.isArray(context.products)||!context.products.length) throw new Error('The Desk is not ready. Try again in a minute.');
-      note.textContent='Everything here waits for your approval under Approve.';
+      note.remove();
       var countFrom=box.children.length;
       var product=makerTilesIn(box,['Book','record.count.book'],context.products.map(bookItem));
       var date=makerField(box,['Counted on','record.count.date'],'date',''), qty=makerField(box,['Units on the shelf','record.count.units'],'number','', '0.01');
@@ -3373,7 +3469,7 @@ export const OWNER_JS = `
     finally{ sweep(); }
   }
   async function makerForAccount(account){
-    showPlace('orders','waiting',{fresh:true,push:true});
+    showPlace('orders','placed',{fresh:true,push:true});
     var box=document.getElementById('makerFor'); box.hidden=false; box.textContent='';
     box.appendChild(el('h2',null,'Order for '+(account.code||account.username)));
     var note=el('p','msg','Opening their price list.'); note.setAttribute('role','status'); box.appendChild(note);
@@ -3452,32 +3548,29 @@ export const OWNER_JS = `
       }
     }finally{ if(gen===makerGen){ reviewReading=false; if(apply) drawNeeds(); } }
   }
-  /* 11 Oct 2026: THE PARTS OF ORDERS an order shows in. Waiting on you holds what only he can move (a placed order, a payment they say
-     they sent, a stage he rejected under Approve); Agreed and Ready hold the stage the order stands at, so an order can show in two. A closed
-     order is in Closed, and a practice order that is closed in none; one with a stage he rejected, or a question of theirs he has not
-     answered (the Worker's awaitingAnswer), is in Waiting on you as well. */
+  /* 14 Oct 2026, HIS DECISION: THE PARTS OF ORDERS ARE THE CUSTOMER'S STAGES, Placed, Confirmed, Ready, Done and Ended (declined or cancelled), and an
+     order is in exactly ONE. What waits on him is no part but a mark on the order's row (orderWaits: a placed order, a payment they say they sent, a stage
+     he rejected, a question of theirs unanswered, the Worker's awaitingAnswer) and a count on its stage's pill. A closed practice order is in none. */
   function orderAsked(order){
     var m=(order&&order.msgs)||[], last=m[m.length-1];
     return !!(last&&last.by==='customer'&&!(order.quiet&&String(order.quiet)>=String(last.at)));
   }
+  function orderWaits(order){
+    var again=!!(order.again&&order.again.length);
+    if(ordOpen(order)) return order.status==='placed'||(order.payments||[]).some(function(p){ return p.claim==='waiting'; })||again||orderAsked(order);
+    return !order.test&&(again||orderAsked(order));
+  }
+  var STAGE_OF={placed:'placed', acknowledged:'confirmed', ready:'ready', done:'done'};
   function orderPartsOf(order){
-    var t=[], again=!!(order.again&&order.again.length);
-    if(ordOpen(order)){
-      if(order.status==='placed'||(order.payments||[]).some(function(p){ return p.claim==='waiting'; })||again||orderAsked(order)) t.push('orders.waiting');
-      if(order.status==='acknowledged') t.push('orders.agreed');
-      if(order.status==='ready') t.push('orders.ready');
-    }else if(!order.test){
-      if(again||orderAsked(order)) t.push('orders.waiting');
-      t.push('orders.closed');
-    }
-    return t.join(' ');
+    if(!ordOpen(order)&&order.test) return '';
+    return 'orders.'+(STAGE_OF[order.status]||'ended');
   }
   /* PHASE 1c (11 Oct 2026): ORDERS ARE A LIST AND A DETAIL. #makerOrderList holds a row for each order of the part showing, the system's
      Inbox row: who by code, the mark and its units, the stage and what is asked of him, the figure and the age. A row opens that order's
      card in #makerReview, today's card with every control, request and guard as it was, drawn for the order opened and no other. From 860px
      the list stands beside the card; below it the card takes the list's place, with a way back. A row has no preview: that read is the
      card's. Leaving the place or the part closes the card. */
-  var ordOpened=null, ordEntries={}, makerOpenOrders=[];
+  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false;
   var ORD_STAGE={placed:['copper','Waiting on you'], acknowledged:['brass','Agreed'], ready:['verdigris','Ready'], done:['mist','Done'], declined:['mist','Declined'], cancelled:['mist','Cancelled']};
   function ordInPart(e){ return e.parts.split(' ').indexOf('orders.'+partNow)>=0; }
   function orderRow(e){
@@ -3485,22 +3578,33 @@ export const OWNER_JS = `
     if(ordOpened===e.id) b.setAttribute('aria-current','true');
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
     if(o){
-      var st=ORD_STAGE[o.status]||['mist',String(o.status||'')];
+      /* the stage is the part he is in, so the row carries one pill, Waiting on you, and says why in its line */
       b.appendChild(bookTile(o.product,o.qty));
       t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
-      t.appendChild(chip(st[0],st[1]));
-      if(o.test) t.appendChild(chip('mist','Practice'));
-      if(orderAsked(o)) t.appendChild(chip('copper','Asked'));
-      if(ordPays(o).length) t.appendChild(chip('ember','Says sent'));
-      if(o.again&&o.again.length) t.appendChild(chip('brass','Send again'));
-      main.appendChild(el('span','salt-inbox-row__what',[units(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')));
+      /* ONE PILL AT MOST, and only a state the stage does not already say: Placed always waits on him, so its rows carry no Waiting on you; on any
+         other stage the pill says he is wanted there (a question, a payment they say they sent). Practice, then Cash held, then Waiting on you. */
+      var pillOf=o.test?['mist','Practice']:makerCashHeld[e.id]?['brass','Cash held']:(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;
+      if(pillOf) t.appendChild(chip(pillOf[0],pillOf[1]));
+      var why=[orderAsked(o)?'asked a question':'', ordPays(o).length?'says sent':'', o.again&&o.again.length?'send again':'', o.status==='placed'?'to decide':''].filter(Boolean);
+      main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
-    }else t.appendChild(el('span',null,e.id));
-    if(makerCashHeld[e.id]) t.appendChild(chip('brass','Cash held'));
+    }else{ t.appendChild(el('span',null,e.id)); if(e.waits) t.appendChild(chip('copper','Waiting on you')); }
     main.insertBefore(t,main.firstChild); b.appendChild(main); b.appendChild(side);
     b.addEventListener('click', function(){ openOrder(e.id); });
     return b;
+  }
+  /* a count on the pill of each stage whose orders wait on him, and on Payments for the payments they say they sent; a practice order is not counted, as the rail does not */
+  function paintOrdCounts(){
+    var n={};
+    Object.keys(ordEntries).forEach(function(k){ var e=ordEntries[k], st=e.parts.replace('orders.',''); if(e.waits&&e.order&&!e.order.test) n[st]=(n[st]||0)+1; });
+    n.payments=waitingClaims().filter(function(c){ return !c.test; }).length;
+    [].forEach.call(document.querySelectorAll('.aparts[data-place="orders"] [data-part]'), function(b){
+      var c=b.querySelector('.salt-tabs__count'), v=n[b.getAttribute('data-part')]||0;
+      if(!v){ if(c) c.remove(); return; }
+      if(!c){ c=el('span','salt-tabs__count'); b.appendChild(c); }
+      c.textContent=String(v);
+    });
   }
   function markOrderRows(){
     [].forEach.call(document.querySelectorAll('#makerOrderList [data-order]'), function(r){
@@ -3514,10 +3618,15 @@ export const OWNER_JS = `
     root.textContent=''; dirty.makerReview=false;
     var e=ordOpened&&placeNow==='orders'&&ordEntries[ordOpened];
     if(e&&!ordInPart(e)) e=null;
+    /* from 860px the detail column is never an empty invitation: the first order of the part opens in it */
+    if(!e&&placeNow==='orders'&&window.matchMedia&&window.matchMedia('(min-width:860px)').matches){
+      var first=Object.keys(ordEntries).map(function(k){ return ordEntries[k]; }).filter(function(x){ return ordInPart(x); })[0];
+      if(first){ e=first; ordOpened=first.id; [first.id,first.id+':again'].forEach(function(k){ delete makerQuotes[k]; delete makerPv[k]; }); }
+    }
     if(!e) ordOpened=null;
     if(split) split.classList.toggle('open', !!e);
     markOrderRows();
-    if(!e){ root.appendChild(el('p','rnone','Choose an order to see it here.')); return; }
+    if(!e) return;
     var back=el('button','aback','← Orders'); back.type='button'; back.setAttribute('data-back','orders'); back.setAttribute('data-in',e.parts); actOn(back,'order.back');
     root.appendChild(back);
     if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else orderPlainCard(root,e);
@@ -3596,34 +3705,45 @@ export const OWNER_JS = `
     makerOpenOrders=open;
     if(status) status.textContent=open.length+(open.length===1?' open order':' open orders');
     if(draftStatus) draftStatus.textContent=pendingRows.length+(pendingRows.length===1?' row':' rows')+' waiting for your approval';
-    /* a row for each order of a part, a closed one (fifty at most) as well; an order whose cash is held stays in Waiting on you with its
-       Undo, whatever else it is, and a held cash with no order on the read is a row of its own */
-    var held=Object.keys(makerCashHeld), entries=[], known={}, settled=0, closedAll=0;
+    /* a row for each order of its stage, a done or ended one (fifty a stage at most) as well; an order whose cash is held is marked Waiting on you
+       with its Undo, whatever else it is, and a held cash with no order on the read is a row of its own, in Placed */
+    var held=Object.keys(makerCashHeld), entries=[], known={}, settled={}, closedAll={}, STAGES=['placed','confirmed','ready','done','ended'];
     (makerData.orders||[]).forEach(function(o){
       known[o.id]=true;
       var parts=orderPartsOf(o);
-      if(held.indexOf(o.id)>=0&&parts.indexOf('orders.waiting')<0) parts=(parts+' orders.waiting').trim();
       if(!parts) return;
-      if(parts.split(' ').indexOf('orders.closed')>=0) closedAll++;
-      if(parts==='orders.closed'&&++settled>50) return;
-      entries.push({id:o.id, order:o, parts:parts});
+      var waits=orderWaits(o)||held.indexOf(o.id)>=0, stage=parts.replace('orders.','');
+      if(!ordOpen(o)){
+        closedAll[stage]=(closedAll[stage]||0)+1;
+        if(!waits&&(settled[stage]=(settled[stage]||0)+1)>50) return;
+      }
+      entries.push({id:o.id, order:o, parts:parts, waits:waits});
     });
-    held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, parts:'orders.waiting'}); });
+    held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, parts:'orders.placed', waits:true}); });
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     list.textContent='';
     entries.forEach(function(e){ list.appendChild(orderRow(e)); });
-    /* what Closed lists is a closed order with nothing else asked of him (fifty at most) and one that is also Waiting on you, which is never
-       dropped; the note counts what the list shows against every closed order */
-    var closedShown=entries.filter(function(e){ return e.parts.split(' ').indexOf('orders.closed')>=0; }).length;
-    if(closedShown<closedAll){ var more=el('p','rnone',closedShown+' of '+closedAll+' closed orders are shown.'); more.setAttribute('data-in','orders.closed'); list.appendChild(more); }
-    /* a part with nothing in it says so, so an empty part is never read as a fault */
-    [['waiting',open.length?'Nothing waits on you.':'No open orders.'],['agreed','No agreed orders.'],['ready','No orders ready.'],['closed','No closed orders.']].forEach(function(p){
-      if(entries.some(function(e){ return e.parts.split(' ').indexOf('orders.'+p[0])>=0; })) return;
+    /* a done or ended stage lists the orders with nothing asked of him (fifty at most) and every one that waits on him, which is never dropped; the note
+       counts what the list shows against every order of the stage */
+    ['done','ended'].forEach(function(st){
+      var shownN=entries.filter(function(e){ return e.parts==='orders.'+st; }).length;
+      if(shownN<(closedAll[st]||0)){ var more=el('p','rnone',shownN+' of '+closedAll[st]+' closed orders are shown.'); more.setAttribute('data-in','orders.'+st); list.appendChild(more); }
+    });
+    /* a stage with nothing in it says so, so an empty one is never read as a fault */
+    [['placed','No placed orders.'],['confirmed','No confirmed orders.'],['ready','No orders ready.'],['done','No done orders.'],['ended','No ended orders.']].forEach(function(p){
+      if(entries.some(function(e){ return e.parts==='orders.'+p[0]; })) return;
       var none=el('p','rnone',p[1]); none.setAttribute('data-in','orders.'+p[0]); list.appendChild(none);
     });
     makerButton(list,['Refresh','maker.refresh'],loadMaker,false);
     /* 13 Oct 2026 (stress, Medium): Refresh answers under itself; its refusal went to the list's line at the head of Orders, a screen above it */
     var refreshSaid=el('p','msg osaid'); refreshSaid.id='makerRefreshSaid'; refreshSaid.setAttribute('role','status'); refreshSaid.setAttribute('aria-live','polite'); list.appendChild(refreshSaid);
+    /* the first read after entering Orders opens the first stage with something waiting (Placed when nothing does), unless he has chosen one */
+    if(ordAuto&&placeNow==='orders'){
+      ordAuto=false;
+      var wait1=STAGES.filter(function(st){ return entries.some(function(e){ return e.waits&&e.parts==='orders.'+st; }); })[0];
+      if(wait1&&wait1!==partNow){ showPlace('orders',wait1,{}); try{ history.replaceState(null,'',addrFor('orders',wait1)); }catch(x){} }
+    }
+    paintOrdCounts();
     drawOrderPane();
     drawDeskRows(draftRoot,queueRoot,pendingRows);
     sweep();
@@ -3937,18 +4057,26 @@ export const OWNER_JS = `
      with one Approve. Both moves ask on the page's Sheet. */
   function approveReading(card,reading,key){
     var figs=readingFigures(reading);
-    if(figs.length) card.appendChild(metrics(figs));
+    if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); }
     var flags=reading.flags||[];
     if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); }); card.appendChild(chips); }
     if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));
     /* the row's figures as names and values, the draft's reference first (Phase 4c); the key is the draft's id */
-    card.appendChild(detailBox('row.proposed',key,rowPairs(reading.row,key)));
+    var panel=el('div','rdet rdet--row'); panel.hidden=true; panel.appendChild(detailList(rowPairs(reading.row,key))); card.appendChild(panel);
   }
   /* an entry waiting for the Desk, by its moment when it has one: Entry of 09 Oct 2026, 14:11 */
   function entryLine(entry){ var at=isoAt(entry.id)||entry.date||''; return 'Entry'+(at?' of '+fmtWhen(at):''); }
   function drawDeskRows(draftRoot,queueRoot,pendingRows){
+    var tripsDrawn={};
     pendingRows.forEach(function(draft){
-      var card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve'), entry=draft.entry||{}, head=el('div','salt-approve__head');
+      /* a trip is one card, drawn once, whichever of its rows comes first */
+      var tid=tripOf(draft); if(tid&&tripRows(draft).length){ if(tripsDrawn[tid]) return; tripsDrawn[tid]=true; }
+      var card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), entry=draft.entry||{}, head=el('button','salt-approve__head apphead');
+      /* the row's Details is the tap on the card: the head is its control, a tap anywhere on the card that is not a button of its own does the same */
+      head.type='button'; actOn(head,'row.proposed',draft.id); head.setAttribute('aria-expanded','false');
+      function toggle(){ var open=head.getAttribute('aria-expanded')!=='true'; head.setAttribute('aria-expanded',String(open)); [].forEach.call(card.querySelectorAll('.rdet--row'),function(n){ n.hidden=!open; }); }
+      head.addEventListener('click',function(ev){ ev.stopPropagation(); toggle(); });
+      card.addEventListener('click',function(ev){ if(!ev.target.closest('button,a,input,select,textarea,summary')) toggle(); });
       head.appendChild(el('span','salt-approve__party',entry.party||'no code'));
       var when1=fmtWhen(entry.date||entry.payload&&entry.payload.date||'');
       head.appendChild(el('span','salt-approve__entry',entryWord(entry)+(when1?' on '+when1:'')));
@@ -4156,7 +4284,7 @@ export const OWNER_JS = `
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=30000;
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
-  var nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
+  var nFoldOpen={}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
   function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; }
   /* a read that finds what it found last time draws nothing: each keeps its last answer */
@@ -4235,8 +4363,12 @@ export const OWNER_JS = `
   /* the Action recipe's own parts: the kind word, the body (who and what, then why), the age in the money's place, the way there. A card
      about an account carries data-u, which the pane beside the list is drawn from. c._add puts an action before Open. */
   function needCard(o){
-    var c=el('article','salt-action salt-action--'+o.sev+' need'), body=el('div','salt-action__body'), title=el('div','salt-action__title'),
+    /* 14 Oct 2026: THE WHOLE CARD IS THE TAP. The title is the one real button (data-act need.open, keyboard and screen reader), its ::after
+       stretched over the card; a card's own actions stand above that. No Open button: a card with no way of its own has no go row. */
+    var tap=!!o.open&&!o.keepOpen;
+    var c=el('article','salt-action salt-action--'+o.sev+' need'+(tap?' ncard':'')), body=el('div','salt-action__body'), title=el(tap?'button':'div','salt-action__title'+(tap?' need-tap':'')),
       go=el('div','salt-action__go'), op=null;
+    if(tap){ title.type='button'; actOn(title,o.act||'need.open',o.key); title.addEventListener('click', o.open); }
     c.setAttribute('data-need', o.key); c.setAttribute('data-kind', o.kind); c.setAttribute('data-sev', o.sev);
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
@@ -4248,10 +4380,10 @@ export const OWNER_JS = `
     if(o.why) body.appendChild(el('p','salt-action__why',o.why));
     c.appendChild(body);
     c.appendChild(el('span','salt-action__money salt-action__money--nil',ageOf(o.at)));
-    if(o.open){ op=ghost(['Open',o.act||'need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); }
-    c.appendChild(go);
+    /* the banner over every place keeps its Open: it is not a list's card */
+    if(o.open&&o.keepOpen){ op=ghost(['Open',o.act||'need.open',o.key]); op.addEventListener('click', o.open); go.appendChild(op); c.appendChild(go); }
     /* a card with an action of its own sets its ways on a row under the body, so a wide button never squeezes what it says */
-    c._body=body; c._add=function(b){ c.classList.add('need--act'); go.insertBefore(b, op); };
+    c._body=body; c._add=function(b){ if(!go.parentNode) c.appendChild(go); c.classList.add('need--act'); go.insertBefore(b, op); };
     return c;
   }
   function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c._body.appendChild(m); return m; }
@@ -4391,9 +4523,9 @@ export const OWNER_JS = `
      read, so a card and the place it opens never disagree: ordWaits is the Orders part Waiting on you. ---- */
   function ordOpen(o){ return ['placed','acknowledged','ready'].indexOf(o.status)>=0; }
   function ordPays(o){ return ordOpen(o)?(o.payments||[]).filter(function(p){ return p.claim==='waiting'; }):[]; }
-  function ordWaits(o){ return orderPartsOf(o).indexOf('orders.waiting')>=0; }
-  /* an order's Open goes to Orders > Waiting on you with that order's card open (Phase 1c) */
-  function orderOpener(id){ return function(){ showPlace('orders','waiting',{fresh:true, push:true}); openOrder(id); }; }
+  function ordWaits(o){ return orderWaits(o); }
+  /* an order's Open goes to Orders, the stage it stands at, with that order's card open (Phase 1c) */
+  function orderOpener(id){ return function(){ var e=ordEntries[id], st=e?e.parts.replace('orders.',''):'placed'; showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }
   function orderWhat(o){ return units(o.qty)+', '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
@@ -4536,7 +4668,7 @@ export const OWNER_JS = `
     });
     waitingClaims().forEach(function(c){
       L.push(item('now','payments','Payment','c:'+c.u+':'+c.id, c.at, {who:codeByUser(c.u), what:'says they paid '+rm(c.amount),
-        practice:!!c.test, open:goPlace('orders','waiting')}));
+        practice:!!c.test, open:goPlace('orders','payments')}));
     });
     makerThreads.filter(makerThreadAsked).forEach(function(t){ L.push(threadNeed(t)); });
     real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ L.push(lockNeed(a)); });
@@ -4580,20 +4712,33 @@ export const OWNER_JS = `
     items.forEach(function(i){ if(i.practice||!i.counts) return; if(i.sev==='now') now++; else if(i.sev==='soon') soon++; });
     var bad=NEED_SRC.filter(function(s){ return nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; });
     nCount.textContent=(now||soon?[now?now+' now':'', soon?soon+' soon':''].filter(Boolean).join(', '):'Nothing needs you')
-      +', as at '+hm(new Date().toISOString())+'.'+(bad.length?' Not read: '+andList(bad)+'.':'');
+      +'.'+(bad.length?' Not read: '+andList(bad)+'.':'');
   }
   function drawNeeds(){
     if(!nlist) return;
     var items=needItems(), shown=items.filter(function(i){ return nKind==='all'||i.kind===nKind; });
     drawCounts(items); drawLead(items);
+    /* the chips are the kinds present, and All; one whose kind has gone leaves him on All */
+    if(needsReady()){
+      var have={}; items.forEach(function(i){ have[i.kind]=1; });
+      [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ var k=x.getAttribute('data-chip'); x.hidden=!(k==='all'||have[k]); });
+      if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x.getAttribute('data-chip')==='all'?'true':'false'); }); }
+    }
     nlist.textContent='';
     if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'?'Nothing needs you.':'Nothing here.'));
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
-      var h=el('p','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]); h.setAttribute('data-sev', s[0]);
-      nlist.appendChild(h);
-      group.forEach(function(i){ nlist.appendChild(i.make()); });
+      /* Now stands open; Soon and Watch are folded behind their heading and a count, kept as he leaves them across a redraw */
+      var h=el(s[0]==='now'?'p':'summary','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+(s[0]==='now'?'':' · '+group.length)); h.setAttribute('data-sev', s[0]); if(s[0]!=='now') h.setAttribute('data-act','need.fold.'+s[0]);
+      var box=nlist;
+      if(s[0]!=='now'){
+        box=el('details','nfold'); box.setAttribute('data-sev', s[0]); if(nFoldOpen[s[0]]) box.open=true;
+        box.addEventListener('toggle', function(){ nFoldOpen[s[0]]=box.open; });
+        nlist.appendChild(box);
+      }
+      box.appendChild(h);
+      group.forEach(function(i){ box.appendChild(i.make()); });
     });
     drawNeedOpen(false);
   }
@@ -4643,7 +4788,7 @@ export const OWNER_JS = `
     b.disabled=true; linkSay('Making it...','wait');
     try{
       var j=await refs('/all/refs', {introducer:intro, label:label});
-      links.unshift(j.ref); drawLinks();
+      links.unshift(j.ref); openLinks[j.ref.id]=true; drawLinks();
       document.getElementById('glabel').value='';
       document.getElementById('gintro').value='';
       linkSay('Made. The QR opens it.');
@@ -4677,7 +4822,7 @@ export const OWNER_JS = `
   function cardOf(r){
     var c=el('div','acard salt-glass-card salt-glass-card--radius-md'+(r.departed?' off':''));
     var head=el('div','srow');
-    head.appendChild(el('b',null,r.id));
+    head.appendChild(el('b','acode',r.id));
     var marks=[];
     if(r.founder) marks.push('founder');
     if(r.rank) marks.push('#'+r.rank);
@@ -4690,17 +4835,19 @@ export const OWNER_JS = `
       var cell=el('div','acell'); cell.appendChild(el('span','salt-metrics__label',p[0])); cell.appendChild(el('span','salt-metrics__value',p[1])); g.appendChild(cell);
     });
     c.appendChild(g);
-    var line=[];
-    if(r.onward) line.push(r.onward+' resale'+(r.onward===1?'':'s'));
-    if(r.referred) line.push(r.referred+' introduced');
-    if(r.share) line.push(r.share+'% of all revenue');
-    if(line.length) c.appendChild(el('p','op',line.join(' \\u00b7 ')));
+    /* 14 OCT 2026 (the layout rework): the counts and the reward are names and values, one to a line, the figures aligned down the right */
+    var led=el('div','salt-ledger salt-ledger--plain aled');
+    function ledRow(k,v){ var rw=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
+      l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',String(v))); rw.appendChild(l); led.appendChild(rw); }
+    if(r.onward) ledRow('Resales',r.onward);
+    if(r.referred) ledRow('Introduced',r.referred);
+    if(r.share) ledRow('Share of all revenue',r.share+'%');
     if(r.reward){
       var w=r.reward;
-      c.appendChild(el('p','tot','Reward: '+w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'
-        +(w.held?', reward held while away':'')));
-      if(w.next!=null){ c.appendChild(bar(w.next)); c.appendChild(el('p','op',Math.round(w.next*100)+'% of the way to the next unit')); }
+      ledRow('Reward',w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'+(w.held?', held while away':''));
     }
+    if(led.childElementCount) c.appendChild(led);
+    if(r.reward&&r.reward.next!=null){ c.appendChild(bar(r.reward.next)); c.appendChild(el('p','op',Math.round(r.reward.next*100)+'% of the way to the next unit')); }
     return c;
   }
   function drawCards(){
@@ -4762,7 +4909,7 @@ export const OWNER_JS = `
   roster.addEventListener('click', function(ev){
     var bk=ev.target.closest('button[data-back]');
     if(bk){ var way=bk.getAttribute('data-back'); if(way==='accounts') openCard(null); else if(way==='orders') closeOrder(); else if(way==='form') closeForm(); return; }
-    var b=ev.target.closest('button[data-m]'); if(b){ showPlace(b.getAttribute('data-m'),'',{fresh:true,push:true}); return; }
+    var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); showPlace(mm, mm===placeNow?partNow:'', {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
     if(k){ nKind=k.getAttribute('data-chip'); [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }
     var t=ev.target.closest('button[data-part]'); if(t) showPlace(t.parentNode.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});

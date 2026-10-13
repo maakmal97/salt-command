@@ -103,22 +103,40 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await p.enter();
     const stage = {};
-    for (const part of ["waiting", "agreed", "ready", "closed"]) { await byAct(d, "part.orders." + part).click(); await p.work.quiet(); stage[part] = p.rowsShown().join(); }
-    ok(stage.waiting === "ord-p1,ord-p2,ord-p3,ord-p4,ord-a1,ord-a2,ord-x1,ex-1" && stage.agreed === "ord-a1,ord-a2" && stage.ready === "ord-r1,ord-r2,ord-r3"
-      && stage.closed === "ord-x1",
-    "each part of Orders lists a row for the orders that stand in it, a stage rejected under Approve in Closed as well: " + JSON.stringify(stage));
-    await byAct(d, "part.orders.waiting").click(); await p.work.quiet();
+    for (const part of ["placed", "confirmed", "ready", "done", "ended"]) { await byAct(d, "part.orders." + part).click(); await p.work.quiet(); stage[part] = p.rowsShown().join(); }
+    ok(stage.placed === "ord-p1,ord-p2,ord-p3,ord-p4,ex-1" && stage.confirmed === "ord-a1,ord-a2" && stage.ready === "ord-r1,ord-r2,ord-r3"
+      && stage.done === "" && stage.ended === "ord-x1",
+    "each stage of Orders lists a row for the orders that stand in it, a declined one in Ended: " + JSON.stringify(stage));
+    const all = Object.values(stage).join().split(",").filter(Boolean);
+    ok(all.length === 11 && new Set(all).size === all.length, "and every order is in exactly one stage, none in two: " + all.join());
+    await byAct(d, "part.orders.placed").click(); await p.work.quiet();
     const row = byAct(d, "order.open", "ord-p3"), mark = row && row.querySelector(".mtile"), main = row && row.querySelector(".salt-inbox-row__main");
     ok(row && row.tagName === "BUTTON" && row.classList.contains("salt-inbox-row") && !!mark && !!mark.querySelector("svg.psym") && /^CX1-ZED/.test(main.querySelector(".salt-inbox-row__title").textContent)
-      && /1 unit/.test(main.querySelector(".salt-inbox-row__what").textContent) && row.querySelector(".salt-inbox-row__action").textContent === "RM 100.00"
+      && /1 unit/.test(mark.textContent) && row.querySelector(".salt-inbox-row__action").textContent === "RM 100.00"
       && (row.querySelector(".salt-inbox-row__age") || {}).textContent === "26 h",
     "a row is the system's Inbox row: the mark, who by code, the stage, the units, the figure and the age: " + (row && row.textContent));
     const p2 = byAct(d, "order.open", "ord-p2");
-    ok(p2.querySelector(".salt-inbox-row__action").textContent === "RM 110.00" && /deliver/.test(p2.querySelector(".salt-inbox-row__what").textContent) && (p2.querySelector(".salt-inbox-row__age") || {}).textContent === "1 h",
+    ok(p2.querySelector(".salt-inbox-row__action").textContent === "RM 110.00" && /Deliver/.test(p2.querySelector(".salt-inbox-row__what").textContent) && (p2.querySelector(".salt-inbox-row__age") || {}).textContent === "1 h",
       "and the figure is the goods and the delivery, the units say how it goes: " + p2.textContent);
     const chips = (id) => [...byAct(d, "order.open", id).querySelectorAll(".salt-status")].map((c) => c.textContent).join();
-    ok(chips("ord-p3") === "Waiting on you" && chips("ord-a1") === "Agreed,Says sent" && chips("ord-a2") === "Agreed,Send again" && chips("ex-1") === "Waiting on you,Practice",
-      "and says what stands on it: a stage, a payment they say they sent, a stage he rejected, a practice order: " + JSON.stringify(["ord-p3", "ord-a1", "ord-a2", "ex-1"].map(chips)));
+    ok(chips("ord-p3") === "" && chips("ex-1") === "Practice" && !p.rowsShown().some((id) => /Waiting on you/.test(byAct(d, "order.open", id).textContent)),
+      "a Placed row carries no Waiting on you (Placed always waits on him), and Practice marks a practice order: " + JSON.stringify(["ord-p3", "ex-1"].map(chips)));
+    /* 14 Oct 2026: every row is the one grid, mark, main (code and at most one pill, then what it is), side (age over the figure) */
+    const shape = (id) => { const r = byAct(d, "order.open", id); return [...r.children].map((c) => c.className.split(" ").filter((x) => /mtile|inbox-row__(main|side)/.test(x)).join("")).join() + "|"
+      + [...r.querySelector(".salt-inbox-row__side").children].map((c) => c.className).join() + "|" + [...r.querySelector(".salt-inbox-row__main").children].map((c) => c.className.split(" ")[0]).join() + "|" + r.querySelectorAll(".salt-status").length; };
+    const shapes = p.rowsShown().map(shape);
+    ok(shapes.length === 5 && shapes.every((x) => /^mtile,salt-inbox-row__main,salt-inbox-row__side[|]salt-inbox-row__age,salt-inbox-row__action[|]salt-inbox-row__title,salt-inbox-row__what[|][01]$/.test(x)),
+      "every row has the same parts in the same order, the age above the figure, and at most one pill: " + JSON.stringify(shapes));
+    const css = ownerCss(), grid = css.top(".adm .ordrow").join(), side = css.top(".adm .ordrow .salt-inbox-row__side").join();
+    ok(/grid-template-columns:\s*84px minmax\(0,\s*1fr\)\s*88px/.test(grid) && /display:\s*grid/.test(grid) && /align-items:\s*flex-end/.test(side) && /text-align:\s*right/.test(side),
+      "the rows' columns are fixed (an 84px mark, the main, an 88px side) and the side is right-aligned, so no unit box moves the rest: " + grid);
+    await byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
+    const chipsC = (id) => [...byAct(d, "order.open", id).querySelectorAll(".salt-status")].map((c) => c.textContent).join();
+    ok(chipsC("ord-a1") === "Waiting on you" && chipsC("ord-a2") === "Waiting on you" && /says sent/.test(byAct(d, "order.open", "ord-a1").textContent) && /send again/.test(byAct(d, "order.open", "ord-a2").textContent),
+      "a payment they say they sent and a stage he rejected mark the row Waiting on you and say which in its line: " + JSON.stringify(["ord-a1", "ord-a2"].map(chipsC)));
+    await byAct(d, "part.orders.ready").click(); await p.work.quiet();
+    ok(chipsC("ord-r2") === "" && chipsC("ord-r3") === "", "and an order that waits on nothing carries no pill: " + JSON.stringify(["ord-r2", "ord-r3"].map(chipsC)));
+    await byAct(d, "part.orders.placed").click(); await p.work.quiet();
     ok(p.posts.length === 0 && !p.reads.some((r) => /preview/.test(r)),
       "listing the orders sends nothing and previews nothing: a row has no preview, which costs a read: " + JSON.stringify(p.posts));
     ok(["makerReview", "makerClaims", "makerPools", "makerOrderList"].every((id) => !!d.getElementById(id)),
@@ -131,12 +149,46 @@ export async function run({ ok, pageWork }) {
   p = await open(st);
   try {
     const d = p.d;
-    await p.enter("closed");
+    await p.enter("ended");
     const shownClosed = p.rowsShown(), note = [...d.querySelectorAll("#makerOrderList .rnone")].filter(shown).map((e) => e.textContent);
     ok(shownClosed.length === 51 && shownClosed.includes("ord-x1") && !shownClosed.includes("ord-z55") && same(note, ["51 of 56 closed orders are shown."]),
-      "Closed lists fifty closed orders and the one that also waits on you, and its note counts what it shows against every closed order: " + shownClosed.length + " " + JSON.stringify(note));
-    await p.tap("part.orders.waiting");
-    ok(p.rowsShown().includes("ord-x1") && !p.rowsShown().some((id) => /^ord-z/.test(id)), "and an order that waits on him is in Waiting on you whatever the cap: " + p.rowsShown().join());
+      "Ended lists fifty ended orders and the one that also waits on you, and its note counts what it shows against every closed order: " + shownClosed.length + " " + JSON.stringify(note));
+    await p.tap("part.orders.done");
+    ok(p.rowsShown().length === 0 && !p.rowsShown().some((id) => /^ord-z/.test(id)), "and Done lists none of them: " + p.rowsShown().join());
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* 1c. THE STAGE PILLS (14 Oct 2026): a count on the pill of each stage that has an order waiting on him, Payments counted by the claims, the place opening on the first
+     stage with something waiting, and from 860px the first order of a stage open in the detail column; no heading repeats the place and no placeholder floats */
+  p = await open();
+  try {
+    const d = p.d;
+    await p.enter();
+    const pill = (part) => { const b = byAct(d, "part.orders." + part); const c = b.querySelector(".salt-tabs__count"); return b.firstChild.textContent + ":" + (c ? c.textContent : ""); };
+    ok(same(["placed", "confirmed", "ready", "done", "ended", "payments", "group"].map(pill), ["Placed:4", "Confirmed:2", "Ready:", "Done:", "Ended:1", "Payments:2", "Group:"]),
+      "a stage whose orders wait on him carries their count on its pill (practice not counted), Payments the claims, and the rest none: " + JSON.stringify(["placed", "confirmed", "ready", "done", "ended", "payments"].map(pill)));
+    ok(p.where() === "orders/placed" && !d.getElementById("makerReviewTitle") && !/Choose an order to see it here/.test(d.getElementById("oOrders").textContent)
+      && !d.querySelector("#oSplit > h2") && d.getElementById("oSplit").getAttribute("aria-label") === "Orders",
+    "the page opens on Placed, where orders wait, with no repeated Orders heading and no floating placeholder: " + p.where());
+    ok(!(d.getElementById("makerReview").textContent), "and the detail column is empty, not an invitation, until an order is chosen");
+    p.w.matchMedia = () => ({ matches: true });
+    await p.tap("part.orders.confirmed");
+    ok(same(p.cardsIn(), ["ord-a1"]) && byAct(d, "order.open", "ord-a1").getAttribute("aria-current") === "true",
+      "from 860px the first order of the stage opens in the detail column by itself: " + JSON.stringify(p.cardsIn()));
+    await p.tap("part.orders.ready");
+    ok(same(p.cardsIn(), ["ord-r1"]), "and so does the first of the next stage he moves to: " + JSON.stringify(p.cardsIn()));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  p = await open(state(), { review: (j) => { day(state())(j); j.orders = j.orders.filter((o) => o.status !== "placed"); return j; } });
+  try {
+    await p.enter();
+    ok(p.where() === "orders/confirmed", "with nothing placed, the page opens on the first stage that has something waiting, Confirmed: " + p.where());
+    await p.tap("part.orders.ready");
+    await p.tap("nav.customers"); await p.tap("nav.orders");
+    ok(p.where() === "orders/confirmed", "and a place he comes back to opens there again, not on a stage he last chose: " + p.where());
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  p = await open(state(), { review: (j) => { day(state())(j); j.orders = j.orders.filter((o) => o.id !== "ord-a1" && o.id !== "ord-a2" && o.id !== "ord-x1" && o.status !== "placed" && o.status !== "ready"); return j; } });
+  try {
+    await p.enter();
+    ok(p.where() === "orders/placed", "with nothing waiting anywhere the page opens on Placed: " + p.where());
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 2. A ROW OPENS ITS CARD */
@@ -163,7 +215,7 @@ export async function run({ ok, pageWork }) {
     await p.tapRow("ord-p3");
     ok(same(p.cardsIn(), ["ord-p3"]) && byAct(d, "order.open", "ord-p3").getAttribute("aria-current") === "true" && !byAct(d, "order.open", "ord-p1").hasAttribute("aria-current"),
       "another row replaces the card: only the order opened has one: " + JSON.stringify(p.cardsIn()));
-    await byAct(d, "part.orders.agreed").click(); await p.work.quiet();
+    await byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
     await p.tapRow("ord-a1");
     const a1 = p.acts("ord-a1");
     ok(a1.filter((x) => x === "order.claim-received").length === 2 && a1.includes("order.claim-not-found") && a1.includes("order.received") && a1.includes("order.amend")
@@ -187,12 +239,12 @@ export async function run({ ok, pageWork }) {
       "a card has a way back at its head, named by its act: " + (back && back.outerHTML));
     back.click(); await p.work.quiet();
     ok(p.cardsIn().length === 0 && !d.getElementById("oSplit").classList.contains("open") && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current")
-      && d.activeElement === byAct(d, "order.open", "ord-p2") && p.rowsShown().length === 8,
+      && d.activeElement === byAct(d, "order.open", "ord-p2") && p.rowsShown().length === 5,
     "Back closes the card, unmarks the row and puts him on the row he came from, the list whole: " + JSON.stringify([p.cardsIn(), d.activeElement && d.activeElement.getAttribute("data-key")]));
     await p.tapRow("ord-p2");
-    await byAct(d, "part.orders.agreed").click(); await p.work.quiet();
+    await byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
     ok(p.cardsIn().length === 0 && !d.getElementById("oSplit").classList.contains("open"), "leaving the part closes the card: " + JSON.stringify(p.cardsIn()));
-    await byAct(d, "part.orders.waiting").click(); await p.work.quiet();
+    await byAct(d, "part.orders.placed").click(); await p.work.quiet();
     ok(p.cardsIn().length === 0, "and it is not there when he comes back");
     await p.tapRow("ord-p2");
     byAct(d, "nav.customers").click(); await p.work.quiet();
@@ -202,7 +254,7 @@ export async function run({ ok, pageWork }) {
     await p.tapRow("ord-p1");
     const field = d.querySelector('#makerReview [data-act="order.total"]');
     field.value = "250"; field.dispatchEvent(new p.w.Event("input", { bubbles: true }));
-    byAct(d, "part.orders.waiting").click(); await p.work.quiet();
+    byAct(d, "part.orders.placed").click(); await p.work.quiet();
     ok(d.querySelector('#makerReview [data-act="order.total"]') === field && field.value === "250", "tapping the part he is in again does not redraw the card he is typing in");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
@@ -320,15 +372,17 @@ export async function run({ ok, pageWork }) {
     await p.tap("need.kind.all");
     ok(!!card("om:ord-r1"), "and All shows it again");
     await p.tap("need.open", "om:ord-r1");
-    ok(p.where() === "orders/waiting" && same(p.cardsIn(), ["ord-r1"]) && byAct(d, "order.open", "ord-r1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open"),
-      "its Open goes to Orders, Waiting on you, with that order's card open and its row marked: " + p.where() + " " + JSON.stringify(p.cardsIn()));
-    ok(p.rowsShown().includes("ord-r1") && p.rowsShown().includes("ord-c9") && p.rowsShown().includes("ex-2")
-      && /Asked/.test(byAct(d, "order.open", "ord-r1").textContent) && /Asked/.test(byAct(d, "order.open", "ord-c9").textContent) && /Practice/.test(byAct(d, "order.open", "ex-2").textContent),
-    "Waiting on you lists the order with its question, marked Asked, the closed one as well, and the practice one marked Practice: " + p.rowsShown().join());
+    ok(p.where() === "orders/ready" && same(p.cardsIn(), ["ord-r1"]) && byAct(d, "order.open", "ord-r1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open"),
+      "its Open goes to Orders, the stage it stands at, with that order's card open and its row marked: " + p.where() + " " + JSON.stringify(p.cardsIn()));
+    ok(p.rowsShown().includes("ord-r1") && p.rowsShown().includes("ex-2")
+      && /Waiting on you/.test(byAct(d, "order.open", "ord-r1").textContent) && /asked a question/.test(byAct(d, "order.open", "ord-r1").textContent) && /Practice/.test(byAct(d, "order.open", "ex-2").textContent),
+    "Ready lists the order with its question, marked Waiting on you, and the practice one marked Practice: " + p.rowsShown().join());
+    await p.tap("part.orders.ended");
+    ok(p.rowsShown().includes("ord-c9") && /Waiting on you/.test(byAct(d, "order.open", "ord-c9").textContent), "and Ended lists the declined one with its question, marked as well: " + p.rowsShown().join());
     await p.tap("nav.needs");
     await p.tap("need.open", "om:ord-c9");
     const reply = p.acts("ord-c9");
-    ok(p.where() === "orders/waiting" && same(p.cardsIn(), ["ord-c9"]) && ["order.reply-text", "order.quick-keep", "order.reply", "order.no-reply"].every((a) => reply.includes(a))
+    ok(p.where() === "orders/ended" && same(p.cardsIn(), ["ord-c9"]) && ["order.reply-text", "order.quick-keep", "order.reply", "order.no-reply"].every((a) => reply.includes(a))
       && !reply.some((a) => ["order.reason", "order.decline", "order.cancel", "order.received", "order.amend", "order.handed", "order.close", "order.cash"].includes(a)),
     "a closed order's card is his reply and No reply needed alone, nothing to decline, cancel or move: " + JSON.stringify(reply));
     p.posts.length = 0;
@@ -399,9 +453,23 @@ export async function run({ ok, pageWork }) {
     ok(same(seen, { entry: [MENU.entry, [], ["Unsent entry"]], customers: [MENU.customers, [], []], pricing: [MENU.pricing, [], []] }),
       "Entry, Customers and Pricing are each a menu of their forms by name, no form shown, and the retained input kept on Entry: " + JSON.stringify(seen));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
-    ok(rows.length === 18 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && r.querySelector(".salt-inbox-row__action").textContent === "Open")
+    ok(rows.length === 18 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !r.querySelector(".salt-inbox-row__action") && !/Open/.test(r.textContent))
       && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 18 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
     "a row is the system's Inbox row, named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
+    /* 14 Oct 2026 (Record): the title and its lead stand once; Offsets are two lists, never one, each offer one row with one Add */
+    ok(d.querySelectorAll("#oRecord h1").length === 1 && (d.getElementById("oRecord").textContent.match(/Everything here waits for your approval under Approve/g) || []).length === 1
+      && !d.querySelector("#makerInputs > h2") && !d.querySelector('#oRecord section[data-in="record.approve"] > h2') && !/Rows to approve/.test(d.getElementById("oRecord").textContent),
+    "Record's title and lead are drawn once: no second Record heading over the forms, no Rows to approve heading under the part strip");
+    await p.tap("record.form", "offsets");
+    const offs = d.querySelector('#makerInputs [data-form="offsets"]'), lists = offs ? [...offs.querySelectorAll("[data-offers]")] : [];
+    const kinds = Object.fromEntries(lists.map((l) => [l.getAttribute("data-offers"), [...l.querySelectorAll(".maker-offer")].length]));
+    const oneRow = offs && offs.querySelector(".maker-offer");
+    ok(!!offs && same(kinds, { customer: 0, reward: 1 }) && same([...offs.querySelectorAll("h4")].map((h) => h.textContent), ["Customer offsets", "Associate reward offsets"])
+      && !/One unit off the oldest unpaid order/.test(offs.textContent) && !!oneRow && oneRow.closest('[data-offers="reward"]') && /AX1-ZED/.test(oneRow.textContent)
+      && same([...oneRow.querySelectorAll("button")].filter((b) => !b.hidden).map((b) => b.textContent), ["Add"]) && oneRow.querySelector("button").getAttribute("data-act") === "record.offset.send"
+      && !/Send the offset/.test(offs.textContent) && !!offs.querySelector('[data-offers="customer"] .rnone'),
+    "Offsets are two lists, customer and associate reward, with no instruction paragraph; the Counter's offers (all rewards) stand in the reward list as one row with one Add, and the customer list says none: " + JSON.stringify(kinds));
+    await p.tap("record.form-back");
     const bad = [], gridOpen = () => d.getElementById("makerFormGrid").classList.contains("open");
     for (const part of ["entry", "customers", "pricing"]) {
       await p.tap("part.record." + part);

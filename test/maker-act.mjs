@@ -313,7 +313,7 @@ export async function drawEverything(p) {
   await click(byAct(d, "need.show-link", U2));
   /* a cash hold, and a cash tap whose answer was lost, which offers Retry. A cash tap draws the card again, and a card is drawn for the order
      opened alone (Phase 1c), so each is audited as it stands. Orders is entered for the last time before the previews: entering it reads the review again */
-  await click(byAct(d, "nav.orders"));
+  await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.payments"));
   /* the account claims (Phase 2b): a row each, and the one opened is its card, which reads its rows, keeps its slip sealed until the passphrase opens the slip key and then draws
      it as a thumbnail, and asks on the Sheet; a claim whose rows could not be read offers them again */
   const c1 = "abcd-efgh:c-1", c2 = "abcd-efgh:c-2";

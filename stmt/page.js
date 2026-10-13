@@ -257,6 +257,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .cshell{padding-bottom:calc(var(--salt-bar-h) + 24px + env(safe-area-inset-bottom))}
 .chead{max-width:620px;margin:0 auto 18px}
 .chead h1{margin:0;font-size:var(--salt-text-2xl);line-height:1.15}
+/* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header (digits only: every word shown is the table's) */
+.cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
+.cclock:empty{display:none}
 .cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 /* a username is a credential, so the rail's capitals never reach it */
 .cfoot .mono{text-transform:none;letter-spacing:.02em}
@@ -315,18 +318,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
 .mfnote:empty{display:none}
 /* S7 7.3: ACCOUNT. The month filter is the system's tab strip, every pill a 44px tap, placed on the list it filters;
-   the earlier statements close the statement. 11 Oct 2026 (Phase 7d part 2, his yes): THE DEVICE COMES FIRST. Messages, then the
+   no earlier statement follows it (14 Oct 2026). 11 Oct 2026 (Phase 7d part 2, his yes): THE DEVICE COMES FIRST. Messages, then the
    compact This device card, then the statement under a gap of its own (28px, a gap and never a margin, so a part that is not drawn
    leaves none); from 1080px This device stands beside, as it did */
 .acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
 #aThread:empty{display:none}
 .mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 
-.stmtback{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 18px}
-.stmtback p{flex:1 1 220px;margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.stmtfoot{margin:30px 0 0;padding-top:18px;border-top:1px solid var(--salt-line)}
-.stmtfoot .sub2{margin:6px 0 12px}
-.stmtissues{display:flex;flex-wrap:wrap;gap:8px}
 .devcard{margin:0}
 .devcard .salt-ledger{margin-top:6px}
 .devcard .salt-ledger__row:last-child{border-bottom:0}
@@ -705,6 +703,19 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}
 .adm .formlist{display:flex;flex-direction:column;gap:8px}
 .adm .formrow .salt-inbox-row__title{gap:6px}
+/* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
+.adm .formrow{min-height:44px}
+.adm .apphead{appearance:none;background:none;border:0;padding:0;margin:0;width:100%;min-height:44px;text-align:left;color:inherit;font:inherit;cursor:pointer;align-items:center}
+.adm .apcard{cursor:pointer}
+.adm .apfigs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px}
+.adm .apcard .rdet--row{margin:0}
+.adm .maker-offers__head{margin:16px 0 4px}
+.adm .maker-offers{display:flex;flex-direction:column}
+.adm .maker-offer{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 12px;padding:8px 0;border-top:1px solid var(--salt-line)}
+.adm .maker-offer__what{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adm .maker-offer__code{font-family:var(--salt-font-mono);font-weight:500;color:var(--salt-salt)}
+.adm .maker-offer__fig{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-variant-numeric:tabular-nums}
+.adm .maker-offer>.salt-ghost[hidden]{display:none}
 /* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
@@ -718,6 +729,37 @@ body.ended>*:not(#aEnded){display:none}
 .adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .need .salt-action__body>*+*{margin-top:8px}
 .adm .need .salt-action__go{display:flex;flex-wrap:wrap;gap:8px}
+/* 14 OCT 2026: THE CARD IS THE TAP. The title is the one button, stretched over the card; the card's own actions sit above it. The age is the money column, a fixed width,
+   right-aligned and level with the kind word on every card; Soon and Watch fold behind a 44px heading. */
+.adm .ncard{position:relative}
+.adm .need .need-tap{all:unset;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;width:100%;min-height:var(--salt-tap);cursor:pointer;font:inherit;color:inherit}
+.adm .need .need-tap::after{content:"";position:absolute;inset:0}
+.adm .need .need-tap:focus-visible{outline:none}
+.adm .need .need-tap:focus-visible::after{outline:2px solid var(--salt-brass);outline-offset:2px;border-radius:inherit}
+.adm .ncard:hover{background:var(--salt-glass-hover)}
+.adm .need .salt-action__go{position:relative;z-index:1}
+.adm .ncard[aria-current="true"]{box-shadow:inset 2px 0 0 var(--salt-brass)}
+.adm .need .salt-action__money{width:4.5rem;justify-self:end;padding-top:0}
+@media (max-width:860px){.adm .need .salt-action__kind{grid-column:1 / 2}}
+.adm .nfold{display:flex;flex-direction:column;gap:12px}
+.adm .nfold>summary.nsev{display:flex;align-items:center;min-height:var(--salt-tap);margin:0;cursor:pointer;list-style:none}
+.adm .nfold>summary.nsev::-webkit-details-marker{display:none}
+.adm .nfold>summary.nsev::before{content:"+";display:inline-block;width:1.2em}
+.adm .nfold[open]>summary.nsev::before{content:"-"}
+.adm .nfold>summary.nsev:focus-visible{outline:2px solid var(--salt-brass);outline-offset:2px}
+.adm .nchips .salt-tabs__pill[hidden]{display:none}
+/* 14 OCT 2026: ORDERS ARE ROWS OF ONE GRID: the mark in a fixed column, the code and at most one pill over what it is, the age over the figure in a fixed column on the
+   right, every row the same height. The system's Inbox row keeps its class; the grid is this page's own container class. */
+.adm .ordrow{display:grid;grid-template-columns:84px minmax(0,1fr) 88px;align-items:center;gap:0 12px;min-height:76px}
+.adm .ordrow>.mtile{width:84px;padding-left:6px;padding-right:6px;box-sizing:border-box;align-self:center}
+.adm .ordrow .salt-inbox-row__main{flex:none}
+.adm .ordrow .salt-inbox-row__title{flex-wrap:nowrap}
+.adm .ordrow .salt-inbox-row__what{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .ordrow .salt-inbox-row__side{margin:0;align-items:flex-end;justify-content:center;text-align:right;gap:4px}
+.adm .ordrow .salt-inbox-row__action{margin-top:0;font-variant-numeric:tabular-nums}
+/* 14 Oct 2026: the live clock beside his page's name */
+.adm .clk{font-variant-numeric:tabular-nums}
+.adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
 .adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
@@ -796,6 +838,45 @@ body.ended>*:not(#aEnded){display:none}
 .glink .gs{margin:8px 0 0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono);letter-spacing:.04em}
 .glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
+/* 14 OCT 2026 (the layout rework): a guest link is one row (summary), the address, QR and moves under it once opened; accounts are rows with one state; an associate's
+   code has room beside its marks and its figures stand in a ledger; a customer's loans stand on their card as rows of figures */
+.adm #glist .glink{padding:0;margin:8px 0 0}
+.adm #glist .glink>*:not(summary){margin-left:16px;margin-right:16px}
+.adm #glist .glink>.grow,.adm #glist .glink>.msg{margin-bottom:14px}
+.adm #glist .glink>.gu{margin-top:0}
+.adm #glist .glink>.gwho{margin-top:0;margin-bottom:0;font-size:var(--salt-text-sm);font-weight:400;color:var(--salt-text-muted)}
+.adm #glist .glink img{width:150px;height:150px}
+.adm .gsum{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:var(--salt-tap);padding:8px 16px;cursor:pointer;list-style:none}
+.adm .gsum::-webkit-details-marker{display:none}
+.adm .gsum::after{content:"";position:absolute;right:16px;width:7px;height:7px;border:solid var(--salt-text-muted);border-width:0 2px 2px 0;transform:rotate(45deg);top:20px}
+.adm #glist .glink{position:relative}
+.adm #glist .glink[open]>.gsum::after{transform:rotate(-135deg);top:24px}
+.adm .gsum .gtop{display:flex;align-items:center;gap:8px;padding-right:20px}
+.adm .gsum .gt{margin:0}
+.adm .gsum .gs{margin:0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);letter-spacing:.04em}
+.adm #glist .grow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.adm #glist select{margin-top:12px}
+.adm .alist .arow .salt-inbox-row__title{display:flex;align-items:center;gap:8px}
+.adm .alist .arow .acode{font-family:var(--salt-font-mono);font-weight:600}
+.adm .alist .arow .astate{margin-left:auto;text-align:right}
+.adm .alist .arow .salt-inbox-row__what{overflow-wrap:anywhere}
+.adm .acard .srow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.adm .acard .srow .un{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+.adm .acard .aled{margin-top:8px}
+.adm .acard .aled .salt-ledger__line{padding:4px 0}
+.adm .acard .acell{display:flex;flex-direction:column;justify-content:space-between;gap:4px}
+.adm .acard .aled .salt-ledger__value{text-align:right;white-space:nowrap}
+.adm .abooks{display:flex;flex-direction:column;gap:8px}
+.adm .abooks .salt-eyebrow{margin:6px 0 0}
+.adm .aloans{display:flex;flex-direction:column}
+.adm .aloan{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--salt-line)}
+.adm .aloan:last-child{border-bottom:0}
+.adm .aloan__txt{min-width:0}
+.adm .aloan__what{margin:0;font-size:var(--salt-text-sm)}
+.adm .aloan__fig{display:flex;gap:16px;margin-top:4px;font-size:var(--salt-text-sm)}
+.adm .aloan__k{color:var(--salt-text-muted);margin-right:6px}
+.adm .aloan__v{font-family:var(--salt-font-mono)}
+.adm .aloan .salt-ghost{flex:none}
 /* S8 8.1: an associate's own links, in Rewards: when it was made, its state in a word (the system's chip), what it
    has done, and the system's ghosts; the Meter is the reward's bar */
 .rlhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
@@ -1295,7 +1376,7 @@ function noticeCard(b) {
    its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
 const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
 const ADMIN_PARTS = {
-  orders: [["waiting", "Waiting on you"], ["agreed", "Agreed"], ["ready", "Ready"], ["group", "Group"], ["closed", "Closed"]],
+  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -1393,7 +1474,7 @@ export function landingPage(user, nonce, owner, bulletin) {
            so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
         + '<div id="mHome" data-in="needs">'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
@@ -1407,16 +1488,16 @@ export function landingPage(user, nonce, owner, bulletin) {
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Orders</h1>"
         + '<p class="lead">Orders from the Counter, by stage. The Desk checks each answer before it reaches the book.</p>'
         + adminParts("orders")
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
-        + '<section id="oSplit" data-in="orders.waiting orders.agreed orders.ready orders.closed" aria-labelledby="makerReviewTitle"><h2 id="makerReviewTitle">Orders</h2>'
+        + '<section id="oSplit" data-in="orders.placed orders.confirmed orders.ready orders.done orders.ended" aria-label="Orders">'
         + '<p class="lead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
-        + '<section data-in="orders.waiting" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
+        + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
         + '<p class="lead">Customers join a bulk order. When you close it, each order comes to you to agree.</p>'
         + '<div id="makerPools" aria-live="polite"></div></section>'
@@ -1424,7 +1505,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Customers</h1>"
         + '<p class="lead">The people on the site: their accounts, their messages, guest links and associates.</p>'
         + adminParts("customers")
@@ -1465,23 +1546,23 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* RECORD: his own entries. Approve is the Desk's rows waiting for him and the entries the server holds; the other three parts
            are the forms, which the Desk checks and holds for review before they change the book. */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Record</h1>"
         + '<p class="lead">Everything here waits for your approval under Approve.</p>'
         + adminParts("record")
         + '<div class="abody">'
-        + '<section data-in="record.approve" aria-labelledby="makerDraftTitle"><h2 id="makerDraftTitle">Rows to approve</h2>'
+        + '<section data-in="record.approve" aria-label="Rows to approve">'
         + '<p class="lead" id="makerDraftStatus">Reading.</p>'
         + '<div id="makerDrafts"></div>'
         /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
         + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Sent, not yet drafted</span></summary>'
         + '<div class="salt-plan__body">'
         + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
-        + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"><h2>Record</h2></section>'
+        + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account</p>'
+        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Shop</h1>"
         + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop")
@@ -1563,7 +1644,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div></div>"
     /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
        sits in it, on every view of the saved app */
-    + '<header class="chead">' + (owner ? "" : bellBox()) + wt("h1", 'id="placeT"', "place.home")
+    + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
     + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
@@ -1573,16 +1654,14 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* PHASE 7A: the foot holding To pay now and its Pay, last in Home so it stays above the bar the whole way down (drawPayHead) */
     + '<div id="homeFoot" class="payfoot" hidden></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
-       statement (its one month filter placed beside the list it filters, the earlier statements at its foot) under a gap of its
+       statement (its one month filter placed beside the list it filters and nothing after it) under a gap of its
        own; This device stands beside them from 1080px */
     + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aThread"></div>'
     + (owner ? "" : thisDevice())
     + '<div class="acct__main">'
-    + '<div id="stmtBack" class="stmtback" hidden><p id="stmtBackT"></p>'
-    + wt("button", 'type="button" class="salt-ghost" id="stmtBackGo"', "acct.back") + "</div>"
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
     + '<div id="out"></div>'
-    + '<div id="stmtFoot" class="stmtfoot" hidden></div></div>'
+    + '</div>'
     + "</div></div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
@@ -1673,6 +1752,20 @@ const CLIENT_JS = `
   var assoc=false;
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
+  /* 14 Oct 2026 (his review): every [data-clock] shows the time in Kuala Lumpur, digits only; painted on the
+     minute and again whenever the page comes back into view, since a phone sleeps its timers */
+  (function(){
+    function clockPaint(){
+      var p={};
+      try{ new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})
+        .formatToParts(new Date()).forEach(function(x){ p[x.type]=x.value; }); }catch(e){ return; }
+      var t=p.hour+':'+p.minute;
+      [].forEach.call(document.querySelectorAll('[data-clock]'),function(n){ n.textContent=t; });
+    }
+    function clockTick(){ clockPaint(); setTimeout(clockTick,60000-Date.now()%60000+50); }
+    clockTick();
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) clockPaint(); });
+  })();
   /* S3: the device, read once. The words say phone on a phone and computer on anything else (nothing says phone
      on a laptop), in the markup's .dev words and in every line the script writes. */
   var UA=navigator.userAgent||'';
@@ -1737,7 +1830,6 @@ const CLIENT_JS = `
       un=document.getElementById('un'), go=document.getElementById('go'),
       barw=document.getElementById('barw'), cd=document.getElementById('cd'),
       acctEl=document.getElementById('acct'), mfil=document.getElementById('mfil'), mfnote=document.getElementById('mfnote'),
-      stmtFoot=document.getElementById('stmtFoot'), stmtBack=document.getElementById('stmtBack'),
       tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
       pOrder=document.getElementById('pOrder'), pCard=document.getElementById('pCard'),
@@ -2468,7 +2560,7 @@ const CLIENT_JS = `
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
     bundle=null; session=''; view=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
-    parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
+    parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
     pPrices.textContent=''; pOrder.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
@@ -2662,7 +2754,7 @@ const CLIENT_JS = `
   async function retryOrders(){ await oReread(); }
 
   /* ---- ACCOUNT (S7 7.3, the plan's section 4, his "all recommended" of 24 Sep 2026) -------------------------------
-     The statement as stacked lines, ONE month filter with All first, the earlier statements at its foot, and This device.
+     The statement as stacked lines, ONE month filter with All first, and This device. No earlier statement is drawn (14 Oct 2026).
      drawAccount(el) is what a place calls: it moves the Account's parts into el (moved, never copied, so every id stays
      one element) and draws what the page holds. The statement itself is drawn by pickStmt, on every open and re-read. */
   function drawAccount(el){
@@ -2683,42 +2775,19 @@ const CLIENT_JS = `
     var s=bundle.statements[i];
     if(!s){
       out.textContent=''; var e=el('div','panel'); e.appendChild(el('p','lead',tw('acct.nothing'))); out.appendChild(e);
-      mfil.hidden=true; mfnote.textContent=''; drawFoot();
+      mfil.hidden=true; mfnote.textContent='';
       return;
     }
     /* C15: never an older document in its place */
     if(s.bad){
       out.textContent=''; out.appendChild(unreadNode(s.bad,s.bad==='acct.unread'?retryAccount:null));
-      mfil.hidden=true; mfnote.textContent=''; drawFoot();
+      mfil.hidden=true; mfnote.textContent='';
       return;
     }
     out.innerHTML=s.body;
     drawMonths();
-    drawFoot();
     window.scrollTo(0,0);
   }
-  /* EARLIER STATEMENTS AT THE FOOT (S7 7.3). The first statement is the account as it stands, the live document where
-     there is one; every issue after it is kept as it was sent, and opens in its place with the way back above it. It
-     is never called the latest issue: there are no monthly statements, just one live document (v769, v772). */
-  function drawFoot(){
-    stmtFoot.textContent='';
-    var list=bundle?bundle.statements:[], s0=list[0];
-    stmtBack.hidden=!(at>0&&list[at]);
-    if(!stmtBack.hidden) document.getElementById('stmtBackT').textContent=tw('acct.issued',{d:list[at].label||list[at].issued});
-    stmtFoot.hidden=list.length<2;
-    if(stmtFoot.hidden) return;
-    stmtFoot.appendChild(el('h2','salt-eyebrow salt-eyebrow--copper',tw('acct.earlier')));
-    stmtFoot.appendChild(el('p','sub2',tw(s0&&s0.live?'acct.keptLive':'acct.kept')));
-    var g=el('div','stmtissues');
-    list.forEach(function(s,j){
-      if(!j) return;
-      var b=el('button','salt-ghost',s.label||s.issued); b.type='button'; b.setAttribute('aria-pressed',j===at?'true':'false');
-      b.addEventListener('click', function(){ pickStmt(j); });
-      g.appendChild(b);
-    });
-    stmtFoot.appendChild(g);
-  }
-  document.getElementById('stmtBackGo').addEventListener('click', function(){ pickStmt(0); });
 
   /* ---- THE MONTH FILTER (v690, his instruction of 18 Sep 2026) -------------------------------
      THE STATEMENT IS NOT BOUND TO A MONTH ANY MORE: it carries every order from the start, and
@@ -6097,8 +6166,9 @@ const CLIENT_JS = `
     else if(body.liveStatus==='updating') b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:'acct.updating'});
     else if(body.liveStatus==='unavailable') b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:'acct.unavailable'});
     else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:body.live?'acct.unread':'acct.later'});
-    /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk and on his own page */
-    if(!OWNER) b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
+    /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk. 14 Oct 2026 (his review):
+       off his View as them too, so no page draws an earlier statement */
+    b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
     if(body.prices){ try{ x.prices=await openList(ck, body.prices); }catch(e){ /* the statements still open; the list is simply absent */ } }
     return x;

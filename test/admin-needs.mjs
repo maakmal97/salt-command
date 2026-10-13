@@ -81,7 +81,7 @@ export async function run({ ok, pageWork }) {
       if (rest) rest.querySelectorAll(".pwith").forEach((m) => m.remove());
       return { kind: c.querySelector(".salt-action__kind").textContent, who: c.querySelector(".need-who").textContent, what: rest ? rest.textContent.trim() : "",
         mark: mark && mark.querySelector("svg.psym") ? (mark.querySelector(".sr") || { textContent: "" }).textContent : "", age: c.querySelector(".salt-action__money").textContent }; };
-    p.buttons = (c) => [...c.querySelectorAll("button")].map((b) => b.textContent);
+    p.buttons = (c) => [...c.querySelectorAll("button:not(.need-tap)")].map((b) => b.textContent);
     p.counts = (bar) => Object.fromEntries([...d.querySelectorAll(bar + " [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
@@ -132,7 +132,7 @@ export async function run({ ok, pageWork }) {
     ok(same(p.keys("now"), NOW_KEYS), "within Now the oldest comes first, and the practice items after the real ones: " + JSON.stringify(p.keys("now")));
     ok(same(p.keys("soon"), ["s", UNSENT, "l:w1", "d:" + ago(6), "d:" + ago(3), "d:" + ago(1), "d:" + ago(0.5), "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
       "within Soon the oldest first, and what has no age after what has one: " + JSON.stringify(p.keys("soon")));
-    ok([...d.querySelectorAll("#nlist > .nsev")].map((h) => h.textContent).join() === "Now,Soon,Watch", "each severity is headed by its word");
+    ok([...d.querySelectorAll("#nlist .nsev")].map((h) => h.textContent.replace(/ . \d+$/, "")).join() === "Now,Soon,Watch", "each severity is headed by its word");
 
     /* 3. PRACTICE */
     const practice = p.cards().filter((c) => c.hasAttribute("data-practice"));
@@ -141,7 +141,7 @@ export async function run({ ok, pageWork }) {
     "an item of a practice account is drawn, labelled Practice, and no other is");
     const real = p.cards().filter((c) => !c.hasAttribute("data-practice"));
     const nowReal = real.filter((c) => c.getAttribute("data-sev") === "now").length, soonReal = real.filter((c) => c.getAttribute("data-sev") === "soon").length;
-    ok(nowReal === 9 && new RegExp("^" + nowReal + " now, " + soonReal + " soon, as at [0-9]{2}:[0-9]{2}[.]$").test(d.getElementById("nCount").textContent),
+    ok(nowReal === 9 && new RegExp("^" + nowReal + " now, " + soonReal + " soon[.]$").test(d.getElementById("nCount").textContent),
       "the line under the title counts the real Now and Soon and no practice item: " + d.getElementById("nCount").textContent);
 
     /* 4. THE COUNTS ON THE BARS */
@@ -160,7 +160,7 @@ export async function run({ ok, pageWork }) {
       return then ? then() : "";
     };
     const opens = [
-      await open1("o:ord-p1", "orders/waiting"), await open1("p:ord-a1", "orders/waiting"), await open1("c:" + U1 + ":c-1", "orders/waiting"),
+      await open1("o:ord-p1", "orders/placed"), await open1("p:ord-a1", "orders/confirmed"), await open1("c:" + U1 + ":c-1", "orders/payments"),
       await open1("m:" + U1, "customers/messages", () => (shown(d.getElementById("makerChatOpen")) && d.getElementById("makerChatOpen").getAttribute("data-key") === U1 ? "" : "the thread was not opened")),
       await open1("k:" + U3, "customers/accounts", () => (shown(d.getElementById("aopen")) && /CX3-ZED/.test(d.getElementById("aopen").textContent) ? "" : "the account was not opened")),
       await open1("d:" + ago(6), "record/approve"), await open1("x:0", "record/approve"), await open1("l:w1", "customers/links"),
@@ -175,8 +175,8 @@ export async function run({ ok, pageWork }) {
     /* 6. THE ONE FILLED PILL */
     const pills = (c) => [...c.querySelectorAll(".salt-pill")].map((b) => b.textContent);
     const money = /Agree|Accept|Received|Cash|Yes received|Pay/i;
-    ok(p.cards().filter((c) => ["orders", "payments", "messages"].includes(c.getAttribute("data-kind"))).every((c) => same(p.buttons(c), ["Open"])),
-      "no order, payment or message card has any control but Open, so nothing is booked from Needs you");
+    ok(p.cards().filter((c) => ["orders", "payments", "messages"].includes(c.getAttribute("data-kind"))).every((c) => same(p.buttons(c), [])),
+      "no order, payment or message card has any control of its own, only the tap, so nothing is booked from Needs you");
     ok(!p.cards().some((c) => p.buttons(c).some((t) => money.test(t))), "and no card of any kind carries Agree, Accept, Received or Cash");
     ok(same(pills(p.card("d:" + ago(6))), ["Approve"]) && same(pills(p.card("d:" + ago(3))), ["Approve both"]) && pills(p.card("d:" + ago(0.5))).length === 0
       && /Answer this through the payment card/.test(p.card("d:" + ago(0.5)).textContent),
@@ -184,8 +184,18 @@ export async function run({ ok, pageWork }) {
     ok(same(pills(p.card("l:w1")), ["Approve"]) && same(pills(p.card("k:" + U3)), ["Send a sign-in link"]) && same(pills(p.card("s")), ["Send sign-in links one by one"]),
       "the guest link, the refused account and the accounts not sent keep the one filled action they had");
     ok(p.cards().every((c) => pills(c).length <= 1), "no card has more than one filled pill");
-    ok(p.cards().every((c) => c.classList.contains("need--act") === p.buttons(c).some((t) => t !== "Open")),
-      "a card with an action besides Open sets its ways on a row under the body (need--act), and one with only Open keeps it beside");
+    ok(p.cards().every((c) => c.classList.contains("need--act") === (p.buttons(c).length > 0)),
+      "a card with an action of its own sets its ways on a row under the body (need--act), and one with none has no go row");
+    /* 14 Oct 2026: THE CARD IS THE TAP, Soon and Watch are folded, the chips are the kinds present */
+    ok(p.cards().every((c) => !p.buttons(c).includes("Open") && !c.querySelector(".salt-action__go .salt-ghost--open")) && !d.querySelector("#nlist button[data-act='need.open']:not(.need-tap)")
+      && p.cards().filter((c) => byAct(c, "need.open")).every((c) => c.querySelector("button.need-tap.salt-action__title") && c.querySelector(".need-tap .need-who")),
+    "a card has no Open button: its title is the one tap (data-act need.open), and the card's own actions stay beside it");
+    const folds = [...d.querySelectorAll("#nlist > details.nfold")];
+    ok(same(folds.map((f) => f.getAttribute("data-sev")), ["soon", "watch"]) && folds.every((f) => !f.open && f.querySelector("summary.nsev") && /^\w+ . \d+$/.test(f.querySelector("summary").textContent))
+      && same(folds.map((f) => f.querySelectorAll("[data-need]").length), [p.keys("soon").length, p.keys("watch").length]) && !d.querySelector("#nlist > [data-need]:not([data-sev=now])"),
+    "Soon and Watch are folded by default behind a heading with their count, Now stands open: " + JSON.stringify(folds.map((f) => [f.open, f.querySelector("summary").textContent])));
+    folds[0].open = true; folds[0].dispatchEvent(new p.w.Event("toggle")); await p.tap("need.kind.all");
+    ok(d.querySelector('#nlist > details[data-sev="soon"]').open, "a fold he opened stays open through a redraw");
   } finally { p.w.close(); }
 
   /* 6b. THE PILL IS THE RECORD BUTTON'S, THE SAME QUESTION AND THE SAME REQUEST */
@@ -234,6 +244,8 @@ export async function run({ ok, pageWork }) {
       && chips[0].getAttribute("aria-selected") === "true" && d.querySelector(".nchips").classList.contains("salt-tabs") && d.querySelector(".nchips").getAttribute("role") === "tablist",
     "the chips are All, Orders, Payments, Messages, Rows and Accounts, drawn as the parts strip is, a tablist of tabs of the system's pill, each with its act, All selected");
     p.reads.length = 0;
+    const KO = ["all", "orders", "payments", "messages", "rows", "accounts"], visible = (dd) => [...dd.querySelectorAll(".nchips button")].filter((b) => !b.hidden).map((b) => b.getAttribute("data-chip"));
+    ok(same(visible(d), KO), "with a card of every kind, every chip is drawn: " + visible(d));
     const kinds = {};
     for (const k of ["orders", "payments", "messages", "rows", "accounts"]) {
       await p.tap("need.kind." + k);
@@ -253,6 +265,15 @@ export async function run({ ok, pageWork }) {
     await p.tap("need.kind.orders");
     ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "9"), "Watch shows under All only, and a filter changes no count");
   } finally { p.w.close(); }
+
+  /* 7b. A CHIP IS DRAWN ONLY FOR A KIND THAT IS PRESENT */
+  p = await open(state(), { threads: (j) => { j.threads = []; return j; } });
+  try {
+    const d = p.d, kinds = new Set(p.cards().map((c) => c.getAttribute("data-kind")));
+    ok(!kinds.has("messages") && same(visible2(d), ["all", ...["orders", "payments", "messages", "rows", "accounts"].filter((k) => kinds.has(k))]) && !visible2(d).includes("messages"),
+      "with no message waiting there is no Messages chip, and each other kind present keeps its own: " + visible2(d));
+  } finally { p.w.close(); }
+  function visible2(dd) { return [...dd.querySelectorAll(".nchips button")].filter((b) => !b.hidden).map((b) => b.getAttribute("data-chip")); }
 
   /* 8. A READ THAT FAILED IS SAID */
   p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.threads] });

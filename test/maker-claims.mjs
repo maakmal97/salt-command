@@ -207,6 +207,7 @@ export async function run({ ok }) {
     const said = () => doc.querySelector("#makerClaims p.msg")?.textContent || "";
     const lock = () => { visible = false; doc.dispatchEvent(new window.Event("visibilitychange")); visible = true; };
     doc.querySelector('[data-act="nav.orders"]').click();
+    doc.querySelector('[data-act="part.orders.payments"]').click();
     await until(() => rowOf(0) && rowOf(1));
     ok(!!rowOf(0) && !!rowOf(1) && [...doc.querySelectorAll("#makerClaims [data-act]")].every((e) => e.getAttribute("data-act") === "claim.open")
       && posts.length === 0 && fetched.key === 0 && fetched.slip === 0,
@@ -280,7 +281,7 @@ export async function run({ ok }) {
     ok(/no longer held/.test(missing) && /cannot be read/.test(version) && /could not be opened/.test(tampered),
       "Missing or expired, wrong-version and tampered slips are refused on the device without a picture: "
       + JSON.stringify([missing, version, tampered]));
-    /* 11 Oct 2026, the five places: the unlocked slip key stays while he moves between the parts of Orders, the picture is let go when Waiting on you is left
+    /* 11 Oct 2026, the five places: the unlocked slip key stays while he moves between the parts of Orders, the picture is let go when Payments is left
        (12 Oct 2026: the claim opened is shut with it, and opened again it draws its slip from the key with no passphrase). Since Phase 4b the unlock is the
        page's, not Orders': it stays when Orders is left too, and goes only with the lock (a page hidden, the sign-in ended, a lapse, Lock) */
     slipMode = "ok";
@@ -288,17 +289,18 @@ export async function run({ ok }) {
     rowOf(0).click(); rowOf(0).click();
     await until(() => thumb());
     const unlocked = !!thumb();
-    doc.querySelector('[data-act="part.orders.agreed"]').click();
+    doc.querySelector('[data-act="part.orders.confirmed"]').click();
     const letGo = !doc.querySelector("[data-maker-slip]");
-    doc.querySelector('[data-act="part.orders.waiting"]').click();
+    doc.querySelector('[data-act="part.orders.payments"]').click();
     const shutOnReturn = !card(0) && !!rowOf(0);
     rowOf(0).click();
     const keptKey = await until(() => thumb()) && !unlockBtn();
     ok(unlocked && letGo && shutOnReturn && keptKey,
-      "An unlocked slip key survives a move between the parts of Orders, the picture is let go and the card shut on leaving Waiting on you, and the next claim opened draws its slip with no passphrase: "
+      "An unlocked slip key survives a move between the parts of Orders, the picture is let go and the card shut on leaving Payments, and the next claim opened draws its slip with no passphrase: "
       + JSON.stringify([unlocked, letGo, shutOnReturn, keptKey]));
     doc.querySelector('[data-act="nav.customers"]').click();
     doc.querySelector('[data-act="nav.orders"]').click();
+    doc.querySelector('[data-act="part.orders.payments"]').click();
     await until(() => rowOf(0));
     const slips = fetched.slip;
     rowOf(0).click();
