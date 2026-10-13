@@ -155,6 +155,14 @@ export async function run({ ok, pageWork }) {
     ok(p.d.getElementById("makerQueueCount").textContent === "0" && /Nothing is waiting for the Desk/.test(p.d.getElementById("makerQueueReview").textContent) && p.d.getElementById("makerQueue").open === false,
       "with nothing held the fold is counted 0, says so inside, and stays shut");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  /* 14 Oct 2026 (his screenshot): a device's copy of an entry already committed or approved is not waiting, so it is not listed */
+  const settled = (j) => ({ ...j, queue: (j.queue || []).map((e, i) => i === 0 ? { ...e, state: "committed", canWithdraw: false } : i === 1 ? { ...e, state: "approved", canWithdraw: false } : e) });
+  p = await open({ review: settled });
+  try {
+    await enterRecord(p);
+    ok(p.d.getElementById("makerQueueCount").textContent === "0" && /Nothing is waiting for the Desk/.test(p.d.getElementById("makerQueueReview").textContent),
+      "a held copy of an entry already committed or approved is not counted or listed as waiting for the Desk: " + p.d.getElementById("makerQueueReview").textContent.slice(0, 120));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 3. APPROVE AND REJECT ASK ON THE SHEET */
   p = await open();
