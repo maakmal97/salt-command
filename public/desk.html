@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="f34d39d693862060";
+var SALT_BUILD_ID="f2b513013965e411";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8036,7 +8036,7 @@ const customerRefunds=[
   {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."},
   {"party":"CZ4-MK","amount":20,"since":"2026-08-26","paidOn":"2026-09-21","note":"RM20 over-tender, cash payable to set off. Set off on 21 Sep against s190 and s191, 5 unit of salt and 10 of candy for RM920, which he settled with RM900 cash: the two rows carry RM920 as paid and this refund the RM20 back, so the cash nets to the RM900 handed over. Closed on his word of 23 Sep 2026."}
 ];
-const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC9-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN3-WM","CN3-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-BAN","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CM4-TO","CA2-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-AMP","CF5-WM","CE5-SA","CR3-DAM-R","CB7-BJ","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R","CS6-DAM","CZ5-TM","CJ2-KUC","CA6-CYB","CE5-SA-R","CA6-CYB-R","CM4-TO-R"];
+const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC9-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN3-WM","CN3-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-BAN","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CM4-TO","CA2-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-AMP","CF5-WM","CE5-SA","CR3-DAM-R","CB7-BJ","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R","CS6-DAM","CZ5-TM","CJ2-KUC","CA6-CYB","CE5-SA-R","CA6-CYB-R","CM4-TO-R","CI5-PER"];
 const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN3-WM","CI4-OKR","CE4-AD","CR3-DAM","CE5-SA","CA6-CYB","CM4-TO"];
 const partners=["CM4-TO"];
 const INTRODUCTIONS=[
@@ -8272,6 +8272,10 @@ const PLACED={
     3.21,
     101.74,
     "Wangsa Maju"
+  ],
+  "CI5-PER": [
+    3.1,
+    101.72
   ]
 };
 const TIER_OF={
@@ -8281,6 +8285,9 @@ const TIER_OF={
   },
   "CZ5-TM": {
     "oil": "Titanium"
+  },
+  "CI5-PER": {
+    "salt": -0.3
   }
 };
 const PEOPLE={
@@ -8406,7 +8413,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-13T09:14:48.829Z";
+const QUEUE_COMMITTED="2026-10-13T10:44:42.146Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -9411,7 +9418,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1096","d":"13 Oct 2026","t":"COST AND MARGIN BEFORE SEND ON THE COUNTER'S TRADE FORM","n":["<b>BEFORE SEND.</b> Counter Admin's trade form reads, before Send, the cost a unit (the latest purchase on or before the trade's date), the goods, the margin over cost in RM and %, the floor for the size with a line when the price is under it, and the party's recent prices on that book. A purchase reads its cost a unit against the current cost, with no margin. Read through the owner's own road from the one engine; nothing is written and nothing prices. B1 of #62.","<b>THE PROOFS.</b> The Counter trade reading section: the figures equal the Desk Workbench's and the drafter's for the same entry, a backdated sale and the rounding edge included; each check red under its own mutation (17). Fable reviewed it twice."]}];
+const evolution=[{"v":"v1097","d":"13 Oct 2026","t":"CI5-PER REGISTERED AS A SALT CUSTOMER; NO STOCK MOVED","n":["<b>ONE ROW FOLDED.</b> CI5-PER is added to the roster as a customer at a salt tier of -0.3. Nothing unusual: the drafter raised no flags, and the row touches no sale, payment or price. The name and place stay in the directory at the laptop.","<b>INVENTORY UNCHANGED.</b> Salt stock stays at 13.14 units, counted on 3 Oct 2026, with a stock cost of RM56 a unit. No lot landed and nothing was sold, so the cost basis does not move."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9562,7 +9569,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 18:14 KL';
+const LAST_UPDATED='13 Oct 2026, 18:45 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
