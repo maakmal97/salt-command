@@ -37993,6 +37993,21 @@ await (async () => {
   const ownKey = await againOrder(denv, wn.id, { drop: true }, "phone");
   ok(ownKey.ok && ownKey.row === "s241" && decidedBy(wn.id, "Pending")[0] === "covered:s241",
     "a hand row bearing the covered order's own key covers it, that order having no row of its own: " + JSON.stringify([ownKey.ok, ownKey.row, ownKey.error]));
+  /* a row whose id is not plain is refused, never stripped; a yes landing on ONE of several covered stages leaves none covered */
+  seedDraft(wn.id, "rejected", "Pending"); seedDraft(wn.id, "rejected", "Handover", { deliveredQty: 1 });
+  db.prepare("DELETE FROM entry WHERE doc LIKE '%\"s241\"%'").run();
+  putSale({ date: day, customer: C1, qty: 1, total: 114, cash: 999, rid: "s 9!" });
+  const badRid = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(badRid.status === 409 && /cannot be filed against/.test(badRid.error) && !decidedBy(wn.id, "Pending").some((x) => x === "covered:s 9!" || x === "covered:s9"),
+    "a hand row whose id is not plain is refused, nothing written: " + JSON.stringify([badRid.status, badRid.error, decidedBy(wn.id, "Pending")]));
+  db.prepare("DELETE FROM entry WHERE doc LIKE '%s 9!%'").run();
+  putSale(hand);
+  raceHook = () => db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wn.id + "|move|8", wn.id, U1, "move", "h", "{}", "{}", "waiting", "2026-10-13T12:30:00Z");
+  const partial = await againOrder(denv, wn.id, { drop: true }, "phone");
+  const stillBy = (es) => drafts(wn.id, es).map((d) => d.decided_by).slice(-1)[0];
+  ok(partial.status === 409 && stillBy("Pending") === "desk" && stillBy("Handover") === "desk",
+    "a yes landing on one of the covered stages leaves none of them covered: " + JSON.stringify([partial.status, stillBy("Pending"), stillBy("Handover")]));
+  db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wn.id);
   /* what is on its way: an order with no row counts nothing, one with a row still does */
   const off = await offBook(D1, [{ id: wl.id }, { id: nh.id }, { id: wo.id }]);
   ok(off.has(wl.id) && off.has(wo.id) && !off.has(nh.id), "an order whose pending row is rejected and with nothing approved is off the book; an order with an approved row is not: " + JSON.stringify([...off]));

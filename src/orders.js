@@ -1529,18 +1529,30 @@ export async function againOrder(env, id, body, by, now, mirror) {
         taken = true;
       }
       if (!onRow) return { ok: false, status: 409, error: taken ? "that row's cash is already spoken for" : "record the cash on the row first" };
+      if (!/^[A-Za-z0-9_-]+$/.test(String(onRow.rid))) return { ok: false, status: 409, error: "that row's id cannot be filed against" };
     }
     const found = [];
-    for (const st of want) { const d = await rejectedOf(db, id, st); if (d) found.push([st, d.id]); }
-    /* one batch, each update refusing if a yes for any covered stage landed meanwhile, so a cover is all or none */
-    const stages = found.map(([st]) => "'" + st + "'").join(",");
-    /* and, against a hand row, none by another order's cover landing between the sum and the write: that would spend the same cash twice */
-    const hold = onRow ? " AND NOT EXISTS (SELECT 1 FROM draft d2 WHERE d2.decided_by='covered:" + String(onRow.rid).replace(/[^A-Za-z0-9_-]/g, "") + "' AND json_extract(d2.entry,'$.orderId') NOT IN (" + known.map((_, i) => "?" + (i + 4)).join(",") + "))" : "";
+    for (const st of want) { const d = await rejectedOf(db, id, st); if (d) found.push({ st, id: d.id, by: d.decided_by }); }
+    const label = onRow ? "covered:" + onRow.rid : "covered";
     if (found.length) {
-      const res = await db.batch(found.map(([, did]) => db.prepare("UPDATE draft SET decided_by=?3 WHERE id=?1 AND status='rejected' AND NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage IN (" + stages + ") AND status IN ('waiting','differs'))" + hold).bind(...[did, id, onRow ? "covered:" + onRow.rid : "covered"].concat(onRow ? known : []))));
-      if (res.some((r) => !(r && r.meta && r.meta.changes > 0))) return { ok: false, status: 409, error: "a yes landed on one of those steps meanwhile: read the order again" };
+      /* ONE statement covers every draft, so the cover is all or none: its guard refuses if a yes is waiting on ANY covered stage or, against a hand row,
+         if another order's cover on that row landed outside the ones the sum read (that would spend the same cash twice) */
+      const args = [label, id], ph = (v) => { args.push(v); return "?" + args.length; };
+      const idIn = found.map((x) => ph(x.id)).join(","), stIn = found.map((x) => ph(x.st)).join(",");
+      const hold = onRow ? " AND NOT EXISTS (SELECT 1 FROM draft d2 WHERE d2.decided_by=" + ph(label) + " AND json_extract(d2.entry,'$.orderId') NOT IN (" + known.map((k) => ph(k)).join(",") + "))" : "";
+      const guard = " AND NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage IN (" + stIn + ") AND status IN ('waiting','differs'))" + hold;
+      /* early refusal before the write; the guard in the statement is what closes the race */
+      const live = await db.prepare("SELECT 1 AS x FROM preapproval WHERE order_id=?1 AND stage IN (" + found.map((_, i) => "?" + (i + 2)).join(",") + ") AND status IN ('waiting','differs')").bind(id, ...found.map((x) => x.st)).first();
+      if (live) return { ok: false, status: 409, error: "a yes is waiting on one of those steps: let it land first" };
+      const res = await db.prepare("UPDATE draft SET decided_by=?1 WHERE id IN (" + idIn + ") AND status='rejected'" + guard).bind(...args).run();
+      const n = res && res.meta && res.meta.changes;
+      if (n !== found.length) {
+        /* the one statement changed nothing, or (a draft no longer rejected) only some: put back what it changed, so no order is left part-covered */
+        if (n > 0) for (const x of found) await db.prepare("UPDATE draft SET decided_by=?1 WHERE id=?2 AND decided_by=?3").bind(x.by, x.id, label).run();
+        return { ok: false, status: 409, error: "a yes landed on one of those steps meanwhile: read the order again" };
+      }
     }
-    const dropped = found.map(([st]) => st);
+    const dropped = found.map((x) => x.st);
     return Object.assign({ ok: true, order: f.order, dropped }, onRow ? { row: onRow.rid || null } : {});
   }
   if (!["pay", "cash", "move", "cancel", "amend"].includes(stage)) return { ok: false, status: 400, error: "offer again a pay, cash, move, cancel or amend; a pending row is offered again by Accept, against its preview" };
