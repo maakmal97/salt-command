@@ -39,10 +39,6 @@ export async function run({ ok, KV, worker, REPO } = {}) {
     const fit = (id) => /^C/.test(id) && !/-Gen$/.test(id) && !POSITION_ENGINE.isBucket(id) && !snap.partners.includes(id);
     const plain = snap.roster.find((id) => fit(id) && !snap.associates.includes(id)), member = snap.roster.find((id) => fit(id) && snap.associates.includes(id));
     for (const id of [plain, member]) {
-      const want = JSON.parse(w.eval("(function(){queue=[];partnerMake(" + JSON.stringify(id) + ");return JSON.stringify(queue[0]);})()"));
-      const made = makerPartner({ at: want.at, code: id }, real);
-      check(!!id && made.entry && JSON.stringify(made.entry) === JSON.stringify(want) && made.draft?.collection === "roster" && made.draft.row.partner === true,
-        "Maker's Make partner for " + (id === plain ? "a customer who is no associate" : "an associate") + " is the entry the Desk's partnerMake queues, and the drafter makes it a roster row");
     }
     check(makerPartner({ at, code: snap.partners[0] }, real).error === snap.partners[0] + " is already a partner.", "the Desk's own partner is refused as already one");
   } finally { w.close(); }

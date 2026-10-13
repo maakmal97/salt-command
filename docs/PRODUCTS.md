@@ -124,7 +124,7 @@ hues, and it is generated, so a new hue is added upstream and synced.
   and `ovKey` (code, date, total and, off salt, the product, all through the engine's `ovKey`),
   the order thread and the bulletin all pass a product through opaquely. `siteWords` refuses
   the desk's name, a roster code's shape and a level's name, in English, and
-  deliberately does not refuse a product's name; the desk's `siteSafe` warns on one.
+  deliberately does not refuse a product's name; the desk has no word check, since it sends no line.
 - **Push topics.** `ALERT_TOPICS` is `orders`, `approve` and `salt`, where that last one names
   the morning round, not the product. No topic is per-product.
 - **D1.** `product` is unconstrained `TEXT` on both `entry` and `draft`, and no `CHECK`
@@ -177,7 +177,7 @@ but a purchase defaults to null.
    letter only if he gives one, with a `PLET_ROOM` drawing if a line of the mark crosses it: never the book's
    initial in English. The F8 section holds each book's words and
    goes red until the new book's are added there, lettered or not. The Ring carries no letter.
-10. Its name in `PRODUCT_WORDS` (`src/orders.js`) and the desk's `siteSafe`.
+10. Its name in `PRODUCT_WORDS` (`src/orders.js`).
     The suite fails until both carry the book's name, and holds the desk to every word on the
     list.
 

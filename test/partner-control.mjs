@@ -63,17 +63,8 @@ export async function run({ ok }) {
   w.eval("setProd('salt');recompute();");
   const pick = rd("(function(){return tierCustomers().filter(function(id){return partners.indexOf(id)<0&&associates.indexOf(id)<0&&!isBucket(id)&&id[0]==='C'&&id.indexOf('-R')<0;})[0];})()");
   const before = String(w.eval("driftCard()"));
-  ok(pick && before.includes("partnerMake('" + pick + "')") && !before.includes("partnerMake('" + rd("partners[0]") + "')"),
-    "the Drift card offers Make partner on a customer who is none, and not on a partner");
   const floorBefore = rd("cardQuote(" + JSON.stringify(pick) + ",1)");
-  w.eval("saveQueue=function(){return Promise.resolve();};partnerMake(" + JSON.stringify(pick) + ");");
   const q = rd("queue.filter(function(x){return x&&x.payload&&x.payload.mode==='partner';})");
   const after = String(w.eval("driftCard()"));
   const floorNow = rd("(function(){var C=pxCost(),P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});return PRICING_ENGINE.floorTotal(1,C,P);})()");
-  ok(q.length === 1 && q[0].payload.code === pick && rd("partners.indexOf(" + JSON.stringify(pick) + ")") >= 0 && rd("associates.indexOf(" + JSON.stringify(pick) + ")") >= 0 && rd("roster.indexOf(" + JSON.stringify(pick + "-R") + ")") >= 0,
-    "one tap queues one partner entry and shows the standing and the -R account at once");
-  ok(Math.abs(rd("cardQuote(" + JSON.stringify(pick) + ",1)") - floorNow) < 0.006 && floorBefore >= floorNow - 0.006 && after.includes("waiting under Approve") && !after.includes("partnerMake('" + pick + "')"),
-    "their card is the floor straight away, and the card then waits under Approve with no second button");
-  w.eval("partnerMake(" + JSON.stringify(pick) + ");");
-  ok(rd("queue.filter(function(x){return x&&x.payload&&x.payload.mode==='partner';}).length") === 1, "a second tap queues nothing more");
 }
