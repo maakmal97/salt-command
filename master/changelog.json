@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1106",
+  "d": "14 Oct 2026",
+  "t": "REPAYMENT OF 2.5 UNITS OF SALT TO CM4-TO SETTLES LOAN L002",
+  "n": [
+   "<b>ONE ROW FOLDED.</b> A repayment of 2.5 units of salt to CM4-TO on loan l002, dated 14 Oct 2026, settling it. Nothing unusual: the drafter raised no flags and the row carries no cash.",
+   "<b>INVENTORY.</b> The salt leaves stock, and no lot landed, so the cost basis does not move."
+  ]
+ },
+ {
   "v": "v1105",
   "d": "14 Oct 2026",
   "t": "SALT ACCOUNT READS AS TABLES; A LOAN REPAYMENT SYNCS",

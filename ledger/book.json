@@ -87,7 +87,7 @@
       "stated": null
     }
   },
-  "STATED_STOCK": 25.64,
+  "STATED_STOCK": 23.14,
   "COUNT_ON": {
     "salt": "2026-10-03",
     "oil": "2026-10-06",
@@ -442,7 +442,7 @@
     {"date":"2026-09-08","party":"CM4-TO","direction":"in","valueKg":5.5,"valueRM":null,"status":"settled","product":"salt","note":"<b>5.5 UNIT OF SALT BORROWED FROM CH5-OUG on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 5.5 in the same fold. <b>RETURNED ON 11 SEP, ON HIS WORD.</b> The 5.5 unit went back to CH5-OUG in kind, unit for unit, so the loan is settled and the stated inventory rolled down by it at v583.","settledOn":"2026-09-11"},
     {"date":"2026-09-08","party":"CA2-SEN","direction":"in","valueKg":1.5,"valueRM":null,"status":"settled","product":"salt","note":"<b>1.5 UNIT OF SALT BORROWED FROM CA11-SEN on 08 Sep, owed back in kind, unit for unit, no date set.</b> Entered on his word in a Code session on 08 Sep 2026. Adds to the inventory while open; when it is returned, mark it settled with the date and roll the stated inventory down by 1.5 in the same fold. <b>RETURNED ON 11 SEP, ON HIS WORD.</b> The 1.5 unit went back to CA11-SEN in kind, unit for unit, so the loan is settled and the stated inventory rolled down by it at v583.","settledOn":"2026-09-11"},
     {"party":"CM4-TO","direction":"in","valueRM":null,"form":"salt","note":"<b>LOAN IN BY HAND, 04 OCT: 3 UNITS OF SALT FROM CM4-TO.</b> Open and owed back in kind; it lands on the inventory. <b>REPAID IN KIND ON 05 OCT, ON HIS WORD.</b> The 3 unit went back to CM4-TO, unit for unit, so the loan is settled and the stated inventory rolled down by 3 at v1007.","product":"salt","date":"2026-10-04","valueKg":3,"status":"settled","rid":"l001","settledOn":"2026-10-05"},
-    {"date":"2026-10-12","party":"CM4-TO","direction":"in","form":"salt","valueKg":2.5,"valueRM":null,"status":"open","product":"salt","note":"<b>BORROWED IN ON 12 OCT: 2.5 UNITS OF SALT FROM CM4-TO, OWED BACK IN KIND.</b> Decided by the desk, status open, no money and no price attached, so there is no rate to set against the floor or the ask. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, RM0 outstanding and 0 units on credit before this; he is an associate on the roster. The loan carries no cost of its own, and the draft's cost is not an inventory rate to correct. The drafter raised no flags, so there is nothing for the figures to answer. Open: 2.5 units of salt owed back to CM4-TO.","rid":"l002"}
+    {"date":"2026-10-12","party":"CM4-TO","direction":"in","form":"salt","valueKg":2.5,"valueRM":null,"status":"settled","product":"salt","note":"<b>BORROWED IN ON 12 OCT: 2.5 UNITS OF SALT FROM CM4-TO, OWED BACK IN KIND.</b> Decided by the desk, status open, no money and no price attached, so there is no rate to set against the floor or the ask. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, RM0 outstanding and 0 units on credit before this; he is an associate on the roster. The loan carries no cost of its own, and the draft's cost is not an inventory rate to correct. The drafter raised no flags, so there is nothing for the figures to answer. Open: 2.5 units of salt owed back to CM4-TO.","rid":"l002","repaid":[{"date":"2026-10-14","kg":2.5}],"settledOn":"2026-10-14"}
   ],
   "supplierReceivable": {
     "party": "SF6-KLC",
@@ -898,7 +898,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-13T15:56:30.567Z",
+  "QUEUE_COMMITTED": "2026-10-13T22:45:05.506Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -952,6 +952,7 @@
       "RETIRED AT v549 on 2026-09-09, his instruction. The key held one hand-typed lot: 50 unit by 2026-08-28, stated on the 24th. He read it on 9 September with the date twelve days gone and four lots landed since (25 unit on 26 Aug, 25 on 31 Aug, 25 on 03 Sep and 50 on 08 Sep), and said he generally has no information on when he purchases. The Sourcing section is now about the CURRENT lot, and the cadence is measured off the book rather than typed. One standing fact from the retired basis is kept here because it is not a plan: the purchase ceiling of RM4,500 resets on the 28th of each month and anything beyond it comes out of rolling cash. The rest was the 24 Aug reasoning, that the 100 unit tier was the recommendation and he took the 50, at a landed RM45.20 a unit against RM43.60."
     ],
     "STATED_STOCK": [
+      "ROLLED AT v1106: 2.5 unit to repaid to CM4-TO on 2026-10-14, so 25.64 less 2.5 is 23.14. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 2.5 units repaid to CM4-TO leave the salt stock.",
       "ROLLED AT v1103: 12.5 unit from SA5-BTR on 2026-10-13, so 13.14 plus 12.5 is 25.64. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 12.5 unit lot from SA5-BTR landed on 13 Oct and is added to salt stock, at the same RM56 a unit cost.",
       "ROLLED AT v1095: 1 unit to CM4-TO on 2026-10-12, so 14.14 less 1 is 13.14. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The 1 unit handed over is already in the roll; salt stock stands at 14.14 units, last counted on 3 Oct.",
       "ROLLED AT v1093: 1 unit to CZ5-TM on 2026-10-13, so 15.14 less 1 is 14.14. A ROLL AND NOT A COUNT; COUNT_ON is untouched. The shelf rolls down by 1 unit for the collection by CZ5-TM.",

@@ -1,6 +1,6 @@
 {
-  "v": "v1103",
-  "derivedFrom": "45a79e8d8f22973e",
+  "v": "v1106",
+  "derivedFrom": "abcb56bd39b138d0",
   "tables": {
     "sales": {
       "rows": 259,
@@ -495,6 +495,14 @@
             "string"
           ]
         },
+        "repaid": {
+          "present": 1,
+          "of": 5,
+          "optional": true,
+          "types": [
+            "array"
+          ]
+        },
         "rid": {
           "present": 2,
           "of": 5,
@@ -504,9 +512,9 @@
           ]
         },
         "settledOn": {
-          "present": 4,
+          "present": 5,
           "of": 5,
-          "optional": true,
+          "optional": false,
           "types": [
             "string"
           ]
