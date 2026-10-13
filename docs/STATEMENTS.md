@@ -636,8 +636,8 @@ under the mark is the size in words alone, "2.5 units", and a book's heading (`p
 order sheet's legends and lines), a mark leading a note (`markLead`) and a mark in a sentence (`markHtml`, which the invoice lines and the pay sheet's note share) are the
 mark alone. **The reader is still told the shape** (`PSHAPE`, by key `shape.<Shape>`): a tile's hidden `.sr` reads "Cube 2.5 units", a heading's `aria-label` is the
 shape (with the light where the book has one), and an inline mark is followed by a hidden `.sr`; a control holding only a mark is named by its shape, never its product.
-**No shape word is a product's**: Cube, Droplet, Lozenge, Capsule and Ring name nothing, and the product-word and level-word scans (v695, v704, `siteWords`, the
-Desk's `siteSafe`) pass them and every sentence of the new words; the suite drives that both ways. The Desk never drew a shape word and keeps its book names.
+**No shape word is a product's**: Cube, Droplet, Lozenge, Capsule and Ring name nothing, and the product-word and level-word scans (v695, v704, `siteWords`)
+pass them and every sentence of the new words; the suite drives that both ways. The Desk never drew a shape word and keeps its book names.
 
 **What follows on the Desk**: the order card's `ordTold` and `toldOf` in `src/orders.js` (`CUSTOMER_SEES`) say what they see in these words, the Accept and
 Decline answers read "They see Confirmed" and "They read Declined", the reasons legend says "Why it is declined", and the restock card says More by. The
