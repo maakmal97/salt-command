@@ -257,7 +257,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .cshell{padding-bottom:calc(var(--salt-bar-h) + 24px + env(safe-area-inset-bottom))}
 .chead{max-width:620px;margin:0 auto 18px}
 .chead h1{margin:0;font-size:var(--salt-text-2xl);line-height:1.15}
-/* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header and beside Salt Account's name */
+/* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header (digits only: every word shown is the table's) */
 .cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
 .cclock:empty{display:none}
 .cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
@@ -757,7 +757,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordrow .salt-inbox-row__what{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .ordrow .salt-inbox-row__side{margin:0;align-items:flex-end;justify-content:center;text-align:right;gap:4px}
 .adm .ordrow .salt-inbox-row__action{margin-top:0;font-variant-numeric:tabular-nums}
-/* 14 Oct 2026: the live clock beside Salt Account's name */
+/* 14 Oct 2026: the live clock beside his page's name */
 .adm .clk{font-variant-numeric:tabular-nums}
 .adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
@@ -1644,7 +1644,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div></div>"
     /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
        sits in it, on every view of the saved app */
-    + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock="date"></p>' + wt("h1", 'id="placeT"', "place.home")
+    + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
     + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
@@ -1752,20 +1752,19 @@ const CLIENT_JS = `
   var assoc=false;
   /* null for a customer; {master,accounts} for the owner, on the Access-gated route only */
   var OWNER=__OWNER__;
-  /* 14 Oct 2026 (his review): every [data-clock] shows the time in Kuala Lumpur, "date" ones the day before it; painted on the
+  /* 14 Oct 2026 (his review): every [data-clock] shows the time in Kuala Lumpur, digits only; painted on the
      minute and again whenever the page comes back into view, since a phone sleeps its timers */
   (function(){
-    var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    function paint(){
+    function clockPaint(){
       var p={};
-      try{ new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',day:'2-digit',month:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})
+      try{ new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})
         .formatToParts(new Date()).forEach(function(x){ p[x.type]=x.value; }); }catch(e){ return; }
-      var t=p.hour+':'+p.minute, d=p.day+' '+MON[+p.month-1]+', '+t;
-      [].forEach.call(document.querySelectorAll('[data-clock]'),function(n){ n.textContent=n.getAttribute('data-clock')==='date'?d:t; });
+      var t=p.hour+':'+p.minute;
+      [].forEach.call(document.querySelectorAll('[data-clock]'),function(n){ n.textContent=t; });
     }
-    function tick(){ paint(); setTimeout(tick,60000-Date.now()%60000+50); }
-    tick();
-    document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });
+    function clockTick(){ clockPaint(); setTimeout(clockTick,60000-Date.now()%60000+50); }
+    clockTick();
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) clockPaint(); });
   })();
   /* S3: the device, read once. The words say phone on a phone and computer on anything else (nothing says phone
      on a laptop), in the markup's .dev words and in every line the script writes. */

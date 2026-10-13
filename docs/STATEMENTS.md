@@ -2429,6 +2429,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
 | `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
+| `need.fold.soon` | Needs you, the Soon heading | Opens or folds the Soon cards; folded when drawn, and once opened it stays open across redraws (14 Oct 2026). |
+| `need.fold.watch` | Needs you, the Watch heading | Opens or folds the Watch cards, the same way. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
 | `need.show-code` | Same card | Shows a sign-in code for them in person. |
 | `need.show-link` | Needs you card for an ID with no account yet | Shows the guest price list (the stranger's standing guest link) and its QR until the account is made. |

@@ -12,12 +12,12 @@ export async function run({ ok }) {
     beforeParse(w) { w.fetch = async () => ({ ok: false, status: 503, json: async () => ({}), text: async () => "" }); } });
   try {
     await new Promise((r) => setTimeout(r, 300));
-    const D = dom.window.document, c = D.querySelector('.chead [data-clock="date"]');
+    const D = dom.window.document, c = D.querySelector(".chead [data-clock]");
     const want = kl(), got = c ? c.textContent : null;
-    ok(!!c && (got === want.d || got === kl().d), "the Counter's header shows the day and the time in Kuala Lumpur: " + JSON.stringify({ got, want: want.d }));
+    ok(!!c && (got === want.t || got === kl().t), "the Counter's header shows the time in Kuala Lumpur, digits only: " + JSON.stringify({ got, want: want.t }));
     c.textContent = "";
     D.dispatchEvent(new dom.window.Event("visibilitychange"));
-    ok(c.textContent === kl().d || c.textContent === want.d, "and paints it again when the page comes back into view: " + JSON.stringify(c.textContent));
+    ok(c.textContent === kl().t || c.textContent === want.t, "and paints it again when the page comes back into view: " + JSON.stringify(c.textContent));
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
   const owner = landingPage("", "nclk2", { master: "", accounts: [] });
   const eyebrows = owner.match(/<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock><\/span><\/p>/g) || [];

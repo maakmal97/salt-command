@@ -2,19 +2,19 @@
  {
   "name": "the clock is never painted",
   "file": "stmt/page.js",
-  "find": "    tick();\n    document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });",
-  "replace": "    document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });"
+  "find": "    clockTick();\n    document.addEventListener('visibilitychange',function(){ if(!document.hidden) clockPaint(); });",
+  "replace": "    document.addEventListener('visibilitychange',function(){ if(!document.hidden) clockPaint(); });"
  },
  {
   "name": "the clock is not painted again on return",
   "file": "stmt/page.js",
-  "find": "document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });",
+  "find": "document.addEventListener('visibilitychange',function(){ if(!document.hidden) clockPaint(); });",
   "replace": ""
  },
  {
-  "name": "the Counter's clock drops the day",
+  "name": "the clock reads another zone's time",
   "file": "stmt/page.js",
-  "find": "n.getAttribute('data-clock')==='date'?d:t",
-  "replace": "t"
+  "find": "try{ new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',",
+  "replace": "try{ new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',hour:'2-digit',"
  }
 ]

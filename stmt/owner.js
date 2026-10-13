@@ -4730,7 +4730,7 @@ export const OWNER_JS = `
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
       /* Now stands open; Soon and Watch are folded behind their heading and a count, kept as he leaves them across a redraw */
-      var h=el(s[0]==='now'?'p':'summary','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+(s[0]==='now'?'':' · '+group.length)); h.setAttribute('data-sev', s[0]);
+      var h=el(s[0]==='now'?'p':'summary','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+(s[0]==='now'?'':' · '+group.length)); h.setAttribute('data-sev', s[0]); if(s[0]!=='now') h.setAttribute('data-act','need.fold.'+s[0]);
       var box=nlist;
       if(s[0]!=='now'){
         box=el('details','nfold'); box.setAttribute('data-sev', s[0]); if(nFoldOpen[s[0]]) box.open=true;
@@ -4837,14 +4837,14 @@ export const OWNER_JS = `
     c.appendChild(g);
     /* 14 OCT 2026 (the layout rework): the counts and the reward are names and values, one to a line, the figures aligned down the right */
     var led=el('div','salt-ledger salt-ledger--plain aled');
-    function lrow(k,v){ var rw=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
+    function ledRow(k,v){ var rw=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
       l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',String(v))); rw.appendChild(l); led.appendChild(rw); }
-    if(r.onward) lrow('Resales',r.onward);
-    if(r.referred) lrow('Introduced',r.referred);
-    if(r.share) lrow('Share of all revenue',r.share+'%');
+    if(r.onward) ledRow('Resales',r.onward);
+    if(r.referred) ledRow('Introduced',r.referred);
+    if(r.share) ledRow('Share of all revenue',r.share+'%');
     if(r.reward){
       var w=r.reward;
-      lrow('Reward',w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'+(w.held?', held while away':''));
+      ledRow('Reward',w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'+(w.held?', held while away':''));
     }
     if(led.childElementCount) c.appendChild(led);
     if(r.reward&&r.reward.next!=null){ c.appendChild(bar(r.reward.next)); c.appendChild(el('p','op',Math.round(r.reward.next*100)+'% of the way to the next unit')); }

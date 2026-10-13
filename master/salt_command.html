@@ -22409,6 +22409,7 @@ document.getElementById('tabs').onclick=e=>{const s=e.target.dataset.s;if(s)swit
   const clock=document.getElementById('deskClock');
   const paint=()=>{try{const p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(x=>{p[x.type]=x.value;});clock.textContent=p.hour+':'+p.minute;}catch(e){}};
   const tick=()=>{paint();setTimeout(tick,60000-Date.now()%60000+50);};
+  tick.background=true;   /* it only paints: a tool that opens the desk and never closes it need not wait on it (tools/payload.mjs) */
   if(clock){tick();document.addEventListener('visibilitychange',()=>{if(!document.hidden)paint();});}
 })();renderReveal();renderRole();
 /* 12 Sep 2026: Today fills the field it sits in and says so to the field's own listeners; a click
