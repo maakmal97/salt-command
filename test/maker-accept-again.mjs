@@ -14,7 +14,9 @@ export async function run({ ok }) {
   const reviewBody = { ok: true, drafts: [], orders: [
     orderOf("20261006090001-aga", "acknowledged", { again: ["ack"] }),
     orderOf("20261006090002-ack", "acknowledged"),
-    orderOf("20261006090003-don", "done", { again: ["ack"] })] };
+    orderOf("20261006090003-don", "done", { again: ["ack"] }),
+    orderOf("20261006090004-whl", "acknowledged", { again: ["ack", "move"], againWhole: true }),
+    orderOf("20261006090005-row", "acknowledged", { again: ["ack", "move"] })] };
   const browser = new JSDOM(landingPage("", "fixture", { master: "local-master", accounts: [] }), {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
@@ -69,5 +71,13 @@ export async function run({ ok }) {
     await until(() => button("20261006090003-don", "Check and agree again"));
     ok(!!button("20261006090003-don", "Check and agree again"),
       "A done order whose pending row he rejected keeps its card with Accept again, read when it is opened.");
+
+    /* Not needed: one covering the whole order only where the order has no row; per stage beside the stage's own Send again where it has one; never beside a pending row alone */
+    await until(() => button("20261006090004-whl", "Not needed"));
+    const nn = (id) => texts(id).filter((t) => t === "Not needed").length;
+    ok(nn("20261006090004-whl") === 1 && !!button("20261006090004-whl", "Not needed") && nn("20261006090001-aga") === 0 && nn("20261006090003-don") === 0 && nn("20261006090002-ack") === 0,
+      "Not needed shows once on an order with no row, and on an order with only its pending row rejected shows none: " + JSON.stringify([nn("20261006090004-whl"), nn("20261006090001-aga"), nn("20261006090003-don")]));
+    ok(nn("20261006090005-row") === 1 && card("20261006090005-row").querySelector('[data-act="order.again-drop-move"]') && !card("20261006090005-row").querySelector('[data-act="order.again-drop"]'),
+      "an order with a row names the one stage it covers, the handover, and offers no whole-order Not needed");
   } finally { browser.window.close(); }
 }

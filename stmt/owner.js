@@ -1697,6 +1697,8 @@ export const OWNER_JS = `
         /* a gift the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/gift'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush'||path==='/all/maker/inputs/partner')){makerClear(path);pending=null;cancel.hidden=true;}
+        /* a point the Desk refuses (not an official locality) leaves nothing to retry, and its word must not stay saved */
+        if(error.status===400&&(path==='/all/maker/inputs/add-id'||path==='/all/maker/inputs/amend-id'||path==='/all/maker/inputs/place')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
@@ -1733,15 +1735,22 @@ export const OWNER_JS = `
       }
     }); parent.appendChild(b);parent.appendChild(cancel);return b;
   }
+      /* a locality is public when the official list carries it or this phone verified it (placeFromText) and kept the word */
+      /* a filed locality is always an official place name, so a saved entry is checked against the bundled official names; no word is stored */
+      function makerPublicWord(word){
+        if(makerGeo.official().indexOf(word)>=0)return true;
+        var found=false;makerGeo.picks().forEach(function(point,label){if(label.split(',')[0].trim()===word)found=true;});
+        return found;
+      }
       function makerSaved(path){
         var text=localStorage.getItem('saltMakerPending:'+path);
         if(!text)return null;
         var saved=JSON.parse(text);
-        if(!makerGeo.pendingOk(saved))throw new Error('This saved entry cannot be sent. Discard it.');
+        if(!makerGeo.pendingOk(saved,makerPublicWord))throw new Error('This saved entry cannot be sent. Discard it.');
         return saved;
       }
       function makerSave(record){
-        if(!makerGeo.pendingOk(record))throw new Error('This saved entry cannot be sent. Discard it.');
+        if(!makerGeo.pendingOk(record,makerPublicWord))throw new Error('This saved entry cannot be sent. Discard it.');
         localStorage.setItem('saltMakerPending:'+record.path,JSON.stringify(record));
       }
       function makerClear(path){localStorage.removeItem('saltMakerPending:'+path);unsentPaint();}
@@ -1979,7 +1988,15 @@ export const OWNER_JS = `
     if(!result.point)throw new Error(result.how==='ambiguous'
       ?'That place matches more than one. Choose its district from the list.'
       :'That place is not on the list. Place it on the Desk first.');
-    return result.point.map(function(number){return Math.round(number*100)/100;});
+    /* the point travels with its locality, the Desk's own geoWhere: a point is never filed without the words before the place's first comma */
+    var parts=value.split(',').map(function(w){return w.trim();}).filter(Boolean), official=new Set();
+    makerGeo.picks().forEach(function(point,label){official.add(label.split(',')[0].trim());});
+    if(result.name)official.add(result.name);
+    var said=parts.find(function(w){return official.has(w);})||(result.how==='area'&&result.name?result.name:'');
+    if(!said)throw new Error('That place has no locality to file with its point. Choose it from the list.');
+    var where=makerGeo.where(result.point.map(function(number){return Math.round(number*100)/100;}),said);
+    if(where.length!==3)throw new Error('That place has no locality to file with its point. Choose it from the list.');
+    return where;
   }
   async function makerFiledLink(value){
     if(!value.trim())return null;
@@ -2416,10 +2433,13 @@ export const OWNER_JS = `
           envelope=placeDraft.places;
         }else if(placeLocality.value.trim())coords=await makerLocalityPoint(placeLocality.value.trim());
         else{
-          var point=places[placeParty.value];
+          /* the point filed already, with the locality it was filed with; a point with none is not re-filed bare */
+          var point=places[placeParty.value], held2=(catalog.placed||{})[placeParty.value];
           if(!point||!Number.isFinite(point.lat)||!Number.isFinite(point.lng))
             throw new Error('They have no place filed yet. Choose a place first.');
-          coords=[Math.round(point.lat*100)/100,Math.round(point.lng*100)/100];
+          if(!held2||typeof held2[2]!=='string'||!held2[2].trim())
+            throw new Error('Choose a place from the list: a point is filed with its locality.');
+          coords=[Math.round(point.lat*100)/100,Math.round(point.lng*100)/100,held2[2].trim()];
         }
         delete placeDraft.placeMap;
         var body={at:new Date().toISOString(),places:{[placeParty.value]:coords}};
@@ -2477,6 +2497,7 @@ export const OWNER_JS = `
       return loadMaker().then(function(){
         makerSay(key,result.differs?'The row differs from what you saw and waits under Approve.'
           :result.waiting?'The row is still being made. Check Approve in a moment.'
+          :result.dropped&&result.row?'Taken off. The money is on '+result.row+'.'
           :result.preapproval&&result.preapproval.says?result.preapproval.says:message||'Saved.');
         return true;
       });
@@ -2622,6 +2643,17 @@ export const OWNER_JS = `
       },false);
       offer.setAttribute('data-again',stage); makerAskTag(order,offer,'again-'+stage);
     });
+    var dropOne=function(stage){
+      var drop=makerButton(acts,['Not needed','order.again-drop'+(stage?'-'+stage:'')],function(){
+        makerAsk(order,drop,'again-drop'+(stage||''),{title:'Not needed?', plain:true, go:'Not needed', keep:'Keep it',
+          say:[stage?'Use this when the sale is on the book another way. The '+MAKER_AGAIN[stage]+' you rejected is no longer offered, and nothing goes to the Desk.'
+            :'Use this when the sale is on the book another way. Every step you rejected on this order is no longer offered, and nothing goes to the Desk.'],
+          yes:function(){ makerTap(order,'again',stage?{drop:true,stage:stage}:{drop:true},'Taken off. Nothing is sent again.'); }});
+      },false);
+      drop.setAttribute('data-again','drop'+(stage?'-'+stage:'')); makerAskTag(order,drop,'again-drop'+(stage||''));
+    };
+    if(order.againWhole===true&&(order.again||[]).indexOf('pay')<0) dropOne('');
+    else ['cancel','move','amend'].forEach(function(stage){ if((order.again||[]).indexOf(stage)>=0) dropOne(stage); });
   }
   /* a pending row he rejected on an agreed order is offered again by Accept against a fresh preview, at the charge and
      goods the order already carries (the customer was told them), as the Desk's own Accept again: nothing priced is sent */

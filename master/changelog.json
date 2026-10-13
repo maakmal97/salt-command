@@ -1,5 +1,32 @@
 [
  {
+  "v": "v1103",
+  "d": "13 Oct 2026",
+  "t": "THE DESK READS; COUNTER ADMIN WRITES",
+  "n": [
+   "<b>A DASHBOARD.</b> The Desk no longer writes the book: Approve, the site order moves and replies, the bulletin, Plans' snooze, the Workbench's Record, the drift, tier, partner and reward controls, the house board, the ledger's order and correction forms, Names and IDs' Save and the map's batch placement are gone, each with its twin on Counter Admin. It keeps the restock date, filing a shared spot as a place, alerts, the waiting stamp, and the panel that sends or discards an entry still held on this device; unsent entries no longer move a figure. His decisions of 13 Oct 2026. Nothing prices. B5 of #62.",
+   "<b>THE PROOFS.</b> The dashboard section presses every control on every part and fails on any write outside the kept list, each check red under its own mutation (13); every Desk assertion removed is named with its Counter twin or a reason in docs/NOTES.md; full suite green. Fable reviewed it twice."
+  ]
+ },
+ {
+  "v": "v1102",
+  "d": "13 Oct 2026",
+  "t": "EVERY POINT FILED CARRIES ITS LOCALITY",
+  "n": [
+   "<b>A POINT AND ITS LOCALITY.</b> Counter Admin's Add ID, Amend ID and Place filed a party's point without its locality, so the Coverage map could not say where they are in words (CI5-PER at v1097). They now file the locality with the point, read from the listed area the place resolves to, never the typed text; a street with no listed locality is refused, and the phone keeps nothing but ciphertext. The drafter refuses a point with no locality from any road. Nothing prices.",
+   "<b>THE PROOFS.</b> The Counter maker, blank-locality, one-unlock and v633 sections: the owner road files the locality, a typed street files the listed locality and nothing else is kept on the device, and the drafter refuses a bare point for a registration, a rename and a place; each check red under its own mutation. Fable reviewed it three times."
+  ]
+ },
+ {
+  "v": "v1101",
+  "d": "13 Oct 2026",
+  "t": "NOT NEEDED: A REJECTED SITE-ORDER STEP ALREADY ON THE BOOK",
+  "n": [
+   "<b>NOT NEEDED.</b> A site order whose step he rejected because the sale was already booked by hand kept asking for that step to be sent again. Counter Admin's order card now answers Not needed: on an order with its own row, for a rejected cancel, move or amendment; on an order with no row at all, for every rejected stage, a paid one only when a hand row of that party, product and day holds the cash, each row's cash covering no more than it holds. A payment is never taken off this way, and nothing is taken off while a send is waiting. All or none. Nothing prices.",
+   "<b>THE PROOFS.</b> The order card and S11 sections: each refusal, the cash cover and its sum, the race guards; each check red under its own mutation. Fable reviewed it five times."
+  ]
+ },
+ {
   "v": "v1100",
   "d": "13 Oct 2026",
   "t": "ENTRIES LEFT ON A DESK DEVICE: SEND OR DISCARD",

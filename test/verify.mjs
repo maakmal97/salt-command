@@ -15093,19 +15093,19 @@ await (async () => {
   /* ---- the drafter: the place travels as a point, and only inside Malaysia ---- */
   const mir31 = { sales: [], purchases: [], state: { roster: ["CZ9-PLA", "CZ9-PLB", "CZ9-PLA-R", "CZ9-OLD"], associates: [], PLACED: { "CZ9-PLB": [2.5, 101.5] } }, pricing: null };
   const en31 = (p) => ({ at: "2026-09-14T09:00:00.000Z", payload: p });
-  const pl31 = dr31(en31({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678], "CZ9-PLB": [2.7012, 101.9456] } }), mir31);
-  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57],"CZ9-PLB":[2.7,101.95]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /the point travels, with the locality/.test(pl31.reasoning),
+  const pl31 = dr31(en31({ mode: "place", places: { "CZ9-PLA": [3.1234, 101.5678, "Testville"], "CZ9-PLB": [2.7012, 101.9456, "Testville"] } }), mir31);
+  ok(!pl31.skip && pl31.collection === "place" && JSON.stringify(pl31.row.places) === '{"CZ9-PLA":[3.12,101.57,"Testville"],"CZ9-PLB":[2.7,101.95,"Testville"]}' && /CZ9-PLB is on the map already/.test(pl31.flags.join(" ")) && /the point travels, with the locality/.test(pl31.reasoning),
     "a place entry drafts as its own collection, each point to 0.01 degrees, flagging a party it moves: " + (pl31.skip || JSON.stringify(pl31.row) + " " + pl31.flags.join(" ")));
   for (const [p, why] of [[{ places: { "CZ9-NOT": [3.1, 101.6] } }, /CZ9-NOT is not on the roster/], [{ places: { "CZ9-PLA-R": [3.1, 101.6] } }, /resale account/],
     [{ places: { "CZ9-PLA": [51.5, -0.12] } }, /not in Malaysia/], [{ places: { "CZ9-PLA": "3.1,101.6" } }, /not in Malaysia/], [{ places: {} }, /names no party/]]) {
     const s = dr31(en31({ mode: "place", ...p }), mir31).skip || "";
     ok(why.test(s), "the drafter refuses the place entry " + JSON.stringify(p) + ": " + (s || "drafted"));
   }
-  const ad31 = dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [3.1234, 101.5678] }), mir31);
-  ok(!ad31.skip && JSON.stringify(ad31.row.geo) === "[3.12,101.57]", "a registration carries the point its place was found at: " + (ad31.skip || JSON.stringify(ad31.row)));
+  const ad31 = dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [3.1234, 101.5678, "Testville"] }), mir31);
+  ok(!ad31.skip && JSON.stringify(ad31.row.geo) === '[3.12,101.57,"Testville"]', "a registration carries the point its place was found at: " + (ad31.skip || JSON.stringify(ad31.row)));
   ok(/not in Malaysia/.test(dr31(en31({ mode: "addid", code: "CZ9-NEW", kind: "customer", parent: null, geo: [0, 0] }), mir31).skip || ""), "and is refused with a point outside Malaysia");
-  const rn31 = dr31(en31({ mode: "rename", from: "CZ9-OLD", to: "CZ9-ODD", geo: [2.7012, 101.9456] }), mir31);
-  ok(!rn31.skip && JSON.stringify(rn31.row.geo) === "[2.7,101.95]" && /place on the map moves with it/.test(rn31.reasoning), "a rename carries the new point, and its card says the place moves: " + (rn31.skip || JSON.stringify(rn31.row)));
+  const rn31 = dr31(en31({ mode: "rename", from: "CZ9-OLD", to: "CZ9-ODD", geo: [2.7012, 101.9456, "Testville"] }), mir31);
+  ok(!rn31.skip && JSON.stringify(rn31.row.geo) === '[2.7,101.95,"Testville"]' && /place on the map moves with it/.test(rn31.reasoning), "a rename carries the new point, and its card says the place moves: " + (rn31.skip || JSON.stringify(rn31.row)));
 
   /* ---- the fold: the point is filed on the book, and follows a rename ---- */
   const master31 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
@@ -36901,13 +36901,15 @@ await (async () => {
   try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so offering again was not driven against the real schema"); return; }
   const O = await import("../stmt/orders.js");
-  const { reconcileOrders, deskPass, againOrder } = await import("../src/orders.js");
+  const { reconcileOrders, deskPass, againOrder, offBook, claimOrderFlight } = await import("../src/orders.js");
   const { runDrafter } = await import("../src/drafter.js");
   const PE = (await import("../engine/position.mjs")).default;
   const deskW = (await import("../src/worker.js")).default, stmtW = (await import("../stmt/worker.js")).default;
   const db = new DatabaseSync(":memory:");
   for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
-  const D1 = { prepare(sql) { const st = db.prepare(sql);
+  let raceHook = null;   /* runs once as the covering update is prepared: a yes landing between the check and the write */
+  const D1 = { batch(stmts) { return Promise.resolve(stmts.map((x) => x.run())); }, prepare(sql) { const st = db.prepare(sql);
+    if (raceHook && sql.startsWith("UPDATE draft SET decided_by=")) { const h = raceHook; raceHook = null; h(); }
     const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
       first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
     const self = mk([]); self.bind = (...a) => mk(a); return self; } };
@@ -37039,7 +37041,156 @@ await (async () => {
   await reconcileOrders(denv);
   ok(drafts(w.id, "Pending")[0].decided_by === "withdrawn" && !(await againOn(w.id)).length,
     "a row dropped because they withdrew is not offered again: " + JSON.stringify({ draft: drafts(w.id, "Pending")[0].decided_by, again: await againOn(w.id) }));
-})();
+
+  /* F2. NOT NEEDED: a rejected step the sale is booked another way for is filed covered, and offered no more.
+     With a row on the book only a named cancel, move or amend goes; with none, one tap covers the order, but never a payment claim. */
+  let dn = 0;
+  const seedDraft = (oid, status, entryStatus, over) => {   /* a draft shaped as the drafter leaves one, status as given */
+    const base = db.prepare("SELECT * FROM draft WHERE id=?").get(nh1.j.draft), ent = Object.assign(JSON.parse(base.entry), { orderId: oid, status: entryStatus }, over || {});
+    delete ent.counter; if (over && over.counter) ent.counter = true;
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,drafter,drafted_at,decided_by) VALUES (?,?,?,?,?,?,?,?,?)")
+      .run("2026-10-13T11:00:00." + String(++dn).padStart(3, "0") + "Z", status, base.collection, JSON.stringify(ent), base.row, "x", "fixture", "2026-10-13T11:00:00Z", status === "rejected" ? "desk" : null);
+  };
+  const decidedBy = (oid, es) => drafts(oid, es).map((d) => d.decided_by);
+  const noLive = (oid) => db.prepare("DELETE FROM preapproval WHERE order_id=?").run(oid);
+  /* with a row: an accepted order whose cancellation, payment and cash were rejected */
+  const nh = await place(U2, 1, 108);
+  const nh1 = await accept(nh); land(nh1.j.draft);
+  seedDraft(nh.id, "rejected", "Cancellation"); seedDraft(nh.id, "rejected", "Payment"); seedDraft(nh.id, "rejected", "Payment", { counter: true });
+  const rowStages = await againOn(nh.id);
+  const rPay = await againOrder(denv, nh.id, { drop: true, stage: "pay" }, "phone"), rCash = await againOrder(denv, nh.id, { drop: true, stage: "cash" }, "phone");
+  const rAck = await againOrder(denv, nh.id, { drop: true, stage: "ack" }, "phone"), rNone = await againOrder(denv, nh.id, { drop: true }, "phone");
+  ok(rowStages.includes("cancel") && rowStages.includes("pay") && rowStages.includes("cash")
+    && rPay.status === 400 && rCash.status === 400 && rAck.status === 400 && rNone.status === 400 && !decidedBy(nh.id, "Payment").includes("covered"),
+    "with a row on the book, Not needed refuses pay, cash and a pending row, and a bare drop, changing nothing: " + JSON.stringify([rPay.status, rCash.status, rAck.status, rNone.status, decidedBy(nh.id, "Payment")]));
+  const dOne = await againOrder(denv, nh.id, { drop: true, stage: "cancel" }, "phone"), dOne2 = await againOrder(denv, nh.id, { drop: true, stage: "cancel" }, "phone");
+  ok(dOne.ok && dOne.dropped.join() === "cancel" && dOne2.ok && dOne2.dropped.length === 0 && decidedBy(nh.id, "Cancellation")[0] === "covered"
+    && !(await againOn(nh.id)).includes("cancel") && (await againOn(nh.id)).includes("pay"),
+    "with a row, a named cancellation is filed covered and offered no more, a retry answers ok, and the payment is still offered: " + JSON.stringify([dOne, await againOn(nh.id)]));
+  /* a live yes on the stage refuses the drop, and nothing is changed */
+  seedDraft(nh.id, "rejected", "Handover", { deliveredQty: 1 });
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(nh.id + "|move|1", nh.id, U2, "move", "h", "{}", "{}", "waiting", "2026-10-13T11:05:00Z");
+  const rLive = await againOrder(denv, nh.id, { drop: true, stage: "move" }, "phone");
+  ok(rLive.status === 409 && /offered again already/.test(rLive.error) && decidedBy(nh.id, "Handover")[0] === "desk",
+    "a live yes on the stage refuses the drop and changes nothing: " + JSON.stringify(rLive));
+  noLive(nh.id);
+  /* no row: his pending row, a handover and a cash rejected, nothing approved */
+  const wo = await place(U1, 1, 109);
+  seedDraft(wo.id, "rejected", "Pending"); seedDraft(wo.id, "rejected", "Handover", { deliveredQty: 1 }); seedDraft(wo.id, "rejected", "Payment", { counter: true });
+  const woBefore = await againOn(wo.id);
+  const woDrop = await againOrder(denv, wo.id, { drop: true }, "phone");
+  ok(woBefore.length === 3 && woDrop.ok && woDrop.dropped.length === 3 && !(await againOn(wo.id)).length
+    && decidedBy(wo.id, "Pending")[0] === "covered" && decidedBy(wo.id, "Handover")[0] === "covered" && decidedBy(wo.id, "Payment")[0] === "covered",
+    "with no row on the book, one Not needed covers the pending row, the handover and the cash: " + JSON.stringify([woBefore, woDrop.dropped, await againOn(wo.id)]));
+  /* no row but a payment claim rejected: refused, nothing changed */
+  const wp = await place(U1, 1, 110);
+  seedDraft(wp.id, "rejected", "Pending"); seedDraft(wp.id, "rejected", "Payment"); seedDraft(wp.id, "rejected", "Handover", { deliveredQty: 1 });
+  const wpDrop = await againOrder(denv, wp.id, { drop: true }, "phone");
+  ok(wpDrop.status === 409 && /Received first/.test(wpDrop.error) && decidedBy(wp.id, "Pending")[0] === "desk" && decidedBy(wp.id, "Handover")[0] === "desk",
+    "with no row, a rejected payment claim refuses the whole drop and changes nothing: " + JSON.stringify([wpDrop, decidedBy(wp.id, "Pending")]));
+  /* a live yes on any stage refuses the whole drop before any is covered */
+  const wl = await place(U1, 1, 111);
+  seedDraft(wl.id, "rejected", "Pending"); seedDraft(wl.id, "rejected", "Handover", { deliveredQty: 1 }); seedDraft(wl.id, "approved", "Payment", { counter: true });
+  /* his pending row rejected, yet another draft of the order approved: the order has a row, so a bare drop is refused */
+  const wlRow = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(wlRow.status === 400 && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
+    "a rejected pending row beside an approved draft is an order with a row: a bare drop is refused: " + JSON.stringify([wlRow.status, decidedBy(wl.id, "Pending")]));
+  db.prepare("UPDATE draft SET status='rejected', decided_by='desk' WHERE status='approved' AND entry LIKE ?").run('%"orderId":"' + wl.id + '"%');
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wl.id + "|move|1", wl.id, U1, "move", "h", "{}", "{}", "waiting", "2026-10-13T11:05:00Z");
+  const wlDrop = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(wlDrop.status === 409 && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
+    "a live yes on one stage refuses the whole drop, and no stage is covered: " + JSON.stringify([wlDrop.status, decidedBy(wl.id, "Pending")]));
+  const listed = (await call("/orders?all=1", null, "GET")).j.orders, byId = (id) => listed.find((x) => x.id === id) || {};
+  ok(byId(wl.id).againWhole === true && !byId(nh.id).againWhole && !byId(wp.id).againWhole,
+    "the order list says an order is whole-droppable only when it has no row and no payment claim rejected: " + JSON.stringify([byId(wl.id).againWhole, byId(nh.id).againWhole, byId(wp.id).againWhole]));
+
+
+  /* money paid on the site: Not needed covers the order only once the book holds a row for that party with the cash */
+  db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wl.id);
+  await O.deskMove(senv, U1, wl.id, { status: "acknowledged", mode: "collect" });
+  await O.deskMove(senv, U1, wl.id, { cash: { amount: 8 } });
+  ok((await orderOf(wl.id)).paid === 8, "the fixture order has RM 8 paid on the site");
+  const day = new Date().toISOString().slice(0, 10);
+  const noRow = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(noRow.status === 409 && /record the cash on the row first/.test(noRow.error) && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
+    "a paid order with no row holding its cash is not covered, and nothing changes: " + JSON.stringify([noRow.status, noRow.error]));
+  putSale({ date: day, customer: C1, qty: 1, total: 16, cash: 5, rid: "s218" });
+  const lowRow = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(lowRow.status === 409 && decidedBy(wl.id, "Pending")[0] === "desk", "a row with less cash than the order is paid does not match: " + JSON.stringify(lowRow.status));
+  seedDraft(wl.id, "rejected", "Cancellation");
+  const payCancel = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(payCancel.status === 409 && /owes a refund/.test(payCancel.error) && decidedBy(wl.id, "Pending")[0] === "desk",
+    "a rejected cancellation on a paid order is not covered: it owes a refund: " + JSON.stringify([payCancel.status, payCancel.error]));
+  db.prepare("DELETE FROM draft WHERE json_extract(entry,'$.status')='Cancellation' AND json_extract(entry,'$.orderId')=?").run(wl.id);
+  putSale({ date: day, customer: C1, qty: 2, total: 16, cash: 16, rid: "s219" });
+  /* a yes that lands between the check and the write: the guarded update changes nothing and the answer is not a success */
+  raceHook = () => db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wl.id + "|move|9", wl.id, U1, "move", "h", "{}", "{}", "waiting", "2026-10-13T12:00:00Z");
+  const raced = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(raced.status === 409 && /meanwhile/.test(raced.error) && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
+    "a yes landing between the check and the write refuses the cover, and nothing is covered: " + JSON.stringify([raced.status, raced.error, raced.ok, raced.dropped]));
+  db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wl.id);
+  const paidDrop = await againOrder(denv, wl.id, { drop: true }, "phone");
+  ok(paidDrop.ok && paidDrop.row === "s219" && paidDrop.dropped.length >= 2 && decidedBy(wl.id, "Pending")[0] === "covered:s219" && decidedBy(wl.id, "Handover")[0] === "covered:s219" && !(await againOn(wl.id)).length,
+    "once a row for that party holds the cash, Not needed covers the order against it, and names the row: " + JSON.stringify([paidDrop.ok, paidDrop.row, paidDrop.dropped]));
+  /* one hand row holds only the cash it holds: two orders paid 8 pass against s219 (16), a third is refused; a site order's own landed row proves nothing */
+  await O.customerMove(senv, U1, wo.id, "cancel", {}); await O.customerMove(senv, U1, wp.id, "cancel", {});
+  const paidOrder = async (total) => {
+    const x = await place(U1, 1, total);
+    await O.deskMove(senv, U1, x.id, { status: "acknowledged", mode: "collect" }); await O.deskMove(senv, U1, x.id, { cash: { amount: 8 } });
+    seedDraft(x.id, "rejected", "Pending"); return x;
+  };
+  const wm = await paidOrder(113), wn = await paidOrder(114);
+  land(a2.j.draft, { date: day, cash: 50 });   /* the site order a's own row, with cash on it */
+  const m1 = await againOrder(denv, wm.id, { drop: true }, "phone");
+  ok(m1.ok && m1.row === "s219" && decidedBy(wm.id, "Pending")[0] === "covered:s219", "a second order paid 8 is covered against s219, cash 16: " + JSON.stringify([m1.ok, m1.row, m1.error]));
+  const m2 = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(m2.status === 409 && /already spoken for|record the cash/.test(m2.error) && decidedBy(wn.id, "Pending")[0] === "desk" && m2.status === 409 && !/^$/.test(m2.error),
+    "a third order paid 8 is refused, s219 being spoken for and a site order's own row proving nothing: " + JSON.stringify([m2.status, m2.error]));
+  const m2b = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(/already spoken for/.test(m2b.error), "and it is told the row's cash is spoken for: " + m2b.error);
+  /* the pending row's yes is waiting, or a draft still pending: the order is on the book */
+  const offW = await offBook(D1, [{ id: wn.id }]);
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wn.id + "|ack|1", wn.id, U1, "ack", "h", "{}", "{}", "waiting", "2026-10-13T12:00:00Z");
+  const offL = await offBook(D1, [{ id: wn.id }]);
+  db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wn.id);
+  seedDraft(wn.id, "pending", "Handover", { deliveredQty: 1 });
+  const offP = await offBook(D1, [{ id: wn.id }]);
+  ok(offW.has(wn.id) && !offL.has(wn.id) && !offP.has(wn.id), "an order is off the book only with no yes waiting on its pending row and no draft still pending: " + JSON.stringify([...offW, ...offL, ...offP]));
+  /* the covering row may bear the covered order's own key; and two covers racing for one row's cash cannot both land */
+  db.prepare("DELETE FROM draft WHERE status='pending' AND json_extract(entry,'$.orderId')=?").run(wn.id);
+  const hand = { date: day, customer: C1, qty: 1, total: 114, cash: 16, rid: "s241" };
+  putSale(hand);
+  const mk = await denv.STMT_SITE.fetch("https://stmt/desk/orders/" + U1 + "/" + wn.id, { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Desk": "desk-key" }, body: JSON.stringify({ mark: { ledgerKey: PE.ovKey(hand) } }) });
+  ok(mk.ok && (await orderOf(wn.id)).ledgerKey === PE.ovKey(hand), "the fixture order bears the key a hand row would: " + mk.status);
+  raceHook = () => { seedDraft("race-x", "rejected", "Pending"); db.prepare("UPDATE draft SET decided_by='covered:s241' WHERE json_extract(entry,'$.orderId')='race-x'").run(); };
+  const raced2 = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(raced2.status === 409 && /meanwhile/.test(raced2.error) && decidedBy(wn.id, "Pending")[0] === "desk",
+    "another order's cover landing on the same row between the sum and the write refuses this one: " + JSON.stringify([raced2.status, raced2.error]));
+  db.prepare("DELETE FROM draft WHERE json_extract(entry,'$.orderId')='race-x'").run();
+  const ownKey = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(ownKey.ok && ownKey.row === "s241" && decidedBy(wn.id, "Pending")[0] === "covered:s241",
+    "a hand row bearing the covered order's own key covers it, that order having no row of its own: " + JSON.stringify([ownKey.ok, ownKey.row, ownKey.error]));
+  /* a row whose id is not plain is refused, never stripped; a yes landing on ONE of several covered stages leaves none covered */
+  seedDraft(wn.id, "rejected", "Pending"); seedDraft(wn.id, "rejected", "Handover", { deliveredQty: 1 });
+  db.prepare("DELETE FROM entry WHERE doc LIKE '%\"s241\"%'").run();
+  putSale({ date: day, customer: C1, qty: 1, total: 114, cash: 999, rid: "s 9!" });
+  const badRid = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(badRid.status === 409 && /cannot be filed against/.test(badRid.error) && !decidedBy(wn.id, "Pending").some((x) => x === "covered:s 9!" || x === "covered:s9"),
+    "a hand row whose id is not plain is refused, nothing written: " + JSON.stringify([badRid.status, badRid.error, decidedBy(wn.id, "Pending")]));
+  db.prepare("DELETE FROM entry WHERE doc LIKE '%s 9!%'").run();
+  putSale(hand);
+  raceHook = () => db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wn.id + "|move|8", wn.id, U1, "move", "h", "{}", "{}", "waiting", "2026-10-13T12:30:00Z");
+  const partial = await againOrder(denv, wn.id, { drop: true }, "phone");
+  const stillBy = (es) => drafts(wn.id, es).map((d) => d.decided_by).slice(-1)[0];
+  ok(partial.status === 409 && stillBy("Pending") === "desk" && stillBy("Handover") === "desk",
+    "a yes landing on one of the covered stages leaves none of them covered: " + JSON.stringify([partial.status, stillBy("Pending"), stillBy("Handover")]));
+  db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wn.id);
+  /* what is on its way: an order with no row counts nothing, one with a row still does */
+  const off = await offBook(D1, [{ id: wl.id }, { id: nh.id }, { id: wo.id }]);
+  ok(off.has(wl.id) && off.has(wo.id) && !off.has(nh.id), "an order whose pending row is rejected and with nothing approved is off the book; an order with an approved row is not: " + JSON.stringify([...off]));
+  const ords = [{ id: "o1", u: "u1", ledgerKey: "k1", status: "acknowledged", paid: 8 }];
+  const flyOff = claimOrderFlight([], ords, "u1", {}, new Set(["o1"])), flyOn = claimOrderFlight([], ords, "u1", {}, new Set());
+  ok(!flyOff.by.k1 && flyOn.by.k1 === 8, "money paid on an order with no row is not counted as on its way to a row: " + JSON.stringify([flyOff.by, flyOn.by]));})();
 
 section("S11 11.16: his wakes name the kind of act and never a code or an amount, and a new order is never titled by older news");
 await (async () => {
@@ -50662,7 +50813,7 @@ await (async () => {
     ["redeem", { at: inputBody.at, code: "CX1-ZED", date: inputBody.date }],
     ["add-id", { at: inputBody.at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers: null, vault: sealed }],
     ["amend-id", { at: inputBody.at, from: "CX1-ZED", to: "CX2-TST", geo: null, vault: sealed }],
-    ["place", { at: inputBody.at, places: { "CX1-ZED": [3.13, 101.68] } }]
+    ["place", { at: inputBody.at, places: { "CX1-ZED": [3.13, 101.68, "Pudu"] } }]
   ];
   for (const [operation, body] of ledgerInputs)
     await inputCall("/all/maker/inputs/" + operation, "POST", body);
@@ -50737,6 +50888,8 @@ await (async () => {
     && !!makerOrderFault("accept", { total: 100 })
     && !!makerOrderFault("handed", { qty: 1, note: "unsupported prose" }),
     "typed order fields reject string figures, missing digests and unsupported prose");
+  ok(!makerOrderFault("again", { drop: true, rid: "r".repeat(16) }) && !makerOrderFault("again", { drop: true, stage: "move", rid: "r".repeat(16) }) && !!makerOrderFault("again", { drop: true, stage: "pay", rid: "r".repeat(16) }) && !!makerOrderFault("again", { stage: "x", rid: "r".repeat(16) }) && !!makerOrderFault("again", { drop: true, rid: "r".repeat(16), other: 1 }),
+    "an again body may carry drop alone, and still needs a stage otherwise");
   let assetCalls = 0;
   const privateMiss = await worker.fetch(new Request("https://desk.test/_internal/maker/unknown"), {
     ASSETS: { fetch: async () => { assetCalls++; return new Response("asset"); } }
@@ -51141,11 +51294,11 @@ await (async () => {
         body: JSON.stringify(body)
       }), env, { waitUntil() {} });
     const addPairBody = { at: "2026-09-29T15:11:00.000Z", code: "CX6-ZED", kind: "customer",
-      parent: null, geo: [3.1, 101.7], tiers: null, vault: pairSeal("add-names"), addrVault: pairSeal("add-places"),
+      parent: null, geo: [3.1, 101.7, "Pudu"], tiers: null, vault: pairSeal("add-names"), addrVault: pairSeal("add-places"),
       pair: { expectedRevision: 1, names: pairSeal("add-names"), places: pairSeal("add-places") } };
     const addedPair = await pairInput("add-id", addPairBody);
     const addedReplay = await pairInput("add-id", addPairBody);
-    const changedPair = await pairInput("add-id", { ...addPairBody, geo: [3.2, 101.7] });
+    const changedPair = await pairInput("add-id", { ...addPairBody, geo: [3.2, 101.7, "Pudu"] });
     ok(addedPair.status === 200 && (await addedReplay.json()).replay && changedPair.status === 409
       && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 2
       && countDb.prepare("SELECT state FROM vault_outbox WHERE id=?").get(addPairBody.at)?.state === "complete"
@@ -51155,7 +51308,7 @@ await (async () => {
       vault: pairSeal("rename-names"), addrVault: pairSeal("rename-places"),
       pair: { expectedRevision: 2, names: pairSeal("rename-names"), places: pairSeal("rename-places") } };
     const renamedPair = await pairInput("amend-id", pairRename);
-    const pairPlace = { at: "2026-09-29T15:13:00.000Z", places: { "CX1-ZED": [3.2, 101.7] },
+    const pairPlace = { at: "2026-09-29T15:13:00.000Z", places: { "CX1-ZED": [3.2, 101.7, "Pudu"] },
       addrVault: pairSeal("file-place"), pair: { expectedRevision: 3, names: pairSeal("rename-names"), places: pairSeal("file-place") } };
     const placedPair = await pairInput("place", pairPlace);
     const stalePair = await pairInput("place", { ...pairPlace, at: "2026-09-29T15:14:00.000Z" });
@@ -51659,7 +51812,7 @@ await (async () => {
           : route === "/all/maker/vault/addr" ? { ok: true, vault: placeEnvelope }
           : route === "/all/maker/inputs" ? { ok: true, products: ["salt"], catalog: {
             products: [{ product: "salt", saleReady: true, purchaseReady: true, tiered: true }],
-            parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
+            parties: ["CX1-AB"], placed: { "CX1-AB": [3.12, 101.69, "Pudu"] }, associates: [{ code: "CX1-AB", resaleReady: false }],
             tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
             loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }],
             rewards: [{ code: "CX1-AB", held: 2, free: 2, associate: true, departed: false, action: "redeem" }],
@@ -51793,7 +51946,7 @@ await (async () => {
     ok(newPlaces["CA3-KL"]?.lat === 3.123456 && newPlaces["CA3-KL"]?.lng === 101.654321
       && newPlaces["CA3-KL"]?.addr === "Secret Way" && newPlaces["CA3-KL"]?.src === "waze"
       && JSON.stringify(newPlaces._base) === JSON.stringify(filedPlaces._base)
-      && sentAddId.body.geo?.length === 2 && !JSON.stringify(sentAddId.body).includes("Secret Way")
+      && sentAddId.body.geo?.length === 3 && !JSON.stringify(sentAddId.body).includes("Secret Way")
       && !JSON.stringify(sentAddId.body).includes("3.123456"),
       "a new Waze address and exact point are filed on-device inside ciphertext only, keeping the base and queueing the official rounded locality");
     ok(addId.querySelector("datalist")?.options.length > 100,
@@ -51834,7 +51987,7 @@ await (async () => {
     placement.querySelector("button").click();
     ok(await adminWork.quiet(), "the encrypted map point opens and queues");
     const sentPlacement = adminCalls.find((call) => call.route === "/all/maker/inputs/place");
-    ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69] })
+    ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69, "Pudu"] })
       && !JSON.stringify(sentPlacement.body).includes("Private Road"),
       "map placement decrypts on-device and queues only a point rounded to 0.01 degrees");
     const placeTexts = placement.querySelectorAll('input[type="text"]');
@@ -51847,10 +52000,26 @@ await (async () => {
     ok(mapFiled["CX1-AB"]?.addr === "Invented Road" && mapFiled["CX1-AB"]?.lat === 3.234567
       && mapFiled["CX1-AB"]?.lng === 101.765432
       && JSON.stringify(mapFiled._base) === JSON.stringify(filedPlaces._base)
-      && JSON.stringify(newPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72] })
+      && JSON.stringify(newPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
       && !JSON.stringify(newPlacement.body).includes("Invented Road")
       && !JSON.stringify(newPlacement.body).includes("3.234567"),
       "Network placement can file a new Maps address and exact point encrypted while queueing only its official locality point");
+    placeTexts[0].value = "Jalan Foo, Pudu";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the street-and-locality placement settles");
+    const streetPlacement = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").at(-1);
+    ok(JSON.stringify(streetPlacement?.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
+      && ![...Array(admin.window.localStorage.length).keys()].some((i) => admin.window.localStorage.getItem(admin.window.localStorage.key(i)).includes("Jalan Foo")),
+      "a typed street, Locality files the matched locality and the phone keeps no street word");
+    const placesBefore = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").length;
+    placeTexts[0].value = "Jalan Foo Cheras";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the street-only placement settles");
+    const cherasCalls = adminCalls.filter((call) => call.route === "/all/maker/inputs/place");
+    ok(cherasCalls.slice(placesBefore).every((call) => call.body.places["CX1-AB"][2] === "Cheras")
+      && ![...Array(admin.window.localStorage.length).keys()].some((i) => admin.window.localStorage.getItem(admin.window.localStorage.key(i)).includes("Jalan Foo"))
+      && !(admin.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/place") || "").includes("Jalan Foo"),
+      "a comma-less street text is never the locality: only the matched area is filed and the phone keeps no street word");
     nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
     devicePairRevision = 10; devicePairConflict = true;
     tile(addId, "Role", "customer");

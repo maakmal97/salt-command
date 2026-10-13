@@ -17,7 +17,7 @@ export async function run({ ok }) {
   const book = () => ({ version: 1, sales: [], purchases: [], pricing,
     state: { PRODUCTS: { salt: { name: "salt" }, oil: { name: "oil" } }, roster: ["CX1-ZED"], associates: [], PEOPLE: { departed: [] } } });
   const add = (patch = {}) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null,
-    geo: [3.1, 101.7], tiers: { salt: "Silver" }, vault: seal("names"), ...patch }, book());
+    geo: [3.1, 101.7, "Pudu"], tiers: { salt: "Silver" }, vault: seal("names"), ...patch }, book());
 
   /* the Desk's own Add ID, the live master, for the same input */
   const { w } = await openMaster();
@@ -43,7 +43,7 @@ export async function run({ ok }) {
   const env = { STMT: { get: async () => null, put: async () => {} }, COUNTER_MAKER_KEY: key,
     DESK_MAKER: { fetch: async (request) => { calls.push({ path: new URL(request.url).pathname, body: await request.json() });
       return new Response(JSON.stringify({ ok: true })); } } };
-  const body = { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7], tiers: { salt: "Silver" }, vault: seal("names") };
+  const body = { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7, "Pudu"], tiers: { salt: "Silver" }, vault: seal("names") };
   const send = (identity) => handleMaker(new Request("https://counter.test/all/maker/inputs/add-id", { method: "POST", body: JSON.stringify(body) }),
     env, "/all/maker/inputs/add-id", identity);
   const denied = await send({ email: "other@example.test" }), anon = await send(undefined);
@@ -72,7 +72,7 @@ export async function run({ ok }) {
   const wenv = { SALT_LEDGER: d1, SALT_QUEUE: kv, COUNTER_MAKER_KEY: key, REQUIRE_ACCESS: "0", VAULT_STORE: "pair" };
   const post = (b) => worker.fetch(new Request("https://desk.test/_internal/maker/inputs/add-id", { method: "POST",
     headers: { "content-type": "application/json", "X-Counter-Maker-Key": key }, body: JSON.stringify(b) }), wenv, { waitUntil() {} });
-  const input = { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7], tiers: { salt: "Silver" },
+  const input = { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7, "Pudu"], tiers: { salt: "Silver" },
     vault: seal("nn"), addrVault: seal("pp"), pair: { expectedRevision: 1, names: seal("nn"), places: seal("pp") } };
   const first = await post(input), replay = await post(input), changed = await post({ ...input, tiers: { salt: "Gold" } });
   const fixed = await post({ ...input, at: "2026-10-05T08:01:00.000Z", code: "CZ5-TST", tiers: { oil: "Silver" } });

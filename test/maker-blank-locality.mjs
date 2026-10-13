@@ -149,7 +149,7 @@ export async function run({ ok, pageWork }) {
           drafts: sqlite.prepare("SELECT id,collection,status FROM draft ORDER BY drafted_at").all() }));
     blank.close();
     if (blank.body) {
-      const replay = await call(blank.body), changed = await call({ ...blank.body, geo: [3.1, 101.7] });
+      const replay = await call(blank.body), changed = await call({ ...blank.body, geo: [3.1, 101.7, "Pudu"] });
       ok(replay.status === 200 && (await replay.json()).replay === true && changed.status === 409
         && pair().revision === 2 && sqlite.prepare("SELECT COUNT(*) n FROM draft WHERE id=?").get(blank.body.at).n === 1,
         "blank-locality bridge: identical retry is once-only and changed content under the same receipt refuses");
@@ -180,7 +180,7 @@ export async function run({ ok, pageWork }) {
       "blank-locality device/pair: a supplied exact Waze point remains encrypted without inventing an approximate locality");
     const official = await device({ name: "Test Local", locality: "Pudu" });
     const localName = (await crypt(JSON.parse(pair().names), true))["CT10-PUD"];
-    ok(official.body?.code === "CT10-PUD" && official.body.geo?.join() === "3.13,101.72" && localName === "Test Local (Pudu)"
+    ok(official.body?.code === "CT10-PUD" && official.body.geo?.join() === "3.13,101.72,Pudu" && localName === "Test Local (Pudu)"
       && draft(official.body.at)?.entry.payload.geo?.join() === official.body.geo.join(),
       "blank-locality device/pair: supplied official locality still derives its own code, sealed words and rounded queued point");
     const original = linked.body || official.body;

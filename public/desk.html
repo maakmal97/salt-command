@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="bd3e212768f329fb";
+var SALT_BUILD_ID="456518c7212beb01";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9416,7 +9416,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1100","d":"13 Oct 2026","t":"ENTRIES LEFT ON A DESK DEVICE: SEND OR DISCARD","n":["<b>RECOVERY.</b> Enter shows every entry still held unsent on this Desk device, with Send and Discard. Book entries go by the queue; names, places and non-bucket Add IDs by the vault pair under their own stamp, so a retry lands once; an entry with neither road offers Discard only, and Discard asks first. An entry stays on the device until the Worker's own receipt. Vault entries already held in the cloud queue are kept there while the device still holds them, and let go when it discards them. Unsent entries are marked wherever they move a figure, behind one switch the Desk's coming read-only version turns off. B3 of #62.","<b>THE PROOFS.</b> The B3 recovery section: receipts, both roads, the confirm, the switch, the carry-forward kept and released; each check red under its own mutation (14). Fable reviewed it three times."]}];
+const evolution=[{"v":"v1103","d":"13 Oct 2026","t":"THE DESK READS; COUNTER ADMIN WRITES","n":["<b>A DASHBOARD.</b> The Desk no longer writes the book: Approve, the site order moves and replies, the bulletin, Plans' snooze, the Workbench's Record, the drift, tier, partner and reward controls, the house board, the ledger's order and correction forms, Names and IDs' Save and the map's batch placement are gone, each with its twin on Counter Admin. It keeps the restock date, filing a shared spot as a place, alerts, the waiting stamp, and the panel that sends or discards an entry still held on this device; unsent entries no longer move a figure. His decisions of 13 Oct 2026. Nothing prices. B5 of #62.","<b>THE PROOFS.</b> The dashboard section presses every control on every part and fails on any write outside the kept list, each check red under its own mutation (13); every Desk assertion removed is named with its Counter twin or a reason in docs/NOTES.md; full suite green. Fable reviewed it twice."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9560,7 +9560,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 19:26 KL';
+const LAST_UPDATED='13 Oct 2026, 22:19 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -13249,6 +13249,9 @@ function areaOf(lat,lng,loc){
    its district. Each named once, and what is not known left out. */
 const PLACE_WORDS={rd:'Road',jln:'Jalan',sg:'Sungai',bkt:'Bukit',bdr:'Bandar',tmn:'Taman',kg:'Kampung',kpg:'Kampung'};
 const placeTidy=t=>String(t||'').replace(/\b([A-Za-z]+)\b\.?/g,(m,w)=>PLACE_WORDS[w.toLowerCase()]||m);
+/* the locality travels with a point as its third element; Counter Admin bundles these two (tools/maker-geosync.mjs) */
+const placeLocality=pl=>String(pl==null?'':pl).split(',')[0].trim();
+const geoWhere=(pt,pl)=>{const l=placeLocality(pl).slice(0,60);return pt&&l&&!/^(location )?(to be confirmed|tbc)$/i.test(l)?[pt[0],pt[1],l]:pt;};
 function placeWords(loc,lat,lng){
   const parts=loc?[loc]:[];
   if(lat!=null){const r=areaOf(lat,lng,loc);if(r.area)parts.push(r.area.short);if(r.district)parts.push(r.district.name);}

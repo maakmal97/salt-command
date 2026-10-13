@@ -19,7 +19,7 @@
 
 import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, draftRow, tripCheck } from "./drafter.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
@@ -696,7 +696,9 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       return json({ ok: true });
     }
     if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
-    return json({ ok: true, again: await againOf(env.SALT_LEDGER, list) });
+    const again = await againOf(env.SALT_LEDGER, list), whole = {};
+    for (const oid of Object.keys(again)) { try { if ((await dropMode(env.SALT_LEDGER, oid)).whole && !again[oid].includes("pay")) whole[oid] = true; } catch (e) { /* the card then offers no Not needed */ } }
+    return json({ ok: true, again, whole });
   }
   if (p === "/_internal/maker/inputs/offset"
     || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)) {
@@ -1545,17 +1547,9 @@ async function handleVaultInput(env, operation, body) {
   for (const point of points)
     if (!await officialVaultPoint(point))
       return json({ ok: false, error: "A public locality must be on the official place list or gazetteer; exact addresses stay encrypted." }, 400);
-  const checkedInput = { ...input };
-  if (input.geo) checkedInput.geo = input.geo.slice(0, 2);
-  if (operation === "place") checkedInput.places = Object.fromEntries(
-    Object.entries(input.places || {}).map(([code, point]) => [code, point.slice(0, 2)]));
-  const built = makerLedgerInput(operation, checkedInput, book);
+  const built = makerLedgerInput(operation, input, book);
   if (built.error) return json({ ok: false, error: built.error }, 400);
   const entry = built.entry || null;
-  if (entry && input.geo?.length === 3) {
-    if (entry.payload.mode === "place") entry.payload.places[input.from] = input.geo;
-    else entry.payload.geo = input.geo;
-  }
   if (entry && operation === "place") entry.payload.places = input.places;
   if (entry) {
     const proposed = draftRow(entry, book);
@@ -2469,6 +2463,7 @@ export default {
       if (r.ok && env.SALT_LEDGER) {
         const again = await againOf(env.SALT_LEDGER, r.orders.map((o) => o.id));
         for (const o of r.orders) if (again[o.id]) o.again = again[o.id];
+        for (const o of r.orders) if (again[o.id] && !again[o.id].includes("pay")) { try { if ((await dropMode(env.SALT_LEDGER, o.id)).whole) o.againWhole = true; } catch (e) { /* none */ } }
         /* and whether his Accept is given and not yet spent: its row being drafted (`waiting`), or waiting under Approve
            because it came out other than he saw (`differs`); the card then offers no second Accept */
         try {

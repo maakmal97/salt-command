@@ -159,7 +159,7 @@ const draft = (id, patch = {}) => ({ id, status: "pending", collection: "sales",
 const catalog = () => ({
   products: [{ product: "salt", saleReady: true, purchaseReady: true, tiered: true, drift: true, driftPresets: [{ name: "Gentle", value: 0.25 }] },
     { product: "oil", saleReady: true, purchaseReady: true, tiered: false, drift: false }],
-  parties: ["CX1-ZED", "CX2-ZED", "SX1-ZED", "AX1-ZED", "AX1-ZED-R"],
+  placed: { "CX1-ZED": [3.1, 101.7, "Pudu"] }, parties: ["CX1-ZED", "CX2-ZED", "SX1-ZED", "AX1-ZED", "AX1-ZED-R"],
   associates: [{ code: "AX1-ZED", resaleReady: true }],
   tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"], tierCustomers: ["CX1-ZED"],
   tierCards: [{ code: "CX1-ZED", product: "salt", held: "Gold", proposed: "Platinum", late: { level: "Silver", why: "paid late" } }],
@@ -390,6 +390,12 @@ export async function auditStates({ pageWork }) {
     await p.click(byAct(p.d, "need.turn-skip"));
     states.push(["the turn done", actAudit(p.d)]);
   } finally { p.w.close(); }
+  /* an order with no row on the book, its rejected steps covered by one Not needed: a card of its own, so the busy page's lists stay as they were */
+  const w = await richOwnerPage({ pageWork, review: (j) => ({ ...j, orders: [{ ...placed, id: "ord-w1", status: "declined", mode: "collect", qty: 1, total: 100, again: ["ack", "move"], againWhole: true }] }) });
+  try {
+    await w.work.quiet(); w.card("ord-w1"); await w.work.quiet();
+    states.push(["an order with no row, Not needed covering all", actAudit(w.d)]);
+  } finally { w.w.close(); }
   const q = await richOwnerPage({ pageWork, failInputs: true });
   try {
     await q.work.quiet();

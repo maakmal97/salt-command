@@ -341,7 +341,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
         action: !reward.error && free > 0.009 ? sale ? "Offset" : "Redeem" : null }];
     }),
     placed: Object.fromEntries(Object.entries(book.state.PLACED || {})
-      .filter(([id, point]) => bookRoster.includes(id) && Array.isArray(point) && safeGeo(point.slice(0, 2)))),
+      .filter(([id, point]) => bookRoster.includes(id) && Array.isArray(point) && safePoint(point))),
     associates: [...new Set(associateCodes(book).concat(verified.filter((item) =>
       item.kind === "reseller" || item.kind === "referral")
       .map((item) => item.code)))].filter((value) => code(value, parties) && !POSITION_ENGINE.isBucket(value))
@@ -623,13 +623,12 @@ export function makerHush(body, book) {
   return { id: body.id, until: body.until, today };
 }
 
-const safeGeo = (value) => {
-  if (!Array.isArray(value) || value.length !== 2
-    || !value.slice(0, 2).every((n) => typeof n === "number" && Number.isFinite(n))
-    || value[0] < 0.8 || value[0] > 7.5 || value[1] < 99.5 || value[1] > 120)
-    return false;
-  return true;
-};
+const safePoint = (value) => value.length >= 2
+  && value.slice(0, 2).every((n) => typeof n === "number" && Number.isFinite(n))
+  && value[0] >= 0.8 && value[0] <= 7.5 && value[1] >= 99.5 && value[1] <= 120;
+/* a point filed is [lat, lng, locality]: never without the locality beside it (the Desk's geoWhere) */
+const safeGeo = (value) => Array.isArray(value) && value.length === 3 && safePoint(value)
+  && typeof value[2] === "string" && /^[^<>\u0000-\u001f]{1,60}$/.test(value[2].trim());
 const exact = (body, fields) => object(body) && !Object.keys(body).some((key) => !fields.includes(key));
 const realCode = (value, roster) => code(value, roster);
 
@@ -868,7 +867,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
       return { error: "Amend ID needs its existing code, a free matching code, a point and the encrypted vault envelope." };
     if (body.to === body.from) {
       const current = (book.state.PLACED || {})[body.from];
-      if (!body.geo || JSON.stringify(current?.slice(0, 2)) === JSON.stringify(body.geo))
+      if (!body.geo || JSON.stringify(current) === JSON.stringify(body.geo))
         return { vaultOnly: true, vault: body.vault };
       entry = POSITION_ENGINE.placeEntry({ at: body.at, party: body.from, places: { [body.from]: body.geo } });
     } else entry = POSITION_ENGINE.renameEntry({ at: body.at, from: body.from, to: body.to, geo: body.geo || null });
