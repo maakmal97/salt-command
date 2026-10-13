@@ -52480,6 +52480,11 @@ await (async () => {
   await (await import("./maker-addid-drift.mjs")).run({ ok });
 })();
 
+section("13 Oct 2026: B3 of #62, entries left in a Desk device queue are recovered by their own road, and the overlay of unsent entries is switchable");
+await (async () => {
+  await (await import("./desk-queue-recovery.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");
