@@ -500,10 +500,64 @@ export const OWNER_JS = `
     /* 12 Oct 2026 (Phase 2a): the input is the 44px target, laid unseen over the box drawn beside it, so the control measures what the label did */
     tick.appendChild(box); tick.appendChild(el('span','tickbox')); tick.appendChild(el('span',null,'Sent'));
     c.appendChild(tick);
+    /* 14 OCT 2026 (his decision): everything related to a customer is on their card, so their loans and their reward stand here, read from the Desk's catalogue */
+    var books=el('div','abooks'); books.setAttribute('data-loans', u);
+    if(!none&&!a.test&&a.code){ c.appendChild(books); drawBooks(books, a); }
     var st=el('div','astory'); st.setAttribute('data-story', u);
     if(!none){ c.appendChild(st); drawStory(st, a); loadStory(a); }
     return c;
   }
+  /* the loans with this customer and their reward: the Desk's catalogue, the same read as Record's Repayment form, asked once a minute at most */
+  var partyRead=null, partyAt=0;
+  function readParty(){
+    if(partyRead&&Date.now()-partyAt<60000) return partyRead;
+    partyAt=Date.now();
+    partyRead=refs('/all/maker/inputs').then(function(j){ return (j&&j.catalog)||{}; });
+    partyRead.catch(function(){ partyRead=null; });
+    return partyRead;
+  }
+  function loanLine(item){
+    var cash=item.form==='cash', fmt=cash?rm:units, on=fmtWhen(item.date);
+    return (item.direction==='in'?'Borrowed':'Lent')+(on?' '+on:'')+(item.value!=null?', '+fmt(item.value):'');
+  }
+  function drawBooks(box, a){
+    box.textContent='';
+    box.appendChild(el('p','salt-eyebrow salt-eyebrow--copper','Loans and reward'));
+    var body=el('div','aloans'); box.appendChild(body); body.appendChild(el('p','anote','Reading.'));
+    readParty().then(function(cat){
+      if(!box.isConnected) return;
+      body.textContent='';
+      var mine=(cat.loans||[]).filter(function(item){ return item.party===a.code; });
+      var reward=(cat.rewards||[]).filter(function(item){ return item.code===a.code; })[0];
+      mine.forEach(function(item){
+        var cash=item.form==='cash', fmt=cash?rm:units, row=el('div','aloan'); row.setAttribute('data-loan', item.rid);
+        var txt=el('div','aloan__txt');
+        txt.appendChild(el('p','aloan__what',loanLine(item)));
+        var fig=el('div','aloan__fig');
+        [['Repaid',item.repaid],['Left',item.remaining]].forEach(function(p){
+          if(p[1]==null) return;
+          var f=el('span','aloan__f'); f.appendChild(el('span','aloan__k',p[0])); f.appendChild(el('span','aloan__v',fmt(p[1]))); fig.appendChild(f); });
+        txt.appendChild(fig); row.appendChild(txt);
+        var go=ghost(['Repayment','acct.repay']); go.setAttribute('data-key',item.rid);
+        go.addEventListener('click', function(){ repayFor(item.rid); });
+        row.appendChild(go); body.appendChild(row);
+      });
+      if(reward){
+        var rw=el('p','aloan__what','Reward: '+units(reward.held)+' held'+(reward.departed?' while away':reward.free<reward.held?', '+units(reward.free)+' free':'')); rw.setAttribute('data-reward',a.code); body.appendChild(rw); }
+      if(!mine.length&&!reward) body.appendChild(el('p','anote','No loans and no reward held.'));
+    }).catch(function(){ if(box.isConnected){ body.textContent=''; body.appendChild(el('p','anote bad','Their loans could not be read.')); } });
+  }
+  /* Repayment opens Record's own form for that loan: the form is the one that sends, so a repayment waits under Approve like any other. A form not built yet is
+     filled when it is (repayWant, applied once Record's forms are drawn). */
+  var repayWant=null;
+  function applyRepay(){
+    if(!repayWant) return;
+    var form=document.querySelector('#makerInputs [data-form="repayment"]'); if(!form) return;
+    var pick=form.querySelector('[data-act="record.repay.loan"]');
+    if(pick){ pick.value=repayWant; pick.dispatchEvent(new Event('change',{bubbles:true})); }
+    repayWant=null; openForm('repayment');
+  }
+  function repayFor(rid){ repayWant=rid; showPlace('record','entry',{fresh:true,push:true}); applyRepay(); }
   /* the test account is not part of a send, so it is out of both halves of the count (v689). A tick
      recounts as well as a draw (24 Sep 2026): the header sat on its first figure while he ticked. */
   function countSent(){
@@ -577,18 +631,32 @@ export const OWNER_JS = `
     if(a.sent) out.push(chip('verdigris','Sent '+dayMon(a.sent)));
     return out;
   }
+  /* 14 OCT 2026 (the layout rework): A ROW SHOWS ONE STATE, the most important, and the rest as one quiet line; the whole row is the tap. The order of
+     importance is no account, practice, locked out, then what they owe or are owed; Opened, Sent and Notifications stay on the card's chips. */
+  function stateOf(a){
+    if(a.test) return chip('mist','Practice');
+    if(a.account===false) return chip('alarm','No account yet');
+    if(a.locked) return chip('alarm','Locked out'+(a.locked.until?' until '+hm(a.locked.until):''));
+    if(a.flag&&a.flag!=='clear') return chip({owes:'ember', goods:'steel', refund:'brass', pend:'copper'}[a.flag]||'mist', flagLine(a));
+    return null;
+  }
+  function quietOf(a){
+    var bits=[a.username];
+    if(a.account===false) bits.push(waitLine());
+    else if(a.tot&&!a.test) bits.push(a.tot);
+    if(a.account!==false&&!a.test) bits.push(a.seen&&a.seen.opens?'Opened '+dayMon(a.seen.last)+(howOf(a.seen)?' '+howOf(a.seen):''):'Not opened');
+    if(a.sent) bits.push('Sent '+dayMon(a.sent));
+        return bits.join(' \u00b7 ');
+  }
   function rowOf(a){
-    var b=el('button','salt-inbox-row'); b.type='button'; b.setAttribute('data-u', a.username); actOn(b,'acct.open',a.username);
+    var b=el('button','salt-inbox-row arow'); b.type='button'; b.setAttribute('data-u', a.username); actOn(b,'acct.open',a.username);
     if(aOpen===a.username) b.setAttribute('aria-current','true');
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title');
-    t.appendChild(whoTag(el('span',null,a.test?testName(a):(a.code||a.username)),a.test?'':a.code));
-    if(sheet) chipsOf(a).forEach(function(c){ t.appendChild(c); });
+    t.appendChild(whoTag(el('span','acode',a.test?testName(a):(a.code||a.username)),a.test?'':a.code));
+    var st=sheet?stateOf(a):null; if(st){ st.className+=' astate'; t.appendChild(st); }
     main.appendChild(t);
-    /* a code with no account says, on its row, when it is made and which link to show until then (D15) */
-    main.appendChild(el('span','salt-inbox-row__what', a.username+(a.account===false?', '+waitLine():a.tot?', '+a.tot:'')));
+    main.appendChild(el('span','salt-inbox-row__what',quietOf(a)));
     b.appendChild(main);
-    var side=el('span','salt-inbox-row__side'); side.appendChild(el('span','salt-inbox-row__action','Open'));
-    b.appendChild(side);
     b.addEventListener('click', function(){ openCard(a.username); });
     return b;
   }
@@ -596,7 +664,13 @@ export const OWNER_JS = `
     if(!OWNER) return;
     var q=(rq.value||'').toLowerCase().replace(/\\s+/g,''), f=FILTER[aFilter]||FILTER.all;
     rlist.textContent='';
-    var hits=(sheet?sheetRows:OWNER.accounts).filter(function(a){
+    var pool=sheet?sheetRows:OWNER.accounts;
+    /* a filter shows only while some account is in the state it names (the layout rework); the one in use is let go when none is */
+    [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){
+      var k=x.getAttribute('data-f'); x.hidden=k!=='all'&&!pool.some(FILTER[k]); });
+    if(aFilter!=='all'&&!pool.some(FILTER[aFilter])){ aFilter='all'; f=FILTER.all;
+      [].slice.call(document.querySelectorAll('#afil button[data-f]')).forEach(function(x){ x.setAttribute('aria-pressed', x.getAttribute('data-f')==='all'?'true':'false'); }); }
+    var hits=pool.filter(function(a){
       return f(a)&&(!q||((a.code||'')+' '+a.username).toLowerCase().replace(/\\s+/g,'').indexOf(q)>=0);
     });
     countSent();
@@ -640,7 +714,7 @@ export const OWNER_JS = `
   var moved=null;
   /* S9 fix: AND A TAP THAT FAILS, or a tier pinned, is answered on the card it was tapped on as well, in Needs you
      and in Links, where the page's own line sat under every card, off a phone's screen. The link keeps its buttons. */
-  var linkSaid=null;
+  var linkSaid=null, openLinks={};
   function saidOn(r, node){ if(linkSaid&&linkSaid.id===r.id){ node.textContent=linkSaid.t; node.className+=linkSaid.bad?' bad':''; withDetails(node,linkSaid.err); } }
   /* waiting means he still has to act on it: not declined (D13), and not withdrawn either */
   function waitingLink(r){ return !r.standing&&r.approved===false&&r.declined!==true&&!r.revoked; }
@@ -676,22 +750,31 @@ export const OWNER_JS = `
     if(older.length){ heads[seq.length]='Older links'; seq=seq.concat(older); }
     seq.forEach(function(r,i){
       if(heads[i]) glist.appendChild(el('p','ghead salt-eyebrow salt-eyebrow--copper',heads[i]));
-      var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
+      var card=el('details','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':'')); card.setAttribute('data-link',r.id);
+      /* 14 OCT 2026 (the layout rework): A LINK IS ONE ROW, who it is for and what it has done, its state a pill only when it is one worth seeing; the address, its
+         QR and the moves open from the row. A row stays open across a redraw once it has been opened, and opens at once for the answer to a move made on it. */
+      card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id));
+      card.addEventListener('toggle', function(){ if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; });
       var declined=r.declined===true, pending=r.approved===false&&!declined;
       /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) is kept because it
          was handed out, and it opens the board a stranger sees, never the level it still carries */
       var retired=r.standing&&want.length&&want.indexOf(r.level)<0;
-      card.appendChild(el('p','gt salt-field__label',(r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):'Level '+r.tier)))))+(r.revoked?' \\u00b7 withdrawn':'')));
-      card.appendChild(el('h4',null,retired?'An old link, kept'
+      var sum=el('summary','gsum'); actOn(sum,'link.open',r.id);
+      var top=el('span','gtop');
+      top.appendChild(el('span','gt salt-field__label',r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):(r.label||'Level '+r.tier)))))));
+      if(r.revoked) top.appendChild(chip('mist','Withdrawn'));
+      sum.appendChild(top);
+      sum.appendChild(el('span','gs', (r.opens
+        ? 'Opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
+        : 'Never opened, made '+stampDay(r.made))));
+      card.appendChild(sum);
+      card.appendChild(el('h4','gwho',retired?'An old link, kept'
         :r.standing?'For strangers'
         :declined?('Made by '+(r.by?codeByUser(r.by):'an associate')+', not approved, so it stays shut')
         :(pending?('Made by '+(r.by?codeByUser(r.by):'an associate')+', shut until you approve it')
         :isAssoc(r)?('Made by '+codeByUser(r.by))
         :(r.label||'(no note)'))));
       card.appendChild(el('code','gu',r.url));
-      card.appendChild(el('p','gs', r.opens
-        ? 'opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
-        : 'never opened \\u00b7 made '+stampDay(r.made)));
       var img=document.createElement('img');
       img.src=r.qr; img.alt='QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
       card.appendChild(img);
@@ -2894,6 +2977,7 @@ export const OWNER_JS = `
     [].slice.call(box.children).forEach(function(n){
       if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
     });
+    applyRepay();
   }
   function openForm(slug){
     var form=document.querySelector('#makerInputs [data-form="'+slug+'"]');
@@ -4704,7 +4788,7 @@ export const OWNER_JS = `
     b.disabled=true; linkSay('Making it...','wait');
     try{
       var j=await refs('/all/refs', {introducer:intro, label:label});
-      links.unshift(j.ref); drawLinks();
+      links.unshift(j.ref); openLinks[j.ref.id]=true; drawLinks();
       document.getElementById('glabel').value='';
       document.getElementById('gintro').value='';
       linkSay('Made. The QR opens it.');
@@ -4738,7 +4822,7 @@ export const OWNER_JS = `
   function cardOf(r){
     var c=el('div','acard salt-glass-card salt-glass-card--radius-md'+(r.departed?' off':''));
     var head=el('div','srow');
-    head.appendChild(el('b',null,r.id));
+    head.appendChild(el('b','acode',r.id));
     var marks=[];
     if(r.founder) marks.push('founder');
     if(r.rank) marks.push('#'+r.rank);
@@ -4751,17 +4835,19 @@ export const OWNER_JS = `
       var cell=el('div','acell'); cell.appendChild(el('span','salt-metrics__label',p[0])); cell.appendChild(el('span','salt-metrics__value',p[1])); g.appendChild(cell);
     });
     c.appendChild(g);
-    var line=[];
-    if(r.onward) line.push(r.onward+' resale'+(r.onward===1?'':'s'));
-    if(r.referred) line.push(r.referred+' introduced');
-    if(r.share) line.push(r.share+'% of all revenue');
-    if(line.length) c.appendChild(el('p','op',line.join(' \\u00b7 ')));
+    /* 14 OCT 2026 (the layout rework): the counts and the reward are names and values, one to a line, the figures aligned down the right */
+    var led=el('div','salt-ledger salt-ledger--plain aled');
+    function lrow(k,v){ var rw=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
+      l.appendChild(el('span','salt-ledger__label',k)); l.appendChild(el('span','salt-ledger__value',String(v))); rw.appendChild(l); led.appendChild(rw); }
+    if(r.onward) lrow('Resales',r.onward);
+    if(r.referred) lrow('Introduced',r.referred);
+    if(r.share) lrow('Share of all revenue',r.share+'%');
     if(r.reward){
       var w=r.reward;
-      c.appendChild(el('p','tot','Reward: '+w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'
-        +(w.held?', reward held while away':'')));
-      if(w.next!=null){ c.appendChild(bar(w.next)); c.appendChild(el('p','op',Math.round(w.next*100)+'% of the way to the next unit')); }
+      lrow('Reward',w.earned+' earned, '+w.taken+' taken, '+(Math.round(w.left*100)/100)+' left'+(w.held?', held while away':''));
     }
+    if(led.childElementCount) c.appendChild(led);
+    if(r.reward&&r.reward.next!=null){ c.appendChild(bar(r.reward.next)); c.appendChild(el('p','op',Math.round(r.reward.next*100)+'% of the way to the next unit')); }
     return c;
   }
   function drawCards(){

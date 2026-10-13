@@ -19211,10 +19211,11 @@ await (async () => {
       "a tap on Customers opens its Accounts and marks it the current place");
     ok(await until(() => rows().length === 4) && rows().every((r) => r.classList.contains("salt-inbox-row")),
       "every roster account is a row, drawn with the system's Inbox row");
-    const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status")].map((x) => x.textContent);
-    ok(chips(uO).includes("They owe RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Notifications on") && chips(uO).includes("Sent 03 Sep 2026"),
-      "a row's chips say what they owe, how and when it was last opened, that notifications are on and when it was sent: " + JSON.stringify(chips(uO)));
-    ok(chips(uL).some((t) => /^Locked out until \d\d:\d\d$/.test(t)) && chips(uN).join() === "No account yet" && chips(uF).includes("Not opened"),
+    /* a row is one state pill and a quiet line of facts, cut at its separators (the layout rework, 14 Oct 2026) */
+    const chips = (u) => [...rowOf(u).querySelectorAll(".salt-status, .salt-inbox-row__what")].flatMap((x) => (x.classList.contains("salt-status") ? [x.textContent] : x.textContent.split(" · ")));
+    ok(chips(uO).includes("They owe RM 272.00") && chips(uO).includes("Opened 14 Sep 2026 by link") && chips(uO).includes("Sent 03 Sep 2026"),
+      "a row's pill says what they owe and its quiet line how and when it was last opened and when it was sent: " + JSON.stringify(chips(uO)));
+    ok(chips(uL).some((t) => /^Locked out until \d\d:\d\d$/.test(t)) && chips(uN)[0] === "No account yet" && chips(uF).includes("Not opened"),
       "an account locked out, one with no account and one never opened each say so: " + JSON.stringify([chips(uL), chips(uN), chips(uF)]));
 
     /* a word, then each filter */
@@ -20115,7 +20116,7 @@ await (async () => {
     ok(await until(() => kc() && /Last signed in by code, 03 Sep 2026[.]/.test(kc().textContent)),
       "a customer who last got in by typing a code reads so on their Needs you card: " + (kc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
-    const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status")].map((x) => x.textContent) : []; };
+    const chips = (u) => { const r = D.querySelector('#rlist [data-u="' + u + '"]'); return r ? [...r.querySelectorAll(".salt-status, .salt-inbox-row__what")].flatMap((x) => (x.classList.contains("salt-status") ? [x.textContent] : x.textContent.split(" · "))) : []; };
     ok(await until(() => chips(us[0]).includes("Opened 03 Sep 2026 by code")) && chips(us[1]).includes("Opened 03 Sep 2026 by code"),
       "Accounts says an open by a scanned code and one by a typed code, by code for both: " + JSON.stringify([chips(us[0]), chips(us[1])]));
     ok(chips(us[2]).includes("Opened 03 Sep 2026 by password") && chips(us[3]).includes("Opened 03 Sep 2026"),
@@ -52240,6 +52241,11 @@ await (async () => {
 section("Salt Account: an id is behind Details, never read out, and a row's Details are names and values, never JSON (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-details.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: Customers are rows with one state, a link is a row, and a card holds the customer's loans (14 Oct 2026)");
+await (async () => {
+  await (await import("./admin-customers.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter queue: server-held withdrawal is device-owned, durable and race-safe");

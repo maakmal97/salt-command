@@ -1,0 +1,50 @@
+[
+ {
+  "name": "a row shows an extra chip",
+  "file": "stmt/owner.js",
+  "find": "flagLine(a));\n    return null;",
+  "replace": "flagLine(a));\n    return chip('mist','extra');"
+ },
+ {
+  "name": "a row brings back its Open",
+  "file": "stmt/owner.js",
+  "find": "    b.appendChild(main);\n    b.addEventListener('click', function(){ openCard(a.username); });",
+  "replace": "    b.appendChild(main); main.appendChild(el('span','salt-inbox-row__action','Open'));\n    b.addEventListener('click', function(){ openCard(a.username); });"
+ },
+ {
+  "name": "every filter is shown",
+  "file": "stmt/owner.js",
+  "find": "x.hidden=k!=='all'&&!pool.some(FILTER[k]); });",
+  "replace": "x.hidden=false; });"
+ },
+ {
+  "name": "a link row is a card again",
+  "file": "stmt/owner.js",
+  "find": "var card=el('details','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':''));",
+  "replace": "var card=el('div','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':''));"
+ },
+ {
+  "name": "a withdrawn link has no pill",
+  "file": "stmt/owner.js",
+  "find": "if(r.revoked) top.appendChild(chip('mist','Withdrawn'));",
+  "replace": "if(r.revoked) top.appendChild(el('span',null,''));"
+ },
+ {
+  "name": "the counts are not a ledger",
+  "file": "stmt/owner.js",
+  "find": "    if(led.childElementCount) c.appendChild(led);",
+  "replace": "    if(0) c.appendChild(led);"
+ },
+ {
+  "name": "the card lists every party's loans",
+  "file": "stmt/owner.js",
+  "find": "return item.party===a.code; });",
+  "replace": "return true; });"
+ },
+ {
+  "name": "Repayment does not choose the loan",
+  "file": "stmt/owner.js",
+  "find": "if(pick){ pick.value=repayWant;",
+  "replace": "if(pick){"
+ }
+]
