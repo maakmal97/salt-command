@@ -1,11 +1,20 @@
 [
  {
-  "v": "v1103",
-  "d": "13 Oct 2026",
+  "v": "v1104",
+  "d": "14 Oct 2026",
   "t": "THE DESK READS; COUNTER ADMIN WRITES",
   "n": [
    "<b>A DASHBOARD.</b> The Desk no longer writes the book: Approve, the site order moves and replies, the bulletin, Plans' snooze, the Workbench's Record, the drift, tier, partner and reward controls, the house board, the ledger's order and correction forms, Names and IDs' Save and the map's batch placement are gone, each with its twin on Counter Admin. It keeps the restock date, filing a shared spot as a place, alerts, the waiting stamp, and the panel that sends or discards an entry still held on this device; unsent entries no longer move a figure. His decisions of 13 Oct 2026. Nothing prices. B5 of #62.",
    "<b>THE PROOFS.</b> The dashboard section presses every control on every part and fails on any write outside the kept list, each check red under its own mutation (13); every Desk assertion removed is named with its Counter twin or a reason in docs/NOTES.md; full suite green. Fable reviewed it twice."
+  ]
+ },
+ {
+  "v": "v1103",
+  "d": "13 Oct 2026",
+  "t": "SALT BUY FROM SA5-BTR LANDED AT RM56 A UNIT, MATCHING HIS QUOTE",
+  "n": [
+   "<b>FOLDED: ONE SALT BUY.</b> 12.5 units from SA5-BTR for RM700 with RM25 freight, collected, paid and received in full on 13 Oct. Nothing unusual: the rate of RM56 a unit matches his quote of 23 Sep, and the drafter raised no flags.",
+   "<b>INVENTORY:</b> the lot landed, so salt stock rises by 12.5 units. The stock cost stays at RM56 a unit, the rate of this lot, and nothing is left outstanding on the row."
   ]
  },
  {

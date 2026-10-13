@@ -1,6 +1,6 @@
 {
- "v": "v1098",
- "stamped": "13 Oct 2026, 19:14 KL",
+ "v": "v1103",
+ "stamped": "13 Oct 2026, 23:57 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 13.14,
+  "STATED_STOCK": 25.64,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -891,6 +891,21 @@
      }
     ],
     "receivedOn": "2026-10-12"
+   },
+   {
+    "qty": 12.5,
+    "total": 700,
+    "cash": 700,
+    "handover": "collected",
+    "supplier": "SA5-BTR",
+    "freight": 25,
+    "status": "paid",
+    "date": "2026-10-13",
+    "receivedOn": "2026-10-13",
+    "receivedQty": 12.5,
+    "paidOn": "2026-10-13",
+    "note": "<b>NEW BUY ON 13 OCT: 12.5 UNITS OF SALT FROM SA5-BTR FOR RM700.</b> Collected, RM700 cash out on 13 Oct with RM25 freight beside it, and all 12.5 units received the same day. At RM56 a unit it matches his word of 23 Sep: multiples of 12.5 units at RM700 each, one tier bought in whole lots. SA5-BTR has 24 orders, a median rate of RM56, a range of RM44 to RM64, RM0 outstanding before and no units on credit. The row carries the inventory's own cost of RM56 a unit. The drafter raised no flags, so there is nothing for the figures to answer. Open: nothing.",
+    "rid": "p039"
    }
   ],
   "sales": [
@@ -8178,9 +8193,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-13T10:44:42.146Z",
+  "QUEUE_COMMITTED": "2026-10-13T15:56:30.567Z",
   "PRICING": {
-   "takenAt": "2026-10-13T11:14:37.112Z",
+   "takenAt": "2026-10-13T15:57:23.938Z",
    "sizes": [
     0.5,
     1,
@@ -9419,7 +9434,7 @@
          "qty": 12.5,
          "total": 700,
          "rate": 56,
-         "date": "2026-10-12",
+         "date": "2026-10-13",
          "sup": "SA5-BTR"
         },
         "days": 68,
@@ -9453,13 +9468,13 @@
         "qty": 12.5,
         "total": 700,
         "rate": 56,
-        "date": "2026-10-12",
+        "date": "2026-10-13",
         "sup": "SA5-BTR"
        },
-       "meanLot": 23.798076923076923,
+       "meanLot": 23.37962962962963,
        "quoteRate": 56,
-       "repl": 57,
-       "freightRate": 2.5,
+       "repl": 56,
+       "freightRate": 2,
        "leak": {
         "ratio": 0.1452,
         "leak": 8.75,
@@ -9473,8 +9488,8 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p038",
-        "date": "2026-10-12",
+        "rid": "p039",
+        "date": "2026-10-13",
         "quote": 700,
         "freight": 25,
         "units": 12.5,
@@ -9492,7 +9507,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.07986851599454824,
+       "shrinkRate": 0.07829914328381672,
        "avgDel": {
         "n": 207,
         "kg": 524.56,
@@ -15161,10 +15176,10 @@
      ]
     }
    },
-   "v": "v1098"
+   "v": "v1103"
   },
   "OPEN": {
-   "at": "2026-10-13T11:14:37.570Z",
+   "at": "2026-10-13T15:57:24.745Z",
    "count": 8,
    "byKey": {
     "CJ4-BJ|2026-10-09|500": {
@@ -15302,10 +15317,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 13.14,
-     "free": 7.64,
+     "onHand": 25.64,
+     "free": 20.14,
      "owedOut": 5.5,
-     "coverDays": 1.4,
+     "coverDays": 3.8,
      "rate": 4.76,
      "owedToYou": 340,
      "promised": 5.5,
@@ -15363,7 +15378,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1098"
+   "v": "v1103"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15371,7 +15386,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1098"
+   "v": "v1103"
   },
   "REWARD": {
    "stated": {
@@ -15383,7 +15398,7 @@
      }
     }
    },
-   "v": "v1098"
+   "v": "v1103"
   }
  }
 }
