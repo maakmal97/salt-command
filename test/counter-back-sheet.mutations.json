@@ -210,6 +210,12 @@
   "replace": "    return (p||true)&&(!h"
  },
  {
+  "name": "a place written into the address drops the mark of the Sheet's entry",
+  "file": "stmt/page.js",
+  "find": "history.replaceState(history.state,'',location.pathname+location.search+'#'+p[2]);",
+  "replace": "history.replaceState(null,'',location.pathname+location.search+'#'+p[2]);"
+ },
+ {
   "name": "the shut page and the 404 carry a script",
   "file": "stmt/page.js",
   "find": "    + '<div class=\"panel\">' + inner + \"</div></body></html>\";\n}\n\n/** The landing page.",

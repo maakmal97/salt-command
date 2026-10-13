@@ -30026,6 +30026,8 @@ await (async () => {
       Object.defineProperty(win.navigator, "userAgent", { value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1", configurable: true });
       Object.defineProperty(win.navigator, "clipboard", { configurable: true, value: { writeText: () => Promise.resolve() } });
       win.scrollTo = () => {};
+      /* the look is kept, so its Sheet (and the history entry a Sheet stands on) is not over a page this check copies a key on and leaves */
+      try { win.localStorage.setItem("salt-look", "tide"); } catch (e) { /* none kept */ }
       win.fetch = async (p, init) => {
         const body = init && init.body ? JSON.parse(init.body) : null;
         const ans = (status, j) => ({ ok: status < 300, status, json: async () => j });

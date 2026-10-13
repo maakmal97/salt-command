@@ -305,6 +305,14 @@ export async function run({ ok, pageWork }) {
     ok(stateIs(Fw, 0) && !Fw.d.getElementById("osheet") && Fw.w.history.length === lenFw,
       "a Forward onto the entry a closed Sheet left is stepped off at once, to the base entry, with no Sheet drawn: " + JSON.stringify(Fw.w.history.state));
 
+    /* a place written into the address (the page's own replaceState) keeps the mark of the Sheet entry it lands on, or a Back onto that entry would read as the base's */
+    const Mk = await open({ list: [part(0), part(1)] });
+    Mk.d.getElementById("payNow").click(); const upM = stateIs(Mk, 1);
+    Mk.d.querySelector('button[data-t="prices"]').click();
+    const keptM = stateIs(Mk, 1) && Mk.w.location.hash === "#prices";
+    await goBack(Mk); const shutM = await until(() => !shown(Mk, "paySheet"));
+    ok(upM && keptM && shutM, "a place written into the address keeps the mark of the entry a Sheet stands on, and Back still closes the Sheet: up " + upM + " kept " + keptM + " closed " + shutM);
+
     /* ---- 7: no address with a key or a token is pushed */
     /* the last is not a road the page's own controls reach (a link's page has Continue and no door); its form is submitted by hand to ask the address alone */
     const keyRoads = [["/app#<key>", "https://site.test/app#" + KEY, KEY], ["/app#qr.<key>", "https://site.test/app#qr." + KEY, KEY], ["/app#code", "https://site.test/app#code", "#code"],

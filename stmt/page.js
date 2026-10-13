@@ -2213,7 +2213,7 @@ const CLIENT_JS = `
       /* the tap's first act, before anything that waits: Safari allows a copy only inside the tap itself */
       var done=null;
       try{ done=navigator.clipboard.writeText(keepTok); }catch(e){ done=Promise.reject(e); }
-      try{ history.replaceState(null,'','/app#'+keepTok); }catch(e){}
+      try{ history.replaceState(history.state,'','/app#'+keepTok); }catch(e){}
       Promise.resolve(done).then(function(){ ksay(tw('keep.copied')); },
         function(){ ksay(tw('keep.copyFail'),'bad'); });
     });
@@ -2395,7 +2395,7 @@ const CLIENT_JS = `
     if(stale()) return false;
     var x=await openBeside(body, ck, b);
     if(stale()) return false;
-    try{ if(location.hash) history.replaceState(null,'','/app'); }catch(e){}
+    try{ if(location.hash) history.replaceState(history.state,'','/app'); }catch(e){}
     var keep=await askReplace(document.getElementById('codePaste'), body.u);   /* S3 3.8 */
     if(stale()) return false;
     csay(''); codeBox.hidden=true; codeIn.value='';
@@ -2477,7 +2477,7 @@ const CLIENT_JS = `
     closeDevSheet(); lookShut(); ynShut(true); devN++; if(devSlot) devSlot.textContent='';
     pkNew=null; if(!OWNER) pkPrime();   /* Step 6: the door is on screen again */
     /* S3 fix: a key the Keep Sheet wrote into the address leaves it with the account */
-    try{ if(location.hash) history.replaceState(null,'',location.pathname); }catch(e){}
+    try{ if(location.hash) history.replaceState(history.state,'',location.pathname); }catch(e){}
     var ask=document.getElementById('askRep'); if(ask&&!ask.hidden){ ask.hidden=true; document.getElementById('askNo').click(); }
     /* the owner goes back to his list, never to a password field he has no password for */
     if(OWNER){ roster.hidden=false; gate.hidden=true; if(whoacct) whoacct.textContent=''; }
@@ -2609,7 +2609,7 @@ const CLIENT_JS = `
     placeTitle();
     if(tapped&&(!location.hash||placeOf(location.hash))){
       var p=PLACES.filter(function(x){ return x[0]===t; })[0];
-      try{ history.replaceState(null,'',location.pathname+location.search+'#'+p[2]); }catch(e){}
+      try{ history.replaceState(history.state,'',location.pathname+location.search+'#'+p[2]); }catch(e){}
     }
     window.scrollTo(0,0);
     /* S5: an order drawn open while the place was elsewhere is seen when they turn to the place themselves. Only a tap:
@@ -5855,7 +5855,7 @@ const CLIENT_JS = `
   function thWanted(){
     if(!wantThread||view||!session||!lapse.hidden) return;
     wantThread=false;
-    try{ if(location.hash==='#thread') history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+    try{ if(location.hash==='#thread') history.replaceState(history.state,'',location.pathname+location.search); }catch(e){}
     if(thSheetEl&&thSheetEl.hidden) thOpen(null); else thRead();
   }
 
@@ -5871,7 +5871,7 @@ const CLIENT_JS = `
     if(!wantOrder||view||!session||!lapse.hidden) return;
     var id=wantOrder;
     wantOrder='';
-    try{ if(location.hash) history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+    try{ if(location.hash) history.replaceState(history.state,'',location.pathname+location.search); }catch(e){}
     if(!oFind(id)) return;
     oOpen(id);
   }
@@ -6173,7 +6173,7 @@ const CLIENT_JS = `
     return n;
   }
   function linkSpent(){
-    try{ history.replaceState(null,'','/'); }catch(e){}
+    try{ history.replaceState(history.state,'','/'); }catch(e){}
     linkBox.hidden=true; gate.hidden=false;
     say(tw('link.spent'),'bad');
   }
@@ -6222,7 +6222,7 @@ const CLIENT_JS = `
       if(r.status===401){ lsay(''); linkSpent(); return; }
       if(!r.ok||!body.ok){ linkGo.disabled=false; lsay(tw('link.lost'),'bad'); return; }
       /* spent, and the answer is in hand: this address is never presented again */
-      try{ history.replaceState(null,'','/'); }catch(e){}
+      try{ history.replaceState(history.state,'','/'); }catch(e){}
       var ck, b;
       try{ ck=await unwrapUnder(new TextEncoder().encode(tok), body.wrap); b=JSON.parse(await open(ck, body.env)); }
       catch(e){ if(!stale()){ lsay(''); linkSpent(); } return; }
