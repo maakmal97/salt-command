@@ -1,10 +1,13 @@
 /* test/counter-stress-fixes.mjs: THE CUSTOMER SIDE OF THE STRESS RUN'S FINDINGS (13 Oct 2026, his yes: "Fix all six, one build"; the three that are the Counter's).
  *
- * The AFTER stress run of the Counter found focus falling to the page after a Sheet closed. What is proved here, each check red under its own mutation
+ * The AFTER stress run of the Counter found focus falling to the page after a Sheet closed, the Pay sheet losing focus when a radio was chosen by the
+ * keyboard. What is proved here, each check red under its own mutation
  * (test/counter-stress-fixes.mutations.json) and red on 1548e0d8:
  *   4  every Sheet that closes gives the focus back to the control that opened it, through the one road (focusBack): the pay sheet from Home's Pay, the
  *      overdue Pay and an order's Pay, by the close orb, the scrim and Escape; found afresh if a redraw replaced the control while it was open; the
  *      signed-out Sheet to Sign in on the bar by every way; Sign in another device to its button, though its list is drawn again as the Sheet closes
+ *   5  choosing a Pay radio the way the arrow keys do (the radio focused, then checked, then change) redraws the sheet and the chosen radio keeps the
+ *      focus, a way and a bank both
  * Every assertion observes a signed-in page's window in jsdom. Every code, name and password is invented. */
 import { webcrypto } from "node:crypto";
 
@@ -155,5 +158,21 @@ export async function run({ ok }) {
       devRes.push([name, was && V.d.getElementById("devSheet").hidden && !!now && V.d.activeElement === now]);
     }
     ok(devRes.every((r) => r[1]), "Sign in another device keeps the focus on its button after the Sheet closes and the list is drawn again: " + JSON.stringify(devRes) + " focus is " + lbl(V.d.activeElement));
+
+    /* ---- 5: a Pay radio chosen by the keyboard keeps the focus through the redraw */
+    const R = await open({ list: [part(0), part(1)] });
+    R.d.getElementById("payNow").click();
+    const radio = (name, v) => R.d.querySelector('#payBody input[name="' + name + '"][value="' + v + '"]');
+    const arrow = (name, v) => { const r = radio(name, v); r.focus(); r.checked = true; r.dispatchEvent(new R.w.Event("change", { bubbles: true })); return r; };
+    const first = radio("payHow", "transfer"), was = arrow("payHow", "qr"), now = radio("payHow", "qr");
+    ok(!!first && was !== now && now.isConnected && now.checked && R.d.activeElement === now,
+      "choosing Scan a code the way the arrow keys do redraws the sheet, and the radio chosen has the focus, so the next Tab goes on from it: " + lbl(R.d.activeElement));
+    const back = arrow("payHow", "transfer"), again = radio("payHow", "transfer");
+    ok(back !== again && again.checked && R.d.activeElement === again, "and back to Transfer the same: " + lbl(R.d.activeElement));
+    const banks = [...R.d.querySelectorAll('#payBody input[name="payInto"]')];
+    if (banks.length) {
+      const bank = banks[0].value, at = arrow("payInto", bank), kept = radio("payInto", bank);
+      ok(at !== kept && kept.checked && R.d.activeElement === kept, "and a bank chosen that way keeps it too: " + lbl(R.d.activeElement));
+    } else ok(false, "the pay sheet offers a bank to choose on Transfer");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack || e)); } finally { for (const w of wins) { try { w.close(); } catch (e) { /* closed */ } } }
 }

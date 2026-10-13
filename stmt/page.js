@@ -5271,6 +5271,8 @@ const CLIENT_JS = `
   function drawPay(){
     if(PS.step==='check'){ drawPayCheck(); return; }
     var body=document.getElementById('payBody'), c=PS.ctx;
+    /* 13 Oct 2026 (stress): the sheet is drawn afresh, so a radio chosen by the arrow keys, which holds focus as it redraws, is given it again (name and value) */
+    var held=document.activeElement&&document.activeElement.type==='radio'&&body.contains(document.activeElement)?document.activeElement.name+'|'+document.activeElement.value:'';
     body.textContent=''; payTitle();
     if(c.kind==='order'&&PS.rail==='cod'&&readyDue(oFind(c.id))) PS.rail='transfer';
     var cash=PS.rail==='cod';
@@ -5345,6 +5347,10 @@ const CLIENT_JS = `
     var rr=lrow(tw('pay.ref'),user,tw('pay.refHint')); rr.querySelector('.salt-ledger__value').appendChild(copyBtn(user,'pay.refCopy'));
     L.appendChild(rr); if(!cash){ body.appendChild(L); body.appendChild(said); }
     drawPayFoot();
+    if(held){
+      var again=[].filter.call(body.querySelectorAll('input[type=radio]'),function(x){ return x.name+'|'+x.value===held&&!x.disabled; })[0];
+      try{ if(again) again.focus({preventScroll:true}); }catch(e){}
+    }
   }
   /* they have paid, or have been to the pay page and are back: the one question, with the figure, the way and the bank as they stand */
   function payAway(a){ PS.away={amt:a, rail:PS.rail, acct:PS.acct, gone:false}; payqPut(); }

@@ -7,5 +7,7 @@
  {"name": "the signed-out Sheet gives the focus to nothing", "file": "stmt/page.js", "find": "    if(quiet!==true) focusBack(null,function(){ return document.getElementById('lapseGo'); });\n", "replace": "\n"},
  {"name": "Sign in another device gives the focus to nothing as it closes", "file": "stmt/page.js", "find": "    focusBack(devFrom,backFind('dev:another'));\n", "replace": "\n"},
  {"name": "the list of devices drawn again drops the focus it held", "file": "stmt/page.js", "find": "    if(held&&(!document.activeElement||document.activeElement===document.body)) focusBack(null,backFind(held));\n", "replace": "\n"},
- {"name": "Sign in another device carries no key to be found by", "file": "stmt/page.js", "find": "another.setAttribute('data-back','dev:another'); ", "replace": ""}
+ {"name": "Sign in another device carries no key to be found by", "file": "stmt/page.js", "find": "another.setAttribute('data-back','dev:another'); ", "replace": ""},
+ {"name": "a Pay radio chosen by keyboard loses the focus in the redraw", "file": "stmt/page.js", "find": "      try{ if(again) again.focus({preventScroll:true}); }catch(e){}\n", "replace": "\n"},
+ {"name": "only the way keeps the focus, not the bank", "file": "stmt/page.js", "find": "x.name+'|'+x.value===held&&!x.disabled", "replace": "x.name==='payHow'&&x.name+'|'+x.value===held&&!x.disabled"}
 ]

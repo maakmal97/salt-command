@@ -678,7 +678,9 @@ mutations in `test/counter-stress-fixes.mutations.json`): `focusBack(from, again
 `again` finds (`backFind(key)`: the control carries `data-back`, as the yes or no's opener carries `data-yn`). The order sheet, the yes or no, the pay Sheet (Home's Pay
 `pay:now`, the overdue Pay `pay:od`, an order's `pay:<id>`), the signed-out Sheet (to Sign in on the bar), the bell, the look Sheet, the thread and Sign in another device
 (`dev:another`, whose list is drawn again as it closes, so `drawDev` hands the focus to the new button) all end there. A lock, a sign-in done or another account passes
-`quiet` (`=== true`; a close wired straight to an event gets the event and is not quiet) so focus is not sent to a page that is leaving.
+`quiet` (`=== true`; a close wired straight to an event gets the event and is not quiet) so focus is not sent to a page that is leaving. **A Pay radio chosen by the
+keyboard keeps the focus**: `drawPay` rebuilds the sheet, so it reads the radio that holds focus (its name and value) before it clears the body and focuses the matching
+one after.
 
 The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
 `test/counter-account-door.mutations.json`) drives all of it through the generated page in jsdom.
