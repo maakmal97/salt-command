@@ -1,0 +1,14 @@
+[
+ {
+  "name": "the candidate list stops excluding a customer with a pending Add ID",
+  "file": "src/worker.js",
+  "find": "      || appointments.has(code)) return false;",
+  "replace": "      ) return false;"
+ },
+ {
+  "name": "the claim stops refusing a pending Add ID draft for the same code",
+  "file": "src/maker-request.js",
+  "find": "      SELECT 1 FROM draft d\n      WHERE d.id<>?1 AND d.committed_at IS NULL AND d.status IN ('pending','approved')\n        AND json_valid(d.entry) AND json_extract(d.entry,'$.payload.mode')='addid'",
+  "replace": "      SELECT 1 FROM draft d\n      WHERE 0 AND d.id<>?1 AND d.committed_at IS NULL AND d.status IN ('pending','approved')\n        AND json_valid(d.entry) AND json_extract(d.entry,'$.payload.mode')='addid'"
+ }
+]
