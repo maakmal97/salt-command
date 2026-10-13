@@ -14,7 +14,7 @@
   {
     "name": "a delayed queue upload restores the tombstoned entry",
     "file": "src/worker.js",
-    "find": "const kept = payload.queue.filter((entry) =>\n    !(entry && (gone.has(entry.at) || withdrawn.has(entry.at))));",
-    "replace": "const kept = payload.queue.filter((entry) => !(entry && gone.has(entry.at)));"
+    "find": "let kept = payload.queue.filter((entry) =>\n    !(entry && (gone.has(entry.at) || withdrawn.has(entry.at))));",
+    "replace": "let kept = payload.queue.filter((entry) => !(entry && gone.has(entry.at)));"
   }
 ]

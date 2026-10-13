@@ -257,8 +257,8 @@ replaceOnce("P6b qPost offline branch",
   "    if(window.SALT_CLOUD){qStatus('<b style=\"color:var(--amber)\">No signal</b>: held on this device; it syncs on the next open with a connection.');return false;} qSyncState='download'; qStatus('<b style=\"color:var(--amber)\">The desk server stopped answering</b>, falling back to downloads. Restart start_desk.bat for in-place saves.');");
 
 replaceOnce("P7 qPayload device id",
-  "function qPayload(){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,queue},null,1);}",
-  "function qPayload(){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,device:(typeof saltDeviceId==='function'?saltDeviceId():'anon'),queue},null,1);}");
+  "function qPayload(cloud){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,queue:cloud?qCloudQueue():queue,vaultHeld:cloud&&vaultPairVersion?queue.filter(qIsVaultKind).map(q=>q.at):undefined},null,1);}",
+  "function qPayload(cloud){return JSON.stringify({updated:new Date().toISOString(),desk:LAST_UPDATED,device:(typeof saltDeviceId==='function'?saltDeviceId():'anon'),queue:cloud?qCloudQueue():queue,vaultHeld:cloud&&vaultPairVersion?queue.filter(qIsVaultKind).map(q=>q.at):undefined},null,1);}");
 
 /* P8 THERE IS NO WAY OUT TO OFFER (v376). v332 turned the desk's Close control into a link back
    to the phone app, because opened from the installed app the desk filled a standalone window
