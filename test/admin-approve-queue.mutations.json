@@ -1,326 +1,56 @@
 [
- {
-  "name": "a Desk row is a glass card again, not the Approve recipe",
-  "file": "stmt/owner.js",
-  "find": "makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard')",
-  "replace": "makerCard(draftRoot,'draft:'+draft.id)"
- },
- {
-  "name": "the party leaves the card's head",
-  "file": "stmt/owner.js",
-  "find": "      head.appendChild(el('span','salt-approve__party',entry.party||'no code'));\n",
-  "replace": ""
- },
- {
-  "name": "the cost is worked out from the total, not read off the draft",
-  "file": "stmt/owner.js",
-  "find": "rm(typeof reading.cost==='object'?reading.cost.total:reading.cost)",
-  "replace": "rm(Number(reading.total||0)*0.5)"
- },
- {
-  "name": "the margin is not shown",
-  "file": "stmt/owner.js",
-  "find": "if(reading.margin) figs.push(",
-  "replace": "if(false) figs.push("
- },
- {
-  "name": "the flags are prose again, not chips",
-  "file": "stmt/owner.js",
-  "find": "flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); });",
-  "replace": "flags.forEach(function(flag){ chips.appendChild(el('span','salt-insight',String(flag))); });"
- },
- {
-  "name": "the drafter's reasoning leaves the card",
-  "file": "stmt/owner.js",
-  "find": "    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));\n",
-  "replace": ""
- },
- {
-  "name": "the proposed row is open on the card",
-  "file": "stmt/owner.js",
-  "find": "panel.hidden=true; panel.appendChild(detailList(rowPairs(reading.row,key)));",
-  "replace": "panel.hidden=false; panel.appendChild(detailList(rowPairs(reading.row,key)));"
- },
- {
-  "name": "Approve is a ghost, not the filled pill",
-  "file": "stmt/owner.js",
-  "find": "approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);",
-  "replace": "approveDraft(draft,approve,'draft:'+draft.id+':approve'); },false);"
- },
- {
-  "name": "Reject is no danger ghost",
-  "file": "stmt/owner.js",
-  "find": "      reject.classList.add('salt-ghost--danger'); ynTag(reject,'draft:'+draft.id+':reject');",
-  "replace": "      ynTag(reject,'draft:'+draft.id+':reject');"
- },
- {
-  "name": "the moves stand outside the recipe's actions",
-  "file": "stmt/owner.js",
-  "find": "var acts=el('div','salt-approve__actions'); card.appendChild(acts);",
-  "replace": "var acts=el('div','maker-actions'); card.appendChild(acts);"
- },
- {
-  "name": "a trip's card lists none of the other rows",
-  "file": "stmt/owner.js",
-  "find": "siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){",
-  "replace": "[].forEach(function(item){"
- },
- {
-  "name": "the page restates the recipe's padding",
-  "file": "stmt/page.js",
-  "find": ".adm .salt-approve>.maker-say:empty{display:none}",
-  "replace": ".adm .salt-approve>.maker-say:empty{display:none}\n.adm .salt-approve{padding:16px}"
- },
- {
-  "name": "the queue is open on arrival",
-  "file": "stmt/page.js",
-  "find": "<details id=\"makerQueue\" class=\"salt-plan\">",
-  "replace": "<details id=\"makerQueue\" class=\"salt-plan\" open>"
- },
- {
-  "name": "the queue is not the Plan fold",
-  "file": "stmt/page.js",
-  "find": "<details id=\"makerQueue\" class=\"salt-plan\">",
-  "replace": "<details id=\"makerQueue\" class=\"maker-card\">"
- },
- {
-  "name": "the queue's count is not kept",
-  "file": "stmt/owner.js",
-  "find": "      if(counted) counted.textContent=String(held.length);\n",
-  "replace": ""
- },
- {
-  "name": "the queue's summary has no act of its own",
-  "file": "stmt/page.js",
-  "find": "<summary data-act=\"record.queue-toggle\">",
-  "replace": "<summary>"
- },
- {
-  "name": "a redraw of the entries shuts the fold",
-  "file": "stmt/owner.js",
-  "find": "      queueRoot.textContent='';\n      var held=",
-  "replace": "      queueRoot.textContent=''; if(queueRoot.parentNode&&queueRoot.parentNode.parentNode) queueRoot.parentNode.parentNode.open=false;\n      var held="
- },
- {
-  "name": "an empty queue opens its fold",
-  "file": "stmt/owner.js",
-  "find": "if(!held.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));",
-  "replace": "if(!held.length){ queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.')); queueRoot.parentNode.parentNode.open=true; }"
- },
- {
-  "name": "Approve sends on a no",
-  "file": "stmt/owner.js",
-  "find": "keep:'Not yet'}).then(function(yes){\n      if(!yes) return;\n      if(going) going();",
-  "replace": "keep:'Not yet'}).then(function(yes){\n      if(going) going();"
- },
- {
-  "name": "Reject sends on a no",
-  "file": "stmt/owner.js",
-  "find": "keep:'Keep it'}).then(function(yes){\n      if(!yes) return;\n      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject'",
-  "replace": "keep:'Keep it'}).then(function(yes){\n      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject'"
- },
- {
-  "name": "Approve sends a body",
-  "file": "stmt/owner.js",
-  "find": "+'/approve',{},'Row approved.'",
-  "replace": "+'/approve',{x:1},'Row approved.'"
- },
- {
-  "name": "Reject sends a body",
-  "file": "stmt/owner.js",
-  "find": "+'/reject',{},'Row rejected.'",
-  "replace": "+'/reject',{x:1},'Row rejected.'"
- },
- {
-  "name": "the Approve Sheet restates no row",
-  "file": "stmt/owner.js",
-  "find": "extra:deskAskRows(draft), plain:true,",
-  "replace": "extra:[], plain:true,"
- },
- {
-  "name": "a trip's Sheet lists the one row",
-  "file": "stmt/owner.js",
-  "find": "return (sibs.length?sibs:[draft]).map(deskAskRow);",
-  "replace": "return [draft].map(deskAskRow);"
- },
- {
-  "name": "Approve is a danger action",
-  "file": "stmt/owner.js",
-  "find": "go.classList.toggle('salt-ghost--danger',q.plain!==true);",
-  "replace": "go.classList.add('salt-ghost--danger');"
- },
- {
-  "name": "Reject is no danger action",
-  "file": "stmt/owner.js",
-  "find": "go.classList.toggle('salt-ghost--danger',q.plain!==true);",
-  "replace": "go.classList.remove('salt-ghost--danger');"
- },
- {
-  "name": "the Sheet tells its no before the action's yes",
-  "file": "stmt/owner.js",
-  "find": "shut:function(){ Promise.resolve().then(function(){ resolve(false); }); },",
-  "replace": "shut:function(){ resolve(false); },"
- },
- {
-  "name": "the Sheet is never told it has come down",
-  "file": "stmt/page.js",
-  "find": "if(q.shut) q.shut();",
-  "replace": "/* shut not told */"
- },
- {
-  "name": "the action never answers yes",
-  "file": "stmt/owner.js",
-  "find": "yes:function(){ resolve(true); },",
-  "replace": "yes:function(){ },"
- },
- {
-  "name": "the Sheet forgets which control asked",
-  "file": "stmt/owner.js",
-  "find": "ynOpen({title:q.title, opener:opener, again:ynFind(key),",
-  "replace": "ynOpen({title:q.title, opener:null, again:ynFind(key),"
- },
- {
-  "name": "a control carries no key to be found by",
-  "file": "stmt/owner.js",
-  "find": "function ynTag(btn,key){ if(btn&&btn.setAttribute) btn.setAttribute('data-yn',key); return btn; }",
-  "replace": "function ynTag(btn,key){ return btn; }"
- },
- {
-  "name": "the Sheet's close control has no act",
-  "file": "stmt/owner.js",
-  "find": "actOn(document.getElementById('ynX'),'ask.close',key);",
-  "replace": ""
- },
- {
-  "name": "the Sheet's action has no key",
-  "file": "stmt/owner.js",
-  "find": "actOn(go,'ask.go',key);",
-  "replace": "actOn(go,'ask.go');"
- },
- {
-  "name": "Withdraw server-held entry sends at once",
-  "file": "stmt/owner.js",
-  "find": "if(!entry.canWithdraw){ withdraw(); return; }",
-  "replace": "withdraw(); return;"
- },
- {
-  "name": "Finish server withdrawal asks",
-  "file": "stmt/owner.js",
-  "find": "if(!entry.canWithdraw){ withdraw(); return; }",
-  "replace": "if(false){ withdraw(); return; }"
- },
- {
-  "name": "the withdrawal loses its fingerprint",
-  "file": "stmt/owner.js",
-  "find": "+'/withdraw',{fingerprint:entry.fingerprint})",
-  "replace": "+'/withdraw',{})"
- },
- {
-  "name": "the withdrawal goes on a no",
-  "file": "stmt/owner.js",
-  "find": "go:'Withdraw entry', keep:'Keep it'})\n              .then(function(yes){ if(yes) withdraw(); });",
-  "replace": "go:'Withdraw entry', keep:'Keep it'})\n              .then(function(yes){ withdraw(); });"
- },
- {
-  "name": "the group order closes on a no",
-  "file": "stmt/owner.js",
-  "find": ".then(function(yes){ if(yes) closePool(); });",
-  "replace": ".then(function(yes){ closePool(); });"
- },
- {
-  "name": "Close again asks",
-  "file": "stmt/owner.js",
-  "find": "if(p.state!=='open'){ closePool(); return; }",
-  "replace": "if(false){ closePool(); return; }"
- },
- {
-  "name": "the notice is set on a no",
-  "file": "stmt/owner.js",
-  "find": "if(!yes||busy||needsRead) return;",
-  "replace": "if(busy||needsRead) return;"
- },
- {
-  "name": "the notice goes without its confirmed flag",
-  "file": "stmt/owner.js",
-  "find": "{lines:lines,confirmed:true}",
-  "replace": "{lines:lines}"
- },
- {
-  "name": "Set notice is a danger action",
-  "file": "stmt/owner.js",
-  "find": "go:'Set the notice', keep:'Not yet', plain:true}",
-  "replace": "go:'Set the notice', keep:'Not yet'}"
- },
- {
-  "name": "Clear notice is no danger action",
-  "file": "stmt/owner.js",
-  "find": "go:'Clear the notice', keep:'Keep it'}",
-  "replace": "go:'Clear the notice', keep:'Keep it', plain:true}"
- },
- {
-  "name": "a twin is recorded without his yes",
-  "file": "stmt/owner.js",
-  "find": "if(!twin||!(await ownerAsk(send.button,'twin:'+what,{title:'Record this '+what+' again?', say:['You already recorded a '+what+' like this. Record it again as a separate one?'], go:'Record it again', keep:'Do not record', plain:true})))throw error;",
-  "replace": "if(!twin)throw error;"
- },
- {
-  "name": "the chat retry is cancelled on a no",
-  "file": "stmt/owner.js",
-  "find": "go:'Discard it', keep:'Keep it'}).then(function(yes){\n        if(!yes) return;\n",
-  "replace": "go:'Discard it', keep:'Keep it'}).then(function(yes){\n"
- },
- {
-  "name": "a lapse leaves the Sheet up",
-  "file": "stmt/owner.js",
-  "find": "    ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */\n",
-  "replace": ""
- },
- {
-  "name": "a native confirm comes back, in code nothing here runs",
-  "file": "stmt/owner.js",
-  "find": "function ynTag(btn,key){ if(btn&&btn.setAttribute)",
-  "replace": "function ynTag(btn,key){ if(false) window.confirm('x'); if(btn&&btn.setAttribute)"
- },
- {
-  "name": "a native confirm is asked before Approve",
-  "file": "stmt/owner.js",
-  "find": "    var trip=tripRows(draft).length>0;\n    return ownerAsk(opener,key,{title:trip?'Approve every row",
-  "replace": "    var trip=tripRows(draft).length>0; window.confirm('Approve?');\n    return ownerAsk(opener,key,{title:trip?'Approve every row"
- },
- {
-  "name": "the Needs pill is off before his yes",
-  "file": "stmt/owner.js",
-  "find": "var said=false;\n          approveDraft(",
-  "replace": "var said=false; ap.disabled=true;\n          approveDraft("
- },
- {
-  "name": "the Needs pill stays on after his yes",
-  "file": "stmt/owner.js",
-  "find": "function(){ said=true; ap.disabled=true; }",
-  "replace": "function(){ said=true; }"
- },
- {
-  "name": "a trip is drawn again for each of its rows",
-  "file": "stmt/owner.js",
-  "find": "if(tripsDrawn[tid]) return; tripsDrawn[tid]=true;",
-  "replace": "tripsDrawn[tid]=true;"
- },
- {
-  "name": "a tap on the card's body no longer opens its detail",
-  "file": "stmt/owner.js",
-  "find": "if(!ev.target.closest('button,a,input,select,textarea,summary')) toggle();",
-  "replace": ""
- },
- {
-  "name": "the head is no longer a control",
-  "file": "stmt/owner.js",
-  "find": "head=el('button','salt-approve__head apphead');",
-  "replace": "head=el('div','salt-approve__head apphead');"
- },
- {
-  "name": "a committed or approved copy is listed as waiting for the Desk",
-  "file": "stmt/owner.js",
-  "find": "var held=(makerData.queue||[]).filter(function(e){ return e&&e.state!=='committed'&&e.state!=='approved'; })",
-  "replace": "var held=(makerData.queue||[])"
- }
+ {"name":"a Desk row is a glass card again, not the Approve recipe","file":"stmt/owner.js","find":"makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard')","replace":"makerCard(draftRoot,'draft:'+draft.id)"},
+ {"name":"the party leaves the card's head","file":"stmt/owner.js","find":"      head.appendChild(el('span','salt-approve__party',entry.party||'no code'));\n","replace":""},
+ {"name":"the cost is worked out from the total, not read off the draft","file":"stmt/owner.js","find":"rm(typeof reading.cost==='object'?reading.cost.total:reading.cost)","replace":"rm(Number(reading.total||0)*0.5)"},
+ {"name":"the margin is not shown","file":"stmt/owner.js","find":"if(reading.margin) figs.push(","replace":"if(false) figs.push("},
+ {"name":"the flags are prose again, not chips","file":"stmt/owner.js","find":"flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); });","replace":"flags.forEach(function(flag){ chips.appendChild(el('span','salt-insight',String(flag))); });"},
+ {"name":"the drafter's reasoning leaves the card","file":"stmt/owner.js","find":"    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));\n","replace":""},
+ {"name":"the proposed row is open on the card","file":"stmt/owner.js","find":"panel.hidden=true; panel.appendChild(detailList(rowPairs(reading.row,key)));","replace":"panel.hidden=false; panel.appendChild(detailList(rowPairs(reading.row,key)));"},
+ {"name":"Approve is a ghost, not the filled pill","file":"stmt/owner.js","find":"approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);","replace":"approveDraft(draft,approve,'draft:'+draft.id+':approve'); },false);"},
+ {"name":"Reject is no danger ghost","file":"stmt/owner.js","find":"      reject.classList.add('salt-ghost--danger'); ynTag(reject,'draft:'+draft.id+':reject');","replace":"      ynTag(reject,'draft:'+draft.id+':reject');"},
+ {"name":"the moves stand outside the recipe's actions","file":"stmt/owner.js","find":"var acts=el('div','salt-approve__actions'); card.appendChild(acts);","replace":"var acts=el('div','maker-actions'); card.appendChild(acts);"},
+ {"name":"a trip's card lists none of the other rows","file":"stmt/owner.js","find":"siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){","replace":"[].forEach(function(item){"},
+ {"name":"the page restates the recipe's padding","file":"stmt/page.js","find":".adm .salt-approve>.maker-say:empty{display:none}","replace":".adm .salt-approve>.maker-say:empty{display:none}\n.adm .salt-approve{padding:16px}"},
+ {"name":"the queue is open on arrival","file":"stmt/page.js","find":"<details id=\"makerQueue\" class=\"salt-plan\">","replace":"<details id=\"makerQueue\" class=\"salt-plan\" open>"},
+ {"name":"the queue is not the Plan fold","file":"stmt/page.js","find":"<details id=\"makerQueue\" class=\"salt-plan\">","replace":"<details id=\"makerQueue\" class=\"maker-card\">"},
+ {"name":"the queue's count is not kept","file":"stmt/owner.js","find":"      if(counted) counted.textContent=String(held.length);\n","replace":""},
+ {"name":"the queue's summary has no act of its own","file":"stmt/page.js","find":"<summary data-act=\"record.queue-toggle\">","replace":"<summary>"},
+ {"name":"a redraw of the entries shuts the fold","file":"stmt/owner.js","find":"      queueRoot.textContent='';\n      var held=","replace":"      queueRoot.textContent=''; if(queueRoot.parentNode&&queueRoot.parentNode.parentNode) queueRoot.parentNode.parentNode.open=false;\n      var held="},
+ {"name":"an empty queue opens its fold","file":"stmt/owner.js","find":"if(!held.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));","replace":"if(!held.length){ queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.')); queueRoot.parentNode.parentNode.open=true; }"},
+ {"name":"Approve sends on a no","file":"stmt/owner.js","find":"keep:'Not yet'}).then(function(yes){\n      if(!yes) return;\n      if(going) going();","replace":"keep:'Not yet'}).then(function(yes){\n      if(going) going();"},
+ {"name":"Reject sends on a no","file":"stmt/owner.js","find":"keep:'Keep it'}).then(function(yes){\n      if(!yes) return;\n      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject'","replace":"keep:'Keep it'}).then(function(yes){\n      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject'"},
+ {"name":"Approve sends a body","file":"stmt/owner.js","find":"+'/approve',{},'Row approved.'","replace":"+'/approve',{x:1},'Row approved.'"},
+ {"name":"Reject sends a body","file":"stmt/owner.js","find":"+'/reject',{},'Row rejected.'","replace":"+'/reject',{x:1},'Row rejected.'"},
+ {"name":"the Approve Sheet restates no row","file":"stmt/owner.js","find":"extra:deskAskRows(draft), plain:true,","replace":"extra:[], plain:true,"},
+ {"name":"a trip's Sheet lists the one row","file":"stmt/owner.js","find":"return (sibs.length?sibs:[draft]).map(deskAskRow);","replace":"return [draft].map(deskAskRow);"},
+ {"name":"Approve is a danger action","file":"stmt/owner.js","find":"go.classList.toggle('salt-ghost--danger',q.plain!==true);","replace":"go.classList.add('salt-ghost--danger');"},
+ {"name":"Reject is no danger action","file":"stmt/owner.js","find":"go.classList.toggle('salt-ghost--danger',q.plain!==true);","replace":"go.classList.remove('salt-ghost--danger');"},
+ {"name":"the Sheet tells its no before the action's yes","file":"stmt/owner.js","find":"shut:function(){ Promise.resolve().then(function(){ resolve(false); }); },","replace":"shut:function(){ resolve(false); },"},
+ {"name":"the Sheet is never told it has come down","file":"stmt/page.js","find":"if(q.shut) q.shut();","replace":"/* shut not told */"},
+ {"name":"the action never answers yes","file":"stmt/owner.js","find":"yes:function(){ resolve(true); },","replace":"yes:function(){ },"},
+ {"name":"the Sheet forgets which control asked","file":"stmt/owner.js","find":"ynOpen({title:q.title, opener:opener, again:ynFind(key),","replace":"ynOpen({title:q.title, opener:null, again:ynFind(key),"},
+ {"name":"a control carries no key to be found by","file":"stmt/owner.js","find":"function ynTag(btn,key){ if(btn&&btn.setAttribute) btn.setAttribute('data-yn',key); return btn; }","replace":"function ynTag(btn,key){ return btn; }"},
+ {"name":"the Sheet's close control has no act","file":"stmt/owner.js","find":"actOn(document.getElementById('ynX'),'ask.close',key);","replace":""},
+ {"name":"the Sheet's action has no key","file":"stmt/owner.js","find":"actOn(go,'ask.go',key);","replace":"actOn(go,'ask.go');"},
+ {"name":"Withdraw server-held entry sends at once","file":"stmt/owner.js","find":"if(!entry.canWithdraw){ withdraw(); return; }","replace":"withdraw(); return;"},
+ {"name":"Finish server withdrawal asks","file":"stmt/owner.js","find":"if(!entry.canWithdraw){ withdraw(); return; }","replace":"if(false){ withdraw(); return; }"},
+ {"name":"the withdrawal loses its fingerprint","file":"stmt/owner.js","find":"+'/withdraw',{fingerprint:entry.fingerprint})","replace":"+'/withdraw',{})"},
+ {"name":"the withdrawal goes on a no","file":"stmt/owner.js","find":"go:'Withdraw entry', keep:'Keep it'})\n              .then(function(yes){ if(yes) withdraw(); });","replace":"go:'Withdraw entry', keep:'Keep it'})\n              .then(function(yes){ withdraw(); });"},
+ {"name":"the group order closes on a no","file":"stmt/owner.js","find":".then(function(yes){ if(yes) closePool(); });","replace":".then(function(yes){ closePool(); });"},
+ {"name":"Close again asks","file":"stmt/owner.js","find":"if(p.state!=='open'){ closePool(); return; }","replace":"if(false){ closePool(); return; }"},
+ {"name":"the notice is set on a no","file":"stmt/owner.js","find":"if(!yes||busy||needsRead) return;","replace":"if(busy||needsRead) return;"},
+ {"name":"the notice goes without its confirmed flag","file":"stmt/owner.js","find":"{lines:lines,confirmed:true}","replace":"{lines:lines}"},
+ {"name":"Set notice is a danger action","file":"stmt/owner.js","find":"go:'Set the notice', keep:'Not yet', plain:true}","replace":"go:'Set the notice', keep:'Not yet'}"},
+ {"name":"Clear notice is no danger action","file":"stmt/owner.js","find":"go:'Clear the notice', keep:'Keep it'}","replace":"go:'Clear the notice', keep:'Keep it', plain:true}"},
+ {"name":"a twin is recorded without his yes","file":"stmt/owner.js","find":"if(!twin||!(await ownerAsk(send.button,'twin:'+what,{title:'Record this '+what+' again?', say:['You already recorded a '+what+' like this. Record it again as a separate one?'], go:'Record it again', keep:'Do not record', plain:true})))throw error;","replace":"if(!twin)throw error;"},
+ {"name":"the chat retry is cancelled on a no","file":"stmt/owner.js","find":"go:'Discard it', keep:'Keep it'}).then(function(yes){\n        if(!yes) return;\n","replace":"go:'Discard it', keep:'Keep it'}).then(function(yes){\n"},
+ {"name":"a lapse leaves the Sheet up","file":"stmt/owner.js","find":"    ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */\n","replace":""},
+ {"name":"a native confirm comes back, in code nothing here runs","file":"stmt/owner.js","find":"function ynTag(btn,key){ if(btn&&btn.setAttribute)","replace":"function ynTag(btn,key){ if(false) window.confirm('x'); if(btn&&btn.setAttribute)"},
+ {"name":"a native confirm is asked before Approve","file":"stmt/owner.js","find":"    var trip=tripRows(draft).length>0;\n    return ownerAsk(opener,key,{title:trip?'Approve every row","replace":"    var trip=tripRows(draft).length>0; window.confirm('Approve?');\n    return ownerAsk(opener,key,{title:trip?'Approve every row"},
+ {"name":"the Needs pill is off before his yes","file":"stmt/owner.js","find":"var said=false;\n          approveDraft(","replace":"var said=false; ap.disabled=true;\n          approveDraft("},
+ {"name":"the Needs pill stays on after his yes","file":"stmt/owner.js","find":"function(){ said=true; ap.disabled=true; }","replace":"function(){ said=true; }"},
+ {"name":"a trip is drawn again for each of its rows","file":"stmt/owner.js","find":"if(tripsDrawn[tid]) return; tripsDrawn[tid]=true;","replace":"tripsDrawn[tid]=true;"},
+ {"name":"a tap on the card's body no longer opens its detail","file":"stmt/owner.js","find":"if(!ev.target.closest('button,a,input,select,textarea,summary')) toggle();","replace":""},
+ {"name":"the head is no longer a control","file":"stmt/owner.js","find":"head=el('button','salt-approve__head apphead');","replace":"head=el('div','salt-approve__head apphead');"},
+ {"name":"a committed or approved copy is listed as waiting for the Desk","file":"stmt/owner.js","find":"var held=(makerData.queue||[]).filter(function(e){ return e&&e.state!=='committed'&&e.state!=='approved'; })","replace":"var held=(makerData.queue||[])"}
 ]

@@ -4106,9 +4106,9 @@ export const OWNER_JS = `
     });
     if(!pendingRows.length&&!(makerData.refused||[]).length) draftRoot.appendChild(el('p','rnone','Nothing waits for your approval.'));
     if(queueRoot){
-      queueRoot.textContent='';
       /* 14 Oct 2026 (his screenshot): a copy a device still holds of an entry already approved or committed is not waiting for anything,
          so it is not listed; it leaves the device's key when that device next posts */
+      queueRoot.textContent='';
       var held=(makerData.queue||[]).filter(function(e){ return e&&e.state!=='committed'&&e.state!=='approved'; }), counted=document.getElementById('makerQueueCount');
       /* the queue is a fold shut by default, titled and counted, so it is never read as missing: its count is read off the entries the server holds */
       if(counted) counted.textContent=String(held.length);
