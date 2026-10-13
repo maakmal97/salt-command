@@ -213,7 +213,6 @@ export const EN = {
   /* ---- PAYING: the pay sheet ---- */
   "pay.h": "Pay",
   /* ---- ACCOUNT ---- */
-  "acct.back": "Back to your statement",
   "acct.months": "Show one month",
   /* ---- A GUEST'S BOARD AND A SHUT LINK (no script: English, from here) ---- */
   "board.h": "Price list",
@@ -322,10 +321,6 @@ export const EN = {
   "acct.later": "Your account will show here after the next update.",
   "acct.updating": "Your live statement is updating. Try again in a minute.",
   "acct.unavailable": "Your live statement could not be verified just now. Try again in a minute.",
-  "acct.issued": "The statement issued {d}, kept as it was sent.",
-  "acct.earlier": "Earlier statements",
-  "acct.keptLive": "Kept as they were sent. Your statement above keeps up with every order.",
-  "acct.kept": "Kept as they were sent.",
   "acct.showing": "Showing the orders and refunds of {m}. The totals, what is still to collect and how it was worked out are the whole account.",
   "acct.all": "Showing every order from the start.",
   "acct.allPill": "All",

@@ -315,18 +315,13 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   font-family:var(--salt-font-mono);letter-spacing:.04em;line-height:1.6}
 .mfnote:empty{display:none}
 /* S7 7.3: ACCOUNT. The month filter is the system's tab strip, every pill a 44px tap, placed on the list it filters;
-   the earlier statements close the statement. 11 Oct 2026 (Phase 7d part 2, his yes): THE DEVICE COMES FIRST. Messages, then the
+   no earlier statement follows it (14 Oct 2026). 11 Oct 2026 (Phase 7d part 2, his yes): THE DEVICE COMES FIRST. Messages, then the
    compact This device card, then the statement under a gap of its own (28px, a gap and never a margin, so a part that is not drawn
    leaves none); from 1080px This device stands beside, as it did */
 .acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
 #aThread:empty{display:none}
 .mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 
-.stmtback{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 18px}
-.stmtback p{flex:1 1 220px;margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.stmtfoot{margin:30px 0 0;padding-top:18px;border-top:1px solid var(--salt-line)}
-.stmtfoot .sub2{margin:6px 0 12px}
-.stmtissues{display:flex;flex-wrap:wrap;gap:8px}
 .devcard{margin:0}
 .devcard .salt-ledger{margin-top:6px}
 .devcard .salt-ledger__row:last-child{border-bottom:0}
@@ -1573,16 +1568,14 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* PHASE 7A: the foot holding To pay now and its Pay, last in Home so it stays above the bar the whole way down (drawPayHead) */
     + '<div id="homeFoot" class="payfoot" hidden></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
-       statement (its one month filter placed beside the list it filters, the earlier statements at its foot) under a gap of its
+       statement (its one month filter placed beside the list it filters and nothing after it) under a gap of its
        own; This device stands beside them from 1080px */
     + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aThread"></div>'
     + (owner ? "" : thisDevice())
     + '<div class="acct__main">'
-    + '<div id="stmtBack" class="stmtback" hidden><p id="stmtBackT"></p>'
-    + wt("button", 'type="button" class="salt-ghost" id="stmtBackGo"', "acct.back") + "</div>"
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
     + '<div id="out"></div>'
-    + '<div id="stmtFoot" class="stmtfoot" hidden></div></div>'
+    + '</div>'
     + "</div></div>"
     + '<div id="pPrices" class="panel" hidden></div>'
     + '<div id="pOrder" class="panel" hidden></div>'
@@ -1737,7 +1730,6 @@ const CLIENT_JS = `
       un=document.getElementById('un'), go=document.getElementById('go'),
       barw=document.getElementById('barw'), cd=document.getElementById('cd'),
       acctEl=document.getElementById('acct'), mfil=document.getElementById('mfil'), mfnote=document.getElementById('mfnote'),
-      stmtFoot=document.getElementById('stmtFoot'), stmtBack=document.getElementById('stmtBack'),
       tabs=document.getElementById('tabs'),
       pStmt=document.getElementById('pStmt'), pPrices=document.getElementById('pPrices'),
       pOrder=document.getElementById('pOrder'), pCard=document.getElementById('pCard'),
@@ -2468,7 +2460,7 @@ const CLIENT_JS = `
     thClose(); thPut(null); thOut=[]; thSig=''; thWhy='';
     bundle=null; session=''; view=false; prices=null; orders=[]; pools=[]; claims=[]; ordersFailed=false; draft={}; seenMem=null; assoc=false; card=null; cardMonth=null; myLinks=null; myMax=0; myNote='';
     hold=false; hidePrices=false; locked=false; payDue=null; liveAt='';
-    parkMonths(); out.textContent=''; at=0; drawFoot(); devNote=''; drawDevice();
+    parkMonths(); out.textContent=''; at=0; devNote=''; drawDevice();
     mfil.textContent=''; mfil.hidden=true; mfPick=null; mfnote.textContent='';
     pPrices.textContent=''; pOrder.textContent=''; drawHome();
     tabs.hidden=true; barw.hidden=true; lapse.hidden=true; if(linkBox) linkBox.hidden=true;
@@ -2662,7 +2654,7 @@ const CLIENT_JS = `
   async function retryOrders(){ await oReread(); }
 
   /* ---- ACCOUNT (S7 7.3, the plan's section 4, his "all recommended" of 24 Sep 2026) -------------------------------
-     The statement as stacked lines, ONE month filter with All first, the earlier statements at its foot, and This device.
+     The statement as stacked lines, ONE month filter with All first, and This device. No earlier statement is drawn (14 Oct 2026).
      drawAccount(el) is what a place calls: it moves the Account's parts into el (moved, never copied, so every id stays
      one element) and draws what the page holds. The statement itself is drawn by pickStmt, on every open and re-read. */
   function drawAccount(el){
@@ -2683,42 +2675,19 @@ const CLIENT_JS = `
     var s=bundle.statements[i];
     if(!s){
       out.textContent=''; var e=el('div','panel'); e.appendChild(el('p','lead',tw('acct.nothing'))); out.appendChild(e);
-      mfil.hidden=true; mfnote.textContent=''; drawFoot();
+      mfil.hidden=true; mfnote.textContent='';
       return;
     }
     /* C15: never an older document in its place */
     if(s.bad){
       out.textContent=''; out.appendChild(unreadNode(s.bad,s.bad==='acct.unread'?retryAccount:null));
-      mfil.hidden=true; mfnote.textContent=''; drawFoot();
+      mfil.hidden=true; mfnote.textContent='';
       return;
     }
     out.innerHTML=s.body;
     drawMonths();
-    drawFoot();
     window.scrollTo(0,0);
   }
-  /* EARLIER STATEMENTS AT THE FOOT (S7 7.3). The first statement is the account as it stands, the live document where
-     there is one; every issue after it is kept as it was sent, and opens in its place with the way back above it. It
-     is never called the latest issue: there are no monthly statements, just one live document (v769, v772). */
-  function drawFoot(){
-    stmtFoot.textContent='';
-    var list=bundle?bundle.statements:[], s0=list[0];
-    stmtBack.hidden=!(at>0&&list[at]);
-    if(!stmtBack.hidden) document.getElementById('stmtBackT').textContent=tw('acct.issued',{d:list[at].label||list[at].issued});
-    stmtFoot.hidden=list.length<2;
-    if(stmtFoot.hidden) return;
-    stmtFoot.appendChild(el('h2','salt-eyebrow salt-eyebrow--copper',tw('acct.earlier')));
-    stmtFoot.appendChild(el('p','sub2',tw(s0&&s0.live?'acct.keptLive':'acct.kept')));
-    var g=el('div','stmtissues');
-    list.forEach(function(s,j){
-      if(!j) return;
-      var b=el('button','salt-ghost',s.label||s.issued); b.type='button'; b.setAttribute('aria-pressed',j===at?'true':'false');
-      b.addEventListener('click', function(){ pickStmt(j); });
-      g.appendChild(b);
-    });
-    stmtFoot.appendChild(g);
-  }
-  document.getElementById('stmtBackGo').addEventListener('click', function(){ pickStmt(0); });
 
   /* ---- THE MONTH FILTER (v690, his instruction of 18 Sep 2026) -------------------------------
      THE STATEMENT IS NOT BOUND TO A MONTH ANY MORE: it carries every order from the start, and
@@ -6097,8 +6066,9 @@ const CLIENT_JS = `
     else if(body.liveStatus==='updating') b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:'acct.updating'});
     else if(body.liveStatus==='unavailable') b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:'acct.unavailable'});
     else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:body.live?'acct.unread':'acct.later'});
-    /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk and on his own page */
-    if(!OWNER) b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
+    /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk. 14 Oct 2026 (his review):
+       off his View as them too, so no page draws an earlier statement */
+    b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
     if(body.prices){ try{ x.prices=await openList(ck, body.prices); }catch(e){ /* the statements still open; the list is simply absent */ } }
     return x;

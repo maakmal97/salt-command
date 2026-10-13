@@ -22487,7 +22487,7 @@ await (async () => {
     pills[0].click();
     ok(new Set(shown()).size === months.length, "and All brings every line back");
     /* C13 (his yes of 29 Sep 2026, option a): the issues sealed beside it are off the Counter, kept on disk and on Salt Account */
-    ok(D.getElementById("stmtFoot").hidden && D.getElementById("stmtBack").hidden && !/ISSUE/.test(D.getElementById("pStmt").textContent),
+    ok(!D.getElementById("stmtFoot") && !D.getElementById("stmtBack") && !/ISSUE|Earlier statements/.test(D.getElementById("pStmt").textContent),
       "the issues sealed beside the live document are never drawn on the Counter");
     /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
     const dev = D.getElementById("thisDevice");
@@ -22606,7 +22606,7 @@ await (async () => {
     st.open = [async () => answer(await sealLive(overdueLive, other))];
     signIn();
     ok(await until(() => !!D.querySelector('#out [data-unread="acct.unread"]')), "a live document that will not open draws could not be read, with Try again");
-    ok(!/ISSUE/.test(vis()) && D.getElementById("stmtFoot").hidden && /could not be read/.test(head()),
+    ok(!/ISSUE/.test(vis()) && !D.getElementById("stmtFoot") && /could not be read/.test(head()),
       "and never the sealed issue in its place, nor at the foot; Home leads with the same line: " + JSON.stringify([outT().slice(0, 80), head().slice(0, 80)]));
     /* Try again: the re-read brings the live document, overdue part and all, and the hold with it */
     st.account = [async () => js({ ok: true, env, live: await sealLive(overdueLive, ck), liveStatus: "current" })];
@@ -22662,7 +22662,7 @@ await (async () => {
     st.open = [async () => answer(await sealLive(live, ck), "current")];
     st.orders = [async () => js({ ok: false, error: "no KV binding" }, 500), async () => js({ ok: true, orders: [] })];
     signIn();
-    ok(await until(() => !!D.querySelector("#out .salt-lines")) && D.getElementById("stmtFoot").hidden && !/ISSUE|Earlier statements/.test(vis()),
+    ok(await until(() => !!D.querySelector("#out .salt-lines")) && !D.getElementById("stmtFoot") && !/ISSUE|Earlier statements/.test(vis()),
       "the Counter draws the live document alone: no earlier statements, no issue");
     /* C14: the first read of orders failed; the list and Home say so, never None yet, and Try again reads it */
     const oArea = () => D.getElementById("oArea");
