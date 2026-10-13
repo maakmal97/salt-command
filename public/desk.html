@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="c11b9493e99cbaba";
+var SALT_BUILD_ID="18578921824b4ea4";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -17075,7 +17075,7 @@ async function vaultReveal(pass){
 }
 /* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other; F13: the slip key too */
 function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}try{slipShut();}catch(e){}
-  try{ORD_FEE={};WB_FEE=null;ORD_PIN={};}catch(e){}}   /* F15: a fee worked from the places goes with them, and a shared spot */
+  try{ORD_FEE={};WB_FEE=null;ORD_PIN={};ORD_PIN_ALL='';ORD_PIN_ALL_FOR='';}catch(e){}}   /* F15: a fee worked from the places goes with them, and a shared spot */
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
    is to RE-KEY the ledger, never to paint a new code over the old id: a hidden second
@@ -21161,19 +21161,65 @@ function ordPinLine(o){
   if(v.st==='looking')return '<p class="ordline ordpin">Opening the spot they shared.</p>';
   if(v.st!=='ok')return `<p class="ordline ordpin" role="status">${esc(v.msg)}</p>`;
   const had=feePt(vaultPlaces&&vaultPlaces[o.code]),same=!!had&&haversineKm(had,v.pt)<0.05;
-  const can=!same&&!!o.code&&!o.forFriend&&!/-R$/.test(String(o.code));
+  const can=!same&&pinFileable(o);
   return `<p class="ordline ordpin">The spot they shared is open on this device${same?', the place filed for them':''}.</p>`
     +(v.filed?'<p class="ordline ordpin" role="status">Filed as their place.</p>':can?`<button type="button" class="salt-ghost" data-pinfile="${esc(o.id)}">File as their place</button>`:'')
     +(v.fileMsg?`<p class="ordline ordpin" role="status">${esc(v.fileMsg)}</p>`:'');
 }
 async function ordPinFile(id){
   const o=ORD_OPEN.find(x=>x&&x.id===id),v=ORD_PIN[id];
-  if(!o||!v||v.st!=='ok'||!o.code||o.forFriend||/-R$/.test(String(o.code)))return;
+  if(!o||!v||v.st!=='ok'||!pinFileable(o))return;
   const code=o.code,pt=v.pt,entry=placeEntry({lat:pt.lat,lng:pt.lng,src:'pin'});
   const why=await wbVaultFile(null,pm=>{pm[code]=Object.assign(entry,{addr:(pm[code]&&pm[code].addr)||null});});
   if(ORD_PIN[id]!==v)return;   /* locked meanwhile */
   if(why)ORD_PIN[id]=Object.assign({},v,{fileMsg:why});
   else{ORD_PIN[id]=Object.assign({},v,{filed:true,fileMsg:''});try{if(vaultPlaces)vaultPlaces[code]=entry;}catch(e){}}
+  ordDraw();
+}
+/* a spot is filed only as the customer's own place: never a friend's order or an -R bucket's, which name no door of theirs */
+function pinFileable(o){return !!o&&!!o.code&&!o.forFriend&&!/-R$/.test(String(o.code));}
+/* 13 OCT 2026, HIS BATCH: every spot opened on this device whose customer has no point filed, the newest order's for each,
+   filed by one tap under ONE passphrase and one vault write. A customer whose filed point differs keeps the card's own tap.
+   The places on screen may be stale or unopened, so the write decides again on the vault it has just read: a point filed
+   meanwhile, from any road, stands, and only what this write actually filed is counted. */
+let ORD_PIN_ALL='',ORD_PIN_ALL_FOR='';   /* the answer, and the batch it answered: a different batch since hides it */
+const ordPinAllKey=b=>b.map(x=>x.o.code).sort().join(',');
+function ordPinBatch(){
+  const by={};
+  for(const o of ORD_OPEN){const v=o&&ORD_PIN[o.id];
+    if(!v||v.st!=='ok'||!pinFileable(o)||feePt(vaultPlaces&&vaultPlaces[o.code]))continue;
+    if(!by[o.code]||String(o.at||'')>String(by[o.code].o.at||''))by[o.code]={o,v};}
+  return Object.values(by);
+}
+function ordPinAllLine(){
+  const b=ordPinBatch(),n=b.length;
+  const said=ORD_PIN_ALL&&ORD_PIN_ALL_FOR===ordPinAllKey(b)?`<p class="dsc ordpinall" role="status">${esc(ORD_PIN_ALL)}</p>`:'';
+  if(!n)return said;
+  return `<p class="dsc ordpinall">${n} ${n===1?'customer':'customers'} shared a spot and ${n===1?'has':'have'} no place filed.</p>`
+    +`<button type="button" class="salt-ghost" data-pinall="1">${n===1?'File it':'File all '+n}</button>`+said;
+}
+async function ordPinFileAll(){
+  const list=ordPinBatch();if(!list.length)return;
+  const filed=[],held={};
+  const why=await wbVaultFile(null,pm=>{filed.length=0;for(const k of Object.keys(held))delete held[k];
+    for(const {o,v} of list){if(feePt(pm[o.code])){held[o.code]=pm[o.code];continue;}
+      pm[o.code]=Object.assign(placeEntry({lat:v.pt.lat,lng:v.pt.lng,src:'pin'}),{addr:(pm[o.code]&&pm[o.code].addr)||null});
+      filed.push(o.code);}});
+  if(!vaultSlipKey){ordDraw();return;}   /* locked meanwhile: nothing on screen to mark */
+  if(why)ORD_PIN_ALL=why;
+  else{
+    for(const {o,v} of list)if(filed.includes(o.code)){
+      if(ORD_PIN[o.id]===v)ORD_PIN[o.id]=Object.assign({},v,{filed:true,fileMsg:''});
+      try{if(vaultPlaces)vaultPlaces[o.code]=placeEntry({lat:v.pt.lat,lng:v.pt.lng,src:'pin'});}catch(e){}}
+    /* a point the vault held that the screen did not know is learnt, so the batch does not offer it again */
+    try{if(vaultPlaces)Object.assign(vaultPlaces,held);}catch(e){}
+    const kept=Object.keys(held).length;
+    /* neither filed nor held: the vault's road sent an input it was holding from before instead, and ran no edit */
+    ORD_PIN_ALL=!filed.length&&!kept?'A vault input held from before was sent instead. Tap again to file these.'
+      :(filed.length?'Filed '+filed.length+(filed.length===1?' place.':' places.'):'Nothing filed.')
+      +(kept?' '+kept+' already had a place filed, which stands.':'');
+  }
+  ORD_PIN_ALL_FOR=ordPinAllKey(ordPinBatch());
   ordDraw();
 }
 async function slipView(u,id,at){
@@ -21563,7 +21609,7 @@ function ordDraw(){
     const cnt=k=>k==='all'?acts.length:acts.filter(a=>a.kind===k).length;
     const tab=(k,w)=>`<button type="button" class="salt-tabs__pill ordtab" role="tab" data-of="${k}" aria-selected="${ORD_FILTER===k}">${w}${cnt(k)?` <span class="salt-tabs__count">${cnt(k)}</span>`:''}</button>`;
     box.classList.toggle('ord-open',!!ORD_OPENED);
-    box.innerHTML=`<div class="ordlist">${gone}
+    box.innerHTML=`<div class="ordlist">${gone}${ordPinAllLine()}
       <div class="salt-tabs ordtabs" role="tablist" aria-label="Show">${tab('all','All')+tab('new','New')+tab('paid','Paid?')+tab('cash','Cash')+tab('asked','Asked')}</div>
       <div class="ordrows">${shown.length?shown.map(a=>ordRow(a,a.o.id===sel)).join(''):`<div class="dsc">${acts.length?'None of this kind.':'Nothing waiting on you.'}</div>`}</div>
       ${rest.length?`<div class="salt-eyebrow ordrest">${ordAll?'Every other order':rest.some(a=>!['placed','acknowledged','ready'].includes(a.o.status))?'Other orders':'Other open orders'}</div><div class="ordrows">${rest.map(a=>ordRow(a,a.o.id===sel)).join('')}</div>`:''}
@@ -21604,6 +21650,7 @@ function ordDraw(){
   /* F13: a slip opened on the card, and let go */
   box.querySelectorAll('button[data-slip]').forEach(b=>{b.onclick=()=>slipView(b.dataset.u,b.dataset.slip,b.dataset.at);});
   box.querySelectorAll('button[data-pinfile]').forEach(b=>{b.onclick=()=>ordPinFile(b.dataset.pinfile);});
+  box.querySelectorAll('button[data-pinall]').forEach(b=>{b.onclick=()=>{b.disabled=true;ordPinFileAll();};});
   box.querySelectorAll('button[data-slipoff]').forEach(b=>{b.onclick=()=>{const v=SLIP_VIEW[b.dataset.slipoff];if(v&&v.url)try{URL.revokeObjectURL(v.url);}catch(e){}delete SLIP_VIEW[b.dataset.slipoff];ordDraw();};});
   box.querySelectorAll('button[data-step]').forEach(b=>{b.onclick=()=>{const i=box.querySelector('input[data-hand="'+b.dataset.for+'"]');if(!i)return;
     const mx=parseFloat(i.max)||0,v=Math.min(mx,Math.max(0,(parseFloat(i.value)||0)+parseFloat(b.dataset.step)));i.value=String(+v.toFixed(3));ordPartSay(b.dataset.for);};});

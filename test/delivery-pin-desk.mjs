@@ -1,7 +1,8 @@
 /* test/delivery-pin-desk.mjs: THE DESK OPENS A DELIVERY'S EXACT SPOT (his decisions of 10 Oct 2026). The desk Worker relays the
  * sealed spot keyed, as it relays a slip, and his service worker never keeps it; the Site orders card opens it with the slip key
  * the one unlock holds, under the pin's own info, measures the fee to it ahead of the places vault and the locality, offers to
- * file it as their place through the vault's own road (never for a friend's order or a -R bucket), and the lock drops it.
+ * file it as their place through the vault's own road (never for a friend's order or a -R bucket), files every customer with
+ * no point in one batch under one passphrase (his choice of 13 Oct 2026), and the lock drops it.
  * Every code, name and point is invented. Every assertion was proved red by its own mutation. */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -63,7 +64,7 @@ export async function run({ ok }) {
   const sealedLink = JSON.stringify(await seal(key.pub, { v: 1, link: "https://maps.app.goo.gl/AbCdEf123", src: "link", at: spot.at }, "salt-pin v1"));
   const P1 = "11".repeat(16), P2 = "22".repeat(16), P3 = "33".repeat(16);
   w.eval("try{cloudMode=function(){return true;};}catch(e){};(function(){NAME_VAULT=" + names + ";qSyncState='server';window.prompt=function(){return 'pw';};"
-    + "window.__gets=[];window.__draws=0;ordDraw=function(){window.__draws++;};navigator.__defineGetter__&&0;"
+    + "window.__gets=[];window.__draws=0;window.__realDraw=ordDraw;ordDraw=function(){window.__draws++;};navigator.__defineGetter__&&0;"
     + "var A=function(st,j){return Promise.resolve({ok:st===200,status:st,json:function(){return Promise.resolve(j);}});};"
     + "window.fetch=function(u,o){var s=String(u);window.__gets.push(s);"
     + "if(s==='vault/addr')return A(200,{ok:true,vault:" + places + "});if(s==='vault/key')return A(200,{ok:true,vault:" + JSON.stringify(key.vault) + "});"
@@ -127,7 +128,47 @@ export async function run({ ok }) {
   ok(/Opening the spot/.test(first) && opened.st && opened.st.st === "ok" && /open on this device/.test(opened.line),
     "an acknowledged order's card, drawn unlocked, opens the spot they shared rather than asking for names already shown: " + JSON.stringify([first, opened.line]));
 
+  /* 13 Oct 2026, his batch: every opened spot whose customer has no point, the newest order's each, filed by one tap */
+  const OTHER = "CZ8-PNR";
+  const O3b = Object.assign({}, O3, { at: "2026-10-10T06:00:00.000Z" }), O7 = order("20261010050000-gggg", P1, { code: OTHER });
+  const O4b = Object.assign({}, O4, { at: "2026-10-10T07:00:00.000Z" });   /* newest of all, so a friend's spot would win its code if it counted */
+  w.eval("ORD_OPEN=" + JSON.stringify([O1, O3b, O4b, O7]) + ";ORD_PIN['" + O1.id + "']=Object.assign({},ORD_PIN['" + O1.id + "'],{filed:false});ORD_PIN['" + O4.id + "']=ORD_PIN['" + O1.id + "'];");
+  await w.eval("ordPinPoint(" + JSON.stringify(O7) + ")");
+  w.eval("vaultPlaces={};");
+  const batch = rd("{b:ordPinBatch().map(function(x){return [x.o.code,x.o.id,x.v.pt.lat];}),line:ordPinAllLine()}");
+  ok(batch.b.length === 2 && JSON.stringify(batch.b.find((x) => x[0] === CODE)) === JSON.stringify([CODE, O3b.id, 3.15])
+    && batch.b.some((x) => x[0] === OTHER) && !batch.b.some((x) => x[1] === O4.id)
+    && /^<p[^>]*>2 customers shared a spot and have no place filed\.<\/p>/.test(batch.line) && /data-pinall="1">File all 2</.test(batch.line) && !/3\.1|101\.7/.test(batch.line),
+    "the batch gathers one spot a customer with no point, the newest order's, never a friend's, and its line names no figure: " + JSON.stringify(batch));
+  w.eval("vaultPlaces={'" + CODE + "':{addr:null,lat:3.2,lng:101.5,src:'waze',at:null}};");
+  ok(JSON.stringify(rd("ordPinBatch().map(function(x){return x.o.code;})")) === JSON.stringify([OTHER]),
+    "a customer with a point filed is left out of the batch, to the card's own tap");
+  w.eval("vaultPlaces={};window.__calls=0;window.__filed=null;wbVaultFile=function(edit,editPlaces){window.__calls++;var m={'" + CODE + "':{addr:'Kedai Zqor',lat:null,lng:null,src:null,at:null},'" + OTHER + "':{addr:'Kedai Rqor',lat:3.3,lng:101.4,src:'waze',at:null}};editPlaces(m);window.__filed=m;return Promise.resolve(null);};");
+  await w.eval("ordPinFileAll()");
+  const all = rd("{calls:window.__calls,m:window.__filed,said:ORD_PIN_ALL,st3:ORD_PIN['" + O3b.id + "'],st7:ORD_PIN['" + O7.id + "'],line:ordPinAllLine()}");
+  ok(all.calls === 1 && all.m[CODE] && all.m[CODE].lat === 3.15 && all.m[CODE].src === "pin" && all.m[CODE].addr === "Kedai Zqor" && all.m[OTHER].lat === 3.3 && all.m[OTHER].src === "waze"
+    && all.st3.filed === true && !all.st7.filed && all.said === "Filed 1 place. 1 already had a place filed, which stands." && !/data-pinall/.test(all.line),
+    "one tap files the batch in one vault write, a point the fresh vault already holds standing, and says what it filed: " + JSON.stringify(all));
+  /* a new customer's spot since: the old answer is not said over a different batch */
+  w.eval("delete vaultPlaces['" + OTHER + "'];");
+  ok(!/Filed 1 place/.test(rd("ordPinAllLine()")) && /data-pinall/.test(rd("ordPinAllLine()")), "the batch's answer is hidden once the batch it answered has changed");
+  /* the edit ran, then the save was refused: nothing is marked filed and the screen learns nothing */
+  w.eval("window.__calls=0;wbVaultFile=function(edit,editPlaces){window.__calls++;var m={'" + CODE + "':{addr:'Kedai Zqor',lat:null,lng:null,src:null,at:null}};editPlaces(m);return Promise.resolve('The vault could not be saved.');};ORD_PIN_ALL='';vaultPlaces={};ORD_PIN['" + O3b.id + "']=Object.assign({},ORD_PIN['" + O3b.id + "'],{filed:false});");
+  await w.eval("ordPinFileAll()");
+  ok(rd("ORD_PIN_ALL") === "The vault could not be saved." && rd("ORD_PIN['" + O3b.id + "'].filed") === false && rd("vaultPlaces['" + CODE + "']||null") === null
+    && /The vault could not be saved/.test(rd("ordPinAllLine()")),
+    "a write refused after its edit ran says why, marks nothing filed and learns no place");
+  /* the vault's road sent an input it held from before and ran no edit */
+  w.eval("wbVaultFile=function(){return Promise.resolve(null);};ORD_PIN_ALL='';");
+  await w.eval("ordPinFileAll()");
+  ok(/held from before was sent instead/.test(rd("ORD_PIN_ALL")) && rd("ORD_PIN['" + O3b.id + "'].filed") === false, "a write that ran no edit says a held input went instead, and files nothing");
+  /* drawn for real: the strip heads the list, and its tap reaches the batch */
+  const drawn = (() => { try { return rd("(function(){var b=document.getElementById('ordBox');if(!b){b=document.createElement('div');b.id='ordBox';document.body.appendChild(b);}"
+    + "window.__all=0;var keep=ordPinFileAll;ordPinFileAll=function(){window.__all++;};window.__realDraw();var btn=b.querySelector('button[data-pinall]');var first=b.querySelector('.ordlist').firstElementChild;"
+    + "if(btn)btn.click();ordPinFileAll=keep;return {btn:!!btn,taps:window.__all,lead:first&&first.className};})()"); } catch (e) { return { error: String(e && e.message || e) }; } })();
+  ok(drawn.btn === true && drawn.taps === 1 && /ordpinall/.test(drawn.lead || ""), "the order list is headed by the batch's strip, and its button files the batch: " + JSON.stringify(drawn));
+
   /* the lock drops every spot */
   w.eval("lockVault();");
-  ok(JSON.stringify(rd("ORD_PIN")) === "{}" && /show names to open it/.test(rd("ordPinLine(" + JSON.stringify(O1) + ")")), "the lock drops every spot opened");
+  ok(JSON.stringify(rd("ORD_PIN")) === "{}" && rd("ORD_PIN_ALL") === "" && /show names to open it/.test(rd("ordPinLine(" + JSON.stringify(O1) + ")")), "the lock drops every spot opened, and the batch's answer");
 }
