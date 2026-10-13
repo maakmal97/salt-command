@@ -52430,6 +52430,11 @@ await (async () => {
   await (await import("./maker-drift.mjs")).run({ ok });
 })();
 
+section("Counter Admin Make partner: the Desk entry, drift books only, owner and bridge key, one retained retry");
+await (async () => {
+  await (await import("./maker-partner.mjs")).run({ ok, KV, worker, handleMaker, REPO });
+})();
+
 section("Counter input receipts: confirmed completion and immutable uncertain retries");
 await (async () => {
   await (await import("./maker-input-receipts.mjs")).run({ ok, pageWork });
@@ -52483,6 +52488,11 @@ await (async () => {
 section("Counter Add ID starting drift: automatic, rule presets, typed bounds, encrypted pair and real bridge");
 await (async () => {
   await (await import("./maker-addid-drift.mjs")).run({ ok });
+})();
+
+section("13 Oct 2026: B3 of #62, entries left in a Desk device queue are recovered by their own road, and the overlay of unsent entries is switchable");
+await (async () => {
+  await (await import("./desk-queue-recovery.mjs")).run({ ok, KV, worker });
 })();
 
 section("Counter maker: verified owner, narrow Desk bridge and hours");

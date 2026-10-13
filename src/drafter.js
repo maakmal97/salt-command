@@ -1278,7 +1278,7 @@ export function draftRow(entry, book) {
     const associates = (book.state && book.state.associates) || [];
     const partners = (book.state && book.state.partners) || [];
     if (!code || !roster.includes(code)) return { skip: `${code || "the code"} is not on the roster, so there is no one to make a partner` };
-    if (code[0] !== "C" || POSITION_ENGINE.isBucket(code) || /-Gen$/.test(code) || /-d+-/.test(code)) return { skip: `${code} is not a customer's own code: a partner is a person, never a supplier, a resale account or an end buyer` };
+    if (code[0] !== "C" || POSITION_ENGINE.isBucket(code) || /-Gen$/.test(code) || /-\d+-/.test(code)) return { skip: `${code} is not a customer's own code: a partner is a person, never a supplier, a resale account or an end buyer` };
     if (partners.includes(code)) return { skip: `${code} is already a partner` };
     const resell = POSITION_ENGINE.appointBucket("reseller", code), isAssoc = associates.includes(code);
     return {

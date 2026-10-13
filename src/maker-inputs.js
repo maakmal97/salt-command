@@ -356,6 +356,9 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     tierCards: tierCards(book, bookRoster, products),
     driftCards: driftCards(book, bookRoster, products),
+    partners: (book.state.partners || []).filter((value) => code(value, bookRoster)),
+    partnerWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "partner")
+      .map((entry) => entry.payload.code),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
@@ -480,6 +483,32 @@ export function makerTierSet(body, book) {
   return proposed(POSITION_ENGINE.tierSetEntry({
     at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }
   }), book);
+}
+
+/** Make partner, the Desk's partnerMake: a name-free `partner` entry for a customer already on the roster, on a drift book only.
+    The raw line is the Desk's word for word; the drafter and the fold are the Desk's own. */
+export function makerPartner(body, book, pending = []) {
+  if (!object(body) || Object.keys(body).some((key) => !["at", "code"].includes(key)))
+    return { error: "A partner input carries only its timestamp and code." };
+  if (!timestamp(body.at)) return { error: "A partner input needs its canonical request timestamp." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const driftBook = Object.keys(book.state.PRODUCTS || {}).some((product) => {
+    if (!active(product, book)) return false;
+    const rule = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product]
+      && book.pricing.byProduct[product].inputs && book.pricing.byProduct[product].inputs.policy
+      && book.pricing.byProduct[product].inputs.policy.tierRule;
+    return !!rule && !!rule.drift && !rule.fixed;
+  });
+  if (!driftBook) return { error: "A partner is made on a book with price drift." };
+  if (!code(body.code, book.state.roster || []) || POSITION_ENGINE.isBucket(body.code))
+    return { error: "Choose a customer on the roster, not a resale account." };
+  if ((book.state.partners || []).includes(body.code)) return { error: body.code + " is already a partner." };
+  if (pending.some((entry) => entry && entry.at !== body.at && entry.payload && entry.payload.mode === "partner" && entry.payload.code === body.code))
+    return { error: body.code + " is already waiting under Approve as a partner.", twin: true };
+  const bucket = POSITION_ENGINE.appointBucket("reseller", body.code);
+  return proposed(POSITION_ENGINE.partnerEntry({ at: body.at, code: body.code,
+    raw: "Make " + body.code + " a partner: pays cost, keeps every associate property"
+      + ((book.state.associates || []).includes(body.code) ? "" : ", appointed an associate on the R2 stream with " + bucket + " as their resell account") }), book);
 }
 
 /* What the Desk's tierQueued reads: tiers waiting in a queued tierset or an Add ID, code to product to level. */

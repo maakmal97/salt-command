@@ -21,7 +21,7 @@ import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, draftRow,
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
+import { makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -177,7 +177,8 @@ async function readQueuePost(request) {
   if (!Array.isArray(body.queue)) throw new Error("expected {queue:[...]}");
   if (body.queue.length > 5000) throw new Error("queue too large");
   let device = typeof body.device === "string" && DEVICE_RE.test(body.device) ? body.device : "anon";
-  return { device, updated: body.updated || null, queue: body.queue };
+  return { device, updated: body.updated || null, queue: body.queue,
+    vaultHeld: Array.isArray(body.vaultHeld) ? body.vaultHeld.filter((a) => typeof a === "string").slice(0, 5000) : [] };
 }
 
 /* DRAFT ON ARRIVAL (v304), and it exists because the cron alone loses the race.
@@ -295,7 +296,7 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
     ).bind(queueWithdrawalKey(entry.at)).first();
     if (receipt) withdrawn.add(entry.at);
   }
-  const kept = payload.queue.filter((entry) =>
+  let kept = payload.queue.filter((entry) =>
     !(entry && (gone.has(entry.at) || withdrawn.has(entry.at))));
   if (env.VAULT_STORE === "pair" && kept.some((entry) => ["rename", "place"].includes(entry?.payload?.mode)
     || entry?.payload?.mode === "addid" && entry.payload.kind !== "bucket"))
@@ -305,6 +306,24 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
   if (!previous.ok || previousBody.ok !== true)
     return json({ ok: false, error: previousBody.error || "The server queue could not be checked; nothing was queued." }, 503);
   const previousQueue = previousBody.queue;
+  /* B3 of #62: IN PAIR MODE A POST THAT OMITS A HELD VAULT-KIND ENTRY DOES NOT WITHDRAW IT. The Desk now leaves those out of /queue
+     (they go by the vault pair), and the whole-key replace below would silently drop one this device filed here before the flip. */
+  let carried = 0;
+  if (env.VAULT_STORE === "pair") {
+    let held = [];
+    try { held = JSON.parse(await env.SALT_QUEUE.get(QKEY(payload.device)) || "{}").queue || []; } catch (e) { held = []; }
+    const vaultKind = (e) => ["rename", "place"].includes(e?.payload?.mode) || e?.payload?.mode === "addid" && e.payload.kind !== "bucket";
+    /* only the stamps the client says it still holds: a Discard drops its stamp from vaultHeld and the Worker lets it go */
+    const asked = held.filter((e) => e && e.at && vaultKind(e) && payload.vaultHeld.includes(e.at) && !kept.some((k) => k && k.at === e.at));
+    const rej = await rejectedAmong(env, asked.map((e) => e.at));
+    const gone2 = new Set(rej);
+    if (env.SALT_LEDGER) for (const e of asked) {
+      const rc = await env.SALT_LEDGER.prepare("SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'").bind(queueWithdrawalKey(e.at)).first();
+      if (rc) gone2.add(e.at);
+    }
+    const extra = asked.filter((e) => !gone2.has(e.at));
+    if (extra.length) { kept = kept.concat(extra); carried = extra.length; }
+  }
   const reserved = kept.some((entry) => entry && entry.payload
     && (entry.payload.mode === "repay" || entry.payload.mode === "redeem"
       || entry.payload.fields && (entry.payload.fields.rebateKg != null || entry.payload.fields.coverUnits != null)
@@ -356,7 +375,7 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
         await withdrawInputAdmission(env.SALT_LEDGER, entry.id, "device:" + payload.device);
   }
   draftOnArrival(env, ctx, mirror);
-  return json({ ok: true, entries: kept.length, device: payload.device,
+  return json({ ok: true, entries: kept.length - carried, carried, device: payload.device,
     dropped: gone.size, droppedAts: [...gone],
     withdrawn: withdrawn.size, withdrawnAts: [...withdrawn] });
   } finally {
@@ -454,7 +473,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
     && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
-    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
@@ -680,7 +699,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     return json({ ok: true, again: await againOf(env.SALT_LEDGER, list) });
   }
   if (p === "/_internal/maker/inputs/offset"
-    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)) {
+    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)) {
     let body;
     try {
       const text = await request.text();
@@ -744,7 +763,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try { held = await offsetHeld(env); }
       catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
     }
-    const resourcePending = ["sale", "redeem"].includes(operation) ? await reservedInputs(env.SALT_LEDGER, book) : [];
+    const resourcePending = ["sale", "redeem", "partner"].includes(operation) ? await reservedInputs(env.SALT_LEDGER, book) : [];
     let registrations = [];
     if (["sale", "purchase"].includes(operation) && env.VAULT_STORE === "pair") {
       try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
@@ -757,6 +776,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       : operation === "tier-accept-all" ? makerTierAcceptAll(body, book, waitingTiers)
       : operation === "house-sizes" ? makerHouseSizes(body, book)
       : operation === "tier-set" ? makerTierSet(body, book)
+      : operation === "partner" ? makerPartner(body, book, resourcePending)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
           : operation === "offset" ? makerOffset(body, book, held)
           : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book, resourcePending, registrations)
