@@ -53787,6 +53787,15 @@ await (async () => {
     ok(JSON.stringify(streetPlacement?.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
       && !(admin.window.localStorage.getItem("saltMakerLocalWords") || "").includes("Jalan Foo"),
       "a typed street, Locality files the matched locality and the phone keeps no street word");
+    const placesBefore = adminCalls.filter((call) => call.route === "/all/maker/inputs/place").length;
+    placeTexts[0].value = "Jalan Foo Cheras";
+    placement.querySelector("button").click();
+    ok(await adminWork.quiet(), "the street-only placement settles");
+    const cherasCalls = adminCalls.filter((call) => call.route === "/all/maker/inputs/place");
+    ok(cherasCalls.slice(placesBefore).every((call) => call.body.places["CX1-AB"][2] === "Cheras")
+      && !(admin.window.localStorage.getItem("saltMakerLocalWords") || "").includes("Jalan Foo")
+      && !(admin.window.localStorage.getItem("saltMakerPending:/all/maker/inputs/place") || "").includes("Jalan Foo"),
+      "a comma-less street text is never the locality: only the matched area is filed and the phone keeps no street word");
     nameEnvelope = await sealFixture({ "CX1-AB": "Invented base" }, "name-pass");
     devicePairRevision = 10; devicePairConflict = true;
     tile(addId, "Role", "customer");

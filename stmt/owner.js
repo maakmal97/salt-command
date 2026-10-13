@@ -1697,6 +1697,8 @@ export const OWNER_JS = `
         /* a gift the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/gift'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}
+        /* a point the Desk refuses (not an official locality) leaves nothing to retry, and its word must not stay saved */
+        if(error.status===400&&(path==='/all/maker/inputs/add-id'||path==='/all/maker/inputs/amend-id'||path==='/all/maker/inputs/place')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
@@ -1992,7 +1994,7 @@ export const OWNER_JS = `
     var parts=value.split(',').map(function(w){return w.trim();}).filter(Boolean), official=new Set();
     makerGeo.picks().forEach(function(point,label){official.add(label.split(',')[0].trim());});
     if(result.name)official.add(result.name);
-    var said=parts.find(function(w){return official.has(w);})||(parts.length===1?parts[0]:'');
+    var said=parts.find(function(w){return official.has(w);})||(result.how==='area'&&result.name?result.name:'');
     if(!said)throw new Error('That place has no locality to file with its point. Choose it from the list.');
     var where=makerGeo.where(result.point.map(function(number){return Math.round(number*100)/100;}),said);
     if(where.length!==3)throw new Error('That place has no locality to file with its point. Choose it from the list.');
