@@ -1525,17 +1525,9 @@ async function handleVaultInput(env, operation, body) {
   for (const point of points)
     if (!await officialVaultPoint(point))
       return json({ ok: false, error: "A public locality must be on the official place list or gazetteer; exact addresses stay encrypted." }, 400);
-  const checkedInput = { ...input };
-  if (input.geo) checkedInput.geo = input.geo.slice(0, 2);
-  if (operation === "place") checkedInput.places = Object.fromEntries(
-    Object.entries(input.places || {}).map(([code, point]) => [code, point.slice(0, 2)]));
-  const built = makerLedgerInput(operation, checkedInput, book);
+  const built = makerLedgerInput(operation, input, book);
   if (built.error) return json({ ok: false, error: built.error }, 400);
   const entry = built.entry || null;
-  if (entry && input.geo?.length === 3) {
-    if (entry.payload.mode === "place") entry.payload.places[input.from] = input.geo;
-    else entry.payload.geo = input.geo;
-  }
   if (entry && operation === "place") entry.payload.places = input.places;
   if (entry) {
     const proposed = draftRow(entry, book);
