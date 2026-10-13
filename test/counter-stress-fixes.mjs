@@ -1,13 +1,15 @@
 /* test/counter-stress-fixes.mjs: THE CUSTOMER SIDE OF THE STRESS RUN'S FINDINGS (13 Oct 2026, his yes: "Fix all six, one build"; the three that are the Counter's).
  *
  * The AFTER stress run of the Counter found focus falling to the page after a Sheet closed, the Pay sheet losing focus when a radio was chosen by the
- * keyboard. What is proved here, each check red under its own mutation
+ * keyboard, and a yes or no over the New order sheet reported as not closing. What is proved here, each check red under its own mutation
  * (test/counter-stress-fixes.mutations.json) and red on 1548e0d8:
  *   4  every Sheet that closes gives the focus back to the control that opened it, through the one road (focusBack): the pay sheet from Home's Pay, the
  *      overdue Pay and an order's Pay, by the close orb, the scrim and Escape; found afresh if a redraw replaced the control while it was open; the
  *      signed-out Sheet to Sign in on the bar by every way; Sign in another device to its button, though its list is drawn again as the Sheet closes
  *   5  choosing a Pay radio the way the arrow keys do (the radio focused, then checked, then change) redraws the sheet and the chosen radio keeps the
  *      focus, a way and a bank both
+ *   6  the yes or no over the New order sheet: Escape, the close orb, the scrim and the ghost each close it alone, two quick opens leave one, and
+ *      the order sheet stays under it (the stress run's runner counted the order sheet it left as a Sheet that would not close; the page was right)
  * Every assertion observes a signed-in page's window in jsdom. Every code, name and password is invented. */
 import { webcrypto } from "node:crypto";
 
@@ -174,5 +176,22 @@ export async function run({ ok }) {
       const bank = banks[0].value, at = arrow("payInto", bank), kept = radio("payInto", bank);
       ok(at !== kept && kept.checked && R.d.activeElement === kept, "and a bank chosen that way keeps it too: " + lbl(R.d.activeElement));
     } else ok(false, "the pay sheet offers a bank to choose on Transfer");
+
+    /* ---- 6: the yes or no over the New order sheet closes alone, and two quick opens leave one */
+    const L = await open({ orders: [A, B, Cc, D, E, F], fast: true });
+    const cb = await openLimit(L);
+    const ynN = () => L.d.querySelectorAll("#ynSheet").length, osh = L.d.getElementById("osheet");
+    cb.focus(); cb.click(); cb.click();
+    ok(ynN() === 1 && !!L.d.getElementById("osheet") && L.d.getElementById("osheet") === osh,
+      "two quick opens of the question over the New order sheet leave one question, and the New order sheet under it: " + ynN());
+    const ynWays = [["Escape", (pg) => key(pg, "Escape")], ["the close orb", (pg) => pg.d.getElementById("ynX").click()], ["the scrim", (pg) => pg.d.getElementById("ynScrim").click()],
+      ["the ghost", (pg) => pg.d.getElementById("ynKeep").click()]];
+    const ynRes = [];
+    for (const [name, fn] of ynWays) {
+      if (!ynN()) { const b = L.d.querySelector('#osheet .olim button'); b.focus(); b.click(); }
+      const was = ynN() === 1; fn(L);
+      ynRes.push([name, was && ynN() === 0 && L.d.getElementById("osheet") === osh && !L.d.getElementById("osheet").hasAttribute("inert")]);
+    }
+    ok(ynRes.every((r) => r[1]) && L.st.cancels.length === 0, "and Escape, the close orb, the scrim and the ghost each close the question alone, the order sheet stays and is let go of, and nothing is cancelled: " + JSON.stringify(ynRes));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack || e)); } finally { for (const w of wins) { try { w.close(); } catch (e) { /* closed */ } } }
 }

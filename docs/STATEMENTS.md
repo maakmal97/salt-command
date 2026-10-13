@@ -680,7 +680,8 @@ mutations in `test/counter-stress-fixes.mutations.json`): `focusBack(from, again
 (`dev:another`, whose list is drawn again as it closes, so `drawDev` hands the focus to the new button) all end there. A lock, a sign-in done or another account passes
 `quiet` (`=== true`; a close wired straight to an event gets the event and is not quiet) so focus is not sent to a page that is leaving. **A Pay radio chosen by the
 keyboard keeps the focus**: `drawPay` rebuilds the sheet, so it reads the radio that holds focus (its name and value) before it clears the body and focuses the matching
-one after.
+one after. **The yes or no over the New order sheet closes alone** (`ynKeys` stops Escape, `ynOpen` shuts any question already open first): the stress run's "did not
+close" on Cancel this order there was its runner counting the order sheet, which correctly stays beneath, as a Sheet that would not close; the page was not changed for it.
 
 The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
 `test/counter-account-door.mutations.json`) drives all of it through the generated page in jsdom.
