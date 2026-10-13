@@ -732,7 +732,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try { held = await offsetHeld(env); }
       catch (error) { return json({ ok: false, error: String(error && error.message || error) }, 503); }
     }
-    const resourcePending = ["sale", "redeem"].includes(operation) ? await reservedInputs(env.SALT_LEDGER, book) : [];
+    const resourcePending = ["sale", "redeem", "partner"].includes(operation) ? await reservedInputs(env.SALT_LEDGER, book) : [];
     let registrations = [];
     if (["sale", "purchase"].includes(operation) && env.VAULT_STORE === "pair") {
       try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
@@ -745,7 +745,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       : operation === "tier-accept-all" ? makerTierAcceptAll(body, book, waitingTiers)
       : operation === "house-sizes" ? makerHouseSizes(body, book)
       : operation === "tier-set" ? makerTierSet(body, book)
-      : operation === "partner" ? makerPartner(body, book)
+      : operation === "partner" ? makerPartner(body, book, resourcePending)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
           : operation === "offset" ? makerOffset(body, book, held)
           : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book, resourcePending, registrations)

@@ -8,6 +8,7 @@ import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
 import { contentKey, wrapKey } from "../tools/stmt-crypto.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
+import { draftRow } from "../src/drafter.js";
 import { openMaster } from "../tools/payload.mjs";
 import { pricingSnapshot } from "../tools/book.mjs";
 
@@ -27,6 +28,7 @@ const book = () => ({
 
 export async function run({ ok, KV, worker, REPO } = {}) {
   const check = ok || ((condition, message) => { if (!condition) throw new Error(message); });
+  const drafted = (c) => draftRow(POSITION_ENGINE.partnerEntry({ at, code: c }), { ...book(), state: { ...book().state, roster: [...book().state.roster, c] } });
   const mirror = book(), make = (code, b = mirror) => makerPartner({ at, code }, b);
   /* 1. equal to the Desk: the real master's partnerMake is driven for a plain customer and for an associate, and Maker is asked for the same */
   const { w } = await openMaster();
@@ -48,6 +50,11 @@ export async function run({ ok, KV, worker, REPO } = {}) {
   const levelBook = book(); levelBook.pricing.byProduct.salt.inputs.policy.tierRule = { multiples: [1, 2] };
   check(make("CX1-ZED", fixedOnly).error === "A partner is made on a book with price drift." && !!make("CX1-ZED", levelBook).error,
     "a book with no price drift refuses it");
+  const waiting = POSITION_ENGINE.partnerEntry({ at: "2026-10-01T07:00:00.000Z", code: "CX1-ZED" });
+  check(makerPartner({ at, code: "CX1-ZED" }, mirror, [waiting]).twin === true && !makerPartner({ at, code: "CX2-ZED" }, mirror, [waiting]).error
+    && !makerPartner({ at: waiting.at, code: "CX1-ZED" }, mirror, [waiting]).error,
+  "a partner already waiting under Approve for that code refuses a second request, and not its own retry or another code");
+  check(!!drafted("CX1-ZED-2-ABC").skip && !drafted("CX1-ZED").skip, "an end buyer's code is refused by the drafter's partner clause");
   check(make("CX3-ZED").error === "CX3-ZED is already a partner.", "a party already a partner is refused");
   check(!!make("AX1-ZED-R").error && !!make("NOPE-ZED").error && !!makerPartner({ at, code: "CX1-ZED", name: "x" }, mirror).error
     && !!makerPartner({ at: "now", code: "CX1-ZED" }, mirror).error,
@@ -110,6 +117,7 @@ export async function run({ ok, KV, worker, REPO } = {}) {
     const retry = await call({ at, code: "CX1-ZED" }), retryBody = await retry.json();
     check(retry.status === 200 && retryBody.ok && retryBody.queued === false && drafts().length === 1, "a retry under the same request id lands once");
     check((await call({ at, code: "CX2-ZED" })).status === 409 && drafts().length === 1, "the same request id for a different customer is refused");
+    check((await call({ at: "2026-10-01T08:30:00.000Z", code: "CX1-ZED" })).status === 409 && drafts().length === 1, "a second tap for a customer already waiting under Approve lands no second draft")
     check((await call({ at: "2026-10-01T09:00:00.000Z", code: "CX3-ZED" })).status === 400 && drafts().length === 1, "a customer already a partner is refused at the Desk");
     const flat = book(); flat.pricing.byProduct.salt.inputs.policy.tierRule = { fixed: true }; seed(flat);
     check((await call({ at: "2026-10-01T10:00:00.000Z", code: "CX1-ZED" })).status === 400 && drafts().length === 1, "off a drift book the Desk refuses it and queues nothing");

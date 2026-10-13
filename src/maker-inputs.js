@@ -436,7 +436,7 @@ export function makerTierSet(body, book) {
 
 /** Make partner, the Desk's partnerMake: a name-free `partner` entry for a customer already on the roster, on a drift book only.
     The raw line is the Desk's word for word; the drafter and the fold are the Desk's own. */
-export function makerPartner(body, book) {
+export function makerPartner(body, book, pending = []) {
   if (!object(body) || Object.keys(body).some((key) => !["at", "code"].includes(key)))
     return { error: "A partner input carries only its timestamp and code." };
   if (!timestamp(body.at)) return { error: "A partner input needs its canonical request timestamp." };
@@ -452,6 +452,8 @@ export function makerPartner(body, book) {
   if (!code(body.code, book.state.roster || []) || POSITION_ENGINE.isBucket(body.code))
     return { error: "Choose a customer on the roster, not a resale account." };
   if ((book.state.partners || []).includes(body.code)) return { error: body.code + " is already a partner." };
+  if (pending.some((entry) => entry && entry.at !== body.at && entry.payload && entry.payload.mode === "partner" && entry.payload.code === body.code))
+    return { error: body.code + " is already waiting under Approve as a partner.", twin: true };
   const bucket = POSITION_ENGINE.appointBucket("reseller", body.code);
   return proposed(POSITION_ENGINE.partnerEntry({ at: body.at, code: body.code,
     raw: "Make " + body.code + " a partner: pays cost, keeps every associate property"
