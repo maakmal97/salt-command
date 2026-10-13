@@ -137,7 +137,9 @@ export async function run({ ok }) {
     if (send401) send401.click();
     for (let i = 0; i < 100 && posts.filter((p) => p.path === "queue").length < 2; i++) await settle();
     const qp = posts.filter((p) => p.path === "queue");
-    ok(!!send401 && qp.length === 2 && !qp[0].headers["X-Salt-Key"] && qp[1].headers["X-Salt-Key"] === "retry-key-invented-32-characters-long" && qp[0].body === qp[1].body,
+    ok(!!send401 && qp.length === 2 && !qp[0].headers["X-Salt-Key"] && qp[1].headers["X-Salt-Key"] === "retry-key-invented-32-characters-long"
+      /* the same entries, not the same bytes: the payload's `updated` is stamped at each send */
+      && JSON.stringify(JSON.parse(qp[0].body).queue) === JSON.stringify(JSON.parse(qp[1].body).queue) && JSON.parse(qp[1].body).queue.length === 1,
       "a 401 on the recovery Send asks for the write key and sends the same entry again with it: " + JSON.stringify(qp.map((p) => [p.headers["X-Salt-Key"] || null, p.body.length])));
     ok(w.eval("OVERLAY_UNSENT") === false,
       "unsent entries are switched out of every figure");
