@@ -60,7 +60,7 @@ export function makerOrderFault(action, body) {
     handed: ["qty", "close", "rid"],
     cash: ["amount", "rid"],
     received: ["amount", "claim", "covered", "rid"],
-    again: ["stage", "rid"],
+    again: ["stage", "rid", "drop"],
     restate: ["qty", "total", "delivery", "rid"],
     notfound: ["rid", "claim", "amount"],
     move: ["rid", "status", "note", "message", "noReply", "mode"],
@@ -101,7 +101,8 @@ export function makerOrderFault(action, body) {
   if (action === "restate" && (body.qty !== undefined && !(body.qty > 0) || body.total !== undefined && !(body.total > 0))) return "A size and a price are above nothing.";
   if (action === "handed" && body.qty === undefined) return "Say how many units were handed over.";
   if (["cash", "received"].includes(action) && !(body.amount > 0)) return "Say how much was received.";
-  if (action === "again" && !["pay", "cash", "move", "cancel", "amend"].includes(body.stage)) return "Choose a stage to offer again.";
+  if (action === "again" && body.drop === true && body.stage !== undefined && !["cancel", "move", "amend"].includes(body.stage)) return "Not needed covers a cancellation, handover or amendment.";
+  if (action === "again" && body.drop !== true && !["pay", "cash", "move", "cancel", "amend"].includes(body.stage)) return "Choose a stage to offer again.";
   if (action === "offer" && body.hash === undefined) return "An offer needs the preview digest.";
   if (["notfound", "move", "handed", "again", "cash", "received", "restate", "offer", "withdraw"].includes(action)
     && (typeof body.rid !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(body.rid)))

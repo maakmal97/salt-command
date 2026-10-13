@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1101",
+  "d": "13 Oct 2026",
+  "t": "NOT NEEDED: A REJECTED SITE-ORDER STEP ALREADY ON THE BOOK",
+  "n": [
+   "<b>NOT NEEDED.</b> A site order whose step he rejected because the sale was already booked by hand kept asking for that step to be sent again. Counter Admin's order card now answers Not needed: on an order with its own row, for a rejected cancel, move or amendment; on an order with no row at all, for every rejected stage, a paid one only when a hand row of that party, product and day holds the cash, each row's cash covering no more than it holds. A payment is never taken off this way, and nothing is taken off while a send is waiting. All or none. Nothing prices.",
+   "<b>THE PROOFS.</b> The order card and S11 sections: each refusal, the cash cover and its sum, the race guards; each check red under its own mutation. Fable reviewed it five times."
+  ]
+ },
+ {
   "v": "v1100",
   "d": "13 Oct 2026",
   "t": "ENTRIES LEFT ON A DESK DEVICE: SEND OR DISCARD",

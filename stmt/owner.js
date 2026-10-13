@@ -2477,6 +2477,7 @@ export const OWNER_JS = `
       return loadMaker().then(function(){
         makerSay(key,result.differs?'The row differs from what you saw and waits under Approve.'
           :result.waiting?'The row is still being made. Check Approve in a moment.'
+          :result.dropped&&result.row?'Taken off. The money is on '+result.row+'.'
           :result.preapproval&&result.preapproval.says?result.preapproval.says:message||'Saved.');
         return true;
       });
@@ -2622,6 +2623,17 @@ export const OWNER_JS = `
       },false);
       offer.setAttribute('data-again',stage); makerAskTag(order,offer,'again-'+stage);
     });
+    var dropOne=function(stage){
+      var drop=makerButton(acts,['Not needed','order.again-drop'+(stage?'-'+stage:'')],function(){
+        makerAsk(order,drop,'again-drop'+(stage||''),{title:'Not needed?', plain:true, go:'Not needed', keep:'Keep it',
+          say:[stage?'Use this when the sale is on the book another way. The '+MAKER_AGAIN[stage]+' you rejected is no longer offered, and nothing goes to the Desk.'
+            :'Use this when the sale is on the book another way. Every step you rejected on this order is no longer offered, and nothing goes to the Desk.'],
+          yes:function(){ makerTap(order,'again',stage?{drop:true,stage:stage}:{drop:true},'Taken off. Nothing is sent again.'); }});
+      },false);
+      drop.setAttribute('data-again','drop'+(stage?'-'+stage:'')); makerAskTag(order,drop,'again-drop'+(stage||''));
+    };
+    if(order.againWhole===true&&(order.again||[]).indexOf('pay')<0) dropOne('');
+    else ['cancel','move','amend'].forEach(function(stage){ if((order.again||[]).indexOf(stage)>=0) dropOne(stage); });
   }
   /* a pending row he rejected on an agreed order is offered again by Accept against a fresh preview, at the charge and
      goods the order already carries (the customer was told them), as the Desk's own Accept again: nothing priced is sent */

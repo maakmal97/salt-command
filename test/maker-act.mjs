@@ -390,6 +390,12 @@ export async function auditStates({ pageWork }) {
     await p.click(byAct(p.d, "need.turn-skip"));
     states.push(["the turn done", actAudit(p.d)]);
   } finally { p.w.close(); }
+  /* an order with no row on the book, its rejected steps covered by one Not needed: a card of its own, so the busy page's lists stay as they were */
+  const w = await richOwnerPage({ pageWork, review: (j) => ({ ...j, orders: [{ ...placed, id: "ord-w1", status: "declined", mode: "collect", qty: 1, total: 100, again: ["ack", "move"], againWhole: true }] }) });
+  try {
+    await w.work.quiet(); w.card("ord-w1"); await w.work.quiet();
+    states.push(["an order with no row, Not needed covering all", actAudit(w.d)]);
+  } finally { w.w.close(); }
   const q = await richOwnerPage({ pageWork, failInputs: true });
   try {
     await q.work.quiet();

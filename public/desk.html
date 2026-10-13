@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="9f7970e2fdada4d4";
+var SALT_BUILD_ID="a18dd5dd53b97305";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9419,7 +9419,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1100","d":"13 Oct 2026","t":"ENTRIES LEFT ON A DESK DEVICE: SEND OR DISCARD","n":["<b>RECOVERY.</b> Enter shows every entry still held unsent on this Desk device, with Send and Discard. Book entries go by the queue; names, places and non-bucket Add IDs by the vault pair under their own stamp, so a retry lands once; an entry with neither road offers Discard only, and Discard asks first. An entry stays on the device until the Worker's own receipt. Vault entries already held in the cloud queue are kept there while the device still holds them, and let go when it discards them. Unsent entries are marked wherever they move a figure, behind one switch the Desk's coming read-only version turns off. B3 of #62.","<b>THE PROOFS.</b> The B3 recovery section: receipts, both roads, the confirm, the switch, the carry-forward kept and released; each check red under its own mutation (14). Fable reviewed it three times."]}];
+const evolution=[{"v":"v1101","d":"13 Oct 2026","t":"NOT NEEDED: A REJECTED SITE-ORDER STEP ALREADY ON THE BOOK","n":["<b>NOT NEEDED.</b> A site order whose step he rejected because the sale was already booked by hand kept asking for that step to be sent again. Counter Admin's order card now answers Not needed: on an order with its own row, for a rejected cancel, move or amendment; on an order with no row at all, for every rejected stage, a paid one only when a hand row of that party, product and day holds the cash, each row's cash covering no more than it holds. A payment is never taken off this way, and nothing is taken off while a send is waiting. All or none. Nothing prices.","<b>THE PROOFS.</b> The order card and S11 sections: each refusal, the cash cover and its sum, the race guards; each check red under its own mutation. Fable reviewed it five times."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9570,7 +9570,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 19:26 KL';
+const LAST_UPDATED='13 Oct 2026, 21:52 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
