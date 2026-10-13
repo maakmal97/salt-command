@@ -6,6 +6,7 @@
  * a purchase, canonical history only, and the route's two locks. Invented codes and figures throughout. */
 import { readBook, pricingSnapshot } from "../tools/book.mjs";
 import { makerTradeReading } from "../src/maker-inputs.js";
+import { cogsFor } from "../src/drafter.js";
 import worker from "../src/worker.js";
 import { world, ownerTrade } from "./maker-trades.mjs";
 
@@ -92,6 +93,26 @@ export async function run({ ok, pageWork }) {
     && makerTradeReading({ direction: "sale", product: "retired", qty: 1, total: 1 }, book).error,
   "trade reading: a bad size, an unknown field or an unknown book is refused");
 
+  /* a sale is costed at the latest purchase on or before its own date, equal to the drafter's cogsFor */
+  const later = { ...LOT, rid: "pB", date: "2099-09-20", receivedOn: "2099-09-20", total: 4400, freight: 0 };
+  const dated = { ...book, purchases: [LOT, later] };
+  const back = makerTradeReading({ direction: "sale", product: "salt", party: "CX1-ZED", qty: 1, total: 130, date: "2099-09-10" }, dated);
+  const fore = makerTradeReading({ direction: "sale", product: "salt", party: "CX1-ZED", qty: 1, total: 130, date: "2099-10-01" }, dated);
+  ok(back.cogs.rate === 42 && back.cogs.rate === +cogsFor(dated, "salt", "2099-09-10").cost.toFixed(2)
+    && fore.cogs.rate === 44 && fore.cogs.rate === +cogsFor(dated, "salt", "2099-10-01").cost.toFixed(2)
+    && makerTradeReading({ direction: "sale", product: "salt", qty: 1, total: 1, date: "tomorrow" }, dated).error,
+  "trade reading: a backdated sale reads the lot on or before its date, as the drafter does " + JSON.stringify([back.cogs.rate, fore.cogs.rate]));
+  /* the margin and the below-cost verdict are struck on the unrounded rate: 42.004 a unit, RM 42,002 for 1,000 units */
+  const fine = { ...book, purchases: [{ ...LOT, rid: "pC", qty: 1000, receivedQty: 1000, total: 42004, freight: 0 }] };
+  const edge = makerTradeReading({ direction: "sale", product: "salt", qty: 1000, total: 42002 }, fine);
+  ok(edge.margin.rm === -2 && edge.margin.belowCost === true && edge.cogs.rate === 42,
+    "trade reading: margin and below cost are struck on the unrounded rate, so the 2dp rate cannot flip the verdict " + JSON.stringify(edge.margin));
+  const noShelf = JSON.parse(JSON.stringify(book)); noShelf.purchases = []; noShelf.pricing.byProduct.salt.stockCost = null;
+  noShelf.purchases = [{ ...LOT, rid: "pD", date: "2099-09-01", receivedOn: "2099-09-01" }];
+  const noBasis = makerTradeReading({ direction: "sale", product: "salt", qty: 1, total: 130, date: "2099-08-01" }, noShelf);
+  ok(noBasis.cogs.basis === null && noBasis.cogs.source === "the newest received lot",
+    "trade reading: with no lot on or before the date the source line names costFor's own basis " + JSON.stringify(noBasis.cogs));
+
   /* the route and the page, end to end over the real bridge and the real Worker */
   const wd = readingWorld(pricing);
   try {
@@ -120,6 +141,11 @@ export async function run({ ok, pageWork }) {
       ok(!box.hidden && /Cost a unit RM 42[.]00/.test(text()) && /margin -?RM 26[.]00|margin RM -26[.]00/.test(text()) && /Floor RM 126[.]00 for 3 units/.test(text())
         && /RM 26 under the floor of RM 126/.test(warn) && /Their usual RM 140[.]00 a unit over 3 orders/.test(text()),
       "trade reading page: before Send the form shows cost, margin, the floor, a warning under it and their usual " + text());
+      page.change("Date", "2099-08-01"); await page.work.quiet();
+      ok(!/latest purchase/.test(text()) && /Cost a unit RM/.test(text()),
+        "trade reading page: the form sends its date, so a date before the lot does not read that lot " + text());
+      page.change("Date", ""); await page.work.quiet();
+      ok(/latest purchase/.test(text()), "trade reading page: clearing the date reads the latest lot again " + text());
       page.change("Price (goods)", "300"); await page.work.quiet();
       ok(!box.querySelector("p.msg.bad") && /Goods RM 300[.]00/.test(text()),
         "trade reading page: a price at or over the floor draws no warning " + text());

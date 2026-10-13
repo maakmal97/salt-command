@@ -2974,6 +2974,7 @@ export const OWNER_JS = `
         if(!(Number(tradeQty.value)>0)||tradeTotal.value===''||!tradeProduct.value){readingBox.hidden=true;return;}
         readingBox.hidden=false; readingLine('Reading.');
         var ask={direction:direction.value,product:tradeProduct.value,qty:Number(tradeQty.value),total:Number(tradeTotal.value)};
+        if(tradeDate.value)ask.date=tradeDate.value;
         if(isSale){ if(tradeParty.value&&tradeStream.value!=='R2')ask.party=tradeParty.value; }
         else if(carriage.value!=='')ask.freight=Number(carriage.value);
         try{
@@ -3001,7 +3002,7 @@ export const OWNER_JS = `
           if(ticket===readingRevision){readingBox.textContent='';refusal(readingLine('',true),error,'Reading not available. ');}
         }
       }
-      [direction,tradeProduct,tradeQty,tradeTotal,carriage,tradeParty,tradeStream].forEach(function(control){
+      [direction,tradeProduct,tradeQty,tradeTotal,carriage,tradeParty,tradeStream,tradeDate].forEach(function(control){
         control.addEventListener('input',readTrade);control.addEventListener('change',readTrade);
       });
       var extraBooks=el('div','maker-extra-books'), extraTrades=[], extraSeq=0;

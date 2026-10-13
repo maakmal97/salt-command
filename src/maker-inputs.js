@@ -264,17 +264,19 @@ export function makerCoverPlan(body, book, pending = []) {
    the margin over COGS, the floor with a refusal-style line when the goods are under it, and the party's recent prices on
    this book. A purchase is never measured with a seller's ruler: its cost a unit sits against the current COGS, no margin. */
 export function makerTradeReading(body, book) {
-  const keys = ["direction", "product", "party", "qty", "total", "freight"];
+  const keys = ["direction", "product", "party", "qty", "total", "freight", "date"];
   if (!object(body) || Object.keys(body).some((key) => !keys.includes(key))) return { error: "Unsupported reading fields." };
   if (!["sale", "purchase"].includes(body.direction)) return { error: "Choose sale or purchase." };
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!active(body.product, book)) return { error: "Choose an active product." };
   if (!(figure(body.qty) && body.qty > 0) || !figure(body.total)) return { error: "Send units and a goods total." };
   if (body.freight !== undefined && body.freight !== null && !figure(body.freight)) return { error: "Send a freight figure." };
+  if (body.date !== undefined && body.date !== null && body.date !== "" && !date(body.date)) return { error: "Send a real date in YYYY-MM-DD." };
   const sale = body.direction === "sale", qty = body.qty, goods = POSITION_ENGINE.txGoods({ total: body.total });
-  const c = cogsFor(book, body.product, null);
+  /* a sale is costed at the latest purchase on or before its date, as the drafter does (drafter.js, cogsFor with pay.date) */
+  const c = cogsFor(book, body.product, body.date || null);
   const rate = c.cost > 0 ? +c.cost.toFixed(2) : null;
-  const cogs = { rate, source: c.basis ? "the latest purchase" : "the inventory cost", basis: c.basis || null };
+  const cogs = { rate, source: c.basis ? "the latest purchase" : c.source, basis: c.basis || null };
   const price = +(goods / qty).toFixed(2);
   if (!sale) {
     const perUnit = +((goods + (body.freight || 0)) / qty).toFixed(2);
@@ -283,8 +285,10 @@ export function makerTradeReading(body, book) {
   }
   const reading = { direction: "sale", product: body.product, qty, goods, price, cogs, margin: null, floor: null, history: null };
   if (rate != null) {
-    reading.margin = { rm: +(goods - rate * qty).toFixed(2), pct: price > 0 ? +((price - rate) / price * 100).toFixed(4) : null,
-      belowCost: price > 0 && price < rate - 0.009 };
+    /* struck on the unrounded rate, as the drafter's row cost and flag 4 are; only the display is rounded */
+    reading.margin = { rm: +(goods - Math.round(c.cost * qty * 100) / 100).toFixed(2),
+      pct: price > 0 ? +((goods / qty - c.cost) / (goods / qty) * 100).toFixed(4) : null,
+      belowCost: qty > 0 && goods / qty < c.cost };
   }
   const fl = floorFor(book, body.product, qty);
   if (fl) {
