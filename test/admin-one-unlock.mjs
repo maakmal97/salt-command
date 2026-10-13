@@ -203,6 +203,8 @@ export async function run({ ok, pageWork }) {
   const unfiled = gateText(f2.place);
   ok(/A place is filed for them/.test(filed) && /No place is filed for them yet/.test(unfiled) && !filed.includes("Invented Lane"),
     "Place on the map reads the held places, saying whether one is filed for the party and never where: " + filed + " | " + unfiled);
+  ok(/with its point, from Waze, filed 04 Oct 2026[.] Filing a new link replaces it[.]/.test(filed) && !/replaces it/.test(unfiled) && !filed.includes("101.7"),
+    "Place on the map discloses before filing that a point is held, its source, the Kuala Lumpur day it was filed and that filing replaces it, and never the address or figures: " + filed);
 
   /* the unsent entry, sent from the unlock */
   await p.send(f2.unsent, "record.retained.retry");

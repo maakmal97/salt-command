@@ -1,0 +1,104 @@
+[
+  {
+    "name": "the margin in RM leaves the units out",
+    "file": "src/maker-inputs.js",
+    "find": "rm: +(goods - Math.round(c.cost * qty * 100) / 100).toFixed(2),",
+    "replace": "rm: +(goods - c.cost).toFixed(2),"
+  },
+  {
+    "name": "the margin percentage is struck on cost, not on the price",
+    "file": "src/maker-inputs.js",
+    "find": "+((goods / qty - c.cost) / (goods / qty) * 100).toFixed(4)",
+    "replace": "+((goods / qty - c.cost) / c.cost * 100).toFixed(4)"
+  },
+  {
+    "name": "the goods are never under the floor",
+    "file": "src/maker-inputs.js",
+    "find": "const under = goods < fl.floor - 0.005;",
+    "replace": "const under = false;"
+  },
+  {
+    "name": "a purchase is read with the seller's ruler",
+    "file": "src/maker-inputs.js",
+    "find": "if (!sale) {",
+    "replace": "if (false) {"
+  },
+  {
+    "name": "history counts every row of the party, pending and gifts included",
+    "file": "src/maker-inputs.js",
+    "find": "rates = theirRates(book, who, body.product);",
+    "replace": "rates = (book.sales || []).filter((s) => s.customer === who).map((s) => s.total / s.qty).sort((a, b) => a - b);"
+  },
+  {
+    "name": "the recent prices come oldest first",
+    "file": "src/drafter.js",
+    "find": ".sort((a, b) => String(b.date || \"\").localeCompare(String(a.date || \"\"))).slice(0, n);",
+    "replace": ".sort((a, b) => String(a.date || \"\").localeCompare(String(b.date || \"\"))).slice(0, n);"
+  },
+  {
+    "name": "the route no longer asks for the owner's identity",
+    "file": "stmt/maker.js",
+    "find": "if (!allowedOwner(verifiedIdentity)) return json({ ok: false, error: \"Admin access required\" }, 403);",
+    "replace": "if (false) return json({ ok: false, error: \"Admin access required\" }, 403);"
+  },
+  {
+    "name": "the Desk side no longer checks the bridge key",
+    "file": "src/worker.js",
+    "find": "if (!makerKeyMatches(request, env)) return json({ ok: false, error: \"not found\" }, 404);",
+    "replace": "if (false) return json({ ok: false, error: \"not found\" }, 404);"
+  },
+  {
+    "name": "the bridge does not carry the reading",
+    "file": "stmt/maker.js",
+    "find": "|| path === \"/_internal/maker/trade-reading\" && method === \"POST\"",
+    "replace": "|| false"
+  },
+  {
+    "name": "the form reads nothing when a figure changes",
+    "file": "stmt/owner.js",
+    "find": "control.addEventListener('input',readTrade);control.addEventListener('change',readTrade);",
+    "replace": "control.addEventListener('input',function(){});control.addEventListener('change',function(){});"
+  },
+  {
+    "name": "the under-floor line is drawn as a plain note",
+    "file": "stmt/owner.js",
+    "find": "if(got.floor.warn)readingLine(got.floor.warn,true);",
+    "replace": "if(got.floor.warn)readingLine(got.floor.warn,false);"
+  },
+  {
+    "name": "a purchase on the form shows the sale's margin lines",
+    "file": "stmt/owner.js",
+    "find": "if(!isSale){",
+    "replace": "if(false){"
+  },
+  {
+    "name": "the reading ignores the sale's date",
+    "file": "src/maker-inputs.js",
+    "find": "const c = cogsFor(book, body.product, body.date || null);",
+    "replace": "const c = cogsFor(book, body.product, null);"
+  },
+  {
+    "name": "the margin is struck on the 2dp rate",
+    "file": "src/maker-inputs.js",
+    "find": "goods - Math.round(c.cost * qty * 100) / 100",
+    "replace": "goods - rate * qty"
+  },
+  {
+    "name": "below cost is struck on the 2dp rate",
+    "file": "src/maker-inputs.js",
+    "find": "belowCost: qty > 0 && goods / qty < c.cost",
+    "replace": "belowCost: price > 0 && price < rate - 0.009"
+  },
+  {
+    "name": "the source line always says the inventory cost",
+    "file": "src/maker-inputs.js",
+    "find": "c.basis ? \"the latest purchase\" : c.source",
+    "replace": "c.basis ? \"the latest purchase\" : \"the inventory cost\""
+  },
+  {
+    "name": "the form does not send its date",
+    "file": "stmt/owner.js",
+    "find": "if(tradeDate.value)ask.date=tradeDate.value;",
+    "replace": ""
+  }
+]

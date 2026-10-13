@@ -441,9 +441,16 @@ const aPriceSomeonePaid = (s) => !s.goodwill && isNum(s.total) && s.total > 0 &&
    unit still dragged a party's median down: CS6-BS read RM 108.50 against a real RM 110, which
    misfires at a rate they have actually paid and stays silent 10.9% adrift. Same rule, both sets.
    v611: THE PERSON, NOT THE CODE: `who` is the owner, and their bucket's rows count as theirs. */
+const theirPaidRows = (book, who, p) => committedSales(book).filter((s) => POSITION_ENGINE.ownsCode(who, s.customer) && prodOf(s) === p && aPriceSomeonePaid(s));
 export function theirRates(book, who, p) {
-  return committedSales(book).filter((s) => POSITION_ENGINE.ownsCode(who, s.customer) && prodOf(s) === p && aPriceSomeonePaid(s))
-    .map((s) => (s.total) / s.qty).sort((a, b) => a - b);
+  return theirPaidRows(book, who, p).map((s) => (s.total) / s.qty).sort((a, b) => a - b);
+}
+/* A party's last few prices on one book, newest first: the same committed, paid-for rows theirRates reads, so the Counter's
+   pre-send reading and the drafter's flag 2 see one history. Superseded replacement-cost advice is not in it. */
+export function recentRates(book, who, p, n = 5) {
+  return theirPaidRows(book, who, p)
+    .map((s) => ({ date: s.date || null, rate: round(POSITION_ENGINE.txGoods(s) / s.qty) }))
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))).slice(0, n);
 }
 const medianOf = (xs) => (xs.length % 2 ? xs[(xs.length - 1) / 2] : (xs[xs.length / 2 - 1] + xs[xs.length / 2]) / 2);
 /** What a customer typically pays for a product, and where this row's rate sits against it: the card's "usual". */
