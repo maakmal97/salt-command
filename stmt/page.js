@@ -705,6 +705,19 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:1080px){.adm #oAdd{right:24px;bottom:24px}}
 .adm .formlist{display:flex;flex-direction:column;gap:8px}
 .adm .formrow .salt-inbox-row__title{gap:6px}
+/* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
+.adm .formrow{min-height:44px}
+.adm .apphead{appearance:none;background:none;border:0;padding:0;margin:0;width:100%;min-height:44px;text-align:left;color:inherit;font:inherit;cursor:pointer;align-items:center}
+.adm .apcard{cursor:pointer}
+.adm .apfigs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px}
+.adm .apcard .rdet--row{margin:0}
+.adm .maker-offers__head{margin:16px 0 4px}
+.adm .maker-offers{display:flex;flex-direction:column}
+.adm .maker-offer{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 12px;padding:8px 0;border-top:1px solid var(--salt-line)}
+.adm .maker-offer__what{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adm .maker-offer__code{font-family:var(--salt-font-mono);font-weight:500;color:var(--salt-salt)}
+.adm .maker-offer__fig{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-variant-numeric:tabular-nums}
+.adm .maker-offer>.salt-ghost[hidden]{display:none}
 /* 11 OCT 2026 (PHASE 1b): NEEDS YOU IS THE SYSTEM'S ACTION RECIPE, ranked Now, Soon, Watch. The recipe sets the card, its kind word and its
    colour (--salt-sev); this page decides only the title's parts, the actions beside each other, the gaps between cards, and the line a
    tap is answered on, which sits on the card it answers */
@@ -1470,14 +1483,14 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead">Everything here waits for your approval under Approve.</p>'
         + adminParts("record")
         + '<div class="abody">'
-        + '<section data-in="record.approve" aria-labelledby="makerDraftTitle"><h2 id="makerDraftTitle">Rows to approve</h2>'
+        + '<section data-in="record.approve" aria-label="Rows to approve">'
         + '<p class="lead" id="makerDraftStatus">Reading.</p>'
         + '<div id="makerDrafts"></div>'
         /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
         + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Sent, not yet drafted</span></summary>'
         + '<div class="salt-plan__body">'
         + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
-        + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"><h2>Record</h2></section>'
+        + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'

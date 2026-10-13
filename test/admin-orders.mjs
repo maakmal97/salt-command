@@ -444,9 +444,23 @@ export async function run({ ok, pageWork }) {
     ok(same(seen, { entry: [MENU.entry, [], ["Unsent entry"]], customers: [MENU.customers, [], []], pricing: [MENU.pricing, [], []] }),
       "Entry, Customers and Pricing are each a menu of their forms by name, no form shown, and the retained input kept on Entry: " + JSON.stringify(seen));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
-    ok(rows.length === 18 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && r.querySelector(".salt-inbox-row__action").textContent === "Open")
+    ok(rows.length === 18 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !r.querySelector(".salt-inbox-row__action") && !/Open/.test(r.textContent))
       && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 18 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
     "a row is the system's Inbox row, named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
+    /* 14 Oct 2026 (Record): the title and its lead stand once; Offsets are two lists, never one, each offer one row with one Add */
+    ok(d.querySelectorAll("#oRecord h1").length === 1 && (d.getElementById("oRecord").textContent.match(/Everything here waits for your approval under Approve/g) || []).length === 1
+      && !d.querySelector("#makerInputs > h2") && !d.querySelector('#oRecord section[data-in="record.approve"] > h2') && !/Rows to approve/.test(d.getElementById("oRecord").textContent),
+    "Record's title and lead are drawn once: no second Record heading over the forms, no Rows to approve heading under the part strip");
+    await p.tap("record.form", "offsets");
+    const offs = d.querySelector('#makerInputs [data-form="offsets"]'), lists = offs ? [...offs.querySelectorAll("[data-offers]")] : [];
+    const kinds = Object.fromEntries(lists.map((l) => [l.getAttribute("data-offers"), [...l.querySelectorAll(".maker-offer")].length]));
+    const oneRow = offs && offs.querySelector(".maker-offer");
+    ok(!!offs && same(kinds, { customer: 0, reward: 1 }) && same([...offs.querySelectorAll("h4")].map((h) => h.textContent), ["Customer offsets", "Associate reward offsets"])
+      && !/One unit off the oldest unpaid order/.test(offs.textContent) && !!oneRow && oneRow.closest('[data-offers="reward"]') && /AX1-ZED/.test(oneRow.textContent)
+      && same([...oneRow.querySelectorAll("button")].filter((b) => !b.hidden).map((b) => b.textContent), ["Add"]) && oneRow.querySelector("button").getAttribute("data-act") === "record.offset.send"
+      && !/Send the offset/.test(offs.textContent) && !!offs.querySelector('[data-offers="customer"] .rnone'),
+    "Offsets are two lists, customer and associate reward, with no instruction paragraph; the Counter's offers (all rewards) stand in the reward list as one row with one Add, and the customer list says none: " + JSON.stringify(kinds));
+    await p.tap("record.form-back");
     const bad = [], gridOpen = () => d.getElementById("makerFormGrid").classList.contains("open");
     for (const part of ["entry", "customers", "pricing"]) {
       await p.tap("part.record." + part);

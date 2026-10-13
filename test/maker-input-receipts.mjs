@@ -32,7 +32,7 @@ const cases = [
   { label: "Hide it", path: "hush",
     body: { id: "margin:zero", until: null },
     edit(root, changed) { tile(root, "Hide for", changed ? "30" : ""); return tileGroup(root, "Hide for").querySelector("input:checked"); } },
-  { label: "Send the offset", path: "offset",
+  { label: "Add", path: "offset",
     body: { code: "CX1-ZED", rid: "Tx_1", date: "2026-10-01" },
     edit(root, changed) { const field = root.querySelector('input[type="date"]'); field.value = changed ? "2026-10-02" : "2026-10-01"; return field; } }
 ];

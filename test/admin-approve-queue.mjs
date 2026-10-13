@@ -90,8 +90,19 @@ export async function run({ ok, pageWork }) {
     ok(!!flags && same([...flags.querySelectorAll(".salt-status.salt-status--ember")].map((x) => x.textContent), ["Check before deciding"]) && !c.querySelector(":scope > .salt-insight"),
       "the flags it was drafted with are chips in the recipe's flag row, and not also a line of prose");
     ok(!!figures && !!flags && !!reason && reason.textContent === "Priced under their usual."
-      && (figures.compareDocumentPosition(flags) & 4) && (flags.compareDocumentPosition(reason) & 4) && !!c.querySelector(":scope > details > summary[data-act='row.proposed']") && !c.querySelector(":scope > details").open,
-    "in the recipe's order, the figures, then the flags, then the drafter's reasoning, with the row itself folded shut");
+      && (figures.compareDocumentPosition(flags) & 4) && (flags.compareDocumentPosition(reason) & 4) && !c.querySelector("details, summary") && !!c.querySelector(":scope > .rdet--row") && c.querySelector(":scope > .rdet--row").hidden,
+    "in the recipe's order, the figures, then the flags, then the drafter's reasoning, with the row itself folded shut and no Details button");
+    /* the card is the tap: the head (the control, with its act) or any part of the card that is not a button opens the row's detail and a second tap shuts it; Approve opens nothing */
+    const hd = c.querySelector(":scope > .salt-approve__head"), panel = c.querySelector(":scope > .rdet--row"), gone = p.posts.length;
+    ok(hd.tagName === "BUTTON" && hd.getAttribute("data-act") === "row.proposed" && hd.getAttribute("aria-expanded") === "false" && panel.hidden, "the head is a button with an act, shut");
+    hd.click(); await p.work.quiet();
+    const afterHead = !panel.hidden && hd.getAttribute("aria-expanded") === "true" && /Reference/.test(panel.textContent);
+    c.querySelector(".salt-approve__reason").click(); await p.work.quiet();
+    const afterBody = panel.hidden && hd.getAttribute("aria-expanded") === "false";
+    ok(afterHead && afterBody && p.posts.length === gone, "a tap on the head opens the row's detail, a tap on the card's body shuts it, and nothing is sent: " + [afterHead, afterBody]);
+    ok(![...c.querySelectorAll("button")].some((b) => b.textContent === "Details") && [...c.querySelectorAll(":scope > .salt-approve__actions button")].filter((b) => !b.hidden).every((b) => /^(Approve|Reject)/.test(b.textContent)), "the card's only buttons for the Desk are Approve and Reject, with no Details");
+    const cells2 = [...d.querySelectorAll("#makerDrafts .apfigs")];
+    ok(cells2.length >= 2 && cells2.every((f) => f.classList.contains("salt-metrics")), "every card's cost and margin stand in one figures row of their own class, so the page can align them as columns");
     const acts = c.querySelector(":scope > .salt-approve__actions"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
     ok(!!acts && acts.contains(approve) && acts.contains(reject) && approve.textContent === "Approve" && reject.textContent === "Reject"
       && approve.classList.contains("salt-pill") && !approve.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost--danger")
@@ -99,7 +110,8 @@ export async function run({ ok, pageWork }) {
     "its moves stand in the recipe's actions: Approve the one filled pill, first, and Reject the danger ghost");
     ok(!byAct(c, "draft.approve").disabled && !byAct(c, "draft.reject").disabled, "and neither is shut on a row that is not a claim's");
     const t2 = p.row("d-2"), t3 = p.row("d-3");
-    ok(!!t2 && !!t3 && /Two books, one trip\. Approve decides both\./.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve both" && byAct(t2, "draft.reject").textContent === "Reject both"
+    ok(!t3 && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].filter((x) => /one trip/.test(x.textContent)).length === 1 && t2.querySelectorAll(".rdet--row").length === 2, "a trip is drawn once, in one card holding both its rows, and never again for its other row: " + d.querySelectorAll("#makerDrafts [data-maker-card]").length);
+    ok(!!t2 && /Two books, one trip\. Approve decides both\./.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve both" && byAct(t2, "draft.reject").textContent === "Reject both"
       && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
     "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
     /* a row's book is the system's Product tag holding the book's mark, and no word for it: "1 unit [tag], RM 100.00", the tag told to a reader by its shape */
@@ -205,11 +217,11 @@ export async function run({ ok, pageWork }) {
     go.click(); go.click(); await p.work.quiet();
     ok(rejects() === 1 && same(p.posted(route("reject", "d-1"))[0].body, {}) && !p.sheet() && !p.row("d-1") && /Row rejected\./.test(d.getElementById("makerDraftStatus").textContent),
       "its one action sends the rejection, the same route and empty body, once however often it is tapped: " + J(p.posted(route("reject", "d-1"))));
-    byAct(p.row("d-3"), "draft.reject").click(); await p.work.quiet();
+    byAct(p.row("d-2"), "draft.reject").click(); await p.work.quiet();
     ok(p.title() === "Reject every row of this trip?" && p.sheet().querySelectorAll(".salt-ledger__row").length === 2 && p.inSheet("ask.go").textContent === "Reject both",
       "a trip's Reject asks once for the card and lists every row: " + p.title());
     p.inSheet("ask.keep").click(); await p.work.quiet();
-    ok(p.posted(route("reject", "d-3")).length === 0 && p.confirms.length === 0, "and keeping it sends nothing");
+    ok(p.posted(route("reject", "d-2")).length === 0 && p.confirms.length === 0, "and keeping it sends nothing");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* the Needs you pill asks the same question on the same Sheet, and a no leaves the card as it was */
