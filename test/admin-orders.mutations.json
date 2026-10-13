@@ -626,7 +626,7 @@
  {
   "name": "the rows' columns follow their content",
   "file": "stmt/page.js",
-  "find": "grid-template-columns:76px minmax(0,1fr) 88px",
+  "find": "grid-template-columns:84px minmax(0,1fr) 88px",
   "replace": "grid-template-columns:auto minmax(0,1fr) auto"
  },
  {

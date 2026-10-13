@@ -128,8 +128,8 @@ export async function run({ ok, pageWork }) {
     ok(shapes.length === 5 && shapes.every((x) => /^mtile,salt-inbox-row__main,salt-inbox-row__side[|]salt-inbox-row__age,salt-inbox-row__action[|]salt-inbox-row__title,salt-inbox-row__what[|][01]$/.test(x)),
       "every row has the same parts in the same order, the age above the figure, and at most one pill: " + JSON.stringify(shapes));
     const css = ownerCss(), grid = css.top(".adm .ordrow").join(), side = css.top(".adm .ordrow .salt-inbox-row__side").join();
-    ok(/grid-template-columns:\s*76px minmax\(0,\s*1fr\)\s*88px/.test(grid) && /display:\s*grid/.test(grid) && /align-items:\s*flex-end/.test(side) && /text-align:\s*right/.test(side),
-      "the rows' columns are fixed (a 76px mark, the main, an 88px side) and the side is right-aligned, so no unit box moves the rest: " + grid);
+    ok(/grid-template-columns:\s*84px minmax\(0,\s*1fr\)\s*88px/.test(grid) && /display:\s*grid/.test(grid) && /align-items:\s*flex-end/.test(side) && /text-align:\s*right/.test(side),
+      "the rows' columns are fixed (an 84px mark, the main, an 88px side) and the side is right-aligned, so no unit box moves the rest: " + grid);
     await byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
     const chipsC = (id) => [...byAct(d, "order.open", id).querySelectorAll(".salt-status")].map((c) => c.textContent).join();
     ok(chipsC("ord-a1") === "Waiting on you" && chipsC("ord-a2") === "Waiting on you" && /says sent/.test(byAct(d, "order.open", "ord-a1").textContent) && /send again/.test(byAct(d, "order.open", "ord-a2").textContent),

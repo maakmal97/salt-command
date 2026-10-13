@@ -260,8 +260,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header and beside Salt Account's name */
 .cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
 .cclock:empty{display:none}
-.clk{font-variant-numeric:tabular-nums}
-.clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
 .cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 /* a username is a credential, so the rail's capitals never reach it */
 .cfoot .mono{text-transform:none;letter-spacing:.02em}
@@ -752,13 +750,16 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nchips .salt-tabs__pill[hidden]{display:none}
 /* 14 OCT 2026: ORDERS ARE ROWS OF ONE GRID: the mark in a fixed column, the code and at most one pill over what it is, the age over the figure in a fixed column on the
    right, every row the same height. The system's Inbox row keeps its class; the grid is this page's own container class. */
-.adm .ordrow{display:grid;grid-template-columns:76px minmax(0,1fr) 88px;align-items:center;gap:0 12px;min-height:76px}
-.adm .ordrow>.mtile{width:76px;box-sizing:border-box;align-self:center}
+.adm .ordrow{display:grid;grid-template-columns:84px minmax(0,1fr) 88px;align-items:center;gap:0 12px;min-height:76px}
+.adm .ordrow>.mtile{width:84px;padding-left:6px;padding-right:6px;box-sizing:border-box;align-self:center}
 .adm .ordrow .salt-inbox-row__main{flex:none}
 .adm .ordrow .salt-inbox-row__title{flex-wrap:nowrap}
 .adm .ordrow .salt-inbox-row__what{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .adm .ordrow .salt-inbox-row__side{margin:0;align-items:flex-end;justify-content:center;text-align:right;gap:4px}
 .adm .ordrow .salt-inbox-row__action{margin-top:0;font-variant-numeric:tabular-nums}
+/* 14 Oct 2026: the live clock beside Salt Account's name */
+.adm .clk{font-variant-numeric:tabular-nums}
+.adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
 .adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
