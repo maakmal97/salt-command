@@ -1212,7 +1212,7 @@ body.navopen .wrap{z-index:97;}
 .fabtn:hover{border-color:color-mix(in srgb, var(--salt-brass) 50%, transparent);}
 .fabtn:active{transform:scale(.94);}
 .fabtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
-.navbtn{display:none;}
+.navbtn,.navbtn.salt-orb{display:none;}
 /* lit when a name is showing, which is the one state worth seeing at a glance */
 .idfix.on{border-color:var(--gold);box-shadow:0 0 12px -4px var(--gold),var(--gloss);}
 .orderbtn{right:calc(14px + var(--saferight));bottom:calc(14px + var(--safebot));font-size:24px;font-weight:400;line-height:1;}
@@ -1232,7 +1232,7 @@ body.navopen .navbtn .nb3{transform:translateY(-6px) rotate(-45deg);}
   transition:opacity .2s ease;}
 body.navopen .navveil{opacity:1;pointer-events:auto;}
 @media(max-width:860px) and (pointer:coarse){
-  .navbtn{display:grid;}
+  .navbtn,.navbtn.salt-orb{display:grid;}
   .shell{display:block;}
   /* every rule the upright rail already has is kept; this only takes it out of the flow
      and floats it. visibility, not just opacity, so a closed menu is out of the tab order
@@ -9284,7 +9284,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1093","d":"13 Oct 2026","t":"ONE COLLECTION RECORDED ON S260; SHELF DOWN BY 1 UNIT","n":["<b>FOLDED:</b> one correction on s260, the 13 Oct sale of 1 unit of salt to CZ5-TM at RM100. It sets the delivered quantity to 1, delivered on to 13 Oct and handover to collected, preapproved by phone. It moves no cash.","<b>INVENTORY:</b> the shelf rolls by 1 unit, out to CZ5-TM, the difference the correction states. The cost basis does not move and no lot landed. The drafter's flag about the 2-step trail is noted on the row."]}];
+const evolution=[{"v":"v1094","d":"13 Oct 2026","t":"THE SECTIONS BUTTON SHOWS ONLY WHERE THE RAIL FOLDS INTO IT","n":["<b>THE SECTIONS BUTTON.</b> On a laptop the round menu button at the right of the header showed, and a tap only frosted the page over a rail already standing. The design system's orb drew it over the rule that hides it. It now shows only on a touch screen at 860px or narrower, where the rail folds into the menu; there it opens and closes as before. His report of 13 Oct 2026. Nothing prices.","<b>THE PROOFS.</b> The v684 section computes the button hidden where no touch screen's menu holds, and reads the shown rule inside that menu only, each red under its own mutation; Chromium at 1280, 1024 and 840px with a mouse, 840px with a finger and a 390px phone."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9435,7 +9435,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 16:39 KL';
+const LAST_UPDATED='13 Oct 2026, 16:55 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

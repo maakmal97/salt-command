@@ -18641,7 +18641,7 @@ await (async () => {
   const norm84 = (x) => x.replace(/\s+/g, "");
   const where = (s) => blocks.filter((b) => norm84(b.body).includes(norm84(s))).map((b) => norm84(b.q));
 
-  const MENU = [".navbtn{display:grid", ".shell{display:block", ".rail{position:fixed", ".rail{right:", ".salt-rail{background:var(--salt-pane)", ".rail{top:calc(var(--safetop) + var(--dbtop)"];
+  const MENU = [".navbtn,.navbtn.salt-orb{display:grid", ".shell{display:block", ".rail{position:fixed", ".rail{right:", ".salt-rail{background:var(--salt-pane)", ".rail{top:calc(var(--safetop) + var(--dbtop)"];
   const menu = MENU.map((s) => [s, where(s)]);
   ok(menu.every(([, q]) => q.length >= 1 && q.every((x) => /^\(max-width:(860|560)px\)and\(pointer:coarse\)$/.test(x))),
     "every rule that folds the rail into the menu is a touch screen's, at 860px or below: " + JSON.stringify(menu));
@@ -18665,6 +18665,11 @@ await (async () => {
   const { openMaster: om84 } = await import("../tools/payload.mjs");
   const { w: w84 } = await om84();
   try {
+    /* 13 Oct 2026, his report: on a laptop the Sections button showed, and a click only frosted the page over a rail
+       already standing. The system's orb recipe, later in the file, drew it over the hidden state; jsdom holds no
+       media query, so what it computes is a laptop's */
+    const nb84 = String(w84.eval("getComputedStyle(document.getElementById('navbtn')).display"));
+    ok(nb84 === "none", "where no touch screen's menu holds, the Sections button is not drawn, the orb's own display included: " + nb84);
     Object.defineProperty(w84, "innerWidth", { value: 832, configurable: true });
     Object.defineProperty(w84.document.querySelector(".main"), "clientWidth", { value: 600, configurable: true });
     w84.eval("MAP_VIEW=null;switchTab('map');");

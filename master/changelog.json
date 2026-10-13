@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1094",
+  "d": "13 Oct 2026",
+  "t": "THE SECTIONS BUTTON SHOWS ONLY WHERE THE RAIL FOLDS INTO IT",
+  "n": [
+   "<b>THE SECTIONS BUTTON.</b> On a laptop the round menu button at the right of the header showed, and a tap only frosted the page over a rail already standing. The design system's orb drew it over the rule that hides it. It now shows only on a touch screen at 860px or narrower, where the rail folds into the menu; there it opens and closes as before. His report of 13 Oct 2026. Nothing prices.",
+   "<b>THE PROOFS.</b> The v684 section computes the button hidden where no touch screen's menu holds, and reads the shown rule inside that menu only, each red under its own mutation; Chromium at 1280, 1024 and 840px with a mouse, 840px with a finger and a 390px phone."
+  ]
+ },
+ {
   "v": "v1093",
   "d": "13 Oct 2026",
   "t": "ONE COLLECTION RECORDED ON S260; SHELF DOWN BY 1 UNIT",
