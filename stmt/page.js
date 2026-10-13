@@ -796,6 +796,45 @@ body.ended>*:not(#aEnded){display:none}
 .glink .gs{margin:8px 0 0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);
   font-family:var(--salt-font-mono);letter-spacing:.04em}
 .glink img{display:block;margin:12px auto 0;border-radius:var(--salt-radius-sm);width:180px;height:180px}
+/* 14 OCT 2026 (the layout rework): a guest link is one row (summary), the address, QR and moves under it once opened; accounts are rows with one state; an associate's
+   code has room beside its marks and its figures stand in a ledger; a customer's loans stand on their card as rows of figures */
+.adm #glist .glink{padding:0;margin:8px 0 0}
+.adm #glist .glink>*:not(summary){margin-left:16px;margin-right:16px}
+.adm #glist .glink>.grow,.adm #glist .glink>.msg{margin-bottom:14px}
+.adm #glist .glink>.gu{margin-top:0}
+.adm #glist .glink>.gwho{margin-top:0;margin-bottom:0;font-size:var(--salt-text-sm);font-weight:400;color:var(--salt-text-muted)}
+.adm #glist .glink img{width:150px;height:150px}
+.adm .gsum{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:var(--salt-tap);padding:8px 16px;cursor:pointer;list-style:none}
+.adm .gsum::-webkit-details-marker{display:none}
+.adm .gsum::after{content:"";position:absolute;right:16px;width:7px;height:7px;border:solid var(--salt-text-muted);border-width:0 2px 2px 0;transform:rotate(45deg);top:20px}
+.adm #glist .glink{position:relative}
+.adm #glist .glink[open]>.gsum::after{transform:rotate(-135deg);top:24px}
+.adm .gsum .gtop{display:flex;align-items:center;gap:8px;padding-right:20px}
+.adm .gsum .gt{margin:0}
+.adm .gsum .gs{margin:0;font-size:var(--salt-text-xs);color:var(--salt-text-muted);font-family:var(--salt-font-mono);letter-spacing:.04em}
+.adm #glist .grow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.adm #glist select{margin-top:12px}
+.adm .alist .arow .salt-inbox-row__title{display:flex;align-items:center;gap:8px}
+.adm .alist .arow .acode{font-family:var(--salt-font-mono);font-weight:600}
+.adm .alist .arow .astate{margin-left:auto;text-align:right}
+.adm .alist .arow .salt-inbox-row__what{overflow-wrap:anywhere}
+.adm .acard .srow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.adm .acard .srow .un{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+.adm .acard .aled{margin-top:8px}
+.adm .acard .aled .salt-ledger__line{padding:4px 0}
+.adm .acard .acell{display:flex;flex-direction:column;justify-content:space-between;gap:4px}
+.adm .acard .aled .salt-ledger__value{text-align:right;white-space:nowrap}
+.adm .abooks{display:flex;flex-direction:column;gap:8px}
+.adm .abooks .salt-eyebrow{margin:6px 0 0}
+.adm .aloans{display:flex;flex-direction:column}
+.adm .aloan{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--salt-line)}
+.adm .aloan:last-child{border-bottom:0}
+.adm .aloan__txt{min-width:0}
+.adm .aloan__what{margin:0;font-size:var(--salt-text-sm)}
+.adm .aloan__fig{display:flex;gap:16px;margin-top:4px;font-size:var(--salt-text-sm)}
+.adm .aloan__k{color:var(--salt-text-muted);margin-right:6px}
+.adm .aloan__v{font-family:var(--salt-font-mono)}
+.adm .aloan .salt-ghost{flex:none}
 /* S8 8.1: an associate's own links, in Rewards: when it was made, its state in a word (the system's chip), what it
    has done, and the system's ghosts; the Meter is the reward's bar */
 .rlhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px}

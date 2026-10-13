@@ -2352,6 +2352,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `acct.filter-unsent` | Accounts, the filter bar | Shows accounts not yet sent a sign-in. |
 | `acct.find` | Accounts | Finds an account by a code or a username. |
 | `acct.open` | Accounts list, one row each (key: the username) | Opens that account's card. |
+| `acct.repay` | Account card, Loans (key: the loan rid) | Opens Record's Repayment form with that loan chosen. |
 | `acct.order-for` | Account card | Opens an order for them, at the head of Orders. |
 | `acct.password` | Account card | Opens their sealed password straight to the clipboard, never into the page. |
 | `acct.sent` | Account card | Ticks the account as sent. |
@@ -2394,6 +2395,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
 | `hours.save` | Operating hours | Saves the weekly hours. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
+| `link.open` | Link row (key: the link id) | Opens or shuts the row: its address, QR and moves. |
 | `link.copy` | Link card (key: data-link, the link id) | Copies the link. |
 | `link.decline` | Same card | Declines it, which keeps it shut. |
 | `link.introducer` | Links | The customer introducing the guest. |
