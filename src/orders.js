@@ -1508,13 +1508,15 @@ export async function againOrder(env, id, body, by, now, mirror) {
     }
     for (const st of want) { const lv = await livePre(db, id, st); if (lv && (lv.status === "waiting" || lv.status === "differs")) return { ok: false, status: 409, error: "the " + STAGE_WORD[st] + " is offered again already: let it land first" }; }
     const o = f.order;
-    let onRow = null, taken = false;
+    let onRow = null, taken = false, known = [];
     if (m.whole && (+o.paid || 0) > 0) {
       /* money paid on the site is on the book already, or Not needed would strand it: a cash Fulfilment covered never lands, and a paid cancellation owes a refund */
       if (want.includes("cancel")) return { ok: false, status: 409, error: "a paid cancellation owes a refund; send it again" };
       const book = await (mirror || bookOnce(db))().catch(() => null), party = partyOnBook(o, o.code), day = String(o.at || "").slice(0, 10);
       /* a site order's own row is no proof of another's cash: rows are told apart by key, the keys of every site order's row being known */
-      const all = await listOrders(env, true), own = new Set((all.ok ? all.orders : []).map((x) => ledgerKeyOf(x)).filter(Boolean));
+      const all = await listOrders(env, true), offs = await offBook(db, all.ok ? all.orders : []);
+      /* an order with no row on the book has no row of its own: the hand row that covers it may bear its key */
+      const own = new Set((all.ok ? all.orders : []).filter((x) => !offs.has(x.id)).map((x) => ledgerKeyOf(x)).filter(Boolean));
       const cands = ((book && book.sales) || []).filter((r) => r && r.rid && !r.cancelled && !own.has(POSITION_ENGINE.ovKey(r)) && r.customer === party
         && (r.product || "salt") === (o.product || "salt") && String(r.date || "") >= day);
       /* and one hand row proves the cash of as many orders as it holds: what other orders were covered against it is spoken for */
@@ -1523,7 +1525,7 @@ export async function againOrder(env, id, body, by, now, mirror) {
         const rs = await db.prepare("SELECT entry FROM draft WHERE decided_by=?1").bind("covered:" + r.rid).all();
         const ids = new Set((rs.results || []).map((x) => { try { return JSON.parse(x.entry).orderId; } catch (e) { return null; } }).filter((x) => x && x !== id));
         const spoken = (all.ok ? all.orders : []).filter((x) => ids.has(x.id)).reduce((n, x) => n + (+x.paid || 0), 0);
-        if ((+r.cash || 0) + 0.004 >= spoken + (+o.paid || 0)) { onRow = r; break; }
+        if ((+r.cash || 0) + 0.004 >= spoken + (+o.paid || 0)) { onRow = r; known = [...ids, id]; break; }
         taken = true;
       }
       if (!onRow) return { ok: false, status: 409, error: taken ? "that row's cash is already spoken for" : "record the cash on the row first" };
@@ -1532,8 +1534,10 @@ export async function againOrder(env, id, body, by, now, mirror) {
     for (const st of want) { const d = await rejectedOf(db, id, st); if (d) found.push([st, d.id]); }
     /* one batch, each update refusing if a yes for any covered stage landed meanwhile, so a cover is all or none */
     const stages = found.map(([st]) => "'" + st + "'").join(",");
+    /* and, against a hand row, none by another order's cover landing between the sum and the write: that would spend the same cash twice */
+    const hold = onRow ? " AND NOT EXISTS (SELECT 1 FROM draft d2 WHERE d2.decided_by='covered:" + String(onRow.rid).replace(/[^A-Za-z0-9_-]/g, "") + "' AND json_extract(d2.entry,'$.orderId') NOT IN (" + known.map((_, i) => "?" + (i + 4)).join(",") + "))" : "";
     if (found.length) {
-      const res = await db.batch(found.map(([, did]) => db.prepare("UPDATE draft SET decided_by=?3 WHERE id=?1 AND status='rejected' AND NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage IN (" + stages + ") AND status IN ('waiting','differs'))").bind(did, id, onRow ? "covered:" + onRow.rid : "covered")));
+      const res = await db.batch(found.map(([, did]) => db.prepare("UPDATE draft SET decided_by=?3 WHERE id=?1 AND status='rejected' AND NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage IN (" + stages + ") AND status IN ('waiting','differs'))" + hold).bind(...[did, id, onRow ? "covered:" + onRow.rid : "covered"].concat(onRow ? known : []))));
       if (res.some((r) => !(r && r.meta && r.meta.changes > 0))) return { ok: false, status: 409, error: "a yes landed on one of those steps meanwhile: read the order again" };
     }
     const dropped = found.map(([st]) => st);

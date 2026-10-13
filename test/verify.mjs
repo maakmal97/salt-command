@@ -37979,6 +37979,20 @@ await (async () => {
   seedDraft(wn.id, "pending", "Handover", { deliveredQty: 1 });
   const offP = await offBook(D1, [{ id: wn.id }]);
   ok(offW.has(wn.id) && !offL.has(wn.id) && !offP.has(wn.id), "an order is off the book only with no yes waiting on its pending row and no draft still pending: " + JSON.stringify([...offW, ...offL, ...offP]));
+  /* the covering row may bear the covered order's own key; and two covers racing for one row's cash cannot both land */
+  db.prepare("DELETE FROM draft WHERE status='pending' AND json_extract(entry,'$.orderId')=?").run(wn.id);
+  const hand = { date: day, customer: C1, qty: 1, total: 114, cash: 16, rid: "s241" };
+  putSale(hand);
+  const mk = await denv.STMT_SITE.fetch("https://stmt/desk/orders/" + U1 + "/" + wn.id, { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Desk": "desk-key" }, body: JSON.stringify({ mark: { ledgerKey: PE.ovKey(hand) } }) });
+  ok(mk.ok && (await orderOf(wn.id)).ledgerKey === PE.ovKey(hand), "the fixture order bears the key a hand row would: " + mk.status);
+  raceHook = () => { seedDraft("race-x", "rejected", "Pending"); db.prepare("UPDATE draft SET decided_by='covered:s241' WHERE json_extract(entry,'$.orderId')='race-x'").run(); };
+  const raced2 = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(raced2.status === 409 && /meanwhile/.test(raced2.error) && decidedBy(wn.id, "Pending")[0] === "desk",
+    "another order's cover landing on the same row between the sum and the write refuses this one: " + JSON.stringify([raced2.status, raced2.error]));
+  db.prepare("DELETE FROM draft WHERE json_extract(entry,'$.orderId')='race-x'").run();
+  const ownKey = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(ownKey.ok && ownKey.row === "s241" && decidedBy(wn.id, "Pending")[0] === "covered:s241",
+    "a hand row bearing the covered order's own key covers it, that order having no row of its own: " + JSON.stringify([ownKey.ok, ownKey.row, ownKey.error]));
   /* what is on its way: an order with no row counts nothing, one with a row still does */
   const off = await offBook(D1, [{ id: wl.id }, { id: nh.id }, { id: wo.id }]);
   ok(off.has(wl.id) && off.has(wo.id) && !off.has(nh.id), "an order whose pending row is rejected and with nothing approved is off the book; an order with an approved row is not: " + JSON.stringify([...off]));
