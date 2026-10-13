@@ -31815,7 +31815,8 @@ await (async () => {
   const d1 = (latency) => ({ prepare: (sql) => {
     const res = async () => { await advance(latency);
       return /FROM state/.test(sql) ? { results: [{ key: "OPEN", doc: JSON.stringify({ byKey: openByKey }) }] } : { results: [] }; };
-    return { bind: () => ({ all: res }), all: res, first: async () => { await advance(latency); return null; } };
+    /* 14 Oct 2026: readBook also reads loans; that read answers at once, so the races these instruments stage keep their timing */
+    return { bind: (c) => ({ all: c === "loans" ? async () => ({ results: [] }) : res }), all: res, first: async () => { await advance(latency); return null; } };
   } });
   const deskEnv = (loc) => ({ STMT_SITE: stmtSite(loc, 150), STMT_DESK_KEY: KEY, SALT_QUEUE: DESKQ.at(loc), SALT_LEDGER: d1(300) });
   const seedDesk = async () => { DESKQ.rateLimit = false; await DESKQ.at("CRON").put("stmt-users", JSON.stringify(CODES)); DESKQ.rateLimit = true; };
@@ -32291,7 +32292,8 @@ await (async () => {
   const d1 = (latency) => ({ prepare: (sql) => {
     const res = async () => { await advance(latency);
       return /FROM state/.test(sql) ? { results: [{ key: "OPEN", doc: JSON.stringify({ byKey: openByKey }) }] } : { results: [] }; };
-    return { bind: () => ({ all: res }), all: res, first: async () => { await advance(latency); return null; } };
+    /* 14 Oct 2026: readBook also reads loans; that read answers at once, so the races these instruments stage keep their timing */
+    return { bind: (c) => ({ all: c === "loans" ? async () => ({ results: [] }) : res }), all: res, first: async () => { await advance(latency); return null; } };
   } });
   const deskEnv = (loc) => ({ STMT_SITE: stmtSite(loc, 150), STMT_DESK_KEY: KEY, SALT_QUEUE: DESKQ.at(loc), SALT_LEDGER: d1(300) });
   const logs = [], realLog = console.log;
