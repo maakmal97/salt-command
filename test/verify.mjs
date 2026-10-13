@@ -19094,7 +19094,7 @@ await (async () => {
     const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
     ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
       "his page opens on Needs you");
-    ok(await until(() => /^1 now, 3 soon, as at [0-9]{2}:[0-9]{2}[.]/.test(D.getElementById("nCount").textContent)),
+    ok(await until(() => /^1 now, 3 soon[.]/.test(D.getElementById("nCount").textContent)),
       "one waits now and three soon, and the line says so: " + D.getElementById("nCount").textContent);
     ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["k:" + uL, "s", "l:" + lid, "n:" + uN].join(","),
       "a card each, Now before Soon and the oldest first: the locked account, then to send, the link, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
@@ -20575,7 +20575,7 @@ await (async () => {
       work = pageWork(w);
     } }).window;
     const D = win.document;
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     ok(await until(() => D.querySelector('#rlist [data-u="' + u + '"]')), "Accounts lists the account");
     D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -20730,7 +20730,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -20771,7 +20771,7 @@ await (async () => {
         work = pageWork(w);
       } }).window;
       const D3 = w3.document;
-      await until(() => /as at/.test(D3.getElementById("mFoot").textContent));
+      await until(() => / accounts$/.test(D3.getElementById("mFoot").textContent));
       D3.querySelector('button[data-m="customers"]').click();
       await until(() => D3.querySelector('#rlist [data-u="' + u + '"]'));
       D3.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -20967,7 +20967,7 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
     } }).window;
     const D = win.document;
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     const openAcct = async (x) => { D.querySelector('button[data-m="customers"]').click();
       await until(() => D.querySelector('#rlist [data-u="' + x + '"]')); D.querySelector('#rlist [data-u="' + x + '"]').click(); };
     const card = (x) => D.querySelector('#aopen [data-acct="' + x + '"]');
@@ -21054,7 +21054,7 @@ await (async () => {
       work = pageWork(w);
     } }).window;
     const D = win.document;
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -21248,7 +21248,7 @@ await (async () => {
       wins.push(w);
       const D = w.document;
       const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-      await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+      await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
       D.querySelector('button[data-m="customers"]').click();
       await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
       D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -21350,7 +21350,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     const chip = () => D.querySelector('#rlist [data-u="' + u + '"]').textContent;
@@ -21407,7 +21407,7 @@ await (async () => {
     } }).window;
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 400 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     await until(() => D.querySelector('#rlist [data-u="' + u + '"]'));
     D.querySelector('#rlist [data-u="' + u + '"]').click();
@@ -23935,7 +23935,7 @@ await (async () => {
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     /* S9 9.2: Send is Accounts now, and an account's card opens from its row, once the sheet is read so no second read redraws it */
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     const cardOf = (x) => { const r = D.querySelector('#rlist [data-u="' + x + '"]'); if (!r) return null; r.click();
       return [...D.querySelectorAll("#aopen .scard")].find((k) => k.textContent.includes(x)); };
@@ -29880,7 +29880,7 @@ await (async () => {
     const D = win.document;
     const until = async (f) => { for (let i = 0; i < 300 && !(await f()); i++) await new Promise((r) => setTimeout(r, 25)); return !!(await f()); };
     /* S9 9.2: Send is Accounts now, and the card opens from its row once, after the sheet is read, so no redraw drops a tap */
-    await until(() => /as at/.test(D.getElementById("mFoot").textContent));
+    await until(() => / accounts$/.test(D.getElementById("mFoot").textContent));
     D.querySelector('button[data-m="customers"]').click();
     const card = () => [...D.querySelectorAll("#aopen .scard")].find((x) => x.textContent.includes(u));
     const btn = () => { let k = card(); if (!k) { const r = D.querySelector('#rlist [data-u="' + u + '"]'); if (r) r.click(); k = card(); }

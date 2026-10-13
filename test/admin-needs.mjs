@@ -141,7 +141,7 @@ export async function run({ ok, pageWork }) {
     "an item of a practice account is drawn, labelled Practice, and no other is");
     const real = p.cards().filter((c) => !c.hasAttribute("data-practice"));
     const nowReal = real.filter((c) => c.getAttribute("data-sev") === "now").length, soonReal = real.filter((c) => c.getAttribute("data-sev") === "soon").length;
-    ok(nowReal === 9 && new RegExp("^" + nowReal + " now, " + soonReal + " soon, as at [0-9]{2}:[0-9]{2}[.]$").test(d.getElementById("nCount").textContent),
+    ok(nowReal === 9 && new RegExp("^" + nowReal + " now, " + soonReal + " soon[.]$").test(d.getElementById("nCount").textContent),
       "the line under the title counts the real Now and Soon and no practice item: " + d.getElementById("nCount").textContent);
 
     /* 4. THE COUNTS ON THE BARS */

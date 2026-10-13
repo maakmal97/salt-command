@@ -181,7 +181,7 @@ export const OWNER_JS = `
       if(aOpen) openCard(aOpen);
       /* the count is of accounts on the book: the test account is not one (v689) */
       var real=sheetRows.filter(function(a){ return !a.test; }).length;
-      document.getElementById('mFoot').textContent=real+' accounts, as at '+hm(new Date().toISOString());
+      document.getElementById('mFoot').textContent=real+' accounts';   /* the time is the live clock beside the name (14 Oct 2026) */
     }catch(e){ nGot('sheet', e); if(quiet!==true) sayFail(e); }
     finally{ sheetBusy=false; }
   }
@@ -4611,7 +4611,7 @@ export const OWNER_JS = `
     items.forEach(function(i){ if(i.practice||!i.counts) return; if(i.sev==='now') now++; else if(i.sev==='soon') soon++; });
     var bad=NEED_SRC.filter(function(s){ return nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; });
     nCount.textContent=(now||soon?[now?now+' now':'', soon?soon+' soon':''].filter(Boolean).join(', '):'Nothing needs you')
-      +', as at '+hm(new Date().toISOString())+'.'+(bad.length?' Not read: '+andList(bad)+'.':'');
+      +'.'+(bad.length?' Not read: '+andList(bad)+'.':'');
   }
   function drawNeeds(){
     if(!nlist) return;
