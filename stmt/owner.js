@@ -1994,6 +1994,14 @@ export const OWNER_JS = `
       throw new Error('Paste a Maps or Waze link with a point or address, or leave it empty.');
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
   }
+  /* what is on file for a party, in the Desk's words: whether a point is held, from where and on which Kuala Lumpur day, never the address */
+  function makerPlaceSaid(e){
+    e=e&&typeof e==='object'?e:{};
+    var from={waze:'Waze',google:'Google Maps',apple:'Apple Maps',pin:'a shared pin',file:'the laptop'}[e.src]||'', d=e.at?new Date(e.at):null,
+      k=d&&!isNaN(d)?d.toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'}):'', mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      day=/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k)?k.slice(8,10)+' '+mon[+k.slice(5,7)-1]+' '+k.slice(0,4):'';
+    return (Number.isFinite(e.lat)&&Number.isFinite(e.lng)?' with its point':' as an address alone')+(from?', from '+from:'')+(day?', filed '+day:'')+'.';
+  }
   async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
     pairDrafts.length=0;
     makerGeo.configure(catalog.placed);
@@ -2388,7 +2396,7 @@ export const OWNER_JS = `
       placeGate=makerVaultGate(placement,function(gate){
         /* open, the gate says whether a place is filed for the one chosen, from the places the unlock holds; never where */
         if(!makerVault||!placeParty.value) return;
-        gate.appendChild(el('p','msg',Object.hasOwn(makerVault.places,placeParty.value)?'A place is filed for them.':'No place is filed for them yet.'));
+        gate.appendChild(el('p','msg',Object.hasOwn(makerVault.places,placeParty.value)?'A place is filed for them'+makerPlaceSaid(makerVault.places[placeParty.value])+' Filing a new link replaces it.':'No place is filed for them yet.'));
       }), placeStatus=makerStatus(placement), placeBusy=false;
     var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New Maps or Waze link','record.place.link'],'text','');
     var placeDraft=null;
