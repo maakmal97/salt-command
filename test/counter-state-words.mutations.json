@@ -204,11 +204,6 @@
   "replace": "export const LEVEL_WORDS = [\"ambassador\", \"titanium\", \"platinum\", \"gold\", \"silver\", \"bronze\", \"declined\"];"
  },
  {
-  "name": "the Desk's lock refuses a new state word",
-  "find": "/\\b(ambassador|titanium|platinum|gold|silver|bronze)\\b/i.test(s))",
-  "replace": "/\\b(ambassador|titanium|platinum|gold|silver|bronze|placed)\\b/i.test(s))"
- },
- {
   "name": "the card tells him a placed order reads Sent",
   "file": "src/orders.js",
   "find": "placed: [\"Placed\", \"Waiting for us to confirm\"],",

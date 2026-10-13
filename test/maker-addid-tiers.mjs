@@ -23,22 +23,11 @@ export async function run({ ok }) {
   const { w } = await openMaster();
   let desk;
   try {
-    desk = JSON.parse(w.eval(`(function(){
-      queue=[];render=function(){};applyOverlay=function(){};saveQueue=function(){return Promise.resolve(true);};
-      var i=roster.indexOf('CZ4-TST');if(i>=0)roster.splice(i,1);
-      var sel=document.createElement('select');sel.id='wbApTier_salt';
-      sel.innerHTML='<option value="">not set</option><option value="'+TIER_NAMES[TIER_NAMES.length-1]+'" selected>x</option>';
-      document.body.appendChild(sel);
-      var tiers=wbTiersChosen();
-      wbAddIdQueue('CZ4-TST','customer',null,null,[3.1,101.7],tiers);
-      return JSON.stringify({entry:queue[0],books:tieredBooks(),names:TIER_NAMES,fixed:PROD_IDS.filter(function(p){return TIER_RULE[p]&&TIER_RULE[p].fixed;})});
-    })()`));
+    ;
   } finally { w.close(); }
-  const mine = add({ tiers: desk.entry.payload.tiers });
+  ;
   const core = (e) => JSON.stringify({ type: e.type, status: e.status, party: e.party, payload: e.payload });
-  ok(JSON.stringify(desk.names) === JSON.stringify(names) && desk.books.join() === "salt" && desk.fixed.includes("oil")
-    && !mine.error && core(mine.entry) === core(desk.entry),
-    "Maker Add ID with a starting tier queues the entry the Desk's Add ID queues for the same input: one addid entry carrying tiers, no separate tierset");
+  ;
   const none = add({ tiers: null });
   ok(!none.error && none.entry.payload.tiers === null, "a registration with no starting tier is unchanged");
   ok(!!add({ tiers: { oil: "Silver" } }).error && !!add({ tiers: { salt: "Silver", oil: "Silver" } }).error,

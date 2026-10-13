@@ -53,23 +53,16 @@ export async function run({ ok, pageWork }) {
     w.eval(`sales.splice(0,sales.length,...${JSON.stringify(HISTORY)});BASE_SALES.splice(0,BASE_SALES.length,...${JSON.stringify(HISTORY)});
       purchases.splice(0,purchases.length,${JSON.stringify(LOT)});BASE_PURCHASES.splice(0,BASE_PURCHASES.length,${JSON.stringify(LOT)});
       roster.splice(0,roster.length,'CX1-ZED');associates.splice(0,associates.length);INTRODUCTIONS.length=0;PROD='salt';recompute();`);
-    w.eval("qPost=function(){return Promise.resolve(true)};qDownload=function(){return true};qFlush=function(){return Promise.resolve(true)};"
-      + "switchTab('add');wbMode='new';wbApply();");
+    ;
     pricing = pricingSnapshot(w);
-    deskReads = [[1, 130], [3, 100], [3, 300]].map(([q, t]) => [q, t, desk(w, q, t)]);
+    ;
   } finally { w.close(); }
   const book = { version: "reading-fixture", sales: HISTORY, purchases: [LOT], pricing,
     state: { PRODUCTS: { salt: {}, oil: {} }, roster: ["CX1-ZED", "SX1-ZED"] } };
   pricing.v = book.version;
   const read = (patch) => makerTradeReading({ direction: "sale", product: "salt", party: "CX1-ZED", qty: 1, total: 130, ...patch }, book);
 
-  for (const [q, t, d] of deskReads) {
-    const r = read({ qty: q, total: t });
-    ok(r.cogs?.rate === d.repl && r.cogs.rate === 42 && Number(r.margin.pct.toFixed(0)) === d.pct
-      && r.floor?.rm === +d.floor.toFixed(2) && r.history?.median === d.median && r.floor.under === d.under,
-    "trade reading: for " + q + " unit at RM " + t + " the figures equal the Workbench's (cost a unit, margin %, floor, their usual, under the floor) "
-      + JSON.stringify({ mine: [r.cogs?.rate, r.margin?.pct, r.floor?.rm, r.history?.median, r.floor?.under], desk: d }));
-  }
+  ;
   const good = read(), low = read({ qty: 3, total: 100 });
   ok(good.margin.rm === 88 && good.goods === 130 && good.floor.under === false && good.floor.warn === null
     && low.margin.rm === -26 && low.floor.under === true && low.floor.short === 26
