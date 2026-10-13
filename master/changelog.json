@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1088",
+  "d": "13 Oct 2026",
+  "t": "CORRECTION ON RICE ROW S258 FOR CK4-SEN, COLLECTION REVERSED",
+  "n": [
+   "<b>FOLDED:</b> one correction, on CK4-SEN's rice order s258 of 12 Oct (1 unit, RM8). It reverses the collection and the cash recorded against it, and was decided by the desk. The unusual point is that the row's trail of 3 steps will no longer add up to the corrected figures; the correction is recorded beside it saying so.",
+   "<b>INVENTORY:</b> the 1 unit of rice returns to the shelf. No salt moved, and the cost basis stands."
+  ]
+ },
+ {
   "v": "v1087",
   "d": "13 Oct 2026",
   "t": "CASH OF RM8 RECEIVED ON A RICE ORDER, SETTLING IT IN FULL",

@@ -1,6 +1,6 @@
 {
- "v": "v1087",
- "stamped": "13 Oct 2026, 08:40 KL",
+ "v": "v1088",
+ "stamped": "13 Oct 2026, 09:03 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -83,7 +83,7 @@
    "rice": {
     "qty": 0,
     "costPerKg": null,
-    "stated": 30
+    "stated": 31
    },
    "spare": {
     "qty": 0,
@@ -7376,15 +7376,15 @@
     "customer": "CK4-SEN",
     "qty": 1,
     "total": 8,
-    "cash": 8,
+    "cash": 0,
     "product": "rice",
     "date": "2026-10-12",
-    "deliveredQty": 1,
-    "note": "<b>CORRECTION ON S258, 12 OCT: 1 UNIT OF RICE COLLECTED, RM8 UNPAID.</b> CK4-SEN collected the 1 unit ordered under 20261012134225-exf2zw. Delivered quantity moves from 0 to 1, delivered on is set to 12 Oct and handover to collected. At RM8 a unit the sale met the ask of RM8 and cleared the floor of RM3.4 for that size. CK4-SEN has 9 orders, a median rate of RM80, a range of RM8 to RM94, RM8 outstanding and 0 units on credit before this, against a cap of 1. The drafter flagged an advance with RM8 unpaid and asked for a check against the cap; the unit now on credit sits at that cap of 1. The cost is the sale's own, COGS off the latest purchase, p028. Open: RM8 to collect. <b>NEW SALE ON 12 OCT: 1 UNIT OF RICE TO CK4-SEN FOR RM8.</b> Ordered on the statements site, order 20261012134225-exf2zw, acknowledged, to collect. Nothing paid and nothing handed over, preapproved by phone. At RM8 a unit it clears the floor of RM3.4 for that size and meets the ask of RM8; the ceiling is RM11. CK4-SEN has 8 orders, a median rate of RM80, a range of RM8 to RM94, RM0 outstanding and 0 units on credit against a cap of 1. The cost is COGS off the latest purchase, p028, and the fold keeps it. The drafter raised no flag. Open: RM8 to collect and 1 unit to deliver.",
+    "deliveredQty": 0,
+    "note": "<b>CORRECTION ON S258: RICE COLLECTION AND CASH REVERSED ON 13 OCT.</b> Sets cash from 8 to 0, deliveredQty from 1 to 0, settledRM and settledKg from unset to 0, on CK4-SEN's order of 1 unit for RM8 dated 12 Oct. Decided by the desk. No cash moves; the shelf rolls by 1 unit, back from CK4-SEN. The dossier gives no floor or ask for this size. CK4-SEN has 9 orders, a median rate of RM80, a range of RM8 to RM94, RM0 outstanding before and 0 units on credit. The drafter flagged that the row's trail of 3 steps will no longer add up to the figure set; the correction is recorded beside them, which answers the flag. The cost stays the sale's own. Open: nothing stated in the dossier. <b>CORRECTION ON S258, 12 OCT: 1 UNIT OF RICE COLLECTED, RM8 UNPAID.</b> CK4-SEN collected the 1 unit ordered under 20261012134225-exf2zw. Delivered quantity moves from 0 to 1, delivered on is set to 12 Oct and handover to collected. At RM8 a unit the sale met the ask of RM8 and cleared the floor of RM3.4 for that size. CK4-SEN has 9 orders, a median rate of RM80, a range of RM8 to RM94, RM8 outstanding and 0 units on credit before this, against a cap of 1. The drafter flagged an advance with RM8 unpaid and asked for a check against the cap; the unit now on credit sits at that cap of 1. The cost is the sale's own, COGS off the latest purchase, p028. Open: RM8 to collect. <b>NEW SALE ON 12 OCT: 1 UNIT OF RICE TO CK4-SEN FOR RM8.</b> Ordered on the statements site, order 20261012134225-exf2zw, acknowledged, to collect. Nothing paid and nothing handed over, preapproved by phone. At RM8 a unit it clears the floor of RM3.4 for that size and meets the ask of RM8; the ceiling is RM11. CK4-SEN has 8 orders, a median rate of RM80, a range of RM8 to RM94, RM0 outstanding and 0 units on credit against a cap of 1. The cost is COGS off the latest purchase, p028, and the fold keeps it. The drafter raised no flag. Open: RM8 to collect and 1 unit to deliver.",
     "rid": "s258",
     "deliveredOn": "2026-10-12",
     "handover": "collected",
-    "mod": "corrected on 2026-10-12: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-12; handover (unset) to collected",
+    "mod": "corrected on 2026-10-12: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-12; handover (unset) to collected, then corrected on 2026-10-13: cash 8 to 0; deliveredQty 1 to 0; settledRM (unset) to 0; settledKg (unset) to 0",
     "amend": [
      {
       "date": "2026-10-12",
@@ -7407,10 +7407,19 @@
       "cash": 8,
       "kg": 0,
       "note": "<b>FULFILMENT ON S258: RM8 CASH RECEIVED ON 13 OCT.</b> CK4-SEN paid RM8 by cash at the counter on 13 Oct, order 20261012134225-exf2zw, for the 1 unit of rice collected on 12 Oct at RM8 a unit. Preapproved by phone. No units move, as the unit was already handed over. The dossier gives no floor or ask for this size. CK4-SEN has 9 orders, a median rate of RM80, a range of RM8 to RM94, RM8 outstanding before and 1 unit on credit before, with nothing defaulted. The drafter flagged that this settles the order in full; the figures answer it, since RM8 against RM8 outstanding leaves nothing open. The cost stays the sale's own. Open: nothing."
+     },
+     {
+      "date": "2026-10-13",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": -1,
+      "note": "<b>CORRECTION ON S258: RICE COLLECTION AND CASH REVERSED ON 13 OCT.</b> Sets cash from 8 to 0, deliveredQty from 1 to 0, settledRM and settledKg from unset to 0, on CK4-SEN's order of 1 unit for RM8 dated 12 Oct. Decided by the desk. No cash moves; the shelf rolls by 1 unit, back from CK4-SEN. The dossier gives no floor or ask for this size. CK4-SEN has 9 orders, a median rate of RM80, a range of RM8 to RM94, RM0 outstanding before and 0 units on credit. The drafter flagged that the row's trail of 3 steps will no longer add up to the figure set; the correction is recorded beside them, which answers the flag. The cost stays the sale's own. Open: nothing stated in the dossier."
      }
     ],
     "cost": 3.4,
-    "paidOn": "2026-10-13"
+    "paidOn": "2026-10-13",
+    "settledRM": 0,
+    "settledKg": 0
    },
    {
     "customer": "CS6-PER-R",
@@ -8105,9 +8114,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-13T00:39:37.808Z",
+  "QUEUE_COMMITTED": "2026-10-13T01:02:55.306Z",
   "PRICING": {
-   "takenAt": "2026-10-13T00:40:14.224Z",
+   "takenAt": "2026-10-13T01:03:51.426Z",
    "sizes": [
     0.5,
     1,
@@ -8508,16 +8517,16 @@
       "rare": false
      },
      "rice": {
-      "name": "small and often",
-      "orders": 3,
+      "name": "consistent mid",
+      "orders": 2,
       "tenureDays": 13,
-      "sinceLastDays": 1,
-      "perMonth": 3.04,
-      "unitsPerMonth": 4.06,
-      "smallShare": 0.67,
+      "sinceLastDays": 2,
+      "perMonth": 2.03,
+      "unitsPerMonth": 3.04,
+      "smallShare": 0.5,
       "bigShare": 0,
       "frequent": true,
-      "small": true,
+      "small": false,
       "bigger": false,
       "loyal": false,
       "rare": false
@@ -14135,15 +14144,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.09090909090909091
+         "v": 0.1
         }
        },
        "attrib": 1,
        "shrinkRate": 0.17,
        "avgDel": {
-        "n": 11,
-        "kg": 53,
-        "mean": 4.8182
+        "n": 10,
+        "kg": 52,
+        "mean": 5.2
        }
       },
       "policy": {
@@ -14984,12 +14993,32 @@
      ]
     }
    },
-   "v": "v1087"
+   "v": "v1088"
   },
   "OPEN": {
-   "at": "2026-10-13T00:40:14.794Z",
-   "count": 8,
+   "at": "2026-10-13T01:03:52.260Z",
+   "count": 9,
    "byKey": {
+    "CK4-SEN|2026-10-12|8|rice": {
+     "d": "2026-10-12",
+     "p": "CK4-SEN",
+     "dir": "S",
+     "q": 1,
+     "t": 8,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 8,
+     "oweUnits": 1,
+     "pr": "rice",
+     "rid": "s258",
+     "paidOn": "2026-10-13",
+     "deliveredOn": "2026-10-12",
+     "handover": "collected",
+     "settledRM": 0,
+     "settledKg": 0,
+     "key": "CK4-SEN|2026-10-12|8|rice"
+    },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
      "p": "CJ4-BJ",
@@ -15158,13 +15187,13 @@
     },
     "rice": {
      "name": "Rice",
-     "onHand": 30,
-     "free": 30,
+     "onHand": 31,
+     "free": 31,
      "owedOut": 0,
-     "coverDays": 19.4,
+     "coverDays": 19.9,
      "rate": 2.01,
      "owedToYou": 15,
-     "promised": 0,
+     "promised": 1,
      "short": 0
     },
     "spare": {
@@ -15186,7 +15215,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1087"
+   "v": "v1088"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15194,7 +15223,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1087"
+   "v": "v1088"
   },
   "REWARD": {
    "stated": {
@@ -15206,7 +15235,7 @@
      }
     }
    },
-   "v": "v1087"
+   "v": "v1088"
   }
  }
 }
