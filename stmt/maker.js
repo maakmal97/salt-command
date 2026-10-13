@@ -403,8 +403,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       /* open orders first, then the rest: a cancellation he rejected leaves the order cancelled, still offered again */
       const open = (o) => !["declined", "cancelled", "done"].includes(o.status);
       const ids = [...orders.filter(open), ...orders.filter((o) => !open(o))].map((o) => o.id).slice(0, 200);
-      const again = ids.length ? (await deskCall(env, "/_internal/maker/order-again", "POST", { ids })).again || {} : {};
-      for (const o of orders) if (Array.isArray(again[o.id]) && again[o.id].length) o.again = again[o.id];
+      const againRes = ids.length ? await deskCall(env, "/_internal/maker/order-again", "POST", { ids }) : {}, again = againRes.again || {}, whole = againRes.whole || {};
+      for (const o of orders) if (Array.isArray(again[o.id]) && again[o.id].length) { o.again = again[o.id]; if (whole[o.id] === true) o.againWhole = true; }
       /* the acceptance accounts' orders, from their serialized fixture alone, marked so no real road is offered */
       for (const u of TEST_USERS) {
         const fixture = await exampleAccount(env, u);

@@ -9293,7 +9293,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1101","d":"13 Oct 2026","t":"EVERY POINT FILED CARRIES ITS LOCALITY","n":["<b>A POINT AND ITS LOCALITY.</b> Counter Admin's Add ID, Amend ID and Place filed a party's point without its locality, so the Coverage map could not say where they are in words (CI5-PER at v1097). They now file the locality with the point, read from the listed area the place resolves to, never the typed text; a street with no listed locality is refused, and the phone keeps a word only after the Desk accepts it. The drafter refuses a point with no locality from any road. Nothing prices.","<b>THE PROOFS.</b> The Counter maker and blank-locality sections: the owner road files the locality, a typed street files the listed locality and keeps no street word, and the drafter refuses a bare point for a registration and a place; each check red under its own mutation. Fable reviewed it three times."]}];
+const evolution=[{"v":"v1102","d":"13 Oct 2026","t":"EVERY POINT FILED CARRIES ITS LOCALITY","n":["<b>A POINT AND ITS LOCALITY.</b> Counter Admin's Add ID, Amend ID and Place filed a party's point without its locality, so the Coverage map could not say where they are in words (CI5-PER at v1097). They now file the locality with the point, read from the listed area the place resolves to, never the typed text; a street with no listed locality is refused, and the phone keeps nothing but ciphertext. The drafter refuses a point with no locality from any road. Nothing prices.","<b>THE PROOFS.</b> The Counter maker, blank-locality, one-unlock and v633 sections: the owner road files the locality, a typed street files the listed locality and nothing else is kept on the device, and the drafter refuses a bare point for a registration, a rename and a place; each check red under its own mutation. Fable reviewed it three times."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9444,7 +9444,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 20:05 KL';
+const LAST_UPDATED='13 Oct 2026, 21:58 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

@@ -1164,15 +1164,34 @@ async function inFlight(env, db, c, sales) {
   for (const o of done.values()) for (const p of o.payments || []) if (p && p.claim === "received" && p.queued) wait.push({ id: p.queued, k: ledgerKeyOf(o), rm: p.amount });
   const drafted = await draftedOf(db, wait.map((w) => w.id).filter(Boolean));
   for (const w of wait) if (!w.id || !drafted.has(w.id)) add(w.k, w.rm);
-  return claimOrderFlight(sales, all.orders, c.u, by);
+  return claimOrderFlight(sales, all.orders, c.u, by, await offBook(db, all.orders.filter((o) => o.u === c.u && o.ledgerKey && !done.has(o.id))));
 }
-function claimOrderFlight(sales, orders, u, by = {}) {
+/** Ids of the orders with no row on the book: the ack draft rejected (by him, covered or withdrawn) and no draft approved. One read of the rejected pending drafts; only
+    their orders are then read draft by draft. */
+export async function offBook(db, orders) {
+  const off = new Set();
+  if (!db || !orders.length) return off;
+  try {
+    const want = new Set(orders.map((o) => o.id));
+    const rs = await db.prepare("SELECT entry FROM draft WHERE status='rejected' AND entry LIKE ?1").bind('%"status":"Pending"%').all();
+    const ids = [...new Set((rs.results || []).map((r) => { try { return JSON.parse(r.entry).orderId; } catch (e) { return null; } }).filter((x) => x && want.has(x)))];
+    /* a yes waiting on the pending row, or any draft still pending, keeps the order on the book */
+    const live = new Set(((await db.prepare("SELECT order_id FROM preapproval WHERE stage='ack' AND status IN ('waiting','differs')").all()).results || []).map((r) => r.order_id));
+    for (const id of ids) {
+      if (live.has(id)) continue;
+      const all = await draftsOfOrders(db, [id]), ack = all.find((r) => ofStage(r, "ack"));
+      if (ack && ack.status === "rejected" && !all.some((r) => r.status === "approved" || r.status === "pending")) off.add(id);
+    }
+  } catch (e) { /* unreadable: the order counts as it did */ }
+  return off;
+}
+export function claimOrderFlight(sales, orders, u, by = {}, off = new Set()) {
   const cash = {}, ready = [];
   const add = (k, rm) => { rm = +(+rm).toFixed(2); if (k && rm > 0.004) by[k] = +((by[k] || 0) + rm).toFixed(2); };
   const done = new Set(orders.filter((o) => o.u === u && o.status === "done").map((o) => o.id));
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
   for (const o of orders) {
-    if (o.u !== u || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
+    if (o.u !== u || !o.ledgerKey || off.has(o.id) || ["cancelled", "declined"].includes(o.status)) continue;
     const lk = ledgerKeyOf(o);   /* V4a: the row's key as the book names it, whether or not the pass has reached the order */
     if (o.status === "ready") ready.push(lk);
     add(lk, done.has(o.id) ? (+o.paid || 0) - (+((o.queued || {}).paid) || 0) : (+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));
@@ -1432,7 +1451,9 @@ async function draftsOfOrders(db, ids) {   /* one order's, in practice: ids hold
 const ofStage = (r, stage) => (stage === "move" ? ["Handover", "Close"].includes(r.entry.status) : r.entry.status === STATUS_OF_STAGE[stage])
   && (stage === "pay" ? !r.entry.counter : stage === "cash" ? !!r.entry.counter : true);
 /* he rejected it: a withdrawal's drop (11.10) is filed rejected too, and is not his */
-const rejectedByHim = (d) => !!d && d.status === "rejected" && !["withdrawn", "notfound", "covered"].includes(d.decided_by);   /* S6: nor a claim not found, or on the book already */
+/* 'covered' and 'covered:<rid>' (the hand row that holds the cash) are the same filing */
+const isCovered = (by) => by === "covered" || String(by || "").startsWith("covered:");
+const rejectedByHim = (d) => !!d && d.status === "rejected" && !["withdrawn", "notfound"].includes(d.decided_by) && !isCovered(d.decided_by);   /* S6: nor a claim not found, or on the book already */
 /** The newest draft of a stage for an order, when it is one he rejected; else null. */
 export async function rejectedOf(db, id, stage) {
   if (!db) return null;
@@ -1457,11 +1478,83 @@ export async function againOf(db, ids) {
   }
   return out;
 }
+/** What Not needed may cover on an order: { whole, stages }. Whole when his ack was rejected and no draft on the order is approved (no row on the book). */
+export async function dropMode(db, id) {
+  const all = await draftsOfOrders(db, [id]);
+  const stages = Object.keys(STATUS_OF_STAGE).filter((st) => rejectedByHim(all.find((r) => ofStage(r, st))));
+  return { whole: stages.includes("ack") && !all.some((r) => r.status === "approved"), stages };
+}
 /** POST /orders/<id>/again {stage}: a payment, cash payment, handover or cancellation he rejected, offered again. */
 export async function againOrder(env, id, body, by, now, mirror) {
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read and the preview's are one */
   const at = now || new Date();
   const stage = String((body && body.stage) || "");
+  /* a rejected step he says is on the book already is filed 'covered', so it is offered no more. Whole-order mode: his ack was rejected and no
+     draft is approved, so the order has no row and every rejected stage but pay goes; with a row, only cancel, move or amend, named. All or none. */
+  if (body && body.drop === true) {
+    const f = await findOrder(env, id);
+    if (!f.ok) return f;
+    const db = env.SALT_LEDGER;
+    if (!db) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be filed" };
+    const m = await dropMode(db, id);
+    let want;
+    if (m.whole) {
+      if (body.stage !== undefined && body.stage !== "") return { ok: false, status: 400, error: "this order has no row on the book: Not needed covers the whole order" };
+      if (m.stages.includes("pay")) return { ok: false, status: 409, error: "answer their payment claim with Received first: on the book already" };
+      want = m.stages;
+    } else {
+      if (!["cancel", "move", "amend"].includes(stage)) return { ok: false, status: 400, error: "pay and cash are answered by Received or Cash, on the book already; a pending row by Accept again" };
+      want = m.stages.includes(stage) ? [stage] : [];
+    }
+    for (const st of want) { const lv = await livePre(db, id, st); if (lv && (lv.status === "waiting" || lv.status === "differs")) return { ok: false, status: 409, error: "the " + STAGE_WORD[st] + " is offered again already: let it land first" }; }
+    const o = f.order;
+    let onRow = null, taken = false, known = [];
+    if (m.whole && (+o.paid || 0) > 0) {
+      /* money paid on the site is on the book already, or Not needed would strand it: a cash Fulfilment covered never lands, and a paid cancellation owes a refund */
+      if (want.includes("cancel")) return { ok: false, status: 409, error: "a paid cancellation owes a refund; send it again" };
+      const book = await (mirror || bookOnce(db))().catch(() => null), party = partyOnBook(o, o.code), day = String(o.at || "").slice(0, 10);
+      /* a site order's own row is no proof of another's cash: rows are told apart by key, the keys of every site order's row being known */
+      const all = await listOrders(env, true), offs = await offBook(db, all.ok ? all.orders : []);
+      /* an order with no row on the book has no row of its own: the hand row that covers it may bear its key */
+      const own = new Set((all.ok ? all.orders : []).filter((x) => !offs.has(x.id)).map((x) => ledgerKeyOf(x)).filter(Boolean));
+      const cands = ((book && book.sales) || []).filter((r) => r && r.rid && !r.cancelled && !own.has(POSITION_ENGINE.ovKey(r)) && r.customer === party
+        && (r.product || "salt") === (o.product || "salt") && String(r.date || "") >= day);
+      /* and one hand row proves the cash of as many orders as it holds: what other orders were covered against it is spoken for */
+      for (const r of cands) {
+        if ((+r.cash || 0) + 0.004 < (+o.paid || 0)) continue;
+        const rs = await db.prepare("SELECT entry FROM draft WHERE decided_by=?1").bind("covered:" + r.rid).all();
+        const ids = new Set((rs.results || []).map((x) => { try { return JSON.parse(x.entry).orderId; } catch (e) { return null; } }).filter((x) => x && x !== id));
+        const spoken = (all.ok ? all.orders : []).filter((x) => ids.has(x.id)).reduce((n, x) => n + (+x.paid || 0), 0);
+        if ((+r.cash || 0) + 0.004 >= spoken + (+o.paid || 0)) { onRow = r; known = [...ids, id]; break; }
+        taken = true;
+      }
+      if (!onRow) return { ok: false, status: 409, error: taken ? "that row's cash is already spoken for" : "record the cash on the row first" };
+      if (!/^[A-Za-z0-9_-]+$/.test(String(onRow.rid))) return { ok: false, status: 409, error: "that row's id cannot be filed against" };
+    }
+    const found = [];
+    for (const st of want) { const d = await rejectedOf(db, id, st); if (d) found.push({ st, id: d.id, by: d.decided_by }); }
+    const label = onRow ? "covered:" + onRow.rid : "covered";
+    if (found.length) {
+      /* ONE statement covers every draft, so the cover is all or none: its guard refuses if a yes is waiting on ANY covered stage or, against a hand row,
+         if another order's cover on that row landed outside the ones the sum read (that would spend the same cash twice) */
+      const args = [label, id], ph = (v) => { args.push(v); return "?" + args.length; };
+      const idIn = found.map((x) => ph(x.id)).join(","), stIn = found.map((x) => ph(x.st)).join(",");
+      const hold = onRow ? " AND NOT EXISTS (SELECT 1 FROM draft d2 WHERE d2.decided_by=" + ph(label) + " AND json_extract(d2.entry,'$.orderId') NOT IN (" + known.map((k) => ph(k)).join(",") + "))" : "";
+      const guard = " AND NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage IN (" + stIn + ") AND status IN ('waiting','differs'))" + hold;
+      /* early refusal before the write; the guard in the statement is what closes the race */
+      const live = await db.prepare("SELECT 1 AS x FROM preapproval WHERE order_id=?1 AND stage IN (" + found.map((_, i) => "?" + (i + 2)).join(",") + ") AND status IN ('waiting','differs')").bind(id, ...found.map((x) => x.st)).first();
+      if (live) return { ok: false, status: 409, error: "a yes is waiting on one of those steps: let it land first" };
+      const res = await db.prepare("UPDATE draft SET decided_by=?1 WHERE id IN (" + idIn + ") AND status='rejected'" + guard).bind(...args).run();
+      const n = res && res.meta && res.meta.changes;
+      if (n !== found.length) {
+        /* the one statement changed nothing, or (a draft no longer rejected) only some: put back what it changed, so no order is left part-covered */
+        if (n > 0) for (const x of found) await db.prepare("UPDATE draft SET decided_by=?1 WHERE id=?2 AND decided_by=?3").bind(x.by, x.id, label).run();
+        return { ok: false, status: 409, error: "a yes landed on one of those steps meanwhile: read the order again" };
+      }
+    }
+    const dropped = found.map((x) => x.st);
+    return Object.assign({ ok: true, order: f.order, dropped }, onRow ? { row: onRow.rid || null } : {});
+  }
   if (!["pay", "cash", "move", "cancel", "amend"].includes(stage)) return { ok: false, status: 400, error: "offer again a pay, cash, move, cancel or amend; a pending row is offered again by Accept, against its preview" };
   const f = await findOrder(env, id);
   if (!f.ok) return f;
