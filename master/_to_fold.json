@@ -1,0 +1,78 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-13T08:37:38.403Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s260",
+    "qty": 1,
+    "total": 100,
+    "cash": 100,
+    "date": "2026-10-13",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 1
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-13"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CZ5-TM"
+   },
+   "reasoning": "Correction against CZ5-TM's order of 1 unit for RM 100 dated 2026-10-13 (s260). Sets deliveredQty from 0 to 1, deliveredOn from unset to 2026-10-13, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so."
+   ],
+   "amends": "s260",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-13T08:37:38.403Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 1,
+    "total": 0,
+    "status": "Handover",
+    "raw": "1 unit collected to CZ5-TM, order 20261013035239-2wgevw, on 2026-10-13",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "rid": null,
+     "orderKey": "CZ5-TM|2026-10-13|100",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-13",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 1,
+      "deliveredOn": "2026-10-13",
+      "handover": "collected"
+     },
+     "note": "1 unit collected for order 20261013035239-2wgevw."
+    },
+    "orderId": "20261013035239-2wgevw"
+   },
+   "decidedAt": "2026-10-13T08:37:41.706Z",
+   "decidedBy": "preapproved by phone"
+  }
+ ]
+}
