@@ -8,14 +8,14 @@
  {
   "name": "a row names no one",
   "file": "stmt/owner.js",
-  "find": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));\n      if(e.waits) t.appendChild(chip('copper','Waiting on you'));",
-  "replace": "      if(e.waits) t.appendChild(chip('copper','Waiting on you'));"
+  "find": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));\n      /* ONE PILL AT MOST",
+  "replace": "      /* ONE PILL AT MOST"
  },
  {
   "name": "a row does not say it waits on him",
   "file": "stmt/owner.js",
-  "find": "      if(e.waits) t.appendChild(chip('copper','Waiting on you'));",
-  "replace": ""
+  "find": "(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;",
+  "replace": "null;"
  },
  {
   "name": "a row does not say a payment is sent",
@@ -32,8 +32,8 @@
  {
   "name": "a practice order is not marked",
   "file": "stmt/owner.js",
-  "find": "      if(o.test) t.appendChild(chip('mist','Practice'));",
-  "replace": ""
+  "find": "var pillOf=o.test?['mist','Practice']:makerCashHeld",
+  "replace": "var pillOf=makerCashHeld"
  },
  {
   "name": "a row shows no age",
@@ -44,14 +44,14 @@
  {
   "name": "a row's figure leaves out the delivery",
   "file": "stmt/owner.js",
-  "find": "rm(Number(o.total||0)+Number(o.delivery||0))));\n    }else t.appendChild",
-  "replace": "rm(Number(o.total||0))));\n    }else t.appendChild"
+  "find": "'salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))",
+  "replace": "'salt-inbox-row__action',rm(Number(o.total||0))"
  },
  {
   "name": "a row says nothing of the units",
   "file": "stmt/owner.js",
-  "find": "[units(o.qty), o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')",
-  "replace": "[o.mode==='deliver'?'deliver':o.mode==='collect'?'collect':''].filter(Boolean).join(', ')"
+  "find": "b.appendChild(bookTile(o.product,o.qty));",
+  "replace": "b.appendChild(bookTile(o.product,0));"
  },
  {
   "name": "listing the orders previews each",

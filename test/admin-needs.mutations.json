@@ -92,14 +92,14 @@
  {
   "name": "a card is not the Action recipe",
   "file": "stmt/owner.js",
-  "find": "var c=el('article','salt-action salt-action--'+o.sev+' need')",
-  "replace": "var c=el('article','salt-approve need')"
+  "find": "var c=el('article','salt-action salt-action--'+o.sev+' need'+(tap?' ncard':''))",
+  "replace": "var c=el('article','salt-approve need'+(tap?' ncard':''))"
  },
  {
   "name": "a card is not coloured by its severity",
   "file": "stmt/owner.js",
-  "find": "var c=el('article','salt-action salt-action--'+o.sev+' need')",
-  "replace": "var c=el('article','salt-action need')"
+  "find": "var c=el('article','salt-action salt-action--'+o.sev+' need'+(tap?' ncard':''))",
+  "replace": "var c=el('article','salt-action need'+(tap?' ncard':''))"
  },
  {
   "name": "a card has no kind word",

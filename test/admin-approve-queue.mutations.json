@@ -1,11 +1,11 @@
 [
- {"name":"a Desk row is a glass card again, not the Approve recipe","file":"stmt/owner.js","find":"makerCard(draftRoot,'draft:'+draft.id,'salt-approve')","replace":"makerCard(draftRoot,'draft:'+draft.id)"},
+ {"name":"a Desk row is a glass card again, not the Approve recipe","file":"stmt/owner.js","find":"makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard')","replace":"makerCard(draftRoot,'draft:'+draft.id)"},
  {"name":"the party leaves the card's head","file":"stmt/owner.js","find":"      head.appendChild(el('span','salt-approve__party',entry.party||'no code'));\n","replace":""},
  {"name":"the cost is worked out from the total, not read off the draft","file":"stmt/owner.js","find":"rm(typeof reading.cost==='object'?reading.cost.total:reading.cost)","replace":"rm(Number(reading.total||0)*0.5)"},
  {"name":"the margin is not shown","file":"stmt/owner.js","find":"if(reading.margin) figs.push(","replace":"if(false) figs.push("},
  {"name":"the flags are prose again, not chips","file":"stmt/owner.js","find":"flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); });","replace":"flags.forEach(function(flag){ chips.appendChild(el('span','salt-insight',String(flag))); });"},
  {"name":"the drafter's reasoning leaves the card","file":"stmt/owner.js","find":"    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));\n","replace":""},
- {"name":"the proposed row is open on the card","file":"stmt/owner.js","find":"    card.appendChild(detailBox('row.proposed',key,rowPairs(reading.row,key)));\n","replace":"    var rd=detailBox('row.proposed',key,rowPairs(reading.row,key)); rd.open=true; card.appendChild(rd);\n"},
+ {"name":"the proposed row is open on the card","file":"stmt/owner.js","find":"panel.hidden=true; panel.appendChild(detailList(rowPairs(reading.row,key)));","replace":"panel.hidden=false; panel.appendChild(detailList(rowPairs(reading.row,key)));"},
  {"name":"Approve is a ghost, not the filled pill","file":"stmt/owner.js","find":"approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);","replace":"approveDraft(draft,approve,'draft:'+draft.id+':approve'); },false);"},
  {"name":"Reject is no danger ghost","file":"stmt/owner.js","find":"      reject.classList.add('salt-ghost--danger'); ynTag(reject,'draft:'+draft.id+':reject');","replace":"      ynTag(reject,'draft:'+draft.id+':reject');"},
  {"name":"the moves stand outside the recipe's actions","file":"stmt/owner.js","find":"var acts=el('div','salt-approve__actions'); card.appendChild(acts);","replace":"var acts=el('div','maker-actions'); card.appendChild(acts);"},

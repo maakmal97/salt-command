@@ -110,8 +110,8 @@
  {
   "name": "the Desk's rows show under Entry",
   "file": "stmt/page.js",
-  "find": "<section data-in=\"record.approve\" aria-labelledby=\"makerDraftTitle\">",
-  "replace": "<section data-in=\"record.entry\" aria-labelledby=\"makerDraftTitle\">"
+  "find": "<section data-in=\"record.approve\" aria-label=\"Rows to approve\">",
+  "replace": "<section data-in=\"record.entry\" aria-label=\"Rows to approve\">"
  },
  {
   "name": "the tier form moves to Entry",
