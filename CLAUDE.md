@@ -374,9 +374,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **A customer writes on an order, and he answers**: one `msgs[]` thread per order, on any order at
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
   checked by `siteWords` on the desk; every line is escaped on both surfaces. `siteWords` reads
-  English off the lists in `src/orders.js` and the desk's `siteSafe` mirrors them by hand;
-  the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through both:
-  a new book or level goes on both. **Malay is removed everywhere** (his decision of 05 Oct 2026): no table, switch or
+  English off the lists in `src/orders.js`; the Desk sends no line and keeps no word check;
+  the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through it:
+  a new book or level goes on the lists. **Malay is removed everywhere** (his decision of 05 Oct 2026): no table, switch or
   Malay list; the suite asserts none returns.
 - **And one thread an account** (Step 7, his Q5): Home's card and a row on Account open it in a Sheet; theirs 20 a
   Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
