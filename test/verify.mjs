@@ -52568,7 +52568,7 @@ await (async () => {
     ["redeem", { at: inputBody.at, code: "CX1-ZED", date: inputBody.date }],
     ["add-id", { at: inputBody.at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers: null, vault: sealed }],
     ["amend-id", { at: inputBody.at, from: "CX1-ZED", to: "CX2-TST", geo: null, vault: sealed }],
-    ["place", { at: inputBody.at, places: { "CX1-ZED": [3.13, 101.68] } }]
+    ["place", { at: inputBody.at, places: { "CX1-ZED": [3.13, 101.68, "Pudu"] } }]
   ];
   for (const [operation, body] of ledgerInputs)
     await inputCall("/all/maker/inputs/" + operation, "POST", body);
@@ -53047,11 +53047,11 @@ await (async () => {
         body: JSON.stringify(body)
       }), env, { waitUntil() {} });
     const addPairBody = { at: "2026-09-29T15:11:00.000Z", code: "CX6-ZED", kind: "customer",
-      parent: null, geo: [3.1, 101.7], tiers: null, vault: pairSeal("add-names"), addrVault: pairSeal("add-places"),
+      parent: null, geo: [3.1, 101.7, "Pudu"], tiers: null, vault: pairSeal("add-names"), addrVault: pairSeal("add-places"),
       pair: { expectedRevision: 1, names: pairSeal("add-names"), places: pairSeal("add-places") } };
     const addedPair = await pairInput("add-id", addPairBody);
     const addedReplay = await pairInput("add-id", addPairBody);
-    const changedPair = await pairInput("add-id", { ...addPairBody, geo: [3.2, 101.7] });
+    const changedPair = await pairInput("add-id", { ...addPairBody, geo: [3.2, 101.7, "Pudu"] });
     ok(addedPair.status === 200 && (await addedReplay.json()).replay && changedPair.status === 409
       && countDb.prepare("SELECT revision FROM vault_pair").get().revision === 2
       && countDb.prepare("SELECT state FROM vault_outbox WHERE id=?").get(addPairBody.at)?.state === "complete"
@@ -53061,7 +53061,7 @@ await (async () => {
       vault: pairSeal("rename-names"), addrVault: pairSeal("rename-places"),
       pair: { expectedRevision: 2, names: pairSeal("rename-names"), places: pairSeal("rename-places") } };
     const renamedPair = await pairInput("amend-id", pairRename);
-    const pairPlace = { at: "2026-09-29T15:13:00.000Z", places: { "CX1-ZED": [3.2, 101.7] },
+    const pairPlace = { at: "2026-09-29T15:13:00.000Z", places: { "CX1-ZED": [3.2, 101.7, "Pudu"] },
       addrVault: pairSeal("file-place"), pair: { expectedRevision: 3, names: pairSeal("rename-names"), places: pairSeal("file-place") } };
     const placedPair = await pairInput("place", pairPlace);
     const stalePair = await pairInput("place", { ...pairPlace, at: "2026-09-29T15:14:00.000Z" });
@@ -53588,7 +53588,7 @@ await (async () => {
           : route === "/all/maker/vault/addr" ? { ok: true, vault: placeEnvelope }
           : route === "/all/maker/inputs" ? { ok: true, products: ["salt"], catalog: {
             products: [{ product: "salt", saleReady: true, purchaseReady: true, tiered: true }],
-            parties: ["CX1-AB"], associates: [{ code: "CX1-AB", resaleReady: false }],
+            parties: ["CX1-AB"], placed: { "CX1-AB": [3.12, 101.69, "Pudu"] }, associates: [{ code: "CX1-AB", resaleReady: false }],
             tierCustomers: ["CX1-AB"], tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
             loans: [{ rid: "loan-1", party: "CX1-AB", remaining: 5, form: "cash" }],
             rewards: [{ code: "CX1-AB", held: 2, free: 2, associate: true, departed: false, action: "redeem" }],
@@ -53722,7 +53722,7 @@ await (async () => {
     ok(newPlaces["CA3-KL"]?.lat === 3.123456 && newPlaces["CA3-KL"]?.lng === 101.654321
       && newPlaces["CA3-KL"]?.addr === "Secret Way" && newPlaces["CA3-KL"]?.src === "waze"
       && JSON.stringify(newPlaces._base) === JSON.stringify(filedPlaces._base)
-      && sentAddId.body.geo?.length === 2 && !JSON.stringify(sentAddId.body).includes("Secret Way")
+      && sentAddId.body.geo?.length === 3 && !JSON.stringify(sentAddId.body).includes("Secret Way")
       && !JSON.stringify(sentAddId.body).includes("3.123456"),
       "a new Waze address and exact point are filed on-device inside ciphertext only, keeping the base and queueing the official rounded locality");
     ok(addId.querySelector("datalist")?.options.length > 100,
@@ -53763,7 +53763,7 @@ await (async () => {
     placement.querySelector("button").click();
     ok(await adminWork.quiet(), "the encrypted map point opens and queues");
     const sentPlacement = adminCalls.find((call) => call.route === "/all/maker/inputs/place");
-    ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69] })
+    ok(sentPlacement && JSON.stringify(sentPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.12, 101.69, "Pudu"] })
       && !JSON.stringify(sentPlacement.body).includes("Private Road"),
       "map placement decrypts on-device and queues only a point rounded to 0.01 degrees");
     const placeTexts = placement.querySelectorAll('input[type="text"]');
@@ -53776,7 +53776,7 @@ await (async () => {
     ok(mapFiled["CX1-AB"]?.addr === "Invented Road" && mapFiled["CX1-AB"]?.lat === 3.234567
       && mapFiled["CX1-AB"]?.lng === 101.765432
       && JSON.stringify(mapFiled._base) === JSON.stringify(filedPlaces._base)
-      && JSON.stringify(newPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72] })
+      && JSON.stringify(newPlacement.body.places) === JSON.stringify({ "CX1-AB": [3.13, 101.72, "Pudu"] })
       && !JSON.stringify(newPlacement.body).includes("Invented Road")
       && !JSON.stringify(newPlacement.body).includes("3.234567"),
       "Network placement can file a new Maps address and exact point encrypted while queueing only its official locality point");
