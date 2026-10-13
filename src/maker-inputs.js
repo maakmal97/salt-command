@@ -1,6 +1,6 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
-import { costFor, draftRow, findRow, checkCorrection, reviving } from "./drafter.js";
+import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving } from "./drafter.js";
 import { cardAt, rowRoom, siteWords } from "./orders.js";
 
 /* note and settle are free prose a row carries about itself, so they stay on the Desk */
@@ -259,6 +259,57 @@ export function makerCoverPlan(body, book, pending = []) {
   return POSITION_ENGINE.coverPlan({ qty: body.qty, free: reward.free, ask, goods: body.total, cost: snapshot.stockCost });
 }
 
+/* B1 of #62: what the Workbench shows before Record, read before Send. A read, never a price: COGS is the engine's latestCogs
+   (the drafter's cogsFor), the floor is the drafter's floorFor, the history is the drafter's own. A sale gets COGS, the goods,
+   the margin over COGS, the floor with a refusal-style line when the goods are under it, and the party's recent prices on
+   this book. A purchase is never measured with a seller's ruler: its cost a unit sits against the current COGS, no margin. */
+export function makerTradeReading(body, book) {
+  const keys = ["direction", "product", "party", "qty", "total", "freight", "date"];
+  if (!object(body) || Object.keys(body).some((key) => !keys.includes(key))) return { error: "Unsupported reading fields." };
+  if (!["sale", "purchase"].includes(body.direction)) return { error: "Choose sale or purchase." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!active(body.product, book)) return { error: "Choose an active product." };
+  if (!(figure(body.qty) && body.qty > 0) || !figure(body.total)) return { error: "Send units and a goods total." };
+  if (body.freight !== undefined && body.freight !== null && !figure(body.freight)) return { error: "Send a freight figure." };
+  if (body.date !== undefined && body.date !== null && body.date !== "" && !date(body.date)) return { error: "Send a real date in YYYY-MM-DD." };
+  const sale = body.direction === "sale", qty = body.qty, goods = POSITION_ENGINE.txGoods({ total: body.total });
+  /* a sale is costed at the latest purchase on or before its date, as the drafter does (drafter.js, cogsFor with pay.date) */
+  const c = cogsFor(book, body.product, body.date || null);
+  const rate = c.cost > 0 ? +c.cost.toFixed(2) : null;
+  const cogs = { rate, source: c.basis ? "the latest purchase" : c.source, basis: c.basis || null };
+  const price = +(goods / qty).toFixed(2);
+  if (!sale) {
+    const perUnit = +((goods + (body.freight || 0)) / qty).toFixed(2);
+    return { direction: "purchase", product: body.product, qty, goods, cogs,
+      purchase: { perUnit, versusCogs: rate == null ? null : +(perUnit - rate).toFixed(2) } };
+  }
+  const reading = { direction: "sale", product: body.product, qty, goods, price, cogs, margin: null, floor: null, history: null };
+  if (rate != null) {
+    /* struck on the unrounded rate, as the drafter's row cost and flag 4 are; only the display is rounded */
+    reading.margin = { rm: +(goods - Math.round(c.cost * qty * 100) / 100).toFixed(2),
+      pct: price > 0 ? +((goods / qty - c.cost) / (goods / qty) * 100).toFixed(4) : null,
+      belowCost: qty > 0 && goods / qty < c.cost };
+  }
+  const fl = floorFor(book, body.product, qty);
+  if (fl) {
+    const under = goods < fl.floor - 0.005;
+    reading.floor = { rm: fl.floor, at: fl.at, exact: fl.exact, under,
+      short: under ? +(fl.floor - goods).toFixed(2) : 0,
+      warn: under ? "RM " + (+goods.toFixed(2)) + " for the goods is RM " + (+(fl.floor - goods).toFixed(2)) + " under the floor of RM "
+        + fl.floor + ", which is COGS times the size and nothing else." : null };
+  }
+  if (typeof body.party === "string" && code(body.party, book.state.roster || [])) {
+    const who = POSITION_ENGINE.ownerCode(body.party), rates = theirRates(book, who, body.product);
+    if (rates.length) {
+      const mid = rates.length % 2 ? rates[(rates.length - 1) / 2] : (rates[rates.length / 2 - 1] + rates[rates.length / 2]) / 2;
+      reading.history = { count: rates.length, median: +mid.toFixed(2), low: +rates[0].toFixed(2), high: +rates[rates.length - 1].toFixed(2),
+        offMedianPct: price > 0 && mid > 0 ? +((price - mid) / mid * 100).toFixed(1) : null,
+        recent: recentRates(book, who, body.product, 5) };
+    }
+  }
+  return reading;
+}
+
 export function makerInputCatalog(book, hush = {}, pending = [], registrations = []) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const bookRoster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
@@ -305,6 +356,9 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
     tierCards: tierCards(book, bookRoster, products),
     driftCards: driftCards(book, bookRoster, products),
+    partners: (book.state.partners || []).filter((value) => code(value, bookRoster)),
+    partnerWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "partner")
+      .map((entry) => entry.payload.code),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
     correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
@@ -429,6 +483,32 @@ export function makerTierSet(body, book) {
   return proposed(POSITION_ENGINE.tierSetEntry({
     at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }
   }), book);
+}
+
+/** Make partner, the Desk's partnerMake: a name-free `partner` entry for a customer already on the roster, on a drift book only.
+    The raw line is the Desk's word for word; the drafter and the fold are the Desk's own. */
+export function makerPartner(body, book, pending = []) {
+  if (!object(body) || Object.keys(body).some((key) => !["at", "code"].includes(key)))
+    return { error: "A partner input carries only its timestamp and code." };
+  if (!timestamp(body.at)) return { error: "A partner input needs its canonical request timestamp." };
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const driftBook = Object.keys(book.state.PRODUCTS || {}).some((product) => {
+    if (!active(product, book)) return false;
+    const rule = book.pricing && book.pricing.byProduct && book.pricing.byProduct[product]
+      && book.pricing.byProduct[product].inputs && book.pricing.byProduct[product].inputs.policy
+      && book.pricing.byProduct[product].inputs.policy.tierRule;
+    return !!rule && !!rule.drift && !rule.fixed;
+  });
+  if (!driftBook) return { error: "A partner is made on a book with price drift." };
+  if (!code(body.code, book.state.roster || []) || POSITION_ENGINE.isBucket(body.code))
+    return { error: "Choose a customer on the roster, not a resale account." };
+  if ((book.state.partners || []).includes(body.code)) return { error: body.code + " is already a partner." };
+  if (pending.some((entry) => entry && entry.at !== body.at && entry.payload && entry.payload.mode === "partner" && entry.payload.code === body.code))
+    return { error: body.code + " is already waiting under Approve as a partner.", twin: true };
+  const bucket = POSITION_ENGINE.appointBucket("reseller", body.code);
+  return proposed(POSITION_ENGINE.partnerEntry({ at: body.at, code: body.code,
+    raw: "Make " + body.code + " a partner: pays cost, keeps every associate property"
+      + ((book.state.associates || []).includes(body.code) ? "" : ", appointed an associate on the R2 stream with " + bucket + " as their resell account") }), book);
 }
 
 /* What the Desk's tierQueued reads: tiers waiting in a queued tierset or an Add ID, code to product to level. */

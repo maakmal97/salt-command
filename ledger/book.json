@@ -510,7 +510,8 @@
     "CA6-CYB",
     "CE5-SA-R",
     "CA6-CYB-R",
-    "CM4-TO-R"
+    "CM4-TO-R",
+    "CI5-PER"
   ],
   "associates": [
     "CS6-BS",
@@ -760,6 +761,11 @@
       3.21,
       101.74,
       "Wangsa Maju"
+    ],
+    "CI5-PER": [
+      3.1,
+      101.72,
+      "Permaisuri"
     ]
   },
   "TIER_OF": {
@@ -769,6 +775,9 @@
     },
     "CZ5-TM": {
       "oil": "Titanium"
+    },
+    "CI5-PER": {
+      "salt": -0.3
     }
   },
   "PEOPLE": {
@@ -888,7 +897,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-13T09:14:48.829Z",
+  "QUEUE_COMMITTED": "2026-10-13T10:44:42.146Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},

@@ -57,5 +57,8 @@
  {"name": "the slip key is imported extractable", "file": "stmt/owner.js", "find": "{name:'ECDH',namedCurve:'P-256'},false,['deriveBits']);", "replace": "{name:'ECDH',namedCurve:'P-256'},true,['deriveBits']);"},
  {"name": "the slip key is exported", "file": "stmt/owner.js", "find": "{name:'ECDH',namedCurve:'P-256'},false,['deriveBits']);", "replace": "{name:'ECDH',namedCurve:'P-256'},false,['deriveBits']); try{ await crypto.subtle.exportKey('jwk',slip); }catch(x){}"},
  {"name": "a key derived to open an envelope is extractable", "file": "stmt/owner.js", "find": "base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);", "replace": "base,{name:'AES-GCM',length:256},true,['encrypt','decrypt']);"},
- {"name": "a key derived to seal an envelope is extractable", "file": "stmt/owner.js", "find": "base,{name:'AES-GCM',length:256},false,['encrypt']);", "replace": "base,{name:'AES-GCM',length:256},true,['encrypt']);"}
+ {"name": "a key derived to seal an envelope is extractable", "file": "stmt/owner.js", "find": "base,{name:'AES-GCM',length:256},false,['encrypt']);", "replace": "base,{name:'AES-GCM',length:256},true,['encrypt']);"},
+ {"name": "the place form stops saying filing replaces what is on file", "file": "stmt/owner.js", "find": "+' Filing a new link replaces it.'", "replace": "+''"},
+ {"name": "the place form stops naming the source of the filed point", "file": "stmt/owner.js", "find": "+(from?', from '+from:'')+(day?", "replace": "+(day?"},
+ {"name": "the place form stops naming the day the point was filed", "file": "stmt/owner.js", "find": "+(day?', filed '+day:'')+'.';", "replace": "+'.';"}
 ]

@@ -330,6 +330,29 @@ export async function run({ ok }) {
   } finally {
     unreadable.sqlite.close();
   }
+  const generic = fixture();
+  try {
+    /* an Add ID that reached the queue by the generic road (not the appointment route) for a roster customer */
+    const queued = E.addIdEntry({ at: "2099-10-05T03:00:00.000Z", code: "CJ4-BLU", kind: "referral",
+      parent: null, rev: "R3", geo: null, tiers: null });
+    generic.map.set("q:generic-device", JSON.stringify({ queue: [queued] }));
+    const listed = await (await generic.call("/all/maker/inputs", undefined, OWNER)).json();
+    const refused = await generic.call("/all/maker/inputs/appoint-existing",
+      { at: "2099-10-05T03:00:01.000Z", code: "CJ4-BLU", kind: "reseller" }, OWNER);
+    const other = await generic.call("/all/maker/inputs/appoint-existing",
+      { at: "2099-10-05T03:00:02.000Z", code: "CJ4-RED", kind: "reseller" }, OWNER);
+    check(!listed.catalog.appointmentCustomers.includes("CJ4-BLU") && listed.catalog.appointmentCustomers.includes("CJ4-RED")
+      && refused.status === 409 && other.status === 200
+      && generic.drafts().filter((draft) => draft.entry.payload.code === "CJ4-BLU").map((draft) => draft.entry.at).join() === queued.at,
+      "a pending generic Add ID for a customer is not offered and is refused as an appointment, while another customer is accepted: "
+        + refused.status + ", " + other.status + ", " + JSON.stringify(generic.drafts().map((d) => d.entry.at)));
+    const entry = E.addIdEntry({ at: "2099-10-05T03:00:03.000Z", code: "CJ4-BLU", kind: "reseller",
+      parent: null, rev: "R2", geo: null, tiers: null });
+    const claim = await makerAppointmentClaim(generic.desk.SALT_LEDGER, entry.at, "9".repeat(64), entry, "CJ4-BLU");
+    check(!claim.claimed && !!claim.error, "the atomic receipt itself refuses an appointment while a generic Add ID draft waits for the same customer: " + JSON.stringify(claim));
+  } finally {
+    generic.sqlite.close();
+  }
   const claimRace = fixture();
   try {
     const at = ["2099-10-05T02:00:00.000Z", "2099-10-05T02:00:01.000Z"];

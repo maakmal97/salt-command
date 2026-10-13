@@ -1696,7 +1696,7 @@ export const OWNER_JS = `
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
         /* a gift the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/gift'){makerClear(path);pending=null;cancel.hidden=true;}
-        if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}
+        if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush'||path==='/all/maker/inputs/partner')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
@@ -1750,7 +1750,7 @@ export const OWNER_JS = `
          have to open Record to learn that one waits: a banner over every place says how many and opens them, and each is a Soon card on Needs you. Both only READ the
          phone's own storage and send nothing; Send again, Update and send and Discard stay Record's, on the entry's own section, exactly as they were. */
       var UNSENT_WORD={'add-id':'new customer','appoint-existing':'appointment','amend-id':'change of name or place','place':'map placement','stock-count':'stock count','sale':'sale','purchase':'purchase',
-        'tier-set':'price setting','tier-accept-all':'set of price levels','house-sizes':'set of printed sizes','hush':'reminder','loan':'loan','repay':'repayment','gift':'gift','redeem':'reward','ledger-amend':'correction','offset':'offset'};
+        'tier-set':'price setting','partner':'partner','tier-accept-all':'set of price levels','house-sizes':'set of printed sizes','hush':'reminder','loan':'loan','repay':'repayment','gift':'gift','redeem':'reward','ledger-amend':'correction','offset':'offset'};
       /* what one kept entry is, from its storage key: never a name or a place, which a kept entry holds only sealed; a record that will not read is still an entry */
       function unsentRead(storageKey){
         var path=storageKey.slice('saltMakerPending:'.length), body=null;
@@ -1836,7 +1836,7 @@ export const OWNER_JS = `
   function makerForm(part){ var section=el('section','maker-input'); section.setAttribute('data-in','record.'+part); return section; }
   function retainedPart(path){
     var k=path.split('/').pop();
-    return ['add-id','amend-id','appoint-existing','place'].indexOf(k)>=0?'customers':['house-sizes','hush','tier-set','tier-accept-all'].indexOf(k)>=0?'pricing':'entry';
+    return ['add-id','amend-id','appoint-existing','place'].indexOf(k)>=0?'customers':['house-sizes','hush','tier-set','partner','tier-accept-all'].indexOf(k)>=0?'pricing':'entry';
   }
   /* 12 Oct 2026 (PHASE 4a): OPTION TILES for the few, fixed choices of a form (a book, a direction, a handover, a kind, a role, a level, yes or no): the system's
      Option recipe, a real radio each, so the group is one tab stop, the arrows move the choice and a tile is 44px. The group is a fieldset that answers where the
@@ -1993,6 +1993,14 @@ export const OWNER_JS = `
     if(!reading||reading.lat==null&&!reading.addr)
       throw new Error('Paste a Maps or Waze link with a point or address, or leave it empty.');
     return {addr:reading.addr||null,lat:reading.lat,lng:reading.lng,src:reading.src,at:new Date().toISOString()};
+  }
+  /* what is on file for a party, in the Desk's words: whether a point is held, from where and on which Kuala Lumpur day, never the address */
+  function makerPlaceSaid(e){
+    e=e&&typeof e==='object'?e:{};
+    var from={waze:'Waze',google:'Google Maps',apple:'Apple Maps',pin:'a shared pin',file:'the laptop'}[e.src]||'', d=e.at?new Date(e.at):null,
+      k=d&&!isNaN(d)?d.toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'}):'', mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      day=/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(k)?k.slice(8,10)+' '+mon[+k.slice(5,7)-1]+' '+k.slice(0,4):'';
+    return (Number.isFinite(e.lat)&&Number.isFinite(e.lng)?' with its point':' as an address alone')+(from?', from '+from:'')+(day?', filed '+day:'')+'.';
   }
   async function makerOtherInputs(parent,catalog,refreshTradeCatalog){
     pairDrafts.length=0;
@@ -2388,7 +2396,7 @@ export const OWNER_JS = `
       placeGate=makerVaultGate(placement,function(gate){
         /* open, the gate says whether a place is filed for the one chosen, from the places the unlock holds; never where */
         if(!makerVault||!placeParty.value) return;
-        gate.appendChild(el('p','msg',Object.hasOwn(makerVault.places,placeParty.value)?'A place is filed for them.':'No place is filed for them yet.'));
+        gate.appendChild(el('p','msg',Object.hasOwn(makerVault.places,placeParty.value)?'A place is filed for them'+makerPlaceSaid(makerVault.places[placeParty.value])+' Filing a new link replaces it.':'No place is filed for them yet.'));
       }), placeStatus=makerStatus(placement), placeBusy=false;
     var placeLocality=makerLocalityField(placement,'record.place.locality'), placeLink=makerField(placement,['New Maps or Waze link','record.place.link'],'text','');
     var placeDraft=null;
@@ -2962,6 +2970,49 @@ export const OWNER_JS = `
         return choice;
       }
       var firstCover=coverChoice(tradeSection,tradeProduct,tradeQty,tradeTotal,['record.trade.cover','record.trade.cover-retry']);
+      /* B1 of #62: what the Workbench shows before Record, shown before Send (the Desk reads it from the same engine: cost a unit,
+         the goods, the margin over it, the floor and a refusal-style line when the goods are under it, their recent prices).
+         A purchase shows its cost a unit against the current cost and no margin. It is a read; Send is never held by it. */
+      var readingBox=el('div','maker-reading'), readingRevision=0;
+      readingBox.setAttribute('aria-live','polite'); readingBox.hidden=true; tradeSection.appendChild(readingBox);
+      function readingLine(text,bad){ var p=el('p',bad?'msg bad':'msg',text); readingBox.appendChild(p); return p; }
+      async function readTrade(){
+        var ticket=++readingRevision, isSale=direction.value==='sale';
+        readingBox.textContent='';
+        if(!(Number(tradeQty.value)>0)||tradeTotal.value===''||!tradeProduct.value){readingBox.hidden=true;return;}
+        readingBox.hidden=false; readingLine('Reading.');
+        var ask={direction:direction.value,product:tradeProduct.value,qty:Number(tradeQty.value),total:Number(tradeTotal.value)};
+        if(tradeDate.value)ask.date=tradeDate.value;
+        if(isSale){ if(tradeParty.value&&tradeStream.value!=='R2')ask.party=tradeParty.value; }
+        else if(carriage.value!=='')ask.freight=Number(carriage.value);
+        try{
+          var got=(await refs('/all/maker/trade-reading',ask)).reading;
+          if(ticket!==readingRevision||!readingBox.isConnected)return;
+          readingBox.textContent='';
+          var c=got.cogs||{};
+          readingLine(c.rate==null?'No cost to read against.':'Cost a unit '+rm(c.rate)+', from '+c.source+'.');
+          if(!isSale){
+            if(got.purchase.versusCogs!=null)readingLine('This buy costs '+rm(got.purchase.perUnit)+' a unit, '+(got.purchase.versusCogs>=0?rm(got.purchase.versusCogs)+' above':rm(-got.purchase.versusCogs)+' under')+' the current cost.');
+            return;
+          }
+          if(got.margin)readingLine('Goods '+rm(got.goods)+', '+rm(got.price)+' a unit: margin '+rm(got.margin.rm)+(got.margin.pct==null?'':' ('+Math.round(got.margin.pct)+'%)')+' over cost.',got.margin.belowCost);
+          if(got.margin&&got.margin.belowCost&&!(got.floor&&got.floor.warn))readingLine('Below cost: every unit loses '+rm(c.rate-got.price)+'.',true);
+          if(got.floor){
+            readingLine('Floor '+rm(got.floor.rm)+' for '+units(got.qty)+', cost times the size.');
+            if(got.floor.warn)readingLine(got.floor.warn,true);
+          }
+          var h=got.history;
+          if(h)readingLine('Their usual '+rm(h.median)+' a unit over '+h.count+' order'+(h.count===1?'':'s')+', '+rm(h.low)+' to '+rm(h.high)
+            +(h.offMedianPct==null?'':'; this is '+(h.offMedianPct>=0?h.offMedianPct+'% above':(-h.offMedianPct)+'% below'))+'. Recent: '
+            +h.recent.map(function(r){return rm(r.rate);}).join(', ')+'.');
+          else if(ask.party)readingLine('No earlier price of theirs on this book.');
+        }catch(error){
+          if(ticket===readingRevision){readingBox.textContent='';refusal(readingLine('',true),error,'Reading not available. ');}
+        }
+      }
+      [direction,tradeProduct,tradeQty,tradeTotal,carriage,tradeParty,tradeStream,tradeDate].forEach(function(control){
+        control.addEventListener('input',readTrade);control.addEventListener('change',readTrade);
+      });
       var extraBooks=el('div','maker-extra-books'), extraTrades=[], extraSeq=0;
       tradeSection.appendChild(extraBooks);
       var tripNote=el('p','msg','Same buyer, same day; delivery charged once; approved in one tap.');
@@ -2999,6 +3050,7 @@ export const OWNER_JS = `
         extraTrades.forEach(function(extra){extraChoices(extra.product);});
         fillAttribution();
         coverChoices.forEach(function(choice){choice.read();});
+        readTrade();
       }
       async function refreshMakerTradeCatalog(){
         var refreshed=await refs('/all/maker/inputs');
@@ -3190,6 +3242,37 @@ export const OWNER_JS = `
           driftPending=false;
         },false,driftReceiptComplete);
         driftRefresh();
+      }
+      /* B2 of #62: the Desk's Make partner. A partner pays cost; Approve is the confirmation, and a name never travels. Drift books only. */
+      var partnerSection=makerForm('pricing');
+      partnerSection.appendChild(el('h3',null,'Partner'));
+      partnerSection.appendChild(el('p','msg','A partner pays cost on every book and is an associate. Only on a book with price drift.'));
+      driftSection.parentNode.insertBefore(partnerSection,driftSection.nextSibling);
+      var partnerHeld=catalog.partners||[], partnerWait=catalog.partnerWaiting||[];
+      var partnerCodes=(catalog.driftCustomers||[]).filter(function(c){ return /^C/.test(c)&&!/-Gen$/.test(c)&&partnerHeld.indexOf(c)<0&&partnerWait.indexOf(c)<0; });
+      if(!(catalog.products||[]).some(function(item){ return item.drift; })){
+        partnerSection.appendChild(el('p','msg','No book has price drift.'));
+      }else{
+        if(partnerHeld.length) partnerSection.appendChild(el('p','msg','Partner now: '+partnerHeld.join(', ')+'.'));
+        if(partnerWait.length) partnerSection.appendChild(el('p','msg','Waiting under Approve: '+partnerWait.join(', ')+'.'));
+        if(!partnerCodes.length){
+          partnerSection.appendChild(el('p','msg','No customer is left to make a partner.'));
+        }else{
+          var partnerCode=actOn(el('select','fld salt-field__input'),'record.partner.customer'), partnerCodeWrap=el('label','maker-field','Customer');
+          partnerCodes.forEach(function(c){ var option=el('option',null,c); option.value=c; partnerCode.appendChild(option); });
+          partnerCodeWrap.appendChild(partnerCode); partnerSection.appendChild(partnerCodeWrap);
+          var partnerAnswer=el('p','msg'); partnerAnswer.setAttribute('role','status'); partnerSection.appendChild(partnerAnswer);
+          var partnerPending=false, partnerAt=null, partnerSignature='';
+          makerButton(partnerSection,['Make partner','record.partner.make'],async function(send){
+            if(partnerPending) return;
+            var body={code:partnerCode.value};
+            var check=JSON.stringify(body); if(check!==partnerSignature){ partnerSignature=check; partnerAt=new Date().toISOString(); }
+            body.at=partnerAt; partnerPending=true;
+            try{ await send('/all/maker/inputs/partner',body); partnerAnswer.textContent='Sent. They pay cost once you approve it.'; loadMaker(); }
+            catch(error){ refusal(partnerAnswer,error); }
+            partnerPending=false;
+          },true,function(){ partnerAt=null; partnerSignature=''; });
+        }
       }
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=makerForm('pricing');
