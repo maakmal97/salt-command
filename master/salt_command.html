@@ -16667,29 +16667,11 @@ function obsCard(o){
         <button class="navlink salt-ghost" onclick="switchTab('${o.tab}')">${TAB_LABEL[o.tab]||o.tab} &rarr;</button>
         ${hushed
           ? `<span class="dsc">${o.st.act==='snooze'?`Snoozed to <b>${esc(o.st.until||'')}</b>`:'Dismissed'}${o.st.why?`: ${esc(o.st.why)}`:''}${o.st._q?' &middot; <span class="attn">queued, not yet filed</span>':''}</span>
-             <button class="obsbtn salt-ghost" onclick="obsAct('${esc(o.id)}','restore')">Bring back</button>`
-          : `<button class="obsbtn salt-ghost" onclick="obsAct('${esc(o.id)}','snooze7')">Snooze 7 days</button>
-             <button class="obsbtn salt-ghost" onclick="obsAct('${esc(o.id)}','snooze30')">Snooze 30</button>
-             <button class="obsbtn salt-ghost" onclick="obsAct('${esc(o.id)}','dismiss')">Dismiss</button>
-             <span class="dsc obsid">${esc(o.id)} &middot; Hush in Maker</span>`}
+`
+          : `<span class="dsc obsid">${esc(o.id)} &middot; Hush on Counter Admin</span>`}
       </div>
     </div>
   </details>`;
-}
-
-/* HUSHING RIDES THE QUEUE, so it reaches me on the next run and survives a browser clear.
-   It writes nothing but its own record: applyOverlay reads mode and returns on anything it
-   does not recognise, so an 'obs' entry cannot touch a figure even by accident. */
-function obsAct(id,what){
-  const until=what==='snooze7'?obsISO(obsDay(7)):what==='snooze30'?obsISO(obsDay(30)):null;
-  const act=what==='restore'?'restore':(what==='dismiss'?'dismiss':'snooze');
-  queue.push({at:new Date().toISOString(),type:'OBS',party:'whiteboard',qty:null,total:null,status:'obs',
-    raw:(act==='restore'?'Bring back observation ':act==='dismiss'?'Dismiss observation ':'Snooze observation ')+id+(until?' to '+until:''),
-    payload:{mode:'obs',id:id,act:act,until:until,why:''}});
-  /* the cloud keeps one store of hushes, the one Counter Maker writes too: the keyed /hush */
-  if(cloudMode()){if(act==='restore')delete HUSH[id];else HUSH[id]=until;hushPost(id,act==='restore'?{clear:true}:{until:until});}
-  render();
-  Promise.resolve(saveQueue());
 }
 
 function tabPlans(){
@@ -20121,29 +20103,7 @@ const WB_NO_PROD={amend:1,addid:1,amendid:1};
    "the Worker answered http 500", or the browser's own "Failed to fetch", with no way on but leaving the part. The
    server is named as the server, a read that never came back says so, and both parts offer Retry. */
 const NO_REPLY='no connection, or no reply the desk could read';
-let AP_DRAFTS=[],AP_REFUSED=[],AP_CLOCK=null,apNeedKey=false,apUnread='',apBusy={},apMsg='',apRejected=null;
-/* v525: REJECT MEANS DISCARD, WITH RE-ENTER (Part B step 7). The Worker drops the entry from every
-   queue on the rejection; this device drops its own copy too, so its next post cannot bring it
-   back, and offers the rejected entry's own figures back in the editor to be corrected. Only a
-   new sale re-enters here: an amendment or a purchase is re-entered on the Workbench. */
-function qForgetAt(at){const n=queue.length;queue=queue.filter(q=>!(q&&q.at===at));if(queue.length!==n)saveQueue();return n-queue.length;}
-function apReenterSeed(d){
-  const p=d&&d.entry&&d.entry.payload;
-  if(!p||p.mode!=='new'||String(p.direction||'').toUpperCase()!=='SELL')return null;
-  const seed={product:p.product||'salt',customer:p.assoc&&p.stream==='R2'?p.assoc:(p.party||null),qty:p.qty,total:p.total,cash:p.cash||0,deliveredQty:p.kg||0,
-    date:p.date||null,delivery:p.delivery||0,handover:p.handover||null,note:p.note||null,orderCode:p.orderCode||null};
-  if(p.assoc){seed.rev=p.stream||'R2';if(p.stream==='R2')seed.downstream=p.downstream||null;}
-  /* v611: a resale re-enters the way it books, in the associate's bucket with only a named buyer beside it */
-  if(p.assoc&&p.stream==='R2')POSITION_ENGINE.bookR2(seed,'customer',p.assoc,p.downstream||null);
-  return seed;
-}
-function apReenter(){
-  const seed=apRejected&&apReenterSeed(apRejected);
-  if(!seed)return;
-  edNew=true;edRid=null;edType='SELL';edSeed=seed;
-  switchTab('ledger');renderEditor();
-  const why=document.getElementById('edWhy');if(why)why.innerHTML='<span style="color:var(--amber)">The rejected entry, as it was typed. Correct it and queue it again.</span>';
-}
+let AP_DRAFTS=[],AP_REFUSED=[],AP_CLOCK=null,apNeedKey=false,apUnread='',apBusy={},apMsg='';
 /* v519: THE CLOCK ON EVERY APPROVAL, his instruction of 08 Sep 2026: how long the last tap took
    to reach the phone and to be marked committed, from D1's own timestamps. A dash where a
    timestamp is missing: a fold stated directly has no tap, and a row marked before v519 has no
@@ -20332,8 +20292,8 @@ function apCard(d){
     ${d.reasoning?`<div class="dsc" style="margin-top:8px">${esc(d.reasoning)}</div>`:''}
     ${d.entry&&d.entry.claim&&!pa
       /* S6 (D7): a claim's own row is his check, answered on its order's card; the Worker refuses it here */
-      ?`<p class="dsc" style="margin-top:10px">A payment they say they sent. Answer it on Site orders: <b>Received</b> books this row, <b>Not found</b> files it as not found.</p>`
-      :`<div style="display:flex;gap:8px;margin-top:10px"><button class="vbtn salt-pill salt-pill--sm" data-ap="approve" data-id="${esc(d.id)}">Approve</button><button class="salt-ghost salt-ghost--danger" data-ap="reject" data-id="${esc(d.id)}">Reject</button></div>`}
+      ?`<p class="dsc" style="margin-top:10px">A payment they say they sent. Answered on Counter Admin: <b>Received</b> books this row, <b>Not found</b> files it as not found.</p>`
+      :`<p class="dsc" style="margin-top:10px">Decided on Counter Admin.</p>`}
   </div>`;
 }
 function apDraw(){
@@ -20346,7 +20306,6 @@ function apDraw(){
   else if(apUnread)box.innerHTML='<div class="warnpill" style="display:block;background:color-mix(in srgb,var(--salt-ember) 14%,transparent);border-color:var(--crim);color:var(--crim)">The drafts could not be read: '+esc(apUnread)+'. <b>This is not an empty queue: rows may be waiting on a tap.</b></div><button type="button" class="vbtn salt-pill salt-pill--sm" data-apretry="1" style="margin-top:8px">Retry</button>';
   else if(!AP_DRAFTS.length)box.innerHTML=apClock(AP_CLOCK)+'<div class="card"><div class="dsc">Nothing waiting. Every drafted row has been decided.</div></div>';
   else box.innerHTML=apClock(AP_CLOCK)+AP_DRAFTS.map(apCard).join('');
-  box.querySelectorAll('button[data-ap]').forEach(b=>{b.onclick=()=>apDecide(b.dataset.id,b.dataset.ap,b);});
   box.querySelectorAll('button[data-apretry]').forEach(b=>{b.onclick=()=>{b.disabled=true;b.textContent='Reading';apLoad();};});
   /* v586, HIS DECISION OF 11 SEP 2026: A REFUSED ENTRY IS KEPT, AND HE CAN WITHDRAW IT. v309 built this panel with no
      control at all so nothing on it could be decided by accident, and that part stands: nothing here approves or
@@ -20362,52 +20321,13 @@ function apDraw(){
     const isNote=r=>/^(fold|suite):/.test(r.id||''), refs=AP_REFUSED.filter(r=>!isNote(r)), notes=AP_REFUSED.filter(isNote);
     const refCard=r=>{const e=r.entry||{},seen=(r.seenAt||'').slice(0,10),note=isNote(r),mine=!note&&held.has(r.id);
       const foot=note?`<div class="dsc" style="margin-top:3px;color:var(--dim)">${/^suite:/.test(r.id)?'Nothing for you to do. It clears itself when the tests next pass.':'Nothing for you to do. It clears itself once a later fold commits.'}</div>`
-        :mine?`<div style="margin-top:7px"><button type="button" class="vbtn salt-pill salt-pill--sm" data-wd="${esc(r.id)}">Withdraw</button></div>`
+        :mine?`<div class="dsc" style="margin-top:3px;color:var(--dim)">Queued on this phone. Withdrawn on Counter Admin.</div>`
         :`<div class="dsc" style="margin-top:3px;color:var(--dim)">Not queued on this phone, so it cannot be withdrawn here.</div>`;
       const head=note?(/^suite:/.test(r.id)?'The desk&rsquo;s tests, after '+esc(r.id.slice(6)):'The fold, '+esc(seen)):esc(e.raw||((e.type||'Entry')+' '+(r.party||'')));
       return `<div class="card" style="margin-top:8px"><div style="font-size:13px">${head}</div><div class="dsc" style="margin-top:5px">${esc(r.why||'')}</div>${note?'':`<div class="dsc" style="margin-top:3px;color:var(--dim)">${esc(r.source||'drafter')}${seen?', '+esc(seen):''}</div>`}${foot}</div>`;};
-    ref.innerHTML=(refs.length?`<h2 style="margin-top:18px">Refused entries <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">Nothing here can be approved; each card says why. One queued on this phone stays until you withdraw it, and can then be entered again, corrected.</div>`+refs.map(refCard).join(''):'')
+    ref.innerHTML=(refs.length?`<h2 style="margin-top:18px">Refused entries <span class="rule"></span></h2><div class="dsc" style="margin-bottom:4px">Nothing here can be approved; each card says why.</div>`+refs.map(refCard).join(''):'')
       +(notes.length?`<h2 style="margin-top:18px">Notices from the desk <span class="rule"></span></h2>`+notes.map(refCard).join(''):'');
-    ref.querySelectorAll('button[data-wd]').forEach(b=>{b.onclick=()=>apWithdraw(b.dataset.wd);});}
-}
-/* v586: Withdraw a refused entry this phone holds. It leaves the queue here by the road a rejection takes
-   (qForgetAt), leaves the panel at once, and leaves the cloud at the next sync, after which the drafter
-   clears a refusal of its own; one the fold or the laptop wrote waits for the watermark, as before. */
-function apWithdraw(at){
-  qForgetAt(at);
-  AP_REFUSED=AP_REFUSED.filter(r=>r.id!==at);
-  try{const k=JSON.parse(localStorage.getItem('saltRefusedAts')||'[]');localStorage.setItem('saltRefusedAts',JSON.stringify((Array.isArray(k)?k:[]).filter(x=>x!==at)));}catch(e){}
-  apMsg='Withdrawn. It is gone from this phone, and from the cloud once this syncs.';
-  apDraw();apBadge();
-  qPost().catch(()=>{});
-}
-async function apDecide(id,action,btn){
-  if(!id||apBusy[id])return;
-  const was=AP_DRAFTS.find(x=>x.id===id)||null;
-  /* 24 Sep 2026: A ROW A CUSTOMER'S ORDER MADE IS ASKED ABOUT FIRST. Rejecting it drops the entry for
-     good while the order stays where it is, so the order is left with no row behind it; to call the
-     order off is Cancel or Decline on Site orders, which tells the customer and books the cancellation. */
-  if(action==='reject'&&was&&was.entry&&was.entry.orderId&&!confirm('This row was made from a customer\'s order on the site. Rejecting it leaves that order standing with no row behind it, and the desk will not queue it again. To call the order off, cancel or decline it on Site orders instead.\n\nReject the row anyway?'))return;
-  apBusy[id]=1;
-  const card=btn.closest('.card');if(card)card.querySelectorAll('button').forEach(b=>b.disabled=true);
-  const url='drafts/'+encodeURIComponent(id)+'/'+action,body=JSON.stringify({by:'desk'});
-  apRejected=null;
-  try{ let r=await fetch(url,{method:'POST',headers:qHeaders(),body});
-    if(r.status===401&&saltAskWriteKey())r=await fetch(url,{method:'POST',headers:qHeaders(),body});
-    let j={};try{j=await r.json();}catch(e){}
-    apMsg=r.status===401?'That write key was refused. The row is still waiting.'
-      :r.status===409?'That row was already decided somewhere else.'
-      :!r.ok?'The server refused the decision (http '+r.status+'). The row is still waiting.'
-      :action==='approve'?'Approved. The fold runs now; the book and this desk update within about a minute.':'Rejected and dropped from the queue. Nothing of it reaches the ledger.'
-        +(j.order===true?' Its order on Site orders now says so.':j.order===false?' Its order on Site orders could not be told.':'');
-    if(r.ok&&action==='reject'){qForgetAt(id);(j.trip||[]).forEach(qForgetAt);apRejected=was;}
-    if(r.ok&&(j.trip||[]).length)apMsg+=' The other '+(j.trip.length===1?'row':j.trip.length+' rows')+' of its trip went with it.';
-  }catch(e){ apMsg='No connection, so the decision was not recorded. The row is still waiting.'; }
-  delete apBusy[id];await apLoad();
-  const m=document.getElementById('apMsg');
-  if(m){m.textContent=apMsg;
-    if(apRejected&&apReenterSeed(apRejected)){const b=document.createElement('button');b.type='button';b.textContent='Re-enter it, corrected';b.style.cssText='margin-left:8px;font-size:12px;padding:4px 10px';b.onclick=apReenter;m.appendChild(b);}
-    else if(apRejected){m.textContent+=' Re-enter it, corrected, on the Workbench.';}}
+  }
 }
 /* ---- Orders card (v499): what customers ordered on the statements site, and the taps that
    move an order. THE ORDERS LIVE ON THE SITE, in its own store, and reach here through the
@@ -20419,7 +20339,7 @@ async function apDecide(id,action,btn){
    Worker's every-minute reconcile is the one road that queues them: the acknowledgement makes the
    pending row, a payment amends it as a Fulfilment, a handover as a Correction, a withdrawal as a
    Cancellation. Each waits under Approve like every other row, and the live statement follows the
-   fold. So a tap here moves the ORDER; Approve lands the ROW. ---- */
+   fold. Since B5 of #62 no control here moves an order: every move is on Counter Admin; this card reads. ---- */
 let ORD_OPEN=[],ordUnread='',ordNeedKey=false,ordBusy={},ordMsg='',ordTimer=null,ordWaitWas='';
 const ORD_WORD={placed:'Placed',acknowledged:'Acknowledged',ready:'Ready',done:'Completed',declined:'Declined',cancelled:'Withdrawn'};
 function tabOrders(){
@@ -20438,11 +20358,9 @@ function tabOrders(){
   <div id="ordMsg" role="status" style="margin-top:8px;font-size:12px;color:var(--mut)">${esc(ordMsg)}</div>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0;font-size:12px;color:var(--mut)"><button type="button" class="salt-ghost" id="ordAllBtn">${ordAll?'Hide the closed ones':'Show the closed ones'}</button><span>${ordAll?'Every order this site has taken, newest first.':'Open orders, and any waiting on an answer from you.'}</span></div>
   <details class="salt-plan ordnote" id="bullFold"><summary><span class="salt-plan__id" id="bullN">&middot;</span><span class="salt-plan__title" id="bullHead">Notice</span></summary>
-  <div class="salt-plan__body" id="bullCard"><div class="dsc">A still card on Home in Salt Counter, for everyone who opens it. Setting one wakes every phone on the site.</div>
+  <div class="salt-plan__body" id="bullCard"><div class="dsc">A still card on Home in Salt Counter, for everyone who opens it.</div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
-    <textarea id="bullText" rows="3" placeholder="One line per item" style="width:100%;margin-top:8px;padding:8px;min-height:44px;font:inherit"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="salt-ghost salt-ghost--lit" id="bullSet">Set</button><button type="button" class="salt-ghost" id="bullClear">Clear</button></div>
-    <div class="dsc" id="bullMsg" style="margin-top:6px"></div></div></details>
+    <div class="dsc" style="margin-top:6px">Set and cleared on Counter Admin.</div></div></details>
   <details class="salt-plan ordnote" id="expFold"><summary><span class="salt-plan__id" id="expN">&middot;</span><span class="salt-plan__title" id="expHead">Restock date</span></summary>
   <div class="salt-plan__body" id="expCard"><div class="dsc">The day the next lot is expected, per book. Customers see it as More by while the light is yellow or red.</div><div id="expRows" style="margin-top:6px">Reading it.</div>
     <div class="dsc" id="expMsg" style="margin-top:6px"></div></div></details>
@@ -20544,12 +20462,8 @@ async function hushLoad(quiet){
   const was=JSON.stringify(HUSH);HUSH=j.hush;HUSH_READ=true;
   if(was!==JSON.stringify(HUSH)&&(curAddr==='plans'||curAddr==='today'))render();
 }
-async function hushPost(id,what){
-  const go=()=>fetch('hush',{method:'POST',headers:qHeaders(),body:JSON.stringify(Object.assign({id:id},what))});
-  try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); }catch(e){}
-}
 async function bullLoad(quiet){
-  const now=document.getElementById('bullNow'),ta=document.getElementById('bullText');if(!now)return;
+  const now=document.getElementById('bullNow');if(!now)return;
   const go=()=>fetch('bulletin',{cache:'no-store',headers:qHeaders()});
   let j=null;
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
@@ -20559,25 +20473,7 @@ async function bullLoad(quiet){
   /* S11 11.4: the fold says what is posted, so a closed notice is still read at a glance */
   if(head)head.textContent=lines.length?'Notice: '+lines.length+(lines.length===1?' line':' lines'):'Notice: nothing posted';
   if(nl)nl.textContent=String(lines.length);
-  now.innerHTML=lines.length?'Showing now: '+esc(lines.join(' · ')):'Nothing posted. Type a line and tap Set.';
-  if(ta&&document.activeElement!==ta)ta.value=lines.join('\n');
-}
-function bullWire(){
-  const s=document.getElementById('bullSet'),c=document.getElementById('bullClear');
-  if(s)s.onclick=()=>bullPost(false);if(c)c.onclick=()=>bullPost(true);
-}
-async function bullPost(clear){
-  const ta=document.getElementById('bullText'),msg=document.getElementById('bullMsg');
-  const say=t=>{if(msg)msg.textContent=t;};
-  const lines=clear?[]:String(ta?ta.value:'').split('\n').map(s=>s.trim()).filter(Boolean);
-  for(const l of lines){const g=siteSafe(l);if(g.refuse)return say(g.refuse+' Nothing was posted.');if(g.warn&&!confirm(g.warn+' Post it anyway?'))return say('Not posted.');}
-  if(lines.length&&!confirm('Setting this notice wakes every phone on Salt Counter. Set it?'))return say('Not posted.');
-  const body=JSON.stringify({lines});
-  const go=()=>fetch('bulletin',{method:'POST',headers:qHeaders(),body});
-  try{ let r=await go(); if(r.status===401&&saltAskWriteKey())r=await go(); let j={};try{j=await r.json();}catch(e){}
-    say(r.status===401?'That write key was refused. Nothing was posted.':!r.ok?'The server refused it: '+(j.error||'http '+r.status)+'.':clear?'Cleared. It goes within a minute on an open page, at once on the next open.':'Posted. It shows within a minute on an open page, at once on the next open.');
-  }catch(e){ say('No connection, so nothing was posted.'); }
-  await bullLoad(true);
+  now.innerHTML=lines.length?'Showing now: '+esc(lines.join(' · ')):'Nothing posted.';
 }
 /* ---- Alerts (v675, and EVERY WAKE SINCE v759). The switch left with the phone app at v387, so the
    Worker's nudge woke nobody and a customer's order arrived in silence; v675 brought it back for ORDERS
@@ -25617,7 +25513,7 @@ const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
-  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();bullWire();expLoad();}, plans:()=>hushLoad()};
+  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();expLoad();}, plans:()=>hushLoad()};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
    remove it everywhere. There were TWO of these on every part, which is most of why it read
    as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
