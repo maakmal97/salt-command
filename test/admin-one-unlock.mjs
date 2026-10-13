@@ -91,7 +91,7 @@ export async function run({ ok, pageWork }) {
   spy.log.imports.length = 0; spy.log.derives.length = 0; spy.log.exports.length = 0;
 
   /* A. LOCKED */
-  await p.tap("nav.orders");
+  await p.tap("nav.orders"); await p.tap("part.orders.payments");
   await p.tap("claim.open", CLAIM);
   let card = p.claim();
   ok(!!card && /Locked/.test(card.textContent) && card.querySelectorAll('[data-act="vault.unlock"]').length === 1 && !card.querySelector('[data-act="claim.slip"]')
@@ -162,7 +162,7 @@ export async function run({ ok, pageWork }) {
   byAct(d, "vault.cancel").click();
 
   /* the right one, from the claim's card in Orders */
-  await p.tap("nav.orders");
+  await p.tap("nav.orders"); await p.tap("part.orders.payments");
   await p.tap("claim.open", CLAIM);
   card = p.claim();
   const reads1 = { names: readsOf(p, "/all/maker/vault"), addr: readsOf(p, "/all/maker/vault/addr"), key: readsOf(p, "/all/maker/vault/key") };
@@ -257,7 +257,7 @@ export async function run({ ok, pageWork }) {
   const locked = async (name, trigger) => {
     const q = await open();
     await q.tap("nav.record"); await q.tap("part.record.customers");
-    await q.tap("nav.orders"); await q.tap("claim.open", CLAIM);
+    await q.tap("nav.orders"); await q.tap("part.orders.payments"); await q.tap("claim.open", CLAIM);
     await q.unlockFrom(q.ask(q.claim()), PASS);
     const was = q.names().length > 0 && !!q.claim()?.querySelector('[data-act="claim.slip"]') && q.urls.made.length === 1 && q.urls.revoked.length === 0 && q.state() === "Open on this phone"
       && q.gates().every((g) => /^Names and places are open/.test(g.textContent));
@@ -295,7 +295,7 @@ export async function run({ ok, pageWork }) {
 
   /* a vault with names and places but no slip key filed: the same unlock opens what there is, and the card says so */
   const n = await open({ noKey: true });
-  await n.tap("nav.orders"); await n.tap("claim.open", CLAIM);
+  await n.tap("nav.orders"); await n.tap("part.orders.payments"); await n.tap("claim.open", CLAIM);
   await n.unlockFrom(n.ask(n.claim()), PASS);
   ok(n.state() === "Open on this phone" && n.names().length > 0 && /No slip key is filed, so this slip cannot be opened/.test(n.claim()?.textContent) && !n.d.querySelector("[data-maker-slip]")
     && !n.claim()?.querySelector('[data-act="vault.unlock"]') && !n.wire.some((w) => w.startsWith("/all/maker/slips/")),
