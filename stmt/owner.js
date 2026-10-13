@@ -1696,7 +1696,7 @@ export const OWNER_JS = `
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
         /* a gift the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/gift'){makerClear(path);pending=null;cancel.hidden=true;}
-        if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush')){makerClear(path);pending=null;cancel.hidden=true;}
+        if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush'||path==='/all/maker/inputs/partner')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
@@ -1750,7 +1750,7 @@ export const OWNER_JS = `
          have to open Record to learn that one waits: a banner over every place says how many and opens them, and each is a Soon card on Needs you. Both only READ the
          phone's own storage and send nothing; Send again, Update and send and Discard stay Record's, on the entry's own section, exactly as they were. */
       var UNSENT_WORD={'add-id':'new customer','appoint-existing':'appointment','amend-id':'change of name or place','place':'map placement','stock-count':'stock count','sale':'sale','purchase':'purchase',
-        'tier-set':'price setting','tier-accept-all':'set of price levels','house-sizes':'set of printed sizes','hush':'reminder','loan':'loan','repay':'repayment','gift':'gift','redeem':'reward','ledger-amend':'correction','offset':'offset'};
+        'tier-set':'price setting','partner':'partner','tier-accept-all':'set of price levels','house-sizes':'set of printed sizes','hush':'reminder','loan':'loan','repay':'repayment','gift':'gift','redeem':'reward','ledger-amend':'correction','offset':'offset'};
       /* what one kept entry is, from its storage key: never a name or a place, which a kept entry holds only sealed; a record that will not read is still an entry */
       function unsentRead(storageKey){
         var path=storageKey.slice('saltMakerPending:'.length), body=null;
@@ -1836,7 +1836,7 @@ export const OWNER_JS = `
   function makerForm(part){ var section=el('section','maker-input'); section.setAttribute('data-in','record.'+part); return section; }
   function retainedPart(path){
     var k=path.split('/').pop();
-    return ['add-id','amend-id','appoint-existing','place'].indexOf(k)>=0?'customers':['house-sizes','hush','tier-set','tier-accept-all'].indexOf(k)>=0?'pricing':'entry';
+    return ['add-id','amend-id','appoint-existing','place'].indexOf(k)>=0?'customers':['house-sizes','hush','tier-set','partner','tier-accept-all'].indexOf(k)>=0?'pricing':'entry';
   }
   /* 12 Oct 2026 (PHASE 4a): OPTION TILES for the few, fixed choices of a form (a book, a direction, a handover, a kind, a role, a level, yes or no): the system's
      Option recipe, a real radio each, so the group is one tab stop, the arrows move the choice and a tile is 44px. The group is a fieldset that answers where the
@@ -3190,6 +3190,37 @@ export const OWNER_JS = `
           driftPending=false;
         },false,driftReceiptComplete);
         driftRefresh();
+      }
+      /* B2 of #62: the Desk's Make partner. A partner pays cost; Approve is the confirmation, and a name never travels. Drift books only. */
+      var partnerSection=makerForm('pricing');
+      partnerSection.appendChild(el('h3',null,'Partner'));
+      partnerSection.appendChild(el('p','msg','A partner pays cost on every book and is an associate. Only on a book with price drift.'));
+      driftSection.parentNode.insertBefore(partnerSection,driftSection.nextSibling);
+      var partnerHeld=catalog.partners||[], partnerWait=catalog.partnerWaiting||[];
+      var partnerCodes=(catalog.driftCustomers||[]).filter(function(c){ return /^C/.test(c)&&!/-Gen$/.test(c)&&partnerHeld.indexOf(c)<0&&partnerWait.indexOf(c)<0; });
+      if(!(catalog.products||[]).some(function(item){ return item.drift; })){
+        partnerSection.appendChild(el('p','msg','No book has price drift.'));
+      }else{
+        if(partnerHeld.length) partnerSection.appendChild(el('p','msg','Partner now: '+partnerHeld.join(', ')+'.'));
+        if(partnerWait.length) partnerSection.appendChild(el('p','msg','Waiting under Approve: '+partnerWait.join(', ')+'.'));
+        if(!partnerCodes.length){
+          partnerSection.appendChild(el('p','msg','No customer is left to make a partner.'));
+        }else{
+          var partnerCode=actOn(el('select','fld salt-field__input'),'record.partner.customer'), partnerCodeWrap=el('label','maker-field','Customer');
+          partnerCodes.forEach(function(c){ var option=el('option',null,c); option.value=c; partnerCode.appendChild(option); });
+          partnerCodeWrap.appendChild(partnerCode); partnerSection.appendChild(partnerCodeWrap);
+          var partnerAnswer=el('p','msg'); partnerAnswer.setAttribute('role','status'); partnerSection.appendChild(partnerAnswer);
+          var partnerPending=false, partnerAt=null, partnerSignature='';
+          makerButton(partnerSection,['Make partner','record.partner.make'],async function(send){
+            if(partnerPending) return;
+            var body={code:partnerCode.value};
+            var check=JSON.stringify(body); if(check!==partnerSignature){ partnerSignature=check; partnerAt=new Date().toISOString(); }
+            body.at=partnerAt; partnerPending=true;
+            try{ await send('/all/maker/inputs/partner',body); partnerAnswer.textContent='Sent. They pay cost once you approve it.'; loadMaker(); }
+            catch(error){ refusal(partnerAnswer,error); }
+            partnerPending=false;
+          },true,function(){ partnerAt=null; partnerSignature=''; });
+        }
       }
       /* A6: the Desk's Make it the house board. Which sizes the board prints, never a price: the ask is the ladder's. */
       var houseSection=makerForm('pricing');

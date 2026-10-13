@@ -2558,6 +2558,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.drift.customer` | Record, customer drift | The customer. |
 | `record.drift.set` | Record, customer drift | Sets the held drift for review. |
 | `record.drift.value` | Record, customer drift | The drift, from -1 to +1. |
+| `record.partner.customer` | Record, partner | The customer to make a partner. |
+| `record.partner.make` | Record, partner | Queues a name-free partner entry for review, as the Desk's Make partner does; a partner pays cost. Drift books only. |
 | `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the pane beside the menu from 860px and in the menu's place below it, with a way back. Reads and sends nothing. |
 | `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |
