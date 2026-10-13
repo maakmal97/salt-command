@@ -53945,6 +53945,11 @@ await (async () => {
   await (await import("./counter-stress-fixes.mjs")).run({ ok });
 })();
 
+section("Counter: Back closes a Sheet, one entry a Sheet at the same address, never one carrying a key or a token (13 Oct 2026)");
+await (async () => {
+  await (await import("./counter-back-sheet.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Account: the bar of five places is fixed to the screen's foot, nothing frames it in the screen's place, the shell keeps its height clear, and in the iPhone's saved app the document is the screen tall");
 await (async () => {
   await (await import("./admin-bar-foot.mjs")).run({ ok, pageWork });
