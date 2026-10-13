@@ -1,0 +1,60 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-13T23:02:24.837Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CC9-OKR",
+    "qty": 6.25,
+    "total": 575,
+    "cash": 0,
+    "date": "2026-10-15",
+    "deliveredQty": 0
+   },
+   "reasoning": "Sold 6.25 unit of salt to CC9-OKR for RM 575, RM 92/unit. Costed at RM 58/unit from COGS off the latest purchase p039 landed 2026-10-13: RM 700 quote plus RM 25 freight over 12.5 unit, so RM 212.5 on the goods at 37%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-15 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-13T23:02:24.837Z",
+    "type": "SELL",
+    "party": "CC9-OKR",
+    "qty": 6.25,
+    "total": 575,
+    "status": "unpaid",
+    "raw": "Sell 6.25 unit salt to CC9-OKR for RM575 on 2026-10-15, RM0 cash, 0 unit moved → Pending",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CC9-OKR",
+     "newId": null,
+     "date": "2026-10-15",
+     "qty": 6.25,
+     "total": 575,
+     "delivery": 0,
+     "freight": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": null,
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "435e488e0a63acca2e8a7c70247f73818f83d94f03d2d2438fc0a2009baae0cf"
+   },
+   "decidedAt": "2026-10-13T23:02:31.601Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
