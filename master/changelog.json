@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1092",
+  "d": "13 Oct 2026",
+  "t": "FILE ALL: ONE TAP FILES EVERY SHARED SPOT WHOSE CUSTOMER HAS NO POINT",
+  "n": [
+   "<b>FILE ALL.</b> Above Site orders, every delivery spot a customer shared whose customer has no point filed yet (the newest order each, never a friend's or an -R bucket) is filed by one tap, under one passphrase and one vault write. A point filed meanwhile stands, and the passphrase is never kept; the lock clears the answer. His choice of 13 Oct 2026. Nothing prices.",
+   "<b>THE PROOFS.</b> The delivery pin section covers the batch, each check red under its own mutation (36)."
+  ]
+ },
+ {
   "v": "v1091",
   "d": "13 Oct 2026",
   "t": "PAYMENT OF RM100 RECEIVED ON CZ5-TM'S ORDER S260",

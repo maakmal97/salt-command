@@ -9283,7 +9283,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1091","d":"13 Oct 2026","t":"PAYMENT OF RM100 RECEIVED ON CZ5-TM'S ORDER S260","n":["<b>ONE PAYMENT FOLDED.</b> CZ5-TM paid RM100 on the statements site, by qr via tng, against order s260 of 1 unit. The payment was preapproved by phone and the drafter raised no flags. The order stays open for the 1 unit to hand over. The inventory did not move: stock stays at 15.14 units and the cost basis is unchanged."]}];
+const evolution=[{"v":"v1092","d":"13 Oct 2026","t":"FILE ALL: ONE TAP FILES EVERY SHARED SPOT WHOSE CUSTOMER HAS NO POINT","n":["<b>FILE ALL.</b> Above Site orders, every delivery spot a customer shared whose customer has no point filed yet (the newest order each, never a friend's or an -R bucket) is filed by one tap, under one passphrase and one vault write. A point filed meanwhile stands, and the passphrase is never kept; the lock clears the answer. His choice of 13 Oct 2026. Nothing prices.","<b>THE PROOFS.</b> The delivery pin section covers the batch, each check red under its own mutation (36)."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9434,7 +9434,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='13 Oct 2026, 12:59 KL';
+const LAST_UPDATED='13 Oct 2026, 16:26 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
