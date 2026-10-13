@@ -1,6 +1,6 @@
 {
- "v": "v1093",
- "stamped": "13 Oct 2026, 16:39 KL",
+ "v": "v1095",
+ "stamped": "13 Oct 2026, 17:16 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 14.14,
+  "STATED_STOCK": 13.14,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -5339,7 +5339,7 @@
     "cash": 750,
     "handover": "collected",
     "date": "2026-09-23",
-    "deliveredQty": 6,
+    "deliveredQty": 7,
     "deliveredOn": "2026-09-23",
     "paidOn": "2026-09-23",
     "note": "<b>SALT SELL DATED 23 SEP, PAID IN FULL, 3 OF 12.5 UNIT COLLECTED.</b> CM3-OUG bought 12.5 unit for RM750, RM60 a unit, RM750 cash in on 23 Sep with 3 unit collected on his word, so 9.5 unit remain to be handed over and no money is outstanding. Costed at RM48 a unit from the desk's own inventory cost, RM600 on the goods, RM150 at 20%. The RM750 clears the floor of RM718.68 and sits under the ask of RM1,090 and the ceiling of RM1,910. CM3-OUG: 3 orders, median RM52, range RM48 to RM65, nothing outstanding, none on credit against a cap of 1. Flagged: 15.4% above his median, answered by the figures; the RM48 blend is not.",
@@ -5359,6 +5359,14 @@
       "kg": 3,
       "cost": 144,
       "note": "<b>FULFILMENT ON S194 DATED 08 OCT: 3 UNIT HANDED OVER, NO MONEY MOVED.</b> Against CM4-TO's salt sell of 23 Sep, 12.5 unit for RM750 at RM60 a unit, paid in full in cash that day. The fulfilment moves 3 unit and RM0, against 9.5 unit outstanding, and leaves 6.5 unit to hand over and no money owed. Decided by the desk. The dossier gives no floor or ask for this size, so the rate is not tested against them. CM4-TO has a median rate of RM52 and a range of RM5 to RM65, RM0 outstanding and no units on credit. The drafter raised no flags. The order's own note names CM3-OUG, not CM4-TO, which the dossier does not explain. Open: 6.5 unit."
+     },
+     {
+      "date": "2026-10-12",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "cost": 48,
+      "note": "<b>FULFILMENT ON S194, 12 OCT: 1 UNIT OF SALT HANDED TO CM4-TO.</b> Against the order of 12.5 units for RM750 agreed on 23 Sep, 1 unit moves on 12 Oct with RM0 cash, as the order was paid in full on 23 Sep. That leaves 5.5 units outstanding, down from 6.5. The rate of RM60 a unit cannot be set against a floor or ask, as the dossier gives none for 12.5 units. CM4-TO has 5 orders, a median rate of RM52, a range of RM5 to RM65, RM0 outstanding before and 0 units on credit. The row keeps its own cost. The drafter raised no flags. Open: 5.5 units to hand over, no money owed."
      }
     ]
    },
@@ -8161,9 +8169,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-13T08:37:38.403Z",
+  "QUEUE_COMMITTED": "2026-10-13T09:14:48.829Z",
   "PRICING": {
-   "takenAt": "2026-10-13T08:39:12.944Z",
+   "takenAt": "2026-10-13T09:16:10.659Z",
    "sizes": [
     0.5,
     1,
@@ -9478,8 +9486,8 @@
        "shrinkRate": 0.07986851599454824,
        "avgDel": {
         "n": 207,
-        "kg": 523.56,
-        "mean": 2.5293
+        "kg": 524.56,
+        "mean": 2.5341
        }
       },
       "policy": {
@@ -15035,10 +15043,10 @@
      ]
     }
    },
-   "v": "v1093"
+   "v": "v1095"
   },
   "OPEN": {
-   "at": "2026-10-13T08:39:13.546Z",
+   "at": "2026-10-13T09:16:11.501Z",
    "count": 8,
    "byKey": {
     "CJ4-BJ|2026-10-09|500": {
@@ -15100,9 +15108,9 @@
      "q": 12.5,
      "t": 750,
      "cash": 750,
-     "mv": 6,
+     "mv": 7,
      "st": "oweStock",
-     "oweUnits": 6.5,
+     "oweUnits": 5.5,
      "rid": "s194",
      "paidOn": "2026-09-23",
      "deliveredOn": "2026-09-23",
@@ -15176,13 +15184,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 14.14,
+     "onHand": 13.14,
      "free": 7.64,
-     "owedOut": 6.5,
+     "owedOut": 5.5,
      "coverDays": 1.4,
      "rate": 4.76,
      "owedToYou": 340,
-     "promised": 6.5,
+     "promised": 5.5,
      "short": 0
     },
     "oil": {
@@ -15237,7 +15245,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1093"
+   "v": "v1095"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15245,7 +15253,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1093"
+   "v": "v1095"
   },
   "REWARD": {
    "stated": {
@@ -15257,7 +15265,7 @@
      }
     }
    },
-   "v": "v1093"
+   "v": "v1095"
   }
  }
 }
