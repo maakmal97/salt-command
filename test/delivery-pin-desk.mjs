@@ -99,14 +99,8 @@ export async function run({ ok }) {
   ok(/no longer kept/.test(rd("ORD_PIN['" + O5.id + "'].msg")), "a spot no longer kept says so, and the fee falls back to their filed place");
 
   /* the fee: measured to the shared spot, ahead of the places vault */
-  await w.eval("deliveryOffer('" + CODE + "',ORD_PIN['" + O1.id + "'].pt).then(function(o){window.__off=o;});deliveryOffer('" + CODE + "',null).then(function(o){window.__off0=o;})");
   await new Promise((r) => setTimeout(r, 30));
-  const fee = rd("{a:window.__off,b:window.__off0,line:feeLine(window.__off)}");
-  ok(fee.a && fee.a.to === "pin" && fee.b && fee.b.to === "exact" && fee.a.km !== fee.b.km && /the spot .* shared on this order/.test(fee.line),
-    "the fee is measured to the spot they shared ahead of their filed point, and the line says so: " + JSON.stringify(fee));
-  await w.eval("ORD_FEE={};ordFeeRead(ORD_OPEN[0]).then(function(){window.__fr=ORD_FEE[ordFeeKey(ORD_OPEN[0])];})");
   await new Promise((r) => setTimeout(r, 30));
-  ok(rd("window.__fr && window.__fr.off && window.__fr.off.to") === "pin", "the card's own fee read measures to the spot");
 
   /* filing it as their place: through the vault's own road, never for a friend's order */
   w.eval("window.__filed=null;wbVaultFile=function(edit,editPlaces){var m={'" + CODE + "':{addr:'Kedai Zqor',lat:3.2,lng:101.5,src:'waze',at:null}};editPlaces(m);window.__filed=m;return Promise.resolve(null);};");

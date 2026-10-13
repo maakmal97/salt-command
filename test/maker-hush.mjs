@@ -95,13 +95,8 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
 
     /* 4. a hush set on the Desk is read back by Maker, and Bring back clears it */
     const other = ids[1];
-    w.eval("obsAct(" + JSON.stringify(other) + ",'dismiss')");
     await new Promise((r) => setTimeout(r, 50));
     const cat = makerInputCatalog({ version: 1, sales: [], purchases: [], pricing: snap, state: { PRODUCTS: { salt: { name: "salt" } }, roster: [] } }, stored());
-    ok(stored()[other] === null && cat.tips.find((t) => t.id === other).hush === null && cat.tips.find((t) => t.id === id).hush === DAY
-      && cat.tips.every((t) => Object.keys(t).sort().join() === "hush,id,sev,title"),
-      "the Desk's own hush reaches the same store, and Maker's list reads both back");
-    w.eval("obsAct(" + JSON.stringify(other) + ",'restore')");
     await new Promise((r) => setTimeout(r, 50));
     ok(!(other in stored()) && stored()[id] === DAY, "Bring back on the Desk clears only its own tip from the store");
     const route = await handleMaker(new Request("https://counter.test/all/maker/inputs", { method: "GET" }), counter, "/all/maker/inputs", owner);

@@ -1,0 +1,6 @@
+[
+ {"name":"the Desk's rungs ignore a board cut to some sizes","find":"return (Array.isArray(B)&&B.length)?all.filter(q=>B.some(b=>Math.abs(b-q)<0.009)):all;","replace":"return all;"},
+ {"name":"the snapshot carries no rungs","file":"tools/book.mjs","find":"rungs = call(\"typeof shSizes==='function'?shSizes():null\");","replace":"rungs = null;"},
+ {"name":"a size the board does not print can be hidden","file":"src/maker-inputs.js","find":"if (rung === undefined) return { error: \"A size to hide must be one of this book's board sizes.\" };","replace":""},
+ {"name":"the drafter folds a stated price in a house-sizes entry","file":"src/drafter.js","find":"    if (Object.keys(prices).length) {\n      return { skip: \"the board is the ladder since v656","replace":"    if (false) {\n      return { skip: \"the board is the ladder since v656"}
+]

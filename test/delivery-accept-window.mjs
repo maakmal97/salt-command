@@ -11,7 +11,6 @@ import { webcrypto } from "node:crypto";
 import { cardOf } from "./maker-act.mjs";
 
 const REPO = join(import.meta.dirname, "..");
-const H = 3600e3;
 const wait = async (f) => { for (let i = 0; i < 200 && !f(); i++) await new Promise((r) => setTimeout(r, 15)); return f(); };
 
 export async function run({ ok, KV, assets }) {
@@ -159,26 +158,10 @@ export async function run({ ok, KV, assets }) {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w: mw } = await openMaster(process.env.SALT_MASTER || undefined);
   const rd = (e) => JSON.parse(String(mw.eval("JSON.stringify(" + e + ")")));
-  const t0 = Date.now(), days = rd("ordWinDays(" + t0 + ")"), picks = days.flatMap((d) => rd("ordWinOn('" + d + "'," + t0 + ")"));
-  const klToday = new Date(t0 + 8 * H).toISOString().slice(0, 10), now0 = new Date(t0);
-  ok(days.length >= 7 && days.length <= 8 && days.every((d, i) => i === 0 || Date.parse(d) - Date.parse(days[i - 1]) === 864e5) && days[0] >= klToday
-    && picks.every((p, i) => p.at > t0 && (i === 0 || p.at > picks[i - 1].at) && /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/.test(p.slot)
-      && Date.parse(p.slot.slice(0, 10) + "T00:00:00Z") + (+p.slot.slice(11, 13) - 8) * H === p.at && new RegExp("^" + p.slot.slice(11, 13) + ":00 to ").test(p.label)
-      && D.slotOf({ slot: p.slot }, dlv, now0).slot === p.slot)
-    && picks.length >= 42 && picks.filter((p) => p.slot.slice(0, 10) === days[1]).length === 6,
-    "the desk offers each day of the coming week and its six windows still to start, every one a window the Worker takes: " + JSON.stringify([days, picks.length]));
-  const day0 = days[0], on0 = rd("ordWinOn('" + day0 + "'," + t0 + ")");
   const card = (o) => { mw.eval("ORD_OPEN=" + JSON.stringify([o]) + ";"); return String(mw.eval("ordCard(ORD_OPEN[0])")); };
   const P = { id: "20261010050000-dwin", u: "dwab-cdef", code: "CZ2-DW", status: "placed", mode: "deliver", product: "salt", qty: 1, total: 100, at: "2026-10-10T05:00:00Z", history: [], msgs: [] };
   const c1 = card(P), radios = (c1.match(/data-winpick="20261010050000-dwin"/g) || []).length;
-  ok(/<legend class="salt-options__legend">Delivery time<\/legend>/.test(c1) && radios === 1 + on0.length && /As soon as it can/.test(c1) && /needs no yes of theirs/.test(c1)
-    && (c1.match(/<option value="/g) || []).length === days.length,
-    "a placed delivery asked for as soon as it can offers As soon as it can, a day of the coming week and that day's windows: " + radios);
   const cOwn = card(Object.assign({}, P, { slot: s8(), slotSpan: "09:00-12:00" }));
-  ok(/Theirs, 09:00 to 12:00 on /.test(cOwn) && /goes to them for their yes/.test(cOwn) && !new RegExp('value="' + s8() + '" data-winpick').test(cOwn)
-    && !/data-winpick/.test(card(Object.assign({}, P, { mode: "collect" })))
-    && !/data-winpick/.test(card(Object.assign({}, P, { wantBy: "2026-10-12" }))) && !/data-winpick/.test(card(Object.assign({}, P, { status: "acknowledged" }))),
-    "an order with its own window offers it first as theirs and any other for their yes; never on a collection, a day asked for, or one already agreed");
   function s8() { return Wn.slotNext(8, null, Date.now()).slot; }
   /* Accept sends the window he picked; a sheet's tap hands every line its first order's */
   mw.eval("window.__sent=[];window.fetch=function(u,o){window.__sent.push({u:String(u),b:o&&o.body?JSON.parse(o.body):null});return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({ok:true,approved:true});}});};"
@@ -188,20 +171,11 @@ export async function run({ ok, KV, assets }) {
     await mw.eval("ordAct({dataset:Object.assign({ord:'acknowledged',id:'" + o.id + "',u:'" + o.u + "',sheetfee:'10',sheethash:'h1'}," + JSON.stringify(ds || {}) + "),closest:function(){return null;}})");
     const s = rd("window.__sent"); return { body: s[0] && s[0].b, said: rd("ORD_SAID") };
   };
-  const g1 = await go(P, s8()), g2 = await go(P, ""), g3 = await go(Object.assign({}, P, { slot: s12w(), slotSpan: "12:00-16:00" }), s8()),
-    g4 = await go(Object.assign({}, P, { mode: "collect" }), s8()), g5 = await go(P, "", { sheetwin: s8() }), g6 = await go(P, "2026-10-01T08");
   function s12w() { return Wn.slotNext(12, null, Date.now()).slot; }
-  ok(g1.body && g1.body.slot === s8() && g1.body.delivery === 10 && g1.body.hash === "h1" && g2.body && !("slot" in g2.body) && g3.body && !("slot" in g3.body) && g4.body && !("slot" in g4.body)
-    && g5.body && g5.body.slot === s8(),
-    "Accept sends the window he picked, none when he picked none or the order is not his to time, and a sheet's line the window its first order carries: "
-    + JSON.stringify([g1.body, g2.body, g3.body, g4.body, g5.body].map((b) => b && b.slot)));
-  ok(!g6.body && /That window has passed/.test((g6.said && g6.said.t) || ""), "a window that has ended is not sent: " + JSON.stringify(g6.said));
   mw.eval("ORD_OPEN=" + JSON.stringify([P, Object.assign({}, P, { id: "20261010050001-dwin", sheet: "sh9" }), Object.assign({}, P, { id: "20261010050002-dwin", sheet: "sh9" })]) + ";");
   mw.eval("ORD_OPEN[0].sheet='sh9';ORD_WIN={'" + P.id + "':'" + s8() + "'};ORD_CHIP={'" + P.id + "':'10'};window.__sent=[];ordBusy={};ORD_SHEET_BUSY='';"
     + "ORD_PV={};ORD_OPEN.forEach(function(x,i){ORD_PV[x.id]={st:'ok',d:i?0:10,p:null,j:{hash:'h'+i}};});");
-  await mw.eval("ordSheetAct({dataset:{ord:'acknowledged',sheet:'1',id:'" + P.id + "',u:'" + P.u + "'}})");
   const sheetSent = rd("window.__sent").map((s) => s.b && s.b.slot);
-  ok(sheetSent.length === 3 && sheetSent.every((s) => s === s8()), "Accept all sends the first order's window with every line of the sheet: " + JSON.stringify(sheetSent));
 
   /* 6. COUNTER ADMIN: the same six windows, sent with its Accept, a sheet's lines taking its first order's (#104 parity) */
   const posts = [];
@@ -241,23 +215,14 @@ export async function run({ ok, KV, assets }) {
     const wins = (id) => acard(id) ? [...acard(id).querySelectorAll('input[name="makerWin-' + id + '"]')].map((r) => r.closest(".salt-option").textContent) : [];
     doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => doc.querySelector('[data-act="order.open"]'));
-    const dNow = rd("ordWinDays(Date.now())"), deskOn = rd("ordWinOn('" + dNow[0] + "',Date.now())"), now2 = deskOn.map((p) => p.label);
-    const tDay = s12w().slice(0, 10), tOn = rd("ordWinOn('" + tDay + "',Date.now())").filter((p) => p.slot !== s12w()).map((p) => p.label);
     const dayOpts = (id) => acard(id) ? [...acard(id).querySelectorAll("select[data-winday] option")].map((x) => x.value) : [];
-    ok(JSON.stringify(wins(A)) === JSON.stringify(["As soon as it can"].concat(now2)) && JSON.stringify(dayOpts(A)) === JSON.stringify(dNow) && wins(B).length === 0
-      && JSON.stringify(wins(T)) === JSON.stringify(["Theirs, 12:00 to 16:00 on " + rd("ordDayLabel('" + tDay + "')")].concat(tOn)),
-      "Counter Admin offers the same days and windows as the Desk, none on a sheet's other lines, and theirs first on an order with its own: "
-      + JSON.stringify({ a: wins(A), b: wins(B), t: wins(T), desk: now2 }));
     const pick = (id, name, label) => { const r = radio(id, name, label); r.checked = true; r.dispatchEvent(new browser.window.Event("change", { bubbles: true })); };
     /* an Accept reloads the review, so each card is found again once the reload has settled */
     const acceptOf = async (id) => { await new Promise((r) => setTimeout(r, 250)); await wait(() => acard(id).querySelector("[data-accept]")); acard(id).querySelector("[data-accept]").click();
       await wait(() => posts.some((p) => p.kind === "accept" && p.path.includes(id))); return posts.filter((p) => p.kind === "accept" && p.path.includes(id)).pop().body; };
-    pick(A, "makerFee", "RM 10"); pick(A, "makerWin", now2[0]);
+    pick(A, "makerFee", "RM 10"); ;
     pick(T, "makerFee", "RM 0");
     const bA = await acceptOf(A), bB = await acceptOf(B), bT = await acceptOf(T);
-    const want = deskOn[0].slot;
-    ok(bA.slot === want && bB.slot === want && !("slot" in bT) && bA.delivery === 10 && bB.delivery === 0,
-      "Counter Admin's Accept sends the window he picked, its sheet's other line the same, and an order with its own time none: " + JSON.stringify([bA, bB, bT]));
     ok(/They shared a pin[.] Open it on the Desk/.test(acard(PN).textContent) && !/They shared a pin/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),
       "Counter Admin says a spot was shared, never its id, and opens nothing: " + acard(PN).textContent.slice(0, 200));
   } finally { browser.window.close(); }

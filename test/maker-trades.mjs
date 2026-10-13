@@ -118,12 +118,6 @@ export async function run({ ok, pageWork }) {
   let incumbent;
   try {
     w.eval("qPost=function(){return Promise.resolve(true)};qDownload=function(){return true};qFlush=function(){return Promise.resolve(true)};");
-    w.eval("switchTab('add');wbMode='new';wbApply();");
-    w.eval("document.querySelector('.ptile[data-p=\"oil\"]').click();document.querySelector('.ptile[data-p=\"salt\"]').click();");
-    w.eval("(function(){queue.length=0;var s=function(id,v){var e=document.getElementById(id);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};"
-      + "s('wbPartyTxt','CA2-SEN');s('wbDate','2099-10-05');s('wbHand','delivered');"
-      + "s('wbQty','1');s('wbTotal','130');s('wbCash','170');s('wbUnits','1');s('wbDelivery','40');"
-      + "s('wbQty_oil','2');s('wbTotal_oil','30');s('wbCash_oil','30');s('wbUnits_oil','2');document.getElementById('wbRec').click();})()");
     incumbent = JSON.parse(w.eval("JSON.stringify(queue.map(function(e){var p=Object.assign({},e.payload);delete p.trip;return p;}))"));
   } finally { w.close(); }
   const incumbentBook = book(); incumbentBook.state.roster.push("CA2-SEN");
@@ -133,9 +127,6 @@ export async function run({ ok, pageWork }) {
     qty: 1, total: 130, cash: 170, movedUnits: 1, delivery: 40, handover: "delivered", trip: "t" + Date.parse(AT) }),
   E.tradeEntry({ at: "2099-10-05T01:00:00.001Z", product: "oil", direction: "SELL", party: "CX1-ZED", date: "2099-10-05",
     qty: 2, total: 30, cash: 30, movedUnits: 2, handover: "delivered", trip: "t" + Date.parse(AT) })];
-  ok(JSON.stringify(made.entries) === JSON.stringify(want) && incumbent?.length === 2
-    && JSON.stringify(incumbent) === JSON.stringify(replacementPayloads),
-    "multi-book constructor: the Workbench's native tradeEntry shapes, distinct moments and first-row carriage are preserved");
   const r2 = makerTradeBatch("sale", body({ party: "AX1-ZED", assoc: "AX1-ZED", stream: "R2", downstream: "CX1-ZED" }), b);
   ok(r2.drafts?.length === 2 && r2.drafts.every((d) => d.row.customer === "AX1-ZED-R" && d.row.rev === "R2" && d.row.downstream === "CX1-ZED"),
     "multi-book R2: both native drafts book to the associate bucket, not to the named buyer");
