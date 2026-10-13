@@ -1175,9 +1175,12 @@ export async function offBook(db, orders) {
     const want = new Set(orders.map((o) => o.id));
     const rs = await db.prepare("SELECT entry FROM draft WHERE status='rejected' AND entry LIKE ?1").bind('%"status":"Pending"%').all();
     const ids = [...new Set((rs.results || []).map((r) => { try { return JSON.parse(r.entry).orderId; } catch (e) { return null; } }).filter((x) => x && want.has(x)))];
+    /* a yes waiting on the pending row, or any draft still pending, keeps the order on the book */
+    const live = new Set(((await db.prepare("SELECT order_id FROM preapproval WHERE stage='ack' AND status IN ('waiting','differs')").all()).results || []).map((r) => r.order_id));
     for (const id of ids) {
+      if (live.has(id)) continue;
       const all = await draftsOfOrders(db, [id]), ack = all.find((r) => ofStage(r, "ack"));
-      if (ack && ack.status === "rejected" && !all.some((r) => r.status === "approved")) off.add(id);
+      if (ack && ack.status === "rejected" && !all.some((r) => r.status === "approved" || r.status === "pending")) off.add(id);
     }
   } catch (e) { /* unreadable: the order counts as it did */ }
   return off;
@@ -1448,7 +1451,9 @@ async function draftsOfOrders(db, ids) {   /* one order's, in practice: ids hold
 const ofStage = (r, stage) => (stage === "move" ? ["Handover", "Close"].includes(r.entry.status) : r.entry.status === STATUS_OF_STAGE[stage])
   && (stage === "pay" ? !r.entry.counter : stage === "cash" ? !!r.entry.counter : true);
 /* he rejected it: a withdrawal's drop (11.10) is filed rejected too, and is not his */
-const rejectedByHim = (d) => !!d && d.status === "rejected" && !["withdrawn", "notfound", "covered"].includes(d.decided_by);   /* S6: nor a claim not found, or on the book already */
+/* 'covered' and 'covered:<rid>' (the hand row that holds the cash) are the same filing */
+const isCovered = (by) => by === "covered" || String(by || "").startsWith("covered:");
+const rejectedByHim = (d) => !!d && d.status === "rejected" && !["withdrawn", "notfound"].includes(d.decided_by) && !isCovered(d.decided_by);   /* S6: nor a claim not found, or on the book already */
 /** The newest draft of a stage for an order, when it is one he rejected; else null. */
 export async function rejectedOf(db, id, stage) {
   if (!db) return null;
@@ -1503,21 +1508,32 @@ export async function againOrder(env, id, body, by, now, mirror) {
     }
     for (const st of want) { const lv = await livePre(db, id, st); if (lv && (lv.status === "waiting" || lv.status === "differs")) return { ok: false, status: 409, error: "the " + STAGE_WORD[st] + " is offered again already: let it land first" }; }
     const o = f.order;
-    let onRow = null;
+    let onRow = null, taken = false;
     if (m.whole && (+o.paid || 0) > 0) {
       /* money paid on the site is on the book already, or Not needed would strand it: a cash Fulfilment covered never lands, and a paid cancellation owes a refund */
       if (want.includes("cancel")) return { ok: false, status: 409, error: "a paid cancellation owes a refund; send it again" };
       const book = await (mirror || bookOnce(db))().catch(() => null), party = partyOnBook(o, o.code), day = String(o.at || "").slice(0, 10);
-      onRow = ((book && book.sales) || []).find((r) => r && !r.cancelled && r.customer === party && (r.product || "salt") === (o.product || "salt")
-        && String(r.date || "") >= day && (+r.cash || 0) + 0.004 >= (+o.paid || 0)) || null;
-      if (!onRow) return { ok: false, status: 409, error: "record the cash on the row first" };
+      /* a site order's own row is no proof of another's cash: rows are told apart by key, the keys of every site order's row being known */
+      const all = await listOrders(env, true), own = new Set((all.ok ? all.orders : []).map((x) => ledgerKeyOf(x)).filter(Boolean));
+      const cands = ((book && book.sales) || []).filter((r) => r && r.rid && !r.cancelled && !own.has(POSITION_ENGINE.ovKey(r)) && r.customer === party
+        && (r.product || "salt") === (o.product || "salt") && String(r.date || "") >= day);
+      /* and one hand row proves the cash of as many orders as it holds: what other orders were covered against it is spoken for */
+      for (const r of cands) {
+        if ((+r.cash || 0) + 0.004 < (+o.paid || 0)) continue;
+        const rs = await db.prepare("SELECT entry FROM draft WHERE decided_by=?1").bind("covered:" + r.rid).all();
+        const ids = new Set((rs.results || []).map((x) => { try { return JSON.parse(x.entry).orderId; } catch (e) { return null; } }).filter((x) => x && x !== id));
+        const spoken = (all.ok ? all.orders : []).filter((x) => ids.has(x.id)).reduce((n, x) => n + (+x.paid || 0), 0);
+        if ((+r.cash || 0) + 0.004 >= spoken + (+o.paid || 0)) { onRow = r; break; }
+        taken = true;
+      }
+      if (!onRow) return { ok: false, status: 409, error: taken ? "that row's cash is already spoken for" : "record the cash on the row first" };
     }
     const found = [];
     for (const st of want) { const d = await rejectedOf(db, id, st); if (d) found.push([st, d.id]); }
     /* one batch, each update refusing if a yes for any covered stage landed meanwhile, so a cover is all or none */
     const stages = found.map(([st]) => "'" + st + "'").join(",");
     if (found.length) {
-      const res = await db.batch(found.map(([, did]) => db.prepare("UPDATE draft SET decided_by='covered' WHERE id=?1 AND status='rejected' AND NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage IN (" + stages + ") AND status IN ('waiting','differs'))").bind(did, id)));
+      const res = await db.batch(found.map(([, did]) => db.prepare("UPDATE draft SET decided_by=?3 WHERE id=?1 AND status='rejected' AND NOT EXISTS (SELECT 1 FROM preapproval WHERE order_id=?2 AND stage IN (" + stages + ") AND status IN ('waiting','differs'))").bind(did, id, onRow ? "covered:" + onRow.rid : "covered")));
       if (res.some((r) => !(r && r.meta && r.meta.changes > 0))) return { ok: false, status: 409, error: "a yes landed on one of those steps meanwhile: read the order again" };
     }
     const dropped = found.map(([st]) => st);

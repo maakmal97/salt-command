@@ -37732,7 +37732,7 @@ await (async () => {
   for (const f of readdirSync(join(REPO, "migrations")).filter((x) => /^\d+_.*\.sql$/.test(x)).sort()) db.exec(readFileSync(join(REPO, "migrations", f), "utf8"));
   let raceHook = null;   /* runs once as the covering update is prepared: a yes landing between the check and the write */
   const D1 = { batch(stmts) { return Promise.resolve(stmts.map((x) => x.run())); }, prepare(sql) { const st = db.prepare(sql);
-    if (raceHook && sql.startsWith("UPDATE draft SET decided_by='covered'")) { const h = raceHook; raceHook = null; h(); }
+    if (raceHook && sql.startsWith("UPDATE draft SET decided_by=")) { const h = raceHook; raceHook = null; h(); }
     const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
       first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
     const self = mk([]); self.bind = (...a) => mk(a); return self; } };
@@ -37950,11 +37950,35 @@ await (async () => {
   raceHook = () => db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wl.id + "|move|9", wl.id, U1, "move", "h", "{}", "{}", "waiting", "2026-10-13T12:00:00Z");
   const raced = await againOrder(denv, wl.id, { drop: true }, "phone");
   ok(raced.status === 409 && /meanwhile/.test(raced.error) && decidedBy(wl.id, "Pending")[0] === "desk" && decidedBy(wl.id, "Handover")[0] === "desk",
-    "a yes landing between the check and the write refuses the cover, and nothing is covered: " + JSON.stringify([raced.status, raced.error]));
+    "a yes landing between the check and the write refuses the cover, and nothing is covered: " + JSON.stringify([raced.status, raced.error, raced.ok, raced.dropped]));
   db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wl.id);
   const paidDrop = await againOrder(denv, wl.id, { drop: true }, "phone");
-  ok(paidDrop.ok && paidDrop.row === "s219" && paidDrop.dropped.length >= 2 && decidedBy(wl.id, "Pending")[0] === "covered" && decidedBy(wl.id, "Handover")[0] === "covered",
-    "once a row for that party holds the cash, Not needed covers the order and names the row: " + JSON.stringify([paidDrop.ok, paidDrop.row, paidDrop.dropped]));
+  ok(paidDrop.ok && paidDrop.row === "s219" && paidDrop.dropped.length >= 2 && decidedBy(wl.id, "Pending")[0] === "covered:s219" && decidedBy(wl.id, "Handover")[0] === "covered:s219" && !(await againOn(wl.id)).length,
+    "once a row for that party holds the cash, Not needed covers the order against it, and names the row: " + JSON.stringify([paidDrop.ok, paidDrop.row, paidDrop.dropped]));
+  /* one hand row holds only the cash it holds: two orders paid 8 pass against s219 (16), a third is refused; a site order's own landed row proves nothing */
+  await O.customerMove(senv, U1, wo.id, "cancel", {}); await O.customerMove(senv, U1, wp.id, "cancel", {});
+  const paidOrder = async (total) => {
+    const x = await place(U1, 1, total);
+    await O.deskMove(senv, U1, x.id, { status: "acknowledged", mode: "collect" }); await O.deskMove(senv, U1, x.id, { cash: { amount: 8 } });
+    seedDraft(x.id, "rejected", "Pending"); return x;
+  };
+  const wm = await paidOrder(113), wn = await paidOrder(114);
+  land(a2.j.draft, { date: day, cash: 50 });   /* the site order a's own row, with cash on it */
+  const m1 = await againOrder(denv, wm.id, { drop: true }, "phone");
+  ok(m1.ok && m1.row === "s219" && decidedBy(wm.id, "Pending")[0] === "covered:s219", "a second order paid 8 is covered against s219, cash 16: " + JSON.stringify([m1.ok, m1.row, m1.error]));
+  const m2 = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(m2.status === 409 && /already spoken for|record the cash/.test(m2.error) && decidedBy(wn.id, "Pending")[0] === "desk" && m2.status === 409 && !/^$/.test(m2.error),
+    "a third order paid 8 is refused, s219 being spoken for and a site order's own row proving nothing: " + JSON.stringify([m2.status, m2.error]));
+  const m2b = await againOrder(denv, wn.id, { drop: true }, "phone");
+  ok(/already spoken for/.test(m2b.error), "and it is told the row's cash is spoken for: " + m2b.error);
+  /* the pending row's yes is waiting, or a draft still pending: the order is on the book */
+  const offW = await offBook(D1, [{ id: wn.id }]);
+  db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,status,at) VALUES (?,?,?,?,?,?,?,?,?)").run(wn.id + "|ack|1", wn.id, U1, "ack", "h", "{}", "{}", "waiting", "2026-10-13T12:00:00Z");
+  const offL = await offBook(D1, [{ id: wn.id }]);
+  db.prepare("DELETE FROM preapproval WHERE order_id=?").run(wn.id);
+  seedDraft(wn.id, "pending", "Handover", { deliveredQty: 1 });
+  const offP = await offBook(D1, [{ id: wn.id }]);
+  ok(offW.has(wn.id) && !offL.has(wn.id) && !offP.has(wn.id), "an order is off the book only with no yes waiting on its pending row and no draft still pending: " + JSON.stringify([...offW, ...offL, ...offP]));
   /* what is on its way: an order with no row counts nothing, one with a row still does */
   const off = await offBook(D1, [{ id: wl.id }, { id: nh.id }, { id: wo.id }]);
   ok(off.has(wl.id) && off.has(wo.id) && !off.has(nh.id), "an order whose pending row is rejected and with nothing approved is off the book; an order with an approved row is not: " + JSON.stringify([...off]));
