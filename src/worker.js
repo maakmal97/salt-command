@@ -177,7 +177,8 @@ async function readQueuePost(request) {
   if (!Array.isArray(body.queue)) throw new Error("expected {queue:[...]}");
   if (body.queue.length > 5000) throw new Error("queue too large");
   let device = typeof body.device === "string" && DEVICE_RE.test(body.device) ? body.device : "anon";
-  return { device, updated: body.updated || null, queue: body.queue };
+  return { device, updated: body.updated || null, queue: body.queue,
+    vaultHeld: Array.isArray(body.vaultHeld) ? body.vaultHeld.filter((a) => typeof a === "string").slice(0, 5000) : [] };
 }
 
 /* DRAFT ON ARRIVAL (v304), and it exists because the cron alone loses the race.
@@ -295,7 +296,7 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
     ).bind(queueWithdrawalKey(entry.at)).first();
     if (receipt) withdrawn.add(entry.at);
   }
-  const kept = payload.queue.filter((entry) =>
+  let kept = payload.queue.filter((entry) =>
     !(entry && (gone.has(entry.at) || withdrawn.has(entry.at))));
   if (env.VAULT_STORE === "pair" && kept.some((entry) => ["rename", "place"].includes(entry?.payload?.mode)
     || entry?.payload?.mode === "addid" && entry.payload.kind !== "bucket"))
@@ -305,6 +306,24 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
   if (!previous.ok || previousBody.ok !== true)
     return json({ ok: false, error: previousBody.error || "The server queue could not be checked; nothing was queued." }, 503);
   const previousQueue = previousBody.queue;
+  /* B3 of #62: IN PAIR MODE A POST THAT OMITS A HELD VAULT-KIND ENTRY DOES NOT WITHDRAW IT. The Desk now leaves those out of /queue
+     (they go by the vault pair), and the whole-key replace below would silently drop one this device filed here before the flip. */
+  let carried = 0;
+  if (env.VAULT_STORE === "pair") {
+    let held = [];
+    try { held = JSON.parse(await env.SALT_QUEUE.get(QKEY(payload.device)) || "{}").queue || []; } catch (e) { held = []; }
+    const vaultKind = (e) => ["rename", "place"].includes(e?.payload?.mode) || e?.payload?.mode === "addid" && e.payload.kind !== "bucket";
+    /* only the stamps the client says it still holds: a Discard drops its stamp from vaultHeld and the Worker lets it go */
+    const asked = held.filter((e) => e && e.at && vaultKind(e) && payload.vaultHeld.includes(e.at) && !kept.some((k) => k && k.at === e.at));
+    const rej = await rejectedAmong(env, asked.map((e) => e.at));
+    const gone2 = new Set(rej);
+    if (env.SALT_LEDGER) for (const e of asked) {
+      const rc = await env.SALT_LEDGER.prepare("SELECT id FROM maker_request WHERE id=?1 AND operation='queue-withdraw'").bind(queueWithdrawalKey(e.at)).first();
+      if (rc) gone2.add(e.at);
+    }
+    const extra = asked.filter((e) => !gone2.has(e.at));
+    if (extra.length) { kept = kept.concat(extra); carried = extra.length; }
+  }
   const reserved = kept.some((entry) => entry && entry.payload
     && (entry.payload.mode === "repay" || entry.payload.mode === "redeem"
       || entry.payload.fields && (entry.payload.fields.rebateKg != null || entry.payload.fields.coverUnits != null)
@@ -356,7 +375,7 @@ async function handleQueuePost(request, env, ctx, gateHeld = false) {
         await withdrawInputAdmission(env.SALT_LEDGER, entry.id, "device:" + payload.device);
   }
   draftOnArrival(env, ctx, mirror);
-  return json({ ok: true, entries: kept.length, device: payload.device,
+  return json({ ok: true, entries: kept.length - carried, carried, device: payload.device,
     dropped: gone.size, droppedAts: [...gone],
     withdrawn: withdrawn.size, withdrawnAts: [...withdrawn] });
   } finally {

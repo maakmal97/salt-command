@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1100",
+  "d": "13 Oct 2026",
+  "t": "ENTRIES LEFT ON A DESK DEVICE: SEND OR DISCARD",
+  "n": [
+   "<b>RECOVERY.</b> Enter shows every entry still held unsent on this Desk device, with Send and Discard. Book entries go by the queue; names, places and non-bucket Add IDs by the vault pair under their own stamp, so a retry lands once; an entry with neither road offers Discard only, and Discard asks first. An entry stays on the device until the Worker's own receipt. Vault entries already held in the cloud queue are kept there while the device still holds them, and let go when it discards them. Unsent entries are marked wherever they move a figure, behind one switch the Desk's coming read-only version turns off. B3 of #62.",
+   "<b>THE PROOFS.</b> The B3 recovery section: receipts, both roads, the confirm, the switch, the carry-forward kept and released; each check red under its own mutation (14). Fable reviewed it three times."
+  ]
+ },
+ {
   "v": "v1099",
   "d": "13 Oct 2026",
   "t": "MAKE PARTNER ON THE COUNTER",
