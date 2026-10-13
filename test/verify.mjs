@@ -3979,8 +3979,18 @@ await (async () => {
     const lots = read("pPurch(PROD).filter(x=>poLive(x)&&poRecvUnits(x)>0.0001&&x.qty>0)");
     const top = lots.map((x, i) => ({ x, i, d: x.receivedOn || x.date || "" })).sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : a.i - b.i)).pop();
     const goods = top ? +(top.x.total / top.x.qty).toFixed(2) : null, cogs = top ? +((top.x.total + (+top.x.freight || 0)) / top.x.qty).toFixed(2) : null;
-    ok(read("pxCost().repl") === goods && goods !== want, `${p}: and the cost stack prices off the latest lot's goods rate, ${goods}, not the trailing ${want}`);
+    ok(read("pxCost().repl") === goods, `${p}: and the cost stack prices off the latest lot's goods rate, ${goods}`);
     ok(read("replCost()") === cogs, `${p}: and replCost() is that lot's COGS, quote plus freight over its units, ${cogs}`);
+    /* THE LATEST LOT AGAINST THE TRAILING RATE NEEDS A FIXTURE (14 Oct 2026: v1103 landed a buy at the same RM56 as the two before it, so the
+       live latest lot and the trailing average coincided and the check above proved nothing either way). A newest landed lot at RM70 a unit,
+       RM73 with its freight, is laid down: the stack must read 70 and replCost 73 while the window's trailing rate is another figure. */
+    {
+      const extra = p === "salt" ? "{}" : JSON.stringify({ product: p });
+      w.eval(`purchases.push(Object.assign({rid:'zLT1',supplier:'SZ9-LTL',date:'2099-12-30',receivedOn:'2099-12-30',qty:10,total:700,freight:30,cash:700,status:'paid',receivedQty:10},${extra}));recompute();`);
+      const trail = expRepl(p), stack = read("pxCost().repl"), win = read("pxInputs().repl"), rc = read("replCost()");
+      w.eval("purchases.splice(purchases.findIndex(function(x){return x.rid==='zLT1';}),1);recompute();");
+      ok(stack === 70 && rc === 73 && win === trail && trail !== 70, `${p}: with a newest lot at RM70 laid down, the stack prices off its goods rate, 70, and replCost() off its COGS, 73 (${stack}, ${rc}), not the trailing ${trail} (${win})`);
+    }
   }
   /* A LOT IN TRANSIT MOVES NO RATE, WHATEVER THE BOOK HOLDS TODAY (12 Oct 2026: v1081 booked one and the loop above, which counted it,
      went red). The loop only meets that case while the book carries such a lot; this lays one down, the newest and priced far from
@@ -37140,7 +37150,7 @@ await (async () => {
     seedDraft(x.id, "rejected", "Pending"); return x;
   };
   const wm = await paidOrder(113), wn = await paidOrder(114);
-  land(a2.j.draft, { date: day, cash: 50 });   /* the site order a's own row, with cash on it */
+  land(a2.j.draft, { cash: 50 });   /* the site order a's own row, with cash on it, on the date the order was agreed (Kuala Lumpur's: it is part of the row's key, and overriding it with the UTC day parted the key from the order's between 00:00 and 08:00 MYT) */
   const m1 = await againOrder(denv, wm.id, { drop: true }, "phone");
   ok(m1.ok && m1.row === "s219" && decidedBy(wm.id, "Pending")[0] === "covered:s219", "a second order paid 8 is covered against s219, cash 16: " + JSON.stringify([m1.ok, m1.row, m1.error]));
   const m2 = await againOrder(denv, wn.id, { drop: true }, "phone");
