@@ -1,0 +1,117 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-14T07:18:36.699Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-PER",
+    "qty": 10,
+    "total": 116,
+    "cash": 0,
+    "product": "oil",
+    "date": "2026-10-14",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261014070907-hi0xcw, acknowledged, to collect, priced at RM 116 on this order, placed at RM 130. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 10 unit of oil to CS6-PER for RM 116, RM 11.6/unit. Costed at RM 7.77/unit from COGS off the latest purchase p037 landed 2026-10-08: RM 532 quote plus RM 12 freight over 70 unit, so RM 38.29 on the goods at 33%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-14 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-14T07:18:36.699Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 10,
+    "total": 116,
+    "status": "Pending",
+    "raw": "SELL CS6-PER 10 oil RM 116, nothing paid, nothing moved (order 20261014070907-hi0xcw)",
+    "orderKey": "CS6-PER|2026-10-14|116|oil",
+    "payload": {
+     "mode": "new",
+     "product": "oil",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "newId": null,
+     "date": "2026-10-14",
+     "qty": 10,
+     "total": 116,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261014070907-hi0xcw, acknowledged, to collect, priced at RM 116 on this order, placed at RM 130. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261014070907-hi0xcw",
+    "prepay": true
+   },
+   "decidedAt": "2026-10-14T07:18:39.933Z",
+   "decidedBy": "preapproved by Counter Admin"
+  },
+  {
+   "id": "2026-10-14T07:18:49.142Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-PER",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-10-14",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261014070906-swblfw, acknowledged, to collect, priced at RM 110 on this order, placed at RM 130. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 1 unit of salt to CS6-PER for RM 110, RM 110/unit. Costed at RM 58/unit from COGS off the latest purchase p039 landed 2026-10-13: RM 700 quote plus RM 25 freight over 12.5 unit, so RM 52 on the goods at 47.3%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-14 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CS6-PER typically pays about RM 100/unit for salt across 13 orders; this one is RM 110, 10% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-14T07:18:49.142Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 1,
+    "total": 110,
+    "status": "Pending",
+    "raw": "SELL CS6-PER 1 salt RM 110, nothing paid, nothing moved (order 20261014070906-swblfw)",
+    "orderKey": "CS6-PER|2026-10-14|110",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "newId": null,
+     "date": "2026-10-14",
+     "qty": 1,
+     "total": 110,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261014070906-swblfw, acknowledged, to collect, priced at RM 110 on this order, placed at RM 130. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261014070906-swblfw",
+    "prepay": true
+   },
+   "decidedAt": "2026-10-14T07:18:51.862Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
