@@ -2918,7 +2918,7 @@ await (async () => {
 })();
 
 /* ---- the frozen book (S0 of the Book plan) ---- */
-section("Frozen book — the suite's master is the current master with only its BOOK block from the fixture");
+section("Frozen book: the suite's master is the current master with only its BOOK block from the fixture");
 await (async () => {
   /* WHY. A phone fold moves ledger/book.json and the master's BOOK block and nothing else; checks reading either went red with no code change
      (CI5-PER locality v1097, #169, #173). The suite reads test/fixtures/book-frozen.json and a master rebuilt each run from the CURRENT master
@@ -2934,7 +2934,7 @@ await (async () => {
 })();
 
 /* ---- no test reads the live book (S0, the guard) ---- */
-section("Frozen book — no test reads the live book for its content");
+section("Frozen book: no test reads the live book for its content");
 await (async () => {
   const { bookReadFaults } = await import("./book-reads.mjs");
   const files = readdirSync(join(REPO, "test")).filter((f) => f.endsWith(".mjs") && !f.startsWith(".")).map((f) => ({ path: "test/" + f, text: readFileSync(join(REPO, "test", f), "utf8") }));
@@ -2952,7 +2952,7 @@ await (async () => {
 })();
 
 /* ---- the invariants a valid book holds, on the LIVE book (S0 split: the frozen book pins content, this catches a bad fold) ---- */
-section("Live book — the invariants every valid book holds, read off the book as it stands");
+section("Live book: the invariants every valid book holds, read off the book as it stands");
 await (async () => {
   /* WHY. v680 went red on CI5-PER because a fold filed a point with no locality: a true catch, a data defect. The frozen book would hide it,
      so every rule a VALID book must obey is asserted here on ledger/book.json itself, with the same function proved red on a planted fault
