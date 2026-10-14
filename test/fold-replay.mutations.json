@@ -1,0 +1,20 @@
+[
+ {
+  "name": "applyBatch mutates the book it is given",
+  "file": "engine/apply.mjs",
+  "find": "const book = structuredClone(book0);",
+  "replace": "const book = book0;"
+ },
+ {
+  "name": "the roll is skipped",
+  "file": "engine/apply.mjs",
+  "find": "for (const prod of Object.keys(byProd)) {",
+  "replace": "for (const prod of []) {"
+ },
+ {
+  "name": "a new row's rid is minted twice over",
+  "file": "engine/apply.mjs",
+  "find": "it.append === \"sales\" ? \"s\" : \"p\")(1);",
+  "replace": "it.append === \"sales\" ? \"s\" : \"p\")(2);"
+ }
+]
