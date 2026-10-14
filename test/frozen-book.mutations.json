@@ -1,0 +1,5 @@
+[
+  {"name": "the frozen master takes a stray byte outside the block", "file": "test/frozen.mjs", "find": "writeFileSync(file, syncText(readFileSync(LIVE_MASTER, \"utf8\"), JSON.parse(readFileSync(process.env.SALT_BOOK, \"utf8\"))));", "replace": "writeFileSync(file, syncText(readFileSync(LIVE_MASTER, \"utf8\"), JSON.parse(readFileSync(process.env.SALT_BOOK, \"utf8\"))).replace(\"<head>\", \"<head><!--x-->\"));"},
+  {"name": "the suite's book is the live one again", "file": "test/frozen.mjs", "find": "if (!process.env.SALT_BOOK) process.env.SALT_BOOK = FROZEN_BOOK;", "replace": "if (!process.env.SALT_BOOK) process.env.SALT_BOOK = LIVE_BOOK;"},
+  {"name": "liveEnv keeps the overrides", "file": "test/frozen.mjs", "find": "if (!(k in extra)) delete e[k];", "replace": "if (!(k in extra)) e[k] = e[k];"}
+]
