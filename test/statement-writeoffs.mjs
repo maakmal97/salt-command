@@ -1,3 +1,4 @@
+import { FROZEN_BOOK } from "./frozen.mjs";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import E from "../engine/position.mjs";
@@ -50,7 +51,7 @@ export function statementWriteoffChecks(ok) {
     && footer(partial)["Not handed over on written-off orders"] === 60,
     "a partial handover distinguishes the actual loss from the balance never handed over");
 
-  const book = JSON.parse(readFileSync(resolve("ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const parties = [...new Set(book.sales.map(s => s.customer).filter(c => c && !E.isBucket(c)))];
   const date = klToday(new Date());
   const options = { from: null, to: date, completed: true, open: true, pending: true, dates: true };

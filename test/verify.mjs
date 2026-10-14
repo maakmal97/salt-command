@@ -5,6 +5,7 @@
  * rendering is tested by the daily run's jsdom pass; this suite guards the cloud plumbing.
  * No network, no browser: `npm test` runs it in a couple of seconds.
  */
+import { FROZEN_BOOK, FROZEN_MASTER, LIVE_BOOK, LIVE_MASTER, liveEnv } from "./frozen.mjs";   /* first, so SALT_BOOK and SALT_MASTER are set before any tool reads them */
 import { execFileSync, spawnSync } from "node:child_process";
 import { DATA_DIR, PROJECT_DIR, prodOrder } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
@@ -624,11 +625,11 @@ await (async () => {
      of a thing the book already makes, and d1.mjs failed when the two disagreed, so a product
      could not be registered in one place. Same fault the LEDGER map above is guarded against. */
   ok(!/PROD_ORDER = \[/.test(book), "the tools keep no typed copy of the product order");
-  const bookOrder = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")).PROD_ORDER;
+  const bookOrder = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")).PROD_ORDER;
   ok(JSON.stringify(prodOrder()) === JSON.stringify(bookOrder), "and read it from the book itself");
   ok(prodOrder()[0] === "salt", "the tools agree salt leads");
   /* v387: read off the master, since the payload that used to prove this is retired. */
-  const md = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const md = readFileSync(FROZEN_MASTER, "utf8");
   ok(md.indexOf("salt:") < md.indexOf("oil:"), "and the desk declares salt before oil");
 
   /* The name gate must exist and must be capable of failing. Nothing may be committed to
@@ -657,7 +658,7 @@ await (async () => {
     const bio = JSON.parse(readFileSync(BIO, "utf8"));
     const words = new Set();
     /* v680, HIS DECISION OF 17 SEP 2026: a place filed as a party's locality is public; a place only, never a name */
-    const localities = publishedLocalities(JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")));
+    const localities = publishedLocalities(JSON.parse(readFileSync(FROZEN_BOOK, "utf8")));
     for (const v of Object.values(bio.bio || {})) {
       const raw = String(v.raw || ""), o = raw.lastIndexOf("(");
       if (o > 0) { words.add(raw.slice(0, o).trim()); const pl = raw.slice(o + 1, raw.lastIndexOf(")")).trim(); if (!localities.has(pl.toLowerCase())) words.add(pl); }
@@ -2319,7 +2320,7 @@ await (async () => {
      with the assertions: v309 exists because the same fulfilment was queued twice, byte for
      byte, since nothing said it was already in hand. What is still proved is the half that
      needs no surface: the store keeps them and no route can decide one. */
-  ok(!/function drawRefused/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
+  ok(!/function drawRefused/.test(readFileSync(FROZEN_MASTER, "utf8")),
     "the desk has no refused panel, so retiring the app left refusals with no surface at all");
 })();
 
@@ -2356,8 +2357,7 @@ await (async () => {
 /* ---- 15. The book is in date order, and stays that way (20 Aug 2026) ------------- */
 section("Ledger — the date is superior to the position");
 await (async () => {
-  const MASTER = process.env.SALT_MASTER ||
-    join(REPO, "master", "salt_command.html");
+  const MASTER = LIVE_MASTER;   /* the book as it stands: this section reads the live file */
   if (!existsSync(MASTER)) {
     skipData("the master is not on this machine, so the order check is skipped");
   } else {
@@ -2422,7 +2422,7 @@ await (async () => {
 section("Ledger — the book carries no undated row, and --check is what proves it");
 await (async () => {
   const { undated } = await import("../tools/sort-ledger.mjs");
-  const live = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const live = JSON.parse(readFileSync(LIVE_BOOK, "utf8"));
   for (const name of ["sales", "purchases"]) {
     const bad = undated(live[name] || []);
     ok(bad.length === 0, bad.length
@@ -2459,7 +2459,7 @@ await (async () => {
 /* ---- 16. The phone payload: the ledger, the open orders, the count dates (v319) -- */
 section("Desk — the row editor names only fields CORRECTABLE holds");
 await (async () => {
-  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const master = readFileSync(FROZEN_MASTER, "utf8");
   const { default: X } = await import("../engine/position.mjs");
 
   /* THE v383 FAULT, ASSERTED SO IT CANNOT COME BACK. Two corrections named `customer` where
@@ -2484,7 +2484,7 @@ await (async () => {
 /* ---- 22. A caveat is a separate block, never a second sentence (v385) ------------- */
 section("Desk — the Whiteboard caveats cannot be cut off");
 await (async () => {
-  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const master = readFileSync(FROZEN_MASTER, "utf8");
   const NOTE_MIN = Number(master.slice(master.indexOf("NOTE_MIN=") + 9).match(/^[0-9]+/));
   ok(NOTE_MIN > 0, "NOTE_MIN was read from the master rather than assumed, at " + NOTE_MIN);
 
@@ -2725,7 +2725,7 @@ await (async () => {
       : "every card carries exactly one state");
     const stepped = cards.filter((c) => c.stepPills.length);
     ok(stepped.length === 0, stepped.length ? `${stepped.length} card(s) still put a state on a step, e.g. ${stepped[0].rid}` : "and no step carries one");
-    const bookL = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const bookL = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const eng = (rid) => X.txStat(bookL.sales.find((s) => s.rid === rid)).order;
     const wrong = cards.filter((c) => c.pills.length === 1 && bookL.sales.some((s) => s.rid === c.rid) && c.pills[0].toLowerCase() !== eng(c.rid).toLowerCase());
     ok(wrong.length === 0, wrong.length
@@ -2757,7 +2757,7 @@ await (async () => {
       "s-default": { cash: 0, deliveredQty: 2, defaulted: true }, "s-cancelled": { cash: 0, deliveredQty: 0, cancelled: true, cancelledOn: "2026-09-02" } };
     Object.keys(PLANT).forEach((k) => wC.eval(`sales.push(Object.assign({customer:'CX9-TINT',qty:2,total:100,date:'2026-09-01',rid:'x-${k.slice(2)}'},${JSON.stringify(PLANT[k])}))`));
     wC.eval("setProd('salt');recompute();ledOlder=true;switchTab('ledger');");
-    const bookC = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const bookC = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const got = JSON.parse(wC.eval(`JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard[data-rid]')).map(function(c){
       var st=[].filter.call(c.classList,function(k){return k.slice(0,2)==='s-';});
       var cs=getComputedStyle(c);
@@ -2899,10 +2899,10 @@ await (async () => {
 section("Book — ledger/book.json is the source (v339)");
 await (async () => {
   let chk = "";
-  try { chk = execFileSync("node", [join(REPO, "tools", "booksync.mjs"), "--check"], { encoding: "utf8" }); }
+  try { chk = execFileSync("node", [join(REPO, "tools", "booksync.mjs"), "--check"], { encoding: "utf8", env: liveEnv() }); }
   catch (e) { chk = String((e && e.stdout) || e); }
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(LIVE_BOOK, "utf8"));   /* live: the extract must equal the file as it stands */
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
   ok(keys.length === 29, "the book holds the twenty-nine ledger keys");   // v1029 added partners; v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING; v776 collapsed supplierQuote and oilQuote into QUOTES
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
@@ -2912,17 +2912,33 @@ await (async () => {
   const led = JSON.parse(readFileSync(join(REPO, "ledger", "ledger.json"), "utf8")).ledger;
   const same = keys.every((k) => JSON.stringify(led[k]) === JSON.stringify(book[k]));
   ok(same, "the extract read from the running desk equals ledger/book.json on every key");
-  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const master = readFileSync(FROZEN_MASTER, "utf8");
   ok(!/(?:^|\n)const sales=\[\n  \{date:'/.test(master), "the hand-written sales array is gone from the master");
   ok(/const sales=\[\n  \{"date"/.test(master) || /const sales=\[\n  \{"/.test(master), "and the generated one stands in its place");
+})();
+
+/* ---- the frozen book (S0 of the Book plan) ---- */
+section("Frozen book — the suite's master is the current master with only its BOOK block from the fixture");
+await (async () => {
+  /* WHY. A phone fold moves ledger/book.json and the master's BOOK block and nothing else; checks reading either went red with no code change
+     (CI5-PER locality v1097, #169, #173). The suite reads test/fixtures/book-frozen.json and a master rebuilt each run from the CURRENT master
+     with that book in its block (test/frozen.mjs), so a desk code change is still tested. Never a stored master: this check is what says so. */
+  const { locate, checkText } = await import("../tools/booksync.mjs");
+  const live = readFileSync(LIVE_MASTER, "utf8"), frozen = readFileSync(FROZEN_MASTER, "utf8");
+  const L = locate(live), F = locate(frozen);
+  ok(L && F, "both masters carry the BOOK markers");
+  ok(F && live.slice(0, L.start) === frozen.slice(0, F.start) && live.slice(L.end) === frozen.slice(F.end), "the frozen master differs from the live master only inside the BOOK markers");
+  ok(checkText(frozen, JSON.parse(readFileSync(FROZEN_BOOK, "utf8"))) === null, "and its block is the fixture book, byte for byte");
+  ok(process.env.SALT_BOOK === FROZEN_BOOK && /^[0-9a-f]{40}$/.test(readFileSync(FROZEN_BOOK.replace(/.json$/, ".sha"), "utf8").trim()), "SALT_BOOK is the fixture, and the sha it was copied at is on record beside it");
+  ok(liveEnv().SALT_BOOK === undefined && liveEnv().SALT_MASTER === undefined && liveEnv({ SALT_BOOK: "x" }).SALT_BOOK === "x", "liveEnv() drops both overrides for a child that must see the live files");
 })();
 
 /* ---- the fold as a data write ----------------------------------------------------------- */
 section("Fold — an approved batch becomes records in the book (v340)");
 await (async () => {
   const { plan, apply } = await import("../tools/fold.mjs");
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
+  const master = readFileSync(FROZEN_MASTER, "utf8");
   /* v359: SYNTHETIC TARGETS, NOT BORROWED FROM THE REAL BOOK, for BOTH amendment cases.
      Two fixes were tried before this and both were beaten by the same real fold within
      hours: pinning to a named row (CS6-PER at v347, the CS6-BS free unit at v359) broke
@@ -3037,7 +3053,7 @@ await (async () => {
   {
     const { checkCorrection, CORRECTABLE } = await import("../src/drafter.js");
     const E = (await import("../engine/position.mjs")).default;
-    const mtxt = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const mtxt = readFileSync(FROZEN_MASTER, "utf8");
 
     /* v373: thirty-one. handover joined the table so the delivered share could be measured
        from the rows rather than stated at 0.20. The count is pinned rather than derived on
@@ -3099,7 +3115,7 @@ await (async () => {
   {
     const { draftRow, checkCorrection } = await import("../src/drafter.js");
     const E2 = (await import("../engine/position.mjs")).default;
-    const m2 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const m2 = readFileSync(FROZEN_MASTER, "utf8");
 
     /* the engine emits the RAW figures where they differ from the derived ones, so the
        phone edits the field a correction actually writes. Thirteen live rows diverge. */
@@ -3501,7 +3517,7 @@ await (async () => {
 /* ---- 24. The parts are visible, and the phone carries the people (v343) ------------ */
 section("Views — every part is one tap away (v343)");
 await (async () => {
-  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m = readFileSync(FROZEN_MASTER, "utf8");
   ok(/const VIEW_PART=\{\}/.test(m) && /function railSubs\(\)/.test(m), "the master keeps the part each view shows and lists the parts under the rail");
   ok(/class="vnav"/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
   /* v732: opening Site orders reads the bulletin and wires its card beside the orders, so the hook is a block */
@@ -3704,7 +3720,7 @@ await (async () => {
        so. Each is recomputed here from the rows rather than read back from the code under test. */
     const c = read("pxCost()");
     if (!c.locked && F.lots > 0) {
-      const bkF = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+      const bkF = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
       const EF = (await import("../engine/position.mjs")).default;
       const live = bkF.purchases.filter((x) => (x.product || "salt") === pr && !x.cancelled && !x.defaulted && !x.pending && +x.qty > 0);
       const landed = live.filter((x) => +x.total > 0 && (x.receivedOn || x.date) && EF.poRecvUnits(x) > 0)
@@ -3764,7 +3780,7 @@ await (async () => {
      throws, which is the only probe that sees through an inner catch: watching for a
      failure notice sees nothing, because there was nothing to see. Both catches are gone
      rather than replaced, since every road out now has a reporter on it. */
-  const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const src = readFileSync(FROZEN_MASTER, "utf8");
   /* round six: the old scan banned the exact byte pattern }catch(e){} in two functions, so a
      single added space defeated it and the other draw functions were never scanned. This one
      covers every draw function and bans an empty catch whose TRY BODY spans a line or runs
@@ -4228,7 +4244,7 @@ await (async () => {
      asserted is therefore the LAW the board keeps rather than the figures, which the cost basis
      moves: each size clears its own floor, no size asks more a unit than the size below it, and the
      ladder reaches it, not a price anybody typed. */
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   ok(book.PRICE_SET && book.PRICE_SET.oil && !Object.keys(book.PRICE_SET.oil.prices || {}).length,
     "the book records no stated oil board any more: his five typed prices retired with the derived ask");
   const { openMaster } = await import("../tools/payload.mjs");
@@ -4627,7 +4643,7 @@ await (async () => {
 
 section("iPhone — the dead zones the desk draws under (v392)");
 await (async () => {
-  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m = readFileSync(FROZEN_MASTER, "utf8");
   /* THE HEAD ASKS TO DRAW UNDER THE STATUS BAR AND THE ISLAND, AND NOTHING PADDED THE TOP.
      apple-mobile-web-app-status-bar-style:black-translucent plus viewport-fit=cover is an
      instruction to use the whole screen including the strip the clock and the Dynamic Island
@@ -4676,7 +4692,7 @@ await (async () => {
      These read the master's source rather than the CSSOM on purpose. CSSOM re-serialises a
      selector list with a space after every comma, so a check written against the authored
      selector comes back false for a rule that is present. */
-  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m = readFileSync(FROZEN_MASTER, "utf8");
 
   ok(/\.vpart\[data-tab="add"\] \.viewsw\{flex-wrap:wrap/.test(m),
     "the Enter form's strips wrap, so no mode sits off the right edge of a phone");
@@ -4714,7 +4730,7 @@ await (async () => {
 
 section("Silence — four things that failed without saying so (v384)");
 await (async () => {
-  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m = readFileSync(FROZEN_MASTER, "utf8");
   const eng = readFileSync(join(REPO, "engine", "pricing.mjs"), "utf8");
 
   /* 1. NO EMPTY CATCH ON A DRAW. Both of these swallowed a throw whole, so a broken chart was
@@ -4899,7 +4915,7 @@ await (async () => {
      an end earning LESS than a ringgit, where a ringgit of standing cost is 200% of the
      earning and the sentence said so, live on /desk. The rule is one rule for both ends: under
      a ringgit of contribution a ringgit is a MULTIPLE of it, at or above a SHARE of it. */
-  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m = readFileSync(FROZEN_MASTER, "utf8");
   const src = /const share=(c=>[^;]+);/.exec(m);
   ok(!!src, "costPanel states the share through one helper, so both ends use the same rule");
   if (src) {
@@ -4998,7 +5014,7 @@ await (async () => {
      What this section keeps is not the bytes but the laws: the tool builds, the desk
      stays out of it, and nothing on a statement is anything a customer must not see. */
   const { stmtRows, stmtDoc, makeStatements } = await import("../tools/make_statements.mjs");
-  const master = readFileSync(resolve(REPO, "master", "salt_command.html"), "utf8");
+  const master = readFileSync(FROZEN_MASTER, "utf8");
   ok(!master.includes("function stmtRows"),
      "the desk carries no statement functions: one home, and it is the module (if a panel returns, inline the module like the engines)");
 
@@ -5010,7 +5026,7 @@ await (async () => {
   rmSync(dir, { recursive: true, force: true });
   ok(run.made > 0 && run.made === run.sheets.length, `the tool builds (${run.made} statements)`);
 
-  const book = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const codes = [...new Set([...book.sales.map(s => s.customer), ...book.purchases.map(p => p.supplier)])].filter(Boolean);
   const alone = (html, c) => new RegExp("(^|[^A-Za-z0-9-])" + c + "($|[^A-Za-z0-9-])").test(html);
   /* the vocabulary law is about the document's WORDS, so the stylesheet and the markup
@@ -5140,7 +5156,7 @@ await (async () => {
 
 section("Round 6 — book integrity");
 await (async () => {
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const allRows = [...(book.sales || []), ...(book.purchases || [])];
   const rids = allRows.map((r) => r.rid).filter(Boolean);
   const dup = rids.filter((v, i) => rids.indexOf(v) !== i);
@@ -5211,14 +5227,14 @@ await (async () => {
   const { execSync } = await import("node:child_process");
   const { join } = await import("node:path");
   const M = join(REPO, "test", ".v408.html"), B = join(REPO, "test", ".v408.json");
-  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(rf(FROZEN_BOOK, "utf8"));
   const seed = (bk.sales || []).find((r) => r.rid && !r.cancelled && (+r.total || 0) > 40 && (+r.qty || 0) > 1 && r.date);
   ok(!!seed, "a sale exists to build the part-paid case from");
   if (seed) {
     seed.cash = +(seed.total / 2).toFixed(2);
     seed.deliveredQty = 0;
     wf(B, JSON.stringify(bk, null, 1));
-    wf(M, rf(join(REPO, "master", "salt_command.html"), "utf8"));
+    wf(M, rf(FROZEN_MASTER, "utf8"));
     execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
     const { w } = await openMaster(M);
     w.eval("setProd(" + JSON.stringify(seed.product || "salt") + ");recompute();");
@@ -5316,7 +5332,7 @@ await (async () => {
   const { join } = await import("node:path");
   const T = join(REPO, "test", ".v410.html");
   const paneAt = async (clock) => {
-    const src = rf(join(REPO, "master", "salt_command.html"), "utf8")
+    const src = rf(FROZEN_MASTER, "utf8")
       .replace(/const TODAY=[^\n]*\n/, "const TODAY=new Date('" + clock + "T12:00:00+08:00');\n");
     wf(T, src);
     const { w } = await openMaster(T);
@@ -5466,7 +5482,7 @@ await (async () => {
   const { join } = await import("node:path");
   const { w } = await openMaster();
   w.eval("setProd('salt');recompute();");
-  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(rf(FROZEN_BOOK, "utf8"));
 
   /* 1. the panel's outstanding is total-minus-poCash and qty-minus-poRecvUnits, on every lot */
   const wrong = [];
@@ -5545,7 +5561,7 @@ await (async () => {
        its received quantity from 12.5 to 0, walking stock that is physically on the shelf out of
        the book. Seventeen lots were offerable and nothing in the chain refused it. */
     {
-      const bkD = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+      const bkD = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
       const Eng2 = (await import("../engine/position.mjs")).default;
       const landed = JSON.parse(JSON.stringify((bkD.purchases || []).find((p) => !p.defaulted && !p.cancelled && Eng2.poRecvUnits(p) > 0.009)));
       ok(!!landed, "the book carries a landed lot to test with");
@@ -5933,14 +5949,14 @@ await (async () => {
     { kind: "Correction", fields: { receivedQty: 8 } },
   ];
 
-  const bk5 = JSON.parse(rf5(j5(REPO, "ledger", "book.json"), "utf8"));
+  const bk5 = JSON.parse(rf5(FROZEN_BOOK, "utf8"));
   bk5.sales = bk5.sales.concat(SALES.map((r) => Object.assign({}, r)));
   bk5.purchases = bk5.purchases.concat(LOTS.map((r) => Object.assign({}, r)));
   /* a folder of its own: two runs of this section side by side (section.mjs's mutations) shared test/.v420.* and read each other's master */
   const T5 = (await import("node:fs")).mkdtempSync(j5((await import("node:os")).tmpdir(), "salt-v420-"));
   const B5 = j5(T5, "v420.json"), M5 = j5(T5, "v420.html");
   wf5(B5, JSON.stringify(bk5, null, 1));
-  wf5(M5, rf5(process.env.SALT_MASTER || j5(REPO, "master", "salt_command.html"), "utf8"));   /* the run's master, so a mutation reaches it */
+  wf5(M5, rf5(process.env.SALT_MASTER || FROZEN_MASTER, "utf8"));   /* the run's master, so a mutation reaches it */
   ex5("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B5, SALT_MASTER: M5 }, stdio: "pipe" });
 
   const strip = (r) => { const o = JSON.parse(JSON.stringify(r)); delete o._prov; return o; };
@@ -5995,8 +6011,7 @@ await (async () => {
      gate and three that must not, because a gate is two claims and only asserting the refusals is
      how v415 shipped a full stop. */
   const { checkCorrection: cc } = await import("../src/drafter.js");
-  const bkA = JSON.parse((await import("node:fs")).readFileSync(
-    (await import("node:path")).join(REPO, "ledger", "book.json"), "utf8"));
+  const bkA = JSON.parse((await import("node:fs")).readFileSync(FROZEN_BOOK, "utf8"));
   const blocked = (row, isSale) => cc({ cancelled: true }, bkA, row, isSale).errs.filter((e) => /already moved/.test(e)).length > 0;
   const lotA = (o) => Object.assign({ date: "2026-07-08", qty: 12.5, total: 750, supplier: "SF6-KLC", rid: "p9" }, o);
   const saleA = (o) => Object.assign({ date: "2026-08-01", qty: 2, total: 200, customer: "CN3-WM", rid: "s9" }, o);
@@ -6040,11 +6055,11 @@ await (async () => {
     "the live book prints a plausible margin percentage on the All row (" + (live && live[5]) + ")");
 
   /* a book whose customers hold cost and no revenue */
-  const bk6 = JSON.parse(rf6(j6(REPO, "ledger", "book.json"), "utf8"));
+  const bk6 = JSON.parse(rf6(FROZEN_BOOK, "utf8"));
   bk6.sales = [{ date: "2026-08-01", customer: "CN3-WM", qty: 2, total: 0, cash: 0, deliveredQty: 2, rid: "z1" }];
   const B6 = j6(REPO, "test", ".v426.json"), M6 = j6(REPO, "test", ".v426.html");
   wf6(B6, JSON.stringify(bk6, null, 1));
-  wf6(M6, rf6(j6(REPO, "master", "salt_command.html"), "utf8"));
+  wf6(M6, rf6(FROZEN_MASTER, "utf8"));
   ex6("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B6, SALT_MASTER: M6 }, stdio: "pipe" });
   const { w: wn } = await om6(M6);
   wn.eval("setProd('salt');recompute();switchTab('concentration');");
@@ -6079,11 +6094,11 @@ await (async () => {
   ok(!/Surplus \(count above ledger\)/.test(w0.document.querySelector(".sec.on").textContent),
     "and prints no surplus row, so the row is not simply always there");
 
-  const bk7 = JSON.parse(rf7(j7(REPO, "ledger", "book.json"), "utf8"));
+  const bk7 = JSON.parse(rf7(FROZEN_BOOK, "utf8"));
   bk7.STATED_STOCK = +(ledger + 15).toFixed(2);          /* counted fifteen above the ledger */
   const B7 = j7(REPO, "test", ".v429.json"), M7 = j7(REPO, "test", ".v429.html");
   wf7(B7, JSON.stringify(bk7, null, 1));
-  wf7(M7, rf7(j7(REPO, "master", "salt_command.html"), "utf8"));
+  wf7(M7, rf7(FROZEN_MASTER, "utf8"));
   ex7("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B7, SALT_MASTER: M7 }, stdio: "pipe" });
   const { w: w7 } = await om7(M7);
   w7.eval("setProd('salt');recompute();switchTab('inventory');");
@@ -6133,11 +6148,11 @@ await (async () => {
 
 
   /* an unpriced row, built because the book has none */
-  const bk8 = JSON.parse(rf8(j8(REPO, "ledger", "book.json"), "utf8"));
+  const bk8 = JSON.parse(rf8(FROZEN_BOOK, "utf8"));
   bk8.sales = bk8.sales.concat([{ date: "2026-08-20", customer: "CN3-WM", qty: 3, total: 0, unpriced: true, cash: 0, deliveredQty: 0, rid: "u1" }]);
   const B8 = j8(REPO, "test", ".v430.json"), M8 = j8(REPO, "test", ".v430.html");
   wf8(B8, JSON.stringify(bk8, null, 1));
-  wf8(M8, rf8(j8(REPO, "master", "salt_command.html"), "utf8"));
+  wf8(M8, rf8(FROZEN_MASTER, "utf8"));
   ex8("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B8, SALT_MASTER: M8 }, stdio: "pipe" });
   const { w: wu } = await om8(M8);
   const uc = JSON.parse(wu.eval("JSON.stringify([].map.call(document.querySelectorAll('.updchip'),function(b){return b.textContent;}))"));
@@ -6180,7 +6195,7 @@ await (async () => {
     fx("sp15", "2026-09-25", { deliveredQty: 1 }),                                             // after the statement's day: not on it yet
     fx("sp16", "2026-09-26", { total: 30 })                                                    // agreed, dated ahead: open whatever its date
   ];
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book.sales = rows; book.customerRefunds = [];
   const tmp = join(REPO, "test", "tmp", "s6pay-" + Date.now());
   mkdirSync(tmp, { recursive: true });
@@ -6201,7 +6216,7 @@ await (async () => {
   try {
     /* V5 (his answers of 29 Sep 2026) put the desk's term at 1 day; the reading below is the three-day one, on a copy of
        the master at 3 days, and the master's own term is read after it */
-    const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+    const src = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
     const three = src.replace(/(const RULES=\{[^;]*?\bholdDays:)1\b/, (all, head) => head + "3");
     ok(three !== src, "the fixture master carries a 3-day term");
     writeFileSync(join(tmp, "m3.html"), three);
@@ -6268,7 +6283,7 @@ await (async () => {
   /* over the real book, the rule and never a day's figures: every live statement's three reconcile to its own owed */
   const M = await import("../tools/make_statements.mjs");
   const POS = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
   const off = [];
   let n = 0;
@@ -6302,7 +6317,7 @@ await (async () => {
     fx("sv03", "2026-09-21", { qty: 3, total: 100, delivery: 10, deliveredQty: 1 }),                  // a third handed over: the sen falls to the delivery
     fx("sv04", "2026-09-22", { qty: 3, total: 100, cash: 10, deliveredQty: 2 }),                      // no delivery charge: none, whatever the rounding
     fx("sv05", "2026-09-23", { total: 90, cash: 30, settledRM: 20, deliveredQty: 1 })];               // paid in cash and in kind
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book.sales = rows; book.customerRefunds = [];
   const tmp = mkdtempSync(join(tmpdir(), "v2seal-"));
   const bookFile = join(tmp, "book.json");
@@ -6324,7 +6339,7 @@ await (async () => {
   /* over the real book, the rule and never a day's figures */
   const R = await import("../tools/make_statements.mjs");
   const POS = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const bad = [];
   let n = 0;
   for (const p of [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((x) => !POS.isBucket(x))) {
@@ -6389,7 +6404,7 @@ await (async () => {
      every check over it passes on nothing. The "both branches exercised" assertion below is what
      caught that, which is the whole reason it is there. */
   const SO = { from: null, to: null, completed: true, open: true, pending: true, dates: true };
-  const bookM = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const bookM = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const parties = [...new Set((bookM.sales || []).map((x) => x.customer).filter(Boolean))];
   ok(parties.length > 5, `the book carries ${parties.length} customers to check`);
 
@@ -6485,7 +6500,7 @@ await (async () => {
   const { applyAmend: aa9 } = await import("../tools/fold.mjs");
   const { checkCorrection: cc9 } = await import("../src/drafter.js");
   const { default: PE9 } = await import("../engine/position.mjs");
-  const bk9 = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const bk9 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const { w: w9 } = await om9();
   w9.eval("setProd('salt');recompute();");
 
@@ -6589,7 +6604,7 @@ await (async () => {
   const { readFileSync: rfA, writeFileSync: wfA, unlinkSync: rmA } = await import("node:fs");
   const { execSync: exA } = await import("node:child_process");
   const { join: jA } = await import("node:path");
-  const bookA = JSON.parse(rfA(jA(REPO, "ledger", "book.json"), "utf8"));
+  const bookA = JSON.parse(rfA(FROZEN_BOOK, "utf8"));
   const LOTS = [
     { date: "2026-08-20", supplier: "SF6-KLC", qty: 25, total: 1250, cash: 0, cancelled: true, rid: "z1" },
     { date: "2026-08-20", supplier: "SF6-KLC", qty: 25, total: 1300, cash: 0, defaulted: true, rid: "z2" },
@@ -6612,7 +6627,7 @@ await (async () => {
     bk.purchases = bk.purchases.concat(lots);
     const B = jA(REPO, "test", ".v438" + tag + ".json"), M = jA(REPO, "test", ".v438" + tag + ".html");
     wfA(B, JSON.stringify(bk, null, 1));
-    wfA(M, rfA(jA(REPO, "master", "salt_command.html"), "utf8"));
+    wfA(M, rfA(FROZEN_MASTER, "utf8"));
     exA("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
     const { w } = await omA(M);
     w.eval("setProd('salt');recompute();");
@@ -6703,12 +6718,12 @@ await (async () => {
   const seed = { rid: "y1", date: null, qty: 2, total: 200, customer: "CN3-WM", unpriced: true };
   const lot = { rid: "y2", date: "2026-08-01", qty: 10, total: 500, supplier: "SF6-KLC", inTransit: true, receivedQty: 0, cash: 100 };
   const settled = { rid: "y3", date: "2026-07-01", qty: 10, total: 500, supplier: "SF6-KLC", status: "paid" };
-  const bkB = JSON.parse(rfB(jB(REPO, "ledger", "book.json"), "utf8"));
+  const bkB = JSON.parse(rfB(FROZEN_BOOK, "utf8"));
   bkB.sales = bkB.sales.concat([Object.assign({}, seed)]);
   bkB.purchases = bkB.purchases.concat([Object.assign({}, lot), Object.assign({}, settled)]);
   const BB = jB(REPO, "test", ".v439.json"), MB = jB(REPO, "test", ".v439.html");
   wfB(BB, JSON.stringify(bkB, null, 1));
-  wfB(MB, rfB(jB(REPO, "master", "salt_command.html"), "utf8"));
+  wfB(MB, rfB(FROZEN_MASTER, "utf8"));
   exB("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: BB, SALT_MASTER: MB }, stdio: "pipe" });
   const { w: wB } = await omB(MB);
   wB.eval("setProd('salt');recompute();");
@@ -6791,7 +6806,7 @@ await (async () => {
      Undelivered on this line changes with it. */
   const { readFileSync: rfC } = await import("node:fs");
   const { join: jC } = await import("node:path");
-  const bkC = JSON.parse(rfC(jC(REPO, "ledger", "book.json"), "utf8"));
+  const bkC = JSON.parse(rfC(FROZEN_BOOK, "utf8"));
   const moved = (bkC.sales || []).filter((x) => x.cancelled && PEc.txEffDeliv(x) > 0.009);
   ok(moved.length === 0, `no cancelled row on the book carries delivery (${moved.map((x) => x.rid).join(", ") || "none"}), which is what makes Undelivered true by construction`);
 
@@ -6842,7 +6857,7 @@ await (async () => {
   const { readFileSync: rfD, writeFileSync: wfD, unlinkSync: rmD } = await import("node:fs");
   const { execSync: exD } = await import("node:child_process");
   const { join: jD } = await import("node:path");
-  const bkD = JSON.parse(rfD(jD(REPO, "ledger", "book.json"), "utf8"));
+  const bkD = JSON.parse(rfD(FROZEN_BOOK, "utf8"));
   const target = (bkD.sales || []).find((x) => x.rid === "s119" && !x.cancelled && +x.qty === 2.5);
   if (!target) skipData("s119 is no longer the 2.5 unit live order this check drives");
   else {
@@ -6856,7 +6871,7 @@ await (async () => {
     { const che = bkD.sales.find((x) => x.rid === "s093"); che.deliveredQty = 5.25; che.amend = (che.amend || []).filter((x) => x.date !== "2026-08-30"); }
     const BD = jD(REPO, "test", ".v443.json"), MD = jD(REPO, "test", ".v443.html");
     wfD(BD, JSON.stringify(bkD, null, 1));
-    wfD(MD, rfD(jD(REPO, "master", "salt_command.html"), "utf8"));
+    wfD(MD, rfD(FROZEN_MASTER, "utf8"));
     exD("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: BD, SALT_MASTER: MD }, stdio: "pipe" });
     const { w: wD } = await omD(MD);
     wD.eval("setProd('salt');recompute();");
@@ -6923,7 +6938,7 @@ await (async () => {
     const { apply: foldApply } = await import("../tools/fold.mjs");
     const { readFileSync: rfE } = await import("node:fs");
     const { join: jE } = await import("node:path");
-    const bookE = JSON.parse(rfE(jE(REPO, "ledger", "book.json"), "utf8"));
+    const bookE = JSON.parse(rfE(FROZEN_BOOK, "utf8"));
     const paid = { rid: "z9", date: "2026-08-01", customer: "CY2-NIL", qty: 2.5, total: 230, cash: 230, deliveredQty: 0 };
     bookE.sales = bookE.sales.concat([paid]);
     const nRef = (bookE.customerRefunds || []).length;
@@ -6931,7 +6946,7 @@ await (async () => {
       entry: { payload: { direction: "SELL", kind: "Cancellation", date: "2026-09-02" } },
       row: paid, pay: { kind: "Cancellation", date: "2026-09-02" } }] };
     const notes = { version: "v9999", title: "t", notes: ["n"], rows: { x1: { note: "cancelled" } } };
-    const res = foldApply(bookE, staged, notes, rfE(jE(REPO, "master", "salt_command.html"), "utf8"));
+    const res = foldApply(bookE, staged, notes, rfE(FROZEN_MASTER, "utf8"));
     ok(res && res.ok !== false, `the fold applies the cancellation (${res && res.problems ? res.problems.join("; ").slice(0, 120) : "ok"})`);
     const added = (bookE.customerRefunds || []).length - nRef;
     ok(added === 1, `and the fold road books the payable too (${added} added), not just the desk`);
@@ -7010,13 +7025,13 @@ await (async () => {
   const ahead = new Date(Date.parse(todayISO) + 30 * 86400000).toISOString().slice(0, 10);
 
   const build = async (mutate, tag) => {
-    const bk = JSON.parse(rfF(jF(REPO, "ledger", "book.json"), "utf8"));
+    const bk = JSON.parse(rfF(FROZEN_BOOK, "utf8"));
     bk.sales.push(Object.assign({ date: todayISO }, victim));
     const row = bk.sales[bk.sales.length - 1];
     mutate(row);
     const B = jF(REPO, "test", `.v445.${tag}.json`), M = jF(REPO, "test", `.v445.${tag}.html`);
     wfF(B, JSON.stringify(bk, null, 1));
-    wfF(M, rfF(jF(REPO, "master", "salt_command.html"), "utf8"));
+    wfF(M, rfF(FROZEN_MASTER, "utf8"));
     exF("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
     const { w } = await omF(M);
     w.eval("setProd('salt');recompute();");
@@ -7123,13 +7138,13 @@ await (async () => {
   const { readFileSync: rf6, writeFileSync: wf6, unlinkSync: rm6 } = await import("node:fs");
   const { execSync: ex6 } = await import("node:child_process");
   const { join: j6 } = await import("node:path");
-  const bk = JSON.parse(rf6(j6(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(rf6(FROZEN_BOOK, "utf8"));
   const sup = (bk.purchases.find((p) => p.supplier) || {}).supplier;
   ok(!!sup, "the book has a supplier to hang the fixtures on");
   bk.purchases.push({ rid: "p9c", date: "2026-08-30", supplier: sup, product: "salt", qty: 10, total: 500, cash: 500, receivedQty: 0, cancelled: true, note: "fixture: cancelled after paying; an explicit cash figure and no status, the shape the old picker rule listed" });
   bk.purchases.push({ rid: "p9u", date: "2026-08-31", supplier: sup, product: "salt", qty: 10, total: 0, unpriced: true, cash: 0, receivedQty: 0, note: "fixture: agreed, unpriced" });
   const B6 = j6(REPO, "test", ".v446.json"), M6 = j6(REPO, "test", ".v446.html");
-  wf6(B6, JSON.stringify(bk, null, 1)); wf6(M6, rf6(j6(REPO, "master", "salt_command.html"), "utf8"));
+  wf6(B6, JSON.stringify(bk, null, 1)); wf6(M6, rf6(FROZEN_MASTER, "utf8"));
   ex6("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B6, SALT_MASTER: M6 }, stdio: "pipe" });
   try {
     const { w } = await om6(M6);
@@ -7163,7 +7178,7 @@ await (async () => {
   const { readFileSync: rf7, writeFileSync: wf7, unlinkSync: rm7 } = await import("node:fs");
   const { execSync: ex7 } = await import("node:child_process");
   const { join: j7 } = await import("node:path");
-  const bk = JSON.parse(rf7(j7(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(rf7(FROZEN_BOOK, "utf8"));
   const cust = bk.sales.find((x) => x.customer).customer, sup = bk.purchases.find((x) => x.supplier).supplier;
   bk.sales.push({ rid: "f1", date: null, customer: cust, product: "salt", qty: 4, total: 400, cash: 0, deliveredQty: 0 });
   bk.sales.push({ rid: "f2", date: "2026-08-29", customer: cust, product: "salt", qty: 4, total: 400, cash: 150, deliveredQty: 4 });
@@ -7171,7 +7186,7 @@ await (async () => {
   bk.sales.push({ rid: "f4", date: "2026-08-29", customer: cust, product: "salt", qty: 4, total: 400, cash: 400, deliveredQty: 0, cancelled: true });
   bk.purchases.push({ rid: "f5", date: "2026-08-29", supplier: sup, product: "salt", qty: 10, total: 500, cash: 200, receivedQty: 0 });
   const B7 = j7(REPO, "test", ".v447.json"), M7 = j7(REPO, "test", ".v447.html");
-  wf7(B7, JSON.stringify(bk, null, 1)); wf7(M7, rf7(j7(REPO, "master", "salt_command.html"), "utf8"));
+  wf7(B7, JSON.stringify(bk, null, 1)); wf7(M7, rf7(FROZEN_MASTER, "utf8"));
   ex7("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B7, SALT_MASTER: M7 }, stdio: "pipe" });
   try {
     const { w } = await om7(M7);
@@ -7272,7 +7287,7 @@ await (async () => {
   /* p016, the one lot that already carried a step */
   const { readFileSync: rf0 } = await import("node:fs");
   const { join: j0 } = await import("node:path");
-  const p016 = JSON.parse(rf0(j0(REPO, "ledger", "book.json"), "utf8")).purchases.find((p) => p.rid === "p016");
+  const p016 = JSON.parse(rf0(FROZEN_BOOK, "utf8")).purchases.find((p) => p.rid === "p016");
   const T = (p016 && p016.amend) || [];
   ok(T.length >= 2 && T[0].note === "as booked" && Math.abs(sum(T, "cash") - P0.poCash(p016)) < 0.01 && Math.abs(sum(T, "kg") - P0.poRecvUnits(p016)) < 0.01,
     `p016 opens with the lot as booked and its trail sums to the row: RM ${sum(T, "cash")} of ${p016 && P0.poCash(p016)}, ${sum(T, "kg")} of ${p016 && P0.poRecvUnits(p016)} unit`);
@@ -7288,14 +7303,14 @@ await (async () => {
   const { readFileSync: rf1, writeFileSync: wf1, unlinkSync: rm1 } = await import("node:fs");
   const { execSync: ex1 } = await import("node:child_process");
   const { join: j1 } = await import("node:path");
-  const bk1 = JSON.parse(rf1(j1(REPO, "ledger", "book.json"), "utf8"));
+  const bk1 = JSON.parse(rf1(FROZEN_BOOK, "utf8"));
   const sup1 = bk1.purchases.find((x) => x.supplier).supplier;
   bk1.purchases.push({ rid: "f6", date: "2026-08-10", supplier: sup1, product: "salt", qty: 10, total: 500, cash: 500, receivedQty: 10, paidOn: "2026-08-10", receivedOn: "2026-08-20",
     amend: [{ date: "2026-08-10", kind: "Fulfilment", cash: 500, kg: 0, note: "as booked" }, { date: "2026-08-20", kind: "Fulfilment", cash: 0, kg: 10 }] });
   bk1.purchases.push({ rid: "f7", date: "2026-08-25", supplier: sup1, product: "salt", qty: 4, total: 220, cash: 220, receivedQty: 4, mod: "corrected on 2026-08-30: total 200 to 220; cash 200 to 220",
     amend: [{ date: "2026-08-25", kind: "Fulfilment", cash: 200, kg: 4, note: "as booked" }, { date: "2026-08-30", kind: "Correction", cash: 0, kg: 0, note: "corrected on 2026-08-30: total 200 to 220; cash 200 to 220" }] });
   const B1 = j1(REPO, "test", ".v451.json"), M1 = j1(REPO, "test", ".v451.html");
-  wf1(B1, JSON.stringify(bk1, null, 1)); wf1(M1, rf1(j1(REPO, "master", "salt_command.html"), "utf8"));
+  wf1(B1, JSON.stringify(bk1, null, 1)); wf1(M1, rf1(FROZEN_MASTER, "utf8"));
   ex1("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B1, SALT_MASTER: M1 }, stdio: "pipe" });
   try {
     const { w } = await om1(M1);
@@ -7336,12 +7351,12 @@ await (async () => {
   const { readFileSync: rf2, writeFileSync: wf2, unlinkSync: rm2 } = await import("node:fs");
   const { execSync: ex2 } = await import("node:child_process");
   const { join: j2 } = await import("node:path");
-  const bk2 = JSON.parse(rf2(j2(REPO, "ledger", "book.json"), "utf8"));
+  const bk2 = JSON.parse(rf2(FROZEN_BOOK, "utf8"));
   const cus2 = bk2.sales.find((x) => x.customer && x.date).customer;
   bk2.sales.push({ rid: "f8", date: "2026-08-12", customer: cus2, product: "salt", qty: 4, total: 400, cost: 64, cash: 200, deliveredQty: 2 });
   bk2.sales.push({ rid: "f9", date: "2027-01-05", customer: cus2, product: "salt", qty: 2, total: 200, cost: 64, cash: 200, deliveredQty: 2 });
   const B2 = j2(REPO, "test", ".v452.json"), M2 = j2(REPO, "test", ".v452.html");
-  wf2(B2, JSON.stringify(bk2, null, 1)); wf2(M2, rf2(j2(REPO, "master", "salt_command.html"), "utf8"));
+  wf2(B2, JSON.stringify(bk2, null, 1)); wf2(M2, rf2(FROZEN_MASTER, "utf8"));
   ex2("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B2, SALT_MASTER: M2 }, stdio: "pipe" });
   const STUB = "window.__charts={};window.Chart=function(c,cfg){var id=(c&&c.canvas&&c.canvas.id)||(c&&c.id)||'?';window.__charts[id+':'+PROD]=cfg;this.destroy=function(){};};window.Chart.register=function(){};";
   const READ = "JSON.stringify((function(){var c=window.__charts['finMonthChart:salt'];if(!c)return null;var d=c.data;return {labels:d.labels,rev:d.datasets[0].data,mar:d.datasets[1].data,names:d.datasets.map(function(x){return x.label;})};})())";
@@ -7363,7 +7378,7 @@ await (async () => {
   } finally { for (const f of [B2, M2]) { try { rm2(f); } catch (e) { /* best effort */ } } }
   /* And on the book as it stands, one year, the labels stay bare. */
   {
-    const { w } = await om2(join(REPO, "master", "salt_command.html"));
+    const { w } = await om2(FROZEN_MASTER);
     w.eval(STUB + "setProd('salt');recompute();switchTab('financials');");
     const ch = JSON.parse(w.eval(READ)), tb = JSON.parse(w.eval(TABLE));
     const years = new Set(tb.map(([k]) => k.slice(0, 4)));
@@ -7383,12 +7398,12 @@ await (async () => {
   const { readFileSync: rf3, writeFileSync: wf3, unlinkSync: rm3 } = await import("node:fs");
   const { execSync: ex3 } = await import("node:child_process");
   const { join: j3 } = await import("node:path");
-  const bk3 = JSON.parse(rf3(j3(REPO, "ledger", "book.json"), "utf8"));
+  const bk3 = JSON.parse(rf3(FROZEN_BOOK, "utf8"));
   const sup3 = bk3.purchases.find((x) => x.supplier).supplier, cus3 = bk3.sales.find((x) => x.customer && x.date).customer;
   bk3.purchases.push({ rid: "f10", date: "2026-08-15", supplier: sup3, product: "salt", qty: 10, total: 500, cash: 500, receivedQty: 6 });
   bk3.sales.push({ rid: "f11", customer: cus3, product: "salt", qty: 4, total: 400, cost: 64, cash: 200, deliveredQty: 2 });
   const B3 = j3(REPO, "test", ".v453.json"), M3 = j3(REPO, "test", ".v453.html");
-  wf3(B3, JSON.stringify(bk3, null, 1)); wf3(M3, rf3(j3(REPO, "master", "salt_command.html"), "utf8"));
+  wf3(B3, JSON.stringify(bk3, null, 1)); wf3(M3, rf3(FROZEN_MASTER, "utf8"));
   ex3("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B3, SALT_MASTER: M3 }, stdio: "pipe" });
   try {
     const { w } = await om3(M3);
@@ -7421,7 +7436,7 @@ await (async () => {
   const { join: j4 } = await import("node:path");
   const { pathToFileURL: pu4 } = await import("node:url");
   const E4 = (await import("../engine/position.mjs")).default;
-  const bk4 = JSON.parse(rf4(j4(REPO, "ledger", "book.json"), "utf8"));
+  const bk4 = JSON.parse(rf4(FROZEN_BOOK, "utf8"));
   const live4 = bk4.sales.find((x) => x.customer && x.date && !x.cancelled && (x.cash || 0) > 0);
   const who4 = live4.customer;
   const cx4 = { rid: "f12", date: "2026-08-20", customer: who4, product: "salt", qty: 4.5, total: 450, cost: 64, cash: 450, deliveredQty: 0, cancelled: true, cancelledOn: "2026-08-22" };
@@ -7475,7 +7490,7 @@ await (async () => {
   const { readFileSync: rf5, writeFileSync: wf5, rmSync: rm5 } = await import("node:fs");
   const { join: j5 } = await import("node:path");
   const { pathToFileURL: pu5 } = await import("node:url");
-  const base5 = JSON.parse(rf5(j5(REPO, "ledger", "book.json"), "utf8"));
+  const base5 = JSON.parse(rf5(FROZEN_BOOK, "utf8"));
   const s018 = base5.sales.find((x) => x.rid === "s018"), s003 = base5.sales.find((x) => x.rid === "s003"), s008 = base5.sales.find((x) => x.rid === "s008");
   ok(s018 && s003 && s008 && s018.amend.some((a) => a.kind === "Linked" && (a.refKeys || []).length === 2) && s003.amend.some((a) => a.ref && a.cash === 50) && s008.amend.some((a) => a.ref && a.cash === 90),
     "the book still holds the case: s018 links s003 and s008, and both legs carry the credited step");
@@ -7523,7 +7538,7 @@ await (async () => {
   const { readFileSync: rf6, writeFileSync: wf6, unlinkSync: rm6 } = await import("node:fs");
   const { execSync: ex6 } = await import("node:child_process");
   const { join: j6 } = await import("node:path");
-  const bk6 = JSON.parse(rf6(j6(REPO, "ledger", "book.json"), "utf8"));
+  const bk6 = JSON.parse(rf6(FROZEN_BOOK, "utf8"));
   const sup6 = bk6.purchases.find((x) => x.supplier).supplier, cus6 = bk6.sales.find((x) => x.customer && x.date).customer;
   /* v516: the census counts the Sourcing tab's per-lot table, which the desk replaces with "nothing left on
      the inventory" once the shelf is at or below zero; the fixture pins its own shelf so the count does not
@@ -7535,7 +7550,7 @@ await (async () => {
   bk6.purchases.push({ rid: "f15", supplier: sup6, product: "salt", qty: 5, total: 250, cash: 0, receivedQty: 5 });
   bk6.purchases.push({ rid: "f17", supplier: sup6, product: "salt", qty: 3, total: 150, pending: true });
   const B6 = j6(REPO, "test", ".v456.json"), M6 = j6(REPO, "test", ".v456.html");
-  wf6(B6, JSON.stringify(bk6, null, 1)); wf6(M6, rf6(j6(REPO, "master", "salt_command.html"), "utf8"));
+  wf6(B6, JSON.stringify(bk6, null, 1)); wf6(M6, rf6(FROZEN_MASTER, "utf8"));
   ex6("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B6, SALT_MASTER: M6 }, stdio: "pipe" });
   /* v471: the Journal quotes the version history verbatim, and that prose names the words this census hunts; quoted history is not desk output, so it is cut before reading */
   const READ6 = "(function(){var e=document.querySelector('.sec.on');if(!e)return '';var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});return c.textContent;})()";
@@ -7578,7 +7593,7 @@ await (async () => {
   const { readFileSync: rf8, writeFileSync: wf8, rmSync: rm8 } = await import("node:fs");
   const { join: j8 } = await import("node:path");
   const { pathToFileURL: pu8 } = await import("node:url");
-  const base8 = JSON.parse(rf8(j8(REPO, "ledger", "book.json"), "utf8"));
+  const base8 = JSON.parse(rf8(FROZEN_BOOK, "utf8"));
   const s009 = base8.sales.find((x) => x.rid === "s009");
   ok(s009 && s009.customer === "CS6-PER" && s009.cash === 750 && (s009.settledKg || 0) > 0 && (s009.amend || []).filter((a) => +a.cash > 0.009).length === 1,
     "the book still holds the case: s009 is the offset order, cash 750 with one cash step beside it");
@@ -7615,7 +7630,7 @@ await (async () => {
   const { join: j10 } = await import("node:path");
   const { pathToFileURL: pu10 } = await import("node:url");
   const E10 = (await import(pu10(j10(REPO, "engine", "position.mjs")).href + "?v460")).default;
-  const bk10 = JSON.parse(rf10(j10(REPO, "ledger", "book.json"), "utf8"));
+  const bk10 = JSON.parse(rf10(FROZEN_BOOK, "utf8"));
   const canc = bk10.sales.filter((x) => x.cancelled);
   ok(canc.length >= 5, `the book still holds the case: ${canc.length} cancelled sales`);
   const bad = canc.map((x) => E10.ledgerRow(x, "S", "salt")).filter((r) => r.oweRM != null || r.oweUnits != null || r.st !== "canc");
@@ -7625,7 +7640,7 @@ await (async () => {
   ok(ctl.oweRM === 200 && ctl.oweUnits === 2 && ctl.st === "part" && cx.oweRM == null && cx.oweUnits == null && cx.st === "canc",
     `the same row uncancelled owes 200 and 2, cancelled owes nothing (${JSON.stringify([ctl.oweRM, ctl.oweUnits, cx.oweRM, cx.oweUnits])})`);
   const { openMaster: om10 } = await import("../tools/payload.mjs");
-  const { w: w10 } = await om10(j10(REPO, "master", "salt_command.html"));
+  const { w: w10 } = await om10(FROZEN_MASTER);
   const viaMaster = JSON.parse(String(w10.eval("JSON.stringify(POSITION_ENGINE.ledgerRow({customer:'F10',product:'salt',date:'2026-08-30',qty:2,total:200,cost:64,cash:0,deliveredQty:0,cancelled:true},'S','salt'))")));
   ok(viaMaster.oweRM == null && viaMaster.oweUnits == null && viaMaster.st === "canc", `and the master's inlined engine says the same (${JSON.stringify(viaMaster)})`);
 })();
@@ -7642,7 +7657,7 @@ await (async () => {
   const { readFileSync: rf11, writeFileSync: wf11, unlinkSync: rm11 } = await import("node:fs");
   const { execSync: ex11 } = await import("node:child_process");
   const { join: j11 } = await import("node:path");
-  const bk11 = JSON.parse(rf11(j11(REPO, "ledger", "book.json"), "utf8"));
+  const bk11 = JSON.parse(rf11(FROZEN_BOOK, "utf8"));
   const sup11 = bk11.purchases.find((x) => x.supplier).supplier, cus11 = bk11.sales.find((x) => x.customer && x.date).customer;
   bk11.purchases.push({ rid: "f20", date: "2026-08-01", supplier: sup11, product: "salt", qty: 10, total: 500, status: "paid", amend: [
     { date: "2026-08-01", kind: "Fulfilment", cash: 200, kg: 0, note: "as booked" },
@@ -7652,7 +7667,7 @@ await (async () => {
     { date: "2026-08-01", kind: "Fulfilment", cash: 0, kg: 0, note: "as booked" },
     { date: "2026-08-05", kind: "Fulfilment", cash: 100, kg: 1, note: "F21 moved" } ] });
   const B11 = j11(REPO, "test", ".v461.json"), M11 = j11(REPO, "test", ".v461.html");
-  wf11(B11, JSON.stringify(bk11, null, 1)); wf11(M11, rf11(j11(REPO, "master", "salt_command.html"), "utf8"));
+  wf11(B11, JSON.stringify(bk11, null, 1)); wf11(M11, rf11(FROZEN_MASTER, "utf8"));
   ex11("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B11, SALT_MASTER: M11 }, stdio: "pipe" });
   /* v471: notes left the sheet, so a step is found through its card's rid rather than its note */
   const LABELS = (tag) => `(function(){var out=[];[].slice.call(document.querySelectorAll(".sec.on .lcard")).forEach(function(c){if(c.getAttribute("data-rid")!==${JSON.stringify(tag.toLowerCase())})return;[].slice.call(c.querySelectorAll(".lmove .etype, .lrow.lclose .etype")).forEach(function(e){out.push(e.textContent);});});return JSON.stringify(out);})()`;
@@ -7686,7 +7701,7 @@ await (async () => {
   ok(has(E12.correctionFaults(gone, { cancelled: null }, true), /without being cancelled/) && E12.correctionFaults(gone, { cancelled: null, cancelledOn: null }, true).length === 0,
     "reviving a cancelled row must clear its date too, and does so cleanly");
   const { openMaster: om12 } = await import("../tools/payload.mjs");
-  const { w: w12 } = await om12(j12(REPO, "master", "salt_command.html"));
+  const { w: w12 } = await om12(FROZEN_MASTER);
   const via = JSON.parse(String(w12.eval("JSON.stringify(POSITION_ENGINE.correctionFaults({customer:'F12',product:'salt',date:'2026-08-01',qty:2,total:200,cost:64,cash:0,deliveredQty:0},{cancelledOn:'2026-08-05'},true))")));
   ok(has(via, /without being cancelled/), "and the master's inlined engine refuses it the same way");
 })();
@@ -7738,7 +7753,7 @@ await (async () => {
   const ids15 = J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return +c.id.replace('ent-E','');}))");
   ok(ids15[0] === 1 && ids15.every((x, i) => !i || ids15[i - 1] < x), "it opens first to latest: E1 at the top and every E-number after the one before it");
   const rids15 = () => J15("JSON.stringify([].slice.call(document.querySelectorAll('.sec.on .lcard')).map(function(c){return c.getAttribute('data-rid');}))");
-  const bk15 = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const bk15 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const byRid15 = {}; for (const r of bk15.sales.concat(bk15.purchases)) byRid15[r.rid] = r;
   const mono = (a, up) => a.every((x, i) => !i || (up ? a[i - 1] <= x : a[i - 1] >= x));
   w15.eval("document.getElementById('lsort-total').click()");
@@ -7907,7 +7922,7 @@ await (async () => {
   const parts17 = JSON.parse(String(w17.eval("JSON.stringify(VIEWS.find(function(v){return v.id==='book';}).parts)")));
   ok(!parts17.includes("journal") && typeof w17.tabJournal === "undefined" && !w17.document.querySelector('.vpart[data-tab="journal"]') && !w17.document.querySelector(".jent"),
     "the Journal is off the desk: Record carries no Journal part and nothing draws one: " + JSON.stringify(parts17));
-  const bk17 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk17 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const noted17 = bk17.sales.concat(bk17.purchases).filter((r) => r.note).length;
   ok(noted17 > 50, `every row note stays on its row in the book (${noted17} noted rows)`);
   const log17 = new Set(JSON.parse(readFileSync(join(REPO, "master", "changelog.json"), "utf8")).map((e) => e.v));
@@ -7933,11 +7948,11 @@ await (async () => {
   const { join } = await import("node:path");
   const TMP = join(REPO, "test", ".r7tmp.html");
   const TMPB = join(REPO, "test", ".r7tmp.json");
-  const bookNow = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const bookNow = JSON.parse(rf(FROZEN_BOOK, "utf8"));
 
   const withBook = (obj) => {
     wf(TMPB, JSON.stringify(obj, null, 1));
-    wf(TMP, rf(join(REPO, "master", "salt_command.html"), "utf8"));
+    wf(TMP, rf(FROZEN_MASTER, "utf8"));
     execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: TMPB, SALT_MASTER: TMP }, stdio: "pipe" });
     return TMP;
   };
@@ -8059,7 +8074,7 @@ await (async () => {
     const negs = [];
     for (const t of ["today", "forward", "receivables", "sourcing", "concentration", "overview"]) {
       for (const p of ["salt", "oil"]) {
-        const r = await paneOf(join(REPO, "master", "salt_command.html"), t, p, back);
+        const r = await paneOf(FROZEN_MASTER, t, p, back);
         if (r.threw) negs.push(`${t}/${p} threw`);
         const m = r.text.match(/(?<![\d-])-\d+\s*(d\b|days?\b)/g);
         if (m) negs.push(`${t}/${p}: ${m.slice(0, 2).join(", ")}`);
@@ -8085,7 +8100,7 @@ await (async () => {
   }
   {
     /* v424: and the held-out line must be ABSENT on the live book, where no priced row is undated */
-    const liveFin = await paneOf(join(REPO, "master", "salt_command.html"), "financials", "salt");
+    const liveFin = await paneOf(FROZEN_MASTER, "financials", "salt");
     ok(!/held out of this statement/.test(liveFin),
       "the held-out line does not print on a book that has nothing held out");
   }
@@ -8135,7 +8150,7 @@ await (async () => {
        a fix rather than on a fault. Asserting on source text is how a check ends up measuring its
        own phrasing; it FOLDS a cancellation on each direction instead and reads what happens. */
     const { applyAmendForTest } = await import("../tools/fold.mjs").then((m) => ({ applyAmendForTest: m.applyAmend || null }));
-    const bk2 = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+    const bk2 = JSON.parse(rf(FROZEN_BOOK, "utf8"));
     const soldRow = (bk2.sales || []).find((r) => !r.cancelled && (+r.deliveredQty || 0) > 0.009);
     const lotRow = (bk2.purchases || []).find((r) => !r.cancelled && !r.pending && r.receivedQty == null);
     const refuses = (row, dir) => {
@@ -8161,7 +8176,7 @@ await (async () => {
   /* 06 Oct 2026: the fields group of the migration (CLAUDE.md rule 6). The body carries the system's `.salt-fields`
      scope, so every native field takes the well, the hairline, the ink, the brass focus ring, the placeholder and the
      option colours from the recipe; the desk's own rules keep SIZE only (padding, font, width, weight). */
-  const mF = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const mF = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const bF = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   ok(/<body class="salt-fields">/.test(mF) && /<body class="salt-fields">/.test(bF), "the body carries .salt-fields, in the master and in the build");
   ok(/\.salt-fields :is\(input:not/.test(mF), "and the recipe it names is in the DESIGN base block");
@@ -8201,7 +8216,7 @@ await (async () => {
   /* 09 Oct 2026: the tier pill group of the migration (CLAUDE.md rule 6). tierPill() carries the system's `.salt-tier`
      recipe beside the desk's own `.tierpill`, which keeps only the pill's place (the margin beside the name) and its measured 10.5px face, under the system's 11px floor;
      the hairline, the tint, the glow, the dot, the weight and the spacing are the recipe's. */
-  const mT = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const mT = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const bT = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   const mark = (s) => /class="tierpill salt-tier \$\{cls\}"/.test(s) && /<span class="salt-tier__dot">/.test(s)
     && /'salt-tier--1'/.test(s) && /'salt-tier--2'/.test(s) && /'salt-tier--3'/.test(s);
@@ -8246,7 +8261,7 @@ await (async () => {
      block draws is the system's .salt-product (a dot in the book's hue, the name in mono caps, a rule running out) and the
      stamp on a row its .salt-producttag; the desk's own rules keep only the ledger's bare stamp. The book's accent reaches
      the recipe through --salt-hue, a custom property, never a colour written in the desk's CSS. */
-  const mP = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const mP = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const bP = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   for (const [nm, src] of [["master", mP], ["build", bP]]) {
     ok(/<div class="prodhd salt-product" style="--salt-hue:\$\{P\.accent\}">`\s*\+`<span class="salt-product__dot"><\/span>/.test(src), `${nm}: a book's band carries .salt-product, its dot, and the accent as --salt-hue`);
@@ -8290,7 +8305,7 @@ await (async () => {
      beside the desk's own (.act, .actk, .actt, .actw, .actm, .actb, .actbar); the recipe draws the grid, the rail, the kind,
      the title, the why, the money and the bar, and the desk keeps only the bar's settle (motion). The Journal has no desk
      markup since v802, so its recipe has nothing to carry. */
-  const mA = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const mA = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const PAIRS = [["act", "salt-action"], ["actk", "salt-action__kind"], ["actt", "salt-action__title"], ["actw", "salt-action__why"],
     ["actm", "salt-action__money"], ["actb", "salt-action__go"], ["actbar", "salt-action__bar"]];
   /* two templates draw a card (the action list's row and the shelf call), so each pair is in both; the bar only in the row */
@@ -8334,7 +8349,7 @@ await (async () => {
      and the pressed state are the recipe's; the desk keeps each placement's padding, the hush row's 10.5px and the brass
      tone of an Undo or Clear. .lqb had no markup and its rules are gone. */
   const GH = ["navlink", "ubtn", "obsbtn", "updchip"];
-  const mG = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const mG = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const bG = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   const markup = (t) => { const out = []; for (const m of t.slice(t.indexOf("</style>")).matchAll(/class=(["'])([^"']*?)\1/g)) { const c = m[2].split(/\s+/); if (c.some((x) => GH.includes(x))) out.push(c); } return out; };
   const mk = markup(mG), bk = markup(bG);
@@ -8388,7 +8403,7 @@ await (async () => {
      beside its own classes and every label cell `salt-table__label` beside `l`; the mist caps head, the salt figures, the faint
      hairline, the opaque warm panel under the sticky head and label column and the total row's wash layered over it are the
      recipe's (design/salt-ds.css). The desk keeps the sticky geometry, the statements' gutters and the cells it owns. */
-  const mT = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const mT = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const bT = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   const dsT = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
   ok(/\.salt-table \.salt-table__label \{[^}]*background: var\(--salt-panel\)/.test(mT) && /\.salt-table thead th \{/.test(mT), "the recipe is in the DESIGN base block");
@@ -8449,7 +8464,7 @@ await (async () => {
   /* His instruction of 02 Sep 2026: redesign the desk with the Salt design system. It lands as
      a last-wins layer in two generated blocks at the foot of the stylesheet, and every figure
      here was proved RED against the v471 master before it was trusted. */
-  const m472 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m472 = readFileSync(FROZEN_MASTER, "utf8");
   let dchk = "";
   try { dchk = execFileSync("node", [join(REPO, "tools", "designsync.mjs"), "--check"], { encoding: "utf8" }); }
   catch (e) { dchk = String((e && e.stdout) || e); }
@@ -8475,7 +8490,7 @@ await (async () => {
   ok(!m472.includes('class="logo">&#9670;') && !m472.includes('class="logo sm">&#9670;'), "and the diamond glyph is gone");
   ok(/<link rel="icon" type="image\/png" sizes="192x192" href="\/icon-192\.png">/.test(m472), "the browser favicon uses the 192px Salt icon");
   /* the books' hues come from the identity, through the book, which is where the extract reads them */
-  const bk472 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk472 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   ok(bk472.PRODUCTS.salt.accent === "var(--salt-product-salt)" && bk472.PRODUCTS.oil.accent === "var(--salt-product-oil)", "salt is the pale book and oil the golden one, declared in ledger/book.json");
   ok(m472.includes("D.font.family=\"'JetBrains Mono','Cascadia Mono',Consolas,monospace\"") && m472.includes("D.borderColor=tcol('brass',0.14)"), "Chart.js is told once that figures are mono and hairlines are brass");
   /* the built desk and the install surface carry it too */
@@ -8493,7 +8508,7 @@ await (async () => {
      of day (05 Oct 2026, retired 09 Oct 2026) stay retired: no clock, no cross-fade, no picker of times, and the checks that fail if any returns are
      kept. Night is the design system's :root as drawn, Tide its :root[data-theme="tide"]. Each check below was proved red by its own mutation
      (test/two-themes.mutations.json, run with tools/section.mjs). */
-  const MV2 = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+  const MV2 = process.env.SALT_MASTER || FROZEN_MASTER;
   const m = readFileSync(MV2, "utf8");
   let dchk = "";
   try { dchk = execFileSync("node", [join(REPO, "tools", "designsync.mjs"), "--check"], { encoding: "utf8", env: { ...process.env, SALT_MASTER: "" } }); }
@@ -8763,7 +8778,7 @@ await (async () => {
      (the set below, read off the build before this change: 43 charts over eleven parts on two books); with every
      token stubbed to a colour of its own no literal is drawn at all. Two themes since 11 Oct 2026 (Night and Tide): the same checks at Tide,
      and a switch in the rail draws the part showing again. Each check was proved red by a mutation of the master. */
-  const MD = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+  const MD = process.env.SALT_MASTER || FROZEN_MASTER;
   const { openMaster: omD } = await import("../tools/payload.mjs");
   const NIGHT = ["#6fae97", "#8ea2b6", "#b87333", "#c5a059", "#d4694c", "#d8c79c", "#e4e9ec", "#f2f4f5", "#7b86cc", "#cf8fb4",
     "rgba(111,174,151,0.35)", "rgba(142,162,182,0.45)", "rgba(142,162,182,0.55)", "rgba(197,160,89,0.5)", "rgba(197,160,89,0.55)",
@@ -8891,7 +8906,7 @@ await (async () => {
   /* v1022's time script arms a timer for the next theme, hours away; a jsdom timer holds Node open, so
      stmt-publish, which never closes its window, ran until Actions cancelled the job twice. openMaster runs
      a timer over a minute unref'd. In a fresh node, the way a tool runs, with the window left open. */
-  const MH = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+  const MH = process.env.SALT_MASTER || FROZEN_MASTER;
   const r = spawnSync(process.execPath, ["--input-type=module", "-e",
     'const { openMaster } = await import("./tools/payload.mjs"); const { w } = await openMaster(process.argv[1]);'
     + ' console.log(w.document.documentElement.getAttribute("data-time") === null ? "none" : "set");', MH],
@@ -8910,7 +8925,7 @@ await (async () => {
   w19.eval("setProd('salt');recompute();");
   const rules19 = JSON.parse(String(w19.eval("JSON.stringify(boundaryScan().map(function(x){return [x.sev,x.rule,x.what||''];}))")));
   ok(String(w19.eval("String(PRICE_LOCK_ON)")) === "false" && !rules19.some((r) => r[1] === "Board unpriced"), "with the lock off, Board unpriced never fires");
-  const bk19 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk19 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const lots19 = bk19.purchases.filter((p) => !p.cancelled && !p.pending && !p.defaulted && (p.product || "salt") === "salt" && p.qty > 0)
     .sort((a, b) => ((a.receivedOn || a.date) < (b.receivedOn || b.date) ? -1 : 1));
   const L19 = lots19[lots19.length - 1], P19 = lots19[lots19.length - 2];
@@ -9576,7 +9591,7 @@ await (async () => {
        not go vacuous the day he moves somebody. */
     const { boardList, guestBoard } = await import("../tools/pricelist.mjs");
     const { readBook } = await import("../tools/book.mjs");
-    const gbook = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const gbook = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     /* 05 Oct 2026: salt prices by drift on the live book, so the level a link follows is proved on salt's last level rule,
        two introducers placed on the first and the last level */
     const gLive = (await readBook()).ledger.PRICING;
@@ -9713,7 +9728,7 @@ await (async () => {
   {
     const { boardList: bl } = await import("../tools/pricelist.mjs");
     const { readBook: rb } = await import("../tools/book.mjs");
-    const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     /* 05 Oct 2026: on salt's last level rule, the live book having no ladder */
     const px = levelSnap((await rb()).ledger.PRICING);
     const bend = (tier1) => {
@@ -10061,12 +10076,12 @@ await (async () => {
     const rd = (e) => JSON.parse(wB.eval("JSON.stringify(" + e + ")"));
     wB.eval("setProd('salt');recompute();");
     const codeB = rd("roster.find(id=>!id.startsWith('S')&&pSales('salt').some(s=>s.customer===id&&s.date&&s.total>0))");
-    const bookB = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const bookB = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const nowB = new Date(rd("TODAY.toISOString()"));
     const mine = PL.priceList(codeB, bookB, liveSnap, nowB).products.find(x => x.product === "salt").sizes.map(x => x.price);
     const desk = rd("pbPrices(" + JSON.stringify(codeB) + ").map(x=>x.price)");
     ok(JSON.stringify(desk) === JSON.stringify(mine), codeB + ": the printed board's prices are the customer's statement-page list, size for size (v507)");
-    ok(rd("typeof pbCard") === "function" && /id=\"pbSheet\"/.test(readFileSync(join(REPO, "master", "salt_command.html"), "utf8")),
+    ok(rd("typeof pbCard") === "function" && /id=\"pbSheet\"/.test(readFileSync(FROZEN_MASTER, "utf8")),
       "and the Price part carries the card and the page the print-only sheet");
     /* ============ v564: THE SHEET IS THE MARK, THE NUMBERS, THE USERNAME, THEN THE QR ============
        HIS INSTRUCTION, 10 SEP 2026: "subtle logos and numbers only, followed by their login username
@@ -10203,7 +10218,7 @@ await (async () => {
 section("v512: a replay batch clears its own handoff");
 await (async () => {
   /* the planner answers the stage's one question: is the whole staged batch a replay? */
-  const bookR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bookR = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const dupRow = bookR.sales.find((x) => x.date && x.customer && +x.total > 0 && +x.qty > 0 && !x.cancelled);
   const dir = join(REPO, "test", "tmp", "replays-" + Date.now());
   mkdirSync(dir, { recursive: true });
@@ -10326,7 +10341,7 @@ await (async () => {
   const { mkdtempSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   /* the real planner on fixture batches: a replay row is refused, a fresh one folds */
-  const bookR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bookR = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const dupRow = bookR.sales.find((x) => x.date && x.customer && +x.total > 0 && +x.qty > 0 && !x.cancelled);
   const root = mkdtempSync(join(tmpdir(), "held-"));
   const stagedF = (rows) => { const f = join(root, "staged-" + rows.length + ".json"); writeFileSync(f, JSON.stringify({ ok: true, count: rows.length, approved: rows })); return f; };
@@ -10491,7 +10506,7 @@ await (async () => {
      stays in the tool as a defence, but the thing that keeps it unreachable is the guard in
      sort-ledger.mjs --check, proved in both directions in its own section above. */
   const { stmtRows } = await import("../tools/make_statements.mjs");
-  const bookS = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+  const bookS = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const undatedSales = bookS.sales.filter(x => !x.date);
   ok(undatedSales.length === 0, undatedSales.length
     ? `the book carries ${undatedSales.length} undated sale(s) (${undatedSales.map(r => r.rid || "?").join(", ")}), so a statement can print a row with no date`
@@ -10607,7 +10622,7 @@ await (async () => {
       "a live statement says it is one, to the minute in Kuala Lumpur time, covers everything, and carries no QR");
     ok(!lv.body.includes('class="who"') && !lv.body.includes(u) && !lv.body.includes(both.who),
       "and it names the account no second time, the Counter's header carrying the username, and never the desk's code (S1 1.33, C2)");
-    const bookL = JSON.parse(readFileSync(resolve(REPO, "ledger", "book.json"), "utf8"));
+    const bookL = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const afterIssue = bookL.sales.find(s => s.date && s.date > "2026-09-01" && !s.cancelled);
     if (afterIssue) {
       const nRows = h => (h.match(/<td class="l dt">|<div class="salt-lines__date" role="cell">/g) || []).length;   // S7 7.3: a live row is a Statement line
@@ -10884,7 +10899,7 @@ await (async () => {
   const { readFileSync: rf7, writeFileSync: wf7, unlinkSync: rm7 } = await import("node:fs");
   const { execSync: ex7 } = await import("node:child_process");
   const { join: j7 } = await import("node:path");
-  const bk7 = JSON.parse(rf7(j7(REPO, "ledger", "book.json"), "utf8"));
+  const bk7 = JSON.parse(rf7(FROZEN_BOOK, "utf8"));
   /* A DATE INSIDE THE WALK THAT IS NOT A COUNT DAY (16 Sep 2026). It was COUNT_ON.salt, taken as "a date inside the walk on
      any book"; since the 15 Sep count it is also a day the walk re-anchors to the counted figure, and a loan dated on that
      day lands 6.90 against a tolerance of 0.095, so the check went red on the calendar rather than on the walk. Off a count
@@ -10900,7 +10915,7 @@ await (async () => {
     { date: LD, party: "CS6-PER", direction: "in", valueKg: 9, valueRM: null, status: "settled", settledOn: LD, product: "salt", note: "fixture, settled: counts nowhere" },
   ]);
   const B7 = j7(REPO, "test", ".v518.json"), M7 = j7(REPO, "test", ".v518.html");
-  wf7(B7, JSON.stringify(bk7, null, 1)); wf7(M7, rf7(j7(REPO, "master", "salt_command.html"), "utf8"));
+  wf7(B7, JSON.stringify(bk7, null, 1)); wf7(M7, rf7(FROZEN_MASTER, "utf8"));
   ex7("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B7, SALT_MASTER: M7 }, stdio: "pipe" });
   const READ7 = "(function(){var e=document.querySelector('.sec.on');if(!e)return '';var c=e.cloneNode(true);[].slice.call(c.querySelectorAll('.jquote')).forEach(function(q){q.parentNode.removeChild(q);});return c.textContent.replace(/\\s+/g,' ');})()";
   try {
@@ -11004,10 +11019,10 @@ await (async () => {
   const { execFileSync: ex9 } = await import("node:child_process");
   const dir9 = j9(REPO, "test", "tmp", "foldcall-" + Date.now());
   mk9(dir9, { recursive: true });
-  const bk9 = JSON.parse(rf9(j9(REPO, "ledger", "book.json"), "utf8"));
+  const bk9 = JSON.parse(rf9(FROZEN_BOOK, "utf8"));
   const party9 = bk9.sales.filter((r) => r.customer && r.date && !r.cancelled).slice(-1)[0].customer;
   const B9 = j9(dir9, "book.json"), M9 = j9(dir9, "salt_command.html"), S9 = j9(dir9, "_to_fold.json"), N9 = j9(dir9, "_fold_notes.json"), FD9 = j9(dir9, "_folded.json"), FAKE9 = j9(dir9, "reply.json");
-  cp9(j9(REPO, "ledger", "book.json"), B9); cp9(j9(REPO, "master", "salt_command.html"), M9); cp9(j9(REPO, "master", "changelog.json"), j9(dir9, "changelog.json"));
+  cp9(FROZEN_BOOK, B9); cp9(FROZEN_MASTER, M9); cp9(j9(REPO, "master", "changelog.json"), j9(dir9, "changelog.json"));
   const id9 = "2099-01-02T00:00:00.001Z";
   wf9(S9, JSON.stringify({ ok: true, count: 1, approved: [{ id: id9, collection: "sales",
     row: { customer: party9, qty: 1, total: 130, cost: 48, cash: 130, delivery: 0, handover: "collected", date: "2099-01-02", deliveredQty: 1, deliveredOn: "2099-01-02", paidOn: "2099-01-02" },
@@ -11031,7 +11046,7 @@ await (async () => {
   const dirN = j9(REPO, "test", "tmp", "foldcall-nokey-" + Date.now());
   mk9(dirN, { recursive: true });
   const BN = j9(dirN, "book.json"), MN = j9(dirN, "salt_command.html"), SN = j9(dirN, "_to_fold.json"), NN = j9(dirN, "_fold_notes.json"), FDN = j9(dirN, "_folded.json");
-  cp9(j9(REPO, "ledger", "book.json"), BN); cp9(j9(REPO, "master", "salt_command.html"), MN); cp9(j9(REPO, "master", "changelog.json"), j9(dirN, "changelog.json")); cp9(S9, SN);
+  cp9(FROZEN_BOOK, BN); cp9(FROZEN_MASTER, MN); cp9(j9(REPO, "master", "changelog.json"), j9(dirN, "changelog.json")); cp9(S9, SN);
   const argsN = ["--staged", SN, "--book", BN, "--master", MN, "--notes", NN, "--folded", FDN, "--today", "2099-01-02"];
   const nokey = (() => { try { return { code: 0, out: ex9(process.execPath, [j9(REPO, "tools", "foldcall.mjs"), ...argsN], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: { ...process.env, SALT_FOLD_FAKE: "", ANTHROPIC_API_KEY: "" } }) }; } catch (e) { return { code: e.status, out: String(e.stdout || "") + String(e.stderr || "") }; } })();
   const afterN = existsSync(BN) ? JSON.parse(rf9(BN, "utf8")) : null;
@@ -11073,7 +11088,7 @@ await (async () => {
     const dirT = j9(REPO, "test", "tmp", "foldcall-silent-" + Date.now());
     mk9(dirT, { recursive: true });
     const BT = j9(dirT, "book.json"), MT = j9(dirT, "salt_command.html"), ST = j9(dirT, "_to_fold.json");
-    cp9(j9(REPO, "ledger", "book.json"), BT); cp9(j9(REPO, "master", "salt_command.html"), MT); cp9(j9(REPO, "master", "changelog.json"), j9(dirT, "changelog.json")); cp9(S9, ST);
+    cp9(FROZEN_BOOK, BT); cp9(FROZEN_MASTER, MT); cp9(j9(REPO, "master", "changelog.json"), j9(dirT, "changelog.json")); cp9(S9, ST);
     const tm = await timed(["--staged", ST, "--book", BT, "--master", MT, "--notes", j9(dirT, "_fold_notes.json"), "--folded", j9(dirT, "_folded.json"), "--today", "2099-01-02"]);
     const foldHits = hits.splice(0), foldHeld = held.splice(0);
     const afterT = existsSync(BT) ? JSON.parse(rf9(BT, "utf8")) : null;
@@ -11114,7 +11129,7 @@ await (async () => {
     const dirM = j9(REPO, "test", "tmp", "foldcall-model-" + Date.now());
     mk9(dirM, { recursive: true });
     const BM = j9(dirM, "book.json"), MM = j9(dirM, "salt_command.html"), SM = j9(dirM, "_to_fold.json");
-    cp9(j9(REPO, "ledger", "book.json"), BM); cp9(j9(REPO, "master", "salt_command.html"), MM); cp9(j9(REPO, "master", "changelog.json"), j9(dirM, "changelog.json")); cp9(S9, SM);
+    cp9(FROZEN_BOOK, BM); cp9(FROZEN_MASTER, MM); cp9(j9(REPO, "master", "changelog.json"), j9(dirM, "changelog.json")); cp9(S9, SM);
     const env = { ...process.env, ANTHROPIC_BASE_URL: "http://127.0.0.1:" + srv.address().port, ANTHROPIC_API_KEY: "sk-fixture-not-a-key", ANTHROPIC_AUTH_TOKEN: "",
       SALT_FOLD_TIMEOUT_MS: "10000", SALT_FOLD_RETRIES: "0", SALT_FOLD_FAKE: "", SALT_FOLD_NOMODEL: "", SALT_FOLD_MODEL: "", CLOUDFLARE_API_TOKEN: "" };
     const call = (args) => new Promise((res) => {
@@ -11257,14 +11272,14 @@ await (async () => {
   mkG(dirG, { recursive: true });
   const MG = join(dirG, "salt_command.html");
   cpG(join(REPO, "master", "changelog.json"), join(dirG, "changelog.json"));
-  wfG(MG, rfG(join(REPO, "master", "salt_command.html"), "utf8").replace(/(const STATED_STOCK=)(-?\d+(?:\.\d+)?)/, (m, a, b) => a + (+b + 1000)));
+  wfG(MG, rfG(FROZEN_MASTER, "utf8").replace(/(const STATED_STOCK=)(-?\d+(?:\.\d+)?)/, (m, a, b) => a + (+b + 1000)));
   let gate;
   try { gate = { code: 0, out: exG(process.execPath, [join(REPO, "tools", "gate.mjs")], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: { ...process.env, SALT_MASTER: MG } }) }; }
   catch (e) { gate = { code: e.status, out: String(e.stdout || "") }; }
   ok(gate.code === 1 && /FAIL  the book in the master is ledger\/book\.json/.test(gate.out) && !/public\/ is what this master builds/.test(gate.out), "a master whose book block is not the file fails the gate there, and the build check never runs");
   /* green, proved to print: v522 shipped a gate whose main-module check failed on Linux, so it printed nothing and passed */
   let green;
-  try { green = { code: 0, out: exG(process.execPath, [join(REPO, "tools", "gate.mjs")], { cwd: REPO, encoding: "utf8", stdio: "pipe" }) }; } catch (e) { green = { code: e.status, out: String(e.stdout || "") }; }
+  try { green = { code: 0, out: exG(process.execPath, [join(REPO, "tools", "gate.mjs")], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: liveEnv() }) }; } catch (e) { green = { code: e.status, out: String(e.stdout || "") }; }
   ok(green.code === 0 && (green.out.match(/^  ok    /gm) || []).length >= 10 && /GATE OK in \d/.test(green.out), "on the real master the gate runs every check, says so, and passes (" + (green.out.match(/^  ok    /gm) || []).length + " checks)");
   rmG(dirG, { recursive: true, force: true });
   const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
@@ -12058,7 +12073,7 @@ await (async () => {
 section("v524: roster-only parties on the phone");
 await (async () => {
   const { openMaster: omB } = await import("../tools/payload.mjs");
-  const bkB = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkB = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   /* v610: EVERY ASSOCIATE HOLDS AN -R ACCOUNT NOW, so the book no longer offers one without. The state
      is FORCED instead: a second associate's account is taken off the roster inside the window. */
   const withR = bkB.associates.find((a) => bkB.roster.includes(a + "-R"));
@@ -12097,7 +12112,7 @@ section("v526: the replay question, asked on the phone");
 await (async () => {
   const { plan: planD } = await import("../tools/fold.mjs");
   const { draftRow: draftD } = await import("../src/drafter.js");
-  const bkD = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkD = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const real = bkD.sales.filter((r) => r.date && r.customer && +r.total > 0 && +r.qty > 0 && !r.cancelled).slice(-1)[0];
   const twinRow = { customer: real.customer, date: real.date, qty: real.qty, total: real.total, cash: real.total, deliveredQty: real.qty, product: real.product || "salt" };
   const staged = (second) => ({ ok: true, count: 1, approved: [{ id: "2099-02-01T00:00:00.001Z", collection: "sales", row: twinRow, entry: { at: "2099-02-01T00:00:00.001Z", payload: { mode: "new", direction: "SELL", second: second ? real.rid || true : null } } }] });
@@ -12130,7 +12145,7 @@ section("v527: borrow and lend on the phone");
 await (async () => {
   const { draftRow: draftL } = await import("../src/drafter.js");
   const { plan: planL, apply: applyL } = await import("../tools/fold.mjs");
-  const bkL = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkL = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   /* v583: THE OPEN LOAN IS FORCED, NOT READ OFF THE BOOK. This leaned on the live book holding one,
      which stayed true only until the two 08 Sep loans went back on 11 Sep: a correct fold then failed
      the check below and threw on lender.party. What the section proves is the drafter naming an
@@ -12155,7 +12170,7 @@ await (async () => {
   ok(pL.refused.length === 0 && pL.items.length === 2 && pL.moves.length === 2 && pL.moves[0].kg === 2 && pL.moves[1].kg === -3 && /BORROW 2 unit/.test(pL.items[0].what) && /LEND 3 unit/.test(pL.items[1].what), "the planner moves a borrowing in and a lending out: " + JSON.stringify(pL.moves.map((m) => m.kg)));
   const notesL = { version: "v9999", date: "01 Mar 2099", title: "TWO LOANS", notes: ["<b>TWO LOANS.</b> A borrowing and a lending, on a copy of the book, long enough to be a paragraph."], rows: { "2099-03-01T00:00:00.001Z": { note: "<b>BORROWED 2 UNIT.</b> A note long enough to pass, on a copy of the book." }, "2099-03-01T00:00:00.002Z": { note: "<b>LENT 3 UNIT.</b> A note long enough to pass, on a copy of the book." } }, stockNote: "", stockCost: null, stockCostNote: "" };
   const before = copyL.STATED_STOCK, nLoans = copyL.loans.length;
-  const aL = applyL(copyL, stagedL, notesL, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  const aL = applyL(copyL, stagedL, notesL, readFileSync(FROZEN_MASTER, "utf8"));
   ok(aL.ok && copyL.loans.length === nLoans + 2 && copyL.loans[nLoans].direction === "in" && copyL.loans[nLoans].valueKg === 2 && /BORROWED 2 UNIT/.test(copyL.loans[nLoans].note) && copyL.loans[nLoans + 1].direction === "out", "the apply appends both to the loan book with their notes: " + (aL.ok ? "ok" : (aL.problems || []).join("; ")));
   ok(Math.abs(copyL.STATED_STOCK - (before + 2 - 3)) < 0.005, "and rolls the stated inventory in by 2 and out by 3 (" + before + " to " + copyL.STATED_STOCK + ")");
   /* the Workbench, driven on the real master */
@@ -12255,7 +12270,7 @@ await (async () => {
      key already in storage, as such a device opens it. */
   const legacyPath = join(REPO, "test", "tmp", "v612-legacy-vault.html");
   mkdirSync(dirname(legacyPath), { recursive: true });
-  writeFileSync(legacyPath, readFileSync(join(REPO, "master", "salt_command.html"), "utf8").replace("<head>", "<head><script>localStorage.setItem('saltNameVault'," + JSON.stringify(olderEnv) + ");</script>"));
+  writeFileSync(legacyPath, readFileSync(FROZEN_MASTER, "utf8").replace("<head>", "<head><script>localStorage.setItem('saltNameVault'," + JSON.stringify(olderEnv) + ");</script>"));
   const { w: wL } = await omV(legacyPath);
   const loaded = String(await wL.eval("(async function(){qSyncState='server';window.fetch=function(){return Promise.resolve({ok:true,json:function(){return Promise.resolve({ok:true,vault:" + newerEnv + "});}});};await vaultLoad();return JSON.stringify(NAME_VAULT);})()"));
   ok(loaded === newerEnv, "a device carrying the retired saltNameVault key loads the cloud's vault, not its own older copy (v612): " + (loaded === olderEnv ? "kept the older copy" : loaded.slice(0, 40)));
@@ -12468,7 +12483,7 @@ await (async () => {
   const cq = { rid: "c2", customer: "CC9-OKR", date: "2026-08-01", qty: 1, total: 110, cost: 48, cash: 0, deliveredQty: 1 };
   amendA(cq, { date: "2026-08-05", kind: "Correction", cash: 0, kg: 0, fields: { qty: 2, total: 220 } }, "SELL");
   ok(cq.qty === 2 && cq.cost === 96, `a qty correction scales the order's absolute cost with it (cost ${cq.cost})`);
-  const bkR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkR = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const liveRow = bkR.sales.find((s) => s.rid && !s.cancelled && s.date && s.customer);
   const pUnd = planA(JSON.parse(JSON.stringify(bkR)), { ok: true, count: 1, approved: [{ id: "2099-01-01T00:00:00.001Z", collection: "sales", amends: liveRow.rid, amendKind: "Fulfilment", row: {},
     entry: { at: "2099-01-01T00:00:00.001Z", payload: { mode: "amend", direction: "SELL", rid: liveRow.rid, kind: "Fulfilment", cash: 10, kg: 0 } } }] }, null);
@@ -12586,7 +12601,7 @@ await (async () => {
        a mistyping. The form refuses the contradiction instead, as the drafter does. */
     /* v581: the Self-use or loss mode left the Enter form on his instruction of 11 Sep 2026, so the
        test that typed into it went with it. Its removal is asserted in its own section below. */
-    const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const msrc = readFileSync(FROZEN_MASTER, "utf8");
     ok(/cell\('Cost drawn',cost==null\?NIL:fmt\(cost\)\+\(qty>0\?/.test(msrc), "the Approve card labels the order's cost as the order's, with the unit figure beside it");
     /* v596: the laptop's list reads that cost the same way; it printed -401.7% for this 49.8% draft. The
        tool runs its modes only when called now, so the second proves it still does, on every machine. */
@@ -12817,7 +12832,7 @@ await (async () => {
      would have missed it exactly as v566 did. Each was proved red against the shipped v566
      master by putting the fault back. */
   const { openMaster: om7 } = await import("../tools/payload.mjs");
-  const master7 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const master7 = readFileSync(FROZEN_MASTER, "utf8");
   /* THE COLOUR IS DECIDED IN design/desk.css AND SYNCED IN (hard rule 6), so the claim is read
      there. The master carries older CSS layers underneath in which "thead th{" also appears, and
      reading the first match in the master picked one of those up: the instrument's own first
@@ -12884,7 +12899,7 @@ await (async () => {
 
   /* ---- the two Price charts, read back off a recording Chart ---- */
   const STUB7 = "window.__charts={};window.Chart=function(c,cfg){var id=(c&&c.canvas&&c.canvas.id)||(c&&c.id)||'?';window.__charts[id+':'+PROD]=cfg;this.destroy=function(){};};window.Chart.register=function(){};";
-  const w7 = (await om7(join(REPO, "master", "salt_command.html"))).w;
+  const w7 = (await om7(FROZEN_MASTER)).w;
   try {
     for (const prod of ["salt", "oil"]) {
       w7.eval(STUB7 + "setProd(" + JSON.stringify(prod) + ");recompute();switchTab('price');");
@@ -12980,7 +12995,7 @@ await (async () => {
   const { plan: plan570, apply: apply570 } = await import("../tools/fold.mjs");
   const { draftRow: draft570 } = await import("../src/drafter.js");
   const { default: PE570 } = await import("../engine/position.mjs");
-  const master570 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const master570 = readFileSync(FROZEN_MASTER, "utf8");
 
   /* THE TABLE HAS ONE HOME. Three readers decide what a Kind means -- the pane, the drafter and
      the fold -- and the whole point of this version is that they cannot answer differently. */
@@ -13242,7 +13257,7 @@ await (async () => {
 
   /* THE DIRECTORY (his instruction, 11 Sep 2026): Position and Trading were one group, Current. v622 took the
      groups out of the rail altogether, on his instruction of 14 Sep 2026, and its own section asserts the rail now. */
-  const masterRail = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const masterRail = readFileSync(FROZEN_MASTER, "utf8");
   const nav = masterRail.slice(masterRail.indexOf('<nav class="rail salt-rail"'), masterRail.indexOf("</nav>"));
 
   /* AND NOTHING ELSE MOVED: the ids are the addresses, so every /desk#tab link still lands.
@@ -13340,7 +13355,7 @@ await (async () => {
     /* COPY MAY POINT ONLY AT CONTROLS THAT EXIST. A literal absent from the master cannot render,
        so the source is a sound instrument for absence; the switch above is read off the page. */
     /* the code only: history entries are skipped by their shape, since the newest sits on its own short line */
-    const msrcX = readFileSync(join(REPO, "master", "salt_command.html"), "utf8").split("\n").filter((l) => !/^(const evolution=\[)?\{"v": ?"v/.test(l)).join("\n");
+    const msrcX = readFileSync(FROZEN_MASTER, "utf8").split("\n").filter((l) => !/^(const evolution=\[)?\{"v": ?"v/.test(l)).join("\n");
     ok(!/under Self-use or loss on/.test(msrcX) && !/Transaction &rarr; Turned away/.test(msrcX),
       "no copy tells him to record under a mode that is gone");
     ok(!/a loss, a lost sale or a follow-up/.test(msrcX), "and the Enter part no longer describes itself by them");
@@ -13377,7 +13392,7 @@ await (async () => {
     ok(Array.isArray(people) && people.includes("approach"), `the phone payload's people block was built (${people})`);
     ok(Array.isArray(people) && !people.includes("lost"), "and it carries no lost field");
     wD.eval("lostDemand.pop();");
-    const codeD = readFileSync(join(REPO, "master", "salt_command.html"), "utf8").split("\n").filter((l) => !/^(const evolution=\[)?\{"v": ?"v/.test(l)).join("\n");
+    const codeD = readFileSync(FROZEN_MASTER, "utf8").split("\n").filter((l) => !/^(const evolution=\[)?\{"v": ?"v/.test(l)).join("\n");
     ok(!/the demand you could not serve/.test(codeD), "and neither the Customers lead nor its description names it");
   } finally { try { wD.close(); } catch (e) { /* best effort */ } }
 })();
@@ -13389,7 +13404,7 @@ await (async () => {
      entries with no payload, so the drafter refused every one and the next fold cleaned the refusal away.
      Every state here is FORCED: the live book's rewards are the calendar's business, not the test's. */
   const { draftRow: dR } = await import("../src/drafter.js");
-  const bkR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkR = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const who = (bkR.roster || []).find((c) => !String(c).startsWith("S"));
   const mirrorR = { version: "vX", sales: bkR.sales, purchases: bkR.purchases,
     state: { roster: bkR.roster, loans: bkR.loans, OPEN: { position: { salt: { onHand: 20, owedOut: 0, promised: 0 } } } }, pricing: null };
@@ -13483,7 +13498,7 @@ await (async () => {
 
   /* ---- THE DRAFTER: a Correction that changes nothing is refused ---- */
   const { draftRow: dN } = await import("../src/drafter.js");
-  const bkN = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkN = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const tgt = bkN.sales.find((x) => x.rid && !x.cancelled && x.date);
   const mN = { version: "vX", sales: bkN.sales, purchases: bkN.purchases, state: { roster: bkN.roster, loans: bkN.loans }, pricing: null };
   const dn = dN({ at: "2099-05-01T00:00:00.001Z", payload: { mode: "amend", kind: "Correction", direction: "SELL", party: tgt.customer, rid: tgt.rid, fields: { total: tgt.total }, date: "2099-05-01" } }, mN);
@@ -13615,7 +13630,7 @@ await (async () => {
     const { tmpdir } = await import("node:os");
     const dir = mkdtempSync(join(tmpdir(), "v586-"));
     const OLD_A = "2026-08-01T01:00:00.000Z", OLD_B = "2026-08-01T02:00:00.000Z";
-    const src = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const src = readFileSync(FROZEN_MASTER, "utf8");
     ok(src.includes("<head>"), "the master has a head to put the seed in, or this proves nothing");
     const seed = "<script>localStorage.setItem('saltQueue'," + JSON.stringify(JSON.stringify([bad(OLD_A), bad(OLD_B)])) + ");"
       + "localStorage.setItem('saltQueueSent','2026-08-02T00:00:00.000Z');"
@@ -13685,7 +13700,7 @@ await (async () => {
   ok(!sIn.skip && sIn.row.form === "salt" && sIn.row.valueKg === 2, "and a salt loan is still units, marked salt now");
 
   /* the planner and the apply, on a copy of the book */
-  const bkC = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkC = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const idC = "2099-04-01T00:00:00.001Z";
   const rowC = dC(entC({ form: "cash", party: "CM4-MK", direction: "in", rm: 500, date: "2099-04-01" }), mirrorC).row;
   const stagedC = { ok: true, count: 1, approved: [{ id: idC, collection: "loan", row: rowC, entry: entC({ form: "cash", party: "CM4-MK", direction: "in", rm: 500, date: "2099-04-01" }) }] };
@@ -13696,7 +13711,7 @@ await (async () => {
   const notesC = { version: "v9999", date: "01 Apr 2099", title: "A CASH LOAN", notes: ["<b>A CASH LOAN.</b> Five hundred ringgit borrowed, on a copy of the book, long enough to be a paragraph."],
     rows: { [idC]: { note: "<b>BORROWED RM 500 IN CASH.</b> A note long enough to pass, on a copy of the book." } }, stockNote: "", stockCost: null, stockCostNote: "" };
   const beforeC = copyC.STATED_STOCK, nC = (copyC.loans || []).length;
-  const aCash = aC(copyC, stagedC, notesC, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  const aCash = aC(copyC, stagedC, notesC, readFileSync(FROZEN_MASTER, "utf8"));
   ok(aCash.ok && copyC.loans.length === nC + 1 && copyC.loans[nC].form === "cash" && copyC.loans[nC].valueRM === 500 && Math.abs(copyC.STATED_STOCK - beforeC) < 0.005,
     "the apply appends it to the loan book and leaves the stated inventory where it was: " + (aCash.ok ? "ok" : (aCash.problems || []).join("; ")));
 
@@ -13806,7 +13821,7 @@ await (async () => {
   ok(/ringgit/.test(dR(entR({ loan: "l902", kg: 1, date: "2099-06-03" }), mirrorR).skip || ""), "and a cash loan is repaid in ringgit, not units: what was lent");
 
   /* the planner and the apply, on a copy of the book carrying the fixture loans */
-  const bkR = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkR = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   bkR.loans = (bkR.loans || []).concat([JSON.parse(JSON.stringify(salt)), JSON.parse(JSON.stringify(cash))]);
   const stR = (rows) => ({ ok: true, count: rows.length, approved: rows.map((r, i) => ({ id: "2099-06-03T00:00:00.00" + (i + 1) + "Z", collection: "repayment", row: r, entry: entR({ loan: r.loan }) })) });
   const twice = pR(JSON.parse(JSON.stringify(bkR)), stR([part.row, { ...part.row }, { ...part.row }]), null);
@@ -13819,7 +13834,7 @@ await (async () => {
   const notesR = { version: "v9999", date: "03 Jun 2099", title: "TWO REPAYMENTS", notes: ["<b>TWO REPAYMENTS.</b> A part of a salt loan and the whole of a cash one, on a copy of the book, long enough to be a paragraph."],
     rows: { "2099-06-03T00:00:00.001Z": { note: "<b>REPAID 2 UNIT.</b> A note long enough to pass, on a copy of the book." },
             "2099-06-03T00:00:00.002Z": { note: "<b>REPAID RM 400.</b> A note long enough to pass, on a copy of the book." } }, stockNote: "", stockCost: null, stockCostNote: "" };
-  const aRp = aR(copyR, stR([part.row, full.row]), notesR, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  const aRp = aR(copyR, stR([part.row, full.row]), notesR, readFileSync(FROZEN_MASTER, "utf8"));
   const sl = copyR.loans.find((l) => l.rid === "l901"), cl = copyR.loans.find((l) => l.rid === "l902");
   ok(aRp.ok && sl && sl.status === "open" && (sl.repaid || []).length === 1 && sl.repaid[0].kg === 2,
     "the apply writes the part repayment on its loan and leaves it open: " + (aRp.ok ? JSON.stringify(sl && sl.repaid) : (aRp.problems || []).join("; ")));
@@ -13830,7 +13845,7 @@ await (async () => {
   const aN = aR(copyN, { ok: true, count: 1, approved: [{ id: "2099-06-04T00:00:00.001Z", collection: "loan", row: loanRow, entry: { at: "2099-06-04T00:00:00.001Z", payload: { mode: "loan" } } }] },
     { version: "v9999", date: "04 Jun 2099", title: "A LOAN", notes: ["<b>A LOAN.</b> One unit borrowed, on a copy of the book, long enough to be a paragraph."],
       rows: { "2099-06-04T00:00:00.001Z": { note: "<b>BORROWED 1 UNIT.</b> A note long enough to pass, on a copy of the book." } }, stockNote: "", stockCost: null, stockCostNote: "" },
-    readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+    readFileSync(FROZEN_MASTER, "utf8"));
   const newest = copyN.loans[copyN.loans.length - 1];
   ok(aN.ok && /^l\d+$/.test((newest && newest.rid) || "") && newest.rid !== "l901" && newest.rid !== "l902",
     "a loan folded now is given a rid, the next after the highest on the book, so a repayment can name it: " + (aN.ok ? newest && newest.rid : (aN.problems || []).join("; ")));
@@ -13867,7 +13882,7 @@ await (async () => {
    they stood at 94a2313, before any of the four was made. */
 section("12 Sep 2026: the header redrawn, Today on every date field, the footer and the hand-filed plans gone");
 await (async () => {
-  const mH = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const mH = readFileSync(FROZEN_MASTER, "utf8");
   const cH = readFileSync(join(REPO, "design", "desk.css"), "utf8");
 
   /* 1. THE HEADER IS ONE FRAME: the mark and the wordmark lead, the status, the as-at and the
@@ -14050,7 +14065,7 @@ await (async () => {
 /* ---- The directory never reaches the desk (12 Sep 2026) ----------------------------- */
 section("12 Sep 2026: the leak check reads the master, and can find the directory at all");
 await (async () => {
-  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const msrc = readFileSync(FROZEN_MASTER, "utf8");
   const led = readFileSync(join(REPO, "tools", "ledger.mjs"), "utf8");
   /* Three real entries were live on the PUBLIC desk: a supplier's name in a script comment
      and two places in Journal version notes. Pinned by what they say now. */
@@ -14094,7 +14109,7 @@ await (async () => {
 /* ---- The Enter form's messages read as sentences (12 Sep 2026) --------------------- */
 section("12 Sep 2026: the Enter form's messages are a list, and an empty form carries no status");
 await (async () => {
-  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const msrc = readFileSync(FROZEN_MASTER, "utf8");
   const dcss = readFileSync(join(REPO, "design", "desk.css"), "utf8");
   /* they borrowed .warnpill, which this layer sets uppercase with letter-spacing */
   ok(!/wbErr=t=>`<span class="warnpill"|wbWarn=t=>`<span class="warnpill"|wbGood=t=>`<span class="warnpill"/.test(msrc),
@@ -14152,7 +14167,7 @@ await (async () => {
      green while the three around it went red. The card computes `mar` inline inside the render,
      with no helper to call, so until there is one the honest instrument is the source pin
      below, which DID go red on that same mutation. */
-  const msrc2 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const msrc2 = readFileSync(FROZEN_MASTER, "utf8");
   /* 19 Sep 2026: the derivation is gone from all twelve places it was written out; the goods ARE the
      total. What is pinned is that the margin is struck on the goods and not on what they owe. */
   ok(/const goods=total;const mar=\(!buy&&goods>0&&cost!=null&&qty\)\?\(\(goods-cost\)\/goods\*100\)/.test(msrc2),
@@ -14186,7 +14201,7 @@ await (async () => {
   const own = fx("sx01", "2026-08-03", "CX9-AA", 100), b1 = fx("sx02", "2026-08-04", "CX9-AA-R", 140, { rev: "R2" }), b2 = fx("sx03", "2026-08-05", "CX9-AA-R", 160, { rev: "R2" });
 
   /* THE STATEMENT, on a copy of the book carrying the fixture */
-  const bookB = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bookB = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   bookB.sales.push(own, b1, b2);
   const tmpB = join(REPO, "test", "tmp", "v609-" + Date.now());
   mkdirSync(join(tmpB, "2026-09", "_kv"), { recursive: true });
@@ -14255,7 +14270,7 @@ await (async () => {
   ok(PE10.appointBucket("reseller", "CX9-AA") === "CX9-AA-R" && PE10.appointBucket("referral", "CX9-AA") === "CX9-AA-R"
     && PE10.appointBucket("customer", "CX9-AA") === null && PE10.appointBucket("bucket", "CX9-AA") === null && PE10.appointBucket("referral", "") === null,
     "an appointment on either stream mints the -R account, and a registration of any other kind mints none");
-  const b10 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const b10 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const bare10 = (b10.associates || []).filter((a) => !(b10.roster || []).includes(a + "-R"));
   ok((b10.associates || []).length > 0 && bare10.length === 0,
     "every associate on the book has their bucket on the roster" + (bare10.length ? ", but not " + bare10.join(", ") : ""));
@@ -14314,7 +14329,7 @@ await (async () => {
   ok(!dD11.skip && !dD11.flags.some((f) => /this one is RM 130/.test(f)),
     "and its rate flags read the goods, not the total with the delivery inside: RM 110 of goods against a RM 110 history raises nothing: " + JSON.stringify(dD11.skip || dD11.flags));
   const { plan: plan11 } = await import("../tools/fold.mjs");
-  const B11 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const B11 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   B11.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
   B11.sales.push(JSON.parse(JSON.stringify(bk11.sales[1])));
   const p11 = plan11(B11, { ok: true, count: 1, approved: [{ id: "d611", collection: "sales", amends: "sy02", amendKind: "Correction",
@@ -14360,7 +14375,7 @@ await (async () => {
      R3 entry, or declared in INTRODUCTIONS on the book; introductions() reads both and nothing else may.
      Every check runs on both books, because an introduction is a relationship and not a sale of one
      product. Each was proved red by mutation. */
-  const bk15 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk15 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const { openMaster: om15 } = await import("../tools/payload.mjs");
   const { w: w15 } = await om15();
   const rd15 = (e) => JSON.parse(String(w15.eval("JSON.stringify(" + e + ")")));
@@ -14461,7 +14476,7 @@ await (async () => {
      open again once the party is off the departed list, so a guard that refused everyone cannot pass.
      Each assertion was proved red by mutation. */
   const { draftRow: dR17, checkCorrection: cc17 } = await import("../src/drafter.js");
-  const bk17 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk17 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const gone17 = [{ id: "CZ9-GONE", since: "2026-09-01", reason: "fixture", memorial: "fixture" }];
   const mir17 = (departed) => ({ version: "vX", sales: bk17.sales, purchases: bk17.purchases,
     state: { roster: bk17.roster.concat(["CZ9-GONE", "CZ9-HERE"]), loans: bk17.loans, PEOPLE: { banned: [], departed, roles: [] },
@@ -14555,7 +14570,7 @@ await (async () => {
      it on every pass. The rule is checked by its invariants, never by a second copy of its arithmetic. Each
      assertion was proved red by mutation. */
   const { draftRow: dR19 } = await import("../src/drafter.js");
-  const bk19 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk19 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const { openMaster: om19 } = await import("../tools/payload.mjs");
   const { w: w19 } = await om19();
   const rd19 = (e) => JSON.parse(String(w19.eval("JSON.stringify(" + e + ")")));
@@ -14631,7 +14646,7 @@ await (async () => {
      and the road refuses. Associates keep their own road, looked for first. Fixtures on the committed book. Each
      assertion was proved red by mutation. */
   const { draftRow: dR21 } = await import("../src/drafter.js");
-  const bk21 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk21 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const { openMaster: om21 } = await import("../tools/payload.mjs");
   const { w: w21 } = await om21();
   const rd21 = (e) => JSON.parse(String(w21.eval("JSON.stringify(" + e + ")")));
@@ -14769,7 +14784,7 @@ await (async () => {
      nothing under itself and closes its own block, and the Order book opens on a page called Receivables. The rail is
      read in the master's markup, the pages on the running desk, the block in design/desk.css. Each assertion was
      proved red by mutation. */
-  const m22 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m22 = readFileSync(FROZEN_MASTER, "utf8");
   const nav22 = m22.slice(m22.indexOf('<nav class="rail salt-rail"'), m22.indexOf("</nav>"));
   ok(!/class="grouplbl"/.test(nav22), "no heading stands over the destinations in the rail");
   const css22 = (readFileSync(join(REPO, "design", "desk.css"), "utf8") + readFileSync(join(REPO, "design", "salt-ds.css"), "utf8")).replace(/\/\*[\s\S]*?\*\//g, "");
@@ -14917,8 +14932,8 @@ await (async () => {
   ok(returns28.every((c) => c === "sales" || staged28.includes('"' + c + '"')), "and drafts.mjs --draft stages each as itself: missing " + (returns28.filter((c) => c !== "sales" && !staged28.includes('"' + c + '"')).join(" ") || "none"));
 
   /* ---- the fold: last in the batch, and refused for a code the desk's own logic names ---- */
-  const master28 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  const book28 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const master28 = readFileSync(FROZEN_MASTER, "utf8");
+  const book28 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book28.roster.push("CZ9-TBC", "CZ9-TBC-R"); book28.associates.push("CZ9-TBC");
   const ren28 = { id: "2099-01-01T00:00:00.001Z", collection: "rename", row: { from: "CZ9-TBC", to: "CZ9-SEG" }, entry: { at: "2099-01-01T00:00:00.001Z", payload: { mode: "rename", from: "CZ9-TBC", to: "CZ9-SEG" } } };
   const sale28 = { id: "2099-01-01T00:00:00.002Z", collection: "sales", row: { date: "2099-01-01", customer: "CZ9-TBC-R", rev: "R2", qty: 1, total: 100, cost: 44, cash: 100, deliveredQty: 1, deliveredOn: "2099-01-01" }, entry: { at: "2099-01-01T00:00:00.002Z", payload: { mode: "new", date: "2099-01-01" } } };
@@ -14928,7 +14943,7 @@ await (async () => {
   ok(res28.ok && !!sold28 && sold28.customer === "CZ9-SEG-R" && book28.roster.includes("CZ9-SEG") && book28.roster.includes("CZ9-SEG-R") && !book28.roster.includes("CZ9-TBC") && book28.associates.includes("CZ9-SEG"),
     "the rename folds last, so a sale approved after it under the old account moves too: " + (res28.ok ? JSON.stringify(sold28 && sold28.customer) : res28.problems.join("; ")));
   const plan28 = (from, to, bk) => F28.plan(bk, { ok: true, count: 1, approved: [{ ...ren28, row: { from, to } }] }, null).refused.map((x) => x.why).join(" ");
-  const live28 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const live28 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   if (!live28.roster.includes("CJ4-OKR")) live28.roster.push("CJ4-OKR");
   live28.roster.push("CZ9-DIA");
   ok(master28.includes("const DIAMOND=['CJ4-OKR']") && /written into the desk's own code/.test(plan28("CJ4-OKR", "CJ5-OKR", live28)), "a code the desk's own logic names, CJ4-OKR in DIAMOND, is left for a hand fold");
@@ -14945,7 +14960,7 @@ await (async () => {
   ok(txt28 === 'a "CZ9-SEG" b "CZ9-SEG-R" c "CZ9-TBCX" d XCZ9-TBC e CZ9-SEG.', "the suite's fixtures move by whole code only: " + txt28);
   const tmp28 = join(REPO, "test", "tmp", "v628-fold"), f28 = (n) => join(tmp28, n);
   mkdirSync(tmp28, { recursive: true });
-  const bookC28 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")); bookC28.roster.push("CZ9-TBC");
+  const bookC28 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); bookC28.roster.push("CZ9-TBC");
   writeFileSync(f28("book.json"), JSON.stringify(bookC28));
   writeFileSync(f28("salt_command.html"), master28);
   writeFileSync(f28("changelog.json"), readFileSync(join(REPO, "master", "changelog.json"), "utf8"));
@@ -15125,8 +15140,8 @@ await (async () => {
   ok(!rn31.skip && JSON.stringify(rn31.row.geo) === '[2.7,101.95,"Testville"]' && /place on the map moves with it/.test(rn31.reasoning), "a rename carries the new point, and its card says the place moves: " + (rn31.skip || JSON.stringify(rn31.row)));
 
   /* ---- the fold: the point is filed on the book, and follows a rename ---- */
-  const master31 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  const book31 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const master31 = readFileSync(FROZEN_MASTER, "utf8");
+  const book31 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book31.roster.push("CZ9-PLA", "CZ9-MOV", "CZ9-GEO"); book31.PLACED = { "CZ9-MOV": [2.9, 101.6], "CZ9-GEO": [2.9, 101.6] };
   const it31 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
   const res31 = F31.apply(book31, { ok: true, count: 4, approved: [
@@ -15739,8 +15754,8 @@ await (async () => {
     }
 
     /* ---- the fold: the tier is filed on the book, and follows a rename ---- */
-    const master43 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-    const book43 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const master43 = readFileSync(FROZEN_MASTER, "utf8");
+    const book43 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     book43.roster.push("CZ9-TA", "CZ9-TB"); book43.TIER_OF = { "CZ9-TB": { salt: "Silver" } };
     const it43 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
     /* 05 Oct 2026: the fold refuses by book and salt takes a drift now, so a level is filed on oil, a book that names none */
@@ -15815,8 +15830,8 @@ await (async () => {
     }
 
     /* ---- the fold ---- */
-    const master45 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-    const book45 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")); book45.TIER_OF = {};
+    const master45 = readFileSync(FROZEN_MASTER, "utf8");
+    const book45 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); book45.TIER_OF = {};
     const it45 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
     /* 05 Oct 2026: the fold refuses by book and salt takes a drift now, so a level is filed on oil, a book that names none */
     const res45 = F45.apply(book45, { ok: true, count: 1, approved: [it45(1, "roster", { code: "CZ9-NEWT", kind: "customer", parent: null, note: null, tiers: { oil: "Gold" } })] },
@@ -15864,8 +15879,8 @@ await (async () => {
       "the drafter drafts a cleared tier with its flag, and refuses a product not on the book and an entry naming no product: " + JSON.stringify(refD46.map((x) => x[1])));
 
     /* ---- the fold ---- */
-    const master46 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-    const book46 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const master46 = readFileSync(FROZEN_MASTER, "utf8");
+    const book46 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     book46.roster.push("CZ9-TA", "CZ9-TB"); book46.TIER_OF = { "CZ9-TA": { salt: "Gold", oil: "Silver" }, "CZ9-TB": { salt: "Silver" } };
     const it46 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
     const res46 = F46.apply(book46, { ok: true, count: 1, approved: [it46(1, "tierset", { tiers: { "CZ9-TA": { oil: null }, "CZ9-TB": { salt: null } } })] },
@@ -17281,7 +17296,7 @@ await (async () => {
     /* 4. AND THE TOOL THAT WRITES THE CUSTOMER'S PAGE AGREES, because two copies of one rule are two rules. */
     const PL60 = await import("../tools/pricelist.mjs");
     const { pricingSnapshot: ps60 } = await import("../tools/book.mjs");
-    const bk60 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const bk60 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const snap60 = ps60(w60);   /* it reads the open master, as every other caller does */
     const who60 = Object.keys(snap60.tierOf || {}).filter((c) => c.slice(-2) !== "-R");
     /* 23 Sep 2026: each on its own book's grid, the ten for salt and oil and the ringgit for candy and rice, whose rates he
@@ -17419,7 +17434,7 @@ await (async () => {
     /* 5. THE CUSTOMER'S OWN PAGE AGREES WITH THE DESK AT EVERY SIZE, through the snapshot, which carries the band set */
     const PL67 = await import("../tools/pricelist.mjs");
     const { pricingSnapshot: ps67 } = await import("../tools/book.mjs");
-    const bk67 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const bk67 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const snap67 = ps67(w67);
     const list67 = PL67.priceList("CZ9-BND", bk67, snap67, new Date()).products.find((p) => p.product === "salt");
     const desk67 = rd67("(function(){var o={};shownSizes('salt').forEach(function(q){o[q]=cardQuote('CZ9-BND',q);});return o;})()");
@@ -17902,7 +17917,7 @@ await (async () => {
      for everyone. The localities are filed beside each point in PLACED (38 from the directory's recorded places at the
      points the parties already stood at, and his three at new points); Coverage's party table reads them through whereOf.
      His three are read off the real book; the rules are read off fixture codes. */
-  const book80 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book80 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const P80 = book80.PLACED || {};
   ok(JSON.stringify(P80["CA5-BAN"]) === '[3.13,101.67,"Bangsar"]' && JSON.stringify(P80["CA7-AMP"]) === '[3.15,101.74,"Ampang"]' && JSON.stringify(P80["CE5-SA"]) === '[3.1,101.46,"Setia Alam"]',
     "his three are filed: Bangsar, Ampang on the Kuala Lumpur side, and Setia Alam: " + JSON.stringify([P80["CA5-BAN"], P80["CA7-AMP"], P80["CE5-SA"]]));
@@ -18001,7 +18016,7 @@ await (async () => {
      menu was keyed on the window's width alone, so a desktop window at 860px or narrower lost the rail. jsdom applies no
      media query, so this reads the rules as the master carries them, both layers; the widths were measured in Chromium
      with a mouse at 380 to 1280px and a finger at 375, 820 and 1024px. */
-  const m84 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m84 = readFileSync(FROZEN_MASTER, "utf8");
   const css84 = m84.slice(m84.indexOf("<style>"), m84.indexOf("</style>")).replace(/\/\*[\s\S]*?\*\//g, "");
   const blocks = [], re84 = /@(?:media|container)([^{]*)\{/g;
   let top84 = "", from = 0, mt;
@@ -18056,7 +18071,7 @@ await (async () => {
   /* the menu closes when its layout ends with it open, or the frost stays over a rail with no button to close it */
   const tmp84 = join(REPO, "test", "tmp", "v684-menu.html");
   mkdirSync(dirname(tmp84), { recursive: true });
-  writeFileSync(tmp84, readFileSync(join(REPO, "master", "salt_command.html"), "utf8").replace("<head>", "<head><script>window.__mq=[];window.matchMedia=function(q){var o={media:q,matches:true,l:[],"
+  writeFileSync(tmp84, readFileSync(FROZEN_MASTER, "utf8").replace("<head>", "<head><script>window.__mq=[];window.matchMedia=function(q){var o={media:q,matches:true,l:[],"
     + "addEventListener:function(t,f){o.l.push(f);},removeEventListener:function(){},addListener:function(f){o.l.push(f);},removeListener:function(){}};window.__mq.push(o);return o;};</script>"));
   const { w: mw84 } = await om84(tmp84);
   try {
@@ -18072,7 +18087,7 @@ await (async () => {
      232px of the window on every screen, and the Pricing chart pair ran past the page column to 959px, the approach
      calendar's side panel to 1027px and the ledger from 868 to 1033px; the page itself scrolled sideways to 923, 1009 and
      1015px. jsdom lays nothing out, so this reads the three rules; the widths were measured in Chromium. */
-  const m85 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m85 = readFileSync(FROZEN_MASTER, "utf8");
   const css85 = m85.slice(m85.indexOf("<style>"), m85.indexOf("</style>")).replace(/\/\*[\s\S]*?\*\//g, "");
   const blocks85 = [], re85 = /@(?:media|container)([^{]*)\{/g;
   let top85 = "", from85 = 0, mt85;
@@ -22047,7 +22062,7 @@ await (async () => {
   const sw = (await import("../stmt/worker.js")).default;
   const now = new Date(), TU = TF.TEST_USER, TL = TF.TEST_LOCKED, TP = TF.TEST_PASS;
   /* a real account's position, read before anything invented is built */
-  const B = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")), day = "2026-09-29";
+  const B = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")), day = "2026-09-29";
   const code = E.ownerCode(B.sales.find((s) => s.customer).customer), before = JSON.stringify(M.partyTotals(code, day));
   const all = F.buildAll(now), fix = all[TU];
 
@@ -22402,7 +22417,7 @@ await (async () => {
      real book; the page is driven as a customer drives it, with the live document sealed beside two issues. */
   const M = await import("../tools/make_statements.mjs");
   const POS = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const at = new Date("2026-09-24T04:00:00Z");
   const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
   let docs = 0, tabled = 0, untagged = 0, plural = 0, wrongWord = [];
@@ -22530,7 +22545,7 @@ await (async () => {
   const M = await import("../tools/make_statements.mjs");
   const POS = (await import("../engine/position.mjs")).default;
   const { EN } = await import("../stmt/words.js");
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const at = new Date("2026-09-24T04:00:00Z");
   const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
   /* C1: every live footer adds up, goods and delivery less paid, as txOwed does */
@@ -22860,7 +22875,7 @@ await (async () => {
      every order from the start; what was missing was a way to read one month of it. Each row says which
      month it belongs to, the page builds the strip from the rows it has, and the newest month opens. */
   const { stmtRows: sr90, stmtDoc: sd90 } = await import("../tools/make_statements.mjs");
-  const book90 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book90 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const party90 = [...new Set(book90.sales.filter((s) => s.date).map((s) => s.customer))]
     .find((c) => new Set(book90.sales.filter((s) => s.customer === c && s.date).map((s) => s.date.slice(0, 7))).size > 1);
   if (!party90) { skipData("no party on the book has orders in two different months, so the filter went unchecked"); return; }
@@ -22950,7 +22965,7 @@ await (async () => {
     ok(snap91.products.length >= 1 && rows91.length >= 6 && fields.every((f) => ASSOC_FIELDS.includes(f)) && rfields.every((f) => REWARD_FIELDS.includes(f)),
       "one row per associate per book, on the whitelist and nothing else: " + JSON.stringify(fields));
     ok(!/margin|profit|floor|cogs/i.test(JSON.stringify(snap91)), "and not one of the seller's words is in it");
-    const roster91 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")).roster;
+    const roster91 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")).roster;
     ok(rows91.every((r) => roster91.includes(r.id)) && rows91.every((r) => typeof r.departed === "boolean")
       && !/reason|memorial|note/i.test(JSON.stringify(snap91)),
       "codes only, and a departure is a yes or no, never his note about a person");
@@ -24470,7 +24485,7 @@ await (async () => {
     "a moment is written 03 Sep 2026, 14:20 in Kuala Lumpur, where the evening of the 3rd in UTC is the 4th: "
     + JSON.stringify([M.klShort(new Date("2026-09-03T06:20:00Z"), true), M.klShort(new Date("2026-09-03T17:00:00Z"))]));
   const POS = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const sales = (bk.state && bk.state.sales) || bk.sales || [];
   const parties = [...new Set(sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
   let sep = 0, four = 0;
@@ -24839,7 +24854,7 @@ await (async () => {
   /* ---- the live statement: its marks are cards, lettered, none under 20px; an archive draws none ---- */
   const MS8 = await import("../tools/make_statements.mjs");
   const POS8 = (await import("../engine/position.mjs")).default;
-  const bk8 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk8 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   let docs8 = 0; const sm8s = [], loose8s = [];
   for (const p of [...new Set(bk8.sales.map((x) => POS8.ownerCode(x.customer)))].filter((p) => !POS8.isBucket(p)).slice(0, 12)) {
     const d = MS8.liveStatement(p, new Date("2026-09-28T04:00:00Z"), "abcd-efgh");
@@ -25328,7 +25343,7 @@ await (async () => {
   }
   const osrc = readFileSync(join(REPO, "src", "orders.js"), "utf8");
   for (const re of [/Malay\b/, /LEVEL_\w*_MS/, /\bgaram\b/, /\bemas\b/]) if (re.test(osrc)) bad.push("src/orders.js " + re);
-  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const msrc = readFileSync(FROZEN_MASTER, "utf8");
   for (const re of [/\bMalay\b[^\n]*\b(refuse|warn|level)/, /\bgaram\b/, /\bgangsa\b/, /\btahap\b/]) if (re.test(msrc.slice(msrc.indexOf("function siteSafe"), msrc.indexOf("function siteSafe") + 1500))) bad.push("master siteSafe " + re);
   ok(!bad.length, "no Malay table, switch, kept choice, half or word list is left in the Counter's code or the desk's lock: " + JSON.stringify(bad));
   ok(Object.keys(WD.WORDS).join() === "en" && !("MS" in WD) && !("LIVE" in WD) && Object.keys(WD).filter((k) => /^(MS|LIVE)$/.test(k)).length === 0
@@ -25370,8 +25385,8 @@ await (async () => {
      English only since the owner's decision of 05 Oct 2026. */
   const WL = await import("../src/orders.js");
   const { siteWords, wordsIn } = WL;
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
+  const msrc = readFileSync(FROZEN_MASTER, "utf8");
   const tierNames = JSON.parse((/const TIER_NAMES=(\[[^\]]*\]);/.exec(msrc) || [, "[]"])[1].replace(/'/g, '"'));
   const names = Object.values(book.PRODUCTS || {}).map((p) => String(p.name).toLowerCase());
 
@@ -25493,7 +25508,7 @@ await (async () => {
     "and it does not become one, nor stop the five being the five");
 
   /* ---- the board a standing link serves is that level and nothing else ---- */
-  const bookN = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bookN = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const { pricingSnapshot: ps96 } = await import("../tools/book.mjs");
   const { openMaster: om96 } = await import("../tools/payload.mjs");
   const { w: w96 } = await om96();
@@ -25771,7 +25786,7 @@ await (async () => {
     };
     const E55 = (await import("../engine/position.mjs")).default;
     /* a live statement needs rows on the book, so for these cases the first account is one the book carries (its code only) */
-    const liveCode55 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")).sales
+    const liveCode55 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")).sales
       .map((s) => s.customer).find((c) => c && !E55.isBucket(c));
     writeFileSync(join(root55, "_users.json"), JSON.stringify({ [liveCode55]: "aaaa-bbbb", "CZ9-BBB": "cccc-dddd" }));
     const restamp = (mins) => (v) => { const r = JSON.parse(v); if (!r.live) return v; r.live = Object.assign({}, r.live, { at: new Date(Date.parse(r.live.at) + mins * 6e4).toISOString() }); return JSON.stringify(r); };
@@ -26974,8 +26989,8 @@ await (async () => {
     delete process.env.STMT_MASTER;
 
     /* ---- THE FOLD, run as the cloud job runs it, with no key and no master anywhere in its environment ---- */
-    writeFileSync(f("book.json"), readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-    writeFileSync(f("salt_command.html"), readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+    writeFileSync(f("book.json"), readFileSync(FROZEN_BOOK, "utf8"));
+    writeFileSync(f("salt_command.html"), readFileSync(FROZEN_MASTER, "utf8"));
     writeFileSync(f("changelog.json"), readFileSync(join(REPO, "master", "changelog.json"), "utf8"));
     writeFileSync(f("staged.json"), JSON.stringify(stage143([["2099-01-01T00:00:00.001Z", "CZ9-WLK", "customer"], ["2099-01-01T00:00:00.002Z", "CZ9-LTR", "customer"]])));
     writeFileSync(f("notes.json"), JSON.stringify({ version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }));
@@ -27118,7 +27133,7 @@ await (async () => {
 
     /* ---- the fold as the cloud job runs it: refused before the book is written, so nothing folds ---- */
     const f = (n) => join(fold, n);
-    const bookText = readFileSync(join(REPO, "ledger", "book.json"), "utf8"), masterText = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const bookText = readFileSync(FROZEN_BOOK, "utf8"), masterText = readFileSync(FROZEN_MASTER, "utf8");
     writeFileSync(f("book.json"), bookText); writeFileSync(f("salt_command.html"), masterText);
     writeFileSync(f("changelog.json"), readFileSync(join(REPO, "master", "changelog.json"), "utf8"));
     writeFileSync(f("staged.json"), JSON.stringify(stage("2099-01-01T00:00:00.001Z", "CZ1-NEW")));
@@ -27428,7 +27443,7 @@ await (async () => {
       ok(nowN >= open8.length, "so it reaches the Today badge, which counts the Now rows and nothing else");
     }
     /* THE MIRROR TERM. A default he is owed counted one; money he owes back counted nothing. */
-    const src8 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const src8 = readFileSync(FROZEN_MASTER, "utf8");
     const navBlock = src8.slice(src8.indexOf("function railCounts()"), src8.indexOf("function railCounts()") + 1200);   /* fold 5: the formula moved out of navCounts */
     ok(/customerRefunds\.filter\(r=>!r\.paidOn\)\.length/.test(navBlock) && /supplierReceivable\.status==='recoverable'/.test(navBlock),
       "the rail counts an open refund beside the default it already counted, which is its mirror");
@@ -30295,7 +30310,7 @@ await (async () => {
     "s155 and s157 have the same GOODS and must not have the same key: " + JSON.stringify([E.ovKey(a), E.ovKey(b)]));
 
   /* ---- the live book: every row v727 restated still says so, and not one figure lost ---- */
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const carried = (bk.sales || []).filter((r) => +r.delivery > 0);
   /* THE TWELVE ROWS v727 RESTATED, BY RID. v737 cut them at s182, the last rid on the book that day, and the
      cut held for a morning: v738 gave s173, a row older than the cut, a carriage it never had at v727, so a
@@ -30362,7 +30377,7 @@ await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const $ = (id) => w.document.getElementById(id);
-  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const msrc = readFileSync(FROZEN_MASTER, "utf8");
 
   /* ---- ONE WORD, IN BOTH EDITORS ---- */
   /* the COPY, not any mention of it: the phrase is still the clearest way to describe the rule in a
@@ -30453,7 +30468,7 @@ await (async () => {
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   const rd = (x) => JSON.parse(String(w.eval("JSON.stringify(" + x + ")")));
-  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const msrc = readFileSync(FROZEN_MASTER, "utf8");
 
   /* ---- WHY IT IS A SECOND WALK AND NOT A WIDER FILTER ----
      The tempting one-line fix is to stop dropping goodwill rows from pricedSales. It shrinks
@@ -30671,7 +30686,7 @@ await (async () => {
   ok(d2.cash === 435 && d2.paidOn === "2026-09-20", "and stamps it when the delivery is paid too: " + JSON.stringify({ cash: d2.cash, paidOn: d2.paidOn }));
   /* the Workbench's outstanding line reads the form's own inputs, so this one is a source pin: the sale branch
      reads txOwed and no longer the goods alone, while the lot branch beside it still reads a lot's total */
-  const m = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const m = readFileSync(FROZEN_MASTER, "utf8");
 
   /* ---- the drafter: the snapshot's figure is what it measures against, and it says the delivery ---- */
   const { draftRow } = await import("../src/drafter.js");
@@ -30702,7 +30717,7 @@ await (async () => {
   ok(dd.items[0].party.outstandingBefore === 15, "the dossier's outstanding figure carries the delivery, RM15 on RM420 paid of RM435: " + JSON.stringify(dd.items[0].party.outstandingBefore));
 
   /* ---- the live book: no row is stamped paid while its delivery is owed, and 18 Sep's delivery is on the row ---- */
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const stamped = bk.sales.filter((r) => r.paidOn && !r.cancelled);
   const wrong = stamped.filter((r) => E.txPaid(r) < owedOf(r) - 0.009).map((r) => r.rid + " paid " + E.txPaid(r) + " of " + owedOf(r));
   ok(stamped.length > 0 && !wrong.length, "no row on the book is stamped paid in full while its delivery is still owed: " + (wrong.join("; ") || "none of " + stamped.length));
@@ -30720,9 +30735,9 @@ await (async () => {
      figure, while v736's fulfilment the same day did roll. The row is the record of what moved; the roll
      follows the record, in either direction. */
   const { plan, apply } = await import("../tools/fold.mjs");
-  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const master = readFileSync(FROZEN_MASTER, "utf8");
   const fresh = () => {
-    const B = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const B = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     B.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
     B.roster.push("CZ9-RL", "SZ9-RL");
     B.sales.push({ rid: "sR1", customer: "CZ9-RL", date: "2026-09-10", qty: 5, total: 420, delivery: 15, cash: 0, deliveredQty: 0, product: "salt", note: "fixture" });
@@ -30765,7 +30780,7 @@ await (async () => {
   ok(sR1 && sR1.deliveredQty === 5 && sR1.deliveredOn === "2026-09-18" && sR1.handover === "delivered", "while the row itself says exactly what the correction stated: " + JSON.stringify({ deliveredQty: sR1.deliveredQty, deliveredOn: sR1.deliveredOn, handover: sR1.handover }));
 
   /* ---- the live book: the 5 unit of 19 Sep came off, in the record ---- */
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const live = ((bk.NOTES && bk.NOTES.STATED_STOCK) || []).find((n) => /^ROLLED AT v739: /.test(n)) || "";
   ok(/^ROLLED AT v739: 5 unit to CS6-BS-R on 2026-09-19, so 9\.9 less 5 is 4\.9\. A ROLL AND NOT A COUNT; COUNT_ON is untouched\./.test(live),
     "the book carries the roll of zhim2a's 5 unit, 9.9 less 5 is 4.9: " + live.slice(0, 100));
@@ -30779,8 +30794,8 @@ await (async () => {
      goods. The fold now writes the difference on the Correction's step. Fixture rows under an invented code. */
   const { apply } = await import("../tools/fold.mjs");
   const E = (await import("../engine/position.mjs")).default;
-  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  const B = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const master = readFileSync(FROZEN_MASTER, "utf8");
+  const B = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   B.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
   B.roster.push("CZ9-ST");
   B.sales.push({ rid: "sS1", customer: "CZ9-ST", date: "2026-09-08", qty: 5, total: 500, cash: 0, deliveredQty: 0, product: "salt", note: "fixture" });
@@ -30834,7 +30849,7 @@ await (async () => {
 
   /* ---- the statement: the row owes RM15 and says so, on a copy of the book carrying the row ---- */
   const { writeFileSync: wf, readFileSync: rf } = await import("node:fs");
-  const bkS = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkS = JSON.parse(rf(FROZEN_BOOK, "utf8"));
   bkS.sales.push({ ...row, note: "fixture" });
   bkS.sales.push({ ...row, rid: "sV2", date: "2026-09-18", cash: 435, amend: row.amend.concat([{ date: "2026-09-18", kind: "Fulfilment", cash: 15, kg: 0 }]), note: "fixture" });
   const BS = join(REPO, "test", ".v741.json");
@@ -30855,7 +30870,7 @@ await (async () => {
     "the amount cell says the delivery is beside the goods, not inside them, since v727 (a source pin: the cell is a template string)");
 
   /* ---- the live book: nothing that owes reads Completed ---- */
-  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(rf(FROZEN_BOOK, "utf8"));
   const done = bk.sales.filter((r) => !r.cancelled && E.txStat(r).order === "Completed");
   const owing = done.filter((r) => E.txOwed(r) - E.txPaid(r) > 0.009).map((r) => r.rid + " owes " + (E.txOwed(r) - E.txPaid(r)).toFixed(2));
   ok(done.length > 0 && !owing.length, "no row on the book reads Completed while it still owes: " + (owing.join("; ") || "none of " + done.length));
@@ -30870,7 +30885,7 @@ await (async () => {
      have landed a second time when the figure was stated. */
   const { plan } = await import("../tools/fold.mjs");
   const fresh = () => {
-    const B = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const B = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     B.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
     B.roster.push("CZ9-RL", "SZ9-RL");
     B.sales.push({ rid: "sR1", customer: "CZ9-RL", date: "2026-09-10", qty: 5, total: 420, delivery: 15, cash: 0, deliveredQty: 0, product: "salt", note: "fixture" });
@@ -30907,7 +30922,7 @@ await (async () => {
      time: applyAmend already writes `note + " " + (row.note || "")`, so both rows opened with the same
      sentence twice, on the desk's card and in the fold's next dossier. The arithmetic and the trail were
      right and the prose was doubled, which nothing on the book could see. */
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const rows = (bk.sales || []).concat(bk.purchases || []).filter((r) => r && r.note);
   /* the sentence may close inside a tag, because a note opens in bold: <b>WHAT HAPPENED.</b> is one sentence
      and the doubling repeats it whole, so the closing tag is part of the unit and not the end of it */
@@ -31067,7 +31082,7 @@ await (async () => {
   /* his word of 20 Sep 2026. The 16th's row had its carriage zeroed by a correction that day and took RM420
      where RM435 was owed; the 18th's said nothing about who moved the goods. The 19th already read right. */
   const E = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const three = ["s168", "s173", "s183"].map((id) => bk.sales.find((r) => r.rid === id));
   ok(three.every(Boolean), "the three rows are on the book: " + JSON.stringify(three.map((r) => r && r.rid)));
   const shape = three.map((r) => ({ rid: r.rid, date: r.date, qty: r.qty, goods: E.txGoods(r), carriage: +r.delivery || 0,
@@ -38912,7 +38927,7 @@ await (async () => {
       + "for a card nobody is looking at: " + JSON.stringify({ cleared, asked: asked.length }));
 
     /* THE ORDERS CARD TAKES THE SAME TWO GUARDS */
-    const src65 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const src65 = readFileSync(FROZEN_MASTER, "utf8");
     const both = src65.match(/if\(document\.hidden\|\|Object\.keys\((ap|ord)Busy\)\.length\)return;/g) || [];
     ok(both.length === 2 && (src65.match(/},CARD_POLL\);/g) || []).length === 2,
       "both cards that follow something outside the phone read one pace and the same two guards: " + JSON.stringify(both));
@@ -41605,7 +41620,7 @@ await (async () => {
     writeFileSync(join(T, "public", "assets", "chart.umd.js"), "/* stand-in: the build only proves it is there */\n");
     for (const f of readdirSync(join(REPO, "src")).filter((n) => n.endsWith(".js")))
       writeFileSync(join(T, "src", f), readFileSync(join(REPO, "src", f)));
-    const M = process.env.SALT_MASTER || join(REPO, "master", "salt_command.html");
+    const M = process.env.SALT_MASTER || FROZEN_MASTER;
     const REVT = join(T, "public", "rev.json"), DESKT = join(T, "public", "desk.html");
     const build = () => spawnSync(process.execPath, [join(T, "tools", "build.mjs")],
       { cwd: T, env: { ...process.env, SALT_MASTER: M }, encoding: "utf8" }).status;
@@ -41893,7 +41908,7 @@ await (async () => {
     const right = rules73[".pxboard th.hs.r .hb"] || "";
     ok(/right:\s*0/.test(right) && /left:\s*auto/.test(right),
       "and the last column's is anchored to its right edge: " + JSON.stringify(right));
-    const css73 = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const css73 = readFileSync(FROZEN_MASTER, "utf8");
     ok(/\.pxboard th\.hs\{position:relative;cursor:help;text-decoration:underline dotted/.test(css73),
       "and the heading says it has something to say, with the cursor and a dotted underline");
     ok(css73.indexOf(".pxboard th.hs") < css73.indexOf("</style>"),
@@ -41915,8 +41930,8 @@ await (async () => {
   const dir = join(REPO, "test", "tmp", "v778-" + Date.now());
   mkdirSync(dir, { recursive: true });
   const bk = join(dir, "book.json"), ms = join(dir, "master.html");
-  writeFileSync(bk, readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  writeFileSync(ms, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  writeFileSync(bk, readFileSync(FROZEN_BOOK, "utf8"));
+  writeFileSync(ms, readFileSync(FROZEN_MASTER, "utf8"));
   const env = Object.assign({}, process.env, { SALT_BOOK: bk, SALT_MASTER: ms });
   const run = (args) => spawnSync(process.execPath, [join(REPO, "tools", "product.mjs"), ...args], { env, encoding: "utf8" });
   const MAPS6 = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", "QUOTES"];
@@ -41970,7 +41985,7 @@ await (async () => {
      assertions are what make all three of those loud instead of quiet. */
   const ds = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
   const css = readFileSync(join(REPO, "stmt", "statement-css.js"), "utf8");
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const ids = Object.keys(book.PRODUCTS || {});
 
   const noHue = ids.filter((id) => !ds.includes("--salt-product-" + id + ":"));
@@ -42003,7 +42018,7 @@ await (async () => {
      rule 2; rules 3 and 5, never counted and declared but empty, are expected on a new book and
      are explicitly not faults. */
   const { openMaster } = await import("../tools/payload.mjs");
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const MAPS6 = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", "QUOTES"];
   const opened = ["candy", "rice", "spare"];
   /* v789: WHICH BOOKS ARE EMPTY IS ASKED OF THE BOOK, NOT TYPED HERE. All three were empty the day
@@ -42073,8 +42088,8 @@ await (async () => {
   const dir80 = join(REPO, "test", "tmp", "v780-" + Date.now());
   mkdirSync(dir80, { recursive: true });
   const bk80 = join(dir80, "book.json"), ms80 = join(dir80, "master.html");
-  writeFileSync(bk80, readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-  writeFileSync(ms80, readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8"));
+  writeFileSync(bk80, readFileSync(FROZEN_BOOK, "utf8"));
+  writeFileSync(ms80, readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8"));
   const add80 = spawnSync(process.execPath, [join(REPO, "tools", "product.mjs"), "--add", "zz", "--name", "Zed"],
     { env: Object.assign({}, process.env, { SALT_BOOK: bk80, SALT_MASTER: ms80 }), encoding: "utf8" });
   const book80 = JSON.parse(readFileSync(bk80, "utf8"));
@@ -42115,7 +42130,7 @@ await (async () => {
      Nothing moves today: the field is true on salt and false everywhere else, which is exactly
      what those comparisons meant. What changes is that turning it on becomes his decision and a
      data one. */
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const ids = Object.keys(book.PRODUCTS || {});
   ok(ids.every((id) => typeof book.PRODUCTS[id].reward === "boolean"),
     "every book states whether it earns");
@@ -42129,7 +42144,7 @@ await (async () => {
      under the mutation written to prove it. The region is now everything EXCEPT the evolution
      array, which runs from that declaration to LAST_UPDATED; the journal is excluded because it
      quotes retired code by design, and a check that read it would go red on history. */
-  const msrc = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const msrc = readFileSync(FROZEN_MASTER, "utf8");
   const evAt = msrc.indexOf("const evolution=["), stampAt = msrc.indexOf("const LAST_UPDATED=", evAt);
   ok(evAt > 0 && stampAt > evAt, "the journal's span can be found, so the code region excludes it");
   const code = msrc.slice(0, evAt) + msrc.slice(stampAt);
@@ -43233,7 +43248,7 @@ await (async () => {
      order a customer sees, not the order of an array handed to the printer. */
   const M = await import("../tools/make_statements.mjs");
   const POS = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const sales = (bk.state && bk.state.sales) || bk.sales || [];
   const at = new Date("2026-09-23T00:00:00Z");
   const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
@@ -45020,7 +45035,7 @@ await (async () => {
   const dn = (iso) => { const d = new Date(iso + "T00:00:00Z"); return WD.EN.day3.split(" ")[d.getUTCDay()] + " " + String(d.getUTCDate()).padStart(2, "0") + " " + WD.EN.mon3.split(" ")[d.getUTCMonth()] + " " + d.getUTCFullYear(); };   /* C17: DD Mon YYYY, a due date with its weekday */
   const P = "CX7-ST";
   const fx = (rid, date, extra) => Object.assign({ rid, date, customer: P, product: "salt", qty: 1, total: 100, cost: 44 }, extra || {});
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book.customerRefunds = [];
   const tmp = join(REPO, "test", "tmp", "v5b1-" + Date.now());
   mkdirSync(tmp, { recursive: true });
@@ -45474,7 +45489,7 @@ await (async () => {
      The figure is sealed inside the live statement and is the one its own footer and his Review read. */
   const M = await import("../tools/make_statements.mjs");
   const POS = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const sales = (bk.state && bk.state.sales) || bk.sales || [];
   const at = new Date("2026-09-23T00:00:00Z"), day = M.klToday(at);
   const parties = [...new Set(sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
@@ -45549,7 +45564,7 @@ await (async () => {
      the Still to collect block two lines below it still added them. Forced state: a fixture party owed
      2 of one book and 1.5 of another, on a copy of the book, so nothing here waits on the live book. */
   const fx = (rid, product, qty, total) => ({ rid, date: "2026-09-10", customer: "CX8-TG", product, qty, total, cost: 44, cash: total, deliveredQty: 1 });
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   bk.sales.push(fx("tg01", "salt", 3, 330), fx("tg02", "oil", 2.5, 250));
   const tmp = join(REPO, "test", "tmp", "s1-128-" + Date.now());
   mkdirSync(tmp, { recursive: true });
@@ -45589,7 +45604,7 @@ await (async () => {
      real book, tables of every kind the book holds. */
   const M = await import("../tools/make_statements.mjs");
   const POS = (await import("../engine/position.mjs")).default;
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const at = new Date("2026-09-24T00:00:00Z");
   const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
   let docs = 0, tables = 0;
@@ -45671,7 +45686,7 @@ await (async () => {
   const M = await import("../tools/make_statements.mjs");
   const POS = (await import("../engine/position.mjs")).default;
   const { siteWords } = await import("../src/orders.js");
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const at = new Date("2026-09-24T00:00:00Z");
   const text = (h) => h.replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   const parties = [...new Set(bk.sales.map((x) => POS.ownerCode(x.customer)))].filter((p) => !POS.isBucket(p));
@@ -45701,7 +45716,7 @@ await (async () => {
      read 117.5 unit over 47.5 of one book and 70 of another. Six customers on this book hold
      more than one. The money still adds, because a ringgit is a ringgit whatever it bought. */
   const M = await import("../tools/make_statements.mjs");
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const at = new Date("2026-09-22T00:00:00Z");
   const text = (h) => String(h).replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   const bodyOf = (who) => { const s = M.liveStatement(who, at); return String((s && (s.body || s.html)) || s); };
@@ -45788,7 +45803,7 @@ await (async () => {
      each recipe against the desk's own class names, and the layer had grown two colours of its own. Now the
      markup carries the system's names beside the desk's, the layer keeps only its bindings, and the colours
      are the identity's. Each assertion below was proved red by mutation, one at a time. */
-  const mX = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const mX = readFileSync(FROZEN_MASTER, "utf8");
   const dX = readFileSync(join(REPO, "design", "desk.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
   const sX = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
   const bodyX = mX.slice(mX.indexOf("<body"));
@@ -45942,7 +45957,7 @@ await (async () => {
      Each assertion was proved red by mutation, one at a time. */
   const FF = ["fraunces-latin.woff2", "jetbrains-mono-latin.woff2"];
   const has = (p) => { try { readFileSync(p); return true; } catch (e) { return false; } };
-  const mF = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const mF = readFileSync(FROZEN_MASTER, "utf8");
   const fcss = readFileSync(join(REPO, "design", "fonts.css"), "utf8");
   ok(/font-family: 'Fraunces'[^}]*url\(fonts\/fraunces-latin\.woff2\)/.test(fcss) && /font-family: 'JetBrains Mono'[^}]*url\(fonts\/jetbrains-mono-latin\.woff2\)/.test(fcss) && !/https?:\/\//.test(fcss),
     "the two faces are declared from the page's own fonts/ folder and name no other origin");
@@ -46097,7 +46112,7 @@ await (async () => {
   const card = String(w.eval("AP_DRAFTS=[{id:'a',collection:'sales',row:{customer:'CA2-SEN',product:'salt',qty:1,total:130,delivery:40,trip:'" + T + "'},flags:[]},{id:'b',collection:'sales',row:{customer:'CA2-SEN',product:'oil',qty:2,total:10,trip:'" + T + "'},flags:[]}];apCard(AP_DRAFTS[0])"));
   ok(/Trip t1759622400000/.test(card) && /2 rows waiting \(salt, oil\)/.test(card) && /decides every row of the trip/.test(card), "the Approve card says the one tap decides the whole trip: " + card.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 200));
   /* a resale carries its extras now, each booked through the same associate and stream, one trip for the friend's buyer */
-  const bkW = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bkW = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   try { w.close(); } catch (e) { }
 
   /* ---- the drafter and the tap, on the real migrations ---- */
@@ -46161,7 +46176,7 @@ await (async () => {
 
   /* ---- the fold: the last check ---- */
   const F = await import("../tools/fold.mjs");
-  const fb = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const fb = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   fb.roster.push("CZ9-TRP");
   const it = (n, r) => ({ id: "2099-10-05T02:00:00.00" + n + "Z", collection: "sales", row: Object.assign({ cost: 64, cash: 0, deliveredQty: 0 }, r), entry: { at: "2099-10-05T02:00:00.00" + n + "Z", payload: {} } });
   const two = F.plan(fb, { ok: true, count: 2, approved: [it(1, row("salt", { total: 130, delivery: 40 })), it(2, row("rice", { total: 10, delivery: 5 }))] }, null);
@@ -46173,7 +46188,7 @@ await (async () => {
     "and a trip whose delivery row is refused holds its sibling back too, moves and all: " + JSON.stringify({ refused: half.refused, moves: half.moves }));
 
   /* ---- the statement: the charge said once, for the trip ---- */
-  const sb = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const sb = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const lone = row("salt", { rid: "st3", date: "2099-10-01", total: 120, delivery: 20, cash: 140, deliveredQty: 1, cost: 64 });
   delete lone.trip;
   sb.sales = [row("salt", { rid: "st1", total: 130, delivery: 40, cash: 170, deliveredQty: 1, cost: 64 }), row("rice", { rid: "st2", total: 10, cash: 10, deliveredQty: 1, cost: 5 }), lone];
@@ -46201,8 +46216,8 @@ await (async () => {
      t1791145053619 from RM64 back to the shelf's RM60. A notes cost now lands only where the draft carried none, or on a lot,
      and never over a cost a correction sets. Invented codes only; each assertion proved red by mutation, one at a time. */
   const F = await import("../tools/fold.mjs");
-  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const master = readFileSync(FROZEN_MASTER, "utf8");
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book.roster.push("CZ9-CGS", "SZ9-CGS");
   book.sales.push({ rid: "s9001", customer: "CZ9-CGS", date: "2099-10-01", qty: 1, total: 120, cost: 60, cash: 120, deliveredQty: 1, note: "fixture" });
   const id = (n) => "2099-10-05T03:00:00.00" + n + "Z";
@@ -46240,7 +46255,7 @@ await (async () => {
      carries the system's class beside the desk's, the layer keeps bindings and geometry, and the one base
      rule that outranked a recipe moved into the layer. Each assertion was proved red by mutation, one at a
      time. */
-  const mR = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const mR = readFileSync(FROZEN_MASTER, "utf8");
   const dR = readFileSync(join(REPO, "design", "desk.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
   const sR = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
   const bodyR = mR.slice(mR.indexOf("<body"));
@@ -46313,7 +46328,7 @@ await (async () => {
 
   const { priceList } = await import("../tools/pricelist.mjs");
   const { readBook } = await import("../tools/book.mjs");
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const pricing = (await readBook()).ledger.PRICING;
   /* 05 Oct 2026: every customer the desk cards, salt's drift cards and any book's held level */
   const lists = [...new Set([...Object.keys(pricing.tierOf || {}), ...Object.keys((pricing.byProduct.salt || {}).cards || {})])]
@@ -46726,7 +46741,7 @@ await (async () => {
   const tmp = mkdtempSync(join(tmpdir(), "salt-v1b-"));
   let over = null;
   try {
-    const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     book.sales = rows; book.customerRefunds = [];
     writeFileSync(join(tmp, "book.json"), JSON.stringify(book));
     const keep = process.env.SALT_BOOK;
@@ -47376,7 +47391,7 @@ await (async () => {
      same way: every top-level `let`, the `function X(` calls followed transitively from actions, allActionsNow, ordActs,
      boundaryScan and txStat, and each `let` the closure touches must be named in badgeKey's own text or allowed below. A new
      mutable global read by actions() with no key term turns this red. Comments are stripped, so a name in prose counts for nothing. */
-  const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
+  const src = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
   const code = [...src.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n")
     .replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;{}])\/\/[^\n]*/g, "$1");
   const body = Object.create(null), lets = new Set(), consts = new Set();
@@ -47564,7 +47579,7 @@ await (async () => {
        part still coming; before the fix the flag rode on both and Home printed the note twice for the one sale */
     fx("rc05", "2026-09-09", { qty: 3, total: 150, delivery: 3, deliveredQty: 1, coverUnits: 0.15, coverRM: 13.37 })
   ];
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book.sales = rows; book.customerRefunds = [];
   const tmp = join(REPO, "test", "tmp", "cover-" + Date.now());
   mkdirSync(tmp, { recursive: true });
@@ -47836,7 +47851,7 @@ await (async () => {
      rows written here on a copy of the book, read back off the Ledger's cards by class and text. */
   const { openMaster: omX } = await import("../tools/payload.mjs");
   const { execSync: exX } = await import("node:child_process");
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const cust = bk.sales.find((x) => x.customer).customer;
   const row = (rid, extra) => Object.assign({ rid, date: "2026-09-27", customer: cust, product: "salt", qty: 2, total: 210, cash: 0, deliveredQty: 0 }, extra);
   bk.sales.push(row("g1", { deliveredQty: 2, deliveredOn: "2026-09-27", handover: "collected",
@@ -47847,7 +47862,7 @@ await (async () => {
     row("g3", { mod: "corrected on 2026-09-27: qty 1 to 2; total 110 to 210", amend: [{ date: "2026-09-27", kind: "Correction", cash: 0, kg: 0, note: "size" }] }));
   const B = join(REPO, "test", ".struck-" + process.pid + ".json"), M = join(REPO, "test", ".struck-" + process.pid + ".html");
   writeFileSync(B, JSON.stringify(bk, null, 1));
-  writeFileSync(M, readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8"));
+  writeFileSync(M, readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8"));
   let wX = null;
   try {
     exX("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
@@ -47879,7 +47894,7 @@ await (async () => {
   const { tmpdir } = await import("node:os");
   const dir = mkdtempSync(join(tmpdir(), "edr2-"));
   const A = "CX9-QA", AR = "CX9-QA-R", X = "CX8-QB";
-  const bk = JSON.parse(rf(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(rf(FROZEN_BOOK, "utf8"));
   const fx = (rid, customer, extra) => Object.assign({ rid, date: "2026-09-01", customer, qty: 1, total: 110, cash: 110,
     deliveredQty: 1, deliveredOn: "2026-09-01", handover: "collected", cost: 56 }, extra || {});
   bk.sales = bk.sales.concat([fx("zq1", A), fx("zq2", AR, { rev: "R2", downstream: X, date: "2026-09-02" }), fx("zq3", X, { date: "2026-09-03" })]);
@@ -47887,7 +47902,7 @@ await (async () => {
   bk.associates = bk.associates.concat([A]);
   const B = join(dir, "book.json"), M = join(dir, "master.html");
   wf(B, JSON.stringify(bk, null, 1));
-  wf(M, rf(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8"));
+  wf(M, rf(process.env.SALT_MASTER || FROZEN_MASTER, "utf8"));
   execSync("node tools/booksync.mjs --sync", { cwd: REPO, env: { ...process.env, SALT_BOOK: B, SALT_MASTER: M }, stdio: "pipe" });
   const { w } = await openMaster(M);
   try {
@@ -47939,7 +47954,7 @@ await (async () => {
   const { plan } = await import("../tools/fold.mjs");
   const { pendingEntry, ledgerKeyOf, orderKeyFor } = await import("../src/orders.js");
   const OLD = (t) => (t.customer || t.supplier) + "|" + t.date + "|" + ((+t.total || 0) + (+t.delivery || 0));
-  const bk = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const rows = [...bk.sales, ...bk.purchases], isSalt = (r) => (r.product || "salt") === "salt";
 
   /* 1. THE BOOK AS IT STANDS */
@@ -48313,7 +48328,7 @@ await (async () => {
   const { readFileSync: rf, writeFileSync: wf, rmSync: rm, mkdtempSync: mk } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { pathToFileURL: pu } = await import("node:url");
-  const live = rf(join(REPO, "ledger", "book.json"), "utf8"), base = JSON.parse(live);
+  const live = rf(FROZEN_BOOK, "utf8"), base = JSON.parse(live);
   const dir = mk(join(tmpdir(), "v4a5-"));
   try {
     /* 1. THE WALK'S LEGS: s018 settles s003 and s008, and s003 is made a row of another book carrying carriage */
@@ -48338,7 +48353,7 @@ await (async () => {
     /* 2. A RENAME OF A BOOK WITH ROWS, on copies of the book and the master */
     const bk = join(dir, "book2.json"), ms = join(dir, "master.html");
     wf(bk, live);
-    wf(ms, rf(join(REPO, "master", "salt_command.html"), "utf8"));
+    wf(ms, rf(FROZEN_MASTER, "utf8"));
     const env = Object.assign({}, process.env, { SALT_BOOK: bk, SALT_MASTER: ms });
     const run = (args) => spawnSync(process.execPath, [join(REPO, "tools", "product.mjs"), ...args], { env, encoding: "utf8" });
     const oilKeys = base.sales.concat(base.purchases).filter((r) => r.product === "oil").map((r) => PE.ovKey(r));
@@ -48629,7 +48644,7 @@ await (async () => {
      into the public desk, holds no addr, no base point and no places envelope under any key, and every point in PLACED is at
      0.01 degrees with at most its locality beside it; the desk's PLACED is read out of the page as the phone gets it. The
      queue side is proved where Add ID and Amend ID are driven. Proved red by mutation (a point filed in PLACED). */
-  const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const desk = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   const keysDeep = (o, out = new Set()) => { if (o && typeof o === "object") for (const k of Object.keys(o)) { out.add(k); keysDeep(o[k], out); } return out; };
   const two = (x) => typeof x === "number" && Math.round(x * 100) / 100 === x;
@@ -53020,7 +53035,7 @@ await (async () => {
     + "return {el:true,set:q1&&q1.tiers[id],refused:refused,clear:q2&&q2.tiers[id]};})()");
   /* 11. ADD ID STARTS A CUSTOMER ON THE AUTOMATIC DRIFT, or on Better, Standard, Higher or one typed */
   /* 12. THE MIGRATION: no customer holds a salt level on the book, and nobody is proposed one */
-  const bk12 = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+  const bk12 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const held12 = Object.keys(bk12.TIER_OF || {}).filter((c) => bk12.TIER_OF[c] && "salt" in bk12.TIER_OF[c] && typeof bk12.TIER_OF[c].salt !== "number");
   const prop12 = rd("tierCustomers().filter(function(c){return tierProposal(c,'salt',tierBoards())||ruleProposal(c,'salt',tierBoards())||cardTier(c)!==0;}).length");
   ok(!held12.length && prop12 === 0, "no customer holds a salt level, none is proposed one, and every card reads the drift: " + JSON.stringify([held12.length, prop12]));
@@ -53046,7 +53061,7 @@ await (async () => {
   const d1 = D.draftRow(en(-0.4), mir), d2 = D.draftRow(en("Gold"), mir), d3 = D.draftRow(en(1.5), mir);
   ok(d1 && !d1.skip && d1.row.tiers["CZ9-DA"].salt === -0.4 && /drift \+0\.2 to drift -0\.4/.test(d1.flags.join(" ")) && /Gold is not a drift/.test(d2.skip || "") && /not a drift/.test(d3.skip || ""),
     "the drafter takes a drift on salt, flags the move, and refuses a level or a drift past one: " + JSON.stringify([d1 && d1.flags, d2.skip, d3.skip]));
-  const bkF = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8")); bkF.roster.push("CZ9-DA");
+  const bkF = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); bkF.roster.push("CZ9-DA");
   const itF = (n, s) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { salt: s } } }, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
   const pl = F.plan(bkF, { ok: true, count: 2, approved: [itF(1, 0.4), itF(2, 1.5)] }, null);
   ok(pl.refused.length === 1 && /drift \+1\.5 is not a drift from -1 to \+1/.test(pl.refused[0].why) && JSON.stringify(pl).indexOf("drift +0.4") >= 0,
@@ -53310,7 +53325,7 @@ await (async () => {
       + JSON.stringify({ unit, missing: said, oneDays: (/.{0,40}(?<!, )\b1 days\b.{0,20}/.exec(html) || [""])[0] }));
   } finally { try { w.close(); } catch (e) { /* jsdom */ } }
   /* and the class: no printer outside the generated blocks writes a count before "days" by itself */
-  const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");   /* the run's master, so a mutation reaches it */
+  const src = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");   /* the run's master, so a mutation reaches it */
   const body = src.slice(src.indexOf("/* ==== END GEO ==== */"));
   const bare = [...body.matchAll(/\$\{(?:[^{}`]|\{\})+?\} (?:(?:public )?holiday |lead |review )?days?\b|[\w.)\]]+ ?\+ ?['"] ?days?\b/g)].map((m) => m[0].slice(-40));
   ok(!bare.length, "and no other printer in the master writes a count of days by itself: " + (bare.join(" | ") || "none"));

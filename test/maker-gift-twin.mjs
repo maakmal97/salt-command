@@ -1,3 +1,4 @@
+import { FROZEN_BOOK } from "./frozen.mjs";
 import { JSDOM } from "jsdom";
 import { webcrypto } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -23,7 +24,7 @@ const holdSale = (wd, row) => wd.sqlite.prepare("INSERT INTO entry(collection,se
   .run(JSON.stringify(row));
 /* the fold's plan over the real book with the given sales and the given approved drafts */
 const foldPlan = (wd, sales, drafts) => {
-  const book = JSON.parse(readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book.sales = sales; book.roster = wd.b.state.roster;
   const approved = drafts.map((r) => ({ id: r.id, collection: r.collection, row: r.row, entry: r.entry }));
   return plan(book, { ok: true, count: approved.length, approved }, null);

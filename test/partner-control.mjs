@@ -2,6 +2,7 @@
    Drift card's Make partner queues a name-free `partner` entry; the drafter turns it into a roster row; the fold files the code in
    `partners` and, if they are no associate yet, appoints them on the R2 stream with their -R account. Fixture books throughout, so
    nothing moves when the real roster does. */
+import { FROZEN_MASTER } from "./frozen.mjs";
 import fs from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,7 +13,7 @@ export async function run({ ok }) {
   const { draftRow } = await import("../src/drafter.js");
   const { plan, apply } = await import("../tools/fold.mjs");
   const { openMaster } = await import("../tools/payload.mjs");
-  const master = fs.readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const master = fs.readFileSync(FROZEN_MASTER, "utf8");
 
   /* 1. THE ENTRY: codes only, one mode, and it is not an Add ID (which the pair vault gates) */
   const e = PE.partnerEntry({ at: "2026-10-09T01:00:00.000Z", code: "CX1-OLD" });

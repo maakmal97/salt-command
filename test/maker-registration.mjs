@@ -1,3 +1,4 @@
+import { FROZEN_BOOK } from "./frozen.mjs";
 import { readFileSync } from "node:fs";
 import { world } from "./maker-trades.mjs";
 import { approvedRows, APPROVED_SQL, readArgs } from "../tools/drafts.mjs";
@@ -47,7 +48,7 @@ const stageApproved = (wd) => {
   return output;
 };
 const foldBook = (wd) => {
-  const book = JSON.parse(readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8"));
+  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   book.sales = []; book.purchases = []; book.roster = wd.b.state.roster.slice();
   book.associates = wd.b.state.associates.slice(); book.PRODUCTS = wd.b.state.PRODUCTS;
   return book;

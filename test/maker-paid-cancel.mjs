@@ -1,3 +1,4 @@
+import { FROZEN_MASTER } from "./frozen.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { draftRow } from "../src/drafter.js";
@@ -29,7 +30,7 @@ export async function run({ ok }) {
     entry: { payload: { direction: "SELL", kind: "Cancellation", date: "2026-10-06" } },
     row: fold.c.sales.at(-1), pay: { kind: "Cancellation", date: "2026-10-06" } }] };
   const notes = { version: "v9999", title: "t", notes: ["n"], rows: { x1: { note: "cancelled" } } };
-  const res = foldApply(fold.c, staged, notes, readFileSync(join(REPO, "master", "salt_command.html"), "utf8"));
+  const res = foldApply(fold.c, staged, notes, readFileSync(FROZEN_MASTER, "utf8"));
   const rows = (fold.c.customerRefunds || []).slice(n);
   ok(res && res.ok !== false && rows.length === 1 && rows[0].rid === "pc-fold" && rows[0].amount === 80 && !rows[0].paidOn,
     "the fold of a paid Counter cancel opens exactly one refund for what was paid, with no paidOn: " + JSON.stringify(rows));
