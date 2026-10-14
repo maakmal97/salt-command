@@ -111,6 +111,7 @@ measurement of the desk.
   text. `tools/section.mjs "<prefix>" --mutations <file.json>` (`[{name, file?, find, replace}]`,
   no file meaning the master) does all of that and names the checks each one turns red; it exits 1
   when a mutation turned none red, a crash included.
+- **The suite reads a frozen book, not the live one** (S0, 14 Oct 2026). `test/frozen.mjs`, the first import of `verify.mjs` and `tools/section.mjs`, sets `SALT_BOOK` to `test/fixtures/book-frozen.json` (`ledger/book.json` at the sha in `book-frozen.sha`) and `SALT_MASTER` to a temp copy of the CURRENT master with only its BOOK block rendered from that fixture, rebuilt every run and never stored. A phone fold therefore cannot turn a check red. A read goes through `FROZEN_BOOK` / `FROZEN_MASTER`; a check that is about the live files (date order, master matches book, the extract, the gate) reads `LIVE_BOOK` / `LIVE_MASTER` or runs its child with `liveEnv()`. To refresh the fixture on purpose: copy `ledger/book.json` over it and write the new sha; expect checks pinned to older rows to need a look.
 - **Attributing a red suite after a cloud fold:** swap only the book. Run the section on today's
   `ledger/book.json` and on `git show <last green>:ledger/book.json`, same code, same clock:
   `--book <last green>` runs it on that commit's master, refused unless the BOOK block, `evolution`
