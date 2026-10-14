@@ -86,6 +86,14 @@ function partyDossier(book, key, party) {
 
 const evalJSON = (w, expr) => JSON.parse(w.eval("JSON.stringify(" + expr + ")"));
 
+/* The ladder for a size, labelled so a total is never read as a rate: the Total figures are for the
+   whole size, the PerUnit figures are those over the size. */
+export function ladderFigures(L, size) {
+  const t = (k) => r2(L && L[k] && L[k].total);
+  const u = (k) => { const v = t(k); return v == null ? null : r2(v / size); };
+  return { size, floorTotal: t("floor"), askTotal: t("ask"), ceilingTotal: t("ceiling"), floorPerUnit: u("floor"), askPerUnit: u("ask"), ceilingPerUnit: u("ceiling") };
+}
+
 export function dossier(book, staged, p, w) {
   const items = [];
   for (const it of p.items) {
@@ -109,7 +117,8 @@ export function dossier(book, staged, p, w) {
       if (src.collection === "sales" && +row.qty > 0) {
         try {
           const L = evalJSON(w, `priceLadder(${+row.qty})`);
-          d.ladder = { size: +row.qty, floor: r2(L.floor && L.floor.total), ask: r2(L.ask && L.ask.total), ceiling: r2(L.ceiling && L.ceiling.total) };
+          d.ladder = ladderFigures(L, +row.qty);
+          d.goodsPerUnit = r2((+row.total || 0) / +row.qty);
           d.goods = r2(+row.total || 0);   /* 05 Oct 2026: the total IS the goods since v727; the delivery sits beside it */
           d.creditCap = evalJSON(w, `creditCapFor(${JSON.stringify(prod)}, ${d.party.associate ? "'associate'" : "'retail'"})`);
         } catch (e) { d.ladder = null; }
@@ -219,7 +228,7 @@ export function checkNotes(notes, expectVersion, ids) {
 /* ---- the call ------------------------------------------------------------------------------- */
 const SYSTEM = `You write the audit notes for a fold of the Salt Command trading book: a small salt trade in Malaysia, kept as a ledger of rows, each with a note a person auditing it would need. The fold tool has already decided what each row DOES; you supply the prose and the version entry, and nothing else.
 
-House style, not optional: plain British English; no em-dashes or en-dashes (use a comma, a colon or a full stop); RM and "unit" only, never kg or kilo; never the word d\u0065ar in any form (write expensive, costly, higher, or the figure); party CODES only (like CJ4-BJ, SA5-BTR), never a name, a title or a place; figures only from the dossier, never computed by hand, and quoted exactly (a floor, an ask, a rate, a margin); each note opens with a bold lead in capitals inside <b></b>, then the facts. A note names what happened, the terms, how the rate stands against the desk's own floor and ask for that size, the party's own history (median rate, range, outstanding, credit against the cap), the cost the row carries and whether it is the inventory's own, what the drafter flagged and whether the figures answer the flag, and what is left outstanding. For an amendment: what moved, when, and what it leaves. For a count: what was counted against what the book said, where the gap sits, and how the floors move. Never invent a row or a reason for a gap: say what the dossier says and no more. Say "on his word" for a fact the dossier marks as decided by him.
+House style, not optional: plain British English; no em-dashes or en-dashes (use a comma, a colon or a full stop); RM and "unit" only, never kg or kilo; never the word d\u0065ar in any form (write expensive, costly, higher, or the figure); party CODES only (like CJ4-BJ, SA5-BTR), never a name, a title or a place; figures only from the dossier, never computed by hand, and quoted exactly (a floor, an ask, a rate, a margin); each note opens with a bold lead in capitals inside <b></b>, then the facts. A note names what happened, the terms, how the rate stands against the desk's own floor and ask for that size (compare like with like: the goods total against ladder.floorTotal and askTotal, or a rate per unit against floorPerUnit and askPerUnit, never a unit rate against a total), the party's own history (median rate, range, outstanding, credit against the cap), the cost the row carries and whether it is the inventory's own, what the drafter flagged and whether the figures answer the flag, and what is left outstanding. For an amendment: what moved, when, and what it leaves. For a count: what was counted against what the book said, where the gap sits, and how the floors move. Never invent a row or a reason for a gap: say what the dossier says and no more. Say "on his word" for a fact the dossier marks as decided by him.
 
 LENGTH, and it is a rule: a row note is 60 to 120 words; each version note is one paragraph of 50 to 90 words; two version notes for a batch of one or two rows, three at most for a larger batch. Say each fact once. The first live fold wrote 4,700 tokens in 60 seconds, and the chain is measured in seconds.
 

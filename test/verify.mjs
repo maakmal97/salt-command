@@ -10990,6 +10990,13 @@ await (async () => {
   ok(F.checkNotes(F.fromReply(good), "v999", ids).length === 0 && F.fromReply({ ...good, rows: { [ids[0]]: { ...good.rows[ids[0]], rowNote: "<b>AMENDED.</b>" } } }).rows[ids[0]].rowNote === "<b>AMENDED.</b>",
     "rows already keyed by id, as the tool's notes and the fakes carry them, and a rowNote with words pass unchanged");
 
+  /* 14 Oct 2026: a note compared a unit rate with the ladder's TOTAL floor. The dossier labels both. */
+  const lad = F.ladderFigures({ floor: { total: 362.5 }, ask: { total: 600 }, ceiling: { total: 1087.5 } }, 6.25);
+  ok(lad.size === 6.25 && lad.floorTotal === 362.5 && lad.askTotal === 600 && lad.ceilingTotal === 1087.5 && lad.floorPerUnit === 58 && lad.askPerUnit === 96 && lad.ceilingPerUnit === 174,
+    "the dossier's ladder carries the totals for the size and the same figures per unit, 362.5 over 6.25 units being 58 a unit");
+  ok(F.requestFor({ todayKL: "02 Jan 2099", version: { last: "v998", next: "v999" }, items: [] }, []).system.map((b) => b.text || b).join("").includes("never a unit rate against a total"),
+    "the house rules say to compare like with like, never a unit rate against a total");
+
   /* END TO END ON A FIXTURE, through a fake reply: the tool plans, builds the dossier off the real
      master, takes the notes, and folds with fold.mjs into copies of the book and the master. */
   const { mkdirSync: mk9, rmSync: rm9, copyFileSync: cp9, readFileSync: rf9, writeFileSync: wf9, existsSync } = await import("node:fs");
@@ -11014,7 +11021,7 @@ await (async () => {
   const dj = JSON.parse(dryOut.slice(dryOut.indexOf('{\n "model"')));
   const dd = JSON.parse(dj.user.slice(dj.user.indexOf("{"), dj.user.lastIndexOf("}") + 1));
   const it9 = dd.items[0];
-  ok(dd.version.next && it9 && it9.ladder && it9.ladder.size === 1 && it9.ladder.floor > 0 && it9.ladder.ask >= it9.ladder.floor, "the dossier carries the desk's own floor and ask for 1 unit (floor " + (it9 && it9.ladder && it9.ladder.floor) + ", ask " + (it9 && it9.ladder && it9.ladder.ask) + ")");
+  ok(dd.version.next && it9 && it9.ladder && it9.ladder.size === 1 && it9.ladder.floorTotal > 0 && it9.ladder.askTotal >= it9.ladder.floorTotal && it9.ladder.floorPerUnit === it9.ladder.floorTotal, "the dossier carries the desk's own floor and ask for 1 unit (floor " + (it9 && it9.ladder && it9.ladder.floorTotal) + ", ask " + (it9 && it9.ladder && it9.ladder.askTotal) + ")");
   ok(it9.party && it9.party.code === party9 && it9.party.lastRows.length > 0 && it9.party.medianRate > 0 && it9.drafterFlags[0] === "a flag from the drafter", "and the party's last rows, median rate and the drafter's flag");
   ok(dd.inventory.position && typeof dd.inventory.position.stock === "number" && typeof dd.inventory.position.owedOut === "number", "and the inventory position from the engine");
   ok(dj.user.includes(JSON.stringify([id9])) && dj.schema.properties.rows.type === "array" && /never kg or kilo/.test(dj.system), "the request binds the reply to the batch's ids under the house rules");
@@ -11213,7 +11220,7 @@ await (async () => {
   const d = { todayKL: "22 Sep 2026", version: { last: "v998", next: "v999" },
     inventory: { stated: 3, countOn: { salt: "2026-09-21" }, position: { stock: 3 } },
     items: [{ id: ids[0], what: "SELL CJ4-BJ 1 unit salt RM130 on 2099-01-03", does: ["append a sale to sales"],
-      row: { qty: 1, total: 130, cash: 130, date: "2099-01-03" }, ladder: { size: 1, floor: 60, ask: 130 },
+      row: { qty: 1, total: 130, cash: 130, date: "2099-01-03" }, ladder: { size: 1, floorTotal: 60, askTotal: 130 },
       party: { code: "CJ4-BJ", orders: 4, medianRate: 120, rateRange: [100, 140], outstandingBefore: 0, defaultedRM: 0 },
       drafterFlags: ["a flag from the drafter"] }] };
   const n = toolNotes(d, ids, "No ANTHROPIC_API_KEY was set.");
