@@ -1,0 +1,8 @@
+[
+  {"name": "the path-pieces spelling is not named", "file": "test/book-reads.mjs", "find": "if (PATH_PIECES.test(l) || URL_FORM.test(l) || DIRECT.test(l))", "replace": "if (URL_FORM.test(l) || DIRECT.test(l))"},
+  {"name": "the new URL spelling is not named", "file": "test/book-reads.mjs", "find": "if (PATH_PIECES.test(l) || URL_FORM.test(l) || DIRECT.test(l))", "replace": "if (PATH_PIECES.test(l) || DIRECT.test(l))"},
+  {"name": "a direct path read is not named", "file": "test/book-reads.mjs", "find": "if (PATH_PIECES.test(l) || URL_FORM.test(l) || DIRECT.test(l))", "replace": "if (PATH_PIECES.test(l) || URL_FORM.test(l))"},
+  {"name": "a marked line is still named", "file": "test/book-reads.mjs", "find": "if (l.includes(OK_MARK)) return;", "replace": ""},
+  {"name": "a comment line is named", "file": "test/book-reads.mjs", "find": "t.startsWith(\"//\") || t.startsWith(\"*\")", "replace": "false"},
+  {"name": "the constants file is not exempt", "file": "test/book-reads.mjs", "find": "if (FRAMEWORK.has(f.path)) continue;", "replace": ""}
+]

@@ -2909,7 +2909,7 @@ await (async () => {
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
   /* the running desk evaluates to the file: read back through the extract */
-  const led = JSON.parse(readFileSync(join(REPO, "ledger", "ledger.json"), "utf8")).ledger;
+  const led = JSON.parse(readFileSync(join(REPO, "ledger", "ledger.json"), "utf8")).ledger;   /* book-read-ok: the extract is compared with the live file */
   const same = keys.every((k) => JSON.stringify(led[k]) === JSON.stringify(book[k]));
   ok(same, "the extract read from the running desk equals ledger/book.json on every key");
   const master = readFileSync(FROZEN_MASTER, "utf8");
@@ -2918,7 +2918,7 @@ await (async () => {
 })();
 
 /* ---- the frozen book (S0 of the Book plan) ---- */
-section("Frozen book — the suite's master is the current master with only its BOOK block from the fixture");
+section("Frozen book: the suite's master is the current master with only its BOOK block from the fixture");
 await (async () => {
   /* WHY. A phone fold moves ledger/book.json and the master's BOOK block and nothing else; checks reading either went red with no code change
      (CI5-PER locality v1097, #169, #173). The suite reads test/fixtures/book-frozen.json and a master rebuilt each run from the CURRENT master
@@ -2933,8 +2933,26 @@ await (async () => {
   ok(liveEnv().SALT_BOOK === undefined && liveEnv().SALT_MASTER === undefined && liveEnv({ SALT_BOOK: "x" }).SALT_BOOK === "x", "liveEnv() drops both overrides for a child that must see the live files");
 })();
 
+/* ---- no test reads the live book (S0, the guard) ---- */
+section("Frozen book: no test reads the live book for its content");
+await (async () => {
+  const { bookReadFaults } = await import("./book-reads.mjs");
+  const files = readdirSync(join(REPO, "test")).filter((f) => f.endsWith(".mjs") && !f.startsWith(".")).map((f) => ({ path: "test/" + f, text: readFileSync(join(REPO, "test", f), "utf8") }));
+  const faults = bookReadFaults(files);
+  ok(files.length > 50 && faults.length === 0, "no test builds the path to ledger/book.json or ledger/ledger.json itself (" + files.length + " files read): " + JSON.stringify(faults.slice(0, 6)));
+  /* RED, planted: each way a test can read the live book is named; the frozen and live constants, a comment, a message and a marked line are not */
+  const bad = ['const b = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));', 'const b = readFileSync(resolve(REPO, "ledger", "ledger.json"));',   /* book-read-ok: planted */
+    'const b = readFileSync(new URL("../ledger/book.json", import.meta.url));', 'const b = readFileSync("ledger/book.json", "utf8");', 'const b = readFileSync("./ledger/book.json");'];   /* book-read-ok: planted */
+  const at = (l) => bookReadFaults([{ path: "test/x.mjs", text: "a\n" + l }]);
+  ok(bad.every((l) => at(l).length === 1 && at(l)[0].line === 2 && at(l)[0].path === "test/x.mjs"), "a planted read of the live book is named by its file and line, in each of its five spellings");
+  const fine = ['const b = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));', 'const b = JSON.parse(readFileSync(LIVE_BOOK, "utf8"));', '// join(REPO, "ledger", "book.json")', ' * join(REPO, "ledger", "book.json")',   /* book-read-ok: planted */
+    '/* join(REPO, "ledger", "book.json") */', 'ok(x, "declared in ledger/book.json");', 'const b = readFileSync(join(REPO, "ledger", "book.json")); /* book-read-ok: a fake workspace */'];
+  ok(fine.every((l) => bookReadFaults([{ path: "test/x.mjs", text: l }]).length === 0), "and the frozen and live constants, a comment, a message and a marked line are not");
+  ok(bookReadFaults([{ path: "test/frozen.mjs", text: bad[0] }]).length === 0, "and the one file that defines the constants is exempt");
+})();
+
 /* ---- the invariants a valid book holds, on the LIVE book (S0 split: the frozen book pins content, this catches a bad fold) ---- */
-section("Live book — the invariants every valid book holds, read off the book as it stands");
+section("Live book: the invariants every valid book holds, read off the book as it stands");
 await (async () => {
   /* WHY. v680 went red on CI5-PER because a fold filed a point with no locality: a true catch, a data defect. The frozen book would hide it,
      so every rule a VALID book must obey is asserted here on ledger/book.json itself, with the same function proved red on a planted fault
@@ -11735,7 +11753,7 @@ await (async () => {
     const dir = join(root, name), w = join(dir, "w");
     for (const d of ["master", "tools", "ledger", "public"]) mkdirSync(join(w, d), { recursive: true });
     writeFileSync(join(w, "master", "changelog.json"), JSON.stringify([{ v: "v999", t: "A fixture fold" }]));
-    writeFileSync(join(w, "ledger", "book.json"), "[]\n");
+    writeFileSync(join(w, "ledger", "book.json"), "[]\n");   /* book-read-ok: a fake workspace's own file */
     writeFileSync(join(w, "public", "rev.json"), JSON.stringify({ id: "c".repeat(64) }));
     writeFileSync(join(w, "tools", "foldcall.mjs"), tool("appendFileSync(" + JSON.stringify(log) + ", 'foldcall\\n');\n"
       + "writeFileSync('ledger/book.json', '[{\"row\":1}]\\n'); writeFileSync('master/_folded.json', JSON.stringify({ ids: ['A1', 'A2'] }));"));
