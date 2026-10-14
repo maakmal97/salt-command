@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1112",
+  "d": "15 Oct 2026",
+  "t": "RICE ORDER S264 PAID IN CASH AND COLLECTED, 5 UNIT OUT",
+  "n": [
+   "<b>TWO AMENDMENTS TO S264 FOLDED.</b> CS6-PER's rice order of 5 unit for RM35, dated 14 Oct, was paid RM35 in cash on 15 Oct and recorded collected the same day. Both were preapproved by Counter Admin. The drafter's advance flag on the collection was overtaken by the payment, so the order closes with nothing outstanding.",
+   "<b>INVENTORY.</b> Rice rolls out by 5 unit to CS6-PER. Salt, oil and candy do not move, and no lot landed, so the cost basis stays as it is."
+  ]
+ },
+ {
   "v": "v1111",
   "d": "14 Oct 2026",
   "t": "TWO PENDING SALES TO CS6-PER, OIL AND SALT, NOTHING MOVED",
