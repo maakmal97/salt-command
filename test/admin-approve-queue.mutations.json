@@ -51,5 +51,6 @@
  {"name":"the Needs pill stays on after his yes","file":"stmt/owner.js","find":"function(){ said=true; ap.disabled=true; }","replace":"function(){ said=true; }"},
  {"name":"a trip is drawn again for each of its rows","file":"stmt/owner.js","find":"if(tripsDrawn[tid]) return; tripsDrawn[tid]=true;","replace":"tripsDrawn[tid]=true;"},
  {"name":"a tap on the card's body no longer opens its detail","file":"stmt/owner.js","find":"if(!ev.target.closest('button,a,input,select,textarea,summary')) toggle();","replace":""},
- {"name":"the head is no longer a control","file":"stmt/owner.js","find":"head=el('button','salt-approve__head apphead');","replace":"head=el('div','salt-approve__head apphead');"}
+ {"name":"the head is no longer a control","file":"stmt/owner.js","find":"head=el('button','salt-approve__head apphead');","replace":"head=el('div','salt-approve__head apphead');"},
+ {"name":"a committed or approved copy is listed as waiting for the Desk","file":"stmt/owner.js","find":"var held=(makerData.queue||[]).filter(function(e){ return e&&e.state!=='committed'&&e.state!=='approved'; })","replace":"var held=(makerData.queue||[])"}
 ]
