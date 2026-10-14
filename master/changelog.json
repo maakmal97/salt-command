@@ -1,5 +1,13 @@
 [
  {
+  "v": "v1109",
+  "d": "14 Oct 2026",
+  "t": "A COMMITTED ENTRY NO LONGER WAITS FOR THE DESK",
+  "n": [
+   "<b>THE QUEUE LISTS WHAT WAITS.</b> Counter Admin's Sent, not yet drafted listed a device's leftover copy of an entry already committed (the 02 Oct correction on CI4-OKR s208) as waiting for the Desk. A copy the Worker marks approved or committed is no longer listed or counted; it leaves the device's key when that device next posts. His screenshot of 14 Oct 2026."
+  ]
+ },
+ {
   "v": "v1108",
   "d": "14 Oct 2026",
   "t": "PENDING SALT SALE TO CC9-OKR, NO STOCK MOVED",
