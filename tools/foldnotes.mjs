@@ -46,8 +46,8 @@ function rowNoteFor(it) {
   if (Number.isFinite(+r.delivery) && +r.delivery > 0) terms.push(`${rm(+r.delivery)} delivery`);
   if (r.date) terms.push(`dated ${dayOf(r.date)}`);
 
-  const lad = it.ladder && Number.isFinite(it.ladder.floor)
-    ? `The desk's own floor for ${it.ladder.size} unit is ${rm(it.ladder.floor)} and the ask ${rm(it.ladder.ask)}.`
+  const lad = it.ladder && Number.isFinite(it.ladder.floorTotal)
+    ? `The desk's own floor for ${it.ladder.size} unit is ${rm(it.ladder.floorTotal)} in all and the ask ${rm(it.ladder.askTotal)}.`
     : "";
 
   const p = it.party;
