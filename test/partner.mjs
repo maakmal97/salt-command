@@ -1,6 +1,7 @@
 /* test/partner.mjs: his decision of 06 Oct 2026, A PARTNER PAYS COST. A party in `partners` is quoted the floor itself, to the sen, at
    every size on every book, through the engine's quoteAt and quoteGrid ('partner'), the desk's cardQuote and the Counter's sealed list;
    nobody else's price moves. Run on the live master's own inputs; a failure names a count, never a code. */
+import { FROZEN_BOOK } from "./frozen.mjs";
 import fs from "node:fs";
 
 export async function run({ ok }) {
@@ -9,7 +10,7 @@ export async function run({ ok }) {
   const { pricingSnapshot } = await import("../tools/book.mjs");
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster(process.env.SALT_MASTER || undefined);
-  const book = JSON.parse(fs.readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8"));
+  const book = JSON.parse(fs.readFileSync(FROZEN_BOOK, "utf8"));
   const partners = book.partners || [], other = (book.associates || []).find((c) => !partners.includes(c));
   ok(partners.length > 0 && other, "the book names a partner, and an associate who is not one");
   const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));

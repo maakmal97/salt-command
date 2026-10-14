@@ -2,6 +2,7 @@
    paid opens a refund for the difference (06 Oct 2026). The engine's refundOnOverpay beside refundOnCancel, read off the
    row; the drafter's card says what opens; the fold books one customerRefunds row for the difference and the rest on a
    later cancellation; the desk's overlay previews the same payable and lets it go with the entry. Invented codes only. */
+import { FROZEN_MASTER } from "./frozen.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { draftRow } from "../src/drafter.js";
@@ -64,7 +65,7 @@ export async function run({ ok }) {
   }
 
   /* THE FOLD: the close books one open refund of the difference; an amendment then a cancellation book the rest */
-  const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+  const master = readFileSync(FROZEN_MASTER, "utf8");
   const staged = (id, rid, row, kind, fields) => ({ approved: [{ id, amends: rid, amendKind: kind, collection: "sales",
     entry: { payload: Object.assign({ direction: "SELL", kind, date: "2026-10-06" }, fields ? { fields } : {}) },
     row, pay: Object.assign({ kind, date: "2026-10-06" }, fields ? { fields } : {}) }] });

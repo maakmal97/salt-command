@@ -1,3 +1,4 @@
+import { FROZEN_BOOK } from "./frozen.mjs";
 import { readFileSync, readdirSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { webcrypto } from "node:crypto";
@@ -105,7 +106,7 @@ export async function ownerTrade(wd, pageWork, cover) {
 }
 
 function foldRows(wd) {
-  const foldedBook = JSON.parse(readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8"));
+  const foldedBook = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   foldedBook.sales = []; foldedBook.roster = wd.b.state.roster;
   const approved = wd.drafts().filter((r) => r.status === "approved")
     .map((r) => ({ id: r.id, collection: r.collection, row: r.row, entry: r.entry }));
@@ -180,7 +181,7 @@ export async function run({ ok, pageWork }) {
     const tap = await wd.call("/all/maker/drafts/" + encodeURIComponent(AT) + "/approve", {});
     ok(tap.status === 200 && wd.drafts().every((r) => r.status === "approved") && (await tap.json()).trip?.length === 1,
       "multi-book approval: the real bridge/native Worker approves both rows in one tap");
-    const foldedBook = JSON.parse(readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8"));
+    const foldedBook = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     foldedBook.sales = []; foldedBook.roster = b.state.roster;
     const approved = wd.drafts().map((r) => ({ id: r.id, collection: r.collection, row: r.row, entry: r.entry }));
     const good = plan(foldedBook, { ok: true, count: 2, approved }, null);

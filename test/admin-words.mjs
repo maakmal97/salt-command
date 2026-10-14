@@ -13,6 +13,7 @@
  *   7  the whole page drawn: no book of ledger/book.json PRODUCTS is named in any word, aria name or title, and no shape word is drawn
  * Drawn by the maker harness (test/maker-act.mjs), whose refuse[route] answers a route as the Counter refuses and whose probe: true leaves window.__owner(code),
  * a test seam that evaluates inside the page script's own scope, so the helpers are called as the page calls them. */
+import { FROZEN_BOOK } from "./frozen.mjs";
 import { readFileSync } from "node:fs";
 import { richOwnerPage, byAct, cardOf, drawEverything } from "./maker-act.mjs";
 import { landingPage } from "../stmt/page.js";
@@ -368,7 +369,7 @@ export async function run({ ok, pageWork }) {
 
   /* 7. THE WHOLE PAGE, DRAWN: NO BOOK NAME IN ANY WORD, ARIA NAME OR TITLE, AND NO SHAPE WORD DRAWN (his word of 12 Oct 2026). The names are read off the book (ledger/book.json PRODUCTS),
      so a sixth book is held to it unasked; "Salt Account", "Salt Counter" and the like are the apps' own names and are let through */
-  const BOOKS_OF = JSON.parse(readFileSync(new URL("../ledger/book.json", import.meta.url), "utf8")).PRODUCTS;
+  const BOOKS_OF = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")).PRODUCTS;
   const BOOK_NAMES = [...new Set(Object.entries(BOOKS_OF).flatMap(([k, v]) => [k, v.name]))].filter(Boolean);
   const BOOK_NAMED = new RegExp("\\b(" + BOOK_NAMES.join("|") + ")\\b(?!\\s+(?:account|counter|command|desk)\\b)", "i");
   const drawnWords = (root) => {

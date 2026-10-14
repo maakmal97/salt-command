@@ -3,6 +3,7 @@
    oldest advance, else a free unit), the drafter drafts it pending with a row, the fold writes that row onto the book, and with no
    reward scheme in the mirror the spend is refused and nothing is queued. Then Accept tier proposals, driven in the actual owner
    script: one request id kept across a failure, a fresh one after it lands, and a refusal with nothing to accept let go. */
+import { FROZEN_BOOK, FROZEN_MASTER } from "./frozen.mjs";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { webcrypto } from "node:crypto";
@@ -78,10 +79,10 @@ export async function run({ ok }) {
     const drafts = () => db.prepare("SELECT id,status,entry,row FROM draft ORDER BY id").all();
     const draftOf = (at) => drafts().find((d) => d.id === at) || null;
 
-    const book = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
+    const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     book.sales.push(...JSON.parse(JSON.stringify(SCENARIO)));
     book.QUEUE_COMMITTED = "2026-01-01T00:00:00.000Z";
-    const master = readFileSync(join(REPO, "master", "salt_command.html"), "utf8");
+    const master = readFileSync(FROZEN_MASTER, "utf8");
     const cases = [
       { code: "CM4-TO", at: "2026-10-06T01:00:00.000Z", what: "an associate holding an advance: the oldest advance is offset",
         expect: (e) => e.payload.mode === "amend" && e.payload.kind === "Correction" && e.payload.rid === "rs2" },

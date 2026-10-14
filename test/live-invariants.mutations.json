@@ -1,0 +1,10 @@
+[
+ {"name":"a point with no locality passes","file":"test/book-invariants.mjs","find":"if (!(Array.isArray(g) && g.length === 3 && typeof g[2] === \"string\" && g[2].trim())) out.push(","replace":"if (false) out.push("},
+ {"name":"a point off the roster passes","file":"test/book-invariants.mjs","find":"if (!roster.has(c)) out.push(\"PLACED \" + c","replace":"if (false) out.push(\"PLACED \" + c"},
+ {"name":"a repeated rid passes","file":"test/book-invariants.mjs","find":"if (new Set(rids).size !== rids.length) out.push(","replace":"if (false) out.push("},
+ {"name":"a row with no rid passes","file":"test/book-invariants.mjs","find":"if (rids.some((r) => !r)) out.push(","replace":"if (false) out.push("},
+ {"name":"a sale to a code off the roster passes","file":"test/book-invariants.mjs","find":"if (s.customer && !roster.has(s.customer)) out.push(","replace":"if (false) out.push("},
+ {"name":"an empty refund passes","file":"test/book-invariants.mjs","find":"if (!(r.party && roster.has(r.party) && r.amount > 0 && r.since)) out.push(","replace":"if (false) out.push("},
+ {"name":"a repeated roster code passes","file":"test/book-invariants.mjs","find":"if (roster.size !== (b.roster || []).length) out.push(","replace":"if (false) out.push("},
+ {"name":"a partner off the roster passes","file":"test/book-invariants.mjs","find":"if (!roster.has(p)) out.push(\"partner \"","replace":"if (false) out.push(\"partner \""}
+]

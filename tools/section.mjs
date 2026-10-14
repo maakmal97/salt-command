@@ -19,6 +19,7 @@
  * Exit 1 when the unmutated run is not green, or a mutation proved nothing: every check stayed green (nobody noticed it), or
  * the run crashed before any check failed, which is the runner's word and not a check's.
  */
+import "../test/frozen.mjs";   /* first: a mutation copy is made of the frozen master, as a suite run reads it */
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync, statSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve, relative, dirname, isAbsolute, sep } from "node:path";
