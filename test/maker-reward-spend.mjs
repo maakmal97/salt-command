@@ -102,9 +102,10 @@ export async function run({ ok }) {
       const staged = { ok: true, count: 1, approved: [{ id: c.at, collection: "sales", amends, amendKind: amends ? "Correction" : null,
         row: drafted, entry: mine }] };
       const B = JSON.parse(JSON.stringify(book)), before = B.sales.length;
+      const before0 = new Set(B.sales); /* the fold sorts by date, so the new row is found by what it is, never by being last */
       const folded = drafted ? apply(B, staged, { version: "v9999", date: "06 Oct 2026", title: "A TEST REWARD SPEND",
         notes: ["<b>TEST.</b> Nothing real."], rows: { [c.at]: { note: "A reward spend." } }, stockNote: "" }, master) : { ok: false, problems: ["no row"] };
-      const target = amends ? B.sales.find((s) => s.rid === "rs2") : B.sales[B.sales.length - 1];
+      const target = amends ? B.sales.find((s) => s.rid === "rs2") : B.sales.find((s) => s.customer === c.code && s.rebate === true && !before0.has(s));
       ok(folded.ok && (amends ? B.sales.length === before && target && +target.settledRM > 0 && +target.rebateKg > 0
         : B.sales.length === before + 1 && target.customer === c.code && target.rebate === true && target.cash === 0 && target.qty === mine.payload.qty),
         "and the fold books it: " + (folded.ok ? JSON.stringify(target) : folded.problems.join("; ")));
