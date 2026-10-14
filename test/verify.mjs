@@ -658,7 +658,7 @@ await (async () => {
     const bio = JSON.parse(readFileSync(BIO, "utf8"));
     const words = new Set();
     /* v680, HIS DECISION OF 17 SEP 2026: a place filed as a party's locality is public; a place only, never a name */
-    const localities = publishedLocalities(JSON.parse(readFileSync(FROZEN_BOOK, "utf8")));
+    const localities = publishedLocalities(JSON.parse(readFileSync(LIVE_BOOK, "utf8")));   /* live: public/desk.html is built from the live book */
     for (const v of Object.values(bio.bio || {})) {
       const raw = String(v.raw || ""), o = raw.lastIndexOf("(");
       if (o > 0) { words.add(raw.slice(0, o).trim()); const pl = raw.slice(o + 1, raw.lastIndexOf(")")).trim(); if (!localities.has(pl.toLowerCase())) words.add(pl); }
@@ -2931,6 +2931,32 @@ await (async () => {
   ok(checkText(frozen, JSON.parse(readFileSync(FROZEN_BOOK, "utf8"))) === null, "and its block is the fixture book, byte for byte");
   ok(process.env.SALT_BOOK === FROZEN_BOOK && /^[0-9a-f]{40}$/.test(readFileSync(FROZEN_BOOK.replace(/.json$/, ".sha"), "utf8").trim()), "SALT_BOOK is the fixture, and the sha it was copied at is on record beside it");
   ok(liveEnv().SALT_BOOK === undefined && liveEnv().SALT_MASTER === undefined && liveEnv({ SALT_BOOK: "x" }).SALT_BOOK === "x", "liveEnv() drops both overrides for a child that must see the live files");
+})();
+
+/* ---- the invariants a valid book holds, on the LIVE book (S0 split: the frozen book pins content, this catches a bad fold) ---- */
+section("Live book — the invariants every valid book holds, read off the book as it stands");
+await (async () => {
+  /* WHY. v680 went red on CI5-PER because a fold filed a point with no locality: a true catch, a data defect. The frozen book would hide it,
+     so every rule a VALID book must obey is asserted here on ledger/book.json itself, with the same function proved red on a planted fault
+     for each. A check pinned to particular content (the latest lot, one customer's history) belongs on the frozen book, not here. The leak
+     scan ("The public desk carries no name and no place", laptop only) and F14 (PLACED and the built desk) read the live book directly. */
+  const { bookFaults: faults } = await import("./book-invariants.mjs");
+  const live = JSON.parse(readFileSync(LIVE_BOOK, "utf8"));
+  const now = faults(live);
+  ok(now.length === 0, "the live book holds every invariant (" + Object.keys(live.PLACED || {}).length + " points, " + (live.sales || []).length + " sales): " + JSON.stringify(now.slice(0, 5)));
+  const plant = (f) => { const b = JSON.parse(JSON.stringify(live)); f(b); return faults(b); };
+  const first = Object.keys(live.PLACED)[0];
+  ok(plant((b) => { b.PLACED[first] = b.PLACED[first].slice(0, 2); }).some((m) => /no locality/.test(m)), "planted: a point filed with no locality is named");
+  ok(plant((b) => { b.PLACED[first] = [b.PLACED[first][0], b.PLACED[first][1], "  "]; }).some((m) => /no locality/.test(m)), "planted: a blank locality is named");
+  ok(plant((b) => { b.PLACED["CZ9-NEW"] = [3.1, 101.6, "Qqqville"]; }).some((m) => /not on the roster/.test(m)), "planted: a point for a code off the roster is named");
+  ok(plant((b) => { b.sales.push({ ...b.sales[0] }); }).some((m) => /repeats a rid/.test(m)), "planted: a repeated rid is named");
+  ok(plant((b) => { delete b.sales[0].rid; }).some((m) => /no rid/.test(m)), "planted: a row with no rid is named");
+  ok(plant((b) => { b.sales.push({ ...b.sales[0], rid: "zz-x", customer: "CZ9-OFF" }); }).some((m) => /not on the roster/.test(m)), "planted: a sale to a code off the roster is named");
+  ok(plant((b) => { b.customerRefunds.push({ party: b.roster[0], amount: 0, since: "2026-01-01" }); }).some((m) => /refund row is incomplete/.test(m)), "planted: a refund of nothing is named");
+  ok(plant((b) => { b.partners = [...(b.partners || []), "CZ9-OFF"]; }).some((m) => /partner CZ9-OFF/.test(m)), "planted: a partner off the roster is named");
+  ok(plant((b) => { b.roster.push(b.roster[0]); }).some((m) => /repeats a code/.test(m)), "planted: a repeated roster code is named");
+  /* and the frozen book, which pins content, is not asked these: a bad fold turns THIS section red, never the pinned ones */
+  ok(faults(JSON.parse(readFileSync(FROZEN_BOOK, "utf8"))).length === 0, "the frozen fixture is itself a valid book under the same rules");
 })();
 
 /* ---- the fold as a data write ----------------------------------------------------------- */
@@ -48644,7 +48670,7 @@ await (async () => {
      into the public desk, holds no addr, no base point and no places envelope under any key, and every point in PLACED is at
      0.01 degrees with at most its locality beside it; the desk's PLACED is read out of the page as the phone gets it. The
      queue side is proved where Add ID and Amend ID are driven. Proved red by mutation (a point filed in PLACED). */
-  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
+  const book = JSON.parse(readFileSync(LIVE_BOOK, "utf8"));   /* live: it is compared with the built public desk */
   const desk = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   const keysDeep = (o, out = new Set()) => { if (o && typeof o === "object") for (const k of Object.keys(o)) { out.add(k); keysDeep(o[k], out); } return out; };
   const two = (x) => typeof x === "number" && Math.round(x * 100) / 100 === x;
