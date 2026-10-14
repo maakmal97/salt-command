@@ -1,6 +1,6 @@
 {
- "v": "v1110",
- "stamped": "14 Oct 2026, 15:18 KL",
+ "v": "v1111",
+ "stamped": "14 Oct 2026, 15:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7569,6 +7569,27 @@
     "rid": "s264"
    },
    {
+    "customer": "CS6-PER",
+    "qty": 10,
+    "total": 116,
+    "cash": 0,
+    "product": "oil",
+    "date": "2026-10-14",
+    "deliveredQty": 0,
+    "note": "<b>NEW SALE DATED 14 OCT: 10 UNIT OF OIL TO CS6-PER FOR RM116, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM116 sits above the desk's floor of RM77.71 and below its ask of RM130 for 10 unit. CS6-PER has 16 orders, a median rate of RM85.52, a range of RM7 to RM116, RM35 outstanding before and 0 units on credit against a cap of 20. The row carries the drafter's cost off the latest purchase, and the fold keeps it. The drafter raised no flags. Open: payment of RM116 and the handover of all 10 unit.",
+    "rid": "s265"
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-10-14",
+    "deliveredQty": 0,
+    "note": "<b>NEW SALE DATED 14 OCT: 1 UNIT OF SALT TO CS6-PER FOR RM110, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM110 sits above the desk's floor of RM58 and below its ask of RM140 for 1 unit. CS6-PER has 16 orders, a median rate of RM85.52, a range of RM7 to RM116, RM35 outstanding before and 0 units on credit against a cap of 2. The row carries cost of RM58 a unit, set off the latest purchase, and the fold keeps it. The drafter flagged the rate as 10% above the party's usual of about RM100 a unit; RM110 is within the desk's floor and ask, so the figures answer it. Open: payment of RM110 and the handover of 1 unit.",
+    "rid": "s266"
+   },
+   {
     "customer": "CC9-OKR",
     "qty": 6.25,
     "total": 575,
@@ -8247,9 +8268,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-14T07:18:14.158Z",
+  "QUEUE_COMMITTED": "2026-10-14T07:18:49.142Z",
   "PRICING": {
-   "takenAt": "2026-10-14T07:18:44.084Z",
+   "takenAt": "2026-10-14T07:20:38.602Z",
    "sizes": [
     0.5,
     1,
@@ -15230,11 +15251,11 @@
      ]
     }
    },
-   "v": "v1110"
+   "v": "v1111"
   },
   "OPEN": {
-   "at": "2026-10-14T07:18:44.934Z",
-   "count": 12,
+   "at": "2026-10-14T07:20:39.487Z",
+   "count": 14,
    "byKey": {
     "CC9-OKR|2026-10-15|575": {
      "d": "2026-10-15",
@@ -15294,6 +15315,35 @@
      "pr": "rice",
      "rid": "s264",
      "key": "CS6-PER|2026-10-14|35|rice"
+    },
+    "CS6-PER|2026-10-14|116|oil": {
+     "d": "2026-10-14",
+     "p": "CS6-PER",
+     "dir": "S",
+     "q": 10,
+     "t": 116,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 116,
+     "oweUnits": 10,
+     "pr": "oil",
+     "rid": "s265",
+     "key": "CS6-PER|2026-10-14|116|oil"
+    },
+    "CS6-PER|2026-10-14|110": {
+     "d": "2026-10-14",
+     "p": "CS6-PER",
+     "dir": "S",
+     "q": 1,
+     "t": 110,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 110,
+     "oweUnits": 1,
+     "rid": "s266",
+     "key": "CS6-PER|2026-10-14|110"
     },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
@@ -15434,9 +15484,9 @@
      "free": 13.14,
      "owedOut": 7,
      "coverDays": 2.4,
-     "rate": 4.77,
+     "rate": 4.82,
      "owedToYou": 340,
-     "promised": 13.75,
+     "promised": 14.75,
      "short": 0
     },
     "oil": {
@@ -15444,10 +15494,10 @@
      "onHand": 10,
      "free": 10,
      "owedOut": 0,
-     "coverDays": 1.7,
-     "rate": 3.93,
+     "coverDays": 1.5,
+     "rate": 4.43,
      "owedToYou": 0,
-     "promised": 0,
+     "promised": 10,
      "short": 0
     },
     "candy": {
@@ -15491,7 +15541,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1110"
+   "v": "v1111"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15499,7 +15549,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1110"
+   "v": "v1111"
   },
   "REWARD": {
    "stated": {
@@ -15511,7 +15561,7 @@
      }
     }
    },
-   "v": "v1110"
+   "v": "v1111"
   }
  }
 }
