@@ -2,8 +2,8 @@
  {
   "name": "applyBatch mutates the book it is given",
   "file": "engine/apply.mjs",
-  "find": "const book = structuredClone(book0);",
-  "replace": "const book = book0;"
+  "find": "const book = structuredClone(book0), st = structuredClone(staged);",
+  "replace": "const book = book0, st = structuredClone(staged);"
  },
  {
   "name": "the roll is skipped",
@@ -16,5 +16,17 @@
   "file": "engine/apply.mjs",
   "find": "it.append === \"sales\" ? \"s\" : \"p\")(1);",
   "replace": "it.append === \"sales\" ? \"s\" : \"p\")(2);"
+ },
+ {
+  "name": "applyBatch has no all-or-nothing gate",
+  "file": "engine/apply.mjs",
+  "find": "if (problems.length) return { ok: false, problems };\n  return Object.assign",
+  "replace": "return Object.assign"
+ },
+ {
+  "name": "applyBatch does not clone the staged batch",
+  "file": "engine/apply.mjs",
+  "find": "st = structuredClone(staged);",
+  "replace": "st = staged;"
  }
 ]

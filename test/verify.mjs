@@ -8204,7 +8204,7 @@ await (async () => {
     };
     const rs = refuses(soldRow, "SELL"), rl = refuses(lotRow, "BUY");
     if (rs === null && rl === null) {
-      ok(/E\.poRecvUnits\(row\)/.test(rf(join(REPO, "tools", "fold.mjs"), "utf8")),
+      ok(/E\.poRecvUnits\(row\)/.test(rf(join(REPO, "engine", "apply.mjs"), "utf8")),
         "the fold's cancellation gates read a lot by poRecvUnits (applyAmend is not exported, checked by source)");
     } else {
       ok(rs !== false, "cancelling a SALE that has delivered goods is refused by the fold");

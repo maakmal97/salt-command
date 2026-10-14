@@ -84,7 +84,19 @@ export async function run({ ok }) {
     const p0 = NEW.plan(JSON.parse(b0.book), b0.staged, null), n0 = notesFor(p0, b0.master);
     const out = ENG.applyBatch(book0, b0.staged, n0, { plan: NEW.plan, nextRid, sortBook });
     ok(JSON.stringify(book0) === frozen, "S1: applyBatch leaves the book it is given exactly as it was");
-    ok(text(out.book) === JSON.parse(go(OLD, b0)).book, "S1: and returns the book the fold before the move wrote");
+    /* nothing aliases the staged batch, and a refused item folds nothing and leaves the book as it was */
+    const outText = out.ok && text(out.book);
+    const mark = (o, seen = new Set()) => { if (!o || typeof o !== "object" || seen.has(o)) return; seen.add(o); if (Array.isArray(o)) o.push("TOUCHED"); else o.zzTouched = 1; for (const v of Object.values(o)) mark(v, seen); };
+    let clean = 0;
+    for (const b of bs) {
+      const sb = JSON.stringify(b.staged), pb = NEW.plan(JSON.parse(b.book), b.staged, null), r = ENG.applyBatch(JSON.parse(b.book), b.staged, notesFor(pb, b.master), { plan: NEW.plan, nextRid, sortBook });
+      if (r.ok) mark(r.book);
+      if (JSON.stringify(b.staged) === sb) clean++;
+    }
+    ok(clean === bs.length, "S1: mutating the book applyBatch returns leaves every staged batch unchanged");
+    const bookText = JSON.stringify(book0), refused = ENG.applyBatch(book0, b0.staged, n0, { plan: () => ({ items: [], refused: [{ id: "zz-refused", why: "refused for the test" }], moves: [] }), nextRid, sortBook });
+    ok(refused.ok === false && refused.problems.length === 1 && JSON.stringify(book0) === bookText, "S1: a batch with one refused item through applyBatch returns its problems and leaves the book as it was");
+    ok(outText === JSON.parse(go(OLD, b0)).book, "S1: and returns the book the fold before the move wrote");
     ok(bs.length >= 1 && equal === bs.length && folded >= 1, `S1: ${equal} of ${bs.length} staged batches replay byte-equal, ${folded} of them folded rather than refused`);
   } finally { Date.now = realNow; rmSync(dir, { recursive: true, force: true }); }
 }

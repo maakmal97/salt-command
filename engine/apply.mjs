@@ -345,9 +345,16 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
 /* what a planned batch does to a book (applyBatch: a clone of it, and the argument untouched): the rows in plan order, then the renames, then the roll (a count is its own row, a roll
    is for what physically moved). Returns { book, plan, folded, newest, moves, renames }; the argument is untouched. */
 export function applyBatch(book0, staged, notes, ctx) {
-  const book = structuredClone(book0);
-  const p = ctx.plan(book, staged, notes);
-  return applyInto(book, p, staged, notes, ctx);
+  const book = structuredClone(book0), st = structuredClone(staged);   /* neither argument is aliased by the result */
+  const p = ctx.plan(book, st, notes);
+  /* all or nothing, as the fold has always been: a refusal, or a new row with no note, folds nothing */
+  const problems = p.refused.map((x) => `${x.id}: ${x.why}`);
+  for (const it of p.items) {
+    const n = notes && notes.rows && notes.rows[it.id];
+    if ((it.append === "sales" || it.append === "purchases") && (!n || !String(n.note || "").trim())) problems.push(`${it.id}: a new row needs a note`);
+  }
+  if (problems.length) return { ok: false, problems };
+  return Object.assign({ ok: true }, applyInto(book, p, st, notes, ctx));
 }
 /* the same, on a book the caller owns and wants folded IN PLACE (tools/fold.mjs's apply, whose callers hold the book and its rows
    by identity): `book` is the caller's own working copy and `p` the plan made against it. Everything else goes through applyBatch. */
