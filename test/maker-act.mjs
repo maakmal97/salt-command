@@ -196,7 +196,7 @@ const links = () => [
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
    sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, and inputsAnswer what Record's forms are told (the books, the customers, the rows, the tips), as the others change theirs. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false }) {
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false, extra = null }) {
   const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {}, wire = [];
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls; noKey: true files the names and places but no slip key; retained is extra [key, value] pairs kept in localStorage; cryptoImpl is the page's crypto; p.wire is every request that left the page */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
@@ -269,6 +269,10 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
         if (failInputs && route === "/all/maker/inputs") throw new Error("fixture: the Desk could not be reached");
         if (fail.has(route)) throw new Error("fixture: the Desk could not be reached");
         if (Object.prototype.hasOwnProperty.call(refuse, route)) return { ok: false, status: 409, type: "basic", json: async () => ({ ok: false, error: refuse[route] }) };
+        /* extra(route, body) answers a route of a test's own: undefined falls through, { refuse: words } answers it as the Counter's refusal (409) */
+        const own = extra ? extra(route, init && init.body ? JSON.parse(init.body) : null) : undefined;
+        if (own && own.refuse) return { ok: false, status: 409, type: "basic", json: async () => ({ ok: false, error: own.refuse }) };
+        if (own) return ok200(own);
         if (!(init && init.method === "POST")) reads.push(route);
         if (lapsed) return { ok: false, status: 401, type: "basic", json: async () => ({}) };
         const body = answer(route, init);
@@ -413,6 +417,22 @@ export async function auditStates({ pageWork }) {
     await q.click(byAct(q.d, "nav.record"));
     states.push(["a Record that could not be read", actAudit(q.d)]);
   } finally { q.w.close(); }
+  /* plan 3 (16 Oct 2026): an order of several books, its split read, and a buyer's same-day rows offered as one (test/admin-trips.mjs proves what each does) */
+  const line = (rid, product, qty, total) => ({ rid, product, qty, total, delivery: 0, paid: 0, owed: total, handed: 0, left: qty, waiting: 0, open: true });
+  const trip = { trip: "t1791900000000", party: "CX1-ZED", date: "2026-10-10", owed: 300, paid: 0, handedLines: 0, waiting: 0, lines: [line("tr-1", "salt", 1, 200), line("tr-2", "oil", 2, 100)] };
+  const day = { ...trip, trip: undefined, rids: ["dy-1", "dy-2"], party: "CX2-ZED", lines: [line("dy-1", "salt", 1, 200), line("dy-2", "oil", 2, 100)] };
+  const t = await richOwnerPage({ pageWork, review: (j) => ({ ...j, trips: [trip], sameDay: [day] }),
+    extra: (route) => route === "/all/maker/trip-split" ? { ok: true, split: { trip: trip.trip, amount: 50, shares: [{ rid: "tr-1", product: "salt", rm: 50, owed: 200 }] } } : undefined });
+  try {
+    await t.work.quiet();
+    await t.click(byAct(t.d, "nav.orders"));
+    const tc = t.card("trip:" + trip.trip);
+    t.type(byAct(tc, "trip.pay-amount", trip.trip), "50");
+    await t.click(byAct(tc, "trip.pay-split", trip.trip));
+    states.push(["an order of several books, its split read", actAudit(t.d)]);
+    t.card("day:dy-1+dy-2"); await t.work.quiet();
+    states.push(["a buyer's same-day rows offered as one order", actAudit(t.d)]);
+  } finally { t.w.close(); }
   return states;
 }
 

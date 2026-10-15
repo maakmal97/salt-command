@@ -2684,6 +2684,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.units` | Record, sale or purchase | The units. |
 | `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
 | `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the row's reference (a Desk row's) and its figures as a list of names and values, never JSON. |
+| `trip.details` | An order of several books, or a buyer's same-day rows, under Orders (key: trip:<id> or day:<rows>) | Opens the order's id, day and rows. |
+| `trip.hand-units` | An order of several books (key: the row) | The units of that line to hand over; full by default, fewer for a part. |
+| `trip.handover` | An order of several books (key: the trip) | Sends one handover a line through Record's own input, each line its own request; a line the Desk refuses holds only itself. |
+| `trip.join` | A buyer's same-day rows with no trip (key: their rows) | These are one order: one Correction a row setting one trip, the delivery left on its row. |
+| `trip.pay` | An order of several books, once the split is read (key: the trip) | Sends the payment with the split he was shown; the Desk refuses it whole if the split moved or a share is past what its row can take. |
+| `trip.pay-amount` | An order of several books (key: the trip) | What they paid for the order, cash or bank, in RM. |
+| `trip.pay-split` | An order of several books (key: the trip) | Asks the Desk to split the payment oldest first, and shows the split. |
 | `unsent.open` | The banner over every place, while an entry waits unconfirmed on this phone | Goes to Record, on the part of the oldest such entry, where its Unsent entry section stands. |
 | `vault.cancel` | The one unlock's Sheet | Closes it and sends nothing; whatever was typed is cleared. |
 | `vault.close` | Same Sheet | Closes it, as Not now does. |

@@ -1786,6 +1786,8 @@ export const OWNER_JS = `
         /* a point the Desk refuses (not an official locality) leaves nothing to retry, and its word must not stay saved */
         if(error.status===400&&(path==='/all/maker/inputs/add-id'||path==='/all/maker/inputs/amend-id'||path==='/all/maker/inputs/place')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
+        /* plan 3: an order's payment or join the Desk refused whole (a split that changed, a share its row cannot take) left nothing queued, so nothing is kept to retry */
+        if((error.status===400||error.status===409)&&(path==='/all/maker/inputs/trip-pay'||path==='/all/maker/inputs/trip-join')){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
@@ -3595,6 +3597,14 @@ export const OWNER_JS = `
       main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
+    }else if(e.trip||e.day){
+      /* an order of several books: the buyer's code, a mark a line, and what the order owes, the Desk's figure */
+      var g=e.trip||e.day, what=el('span','salt-inbox-row__what');
+      t.appendChild(whoTag(el('span',null,g.party),g.party));
+      g.lines.forEach(function(l){ what.appendChild(bookMark(l.product)); what.appendChild(document.createTextNode(' ')); });
+      what.appendChild(document.createTextNode(e.trip?'one order':'same day, not one order'));
+      main.appendChild(what);
+      side.appendChild(el('span','salt-inbox-row__action',rm(g.owed)));
     }else{ t.appendChild(el('span',null,e.id)); if(e.waits) t.appendChild(chip('copper','Waiting on you')); }
     main.insertBefore(t,main.firstChild); b.appendChild(main); b.appendChild(side);
     b.addEventListener('click', function(){ openOrder(e.id); });
@@ -3635,7 +3645,7 @@ export const OWNER_JS = `
     if(!e) return;
     var back=el('button','aback','← Orders'); back.type='button'; back.setAttribute('data-back','orders'); back.setAttribute('data-in',e.parts); actOn(back,'order.back');
     root.appendChild(back);
-    if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else orderPlainCard(root,e);
+    if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else if(e.trip) tripCard(root,e); else if(e.day) dayCard(root,e); else orderPlainCard(root,e);
     focusOrderAt();
   }
   function openOrder(id){
@@ -3750,6 +3760,9 @@ export const OWNER_JS = `
       entries.push({id:o.id, order:o, parts:parts, waits:waits});
     });
     held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, parts:'orders.placed', waits:true}); });
+    /* plan 3 (16 Oct 2026): an order of several books on the book is agreed, one card for all its lines; a buyer's same-day rows that could be one stand beside it */
+    (makerData.trips||[]).forEach(function(t){ entries.push({id:'trip:'+t.trip, trip:t, parts:'orders.confirmed', waits:false}); });
+    (makerData.sameDay||[]).forEach(function(t){ entries.push({id:'day:'+t.rids.join('+'), day:t, parts:'orders.confirmed', waits:false}); });
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     list.textContent='';
     entries.forEach(function(e){ list.appendChild(orderRow(e)); });
@@ -3764,6 +3777,7 @@ export const OWNER_JS = `
       if(entries.some(function(e){ return e.parts==='orders.'+p[0]; })) return;
       var none=el('p','rnone',p[1]); none.setAttribute('data-in','orders.'+p[0]); list.appendChild(none);
     });
+    if(makerData.tripsError){ var te=el('p','msg bad',makerData.tripsError); te.setAttribute('data-in','orders.confirmed'); te.setAttribute('data-trips-error',''); list.appendChild(te); }
     makerButton(list,['Refresh','maker.refresh'],loadMaker,false);
     /* 13 Oct 2026 (stress, Medium): Refresh answers under itself; its refusal went to the list's line at the head of Orders, a screen above it */
     var refreshSaid=el('p','msg osaid'); refreshSaid.id='makerRefreshSaid'; refreshSaid.setAttribute('role','status'); refreshSaid.setAttribute('aria-live','polite'); list.appendChild(refreshSaid);
@@ -4051,6 +4065,135 @@ export const OWNER_JS = `
       return card;
     }
   }
+  /* ---- 16 OCT 2026, PLAN 3 OF docs/plans-counter-admin.html: ORDERS ACROSS SEVERAL BOOKS ----------------------------------------------------------
+     CS6-PER's salt, oil and rice of 14 Oct were three cards, each handed over and paid on its own. An order of several books (a trip: one buyer, one day, one
+     row a book, the delivery on one row) is one card under Agreed. Its head is what the order owes and has paid and how many lines are handed over in full,
+     in the head v1117 gave an order's card; then one line a book, its mark (never a word for it), units, total and what is handed over. Every figure is the
+     Desk's (src/maker-inputs.js makerTrips, read with the drafts); this page adds up no money.
+     Handover all sends one handover a line through Record's own input (a Fulfilment of units, ledger-amend), each line its own request under its own moment
+     until it lands, so a book short of stock holds only its own line; a line's field allows a part. One payment is split by the Desk, oldest first by the
+     engine's claimAlloc, shown, and sent with the split he read (trip-pay); the Desk refuses it whole if the split moved or any share is more than its row can
+     take. A buyer's same-day rows with no trip are offered as one order (trip-join), a Correction a row. All of it lands under Approve as one card. ---- */
+  var tripHand={}, tripRead={};
+  function tripToday(){ return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kuala_Lumpur'}); }
+  function tripHead(card,t){
+    var title=el('h3','');
+    title.appendChild(whoTag(el('span',null,t.party),t.party));
+    title.appendChild(document.createTextNode(', '+t.lines.length+' books'+(t.date?', '+fmtWhen(t.date):'')));
+    card.appendChild(title);
+    card.appendChild(metrics([['Owed',rm(t.owed)],['Paid',rm(t.paid)],['Handed',t.handedLines+' of '+t.lines.length+' lines']]));
+    /* the Desk reads the order as it will stand, so a move waiting under Approve is never asked for twice; it says so */
+    if(t.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(t.waiting===1?'the move':'the '+t.waiting+' moves')+' waiting under Approve '+(t.waiting===1?'is':'are')+' approved.'));
+  }
+  function tripLines(card,t,more){
+    var list=el('div','triplines');
+    t.lines.forEach(function(l){
+      var row=el('div','tripline'), p=el('p','maker-facts');
+      row.setAttribute('data-line',l.rid);
+      p.appendChild(bookMark(l.product));
+      p.appendChild(document.createTextNode(' '+units(l.qty)+', '+rm(l.total)+(l.delivery>0.004?' + '+rm(l.delivery)+' delivery':'')+', handed '+String(+(+l.handed||0).toFixed(3))+' of '+units(l.qty)+(l.waiting>0?', '+(l.waiting===1?'one move':l.waiting+' moves')+' waiting under Approve':'')));
+      row.appendChild(p); if(more) more(row,l); list.appendChild(row);
+    });
+    card.appendChild(list);
+  }
+  function tripCard(root,e){
+    var t=e.trip, key=e.id, card=makerCard(root,key), acts=el('div','maker-foot__acts'), fields={};
+    card.setAttribute('data-in',e.parts);
+    tripHead(card,t);
+    var left=t.lines.filter(function(l){ return l.left>0.0005; });
+    tripLines(card,t,function(row,l){ if(l.left>0.0005) fields[l.rid]=makerField(row,['Units to hand over','trip.hand-units',l.rid,l.product],'number',l.left); });
+    if(left.length){
+      var hand=el('div','maker-fields triphand'), handSaid=el('p','msg'); handSaid.setAttribute('role','status');
+      var handBtn=makerButton(hand,['Handover all','trip.handover',t.trip],function(){ return tripHandover(t,key,fields,handSaid); },true);
+      var relabel=function(){ handBtn.textContent=left.every(function(l){ return Number(fields[l.rid].value)===l.left; })?'Handover all':'Hand over as typed'; };
+      left.forEach(function(l){ fields[l.rid].addEventListener('input',relabel); });
+      hand.appendChild(handSaid); card.appendChild(hand);
+    }
+    if(t.owed>0.004) tripPayBlock(card,t,key);
+    card.appendChild(detailBox('trip.details',key,[['Order',t.trip],['Day',t.date?fmtWhen(t.date):'']].concat(t.lines.map(function(l){ return ['Row',l.rid]; }))));
+    makerCardFoot(card,acts,key,false,false);
+    return card;
+  }
+  /* one handover a line, each its own request: what the Desk takes waits under Approve, and a line it refuses is said and holds only itself */
+  async function tripHandover(t,key,fields,said){
+    var lines=t.lines.filter(function(l){ return l.left>0.0005; }), want={}, day=tripToday(), base=Date.now(), sent=[], held=[], first=null;
+    lines.forEach(function(l){
+      var n=Number(fields[l.rid].value);
+      if(!(n>=0&&n<=l.left+0.0005)) throw new Error(l.rid+' takes from 0 to '+units(l.left)+'.');
+      want[l.rid]=n;
+    });
+    if(!lines.some(function(l){ return want[l.rid]>0; })) throw new Error('Type the units to hand over first.');
+    said.textContent='Sending.';
+    for(var i=0;i<lines.length;i++){
+      var l=lines[i], n=want[l.rid]; if(!(n>0)) continue;
+      var k=t.trip+'|'+l.rid+'|'+n, at=tripHand[k]||(tripHand[k]=new Date(base+i).toISOString());
+      try{ await refs('/all/maker/inputs/ledger-amend',{at:at,rid:l.rid,kind:'Fulfilment',date:day,cash:0,movedUnits:n}); delete tripHand[k]; sent.push(l.rid); }
+      catch(error){ held.push(l.rid+': '+error.message); if(!first) first=error; }
+    }
+    await loadMaker();
+    makerSay(key,(sent.length?'Sent for '+andList(sent)+'. '+(sent.length>1?'They wait':'It waits')+' under Approve as one card.':'Nothing was sent.')
+      +(held.length?' Held: '+held.join(' ')+' Tap again to send '+(held.length>1?'those lines':'that line')+' again.':''),first);
+  }
+  /* one payment for the order: the Desk splits it and the split is shown before it is sent; a change of the figure takes the split away */
+  function tripPayBlock(card,t,key){
+    var pay=el('div','maker-fields trippay'), said=el('p','msg'), shown=el('div','tripsplit'), rec=null;
+    said.setAttribute('role','status');
+    card.appendChild(el('h4','','Money received'));
+    var held=tripRead[t.trip];
+    var amount=makerField(pay,['Paid, RM, cash or bank','trip.pay-amount',t.trip],'number',held?held.amount:'');
+    function drop(){ shown.textContent=''; if(rec){ var c=rec.nextSibling; if(c&&c.getAttribute&&c.getAttribute('data-act')==='trip.pay.cancel-retained'&&c.hidden) c.remove(); rec.remove(); rec=null; } }
+    function draw(r){
+      drop();
+      r.split.shares.forEach(function(s){
+        var p=el('p','maker-facts'); p.setAttribute('data-share',s.rid); p.appendChild(bookMark(s.product));
+        p.appendChild(document.createTextNode(' '+s.rid+', '+rm(s.rm)+(s.rm<s.owed-0.004?' of '+rm(s.owed)+' owed':', all it owes')));
+        shown.appendChild(p);
+      });
+      rec=makerButton(pay,['Record '+rm(r.amount),'trip.pay',t.trip],async function(send){
+        var body={at:new Date().toISOString(),trip:t.trip,date:tripToday(),amount:r.amount,shares:r.split.shares.map(function(s){ return {rid:s.rid,rm:s.rm}; })};
+        said.textContent='Sending.';
+        await send('/all/maker/inputs/trip-pay',body);
+        delete tripRead[t.trip];
+        await loadMaker();
+        makerSay(key,'Sent. '+rm(r.amount)+' waits under Approve as one card, split as shown.');
+      },true);
+      pay.appendChild(said);
+    }
+    makerButton(pay,['Show the split','trip.pay-split',t.trip],async function(){
+      var a=Number(amount.value);
+      if(!(a>0)) throw new Error('Type what they paid first.');
+      said.textContent='Reading the split.';
+      var j=await refs('/all/maker/trip-split',{trip:t.trip,amount:a});
+      tripRead[t.trip]={amount:a, split:j.split};
+      draw(tripRead[t.trip]);
+      said.textContent='The Desk splits it oldest first. Check it before you record it.';
+    },false);
+    pay.appendChild(shown); pay.appendChild(said);
+    amount.addEventListener('input',function(){ delete tripRead[t.trip]; drop(); said.textContent=''; });
+    card.appendChild(pay);
+    if(held&&held.split) draw(held);
+  }
+  /* a buyer's rows of one day with no trip: offered as one order, a Correction a row setting one trip, the delivery left on the row that has it */
+  function dayCard(root,e){
+    var t=e.day, key=e.id, card=makerCard(root,key), acts=el('div','maker-foot__acts');
+    card.setAttribute('data-in',e.parts);
+    tripHead(card,t);
+    var dv=t.lines.filter(function(l){ return l.delivery>0.004; })[0];
+    card.appendChild(el('p','salt-insight','Entered apart on one day. As one order they are handed over and paid together, '
+      +(dv?'the delivery staying on '+dv.rid+'.':'with no delivery.')));
+    tripLines(card,t);
+    var join=el('div','maker-fields tripjoin'), said=el('p','msg'); said.setAttribute('role','status');
+    makerButton(join,['These are one order','trip.join',t.rids.join('+')],async function(send){
+      said.textContent='Sending.';
+      await send('/all/maker/inputs/trip-join',{at:new Date().toISOString(),date:tripToday(),rids:t.rids.slice()});
+      await loadMaker();
+      makerSay(key,'Sent. Each row waits under Approve as one card.');
+    },true);
+    join.appendChild(said); card.appendChild(join);
+    card.appendChild(detailBox('trip.details',key,[['Day',t.date?fmtWhen(t.date):'']].concat(t.lines.map(function(l){ return ['Row',l.rid]; }))));
+    makerCardFoot(card,acts,key,false,false);
+    return card;
+  }
   /* 12 Oct 2026 (Phase 4c, glossary 5.2): CHANGE THE ORDER IS A SHEET of Units, Price (goods) and Delivery, opened from the card's Change the order (it was three fields and
      a button down the card). Its one action sends exactly what Send the change sent: the same restate route, the same figures (only those changed, the goods' price with a
      new size) and the same request id until it lands, so a lost reply is retried as itself. The card keeps what was typed while a change has not landed (amendMemo), so a
@@ -4113,15 +4256,38 @@ export const OWNER_JS = `
   /* a trip's rows (the Desk decides them in one batch) or every move on one row is one card, in the order entered. A customer's claim stands alone: it is answered
      on its order's card, never approved here, so it never shuts his own move on the same row (Fable's review of 16 Oct 2026) */
   function draftClaim(d){ var e=d.entry||{}; return !!(e.claim||e.fulfil&&e.fulfil.claim); }
+  /* plan 3 (16 Oct 2026): a move on a row of an order of several books, his own (never a site order's or a claim's), names that order: the trip the Desk read
+     off the row (figures.trip), or the one a These are one order sets. Such moves on the order's rows are one card, each draft approved in the order entered. */
+  function moveTrip(d){
+    var e=d.entry||{}, p=e.payload||{}, f=p.fields||{}, kind=d.amendKind||p.kind, keys=Object.keys(f);
+    if(!d.amends||d.collection!=='sales'||draftClaim(d)||e.orderId) return '';
+    /* only the order's own moves ride its card: a handover or a payment (a Fulfilment), and a join; any other move on a line keeps its own card (Fable's review) */
+    if(kind==='Fulfilment') return String(d.figures&&d.figures.trip||'');
+    return kind==='Correction'&&keys.length===1&&f.trip?String(f.trip):'';
+  }
   function draftGroups(rows){
     var by={}, out=[];
     rows.slice().sort(function(a,b){ return draftAt(a)<draftAt(b)?-1:draftAt(a)>draftAt(b)?1:0; }).forEach(function(d){
-      var t=tripOf(d), k=t&&tripRows(d).length?'trip:'+t:d.amends&&!draftClaim(d)?'row:'+d.collection+':'+d.amends:'draft:'+d.id;
+      var t=tripOf(d), mt=moveTrip(d), k=t&&tripRows(d).length?'trip:'+t:mt?'moves:'+mt:d.amends&&!draftClaim(d)?'row:'+d.collection+':'+d.amends:'draft:'+d.id;
       if(!by[k]){ by[k]={key:k, trip:k.indexOf('trip:')===0, drafts:[]}; out.push(by[k]); }
       by[k].drafts.push(d);
     });
-    out.forEach(function(g){ g.lead=g.drafts[0]; g.last=g.drafts[g.drafts.length-1]; });
+    out.forEach(function(g){ g.lead=g.drafts[0]; g.last=g.drafts[g.drafts.length-1]; g.tripMoves=g.key.indexOf('moves:')===0&&tripMoveRows(g).length>1; });
     return out;
+  }
+  /* the rows a card of an order's moves touches, in the order first entered, each with the Desk's Now (its first move's) and After (its last's) */
+  function tripMoveRows(g){
+    var rows=[], by={};
+    g.drafts.forEach(function(d){
+      var r=by[d.amends];
+      if(!r){ r=by[d.amends]={rid:draftRid(d)||d.amends, product:d.product||'salt', drafts:[]}; rows.push(r); }
+      r.drafts.push(d);
+    });
+    rows.forEach(function(r){
+      var a=r.drafts[0].figures, b=r.drafts[r.drafts.length-1].figures;
+      r.fg=r.drafts.every(function(d){ return d.figures&&d.figures.now&&d.figures.after; })?{now:a.now, after:b.after}:null;
+    });
+    return rows;
   }
   function groupOf(d){
     var hit=draftGroups(pendingRows()).filter(function(g){ return g.drafts.some(function(x){ return x.id===d.id; }); })[0];
@@ -4143,6 +4309,7 @@ export const OWNER_JS = `
       var some=function(set){ return keys.some(function(k){ return set.indexOf(k)>=0; }); };
       if(some(AP_HAND)&&some(AP_PRICE)&&only(AP_HAND.concat(AP_PRICE,AP_MONEY))
         &&f.deliveredQty!=null&&+f.deliveredQty>=+(f.qty!=null?f.qty:(d.row||{}).qty||0)-0.0005) return 'close';
+      if(only(['trip'])&&f.trip) return 'join';
       if(only(AP_MONEY)&&f.cash!=null&&from('cash')!=null) return +f.cash<from('cash')?'unpay':'pay';
       if(only(AP_HAND)&&f.deliveredQty!=null&&from('deliveredQty')!=null) return +f.deliveredQty<from('deliveredQty')?'unhand':'hand';
       if(only(AP_PRICE)) return 'price';
@@ -4153,7 +4320,8 @@ export const OWNER_JS = `
     return cash>0.005&&kg>0.0005?'payhand':kg>0.0005?'hand':cash>0.005?'pay':'fix';
   }
   var AP_WORD={sell:'New sale', buy:'New purchase', cancel:'Cancel the order', price:'Change the price', 'default':'Never delivered', close:'Close the order', pay:'Payment received',
-    unpay:'Take back a payment', hand:'Handover', unhand:'Take back a handover', payhand:'Handover and payment', receive:'Goods received', paidout:'Payment made', fix:'Fix a row'};
+    unpay:'Take back a payment', hand:'Handover', unhand:'Take back a handover', payhand:'Handover and payment', receive:'Goods received', paidout:'Payment made', fix:'Fix a row',
+    join:'These are one order'};
   function moveWord(d){ var k=moveKind(d); return k==='other'?entryWord(d.entry||{}):AP_WORD[k]; }
   /* the card's one verb: a close among its moves closes the order; moves of one kind keep it; a payment and a handover together are both; anything else fixes a row */
   function groupKind(g){
@@ -4165,7 +4333,7 @@ export const OWNER_JS = `
   }
   /* Now and After of the whole card: the first move's Now and the last's After, both the Desk's; none unless every move carries them */
   function groupFigures(g){
-    if(g.trip||!g.drafts.every(function(d){ return d.figures&&d.figures.after; })) return null;
+    if(g.trip||g.tripMoves||!g.drafts.every(function(d){ return d.figures&&d.figures.after; })) return null;
     var a=g.lead.figures, b=g.last.figures;
     return {now:a.now, after:b.after, party:a.party, owedNow:a.owedNow, owedAfter:b.owedAfter, ceiling:a.ceiling, approvedBefore:a.approvedBefore||0};
   }
@@ -4174,6 +4342,8 @@ export const OWNER_JS = `
   function approveLabel(g){
     var k=groupKind(g), fg=groupFigures(g), rid=draftRid(g.lead), a=fg&&fg.after;
     if(g.trip) return approveWord(g.drafts.length);
+    if(g.tripMoves){ var n=tripMoveRows(g).length;
+      return k==='hand'?'Approve: handover on '+n+' lines':k==='pay'?'Approve: payment on '+n+' lines':k==='join'?'Approve: one order of '+n+' lines':approveWord(n); }
     if(k==='sell') return 'Approve the sale';
     if(k==='buy') return 'Approve the purchase';
     if(k==='other') return 'Approve';
@@ -4244,16 +4414,22 @@ export const OWNER_JS = `
   function drawDeskRows(draftRoot,queueRoot,pendingRows){
     draftGroups(pendingRows).forEach(function(g){
       var draft=g.lead, card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), head=el('div','salt-approve__head apphead');
-      var rid=draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','salt-approve__party');
+      var rid=g.tripMoves?'':draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','salt-approve__party');
       /* the head: the row, the customer's code and the book's mark; then where the entry came from, and when */
       party.appendChild(document.createTextNode((rid?rid+' · ':'')+(draftParty(draft)||'no code')));
-      if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' · ')); party.appendChild(bookMark(draft.product)); }
+      if(g.tripMoves) party.appendChild(document.createTextNode(' · '+tripMoveRows(g).length+' books, one order'));
+      else if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' · ')); party.appendChild(bookMark(draft.product)); }
       head.appendChild(party);
       head.appendChild(el('span','salt-approve__entry',[from?'from '+from:'',when].filter(Boolean).join(', ')));
       card.appendChild(head);
       var kind=groupKind(g), verb=kind==='other'?entryWord(draft.entry||{}):AP_WORD[kind], fg=groupFigures(g), closed=kind==='close'?closeSay(g):'';
       card.appendChild(el('h3','apverb',verb+(closed?': '+closed:'')));
       if(fg&&fg.now) card.appendChild(nowAfter(fg));
+      else if(g.tripMoves) tripMoveRows(g).forEach(function(r){
+        /* each line of the order: its mark and row, then its Now and After as the Desk sent them; nothing is added up here */
+        var h=el('p','maker-facts apline'); h.appendChild(bookMark(r.product)); h.appendChild(document.createTextNode(' '+r.rid)); card.appendChild(h);
+        if(r.fg) card.appendChild(nowAfter(r.fg));
+      });
       else if(!draft.amends){
         g.drafts.forEach(function(d){ card.appendChild(bookLine(d.qty,d.product||'salt',d.total)); var figs=readingFigures(d); if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); } });
         if(g.trip) card.appendChild(el('p','salt-insight',g.drafts.length===2?'Two books, one trip. Approve decides both.':g.drafts.length+' books, one trip. Approve decides all of them.'));
@@ -4712,7 +4888,8 @@ export const OWNER_JS = `
   function rowNeed(d){
     var g=groupOf(d), claim=g.drafts.some(draftClaim), sibs=g.trip?g.drafts:[], said=needSaid['d:'+d.id], who=draftParty(d)||'no code';
     return item('soon','rows','Row','d:'+d.id, isoAt(d.id), {who:who,
-      mark:d.qty==null?'':d.product, what:d.amends?[draftRid(d),moveWord(d)].filter(Boolean).join(', ')+(g.drafts.length>1&&!g.trip?', '+g.drafts.length+' moves':''):rowWhat(d),
+      mark:d.qty==null||g.tripMoves?'':d.product, what:g.tripMoves?moveWord(d)+', '+tripMoveRows(g).length+' books, one order'
+        :d.amends?[draftRid(d),moveWord(d)].filter(Boolean).join(', ')+(g.drafts.length>1&&!g.trip?', '+g.drafts.length+' moves':''):rowWhat(d),
       why:claim?'Answer this through the payment card.'
         :sibs.length?(sibs.length===2?'Two books, one trip. Approve decides both.':sibs.length+' books, one trip. Approve decides all of them.'):'',
       open:goPlace('record','approve')}, function(c){
