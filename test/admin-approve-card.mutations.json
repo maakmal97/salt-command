@@ -134,7 +134,7 @@
  {
   "name": "drafts on one row are separate cards again",
   "file": "stmt/owner.js",
-  "find": "'trip:'+t:d.amends&&!draftClaim(d)?'row:'+d.collection+':'+d.amends:'draft:'+d.id;",
+  "find": "'trip:'+t:mt?'moves:'+mt:d.amends&&!draftClaim(d)?'row:'+d.collection+':'+d.amends:'draft:'+d.id;",
   "replace": "'trip:'+t:'draft:'+d.id;"
  },
  {

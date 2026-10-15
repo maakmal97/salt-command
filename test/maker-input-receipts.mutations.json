@@ -97,8 +97,8 @@
   },
   {
     "name": "offset omitted from generated retained paths",
-    "find": "|all\\/maker\\/inputs\\/offset|vault\\/pair",
-    "replace": "|vault\\/pair"
+    "find": "|all\\/maker\\/inputs\\/(offset|trip-pay|trip-join)|vault\\/pair",
+    "replace": "|all\\/maker\\/inputs\\/(trip-pay|trip-join)|vault\\/pair"
   },
   {
     "name": "offset arbitrary metadata admitted",

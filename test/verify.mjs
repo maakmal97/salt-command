@@ -3105,7 +3105,8 @@ await (async () => {
     /* v502: thirty-two. delivery joined, the charge inside a sale's total, typed per order. */
     /* v503: thirty-three. freight joined, the trip a lot cost, typed per purchase. */
     /* v620: thirty-five. coverUnits and coverRM joined, the reward a sale spent covering a lower margin. */
-    ok(E.CORRECTABLE.length === 35, `thirty-five attributes are editable, found ${E.CORRECTABLE.length}`);
+    /* 16 Oct 2026 (plan 3): thirty-six. trip joined, set by These are one order alone, so a buyer's same-day rows become one order. */
+    ok(E.CORRECTABLE.length === 36, `thirty-six attributes are editable, found ${E.CORRECTABLE.length}`);
     ok(E.CORRECTABLE.includes('handover'), 'handover is one of them');
     ok(Array.isArray(E.HANDOVER) && E.HANDOVER.join(',') === 'delivered,collected',
        `handover takes two values, found ${JSON.stringify(E.HANDOVER)}`);
@@ -52282,6 +52283,11 @@ await (async () => {
 section("Salt Account: the approve card says the change, one card and one Approve an order (plan 2, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-approve-card.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");
+await (async () => {
+  await (await import("./admin-trips.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: the few, fixed choices of Record's forms are option tiles, each sending the value its select did");

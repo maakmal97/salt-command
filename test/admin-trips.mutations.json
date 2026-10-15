@@ -1,0 +1,236 @@
+[
+ {
+  "name": "the trip's head adds what is paid, not what is owed",
+  "file": "src/maker-inputs.js",
+  "find": "owed: r2(lines.reduce((a, l) => a + l.owed, 0)), paid:",
+  "replace": "owed: r2(lines.reduce((a, l) => a + l.paid, 0)), paid:"
+ },
+ {
+  "name": "two rows of one book are offered as one order",
+  "file": "src/maker-inputs.js",
+  "find": "    && new Set(rows.map((s) => s.product || \"salt\")).size === rows.length\n",
+  "replace": "\n"
+ },
+ {
+  "name": "two deliveries are offered as one order",
+  "file": "src/maker-inputs.js",
+  "find": "&& rows.filter((s) => +s.delivery > 0.005).length <= 1 && !rows.some",
+  "replace": "&& rows.filter((s) => +s.delivery > 0.005).length <= 2 && !rows.some"
+ },
+ {
+  "name": "the Desk's drafts read carries no orders of several books",
+  "file": "src/worker.js",
+  "find": "Object.assign(body, makerTrips(book, await makerHeldMoves(env)));",
+  "replace": "Object.assign(body, {});"
+ },
+ {
+  "name": "the Counter's review drops the Desk's orders of several books",
+  "file": "stmt/maker.js",
+  "find": "const trips = Array.isArray(drafts.trips) ? drafts.trips : [],",
+  "replace": "const trips = [],"
+ },
+ {
+  "name": "the split names no line ready, so it reads only goods out",
+  "file": "src/maker-inputs.js",
+  "find": "E.claimAlloc(rows, rows[0].customer, body.amount, rows.map(E.ovKey));",
+  "replace": "E.claimAlloc(rows, rows[0].customer, body.amount, []);"
+ },
+ {
+  "name": "a payment past what the order owes is split anyway",
+  "file": "src/maker-inputs.js",
+  "find": "  if (alloc.left > 0.004) return { error: \"RM \"",
+  "replace": "  if (false) return { error: \"RM \""
+ },
+ {
+  "name": "the Counter cannot reach the split",
+  "file": "stmt/maker.js",
+  "find": "    || path === \"/_internal/maker/trip-split\" && method === \"POST\"\n",
+  "replace": ""
+ },
+ {
+  "name": "a split other than the Desk's is taken",
+  "file": "src/maker-inputs.js",
+  "find": "if (!seen || JSON.stringify(seen) !== JSON.stringify(split.shares.map((s) => [s.rid, s.rm])))",
+  "replace": "if (!seen)"
+ },
+ {
+  "name": "moves waiting under Approve are not counted",
+  "file": "src/maker-inputs.js",
+  "find": "  for (const e of moves) s = moveRow(s, { entry: e });\n",
+  "replace": "  for (const e of []) s = moveRow(s, { entry: e });\n"
+ },
+ {
+  "name": "a share its row cannot take is let through",
+  "file": "src/worker.js",
+  "find": "if (room) return json({ ok: false, error: entry.payload.rid + \": \" + room",
+  "replace": "if (false) return json({ ok: false, error: entry.payload.rid + \": \" + room"
+ },
+ {
+  "name": "the join sets another trip on each row than the one it names",
+  "file": "src/maker-inputs.js",
+  "find": "kind: \"Correction\", date: body.date, fields: { trip } }), book);",
+  "replace": "kind: \"Correction\", date: body.date, fields: { trip: \"t\" + (start + i) } }), book);"
+ },
+ {
+  "name": "rows waiting to join are offered again",
+  "file": "src/maker-inputs.js",
+  "find": "&& rows.filter((s) => +s.delivery > 0.005).length <= 1 && !rows.some((s) => joining.has(s.rid)))",
+  "replace": "&& rows.filter((s) => +s.delivery > 0.005).length <= 1)"
+ },
+ {
+  "name": "a second join of rows waiting to join is taken",
+  "file": "src/worker.js",
+  "find": "        if (busy) return json(",
+  "replace": "        if (false) return json("
+ },
+ {
+  "name": "rows that cannot be one trip are joined",
+  "file": "src/maker-inputs.js",
+  "find": "  if (fault) return { error: \"These rows cannot be one order: \"",
+  "replace": "  if (false) return { error: \"These rows cannot be one order: \""
+ },
+ {
+  "name": "Correct a row offers the trip",
+  "file": "src/maker-inputs.js",
+  "find": "!DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field))",
+  "replace": "!DESK_ONLY_FIELDS.includes(field))"
+ },
+ {
+  "name": "Correct a row takes a trip typed",
+  "file": "src/maker-inputs.js",
+  "find": "|| DESK_ONLY_FIELDS.includes(field) || JOIN_ONLY_FIELDS.includes(field)))",
+  "replace": "|| DESK_ONLY_FIELDS.includes(field)))"
+ },
+ {
+  "name": "the engine takes any trip id, and on a lot",
+  "file": "engine/position.mjs",
+  "find": "  if(f.trip!=null&&(!isSale||!TRIP_RE.test(String(f.trip))))",
+  "replace": "  if(false)"
+ },
+ {
+  "name": "the drafter lets a row join another buyer's trip",
+  "file": "src/drafter.js",
+  "find": "      if (isSale && tripOn != null && (",
+  "replace": "      if (false && ("
+ },
+ {
+  "name": "the drafter reads a correction's own trip only",
+  "file": "src/drafter.js",
+  "find": "const tripOn = fields.trip !== undefined ? fields.trip : target.trip;",
+  "replace": "const tripOn = fields.trip;"
+ },
+ {
+  "name": "the fold does not hold a trip set across one batch together",
+  "file": "tools/fold.mjs",
+  "find": "        if (dir === \"SELL\" && tripOn != null && (",
+  "replace": "        if (false && ("
+ },
+ {
+  "name": "the fold reads a correction's own trip only",
+  "file": "tools/fold.mjs",
+  "find": "const tripOn = fields.trip !== undefined ? fields.trip : simOf(hits[0]).trip;",
+  "replace": "const tripOn = fields.trip;"
+ },
+ {
+  "name": "a join beside a trip mints a new one",
+  "file": "src/maker-inputs.js",
+  "find": "const trip = on[0] || \"t\" + Date.parse(body.at);",
+  "replace": "const trip = \"t\" + Date.parse(body.at);"
+ },
+ {
+  "name": "a join corrects rows already on the trip",
+  "file": "src/maker-inputs.js",
+  "find": "const joining = rows.filter((s) => !s.trip);",
+  "replace": "const joining = rows;"
+ },
+ {
+  "name": "a row beside a trip is not offered with it",
+  "file": "src/maker-inputs.js",
+  "find": "[...byDay.values()].map(withTrip).filter(",
+  "replace": "[...byDay.values()].filter("
+ },
+ {
+  "name": "the head counts lines, not lines handed of all",
+  "file": "stmt/owner.js",
+  "find": "['Handed',t.handedLines+' of '+t.lines.length+' lines']",
+  "replace": "['Handed',t.handedLines+' lines']"
+ },
+ {
+  "name": "a line names its book in words",
+  "file": "stmt/owner.js",
+  "find": "      p.appendChild(bookMark(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)",
+  "replace": "      p.appendChild(document.createTextNode(l.product));\n      p.appendChild(document.createTextNode(' '+units(l.qty)"
+ },
+ {
+  "name": "every line of Handover all is sent under one moment",
+  "file": "stmt/owner.js",
+  "find": "at=tripHand[k]||(tripHand[k]=new Date(base+i).toISOString());",
+  "replace": "at=tripHand[k]||(tripHand[k]=new Date(base).toISOString());"
+ },
+ {
+  "name": "Handover all sends every line in full, whatever was typed",
+  "file": "stmt/owner.js",
+  "find": "kind:'Fulfilment',date:day,cash:0,movedUnits:n});",
+  "replace": "kind:'Fulfilment',date:day,cash:0,movedUnits:l.left});"
+ },
+ {
+  "name": "a refused line stops the lines after it",
+  "file": "stmt/owner.js",
+  "find": "      catch(error){ held.push(l.rid+': '+error.message); if(!first) first=error; }",
+  "replace": "      catch(error){ throw error; }"
+ },
+ {
+  "name": "Record sends what each line owes, not the split",
+  "file": "stmt/owner.js",
+  "find": "shares:r.split.shares.map(function(s){ return {rid:s.rid,rm:s.rm}; })",
+  "replace": "shares:r.split.shares.map(function(s){ return {rid:s.rid,rm:s.owed}; })"
+ },
+ {
+  "name": "a new figure keeps the split and Record",
+  "file": "stmt/owner.js",
+  "find": "amount.addEventListener('input',function(){ delete tripRead[t.trip]; drop(); said.textContent=''; });",
+  "replace": "amount.addEventListener('input',function(){ delete tripRead[t.trip]; said.textContent=''; });"
+ },
+ {
+  "name": "the device cannot keep an order's payment to send again",
+  "file": "stmt/maker-geo.js",
+  "find": "(offset|trip-pay|trip-join)",
+  "replace": "(offset|trip-join)"
+ },
+ {
+  "name": "the join sends one row",
+  "file": "stmt/owner.js",
+  "find": "rids:t.rids.slice()}",
+  "replace": "rids:t.rids.slice(0,1)}"
+ },
+ {
+  "name": "a read that failed says nothing",
+  "file": "stmt/owner.js",
+  "find": "    if(makerData.tripsError){",
+  "replace": "    if(false){"
+ },
+ {
+  "name": "the Desk sends no trip with a move's figures",
+  "file": "src/approve-figures.js",
+  "find": "...(now.trip ? { trip: now.trip } : {}), ",
+  "replace": ""
+ },
+ {
+  "name": "moves on an order's rows are a card a row",
+  "file": "stmt/owner.js",
+  "find": "    if(kind==='Fulfilment') return String(d.figures&&d.figures.trip||'');",
+  "replace": "    if(kind==='Fulfilment') return '';"
+ },
+ {
+  "name": "a join reads as fixing a row",
+  "file": "stmt/owner.js",
+  "find": "      if(only(['trip'])&&f.trip) return 'join';\n",
+  "replace": ""
+ },
+ {
+  "name": "an order's moves are approved by their lead alone",
+  "file": "stmt/owner.js",
+  "find": "g.tripMoves=g.key.indexOf('moves:')===0&&tripMoveRows(g).length>1;",
+  "replace": "g.tripMoves=false;"
+ }
+]

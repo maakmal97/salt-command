@@ -296,8 +296,8 @@
  {
   "name": "a trip is drawn again for each of its rows",
   "file": "stmt/owner.js",
-  "find": "var t=tripOf(d), k=t&&tripRows(d).length?'trip:'+t:",
-  "replace": "var t=tripOf(d), k=false?'trip:'+t:"
+  "find": "var t=tripOf(d), mt=moveTrip(d), k=t&&tripRows(d).length?'trip:'+t:",
+  "replace": "var t=tripOf(d), mt=moveTrip(d), k=false?'trip:'+t:"
  },
  {
   "name": "a tap on the card's body opens its detail",

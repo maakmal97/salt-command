@@ -554,8 +554,8 @@
  {
   "name": "the Counter drops the bad keys",
   "file": "stmt/maker.js",
-  "find": "queue: queue.entries, unreadable });",
-  "replace": "queue: queue.entries });"
+  "find": "queue: queue.entries, unreadable, trips, sameDay,",
+  "replace": "queue: queue.entries, trips, sameDay,"
  },
  {
   "name": "Needs you does not name a bad key",
