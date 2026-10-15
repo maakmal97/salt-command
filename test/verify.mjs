@@ -50822,6 +50822,11 @@ await (async () => {
   await (await import("./engine-snapshot.mjs")).run({ ok });
 })();
 
+section("S1c-3: the cards and the drift live in engine/snapshot.mjs, and every figure is the fixture's");
+await (async () => {
+  await (await import("./engine-cards.mjs")).run({ ok });
+})();
+
 section("Counter Gift: a double tap books once, a booked twin is asked about and folds as a second");
 await (async () => {
   await (await import("./maker-gift-twin.mjs")).run({ ok, pageWork });
