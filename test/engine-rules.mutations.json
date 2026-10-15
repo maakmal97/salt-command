@@ -1,0 +1,20 @@
+[
+ {
+  "name": "a RULES number changes in the engine module",
+  "file": "engine/rules.mjs",
+  "find": "creditCeilingRM:250,",
+  "replace": "creditCeilingRM:251,"
+ },
+ {
+  "name": "salt's set-multiple changes inside the master's inlined block (the snapshot moves, and the page leaves the module)",
+  "file": "master/salt_command.html",
+  "find": "mS:2.813,",
+  "replace": "mS:2.814,"
+ },
+ {
+  "name": "a table is redefined a second time in the master's own script",
+  "file": "master/salt_command.html",
+  "find": "/* TIER_NAMES lives in engine/rules.mjs (inlined in the ENGINE block above) */",
+  "replace": "const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];"
+ }
+]
