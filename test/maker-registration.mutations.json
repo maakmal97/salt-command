@@ -49,19 +49,19 @@
   },
   {
     "name": "dependent trade planned ahead of registration",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "const next = waiting.findIndex((item) => !(dependencies.get(item.id) || []).some((id) => !applied.has(id)));",
     "replace": "const next = 0;"
   },
   {
     "name": "trade proceeds when approved registration plan is refused",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "if (failedDependency) {",
     "replace": "if (false && failedDependency) {"
   },
   {
     "name": "fold silently omits a refused dependency row",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "out.refused.push({ id: it.id, why: dependencyFaults.get(it.id) });",
     "replace": "/* mutation: omit explicit refusal */"
   },
@@ -79,19 +79,19 @@
   },
   {
     "name": "existing Maker trades acquire a new fold prerequisite",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "if (!partyCodes.length) continue;",
     "replace": "if (false && !partyCodes.length) continue;"
   },
   {
     "name": "legacy hand-fold trades acquire the Counter prerequisite",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "if (![\"sales\", \"purchases\"].includes(item.collection)\n      || item.entry?.payload?.mode !== \"new\" || !item.entry?.makerRequest) continue;",
     "replace": "if (![\"sales\", \"purchases\"].includes(item.collection) || item.entry?.payload?.mode !== \"new\") continue;"
   },
   {
     "name": "Maker purchase amendments acquire the new-trade prerequisite",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "|| item.entry?.payload?.mode !== \"new\" || !item.entry?.makerRequest) continue;",
     "replace": "|| !item.entry?.makerRequest) continue;"
   },
