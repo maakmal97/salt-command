@@ -724,6 +724,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlist .glink{margin:0}
 .adm .nlist .nsev{margin:8px 0 -4px}
 .adm .nchips{margin:0 0 16px}
+.adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
+.adm .nfail[hidden]{display:none}
+.adm .nfail__what{margin:0;flex:1 1 12em}
 .adm .nchips .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 .adm .need .salt-action__title{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
 .adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
@@ -1475,6 +1478,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
         + '<div id="mHome" data-in="needs">'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
+        /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
+        + '<div id="nFail" class="salt-action salt-action--now nfail" role="alert" hidden></div>'
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k

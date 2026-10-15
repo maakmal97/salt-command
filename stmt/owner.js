@@ -4722,15 +4722,31 @@ export const OWNER_JS = `
     setCount('record', pendingRows().length);
   }
   function needsReady(){ return NEED_SRC.every(function(s){ return nSrc[s[0]]; }); }
-  /* the line under the title: Now and Soon as counted, as at the time of drawing, and what could not be read, so a failed read is never
-     taken for nothing waiting */
+  function needsBad(){ return NEED_SRC.filter(function(s){ return nSrc[s[0]]&&nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; }); }
+  /* 15 Oct 2026 (plan 1, his word: "Nothing needs you" while its orders read had failed): A READ THAT FAILED LEADS THE PAGE, above the title, in plain
+     words and with a Retry, and the all-clear is said only when every read got through. The banner is made once and its words changed, so a redraw
+     never takes the Retry from under his finger. */
+  var nFail=document.getElementById('nFail'), nRetry=null;
+  function drawFail(bad){
+    if(!nFail) return;
+    nFail.hidden=!bad.length;
+    if(!bad.length) return;
+    if(!nRetry){
+      nFail.textContent=''; nFail.appendChild(el('p','nfail__what'));
+      nRetry=pill(['Retry','need.retry']); nRetry.addEventListener('click', function(){ nRetry.disabled=true; nRetry.textContent='Reading.'; readNeeds(true); });
+      nFail.appendChild(nRetry);
+    }
+    nFail.firstChild.textContent='Couldn\\'t read '+andList(bad)+'.';
+    if(!needsReading){ nRetry.disabled=false; nRetry.textContent='Retry'; }
+  }
+  /* the line under the title: Now and Soon as counted, as at the time of drawing; with a read failed it never says nothing needs him */
   function drawLead(items){
+    var bad=needsBad(); drawFail(bad);
     if(!needsReady()){ nCount.textContent='Reading what needs you.'; return; }
     var now=0, soon=0;
     items.forEach(function(i){ if(i.practice||!i.counts) return; if(i.sev==='now') now++; else if(i.sev==='soon') soon++; });
-    var bad=NEED_SRC.filter(function(s){ return nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; });
-    nCount.textContent=(now||soon?[now?now+' now':'', soon?soon+' soon':''].filter(Boolean).join(', '):'Nothing needs you')
-      +'.'+(bad.length?' Not read: '+andList(bad)+'.':'');
+    nCount.textContent=now||soon?[now?now+' now':'', soon?soon+' soon':''].filter(Boolean).join(', ')+(bad.length?' in what could be read.':'.')
+      :bad.length?'Nothing in what could be read.':'Nothing needs you.';
   }
   function drawNeeds(){
     if(!nlist) return;
@@ -4743,7 +4759,7 @@ export const OWNER_JS = `
       if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x.getAttribute('data-chip')==='all'?'true':'false'); }); }
     }
     nlist.textContent='';
-    if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'?'Nothing needs you.':'Nothing here.'));
+    if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'&&!needsBad().length?'Nothing needs you.':'Nothing here.'));
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
@@ -4769,8 +4785,9 @@ export const OWNER_JS = `
     if(!force&&needsAt&&Date.now()-needsAt<NEED_MS) return;
     needsReading=true;
     var jobs=[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop()];
-    if(sheet&&!sheetBusy) jobs.push(loadSheet(true));
-    if(linksRead&&!linksBusy) jobs.push(loadLinks(true));
+    /* the sheet and the links are read again once read, or once their read has failed, so a Retry reaches every read that did */
+    if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
+    if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
     Promise.all(jobs).then(function(){ needsAt=Date.now(); }, function(){}).then(function(){ needsReading=false; redrawLead(); });
   }
   /* what Watch shows: the hours with an override in force, and the notice */
