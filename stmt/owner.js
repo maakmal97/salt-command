@@ -4128,7 +4128,10 @@ export const OWNER_JS = `
       var held=(makerData.queue||[]).filter(function(e){ return e&&e.state!=='committed'&&e.state!=='approved'; }), counted=document.getElementById('makerQueueCount');
       /* the queue is a fold shut by default, titled and counted, so it is never read as missing: its count is read off the entries the server holds */
       if(counted) counted.textContent=String(held.length);
-      if(!held.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));
+      /* plan 1: a queue key the Desk could not read is said first, by its name, and never read as an empty queue */
+      var bad=unreadableKeys();
+      if(bad.length){ var ub=el('p','msg bad',unreadableLine(bad)); ub.setAttribute('data-unreadable',''); queueRoot.appendChild(ub); }
+      if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));
       held.forEach(function(entry){
         var card=makerCard(queueRoot), title=entry.state==='refused'?'Entry the Desk refused':'Entry waiting for the Desk'; card.setAttribute('data-key',entry.id);
         card.appendChild(el('h4','',title));
@@ -4578,6 +4581,14 @@ export const OWNER_JS = `
   function decidedNeed(k, said){
     return item('soon','rows','Row',k, '', {who:said.who, what:'', why:said.t, counts:false, open:goPlace('record','approve')});
   }
+  /* 15 Oct 2026 (plan 1, part 2): a device's queue key the Desk could not read (malformed, or with no matching device), named so he can mend it;
+     every other entry is read beside it */
+  function unreadableKeys(){ return (makerData&&makerData.unreadable||[]).filter(function(k){ return typeof k==='string'; }); }
+  function unreadableLine(keys){ return keys.length+(keys.length===1?' queue entry':' queue entries')+' unreadable: '+keys.join(', '); }
+  function unreadableNeed(keys){
+    return item('soon','rows','Entry','qx', '', {who:'Desk queue', what:unreadableLine(keys),
+      why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('record','approve')});
+  }
   function entryNeed(r, key){
     return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', what:'did not get through',
       why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('record','approve')});
@@ -4695,6 +4706,7 @@ export const OWNER_JS = `
     Object.keys(needSaid).filter(function(k){ return !rows.some(function(d){ return 'd:'+d.id===k; }); }).forEach(function(k){ L.push(decidedNeed(k, needSaid[k])); });
     (makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
+    if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
     unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
     /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
     links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); }).forEach(function(r){ L.push(linkNeed(r)); });

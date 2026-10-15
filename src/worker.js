@@ -1016,7 +1016,10 @@ async function rejectedAmong(env, ats) {
 const canonicalQueueAt = (value) => typeof value === "string" && Number.isFinite(Date.parse(value))
   && new Date(value).toISOString() === value;
 
-async function deviceQueueRecords(env) {
+/* 15 Oct 2026 (plan 1, part 2): ONE BAD QUEUE KEY NEVER BLANKS THE REVIEW. A road that acts (a withdrawal, an owner record)
+   reads strictly and refuses on any doubtful key; the review alone passes { skip }, which collects the malformed key's name
+   and reads on, so Salt Account can say which key it could not read and still show every other entry. */
+async function deviceQueueRecords(env, skip = null) {
   if (!env.SALT_QUEUE) throw new Error("The Desk queue is unavailable.");
   const records = [];
   let cursor;
@@ -1030,9 +1033,14 @@ async function deviceQueueRecords(env) {
       if (raw == null) continue;
       let record;
       try { record = JSON.parse(raw); }
-      catch { throw new Error("A device queue could not be read; no withdrawal was made."); }
-      if (!record || record.device !== device || !Array.isArray(record.queue))
+      catch {
+        if (skip) { skip.push(key.name); continue; }
+        throw new Error("A device queue could not be read; no withdrawal was made.");
+      }
+      if (!record || record.device !== device || !Array.isArray(record.queue)) {
+        if (skip) { skip.push(key.name); continue; }
         throw new Error("A device queue has no matching owner record; no withdrawal was made.");
+      }
       records.push({ key: key.name, device, record });
     }
     cursor = page.list_complete ? null : page.cursor;
@@ -1085,7 +1093,8 @@ async function recordDeviceQueueOwners(env, device, entries) {
 async function makerQueueReview(env) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE)
     return { ok: false, status: 503, error: "The Desk queue and ledger are required for server-held review." };
-  const records = await deviceQueueRecords(env);
+  const unreadable = [];
+  const records = await deviceQueueRecords(env, unreadable);
   const [draftRows, refusalRows, sourceRows, admissionRows, withdrawalRows] = await Promise.all([
     env.SALT_LEDGER.prepare("SELECT id,status,committed_at FROM draft").all(),
     env.SALT_LEDGER.prepare("SELECT id,entry,why,source,seen_at FROM refused WHERE source='cloud-drafter'").all(),
@@ -1138,7 +1147,8 @@ async function makerQueueReview(env) {
       ? admissionSources.includes("device:" + owner.device) && admissionSources.every((source) =>
         source === "device:" + owner.device || source === "drafter")
       : true);
-    const canWithdraw = !!owner && owner.device !== "anon" && !draft && (!admissionState || admissionState === "accepted")
+    /* a key that could not be read may hold this timestamp too, so nothing is offered for withdrawal while one stands */
+    const canWithdraw = !unreadable.length && !!owner && owner.device !== "anon" && !draft && (!admissionState || admissionState === "accepted")
       && ownedSource && !withdrawal;
     const fingerprint = owner ? await makerRequestFingerprint("server-queue-entry", owner.entry) : null;
     entries.push({
@@ -1159,7 +1169,8 @@ async function makerQueueReview(env) {
       fingerprint: fingerprint || withdrawal?.entry?.fingerprint || null,
       canWithdraw,
       canRetry: !!withdrawal?.pending,
-      unavailable: owners.length > 1 ? "More than one device holds this timestamp."
+      unavailable: unreadable.length && owner && !draft && !withdrawal ? "A queue entry could not be read, so nothing is withdrawn until it is mended."
+        : owners.length > 1 ? "More than one device holds this timestamp."
         : withdrawal?.pending ? "Withdrawal is recorded; retry to finish removing it."
           : !owners.length ? "No server-held device entry matches this refusal."
             : owner?.device === "anon" ? "This legacy queue has no uniquely identified device owner."
@@ -1171,7 +1182,7 @@ async function makerQueueReview(env) {
                     : null
     });
   }
-  return { ok: true, entries };
+  return { ok: true, entries, unreadable };
 }
 
 function queueDraftConflict(draft) {
