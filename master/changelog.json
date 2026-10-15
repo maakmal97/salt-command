@@ -1,5 +1,130 @@
 [
  {
+  "v": "v1125",
+  "d": "16 Oct 2026",
+  "t": "COUNTER ADMIN: THE APPROVE CARD, FOR A PERSON",
+  "n": [
+   "<b>THE HEAD SAYS WHOSE ROW AND FROM WHERE.</b> The row, the customer's code (read off the draft, so a correction never reads \"no code\"), the book's mark, and whether the entry came from Counter Admin, the site, the laptop or the phone, with its time.",
+   "<b>ONE PLAIN VERB.</b> Take back a payment, Payment received, Handover, Change the price, Close the order, New sale, Fix a row; Correction and Fulfilment stand only in Details.",
+   "<b>NOW AND AFTER.</b> Paid, Owed and Handed over, only what changes marked, worked out on the Desk off the mirror and the engine (src/approve-figures.js); the Counter computes no money.",
+   "<b>TWO LINES AT MOST, AND ONLY THOSE THAT ASK.</b> Over the credit ceiling (or under it, when a move on a booked row raises what is owed), under the floor, a refund opening, stock below zero, a twin; in sentence case. Every flag, the drafter's note and the row stand under Details.",
+   "<b>ONE CARD AND ONE APPROVE AN ORDER.</b> Drafts on one row, or one trip, are one card; its Approve sends each draft's own approval in the order entered and stops at the first refusal, naming it; a move left after a partial approval says Half approved. A customer's claim stands alone. Needs you holds the same cards.",
+   "<b>THE BUTTON SAYS THE RESULT.</b> \"Approve: s262 closed\", \"Approve: s267 owes RM 220.00\". Plan 2 of docs/plans-counter-admin.html; the drafter, the fold and what one approval does are unchanged."
+  ]
+ },
+ {
+  "v": "v1124",
+  "d": "16 Oct 2026",
+  "t": "CORRECTION TO S263 CUTS THE TOTAL FROM RM80 TO RM65; NO STOCK MOVES",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The batch holds a single amendment, on s263, a pending sale of 0.5 unit of salt to CR3-DAM dated 14 Oct. It sets the total from RM80 to RM65. It moves no cash and no goods, and the order stays pending with all of it still open.",
+   "<b>UNUSUAL, AND INVENTORY UNCHANGED.</b> The drafter flagged the rate against CR3-DAM's usual RM80 a unit; the correction does not explain it. Nothing was delivered, so the roll stays at 9.89 units and the cost basis is untouched."
+  ]
+ },
+ {
+  "v": "v1123",
+  "d": "15 Oct 2026",
+  "t": "COUNTER ADMIN: NEEDS YOU TELLS THE TRUTH",
+  "n": [
+   "<b>A READ THAT FAILED LEADS THE PAGE.</b> \"Couldn't read orders and rows.\" stands above the title with a Retry, which reads every failed source again, and \"Nothing needs you\" is said only when every read got through.",
+   "<b>ONE BAD QUEUE KEY NEVER BLANKS THE REVIEW.</b> The Desk's queue review skips a malformed device key and names it by its key; nothing is offered for withdrawal while one stands, and the withdrawal stays strict.",
+   "<b>MONEY OWED PAST TERM IS A SOON CARD.</b> One a customer, oldest first, the engine's txAdvance past TERMS.holdDays, read off the Desk's catalog (owedBothWays); Record payment opens the site order's Money received, or Correct a row on a Desk row.",
+   "<b>GOODS PAID FOR AND NOT HANDED OVER ARE A SOON CARD.</b> One a row, with Handover opening the order's handover or Correct a row.",
+   "<b>THE DESK'S BARE COUNT IS NO LONGER A CARD.</b> Every kind it counted is a card of its own."
+  ]
+ },
+ {
+  "v": "v1122",
+  "d": "15 Oct 2026",
+  "t": "CM4-MK SALT DRIFT SET TO +0.3",
+  "n": [
+   "<b>ONE TIER SET, NO CASH, NO STOCK.</b> The fold applied a single tier change on 15 Oct 2026: CM4-MK's salt drift is now +0.3. A drift moves that customer's own price and never the board, so no other party's rate changes. The drafter raised no flags, and the dossier gives no reason for the change, so none is stated here.",
+   "<b>INVENTORY UNTOUCHED.</b> No lot landed, no sale was booked and no count was taken. Stock stays at 9.89 units and the cost basis is unchanged at RM56 a unit."
+  ]
+ },
+ {
+  "v": "v1121",
+  "d": "15 Oct 2026",
+  "t": "ONE UNIT OF SALT REDEEMED FREE BY CS6-PER AS GOODWILL, BOOKED AS COST",
+  "n": [
+   "<b>REWARD REDEMPTION FOLDED.</b> One row: 1 unit of salt to CS6-PER on 15 Oct, settled by the reward rather than cash, RM0 cash against RM56 settled. Unusual because the row carries both rebate and goodwill, so on his word of 11 Sep 2026 it stays out of revenue and the RM56 is an expense. The desk's reward count could not be checked here.",
+   "<b>INVENTORY.</b> Salt leaves the shelf by 1 unit and the fold rolls the stated shelf by it. The cost basis does not move, as no lot landed."
+  ]
+ },
+ {
+  "v": "v1120",
+  "d": "15 Oct 2026",
+  "t": "FULFILMENT ON S262 FOR CC9-OKR FOLDED, NO STOCK MOVE",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> The entry against s262 for CC9-OKR, dated 15 Oct, records RM540 and no units. The drafter raised no flags. The unusual point is that the target row already reads total RM540, cash RM0 and 6.25 unit collected, so the cash entry and the row's cash do not plainly agree. The dossier does not reconcile them.",
+   "<b>INVENTORY.</b> Nothing moves on this entry, since it carries no units. Stock stays at 10.89 and the cost basis is unchanged. The 6.25 unit leaving belongs to the correction already on the row, not to this fulfilment."
+  ]
+ },
+ {
+  "v": "v1119",
+  "d": "15 Oct 2026",
+  "t": "S267 CASH REVERSED; TWO FULFILMENTS SETTLE CS6-PER; S262 DELIVERED AT RM540",
+  "n": [
+   "<b>FOLDED: ONE REVERSAL, TWO SETTLEMENTS, ONE DELIVERY.</b> s267 for CS6-BS-R returns to RM0 cash and no paid date, so RM220 is open again. CS6-PER pays RM116 on s265 and RM110 on s266, both settled in full. s262 for CC9-OKR is corrected from RM575 to RM540 and 6.25 unit go out collected, unpaid.",
+   "<b>UNUSUAL: AN ADVANCE AND A CAP NOT IN THE DOSSIER.</b> The s262 delivery is on credit, and no credit cap for CC9-OKR appears in the dossier. Salt stock rolls down by 6.25 unit, to 17.14 as stated, with the stock cost unchanged at RM56 a unit. The two CS6-PER rows are cash only, with no stock move."
+  ]
+ },
+ {
+  "v": "v1118",
+  "d": "15 Oct 2026",
+  "t": "ORDER STEP PER BOOK, AND SPARE RETIRED",
+  "n": [
+   "<b>EACH BOOK IS ORDERED IN ITS SMALLEST UNIT STEP.</b> Salt in quarters from half a unit, oil in tens from 10, candy and rice in ones from 1, a size under the first or off the step refused by the Worker (offStep) and not offered by the page. The setting is the grid's step in each book's rule: oil's goes from 1 to 10, with no price moved, its five points being its five typed rungs. Salt stays at a quarter, since a half would drop the points its walk runs through and raise most of its prices. A Negotiate size over the max is held to the step too (oil 60, not 55). Counter Admin's forms are not held to it.",
+   "<b>SPARE IS RETIRED.</b> The fifth book had no row, opening or price; it is flagged retired in the book and off the switch, the Enter form, the tier grid and the parity scan, its name is off the Counter's product words, and the live books are four. tools/product.mjs now writes the book in its own layout. No price, floor or pricing rule moved."
+  ]
+ },
+ {
+  "v": "v1117",
+  "d": "15 Oct 2026",
+  "t": "COUNTER ADMIN ORDER CARD: PROGRESS IN THE HEAD, MONEY RECEIVED IN ONE BLOCK",
+  "n": [
+   "<b>THE HEAD OF AN AGREED ORDER IS ITS PROGRESS.</b> Owed, Paid and Handed (units moved of units ordered), with Says sent beside them while a claim of theirs waits. The goods and the delivery charge are in the title already and stand in Details. A placed, declined or cancelled order keeps Goods, since nothing is yet owed.",
+   "<b>MONEY RECEIVED IS ONE BLOCK.</b> Their claim answered, then Bank (a payment that reached the account), then Cash on a Ready order, the cash still held ten seconds with its Undo. Each field names its road, and its button says the figure and the road once one is typed (Record RM 25.00, bank). The reply stands below it with their last line above it, which the card did not draw before. Cash held shuts the reply as it shuts the rest of the card.",
+   "<b>NOTHING BEHIND IT MOVED.</b> No act, route, request id or rule changed; the Desk and the customer's site are as they were. Left for a later version: Bank and Cash as tiles over one field, Change the order under the head, and the units field's two buttons."
+  ]
+ },
+ {
+  "v": "v1116",
+  "d": "15 Oct 2026",
+  "t": "PAST STATEMENTS ARE GONE FROM EVERY CUSTOMER RECORD",
+  "n": [
+   "<b>NO MONTHLY ISSUE REACHES A CUSTOMER.</b> The page stopped drawing an earlier statement in v1105; now the publish seals each account's bundle again with no statements and drops the clear list of issue dates, the Counter's open answers no longer send that list, and the test account's bundle is empty. The account is the live statement alone, with its month, range and product filters as before.",
+   "<b>THE SEALED ISSUES ARE LEFT AS ISSUED.</b> statements/2026-08 and 2026-09 stay on disk untouched and on his own page; only what is published changed, so a customer's record loses the old issue at the next publish. A publish with no STMT_KEY, or a record the key does not open, leaves such a record as it was. Nothing in pricing, the engine or the Desk moved."
+  ]
+ },
+ {
+  "v": "v1114",
+  "d": "15 Oct 2026",
+  "t": "TWO SALT HANDOVERS RECORDED AND RM220 CASH TAKEN ON S267",
+  "n": [
+   "<b>THREE ROWS FOLDED.</b> Two corrections record salt as collected on 15 Oct: 1 unit to CS6-PER (s266) and 2 unit to CS6-BS-R (s267). A fulfilment then takes RM220 cash on s267. All three were preapproved by Counter Admin. Both corrections were flagged as advances, with RM110 a unit against a usual RM100.",
+   "<b>INVENTORY.</b> The shelf rolls out 1 unit of salt to CS6-PER and 2 unit to CS6-BS-R. The cash fulfilment moves no stock. No lot landed, so the cost basis stays as it is."
+  ]
+ },
+ {
+  "v": "v1113",
+  "d": "15 Oct 2026",
+  "t": "ONE NEW SALE OF SALT PENDING; 10 UNIT OF OIL COLLECTED AGAINST AN UNPAID ORDER",
+  "n": [
+   "<b>FOLDED TWO ROWS.</b> A new pending sale of 2 unit of salt to CS6-BS-R for RM220, and a correction on s265 recording 10 unit of oil collected by CS6-PER on 15 Oct. The oil goes out with RM116 unpaid, so it is an advance, and CS6-PER already had RM226 outstanding before it.",
+   "<b>INVENTORY.</b> The salt sale moves nothing. The oil collection rolls the oil shelf out by 10 unit. No lot landed, so the cost basis stays as it was."
+  ]
+ },
+ {
+  "v": "v1112",
+  "d": "15 Oct 2026",
+  "t": "RICE ORDER S264 PAID IN CASH AND COLLECTED, 5 UNIT OUT",
+  "n": [
+   "<b>TWO AMENDMENTS TO S264 FOLDED.</b> CS6-PER's rice order of 5 unit for RM35, dated 14 Oct, was paid RM35 in cash on 15 Oct and recorded collected the same day. Both were preapproved by Counter Admin. The drafter's advance flag on the collection was overtaken by the payment, so the order closes with nothing outstanding.",
+   "<b>INVENTORY.</b> Rice rolls out by 5 unit to CS6-PER. Salt, oil and candy do not move, and no lot landed, so the cost basis stays as it is."
+  ]
+ },
+ {
   "v": "v1111",
   "d": "14 Oct 2026",
   "t": "TWO PENDING SALES TO CS6-PER, OIL AND SALT, NOTHING MOVED",

@@ -23,10 +23,20 @@ he wants one, it is asked for in so many words:
 node tools/make_statements.mjs statements/2026-10 2026-10-01 --new-issue
 ```
 
-**What is untouched:** the issues already sealed and sent (August and September) still publish and
-still open on the page, because a dated record is not corrected in place; `--archive` of a past month
-is not an issue and still works; and the LIVE statement, the price list, the associate's card and the
-account mint all run on every publish exactly as before.
+**Past statements are gone from the customer (15 Oct 2026, his instruction: "remove Past Statements from each user
+account; there is only one live statement, and users can use the months or date ranges or products filter").** The page
+stopped drawing an earlier statement in v1105 (14 Oct). From this version nothing a customer can reach carries one
+either: `liveRecords` (`tools/make_statements.mjs`) seals each record's bundle again with **no statements** after it has
+proved the key on the old one, and drops the clear `issues` list, so the store holds no monthly issue; the Worker no
+longer sends `issues` on any open (`issued`, one date, stays for the owner's list and the publish read-back); the test
+account's bundle is empty too and its one document is the live one. The page keeps its filter on the first statement
+only as a cut for a record not yet republished. **How the existing sealed issues are left:** `statements/2026-08` and
+`statements/2026-09` stay on disk exactly as issued (dated records, never rewritten) and the owner's page keeps them
+at the foot; only the publish stops carrying them, so the old text a customer's record held is gone from the store at
+the next publish, and a publish with no `STMT_KEY` (or a record the key does not open) leaves such a record as it was.
+Still working: `--archive` of a past month, `--new-issue` for a dispute (its file is the owner's, never published to a
+customer), and the LIVE statement with its month, range and product filters, the price list, the associate's card and
+the account mint, on every publish as before.
 
 ## The gate, first and most important
 
@@ -190,7 +200,7 @@ own position under the list does not move with the filter.
 **Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
 the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
 own width), "units" above one; an issue is a standalone file and keeps its table. **The account is the live
-document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter, kept on disk and on
+document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter and out of every published record (15 Oct 2026), kept on disk and on
 his own page, where they sit at the foot by date; a live document that will not open says so with Try again, one the
 publish wrote none of says the account shows after the next update, and neither is ever an issue drawn in its place.
 A re-read that meets either keeps the hold where it last stood; a first open has no last state, so the gate is open
@@ -234,7 +244,7 @@ and a shut link are keyed but English only (no script); `stmt/send.js` is unkeye
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
-pair, decrypts in his own browser, and opens on **"Now"**, with every issue by its date at the foot. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
+pair, decrypts in his own browser, and opens on **"Now"**, the live statement alone (no issue is listed; 15 Oct 2026). It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **A passkey opens it too (Step 6, his decisions of 29 Sep 2026).** Signed in, This device offers **Save a passkey**; the
@@ -255,8 +265,8 @@ passkey is a credential, not fixture data, and counts nowhere.
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
 written.** The deploy rewrites it after every fold, so an approved row reaches the customer's
 page in the same run that reaches the phone. Its heading names that minute in Kuala Lumpur
-time. The dated issues beside it are the monthly statements exactly as sent, the August archive
-included, and they never change.
+time. There are no dated issues beside it for a customer any more (15 Oct 2026); the sealed ones
+stay on disk as sent and never change.
 
 **The account closes in stages (V5, his answers of 29 Sep 2026).** Counted from the handover of the oldest part still
 overdue (`since`), on the phone's own Kuala Lumpur day: past the term, day 2, no new order (the hold); from `pay.hide`
@@ -458,7 +468,7 @@ the same line** (`PLET_AT`: 8 in the 24 grid, its capitals centred on the mark's
 square, the droplet rounder, the capsule turned to the diagonal so it is as wide as it is tall, the book's ring larger,
 the cube as it was. The app's own ring on the door and the rail keeps the home-screen icon's proportion (`APP_RING`). Where a line of the mark would
 cross its letter, `PLET_ROOM` gives it room: the cube's three inner edges stop at radius 5 and the capsule's seam gives
-way. The spare book's Ring stays bare, and the aria stays the shape. The letter's face is the class `.plet`, never a style attribute: the site's
+way. A book with no mark draws the Ring, bare, and the aria stays the shape (spare, the book that exercised it, was retired on 15 Oct 2026). The letter's face is the class `.plet`, never a style attribute: the site's
 style policy refuses one. The guest board carries it in the page's own styles, with the mono face its policy lets load.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
@@ -992,8 +1002,8 @@ audiences differ, and the whitelist that guards his card would have had to widen
 of 28 Sep 2026, revised the same day: "Rewards remains solely for salt", and associates "can see all but just
 on the sales progress"). Both functions loop `PROD_ORDER` and fill `reward` only on a book the desk's
 `tieredBooks()` names, salt where the window has none, null on every other whatever `networkStats` says. Each
-page draws a book's reward block only where it is present, so a fixed board (oil, candy, rice) and the spare
-book show the progress alone, on his card and theirs.
+page draws a book's reward block only where it is present, so a fixed board (oil, candy, rice)
+shows the progress alone, on his card and theirs.
 
 *What is left off, and why.* `share` is a ratio against the WHOLE book's revenue, so an associate
 holding their own RM and their own share can solve for his total; `stars` are bands of that same
@@ -1433,11 +1443,12 @@ exists the page says notifications are not switched on.
 ### Any quantity, and Negotiate (his decisions of 05 Oct 2026)
 
 - **Any quantity at an automatic price.** Each book's `TIER_RULE` carries `grid`, {min, step, max}: salt 0.5 to 25 in
-  quarters, oil 10 to 50, candy 1 to 30, rice 1 to 10, in steps of one. The publish seals each customer's `grid`
+  quarters, oil 10 to 50 in tens, candy 1 to 30 and rice 1 to 10 in ones (his word of 15 Oct 2026: each book is ordered in its
+  smallest unit step, and `step` is that setting, read by the page's field, the Worker's `onStep` and nothing else). The publish seals each customer's `grid`
   ({min, step, max, p[]}, the engine's `quoteGrid` at their drift) beside the board's `sizes`, and writes the steps alone,
   no price, in the clear beside the stamp (`priceSteps`). The stamp covers the grid. The page reads every figure through one
   `priceAt(P, q)` and works nothing out. The Worker refuses a size off the step (`offStep`) or over the max (`overMax`,
-  Negotiate's alone) and **a Place with no stamp** against a stamped list (as moved, 409 with the list). The desk Worker's
+  Negotiate's alone, and still a whole number of steps from the min: oil 60 is asked for, oil 55 is refused) and **a Place with no stamp** against a stamped list (as moved, 409 with the list). The desk Worker's
   card at any size is the engine's `quoteAt` on the snapshot's inputs and the drift it carries per code (`cardAt`).
 - **Negotiate.** An order placed with `ask` (a figure of theirs optional, a number only) waits in `price` (asked). His offer
   is the goods alone (`POST /orders/<id>/offer`): drafted as Accept drafts it (never under the floor), filed as an ack
@@ -1637,6 +1648,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`stmt/page.js` splices it in at the end of the page script), so a name it declares at the top must not be one the customer's code declares:
   `oOpen` was both, and View as them met "oOpen is not a function" until the owner's became `ordOpened`; `test/admin-orders.mjs` section 9 compares
   the two lists, every declarator of a `var` list included (the owner's `HOW`, which overwrote the customer's pay ways, is `HOW_IN`).
+- **An agreed order's card leads with its progress and takes money in one block** (15 Oct 2026, `test/admin-order-card.mjs` section 5). The head of an
+  Agreed, Ready or Done order is Owed, Paid and Handed (`moved` of `qty`), with Says sent beside them while a claim of theirs is waiting; the goods and the
+  delivery charge, already in the title, stand in Details. A Placed, Declined or Cancelled order keeps Goods, since no figure is yet owed. **Money received** is
+  one block under its own heading, in the order the money comes: their claim answered (Yes, I got, Not found), Bank (`order.received`), then Cash on a Ready
+  order only (`order.cash`, still held ten seconds with its Undo). Each field is named for its road, Bank, RM and Cash, RM, and its button says the figure and
+  the road once one is typed (Record RM 25.00, bank). The reply stands below the block with their last line above it (They wrote, the moment, their words):
+  the card drew none before. Cash held shuts the whole card, the reply included, and leaves Undo or Retry live. No act, route, rule or request changed.
 - **The order card reads its own preview** (Phase 2a, 12 Oct 2026, his decision 6 of 11 Oct; `test/admin-order-card.mjs`, its mutations in
   `test/admin-order-card.mutations.json`). **A placed order reads its preview when its detail is opened**, once, and again when an input is
   changed: choosing a delivery charge or a window reads at once, and the goods total reads when the field is finished (`change`), taking
@@ -1741,6 +1759,20 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`makerVaultTurn`). The claim card's own unlock and lock (`claim.passphrase`, `claim.lock-slip`) and the password fields of Add ID, Amend ID, Place on the map
   and the unsent entry (`record.add-id.passphrase`, `record.amend-id.passphrase`, `record.place.passphrase`, `record.retained.passphrase`) are retired from the
   act table. No route, body or request id changed; the Desk's own vault code is untouched, and no route writes `vault-key`.
+- **The approve card says the change, one card and one Approve an order** (plan 2 of `docs/plans-counter-admin.html`, 16 Oct 2026;
+  `test/admin-approve-card.mjs`, its mutations in `test/admin-approve-card.mutations.json`). The head is the row (its rid), the customer's code (read off the
+  draft, the entry or its payload, so a correction never reads "no code"), the book's mark, and where the entry came from (Counter Admin by its `makerRequest`,
+  the site by its `orderId` unless the Desk's own cash, the laptop by a bare payload, else the phone) and when. Then one plain verb off the draft's kind, the
+  fields it changes and which way (Take back a payment, Payment received, Handover, Change the price, Close the order, New sale, Fix a row ...); Correction and
+  Fulfilment stand only in Details. **Now and After** (Paid, Owed, Handed over), only what changes marked, are the Desk's: `src/approve-figures.js` reads each
+  pending sale's row off the mirror, applies the approved moves on that row not yet folded and then the pending ones in entry order, moved for the figure fields
+  as `ovAmend` moves a sale, and reads them with the engine's `txPaid`, `txOwed` and `txEffDeliv`; `owedNow` and `owedAfter` are `partyOwedRM` for the bucket's
+  owner against `TERMS.ceiling`. The Counter computes no money. **At most two lines that ask a decision**, in sentence case: over the ceiling (or, on a move on a
+  booked row that raises what is owed, under it), then the drafter's flags for under the floor, a refund opening, stock below zero and a twin. Every flag, the
+  drafter's note and the row (its id added where the drafted row leaves it off) stand in **Details**, its own control. **Drafts on one row (same `amends`), or
+  one trip, are one card**; its Approve, which says the result ("Approve: s262 closed"), sends each draft's own approval in entry order and stops at the first
+  refusal, naming it; a trip is still one request. A move left after a partial approval reads from the approved one and says Half approved. Needs you holds the
+  same one card an order. The drafter, the fold, the preapproval (D6) and what one approval does are unchanged.
 - **The rows to approve wear the approve card, the queue folds away, and no native confirm is left** (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct;
   `test/admin-approve-queue.mjs`, its mutations in `test/admin-approve-queue.mutations.json`). **A Desk row to approve is the system's Approve recipe**
   (`salt-approve`, carried whole by `SITE_RECIPES` and restated nowhere: the page's own rules naming it only take its empty answer line away and leave it out of
@@ -2426,9 +2458,12 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.kind.payments` | The chips under Needs you's title | Shows only the payments they say they sent. Reads nothing. |
 | `need.kind.rows` | The chips under Needs you's title | Shows only the Desk rows, the entries that did not get through and the entries kept unsent on this phone. Reads nothing. |
 | `need.link-approve` | Same card | Approves the link, which then opens. |
+| `need.owed-hand` | Needs you card for goods paid for and not handed over (key: the row's rid) | Opens that site order's card at its handover, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
+| `need.owed-pay` | Needs you card for money owed past term (key: the customer's code) | Opens the oldest such row's site order at Money received, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
+| `need.retry` | The banner over Needs you's title when a read failed | Reads every source again, the ones that failed among them; the banner goes once all get through. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
-| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
+| `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.fold.soon` | Needs you, the Soon heading | Opens or folds the Soon cards; folded when drawn, and once opened it stays open across redraws (14 Oct 2026). |
 | `need.fold.watch` | Needs you, the Watch heading | Opens or folds the Watch cards, the same way. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
@@ -2463,7 +2498,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Asks on a sheet, with a reason, then cancels the order. |
 | `order.cash` | Order card (key: the order id), ready | Holds the cash for ten seconds, then records it. |
-| `order.cash-amount` | Order card (key: the order id), ready | Cash received, in RM. |
+| `order.cash-amount` | Order card (key: the order id), ready | Cash, in RM, the money taken at the handover; its button says the figure and "cash" once one is typed. |
 | `order.cash-retry` | Order card (key: the order id), when the answer was lost | Sends the same cash again, or refreshes the card. |
 | `order.cash-undo` | Order card (key: the order id), while the cash is held | Undoes it, sending nothing. |
 | `order.claim-not-found` | Same card | Asks, on the Sheet, whether to answer that claim Not found. |
@@ -2489,7 +2524,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.reason-price` | Same sheet | Picks the price line as the reason. |
 | `order.reason-stock` | Same sheet | Picks the stock line as the reason. |
 | `order.received` | Same card | Confirms that payment. |
-| `order.received-amount` | Order card (key: the order id), acknowledged or ready | Another payment received, in RM. |
+| `order.received-amount` | Order card (key: the order id), acknowledged or ready | Bank, in RM, a payment that reached the bank; its button says the figure and "bank" once one is typed. |
 | `order.reply` | Same card | Sends the reply. |
 | `order.reply-text` | Same card | The reply to the customer. |
 | `order.reread` | Order card (key: the order id), placed or with a rejected pending row, after a read that failed, and on a placed order from the moment its total or charge is edited until the figures are read | Reads the figures again. |
@@ -2681,7 +2716,7 @@ text is redrawn from state, so the next tap that clears the note clears them wit
 
 **A book has no name here: its mark stands alone.** His word of 12 Oct 2026 ("and even the name of the product") took back decision 5 of 11 Oct, which had Salt
 Account say the Desk's name beside the mark. Where this page shows a book it draws the book's mark, his letter in it, and no word for it: not the Desk's name
-(`salt`, `oil`, `candy`, `rice`, `spare`) and not the shape (Cube, Droplet, Lozenge, Capsule, Ring). **A reader is told the shape**, as on the customer's page, through
+(`salt`, `oil`, `candy`, `rice`) and not the shape (Cube, Droplet, Lozenge, Capsule, Ring). **A reader is told the shape**, as on the customer's page, through
 a hidden `.sr` or an `aria-label` (`pshape`), never the product. An order's tile is the mark with *2 units* under it (`bookTile`, the customer's `mtile`), a
 heading the mark alone (`pmarkHead`, the associates' report card), a row's Product tag the dot and the mark (`bookTag`), a legend or a field about a book ends in the
 mark (a fourth label element, `[words, act, key, book]`), a tile of a form is the mark alone (`bookItem`), and a select, which cannot hold a mark, says the book's

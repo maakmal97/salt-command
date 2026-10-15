@@ -25,8 +25,8 @@
  *      _passwords.json.
  *
  * WHAT A RECORD HOLDS (03 Sep 2026, live statements): a verifier; the content key wrapped under
- * the password and, when the issue was made with it, under the master; the monthly bundle
- * sealed under that content key; and, once the deploy has run, the live document sealed under
+ * the password and, when the issue was made with it, under the master; an empty bundle (no monthly
+ * issue, since 15 Oct 2026) sealed under that content key; and, once the deploy has run, the live document sealed under
  * the same key with the moment it was written. The deploy rewrites the live document after every
  * fold. This Worker reads none of it: it hands the record over or it does not.
  *
@@ -328,7 +328,7 @@ async function handleOpen(request, env) {
   const session = byMaster ? null : await openSession(env, u, "password", request);
   const live = await customerLive(env, u, rec);
   return new Response(JSON.stringify({
-    ok: true, byMaster, issued: rec.issued || null, issues: rec.issues || null,
+    ok: true, byMaster, issued: rec.issued || null,
     wrap: byMaster ? null : (rec.wrap || null),
     wrapMaster: byMaster ? (rec.wrapMaster || null) : null,
     /* v702: whether this account may order on behalf of a friend. It decides one tick on the
@@ -369,7 +369,7 @@ async function handleCustomer(request, env, p, m, ctx) {
     const acct = await accountRecord(env, u);
     if (!acct) return signinAgain("signinOrders");
     const live = await customerLive(env, u, acct);
-    return json({ ok: true, u, issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc,
+    return json({ ok: true, u, issued: acct.issued || null, assoc: !!acct.assoc,
       card: acct.card || null, env: acct.env, ...live, prices: acct.prices || null });
   }
   /* S6 6.6: their word that they sent a figure against the account, for money owed on rows he entered on the desk.
@@ -668,7 +668,7 @@ async function handleRemember(request, env) {
   } catch (e) { /* the next open writes it */ }
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
-    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    issued: acct.issued || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
@@ -792,7 +792,7 @@ async function handlePasskeyOpen(request, env) {
   } catch (e) { /* the next open writes it */ }
   return json({
     ok: true, u, passkey: true, share: got.rec.share, wrap, prfWrap,
-    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    issued: acct.issued || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
@@ -825,7 +825,7 @@ async function handleSignin(request, env) {
   const live = await customerLive(env, rec.u, acct);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap,
-    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    issued: acct.issued || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
@@ -889,7 +889,7 @@ async function handleHandover(request, env, p, m) {
   const live = await customerLive(env, rec.u, acct);
   return json({
     ok: true, u: rec.u, remembered: true, wrap: rec.wrap, token: rec.token,
-    issued: acct.issued || null, issues: acct.issues || null, assoc: !!acct.assoc, card: acct.card || null,
+    issued: acct.issued || null, assoc: !!acct.assoc, card: acct.card || null,
     env: acct.env, ...live, prices: acct.prices || null, session
   });
 }
@@ -1330,7 +1330,7 @@ export async function testStatement() {
     + '<div class="salt-lines__row" role="row" data-m="' + day.slice(0, 7) + '"><div class="salt-lines__date" role="cell">' + dmy + "</div>"
     + '<div class="salt-lines__what" role="cell">' + mtileSvg("salt", "1 unit") + '</div><div class="salt-lines__amount" role="cell">RM 100.00</div>'
     + '<div class="salt-lines__state salt-lines__state--verdigris" role="cell">settled</div></div></div>';
-  return { v: 1, issued: day, statements: [{ issued: day, label: "Test", body }] };
+  return { v: 1, issued: day, body };
 }
 function testPrices() {
   const now = new Date(), day = now.toISOString().slice(0, 10);
@@ -1371,10 +1371,10 @@ async function makeTest(env, body) {
   const vbits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: vsalt, iterations: 10000, hash: "SHA-256" }, vbase, 256);
   const bundle = await testStatement();
   const rec = {
-    u: t, test: true, issued: bundle.issued, issues: [bundle.issued],
+    u: t, test: true, issued: bundle.issued,
     verifier: { salt: b64e(vsalt), hash: b64e(new Uint8Array(vbits)), rounds: 10000 },
-    wrap, env: await sealed(bundle),
-    live: Object.assign({ at: new Date().toISOString() }, await sealed({ at: new Date().toISOString(), body: bundle.statements[0].body })),
+    wrap, env: await sealed({ v: 1, issued: bundle.issued, statements: [] }),
+    live: Object.assign({ at: new Date().toISOString() }, await sealed({ at: new Date().toISOString(), body: bundle.body })),
     prices: Object.assign({ at: new Date().toISOString(), week: testPrices().week.monday }, await sealed(testPrices()))
   };
   if (wrapMaster) rec.wrapMaster = wrapMaster;

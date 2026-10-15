@@ -314,4 +314,54 @@ export async function run({ ok, pageWork }) {
       && !!drawn && prop(drawn, "width") === "18px" && prop(drawn, "height") === "18px",
       "its label is a 44px target as well, round the 18px box it draws: " + (tick && tick.cssText));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+
+  /* 5. THE HEAD IS PROGRESS AND MONEY RECEIVED IS ONE BLOCK (15 Oct 2026): an agreed order's head reads Owed, Paid, Handed and Says sent; Money received holds the
+     claims, Bank and Cash in that order with the reply and their last line below it; each road names itself on its button once a figure is typed; cash held shuts the reply */
+  const patch = { "ord-r1": { paid: 40, moved: 0.5, claimed: 20, msgs: [{ by: "customer", at: "2026-10-10T08:00:00.000Z", text: "Can you come after five?" }] } };
+  p = await richOwnerPage({ pageWork, review: (j) => { for (const o of j.orders) Object.assign(o, patch[o.id] || {}); return j; } });
+  try {
+    const d = p.d, w = p.w;
+    await p.work.quiet();
+    const tapRow = async (id) => { const r = byAct(d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
+    const part = async (name) => { byAct(d, "part.orders." + name).click(); await p.work.quiet(); };
+    const cardOf = (id) => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === id) || null;
+    const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING);
+    const typed = (el, v) => { el.value = v; el.dispatchEvent(new w.Event("input", { bubbles: true })); };
+    const head = (id) => (cardOf(id).querySelector(".salt-metrics") || { textContent: "" }).textContent.replace(/\s+/g, " ");
+    const money = (c) => [...c.querySelectorAll("h4")].find((h) => h.textContent === "Money received");
+    byAct(d, "nav.orders").click(); await p.work.quiet();
+    await tapRow("ord-p1");
+    ok(/Goods RM 200\.00/.test(head("ord-p1")) && !/Owed/.test(head("ord-p1")) && !cardOf("ord-p1").querySelector(".rdet").textContent.includes("Goods"),
+      "a placed order keeps Goods in its head, with no figure owed: " + head("ord-p1"));
+    await part("ready"); await tapRow("ord-r1");
+    const r1 = cardOf("ord-r1");
+    ok(/Owed RM 60\.00/.test(head("ord-r1")) && /Paid RM 40\.00/.test(head("ord-r1")) && /Handed 0\.5 of 1/.test(head("ord-r1")) && /Says sent RM 20\.00/.test(head("ord-r1")) && !/Goods/.test(head("ord-r1")),
+      "a ready order's head is what it owes, what is paid, what is handed over and what they say they sent: " + head("ord-r1"));
+    ok(/Goods\s*RM 100\.00/.test(r1.querySelector(".rdet").textContent), "and its goods stand in Details");
+    await tapRow("ord-r2");
+    ok(!/Says sent/.test(head("ord-r2")) && /Owed RM 100\.00/.test(head("ord-r2")) && /Handed 0 of 1/.test(head("ord-r2")), "an order with no claim says none: " + head("ord-r2"));
+    const r2 = cardOf("ord-r2"), bank = byAct(r2, "order.received-amount"), cashIn = byAct(r2, "order.cash-amount");
+    ok(!!money(r2) && before(money(r2), bank) && before(byAct(r2, "order.received"), cashIn) && before(cashIn, byAct(r2, "order.reply-text")),
+      "a ready order's Money received holds Bank, then Cash, and the reply stands below them");
+    ok(byAct(r2, "order.received").textContent === "Record bank payment" && byAct(r2, "order.cash").textContent === "Record cash", "each button says its road with no figure typed");
+    typed(bank, "25"); typed(cashIn, "50");
+    ok(byAct(r2, "order.received").textContent === "Record RM 25.00, bank" && byAct(r2, "order.cash").textContent === "Record RM 50.00, cash",
+      "and the figure and the road once one is typed: " + byAct(r2, "order.received").textContent + " / " + byAct(r2, "order.cash").textContent);
+    typed(cashIn, "");
+    ok(byAct(r2, "order.cash").textContent === "Record cash", "a figure cleared takes the figure off the button");
+    ok(![...r2.querySelectorAll(".maker-facts")].some((x) => /They wrote/.test(x.textContent)), "an order with no message of theirs draws no line of theirs");
+    const said = [...r1.querySelectorAll(".maker-facts")].find((x) => /They wrote/.test(x.textContent));
+    ok(!!said && /Can you come after five\?/.test(said.textContent) && before(byAct(r1, "order.cash-amount"), said) && before(said, byAct(r1, "order.reply-text")),
+      "their last line stands above the reply, below the money: " + (said && said.textContent));
+    typed(cashIn, "50");
+    byAct(r2, "order.cash").click(); await p.work.quiet();
+    const held = cardOf("ord-r2"), live = [...held.querySelectorAll("button,input,select")].filter((n) => !n.disabled).map((n) => n.getAttribute("data-act") || n.tagName);
+    ok(!!byAct(held, "order.cash-undo") && same(live, ["order.cash-undo"]),
+      "cash held shuts the reply and every other control of the card, and only Undo is live: " + JSON.stringify(live));
+    byAct(d, "order.cash-undo").click(); await p.work.quiet();
+    await part("confirmed"); await tapRow("ord-a1");
+    const a1 = cardOf("ord-a1");
+    ok(!byAct(a1, "order.cash-amount") && !!byAct(a1, "order.claim-received") && before(money(a1), byAct(a1, "order.claim-received")) && before(byAct(a1, "order.claim-received"), byAct(a1, "order.received-amount")) && before(byAct(a1, "order.received"), byAct(a1, "order.reply-text")),
+      "an agreed order's Money received holds their claim first, then Bank and no cash, with the reply below");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

@@ -705,8 +705,15 @@ body.ended>*:not(#aEnded){display:none}
 .adm .formrow .salt-inbox-row__title{gap:6px}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
 .adm .formrow{min-height:44px}
-.adm .apphead{appearance:none;background:none;border:0;padding:0;margin:0;width:100%;min-height:44px;text-align:left;color:inherit;font:inherit;cursor:pointer;align-items:center}
-.adm .apcard{cursor:pointer}
+.adm .apphead{min-height:44px;align-items:center}
+.adm .apverb{margin:0}
+.adm .apnow{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.adm .apnow th,.adm .apnow td{text-align:right;padding:4px 0 4px 12px;font-weight:400}
+.adm .apnow th:first-child{text-align:left;padding-left:0;color:var(--salt-text-muted)}
+.adm .apnow thead th{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+.adm .apnow .apchg strong{font-weight:700;color:var(--salt-text)}
+.adm .apflag{white-space:normal}
+.adm .apbang{font-weight:700}
 .adm .apfigs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px}
 .adm .apcard .rdet--row{margin:0}
 .adm .maker-offers__head{margin:16px 0 4px}
@@ -724,6 +731,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .nlist .glink{margin:0}
 .adm .nlist .nsev{margin:8px 0 -4px}
 .adm .nchips{margin:0 0 16px}
+.adm .nfail{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:0 0 12px}
+.adm .nfail[hidden]{display:none}
+.adm .nfail__what{margin:0;flex:1 1 12em}
 .adm .nchips .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 .adm .need .salt-action__title{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
 .adm .need .need-what{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
@@ -1475,6 +1485,8 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
         + '<div id="mHome" data-in="needs">'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
+        /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
+        + '<div id="nFail" class="salt-action salt-action--now nfail" role="alert" hidden></div>'
         + "<h1>Needs you</h1>"
         + '<p class="lead" id="nCount">Reading what needs you.</p>'
         + '<div class="salt-tabs nchips" role="tablist" aria-label="Show">' + ADMIN_KINDS.map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-chip="' + k
@@ -3329,7 +3341,8 @@ const CLIENT_JS = `
     var g=gridOf(P), i=g?gridIx(g,q):-1; if(i>=0&&typeof g.p[i]==='number') return g.p[i];
     var z=(P.sizes||[]).filter(function(x){ return String(x.q)===String(q); })[0]; return z?z.price:null; }
   var ASK_CAP=1000;   /* the Worker's own limit on a size (checkPlacement) */
-  function overMax(P,q){ var g=gridOf(P); return !!g&&+q>g.max+1e-9&&+q<=ASK_CAP; }
+  /* past the max a size is still a whole number of steps from min (the Worker's onStep with past), so Negotiate never takes an off-step size */
+  function overMax(P,q){ var g=gridOf(P), k=g?(+q-g.min)/g.step:0; return !!g&&+q>g.max+1e-9&&+q<=ASK_CAP&&Math.abs(k-Math.round(k))<1e-6; }
   /* what the page says where nothing can be ordered: a list with nothing priced, or no list at all */
   function noOrderLine(){ return tw(prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'ord.opensSet':'ord.opensList'); }
   async function api(path, body, method){
@@ -6167,7 +6180,8 @@ const CLIENT_JS = `
     else if(body.liveStatus==='unavailable') b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:'acct.unavailable'});
     else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:body.live?'acct.unread':'acct.later'});
     /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk. 14 Oct 2026 (his review):
-       off his View as them too, so no page draws an earlier statement */
+       off his View as them too, so no page draws an earlier statement. 15 Oct 2026: the publish no longer seals one into a record,
+       so this only cuts a record not yet republished */
     b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
     if(body.prices){ try{ x.prices=await openList(ck, body.prices); }catch(e){ /* the statements still open; the list is simply absent */ } }

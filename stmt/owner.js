@@ -25,7 +25,7 @@ export const OWNER_JS = `
   var makerGeo=${MAKER_GEO_JS};
   var mHome=document.getElementById('mHome'), oAccts=document.getElementById('oAccts'),
       oLinks=document.getElementById('oLinks'), aopen=document.getElementById('aopen'),
-      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, deskWait=null, sheetBusy=false;
+      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, sheetBusy=false;
   /* 11 Oct 2026: EVERY CONTROL CARRIES A STABLE data-act, "<place>.<thing>", named by what the control does and never by its words, so a
      later change of label, class or layout leaves whatever finds a control by its act where it was (docs/STATEMENTS.md). A control drawn
      once for each item of a list also carries the item's id as data-key. Where a helper makes the control, its label may be
@@ -175,7 +175,7 @@ export const OWNER_JS = `
       var j=await refs('/all/sheet');
       nGot('sheet');
       if(!changed('sheet',[j.accounts,j.desk,j.stranger,j.issue])&&quiet===true) return;
-      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; deskWait=j.desk||null; stranger=j.stranger||null;
+      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; stranger=j.stranger||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
       drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true);
       if(aOpen) openCard(aOpen);
@@ -2312,6 +2312,8 @@ export const OWNER_JS = `
           +(refund!=null?', and '+rm(refund)+' already paid becomes a refund you owe '+row.party:'')+'.'));
       }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
+    /* plan 1: Needs you's owed cards open this form on their row, as goods or cash moved (amendFor) */
+    amendPick=function(rid){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; patchList.textContent=''; kindsFor(); editKind.value='Fulfilment'; drawKind(); return true; };
     var editorButton=makerButton(editor,['Send the correction','record.amend.send'],async function(send){
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
       if(body.kind==='Correction')body.fields=Object.assign({},changes);
@@ -2717,8 +2719,9 @@ export const OWNER_JS = `
       card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
       note.textContent=makerCashStorageError;
     }else{
-      var cash=makerField(card,['Cash received','order.cash-amount'],'number','');
-      makerButton(card,['Record cash','order.cash'],function(){makerCashHold(order,Number(cash.value));},false);
+      var cash=makerField(card,['Cash, RM','order.cash-amount'],'number','');
+      var record=makerButton(card,['Record cash','order.cash'],function(){makerCashHold(order,Number(cash.value));},false);
+      cash.addEventListener('input',function(){ record.textContent=Number(cash.value)>0?'Record '+rm(cash.value)+', cash':'Record cash'; });
       note.textContent=makerCashSaid[order.id]||'';
     }
     card.appendChild(note);
@@ -2906,6 +2909,9 @@ export const OWNER_JS = `
   }
   /* replyOnly is a closed order: only his answer to their question, and no Decline, Cancel or reason */
   function makerOrderMoves(card,order,replyOnly,acts){
+    /* 15 Oct 2026: their last line stands above the reply, so the field has something to answer (the card drew no line of theirs before; Needs you did) */
+    var theirs=((order&&order.msgs)||[]).filter(function(m){ return m.by==='customer'&&m.text; }).slice(-1)[0];
+    if(theirs) card.appendChild(el('p','maker-facts','They wrote, '+fmtWhen(theirs.at)+': '+theirs.text));
     var said=makerField(card,['Answer them','order.reply-text'],'text','');
     makerQuick().forEach(function(line,i){
       makerButton(card,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
@@ -2977,7 +2983,7 @@ export const OWNER_JS = `
     [].slice.call(box.children).forEach(function(n){
       if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
     });
-    applyRepay();
+    applyRepay(); applyAmend();
   }
   function openForm(slug){
     var form=document.querySelector('#makerInputs [data-form="'+slug+'"]');
@@ -3546,7 +3552,7 @@ export const OWNER_JS = `
         drawMaker();if(status) refusal(status,error); if(rows) refusal(rows,error);
         var failed0=document.getElementById('makerRefreshSaid'); if(failed0){ refusal(failed0,error); if(failed0.scrollIntoView) failed0.scrollIntoView({block:'nearest'}); }
       }
-    }finally{ if(gen===makerGen){ reviewReading=false; if(apply) drawNeeds(); } }
+    }finally{ if(gen===makerGen){ reviewReading=false; ordFocus=null; if(apply) drawNeeds(); } }
   }
   /* 14 Oct 2026, HIS DECISION: THE PARTS OF ORDERS ARE THE CUSTOMER'S STAGES, Placed, Confirmed, Ready, Done and Ended (declined or cancelled), and an
      order is in exactly ONE. What waits on him is no part but a mark on the order's row (orderWaits: a placed order, a payment they say they sent, a stage
@@ -3570,7 +3576,7 @@ export const OWNER_JS = `
      card in #makerReview, today's card with every control, request and guard as it was, drawn for the order opened and no other. From 860px
      the list stands beside the card; below it the card takes the list's place, with a way back. A row has no preview: that read is the
      card's. Leaving the place or the part closes the card. */
-  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false;
+  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null;
   var ORD_STAGE={placed:['copper','Waiting on you'], acknowledged:['brass','Agreed'], ready:['verdigris','Ready'], done:['mist','Done'], declined:['mist','Declined'], cancelled:['mist','Cancelled']};
   function ordInPart(e){ return e.parts.split(' ').indexOf('orders.'+partNow)>=0; }
   function orderRow(e){
@@ -3630,6 +3636,7 @@ export const OWNER_JS = `
     var back=el('button','aback','← Orders'); back.type='button'; back.setAttribute('data-back','orders'); back.setAttribute('data-in',e.parts); actOn(back,'order.back');
     root.appendChild(back);
     if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else orderPlainCard(root,e);
+    focusOrderAt();
   }
   function openOrder(id){
     var e=ordEntries[id];
@@ -3663,32 +3670,55 @@ export const OWNER_JS = `
      row of the trip) by its mark, its code, its size and its figure and says what follows; its one action sends the request the confirm let through, the same route
      and the same empty body, and the ghost, the close control, the scrim and Escape send nothing. What is approved is the ROW AS DRAFTED, never recomputed. */
   function deskAskRow(item){
-    var e=item.entry||{};
-    return askRow(e.party||'no code', rm(item.total), [entryWord(e), item.qty==null?'':units(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null?bookTile(item.product,item.qty):null);
+    var rid=draftRid(item);
+    return askRow((rid?rid+' · ':'')+(draftParty(item)||'no code'), item.amends?'':rm(item.total), [moveWord(item), item.amends||item.qty==null?'':units(item.qty)].filter(Boolean).join(', '), item.product&&item.qty!=null&&!item.amends?bookTile(item.product,item.qty):null);
   }
-  function deskAskRows(draft){ var sibs=tripRows(draft); return (sibs.length?sibs:[draft]).map(deskAskRow); }
+  function deskAskRows(draft){ return groupOf(draft).drafts.map(deskAskRow); }
   /* a row's Approve and Reject, and a trip's: Approve, or Approve both for two books and Approve all for more */
   function approveWord(n){ return n?(n===2?'Approve both':'Approve all'):'Approve'; }
   function rejectWord(n){ return n?(n===2?'Reject both':'Reject all'):'Reject'; }
   /* THE ONE APPROVE of a Desk row, Record > Approve's button and Needs you's pill alike: the same question, the same request, the same
      answer line. It resolves true when the row was approved, false when it was not, and nothing when it was not asked (he declined, or a
      tap is already out). opener is the control that asked and key what it asks (its data-yn); going is told when he says yes, before the request goes. */
+  /* PLAN 2 (16 Oct 2026): ONE CARD, ONE APPROVE. The Sheet lists every draft the card holds, as it stood when he tapped; his yes decides exactly those. A trip is one
+     request (the Desk decides its rows in one batch); moves on one row are each draft's own approval, sent in the order they were entered, stopping at the first the
+     Desk refuses, which the answer names. What one approval does is unchanged. */
   function approveDraft(draft,opener,key,going){
-    var trip=tripRows(draft).length>0;
-    return ownerAsk(opener,key,{title:trip?'Approve every row of this trip?':'Approve this row?', extra:deskAskRows(draft), plain:true,
-      say:[trip?'Every row of the trip is approved as drafted, with the cost, margin and flags shown. This tap decides them all.':'The row is approved as drafted, with the cost, margin and flags shown.'],
-      go:approveWord(tripRows(draft).length), keep:'Not yet'}).then(function(yes){
+    var g=groupOf(draft), many=g.drafts.length>1;
+    return ownerAsk(opener,key,{title:g.trip?'Approve every row of this trip?':many?'Approve every move on this order?':'Approve this row?', extra:g.drafts.map(deskAskRow), plain:true,
+      say:[g.trip?'Every row of the trip is approved as drafted, with the cost, margin and flags shown. This tap decides them all.'
+        :many?'Each move is approved as drafted, in the order it was entered. If the Desk refuses one, the moves after it wait and you are told which.'
+        :'The row is approved as drafted, with the cost, margin and flags shown.'],
+      go:approveLabel(g), keep:'Not yet'}).then(function(yes){
       if(!yes) return;
       if(going) going();
-      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/approve',{},'Row approved.','draft:'+draft.id);
+      if(g.trip||!many) return makerAction('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/approve',{},'Row approved.','draft:'+g.lead.id);
+      return decideInOrder(g,'approve');
     });
   }
   function rejectDraft(draft,opener,key){
-    var trip=tripRows(draft).length>0;
-    return ownerAsk(opener,key,{title:trip?'Reject every row of this trip?':'Reject this row?', extra:deskAskRows(draft),
-      say:[trip?'Every row of the trip is rejected and none is recorded.':'The row is rejected and nothing is recorded.'], go:rejectWord(tripRows(draft).length), keep:'Keep it'}).then(function(yes){
+    var g=groupOf(draft), many=g.drafts.length>1;
+    return ownerAsk(opener,key,{title:g.trip?'Reject every row of this trip?':many?'Reject every move on this order?':'Reject this row?', extra:g.drafts.map(deskAskRow),
+      say:[g.trip?'Every row of the trip is rejected and none is recorded.':many?'Each move is rejected and none is recorded.':'The row is rejected and nothing is recorded.'],
+      go:g.trip?rejectWord(g.drafts.length):many?'Reject all':'Reject', keep:'Keep it'}).then(function(yes){
       if(!yes) return;
-      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject',{},'Row rejected.','draft:'+draft.id);
+      if(g.trip||!many) return makerAction('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/reject',{},'Row rejected.','draft:'+g.lead.id);
+      return decideInOrder(g,'reject');
+    });
+  }
+  /* each draft of the card in turn, the next only once the last was taken; the first refusal stops the rest and is named, with how many went before it */
+  function decideInOrder(g,verb){
+    if(makerBusy) return Promise.resolve();
+    makerBusy=true;
+    var key='draft:'+g.lead.id, n=g.drafts.length, done=0, word=verb==='approve'?'approved':'rejected';
+    function next(){
+      if(done>=n) return Promise.resolve();
+      return refs('/all/maker/drafts/'+encodeURIComponent(g.drafts[done].id)+'/'+verb,{}).then(function(){ done++; return next(); });
+    }
+    function settle(said,error,ok){ makerBusy=false; return loadMaker().then(function(){ makerSay(key,said,error); return ok; },function(){ makerSay(key,said,error); return ok; }); }
+    return next().then(function(){ return settle(n===2?'Both moves '+word+'.':'All '+n+' moves '+word+'.',null,true); },function(error){
+      var d=g.drafts[done];
+      return settle((done?done+' of '+n+' '+word+'. ':'')+'Move '+(done+1)+', '+moveWord(d).toLowerCase()+', was not '+word+': '+error.message+(done<n-1?' The moves after it wait under Approve.':''),error,false);
     });
   }
   function drawMaker(){
@@ -3757,8 +3787,14 @@ export const OWNER_JS = `
     orderTitle.appendChild(document.createTextNode(' '+units(order.qty)+', '+rm(order.total)+(order.delivery?' + '+rm(order.delivery):'')));
     card.appendChild(orderTitle);
     line.appendChild(chip(st[0],st[1])); card.appendChild(line);
-    card.appendChild(metrics([['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
-    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));
+    /* 15 Oct 2026: an agreed order's head is its progress, what is owed, what is paid and what is handed over, and what they say they sent; the goods and the
+       delivery charge are already in the title and stand in Details. A placed, declined or cancelled order has no agreed figure to owe, so it keeps Goods. */
+    var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
+    card.appendChild(metrics(agreed
+      ?[['Owed',rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))],['Paid',rm(order.paid||0)],['Handed',moved+' of '+units(order.qty)]].concat(+order.claimed>0?[['Says sent',rm(order.claimed)]]:[])
+      :[['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
+    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]
+      .concat(agreed?[['Goods',rm(order.total)],['Delivery',order.delivery?rm(order.delivery):'']]:[])));
   }
   /* the card of an open order: every control it had, on the order opened alone */
   function orderCard(root,order){
@@ -3967,6 +4003,9 @@ export const OWNER_JS = `
         }
       }
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
+        /* 15 Oct 2026: MONEY RECEIVED IS ONE BLOCK, in the order the money comes: their claim answered, a payment into the bank, then cash at the handover (Ready only).
+           Each road names itself on its field and on its button once a figure is typed; the reply stands below it, with their last line. */
+        var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           /* a claim above what the order still owes is money he recorded another way: the Desk's Received, already recorded */
           var onBook=Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004;
@@ -3990,11 +4029,12 @@ export const OWNER_JS = `
           },false);
           makerAskTag(order,lost,'lost-'+payment.at);
         });
-        var received=makerField(card,['Payment received, RM','order.received-amount'],'number','');
-        var recv=makerButton(card,['Record payment','order.received'],function(){
+        var received=makerField(card,['Bank, RM','order.received-amount'],'number','');
+        var recv=makerButton(card,['Record bank payment','order.received'],function(){
           makerTap(order,'received',{amount:Number(received.value)},'Sent to the Desk.');
         },false);
-        received.addEventListener('input',function(){ recv.textContent=Number(received.value)>0?'Record '+rm(received.value):'Record payment'; });
+        received.addEventListener('input',function(){ recv.textContent=Number(received.value)>0?'Record '+rm(received.value)+', bank':'Record bank payment'; });
+        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; }
       }
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
@@ -4003,7 +4043,9 @@ export const OWNER_JS = `
       }
       makerAgain(card,order,acts);
       makerOrderMoves(card,order,false,acts);
-      if(order.status==='ready'&&!againAck){ makerCashControls(card,order); cashed=true; }
+      /* cash held for the order shuts every control of the card, the reply's too, which is drawn after the cash block: its Undo or Retry alone stays live */
+      if(cashed&&(makerCashHeld[order.id]||makerCashStorageError)) [].forEach.call(card.querySelectorAll('button,input,select'),function(n){
+        if(!n.hasAttribute('data-maker-cash-undo')&&!n.hasAttribute('data-maker-cash-retry')) n.disabled=true; });
       makerCardFoot(card,acts,order.id,cashed,!!quoteStart);
       if(quoteStart) quoteStart();
       return card;
@@ -4051,53 +4093,183 @@ export const OWNER_JS = `
     return card;
   }
   /* the Desk's rows waiting for him and the entries the server holds, on Record > Approve */
-  /* 12 Oct 2026 (Phase 2c): A ROW TO APPROVE IS THE SYSTEM'S APPROVE CARD (salt-approve, carried whole by SITE_RECIPES and restated nowhere). The card leads with what decides
-     it, read off the draft and computed nowhere: its code and the entry as typed in the head, the row's figure, cost and margin, the flags it was drafted with as chips (they
-     freeze at drafting), the drafter's reasoning, and the row itself folded; then the two moves, Approve filled and Reject the danger ghost. A trip's rows stand in one card
-     with one Approve. Both moves ask on the page's Sheet. */
-  function approveReading(card,reading,key){
-    var figs=readingFigures(reading);
-    if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); }
-    var flags=reading.flags||[];
-    if(flags.length){ var chips=el('div','salt-approve__flags'); flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); }); card.appendChild(chips); }
-    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));
-    /* the row's figures as names and values, the draft's reference first (Phase 4c); the key is the draft's id */
-    var panel=el('div','rdet rdet--row'); panel.hidden=true; panel.appendChild(detailList(rowPairs(reading.row,key))); card.appendChild(panel);
+  /* 16 Oct 2026, PLAN 2 OF docs/plans-counter-admin.html: THE APPROVE CARD, FOR A PERSON. Still the system's approve card (salt-approve, carried whole by SITE_RECIPES and
+     restated nowhere), now saying what the change does rather than what the order is. Its head is the row, the customer's code and the book's mark, and where the entry
+     came from and when; then one plain verb; then Now and After, Paid, Owed and Handed over, read off the engine's figures the Desk sends with the draft (src/approve-figures.js)
+     and computed nowhere here, only what changes marked; then at most two lines that ask a decision; then Approve, saying the result, Reject and Details, which keeps the
+     drafter's whole note, every flag and the row. Every draft on one row, or on one trip, is one card and one Approve. */
+  function draftAt(d){ return String(d&&d.id||''); }
+  function draftParty(d){ var e=d.entry||{}, p=e.payload||{}; return d.party||e.party||p.party||''; }
+  function draftRid(d){ var r=d.row||{}, f=d.figures||{}; return f.rid||r.rid||(/^[a-z]{1,3}[0-9]+$/i.test(String(d.amends||''))?d.amends:''); }
+  /* where the entry came from: Counter Admin's own inputs carry their request, a site order's its id (his taps on it are the Desk's own), the laptop's queue holds the bare
+     payload, and the phone typed the rest */
+  function draftFrom(d){
+    var e=d.entry||{};
+    if(e.makerRequest) return 'Counter Admin';
+    if(e.orderId) return e.by==='desk'||e.counter?'Counter Admin':'the site';
+    if(!e.type&&e.payload) return 'laptop';
+    return e.type?'phone':'';
+  }
+  /* a trip's rows (the Desk decides them in one batch) or every move on one row is one card, in the order entered. A customer's claim stands alone: it is answered
+     on its order's card, never approved here, so it never shuts his own move on the same row (Fable's review of 16 Oct 2026) */
+  function draftClaim(d){ var e=d.entry||{}; return !!(e.claim||e.fulfil&&e.fulfil.claim); }
+  function draftGroups(rows){
+    var by={}, out=[];
+    rows.slice().sort(function(a,b){ return draftAt(a)<draftAt(b)?-1:draftAt(a)>draftAt(b)?1:0; }).forEach(function(d){
+      var t=tripOf(d), k=t&&tripRows(d).length?'trip:'+t:d.amends&&!draftClaim(d)?'row:'+d.collection+':'+d.amends:'draft:'+d.id;
+      if(!by[k]){ by[k]={key:k, trip:k.indexOf('trip:')===0, drafts:[]}; out.push(by[k]); }
+      by[k].drafts.push(d);
+    });
+    out.forEach(function(g){ g.lead=g.drafts[0]; g.last=g.drafts[g.drafts.length-1]; });
+    return out;
+  }
+  function groupOf(d){
+    var hit=draftGroups(pendingRows()).filter(function(g){ return g.drafts.some(function(x){ return x.id===d.id; }); })[0];
+    return hit||{key:'draft:'+d.id, trip:false, drafts:[d], lead:d, last:d};
+  }
+  /* WHAT ONE MOVE DOES, in a word a person uses: off the draft's kind, the fields it changes and which way. Correction and Fulfilment are the book's words, not his. */
+  var AP_MONEY=['cash','settledRM','paidOn'], AP_HAND=['deliveredQty','deliveredOn','handover','settledKg'], AP_PRICE=['total','qty','delivery'];
+  function moveKind(d){
+    var e=d.entry||{}, p=e.payload||{}, kind=d.amendKind||p.kind;
+    if(d.collection!=='sales'&&d.collection!=='purchases') return 'other';
+    if(!d.amends) return d.collection==='purchases'?'buy':'sell';
+    if(kind==='Cancellation') return 'cancel';
+    if(kind==='Modification') return 'price';
+    if(kind==='Default') return 'default';
+    if(kind==='Correction'){
+      var f=p.fields||{}, keys=Object.keys(f), ch=(d.row&&d.row.changes)||[];
+      var from=function(k){ var c=ch.filter(function(x){ return x.field===k; })[0]; return c?+c.from||0:null; };
+      var only=function(set){ return keys.length>0&&keys.every(function(k){ return set.indexOf(k)>=0; }); };
+      var some=function(set){ return keys.some(function(k){ return set.indexOf(k)>=0; }); };
+      if(some(AP_HAND)&&some(AP_PRICE)&&only(AP_HAND.concat(AP_PRICE,AP_MONEY))
+        &&f.deliveredQty!=null&&+f.deliveredQty>=+(f.qty!=null?f.qty:(d.row||{}).qty||0)-0.0005) return 'close';
+      if(only(AP_MONEY)&&f.cash!=null&&from('cash')!=null) return +f.cash<from('cash')?'unpay':'pay';
+      if(only(AP_HAND)&&f.deliveredQty!=null&&from('deliveredQty')!=null) return +f.deliveredQty<from('deliveredQty')?'unhand':'hand';
+      if(only(AP_PRICE)) return 'price';
+      return 'fix';
+    }
+    var cash=+p.cash||0, kg=+p.kg||0;
+    if(d.collection==='purchases') return kg>0.0005?'receive':cash>0.005?'paidout':'fix';
+    return cash>0.005&&kg>0.0005?'payhand':kg>0.0005?'hand':cash>0.005?'pay':'fix';
+  }
+  var AP_WORD={sell:'New sale', buy:'New purchase', cancel:'Cancel the order', price:'Change the price', 'default':'Never delivered', close:'Close the order', pay:'Payment received',
+    unpay:'Take back a payment', hand:'Handover', unhand:'Take back a handover', payhand:'Handover and payment', receive:'Goods received', paidout:'Payment made', fix:'Fix a row'};
+  function moveWord(d){ var k=moveKind(d); return k==='other'?entryWord(d.entry||{}):AP_WORD[k]; }
+  /* the card's one verb: a close among its moves closes the order; moves of one kind keep it; a payment and a handover together are both; anything else fixes a row */
+  function groupKind(g){
+    var ks=g.drafts.map(moveKind), has=function(k){ return ks.indexOf(k)>=0; };
+    if(g.trip||ks.every(function(k){ return k===ks[0]; })) return ks[0];
+    if(has('close')&&ks.every(function(k){ return ['close','pay','hand','payhand','price'].indexOf(k)>=0; })) return 'close';
+    if(ks.every(function(k){ return ['pay','hand','payhand'].indexOf(k)>=0; })) return 'payhand';
+    return 'fix';
+  }
+  /* Now and After of the whole card: the first move's Now and the last's After, both the Desk's; none unless every move carries them */
+  function groupFigures(g){
+    if(g.trip||!g.drafts.every(function(d){ return d.figures&&d.figures.after; })) return null;
+    var a=g.lead.figures, b=g.last.figures;
+    return {now:a.now, after:b.after, party:a.party, owedNow:a.owedNow, owedAfter:b.owedAfter, ceiling:a.ceiling, approvedBefore:a.approvedBefore||0};
+  }
+  function handedSay(f){ return String(+(+f.handed||0).toFixed(3))+' of '+units(f.qty); }
+  /* THE BUTTON SAYS THE RESULT, read off the After the Desk sent; a card with no figures says its verb */
+  function approveLabel(g){
+    var k=groupKind(g), fg=groupFigures(g), rid=draftRid(g.lead), a=fg&&fg.after;
+    if(g.trip) return approveWord(g.drafts.length);
+    if(k==='sell') return 'Approve the sale';
+    if(k==='buy') return 'Approve the purchase';
+    if(k==='other') return 'Approve';
+    if(!rid) return 'Approve: '+AP_WORD[k].toLowerCase();
+    if(k==='close') return 'Approve: '+rid+' closed';
+    if(k==='cancel') return 'Approve: '+rid+' cancelled';
+    if(!a) return 'Approve: '+rid+', '+AP_WORD[k].toLowerCase();
+    var full=a.handed>=a.qty-0.0005, paid=!(a.owed>0.004);
+    if(k==='pay'||k==='unpay') return 'Approve: '+rid+(paid?' paid':' owes '+rm(a.owed));
+    if(k==='hand'||k==='unhand') return 'Approve: '+rid+(full?' handed over':' '+handedSay(a)+' handed over');
+    if(k==='payhand') return 'Approve: '+rid+(paid&&full?' closed':paid?' paid, '+handedSay(a)+' handed over':' owes '+rm(a.owed));
+    if(k==='price') return 'Approve: '+rid+' at '+rm(a.total);
+    return 'Approve: '+rid+' fixed';
+  }
+  /* Close the order says what it closes on: the goods' total, how it went, and that it was paid in cash */
+  function closeSay(g){
+    var fg=groupFigures(g), f={}, cash=false;
+    g.drafts.forEach(function(d){ var p=(d.entry||{}).payload||{}; Object.assign(f,p.fields||{}); if((+p.cash||0)>0.005) cash=true; });
+    var total=fg?fg.after.total:f.total;
+    return [total!=null?rm(total):'', f.handover==='collected'||f.handover==='delivered'?f.handover:'', cash?'paid cash':''].filter(Boolean).join(', ');
+  }
+  /* THE LINES THAT ASK A DECISION, two at most and in his words: what the customer will owe against the ceiling when the card raises it, then the drafter's flags that
+     ask one (under the floor, a refund opens, stock below zero, a twin). Every flag stands in Details whatever is drawn here. */
+  var AP_ASK=[[/under the floor|loses money/i,'floor'],[/refund|overpaid|more than the order is owed|more than it is worth/i,'refund'],
+    [/inventory the book puts at|owed out|unmeetable/i,'stock'],[/on the book by party, date, size and total/i,'twin']];
+  function sentenceCase(s){
+    s=noBook(s).replace(/\\b([A-Z][A-Z]+)\\b/g,function(w){ return /^(RM|COGS|ID|MYT)$/.test(w)?w:w.toLowerCase(); });
+    s=s.split(/[.!?] /)[0].split(', which')[0].split(': ')[0].replace(/[.]$/,'');
+    return s.charAt(0).toUpperCase()+s.slice(1)+'.';
+  }
+  function askLines(g){
+    var out=[], fg=groupFigures(g)||(g.drafts.length===1&&g.lead.figures), seen={};
+    /* over the ceiling always asks; under it, only a move on a booked row that raises what they owe (a payment taken back, a price raised), never a new sale */
+    if(fg&&fg.ceiling!=null&&fg.owedAfter>fg.owedNow+0.004&&fg.party&&(fg.owedAfter>fg.ceiling+0.004||g.lead.amends))
+      out.push(fg.owedAfter>fg.ceiling+0.004?fg.party+' will owe '+rm(fg.owedAfter)+', over the '+rm(fg.ceiling)+' ceiling.':fg.party+' will owe '+rm(fg.owedAfter)+' (under the '+rm(fg.ceiling)+' ceiling).');
+    g.drafts.forEach(function(d){ (d.flags||[]).forEach(function(f){
+      var hit=AP_ASK.filter(function(a){ return a[0].test(String(f)); })[0];
+      if(hit&&!seen[hit[1]]){ seen[hit[1]]=true; out.push(sentenceCase(String(f))); }
+    }); });
+    return out.slice(0,2);
+  }
+  function nowAfter(fg){
+    var tb=el('table','apnow'), hd=el('tr'), body=el('tbody'), thead=el('thead');
+    [['',''],['Now','col'],['After','col']].forEach(function(h){ var th=el('th','',h[0]); if(h[1]) th.setAttribute('scope','col'); hd.appendChild(th); });
+    thead.appendChild(hd); tb.appendChild(thead);
+    [['Paid',rm(fg.now.paid),rm(fg.after.paid)],['Owed',rm(fg.now.owed),rm(fg.after.owed)],['Handed over',handedSay(fg.now),handedSay(fg.after)]].forEach(function(r){
+      var tr=el('tr'), th=el('th','',r[0]); th.setAttribute('scope','row'); tr.appendChild(th);
+      tr.appendChild(el('td','',r[1]));
+      var td=el('td');
+      if(r[1]!==r[2]){ td.className='apchg'; td.appendChild(el('strong','',r[2])); } else td.textContent=r[2];
+      tr.appendChild(td); body.appendChild(tr);
+    });
+    tb.appendChild(body); return tb;
+  }
+  function apDetails(g){
+    var panel=el('div','rdet rdet--row'); panel.hidden=true;
+    g.drafts.forEach(function(d,i){
+      if(g.drafts.length>1) panel.appendChild(el('h4','',(g.trip?'Row ':'Move ')+(i+1)+' of '+g.drafts.length+': '+moveWord(d)));
+      if(d.reasoning) panel.appendChild(el('p','salt-approve__reason',noBook(d.reasoning)));
+      (d.flags||[]).forEach(function(f){ panel.appendChild(el('p','salt-insight apnote',noBook(f))); });
+      /* the draft's reference and the row in his words, and the row's id where the drafter left it off the row */
+      panel.appendChild(detailList(rowPairs(d.row,d.id).concat(d.row&&d.row.rid||!draftRid(d)?[]:[['Row reference',draftRid(d)]])));
+    });
+    return panel;
   }
   /* an entry waiting for the Desk, by its moment when it has one: Entry of 09 Oct 2026, 14:11 */
   function entryLine(entry){ var at=isoAt(entry.id)||entry.date||''; return 'Entry'+(at?' of '+fmtWhen(at):''); }
   function drawDeskRows(draftRoot,queueRoot,pendingRows){
-    var tripsDrawn={};
-    pendingRows.forEach(function(draft){
-      /* a trip is one card, drawn once, whichever of its rows comes first */
-      var tid=tripOf(draft); if(tid&&tripRows(draft).length){ if(tripsDrawn[tid]) return; tripsDrawn[tid]=true; }
-      var card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), entry=draft.entry||{}, head=el('button','salt-approve__head apphead');
-      /* the row's Details is the tap on the card: the head is its control, a tap anywhere on the card that is not a button of its own does the same */
-      head.type='button'; actOn(head,'row.proposed',draft.id); head.setAttribute('aria-expanded','false');
-      function toggle(){ var open=head.getAttribute('aria-expanded')!=='true'; head.setAttribute('aria-expanded',String(open)); [].forEach.call(card.querySelectorAll('.rdet--row'),function(n){ n.hidden=!open; }); }
-      head.addEventListener('click',function(ev){ ev.stopPropagation(); toggle(); });
-      card.addEventListener('click',function(ev){ if(!ev.target.closest('button,a,input,select,textarea,summary')) toggle(); });
-      head.appendChild(el('span','salt-approve__party',entry.party||'no code'));
-      var when1=fmtWhen(entry.date||entry.payload&&entry.payload.date||'');
-      head.appendChild(el('span','salt-approve__entry',entryWord(entry)+(when1?' on '+when1:'')));
+    draftGroups(pendingRows).forEach(function(g){
+      var draft=g.lead, card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), head=el('div','salt-approve__head apphead');
+      var rid=draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','salt-approve__party');
+      /* the head: the row, the customer's code and the book's mark; then where the entry came from, and when */
+      party.appendChild(document.createTextNode((rid?rid+' · ':'')+(draftParty(draft)||'no code')));
+      if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' · ')); party.appendChild(bookMark(draft.product)); }
+      head.appendChild(party);
+      head.appendChild(el('span','salt-approve__entry',[from?'from '+from:'',when].filter(Boolean).join(', ')));
       card.appendChild(head);
-      card.appendChild(bookLine(draft.qty,draft.product,draft.total));
-      approveReading(card,draft,draft.id);
-      var trip=tripOf(draft), siblings=tripRows(draft);
-      if(siblings.length){
-        card.appendChild(el('p','salt-insight',siblings.length===2?'Two books, one trip. Approve decides both.':siblings.length+' books, one trip. Approve decides all of them.'));
-        siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){
-          card.appendChild(bookLine(item.qty,item.product||'salt',item.total));
-          approveReading(card,item,item.id);
-        });
+      var kind=groupKind(g), verb=kind==='other'?entryWord(draft.entry||{}):AP_WORD[kind], fg=groupFigures(g), closed=kind==='close'?closeSay(g):'';
+      card.appendChild(el('h3','apverb',verb+(closed?': '+closed:'')));
+      if(fg&&fg.now) card.appendChild(nowAfter(fg));
+      else if(!draft.amends){
+        g.drafts.forEach(function(d){ card.appendChild(bookLine(d.qty,d.product||'salt',d.total)); var figs=readingFigures(d); if(figs.length){ var fr=metrics(figs); fr.classList.add('apfigs'); card.appendChild(fr); } });
+        if(g.trip) card.appendChild(el('p','salt-insight',g.drafts.length===2?'Two books, one trip. Approve decides both.':g.drafts.length+' books, one trip. Approve decides all of them.'));
       }
-      var claim=entry.claim||entry.fulfil&&entry.fulfil.claim;
+      if(fg&&fg.approvedBefore) card.appendChild(el('p','salt-insight aphalf','Half approved: '+(fg.approvedBefore===1?'one move':fg.approvedBefore+' moves')+' on this row approved before, waiting to be booked; '+(g.drafts.length===1?'this one waits for you.':'these wait for you.')));
+      askLines(g).forEach(function(line){ var p=el('p','salt-insight apflag'), bang=el('span','apbang','!'); bang.setAttribute('aria-hidden','true'); p.appendChild(bang); p.appendChild(document.createTextNode(' '+line)); card.appendChild(p); });
+      var claim=g.drafts.some(draftClaim);
       if(claim) card.appendChild(el('p','salt-insight','Answer this through the payment card.'));
-      var acts=el('div','salt-approve__actions'); card.appendChild(acts);
-      var approve=makerButton(acts,[approveWord(siblings.length),'draft.approve'],function(){ approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);
+      var panel=apDetails(g), acts=el('div','salt-approve__actions'); card.appendChild(acts);
+      var approve=makerButton(acts,[approveLabel(g),'draft.approve'],function(){ approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);
       approve.disabled=!!claim; ynTag(approve,'draft:'+draft.id+':approve');
-      var reject=makerButton(acts,[rejectWord(siblings.length),'draft.reject'],function(){ rejectDraft(draft,reject,'draft:'+draft.id+':reject'); },false);
+      var reject=makerButton(acts,[g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject','draft.reject'],function(){ rejectDraft(draft,reject,'draft:'+draft.id+':reject'); },false);
       reject.classList.add('salt-ghost--danger'); ynTag(reject,'draft:'+draft.id+':reject');
+      var more=makerButton(acts,['Details','row.proposed'],function(){ var open=more.getAttribute('aria-expanded')!=='true'; more.setAttribute('aria-expanded',String(open)); panel.hidden=!open; },false);
+      more.setAttribute('aria-expanded','false');
+      card.appendChild(panel);
       makerFoot(card,'draft:'+draft.id);
     });
     (makerData.refused||[]).forEach(function(refused){
@@ -4112,7 +4284,10 @@ export const OWNER_JS = `
       var held=(makerData.queue||[]).filter(function(e){ return e&&e.state!=='committed'&&e.state!=='approved'; }), counted=document.getElementById('makerQueueCount');
       /* the queue is a fold shut by default, titled and counted, so it is never read as missing: its count is read off the entries the server holds */
       if(counted) counted.textContent=String(held.length);
-      if(!held.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));
+      /* plan 1: a queue key the Desk could not read is said first, by its name, and never read as an empty queue */
+      var bad=unreadableKeys();
+      if(bad.length){ var ub=el('p','msg bad',unreadableLine(bad)); ub.setAttribute('data-unreadable',''); queueRoot.appendChild(ub); }
+      if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));
       held.forEach(function(entry){
         var card=makerCard(queueRoot), title=entry.state==='refused'?'Entry the Desk refused':'Entry waiting for the Desk'; card.setAttribute('data-key',entry.id);
         card.appendChild(el('h4','',title));
@@ -4277,14 +4452,14 @@ export const OWNER_JS = `
      His home: every thing that waits on him, one card each on the system's Action recipe (salt-action, coloured by --salt-sev), ranked
      Now, Soon, Watch and oldest first in each. NOW is a customer waiting: an order placed, a payment they say they sent (on an order or
      against the account), a message asked, an account whose address is refused. SOON is his own work: a Desk row to approve, an entry
-     that did not get through, a stage he rejected, a guest link, an ID with no account, accounts nobody has been sent. WATCH is the
-     Desk's own count, an override in force and a notice set. A practice item is drawn after the real ones, labelled, and counted nowhere.
+     that did not get through, a stage he rejected, a guest link, an ID with no account, accounts nobody has been sent, money owed past its term
+     and goods paid for and not handed over. WATCH is an override in force and a notice set. A practice item is drawn after the real ones, labelled, and counted nowhere.
      A card is its kind word, who (the code), what, its age, one Open that goes to the detail, and, only where the page already has that
      exact action as one tap, one filled pill that calls the same function with the same guards. NOTHING HERE BOOKS MONEY: Agree, Yes
      received and Cash stay on their cards in Orders, which Open reaches. Read off what the places read anyway (/all/sheet, /all/refs, the
      review, the claims, the threads, the hours and the notice). A tap is answered on its own card. */
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=30000;
-  var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice']];
+  var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice'],['book','what is owed']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
   var nFoldOpen={}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
@@ -4315,7 +4490,7 @@ export const OWNER_JS = `
      a line, bookTile mtile for a card (the mark, and under it "2.5 units"), bookTag the system's Product tag holding the mark, bookItem a tile of a form that is the
      mark alone, and pmarkHead, the customer's, a heading that is the mark alone. A select cannot hold a mark, so an option says the book's letter in brackets, [I],
      and nothing for a book with none. noBook takes a book's name out of a sentence the Desk or the Counter wrote, for the words that are not this page's to change. */
-  var BOOKS=/\\b(salt|oil|candy|rice|spare)\\b(?!\\s+(?:account|counter|command|desk)\\b)/gi;
+  var BOOKS=/\\b(salt|oil|candy|rice)\\b(?!\\s+(?:account|counter|command|desk)\\b)/gi;
   function noBook(text){
     return String(text==null?'':text).replace(BOOKS,function(w,k,at,all){ var before=all.slice(0,at); return /\\bthe\\s+$/i.test(before)?'book':/(^|[.!?]\\s)$/.test(before)?'The book':'the book'; });
   }
@@ -4535,21 +4710,21 @@ export const OWNER_JS = `
      that is a customer's claim is answered through Received on its order, so it has no pill. The answer stays on the card, which is drawn
      from the live row, and outlives it once the row is decided. */
   function rowNeed(d){
-    var e=d.entry||{}, claim=e.claim||(e.fulfil&&e.fulfil.claim), sibs=tripRows(d), said=needSaid['d:'+d.id];
-    return item('soon','rows','Row','d:'+d.id, isoAt(d.id), {who:e.party||'no code',
-      mark:d.qty==null?'':d.product, what:rowWhat(d),
+    var g=groupOf(d), claim=g.drafts.some(draftClaim), sibs=g.trip?g.drafts:[], said=needSaid['d:'+d.id], who=draftParty(d)||'no code';
+    return item('soon','rows','Row','d:'+d.id, isoAt(d.id), {who:who,
+      mark:d.qty==null?'':d.product, what:d.amends?[draftRid(d),moveWord(d)].filter(Boolean).join(', ')+(g.drafts.length>1&&!g.trip?', '+g.drafts.length+' moves':''):rowWhat(d),
       why:claim?'Answer this through the payment card.'
         :sibs.length?(sibs.length===2?'Two books, one trip. Approve decides both.':sibs.length+' books, one trip. Approve decides all of them.'):'',
       open:goPlace('record','approve')}, function(c){
       if(!claim){
-        var ap=pill([approveWord(sibs.length),'need.approve-row']);
+        var ap=pill([approveLabel(g),'need.approve-row']);
         ap.disabled=!!makerBusy; ynTag(ap,'need:draft:'+d.id+':approve');
         ap.addEventListener('click', function(){
           /* asked on the page's Sheet, with nothing shut until he says yes: a no leaves the pill and the card as they were */
           var said=false;
           approveDraft(d,ap,'need:draft:'+d.id+':approve',function(){ said=true; ap.disabled=true; }).then(function(ok){
             if(!said) return;
-            if(ok!==undefined) needSaid['d:'+d.id]={t:makerSaid['draft:'+d.id]||(ok?'Row approved.':'Not approved.'), bad:!ok, who:e.party||'no code'};
+            if(ok!==undefined) needSaid['d:'+d.id]={t:makerSaid['draft:'+d.id]||(ok?'Row approved.':'Not approved.'), bad:!ok, who:who};
             drawNeeds();
           });
         });
@@ -4561,6 +4736,14 @@ export const OWNER_JS = `
   /* a row he has just approved stays where he tapped it, saying what happened, and no longer waits on him */
   function decidedNeed(k, said){
     return item('soon','rows','Row',k, '', {who:said.who, what:'', why:said.t, counts:false, open:goPlace('record','approve')});
+  }
+  /* 15 Oct 2026 (plan 1, part 2): a device's queue key the Desk could not read (malformed, or with no matching device), named so he can mend it;
+     every other entry is read beside it */
+  function unreadableKeys(){ return (makerData&&makerData.unreadable||[]).filter(function(k){ return typeof k==='string'; }); }
+  function unreadableLine(keys){ return keys.length+(keys.length===1?' queue entry':' queue entries')+' unreadable: '+keys.join(', '); }
+  function unreadableNeed(keys){
+    return item('soon','rows','Entry','qx', '', {who:'Desk queue', what:unreadableLine(keys),
+      why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('record','approve')});
   }
   function entryNeed(r, key){
     return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', what:'did not get through',
@@ -4577,13 +4760,72 @@ export const OWNER_JS = `
     return item('now','messages','Message','m:'+t.u, last.at, {who:codeByUser(t.u), what:cut(last.text), practice:!!t.test,
       open:function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(t.u); }});
   }
-  /* the Watch cards: the Desk's own count as it last told this site, an override in force, a notice set */
-  function deskNeed(){
-    var dn=deskWait.n||0, dAt=deskWait.at?', as of '+when(deskWait.at):'';
-    /* S9 9.8 fix: the desk's own Waiting on you count, as fresh as the desk's last read, so it says when that was.
-       S9 fix: and in the past tense, saying so, once an order has moved since */
-    return item('watch','watch','Desk','w:desk', '', {who:'Desk', why:'The Desk shows '+(dn||'nothing')+' for you'+dAt+(deskWait.moved?'; an order has moved since.':'.')});
+  /* ---- 15 Oct 2026 (plan 1, parts 3 and 4): WHAT IS OWED, BOTH WAYS, as Soon cards, his own work. The figures are the Desk's (/all/maker/inputs, owedMoney
+     and owedGoods: src/maker-inputs.js owedBothWays over the engine's txAdvance, txUnpaidSince, the term and txStat), so nothing is reckoned here.
+     A card's button opens the site order its row belongs to (the order's ledgerKey is the row's ovKey) on Money received or the handover; a row
+     with no site order opens Record's Correct a row on that row, as goods or cash moved. The button opens; it books nothing. ---- */
+  var owed=null, owedReading=false;
+  async function loadOwed(){
+    if(owedReading) return;
+    owedReading=true;
+    var apply=false;
+    try{
+      var j=await refs('/all/maker/inputs'), c=(j&&j.catalog)||{};
+      if(!Array.isArray(c.owedMoney)||!Array.isArray(c.owedGoods)) throw new Error(c.owedError||c.error||'The Desk did not say what is owed.');
+      nGot('book');
+      var v={money:c.owedMoney, goods:c.owedGoods};
+      if(changed('book', v)){ owed=v; apply=true; }
+    }catch(error){ nGot('book', error); apply=true; }
+    owedReading=false;
+    if(apply) drawNeeds();
   }
+  /* the open site order a Desk row is, found by its key (a key of three parts is salt's, from before a key named its book) */
+  function siteOrderOf(r){
+    var key=String(r.key||''), three=key.split('|').slice(0,3).join('|');
+    return (makerData&&makerData.orders||[]).filter(function(o){
+      var k=typeof o.ledgerKey==='string'?o.ledgerKey:'';
+      return !o.test&&ordOpen(o)&&!!k&&(k===key||(k.split('|').length===3&&k===three&&(o.product||'salt')===r.product));
+    })[0]||null;
+  }
+  /* an order's card opened at one of its parts: Money received (data-sect money) or the handover (its units field) */
+  function openOrderAt(id, at){
+    orderOpener(id)();
+    /* kept through the read the place started, which draws the card again, and let go once that read lands (loadMaker) */
+    ordFocus={id:id, at:at}; focusOrderAt();
+    if(!reviewReading) ordFocus=null;
+  }
+  function focusOrderAt(){
+    if(!ordFocus||ordFocus.id!==ordOpened) return;
+    try{ var n=document.querySelector('#makerReview '+ordFocus.at); if(n){ if(n.scrollIntoView) n.scrollIntoView({block:'center'}); if(n.focus) n.focus(); } }catch(x){}
+  }
+  var amendWant=null, amendPick=null;
+  function applyAmend(){
+    if(!amendWant||!amendPick) return;
+    var rid=amendWant; amendWant=null;
+    if(amendPick(rid)) openForm('correct-a-row');
+  }
+  function amendFor(rid){ amendWant=rid; showPlace('record','entry',{fresh:true,push:true}); applyAmend(); }
+  function owedGo(r, sect){
+    var o=siteOrderOf(r);
+    if(o) openOrderAt(o.id, sect); else amendFor(r.rid);
+  }
+  function moneyNeed(m){
+    var first=m.rows[0];
+    return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, what:rm(m.rm)+' past term',
+      why:'Handed over '+fmtWhen(m.since)+', due '+fmtWhen(m.due)+'.'+(m.rows.length>1?' '+m.rows.length+' orders; the oldest opens.':''),
+      open:function(){ owedGo(first,'[data-sect="money"]'); }}, function(c){
+      var b=ghost(['Record payment','need.owed-pay',m.party]); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
+    });
+  }
+  function goodsNeed(r){
+    return item('soon','orders','To hand over','g:'+r.rid, r.date||'', {who:r.party, mark:r.product, what:units(r.units)+' paid, not handed over',
+      why:r.date?'Ordered '+fmtWhen(r.date)+'.':'', open:function(){ owedGo(r,'[data-act="order.handed-units"]'); }}, function(c){
+      var b=ghost(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-act="order.handed-units"]'); }); c._add(b);
+    });
+  }
+  /* the Watch cards: an override in force, a notice set. 15 Oct 2026 (plan 1, part 5): THE DESK'S OWN COUNT IS NO CARD. "The Desk shows 4 for you" named
+     nothing he could act on, and every kind it counts (the master's ordActs: an order placed, a question asked, a payment they say they sent, cash
+     to record on goods handed over) is a card of its own here: Order, Message, Payment, and Owed once past its term. */
   function hoursNeed(m){
     var wd=day3('en')[new Date(Date.parse(m.until)+28800000).getUTCDay()];
     return item('watch','watch','Hours','w:hours', '', {who:'Shop', what:(m.open?'Open':'Closed')+' until '+wd+' '+hm(m.until),
@@ -4675,17 +4917,19 @@ export const OWNER_JS = `
     makerThreads.filter(makerThreadAsked).forEach(function(t){ L.push(threadNeed(t)); });
     real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ L.push(lockNeed(a)); });
     var rows=pendingRows();
-    rows.forEach(function(d){ L.push(rowNeed(d)); });
+    draftGroups(rows).forEach(function(g){ L.push(rowNeed(g.lead)); });
     Object.keys(needSaid).filter(function(k){ return !rows.some(function(d){ return 'd:'+d.id===k; }); }).forEach(function(k){ L.push(decidedNeed(k, needSaid[k])); });
     (makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
+    if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
+    if(owed) owed.money.forEach(function(m){ if(m&&m.rows&&m.rows.length) L.push(moneyNeed(m)); });
+    if(owed) owed.goods.forEach(function(r){ if(r&&r.rid) L.push(goodsNeed(r)); });
     unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
     /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
     links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); }).forEach(function(r){ L.push(linkNeed(r)); });
     real.filter(function(a){ return a.account===false; }).forEach(function(a){ L.push(bareNeed(a)); });
     var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
     if(turn||fresh.length) L.push(turn?turnCard(fresh.length>0):sendNeed(fresh));
-    if(deskWait) L.push(deskNeed());
     var manual=makerHours&&makerHours.status&&makerHours.status.source==='manual'&&makerHours.config&&makerHours.config.manual;
     if(manual) L.push(hoursNeed(manual));
     if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));
@@ -4706,15 +4950,31 @@ export const OWNER_JS = `
     setCount('record', pendingRows().length);
   }
   function needsReady(){ return NEED_SRC.every(function(s){ return nSrc[s[0]]; }); }
-  /* the line under the title: Now and Soon as counted, as at the time of drawing, and what could not be read, so a failed read is never
-     taken for nothing waiting */
+  function needsBad(){ return NEED_SRC.filter(function(s){ return nSrc[s[0]]&&nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; }); }
+  /* 15 Oct 2026 (plan 1, his word: "Nothing needs you" while its orders read had failed): A READ THAT FAILED LEADS THE PAGE, above the title, in plain
+     words and with a Retry, and the all-clear is said only when every read got through. The banner is made once and its words changed, so a redraw
+     never takes the Retry from under his finger. */
+  var nFail=document.getElementById('nFail'), nRetry=null;
+  function drawFail(bad){
+    if(!nFail) return;
+    nFail.hidden=!bad.length;
+    if(!bad.length) return;
+    if(!nRetry){
+      nFail.textContent=''; nFail.appendChild(el('p','nfail__what'));
+      nRetry=pill(['Retry','need.retry']); nRetry.addEventListener('click', function(){ nRetry.disabled=true; nRetry.textContent='Reading.'; readNeeds(true); });
+      nFail.appendChild(nRetry);
+    }
+    nFail.firstChild.textContent='Couldn\\'t read '+andList(bad)+'.';
+    if(!needsReading){ nRetry.disabled=false; nRetry.textContent='Retry'; }
+  }
+  /* the line under the title: Now and Soon as counted, as at the time of drawing; with a read failed it never says nothing needs him */
   function drawLead(items){
+    var bad=needsBad(); drawFail(bad);
     if(!needsReady()){ nCount.textContent='Reading what needs you.'; return; }
     var now=0, soon=0;
     items.forEach(function(i){ if(i.practice||!i.counts) return; if(i.sev==='now') now++; else if(i.sev==='soon') soon++; });
-    var bad=NEED_SRC.filter(function(s){ return nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; });
-    nCount.textContent=(now||soon?[now?now+' now':'', soon?soon+' soon':''].filter(Boolean).join(', '):'Nothing needs you')
-      +'.'+(bad.length?' Not read: '+andList(bad)+'.':'');
+    nCount.textContent=now||soon?[now?now+' now':'', soon?soon+' soon':''].filter(Boolean).join(', ')+(bad.length?' in what could be read.':'.')
+      :bad.length?'Nothing in what could be read.':'Nothing needs you.';
   }
   function drawNeeds(){
     if(!nlist) return;
@@ -4727,7 +4987,7 @@ export const OWNER_JS = `
       if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x.getAttribute('data-chip')==='all'?'true':'false'); }); }
     }
     nlist.textContent='';
-    if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'?'Nothing needs you.':'Nothing here.'));
+    if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'&&!needsBad().length?'Nothing needs you.':'Nothing here.'));
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
@@ -4752,9 +5012,10 @@ export const OWNER_JS = `
     if(needsReading) return;
     if(!force&&needsAt&&Date.now()-needsAt<NEED_MS) return;
     needsReading=true;
-    var jobs=[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop()];
-    if(sheet&&!sheetBusy) jobs.push(loadSheet(true));
-    if(linksRead&&!linksBusy) jobs.push(loadLinks(true));
+    var jobs=[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop(), loadOwed()];
+    /* the sheet and the links are read again once read, or once their read has failed, so a Retry reaches every read that did */
+    if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
+    if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
     Promise.all(jobs).then(function(){ needsAt=Date.now(); }, function(){}).then(function(){ needsReading=false; redrawLead(); });
   }
   /* what Watch shows: the hours with an override in force, and the notice */

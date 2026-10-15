@@ -380,7 +380,7 @@ export async function run({ ok, pageWork }) {
   };
   /* the Desk's own sentences name a book (src/drafter.js composes them, and the Desk keeps its words): a flag, a reason and a refusal here do, as they arrive */
   const deskSpeaks = (j) => ({ ...j, drafts: j.drafts.map((x) => ({ ...x, flags: ["Salt is cheaper than its floor.", "Check the rice and the oil rows. The row carries RM 5/unit of cost from its old product. candy costs RM 46/unit, quoted."],
-    reasoning: "A sale of Spare, priced like salt." })), refused: [{ why: "Rice has no cost on the book." }] });
+    reasoning: "A sale of Candy, priced like salt." })), refused: [{ why: "Rice has no cost on the book." }] });
   const all = await richOwnerPage({ pageWork, slip: true, probe: true, review: deskSpeaks, assocAnswer: (j) => ({ ...j, products: Object.keys(BOOKS_OF).map((k) => ({ product: k, name: BOOKS_OF[k].name, rows: [] })) }) });
   try {
     await drawEverything(all);

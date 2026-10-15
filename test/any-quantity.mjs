@@ -60,8 +60,8 @@ export async function run({ ok }) {
   for (const p of books) { const { P, C, codes, drift } = ctx[p];
     for (const id of codes.slice(0, 6)) { const g = E.quoteGrid(C, P, drift[id]); g.p.forEach((x, i) => { if (Math.abs(x - E.quoteAt(g.min + i * g.step, C, P, drift[id])) > 0.004) gridOff++; }); } }
   const shape = books.map((p) => { const g = E.quoteGrid(ctx[p].C, ctx[p].P, 0); return [g.min, g.step, g.max, g.p.length]; });
-  ok(gridOff === 0 && JSON.stringify(shape) === "[[0.5,0.25,25,99],[10,1,50,41],[1,1,30,30],[1,1,10,10]]",
-    "each point of a sealed grid is quoteAt at its size, over salt 0.5 to 25 in quarters, oil 10 to 50, candy 1 to 30 and rice 1 to 10: " + JSON.stringify({ gridOff, shape }));
+  ok(gridOff === 0 && JSON.stringify(shape) === "[[0.5,0.25,25,99],[10,10,50,5],[1,1,30,30],[1,1,10,10]]",
+    "each point of a sealed grid is quoteAt at its size, over salt 0.5 to 25 in quarters, oil 10 to 50 in tens, candy 1 to 30 and rice 1 to 10 in ones: " + JSON.stringify({ gridOff, shape }));
 
   /* 5. THE WORKER: a size off the step or over the max is refused, over the max is Negotiate's alone, and with no steps
      (a list from before the grid) any size is taken as before */
@@ -93,6 +93,24 @@ export async function run({ ok }) {
   const got = [pg.priceAt(P0, 6.75), pg.priceAt(P0, 1), pg.priceAt(P0, 0.25), pg.priceAt(P0, 6.8), pg.priceAt(P0, 30), pg.overMax(P0, 30), pg.overMax(P0, 6.75), pg.overMax(P0, 1000), pg.overMax(P0, 1001)];
   ok(a0 > 0 && JSON.stringify(got) === JSON.stringify([1025, 1002, 40, null, null, true, false, true, false]),
     "the page's priceAt reads 6.75 unit off the grid (not the board), a size off the grid off its board row, and nothing off the step or past the max, an ask capped at the Worker's 1,000 units: " + JSON.stringify(got));
+  /* 7b. THE ORDER STEP (15 Oct 2026, his word: each book is ordered in its smallest unit step, salt a quarter from half a unit, oil
+     ten, candy and rice one). The grid's step is the one setting; the steps the Worker reads are the engine's quoteGrid shape, as
+     the publish writes them (priceSteps), and the page's Negotiate takes no size off the step either. */
+  const live = {}; for (const p of books) { const g = E.quoteGrid(ctx[p].C, ctx[p].P, 0); live[p] = { min: g.min, step: g.step, max: g.max }; }
+  const place = (product, qty, ask) => O.checkPlacement({ product, qty, mode: "collect", unit: ask ? 0 : 10, total: ask ? 0 : qty * 10, week: "", ask: !!ask }, [], at, false, live);
+  const code = (product, qty, ask) => { const c = place(product, qty, ask); return c.error ? (c.code || "error") : "ok"; };
+  const stepGot = [code("salt", 0.5), code("salt", 0.75), code("salt", 0.6), code("salt", 0.25), code("oil", 10), code("oil", 50), code("oil", 20), code("oil", 15), code("oil", 5), code("oil", 11),
+    code("candy", 1), code("candy", 2), code("candy", 1.5), code("candy", 0.5), code("rice", 1), code("rice", 10), code("rice", 0.5), code("rice", 2.5)];
+  ok(JSON.stringify(stepGot) === JSON.stringify(["ok", "ok", "offStep", "offStep", "ok", "ok", "ok", "offStep", "offStep", "offStep", "ok", "ok", "offStep", "offStep", "ok", "ok", "offStep", "offStep"]),
+    "the Worker takes salt in quarters from 0.5, oil in tens from 10, candy and rice in ones from 1, and refuses a size off the step or under the first: " + JSON.stringify(stepGot));
+  const stepAsk = [code("oil", 60, true), code("oil", 55, true), code("salt", 30.25, true), code("salt", 30.1, true), code("candy", 31, true), code("rice", 10.5, true)];
+  ok(JSON.stringify(stepAsk) === JSON.stringify(["ok", "offStep", "ok", "offStep", "ok", "offStep"]),
+    "a Negotiate size over the max is still a whole number of steps: oil 60 and salt 30.25 are asked for, oil 55 and salt 30.1 are refused: " + JSON.stringify(stepAsk));
+  const offRung = []; for (const p of books) for (const q of ctx[p].R.rungs) if (!O.onStep(+q, live[p])) offRung.push(p + ":" + q);
+  ok(offRung.length === 0, "every board size of every book is a size the step allows, so a listed tile can always be ordered: " + JSON.stringify(offRung));
+  const pgOver = [pg.overMax({ grid: { ...live.oil, p: [1, 2, 3, 4, 5] }, sizes: [] }, 60), pg.overMax({ grid: { ...live.oil, p: [1, 2, 3, 4, 5] }, sizes: [] }, 55)];
+  ok(JSON.stringify(pgOver) === JSON.stringify([true, false]), "the page's Negotiate takes oil 60 over its max of 50 and not 55, off the tens: " + JSON.stringify(pgOver));
+
   /* 8. THE DESK (06 Oct 2026): an order whose ask closed (No thanks, or his withdrawal) is a New one again at its listed price,
      his Accept as ever; an ask still open is his Asked act */
   const acts = JSON.parse(String(w.eval(`(function(){ORD_OPEN=[

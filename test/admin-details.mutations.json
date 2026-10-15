@@ -1,5 +1,5 @@
 [
- {"name": "an order's reference is read down its card again", "file": "stmt/owner.js", "find": "card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));", "replace": "card.appendChild(el('p','maker-facts','Reference '+order.id));"},
+ {"name": "an order's reference is read down its card again", "file": "stmt/owner.js", "find": "card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]\n      .concat(agreed?[['Goods',rm(order.total)],['Delivery',order.delivery?rm(order.delivery):'']]:[])));", "replace": "card.appendChild(el('p','maker-facts','Reference '+order.id));"},
  {"name": "an order's Details leave out when it was placed", "file": "stmt/owner.js", "find": "['Placed',fmtWhen(order.at)],", "replace": ""},
  {"name": "an order's Details call every way Collection", "file": "stmt/owner.js", "find": "order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':''", "replace": "'Collection'"},
  {"name": "a claim card has no Details", "file": "stmt/owner.js", "find": "    card.appendChild(detailBox('claim.details',key,[['Reference',claim.id],['Sent',fmtWhen(claim.at)],['Slip',claim.slip?'Attached':'None'],['Practice',claim.test?'Yes':'']]));\n", "replace": ""},
@@ -8,8 +8,8 @@
  {"name": "a held entry has no Details", "file": "stmt/owner.js", "find": "        card.appendChild(detailBox('queue.details',entry.id,[['Reference',entry.id],['Sent',fmtWhen(isoAt(entry.id)||entry.date)],['State',entry.state==='refused'?'Refused':'Waiting for the Desk']]));\n", "replace": ""},
  {"name": "a held entry's Details leave out its moment", "file": "stmt/owner.js", "find": "['Sent',fmtWhen(isoAt(entry.id)||entry.date)],", "replace": ""},
  {"name": "a held entry's Details call every one waiting", "file": "stmt/owner.js", "find": "['State',entry.state==='refused'?'Refused':'Waiting for the Desk']", "replace": "['State','Waiting for the Desk']"},
- {"name":"a Desk row's Details leave out its reference","file":"stmt/owner.js","find":"detailList(rowPairs(reading.row,key))","replace":"detailList(rowPairs(reading.row))"},
- {"name":"a Desk row's Details are JSON again","file":"stmt/owner.js","find":"panel.appendChild(detailList(rowPairs(reading.row,key)));","replace":"panel.appendChild(el('pre','maker-row',JSON.stringify(reading.row,null,2)));"},
+ {"name":"a Desk row's Details leave out its reference","file":"stmt/owner.js","find":"detailList(rowPairs(d.row,d.id)","replace":"detailList(rowPairs(d.row)"},
+ {"name":"a Desk row's Details are JSON again","file":"stmt/owner.js","find":"panel.appendChild(detailList(rowPairs(d.row,d.id).concat(","replace":"panel.appendChild(el('pre','maker-row',JSON.stringify(d.row,null,2)));void (["},
  {"name": "a yes or no is printed as the word true or false", "file": "stmt/owner.js", "find": "if(v===true||v===false) return v?'Yes':'No';", "replace": "if(v===true||v===false) return String(v);"},
  {"name": "a name the page has no word for is printed as it is", "file": "stmt/owner.js", "find": "var s=String(k).replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1);", "replace": "return String(k);"},
  {"name": "a size is printed as a bare number", "file": "stmt/owner.js", "find": ")$/.test(k)?units(v):/^(total|cash|delivery", "replace": ")$/.test(k)?String(v):/^(total|cash|delivery"},

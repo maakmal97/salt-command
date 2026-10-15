@@ -33,7 +33,7 @@ export function monthNameOf(issue) {
  * as it was issued", which was true of a monthly issue and is not true of what this is: ONE LIVE
  * DOCUMENT that keeps up with the orders, beside the prices and the order form. So the message hands
  * over an ACCOUNT rather than a document, says the three things it is for, and says where a question
- * goes. The sealed issues already sent are untouched and still open on the page.
+ * goes. The sealed issues already sent are untouched on disk and no longer open on the page (15 Oct 2026).
  *
  * WHAT IT IS CAREFUL ABOUT: a question goes ON AN ORDER, because that is where the thread lives
  * (v751), and saying "ask us anything" would promise a channel that is not there. */

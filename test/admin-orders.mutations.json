@@ -92,8 +92,8 @@
  {
   "name": "the card has no reply",
   "file": "stmt/owner.js",
-  "find": "      makerOrderMoves(card,order,false,acts);\n      if(order.status==='ready'&&!againAck){ makerCashControls(card,order); cashed=true; }",
-  "replace": "      if(order.status==='ready'&&!againAck){ makerCashControls(card,order); cashed=true; }"
+  "find": "      makerOrderMoves(card,order,false,acts);\n      /* cash held for the order shuts",
+  "replace": "      /* cash held for the order shuts"
  },
  {
   "name": "Preview sends the total alone",
@@ -398,8 +398,8 @@
  {
   "name": "the owner's script names a variable the customer page names a function",
   "file": "stmt/owner.js",
-  "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false;",
-  "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false;"
+  "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null;",
+  "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null;"
  },
  {
   "name": "a row tap always takes him to the top",

@@ -6,7 +6,7 @@ import { landingPage } from "../stmt/page.js";
 const OWNER = { email: "maakmal97@icloud.com" };
 const KEY = "counter-queue-withdrawal-test-key-0123456789";
 
-function world(DatabaseSync, worker, handleMaker) {
+export function world(DatabaseSync, worker, handleMaker) {
   const db = new DatabaseSync(":memory:");
   for (const file of readdirSync(new URL("../migrations/", import.meta.url))
     .filter((name) => /^\d+_.*[.]sql$/.test(name)).sort())

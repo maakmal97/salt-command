@@ -31,6 +31,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { writeBookFile } from "./booksync.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BOOK = process.env.SALT_BOOK || resolve(REPO, "ledger", "book.json");
@@ -41,7 +42,8 @@ const MAPS = ["PRODUCTS", "PROD_OPENING", "COUNT_ON", "PRICE_SET", "COST_RULE", 
 const ROWS = ["sales", "purchases", "loans", "COUNTS", "selfUseLog", "lostDemand"];
 
 const read = () => JSON.parse(readFileSync(BOOK, "utf8"));
-const write = (b) => writeFileSync(BOOK, JSON.stringify(b, null, 2) + "\n");
+/* the book's own renderer, one row per line: a plain JSON.stringify rewrote all 8,000 lines of it (15 Oct 2026) */
+const write = (b) => writeBookFile(b, BOOK);
 const die = (m) => { console.error("REFUSED: " + m); process.exit(1); };
 
 function sync() {

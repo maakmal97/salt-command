@@ -9225,6 +9225,8 @@ await (async () => {
     "the right username and password return the record: wrap, envelope and live document");
   ok(deskAuthOk && j.live.buildId === deskBuild,
     "the live document is returned only after a keyed read of the Desk build id");
+  ok(!("issues" in j) && j.issued === "2026-09-01",
+    "and the answer lists no monthly issues, though the stored record still carries the list: Past statements stay gone (15 Oct 2026)");
   /* THE MASTER WRAP NEVER TRAVELS TO A CUSTOMER (04 Sep 2026 audit). It is his content key sealed
      under STMT_MASTER, so handing it to every customer every month was handing out a self-verifying
      offline crack target against the one passphrase that opens every account: an auditor recovered
@@ -10231,6 +10233,9 @@ await (async () => {
       "liveRecords seals " + code + "'s price list into the record for the week, opening under the same content key as the statement");
     const lr0 = await liveRecords(tmp, "test-secret", nowP);
     ok(lr0.priced === 0 && !lr0.records[0].prices, "and without a snapshot no list is written");
+    const envR = JSON.parse(await C.decryptWith(ckR, recR.env));
+    ok(Array.isArray(envR.statements) && envR.statements.length === 0 && !("issues" in recR),
+      "and the record is published with no monthly issue in its bundle and no list of issue dates, though the file on disk carries one: Past statements stay gone (15 Oct 2026)");
     rmSync(tmp, { recursive: true, force: true });
   }
 
@@ -11322,6 +11327,8 @@ await (async () => {
   catch (e) { gate = { code: e.status, out: String(e.stdout || "") }; }
   ok(gate.code === 1 && /FAIL  the book in the master is ledger\/book\.json/.test(gate.out) && !/public\/ is what this master builds/.test(gate.out), "a master whose book block is not the file fails the gate there, and the build check never runs");
   /* green, proved to print: v522 shipped a gate whose main-module check failed on Linux, so it printed nothing and passed */
+  /* the Build section above rebuilt public/ from the FROZEN master; the gate's last check compares it with the LIVE one, so build it from the live master first (this also leaves public/ as committed) */
+  exG(process.execPath, [join(REPO, "tools", "build.mjs")], { cwd: REPO, stdio: "pipe", env: liveEnv() });
   let green;
   try { green = { code: 0, out: exG(process.execPath, [join(REPO, "tools", "gate.mjs")], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: liveEnv() }) }; } catch (e) { green = { code: e.status, out: String(e.stdout || "") }; }
   ok(green.code === 0 && (green.out.match(/^  ok    /gm) || []).length >= 10 && /GATE OK in \d/.test(green.out), "on the real master the gate runs every check, says so, and passes (" + (green.out.match(/^  ok    /gm) || []).length + " checks)");
@@ -19160,7 +19167,8 @@ await (async () => {
     const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
     ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
       "his page opens on Needs you");
-    ok(await until(() => /^1 now, 3 soon[.]/.test(D.getElementById("nCount").textContent)),
+    /* this fixture has no Desk, so the maker reads fail and the line counts what could be read (plan 1) */
+    ok(await until(() => /^1 now, 3 soon( in what could be read)?[.]/.test(D.getElementById("nCount").textContent)),
       "one waits now and three soon, and the line says so: " + D.getElementById("nCount").textContent);
     ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["k:" + uL, "s", "l:" + lid, "n:" + uN].join(","),
       "a card each, Now before Soon and the oldest first: the locked account, then to send, the link, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
@@ -19642,10 +19650,10 @@ await (async () => {
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
-    const watch = () => win.document.querySelector('#nlist [data-need="w:desk"]'), line = () => watch() && watch().querySelector(".salt-action__why");
-    ok(await until(() => line() && /^The Desk shows 1 for you, as of [0-9]{2}:[0-9]{2}[.]$/.test(line().textContent)) && !watch().querySelector("a") && !watch().querySelector("button")
-      && watch().getAttribute("data-sev") === "watch" && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(watch().textContent),
-      "Needs you says what the Desk shows and when it counted it, a Watch card with no link, no action and no name: " + JSON.stringify(watch() && watch().textContent));
+    /* plan 1, part 5 (15 Oct 2026): the figure named nothing he could act on, and every kind it counts is a card of its own, so Needs you draws no card of it */
+    const lead = () => win.document.getElementById("nCount").textContent;
+    ok(await until(() => lead() !== "Reading what needs you.") && !win.document.querySelector('#nlist [data-need="w:desk"]') && !/The Desk shows/.test(win.document.getElementById("nlist").textContent),
+      "Needs you, once read, draws no card of the Desk's count: " + JSON.stringify(lead()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 
   /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
@@ -21776,9 +21784,11 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
     } }).window;
     try {
-      const el = () => win.document.querySelector('#nlist [data-need="w:desk"] .salt-action__why');
-      for (let i = 0; i < 200 && !el(); i++) await new Promise((r) => setTimeout(r, 20));
-      return el() ? el().textContent : "";
+      /* plan 1, part 5: read once Needs you has read everything; the Desk's count is no card of it */
+      const read = () => win.document.getElementById("nCount").textContent !== "Reading what needs you.";
+      for (let i = 0; i < 200 && !read(); i++) await new Promise((r) => setTimeout(r, 20));
+      const el = win.document.querySelector('#nlist [data-need="w:desk"] .salt-action__why');
+      return read() ? (el ? el.textContent : "none") : "";
     } finally { win.close(); }
   };
   try {
@@ -21788,12 +21798,11 @@ await (async () => {
     const sj = await (await site("/all/sheet", { headers: A })).json();
     ok(sj.desk && sj.desk.n === 0 && sj.desk.moved === true, "the sheet says an order has moved since the desk's reading: " + JSON.stringify(sj.desk));
     const t1 = await line();
-    ok(/^The Desk shows nothing for you, as of ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4}); an order has moved since[.]$/.test(t1),
-      "Needs you says nothing waited then, and that an order has moved since, never that nothing waits: " + JSON.stringify(t1));
+    ok(t1 === "none", "Needs you draws no card of the Desk's count, so it cannot say an old figure waits: " + JSON.stringify(t1));
     /* the desk looks again */
     await tell(1, 0);
     const t2 = await line();
-    ok(/^The Desk shows 1 for you, as of ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
+    ok(t2 === "none", "and none once the desk has read again: " + JSON.stringify(t2));
   } finally { globalThis.fetch = realFetch; }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
@@ -22035,11 +22044,11 @@ await (async () => {
       const kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(body89.wrap.salt), iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
       const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(body89.wrap.iv) }, kek, b64(body89.wrap.ct));
       const ck = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["decrypt"]);
-      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(body89.env.iv) }, ck, b64(body89.env.ct));
-      return JSON.parse(new TextDecoder().decode(pt));
+      const open = async (e) => JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(e.iv) }, ck, b64(e.ct))));
+      return { env: await open(body89.env), live: await open(body89.live) };
     })();
-    ok(unwrapped.statements.length === 1 && /Test account/.test(unwrapped.statements[0].body) && /nothing it orders reaches the ledger/.test(unwrapped.statements[0].body),
-      "its statement opens in the reader's own browser and says what it is");
+    ok(unwrapped.env.statements.length === 0 && /Test account/.test(unwrapped.live.body) && /nothing it orders reaches the ledger/.test(unwrapped.live.body),
+      "its statement is the live document and opens in the reader's own browser and says what it is; its bundle holds no monthly issue (15 Oct 2026)");
 
     /* counted nowhere */
     const sheet89 = await (await stmtWorker.fetch(new Request("https://k7m3p2.example/all/sheet", { headers: { "cf-access-jwt-assertion": tok89 } }), env89)).json();
@@ -22833,7 +22842,7 @@ await (async () => {
   ok(navs.length === 2 && new Set(navs).size === 2 && navs.includes("Places"), "the rail and the bar are two landmarks with two names (C22): " + JSON.stringify(navs));
   /* C23: the test account's own statement is a customer's live document in shape, dated DD Mon YYYY */
   const { testStatement } = await import("../stmt/worker.js");
-  const tb = (await testStatement()).statements[0].body;
+  const tb = (await testStatement()).body;
   ok(!/<h1|<table|September/.test(tb) && /^<h2 class="stmth">/.test(tb) && /class="salt-lines__row"[^>]*><div class="salt-lines__date" role="cell">\d\d [A-Z][a-z]{2} \d{4}</.test(tb),
     "the test account's statement is Statement lines under an h2, its date DD Mon YYYY, never the retired table (C23): " + JSON.stringify(tb.slice(0, 80)));
 })();
@@ -24705,7 +24714,7 @@ await (async () => {
     "his letters: I in the cube, G in the droplet, E in the lozenge, V in the capsule: " + JSON.stringify(P8.PLET));
   /* each book's words, held to the lock's own list both ways: a word the list gains and no book here
      owns goes red, so a new name cannot slip past the initial check (a new book joins OWN8, lettered or not) */
-  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"], spare: ["spare"] };
+  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"] };
   const owned8 = Object.values(OWN8).flat(), letters8 = Object.values(P8.PLET).join("");
   ok(OW8.PRODUCT_WORDS.every((w) => owned8.includes(w)) && owned8.every((w) => OW8.PRODUCT_WORDS.includes(w))
     && Object.keys(P8.PLET).every((k) => OWN8[k] && /^[A-Z]$/.test(P8.PLET[k]) && OWN8[k].every((w) => w[0].toUpperCase() !== P8.PLET[k]))
@@ -25432,12 +25441,12 @@ await (async () => {
   const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const msrc = readFileSync(FROZEN_MASTER, "utf8");
   const tierNames = JSON.parse((/const TIER_NAMES=(\[[^\]]*\]);/.exec(msrc) || [, "[]"])[1].replace(/'/g, '"'));
-  const names = Object.values(book.PRODUCTS || {}).map((p) => String(p.name).toLowerCase());
+  const names = Object.values(book.PRODUCTS || {}).filter((p) => !p.retired).map((p) => String(p.name).toLowerCase());
 
   /* ---- the lists ---- */
   ok(tierNames.length >= 4 && tierNames.every((n) => WL.LEVEL_WORDS.includes(n.toLowerCase())) && WL.LEVEL_WORDS.includes("bronze"),
     "every level the master names is on the lock's list, Bronze's old name kept: " + JSON.stringify(tierNames));
-  ok(names.length >= 5 && names.every((w) => WL.PRODUCT_WORDS.includes(w)) && WL.PRODUCT_WORDS.length === names.length,
+  ok(names.length >= 4 && names.every((w) => WL.PRODUCT_WORDS.includes(w)) && WL.PRODUCT_WORDS.length === names.length,
     "every book's name is on the product list, and the list holds nothing else: " + JSON.stringify(names.filter((w) => !WL.PRODUCT_WORDS.includes(w))));
   const all = WL.LEVEL_WORDS.concat(WL.PRODUCT_WORDS);
   ok(all.every((w) => /[a-z]/.test(w) || w.length >= 2), "and no word in another script is a single character");
@@ -25465,7 +25474,7 @@ await (async () => {
   for (const lw of WL.LEVEL_WORDS) lines.push({ t: "Price " + lw[0].toUpperCase() + lw.slice(1) + " this week", refuse: true });
   for (const p of WL.PRODUCT_WORDS) lines.push({ t: "Stock " + p + " is new", refuse: false });
   const off = lines.filter((x) => (x.refuse ? !/names a level/.test(siteWords(x.t)) : siteWords(x.t) !== ""));
-  ok(lines.length >= 11 && !off.length,
+  ok(lines.length >= 10 && !off.length,
     "every English level word is refused by the Worker's lock, and every product word is left alone by it: " + JSON.stringify(off.slice(0, 6).map((x) => x.t)));
 })();
 section("S13 fix: an associate's page closed while Rewards' links are on their way throws nothing after it");
@@ -42094,7 +42103,7 @@ await (async () => {
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
-  ok(ids.length === 5 && opened.every((id) => ids.includes(id)), "the desk carries five books");
+  ok(ids.length === 4 && opened.filter((id) => id !== "spare").every((id) => ids.includes(id)) && !ids.includes("spare"), "the desk carries four live books, spare registered but retired: " + JSON.stringify(ids));
 
   /* A FIGURE IS STATED WHERE IT IS TRUE. creditCapFor falls back to the default book, so the
      sentence that begins "Credit caps are per book" stated salt's 1 unit as candy's own the
@@ -50642,6 +50651,10 @@ section("05 Oct 2026: any quantity at an automatic price, one rule over each boo
 await (async () => {
   await (await import("./any-quantity.mjs")).run({ ok });
 })();
+section("15 Oct 2026: spare is retired, the Counter's words are the live books, and the one road moves one line");
+await (async () => {
+  await (await import("./spare-retired.mjs")).run({ ok });
+})();
 section("06 Oct 2026: a partner pays cost, the floor to the sen on every book, nobody else's price moved");
 await (async () => {
   await (await import("./partner.mjs")).run({ ok });
@@ -52269,6 +52282,11 @@ await (async () => {
 section("Salt Account: rows to approve wear the approve card, the queue folds away, and no native confirm is left");
 await (async () => {
   await (await import("./admin-approve-queue.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: the approve card says the change, one card and one Approve an order (plan 2, 16 Oct 2026)");
+await (async () => {
+  await (await import("./admin-approve-card.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: the few, fixed choices of Record's forms are option tiles, each sending the value its select did");

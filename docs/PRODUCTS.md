@@ -250,3 +250,29 @@ the case was anticipated.
 - **The Associates page mixes scopes.** Its R1, R2 and R3 totals read the whole book across
   every product, while the reward figures beside them read the one book in view, with nothing
   on screen saying so.
+
+## 9. The order step (his word of 15 Oct 2026)
+
+A customer orders each book in its smallest unit step: **salt 0.5 to 25 in quarters, oil 10 to 50 in tens, candy 1 to 30 and rice
+1 to 10 in ones**. There is one setting, the `grid` of the book's `TIER_RULE` in the master, `{min, step, max}`: `min` is the
+smallest order, `step` the order step, `max` where Negotiate begins. The publish carries it in the clear beside the stamp
+(`priceSteps`); the page's field takes `min` and `step` from it, and the Worker's `onStep` (`stmt/orders.js`, from `checkPlacement`,
+which Place, a customer's amendment and Negotiate all pass through) refuses a size under `min` or off the step with `offStep`. Past
+`max` the size is Negotiate's, and still a whole number of steps from `min`. A list from before the grid carries no steps and takes any size.
+Counter Admin's own forms (a trade, an amended order) type what was really handed over and are not held to it.
+
+**The step is also the pricing walk's resolution, so it is not free to move.** The engine walks every grid point beneath a size so the
+rate never rises across the grid (`walkSizes`). Salt's step moved from 0.25 to 0.5 would drop the points between and raise 1,484 of
+2,100 checked salt prices, up to RM290 (2 units RM220 to RM230), so salt stays at a quarter (his answer of 15 Oct 2026). Oil's step
+moved from 1 to 10 changes no price: its five points are its five typed rungs, a stated board. **Every board size must be a point of
+its grid**, or a listed tile could not be ordered; salt's 6.25 rung is one only because the step is a quarter. The suite holds each of
+these (`test/any-quantity.mjs`).
+
+## 10. Spare is retired (15 Oct 2026)
+
+The fifth book, `spare`, opened on 22 Sep 2026 to prove that adding a book is a command, is retired with `node tools/product.mjs
+--retire spare`: it had no row, opening or price, so the tool allowed it. Its entry stays in `ledger/book.json` with `retired: true` (off
+the switch, the Enter form, the tier grid and the parity scan; `--unretire` brings it back). Its name left `PRODUCT_WORDS`, the position
+engine's word list and the Admin's book-name pattern, so the live books are four: salt, oil, candy and rice. The vendored hue tokens in
+`design/salt-ds.css` stay, they being the design system's to drop. `product.mjs` now writes the book through `writeBookFile`, since a plain
+`JSON.stringify` had re-laid all 8,000 lines.

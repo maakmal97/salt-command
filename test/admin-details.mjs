@@ -85,7 +85,7 @@ export async function run({ ok, pageWork }) {
     ok(!!box && !/\b(salt|oil|candy|rice|spare)\b/i.test(box.textContent), "and no book's name is read out in it: " + (box && box.textContent));
     ok(!!row && !row.querySelector("pre") && !/[{}[\]"]/.test(box.textContent), "never JSON: no preformatted block and no brace or quote in it: " + (box && box.textContent));
     const trip = d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]');
-    const tp = trip ? [...trip.querySelectorAll(".rdet--row")].map(pairs) : [];
+    const tp = trip ? [...trip.querySelectorAll(".rdet--row .salt-ledger--plain")].map(pairs) : [];
     ok(!!trip && tp.length === 2 && same(tp[1], [["Reference", "d-3"], ["Units", "1 unit"], ["Price", "RM 50.00"], ["Trip", "t1"]]) && !d.querySelector('#makerDrafts [data-maker-card="draft:d-3"]'),
     "a trip's second row has its own detail, under its own reference, in the trip's one card: " + JSON.stringify(tp));
     const held = d.querySelector('#makerQueueReview [data-key="2026-10-09T14:11:05.000Z"]'), refused = d.querySelector('#makerQueueReview [data-key="q-2"]');

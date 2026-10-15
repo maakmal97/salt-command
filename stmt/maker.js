@@ -414,7 +414,9 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
         }
         orders.push(...fixture.orders.map((o) => ({ ...o, u: o.u || u, test: true })));
       }
-      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries });
+      /* plan 1: a queue key the Desk could not read is named, never read as an empty queue (src/worker.js makerQueueReview) */
+      const unreadable = Array.isArray(queue.unreadable) ? queue.unreadable.filter((k) => typeof k === "string" && /^q:[A-Za-z0-9._-]{1,80}$/.test(k)).slice(0, 20) : [];
+      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable });
     }
     if (op.kind === "queue") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
