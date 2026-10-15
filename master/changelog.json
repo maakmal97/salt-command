@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1117",
+  "d": "15 Oct 2026",
+  "t": "COUNTER ADMIN ORDER CARD: PROGRESS IN THE HEAD, MONEY RECEIVED IN ONE BLOCK",
+  "n": [
+   "<b>THE HEAD OF AN AGREED ORDER IS ITS PROGRESS.</b> Owed, Paid and Handed (units moved of units ordered), with Says sent beside them while a claim of theirs waits. The goods and the delivery charge are in the title already and stand in Details. A placed, declined or cancelled order keeps Goods, since nothing is yet owed.",
+   "<b>MONEY RECEIVED IS ONE BLOCK.</b> Their claim answered, then Bank (a payment that reached the account), then Cash on a Ready order, the cash still held ten seconds with its Undo. Each field names its road, and its button says the figure and the road once one is typed (Record RM 25.00, bank). The reply stands below it with their last line above it, which the card did not draw before. Cash held shuts the reply as it shuts the rest of the card.",
+   "<b>NOTHING BEHIND IT MOVED.</b> No act, route, request id or rule changed; the Desk and the customer's site are as they were. Left for a later version: Bank and Cash as tiles over one field, Change the order under the head, and the units field's two buttons."
+  ]
+ },
+ {
   "v": "v1116",
   "d": "15 Oct 2026",
   "t": "PAST STATEMENTS ARE GONE FROM EVERY CUSTOMER RECORD",

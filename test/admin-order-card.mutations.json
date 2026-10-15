@@ -48,5 +48,15 @@
  {"name":"the tick's label is not a 44px target","file":"stmt/page.js","find":"align-self:flex-start;width:fit-content;min-height:var(--salt-tap);min-width:var(--salt-tap);padding-right:8px;","replace":"align-self:flex-start;width:fit-content;min-height:0;min-width:0;padding-right:8px;"},
  {"name":"the tick draws no box","file":"stmt/owner.js","find":"tick.appendChild(el('span','tickbox')); ","replace":""},
  {"name":"an edit put back to what it was offers no read","file":"stmt/owner.js","find":"          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);\n","replace":"\n"},
- {"name":"the read offered after an edit does not read","file":"stmt/owner.js","find":"          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);\n","replace":"          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],function(){},false);\n"}
+ {"name":"the read offered after an edit does not read","file":"stmt/owner.js","find":"          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],makerPlacedRead,false);\n","replace":"          if(chosen) makerButton(qfigs,['Read the figures again','order.reread'],function(){},false);\n"},
+ {"name":"an agreed order keeps Goods in its head","file":"stmt/owner.js","find":"var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0,","replace":"var agreed=false,"},
+ {"name":"the head drops Says sent","file":"stmt/owner.js","find":".concat(+order.claimed>0?[['Says sent',rm(order.claimed)]]:[])","replace":""},
+ {"name":"the goods are not in Details","file":"stmt/owner.js","find":".concat(agreed?[['Goods',rm(order.total)],['Delivery',order.delivery?rm(order.delivery):'']]:[])","replace":""},
+ {"name":"Money received has no heading","file":"stmt/owner.js","find":"        card.appendChild(el('h4','','Money received'));\n","replace":""},
+ {"name":"the reply stands above the money","file":"stmt/owner.js","find":"        card.appendChild(el('h4','','Money received'));\n","replace":"        makerOrderMoves(card,order,false,acts); card.appendChild(el('h4','','Money received'));\n"},
+ {"name":"Bank does not say its road","file":"stmt/owner.js","find":"'Record '+rm(received.value)+', bank'","replace":"'Record '+rm(received.value)"},
+ {"name":"Cash does not say its road","file":"stmt/owner.js","find":"'Record '+rm(cash.value)+', cash'","replace":"'Record '+rm(cash.value)"},
+ {"name":"their last line is not drawn","file":"stmt/owner.js","find":"    if(theirs) card.appendChild(","replace":"    if(false) card.appendChild("},
+ {"name":"cash held leaves the reply live","file":"stmt/owner.js","find":"if(!n.hasAttribute('data-maker-cash-undo')&&!n.hasAttribute('data-maker-cash-retry')) n.disabled=true;","replace":"void 0;"},
+ {"name":"an agreed order offers cash","file":"stmt/owner.js","find":"        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; }\n","replace":"        { makerCashControls(card,order); cashed=true; }\n"}
 ]

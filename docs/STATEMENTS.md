@@ -1648,6 +1648,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`stmt/page.js` splices it in at the end of the page script), so a name it declares at the top must not be one the customer's code declares:
   `oOpen` was both, and View as them met "oOpen is not a function" until the owner's became `ordOpened`; `test/admin-orders.mjs` section 9 compares
   the two lists, every declarator of a `var` list included (the owner's `HOW`, which overwrote the customer's pay ways, is `HOW_IN`).
+- **An agreed order's card leads with its progress and takes money in one block** (15 Oct 2026, `test/admin-order-card.mjs` section 5). The head of an
+  Agreed, Ready or Done order is Owed, Paid and Handed (`moved` of `qty`), with Says sent beside them while a claim of theirs is waiting; the goods and the
+  delivery charge, already in the title, stand in Details. A Placed, Declined or Cancelled order keeps Goods, since no figure is yet owed. **Money received** is
+  one block under its own heading, in the order the money comes: their claim answered (Yes, I got, Not found), Bank (`order.received`), then Cash on a Ready
+  order only (`order.cash`, still held ten seconds with its Undo). Each field is named for its road, Bank, RM and Cash, RM, and its button says the figure and
+  the road once one is typed (Record RM 25.00, bank). The reply stands below the block with their last line above it (They wrote, the moment, their words):
+  the card drew none before. Cash held shuts the whole card, the reply included, and leaves Undo or Retry live. No act, route, rule or request changed.
 - **The order card reads its own preview** (Phase 2a, 12 Oct 2026, his decision 6 of 11 Oct; `test/admin-order-card.mjs`, its mutations in
   `test/admin-order-card.mutations.json`). **A placed order reads its preview when its detail is opened**, once, and again when an input is
   changed: choosing a delivery charge or a window reads at once, and the goods total reads when the field is finished (`change`), taking
@@ -2474,7 +2481,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Asks on a sheet, with a reason, then cancels the order. |
 | `order.cash` | Order card (key: the order id), ready | Holds the cash for ten seconds, then records it. |
-| `order.cash-amount` | Order card (key: the order id), ready | Cash received, in RM. |
+| `order.cash-amount` | Order card (key: the order id), ready | Cash, in RM, the money taken at the handover; its button says the figure and "cash" once one is typed. |
 | `order.cash-retry` | Order card (key: the order id), when the answer was lost | Sends the same cash again, or refreshes the card. |
 | `order.cash-undo` | Order card (key: the order id), while the cash is held | Undoes it, sending nothing. |
 | `order.claim-not-found` | Same card | Asks, on the Sheet, whether to answer that claim Not found. |
@@ -2500,7 +2507,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.reason-price` | Same sheet | Picks the price line as the reason. |
 | `order.reason-stock` | Same sheet | Picks the stock line as the reason. |
 | `order.received` | Same card | Confirms that payment. |
-| `order.received-amount` | Order card (key: the order id), acknowledged or ready | Another payment received, in RM. |
+| `order.received-amount` | Order card (key: the order id), acknowledged or ready | Bank, in RM, a payment that reached the bank; its button says the figure and "bank" once one is typed. |
 | `order.reply` | Same card | Sends the reply. |
 | `order.reply-text` | Same card | The reply to the customer. |
 | `order.reread` | Order card (key: the order id), placed or with a rejected pending row, after a read that failed, and on a placed order from the moment its total or charge is edited until the figures are read | Reads the figures again. |
