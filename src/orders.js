@@ -26,6 +26,12 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import { admitInput, admitInputs } from "./input-admission.js";
 import { makerRequestFingerprint } from "./maker-request.js";
 import PRICING_ENGINE from "../engine/pricing.mjs";
+/* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
+import { rm, chargeOf, priceOf, advanceOf, acceptEntry, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
+  handoverTap, receivedTap, cashTap, restateTap, pastRoom, claimRows, claimOrderFlight, claimEntry,
+  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor } from "../engine/stages.mjs";
+export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
+  amendEntry, stageAt, advanceOf, claimOrderFlight } from "../engine/stages.mjs";
 
 const DEVICE = "orders";
 /* ONE KEY AN ENTRY (fold 2.1, 26 Sep 2026). q:orders was one blob that three roads (the minute's reconcile, a tap's
@@ -245,8 +251,6 @@ export function toldOf(o) {
  * order that is on no queue. Back come the row and the drafter's own flags, the cost, margin and floor
  * the drafter reads, the customer's usual and their card, what their page says, the pricing version,
  * and the digest an Accept sends back to prove it answered this row. */
-const rm = (n) => "RM " + (Math.abs(n - Math.round(n)) < 0.005 ? String(Math.round(n)) : n.toFixed(2));
-const chargeOf = (b) => (b && typeof b.delivery === "number" && Number.isFinite(b.delivery) && b.delivery >= 0 ? +b.delivery.toFixed(2) : null);
 /* 10 Oct 2026 (his Q3): A WINDOW AT ACCEPT, only on a delivery that asked for none (as soon as it can, no day wanted), so no
    window goes out without their yes: theirs is never changed this version (his Q2). Its end ahead and its start at most eight
    days off; the Counter cuts it to its hours as it moves the order. Absent or empty, none. Returns { slot } or { error }. */
@@ -282,14 +286,6 @@ export function acceptUntil(at, slot) {
   const start = Date.parse(slot.slice(0, 10) + "T00:00:00Z") + (+slot.slice(11, 13) - 8) * 3600e3, end = start + 4 * 3600e3;
   return new Date(start - t >= 3600e3 ? Math.min(start, max) : Math.min(end, max)).toISOString();
 }
-/* Step 2 (his Q10 of 28 Sep 2026): THE PRICE HE SETS ON THIS ONE ORDER at its acknowledgement, the goods to 2 dp. Absent, the
-   order's own total; present and not a figure above nothing, refused. The board, the tiers and the pricing state never move. */
-const priceOf = (b) => {
-  if (!b || b.total === undefined || b.total === null) return { price: null };
-  const t = b.total;
-  if (typeof t !== "number" || !Number.isFinite(t) || !(t > 0) || t > 1000000) return { error: "the price has to be a figure above nothing" };
-  return { price: +t.toFixed(2) };
-};
 /* their card at this size: the desk's own cardQuote, carried in the pricing snapshot (tools/book.mjs), read and never worked out */
 export function cardAt(pricing, code, product, qty) {
   const snap = pricing && pricing.byProduct && pricing.byProduct[product];
@@ -322,22 +318,14 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
   if (!env.SALT_LEDGER) return { ok: false, status: 503, error: "the desk has no ledger binding, so no row can be drafted" };
   /* the charge is the site's own rule (decideDesk): typed for a delivery, nought for a collection; Step 2: the goods at the
      price he sets on this order, when he sets one, so the row, its key and the digest are all drafted on it */
-  const agreed = Object.assign({}, o, { delivery: o.mode === "deliver" ? (delivery || 0) : 0 }, price != null ? { total: price, asked: +(+o.total).toFixed(2) } : {});
-  const entry = pendingEntry(agreed, code, now);
-  entry.orderId = o.id;
+  const { agreed, entry } = acceptEntry(o, code, delivery, price, now);
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER));
   /* fold 2.2: no snapshot is a mirror being seeded, and the drafter stands down on it; so does the card */
   if (book.version == null) return { ok: false, status: 503, error: "the mirror is being seeded: try again in a minute" };
   const product = o.product || "salt", qty = +o.qty, goods = +(+agreed.total).toFixed(2);
   const fl = floorFor(book, product, qty);
-  /* never under the floor at this size: the one line no price he sets goes under (rule 5). A price is set only against the
-     floor AT this size: none known, or only a carded size below it (an older snapshot), and no price can be set on it */
-  if (price != null && (!fl || !fl.exact))
-    return { ok: false, status: 409, underFloor: true, floor: fl ? { rm: fl.floor, at: fl.at, exact: false } : null,
-      error: "no floor is known at " + qty + " unit, so no price can be set on it: accept it at theirs" };
-  if (price != null && price < fl.floor - 0.005)
-    return { ok: false, status: 409, underFloor: true, floor: { rm: fl.floor, at: fl.at, exact: fl.exact },
-      error: rm(price) + " is under the floor of " + rm(fl.floor) + " at " + qty + " unit, so it cannot be set" };
+  const under = floorRefusal(price, fl, qty);   /* never under the floor at this size (rule 5), engine/stages.mjs */
+  if (under) return under;
   const d = draftRow(entry, book);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
   /* V5b2 (his answers of 29 Sep 2026): PAID IN ADVANCE when what they owe at once, with this order, is over the ceiling.
@@ -356,45 +344,6 @@ async function previewAck(env, o, code, delivery, now, ctx, price, mirror) {
     usual: usualFor(book, d.row), told: toldOf(o), pricing, prepay: adv.prepay, owedWith: adv.owedWith, ceiling: adv.ceiling, late: adv.late || null,
     hash: await stageDigest("ack", entry, d, pricing) },
     cardAt(book.pricing, code, product, qty));
-}
-/* WHAT THEY OWE AT ONCE WITH THIS ORDER: the book's rows (the engine's partyOwedRM), the owner's agreed site orders whose
-   row is not on the book yet, then this order with its delivery. Everything counts until paid. A SHEET IS ONE VERDICT
-   (his answer of 29 Sep 2026): its lines, placed or agreed and not yet on the book, count together at their goods, the
-   sheet's charge left out, so every line reads the same figure whichever is accepted first. The orders are the list the
-   order was found in (findOrder), never a second read. STEP 2: A PRICE HE SETS ON A LINE MOVES THE SHEET'S FIGURE: a line
-   agreed at his price counts at it and a line still placed at what it was placed at, so lines he prices differently can
-   read different figures, each at the money it is agreed for. Offered again, an order keeps the verdict it was agreed on, as it
-   keeps its charge: it has no move left to carry a new one. A book with no TERMS decides nothing. */
-const AGREED_ON_SITE = ["acknowledged", "ready"];
-function lateHistory(book, owner, today, terms) {
-  if (!today) return { error: "the day was not read, so paid in advance after lateness cannot be decided: try again in a minute" };
-  const E = POSITION_ENGINE, st = E.lateOffer(E.payDelays(book.sales || [], owner, today, terms), terms);
-  const need = typeof terms.lateResetRepeat === "number" ? terms.lateResetRepeat : 3;
-  return st.late && st.run < need ? { prepay: true, run: st.run, need } : { prepay: false };
-}
-export function advanceOf(book, o, code, delivery, ctx) {
-  if (ctx.again) return { prepay: !!o.prepay, owedWith: null, ceiling: null };
-  const terms = (book.state && book.state.TERMS) || {};
-  const ceiling = typeof terms.ceiling === "number" && Number.isFinite(terms.ceiling) ? terms.ceiling : null;
-  if (ceiling == null) return { prepay: false, owedWith: null, ceiling: null };
-  if (!Array.isArray(ctx.orders)) return { error: "the site's orders were not read, so paid in advance cannot be decided: try again in a minute" };
-  const E = POSITION_ENGINE, owner = E.ownerCode(code);
-  const keys = new Set((book.sales || []).map((s) => E.ovKey(s)));
-  const onBook = (k, p) => !!k && (keys.has(k) || keys.has(E.ovRekey(k, p)));
-  const onSheet = (x) => !!o.sheet && x.sheet === o.sheet && x.u === o.u;
-  const mineToo = ctx.orders.filter((x) => x.id !== o.id && x.code && E.ownsCode(owner, x.code));
-  const agreed = mineToo.filter((x) => !onSheet(x) && AGREED_ON_SITE.includes(x.status) && !onBook(x.ledgerKey, x.product))
-    .reduce((a, x) => a + Math.max(0, (+x.total || 0) + (+x.delivery || 0) - (+x.paid || 0)), 0);
-  const sheet = mineToo.filter((x) => onSheet(x) && (x.status === "placed" || (AGREED_ON_SITE.includes(x.status) && !onBook(x.ledgerKey, x.product))));
-  const lines = sheet.reduce((a, x) => a + Math.max(0, (+x.total || 0) - (+x.paid || 0)), 0);
-  const mine = (+o.total || 0) + (sheet.length ? 0 : (+delivery || 0));
-  const owedWith = +(E.partyOwedRM(book.sales, owner) + agreed + lines + mine).toFixed(2);
-  /* V5b2c (his decisions of 29 Sep and 05 Oct 2026): a customer who has EVER paid late pays in advance until three payments
-     in a row are on time. It reads the engine's lateOffer, the one state machine, over payDelays on the book's rows: on time is
-     within the term, a paid-in-advance order counts once handed over, an amount open past the term is late today. */
-  const late = lateHistory(book, owner, ctx.today, terms);
-  if (late.error) return late;
-  return { prepay: owedWith > ceiling + 0.004 || late.prepay, owedWith, ceiling, late: late.prepay ? late : null };
 }
 /** POST /orders/<id>/preview {delivery}: the pending row an Accept would make now. Stores nothing. */
 export async function previewOrder(env, id, body, now) {
@@ -799,7 +748,6 @@ async function stagePreview(env, o, stage, entry, mirror) {
   const db = env.SALT_LEDGER;
   const book = await (mirror ? mirror() : readBook(db));
   const open = (book.state && book.state.OPEN && book.state.OPEN.byKey) || {};
-  let against = book, waits = false;
   let rd = null;
   if (!open[entry.payload.orderKey] && o.queued && o.queued.redate) {
     const pending = await queuedAt(env, o.queued.redate);
@@ -807,32 +755,14 @@ async function stagePreview(env, o, stage, entry, mirror) {
     else rd = await db.prepare("SELECT entry,status FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"redate\":true%' ORDER BY id DESC LIMIT 1")
       .bind('%"orderId":"' + o.id + '"%').first();
   }
-  if (rd && rd.status !== "rejected") {
-    const re = JSON.parse(rd.entry), was = re.payload.orderKey, day = re.payload.fields.date;
-    let base = book;
-    if (!open[was]) {
-      const ack = o.queued && o.queued.ack;
-      const r = ack ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
-      if (!r || r.status === "rejected") return { ok: false, status: 409, error: "its pending row " + (r ? "was rejected" : "is not drafted yet") + ", so there is no row for this to amend" };
-      base = withPending(book, JSON.parse(r.row));
-    }
-    const row = (base.sales || []).find((s) => POSITION_ENGINE.ovKey(s) === was);
-    if (!row) return { ok: false, status: 409, error: "the row its first handover redates is not on the book, so there is no row for this to amend" };
-    const sales = base.sales.filter((s) => s !== row), st = Object.assign({}, base.state || {}), op = Object.assign({}, st.OPEN || {});
-    op.byKey = Object.assign({}, op.byKey || {}); delete op.byKey[was]; st.OPEN = op;
-    against = withPending(Object.assign({}, base, { sales, state: st }), Object.assign({}, row, { date: day }));
-    waits = true;
-  } else if (!open[entry.payload.orderKey]) {
-    /* not on the book yet: the pending row, as it was drafted, is what will land */
-    const ack = o.queued && o.queued.ack;
-    const r = ack ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
-    if (!r || r.status === "rejected") return { ok: false, status: 409, error: "its pending row " + (r ? "was rejected" : "is not drafted yet") + ", so there is no row for this to amend" };
-    against = withPending(book, JSON.parse(r.row));
-    waits = true;
-  }
-  const d = draftRow(entry, against);
+  /* the pending row a stage waits on, when the book's own does not hold the row yet (engine/stages.mjs stageAgainst) */
+  const ack = o.queued && o.queued.ack;
+  const ackRow = ack && ackRowWanted(book, entry, rd) ? await db.prepare("SELECT row,status FROM draft WHERE id=?1").bind(ack).first() : null;
+  const ag = stageAgainst(book, entry, rd, ackRow);
+  if (!ag.ok) return ag;
+  const d = draftRow(entry, ag.against);
   if (d.skip) return { ok: false, status: 409, error: "the drafter would not draft it: " + d.skip };
-  return { ok: true, waits, d, hash: await stageDigest(stage, entry, d, null) };
+  return { ok: true, waits: ag.waits, d, hash: await stageDigest(stage, entry, d, null) };
 }
 const yesWords = (waits) => (waits ? "Booked when the first row lands" : "Booked as it is drafted");
 async function stageTap(env, id, body, by, now, stage, build, mirror) {
@@ -877,35 +807,7 @@ const ROWED_ON_SITE = ["acknowledged", "ready", "done"];
 /** POST /orders/<id>/handed {qty, close}: Collected or Delivered, in the order's own mode, the running total handed over. */
 export async function handedOrder(env, id, body, by, now, mirror) {
   const rej = await rejectedOf(env.SALT_LEDGER, id, "move");
-  return stageTap(env, id, body, by, now, "move", (o, at) => {
-    const qty = body && body.qty;
-    if (typeof qty !== "number" || !Number.isFinite(qty) || qty < 0 || qty > +o.qty + 0.004) return { error: "the units handed over have to be a figure from zero to the " + o.qty + " ordered" };
-    /* S11 11.9: CLOSE AT WHAT WAS HANDED OVER is a close only under the size, as the site decides it; its row is the
-       one Correction restating size and total (closeEntry), so that is the row his yes is the digest of, and a close
-       at what is already out is a tap of its own, never "that is what the order already says" */
-    const closing = body.close === true && qty < +o.qty - 0.004;
-    if (closing && !(qty > 0)) return { error: "nothing was handed over, so there is nothing to close at: cancel it instead" };
-    if (!closing && Math.abs(qty - (+o.moved || 0)) < 0.0004) {
-      if (rej && Math.abs(qty - (+((rej.entry.payload.fields || {}).deliveredQty) || 0)) < 0.0004) return { again: "move" };
-      return { status: 409, error: "that is what the order already says was handed over" };
-    }
-    /* stamped as the site stamps it: the Kuala Lumpur day of the tap, the handover's own day */
-    const handed = Object.assign({}, o, { movedOn: klDate(at), moved: qty });
-    const entry = closing
-      ? closeEntry(Object.assign(handed, { qty, total: POSITION_ENGINE.closeGoods(o.total, +o.qty, qty), closed: { at: at.toISOString(), qty: o.qty, total: o.total } }), o.code, at)
-      : handoverEntry(handed, o.code, qty, at);
-    entry.orderId = o.id;
-    const handover = { units: qty, mode: o.mode };
-    if (closing) { handover.close = true; handover.total = entry.total; }   /* stated, the site pricing nothing */
-    /* A CLOSE UNDER WHAT THEY HAVE PAID leaves money he holds that is theirs. Until 06 Oct 2026 nothing booked it, so
-       the close waited under Approve; the fold now raises a customerRefunds row for the difference as its Correction
-       lands (the engine's refundOnOverpay, as a paid cancel's), so the tap files his yes like any close, and the answer
-       and the drafter's flag say what opens */
-    const over = closing ? +((+o.paid || 0) - (+entry.total + (+o.delivery || 0))).toFixed(2) : 0;
-    const shown = { units: qty, how: o.mode === "deliver" ? "delivered" : "collected", close: closing };
-    if (over > 0.004) shown.refund = over;
-    return Object.assign({ entry, site: { handover }, shown }, over > 0.004 ? { refund: over } : {});
-  }, mirror);
+  return stageTap(env, id, body, by, now, "move", (o, at) => handoverTap(o, body, at, rej), mirror);
 }
 
 /** POST /orders/<id>/received {amount}: the payment they recorded is in his bank. The site already counts it. */
@@ -927,40 +829,7 @@ export async function receivedOrder(env, id, body, by, now, mirror) {
     onRows = await acctInFlight(env.SALT_LEDGER, null, way);
   }
   const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", way, mirror) : null;
-  /* 28 Sep 2026, s210: whichever entry his yes answers, it answers to what the row can still take */
-  return stageTap(env, id, body, by, now, "pay", (o, at) => { const b = payTap(o, at); return (b.entry && pastRoom(room, o, b.entry, "received", !!b.site)) || b; }, mirror);
-  function payTap(o, at) {
-    const amount = body && body.amount;
-    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much was received" };
-    /* S6 6.5 (D7): A CLAIM OF THEIRS, named by its moment (the oldest waiting when the tap names none). His yes is to
-       the claim's own entry, drafted or still to be, and the site hears it as one verdict: it becomes paid there */
-    const waiting = (o.payments || []).filter((p) => p && p.claim === "waiting");
-    if (waiting.length) {
-      const p = body.claim ? waiting.find((x) => x.at === body.claim) : waiting[0];
-      if (!p) return { status: 409, error: "that claim of theirs is not waiting any more: look again" };
-      if (Math.abs(p.amount - amount) > 0.004) return { status: 409, error: "RM " + p.amount.toFixed(2) + " they say they sent is waiting to be received here, not RM " + amount.toFixed(2) };
-      if (shut.has(p.queued || "") || shut.has(p.at)) return { status: 409, error: "that claim was filed not found, and its row with it: it cannot be received now" };
-      /* S6 fix: money sent against the account, booked on this order's row and not folded yet, may be this very money */
-      const onRow = onRows[ledgerKeyOf(o)] || 0, due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
-      if (onRow > 0.004 && p.amount > due - onRow + 0.004) return { status: 409, error: "RM " + onRow.toFixed(2) + " sent against their account is booked on this order's row and not folded yet, so this claim would pay it twice: answer it once the fold lands" };
-      const site = { verdict: { kind: "received", claim: p.at, amount: p.amount } }, shown = { amount: p.amount, claim: p.at };
-      const own = queued.find((e) => e.at === p.queued) || claimEntry(o, p);
-      if (p.queued) { own.at = p.queued; return { entry: own, pin: p.queued, site, shown }; }
-      return { entry: own, site, shown };
-    }
-    const drafted = queued.find((e) => Math.abs(+e.payload.cash - amount) < 0.005 && !e.claim);
-    if (drafted) return { entry: drafted, pin: drafted.at, shown: { amount: +drafted.payload.cash } };
-    /* a claim he received and not yet queued is told by its own entry, as the site's paidUntold reads it */
-    const own = (o.payments || []).filter((p) => p && p.claim === "received" && !p.queued).reduce((n, p) => n + (+p.amount || 0), 0);
-    const inc = +((+o.paid || 0) - own - (+((o.queued || {}).paid) || 0)).toFixed(2);
-    if (!(inc > 0.004) && rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "pay" };
-    if (!(inc > 0.004)) return { status: 409, error: "nothing they recorded is waiting to be received here" };
-    if (Math.abs(inc - amount) > 0.004) return { status: 409, error: "RM " + inc.toFixed(2) + " they recorded is waiting to be received, not RM " + amount.toFixed(2) };
-    /* the Fulfilment the reconcile will queue for it: the increment, stamped with their last payment */
-    const entry = payEntry(o, o.code, inc, stageAt(o, "pay", at));
-    entry.orderId = o.id;
-    return { entry, shown: { amount: inc } };
-  }
+  return stageTap(env, id, body, by, now, "pay", (o, at) => receivedTap(o, at, body, { queued, shut, onRows, rej, room }), mirror);
 }
 
 /* ---- NOT FOUND (S6 11.14, his decision D7) ---------------------------------------------------------------------
@@ -1106,19 +975,6 @@ export async function rowRoom(db, direction = "SELL", onWay, mirror) {
     return { owes, on: way, left: +Math.max(0, owes - way).toFixed(2) };
   }, { version: book && book.version });
 }
-/* 28 Sep 2026, s210: the refusal a tap gives when its payment would take the row past what it can still take. A claim of
-   theirs is also told how it is answered: Received, on the book already, which the site takes only once its order has
-   heard of the money (the return leg, in the minute after the mirror is re-seeded), or Not found */
-function pastRoom(room, o, entry, word, claim) {
-  const r = room ? room(ledgerKeyOf(o), entry) : null, rm = +((entry && entry.payload) || {}).cash || 0;
-  if (!r || !(rm > r.left + 0.004)) return null;
-  const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0)).toFixed(2);
-  return { status: 409, error: "the row owes RM " + r.owes.toFixed(2)
-    + (r.on > 0.004 ? ", and RM " + r.on.toFixed(2) + " of it is on its way already, received or waiting under Approve and not folded yet" : "")
-    + ", so RM " + rm.toFixed(2) + " " + word + " would pay it past what it owes" + (r.left > 0.004 ? ": RM " + r.left.toFixed(2) + " is what it can still take" : "")
-    + (claim ? ". " + (r.on > 0.004 ? "Once that is folded, answer" : rm > due + 0.004 ? "Answer" : "Within the minute its order hears of the book: then answer")
-      + " it Received, on the book already, if you recorded it, or Not found" : "") };
-}
 /* and (pay terms V2, 28 Sep 2026) the rows of the claimant's orders he has made Ready, by their key, which the engine's
    allocation takes as owing all that is left on them: an order at Ready is due at once, a cash-on-handover one included
    (his C1). Read off the same list, so nothing more is fetched. An order at Ready with no row on the book yet has no key,
@@ -1185,19 +1041,6 @@ export async function offBook(db, orders) {
   } catch (e) { /* unreadable: the order counts as it did */ }
   return off;
 }
-export function claimOrderFlight(sales, orders, u, by = {}, off = new Set()) {
-  const cash = {}, ready = [];
-  const add = (k, rm) => { rm = +(+rm).toFixed(2); if (k && rm > 0.004) by[k] = +((by[k] || 0) + rm).toFixed(2); };
-  const done = new Set(orders.filter((o) => o.u === u && o.status === "done").map((o) => o.id));
-  for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); cash[k] = (cash[k] || 0) + (+s.cash || 0); }
-  for (const o of orders) {
-    if (o.u !== u || !o.ledgerKey || off.has(o.id) || ["cancelled", "declined"].includes(o.status)) continue;
-    const lk = ledgerKeyOf(o);   /* V4a: the row's key as the book names it, whether or not the pass has reached the order */
-    if (o.status === "ready") ready.push(lk);
-    add(lk, done.has(o.id) ? (+o.paid || 0) - (+((o.queued || {}).paid) || 0) : (+o.paid || 0) + (+o.claimed || 0) - (cash[lk] || 0));
-  }
-  return { by, ready };
-}
 export async function fixtureClaimPreview(snapshot, u, id, generation) {
   if (!["0000-0000", "0000-0001"].includes(u) || !snapshot?.prepared
     || !Array.isArray(snapshot.account?.sales) || !Array.isArray(snapshot.account?.claims)
@@ -1212,18 +1055,6 @@ export async function fixtureClaimPreview(snapshot, u, id, generation) {
   const hash = await hex(JSON.stringify({ generation, revision: snapshot.account.revision, claim, allocation }));
   return { ok: true, test: true, claim, rows: allocation.rows, left: allocation.left, hash,
     generation, revision: snapshot.account.revision };
-}
-function claimRows(book, c, fl) {
-  const sales = (book.sales || []).map((s) => { const on = fl && fl.by[POSITION_ENGINE.ovKey(s)];
-    return on ? Object.assign({}, s, { cash: +((+s.cash || 0) + on).toFixed(2) }) : s; });
-  const alloc = POSITION_ENGINE.claimAlloc(sales, c.code, +c.amount, fl && fl.ready);
-  const date = klDate(new Date(c.at)), method = c.method + (c.account ? " via " + c.account : "");
-  const entries = alloc.rows.map((r, i) => ({ at: new Date(Date.parse(c.at) + i).toISOString(), type: "SELL", party: r.party, qty: 0, total: r.rm,
-    status: "Payment", by: "customer", claim: true, claimId: c.id,
-    raw: "Payment of RM " + r.rm + " on " + r.party + ", against the account (claim " + c.id + "), by " + method,
-    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: r.party, rid: r.rid || null, orderKey: r.key, orderCode: null, linkTo: null,
-      assoc: null, downstream: null, date, qty: 0, total: 0, cash: r.rm, kg: 0, note: "Paid on the statements site against the account, by " + method + "." } }));
-  return { alloc, entries };
 }
 /* S6 fix: WHAT HIS RECEIVED ALREADY BOOKED FOR A CLAIM. A yes of his on file for any of its rows (queued, drafted, marked
    or spent), or a row of it approved, means Received was given and those rows are the ones he said yes to. A retry after
@@ -1336,29 +1167,7 @@ export async function cashOrder(env, id, body, by, now, mirror) {
   mirror = mirror || (env.SALT_LEDGER ? bookOnce(env.SALT_LEDGER) : null);   /* the room's read and the tap's are one */
   const rej = await rejectedOf(env.SALT_LEDGER, id, "cash");
   const room = env.SALT_LEDGER ? await rowRoom(env.SALT_LEDGER, "SELL", undefined, mirror) : null;
-  return stageTap(env, id, body, by, now, "cash", (o, at) => {
-    const amount = body && body.amount;
-    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) return { error: "say how much cash was taken" };
-    /* the order already counts that cash: raising it again would count it twice */
-    if (rej && Math.abs(+rej.entry.payload.cash - amount) < 0.005) return { again: "cash" };
-    const due = +((+o.total + (+o.delivery || 0)) - (+o.paid || 0) - (+o.claimed || 0)).toFixed(2);   /* S6: less what they say they sent */
-    if (amount > due + 0.004) return { error: "that is more than the RM " + due.toFixed(2) + " still owed on this order" + ((+o.claimed || 0) > 0.004 ? " beside what they say they sent" : "") };
-    /* a payment of theirs not yet queued would be swallowed by the mark the cash moves (orderWork reads paid against it) */
-    /* S6: a claim he received and not yet queued is told by its own entry, so it is left out, as the site's paidUntold leaves it */
-    const own = (o.payments || []).filter((p) => p && p.claim === "received" && !p.queued).reduce((n, p) => n + (+p.amount || 0), 0);
-    if ((+o.paid || 0) - own > (+((o.queued || {}).paid) || 0) + 0.004) return { status: 409, error: "a payment they recorded is still waiting for its row: receive that first" };
-    const entry = payEntry(o, o.code, amount, at, true);
-    entry.orderId = o.id; entry.counter = true;   /* the desk's own, which a Received never answers */
-    /* 28 Sep 2026, s210: AND WHAT THE ROW CAN STILL TAKE. RM 210 against the account was received and not yet folded when
-       RM 210 cash was taken for the same order, and the site's figure, which a claim against the account never reaches,
-       said RM 210 was owed: the row read cash 420. receivedOrder has had the S6 guard; this is the same question asked of
-       every road the money can come by. */
-    const past = pastRoom(room, o, entry, "cash");
-    if (past) return past;
-    /* the site's own cash event (S11 11.8): paid at once, kept as his in cash, and the ledger's mark of the money moved
-       by the same figure, because this Fulfilment is the desk's own and the reconcile must not queue it again */
-    return { entry, queueIt: true, site: { cash: { amount: +amount.toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
-  }, mirror);
+  return stageTap(env, id, body, by, now, "cash", (o, at) => cashTap(o, at, body, { rej, room }), mirror);
 }
 
 /** POST /orders/<id>/restate {qty, total, delivery}: his decision of 06 Oct 2026, that EVERYTHING ON AN AGREED ORDER IS AMENDABLE,
@@ -1373,63 +1182,7 @@ export async function restateOrder(env, id, body, by, now, mirror) {
   const book = mirror ? await mirror().catch(() => null) : null;
   const earlier = db ? await db.prepare("SELECT id,status,committed_at FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' ORDER BY id DESC").bind('%"orderId":"' + id + '"%').all().catch(() => ({ results: [] })) : { results: [] };
   const live = db ? await livePre(db, id, "amend").catch(() => null) : null;
-  return stageTap(env, id, body, by, now, "amend", (o, at) => {
-    if (!AGREED_ON_SITE.includes(o.status)) return { status: 409, error: "this order is " + o.status + ", so its figures are not amended" };
-    const num = (v) => typeof v === "number" && Number.isFinite(v);
-    const qty = body && body.qty !== undefined ? body.qty : +o.qty;
-    const total = body && body.total !== undefined ? body.total : +o.total;
-    const delivery = body && body.delivery !== undefined ? body.delivery : +(o.delivery || 0);
-    if (!num(qty) || !(qty > 0) || qty > 1000000) return { error: "the size has to be a figure above nothing" };
-    if (!num(total) || !(total > 0) || total > 1000000) return { error: "the goods' price has to be a figure above nothing" };
-    if (!num(delivery) || delivery < 0 || delivery > 1000000) return { error: "the delivery charge has to be a figure from nothing" };
-    if (delivery > 0 && o.mode !== "deliver") return { error: "a collection carries no delivery charge" };
-    const figs = { qty: +qty.toFixed(3), total: +total.toFixed(2), delivery: +delivery.toFixed(2) };
-    const was = { qty: +o.qty, total: +(+o.total).toFixed(2), delivery: +(+(o.delivery || 0)).toFixed(2) };
-    if (Math.abs(figs.qty - was.qty) < 0.0004 && figs.total === was.total && figs.delivery === was.delivery) return { status: 409, error: "that is what the order already says" };
-    if (figs.qty < (+o.moved || 0) - 0.0004) return { error: "the size cannot go under the " + o.moved + " already handed over" };
-    if (o.closed && Math.abs(figs.qty - was.qty) > 0.0004) return { status: 409, error: "the order was closed at what was handed over, so its size stays; amend the price or the delivery" };
-    if ((o.payments || []).some((p) => p && p.claim === "waiting")) return { status: 409, error: "a payment they say they sent waits on this order: answer it first, Received or Not found" };
-    const owed = +(figs.total + figs.delivery).toFixed(2);
-    /* 06 Oct 2026: under what they paid is no longer refused; the fold raises a refund for the difference (refundOnOverpay) */
-    const over = +((+o.paid || 0) - owed).toFixed(2);
-    if (!book || book.version == null) return { status: 503, error: "the mirror is being seeded: try again in a minute" };
-    /* never under the floor at the size, and the board is never repriced: what changes is this one order's figure */
-    if (figs.qty !== was.qty || figs.total !== was.total) {
-      const fl = floorFor(book, o.product || "salt", figs.qty);
-      if (!fl || !fl.exact) return { status: 409, error: "no floor is known at " + figs.qty + " unit, so no price can be set on it" };
-      if (figs.total < fl.floor - 0.005) return { status: 409, error: rm(figs.total) + " is under the floor of " + rm(fl.floor) + " at " + figs.qty + " unit, so it cannot be set" };
-    }
-    /* money on its way to the row (a claim against the account, cash, a payment typed on the desk) is measured once it lands:
-       the refund is read off the row as it stands when each entry folds, so the figure waits for that money */
-    const r = room ? room(ledgerKeyOf(o), null) : null;
-    if (r && r.on > 0.004) {
-      const paidRow = +(was.total + was.delivery - r.owes).toFixed(2);
-      if (owed < paidRow + r.on - 0.004) return { status: 409, error: "the row has " + rm(paidRow) + " paid and " + rm(r.on) + " more on its way, so it cannot come to " + rm(owed) + " until that lands" };
-    }
-    if ((earlier.results || []).some((x) => x.status === "pending" || (x.status === "approved" && !x.committed_at)))
-      return { status: 409, error: "an earlier amendment of this order is not on the book yet: wait for it to land" };
-    if (live && live.status === "waiting") return { status: 409, error: "an earlier amendment of this order is waiting to be drafted" };
-    const entry = amendEntry(o, o.code, figs, was, at);
-    entry.orderId = o.id;
-    const shown = Object.assign({ was }, figs);
-    if (over > 0.004) shown.refund = over;
-    return Object.assign({ entry, queueIt: true, site: { restate: figs }, shown }, over > 0.004 ? { refund: over } : {});
-  }, mirror);
-}
-/** The amendment as a Correction restating the row's size, the goods' price and the delivery charge. */
-export function amendEntry(order, code, figs, was, now) {
-  const at = now instanceof Date ? now : new Date(now || Date.now());
-  const books = partyOnBook(order, code);
-  const said = ["qty", "total", "delivery"].filter((k) => Math.abs(figs[k] - was[k]) > 0.0004).map((k) => (k === "qty" ? "size " : k === "total" ? "goods RM " : "delivery RM ") + was[k] + " to " + figs[k]);
-  return {
-    at: at.toISOString(), type: "SELL", party: books, qty: figs.qty, total: figs.total, status: "Amendment",
-    raw: "Amended " + books + ", order " + order.id + ": " + said.join(", "),
-    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
-      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
-      date: klDate(at), qty: 0, total: 0, cash: 0, kg: 0,
-      fields: { qty: figs.qty, total: figs.total, delivery: figs.delivery },
-      note: "Amended after Accept for order " + order.id + ": " + said.join(", ") + "." }
-  };
+  return stageTap(env, id, body, by, now, "amend", (o, at) => restateTap(o, at, body, { book, room, earlier: earlier.results || [], live }), mirror);
 }
 
 /* ---- OFFERED AGAIN (S11 11.13, D6) ----------------------------------------------------------------
@@ -1567,9 +1320,7 @@ export async function againOrder(env, id, body, by, now, mirror) {
   if (live && live.status === "waiting" && live.entry) return { ok: false, status: 409, error: "that " + STAGE_WORD[stage] + " is offered again already and is being drafted" };
   if (stage === "move" && Math.abs((+o.moved || 0) - (+((rej.entry.payload.fields || {}).deliveredQty) || 0)) > 0.0004)
     return { ok: false, status: 409, error: "the order has moved on since that handover: record the handover as it stands" };
-  const entry = Object.assign({}, rej.entry, { at: at.toISOString() });
-  /* V4a: a move rejected before the row key named the product is offered again under the key as it is now */
-  if (entry.payload && entry.payload.orderKey) entry.payload = Object.assign({}, entry.payload, { orderKey: POSITION_ENGINE.ovRekey(entry.payload.orderKey, o.product) });
+  const entry = againEntry(rej.entry, o, at);   /* V4a: a move rejected before the row key named the product is offered again under the key as it is now */
   /* 28 Sep 2026, s210: a payment offered again answers to what the row can still take, as the tap that made it does now */
   if (stage === "pay" || stage === "cash") { const past = pastRoom(await rowRoom(db, "SELL", undefined, mirror), o, entry, "offered again"); if (past) return Object.assign({ ok: false }, past); }
   const pv = await stagePreview(env, o, stage, entry, mirror);
@@ -1690,199 +1441,7 @@ export async function moveOrder(env, u, id, body) {
  * A handover also has to say WHEN and BY WHOM (deliveredOn, handover), which only a Correction may
  * set, and a Correction states figures rather than adding them, so it carries the running total of
  * what has been handed over. Both kinds are among the four the drafter accepts. */
-/* IT IS THE ENGINE'S ovKey AND NOTHING ELSE: `${party}|${date}|${total}`, the total as the row
-   carries it. It was written here with toFixed(2) and every amendment missed its row by the two
-   noughts, which is the sort of thing that only shows when the chain is driven end to end. */
-/* V4a (28 Sep 2026): AND ovKey BUILDS IT, from the goods, the carriage and the product the row will carry, so the key
-   and the row cannot part: `party|date|amount` on salt, as it always was, and `|product` after it on any other book. */
-export const orderKeyFor = (code, date, total, product, delivery) => POSITION_ENGINE.ovKey({ customer: code, date, total, delivery, product });
-const klDate = (now) => (now instanceof Date ? now : new Date(now || Date.now()))
-  .toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 
-/* ---- ON BEHALF OF A FRIEND (v702, his instruction of 18 Sep 2026) ----------------------------
- * An associate's own order and one placed for somebody else are no longer told apart by what they
- * buy; they tick it, and a ticked order books to their `<CODE>-R` bucket exactly as a phone-entered
- * downsell does. NOTHING HERE DOES THE BOOKING: the entry carries `stream: "R2"` and `assoc`, which
- * is the shape the drafter already takes, and the drafter calls the engine's own bookR2. A second
- * copy of that rule would be a second kind of downsell in the book.
- *
- * THE KEY NAMES THE ROW AS IT WILL STAND, so it is built on the BUCKET, because that is the party
- * the fold will write. Built on the associate's own code, every later amendment would miss its row.
- */
-const bucketFor = (code) => POSITION_ENGINE.bookR2({}, "customer", code, null).customer;
-export const partyOnBook = (order, code) => (order && order.forFriend ? bucketFor(code) : code);
-/* V4a: THE KEY AN ORDER NAMES ITS ROW BY, for every stage it builds and every road here that looks the row up: its own
-   ledgerKey, given the product's tail if it was written before V4a, so an order rekeyOrders has not reached yet never
-   names a salt twin's row by the old shape */
-export const ledgerKeyOf = (order) => POSITION_ENGINE.ovRekey(order && order.ledgerKey, order && order.product) || null;
-
-/** The pending row an acknowledged order becomes: agreed, nothing paid, nothing moved. */
-export function pendingEntry(order, code, now) {
-  const at = now instanceof Date ? now : new Date(now || Date.now());
-  const date = klDate(at);
-  const delivery = +(order.delivery || 0);
-  /* 19 SEP 2026: THE ROW TAKES THE GOODS AND THE CARRIAGE APART, and the KEY keeps them together.
-     The site has always kept them apart (stmt/page.js prints "RM x for the goods and RM y delivery")
-     and this is where they were folded back into one figure on the way to the book. The row now
-     carries what the site sent; the order key is still what the customer agreed to pay, which is the
-     two together, because that key is written onto a LIVE order and a key that moved would orphan
-     every order in flight. */
-  const goods = +(+order.total).toFixed(2);
-  const owed = +(order.total + delivery).toFixed(2);
-  const friend = !!order.forFriend;
-  const books = partyOnBook(order, code);
-  /* the general location the customer typed stays on the site, on his card: a note reaches the
-     committed book, and free text a customer typed is the one thing here that could carry a street */
-  const note = "Ordered on the statements site, order " + order.id + ", acknowledged"
-    + (friend ? ", on behalf of a friend" : "")
-    + (order.mode === "deliver" ? ", to be delivered" : ", to collect")
-    + (delivery > 0 ? ", delivery RM " + delivery : "")
-    /* Step 2: a price he set on this order at its acknowledgement, and what they placed at */
-    + (typeof order.asked === "number" && Math.abs(order.asked - goods) > 0.004 ? ", priced at RM " + goods + " on this order, placed at RM " + order.asked : "")
-    /* 29 Sep 2026: the day they asked for rides as fixed words, never their text; the row stays dated at the acknowledgement */
-    + (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(order.wantBy || "") ? ", wanted by " + order.wantBy : "")
-    + ". Nothing paid and nothing handed over yet.";
-  const raw = "SELL " + books + " " + order.qty + " " + (order.product || "salt") + " RM " + owed
-    + ", nothing paid, nothing moved (order " + order.id + ")";
-  return {
-    at: at.toISOString(), type: "SELL", party: books, qty: order.qty, total: goods, status: "Pending", raw,
-    orderKey: orderKeyFor(books, date, goods, order.product || "salt", delivery),
-    payload: { mode: "new", product: order.product || "salt", direction: "SELL", party: code, newId: null,
-      date, qty: order.qty, total: goods, delivery, cash: 0, kg: 0,
-      assoc: friend ? code : null, stream: friend ? "R2" : null, downstream: null,
-      kind: null, orderCode: null, linkTo: null, note,
-      handover: null, second: null }
-  };
-}
-
-/** What a customer paid, as a Fulfilment against the row the acknowledgement made. `cash`: money he took at the
- *  handover and recorded on the card (S11 11.8, 11.12), the one payment the site did not hear first: the desk's own
- *  entry, said as his and marked `by: "desk"`, so the desk never reads it as a payment of theirs waiting on him. */
-export function payEntry(order, code, amount, now, cash) {
-  const at = now instanceof Date ? now : new Date(now || Date.now());
-  const date = klDate(at);
-  const rm = +(+amount).toFixed(2);
-  const books = partyOnBook(order, code);
-  const method = cash ? "cash at the counter" : (order.method ? (order.method + (order.account ? " via " + order.account : "")) : "not stated");
-  return {
-    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: rm, status: "Payment", by: cash ? "desk" : "customer",
-    raw: "Payment of RM " + rm + " on " + books + ", order " + order.id + ", by " + method,
-    payload: { mode: "amend", kind: "Fulfilment", direction: "SELL", party: books, rid: null,
-      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
-      date, qty: 0, total: 0, cash: rm, kg: 0,
-      note: (cash ? "Cash received at the handover, recorded on the desk, order " + order.id : "Paid on the statements site, order " + order.id + ", by " + method) + "." }
-  };
-}
-
-/** S6 6.5: a claim's own Fulfilment, flagged as a claim for his check and stamped with the claim's moment, the one
- *  builder for the reconcile that queues it and the Received that answers it before it is queued. */
-export function claimEntry(order, p) {
-  const e = payEntry(Object.assign({}, order, { method: p.method || null, account: p.account || null }), order.code, p.amount, new Date(p.at));
-  e.orderId = order.id; e.claim = true; e.claimOf = p.at;
-  return e;
-}
-
-/** What was handed over, as a Correction: the running total, the day, and who moved it. */
-export function handoverEntry(order, code, units, now) {
-  const at = now instanceof Date ? now : new Date(now || Date.now());
-  /* the day HE typed it on the site: movedOn is that moment's Kuala Lumpur day, so the Correction
-     and the order agree even when this runs after midnight; a record from before movedOn falls back */
-  const date = order.movedOn || klDate(at);
-  const moved = +(+units).toFixed(2);
-  const books = partyOnBook(order, code);
-  const how = order.mode === "deliver" ? "delivered" : "collected";
-  const was = moved > 0 ? redateFrom(order, date) : "";
-  return Object.assign({
-    at: at.toISOString(), type: "SELL", party: books, qty: moved, total: 0, status: "Handover",
-    raw: moved + " unit " + how + " to " + books + ", order " + order.id + ", on " + date,
-    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
-      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
-      date, qty: 0, total: 0, cash: 0, kg: 0,
-      fields: Object.assign({ deliveredQty: moved, deliveredOn: date, handover: how }, was ? { date } : {}),
-      note: moved + " unit " + how + " for order " + order.id + redateWords(was, date) + "." }
-  }, was ? { redate: true } : {});
-}
-
-/* The first later handover moves a wanted-day order from its acknowledgement's date. */
-export function redateFrom(order, date) {
-  if (!order || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(order.wantBy || "")) return "";
-  if (+((order.queued || {}).moved) > 0) return "";
-  const rowOn = String(order.ledgerKey || "").split("|")[1] || "";
-  const h = order.history || [];
-  let ack = null;
-  for (let i = h.length - 1; i >= 0 && !ack; i--) if (h[i] && h[i].status === "acknowledged" && h[i].by === "desk" && !h[i].note) ack = h[i].at;
-  if (!ack || isNaN(Date.parse(ack)) || rowOn !== klDate(new Date(ack))) return "";
-  return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date || "") && date > rowOn ? rowOn : "";
-}
-const redateWords = (was, date) => (was ? ", its first handover, so the row moves from " + was + " to " + date : "");
-const keyAfter = (order, e) => (e.status === "Close" || e.redate ? closedKey(order, e.redate ? e.payload.fields.date : undefined) : ledgerKeyOf(order));
-
-/** S11 11.9: an order closed at what was handed over, as a Correction restating the row: its size and the
- *  goods' total at what went, what was handed over and when. The cost follows the size in the fold. */
-export function closeEntry(order, code, now) {
-  const at = now instanceof Date ? now : new Date(now || Date.now());
-  const date = order.movedOn || klDate(at);
-  const books = partyOnBook(order, code);
-  const how = order.mode === "deliver" ? "delivered" : "collected";
-  const qty = +(+order.qty).toFixed(3), goods = +(+order.total).toFixed(2), was = (order.closed && order.closed.qty) || qty;
-  const from = +order.moved > 0 ? redateFrom(order, date) : "";
-  return Object.assign({
-    at: at.toISOString(), type: "SELL", party: books, qty, total: goods, status: "Close",
-    raw: "Closed at " + qty + " unit " + how + " to " + books + " for RM " + goods + ", order " + order.id + ", of " + was + " ordered",
-    payload: { mode: "amend", kind: "Correction", direction: "SELL", party: books, rid: null,
-      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
-      date, qty: 0, total: 0, cash: 0, kg: 0,
-      fields: Object.assign({ qty, total: goods, deliveredQty: +(+order.moved || 0).toFixed(3), deliveredOn: date, handover: how }, from ? { date } : {}),
-      note: "Closed at " + qty + " unit " + how + " for order " + order.id + ", of the " + was + " ordered" + redateWords(from, date) + "." }
-  }, from ? { redate: true } : {});
-}
-/* THE ROW'S NAME MOVES WITH ITS TOTAL: the engine's ovKey of the row as the close leaves it, the party and the
-   day kept from the key the acknowledgement wrote. Later stages then wait for the close to fold, as a first
-   stage waits for its pending row, and the return leg finds the row by the name it will carry. */
-/* V4a: and the product the order carries, so a close keeps a row's tail. `date` is a day a stage restates in place of
-   the key's own: Step 2's early handover redates the row, and its key moves here as a close's does. */
-export const closedKey = (order, date) => {
-  const [party, was] = String(order.ledgerKey || "").split("|");
-  return POSITION_ENGINE.ovKey({ customer: party, date: date || was, total: +(+order.total).toFixed(2), delivery: +order.delivery || 0, product: order.product });
-};
-
-/** Either side withdrew it: the row is cancelled, and the fold raises any refund itself. */
-export function cancelEntry(order, code, why, now) {
-  const at = now instanceof Date ? now : new Date(now || Date.now());
-  const date = klDate(at);
-  const books = partyOnBook(order, code);
-  return {
-    at: at.toISOString(), type: "SELL", party: books, qty: 0, total: 0, status: "Cancellation",
-    raw: "Cancellation on " + books + ", order " + order.id + ", recorded " + date,
-    payload: { mode: "amend", kind: "Cancellation", direction: "SELL", party: books, rid: null,
-      orderKey: ledgerKeyOf(order), orderCode: null, linkTo: null, assoc: null, downstream: null,
-      date, qty: 0, total: 0, cash: 0, kg: 0,
-      note: "Withdrawn on the statements site by " + (why === "desk" ? "the desk" : "the customer") + ", order " + order.id + "." }
-  };
-}
-
-/* ---- THE STAGE'S OWN MOMENT (20 Sep 2026) -----------------------------------------------------
- * Every entry queued in one pass carried the pass's clock, and a draft's id IS the entry's `at`: on
- * 18 Sep three acknowledgements queued in one tick collapsed to ONE draft in the drafter's byAt map,
- * and the pending row for order 4l1kkq was never made. An entry is stamped with the moment its stage
- * happened on the site instead: the acknowledgement's history event, the last payment, the handover
- * (movedAt), the withdrawal. Two stages are two moments, so two ids; a stage queued again after a
- * failed mark lands on the same id, which the drafter's INSERT OR IGNORE collapses; and the pending
- * row is dated the day he agreed it rather than the day the cron noticed (acknowledged at 23:59 and
- * reconciled at 00:00 it was dated tomorrow, inside its own key). A record from before this carries
- * no movedAt: the handover's own history note stands in, and the pass's clock is the last resort. */
-export function stageAt(order, job, now) {
-  const h = (order && order.history) || [];
-  const last = (test) => { for (let i = h.length - 1; i >= 0; i--) if (h[i] && test(h[i])) return h[i].at; return null; };
-  let at = null;
-  if (job === "ack") at = last((x) => x.status === "acknowledged" && x.by === "desk");
-  else if (job === "pay") { const p = ((order && order.payments) || []).filter((x) => x && !x.claim); at = p.length ? p[p.length - 1].at : null; }   /* a claim is stamped by its own moment (S6) */
-  else if (job === "move") at = (order && order.movedAt) || last((x) => x.by === "desk" && / unit (delivered|collected)$/.test(String(x.note || "")));
-  else if (job === "cancel") at = last((x) => x.status === "cancelled" || x.status === "declined");
-  else if (job === "close") at = (order && order.closed && order.closed.at) || null;
-  const d = at ? new Date(at) : null;
-  return d && !isNaN(d.getTime()) ? d : (now instanceof Date ? now : new Date(now || Date.now()));
-}
 
 /** Queue one entry for the orders device, under its own key (fold 2.1).
  * A BLOB THIS CANNOT READ IS LEFT ALONE, AND SAID SO (20 Sep 2026). q:orders held a hand-written value
@@ -2076,16 +1635,7 @@ export async function reconcileOrders(env, read, mirror) {
         }
         /* each entry is stamped with its stage's own moment (stageAt), never the pass's clock */
         const told = o.tell ? +o.tell.pay : +((+order.paid || 0) - (+q.paid || 0)).toFixed(2);
-        if (job === "ack") e = pendingEntry(order, code, stageAt(order, job, now));
-        else if (job === "pay") e = payEntry(order, code, told, stageAt(order, job, now));
-        else if (job === "move") e = handoverEntry(order, code, +order.moved || 0, stageAt(order, job, now));
-        else if (job === "close") e = closeEntry(order, code, stageAt(order, job, now));
-        /* WHO ENDED IT is read off the event that ended it (24 Sep 2026): a cancellation of his own was
-           noted in the committed row as the customer's, because only a decline was taken to be his */
-        else if (job === "cancel") {
-          const ended = [...(order.history || [])].reverse().find((x) => x && (x.status === "cancelled" || x.status === "declined"));
-          e = cancelEntry(order, code, ended && ended.by === "desk" ? "desk" : "customer", stageAt(order, job, now));
-        }
+        e = jobEntry(job, order, code, told, now);
         if (!e) continue;
         e.orderId = o.id;   /* which order made it, so a rejection can be told to that order (rejectedOnOrder); never the username */
         while (used.has(e.at)) e.at = new Date(Date.parse(e.at) + 1).toISOString();
@@ -2199,7 +1749,8 @@ export async function rejectedOnOrder(env, entry, at) {
   /* A CLOSE HE REJECTS NEVER LANDS, so the row keeps the name it had: the order names it by that key again, and every
      later stage, the return leg and the card's taps find the row the book still carries (offered again, the close
      moves the name once more, againOrder) */
-  if ((entry.status === "Close" || entry.redate) && entry.payload && entry.payload.orderKey) mark.ledgerKey = POSITION_ENGINE.ovRekey(entry.payload.orderKey, o.product);   /* V4a: in the key's shape now */
+  const given = keyGivenBack(entry, o);   /* V4a: in the key's shape now */
+  if (given) mark.ledgerKey = given;
   const r = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
     method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mark })
   });

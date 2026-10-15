@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1126",
+  "d": "16 Oct 2026",
+  "t": "THE ORDER STAGES LIVE IN ONE SHARED ENGINE",
+  "n": [
+   "Each order stage's entry (Accept, handover, cash, Received, Not found, close, cancel, amend, the account claim) is built by engine/stages.mjs; the Worker calls it, and every tap previews, refuses and queues exactly as before.",
+   "Step S1b of moving the book into a Durable Object: proved byte-equal over 392 steps against the previous Worker."
+  ]
+ },
+ {
   "v": "v1125",
   "d": "16 Oct 2026",
   "t": "COUNTER ADMIN: THE APPROVE CARD, FOR A PERSON",
