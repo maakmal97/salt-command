@@ -7639,6 +7639,205 @@ return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMa
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
+/* ==== ENGINE snapshot: generated from engine/snapshot.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
+/* engine/snapshot.mjs: S1c-ii of the Book plan. THE COST GLUE THE PRICING SNAPSHOT NEEDS, PURE.
+   These readers sat in the master's script and read its globals (PROD, TODAY, the book consts, pxOver, the walk's outputs), so only
+   a desk in jsdom could build the Worker's PRICING. They take everything explicitly now, and the master's functions of the same
+   names are one-line delegations (tools/engine.mjs inlines this file after the pricing engine, the import lines dropped; the
+   engines are the globals of the same names there).
+
+   C is the context every reader takes: { B, R, today, W, over }.
+     B  the book: sales, purchases, opening (by book), statedStockBy, statedStock, loanDrawUnits() (a function: only salt reads it),
+        supplierReceivable, counts, selfUseLog, quotes, priceSet, costRule, defaultProd
+     R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES (all in engine/rules.mjs),
+        and the master's LADDER, PRICE and PRICE_LOCK_ON, which are not there yet (S1c-iii)
+     today  a Date, the page-load clock in the desk
+     W  what the walk of the book in view gave: buyUnits, selfUse, wavgBuy, stockCost. In the desk these are its globals, read as they
+        stand (recompute() has run for that book); here figures() walks the book itself
+     over  { cost, shrink }, the desk's pxOver; null reads as no override
+   No module-level state and no cache: the master keeps stockCostFor's and renderMemo's.
+
+   ORDERING, reproduced: the desk's recompute() walks a book with wavgBuyPrev = the wavgBuy of the book walked BEFORE it. That value
+   only prices goodwillRM, which nothing here reads, so figures() walks with 0 and every figure is the same (the section proves it). */
+
+const SNAPSHOT_ENGINE=(function(){
+const pSales=(B,p)=>B.sales.filter(r=>((r&&r.product)||B.defaultProd)===p);
+const pPurch=(B,p)=>B.purchases.filter(r=>((r&&r.product)||B.defaultProd)===p);
+const openingFor=(B,p)=>B.opening[p]||{qty:0,costPerKg:null,stated:null,uncounted:true};
+const dAge=(C,d)=>POSITION_ENGINE.dayAge(C.today,d);
+const byDate=(a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;};
+
+function countedFor(B,k){
+  if(B.statedStockBy[k]!=null)return B.statedStockBy[k];
+  const o=openingFor(B,k);
+  if(o&&o.stated!=null)return o.stated;
+  return k===B.defaultProd?B.statedStock:null;
+}
+function posInputs(C,P){
+  const B=C.B,_isSalt=(P===B.defaultProd);
+  return {sales:pSales(B,P), purchases:pPurch(B,P), opening:openingFor(B,P), isSalt:_isSalt,
+    loanUnits:_isSalt?B.loanDrawUnits():0, counted:countedFor(B,P), today:C.today,
+    supplierReceivable:(_isSalt&&B.supplierReceivable!=null)?B.supplierReceivable:null,
+    wavgBuyPrev:C.W.wavgBuy};
+}
+function stockCost(C,p){return POSITION_ENGINE.walk(posInputs(C,p)).stockCost;}
+
+/* the sizes: the walk grid, the printed rungs, a book's own ladder and its stated prices */
+function hiddenFor(C,P){
+  const e=C.B.priceSet?C.B.priceSet[P]:null;
+  return (e&&Array.isArray(e.hide))?e.hide.map(Number):[];
+}
+function setPricesFor(C,P){
+  const e=C.B.priceSet?C.B.priceSet[P]:null;
+  return (e&&e.prices)?e.prices:{};
+}
+function sizesFor(C,P){
+  const S=C.R.PRICE_ENGINE.sizesBy||{};
+  const all=(S[P]||S[C.B.defaultProd]||C.R.PRICE_ENGINE.sizes).slice();
+  const hid=hiddenFor(C,P);
+  const out=all.filter(q=>!hid.some(h=>Math.abs(h-q)<0.009));
+  return out.length?out:all;                 // hiding every size would leave no board at all
+}
+function shownSizes(C,P){
+  const B=(C.R.PRICE_ENGINE.boardBy||{})[P], all=sizesFor(C,P);
+  if(!Array.isArray(B)||!B.length)return all;
+  const out=all.filter(q=>B.some(b=>Math.abs(b-q)<0.009));
+  return out.length?out:all;
+}
+function shSizes(C,P){
+  const all=(C.R.PRICE_ENGINE.sizesBy&&C.R.PRICE_ENGINE.sizesBy[P])||C.R.PRICE_ENGINE.sizes;
+  const B=(C.R.PRICE_ENGINE.boardBy||{})[P];
+  return (Array.isArray(B)&&B.length)?all.filter(q=>B.some(b=>Math.abs(b-q)<0.009)):all;
+}
+function ladderFor(C,P){const o=C.R.LADDER_BY[P];return o?{...C.R.LADDER,...o}:C.R.LADDER;}
+
+/* the lots */
+function latestLot(C,p){
+  const ls=pPurch(C.B,p).filter(x=>POSITION_ENGINE.poLive(x)&&x.qty>0&&POSITION_ENGINE.poRecvUnits(x)>0).sort(byDate);
+  const L=ls[ls.length-1];
+  return L?{qty:L.qty,total:L.total,rate:+(L.total/L.qty).toFixed(4),date:L.receivedOn||L.date,sup:L.supplier}:null;
+}
+function meanLotQty(C,p){
+  const ls=pPurch(C.B,p).filter(x=>POSITION_ENGINE.poLive(x)&&x.qty>0);
+  if(!ls.length)return null;
+  return ls.reduce((a,x)=>a+x.qty,0)/ls.length;
+}
+function windowLots(C,p){
+  return pPurch(C.B,p).filter(x=>POSITION_ENGINE.poLive(x)&&x.qty>0&&x.total>0&&(x.receivedOn||x.date)&&POSITION_ENGINE.poRecvUnits(x)>0).sort(byDate).slice(-3);
+}
+function priceLockState(C,p){
+  const L=C.R.PRICE_LOCK[p], cur=latestLot(C,p);
+  if(!L)return {state:'none',lock:null,cur:cur};
+  if(!cur)return {state:'locked',lock:L,cur:null,days:dAge(C,L.lockedOn)};
+  const same=(cur.date===L.lot.date&&Math.abs(cur.rate-L.lot.rate)<0.005&&Math.abs(cur.qty-L.lot.qty)<0.005);
+  return {state:same?'locked':'stale',lock:L,cur:cur,days:dAge(C,L.lockedOn),sinceLot:dAge(C,L.lot.date)};
+}
+function delShare(C,p){
+  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);
+  const said=rows.filter(s=>s.handover==='delivered'||s.handover==='collected');
+  const del=said.filter(s=>s.handover==='delivered');
+  return said.length
+    ? {v:del.length/said.length,delivered:del.length,said:said.length,of:rows.length,measured:true}
+    : {v:C.R.COST_BASIS.deliveredShare.v,delivered:0,said:0,of:rows.length,measured:false};
+}
+function avgDelivery(C,p){
+  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);
+  const unitsSum=rows.reduce((a,s)=>a+POSITION_ENGINE.txPhys(s),0);
+  return rows.length?{n:rows.length,kg:+unitsSum.toFixed(2),mean:+(unitsSum/rows.length).toFixed(4)}:{n:0,kg:0,mean:null};
+}
+
+/* the rates the cost stack reads */
+function replRate(C,p){
+  const ps=windowLots(C,p);
+  const k=ps.reduce((a,x)=>a+x.qty,0);
+  if(k>0)return +(ps.reduce((a,x)=>a+x.total,0)/k).toFixed(2);
+  const L=latestLot(C,p);
+  return L?+L.rate.toFixed(2):null;
+}
+function replCost(C,p){
+  if(((C.B.costRule||{})[p]||{}).kind==='latestCogs'){const lc=POSITION_ENGINE.latestCogs(pPurch(C.B,p));if(lc)return +lc.rate.toFixed(2);}
+  const r=replRate(C,p);
+  if(r!=null)return +r.toFixed(2);
+  const c=C.W.stockCost;return +((c!=null?c:C.W.wavgBuy)).toFixed(2);
+}
+function quoteRate(C,p){
+  const q=C.B.quotes[p]||null;
+  if(!q||!q.tiers||!q.tiers.length)return replCost(C,p);
+  return Math.max.apply(null,q.tiers.map(t=>t.total/t.qty));
+}
+function freightRate(C,p){
+  let ps=windowLots(C,p).filter(x=>x.freight!=null);
+  if(!ps.length)ps=pPurch(C.B,p).filter(x=>POSITION_ENGINE.poLive(x)&&x.qty>0&&x.freight!=null);
+  const k=ps.reduce((a,x)=>a+x.qty,0);
+  return k>0?+(ps.reduce((a,x)=>a+(+x.freight||0),0)/k).toFixed(4):0;
+}
+function leakCharge(C,p){
+  const cmp=(a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;};
+  const cs=C.B.counts.filter(c=>(c.product||'salt')===p&&c.date&&c.drift!=null).sort(cmp);
+  const last=cs.slice(-3); if(!last.length)return null;
+  const all=C.B.counts.filter(c=>(c.product||'salt')===p&&c.date).sort(cmp);
+  const i=all.findIndex(c=>c.date===last[0].date);
+  const start=i>0?all[i-1].date:null, end=last[last.length-1].date;
+  const leak=Math.max(0,-last.reduce((a,c)=>a+(+c.drift||0),0));
+  const inWin=d=>!!d&&(start==null||d>start)&&d<=end;
+  const sold=pSales(C.B,p).filter(s=>!s.cancelled).reduce((a,s)=>{
+    let got=0,tr=0;
+    (s.amend||[]).forEach(st=>{const k=+st.kg||0;if(st.kind!=='Fulfilment'||!(k>0))return;tr+=k;if(inWin(st.date||s.date))got+=k;});
+    const rest=(+s.deliveredQty||0)-tr;
+    if(rest>0&&inWin(s.deliveredOn||s.date))got+=rest;
+    return a+got;},0);
+  if(!(sold>0))return null;
+  return {ratio:+(leak/sold).toFixed(4),leak:+leak.toFixed(2),sold:+sold.toFixed(2),cycles:last.length,from:start,to:end};
+}
+function sampleUnits(C,p){return C.B.selfUseLog.filter(r=>(r.product||C.B.defaultProd)===p&&r.why==='sample').reduce((a,r)=>a+(+r.kg||0),0);}
+function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
+  return h>0?Math.max(0,C.W.selfUse-sampleUnits(C,p))/h:0;}
+
+/* the records the pricing engine takes */
+function inputs(C,p){
+  const R=C.R,o=C.over||{cost:null,shrink:null};
+  return {prod:p, lockOn:R.PRICE_LOCK_ON, lockState:priceLockState(C,p), lockBase:R.PRICE_LOCK[p]||null,
+    over:{cost:o.cost,shrink:o.shrink}, lot:latestLot(C,p), meanLot:meanLotQty(C,p), quoteRate:quoteRate(C,p),
+    repl:replRate(C,p), freightRate:freightRate(C,p), leak:leakCharge(C,p),
+    costRule:(C.B.costRule||{})[p]||null,
+    latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(C.B,p))),
+    costBasis:{freightPerTrip:{rm:R.COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:R.COST_BASIS.txnPerDelivery.rm},
+      deliveredShare:{v:delShare(C,p).v}},
+    attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)};
+}
+function policy(C,p){
+  const R=C.R,pq=C.B.quotes[p]||null;
+  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, lotFloor:R.PRICE.lotFloor||{},
+    stated:setPricesFor(C,p),
+    tier1:ladderFor(C,p).tier1||null,
+    tierRule:R.TIER_RULE[p]||null,
+    lastLevel:R.TIER_NAMES[R.TIER_NAMES.length-1],
+    tiers:(pq&&pq.tiers)?pq.tiers:[],
+    boardSizes:sizesFor(C,p)};
+}
+/* the five tiers for a book, on its own rungs; null for a book with no rule. `cost` is a function, read only when there is a rule */
+function fiveTiers(C,p,cost){
+  const R=C.R.TIER_RULE[p];
+  const sizes=R?R.rungs.concat(sizesFor(C,p).filter(q=>!R.rungs.some(r=>Math.abs(r-q)<0.009))).sort((a,b)=>a-b):null;
+  return R?PRICING_ENGINE.fiveTiers(sizes,cost(),policy(C,p)):null;
+}
+
+/* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
+function figures(B,R,prod,today,over=null){
+  const C0={B,R,today,over,W:{buyUnits:0,selfUse:0,wavgBuy:0,stockCost:null}};
+  const W=POSITION_ENGINE.walk(posInputs(C0,prod)),C={...C0,W};
+  const cost=PRICING_ENGINE.costStack(inputs(C,prod)),P=policy(C,prod),sizes=sizesFor(C,prod),floors={};
+  sizes.forEach(q=>{floors[q]={floor:PRICING_ENGINE.floorTotal(q,cost,P)};});
+  return {stockCost:W.stockCost, replCost:replCost(C,prod), inputs:{cost:inputs(C,prod),policy:P}, sizes, floors,
+    rungs:shSizes(C,prod), ladder:fiveTiers(C,prod,()=>cost)};
+}
+
+return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
+  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
+  inputs,policy,fiveTiers,figures};
+})();
+
+/* ==== END ENGINE snapshot ==== */
 /* ==== BOOK: generated from ledger/book.json by tools/booksync.mjs. Edit the JSON, never this block. ==== */
 /* v781, 22 Sep 2026: WHO EARNS IS A FIELD ON THE BOOK NOW. The reward scheme was salt-only by five bare string comparisons in the master and two in the drafter, so no book opened after salt could ever earn without a code edit, whatever the book said about itself. reward is true on salt and false on every other book, which is exactly what those comparisons meant, so nothing moves today. Whether candy or rice ever earn is his decision and a data one. */
 const PRODUCTS={
@@ -8706,7 +8905,7 @@ const COST_RULE={
    A product with a null count reports its inventory as unknown rather than drawing a walk down
    to an imaginary zero. */
 /* PROD_OPENING: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
-const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,uncounted:true};
+const openingFor=p=>SNAPSHOT_ENGINE.openingFor(snapCtx().B,p||PROD);
 /* WHAT THE INVENTORY IS WORTH, PER PRODUCT (v230). STOCK_COST is the rate of the lots actually
    sitting on the SALT inventory and five places read it. Every one of them would have valued
    45 unit of oil at RM47.47 and reported a RM2,136 inventory worth about RM315, and it would
@@ -8745,7 +8944,7 @@ const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,unc
    27 Sep 2026: the cache answers only its own keys, so a name on Object.prototype (constructor, __proto__)
    is walked as the book it names, never read off the prototype; restockFor's cache takes the same guard. */
 function stockCostFor(p){const k=p||PROD,c=stockCostFor._c||(stockCostFor._c={});
-  return Object.hasOwn(c,k)?c[k]:(c[k]=POSITION_ENGINE.walk(posInputs(k)).stockCost);}
+  return Object.hasOwn(c,k)?c[k]:(c[k]=SNAPSHOT_ENGINE.stockCost(snapCtx(),k));}
 /* TRANSACTION MODEL (post-audit, three-axis per R1):
    qty  = order unit, total = order RM (price = total/qty)
    cash = RM received in cash;  settledRM = RM settled non-cash (fold/waiver/in-kind)  -> paid = cash+settledRM
@@ -9586,8 +9785,8 @@ const inProd=(r,p)=>prodOf(r)===(p||PROD);
 /* THE ONLY TWO FUNCTIONS THAT MATTER FOR SCOPING. Everything product-specific reads
    these; everything consolidated keeps reading `sales` and `purchases` whole, which is
    why the split above costs almost nothing to maintain. */
-const pSales=p=>sales.filter(r=>inProd(r,p));
-const pPurch=p=>purchases.filter(r=>inProd(r,p));
+const pSales=p=>SNAPSHOT_ENGINE.pSales(snapCtx().B,p||PROD);
+const pPurch=p=>SNAPSHOT_ENGINE.pPurch(snapCtx().B,p||PROD);
 /* v262: THE SWITCHER IS NO LONGER A FILTER of the arithmetic. setProd survives for the internal scoping perProduct()
    does; which product's detail a page shows is PROD, the book in view, set only by setProdView (v625). */
 function setProd(p){if(!prodLive(p))return;PROD=p;recompute();}
@@ -9653,7 +9852,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1127","d":"16 Oct 2026","t":"THE PRICING RULE TABLES LIVE IN ONE SHARED ENGINE MODULE","n":["Nine pricing rule tables (RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE) move verbatim into engine/rules.mjs, inlined into the master's ENGINE block, so a Worker can later read the same tables. No price moves.","Step S1c-i of moving the book into a Durable Object: each table on the page equals the module, and the pricing snapshot on the frozen book is byte-identical to v1126's."]}];
+const evolution=[{"v":"v1128","d":"16 Oct 2026","t":"THE COST SIDE OF PRICING RUNS IN ONE SHARED ENGINE MODULE","n":["Stock cost, replacement cost, the cost inputs and policy, the floors, sizes and ladder are now computed by engine/snapshot.mjs, which the desk inlines and calls; a Worker can compute the same figures with no page. No price moves.","Step S1c-ii of moving the book into a Durable Object: the pricing snapshot on the frozen book is byte-identical to v1126's, the engine run alone gives the page's own figures for every book, and the proof now opens the page on the fixture's day."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9797,7 +9996,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Oct 2026, 04:46 KL';
+const LAST_UPDATED='16 Oct 2026, 05:36 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9940,13 +10139,7 @@ let OVERLAY_UNSENT=false;
 let provUnsent=0,unsentAts=new Set();
 /* the count that applies to a product: a queued one first, then its declared opening
    figure, then the salt roll for salt. Null means nobody has counted this book. */
-function countedFor(pr){
-  const k=pr||PROD;
-  if(statedStockBy[k]!=null)return statedStockBy[k];
-  const o=openingFor(k);
-  if(o&&o.stated!=null)return o.stated;
-  return k===DEFAULT_PROD?STATED_STOCK:null;
-}
+function countedFor(pr){return SNAPSHOT_ENGINE.countedFor(snapCtx().B,pr||PROD);}
 const ovKey=t=>POSITION_ENGINE.ovKey(t);   // v338: shared with the phone and the drafter
 /* BY rid FIRST (25 Aug 2026), then by ovKey. ovKey is party|date|total, which names a row only
    while none of those three changes; a correction changes exactly those, and two SA5-BTR lots
@@ -10784,32 +10977,13 @@ function enforceStrict(rows){
 /* v354: A SIZE HE HAS HIDDEN IS NOT QUOTED. It stays in the ladder and stays priceable off the
    board; it simply stops appearing on the card, which is what "change the lot to be shown" means.
    Hiding is reversible by removing one entry, which is why it is a hide list and not a deletion. */
-function hiddenFor(prod){
-  const P=prod||PROD;
-  const e=(typeof PRICE_SET!=='undefined'&&PRICE_SET)?PRICE_SET[P]:null;
-  return (e&&Array.isArray(e.hide))?e.hide.map(Number):[];
-}
-function setPricesFor(prod){
-  const P=prod||PROD;
-  const e=(typeof PRICE_SET!=='undefined'&&PRICE_SET)?PRICE_SET[P]:null;
-  return (e&&e.prices)?e.prices:{};
-}
-function sizesFor(prod){
-  const P=prod||PROD, S=PRICE_ENGINE.sizesBy||{};
-  const all=(S[P]||S[DEFAULT_PROD]||PRICE_ENGINE.sizes).slice();
-  const hid=hiddenFor(P);
-  const out=all.filter(q=>!hid.some(h=>Math.abs(h-q)<0.009));
-  return out.length?out:all;                 // hiding every size would leave no board at all
-}
+function hiddenFor(prod){return SNAPSHOT_ENGINE.hiddenFor(snapCtx(),prod||PROD);}
+function setPricesFor(prod){return SNAPSHOT_ENGINE.setPricesFor(snapCtx(),prod||PROD);}
+function sizesFor(prod){return SNAPSHOT_ENGINE.sizesFor(snapCtx(),prod||PROD);}
 /* THE RUNGS THAT ARE PRINTED. sizesFor() is the walk grid; this is the board. A product
    with no boardBy entry prints every rung, which is salt. See the note beside boardBy for why
    the two lists cannot be one: cutting the grid to the printed list flattens oil at RM13.00. */
-function shownSizes(prod){
-  const P=prod||PROD, B=(PRICE_ENGINE.boardBy||{})[P], all=sizesFor(P);
-  if(!Array.isArray(B)||!B.length)return all;
-  const out=all.filter(q=>B.some(b=>Math.abs(b-q)<0.009));
-  return out.length?out:all;
-}
+function shownSizes(prod){return SNAPSHOT_ENGINE.shownSizes(snapCtx(),prod||PROD);}
 function anchorsFor(prod){
   const P=prod||PROD, A=PRICE_ENGINE.anchors||{};
   if(A[P])return {a:A[P],derived:false,from:null};
@@ -11315,7 +11489,7 @@ const LADDER={
    still enforces after every step.
    A product with no entry inherits LADDER whole, exactly as sizesBy and anchors fall back. */
 /* LADDER_BY lives in engine/rules.mjs (inlined in the ENGINE block above) */
-function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDER;}
+function ladderFor(p){return SNAPSHOT_ENGINE.ladderFor(snapCtx(),p||PROD);}
 /* ============ AMBASSADOR AND THE TIERS, PER BOOK (his workbook of 23 Sep 2026, salt-command pricing_v2.xlsx) ============
    Salt is Ambassador and FOUR tiers. COGS is the supplier's quote, RM56 a unit (700 a 12.5 unit lot), and moves
    only when the quote does. Ambassador is COGS plus the overhead, half again, up to the ten. The tiers are the
@@ -11771,13 +11945,19 @@ function boundaryPanel(b,r){
 /* 26 Sep 2026: posInputs takes the book, so stockCostFor can walk a book that is not in view; left out,
    it is the book in view, as it always was. wavgBuyPrev is the view's and only values goodwill, which
    the rate of another book never reads. */
-function posInputs(pr){
-  const P=pr||PROD, _isSalt=(P===DEFAULT_PROD);
-  return {sales:pSales(P), purchases:pPurch(P), opening:openingFor(P), isSalt:_isSalt,
-    loanUnits:_isSalt?loanDrawUnits():0, counted:countedFor(P), today:TODAY,
-    supplierReceivable:(_isSalt&&typeof supplierReceivable!=='undefined')?supplierReceivable:null,
-    wavgBuyPrev:wavgBuy};
-}
+/* S1c-ii: THE CONTEXT THE ENGINE'S READERS TAKE (engine/snapshot.mjs). Built once, on first use, of getters, so each read is the live
+   binding at the call and nothing is copied. W is the walk of the book in view that recompute() last made; its stockCost goes through
+   stockCostFor, the per-recompute cache. The clock is TODAY and the override is pxOver: both the desk's. */
+function snapCtx(){return snapCtx._c||(snapCtx._c={
+  B:{get sales(){return sales;},get purchases(){return purchases;},get opening(){return PROD_OPENING;},get statedStockBy(){return statedStockBy;},
+    get statedStock(){return STATED_STOCK;},get loanDrawUnits(){return loanDrawUnits;},get supplierReceivable(){return typeof supplierReceivable!=='undefined'?supplierReceivable:null;},
+    get counts(){return typeof COUNTS!=='undefined'?COUNTS:[];},get selfUseLog(){return typeof selfUseLog!=='undefined'?selfUseLog:[];},
+    get quotes(){return QUOTES;},get priceSet(){return typeof PRICE_SET!=='undefined'?PRICE_SET:null;},get costRule(){return typeof COST_RULE!=='undefined'?COST_RULE:{};},
+    get defaultProd(){return DEFAULT_PROD;}},
+  R:{PRICE_ENGINE,LADDER_BY,TIER_RULE,TIER_NAMES,SHRINK_ATTRIB,COST_BASIS,PRICE_LOCK,get LADDER(){return LADDER;},get PRICE(){return PRICE;},get PRICE_LOCK_ON(){return PRICE_LOCK_ON;}},
+  get today(){return TODAY;},get over(){return pxOver;},
+  W:{get buyUnits(){return buyUnits;},get selfUse(){return selfUse;},get wavgBuy(){return wavgBuy;},get stockCost(){return stockCostFor(PROD);}}});}
+function posInputs(pr){return SNAPSHOT_ENGINE.posInputs(snapCtx(),pr||PROD);}
 function recompute(){
   restockFor._c=null;   // the restock plan is read off this book, so it is dropped with it
   stockCostFor._c=null;   // and every book's inventory rate, read off the book as it now stands (26 Sep 2026)
@@ -16479,15 +16659,7 @@ function costBasis(){return +(wavgBuy||54.26).toFixed(2);}
    not jump on every single lot. costBasis() remains the book/reporting basis for what was
    earned. Fallbacks, in order, so it is never undefined: trailing average, most recent lot,
    the inventory cost, the all-time weighted average. */
-function replCost(){
-  /* 05 Oct 2026, his settled rule: on a `latestCogs` book what it costs to replace is COGS off the latest landed lot, quote
-     plus freight over its units, the figure the floor is struck on; read from the engine's latestCogs, not from pxCost,
-     which reads this through pxQuoteRate */
-  if(((typeof COST_RULE!=='undefined'?COST_RULE:{})[PROD]||{}).kind==='latestCogs'){const lc=POSITION_ENGINE.latestCogs(pPurch(PROD));if(lc)return +lc.rate.toFixed(2);}
-  const r=(typeof pxReplRate==='function')?pxReplRate():null;
-  if(r!=null)return +r.toFixed(2);
-  const c=stockCostFor(PROD);return +((c!=null?c:wavgBuy)).toFixed(2);
-}
+function replCost(){return SNAPSHOT_ENGINE.replCost(snapCtx(),PROD);}
 function median(a){if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 /* current cost base for the buy simulator: value and qty behind the wavg */
 /* ============ PRICING ENGINE (v138) ============
@@ -16515,11 +16687,7 @@ let pxOver={cost:null,shrink:null,party:'',anyQ:'',tier:'T2',cap:''};   // cost/
    ROUND 5, his call 1 of 29 Aug: THE BOOK'S OWN QUOTE, through quoteFor(PROD). This read
    was bare supplierQuote, which is salt's, so oil's engine inputs carried RM56 a unit
    from a ladder for a different commodity. Oil reads its own RM10 now. */
-function pxQuoteRate(){
-  const q=quoteFor(PROD);
-  if(!q||!q.tiers||!q.tiers.length)return replCost();
-  return Math.max.apply(null,q.tiers.map(t=>t.total/t.qty));
-}
+function pxQuoteRate(){return SNAPSHOT_ENGINE.quoteRate(snapCtx(),PROD);}
 function pxRecentBuyRate(days){
   const from=new Date(TODAY.getTime()-days*86400000);
   /* poLive, not !defaulted: an agreed-only lot is a rate you have not paid, and quoting
@@ -16541,59 +16709,18 @@ function pxRecentBuyRate(days){
    `freight`, typed when it is entered. The rate is the sum of those over the units of the same
    lots, over the replacement window first and over every live lot with a figure when the
    window holds none; a book with no typed freight reads 0, which the copy says. */
-function pxFreightRate(){
-  let ps=pxWindowLots().filter(p=>p.freight!=null);   /* v504: the same three lots as the rate */
-  if(!ps.length)ps=pPurch(PROD).filter(p=>poLive(p)&&p.qty>0&&p.freight!=null);
-  const k=ps.reduce((a,p)=>a+p.qty,0);
-  return k>0?+(ps.reduce((a,p)=>a+(+p.freight||0),0)/k).toFixed(4):0;
-}
+function pxFreightRate(){return SNAPSHOT_ENGINE.freightRate(snapCtx(),PROD);}
 /* v504, his instruction of 07 Sep 2026: THE WINDOW IS THE LAST THREE LOTS RECEIVED, not thirty
    days. Salt lands a lot every four or five days and oil every ten to fifteen, so one calendar
    window was six cycles on one book and two on the other; three lots is one purchase cycle
    or so on either, holds enough to smooth a single odd lot, and moves within a fortnight. The
    rate, the freight and (through the counts) the leak all read off the same lots. */
-function pxWindowLots(){
-  /* 08 Sep 2026: RECEIVED means landed. poLive alone let a lot in transit be one of the last three
-     received, and its rate moved the whole board the day it was ordered rather than the day it arrived. */
-  return pPurch(PROD).filter(p=>poLive(p)&&p.qty>0&&p.total>0&&(p.receivedOn||p.date)&&poRecvUnits(p)>0)
-    .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-3);
-}
 /* v504: THE LEAK, FROM THE COUNTS. A count is taken when a lot lands and the inventory is at or
    near empty, so the drift at each count is the leak of that cycle, every use included. The
    charge is the units missing over the last three cycles over the units handed over in them,
    a ratio the cost stack applies to landed. Null where fewer than one cycle can be read. */
-function pxLeakCharge(){
-  const cs=(typeof COUNTS!=='undefined'?COUNTS:[]).filter(c=>(c.product||'salt')===PROD&&c.date&&c.drift!=null)
-    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-  const last=cs.slice(-3); if(!last.length)return null;
-  const all=(typeof COUNTS!=='undefined'?COUNTS:[]).filter(c=>(c.product||'salt')===PROD&&c.date).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-  const i=all.findIndex(c=>c.date===last[0].date);
-  const start=i>0?all[i-1].date:null, end=last[last.length-1].date;
-  /* 08 Sep 2026, two corrections to the reading. THE DRIFTS ARE NETTED: a lot not yet stacked at
-     one count shows as a deficit there and the same surplus at the next (the v473 note says so),
-     and flooring each count at zero before summing charged the deficit and forgave nothing. And
-     THE UNITS ARE DATED BY THE MOVEMENT, NOT THE ORDER: a row's whole deliveredQty used to land on
-     deliveredOn||date, so a part-delivered order completed after the last count put its later
-     units into a cycle that had closed. Each Fulfilment step counts at its own date; units the
-     trail does not carry (a Correction that raised deliveredQty) count at deliveredOn||date. */
-  const leak=Math.max(0,-last.reduce((a,c)=>a+(+c.drift||0),0));
-  const inWin=d=>!!d&&(start==null||d>start)&&d<=end;
-  const sold=pSales(PROD).filter(s=>!s.cancelled).reduce((a,s)=>{
-    let got=0,tr=0;
-    (s.amend||[]).forEach(st=>{const k=+st.kg||0;if(st.kind!=='Fulfilment'||!(k>0))return;tr+=k;if(inWin(st.date||s.date))got+=k;});
-    const rest=(+s.deliveredQty||0)-tr;
-    if(rest>0&&inWin(s.deliveredOn||s.date))got+=rest;
-    return a+got;},0);
-  if(!(sold>0))return null;
-  return {ratio:+(leak/sold).toFixed(4),leak:+leak.toFixed(2),sold:+sold.toFixed(2),cycles:last.length,from:start,to:end};
-}
-function pxReplRate(){
-  const ps=pxWindowLots();
-  const k=ps.reduce((a,p)=>a+p.qty,0);
-  if(k>0)return +(ps.reduce((a,p)=>a+p.total,0)/k).toFixed(2);
-  const L=latestLot(PROD);
-  return L?+L.rate.toFixed(2):null;
-}
+function pxLeakCharge(){return SNAPSHOT_ENGINE.leakCharge(snapCtx(),PROD);}
+function pxReplRate(){return SNAPSHOT_ENGINE.replRate(snapCtx(),PROD);}
 /* ============ ROUND 5, HIS CALL 4: A RESTOCK IS PRICED AT ITS OWN TIER ============
    The suggested restock used to be priced at a flat per-unit rate, which is not a price
    anyone is quoted: lots are bought whole, off a tier ladder. This prices a suggestion at
@@ -16623,11 +16750,7 @@ function restockQuote(needUnits){
    ONLY WHAT IS LOGGED AS `sample` LEAVES. An unattributed plug is priced in FULL, which is the
    conservative way round: a leak nobody has explained is a leak until someone explains it. Salt's
    55.2 unit are still unattributed and still carried whole. */
-function pxSampleUnits(){return (typeof selfUseLog!=='undefined'?selfUseLog:[])
-  .filter(r=>(r.product||DEFAULT_PROD)===PROD&&r.why==='sample')
-  .reduce((a,r)=>a+(+r.kg||0),0);}
-function pxShrinkRate(){const h=buyUnits+openingFor(PROD).qty;
-  return h>0?Math.max(0,selfUse-pxSampleUnits())/h:0;}   // v232: this product's opening; v353: less promotion
+function pxShrinkRate(){return SNAPSHOT_ENGINE.shrinkRate(snapCtx(),PROD);}   // v232: this product's opening; v353: less promotion
 /* every unit that reaches a customer has to carry the ones that did not */
 /* ============ HOW MUCH OF THE LEAK THE CUSTOMER PAYS FOR (v205) ============
    Until now every unit lost was recovered in the price of the units that survived, so a
@@ -16719,22 +16842,10 @@ function pxShrinkRate(){const h=buyUnits+openingFor(PROD).qty;
 const PRICE_LOCK_ON=false;
 /* PRICE_LOCK lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* is the locked snapshot still the current lot? */
-function priceLockState(p){
-  const P=p||PROD, L=PRICE_LOCK[P], cur=latestLot(P);
-  if(!L)return {state:'none',lock:null,cur:cur};
-  if(!cur)return {state:'locked',lock:L,cur:null,days:dAge(L.lockedOn)};
-  const same=(cur.date===L.lot.date&&Math.abs(cur.rate-L.lot.rate)<0.005&&Math.abs(cur.qty-L.lot.qty)<0.005);
-  return {state:same?'locked':'stale',lock:L,cur:cur,days:dAge(L.lockedOn),
-          sinceLot:dAge(L.lot.date)};
-}
+function priceLockState(p){return SNAPSHOT_ENGINE.priceLockState(snapCtx(),p||PROD);}
 /* the rate actually paid for the most recent lot of this product, which is what a
    replacement costs today, rather than an average of what it used to cost */
-function latestLot(p){
-  const ls=pPurch(p).filter(x=>poLive(x)&&x.qty>0&&poRecvUnits(x)>0)   /* 08 Sep 2026: landed, as pxWindowLots */
-    .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-  const L=ls[ls.length-1];
-  return L?{qty:L.qty,total:L.total,rate:+(L.total/L.qty).toFixed(4),date:L.receivedOn||L.date,sup:L.supplier}:null;
-}
+function latestLot(p){return SNAPSHOT_ENGINE.latestLot(snapCtx(),p);}
 /* THE AVERAGE LOT, WHICH IS WHAT FREIGHT IS SPREAD OVER FROM v381, on his instruction.
    A trip is a recurring cost and the lots keep arriving, so dividing one trip by whichever lot
    happened to come last made a floor move on nothing but the size of the last purchase: oil's
@@ -16743,11 +16854,7 @@ function latestLot(p){
    received is what a trip actually costs to spread, and it settles as the book grows instead of
    swinging. The mean is used rather than the median for the same reason avgDelivery uses one:
    the cost is being spread over everything received, not over a typical lot. */
-function meanLotQty(p){
-  const ls=pPurch(p).filter(x=>poLive(x)&&x.qty>0);
-  if(!ls.length)return null;
-  return ls.reduce((a,x)=>a+x.qty,0)/ls.length;
-}
+function meanLotQty(p){return SNAPSHOT_ENGINE.meanLotQty(snapCtx(),p);}
 /* how much salt leaves per delivery, which is what turns a per-ORDER cost into a per-UNIT
    one. The mean is used rather than the median because the cost is being spread over
    everything shipped, not over a typical order. */
@@ -16763,19 +16870,8 @@ function meanLotQty(p){
    move on the day this ships, and `measured` tells every reader which of the two it is.
    The denominator for the per-unit spread stays the average of ALL moved orders, because
    what the share estimates is the rate at which any order turns out to need a delivery. */
-function delShare(p){
-  const rows=pSales(p).filter(s=>!s.cancelled&&txPhys(s)>0.009);
-  const said=rows.filter(s=>s.handover==='delivered'||s.handover==='collected');
-  const del=said.filter(s=>s.handover==='delivered');
-  return said.length
-    ? {v:del.length/said.length,delivered:del.length,said:said.length,of:rows.length,measured:true}
-    : {v:COST_BASIS.deliveredShare.v,delivered:0,said:0,of:rows.length,measured:false};
-}
-function avgDelivery(p){
-  const rows=pSales(p).filter(s=>!s.cancelled&&txPhys(s)>0.009);
-  const unitsSum=rows.reduce((a,s)=>a+txPhys(s),0);
-  return rows.length?{n:rows.length,kg:+unitsSum.toFixed(2),mean:+(unitsSum/rows.length).toFixed(4)}:{n:0,kg:0,mean:null};
-}
+function delShare(p){return SNAPSHOT_ENGINE.delShare(snapCtx(),p);}
+function avgDelivery(p){return SNAPSHOT_ENGINE.avgDelivery(snapCtx(),p);}
 /* ============ IFRS STATEMENT OF PROFIT OR LOSS (v232) ============
    The same four costs the board prices on, sorted the way the standards require rather
    than the way pricing wants them. Two of them belong in inventory and two do not, and a
@@ -16902,53 +16998,13 @@ function ifrsPL(p){
    if that block is not the module. The two functions below are the whole of what the desk
    contributes: they gather the book's facts and the policy into the records the engine takes.
    Nothing prices here any more. The comments that used to sit on each body moved with it. */
-function pxInputs(){
-  return {prod:PROD, lockOn:PRICE_LOCK_ON, lockState:priceLockState(PROD), lockBase:PRICE_LOCK[PROD]||null,
-    over:{cost:pxOver.cost,shrink:pxOver.shrink}, lot:latestLot(PROD), meanLot:meanLotQty(PROD), quoteRate:pxQuoteRate(),
-    repl:pxReplRate(),   /* round 5, call 2: the trailing 30-day weighted average, per book */
-    freightRate:pxFreightRate(),   /* v503: freight typed on the lots, per unit; v504: the same three lots */
-    leak:pxLeakCharge(),   /* v504: the last three count cycles */
-    costRule:(typeof COST_RULE!=='undefined'?COST_RULE:{})[PROD]||null,   /* v553: a per-book pricing basis, from the book */
-    latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(PROD))),   /* 05 Oct 2026: COGS off the latest landed lot, the `latestCogs` basis */
-    costBasis:{freightPerTrip:{rm:COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm},
-      deliveredShare:{v:delShare(PROD).v}},
-    attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
-}
-function pxPolicy(){
-  /* ROUND 5, his call 1: the taper fits the BOOK'S OWN quote and walks the BOOK'S OWN
-     ladder. tiers was bare supplierQuote and LADDER was salt's alone, so oil's curve ran
-     at salt's exponent inside salt's clamp. quoteFor(PROD) and ladderFor(PROD) hand each
-     book its own; salt's values are untouched. */
-  const pq=(typeof quoteFor==='function')?quoteFor(PROD):null;
-  /* v564: TIER 1 IS LIFTED OUT OF THE LADDER AND ONTO THE POLICY, and the engine reads it in one
-     place only. It is DECLARED in LADDER, and in LADDER_BY for a book that differs, so oil's
-     tier1:null overrides salt's pair by the same mechanism anchorQ and the span already use; it is
-     READ as P.tier1, beside `stated`, because that is what it is, a set of prices he has typed. The
-     first cut declared it and never passed it, so salt rendered with one tier and the derivation
-     row said the anchors were not stated. A fallback to P.LADDER.tier1 in the engine would have
-     hidden exactly that, which is why there is not one. */
-  /* v656: AND THE FIVE-TIER RULE COMES WITH IT, so the engine's own ask is the ladder's last level.
-     It was deliberately left out while the tiers were staged and quoted nowhere; the board is the
-     ladder now, and this is the one line that makes it so for every reader of pxPolicy at once. */
-  return {LADDER:ladderFor(PROD), minPerUnit:PRICE_ENGINE.minPerUnit||0, timePerOrder:PRICE_ENGINE.timePerOrder||0, lotFloor:PRICE.lotFloor||{},
-    stated:setPricesFor(PROD),
-    tier1:ladderFor(PROD).tier1||null,
-    tierRule:(typeof TIER_RULE!=='undefined'?TIER_RULE[PROD]:null)||null,
-    lastLevel:TIER_NAMES[TIER_NAMES.length-1],   /* 23 Sep 2026: the row's name, which was the literal Bronze */
-    tiers:(pq&&pq.tiers)?pq.tiers:[],
-    boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
-}
+function pxInputs(){return SNAPSHOT_ENGINE.inputs(snapCtx(),PROD);}
+function pxPolicy(){return SNAPSHOT_ENGINE.policy(snapCtx(),PROD);}
 /* one render quotes about 950 times off the same stack, so it is read once a render per book and per override
    (boardHeadroom walks pxOver.cost mid-render); outside a render it is computed fresh */
 function pxCost(){ return renderMemo('pxCost|'+PROD+'|'+pxOver.cost+'|'+pxOver.shrink, ()=>PRICING_ENGINE.costStack(pxInputs())); }
 /* the five tiers for the book in view, on its own rungs; null for a book with no rule */
-function fiveTiersNow(){
-  const R=TIER_RULE[PROD];
-  /* 23 Sep 2026: the board's own sizes walked with the rungs, so candy's 5 and 20 unit reach the customer's list; salt's and
-     oil's sizes are their rungs, so theirs do not move */
-  const sizes=R?R.rungs.concat(sizesFor(PROD).filter(q=>!R.rungs.some(r=>Math.abs(r-q)<0.009))).sort((a,b)=>a-b):null;
-  return R?PRICING_ENGINE.fiveTiers(sizes,pxCost(),pxPolicy()):null;   /* v656: the policy carries the rule */
-}
+function fiveTiersNow(){return SNAPSHOT_ENGINE.fiveTiers(snapCtx(),PROD,pxCost);}
 /* ============ v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, BEFORE ANY QUOTE READS IT ============
    A tier for each product since v646 (his instruction of 15 Sep 2026): a customer can hold Gold on salt and Silver on oil.
    A tier held is TIER_OF on the book, code to product to level: set on the Customers page, queued, drafted as `tierset`,
@@ -19915,11 +19971,7 @@ function tabWorkbench(){
   <div id="queueBox" style="margin-top:8px"></div>`;
 }
 /* the rungs the board prints: the book's sizes cut to boardBy. A read: the snapshot carries it to Maker's printed-sizes input (tools/book.mjs) */
-function shSizes(){
-  const all=(PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;
-  const B=(PRICE_ENGINE.boardBy||{})[PROD];
-  return (Array.isArray(B)&&B.length)?all.filter(q=>B.some(b=>Math.abs(b-q)<0.009)):all;
-}
+function shSizes(){return SNAPSHOT_ENGINE.shSizes(snapCtx(),PROD);}
 /* ============ TAB: PRICING ============ */
 function pxMarket(){
   const c=pxCost();

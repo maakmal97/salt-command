@@ -15,8 +15,12 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const NAMES = ["RULES", "PRICE_ENGINE", "LADDER_BY", "TIER_RULE", "TIER_NAMES", "SHRINK_ATTRIB", "COST_BASIS", "PRICE_LOCK", "PROFILE_RULE"];
 const round = (s) => JSON.stringify(s, (k, v) => typeof v === "number" ? Math.round(v * 1e8) / 1e8 : v);
 
+/* the fixture was taken on 16 Oct 2026 MYT, and the snapshot reads the page's TODAY (lock ages, profiles, drift), so the page opens on that day */
+const FIXTURE_NOW = Date.parse("2026-10-16T04:00:00Z");
+const pinClock = (w) => { w.Date.now = () => FIXTURE_NOW; };
+
 export async function run({ ok }) {
-  const { w } = await openMaster();
+  const { w } = await openMaster(undefined, { before: pinClock });
   const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
   const a = src.indexOf("/* ==== ENGINE rules:"), b = src.indexOf("/* ==== END ENGINE rules ==== */");
   const outside = src.slice(0, a) + src.slice(b);
