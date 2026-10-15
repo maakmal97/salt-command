@@ -25,19 +25,19 @@
   },
   {
     "name": "Native fold applies an existing-customer appointment",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "if (rr.appoint) {",
     "replace": "if (false && rr.appoint) {"
   },
   {
     "name": "Appointments do not create downstream money rows",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "if (rr.appoint) {",
     "replace": "if (rr.appoint) { book.sales.push({ rid: \"appointment-mutation\", customer: rr.code, product: \"salt\", date: \"2099-10-05\", qty: 0, total: 0, cash: 0 });"
   },
   {
     "name": "Appointments do not overwrite an existing customer's place",
-    "file": "tools/fold.mjs",
+    "file": "engine/apply.mjs",
     "find": "if (rr.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rr.code] = rr.geo; }",
     "replace": "if (rr.geo || rr.appoint) { book.PLACED = book.PLACED || {}; book.PLACED[rr.code] = rr.geo || [0, 0]; }"
   },
