@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1116",
+  "d": "15 Oct 2026",
+  "t": "PAST STATEMENTS ARE GONE FROM EVERY CUSTOMER RECORD",
+  "n": [
+   "<b>NO MONTHLY ISSUE REACHES A CUSTOMER.</b> The page stopped drawing an earlier statement in v1105; now the publish seals each account's bundle again with no statements and drops the clear list of issue dates, the Counter's open answers no longer send that list, and the test account's bundle is empty. The account is the live statement alone, with its month, range and product filters as before.",
+   "<b>THE SEALED ISSUES ARE LEFT AS ISSUED.</b> statements/2026-08 and 2026-09 stay on disk untouched and on his own page; only what is published changed, so a customer's record loses the old issue at the next publish. A publish with no STMT_KEY, or a record the key does not open, leaves such a record as it was. Nothing in pricing, the engine or the Desk moved."
+  ]
+ },
+ {
   "v": "v1114",
   "d": "15 Oct 2026",
   "t": "TWO SALT HANDOVERS RECORDED AND RM220 CASH TAKEN ON S267",

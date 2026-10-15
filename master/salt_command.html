@@ -9307,7 +9307,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1114","d":"15 Oct 2026","t":"TWO SALT HANDOVERS RECORDED AND RM220 CASH TAKEN ON S267","n":["<b>THREE ROWS FOLDED.</b> Two corrections record salt as collected on 15 Oct: 1 unit to CS6-PER (s266) and 2 unit to CS6-BS-R (s267). A fulfilment then takes RM220 cash on s267. All three were preapproved by Counter Admin. Both corrections were flagged as advances, with RM110 a unit against a usual RM100.","<b>INVENTORY.</b> The shelf rolls out 1 unit of salt to CS6-PER and 2 unit to CS6-BS-R. The cash fulfilment moves no stock. No lot landed, so the cost basis stays as it is."]}];
+const evolution=[{"v":"v1116","d":"15 Oct 2026","t":"PAST STATEMENTS ARE GONE FROM EVERY CUSTOMER RECORD","n":["<b>NO MONTHLY ISSUE REACHES A CUSTOMER.</b> The page stopped drawing an earlier statement in v1105; now the publish seals each account's bundle again with no statements and drops the clear list of issue dates, the Counter's open answers no longer send that list, and the test account's bundle is empty. The account is the live statement alone, with its month, range and product filters as before.","<b>THE SEALED ISSUES ARE LEFT AS ISSUED.</b> statements/2026-08 and 2026-09 stay on disk untouched and on his own page; only what is published changed, so a customer's record loses the old issue at the next publish. A publish with no STMT_KEY, or a record the key does not open, leaves such a record as it was. Nothing in pricing, the engine or the Desk moved."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9451,7 +9451,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Oct 2026, 13:22 KL';
+const LAST_UPDATED='15 Oct 2026, 18:45 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
