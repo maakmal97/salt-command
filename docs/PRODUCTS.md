@@ -267,3 +267,12 @@ rate never rises across the grid (`walkSizes`). Salt's step moved from 0.25 to 0
 moved from 1 to 10 changes no price: its five points are its five typed rungs, a stated board. **Every board size must be a point of
 its grid**, or a listed tile could not be ordered; salt's 6.25 rung is one only because the step is a quarter. The suite holds each of
 these (`test/any-quantity.mjs`).
+
+## 10. Spare is retired (15 Oct 2026)
+
+The fifth book, `spare`, opened on 22 Sep 2026 to prove that adding a book is a command, is retired with `node tools/product.mjs
+--retire spare`: it had no row, opening or price, so the tool allowed it. Its entry stays in `ledger/book.json` with `retired: true` (off
+the switch, the Enter form, the tier grid and the parity scan; `--unretire` brings it back). Its name left `PRODUCT_WORDS`, the position
+engine's word list and the Admin's book-name pattern, so the live books are four: salt, oil, candy and rice. The vendored hue tokens in
+`design/salt-ds.css` stay, they being the design system's to drop. `product.mjs` now writes the book through `writeBookFile`, since a plain
+`JSON.stringify` had re-laid all 8,000 lines.

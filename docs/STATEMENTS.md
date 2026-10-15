@@ -468,7 +468,7 @@ the same line** (`PLET_AT`: 8 in the 24 grid, its capitals centred on the mark's
 square, the droplet rounder, the capsule turned to the diagonal so it is as wide as it is tall, the book's ring larger,
 the cube as it was. The app's own ring on the door and the rail keeps the home-screen icon's proportion (`APP_RING`). Where a line of the mark would
 cross its letter, `PLET_ROOM` gives it room: the cube's three inner edges stop at radius 5 and the capsule's seam gives
-way. The spare book's Ring stays bare, and the aria stays the shape. The letter's face is the class `.plet`, never a style attribute: the site's
+way. A book with no mark draws the Ring, bare, and the aria stays the shape (spare, the book that exercised it, was retired on 15 Oct 2026). The letter's face is the class `.plet`, never a style attribute: the site's
 style policy refuses one. The guest board carries it in the page's own styles, with the mono face its policy lets load.
 
 **The one name on the site is the app's.** The manifest, the `<title>`, the iPhone app title, the
@@ -1002,8 +1002,8 @@ audiences differ, and the whitelist that guards his card would have had to widen
 of 28 Sep 2026, revised the same day: "Rewards remains solely for salt", and associates "can see all but just
 on the sales progress"). Both functions loop `PROD_ORDER` and fill `reward` only on a book the desk's
 `tieredBooks()` names, salt where the window has none, null on every other whatever `networkStats` says. Each
-page draws a book's reward block only where it is present, so a fixed board (oil, candy, rice) and the spare
-book show the progress alone, on his card and theirs.
+page draws a book's reward block only where it is present, so a fixed board (oil, candy, rice)
+shows the progress alone, on his card and theirs.
 
 *What is left off, and why.* `share` is a ratio against the WHOLE book's revenue, so an associate
 holding their own RM and their own share can solve for his total; `stars` are bands of that same
@@ -2692,7 +2692,7 @@ text is redrawn from state, so the next tap that clears the note clears them wit
 
 **A book has no name here: its mark stands alone.** His word of 12 Oct 2026 ("and even the name of the product") took back decision 5 of 11 Oct, which had Salt
 Account say the Desk's name beside the mark. Where this page shows a book it draws the book's mark, his letter in it, and no word for it: not the Desk's name
-(`salt`, `oil`, `candy`, `rice`, `spare`) and not the shape (Cube, Droplet, Lozenge, Capsule, Ring). **A reader is told the shape**, as on the customer's page, through
+(`salt`, `oil`, `candy`, `rice`) and not the shape (Cube, Droplet, Lozenge, Capsule, Ring). **A reader is told the shape**, as on the customer's page, through
 a hidden `.sr` or an `aria-label` (`pshape`), never the product. An order's tile is the mark with *2 units* under it (`bookTile`, the customer's `mtile`), a
 heading the mark alone (`pmarkHead`, the associates' report card), a row's Product tag the dot and the mark (`bookTag`), a legend or a field about a book ends in the
 mark (a fourth label element, `[words, act, key, book]`), a tile of a form is the mark alone (`bookItem`), and a select, which cannot hold a mark, says the book's
