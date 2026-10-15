@@ -11250,7 +11250,10 @@ const TIER_RULE={
      RM720 and RM900; he was asked and chose to drop them. `fixed` is what makes fiveTiers state the
      board instead of striking columns, and `multiples`, `start` and `step` are gone because with one
      price there is nothing for them to say. */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:1, max:50}},
+  /* 15 OCT 2026, HIS WORD: oil is ordered in tens, its smallest unit step. The grid's step IS the order step (the Worker's onStep reads
+     it), and oil's prices do not move when it goes from 1 to 10: the five points are the five typed rungs. Salt stays at a quarter
+     and a coarser step there would raise most of its prices, the walk running through every point (docs/PRODUCTS.md section 9). */
+  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:10, max:50}},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the

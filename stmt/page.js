@@ -3329,7 +3329,8 @@ const CLIENT_JS = `
     var g=gridOf(P), i=g?gridIx(g,q):-1; if(i>=0&&typeof g.p[i]==='number') return g.p[i];
     var z=(P.sizes||[]).filter(function(x){ return String(x.q)===String(q); })[0]; return z?z.price:null; }
   var ASK_CAP=1000;   /* the Worker's own limit on a size (checkPlacement) */
-  function overMax(P,q){ var g=gridOf(P); return !!g&&+q>g.max+1e-9&&+q<=ASK_CAP; }
+  /* past the max a size is still a whole number of steps from min (the Worker's onStep with past), so Negotiate never takes an off-step size */
+  function overMax(P,q){ var g=gridOf(P), k=g?(+q-g.min)/g.step:0; return !!g&&+q>g.max+1e-9&&+q<=ASK_CAP&&Math.abs(k-Math.round(k))<1e-6; }
   /* what the page says where nothing can be ordered: a list with nothing priced, or no list at all */
   function noOrderLine(){ return tw(prices&&(prices.soon&&prices.soon.length||prices.products&&prices.products.length)?'ord.opensSet':'ord.opensList'); }
   async function api(path, body, method){

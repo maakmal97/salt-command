@@ -1433,11 +1433,12 @@ exists the page says notifications are not switched on.
 ### Any quantity, and Negotiate (his decisions of 05 Oct 2026)
 
 - **Any quantity at an automatic price.** Each book's `TIER_RULE` carries `grid`, {min, step, max}: salt 0.5 to 25 in
-  quarters, oil 10 to 50, candy 1 to 30, rice 1 to 10, in steps of one. The publish seals each customer's `grid`
+  quarters, oil 10 to 50 in tens, candy 1 to 30 and rice 1 to 10 in ones (his word of 15 Oct 2026: each book is ordered in its
+  smallest unit step, and `step` is that setting, read by the page's field, the Worker's `onStep` and nothing else). The publish seals each customer's `grid`
   ({min, step, max, p[]}, the engine's `quoteGrid` at their drift) beside the board's `sizes`, and writes the steps alone,
   no price, in the clear beside the stamp (`priceSteps`). The stamp covers the grid. The page reads every figure through one
   `priceAt(P, q)` and works nothing out. The Worker refuses a size off the step (`offStep`) or over the max (`overMax`,
-  Negotiate's alone) and **a Place with no stamp** against a stamped list (as moved, 409 with the list). The desk Worker's
+  Negotiate's alone, and still a whole number of steps from the min: oil 60 is asked for, oil 55 is refused) and **a Place with no stamp** against a stamped list (as moved, 409 with the list). The desk Worker's
   card at any size is the engine's `quoteAt` on the snapshot's inputs and the drift it carries per code (`cardAt`).
 - **Negotiate.** An order placed with `ask` (a figure of theirs optional, a number only) waits in `price` (asked). His offer
   is the goods alone (`POST /orders/<id>/offer`): drafted as Accept drafts it (never under the floor), filed as an ack
