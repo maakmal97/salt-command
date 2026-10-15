@@ -25,7 +25,7 @@ export const OWNER_JS = `
   var makerGeo=${MAKER_GEO_JS};
   var mHome=document.getElementById('mHome'), oAccts=document.getElementById('oAccts'),
       oLinks=document.getElementById('oLinks'), aopen=document.getElementById('aopen'),
-      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, deskWait=null, sheetBusy=false;
+      sheet=null, sheetAt=null, sheetRows=[], sheetIssue=null, cards=null, sheetBusy=false;
   /* 11 Oct 2026: EVERY CONTROL CARRIES A STABLE data-act, "<place>.<thing>", named by what the control does and never by its words, so a
      later change of label, class or layout leaves whatever finds a control by its act where it was (docs/STATEMENTS.md). A control drawn
      once for each item of a list also carries the item's id as data-key. Where a helper makes the control, its label may be
@@ -175,7 +175,7 @@ export const OWNER_JS = `
       var j=await refs('/all/sheet');
       nGot('sheet');
       if(!changed('sheet',[j.accounts,j.desk,j.stranger,j.issue])&&quiet===true) return;
-      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; deskWait=j.desk||null; stranger=j.stranger||null;
+      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; stranger=j.stranger||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
       drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true);
       if(aOpen) openCard(aOpen);
@@ -4299,8 +4299,8 @@ export const OWNER_JS = `
      His home: every thing that waits on him, one card each on the system's Action recipe (salt-action, coloured by --salt-sev), ranked
      Now, Soon, Watch and oldest first in each. NOW is a customer waiting: an order placed, a payment they say they sent (on an order or
      against the account), a message asked, an account whose address is refused. SOON is his own work: a Desk row to approve, an entry
-     that did not get through, a stage he rejected, a guest link, an ID with no account, accounts nobody has been sent. WATCH is the
-     Desk's own count, an override in force and a notice set. A practice item is drawn after the real ones, labelled, and counted nowhere.
+     that did not get through, a stage he rejected, a guest link, an ID with no account, accounts nobody has been sent, money owed past its term
+     and goods paid for and not handed over. WATCH is an override in force and a notice set. A practice item is drawn after the real ones, labelled, and counted nowhere.
      A card is its kind word, who (the code), what, its age, one Open that goes to the detail, and, only where the page already has that
      exact action as one tap, one filled pill that calls the same function with the same guards. NOTHING HERE BOOKS MONEY: Agree, Yes
      received and Cash stay on their cards in Orders, which Open reaches. Read off what the places read anyway (/all/sheet, /all/refs, the
@@ -4670,13 +4670,9 @@ export const OWNER_JS = `
       var b=ghost(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-act="order.handed-units"]'); }); c._add(b);
     });
   }
-  /* the Watch cards: the Desk's own count as it last told this site, an override in force, a notice set */
-  function deskNeed(){
-    var dn=deskWait.n||0, dAt=deskWait.at?', as of '+when(deskWait.at):'';
-    /* S9 9.8 fix: the desk's own Waiting on you count, as fresh as the desk's last read, so it says when that was.
-       S9 fix: and in the past tense, saying so, once an order has moved since */
-    return item('watch','watch','Desk','w:desk', '', {who:'Desk', why:'The Desk shows '+(dn||'nothing')+' for you'+dAt+(deskWait.moved?'; an order has moved since.':'.')});
-  }
+  /* the Watch cards: an override in force, a notice set. 15 Oct 2026 (plan 1, part 5): THE DESK'S OWN COUNT IS NO CARD. "The Desk shows 4 for you" named
+     nothing he could act on, and every kind it counts (the master's ordActs: an order placed, a question asked, a payment they say they sent, cash
+     to record on goods handed over) is a card of its own here: Order, Message, Payment, and Owed once past its term. */
   function hoursNeed(m){
     var wd=day3('en')[new Date(Date.parse(m.until)+28800000).getUTCDay()];
     return item('watch','watch','Hours','w:hours', '', {who:'Shop', what:(m.open?'Open':'Closed')+' until '+wd+' '+hm(m.until),
@@ -4781,7 +4777,6 @@ export const OWNER_JS = `
     real.filter(function(a){ return a.account===false; }).forEach(function(a){ L.push(bareNeed(a)); });
     var fresh=real.filter(function(a){ return a.account&&!a.sent&&!(a.seen&&a.seen.opens); });
     if(turn||fresh.length) L.push(turn?turnCard(fresh.length>0):sendNeed(fresh));
-    if(deskWait) L.push(deskNeed());
     var manual=makerHours&&makerHours.status&&makerHours.status.source==='manual'&&makerHours.config&&makerHours.config.manual;
     if(manual) L.push(hoursNeed(manual));
     if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));
