@@ -102,7 +102,7 @@ export async function run({ ok }) {
     const pad = (n) => String(n).padStart(3, "0");
     const mkOrder = (r, i, extra = {}) => {
       const t0 = (r.date || "2026-10-01") + "T02:00:00.000Z";
-      return Object.assign({ id: "2026101500" + pad(i) + "-" + r.rid, u: "u" + pad(i) + "-aaaa", code: r.customer, status: "acknowledged", product: r.product || "salt",
+      return Object.assign({ id: "20261015" + "00" + pad(i) + "-" + r.rid, u: "u" + pad(i) + "-aaaa", code: r.customer, status: "acknowledged", product: r.product || "salt",
         qty: r.qty, total: r.total, delivery: r.delivery || 0, mode: "collect", forFriend: false, ledgerKey: E.ovKey(r), moved: r.deliveredQty || 0, movedOn: null,
         paid: r.cash || 0, claimed: 0, payments: [], at: t0, history: [{ at: t0, status: "acknowledged", by: "desk" }],
         queued: { ack: t0, paid: r.cash || 0, moved: r.deliveredQty || 0 } }, extra);
@@ -202,7 +202,7 @@ export async function run({ ok }) {
       const mkPlaced = (p, i) => {
         const fl = D.floorFor({ pricing: ledger.PRICING }, p[0], p[1]);
         const placed = +(fl.floor * 1.6).toFixed(2);
-        return { floor: fl.floor, o: { id: "2026101600" + pad(i) + "-acc" + i, u: "p" + pad(i) + "-aaaa", code: "CN3-WM", status: "placed", product: p[0], qty: p[1], total: placed, delivery: 0,
+        return { floor: fl.floor, o: { id: "20261016" + "00" + pad(i) + "-acc" + i, u: "p" + pad(i) + "-aaaa", code: "CN3-WM", status: "placed", product: p[0], qty: p[1], total: placed, delivery: 0,
           mode: p[2], forFriend: false, at: "2026-10-16T01:00:00.000Z", history: [{ at: "2026-10-16T01:00:00.000Z", status: "placed", by: "customer" }], queued: {}, unit: placed / p[1] } };
       };
       const ps = sizes.flatMap((s, i) => [mkPlaced(s, 2 * i), mkPlaced(s, 2 * i + 1)]);
