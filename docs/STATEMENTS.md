@@ -1759,6 +1759,20 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`makerVaultTurn`). The claim card's own unlock and lock (`claim.passphrase`, `claim.lock-slip`) and the password fields of Add ID, Amend ID, Place on the map
   and the unsent entry (`record.add-id.passphrase`, `record.amend-id.passphrase`, `record.place.passphrase`, `record.retained.passphrase`) are retired from the
   act table. No route, body or request id changed; the Desk's own vault code is untouched, and no route writes `vault-key`.
+- **The approve card says the change, one card and one Approve an order** (plan 2 of `docs/plans-counter-admin.html`, 16 Oct 2026;
+  `test/admin-approve-card.mjs`, its mutations in `test/admin-approve-card.mutations.json`). The head is the row (its rid), the customer's code (read off the
+  draft, the entry or its payload, so a correction never reads "no code"), the book's mark, and where the entry came from (Counter Admin by its `makerRequest`,
+  the site by its `orderId` unless the Desk's own cash, the laptop by a bare payload, else the phone) and when. Then one plain verb off the draft's kind, the
+  fields it changes and which way (Take back a payment, Payment received, Handover, Change the price, Close the order, New sale, Fix a row ...); Correction and
+  Fulfilment stand only in Details. **Now and After** (Paid, Owed, Handed over), only what changes marked, are the Desk's: `src/approve-figures.js` reads each
+  pending sale's row off the mirror, applies the approved moves on that row not yet folded and then the pending ones in entry order, moved for the figure fields
+  as `ovAmend` moves a sale, and reads them with the engine's `txPaid`, `txOwed` and `txEffDeliv`; `owedNow` and `owedAfter` are `partyOwedRM` for the bucket's
+  owner against `TERMS.ceiling`. The Counter computes no money. **At most two lines that ask a decision**, in sentence case: over the ceiling (or, on a move on a
+  booked row that raises what is owed, under it), then the drafter's flags for under the floor, a refund opening, stock below zero and a twin. Every flag, the
+  drafter's note and the row (its id added where the drafted row leaves it off) stand in **Details**, its own control. **Drafts on one row (same `amends`), or
+  one trip, are one card**; its Approve, which says the result ("Approve: s262 closed"), sends each draft's own approval in entry order and stops at the first
+  refusal, naming it; a trip is still one request. A move left after a partial approval reads from the approved one and says Half approved. Needs you holds the
+  same one card an order. The drafter, the fold, the preapproval (D6) and what one approval does are unchanged.
 - **The rows to approve wear the approve card, the queue folds away, and no native confirm is left** (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct;
   `test/admin-approve-queue.mjs`, its mutations in `test/admin-approve-queue.mutations.json`). **A Desk row to approve is the system's Approve recipe**
   (`salt-approve`, carried whole by `SITE_RECIPES` and restated nowhere: the page's own rules naming it only take its empty answer line away and leave it out of
