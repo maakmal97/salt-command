@@ -1,0 +1,196 @@
+{
+ "ok": true,
+ "count": 4,
+ "approved": [
+  {
+   "id": "2026-10-15T12:48:33.817Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s267",
+    "qty": 2,
+    "total": 220,
+    "cash": 220,
+    "date": "2026-10-15",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "cash",
+      "from": 220,
+      "to": 0
+     },
+     {
+      "field": "paidOn",
+      "from": "2026-10-15",
+      "to": null
+     }
+    ],
+    "customer": "CS6-BS-R"
+   },
+   "reasoning": "Correction against CS6-BS-R's order of 2 unit for RM 220 dated 2026-10-15 (s267). Sets cash from 220 to 0, paidOn from 2026-10-15 to cleared. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 3 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.",
+    "This is an ADVANCE: 2 unit goes out with RM 220 unpaid. Check it against CS6-BS's credit cap."
+   ],
+   "amends": "s267",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-15T12:48:33.817Z",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-BS-R",
+     "rid": "s267",
+     "date": "2026-10-15",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "cash": 0,
+      "paidOn": null
+     }
+    }
+   },
+   "decidedAt": "2026-10-15T13:06:19.326Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-15T12:52:24.992Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 10,
+    "total": 116,
+    "cash": 0,
+    "date": "2026-10-14",
+    "customer": "CS6-PER",
+    "product": "oil"
+   },
+   "reasoning": "Fulfilment against CS6-PER's order of 10 unit for RM 116 agreed 2026-10-14. RM 116 and 0 unit move on 2026-10-15, against RM 116 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s265",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-15T12:52:24.992Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": "s265",
+     "date": "2026-10-15",
+     "qty": 0,
+     "total": 0,
+     "kind": "Fulfilment",
+     "cash": 116,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-10-15T13:06:27.599Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-15T12:52:25.992Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-10-14",
+    "customer": "CS6-PER"
+   },
+   "reasoning": "Fulfilment against CS6-PER's order of 1 unit for RM 110 agreed 2026-10-14. RM 110 and 0 unit move on 2026-10-15, against RM 110 and 0 unit outstanding. Leaves RM 0 and 0 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [
+    "This SETTLES the order in full: nothing is left outstanding after it."
+   ],
+   "amends": "s266",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-15T12:52:25.992Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": "s266",
+     "date": "2026-10-15",
+     "qty": 0,
+     "total": 0,
+     "kind": "Fulfilment",
+     "cash": 110,
+     "kg": 0
+    }
+   },
+   "decidedAt": "2026-10-15T13:06:34.944Z",
+   "decidedBy": "Counter Admin"
+  },
+  {
+   "id": "2026-10-15T12:52:26.992Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s262",
+    "qty": 6.25,
+    "total": 575,
+    "cash": 0,
+    "date": "2026-10-15",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 575,
+      "to": 540
+     },
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 6.25
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-15"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CC9-OKR"
+   },
+   "reasoning": "Correction against CC9-OKR's order of 6.25 unit for RM 575 dated 2026-10-15 (s262). Sets total from 575 to 540, deliveredQty from 0 to 6.25, deliveredOn from unset to 2026-10-15, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 6.25 unit goes out with RM 540 unpaid. Check it against CC9-OKR's credit cap."
+   ],
+   "amends": "s262",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-15T12:52:26.992Z",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CC9-OKR",
+     "rid": "s262",
+     "date": "2026-10-15",
+     "qty": 0,
+     "total": 0,
+     "kind": "Correction",
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "total": 540,
+      "deliveredQty": 6.25,
+      "deliveredOn": "2026-10-15",
+      "handover": "collected"
+     }
+    }
+   },
+   "decidedAt": "2026-10-15T13:06:39.798Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
