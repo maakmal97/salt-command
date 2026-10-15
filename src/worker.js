@@ -1169,7 +1169,7 @@ async function makerQueueReview(env) {
       fingerprint: fingerprint || withdrawal?.entry?.fingerprint || null,
       canWithdraw,
       canRetry: !!withdrawal?.pending,
-      unavailable: unreadable.length && owner && !draft && !withdrawal ? "A queue entry could not be read, so nothing is withdrawn until it is mended."
+      unavailable: unreadable.length && !draft && !withdrawal ? "A queue entry could not be read, so nothing is withdrawn until it is mended."
         : owners.length > 1 ? "More than one device holds this timestamp."
         : withdrawal?.pending ? "Withdrawal is recorded; retry to finish removing it."
           : !owners.length ? "No server-held device entry matches this refusal."
