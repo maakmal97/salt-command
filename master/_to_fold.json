@@ -1,0 +1,68 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-15T16:23:27.544Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s263",
+    "qty": 0.5,
+    "total": 80,
+    "cash": 0,
+    "date": "2026-10-14",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 80,
+      "to": 65
+     }
+    ],
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Correction against CR3-DAM's order of 0.5 unit for RM 80 dated 2026-10-14 (s263). Sets total from 80 to 65. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CR3-DAM typically pays about RM 80/unit for salt across 20 orders; this one is RM 130, 62.5% above that."
+   ],
+   "amends": "s263",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-15T16:23:27.544Z",
+    "type": "AMEND",
+    "party": "CR3-DAM",
+    "qty": 0,
+    "total": 0,
+    "status": "corrected",
+    "raw": "Correction against s263 for CR3-DAM on 2026-10-16",
+    "payload": {
+     "mode": "amend",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "product": "salt",
+     "rid": "s263",
+     "orderKey": "CR3-DAM|2026-10-14|80",
+     "date": "2026-10-16",
+     "kind": "Correction",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "sameDay": false,
+     "note": null,
+     "fields": {
+      "total": 65
+     },
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0
+    },
+    "makerRequest": "125e477163fafea0f3b3994c0dc138619475a93f7d36c5530556a4bb0658fb5b"
+   },
+   "decidedAt": "2026-10-15T16:24:13.375Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
