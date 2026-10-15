@@ -1398,7 +1398,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
     'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
-    'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','spare','delivered','collected',
+    'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);

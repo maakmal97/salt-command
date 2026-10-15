@@ -44,7 +44,7 @@
       "unit": "unit",
       "accent": "var(--salt-product-spare)",
       "since": "2026-09-22",
-      "retired": false,
+      "retired": true,
       "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served.",
       "reward": false
     }

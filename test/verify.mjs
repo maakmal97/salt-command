@@ -24707,7 +24707,7 @@ await (async () => {
     "his letters: I in the cube, G in the droplet, E in the lozenge, V in the capsule: " + JSON.stringify(P8.PLET));
   /* each book's words, held to the lock's own list both ways: a word the list gains and no book here
      owns goes red, so a new name cannot slip past the initial check (a new book joins OWN8, lettered or not) */
-  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"], spare: ["spare"] };
+  const OWN8 = { salt: ["salt"], oil: ["oil"], candy: ["candy"], rice: ["rice"] };
   const owned8 = Object.values(OWN8).flat(), letters8 = Object.values(P8.PLET).join("");
   ok(OW8.PRODUCT_WORDS.every((w) => owned8.includes(w)) && owned8.every((w) => OW8.PRODUCT_WORDS.includes(w))
     && Object.keys(P8.PLET).every((k) => OWN8[k] && /^[A-Z]$/.test(P8.PLET[k]) && OWN8[k].every((w) => w[0].toUpperCase() !== P8.PLET[k]))
@@ -25434,12 +25434,12 @@ await (async () => {
   const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const msrc = readFileSync(FROZEN_MASTER, "utf8");
   const tierNames = JSON.parse((/const TIER_NAMES=(\[[^\]]*\]);/.exec(msrc) || [, "[]"])[1].replace(/'/g, '"'));
-  const names = Object.values(book.PRODUCTS || {}).map((p) => String(p.name).toLowerCase());
+  const names = Object.values(book.PRODUCTS || {}).filter((p) => !p.retired).map((p) => String(p.name).toLowerCase());
 
   /* ---- the lists ---- */
   ok(tierNames.length >= 4 && tierNames.every((n) => WL.LEVEL_WORDS.includes(n.toLowerCase())) && WL.LEVEL_WORDS.includes("bronze"),
     "every level the master names is on the lock's list, Bronze's old name kept: " + JSON.stringify(tierNames));
-  ok(names.length >= 5 && names.every((w) => WL.PRODUCT_WORDS.includes(w)) && WL.PRODUCT_WORDS.length === names.length,
+  ok(names.length >= 4 && names.every((w) => WL.PRODUCT_WORDS.includes(w)) && WL.PRODUCT_WORDS.length === names.length,
     "every book's name is on the product list, and the list holds nothing else: " + JSON.stringify(names.filter((w) => !WL.PRODUCT_WORDS.includes(w))));
   const all = WL.LEVEL_WORDS.concat(WL.PRODUCT_WORDS);
   ok(all.every((w) => /[a-z]/.test(w) || w.length >= 2), "and no word in another script is a single character");

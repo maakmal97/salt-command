@@ -4315,7 +4315,7 @@ export const OWNER_JS = `
      a line, bookTile mtile for a card (the mark, and under it "2.5 units"), bookTag the system's Product tag holding the mark, bookItem a tile of a form that is the
      mark alone, and pmarkHead, the customer's, a heading that is the mark alone. A select cannot hold a mark, so an option says the book's letter in brackets, [I],
      and nothing for a book with none. noBook takes a book's name out of a sentence the Desk or the Counter wrote, for the words that are not this page's to change. */
-  var BOOKS=/\\b(salt|oil|candy|rice|spare)\\b(?!\\s+(?:account|counter|command|desk)\\b)/gi;
+  var BOOKS=/\\b(salt|oil|candy|rice)\\b(?!\\s+(?:account|counter|command|desk)\\b)/gi;
   function noBook(text){
     return String(text==null?'':text).replace(BOOKS,function(w,k,at,all){ var before=all.slice(0,at); return /\\bthe\\s+$/i.test(before)?'book':/(^|[.!?]\\s)$/.test(before)?'The book':'the book'; });
   }
