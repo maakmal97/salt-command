@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="2da0af4dedc9d82d";
+var SALT_BUILD_ID="f984419bffb34c08";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9439,7 +9439,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1125","d":"16 Oct 2026","t":"COUNTER ADMIN: THE APPROVE CARD, FOR A PERSON","n":["<b>THE HEAD SAYS WHOSE ROW AND FROM WHERE.</b> The row, the customer's code (read off the draft, so a correction never reads \"no code\"), the book's mark, and whether the entry came from Counter Admin, the site, the laptop or the phone, with its time.","<b>ONE PLAIN VERB.</b> Take back a payment, Payment received, Handover, Change the price, Close the order, New sale, Fix a row; Correction and Fulfilment stand only in Details.","<b>NOW AND AFTER.</b> Paid, Owed and Handed over, only what changes marked, worked out on the Desk off the mirror and the engine (src/approve-figures.js); the Counter computes no money.","<b>TWO LINES AT MOST, AND ONLY THOSE THAT ASK.</b> Over the credit ceiling (or under it, when a move on a booked row raises what is owed), under the floor, a refund opening, stock below zero, a twin; in sentence case. Every flag, the drafter's note and the row stand under Details.","<b>ONE CARD AND ONE APPROVE AN ORDER.</b> Drafts on one row, or one trip, are one card; its Approve sends each draft's own approval in the order entered and stops at the first refusal, naming it; a move left after a partial approval says Half approved. A customer's claim stands alone. Needs you holds the same cards.","<b>THE BUTTON SAYS THE RESULT.</b> \"Approve: s262 closed\", \"Approve: s267 owes RM 220.00\". Plan 2 of docs/plans-counter-admin.html; the drafter, the fold and what one approval does are unchanged."]}];
+const evolution=[{"v":"v1126","d":"16 Oct 2026","t":"THE ORDER STAGES LIVE IN ONE SHARED ENGINE","n":["Each order stage's entry (Accept, handover, cash, Received, Not found, close, cancel, amend, the account claim) is built by engine/stages.mjs; the Worker calls it, and every tap previews, refuses and queues exactly as before.","Step S1b of moving the book into a Durable Object: proved byte-equal over 392 steps against the previous Worker."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9583,7 +9583,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Oct 2026, 01:59 KL';
+const LAST_UPDATED='16 Oct 2026, 03:53 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
