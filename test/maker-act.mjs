@@ -170,7 +170,9 @@ const catalog = () => ({
   correctionFields: [{ field: "qty", kind: "number", required: true }, { field: "cash", kind: "number", required: true }],
   revivable: [{ rid: "row-3", party: "CX1-ZED", product: "salt", date: "2026-09-02", qty: 1, total: 100, paid: 0, movedUnits: 0, cancelledOn: "2026-09-03" }],
   houseBoards: { salt: { sizes: [1, 5, 10], hidden: [] } }, tips: [{ id: "tip-1", title: "A tip", hush: null }],
-  appointmentCustomers: ["CX1-ZED"], appointmentKinds: [{ kind: "reseller", stream: "R2" }]
+  appointmentCustomers: ["CX1-ZED"], appointmentKinds: [{ kind: "reseller", stream: "R2" }],
+  /* plan 1 (15 Oct 2026): what is owed both ways, as the Desk serves it (src/maker-inputs.js owedBothWays); none on the richest day, a test adds its own */
+  today: "2026-10-10", owedMoney: [], owedGoods: []
 });
 const account = (u, code, patch = {}) => ({ username: u, code, account: true, t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear",
   seen: { opens: 1, last: ISO, how: "link" }, sent: ISO, issued: "2026-10-01", ...patch });
@@ -194,7 +196,7 @@ const links = () => [
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
    sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, and inputsAnswer what Record's forms are told (the books, the customers, the rows, the tips), as the others change theirs. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false }) {
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false }) {
   const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {}, wire = [];
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls; noKey: true files the names and places but no slip key; retained is extra [key, value] pairs kept in localStorage; cryptoImpl is the page's crypto; p.wire is every request that left the page */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
@@ -253,7 +255,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
       w.setInterval = (f, ms) => { intervals.push({ f, ms, off: false }); return intervals.length; };
       w.clearInterval = (id) => { if (intervals[id - 1]) intervals[id - 1].off = true; };
       /* a retained loan and two kept quick replies on this device, so the page draws the retained-input section and the replies */
-      w.localStorage.setItem("saltMakerPending:/all/maker/inputs/loan", JSON.stringify({ path: "/all/maker/inputs/loan",
+      /* bare: true keeps no retained loan, so a quiet day can be wholly quiet */
+      if (!bare) w.localStorage.setItem("saltMakerPending:/all/maker/inputs/loan", JSON.stringify({ path: "/all/maker/inputs/loan",
         body: { at: ISO, form: "cash", direction: "in", code: "CX1-ZED", date: "2026-10-01", amount: 5 } }));
       w.localStorage.setItem("saltQuickReplies", JSON.stringify(["On my way", "Thank you"]));
       retained.forEach(([k, v]) => w.localStorage.setItem(k, v));

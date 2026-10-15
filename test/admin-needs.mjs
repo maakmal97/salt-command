@@ -16,6 +16,10 @@
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
 import { richOwnerPage, byAct, cardOf } from "./maker-act.mjs";
 import { SITE_RECIPES } from "../stmt/statement-css.js";
+import worker from "../src/worker.js";
+import { handleMaker } from "../stmt/maker.js";
+import { world } from "./maker-queue-withdrawal.mjs";
+import { makerRequestFingerprint } from "../src/maker-request.js";
 
 const U1 = "abcd-efgh", U2 = "jkmn-pqrs", U3 = "tvwx-yz23", U4 = "4567-89ab", PRACTICE = "0000-0000";
 const NOW = Date.now(), ago = (h) => new Date(NOW - h * 3600000).toISOString();
@@ -39,6 +43,7 @@ function busyDay(state) {
       j.drafts[0].id = ago(6); j.drafts[1].id = ago(3); j.drafts[2].id = ago(1);
       j.drafts.push({ ...j.drafts[0], id: ago(0.5), entry: { type: "SELL", party: "CX1-ZED", date: "2026-10-10", claim: { id: "c-1" } } });
       j.drafts = j.drafts.filter((d) => !state.approved.has(d.id));
+      j.orders.find((o) => o.id === "ord-r1").ledgerKey = "CX1-ZED|2026-09-01|200";
       return j;
     },
     claims: (j) => {
@@ -58,12 +63,17 @@ function busyDay(state) {
       j.accounts.find((a) => a.username === U4).issued = "2026-10-09";
       return j;
     },
-    linksAnswer: (j) => { j.refs.find((r) => r.id === "w1").made = ago(20); return j; }
+    linksAnswer: (j) => { j.refs.find((r) => r.id === "w1").made = ago(20); return j; },
+    /* plan 1: money owed past term on a row that is a site order (ord-r1's key), and goods paid for on a row that is none */
+    inputsAnswer: (j) => { Object.assign(j.catalog, OWED); return j; }
   };
 }
+const OWED = { owedMoney: [{ party: "CX1-ZED", rm: 150, since: "2026-09-20", due: "2026-09-21",
+  rows: [{ rid: "row-1", key: "CX1-ZED|2026-09-01|200", product: "salt", rm: 150, since: "2026-09-20", due: "2026-09-21" }] }],
+owedGoods: [{ party: "CX2-ZED", rid: "row-1", key: "CX2-ZED|2026-10-05|99|oil", product: "oil", units: 1.5, date: "2026-10-05" }] };
 const NOW_KEYS = ["o:ord-p3", "p:ord-a1", "c:" + U1 + ":c-1", "o:ord-p1", "m:" + U1, "o:ord-p4", "c:" + U1 + ":c-2", "o:ord-p2", "k:" + U3,
   "m:" + PRACTICE, "c:" + PRACTICE + ":c-x", "o:ex-1"];
-const WATCH_KEYS = ["w:desk", "w:hours", "w:notice"];
+const WATCH_KEYS = ["w:hours", "w:notice"];
 /* the loan the harness keeps unsent on this phone is a Soon card too (Phase 4c), between the accounts not sent and the guest link by its age */
 const UNSENT = "u:/all/maker/inputs/loan";
 
@@ -103,7 +113,7 @@ export async function run({ ok, pageWork }) {
   let p = await open(state());
   try {
     const d = p.d;
-    ok(same(p.keys("now"), NOW_KEYS) && same(p.keys("soon").slice(0, 3), ["s", UNSENT, "l:w1"]) && same(p.keys("watch"), WATCH_KEYS),
+    ok(same(p.keys("now"), NOW_KEYS) && same(p.keys("soon").slice(0, 5), ["$:CX1-ZED", "g:row-1", "s", UNSENT, "l:w1"]) && same(p.keys("watch"), WATCH_KEYS),
       "an order placed, a payment they say they sent, a message asked and a locked account are Now, the guest link and the accounts not sent Soon, and the Desk's line, "
       + "an override and a notice Watch: " + JSON.stringify([p.keys("now"), p.keys("soon"), p.keys("watch")]));
     ok(p.cards().every((c) => c.classList.contains("salt-action") && c.classList.contains("salt-action--" + c.getAttribute("data-sev"))
@@ -122,8 +132,16 @@ export async function run({ ok, pageWork }) {
     ok(p.card("x:0") && p.card("q:q-2") && p.card("q:q-1") === null && p.card("x:0").getAttribute("data-sev") === "soon" && /Refused for the fixture/.test(p.card("x:0").textContent)
       && p.card("q:q-2").getAttribute("data-kind") === "rows" && p.card("a:ord-a2") && p.card("a:ord-a2").getAttribute("data-sev") === "soon",
     "an entry that did not get through (the drafter's refusal, a refused server entry, not a held one) and a stage he rejected are Soon");
-    ok(/The Desk shows 2 for you, as of/.test(p.card("w:desk").textContent) && /Closed until Fri 18:00/.test(p.card("w:hours").textContent) && /Open late/.test(p.card("w:notice").textContent),
-      "Watch says what the Desk counts, \"Closed until Fri 18:00\" for the override in force, and the notice set");
+    ok(!p.card("w:desk") && !/The Desk shows/.test(d.getElementById("nlist").textContent) && /Closed until Fri 18:00/.test(p.card("w:hours").textContent) && /Open late/.test(p.card("w:notice").textContent),
+      "Watch says \"Closed until Fri 18:00\" for the override in force and the notice set, and no card says only what the Desk counts (plan 1, part 5)");
+    /* 1b. WHAT IS OWED, BOTH WAYS (plan 1, parts 3 and 4) */
+    const owedM = p.words(p.card("$:CX1-ZED")), owedG = p.words(p.card("g:row-1"));
+    ok(p.card("$:CX1-ZED").getAttribute("data-sev") === "soon" && p.card("$:CX1-ZED").getAttribute("data-kind") === "payments" && owedM.kind === "Owed" && owedM.who === "CX1-ZED"
+      && owedM.what === "RM 150.00 past term" && /Handed over 20 Sep 2026, due 21 Sep 2026[.]/.test(p.card("$:CX1-ZED").textContent) && same(p.buttons(p.card("$:CX1-ZED")), ["Record payment"]),
+    "money owed past term is a Soon card: who, the Desk's figure, when it was handed over and due, and Record payment: " + JSON.stringify(owedM));
+    ok(p.card("g:row-1").getAttribute("data-sev") === "soon" && p.card("g:row-1").getAttribute("data-kind") === "orders" && owedG.kind === "To hand over" && owedG.who === "CX2-ZED"
+      && owedG.what === "1.5 units paid, not handed over" && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(owedG.mark) && same(p.buttons(p.card("g:row-1")), ["Handover"]),
+    "goods paid for and not handed over are a Soon card: who, the book's mark, the units, and Handover: " + JSON.stringify(owedG));
 
     /* 2. THE RANKING */
     const order2 = p.cards().map((c) => c.getAttribute("data-sev"));
@@ -131,7 +149,7 @@ export async function run({ ok, pageWork }) {
     ok(order2.every((s, i) => i === 0 || sevOrder.indexOf(order2[i - 1]) <= sevOrder.indexOf(s)),
       "Now comes before Soon and Soon before Watch: " + JSON.stringify(order2));
     ok(same(p.keys("now"), NOW_KEYS), "within Now the oldest comes first, and the practice items after the real ones: " + JSON.stringify(p.keys("now")));
-    ok(same(p.keys("soon"), ["s", UNSENT, "l:w1", "d:" + ago(6), "d:" + ago(3), "d:" + ago(1), "d:" + ago(0.5), "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
+    ok(same(p.keys("soon"), ["$:CX1-ZED", "g:row-1", "s", UNSENT, "l:w1", "d:" + ago(6), "d:" + ago(3), "d:" + ago(1), "d:" + ago(0.5), "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
       "within Soon the oldest first, and what has no age after what has one: " + JSON.stringify(p.keys("soon")));
     ok([...d.querySelectorAll("#nlist .nsev")].map((h) => h.textContent.replace(/ . \d+$/, "")).join() === "Now,Soon,Watch", "each severity is headed by its word");
 
@@ -170,15 +188,28 @@ export async function run({ ok, pageWork }) {
     ].filter(Boolean);
     ok(opens.length === 0, "Open goes to the place and part of its kind, and opens the thing it is about: " + JSON.stringify(opens));
     byAct(d, "nav.needs").click(); await p.work.quiet();
-    ok(p.cards().filter((c) => !byAct(c, "need.open")).map((c) => c.getAttribute("data-need")).join() === "w:desk",
-      "every card but the Desk's own line has an Open");
+    ok(p.cards().filter((c) => !byAct(c, "need.open")).length === 0, "every card has an Open");
+    /* plan 1: Record payment opens the site order's card at Money received; Handover, on a row with no site order, Record's Correct a row on that row */
+    p.posts.length = 0;
+    byAct(p.card("$:CX1-ZED"), "need.owed-pay", "CX1-ZED").click(); await p.work.quiet();
+    const moneyHead = d.querySelector('#makerReview [data-sect="money"]');
+    ok(p.where() === "orders/ready" && !!d.querySelector('#makerOrderList [data-order="ord-r1"][aria-current="true"]') && moneyHead && moneyHead.textContent === "Money received" && d.activeElement === moneyHead,
+      "Record payment opens the order the row is, on Money received: " + p.where() + " " + (d.activeElement && d.activeElement.textContent));
+    byAct(d, "nav.needs").click(); await p.work.quiet();
+    byAct(p.card("g:row-1"), "need.owed-hand", "row-1").click(); await p.work.quiet();
+    const form = d.querySelector('#makerInputs [data-form="correct-a-row"]'), pick = form && form.querySelector('[data-act="record.amend.row"]'), kind = form && form.querySelector("input:checked[value=Fulfilment]");
+    ok(p.where() === "record/entry" && form && !form.hidden && pick && pick.value === "row-1" && !!kind,
+      "Handover on a row with no site order opens Correct a row on that row, as goods or cash moved: " + JSON.stringify([p.where(), form && form.hidden, pick && pick.value, !!kind]));
+    ok(p.posts.length === 0, "and neither books anything: " + JSON.stringify(p.posts.map((x) => x.route)));
 
     /* 6. THE ONE FILLED PILL */
     const pills = (c) => [...c.querySelectorAll(".salt-pill")].map((b) => b.textContent);
     const money = /Agree|Accept|Received|Cash|Yes received|Pay/i;
-    ok(p.cards().filter((c) => ["orders", "payments", "messages"].includes(c.getAttribute("data-kind"))).every((c) => same(p.buttons(c), [])),
+    const owedCard = (c) => /^[$g]:/.test(c.getAttribute("data-need"));
+    ok(p.cards().filter((c) => ["orders", "payments", "messages"].includes(c.getAttribute("data-kind")) && !owedCard(c)).every((c) => same(p.buttons(c), [])),
       "no order, payment or message card has any control of its own, only the tap, so nothing is booked from Needs you");
-    ok(!p.cards().some((c) => p.buttons(c).some((t) => money.test(t))), "and no card of any kind carries Agree, Accept, Received or Cash");
+    ok(!p.cards().some((c) => !owedCard(c) && p.buttons(c).some((t) => money.test(t))) && p.cards().filter(owedCard).every((c) => c.querySelectorAll(".salt-pill").length === 0),
+      "and no card of any kind carries Agree, Accept, Received or Cash; an owed card's one way is a ghost that opens, never a filled pill");
     ok(same(pills(p.card("d:" + ago(6))), ["Approve"]) && same(pills(p.card("d:" + ago(3))), ["Approve both"]) && pills(p.card("d:" + ago(0.5))).length === 0
       && /Answer this through the payment card/.test(p.card("d:" + ago(0.5)).textContent),
     "a Desk row has Approve row (Approve trip when it rides one) and a customer's claim row none, as on Record > Approve");
@@ -230,7 +261,7 @@ export async function run({ ok, pageWork }) {
     const done = p.card("d:" + id);
     ok(done && /Row approved[.]/.test(done.textContent) && !done.querySelector(".salt-pill") && done.getAttribute("data-sev") === "soon",
       "the answer stays on the card he tapped, though the row is no longer there: " + (done && done.textContent));
-    ok(/^9 now, 11 soon/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "3",
+    ok(/^9 now, 13 soon/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "3",
       "and the row is no longer counted: " + d.getElementById("nCount").textContent);
     byAct(d, "nav.customers").click(); await p.work.quiet();
     byAct(d, "nav.needs").click(); await p.work.quiet();
@@ -262,7 +293,7 @@ export async function run({ ok, pageWork }) {
     ok(SITE_RECIPES.includes(SELECTED + " {") && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED)).map((b) => b.getAttribute("data-chip")), ["rows"]),
       "and it alone matches the selector the system's tabs are drawn selected by, so it looks different from the other five");
     await p.tap("need.kind.all");
-    ok(p.cards().length === 12 + 12 + 3, "All shows every card again, Watch among them: " + p.cards().length);
+    ok(p.cards().length === 12 + 14 + 2, "All shows every card again, Watch among them: " + p.cards().length);
     await p.tap("need.kind.orders");
     ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "9"), "Watch shows under All only, and a filter changes no count");
   } finally { p.w.close(); }
@@ -279,18 +310,101 @@ export async function run({ ok, pageWork }) {
   /* 8. A READ THAT FAILED IS SAID */
   p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.threads] });
   try {
-    const d = p.d, line = d.getElementById("nCount").textContent;
-    ok(/ Not read: orders and rows and messages[.]$/.test(line) && !p.card("o:ord-p1") && !p.card("m:" + U1) && p.card("c:" + U1 + ":c-1") && p.card("k:" + U3),
-      "what could not be read is named under the title, and the cards of what could be read stand: " + line);
-    ok(!/^Nothing needs you/.test(line), "and it never says nothing needs him");
+    const d = p.d, line = d.getElementById("nCount").textContent, fail = d.getElementById("nFail"), home = d.getElementById("mHome");
+    /* plan 1 (15 Oct 2026): the failed read leads the page, above the title, in plain words with a Retry */
+    const lead = [...home.children].find((n) => !n.hidden && !n.classList.contains("salt-eyebrow"));
+    ok(fail && !fail.hidden && lead === fail && fail.getAttribute("role") === "alert" && /^Couldn't read orders and rows and messages[.]/.test(fail.textContent)
+      && byAct(fail, "need.retry") && byAct(fail, "need.retry").textContent === "Retry" && !p.card("o:ord-p1") && !p.card("m:" + U1) && p.card("c:" + U1 + ":c-1") && p.card("k:" + U3),
+    "a failed read is the first thing on the page, \"Couldn't read orders and rows and messages.\" with a Retry, and the cards of what could be read stand: " + (fail && fail.textContent) + " | " + line);
+    ok(!/Nothing needs you/.test(line) && / in what could be read[.]$/.test(line), "and the line under the title never says nothing needs him: " + line);
     p.fail.clear();
-    await p.tick();
-    ok(!/Not read/.test(d.getElementById("nCount").textContent) && p.card("o:ord-p1") && p.card("m:" + U1), "once the next read gets through, the cards come and the note goes: " + d.getElementById("nCount").textContent);
+    p.reads.length = 0;
+    byAct(fail, "need.retry").click(); await p.work.quiet();
+    ok(fail.hidden && p.reads.includes(ROUTES.review) && p.reads.includes(ROUTES.threads) && !/could be read/.test(d.getElementById("nCount").textContent) && p.card("o:ord-p1") && p.card("m:" + U1),
+      "Retry reads again, and once it gets through the cards come and the banner goes: " + d.getElementById("nCount").textContent);
   } finally { p.w.close(); }
-  p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin] });
+  p = await open(state(), { failRoutes: [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin, ROUTES.inputs] });
   try {
-    ok(/Not read: orders and rows, payments, messages, hours and the notice[.]$/.test(p.d.getElementById("nCount").textContent),
-      "and every source that failed is named: " + p.d.getElementById("nCount").textContent);
+    ok(/^Couldn't read orders and rows, payments, messages, hours, the notice and what is owed[.]$/.test(p.d.getElementById("nFail").textContent.replace(/Retry$/, "")),
+      "and every source that failed is named: " + p.d.getElementById("nFail").textContent);
+  } finally { p.w.close(); }
+  /* with nothing to show and a read failed, the page never gives the all-clear */
+  const emptyDay = { review: (j) => ({ ...j, orders: [], drafts: [], refused: [], queue: [] }), claims: (j) => ({ ...j, claims: [] }), threads: (j) => ({ ...j, threads: [] }),
+    bulletin: (j) => ({ ...j, lines: [] }), sheetAnswer: (j) => ({ ...j, accounts: [] }), linksAnswer: (j) => ({ ...j, refs: [] }) };
+  p = await richOwnerPage({ pageWork, ...emptyDay, bare: true, failRoutes: [ROUTES.review, ROUTES.sheet] });
+  try {
+    await p.work.quiet();
+    const d = p.d, said = d.getElementById("nCount").textContent + " | " + d.getElementById("nlist").textContent;
+    ok(!d.getElementById("nFail").hidden && !/Nothing needs you/.test(said) && /^Nothing in what could be read[.]/.test(said), "a failed read on a quiet day still leads, and nothing says nothing needs him: " + said);
+    p.fail.clear(); p.reads.length = 0;
+    byAct(d, "need.retry").click(); await p.work.quiet();
+    ok(d.getElementById("nFail").hidden && p.reads.includes(ROUTES.sheet) && p.reads.includes(ROUTES.review) && /^Nothing needs you[.]/.test(d.getElementById("nCount").textContent),
+      "and Retry reads again every read that failed, the accounts among them, and the banner goes: " + JSON.stringify(p.reads));
+  } finally { p.w.close(); }
+
+  /* 8c. WHAT IS OWED IS THE DESK'S OWN READING (plan 1, parts 3 and 4): src/maker-inputs.js owedBothWays over the engine, on a fixed day */
+  {
+    const { owedBothWays, makerInputCatalog } = await import("../src/maker-inputs.js");
+    const E = (await import("../engine/position.mjs")).default;
+    const sales = [
+      { rid: "r-a", customer: "CA1-ZED", date: "2026-10-01", qty: 2, total: 200, cash: 50, deliveredQty: 2, deliveredOn: "2026-10-01" },
+      { rid: "r-b", customer: "CA1-ZED", date: "2026-09-28", qty: 1, total: 100, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-28" },
+      { rid: "r-c", customer: "CB1-ZED", date: "2026-10-04", qty: 1, total: 100, cash: 0, deliveredQty: 1, deliveredOn: "2026-10-04" },
+      { rid: "r-d", customer: "CC1-ZED", date: "2026-10-01", qty: 3, total: 300, cash: 300, deliveredQty: 1, deliveredOn: "2026-10-01" },
+      { rid: "r-e", customer: "CD1-ZED", date: "2026-09-01", qty: 1, total: 100, cash: 0, deliveredQty: 1, deliveredOn: "2026-09-01", defaulted: true },
+      { rid: "r-f", customer: "CE1-ZED", date: "2026-10-02", qty: 2, total: 200, cash: 0, deliveredQty: 0 },
+      { rid: "r-g", customer: "CF1-ZED", date: "2026-10-03", qty: 1, total: 100, cash: 100, deliveredQty: 0, cancelled: true },
+      { rid: "r-h", customer: "CG1-ZED", date: "2026-10-03", qty: 2, total: 0, cash: 0, deliveredQty: 1, deliveredOn: "2026-10-03", goodwill: true }
+    ];
+    const book = { version: "v-fixture", state: { TERMS: { holdDays: 1 } }, sales, purchases: [] };
+    const r = owedBothWays(book, "2026-10-05"), m = r.owedMoney;
+    ok(m.length === 1 && m[0].party === "CA1-ZED" && m[0].rm === +(E.txAdvance(sales[0]) + E.txAdvance(sales[1])).toFixed(2) && m[0].rm === 250
+      && m[0].since === "2026-09-28" && m[0].due === "2026-09-29" && same(m[0].rows.map((x) => [x.rid, x.rm]), [["r-b", 100], ["r-a", 150]]) && m[0].rows[0].key === E.ovKey(sales[1]),
+    "money owed is the engine's txAdvance on goods handed over, past the term from the oldest handover, summed per party and the oldest first; "
+      + "one due today, a write-off and a row with nothing handed over are not owed: " + JSON.stringify(m));
+    ok(same(r.owedGoods.map((x) => [x.party, x.rid, x.units]), [["CC1-ZED", "r-d", 2]]),
+      "goods owed are the units still to hand over on a row paid in full, and never on one unpaid, cancelled or a gift: " + JSON.stringify(r.owedGoods));
+    const cat = makerInputCatalog(book, {}, [], [], "2026-10-05");
+    ok(same(cat.owedMoney, m) && same(cat.owedGoods, r.owedGoods) && cat.today === "2026-10-05", "and the catalog Counter Admin reads carries both");
+    const none = owedBothWays({ ...book, state: {} }, "2026-10-05");
+    ok(!("owedMoney" in none) && /payment term/.test(none.owedError || ""), "a mirror with no term says so, never that nothing is owed: " + JSON.stringify(none));
+  }
+  p = await open(state(), { inputsAnswer: (j) => { delete j.catalog.owedMoney; delete j.catalog.owedGoods; return j; } });
+  try {
+    ok(!p.d.getElementById("nFail").hidden && /what is owed/.test(p.d.getElementById("nFail").textContent) && !p.card("$:CX1-ZED"),
+      "a Desk that does not say what is owed is a failed read, never nothing owed: " + p.d.getElementById("nFail").textContent);
+  } finally { p.w.close(); }
+
+  /* 8b. ONE BAD QUEUE KEY NEVER BLANKS THE REVIEW (plan 1, part 2; 15 Oct 2026, a laptop key written without its device): the review reads every
+     other key and names the bad ones; a withdrawal still refuses while one stands */
+  {
+    const { DatabaseSync } = await import("node:sqlite");
+    const w = world(DatabaseSync, worker, handleMaker), at = "2099-10-06T02:00:00.000Z", entry = { at, date: "2099-10-06", payload: { mode: "ordinary" } };
+    await w.upload("phone-A", [entry]);
+    await w.kv.put("q:laptop-x", JSON.stringify({ queue: [{ at: "2099-10-06T03:00:00.000Z", date: "2099-10-06" }] }));
+    await w.kv.put("q:laptop-y", "{");
+    const res = await w.call("/all/maker/review"), body = await res.json(), held = (body.queue || []).find((e) => e.id === at);
+    ok(res.status === 200 && held && held.device === "phone-A" && same([...(body.unreadable || [])].sort(), ["q:laptop-x", "q:laptop-y"]),
+      "a queue key with no matching device, or not JSON, is skipped and named, and the review still answers with every other entry: " + JSON.stringify([res.status, body.unreadable, !!held]));
+    const fp = await makerRequestFingerprint("server-queue-entry", entry);
+    ok(held && held.canWithdraw === false && /could not be read/.test(held.unavailable || ""), "while one stands, no entry is offered for withdrawal: " + JSON.stringify(held && [held.canWithdraw, held.unavailable]));
+    const wd = await (await w.call("/all/maker/queue/" + encodeURIComponent(at) + "/withdraw", "POST", { fingerprint: fp })).json();
+    ok(wd.ok === false && wd.state === "withdrawal-pending" && /no matching owner|could not be read/.test(wd.error || "") && JSON.parse(await w.kv.get("q:phone-A")).queue.some((e) => e.at === at),
+      "and the withdrawal road stays strict: it refuses rather than act on a doubtful queue: " + JSON.stringify(wd));
+    await w.kv.delete("q:laptop-x"); await w.kv.delete("q:laptop-y");
+    const mended = await (await w.call("/all/maker/review")).json(), again = (mended.queue || []).find((e) => e.id === at);
+    const wd2 = await (await w.call("/all/maker/queue/" + encodeURIComponent(at) + "/withdraw", "POST", { fingerprint: fp })).json();
+    ok(same(mended.unreadable, []) && again && again.canWithdraw === true && wd2.ok === true && wd2.state === "withdrawn",
+      "once the keys are mended the review is whole and the entry is withdrawn: " + JSON.stringify(wd2));
+  }
+  p = await open(state(), { review: (j) => { j.unreadable = ["q:laptop-x"]; return j; } });
+  try {
+    const d = p.d, c = p.card("qx");
+    ok(c && c.getAttribute("data-sev") === "soon" && /1 queue entry unreadable: q:laptop-x/.test(c.textContent) && p.card("o:ord-p1") && p.card("q:q-2"),
+      "Needs you says \"1 queue entry unreadable: q:laptop-x\" as a Soon card, and every other card stands: " + (c && c.textContent));
+    byAct(d, "nav.record").click(); await p.work.quiet();
+    const line = d.querySelector("#makerQueueReview [data-unreadable]");
+    ok(line && line.textContent === "1 queue entry unreadable: q:laptop-x", "and Record's queue names it too: " + (line && line.textContent));
   } finally { p.w.close(); }
 
   /* 9. THE 30-SECOND READ */
@@ -300,8 +414,8 @@ export async function run({ ok, pageWork }) {
     ok(p.live().length === 1, "Needs you sets one read every 30 seconds: " + JSON.stringify(p.intervals.map((i) => i.ms)));
     p.reads.length = 0;
     await p.tick();
-    ok(same([...p.reads].sort(), [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin, ROUTES.sheet, ROUTES.links].sort()),
-      "a tick on Needs you reads the orders and rows, the claims, the threads, the hours, the notice, the accounts and the links, each once: " + JSON.stringify(p.reads));
+    ok(same([...p.reads].sort(), [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin, ROUTES.sheet, ROUTES.links, ROUTES.inputs].sort()),
+      "a tick on Needs you reads the orders and rows, the claims, the threads, the hours, the notice, the accounts, the links and what is owed, each once: " + JSON.stringify(p.reads));
 
     /* nothing drawn when nothing changed */
     const kept = { c: p.card("o:ord-p1"), s: p.card("l:w1"), r: d.querySelector("#makerOrderList .ordrow"), status: d.getElementById("makerReviewStatus").textContent };

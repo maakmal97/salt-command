@@ -54,12 +54,6 @@
   "replace": "return item('soon','messages','Message','m:'+t.u,"
  },
  {
-  "name": "the Desk's line is Soon",
-  "file": "stmt/owner.js",
-  "find": "return item('watch','watch','Desk','w:desk',",
-  "replace": "return item('soon','watch','Desk','w:desk',"
- },
- {
   "name": "the override in force is not shown",
   "file": "stmt/owner.js",
   "find": "if(manual) L.push(hoursNeed(manual));",
@@ -204,12 +198,6 @@
   "replace": "}}, function(c){\n      var go=pill("
  },
  {
-  "name": "the Desk's line opens Orders",
-  "file": "stmt/owner.js",
-  "find": "{who:'Desk', why:'The Desk shows '",
-  "replace": "{who:'Desk', open:goPlace('orders','waiting'), why:'The Desk shows '"
- },
- {
   "name": "an order has an Agree",
   "file": "stmt/owner.js",
   "find": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o), practice:t, open:to}));",
@@ -282,10 +270,10 @@
   "replace": "'\" aria-selected=\"'"
  },
  {
-  "name": "a failed read is not said",
+  "name": "a failed read does not lead the page",
   "file": "stmt/owner.js",
-  "find": "+(bad.length?' Not read: '+andList(bad)+'.':'');",
-  "replace": "+'.';"
+  "find": "var bad=needsBad(); drawFail(bad);",
+  "replace": "var bad=needsBad(); drawFail([]);"
  },
  {
   "name": "a failed review is not noted",
@@ -350,14 +338,14 @@
  {
   "name": "Needs you does not read the accounts",
   "file": "stmt/owner.js",
-  "find": "if(sheet&&!sheetBusy) jobs.push(loadSheet(true));",
+  "find": "if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));",
   "replace": ""
  },
  {
   "name": "Needs you does not read the hours",
   "file": "stmt/owner.js",
-  "find": "loadMakerThreads(true), readShop()];",
-  "replace": "loadMakerThreads(true)];"
+  "find": "loadMakerThreads(true), readShop(), loadOwed()];",
+  "replace": "loadMakerThreads(true), loadOwed()];"
  },
  {
   "name": "a read starts while one is out",
@@ -508,5 +496,185 @@
   "file": "stmt/owner.js",
   "find": "x.hidden=!(k==='all'||have[k]);",
   "replace": "x.hidden=false;"
+ },
+ {
+  "name": "the all-clear is said with a read failed",
+  "file": "stmt/owner.js",
+  "find": ":bad.length?'Nothing in what could be read.':'Nothing needs you.';",
+  "replace": ":'Nothing needs you.';"
+ },
+ {
+  "name": "the count reads as whole with a read failed",
+  "file": "stmt/owner.js",
+  "find": "+(bad.length?' in what could be read.':'.')",
+  "replace": "+'.'"
+ },
+ {
+  "name": "Retry reads nothing",
+  "file": "stmt/owner.js",
+  "find": "nRetry.textContent='Reading.'; readNeeds(true); });",
+  "replace": "nRetry.textContent='Reading.'; });"
+ },
+ {
+  "name": "a failed sheet read is never read again",
+  "file": "stmt/owner.js",
+  "find": "if((sheet||nSrc.sheet)&&!sheetBusy)",
+  "replace": "if(sheet&&!sheetBusy)"
+ },
+ {
+  "name": "the banner stands below the title",
+  "file": "stmt/page.js",
+  "find": "        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'\n        + \"<h1>Needs you</h1>\"",
+  "replace": "        + \"<h1>Needs you</h1>\"\n        + '<div id=\"nFail\" class=\"salt-action salt-action--now nfail\" role=\"alert\" hidden></div>'"
+ },
+ {
+  "name": "one bad key blanks the review",
+  "file": "src/worker.js",
+  "find": "const records = await deviceQueueRecords(env, unreadable);",
+  "replace": "const records = await deviceQueueRecords(env);"
+ },
+ {
+  "name": "the bad keys are not named",
+  "file": "src/worker.js",
+  "find": "return { ok: true, entries, unreadable };",
+  "replace": "return { ok: true, entries, unreadable: [] };"
+ },
+ {
+  "name": "a withdrawal is offered beside a bad key",
+  "file": "src/worker.js",
+  "find": "const canWithdraw = !unreadable.length && !!owner",
+  "replace": "const canWithdraw = !!owner"
+ },
+ {
+  "name": "every road reads past a bad key",
+  "file": "src/worker.js",
+  "find": "async function deviceQueueRecords(env, skip = null) {",
+  "replace": "async function deviceQueueRecords(env, skip = []) {"
+ },
+ {
+  "name": "the Counter drops the bad keys",
+  "file": "stmt/maker.js",
+  "find": "queue: queue.entries, unreadable });",
+  "replace": "queue: queue.entries });"
+ },
+ {
+  "name": "Needs you does not name a bad key",
+  "file": "stmt/owner.js",
+  "find": "    if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));\n",
+  "replace": ""
+ },
+ {
+  "name": "Record's queue does not name a bad key",
+  "file": "stmt/owner.js",
+  "find": "if(bad.length){ var ub=",
+  "replace": "if(false){ var ub="
+ },
+ {
+  "name": "money is owed on the day it falls due",
+  "file": "src/maker-inputs.js",
+  "find": "if (due && due < today) {",
+  "replace": "if (due && due <= today) {"
+ },
+ {
+  "name": "goods are owed on an unpaid row",
+  "file": "src/maker-inputs.js",
+  "find": "left > 0.0001 && E.txStat(row).pay === \"Paid\")",
+  "replace": "left > 0.0001)"
+ },
+ {
+  "name": "a party's oldest handover is not kept",
+  "file": "src/maker-inputs.js",
+  "find": "      if (since < m.since) { m.since = since; m.due = due; }\n",
+  "replace": ""
+ },
+ {
+  "name": "the catalog does not carry what is owed",
+  "file": "src/maker-inputs.js",
+  "find": "version: book.version, products, parties, ...owedBothWays(book, today),",
+  "replace": "version: book.version, products, parties,"
+ },
+ {
+  "name": "money owed is not drawn",
+  "file": "stmt/owner.js",
+  "find": "    if(owed) owed.money.forEach(function(m){ if(m&&m.rows&&m.rows.length) L.push(moneyNeed(m)); });\n",
+  "replace": ""
+ },
+ {
+  "name": "goods owed are not drawn",
+  "file": "stmt/owner.js",
+  "find": "    if(owed) owed.goods.forEach(function(r){ if(r&&r.rid) L.push(goodsNeed(r)); });\n",
+  "replace": ""
+ },
+ {
+  "name": "money owed is Now",
+  "file": "stmt/owner.js",
+  "find": "return item('soon','payments','Owed',",
+  "replace": "return item('now','payments','Owed',"
+ },
+ {
+  "name": "goods owed are Now",
+  "file": "stmt/owner.js",
+  "find": "return item('soon','orders','To hand over',",
+  "replace": "return item('now','orders','To hand over',"
+ },
+ {
+  "name": "a site order's money opens Correct a row",
+  "file": "stmt/owner.js",
+  "find": "if(o) openOrderAt(o.id, sect); else amendFor(r.rid);",
+  "replace": "amendFor(r.rid);"
+ },
+ {
+  "name": "a row with no site order opens nothing",
+  "file": "stmt/owner.js",
+  "find": "if(o) openOrderAt(o.id, sect); else amendFor(r.rid);",
+  "replace": "if(o) openOrderAt(o.id, sect);"
+ },
+ {
+  "name": "the order opens at its head",
+  "file": "stmt/owner.js",
+  "find": "ordFocus={id:id, at:at}; focusOrderAt();",
+  "replace": "ordFocus=null;"
+ },
+ {
+  "name": "Correct a row opens on Change the figures",
+  "file": "stmt/owner.js",
+  "find": "editKind.value='Fulfilment'; drawKind(); return true;",
+  "replace": "editKind.value='Correction'; drawKind(); return true;"
+ },
+ {
+  "name": "a failed owed read is not noted",
+  "file": "stmt/owner.js",
+  "find": "}catch(error){ nGot('book', error); apply=true; }",
+  "replace": "}catch(error){ apply=true; }"
+ },
+ {
+  "name": "the owed read is not on the tick",
+  "file": "stmt/owner.js",
+  "find": "loadMakerThreads(true), readShop(), loadOwed()];",
+  "replace": "loadMakerThreads(true), readShop()];"
+ },
+ {
+  "name": "a Desk that says nothing owed is taken at its word",
+  "file": "stmt/owner.js",
+  "find": "if(!Array.isArray(c.owedMoney)||!Array.isArray(c.owedGoods)) throw new Error(c.owedError||c.error||'The Desk did not say what is owed.');",
+  "replace": "c.owedMoney=c.owedMoney||[]; c.owedGoods=c.owedGoods||[];"
+ },
+ {
+  "name": "the Desk's count is a card again",
+  "file": "stmt/owner.js",
+  "find": "    if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));",
+  "replace": "    L.push(item('watch','watch','Desk','w:desk','',{who:'Desk', why:'The Desk shows 4 for you.'}));\n    if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));"
+ },
+ {
+  "name": "a gift is goods owed",
+  "file": "src/maker-inputs.js",
+  "find": "row.cancelled || row.goodwill || !code(",
+  "replace": "row.cancelled || !code("
+ },
+ {
+  "name": "a mirror with no term reads as nothing owed",
+  "file": "src/maker-inputs.js",
+  "find": "  if (hold == null) return { today, owedError:",
+  "replace": "  if (false) return { today, owedError:"
  }
 ]

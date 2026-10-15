@@ -19649,10 +19649,10 @@ await (async () => {
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, { "cf-access-jwt-assertion": tok }), body: o.body }); };
     } }).window;
-    const watch = () => win.document.querySelector('#nlist [data-need="w:desk"]'), line = () => watch() && watch().querySelector(".salt-action__why");
-    ok(await until(() => line() && /^The Desk shows 1 for you, as of [0-9]{2}:[0-9]{2}[.]$/.test(line().textContent)) && !watch().querySelector("a") && !watch().querySelector("button")
-      && watch().getAttribute("data-sev") === "watch" && !/Salt Command|[A-Z]{2}\d-[A-Z]{2,4}/.test(watch().textContent),
-      "Needs you says what the Desk shows and when it counted it, a Watch card with no link, no action and no name: " + JSON.stringify(watch() && watch().textContent));
+    /* plan 1, part 5 (15 Oct 2026): the figure named nothing he could act on, and every kind it counts is a card of its own, so Needs you draws no card of it */
+    const lead = () => win.document.getElementById("nCount").textContent;
+    ok(await until(() => lead() !== "Reading what needs you.") && !win.document.querySelector('#nlist [data-need="w:desk"]') && !/The Desk shows/.test(win.document.getElementById("nlist").textContent),
+      "Needs you, once read, draws no card of the Desk's count: " + JSON.stringify(lead()));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 
   /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
@@ -21783,9 +21783,11 @@ await (async () => {
       w.fetch = async (q, o) => { o = o || {}; return site(String(q), { method: o.method || "GET", headers: Object.assign({}, o.headers, A), body: o.body }); };
     } }).window;
     try {
-      const el = () => win.document.querySelector('#nlist [data-need="w:desk"] .salt-action__why');
-      for (let i = 0; i < 200 && !el(); i++) await new Promise((r) => setTimeout(r, 20));
-      return el() ? el().textContent : "";
+      /* plan 1, part 5: read once Needs you has read everything; the Desk's count is no card of it */
+      const read = () => win.document.getElementById("nCount").textContent !== "Reading what needs you.";
+      for (let i = 0; i < 200 && !read(); i++) await new Promise((r) => setTimeout(r, 20));
+      const el = win.document.querySelector('#nlist [data-need="w:desk"] .salt-action__why');
+      return read() ? (el ? el.textContent : "none") : "";
     } finally { win.close(); }
   };
   try {
@@ -21795,12 +21797,11 @@ await (async () => {
     const sj = await (await site("/all/sheet", { headers: A })).json();
     ok(sj.desk && sj.desk.n === 0 && sj.desk.moved === true, "the sheet says an order has moved since the desk's reading: " + JSON.stringify(sj.desk));
     const t1 = await line();
-    ok(/^The Desk shows nothing for you, as of ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4}); an order has moved since[.]$/.test(t1),
-      "Needs you says nothing waited then, and that an order has moved since, never that nothing waits: " + JSON.stringify(t1));
+    ok(t1 === "none", "Needs you draws no card of the Desk's count, so it cannot say an old figure waits: " + JSON.stringify(t1));
     /* the desk looks again */
     await tell(1, 0);
     const t2 = await line();
-    ok(/^The Desk shows 1 for you, as of ([0-9]{2}:[0-9]{2}|[0-9]{2} [A-Z][a-z]{2} [0-9]{4})[.]$/.test(t2), "once the desk has read again, the figure stands as it did: " + JSON.stringify(t2));
+    ok(t2 === "none", "and none once the desk has read again: " + JSON.stringify(t2));
   } finally { globalThis.fetch = realFetch; }
 })();
 section("v688: Send statement, with the password sealed under the master and a tick both his devices share");
