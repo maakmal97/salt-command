@@ -18,6 +18,7 @@
  */
 
 import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, draftRow, tripCheck } from "./drafter.js";
+import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
@@ -1735,6 +1736,14 @@ async function handleDraftsGet(env, url) {
         d.preapproval = { state: "differs", says: "differs from what you saw", stage: p.stage, at: p.at, shown }; }
     }
   } catch (e) { /* a store before migrations/0011 marks nothing */ }
+  /* PLAN 2 (16 Oct 2026): NOW AND AFTER, the engine's figures for each pending sale, so the approve card reads them and computes
+     nothing (src/approve-figures.js). Pending view only; a mirror that cannot be read leaves the drafts as they were. */
+  if (want === "pending" && !uncommitted && drafts.some((d) => d.status === "pending" && d.collection === "sales")) {
+    try {
+      const wr = await env.SALT_LEDGER.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE status='approved' AND committed_at IS NULL AND collection='sales' AND amends IS NOT NULL ORDER BY id`).all();
+      approveFigures(await readBook(env.SALT_LEDGER), drafts, (wr.results || []).map(draftOut));
+    } catch (e) { for (const d of drafts) delete d.figures; }
+  }
 
   /* THE REFUSED LIST RIDES ALONG, and it is a separate key rather than a fourth status for
      the reason migrations/0003 gives: these carry no proposed row and can never be approved.
