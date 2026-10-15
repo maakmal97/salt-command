@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1128",
+  "d": "16 Oct 2026",
+  "t": "THE COST SIDE OF PRICING RUNS IN ONE SHARED ENGINE MODULE",
+  "n": [
+   "Stock cost, replacement cost, the cost inputs and policy, the floors, sizes and ladder are now computed by engine/snapshot.mjs, which the desk inlines and calls; a Worker can compute the same figures with no page. No price moves.",
+   "Step S1c-ii of moving the book into a Durable Object: the pricing snapshot on the frozen book is byte-identical to v1126's, the engine run alone gives the page's own figures for every book, and the proof now opens the page on the fixture's day."
+  ]
+ },
+ {
   "v": "v1127",
   "d": "16 Oct 2026",
   "t": "THE PRICING RULE TABLES LIVE IN ONE SHARED ENGINE MODULE",
