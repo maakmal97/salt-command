@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1113",
+  "d": "15 Oct 2026",
+  "t": "ONE NEW SALE OF SALT PENDING; 10 UNIT OF OIL COLLECTED AGAINST AN UNPAID ORDER",
+  "n": [
+   "<b>FOLDED TWO ROWS.</b> A new pending sale of 2 unit of salt to CS6-BS-R for RM220, and a correction on s265 recording 10 unit of oil collected by CS6-PER on 15 Oct. The oil goes out with RM116 unpaid, so it is an advance, and CS6-PER already had RM226 outstanding before it.",
+   "<b>INVENTORY.</b> The salt sale moves nothing. The oil collection rolls the oil shelf out by 10 unit. No lot landed, so the cost basis stays as it was."
+  ]
+ },
+ {
   "v": "v1112",
   "d": "15 Oct 2026",
   "t": "RICE ORDER S264 PAID IN CASH AND COLLECTED, 5 UNIT OUT",

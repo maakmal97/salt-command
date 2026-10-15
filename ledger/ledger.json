@@ -1,6 +1,6 @@
 {
- "v": "v1112",
- "stamped": "15 Oct 2026, 02:50 KL",
+ "v": "v1113",
+ "stamped": "15 Oct 2026, 13:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 10
+    "stated": 0
    },
    "candy": {
     "qty": 0,
@@ -7604,9 +7604,30 @@
     "cash": 0,
     "product": "oil",
     "date": "2026-10-14",
-    "deliveredQty": 0,
-    "note": "<b>NEW SALE DATED 14 OCT: 10 UNIT OF OIL TO CS6-PER FOR RM116, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM116 sits above the desk's floor of RM77.71 and below its ask of RM130 for 10 unit. CS6-PER has 16 orders, a median rate of RM85.52, a range of RM7 to RM116, RM35 outstanding before and 0 units on credit against a cap of 20. The row carries the drafter's cost off the latest purchase, and the fold keeps it. The drafter raised no flags. Open: payment of RM116 and the handover of all 10 unit.",
-    "rid": "s265"
+    "deliveredQty": 10,
+    "note": "<b>CORRECTION ON s265 DATED 15 OCT: 10 UNIT OF OIL COLLECTED, RM116 STILL UNPAID.</b> The correction sets deliveredQty from 0 to 10, deliveredOn to 2026-10-15 and handover to collected, on CS6-PER's oil order of 10 unit for RM116 dated 14 Oct. It moves no cash; the shelf rolls out by 10 unit. CS6-PER has 18 orders, a median rate of RM85.52, a range of RM7 to RM116, RM226 outstanding before and 0 units on credit against a cap of 1. The drafter flagged an advance with RM116 unpaid, to be checked against the cap. The dossier gives no credit figure that clears it, so the flag stands. Open: payment of RM116. <b>NEW SALE DATED 14 OCT: 10 UNIT OF OIL TO CS6-PER FOR RM116, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM116 sits above the desk's floor of RM77.71 and below its ask of RM130 for 10 unit. CS6-PER has 16 orders, a median rate of RM85.52, a range of RM7 to RM116, RM35 outstanding before and 0 units on credit against a cap of 20. The row carries the drafter's cost off the latest purchase, and the fold keeps it. The drafter raised no flags. Open: payment of RM116 and the handover of all 10 unit.",
+    "rid": "s265",
+    "deliveredOn": "2026-10-15",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-15: deliveredQty 0 to 10; deliveredOn (unset) to 2026-10-15; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-14",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-15",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 10,
+      "note": "<b>CORRECTION ON s265 DATED 15 OCT: 10 UNIT OF OIL COLLECTED, RM116 STILL UNPAID.</b> The correction sets deliveredQty from 0 to 10, deliveredOn to 2026-10-15 and handover to collected, on CS6-PER's oil order of 10 unit for RM116 dated 14 Oct. It moves no cash; the shelf rolls out by 10 unit. CS6-PER has 18 orders, a median rate of RM85.52, a range of RM7 to RM116, RM226 outstanding before and 0 units on credit against a cap of 1. The drafter flagged an advance with RM116 unpaid, to be checked against the cap. The dossier gives no credit figure that clears it, so the flag stands. Open: payment of RM116.",
+      "cost": 77.71
+     }
+    ],
+    "cost": 77.71
    },
    {
     "customer": "CS6-PER",
@@ -7627,6 +7648,17 @@
     "deliveredQty": 0,
     "note": "<b>NEW SALE DATED 15 OCT: 6.25 UNIT OF SALT TO CC9-OKR FOR RM575, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The rate is RM92 a unit, above the desk's floor of RM362.5 and below its ask of RM600 for 6.25 unit. CC9-OKR has 15 orders, a median rate of RM90, a range of RM5 to RM90, RM138 outstanding before and 2 units on credit against a cap of 1, so it is already over the cap. The row carries cost of RM58 a unit, set off the latest purchase, and the fold keeps it. The drafter raised no flags. Open: payment of RM575 and the handover of all 6.25 unit.",
     "rid": "s262"
+   },
+   {
+    "customer": "CS6-BS-R",
+    "qty": 2,
+    "total": 220,
+    "cash": 0,
+    "date": "2026-10-15",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "<b>NEW SALE DATED 15 OCT: 2 UNIT OF SALT TO CS6-BS-R FOR RM220, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM220 is above the desk's floor of RM116 and below its ask of RM250 for 2 unit, a rate of RM110 a unit. CS6-BS-R has 16 orders, a median rate of RM95, a range of RM6 to RM120, RM0 outstanding before and 0 units on credit against a cap of 1. The row carries cost of RM58 a unit, set off the latest purchase, and the fold keeps it. The drafter flagged the booking as R2 (resale) and the rate as 10% above the usual RM100 a unit; RM110 is within the desk's range, so the figures answer both. Open: payment of RM220 and the handover of all 2 unit.",
+    "rid": "s267"
    }
   ],
   "contacts": [
@@ -8297,9 +8329,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-14T18:50:16.191Z",
+  "QUEUE_COMMITTED": "2026-10-15T05:19:43.703Z",
   "PRICING": {
-   "takenAt": "2026-10-14T18:50:53.616Z",
+   "takenAt": "2026-10-15T05:20:06.716Z",
    "sizes": [
     0.5,
     1,
@@ -8570,11 +8602,11 @@
      },
      "oil": {
       "name": "rare and large",
-      "orders": 3,
+      "orders": 4,
       "tenureDays": 69,
-      "sinceLastDays": 3,
-      "perMonth": 1.32,
-      "unitsPerMonth": 13.23,
+      "sinceLastDays": 1,
+      "perMonth": 1.76,
+      "unitsPerMonth": 17.65,
       "smallShare": 0,
       "bigShare": 1,
       "frequent": false,
@@ -12125,15 +12157,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.4
+         "v": 0.36363636363636365
         }
        },
        "attrib": 1,
        "shrinkRate": 0.2814457831325301,
        "avgDel": {
-        "n": 17,
-        "kg": 261,
-        "mean": 15.3529
+        "n": 18,
+        "kg": 271,
+        "mean": 15.0556
        }
       },
       "policy": {
@@ -15280,11 +15312,11 @@
      ]
     }
    },
-   "v": "v1112"
+   "v": "v1113"
   },
   "OPEN": {
-   "at": "2026-10-14T18:50:54.051Z",
-   "count": 13,
+   "at": "2026-10-15T05:20:07.349Z",
+   "count": 14,
    "byKey": {
     "CC9-OKR|2026-10-15|575": {
      "d": "2026-10-15",
@@ -15299,6 +15331,22 @@
      "oweUnits": 6.25,
      "rid": "s262",
      "key": "CC9-OKR|2026-10-15|575"
+    },
+    "CS6-BS-R|2026-10-15|220": {
+     "d": "2026-10-15",
+     "p": "CS6-BS-R",
+     "dir": "S",
+     "q": 2,
+     "t": 220,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 220,
+     "oweUnits": 2,
+     "rid": "s267",
+     "as": "CS6-BS",
+     "st2": "R2",
+     "key": "CS6-BS-R|2026-10-15|220"
     },
     "CE4-CHE|2026-10-14|400": {
      "d": "2026-10-14",
@@ -15337,13 +15385,16 @@
      "q": 10,
      "t": 116,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 10,
+     "st": "dueMoney",
      "oweRM": 116,
-     "oweUnits": 10,
      "pr": "oil",
      "rid": "s265",
-     "key": "CS6-PER|2026-10-14|116|oil"
+     "deliveredOn": "2026-10-15",
+     "handover": "collected",
+     "key": "CS6-PER|2026-10-14|116|oil",
+     "age": 0,
+     "exp": 116
     },
     "CS6-PER|2026-10-14|110": {
      "d": "2026-10-14",
@@ -15498,20 +15549,20 @@
      "free": 13.14,
      "owedOut": 7,
      "coverDays": 2.6,
-     "rate": 4.89,
+     "rate": 4.98,
      "owedToYou": 340,
-     "promised": 14.75,
+     "promised": 16.75,
      "short": 0
     },
     "oil": {
      "name": "Oil",
-     "onHand": 10,
-     "free": 10,
+     "onHand": 0,
+     "free": 0,
      "owedOut": 0,
-     "coverDays": 2,
+     "coverDays": 0,
      "rate": 4.21,
-     "owedToYou": 0,
-     "promised": 10,
+     "owedToYou": 116,
+     "promised": 0,
      "short": 0
     },
     "candy": {
@@ -15555,7 +15606,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1112"
+   "v": "v1113"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15563,7 +15614,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1112"
+   "v": "v1113"
   },
   "REWARD": {
    "stated": {
@@ -15575,7 +15626,7 @@
      }
     }
    },
-   "v": "v1112"
+   "v": "v1113"
   }
  }
 }
