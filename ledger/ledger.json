@@ -1,6 +1,6 @@
 {
- "v": "v1120",
- "stamped": "15 Oct 2026, 21:09 KL",
+ "v": "v1122",
+ "stamped": "15 Oct 2026, 22:42 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 10.89,
+  "STATED_STOCK": 9.89,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -7760,6 +7760,22 @@
     ],
     "cost": 116,
     "rev": "R2"
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 1,
+    "total": 56,
+    "cost": 56,
+    "cash": 0,
+    "settledRM": 56,
+    "rebate": true,
+    "rebateKg": 1,
+    "goodwill": true,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-15",
+    "date": "2026-10-15",
+    "note": "<b>REDEMPTION ON 15 OCT: 1 UNIT OF SALT FREE TO CS6-PER, BOOKED AS COST.</b> Settled by the reward, RM0 cash, RM56 settled, delivered the same day. On his word of 11 Sep 2026 the row carries goodwill as well as rebate, so it is an expense and not revenue. The goods total of RM56 is below the desk's floor of RM58 and well below its ask of RM140 for 1 unit; that follows from it being a gift. CS6-PER has 18 orders, a median rate of RM85.52, a range of RM7 to RM116, RM0 outstanding before and 0 units on credit; the cap is 2. The cost carried is RM56 a unit, the inventory's own rate. The drafter flagged the desk's count of 1 unit earned and unredeemed (3 earned, 2 used); the figures cannot answer it, as it is the desk's word. Open: nothing is owed.",
+    "rid": "s268"
    }
   ],
   "contacts": [
@@ -8294,6 +8310,9 @@
    },
    "CI5-PER": {
     "salt": -0.3
+   },
+   "CM4-MK": {
+    "salt": 0.3
    }
   },
   "AWARDS": {
@@ -8430,9 +8449,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-15T12:52:27.992Z",
+  "QUEUE_COMMITTED": "2026-10-15T14:41:26.812Z",
   "PRICING": {
-   "takenAt": "2026-10-15T13:09:23.767Z",
+   "takenAt": "2026-10-15T14:42:16.081Z",
    "sizes": [
     0.5,
     1,
@@ -9736,9 +9755,9 @@
        "attrib": 1,
        "shrinkRate": 0.07829914328381672,
        "avgDel": {
-        "n": 211,
-        "kg": 536.81,
-        "mean": 2.5441
+        "n": 212,
+        "kg": 537.81,
+        "mean": 2.5368
        }
       },
       "policy": {
@@ -10199,35 +10218,35 @@
        ],
        [
         2.5,
-        300
+        310
        ],
        [
         3,
-        340
+        350
        ],
        [
         3.5,
-        380
+        390
        ],
        [
         4,
-        420
+        430
        ],
        [
         4.5,
-        460
+        470
        ],
        [
         5,
-        500
+        510
        ],
        [
         6.25,
-        600
+        610
        ],
        [
         12.5,
-        980
+        1040
        ]
       ],
       "CK4-SEN": [
@@ -12089,7 +12108,7 @@
       "CJ4-BJ": 0.0818,
       "CS6-PER": -0.4908,
       "CE4-CHE": -0.4883,
-      "CM4-MK": 0.0292,
+      "CM4-MK": 0.3,
       "CK4-SEN": -0.4223,
       "CR3-DAM": 0.0717,
       "CN3-WM": 0.5,
@@ -15403,10 +15422,10 @@
      ]
     }
    },
-   "v": "v1120"
+   "v": "v1122"
   },
   "OPEN": {
-   "at": "2026-10-15T13:09:24.622Z",
+   "at": "2026-10-15T14:42:16.722Z",
    "count": 11,
    "byKey": {
     "CS6-BS-R|2026-10-15|220": {
@@ -15593,10 +15612,10 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 10.89,
-     "free": 3.89,
+     "onHand": 9.89,
+     "free": 2.89,
      "owedOut": 7,
-     "coverDays": 0.6,
+     "coverDays": 0.5,
      "rate": 4.98,
      "owedToYou": 560,
      "promised": 7.5,
@@ -15643,7 +15662,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1120"
+   "v": "v1122"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15651,7 +15670,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1120"
+   "v": "v1122"
   },
   "REWARD": {
    "stated": {
@@ -15663,7 +15682,7 @@
      }
     }
    },
-   "v": "v1120"
+   "v": "v1122"
   }
  }
 }

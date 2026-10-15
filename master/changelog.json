@@ -1,5 +1,23 @@
 [
  {
+  "v": "v1122",
+  "d": "15 Oct 2026",
+  "t": "CM4-MK SALT DRIFT SET TO +0.3",
+  "n": [
+   "<b>ONE TIER SET, NO CASH, NO STOCK.</b> The fold applied a single tier change on 15 Oct 2026: CM4-MK's salt drift is now +0.3. A drift moves that customer's own price and never the board, so no other party's rate changes. The drafter raised no flags, and the dossier gives no reason for the change, so none is stated here.",
+   "<b>INVENTORY UNTOUCHED.</b> No lot landed, no sale was booked and no count was taken. Stock stays at 9.89 units and the cost basis is unchanged at RM56 a unit."
+  ]
+ },
+ {
+  "v": "v1121",
+  "d": "15 Oct 2026",
+  "t": "ONE UNIT OF SALT REDEEMED FREE BY CS6-PER AS GOODWILL, BOOKED AS COST",
+  "n": [
+   "<b>REWARD REDEMPTION FOLDED.</b> One row: 1 unit of salt to CS6-PER on 15 Oct, settled by the reward rather than cash, RM0 cash against RM56 settled. Unusual because the row carries both rebate and goodwill, so on his word of 11 Sep 2026 it stays out of revenue and the RM56 is an expense. The desk's reward count could not be checked here.",
+   "<b>INVENTORY.</b> Salt leaves the shelf by 1 unit and the fold rolls the stated shelf by it. The cost basis does not move, as no lot landed."
+  ]
+ },
+ {
   "v": "v1120",
   "d": "15 Oct 2026",
   "t": "FULFILMENT ON S262 FOR CC9-OKR FOLDED, NO STOCK MOVE",
