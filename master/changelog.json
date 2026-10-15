@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1118",
+  "d": "15 Oct 2026",
+  "t": "ORDER STEP PER BOOK, AND SPARE RETIRED",
+  "n": [
+   "<b>EACH BOOK IS ORDERED IN ITS SMALLEST UNIT STEP.</b> Salt in quarters from half a unit, oil in tens from 10, candy and rice in ones from 1, a size under the first or off the step refused by the Worker (offStep) and not offered by the page. The setting is the grid's step in each book's rule: oil's goes from 1 to 10, with no price moved, its five points being its five typed rungs. Salt stays at a quarter, since a half would drop the points its walk runs through and raise most of its prices. A Negotiate size over the max is held to the step too (oil 60, not 55). Counter Admin's forms are not held to it.",
+   "<b>SPARE IS RETIRED.</b> The fifth book had no row, opening or price; it is flagged retired in the book and off the switch, the Enter form, the tier grid and the parity scan, its name is off the Counter's product words, and the live books are four. tools/product.mjs now writes the book in its own layout. No price, floor or pricing rule moved."
+  ]
+ },
+ {
   "v": "v1117",
   "d": "15 Oct 2026",
   "t": "COUNTER ADMIN ORDER CARD: PROGRESS IN THE HEAD, MONEY RECEIVED IN ONE BLOCK",

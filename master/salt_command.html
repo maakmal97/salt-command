@@ -9307,7 +9307,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1117","d":"15 Oct 2026","t":"COUNTER ADMIN ORDER CARD: PROGRESS IN THE HEAD, MONEY RECEIVED IN ONE BLOCK","n":["<b>THE HEAD OF AN AGREED ORDER IS ITS PROGRESS.</b> Owed, Paid and Handed (units moved of units ordered), with Says sent beside them while a claim of theirs waits. The goods and the delivery charge are in the title already and stand in Details. A placed, declined or cancelled order keeps Goods, since nothing is yet owed.","<b>MONEY RECEIVED IS ONE BLOCK.</b> Their claim answered, then Bank (a payment that reached the account), then Cash on a Ready order, the cash still held ten seconds with its Undo. Each field names its road, and its button says the figure and the road once one is typed (Record RM 25.00, bank). The reply stands below it with their last line above it, which the card did not draw before. Cash held shuts the reply as it shuts the rest of the card.","<b>NOTHING BEHIND IT MOVED.</b> No act, route, request id or rule changed; the Desk and the customer's site are as they were. Left for a later version: Bank and Cash as tiles over one field, Change the order under the head, and the units field's two buttons."]}];
+const evolution=[{"v":"v1118","d":"15 Oct 2026","t":"ORDER STEP PER BOOK, AND SPARE RETIRED","n":["<b>EACH BOOK IS ORDERED IN ITS SMALLEST UNIT STEP.</b> Salt in quarters from half a unit, oil in tens from 10, candy and rice in ones from 1, a size under the first or off the step refused by the Worker (offStep) and not offered by the page. The setting is the grid's step in each book's rule: oil's goes from 1 to 10, with no price moved, its five points being its five typed rungs. Salt stays at a quarter, since a half would drop the points its walk runs through and raise most of its prices. A Negotiate size over the max is held to the step too (oil 60, not 55). Counter Admin's forms are not held to it.","<b>SPARE IS RETIRED.</b> The fifth book had no row, opening or price; it is flagged retired in the book and off the switch, the Enter form, the tier grid and the parity scan, its name is off the Counter's product words, and the live books are four. tools/product.mjs now writes the book in its own layout. No price, floor or pricing rule moved."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9451,7 +9451,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Oct 2026, 19:05 KL';
+const LAST_UPDATED='15 Oct 2026, 19:25 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

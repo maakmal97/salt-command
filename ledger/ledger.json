@@ -1,6 +1,6 @@
 {
- "v": "v1114",
- "stamped": "15 Oct 2026, 13:22 KL",
+ "v": "v1118",
+ "stamped": "15 Oct 2026, 19:25 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -48,7 +48,7 @@
     "unit": "unit",
     "accent": "var(--salt-product-spare)",
     "since": "2026-09-22",
-    "retired": false,
+    "retired": true,
     "note": "Opened 22 Sep 2026 as THE SPARE SLOT, on his instruction, to prove that adding a book is repeatable rather than surgical. It is deliberately given NO mark, so the Ring fallback is exercised by a real book. Put it away with tools/product.mjs --retire spare once it has served.",
     "reward": false
    }
@@ -8381,7 +8381,7 @@
   ],
   "QUEUE_COMMITTED": "2026-10-15T05:21:31.573Z",
   "PRICING": {
-   "takenAt": "2026-10-15T05:22:19.211Z",
+   "takenAt": "2026-10-15T11:28:21.956Z",
    "sizes": [
     0.5,
     1,
@@ -8446,11 +8446,6 @@
      "id": "rhythm:weekend:salt",
      "sev": "watch",
      "title": "Weekends run quieter than weekdays"
-    },
-    {
-     "id": "parity:uncounted:spare",
-     "sev": "watch",
-     "title": "Spare has never been counted, so its inventory is the ledger"
     },
     {
      "id": "promo:revive:salt",
@@ -8561,11 +8556,6 @@
      "id": "rhythm:restock:salt",
      "sev": "note",
      "title": "The next fortnight looks ordinary, so buy at the desk's rate"
-    },
-    {
-     "id": "parity:declared:spare",
-     "sev": "note",
-     "title": "Spare is declared but has nothing on the books"
     }
    ],
    "tierNames": [
@@ -12262,7 +12252,7 @@
         "ceilingX": 2,
         "grid": {
          "min": 10,
-         "step": 1,
+         "step": 10,
          "max": 50
         }
        },
@@ -15362,10 +15352,10 @@
      ]
     }
    },
-   "v": "v1114"
+   "v": "v1118"
   },
   "OPEN": {
-   "at": "2026-10-15T05:22:19.688Z",
+   "at": "2026-10-15T11:28:22.626Z",
    "count": 13,
    "byKey": {
     "CC9-OKR|2026-10-15|575": {
@@ -15623,17 +15613,6 @@
      "owedToYou": 15,
      "promised": 0,
      "short": 0
-    },
-    "spare": {
-     "name": "Spare",
-     "onHand": 0,
-     "free": 0,
-     "owedOut": 0,
-     "coverDays": null,
-     "rate": 0,
-     "owedToYou": 0,
-     "promised": 0,
-     "short": 0
     }
    },
    "countedOn": {
@@ -15643,7 +15622,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1114"
+   "v": "v1118"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15651,7 +15630,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1114"
+   "v": "v1118"
   },
   "REWARD": {
    "stated": {
@@ -15663,7 +15642,7 @@
      }
     }
    },
-   "v": "v1114"
+   "v": "v1118"
   }
  }
 }
