@@ -8180,6 +8180,9 @@ const TIER_OF={
   },
   "CI5-PER": {
     "salt": -0.3
+  },
+  "CM4-MK": {
+    "salt": 0.3
   }
 };
 const PEOPLE={
@@ -8305,7 +8308,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-15T14:29:42.001Z";
+const QUEUE_COMMITTED="2026-10-15T14:41:26.812Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -9310,7 +9313,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1121","d":"15 Oct 2026","t":"ONE UNIT OF SALT REDEEMED FREE BY CS6-PER AS GOODWILL, BOOKED AS COST","n":["<b>REWARD REDEMPTION FOLDED.</b> One row: 1 unit of salt to CS6-PER on 15 Oct, settled by the reward rather than cash, RM0 cash against RM56 settled. Unusual because the row carries both rebate and goodwill, so on his word of 11 Sep 2026 it stays out of revenue and the RM56 is an expense. The desk's reward count could not be checked here.","<b>INVENTORY.</b> Salt leaves the shelf by 1 unit and the fold rolls the stated shelf by it. The cost basis does not move, as no lot landed."]}];
+const evolution=[{"v":"v1122","d":"15 Oct 2026","t":"CM4-MK SALT DRIFT SET TO +0.3","n":["<b>ONE TIER SET, NO CASH, NO STOCK.</b> The fold applied a single tier change on 15 Oct 2026: CM4-MK's salt drift is now +0.3. A drift moves that customer's own price and never the board, so no other party's rate changes. The drafter raised no flags, and the dossier gives no reason for the change, so none is stated here.","<b>INVENTORY UNTOUCHED.</b> No lot landed, no sale was booked and no count was taken. Stock stays at 9.89 units and the cost basis is unchanged at RM56 a unit."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9454,7 +9457,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Oct 2026, 22:31 KL';
+const LAST_UPDATED='15 Oct 2026, 22:42 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

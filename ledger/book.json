@@ -787,6 +787,9 @@
     },
     "CI5-PER": {
       "salt": -0.3
+    },
+    "CM4-MK": {
+      "salt": 0.3
     }
   },
   "PEOPLE": {
@@ -906,7 +909,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-15T14:29:42.001Z",
+  "QUEUE_COMMITTED": "2026-10-15T14:41:26.812Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
