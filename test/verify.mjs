@@ -50807,6 +50807,11 @@ await (async () => {
   await (await import("./fold-replay.mjs")).run({ ok });
 })();
 
+section("S1b: the order-stage entries live in engine/stages.mjs, and every tap queues what it queued before");
+await (async () => {
+  await (await import("./engine-stages.mjs")).run({ ok });
+})();
+
 section("Counter Gift: a double tap books once, a booked twin is asked about and folds as a second");
 await (async () => {
   await (await import("./maker-gift-twin.mjs")).run({ ok, pageWork });
