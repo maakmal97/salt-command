@@ -50817,6 +50817,11 @@ await (async () => {
   await (await import("./engine-rules.mjs")).run({ ok });
 })();
 
+section("S1c-ii: the pricing glue lives in engine/snapshot.mjs, and every figure is the page's own");
+await (async () => {
+  await (await import("./engine-snapshot.mjs")).run({ ok });
+})();
+
 section("Counter Gift: a double tap books once, a booked twin is asked about and folds as a second");
 await (async () => {
   await (await import("./maker-gift-twin.mjs")).run({ ok, pageWork });
