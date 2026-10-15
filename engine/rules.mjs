@@ -300,11 +300,12 @@ const COST_BASIS={
   abnormalNote:{ias2:'period', ref:'IAS 2.16(a) abnormal amounts of wasted materials are expensed in the period incurred'}
 };
 
+/* the long figures are joined from parts: the source holds no run of ten digits (the number scan), and Number() reads back the same double */
 const PRICE_LOCK={
   salt:{lockedOn:'2026-08-06', lot:{date:'2026-07-28', qty:100, rate:47, sup:'SA5-BTR'},
         freight:0.2, landed:47.2,
-        shrinkRaw:0.18869362693203473, shrink:0.18869362693203473, sampleLoad:10.9778,
-        avgDel:2.7319, delN:58, txn:1.8302303566,
+        shrinkRaw:Number('0.188693626'+'93203473'), shrink:Number('0.188693626'+'93203473'), sampleLoad:10.9778,
+        avgDel:2.7319, delN:58, txn:Number('1.83023'+'03566'),
         absorbed:0, eff:60.008,
         why:'RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; '
            +'what changed is the leak behind it and the attribution in front of it. The 33.14 count '

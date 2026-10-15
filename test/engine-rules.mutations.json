@@ -12,9 +12,9 @@
   "replace": "mS:2.814,"
  },
  {
-  "name": "a table is redefined a second time in the master's own script",
+  "name": "a table is defined a second time in the master's own script (in a block, so the page still loads)",
   "file": "master/salt_command.html",
   "find": "/* TIER_NAMES lives in engine/rules.mjs (inlined in the ENGINE block above) */",
-  "replace": "const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];"
+  "replace": "{\nconst TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];\n}"
  }
 ]
