@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1120",
+  "d": "15 Oct 2026",
+  "t": "FULFILMENT ON S262 FOR CC9-OKR FOLDED, NO STOCK MOVE",
+  "n": [
+   "<b>ONE FULFILMENT FOLDED.</b> The entry against s262 for CC9-OKR, dated 15 Oct, records RM540 and no units. The drafter raised no flags. The unusual point is that the target row already reads total RM540, cash RM0 and 6.25 unit collected, so the cash entry and the row's cash do not plainly agree. The dossier does not reconcile them.",
+   "<b>INVENTORY.</b> Nothing moves on this entry, since it carries no units. Stock stays at 10.89 and the cost basis is unchanged. The 6.25 unit leaving belongs to the correction already on the row, not to this fulfilment."
+  ]
+ },
+ {
   "v": "v1119",
   "d": "15 Oct 2026",
   "t": "S267 CASH REVERSED; TWO FULFILMENTS SETTLE CS6-PER; S262 DELIVERED AT RM540",

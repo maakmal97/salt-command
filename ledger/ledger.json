@@ -1,6 +1,6 @@
 {
- "v": "v1119",
- "stamped": "15 Oct 2026, 21:07 KL",
+ "v": "v1120",
+ "stamped": "15 Oct 2026, 21:09 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7680,7 +7680,7 @@
     "customer": "CC9-OKR",
     "qty": 6.25,
     "total": 540,
-    "cash": 0,
+    "cash": 540,
     "date": "2026-10-15",
     "deliveredQty": 6.25,
     "note": "<b>CORRECTION ON s262: 6.25 UNIT OF SALT COLLECTED BY CC9-OKR ON 15 OCT, TOTAL RM575 TO RM540, UNPAID.</b> It sets total from RM575 to RM540, deliveredQty to 6.25, deliveredOn to 15 Oct and handover to collected. The salt shelf rolls out by 6.25 unit. The dossier gives the ladder floor of RM362.5 for the order; the ask is not quoted in full, so the RM540 total sits above that floor only. CC9-OKR has 16 orders, a median rate of RM90, a range of RM5 to RM92, RM713 outstanding before and 2 units on credit; the cap is not in the dossier. The drafter flagged the advance of RM540, which the dossier cannot answer. Open: RM540. <b>NEW SALE DATED 15 OCT: 6.25 UNIT OF SALT TO CC9-OKR FOR RM575, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The rate is RM92 a unit, above the desk's floor of RM362.5 and below its ask of RM600 for 6.25 unit. CC9-OKR has 15 orders, a median rate of RM90, a range of RM5 to RM90, RM138 outstanding before and 2 units on credit against a cap of 1, so it is already over the cap. The row carries cost of RM58 a unit, set off the latest purchase, and the fold keeps it. The drafter raised no flags. Open: payment of RM575 and the handover of all 6.25 unit.",
@@ -7703,9 +7703,17 @@
       "kg": 6.25,
       "note": "<b>CORRECTION ON s262: 6.25 UNIT OF SALT COLLECTED BY CC9-OKR ON 15 OCT, TOTAL RM575 TO RM540, UNPAID.</b> It sets total from RM575 to RM540, deliveredQty to 6.25, deliveredOn to 15 Oct and handover to collected. The salt shelf rolls out by 6.25 unit. The dossier gives the ladder floor of RM362.5 for the order; the ask is not quoted in full, so the RM540 total sits above that floor only. CC9-OKR has 16 orders, a median rate of RM90, a range of RM5 to RM92, RM713 outstanding before and 2 units on credit; the cap is not in the dossier. The drafter flagged the advance of RM540, which the dossier cannot answer. Open: RM540.",
       "cost": 362.5
+     },
+     {
+      "date": "2026-10-15",
+      "kind": "Fulfilment",
+      "cash": 540,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s262: RM540 RECORDED FOR CC9-OKR, 15 OCT.</b> The entry moves RM540 and no units against the 6.25 unit order agreed on 15 Oct, which stood at RM575 when drafted. The row now reads total RM540, cash RM0, collected, so entry and row do not plainly agree. The desk's floor and ask for this size are not in the dossier. CC9-OKR has 16 orders, a median rate of RM90, a range of RM5 to RM90, RM678 outstanding before and 8.25 units on credit; the cap is not in the dossier. The drafter raised no flags. Open: the drafter's RM35 and 6.25 unit outstanding are not confirmed by the row."
      }
     ],
-    "cost": 362.5
+    "cost": 362.5,
+    "paidOn": "2026-10-15"
    },
    {
     "customer": "CS6-BS-R",
@@ -8422,9 +8430,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-15T12:52:26.992Z",
+  "QUEUE_COMMITTED": "2026-10-15T12:52:27.992Z",
   "PRICING": {
-   "takenAt": "2026-10-15T13:07:04.278Z",
+   "takenAt": "2026-10-15T13:09:23.767Z",
    "sizes": [
     0.5,
     1,
@@ -12087,7 +12095,7 @@
       "CN3-WM": 0.5,
       "CM4-TO": "partner",
       "CZ4-MK": -0.2965,
-      "CC9-OKR": -0.3624,
+      "CC9-OKR": -0.3643,
       "CE4-AD": -0.2941,
       "CM6-HCM": -0.0512,
       "CA4-DAM": 0.5,
@@ -15395,29 +15403,12 @@
      ]
     }
    },
-   "v": "v1119"
+   "v": "v1120"
   },
   "OPEN": {
-   "at": "2026-10-15T13:07:05.111Z",
-   "count": 12,
+   "at": "2026-10-15T13:09:24.622Z",
+   "count": 11,
    "byKey": {
-    "CC9-OKR|2026-10-15|540": {
-     "d": "2026-10-15",
-     "p": "CC9-OKR",
-     "dir": "S",
-     "q": 6.25,
-     "t": 540,
-     "cash": 0,
-     "mv": 6.25,
-     "st": "dueMoney",
-     "oweRM": 540,
-     "rid": "s262",
-     "deliveredOn": "2026-10-15",
-     "handover": "collected",
-     "key": "CC9-OKR|2026-10-15|540",
-     "age": 0,
-     "exp": 540
-    },
     "CS6-BS-R|2026-10-15|220": {
      "d": "2026-10-15",
      "p": "CS6-BS-R",
@@ -15607,7 +15598,7 @@
      "owedOut": 7,
      "coverDays": 0.6,
      "rate": 4.98,
-     "owedToYou": 1100,
+     "owedToYou": 560,
      "promised": 7.5,
      "short": 0
     },
@@ -15652,7 +15643,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1119"
+   "v": "v1120"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15660,7 +15651,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1119"
+   "v": "v1120"
   },
   "REWARD": {
    "stated": {
@@ -15672,7 +15663,7 @@
      }
     }
    },
-   "v": "v1119"
+   "v": "v1120"
   }
  }
 }
