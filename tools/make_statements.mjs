@@ -1002,6 +1002,11 @@ export async function liveRecords(root, key, now, pricing, cards, buildId, suppl
         JSON.parse(await decryptWith(ck, rec.env));
       } catch (e) { ck = null; }
       if (!ck) { wrongKey.push(rec.u); records.push(rec); continue; }
+      /* 15 Oct 2026 (his instruction): NO MONTHLY ISSUE REACHES A CUSTOMER. The record's bundle is sealed again with no
+         statements and the clear list of issue dates goes; the issue files on disk are the owner's dated record and are not
+         touched, only what is published. The key was just proved on the old bundle, so this is the same account's key. */
+      rec.env = await encryptWith(ck, JSON.stringify({ v: 1, issued: rec.issued, statements: [] }));
+      delete rec.issues;
       const doc = liveStatement(code, now, rec.u);
       if (doc) {
         const liveDoc = buildId ? Object.assign({}, doc, { buildId }) : doc;

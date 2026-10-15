@@ -6168,7 +6168,8 @@ const CLIENT_JS = `
     else if(body.liveStatus==='unavailable') b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:'acct.unavailable'});
     else if(body.live||b.statements.length) b.statements.unshift({issued:'now', label:tw('acct.now'), live:true, bad:body.live?'acct.unread':'acct.later'});
     /* C13 (his yes of 29 Sep 2026, option a): the sealed issues are off the Counter; they stay on disk. 14 Oct 2026 (his review):
-       off his View as them too, so no page draws an earlier statement */
+       off his View as them too, so no page draws an earlier statement. 15 Oct 2026: the publish no longer seals one into a record,
+       so this only cuts a record not yet republished */
     b.statements=b.statements.slice(0,1).filter(function(s){ return s.live; });
     if(body.card){ try{ x.card=JSON.parse(await open(ck, body.card)); }catch(e){ /* the statement still opens; the card is simply absent */ } }
     if(body.prices){ try{ x.prices=await openList(ck, body.prices); }catch(e){ /* the statements still open; the list is simply absent */ } }
