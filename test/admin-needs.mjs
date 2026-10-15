@@ -54,7 +54,8 @@ function busyDay(state) {
     hours: (j) => { j.config.manual = { open: false, until: "2026-10-16T10:00:00.000Z" }; j.status = { open: false, source: "manual" }; return j; },
     sheetAnswer: (j) => {
       j.accounts.find((a) => a.username === U3).locked = { from: 2, until: new Date(NOW + 10 * 60000).toISOString() };
-      j.accounts.find((a) => a.username === U4).issued = ago(100).slice(0, 10);
+      /* a fixed day before the harness's unsent loan (stamped 10 Oct 2026 08:00Z), so the order of the two holds on any day the suite runs */
+      j.accounts.find((a) => a.username === U4).issued = "2026-10-09";
       return j;
     },
     linksAnswer: (j) => { j.refs.find((r) => r.id === "w1").made = ago(20); return j; }
