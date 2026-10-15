@@ -9225,6 +9225,8 @@ await (async () => {
     "the right username and password return the record: wrap, envelope and live document");
   ok(deskAuthOk && j.live.buildId === deskBuild,
     "the live document is returned only after a keyed read of the Desk build id");
+  ok(!("issues" in j) && j.issued === "2026-09-01",
+    "and the answer lists no monthly issues, though the stored record still carries the list: Past statements stay gone (15 Oct 2026)");
   /* THE MASTER WRAP NEVER TRAVELS TO A CUSTOMER (04 Sep 2026 audit). It is his content key sealed
      under STMT_MASTER, so handing it to every customer every month was handing out a self-verifying
      offline crack target against the one passphrase that opens every account: an auditor recovered
@@ -10231,6 +10233,9 @@ await (async () => {
       "liveRecords seals " + code + "'s price list into the record for the week, opening under the same content key as the statement");
     const lr0 = await liveRecords(tmp, "test-secret", nowP);
     ok(lr0.priced === 0 && !lr0.records[0].prices, "and without a snapshot no list is written");
+    const envR = JSON.parse(await C.decryptWith(ckR, recR.env));
+    ok(Array.isArray(envR.statements) && envR.statements.length === 0 && !("issues" in recR),
+      "and the record is published with no monthly issue in its bundle and no list of issue dates, though the file on disk carries one: Past statements stay gone (15 Oct 2026)");
     rmSync(tmp, { recursive: true, force: true });
   }
 
@@ -22037,11 +22042,11 @@ await (async () => {
       const kek = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(body89.wrap.salt), iterations: 150000, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
       const raw = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(body89.wrap.iv) }, kek, b64(body89.wrap.ct));
       const ck = await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["decrypt"]);
-      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(body89.env.iv) }, ck, b64(body89.env.ct));
-      return JSON.parse(new TextDecoder().decode(pt));
+      const open = async (e) => JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(e.iv) }, ck, b64(e.ct))));
+      return { env: await open(body89.env), live: await open(body89.live) };
     })();
-    ok(unwrapped.statements.length === 1 && /Test account/.test(unwrapped.statements[0].body) && /nothing it orders reaches the ledger/.test(unwrapped.statements[0].body),
-      "its statement opens in the reader's own browser and says what it is");
+    ok(unwrapped.env.statements.length === 0 && /Test account/.test(unwrapped.live.body) && /nothing it orders reaches the ledger/.test(unwrapped.live.body),
+      "its statement is the live document and opens in the reader's own browser and says what it is; its bundle holds no monthly issue (15 Oct 2026)");
 
     /* counted nowhere */
     const sheet89 = await (await stmtWorker.fetch(new Request("https://k7m3p2.example/all/sheet", { headers: { "cf-access-jwt-assertion": tok89 } }), env89)).json();
@@ -22835,7 +22840,7 @@ await (async () => {
   ok(navs.length === 2 && new Set(navs).size === 2 && navs.includes("Places"), "the rail and the bar are two landmarks with two names (C22): " + JSON.stringify(navs));
   /* C23: the test account's own statement is a customer's live document in shape, dated DD Mon YYYY */
   const { testStatement } = await import("../stmt/worker.js");
-  const tb = (await testStatement()).statements[0].body;
+  const tb = (await testStatement()).body;
   ok(!/<h1|<table|September/.test(tb) && /^<h2 class="stmth">/.test(tb) && /class="salt-lines__row"[^>]*><div class="salt-lines__date" role="cell">\d\d [A-Z][a-z]{2} \d{4}</.test(tb),
     "the test account's statement is Statement lines under an h2, its date DD Mon YYYY, never the retired table (C23): " + JSON.stringify(tb.slice(0, 80)));
 })();
