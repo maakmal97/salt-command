@@ -25472,7 +25472,7 @@ await (async () => {
   for (const lw of WL.LEVEL_WORDS) lines.push({ t: "Price " + lw[0].toUpperCase() + lw.slice(1) + " this week", refuse: true });
   for (const p of WL.PRODUCT_WORDS) lines.push({ t: "Stock " + p + " is new", refuse: false });
   const off = lines.filter((x) => (x.refuse ? !/names a level/.test(siteWords(x.t)) : siteWords(x.t) !== ""));
-  ok(lines.length >= 11 && !off.length,
+  ok(lines.length >= 10 && !off.length,
     "every English level word is refused by the Worker's lock, and every product word is left alone by it: " + JSON.stringify(off.slice(0, 6).map((x) => x.t)));
 })();
 section("S13 fix: an associate's page closed while Rewards' links are on their way throws nothing after it");
@@ -42101,7 +42101,7 @@ await (async () => {
 
   const { w } = await openMaster();
   const ids = JSON.parse(w.eval("JSON.stringify(PROD_IDS)"));
-  ok(ids.length === 5 && opened.every((id) => ids.includes(id)), "the desk carries five books");
+  ok(ids.length === 4 && opened.filter((id) => id !== "spare").every((id) => ids.includes(id)) && !ids.includes("spare"), "the desk carries four live books, spare registered but retired: " + JSON.stringify(ids));
 
   /* A FIGURE IS STATED WHERE IT IS TRUE. creditCapFor falls back to the default book, so the
      sentence that begins "Credit caps are per book" stated salt's 1 unit as candy's own the
@@ -50648,6 +50648,10 @@ await (async () => {
 section("05 Oct 2026: any quantity at an automatic price, one rule over each book's grid, the rate never rising across it");
 await (async () => {
   await (await import("./any-quantity.mjs")).run({ ok });
+})();
+section("15 Oct 2026: spare is retired, the Counter's words are the live books, and the one road moves one line");
+await (async () => {
+  await (await import("./spare-retired.mjs")).run({ ok });
 })();
 section("06 Oct 2026: a partner pays cost, the floor to the sen on every book, nobody else's price moved");
 await (async () => {
