@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1127",
+  "d": "16 Oct 2026",
+  "t": "THE PRICING RULE TABLES LIVE IN ONE SHARED ENGINE MODULE",
+  "n": [
+   "Nine pricing rule tables (RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE) move verbatim into engine/rules.mjs, inlined into the master's ENGINE block, so a Worker can later read the same tables. No price moves.",
+   "Step S1c-i of moving the book into a Durable Object: each table on the page equals the module, and the pricing snapshot on the frozen book is byte-identical to v1126's."
+  ]
+ },
+ {
   "v": "v1126",
   "d": "16 Oct 2026",
   "t": "THE ORDER STAGES LIVE IN ONE SHARED ENGINE",

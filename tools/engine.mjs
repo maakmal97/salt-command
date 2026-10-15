@@ -25,6 +25,8 @@ const ENGINES = [
   /* v564: the QR encoder, because the desk draws one on the board sheet he hands a customer and
      the statements build draws one from the same text. Two encoders would drift. */
   { name: "qr", file: resolve(REPO, "engine", "qr.mjs") },
+  /* S1c-i: the pricing rule tables, so a Worker imports what the desk inlines */
+  { name: "rules", file: resolve(REPO, "engine", "rules.mjs") },
 ];
 
 const BEGIN = (n) => `/* ==== ENGINE ${n}: generated from engine/${n}.mjs by tools/engine.mjs. Edit the module, never this block. ==== */`;
