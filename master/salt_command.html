@@ -7822,19 +7822,119 @@ function fiveTiers(C,p,cost){
   return R?PRICING_ENGINE.fiveTiers(sizes,cost(),policy(C,p)):null;
 }
 
+/* S1c-iii: THE CARDS AND THE DRIFT. Whose account a code is, who is a person, who pays cost, and what each customer is quoted.
+   Added to C: B.roster, B.partners, B.tierOf (the hand-set TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
+   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh), and C.tierAt(code,q), the level machinery
+   (tierProposal, ruleProposal), which no live book uses: without it a book that names levels quotes null, never a wrong figure. */
+const viaMemo=(C,k,f)=>C.memo?C.memo(k,f):f();
+const isResellAcct=id=>typeof id==='string'&&id.slice(-2)==='-R';
+const ownerOf=id=>isResellAcct(id)?id.slice(0,-2):id;      /* the desk's isBucket has been always false since v265 */
+const isPerson=id=>!!id;
+/* the desk's tests (and nothing else) swap lateOf, buyerProfile, driftOfNow and driftOf at run time: the desk hands each in as C.fn.NAME(args without C), so a swap still takes; a Worker leaves C.fn out */
+const lateOfS=(C,code)=>C.fn&&C.fn.lateOf?C.fn.lateOf(code):lateOf(C,code);
+const profileS=(C,p,code)=>C.fn&&C.fn.buyerProfile?C.fn.buyerProfile(p,code):buyerProfile(C,p,code);
+const driftNowS=(C,p,code)=>C.fn&&C.fn.driftOfNow?C.fn.driftOfNow(p,code):driftOfNow(C,p,code);
+const driftS=(C,p,code)=>C.fn&&C.fn.driftOf?C.fn.driftOf(p,code):driftOf(C,p,code);
+const todayISO=C=>C.today.toISOString().slice(0,10);
+function pbPriced(s){const st=POSITION_ENGINE.txStat(s).order;
+  if(st==='Pending'||st==='Cancelled'||st==='Default')return false;
+  if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
+  return true;}
+function isPartner(C,code){return C.B.partners.includes(ownerOf(code)||code);}
+function lateOf(C,code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays(C.B.sales,ownerOf(code)||code,todayISO(C),C.R.RULES),C.R.RULES);}
+function buyerProfile(C,prod,code){
+  const R=C.R.PROFILE_RULE, DAY=86400000, now=C.today.getTime();
+  const rows=pSales(C.B,prod).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0&&s.qty>0);
+  if(!rows.length)return null;
+  const times=rows.map(s=>new Date(s.date).getTime()).sort((a,b)=>a-b);
+  const tenure=(now-times[0])/DAY, sinceLast=(now-times[times.length-1])/DAY;
+  const perMonth=rows.length/(Math.max(tenure,R.spanFloorDays)/30.44);
+  const unitsPerMonth=rows.reduce((a,s)=>a+s.qty,0)/(Math.max(tenure,R.spanFloorDays)/30.44);   /* 05 Oct 2026: the drift's volume signal */
+  const smallShare=rows.filter(s=>s.qty<=R.smallUpTo+0.0001).length/rows.length;
+  const bigShare=rows.filter(s=>s.qty>=R.bigFrom-0.0001).length/rows.length;
+  const frequent=perMonth>=R.frequentPerMonth, small=smallShare>=R.smallShare, bigger=bigShare>=R.biggerShare;
+  const loyal=rows.length>=R.loyalOrders&&sinceLast<=R.loyalWithinDays;
+  const rare=perMonth<R.rarePerMonth||sinceLast>R.rareAfterDays;
+  const name=rows.length===1?'one-off'
+    :small?(frequent?'small and often':'small and rare')
+    :bigger?(frequent?'large and regular':'rare and large')
+    :frequent?'consistent mid':'occasional mid';
+  return {name,orders:rows.length,tenureDays:Math.round(tenure),sinceLastDays:Math.round(sinceLast),
+    perMonth:+perMonth.toFixed(2),unitsPerMonth:+unitsPerMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),
+    frequent,small,bigger,loyal,rare};
+}
+function driftBook(C,p){const R=C.R.TIER_RULE[p];return !!(R&&R.drift);}
+function driftSignals(C,prod,code){
+  const who=ownerOf(code)||code,pf=profileS(C,prod,who),RU=C.R.RULES;
+  const dl=POSITION_ENGINE.payDelays(C.B.sales,who,todayISO(C),RU),settled=dl.filter(x=>!x.open),open=dl.filter(x=>x.open);
+  const lt=lateOfS(C,who);
+  const wo=C.B.sales.filter(s=>POSITION_ENGINE.ownsCode(who,s.customer)).reduce((a,s)=>a+POSITION_ENGINE.txWrittenOff(s),0);
+  return {settled:settled.length,onTime:settled.filter(x=>x.days<=RU.holdDays).length,
+    perMonth:pf?pf.perMonth:0,unitsPerMonth:pf?pf.unitsPerMonth:0,orders:pf?pf.orders:0,sinceLastDays:pf?pf.sinceLastDays:null,
+    late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
+    overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RU.holdDays),0)};
+}
+function driftOfNow(C,p,code){
+  const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
+  const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
+  const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
+  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
+}
+function driftOf(C,p,code){return viaMemo(C,'drift|'+(ownerOf(code)||code)+'|'+p,()=>driftNowS(C,p,code));}
+function tierCustomers(C){
+  const rev={};
+  C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
+  const rest=C.B.roster.map(ownerOf).filter((id,i,a)=>a.indexOf(id)===i&&isPerson(id)&&!id.startsWith('S')&&!(id in rev));
+  return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
+}
+function cost(C,p){const o=C.over||{cost:null,shrink:null};return viaMemo(C,'pxCost|'+p+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.costStack(inputs(C,p)));}
+/* a named customer's price at any size: a partner the floor to the sen; a stated board the board; a drift book the Set Price moved by their drift */
+function cardQuote(C,p,code,q,t){
+  if(!(q>0))return null;
+  const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
+  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
+  const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
+  if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
+  if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
+  if(t==null)t=C.tierAt?C.tierAt(code,q):-1;if(t<0)return null;
+  if(!row||row.prices[t]==null)return null;
+  return +PRICING_ENGINE.cardPrice(null,PRICING_ENGINE.floorTotal(q,K,policy(C,p)),row.prices[t]).toFixed(2);}
+
 /* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
-function figures(B,R,prod,today,over=null){
+function ctxFor(B,R,prod,today,over){
   const C0={B,R,today,over,W:{buyUnits:0,selfUse:0,wavgBuy:0,stockCost:null}};
-  const W=POSITION_ENGINE.walk(posInputs(C0,prod)),C={...C0,W};
-  const cost=PRICING_ENGINE.costStack(inputs(C,prod)),P=policy(C,prod),sizes=sizesFor(C,prod),floors={};
+  return {...C0,W:POSITION_ENGINE.walk(posInputs(C0,prod))};
+}
+function figuresOf(C,prod){
+  const W=C.W,cost=PRICING_ENGINE.costStack(inputs(C,prod)),P=policy(C,prod),sizes=sizesFor(C,prod),floors={};
   sizes.forEach(q=>{floors[q]={floor:PRICING_ENGINE.floorTotal(q,cost,P)};});
   return {stockCost:W.stockCost, replCost:replCost(C,prod), inputs:{cost:inputs(C,prod),policy:P}, sizes, floors,
     rungs:shSizes(C,prod), ladder:fiveTiers(C,prod,()=>cost)};
 }
+function figures(B,R,prod,today,over=null){return figuresOf(ctxFor(B,R,prod,today,over),prod);}
+
+/* the snapshot's pricing part for every book, as tools/book.mjs pricingSnapshot() reads it off the page: figures to four places,
+   the ladder as the price list carries it, every customer's card at the shown sizes, and on a drift book each one's drift */
+function pricing(B,R,today,over=null){
+  const r4=v=>(typeof v==='number'&&Number.isFinite(v))?+v.toFixed(4):null, out={};
+  for(const p of B.prodOrder){
+    const C=ctxFor(B,R,p,today,over),f=figuresOf(C,p),ids=tierCustomers(C),floors={};
+    Object.keys(f.floors).forEach(q=>{floors[q]={floor:r4(f.floors[q].floor)};});
+    const cards={};
+    ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
+    let drift=null;
+    if(driftBook(C,p)){drift={};ids.forEach(id=>{if(isPartner(C,id)){drift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))drift[id]=d.d;});}
+    out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
+      ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
+      drift?{drift}:{});
+  }
+  return out;
+}
 
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
-  inputs,policy,fiveTiers,figures};
+  inputs,policy,fiveTiers,figures,
+  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,tierCustomers,cost,cardQuote,pricing};
 })();
 
 /* ==== END ENGINE snapshot ==== */
@@ -9852,7 +9952,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1128","d":"16 Oct 2026","t":"THE COST SIDE OF PRICING RUNS IN ONE SHARED ENGINE MODULE","n":["Stock cost, replacement cost, the cost inputs and policy, the floors, sizes and ladder are now computed by engine/snapshot.mjs, which the desk inlines and calls; a Worker can compute the same figures with no page. No price moves.","Step S1c-ii of moving the book into a Durable Object: the pricing snapshot on the frozen book is byte-identical to v1126's, the engine run alone gives the page's own figures for every book, and the proof now opens the page on the fixture's day."]}];
+const evolution=[{"v":"v1129","d":"16 Oct 2026","t":"EVERY CUSTOMER'S QUOTE AND DRIFT RUN IN ONE SHARED ENGINE MODULE","n":["A named customer's card, a partner's cost quote and each customer's drift read off their record are now computed by engine/snapshot.mjs, which the desk inlines and calls; a Worker can compute the whole pricing snapshot with no page. No price moves.","Step S1c-iii of moving the book into a Durable Object: run alone, the engine gives the v1126 snapshot field for field on every book, the partner, hand-set drifts and late payers included."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9996,7 +10096,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Oct 2026, 05:36 KL';
+const LAST_UPDATED='16 Oct 2026, 06:11 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11953,9 +12053,12 @@ function snapCtx(){return snapCtx._c||(snapCtx._c={
     get statedStock(){return STATED_STOCK;},get loanDrawUnits(){return loanDrawUnits;},get supplierReceivable(){return typeof supplierReceivable!=='undefined'?supplierReceivable:null;},
     get counts(){return typeof COUNTS!=='undefined'?COUNTS:[];},get selfUseLog(){return typeof selfUseLog!=='undefined'?selfUseLog:[];},
     get quotes(){return QUOTES;},get priceSet(){return typeof PRICE_SET!=='undefined'?PRICE_SET:null;},get costRule(){return typeof COST_RULE!=='undefined'?COST_RULE:{};},
-    get defaultProd(){return DEFAULT_PROD;}},
-  R:{PRICE_ENGINE,LADDER_BY,TIER_RULE,TIER_NAMES,SHRINK_ATTRIB,COST_BASIS,PRICE_LOCK,get LADDER(){return LADDER;},get PRICE(){return PRICE;},get PRICE_LOCK_ON(){return PRICE_LOCK_ON;}},
+    get defaultProd(){return DEFAULT_PROD;},
+    get roster(){return roster;},get partners(){return typeof partners!=='undefined'?partners:[];},get tierOf(){return TIER_OF;},get prodOrder(){return PROD_ORDER;}},
+  R:{PRICE_ENGINE,LADDER_BY,TIER_RULE,TIER_NAMES,SHRINK_ATTRIB,COST_BASIS,PRICE_LOCK,RULES,PROFILE_RULE,get LADDER(){return LADDER;},get PRICE(){return PRICE;},get PRICE_LOCK_ON(){return PRICE_LOCK_ON;}},
   get today(){return TODAY;},get over(){return pxOver;},
+  memo(k,f){return renderMemo(k,f);},tierAt(code,q){return cardTierAt(code,q);},
+  fn:{lateOf(code){return lateOf(code);},buyerProfile(p,code){return buyerProfile(code,p);},driftOfNow(p,code){return driftOfNow(code,p);},driftOf(p,code){return driftOf(code,p);}},
   W:{get buyUnits(){return buyUnits;},get selfUse(){return selfUse;},get wavgBuy(){return wavgBuy;},get stockCost(){return stockCostFor(PROD);}}});}
 function posInputs(pr){return SNAPSHOT_ENGINE.posInputs(snapCtx(),pr||PROD);}
 function recompute(){
@@ -13844,7 +13947,7 @@ function tabInventory(){
    ownerOf() is the single resolver. Anything that asks "whose stream is this" must go
    through it, or the associate silently loses credit for his own resells. */
 const RESELL_SFX='-R';
-const isResellAcct=id=>typeof id==='string'&&id.slice(-2)===RESELL_SFX;
+const isResellAcct=SNAPSHOT_ENGINE.isResellAcct;
 /* ============ A BUCKET IS NOT A PERSON (v237) ============
    His instruction, and it was already half true: the general bucket was excluded from the
    map but still counted as a customer everywhere else, so it drew badges, sat in the
@@ -13860,8 +13963,8 @@ const isResellAcct=id=>typeof id==='string'&&id.slice(-2)===RESELL_SFX;
    isBucket is kept and always false rather than deleted, because a dozen call sites ask it
    and the honest answer now is "there are none" rather than a missing function. */
 const isBucket=id=>false;
-const isPerson=id=>!!id&&!isBucket(id);
-const ownerOf=id=>isResellAcct(id)?id.slice(0,-2):(isBucket(id)?id.slice(0,-4):id);
+const isPerson=SNAPSHOT_ENGINE.isPerson;
+const ownerOf=SNAPSHOT_ENGINE.ownerOf;
 function assocOf(code){
   if(!code)return null;
   if(isResellAcct(code))return ownerOf(code);
@@ -17032,28 +17135,7 @@ function tierBoards(){
    twice. One constant, so a threshold is one edit. */
 /* PROFILE_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* the profile of one customer on one product; null for a product they have never bought at a price */
-function buyerProfile(code,prod){
-  const R=PROFILE_RULE, DAY=86400000, now=TODAY.getTime();
-  const rows=pSales(prod||PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0&&s.qty>0);
-  if(!rows.length)return null;
-  const times=rows.map(s=>new Date(s.date).getTime()).sort((a,b)=>a-b);
-  const tenure=(now-times[0])/DAY, sinceLast=(now-times[times.length-1])/DAY;
-  const perMonth=rows.length/(Math.max(tenure,R.spanFloorDays)/30.44);
-  const unitsPerMonth=rows.reduce((a,s)=>a+s.qty,0)/(Math.max(tenure,R.spanFloorDays)/30.44);   /* 05 Oct 2026: the drift's volume signal */
-  const smallShare=rows.filter(s=>s.qty<=R.smallUpTo+0.0001).length/rows.length;
-  const bigShare=rows.filter(s=>s.qty>=R.bigFrom-0.0001).length/rows.length;
-  const frequent=perMonth>=R.frequentPerMonth, small=smallShare>=R.smallShare, bigger=bigShare>=R.biggerShare;
-  const loyal=rows.length>=R.loyalOrders&&sinceLast<=R.loyalWithinDays;
-  /* V5c: how late they pay is read across every book by lateOf, no longer here */
-  const rare=perMonth<R.rarePerMonth||sinceLast>R.rareAfterDays;
-  const name=rows.length===1?'one-off'
-    :small?(frequent?'small and often':'small and rare')
-    :bigger?(frequent?'large and regular':'rare and large')
-    :frequent?'consistent mid':'occasional mid';
-  return {name,orders:rows.length,tenureDays:Math.round(tenure),sinceLastDays:Math.round(sinceLast),
-    perMonth:+perMonth.toFixed(2),unitsPerMonth:+unitsPerMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),
-    frequent,small,bigger,loyal,rare};
-}
+function buyerProfile(code,prod){return SNAPSHOT_ENGINE.buyerProfile(snapCtx(),prod||PROD,code);}
 /* v655, HIS DECISION OF 16 SEP 2026: THE TIER IS PROPOSED AT THE SIZES THEY BUY, and read a unit, so a size they never take
    cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung:
    adding 80 and 100 unit to oil moved two customers a level on sizes neither of them buys (v654). */
@@ -17104,7 +17186,7 @@ function slowdown(prod){
   return {on:run>=3,since:run>=3?iso(today-(run-3)*DAY):null,lastLot:isFinite(lastLot)?iso(lastLot):null};
 }
 /* V5c: THE LATE PAYER, across every book and their bucket, read by the engine's walk (payDelays, lateOffer) */
-function lateOf(code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays(sales,ownerOf(code)||code,TODAY.toISOString().slice(0,10),RULES),RULES);}
+function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}
 /* ============ 05 OCT 2026, HIS DECISION: EACH CUSTOMER'S DRIFT ON A DRIFT BOOK ============
    A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price moved by their drift, d from -1 to +1.
    HAND-SET WINS: a number held in TIER_OF[code][book], set on the Drift card or at Add ID, queued and folded as `tierset`,
@@ -17112,25 +17194,11 @@ function lateOf(code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays
    that book for how often, how much and how many; payDelays, across every book, for the settlements paid within the term
    (RULES.holdDays) and the oldest open overdue; lateOf for the late flag; txWrittenOff for anything written off. A late payer
    is priced up, his decision of 05 Oct 2026, superseding the offer-only rule of 29 Sep. */
-function driftBook(p){const R=TIER_RULE[p||PROD];return !!(R&&R.drift);}
-function driftSignals(code,prod){
-  const who=ownerOf(code)||code,p=prod||PROD,pf=buyerProfile(who,p),today=TODAY.toISOString().slice(0,10);
-  const dl=POSITION_ENGINE.payDelays(sales,who,today,RULES),settled=dl.filter(x=>!x.open),open=dl.filter(x=>x.open);
-  const lt=lateOf(who);
-  const wo=sales.filter(s=>POSITION_ENGINE.ownsCode(who,s.customer)).reduce((a,s)=>a+POSITION_ENGINE.txWrittenOff(s),0);
-  return {settled:settled.length,onTime:settled.filter(x=>x.days<=RULES.holdDays).length,
-    perMonth:pf?pf.perMonth:0,unitsPerMonth:pf?pf.unitsPerMonth:0,orders:pf?pf.orders:0,sinceLastDays:pf?pf.sinceLastDays:null,
-    late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
-    overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RULES.holdDays),0)};
-}
+function driftBook(p){return SNAPSHOT_ENGINE.driftBook(snapCtx(),p||PROD);}
+function driftSignals(code,prod){return SNAPSHOT_ENGINE.driftSignals(snapCtx(),prod||PROD,code);}
 /* the Drift card and the price lists ask each customer's drift about four times a render: kept for the render, by customer and book */
-function driftOf(code,prod){const p=prod||PROD;return renderMemo('drift|'+(ownerOf(code)||code)+'|'+p,()=>driftOfNow(code,p));}
-function driftOfNow(code,prod){
-  const p=prod||PROD,R=TIER_RULE[p];if(!R||!R.drift)return null;
-  const who=ownerOf(code)||code,h=(TIER_OF[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
-  const sig=driftSignals(who,p),a=PRICING_ENGINE.autoDrift(sig,R.auto);
-  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
-}
+function driftOf(code,prod){return SNAPSHOT_ENGINE.driftOf(snapCtx(),prod||PROD,code);}
+function driftOfNow(code,prod){return SNAPSHOT_ENGINE.driftOfNow(snapCtx(),prod||PROD,code);}
 /* the level a late payer is offered: one down from what they are quoted, a band set read at its mid; none at the last level */
 function lateDown(v){const N=TIER_NAMES,cur=v&&typeof v==='object'?v.mid:v,i=N.indexOf(cur);return i<0||i>=N.length-1?null:N[i+1];}
 function lateWhy(l){
@@ -17154,12 +17222,7 @@ function ruleProposal(code,prod,boards){
 }
 /* every customer on the roster, those who have bought first and largest first; a resale account stands with its associate
    and a supplier holds no tier. Since v646 one who has not bought yet is listed too, so a tier can be set before they do. */
-function tierCustomers(){
-  const rev={};
-  sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
-  const rest=roster.map(ownerOf).filter((id,i,a)=>a.indexOf(id)===i&&isPerson(id)&&!id.startsWith('S')&&!(id in rev));
-  return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
-}
+function tierCustomers(){return SNAPSHOT_ENGINE.tierCustomers(snapCtx());}
 /* what waits for approval, code to product to level, a null clearing one; a registration's starting tiers wait too (v645) */
 function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
   queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
@@ -20127,10 +20190,7 @@ function pbWeekMonday(){if(PB_MONDAY)return PB_MONDAY;
   return (PB_MONDAY=kl.getFullYear()+'-'+String(kl.getMonth()+1).padStart(2,'0')+'-'+String(kl.getDate()).padStart(2,'0'));}
 /* 08 Sep 2026: A ROW THAT COUNTS AS A PRICE THIS CUSTOMER PAID, word for word pricedOrder in
    tools/pricelist.mjs. Pending, cancelled and defaulted rows and awards with no cash are not. */
-function pbPriced(s){const st=txStat(s).order;
-  if(st==='Pending'||st==='Cancelled'||st==='Default')return false;
-  if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
-  return true;}
+function pbPriced(s){return SNAPSHOT_ENGINE.pbPriced(s);}
 /* v655, HIS DECISION OF 16 SEP 2026: THEIR OWN RATE IS THE BEST THEY HAVE PAID, of the last four priced orders before the
    week's Monday, where it was the middle one until now. His reading of the book is that a sale struck is the best price
    strikeable with that customer, so the best of those four is what they will pay again; the middle one left RM4,170 of
@@ -20159,24 +20219,8 @@ function cardTier(code){if(driftBook(PROD))return 0;return cardTierAt(code,(PROF
    refusal above is right where a LEVEL decides the price and wrong where he has typed one price for
    all: it would have left thirty of thirty-six customers with no oil price on the desk and on their
    own page, and it is why the desk printed nothing for oil the day the tiers came off. */
-function isPartner(code){return typeof partners!=='undefined'&&partners.includes(ownerOf(code)||code);}
-function cardQuote(code,q,t){
-  if(!(q>0))return null;
-  const P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
-  if(isPartner(code))return PRICING_ENGINE.quoteAt(q,pxCost(),P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
-  /* one render quotes about 55 cards, 180 on Who buys, at a handful of distinct sizes, and a drift book's row walks the whole
-     grid each time. The row is the book's at the size and nothing of the customer's: their held tier or band set, their drift,
-     a late offer and a partner's cost are all applied below, outside it. So its key is book, size and pxCost's own override
-     (cost, shrink); outside a render it is built fresh. */
-  const row=renderMemo('tierAt|'+PROD+'|'+q+'|'+pxOver.cost+'|'+pxOver.shrink,()=>PRICING_ENGINE.fiveTierAt(q,pxCost(),P));
-  /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through every grid
-     point beneath the size; on a stated board the board, pro rata. One rule, the engine's quoteAt, which the Counter's sealed
-     grid and the desk Worker's card read too. Never under the floor. */
-  if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,pxCost(),P,0);
-  if(row&&row.drift){const dr=driftOf(code,PROD);return PRICING_ENGINE.quoteAt(q,pxCost(),P,dr?dr.d:0);}
-  if(t==null)t=cardTierAt(code,q);if(t<0)return null;
-  if(!row||row.prices[t]==null)return null;
-  return +PRICING_ENGINE.cardPrice(null,floorTotal(q),row.prices[t]).toFixed(2);}
+function isPartner(code){return SNAPSHOT_ENGINE.isPartner(snapCtx(),code);}
+function cardQuote(code,q,t){return SNAPSHOT_ENGINE.cardQuote(snapCtx(),PROD,code,q,t);}
 /* v670: each size reads its own level, so a customer on a band set is printed their small, mid and big levels where they fall */
 function pbPrices(code){
   /* a typed board needs no tier to be printed; a tiered product still does */

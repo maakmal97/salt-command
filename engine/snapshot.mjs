@@ -182,19 +182,119 @@ function fiveTiers(C,p,cost){
   return R?PRICING_ENGINE.fiveTiers(sizes,cost(),policy(C,p)):null;
 }
 
+/* S1c-iii: THE CARDS AND THE DRIFT. Whose account a code is, who is a person, who pays cost, and what each customer is quoted.
+   Added to C: B.roster, B.partners, B.tierOf (the hand-set TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
+   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh), and C.tierAt(code,q), the level machinery
+   (tierProposal, ruleProposal), which no live book uses: without it a book that names levels quotes null, never a wrong figure. */
+const viaMemo=(C,k,f)=>C.memo?C.memo(k,f):f();
+const isResellAcct=id=>typeof id==='string'&&id.slice(-2)==='-R';
+const ownerOf=id=>isResellAcct(id)?id.slice(0,-2):id;      /* the desk's isBucket has been always false since v265 */
+const isPerson=id=>!!id;
+/* the desk's tests (and nothing else) swap lateOf, buyerProfile, driftOfNow and driftOf at run time: the desk hands each in as C.fn.NAME(args without C), so a swap still takes; a Worker leaves C.fn out */
+const lateOfS=(C,code)=>C.fn&&C.fn.lateOf?C.fn.lateOf(code):lateOf(C,code);
+const profileS=(C,p,code)=>C.fn&&C.fn.buyerProfile?C.fn.buyerProfile(p,code):buyerProfile(C,p,code);
+const driftNowS=(C,p,code)=>C.fn&&C.fn.driftOfNow?C.fn.driftOfNow(p,code):driftOfNow(C,p,code);
+const driftS=(C,p,code)=>C.fn&&C.fn.driftOf?C.fn.driftOf(p,code):driftOf(C,p,code);
+const todayISO=C=>C.today.toISOString().slice(0,10);
+function pbPriced(s){const st=POSITION_ENGINE.txStat(s).order;
+  if(st==='Pending'||st==='Cancelled'||st==='Default')return false;
+  if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
+  return true;}
+function isPartner(C,code){return C.B.partners.includes(ownerOf(code)||code);}
+function lateOf(C,code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays(C.B.sales,ownerOf(code)||code,todayISO(C),C.R.RULES),C.R.RULES);}
+function buyerProfile(C,prod,code){
+  const R=C.R.PROFILE_RULE, DAY=86400000, now=C.today.getTime();
+  const rows=pSales(C.B,prod).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0&&s.qty>0);
+  if(!rows.length)return null;
+  const times=rows.map(s=>new Date(s.date).getTime()).sort((a,b)=>a-b);
+  const tenure=(now-times[0])/DAY, sinceLast=(now-times[times.length-1])/DAY;
+  const perMonth=rows.length/(Math.max(tenure,R.spanFloorDays)/30.44);
+  const unitsPerMonth=rows.reduce((a,s)=>a+s.qty,0)/(Math.max(tenure,R.spanFloorDays)/30.44);   /* 05 Oct 2026: the drift's volume signal */
+  const smallShare=rows.filter(s=>s.qty<=R.smallUpTo+0.0001).length/rows.length;
+  const bigShare=rows.filter(s=>s.qty>=R.bigFrom-0.0001).length/rows.length;
+  const frequent=perMonth>=R.frequentPerMonth, small=smallShare>=R.smallShare, bigger=bigShare>=R.biggerShare;
+  const loyal=rows.length>=R.loyalOrders&&sinceLast<=R.loyalWithinDays;
+  const rare=perMonth<R.rarePerMonth||sinceLast>R.rareAfterDays;
+  const name=rows.length===1?'one-off'
+    :small?(frequent?'small and often':'small and rare')
+    :bigger?(frequent?'large and regular':'rare and large')
+    :frequent?'consistent mid':'occasional mid';
+  return {name,orders:rows.length,tenureDays:Math.round(tenure),sinceLastDays:Math.round(sinceLast),
+    perMonth:+perMonth.toFixed(2),unitsPerMonth:+unitsPerMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),
+    frequent,small,bigger,loyal,rare};
+}
+function driftBook(C,p){const R=C.R.TIER_RULE[p];return !!(R&&R.drift);}
+function driftSignals(C,prod,code){
+  const who=ownerOf(code)||code,pf=profileS(C,prod,who),RU=C.R.RULES;
+  const dl=POSITION_ENGINE.payDelays(C.B.sales,who,todayISO(C),RU),settled=dl.filter(x=>!x.open),open=dl.filter(x=>x.open);
+  const lt=lateOfS(C,who);
+  const wo=C.B.sales.filter(s=>POSITION_ENGINE.ownsCode(who,s.customer)).reduce((a,s)=>a+POSITION_ENGINE.txWrittenOff(s),0);
+  return {settled:settled.length,onTime:settled.filter(x=>x.days<=RU.holdDays).length,
+    perMonth:pf?pf.perMonth:0,unitsPerMonth:pf?pf.unitsPerMonth:0,orders:pf?pf.orders:0,sinceLastDays:pf?pf.sinceLastDays:null,
+    late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
+    overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RU.holdDays),0)};
+}
+function driftOfNow(C,p,code){
+  const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
+  const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
+  const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
+  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
+}
+function driftOf(C,p,code){return viaMemo(C,'drift|'+(ownerOf(code)||code)+'|'+p,()=>driftNowS(C,p,code));}
+function tierCustomers(C){
+  const rev={};
+  C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
+  const rest=C.B.roster.map(ownerOf).filter((id,i,a)=>a.indexOf(id)===i&&isPerson(id)&&!id.startsWith('S')&&!(id in rev));
+  return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
+}
+function cost(C,p){const o=C.over||{cost:null,shrink:null};return viaMemo(C,'pxCost|'+p+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.costStack(inputs(C,p)));}
+/* a named customer's price at any size: a partner the floor to the sen; a stated board the board; a drift book the Set Price moved by their drift */
+function cardQuote(C,p,code,q,t){
+  if(!(q>0))return null;
+  const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
+  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
+  const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
+  if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
+  if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
+  if(t==null)t=C.tierAt?C.tierAt(code,q):-1;if(t<0)return null;
+  if(!row||row.prices[t]==null)return null;
+  return +PRICING_ENGINE.cardPrice(null,PRICING_ENGINE.floorTotal(q,K,policy(C,p)),row.prices[t]).toFixed(2);}
+
 /* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
-function figures(B,R,prod,today,over=null){
+function ctxFor(B,R,prod,today,over){
   const C0={B,R,today,over,W:{buyUnits:0,selfUse:0,wavgBuy:0,stockCost:null}};
-  const W=POSITION_ENGINE.walk(posInputs(C0,prod)),C={...C0,W};
-  const cost=PRICING_ENGINE.costStack(inputs(C,prod)),P=policy(C,prod),sizes=sizesFor(C,prod),floors={};
+  return {...C0,W:POSITION_ENGINE.walk(posInputs(C0,prod))};
+}
+function figuresOf(C,prod){
+  const W=C.W,cost=PRICING_ENGINE.costStack(inputs(C,prod)),P=policy(C,prod),sizes=sizesFor(C,prod),floors={};
   sizes.forEach(q=>{floors[q]={floor:PRICING_ENGINE.floorTotal(q,cost,P)};});
   return {stockCost:W.stockCost, replCost:replCost(C,prod), inputs:{cost:inputs(C,prod),policy:P}, sizes, floors,
     rungs:shSizes(C,prod), ladder:fiveTiers(C,prod,()=>cost)};
 }
+function figures(B,R,prod,today,over=null){return figuresOf(ctxFor(B,R,prod,today,over),prod);}
+
+/* the snapshot's pricing part for every book, as tools/book.mjs pricingSnapshot() reads it off the page: figures to four places,
+   the ladder as the price list carries it, every customer's card at the shown sizes, and on a drift book each one's drift */
+function pricing(B,R,today,over=null){
+  const r4=v=>(typeof v==='number'&&Number.isFinite(v))?+v.toFixed(4):null, out={};
+  for(const p of B.prodOrder){
+    const C=ctxFor(B,R,p,today,over),f=figuresOf(C,p),ids=tierCustomers(C),floors={};
+    Object.keys(f.floors).forEach(q=>{floors[q]={floor:r4(f.floors[q].floor)};});
+    const cards={};
+    ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
+    let drift=null;
+    if(driftBook(C,p)){drift={};ids.forEach(id=>{if(isPartner(C,id)){drift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))drift[id]=d.d;});}
+    out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
+      ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
+      drift?{drift}:{});
+  }
+  return out;
+}
 
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
-  inputs,policy,fiveTiers,figures};
+  inputs,policy,fiveTiers,figures,
+  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,tierCustomers,cost,cardQuote,pricing};
 })();
 
 export default SNAPSHOT_ENGINE;
