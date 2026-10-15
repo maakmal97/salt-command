@@ -70,7 +70,7 @@ export async function run({ ok, pageWork }) {
   };
   const enterRecord = async (p) => { await p.tap("nav.record"); await p.tap("part.record.approve"); };
 
-  /* 1. THE ROW TO APPROVE IS THE SYSTEM'S APPROVE CARD */
+  /* 1. THE ROW TO APPROVE IS THE SYSTEM'S APPROVE CARD (since plan 2 of 16 Oct 2026 it says the change; test/admin-approve-card.mjs proves what it says) */
   let p = await open({ review: (j) => { j.drafts[0].reasoning = "Priced under their usual."; return j; } });
   try {
     const d = p.d;
@@ -80,37 +80,39 @@ export async function run({ ok, pageWork }) {
       && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].every((x) => x.classList.contains("salt-approve")),
     "each Desk row to approve is an article on the system's Approve recipe (salt-approve), beside the page's own card class and in place of the glass card");
     const head = c.querySelector(":scope > .salt-approve__head");
-    ok(!!head && head.querySelector(".salt-approve__party").textContent === "CX1-ZED" && head.querySelector(".salt-approve__entry").textContent === "Sale on 10 Oct 2026",
-      "its head is the recipe's: the party's code, and the entry as typed beside it: " + (head && head.textContent));
-    /* 12 Oct 2026 (Phase 5): the cost and margin are the system's Metric row, a label over its figure, and not a line of the card's own */
-    const facts = [...c.querySelectorAll(":scope > .maker-facts")], flags = c.querySelector(":scope > .salt-approve__flags"), reason = c.querySelector(":scope > .salt-approve__reason");
+    const partyText = head && head.querySelector(".salt-approve__party").cloneNode(true);
+    if (partyText) partyText.querySelectorAll(".pwith").forEach((x) => x.replaceWith("[mark]"));
+    ok(!!head && partyText.textContent === "CX1-ZED · [mark]" && head.querySelector(".salt-approve__entry").textContent === "from phone, 10 Oct 2026",
+      "its head is the recipe's: the party's code and the book's mark, and where the entry came from and when: " + (head && head.textContent));
+    /* 12 Oct 2026 (Phase 5): a new row's cost and margin are the system's Metric row, a label over its figure, and not a line of the card's own */
+    const facts = [...c.querySelectorAll(":scope > .maker-facts")], reason = c.querySelector(".salt-approve__reason");
     const figures = c.querySelector(":scope > .salt-metrics.salt-metrics--sm"), cells = figures ? [...figures.children].map((x) => [x.querySelector(".salt-metrics__label").textContent, x.querySelector(".salt-metrics__value").textContent]) : [];
     ok(!!figures && JSON.stringify(cells) === JSON.stringify([["Cost", "RM 56.00"], ["Your margin", "RM 44.00 · 44%"]]) && figures.textContent.replace(/\s+/g, " ") === "Cost RM 56.00 Your margin RM 44.00 · 44%" && /RM 100\.00/.test(facts[0].textContent) && !facts.some((x) => /Cost RM/.test(x.textContent)),
-      "the figures lead, read off the draft and computed nowhere: the row's total, then its cost and margin as the system's Metric row: " + facts.map((x) => x.textContent).join(" | ") + " / " + JSON.stringify(cells));
-    ok(!!flags && same([...flags.querySelectorAll(".salt-status.salt-status--ember")].map((x) => x.textContent), ["Check before deciding"]) && !c.querySelector(":scope > .salt-insight"),
-      "the flags it was drafted with are chips in the recipe's flag row, and not also a line of prose");
-    ok(!!figures && !!flags && !!reason && reason.textContent === "Priced under their usual."
-      && (figures.compareDocumentPosition(flags) & 4) && (flags.compareDocumentPosition(reason) & 4) && !c.querySelector("details, summary") && !!c.querySelector(":scope > .rdet--row") && c.querySelector(":scope > .rdet--row").hidden,
-    "in the recipe's order, the figures, then the flags, then the drafter's reasoning, with the row itself folded shut and no Details button");
-    /* the card is the tap: the head (the control, with its act) or any part of the card that is not a button opens the row's detail and a second tap shuts it; Approve opens nothing */
-    const hd = c.querySelector(":scope > .salt-approve__head"), panel = c.querySelector(":scope > .rdet--row"), gone = p.posts.length;
-    ok(hd.tagName === "BUTTON" && hd.getAttribute("data-act") === "row.proposed" && hd.getAttribute("aria-expanded") === "false" && panel.hidden, "the head is a button with an act, shut");
-    hd.click(); await p.work.quiet();
-    const afterHead = !panel.hidden && hd.getAttribute("aria-expanded") === "true" && /Reference/.test(panel.textContent);
-    c.querySelector(".salt-approve__reason").click(); await p.work.quiet();
-    const afterBody = panel.hidden && hd.getAttribute("aria-expanded") === "false";
-    ok(afterHead && afterBody && p.posts.length === gone, "a tap on the head opens the row's detail, a tap on the card's body shuts it, and nothing is sent: " + [afterHead, afterBody]);
-    ok(![...c.querySelectorAll("button")].some((b) => b.textContent === "Details") && [...c.querySelectorAll(":scope > .salt-approve__actions button")].filter((b) => !b.hidden).every((b) => /^(Approve|Reject)/.test(b.textContent)), "the card's only buttons for the Desk are Approve and Reject, with no Details");
+      "a new row's figures lead, read off the draft and computed nowhere: the row's total, then its cost and margin as the system's Metric row: " + facts.map((x) => x.textContent).join(" | ") + " / " + JSON.stringify(cells));
+    const panel = c.querySelector(":scope > .rdet--row");
+    ok(!c.querySelector(":scope > .salt-approve__flags") && !!panel && panel.hidden && panel.contains(reason) && reason.textContent === "Priced under their usual."
+      && [...panel.querySelectorAll(".apnote")].map((x) => x.textContent).join("|") === "Check before deciding",
+    "a flag that asks no decision is no chip on the card: it and the drafter's note stand in Details, shut");
+    /* Details is its own control at the card's foot; the head is no longer a control, and a tap on the card opens nothing */
+    const more = byAct(c, "row.proposed"), gone = p.posts.length;
+    ok(!!more && more.tagName === "BUTTON" && more.textContent === "Details" && more.getAttribute("aria-expanded") === "false" && head.tagName !== "BUTTON",
+      "Details is a button with its act, shut, and the head is not a control");
+    c.querySelector(".apverb").click(); await p.work.quiet();
+    const afterBody = panel.hidden;
+    more.click(); await p.work.quiet();
+    const afterMore = !panel.hidden && more.getAttribute("aria-expanded") === "true" && /Reference/.test(panel.textContent);
+    more.click(); await p.work.quiet();
+    ok(afterBody && afterMore && panel.hidden && p.posts.length === gone, "a tap on the card opens nothing, Details opens the row's detail and a second tap shuts it, and nothing is sent: " + [afterBody, afterMore]);
     const cells2 = [...d.querySelectorAll("#makerDrafts .apfigs")];
-    ok(cells2.length >= 2 && cells2.every((f) => f.classList.contains("salt-metrics")), "every card's cost and margin stand in one figures row of their own class, so the page can align them as columns");
+    ok(cells2.length >= 2 && cells2.every((f) => f.classList.contains("salt-metrics")), "every new row's cost and margin stand in one figures row of their own class, so the page can align them as columns");
     const acts = c.querySelector(":scope > .salt-approve__actions"), approve = byAct(c, "draft.approve"), reject = byAct(c, "draft.reject");
-    ok(!!acts && acts.contains(approve) && acts.contains(reject) && approve.textContent === "Approve" && reject.textContent === "Reject"
+    ok(!!acts && acts.contains(approve) && acts.contains(reject) && acts.contains(more) && approve.textContent === "Approve the sale" && reject.textContent === "Reject"
       && approve.classList.contains("salt-pill") && !approve.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost") && reject.classList.contains("salt-ghost--danger")
       && [...acts.children].filter((x) => !x.hidden)[0] === approve,
-    "its moves stand in the recipe's actions: Approve the one filled pill, first, and Reject the danger ghost");
+    "its moves stand in the recipe's actions: Approve the one filled pill, first, Reject the danger ghost, and Details: " + (acts && acts.textContent));
     ok(!byAct(c, "draft.approve").disabled && !byAct(c, "draft.reject").disabled, "and neither is shut on a row that is not a claim's");
     const t2 = p.row("d-2"), t3 = p.row("d-3");
-    ok(!t3 && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].filter((x) => /one trip/.test(x.textContent)).length === 1 && t2.querySelectorAll(".rdet--row").length === 2, "a trip is drawn once, in one card holding both its rows, and never again for its other row: " + d.querySelectorAll("#makerDrafts [data-maker-card]").length);
+    ok(!t3 && [...d.querySelectorAll("#makerDrafts [data-maker-card]")].filter((x) => /one trip/.test(x.textContent)).length === 1 && t2.querySelectorAll(".rdet--row h4").length === 2, "a trip is drawn once, in one card holding both its rows, and never again for its other row: " + d.querySelectorAll("#makerDrafts [data-maker-card]").length);
     ok(!!t2 && /Two books, one trip\. Approve decides both\./.test(t2.textContent) && byAct(t2, "draft.approve").textContent === "Approve both" && byAct(t2, "draft.reject").textContent === "Reject both"
       && t2.querySelectorAll("[data-act='draft.approve']").length === 1,
     "a trip's rows stand in one card with one Approve and one Reject: " + (t2 && t2.textContent.slice(0, 140)));
@@ -174,11 +176,11 @@ export async function run({ ok, pageWork }) {
     const sh = p.sheet();
     ok(!!sh && sh.getAttribute("role") === "dialog" && sh.getAttribute("aria-modal") === "true" && sh.classList.contains("salt-sheet") && approves() === 0 && p.confirms.length === 0,
       "Approve row opens the page's Sheet, a modal dialog, and sends nothing as it opens, with no native confirm asked");
-    ok(p.title() === "Approve this row?" && /CX1-ZED/.test(sh.textContent) && /RM 100\.00/.test(sh.textContent) && /Sale, 1 unit/.test(sh.textContent) && /as drafted/.test(sh.textContent)
+    ok(p.title() === "Approve this row?" && /CX1-ZED/.test(sh.textContent) && /RM 100\.00/.test(sh.textContent) && /New sale, 1 unit/.test(sh.textContent) && /as drafted/.test(sh.textContent)
       && sh.querySelectorAll(".salt-ledger__row").length === 1,
     "the Sheet restates the row by its code, its size, its kind and its figure, and says it is approved as drafted: " + sh.textContent);
     ok(!!p.inSheet("ask.go", "draft:d-1:approve") && !!p.inSheet("ask.keep", "draft:d-1:approve") && !!p.inSheet("ask.close", "draft:d-1:approve")
-      && !p.inSheet("ask.go").classList.contains("salt-ghost--danger") && sh.querySelector(".salt-sheet__foot").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Approve",
+      && !p.inSheet("ask.go").classList.contains("salt-ghost--danger") && sh.querySelector(".salt-sheet__foot").contains(p.inSheet("ask.go")) && p.inSheet("ask.go").textContent === "Approve the sale",
     "its controls carry their acts and the row's key, and Approve is not a danger action");
     const bad = await p.ways(() => approve().click(), approve, approves);
     ok(bad.length === 0, "the ghost, the close control, the scrim and Escape each close it, send nothing and give focus back to Approve row: " + bad.join(" | "));
@@ -240,7 +242,7 @@ export async function run({ ok, pageWork }) {
     ok(!!card() && !!pill(), "Needs you has the row's card and its Approve pill");
     const before = pill();
     pill().click(); await p.work.quiet();
-    ok(p.title() === "Approve this row?" && p.inSheet("ask.go").textContent === "Approve" && !!p.inSheet("ask.go", "need:draft:d-1:approve") && p.posted(route("approve", "d-1")).length === 0 && p.confirms.length === 0,
+    ok(p.title() === "Approve this row?" && p.inSheet("ask.go").textContent === "Approve the sale" && !!p.inSheet("ask.go", "need:draft:d-1:approve") && p.posted(route("approve", "d-1")).length === 0 && p.confirms.length === 0,
       "the pill opens the very Sheet Record > Approve asks on, and sends nothing as it opens");
     p.inSheet("ask.keep").click(); await p.work.quiet();
     ok(!p.sheet() && pill() === before && !pill().disabled && d.activeElement === pill() && p.posted(route("approve", "d-1")).length === 0,

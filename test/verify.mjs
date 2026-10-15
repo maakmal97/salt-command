@@ -52279,6 +52279,11 @@ await (async () => {
   await (await import("./admin-approve-queue.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: the approve card says the change, one card and one Approve an order (plan 2, 16 Oct 2026)");
+await (async () => {
+  await (await import("./admin-approve-card.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Account: the few, fixed choices of Record's forms are option tiles, each sending the value its select did");
 await (async () => {
   await (await import("./admin-tiles.mjs")).run({ ok, pageWork });

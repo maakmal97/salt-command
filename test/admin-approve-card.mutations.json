@@ -1,0 +1,200 @@
+[
+ {
+  "name": "a Correction's fields are not applied on the Desk",
+  "file": "src/approve-figures.js",
+  "find": "for (const k of PLAIN) if (asked(k)) {",
+  "replace": "for (const k of []) if (asked(k)) {"
+ },
+ {
+  "name": "a Fulfilment adds no cash",
+  "file": "src/approve-figures.js",
+  "find": "s.cash = r2((+s.cash || 0) + (+p.cash || 0));",
+  "replace": "s.cash = r2(+s.cash || 0);"
+ },
+ {
+  "name": "moves on one row are read in the order they arrived, not entered",
+  "file": "src/approve-figures.js",
+  "find": "for (const d of (pending || []).filter(isSale).sort((a, b) => at(a).localeCompare(at(b)))) {",
+  "replace": "for (const d of (pending || []).filter(isSale)) {"
+ },
+ {
+  "name": "a move approved and not folded is not read first",
+  "file": "src/approve-figures.js",
+  "find": "    const moved = moveRow(base, d);\n",
+  "replace": "    const moved = base;\n"
+ },
+ {
+  "name": "what is owed is read for the bucket, not its owner",
+  "file": "src/approve-figures.js",
+  "find": "const owner = E.ownerCode(now.customer || d.party || \"\");",
+  "replace": "const owner = now.customer || d.party || \"\";"
+ },
+ {
+  "name": "a cancelled row still owes",
+  "file": "src/approve-figures.js",
+  "find": "owed: s.cancelled || s.goodwill || s.defaulted ? 0 :",
+  "replace": "owed: s.goodwill || s.defaulted ? 0 :"
+ },
+ {
+  "name": "the card reads the party off the entry alone, as before",
+  "file": "stmt/owner.js",
+  "find": "return d.party||e.party||p.party||'';",
+  "replace": "return e.party||'';"
+ },
+ {
+  "name": "the laptop is not named",
+  "file": "stmt/owner.js",
+  "find": "if(!e.type&&e.payload) return 'laptop';",
+  "replace": "if(!e.type&&e.payload) return '';"
+ },
+ {
+  "name": "the head loses the row id",
+  "file": "stmt/owner.js",
+  "find": "party.appendChild(document.createTextNode((rid?rid+' · ':'')+(draftParty(draft)||'no code')));",
+  "replace": "party.appendChild(document.createTextNode(draftParty(draft)||'no code'));"
+ },
+ {
+  "name": "the head loses the book's mark",
+  "file": "stmt/owner.js",
+  "find": "party.appendChild(document.createTextNode(' · ')); party.appendChild(bookMark(draft.product)); }",
+  "replace": "}"
+ },
+ {
+  "name": "taking cash back reads as a payment",
+  "file": "stmt/owner.js",
+  "find": "return +f.cash<from('cash')?'unpay':'pay';",
+  "replace": "return 'pay';"
+ },
+ {
+  "name": "a close among the moves does not close the order",
+  "file": "stmt/owner.js",
+  "find": "    if(has('close')&&ks.every(function(k){ return ['close','pay','hand','payhand','price'].indexOf(k)>=0; })) return 'close';\n",
+  "replace": ""
+ },
+ {
+  "name": "the card shows the book's word for the kind",
+  "file": "stmt/owner.js",
+  "find": "var kind=groupKind(g), verb=kind==='other'?entryWord(draft.entry||{}):AP_WORD[kind]",
+  "replace": "var kind=groupKind(g), verb=kind==='other'||draft.amends?entryWord(draft.entry||{}):AP_WORD[kind]"
+ },
+ {
+  "name": "every figure is marked as changed",
+  "file": "stmt/owner.js",
+  "find": "if(r[1]!==r[2]){ td.className='apchg';",
+  "replace": "if(true){ td.className='apchg';"
+ },
+ {
+  "name": "After is the first move's, not the last's",
+  "file": "stmt/owner.js",
+  "find": "var a=g.lead.figures, b=g.last.figures;",
+  "replace": "var a=g.lead.figures, b=g.lead.figures;"
+ },
+ {
+  "name": "the ceiling line is drawn when what is owed falls",
+  "file": "stmt/owner.js",
+  "find": "fg.owedAfter>fg.owedNow+0.004&&fg.party",
+  "replace": "fg.party"
+ },
+ {
+  "name": "over the ceiling is said as under",
+  "file": "stmt/owner.js",
+  "find": "fg.owedAfter>fg.ceiling+0.004?fg.party+' will owe '",
+  "replace": "false?fg.party+' will owe '"
+ },
+ {
+  "name": "more than two lines are drawn",
+  "file": "stmt/owner.js",
+  "find": "    return out.slice(0,2);\n",
+  "replace": "    return out;\n"
+ },
+ {
+  "name": "the lines keep their capitals",
+  "file": "stmt/owner.js",
+  "find": "return /^(RM|COGS|ID|MYT)$/.test(w)?w:w.toLowerCase();",
+  "replace": "return w;"
+ },
+ {
+  "name": "an advance the entry means to make asks a decision",
+  "file": "stmt/owner.js",
+  "find": "[/inventory the book puts at|owed out|unmeetable/i,'stock']",
+  "replace": "[/inventory the book puts at|owed out|unmeetable|advance/i,'stock']"
+ },
+ {
+  "name": "Details drops the flags",
+  "file": "stmt/owner.js",
+  "find": "      (d.flags||[]).forEach(function(f){ panel.appendChild(el('p','salt-insight apnote',noBook(f))); });\n",
+  "replace": ""
+ },
+ {
+  "name": "Details drops the row id",
+  "file": "stmt/owner.js",
+  "find": "concat(d.row&&d.row.rid||!draftRid(d)?[]:[['Row reference',draftRid(d)]])",
+  "replace": "concat([])"
+ },
+ {
+  "name": "drafts on one row are separate cards again",
+  "file": "stmt/owner.js",
+  "find": "'trip:'+t:d.amends&&!draftClaim(d)?'row:'+d.collection+':'+d.amends:'draft:'+d.id;",
+  "replace": "'trip:'+t:'draft:'+d.id;"
+ },
+ {
+  "name": "a card's drafts keep the order they arrived in",
+  "file": "stmt/owner.js",
+  "find": "rows.slice().sort(function(a,b){ return draftAt(a)<draftAt(b)?-1:draftAt(a)>draftAt(b)?1:0; }).forEach(function(d){",
+  "replace": "rows.slice().forEach(function(d){"
+ },
+ {
+  "name": "the merged Approve carries on past a refusal",
+  "file": "stmt/owner.js",
+  "find": ".then(function(){ done++; return next(); });",
+  "replace": ".then(function(){ done++; return next(); },function(){ done++; return next(); });"
+ },
+ {
+  "name": "the merged Approve sends only the first draft's approval",
+  "file": "stmt/owner.js",
+  "find": "if(g.trip||!many) return makerAction('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/approve'",
+  "replace": "if(true) return makerAction('/all/maker/drafts/'+encodeURIComponent(g.lead.id)+'/approve'"
+ },
+ {
+  "name": "a refusal does not say which move",
+  "file": "stmt/owner.js",
+  "find": "+'Move '+(done+1)+', '+moveWord(d).toLowerCase()+', was not '+word+': '",
+  "replace": "+'Not '+word+': '"
+ },
+ {
+  "name": "a half-approved order is not said",
+  "file": "stmt/owner.js",
+  "find": "if(fg&&fg.approvedBefore) card.appendChild(",
+  "replace": "if(false) card.appendChild("
+ },
+ {
+  "name": "the button does not say a close",
+  "file": "stmt/owner.js",
+  "find": "    if(k==='close') return 'Approve: '+rid+' closed';\n",
+  "replace": ""
+ },
+ {
+  "name": "the button does not say what is owed",
+  "file": "stmt/owner.js",
+  "find": "if(k==='pay'||k==='unpay') return 'Approve: '+rid+(paid?' paid':' owes '+rm(a.owed));",
+  "replace": "if(k==='pay'||k==='unpay') return 'Approve';"
+ },
+ {
+  "name": "Needs you draws a card per draft again",
+  "file": "stmt/owner.js",
+  "find": "draftGroups(rows).forEach(function(g){ L.push(rowNeed(g.lead)); });",
+  "replace": "rows.forEach(function(d){ L.push(rowNeed(d)); });"
+ },
+ {
+  "name": "a claim joins his moves on the same row",
+  "file": "stmt/owner.js",
+  "find": "d.amends&&!draftClaim(d)?'row:'",
+  "replace": "d.amends?'row:'"
+ },
+ {
+  "name": "a move named by its order key finds no row",
+  "file": "src/approve-figures.js",
+  "find": "for (const s of sales) { if (!s) continue; const k = E.ovKey(s); if (k && !byRid.has(k)) byRid.set(k, s); }",
+  "replace": ""
+ }
+]

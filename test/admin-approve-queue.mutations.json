@@ -8,7 +8,7 @@
  {
   "name": "the party leaves the card's head",
   "file": "stmt/owner.js",
-  "find": "      head.appendChild(el('span','salt-approve__party',entry.party||'no code'));\n",
+  "find": "      head.appendChild(party);\n",
   "replace": ""
  },
  {
@@ -24,22 +24,16 @@
   "replace": "if(false) figs.push("
  },
  {
-  "name": "the flags are prose again, not chips",
-  "file": "stmt/owner.js",
-  "find": "flags.forEach(function(flag){ chips.appendChild(chip('ember',noBook(flag))); });",
-  "replace": "flags.forEach(function(flag){ chips.appendChild(el('span','salt-insight',String(flag))); });"
- },
- {
   "name": "the drafter's reasoning leaves the card",
   "file": "stmt/owner.js",
-  "find": "    if(reading.reasoning) card.appendChild(el('p','salt-approve__reason',noBook(reading.reasoning)));\n",
+  "find": "      if(d.reasoning) panel.appendChild(el('p','salt-approve__reason',noBook(d.reasoning)));\n",
   "replace": ""
  },
  {
   "name": "the proposed row is open on the card",
   "file": "stmt/owner.js",
-  "find": "panel.hidden=true; panel.appendChild(detailList(rowPairs(reading.row,key)));",
-  "replace": "panel.hidden=false; panel.appendChild(detailList(rowPairs(reading.row,key)));"
+  "find": "var panel=el('div','rdet rdet--row'); panel.hidden=true;",
+  "replace": "var panel=el('div','rdet rdet--row'); panel.hidden=false;"
  },
  {
   "name": "Approve is a ghost, not the filled pill",
@@ -56,14 +50,14 @@
  {
   "name": "the moves stand outside the recipe's actions",
   "file": "stmt/owner.js",
-  "find": "var acts=el('div','salt-approve__actions'); card.appendChild(acts);",
-  "replace": "var acts=el('div','maker-actions'); card.appendChild(acts);"
+  "find": "var panel=apDetails(g), acts=el('div','salt-approve__actions'); card.appendChild(acts);",
+  "replace": "var panel=apDetails(g), acts=el('div','maker-acts'); card.appendChild(acts);"
  },
  {
   "name": "a trip's card lists none of the other rows",
   "file": "stmt/owner.js",
-  "find": "siblings.filter(function(item){return item.id!==draft.id;}).forEach(function(item){",
-  "replace": "[].forEach(function(item){"
+  "find": "g.drafts.forEach(function(d){ card.appendChild(bookLine(d.qty",
+  "replace": "[g.lead].forEach(function(d){ card.appendChild(bookLine(d.qty"
  },
  {
   "name": "the page restates the recipe's padding",
@@ -116,8 +110,8 @@
  {
   "name": "Reject sends on a no",
   "file": "stmt/owner.js",
-  "find": "keep:'Keep it'}).then(function(yes){\n      if(!yes) return;\n      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject'",
-  "replace": "keep:'Keep it'}).then(function(yes){\n      return makerAction('/all/maker/drafts/'+encodeURIComponent(draft.id)+'/reject'"
+  "find": "      go:g.trip?rejectWord(g.drafts.length):many?'Reject all':'Reject', keep:'Keep it'}).then(function(yes){\n      if(!yes) return;\n",
+  "replace": "      go:g.trip?rejectWord(g.drafts.length):many?'Reject all':'Reject', keep:'Keep it'}).then(function(yes){\n"
  },
  {
   "name": "Approve sends a body",
@@ -134,14 +128,14 @@
  {
   "name": "the Approve Sheet restates no row",
   "file": "stmt/owner.js",
-  "find": "extra:deskAskRows(draft), plain:true,",
+  "find": "extra:g.drafts.map(deskAskRow), plain:true,",
   "replace": "extra:[], plain:true,"
  },
  {
   "name": "a trip's Sheet lists the one row",
   "file": "stmt/owner.js",
-  "find": "return (sibs.length?sibs:[draft]).map(deskAskRow);",
-  "replace": "return [draft].map(deskAskRow);"
+  "find": "extra:g.drafts.map(deskAskRow), plain:true,",
+  "replace": "extra:[g.lead].map(deskAskRow), plain:true,"
  },
  {
   "name": "Approve is a danger action",
@@ -284,8 +278,8 @@
  {
   "name": "a native confirm is asked before Approve",
   "file": "stmt/owner.js",
-  "find": "    var trip=tripRows(draft).length>0;\n    return ownerAsk(opener,key,{title:trip?'Approve every row",
-  "replace": "    var trip=tripRows(draft).length>0; window.confirm('Approve?');\n    return ownerAsk(opener,key,{title:trip?'Approve every row"
+  "find": "    var g=groupOf(draft), many=g.drafts.length>1;\n    return ownerAsk(opener,key,{title:g.trip?'Approve every row",
+  "replace": "    var g=groupOf(draft), many=g.drafts.length>1;\n    if(!window.confirm('Approve this row?')) return Promise.resolve();\n    return ownerAsk(opener,key,{title:g.trip?'Approve every row"
  },
  {
   "name": "the Needs pill is off before his yes",
@@ -302,20 +296,20 @@
  {
   "name": "a trip is drawn again for each of its rows",
   "file": "stmt/owner.js",
-  "find": "if(tripsDrawn[tid]) return; tripsDrawn[tid]=true;",
-  "replace": "tripsDrawn[tid]=true;"
+  "find": "var t=tripOf(d), k=t&&tripRows(d).length?'trip:'+t:",
+  "replace": "var t=tripOf(d), k=false?'trip:'+t:"
  },
  {
-  "name": "a tap on the card's body no longer opens its detail",
+  "name": "a tap on the card's body opens its detail",
   "file": "stmt/owner.js",
-  "find": "if(!ev.target.closest('button,a,input,select,textarea,summary')) toggle();",
-  "replace": ""
+  "find": "      more.setAttribute('aria-expanded','false');\n",
+  "replace": "      more.setAttribute('aria-expanded','false'); card.addEventListener('click',function(ev){ if(!ev.target.closest('button')) more.click(); });\n"
  },
  {
-  "name": "the head is no longer a control",
+  "name": "the head is a control again",
   "file": "stmt/owner.js",
-  "find": "head=el('button','salt-approve__head apphead');",
-  "replace": "head=el('div','salt-approve__head apphead');"
+  "find": "head=el('div','salt-approve__head apphead');",
+  "replace": "head=el('button','salt-approve__head apphead');"
  },
  {
   "name": "a committed or approved copy is listed as waiting for the Desk",

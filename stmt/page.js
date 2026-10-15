@@ -705,8 +705,15 @@ body.ended>*:not(#aEnded){display:none}
 .adm .formrow .salt-inbox-row__title{gap:6px}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
 .adm .formrow{min-height:44px}
-.adm .apphead{appearance:none;background:none;border:0;padding:0;margin:0;width:100%;min-height:44px;text-align:left;color:inherit;font:inherit;cursor:pointer;align-items:center}
-.adm .apcard{cursor:pointer}
+.adm .apphead{min-height:44px;align-items:center}
+.adm .apverb{margin:0}
+.adm .apnow{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.adm .apnow th,.adm .apnow td{text-align:right;padding:4px 0 4px 12px;font-weight:400}
+.adm .apnow th:first-child{text-align:left;padding-left:0;color:var(--salt-text-muted)}
+.adm .apnow thead th{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
+.adm .apnow .apchg strong{font-weight:700;color:var(--salt-text)}
+.adm .apflag{white-space:normal}
+.adm .apbang{font-weight:700}
 .adm .apfigs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px}
 .adm .apcard .rdet--row{margin:0}
 .adm .maker-offers__head{margin:16px 0 4px}

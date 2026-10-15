@@ -376,8 +376,9 @@ export async function run({ ok }) {
     await until(() => /Order declined/.test(list()));
     ok(!card("20261003090003-del") && list() === "Order declined.",
       "An answer whose card has gone, the order having left the open list, falls to the list's own line and is not lost: " + list());
-    await until(() => button(draftId, "Approve"));
-    button(draftId, "Approve").click(); sheetGo();   /* the row asks on the page's Sheet (Phase 2c), and his yes is its one action */
+    const approveRow = () => card(draftId) && card(draftId).querySelector('button[data-act="draft.approve"]');
+    await until(() => approveRow());
+    approveRow().click(); sheetGo();   /* the row asks on the page's Sheet (Phase 2c), and his yes is its one action */
     await until(() => say(draftId)?.textContent);
     ok(say(draftId)?.textContent === "Row approved." && !/Row approved/.test(list()),
       "A Desk row's answer lands on the row's own card too: " + JSON.stringify({ card: say(draftId)?.textContent, list: list() }));

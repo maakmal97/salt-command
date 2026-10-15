@@ -236,7 +236,7 @@
  {
   "name": "the answer is not kept on the card",
   "file": "stmt/owner.js",
-  "find": "needSaid['d:'+d.id]={t:makerSaid['draft:'+d.id]||(ok?'Row approved.':'Not approved.'), bad:!ok, who:e.party||'no code'};",
+  "find": "needSaid['d:'+d.id]={t:makerSaid['draft:'+d.id]||(ok?'Row approved.':'Not approved.'), bad:!ok, who:who};",
   "replace": ""
  },
  {

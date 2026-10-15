@@ -149,7 +149,7 @@ export async function run({ ok, pageWork }) {
     ok(order2.every((s, i) => i === 0 || sevOrder.indexOf(order2[i - 1]) <= sevOrder.indexOf(s)),
       "Now comes before Soon and Soon before Watch: " + JSON.stringify(order2));
     ok(same(p.keys("now"), NOW_KEYS), "within Now the oldest comes first, and the practice items after the real ones: " + JSON.stringify(p.keys("now")));
-    ok(same(p.keys("soon"), ["$:CX1-ZED", "g:row-1", "s", UNSENT, "l:w1", "d:" + ago(6), "d:" + ago(3), "d:" + ago(1), "d:" + ago(0.5), "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
+    ok(same(p.keys("soon"), ["$:CX1-ZED", "g:row-1", "s", UNSENT, "l:w1", "d:" + ago(6), "d:" + ago(3), "d:" + ago(0.5), "a:ord-a2", "a:ord-x1", "x:0", "q:q-2", "n:" + U2]),
       "within Soon the oldest first, and what has no age after what has one: " + JSON.stringify(p.keys("soon")));
     ok([...d.querySelectorAll("#nlist .nsev")].map((h) => h.textContent.replace(/ . \d+$/, "")).join() === "Now,Soon,Watch", "each severity is headed by its word");
 
@@ -210,9 +210,9 @@ export async function run({ ok, pageWork }) {
       "no order, payment or message card has any control of its own, only the tap, so nothing is booked from Needs you");
     ok(!p.cards().some((c) => !owedCard(c) && p.buttons(c).some((t) => money.test(t))) && p.cards().filter(owedCard).every((c) => c.querySelectorAll(".salt-pill").length === 0),
       "and no card of any kind carries Agree, Accept, Received or Cash; an owed card's one way is a ghost that opens, never a filled pill");
-    ok(same(pills(p.card("d:" + ago(6))), ["Approve"]) && same(pills(p.card("d:" + ago(3))), ["Approve both"]) && pills(p.card("d:" + ago(0.5))).length === 0
+    ok(same(pills(p.card("d:" + ago(6))), ["Approve the sale"]) && same(pills(p.card("d:" + ago(3))), ["Approve both"]) && !p.card("d:" + ago(1)) && pills(p.card("d:" + ago(0.5))).length === 0
       && /Answer this through the payment card/.test(p.card("d:" + ago(0.5)).textContent),
-    "a Desk row has Approve row (Approve trip when it rides one) and a customer's claim row none, as on Record > Approve");
+    "a Desk row has its Approve, saying the result (a trip one card, Approve both), and a customer's claim row none, as on Record > Approve");
     ok(same(pills(p.card("l:w1")), ["Approve"]) && same(pills(p.card("k:" + U3)), ["Send a sign-in link"]) && same(pills(p.card("s")), ["Send sign-in links one by one"]),
       "the guest link, the refused account and the accounts not sent keep the one filled action they had");
     ok(p.cards().every((c) => pills(c).length <= 1), "no card has more than one filled pill");
@@ -261,7 +261,7 @@ export async function run({ ok, pageWork }) {
     const done = p.card("d:" + id);
     ok(done && /Row approved[.]/.test(done.textContent) && !done.querySelector(".salt-pill") && done.getAttribute("data-sev") === "soon",
       "the answer stays on the card he tapped, though the row is no longer there: " + (done && done.textContent));
-    ok(/^9 now, 13 soon/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "3",
+    ok(/^9 now, 12 soon/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "3",
       "and the row is no longer counted: " + d.getElementById("nCount").textContent);
     byAct(d, "nav.customers").click(); await p.work.quiet();
     byAct(d, "nav.needs").click(); await p.work.quiet();
@@ -293,7 +293,7 @@ export async function run({ ok, pageWork }) {
     ok(SITE_RECIPES.includes(SELECTED + " {") && same([...d.querySelectorAll(".nchips button")].filter((b) => b.matches(SELECTED)).map((b) => b.getAttribute("data-chip")), ["rows"]),
       "and it alone matches the selector the system's tabs are drawn selected by, so it looks different from the other five");
     await p.tap("need.kind.all");
-    ok(p.cards().length === 12 + 14 + 2, "All shows every card again, Watch among them: " + p.cards().length);
+    ok(p.cards().length === 12 + 13 + 2, "All shows every card again, Watch among them: " + p.cards().length);
     await p.tap("need.kind.orders");
     ok(!p.cards().some((c) => c.getAttribute("data-sev") === "watch") && same(p.counts(".salt-rail").needs, "9"), "Watch shows under All only, and a filter changes no count");
   } finally { p.w.close(); }

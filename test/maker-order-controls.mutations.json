@@ -38,7 +38,7 @@
   {
     "name": "a Desk row's answer is not keyed to its own card",
     "file": "stmt/owner.js",
-    "find": "'Row approved.','draft:'+draft.id);",
+    "find": "'Row approved.','draft:'+g.lead.id);",
     "replace": "'Row approved.');"
   },
   {
