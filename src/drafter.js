@@ -714,6 +714,10 @@ export function draftRow(entry, book) {
 
       const chk = checkCorrection(fields, book, target, isSale);
       if (chk.errs.length) return { skip: chk.errs.join("; ") };
+      /* 16 Oct 2026 (plan 3): a row joining a trip holds the trip together with the rows already on it (one buyer, one day, a book once,
+         one delivery); its siblings joining in the same tap are held together by the Worker before any is queued, and by the fold */
+      /* Fable's review of 16 Oct 2026: and a row already on a trip whose correction moves its delivery, buyer, day or book is held to the
+         same rule, so a second delivery cannot reach a trip by Correct a row */
 
       const flags = chk.flags.slice();
       const after = chk.after;
@@ -734,6 +738,15 @@ export function draftRow(entry, book) {
         : (target.rev === "R2" && !after.assoc) ? (after.party || POSITION_ENGINE.ownerCode(target[partyKey])) : null;
       const moveLine = (bookedAfter && bookedAfter !== target[partyKey])
         ? `It moves the row from ${target[partyKey]} to ${bookedAfter}${POSITION_ENGINE.isBucket(bookedAfter) ? ", the associate's resale account, where an R2 books since v611" : ""}.` : "";
+      const tripOn = fields.trip !== undefined ? fields.trip : target.trip;
+      if (isSale && tripOn != null && (fields.trip != null || ["delivery", "party", "date", "product", "assoc", "stream"].some((k) => k in fields))) {
+        const sim = Object.assign({}, target, { trip: tripOn });
+        for (const [k, v] of Object.entries(fields)) { if (k === "party") continue; if (v === null) delete sim[k]; else if (v !== undefined) sim[k] = v; }
+        /* the account the row books to as the fold will file it (an R2's party is its downstream buyer, never the account; Fable's re-check) */
+        sim.customer = bookedAfter || after.party || target.customer;
+        const tf = POSITION_ENGINE.tripFault((book.sales || []).filter((s) => s && s !== target && s.trip === tripOn).concat([sim]));
+        if (tf) return { skip: tf };
+      }
       if (isSale) {
         /* v626: THE FIGURES AS THE ROW WILL STAND, settledRM with them. Taken off the row before the patch, a correction
            settling an advance in kind was flagged as the advance it settles, and one cancelling a redemption (s152) as a

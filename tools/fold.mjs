@@ -226,6 +226,8 @@ export function plan(book, staged, notes) {
      baseline is the ENGINE's reading, not the raw field: a lot stored without receivedQty is read by poRecvUnits as
      received in full, and stating that figure must move nothing. */
   const movedSoFar = new Map();
+  /* 16 Oct 2026 (plan 3): the rows this batch joins to a trip, as they will stand, so a trip set across several corrections holds together */
+  const tripJoins = new Map();
   const movedOf = (row, d) => movedSoFar.has(row) ? movedSoFar.get(row) : (d === "BUY" ? E.poRecvUnits(row) : (+row.deliveredQty || 0));
   /* 28 Sep 2026, s210: AND THE ROW AS THE BATCH LEAVES IT, for the payment rule. Two payments in one batch, or a
      correction of the total before a payment, are measured one after the other on a copy each accepted amendment is
@@ -335,6 +337,19 @@ export function plan(book, staged, notes) {
            previewed as applied the correction this line refuses. All four call the engine now. */
         const cf = E.correctionFaults(hits[0], fields, !((hits[0].supplier !== undefined) || it.collection === "purchases"));
         if (cf.length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} was refused: ${cf[0]}` }); continue; }
+        /* the row as this batch leaves it (simOf), with this correction applied; a join, or a correction moving the delivery, buyer, day or
+           book of a row on a trip (Fable's review of 16 Oct 2026), holds the trip together with its rows on the book and those joined in this batch */
+        const tripOn = fields.trip !== undefined ? fields.trip : simOf(hits[0]).trip;
+        if (dir === "SELL" && tripOn != null && (fields.trip != null || ["delivery", "party", "date", "product", "assoc", "stream"].some((k) => k in fields))) {
+          const joined = (tripJoins.get(tripOn) || []).filter((x) => x._of !== hits[0]), sim = simOf(hits[0]);
+          let applies = true;
+          try { applyAmend(sim, { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields }, dir, null); } catch (e) { applies = false; /* the apply refuses it below, with its own reason */ }
+          sim.trip = tripOn;
+          const tf = E.tripFault((book.sales || []).filter((x) => x && x !== hits[0] && x.trip === tripOn && !joined.some((j) => j._of === x)).concat(joined, [sim]));
+          if (tf) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} was refused: ${tf}` }); continue; }
+          Object.defineProperty(sim, "_of", { value: hits[0] });
+          if (applies) { joined.push(sim); tripJoins.set(tripOn, joined); }   /* a trip-mate only if the correction itself applies (Fable's re-check) */
+        }
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
         /* v739: A CORRECTION THAT RESTATES WHAT MOVED ROLLS THE SHELF BY THE DIFFERENCE. "A correction moves
            nothing" was written at v358, when a correction could not touch deliveredQty. It has been able to
@@ -421,7 +436,7 @@ export function plan(book, staged, notes) {
       /* 05 Oct 2026: A TRIP HOLDS TOGETHER on the book it folds into: its rows there and in this batch, with this one */
       if (it.collection === "sales" && r.trip) {
         const tf = E.tripFault((book.sales || []).filter((x) => x && x.trip === r.trip)
-          .concat(out.items.filter((e) => e.append === "sales" && e.row && e.row.trip === r.trip).map((e) => e.row), [r]));
+          .concat(out.items.filter((e) => e.append === "sales" && e.row && e.row.trip === r.trip).map((e) => e.row), tripJoins.get(r.trip) || [], [r]));
         if (tf) { out.refused.push({ id: it.id, why: tf }); continue; }
         entry.does.push(`one row of trip ${r.trip}${+r.delivery > 0.005 ? ", carrying its one delivery" : ", its delivery on another row"}`);
       }

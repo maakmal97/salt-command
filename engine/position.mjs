@@ -1053,7 +1053,10 @@ const CORRECT_CODE=['party','assoc','downstream'];
    the key included; the only thing it adds is a closed list of values, which the drafter
    checks and both editors render as a select rather than a box to mistype into. */
 const HANDOVER=['delivered','collected'];
-const CORRECT_TEXT=['orderCode','settle','note','handover'];
+/* 16 Oct 2026 (plan 3 of docs/plans-counter-admin.html): `trip` joins, so a buyer's same-day rows entered apart can be made one
+   order, a Correction each; Counter Admin's These are one order is the only road that sets it (src/maker-inputs.js makerTripJoin),
+   and correctionFaults below holds it to the desk's own id on a sale. */
+const CORRECT_TEXT=['orderCode','settle','note','handover','trip'];
 const CORRECT_REQUIRED=['product','party','qty','total'];
 const CORRECTABLE=['product','stream'].concat(CORRECT_NUM_POS,CORRECT_NUM_NN,CORRECT_DATE,
   CORRECT_BOOL,CORRECT_CODE,CORRECT_TEXT);
@@ -1118,6 +1121,9 @@ function correctionFaults(row,fields,isSale){
      is not cancelled, or revive a cancelled row and leave the date behind, or date the
      cancellation before the order was agreed. refundOnCancel dates the refund from it and the
      statement prints it, so the row has to carry it consistently or not at all. */
+  /* 16 Oct 2026 (plan 3): a trip is the desk's own id, and only a sale rides one */
+  if(f.trip!=null&&(!isSale||!TRIP_RE.test(String(f.trip))))
+    out.push('a trip is the desk\'s own id on a sale, never '+f.trip);
   if(after.cancelledOn&&after.cancelled!==true)
     out.push('the corrected row would carry a cancelled-on date of '+after.cancelledOn+' without being cancelled: clear the date, or cancel the row with it');
   if(after.cancelled===true&&after.cancelledOn&&after.date&&after.cancelledOn<after.date)
@@ -1396,7 +1402,8 @@ function vaultPendingOk(record,publicWord=()=>false){
     'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
     'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
-    'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover'];
+    'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover',
+    'shares','rids'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
@@ -1418,13 +1425,18 @@ function vaultPendingOk(record,publicWord=()=>false){
     if(key==='extras')return /\/inputs\/(sale|purchase)$/.test(record.path)&&Array.isArray(v)&&v.length>0&&v.length<=19
       &&v.every(n=>object(n)&&Object.keys(n).every(k=>['product','qty','total','cash','movedUnits','second','cover'].includes(k))
         &&safe(n,'trade'));
+    /* 16 Oct 2026 (plan 3): an order of several books, its payment kept with the split he read and its join with the rows it joins */
+    if(key==='shares')return /\/inputs\/trip-pay$/.test(record.path)&&Array.isArray(v)&&v.length>0&&v.length<=20
+      &&v.every(n=>object(n)&&Object.keys(n).length===2&&/^[a-z][a-z0-9-]{0,60}$/.test(String(n.rid))&&typeof n.rm==='number'&&Number.isFinite(n.rm));
+    if(key==='rids')return /\/inputs\/trip-join$/.test(record.path)&&Array.isArray(v)&&v.length>1&&v.length<=20
+      &&v.every(n=>typeof n==='string'&&/^[a-z][a-z0-9-]{0,60}$/.test(n));
     if(Array.isArray(v))return v.length<=3&&v.every((n,i)=>typeof n==='number'&&Number.isFinite(n)
       ||i===2&&typeof n==='string'&&publicWord(n));
     return object(v)&&Object.entries(v).every(([k,n])=>
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/offset|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/(offset|trip-pay|trip-join)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))
