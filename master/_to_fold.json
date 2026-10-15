@@ -1,0 +1,135 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-15T05:19:27.914Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-BS-R",
+    "qty": 2,
+    "total": 220,
+    "cash": 0,
+    "date": "2026-10-15",
+    "deliveredQty": 0,
+    "rev": "R2",
+    "note": "Ordered on the statements site, order 20261014233900-iqpmgg, acknowledged, on behalf of a friend, to be delivered. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 2 unit of salt to CS6-BS-R for RM 220, RM 110/unit. Costed at RM 58/unit from COGS off the latest purchase p039 landed 2026-10-13: RM 700 quote plus RM 25 freight over 12.5 unit, so RM 104 on the goods at 47.3%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-15 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CS6-BS-R as R2: CS6-BS buys it to sell on.",
+    "CS6-BS typically pays about RM 100/unit for salt across 21 orders; this one is RM 110, 10% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-15T05:19:27.914Z",
+    "type": "SELL",
+    "party": "CS6-BS-R",
+    "qty": 2,
+    "total": 220,
+    "status": "Pending",
+    "raw": "SELL CS6-BS-R 2 salt RM 220, nothing paid, nothing moved (order 20261014233900-iqpmgg)",
+    "orderKey": "CS6-BS-R|2026-10-15|220",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-BS",
+     "newId": null,
+     "date": "2026-10-15",
+     "qty": 2,
+     "total": 220,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": "CS6-BS",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261014233900-iqpmgg, acknowledged, on behalf of a friend, to be delivered. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261014233900-iqpmgg"
+   },
+   "decidedAt": "2026-10-15T05:19:29.865Z",
+   "decidedBy": "preapproved by Counter Admin"
+  },
+  {
+   "id": "2026-10-15T05:19:43.703Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s265",
+    "qty": 10,
+    "total": 116,
+    "cash": 0,
+    "date": "2026-10-14",
+    "product": "oil",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 10
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-15"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CS6-PER"
+   },
+   "reasoning": "Correction against CS6-PER's order of 10 unit for RM 116 dated 2026-10-14 (s265). Sets deliveredQty from 0 to 10, deliveredOn from unset to 2026-10-15, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This is an ADVANCE: 10 unit goes out with RM 116 unpaid. Check it against CS6-PER's credit cap."
+   ],
+   "amends": "s265",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-15T05:19:43.703Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 10,
+    "total": 0,
+    "status": "Handover",
+    "raw": "10 unit collected to CS6-PER, order 20261014070907-hi0xcw, on 2026-10-15",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": null,
+     "orderKey": "CS6-PER|2026-10-14|116|oil",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-15",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 10,
+      "deliveredOn": "2026-10-15",
+      "handover": "collected"
+     },
+     "note": "10 unit collected for order 20261014070907-hi0xcw."
+    },
+    "orderId": "20261014070907-hi0xcw"
+   },
+   "decidedAt": "2026-10-15T05:19:44.824Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
