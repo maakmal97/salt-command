@@ -310,7 +310,38 @@ export function makerTradeReading(body, book) {
   return reading;
 }
 
-export function makerInputCatalog(book, hush = {}, pending = [], registrations = []) {
+/* 15 Oct 2026 (plan 1, parts 3 and 4): WHAT IS OWED, BOTH WAYS, as Salt Account's Needs you shows it, read off the engine so the Counter computes
+   nothing. Money: a sale's txAdvance (goods handed over and not paid for), from txUnpaidSince, due that day plus TERMS.holdDays, and past term
+   once that day is behind today in Kuala Lumpur; summed per party, the oldest first. Goods: a sale paid in full (txStat) with units still to
+   hand over, the oldest first. Each row carries its ovKey, so the page finds the site order it belongs to. Codes and figures only (rule 2). */
+const dayAfter = (day, n) => new Date(Date.parse(day + "T00:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+export function owedBothWays(book, today) {
+  const E = POSITION_ENGINE, terms = (book.state && book.state.TERMS) || {};
+  const hold = typeof terms.holdDays === "number" && Number.isFinite(terms.holdDays) ? terms.holdDays : null;
+  if (hold == null) return { today, owedError: "The Desk has no payment term (TERMS.holdDays), so what is owed cannot be read." };
+  const money = new Map(), goods = [];
+  for (const row of book.sales || []) {
+    if (!row || !row.rid || row.cancelled || row.goodwill || !code(row.customer, [row.customer])) continue;
+    const rm = +E.txAdvance(row).toFixed(2), since = rm > 0.009 ? E.txUnpaidSince(row) : null;
+    const due = since && date(since) && hold != null ? dayAfter(since, hold) : null;
+    if (due && due < today) {
+      const m = money.get(row.customer) || { party: row.customer, rm: 0, since, due, rows: [] };
+      m.rm = +(m.rm + rm).toFixed(2);
+      if (since < m.since) { m.since = since; m.due = due; }
+      m.rows.push({ rid: row.rid, key: E.ovKey(row), product: row.product || "salt", rm, since, due });
+      money.set(row.customer, m);
+    }
+    const left = +(row.qty - E.txEffDeliv(row)).toFixed(4);
+    if (!row.defaulted && left > 0.0001 && E.txStat(row).pay === "Paid")
+      goods.push({ party: row.customer, rid: row.rid, key: E.ovKey(row), product: row.product || "salt", units: left, date: row.date || null });
+  }
+  const byOld = (a, b) => String(a || "9999").localeCompare(String(b || "9999"));
+  const owedMoney = [...money.values()].sort((a, b) => byOld(a.since, b.since));
+  owedMoney.forEach((m) => m.rows.sort((a, b) => byOld(a.since, b.since)));
+  return { today, owedMoney, owedGoods: goods.sort((a, b) => byOld(a.date, b.date)) };
+}
+
+export function makerInputCatalog(book, hush = {}, pending = [], registrations = [], today = mytDay(new Date().toISOString())) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const bookRoster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
   const verified = registrations.filter((item) => item && code(item.code, [item.code])
@@ -330,7 +361,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
       ...(rule && rule.drift ? { driftPresets } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
   });
   return {
-    version: book.version, products, parties,
+    version: book.version, products, parties, ...owedBothWays(book, today),
     rewards: bookRoster.filter((id) => !POSITION_ENGINE.isBucket(id)).flatMap((id) => {
       const reward = rewardFree(book, id, "salt", pending);
       if (reward.earned == null || !(reward.earned || reward.applied)) return [];

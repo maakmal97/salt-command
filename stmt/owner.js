@@ -2312,6 +2312,8 @@ export const OWNER_JS = `
           +(refund!=null?', and '+rm(refund)+' already paid becomes a refund you owe '+row.party:'')+'.'));
       }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
+    /* plan 1: Needs you's owed cards open this form on their row, as goods or cash moved (amendFor) */
+    amendPick=function(rid){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; patchList.textContent=''; kindsFor(); editKind.value='Fulfilment'; drawKind(); return true; };
     var editorButton=makerButton(editor,['Send the correction','record.amend.send'],async function(send){
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
       if(body.kind==='Correction')body.fields=Object.assign({},changes);
@@ -2981,7 +2983,7 @@ export const OWNER_JS = `
     [].slice.call(box.children).forEach(function(n){
       if(n.hasAttribute('data-formmenu')) list.appendChild(n); else if(n.hasAttribute('data-form')) pane.appendChild(n);
     });
-    applyRepay();
+    applyRepay(); applyAmend();
   }
   function openForm(slug){
     var form=document.querySelector('#makerInputs [data-form="'+slug+'"]');
@@ -3550,7 +3552,7 @@ export const OWNER_JS = `
         drawMaker();if(status) refusal(status,error); if(rows) refusal(rows,error);
         var failed0=document.getElementById('makerRefreshSaid'); if(failed0){ refusal(failed0,error); if(failed0.scrollIntoView) failed0.scrollIntoView({block:'nearest'}); }
       }
-    }finally{ if(gen===makerGen){ reviewReading=false; if(apply) drawNeeds(); } }
+    }finally{ if(gen===makerGen){ reviewReading=false; ordFocus=null; if(apply) drawNeeds(); } }
   }
   /* 14 Oct 2026, HIS DECISION: THE PARTS OF ORDERS ARE THE CUSTOMER'S STAGES, Placed, Confirmed, Ready, Done and Ended (declined or cancelled), and an
      order is in exactly ONE. What waits on him is no part but a mark on the order's row (orderWaits: a placed order, a payment they say they sent, a stage
@@ -3574,7 +3576,7 @@ export const OWNER_JS = `
      card in #makerReview, today's card with every control, request and guard as it was, drawn for the order opened and no other. From 860px
      the list stands beside the card; below it the card takes the list's place, with a way back. A row has no preview: that read is the
      card's. Leaving the place or the part closes the card. */
-  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false;
+  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null;
   var ORD_STAGE={placed:['copper','Waiting on you'], acknowledged:['brass','Agreed'], ready:['verdigris','Ready'], done:['mist','Done'], declined:['mist','Declined'], cancelled:['mist','Cancelled']};
   function ordInPart(e){ return e.parts.split(' ').indexOf('orders.'+partNow)>=0; }
   function orderRow(e){
@@ -3634,6 +3636,7 @@ export const OWNER_JS = `
     var back=el('button','aback','← Orders'); back.type='button'; back.setAttribute('data-back','orders'); back.setAttribute('data-in',e.parts); actOn(back,'order.back');
     root.appendChild(back);
     if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else orderPlainCard(root,e);
+    focusOrderAt();
   }
   function openOrder(id){
     var e=ordEntries[id];
@@ -3979,7 +3982,7 @@ export const OWNER_JS = `
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         /* 15 Oct 2026: MONEY RECEIVED IS ONE BLOCK, in the order the money comes: their claim answered, a payment into the bank, then cash at the handover (Ready only).
            Each road names itself on its field and on its button once a figure is typed; the reply stands below it, with their last line. */
-        card.appendChild(el('h4','','Money received'));
+        var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           /* a claim above what the order still owes is money he recorded another way: the Desk's Received, already recorded */
           var onBook=Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004;
@@ -4303,7 +4306,7 @@ export const OWNER_JS = `
      received and Cash stay on their cards in Orders, which Open reaches. Read off what the places read anyway (/all/sheet, /all/refs, the
      review, the claims, the threads, the hours and the notice). A tap is answered on its own card. */
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=30000;
-  var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice']];
+  var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice'],['book','what is owed']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
   var nFoldOpen={}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
@@ -4604,6 +4607,63 @@ export const OWNER_JS = `
     return item('now','messages','Message','m:'+t.u, last.at, {who:codeByUser(t.u), what:cut(last.text), practice:!!t.test,
       open:function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(t.u); }});
   }
+  /* ---- 15 Oct 2026 (plan 1, parts 3 and 4): WHAT IS OWED, BOTH WAYS, as Soon cards, his own work. The figures are the Desk's (/all/maker/inputs, owedMoney
+     and owedGoods: src/maker-inputs.js owedBothWays over the engine's txAdvance, txUnpaidSince, the term and txStat), so nothing is reckoned here.
+     A card's button opens the site order its row belongs to (the order's ledgerKey is the row's ovKey) on Money received or the handover; a row
+     with no site order opens Record's Correct a row on that row, as goods or cash moved. The button opens; it books nothing. ---- */
+  var owed=null, owedReading=false;
+  async function loadOwed(){
+    if(owedReading) return;
+    owedReading=true;
+    var apply=false;
+    try{
+      var j=await refs('/all/maker/inputs'), c=(j&&j.catalog)||{};
+      if(!Array.isArray(c.owedMoney)||!Array.isArray(c.owedGoods)) throw new Error(c.owedError||c.error||'The Desk did not say what is owed.');
+      nGot('book');
+      var v={money:c.owedMoney, goods:c.owedGoods};
+      if(changed('book', v)){ owed=v; apply=true; }
+    }catch(error){ nGot('book', error); apply=true; }
+    owedReading=false;
+    if(apply) drawNeeds();
+  }
+  /* the open site order a Desk row is, found by its key (a key of three parts is salt's, from before a key named its book) */
+  function siteOrderOf(r){
+    var key=String(r.key||''), three=key.split('|').slice(0,3).join('|');
+    return (makerData&&makerData.orders||[]).filter(function(o){
+      var k=typeof o.ledgerKey==='string'?o.ledgerKey:'';
+      return !o.test&&ordOpen(o)&&!!k&&(k===key||(k.split('|').length===3&&k===three&&(o.product||'salt')===r.product));
+    })[0]||null;
+  }
+  /* an order's card opened at one of its parts: Money received (data-sect money) or the handover (its units field) */
+  function openOrderAt(id, at){
+    orderOpener(id)();
+    /* kept through the read the place started, which draws the card again, and let go once that read lands (loadMaker) */
+    ordFocus={id:id, at:at}; focusOrderAt();
+    if(!reviewReading) ordFocus=null;
+  }
+  function focusOrderAt(){
+    if(!ordFocus||ordFocus.id!==ordOpened) return;
+    try{ var n=document.querySelector('#makerReview '+ordFocus.at); if(n){ if(n.scrollIntoView) n.scrollIntoView({block:'center'}); if(n.focus) n.focus(); } }catch(x){}
+  }
+  var amendWant=null, amendPick=null;
+  function applyAmend(){
+    if(!amendWant||!amendPick) return;
+    var rid=amendWant; amendWant=null;
+    if(amendPick(rid)) openForm('correct-a-row');
+  }
+  function amendFor(rid){ amendWant=rid; showPlace('record','entry',{fresh:true,push:true}); applyAmend(); }
+  function owedGo(r, sect){
+    var o=siteOrderOf(r);
+    if(o) openOrderAt(o.id, sect); else amendFor(r.rid);
+  }
+  function moneyNeed(m){
+    var first=m.rows[0];
+    return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, what:rm(m.rm)+' past term',
+      why:'Handed over '+fmtWhen(m.since)+', due '+fmtWhen(m.due)+'.'+(m.rows.length>1?' '+m.rows.length+' orders; the oldest opens.':''),
+      open:function(){ owedGo(first,'[data-sect="money"]'); }}, function(c){
+      var b=ghost(['Record payment','need.owed-pay',m.party]); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
+    });
+  }
   /* the Watch cards: the Desk's own count as it last told this site, an override in force, a notice set */
   function deskNeed(){
     var dn=deskWait.n||0, dAt=deskWait.at?', as of '+when(deskWait.at):'';
@@ -4707,6 +4767,7 @@ export const OWNER_JS = `
     (makerData&&makerData.refused||[]).forEach(function(r, i){ L.push(entryNeed(r, 'x:'+i)); });
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
     if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
+    if(owed) owed.money.forEach(function(m){ if(m&&m.rows&&m.rows.length) L.push(moneyNeed(m)); });
     unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
     /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
     links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); }).forEach(function(r){ L.push(linkNeed(r)); });
@@ -4796,7 +4857,7 @@ export const OWNER_JS = `
     if(needsReading) return;
     if(!force&&needsAt&&Date.now()-needsAt<NEED_MS) return;
     needsReading=true;
-    var jobs=[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop()];
+    var jobs=[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop(), loadOwed()];
     /* the sheet and the links are read again once read, or once their read has failed, so a Retry reaches every read that did */
     if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
     if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
