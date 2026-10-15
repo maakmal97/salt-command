@@ -121,13 +121,13 @@
  },
  {
   "name": "the fold does not hold a trip set across one batch together",
-  "file": "tools/fold.mjs",
+  "file": "engine/apply.mjs",
   "find": "        if (dir === \"SELL\" && tripOn != null && (",
   "replace": "        if (false && ("
  },
  {
   "name": "the fold reads a correction's own trip only",
-  "file": "tools/fold.mjs",
+  "file": "engine/apply.mjs",
   "find": "const tripOn = fields.trip !== undefined ? fields.trip : simOf(hits[0]).trip;",
   "replace": "const tripOn = fields.trip;"
  },

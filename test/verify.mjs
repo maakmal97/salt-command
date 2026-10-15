@@ -4903,7 +4903,7 @@ await (async () => {
      lot into stock and into the cost basis. Both fields, matching the fold's v146 guard. */
   ok(/else \{ row\.receivedQty = 0; row\.inTransit = true; \}/.test(d),
      "a BUY that moved nothing states the zero AND says the lot is on order");
-  const f = readFileSync(join(REPO, "tools", "fold.mjs"), "utf8");
+  const f = readFileSync(join(REPO, "engine", "apply.mjs"), "utf8");
   ok(/row\.receivedQty = 0; row\.inTransit = true;/.test(f),
      "and the fold's correction road writes the same pair, so both roads make the same shape");
 })();
@@ -8205,7 +8205,7 @@ await (async () => {
     };
     const rs = refuses(soldRow, "SELL"), rl = refuses(lotRow, "BUY");
     if (rs === null && rl === null) {
-      ok(/E\.poRecvUnits\(row\)/.test(rf(join(REPO, "tools", "fold.mjs"), "utf8")),
+      ok(/E\.poRecvUnits\(row\)/.test(rf(join(REPO, "engine", "apply.mjs"), "utf8")),
         "the fold's cancellation gates read a lot by poRecvUnits (applyAmend is not exported, checked by source)");
     } else {
       ok(rs !== false, "cancelling a SALE that has delivered goods is refused by the fold");
@@ -50801,6 +50801,11 @@ await (async () => {
 section("Counter blank-locality Add ID: owner device pair and real bridge");
 await (async () => {
   await (await import("./maker-blank-locality.mjs")).run({ ok, pageWork });
+})();
+
+section("S1: the fold replays the last 20 staged batches byte-equal to the fold before the booking law moved");
+await (async () => {
+  await (await import("./fold-replay.mjs")).run({ ok });
 })();
 
 section("Counter Gift: a double tap books once, a booked twin is asked about and folds as a second");

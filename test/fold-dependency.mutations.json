@@ -1,0 +1,8 @@
+[
+ {
+  "name": "the Add ID dependency order is dropped",
+  "file": "engine/apply.mjs",
+  "find": "rows = ordered.concat(waiting);",
+  "replace": "rows = rows.slice();"
+ }
+]
