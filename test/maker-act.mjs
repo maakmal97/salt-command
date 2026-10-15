@@ -399,6 +399,14 @@ export async function auditStates({ pageWork }) {
     await w.work.quiet(); w.card("ord-w1"); await w.work.quiet();
     states.push(["an order with no row, Not needed covering all", actAudit(w.d)]);
   } finally { w.w.close(); }
+  /* plan 1: a day with money owed past term and goods to hand over, each a Needs you card of its own, so the busy page's lists stay as they were */
+  const o = await richOwnerPage({ pageWork, inputsAnswer: (j) => { Object.assign(j.catalog, { owedMoney: [{ party: "CX1-ZED", rm: 150, since: "2026-09-20", due: "2026-09-21",
+    rows: [{ rid: "row-1", key: "CX1-ZED|2026-09-01|200", product: "salt", rm: 150, since: "2026-09-20", due: "2026-09-21" }] }],
+  owedGoods: [{ party: "CX2-ZED", rid: "row-1", key: "CX2-ZED|2026-10-05|99|oil", product: "oil", units: 1.5, date: "2026-10-05" }] }); return j; } });
+  try {
+    await o.work.quiet();
+    states.push(["a day with money and goods owed", actAudit(o.d)]);
+  } finally { o.w.close(); }
   const q = await richOwnerPage({ pageWork, failInputs: true });
   try {
     await q.work.quiet();

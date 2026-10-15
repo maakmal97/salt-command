@@ -19167,7 +19167,8 @@ await (async () => {
     const btn = (c, t) => c && [...c.querySelectorAll("button")].find((b) => b.textContent === t);
     ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
       "his page opens on Needs you");
-    ok(await until(() => /^1 now, 3 soon[.]/.test(D.getElementById("nCount").textContent)),
+    /* this fixture has no Desk, so the maker reads fail and the line counts what could be read (plan 1) */
+    ok(await until(() => /^1 now, 3 soon( in what could be read)?[.]/.test(D.getElementById("nCount").textContent)),
       "one waits now and three soon, and the line says so: " + D.getElementById("nCount").textContent);
     ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["k:" + uL, "s", "l:" + lid, "n:" + uN].join(","),
       "a card each, Now before Soon and the oldest first: the locked account, then to send, the link, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));

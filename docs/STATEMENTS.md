@@ -2444,9 +2444,12 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.kind.payments` | The chips under Needs you's title | Shows only the payments they say they sent. Reads nothing. |
 | `need.kind.rows` | The chips under Needs you's title | Shows only the Desk rows, the entries that did not get through and the entries kept unsent on this phone. Reads nothing. |
 | `need.link-approve` | Same card | Approves the link, which then opens. |
+| `need.owed-hand` | Needs you card for goods paid for and not handed over (key: the row's rid) | Opens that site order's card at its handover, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
+| `need.owed-pay` | Needs you card for money owed past term (key: the customer's code) | Opens the oldest such row's site order at Money received, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
+| `need.retry` | The banner over Needs you's title when a read failed | Reads every source again, the ones that failed among them; the banner goes once all get through. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
 | `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
-| `need.open` | Every Needs you card but the Desk's line (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
+| `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Record > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.fold.soon` | Needs you, the Soon heading | Opens or folds the Soon cards; folded when drawn, and once opened it stays open across redraws (14 Oct 2026). |
 | `need.fold.watch` | Needs you, the Watch heading | Opens or folds the Watch cards, the same way. |
 | `need.send-turn` | Needs you card for accounts nobody has been sent | Starts sending them their links one account at a time. |
