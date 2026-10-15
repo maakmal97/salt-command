@@ -20,8 +20,12 @@ const FUNCS = ["posInputs", "replCost", "pxQuoteRate", "pxFreightRate", "pxLeakC
 const ARROWS = ["openingFor", "pSales", "pPurch"];
 const GONE = ["pxWindowLots", "pxSampleUnits"];
 
+/* the fixture was taken on 16 Oct 2026 MYT, and the snapshot reads the page's TODAY (lock ages, profiles, drift), so the page opens on that day */
+const FIXTURE_NOW = Date.parse("2026-10-16T04:00:00Z");
+const pinClock = (w) => { w.Date.now = () => FIXTURE_NOW; };
+
 export async function run({ ok }) {
-  const { w } = await openMaster();
+  const { w } = await openMaster(undefined, { before: pinClock });
   const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
   const outside = src.replace(/\/\* ==== ENGINE (\w+):[\s\S]*?\/\* ==== END ENGINE \1 ==== \*\//g, "");
 
