@@ -2717,8 +2717,9 @@ export const OWNER_JS = `
       card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
       note.textContent=makerCashStorageError;
     }else{
-      var cash=makerField(card,['Cash received','order.cash-amount'],'number','');
-      makerButton(card,['Record cash','order.cash'],function(){makerCashHold(order,Number(cash.value));},false);
+      var cash=makerField(card,['Cash, RM','order.cash-amount'],'number','');
+      var record=makerButton(card,['Record cash','order.cash'],function(){makerCashHold(order,Number(cash.value));},false);
+      cash.addEventListener('input',function(){ record.textContent=Number(cash.value)>0?'Record '+rm(cash.value)+', cash':'Record cash'; });
       note.textContent=makerCashSaid[order.id]||'';
     }
     card.appendChild(note);
@@ -2906,6 +2907,9 @@ export const OWNER_JS = `
   }
   /* replyOnly is a closed order: only his answer to their question, and no Decline, Cancel or reason */
   function makerOrderMoves(card,order,replyOnly,acts){
+    /* 15 Oct 2026: their last line stands above the reply, so the field has something to answer (the card drew no line of theirs before; Needs you did) */
+    var theirs=((order&&order.msgs)||[]).filter(function(m){ return m.by==='customer'&&m.text; }).slice(-1)[0];
+    if(theirs) card.appendChild(el('p','maker-facts','They wrote, '+fmtWhen(theirs.at)+': '+theirs.text));
     var said=makerField(card,['Answer them','order.reply-text'],'text','');
     makerQuick().forEach(function(line,i){
       makerButton(card,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
@@ -3757,8 +3761,14 @@ export const OWNER_JS = `
     orderTitle.appendChild(document.createTextNode(' '+units(order.qty)+', '+rm(order.total)+(order.delivery?' + '+rm(order.delivery):'')));
     card.appendChild(orderTitle);
     line.appendChild(chip(st[0],st[1])); card.appendChild(line);
-    card.appendChild(metrics([['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
-    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));
+    /* 15 Oct 2026: an agreed order's head is its progress, what is owed, what is paid and what is handed over, and what they say they sent; the goods and the
+       delivery charge are already in the title and stand in Details. A placed, declined or cancelled order has no agreed figure to owe, so it keeps Goods. */
+    var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
+    card.appendChild(metrics(agreed
+      ?[['Owed',rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))],['Paid',rm(order.paid||0)],['Handed',moved+' of '+units(order.qty)]].concat(+order.claimed>0?[['Says sent',rm(order.claimed)]]:[])
+      :[['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
+    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]
+      .concat(agreed?[['Goods',rm(order.total)],['Delivery',order.delivery?rm(order.delivery):'']]:[])));
   }
   /* the card of an open order: every control it had, on the order opened alone */
   function orderCard(root,order){
@@ -3967,6 +3977,9 @@ export const OWNER_JS = `
         }
       }
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
+        /* 15 Oct 2026: MONEY RECEIVED IS ONE BLOCK, in the order the money comes: their claim answered, a payment into the bank, then cash at the handover (Ready only).
+           Each road names itself on its field and on its button once a figure is typed; the reply stands below it, with their last line. */
+        card.appendChild(el('h4','','Money received'));
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           /* a claim above what the order still owes is money he recorded another way: the Desk's Received, already recorded */
           var onBook=Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004;
@@ -3990,11 +4003,12 @@ export const OWNER_JS = `
           },false);
           makerAskTag(order,lost,'lost-'+payment.at);
         });
-        var received=makerField(card,['Payment received, RM','order.received-amount'],'number','');
-        var recv=makerButton(card,['Record payment','order.received'],function(){
+        var received=makerField(card,['Bank, RM','order.received-amount'],'number','');
+        var recv=makerButton(card,['Record bank payment','order.received'],function(){
           makerTap(order,'received',{amount:Number(received.value)},'Sent to the Desk.');
         },false);
-        received.addEventListener('input',function(){ recv.textContent=Number(received.value)>0?'Record '+rm(received.value):'Record payment'; });
+        received.addEventListener('input',function(){ recv.textContent=Number(received.value)>0?'Record '+rm(received.value)+', bank':'Record bank payment'; });
+        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; }
       }
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
@@ -4003,7 +4017,9 @@ export const OWNER_JS = `
       }
       makerAgain(card,order,acts);
       makerOrderMoves(card,order,false,acts);
-      if(order.status==='ready'&&!againAck){ makerCashControls(card,order); cashed=true; }
+      /* cash held for the order shuts every control of the card, the reply's too, which is drawn after the cash block: its Undo or Retry alone stays live */
+      if(cashed&&(makerCashHeld[order.id]||makerCashStorageError)) [].forEach.call(card.querySelectorAll('button,input,select'),function(n){
+        if(!n.hasAttribute('data-maker-cash-undo')&&!n.hasAttribute('data-maker-cash-retry')) n.disabled=true; });
       makerCardFoot(card,acts,order.id,cashed,!!quoteStart);
       if(quoteStart) quoteStart();
       return card;
