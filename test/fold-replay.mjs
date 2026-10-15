@@ -82,14 +82,14 @@ export async function run({ ok }) {
     const ENG = await import("../engine/apply.mjs"), { nextRid } = await import("../tools/rid.mjs"), { sortBook } = await import("../tools/sort-ledger.mjs");
     const b0 = bs[0], book0 = JSON.parse(b0.book), frozen = JSON.stringify(book0);
     const p0 = NEW.plan(JSON.parse(b0.book), b0.staged, null), n0 = notesFor(p0, b0.master);
-    const out = ENG.applyBatch(book0, b0.staged, n0, { ...NEW.planCtx, nextRid, sortBook });
+    const out = ENG.applyBatch(book0, b0.staged, n0, Object.assign(Object.create(NEW.planCtx), { nextRid, sortBook }));
     ok(JSON.stringify(book0) === frozen, "S1: applyBatch leaves the book it is given exactly as it was");
     /* nothing aliases the staged batch, and a refused item folds nothing and leaves the book as it was */
     const outText = out.ok && text(out.book);
     const mark = (o, seen = new Set()) => { if (!o || typeof o !== "object" || seen.has(o)) return; seen.add(o); if (Array.isArray(o)) o.push("TOUCHED"); else o.zzTouched = 1; for (const v of Object.values(o)) mark(v, seen); };
     let clean = 0;
     for (const b of bs) {
-      const sb = JSON.stringify(b.staged), pb = NEW.plan(JSON.parse(b.book), b.staged, null), r = ENG.applyBatch(JSON.parse(b.book), b.staged, notesFor(pb, b.master), { ...NEW.planCtx, nextRid, sortBook });
+      const sb = JSON.stringify(b.staged), pb = NEW.plan(JSON.parse(b.book), b.staged, null), r = ENG.applyBatch(JSON.parse(b.book), b.staged, notesFor(pb, b.master), Object.assign(Object.create(NEW.planCtx), { nextRid, sortBook }));
       if (r.ok) mark(r.book);
       if (JSON.stringify(b.staged) === sb) clean++;
     }
@@ -97,7 +97,7 @@ export async function run({ ok }) {
     /* a batch the plan refuses folds nothing: the book it just produced, folded again, is all replays */
     let replayed = 0;
     for (const b of bs) {
-      const pb = NEW.plan(JSON.parse(b.book), b.staged, null), nb = notesFor(pb, b.master), ctx = { ...NEW.planCtx, nextRid, sortBook };
+      const pb = NEW.plan(JSON.parse(b.book), b.staged, null), nb = notesFor(pb, b.master), ctx = Object.assign(Object.create(NEW.planCtx), { nextRid, sortBook });
       const once = ENG.applyBatch(JSON.parse(b.book), b.staged, nb, ctx);
       if (!once.ok) continue;
       const was = JSON.stringify(once.book), again = ENG.applyBatch(once.book, b.staged, nb, ctx);
@@ -106,7 +106,7 @@ export async function run({ ok }) {
     ok(replayed >= 1, `S1: ${replayed} batch(es) folded twice are refused as replays through applyBatch, which returns its problems and leaves the book as it was`);
     /* the clock comes in through ctx: an undated count is dated by ctx.today and by nothing else */
     const cnt = { ok: true, count: 1, approved: [{ id: "zz-count", status: "approved", collection: "count", row: { product: "salt", qty: 5 } }] };
-    const pc = ENG.planBatch(JSON.parse(b0.book), cnt, null, { ...NEW.planCtx, today: "2031-02-03" });
+    const pc = ENG.planBatch(JSON.parse(b0.book), cnt, null, Object.assign(Object.create(NEW.planCtx), { today: "2031-02-03" }));
     ok(pc.items.length === 1 && pc.items[0].count && pc.items[0].count.date === "2031-02-03", "S1: planBatch dates an undated count by ctx.today");
     ok(outText === JSON.parse(go(OLD, b0)).book, "S1: and returns the book the fold before the move wrote");
     ok(bs.length >= 1 && equal === bs.length && folded >= 1, `S1: ${equal} of ${bs.length} staged batches replay byte-equal, ${folded} of them folded rather than refused`);
