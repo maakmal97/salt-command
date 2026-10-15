@@ -1,6 +1,6 @@
 {
- "v": "v1113",
- "stamped": "15 Oct 2026, 13:20 KL",
+ "v": "v1114",
+ "stamped": "15 Oct 2026, 13:22 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 20.14,
+  "STATED_STOCK": 17.14,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -7635,9 +7635,30 @@
     "total": 110,
     "cash": 0,
     "date": "2026-10-14",
-    "deliveredQty": 0,
-    "note": "<b>NEW SALE DATED 14 OCT: 1 UNIT OF SALT TO CS6-PER FOR RM110, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM110 sits above the desk's floor of RM58 and below its ask of RM140 for 1 unit. CS6-PER has 16 orders, a median rate of RM85.52, a range of RM7 to RM116, RM35 outstanding before and 0 units on credit against a cap of 2. The row carries cost of RM58 a unit, set off the latest purchase, and the fold keeps it. The drafter flagged the rate as 10% above the party's usual of about RM100 a unit; RM110 is within the desk's floor and ask, so the figures answer it. Open: payment of RM110 and the handover of 1 unit.",
-    "rid": "s266"
+    "deliveredQty": 1,
+    "note": "<b>CORRECTION ON s266: 1 UNIT OF SALT COLLECTED BY CS6-PER ON 15 OCT, RM110 STILL UNPAID.</b> It sets deliveredQty from 0 to 1, deliveredOn to 15 Oct and handover to collected, on the order of 14 Oct for RM110. The rate of RM110 a unit is above the desk's floor of RM58 for that size; the ask is not shown in the dossier. CS6-PER has 18 orders, a median rate of RM85.52, a range of RM7 to RM116, RM226 outstanding before and 10 units on credit; the cap is not in the dossier. The drafter flagged the rate as 10% above the usual RM100, which RM110 being inside the range answers, and the advance against the cap, which the figures do not answer. Open: payment of RM110. <b>NEW SALE DATED 14 OCT: 1 UNIT OF SALT TO CS6-PER FOR RM110, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM110 sits above the desk's floor of RM58 and below its ask of RM140 for 1 unit. CS6-PER has 16 orders, a median rate of RM85.52, a range of RM7 to RM116, RM35 outstanding before and 0 units on credit against a cap of 2. The row carries cost of RM58 a unit, set off the latest purchase, and the fold keeps it. The drafter flagged the rate as 10% above the party's usual of about RM100 a unit; RM110 is within the desk's floor and ask, so the figures answer it. Open: payment of RM110 and the handover of 1 unit.",
+    "rid": "s266",
+    "deliveredOn": "2026-10-15",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-15: deliveredQty 0 to 1; deliveredOn (unset) to 2026-10-15; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-14",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-15",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 1,
+      "note": "<b>CORRECTION ON s266: 1 UNIT OF SALT COLLECTED BY CS6-PER ON 15 OCT, RM110 STILL UNPAID.</b> It sets deliveredQty from 0 to 1, deliveredOn to 15 Oct and handover to collected, on the order of 14 Oct for RM110. The rate of RM110 a unit is above the desk's floor of RM58 for that size; the ask is not shown in the dossier. CS6-PER has 18 orders, a median rate of RM85.52, a range of RM7 to RM116, RM226 outstanding before and 10 units on credit; the cap is not in the dossier. The drafter flagged the rate as 10% above the usual RM100, which RM110 being inside the range answers, and the advance against the cap, which the figures do not answer. Open: payment of RM110.",
+      "cost": 58
+     }
+    ],
+    "cost": 58
    },
    {
     "customer": "CC9-OKR",
@@ -7653,12 +7674,41 @@
     "customer": "CS6-BS-R",
     "qty": 2,
     "total": 220,
-    "cash": 0,
+    "cash": 220,
     "date": "2026-10-15",
-    "deliveredQty": 0,
+    "deliveredQty": 2,
+    "note": "<b>CORRECTION ON s267: 2 UNIT OF SALT COLLECTED BY CS6-BS-R ON 15 OCT, RM220 NOT YET PAID AT THIS ROW.</b> It sets deliveredQty from 0 to 2, deliveredOn to 15 Oct and handover to collected. The goods total of RM220 is above the desk's floor of RM116 and below its ask of RM250 for 2 unit, a rate of RM110 a unit. CS6-BS-R has 17 orders, a median rate of RM96.67, a range of RM6 to RM120, RM220 outstanding before and 0 units on credit; the cap is not in the dossier. The drafter flagged the rate as 10% above the usual RM100, which the range answers, and the advance, which the cash fulfilment on the same order then settles. Open: nothing after that payment. <b>NEW SALE DATED 15 OCT: 2 UNIT OF SALT TO CS6-BS-R FOR RM220, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM220 is above the desk's floor of RM116 and below its ask of RM250 for 2 unit, a rate of RM110 a unit. CS6-BS-R has 16 orders, a median rate of RM95, a range of RM6 to RM120, RM0 outstanding before and 0 units on credit against a cap of 1. The row carries cost of RM58 a unit, set off the latest purchase, and the fold keeps it. The drafter flagged the booking as R2 (resale) and the rate as 10% above the usual RM100 a unit; RM110 is within the desk's range, so the figures answer both. Open: payment of RM220 and the handover of all 2 unit.",
+    "rid": "s267",
+    "deliveredOn": "2026-10-15",
+    "handover": "collected",
     "rev": "R2",
-    "note": "<b>NEW SALE DATED 15 OCT: 2 UNIT OF SALT TO CS6-BS-R FOR RM220, PENDING.</b> RM0 cash and 0 unit moved, so the whole order is open and no stock or revenue is booked yet. The goods total of RM220 is above the desk's floor of RM116 and below its ask of RM250 for 2 unit, a rate of RM110 a unit. CS6-BS-R has 16 orders, a median rate of RM95, a range of RM6 to RM120, RM0 outstanding before and 0 units on credit against a cap of 1. The row carries cost of RM58 a unit, set off the latest purchase, and the fold keeps it. The drafter flagged the booking as R2 (resale) and the rate as 10% above the usual RM100 a unit; RM110 is within the desk's range, so the figures answer both. Open: payment of RM220 and the handover of all 2 unit.",
-    "rid": "s267"
+    "mod": "corrected on 2026-10-15: deliveredQty 0 to 2; deliveredOn (unset) to 2026-10-15; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-15",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-15",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 2,
+      "note": "<b>CORRECTION ON s267: 2 UNIT OF SALT COLLECTED BY CS6-BS-R ON 15 OCT, RM220 NOT YET PAID AT THIS ROW.</b> It sets deliveredQty from 0 to 2, deliveredOn to 15 Oct and handover to collected. The goods total of RM220 is above the desk's floor of RM116 and below its ask of RM250 for 2 unit, a rate of RM110 a unit. CS6-BS-R has 17 orders, a median rate of RM96.67, a range of RM6 to RM120, RM220 outstanding before and 0 units on credit; the cap is not in the dossier. The drafter flagged the rate as 10% above the usual RM100, which the range answers, and the advance, which the cash fulfilment on the same order then settles. Open: nothing after that payment.",
+      "cost": 116
+     },
+     {
+      "date": "2026-10-15",
+      "kind": "Fulfilment",
+      "cash": 220,
+      "kg": 0,
+      "note": "<b>FULFILMENT ON s267: RM220 CASH TAKEN AT THE COUNTER ON 15 OCT FROM CS6-BS-R.</b> It is against the order of 2 unit for RM220 agreed 15 Oct, which was RM220 and 2 unit outstanding. The payment equals the goods total, above the desk's floor of RM116 and below its ask of RM250 for 2 unit. CS6-BS-R has 17 orders, a median rate of RM96.67, a range of RM6 to RM120 and 0 units on credit before. No cost is carried by this row and none is changed. The drafter raised no flags. Open: RM0 of payment; the 2 unit are recorded collected by the correction on the same order."
+     }
+    ],
+    "cost": 116,
+    "paidOn": "2026-10-15"
    }
   ],
   "contacts": [
@@ -8329,9 +8379,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-15T05:19:43.703Z",
+  "QUEUE_COMMITTED": "2026-10-15T05:21:31.573Z",
   "PRICING": {
-   "takenAt": "2026-10-15T05:20:06.716Z",
+   "takenAt": "2026-10-15T05:22:19.211Z",
    "sizes": [
     0.5,
     1,
@@ -8365,7 +8415,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "10 customers are past their own habit on salt"
+     "title": "9 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:candy",
@@ -8538,13 +8588,13 @@
     "CS6-BS": {
      "salt": {
       "name": "consistent mid",
-      "orders": 19,
+      "orders": 20,
       "tenureDays": 95,
-      "sinceLastDays": 19,
-      "perMonth": 6.09,
-      "unitsPerMonth": 15.22,
-      "smallShare": 0.47,
-      "bigShare": 0.37,
+      "sinceLastDays": 0,
+      "perMonth": 6.41,
+      "unitsPerMonth": 15.86,
+      "smallShare": 0.45,
+      "bigShare": 0.35,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -8587,13 +8637,13 @@
     "CS6-PER": {
      "salt": {
       "name": "consistent mid",
-      "orders": 13,
+      "orders": 14,
       "tenureDays": 99,
-      "sinceLastDays": 2,
-      "perMonth": 4,
-      "unitsPerMonth": 13.22,
-      "smallShare": 0.23,
-      "bigShare": 0.38,
+      "sinceLastDays": 1,
+      "perMonth": 4.3,
+      "unitsPerMonth": 13.53,
+      "smallShare": 0.29,
+      "bigShare": 0.36,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -9639,15 +9689,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3191489361702128
+         "v": 0.3125
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07829914328381672,
        "avgDel": {
-        "n": 208,
-        "kg": 527.56,
-        "mean": 2.5363
+        "n": 210,
+        "kg": 530.56,
+        "mean": 2.5265
        }
       },
       "policy": {
@@ -15312,11 +15362,11 @@
      ]
     }
    },
-   "v": "v1113"
+   "v": "v1114"
   },
   "OPEN": {
-   "at": "2026-10-15T05:20:07.349Z",
-   "count": 14,
+   "at": "2026-10-15T05:22:19.688Z",
+   "count": 13,
    "byKey": {
     "CC9-OKR|2026-10-15|575": {
      "d": "2026-10-15",
@@ -15331,22 +15381,6 @@
      "oweUnits": 6.25,
      "rid": "s262",
      "key": "CC9-OKR|2026-10-15|575"
-    },
-    "CS6-BS-R|2026-10-15|220": {
-     "d": "2026-10-15",
-     "p": "CS6-BS-R",
-     "dir": "S",
-     "q": 2,
-     "t": 220,
-     "cash": 0,
-     "mv": 0,
-     "st": "part",
-     "oweRM": 220,
-     "oweUnits": 2,
-     "rid": "s267",
-     "as": "CS6-BS",
-     "st2": "R2",
-     "key": "CS6-BS-R|2026-10-15|220"
     },
     "CE4-CHE|2026-10-14|400": {
      "d": "2026-10-14",
@@ -15403,12 +15437,15 @@
      "q": 1,
      "t": 110,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 1,
+     "st": "dueMoney",
      "oweRM": 110,
-     "oweUnits": 1,
      "rid": "s266",
-     "key": "CS6-PER|2026-10-14|110"
+     "deliveredOn": "2026-10-15",
+     "handover": "collected",
+     "key": "CS6-PER|2026-10-14|110",
+     "age": 0,
+     "exp": 110
     },
     "CJ4-BJ|2026-10-09|500": {
      "d": "2026-10-09",
@@ -15545,13 +15582,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 20.14,
-     "free": 13.14,
+     "onHand": 17.14,
+     "free": 10.14,
      "owedOut": 7,
-     "coverDays": 2.6,
+     "coverDays": 1.8,
      "rate": 4.98,
-     "owedToYou": 340,
-     "promised": 16.75,
+     "owedToYou": 450,
+     "promised": 13.75,
      "short": 0
     },
     "oil": {
@@ -15606,7 +15643,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1113"
+   "v": "v1114"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15614,7 +15651,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1113"
+   "v": "v1114"
   },
   "REWARD": {
    "stated": {
@@ -15626,7 +15663,7 @@
      }
     }
    },
-   "v": "v1113"
+   "v": "v1114"
   }
  }
 }
