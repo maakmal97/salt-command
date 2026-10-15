@@ -1,0 +1,53 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-15T14:29:42.001Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-PER",
+    "qty": 1,
+    "total": 56,
+    "cost": 56,
+    "cash": 0,
+    "settledRM": 56,
+    "rebate": true,
+    "rebateKg": 1,
+    "goodwill": true,
+    "deliveredQty": 1,
+    "deliveredOn": "2026-10-15",
+    "date": "2026-10-15"
+   },
+   "reasoning": "Redeems 1 unit of salt free to CS6-PER on 2026-10-15, settled by the reward rather than in cash. Booked as a cost and not as revenue, on his ruling of 11 Sep 2026: the row carries goodwill as well as rebate, so it stays out of revenue and its RM 56 of cost is an expense. The salt leaves the inventory and the fold rolls the stated shelf by it.",
+   "flags": [
+    "The desk says CS6-PER held 1 unit earned and unredeemed when this was pressed (3 earned, 2 already used). Rewards are worked out on the desk, not here, so that figure is the desk's word and the drafter cannot check it."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-15T14:29:42.001Z",
+    "type": "REDEEM",
+    "party": "CS6-PER",
+    "qty": 1,
+    "total": 0,
+    "status": "inkind",
+    "raw": "Redeem 1 free unit salt for CS6-PER on 2026-10-15",
+    "payload": {
+     "mode": "redeem",
+     "product": "salt",
+     "party": "CS6-PER",
+     "qty": 1,
+     "date": "2026-10-15",
+     "earned": 3,
+     "applied": 2,
+     "balance": 1
+    },
+    "makerRequest": "006ea0616cd2ec553883d95b11a494057a784041237ea2c1a71a09a1e3613be9"
+   },
+   "decidedAt": "2026-10-15T14:30:48.152Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
