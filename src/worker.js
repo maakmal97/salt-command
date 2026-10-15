@@ -22,7 +22,7 @@ import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
+import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -462,19 +462,32 @@ function makerAppointmentCandidates(book, parties, pending) {
     });
   }).sort();
 }
+/* 16 Oct 2026 (plan 3): the moves on their way to the book's sales, for an order of several books read as it will stand: every entry drafted and
+   waiting (pending, or approved and not folded), then every amendment still in the queue that no draft holds yet, read by its own id. Once each. */
+async function makerHeldMoves(env) {
+  const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+  const out = (waiting.results || []).map((row) => { try { return JSON.parse(row.entry); } catch (e) { return null; } }).filter(Boolean);
+  const seen = new Set(out.map((e) => e.at));
+  for (const e of (await (await handleQueueGet(env, true)).json()).queue || []) {
+    if (!e || seen.has(e.at) || !e.payload || e.payload.mode !== "amend") continue;
+    if (await env.SALT_LEDGER.prepare("SELECT id FROM draft WHERE id=?1").bind(e.at).first()) continue;
+    seen.add(e.at); out.push(e);
+  }
+  return out;
+}
 async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, offsetLocked = false) {
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
     && p !== "/_internal/maker/queue"
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
-    && p !== "/_internal/maker/trade-cover" && p !== "/_internal/maker/trade-reading"
+    && p !== "/_internal/maker/trade-cover" && p !== "/_internal/maker/trade-reading" && p !== "/_internal/maker/trip-split"
     && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
     && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
     && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
     && !/^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
     && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
-    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)
+    && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
@@ -675,7 +688,29 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
   }
   if (p === "/_internal/maker/drafts") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    return handleDraftsGet(env, new URL(request.url));
+    const url = new URL(request.url), res = await handleDraftsGet(env, url);
+    if ((url.searchParams.get("status") || "pending") !== "pending" || url.searchParams.get("uncommitted") === "1" || res.status !== 200) return res;
+    /* 16 Oct 2026 (plan 3): the orders of several books ride on the review read, each trip one card and the same-day rows that could be
+       one; a book that cannot be read is said, never read as no orders */
+    let body;
+    try { body = await res.json(); } catch (error) { return json({ ok: false, error: "The rows waiting could not be read." }, 503); }
+    try {
+      const book = await readBook(env.SALT_LEDGER);
+      if (!book.version) throw new Error("the mirror is being seeded");
+      Object.assign(body, makerTrips(book, await makerHeldMoves(env)));
+    } catch (error) { body.tripsError = "Orders of several books could not be read."; }
+    return json(body);
+  }
+  if (p === "/_internal/maker/trip-split") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER) return json({ ok: false, error: "The Desk mirror is required." }, 503);
+    let body;
+    try { body = JSON.parse(await request.text()); }
+    catch { return json({ ok: false, error: "send JSON" }, 400); }
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
+    const split = makerTripSplit(body, book, await makerHeldMoves(env));
+    return split.error ? json({ ok: false, error: split.error }, 400) : json({ ok: true, split });
   }
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   if (p === "/_internal/maker/order-again" || p === "/_internal/maker/words") {
@@ -702,7 +737,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     return json({ ok: true, again, whole });
   }
   if (p === "/_internal/maker/inputs/offset"
-    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(p)) {
+    || /^\/_internal\/maker\/inputs\/(stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(p)) {
     let body;
     try {
       const text = await request.text();
@@ -772,6 +807,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       try { registrations = await readVaultRegistrations(env.SALT_LEDGER); }
       catch (error) { return json({ ok: false, error: "Confirmed Add IDs could not be verified against the vault receipts and outbox." }, 503); }
     }
+    const tripHeld = operation === "trip-pay" ? await makerHeldMoves(env) : [];
     const built = operation === "appoint-existing"
       ? { entry: POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,
         parent: null, rev: appointmentPlan.stream, geo: null, tiers: null }) }
@@ -781,10 +817,41 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       : operation === "tier-set" ? makerTierSet(body, book)
       : operation === "partner" ? makerPartner(body, book, resourcePending)
         : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
+          : operation === "trip-pay" ? makerTripPay(body, book, tripHeld)
+          : operation === "trip-join" ? makerTripJoin(body, book)
           : operation === "offset" ? makerOffset(body, book, held)
           : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book, resourcePending, registrations)
           : makerLedgerInput(operation, body, book, resourcePending);
     if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
+    if (built.amendBatch) {
+      /* 16 Oct 2026 (plan 3): one entry a line of an order of several books, all or none. Each share of a payment is held to what its row
+         can still take (rowRoom, through makerAmendmentRoom), and a refused share refuses the batch before anything is queued; a row
+         another join already waits on is refused; then the batch is queued under one key, as a trade of several books is. */
+      const entries = built.entries;
+      entries.forEach((entry) => { entry.makerRequest = fingerprint; });
+      const queued = (await (await handleQueueGet(env, true)).json()).queue;
+      const waiting = await env.SALT_LEDGER.prepare("SELECT entry FROM draft WHERE committed_at IS NULL AND status IN ('pending','approved')").all();
+      const held = queued.concat((waiting.results || []).map((row) => JSON.parse(row.entry)))
+        .filter((item) => !entries.some((entry) => entry.at === item.at));
+      if (operation === "trip-join") {
+        const joining = held.filter((item) => item && item.payload && item.payload.mode === "amend" && item.payload.kind === "Correction"
+          && item.payload.fields && item.payload.fields.trip != null).map((item) => item.payload.rid);
+        const busy = entries.find((entry) => joining.includes(entry.payload.rid));
+        if (busy) return json({ ok: false, error: busy.payload.rid + " already waits to join an order. Decide that one under Approve first." }, 409);
+      }
+      for (const entry of entries) {
+        const room = await makerAmendmentRoom(env.SALT_LEDGER, entry, book);
+        if (room) return json({ ok: false, error: entry.payload.rid + ": " + room + " Nothing was sent." }, 409);
+        const reserved = POSITION_ENGINE.entryReservationFault(entry, held, book);
+        if (reserved) return json({ ok: false, error: entry.payload.rid + ": " + reserved + " Nothing was sent." }, 409);
+      }
+      if (!await makerRequestClaim(env.SALT_LEDGER, body.at, operation, fingerprint, entries)) {
+        const raced = await makerRequestRead(env.SALT_LEDGER, body.at, operation, fingerprint);
+        if (raced?.pending) return resumeMakerInput(env, raced.pending, fingerprint);
+        return json(raced?.response || { ok: false, error: raced?.error || "Retry the original request." }, raced?.response ? 200 : 409);
+      }
+      return resumeMakerInput(env, entries, fingerprint);
+    }
     if (built.entries) {
       const entries = built.entries;
       entries.forEach((entry) => { entry.makerRequest = fingerprint; });

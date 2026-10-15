@@ -68,6 +68,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/queue" && method === "GET"
     || path === "/_internal/maker/trade-cover" && method === "POST"
     || path === "/_internal/maker/trade-reading" && method === "POST"
+    || path === "/_internal/maker/trip-split" && method === "POST"
     || path === "/_internal/maker/inputs" && method === "GET"
     || path === "/_internal/maker/vault" && method === "GET"
     || path === "/_internal/maker/vault/addr" && method === "GET"
@@ -84,7 +85,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/offsets" && method === "GET"
     || path === "/_internal/maker/inputs/offset" && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
-    || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move|restate)$/.test(path) && method === "POST"
@@ -186,6 +187,7 @@ async function makerHours(request, env, method) {
 function internalOperation(path) {
   if (path === "/all/maker/trade-cover") return { kind: "trade-cover" };
   if (path === "/all/maker/trade-reading") return { kind: "trade-reading" };
+  if (path === "/all/maker/trip-split") return { kind: "trip-split" };
   if (path === "/all/maker/review") return { kind: "review" };
   if (path === "/all/maker/queue") return { kind: "queue" };
   const withdrawal = /^\/all\/maker\/queue\/([^/]+)\/withdraw$/.exec(path);
@@ -212,7 +214,7 @@ function internalOperation(path) {
   if (path === "/all/maker/offsets") return { kind: "offsets" };
   if (path === "/all/maker/inputs/offset") return { kind: "input", input: "offset" };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
-  const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend)$/.exec(path);
+  const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.exec(path);
   if (input) return { kind: "input", input: input[1] };
   const customer = /^\/all\/maker\/customers\/([a-z0-9]{4}-[a-z0-9]{4})\/orders$/.exec(path);
   if (customer) return { kind: "place", u: customer[1] };
@@ -244,6 +246,15 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       const parsed = await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
       return json(await deskCall(env, "/_internal/maker/trade-reading", "POST", parsed.body));
+    }
+    /* plan 3 (16 Oct 2026): one payment for an order of several books, split by the Desk before anything is sent; a read */
+    if (op.kind === "trip-split") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      if (Object.keys(parsed.body).some((key) => !["trip", "amount"].includes(key)))
+        return json({ ok: false, error: "Send only the order and the amount." }, 400);
+      return json(await deskCall(env, "/_internal/maker/trip-split", "POST", parsed.body));
     }
     if (op.kind === "hours") return await makerHours(request, env, method);
     /* THE POOL, A GROUP ORDER: his read of every one, his opening of one (a product, a size, a target, a closing day), and his
@@ -416,7 +427,10 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       }
       /* plan 1: a queue key the Desk could not read is named, never read as an empty queue (src/worker.js makerQueueReview) */
       const unreadable = Array.isArray(queue.unreadable) ? queue.unreadable.filter((k) => typeof k === "string" && /^q:[A-Za-z0-9._-]{1,80}$/.test(k)).slice(0, 20) : [];
-      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable });
+      /* plan 3: the orders of several books the Desk read with the drafts, or that it could not read them */
+      const trips = Array.isArray(drafts.trips) ? drafts.trips : [], sameDay = Array.isArray(drafts.sameDay) ? drafts.sameDay : [];
+      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable, trips, sameDay,
+        ...(typeof drafts.tripsError === "string" || !Array.isArray(drafts.trips) ? { tripsError: drafts.tripsError || "Orders of several books could not be read." } : {}) });
     }
     if (op.kind === "queue") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

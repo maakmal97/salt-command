@@ -92,7 +92,8 @@ export function approveFigures(book, pending, waiting) {
         if (!origin.has(now)) origin.set(now, now);
         origin.set(after, origin.get(now));
         const owner = E.ownerCode(now.customer || d.party || "");
-        d.figures = { ...(now.rid ? { rid: now.rid } : {}), now: rowFigures(now), after: rowFigures(after), party: owner,
+        /* plan 3 (16 Oct 2026): the order of several books the row rides, so the moves on its rows are one card */
+        d.figures = { ...(now.rid ? { rid: now.rid } : {}), ...(now.trip ? { trip: now.trip } : {}), now: rowFigures(now), after: rowFigures(after), party: owner,
           owedNow: owedOf(owner, now, now), owedAfter: owedOf(owner, now, after), ceiling,
           ...(before.get(d.amends) ? { approvedBefore: before.get(d.amends) } : {}) };
         state.set(d.amends, after);

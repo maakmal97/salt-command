@@ -2,9 +2,12 @@ import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving } from "./drafter.js";
 import { cardAt, rowRoom, siteWords } from "./orders.js";
+import { rowFigures, moveRow } from "./approve-figures.js";
 
 /* note and settle are free prose a row carries about itself, so they stay on the Desk */
 const DESK_ONLY_FIELDS = ["note", "settle"];
+/* a trip is set by These are one order alone (makerTripJoin), which holds the whole trip together; Correct a row never offers it */
+const JOIN_ONLY_FIELDS = ["trip"];
 
 const object = (body) => !!body && typeof body === "object" && !Array.isArray(body);
 const timestamp = (at) => typeof at === "string" && Number.isFinite(Date.parse(at))
@@ -341,6 +344,142 @@ export function owedBothWays(book, today) {
   return { today, owedMoney, owedGoods: goods.sort((a, b) => byOld(a.date, b.date)) };
 }
 
+/* 16 Oct 2026, PLAN 3 OF docs/plans-counter-admin.html: ORDERS ACROSS SEVERAL BOOKS, Counter Admin's half. CS6-PER's salt, oil and rice
+   of 14 Oct were three cards, each handed over and paid on its own. A trip already ties a buyer's rows of one day (one delivery on one
+   row, tripFault); what follows reads and writes it for Counter Admin, and the Counter computes no money:
+   - makerTrips: each open trip as one card, the head (owed, paid, lines handed in full) and one line a book off the engine's figures
+     (rowFigures, the approve card's own reading), and a buyer's same-day rows with no trip that could be one (sameDay);
+   - makerTripSplit: one payment for the order split across its lines oldest first by the engine's claimAlloc, every line owing all
+     that is left on it (each line's key in `ready`), read before anything is sent;
+   - makerTripPay: that split as one Fulfilment a line, refused whole unless the split is the one he read; the Worker then holds each
+     share to rowRoom before any is queued (worker.js), so one refused share refuses the batch;
+   - makerTripJoin: These are one order, a Correction a row setting one new trip, refused unless the rows make a trip tripFault passes.
+   Nothing here reprices a line: a payment moves cash, a join moves the trip id, and the delivery stays on the one row that has it. */
+const r2 = (n) => +(+n || 0).toFixed(2);
+/* each row as it will stand once the moves waiting on it are approved and folded (`held`: entries queued or drafted, pending or approved and
+   not folded), read in the order entered by the approve card's own moveRow, so a second Handover all or payment never counts a move twice.
+   A move names its row as rowRoom reads it: by rid, else by the order key it was queued under (a claim against the account) */
+const heldMoves = (row, held) => (held || []).filter((e) => e && e.payload && e.payload.mode === "amend" && e.payload.direction !== "BUY"
+  && (e.payload.rid ? e.payload.rid === row.rid : e.payload.orderKey === POSITION_ENGINE.ovKey(row)))
+  .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+const standing = (rows, held) => rows.map((row) => {
+  const moves = heldMoves(row, held);
+  let s = row;
+  for (const e of moves) s = moveRow(s, { entry: e });
+  return { row: s, waiting: moves.length };
+});
+const tripLine = ({ row, waiting }) => {
+  const f = rowFigures(row);
+  return { rid: row.rid, product: row.product || "salt", qty: f.qty, total: f.total, delivery: f.delivery, paid: f.paid, owed: f.owed,
+    handed: f.handed, left: +Math.max(0, f.qty - f.handed).toFixed(3), waiting,
+    open: POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, "S", "salt")) };
+};
+const tripCard = (rows, held) => {
+  const lines = standing(rows, held).map(tripLine);
+  return { party: rows[0].customer, date: rows[0].date || null,
+    owed: r2(lines.reduce((a, l) => a + l.owed, 0)), paid: r2(lines.reduce((a, l) => a + l.paid, 0)),
+    handedLines: lines.filter((l) => l.left <= 0.0005).length, waiting: lines.reduce((a, l) => a + l.waiting, 0), lines };
+};
+const joiningRids = (held) => new Set((held || []).filter((e) => e && e.payload && e.payload.mode === "amend"
+  && e.payload.kind === "Correction" && e.payload.fields && e.payload.fields.trip != null).map((e) => e.payload.rid));
+export function makerTrips(book, held = []) {
+  const E = POSITION_ENGINE, byTrip = new Map(), byDay = new Map();
+  const open = (s) => E.openable(E.ledgerRow(s, "S", "salt"));
+  for (const s of (book && book.sales) || []) {
+    if (!s || !s.rid || s.cancelled || !code(s.customer, [s.customer])) continue;
+    if (s.trip) { if (!byTrip.has(s.trip)) byTrip.set(s.trip, []); byTrip.get(s.trip).push(s); continue; }
+    if (s.goodwill || s.defaulted || !date(s.date)) continue;
+    const k = s.customer + "|" + s.date;
+    if (!byDay.has(k)) byDay.set(k, []);
+    byDay.get(k).push(s);
+  }
+  const joining = joiningRids(held);
+  /* a buyer's day that already has one open trip offers its untripped rows as joining that trip (a join that landed in part) */
+  const tripOfDay = new Map();
+  for (const [trip, rows] of byTrip) { if (!E.TRIP_RE.test(trip)) continue; const k = rows[0].customer + "|" + rows[0].date; tripOfDay.set(k, tripOfDay.has(k) ? null : trip); }
+  const withTrip = (rows) => { const t = tripOfDay.get(rows[0].customer + "|" + rows[0].date); return t ? byTrip.get(t).filter((s) => !s.cancelled).concat(rows) : rows; };
+  const byDate = (a, b) => String(a.date || "9999").localeCompare(String(b.date || "9999")) || String(a.party).localeCompare(String(b.party));
+  const trips = [...byTrip].filter(([trip, rows]) => E.TRIP_RE.test(trip) && rows.length > 1 && rows.some(open) && !E.tripFault(rows))
+    .map(([trip, rows]) => ({ trip, ...tripCard(rows, held) })).sort(byDate);
+  const sameDay = [...byDay.values()].map(withTrip).filter((rows) => rows.length > 1 && rows.some(open)
+    && new Set(rows.map((s) => s.product || "salt")).size === rows.length
+    && rows.filter((s) => +s.delivery > 0.005).length <= 1 && !rows.some((s) => joining.has(s.rid)))
+    .map((rows) => ({ rids: rows.map((s) => s.rid), ...tripCard(rows, held) })).sort(byDate);
+  return { trips, sameDay };
+}
+const tripRowsOf = (book, trip) => ((book && book.sales) || []).filter((s) => s && s.rid && s.trip === trip && !s.cancelled);
+export function makerTripSplit(body, book, held = []) {
+  const E = POSITION_ENGINE;
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!object(body) || typeof body.trip !== "string" || !E.TRIP_RE.test(body.trip)
+    || !figure(body.amount) || !(body.amount > 0.004) || r2(body.amount) !== body.amount)
+    return { error: "Choose an order of several books and an amount above zero, to the sen." };
+  const booked = tripRowsOf(book, body.trip);
+  if (booked.length < 2) return { error: "That order of several books is not on the book. Read the orders again." };
+  const fault = E.tripFault(booked);
+  if (fault) return { error: "That order does not hold together: " + fault + "." };
+  /* the rows as they will stand, so money already waiting under Approve is not asked for twice; the allocator is the engine's */
+  const rows = standing(booked, held).map((x) => x.row);
+  const alloc = E.claimAlloc(rows, rows[0].customer, body.amount, rows.map(E.ovKey));
+  const owed = r2(alloc.rows.reduce((a, s) => a + s.owed, 0));
+  if (alloc.left > 0.004) return { error: "RM " + body.amount.toFixed(2) + " is more than this order still owes (RM " + owed.toFixed(2) + ")." };
+  return { trip: body.trip, party: rows[0].customer, amount: body.amount,
+    shares: alloc.rows.map((a) => ({ rid: a.rid, product: (rows.find((s) => s.rid === a.rid) || {}).product || "salt", rm: a.rm, owed: a.owed })) };
+}
+export function makerTripPay(body, book, held = []) {
+  if (!exact(body, ["at", "trip", "date", "amount", "shares"]) || !timestamp(body.at) || !date(body.date))
+    return { error: "A payment for the order carries its moment, the order, the day, the amount and the split you read." };
+  const split = makerTripSplit({ trip: body.trip, amount: body.amount }, book, held);
+  if (split.error) return split;
+  const seen = Array.isArray(body.shares) ? body.shares.map((s) => [s && s.rid, s && s.rm]) : null;
+  if (!seen || JSON.stringify(seen) !== JSON.stringify(split.shares.map((s) => [s.rid, s.rm])))
+    return { error: "The split changed since you read it. Read it again before you send.", stale: true };
+  const rows = tripRowsOf(book, body.trip), start = Date.parse(body.at), entries = [], drafts = [];
+  for (const [i, share] of split.shares.entries()) {
+    const row = rows.find((s) => s.rid === share.rid);
+    const made = proposed(POSITION_ENGINE.ledgerAmendmentEntry({ at: new Date(start + i).toISOString(), row, direction: "SELL",
+      kind: "Fulfilment", date: body.date, cash: share.rm, movedUnits: 0 }), book);
+    if (made.error) return { error: share.rid + ": " + made.error };
+    entries.push(made.entry); drafts.push(made.draft);
+  }
+  return { entries, drafts, shares: split.shares, amendBatch: true };
+}
+export function makerTripJoin(body, book) {
+  const E = POSITION_ENGINE;
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (!exact(body, ["at", "date", "rids"]) || !timestamp(body.at) || !date(body.date) || !Array.isArray(body.rids)
+    || body.rids.length < 2 || body.rids.length > 20 || new Set(body.rids).size !== body.rids.length
+    || body.rids.some((rid) => typeof rid !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(rid)))
+    return { error: "Choose two or more rows of one buyer and one day." };
+  const rows = [];
+  for (const rid of body.rids) {
+    const found = findRow(book, rid);
+    if (found.err) return { error: found.err };
+    if (found.collection !== "sales" || found.row.cancelled) return { error: rid + " is not an open sale." };
+    rows.push(found.row);
+  }
+  if (new Set(rows.map((s) => s.customer)).size > 1 || new Set(rows.map((s) => s.date || null)).size > 1 || !rows[0].date)
+    return { error: "These rows are not one buyer's on one day." };
+  /* Fable's review of 16 Oct 2026: a join that landed in part leaves rows on a trip and one beside it; naming them together extends that trip,
+     so the order can always be made whole. Rows on two trips are never one order. */
+  const on = [...new Set(rows.filter((s) => s.trip).map((s) => s.trip))];
+  if (on.length > 1) return { error: "These rows are on two orders of several books already." };
+  const joining = rows.filter((s) => !s.trip);
+  if (!joining.length) return { error: "These rows are one order already." };
+  const trip = on[0] || "t" + Date.parse(body.at);
+  if (!on.length && tripRowsOf(book, trip).length) return { error: "That moment already names an order of several books. Start again." };
+  const fault = E.tripFault(tripRowsOf(book, trip).filter((s) => !rows.includes(s)).concat(rows.map((s) => ({ ...s, trip }))));
+  if (fault) return { error: "These rows cannot be one order: " + fault + "." };
+  const start = Date.parse(body.at), entries = [], drafts = [];
+  for (const [i, row] of joining.entries()) {
+    const made = proposed(E.ledgerAmendmentEntry({ at: new Date(start + i).toISOString(), row, direction: "SELL",
+      kind: "Correction", date: body.date, fields: { trip } }), book);
+    if (made.error) return { error: row.rid + ": " + made.error };
+    entries.push(made.entry); drafts.push(made.draft);
+  }
+  return { entries, drafts, trip, amendBatch: true };
+}
+
 export function makerInputCatalog(book, hush = {}, pending = [], registrations = [], today = mytDay(new Date().toISOString())) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const bookRoster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
@@ -391,7 +530,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
     partnerWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "partner")
       .map((entry) => entry.payload.code),
     handovers: POSITION_ENGINE.HANDOVER.slice(), streams: ["R2", "R3"],
-    correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field))
+    correctionFields: POSITION_ENGINE.CORRECTABLE.filter((field) => !DESK_ONLY_FIELDS.includes(field) && !JOIN_ONLY_FIELDS.includes(field))
       .map((field) => ({ field, required: POSITION_ENGINE.CORRECT_REQUIRED.includes(field),
         kind: field === "orderCode" ? "text" : POSITION_ENGINE.CORRECT_BOOL.includes(field) ? "boolean"
           : POSITION_ENGINE.CORRECT_DATE.includes(field) ? "date"
@@ -683,7 +822,7 @@ export function makerLedgerAmendment(body, book) {
     if (body.cash !== undefined || body.movedUnits !== undefined || !object(body.fields)
       || !Object.keys(body.fields).length || Object.keys(body.fields).length > POSITION_ENGINE.CORRECTABLE.length
       || Object.keys(body.fields).some((field) => !POSITION_ENGINE.CORRECTABLE.includes(field)
-        || DESK_ONLY_FIELDS.includes(field)))
+        || DESK_ONLY_FIELDS.includes(field) || JOIN_ONLY_FIELDS.includes(field)))
       return { error: "Choose correctable typed fields; notes and settlement prose stay on Desk." };
     for (const [field, value] of Object.entries(body.fields)) {
       if (value == null) continue;
