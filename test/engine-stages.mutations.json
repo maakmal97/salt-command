@@ -1,0 +1,32 @@
+[
+ {
+  "name": "a stage function mutates the order it is handed",
+  "file": "engine/stages.mjs",
+  "find": "const handed = Object.assign({}, o, { movedOn: klDate(at), moved: qty });",
+  "replace": "const handed = Object.assign(o, { movedOn: klDate(at), moved: qty });"
+ },
+ {
+  "name": "Accept's floor refusal is removed",
+  "file": "engine/stages.mjs",
+  "find": "if (price != null && price < fl.floor - 0.005)",
+  "replace": "if (false)"
+ },
+ {
+  "name": "a claim is allocated to the newest row first",
+  "file": "engine/position.mjs",
+  "find": "const rows=mine.filter(out1).sort(byDate).concat(",
+  "replace": "const rows=mine.filter(out1).sort((a,b)=>byDate(b,a)).concat("
+ },
+ {
+  "name": "an early handover no longer redates its row",
+  "file": "engine/stages.mjs",
+  "find": "const was = moved > 0 ? redateFrom(order, date) : \"\";",
+  "replace": "const was = \"\";"
+ },
+ {
+  "name": "Accept drafts at the placed total when he set another",
+  "file": "engine/stages.mjs",
+  "find": ", price != null ? { total: price, asked: +(+o.total).toFixed(2) } : {});",
+  "replace": ", {});"
+ }
+]
