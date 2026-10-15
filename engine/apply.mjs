@@ -3,11 +3,13 @@
  * the rows, the cost stamps, the rids, the counts, the roll and the renames, in the order the fold has always done them.
  *
  * PURE. No fs, no child process, no clock, no reading of the master, and it never mutates what it is handed: applyBatch works on a
- * clone and returns it. What the fold read from disk or the clock comes in through `ctx`: { plan, nextRid, sortBook }, where
- * plan(book, staged, notes) is the plan of this batch against the book it is given (it moves in with S1a-ii), nextRid is
- * tools/rid.mjs's minter and sortBook is tools/sort-ledger.mjs's, both of which read files and so stay outside.
+ * clone and returns it. What the fold read from disk or the clock comes in through `ctx`: { tierNames, driftBooks, pinnedInMaster(code),
+ * today, reward } for the plan, and { nextRid, sortBook } for the booking, the last two being tools/rid.mjs's and tools/sort-ledger.mjs's, which
+ * read files and so stay outside.
  * It is NOT in tools/engine.mjs's list, so the master's ENGINE block does not carry it, and nothing under stmt/ may import it. */
 import POSITION_ENGINE from "./position.mjs";
+import PRICING_ENGINE from "./pricing.mjs";
+import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } from "../src/drafter.js";
 
 const E = POSITION_ENGINE;
@@ -342,11 +344,450 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
   if ((+pay.cash || 0) > 0.009 && row.total > 0 && row.cash >= E.txOwed(row) - 0.009) row.paidOn = pay.date;   /* v738: paid in full is the goods and the delivery */
 }
 
+/* v670: a tier as words, one level or a band set spelled band by band, so a refusal or a plan line never reads [object Object] */
+const sayLevel = (v) => v == null ? "not set" : typeof v === "number" ? "drift " + (v > 0 ? "+" : "") + v : typeof v === "string" ? v
+  : (typeof v === "object" ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v));
+const APPOINTS = POSITION_ENGINE.ADDID_APPOINTS;
+export const STATEMENT_KINDS = ["customer", "reseller", "referral"];
+function describe(item) {
+  const r = item.row || {};
+  if (item.amends) {
+    if (item.amendKind === "Modification") return `Modification on ${item.amends}: to ${r.newQty ?? "?"} unit / RM${r.newTotal ?? "?"}`;
+    if (item.amendKind === "Correction") {
+      const f = (item.entry && item.entry.payload && item.entry.payload.fields) || {};
+      return `Correction on ${item.amends}: ${Object.keys(f).join(", ") || "nothing"}`;
+    }
+    return `${item.amendKind} on ${item.amends}: cash ${r.cash != null ? r.cash : "?"}`;
+  }
+  switch (item.collection) {
+    case "sales": return `SELL ${r.customer} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.date ? " on " + r.date : " (pending, undated)"}`;
+    case "purchases": return `BUY ${r.supplier} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.pending ? " (pending lot)" : ""}`;
+    case "count": return `COUNT ${r.product} ${r.qty} unit on ${r.date} (book said ${r.was}, drift ${r.drift})`;
+    case "loss": return `LOSS ${r.kg} unit ${r.product} on ${r.date}: ${r.why}`;
+    case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.form === "cash" ? "RM " + r.valueRM + " in cash" : r.valueKg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
+    case "repayment": return `REPAY ${r.form === "cash" ? "RM " + r.rm : r.kg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "to" : "from"} ${r.party} on loan ${r.loan}, ${r.date}${r.settles ? ", settling it" : ""}`;
+    case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
+    case "roster": if (r.partner) return `PARTNER ${r.code}: pays cost`; return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
+    case "rename": return `RENAME ${r.from} to ${r.to}`;
+    case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
+    case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLevel(v)).join(" ")).join(", ")}`;
+    case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
+    default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
+  }
+}
+
+/* ---- the plan: what each item would do, and what is refused ----------------------------- */
+export function planBatch(book, staged, notes, ctx) {
+  /* what the fold read from disk and the clock comes in through ctx: { tierNames, driftBooks, pinnedInMaster(code), today, reward } */
+  const TODAY = ctx.today, pinnedInMaster = ctx.pinnedInMaster;
+  const tierNames = () => ctx.tierNames, driftBooks = () => ctx.driftBooks;
+  const tierOk = (p, v) => driftBooks().includes(p) ? PRICING_ENGINE.driftOk(v) : PRICING_ENGINE.levelShapeOk(v, tierNames());
+  const out = { items: [], refused: [], moves: [] };
+  let rows = (staged && staged.approved) || [];
+  const registrations = rows.flatMap((item) => {
+    if (item.status !== "approved") return [];
+    const proof = verifiedVaultRegistration(item, item.vaultReceipt, item.vaultOutbox);
+    return proof ? [{ item, proof }] : [];
+  });
+  const registrationIds = new Set(registrations.map((registration) => registration.item.id));
+  const plannedRegistrations = new Set();
+  const registrationsByCode = new Map();
+  for (const registration of registrations) {
+    const known = registrationsByCode.get(registration.proof.code) || [];
+    known.push(registration);
+    registrationsByCode.set(registration.proof.code, known);
+  }
+  const dependencies = new Map(), dependencyFaults = new Map();
+  for (const item of rows) {
+    if (!["sales", "purchases"].includes(item.collection)
+      || item.entry?.payload?.mode !== "new" || !item.entry?.makerRequest) continue;
+    const payload = item.entry.payload || {};
+    const partyCodes = [...new Set([payload.party, payload.assoc, payload.downstream]
+      .filter((value) => typeof value === "string" && !(book.roster || []).includes(value)))];
+    if (!partyCodes.length) continue;
+    const stated = item.entry.registrationDependencies;
+    if (!Array.isArray(stated) || stated.length !== partyCodes.length
+      || stated.some((dependency) => !dependency || Object.keys(dependency).sort().join(",") !== "code,id"
+        || typeof dependency.code !== "string" || typeof dependency.id !== "string")) {
+      dependencyFaults.set(item.id, "a Counter trade names a party not on the book and has no server-verified Add ID dependency");
+      continue;
+    }
+    const required = [];
+    for (const code of partyCodes) {
+      const matching = registrationsByCode.get(code) || [];
+      const declared = stated.filter((dependency) => dependency.code === code);
+      const registration = matching.find((candidate) => candidate.proof.id === declared[0]?.id);
+      if (declared.length !== 1 || matching.length !== 1 || !registration
+        || registration.item.status !== "approved"
+        || registration.item.id !== registration.proof.id) {
+        dependencyFaults.set(item.id, `${code} needs one approved, receipt- and outbox-matched Add ID in this batch`);
+        break;
+      }
+      required.push(registration.item.id);
+    }
+    if (!dependencyFaults.has(item.id)) dependencies.set(item.id, required);
+  }
+  const ordered = [], waiting = rows.slice(), applied = new Set();
+  while (waiting.length) {
+    const next = waiting.findIndex((item) => !(dependencies.get(item.id) || []).some((id) => !applied.has(id)));
+    if (next < 0) break;
+    const [item] = waiting.splice(next, 1);
+    ordered.push(item);
+    applied.add(item.id);
+  }
+  rows = ordered.concat(waiting);
+  /* v742: WHAT EACH ROW HAS MOVED SO FAR IN THIS BATCH, keyed on the book row, so a second amendment on one row in
+     one batch is struck from where the first left it and not from the book as it stood before the batch: a handover
+     in two stages inside one hour stages two corrections, and the site's running total would have rolled twice. The
+     baseline is the ENGINE's reading, not the raw field: a lot stored without receivedQty is read by poRecvUnits as
+     received in full, and stating that figure must move nothing. */
+  const movedSoFar = new Map();
+  const movedOf = (row, d) => movedSoFar.has(row) ? movedSoFar.get(row) : (d === "BUY" ? E.poRecvUnits(row) : (+row.deliveredQty || 0));
+  /* 28 Sep 2026, s210: AND THE ROW AS THE BATCH LEAVES IT, for the payment rule. Two payments in one batch, or a
+     correction of the total before a payment, are measured one after the other on a copy each accepted amendment is
+     applied to, so the rule reads what the row will say when this item lands, not what it said before the batch. */
+  const simSoFar = new Map();
+  const simOf = (row) => simSoFar.has(row) ? simSoFar.get(row) : JSON.parse(JSON.stringify(row));
+  const reservedEntries = [];
+  const reservationState = book.REWARD ? book : { ...book, REWARD: ctx.reward };
+  for (const it of rows) {
+    const entry = { id: it.id, what: describe(it), does: [] };
+    const r = it.row || {};
+    if (dependencyFaults.has(it.id)) {
+      out.refused.push({ id: it.id, why: dependencyFaults.get(it.id) });
+      continue;
+    }
+    const failedDependency = (dependencies.get(it.id) || []).find((id) => !plannedRegistrations.has(id));
+    if (failedDependency) {
+      out.refused.push({ id: it.id,
+        why: `the approved Add ID ${failedDependency} was refused by the native fold plan; this trade remains staged until its registration can be applied` });
+      continue;
+    }
+    const resourceEntry = it.collection === "repayment" ? { at: it.id,
+      payload: { mode: "repay", loan: r.loan, kg: r.kg, rm: r.rm } } : it.entry;
+    const reservationFault = E.entryReservationFault(resourceEntry, reservedEntries,
+      { state: reservationState, sales: book.sales || [], purchases: book.purchases || [] });
+    if (reservationFault) { out.refused.push({ id: it.id, why: reservationFault }); continue; }
+    /* round six: the fold took row.product verbatim, so a row folded under an unregistered
+       product shipped to the phone as a ledger line while every total excluded it. This is
+       the third-product bootstrap path (the drafter refuses the first lot, so it is
+       hand-folded, and hand-folding is where registration gets forgotten). */
+    if (!it.amends && ["sales", "purchases", "count", "loss", "lostDemand", "priceset"].includes(it.collection)) {
+      const pr = prodOf(r);
+      if (!((book.PRODUCTS || {})[pr])) { out.refused.push({ id: it.id, why: `${pr} is not a product on this book: register it in PRODUCTS and PROD_ORDER (and give it a quote) before its rows fold` }); continue; }
+    }
+    if (it.amends) {
+      const dir = (it.entry && it.entry.payload && it.entry.payload.direction) || "SELL";
+      /* 05 Oct 2026 (A4): a lot's Payment, Receipt and Default fold; Linked and Rewarded stay a person's. */
+      const buyKind = ["Payment", "Receipt", "Default"].includes(it.amendKind) && dir === "BUY";
+      if (!buyKind && it.amendKind !== "Fulfilment" && it.amendKind !== "Cancellation" && it.amendKind !== "Modification" && it.amendKind !== "Correction") { out.refused.push({ id: it.id, why: `${it.amendKind || "nameless"} amendment: what changed is a judgement, left for a person` }); continue; }
+      const arr = dir === "BUY" ? book.purchases : book.sales;
+      /* BY rid FIRST (25 Aug 2026). ovKey is party|date|total, which names a row only for as
+         long as none of those three changes. A correction changes exactly those, and two
+         SA5-BTR lots already share one key, so an id that survives an edit is the only thing
+         that can name a row for an editor. ovKey stays as the fallback, so anything queued
+         before rids existed still folds. */
+      const byRid = arr.filter((x) => x && x.rid && x.rid === it.amends);
+      const hits = byRid.length ? byRid : arr.filter((x) => E.ovKey(x) === it.amends);
+      if (hits.length !== 1) { out.refused.push({ id: it.id, why: hits.length ? `key ${it.amends} matches ${hits.length} rows` : `no row on the book matches ${it.amends}` }); continue; }
+      /* v347: A CANCELLED ORDER IS NOT A TARGET. The match was by key alone, so a fulfilment
+         queued against an order that has since been cancelled would fold straight onto it and
+         quietly bring it back: cash, units and a date on a row the book says did not happen.
+         Nothing has hit it yet, but v345 cancelled two live pending orders, so the road is
+         open. Reviving a cancelled order is a judgement in any case, which is the same test
+         every other amendment here is measured by.
+
+         NARROWED TO EXCLUDE A CORRECTION, 04 Sep 2026, on his instruction that no undated row
+         may stand on the ledger. The danger v347 named is a movement: cash, units, a date that
+         asserts the order happened. A Correction carries none of those. It moves nothing, and
+         the comment eight lines below says so in terms: "A CORRECTION MOVES NOTHING, so it adds
+         nothing to out.moves and needs no date to be valid: what it changes is what the row SAYS
+         about itself." Refusing it bought no safety and cost the book two rows it could not
+         repair: s108 and s109 were cancelled undated on 24 Aug 2026, and from that moment there
+         was no route to date them. Queue the correction, the plan refuses it, every time.
+
+         THE TWO GUARDS FOR THIS QUESTION ALREADY DISAGREED, which is what makes this a fix
+         rather than a loosening. applyAmend below refuses only cash or units on a cancelled row,
+         and its v434 comment states the policy outright: "A Correction, a Modification and a
+         repeat Cancellation are still allowed on a cancelled row, because restating the record
+         of one is not the same as moving goods against it." The suite has asserted that at the
+         apply layer since v434. This guard sat in front of it and blocked the call, so the
+         stated policy could never run. v347 was written first and never swept when v434 refined
+         it: the twin, again.
+
+         MODIFICATION AND REPEAT CANCELLATION STAY REFUSED HERE, which is narrower than v434's
+         comment describes, and deliberately so. A Modification restates qty and total, which is
+         a figure and not a record, and nothing on the book needs it today. The gap between the
+         two guards is left listed rather than taken, because widening it further has no reason
+         behind it yet and this fold has one. */
+      if (hits[0].cancelled && it.amendKind !== "Correction") { out.refused.push({ id: it.id, why: `the row at ${it.amends} is cancelled; reviving it is a judgement, left for a person` }); continue; }
+      const pay = (it.entry && it.entry.payload) || {};
+      entry.target = hits[0]; entry.dir = dir;
+      /* v358: A MODIFICATION CARRIES newQty/newTotal, NOT cash/kg. It moves nothing, so it adds
+         nothing to out.moves, and it is described by what it restates the order TO rather than
+         by what moved. */
+      if (it.amendKind === "Correction") {
+        /* A CORRECTION MOVES NOTHING (v739: except what it restates as moved, which rolls the shelf by the
+           difference, below), so it needs no date to be valid: what it changes is what the row SAYS about itself. The patch is read from the
+           ENTRY rather than from the drafted row, because the drafted row is a before-and-after
+           card built for the Approve screen and the entry is what was actually asked for. */
+        const fields = pay.fields && typeof pay.fields === "object" ? pay.fields : null;
+        if (!fields || !Object.keys(fields).length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} carries no fields to set` }); continue; }
+        /* v383: A FIELD THIS BOOK CANNOT CORRECT IS REFUSED, NOT QUIETLY DROPPED. The apply
+           writes only what is in CORRECTABLE, but it built the `mod` line and the trail note
+           from whatever keys the caller supplied, so the two disagreed the moment a key was
+           wrong. A correction naming `customer` rather than `party` was accepted on 27 Aug:
+           it recorded "customer CZ4-TBC to CZ4-MK" in mod, extended the trail, and left the
+           party exactly as it was. A row asserting a change it did not make is worse than a
+           refusal, and it is the one thing a ledger must never do. */
+        const unknown = Object.keys(fields).filter((k) => !E.CORRECTABLE.includes(k));
+        if (unknown.length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} names ${unknown.join(", ")}, which ${unknown.length > 1 ? "are not correctable fields" : "is not a correctable field"} (the party of a row is \`party\`, not \`customer\`)` }); continue; }
+        /* round six: the cancelled/delivered PAIR is a contradiction the desk then chases as
+           money owed. Both fields are individually correctable, so the pair is checked here
+           on the state the correction would leave. The drafter refuses it too; this gate is
+           for a correction that reaches the fold another way. */
+        /* v436: ONE RULER. This gate had a rule of its own, the drafter had a second, and the two
+           readers BELOW -- applyAmend and the desk's ovAmend -- had none at all, so the row editor
+           previewed as applied the correction this line refuses. All four call the engine now. */
+        const cf = E.correctionFaults(hits[0], fields, !((hits[0].supplier !== undefined) || it.collection === "purchases"));
+        if (cf.length) { out.refused.push({ id: it.id, why: `the correction on ${it.amends} was refused: ${cf[0]}` }); continue; }
+        entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
+        /* v739: A CORRECTION THAT RESTATES WHAT MOVED ROLLS THE SHELF BY THE DIFFERENCE. "A correction moves
+           nothing" was written at v358, when a correction could not touch deliveredQty. It has been able to
+           since 25 Aug 2026 (what has actually moved is a thing a person states), seven rows on the book carry
+           one, and a site handover arrives as one (v694). So goods left the shelf on the row and never left the
+           stated figure: s183's 5 unit of 19 Sep. The row is the record of what moved, and the roll follows the
+           record in either direction, so a reversal puts the goods back. The date is the row's own moved-on date
+           where the correction states one, else the correction's day. */
+        const qk = dir === "BUY" ? "receivedQty" : "deliveredQty";
+        if (fields[qk] != null && Number.isFinite(+fields[qk])) {
+          const delta = +((+fields[qk]) - movedOf(hits[0], dir)).toFixed(3);   /* v742: against the batch's running figure */
+          movedSoFar.set(hits[0], +fields[qk]);
+          if (Math.abs(delta) > 0.009) {
+            const who = hits[0][dir === "BUY" ? "supplier" : "customer"];
+            const when = fields[dir === "BUY" ? "receivedOn" : "deliveredOn"] || pay.date || hits[0].date || TODAY;
+            out.moves.push({ product: prodOf(hits[0]), kg: dir === "BUY" ? delta : -delta, who, when, landed: dir === "BUY" });
+            entry.does.push(`roll the shelf by ${Math.abs(delta)} unit, ${delta > 0 ? (dir === "BUY" ? "in from" : "out to") : (dir === "BUY" ? "back to" : "back from")} ${who}: the difference the correction states`);
+          }
+        }
+        const words = Object.keys(fields).map((k) => `${k} to ${fields[k] === null ? "(cleared)" : fields[k]}`);
+        entry.does.push(`correct ${dir === "BUY" ? "lot" : "order"} ${it.amends}: ${words.join(", ")}`);
+        /* v611: SAY WHEN THE ROW CHANGES ACCOUNT. An R2 books to the associate's bucket, so a correction can move a
+           row from the plain code into the bucket without naming either code, and the trail's field list reads the
+           buyer and would not say so. Measured by applying the patch to a copy, the one definition of a correction. */
+        try {
+          const pk = dir === "BUY" ? "supplier" : "customer", sim = JSON.parse(JSON.stringify(hits[0]));
+          applyAmend(sim, entry.pay, dir, null);
+          if (sim[pk] !== hits[0][pk]) entry.does.push(`move ${it.amends} from ${hits[0][pk]} to ${sim[pk]}${E.isBucket(sim[pk]) ? ", the associate's resale account, where an R2 books since v611" : ""}`);
+        } catch (e) { /* the apply refuses it below, with its own reason */ }
+      } else if (it.amendKind === "Modification") {
+        const newQty = +pay.newQty, newTotal = +pay.newTotal;
+        if (!(newQty > 0) || !(newTotal >= 0)) { out.refused.push({ id: it.id, why: `the modification on ${it.amends} carries no valid new quantity and total` }); continue; }
+        /* 08 Sep 2026: AN UNDATED AMENDMENT IS REFUSED, not dated to the order. The draft row carries
+           the target's own date, so `pay.date || r.date` stamped a fulfilment typed today with the day
+           the order was agreed. The drafter refuses a movement with no date; this gate now does too. */
+        if (!pay.date) { out.refused.push({ id: it.id, why: `the modification on ${it.amends} carries no date; an amendment is dated the day it happened, not the day the order was agreed` }); continue; }
+        entry.pay = { date: pay.date, kind: "Modification", cash: 0, kg: 0, newQty, newTotal };
+        entry.does.push(`restate ${dir === "BUY" ? "lot" : "order"} ${it.amends} to ${newQty} unit / RM${newTotal}${pay.date ? " on " + pay.date : ""}`);
+      } else {
+        if (!pay.date) { out.refused.push({ id: it.id, why: `the ${it.amendKind.toLowerCase()} on ${it.amends} carries no date; an amendment is dated the day it happened, not the day the order was agreed` }); continue; }
+        entry.pay = { date: pay.date, kind: it.amendKind, cash: +pay.cash || 0, kg: +pay.kg || 0 };
+        /* 28 Sep 2026, s210: a payment measured before other money reached its row, which would now take the row past
+           what it owes, is refused here on the row as this batch leaves it. The drafted row's cash is what it was
+           measured on; it rides with the payment so applyAmend reads the same rule. */
+        if (r.cash != null && Number.isFinite(+r.cash)) entry.pay.drafted = +r.cash;
+        const pf = E.payFault(simOf(hits[0]), entry.pay.cash, dir !== "BUY", entry.pay.drafted);
+        if (pf) { out.refused.push({ id: it.id, why: `the ${it.amendKind.toLowerCase()} on ${it.amends} was refused: ${pf}` }); continue; }
+        entry.does.push(`${it.amendKind.toLowerCase()} ${entry.pay.cash ? "RM" + entry.pay.cash + " " : ""}${entry.pay.kg ? entry.pay.kg + " unit " : ""}on ${entry.pay.date} against ${dir === "BUY" ? "lot" : "order"} ${it.amends}`);
+      }
+      if (dir !== "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: -entry.pay.kg, who: hits[0].customer, when: entry.pay.date });
+      if (dir === "BUY" && entry.pay.kg > 0.009) out.moves.push({ product: prodOf(hits[0]), kg: +entry.pay.kg, who: hits[0].supplier, when: entry.pay.date, landed: true });
+      if (entry.pay.kg > 0.009) movedSoFar.set(hits[0], +(movedOf(hits[0], dir) + entry.pay.kg).toFixed(3));   /* v742: the batch's running figure follows a fulfilment too */
+      { const s = simOf(hits[0]); try { applyAmend(s, entry.pay, dir, null); } catch (e) { /* the apply refuses it below, with its own reason */ } simSoFar.set(hits[0], s); }
+    } else if (it.collection === "sales" || it.collection === "purchases") {
+      const key = it.collection === "sales" ? "customer" : "supplier";
+      /* v540: EVERY ROW IS DATED (v487), and a pending row is dated to the day it was agreed. A draft
+         made before the drafter learnt that arrives undated; the entry it came from carries the date
+         the phone typed, and that is the row's date. With neither, the fold refuses rather than put
+         an undated row on the book for the gate to throw back.
+         08 Sep 2026: THIS RUNS BEFORE THE REPLAY GUARD, which it used to follow, so an undated draft
+         compared `null` against the book's dates, matched nothing, was then dated, and folded a
+         twin beside the row it replayed. */
+      if (!r.date) {
+        const typed = it.entry && it.entry.payload && it.entry.payload.date;
+        if (!typed) { out.refused.push({ id: it.id, why: "the row carries no date and the entry typed none; every row on the ledger is dated (v487)" }); continue; }
+        r.date = typed;
+        entry.does.push(`date the pending row ${typed}, the day it was agreed, from the entry`);
+      }
+      /* V4a (28 Sep 2026): AND THE PRODUCT. Two lines of one order sheet, a salt and an oil at one size and one figure on
+         one day, are two orders; the second was refused here as a replay and left the batch staged. A replay is the
+         same entry twice, so the same product, as the phone's replayTwin has read it since v526. */
+      const twinOf = (x) => x[key] === r[key] && (x.product || "salt") === (r.product || "salt") && (x.date || null) === (r.date || null) && +x.total === +r.total && +x.qty === +r.qty;
+      /* 08 Sep 2026: AND THE BATCH IS READ AS WELL AS THE BOOK. Two identical approved drafts, from
+         two devices or the laptop road, both matched nothing on the book and both folded. */
+      const dup = (book[it.collection] || []).find(twinOf)
+        || (out.items.find((e) => e.append === it.collection && e.row && twinOf(e.row)) || {}).row;
+      /* v526: THE REPLAY QUESTION IS ASKED ON THE PHONE. An entry that matches a row on the book by
+         party, date, size and total is refused as a replay unless the phone asked and he said it is a
+         second order, which the entry then carries as `second`. Two identical CS6-BS rows on 07 Sep
+         were real; the guard would have refused the second. */
+      const second = !!(it.entry && it.entry.payload && it.entry.payload.second);
+      if (dup && !second) { out.refused.push({ id: it.id, why: `a row for ${r[key]} with the same date, size and total is already on the book${dup.rid ? "" : " or in this batch"}, so this would be a replay` }); continue; }
+      if (dup && second) entry.does.push(`a second order beside ${dup.rid || "the row"} with the same party, date, size and total, marked so at entry on his word`);
+      /* 05 Oct 2026: A TRIP HOLDS TOGETHER on the book it folds into: its rows there and in this batch, with this one */
+      if (it.collection === "sales" && r.trip) {
+        const tf = E.tripFault((book.sales || []).filter((x) => x && x.trip === r.trip)
+          .concat(out.items.filter((e) => e.append === "sales" && e.row && e.row.trip === r.trip).map((e) => e.row), [r]));
+        if (tf) { out.refused.push({ id: it.id, why: tf }); continue; }
+        entry.does.push(`one row of trip ${r.trip}${+r.delivery > 0.005 ? ", carrying its one delivery" : ", its delivery on another row"}`);
+      }
+      entry.append = it.collection; entry.row = r;   /* the row, so a later item in this batch can see it */
+      entry.does.push(`append to ${it.collection} with its note`);
+      const moved = it.collection === "sales" ? (+r.deliveredQty || 0) : (r.pending || r.inTransit ? 0 : (r.receivedQty != null ? +r.receivedQty : +r.qty || 0));
+      if (moved > 0.009) out.moves.push(Object.assign({ product: prodOf(r), kg: it.collection === "sales" ? -moved : +moved, who: r[key], when: r.date || TODAY, landed: it.collection === "purchases" }, it.collection === "sales" && r.trip ? { trip: r.trip } : {}));
+    } else if (it.collection === "count") {
+      entry.count = { product: r.product || "salt", qty: +r.qty, date: r.date || TODAY, was: r.was, drift: r.drift };
+      entry.does.push(`set the stated ${entry.count.product} inventory to ${entry.count.qty} and move COUNT_ON.${entry.count.product} to ${entry.count.date}`);
+    } else if (it.collection === "loss") {
+      entry.append = "selfUseLog"; entry.does.push("append to selfUseLog; it draws stock and books no revenue");
+      if (+r.kg > 0.009) out.moves.push({ product: r.product || "salt", kg: -(+r.kg), who: "loss: " + r.why, when: r.date || TODAY });
+    } else if (it.collection === "loan") {
+      /* v527: a loan in lands on the inventory, a loan out leaves it; both are owed back in kind */
+      entry.append = "loans";
+      entry.does.push(r.form === "cash"   // v589: the move below is guarded on valueKg, so a cash loan moves no inventory
+        ? (r.direction === "in" ? "append to loans as cash borrowed in: it moves the cash flow, not the inventory, and is owed back in cash" : "append to loans as cash lent out: it moves the cash flow, not the inventory, and is owed back in cash")
+        : (r.direction === "in" ? "append to loans as borrowed in: it lands on the inventory and is owed back in kind" : "append to loans as lent out: it leaves the inventory and is owed back in kind"));
+      if (+r.valueKg > 0.009) out.moves.push({ product: r.product || "salt", kg: r.direction === "in" ? +r.valueKg : -(+r.valueKg), who: (r.direction === "in" ? "borrowed from " : "lent to ") + r.party, when: r.date || TODAY });
+    } else if (it.collection === "lostDemand") {
+      entry.append = "lostDemand"; entry.does.push("append to lostDemand; touches no stock and no cash");
+    } else if (it.collection === "roster") {
+      /* ====== v570: THE KIND IS NOT DECORATION ==========================================
+         Add ID has offered "Associate, resells for you (R2)" since v343 and the fold appended
+         the bare code and stopped, so a party registered as an associate was not one: it never
+         reached book.associates, which is the only thing associateIds() reads for an appointment.
+         Every consequence of standing hung off that list and none of them fired -- the Workbench's
+         associate picker, the network bench, the credit cap of 2 unit against retail's 1, and the
+         move off the customer reward table. The option was a label over an act nobody performed.
+
+         AN APPOINTMENT IS ALSO WHY A CODE ALREADY ON THE ROSTER IS NOT A DUPLICATE. A person is
+         registered when they first buy and appointed when he decides, which can be months apart:
+         CR3-DAM bought from 29 Jun and was appointed on 11 Sep. So the already-on-the-roster
+         refusal holds for a plain registration, which really would list the party twice, and
+         becomes the appointment's ordinary road. What it refuses instead is appointing an
+         associate twice, which is the duplicate that matters on this collection.
+
+         THE -R ACCOUNT IS MINTED WITH THE APPOINTMENT, so an associate never has a second act to
+         remember before their first resale can book. v610, HIS RULING OF 13 SEP 2026: EVERY
+         appointment mints it, a referrer's included. Their own buying and their buying to sell on
+         are one stream for the reward and any associate may resell; the engine's appointBucket is
+         the one answer this, the drafter and the Add ID preview all read. */
+      const partner = r.partner === true;
+      if (r.partner != null && !partner) { out.refused.push({ id: it.id, why: "partner is true or absent" }); continue; }
+      const appoints = !!APPOINTS[r.kind] && !(partner && (book.associates || []).includes(r.code));   // a partner already appointed is not appointed twice
+      const onRoster = (book.roster || []).includes(r.code);
+      if (partner && (!APPOINTS[r.kind] || !onRoster)) { out.refused.push({ id: it.id, why: `${r.code} must be on the roster and appointed on an associate kind to be made a partner` }); continue; }
+      if (partner && (book.partners || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already a partner` }); continue; }
+      if (onRoster && !appoints && !partner) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
+      if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
+      const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
+      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => driftBooks().includes(p) ? !PRICING_ENGINE.driftOk(rt[p]) : !tierNames().includes(rt[p]));   /* 05 Oct 2026: a drift on a drift book, a level on any other */   // v645, per product since v646
+      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLevel(rt[p]) + (driftBooks().includes(p) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ")}` }); continue; }
+      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null, partner };
+      if (partner) entry.does.push(`make ${r.code} a partner: they pay cost, the floor to the sen, on every book; they keep every associate property`);
+      if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
+      if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
+      if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life, on the next free spare account where there is one`);
+      /* THE FIGURES ARE NOT RESTATED HERE. The reward hurdles and the credit caps are the
+         engine's (REWARD.hurdleMultiple, RULES.creditUnits), and a second copy in the fold's
+         prose is a second copy that will differ. What the line says is which rules start
+         reading them, which is the part that is true whatever the numbers are. */
+      if (appoints) entry.does.push(`appoint ${r.code} an associate: R2 and R3 credit reaches them, their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench`);
+      if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, which holds what they buy to sell on`);
+    } else if (it.collection === "priceset") {
+      /* v354: A PRICE EDIT MOVES NO STOCK AND NO CASH. It REPLACES that product's entry in
+         PRICE_SET rather than merging into it, so the form on the desk is the whole statement of
+         what he wants the board to be and a price he cleared is actually cleared. */
+      const prod = r.product || "salt";
+      if (!(book.PRODUCTS || {})[prod]) { out.refused.push({ id: it.id, why: `${prod} is not a product on this book` }); continue; }
+      entry.priceset = { product: prod, prices: r.prices || {}, hide: r.hide || [] };
+      const n = Object.keys(r.prices || {}).length;
+      entry.does.push(`set ${n} price${n === 1 ? "" : "s"} on the ${prod} board${(r.hide || []).length ? ` and hide ${r.hide.join(", ")} unit` : ""}; it moves no stock and no cash`);
+    } else if (it.collection === "repayment") {
+      /* v595: A REPAYMENT IS WRITTEN ON ITS LOAN, named by rid, and the loan settles when nothing is left owing.
+         Earlier repayments of the same loan in this batch count, so two approvals cannot repay it twice. */
+      const loan = (book.loans || []).find((l) => l && l.rid === r.loan);
+      if (!loan) { out.refused.push({ id: it.id, why: `no loan ${r.loan} is on the book` }); continue; }
+      if (loan.status === "settled") { out.refused.push({ id: it.id, why: `loan ${r.loan} is already settled` }); continue; }
+      const cashL = loan.form === "cash", amt = +(cashL ? r.rm : r.kg);
+      const paid = (loan.repaid || []).reduce((a, x) => a + (+(cashL ? x.rm : x.kg) || 0), 0)
+        + out.items.filter((e) => e.repay && e.repay.rid === r.loan).reduce((a, e) => a + (+(cashL ? e.repay.rm : e.repay.kg) || 0), 0);
+      const owed = +((cashL ? +loan.valueRM : +loan.valueKg) - paid).toFixed(2);
+      if (!(amt > 0) || amt > owed + 0.005) { out.refused.push({ id: it.id, why: `repays ${amt} against ${owed} still owing on ${r.loan}` }); continue; }
+      const settles = owed - amt < 0.005;
+      entry.repay = { rid: r.loan, date: r.date, kg: cashL ? null : amt, rm: cashL ? amt : null, settles };
+      entry.does.push(`record the repayment on loan ${r.loan}${settles ? " and settle it" : `, leaving ${+(owed - amt).toFixed(2)} owing`}`);
+      if (!cashL) out.moves.push({ product: loan.product || "salt", kg: loan.direction === "in" ? -amt : +amt, who: (loan.direction === "in" ? "repaid to " : "repaid by ") + loan.party, when: r.date || TODAY });
+    } else if (it.collection === "place") {
+      /* v633: where parties are on the map, as points; checked against the book it folds into */
+      const codes = Object.keys(r.places || {}), off = codes.filter((c) => !(book.roster || []).includes(c));
+      if (!codes.length || off.length) { out.refused.push({ id: it.id, why: codes.length ? `${off.join(" and ")} is not on the roster` : "a place entry names no party" }); continue; }
+      entry.place = r.places;
+      entry.does.push(`file ${codes.join(", ")} as ${codes.length === 1 ? "a point" : "points"} on the map, about a kilometre each`);
+    } else if (it.collection === "tierset") {
+      /* v643: a customer's tier for each product (v646), checked against the book it folds into and the level names the
+         master states; a null clears the product's tier */
+      const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
+      const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
+      /* v670: a tier may be a band set, so the check is the engine's shape rule rather than a name lookup */
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a drift, -1 to +1, on a drift book, held as a tier was; a level on any other */
+      if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
+        out.refused.push({ id: it.id, why: !codes.length ? "a tier entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
+          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLevel(x[2]) + (driftBooks().includes(x[1]) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ") });
+        continue;
+      }
+      entry.tiers = r.tiers;
+      entry.does.push(`set ${pairs.map(([c, p, v]) => `${c}'s ${p} tier to ${sayLevel(v)}`).join(", ")}`);
+    } else if (it.collection === "rename") {
+      /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
+         between the draft and the fold. What moves is the engine's renamePairs, as on the card. */
+      const roster = book.roster || [];
+      if (!roster.includes(r.from)) { out.refused.push({ id: it.id, why: `${r.from} is not on the roster, so there is nothing to rename` }); continue; }
+      if (E.isBucket(r.from) || !r.to || r.to === r.from) { out.refused.push({ id: it.id, why: `${r.from} to ${r.to} is not a rename this fold takes` }); continue; }
+      const pairs = E.renamePairs(roster, r.from, r.to);
+      const taken = pairs.map((x) => x[1]).filter((c) => roster.includes(c));
+      if (taken.length) { out.refused.push({ id: it.id, why: `${taken.join(" and ")} already belongs to another party` }); continue; }
+      const pinned = pairs.map((x) => x[0]).filter(pinnedInMaster);
+      if (pinned.length) { out.refused.push({ id: it.id, why: `${pinned.join(" and ")} is written into the desk's own code, which a fold never edits, so this rename is left for a hand fold` }); continue; }
+      entry.rename = { from: r.from, to: r.to, pairs, geo: r.geo || null };
+      entry.does.push(`re-key ${pairs.map((x) => x[0] + " to " + x[1]).join(" and ")} wherever the book holds the code, after every other row in this batch; notes and history keep the old code`);
+      entry.does.push("move the statement account to the new code, its username unchanged, with any place override and the suite's fixtures");
+    } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
+    out.items.push(entry);
+    if (it.collection === "roster" && registrationIds.has(it.id)) plannedRegistrations.add(it.id);
+    if (resourceEntry) reservedEntries.push(resourceEntry);
+  }
+  /* 05 Oct 2026: A TRIP IS STAGED TOGETHER. A refused row of a trip holds back its siblings in this batch, so the row that
+     carries the delivery is never left behind while the others land with no charge. They stay staged with it. */
+  const tripOf = new Map(rows.map((it) => [it.id, it.collection === "sales" && it.row && it.row.trip]));
+  const held = new Set(out.refused.map((x) => tripOf.get(x.id)).filter(Boolean));
+  if (held.size) {
+    out.items = out.items.filter((e) => {
+      const tr = e.append === "sales" && e.row && e.row.trip;
+      if (!tr || !held.has(tr)) return true;
+      out.refused.push({ id: e.id, why: `another row of trip ${tr} was refused, so this one waits with it` });
+      return false;
+    });
+    out.moves = out.moves.filter((m) => !(m.trip && held.has(m.trip)));
+  }
+  return out;
+}
+
 /* what a planned batch does to a book (applyBatch: a clone of it, and the argument untouched): the rows in plan order, then the renames, then the roll (a count is its own row, a roll
-   is for what physically moved). Returns { book, plan, folded, newest, moves, renames }; the argument is untouched. */
+   is for what physically moved). Returns { ok: true, book, plan, folded, newest, moves, renames }, or { ok: false, problems } when the plan refuses anything
+   or a new row has no note; the arguments are untouched. */
 export function applyBatch(book0, staged, notes, ctx) {
   const book = structuredClone(book0), st = structuredClone(staged);   /* neither argument is aliased by the result */
-  const p = ctx.plan(book, st, notes);
+  const p = planBatch(book, st, notes, ctx);
   /* all or nothing, as the fold has always been: a refusal, or a new row with no note, folds nothing */
   const problems = p.refused.map((x) => `${x.id}: ${x.why}`);
   for (const it of p.items) {

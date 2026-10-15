@@ -1,0 +1,8 @@
+[
+ {
+  "name": "payFault is not asked of a payment in the plan",
+  "file": "engine/apply.mjs",
+  "find": "if (pf) { out.refused.push({ id: it.id, why: `the ${it.amendKind",
+  "replace": "if (false && pf) { out.refused.push({ id: it.id, why: `the ${it.amendKind"
+ }
+]

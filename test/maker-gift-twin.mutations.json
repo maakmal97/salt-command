@@ -11,7 +11,7 @@
     "find": "status IN ('pending','approved')\").all();\n    const waitingEntries", "replace": "status IN ('approved')\").all();\n    const waitingEntries" },
   { "name": "approved drafts not counted", "file": "src/worker.js",
     "find": "status IN ('pending','approved')\").all();\n    const waitingEntries", "replace": "status IN ('pending')\").all();\n    const waitingEntries" },
-  { "name": "the fold's replay guard dropped", "file": "tools/fold.mjs",
+  { "name": "the fold's replay guard dropped", "file": "engine/apply.mjs",
     "find": "if (dup && !second) {", "replace": "if (false && dup && !second) {" },
   { "name": "form never asks the booked question", "file": "stmt/owner.js",
     "find": "await makerSecond(send,'/all/maker/inputs/gift',body,'gift');", "replace": "await send('/all/maker/inputs/gift',body);" },

@@ -28,5 +28,17 @@
   "file": "engine/apply.mjs",
   "find": "st = structuredClone(staged);",
   "replace": "st = staged;"
+ },
+ {
+  "name": "the replay twin refusal is removed",
+  "file": "engine/apply.mjs",
+  "find": "if (dup && !second) {",
+  "replace": "if (false && dup && !second) {"
+ },
+ {
+  "name": "planBatch ignores ctx.today",
+  "file": "engine/apply.mjs",
+  "find": "const TODAY = ctx.today,",
+  "replace": "const TODAY = \"2000-01-01\","
  }
 ]
