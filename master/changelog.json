@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1119",
+  "d": "15 Oct 2026",
+  "t": "S267 CASH REVERSED; TWO FULFILMENTS SETTLE CS6-PER; S262 DELIVERED AT RM540",
+  "n": [
+   "<b>FOLDED: ONE REVERSAL, TWO SETTLEMENTS, ONE DELIVERY.</b> s267 for CS6-BS-R returns to RM0 cash and no paid date, so RM220 is open again. CS6-PER pays RM116 on s265 and RM110 on s266, both settled in full. s262 for CC9-OKR is corrected from RM575 to RM540 and 6.25 unit go out collected, unpaid.",
+   "<b>UNUSUAL: AN ADVANCE AND A CAP NOT IN THE DOSSIER.</b> The s262 delivery is on credit, and no credit cap for CC9-OKR appears in the dossier. Salt stock rolls down by 6.25 unit, to 17.14 as stated, with the stock cost unchanged at RM56 a unit. The two CS6-PER rows are cash only, with no stock move."
+  ]
+ },
+ {
   "v": "v1118",
   "d": "15 Oct 2026",
   "t": "ORDER STEP PER BOOK, AND SPARE RETIRED",
