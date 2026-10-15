@@ -23,10 +23,20 @@ he wants one, it is asked for in so many words:
 node tools/make_statements.mjs statements/2026-10 2026-10-01 --new-issue
 ```
 
-**What is untouched:** the issues already sealed and sent (August and September) still publish and
-still open on the page, because a dated record is not corrected in place; `--archive` of a past month
-is not an issue and still works; and the LIVE statement, the price list, the associate's card and the
-account mint all run on every publish exactly as before.
+**Past statements are gone from the customer (15 Oct 2026, his instruction: "remove Past Statements from each user
+account; there is only one live statement, and users can use the months or date ranges or products filter").** The page
+stopped drawing an earlier statement in v1105 (14 Oct). From this version nothing a customer can reach carries one
+either: `liveRecords` (`tools/make_statements.mjs`) seals each record's bundle again with **no statements** after it has
+proved the key on the old one, and drops the clear `issues` list, so the store holds no monthly issue; the Worker no
+longer sends `issues` on any open (`issued`, one date, stays for the owner's list and the publish read-back); the test
+account's bundle is empty too and its one document is the live one. The page keeps its filter on the first statement
+only as a cut for a record not yet republished. **How the existing sealed issues are left:** `statements/2026-08` and
+`statements/2026-09` stay on disk exactly as issued (dated records, never rewritten) and the owner's page keeps them
+at the foot; only the publish stops carrying them, so the old text a customer's record held is gone from the store at
+the next publish, and a publish with no `STMT_KEY` (or a record the key does not open) leaves such a record as it was.
+Still working: `--archive` of a past month, `--new-issue` for a dispute (its file is the owner's, never published to a
+customer), and the LIVE statement with its month, range and product filters, the price list, the associate's card and
+the account mint, on every publish as before.
 
 ## The gate, first and most important
 
@@ -190,7 +200,7 @@ own position under the list does not move with the filter.
 **Account** (S7 7.3, his "all recommended" of 24 Sep 2026). The live document's orders and refunds are
 the system's Statement lines (`.salt-lines`, stacked on a phone, a table from about 600px of the list's
 own width), "units" above one; an issue is a standalone file and keeps its table. **The account is the live
-document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter, kept on disk and on
+document or nothing** (C15 and C13, his yes of 29 Sep 2026): the sealed issues are off the Counter and out of every published record (15 Oct 2026), kept on disk and on
 his own page, where they sit at the foot by date; a live document that will not open says so with Try again, one the
 publish wrote none of says the account shows after the next update, and neither is ever an issue drawn in its place.
 A re-read that meets either keeps the hold where it last stood; a first open has no last state, so the gate is open
@@ -234,7 +244,7 @@ and a shut link are keyed but English only (no script); `stmt/send.js` is unkeye
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
 with the username filled in; the password goes by a different channel. The page checks the
-pair, decrypts in his own browser, and opens on **"Now"**, with every issue by its date at the foot. It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
+pair, decrypts in his own browser, and opens on **"Now"**, the live statement alone (no issue is listed; 15 Oct 2026). It stays signed in on that device while Keep me signed in is ticked, and Log out ends it (v692); until 18 Sep 2026 it locked after three minutes and asked for the password again, as often as
 he likes.
 
 **A passkey opens it too (Step 6, his decisions of 29 Sep 2026).** Signed in, This device offers **Save a passkey**; the
@@ -255,8 +265,8 @@ passkey is a credential, not fixture data, and counts nowhere.
 **"Now" is live (his instruction, 03 Sep 2026): every entry from the start to the minute it was
 written.** The deploy rewrites it after every fold, so an approved row reaches the customer's
 page in the same run that reaches the phone. Its heading names that minute in Kuala Lumpur
-time. The dated issues beside it are the monthly statements exactly as sent, the August archive
-included, and they never change.
+time. There are no dated issues beside it for a customer any more (15 Oct 2026); the sealed ones
+stay on disk as sent and never change.
 
 **The account closes in stages (V5, his answers of 29 Sep 2026).** Counted from the handover of the oldest part still
 overdue (`since`), on the phone's own Kuala Lumpur day: past the term, day 2, no new order (the hold); from `pay.hide`
