@@ -11322,6 +11322,8 @@ await (async () => {
   catch (e) { gate = { code: e.status, out: String(e.stdout || "") }; }
   ok(gate.code === 1 && /FAIL  the book in the master is ledger\/book\.json/.test(gate.out) && !/public\/ is what this master builds/.test(gate.out), "a master whose book block is not the file fails the gate there, and the build check never runs");
   /* green, proved to print: v522 shipped a gate whose main-module check failed on Linux, so it printed nothing and passed */
+  /* the Build section above rebuilt public/ from the FROZEN master; the gate's last check compares it with the LIVE one, so build it from the live master first (this also leaves public/ as committed) */
+  exG(process.execPath, [join(REPO, "tools", "build.mjs")], { cwd: REPO, stdio: "pipe", env: liveEnv() });
   let green;
   try { green = { code: 0, out: exG(process.execPath, [join(REPO, "tools", "gate.mjs")], { cwd: REPO, encoding: "utf8", stdio: "pipe", env: liveEnv() }) }; } catch (e) { green = { code: e.status, out: String(e.stdout || "") }; }
   ok(green.code === 0 && (green.out.match(/^  ok    /gm) || []).length >= 10 && /GATE OK in \d/.test(green.out), "on the real master the gate runs every check, says so, and passes (" + (green.out.match(/^  ok    /gm) || []).length + " checks)");
