@@ -1,5 +1,18 @@
 [
  {
+  "v": "v1125",
+  "d": "16 Oct 2026",
+  "t": "COUNTER ADMIN: THE APPROVE CARD, FOR A PERSON",
+  "n": [
+   "<b>THE HEAD SAYS WHOSE ROW AND FROM WHERE.</b> The row, the customer's code (read off the draft, so a correction never reads \"no code\"), the book's mark, and whether the entry came from Counter Admin, the site, the laptop or the phone, with its time.",
+   "<b>ONE PLAIN VERB.</b> Take back a payment, Payment received, Handover, Change the price, Close the order, New sale, Fix a row; Correction and Fulfilment stand only in Details.",
+   "<b>NOW AND AFTER.</b> Paid, Owed and Handed over, only what changes marked, worked out on the Desk off the mirror and the engine (src/approve-figures.js); the Counter computes no money.",
+   "<b>TWO LINES AT MOST, AND ONLY THOSE THAT ASK.</b> Over the credit ceiling (or under it, when a move on a booked row raises what is owed), under the floor, a refund opening, stock below zero, a twin; in sentence case. Every flag, the drafter's note and the row stand under Details.",
+   "<b>ONE CARD AND ONE APPROVE AN ORDER.</b> Drafts on one row, or one trip, are one card; its Approve sends each draft's own approval in the order entered and stops at the first refusal, naming it; a move left after a partial approval says Half approved. A customer's claim stands alone. Needs you holds the same cards.",
+   "<b>THE BUTTON SAYS THE RESULT.</b> \"Approve: s262 closed\", \"Approve: s267 owes RM 220.00\". Plan 2 of docs/plans-counter-admin.html; the drafter, the fold and what one approval does are unchanged."
+  ]
+ },
+ {
   "v": "v1124",
   "d": "16 Oct 2026",
   "t": "CORRECTION TO S263 CUTS THE TOTAL FROM RM80 TO RM65; NO STOCK MOVES",
