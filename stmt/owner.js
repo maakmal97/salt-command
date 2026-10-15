@@ -4664,6 +4664,12 @@ export const OWNER_JS = `
       var b=ghost(['Record payment','need.owed-pay',m.party]); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
     });
   }
+  function goodsNeed(r){
+    return item('soon','orders','To hand over','g:'+r.rid, r.date||'', {who:r.party, mark:r.product, what:units(r.units)+' paid, not handed over',
+      why:r.date?'Ordered '+fmtWhen(r.date)+'.':'', open:function(){ owedGo(r,'[data-act="order.handed-units"]'); }}, function(c){
+      var b=ghost(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-act="order.handed-units"]'); }); c._add(b);
+    });
+  }
   /* the Watch cards: the Desk's own count as it last told this site, an override in force, a notice set */
   function deskNeed(){
     var dn=deskWait.n||0, dAt=deskWait.at?', as of '+when(deskWait.at):'';
@@ -4768,6 +4774,7 @@ export const OWNER_JS = `
     (makerData&&makerData.queue||[]).filter(function(e){ return e.state==='refused'; }).forEach(function(e){ L.push(entryNeed(e, 'q:'+e.id)); });
     if(unreadableKeys().length) L.push(unreadableNeed(unreadableKeys()));
     if(owed) owed.money.forEach(function(m){ if(m&&m.rows&&m.rows.length) L.push(moneyNeed(m)); });
+    if(owed) owed.goods.forEach(function(r){ if(r&&r.rid) L.push(goodsNeed(r)); });
     unsentList().forEach(function(u){ L.push(unsentNeed(u)); });
     /* a link he has just moved stays where he tapped it, saying what happened, and is no longer counted */
     links.filter(function(r){ return waitingLink(r)||(moved&&moved.id===r.id&&!r.standing&&r.by); }).forEach(function(r){ L.push(linkNeed(r)); });
