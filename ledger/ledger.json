@@ -1,6 +1,6 @@
 {
- "v": "v1122",
- "stamped": "15 Oct 2026, 22:42 KL",
+ "v": "v1123",
+ "stamped": "15 Oct 2026, 23:17 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -8451,7 +8451,7 @@
   ],
   "QUEUE_COMMITTED": "2026-10-15T14:41:26.812Z",
   "PRICING": {
-   "takenAt": "2026-10-15T14:42:16.081Z",
+   "takenAt": "2026-10-15T15:17:50.915Z",
    "sizes": [
     0.5,
     1,
@@ -15422,10 +15422,10 @@
      ]
     }
    },
-   "v": "v1122"
+   "v": "v1123"
   },
   "OPEN": {
-   "at": "2026-10-15T14:42:16.722Z",
+   "at": "2026-10-15T15:17:51.553Z",
    "count": 11,
    "byKey": {
     "CS6-BS-R|2026-10-15|220": {
@@ -15662,7 +15662,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1122"
+   "v": "v1123"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15670,7 +15670,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1122"
+   "v": "v1123"
   },
   "REWARD": {
    "stated": {
@@ -15682,7 +15682,7 @@
      }
     }
    },
-   "v": "v1122"
+   "v": "v1123"
   }
  }
 }

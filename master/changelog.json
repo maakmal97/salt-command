@@ -1,5 +1,17 @@
 [
  {
+  "v": "v1123",
+  "d": "15 Oct 2026",
+  "t": "COUNTER ADMIN: NEEDS YOU TELLS THE TRUTH",
+  "n": [
+   "<b>A READ THAT FAILED LEADS THE PAGE.</b> \"Couldn't read orders and rows.\" stands above the title with a Retry, which reads every failed source again, and \"Nothing needs you\" is said only when every read got through.",
+   "<b>ONE BAD QUEUE KEY NEVER BLANKS THE REVIEW.</b> The Desk's queue review skips a malformed device key and names it by its key; nothing is offered for withdrawal while one stands, and the withdrawal stays strict.",
+   "<b>MONEY OWED PAST TERM IS A SOON CARD.</b> One a customer, oldest first, the engine's txAdvance past TERMS.holdDays, read off the Desk's catalog (owedBothWays); Record payment opens the site order's Money received, or Correct a row on a Desk row.",
+   "<b>GOODS PAID FOR AND NOT HANDED OVER ARE A SOON CARD.</b> One a row, with Handover opening the order's handover or Correct a row.",
+   "<b>THE DESK'S BARE COUNT IS NO LONGER A CARD.</b> Every kind it counted is a card of its own."
+  ]
+ },
+ {
   "v": "v1122",
   "d": "15 Oct 2026",
   "t": "CM4-MK SALT DRIFT SET TO +0.3",

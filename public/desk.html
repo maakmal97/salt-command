@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="5e092ba2d9e1c917";
+var SALT_BUILD_ID="5c42473229db6c1b";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -9439,7 +9439,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1122","d":"15 Oct 2026","t":"CM4-MK SALT DRIFT SET TO +0.3","n":["<b>ONE TIER SET, NO CASH, NO STOCK.</b> The fold applied a single tier change on 15 Oct 2026: CM4-MK's salt drift is now +0.3. A drift moves that customer's own price and never the board, so no other party's rate changes. The drafter raised no flags, and the dossier gives no reason for the change, so none is stated here.","<b>INVENTORY UNTOUCHED.</b> No lot landed, no sale was booked and no count was taken. Stock stays at 9.89 units and the cost basis is unchanged at RM56 a unit."]}];
+const evolution=[{"v":"v1123","d":"15 Oct 2026","t":"COUNTER ADMIN: NEEDS YOU TELLS THE TRUTH","n":["<b>A READ THAT FAILED LEADS THE PAGE.</b> \"Couldn't read orders and rows.\" stands above the title with a Retry, which reads every failed source again, and \"Nothing needs you\" is said only when every read got through.","<b>ONE BAD QUEUE KEY NEVER BLANKS THE REVIEW.</b> The Desk's queue review skips a malformed device key and names it by its key; nothing is offered for withdrawal while one stands, and the withdrawal stays strict.","<b>MONEY OWED PAST TERM IS A SOON CARD.</b> One a customer, oldest first, the engine's txAdvance past TERMS.holdDays, read off the Desk's catalog (owedBothWays); Record payment opens the site order's Money received, or Correct a row on a Desk row.","<b>GOODS PAID FOR AND NOT HANDED OVER ARE A SOON CARD.</b> One a row, with Handover opening the order's handover or Correct a row.","<b>THE DESK'S BARE COUNT IS NO LONGER A CARD.</b> Every kind it counted is a card of its own."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9583,7 +9583,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='15 Oct 2026, 22:42 KL';
+const LAST_UPDATED='15 Oct 2026, 23:17 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
