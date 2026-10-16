@@ -142,7 +142,7 @@ function leakCharge(C,p){
   const inWin=d=>!!d&&(start==null||d>start)&&d<=end;
   const sold=pSales(C.B,p).filter(s=>!s.cancelled).reduce((a,s)=>{
     let got=0,tr=0;
-    (s.amend||[]).forEach(st=>{const k=+st.kg||0;if(st.kind!=='Fulfilment'||!(k>0))return;tr+=k;if(inWin(st.date||s.date))got+=k;});
+    (s.amend||[]).forEach(st=>{const k=+st.kg||0;if(st.kind!=='Fulfilment'||st.undone||!(k>0))return;tr+=k;if(inWin(st.date||s.date))got+=k;});
     const rest=(+s.deliveredQty||0)-tr;
     if(rest>0&&inWin(s.deliveredOn||s.date))got+=rest;
     return a+got;},0);

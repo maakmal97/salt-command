@@ -237,7 +237,7 @@ function placeEntry({at,places,party=null,raw}){
     payload:{mode:'place',places}};
 }
 function ledgerAmendmentEntry({at,row,direction,kind,date,cash=0,movedUnits=0,fields,
-  party=direction==='BUY'?row.supplier:row.customer,note=null,raw,status,orderCode=null,sameDay=date===row.date}){
+  party=direction==='BUY'?row.supplier:row.customer,note=null,raw,status,orderCode=null,sameDay=date===row.date,undo=null}){
   if(!['Correction','Fulfilment','Cancellation','Modification','Default'].includes(kind)
     && !(direction==='BUY'&&['Payment','Receipt'].includes(kind)))
     throw new Error('This amendment kind is retired or unsupported.');
@@ -247,7 +247,7 @@ function ledgerAmendmentEntry({at,row,direction,kind,date,cash=0,movedUnits=0,fi
     raw:raw===undefined?kind+' against '+row.rid+' for '+party+' on '+date:raw,
     payload:{mode:'amend',direction,party,product:row.product||'salt',rid:row.rid||null,orderKey:ovKey(row),
       date,kind,orderCode,linkTo:null,assoc:null,downstream:null,sameDay,note,
-      ...(correction?{fields:{...fields},qty:0,total:0,cash:0,kg:0}
+      ...(correction?{fields:{...fields},qty:0,total:0,cash:0,kg:0,...(undo!=null?{undo}:{})}
         :mod?{newTotal:cash,newQty:movedUnits,wasTotal:row.total,wasQty:row.qty,qty:null,total:null,cash:null,kg:null}
         :cancel?{qty:null,total:null,cash:null,kg:null}
         :{qty:movedUnits,total:cash,cash,kg:movedUnits})}};
@@ -324,7 +324,7 @@ function txUnpaidSince(s){
    row's own date, no step or deliveredOn naming one. */
 function txHandSteps(s){
   const phys=txPhys(s);
-  const steps=(s.amend||[]).filter(a=>a&&a.date&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)))
+  const steps=(s.amend||[]).filter(a=>a&&a.date&&!a.undone&&((a.kind==='Fulfilment'&&+a.kg>0.0001)||(a.kind==='Correction'&&Math.abs(+a.kg||0)>0.0001)))
     .map(a=>({d:String(a.date),u:+a.kg,dated:true}));
   const rest=phys-steps.reduce((t,x)=>t+x.u,0);
   if(rest>0.0001)steps.push({d:s.deliveredOn||s.date||'',u:rest,dated:!!s.deliveredOn});
@@ -354,7 +354,7 @@ function payDelays(sales,party,today,rules){
     const t=txDates(s);
     if(t.fullPaid&&t.pSrc==='stated'){out.push(Object.assign(base,{on:t.pOn,days:Math.max(0,dayNo(t.pOn)-dayNo(first)),open:false}));return;}
     if(t.fullPaid&&t.pSrc==='trail'){
-      const p=txPrice(s),steps=(s.amend||[]).filter(a=>a&&+a.cash>0.0001).map(a=>({d:String(a.date||s.date),rm:+a.cash}));
+      const p=txPrice(s),steps=(s.amend||[]).filter(a=>a&&!a.undone&&+a.cash>0.0001).map(a=>({d:String(a.date||s.date),rm:+a.cash}));
       const first$=txPaid(s)-steps.reduce((a,x)=>a+x.rm,0),pays=(first$>0.009?[{d:String(s.date),rm:first$}]:[]).concat(steps)
         .sort((a,b)=>a.d.localeCompare(b.d));
       let days=0,cum=0,paid=0,i=0;
@@ -467,7 +467,7 @@ function txStat(t){
   return {order,cls,pay,deliv};
 }
 function txDates(s){
-  const am=s.amend||[];
+  const am=(s.amend||[]).filter(a=>a&&!a.undone);   /* plan 4: a step undone moved nothing */
   const unitSteps=am.filter(a=>a.kind==='Fulfilment'&&+a.kg>0.0001);
   const cashSteps=am.filter(a=>+a.cash>0.0001);
   const phys=txPhys(s), eff=txEffDeliv(s), paid=txPaid(s);
@@ -1248,6 +1248,68 @@ function refundStale(list,row){
   const x=Math.min(open,had-(paid-owed));
   return x>0.009?+x.toFixed(2):0;
 }
+/* ====== PLAN 4, EASY REVERT (16 Oct 2026; his answers: the newest move only, and a site order's customer told by a banner) ======
+   A ROW'S MOVES are the steps of its trail booked after the row itself (step 0 is the row as booked): a payment or a handover, which a
+   Fulfilment carries, and a Correction, which since this version says what it replaced (`was`). An undo is itself a Correction, whose step
+   names the step it undoes (`undoes`) and marks that step `undone`, which every reader of the trail then passes over; neither is a move.
+   undoOf reads the NEWEST move and nothing else, so undos peel back in order, and says what undoing it sets, as the absolute figures a
+   Correction carries: the drafter, the fold and Counter Admin's sheet each call it, and the fold refuses an undo whose figures differ.
+   A payment: cash less it, and paidOn cleared once what remains is under what is owed. A handover: deliveredQty less its units, and
+   deliveredOn and handover cleared at none. A Correction: the figures it replaced, read off its own step, and only cash, payment and
+   handover dates, units, the order's terms and its cost; a payment in kind, a party, a trip or anything else is undone by hand, as is a
+   step of a kind no undo reads (a Modification, a Cancellation, a link). A price is never written by an undo but a Correction's own
+   `was`. A cancelled or defaulted row is undone by hand. */
+const UNDO_FIELDS=['cash','paidOn','deliveredQty','deliveredOn','handover','qty','total','delivery','cost','unpriced'];
+function rowMoves(row){
+  const am=(row&&row.amend)||[],out=[];
+  am.forEach((a,i)=>{
+    if(!i||!a||a.undoes!=null)return;
+    const c=+a.cash||0,k=+a.kg||0;
+    out.push({i,date:a.date||null,kind:a.kind,cash:c>0.009?+c.toFixed(2):0,kg:Math.abs(k)>0.0009?+k.toFixed(4):0,
+      was:a.was&&typeof a.was==='object'?Object.assign({},a.was):null,undone:!!a.undone});
+  });
+  return out;
+}
+function undoOf(row,i){
+  if(!row)return {fault:'there is no such row'};
+  if(row.cancelled)return {fault:'a cancelled row is undone by hand'};
+  if(row.defaulted)return {fault:'a defaulted row is undone by hand'};
+  const live=rowMoves(row).filter(m=>!m.undone);
+  const m=live[live.length-1];
+  if(!m)return {fault:'nothing has been booked on this row since it was entered'};
+  if(i!=null&&i!==m.i)return {fault:'only the newest move on a row is undone, and that is no longer the move asked for'};
+  const f={},r4=v=>+(+v).toFixed(4);
+  let kind;
+  if(m.kind==='Fulfilment'){
+    if(m.cash){
+      if((+row.cash||0)<m.cash-0.009)return {i:m.i,move:m,fault:'the row no longer holds that payment'};
+      f.cash=+((+row.cash||0)-m.cash).toFixed(2);
+    }
+    if(m.kg>0){
+      if((+row.deliveredQty||0)<m.kg-0.0009)return {i:m.i,move:m,fault:'the row no longer holds that handover'};
+      f.deliveredQty=Math.max(0,r4((+row.deliveredQty||0)-m.kg));
+      if(f.deliveredQty<=0.0009){if(row.deliveredOn)f.deliveredOn=null;if(row.handover)f.handover=null;}
+    }
+    if(!Object.keys(f).length)return {i:m.i,move:m,fault:'that step moved nothing'};
+    if(f.cash!=null&&row.paidOn&&txPaid(Object.assign({},row,f))<txOwed(row)-0.009)f.paidOn=null;
+    kind=m.cash&&m.kg>0?'payhand':m.cash?'pay':'hand';
+  }else if(m.kind==='Correction'&&m.was){
+    const keys=Object.keys(m.was);
+    if(!keys.length||keys.some(k=>!UNDO_FIELDS.includes(k)))return {i:m.i,move:m,fault:'that change is undone by hand'};
+    keys.forEach(k=>{f[k]=m.was[k]===undefined?null:m.was[k];});
+    kind=keys.some(k=>['qty','total','delivery'].includes(k))?'terms':keys.some(k=>['deliveredQty','deliveredOn','handover'].includes(k))
+      ?(keys.includes('cash')?'payhand':'hand'):keys.some(k=>['cash','paidOn'].includes(k))?'pay':'change';
+  }else return {i:m.i,move:m,fault:m.kind==='Correction'?'that change was booked before a change said what it replaced, so it is undone by hand':'a '+String(m.kind||'step').toLowerCase()+' is undone by hand'};
+  return {i:m.i,move:m,kind,fields:f};
+}
+/* the figures an undo carries are those undoOf gives, field for field, a figure to the ten-thousandth; a field cleared is null either way */
+function undoSame(a,b){
+  const ka=Object.keys(a||{}).sort(),kb=Object.keys(b||{}).sort();
+  if(ka.join()!==kb.join())return false;
+  return ka.every(k=>{const x=a[k],y=b[k];
+    if(x==null||y==null)return x==null&&y==null;
+    return typeof x==='number'&&typeof y==='number'?Math.abs(x-y)<0.00005:x===y;});
+}
 /* the key an amendment names a row by, shared with the phone and the drafter */
 /* THE ORDER KEY IS WHAT THE CUSTOMER AGREED TO PAY, goods and carriage together, and it stays that
    way through the split of 19 Sep 2026 (v694 names a row by this to the character, and it is
@@ -1403,7 +1465,7 @@ function vaultPendingOk(record,publicWord=()=>false){
     'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
     'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover',
-    'shares','rids'];
+    'shares','rids','undo'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','delivered','collected',
     'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
@@ -1494,7 +1556,7 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
-        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,
+        ledgerRow:ledgerRow,openable:openable,ovKey:ovKey,ovRekey:ovRekey,attributionOf:attributionOf,correctionFaults:correctionFaults,payFault:payFault,refundOnCancel:refundOnCancel,refundOnOverpay:refundOnOverpay,refundStale:refundStale,UNDO_FIELDS:UNDO_FIELDS,rowMoves:rowMoves,undoOf:undoOf,undoSame:undoSame,
         CORRECTABLE:CORRECTABLE,CORRECT_REQUIRED:CORRECT_REQUIRED,CORRECT_NUM_POS:CORRECT_NUM_POS,
         CORRECT_NUM_NN:CORRECT_NUM_NN,CORRECT_DATE:CORRECT_DATE,CORRECT_BOOL:CORRECT_BOOL,
         CORRECT_CODE:CORRECT_CODE,CORRECT_TEXT:CORRECT_TEXT,HANDOVER:HANDOVER,
