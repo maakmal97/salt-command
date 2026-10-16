@@ -2727,12 +2727,26 @@ export const OWNER_JS = `
       card.querySelectorAll('button,input,select').forEach(function(node){node.disabled=true;});
       note.textContent=makerCashStorageError;
     }else{
-      var cash=makerField(card,['Cash, RM','order.cash-amount'],'number','');
-      var record=makerButton(card,['Record cash','order.cash'],function(){makerCashHold(order,Number(cash.value));},false);
-      cash.addEventListener('input',function(){ record.textContent=Number(cash.value)>0?'Record '+rm(cash.value)+', cash':'Record cash'; });
+      makerPayControl(card,order,true);
       note.textContent=makerCashSaid[order.id]||'';
     }
     card.appendChild(note);
+  }
+  /* 16 Oct 2026 (plan 5, part 1): BANK AND CASH ARE TWO TILES OVER ONE AMOUNT, in place of a field and a button each. Cash is offered at Ready alone, as
+     before, and neither tile is chosen until he chooses, so money is never booked by a road he did not pick; an agreed order not yet Ready has Bank alone,
+     chosen. The button says the figure and the road once both are there. What a tap sends is what the old button of that road sent, to the sen and the
+     byte: Bank the order's received with the amount, under one request id until it lands (makerTap), so the Desk's rowRoom and the fold's payFault read it
+     as they did; Cash held ten seconds with its Undo (makerCashHold), then the order's cash. No road is new. */
+  function makerPayControl(card,order,cash){
+    var amount=makerField(card,['Amount, RM','order.pay-amount'],'number','');
+    var by=makerTilesIn(card,['Paid by','order.pay-by'],[{value:'bank',label:'Bank'}].concat(cash?[{value:'cash',label:'Cash'}]:[]),cash);
+    var record=makerButton(card,['Record payment','order.pay'],function(){
+      if(by.value==='cash') makerCashHold(order,Number(amount.value));
+      else if(by.value==='bank') makerTap(order,'received',{amount:Number(amount.value)},'Sent to the Desk.');
+      else makerSay(order.id,'Choose Bank or Cash first. Nothing was sent.');
+    },false);
+    var draw=function(){ record.textContent=Number(amount.value)>0&&by.value?'Record '+rm(amount.value)+', '+by.value:'Record payment'; };
+    amount.addEventListener('input',draw); by.addEventListener('change',draw); draw();
   }
   /* a stage he rejected under Approve, offered again by the Desk's own againOrder */
   var MAKER_AGAIN={pay:'payment',cash:'cash',move:'handover',cancel:'cancellation',amend:'amendment'};
@@ -4024,7 +4038,7 @@ export const OWNER_JS = `
       }
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         /* 15 Oct 2026: MONEY RECEIVED IS ONE BLOCK, in the order the money comes: their claim answered, a payment into the bank, then cash at the handover (Ready only).
-           Each road names itself on its field and on its button once a figure is typed; the reply stands below it, with their last line. */
+           Since 16 Oct 2026 the bank and the cash are one amount and two tiles (makerPayControl); the reply stands below it, with their last line. */
         var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           /* a claim above what the order still owes is money he recorded another way: the Desk's Received, already recorded */
@@ -4049,12 +4063,7 @@ export const OWNER_JS = `
           },false);
           makerAskTag(order,lost,'lost-'+payment.at);
         });
-        var received=makerField(card,['Bank, RM','order.received-amount'],'number','');
-        var recv=makerButton(card,['Record bank payment','order.received'],function(){
-          makerTap(order,'received',{amount:Number(received.value)},'Sent to the Desk.');
-        },false);
-        received.addEventListener('input',function(){ recv.textContent=Number(received.value)>0?'Record '+rm(received.value)+', bank':'Record bank payment'; });
-        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; }
+        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; } else makerPayControl(card,order,false);
       }
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
