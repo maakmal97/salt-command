@@ -71,8 +71,11 @@ export async function run({ ok }) {
       } catch (e) { return "threw: " + e.message; }
     };
     let equal = 0, folded = 0;
+    /* plan 4 (16 Oct 2026): a Correction's step says what it replaced (`was`), a key the fold before the move never wrote, so it is set
+       aside here and only here; every other byte of the plan, the book and the master is still the old fold's */
+    const law = (s) => s.replace(/,(\\)?"was(\\)?":\{[^{}]*\}/g, "");
     for (const b of bs) {
-      const a = go(OLD, b), c = go(NEW, b);
+      const a = law(go(OLD, b)), c = law(go(NEW, b));
       const same = a === c;
       if (same) equal++;
       if (!a.startsWith("threw") && JSON.parse(a).ok) folded++;
@@ -108,7 +111,7 @@ export async function run({ ok }) {
     const cnt = { ok: true, count: 1, approved: [{ id: "zz-count", status: "approved", collection: "count", row: { product: "salt", qty: 5 } }] };
     const pc = ENG.planBatch(JSON.parse(b0.book), cnt, null, Object.assign(Object.create(NEW.planCtx), { today: "2031-02-03" }));
     ok(pc.items.length === 1 && pc.items[0].count && pc.items[0].count.date === "2031-02-03", "S1: planBatch dates an undated count by ctx.today");
-    ok(outText === JSON.parse(go(OLD, b0)).book, "S1: and returns the book the fold before the move wrote");
+    ok(law(outText || "") === law(JSON.parse(go(OLD, b0)).book), "S1: and returns the book the fold before the move wrote");
     ok(bs.length >= 1 && equal === bs.length && folded >= 1, `S1: ${equal} of ${bs.length} staged batches replay byte-equal, ${folded} of them folded rather than refused`);
   } finally { Date.now = realNow; rmSync(dir, { recursive: true, force: true }); }
 }

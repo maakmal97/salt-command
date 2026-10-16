@@ -70,6 +70,10 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
        differential test, a future caller -- got no check at all before this line. */
     const faults = E.correctionFaults(row, f, dir !== "BUY");
     if (faults.length) throw new Error(faults[0]);
+    /* plan 4: AN UNDO IS CHECKED AGAIN BY THE WRITER, on the row as it arrives: the newest move still, and the figures undoing it sets */
+    const undo = pay.undo != null ? E.undoOf(row, pay.undo) : null;
+    if (undo && undo.fault) throw new Error("the undo was refused: " + undo.fault);
+    if (undo && !E.undoSame(undo.fields, f)) throw new Error("the undo was refused: it does not set what undoing that move sets");
     const partyKey = dir === "BUY" ? "supplier" : "customer";
     const attr = E.attributionOf(row, partyKey);
     const buyerNow = attr.stream === "R2" ? (attr.downstream || null) : (row[partyKey] || null);
@@ -178,14 +182,16 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       party: attrNow.stream === "R2" ? (attrNow.downstream || null) : (row[partyKey] || null),
       assoc: attrNow.assoc, stream: attrNow.stream, downstream: attrNow.downstream,
     });
-    const said = [];
+    const said = [], was = {};
     for (const k of E.CORRECTABLE) {
-      const was = before[k] === undefined ? null : before[k];
+      const was0 = before[k] === undefined ? null : before[k];
       const now = after[k] === undefined ? null : after[k];
-      if (JSON.stringify(was) === JSON.stringify(now)) continue;
+      if (JSON.stringify(was0) === JSON.stringify(now)) continue;
       const why = reasons[k] ? `, ${reasons[k]}` : "";
-      said.push(`${k} ${was == null ? "(unset)" : was} to ${now == null ? "(cleared)" : now}${why}`);
+      said.push(`${k} ${was0 == null ? "(unset)" : was0} to ${now == null ? "(cleared)" : now}${why}`);
+      was[k] = was0;
     }
+    if (undo && !said.length) throw new Error("the undo was refused: the row already says what undoing that move sets");
 
     if (said.length) {
       const line = `corrected${pay.date ? " on " + pay.date : ""}: ${said.join("; ")}`;
@@ -206,7 +212,17 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
          units are the engine's reading, never the raw field: a lot with no receivedQty has received the lot. */
       const units = dir === "BUY" ? E.poRecvUnits : E.txPhys;
       const moved = +(units(after) - units(before)).toFixed(3);
-      row.amend = row.amend.concat([{ date: pay.date || null, kind: "Correction", cash: 0, kg: Math.abs(moved) > 0.0009 ? moved : 0, note: note || line }]);
+      /* plan 4 (16 Oct 2026): AND IT SAYS WHAT IT REPLACED (`was`), so the change can be undone from its own record. An undo's step names
+         the step it undoes and moves nothing on the walk (its units are the step's it undoes, now passed over), and that step is marked undone. */
+      const step = { date: pay.date || null, kind: "Correction", cash: 0, kg: undo ? 0 : (Math.abs(moved) > 0.0009 ? moved : 0), note: note || line, was };
+      if (undo) {
+        step.undoes = undo.i;
+        /* what the undo took back, by the engine's readings, which the site order follows (src/orders.js tellSite) */
+        const tookCash = +(E.txPaid(before) - E.txPaid(after)).toFixed(2), tookUnits = +(E.txPhys(before) - E.txPhys(after)).toFixed(4);
+        if (dir !== "BUY" && (tookCash > 0.004 || tookUnits > 0.0004)) step.took = Object.assign({}, tookCash > 0.004 ? { cash: tookCash } : {}, tookUnits > 0.0004 ? { units: tookUnits } : {});
+      }
+      row.amend = row.amend.concat([step]);
+      if (undo) row.amend[undo.i] = Object.assign({}, row.amend[undo.i], { undone: pay.date || true });
     }
     if (note && !asked("note")) row.note = note + " " + (row.note || "");
     return;
@@ -575,6 +591,13 @@ export function planBatch(book, staged, notes, ctx) {
           if (applies) { joined.push(sim); tripJoins.set(tripOn, joined); }   /* a trip-mate only if the correction itself applies (Fable's re-check) */
         }
         entry.pay = { date: pay.date || null, kind: "Correction", cash: 0, kg: 0, fields };
+        /* plan 4: an undo names the step it undoes, and is refused unless that step is still the newest move on the row as this batch
+           leaves it and the figures are the ones undoing it sets: a move folded since, in this batch or before, refuses it */
+        if (pay.undo != null) {
+          const u = Number.isInteger(pay.undo) ? E.undoOf(simOf(hits[0]), pay.undo) : { fault: "it names no step" };
+          if (u.fault || !E.undoSame(u.fields, fields)) { out.refused.push({ id: it.id, why: `the undo on ${it.amends} was refused: ${u.fault || "it does not set what undoing that move sets"}` }); continue; }
+          entry.pay.undo = pay.undo;
+        }
         /* v739: A CORRECTION THAT RESTATES WHAT MOVED ROLLS THE SHELF BY THE DIFFERENCE. "A correction moves
            nothing" was written at v358, when a correction could not touch deliveredQty. It has been able to
            since 25 Aug 2026 (what has actually moved is a thing a person states), seven rows on the book carry

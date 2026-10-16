@@ -78,6 +78,11 @@ export async function readBook(db) {
     pricing: state.PRICING || null
   };
 }
+/* plan 4 (16 Oct 2026): THE REFUNDS, a collection of `entry` the book read leaves out, read only for an undo, which says one it would strand */
+export async function withRefunds(db, book) {
+  const rs = await db.prepare("SELECT doc FROM entry WHERE collection=?1 ORDER BY seq").bind("customerRefunds").all();
+  return { ...book, customerRefunds: (rs.results || []).map((r) => { try { return JSON.parse(r.doc); } catch (e) { return null; } }).filter(Boolean) };
+}
 /* 06 OCT 2026: ONE READ OF THE MIRROR AN INVOCATION. The book is four queries and every row of the mirror (299 rows,
  * 378 KB of JSON on the live extract, about 2 ms of CPU to parse), and the mirror moves only when the deploy job seeds it,
  * never inside one invocation; yet a minute that queued a stage read it twice (the reconcile, then the drafter), the
@@ -631,6 +636,21 @@ export function flagsFor(entry, row, book, priced) {
   return flags;
 }
 
+/* PLAN 4 (16 Oct 2026, Fable's review): WHAT AN UNDO LEAVES FOR HIM TO KNOW, said on Counter Admin's sheet and as the draft's flags.
+ * A refund is never closed by an undo: one the row would no longer owe after it is said, and stays open until he removes it by hand.
+ * A handover undone after a count of its book is said too: the shelf takes the units back, and the count may not have held them. */
+export function undoNotes(book, row, u) {
+  const out = [], st = (book && book.state) || {}, after = Object.assign({}, row, u.fields || {});
+  for (const k of Object.keys(u.fields || {})) if (u.fields[k] === null) delete after[k];
+  const stale = POSITION_ENGINE.refundStale((book && book.customerRefunds) || st.customerRefunds || [], after);
+  if (stale > 0.009) out.push(`An open refund of RM ${round(stale)} on ${row.rid} is more than the row is paid past once this is undone. The undo does not close it: remove it by hand in the book if it is not owed.`);
+  const units = +(+(row.deliveredQty || 0) - (+(after.deliveredQty || 0))).toFixed(4);
+  const counted = (st.COUNT_ON || {})[prodOf(row)];
+  if (units > 0.0009 && counted && u.move && u.move.date && String(counted) >= String(u.move.date))
+    out.push(`A count of this book on ${counted} came after this handover of ${round(units)} unit. Undoing it puts the units back on the shelf, which that count may not have held.`);
+  return out;
+}
+
 /* ---- the row ----------------------------------------------------------------------- */
 /* Built to the shape the master's own arrays use, because the commit run folds it in verbatim.
  * A PENDING order carries THE DAY IT WAS AGREED (v540, 08 Sep 2026). It used to carry no date,
@@ -714,6 +734,13 @@ export function draftRow(entry, book) {
 
       const chk = checkCorrection(fields, book, target, isSale);
       if (chk.errs.length) return { skip: chk.errs.join("; ") };
+      /* plan 4 (16 Oct 2026): AN UNDO is the newest move on the row and exactly the figures undoing it sets, or it is not drafted */
+      let undone = null;
+      if (pay.undo != null) {
+        undone = Number.isInteger(pay.undo) ? POSITION_ENGINE.undoOf(target, pay.undo) : { fault: "it names no step" };
+        if (undone.fault) return { skip: "the undo was refused: " + undone.fault };
+        if (!POSITION_ENGINE.undoSame(undone.fields, fields)) return { skip: "the undo was refused: it does not set what undoing that move sets; read the row again" };
+      }
       /* 16 Oct 2026 (plan 3): a row joining a trip holds the trip together with the rows already on it (one buyer, one day, a book once,
          one delivery); its siblings joining in the same tap are held together by the Worker before any is queued, and by the fold */
       /* Fable's review of 16 Oct 2026: and a row already on a trip whose correction moves its delivery, buyer, day or book is held to the
@@ -792,6 +819,7 @@ export function draftRow(entry, book) {
       }
 
       if (revival) flags.push(`Revives a cancelled ${isSale ? "order" : "lot"}: ${round(target.qty)} unit for RM ${round(target.total)} is on the book again.`);
+      if (undone) for (const n of undoNotes(book, target, undone)) flags.push(n);
 
       const words = chk.changes.map((c) => `${c.field} from ${c.from == null ? "unset" : c.from} to ${c.to == null ? "cleared" : c.to}`);
       const row = {
@@ -805,6 +833,7 @@ export function draftRow(entry, book) {
         collection: found.collection,
         row,
         reasoning: [
+          undone ? `Undoes the newest move on the row, step ${undone.i} of its trail${undone.move.date ? `, booked ${undone.move.date}` : ""}, which the fold marks undone.` : "",
           `Correction against ${target[partyKey]}'s ${isSale ? "order" : "lot"} of ${round(target.qty)} unit for RM ${round(target.total)}${target.date ? ` dated ${target.date}` : ", pending and undated"}${target.rid ? ` (${target.rid})` : ""}.`,
           `Sets ${words.join(", ")}.`,
           moveLine,
@@ -2041,7 +2070,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
     if (staleLot.has(at)) continue;
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "drafter");
     const reservationFault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
-    let d = reservationFault ? { skip: reservationFault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
+    let d = reservationFault ? { skip: reservationFault } : draftRow(entry, entry.payload && entry.payload.undo != null
+      ? await withRefunds(env.SALT_LEDGER, await withDraftLots(env.SALT_LEDGER, book)) : await withDraftLots(env.SALT_LEDGER, book));
     const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, [], d.flags) : null;
     if (tf) d = { skip: tf };
     if (d.skip) {

@@ -524,7 +524,27 @@ export function restateTap(o, at, body, ctx) {
   if (live && live.status === "waiting") return { status: 409, error: "an earlier amendment of this order is waiting to be drafted" };
   const entry = amendEntry(o, o.code, figs, was, at);
   entry.orderId = o.id;
+  /* plan 4 (16 Oct 2026): AN UNDO OF THE ORDER'S NEWEST CHANGE OF TERMS comes this road, so the order keeps its row: the change must still be
+     the newest move on the row, nothing on its way to it, and these figures the ones it replaced; the Correction then carries exactly what
+     undoing it sets, which the drafter and the fold check again, and the site's restate says it is an undo, which tells the customer */
+  let undone = null;
+  if (body && body.undo !== undefined) {
+    const row = book && (book.sales || []).find((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === ledgerKeyOf(o));
+    const u = !Number.isInteger(body.undo) ? { fault: "it names no step" } : row ? POSITION_ENGINE.undoOf(row, body.undo) : { fault: "the order's row is not on the book" };
+    if (u.fault) return { status: 409, error: "the undo was refused: " + u.fault };
+    if (u.kind !== "terms" || Object.keys(u.fields).some((k) => !["qty", "total", "delivery", "cost", "unpriced"].includes(k))) return { status: 409, error: "that change on a site order is undone by hand" };
+    if (r && r.on > 0.004) return { status: 409, error: "money is already on its way to this row: decide it before undoing a move" };
+    if ((+o.paid || 0) - (+((o.queued || {}).paid) || 0) > 0.004) return { status: 409, error: "the order has a payment the book has not heard yet: wait for it to land" };
+    const back = Object.assign({}, row);
+    for (const [k, v] of Object.entries(u.fields)) { if (v === null) delete back[k]; else back[k] = v; }
+    if (Math.abs(figs.qty - +back.qty) > 0.0004 || Math.abs(figs.total - +back.total) > 0.004 || Math.abs(figs.delivery - (+back.delivery || 0)) > 0.004)
+      return { status: 409, error: "the undo changed since it was read: read the order again" };
+    entry.payload.fields = Object.assign({}, u.fields);
+    entry.payload.undo = u.i;
+    undone = u.i;
+  }
   const shown = Object.assign({ was }, figs);
   if (over > 0.004) shown.refund = over;
-  return Object.assign({ entry, queueIt: true, site: { restate: figs }, shown }, over > 0.004 ? { refund: over } : {});
+  if (undone != null) shown.undo = undone;
+  return Object.assign({ entry, queueIt: true, site: { restate: Object.assign({}, figs, undone != null ? { undo: true } : {}) }, shown }, over > 0.004 ? { refund: over } : {});
 }

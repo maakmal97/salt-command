@@ -1,6 +1,6 @@
 import POSITION_ENGINE from "../engine/position.mjs";
 import PRICING_ENGINE from "../engine/pricing.mjs";
-import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving } from "./drafter.js";
+import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving, undoNotes } from "./drafter.js";
 import { cardAt, rowRoom, siteWords } from "./orders.js";
 import { rowFigures, moveRow } from "./approve-figures.js";
 
@@ -480,6 +480,48 @@ export function makerTripJoin(body, book) {
   return { entries, drafts, trip, amendBatch: true };
 }
 
+/* 16 Oct 2026, PLAN 4 OF docs/plans-counter-admin.html: EASY REVERT, the Desk's half (his answers: the newest move only; a site order's
+   customer is told by a banner). makerUndo reads one sale's History, its moves newest first off the engine's rowMoves, and the newest
+   move's undo off the engine's undoOf: the figures it sets, Now and After off the approve card's own reading (rowFigures), and what he must
+   know (undoNotes: a refund the undo would strand, a handover undone after a count). Nothing is undone while anything is on its way to the
+   row (Fable's review: an undo sets absolute figures, and the checks on money only measure it going up), nor while the site order the row
+   belongs to has a move the book has not heard. The road it takes: a restatement of a site order's terms goes through restateOrder, so the
+   order keeps its row; every other undo is a Correction through ledger-amend, the site order following by the fix event once it folds.
+   ctx: { held: the moves waiting (makerHeldMoves), onWay: money on its way to the row (rowRoom's `on`), order: the site order whose row
+   this is, or null, siteError: the site's orders could not be read }. */
+const UNDO_TERMS = ["qty", "total", "delivery", "cost", "unpriced"];
+export function makerUndo(book, rid, ctx = {}) {
+  const E = POSITION_ENGINE;
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  if (typeof rid !== "string" || !/^[A-Za-z0-9_-]{1,64}$/.test(rid)) return { error: "Choose a row." };
+  const found = findRow(book, rid);
+  if (found.err) return { error: found.err };
+  if (found.collection !== "sales") return { error: "A lot's moves are undone by hand." };
+  const row = found.row, order = ctx.order || null;
+  const moves = E.rowMoves(row).reverse().map((m) => ({ i: m.i, date: m.date, kind: m.kind, cash: m.cash, kg: m.kg, undone: m.undone,
+    changed: m.was ? Object.keys(m.was) : null }));
+  const out = { rid: row.rid, party: row.customer, product: row.product || "salt", handover: row.handover || null, moves, undo: null,
+    order: order ? order.id : null };
+  const u = E.undoOf(row);
+  if (u.fault) return { ...out, why: u.fault };
+  const after = Object.assign({}, row);
+  for (const [k, v] of Object.entries(u.fields)) { if (v === null) delete after[k]; else after[k] = v; }
+  const restate = !!order && u.kind === "terms";
+  const blocked = heldMoves(row, ctx.held).length ? "A move on this row waits under Approve or on its way to the Desk. Decide it first."
+    : (+ctx.onWay || 0) > 0.004 ? "Money is already on its way to this row. Decide it before undoing a move."
+      : ctx.siteError ? "The site's orders could not be read, so nothing is undone until they can be."
+        : order && (order.payments || []).some((p) => p && p.claim === "waiting") ? "A payment they say they sent waits on the order. Answer it first."
+          : order && ((+order.paid || 0) - (+((order.queued || {}).paid) || 0) > 0.004 || Math.abs((+order.moved || 0) - (+((order.queued || {}).moved) || 0)) > 0.0004)
+            ? "The order has a move on the site the book has not heard yet. Wait for it to land."
+            : restate && Object.keys(u.fields).some((k) => !UNDO_TERMS.includes(k)) ? "That change on a site order is undone by hand."
+              : restate && !["acknowledged", "ready", "done"].includes(order.status) ? "The order is " + order.status + ", so its terms are not changed." : null;
+  out.undo = { i: u.i, kind: u.kind, date: u.move.date, cash: u.move.cash, kg: u.move.kg, fields: u.fields,
+    now: rowFigures(row), after: rowFigures(after), notes: undoNotes(book, row, u), route: restate ? "restate" : "ledger",
+    ...(restate ? { restate: { qty: +after.qty, total: +(+after.total).toFixed(2), delivery: +(+(after.delivery || 0)).toFixed(2) } } : {}),
+    ...(blocked ? { blocked } : {}) };
+  return out;
+}
+
 export function makerInputCatalog(book, hush = {}, pending = [], registrations = [], today = mytDay(new Date().toISOString())) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   const bookRoster = (book.state.roster || []).filter((value) => code(value, book.state.roster || []));
@@ -802,9 +844,9 @@ const safeGeo = (value) => Array.isArray(value) && value.length === 3 && safePoi
 const exact = (body, fields) => object(body) && !Object.keys(body).some((key) => !fields.includes(key));
 const realCode = (value, roster) => code(value, roster);
 
-export function makerLedgerAmendment(body, book) {
+export function makerLedgerAmendment(body, book, undoCtx = null) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
-  if (!exact(body, ["at", "rid", "kind", "date", "cash", "movedUnits", "fields"])
+  if (!exact(body, ["at", "rid", "kind", "date", "cash", "movedUnits", "fields", "undo"])
     || !timestamp(body.at) || !date(body.date) || typeof body.rid !== "string"
     || !/^[A-Za-z0-9_-]{1,64}$/.test(body.rid)
     || !["Correction", "Fulfilment", "Cancellation", "Payment", "Receipt", "Default"].includes(body.kind))
@@ -812,6 +854,17 @@ export function makerLedgerAmendment(body, book) {
   const found = findRow(book, body.rid);
   if (found.err) return { error: found.err };
   const row = found.row, sale = found.collection === "sales";
+  /* plan 4: an undo is the newest move's, exactly as the History read it, by the ledger's road, and refused while it is blocked */
+  if (body.undo !== undefined) {
+    if (body.kind !== "Correction" || !Number.isInteger(body.undo) || !object(body.fields)) return { error: "An undo is a Correction naming the move it undoes." };
+    const read = makerUndo(book, body.rid, undoCtx || { siteError: true });
+    const u = read.undo;
+    if (read.error || !u) return { error: read.error || "Nothing on this row can be undone: " + (read.why || "read it again") + "." };
+    if (u.i !== body.undo) return { error: "Only the newest move on a row is undone, and that is no longer the move you read. Read it again.", stale: true };
+    if (u.blocked) return { error: u.blocked };
+    if (u.route !== "ledger") return { error: "A change of a site order's terms is undone on its order card, so the order keeps its row." };
+    if (!POSITION_ENGINE.undoSame(u.fields, body.fields)) return { error: "The undo changed since you read it. Read it again.", stale: true };
+  }
   /* the drafter's own rule: a cancelled row takes its revival and nothing else, the drafter judging what is paid or moved */
   if (row.cancelled && (body.kind !== "Correction" || !object(body.fields) || !reviving(body.fields)))
     return { error: "A cancelled row takes only its revival: cancelled off and its date cleared." };
@@ -889,7 +942,8 @@ export function makerLedgerAmendment(body, book) {
       kind: body.kind, date: body.date, cash, movedUnits: units, status, raw }), book);
   }
   return proposed(POSITION_ENGINE.ledgerAmendmentEntry({ at: body.at, row, direction: sale ? "SELL" : "BUY",
-    kind: body.kind, date: body.date, cash: body.cash, movedUnits: body.movedUnits, fields: body.fields }), book);
+    kind: body.kind, date: body.date, cash: body.cash, movedUnits: body.movedUnits, fields: body.fields,
+    ...(body.undo !== undefined ? { undo: body.undo } : {}) }), book);
 }
 
 export async function makerAmendmentRoom(db, entry, book) {
@@ -901,14 +955,14 @@ export async function makerAmendmentRoom(db, entry, book) {
   const paid = (value) => sale ? POSITION_ENGINE.txPaid(value) : POSITION_ENGINE.poCash(value);
   const cash = p.kind === "Fulfilment" || p.kind === "Payment" ? +p.cash || 0
     : p.kind === "Correction" ? Math.max(0, paid(after) - paid(row)) : 0;
-  const stops = p.kind === "Cancellation" || p.kind === "Default";
+  const stops = p.kind === "Cancellation" || p.kind === "Default" || p.undo != null;
   if (!(cash > 0.004) && !stops) return "";
   const room = await rowRoom(db, sale ? "SELL" : "BUY");
   if (!room.version || room.version !== book.version) return "The mirror changed or could not be read. Read the row again.";
   const reading = room(POSITION_ENGINE.ovKey(row), entry);
   if (!reading) return "The row's remaining money could not be confirmed.";
   if (stops && reading.on > 0.004)
-    return "Money is already on its way to this row. Decide it before " + (p.kind === "Default" ? "defaulting it." : "cancelling.");
+    return "Money is already on its way to this row. Decide it before " + (p.undo != null ? "undoing a move." : p.kind === "Default" ? "defaulting it." : "cancelling.");
   const changedTotal = p.kind === "Correction" && p.fields.total != null ? p.fields.total - (+row.total || 0) : 0;
   const changedDelivery = sale && p.kind === "Correction" && p.fields.delivery != null
     ? p.fields.delivery - (+row.delivery || 0) : 0;

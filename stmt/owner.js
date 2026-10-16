@@ -1788,6 +1788,8 @@ export const OWNER_JS = `
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
         /* plan 3: an order's payment or join the Desk refused whole (a split that changed, a share its row cannot take) left nothing queued, so nothing is kept to retry */
         if((error.status===400||error.status===409)&&(path==='/all/maker/inputs/trip-pay'||path==='/all/maker/inputs/trip-join')){makerClear(path);pending=null;cancel.hidden=true;}
+        /* plan 4: an undo the Desk refused (it waits on something, or the row moved since it was read) left nothing queued, so nothing is kept to retry */
+        if((error.status===400||error.status===409)&&path==='/all/maker/inputs/ledger-amend'&&pending&&pending.body&&pending.body.undo!==undefined){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
@@ -2293,6 +2295,10 @@ export const OWNER_JS = `
       editor.dispatchEvent(new Event('input',{bubbles:true}));
     });
     editRow.addEventListener('change',function(){changes={};patchList.textContent='';});
+    /* plan 4: the row picked has its History, and Undo on its newest move */
+    var editHist=el('div','maker-fields');editor.appendChild(editHist);
+    var drawHist=function(){editHist.replaceChildren();if(editRow.value&&rows.some(function(item){return item.rid===editRow.value&&item.direction!=='BUY';}))historyBlock(editHist,{rid:editRow.value},'row:'+editRow.value,null,'row:'+editRow.value);};
+    editRow.addEventListener('change',drawHist);drawHist();
     var kindsFor=function(){
       var row=rows.find(function(item){return item.rid===editRow.value;}), kept=editKind.value;
       var names=row&&row.defaulted?['Correction']:row&&row.direction==='BUY'?['Correction','Fulfilment','Cancellation','Payment','Receipt','Default']:['Correction','Fulfilment','Cancellation'];
@@ -4055,6 +4061,8 @@ export const OWNER_JS = `
         var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
         change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
       }
+      /* plan 4: an agreed order's History, and Undo on its newest move */
+      if(['acknowledged','ready','done'].indexOf(order.status)>=0) historyBlock(card,{order:order.id},'order:'+order.id,order,order.id);
       makerAgain(card,order,acts);
       makerOrderMoves(card,order,false,acts);
       /* cash held for the order shuts every control of the card, the reply's too, which is drawn after the cash block: its Undo or Retry alone stays live */
@@ -4101,7 +4109,8 @@ export const OWNER_JS = `
     card.setAttribute('data-in',e.parts);
     tripHead(card,t);
     var left=t.lines.filter(function(l){ return l.left>0.0005; });
-    tripLines(card,t,function(row,l){ if(l.left>0.0005) fields[l.rid]=makerField(row,['Units to hand over','trip.hand-units',l.rid,l.product],'number',l.left); });
+    tripLines(card,t,function(row,l){ if(l.left>0.0005) fields[l.rid]=makerField(row,['Units to hand over','trip.hand-units',l.rid,l.product],'number',l.left);
+      historyBlock(row,{rid:l.rid},'line:'+l.rid,null,key); });   /* plan 4: each line its History and Undo */
     if(left.length){
       var hand=el('div','maker-fields triphand'), handSaid=el('p','msg'); handSaid.setAttribute('role','status');
       var handBtn=makerButton(hand,['Handover all','trip.handover',t.trip],function(){ return tripHandover(t,key,fields,handSaid); },true);
@@ -4219,6 +4228,70 @@ export const OWNER_JS = `
         makerTap(order,'restate',body,'Change sent. You approve it next, under Approve.').then(function(){ if(!makerRids[order.id+'restate'+JSON.stringify(body)]) delete amendMemo[order.id]; });
       }});
   }
+  /* ---- 16 OCT 2026, PLAN 4 OF docs/plans-counter-admin.html: EASY REVERT (his answers: the newest move only; a site order's customer told by a banner) ----
+     On an agreed order's card, on each line of an order of several books and on Correct a row, History reads a sale's booked moves from the Desk, newest
+     first, and offers Undo on the newest alone, so undos peel back in order. The Desk says what undoing it sets and its Now and After, and why it waits when it
+     does (money on its way, a move under Approve, the site's order not caught up); the Counter reckons nothing. Undo asks on the page's Sheet, Now and After
+     and one action, and lands under Approve as one card: a Correction by Correct a row's road, or, for a change of a site order's terms, the order's own
+     restate, so the order keeps its row. ---- */
+  var undoRead={};
+  function moveSay(m,handover){
+    var bits=[];
+    if(m.cash) bits.push(rm(m.cash)+' paid');
+    if(m.kg) bits.push(units(Math.abs(m.kg))+(m.kg<0?' taken back':' '+(handover==='delivered'||handover==='collected'?handover:'handed over')));
+    if(!bits.length) bits.push(m.kind==='Correction'?(m.changed&&m.changed.length?'Changed '+m.changed.map(function(k){ return fieldWord(k).toLowerCase(); }).join(', '):'A change')
+      :m.kind==='Modification'?'Size and price restated':m.kind==='Cancellation'?'Cancelled':'A '+String(m.kind||'step').toLowerCase());
+    return bits.join(', ')+(m.date?', '+fmtWhen(m.date):'')+(m.undone?', undone':'');
+  }
+  function undoGo(h){
+    var u=h.undo, a=u.after;
+    if(u.kind==='terms') return 'Undo: '+h.rid+' at '+rm(a.total);
+    if(u.kind==='hand') return 'Undo: '+h.rid+' '+handedSay(a)+' handed over';
+    return 'Undo: '+h.rid+(a.owed>0.004?' owes '+rm(a.owed):' paid');
+  }
+  function historyBlock(card,ref,key,order,sayKey){
+    var box=el('div','undohist'), list=el('div','undolist'), said=el('p','msg'); said.setAttribute('role','status'); box.setAttribute('data-history',key);
+    box.appendChild(el('h4','','History'));
+    makerButton(box,[undoRead[key]?'Read it again':'History','undo.history',key],async function(){
+      said.textContent='Reading.';
+      var j=await refs('/all/maker/undo',ref);
+      undoRead[key]=j.history; drawHist(j.history); said.textContent='';
+    },false);
+    function drawHist(h){
+      list.textContent='';
+      if(!h.moves.length) list.appendChild(el('p','rnone','Nothing booked since the row was entered.'));
+      h.moves.forEach(function(m){
+        var line=el('div','undomove'); line.setAttribute('data-move',String(m.i));
+        line.appendChild(el('p','maker-facts',moveSay(m,h.handover)));
+        if(h.undo&&h.undo.i===m.i&&!h.undo.blocked) undoButton(line,h,m,key,order,sayKey||key);
+        list.appendChild(line);
+      });
+      if(h.undo&&h.undo.blocked){ var w=el('p','salt-insight',h.undo.blocked); w.setAttribute('data-undo-blocked',''); list.appendChild(w); }
+      else if(!h.undo&&h.why&&h.moves.length){ var n=el('p','salt-insight','The newest move is not undone here: '+h.why+'.'); n.setAttribute('data-undo-none',''); list.appendChild(n); }
+    }
+    box.appendChild(list); box.appendChild(said); card.appendChild(box);
+    if(undoRead[key]) drawHist(undoRead[key]);
+    return box;
+  }
+  function undoButton(line,h,m,key,order,sayKey){
+    var u=h.undo, btn=makerButton(line,['Undo','undo.open',key],async function(send){
+      var say=['The row goes back to how it stood before this move. You approve it next, under Approve.']
+        .concat(h.order?['Their order page follows once it is booked, and they are told.']:[]).concat(u.notes||[]);
+      var yes=await ownerAsk(btn,'undo:'+key,{title:'Undo this move?', row:askRow((h.rid?h.rid+' · ':'')+h.party,'',moveSay(m,h.handover)), say:say,
+        extra:[nowAfter({now:u.now, after:u.after})], go:undoGo(h), keep:'Keep it', plain:true});
+      if(!yes) return;
+      if(u.route==='restate'&&order){
+        await makerTap(order,'restate',{qty:u.restate.qty,total:u.restate.total,delivery:u.restate.delivery,undo:u.i},'Undo sent. You approve it next, under Approve.');
+      }else{
+        await send('/all/maker/inputs/ledger-amend',{at:new Date().toISOString(),rid:h.rid,kind:'Correction',date:tripToday(),fields:u.fields,undo:u.i});
+        makerSay(sayKey,'Undo sent. It waits under Approve.');
+      }
+      delete undoRead[key];
+      await loadMaker();
+    },true);
+    ynTag(btn,'undo:'+key);
+    return btn;
+  }
   /* the card of an order that is not open: one with a stage he rejected keeps its card until that stage is offered again or left; a closed
      order has its figures, and a question of theirs he has not answered its reply; cash held for it keeps its Undo (or its Retry) */
   function orderPlainCard(root,e){
@@ -4226,6 +4299,7 @@ export const OWNER_JS = `
     if(!order){ card.appendChild(el('h3','','Cash held for an order not on this read')); card.appendChild(detailBox('order.details',e.id,[['Reference',e.id]])); }
     if(order){
       orderHead(card,order);
+      if(order.status==='done') historyBlock(card,{order:order.id},'order:'+order.id,order,e.id);   /* plan 4 */
       if(makerAgainAck(order)) again=makerAcceptAgain(card,order,acts);
       makerAgain(card,order,acts);
       if(orderAsked(order)) makerOrderMoves(card,order,true);
@@ -4307,6 +4381,8 @@ export const OWNER_JS = `
       var from=function(k){ var c=ch.filter(function(x){ return x.field===k; })[0]; return c?+c.from||0:null; };
       var only=function(set){ return keys.length>0&&keys.every(function(k){ return set.indexOf(k)>=0; }); };
       var some=function(set){ return keys.some(function(k){ return set.indexOf(k)>=0; }); };
+      /* plan 4: an undo says what it undoes */
+      if(p.undo!=null) return some(AP_PRICE)?'undoterms':some(AP_HAND)&&some(AP_MONEY)?'undopayhand':some(AP_HAND)?'undohand':some(AP_MONEY)?'undopay':'fix';
       if(some(AP_HAND)&&some(AP_PRICE)&&only(AP_HAND.concat(AP_PRICE,AP_MONEY))
         &&f.deliveredQty!=null&&+f.deliveredQty>=+(f.qty!=null?f.qty:(d.row||{}).qty||0)-0.0005) return 'close';
       if(only(['trip'])&&f.trip) return 'join';
@@ -4321,7 +4397,7 @@ export const OWNER_JS = `
   }
   var AP_WORD={sell:'New sale', buy:'New purchase', cancel:'Cancel the order', price:'Change the price', 'default':'Never delivered', close:'Close the order', pay:'Payment received',
     unpay:'Take back a payment', hand:'Handover', unhand:'Take back a handover', payhand:'Handover and payment', receive:'Goods received', paidout:'Payment made', fix:'Fix a row',
-    join:'These are one order'};
+    join:'These are one order', undopay:'Undo a payment', undohand:'Undo a handover', undopayhand:'Undo a handover and payment', undoterms:'Undo a change of terms'};
   function moveWord(d){ var k=moveKind(d); return k==='other'?entryWord(d.entry||{}):AP_WORD[k]; }
   /* the card's one verb: a close among its moves closes the order; moves of one kind keep it; a payment and a handover together are both; anything else fixes a row */
   function groupKind(g){
@@ -4352,10 +4428,10 @@ export const OWNER_JS = `
     if(k==='cancel') return 'Approve: '+rid+' cancelled';
     if(!a) return 'Approve: '+rid+', '+AP_WORD[k].toLowerCase();
     var full=a.handed>=a.qty-0.0005, paid=!(a.owed>0.004);
-    if(k==='pay'||k==='unpay') return 'Approve: '+rid+(paid?' paid':' owes '+rm(a.owed));
-    if(k==='hand'||k==='unhand') return 'Approve: '+rid+(full?' handed over':' '+handedSay(a)+' handed over');
-    if(k==='payhand') return 'Approve: '+rid+(paid&&full?' closed':paid?' paid, '+handedSay(a)+' handed over':' owes '+rm(a.owed));
-    if(k==='price') return 'Approve: '+rid+' at '+rm(a.total);
+    if(k==='pay'||k==='unpay'||k==='undopay') return 'Approve: '+rid+(paid?' paid':' owes '+rm(a.owed));
+    if(k==='hand'||k==='unhand'||k==='undohand') return 'Approve: '+rid+(full?' handed over':' '+handedSay(a)+' handed over');
+    if(k==='payhand'||k==='undopayhand') return 'Approve: '+rid+(paid&&full?' closed':paid?' paid, '+handedSay(a)+' handed over':' owes '+rm(a.owed));
+    if(k==='price'||k==='undoterms') return 'Approve: '+rid+' at '+rm(a.total);
     return 'Approve: '+rid+' fixed';
   }
   /* Close the order says what it closes on: the goods' total, how it went, and that it was paid in cash */
@@ -4368,7 +4444,7 @@ export const OWNER_JS = `
   /* THE LINES THAT ASK A DECISION, two at most and in his words: what the customer will owe against the ceiling when the card raises it, then the drafter's flags that
      ask one (under the floor, a refund opens, stock below zero, a twin). Every flag stands in Details whatever is drawn here. */
   var AP_ASK=[[/under the floor|loses money/i,'floor'],[/refund|overpaid|more than the order is owed|more than it is worth/i,'refund'],
-    [/inventory the book puts at|owed out|unmeetable/i,'stock'],[/on the book by party, date, size and total/i,'twin']];
+    [/inventory the book puts at|owed out|unmeetable|a count of this book/i,'stock'],[/on the book by party, date, size and total/i,'twin']];
   function sentenceCase(s){
     s=noBook(s).replace(/\\b([A-Z][A-Z]+)\\b/g,function(w){ return /^(RM|COGS|ID|MYT)$/.test(w)?w:w.toLowerCase(); });
     s=s.split(/[.!?] /)[0].split(', which')[0].split(': ')[0].replace(/[.]$/,'');

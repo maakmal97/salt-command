@@ -172,6 +172,13 @@ carries it to every reading of what was lost, so no price moves. A new reader of
 `txAdvance`; a new reader of losses must add `txWrittenOff`. A party with a write-off is not
 approached (`approachable`).
 
+**An undo takes back the newest move on a sale and nothing older** (plan 4, his answers of 16 Oct 2026):
+the engine's `undoOf`, read by Counter Admin's History, the drafter and the fold, from a payment or handover
+(a Fulfilment) or a Correction's own `was`; nothing is undone while money is on its way or a move waits on
+the row. The fold marks the step `undone` and the undo's own step `undoes` it: **a new reader of the trail
+passes an `undone` step over**. A site order follows by the order book's undo fix and is told by a banner;
+a change of its terms is undone through `restateOrder`. A refund it strands is said, never closed.
+
 **THE REORDER POINT IS DERIVED, NEVER UNDER 4 DAYS OF COVER AND NEVER OVER 14**: the engine's
 `restockPlan`, read through `restockFor(prod)` and `reorderFor`, from measured demand only;
 `RULES.reorderUnits` is the fallback for a book with no demand. Never type a mark back in.
