@@ -53,14 +53,15 @@ export async function run({ ok }) {
     const card = () => cardOf(d, "cash-fixture-1");
     /* 11 Oct 2026: Record cash, Undo and the cash field are found by what they do (test/maker-act.mjs), so a change of their words leaves
        this test where it was; Retry cash and Refresh cash are one control whose words are the behaviour under test, and keep theirs */
-    const ACTS = { "Record cash": "order.cash", Undo: "order.cash-undo" };
+    const ACTS = { "Record cash": "order.pay", Undo: "order.cash-undo" };   /* plan 5 (16 Oct 2026): one Record payment over the Bank and Cash tiles */
     const button = (text) => ACTS[text] ? (card(), byAct(d, ACTS[text], "cash-fixture-1")) : [...(card()?.querySelectorAll("button") || [])].find((n) => n.textContent === text);
     const note = () => card()?.querySelector("[data-maker-cash-status]")?.textContent || "";
-    const cash = () => (card(), byAct(d, "order.cash-amount", "cash-fixture-1"));
+    const cash = () => (card(), byAct(d, "order.pay-amount", "cash-fixture-1"));
     const tap = async (amount) => {
       const input = cash(), record = button("Record cash");
       if (!input || !record) return;
-      input.value = String(amount); record.click(); await quiet();
+      const road = byAct(d, "order.pay-by", "cash"); if (!road) return;
+      input.value = String(amount); road.click(); record.click(); await quiet();
     };
     const advance = async (ms) => {
       now += ms;

@@ -164,20 +164,21 @@ export async function run({ ok }) {
     /* 11 Oct 2026: the cards are in Orders and the ledger-row editor in Record, so both places are entered */
     doc.querySelector('[data-act="nav.record"]').click();
     doc.querySelector('[data-act="nav.orders"]').click();
-    await until(() => button((t) => t === "Record cash"));
+    /* plan 5 (16 Oct 2026): Bank and Cash are two tiles over one amount and one button; payBy() types the figure and picks the road as he does */
+    const payBtn = () => card() && card().querySelector('button[data-act="order.pay"]');
+    const payBy = (road, amount) => { fieldIn(card(), "Amount, RM").value = amount; card().querySelector('input[data-act="order.pay-by"][data-key="' + road + '"]').click(); return payBtn(); };
+    await until(() => payBtn());
 
     /* Record cash: one id, kept across a failure */
     failNext = 1;
-    fieldIn(card(), "Cash, RM").value = "60";
-    button((t) => t === "Record cash").click(); cashTimers.shift()(); await settle(1);
+    payBy("cash", "60").click(); cashTimers.shift()(); await settle(1);
     await until(() => button((t) => t === "Retry cash") && !button((t) => t === "Retry cash").disabled);
     button((t) => t === "Retry cash").click(); await settle(2);
     ok(posts[0].path === "/all/maker/orders/" + id + "/cash" && posts[0].body.amount === 60 && isRid(posts[0].body.rid)
       && posts[1].body.rid === posts[0].body.rid && Object.keys(posts[0].body).sort().join() === "amount,rid",
       "Record cash sends the amount under a request id, and its retry after a failure carries the same id: " + JSON.stringify(posts.slice(0, 2)));
-    await until(() => button((t) => t === "Record cash"));
-    fieldIn(card(), "Cash, RM").value = "60";
-    button((t) => t === "Record cash").click(); cashTimers.shift()(); await settle(3);
+    await until(() => payBtn());
+    payBy("cash", "60").click(); cashTimers.shift()(); await settle(3);
     ok(isRid(posts[2].body.rid) && posts[2].body.rid !== posts[0].body.rid,
       "Once cash has landed, the next Record cash is a new request with its own id: " + JSON.stringify(posts[2]));
 
@@ -188,13 +189,11 @@ export async function run({ ok }) {
     ok(posts[3].path === "/all/maker/orders/" + id + "/received" && posts[3].body.amount === 40 && posts[3].body.claim === claimAt
       && isRid(posts[3].body.rid) && posts[3].body.rid !== posts[2].body.rid,
       "Receive claimed sends the claim's amount and moment under its own request id: " + JSON.stringify(posts[3]));
-    await until(() => button((t) => t === "Record bank payment"));
+    await until(() => payBtn());
     failNext = 1;
-    fieldIn(card(), "Bank, RM").value = "25";
-    button((t) => t === "Record bank payment").click(); await settle(5);
-    await until(() => button((t) => t === "Record bank payment"));
-    fieldIn(card(), "Bank, RM").value = "25";
-    button((t) => t === "Record bank payment").click(); await settle(6);
+    payBy("bank", "25").click(); await settle(5);
+    await until(() => payBtn() && !payBtn().disabled);
+    payBy("bank", "25").click(); await settle(6);
     ok(posts[4].path === "/all/maker/orders/" + id + "/received" && posts[4].body.amount === 25 && posts[4].body.claim === undefined
       && isRid(posts[4].body.rid) && posts[5].body.rid === posts[4].body.rid && posts[4].body.rid !== posts[3].body.rid,
       "Confirm received sends the amount under a request id that a retry keeps: " + JSON.stringify(posts.slice(4, 6)));

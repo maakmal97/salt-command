@@ -343,9 +343,9 @@ export async function drawEverything(p) {
   await click(byAct(d, "claim.open", c2)); p.snap("a claim whose rows could not be read");
   p.fail.delete("/all/maker/claims/abcd-efgh/c-2/preview");
   await click(byAct(d, "claim.open", c2));
-  type(byAct(card("ord-r2"), "order.cash-amount"), "50"); await click(byAct(card("ord-r2"), "order.cash"));
+  type(byAct(card("ord-r2"), "order.pay-amount"), "50"); await click(byAct(card("ord-r2"), "order.pay-by", "cash")); await click(byAct(card("ord-r2"), "order.pay"));
   p.snap("a cash hold, with its Undo");
-  type(byAct(card("ord-r3"), "order.cash-amount"), "50"); await click(byAct(card("ord-r3"), "order.cash"));
+  type(byAct(card("ord-r3"), "order.pay-amount"), "50"); await click(byAct(card("ord-r3"), "order.pay-by", "cash")); await click(byAct(card("ord-r3"), "order.pay"));
   p.failCash(true);
   p.timers.filter((t) => t.ms === 10000 && !t.off).at(-1).f(); await work.quiet();
   p.failCash(false);

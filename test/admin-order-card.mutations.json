@@ -152,8 +152,8 @@
  {
   "name": "Close asks a native confirm",
   "file": "stmt/owner.js",
-  "find": "            makerAsk(order,closeBtn,'close',{",
-  "replace": "            if(!window.confirm('Close this order?')) return; makerAsk(order,closeBtn,'close',{"
+  "find": "          makerAsk(order,handed,'close',{",
+  "replace": "          if(!window.confirm('Close this order?')) return; makerAsk(order,handed,'close',{"
  },
  {
   "name": "Offer again asks a native confirm",
@@ -164,8 +164,8 @@
  {
   "name": "Record handover asks a native confirm",
   "file": "stmt/owner.js",
-  "find": "          makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.');",
-  "replace": "          if(!window.confirm('Record the handover?')) return; makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.');"
+  "find": "          if(!handedEnds()){ makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }",
+  "replace": "          if(!handedEnds()){ if(!window.confirm('Record the handover?')) return; makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }"
  },
  {
   "name": "Decline sends as the sheet opens",
@@ -182,8 +182,8 @@
  {
   "name": "Close sends as the sheet opens",
   "file": "stmt/owner.js",
-  "find": "              yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.'); }});",
-  "replace": "              yes:function(){}}); makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.');"
+  "find": "            yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.'); }});",
+  "replace": "            yes:function(){}}); makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.');"
  },
  {
   "name": "Offer again sends as the sheet opens",
@@ -330,16 +330,10 @@
   "replace": "        makerOrderMoves(card,order,false,acts); var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);\n"
  },
  {
-  "name": "Bank does not say its road",
+  "name": "the one button does not say its road",
   "file": "stmt/owner.js",
-  "find": "'Record '+rm(received.value)+', bank'",
-  "replace": "'Record '+rm(received.value)"
- },
- {
-  "name": "Cash does not say its road",
-  "file": "stmt/owner.js",
-  "find": "'Record '+rm(cash.value)+', cash'",
-  "replace": "'Record '+rm(cash.value)"
+  "find": "'Record '+rm(amount.value)+', '+by.value",
+  "replace": "'Record '+rm(amount.value)"
  },
  {
   "name": "their last line is not drawn",
@@ -356,7 +350,7 @@
  {
   "name": "an agreed order offers cash",
   "file": "stmt/owner.js",
-  "find": "        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; }\n",
+  "find": "        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; } else makerPayControl(card,order,false);\n",
   "replace": "        { makerCashControls(card,order); cashed=true; }\n"
  }
 ]
