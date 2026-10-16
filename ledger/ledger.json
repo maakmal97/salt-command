@@ -1,6 +1,6 @@
 {
- "v": "v1135",
- "stamped": "16 Oct 2026, 19:46 KL",
+ "v": "v1137",
+ "stamped": "16 Oct 2026, 20:05 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7817,6 +7817,16 @@
     "date": "2026-10-15",
     "note": "<b>REDEMPTION ON 15 OCT: 1 UNIT OF SALT FREE TO CS6-PER, BOOKED AS COST.</b> Settled by the reward, RM0 cash, RM56 settled, delivered the same day. On his word of 11 Sep 2026 the row carries goodwill as well as rebate, so it is an expense and not revenue. The goods total of RM56 is below the desk's floor of RM58 and well below its ask of RM140 for 1 unit; that follows from it being a gift. CS6-PER has 18 orders, a median rate of RM85.52, a range of RM7 to RM116, RM0 outstanding before and 0 units on credit; the cap is 2. The cost carried is RM56 a unit, the inventory's own rate. The drafter flagged the desk's count of 1 unit earned and unredeemed (3 earned, 2 used); the figures cannot answer it, as it is the desk's word. Open: nothing is owed.",
     "rid": "s268"
+   },
+   {
+    "customer": "CA5-BAN",
+    "qty": 6.25,
+    "total": 500,
+    "cash": 0,
+    "date": "2026-10-16",
+    "deliveredQty": 0,
+    "note": "<b>PENDING SALE ON 16 OCT: 6.25 UNITS OF SALT TO CA5-BAN, NOTHING PAID, NOTHING HANDED OVER.</b> Order 20261015105151-ipmsbq, priced at RM500 on this order and placed at RM580, RM500 goods, RM0 cash, 0 units delivered. The goods total of RM500 is above the desk's floor of RM362.5 and below its ask of RM600 for 6.25 units; the rate is RM80 a unit against a floor of RM58 and an ask of RM96. CA5-BAN has 3 orders, a median rate of RM120, a range of RM100 to RM120, RM0 outstanding before and 0 units on credit; the cap is 1. The cost carried is RM58 a unit, the inventory's own rate. The drafter flagged the rate as 33.3% below the party's usual RM120; the figures confirm it is lower but still above the floor. Open: RM500 and 6.25 units to collect.",
+    "rid": "s269"
    }
   ],
   "contacts": [
@@ -8490,9 +8500,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-16T11:44:38.062Z",
+  "QUEUE_COMMITTED": "2026-10-16T12:04:42.184Z",
   "PRICING": {
-   "takenAt": "2026-10-16T11:46:33.376Z",
+   "takenAt": "2026-10-16T12:05:19.609Z",
    "sizes": [
     0.5,
     1,
@@ -8651,7 +8661,7 @@
     {
      "id": "rhythm:dow:salt",
      "sev": "note",
-     "title": "Monday is the busiest day, Sunday the quietest"
+     "title": "Friday is the busiest day, Sunday the quietest"
     },
     {
      "id": "rhythm:payday:salt",
@@ -9183,6 +9193,23 @@
       "rare": false
      }
     },
+    "CA5-BAN": {
+     "salt": {
+      "name": "small and rare",
+      "orders": 3,
+      "tenureDays": 80,
+      "sinceLastDays": 34,
+      "perMonth": 1.14,
+      "unitsPerMonth": 1.52,
+      "smallShare": 0.67,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CA2-SEN": {
      "salt": {
       "name": "rare and large",
@@ -9430,23 +9457,6 @@
       "frequent": true,
       "small": false,
       "bigger": true,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CA5-BAN": {
-     "salt": {
-      "name": "small and rare",
-      "orders": 3,
-      "tenureDays": 80,
-      "sinceLastDays": 34,
-      "perMonth": 1.14,
-      "unitsPerMonth": 1.52,
-      "smallShare": 0.67,
-      "bigShare": 0,
-      "frequent": false,
-      "small": true,
-      "bigger": false,
       "loyal": false,
       "rare": false
      }
@@ -10840,6 +10850,56 @@
         910
        ]
       ],
+      "CA5-BAN": [
+       [
+        0.5,
+        70
+       ],
+       [
+        1,
+        130
+       ],
+       [
+        1.5,
+        190
+       ],
+       [
+        2,
+        240
+       ],
+       [
+        2.5,
+        280
+       ],
+       [
+        3,
+        320
+       ],
+       [
+        3.5,
+        360
+       ],
+       [
+        4,
+        400
+       ],
+       [
+        4.5,
+        440
+       ],
+       [
+        5,
+        480
+       ],
+       [
+        6.25,
+        580
+       ],
+       [
+        12.5,
+        910
+       ]
+      ],
       "CA2-SEN": [
        [
         0.5,
@@ -11490,56 +11550,6 @@
         950
        ]
       ],
-      "CA5-BAN": [
-       [
-        0.5,
-        70
-       ],
-       [
-        1,
-        130
-       ],
-       [
-        1.5,
-        190
-       ],
-       [
-        2,
-        240
-       ],
-       [
-        2.5,
-        280
-       ],
-       [
-        3,
-        320
-       ],
-       [
-        3.5,
-        360
-       ],
-       [
-        4,
-        400
-       ],
-       [
-        4.5,
-        440
-       ],
-       [
-        5,
-        480
-       ],
-       [
-        6.25,
-        580
-       ],
-       [
-        12.5,
-        910
-       ]
-      ],
       "CZ6-WM": [
        [
         0.5,
@@ -12161,6 +12171,7 @@
       "CA4-DAM": 0.5,
       "CA7-AMP": -0.2106,
       "CI4-OKR": -0.2801,
+      "CA5-BAN": -0.2508,
       "CA2-SEN": -0.1268,
       "CH4-KS": -0.2797,
       "CR4-PJ": -0.0551,
@@ -12174,7 +12185,6 @@
       "CE5-SA": -0.3123,
       "CF5-WM": -0.2996,
       "CA6-CYB": -0.1359,
-      "CA5-BAN": -0.2508,
       "CZ6-WM": -0.0683,
       "CA5-SEN": -0.0224,
       "CJ4-OKR": 0,
@@ -12798,6 +12808,28 @@
         450
        ]
       ],
+      "CA5-BAN": [
+       [
+        10,
+        130
+       ],
+       [
+        20,
+        240
+       ],
+       [
+        30,
+        330
+       ],
+       [
+        40,
+        400
+       ],
+       [
+        50,
+        450
+       ]
+      ],
       "CA2-SEN": [
        [
         10,
@@ -13063,28 +13095,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        10,
-        130
-       ],
-       [
-        20,
-        240
-       ],
-       [
-        30,
-        330
-       ],
-       [
-        40,
-        400
-       ],
-       [
-        50,
-        450
-       ]
-      ],
-      "CA5-BAN": [
        [
         10,
         130
@@ -13950,6 +13960,28 @@
         1500
        ]
       ],
+      "CA5-BAN": [
+       [
+        1,
+        60
+       ],
+       [
+        5,
+        300
+       ],
+       [
+        10,
+        550
+       ],
+       [
+        20,
+        1100
+       ],
+       [
+        30,
+        1500
+       ]
+      ],
       "CA2-SEN": [
        [
         1,
@@ -14215,28 +14247,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        1,
-        60
-       ],
-       [
-        5,
-        300
-       ],
-       [
-        10,
-        550
-       ],
-       [
-        20,
-        1100
-       ],
-       [
-        30,
-        1500
-       ]
-      ],
-      "CA5-BAN": [
        [
         1,
         60
@@ -14931,6 +14941,20 @@
         60
        ]
       ],
+      "CA5-BAN": [
+       [
+        1,
+        8
+       ],
+       [
+        5,
+        35
+       ],
+       [
+        10,
+        60
+       ]
+      ],
       "CA2-SEN": [
        [
         1,
@@ -15100,20 +15124,6 @@
        ]
       ],
       "CA6-CYB": [
-       [
-        1,
-        8
-       ],
-       [
-        5,
-        35
-       ],
-       [
-        10,
-        60
-       ]
-      ],
-      "CA5-BAN": [
        [
         1,
         8
@@ -15463,12 +15473,26 @@
      ]
     }
    },
-   "v": "v1135"
+   "v": "v1137"
   },
   "OPEN": {
-   "at": "2026-10-16T11:46:33.843Z",
-   "count": 10,
+   "at": "2026-10-16T12:05:20.497Z",
+   "count": 11,
    "byKey": {
+    "CA5-BAN|2026-10-16|500": {
+     "d": "2026-10-16",
+     "p": "CA5-BAN",
+     "dir": "S",
+     "q": 6.25,
+     "t": 500,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 500,
+     "oweUnits": 6.25,
+     "rid": "s269",
+     "key": "CA5-BAN|2026-10-16|500"
+    },
     "CS6-BS-R|2026-10-15|220": {
      "d": "2026-10-15",
      "p": "CS6-BS-R",
@@ -15644,10 +15668,10 @@
      "free": 2.39,
      "owedOut": 1.5,
      "coverDays": 0.5,
-     "rate": 4.74,
+     "rate": 5.04,
      "owedToYou": 625,
-     "promised": 1.5,
-     "short": 0
+     "promised": 7.75,
+     "short": 3.86
     },
     "oil": {
      "name": "Oil",
@@ -15690,7 +15714,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1135"
+   "v": "v1137"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15698,7 +15722,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1135"
+   "v": "v1137"
   },
   "REWARD": {
    "stated": {
@@ -15710,7 +15734,7 @@
      }
     }
    },
-   "v": "v1135"
+   "v": "v1137"
   }
  }
 }
