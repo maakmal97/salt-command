@@ -51244,7 +51244,10 @@ await (async () => {
     } };
     countDb.prepare("INSERT INTO state(key,doc) VALUES (?,?)").run("PRODUCTS", JSON.stringify({ salt: {}, spare: { retired: true } }));
     countDb.prepare("INSERT INTO snapshot(one,v,stamped) VALUES (1,'maker-fixture',NULL)").run();
-    const countQueue = new KV(), countEnv = { ...privateEnv, SALT_QUEUE: countQueue, SALT_LEDGER: countD1 };
+    const countQueue = new KV(), countEnv = { ...privateEnv, SALT_QUEUE: countQueue, SALT_LEDGER: countD1,
+      /* a Counter with no orders: a Correction of a sale's terms reads the site's orders first (16 Oct 2026) */
+      STMT_DESK_KEY: privateEnv.STMT_DESK_KEY || "desk-key-for-the-count-fixture",
+      STMT_SITE: { fetch: async (url) => new URL(url).pathname === "/desk/orders" ? Response.json({ ok: true, orders: [] }) : new Response("not found", { status: 404 }) } };
     const countCounter = { ...env, DESK_MAKER: { fetch: (request) => worker.fetch(request, countEnv, { waitUntil() {} }) } };
     const countCall = (body) => handleMaker(new Request("https://counter.test/all/maker/inputs/stock-count", {
       method: "POST", body: JSON.stringify(body)
