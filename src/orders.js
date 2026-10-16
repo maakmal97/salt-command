@@ -1913,8 +1913,9 @@ export async function tellSite(env, fixes, mirror) {
     if (!m || !m.ok) failed.push({ id: o.id, why: "the site would not take it" + (m ? " (http " + m.status + ")" : "") });
     else told++;
   }
-  /* fix 4: the committed list's corrections, sent on the list of orders this pass already read */
-  const fx = await sendFixes(env, r.orders, fixes);
+  /* fix 4: the committed list's corrections, sent on the list of orders this pass already read; and (plan 4) each undo the book now holds
+     on a site order's row, taking back off the order what it took back off the row, once, by its own id */
+  const fx = await sendFixes(env, r.orders, (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows)));
   failed.push(...(fx.failed || []));
   /* the mark moves only on a clean pass, so an order the site refused is tried again next minute
      rather than waiting for the next fold */
@@ -1944,6 +1945,24 @@ export const SITE_FIXES = [
   { id: "fx4-gwepmw-transfer", order: "20260927095911-gwepmw", line: "2026-09-27T13:09:07.720Z", method: "transfer", account: "tng" }
 ];
 const FIXED_MARK = "orders:fixed";
+/* PLAN 4 (16 Oct 2026): THE UNDOS ON SITE ORDERS' ROWS, as lines of the list sendFixes sends: each undo step on a row an order names (its one
+   row by the key, never a twin's), what it took back (`took`, the fold's reading) as the order's undo fix, its id the row and the step, so a
+   pass sends it once and the done mark keeps it from ever going twice. A change of terms took nothing back here: restateOrder told the order. */
+export function undoFixes(orders, byKey, rows) {
+  const out = [];
+  for (const o of orders || []) {
+    if (!o || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
+    const k = ledgerKeyOf(o), row = byKey.get(k);
+    if (!row || row.cancelled || !row.rid || (rows.get(k) || 0) > 1) continue;
+    (row.amend || []).forEach((a, i) => {
+      if (!a || a.undoes == null || !a.took) return;
+      const id = ("un-" + String(row.rid).toLowerCase() + "-" + i).slice(0, 40);
+      if (!/^[a-z0-9-]{1,40}$/.test(id)) return;   /* the order book's FIX_ID_RE */
+      out.push(Object.assign({ id, order: o.id, undo: true }, +a.took.cash > 0.004 ? { unpay: +a.took.cash } : {}, +a.took.units > 0.0004 ? { unmove: +a.took.units } : {}));
+    });
+  }
+  return out.filter((f) => f.unpay || f.unmove);
+}
 /** Each line of the list not yet sent, to its order on `orders`: { sent, refused?, waiting?, failed? }. */
 export async function sendFixes(env, orders, fixes) {
   const list = fixes || SITE_FIXES;

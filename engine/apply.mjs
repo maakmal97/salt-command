@@ -215,7 +215,12 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
       /* plan 4 (16 Oct 2026): AND IT SAYS WHAT IT REPLACED (`was`), so the change can be undone from its own record. An undo's step names
          the step it undoes and moves nothing on the walk (its units are the step's it undoes, now passed over), and that step is marked undone. */
       const step = { date: pay.date || null, kind: "Correction", cash: 0, kg: undo ? 0 : (Math.abs(moved) > 0.0009 ? moved : 0), note: note || line, was };
-      if (undo) step.undoes = undo.i;
+      if (undo) {
+        step.undoes = undo.i;
+        /* what the undo took back, by the engine's readings, which the site order follows (src/orders.js tellSite) */
+        const tookCash = +(E.txPaid(before) - E.txPaid(after)).toFixed(2), tookUnits = +(E.txPhys(before) - E.txPhys(after)).toFixed(4);
+        if (dir !== "BUY" && (tookCash > 0.004 || tookUnits > 0.0004)) step.took = Object.assign({}, tookCash > 0.004 ? { cash: tookCash } : {}, tookUnits > 0.0004 ? { units: tookUnits } : {});
+      }
       row.amend = row.amend.concat([step]);
       if (undo) row.amend[undo.i] = Object.assign({}, row.amend[undo.i], { undone: pay.date || true });
     }

@@ -20,9 +20,9 @@
 import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, draftRow, tripCheck } from "./drafter.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset } from "./maker-inputs.js";
+import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerUndo } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -475,12 +475,33 @@ async function makerHeldMoves(env) {
   }
   return out;
 }
+/* plan 4: WHAT AN UNDO ON A ROW ANSWERS TO, read once for the History and again when the undo is sent: the moves waiting on the book's sales,
+   the money on its way to the row (rowRoom's `on`), and the site order whose row it is, any but a declined or cancelled one, by its key.
+   A site that cannot be read is said, and nothing is undone meanwhile. */
+async function undoContext(env, book, rid) {
+  const held = await makerHeldMoves(env);
+  const found = (book.sales || []).find((s) => s && s.rid === rid);
+  let onWay = 0, order = null, siteError = false;
+  if (found) {
+    const room = await rowRoom(env.SALT_LEDGER, "SELL", undefined, async () => book);
+    const reading = room(POSITION_ENGINE.ovKey(found), { at: "", payload: { rid } });
+    onWay = reading ? reading.on : 0;
+    const listed = await listOrders(env, true);
+    if (!listed.ok) siteError = true;
+    else {
+      const key = POSITION_ENGINE.ovKey(found);
+      const hits = listed.orders.filter((o) => o && !["declined", "cancelled"].includes(o.status) && ledgerKeyOf(o) === key);
+      if (hits.length > 1) siteError = true; else order = hits[0] || null;
+    }
+  }
+  return { held, onWay, order, siteError };
+}
 async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, offsetLocked = false) {
   if (p !== "/_internal/maker/drafts" && p !== "/_internal/maker/inputs" && p !== "/_internal/maker/inputs/stock-count"
     && p !== "/_internal/maker/queue"
     && p !== "/_internal/maker/vault" && p !== "/_internal/maker/vault/addr" && p !== "/_internal/maker/vault/pair"
     && p !== "/_internal/maker/geo/expand"
-    && p !== "/_internal/maker/trade-cover" && p !== "/_internal/maker/trade-reading" && p !== "/_internal/maker/trip-split"
+    && p !== "/_internal/maker/trade-cover" && p !== "/_internal/maker/trade-reading" && p !== "/_internal/maker/trip-split" && p !== "/_internal/maker/undo"
     && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
     && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
     && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
@@ -712,6 +733,30 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const split = makerTripSplit(body, book, await makerHeldMoves(env));
     return split.error ? json({ ok: false, error: split.error }, 400) : json({ ok: true, split });
   }
+  if (p === "/_internal/maker/undo") {
+    /* plan 4: one sale's History and the undo of its newest move, a read; nothing is queued here */
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    if (!env.SALT_LEDGER || !env.SALT_QUEUE) return json({ ok: false, error: "The Desk queue and mirror are required." }, 503);
+    let body;
+    try { body = JSON.parse(await request.text()); }
+    catch { return json({ ok: false, error: "send JSON" }, 400); }
+    if (!body || typeof body !== "object" || !["rid", "order"].includes(Object.keys(body).join())) return json({ ok: false, error: "Choose a row." }, 400);
+    const book = await readBook(env.SALT_LEDGER);
+    if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
+    let rid = body.rid;
+    if (body.order !== undefined) {
+      /* a site order's card names its order; its row is the one its key names */
+      if (typeof body.order !== "string" || !/^[0-9]{14}-[a-z0-9]{1,8}$/.test(body.order)) return json({ ok: false, error: "Choose an order." }, 400);
+      const listed = await listOrders(env, true);
+      if (!listed.ok) return json({ ok: false, error: "The site's orders could not be read." }, 503);
+      const o = listed.orders.find((x) => x && x.id === body.order), k = o && ledgerKeyOf(o);
+      const hits = k ? (book.sales || []).filter((s) => s && !s.cancelled && POSITION_ENGINE.ovKey(s) === k) : [];
+      if (hits.length !== 1) return json({ ok: false, error: hits.length ? "That order's key names two rows: undo it by hand." : "That order has no row on the book yet." }, 409);
+      rid = hits[0].rid;
+    }
+    const read = makerUndo(book, rid, await undoContext(env, book, rid));
+    return read.error ? json({ ok: false, error: read.error }, 400) : json({ ok: true, history: read });
+  }
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   if (p === "/_internal/maker/order-again" || p === "/_internal/maker/words") {
     let body;
@@ -808,6 +853,8 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       catch (error) { return json({ ok: false, error: "Confirmed Add IDs could not be verified against the vault receipts and outbox." }, 503); }
     }
     const tripHeld = operation === "trip-pay" ? await makerHeldMoves(env) : [];
+    /* plan 4: an undo answers to what is waiting on its row and to the site order, read again as it is sent */
+    const undoCtx = operation === "ledger-amend" && body.undo !== undefined && typeof body.rid === "string" ? await undoContext(env, book, body.rid) : null;
     const built = operation === "appoint-existing"
       ? { entry: POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,
         parent: null, rev: appointmentPlan.stream, geo: null, tiers: null }) }
@@ -816,7 +863,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       : operation === "house-sizes" ? makerHouseSizes(body, book)
       : operation === "tier-set" ? makerTierSet(body, book)
       : operation === "partner" ? makerPartner(body, book, resourcePending)
-        : operation === "ledger-amend" ? makerLedgerAmendment(body, book)
+        : operation === "ledger-amend" ? makerLedgerAmendment(body, book, undoCtx)
           : operation === "trip-pay" ? makerTripPay(body, book, tripHeld)
           : operation === "trip-join" ? makerTripJoin(body, book)
           : operation === "offset" ? makerOffset(body, book, held)
