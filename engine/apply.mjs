@@ -14,6 +14,13 @@ import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TE
 
 const E = POSITION_ENGINE;
 const r2 = (v) => +(+v).toFixed(2);
+/* which entry made each of a plan's moves (a WeakMap, so the plan's own text is unchanged) */
+const MOVE_OF = new WeakMap(), PLANNED = new WeakSet();
+/* a plan planBatch did not build (or a clone of one) has no attribution; applyInto never calls this (it reads p.moves whole), so it throws rather than answer [] */
+export const movesOf = (p, it) => {
+  if (!PLANNED.has(p)) throw new Error("movesOf: not a plan built by planBatch");
+  return p.moves.filter((m) => MOVE_OF.get(m) === it.id);
+};
 function prodOf(row) { return (row && row.product) || "salt"; }
 
 /* The attribution rule lives in engine/position.mjs, because the desk, this fold and the
@@ -383,6 +390,7 @@ export function planBatch(book, staged, notes, ctx) {
   const tierNames = () => ctx.tierNames, driftBooks = () => ctx.driftBooks;
   const tierOk = (p, v) => driftBooks().includes(p) ? PRICING_ENGINE.driftOk(v) : PRICING_ENGINE.levelShapeOk(v, tierNames());
   const out = { items: [], refused: [], moves: [] };
+  let tagged = 0;
   let rows = (staged && staged.approved) || [];
   const registrations = rows.flatMap((item) => {
     if (item.status !== "approved") return [];
@@ -777,6 +785,7 @@ export function planBatch(book, staged, notes, ctx) {
       entry.does.push(`re-key ${pairs.map((x) => x[0] + " to " + x[1]).join(" and ")} wherever the book holds the code, after every other row in this batch; notes and history keep the old code`);
       entry.does.push("move the statement account to the new code, its username unchanged, with any place override and the suite's fixtures");
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
+    for (; tagged < out.moves.length; tagged++) MOVE_OF.set(out.moves[tagged], it.id);   /* every refusal (continue) in this iteration came before this line, so the moves made since the last entry are this entry's alone */
     out.items.push(entry);
     if (it.collection === "roster" && registrationIds.has(it.id)) plannedRegistrations.add(it.id);
     if (resourceEntry) reservedEntries.push(resourceEntry);
@@ -794,6 +803,7 @@ export function planBatch(book, staged, notes, ctx) {
     });
     out.moves = out.moves.filter((m) => !(m.trip && held.has(m.trip)));
   }
+  PLANNED.add(out);
   return out;
 }
 
@@ -812,26 +822,16 @@ export function applyBatch(book0, staged, notes, ctx) {
   if (problems.length) return { ok: false, problems };
   return Object.assign({ ok: true }, applyInto(book, p, st, notes, ctx));
 }
-/* the same, on a book the caller owns and wants folded IN PLACE (tools/fold.mjs's apply, whose callers hold the book and its rows
-   by identity): `book` is the caller's own working copy and `p` the plan made against it. Everything else goes through applyBatch. */
-export function applyInto(book, p, staged, notes, ctx) {
-  const nextRid = ctx.nextRid, sortBook = ctx.sortBook;
-  /* 26 Sep 2026, HIS INSTRUCTION: THE SHELF'S RATE IS DERIVED FROM THE LOTS, so the master has no STOCK_COST line to
-     read or to move. A salt sale leaving the shelf with no cost of its own is costed at the engine's stockBasis on the
-     book as it stands before this batch: salt's received lots, allocated newest-first under the salt count the book
-     states (PROD_OPENING.salt.stated, else STATED_STOCK, as the desk's countedFor reads it), at their goods rate. It is
-     the function the desk's walk runs, so the fold and the desk carry one rate. No salt count stated, no fill, as a
-     master without the line had none. */
+/* the salt fallback rate (see applyInto): the engine's stockBasis on the book as it stands, null with no salt count stated */
+function stockCostOf(book) {
   const saltOpening = (book.PROD_OPENING || {}).salt || null;
   const saltCount = saltOpening && saltOpening.stated != null ? saltOpening.stated : book.STATED_STOCK;
-  const stockCost = saltCount != null ? E.stockBasis((book.purchases || []).filter((r) => prodOf(r) === "salt"), +saltCount, saltOpening).rate : null;
-  const fromSalt = book.STATED_STOCK;
-  const moves = [];
-  let newest = book.QUEUE_COMMITTED || "";
-  const folded = [], renames = [];
-  for (const it of p.items) {
-    const src = staged.approved.find((x) => x.id === it.id);
-    const n = (notes.rows && notes.rows[it.id]) || {};
+  return saltCount != null ? E.stockBasis((book.purchases || []).filter((r) => prodOf(r) === "salt"), +saltCount, saltOpening).rate : null;
+}
+/* ONE PLANNED ITEM BOOKED INTO THE BOOK: the body of the fold's loop, shared by applyInto (a batch) and applyEntry (one entry). c = { src, n, notes, stockCost, nextRid, moves, renames }:
+   the staged item, its notes row, the batch notes, the salt fallback rate, the rid minter, and the two lists it adds to (refund words; renames, applied last by the caller). */
+function bookItem(book, it, c) {
+  const { src, n, notes, stockCost, nextRid, moves, renames } = c;
     if (it.target) {
       applyAmend(it.target, it.pay, it.dir, String(n.note || "").trim() || undefined);
       /* v444, HIS INSTRUCTION: a cancelled order that was paid for is a payable, recorded exactly
@@ -939,6 +939,48 @@ export function applyInto(book, p, staged, notes, ctx) {
       }
     }
     else if (it.rename) renames.push(it.rename);
+}
+/* S1d-i: ONE ENTRY BOOKED AT A TIME, beside the batch (applyInto is untouched in its output). ctx = { nextRid, staged, notes, moves }, moves being this entry's own
+   (movesOf(plan, it)). It books the item, then rolls the stated figure of each product the entry moved, at once: a count sets the figure, a move after it adds or
+   takes off what stands, and a move before a count is overwritten by it. The salt fallback rate is read on the book before THIS entry. It writes no ROLLED sentence, renames
+   nothing and sets neither QUEUE_COMMITTED nor the order of the rows: a wrapper does those once for a batch, from what this returns,
+   { id, newest, moves (refund words), renames, rolls: [{ product, out, inn, from, to, uncounted }], entryMoves }.
+   Today's batch law rolls after every row, so a count and a move on one product give count less move in either order; here the order of the entries decides. */
+export function applyEntry(book, it, ctx) {
+  const src = ctx.staged.approved.find((x) => x.id === it.id), n = (ctx.notes.rows && ctx.notes.rows[it.id]) || {};
+  const moves = [], renames = [];
+  bookItem(book, it, { src, n, notes: ctx.notes, stockCost: stockCostOf(book), nextRid: ctx.nextRid, moves, renames });
+  const entryMoves = ctx.moves || [], rolls = [];
+  for (const prod of [...new Set(entryMoves.map((m) => m.product))]) {
+    const ms = entryMoves.filter((m) => m.product === prod);
+    const out = ms.filter((m) => m.kg < 0).reduce((a, m) => a - m.kg, 0), inn = ms.filter((m) => m.kg > 0).reduce((a, m) => a + m.kg, 0);
+    const o = prod === "salt" ? null : (book.PROD_OPENING || {})[prod];
+    if (prod === "salt") { const from = book.STATED_STOCK, to = r2(from - out + inn); book.STATED_STOCK = to; rolls.push({ product: prod, from, out, inn, to }); }
+    else if (o && o.stated != null) { const from = o.stated, to = r2(from - out + inn); o.stated = to; rolls.push({ product: prod, from, out, inn, to }); }
+    else rolls.push({ product: prod, from: null, out, inn, to: null, uncounted: true });
+  }
+  return { id: it.id, newest: it.id, moves, renames, rolls, entryMoves };
+}
+
+/* the same, on a book the caller owns and wants folded IN PLACE (tools/fold.mjs's apply, whose callers hold the book and its rows
+   by identity): `book` is the caller's own working copy and `p` the plan made against it. Everything else goes through applyBatch. */
+export function applyInto(book, p, staged, notes, ctx) {
+  const nextRid = ctx.nextRid, sortBook = ctx.sortBook;
+  /* 26 Sep 2026, HIS INSTRUCTION: THE SHELF'S RATE IS DERIVED FROM THE LOTS, so the master has no STOCK_COST line to
+     read or to move. A salt sale leaving the shelf with no cost of its own is costed at the engine's stockBasis on the
+     book as it stands before this batch: salt's received lots, allocated newest-first under the salt count the book
+     states (PROD_OPENING.salt.stated, else STATED_STOCK, as the desk's countedFor reads it), at their goods rate. It is
+     the function the desk's walk runs, so the fold and the desk carry one rate. No salt count stated, no fill, as a
+     master without the line had none. */
+  const stockCost = stockCostOf(book);
+  const fromSalt = book.STATED_STOCK;
+  const moves = [];
+  let newest = book.QUEUE_COMMITTED || "";
+  const folded = [], renames = [];
+  for (const it of p.items) {
+    const src = staged.approved.find((x) => x.id === it.id);
+    const n = (notes.rows && notes.rows[it.id]) || {};
+    bookItem(book, it, { src, n, notes, stockCost, nextRid, moves, renames });
     if (it.id > newest) newest = it.id;
     folded.push(it.id);
   }

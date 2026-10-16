@@ -1,0 +1,8 @@
+[
+  {"name": "the per-entry roll is skipped", "file": "engine/apply.mjs", "find": "const from = book.STATED_STOCK, to = r2(from - out + inn); book.STATED_STOCK = to; rolls.push", "replace": "const from = book.STATED_STOCK, to = r2(from - out + inn); rolls.push"},
+  {"name": "the salt fallback rate is read once, before the batch, not before the entry", "file": "engine/apply.mjs", "find": "stockCost: stockCostOf(book), nextRid: ctx.nextRid", "replace": "stockCost: (ctx.staged.zzSc === undefined ? (ctx.staged.zzSc = stockCostOf(book)) : ctx.staged.zzSc), nextRid: ctx.nextRid"},
+  {"name": "the reducer drops sortBook", "file": "test/apply-entry.mjs", "find": "  ctx.sortBook(book);\n  return book;", "replace": "  return book;"},
+  {"name": "the reducer drops QUEUE_COMMITTED", "file": "test/apply-entry.mjs", "find": "if (newest && newest > (book.QUEUE_COMMITTED || \"\")) book.QUEUE_COMMITTED = newest;", "replace": ""},
+  {"name": "the reducer applies no rename", "file": "test/apply-entry.mjs", "find": "    E.renameInBook(book, rn.pairs);\n", "replace": ""},
+  {"name": "a move is attributed to no entry", "file": "engine/apply.mjs", "find": "MOVE_OF.get(m) === it.id", "replace": "MOVE_OF.get(m) === undefined"}
+]
