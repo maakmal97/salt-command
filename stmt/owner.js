@@ -1576,7 +1576,7 @@ export const OWNER_JS = `
       var h=document.getElementById('led-'+t[0]+'-h'); if(h) h.textContent=t[1]+' · '+rows.length;
       if(!rows.length){ root.appendChild(el('p','rnone',t[2])); return; }
       var table=el('table','salt-table'), head=el('tr'), body=el('tbody');
-      LEDGER_COLS.forEach(function(c){ var th=el('th',c[1],c[0]); th.setAttribute('scope','col'); head.appendChild(th); });
+      LEDGER_COLS.forEach(function(c){ var th=el('th',c[1],c[0]); head.appendChild(th); th.setAttribute('scope','col'); });
       table.appendChild(el('thead')).appendChild(head); table.appendChild(body);
       rows.forEach(function(r){ var tr=el('tr'); tr.setAttribute('data-rid',r.rid); ledgerCells(r).forEach(function(c){ tr.appendChild(c); }); body.appendChild(tr); });
       root.appendChild(table);
