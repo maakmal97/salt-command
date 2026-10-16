@@ -116,8 +116,8 @@
  {
   "name": "an advance the entry means to make asks a decision",
   "file": "stmt/owner.js",
-  "find": "[/inventory the book puts at|owed out|unmeetable/i,'stock']",
-  "replace": "[/inventory the book puts at|owed out|unmeetable|advance/i,'stock']"
+  "find": "[/inventory the book puts at|owed out|unmeetable|a count of this book/i,'stock']",
+  "replace": "[/inventory the book puts at|owed out|unmeetable|a count of this book|advance/i,'stock']"
  },
  {
   "name": "Details drops the flags",
@@ -176,8 +176,8 @@
  {
   "name": "the button does not say what is owed",
   "file": "stmt/owner.js",
-  "find": "if(k==='pay'||k==='unpay') return 'Approve: '+rid+(paid?' paid':' owes '+rm(a.owed));",
-  "replace": "if(k==='pay'||k==='unpay') return 'Approve';"
+  "find": "if(k==='pay'||k==='unpay'||k==='undopay') return 'Approve: '+rid+(paid?' paid':' owes '+rm(a.owed));",
+  "replace": "if(k==='pay'||k==='unpay'||k==='undopay') return 'Approve';"
  },
  {
   "name": "Needs you draws a card per draft again",

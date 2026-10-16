@@ -25302,8 +25302,9 @@ await (async () => {
     }
   }
   const bare = await show(null);
-  /* 10 Oct 2026: confirm, his Accept sent for their yes, is the twentieth kind, its one body the twenty-eighth banner */
-  ok(!own.length && kinds.length === 20 && seen.length === 28 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+  /* 10 Oct 2026: confirm, his Accept sent for their yes, is the twentieth kind, its one body the twenty-eighth banner; 16 Oct 2026 (plan 4):
+     corrected, a step taken back, the twenty-first, its three cases the thirty-first */
+  ok(!own.length && kinds.length === 21 && seen.length === 31 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -52318,6 +52319,11 @@ await (async () => {
 section("Salt Account: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-trips.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: History on an order and each line of a trip, Undo on the newest move alone, the site order following with a banner (plan 4, 16 Oct 2026)");
+await (async () => {
+  await (await import("./admin-undo.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: the few, fixed choices of Record's forms are option tiles, each sending the value its select did");
