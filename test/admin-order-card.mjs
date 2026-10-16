@@ -143,15 +143,15 @@ export async function run({ ok, pageWork }) {
       "an order with a rejected pending row has Accept again first in its foot, with the stages he rejected offered again: " + JSON.stringify(moves()));
     await part("ready");
     await p.tapRow("ord-r1");
-    ok(same(moves(), ["order.handed", "order.cancel"]) && !foot().contains(byAct(d, "order.handed-units")) && !foot().contains(byAct(d, "order.close")),
-      "a ready order's foot holds Record handover and Cancel order, the units and the close staying in the body: " + JSON.stringify(moves()));
-    byAct(d, "order.close", "ord-r1").click(); await p.work.quiet();
-    ok(!!foot().querySelector("[data-maker-say]") && /Finish at more than 0/.test(foot().querySelector("[data-maker-say]").textContent) && foot().lastElementChild === foot().querySelector("[data-maker-say]"),
+    ok(same(moves(), ["order.handed", "order.cancel"]) && !foot().contains(byAct(d, "order.handed-units")) && !foot().contains(byAct(d, "order.handed-rest")),
+      "a ready order's foot holds Record handover and Cancel order, the units and the tiles that make it a close staying in the body: " + JSON.stringify(moves()));
+    byAct(d, "order.pay", "ord-r1").click(); await p.work.quiet();
+    ok(!!foot().querySelector("[data-maker-say]") && /Choose Bank or Cash first/.test(foot().querySelector("[data-maker-say]").textContent) && foot().lastElementChild === foot().querySelector("[data-maker-say]"),
       "the card's answer lands in its foot, under its moves: " + (foot().querySelector("[data-maker-say]") || {}).textContent);
     /* cash held for the order shuts every control of the card, the foot's too, and Undo opens them again */
     await p.tapRow("ord-r2");
-    const cash = byAct(d, "order.cash-amount", "ord-r2"); cash.value = "50"; cash.dispatchEvent(new p.w.Event("input", { bubbles: true }));
-    byAct(d, "order.cash", "ord-r2").click(); await p.work.quiet();
+    const cash = byAct(d, "order.pay-amount", "ord-r2"); cash.value = "50"; cash.dispatchEvent(new p.w.Event("input", { bubbles: true }));
+    byAct(p.cardOf("ord-r2"), "order.pay-by", "cash").click(); byAct(d, "order.pay", "ord-r2").click(); await p.work.quiet();
     ok(!!byAct(d, "order.cash-undo") && !byAct(d, "order.cash-undo").disabled && [...foot().querySelectorAll("button")].every((b) => b.disabled) && foot().querySelectorAll("button").length >= 2,
       "while cash is held, every move in the foot is shut and only Undo is live");
     byAct(d, "order.cash-undo").click(); await p.work.quiet();
@@ -264,12 +264,13 @@ export async function run({ ok, pageWork }) {
       "a Cancel that failed is sent again from the sheet under the request id it had: " + JSON.stringify(can));
     ok(can.every((x) => x.body.note === "Our prices have changed."), "and a Cancel carries the reason picked on its sheet, as a Decline does: " + JSON.stringify(can.map((x) => x.body.note)));
 
-    /* Close at these units: a figure that is not a close is said on the card, one that is asks on the sheet */
+    /* Close at these units (plan 5, 16 Oct 2026: That is all under the units, the one button): the full size offers no close, fewer asks on the sheet */
     await tapRow("ord-r1");
     const units = byAct(d, "order.handed-units", "ord-r1");
-    units.value = "3"; byAct(d, "order.close", "ord-r1").click(); await p.work.quiet();
-    ok(!sheetOf() && /Finish at more than 0 and fewer than the 3 units ordered/.test(d.querySelector("#makerReview [data-maker-say]").textContent), "a figure that is not a close opens no sheet and is said on the card");
-    units.value = "2"; byAct(d, "order.close", "ord-r1").click(); await p.work.quiet();
+    units.value = "3"; units.dispatchEvent(new p.w.Event("input", { bubbles: true }));
+    ok(!sheetOf() && d.querySelector("#makerReview fieldset[data-close]").hidden && byAct(d, "order.handed", "ord-r1").textContent === "Handed over, 3 units", "at the full size the close is not offered: its tiles are hidden and the one button is the handover");
+    units.value = "2"; units.dispatchEvent(new p.w.Event("input", { bubbles: true }));
+    byAct(d, "order.handed-rest", "all").click(); byAct(d, "order.handed", "ord-r1").click(); await p.work.quiet();
     ok(/Finish this order at 2 of 3 units/.test(sheetOf().querySelector(".salt-sheet__title").textContent) && !inSheet("order.ask-go").classList.contains("salt-ghost--danger") && sends("/handed").length === 0,
       "a close asks on the sheet, naming the units, and sends nothing as it opens");
     inSheet("order.ask-go").click(); await p.work.quiet();
@@ -340,28 +341,28 @@ export async function run({ ok, pageWork }) {
     ok(/Goods\s*RM 100\.00/.test(r1.querySelector(".rdet").textContent), "and its goods stand in Details");
     await tapRow("ord-r2");
     ok(!/Says sent/.test(head("ord-r2")) && /Owed RM 100\.00/.test(head("ord-r2")) && /Handed 0 of 1/.test(head("ord-r2")), "an order with no claim says none: " + head("ord-r2"));
-    const r2 = cardOf("ord-r2"), bank = byAct(r2, "order.received-amount"), cashIn = byAct(r2, "order.cash-amount");
-    ok(!!money(r2) && before(money(r2), bank) && before(byAct(r2, "order.received"), cashIn) && before(cashIn, byAct(r2, "order.reply-text")),
-      "a ready order's Money received holds Bank, then Cash, and the reply stands below them");
-    ok(byAct(r2, "order.received").textContent === "Record bank payment" && byAct(r2, "order.cash").textContent === "Record cash", "each button says its road with no figure typed");
-    typed(bank, "25"); typed(cashIn, "50");
-    ok(byAct(r2, "order.received").textContent === "Record RM 25.00, bank" && byAct(r2, "order.cash").textContent === "Record RM 50.00, cash",
-      "and the figure and the road once one is typed: " + byAct(r2, "order.received").textContent + " / " + byAct(r2, "order.cash").textContent);
+    /* plan 5 (16 Oct 2026): Bank and Cash are two tiles over one amount; the one button says the figure and the road (test/admin-card5.mjs proves the rest) */
+    const r2 = cardOf("ord-r2"), cashIn = byAct(r2, "order.pay-amount");
+    ok(!!money(r2) && before(money(r2), cashIn) && before(cashIn, byAct(r2, "order.pay-by", "bank")) && before(byAct(r2, "order.pay-by", "bank"), byAct(r2, "order.pay-by", "cash")) && before(byAct(r2, "order.pay"), byAct(r2, "order.reply-text")),
+      "a ready order's Money received holds the amount, then Bank and Cash, and the reply stands below them");
+    ok(byAct(r2, "order.pay").textContent === "Record payment", "the button says Record payment with no figure typed");
+    typed(cashIn, "50"); byAct(r2, "order.pay-by", "cash").click();
+    ok(byAct(r2, "order.pay").textContent === "Record RM 50.00, cash", "and the figure and the road once both are there: " + byAct(r2, "order.pay").textContent);
     typed(cashIn, "");
-    ok(byAct(r2, "order.cash").textContent === "Record cash", "a figure cleared takes the figure off the button");
+    ok(byAct(r2, "order.pay").textContent === "Record payment", "a figure cleared takes the figure off the button");
     ok(![...r2.querySelectorAll(".maker-facts")].some((x) => /They wrote/.test(x.textContent)), "an order with no message of theirs draws no line of theirs");
     const said = [...r1.querySelectorAll(".maker-facts")].find((x) => /They wrote/.test(x.textContent));
-    ok(!!said && /Can you come after five\?/.test(said.textContent) && before(byAct(r1, "order.cash-amount"), said) && before(said, byAct(r1, "order.reply-text")),
+    ok(!!said && /Can you come after five\?/.test(said.textContent) && before(byAct(r1, "order.pay-amount"), said) && before(said, byAct(r1, "order.reply-text")),
       "their last line stands above the reply, below the money: " + (said && said.textContent));
     typed(cashIn, "50");
-    byAct(r2, "order.cash").click(); await p.work.quiet();
+    byAct(r2, "order.pay").click(); await p.work.quiet();
     const held = cardOf("ord-r2"), live = [...held.querySelectorAll("button,input,select")].filter((n) => !n.disabled).map((n) => n.getAttribute("data-act") || n.tagName);
     ok(!!byAct(held, "order.cash-undo") && same(live, ["order.cash-undo"]),
       "cash held shuts the reply and every other control of the card, and only Undo is live: " + JSON.stringify(live));
     byAct(d, "order.cash-undo").click(); await p.work.quiet();
     await part("confirmed"); await tapRow("ord-a1");
     const a1 = cardOf("ord-a1");
-    ok(!byAct(a1, "order.cash-amount") && !!byAct(a1, "order.claim-received") && before(money(a1), byAct(a1, "order.claim-received")) && before(byAct(a1, "order.claim-received"), byAct(a1, "order.received-amount")) && before(byAct(a1, "order.received"), byAct(a1, "order.reply-text")),
+    ok(!byAct(a1, "order.pay-by", "cash") && !!byAct(a1, "order.claim-received") && before(money(a1), byAct(a1, "order.claim-received")) && before(byAct(a1, "order.claim-received"), byAct(a1, "order.pay-amount")) && before(byAct(a1, "order.pay"), byAct(a1, "order.reply-text")),
       "an agreed order's Money received holds their claim first, then Bank and no cash, with the reply below");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

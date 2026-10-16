@@ -52326,6 +52326,11 @@ await (async () => {
   await (await import("./admin-undo.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: the order card's Bank and Cash over one amount, Change the order under the head, and one button on the units (plan 5, 16 Oct 2026)");
+await (async () => {
+  await (await import("./admin-card5.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Account: the few, fixed choices of Record's forms are option tiles, each sending the value its select did");
 await (async () => {
   await (await import("./admin-tiles.mjs")).run({ ok, pageWork });

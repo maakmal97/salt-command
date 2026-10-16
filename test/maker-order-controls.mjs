@@ -317,29 +317,35 @@ export async function run({ ok }) {
       "An order's answer lands in the foot of the card tapped, a polite status line, not on the list's line and not on another card: "
       + JSON.stringify({ card: say("20261003090001-ack")?.textContent, other: say("20261003090002-rdy")?.textContent, list: list() }));
 
-    await until(() => button("20261003090002-rdy", "Finish at fewer units"));
+    /* plan 5 (16 Oct 2026): the units field has one button; fewer units than ordered show More to come and That is all, and That is all is the close */
+    const handed = () => card("20261003090002-rdy") && card("20261003090002-rdy").querySelector('button[data-act="order.handed"]');
+    const finishAt = (n) => {
+      const u = field("20261003090002-rdy", "Units handed over"); u.value = String(n); u.dispatchEvent(new window.Event("input", { bubbles: true }));
+      const all = card("20261003090002-rdy").querySelector('input[data-act="order.handed-rest"][data-key="all"]'); if (all) all.click();
+    };
+    await until(() => handed());
     const units = field("20261003090002-rdy", "Units handed over");
-    units.value = "3"; button("20261003090002-rdy", "Finish at fewer units").click();
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    ok(posts.length === 1, "Close at the full size sends nothing: a close is under the units ordered.");
-    ok(say("20261003090002-rdy")?.textContent === "Finish at more than 0 and fewer than the 3 units ordered." && !/Finish at more than/.test(list()),
-      "A refusal made on the page itself, before anything is sent, is said on the card it was made on");
+    units.value = "3"; units.dispatchEvent(new window.Event("input", { bubbles: true }));
+    const restSet = card("20261003090002-rdy").querySelector("fieldset[data-close]");
+    ok(!!restSet && restSet.hidden && handed().textContent === "Handed over, 3 units" && !button("20261003090002-rdy", "Finish at fewer units") && posts.length === 1,
+      "At the full size the card offers no finish: the tiles are hidden and the one button is Handed over, and nothing is sent.");
     failNext = 1;
-    field("20261003090002-rdy", "Units handed over").value = "2";
-    button("20261003090002-rdy", "Finish at fewer units").click(); sheetGo(); await settle(2);
+    finishAt(2);
+    ok(handed().textContent === "Finish at 2 of 3 units", "Two of three units with That is all chosen turns the one button into the finish: " + handed().textContent);
+    handed().click(); sheetGo(); await settle(2);
     await until(() => /did not answer/.test(say("20261003090002-rdy")?.textContent || ""));
     ok(say("20261003090002-rdy")?.firstChild.textContent === "The Counter could not do that. Try again." && say("20261003090002-rdy").querySelector(".rraw")?.textContent === "The Desk did not answer." && !/did not answer/.test(list())
       && !say("20261003090001-ack")?.textContent.includes("did not answer"),
       "A refused action says so in the foot of its own card, beside the buttons it was tapped on, and not on the list's line");
-    await until(() => button("20261003090002-rdy", "Finish at fewer units"));
-    field("20261003090002-rdy", "Units handed over").value = "2";
-    button("20261003090002-rdy", "Finish at fewer units").click(); sheetGo(); await settle(3);
+    await until(() => handed());
+    finishAt(2);
+    handed().click(); sheetGo(); await settle(3);
     ok(posts[1].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[1].body.qty === 2 && posts[1].body.close === true
       && /^[0-9a-f]{32}$/.test(posts[1].body.rid) && posts[2].body.rid === posts[1].body.rid,
-      "Finish at fewer units sends a close at the units in the box, and its retry after a failure carries the same request id: "
+      "The finish sends a close at the units in the box, and its retry after a failure carries the same request id: "
       + JSON.stringify(posts.slice(1, 3)));
-    const handed = () => card("20261003090002-rdy") && card("20261003090002-rdy").querySelector('button[data-act="order.handed"]');
     await until(() => handed());
+    const back = field("20261003090002-rdy", "Units handed over"); back.value = "3"; back.dispatchEvent(new window.Event("input", { bubbles: true }));
     handed().click(); await settle(4);
     ok(posts[3].path === "/all/maker/orders/20261003090002-rdy/handed" && posts[3].body.close === undefined
       && /^[0-9a-f]{32}$/.test(posts[3].body.rid) && posts[3].body.rid !== posts[1].body.rid,

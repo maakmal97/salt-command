@@ -218,13 +218,13 @@ export async function run({ ok, pageWork }) {
     await byAct(d, "part.orders.confirmed").click(); await p.work.quiet();
     await p.tapRow("ord-a1");
     const a1 = p.acts("ord-a1");
-    ok(a1.filter((x) => x === "order.claim-received").length === 2 && a1.includes("order.claim-not-found") && a1.includes("order.received") && a1.includes("order.amend")
+    ok(a1.filter((x) => x === "order.claim-received").length === 2 && a1.includes("order.claim-not-found") && a1.includes("order.pay") && a1.includes("order.amend")
       && a1.includes("order.cancel") && !a1.includes("order.preview") && !a1.includes("order.handed"),
     "an agreed order's card keeps its claims, Received, Amend and Cancel: " + JSON.stringify(a1));
     await byAct(d, "part.orders.ready").click(); await p.work.quiet();
     await p.tapRow("ord-r1");
     const r1 = p.acts("ord-r1");
-    ok(r1.includes("order.handed") && r1.includes("order.close") && r1.includes("order.cash") && r1.includes("order.cancel") && !r1.includes("order.preview"),
+    ok(r1.includes("order.handed") && r1.includes("order.handed-rest") && r1.includes("order.pay") && r1.includes("order.cancel") && !r1.includes("order.preview"),
       "a ready order's card keeps the handover, the close and the cash: " + JSON.stringify(r1));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
@@ -383,7 +383,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("need.open", "om:ord-c9");
     const reply = p.acts("ord-c9");
     ok(p.where() === "orders/ended" && same(p.cardsIn(), ["ord-c9"]) && ["order.reply-text", "order.quick-keep", "order.reply", "order.no-reply"].every((a) => reply.includes(a))
-      && !reply.some((a) => ["order.reason", "order.decline", "order.cancel", "order.received", "order.amend", "order.handed", "order.close", "order.cash"].includes(a)),
+      && !reply.some((a) => ["order.reason", "order.decline", "order.cancel", "order.pay", "order.amend", "order.handed", "order.handed-rest", "order.pay-by"].includes(a)),
     "a closed order's card is his reply and No reply needed alone, nothing to decline, cancel or move: " + JSON.stringify(reply));
     p.posts.length = 0;
     byAct(d, "order.no-reply", "ord-c9").click(); await p.work.quiet();

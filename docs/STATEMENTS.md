@@ -1651,10 +1651,15 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **An agreed order's card leads with its progress and takes money in one block** (15 Oct 2026, `test/admin-order-card.mjs` section 5). The head of an
   Agreed, Ready or Done order is Owed, Paid and Handed (`moved` of `qty`), with Says sent beside them while a claim of theirs is waiting; the goods and the
   delivery charge, already in the title, stand in Details. A Placed, Declined or Cancelled order keeps Goods, since no figure is yet owed. **Money received** is
-  one block under its own heading, in the order the money comes: their claim answered (Yes, I got, Not found), Bank (`order.received`), then Cash on a Ready
-  order only (`order.cash`, still held ten seconds with its Undo). Each field is named for its road, Bank, RM and Cash, RM, and its button says the figure and
-  the road once one is typed (Record RM 25.00, bank). The reply stands below the block with their last line above it (They wrote, the moment, their words):
-  the card drew none before. Cash held shuts the whole card, the reply included, and leaves Undo or Retry live. No act, route, rule or request changed.
+  one block under its own heading, in the order the money comes: their claim answered (Yes, I got, Not found), then one amount (`order.pay-amount`) over two
+  tiles, Bank and Cash (`order.pay-by`), and one button (`order.pay`) that says the figure and the road once both are there (Record RM 25.00, bank). Cash is
+  offered on a Ready order only and neither tile is chosen there until he chooses; an Agreed order has Bank alone, chosen (plan 5, 16 Oct 2026,
+  `makerPayControl`). Bank sends the order's `received` and Cash is still held ten seconds with its Undo, each body the one the two buttons sent before it.
+  The reply stands below the block with their last line above it (They wrote, the moment, their words):
+  the card drew none before. Cash held shuts the whole card, the reply included, and leaves Undo or Retry live.
+- **Plan 5 of the order card** (16 Oct 2026, `test/admin-card5.mjs`). Change the order (`order.amend`) stands under the head, opening the same Sheet and the
+  same `restate`. The units field has one button: at the units ordered it is Handed over; fewer units show More to come and That is all
+  (`order.handed-rest`, More to come chosen), and That is all turns it into Finish at n of the size, asked on the Sheet and sent as the close it was.
 - **The order card reads its own preview** (Phase 2a, 12 Oct 2026, his decision 6 of 11 Oct; `test/admin-order-card.mjs`, its mutations in
   `test/admin-order-card.mutations.json`). **A placed order reads its preview when its detail is opened**, once, and again when an input is
   changed: choosing a delivery charge or a window reads at once, and the goods total reads when the field is finished (`change`), taking
@@ -2497,13 +2502,10 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.ask-keep` | Same sheet | Leaves the order as it was, sending nothing. |
 | `order.back` | The head of an open order's card, below 860px | Closes the card and returns to the list, to the row it came from. |
 | `order.cancel` | Order card (key: the order id), acknowledged or ready | Asks on a sheet, with a reason, then cancels the order. |
-| `order.cash` | Order card (key: the order id), ready | Holds the cash for ten seconds, then records it. |
-| `order.cash-amount` | Order card (key: the order id), ready | Cash, in RM, the money taken at the handover; its button says the figure and "cash" once one is typed. |
 | `order.cash-retry` | Order card (key: the order id), when the answer was lost | Sends the same cash again, or refreshes the card. |
 | `order.cash-undo` | Order card (key: the order id), while the cash is held | Undoes it, sending nothing. |
 | `order.claim-not-found` | Same card | Asks, on the Sheet, whether to answer that claim Not found. |
 | `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Asks, on the Sheet, whether to confirm the money they say they sent. |
-| `order.close` | Order card (key: the order id), ready | Asks on a sheet, then closes the order at the units typed. |
 | `order.decline` | Order card (key: the order id), placed | Asks on a sheet, with a reason, then declines the order. |
 | `order.details` | Every order card, and the card of cash held for an order not on the read (key: the order id) | Opens the order's reference, when it was placed and how it goes, as a list of names and values. |
 | `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |
@@ -2513,8 +2515,12 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.fee-other-amount` | Order card (key: the order id), placed for delivery | His own delivery charge, in RM. |
 | `order.handed` | Order card (key: the order id), ready | Records the handover. |
 | `order.handed-units` | Order card (key: the order id), ready | The units handed over. |
+| `order.handed-rest` | Same card, fewer units typed than ordered (key: more or all) | More to come (a part handover) or That is all (the close at the units typed, asked on a sheet); Handed over says which. |
 | `order.no-reply` | Same card | Records that no reply is needed. |
 | `order.open` | A row of the list in Orders (key: the order id) | Opens that order's card beside the list from 860px, in its place below it. Reads nothing. |
+| `order.pay` | Order card (key: the order id), acknowledged or ready | Records the amount by the road chosen: Bank as the order's received, Cash held ten seconds with its Undo, then recorded; it says the figure and the road once both are there. |
+| `order.pay-amount` | Same card | The amount received, in RM, one field for the bank and the cash. |
+| `order.pay-by` | Same card (key: bank or cash) | Bank or Cash; Cash is offered on a ready order alone, and none is chosen there until he chooses. |
 | `order.quick-keep` | Same card | Keeps the reply as a quick reply on this device, or forgets it. |
 | `order.quick-reply` | Same card, one for each kept line (key: its place in the list) | Fills the reply with that line. |
 | `order.ready-collect` | Order card (key: the order id), acknowledged | Marks the order ready to collect. |
@@ -2523,8 +2529,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.reason-place` | Same sheet, an order to be delivered | Picks the place line as the reason. |
 | `order.reason-price` | Same sheet | Picks the price line as the reason. |
 | `order.reason-stock` | Same sheet | Picks the stock line as the reason. |
-| `order.received` | Same card | Confirms that payment. |
-| `order.received-amount` | Order card (key: the order id), acknowledged or ready | Bank, in RM, a payment that reached the bank; its button says the figure and "bank" once one is typed. |
 | `order.reply` | Same card | Sends the reply. |
 | `order.reply-text` | Same card | The reply to the customer. |
 | `order.reread` | Order card (key: the order id), placed or with a rejected pending row, after a read that failed, and on a placed order from the moment its total or charge is edited until the figures are read | Reads the figures again. |
