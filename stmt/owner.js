@@ -4026,22 +4026,27 @@ export const OWNER_JS = `
           },(order.mode||'collect')===m[0]).setAttribute('data-mode',m[0]);
         });
       }else if(order.status==='ready'){
-        var qty=makerField(card,['Units handed over','order.handed-units'],'number',order.qty);
+        /* 16 Oct 2026 (plan 5, part 3): THE UNITS FIELD HAS ONE BUTTON. Handed over and Finish at fewer units were two buttons on one field; now the field
+           has one, and fewer units than ordered show two tiles under it: More to come (the default, a part handover, as Handed over sent it) or That is all
+           (a close at these units, asked on the Sheet, as Finish at fewer units sent it). The button says which. Each body is the one its old button sent. */
+        var qty=makerField(card,['Units handed over','order.handed-units'],'number',order.qty), rest=null;
+        if(!order.test){ rest=makerTilesIn(card,['The rest','order.handed-rest'],[{value:'more',label:'More to come'},{value:'all',label:'That is all'}]); rest.setAttribute('data-close',''); }
+        var handedPart=function(){ var n=Number(qty.value); return !!rest&&n>0&&n<Number(order.qty); };
+        var handedEnds=function(){ return handedPart()&&rest.value==='all'; };
         var handed=makerButton(acts,['Handed over, '+units(order.qty),'order.handed'],function(){
-          makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.');
+          if(!handedEnds()){ makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }
+          /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
+          var n=Number(qty.value);
+          makerAsk(order,handed,'close',{title:'Finish this order at '+n+' of '+order.qty+' units?', plain:true, go:'Finish the order', keep:'Not yet',
+            say:['The order ends at '+n+' units, and the Desk restates its total.'],
+            yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.'); }});
         },true);
-        qty.addEventListener('input',function(){ handed.textContent=Number(qty.value)>0?'Handed over, '+units(qty.value):'Handed over'; });
-        /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
-        if(!order.test){
-          var closeBtn=makerButton(card,['Finish at fewer units','order.close'],function(){
-            var n=Number(qty.value);
-            if(!(n>0&&n<Number(order.qty))){ makerSay(order.id,'Finish at more than 0 and fewer than the '+order.qty+' units ordered.'); return; }
-            makerAsk(order,closeBtn,'close',{title:'Finish this order at '+n+' of '+order.qty+' units?', plain:true, go:'Finish the order', keep:'Not yet',
-              say:['The order ends at '+n+' units, and the Desk restates its total.'],
-              yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Finish sent to the Desk.'); }});
-          },false);
-          closeBtn.setAttribute('data-close',''); makerAskTag(order,closeBtn,'close');
-        }
+        makerAskTag(order,handed,'close');
+        var handedDraw=function(){
+          if(rest) rest.hidden=!handedPart();
+          handed.textContent=handedEnds()?'Finish at '+Number(qty.value)+' of '+units(order.qty):Number(qty.value)>0?'Handed over, '+units(qty.value):'Handed over';
+        };
+        qty.addEventListener('input',handedDraw); if(rest) rest.addEventListener('change',handedDraw); handedDraw();
       }
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         /* 15 Oct 2026: MONEY RECEIVED IS ONE BLOCK, in the order the money comes: their claim answered, a payment into the bank, then cash at the handover (Ready only).
