@@ -1,6 +1,6 @@
 {
- "v": "v1139",
- "stamped": "16 Oct 2026, 20:09 KL",
+ "v": "v1140",
+ "stamped": "16 Oct 2026, 20:18 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": -2.11,
+  "STATED_STOCK": 22.89,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -906,6 +906,21 @@
     "paidOn": "2026-10-13",
     "note": "<b>NEW BUY ON 13 OCT: 12.5 UNITS OF SALT FROM SA5-BTR FOR RM700.</b> Collected, RM700 cash out on 13 Oct with RM25 freight beside it, and all 12.5 units received the same day. At RM56 a unit it matches his word of 23 Sep: multiples of 12.5 units at RM700 each, one tier bought in whole lots. SA5-BTR has 24 orders, a median rate of RM56, a range of RM44 to RM64, RM0 outstanding before and no units on credit. The row carries the inventory's own cost of RM56 a unit. The drafter raised no flags, so there is nothing for the figures to answer. Open: nothing.",
     "rid": "p039"
+   },
+   {
+    "qty": 25,
+    "total": 1400,
+    "cash": 1400,
+    "handover": "collected",
+    "supplier": "SA5-BTR",
+    "freight": 50,
+    "status": "paid",
+    "date": "2026-10-15",
+    "receivedOn": "2026-10-15",
+    "receivedQty": 25,
+    "paidOn": "2026-10-15",
+    "note": "<b>NEW BUY ON 15 OCT: 25 UNITS OF SALT FROM SA5-BTR FOR RM1400.</b> Collected, RM1400 cash out and paid in full, all 25 units received on 15 Oct, with RM50 freight beside it. At RM56 a unit it matches his word of 23 Sep: multiples of 12.5 units at RM700 each, so two lots here. SA5-BTR has a median rate of RM56, a range of RM44 to RM64, RM0 outstanding before and no units on credit. The cost carried is the inventory's own rate of RM56 a unit. The drafter raised no flags, so there is nothing for the figures to answer. Cap not stated in the dossier. Nothing is left outstanding.",
+    "rid": "p040"
    }
   ],
   "sales": [
@@ -8546,9 +8561,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-16T12:07:47.902Z",
+  "QUEUE_COMMITTED": "2026-10-16T12:17:45.897Z",
   "PRICING": {
-   "takenAt": "2026-10-16T12:09:20.411Z",
+   "takenAt": "2026-10-16T12:18:59.062Z",
    "sizes": [
     0.5,
     1,
@@ -9774,10 +9789,10 @@
          "why": "RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; what changed is the leak behind it and the attribution in front of it. The 33.14 count took the observed rate from 16.19% to 18.87%, and SHRINK_ATTRIB went to 1, so the whole leak is now carried in the price and nothing is absorbed. Effective cost RM53.19 to RM60.01. These numbers are the unlocked path’s own output, captured rather than hand-computed: the lock was deleted, pxCost() run fresh at attrib 1, and the result written back here. Absorbed is 0 by definition at full attribution."
         },
         "cur": {
-         "qty": 12.5,
-         "total": 700,
+         "qty": 25,
+         "total": 1400,
          "rate": 56,
-         "date": "2026-10-13",
+         "date": "2026-10-15",
          "sup": "SA5-BTR"
         },
         "days": 71,
@@ -9808,13 +9823,13 @@
         "shrink": null
        },
        "lot": {
-        "qty": 12.5,
-        "total": 700,
+        "qty": 25,
+        "total": 1400,
         "rate": 56,
-        "date": "2026-10-13",
+        "date": "2026-10-15",
         "sup": "SA5-BTR"
        },
-       "meanLot": 23.37962962962963,
+       "meanLot": 23.4375,
        "quoteRate": 56,
        "repl": 56,
        "freightRate": 2,
@@ -9831,11 +9846,11 @@
         "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
        },
        "latest": {
-        "rid": "p039",
-        "date": "2026-10-13",
-        "quote": 700,
-        "freight": 25,
-        "units": 12.5,
+        "rid": "p040",
+        "date": "2026-10-15",
+        "quote": 1400,
+        "freight": 50,
+        "units": 25,
         "rate": 58
        },
        "costBasis": {
@@ -9850,7 +9865,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.07829914328381672,
+       "shrinkRate": 0.07533842547077063,
        "avgDel": {
         "n": 214,
         "kg": 549.81,
@@ -15519,10 +15534,10 @@
      ]
     }
    },
-   "v": "v1139"
+   "v": "v1140"
   },
   "OPEN": {
-   "at": "2026-10-16T12:09:21.051Z",
+   "at": "2026-10-16T12:18:59.898Z",
    "count": 10,
    "byKey": {
     "CS6-BS-R|2026-10-15|220": {
@@ -15696,14 +15711,14 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": -2.11,
-     "free": -3.61,
+     "onHand": 22.89,
+     "free": 21.39,
      "owedOut": 1.5,
-     "coverDays": 0,
+     "coverDays": 4.2,
      "rate": 5.03,
      "owedToYou": 625,
      "promised": 1.5,
-     "short": 3.61
+     "short": 0
     },
     "oil": {
      "name": "Oil",
@@ -15746,7 +15761,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1139"
+   "v": "v1140"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15754,7 +15769,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1139"
+   "v": "v1140"
   },
   "REWARD": {
    "stated": {
@@ -15766,7 +15781,7 @@
      }
     }
    },
-   "v": "v1139"
+   "v": "v1140"
   }
  }
 }
