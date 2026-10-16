@@ -50827,6 +50827,11 @@ await (async () => {
   await (await import("./engine-cards.mjs")).run({ ok });
 })();
 
+section("S1d-1: applyEntry books one entry, and the entries reduced in order end where the batch ends");
+await (async () => {
+  await (await import("./apply-entry.mjs")).run({ ok });
+})();
+
 section("Counter Gift: a double tap books once, a booked twin is asked about and folds as a second");
 await (async () => {
   await (await import("./maker-gift-twin.mjs")).run({ ok, pageWork });
