@@ -483,6 +483,23 @@ export function cashTap(o, at, body, ctx) {
   return { entry, queueIt: true, site: { cash: { amount: +amount.toFixed(2) } }, shown: { amount: +amount.toFixed(2), cash: true } };
 }
 
+/** 16 Oct 2026, his word on CR3-DAM's s263 (a Correction cut the row to RM65 and the order kept RM80): AN AGREED ORDER STATES
+ *  WHAT ITS ROW STATES. The size, the goods and the delivery the return leg restates the order to, or null when they already
+ *  agree or the order cannot take them now (not agreed, a claim of theirs waiting, a size under what is out, a charge on a
+ *  collection). A row on a trip carries the trip's one delivery or none, so the order keeps its own. `moved` is what the order
+ *  will hold once the same pass has carried the handovers back. */
+export function termsFromRow(o, row, moved) {
+  if (!o || !row || !AGREED_ON_SITE.includes(o.status)) return null;
+  if ((o.payments || []).some((p) => p && p.claim === "waiting")) return null;
+  const qty = +(+row.qty).toFixed(3), total = +(+row.total).toFixed(2);
+  const delivery = row.trip ? +(+(o.delivery || 0)).toFixed(2) : +(+(row.delivery || 0)).toFixed(2);
+  if (!(qty > 0) || !(total > 0) || !(delivery >= 0)) return null;
+  if (delivery > 0.004 && o.mode !== "deliver") return null;
+  if (qty < Math.max(+o.moved || 0, +moved || 0) - 0.0004) return null;
+  if (Math.abs(qty - +o.qty) < 0.0004 && Math.abs(total - +o.total) < 0.004 && Math.abs(delivery - (+o.delivery || 0)) < 0.004) return null;
+  return { qty, total, delivery };
+}
+
 /** Amend after Accept (06 Oct 2026): one Correction restating size, goods and delivery. ctx: { book, room, earlier: the order's
  *  Amendment drafts ({status, committed_at}), live: a yes waiting on an amendment or null }. */
 export function restateTap(o, at, body, ctx) {

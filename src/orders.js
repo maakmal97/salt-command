@@ -29,7 +29,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, claimRows, claimOrderFlight, claimEntry,
-  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor } from "../engine/stages.mjs";
+  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
   amendEntry, stageAt, advanceOf, claimOrderFlight } from "../engine/stages.mjs";
 
@@ -1883,6 +1883,16 @@ async function followRows(env, orders, idx) {
   }
   return { followed, failed };
 }
+/* an Amendment of the order not on the book yet (drafted and undecided, approved and not folded, or his yes waiting to be drafted), or a close
+   or redate on its way: the order already says what the row will. A read that fails is read as on its way. */
+const AMEND_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' AND (status='pending' OR (status='approved' AND committed_at IS NULL)) LIMIT 1";
+export async function termsInFlight(env, o) {
+  if (await closeOnItsWay(env, o)) return true;
+  try {
+    if (await env.SALT_LEDGER.prepare(AMEND_FLIGHT).bind('%"orderId":"' + o.id + '"%').first()) return true;
+    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='amend' AND status='waiting' LIMIT 1").bind(o.id).first());
+  } catch (e) { return true; }
+}
 export async function tellSite(env, fixes, mirror) {
   if (!env.SALT_LEDGER || !env.SALT_QUEUE) return { ok: true, told: 0 };
   let snap = null;
@@ -1907,11 +1917,22 @@ export async function tellSite(env, fixes, mirror) {
     const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);
     if (paid > (+o.paid || 0) + 0.004) ledger.paid = paid;
     if (moved > (+o.moved || 0) + 0.0004) ledger.moved = moved;
-    if (!Object.keys(ledger).length) continue;
-    const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ledger })
+    if (Object.keys(ledger).length) {
+      const m = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ledger })
+      });
+      if (!m || !m.ok) { failed.push({ id: o.id, why: "the site would not take it" + (m ? " (http " + m.status + ")" : "") }); continue; }
+      told++;
+    }
+    /* 16 Oct 2026: AND THE ORDER STATES WHAT ITS ROW STATES. A Correction on the row (Counter Admin's Corrections, a hand fold) changed
+       the book alone, so the order kept its old figure (CR3-DAM's s263: RM65 on the book, RM80 on the order). The row wins, except
+       while a change of the order's own is on its way to the row: his Amend and a close tell the order at the tap, before it folds. */
+    const terms = termsFromRow(o, row, ledger.moved);
+    if (!terms || await termsInFlight(env, o)) continue;
+    const t = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ restate: terms })
     });
-    if (!m || !m.ok) failed.push({ id: o.id, why: "the site would not take it" + (m ? " (http " + m.status + ")" : "") });
+    if (!t || !t.ok) failed.push({ id: o.id, why: "the site would not take its row's figures" + (t ? " (http " + t.status + ")" : "") });
     else told++;
   }
   /* fix 4: the committed list's corrections, sent on the list of orders this pass already read; and (plan 4) each undo the book now holds

@@ -49432,7 +49432,7 @@ await (async () => {
     let failFor = null;   /* an order whose waiting yes the ledger will not read, for one pass */
     const D1 = { prepare(sql) { const st = db.prepare(sql);
       const mk = (a) => ({ run() { const r = st.run(...a); return { meta: { changes: Number(r.changes || 0) } }; },
-        first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
+        first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return Promise.resolve({ results: st.all(...a) }); } });
       const self = mk([]);
       self.bind = (...a) => { if (failFor && a[0] === failFor && /FROM preapproval .*stage<>'ack'/.test(sql)) throw new Error("D1 fixture: not now"); return mk(a); };
       return self; } };
@@ -49598,6 +49598,9 @@ await (async () => {
       tag + ", nor does one never amended take a row on its bucket that no Correction moved: " + J({ key: now[D.o.id].ledgerKey, marks: mk(D) }));
     ok(now[E.o.id].ledgerKey === PE.ovKey(saleOf(E.rid)) && /\|120$/.test(now[E.o.id].ledgerKey) && !now[E.o.id].forFriend,
       tag + ", a restated row is followed by the rid its handover named, never the twin on the bucket at the old figure: " + J(now[E.o.id].ledgerKey));
+    /* 16 Oct 2026, CR3-DAM's s263: a Correction cut the row and the order kept its figure. AN AGREED ORDER STATES WHAT ITS ROW STATES */
+    ok(now[E.o.id].total === 120 && now[E.o.id].qty === 1 && (now[E.o.id].delivery || 0) === 0 && now[E.o.id].history.some((h) => /amended to 1 unit, 120\.00 goods/.test(h.note || "")),
+      tag + ", and the agreed order takes its restated row's goods, size and delivery: " + J({ qty: now[E.o.id].qty, total: now[E.o.id].total, delivery: now[E.o.id].delivery }));
     ok(now[F.o.id].ledgerKey === F.key && !now[F.o.id].forFriend && !mk(F).length && now[F2.o.id].ledgerKey === PE.ovKey(rowF) && !mk(F2).length,
       tag + ", a key another order names is followed by neither, and nothing is sent: " + J({ own: now[F.o.id].ledgerKey, friend: now[F2.o.id].ledgerKey, marks: [mk(F), mk(F2)] }));
     ok(now[G.o.id].ledgerKey === PE.ovKey(rowG) && now[G.o.id].forFriend === false,
@@ -49647,6 +49650,33 @@ await (async () => {
       && e4.payload.orderKey === PE.ovKey(rowK2) && e4.party === R(K2.code),
       tag + ", a pass that cannot point his waiting yes at the row leaves the order's key where it was, and the next pass does both: "
       + J({ t3: t3.failed, k3, t4: t4.failed || null, yes: [e4.payload.orderKey, e4.party] }));
+
+    /* HIS AMEND TELLS THE ORDER AT THE TAP, before its row folds: the return leg leaves the order's new figure while the amendment is on its way,
+       whatever else folds meanwhile, and once it lands they agree and nothing is sent */
+    const QA = await agreed(13, { unit: 111, total: 111 }, false);
+    const ofrQA = await call("/orders/" + QA.o.id + "/restate", { total: 130 });
+    await runDrafter(denv);
+    const ofrQD = drafts(QA.o.id).find((d) => d.e.status === "Amendment");
+    setup(ofrQA.status === 200 && (await orderOf(QA.o.id)).total === 130 && ofrQD, "his Amend told the order at the tap and was drafted: " + J([ofrQA.j.error || null, ofrQD && ofrQD.status]));
+    held.add(ofrQD.id);
+    if (ofrQD.status === "pending") db.prepare("UPDATE draft SET status='approved', decided_at=? WHERE id=?").run(new Date().toISOString(), ofrQD.id);
+    fold();
+    const ofrT11 = await tellSite(denv), ofrQ11 = await orderOf(QA.o.id);
+    db.prepare("UPDATE draft SET status='pending', decided_at=NULL WHERE id=?").run(ofrQD.id); reseed();
+    const ofrT12 = await tellSite(denv), ofrQ12 = await orderOf(QA.o.id);
+    db.prepare("UPDATE draft SET status='approved', decided_at=? WHERE id=?").run(new Date().toISOString(), ofrQD.id);
+    held.delete(ofrQD.id); fold();
+    const ofrT13 = await tellSite(denv), ofrQ13 = await orderOf(QA.o.id);
+    ok(!ofrT11.failed && ofrQ11.total === 130 && !ofrT12.failed && ofrQ12.total === 130 && !ofrT13.failed && ofrQ13.total === 130 && saleOf(QA.rid).total === 130,
+      tag + ", an order his Amend told at the tap keeps its figure while the amendment is approved or waits under Approve, and agrees with its row once it lands: "
+      + J({ ofrT11: ofrQ11.total, ofrT12: ofrQ12.total, ofrT13: ofrQ13.total, row: saleOf(QA.rid).total }));
+    /* and a claim of theirs waiting holds the order where it is, the pass not failed */
+    const WQ = await agreed(14, { unit: 112, total: 112 }, false);
+    await O.customerMove(senv, WQ.u, WQ.o.id, "method", { method: "tngbiz", account: "tngbiz" });
+    await O.customerMove(senv, WQ.u, WQ.o.id, "pay", { amount: 50 });
+    correct(WQ.rid, { total: 100 });
+    const ofrT14 = await tellSite(denv), ofrW14 = await orderOf(WQ.o.id);
+    ok(!ofrT14.failed && ofrW14.total === 112, tag + ", while a payment they say they sent waits, the order keeps its figure and the pass is not failed: " + J({ failed: ofrT14.failed, total: ofrW14.total }));
 
     /* A CLOSE NAMES ITS ROW AHEAD of its fold: the order waits for the close, whatever else folds meanwhile */
     const M = await agreed(10, { qty: 2, unit: 110, total: 220 }, false);

@@ -1,0 +1,6 @@
+[
+  { "name": "the return leg never restates an order from its row", "file": "src/orders.js", "find": "if (!terms || await termsInFlight(env, o)) continue;", "replace": "if (true) continue;" },
+  { "name": "an approved amendment not folded is not on its way", "file": "src/orders.js", "find": "if (await env.SALT_LEDGER.prepare(AMEND_FLIGHT).bind('%\"orderId\":\"' + o.id + '\"%').first()) return true;", "replace": "" },
+  { "name": "a pending amendment is not on its way", "file": "src/orders.js", "find": "(status='pending' OR (status='approved' AND committed_at IS NULL))", "replace": "(status='approved' AND committed_at IS NULL)" },
+  { "name": "a claim waiting does not hold the order", "file": "engine/stages.mjs", "find": "  if ((o.payments || []).some((p) => p && p.claim === \"waiting\")) return null;\n  const qty = +(+row.qty)", "replace": "  const qty = +(+row.qty)" }
+]
