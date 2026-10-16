@@ -654,6 +654,25 @@ export function makerOffsetOffers(book, held = {}) {
   return { offers };
 }
 
+/** Counter Admin's mini ledger: the customer sales orders of every book, read off the mirror by the engine's own rules (txStat, txOwed,
+    txPaid, txAdvance, txEffDeliv) and never a status or pricing rule of its own. Open is every txStat order word that begins Open (Open,
+    Advance and Deferred), Pending is the word Pending, and the latest are by date then order id, newest first, a row with no date last. */
+export function makerLedgerMini(book, recent = 20) {
+  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
+  const P = POSITION_ENGINE, two = (n) => +(+n || 0).toFixed(2);
+  const rows = (book.sales || []).filter((s) => s && s.rid && s.customer).map((s) => {
+    const stat = P.txStat(s);
+    return { rid: s.rid, date: s.date || null, customer: s.customer, product: s.product || "salt", qty: two(s.qty), total: two(s.total),
+      paid: two(P.txPaid(s)), owed: s.cancelled || s.defaulted ? 0 : two(Math.max(0, P.txOwed(s) - P.txPaid(s))), advance: two(P.txAdvance(s)),
+      moved: +(+P.txEffDeliv(s) || 0).toFixed(3), stage: stat.order, pay: stat.pay, deliv: stat.deliv };
+  });
+  const newest = (a, b) => (a.date === b.date ? 0 : !a.date ? 1 : !b.date ? -1 : a.date < b.date ? 1 : -1)
+    || b.rid.localeCompare(a.rid, "en", { numeric: true });
+  rows.sort(newest);
+  return { open: rows.filter((r) => r.stage.startsWith("Open")), pending: rows.filter((r) => r.stage === "Pending"),
+    recent: rows.slice(0, recent), orders: rows.length };
+}
+
 /** One owner tap on one offer. The figures are the mirror's, never the request's: the body names only the holder, the row and a date. */
 export function makerOffset(body, book, held) {
   if (!exact(body, ["at", "code", "rid", "date"]) || !timestamp(body.at) || !date(body.date)
