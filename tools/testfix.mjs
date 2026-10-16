@@ -142,6 +142,11 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   O.push(order(oid(9, "05"), list, T(9), { product: "salt", qty: 1, mode: "collect" }, [
     [T(9, 20), "desk", { status: "acknowledged" }], [T(8), "desk", { status: "ready" }],
     [T(8, 30), "desk", { handover: { units: 1 } }], [T(8, 31), "desk", { cash: { amount: 110 } }]]));
+  /* PLAN 4 (16 Oct 2026): A STEP WE RECORDED BY MISTAKE, TAKEN BACK. Paid in cash at Ready and a handover recorded, which he undid on the book;
+     the order follows by its undo fix, the units off what they hold, and the page says so in a line of its own */
+  O.push(order(oid(7, "30"), list, T(7), { product: "salt", qty: 1, mode: "collect" }, [
+    [T(7, 20), "desk", { status: "acknowledged" }], [T(6, 40), "desk", { status: "ready" }], [T(6, 41), "desk", { cash: { amount: 110 } }],
+    [T(6, 50), "desk", { handover: { units: 1 } }], [T(6, 55), "desk", { fix: { id: "un-ex30-2", undo: true, unmove: 1 } }]]));
   /* DELIVERED and paid by a transfer he received: complete */
   O.push(order(oid(12, "06"), list, T(12), { product: "candy", qty: 4, mode: "deliver", place: "Taman Rekaan" }, [
     [T(12, 20), "desk", { status: "acknowledged", delivery: 3 }], [T(11), "customer", pay("transfer")],
@@ -361,6 +366,8 @@ export const FEATURES = [
   ["declined, with his reason", (f) => has(f, (o) => o.status === "declined" && hist(o, (h) => h.status === "declined" && h.note))],
   ["closed at what was handed over", (f) => has(f, (o) => o.closed && o.closed.qty > o.qty)],
   ["amended after it was confirmed, the goods and the delivery restated (06 Oct 2026)", (f) => has(f, (o) => hist(o, (h) => h.by === "desk" && /^amended to /.test(h.note || "")))],
+  ["a handover recorded by mistake, taken back (plan 4, 16 Oct 2026)", (f) => has(f, (o) => o.status === "ready" && !(+o.moved > 0)
+    && hist(o, (h) => h.by === "desk" && /^[0-9.]+ unit taken back$/.test(h.note || "")))],
   ["a price set when it was confirmed, what they placed it at beside it (Step 2)", (f) => has(f, (o) => typeof o.asked === "number" && Math.abs(o.asked - o.total) > 0.004)],
   ["a delivery fee, set by distance when it was confirmed (F15)", (f) => has(f, (o) => +o.delivery > 0 && hist(o, (h) => h.status === "acknowledged"))],
   ["ready again for the rest after a part (Step 1b)", (f) => has(f, (o) => o.status === "ready" && +o.moved > 0 && o.moved < o.qty

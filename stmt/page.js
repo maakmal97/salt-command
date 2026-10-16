@@ -4311,6 +4311,9 @@ const CLIENT_JS = `
     if((m=/^received ([0-9.]+)$/.exec(n))) return tw('hist.received',{rm:rm(+m[1])});
     if((m=/^not found ([0-9.]+)$/.exec(n))) return tw('hist.notFound',{rm:rm(+m[1])});
     if((m=/^payment of ([0-9.]+) recorded$/.exec(n))) return tw('hist.recorded',{rm:rm(+m[1])});
+    /* plan 4: a step we recorded by mistake, taken back */
+    if((m=/^payment of ([0-9.]+) taken back$/.exec(n))) return tw('hist.undonePay',{rm:rm(+m[1])});
+    if((m=/^([0-9.]+) unit taken back$/.exec(n))) return tw('hist.undoneMove',{a:Uq(+m[1],oUnit(o))});
     /* S11 11.8 and 11.9: cash he took at the handover, and a short order closed at what was handed over */
     if((m=/^paid ([0-9.]+) in cash$/.exec(n))) return tw('hist.cash',{rm:rm(+m[1])});
     if((m=/^closed at ([0-9.]+) unit of the ([0-9.]+) ordered$/.exec(n))) return tw('hist.closed',{a:Uq(+m[1],oUnit(o)), b:m[2]});

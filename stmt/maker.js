@@ -16,13 +16,14 @@ const allowedOwner = (identity) =>
 /* his order controls, the same shape the Desk's makerOrderFault holds, checked here too because an example order never
    reaches the Desk's route */
 function orderMoveFault(action, body) {
-  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery"] : ["rid", "status", "note", "message", "noReply", "mode"];
+  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo"] : ["rid", "status", "note", "message", "noReply", "mode"];
   if (Object.keys(body).some((key) => !fields.includes(key))) return "Unsupported order action fields.";
   if (!RID_RE.test(String(body.rid || ""))) return "Send the action's immutable request id.";
   if (action === "restate") {
     const figs = ["qty", "total", "delivery"].filter((key) => body[key] !== undefined);
     if (!figs.length) return "Say which figure changes.";
     if (figs.some((key) => typeof body[key] !== "number" || !Number.isFinite(body[key]) || body[key] < 0 || body[key] > 1000000)) return "Order figures must be finite, non-negative numbers.";
+    if (body.undo !== undefined && (!Number.isInteger(body.undo) || body.undo < 1 || figs.length !== 3)) return "An undo names its step and the figures it puts back.";
     return body.qty === 0 || body.total === 0 ? "A size and a price are above nothing." : "";
   }
   if (action === "notfound")
@@ -69,6 +70,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/trade-cover" && method === "POST"
     || path === "/_internal/maker/trade-reading" && method === "POST"
     || path === "/_internal/maker/trip-split" && method === "POST"
+    || path === "/_internal/maker/undo" && method === "POST"
     || path === "/_internal/maker/inputs" && method === "GET"
     || path === "/_internal/maker/vault" && method === "GET"
     || path === "/_internal/maker/vault/addr" && method === "GET"
@@ -188,6 +190,7 @@ function internalOperation(path) {
   if (path === "/all/maker/trade-cover") return { kind: "trade-cover" };
   if (path === "/all/maker/trade-reading") return { kind: "trade-reading" };
   if (path === "/all/maker/trip-split") return { kind: "trip-split" };
+  if (path === "/all/maker/undo") return { kind: "undo" };
   if (path === "/all/maker/review") return { kind: "review" };
   if (path === "/all/maker/queue") return { kind: "queue" };
   const withdrawal = /^\/all\/maker\/queue\/([^/]+)\/withdraw$/.exec(path);
@@ -255,6 +258,15 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       if (Object.keys(parsed.body).some((key) => !["trip", "amount"].includes(key)))
         return json({ ok: false, error: "Send only the order and the amount." }, 400);
       return json(await deskCall(env, "/_internal/maker/trip-split", "POST", parsed.body));
+    }
+    /* plan 4 (16 Oct 2026): one sale's History and the undo of its newest move, read by the Desk; a read, nothing is sent */
+    if (op.kind === "undo") {
+      if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      const parsed = await bodyOf(request);
+      if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+      if (Object.keys(parsed.body).length !== 1 || !["rid", "order"].includes(Object.keys(parsed.body)[0]))
+        return json({ ok: false, error: "Send only the row or the order." }, 400);
+      return json(await deskCall(env, "/_internal/maker/undo", "POST", parsed.body));
     }
     if (op.kind === "hours") return await makerHours(request, env, method);
     /* THE POOL, A GROUP ORDER: his read of every one, his opening of one (a product, a size, a target, a closing day), and his

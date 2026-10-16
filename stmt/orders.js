@@ -809,6 +809,21 @@ export const FIX_ID_RE = /^[a-z0-9-]{1,40}$/;
 export const FIX_REFUSED = "fix refused: ";
 export function decideFix(order, f, at) {
   if (!f || typeof f !== "object" || !FIX_ID_RE.test(String(f.id || ""))) return { error: FIX_REFUSED + "a fix names itself", status: 400 };
+  /* PLAN 4 (16 Oct 2026): AN UNDO ON THE BOOK, followed here. The desk took back the newest move on the order's row, a payment or a handover,
+     and says how much of each; what the order holds comes down by that much, the payment's line with it (his cash, or their claim he
+     received, the newest of that amount; with none, the ledger told the order of it and only the figure moves), and what the ledger has
+     been told comes down with it, so the reconcile has nothing to book again. Never more than the order holds: that is refused, once. */
+  if (f.undo === true) {
+    const pay = f.unpay, move = f.unmove;
+    if ((pay === undefined && move === undefined) || (pay !== undefined && !(isNum(pay) && pay > 0.004)) || (move !== undefined && !(isNum(move) && move > 0.0004)))
+      return { error: FIX_REFUSED + "an undo takes back a payment or a handover, by its figure", status: 400 };
+    if (pay !== undefined && pay > (+order.paid || 0) + 0.004) return { error: FIX_REFUSED + "the order holds less than that payment", status: 409 };
+    if (move !== undefined && move > (+order.moved || 0) + 0.0004) return { error: FIX_REFUSED + "the order holds less than that handover", status: 409 };
+    const line = pay === undefined ? null : (order.payments || []).slice().reverse()
+      .find((p) => p && Math.abs((+p.amount || 0) - pay) < 0.005 && (p.by === "desk" || p.claim === "received"));
+    return { ev: { kind: "fix", at, fix: Object.assign({ id: f.id, undo: true }, pay !== undefined ? { unpay: +pay.toFixed(2) } : {},
+      move !== undefined ? { unmove: +move.toFixed(3) } : {}, line ? { line: line.at } : {}) } };
+  }
   const line = (order.payments || []).find((p) => p && p.by === "desk" && p.at === f.line);
   if (!line) return { error: FIX_REFUSED + "this order has no line of the desk's at " + String(f.line || "no moment"), status: 409 };
   const fix = { id: f.id, line: line.at };
@@ -946,7 +961,7 @@ export function decideDesk(order, body, at) {
     if (!isNum(d) || d < 0 || d > 1000000 || (d > 0 && order.mode !== "deliver")) return { error: "the delivery charge is a figure from nothing, and nothing on a collection", status: 400 };
     if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
     if (Math.abs(q - order.qty) < 0.0004 && Math.abs(t - order.total) < 0.004 && Math.abs(d - (+order.delivery || 0)) < 0.004) return { none: true };
-    return { ev: { kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) } };
+    return { ev: Object.assign({ kind: "restate", at, qty: +q.toFixed(3), total: +t.toFixed(2), delivery: +d.toFixed(2) }, r.undo === true ? { undo: true } : {}) };
   }
   /* v694: what he handed over, in units, whichever way it went. It is its own step and its own
      entry, because goods and money move apart: he may deliver before a ringgit arrives. */
@@ -1145,19 +1160,35 @@ export function applyEvent(order, ev) {
   } else if (ev.kind === "fix") {
     /* fix 4: the line, the lines of the history written with it (its cash note, and the done it completed), and what
        the ledger was told, all at once; an order the line had completed is open again at the state it held before */
-    const f = ev.fix, q = Object.assign({}, order.queued || {}), line = (order.payments || []).find((p) => p && p.at === f.line && p.by === "desk");
-    if (line && f.method) {
+    const f = ev.fix, q = Object.assign({}, order.queued || {}), line = (order.payments || []).find((p) => p && p.at === f.line && (f.undo ? true : p.by === "desk"));
+    if (f.undo) {
+      /* plan 4: the undo's figures come off what the order holds and what the ledger was told; the line goes, and a line says so */
+      if (f.unpay) {
+        if (line) order.payments = order.payments.filter((p) => p !== line);
+        order.paid = +Math.max(0, (+order.paid || 0) - f.unpay).toFixed(2);
+        q.paid = +Math.max(0, (+q.paid || 0) - f.unpay).toFixed(2);
+        order.claimed = claimedOf(order);
+        order.history.push({ at, status: order.status, by: "desk", note: "payment of " + f.unpay.toFixed(2) + " taken back" });
+      }
+      if (f.unmove) {
+        order.moved = +Math.max(0, (+order.moved || 0) - f.unmove).toFixed(3);
+        q.moved = +Math.max(0, (+q.moved || 0) - f.unmove).toFixed(3);
+        if (!(order.moved > 0.0004)) { delete order.movedOn; delete order.movedAt; }
+        order.history.push({ at, status: order.status, by: "desk", note: f.unmove + " unit taken back" });
+      }
+    }
+    if (line && f.method && !f.undo) {
       order.payments = order.payments.map((p) => (p === line ? Object.assign({}, p, { method: f.method, account: f.account }) : p));
       order.history = order.history.map((h) => (h && h.at === f.line && h.by === "desk" && h.method
         ? Object.assign({}, h, { method: f.method, account: f.account, note: "paid " + (+line.amount).toFixed(2) }) : h));
     }
-    if (line && f.unpay) {
+    if (line && f.unpay && !f.undo) {
       order.payments = order.payments.filter((p) => p !== line);
       order.paid = +Math.max(0, (+order.paid || 0) - line.amount).toFixed(2);
       q.paid = +Math.max(0, (+q.paid || 0) - line.amount).toFixed(2);
       order.history = order.history.filter((h) => !h || h.at !== f.line);
     }
-    if (f.unmove) {
+    if (f.unmove && !f.undo) {
       order.moved = 0; q.moved = 0; delete order.movedOn; delete order.movedAt;
       order.history = order.history.filter((h) => !h || !/^[0-9.]+ unit (delivered|collected)$/.test(String(h.note || "")));
     }
@@ -1251,6 +1282,8 @@ export function wakes(ev, order, done) {
   const o = (order && order.id) || "";
   if (ev.kind === "ledger") return ev.paid !== undefined ? { k: "paid", o } : handedWake(order, o);
   if (ev.kind === "handover") return handedWake(order, o);
+  /* plan 4 (16 Oct 2026, his answer): a move of his taken back on the book, or a change of terms undone, is told by its own banner, its body the case */
+  if ((ev.kind === "fix" && ev.fix && ev.fix.undo) || (ev.kind === "restate" && ev.undo)) return { k: "corrected", o, v: payCase(order) };
   /* a group order closed tells each joiner; poolClose puts each one's own order in o. A retry that only records what was left wakes nobody */
   if (ev.kind === "pclose") return ev.again ? null : { k: "pool-closed", o: "" };
   /* Step 1b: his reason at Decline or Cancel is the banner's body; his line on the order is, in quotation marks, under
