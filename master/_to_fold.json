@@ -1,0 +1,73 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-16T12:05:00.989Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s269",
+    "qty": 6.25,
+    "total": 500,
+    "cash": 0,
+    "date": "2026-10-16",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "qty",
+      "from": 6.25,
+      "to": 6
+     },
+     {
+      "field": "delivery",
+      "from": null,
+      "to": 0
+     }
+    ],
+    "customer": "CA5-BAN"
+   },
+   "reasoning": "Correction against CA5-BAN's order of 6.25 unit for RM 500 dated 2026-10-16 (s269). Sets qty from 6.25 to 6, delivery from unset to 0. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "CA5-BAN typically pays about RM 120/unit for salt across 3 orders; this one is RM 83.33, 30.6% below that."
+   ],
+   "amends": "s269",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-16T12:05:00.989Z",
+    "type": "SELL",
+    "party": "CA5-BAN",
+    "qty": 6,
+    "total": 500,
+    "status": "Amendment",
+    "raw": "Amended CA5-BAN, order 20261015105151-ipmsbq: size 6.25 to 6",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CA5-BAN",
+     "rid": null,
+     "orderKey": "CA5-BAN|2026-10-16|500",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-16",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "qty": 6,
+      "total": 500,
+      "delivery": 0
+     },
+     "note": "Amended after Accept for order 20261015105151-ipmsbq: size 6.25 to 6."
+    },
+    "orderId": "20261015105151-ipmsbq"
+   },
+   "decidedAt": "2026-10-16T12:06:58.573Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
