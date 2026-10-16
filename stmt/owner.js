@@ -3842,6 +3842,13 @@ export const OWNER_JS = `
       /* 10 Oct 2026: their exact spot is sealed to his key: the Desk opens it, this page only says it was shared */
       if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','They shared a pin. Open it on the Desk to price the delivery.'));
       var againAck=makerAgainAck(order), quoteStart=null;
+      /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval.
+         16 Oct 2026 (plan 5, part 2): Change the order stands under the head, where the figures it changes are read, in place of below the money; it opens
+         the same Sheet and sends the same restate (stage amend), so nothing about what it books moved */
+      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
+        var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
+        change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
+      }
       if(order.status==='placed'&&makerAccHeld(order)){
         var ap=order.price, apf=ap.offer||{};
         card.appendChild(el('p','maker-facts',(ap.state==='taken'?'They agreed to ':'Waiting for their yes to ')+rm(apf.total)
@@ -4064,11 +4071,6 @@ export const OWNER_JS = `
           makerAskTag(order,lost,'lost-'+payment.at);
         });
         if(order.status==='ready'){ makerCashControls(card,order); cashed=true; } else makerPayControl(card,order,false);
-      }
-      /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval */
-      if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
-        var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
-        change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
       }
       /* plan 4: an agreed order's History, and Undo on its newest move */
       if(['acknowledged','ready','done'].indexOf(order.status)>=0) historyBlock(card,{order:order.id},'order:'+order.id,order,order.id);
