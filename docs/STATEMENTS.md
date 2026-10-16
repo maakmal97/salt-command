@@ -2061,6 +2061,12 @@ Desk compares a canonical operation/body digest, replays completed requests even
 moves, and refuses changed content under an old timestamp. An incomplete non-vault receipt
 resumes its stored immutable entry to a matching real draft. Legacy KV vault receipts without
 their draft still fail closed; they do not claim the input succeeded.
+**The mini ledger** (Orders > Ledger, 16 Oct 2026) is three tables of the folded book, in this order: Open orders, Pending orders and the latest 20 orders, every book. `GET /all/maker/ledger`
+reaches the Desk's `/_internal/maker/ledger`, which reads the mirror and answers `makerLedgerMini` (`src/maker-inputs.js`): the stage is the engine's `txStat` order word (Open is every word that
+begins Open, Pending is Pending), owed is `txOwed` less `txPaid` (nothing on a cancelled or written-off order) with the `txAdvance` beside it, handed over is `txEffDeliv` of the units ordered, and
+the order is date then order id, newest first, a row with no date last. The page draws what it is given: a book as its mark, a customer as its code. It reads the folded book only: a site order the
+Counter holds but the fold has not yet put on the book is under Placed, not here.
+
 Counter notes are disabled because these specific paths cannot prove arbitrary prose is
 free of names and places. `GET inputs` returns the active-book and roster catalog, including open
 loans for repayment selection.
@@ -2551,6 +2557,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.orders.ended` | The strip under Orders (tab: Ended) | Shows the declined and cancelled orders. |
 | `part.orders.payments` | The strip under Orders (tab: Payments) | Shows the payments they say they sent. |
 | `part.orders.group` | The strip under Orders (tab: Group) | Shows the group orders, reading them. |
+| `part.orders.ledger` | The strip under Orders (tab: Ledger) | Shows the mini ledger, reading the folded book: Open orders, Pending orders and the latest 20 orders. |
 | `part.record.approve` | The strip under Record (tab: Approve) | Shows the Desk's rows waiting for him and the entries the server holds, reading them. |
 | `part.record.customers` | The strip under Record (tab: Customers) | Shows the menu of the forms that add, change or place a customer, one form at a time. |
 | `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |

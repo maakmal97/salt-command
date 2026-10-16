@@ -52256,6 +52256,12 @@ await (async () => {
   await (await import("./admin-places.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Admin's mini ledger: Open orders, Pending orders and the latest twenty, read off the folded book by the engine (16 Oct 2026)");
+await (async () => {
+  await (await import("./maker-ledger.mjs")).run({ ok });
+  await (await import("./admin-ledger.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)");
 await (async () => {
   await (await import("./admin-look.mjs")).run({ ok, pageWork });

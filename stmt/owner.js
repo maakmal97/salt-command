@@ -55,6 +55,7 @@ export const OWNER_JS = `
   };
   var PART_READ={
     'orders.group':function(){ loadMakerPools(); },
+    'orders.ledger':function(){ loadLedger(); },
     'customers.accounts':function(){ drawRoster(); if(!sheet&&!sheetBusy) loadSheet(); },
     'customers.messages':function(){ loadMakerThreads(false); },
     'customers.links':function(){ if(linksRead) drawLinks(); else if(!linksBusy) loadLinks(); },
@@ -1556,6 +1557,38 @@ export const OWNER_JS = `
     if(draft.storageError) draft.note=draft.storageError;
     else if(draft.saved&&!draft.pending) draft.note='An unsent reply is kept on this phone. Open it to send it again, or discard it.';
     makerChatState();drawMakerThreadLines();startMakerChat();
+  }
+  /* 16 Oct 2026: THE MINI LEDGER. Open orders, Pending orders and the latest twenty, read off the Desk's mirror of the folded book by the engine's own rules (GET
+     /all/maker/ledger: txStat for the stage, txOwed, txPaid and txAdvance for what is owed, txEffDeliv for what was handed over). This page states no status
+     or price and sorts nothing; it draws what it is given, a book as its mark and a customer as its code. An order the site has not yet put on the book is under Orders, not here. */
+  var LEDGER_COLS=[['Order','l'],['Date','l'],['Customer','l'],['Book','l'],['Units',''],['Total',''],['Owed',''],['Handed over','l'],['Stage','l']];
+  var LEDGER_TABLES=[['open','Open orders','No open orders.'],['pending','Pending orders','No pending orders.'],['recent','Latest 20 orders','No orders on the book.']];
+  function ledgerCells(r){
+    var owed=el('td','',rm(r.owed)); if(r.advance>0.009) owed.appendChild(el('small','','goods out, '+rm(r.advance)));
+    var book=el('td','l'); book.appendChild(bookTag(r.product));
+    return [el('td','l salt-table__label',r.rid), el('td','l',r.date?fmtWhen(r.date):'Undated'), el('td','l',r.customer), book, el('td','',String(+r.qty)), el('td','',rm(r.total)),
+      owed, el('td','l',String(+r.moved)+' of '+String(+r.qty)), el('td','l',r.stage)];
+  }
+  function drawLedger(j){
+    LEDGER_TABLES.forEach(function(t){
+      var root=document.getElementById('led-'+t[0]), rows=j[t[0]]||[]; if(!root) return;
+      root.textContent='';
+      var h=document.getElementById('led-'+t[0]+'-h'); if(h) h.textContent=t[1]+' · '+rows.length;
+      if(!rows.length){ root.appendChild(el('p','rnone',t[2])); return; }
+      var table=el('table','salt-table'), head=el('tr'), body=el('tbody');
+      LEDGER_COLS.forEach(function(c){ var th=el('th',c[1],c[0]); th.setAttribute('scope','col'); head.appendChild(th); });
+      table.appendChild(el('thead')).appendChild(head); table.appendChild(body);
+      rows.forEach(function(r){ var tr=el('tr'); tr.setAttribute('data-rid',r.rid); ledgerCells(r).forEach(function(c){ tr.appendChild(c); }); body.appendChild(tr); });
+      root.appendChild(table);
+    });
+  }
+  async function loadLedger(){
+    var status=document.getElementById('ledgerStatus'); if(!status||placeNow!=='orders'||partNow!=='ledger') return;
+    var j;
+    try{ j=await refs('/all/maker/ledger'); }catch(error){ refusal(status,error); return; }
+    if(!status.isConnected||placeNow!=='orders'||partNow!=='ledger') return;
+    status.textContent='The folded book: '+j.orders+(j.orders===1?' order':' orders')+'. A site order not yet on the book is under Placed.';
+    drawLedger(j);
   }
   /* A GROUP ORDER (the pool): open one, see who is in by units, and Close. Close closes it, tells each joiner once and sends
      each joined order for acknowledgement; one the Desk would not accept is listed under the pool with its reason, and Close

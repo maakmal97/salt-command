@@ -230,6 +230,7 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
     if (route.endsWith("/preview")) return { ok: true, hash: "a".repeat(64), offerHash: "b".repeat(64), quote: 200, delivery: 10, card: 200,
       floor: 150, margin: { rm: 50, pct: 25 }, cost: { total: 150 }, usual: { rate: 100 }, flags: [], row: { qty: 2, total: 200 } };
     if (route === "/all/maker/inputs") return via(inputsAnswer)({ ok: true, products: ["salt", "oil"], catalog: catalog() });
+    if (route === "/all/maker/ledger") return { ok: true, version: 1, orders: 0, open: [], pending: [], recent: [] };
     if (route === "/all/maker/offsets") return { ok: true, offers: [{ code: "AX1-ZED", units: 1, rm: 100, saleDate: "2026-10-01", rid: "off-1" }] };
     if (route === "/all/maker/claims") return via(claims)({ ok: true, claims: [{ id: "c-1", u: U1, amount: 50, state: "waiting", slip: "s-1" },
       { id: "c-2", u: U1, amount: 20, state: "waiting" }] });

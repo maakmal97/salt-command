@@ -1,0 +1,158 @@
+[
+ {
+  "name": "Open reads only the bare word Open",
+  "file": "src/maker-inputs.js",
+  "find": "r.stage.startsWith(\"Open\")",
+  "replace": "r.stage === \"Open\""
+ },
+ {
+  "name": "Pending takes every order not completed",
+  "file": "src/maker-inputs.js",
+  "find": "r.stage === \"Pending\"",
+  "replace": "r.stage !== \"Completed\""
+ },
+ {
+  "name": "the latest are ten, not twenty",
+  "file": "src/maker-inputs.js",
+  "find": "recent = 20",
+  "replace": "recent = 10"
+ },
+ {
+  "name": "the latest run oldest first",
+  "file": "src/maker-inputs.js",
+  "find": "a.date < b.date ? 1 : -1",
+  "replace": "a.date < b.date ? -1 : 1"
+ },
+ {
+  "name": "a number's order ids compare as text",
+  "file": "src/maker-inputs.js",
+  "find": "{ numeric: true }",
+  "replace": "{ numeric: false }"
+ },
+ {
+  "name": "a written-off order still owes",
+  "file": "src/maker-inputs.js",
+  "find": "s.cancelled || s.defaulted ? 0 :",
+  "replace": "s.cancelled ? 0 :"
+ },
+ {
+  "name": "owed forgets the delivery charge",
+  "file": "src/maker-inputs.js",
+  "find": "P.txOwed(s) - P.txPaid(s)",
+  "replace": "(+s.total || 0) - P.txPaid(s)"
+ },
+ {
+  "name": "handed over reads the units ordered",
+  "file": "src/maker-inputs.js",
+  "find": "moved: +(+P.txEffDeliv(s) || 0).toFixed(3)",
+  "replace": "moved: two(s.qty)"
+ },
+ {
+  "name": "a row with no date comes first",
+  "file": "src/maker-inputs.js",
+  "find": "!a.date ? 1 : !b.date ? -1",
+  "replace": "!a.date ? -1 : !b.date ? 1"
+ },
+ {
+  "name": "a row with no id is an order",
+  "file": "src/maker-inputs.js",
+  "find": "s && s.rid && s.customer",
+  "replace": "s && s.customer"
+ },
+ {
+  "name": "the Desk's route is not served",
+  "file": "src/worker.js",
+  "find": " && p !== \"/_internal/maker/ledger\"",
+  "replace": ""
+ },
+ {
+  "name": "the bridge does not let the ledger through",
+  "file": "stmt/maker.js",
+  "find": "    || path === \"/_internal/maker/ledger\" && method === \"GET\"\n",
+  "replace": ""
+ },
+ {
+  "name": "the Counter answers the ledger with the offers",
+  "file": "stmt/maker.js",
+  "find": "return { kind: \"ledger\" };",
+  "replace": "return { kind: \"offsets\" };"
+ },
+ {
+  "name": "the Counter lets a POST read the ledger",
+  "file": "stmt/maker.js",
+  "find": "    if (op.kind === \"ledger\") {\n      if (method !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n",
+  "replace": "    if (op.kind === \"ledger\") {\n"
+ },
+ {
+  "name": "Pending stands before Open",
+  "file": "stmt/page.js",
+  "find": "[[\"open\", \"Open orders\"], [\"pending\", \"Pending orders\"], [\"recent\", \"Latest 20 orders\"]]",
+  "replace": "[[\"pending\", \"Pending orders\"], [\"open\", \"Open orders\"], [\"recent\", \"Latest 20 orders\"]]"
+ },
+ {
+  "name": "the ledger shows with every part of Orders",
+  "file": "stmt/page.js",
+  "find": "data-in=\"orders.ledger\"",
+  "replace": "data-in=\"orders\""
+ },
+ {
+  "name": "a table's box cannot be reached by keyboard",
+  "file": "stmt/page.js",
+  "find": "\" tabindex=\"0\" role=\"region\"",
+  "replace": "\" role=\"region\""
+ },
+ {
+  "name": "a figure in the ledger is a literal colour",
+  "file": "stmt/page.js",
+  "find": ".adm .ledgrp small{display:block;color:var(--salt-mist)}",
+  "replace": ".adm .ledgrp small{display:block;color:#888888}"
+ },
+ {
+  "name": "the ledger is never read on entering the part",
+  "file": "stmt/owner.js",
+  "find": "    'orders.ledger':function(){ loadLedger(); },\n",
+  "replace": ""
+ },
+ {
+  "name": "Units and Total swap places",
+  "file": "stmt/owner.js",
+  "find": "['Units',''],['Total','']",
+  "replace": "['Total',''],['Units','']"
+ },
+ {
+  "name": "handed over drops what was ordered",
+  "file": "stmt/owner.js",
+  "find": "String(+r.moved)+' of '+String(+r.qty)",
+  "replace": "String(+r.moved)"
+ },
+ {
+  "name": "an undated row says nothing",
+  "file": "stmt/owner.js",
+  "find": "r.date?fmtWhen(r.date):'Undated'",
+  "replace": "r.date?fmtWhen(r.date):''"
+ },
+ {
+  "name": "a book is drawn as its word",
+  "file": "stmt/owner.js",
+  "find": "book.appendChild(bookTag(r.product));",
+  "replace": "book.textContent=r.product;"
+ },
+ {
+  "name": "goods out is always said",
+  "file": "stmt/owner.js",
+  "find": "if(r.advance>0.009) owed.appendChild",
+  "replace": "if(true) owed.appendChild"
+ },
+ {
+  "name": "an empty table says nothing",
+  "file": "stmt/owner.js",
+  "find": "if(!rows.length){ root.appendChild(el('p','rnone',t[2])); return; }",
+  "replace": "if(!rows.length){ return; }"
+ },
+ {
+  "name": "a failed read is not said",
+  "file": "stmt/owner.js",
+  "find": "try{ j=await refs('/all/maker/ledger'); }catch(error){ refusal(status,error); return; }",
+  "replace": "try{ j=await refs('/all/maker/ledger'); }catch(error){ return; }"
+ }
+]

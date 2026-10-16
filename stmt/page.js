@@ -543,6 +543,15 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .maker-cover-row button{flex:none;min-width:var(--salt-tap);min-height:var(--salt-tap)}
 .adm .maker-drift-actions{display:flex;flex-wrap:wrap;gap:8px}
 .adm .maker-drift-actions button{min-width:var(--salt-tap);min-height:var(--salt-tap)}
+/* 16 OCT 2026: THE MINI LEDGER'S TABLES are the system's table in its scrolling wrap, so nine columns scroll inside their box on a phone and the page never does; a figure stands right, a word left. */
+.adm #oLedger{display:flex;flex-direction:column;gap:24px}
+.adm #oLedger .lead{margin:0}
+.adm .ledgrp h2{margin:0 0 8px}
+.adm .ledgrp .salt-table-wrap{min-width:0}
+.adm .ledgrp .salt-table th,.adm .ledgrp .salt-table td{white-space:nowrap}
+.adm .ledgrp .salt-table td.l,.adm .ledgrp .salt-table th.l{text-align:left}
+.adm .ledgrp small{display:block;color:var(--salt-mist)}
+.adm .ledgrp .rnone{margin:0}
 /* 12 OCT 2026 (PHASE 4a, 5): THE WEEKLY HOURS ARE THE SYSTEM'S TABLE (salt-table, the day's cell its label cell). Its head names the three columns (the day with its tick, when it
    opens, when it closes) and the rows keep the 44px of the tick and of each time. The columns share the width, so the head stands over them at 375px as at 1280. The cells hold
    controls and not figures, so they stand left, and their gutters stay the 4px the times were fitted in. */
@@ -1386,7 +1395,7 @@ function noticeCard(b) {
    its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
 const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
 const ADMIN_PARTS = {
-  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"]],
+  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -1513,6 +1522,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
         + '<p class="lead">Customers join a bulk order. When you close it, each order comes to you to agree.</p>'
         + '<div id="makerPools" aria-live="polite"></div></section>'
+        /* 16 Oct 2026: THE MINI LEDGER, three tables of the folded book in this order: Open orders, Pending orders and the latest twenty. Every other part of Orders
+           is shut while it shows (stmt/owner.js, loadLedger). */
+        + '<div id="oLedger" data-in="orders.ledger"><p class="lead" id="ledgerStatus" role="status">Reading.</p>'
+        + [["open", "Open orders"], ["pending", "Pending orders"], ["recent", "Latest 20 orders"]].map(([k, w]) => '<section class="ledgrp" aria-labelledby="led-' + k + '-h"><h2 id="led-' + k + '-h">' + w
+          + '</h2><div class="salt-table-wrap" id="led-' + k + '" tabindex="0" role="region" aria-labelledby="led-' + k + '-h"></div></section>').join("") + "</div>"
         + "</div></div>"
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */

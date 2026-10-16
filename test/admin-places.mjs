@@ -19,19 +19,19 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Shop"];
 const PARTS = {
-  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"]],
+  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* the sections that stand for a place or a part, and so show or do not */
 const IDS = ["mHome", "oOrders", "oCustomers", "oRecord", "oShop", "makerOrderList", "makerReview", "makerClaims", "makerPools", "oAccts", "makerChatList", "oLinks",
-  "oCards", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook"];
+  "oCards", "oLedger", "makerDrafts", "makerQueueReview", "makerInputs", "makerSchedule", "makerBulletin", "mTest", "oLook"];
 const SHOWS = {
   needs: "mHome",
   "orders/placed": "oOrders makerOrderList makerReview", "orders/confirmed": "oOrders makerOrderList makerReview", "orders/ready": "oOrders makerOrderList makerReview",
   "orders/done": "oOrders makerOrderList makerReview", "orders/ended": "oOrders makerOrderList makerReview", "orders/payments": "oOrders makerClaims",
-  "orders/group": "oOrders makerPools",
+  "orders/group": "oOrders makerPools", "orders/ledger": "oOrders oLedger",
   "customers/accounts": "oCustomers oAccts", "customers/messages": "oCustomers makerChatList", "customers/links": "oCustomers oLinks",
   "customers/associates": "oCustomers oCards",
   "record/approve": "oRecord makerDrafts makerQueueReview", "record/entry": "oRecord makerInputs", "record/customers": "oRecord makerInputs",
@@ -46,7 +46,7 @@ const FORMS = {
 };
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", pools: "/all/maker/pools", inputs: "/all/maker/inputs", offsets: "/all/maker/offsets",
-  hours: "/all/maker/hours", bulletin: "/all/maker/bulletin", threads: "/all/maker/threads", assoc: "/all/assoc" };
+  hours: "/all/maker/hours", ledger: "/all/maker/ledger", bulletin: "/all/maker/bulletin", threads: "/all/maker/threads", assoc: "/all/assoc" };
 const reads = (...names) => names.map((n) => ROUTES[n]).sort();
 
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
@@ -105,7 +105,7 @@ export async function run({ ok, pageWork }) {
     ok(p.where() === "orders orders/placed", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
     await p.tap("part.orders.ready");
     const pills = [...stripOf("orders").querySelectorAll("button")].map((b) => b.getAttribute("aria-selected")).join();
-    ok(p.where() === "orders orders/ready" && pills === "false,false,true,false,false,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
+    ok(p.where() === "orders orders/ready" && pills === "false,false,true,false,false,false,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
     await p.tap("nav.customers"); await p.tap("nav.orders");
     ok(p.where() === "orders orders/placed", "and a place he comes back to opens on its first part again: " + p.where());
     const counts = [...d.querySelectorAll(".salt-rail [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
@@ -146,7 +146,7 @@ export async function run({ ok, pageWork }) {
     try {
       await empty.tap("nav.orders");
       const none = {};
-      for (const [part] of PARTS.orders.filter(([k]) => !["group", "payments"].includes(k))) {
+      for (const [part] of PARTS.orders.filter(([k]) => !["group", "payments", "ledger"].includes(k))) {
         await empty.tap("part.orders." + part);
         none[part] = [...empty.d.querySelectorAll("#makerOrderList .rnone")].filter(shown).map((e) => e.textContent).join();
       }
@@ -208,6 +208,7 @@ export async function run({ ok, pageWork }) {
       for (const part of ["confirmed", "ready", "done", "ended", "payments", "placed"]) await step("part.orders." + part, reads());
       await step("part.orders.group", reads("pools"));
       await step("nav.orders", reads("review", "claims", "pools"));
+      await step("part.orders.ledger", reads("ledger"));
       await step("nav.customers", reads());
       await step("part.customers.messages", reads("threads"));
       await step("part.customers.links", reads());
