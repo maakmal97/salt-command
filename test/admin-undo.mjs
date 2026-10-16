@@ -21,7 +21,7 @@ import { buildSeed } from "../tools/d1.mjs";
 import { readBook, draftRow, withRefunds } from "../src/drafter.js";
 import { makerAmendmentRoom } from "../src/maker-inputs.js";
 import { undoFixes } from "../src/orders.js";
-import { restateTap } from "../engine/stages.mjs";
+import { restateTap, termsFromRow } from "../engine/stages.mjs";
 import { applyAmend } from "../engine/apply.mjs";
 import { decideFix, decideDesk, applyEvent, wakes } from "../stmt/orders.js";
 import { NEWS } from "../stmt/sw.js";
@@ -223,6 +223,36 @@ export async function run({ ok, pageWork }) {
       && s3.status === 400 && /order card/.test(s3.j.error || ""),
     "a site order's card reads its row's History; a change of its terms is undone by restateOrder, and refused by the ledger's road: " + J([h2.j.history.undo, h3.j.history.undo, s3.j]));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); }
+  /* 16 Oct 2026, CR3-DAM's s263: a Correction of an agreed site order's units, price or delivery is refused by the ledger's road, naming the
+     order and the figures its Amend takes; anything else on it, or a row whose order is done, goes by the ledger as before */
+  const fT = await fixture();
+  try {
+    const n0 = fT.drafts().length;
+    const cut = await fT.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:00.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95 } });
+    const mixed = await fT.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:01.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95, handover: "collected" } });
+    const other = await fT.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:02.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { handover: "collected" } });
+    const doneRow = await fT.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:03.000Z", rid: "zu2", kind: "Correction", date: "2026-10-16", fields: { total: 120 } });
+    const made = fT.drafts().slice(n0).map((d) => [d.amends, J(d.entry.payload.fields)]);
+    ok(cut.status === 409 && J(cut.j.restate) === J({ order: "20261015000000-un3", qty: 1, total: 95, delivery: 0 }) && /customer's order/.test(cut.j.error || "")
+      && mixed.status === 400 && /on their own/.test(mixed.j.error || "") && !mixed.j.restate
+      && other.status === 200 && doneRow.status === 200 && J(made) === J([["zu3", J({ handover: "collected" })], ["zu2", J({ total: 120 })]]),
+    "a Correction of an agreed site order's price is refused by the ledger's road and names the order's Amend; mixed with another field it is refused; "
+      + "another field, or a row whose order is done, is drafted as before: " + J({ cut: cut.j, mixed: mixed.j.error, other: other.status, done: doneRow.status, made }));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); }
+  const fTDown = await fixture({ siteDown: true });
+  const cutDown = await fTDown.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:04.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95 } });
+  ok(cutDown.status === 400 && /could not be read/.test(cutDown.j.error || "") && !fTDown.drafts().some((d) => d.amends === "zu3"),
+    "while the site's orders cannot be read, a change of a sale's units, price or delivery waits: " + J(cutDown.j));
+  /* the return leg's reading: an agreed order takes its row's figures, or nothing when it cannot */
+  const ag = ORDER("20261015000000-un3", zu3(), { status: "acknowledged", total: 110 }), rowT = zu3();
+  ok(J(termsFromRow(ag, rowT)) === J({ qty: 1, total: 100, delivery: 0 }) && termsFromRow({ ...ag, total: 100 }, rowT) === null
+    && termsFromRow({ ...ag, status: "done" }, rowT) === null
+    && termsFromRow({ ...ag, payments: [{ at: "x", amount: 5, claim: "waiting" }] }, rowT) === null
+    && termsFromRow(ag, { ...rowT, delivery: 8 }) === null && J(termsFromRow({ ...ag, mode: "deliver" }, { ...rowT, delivery: 8 })) === J({ qty: 1, total: 100, delivery: 8 })
+    && J(termsFromRow({ ...ag, mode: "deliver", delivery: 8 }, { ...rowT, trip: "t1", delivery: 0 })) === J({ qty: 1, total: 100, delivery: 8 })
+    && termsFromRow({ ...ag, moved: 0 }, { ...rowT, qty: 0.5 }, 1) === null,
+  "an agreed order takes its row's size, goods and delivery; never when they agree, it is not agreed, a claim waits, a charge would sit on a collection "
+    + "or the size under what is out; a row on a trip leaves the order its delivery: " + J(termsFromRow(ag, rowT)));
   const fBehind = await fixture({ orders: [ORDER("20261002000000-un2", zu2(), { status: "done", paid: 160, queued: { paid: 110, moved: 1 } })] });
   const fDown = await fixture({ siteDown: true });
   const fWait = await fixture({ orders: [ORDER("20261002000000-un2", zu2(), { status: "done", payments: [{ at: "2026-10-03T00:00:00.000Z", amount: 5, claim: "waiting" }] })] });
@@ -330,6 +360,27 @@ export async function run({ ok, pageWork }) {
       && !p.sent("/all/maker/inputs/ledger-amend").length,
     "a change of a site order's terms is undone by the order's own restate, so the order keeps its row: " + J({ label, rs }));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+
+  /* the Corrections form: a change the Desk names as a site order's goes as the order's Amend, once, and the form says so */
+  const pc = await richOwnerPage({ pageWork,
+    extra: (route, body) => route === "/all/maker/inputs/ledger-amend" && body.fields && body.fields.qty === 3
+      ? { refuse: "This row is a customer's order, so its units, price or delivery change on the order and the row together.",
+        detail: { restate: { order: "20261015000000-un3", qty: 3, total: 200, delivery: 0 } } }
+      : /^\/all\/maker\/orders\/[0-9]{14}-[a-z0-9]+\/restate$/.test(route) ? { ok: true, draft: "x", status: "pending" } : undefined });
+  try {
+    await pc.work.quiet();
+    byAct(pc.d, "nav.record").click(); await pc.work.quiet();
+    const ed = [...pc.d.querySelectorAll("#makerInputs section.maker-input")].find((x) => x.querySelector("h3").textContent === "Correct a row");
+    const put = (c, v) => { c.value = v; c.dispatchEvent(new pc.w.Event("input", { bubbles: true })); c.dispatchEvent(new pc.w.Event("change", { bubbles: true })); };
+    put(byAct(ed, "record.amend.row"), "row-1"); put(byAct(ed, "record.amend.field"), "qty"); put(byAct(ed, "record.amend.value"), "3");
+    byAct(ed, "record.amend.add-change").click(); await pc.work.quiet();
+    byAct(ed, "record.amend.send").click(); await pc.work.quiet();
+    const rs = pc.posts.filter((x) => /\/restate$/.test(x.route)), tried = pc.posts.filter((x) => x.route === "/all/maker/inputs/ledger-amend");
+    const said = ed.textContent.replace(/\s+/g, " ");
+    ok(tried.length === 1 && rs.length === 1 && rs[0].route === "/all/maker/orders/20261015000000-un3/restate" && rs[0].body.total === 200 && rs[0].body.qty === 3
+      && rs[0].body.delivery === 0 && /^[0-9a-f]{32}$/.test(rs[0].body.rid) && /amendment of their order/.test(said),
+    "a Correction the Desk names as a site order's is sent once as that order's Amend, under its own request id, and the form says so: " + J({ tried: tried.length, rs }));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { pc.w.close(); }
 
   /* the approve card: an undo is one card with its own verb, and the button says the result */
   const mb = { sales: [s267()], purchases: [], state: { TERMS: { ceiling: 250 } } };

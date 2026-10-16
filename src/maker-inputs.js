@@ -3,6 +3,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 import { costFor, cogsFor, floorFor, theirRates, recentRates, draftRow, findRow, checkCorrection, reviving, undoNotes } from "./drafter.js";
 import { cardAt, rowRoom, siteWords } from "./orders.js";
 import { rowFigures, moveRow } from "./approve-figures.js";
+import { AGREED_ON_SITE } from "../engine/stages.mjs";
 
 /* note and settle are free prose a row carries about itself, so they stay on the Desk */
 const DESK_ONLY_FIELDS = ["note", "settle"];
@@ -883,6 +884,23 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
     if (u.blocked) return { error: u.blocked };
     if (u.route !== "ledger") return { error: "A change of a site order's terms is undone on its order card, so the order keeps its row." };
     if (!POSITION_ENGINE.undoSame(u.fields, body.fields)) return { error: "The undo changed since you read it. Read it again.", stale: true };
+  }
+  /* 16 Oct 2026, his word on CR3-DAM's s263: A CUSTOMER'S AGREED ORDER AND ITS ROW CHANGE TOGETHER. A Correction of the row's units, price or
+     delivery reached the book alone and the order kept its old figure, so it is refused here, naming the order, and Counter Admin sends it
+     as the order's Amend (restateOrder): the floor, the refund and the customer's page follow, as from the order card */
+  const terms = ["qty", "total", "delivery"], fields = object(body.fields) ? Object.keys(body.fields) : [];
+  if (sale && body.kind === "Correction" && body.undo === undefined && fields.some((k) => terms.includes(k))) {
+    const ctx = undoCtx || { siteError: true }, order = ctx.order;
+    if (ctx.siteError) return { error: "The site's orders could not be read, so a change of units, price or delivery waits until they can be." };
+    if (order && AGREED_ON_SITE.includes(order.status)) {
+      if (fields.some((k) => !terms.includes(k)))
+        return { error: "This row is a customer's order: send its units, price or delivery on their own, so the order changes with the row." };
+      const f = body.fields;
+      if (f.qty === null || f.total === null) return { error: "A customer's order keeps a size and a price." };
+      return { error: "This row is a customer's order, so its units, price or delivery change on the order and the row together.",
+        restate: { order: order.id, qty: f.qty !== undefined ? +f.qty : +order.qty, total: f.total !== undefined ? +f.total : +order.total,
+          delivery: f.delivery !== undefined ? +(f.delivery || 0) : +(order.delivery || 0) } };
+    }
   }
   /* the drafter's own rule: a cancelled row takes its revival and nothing else, the drafter judging what is paid or moved */
   if (row.cancelled && (body.kind !== "Correction" || !object(body.fields) || !reviving(body.fields)))

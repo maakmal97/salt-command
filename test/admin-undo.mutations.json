@@ -72,5 +72,16 @@
   { "name": "Undo sends without asking", "file": "stmt/owner.js", "find": "var yes=await ownerAsk(", "replace": "var yes=true||await ownerAsk(" },
   { "name": "the approve card reads an undo as a plain move", "file": "stmt/owner.js", "find": "if(p.undo!=null) return some(AP_PRICE)?", "replace": "if(false) return some(AP_PRICE)?" },
   { "name": "the approve card's verb for an undone payment", "file": "stmt/owner.js", "find": "undopay:'Undo a payment'", "replace": "undopay:'Payment received'" },
-  { "name": "the approve button for an undone payment", "file": "stmt/owner.js", "find": "if(k==='pay'||k==='unpay'||k==='undopay') return", "replace": "if(k==='pay'||k==='unpay') return" }
+  { "name": "the approve button for an undone payment", "file": "stmt/owner.js", "find": "if(k==='pay'||k==='unpay'||k==='undopay') return", "replace": "if(k==='pay'||k==='unpay') return" },
+  { "name": "a Correction of a site order's terms goes by the ledger", "file": "src/maker-inputs.js", "find": "if (order && AGREED_ON_SITE.includes(order.status)) {", "replace": "if (false) {" },
+  { "name": "a site order's terms mixed with another field are named for the Amend", "file": "src/maker-inputs.js", "find": "return { error: \"This row is a customer's order: send its units, price or delivery on their own, so the order changes with the row.\" };", "replace": ";" },
+  { "name": "a change of terms goes on while the site's orders cannot be read", "file": "src/maker-inputs.js", "find": "if (ctx.siteError) return { error: \"The site's orders could not be read, so a change of units, price or delivery waits until they can be.\" };", "replace": "" },
+  { "name": "a plain Correction reads no site order", "file": "src/worker.js", "find": "(body.undo !== undefined || termsTouched)", "replace": "(body.undo !== undefined)" },
+  { "name": "the refusal naming the order answers 400", "file": "src/worker.js", "find": "built.twin || built.restate ? 409 : 400", "replace": "built.twin ? 409 : 400" },
+  { "name": "the Counter drops the order the Desk names", "file": "stmt/maker.js", "find": "      ...(error.restate && typeof error.restate === \"object\" ? { restate: error.restate } : {}) }, status);", "replace": "      }, status);" },
+  { "name": "the form does not re-send as the order's Amend", "file": "stmt/owner.js", "find": "if(!rs||!(/^[0-9]{14}-[a-z0-9]{1,8}$/).test(rs.order))throw error;", "replace": "throw error;" },
+  { "name": "a row on a trip takes the order's delivery away", "file": "engine/stages.mjs", "find": "const delivery = row.trip ? +(+(o.delivery || 0)).toFixed(2) : +(+(row.delivery || 0)).toFixed(2);", "replace": "const delivery = +(+(row.delivery || 0)).toFixed(2);" },
+  { "name": "the size is held only to what the order holds out", "file": "engine/stages.mjs", "find": "if (qty < Math.max(+o.moved || 0, +moved || 0) - 0.0004) return null;", "replace": "if (qty < (+o.moved || 0) - 0.0004) return null;" },
+  { "name": "an order not agreed takes its row's figures", "file": "engine/stages.mjs", "find": "if (!o || !row || !AGREED_ON_SITE.includes(o.status)) return null;", "replace": "if (!o || !row) return null;" },
+  { "name": "a charge may sit on a collection", "file": "engine/stages.mjs", "find": "  if (delivery > 0.004 && o.mode !== \"deliver\") return null;\n  if (qty < Math.max", "replace": "  if (qty < Math.max" }
 ]

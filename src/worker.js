@@ -866,7 +866,9 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     }
     const tripHeld = operation === "trip-pay" ? await makerHeldMoves(env) : [];
     /* plan 4: an undo answers to what is waiting on its row and to the site order, read again as it is sent */
-    const undoCtx = operation === "ledger-amend" && body.undo !== undefined && typeof body.rid === "string" ? await undoContext(env, book, body.rid) : null;
+    /* and so does a Correction of a sale's units, price or delivery: the site order its row belongs to takes it instead (16 Oct 2026) */
+    const termsTouched = body.kind === "Correction" && body.fields && typeof body.fields === "object" && ["qty", "total", "delivery"].some((k) => k in body.fields);
+    const undoCtx = operation === "ledger-amend" && (body.undo !== undefined || termsTouched) && typeof body.rid === "string" ? await undoContext(env, book, body.rid) : null;
     const built = operation === "appoint-existing"
       ? { entry: POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,
         parent: null, rev: appointmentPlan.stream, geo: null, tiers: null }) }
@@ -881,7 +883,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
           : operation === "offset" ? makerOffset(body, book, held)
           : ["sale", "purchase"].includes(operation) ? makerTradeBatch(operation, body, book, resourcePending, registrations)
           : makerLedgerInput(operation, body, book, resourcePending);
-    if (built.error) return json({ ok: false, ...built }, built.twin ? 409 : 400);
+    if (built.error) return json({ ok: false, ...built }, built.twin || built.restate ? 409 : 400);
     if (built.amendBatch) {
       /* 16 Oct 2026 (plan 3): one entry a line of an order of several books, all or none. Each share of a payment is held to what its row
          can still take (rowRoom, through makerAmendmentRoom), and a refused share refuses the batch before anything is queued; a row

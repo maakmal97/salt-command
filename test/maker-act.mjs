@@ -270,9 +270,9 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
         if (failInputs && route === "/all/maker/inputs") throw new Error("fixture: the Desk could not be reached");
         if (fail.has(route)) throw new Error("fixture: the Desk could not be reached");
         if (Object.prototype.hasOwnProperty.call(refuse, route)) return { ok: false, status: 409, type: "basic", json: async () => ({ ok: false, error: refuse[route] }) };
-        /* extra(route, body) answers a route of a test's own: undefined falls through, { refuse: words } answers it as the Counter's refusal (409) */
+        /* extra(route, body) answers a route of a test's own: undefined falls through, { refuse: words, detail } answers it as the Counter's refusal (409), detail's fields beside the words */
         const own = extra ? extra(route, init && init.body ? JSON.parse(init.body) : null) : undefined;
-        if (own && own.refuse) return { ok: false, status: 409, type: "basic", json: async () => ({ ok: false, error: own.refuse }) };
+        if (own && own.refuse) return { ok: false, status: 409, type: "basic", json: async () => ({ ...(own.detail || {}), ok: false, error: own.refuse }) };
         if (own) return ok200(own);
         if (!(init && init.method === "POST")) reads.push(route);
         if (lapsed) return { ok: false, status: 401, type: "basic", json: async () => ({}) };

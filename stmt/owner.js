@@ -1822,7 +1822,7 @@ export const OWNER_JS = `
         /* plan 3: an order's payment or join the Desk refused whole (a split that changed, a share its row cannot take) left nothing queued, so nothing is kept to retry */
         if((error.status===400||error.status===409)&&(path==='/all/maker/inputs/trip-pay'||path==='/all/maker/inputs/trip-join')){makerClear(path);pending=null;cancel.hidden=true;}
         /* plan 4: an undo the Desk refused (it waits on something, or the row moved since it was read) left nothing queued, so nothing is kept to retry */
-        if((error.status===400||error.status===409)&&path==='/all/maker/inputs/ledger-amend'&&pending&&pending.body&&pending.body.undo!==undefined){makerClear(path);pending=null;cancel.hidden=true;}
+        if((error.status===400||error.status===409)&&path==='/all/maker/inputs/ledger-amend'&&pending&&pending.body&&(pending.body.undo!==undefined||error.detail&&error.detail.restate)){makerClear(path);pending=null;cancel.hidden=true;}
         /* a loan the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/loan'){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.detail&&(error.detail.twin||error.detail.code==='vaultConflict')){
@@ -2364,7 +2364,16 @@ export const OWNER_JS = `
       if(body.kind==='Payment')body.cash=Number(editCash.value);
       if(body.kind==='Receipt')body.movedUnits=Number(editUnits.value);
       editStatus.textContent='Sending.';
-      await send('/all/maker/inputs/ledger-amend',body);
+      try{ await send('/all/maker/inputs/ledger-amend',body); }
+      catch(error){
+        /* a customer's order: the Desk names it, and the change goes as the order's Amend, so the order and the row change together */
+        var rs=error.detail&&error.detail.restate;
+        if(!rs||!(/^[0-9]{14}-[a-z0-9]{1,8}$/).test(rs.order))throw error;
+        await refs('/all/maker/orders/'+encodeURIComponent(rs.order)+'/restate',{rid:mintRid(),qty:rs.qty,total:rs.total,delivery:rs.delivery});
+        changes={};patchList.textContent='';editStatus.textContent='Sent as an amendment of their order, so the order and the row change together. Approve it under Approve.';
+        await loadMaker();
+        return;
+      }
       changes={};patchList.textContent='';editStatus.textContent='Sent. The row changes once you approve it.';
       await loadMaker();
     },true);
