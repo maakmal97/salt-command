@@ -1,6 +1,6 @@
 {
- "v": "v1137",
- "stamped": "16 Oct 2026, 20:05 KL",
+ "v": "v1138",
+ "stamped": "16 Oct 2026, 20:07 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7820,13 +7820,35 @@
    },
    {
     "customer": "CA5-BAN",
-    "qty": 6.25,
+    "qty": 6,
     "total": 500,
     "cash": 0,
     "date": "2026-10-16",
     "deliveredQty": 0,
-    "note": "<b>PENDING SALE ON 16 OCT: 6.25 UNITS OF SALT TO CA5-BAN, NOTHING PAID, NOTHING HANDED OVER.</b> Order 20261015105151-ipmsbq, priced at RM500 on this order and placed at RM580, RM500 goods, RM0 cash, 0 units delivered. The goods total of RM500 is above the desk's floor of RM362.5 and below its ask of RM600 for 6.25 units; the rate is RM80 a unit against a floor of RM58 and an ask of RM96. CA5-BAN has 3 orders, a median rate of RM120, a range of RM100 to RM120, RM0 outstanding before and 0 units on credit; the cap is 1. The cost carried is RM58 a unit, the inventory's own rate. The drafter flagged the rate as 33.3% below the party's usual RM120; the figures confirm it is lower but still above the floor. Open: RM500 and 6.25 units to collect.",
-    "rid": "s269"
+    "note": "<b>CORRECTION ON 16 OCT TO ORDER S269: SIZE 6.25 TO 6 UNITS OF SALT FOR CA5-BAN, DELIVERY SET TO 0.</b> Order 20261015105151-ipmsbq keeps its total of RM500 and RM0 cash; nothing is paid or handed over. The goods total of RM500 is above the desk's floor of RM362.5 and below its ask of RM600, both quoted for 6.25 units. CA5-BAN has a median rate of RM120, a range of RM80 to RM120, RM500 outstanding before and 0 units on credit. The cost carried is the inventory's own rate. The drafter flagged the rate as 30.6% below the usual RM120; at RM83.33 a unit it is lower, as flagged. Open: RM500 and 6 units to collect. <b>PENDING SALE ON 16 OCT: 6.25 UNITS OF SALT TO CA5-BAN, NOTHING PAID, NOTHING HANDED OVER.</b> Order 20261015105151-ipmsbq, priced at RM500 on this order and placed at RM580, RM500 goods, RM0 cash, 0 units delivered. The goods total of RM500 is above the desk's floor of RM362.5 and below its ask of RM600 for 6.25 units; the rate is RM80 a unit against a floor of RM58 and an ask of RM96. CA5-BAN has 3 orders, a median rate of RM120, a range of RM100 to RM120, RM0 outstanding before and 0 units on credit; the cap is 1. The cost carried is RM58 a unit, the inventory's own rate. The drafter flagged the rate as 33.3% below the party's usual RM120; the figures confirm it is lower but still above the floor. Open: RM500 and 6.25 units to collect.",
+    "rid": "s269",
+    "delivery": 0,
+    "mod": "corrected on 2026-10-16: qty 6.25 to 6; delivery (unset) to 0",
+    "amend": [
+     {
+      "date": "2026-10-16",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-16",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON 16 OCT TO ORDER S269: SIZE 6.25 TO 6 UNITS OF SALT FOR CA5-BAN, DELIVERY SET TO 0.</b> Order 20261015105151-ipmsbq keeps its total of RM500 and RM0 cash; nothing is paid or handed over. The goods total of RM500 is above the desk's floor of RM362.5 and below its ask of RM600, both quoted for 6.25 units. CA5-BAN has a median rate of RM120, a range of RM80 to RM120, RM500 outstanding before and 0 units on credit. The cost carried is the inventory's own rate. The drafter flagged the rate as 30.6% below the usual RM120; at RM83.33 a unit it is lower, as flagged. Open: RM500 and 6 units to collect.",
+      "was": {
+       "qty": 6.25,
+       "delivery": null
+      }
+     }
+    ]
    }
   ],
   "contacts": [
@@ -8500,9 +8522,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-16T12:04:42.184Z",
+  "QUEUE_COMMITTED": "2026-10-16T12:05:00.989Z",
   "PRICING": {
-   "takenAt": "2026-10-16T12:05:19.609Z",
+   "takenAt": "2026-10-16T12:07:35.085Z",
    "sizes": [
     0.5,
     1,
@@ -15473,23 +15495,23 @@
      ]
     }
    },
-   "v": "v1137"
+   "v": "v1138"
   },
   "OPEN": {
-   "at": "2026-10-16T12:05:20.497Z",
+   "at": "2026-10-16T12:07:36.013Z",
    "count": 11,
    "byKey": {
     "CA5-BAN|2026-10-16|500": {
      "d": "2026-10-16",
      "p": "CA5-BAN",
      "dir": "S",
-     "q": 6.25,
+     "q": 6,
      "t": 500,
      "cash": 0,
      "mv": 0,
      "st": "part",
      "oweRM": 500,
-     "oweUnits": 6.25,
+     "oweUnits": 6,
      "rid": "s269",
      "key": "CA5-BAN|2026-10-16|500"
     },
@@ -15668,10 +15690,10 @@
      "free": 2.39,
      "owedOut": 1.5,
      "coverDays": 0.5,
-     "rate": 5.04,
+     "rate": 5.03,
      "owedToYou": 625,
-     "promised": 7.75,
-     "short": 3.86
+     "promised": 7.5,
+     "short": 3.61
     },
     "oil": {
      "name": "Oil",
@@ -15714,7 +15736,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1137"
+   "v": "v1138"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15722,7 +15744,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1137"
+   "v": "v1138"
   },
   "REWARD": {
    "stated": {
@@ -15734,7 +15756,7 @@
      }
     }
    },
-   "v": "v1137"
+   "v": "v1138"
   }
  }
 }
