@@ -4255,9 +4255,9 @@ export const OWNER_JS = `
     makerButton(box,[undoRead[key]?'Read it again':'History','undo.history',key],async function(){
       said.textContent='Reading.';
       var j=await refs('/all/maker/undo',ref);
-      undoRead[key]=j.history; draw(j.history); said.textContent='';
+      undoRead[key]=j.history; drawHist(j.history); said.textContent='';
     },false);
-    function draw(h){
+    function drawHist(h){
       list.textContent='';
       if(!h.moves.length) list.appendChild(el('p','rnone','Nothing booked since the row was entered.'));
       h.moves.forEach(function(m){
@@ -4270,7 +4270,7 @@ export const OWNER_JS = `
       else if(!h.undo&&h.why&&h.moves.length){ var n=el('p','salt-insight','The newest move is not undone here: '+h.why+'.'); n.setAttribute('data-undo-none',''); list.appendChild(n); }
     }
     box.appendChild(list); box.appendChild(said); card.appendChild(box);
-    if(undoRead[key]) draw(undoRead[key]);
+    if(undoRead[key]) drawHist(undoRead[key]);
     return box;
   }
   function undoButton(line,h,m,key,order,sayKey){

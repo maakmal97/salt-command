@@ -17,7 +17,7 @@
  * trusted. See CLAUDE.md and docs/DESK.md before changing the deployment setting.
  */
 
-import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, draftRow, tripCheck } from "./drafter.js";
+import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck } from "./drafter.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
@@ -754,7 +754,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       if (hits.length !== 1) return json({ ok: false, error: hits.length ? "That order's key names two rows: undo it by hand." : "That order has no row on the book yet." }, 409);
       rid = hits[0].rid;
     }
-    const read = makerUndo(book, rid, await undoContext(env, book, rid));
+    const read = makerUndo(await withRefunds(env.SALT_LEDGER, book), rid, await undoContext(env, book, rid));
     return read.error ? json({ ok: false, error: read.error }, 400) : json({ ok: true, history: read });
   }
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);

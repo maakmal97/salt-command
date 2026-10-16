@@ -63,7 +63,7 @@ export async function readBook(db) {
   };
   const rs = await db.prepare("SELECT key,doc FROM state").all();
   const snap = await db.prepare("SELECT v,stamped FROM snapshot WHERE one=1").first();
-  const [sales, purchases, loans, refunds] = await Promise.all([rows("sales"), rows("purchases"), rows("loans"), rows("customerRefunds")]);
+  const [sales, purchases, loans] = await Promise.all([rows("sales"), rows("purchases"), rows("loans")]);
   const state = {};
   for (const r of (rs.results || [])) { try { state[r.key] = JSON.parse(r.doc); } catch (e) { /* skip */ } }
   /* 14 OCT 2026: LOANS LIVE IN `entry` (tools/d1.mjs seeds every COLLECTION there, none into `state`), so `state.loans`
@@ -73,12 +73,15 @@ export async function readBook(db) {
   return {
     sales,
     purchases,
-    /* plan 4 (16 Oct 2026): the refunds, a collection of `entry` too, so an undo can say one it would strand */
-    customerRefunds: refunds,
     state,
     version: snap ? snap.v : null,
     pricing: state.PRICING || null
   };
+}
+/* plan 4 (16 Oct 2026): THE REFUNDS, a collection of `entry` the book read leaves out, read only for an undo, which says one it would strand */
+export async function withRefunds(db, book) {
+  const rs = await db.prepare("SELECT doc FROM entry WHERE collection=?1 ORDER BY seq").bind("customerRefunds").all();
+  return { ...book, customerRefunds: (rs.results || []).map((r) => { try { return JSON.parse(r.doc); } catch (e) { return null; } }).filter(Boolean) };
 }
 /* 06 OCT 2026: ONE READ OF THE MIRROR AN INVOCATION. The book is four queries and every row of the mirror (299 rows,
  * 378 KB of JSON on the live extract, about 2 ms of CPU to parse), and the mirror moves only when the deploy job seeds it,
@@ -2067,7 +2070,8 @@ export async function runDrafter(env, { now = () => new Date().toISOString(), mi
     if (staleLot.has(at)) continue;
     const admission = await admitInput(env.SALT_LEDGER, entry, book, "drafter");
     const reservationFault = admission.error || POSITION_ENGINE.entryReservationFault(entry, reservedEntries, book);
-    let d = reservationFault ? { skip: reservationFault } : draftRow(entry, await withDraftLots(env.SALT_LEDGER, book));
+    let d = reservationFault ? { skip: reservationFault } : draftRow(entry, entry.payload && entry.payload.undo != null
+      ? await withRefunds(env.SALT_LEDGER, await withDraftLots(env.SALT_LEDGER, book)) : await withDraftLots(env.SALT_LEDGER, book));
     const tf = !d.skip && d.row && d.row.trip ? await tripCheck(env.SALT_LEDGER, book, d.row, [], d.flags) : null;
     if (tf) d = { skip: tf };
     if (d.skip) {

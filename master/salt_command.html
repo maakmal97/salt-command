@@ -10535,7 +10535,12 @@ function ovAmend(p,q){
          stage's day for the engine's txUnpaidSince; the engine's reading of units, never the raw field. */
       if(!row.amend||!row.amend.length)row.amend=[ovSeed(before,p.direction)];
       const units=p.direction==='BUY'?PE.poRecvUnits:PE.txPhys, moved=+(units(row)-units(before)).toFixed(3);
-      row.amend=row.amend.concat([{date:p.date||null,kind:'Correction',cash:0,kg:Math.abs(moved)>0.0009?moved:0,note:p.note||line}]);}
+      /* plan 4 (16 Oct 2026), AS THE FOLD: the step says what the correction replaced, every correctable figure that moved, read off the row
+         as written in the person's terms, so it can be undone from its own record */
+      const attrN=ovAttribution(row,partyKey), afterR=Object.assign({},row,{product:row.product||'salt',party:attrN.stream==='R2'?(attrN.downstream||null):(row[partyKey]||null),
+        assoc:attrN.assoc,stream:attrN.stream,downstream:attrN.downstream}), wasR={};
+      PE.CORRECTABLE.forEach(k=>{const a=before[k]===undefined?null:before[k],b=afterR[k]===undefined?null:afterR[k];if(JSON.stringify(a)!==JSON.stringify(b))wasR[k]=a;});
+      row.amend=row.amend.concat([{date:p.date||null,kind:'Correction',cash:0,kg:Math.abs(moved)>0.0009?moved:0,note:p.note||line,was:wasR}]);}
     return;}
   /* ====== RESTATE (v439) ================================================================
      THE DESK HAD NO MODIFICATION BRANCH AT ALL, and the fold has had one since v358. A
