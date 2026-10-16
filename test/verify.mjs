@@ -52039,6 +52039,8 @@ await (async () => {
       "the Maker trade form sends typed figures and no free-text note to the named Desk operation: "+tradeSection.textContent);
     const editor = [...doc.querySelectorAll("#makerInputs .maker-input")]
       .find((section) => section.querySelector("h3").textContent === "Correct a row");
+    const editorRow = editor.querySelector('[data-act="record.amend.row"]');
+    editorRow.value = "editor-sale"; editorRow.dispatchEvent(new admin.window.Event("change", { bubbles: true }));
     const valueField = [...editor.querySelectorAll('input[type="number"]')].at(-1);
     valueField.value = "3";
     [...editor.querySelectorAll("button")].find((button) => button.textContent === "Add").click();

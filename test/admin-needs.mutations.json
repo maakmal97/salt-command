@@ -638,8 +638,8 @@
  {
   "name": "Correct a row opens on Change the figures",
   "file": "stmt/owner.js",
-  "find": "editKind.value='Fulfilment'; drawKind(); return true;",
-  "replace": "editKind.value='Correction'; drawKind(); return true;"
+  "find": "editKind.value='Fulfilment'; drawKind(); editorReady(); return true;",
+  "replace": "editKind.value='Correction'; drawKind(); editorReady(); return true;"
  },
  {
   "name": "a failed owed read is not noted",

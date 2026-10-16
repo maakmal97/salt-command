@@ -2285,7 +2285,8 @@ export const OWNER_JS = `
     parent.appendChild(editor);
     var rows=catalog.rows||[], rowItems=rows.map(function(row){return {value:row.rid,
       label:optionBook(row.product)+row.party+', '+units(row.qty)+', '+rm(row.total)+', '+(fmtWhen(row.date)||'undated')+(row.defaulted?', defaulted':'')};});
-    var editRow=addSelect(editor,['Which row','record.amend.row'],rowItems),
+    /* no row is chosen until he picks one, so a movement never goes out against the book's first row by default */
+    var editRow=addSelect(editor,['Which row','record.amend.row'],[{value:'',label:rows.length?'Choose a row':'No row to correct'}].concat(rowItems)),
       editKind=makerTilesIn(editor,['What to do','record.amend.kind'],[{value:'Correction',label:KINDW.Correction},
         {value:'Fulfilment',label:KINDW.Fulfilment},{value:'Cancellation',label:KINDW.Cancellation}]),
       editDate=makerField(editor,['On','record.amend.date'],'date',today);
@@ -2354,8 +2355,9 @@ export const OWNER_JS = `
       }};
     editKind.addEventListener('change',drawKind);editRow.addEventListener('change',function(){kindsFor();drawKind();});kindsFor();drawKind();
     /* plan 1: Needs you's owed cards open this form on their row, as goods or cash moved (amendFor) */
-    amendPick=function(rid){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; patchList.textContent=''; kindsFor(); editKind.value='Fulfilment'; drawKind(); return true; };
+    amendPick=function(rid){ if(!rows.some(function(item){return item.rid===rid;}))return false; editRow.value=rid; changes={}; patchList.textContent=''; kindsFor(); editKind.value='Fulfilment'; drawKind(); editorReady(); return true; };
     var editorButton=makerButton(editor,['Send the correction','record.amend.send'],async function(send){
+      if(!editRow.value)throw new Error('Choose a row first.');
       var body={at:new Date().toISOString(),rid:editRow.value,kind:editKind.value,date:editDate.value};
       if(body.kind==='Correction')body.fields=Object.assign({},changes);
       if(body.kind==='Fulfilment'){body.cash=Number(editCash.value);body.movedUnits=Number(editUnits.value);}
@@ -2366,7 +2368,8 @@ export const OWNER_JS = `
       changes={};patchList.textContent='';editStatus.textContent='Sent. The row changes once you approve it.';
       await loadMaker();
     },true);
-    editorButton.disabled=!rows.length;
+    var editorReady=function(){editorButton.disabled=!rows.length||!editRow.value;};
+    editRow.addEventListener('change',editorReady);editorReady();
     if(!rows.length)editStatus.textContent='No row to correct.';
     var revive=makerForm('entry');revive.appendChild(el('h3',null,'Reopen a cancelled order'));
     revive.appendChild(el('p','msg','Reopens an order you cancelled, if nothing was paid or handed over.'));

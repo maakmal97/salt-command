@@ -251,6 +251,12 @@ export async function run({ ok, pageWork }) {
     const send = (route, section, act) => sends(p, route, section, act);
     /* a correction: the kind, and the new value of a field as a tile where the choices are few */
     const editor = p.form("Correct a row");
+    /* 16 Oct 2026: a Fulfilment for one row went out against the book's first row, left as the picker's default */
+    const rowPick = byAct(editor, "record.amend.row"), amendSend = byAct(editor, "record.amend.send");
+    const unpicked = [rowPick.value, rowPick.selectedIndex, amendSend.disabled], unsent = await send("/all/maker/inputs/ledger-amend", editor, "record.amend.send");
+    p.type(rowPick, "row-1");
+    ok(unpicked[0] === "" && unpicked[1] === 0 && unpicked[2] === true && unsent === null && amendSend.disabled === false,
+      "Correct a row opens on no row, its Send disabled and sending nothing, until a row is chosen: " + JSON.stringify([unpicked, unsent, amendSend.disabled]));
     for (const kind of tileValues(editor, "What to do")) {
       tile(editor, "What to do", kind);
       check("correct " + kind, await send("/all/maker/inputs/ledger-amend", editor, "record.amend.send"), { kind, rid: "row-1" });

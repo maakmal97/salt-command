@@ -198,8 +198,9 @@ export async function run({ ok, pageWork }) {
     byAct(d, "nav.needs").click(); await p.work.quiet();
     byAct(p.card("g:row-1"), "need.owed-hand", "row-1").click(); await p.work.quiet();
     const form = d.querySelector('#makerInputs [data-form="correct-a-row"]'), pick = form && form.querySelector('[data-act="record.amend.row"]'), kind = form && form.querySelector("input:checked[value=Fulfilment]");
-    ok(p.where() === "record/entry" && form && !form.hidden && pick && pick.value === "row-1" && !!kind,
-      "Handover on a row with no site order opens Correct a row on that row, as goods or cash moved: " + JSON.stringify([p.where(), form && form.hidden, pick && pick.value, !!kind]));
+    const pickSend = form && form.querySelector('[data-act="record.amend.send"]');
+    ok(p.where() === "record/entry" && form && !form.hidden && pick && pick.value === "row-1" && !!kind && pickSend && pickSend.disabled === false,
+      "Handover on a row with no site order opens Correct a row on that row, as goods or cash moved, its Send ready: " + JSON.stringify([p.where(), form && form.hidden, pick && pick.value, !!kind, pickSend && pickSend.disabled]));
     ok(p.posts.length === 0, "and neither books anything: " + JSON.stringify(p.posts.map((x) => x.route)));
 
     /* 6. THE ONE FILLED PILL */
