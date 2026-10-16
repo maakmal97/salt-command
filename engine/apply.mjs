@@ -15,8 +15,12 @@ import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TE
 const E = POSITION_ENGINE;
 const r2 = (v) => +(+v).toFixed(2);
 /* which entry made each of a plan's moves (a WeakMap, so the plan's own text is unchanged) */
-const MOVE_OF = new WeakMap();
-export const movesOf = (p, it) => p.moves.filter((m) => MOVE_OF.get(m) === it.id);
+const MOVE_OF = new WeakMap(), PLANNED = new WeakSet();
+/* a plan planBatch did not build (or a clone of one) has no attribution; applyInto never calls this (it reads p.moves whole), so it throws rather than answer [] */
+export const movesOf = (p, it) => {
+  if (!PLANNED.has(p)) throw new Error("movesOf: not a plan built by planBatch");
+  return p.moves.filter((m) => MOVE_OF.get(m) === it.id);
+};
 function prodOf(row) { return (row && row.product) || "salt"; }
 
 /* The attribution rule lives in engine/position.mjs, because the desk, this fold and the
@@ -766,7 +770,7 @@ export function planBatch(book, staged, notes, ctx) {
       entry.does.push(`re-key ${pairs.map((x) => x[0] + " to " + x[1]).join(" and ")} wherever the book holds the code, after every other row in this batch; notes and history keep the old code`);
       entry.does.push("move the statement account to the new code, its username unchanged, with any place override and the suite's fixtures");
     } else { out.refused.push({ id: it.id, why: `unknown collection ${it.collection}` }); continue; }
-    for (; tagged < out.moves.length; tagged++) MOVE_OF.set(out.moves[tagged], it.id);   /* the moves made since the last entry are this one's */
+    for (; tagged < out.moves.length; tagged++) MOVE_OF.set(out.moves[tagged], it.id);   /* every refusal (continue) in this iteration came before this line, so the moves made since the last entry are this entry's alone */
     out.items.push(entry);
     if (it.collection === "roster" && registrationIds.has(it.id)) plannedRegistrations.add(it.id);
     if (resourceEntry) reservedEntries.push(resourceEntry);
@@ -784,6 +788,7 @@ export function planBatch(book, staged, notes, ctx) {
     });
     out.moves = out.moves.filter((m) => !(m.trip && held.has(m.trip)));
   }
+  PLANNED.add(out);
   return out;
 }
 

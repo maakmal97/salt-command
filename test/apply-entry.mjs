@@ -9,11 +9,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /* the reducer a batch wrapper will be: every entry, then the renames, QUEUE_COMMITTED and the sort, once */
-export function reduceEntries(ENG, E, book, p, staged, notes, ctx) {
+export function reduceEntries(ENG, E, book, p, staged, notes, ctx, movesFor = ENG.movesOf) {
   let newest = book.QUEUE_COMMITTED || "";
   const renames = [];
   for (const it of p.items) {
-    const r = ENG.applyEntry(book, it, { nextRid: ctx.nextRid, staged, notes, moves: ENG.movesOf(p, it) });
+    const r = ENG.applyEntry(book, it, { nextRid: ctx.nextRid, staged, notes, moves: movesFor(p, it) });
     renames.push(...r.renames);
     if (r.newest > newest) newest = r.newest;
   }
@@ -61,8 +61,22 @@ export async function run({ ok }) {
   /* a rename comes last: a row booked in the same batch under the old code moves with it */
   const c4 = mk(), st4 = { approved: [sale] };
   const p4 = { items: [{ id: "q-0", rename: { from: "ZZ1-AAA", to: "ZZ2-BBB", pairs: [["ZZ1-AAA", "ZZ2-BBB"]], geo: null } }, itSale], moves: [] };
-  reduceEntries(ENG, E, c4, p4, st4, { version: "v1", rows: { "q-1": { note: "invented sale" } } }, { nextRid, sortBook });
+  reduceEntries(ENG, E, c4, p4, st4, { version: "v1", rows: { "q-1": { note: "invented sale" } } }, { nextRid, sortBook }, () => []);
   ok(c4.sales.length === 1 && c4.sales[0].customer === "ZZ2-BBB" && c4.roster.includes("ZZ2-BBB") && c4.QUEUE_COMMITTED === "q-1", "S1d-1: a rename planned first is applied last, after the sale booked under the old code, and QUEUE_COMMITTED follows the newest entry");
+
+  /* movesOf, on a real plan (so it runs on a shallow clone too): a sale delivering 2 and a count on one product, planned by planBatch against the current book plus an invented code */
+  { const FOLD = await import(pathToFileURL(join(REPO, "tools", "fold.mjs")).href + "?movesof");
+    const bk = (await import("./frozen.mjs")).frozenBook(); bk.roster.push("ZZ1-AAA");
+    const sg = { ok: true, count: 2, approved: [
+      { id: "2031-01-02T01:00:00.000Z", status: "approved", collection: "sales", row: { customer: "ZZ1-AAA", date: "2031-01-02", qty: 2, total: 200, cash: 200, deliveredQty: 2, product: "salt" } },
+      { id: "2031-01-02T02:00:00.000Z", status: "approved", collection: "count", row: { product: "salt", qty: 10.5, date: "2031-01-03" } }] };
+    const pl = ENG.planBatch(bk, sg, null, FOLD.planCtx), [pSale, pCount] = pl.items;
+    ok(pl.refused.length === 0 && pl.items.length === 2 && pl.moves.length === 1, "S1d-1: the invented sale and count are planned by planBatch, one move between them");
+    ok(ENG.movesOf(pl, pSale).length === 1 && ENG.movesOf(pl, pSale)[0] === pl.moves[0] && ENG.movesOf(pl, pCount).length === 0, "S1d-1: movesOf holds the sale's own move and the count none");
+    ok(pl.items.reduce((n, it) => n + ENG.movesOf(pl, it).length, 0) === pl.moves.length, "S1d-1: the moves over all entries add up to the plan's moves");
+    let threw = false; try { ENG.movesOf({ items: pl.items, moves: pl.moves.slice() }, pSale); } catch (e) { threw = /not a plan built by planBatch/.test(e.message); }
+    ok(threw, "S1d-1: movesOf refuses a plan planBatch did not build, rather than answering none");
+  }
 
   /* 1. the last 20 staged batches, reduced entry by entry */
   let bs;
