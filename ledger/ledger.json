@@ -1,6 +1,6 @@
 {
- "v": "v1140",
- "stamped": "16 Oct 2026, 20:18 KL",
+ "v": "v1141",
+ "stamped": "16 Oct 2026, 20:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -6754,8 +6754,29 @@
     "date": "2026-10-05",
     "deliveredQty": 1,
     "deliveredOn": "2026-10-05",
-    "note": "<b>SALT SELL DATED 05 OCT: 1 UNIT FOR RM130, COLLECTED WITH NOTHING PAID.</b> Booked to CN3-WM, RM130 a unit, RM0 cash in, 1 unit delivered the same day. The floor for 1 unit is RM64 and the ask RM160, so the rate clears the floor and sits under the ask. CN3-WM's median is RM100 across 9 orders, range RM75 to RM110, so this is above its usual top. It owed RM210 and 2.1 units on credit against a cap of 2 before this row, and the advance adds to that. The figures do not answer the credit flag; the desk decided it. Cost stays at the drafted RM64 a unit, off the latest purchase p035, not the inventory's own RM60. Outstanding: RM130.",
-    "rid": "s235"
+    "note": "<b>CORRECTION ON 16 OCT TO ORDER S235: TRIP SET FOR 1 UNIT OF SALT FOR CN3-WM.</b> Sets trip from unset to t1792153122763. It moves no cash and no stock, and the row's total of RM130 and its delivery of 1 unit on 5 Oct stand. The rate of RM130 a unit is above the desk's floor of RM64 and below its ask of RM160, both quoted for 1 unit. CN3-WM has a median rate of RM100, a range of RM7.50 to RM130, RM355 outstanding before and 5.1 units on credit. Cap not stated in the dossier. The cost carried stays as set and is not changed here. The drafter flagged the rate as 18.2% above the usual and the order as an advance with RM130 unpaid; the rate is higher, as flagged, and this correction does not answer the advance. RM130 is left outstanding. <b>SALT SELL DATED 05 OCT: 1 UNIT FOR RM130, COLLECTED WITH NOTHING PAID.</b> Booked to CN3-WM, RM130 a unit, RM0 cash in, 1 unit delivered the same day. The floor for 1 unit is RM64 and the ask RM160, so the rate clears the floor and sits under the ask. CN3-WM's median is RM100 across 9 orders, range RM75 to RM110, so this is above its usual top. It owed RM210 and 2.1 units on credit against a cap of 2 before this row, and the advance adds to that. The figures do not answer the credit flag; the desk decided it. Cost stays at the drafted RM64 a unit, off the latest purchase p035, not the inventory's own RM60. Outstanding: RM130.",
+    "rid": "s235",
+    "trip": "t1792153122763",
+    "mod": "corrected on 2026-10-16: trip (unset) to t1792153122763",
+    "amend": [
+     {
+      "date": "2026-10-05",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 1,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-16",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON 16 OCT TO ORDER S235: TRIP SET FOR 1 UNIT OF SALT FOR CN3-WM.</b> Sets trip from unset to t1792153122763. It moves no cash and no stock, and the row's total of RM130 and its delivery of 1 unit on 5 Oct stand. The rate of RM130 a unit is above the desk's floor of RM64 and below its ask of RM160, both quoted for 1 unit. CN3-WM has a median rate of RM100, a range of RM7.50 to RM130, RM355 outstanding before and 5.1 units on credit. Cap not stated in the dossier. The cost carried stays as set and is not changed here. The drafter flagged the rate as 18.2% above the usual and the order as an advance with RM130 unpaid; the rate is higher, as flagged, and this correction does not answer the advance. RM130 is left outstanding.",
+      "was": {
+       "trip": null
+      }
+     }
+    ]
    },
    {
     "customer": "CN3-WM",
@@ -6768,8 +6789,29 @@
     "date": "2026-10-05",
     "deliveredQty": 2,
     "deliveredOn": "2026-10-05",
-    "note": "<b>RICE SELL DATED 05 OCT: 2 UNIT FOR RM15, COLLECTED WITH NOTHING PAID.</b> Booked to CN3-WM as RM7.50 a unit, RM0 cash in, 2 unit delivered the same day. The floor for 2 unit is RM6.8 and the ask RM16, so the sale clears the floor and sits just under the ask. CN3-WM has no rice history, so no rate of its own to compare. It stood at RM210 outstanding and 2.1 units on credit against a cap of 2 before this row, so the advance goes further past the cap. The figures do not answer that flag; the desk decided it. Cost stays at the drafted RM3.4 a unit, from lot p028. Outstanding: RM15.",
-    "rid": "s236"
+    "note": "<b>CORRECTION ON 16 OCT TO ORDER S236: TRIP SET FOR 2 UNIT OF RICE FOR CN3-WM.</b> Sets trip from unset to t1792153122763. It moves no cash and no stock, and the row's total of RM15 and its delivery of 2 unit on 5 Oct stand. The goods total of RM15 is above the desk's floor of RM6.8 and just under its ask of RM16, both quoted for 2 unit. CN3-WM has a median rate of RM100 across all products, a range of RM7.50 to RM130, RM355 outstanding before and 5.1 units on credit. Cap not stated in the dossier. The drafter flagged the order as an advance with RM15 unpaid; the correction does not answer that. RM15 is left outstanding. <b>RICE SELL DATED 05 OCT: 2 UNIT FOR RM15, COLLECTED WITH NOTHING PAID.</b> Booked to CN3-WM as RM7.50 a unit, RM0 cash in, 2 unit delivered the same day. The floor for 2 unit is RM6.8 and the ask RM16, so the sale clears the floor and sits just under the ask. CN3-WM has no rice history, so no rate of its own to compare. It stood at RM210 outstanding and 2.1 units on credit against a cap of 2 before this row, so the advance goes further past the cap. The figures do not answer that flag; the desk decided it. Cost stays at the drafted RM3.4 a unit, from lot p028. Outstanding: RM15.",
+    "rid": "s236",
+    "trip": "t1792153122763",
+    "mod": "corrected on 2026-10-16: trip (unset) to t1792153122763",
+    "amend": [
+     {
+      "date": "2026-10-05",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 2,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-16",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON 16 OCT TO ORDER S236: TRIP SET FOR 2 UNIT OF RICE FOR CN3-WM.</b> Sets trip from unset to t1792153122763. It moves no cash and no stock, and the row's total of RM15 and its delivery of 2 unit on 5 Oct stand. The goods total of RM15 is above the desk's floor of RM6.8 and just under its ask of RM16, both quoted for 2 unit. CN3-WM has a median rate of RM100 across all products, a range of RM7.50 to RM130, RM355 outstanding before and 5.1 units on credit. Cap not stated in the dossier. The drafter flagged the order as an advance with RM15 unpaid; the correction does not answer that. RM15 is left outstanding.",
+      "was": {
+       "trip": null
+      }
+     }
+    ]
    },
    {
     "customer": "CJ2-KUC",
@@ -8561,9 +8603,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-16T12:17:45.897Z",
+  "QUEUE_COMMITTED": "2026-10-16T12:18:42.764Z",
   "PRICING": {
-   "takenAt": "2026-10-16T12:18:59.062Z",
+   "takenAt": "2026-10-16T12:20:48.286Z",
    "sizes": [
     0.5,
     1,
@@ -15534,10 +15576,10 @@
      ]
     }
    },
-   "v": "v1140"
+   "v": "v1141"
   },
   "OPEN": {
-   "at": "2026-10-16T12:18:59.898Z",
+   "at": "2026-10-16T12:20:49.188Z",
    "count": 10,
    "byKey": {
     "CS6-BS-R|2026-10-15|220": {
@@ -15622,6 +15664,7 @@
      "rid": "s235",
      "deliveredOn": "2026-10-05",
      "handover": "collected",
+     "trip": "t1792153122763",
      "key": "CN3-WM|2026-10-05|130",
      "age": 11,
      "exp": 0
@@ -15640,6 +15683,7 @@
      "rid": "s236",
      "deliveredOn": "2026-10-05",
      "handover": "collected",
+     "trip": "t1792153122763",
      "key": "CN3-WM|2026-10-05|15|rice",
      "age": 11,
      "exp": 0
@@ -15761,7 +15805,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1140"
+   "v": "v1141"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15769,7 +15813,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1140"
+   "v": "v1141"
   },
   "REWARD": {
    "stated": {
@@ -15781,7 +15825,7 @@
      }
     }
    },
-   "v": "v1140"
+   "v": "v1141"
   }
  }
 }

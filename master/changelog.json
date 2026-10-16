@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1141",
+  "d": "16 Oct 2026",
+  "t": "TWO TRIP CORRECTIONS FOR CN3-WM, NO CASH OR STOCK MOVED",
+  "n": [
+   "<b>TWO CORRECTIONS FOLDED ON 16 OCT.</b> Orders s235 (salt) and s236 (rice) for CN3-WM each have their trip set from unset to t1792153122763. Both were decided by Counter Admin. Neither moves cash, quantity or total, so the corrections only change what each row says about itself.",
+   "<b>INVENTORY UNCHANGED.</b> Stock stays at 22.89 units. Both orders were already delivered on 5 Oct, and both remain unpaid, so CN3-WM's balance is untouched by this fold. The dossier does not state a credit cap for CN3-WM."
+  ]
+ },
+ {
   "v": "v1140",
   "d": "16 Oct 2026",
   "t": "SALT BUY OF 25 UNITS FROM SA5-BTR AT THE QUOTED RM56 A UNIT",
