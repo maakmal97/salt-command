@@ -25,6 +25,11 @@ const ENGINES = [
   /* v564: the QR encoder, because the desk draws one on the board sheet he hands a customer and
      the statements build draws one from the same text. Two encoders would drift. */
   { name: "qr", file: resolve(REPO, "engine", "qr.mjs") },
+  /* S1c-i: the pricing rule tables, so a Worker imports what the desk inlines */
+  { name: "rules", file: resolve(REPO, "engine", "rules.mjs") },
+  /* S1c-ii: the cost glue the pricing snapshot reads. It imports the two engines, which are globals of the same names in the
+     desk, so its import lines are dropped from the block; a first insert goes after the pricing block, in the desk's script */
+  { name: "snapshot", file: resolve(REPO, "engine", "snapshot.mjs"), after: "pricing" },
 ];
 
 const BEGIN = (n) => `/* ==== ENGINE ${n}: generated from engine/${n}.mjs by tools/engine.mjs. Edit the module, never this block. ==== */`;
@@ -32,7 +37,7 @@ const END = (n) => `/* ==== END ENGINE ${n} ==== */`;
 
 function blockFor(e) {
   const src = readFileSync(e.file, "utf8").replace(/\r\n/g, "\n");
-  const lines = src.replace(/\n+$/, "").split("\n");
+  const lines = src.replace(/\n+$/, "").split("\n").filter((l) => !/^import \w+ from "\.\/\w+\.mjs";$/.test(l));
   const last = lines[lines.length - 1];
   if (!/^export default \w+;$/.test(last)) {
     throw new Error(`engine/${e.name}.mjs must end with a single 'export default NAME;' line, found: ${last}`);
@@ -61,10 +66,16 @@ for (const e of ENGINES) {
     } else {
       /* first time: straight after the desk's script opens, so the engine exists before
          anything that could call it */
-      const anchor = "\n<script>\n";
-      const i = master.indexOf(anchor);
-      if (i < 0) throw new Error("could not find the desk's <script> to insert the engine after");
-      master = master.slice(0, i + anchor.length) + want + "\n" + master.slice(i + anchor.length);
+      if (e.after) {
+        const pa = locate(master, ENGINES.find((x) => x.name === e.after));
+        if (!pa) throw new Error(`the ${e.after} engine must be in the master before ${e.name}`);
+        master = master.slice(0, pa.end) + "\n" + want + master.slice(pa.end);
+      } else {
+        const anchor = "\n<script>\n";
+        const i = master.indexOf(anchor);
+        if (i < 0) throw new Error("could not find the desk's <script> to insert the engine after");
+        master = master.slice(0, i + anchor.length) + want + "\n" + master.slice(i + anchor.length);
+      }
     }
     console.log(`  ok    ${e.name}: inlined ${want.split("\n").length} lines into the master`);
   } else if (mode === "--check") {

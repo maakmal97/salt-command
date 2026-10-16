@@ -4533,6 +4533,346 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
 </div>
 <button class="totop salt-orb salt-orb--lit" id="totop" type="button" title="Back to top" aria-label="Back to top">&#9650;</button>
 <script>
+/* ==== ENGINE rules: generated from engine/rules.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
+/* engine/rules.mjs: S1c-i of the Book plan. THE PRICING RULE TABLES, ONE MODULE.
+   These tables sat in the master's own script, so only the desk could read them. They live here now so a Worker can
+   import the same object the desk inlines (tools/engine.mjs puts this file's text into the master between its markers,
+   the final export line dropped). The text of each const is exactly what stood in the master: no value, key or order
+   changed, and the master reads them under the same names. REF is not here: it is built from the master's LADDER.
+   Edit this module, then: node tools/engine.mjs --sync. */
+
+const RULES={
+  creditUnits:{salt:{retail:1,associate:2}, oil:{retail:10,associate:20}},
+  creditDays:10,
+  holdDays:1,
+  hideDays:3,
+  lockDays:4,
+  /* V5b2 (his answers of 29 Sep 2026): an order that would take what a customer owes at once, across every book, over
+     this is paid in advance, for everyone, in place of the Counter's unit cap. The desk Worker reads it from TERMS.
+     No semicolon in this object: the publish reads RULES up to the first one. */
+  creditCeilingRM:250,
+  /* V5c (his answers of 29 Sep 2026): a late payer is offered a level down, never priced one. Two delays past the term
+     within this many days, or one of lockDays or more, turn the offer on, one payment on time turns it off, and a delay
+     within this many days of that takes lateResetRepeat payments on time in a row. The engine's lateOffer reads them. */
+  lateWindowDays:90,
+  /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
+     information only, the floor being COGS and nothing pricing off the leak */
+  leakInfoFrom:0.25,
+  lateResetRepeat:3,
+  fullProvDays:21,
+  reorderUnits:{salt:15, oil:20},
+  /* F15 (29 Sep 2026, his Q16): the delivery fee offered by distance, one way. A setting, never a price: it fills the
+     delivery box, his figure wins, and the goods, the floor and the board never read it. roadFactor 1.3 is an assumption
+     for the Klang Valley. localityFallback: a party with no exact point is measured to its PLACED locality (0.01 degrees,
+     about a kilometre out), his answer at design. */
+  delivery:{rmPerKm:1.5, roadFactor:1.3, roundTo:0.5, minRm:0, maxRm:null, localityFallback:true}
+};
+
+const PRICE_ENGINE={
+  sizes:[0.5,1,1.5,2,2.5,3,4,5,6.25,12.5],
+  /* THE MARGIN IS NOT TYPED. It is REGRESSED from what this book has actually achieved,
+     size by size, and refits itself as orders accumulate. See marginCurve(). What is typed
+     is a single hand on the tiller: a shift applied to the whole fitted curve, at zero
+     until he wants to be more expensive or cheaper across the board. */
+  marginShift:0,
+  minPoints:8,          // below this there is not enough trade to fit anything honest
+  fallbackMargin:0.42,  // and this is used instead, stated rather than inferred
+  clamp:{lo:0.18,hi:0.72},
+  /* how much of the unexplained leak the customer is asked to carry. Zero keeps the v205
+     position that the desk absorbs the cost of a problem the customer did not cause. */
+  recoverAbnormal:0,
+  /* what the desk charges itself for money out on credit, per year. Used only to price the
+     days a tier is expected to take, never to charge anyone interest. */
+  /* v353, HIS INSTRUCTION OF 24 Aug: 40%, NOT 12%. What he charges himself for money tied up,
+     per year. 12% was a borrowing rate; 40% is what he says his own capital is worth, which is
+     the right basis for a desk funded out of his own pocket rather than out of a facility.
+     WHERE IT BITES, AND IT IS SMALLER THAN IT SOUNDS. Inventory: a 50 unit lot clears in about 12
+     days at 4.32 a day, so the average unit is held under 6, and 40% of RM45.20 over 6 days is
+     about 29 sen a unit. Credit: a customer who takes 10 days to pay costs 1.1% of the sale
+     against 0.33% at 12%. It is a real layer and it is not the one that decides a price. */
+  moneyRate:0.40,
+  /* the least a rate must fall at each step up, so size is visibly worth taking */
+  incentive:0.03,
+  /* ============ FIVE CATEGORIES, EARNED NOT ASSIGNED (v237) ============
+     Cheapest first, because that is the order they earn. rel is what each pays relative to
+     Regular, so the whole ladder moves together when the curve moves and the RELATIONSHIP
+     between them stays a policy.
+       SPECIAL    the handful who have carried the book. Best price on the desk.
+       ASSOCIATE  resells or refers, so his margin is earned on volume he brings.
+       LOYAL      buys to a rhythm and settles on the day.
+       REGULAR    the default ask, and the price the curve is fitted to.
+       ONE-TIME   bought once, no history, full term assumed, no claim on a discount.
+     days is what each is expected to take to pay, which is a real cost and is priced. */
+  /* ============ THREE TIERS, TIER I TO TIER III (v245) ============
+     Five categories became three because the book cannot support five. The engine was
+     already pricing Associate and Loyal identically at 29.8%, and Regular held two
+     customers against a book of twenty-four, so two of the five distinctions were
+     nominal before any constraint bound. Cheapest first, because that is the order they
+     earn: TIER I is the best price on the desk, TIER III is the full ask.
+     REL NO LONGER PAYS TWICE. Tier I sat at 0.82 AND took zero credit days, so the same
+     fact bought the same customer a discount and a cost saving. rel is now 0.92 and the
+     zero credit days deliver the rest, which is cost recovery rather than a second gift. */
+  tiers:[
+    {code:'T1',name:'Tier I',   rel:0.92, days:0,  col:'#e4e9ec',dots:3,
+     who:'carried the book; best price on the desk'},
+    {code:'T2',name:'Tier II',  rel:1.00, days:3,  col:'#d8c79c',dots:2,
+     who:'the default ask, and the price the curve is fitted to'},
+    {code:'T3',name:'Tier III', rel:1.15, days:10, col:'#c5a059',dots:1,
+     who:'bought once, no history, and the full term assumed'}
+  ],
+  /* v238: NO CAPS. Every tier runs every size. A cap is a break in the ladder by another
+     name, and the only thing allowed to move a price is the floor. */
+  maxSize:{T1:1e9,T2:1e9,T3:1e9},
+  /* THE LEAST A UNIT MAY EARN, IN RINGGIT, WHATEVER THE SIZE (v245). The percentage floor
+     could not see that a unit is the scarce thing here: at 20% it let a 12.5 lot go for
+     RM13.59 a unit while a single unit earned RM40. Twenty is not a round number picked
+     for neatness, it is the LARGEST value at which the board still solves in whole RM10
+     steps at every size and tier; at 25 and above the band between floor and ceiling
+     closes and prices go to exact ringgit again. */
+  /* ============ THE FLOOR IS A CURVE PER TIER (v249) ============
+     Stated by him as MARKUP ON COST, which is the only reading that parses: 100% margin on
+     revenue is undefined, 100% markup is twice cost. Two anchors per tier, at 1 unit and at
+     12.5 unit, interpolated in the LOG of size because that is how the fitted margin curve
+     already behaves and how discounts are actually felt. Tier II is the midpoint of the two
+     at every size rather than a third pair of typed numbers, so the ladder cannot develop a
+     kink in the middle that nobody chose.
+     THIS REPLACES minPerUnit, WHICH IS NOW ZERO. The two cannot both be the floor: a flat
+     RM20 a unit forces 12.5 unit to a 31% markup, which would silently overrule the 15% he
+     asked for at Tier I. Kept as a live mechanism at zero so it is one number to restore. */
+  /* v250: IT IS A CAP, NOT A FLOOR, and that correction changes what the board IS. Read as
+     a minimum, the fitted margin curve was free to price Tier I ABOVE 33% at a unit and did,
+     at 50.4%. Read as a maximum, these four numbers ARE the board: every price is lot cost
+     times one plus the stated markup, rounded DOWN to the five grid so the cap is never
+     breached by rounding. The regressed margin curve no longer sets the carded price; it
+     stays alive for off-board sizes and for the analysis panes. */
+  /* ============ NINE STATED PRICES, AND A SOLVER BETWEEN THEM (v251) ============
+     He now sets the board directly at three sizes per tier. These are PRICES, not markups
+     and not margins, so nothing is derived from cost any more except the floor that tests
+     them. Everything between is solved.
+     THE SOLVER INTERPOLATES THE RATE, NOT THE TOTAL. Interpolating totals draws a straight
+     line through a curve and puts the middle sizes above both ends per unit; the rate is the
+     thing that has to fall smoothly, so the rate is what is interpolated, in the LOG of size
+     because that is how every other curve on this desk behaves. Outside the stated range it
+     is held flat rather than extrapolated.
+     THE ANCHORS ARE PINNED. The strictness pass may move any solved size but never one he
+     typed: if a stated price and a solved neighbour collide, the solved one gives way. */
+  /* ============ THE ANCHORS ARE PER PRODUCT (v260) ============
+     They were flat, so switching the desk to oil showed SALT'S BOARD VERBATIM: RM80 for a
+     unit of oil that costs RM7.90 landed, a 545% markup, and RM850 for a 12.5 lot, against
+     the one oil sale on the book which cleared RM13 a unit. A price list keyed to nothing is
+     worse than no price list, because it looks authoritative.
+     A PRODUCT WITH NO STATED ANCHORS DOES NOT BORROW ANOTHER'S PRICES. It borrows the SHAPE:
+     the markup salt carries on its OWN lot cost at each anchor size, applied to this
+     product's own lot cost. Same commercial ladder, its own economics. That board is marked
+     DERIVED wherever it appears; it is a placeholder for his numbers, not a recommendation. */
+  anchors:{
+    salt:{
+      T1:{0.5:50,  1:80,  12.5:850},
+      T2:{0.5:60,  1:100, 12.5:900},
+      T3:{0.5:80,  1:120, 12.5:950}
+    },
+    /* OIL IS ITS OWN TRADE, NOT SALT AT ANOTHER SCALE (v261). Stated by him 07 Aug: a 10
+       unit minimum, and two anchors per tier. The 10 unit anchors are RM10.00, RM11.50 and
+       RM13.00 a unit; at 50 they are RM8.20, RM8.80 and RM9.40. The single oil sale on the
+       book was 10 units for RM130, which is Tier III at 10 to the ringgit, so the ladder is
+       consistent with the one trade written rather than merely plausible.
+       BEYOND 50 THE RATE HOLDS FLAT, because the anchors stop there and the curve is clamped
+       rather than extrapolated: 100 units quotes at the 50 unit rate, RM820 at Tier I. If a
+       hundred should be cheaper per unit than a fifty, that needs a third anchor. */
+    oil:{
+      T1:{10:100, 50:420},
+      T2:{10:115, 50:440},
+      T3:{10:130, 50:470}
+    }
+  },
+  /* ============ THE RUNGS AND THE BOARD ARE TWO LISTS, AND THIS IS WHY ============
+     THE SIZE LADDER IS PER PRODUCT. Salt runs half a unit to 12.5; oil starts at a 10 unit
+     minimum, steps by 5 to 50, then by 10 to 100. Quoting oil on salt's sizes produced a board
+     whose smallest lot was a twentieth of the minimum order.
+     sizesBy WAS THE WALK'S RUNG GRID, NOT THE PRINTED BOARD, and the split existed because
+     conflating the two was a trap. ladderWalk goes forward and each rung is clamped to the rate
+     of the rung below it, so the ONLY thing that ratchets a rate DOWN is an intermediate rung
+     landing on a cheaper ten. He asked for an oil board of 10 to 50 in tens. Taking that as the
+     rung grid measured out at RM13.00 a unit at every size, dead flat, because nine dropped
+     rungs are nine chances to step down removed; 50 unit would have risen from RM610 to RM650
+     and oil's volume discount would have gone. So the rungs stayed fine and boardBy said which
+     of them were PRINTED. Measured with the split in place: 130 / 250 / 370 / 490 / 610, taper
+     intact, not one price moved.
+     ROUND 5 RETIRES OIL'S SPLIT, AND THE TRAP WITH IT. The flatness above was never a property
+     of his grid: it was salt's ladder clamp handing every oil size past 12.5 unit ONE markup,
+     so nothing but a rounding accident could taper, and the intermediate rungs were those
+     accidents. With the taper fitted to oil's own quote and the anchor span on oil's own board
+     (LADDER_BY), the curve tapers by itself and his 10-to-50-in-tens grid holds the rate law
+     with no rungs between: measured at 130 / 240 / 320 / 400 / 470 on the current cost basis,
+     strictly falling per unit. The 15 to 45 fives and the 60 to 100 tail leave the walk grid
+     on his call 4 of 29 Aug: the board quotes what he sells, and a size he does not sell is
+     priced off-board by ladderAsk against the rungs beneath it, exactly as salt's 7 unit is.
+     SALT NEEDS NO SPLIT, because his list is a superset of the rungs it already had. 3.5 and 4.5
+     are real rungs, and adding them moves three prices down by RM10 each: 4 unit 390 to 380,
+     5 unit 470 to 460, 6.25 unit 580 to 570. That is not a discount anyone chose. 3.5 unit asks
+     RM340, which is RM97.14 a unit, and a bigger lot may never cost more per unit, so 4 unit may
+     not exceed RM388.57 and rounds to RM380. RM390 was only holding because 3.5 was not quoted;
+     the rung exposes the rate law rather than changing it.
+     80 AND 100 UNIT COME BACK ON HIS DECISION OF 15 SEP 2026, because his pricing workbook's oil board carries them:
+     derived beside his five stated sizes, they ask no more a unit than 50 unit does and clear their own floors
+     (RM720 and RM900 on 16 Sep, RM9.00 a unit). */
+  sizesBy:{
+    salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
+    oil:[10,20,30,40,50],   /* 19 Sep 2026: five sizes, his board. 80 and 100 went with the tiers. */
+    candy:[1,5,10,20,30],   /* 23 Sep 2026: his three rates and a size inside each */
+    rice:[1,5,10]
+  },
+  /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
+     round 5: oil's grid IS its board now, so the mechanism stands and nothing uses it. */
+  boardBy:{},
+  /* TENS FIRST, FIVES ONLY WHERE TENS CANNOT HOLD HIS ANCHORS (v251). His instruction was
+     nearest tens all across, and on Tier I that is arithmetically impossible: the rate is
+     RM80 a unit at the 1 unit anchor, the only ten-grid prices at 1.5 unit are RM110 and
+     RM120, RM120 ties the rate and RM110 crashes it to RM73.33, and from RM73.33 a strictly
+     falling rate cannot reach the RM68 his 12.5 anchor states without passing under it at
+     3 unit. Fives clear it exactly, with rates 100, 80, 76.67, 75, 74, 73.33, 72.5, 71,
+     70.4, 68. So the solver takes the COARSEST grid that satisfies both laws, cell by cell,
+     and the board reports which cells needed the finer step rather than hiding it. */
+  /* v262: A THIRD STEP, BECAUSE OIL'S FLOOR IS NEARLY FLAT. Oil's floor rate is
+     8.22 + 5.56/q, which falls by fractions of a sen per unit as the lot grows: from RM8.33 a
+     unit at 50 to RM8.28 at 100. The band a larger lot has to land in is therefore a few sen
+     wide, while one five-ringgit step at 70 units moves the rate by 7 sen. The step was
+     coarser than the target. Salt never showed this because its delivery is a tenth of its
+     lot cost and its floor still has somewhere to fall. Tens first, then fives, then whole
+     ringgit where nothing else fits, and the grid used is recorded per cell. */
+  /* v263: TENS OR FIVES, NEVER FINER, AND ROUND UP WHERE IT WILL NOT FIT. Stated by him.
+     The RM1 step added at v262 solved oil's nearly-flat floor and produced RM582 and RM746 on
+     a printed card, which is not a price anyone reads out. Where a five cannot satisfy every
+     law at once the price goes UP to the next five: a price above its floor that breaks a
+     rate taper is a decision the desk can defend; one below its floor is not. */
+  grid:10, gridFallback:[10,5],
+  /* v261: THE FLOOR CURVE IS SALT'S AND ONLY SALT'S. Its anchors are stated in salt's sizes,
+     1 unit and 12.5, so on oil's 10-to-100 ladder every size clamped to the far end and a
+     product with a RM5 delivery on a RM375 lot inherited a floor built for one with a RM5
+     delivery on a RM63 lot. A product without its own curve falls back to the band
+     percentage, which is the desk's own refusal line and asks nothing it cannot justify. */
+  markupCurve:{salt:{lo:1, hi:12.5, T1:{lo:0.33, hi:0.15}, T3:{lo:1.00, hi:0.45}}},
+  minPerUnit:0,
+  /* ============ WHAT AN ORDER OF HIS OWN TIME COSTS (v352) ============
+     RM25, stated by him on 24 Aug. Roughly five hours a week at RM50 an hour spread over the ten
+     orders a week this book actually runs at.
+     PER ORDER, NOT PER UNIT, because that is how the work falls: a half unit and a twelve and a
+     half take about the same handling, one message, one handover, one line in the book.
+     WHY IT IS RM25 AND NOT MORE. Tested against his own eighty-two priced sales: at RM25 seventy-
+     three of them still clear the floor, at RM40 fifty-nine do and at RM60 forty-six. RM25
+     disciplines the worst nine without declaring half the book a mistake. Raise it when the ask
+     has caught up with it, not before.
+     IT IS NOT IN THE MARGIN CURVE, and that is deliberate. A flat per-order charge is
+     proportionally enormous on a small order, so putting it in the regression base inverts the
+     slope: margin appears to RISE with size, the "may not rise" clamp fires, and the curve dies.
+     Measured, with it in: b +0.0436, r-squared 0.058. Without: b -0.0881, r-squared 0.340. His
+     time belongs in the refusal line, not in the measurement of what the book has achieved.
+     NOT CHARGED since 07 Sep 2026, his instruction ("do not charge for my time"), given after
+     reading the 1, 1.5 and 2 unit derivation: the floor is the leak-adjusted cost of the units
+     and nothing per order. The mechanism and the argument above stay for the day he states a
+     figure again. */
+  timePerOrder:0,
+  /* WHEN THE INVENTORY IS SHORT, STOP PAYING PEOPLE TO EMPTY IT. The 3% step incentive is a
+     policy for spare capacity. Below this many days of cover it goes to zero, so the
+     ladder flattens by itself and returns when inventory does. */
+  coverGuard:14,
+  /* ============ WHAT PUTS SOMEONE IN A CATEGORY ============
+     Read off the ledger every time, never typed against a name, so a customer moves up by
+     trading and moves down by stopping. Tested in order, first match wins. */
+  rules:{loyalOrders:3, loyalDays:35, specialRev:1200, specialOrders:4}
+};
+
+const LADDER_BY={
+  /* v564: tier1 null, and it is an ENTRY rather than an omission. ladderFor spreads LADDER under
+     the override, so leaving it out would hand oil SALT'S two anchors: every oil size clamps to
+     12.5, the rate lands at RM70 a unit, and ten units of oil that Tier 2 sells at RM130 would be
+     quoted RM700. Oil has one tier on its own merits too: its board is his stated price at all
+     five sizes and the 50 unit rung already earns 3%, so there is nothing for a second tier to sit
+     under. Give it two ends here the day he states them. */
+  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
+  /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
+  candy:{round:{to:1, up:true}, tier1:null},
+  rice:{round:{to:1, up:true}, tier1:null}
+};
+
+const TIER_RULE={
+  salt:{drift:{up:0.3, down:0.2}, mS:2.813, qS:0.5, mB:1.363, qB:12.5, ceilingX:3,
+        auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
+        presets:{Better:-0.3, Standard:0, Higher:0.3},
+        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
+        /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
+           walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */
+        grid:{min:0.5, step:0.25, max:25}},
+  /* 19 Sep 2026, HIS INSTRUCTION: oil has no pricing tier. One board, typed, the same for every
+     customer, RM13 a unit falling a ringgit every ten to RM9. FIVE SIZES: he typed five prices and
+     the engine does not extrapolate his taper, so 80 and 100 would have held flat at RM9 and quoted
+     RM720 and RM900; he was asked and chose to drop them. `fixed` is what makes fiveTiers state the
+     board instead of striking columns, and `multiples`, `start` and `step` are gone because with one
+     price there is nothing for them to say. */
+  /* 15 OCT 2026, HIS WORD: oil is ordered in tens, its smallest unit step. The grid's step IS the order step (the Worker's onStep reads
+     it), and oil's prices do not move when it goes from 1 to 10: the five points are the five typed rungs. Salt stays at a quarter
+     and a coarser step there would raise most of its prices, the walk running through every point (docs/PRODUCTS.md section 9). */
+  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:10, max:50}},
+  /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
+     RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
+     between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
+     ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
+  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:2, grid:{min:1, step:1, max:30}},
+  /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
+     `ceilingX` times that floor, capped down to the book's grid. Twice the floor; rice two and a half, an assumption the
+     changelog states. A typed price inside the band does not move. */
+  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:2.5, grid:{min:1, step:1, max:10}}
+};
+
+const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];
+
+const SHRINK_ATTRIB=1;
+
+const COST_BASIS={
+  freightPerTrip:{rm:0, what:'RETIRED AS A STATED FIGURE (v503, his instruction of 07 Sep 2026): freight is typed on each lot as `freight`, and pxFreightRate() reads it per unit; this stands at 0 as the fallback for a book with no typed freight', ias2:'inventory', ref:'IAS 2.11 costs of purchase include transport and handling directly attributable to acquisition; rate and basis both stated by him 27 Aug 2026'},
+  txnPerDelivery:{rm:0, what:'ONE delivery, to a customer who does not collect. NOT CHARGED since 06 Sep 2026, his instruction: the oil floor at 50 units had climbed over his stated RM 450 on the RM 10 of delivery alone, and his answer was to remove the delivery cost, so a delivered order carries the collected floor and no more', ias2:'period', ref:'IAS 2.16(d) selling costs are excluded from the cost of inventories; RM 10 stated by him 27 Aug 2026, replacing the RM50 v373 flagged as never derived'},
+  deliveredShare:{v:0.20, what:'the share of orders delivered rather than collected; four in five come and collect', ias2:'period', ref:'stated by him 24 Aug 2026'},
+  sampleShare:{v:0.5,    what:'the half of the leak that is samples, testers and advertising', ias2:'period', ref:'IAS 38.69 advertising and promotional costs are expensed as incurred'},
+  abnormalNote:{ias2:'period', ref:'IAS 2.16(a) abnormal amounts of wasted materials are expensed in the period incurred'}
+};
+
+/* the long figures are joined from parts: the source holds no run of ten digits (the number scan), and Number() reads back the same double */
+const PRICE_LOCK={
+  salt:{lockedOn:'2026-08-06', lot:{date:'2026-07-28', qty:100, rate:47, sup:'SA5-BTR'},
+        freight:0.2, landed:47.2,
+        shrinkRaw:Number('0.188693626'+'93203473'), shrink:Number('0.188693626'+'93203473'), sampleLoad:10.9778,
+        avgDel:2.7319, delN:58, txn:Number('1.83023'+'03566'),
+        absorbed:0, eff:60.008,
+        why:'RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; '
+           +'what changed is the leak behind it and the attribution in front of it. The 33.14 count '
+           +'took the observed rate from 16.19% to 18.87%, and SHRINK_ATTRIB went to 1, so the whole '
+           +'leak is now carried in the price and nothing is absorbed. Effective cost RM53.19 to RM60.01. '
+           +'These numbers are the unlocked path’s own output, captured rather than hand-computed: '
+           +'the lock was deleted, pxCost() run fresh at attrib 1, and the result written back here. '
+           +'Absorbed is 0 by definition at full attribution.'},
+  oil: {lockedOn:'2026-08-06', lot:{date:'2026-08-06', qty:50, rate:7, sup:'SP7-PUD'},
+        freight:0.4, landed:7.4,
+        shrinkRaw:0, shrink:0, sampleLoad:0,
+        avgDel:10, delN:1, txn:0.5,
+        absorbed:0, eff:7.9,
+        why:'Locked on the first oil lot, the day it landed.'}
+};
+
+const PROFILE_RULE={
+  frequentPerMonth:2,   // "frequent": two or more orders a month
+  smallUpTo:1,          // "small": half a unit and one unit, his words
+  smallShare:0.6,       //   and six in ten of their orders are that small
+  bigFrom:3,            // three units and above, the book's upper quartile and his band
+  biggerShare:0.4,      // "buying bigger": four in ten of their orders at three units or more
+  loyalOrders:6,        // "loyal": six or more priced orders
+  loyalWithinDays:30,   //   and the last within thirty days
+  rarePerMonth:1,       // "rare": under one order a month
+  rareAfterDays:60,     //   or nothing for sixty days
+  spanFloorDays:30      // orders a month is read over at least thirty days, so one order last week is not four a month
+};
+
+const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE };
+/* ==== END ENGINE rules ==== */
 /* ==== ENGINE qr: generated from engine/qr.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
 /* engine/qr.mjs: A QR ENCODER, WRITTEN OUT RATHER THAN INSTALLED.
  *
@@ -7311,6 +7651,305 @@ return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMa
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
+/* ==== ENGINE snapshot: generated from engine/snapshot.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
+/* engine/snapshot.mjs: S1c-ii of the Book plan. THE COST GLUE THE PRICING SNAPSHOT NEEDS, PURE.
+   These readers sat in the master's script and read its globals (PROD, TODAY, the book consts, pxOver, the walk's outputs), so only
+   a desk in jsdom could build the Worker's PRICING. They take everything explicitly now, and the master's functions of the same
+   names are one-line delegations (tools/engine.mjs inlines this file after the pricing engine, the import lines dropped; the
+   engines are the globals of the same names there).
+
+   C is the context every reader takes: { B, R, today, W, over }.
+     B  the book: sales, purchases, opening (by book), statedStockBy, statedStock, loanDrawUnits() (a function: only salt reads it),
+        supplierReceivable, counts, selfUseLog, quotes, priceSet, costRule, defaultProd
+     R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES (all in engine/rules.mjs),
+        and the master's LADDER, PRICE and PRICE_LOCK_ON, which are not there yet (S1c-iii)
+     today  a Date, the page-load clock in the desk
+     W  what the walk of the book in view gave: buyUnits, selfUse, wavgBuy, stockCost. In the desk these are its globals, read as they
+        stand (recompute() has run for that book); here figures() walks the book itself
+     over  { cost, shrink }, the desk's pxOver; null reads as no override
+   No module-level state and no cache: the master keeps stockCostFor's and renderMemo's.
+
+   ORDERING, reproduced: the desk's recompute() walks a book with wavgBuyPrev = the wavgBuy of the book walked BEFORE it. That value
+   only prices goodwillRM, which nothing here reads, so figures() walks with 0 and every figure is the same (the section proves it). */
+
+const SNAPSHOT_ENGINE=(function(){
+const pSales=(B,p)=>B.sales.filter(r=>((r&&r.product)||B.defaultProd)===p);
+const pPurch=(B,p)=>B.purchases.filter(r=>((r&&r.product)||B.defaultProd)===p);
+const openingFor=(B,p)=>B.opening[p]||{qty:0,costPerKg:null,stated:null,uncounted:true};
+const dAge=(C,d)=>POSITION_ENGINE.dayAge(C.today,d);
+const byDate=(a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;};
+
+function countedFor(B,k){
+  if(B.statedStockBy[k]!=null)return B.statedStockBy[k];
+  const o=openingFor(B,k);
+  if(o&&o.stated!=null)return o.stated;
+  return k===B.defaultProd?B.statedStock:null;
+}
+function posInputs(C,P){
+  const B=C.B,_isSalt=(P===B.defaultProd);
+  return {sales:pSales(B,P), purchases:pPurch(B,P), opening:openingFor(B,P), isSalt:_isSalt,
+    loanUnits:_isSalt?B.loanDrawUnits():0, counted:countedFor(B,P), today:C.today,
+    supplierReceivable:(_isSalt&&B.supplierReceivable!=null)?B.supplierReceivable:null,
+    wavgBuyPrev:C.W.wavgBuy};
+}
+function stockCost(C,p){return POSITION_ENGINE.walk(posInputs(C,p)).stockCost;}
+
+/* the sizes: the walk grid, the printed rungs, a book's own ladder and its stated prices */
+function hiddenFor(C,P){
+  const e=C.B.priceSet?C.B.priceSet[P]:null;
+  return (e&&Array.isArray(e.hide))?e.hide.map(Number):[];
+}
+function setPricesFor(C,P){
+  const e=C.B.priceSet?C.B.priceSet[P]:null;
+  return (e&&e.prices)?e.prices:{};
+}
+function sizesFor(C,P){
+  const S=C.R.PRICE_ENGINE.sizesBy||{};
+  const all=(S[P]||S[C.B.defaultProd]||C.R.PRICE_ENGINE.sizes).slice();
+  const hid=hiddenFor(C,P);
+  const out=all.filter(q=>!hid.some(h=>Math.abs(h-q)<0.009));
+  return out.length?out:all;                 // hiding every size would leave no board at all
+}
+function shownSizes(C,P){
+  const B=(C.R.PRICE_ENGINE.boardBy||{})[P], all=sizesFor(C,P);
+  if(!Array.isArray(B)||!B.length)return all;
+  const out=all.filter(q=>B.some(b=>Math.abs(b-q)<0.009));
+  return out.length?out:all;
+}
+function shSizes(C,P){
+  const all=(C.R.PRICE_ENGINE.sizesBy&&C.R.PRICE_ENGINE.sizesBy[P])||C.R.PRICE_ENGINE.sizes;
+  const B=(C.R.PRICE_ENGINE.boardBy||{})[P];
+  return (Array.isArray(B)&&B.length)?all.filter(q=>B.some(b=>Math.abs(b-q)<0.009)):all;
+}
+function ladderFor(C,P){const o=C.R.LADDER_BY[P];return o?{...C.R.LADDER,...o}:C.R.LADDER;}
+
+/* the lots */
+function latestLot(C,p){
+  const ls=pPurch(C.B,p).filter(x=>POSITION_ENGINE.poLive(x)&&x.qty>0&&POSITION_ENGINE.poRecvUnits(x)>0).sort(byDate);
+  const L=ls[ls.length-1];
+  return L?{qty:L.qty,total:L.total,rate:+(L.total/L.qty).toFixed(4),date:L.receivedOn||L.date,sup:L.supplier}:null;
+}
+function meanLotQty(C,p){
+  const ls=pPurch(C.B,p).filter(x=>POSITION_ENGINE.poLive(x)&&x.qty>0);
+  if(!ls.length)return null;
+  return ls.reduce((a,x)=>a+x.qty,0)/ls.length;
+}
+function windowLots(C,p){
+  return pPurch(C.B,p).filter(x=>POSITION_ENGINE.poLive(x)&&x.qty>0&&x.total>0&&(x.receivedOn||x.date)&&POSITION_ENGINE.poRecvUnits(x)>0).sort(byDate).slice(-3);
+}
+function priceLockState(C,p){
+  const L=C.R.PRICE_LOCK[p], cur=latestLot(C,p);
+  if(!L)return {state:'none',lock:null,cur:cur};
+  if(!cur)return {state:'locked',lock:L,cur:null,days:dAge(C,L.lockedOn)};
+  const same=(cur.date===L.lot.date&&Math.abs(cur.rate-L.lot.rate)<0.005&&Math.abs(cur.qty-L.lot.qty)<0.005);
+  return {state:same?'locked':'stale',lock:L,cur:cur,days:dAge(C,L.lockedOn),sinceLot:dAge(C,L.lot.date)};
+}
+function delShare(C,p){
+  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);
+  const said=rows.filter(s=>s.handover==='delivered'||s.handover==='collected');
+  const del=said.filter(s=>s.handover==='delivered');
+  return said.length
+    ? {v:del.length/said.length,delivered:del.length,said:said.length,of:rows.length,measured:true}
+    : {v:C.R.COST_BASIS.deliveredShare.v,delivered:0,said:0,of:rows.length,measured:false};
+}
+function avgDelivery(C,p){
+  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);
+  const unitsSum=rows.reduce((a,s)=>a+POSITION_ENGINE.txPhys(s),0);
+  return rows.length?{n:rows.length,kg:+unitsSum.toFixed(2),mean:+(unitsSum/rows.length).toFixed(4)}:{n:0,kg:0,mean:null};
+}
+
+/* the rates the cost stack reads */
+function replRate(C,p){
+  const ps=windowLots(C,p);
+  const k=ps.reduce((a,x)=>a+x.qty,0);
+  if(k>0)return +(ps.reduce((a,x)=>a+x.total,0)/k).toFixed(2);
+  const L=latestLot(C,p);
+  return L?+L.rate.toFixed(2):null;
+}
+function replCost(C,p){
+  if(((C.B.costRule||{})[p]||{}).kind==='latestCogs'){const lc=POSITION_ENGINE.latestCogs(pPurch(C.B,p));if(lc)return +lc.rate.toFixed(2);}
+  const r=replRate(C,p);
+  if(r!=null)return +r.toFixed(2);
+  const c=C.W.stockCost;return +((c!=null?c:C.W.wavgBuy)).toFixed(2);
+}
+function quoteRate(C,p){
+  const q=C.B.quotes[p]||null;
+  if(!q||!q.tiers||!q.tiers.length)return replCost(C,p);
+  return Math.max.apply(null,q.tiers.map(t=>t.total/t.qty));
+}
+function freightRate(C,p){
+  let ps=windowLots(C,p).filter(x=>x.freight!=null);
+  if(!ps.length)ps=pPurch(C.B,p).filter(x=>POSITION_ENGINE.poLive(x)&&x.qty>0&&x.freight!=null);
+  const k=ps.reduce((a,x)=>a+x.qty,0);
+  return k>0?+(ps.reduce((a,x)=>a+(+x.freight||0),0)/k).toFixed(4):0;
+}
+function leakCharge(C,p){
+  const cmp=(a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;};
+  const cs=C.B.counts.filter(c=>(c.product||'salt')===p&&c.date&&c.drift!=null).sort(cmp);
+  const last=cs.slice(-3); if(!last.length)return null;
+  const all=C.B.counts.filter(c=>(c.product||'salt')===p&&c.date).sort(cmp);
+  const i=all.findIndex(c=>c.date===last[0].date);
+  const start=i>0?all[i-1].date:null, end=last[last.length-1].date;
+  const leak=Math.max(0,-last.reduce((a,c)=>a+(+c.drift||0),0));
+  const inWin=d=>!!d&&(start==null||d>start)&&d<=end;
+  const sold=pSales(C.B,p).filter(s=>!s.cancelled).reduce((a,s)=>{
+    let got=0,tr=0;
+    (s.amend||[]).forEach(st=>{const k=+st.kg||0;if(st.kind!=='Fulfilment'||!(k>0))return;tr+=k;if(inWin(st.date||s.date))got+=k;});
+    const rest=(+s.deliveredQty||0)-tr;
+    if(rest>0&&inWin(s.deliveredOn||s.date))got+=rest;
+    return a+got;},0);
+  if(!(sold>0))return null;
+  return {ratio:+(leak/sold).toFixed(4),leak:+leak.toFixed(2),sold:+sold.toFixed(2),cycles:last.length,from:start,to:end};
+}
+function sampleUnits(C,p){return C.B.selfUseLog.filter(r=>(r.product||C.B.defaultProd)===p&&r.why==='sample').reduce((a,r)=>a+(+r.kg||0),0);}
+function shrinkRate(C,p){const h=C.W.buyUnits+openingFor(C.B,p).qty;
+  return h>0?Math.max(0,C.W.selfUse-sampleUnits(C,p))/h:0;}
+
+/* the records the pricing engine takes */
+function inputs(C,p){
+  const R=C.R,o=C.over||{cost:null,shrink:null};
+  return {prod:p, lockOn:R.PRICE_LOCK_ON, lockState:priceLockState(C,p), lockBase:R.PRICE_LOCK[p]||null,
+    over:{cost:o.cost,shrink:o.shrink}, lot:latestLot(C,p), meanLot:meanLotQty(C,p), quoteRate:quoteRate(C,p),
+    repl:replRate(C,p), freightRate:freightRate(C,p), leak:leakCharge(C,p),
+    costRule:(C.B.costRule||{})[p]||null,
+    latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(C.B,p))),
+    costBasis:{freightPerTrip:{rm:R.COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:R.COST_BASIS.txnPerDelivery.rm},
+      deliveredShare:{v:delShare(C,p).v}},
+    attrib:R.SHRINK_ATTRIB, shrinkRate:shrinkRate(C,p), avgDel:avgDelivery(C,p)};
+}
+function policy(C,p){
+  const R=C.R,pq=C.B.quotes[p]||null;
+  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, lotFloor:R.PRICE.lotFloor||{},
+    stated:setPricesFor(C,p),
+    tier1:ladderFor(C,p).tier1||null,
+    tierRule:R.TIER_RULE[p]||null,
+    lastLevel:R.TIER_NAMES[R.TIER_NAMES.length-1],
+    tiers:(pq&&pq.tiers)?pq.tiers:[],
+    boardSizes:sizesFor(C,p)};
+}
+/* the five tiers for a book, on its own rungs; null for a book with no rule. `cost` is a function, read only when there is a rule */
+function fiveTiers(C,p,cost){
+  const R=C.R.TIER_RULE[p];
+  const sizes=R?R.rungs.concat(sizesFor(C,p).filter(q=>!R.rungs.some(r=>Math.abs(r-q)<0.009))).sort((a,b)=>a-b):null;
+  return R?PRICING_ENGINE.fiveTiers(sizes,cost(),policy(C,p)):null;
+}
+
+/* S1c-iii: THE CARDS AND THE DRIFT. Whose account a code is, who is a person, who pays cost, and what each customer is quoted.
+   Added to C: B.roster, B.partners, B.tierOf (the hand-set TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
+   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh), and C.tierAt(code,q), the level machinery
+   (tierProposal, ruleProposal), which no live book uses: without it a book that names levels quotes null, never a wrong figure. */
+const viaMemo=(C,k,f)=>C.memo?C.memo(k,f):f();
+const isResellAcct=id=>typeof id==='string'&&id.slice(-2)==='-R';
+const ownerOf=id=>isResellAcct(id)?id.slice(0,-2):id;      /* the desk's isBucket has been always false since v265 */
+const isPerson=id=>!!id;
+/* the desk's tests (and nothing else) swap lateOf, buyerProfile, driftOfNow and driftOf at run time: the desk hands each in as C.fn.NAME(args without C), so a swap still takes; a Worker leaves C.fn out */
+const lateOfS=(C,code)=>C.fn&&C.fn.lateOf?C.fn.lateOf(code):lateOf(C,code);
+const profileS=(C,p,code)=>C.fn&&C.fn.buyerProfile?C.fn.buyerProfile(p,code):buyerProfile(C,p,code);
+const driftNowS=(C,p,code)=>C.fn&&C.fn.driftOfNow?C.fn.driftOfNow(p,code):driftOfNow(C,p,code);
+const driftS=(C,p,code)=>C.fn&&C.fn.driftOf?C.fn.driftOf(p,code):driftOf(C,p,code);
+const todayISO=C=>C.today.toISOString().slice(0,10);
+function pbPriced(s){const st=POSITION_ENGINE.txStat(s).order;
+  if(st==='Pending'||st==='Cancelled'||st==='Default')return false;
+  if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
+  return true;}
+function isPartner(C,code){return C.B.partners.includes(ownerOf(code)||code);}
+function lateOf(C,code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays(C.B.sales,ownerOf(code)||code,todayISO(C),C.R.RULES),C.R.RULES);}
+function buyerProfile(C,prod,code){
+  const R=C.R.PROFILE_RULE, DAY=86400000, now=C.today.getTime();
+  const rows=pSales(C.B,prod).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0&&s.qty>0);
+  if(!rows.length)return null;
+  const times=rows.map(s=>new Date(s.date).getTime()).sort((a,b)=>a-b);
+  const tenure=(now-times[0])/DAY, sinceLast=(now-times[times.length-1])/DAY;
+  const perMonth=rows.length/(Math.max(tenure,R.spanFloorDays)/30.44);
+  const unitsPerMonth=rows.reduce((a,s)=>a+s.qty,0)/(Math.max(tenure,R.spanFloorDays)/30.44);   /* 05 Oct 2026: the drift's volume signal */
+  const smallShare=rows.filter(s=>s.qty<=R.smallUpTo+0.0001).length/rows.length;
+  const bigShare=rows.filter(s=>s.qty>=R.bigFrom-0.0001).length/rows.length;
+  const frequent=perMonth>=R.frequentPerMonth, small=smallShare>=R.smallShare, bigger=bigShare>=R.biggerShare;
+  const loyal=rows.length>=R.loyalOrders&&sinceLast<=R.loyalWithinDays;
+  const rare=perMonth<R.rarePerMonth||sinceLast>R.rareAfterDays;
+  const name=rows.length===1?'one-off'
+    :small?(frequent?'small and often':'small and rare')
+    :bigger?(frequent?'large and regular':'rare and large')
+    :frequent?'consistent mid':'occasional mid';
+  return {name,orders:rows.length,tenureDays:Math.round(tenure),sinceLastDays:Math.round(sinceLast),
+    perMonth:+perMonth.toFixed(2),unitsPerMonth:+unitsPerMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),
+    frequent,small,bigger,loyal,rare};
+}
+function driftBook(C,p){const R=C.R.TIER_RULE[p];return !!(R&&R.drift);}
+function driftSignals(C,prod,code){
+  const who=ownerOf(code)||code,pf=profileS(C,prod,who),RU=C.R.RULES;
+  const dl=POSITION_ENGINE.payDelays(C.B.sales,who,todayISO(C),RU),settled=dl.filter(x=>!x.open),open=dl.filter(x=>x.open);
+  const lt=lateOfS(C,who);
+  const wo=C.B.sales.filter(s=>POSITION_ENGINE.ownsCode(who,s.customer)).reduce((a,s)=>a+POSITION_ENGINE.txWrittenOff(s),0);
+  return {settled:settled.length,onTime:settled.filter(x=>x.days<=RU.holdDays).length,
+    perMonth:pf?pf.perMonth:0,unitsPerMonth:pf?pf.unitsPerMonth:0,orders:pf?pf.orders:0,sinceLastDays:pf?pf.sinceLastDays:null,
+    late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
+    overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RU.holdDays),0)};
+}
+function driftOfNow(C,p,code){
+  const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
+  const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
+  const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
+  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
+}
+function driftOf(C,p,code){return viaMemo(C,'drift|'+(ownerOf(code)||code)+'|'+p,()=>driftNowS(C,p,code));}
+function tierCustomers(C){
+  const rev={};
+  C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
+  const rest=C.B.roster.map(ownerOf).filter((id,i,a)=>a.indexOf(id)===i&&isPerson(id)&&!id.startsWith('S')&&!(id in rev));
+  return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
+}
+function cost(C,p){const o=C.over||{cost:null,shrink:null};return viaMemo(C,'pxCost|'+p+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.costStack(inputs(C,p)));}
+/* a named customer's price at any size: a partner the floor to the sen; a stated board the board; a drift book the Set Price moved by their drift */
+function cardQuote(C,p,code,q,t){
+  if(!(q>0))return null;
+  const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
+  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
+  const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
+  if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
+  if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
+  if(t==null)t=C.tierAt?C.tierAt(code,q):-1;if(t<0)return null;
+  if(!row||row.prices[t]==null)return null;
+  return +PRICING_ENGINE.cardPrice(null,PRICING_ENGINE.floorTotal(q,K,policy(C,p)),row.prices[t]).toFixed(2);}
+
+/* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
+function ctxFor(B,R,prod,today,over){
+  const C0={B,R,today,over,W:{buyUnits:0,selfUse:0,wavgBuy:0,stockCost:null}};
+  return {...C0,W:POSITION_ENGINE.walk(posInputs(C0,prod))};
+}
+function figuresOf(C,prod){
+  const W=C.W,cost=PRICING_ENGINE.costStack(inputs(C,prod)),P=policy(C,prod),sizes=sizesFor(C,prod),floors={};
+  sizes.forEach(q=>{floors[q]={floor:PRICING_ENGINE.floorTotal(q,cost,P)};});
+  return {stockCost:W.stockCost, replCost:replCost(C,prod), inputs:{cost:inputs(C,prod),policy:P}, sizes, floors,
+    rungs:shSizes(C,prod), ladder:fiveTiers(C,prod,()=>cost)};
+}
+function figures(B,R,prod,today,over=null){return figuresOf(ctxFor(B,R,prod,today,over),prod);}
+
+/* the snapshot's pricing part for every book, as tools/book.mjs pricingSnapshot() reads it off the page: figures to four places,
+   the ladder as the price list carries it, every customer's card at the shown sizes, and on a drift book each one's drift */
+function pricing(B,R,today,over=null){
+  const r4=v=>(typeof v==='number'&&Number.isFinite(v))?+v.toFixed(4):null, out={};
+  for(const p of B.prodOrder){
+    const C=ctxFor(B,R,p,today,over),f=figuresOf(C,p),ids=tierCustomers(C),floors={};
+    Object.keys(f.floors).forEach(q=>{floors[q]={floor:r4(f.floors[q].floor)};});
+    const cards={};
+    ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
+    let drift=null;
+    if(driftBook(C,p)){drift={};ids.forEach(id=>{if(isPartner(C,id)){drift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))drift[id]=d.d;});}
+    out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
+      ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
+      drift?{drift}:{});
+  }
+  return out;
+}
+
+return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
+  latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
+  inputs,policy,fiveTiers,figures,
+  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,tierCustomers,cost,cardQuote,pricing};
+})();
+
+/* ==== END ENGINE snapshot ==== */
 /* ==== BOOK: generated from ledger/book.json by tools/booksync.mjs. Edit the JSON, never this block. ==== */
 /* v781, 22 Sep 2026: WHO EARNS IS A FIELD ON THE BOOK NOW. The reward scheme was salt-only by five bare string comparisons in the master and two in the drafter, so no book opened after salt could ever earn without a code edit, whatever the book said about itself. reward is true on salt and false on every other book, which is exactly what those comparisons meant, so nothing moves today. Whether candy or rice ever earn is his decision and a data one. */
 const PRODUCTS={
@@ -8378,7 +9017,7 @@ const COST_RULE={
    A product with a null count reports its inventory as unknown rather than drawing a walk down
    to an imaginary zero. */
 /* PROD_OPENING: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
-const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,uncounted:true};
+const openingFor=p=>SNAPSHOT_ENGINE.openingFor(snapCtx().B,p||PROD);
 /* WHAT THE INVENTORY IS WORTH, PER PRODUCT (v230). STOCK_COST is the rate of the lots actually
    sitting on the SALT inventory and five places read it. Every one of them would have valued
    45 unit of oil at RM47.47 and reported a RM2,136 inventory worth about RM315, and it would
@@ -8417,7 +9056,7 @@ const openingFor=p=>PROD_OPENING[p||PROD]||{qty:0,costPerKg:null,stated:null,unc
    27 Sep 2026: the cache answers only its own keys, so a name on Object.prototype (constructor, __proto__)
    is walked as the book it names, never read off the prototype; restockFor's cache takes the same guard. */
 function stockCostFor(p){const k=p||PROD,c=stockCostFor._c||(stockCostFor._c={});
-  return Object.hasOwn(c,k)?c[k]:(c[k]=POSITION_ENGINE.walk(posInputs(k)).stockCost);}
+  return Object.hasOwn(c,k)?c[k]:(c[k]=SNAPSHOT_ENGINE.stockCost(snapCtx(),k));}
 /* TRANSACTION MODEL (post-audit, three-axis per R1):
    qty  = order unit, total = order RM (price = total/qty)
    cash = RM received in cash;  settledRM = RM settled non-cash (fold/waiver/in-kind)  -> paid = cash+settledRM
@@ -9258,8 +9897,8 @@ const inProd=(r,p)=>prodOf(r)===(p||PROD);
 /* THE ONLY TWO FUNCTIONS THAT MATTER FOR SCOPING. Everything product-specific reads
    these; everything consolidated keeps reading `sales` and `purchases` whole, which is
    why the split above costs almost nothing to maintain. */
-const pSales=p=>sales.filter(r=>inProd(r,p));
-const pPurch=p=>purchases.filter(r=>inProd(r,p));
+const pSales=p=>SNAPSHOT_ENGINE.pSales(snapCtx().B,p||PROD);
+const pPurch=p=>SNAPSHOT_ENGINE.pPurch(snapCtx().B,p||PROD);
 /* v262: THE SWITCHER IS NO LONGER A FILTER of the arithmetic. setProd survives for the internal scoping perProduct()
    does; which product's detail a page shows is PROD, the book in view, set only by setProdView (v625). */
 function setProd(p){if(!prodLive(p))return;PROD=p;recompute();}
@@ -9325,7 +9964,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1127","d":"16 Oct 2026","t":"COUNTER ADMIN: AN ORDER OF SEVERAL BOOKS IS ONE CARD","n":["<b>ONE CARD AN ORDER.</b> In Orders, a buyer's rows of one trip are one card: a head with what is owed, paid and how many lines are handed over, then one line a book with its mark, units, total and handed. The Desk reads it as the rows will stand once the moves waiting under Approve land.","<b>HANDOVER ALL.</b> One button hands every line over in full; a line's own field hands over a part. One handover a row through the usual input, and a line the Desk refuses (a book short of stock) holds only itself.","<b>ONE PAYMENT.</b> A cash or bank figure is split by the Desk oldest first (the engine's claimAlloc, each line owing all that is left on it) and shown before Record; a figure past what the order owes is refused. Record sends one payment a share, and the whole payment is refused if the split moved since it was read or any share is more than its row can take.","<b>THESE ARE ONE ORDER.</b> A buyer's same-day rows of different books with one delivery at most are offered as one order: one Correction a row setting one trip, the delivery left on its row. Correct a row never sets a trip. The engine, the drafter and the fold hold a trip together, a second delivery by Correction included.","<b>ONE APPROVE.</b> The handovers, payments or join on an order's lines land on the approve card as one card, each line's Now and After, approved in the order entered. Plan 3 of docs/plans-counter-admin.html; nothing reprices a line."]}];
+const evolution=[{"v":"v1129","d":"16 Oct 2026","t":"EVERY CUSTOMER'S QUOTE AND DRIFT RUN IN ONE SHARED ENGINE MODULE","n":["A named customer's card, a partner's cost quote and each customer's drift read off their record are now computed by engine/snapshot.mjs, which the desk inlines and calls; a Worker can compute the whole pricing snapshot with no page. No price moves.","Step S1c-iii of moving the book into a Durable Object: run alone, the engine gives the v1126 snapshot field for field on every book, the partner, hand-set drifts and late payers included."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -9469,7 +10108,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Oct 2026, 03:53 KL';
+const LAST_UPDATED='16 Oct 2026, 06:11 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -9612,13 +10251,7 @@ let OVERLAY_UNSENT=false;
 let provUnsent=0,unsentAts=new Set();
 /* the count that applies to a product: a queued one first, then its declared opening
    figure, then the salt roll for salt. Null means nobody has counted this book. */
-function countedFor(pr){
-  const k=pr||PROD;
-  if(statedStockBy[k]!=null)return statedStockBy[k];
-  const o=openingFor(k);
-  if(o&&o.stated!=null)return o.stated;
-  return k===DEFAULT_PROD?STATED_STOCK:null;
-}
+function countedFor(pr){return SNAPSHOT_ENGINE.countedFor(snapCtx().B,pr||PROD);}
 const ovKey=t=>POSITION_ENGINE.ovKey(t);   // v338: shared with the phone and the drafter
 /* BY rid FIRST (25 Aug 2026), then by ovKey. ovKey is party|date|total, which names a row only
    while none of those three changes; a correction changes exactly those, and two SA5-BTR lots
@@ -10012,32 +10645,7 @@ const provOf=t=>t._prov||(t._buy&&t._buy._prov)||null;
    V5, HIS ANSWERS OF 29 SEP 2026: THE ACCOUNT CLOSES IN STAGES, counted from the handover: no new order from day 2 (so
    holdDays is 1, the hold past it), prices hidden from day 3 (hideDays), and from day 4 (lockDays) the account is only
    for paying what is owed. The publish reads all three out of this master. */
-const RULES={
-  creditUnits:{salt:{retail:1,associate:2}, oil:{retail:10,associate:20}},
-  creditDays:10,
-  holdDays:1,
-  hideDays:3,
-  lockDays:4,
-  /* V5b2 (his answers of 29 Sep 2026): an order that would take what a customer owes at once, across every book, over
-     this is paid in advance, for everyone, in place of the Counter's unit cap. The desk Worker reads it from TERMS.
-     No semicolon in this object: the publish reads RULES up to the first one. */
-  creditCeilingRM:250,
-  /* V5c (his answers of 29 Sep 2026): a late payer is offered a level down, never priced one. Two delays past the term
-     within this many days, or one of lockDays or more, turn the offer on, one payment on time turns it off, and a delay
-     within this many days of that takes lateResetRepeat payments on time in a row. The engine's lateOffer reads them. */
-  lateWindowDays:90,
-  /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
-     information only, the floor being COGS and nothing pricing off the leak */
-  leakInfoFrom:0.25,
-  lateResetRepeat:3,
-  fullProvDays:21,
-  reorderUnits:{salt:15, oil:20},
-  /* F15 (29 Sep 2026, his Q16): the delivery fee offered by distance, one way. A setting, never a price: it fills the
-     delivery box, his figure wins, and the goods, the floor and the board never read it. roadFactor 1.3 is an assumption
-     for the Klang Valley. localityFallback: a party with no exact point is measured to its PLACED locality (0.01 degrees,
-     about a kilometre out), his answer at design. */
-  delivery:{rmPerKm:1.5, roadFactor:1.3, roundTo:0.5, minRm:0, maxRm:null, localityFallback:true}
-};
+/* RULES lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* F15: THE FEE BY DISTANCE. Worked on the device from two points: where he is, read once when the delivery box opens and
    kept nowhere, else his base point in the places vault (_base); and the party's exact point in the places vault, else its
    locality. The great-circle distance times the road factor at RM a km, rounded to roundTo. No key, no third party. It needs
@@ -10187,219 +10795,7 @@ function incentiveNow(){
    handled by the arithmetic instead of by a separate card: the RM5 delivery is a fixed
    cost per order, so it dilutes as the lot grows and the rate falls out of that by itself.
    A five-tier board could not do that; it had to have the taper typed into it. */
-const PRICE_ENGINE={
-  sizes:[0.5,1,1.5,2,2.5,3,4,5,6.25,12.5],
-  /* THE MARGIN IS NOT TYPED. It is REGRESSED from what this book has actually achieved,
-     size by size, and refits itself as orders accumulate. See marginCurve(). What is typed
-     is a single hand on the tiller: a shift applied to the whole fitted curve, at zero
-     until he wants to be more expensive or cheaper across the board. */
-  marginShift:0,
-  minPoints:8,          // below this there is not enough trade to fit anything honest
-  fallbackMargin:0.42,  // and this is used instead, stated rather than inferred
-  clamp:{lo:0.18,hi:0.72},
-  /* how much of the unexplained leak the customer is asked to carry. Zero keeps the v205
-     position that the desk absorbs the cost of a problem the customer did not cause. */
-  recoverAbnormal:0,
-  /* what the desk charges itself for money out on credit, per year. Used only to price the
-     days a tier is expected to take, never to charge anyone interest. */
-  /* v353, HIS INSTRUCTION OF 24 Aug: 40%, NOT 12%. What he charges himself for money tied up,
-     per year. 12% was a borrowing rate; 40% is what he says his own capital is worth, which is
-     the right basis for a desk funded out of his own pocket rather than out of a facility.
-     WHERE IT BITES, AND IT IS SMALLER THAN IT SOUNDS. Inventory: a 50 unit lot clears in about 12
-     days at 4.32 a day, so the average unit is held under 6, and 40% of RM45.20 over 6 days is
-     about 29 sen a unit. Credit: a customer who takes 10 days to pay costs 1.1% of the sale
-     against 0.33% at 12%. It is a real layer and it is not the one that decides a price. */
-  moneyRate:0.40,
-  /* the least a rate must fall at each step up, so size is visibly worth taking */
-  incentive:0.03,
-  /* ============ FIVE CATEGORIES, EARNED NOT ASSIGNED (v237) ============
-     Cheapest first, because that is the order they earn. rel is what each pays relative to
-     Regular, so the whole ladder moves together when the curve moves and the RELATIONSHIP
-     between them stays a policy.
-       SPECIAL    the handful who have carried the book. Best price on the desk.
-       ASSOCIATE  resells or refers, so his margin is earned on volume he brings.
-       LOYAL      buys to a rhythm and settles on the day.
-       REGULAR    the default ask, and the price the curve is fitted to.
-       ONE-TIME   bought once, no history, full term assumed, no claim on a discount.
-     days is what each is expected to take to pay, which is a real cost and is priced. */
-  /* ============ THREE TIERS, TIER I TO TIER III (v245) ============
-     Five categories became three because the book cannot support five. The engine was
-     already pricing Associate and Loyal identically at 29.8%, and Regular held two
-     customers against a book of twenty-four, so two of the five distinctions were
-     nominal before any constraint bound. Cheapest first, because that is the order they
-     earn: TIER I is the best price on the desk, TIER III is the full ask.
-     REL NO LONGER PAYS TWICE. Tier I sat at 0.82 AND took zero credit days, so the same
-     fact bought the same customer a discount and a cost saving. rel is now 0.92 and the
-     zero credit days deliver the rest, which is cost recovery rather than a second gift. */
-  tiers:[
-    {code:'T1',name:'Tier I',   rel:0.92, days:0,  col:'#e4e9ec',dots:3,
-     who:'carried the book; best price on the desk'},
-    {code:'T2',name:'Tier II',  rel:1.00, days:3,  col:'#d8c79c',dots:2,
-     who:'the default ask, and the price the curve is fitted to'},
-    {code:'T3',name:'Tier III', rel:1.15, days:10, col:'#c5a059',dots:1,
-     who:'bought once, no history, and the full term assumed'}
-  ],
-  /* v238: NO CAPS. Every tier runs every size. A cap is a break in the ladder by another
-     name, and the only thing allowed to move a price is the floor. */
-  maxSize:{T1:1e9,T2:1e9,T3:1e9},
-  /* THE LEAST A UNIT MAY EARN, IN RINGGIT, WHATEVER THE SIZE (v245). The percentage floor
-     could not see that a unit is the scarce thing here: at 20% it let a 12.5 lot go for
-     RM13.59 a unit while a single unit earned RM40. Twenty is not a round number picked
-     for neatness, it is the LARGEST value at which the board still solves in whole RM10
-     steps at every size and tier; at 25 and above the band between floor and ceiling
-     closes and prices go to exact ringgit again. */
-  /* ============ THE FLOOR IS A CURVE PER TIER (v249) ============
-     Stated by him as MARKUP ON COST, which is the only reading that parses: 100% margin on
-     revenue is undefined, 100% markup is twice cost. Two anchors per tier, at 1 unit and at
-     12.5 unit, interpolated in the LOG of size because that is how the fitted margin curve
-     already behaves and how discounts are actually felt. Tier II is the midpoint of the two
-     at every size rather than a third pair of typed numbers, so the ladder cannot develop a
-     kink in the middle that nobody chose.
-     THIS REPLACES minPerUnit, WHICH IS NOW ZERO. The two cannot both be the floor: a flat
-     RM20 a unit forces 12.5 unit to a 31% markup, which would silently overrule the 15% he
-     asked for at Tier I. Kept as a live mechanism at zero so it is one number to restore. */
-  /* v250: IT IS A CAP, NOT A FLOOR, and that correction changes what the board IS. Read as
-     a minimum, the fitted margin curve was free to price Tier I ABOVE 33% at a unit and did,
-     at 50.4%. Read as a maximum, these four numbers ARE the board: every price is lot cost
-     times one plus the stated markup, rounded DOWN to the five grid so the cap is never
-     breached by rounding. The regressed margin curve no longer sets the carded price; it
-     stays alive for off-board sizes and for the analysis panes. */
-  /* ============ NINE STATED PRICES, AND A SOLVER BETWEEN THEM (v251) ============
-     He now sets the board directly at three sizes per tier. These are PRICES, not markups
-     and not margins, so nothing is derived from cost any more except the floor that tests
-     them. Everything between is solved.
-     THE SOLVER INTERPOLATES THE RATE, NOT THE TOTAL. Interpolating totals draws a straight
-     line through a curve and puts the middle sizes above both ends per unit; the rate is the
-     thing that has to fall smoothly, so the rate is what is interpolated, in the LOG of size
-     because that is how every other curve on this desk behaves. Outside the stated range it
-     is held flat rather than extrapolated.
-     THE ANCHORS ARE PINNED. The strictness pass may move any solved size but never one he
-     typed: if a stated price and a solved neighbour collide, the solved one gives way. */
-  /* ============ THE ANCHORS ARE PER PRODUCT (v260) ============
-     They were flat, so switching the desk to oil showed SALT'S BOARD VERBATIM: RM80 for a
-     unit of oil that costs RM7.90 landed, a 545% markup, and RM850 for a 12.5 lot, against
-     the one oil sale on the book which cleared RM13 a unit. A price list keyed to nothing is
-     worse than no price list, because it looks authoritative.
-     A PRODUCT WITH NO STATED ANCHORS DOES NOT BORROW ANOTHER'S PRICES. It borrows the SHAPE:
-     the markup salt carries on its OWN lot cost at each anchor size, applied to this
-     product's own lot cost. Same commercial ladder, its own economics. That board is marked
-     DERIVED wherever it appears; it is a placeholder for his numbers, not a recommendation. */
-  anchors:{
-    salt:{
-      T1:{0.5:50,  1:80,  12.5:850},
-      T2:{0.5:60,  1:100, 12.5:900},
-      T3:{0.5:80,  1:120, 12.5:950}
-    },
-    /* OIL IS ITS OWN TRADE, NOT SALT AT ANOTHER SCALE (v261). Stated by him 07 Aug: a 10
-       unit minimum, and two anchors per tier. The 10 unit anchors are RM10.00, RM11.50 and
-       RM13.00 a unit; at 50 they are RM8.20, RM8.80 and RM9.40. The single oil sale on the
-       book was 10 units for RM130, which is Tier III at 10 to the ringgit, so the ladder is
-       consistent with the one trade written rather than merely plausible.
-       BEYOND 50 THE RATE HOLDS FLAT, because the anchors stop there and the curve is clamped
-       rather than extrapolated: 100 units quotes at the 50 unit rate, RM820 at Tier I. If a
-       hundred should be cheaper per unit than a fifty, that needs a third anchor. */
-    oil:{
-      T1:{10:100, 50:420},
-      T2:{10:115, 50:440},
-      T3:{10:130, 50:470}
-    }
-  },
-  /* ============ THE RUNGS AND THE BOARD ARE TWO LISTS, AND THIS IS WHY ============
-     THE SIZE LADDER IS PER PRODUCT. Salt runs half a unit to 12.5; oil starts at a 10 unit
-     minimum, steps by 5 to 50, then by 10 to 100. Quoting oil on salt's sizes produced a board
-     whose smallest lot was a twentieth of the minimum order.
-     sizesBy WAS THE WALK'S RUNG GRID, NOT THE PRINTED BOARD, and the split existed because
-     conflating the two was a trap. ladderWalk goes forward and each rung is clamped to the rate
-     of the rung below it, so the ONLY thing that ratchets a rate DOWN is an intermediate rung
-     landing on a cheaper ten. He asked for an oil board of 10 to 50 in tens. Taking that as the
-     rung grid measured out at RM13.00 a unit at every size, dead flat, because nine dropped
-     rungs are nine chances to step down removed; 50 unit would have risen from RM610 to RM650
-     and oil's volume discount would have gone. So the rungs stayed fine and boardBy said which
-     of them were PRINTED. Measured with the split in place: 130 / 250 / 370 / 490 / 610, taper
-     intact, not one price moved.
-     ROUND 5 RETIRES OIL'S SPLIT, AND THE TRAP WITH IT. The flatness above was never a property
-     of his grid: it was salt's ladder clamp handing every oil size past 12.5 unit ONE markup,
-     so nothing but a rounding accident could taper, and the intermediate rungs were those
-     accidents. With the taper fitted to oil's own quote and the anchor span on oil's own board
-     (LADDER_BY), the curve tapers by itself and his 10-to-50-in-tens grid holds the rate law
-     with no rungs between: measured at 130 / 240 / 320 / 400 / 470 on the current cost basis,
-     strictly falling per unit. The 15 to 45 fives and the 60 to 100 tail leave the walk grid
-     on his call 4 of 29 Aug: the board quotes what he sells, and a size he does not sell is
-     priced off-board by ladderAsk against the rungs beneath it, exactly as salt's 7 unit is.
-     SALT NEEDS NO SPLIT, because his list is a superset of the rungs it already had. 3.5 and 4.5
-     are real rungs, and adding them moves three prices down by RM10 each: 4 unit 390 to 380,
-     5 unit 470 to 460, 6.25 unit 580 to 570. That is not a discount anyone chose. 3.5 unit asks
-     RM340, which is RM97.14 a unit, and a bigger lot may never cost more per unit, so 4 unit may
-     not exceed RM388.57 and rounds to RM380. RM390 was only holding because 3.5 was not quoted;
-     the rung exposes the rate law rather than changing it.
-     80 AND 100 UNIT COME BACK ON HIS DECISION OF 15 SEP 2026, because his pricing workbook's oil board carries them:
-     derived beside his five stated sizes, they ask no more a unit than 50 unit does and clear their own floors
-     (RM720 and RM900 on 16 Sep, RM9.00 a unit). */
-  sizesBy:{
-    salt:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
-    oil:[10,20,30,40,50],   /* 19 Sep 2026: five sizes, his board. 80 and 100 went with the tiers. */
-    candy:[1,5,10,20,30],   /* 23 Sep 2026: his three rates and a size inside each */
-    rice:[1,5,10]
-  },
-  /* which rungs are PRINTED. A product with no entry prints every rung it has. Empty since
-     round 5: oil's grid IS its board now, so the mechanism stands and nothing uses it. */
-  boardBy:{},
-  /* TENS FIRST, FIVES ONLY WHERE TENS CANNOT HOLD HIS ANCHORS (v251). His instruction was
-     nearest tens all across, and on Tier I that is arithmetically impossible: the rate is
-     RM80 a unit at the 1 unit anchor, the only ten-grid prices at 1.5 unit are RM110 and
-     RM120, RM120 ties the rate and RM110 crashes it to RM73.33, and from RM73.33 a strictly
-     falling rate cannot reach the RM68 his 12.5 anchor states without passing under it at
-     3 unit. Fives clear it exactly, with rates 100, 80, 76.67, 75, 74, 73.33, 72.5, 71,
-     70.4, 68. So the solver takes the COARSEST grid that satisfies both laws, cell by cell,
-     and the board reports which cells needed the finer step rather than hiding it. */
-  /* v262: A THIRD STEP, BECAUSE OIL'S FLOOR IS NEARLY FLAT. Oil's floor rate is
-     8.22 + 5.56/q, which falls by fractions of a sen per unit as the lot grows: from RM8.33 a
-     unit at 50 to RM8.28 at 100. The band a larger lot has to land in is therefore a few sen
-     wide, while one five-ringgit step at 70 units moves the rate by 7 sen. The step was
-     coarser than the target. Salt never showed this because its delivery is a tenth of its
-     lot cost and its floor still has somewhere to fall. Tens first, then fives, then whole
-     ringgit where nothing else fits, and the grid used is recorded per cell. */
-  /* v263: TENS OR FIVES, NEVER FINER, AND ROUND UP WHERE IT WILL NOT FIT. Stated by him.
-     The RM1 step added at v262 solved oil's nearly-flat floor and produced RM582 and RM746 on
-     a printed card, which is not a price anyone reads out. Where a five cannot satisfy every
-     law at once the price goes UP to the next five: a price above its floor that breaks a
-     rate taper is a decision the desk can defend; one below its floor is not. */
-  grid:10, gridFallback:[10,5],
-  /* v261: THE FLOOR CURVE IS SALT'S AND ONLY SALT'S. Its anchors are stated in salt's sizes,
-     1 unit and 12.5, so on oil's 10-to-100 ladder every size clamped to the far end and a
-     product with a RM5 delivery on a RM375 lot inherited a floor built for one with a RM5
-     delivery on a RM63 lot. A product without its own curve falls back to the band
-     percentage, which is the desk's own refusal line and asks nothing it cannot justify. */
-  markupCurve:{salt:{lo:1, hi:12.5, T1:{lo:0.33, hi:0.15}, T3:{lo:1.00, hi:0.45}}},
-  minPerUnit:0,
-  /* ============ WHAT AN ORDER OF HIS OWN TIME COSTS (v352) ============
-     RM25, stated by him on 24 Aug. Roughly five hours a week at RM50 an hour spread over the ten
-     orders a week this book actually runs at.
-     PER ORDER, NOT PER UNIT, because that is how the work falls: a half unit and a twelve and a
-     half take about the same handling, one message, one handover, one line in the book.
-     WHY IT IS RM25 AND NOT MORE. Tested against his own eighty-two priced sales: at RM25 seventy-
-     three of them still clear the floor, at RM40 fifty-nine do and at RM60 forty-six. RM25
-     disciplines the worst nine without declaring half the book a mistake. Raise it when the ask
-     has caught up with it, not before.
-     IT IS NOT IN THE MARGIN CURVE, and that is deliberate. A flat per-order charge is
-     proportionally enormous on a small order, so putting it in the regression base inverts the
-     slope: margin appears to RISE with size, the "may not rise" clamp fires, and the curve dies.
-     Measured, with it in: b +0.0436, r-squared 0.058. Without: b -0.0881, r-squared 0.340. His
-     time belongs in the refusal line, not in the measurement of what the book has achieved.
-     NOT CHARGED since 07 Sep 2026, his instruction ("do not charge for my time"), given after
-     reading the 1, 1.5 and 2 unit derivation: the floor is the leak-adjusted cost of the units
-     and nothing per order. The mechanism and the argument above stay for the day he states a
-     figure again. */
-  timePerOrder:0,
-  /* WHEN THE INVENTORY IS SHORT, STOP PAYING PEOPLE TO EMPTY IT. The 3% step incentive is a
-     policy for spare capacity. Below this many days of cover it goes to zero, so the
-     ladder flattens by itself and returns when inventory does. */
-  coverGuard:14,
-  /* ============ WHAT PUTS SOMEONE IN A CATEGORY ============
-     Read off the ledger every time, never typed against a name, so a customer moves up by
-     trading and moves down by stopping. Tested in order, first match wins. */
-  rules:{loyalOrders:3, loyalDays:35, specialRev:1200, specialOrders:4}
-};
+/* PRICE_ENGINE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* ============ THE MARGIN CURVE, REGRESSED FROM THE BOOK (v234) ============
    The one number nobody can look up is what margin a price should carry. Typing it makes it
    an opinion; taking it from the ledger makes it evidence.
@@ -10693,32 +11089,13 @@ function enforceStrict(rows){
 /* v354: A SIZE HE HAS HIDDEN IS NOT QUOTED. It stays in the ladder and stays priceable off the
    board; it simply stops appearing on the card, which is what "change the lot to be shown" means.
    Hiding is reversible by removing one entry, which is why it is a hide list and not a deletion. */
-function hiddenFor(prod){
-  const P=prod||PROD;
-  const e=(typeof PRICE_SET!=='undefined'&&PRICE_SET)?PRICE_SET[P]:null;
-  return (e&&Array.isArray(e.hide))?e.hide.map(Number):[];
-}
-function setPricesFor(prod){
-  const P=prod||PROD;
-  const e=(typeof PRICE_SET!=='undefined'&&PRICE_SET)?PRICE_SET[P]:null;
-  return (e&&e.prices)?e.prices:{};
-}
-function sizesFor(prod){
-  const P=prod||PROD, S=PRICE_ENGINE.sizesBy||{};
-  const all=(S[P]||S[DEFAULT_PROD]||PRICE_ENGINE.sizes).slice();
-  const hid=hiddenFor(P);
-  const out=all.filter(q=>!hid.some(h=>Math.abs(h-q)<0.009));
-  return out.length?out:all;                 // hiding every size would leave no board at all
-}
+function hiddenFor(prod){return SNAPSHOT_ENGINE.hiddenFor(snapCtx(),prod||PROD);}
+function setPricesFor(prod){return SNAPSHOT_ENGINE.setPricesFor(snapCtx(),prod||PROD);}
+function sizesFor(prod){return SNAPSHOT_ENGINE.sizesFor(snapCtx(),prod||PROD);}
 /* THE RUNGS THAT ARE PRINTED. sizesFor() is the walk grid; this is the board. A product
    with no boardBy entry prints every rung, which is salt. See the note beside boardBy for why
    the two lists cannot be one: cutting the grid to the printed list flattens oil at RM13.00. */
-function shownSizes(prod){
-  const P=prod||PROD, B=(PRICE_ENGINE.boardBy||{})[P], all=sizesFor(P);
-  if(!Array.isArray(B)||!B.length)return all;
-  const out=all.filter(q=>B.some(b=>Math.abs(b-q)<0.009));
-  return out.length?out:all;
-}
+function shownSizes(prod){return SNAPSHOT_ENGINE.shownSizes(snapCtx(),prod||PROD);}
 function anchorsFor(prod){
   const P=prod||PROD, A=PRICE_ENGINE.anchors||{};
   if(A[P])return {a:A[P],derived:false,from:null};
@@ -11223,19 +11600,8 @@ const LADDER={
    far as cogs; the REAL refusal line is unchanged, floorTotal's break-even, which the walk
    still enforces after every step.
    A product with no entry inherits LADDER whole, exactly as sizesBy and anchors fall back. */
-const LADDER_BY={
-  /* v564: tier1 null, and it is an ENTRY rather than an omission. ladderFor spreads LADDER under
-     the override, so leaving it out would hand oil SALT'S two anchors: every oil size clamps to
-     12.5, the rate lands at RM70 a unit, and ten units of oil that Tier 2 sells at RM130 would be
-     quoted RM700. Oil has one tier on its own merits too: its board is his stated price at all
-     five sizes and the 50 unit rung already earns 3%, so there is nothing for a second tier to sit
-     under. Give it two ends here the day he states them. */
-  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
-  /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
-  candy:{round:{to:1, up:true}, tier1:null},
-  rice:{round:{to:1, up:true}, tier1:null}
-};
-function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDER;}
+/* LADDER_BY lives in engine/rules.mjs (inlined in the ENGINE block above) */
+function ladderFor(p){return SNAPSHOT_ENGINE.ladderFor(snapCtx(),p||PROD);}
 /* ============ AMBASSADOR AND THE TIERS, PER BOOK (his workbook of 23 Sep 2026, salt-command pricing_v2.xlsx) ============
    Salt is Ambassador and FOUR tiers. COGS is the supplier's quote, RM56 a unit (700 a 12.5 unit lot), and moves
    only when the quote does. Ambassador is COGS plus the overhead, half again, up to the ten. The tiers are the
@@ -11254,41 +11620,14 @@ function ladderFor(p){const o=LADDER_BY[p||PROD];return o?{...LADDER,...o}:LADDE
    holds a drift from -1 to +1, hand-set (TIER_OF, folded as `tierset`) or read off their record (`auto`, the engine's
    autoDrift), which moves the Set Price by up to `drift.up` of the floor towards the ceiling or `drift.down` of it towards
    the floor (driftAt in the ENGINE block). */
-const TIER_RULE={
-  salt:{drift:{up:0.3, down:0.2}, mS:2.813, qS:0.5, mB:1.363, qB:12.5, ceilingX:3,
-        auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
-        presets:{Better:-0.3, Standard:0, Higher:0.3},
-        rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
-        /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
-           walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */
-        grid:{min:0.5, step:0.25, max:25}},
-  /* 19 Sep 2026, HIS INSTRUCTION: oil has no pricing tier. One board, typed, the same for every
-     customer, RM13 a unit falling a ringgit every ten to RM9. FIVE SIZES: he typed five prices and
-     the engine does not extrapolate his taper, so 80 and 100 would have held flat at RM9 and quoted
-     RM720 and RM900; he was asked and chose to drop them. `fixed` is what makes fiveTiers state the
-     board instead of striking columns, and `multiples`, `start` and `step` are gone because with one
-     price there is nothing for them to say. */
-  /* 15 OCT 2026, HIS WORD: oil is ordered in tens, its smallest unit step. The grid's step IS the order step (the Worker's onStep reads
-     it), and oil's prices do not move when it goes from 1 to 10: the five points are the five typed rungs. Salt stays at a quarter
-     and a coarser step there would raise most of its prices, the walk running through every point (docs/PRODUCTS.md section 9). */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:10, max:50}},
-  /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
-     RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
-     between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
-     ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:2, grid:{min:1, step:1, max:30}},
-  /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
-     `ceilingX` times that floor, capped down to the book's grid. Twice the floor; rice two and a half, an assumption the
-     changelog states. A typed price inside the band does not move. */
-  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:2.5, grid:{min:1, step:1, max:10}}
-};
+/* TIER_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* 05 OCT 2026, HIS DECISION: EACH BOOK'S GRID, {min, step, max}, read off its rule: the quantities the Counter quotes at once.
    Above max the only way in is Negotiate. Null for a book with none. */
 function gridFor(p){return PRICING_ENGINE.gridOf(TIER_RULE[p||PROD]);}
 /* the levels' names, cheapest first: Ambassador, on his word alone and earning no free units; Titanium to
    Silver are the tiers, and a new customer starts at Silver, the last. Bronze went on 23 Sep 2026, his choice
    when the workbook came down to four tiers; nobody held it. */
-const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];
+/* TIER_NAMES lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED. Least squares of ln(rate) on ln(qty)
    across every tier of the live quote. It returns the exponent and the r-squared, and the r-squared
    is reported on the tab rather than hidden: a ladder that does not actually follow a power law
@@ -11718,13 +12057,22 @@ function boundaryPanel(b,r){
 /* 26 Sep 2026: posInputs takes the book, so stockCostFor can walk a book that is not in view; left out,
    it is the book in view, as it always was. wavgBuyPrev is the view's and only values goodwill, which
    the rate of another book never reads. */
-function posInputs(pr){
-  const P=pr||PROD, _isSalt=(P===DEFAULT_PROD);
-  return {sales:pSales(P), purchases:pPurch(P), opening:openingFor(P), isSalt:_isSalt,
-    loanUnits:_isSalt?loanDrawUnits():0, counted:countedFor(P), today:TODAY,
-    supplierReceivable:(_isSalt&&typeof supplierReceivable!=='undefined')?supplierReceivable:null,
-    wavgBuyPrev:wavgBuy};
-}
+/* S1c-ii: THE CONTEXT THE ENGINE'S READERS TAKE (engine/snapshot.mjs). Built once, on first use, of getters, so each read is the live
+   binding at the call and nothing is copied. W is the walk of the book in view that recompute() last made; its stockCost goes through
+   stockCostFor, the per-recompute cache. The clock is TODAY and the override is pxOver: both the desk's. */
+function snapCtx(){return snapCtx._c||(snapCtx._c={
+  B:{get sales(){return sales;},get purchases(){return purchases;},get opening(){return PROD_OPENING;},get statedStockBy(){return statedStockBy;},
+    get statedStock(){return STATED_STOCK;},get loanDrawUnits(){return loanDrawUnits;},get supplierReceivable(){return typeof supplierReceivable!=='undefined'?supplierReceivable:null;},
+    get counts(){return typeof COUNTS!=='undefined'?COUNTS:[];},get selfUseLog(){return typeof selfUseLog!=='undefined'?selfUseLog:[];},
+    get quotes(){return QUOTES;},get priceSet(){return typeof PRICE_SET!=='undefined'?PRICE_SET:null;},get costRule(){return typeof COST_RULE!=='undefined'?COST_RULE:{};},
+    get defaultProd(){return DEFAULT_PROD;},
+    get roster(){return roster;},get partners(){return typeof partners!=='undefined'?partners:[];},get tierOf(){return TIER_OF;},get prodOrder(){return PROD_ORDER;}},
+  R:{PRICE_ENGINE,LADDER_BY,TIER_RULE,TIER_NAMES,SHRINK_ATTRIB,COST_BASIS,PRICE_LOCK,RULES,PROFILE_RULE,get LADDER(){return LADDER;},get PRICE(){return PRICE;},get PRICE_LOCK_ON(){return PRICE_LOCK_ON;}},
+  get today(){return TODAY;},get over(){return pxOver;},
+  memo(k,f){return renderMemo(k,f);},tierAt(code,q){return cardTierAt(code,q);},
+  fn:{lateOf(code){return lateOf(code);},buyerProfile(p,code){return buyerProfile(code,p);},driftOfNow(p,code){return driftOfNow(code,p);},driftOf(p,code){return driftOf(code,p);}},
+  W:{get buyUnits(){return buyUnits;},get selfUse(){return selfUse;},get wavgBuy(){return wavgBuy;},get stockCost(){return stockCostFor(PROD);}}});}
+function posInputs(pr){return SNAPSHOT_ENGINE.posInputs(snapCtx(),pr||PROD);}
 function recompute(){
   restockFor._c=null;   // the restock plan is read off this book, so it is dropped with it
   stockCostFor._c=null;   // and every book's inventory rate, read off the book as it now stands (26 Sep 2026)
@@ -13611,7 +13959,7 @@ function tabInventory(){
    ownerOf() is the single resolver. Anything that asks "whose stream is this" must go
    through it, or the associate silently loses credit for his own resells. */
 const RESELL_SFX='-R';
-const isResellAcct=id=>typeof id==='string'&&id.slice(-2)===RESELL_SFX;
+const isResellAcct=SNAPSHOT_ENGINE.isResellAcct;
 /* ============ A BUCKET IS NOT A PERSON (v237) ============
    His instruction, and it was already half true: the general bucket was excluded from the
    map but still counted as a customer everywhere else, so it drew badges, sat in the
@@ -13627,8 +13975,8 @@ const isResellAcct=id=>typeof id==='string'&&id.slice(-2)===RESELL_SFX;
    isBucket is kept and always false rather than deleted, because a dozen call sites ask it
    and the honest answer now is "there are none" rather than a missing function. */
 const isBucket=id=>false;
-const isPerson=id=>!!id&&!isBucket(id);
-const ownerOf=id=>isResellAcct(id)?id.slice(0,-2):(isBucket(id)?id.slice(0,-4):id);
+const isPerson=SNAPSHOT_ENGINE.isPerson;
+const ownerOf=SNAPSHOT_ENGINE.ownerOf;
 function assocOf(code){
   if(!code)return null;
   if(isResellAcct(code))return ownerOf(code);
@@ -16426,15 +16774,7 @@ function costBasis(){return +(wavgBuy||54.26).toFixed(2);}
    not jump on every single lot. costBasis() remains the book/reporting basis for what was
    earned. Fallbacks, in order, so it is never undefined: trailing average, most recent lot,
    the inventory cost, the all-time weighted average. */
-function replCost(){
-  /* 05 Oct 2026, his settled rule: on a `latestCogs` book what it costs to replace is COGS off the latest landed lot, quote
-     plus freight over its units, the figure the floor is struck on; read from the engine's latestCogs, not from pxCost,
-     which reads this through pxQuoteRate */
-  if(((typeof COST_RULE!=='undefined'?COST_RULE:{})[PROD]||{}).kind==='latestCogs'){const lc=POSITION_ENGINE.latestCogs(pPurch(PROD));if(lc)return +lc.rate.toFixed(2);}
-  const r=(typeof pxReplRate==='function')?pxReplRate():null;
-  if(r!=null)return +r.toFixed(2);
-  const c=stockCostFor(PROD);return +((c!=null?c:wavgBuy)).toFixed(2);
-}
+function replCost(){return SNAPSHOT_ENGINE.replCost(snapCtx(),PROD);}
 function median(a){if(!a.length)return 0;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
 /* current cost base for the buy simulator: value and qty behind the wavg */
 /* ============ PRICING ENGINE (v138) ============
@@ -16462,11 +16802,7 @@ let pxOver={cost:null,shrink:null,party:'',anyQ:'',tier:'T2',cap:''};   // cost/
    ROUND 5, his call 1 of 29 Aug: THE BOOK'S OWN QUOTE, through quoteFor(PROD). This read
    was bare supplierQuote, which is salt's, so oil's engine inputs carried RM56 a unit
    from a ladder for a different commodity. Oil reads its own RM10 now. */
-function pxQuoteRate(){
-  const q=quoteFor(PROD);
-  if(!q||!q.tiers||!q.tiers.length)return replCost();
-  return Math.max.apply(null,q.tiers.map(t=>t.total/t.qty));
-}
+function pxQuoteRate(){return SNAPSHOT_ENGINE.quoteRate(snapCtx(),PROD);}
 function pxRecentBuyRate(days){
   const from=new Date(TODAY.getTime()-days*86400000);
   /* poLive, not !defaulted: an agreed-only lot is a rate you have not paid, and quoting
@@ -16488,59 +16824,18 @@ function pxRecentBuyRate(days){
    `freight`, typed when it is entered. The rate is the sum of those over the units of the same
    lots, over the replacement window first and over every live lot with a figure when the
    window holds none; a book with no typed freight reads 0, which the copy says. */
-function pxFreightRate(){
-  let ps=pxWindowLots().filter(p=>p.freight!=null);   /* v504: the same three lots as the rate */
-  if(!ps.length)ps=pPurch(PROD).filter(p=>poLive(p)&&p.qty>0&&p.freight!=null);
-  const k=ps.reduce((a,p)=>a+p.qty,0);
-  return k>0?+(ps.reduce((a,p)=>a+(+p.freight||0),0)/k).toFixed(4):0;
-}
+function pxFreightRate(){return SNAPSHOT_ENGINE.freightRate(snapCtx(),PROD);}
 /* v504, his instruction of 07 Sep 2026: THE WINDOW IS THE LAST THREE LOTS RECEIVED, not thirty
    days. Salt lands a lot every four or five days and oil every ten to fifteen, so one calendar
    window was six cycles on one book and two on the other; three lots is one purchase cycle
    or so on either, holds enough to smooth a single odd lot, and moves within a fortnight. The
    rate, the freight and (through the counts) the leak all read off the same lots. */
-function pxWindowLots(){
-  /* 08 Sep 2026: RECEIVED means landed. poLive alone let a lot in transit be one of the last three
-     received, and its rate moved the whole board the day it was ordered rather than the day it arrived. */
-  return pPurch(PROD).filter(p=>poLive(p)&&p.qty>0&&p.total>0&&(p.receivedOn||p.date)&&poRecvUnits(p)>0)
-    .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;}).slice(-3);
-}
 /* v504: THE LEAK, FROM THE COUNTS. A count is taken when a lot lands and the inventory is at or
    near empty, so the drift at each count is the leak of that cycle, every use included. The
    charge is the units missing over the last three cycles over the units handed over in them,
    a ratio the cost stack applies to landed. Null where fewer than one cycle can be read. */
-function pxLeakCharge(){
-  const cs=(typeof COUNTS!=='undefined'?COUNTS:[]).filter(c=>(c.product||'salt')===PROD&&c.date&&c.drift!=null)
-    .sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-  const last=cs.slice(-3); if(!last.length)return null;
-  const all=(typeof COUNTS!=='undefined'?COUNTS:[]).filter(c=>(c.product||'salt')===PROD&&c.date).sort((a,b)=>{const x=a.date,y=b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-  const i=all.findIndex(c=>c.date===last[0].date);
-  const start=i>0?all[i-1].date:null, end=last[last.length-1].date;
-  /* 08 Sep 2026, two corrections to the reading. THE DRIFTS ARE NETTED: a lot not yet stacked at
-     one count shows as a deficit there and the same surplus at the next (the v473 note says so),
-     and flooring each count at zero before summing charged the deficit and forgave nothing. And
-     THE UNITS ARE DATED BY THE MOVEMENT, NOT THE ORDER: a row's whole deliveredQty used to land on
-     deliveredOn||date, so a part-delivered order completed after the last count put its later
-     units into a cycle that had closed. Each Fulfilment step counts at its own date; units the
-     trail does not carry (a Correction that raised deliveredQty) count at deliveredOn||date. */
-  const leak=Math.max(0,-last.reduce((a,c)=>a+(+c.drift||0),0));
-  const inWin=d=>!!d&&(start==null||d>start)&&d<=end;
-  const sold=pSales(PROD).filter(s=>!s.cancelled).reduce((a,s)=>{
-    let got=0,tr=0;
-    (s.amend||[]).forEach(st=>{const k=+st.kg||0;if(st.kind!=='Fulfilment'||!(k>0))return;tr+=k;if(inWin(st.date||s.date))got+=k;});
-    const rest=(+s.deliveredQty||0)-tr;
-    if(rest>0&&inWin(s.deliveredOn||s.date))got+=rest;
-    return a+got;},0);
-  if(!(sold>0))return null;
-  return {ratio:+(leak/sold).toFixed(4),leak:+leak.toFixed(2),sold:+sold.toFixed(2),cycles:last.length,from:start,to:end};
-}
-function pxReplRate(){
-  const ps=pxWindowLots();
-  const k=ps.reduce((a,p)=>a+p.qty,0);
-  if(k>0)return +(ps.reduce((a,p)=>a+p.total,0)/k).toFixed(2);
-  const L=latestLot(PROD);
-  return L?+L.rate.toFixed(2):null;
-}
+function pxLeakCharge(){return SNAPSHOT_ENGINE.leakCharge(snapCtx(),PROD);}
+function pxReplRate(){return SNAPSHOT_ENGINE.replRate(snapCtx(),PROD);}
 /* ============ ROUND 5, HIS CALL 4: A RESTOCK IS PRICED AT ITS OWN TIER ============
    The suggested restock used to be priced at a flat per-unit rate, which is not a price
    anyone is quoted: lots are bought whole, off a tier ladder. This prices a suggestion at
@@ -16570,11 +16865,7 @@ function restockQuote(needUnits){
    ONLY WHAT IS LOGGED AS `sample` LEAVES. An unattributed plug is priced in FULL, which is the
    conservative way round: a leak nobody has explained is a leak until someone explains it. Salt's
    55.2 unit are still unattributed and still carried whole. */
-function pxSampleUnits(){return (typeof selfUseLog!=='undefined'?selfUseLog:[])
-  .filter(r=>(r.product||DEFAULT_PROD)===PROD&&r.why==='sample')
-  .reduce((a,r)=>a+(+r.kg||0),0);}
-function pxShrinkRate(){const h=buyUnits+openingFor(PROD).qty;
-  return h>0?Math.max(0,selfUse-pxSampleUnits())/h:0;}   // v232: this product's opening; v353: less promotion
+function pxShrinkRate(){return SNAPSHOT_ENGINE.shrinkRate(snapCtx(),PROD);}   // v232: this product's opening; v353: less promotion
 /* every unit that reaches a customer has to carry the ones that did not */
 /* ============ HOW MUCH OF THE LEAK THE CUSTOMER PAYS FOR (v205) ============
    Until now every unit lost was recovered in the price of the units that survived, so a
@@ -16614,7 +16905,7 @@ function pxShrinkRate(){const h=buyUnits+openingFor(PROD).qty;
    why one sale in eighty-two lost money and thirty-one more would have if they had been delivered.
    IT MOVES NO CARDED PRICE. The ask is a markup on cogs, the landed cost of a lot, and this lever is
    not in that line at all. It moves the REFUSAL line, which is the one that was lying. */
-const SHRINK_ATTRIB=1;
+/* SHRINK_ATTRIB lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* ============ THE COST STACK (v232) ============
    The board priced off ONE number, a 30-day average buying rate grossed up for half the
    leak, and it was wrong in three ways at once: it used an average rather than the rate
@@ -16635,13 +16926,7 @@ const SHRINK_ATTRIB=1;
    are collected by the customer, so the blended cost of an order is RM10. The old RM16.67
    was neither: it charged every order a third of a delivery that most of them never had.
    Keeping them apart is what lets the delivered and the collected floor differ honestly. */
-const COST_BASIS={
-  freightPerTrip:{rm:0, what:'RETIRED AS A STATED FIGURE (v503, his instruction of 07 Sep 2026): freight is typed on each lot as `freight`, and pxFreightRate() reads it per unit; this stands at 0 as the fallback for a book with no typed freight', ias2:'inventory', ref:'IAS 2.11 costs of purchase include transport and handling directly attributable to acquisition; rate and basis both stated by him 27 Aug 2026'},
-  txnPerDelivery:{rm:0, what:'ONE delivery, to a customer who does not collect. NOT CHARGED since 06 Sep 2026, his instruction: the oil floor at 50 units had climbed over his stated RM 450 on the RM 10 of delivery alone, and his answer was to remove the delivery cost, so a delivered order carries the collected floor and no more', ias2:'period', ref:'IAS 2.16(d) selling costs are excluded from the cost of inventories; RM 10 stated by him 27 Aug 2026, replacing the RM50 v373 flagged as never derived'},
-  deliveredShare:{v:0.20, what:'the share of orders delivered rather than collected; four in five come and collect', ias2:'period', ref:'stated by him 24 Aug 2026'},
-  sampleShare:{v:0.5,    what:'the half of the leak that is samples, testers and advertising', ias2:'period', ref:'IAS 38.69 advertising and promotional costs are expensed as incurred'},
-  abnormalNote:{ias2:'period', ref:'IAS 2.16(a) abnormal amounts of wasted materials are expensed in the period incurred'}
-};
+/* COST_BASIS lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* ============ THE BOARD IS FROZEN BETWEEN PURCHASES (v233) ============
    His instruction, 06 Aug: reprice only when a lot is bought, and until then do not move.
    IT WAS MOVING EVERY DAY AND NOTHING ANNOUNCED IT. Two of the four components in the
@@ -16670,43 +16955,12 @@ const COST_BASIS={
    for freezing it has gone. Set this true to freeze again; the snapshots below are kept intact
    so it can be turned back on without recapturing anything. */
 const PRICE_LOCK_ON=false;
-const PRICE_LOCK={
-  salt:{lockedOn:'2026-08-06', lot:{date:'2026-07-28', qty:100, rate:47, sup:'SA5-BTR'},
-        freight:0.2, landed:47.2,
-        shrinkRaw:0.18869362693203473, shrink:0.18869362693203473, sampleLoad:10.9778,
-        avgDel:2.7319, delN:58, txn:1.8302303566,
-        absorbed:0, eff:60.008,
-        why:'RE-LOCKED v244 on the same 28 Jul lot, at the 06 Aug count. The lot has not changed; '
-           +'what changed is the leak behind it and the attribution in front of it. The 33.14 count '
-           +'took the observed rate from 16.19% to 18.87%, and SHRINK_ATTRIB went to 1, so the whole '
-           +'leak is now carried in the price and nothing is absorbed. Effective cost RM53.19 to RM60.01. '
-           +'These numbers are the unlocked path’s own output, captured rather than hand-computed: '
-           +'the lock was deleted, pxCost() run fresh at attrib 1, and the result written back here. '
-           +'Absorbed is 0 by definition at full attribution.'},
-  oil: {lockedOn:'2026-08-06', lot:{date:'2026-08-06', qty:50, rate:7, sup:'SP7-PUD'},
-        freight:0.4, landed:7.4,
-        shrinkRaw:0, shrink:0, sampleLoad:0,
-        avgDel:10, delN:1, txn:0.5,
-        absorbed:0, eff:7.9,
-        why:'Locked on the first oil lot, the day it landed.'}
-};
+/* PRICE_LOCK lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* is the locked snapshot still the current lot? */
-function priceLockState(p){
-  const P=p||PROD, L=PRICE_LOCK[P], cur=latestLot(P);
-  if(!L)return {state:'none',lock:null,cur:cur};
-  if(!cur)return {state:'locked',lock:L,cur:null,days:dAge(L.lockedOn)};
-  const same=(cur.date===L.lot.date&&Math.abs(cur.rate-L.lot.rate)<0.005&&Math.abs(cur.qty-L.lot.qty)<0.005);
-  return {state:same?'locked':'stale',lock:L,cur:cur,days:dAge(L.lockedOn),
-          sinceLot:dAge(L.lot.date)};
-}
+function priceLockState(p){return SNAPSHOT_ENGINE.priceLockState(snapCtx(),p||PROD);}
 /* the rate actually paid for the most recent lot of this product, which is what a
    replacement costs today, rather than an average of what it used to cost */
-function latestLot(p){
-  const ls=pPurch(p).filter(x=>poLive(x)&&x.qty>0&&poRecvUnits(x)>0)   /* 08 Sep 2026: landed, as pxWindowLots */
-    .sort((a,b)=>{const x=a.receivedOn||a.date,y=b.receivedOn||b.date;if(!x||!y)return (!x&&!y)?0:(!x?1:-1);return x<y?-1:x>y?1:0;});
-  const L=ls[ls.length-1];
-  return L?{qty:L.qty,total:L.total,rate:+(L.total/L.qty).toFixed(4),date:L.receivedOn||L.date,sup:L.supplier}:null;
-}
+function latestLot(p){return SNAPSHOT_ENGINE.latestLot(snapCtx(),p);}
 /* THE AVERAGE LOT, WHICH IS WHAT FREIGHT IS SPREAD OVER FROM v381, on his instruction.
    A trip is a recurring cost and the lots keep arriving, so dividing one trip by whichever lot
    happened to come last made a floor move on nothing but the size of the last purchase: oil's
@@ -16715,11 +16969,7 @@ function latestLot(p){
    received is what a trip actually costs to spread, and it settles as the book grows instead of
    swinging. The mean is used rather than the median for the same reason avgDelivery uses one:
    the cost is being spread over everything received, not over a typical lot. */
-function meanLotQty(p){
-  const ls=pPurch(p).filter(x=>poLive(x)&&x.qty>0);
-  if(!ls.length)return null;
-  return ls.reduce((a,x)=>a+x.qty,0)/ls.length;
-}
+function meanLotQty(p){return SNAPSHOT_ENGINE.meanLotQty(snapCtx(),p);}
 /* how much salt leaves per delivery, which is what turns a per-ORDER cost into a per-UNIT
    one. The mean is used rather than the median because the cost is being spread over
    everything shipped, not over a typical order. */
@@ -16735,19 +16985,8 @@ function meanLotQty(p){
    move on the day this ships, and `measured` tells every reader which of the two it is.
    The denominator for the per-unit spread stays the average of ALL moved orders, because
    what the share estimates is the rate at which any order turns out to need a delivery. */
-function delShare(p){
-  const rows=pSales(p).filter(s=>!s.cancelled&&txPhys(s)>0.009);
-  const said=rows.filter(s=>s.handover==='delivered'||s.handover==='collected');
-  const del=said.filter(s=>s.handover==='delivered');
-  return said.length
-    ? {v:del.length/said.length,delivered:del.length,said:said.length,of:rows.length,measured:true}
-    : {v:COST_BASIS.deliveredShare.v,delivered:0,said:0,of:rows.length,measured:false};
-}
-function avgDelivery(p){
-  const rows=pSales(p).filter(s=>!s.cancelled&&txPhys(s)>0.009);
-  const unitsSum=rows.reduce((a,s)=>a+txPhys(s),0);
-  return rows.length?{n:rows.length,kg:+unitsSum.toFixed(2),mean:+(unitsSum/rows.length).toFixed(4)}:{n:0,kg:0,mean:null};
-}
+function delShare(p){return SNAPSHOT_ENGINE.delShare(snapCtx(),p);}
+function avgDelivery(p){return SNAPSHOT_ENGINE.avgDelivery(snapCtx(),p);}
 /* ============ IFRS STATEMENT OF PROFIT OR LOSS (v232) ============
    The same four costs the board prices on, sorted the way the standards require rather
    than the way pricing wants them. Two of them belong in inventory and two do not, and a
@@ -16874,53 +17113,13 @@ function ifrsPL(p){
    if that block is not the module. The two functions below are the whole of what the desk
    contributes: they gather the book's facts and the policy into the records the engine takes.
    Nothing prices here any more. The comments that used to sit on each body moved with it. */
-function pxInputs(){
-  return {prod:PROD, lockOn:PRICE_LOCK_ON, lockState:priceLockState(PROD), lockBase:PRICE_LOCK[PROD]||null,
-    over:{cost:pxOver.cost,shrink:pxOver.shrink}, lot:latestLot(PROD), meanLot:meanLotQty(PROD), quoteRate:pxQuoteRate(),
-    repl:pxReplRate(),   /* round 5, call 2: the trailing 30-day weighted average, per book */
-    freightRate:pxFreightRate(),   /* v503: freight typed on the lots, per unit; v504: the same three lots */
-    leak:pxLeakCharge(),   /* v504: the last three count cycles */
-    costRule:(typeof COST_RULE!=='undefined'?COST_RULE:{})[PROD]||null,   /* v553: a per-book pricing basis, from the book */
-    latest:(x=>x&&{rid:x.rid,date:x.date,quote:x.quote,freight:x.freight,units:x.units,rate:x.rate})(POSITION_ENGINE.latestCogs(pPurch(PROD))),   /* 05 Oct 2026: COGS off the latest landed lot, the `latestCogs` basis */
-    costBasis:{freightPerTrip:{rm:COST_BASIS.freightPerTrip.rm},txnPerDelivery:{rm:COST_BASIS.txnPerDelivery.rm},
-      deliveredShare:{v:delShare(PROD).v}},
-    attrib:SHRINK_ATTRIB, shrinkRate:pxShrinkRate(), avgDel:avgDelivery(PROD)};
-}
-function pxPolicy(){
-  /* ROUND 5, his call 1: the taper fits the BOOK'S OWN quote and walks the BOOK'S OWN
-     ladder. tiers was bare supplierQuote and LADDER was salt's alone, so oil's curve ran
-     at salt's exponent inside salt's clamp. quoteFor(PROD) and ladderFor(PROD) hand each
-     book its own; salt's values are untouched. */
-  const pq=(typeof quoteFor==='function')?quoteFor(PROD):null;
-  /* v564: TIER 1 IS LIFTED OUT OF THE LADDER AND ONTO THE POLICY, and the engine reads it in one
-     place only. It is DECLARED in LADDER, and in LADDER_BY for a book that differs, so oil's
-     tier1:null overrides salt's pair by the same mechanism anchorQ and the span already use; it is
-     READ as P.tier1, beside `stated`, because that is what it is, a set of prices he has typed. The
-     first cut declared it and never passed it, so salt rendered with one tier and the derivation
-     row said the anchors were not stated. A fallback to P.LADDER.tier1 in the engine would have
-     hidden exactly that, which is why there is not one. */
-  /* v656: AND THE FIVE-TIER RULE COMES WITH IT, so the engine's own ask is the ladder's last level.
-     It was deliberately left out while the tiers were staged and quoted nowhere; the board is the
-     ladder now, and this is the one line that makes it so for every reader of pxPolicy at once. */
-  return {LADDER:ladderFor(PROD), minPerUnit:PRICE_ENGINE.minPerUnit||0, timePerOrder:PRICE_ENGINE.timePerOrder||0, lotFloor:PRICE.lotFloor||{},
-    stated:setPricesFor(PROD),
-    tier1:ladderFor(PROD).tier1||null,
-    tierRule:(typeof TIER_RULE!=='undefined'?TIER_RULE[PROD]:null)||null,
-    lastLevel:TIER_NAMES[TIER_NAMES.length-1],   /* 23 Sep 2026: the row's name, which was the literal Bronze */
-    tiers:(pq&&pq.tiers)?pq.tiers:[],
-    boardSizes:(typeof sizesFor==='function')?sizesFor(PROD):[]};
-}
+function pxInputs(){return SNAPSHOT_ENGINE.inputs(snapCtx(),PROD);}
+function pxPolicy(){return SNAPSHOT_ENGINE.policy(snapCtx(),PROD);}
 /* one render quotes about 950 times off the same stack, so it is read once a render per book and per override
    (boardHeadroom walks pxOver.cost mid-render); outside a render it is computed fresh */
 function pxCost(){ return renderMemo('pxCost|'+PROD+'|'+pxOver.cost+'|'+pxOver.shrink, ()=>PRICING_ENGINE.costStack(pxInputs())); }
 /* the five tiers for the book in view, on its own rungs; null for a book with no rule */
-function fiveTiersNow(){
-  const R=TIER_RULE[PROD];
-  /* 23 Sep 2026: the board's own sizes walked with the rungs, so candy's 5 and 20 unit reach the customer's list; salt's and
-     oil's sizes are their rungs, so theirs do not move */
-  const sizes=R?R.rungs.concat(sizesFor(PROD).filter(q=>!R.rungs.some(r=>Math.abs(r-q)<0.009))).sort((a,b)=>a-b):null;
-  return R?PRICING_ENGINE.fiveTiers(sizes,pxCost(),pxPolicy()):null;   /* v656: the policy carries the rule */
-}
+function fiveTiersNow(){return SNAPSHOT_ENGINE.fiveTiers(snapCtx(),PROD,pxCost);}
 /* ============ v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, BEFORE ANY QUOTE READS IT ============
    A tier for each product since v646 (his instruction of 15 Sep 2026): a customer can hold Gold on salt and Silver on oil.
    A tier held is TIER_OF on the book, code to product to level: set on the Customers page, queued, drafted as `tierset`,
@@ -16946,41 +17145,9 @@ function tierBoards(){
    month, one unit and three units at the lower and upper quartiles of size, and the whole book under three months old, so
    loyalty is counted in orders and not in time; the ten-day credit term is RULES.creditDays, and nobody had then been late
    twice. One constant, so a threshold is one edit. */
-const PROFILE_RULE={
-  frequentPerMonth:2,   // "frequent": two or more orders a month
-  smallUpTo:1,          // "small": half a unit and one unit, his words
-  smallShare:0.6,       //   and six in ten of their orders are that small
-  bigFrom:3,            // three units and above, the book's upper quartile and his band
-  biggerShare:0.4,      // "buying bigger": four in ten of their orders at three units or more
-  loyalOrders:6,        // "loyal": six or more priced orders
-  loyalWithinDays:30,   //   and the last within thirty days
-  rarePerMonth:1,       // "rare": under one order a month
-  rareAfterDays:60,     //   or nothing for sixty days
-  spanFloorDays:30      // orders a month is read over at least thirty days, so one order last week is not four a month
-};
+/* PROFILE_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* the profile of one customer on one product; null for a product they have never bought at a price */
-function buyerProfile(code,prod){
-  const R=PROFILE_RULE, DAY=86400000, now=TODAY.getTime();
-  const rows=pSales(prod||PROD).filter(s=>POSITION_ENGINE.ownsCode(code,s.customer)&&pbPriced(s)&&s.date&&s.total>0&&s.qty>0);
-  if(!rows.length)return null;
-  const times=rows.map(s=>new Date(s.date).getTime()).sort((a,b)=>a-b);
-  const tenure=(now-times[0])/DAY, sinceLast=(now-times[times.length-1])/DAY;
-  const perMonth=rows.length/(Math.max(tenure,R.spanFloorDays)/30.44);
-  const unitsPerMonth=rows.reduce((a,s)=>a+s.qty,0)/(Math.max(tenure,R.spanFloorDays)/30.44);   /* 05 Oct 2026: the drift's volume signal */
-  const smallShare=rows.filter(s=>s.qty<=R.smallUpTo+0.0001).length/rows.length;
-  const bigShare=rows.filter(s=>s.qty>=R.bigFrom-0.0001).length/rows.length;
-  const frequent=perMonth>=R.frequentPerMonth, small=smallShare>=R.smallShare, bigger=bigShare>=R.biggerShare;
-  const loyal=rows.length>=R.loyalOrders&&sinceLast<=R.loyalWithinDays;
-  /* V5c: how late they pay is read across every book by lateOf, no longer here */
-  const rare=perMonth<R.rarePerMonth||sinceLast>R.rareAfterDays;
-  const name=rows.length===1?'one-off'
-    :small?(frequent?'small and often':'small and rare')
-    :bigger?(frequent?'large and regular':'rare and large')
-    :frequent?'consistent mid':'occasional mid';
-  return {name,orders:rows.length,tenureDays:Math.round(tenure),sinceLastDays:Math.round(sinceLast),
-    perMonth:+perMonth.toFixed(2),unitsPerMonth:+unitsPerMonth.toFixed(2),smallShare:+smallShare.toFixed(2),bigShare:+bigShare.toFixed(2),
-    frequent,small,bigger,loyal,rare};
-}
+function buyerProfile(code,prod){return SNAPSHOT_ENGINE.buyerProfile(snapCtx(),prod||PROD,code);}
 /* v655, HIS DECISION OF 16 SEP 2026: THE TIER IS PROPOSED AT THE SIZES THEY BUY, and read a unit, so a size they never take
    cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung:
    adding 80 and 100 unit to oil moved two customers a level on sizes neither of them buys (v654). */
@@ -17031,7 +17198,7 @@ function slowdown(prod){
   return {on:run>=3,since:run>=3?iso(today-(run-3)*DAY):null,lastLot:isFinite(lastLot)?iso(lastLot):null};
 }
 /* V5c: THE LATE PAYER, across every book and their bucket, read by the engine's walk (payDelays, lateOffer) */
-function lateOf(code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays(sales,ownerOf(code)||code,TODAY.toISOString().slice(0,10),RULES),RULES);}
+function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}
 /* ============ 05 OCT 2026, HIS DECISION: EACH CUSTOMER'S DRIFT ON A DRIFT BOOK ============
    A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price moved by their drift, d from -1 to +1.
    HAND-SET WINS: a number held in TIER_OF[code][book], set on the Drift card or at Add ID, queued and folded as `tierset`,
@@ -17039,25 +17206,11 @@ function lateOf(code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays
    that book for how often, how much and how many; payDelays, across every book, for the settlements paid within the term
    (RULES.holdDays) and the oldest open overdue; lateOf for the late flag; txWrittenOff for anything written off. A late payer
    is priced up, his decision of 05 Oct 2026, superseding the offer-only rule of 29 Sep. */
-function driftBook(p){const R=TIER_RULE[p||PROD];return !!(R&&R.drift);}
-function driftSignals(code,prod){
-  const who=ownerOf(code)||code,p=prod||PROD,pf=buyerProfile(who,p),today=TODAY.toISOString().slice(0,10);
-  const dl=POSITION_ENGINE.payDelays(sales,who,today,RULES),settled=dl.filter(x=>!x.open),open=dl.filter(x=>x.open);
-  const lt=lateOf(who);
-  const wo=sales.filter(s=>POSITION_ENGINE.ownsCode(who,s.customer)).reduce((a,s)=>a+POSITION_ENGINE.txWrittenOff(s),0);
-  return {settled:settled.length,onTime:settled.filter(x=>x.days<=RULES.holdDays).length,
-    perMonth:pf?pf.perMonth:0,unitsPerMonth:pf?pf.unitsPerMonth:0,orders:pf?pf.orders:0,sinceLastDays:pf?pf.sinceLastDays:null,
-    late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
-    overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RULES.holdDays),0)};
-}
+function driftBook(p){return SNAPSHOT_ENGINE.driftBook(snapCtx(),p||PROD);}
+function driftSignals(code,prod){return SNAPSHOT_ENGINE.driftSignals(snapCtx(),prod||PROD,code);}
 /* the Drift card and the price lists ask each customer's drift about four times a render: kept for the render, by customer and book */
-function driftOf(code,prod){const p=prod||PROD;return renderMemo('drift|'+(ownerOf(code)||code)+'|'+p,()=>driftOfNow(code,p));}
-function driftOfNow(code,prod){
-  const p=prod||PROD,R=TIER_RULE[p];if(!R||!R.drift)return null;
-  const who=ownerOf(code)||code,h=(TIER_OF[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
-  const sig=driftSignals(who,p),a=PRICING_ENGINE.autoDrift(sig,R.auto);
-  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
-}
+function driftOf(code,prod){return SNAPSHOT_ENGINE.driftOf(snapCtx(),prod||PROD,code);}
+function driftOfNow(code,prod){return SNAPSHOT_ENGINE.driftOfNow(snapCtx(),prod||PROD,code);}
 /* the level a late payer is offered: one down from what they are quoted, a band set read at its mid; none at the last level */
 function lateDown(v){const N=TIER_NAMES,cur=v&&typeof v==='object'?v.mid:v,i=N.indexOf(cur);return i<0||i>=N.length-1?null:N[i+1];}
 function lateWhy(l){
@@ -17081,12 +17234,7 @@ function ruleProposal(code,prod,boards){
 }
 /* every customer on the roster, those who have bought first and largest first; a resale account stands with its associate
    and a supplier holds no tier. Since v646 one who has not bought yet is listed too, so a tier can be set before they do. */
-function tierCustomers(){
-  const rev={};
-  sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
-  const rest=roster.map(ownerOf).filter((id,i,a)=>a.indexOf(id)===i&&isPerson(id)&&!id.startsWith('S')&&!(id in rev));
-  return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
-}
+function tierCustomers(){return SNAPSHOT_ENGINE.tierCustomers(snapCtx());}
 /* what waits for approval, code to product to level, a null clearing one; a registration's starting tiers wait too (v645) */
 function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
   queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
@@ -19898,11 +20046,7 @@ function tabWorkbench(){
   <div id="queueBox" style="margin-top:8px"></div>`;
 }
 /* the rungs the board prints: the book's sizes cut to boardBy. A read: the snapshot carries it to Maker's printed-sizes input (tools/book.mjs) */
-function shSizes(){
-  const all=(PRICE_ENGINE.sizesBy&&PRICE_ENGINE.sizesBy[PROD])||PRICE_ENGINE.sizes;
-  const B=(PRICE_ENGINE.boardBy||{})[PROD];
-  return (Array.isArray(B)&&B.length)?all.filter(q=>B.some(b=>Math.abs(b-q)<0.009)):all;
-}
+function shSizes(){return SNAPSHOT_ENGINE.shSizes(snapCtx(),PROD);}
 /* ============ TAB: PRICING ============ */
 function pxMarket(){
   const c=pxCost();
@@ -20058,10 +20202,7 @@ function pbWeekMonday(){if(PB_MONDAY)return PB_MONDAY;
   return (PB_MONDAY=kl.getFullYear()+'-'+String(kl.getMonth()+1).padStart(2,'0')+'-'+String(kl.getDate()).padStart(2,'0'));}
 /* 08 Sep 2026: A ROW THAT COUNTS AS A PRICE THIS CUSTOMER PAID, word for word pricedOrder in
    tools/pricelist.mjs. Pending, cancelled and defaulted rows and awards with no cash are not. */
-function pbPriced(s){const st=txStat(s).order;
-  if(st==='Pending'||st==='Cancelled'||st==='Default')return false;
-  if((s.rebate||s.goodwill)&&!((+s.cash||0)>0.009))return false;
-  return true;}
+function pbPriced(s){return SNAPSHOT_ENGINE.pbPriced(s);}
 /* v655, HIS DECISION OF 16 SEP 2026: THEIR OWN RATE IS THE BEST THEY HAVE PAID, of the last four priced orders before the
    week's Monday, where it was the middle one until now. His reading of the book is that a sale struck is the best price
    strikeable with that customer, so the best of those four is what they will pay again; the middle one left RM4,170 of
@@ -20090,24 +20231,8 @@ function cardTier(code){if(driftBook(PROD))return 0;return cardTierAt(code,(PROF
    refusal above is right where a LEVEL decides the price and wrong where he has typed one price for
    all: it would have left thirty of thirty-six customers with no oil price on the desk and on their
    own page, and it is why the desk printed nothing for oil the day the tiers came off. */
-function isPartner(code){return typeof partners!=='undefined'&&partners.includes(ownerOf(code)||code);}
-function cardQuote(code,q,t){
-  if(!(q>0))return null;
-  const P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[PROD]});
-  if(isPartner(code))return PRICING_ENGINE.quoteAt(q,pxCost(),P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
-  /* one render quotes about 55 cards, 180 on Who buys, at a handful of distinct sizes, and a drift book's row walks the whole
-     grid each time. The row is the book's at the size and nothing of the customer's: their held tier or band set, their drift,
-     a late offer and a partner's cost are all applied below, outside it. So its key is book, size and pxCost's own override
-     (cost, shrink); outside a render it is built fresh. */
-  const row=renderMemo('tierAt|'+PROD+'|'+q+'|'+pxOver.cost+'|'+pxOver.shrink,()=>PRICING_ENGINE.fiveTierAt(q,pxCost(),P));
-  /* 05 Oct 2026, his decision: on a drift book the price is the Set Price moved by their drift, walked through every grid
-     point beneath the size; on a stated board the board, pro rata. One rule, the engine's quoteAt, which the Counter's sealed
-     grid and the desk Worker's card read too. Never under the floor. */
-  if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,pxCost(),P,0);
-  if(row&&row.drift){const dr=driftOf(code,PROD);return PRICING_ENGINE.quoteAt(q,pxCost(),P,dr?dr.d:0);}
-  if(t==null)t=cardTierAt(code,q);if(t<0)return null;
-  if(!row||row.prices[t]==null)return null;
-  return +PRICING_ENGINE.cardPrice(null,floorTotal(q),row.prices[t]).toFixed(2);}
+function isPartner(code){return SNAPSHOT_ENGINE.isPartner(snapCtx(),code);}
+function cardQuote(code,q,t){return SNAPSHOT_ENGINE.cardQuote(snapCtx(),PROD,code,q,t);}
 /* v670: each size reads its own level, so a customer on a band set is printed their small, mid and big levels where they fall */
 function pbPrices(code){
   /* a typed board needs no tier to be printed; a tiered product still does */

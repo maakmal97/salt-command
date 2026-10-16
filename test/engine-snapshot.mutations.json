@@ -1,0 +1,20 @@
+[
+ {
+  "name": "a figure changes in the engine module (the latest lot total up by one); the page is untouched, so only the node comparison can see it",
+  "file": "engine/snapshot.mjs",
+  "find": "total:L.total,rate:",
+  "replace": "total:L.total+1,rate:"
+ },
+ {
+  "name": "the same figure changes inside the master's inlined copy (the snapshot leaves the fixture, and the page leaves the module)",
+  "file": "master/salt_command.html",
+  "find": "total:L.total,rate:",
+  "replace": "total:L.total+1,rate:"
+ },
+ {
+  "name": "a full body of delShare is restored in the master's own script (in a block as a named expression, so the page still loads)",
+  "file": "master/salt_command.html",
+  "find": "function delShare(p){return SNAPSHOT_ENGINE.delShare(snapCtx(),p);}",
+  "replace": "function delShare(p){return SNAPSHOT_ENGINE.delShare(snapCtx(),p);}\n{\nconst second=function delShare(p){const rows=pSales(p).filter(s=>!s.cancelled);return {v:rows.length?1:0};};\n}"
+ }
+]
