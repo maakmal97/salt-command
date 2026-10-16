@@ -1,0 +1,65 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-16T12:17:45.897Z",
+   "status": "approved",
+   "collection": "purchases",
+   "row": {
+    "qty": 25,
+    "total": 1400,
+    "cash": 1400,
+    "handover": "collected",
+    "supplier": "SA5-BTR",
+    "freight": 50,
+    "status": "paid",
+    "date": "2026-10-15",
+    "receivedOn": "2026-10-15",
+    "receivedQty": 25,
+    "paidOn": "2026-10-15"
+   },
+   "reasoning": "Bought 25 unit of salt from SA5-BTR for RM 1400, with RM 50 of freight beside it, RM 56/unit. Paid in full and delivered in full on 2026-10-15. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-16T12:17:45.897Z",
+    "type": "BUY",
+    "party": "SA5-BTR",
+    "qty": 25,
+    "total": 1400,
+    "status": "paid",
+    "raw": "Buy 25 unit salt from SA5-BTR for RM1400 on 2026-10-15 plus RM50 freight, collected, RM1400 cash, 25 unit moved → Completed",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "BUY",
+     "party": "SA5-BTR",
+     "newId": null,
+     "date": "2026-10-15",
+     "qty": 25,
+     "total": 1400,
+     "delivery": 0,
+     "freight": 50,
+     "cash": 1400,
+     "kg": 25,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "collected",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "b1f93a6844456a3a14c23ae802a55c54739330b87a225a8f2dec150b4fe6f517"
+   },
+   "decidedAt": "2026-10-16T12:18:24.158Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
