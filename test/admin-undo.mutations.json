@@ -83,5 +83,9 @@
   { "name": "a row on a trip takes the order's delivery away", "file": "engine/stages.mjs", "find": "const delivery = row.trip ? +(+(o.delivery || 0)).toFixed(2) : +(+(row.delivery || 0)).toFixed(2);", "replace": "const delivery = +(+(row.delivery || 0)).toFixed(2);" },
   { "name": "the size is held only to what the order holds out", "file": "engine/stages.mjs", "find": "if (qty < Math.max(+o.moved || 0, +moved || 0) - 0.0004) return null;", "replace": "if (qty < (+o.moved || 0) - 0.0004) return null;" },
   { "name": "an order not agreed takes its row's figures", "file": "engine/stages.mjs", "find": "if (!o || !row || !AGREED_ON_SITE.includes(o.status)) return null;", "replace": "if (!o || !row) return null;" },
-  { "name": "a charge may sit on a collection", "file": "engine/stages.mjs", "find": "  if (delivery > 0.004 && o.mode !== \"deliver\") return null;\n  if (qty < Math.max", "replace": "  if (qty < Math.max" }
+  { "name": "a charge may sit on a collection", "file": "engine/stages.mjs", "find": "  if (delivery > 0.004 && o.mode !== \"deliver\") return null;\n  if (qty < Math.max", "replace": "  if (qty < Math.max" },
+  { "name": "a row past the site's bounds is restated", "file": "engine/stages.mjs", "find": " || qty > 1000000 || total > 1000000 || delivery > 1000000) return null;", "replace": ") return null;" },
+  { "name": "a closed order's size is restated", "file": "engine/stages.mjs", "find": "  if (o.closed && Math.abs(qty - +o.qty) > 0.0004) return null;", "replace": "" },
+  { "name": "a trip row's delivery is sent to one order", "file": "src/maker-inputs.js", "find": "      if (row.trip && \"delivery\" in f) return { error: \"This row's delivery is its trip's: change it by hand.\" };", "replace": "" },
+  { "name": "no context asked for reads as the site down", "file": "src/maker-inputs.js", "find": "const ctx = undoCtx || {}, order = ctx.order;", "replace": "const ctx = undoCtx || { siteError: true }, order = ctx.order;" }
 ]

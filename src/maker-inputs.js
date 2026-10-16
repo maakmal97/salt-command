@@ -890,13 +890,15 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
      as the order's Amend (restateOrder): the floor, the refund and the customer's page follow, as from the order card */
   const terms = ["qty", "total", "delivery"], fields = object(body.fields) ? Object.keys(body.fields) : [];
   if (sale && body.kind === "Correction" && body.undo === undefined && fields.some((k) => terms.includes(k))) {
-    const ctx = undoCtx || { siteError: true }, order = ctx.order;
+    const ctx = undoCtx || {}, order = ctx.order;   /* no context asked for: no site order to name */
     if (ctx.siteError) return { error: "The site's orders could not be read, so a change of units, price or delivery waits until they can be." };
     if (order && AGREED_ON_SITE.includes(order.status)) {
       if (fields.some((k) => !terms.includes(k)))
         return { error: "This row is a customer's order: send its units, price or delivery on their own, so the order changes with the row." };
       const f = body.fields;
       if (f.qty === null || f.total === null) return { error: "A customer's order keeps a size and a price." };
+      /* a row on a trip carries the trip's one delivery, never its order's own: that is changed by hand */
+      if (row.trip && "delivery" in f) return { error: "This row's delivery is its trip's: change it by hand." };
       return { error: "This row is a customer's order, so its units, price or delivery change on the order and the row together.",
         restate: { order: order.id, qty: f.qty !== undefined ? +f.qty : +order.qty, total: f.total !== undefined ? +f.total : +order.total,
           delivery: f.delivery !== undefined ? +(f.delivery || 0) : +(order.delivery || 0) } };

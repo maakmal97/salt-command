@@ -49664,7 +49664,12 @@ await (async () => {
     const ofrT11 = await tellSite(denv), ofrQ11 = await orderOf(QA.o.id);
     db.prepare("UPDATE draft SET status='pending', decided_at=NULL WHERE id=?").run(ofrQD.id); reseed();
     const ofrT12 = await tellSite(denv), ofrQ12 = await orderOf(QA.o.id);
-    db.prepare("UPDATE draft SET status='approved', decided_at=? WHERE id=?").run(new Date().toISOString(), ofrQD.id);
+    /* marked committed before the re-seed has it: the mirror still holds the old row, and the amendment is still on its way */
+    db.prepare("UPDATE draft SET status='approved', decided_at=?, committed_at='2999-01-01T00:00:00.000Z' WHERE id=?").run(new Date().toISOString(), ofrQD.id);
+    reseed();
+    const ofrT15 = await tellSite(denv), ofrQ15 = await orderOf(QA.o.id);
+    db.prepare("UPDATE draft SET committed_at=NULL WHERE id=?").run(ofrQD.id);
+    ok(!ofrT15.failed && ofrQ15.total === 130, tag + ", an amendment marked committed before the mirror holds it is still on its way: " + J({ total: ofrQ15.total }));
     held.delete(ofrQD.id); fold();
     const ofrT13 = await tellSite(denv), ofrQ13 = await orderOf(QA.o.id);
     ok(!ofrT11.failed && ofrQ11.total === 130 && !ofrT12.failed && ofrQ12.total === 130 && !ofrT13.failed && ofrQ13.total === 130 && saleOf(QA.rid).total === 130,

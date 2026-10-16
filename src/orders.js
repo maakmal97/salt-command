@@ -1883,9 +1883,10 @@ async function followRows(env, orders, idx) {
   }
   return { followed, failed };
 }
-/* an Amendment of the order not on the book yet (drafted and undecided, approved and not folded, or his yes waiting to be drafted), or a close
+/* an Amendment of the order not on the book yet (drafted and undecided, approved and not on the mirror: marked committed before the re-seed reads
+   as on its way, as a close's landing does, or his yes waiting to be drafted), or a close
    or redate on its way: the order already says what the row will. A read that fails is read as on its way. */
-const AMEND_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' AND (status='pending' OR (status='approved' AND committed_at IS NULL)) LIMIT 1";
+const AMEND_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' AND (status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1";
 export async function termsInFlight(env, o) {
   if (await closeOnItsWay(env, o)) return true;
   try {

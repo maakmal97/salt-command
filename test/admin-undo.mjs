@@ -19,7 +19,7 @@ import { handleMaker } from "../stmt/maker.js";
 import { readBook as toolsBook } from "../tools/book.mjs";
 import { buildSeed } from "../tools/d1.mjs";
 import { readBook, draftRow, withRefunds } from "../src/drafter.js";
-import { makerAmendmentRoom } from "../src/maker-inputs.js";
+import { makerAmendmentRoom, makerLedgerAmendment } from "../src/maker-inputs.js";
 import { undoFixes } from "../src/orders.js";
 import { restateTap, termsFromRow } from "../engine/stages.mjs";
 import { applyAmend } from "../engine/apply.mjs";
@@ -239,6 +239,15 @@ export async function run({ ok, pageWork }) {
     "a Correction of an agreed site order's price is refused by the ledger's road and names the order's Amend; mixed with another field it is refused; "
       + "another field, or a row whose order is done, is drafted as before: " + J({ cut: cut.j, mixed: mixed.j.error, other: other.status, done: doneRow.status, made }));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); }
+  /* a trip row's delivery is the trip's, and a caller that asked for no site order is not told the site could not be read */
+  const tBook = await fT.mirror(), z3 = tBook.sales.find((s) => s.rid === "zu3");
+  const oT = ORDER("20261015000000-un3", zu3(), { status: "acknowledged" });
+  z3.trip = "t1791900000009";
+  const onTrip = makerLedgerAmendment({ at: "2026-10-16T06:00:05.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { delivery: 5 } }, tBook, { order: oT });
+  delete z3.trip;
+  const noCtx = makerLedgerAmendment({ at: "2026-10-16T06:00:06.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95 } }, tBook);
+  ok(/trip's/.test(onTrip.error || "") && !onTrip.restate && !/could not be read/.test(noCtx.error || ""),
+    "a delivery Correction on a trip row is refused, never sent to one order, and a caller that asked for no site order is not told the site was down: " + J([onTrip, noCtx.error || "ok"]));
   const fTDown = await fixture({ siteDown: true });
   const cutDown = await fTDown.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:04.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95 } });
   ok(cutDown.status === 400 && /could not be read/.test(cutDown.j.error || "") && !fTDown.drafts().some((d) => d.amends === "zu3"),
@@ -250,9 +259,11 @@ export async function run({ ok, pageWork }) {
     && termsFromRow({ ...ag, payments: [{ at: "x", amount: 5, claim: "waiting" }] }, rowT) === null
     && termsFromRow(ag, { ...rowT, delivery: 8 }) === null && J(termsFromRow({ ...ag, mode: "deliver" }, { ...rowT, delivery: 8 })) === J({ qty: 1, total: 100, delivery: 8 })
     && J(termsFromRow({ ...ag, mode: "deliver", delivery: 8 }, { ...rowT, trip: "t1", delivery: 0 })) === J({ qty: 1, total: 100, delivery: 8 })
-    && termsFromRow({ ...ag, moved: 0 }, { ...rowT, qty: 0.5 }, 1) === null,
+    && termsFromRow({ ...ag, moved: 0 }, { ...rowT, qty: 0.5 }, 1) === null
+    && termsFromRow(ag, { ...rowT, total: 2000000 }) === null
+    && termsFromRow({ ...ag, closed: { qty: 2, total: 220 } }, { ...rowT, qty: 2 }) === null && J(termsFromRow({ ...ag, closed: { qty: 2, total: 220 } }, rowT)) === J({ qty: 1, total: 100, delivery: 0 }),
   "an agreed order takes its row's size, goods and delivery; never when they agree, it is not agreed, a claim waits, a charge would sit on a collection "
-    + "or the size under what is out; a row on a trip leaves the order its delivery: " + J(termsFromRow(ag, rowT)));
+    + "or the size under what is out, past the site's bounds or a closed order's size; a row on a trip leaves the order its delivery: " + J(termsFromRow(ag, rowT)));
   const fBehind = await fixture({ orders: [ORDER("20261002000000-un2", zu2(), { status: "done", paid: 160, queued: { paid: 110, moved: 1 } })] });
   const fDown = await fixture({ siteDown: true });
   const fWait = await fixture({ orders: [ORDER("20261002000000-un2", zu2(), { status: "done", payments: [{ at: "2026-10-03T00:00:00.000Z", amount: 5, claim: "waiting" }] })] });

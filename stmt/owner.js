@@ -2370,7 +2370,7 @@ export const OWNER_JS = `
         var rs=error.detail&&error.detail.restate;
         if(!rs||!(/^[0-9]{14}-[a-z0-9]{1,8}$/).test(rs.order))throw error;
         await refs('/all/maker/orders/'+encodeURIComponent(rs.order)+'/restate',{rid:mintRid(),qty:rs.qty,total:rs.total,delivery:rs.delivery});
-        changes={};patchList.textContent='';editStatus.textContent='Sent as an amendment of their order, so the order and the row change together. Approve it under Approve.';
+        changes={};patchList.textContent='';editStatus.textContent='Sent as an amendment of their order, so the order and the row change together.';
         await loadMaker();
         return;
       }
