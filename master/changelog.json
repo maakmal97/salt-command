@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1134",
+  "d": "16 Oct 2026",
+  "t": "COUNTER ADMIN: A MINI LEDGER OF OPEN, PENDING AND THE LATEST 20 ORDERS",
+  "n": [
+   "<b>ORDERS > LEDGER IS THREE TABLES, IN ONE ORDER.</b> Open orders, Pending orders, then the latest 20 orders, across every book, each headed with its count and each in its own scrolling box so a phone never scrolls sideways. Every other part of Orders is shut while it shows. A row gives the order id, date, customer code, the book's mark, units, total, what is owed (with the goods out unpaid beside it), units handed over of units ordered, and the stage.",
+   "<b>THE ENGINE DECIDES, THE PAGE DRAWS.</b> The Desk reads its mirror of the folded book through the engine's own functions: the stage is txStat's order word (Open is every word that begins Open, Advance and Deferred included; Pending is Pending), owed is txOwed less txPaid, goods out unpaid is txAdvance, handed over is txEffDeliv. Newest first by date, then order id (a higher number is newer), a row with no date last. A cancelled or written-off order owes nothing. No rule of status or price is written a second time.",
+   "<b>THE FOLDED BOOK ONLY.</b> A site order the Counter holds but the fold has not yet put on the book is under Placed, not in the ledger. New route: GET /all/maker/ledger, owner only, over the private bridge to the Desk's /_internal/maker/ledger, read only. Nothing is written, queued or priced; no name or place is sent."
+  ]
+ },
+ {
   "v": "v1133",
   "d": "16 Oct 2026",
   "t": "COUNTER ADMIN ORDER CARD: ONE AMOUNT, CHANGE THE ORDER UNDER THE HEAD, ONE UNITS BUTTON",
