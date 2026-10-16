@@ -1,0 +1,80 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-16T10:02:03.819Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s263",
+    "qty": 0.5,
+    "total": 65,
+    "cash": 0,
+    "date": "2026-10-14",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "deliveredQty",
+      "from": 0,
+      "to": 0.5
+     },
+     {
+      "field": "deliveredOn",
+      "from": null,
+      "to": "2026-10-16"
+     },
+     {
+      "field": "handover",
+      "from": null,
+      "to": "collected"
+     }
+    ],
+    "customer": "CR3-DAM"
+   },
+   "reasoning": "Correction against CR3-DAM's order of 0.5 unit for RM 65 dated 2026-10-14 (s263). Sets deliveredQty from 0 to 0.5, deliveredOn from unset to 2026-10-16, handover from unset to collected. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [
+    "This row carries a trail of 2 steps. Setting the figure directly does not rewrite them, so the trail will no longer add up to it; the correction is recorded beside them saying so.",
+    "CR3-DAM typically pays about RM 80/unit for salt across 20 orders; this one is RM 130, 62.5% above that.",
+    "This is an ADVANCE: 0.5 unit goes out with RM 65 unpaid. Check it against CR3-DAM's credit cap."
+   ],
+   "amends": "s263",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-16T10:02:03.819Z",
+    "type": "SELL",
+    "party": "CR3-DAM",
+    "qty": 0.5,
+    "total": 0,
+    "status": "Handover",
+    "raw": "0.5 unit collected to CR3-DAM, order 20261014042727-eedaja, on 2026-10-16",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CR3-DAM",
+     "rid": null,
+     "orderKey": "CR3-DAM|2026-10-14|65",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-16",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "deliveredQty": 0.5,
+      "deliveredOn": "2026-10-16",
+      "handover": "collected"
+     },
+     "note": "0.5 unit collected for order 20261014042727-eedaja."
+    },
+    "orderId": "20261014042727-eedaja"
+   },
+   "decidedAt": "2026-10-16T10:02:07.714Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
