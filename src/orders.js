@@ -1224,11 +1224,12 @@ export async function againOf(db, ids) {
     const want = new Set(ids);
     hit = [...new Set((rs.results || []).map((r) => { try { return JSON.parse(r.entry).orderId; } catch (e) { return null; } }).filter((x) => x && want.has(x)))];
   } catch (e) { return out; }
-  for (const id of hit) {
+  /* each order's drafts are their own question of the store: asked together, the stages of one still in their own order */
+  await Promise.all(hit.map(async (id) => {
     let all = [];
-    try { all = await draftsOfOrders(db, [id]); } catch (e) { continue; }
+    try { all = await draftsOfOrders(db, [id]); } catch (e) { return; }
     for (const st of Object.keys(STATUS_OF_STAGE)) if (rejectedByHim(all.find((r) => ofStage(r, st)))) (out[id] = out[id] || []).push(st);
-  }
+  }));
   return out;
 }
 /** What Not needed may cover on an order: { whole, stages }. Whole when his ack was rejected and no draft on the order is approved (no row on the book). */

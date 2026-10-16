@@ -53464,5 +53464,10 @@ await (async () => {
   ok(fromState.state.loans.length === 1 && fromState.state.loans[0].rid === "l009", "a state.loans that arrived from the state table wins over the entry rows");
 })();
 
+section("Desk speed: GET /orders and GET /drafts ask their reads together, and the answers are what they were (16 Oct 2026)");
+await (async () => {
+  await (await import("./desk-parallel-reads.mjs")).run({ ok });
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
