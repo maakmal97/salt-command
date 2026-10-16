@@ -14,21 +14,22 @@ ul,ol{margin:6px 0;padding-left:20px}li{margin:3px 0}code{font-size:.9em}a{color
 th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}thead th{background:var(--or);color:#2b0e00;font-size:.8rem}
 pre{background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:.85rem;line-height:1.35}
 </style><main>
-<h1>Counter Admin plans <span>15 Oct 2026</span></h1>
-<p class=dim>Draft 1, for your yes on each. Nothing here is built. Five plans, each one version of its own, in the order recommended below. Fable reviewed plan 4; plans 2, 3 and 4 get Fable on the money parts before they land.</p>
+<h1>Counter Admin plans <span>16 Oct 2026</span></h1>
+<p class=dim>All five plans are built, each one version of its own, in the order below. Fable reviewed plan 4. What is left is the site basket of plan 3, later by his answer.</p>
 
-<div class=hero><b>Build order, recommended</b>
-<div class=tw><table><thead><tr><th>#<th>Plan<th>Why this place<th>Estimate</tr></thead><tbody>
-<tr><td>1<td><a href="#needs">Needs you that tells the truth</a><td>Today it can say "Nothing needs you" while it cannot read; small and urgent<td>1 session</tr>
-<tr><td>2<td><a href="#approve">The approve card, for a person</a><td>Every other plan lands its taps here; one card per order is the base for 3 and 4<td>1 session</tr>
-<tr><td>3<td><a href="#multi">Orders across several books</a><td>Builds on one card per order; the CS6-PER case<td>1 to 2 sessions (Admin), 2 to 3 (site basket)</tr>
-<tr><td>4<td><a href="#revert">Easy revert</a><td>Its Undo shows on the approve card and per line of a trip<td>2 to 3 sessions</tr>
-<tr><td>5<td><a href="#card">Order card, the rest of Fable's list</a><td>Polish once the card's shape is settled<td>1 session</tr>
+<div class=hero><b>Build order, as built</b>
+<div class=tw><table><thead><tr><th>#<th>Plan<th>Why this place<th>Live</tr></thead><tbody>
+<tr><td>1<td><a href="#needs">Needs you that tells the truth</a><td>Today it can say "Nothing needs you" while it cannot read; small and urgent<td>v1123</tr>
+<tr><td>2<td><a href="#approve">The approve card, for a person</a><td>Every other plan lands its taps here; one card per order is the base for 3 and 4<td>v1125</tr>
+<tr><td>3<td><a href="#multi">Orders across several books</a><td>Builds on one card per order; the CS6-PER case<td>v1130, the Admin card; the site basket later</tr>
+<tr><td>4<td><a href="#revert">Easy revert</a><td>Its Undo shows on the approve card and per line of a trip<td>v1131 (#185), newest move only, banner to the customer</tr>
+<tr><td>5<td><a href="#card">Order card, the rest of Fable's list</a><td>Polish once the card's shape is settled<td>v1133</tr>
 </tbody></table></div>
-<p class=dim>Estimates are estimates. One version per plan, one commit per part.</p></div>
+<p class=dim>One version per plan, one commit per part.</p></div>
 
 <!-- 1 -->
 <h2 id=needs>1. Needs you that tells the truth</h2>
+<div class="f l"><b>Live in v1123.</b></div>
 <p class=dim>Prompted 15 Oct 2026: the page read "Nothing needs you. Not read: orders and rows." One malformed queue key (mine, from the laptop) blanked the whole read; fixed the same evening.</p>
 <h3>What changes</h3>
 <div class=f><ol>
@@ -43,6 +44,7 @@ pre{background:var(--pane);border:1px solid var(--line);border-radius:12px;paddi
 
 <!-- 2 -->
 <h2 id=approve>2. The approve card, for a person</h2>
+<div class="f l"><b>Live in v1125.</b></div>
 <p class=dim>Prompted 15 Oct 2026 by the s267 card: "no code" in its head, the order not the change, two flags in capitals, a paragraph for a developer.</p>
 <h3>What you would see</h3>
 <pre>s267 · CS6-BS-R · salt                  from laptop, 20:48
@@ -70,6 +72,7 @@ Handed over   2 of 2   2 of 2
 
 <!-- 3 -->
 <h2 id=multi>3. Orders across several books</h2>
+<div class="f l"><b>Live in v1130: the Admin card.</b> His answer: the Admin card first, the basket on the customer's site later. Not built yet: that basket.</div>
 <p class=dim>Prompted 15 Oct 2026: CS6-PER's salt, oil and rice of 14 Oct (s264 to s266) were three cards, each handed over and paid on its own; the rows carry no trip.</p>
 <h3>Today</h3>
 <div class="f m"><ul>
@@ -91,7 +94,7 @@ Handed over   2 of 2   2 of 2
 <!-- 4 -->
 <h2 id=revert>4. Easy revert</h2>
 <p class=dim>Prompted 15 Oct 2026: s267's RM220 cash booked by mistake. Today an undo is Record, Correction, pick the row, pick each field, type its old value. Reviewed by Fable the same day.</p>
-<div class="f l"><b>His answers, 16 Oct 2026</b>: the newest move only; an undo on a site order is told to the customer by a banner (Order corrected). Built as one version on those answers: History on an agreed order's card, on each line of an order of several books and on Correct a row; an undo lands under Approve as one card.</div>
+<div class="f l"><b>Live in v1131 (#185).</b> His answers of 16 Oct 2026: the newest move only; an undo on a site order is told to the customer by a banner (Order corrected). History on an agreed order's card, on each line of an order of several books and on Correct a row; an undo lands under Approve as one card.</div>
 <h3>What you would see</h3>
 <div class=f><ul>
 <li>On every order card a <b>History</b>: each booked move, newest first ("RM220 cash, 15 Oct", "2 units collected, 15 Oct").</li>
@@ -119,20 +122,14 @@ Handed over   2 of 2   2 of 2
 <!-- 5 -->
 <h2 id=card>5. Order card, the rest of Fable's list</h2>
 <p class=dim>Left over from v1117 (live 15 Oct 2026), which put progress in the head and Money received in one block.</p>
+<div class="f l"><b>Live in v1133.</b></div>
 <div class=f><ul>
-<li><b>Bank and Cash as two tiles over one field</b>, in place of two fields.</li>
-<li><b>Change the order</b> under the head (units, price, delivery), in place of deep in Record.</li>
-<li><b>The units field's two buttons</b> made one.</li></ul></div>
+<li><b>Bank and Cash as two tiles over one amount</b>, in place of two fields. Cash on a Ready order only, neither tile chosen until you choose; an agreed order has Bank alone. Each tap sends what its old button sent, so the room on the row and the fold's check read it as before.</li>
+<li><b>Change the order</b> under the head (units, price, delivery), above the money; the same Sheet and the same change for approval.</li>
+<li><b>The units field's two buttons</b> made one: at the units ordered it is Handed over; fewer show More to come (chosen) and That is all, which turns it into Finish at n of the size, asked on the Sheet.</li></ul></div>
 
-<h2 style="background:var(--or);color:#2b0e00">For your answers</h2>
-<div class="f m"><ol>
-<li>Build in the order above?</li>
-<li>Plan 3: Admin card first and the site basket later (recommended), or together? One payment always split oldest first, or would you pick the lines?</li>
-<li>Plan 4: newest move only (recommended), or any move? An undo on a site order: tell the customer by a banner, or only change their page?</li></ol></div>
-
-<h2 style="background:var(--mi);color:#04281d">Done on 15 Oct 2026, for the record</h2>
+<h2 style="background:var(--mi);color:#04281d">Record</h2>
 <div class="f l"><ul>
-<li>Queued from the laptop and drafted, waiting under Approve: s267 RM220 cash taken back (collected stays); s265 RM116 and s266 RM110 cash from CS6-PER; s262 total RM575 to RM540, 6.25 units collected, RM540 cash.</li>
-<li>Oil restock date set to 16 Oct 2026.</li>
-<li>v1117 (order card) and the Needs you test fix are live.</li></ul></div>
+<li>15 Oct 2026: s267, s265, s266 and s262 queued from the laptop and approved; oil's restock date set to 16 Oct; v1117 and the Needs you test fix live.</li>
+<li>16 Oct 2026: his answers, plan 3 the Admin card first and the basket later, plan 4 the newest move only with a banner. Plans 1 to 5 live in v1123, v1125, v1130, v1131 and v1133.</li></ul></div>
 </main></html>
