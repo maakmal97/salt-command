@@ -48,6 +48,9 @@ const JSON_HEADERS = {
 
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: JSON_HEADERS });
+/* A read that may fail alone: null for a store that lacks the table or column, so a route can ask several reads together
+   and let each answer or fail on its own (16 Oct 2026, the desk's speed folds). */
+const soft = (read) => (async () => read())().catch(() => null);
 const vaultWriteResponse = async (env, action) => {
   const result = await withVaultWrite(env, action);
   return result instanceof Response ? result : json(result, result.status || 503);
@@ -1847,24 +1850,39 @@ async function handleDraftsGet(env, url) {
   if (uncommitted) where.push("committed_at IS NULL");
   if (where.length) sql += " WHERE " + where.join(" AND ");
   sql += " ORDER BY drafted_at";
-  const rs = await env.SALT_LEDGER.prepare(sql).bind(...binds).all();
+  const db = env.SALT_LEDGER, extras = want === "pending" && !uncommitted;
+  /* ONE ROUND OF QUESTIONS, NOT FOUR (16 Oct 2026). The rows, the live yes, the refused list and the clock do not depend on one
+     another, so they go to the store together and each still answers or fails alone: a store before migrations/0011, the `refused`
+     table or the clock column marks nothing, lists none or says no clock, and the drafts still answer. */
+  const [rs, pr, rr, last] = await Promise.all([
+    db.prepare(sql).bind(...binds).all(),
+    soft(() => db.prepare("SELECT draft_id,stage,shown,at FROM preapproval WHERE status='differs' AND draft_id IS NOT NULL").all()),
+    extras ? soft(() => db.prepare("SELECT id,entry,why,party,source,seen_at FROM refused ORDER BY id").all()) : null,
+    /* v519: THE CLOCK RIDES ALONG. The last committed draft's three timestamps, so the Approve view can say how long the last tap
+       took to reach the phone without a second round trip and without reading every approved row there has ever been: one entry
+       of `draft_committed` (migrations/0012), where it read and sorted the whole table before. Pending view only. */
+    extras ? soft(() => db.prepare("SELECT id,party,decided_at,live_at,committed_at FROM draft WHERE committed_at IS NOT NULL ORDER BY committed_at DESC LIMIT 1").first()) : null
+  ]);
   const drafts = (rs.results || []).map(draftOut);
   /* S11 (D6): A ROW THAT DIFFERS FROM WHAT HE SAID YES TO waits here marked, with what he was shown beside it */
-  try {
-    const pr = await env.SALT_LEDGER.prepare("SELECT draft_id,stage,shown,at FROM preapproval WHERE status='differs' AND draft_id IS NOT NULL").all();
+  if (pr) {
     const by = new Map((pr.results || []).map((r) => [r.draft_id, r]));
     for (const d of drafts) {
       const p = d.status === "pending" && by.get(d.id);
       if (p) { let shown = null; try { shown = JSON.parse(p.shown); } catch (e) { shown = null; }
         d.preapproval = { state: "differs", says: "differs from what you saw", stage: p.stage, at: p.at, shown }; }
     }
-  } catch (e) { /* a store before migrations/0011 marks nothing */ }
+  }   /* a store before migrations/0011 marks nothing */
   /* PLAN 2 (16 Oct 2026): NOW AND AFTER, the engine's figures for each pending sale, so the approve card reads them and computes
-     nothing (src/approve-figures.js). Pending view only; a mirror that cannot be read leaves the drafts as they were. */
-  if (want === "pending" && !uncommitted && drafts.some((d) => d.status === "pending" && d.collection === "sales")) {
+     nothing (src/approve-figures.js). Pending view only; a mirror that cannot be read leaves the drafts as they were. The two reads
+     it needs, the approved amendments and the book, are asked together. */
+  if (extras && drafts.some((d) => d.status === "pending" && d.collection === "sales")) {
     try {
-      const wr = await env.SALT_LEDGER.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE status='approved' AND committed_at IS NULL AND collection='sales' AND amends IS NOT NULL ORDER BY id`).all();
-      approveFigures(await readBook(env.SALT_LEDGER), drafts, (wr.results || []).map(draftOut));
+      const [wr, book] = await Promise.all([
+        db.prepare(`SELECT ${DRAFT_COLS} FROM draft WHERE status='approved' AND committed_at IS NULL AND collection='sales' AND amends IS NOT NULL ORDER BY id`).all(),
+        readBook(db)
+      ]);
+      approveFigures(book, drafts, (wr.results || []).map(draftOut));
     } catch (e) { for (const d of drafts) delete d.figures; }
   }
 
@@ -1874,31 +1892,15 @@ async function handleDraftsGet(env, url) {
      a second round trip on a phone is a second chance to be offline. Only on the default
      pending view: asking for approved or rejected rows is a different question. */
   let refused = [];
-  if (want === "pending" && !uncommitted) {
-    try {
-      const rr = await env.SALT_LEDGER.prepare(
-        "SELECT id,entry,why,party,source,seen_at FROM refused ORDER BY id"
-      ).all();
-      refused = (rr.results || []).map((r) => {
-        let entry = null;
-        try { entry = JSON.parse(r.entry); } catch (e) { /* show the reason even if the entry is unreadable */ }
-        return { id: r.id, entry, why: r.why, party: r.party, source: r.source, seenAt: r.seen_at };
-      });
-    } catch (e) { /* an older store has no `refused` table; the drafts still answer */ }
+  if (rr) {   /* an older store has no `refused` table; the drafts still answer */
+    refused = (rr.results || []).map((r) => {
+      let entry = null;
+      try { entry = JSON.parse(r.entry); } catch (e) { /* show the reason even if the entry is unreadable */ }
+      return { id: r.id, entry, why: r.why, party: r.party, source: r.source, seenAt: r.seen_at };
+    });
   }
-  /* v519: THE CLOCK RIDES ALONG. The last committed draft's three timestamps, so the Approve
-     view can say how long the last tap took to reach the phone without a second round trip
-     and without reading every approved row there has ever been: one entry of `draft_committed`
-     (migrations/0012), where it read and sorted the whole table before. Pending view only. */
-  let clock = null;
-  if (want === "pending" && !uncommitted) {
-    try {
-      const c = await env.SALT_LEDGER.prepare(
-        "SELECT id,party,decided_at,live_at,committed_at FROM draft WHERE committed_at IS NOT NULL ORDER BY committed_at DESC LIMIT 1"
-      ).first();
-      if (c) clock = { id: c.id, party: c.party, decidedAt: c.decided_at, liveAt: c.live_at || null, committedAt: c.committed_at };
-    } catch (e) { /* a store without the column answers the drafts and no clock */ }
-  }
+  let clock = null;   /* a store without the column answers the drafts and no clock */
+  if (last) clock = { id: last.id, party: last.party, decidedAt: last.decided_at, liveAt: last.live_at || null, committedAt: last.committed_at };
   return json({ ok: true, count: drafts.length, drafts, refused, refusedCount: refused.length, clock });
 }
 
@@ -2596,25 +2598,34 @@ export default {
     }
     if (p === "/orders") {
       if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      /* THE SITE'S THREE READS GO TOGETHER (16 Oct 2026): orders, claims and threads are separate questions of the statements
+         site and none waits on another, so the page spends one trip's time, not three. */
+      const every = url.searchParams.get("all") === "1";
       /* S9 9.8: the page's own read carries the count of associate links waiting in Salt Account */
-      const r = await listOrders(env, url.searchParams.get("all") === "1", true);
+      const [r, c, t] = await Promise.all([listOrders(env, every, true), listClaims(env, every), listThreads(env)]);
       /* S6 6.6: and the claims against accounts beside them, each on a card of its own; a site that cannot say leaves none */
-      if (r.ok) { const c = await listClaims(env, url.searchParams.get("all") === "1"); r.claims = c.ok ? c.claims : []; if (!c.ok) r.claimsUnread = c.error; }
+      if (r.ok) { r.claims = c.ok ? c.claims : []; if (!c.ok) r.claimsUnread = c.error; }
       /* Step 7: and every account's thread, his Chat, each on a card of its own */
-      if (r.ok) { const t = await listThreads(env); r.threads = t.ok ? t.threads : []; if (!t.ok) r.threadsUnread = t.error; }
+      if (r.ok) { r.threads = t.ok ? t.threads : []; if (!t.ok) r.threadsUnread = t.error; }
       /* S11 11.13: and what each has to offer again, a row he rejected, read off the drafts; the desk's alone */
       if (r.ok && env.SALT_LEDGER) {
-        const again = await againOf(env.SALT_LEDGER, r.orders.map((o) => o.id));
+        const db = env.SALT_LEDGER;
+        /* the rejected rows and the live yes are two questions of the store: asked together; a store before migrations/0011 has no
+           yes to say, which is the null */
+        const [again, ys] = await Promise.all([
+          againOf(db, r.orders.map((o) => o.id)),
+          /* and whether his Accept is given and not yet spent: its row being drafted (`waiting`), or waiting under Approve
+             because it came out other than he saw (`differs`); the card then offers no second Accept.
+             Negotiate: an offer of his waiting on their answer, its row not yet queued, is `offer`: the card shows it open */
+          soft(() => db.prepare("SELECT order_id,status,(entry IS NULL AND json_extract(shown,'$.offer') IS NOT NULL) AS off FROM preapproval WHERE stage='ack' AND status IN ('waiting','differs')").all())
+        ]);
         for (const o of r.orders) if (again[o.id]) o.again = again[o.id];
-        for (const o of r.orders) if (again[o.id] && !again[o.id].includes("pay")) { try { if ((await dropMode(env.SALT_LEDGER, o.id)).whole) o.againWhole = true; } catch (e) { /* none */ } }
-        /* and whether his Accept is given and not yet spent: its row being drafted (`waiting`), or waiting under Approve
-           because it came out other than he saw (`differs`); the card then offers no second Accept */
-        try {
-          /* Negotiate: an offer of his waiting on their answer, its row not yet queued, is `offer`: the card shows it open */
-          const ys = await env.SALT_LEDGER.prepare("SELECT order_id,status,(entry IS NULL AND json_extract(shown,'$.offer') IS NOT NULL) AS off FROM preapproval WHERE stage='ack' AND status IN ('waiting','differs')").all();
+        await Promise.all(r.orders.filter((o) => again[o.id] && !again[o.id].includes("pay"))
+          .map(async (o) => { try { if ((await dropMode(db, o.id)).whole) o.againWhole = true; } catch (e) { /* none */ } }));
+        if (ys) {
           const yes = new Map((ys.results || []).map((y) => [y.order_id, y.off && y.status === "waiting" ? "offer" : y.status]));
           for (const o of r.orders) if (yes.has(o.id)) o.yes = yes.get(o.id);
-        } catch (e) { /* a store before migrations/0011 has no yes to say */ }
+        }
       }
       return json(r, r.ok ? 200 : 503);
     }
