@@ -1,0 +1,82 @@
+<!doctype html><html lang=en-GB><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Book DO board</title>
+<style>
+:root{--bg:#f4f3fb;--pane:#fff;--ink:#23232e;--dim:#5b5b6e;--line:#dedcef;--or:#ff6a2b;--vi:#6b5cff;--mi:#12b886;--ort:#b3410c;--mit:#0b7a58}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#292a36;--pane:#343543;--ink:#ececf4;--dim:#b9b9cc;--line:#4a4b5e;--ort:#ff9a6b;--mit:#5fe0b4}}
+:root[data-theme=dark]{--bg:#292a36;--pane:#343543;--ink:#ececf4;--dim:#b9b9cc;--line:#4a4b5e;--ort:#ff9a6b;--mit:#5fe0b4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}h1{font-size:1.6rem;margin:0 0 4px;line-height:1.2}h1 span{color:var(--ort)}
+h2{font-size:1.25rem;margin:36px 0 8px;padding:8px 12px;background:var(--vi);color:#fff;border-radius:12px}
+h3{font-size:1.05rem;margin:0 0 4px}p{margin:6px 0}.dim{color:var(--dim)}
+.hero{background:var(--pane);border:2px solid var(--vi);border-radius:16px;padding:14px 18px;margin:14px 0}
+.steps{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0;margin:10px 0 0}.steps li{padding:4px 10px;border-radius:999px;border:1px solid var(--line);font-size:.85rem}
+.steps .done{background:var(--mi);color:#00241a;border-color:var(--mi)}.steps .now{background:var(--or);color:#2b0e00;border-color:var(--or)}
+.f{background:var(--pane);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.f.done{border-left-color:var(--mi)}.f.now{border-left-color:var(--or)}.f.held{border-left-color:var(--vi)}
+.tag{font-size:.8rem;font-weight:600}.done .tag{color:var(--mit)}.now .tag{color:var(--ort)}
+ul,ol{margin:6px 0;padding-left:20px}li{margin:3px 0}code{font-size:.9em}
+.tw{overflow-x:auto;background:var(--pane);border-radius:12px;border:1px solid var(--line)}table{border-collapse:collapse;width:100%;min-width:520px;font-size:.9rem}
+th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}thead th{background:var(--or);color:#2b0e00;font-size:.8rem}
+</style><main>
+<h1>Moving the book into one Durable Object <span>16 Oct 2026</span></h1>
+<p class=dim>The board for the plan in <code>docs/plan-book-do.md</code> (draft 8). Codes only; no names.</p>
+
+<div class=hero><b>S0 is done. S1 is under way.</b> The fold's rules, the order-stage rules and the pricing sums now live in the shared engine. S1d-i (<code>applyEntry</code> beside the fold, #184) has landed; S1d-ii, the fold switched to it in event order, is next and is the only real behaviour change in S1.
+<ol class=steps aria-label=Steps><li class=done>S0 tests<li class=now>S1 rules<li>S2 shadow<li>S3 read<li>S4 tap<li>S5 record<li>S6 orders</ol>
+<p class=dim>1 of 8 steps done (S0b held by his choice). 34 to 52 sessions in all, estimate; the old plan was 46 to 66. Approvals that became versions: 7.6 a day, 53 of 69 versions, 08 to 14 Oct (git).</p></div>
+
+<h2>The short version</h2>
+<p>Every approval tapped becomes a whole release: the row is written into a file in GitHub, the app is rebuilt and redeployed, and the full suite runs. That happened 53 times in a week. It works, but it is slow and keeps the real ledger in a public repo.</p>
+<p>The plan moves the book into one database inside Cloudflare, so a tap books the row in about a second and a version goes back to meaning a change to the code. It is done in place, one small step at a time, and every step before the switch can be undone with a revert.</p>
+
+<h2>Aims</h2>
+<ul>
+<li>Tap Approve and every figure on the Desk and the Counter counts the row within about a second (S4).</li>
+<li>Nothing is rebuilt because something was approved; a version means a code change (S5).</li>
+<li>Tests check the code on a fixed copy of the book; live-data rules still run on the real one (S0, done).</li>
+<li>A nightly backup, and a daily export to git as the audit trail (S0b, S5).</li>
+<li>The fold's notes still written, just after the row (S5).</li>
+</ul>
+
+<h2>Step by step</h2>
+<div class="f done"><span class=tag>S0 · Done</span><h3>The tests stop reading the live book</h3><p>A frozen copy of the book; seven rules every valid book must obey still run on the live book. #176 (19f86cd3) and #177 (43fc5b0a), 14 Oct; tests only.</p></div>
+<div class="f now"><span class=tag>S1 · In progress</span><h3>One set of rules for everyone</h3><p>The fold's checks, the order-stage rules and the pricing sums move into one shared engine, so the Book can run exactly the same rules later. 8 to 12 sessions; Fable reviews each part.</p>
+<ol>
+<li><b>S1a-i</b>: row core moved (about 480 lines); 20 real folds replay identical; #178 (a8dfc999).</li>
+<li><b>S1a-ii</b>: the checks before booking (duplicates, payments, trips, Add ID first); #179 (f61c5504).</li>
+<li><b>S1b</b>: the order-stage rules; 392 steps replay identical; #180 (35ebb39e), v1126.</li>
+<li><b>S1c</b>: the pricing sums: rule tables #181 (v1127), costs and floors #182 (v1128), cards and drift #183 (fc2d8ea2, v1129).</li>
+<li><b>S1d-i</b>: <code>applyEntry</code> in <code>engine/apply.mjs</code> beside <code>applyInto</code>, no behaviour change; #184 (957eb986).</li>
+<li><b>S1d-ii, next</b>: <code>applyInto</code> becomes the fold of <code>applyEntry</code> in event order; the 02 Sep batch gives 10.5.</li>
+</ol></div>
+<div class="f held"><span class=tag>S0b · Held</span><h3>A nightly backup of D1's decisions</h3><p>Approvals, pre-approvals, refusals and the vault pair, encrypted to R2. The bucket and the job each need his yes. 1 session.</p></div>
+<div class=f><span class=tag>S2 · Later</span><h3>The Book as a shadow copy</h3><p>Refilled at every fold and checked against git on rows, stock, counts, notes and pricing. Nothing reads it yet. 4 to 6 sessions; way back: remove it.</p></div>
+<div class=f><span class=tag>S3 · Later</span><h3>Read from the Book</h3><p>First "on its way" becomes approved but not yet in the Book, so nothing counts twice; then the drafter and order code read it. 3 to 5 sessions; way back: switch to D1.</p></div>
+<div class=f><span class=tag>S4 · Later</span><h3>A tap books the row at once</h3><p>Every check runs, then the row books in the Book; the Book issues the row id and writes it back so the fold copies it. 6 to 9 sessions; way back: switch off.</p></div>
+<div class=f><span class=tag>S5 · Later</span><h3>The Book becomes the record</h3><p>After 7 days of agreement. The fold becomes a daily export to git; approvals stop being versions. 6 to 9 sessions; way back 60 to 90 min (estimate).</p></div>
+<div class=f><span class=tag>S6 · Later</span><h3>Orders and the book in step</h3><p>The Book hands order moves to the Counter's order book through an outbox. 3 to 5 sessions.</p></div>
+
+<h2>His decisions</h2>
+<div class=tw><table><thead><tr><th>Question<th>Where it stands</tr></thead><tbody>
+<tr><td>Build in place, or beside and swap?<td>Answered 14 Oct: in place, step by step</tr>
+<tr><td>What starts first?<td>Answered: S0 only; S1 on his go of 14 Oct</tr>
+<tr><td>Where does the backup go?<td>Answered: R2, encrypted, when S0b runs</tr>
+<tr><td>Is the book still in git after S5?<td>Answered: yes, a daily export</tr>
+<tr><td>S1d: count order, Add ID, trip, roll note<td>Answered 16 Oct: event order; booked order; one tap for the trip, all rows or none; one roll note per batch</tr>
+<tr><td>Which Worker holds the Book?<td>Before S2; recommended the Desk's</tr>
+<tr><td>Orders and book: two objects or one?<td>Before S3; recommended two, Fable agrees</tr>
+<tr><td>What does a version mean after S5?<td>Before S5; recommended code changes only</tr>
+<tr><td>Keep the fold's model-written notes?<td>Before S5; recommended keep them</tr>
+</tbody></table></div>
+
+<h2>What could go wrong, and what stops it</h2>
+<div class=tw><table><thead><tr><th>The worry<th>What stops it</tr></thead><tbody>
+<tr><td>A payment or lot counted twice, once in the Book and once as "on its way"<td>S3 redefines "on its way" before anything books</tr>
+<tr><td>Two places issuing row ids, which key every site order<td>Only the Book issues them; the fold copies</tr>
+<tr><td>The fold refusing a row the Book already booked<td>Every check runs at the tap first</tr>
+<tr><td>A floor lagging a new purchase, so a sale goes under cost<td>Pricing moves into the engine and reruns on each purchase</tr>
+<tr><td>A stock count between two sales giving different stock<td>Bookings one at a time, in order (S1d)</tr>
+<tr><td>Losing D1's approvals and names<td>The nightly backup (S0b)</tr>
+<tr><td>Frozen tests missing real bad data, like CI5-PER's missing locality<td>Seven rules keep running on the live book</tr>
+<tr><td>The engine booking half a batch, or sharing pieces with its input<td>All-or-nothing gate and a full copy (#178), re-checked by Fable</tr>
+</tbody></table></div>
+</main></html>
