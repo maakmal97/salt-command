@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1132",
+  "d": "16 Oct 2026",
+  "t": "CORRECTION ON S263: 0.5 UNIT OF SALT COLLECTED BY CR3-DAM",
+  "n": [
+   "<b>ONE CORRECTION FOLDED, PRE-APPROVED BY COUNTER ADMIN.</b> It records that CR3-DAM collected the 0.5 unit of s263 (RM65, dated 14 Oct) on 16 Oct 2026, setting deliveredQty to 0.5, deliveredOn to 16 Oct and handover to collected. No cash comes in and no total changes. The row is patched by the fold, not rewritten, so its 2 trail steps stay as they were.",
+   "<b>UNUSUAL: AN ADVANCE AT A HIGH RATE.</b> The 0.5 unit leaves with RM65 unpaid, and RM130 a unit is well above CR3-DAM's median of RM80. The dossier gives no credit cap for this party, so that flag stays open. The inventory rolls the shelf down by 0.5 unit and its cost basis does not move."
+  ]
+ },
+ {
   "v": "v1131",
   "d": "16 Oct 2026",
   "t": "COUNTER ADMIN: EASY REVERT, UNDO THE NEWEST MOVE ON AN ORDER",
