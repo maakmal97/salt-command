@@ -1,0 +1,137 @@
+<!doctype html><html lang=en-GB><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Counter Admin plans</title>
+<style>
+:root{--bg:#f4f3fb;--pane:#fff;--ink:#23232e;--dim:#5b5b6e;--line:#dedcef;--or:#ff6a2b;--vi:#6b5cff;--mi:#12b886;--ort:#b3410c}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#292a36;--pane:#343543;--ink:#ececf4;--dim:#b9b9cc;--line:#4a4b5e;--ort:#ff9a6b}}
+:root[data-theme=dark]{--bg:#292a36;--pane:#343543;--ink:#ececf4;--dim:#b9b9cc;--line:#4a4b5e;--ort:#ff9a6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}h1{font-size:1.6rem;margin:0 0 4px;line-height:1.2}h1 span{color:var(--ort)}
+h2{font-size:1.25rem;margin:40px 0 8px;padding:8px 12px;background:var(--vi);color:#fff;border-radius:12px}
+h3{font-size:1.05rem;margin:20px 0 8px;padding-left:10px;border-left:6px solid var(--or)}p{margin:6px 0}.dim{color:var(--dim)}
+.hero{background:var(--pane);border:2px solid var(--vi);border-radius:16px;padding:14px 18px;margin:14px 0}
+.f{background:var(--pane);border:1px solid var(--line);border-left:6px solid var(--or);border-radius:12px;padding:12px 14px;margin:10px 0}.f.m{border-left-color:var(--vi)}.f.l{border-left-color:var(--mi)}
+ul,ol{margin:6px 0;padding-left:20px}li{margin:3px 0}code{font-size:.9em}a{color:var(--vi)}
+.tw{overflow-x:auto;background:var(--pane);border-radius:12px;border:1px solid var(--line)}table{border-collapse:collapse;width:100%;min-width:560px;font-size:.9rem}
+th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}thead th{background:var(--or);color:#2b0e00;font-size:.8rem}
+pre{background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:12px;overflow-x:auto;font-size:.85rem;line-height:1.35}
+</style><main>
+<h1>Counter Admin plans <span>15 Oct 2026</span></h1>
+<p class=dim>Draft 1, for your yes on each. Nothing here is built. Five plans, each one version of its own, in the order recommended below. Fable reviewed plan 4; plans 2, 3 and 4 get Fable on the money parts before they land.</p>
+
+<div class=hero><b>Build order, recommended</b>
+<div class=tw><table><thead><tr><th>#<th>Plan<th>Why this place<th>Estimate</tr></thead><tbody>
+<tr><td>1<td><a href="#needs">Needs you that tells the truth</a><td>Today it can say "Nothing needs you" while it cannot read; small and urgent<td>1 session</tr>
+<tr><td>2<td><a href="#approve">The approve card, for a person</a><td>Every other plan lands its taps here; one card per order is the base for 3 and 4<td>1 session</tr>
+<tr><td>3<td><a href="#multi">Orders across several books</a><td>Builds on one card per order; the CS6-PER case<td>1 to 2 sessions (Admin), 2 to 3 (site basket)</tr>
+<tr><td>4<td><a href="#revert">Easy revert</a><td>Its Undo shows on the approve card and per line of a trip<td>2 to 3 sessions</tr>
+<tr><td>5<td><a href="#card">Order card, the rest of Fable's list</a><td>Polish once the card's shape is settled<td>1 session</tr>
+</tbody></table></div>
+<p class=dim>Estimates are estimates. One version per plan, one commit per part.</p></div>
+
+<!-- 1 -->
+<h2 id=needs>1. Needs you that tells the truth</h2>
+<p class=dim>Prompted 15 Oct 2026: the page read "Nothing needs you. Not read: orders and rows." One malformed queue key (mine, from the laptop) blanked the whole read; fixed the same evening.</p>
+<h3>What changes</h3>
+<div class=f><ol>
+<li><b>A failed read leads the page</b>: "Couldn't read orders and rows. Retry", in place of the all-clear. "Nothing needs you" shows only when every read succeeded.</li>
+<li><b>One bad entry never blanks the rest.</b> The Desk's queue review skips a malformed device key, names it, and returns everything else. Today one key throws for all.</li>
+<li><b>Money owed as Soon cards</b>: each customer past term, oldest first, the amount and a Record payment button. On 15 Oct that would have shown CN3-WM MYR 255 (over the ceiling), CJ4-BJ MYR 100 and CS6-PER.</li>
+<li><b>Goods owed as Soon cards</b>: paid but not handed over (CM4-TO 5.5 units, CE4-CHE 1.5), with Handover.</li>
+<li><b>The Desk card names its items</b>, or goes: "The Desk shows 4" says nothing you can act on.</li></ol></div>
+<h3>Guard</h3>
+<div class="f m"><ul><li>Cards read figures the Desk already serves (<code>txAdvance</code>, the open orders); nothing new is computed on the Counter.</li>
+<li>The suite drives a failed read and a malformed key and proves both red.</li></ul></div>
+
+<!-- 2 -->
+<h2 id=approve>2. The approve card, for a person</h2>
+<p class=dim>Prompted 15 Oct 2026 by the s267 card: "no code" in its head, the order not the change, two flags in capitals, a paragraph for a developer.</p>
+<h3>What you would see</h3>
+<pre>s267 · CS6-BS-R · salt                  from laptop, 20:48
+Take back a payment
+
+              Now      After
+Paid          RM220    RM0
+Owed          RM0      RM220
+Handed over   2 of 2   2 of 2
+
+!  CS6-BS-R will owe RM220 (under the RM250 ceiling).
+
+[ Approve: s267 owes RM220 ]     Reject     Details</pre>
+<div class=f><ol>
+<li><b>Head</b>: order, customer, book, and where the entry came from (phone, Admin, laptop) with its time. Fixes "no code".</li>
+<li><b>One plain verb</b>: Take back a payment, Payment received, Handover, Change the price, Close the order. No Correction or Fulfilment.</li>
+<li><b>Now and After</b>: Paid, Owed, Handed over; only what changes is marked.</li>
+<li><b>Two flags at most, in sentence case</b>, and only ones that ask a decision: over the ceiling, under the floor, a refund opens, stock below zero. Bookkeeping flags move under Details.</li>
+<li><b>One card per order</b>: drafts on the same row, or the same trip, merge into one card and one Approve, applied in their order. s262's two drafts read "Close the order: RM540, collected, paid cash".</li>
+<li><b>The button says the result</b>: "Approve: s262 closed".</li>
+<li><b>Details</b> keeps the drafter's full note, every flag and the row id.</li></ol></div>
+<h3>Guard</h3>
+<div class="f m"><ul><li>The drafter and the fold do not change; what one approval does is unchanged.</li>
+<li>The merged Approve sends each draft's own approval in order and stops at the first refusal, saying which; a half-approved order is shown as such. Fable reviews this part.</li></ul></div>
+
+<!-- 3 -->
+<h2 id=multi>3. Orders across several books</h2>
+<p class=dim>Prompted 15 Oct 2026: CS6-PER's salt, oil and rice of 14 Oct (s264 to s266) were three cards, each handed over and paid on its own; the rows carry no trip.</p>
+<h3>Today</h3>
+<div class="f m"><ul>
+<li>The book ties a buyer's rows of one day by <code>trip</code>: one delivery on one row, one tap approves the trip. Counter Admin's trade form makes them.</li>
+<li>The order card, Handover and cash are per row; nothing shows the rows belong together. A customer on the site orders one book at a time.</li></ul></div>
+<h3>What you would see</h3>
+<div class=f><ol>
+<li><b>One card for a trip</b>: owed, paid and handed across every line, then one line per book (mark, units, total, handed).</li>
+<li><b>Handover all</b>, with a per-line field for a part handover; one handover per row, approved as one card (plan 2).</li>
+<li><b>One payment</b> split across the lines oldest first by the engine's <code>claimAlloc</code>, shown before it is sent.</li>
+<li><b>"These are one order"</b> on a buyer's same-day rows with no trip: sets the trip, a Correction each.</li>
+<li><b>On the customer's site</b>, later: a basket of several books placed as one order, arriving as one trip.</li></ol></div>
+<h3>Guard</h3>
+<div class="f m"><ul>
+<li>Each row's share passes <code>rowRoom</code> and the fold's <code>payFault</code>; one refused share refuses the batch.</li>
+<li>Salt keeps the drift, the other books their fixed boards; nothing reprices a line. One delivery stays on one row (<code>tripFault</code>).</li>
+<li>A book short of stock holds only its own line.</li></ul></div>
+
+<!-- 4 -->
+<h2 id=revert>4. Easy revert</h2>
+<p class=dim>Prompted 15 Oct 2026: s267's RM220 cash booked by mistake. Today an undo is Record, Correction, pick the row, pick each field, type its old value. Reviewed by Fable the same day.</p>
+<h3>What you would see</h3>
+<div class=f><ul>
+<li>On every order card a <b>History</b>: each booked move, newest first ("RM220 cash, 15 Oct", "2 units collected, 15 Oct").</li>
+<li><b>Undo</b> on the newest move only, of any kind, so undos peel back in order. It opens Now and After and one button, and lands under Approve as one card.</li>
+<li>Cash and bank moves only; a payment in kind (offset, reward) stays a hand fold.</li></ul></div>
+<h3>What each undo sets</h3>
+<div class="f m"><ul>
+<li><b>A payment</b>: cash less that payment; paidOn cleared if what remains is below what is owed.</li>
+<li><b>A handover</b>: deliveredQty less those units; deliveredOn and handover cleared at zero.</li>
+<li><b>A restatement</b>: the figures it replaced, from its own record on the row.</li></ul></div>
+<h3>Guard, from Fable's review</h3>
+<div class=f><ol>
+<li><b>Money on its way.</b> The undo sets an absolute figure, and today's checks only measure money going up, so no undo while anything is on its way to the row, as Cancellation already does.</li>
+<li><b>A site order's page.</b> Reuse the order book's existing <code>fix</code> event (<code>unpay</code>, <code>unmove</code>) and remove the payment line, or the next reconcile books it again.</li>
+<li><b>Refunds</b> are never closed by an undo; one it would strand is said on the sheet.</li>
+<li><b>Restatements on a site order</b> go through <code>restateOrder</code>, never a plain Correction, or the order loses its row.</li>
+<li><b>Late-payer drift</b> reads the row's trail; the undo marks its step undone so the drift ignores it.</li>
+<li><b>Stock</b>: an undone handover after a count is flagged. <b>Price</b>: never written.</li></ol></div>
+<h3>How it would land</h3>
+<div class="f l"><ol><li>Engine: <code>undoOf(row, move)</code>, called by the drafter and the sheet alike.</li>
+<li>Counter Admin: History and the Undo sheet, through <code>/all/maker/inputs/ledger-amend</code>.</li>
+<li>Site orders: the <code>fix</code> event wired to it.</li>
+<li>Tests: each kind proved red; s267 as the fixture.</li></ol></div>
+
+<!-- 5 -->
+<h2 id=card>5. Order card, the rest of Fable's list</h2>
+<p class=dim>Left over from v1117 (live 15 Oct 2026), which put progress in the head and Money received in one block.</p>
+<div class=f><ul>
+<li><b>Bank and Cash as two tiles over one field</b>, in place of two fields.</li>
+<li><b>Change the order</b> under the head (units, price, delivery), in place of deep in Record.</li>
+<li><b>The units field's two buttons</b> made one.</li></ul></div>
+
+<h2 style="background:var(--or);color:#2b0e00">For your answers</h2>
+<div class="f m"><ol>
+<li>Build in the order above?</li>
+<li>Plan 3: Admin card first and the site basket later (recommended), or together? One payment always split oldest first, or would you pick the lines?</li>
+<li>Plan 4: newest move only (recommended), or any move? An undo on a site order: tell the customer by a banner, or only change their page?</li></ol></div>
+
+<h2 style="background:var(--mi);color:#04281d">Done on 15 Oct 2026, for the record</h2>
+<div class="f l"><ul>
+<li>Queued from the laptop and drafted, waiting under Approve: s267 RM220 cash taken back (collected stays); s265 RM116 and s266 RM110 cash from CS6-PER; s262 total RM575 to RM540, 6.25 units collected, RM540 cash.</li>
+<li>Oil restock date set to 16 Oct 2026.</li>
+<li>v1117 (order card) and the Needs you test fix are live.</li></ul></div>
+</main></html>
