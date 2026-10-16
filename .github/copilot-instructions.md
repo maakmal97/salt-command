@@ -6,9 +6,8 @@ from the owner's own standing rules, which live outside this repo; where they an
 project, and the owner's word in the conversation wins over both.
 
 ## Open work
-- Counter Admin plans: `docs/plans-counter-admin.html`. Plans 1 to 3 are live (v1123, v1125, v1130). Plan 4 (easy revert) and
-  plan 5 (the rest of the order card) are next, each on the owner's word. Plan 4's open questions: newest move only or any; a
-  customer banner or the page only.
+- Counter Admin plans: `docs/plans-counter-admin.html`. Plans 1 to 3 are live (v1123, v1125, v1130). Plan 4 (easy revert) is built
+  on its answers of 16 Oct 2026 (the newest move only; a customer banner); plan 5 (the rest of the order card) is next, on the owner's word.
 - The Book as a Durable Object: `docs/plan-book-do.md` (draft 8) and `docs/book-do-board.html`. S0 and S1a to S1d-i have landed;
   S1d-ii is next.
 

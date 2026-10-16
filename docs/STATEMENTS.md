@@ -2691,6 +2691,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `trip.pay` | An order of several books, once the split is read (key: the trip) | Sends the payment with the split he was shown; the Desk refuses it whole if the split moved or a share is past what its row can take. |
 | `trip.pay-amount` | An order of several books (key: the trip) | What they paid for the order, cash or bank, in RM. |
 | `trip.pay-split` | An order of several books (key: the trip) | Asks the Desk to split the payment oldest first, and shows the split. |
+| `undo.history` | An agreed order's card, each line of an order of several books, and Correct a row (key: order:<id>, line:<row> or row:<row>) | Reads the sale's History from the Desk, its booked moves newest first (plan 4). Once read, the newest move carries Undo, when nothing waits on the row: it asks on the page's Sheet, with Now and After, then sends the undo, a Correction naming the step, or a site order's own restate for a change of its terms. |
 | `unsent.open` | The banner over every place, while an entry waits unconfirmed on this phone | Goes to Record, on the part of the oldest such entry, where its Unsent entry section stands. |
 | `vault.cancel` | The one unlock's Sheet | Closes it and sends nothing; whatever was typed is cleared. |
 | `vault.close` | Same Sheet | Closes it, as Not now does. |
