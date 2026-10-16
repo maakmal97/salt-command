@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="843610c13be0dd00";
+var SALT_BUILD_ID="115d667a3cda798a";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10158,7 +10158,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1141","d":"16 Oct 2026","t":"TWO TRIP CORRECTIONS FOR CN3-WM, NO CASH OR STOCK MOVED","n":["<b>TWO CORRECTIONS FOLDED ON 16 OCT.</b> Orders s235 (salt) and s236 (rice) for CN3-WM each have their trip set from unset to t1792153122763. Both were decided by Counter Admin. Neither moves cash, quantity or total, so the corrections only change what each row says about itself.","<b>INVENTORY UNCHANGED.</b> Stock stays at 22.89 units. Both orders were already delivered on 5 Oct, and both remain unpaid, so CN3-WM's balance is untouched by this fold. The dossier does not state a credit cap for CN3-WM."]}];
+const evolution=[{"v":"v1142","d":"16 Oct 2026","t":"A CUSTOMER'S ORDER STATES WHAT ITS ROW STATES","n":["<b>THE RETURN LEG CARRIES A ROW'S FIGURES TO ITS ORDER.</b> A Correction of a row's size, goods or delivery reached the book alone, so the Counter's order kept its old figure (CR3-DAM's s263: RM65 on the book, RM80 on the order). An agreed order now takes its row's size, goods and delivery on the next pass, except while his own Amend or a close is still on its way to the row, or a payment they say they sent waits.","<b>A CORRECTION OF A SITE ORDER'S TERMS GOES AS THE ORDER'S AMEND.</b> Counter Admin's Correct a row sends a change of an agreed site order's units, price or delivery through the order's restate, so the floor, any refund and their page follow together; mixed with another field it is refused, and a trip row's delivery is changed by hand.","<b>A SETTLED ORDER IS NOT RESTATED.</b> An order already done keeps its figures on the Counter; a Correction of its row reaches the book alone, as before."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10302,7 +10302,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Oct 2026, 20:20 KL';
+const LAST_UPDATED='16 Oct 2026, 21:09 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

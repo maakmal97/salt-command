@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1142",
+  "d": "16 Oct 2026",
+  "t": "A CUSTOMER'S ORDER STATES WHAT ITS ROW STATES",
+  "n": [
+   "<b>THE RETURN LEG CARRIES A ROW'S FIGURES TO ITS ORDER.</b> A Correction of a row's size, goods or delivery reached the book alone, so the Counter's order kept its old figure (CR3-DAM's s263: RM65 on the book, RM80 on the order). An agreed order now takes its row's size, goods and delivery on the next pass, except while his own Amend or a close is still on its way to the row, or a payment they say they sent waits.",
+   "<b>A CORRECTION OF A SITE ORDER'S TERMS GOES AS THE ORDER'S AMEND.</b> Counter Admin's Correct a row sends a change of an agreed site order's units, price or delivery through the order's restate, so the floor, any refund and their page follow together; mixed with another field it is refused, and a trip row's delivery is changed by hand.",
+   "<b>A SETTLED ORDER IS NOT RESTATED.</b> An order already done keeps its figures on the Counter; a Correction of its row reaches the book alone, as before."
+  ]
+ },
+ {
   "v": "v1141",
   "d": "16 Oct 2026",
   "t": "TWO TRIP CORRECTIONS FOR CN3-WM, NO CASH OR STOCK MOVED",
