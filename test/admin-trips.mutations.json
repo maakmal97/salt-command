@@ -232,5 +232,23 @@
   "file": "stmt/owner.js",
   "find": "g.tripMoves=g.key.indexOf('moves:')===0&&tripMoveRows(g).length>1;",
   "replace": "g.tripMoves=false;"
+ },
+ {
+  "name": "an order of several books draws its marks in the line, not the tile column",
+  "file": "stmt/owner.js",
+  "find": "      g.lines.forEach(function(l){ tile.appendChild(bookMark(l.product)); });\n      b.appendChild(tile);\n",
+  "replace": "      g.lines.forEach(function(l){ what.appendChild(bookMark(l.product)); });\n"
+ },
+ {
+  "name": "the line over the list counts every stage's cards",
+  "file": "stmt/owner.js",
+  "find": "return ordEntries[k].parts==='orders.'+partNow; }).length;",
+  "replace": "return ordEntries[k].parts.indexOf('orders.')===0; }).length;"
+ },
+ {
+  "name": "the line over the list stays put when the stage changes",
+  "file": "stmt/owner.js",
+  "find": "    if(placeNow==='orders'&&moved2&&makerData) paintOrdStatus();\n",
+  "replace": ""
  }
 ]
