@@ -1269,11 +1269,15 @@ export function applyEvent(order, ev) {
     }
     done = settle(order, at);
   } else if (ev.kind === "handover") {
+    /* 17 Oct 2026 (Fable's review): a close at what is already out moves nothing, so the handover keeps its day and no handover is written */
+    const moves = !(ev.close && order.movedOn && Math.abs(+ev.units - (+order.moved || 0)) < 0.0004);
     order.moved = +ev.units.toFixed(3);
-    order.movedOn = klDay(at);
-    order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
+    if (moves) {
+      order.movedOn = klDay(at);
+      order.movedAt = at;   /* the moment, for the desk to stamp the Correction with (20 Sep 2026) */
+    }
     if (ev.mode) order.mode = ev.mode;
-    order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
+    if (moves) order.history.push({ at, status: order.status, by: "desk", note: order.moved + " unit " + (order.mode === "deliver" ? "delivered" : "collected") });
     if (ev.close) {   /* S11 11.9: the size and the goods' total restated at what went, the old ones kept */
       order.closed = { at, qty: order.qty, total: order.total };
       order.qty = order.moved; order.total = ev.total;

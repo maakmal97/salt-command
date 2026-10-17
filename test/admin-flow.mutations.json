@@ -30,5 +30,9 @@
 {"name": "order book: the book cancels goods already out", "file": "stmt/orders.js", "find": "if ((+order.moved || 0) > 0.0004) return { error: \"the goods are already out, so the book's cancellation", "replace": "if (false) return { error: \"the goods are already out, so the book's cancellation"},
 {"name": "order book: a write-off twice is a second event", "file": "stmt/orders.js", "find": "if ((e === \"writtenOff\") === !!order.writtenOff) return { none: true };", "replace": ""},
 {"name": "order book: the book's end waits on no claim", "file": "stmt/orders.js", "find": "    if (!ROWED.includes(order.status)) return { error: \"only an agreed order follows its row's end\", status: 409 };\n    if (claimWaits(order))", "replace": "    if (!ROWED.includes(order.status)) return { error: \"only an agreed order follows its row's end\", status: 409 };\n    if (false)"},
-{"name": "page: a written-off order stays at its stage", "file": "stmt/owner.js", "find": "    if(order.writtenOff) return 'orders.ended';", "replace": ""}
+{"name": "page: a written-off order stays at its stage", "file": "stmt/owner.js", "find": "    if(order.writtenOff) return 'orders.ended';", "replace": ""},
+{"name": "Fable 1: a close at what is out restamps the row's day", "file": "engine/stages.mjs", "find": "movedOn: still ? o.movedOn : klDate(at), moved: qty", "replace": "movedOn: klDate(at), moved: qty"},
+{"name": "Fable 1: a close at what is out writes a handover on the order", "file": "stmt/orders.js", "find": "const moves = !(ev.close && order.movedOn && Math.abs(+ev.units - (+order.moved || 0)) < 0.0004);", "replace": "const moves = true;"},
+{"name": "Fable 2: the ledger's road prices under the floor", "file": "src/maker-inputs.js", "find": "if (fl && fl.exact && t < fl.floor - 0.005)", "replace": "if (false)"},
+{"name": "Fable 3: same-day rows drawn twice", "file": "src/worker.js", "find": ".concat(cards.sameDay.flatMap((d) => d.rids))", "replace": ""}
 ]

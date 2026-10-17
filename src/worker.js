@@ -731,7 +731,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
       const book = await readBook(env.SALT_LEDGER);
       if (!book.version) throw new Error("the mirror is being seeded");
       const held = await makerHeldMoves(env), cards = makerTrips(book, held);
-      Object.assign(body, cards, { rows: makerRows(book, held, cards.trips.flatMap((t) => t.lines.map((l) => l.rid))) });
+      Object.assign(body, cards, { rows: makerRows(book, held, cards.trips.flatMap((t) => t.lines.map((l) => l.rid)).concat(cards.sameDay.flatMap((d) => d.rids))) });
     } catch (error) { body.tripsError = "Orders of several books could not be read."; }
     return json(body);
   }

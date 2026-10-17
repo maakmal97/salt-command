@@ -965,6 +965,14 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
     }
     const checked = checkCorrection(body.fields, book, row, sale);
     if (checked.errs.length) return { error: checked.errs.join("; ") };
+    /* 17 Oct 2026 (Fable's review): NEVER UNDER THE FLOOR, on this road as on an order's Amend (restateTap): a change of a sale's units or price
+       is refused under the floor at its size, where one is known; a gift, a rebate and a waived row are priced at nothing by design */
+    const f = body.fields;
+    if (sale && body.undo === undefined && (f.qty != null || f.total != null) && !row.goodwill && !row.rebate && !row.waived) {
+      const q = f.qty != null ? +f.qty : +row.qty, t = f.total != null ? +f.total : +row.total, fl = floorFor(book, row.product || "salt", q);
+      if (fl && fl.exact && t < fl.floor - 0.005)
+        return { error: "RM " + t.toFixed(2) + " is under the floor of RM " + (+fl.floor).toFixed(2) + " at " + q + " unit, so it cannot be set" };
+    }
   } else {
     if (body.fields !== undefined) return { error: "A movement or cancellation carries no row patch." };
     if (!POSITION_ENGINE.openable(POSITION_ENGINE.ledgerRow(row, sale ? "S" : "B", "salt")))

@@ -404,7 +404,9 @@ export function handoverTap(o, body, at, rej) {
     return { status: 409, error: "that is what the order already says was handed over" };
   }
   /* stamped as the site stamps it: the Kuala Lumpur day of the tap, the handover's own day */
-  const handed = Object.assign({}, o, { movedOn: klDate(at), moved: qty });
+  /* 17 Oct 2026 (Fable's review): a close at what is already out moves nothing, so the handover keeps its own day; Cancel the rest restamped it */
+  const still = closing && Math.abs(qty - (+o.moved || 0)) < 0.0004 && o.movedOn;
+  const handed = Object.assign({}, o, { movedOn: still ? o.movedOn : klDate(at), moved: qty });
   const entry = closing
     ? closeEntry(Object.assign(handed, { qty, total: POSITION_ENGINE.closeGoods(o.total, +o.qty, qty), closed: { at: at.toISOString(), qty: o.qty, total: o.total } }), o.code, at)
     : handoverEntry(handed, o.code, qty, at);

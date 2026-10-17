@@ -49,7 +49,8 @@ async function fixture() {
     sale("fw1", "CQ9-ZED", 1, 110, { deliveredQty: 1, defaulted: true }),
     sale("ft1", "CQ8-ZED", 1, 110, { delivery: 10, trip: T }), sale("ft2", "CQ8-ZED", 2, 30, { product: "oil", trip: T }),
     sale("fs1", "CQ7-ZED", 1, 110), sale("fs2", "CQ6-ZED", 1, 110),
-    sale("fx1", "CQ5-ZED", 2, 200, { deliveredQty: 1, cash: 150 }));
+    sale("fx1", "CQ5-ZED", 2, 200, { deliveredQty: 1, cash: 150 }),
+    sale("fy1", "CQ4-ZED", 1, 110, { delivery: 10 }), sale("fy2", "CQ4-ZED", 2, 30, { product: "oil" }));
   const db = new DatabaseSync(":memory:"), migrations = new URL("../migrations/", import.meta.url);
   for (const file of readdirSync(migrations).filter((f) => /^\d+_.*\.sql$/.test(f)).sort())
     db.exec(readFileSync(new URL(file, migrations), "utf8"));
@@ -95,6 +96,8 @@ export async function run({ ok, pageWork }) {
     && by.fc1.cancelled === true && by.fw1.writtenOff === true && by.fa1.owed === 110 && by.fa1.left === 1 && by.fa1.key === "CQ9-ZED|2026-10-14|110",
   "the Desk reads every row with no trip card as an order at its stage, with its key and what it owes: " + J(mine.map((r) => [r.rid, r.stage, r.owed, r.left, r.key])));
   ok(!by.ft1 && !by.ft2 && (r0.trips || []).some((t) => t.trip === T), "a row on a trip card is that card's, never a second order: " + J(Object.keys(by)));
+  ok(!(r0.rows || []).some((r) => r.rid === "fy1" || r.rid === "fy2") && (r0.sameDay || []).some((d) => J(d.rids) === J(["fy1", "fy2"])),
+    "a buyer's same-day rows offered as one order are that card's, never drawn twice: " + J((r0.sameDay || []).map((d) => d.rids)));
 
   /* B. A ROW A LIVE SITE ORDER HOLDS IS THAT ORDER */
   await f.env.STMT.put("order:u-flow-1:20261014010000-flowaa", J({ id: "20261014010000-flowaa", u: "u-flow-1", status: "acknowledged", ledgerKey: "CQ7-ZED|2026-10-14|110", qty: 1, total: 110, product: "salt", at: D + "T01:00:00.000Z" }));
@@ -114,6 +117,10 @@ export async function run({ ok, pageWork }) {
   const so = { id: "20261014010002-flowac", code: "CQ5-ZED", u: "u-flow-5", product: "salt", qty: 2, total: 200, delivery: 0, mode: "collect", paid: 150, moved: 1, movedOn: D, status: "ready",
     ledgerKey: "CQ5-ZED|2026-10-14|200", payments: [], history: [] };
   const close = handoverTap(so, { qty: 1, close: true }, new Date("2026-10-17T02:00:00.000Z"));
+  const keptDay = close.entry && close.entry.payload.fields.deliveredOn;
+  const shut = applyEvent(JSON.parse(J({ ...so, history: [] })), { kind: "handover", at: "2026-10-17T02:00:00.000Z", units: 1, close: true, total: 100 }).order;
+  ok(keptDay === D && shut.movedOn === D && !shut.history.some((h) => /collected/.test(h.note || "")) && shut.closed && shut.qty === 1,
+    "a close at what is already out keeps the handover's own day on the row and the order, and writes no handover that did not happen: " + J({ keptDay, movedOn: shut.movedOn, history: shut.history }));
   ok(close.entry && close.entry.status === "Close" && close.entry.total === 100 && close.refund === 50 && close.site.handover.close === true,
     "a site order closed at the unit already out is a close of its own, its total restated at the same rate, and the RM 50 paid above it a refund: " + J({ status: close.entry && close.entry.status, total: close.entry && close.entry.total, refund: close.refund, error: close.error }));
 
@@ -130,6 +137,8 @@ export async function run({ ok, pageWork }) {
   const mb = await f.mirror();
   const viaLedger = makerLedgerAmendment({ at: "2026-10-17T02:00:04.000Z", rid: "fd1", kind: "Correction", date: "2026-10-17", fields: { total: 120 } }, mb,
     { order: { ...done, id: "20261014010003-flowad", qty: 1, total: 110, delivery: 0 } });
+  const under = makerLedgerAmendment({ at: "2026-10-17T02:00:04.500Z", rid: "fa1", kind: "Correction", date: "2026-10-17", fields: { total: 1 } }, mb);
+  ok(/under the floor/.test(under.error || ""), "a change of a row's price on the ledger's road is refused under the floor, as an order's Amend is: " + J(under.error || under));
   ok(viaLedger.restate && viaLedger.restate.order === "20261014010003-flowad" && viaLedger.restate.total === 120,
     "a Correction of a completed site order's price on the ledger's road is sent as its Amend, so the order and the row change together: " + J(viaLedger));
 
