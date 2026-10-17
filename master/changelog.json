@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1144",
+  "d": "17 Oct 2026",
+  "t": "CN4-BSL REGISTERED AS A CUSTOMER AT SALT -0.5",
+  "n": [
+   "<b>ONE ROSTER ENTRY FOLDED.</b> CN4-BSL is added to the roster as a customer with a salt tier of -0.5, and is filed as a point on the map. The directory is not touched, so no name or place travels with the row. Nothing unusual: the drafter raised no flags.",
+   "<b>INVENTORY UNCHANGED.</b> No sale, purchase or count moved. The shelf stays at 22.89 units, with stock cost at RM56 and replacement cost at RM58."
+  ]
+ },
+ {
   "v": "v1143",
   "d": "17 Oct 2026",
   "t": "A SETTLED ORDER STATES WHAT ITS ROW STATES",

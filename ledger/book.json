@@ -522,7 +522,8 @@
     "CE5-SA-R",
     "CA6-CYB-R",
     "CM4-TO-R",
-    "CI5-PER"
+    "CI5-PER",
+    "CN4-BSL"
   ],
   "associates": [
     "CS6-BS",
@@ -777,6 +778,11 @@
       3.1,
       101.72,
       "Permaisuri"
+    ],
+    "CN4-BSL": [
+      3.05,
+      101.8,
+      "Mahkota Cheras"
     ]
   },
   "TIER_OF": {
@@ -792,6 +798,9 @@
     },
     "CM4-MK": {
       "salt": 0.3
+    },
+    "CN4-BSL": {
+      "salt": -0.5
     }
   },
   "PEOPLE": {
@@ -911,7 +920,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-16T12:18:42.764Z",
+  "QUEUE_COMMITTED": "2026-10-17T03:05:17.129Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
