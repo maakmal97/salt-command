@@ -1590,9 +1590,9 @@ export async function reconcileOrders(env, read, mirror) {
   let allNamed = null;
   const shares = async (k, order) => {
     const at = onBook && onBook[k];
-    if (!at || Math.abs((+at.q || 0) - (+order.qty || 0)) < 0.0005) return false;
-    if (!allNamed) { const all = await listOrders(env, true).catch(() => ({ ok: false })); allNamed = all.ok ? namedKeys(all.orders) : namedKeys(owing); }
-    return allNamed.get(k) > 1;
+    if (!at || typeof at.q !== "number" || Math.abs(at.q - (+order.qty || 0)) < 0.0005) return false;
+    if (!allNamed) { const all = await listOrders(env, true).catch(() => ({ ok: false })); allNamed = all.ok ? namedKeys(all.orders) : "unread"; }
+    return allNamed === "unread" || allNamed.get(k) > 1;   /* unread: it waits a minute, never risks the row */
   };
   for (const o of owing) {
     const code = users[o.u] || null;
@@ -1938,7 +1938,7 @@ async function followRows(env, orders, idx) {
   /* a group that moved in part goes back, so it is tried whole next pass: one left on the dead key alone would read that key's row */
   const undoGroup = async (k) => {
     broke.add(k);
-    for (const m of movedIn.get(k) || []) { const b = await answerOf(await markOrder(env, m.u, m.id, { ledgerKey: k })); if (b.order && b.order.ledgerKey === k) m.ledgerKey = k; }
+    for (const m of movedIn.get(k) || []) { const b = await answerOf(await markOrder(env, m.u, m.id, { ledgerKey: k })); if (b.order && b.order.ledgerKey === k) m.ledgerKey = k; else failed.push({ id: m.id, why: "its key could not be given back to its group" + b.why }); }
   };
   for (const { o, k, nk, friend, party, shared } of plan) {
     if (shared && broke.has(k)) continue;
