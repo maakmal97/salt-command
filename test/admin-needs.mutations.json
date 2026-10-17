@@ -18,12 +18,6 @@
   "replace": "if(isFinite(ta)!==isFinite(tb)) return isFinite(ta)?1:-1;"
  },
  {
-  "name": "a practice item ranks among the real ones",
-  "file": "stmt/owner.js",
-  "find": "d=(a.practice?1:0)-(b.practice?1:0);",
-  "replace": "d=0;"
- },
- {
   "name": "a locked account is only Soon",
   "file": "stmt/owner.js",
   "find": "return item('now','accounts','Locked','k:'+a.username,",

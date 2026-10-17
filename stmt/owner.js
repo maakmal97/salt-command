@@ -5574,10 +5574,8 @@ export const OWNER_JS = `
     var manual=makerHours&&makerHours.status&&makerHours.status.source==='manual'&&makerHours.config&&makerHours.config.manual;
     if(manual) L.push(hoursNeed(manual));
     if(makerNotice&&makerNotice.length) L.push(noticeNeed(makerNotice));
-    /* within a severity (drawNeeds heads them Now, Soon, Watch): real before practice, then the oldest, then as built */
+    /* within a severity (drawNeeds heads them Now, Soon, Watch, practice apart under its own line): the oldest, then as built */
     return L.sort(function(a, b){
-      var d=(a.practice?1:0)-(b.practice?1:0);
-      if(d) return d;
       var ta=Date.parse(a.at), tb=Date.parse(b.at);
       if(isFinite(ta)!==isFinite(tb)) return isFinite(ta)?-1:1;
       return (isFinite(ta)&&ta!==tb)?ta-tb:a.n-b.n;

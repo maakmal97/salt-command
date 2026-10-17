@@ -3,7 +3,7 @@
  * Every thing that waits on him is a card on the system's Action recipe, ranked Now, Soon, Watch and oldest first in each, read again every 30
  * seconds while it is showing. What is proved here, each check red under its own mutation (test/admin-needs.mutations.json):
  *   1  the cards: which kind of thing is in which severity, with its kind word, who, what, age and Open
- *   2  the ranking: Now before Soon before Watch, the oldest first, a practice item after the real ones
+ *   2  the ranking: Now before Soon before Watch, the oldest first; practice items apart, under their own line
  *   3  practice items: labelled, and counted nowhere, in the line under the title and on both bars
  *   4  the counts on every bar item, on the rail and on the app bar alike
  *   5  Open: each kind goes to its own place and part, and opens the thing it is about
