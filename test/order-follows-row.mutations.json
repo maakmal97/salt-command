@@ -22,5 +22,13 @@
   {"name": "V8: an offset on the row is not money on the order", "file": "src/orders.js", "find": "const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);", "replace": "const paid = +(+row.cash || 0).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);"},
   {"name": "V9: the tie-out reads no money", "file": "src/orders.js", "find": "if (Math.abs(paid - f2(o.paid)) > 0.004) diff.push(", "replace": "if (false) diff.push("},
   {"name": "V9: a stalled return leg is silent", "file": "src/orders.js", "find": "if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS)", "replace": "if (false)"},
-  {"name": "V9: a stall is read at once", "file": "src/orders.js", "find": "const TIEOUT_STALL_MS = 15 * 60000;", "replace": "const TIEOUT_STALL_MS = -1;"}
+  {"name": "V9: a stall is read at once", "file": "src/orders.js", "find": "const TIEOUT_STALL_MS = 15 * 60000;", "replace": "const TIEOUT_STALL_MS = -1;"},
+  {"name": "Fable V9: two orders on one key both read the row", "file": "src/orders.js", "find": "    if (named.get(ledgerKeyOf(o)) > 1) continue;", "replace": ""},
+  {"name": "Fable V9: the tie-out does not see two orders on one key", "file": "src/orders.js", "find": "    else if (!ended && (named.get(k) || 0) > 1) diff.push(", "replace": "    else if (false) diff.push("},
+  {"name": "Fable V9: the lowering branch skips what rose", "file": "src/orders.js", "find": "      /* nothing sent (a move of its own on its way): what rose on the book is still told, below (Fable's review) */\n    }", "replace": "      continue;\n    }"},
+  {"name": "Fable V9: a refused pass is not kept", "file": "src/orders.js", "find": "if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED,", "replace": "if (false) await env.SALT_QUEUE.put(TOLD_FAILED,"},
+  {"name": "Fable V9: a kept refusal never clears", "file": "src/orders.js", "find": "else await env.SALT_QUEUE.delete(TOLD_FAILED); } catch (e) {}", "replace": "} catch (e) {}"},
+  {"name": "Fable V9: a stall names nobody", "file": "src/orders.js", "find": "? \"; held by \" + held.failed.map(", "replace": "? \"\" + held.failed.slice(0, 0).map("},
+  {"name": "Fable V9: a rejected Agree is waiting", "file": "src/orders.js", "find": "if (ack && ack.status === \"rejected\") faults.push(", "replace": "if (false) faults.push("},
+  {"name": "Fable V9: a waiting claim is a difference", "file": "src/orders.js", "find": "if ((o.payments || []).some((p) => p && p.claim === \"waiting\")) waiting.push(", "replace": "if (false) waiting.push("}
 ]

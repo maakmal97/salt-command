@@ -174,10 +174,12 @@ export async function run({ ok, pageWork }) {
   const WOFF = { id: "20261014010006-flowag", u: "u-flow-7", status: "ready", qty: 1, total: 110, delivery: 0, paid: 0, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [], writtenOff: "2026-10-16T00:00:00.000Z" };
   const GONE = { id: "20261014010009-flowaj", u: "u-flow-10", status: "cancelled", qty: 1, total: 110, delivery: 0, paid: 0, moved: 0, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
   const ORDER = { id: "o-pay", u: "u-flow-3", status: "acknowledged", qty: 1, total: 100, delivery: 0, paid: 100, moved: 0, product: "salt", at: D + "T01:00:00.000Z", payments: [], msgs: [] };
+  let tieTaps = 0;
   const open = async () => {
     const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE, WOFF, AGAIN, OWED, GONE], refunds: { "CQ3-ZED|2026-10-14|110": 25 },
       drafts: [{ id: "2026-10-17T03:00:00.000Z", status: "pending", collection: "sales", entry: { orderId: GONE.id, status: "Cancellation", payload: { mode: "amend", kind: "Cancellation" } }, row: {} }], queue: [], trips: [], sameDay: [], rows: ROWS }),
       extra: (route, body) => route === "/all/maker/ledger" ? { ok: true, version: 1, orders: 0, open: [], pending: [], recent: [],
+          ...(body && ++tieTaps > 1 ? { ok: false, error: "the Desk could not check" } : {}),
           tieout: body ? { ok: true, at: "2026-10-17T03:00:00.000Z", v: "v1146", orders: 38, clean: true, faults: [], waiting: [] }
             : { ok: true, at: "2026-10-17T02:00:00.000Z", v: "v1145", orders: 38, clean: false, faults: [{ order: ORDER.id, rid: "s1", what: ["paid RM 100 on the order, RM 60 on the row"] }], waiting: [] } }
         : route === "/all/maker/inputs/ledger-amend" ? { ok: true, draft: body.at, status: "pending" }
@@ -251,5 +253,12 @@ export async function run({ ok, pageWork }) {
     ok(/One difference between the orders and the book, 38 orders checked against book v1145/.test(t1) && /paid RM 100 on the order, RM 60 on the row/.test(t1)
       && /Every site order matches its row on the book, 38 orders checked against book v1146/.test(t2) && p.sent("/all/maker/ledger").length === 1,
     "the Ledger says the tie-out, each difference by order and row, and Check now asks the Desk for a fresh one: " + J([t1.slice(0, 200), t2.slice(0, 160)]));
+    /* a refusal with no line to say it on is thrown out of the tap, unseen: caught here so that is a red check, never a crash */
+    const thrown = [], keep = (e) => thrown.push(String((e && e.message) || e));
+    process.on("unhandledRejection", keep);
+    try { await p.tap("ledger.tieout"); await new Promise((r) => setTimeout(r, 30)); } finally { process.off("unhandledRejection", keep); }
+    const t3 = tieText(), said = p.d.querySelector('#led-tie [role="status"]');
+    ok(!thrown.length && !!said && /the Desk could not check/i.test(t3) && /Every site order matches/.test(t3),
+      "a Check now the Desk refuses says so on the tie-out's own line, the last answer standing: " + J(t3.slice(0, 240)));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 }

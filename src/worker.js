@@ -2369,7 +2369,8 @@ export default {
         if (env.SALT_LEDGER && env.SALT_QUEUE) try {
           const last = await env.SALT_QUEUE.get(TIEOUT_KEY, "json");
           const snapV = await env.SALT_LEDGER.prepare("SELECT v FROM snapshot WHERE one=1").first();
-          const due = !last || !last.ok || (snapV && last.v !== snapV.v) || Date.now() - Date.parse(last.at || 0) > 6 * 3600000;
+          const age = Date.now() - Date.parse(last && last.at || 0);
+          const due = !last || !last.ok || (snapV && last.v !== snapV.v) || age > 6 * 3600000 || (!last.clean && age > 5 * 60000);
           if (due) {
             const tie = await tieOut(env, mirror);
             await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tie));

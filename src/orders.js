@@ -1929,10 +1929,13 @@ export async function tellSite(env, fixes, mirror) {
   const fixedDone = (await env.SALT_QUEUE.get(FIXED_MARK, "json").catch(() => null)) || {};
   const fixWaits = new Set(allFixes.filter((f) => !fixedDone[f.id]).map((f) => f.order));
   let told = 0;
+  const named = namedKeys(r.orders);
   for (const o of r.orders) {
     if (!o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const row = byKey.get(ledgerKeyOf(o));   /* V4a: never a salt twin's row by the old shape */
     if (!row) continue;
+    /* 17 Oct 2026 (Fable's review): a key two live orders name is neither's row: one re-dated away and another landed under its old key */
+    if (named.get(ledgerKeyOf(o)) > 1) continue;
     const sole = rows.get(ledgerKeyOf(o)) === 1;   /* a key two rows share names neither: byKey keeps one of the twins */
     /* 17 Oct 2026, HIS FLOW: what the book ended, the order ends: a row cancelled there cancels its order, and a write-off marks it written off
        (or undone, clears it), once nothing of the order's own is on its way to the row */
@@ -1970,8 +1973,9 @@ export async function tellSite(env, fixes, mirror) {
         });
         if (!d || !d.ok) failed.push({ id: o.id, why: "the site would not take its row's figures" + (d ? " (http " + d.status + ")" : "") });
         else told++;
+        continue;
       }
-      continue;
+      /* nothing sent (a move of its own on its way): what rose on the book is still told, below (Fable's review) */
     }
     if (paid > (+o.paid || 0) + 0.004) ledger.paid = paid;
     if (moved > (+o.moved || 0) + 0.0004) ledger.moved = moved;
@@ -2000,6 +2004,8 @@ export async function tellSite(env, fixes, mirror) {
   /* the mark moves only on a clean pass, so an order the site refused is tried again next minute
      rather than waiting for the next fold */
   if (!failed.length) await env.SALT_QUEUE.put(TOLD_MARK, v);
+  /* 17 Oct 2026: and what held it, for the tie-out to name (Fable's review): the stall is then an order's, not the return leg's */
+  try { if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED, JSON.stringify({ v, at: new Date().toISOString(), failed: failed.slice(0, 20) })); else await env.SALT_QUEUE.delete(TOLD_FAILED); } catch (e) {}
   return Object.assign({ ok: true, told, v }, followed ? { followed } : {}, fx.sent ? { fixed: fx.sent } : {}, fx.refused ? { refused: fx.refused } : {}, fx.waiting ? { waiting: fx.waiting } : {},
     failed.length ? { failed } : {});
 }
@@ -2011,21 +2017,32 @@ export async function tellSite(env, fixes, mirror) {
  * is still to land. And the return leg itself: a book version the Counter has not been told of for TIEOUT_STALL_MS is a fault, so a
  * stalled pass is never silent. The answer is kept at KV TIEOUT_KEY for Counter Admin's Ledger; a clean one is the proof. */
 export const TIEOUT_KEY = "orders:tieout";
+const TOLD_FAILED = "orders:toldFailed";
+/* how many live orders name each key: a key two of them name is neither's row */
+const namedKeys = (orders) => {
+  const n = new Map();
+  for (const o of orders || []) { if (!o || o.test || !o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue; const k = ledgerKeyOf(o); n.set(k, (n.get(k) || 0) + 1); }
+  return n;
+};
 const TIEOUT_STALL_MS = 15 * 60000;
 export async function tieOut(env, mirror, now = new Date()) {
   const at = now.toISOString(), faults = [], waiting = [];
   let snap = null;
   try { snap = await env.SALT_LEDGER.prepare("SELECT v, at FROM snapshot WHERE one=1").first(); } catch (e) { snap = null; }
   const v = (snap && snap.v) || null, told = await env.SALT_QUEUE.get(TOLD_MARK);
-  if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS)
-    faults.push({ what: "return leg", why: "the Counter has not been told of book " + v + " since " + snap.at + " (last told " + (told || "never") + ")" });
+  if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS) {
+    let held = null;
+    try { held = await env.SALT_QUEUE.get(TOLD_FAILED, "json"); } catch (e) { held = null; }
+    const who = held && Array.isArray(held.failed) && held.failed.length ? "; held by " + held.failed.map((f) => (f.id || "the pass") + " (" + f.why + ")").join(", ") : "";
+    faults.push({ what: "return leg", why: "the Counter has not been told of book " + v + " since " + snap.at + " (last told " + (told || "never") + ")" + who });
+  }
   const r = await listOrders(env, true);
   if (!r.ok) return { at, v, ok: false, error: "the site's orders could not be read: " + (r.error || "") };
   const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
   if (!book || !book.sales) return { at, v, ok: false, error: "the book could not be read" };
   const byKey = new Map(), n = new Map();
   for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }
-  const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3);
+  const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3), named = namedKeys(r.orders);
   let orders = 0;
   for (const o of r.orders) {
     if (o.test || !o.ledgerKey || !ROWED_ON_SITE.concat(["cancelled", "declined"]).includes(o.status)) continue;
@@ -2034,6 +2051,7 @@ export async function tieOut(env, mirror, now = new Date()) {
     orders++;
     const diff = [];
     if (!row) diff.push("no row on the book under " + k);
+    else if (!ended && (named.get(k) || 0) > 1) diff.push("another order names its key, so the row is neither's");
     else if ((n.get(k) || 0) > 1) diff.push("two rows share its key, so neither is its");
     else {
       if (!!row.cancelled !== ended) diff.push(row.cancelled ? "the row is cancelled and the order is " + o.status : "the order is " + o.status + " and its row is live");
@@ -2049,8 +2067,15 @@ export async function tieOut(env, mirror, now = new Date()) {
     }
     if (!diff.length) continue;
     const item = { order: o.id, ...(row && row.rid ? { rid: row.rid } : {}), what: diff };
-    if (await orderInFlight(env, o)) waiting.push(item);
-    else if (!row) { const ack = await fate(env, o.queued && o.queued.ack); if (!ack || !ack.landed) waiting.push(item); else faults.push(item); }
+    /* a claim of theirs waiting holds the order on purpose: his Received or Not found is owed, so it is waiting, said so (Fable's review) */
+    if ((o.payments || []).some((p) => p && p.claim === "waiting")) waiting.push({ ...item, what: diff.concat(["a payment they say they sent waits on your Received or Not found"]) });
+    else if (await orderInFlight(env, o)) waiting.push(item);
+    else if (!row) {
+      const ack = await fate(env, o.queued && o.queued.ack);
+      /* its pending row rejected under Approve is no row to come: the re-offer is owed */
+      if (ack && ack.status === "rejected") faults.push({ ...item, what: diff.concat(["its pending row was rejected under Approve: offer it again or cancel the order"]) });
+      else if (!ack || !ack.landed) waiting.push(item); else faults.push(item);
+    }
     else faults.push(item);
   }
   return { at, v, told, ok: true, orders, clean: !faults.length, faults, waiting };

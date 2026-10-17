@@ -49437,7 +49437,7 @@ await (async () => {
       const self = mk([]);
       self.bind = (...a) => { if (failFor && a[0] === failFor && /FROM preapproval .*stage<>'ack'/.test(sql)) throw new Error("D1 fixture: not now"); return mk(a); };
       return self; } };
-    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4", "5", "6", "7", "8"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
+    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4", "5", "6", "7", "8", "9", "w", "v"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
     const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, J(doc));
     let seq = 0, ver = 0;
     const OPEN = { byKey: {}, position: {} };
@@ -49478,9 +49478,11 @@ await (async () => {
     /* every mark the desk sends the site, by order; a Counter deployed before this version keeps a mark's key and drops its side */
     const marks = [], restates = [];
     let oldCounter = false;
+    let siteDown = false;
     const siteFetch = (url, init) => {
       let b = null;
       try { b = init && typeof init.body === "string" ? JSON.parse(init.body) : null; } catch (e) { b = null; }
+      if (siteDown && b && (b.restate || b.ledger)) return Promise.resolve(new Response("{}", { status: 503 }));
       if (b && b.restate) restates.push(decodeURIComponent(String(url).split("/").pop()));
       if (b && b.mark) {
         marks.push(Object.assign({ id: decodeURIComponent(String(url).split("/").pop()) }, b.mark));
@@ -49882,6 +49884,56 @@ await (async () => {
       && tie2.ok && !efFault(tie2) && !tie2.faults.some((f) => f.what === "return leg"),
       tag + ", the tie-out names an order whose row moved untold, a return leg stalled past fifteen minutes, and nothing once told: "
       + J({ tie1: efFault(tie1), late: tieLate.faults.filter((f) => f.what === "return leg"), tie2: (tie2.faults || []).filter((f) => f.order === EF.o.id), n: tie1.orders }));
+    /* Fable's review of V9. (4) A pass the site refused is kept beside the mark, so a stall names the order that held it, and is cleared once told */
+    correct(EF.rid, { cash: 7 });
+    siteDown = true;
+    const ofrT26 = await tellSite(denv), tieHeld = await tieOut(denv, undefined, new Date(Date.now() + 16 * 60000));
+    siteDown = false;
+    const keptHeld = await dkv.get("orders:toldFailed", "json");
+    await tellSite(denv);
+    const keptAfter = await dkv.get("orders:toldFailed", "json"), legHeld = (tieHeld.faults || []).find((f) => f.what === "return leg");
+    ok(ofrT26.failed && keptHeld && keptHeld.failed.some((f) => f.id === EF.o.id) && legHeld && legHeld.why.includes("held by " + EF.o.id) && keptAfter === null,
+      tag + ", a stalled return leg names the order the site refused, and the record clears once told: " + J({ kept: keptHeld, leg: legHeld, after: keptAfter }));
+    /* (1) two live orders naming one key: neither takes the row's figures, and the tie-out says so; one named its own again, the row is told */
+    const EG = await agreed(27, { unit: 133, total: 133 }, false), EH = await agreed(28, { unit: 135, total: 135 }, false);
+    await O.deskMove(senv, EH.u, EH.o.id, { mark: { ledgerKey: EG.key } });
+    correct(EG.rid, { cash: 40 });
+    const ofrT27 = await tellSite(denv), eg1 = await orderOf(EG.o.id), eh1 = await orderOf(EH.o.id), tieTwo = await tieOut(denv);
+    const twoOf = (id) => (tieTwo.faults || []).find((f) => f.order === id && f.what.some((w) => /another order names its key/.test(w)));
+    await O.deskMove(senv, EH.u, EH.o.id, { mark: { ledgerKey: EH.key } });
+    reseed();
+    const ofrT28 = await tellSite(denv), eg2 = await orderOf(EG.o.id);
+    ok(!ofrT27.failed && eg1.paid === 0 && eh1.paid === 0 && twoOf(EG.o.id) && twoOf(EH.o.id) && !ofrT28.failed && eg2.paid === 40,
+      tag + ", a key two live orders name is neither's row, said by the tie-out, and told once it is one's again: "
+      + J({ paid: [eg1.paid, eh1.paid, eg2.paid], faults: (tieTwo.faults || []).filter((f) => [EG.o.id, EH.o.id].includes(f.order)) }));
+    /* (5) money lowered on the book while a move of the order's own is on its way: the lowering waits, and what rose is still told */
+    const fly = "2026-10-17T00:00:02.000Z";
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,party,product,amends,amend_kind,drafter,drafted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+      .run(fly, "pending", "sales", J({ at: fly, orderId: EG.o.id, payload: { mode: "amend", kind: "Fulfilment" } }), "{}", "a move", EG.code, "salt", EG.rid, "Fulfilment", "test", fly);
+    const egRow = saleOf(EG.rid); egRow.cash = 20; egRow.deliveredQty = 1; putRow(egRow); reseed();
+    await tellSite(denv);
+    const eg3 = await orderOf(EG.o.id);
+    db.prepare("DELETE FROM draft WHERE id=?").run(fly); reseed();
+    await tellSite(denv);
+    const eg4 = await orderOf(EG.o.id);
+    ok(eg3.paid === 40 && eg3.moved === 1 && eg4.paid === 20,
+      tag + ", money lowered while a move is on its way waits for it, and the handover that rose is told meanwhile: " + J({ during: [eg3.paid, eg3.moved], after: eg4.paid }));
+    /* (3) a payment they say they sent, waiting on his Received, holds the order on purpose: waiting, said so, never a difference */
+    const claim = await O.customerMove(senv, EG.u, EG.o.id, "pay", { amount: 5, method: "transfer", account: "wise" });
+    setup(!claim.error, "their claim was recorded: " + J(claim));
+    correct(EG.rid, { cash: 26 });
+    const tieClaim = await tieOut(denv), egIn = (g) => (tieClaim[g] || []).find((f) => f.order === EG.o.id);
+    ok(egIn("waiting") && !egIn("faults") && /waits on your Received or Not found/.test(egIn("waiting").what.join("; ")),
+      tag + ", a difference on an order holding their claim is waiting on his Received, said so: " + J({ w: egIn("waiting"), f: egIn("faults") }));
+    await tellSite(denv);
+    /* (3) an Agree whose pending row he rejected is a difference, naming the re-offer; one on its way is waiting */
+    const EJ = await agreed(29, { unit: 137, total: 137 }, false, true);
+    const tieOn = await tieOut(denv);
+    db.prepare("UPDATE draft SET status='rejected' WHERE id=?").run(EJ.ack); reseed();
+    const tieRej = await tieOut(denv);
+    const ejIn = (t, g) => (t[g] || []).find((f) => f.order === EJ.o.id);
+    ok(ejIn(tieOn, "waiting") && !ejIn(tieOn, "faults") && ejIn(tieRej, "faults") && /rejected under Approve: offer it again/.test(ejIn(tieRej, "faults").what.join("; ")),
+      tag + ", an order whose pending row is on its way waits, and one whose row he rejected is a difference naming the re-offer: " + J({ on: ejIn(tieOn, "waiting"), rej: ejIn(tieRej, "faults") }));
     correct(EW.rid, { defaulted: false });
     const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
     ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));

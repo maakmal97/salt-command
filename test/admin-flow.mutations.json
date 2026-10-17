@@ -43,5 +43,6 @@
 {"name": "V7: an order's card says no refund", "file": "stmt/owner.js", "find": "    if(+owes>0.004) card.appendChild(", "replace": "    if(false) card.appendChild("},
 {"name": "V8: an ended order's waiting move is not said", "file": "stmt/owner.js", "find": "if(waitN&&!ordOpen(order)) card.appendChild(", "replace": "if(false) card.appendChild("},
 {"name": "V9: the Ledger draws no tie-out", "file": "stmt/owner.js", "find": "    drawLedger(j);\n    drawTieout(j.tieout);\n  }", "replace": "    drawLedger(j);\n  }"},
-{"name": "V9: a difference is not named", "file": "stmt/owner.js", "find": "(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.'", "replace": "'.'"}
+{"name": "V9: a difference is not named", "file": "stmt/owner.js", "find": "(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.'", "replace": "'.'"},
+{"name": "Fable V9: Check now has no line of its own", "file": "stmt/owner.js", "find": "said.setAttribute('role','status'); root.appendChild(said);\n    makerButton(root,['Check now'", "replace": "said.hidden=true;\n    makerButton(root,['Check now'"}
 ]

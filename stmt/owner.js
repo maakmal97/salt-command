@@ -1608,7 +1608,9 @@ export const OWNER_JS = `
         t[g[0]].forEach(function(f){ root.appendChild(el('p','maker-facts',(f.order?f.order:'')+(f.rid?' · '+f.rid:'')+(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.')); });
       });
     }
+    var said=el('p','msg'); said.setAttribute('role','status'); root.appendChild(said);
     makerButton(root,['Check now','ledger.tieout'],async function(){
+      said.textContent='Checking.';
       var j=await refs('/all/maker/ledger',{}); drawLedger(j); drawTieout(j.tieout);
     },false);
   }
