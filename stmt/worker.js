@@ -53,6 +53,7 @@ import { refusal, clip } from "./words.js";
 import { PK_TTL, PK_ALGS, PK_ID_RE, PKT_RE, pkKey, pkdPrefix, pkdKey, b64u, unb64, mintChallenge, spendChallenge, clientOk, authOk, sigOk, wrapShape, handleOf } from "./passkey.js";
 import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from "./slip.js";
 import { payNumbers } from "./paynum.js";
+import { payDown, liveAccounts } from "./paystate.js";
 import { takePin, keepPin, readPin } from "./pin.js";
 import { handleMaker, publicHours, customerAmend, takeNudge } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, examplePaynum, isExample,
@@ -421,10 +422,14 @@ async function handleCustomer(request, env, p, m, ctx) {
   /* PHASE 7B (his yes of 11 Oct 2026): THE ACCOUNT NUMBERS THE PAY SHEET SHOWS beside the reference, from KV `paynum`, which only
      `node tools/paysync.mjs --numbers` writes and git never holds (stmt/paynum.js whitelists it to `number` a key). On their
      session alone, no-store; {} while none is filed. A test account is answered its fixture's invented number, and the real
-     record is never read for it. Not an /all route: the owner's read-only view never asks. */
+     record is never read for it. Not an /all route: the owner's read-only view never asks.
+     WITH THEM, `down` (17 Oct 2026): which accounts QR Command has under maintenance now, read live off its /state.json
+     (stmt/paystate.js), so the sheet drops one he suspends without a deploy; absent when that read fails, the baked flags standing. */
   if (p === "/pay/accounts") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-    return json({ ok: true, accounts: isTest(u) ? await examplePaynum(env, u) : await payNumbers(env) });
+    const down = await payDown(env);
+    const accounts = isTest(u) ? await examplePaynum(env, u) : await payNumbers(env, liveAccounts(down));
+    return json(down ? { ok: true, accounts, down } : { ok: true, accounts });
   }
   /* S9 9.4, FOR THE CUSTOMER'S OWN THIS DEVICE CARD (9.9): their phones and computers, on their session, and signing the
      others out. The list carries no id and no address: the kind of device, when it came and was last used, whether it

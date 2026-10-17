@@ -27,9 +27,9 @@ export function numbersOf(rec, list = PAY_ACCOUNTS) {
   return out;
 }
 
-/** The numbers as KV holds them, or {} while none are filed or when the read fails. */
-export async function payNumbers(env) {
+/** The numbers as KV holds them, against `list` (the rails with QR Command's live flags, stmt/paystate.js), or {} while none are filed or when the read fails. */
+export async function payNumbers(env, list = PAY_ACCOUNTS) {
   let r = null;
   try { r = await env.STMT.get(PAYNUM_KEY, "json"); } catch (e) { r = null; }
-  return numbersOf(r);
+  return numbersOf(r, list);
 }

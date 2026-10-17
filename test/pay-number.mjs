@@ -214,6 +214,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
   const O = await import("../stmt/orders.js");
   const TF = await import("../stmt/testfix.js");
   const PN = await import("../stmt/paynum.js");
+  const PAY_ACCOUNTS_W = (await import("../stmt/pay.js")).PAY_ACCOUNTS;
   const kv = new KV();
   const env = { STMT: kv, STMT_DESK_KEY: "desk-key" };
   const asker = async (u) => ({ "X-Stmt-Session": await O.mintSession(env, u) });
@@ -248,6 +249,25 @@ export async function run({ ok, okOff, pageWork, KV }) {
   const lame = { STMT: { get: async (k, t) => { if (k === "paynum") throw new Error("KV is down"); return kv.get(k, t); }, put: (k, v, o) => kv.put(k, v, o), delete: (k) => kv.delete(k) }, STMT_DESK_KEY: "desk-key" };
   const down = await call("/pay/accounts", S, "GET", lame);
   ok(down.status === 200 && JSON.stringify(down.b.accounts) === "{}", "and a KV read that fails answers an empty list, so the sheet falls back to the link: " + down.status);
+
+  /* QR COMMAND'S LIVE STATE (17 Oct 2026): its /state.json through the QRCMD binding wins over the baked flag, a key at a time; only a real
+     boolean against a known key is taken; an account it has down is never served; a failed read leaves `down` out and the baked flags stand */
+  const qrAsked = [];
+  const qr = (answer) => ({ ...env, QRCMD: { fetch: async (u) => { qrAsked.push(String(u)); if (answer instanceof Error) throw answer; return answer; } } });
+  const stateOf = (m, status = 200) => new Response(JSON.stringify({ maintenance: m, order: [] }), { status, headers: { "content-type": "application/json" } });
+  const live = await call("/pay/accounts", S, "GET", qr(stateOf({ maybank: true, spay: false, ambank: "yes", nokey: true })));
+  ok(live.status === 200 && Object.keys(live.b.accounts).join() === "ambank,spay" && live.b.down && live.b.down.maybank === true && live.b.down.spay === false
+    && live.b.down.ambank === false && !("nokey" in live.b.down) && Object.keys(live.b.down).length === PAY_ACCOUNTS_W.length && /\/state\.json$/.test(qrAsked[qrAsked.length - 1]),
+    "QR Command's live state wins over the baked flag: maybank, live down, is not served; spay, baked down and live up, is; a string and a key the rails lack are passed over: " + hide(live.raw));
+  for (const [why, answer] of [["throws", new Error("unreachable")], ["answers 500", stateOf({ maybank: true }, 500)], ["answers no maintenance", new Response("{}")], ["answers not JSON", new Response("<html>")]]) {
+    const r = await call("/pay/accounts", S, "GET", qr(answer));
+    ok(r.status === 200 && !("down" in r.b) && Object.keys(r.b.accounts).join() === "maybank,ambank", "when QR Command " + why + ", `down` is left out and the baked flags stand: " + hide(r.raw));
+  }
+  ok(!("down" in (await call("/pay/accounts", S)).b), "and with no QRCMD bound, `down` is left out");
+  const PST = await import("../stmt/paystate.js");
+  ok(JSON.stringify(PST.downOf({ maintenance: { a: true } }, [{ key: "a", maintenance: false }, { key: "b", maintenance: true }, { key: "c", maintenance: false }])) === JSON.stringify({ a: true, b: true, c: false })
+    && PST.downOf({ maintenance: [] }) === null && PST.downOf(null) === null && PST.liveAccounts(null) === PAY_ACCOUNTS_W,
+    "downOf takes the live word where there is one and the baked flag elsewhere, and an unreadable state is null");
 
   /* the whitelist alone, on an invented list: only a transfer account that is not suspended, only its own key, never an inherited one */
   const list = [{ key: "a", transfer: true, maintenance: false }, { key: "b", transfer: false, maintenance: false }, { key: "c", transfer: true, maintenance: true }, { key: "e", transfer: true, maintenance: false }];
@@ -371,14 +391,14 @@ export async function run({ ok, okOff, pageWork, KV }) {
   const wins = [];
   /* a customer's page signed in on an invented account owing three parts, 303 in all; `numbers` is what GET /pay/accounts answers, `down`
      a Worker that cannot be reached for it. `calls` is every request the page made, `copied` every string put on the clipboard. */
-  const openPage = async ({ numbers = {}, down = false } = {}) => {
+  const openPage = async ({ numbers = {}, down = false, live = null } = {}) => {
     const pass = "fixture-pass-7b", ck = await CR.contentKey("test-secret", UN), list = [part(0), part(1), part(2)], sum = 303;
     const pay = { term: 1, hide: 3, lock: 4, window: 60, now: { rm: sum, due: list[0].due, parts: list }, overdue: { rm: 0, parts: [] }, coming: { rm: 0, parts: [] } };
     const stamped = { at: new Date(Date.now() - 3600e3).toISOString(), body: "<p>Live</p>", owed: sum, pay, buildId: BUILD };
     const body = { ok: true, wrap: await CR.wrapKey(pass, ck), session: "sess-7b", liveStatus: "current",
       live: Object.assign({ at: stamped.at, buildId: BUILD }, await CR.encryptWith(ck, JSON.stringify(stamped))),
       env: await CR.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", label: "September", body: "<p>Statement</p>" }] })) };
-    const calls = [], copied = []; let work, isDown = down;
+    const calls = [], copied = []; let work, isDown = down, liveDown = live, hold = null;
     const dom = new JSDOM(landingPage(UN, "n7b", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
       try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
       if (!win.TextEncoder) win.TextEncoder = TextEncoder;
@@ -391,7 +411,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
         const res = (status, j) => ({ ok: status === 200, status, json: async () => j });
         if (p === "/open" || p === "/account") return res(200, body);
         if (p === "/orders" && m === "GET") return res(200, { ok: true, orders: [], claims: [] });
-        if (p === "/pay/accounts") return isDown ? res(500, { ok: false }) : res(200, { ok: true, accounts: numbers });
+        if (p === "/pay/accounts") { if (hold) await hold.p; return isDown ? res(500, { ok: false }) : res(200, liveDown ? { ok: true, accounts: numbers, down: liveDown } : { ok: true, accounts: numbers }); }
         if (p === "/account/claim" && m === "POST") return res(200, { ok: true, claim: { id: "c1" } });
         return res(404, { ok: false });
       };
@@ -407,7 +427,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
     const pick = (key) => { const r = d.querySelector('#payBody input[name="payInto"][value="' + key + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
     const way = (v) => { const r = d.querySelector('#payBody input[name="payHow"][value="' + v + '"]'); r.checked = true; r.dispatchEvent(new w.Event("change", { bubbles: true })); };
     const go = () => d.getElementById("payGo");
-    return { w, d, work, calls, copied, sum, pick, way, go, up: () => { isDown = false; }, open: () => d.getElementById("payNow").click(), asked: () => calls.filter((c) => c.p === "/pay/accounts").length,
+    return { w, d, work, calls, copied, sum, pick, way, go, up: () => { isDown = false; }, setLive: (x) => { liveDown = x; }, holdAsk: () => { let r; hold = { p: new Promise((y) => { r = y; }) }; return () => { const h = hold; hold = null; r(); return h; }; }, open: () => d.getElementById("payNow").click(), asked: () => calls.filter((c) => c.p === "/pay/accounts").length,
       posts: () => calls.filter((c) => c.m === "POST" && c.p === "/account/claim"), q: () => { try { return JSON.parse(w.localStorage.getItem("salt-stmt-payq") || "null"); } catch (e) { return null; } } };
   };
   const kind = (e) => (e ? e.tagName + (e.disabled ? " disabled" : "") : "(none)");
@@ -548,6 +568,27 @@ export async function run({ ok, okOff, pageWork, KV }) {
     G.d.getElementById("payX").click(); G.open(); G.d.getElementById("payX").click(); G.open();
     ok(!!kept2 && kept2.open && !G.d.getElementById("payWhat").open && G.asked() === 1,
       "What this pays stays open across a redraw of the sheet and opens shut with the sheet, and across three openings the numbers were asked once: " + JSON.stringify([kept2 && kept2.open, G.d.getElementById("payWhat").open, G.asked()]));
+
+    /* QR COMMAND'S LIVE STATE ON THE SHEET (17 Oct 2026): an account it has down is not offered, one it has back up is, and a bank chosen
+       before the answer came is unchosen when it turns out to be down; a minute on, the next open asks again */
+    const tilesOf = (X) => [...X.d.querySelectorAll('#payBody input[name="payInto"]')].map((r) => r.value);
+    const H = await openPage({ live: { maybank: true, spay: false } });
+    H.open(); await H.work.quiet(); await until(() => !tilesOf(H).includes("maybank"), 60);
+    ok(!tilesOf(H).includes("maybank") && tilesOf(H).includes("spay") && tilesOf(H).includes("ambank"),
+      "an account QR Command has down now is not offered, and one it has back up is: " + JSON.stringify(tilesOf(H)));
+    H.d.getElementById("payX").click();
+    const I = await openPage({});
+    const realNow = I.w.Date.now.bind(I.w.Date), asked0 = I.asked(); I.w.Date.now = () => realNow() + 61000;
+    const let_go = I.holdAsk(); I.open(); I.pick("maybank"); I.setLive({ maybank: true }); const held = I.asked() === asked0 + 1 && tilesOf(I).includes("maybank");
+    await let_go().p; await I.work.quiet();
+    await until(() => !tilesOf(I).includes("maybank"), 60);
+    ok(held && !tilesOf(I).includes("maybank") && !I.d.querySelector('#payBody input[name="payInto"]:checked') && !(I.go() && I.go().tagName === "A"),
+      "a bank chosen before the answer came, which QR Command has down, is no longer offered and no link to it is drawn: " + JSON.stringify([tilesOf(I), kind(I.go()), held]));
+    I.d.getElementById("payX").click(); const before = I.asked();
+    I.setLive({ maybank: false }); I.w.Date.now = () => realNow() + 122000;
+    I.open(); await until(() => I.asked() > before, 60); await I.work.quiet(); await until(() => tilesOf(I).includes("maybank"), 60);
+    ok(I.asked() === before + 1 && tilesOf(I).includes("maybank"), "a minute on, the next open asks again and an account back up is offered again: " + JSON.stringify([before, I.asked(), tilesOf(I)]));
+    I.d.getElementById("payX").click();
 
     /* his read-only view of an account asks nothing, on the page his route spliced in */
     const ow = await ownerView();

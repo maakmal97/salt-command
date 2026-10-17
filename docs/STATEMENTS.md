@@ -1064,8 +1064,13 @@ number. **The number is never in git** (rule 3): it is Counter KV `paynum`, `{v:
 the laptop by `node tools/paysync.mjs --numbers` (the pay store's number with its spaces stripped, refused unless 10 to 15 digits
 or if `stmt/pay.js` lacks the key, nothing else carried, each key shown by its last four digits) and read back by `--check-numbers`.
 It is served on a customer's session at `GET /pay/accounts`, whitelisted to `number` and to the accounts the page offers for a
-transfer, `no-store`, `{ok: true, accounts: {}}` when none is filed or the read fails; the page asks once a visit, and never on
-his read-only view. **The practice accounts are answered their fixture's invented all-zero number** through the test-account
+transfer, `no-store`, `{ok: true, accounts: {}}` when none is filed or the read fails; the page asks at sign-in and again at a
+sheet's open once the last answer is a minute old, and never on his read-only view. **An account QR Command has under maintenance
+now is never offered** (his instruction of 17 Oct 2026): the same answer carries `down`, `{<key>: bool}` for every account
+`stmt/pay.js` names, read live off QR Command's public `/state.json` through the service binding `QRCMD` (`stmt/paystate.js`), its
+word winning over the baked flag a key at a time, as on QR Command's own phone; the page lays it on `PAY`, so `payHref` and the bank
+tiles follow, a bank chosen before the answer included, and no number is served for it. An unbound, failed or
+malformed read leaves `down` out and the baked flags stand; QR Command's own page still refuses a suspended code. **The practice accounts are answered their fixture's invented all-zero number** through the test-account
 overlay (`paynum` in `tools/testfix.mjs`, `FIX_VERSION` 9) and never the real record. **With a number** the filled pill is I have
 paid, straight to Did you send, and a ghost Open the payment page keeps the `payHref` link; **with none, and on Scan a code**, the
 filled pill is the link as it was (Show the account number, or Show the code) and a ghost I am back moves to the same question, the
