@@ -16,5 +16,11 @@
   "file": "stmt/page.js",
   "find": "try{ new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',",
   "replace": "try{ new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',hour:'2-digit',"
+ },
+ {
+  "name": "the bar loses the clock",
+  "file": "stmt/page.js",
+  "find": "<div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>",
+  "replace": "<div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"
  }
 ]

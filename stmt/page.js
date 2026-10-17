@@ -58,8 +58,8 @@ const PAGE_CSS = `
    brass-to-copper pill, because this is the one thing on the page that produces something;
    decision 5 of the identity. Everything else is a hairline or a word. */
 .gate{max-width:440px;margin:10vh auto 0;padding:0 4px}
-.gate h1{font-size:var(--salt-text-xl);margin:0 0 8px}
-.gate p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.75;margin:0 0 24px}
+.gate h1{font-size:1.75rem;margin:0 0 8px}
+.gate p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 24px}
 /* S3 3.3: the link page, in the system's card, eyebrow, plain ledger and insight; the ring is the app's mark */
 .appmark{display:block;margin:0 0 14px}
 /* the door's name, the one line over Sign in (11 Oct 2026) */
@@ -97,13 +97,14 @@ const PAGE_CSS = `
 /* v694: THE OPEN LIST IS DRAWN BY THE SYSTEM, NOT BY THIS PAGE. With no colour scheme declared it
    draws a white list of black words under a dark field, which is the colour he called bizarre.
    color-scheme tells the system the page is dark and the list follows it; option is named too, for
-   the platforms that take the colour rather than the scheme. The chevron is drawn out of two
+   the platforms that take the colour rather than the scheme: the system's own .salt-field__select option, slate under salt
+   ink as on the Desk (18 Oct 2026; this page had set the well, black at 28%, which a native list draws near-black), so every
+   select carries salt-field__select. The chevron is drawn out of two
    gradients because appearance:none took the system's away and left nothing to say it opens. */
 select.fld{letter-spacing:0;appearance:none;-webkit-appearance:none;color-scheme:dark;cursor:pointer;
   padding-right:42px;background-repeat:no-repeat;background-size:6px 6px,6px 6px;
   background-image:linear-gradient(45deg,transparent 50%,var(--salt-brass) 50%),linear-gradient(135deg,var(--salt-brass) 50%,transparent 50%);
   background-position:calc(100% - 22px) calc(50% - 2px),calc(100% - 17px) calc(50% - 2px)}
-select.fld option{background:var(--salt-well);color:var(--salt-text)}
 /* v695: a product is a mark. Brass, hairline, and it sits on the baseline of whatever it is beside. */
 .psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}
 /* F8: his letter in every mark, the mono face at its middle weight, whatever the heading around it says */
@@ -189,9 +190,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* Optional install guide under This device; its steps draw the browser's own marks. */
 .keeppage{margin:20px 0 0;padding:0}
 /* the guide is a part of the compact This device card, so its heading is the card's own third level and not a page's first (11 Oct 2026) */
-.keeppage h3{margin:0 0 10px;font-family:var(--salt-font-display);font-size:var(--salt-text-lg);font-weight:600;line-height:1.2}
+.keeppage h3{margin:0 0 10px;font-family:var(--salt-font-display);font-size:var(--salt-text-lg);font-weight:500;line-height:1.2}
 .keeppage .kline{margin:14px 0 0}
-.keeppage b{color:var(--salt-text);font-weight:600}
+.keeppage b{color:var(--salt-text);font-weight:500}
 .keepsteps{margin:14px 0;padding-left:22px;line-height:2.1}
 .keepsteps .glyph,.keeppage .glyph{vertical-align:-0.3em;margin:0 3px}
 /* THE BELL (Step 1b), at the head of every view of the saved app: marked, with its call beside it, until notifications
@@ -256,7 +257,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    at the foot, names the place in the header and lays Home out. */
 .cshell{padding-bottom:calc(var(--salt-bar-h) + 24px + env(safe-area-inset-bottom))}
 .chead{max-width:620px;margin:0 auto 18px}
-.chead h1{margin:0;font-size:var(--salt-text-2xl);line-height:1.15}
+.chead h1{margin:0;font-size:1.75rem;line-height:1.15}
 /* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header (digits only: every word shown is the table's) */
 .cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
 .cclock:empty{display:none}
@@ -304,7 +305,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 }
 .panel{max-width:620px;margin:0 auto}
 .panel h2,.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
-.panel p.lead{color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7;margin:0 0 18px}
+.panel p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 18px}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
    a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
    inside its card, so it starts at the card's edge: centred, it stood 170px in from everything else from 1080px */
@@ -350,8 +351,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .inv .invt .salt-ledger__label,.inv .invt .salt-ledger__value{font-size:var(--salt-text-sm)}
 .inv .invt .salt-ledger__flag{margin:0 0 4px}
 .inv .invtot{border-top:1px solid var(--salt-line-strong);border-bottom:0}
-.inv .invtot .salt-ledger__label{color:var(--salt-text);font-weight:600}
-.inv .invtot .salt-ledger__value{color:var(--salt-brass);font-weight:600}
+.inv .invtot .salt-ledger__label{color:var(--salt-text);font-weight:500}
+.inv .invtot .salt-ledger__value{color:var(--salt-brass);font-weight:500}
 /* S6 6.4: the pay sheet. The look is the recipes' (Sheet, KPI tile, Ghost, Option, Field, Ledger, Pill); this lays them out */
 .payseg{display:flex;gap:8px;margin-top:12px}
 .payseg .salt-ghost{flex:1 1 0;min-width:0}
@@ -616,9 +617,9 @@ body.ended>*:not(#aEnded){display:none}
 .aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-well)}
 .aring svg{width:22px;height:22px}
-/* 05 OCT 2026: THE RAIL'S NAME ON ONE LINE. The recipe's 22px title leaves 131px beside the ring in a 212px rail, and
-   each rail's name needs about 148, so it broke onto two lines; at 1.2rem it fits with room */
+/* the rail's brand, where a rail carries one (18 Oct 2026: the owner's page carries its name in the bar instead) */
 .salt-rail__brand .salt-title{font-size:1.2rem;white-space:nowrap}
+.adm .abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
 .salt-rail__tab .salt-appbar__place{color:inherit}
 .adm #mFoot:empty{display:none}
 .adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
@@ -627,7 +628,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm .alist .salt-inbox-row__title{gap:6px}
 .adm .achips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 @media (min-width:1080px){
-  .gate.adm{max-width:1180px;margin-top:24px;display:flex;gap:28px;align-items:flex-start;padding-bottom:48px}
+  .gate.adm{max-width:1180px;margin-top:0;display:flex;gap:20px;align-items:flex-start;padding-bottom:48px}
   .adm .amain{flex:1 1 auto;min-width:0}
   .adm #oShop{max-width:760px}
 }
@@ -736,9 +737,9 @@ body.ended>*:not(#aEnded){display:none}
 .adm .apnow th,.adm .apnow td{text-align:right;padding:4px 0 4px 12px;font-weight:400}
 .adm .apnow th:first-child{text-align:left;padding-left:0;color:var(--salt-text-muted)}
 .adm .apnow thead th{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
-.adm .apnow .apchg strong{font-weight:700;color:var(--salt-text)}
+.adm .apnow .apchg strong{font-weight:500;color:var(--salt-text)}
 .adm .apflag{white-space:normal}
-.adm .apbang{font-weight:700}
+.adm .apbang{font-weight:500}
 .adm .apfigs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:12px}
 .adm .apcard .rdet--row{margin:0}
 .adm .maker-offers__head{margin:16px 0 4px}
@@ -820,7 +821,7 @@ body.ended>*:not(#aEnded){display:none}
 /* THE TEST ACCOUNT (v689): its own small block under the items, quiet, because it is a thing he
    makes and unmakes rather than a place he goes. */
 .adm .mtest{margin-top:18px;padding-top:14px;border-top:1px solid var(--salt-line)}
-.adm .mtest p.lead{margin:0 0 10px;color:var(--salt-text-muted);font-size:var(--salt-text-sm);line-height:1.7}
+.adm .mtest p.lead{margin:0 0 10px;color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6}
 .adm .mtest .btn{margin-top:0}
 /* S9 9.3: AN ACCOUNT, as a row opens it (the plan's f13): the code large and the username under it, the chips, the one
    filled Send a sign-in link across the column with its answer under it, the other ways two by two with theirs, the
@@ -892,7 +893,7 @@ body.ended>*:not(#aEnded){display:none}
 .adm #glist .grow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .adm #glist select{margin-top:12px}
 .adm .alist .arow .salt-inbox-row__title{display:flex;align-items:center;gap:8px}
-.adm .alist .arow .acode{font-family:var(--salt-font-mono);font-weight:600}
+.adm .alist .arow .acode{font-family:var(--salt-font-mono);font-weight:500}
 .adm .alist .arow .astate{margin-left:auto;text-align:right}
 .adm .alist .arow .salt-inbox-row__what{overflow-wrap:anywhere}
 .adm .acard .srow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
@@ -1507,12 +1508,15 @@ export function landingPage(user, nonce, owner, bulletin) {
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */
         + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Account">'
-        + '<div class="salt-rail__brand"><span class="aring">' + aico("key") + '</span><b class="salt-title">Salt Account</b></div>'
         + '<div class="salt-rail__group">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo place" data-m="' + m + '" data-act="nav.' + m + '">'
           + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(m) + "</span><span>" + w + "</span></span>"
           + '<span class="salt-rail__count" data-count="' + m + '"></span></button>').join("") + "</div>"
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
         + '<div class="amain">'
+        /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
+           under it. It took the rail's brand and the eyebrow each place repeated ("Salt Account" and the clock). */
+        + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Account</div><div class="salt-deskbar__meta"><span class="clk" data-clock></span></div></div></div></header>'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
         + '<div id="unsentBar" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
@@ -1520,7 +1524,6 @@ export function landingPage(user, nonce, owner, bulletin) {
            so a section is moved between parts by changing its words here and nothing else. An element with none shows with its place. */
         /* S9 9.1: his home is Needs you, one card a thing with its action on it (stmt/owner.js) */
         + '<div id="mHome" data-in="needs">'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         /* plan 1 (15 Oct 2026): a read that failed leads the page, with a Retry (stmt/owner.js drawFail) */
         + '<div id="nFail" class="salt-action salt-action--now nfail" role="alert" hidden></div>'
         + "<h1>Needs you</h1>"
@@ -1536,7 +1539,6 @@ export function landingPage(user, nonce, owner, bulletin) {
            (#makerOrderList, a row an order); a row opens that order's card in #makerReview, beside the list from 860px and in its place
            below it (PHASE 1c). Order for them, opened from an account, stands at the head of the place. */
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Orders</h1>"
         + '<p class="lead">Orders from the Counter, by stage. The Desk checks each answer before it reaches the book.</p>'
         + adminParts("orders")
@@ -1565,7 +1567,6 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* CUSTOMERS: the people. Accounts is S9 9.2's list, one list for what Send and Review were: found by a word, narrowed by a
            filter, and a row opens the account beside the list from 860px, in its place below it on a phone. */
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Customers</h1>"
         + '<p class="lead">The people on the site: their accounts, their messages, guest links and associates.</p>'
         + adminParts("customers")
@@ -1606,7 +1607,6 @@ export function landingPage(user, nonce, owner, bulletin) {
         /* RECORD: his own entries, the forms, which the Desk checks and holds for review before they change the book. The Desk's rows waiting for
            him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Record</h1>"
         + '<p class="lead">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record")
@@ -1615,7 +1615,6 @@ export function landingPage(user, nonce, owner, bulletin) {
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
-        + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Shop</h1>"
         + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
         + adminParts("shop")

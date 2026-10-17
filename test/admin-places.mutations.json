@@ -344,14 +344,14 @@
  {
   "name": "a shared rule is moved under .adm (the customer's lead)",
   "file": "stmt/page.js",
-  "find": ".gate p.lead{color:var(--salt-text-muted);",
-  "replace": ".adm p.lead{color:var(--salt-text-muted);"
+  "find": ".gate p.lead{color:var(--salt-mist-bright);",
+  "replace": ".adm p.lead{color:var(--salt-mist-bright);"
  },
  {
   "name": "a shared rule is moved under .adm (the panel's lead)",
   "file": "stmt/page.js",
-  "find": ".panel p.lead{color:var(--salt-text-muted);",
-  "replace": ".adm .panel p.lead{color:var(--salt-text-muted);"
+  "find": ".panel p.lead{color:var(--salt-mist-bright);",
+  "replace": ".adm .panel p.lead{color:var(--salt-mist-bright);"
  },
  {
   "name": "tapping the place he is in goes back to its first stage",
