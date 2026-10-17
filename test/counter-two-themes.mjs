@@ -83,8 +83,8 @@ export async function run({ ok }) {
   ok(litLayer.length === 0, `the statement layer writes no colour as a literal, its print block too (found ${litLayer.join(" ") || "none"})`);
   ok(litPage.length === 0, `nor does the page's own CSS, the look swatches included (found ${litPage.join(" ") || "none"})`);
   const flat = layerAll.replace(/\s+/g, " ");
-  ok(/color-mix\(in srgb, var\(--salt-copper\) 16%, transparent\)/.test(flat) && /color-mix\(in srgb, var\(--salt-brass\) 10%, transparent\)/.test(flat) && !/-rgb\b/.test(layerAll),
-    "so the body's two corner glows are a mix of the copper and brass tokens, which Tide restates, and read no pair of channels");
+  ok(/body\{ margin:0;padding:22px 18px 60px; color:var\(--salt-text\); background:var\(--salt-obsidian\);/.test(flat) && !/radial-gradient/.test(flat) && !/-rgb\b/.test(layerAll),
+    "so the body's ground is the obsidian token, which Tide restates, with no glow of the layer's own (the light is the system's Aurora since 18 Oct 2026, test/counter-page-css.mjs), and reads no pair of channels");
   /* the swatches are the system's four tokens, each theme's ground and accent, the same under either theme; the page writes none and no theme restates them */
   const SWATCHES = ["night-ground", "night-accent", "tide-ground", "tide-accent"];
   ok(SWATCHES.every((k) => pageCss.includes("var(--salt-swatch-" + k + ")")) && !/--look-/.test(pageCss) && !Object.keys(TIDE_OVER).some((k) => /^swatch-/.test(k))

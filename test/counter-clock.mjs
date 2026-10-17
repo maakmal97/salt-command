@@ -20,6 +20,7 @@ export async function run({ ok }) {
     ok(c.textContent === kl().t || c.textContent === want.t, "and paints it again when the page comes back into view: " + JSON.stringify(c.textContent));
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
   const owner = landingPage("", "nclk2", { master: "", accounts: [] });
-  const eyebrows = owner.match(/<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock><\/span><\/p>/g) || [];
-  ok(eyebrows.length === 5, "every Salt Account place carries the clock beside its name: " + eyebrows.length);
+  /* 18 Oct 2026: one clock, under the name in the Desk bar that heads every place, as the Desk carries it */
+  const bars = owner.match(/<div class="salt-deskbar__name">Salt Account<\/div><div class="salt-deskbar__meta"><span class="clk" data-clock><\/span><\/div>/g) || [];
+  ok(bars.length === 1, "Salt Account carries the clock under its name in the Desk bar that heads every place: " + bars.length);
 }

@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="aa8d8fd0eaed1b22";
+var SALT_BUILD_ID="eb070d771c6244d9";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -2888,6 +2888,27 @@ label.salt-field__label {
 .salt-tabs__pill--active:hover, .salt-tabs__pill[aria-selected="true"]:hover { color: var(--salt-salt); }
 .salt-tabs__pill:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
 .salt-tabs__count { color: var(--salt-copper); margin-left: 8px; }
+/* Arrows (18 Oct 2026): a strip of stages in the order a thing moves, each tab an arrowhead pointing at the
+   next and the first flat at its tail. The edge and fill are two clipped layers behind the label, so the
+   button stays a rectangle: its tap target, its hit test and its focus ring are the pill's own. */
+.salt-tabs--arrows { gap: 2px; }
+.salt-tabs--arrows .salt-tabs__pill { position: relative; isolation: isolate; border: 0; border-radius: 0; padding-inline: 24px 22px; }
+.salt-tabs--arrows .salt-tabs__pill, .salt-tabs--arrows .salt-tabs__pill[aria-selected="true"], .salt-tabs--arrows .salt-tabs__pill--active { background: transparent; }
+.salt-tabs--arrows .salt-tabs__pill::before, .salt-tabs--arrows .salt-tabs__pill::after {
+  content: ""; position: absolute; z-index: -1;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%);
+}
+.salt-tabs--arrows .salt-tabs__pill::before { inset: 0; background: var(--salt-edge-field); }
+.salt-tabs--arrows .salt-tabs__pill::after { inset: 1px; background: var(--salt-obsidian); }
+.salt-tabs--arrows .salt-tabs__pill:first-child { padding-inline-start: 16px; }
+.salt-tabs--arrows .salt-tabs__pill:first-child::before, .salt-tabs--arrows .salt-tabs__pill:first-child::after {
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+}
+.salt-tabs--arrows .salt-tabs__pill:hover::before, .salt-tabs--arrows .salt-tabs__pill[aria-selected="true"]::before,
+.salt-tabs--arrows .salt-tabs__pill--active::before { background: var(--salt-brass); }
+.salt-tabs--arrows .salt-tabs__pill[aria-selected="true"]::after, .salt-tabs--arrows .salt-tabs__pill--active::after {
+  background: linear-gradient(var(--salt-glass), var(--salt-glass)), var(--salt-obsidian);
+}
 
 /* ---- Steps: where an order's GOODS are, and nothing else: Sent, Confirmed, Ready, then Collected or
    Delivered. A bar a step: done in verdigris, now in brass, ahead a well with the field's edge. The step

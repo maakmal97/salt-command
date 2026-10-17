@@ -53,6 +53,45 @@ export async function run({ ok, pageWork }) {
   ok(!/salt-producttag/.test(PAGE_SRC.replace(/\/\*[\s\S]*?\*\//g, "")) && /salt-producttag/.test(OWNER_SRC),
     "and the Product tag is drawn by Salt Account's script alone: nothing a customer's page draws names it, so a book is still a mark there and never a word");
 
+  /* ---- 1b. the light is the system's Aurora, as the Desk draws it (18 Oct 2026): carried whole, the first thing in both bodies, laid under the content, and no light of the
+     page's own. The ground was two radial gradients at a fraction of the orbs' strength, so the glass rail read flat black on the Counter and warm on the Desk ---- */
+  {
+    const { JSDOM } = await import("jsdom");
+    const key = ([sel, body, media]) => squash(media) + "|" + squash(sel) + "{" + squash(body) + "}", have = new Set(rulesOf(SITE_RECIPES).map(key));
+    const aur = rulesOf(ds).filter(([sel]) => /\.salt-aurora/.test(sel)), lost = aur.filter((r) => !have.has(key(r))).map((r) => (r[2] ? r[2] + " " : "") + r[0]);
+    ok(aur.length >= 16 && aur.filter((r) => r[2]).length === 2 && lost.length === 0,
+      `the Aurora is in the recipes the page carries, ${aur.length} rules whole, Tide's blobs and the system's own no-Aurora under reduced transparency and in print among them (missing: ${lost.join(", ") || "none"})`);
+    const pages = [["the customer's", landingPage("abcd-efgh", "nct", null)], ["Salt Account's", landingPage("", "nct", { master: "fixture-master", accounts: [] })]];
+    const drawn = pages.map(([w, h]) => { const a = new JSDOM(h).window.document.body.firstElementChild;
+      return [w, !!a && a.matches(".salt-aurora.salt-aurora--page.salt-aurora--fixed[aria-hidden=true]") && a.querySelectorAll(":scope > .salt-aurora__blob--copper, :scope > .salt-aurora__blob--brass").length === 2]; });
+    ok(drawn.every(([, y]) => y), "both pages draw the page Aurora, fixed and hidden from a reader, as the first thing in the body with its copper and brass blobs: " + drawn.map(([w, y]) => w + " " + (y ? "yes" : "no")).join(", "));
+    const layer = rulesOf(STATEMENT_CSS + pageCss), under = layer.filter(([sel, body, media]) => !media && sel === "body>.salt-aurora" && decl(body, "z-index") === "-1");
+    const hand = layer.filter(([, body]) => /radial-gradient/.test(body) && /(^|;)\s*background(-image)?\s*:/.test(body)).map((r) => r[0]);
+    ok(under.length === 1 && hand.filter((s) => /^(html|body)\b/.test(s)).length === 0,
+      `the page lays the Aurora under its content by a selector that outweighs the recipe's own z-index (${under.length}), and draws no light of its own on the ground (${hand.join(" ") || "none"})`);
+  }
+
+  /* ---- 1c. the Desk's type, gutter and shell, from salt-ds (18 Oct 2026, his word that the Desk's aesthetic is the one): no weight over the system's 500 in
+     the page's own layers (the system keeps 700 for its one filled pill), a heading at the display face's 300 and the Desk's 28px, the page 22px from the top,
+     and Salt Account headed by the system's Desk bar, which carries its name and the clock the rail and every place once carried ---- */
+  {
+    const { JSDOM } = await import("jsdom");
+    const own = rulesOf(STATEMENT_CSS + pageCss), heavy = own.filter(([, b]) => /^(600|700|bold|bolder)$/.test(decl(b, "font-weight"))).map((r) => r[0]);
+    ok(heavy.length === 0, `the page's own layers set no weight over the system's 500 (heavier: ${heavy.slice(0, 6).join(" | ") || "none"})`);
+    const h1 = own.filter(([sel, , m]) => !m && sel.split(",").includes("h1")), gateH1 = own.filter(([sel, , m]) => !m && /^\.(gate|chead) h1$/.test(sel));
+    ok(h1.length === 1 && decl(h1[0][1], "font-weight") === "300" && decl(h1[0][1], "letter-spacing") === ".04em" && gateH1.length === 2 && gateH1.every(([, b]) => decl(b, "font-size") === "1.75rem"),
+      "a heading is the display face at 300 with the Desk's tracking, at the Desk's 28px on the door, Salt Account and the customer's places");
+    const body = own.filter(([sel, , m]) => !m && sel === "body");
+    ok(body.length === 1 && /^22px\b/.test(decl(body[0][1], "padding")) && own.some(([sel, b, m]) => /min-width:\s*1080px/.test(m) && sel === ".gate.adm" && decl(b, "margin-top") === "0" && decl(b, "gap") === "20px"),
+      "the page starts 22px from the top, and from 1080px Salt Account's rail and column stand 20px apart with no margin above, as the Desk's do");
+    const heads = RECIPE_HEADS.filter((h) => h.startsWith("/* ---- Desk bar"));
+    const od = new JSDOM(landingPage("", "nct", { master: "fixture-master", accounts: [] })).window.document, bar = od.querySelector(".amain > .salt-deskbar:first-child");
+    ok(heads.length === 1 && SITE_RECIPES.includes(".salt-deskbar__name {") && !!bar && bar.querySelector(".salt-deskbar__brand .salt-deskbar__name").textContent === "Salt Account"
+      && bar.querySelectorAll(".salt-deskbar__meta [data-clock]").length === 1 && od.querySelectorAll("#roster [data-clock]").length === 1 && !od.querySelector("#roster .salt-rail__brand")
+      && ![...od.querySelectorAll("#roster .salt-eyebrow")].some((e) => /Salt Account/.test(e.textContent)),
+      "Salt Account is headed by the system's Desk bar, carried whole: its name, the one clock under it, and no brand in the rail nor a name repeated over each place");
+  }
+
   /* ---- 2. what PAGE_CSS keeps is placement: no rule under .adm sets a recipe's material, nor one of the page's classes that wear a recipe ---- */
   const MATERIAL = /(^|;)\s*(background(-color|-image)?|border(-[a-z]+)*|border-radius|box-shadow|font-family|font-size|font-weight|letter-spacing|text-transform|color)\s*:/;
   const WEARS = /(^|\.)(lbl|pane|acard|glink|ghead|gt|mos|maker-hours|grow|look-tile)(\.|:|$|\[)/;
@@ -129,8 +168,9 @@ export async function run({ ok, pageWork }) {
   try {
     const { d, work, click } = p;
     await work.quiet();
-    let bad = [], seen = 0;
-    const audit = () => { seen += d.querySelectorAll(".lbl").length; bad.push(...labelsBad(d)); };
+    let bad = [], seen = 0, sels = 0, selBad = [];
+    const audit = () => { seen += d.querySelectorAll(".lbl").length; bad.push(...labelsBad(d));
+      for (const x of d.querySelectorAll("select")) { sels++; if (!x.classList.contains("salt-field__select")) selBad.push(x.getAttribute("data-act") || x.className); } };
     await click(byAct(d, "nav.record")); await click(byAct(d, "part.record.entry"));
     const forms = [...d.querySelectorAll('[data-act="record.form"]')].length;
     for (let i = 0; i < forms; i++) {
@@ -138,6 +178,10 @@ export async function run({ ok, pageWork }) {
       const r = [...d.querySelectorAll('[data-act="record.form"]')][i]; if (r) { await click(r); audit(); }
     }
     ok(forms >= 10 && seen >= 25 && bad.length === 0, `every label on Record's ${forms} forms is the system's Field label, and every legend its label modifier (${seen} read; bare: ${bad.slice(0, 3).join(" | ") || "none"})`);
+    /* 18 Oct 2026: a select is the system's, so its open list is the Desk's slate under salt ink (.salt-field__select option) and never the well this page once set */
+    ok(sels >= 10 && selBad.length === 0 && rulesOf(SITE_RECIPES).some(([sel, b, m]) => !m && sel === ".salt-field__select option" && decl(b, "background") === "var(--salt-slate)" && decl(b, "color") === "var(--salt-salt)")
+      && !R.some(([sel]) => /(^|[\s>+~,])option\b/.test(sel)),
+      `every select on Record's forms wears the system's select, whose open list is slate under salt ink as on the Desk, and the page sets no list colour of its own (${sels} read; bare: ${selBad.slice(0, 3).join(" ") || "none"})`);
 
     /* a book on a row wears the Product tag, the book's mark in it and no word for the book (his word of 12 Oct 2026), its hue the book's own accent token, and no style attribute (the Counter's policy refuses one) */
     await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.approve"));

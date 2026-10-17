@@ -377,9 +377,12 @@ const tripLine = ({ row, waiting }) => {
 };
 const tripCard = (rows, held) => {
   const lines = standing(rows, held).map(tripLine);
-  return { party: rows[0].customer, date: rows[0].date || null,
-    owed: r2(lines.reduce((a, l) => a + l.owed, 0)), paid: r2(lines.reduce((a, l) => a + l.paid, 0)),
-    handedLines: lines.filter((l) => l.left <= 0.0005).length, waiting: lines.reduce((a, l) => a + l.waiting, 0), lines };
+  const owed = r2(lines.reduce((a, l) => a + l.owed, 0)), paid = r2(lines.reduce((a, l) => a + l.paid, 0));
+  const handedLines = lines.filter((l) => l.left <= 0.0005).length;
+  /* 18 Oct 2026: an order of several books stands at the stage its lines put it, by the one rule a row's is read by (flowStage): every line out
+     is its goods out, what it owes is its lines' (CN3-WM's, all collected and owing, sat under Agreed) */
+  const stage = flowStage({ qty: lines.length, handed: handedLines, owed, paid, ended: rows.every((s) => s.defaulted) });
+  return { party: rows[0].customer, date: rows[0].date || null, owed, paid, handedLines, waiting: lines.reduce((a, l) => a + l.waiting, 0), lines, stage };
 };
 const joiningRids = (held) => new Set((held || []).filter((e) => e && e.payload && e.payload.mode === "amend"
   && e.payload.kind === "Correction" && e.payload.fields && e.payload.fields.trip != null).map((e) => e.payload.rid));

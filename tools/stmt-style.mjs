@@ -100,6 +100,13 @@ export const RECIPE_HEADS = [
      (PRODUCTS.accent in ledger/book.json, reached as the system's --salt-product-* token). Product tag is his page's alone:
      no customer's page draws one, and the site's rule that a product is a mark and never a word stands. */
   "/* ---- Metric row ---- */", "/* ---- Table (synced to the desk", "/* ---- Product tag:",
+  /* 18 OCT 2026, HIS WORD: THE LIGHT IS THE SYSTEM'S, as the Desk draws it. The ground was two radial gradients restated here at a fraction of the
+     orbs' strength, so the glass rail and cards read flat black on the Counter and warm on the Desk. Aurora is carried whole and both pages draw
+     .salt-aurora--page --fixed first in the body; the layer below only lays it under the content. The system's last section comes with it: no Aurora under
+     reduced transparency or on paper, and the pane fill where a renderer cannot frost the glass. */
+  "/* ---- Aurora ---- */", "/* ---- Where the frost cannot be drawn ----",
+  /* and the Desk bar, which heads Salt Account as it heads the Desk (18 Oct 2026) */
+  "/* ---- Desk bar (synced to the desk",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
@@ -117,7 +124,6 @@ export function siteRecipes() {
        out of two gradients and keeps it. Stripped here, and a url( anywhere else in a recipe
        stops the generation rather than the suite. */
     .replace(/\n\.salt-field__input\.salt-field__select \{[^}]*\}/, "")
-    .replace(/\n\.salt-field__select option \{[^}]*\}/, "")
     /* NOT THE COMMENTS (24 Sep 2026). The system's notes name its other surfaces (the Inbox row's
        names Salt Account, which S1 1.10 keeps off the customer's page) and are a fifth of the bytes;
        the rules are carried whole, the prose stays upstream. No recipe holds a string with a comment
@@ -131,18 +137,18 @@ export function siteRecipes() {
 /* The statement's own layer. Class names are the ones stmtDoc already emits: this is a
    change of material, not a rewrite of the markup, for the same reason v472 was a layer. */
 const LAYER = `
+/* 18 OCT 2026, HIS WORD: THE DESK'S TYPE AND GUTTER, from salt-ds. A heading is the display face at 300, as the Desk's; every figure, label and
+   total is at the system's 500, where this layer had set 600 and 700 (the system keeps 700 for the one filled pill); the page starts 22px from the top, as the Desk's does. */
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{
-  margin:0;padding:44px 20px 60px;
+  margin:0;padding:22px 18px 60px;
   color:var(--salt-text);
-  background:
-    radial-gradient(1200px 640px at 82% -12%, color-mix(in srgb, var(--salt-copper) 16%, transparent) 0%, transparent 62%),
-    radial-gradient(900px 560px at -10% 6%, color-mix(in srgb, var(--salt-brass) 10%, transparent) 0%, transparent 58%),
-    var(--salt-obsidian);
-  background-attachment:fixed;
+  background:var(--salt-obsidian);
   font-family:var(--salt-font-display);
   font-size:var(--salt-text-md);line-height:1.6;-webkit-font-smoothing:antialiased}
+/* the light is the system's Aurora (SITE_RECIPES), the first thing in the body; laid under every block of the page and over the body's ground, a selector that outweighs the recipe's z-index, which the recipes, coming later, would otherwise win */
+body>.salt-aurora{z-index:-1}
 
 /* FIGURES IN MONO, SENTENCES IN THE DISPLAY FACE. Decision 3 of the identity, and the whole
    figure vocabulary of a statement is listed here once. */
@@ -152,14 +158,14 @@ body{
 
 .w{max-width:620px;margin:0 auto}
 .eyebrow{font-size:var(--salt-text-xs);letter-spacing:.32em;color:var(--salt-copper);
-  font-weight:700;margin:0 0 10px;text-transform:uppercase}
-h1,h2.stmth{margin:0;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em;line-height:1.12;
+  font-weight:500;margin:0 0 10px;text-transform:uppercase}
+h1,h2.stmth{margin:0;font-size:var(--salt-text-2xl);font-weight:300;letter-spacing:.04em;line-height:1.12;
   font-family:var(--salt-font-display)}
 .meta{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:10px 0 0}
 .whol{font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--salt-copper);font-weight:700;margin:0}
+  color:var(--salt-copper);font-weight:500;margin:0}
 .whol.gap1{margin:26px 0 0}.whol.gap2{margin:30px 0 0}
-.who{margin:8px 0 4px;font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text);
+.who{margin:8px 0 4px;font-size:var(--salt-text-lg);font-weight:500;color:var(--salt-text);
   letter-spacing:.06em}
 /* brass leads the hairlines: decision 1 */
 .rule{height:1px;background:var(--salt-line);margin:24px 0 4px;border:0}
@@ -176,7 +182,7 @@ table{width:100%;border-collapse:collapse;min-width:340px}
 .tblw td+td,.tblw th+th{padding-left:10px}
 table.rft{margin-top:10px}
 th{font-size:var(--salt-text-xs);letter-spacing:.16em;text-transform:uppercase;
-  color:var(--salt-text-muted);font-weight:700;padding:0 0 10px;text-align:right;white-space:nowrap}
+  color:var(--salt-text-muted);font-weight:500;padding:0 0 10px;text-align:right;white-space:nowrap}
 th.l{text-align:left}
 td{padding:15px 0;border-bottom:1px solid var(--salt-line-faint);text-align:right;vertical-align:top}
 td.l{text-align:left}
@@ -195,16 +201,16 @@ td.l{text-align:left}
 .pm{display:inline-flex;align-items:center;margin-right:5px;vertical-align:-1px;color:var(--salt-text-muted)}
 .pm .psym{display:block}
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.amt{font-size:var(--salt-text-lg);font-weight:700;color:var(--salt-text)}
+.amt{font-size:var(--salt-text-lg);font-weight:500;color:var(--salt-text)}
 
 /* THE THREE WORDS. Each is a mono word in its colour; nothing here is a filled badge. */
 .ok{font-size:var(--salt-text-sm);color:var(--salt-verdigris);letter-spacing:.02em}
-.due{font-size:var(--salt-text-sm);font-weight:700;color:var(--salt-ember);white-space:nowrap}
-.pend{color:var(--salt-steel);font-weight:700;font-size:var(--salt-text-sm);letter-spacing:.02em}
+.due{font-size:var(--salt-text-sm);font-weight:500;color:var(--salt-ember);white-space:nowrap}
+.pend{color:var(--salt-steel);font-weight:500;font-size:var(--salt-text-sm);letter-spacing:.02em}
 .owedunits{font-size:var(--salt-text-sm);color:var(--salt-verdigris);margin-top:5px;
-  font-weight:600;white-space:nowrap}
-.cx{color:var(--salt-text-muted);font-weight:700;font-size:var(--salt-text-sm);letter-spacing:.02em}
-.cxn{color:var(--salt-text-muted);font-weight:600}
+  font-weight:500;white-space:nowrap}
+.cx{color:var(--salt-text-muted);font-weight:500;font-size:var(--salt-text-sm);letter-spacing:.02em}
+.cxn{color:var(--salt-text-muted);font-weight:500}
 .cxr{text-decoration:line-through;text-decoration-thickness:1px;opacity:.45}
 .gift{font-size:var(--salt-text-sm);color:var(--salt-mist-light);letter-spacing:.02em;white-space:nowrap}
 .nilamt{color:var(--salt-text-muted);font-weight:400}
@@ -215,7 +221,7 @@ td.l{text-align:left}
 /* the figure is the row's own last child: the cancelled note nested in the words wraps (S7-R4, 25 Sep 2026) */
 .tr>span:last-child{color:var(--salt-text);white-space:nowrap}
 .tr.big{margin-top:10px;padding-top:16px;border-top:1px solid var(--salt-line);
-  font-size:var(--salt-text-xl);font-weight:700;color:var(--salt-text)}
+  font-size:var(--salt-text-xl);font-weight:500;color:var(--salt-text)}
 .tr.big span:last-child{color:var(--salt-ember)}
 .tr.big.clear span:last-child{color:var(--salt-verdigris)}
 .tr.sub{color:var(--salt-text-muted);font-size:var(--salt-text-sm)}
@@ -225,28 +231,28 @@ td.l{text-align:left}
   background:var(--salt-glass)}
 .owed{padding:20px 22px}
 .owedl{margin:0;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--salt-copper);font-weight:700}
-.owedv{margin:8px 0 0;font-size:var(--salt-text-2xl);font-weight:700;color:var(--salt-verdigris);
+  color:var(--salt-copper);font-weight:500}
+.owedv{margin:8px 0 0;font-size:var(--salt-text-2xl);font-weight:500;color:var(--salt-verdigris);
   letter-spacing:-.01em}
-.owedv>span:last-child{font-size:var(--salt-text-md);font-weight:600;margin-left:6px;color:var(--salt-text-muted)}
+.owedv>span:last-child{font-size:var(--salt-text-md);font-weight:500;margin-left:6px;color:var(--salt-text-muted)}
 .owedn{margin:12px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.6}
 .rec{padding:22px 22px 8px}
 .recl{margin:0 0 18px;font-size:var(--salt-text-xs);letter-spacing:.2em;text-transform:uppercase;
-  color:var(--salt-copper);font-weight:700}
+  color:var(--salt-copper);font-weight:500}
 .stp{display:flex;gap:14px;margin-bottom:20px}
 .stpn{flex:0 0 24px;height:24px;border-radius:var(--salt-radius-pill);border:1px solid var(--salt-line);
-  color:var(--salt-brass);font-size:var(--salt-text-xs);font-weight:700;font-family:var(--salt-font-mono);
+  color:var(--salt-brass);font-size:var(--salt-text-xs);font-weight:500;font-family:var(--salt-font-mono);
   display:flex;align-items:center;justify-content:center;line-height:1}
 .stpb{flex:1 1 auto;min-width:0}
-.stpt{margin:0;font-size:var(--salt-text-md);font-weight:600;color:var(--salt-text);line-height:1.5}
+.stpt{margin:0;font-size:var(--salt-text-md);font-weight:500;color:var(--salt-text);line-height:1.5}
 .stpd{margin:7px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.65}
 table.mini{width:100%;border-collapse:collapse;margin-top:10px;min-width:0}
 table.mini th{font-size:var(--salt-text-xs);letter-spacing:.14em;padding:0 0 6px;color:var(--salt-text-muted)}
 table.mini td{padding:8px 0;font-size:var(--salt-text-sm);border-bottom:1px solid var(--salt-line-faint);
   color:var(--salt-mist-light)}
-table.mini tr.tot td{border-bottom:0;border-top:1px solid var(--salt-line);font-weight:700;
+table.mini tr.tot td{border-bottom:0;border-top:1px solid var(--salt-line);font-weight:500;
   color:var(--salt-text);padding-top:9px}
-table.mini tr.sub td{border-bottom:0;color:var(--salt-text);font-weight:700}
+table.mini tr.sub td{border-bottom:0;color:var(--salt-text);font-weight:500}
 b.short{color:var(--salt-ember)}
 .recn{margin:2px 0 16px;font-size:var(--salt-text-sm);color:var(--salt-text-muted);line-height:1.65;
   border-top:1px solid var(--salt-line-faint);padding-top:14px}
@@ -288,20 +294,20 @@ export function statementCss() {
 export const REVIEW_CSS = `
 .rv{max-width:960px;margin:0 auto 40px}
 .rvh{font-size:var(--salt-text-xs);letter-spacing:.3em;text-transform:uppercase;
-  color:var(--salt-copper);font-weight:700;margin:0 0 10px}
-.rvt{margin:0 0 8px;font-size:var(--salt-text-2xl);font-weight:600;letter-spacing:-.01em}
+  color:var(--salt-copper);font-weight:500;margin:0 0 10px}
+.rvt{margin:0 0 8px;font-size:var(--salt-text-2xl);font-weight:300;letter-spacing:.04em}
 .rvs{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:0 0 26px;line-height:1.7}
 .rvs b{color:var(--salt-text)}
 .idxw{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .idx{width:100%;border-collapse:collapse;margin-bottom:14px;min-width:760px}
 .idx th{font-size:var(--salt-text-xs);letter-spacing:.16em;text-transform:uppercase;
-  color:var(--salt-text-muted);font-weight:700;padding:0 10px 9px;text-align:right;
+  color:var(--salt-text-muted);font-weight:500;padding:0 10px 9px;text-align:right;
   border-bottom:1px solid var(--salt-line);white-space:nowrap}
 .idx th.l{text-align:left}
 .idx td{padding:11px 10px;border-bottom:1px solid var(--salt-line-faint);text-align:right;
   font-size:var(--salt-text-sm)}
 .idx td.l{text-align:left}.idx td.r{text-align:right}
-.idx a{color:var(--salt-brass);text-decoration:none;font-weight:700}
+.idx a{color:var(--salt-brass);text-decoration:none;font-weight:500}
 .idx a:hover{text-decoration:underline}
 .idx tr.f-owes{background:color-mix(in srgb, var(--salt-ember) 7%, transparent)}
 .idx tr.f-goods{background:color-mix(in srgb, var(--salt-verdigris) 7%, transparent)}
@@ -314,7 +320,7 @@ b.rf{color:var(--salt-ember)}
 .pw{font-size:var(--salt-text-sm);color:var(--salt-brass);letter-spacing:.04em;white-space:nowrap}
 .cut{margin:0;border:0;border-top:1px dashed var(--salt-line);padding:0}
 .slab{max-width:960px;margin:34px auto 6px;font-size:var(--salt-text-xs);letter-spacing:.24em;
-  text-transform:uppercase;color:var(--salt-copper);font-weight:700}
+  text-transform:uppercase;color:var(--salt-copper);font-weight:500}
 .warn{max-width:960px;margin:0 auto 26px;border:1px solid color-mix(in srgb, var(--salt-ember) 40%, transparent);
   border-radius:var(--salt-radius-md);padding:16px 20px;background:color-mix(in srgb, var(--salt-ember) 8%, transparent);
   color:var(--salt-mist-light);font-size:var(--salt-text-sm);line-height:1.7}

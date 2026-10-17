@@ -113,6 +113,9 @@ export async function run({ ok, pageWork }) {
     ok(strips.length === 2 && partsOf(strips[0]) === "placed,confirmed,ready,paid,done,ended" && partsOf(strips[1]) === "approve,payments,group,ledger" && strips[1].classList.contains("aparts--minor")
       && strips.every((s) => s.classList.contains("salt-tabs") && s.getAttribute("role") === "tablist"),
     "Orders draws two strips, the six stages in the order an order moves and then Approve, Payments, Group and Ledger, smaller: " + JSON.stringify(strips.map(partsOf)));
+    /* 18 Oct 2026 (his word): the stages are arrowheads, the system's own variant, and the strip beneath stays pills */
+    ok(strips[0].classList.contains("salt-tabs--arrows") && !strips[1].classList.contains("salt-tabs--arrows") && /\.salt-tabs--arrows \.salt-tabs__pill::before[^{]*\{[^}]*clip-path/.test(SITE_RECIPES),
+      "the six stages are drawn as arrowheads (salt-tabs--arrows), Approve, Payments, Group and Ledger as pills: " + strips.map((s) => s.className).join(" | "));
     const stripCss = ownerCss().top(".adm .aparts--stages,.adm .aparts--minor").join();
     ok(/flex-wrap:\s*nowrap/.test(stripCss) && /overflow-x:\s*auto/.test(stripCss), "and a strip is one row that scrolls sideways on a narrow screen, never wrapping: " + stripCss);
     const reach = [];

@@ -24489,7 +24489,7 @@ await (async () => {
 
   /* ---- 10. THE PAGE: the confirm step, the location, the amount, and the dropdown he called bizarre ---- */
   const page94 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(/select\.fld\{[^}]*color-scheme:dark/.test(page94) && /select\.fld option\{background:var\(--salt-well\)/.test(page94)
+  ok(/select\.fld\{[^}]*color-scheme:dark/.test(page94) && /\.salt-field__select option \{ background: var\(--salt-slate\); color: var\(--salt-salt\); \}/.test(page94) && !/select\.fld option\{/.test(page94)
     && /select\.fld\{[^}]*linear-gradient\(45deg/.test(page94),
     "the open list is told the page is dark and the chevron is drawn on the page, which is the bizarre colour fixed");
   /* S13 13.3: the words are the table's, served as its JSON */
@@ -42451,9 +42451,9 @@ await (async () => {
   ok(phone.hcol === "flex|24px|0px|24px" && phone.rows === "8px|0px" && phone.orows === "8px|0px",
     "Home's sections stand one 24px gap apart, each column's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
     + JSON.stringify(phone));
-  ok(desk.body.join() === "44px,20px,60px,20px" && desk.shell === "48px" && desk.door === "4px|4px" && deskOwn.roster === "24px|48px"
+  ok(desk.body.join() === "22px,18px,60px,18px" && desk.shell === "48px" && desk.door === "4px|4px" && deskOwn.roster === "0px|48px"
     && desk.hcol.split("|")[2] === "24px" && desk.rows === "8px|8px" && desk.orows === "8px|8px",
-    "from 1080px nothing moves: the desk keeps its own frame: " + JSON.stringify({ desk, roster: deskOwn.roster }));
+    "from 1080px nothing moves: the desk keeps its own frame, 22px from the top as the Desk is since 18 Oct 2026, Salt Account with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
 })();
 
 section("S7 7.4: Order again opens the check at today's price with the same size, way and place");
@@ -45941,8 +45941,8 @@ await (async () => {
   ok(/\.salt-pill \{/.test(genY.SITE_RECIPES) && /\.salt-ghost \{/.test(genY.SITE_RECIPES) && /\.salt-field__input \{/.test(genY.SITE_RECIPES)
     && /\.salt-tabs__pill\[aria-selected="true"\]/.test(genY.SITE_RECIPES) && /\.salt-status--verdigris/.test(genY.SITE_RECIPES),
     "and they are the pill, the ghost, the field, the tab strip and the state chip");
-  ok(!/url\(/.test(genY.SITE_RECIPES) && !/salt-field__select/.test(genY.SITE_RECIPES),
-    "and none of them loads anything: the select's data: chevron stays out, the page draws its own from gradients");
+  ok(!/url\(/.test(genY.SITE_RECIPES) && !/salt-field__input\.salt-field__select/.test(genY.SITE_RECIPES) && /\.salt-field__select option \{/.test(genY.SITE_RECIPES),
+    "and none of them loads anything: the select's data: chevron stays out, the page draws its own from gradients, while its open list is the system's slate (18 Oct 2026)");
   const pgY = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
   ok((pgY.match(/STATEMENT_CSS \+ SITE_RECIPES \+ PAGE_CSS/g) || []).length === 2,
     "both pages the Worker serves carry the recipes between the tokens and the page's own layer");
@@ -46013,7 +46013,7 @@ await (async () => {
   const cssW = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8"), flat = (s) => s.replace(/\s+/g, " ").trim(), flatR = flat(R);
   const shortW = headsW.filter((h) => {
     const i = cssW.indexOf(h), j = cssW.indexOf("\n/* ---- ", i + h.length);
-    const sec = cssW.slice(i, j < 0 ? cssW.length : j).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n[^\n{}]*salt-field__select[^{}]*\{[^}]*\}/g, "");
+    const sec = cssW.slice(i, j < 0 ? cssW.length : j).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n\.salt-field__input\.salt-field__select \{[^}]*\}/g, "");
     return i < 0 || !flatR.includes(flat(sec));
   });
   ok(headsW.length > 25 && !shortW.length, "and each of its " + headsW.length + " sections whole, every rule the system states in it (short: " + (shortW.join(" ") || "none") + ")");

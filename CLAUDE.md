@@ -556,7 +556,7 @@ The rest: `docs/DESK.md`.
 npm install        # once
 npm run build      # master -> public/desk.html, after any master edit
 npm run dev        # build, then wrangler dev (live KV)
-npm test           # the suite split across processes (tools/suite-split.mjs), about 2 minutes here; CI runs it too
+npm test           # the suite split across processes (tools/suite-split.mjs), 5 to 12 minutes here; CI runs it too
 npm run test:serial  # the same suite in one process, 3 to 7 minutes; 4 GB heap
 npm run deploy     # build, then wrangler deploy
 node tools/update.mjs
@@ -581,6 +581,10 @@ skips Cloudflare and the fetch).
   read `docs/WORKING.md`.
 - **Run independent steps in parallel**: the suite in the background; master mutations at once on
   `SALT_MASTER` copies; tool-file mutations one at a time.
+- **A display-only change pushes on its touched sections plus the gate** (his yes of 18 Oct 2026): markup and CSS of
+  what the desk or the Counter shows, touching nothing that prices, books, folds, routes or holds money. Each new
+  check is proved red (`tools/section.mjs --mutations`), the sections it touches pass, the gate is OK, and CI's suite
+  on that push is the full check, read after. Anything else runs the full suite before it pushes.
 
 Read @MEMORY.md beside this file (current facts) before the first action; correct it in place.
 History: git log; master/changelog.json is written only by tools/changelog.mjs on a bump.
