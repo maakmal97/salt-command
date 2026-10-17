@@ -29,7 +29,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, claimRows, claimOrderFlight, claimEntry,
-  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow } from "../engine/stages.mjs";
+  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
   amendEntry, stageAt, advanceOf, claimOrderFlight } from "../engine/stages.mjs";
 
@@ -1911,9 +1911,20 @@ export async function tellSite(env, fixes, mirror) {
   const { followed, failed } = await followRows(env, r.orders, { byKey, rows, byRid });
   let told = 0;
   for (const o of r.orders) {
-    if (!o.ledgerKey || ["done", "cancelled", "declined"].includes(o.status)) continue;
+    if (!o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const row = byKey.get(ledgerKeyOf(o));   /* V4a: never a salt twin's row by the old shape */
     if (!row || row.cancelled) continue;
+    if (o.status === "done") {
+      /* 17 Oct 2026, his yes: a settled order takes all its row states, its money and goods included, once nothing is on its way to the row */
+      const s = settledFromRow(o, row);
+      if (!s || await termsInFlight(env, o)) continue;
+      const d = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ restate: Object.assign({}, s, { book: true }) })
+      });
+      if (!d || !d.ok) failed.push({ id: o.id, why: "the site would not take its row's figures" + (d ? " (http " + d.status + ")" : "") });
+      else told++;
+      continue;
+    }
     const ledger = {};
     const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);
     if (paid > (+o.paid || 0) + 0.004) ledger.paid = paid;

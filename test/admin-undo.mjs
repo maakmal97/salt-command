@@ -21,7 +21,7 @@ import { buildSeed } from "../tools/d1.mjs";
 import { readBook, draftRow, withRefunds } from "../src/drafter.js";
 import { makerAmendmentRoom, makerLedgerAmendment } from "../src/maker-inputs.js";
 import { undoFixes } from "../src/orders.js";
-import { restateTap, termsFromRow } from "../engine/stages.mjs";
+import { restateTap, termsFromRow, settledFromRow } from "../engine/stages.mjs";
 import { applyAmend } from "../engine/apply.mjs";
 import { decideFix, decideDesk, applyEvent, wakes } from "../stmt/orders.js";
 import { NEWS } from "../stmt/sw.js";
@@ -248,6 +248,30 @@ export async function run({ ok, pageWork }) {
   const noCtx = makerLedgerAmendment({ at: "2026-10-16T06:00:06.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95 } }, tBook);
   ok(/trip's/.test(onTrip.error || "") && !onTrip.restate && !/could not be read/.test(noCtx.error || ""),
     "a delivery Correction on a trip row is refused, never sent to one order, and a caller that asked for no site order is not told the site was down: " + J([onTrip, noCtx.error || "ok"]));
+  /* a settled order's reading: the row's money and goods too, never while the site holds a move the book has not heard or a claim waits */
+  const sRow = { ...zu2(), total: 100, cash: 100 }, sO = ORDER("20261002000000-un2", zu2(), { status: "done" });
+  ok(J(settledFromRow(sO, sRow)) === J({ qty: 1, total: 100, delivery: 0, paid: 100, moved: 1 }) && settledFromRow(sO, zu2()) === null
+    && J(settledFromRow(sO, { ...zu2(), cash: 60 })) === J({ qty: 1, total: 110, delivery: 0, paid: 60, moved: 1 })
+    && settledFromRow({ ...sO, status: "ready" }, sRow) === null
+    && settledFromRow({ ...sO, paid: 120, queued: { paid: 110, moved: 1 } }, sRow) === null
+    && settledFromRow({ ...sO, moved: 1, queued: { paid: 110, moved: 0 } }, sRow) === null
+    && settledFromRow({ ...sO, payments: [{ at: "x", amount: 5, claim: "waiting" }] }, sRow) === null
+    && settledFromRow(sO, { ...sRow, total: 2000000 }) === null && settledFromRow(sO, { ...sRow, delivery: 9 }) === null
+    && settledFromRow({ ...sO, closed: { qty: 2, total: 200 } }, { ...sRow, qty: 2, deliveredQty: 2 }) === null
+    && J(settledFromRow({ ...sO, mode: "deliver", delivery: 7 }, { ...sRow, trip: "t1", delivery: 0 })) === J({ qty: 1, total: 100, delivery: 7, paid: 100, moved: 1 }),
+  "a settled order takes its row's size, goods, delivery, money and goods handed over; never when they agree, it is not settled, the site holds a "
+    + "move the book has not heard, a claim waits, past the bounds, a charge on a collection or a closed order's size; a trip row leaves its delivery: " + J(settledFromRow(sO, sRow)));
+  /* and the order book: the book's figures whole on a settled order alone, a move it has not told refusing them, and owing after them it opens again */
+  const sd = { ...JSON.parse(J(sO)), status: "done", history: [{ at: "x", status: "ready", by: "desk" }, { at: "y", status: "done", by: "site" }] };
+  const bk1 = decideDesk(JSON.parse(J(sd)), { restate: { qty: 1, total: 120, delivery: 0, paid: 110, moved: 1, book: true } }, "2026-10-17T01:00:00.000Z");
+  const bo = applyEvent(JSON.parse(J(sd)), bk1.ev).order;
+  const bk2 = decideDesk({ ...JSON.parse(J(sd)), status: "ready" }, { restate: { qty: 1, total: 120, delivery: 0, paid: 110, moved: 1, book: true } }, "2026-10-17T01:00:01.000Z");
+  const bk3 = decideDesk({ ...JSON.parse(J(sd)), paid: 130 }, { restate: { qty: 1, total: 120, delivery: 0, paid: 110, moved: 1, book: true } }, "2026-10-17T01:00:02.000Z");
+  const bk4 = applyEvent(JSON.parse(J(sd)), decideDesk(JSON.parse(J(sd)), { restate: { qty: 1, total: 90, delivery: 0, paid: 90, moved: 1, book: true } }, "2026-10-17T01:00:03.000Z").ev).order;
+  ok(bk1.ev && bo.status === "ready" && bo.total === 120 && bo.paid === 110 && bo.queued.paid === 110 && bk2.status === 409 && bk3.status === 409
+    && bk4.status === "done" && bk4.paid === 90 && bk4.queued.paid === 90 && wakes(bk1.ev, bo, false) === null,
+  "the order book takes the book's figures whole on a settled order alone, never over a move it has not told, opens one left owing at its state before, "
+    + "and a cut with its money stays settled: " + J([bo.status, bo.total, bo.paid, bk2.error, bk3.error, bk4.status, bk4.paid]));
   const fTDown = await fixture({ siteDown: true });
   const cutDown = await fTDown.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:04.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95 } });
   ok(cutDown.status === 400 && /could not be read/.test(cutDown.j.error || "") && !fTDown.drafts().some((d) => d.amends === "zu3"),
@@ -392,6 +416,20 @@ export async function run({ ok, pageWork }) {
       && rs[0].body.delivery === 0 && /^[0-9a-f]{32}$/.test(rs[0].body.rid) && /amendment of their order/.test(said),
     "a Correction the Desk names as a site order's is sent once as that order's Amend, under its own request id, and the form says so: " + J({ tried: tried.length, rs }));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { pc.w.close(); }
+
+  /* 17 Oct 2026, CR3-DAM's order: a Ready order with every unit handed over asks for no handover; one with units left still does */
+  const handAsk = async (moved) => {
+    const ph = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: (j.orders || []).map((o) => o.id === "ord-r1" ? { ...o, moved } : o), drafts: [], queue: [], trips: [], sameDay: [] }) });
+    try {
+      await ph.work.quiet();
+      byAct(ph.d, "nav.orders").click(); await ph.work.quiet(); byAct(ph.d, "part.orders.ready").click(); await ph.work.quiet();
+      const c = ph.card("ord-r1");
+      return c ? [!!byAct(c, "order.handed-units"), !!byAct(c, "order.handed")] : null;
+    } finally { ph.w.close(); }
+  };
+  const allOut = await handAsk(1), partOut = await handAsk(0.5);
+  ok(J(allOut) === J([false, false]) && J(partOut) === J([true, true]),
+    "a Ready order with every unit handed over offers no handover field or button, and one with units left still does: " + J({ allOut, partOut }));
 
   /* the approve card: an undo is one card with its own verb, and the button says the result */
   const mb = { sales: [s267()], purchases: [], state: { TERMS: { ceiling: 250 } } };

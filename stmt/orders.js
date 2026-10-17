@@ -953,6 +953,20 @@ export function decideDesk(order, body, at) {
      charge. The desk checked the floor and stated the figures; the site prices nothing, so it holds only what makes the
      order true: not under what is out, no charge on a collection, no waiting claim. Under what they have paid is taken
      since 06 Oct 2026, as a close under it is: the ledger raises the refund for the difference when the amendment folds. */
+  /* 17 Oct 2026, his yes: A SETTLED ORDER TAKES ALL ITS ROW STATES (the return leg's `book`), its money and goods included, which may come down:
+     the book is the record once nothing of the site's is on its way to it. Owing after it, the order opens again at the state it held before. */
+  if (body && body.restate && body.restate.book === true) {
+    const r = body.restate, told = order.queued || {};
+    if (order.status !== "done") return { error: "only a settled order takes the book's figures whole", status: 409 };
+    const fig = (v, lo) => isNum(v) && v >= lo && v <= 1000000;
+    if (!fig(r.qty, 0.0005) || !fig(r.total, 0.005) || !fig(r.delivery, 0) || !fig(r.paid, 0) || !fig(r.moved, 0) || r.moved > r.qty + 0.0004
+      || (r.delivery > 0 && order.mode !== "deliver")) return { error: "the book's figures are not an order's", status: 400 };
+    if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
+    if ((+order.paid || 0) > (+told.paid || 0) + 0.004 || (+order.moved || 0) > (+told.moved || 0) + 0.0004) return { error: "the order holds a move the book has not heard yet", status: 409 };
+    if (Math.abs(r.qty - order.qty) < 0.0004 && Math.abs(r.total - order.total) < 0.004 && Math.abs(r.delivery - (+order.delivery || 0)) < 0.004
+      && Math.abs(r.paid - (+order.paid || 0)) < 0.004 && Math.abs(r.moved - (+order.moved || 0)) < 0.0004) return { none: true };
+    return { ev: { kind: "restate", at, book: true, qty: +r.qty.toFixed(3), total: +r.total.toFixed(2), delivery: +r.delivery.toFixed(2), paid: +r.paid.toFixed(2), moved: +r.moved.toFixed(3) } };
+  }
   if (body && body.restate) {
     if (!PAYABLE.includes(order.status)) return { error: "an order that is " + order.status + " cannot be amended", status: 409 };
     const r = body.restate, q = r.qty, t = r.total, d = r.delivery;
@@ -1218,6 +1232,17 @@ export function applyEvent(order, ev) {
     /* never `closed`: that record says the order was closed short, which the customer's page reads as such */
     order.qty = ev.qty; order.total = ev.total; order.delivery = ev.delivery;
     order.history.push({ at, status: order.status, by: "desk", note: "amended to " + ev.qty + " unit, " + ev.total.toFixed(2) + " goods, " + ev.delivery.toFixed(2) + " delivery" });
+    if (ev.book) {
+      /* the book's money and goods, and what the ledger has been told of them with it, so the reconcile queues nothing for them */
+      const q = Object.assign({}, order.queued || {});
+      order.paid = ev.paid; q.paid = ev.paid; order.moved = ev.moved; q.moved = ev.moved; order.queued = q;
+      order.history.push({ at, status: order.status, by: "desk", note: "the book's figures: " + ev.paid.toFixed(2) + " paid, " + ev.moved + " unit handed over" });
+      if (order.status === "done" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {
+        const was = order.history.filter((h) => h && h.status && h.status !== "done").slice(-1)[0];
+        order.status = was ? was.status : "ready";
+        order.history.push({ at, status: order.status, by: "desk", note: "open again: the book's figures leave it owing" });
+      }
+    }
     done = settle(order, at);
   } else if (ev.kind === "handover") {
     order.moved = +ev.units.toFixed(3);

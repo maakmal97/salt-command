@@ -501,6 +501,28 @@ export function termsFromRow(o, row, moved) {
   return { qty, total, delivery };
 }
 
+/** 17 Oct 2026, his yes: A SETTLED ORDER STATES WHAT ITS ROW STATES TOO, money and goods included, since a Correction of a settled row moves them
+ *  as well (s223 cut to RM260 with RM260 paid while its order said RM310 paid; s258 made 2 units for RM16 while its order said 1 for RM8). The row's
+ *  size, goods, delivery, paid and handed over, or null when they agree or the order cannot take them now: not settled, a claim of theirs waiting, a
+ *  move on the site the book has not heard, past the site's bounds, a charge on a collection or a closed order's size. A trip row leaves the order
+ *  its delivery, as for an agreed order. */
+export function settledFromRow(o, row) {
+  if (!o || !row || o.status !== "done") return null;
+  if ((o.payments || []).some((p) => p && p.claim === "waiting")) return null;
+  const told = o.queued || {};
+  if ((+o.paid || 0) > (+told.paid || 0) + 0.004 || (+o.moved || 0) > (+told.moved || 0) + 0.0004) return null;
+  const qty = +(+row.qty).toFixed(3), total = +(+row.total).toFixed(2);
+  const delivery = row.trip ? +(+(o.delivery || 0)).toFixed(2) : +(+(row.delivery || 0)).toFixed(2);
+  const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);
+  if (!(qty > 0) || !(total > 0) || !(delivery >= 0) || !(paid >= 0) || !(moved >= 0)) return null;
+  if (qty > 1000000 || total > 1000000 || delivery > 1000000 || paid > 1000000 || moved > qty + 0.0004) return null;
+  if (delivery > 0.004 && o.mode !== "deliver") return null;
+  if (o.closed && Math.abs(qty - +o.qty) > 0.0004) return null;
+  if (Math.abs(qty - +o.qty) < 0.0004 && Math.abs(total - +o.total) < 0.004 && Math.abs(delivery - (+o.delivery || 0)) < 0.004
+    && Math.abs(paid - (+o.paid || 0)) < 0.004 && Math.abs(moved - (+o.moved || 0)) < 0.0004) return null;
+  return { qty, total, delivery, paid, moved };
+}
+
 /** Amend after Accept (06 Oct 2026): one Correction restating size, goods and delivery. ctx: { book, room, earlier: the order's
  *  Amendment drafts ({status, committed_at}), live: a yes waiting on an amendment or null }. */
 export function restateTap(o, at, body, ctx) {

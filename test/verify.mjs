@@ -49784,6 +49784,25 @@ await (async () => {
       tag + ", a restated row he has since voided is not followed: " + J({ key: o12[Y.o.id], marks: mk(Y) }));
     ok(o12[X.o.id] === xKey && !mk(X).length,
       tag + ", a cancelled order is not followed to a restated row: " + J({ key: o12[X.o.id], marks: mk(X) }));
+    /* 17 Oct 2026, his yes: A SETTLED ORDER TAKES ALL ITS ROW STATES, money and goods included (s223 cut to RM260 with RM260 paid, its order at RM310
+       paid; s258 made 2 units for RM16, its order 1 for RM8) */
+    const settledOf = async (i, unit) => {
+      const x = await agreed(i, { unit, total: unit }, true);
+      const c = await call("/orders/" + x.o.id + "/cash", { amount: unit });
+      await deskPass(denv, new Date()); await runDrafter(denv); fold();
+      setup(c.status === 200 && (await orderOf(x.o.id)).status === "done" && PE.txPaid(saleOf(x.rid)) === unit, "the order was settled and its row paid: " + J([c.j.error || null, (await orderOf(x.o.id)).status]));
+      return x;
+    };
+    const SC = await settledOf(15, 113), SU = await settledOf(16, 114), SO = await settledOf(17, 115);
+    correct(SC.rid, { total: 93, cash: 93 });
+    correct(SU.rid, { qty: 2, total: 228, cash: 228, deliveredQty: 2 });
+    correct(SO.rid, { total: 135 });
+    const ofrT16 = await tellSite(denv), sc = await orderOf(SC.o.id), su = await orderOf(SU.o.id), so = await orderOf(SO.o.id);
+    ok(!ofrT16.failed && sc.status === "done" && sc.total === 93 && sc.paid === 93 && sc.queued.paid === 93
+      && su.status === "done" && su.qty === 2 && su.total === 228 && su.paid === 228 && su.moved === 2 && su.queued.moved === 2
+      && so.total === 135 && so.paid === 115 && so.status !== "done" && so.history.some((h) => /open again/.test(h.note || "")),
+      tag + ", a settled order takes its corrected row's goods, size, money and goods handed over, down as well as up, and one the row leaves owing opens again: "
+      + J({ failed: ofrT16.failed, sc: [sc.status, sc.total, sc.paid], su: [su.status, su.qty, su.total, su.paid, su.moved], so: [so.status, so.total, so.paid] }));
   }
 
   /* THE COUNTER: the order at Ready, handed as the site hands it, beside the bucket's row sealed as a part of To pay now */

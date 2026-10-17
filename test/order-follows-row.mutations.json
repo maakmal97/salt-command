@@ -3,5 +3,7 @@
   { "name": "an approved amendment not folded is not on its way", "file": "src/orders.js", "find": "if (await env.SALT_LEDGER.prepare(AMEND_FLIGHT).bind('%\"orderId\":\"' + o.id + '\"%').first()) return true;", "replace": "" },
   { "name": "a pending amendment is not on its way", "file": "src/orders.js", "find": "AND (status='pending' OR (status='approved' AND (committed_at IS NULL OR", "replace": "AND ((status='approved' AND (committed_at IS NULL OR" },
   { "name": "a claim waiting does not hold the order", "file": "engine/stages.mjs", "find": "  if ((o.payments || []).some((p) => p && p.claim === \"waiting\")) return null;\n  const qty = +(+row.qty)", "replace": "  const qty = +(+row.qty)" },
-  { "name": "an amendment marked committed before the re-seed is on the book", "file": "src/orders.js", "find": "(committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1", "replace": "(committed_at IS NULL))) LIMIT 1" }
+  { "name": "an amendment marked committed before the re-seed is on the book", "file": "src/orders.js", "find": "(committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1", "replace": "(committed_at IS NULL))) LIMIT 1" },
+  { "name": "the return leg leaves a settled order alone", "file": "src/orders.js", "find": "      const s = settledFromRow(o, row);\n      if (!s || await termsInFlight(env, o)) continue;", "replace": "      const s = null;\n      if (!s || await termsInFlight(env, o)) continue;" },
+  { "name": "a settled order is sent its row's figures without the book's mark", "file": "src/orders.js", "find": "JSON.stringify({ restate: Object.assign({}, s, { book: true }) })", "replace": "JSON.stringify({ restate: s })" }
 ]
