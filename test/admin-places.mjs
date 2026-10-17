@@ -40,7 +40,7 @@ const SHOWS = {
 };
 /* the forms of Record, by the part each belongs to (the page also draws an Unsent entry for the loan this device kept) */
 const FORMS = {
-  entry: ["Unsent entry", "Stock count", "Sale or purchase", "Loan", "Gift", "Repayment", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
+  entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
   pricing: ["Price level", "Desk reminders", "Price drift", "Partner", "Printed sizes"]
 };

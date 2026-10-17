@@ -50,8 +50,8 @@
  {
   "name": "the moves stand outside the recipe's actions",
   "file": "stmt/owner.js",
-  "find": "var panel=apDetails(g), acts=el('div','salt-approve__actions'); card.appendChild(acts);",
-  "replace": "var panel=apDetails(g), acts=el('div','maker-acts'); card.appendChild(acts);"
+  "find": "acts=el('div','salt-approve__actions'); card.appendChild(acts);",
+  "replace": "acts=el('div','maker-acts'); card.appendChild(acts);"
  },
  {
   "name": "a trip's card lists none of the other rows",
@@ -316,5 +316,17 @@
   "file": "stmt/owner.js",
   "find": "var held=(makerData.queue||[]).filter(function(e){ return e&&e.state!=='committed'&&e.state!=='approved'; })",
   "replace": "var held=(makerData.queue||[])"
+ },
+ {
+  "name": "a refusal keeps no verb",
+  "file": "stmt/owner.js",
+  "find": "return 'Not taken: '+NOT_TAKEN[i][1];",
+  "replace": "return 'Not taken: '+w;"
+ },
+ {
+  "name": "the queue keeps its old title",
+  "file": "stmt/page.js",
+  "find": ">sent, waiting for the drafter</span>",
+  "replace": ">Sent, not yet drafted</span>"
  }
 ]

@@ -1768,9 +1768,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   and the unsent entry (`record.add-id.passphrase`, `record.amend-id.passphrase`, `record.place.passphrase`, `record.retained.passphrase`) are retired from the
   act table. No route, body or request id changed; the Desk's own vault code is untouched, and no route writes `vault-key`.
 - **The approve card says the change, one card and one Approve an order** (plan 2 of `docs/plans-counter-admin.html`, 16 Oct 2026;
-  `test/admin-approve-card.mjs`, its mutations in `test/admin-approve-card.mutations.json`). The head is the row (its rid), the customer's code (read off the
-  draft, the entry or its payload, so a correction never reads "no code"), the book's mark, and where the entry came from (Counter Admin by its `makerRequest`,
-  the site by its `orderId` unless the Desk's own cash, the laptop by a bare payload, else the phone) and when. Then one plain verb off the draft's kind, the
+  `test/admin-approve-card.mjs`, its mutations in `test/admin-approve-card.mutations.json`). The head is the customer's code (read off the
+  draft, the entry or its payload, so a correction never reads "no code") and the book's mark; **the row's id and where the entry came from (Counter Admin by its `makerRequest`,
+  the site by its `orderId` unless the Desk's own cash, the laptop by a bare payload, else the phone) and when stand in Details** (clarity part 4, 18 Oct 2026). Then one plain verb off the draft's kind, the
   fields it changes and which way (Take back a payment, Payment received, Handover, Change the price, Close the order, New sale, Fix a row ...); Correction and
   Fulfilment stand only in Details. **Now and After** (Paid, Owed, Handed over), only what changes marked, are the Desk's: `src/approve-figures.js` reads each
   pending sale's row off the mirror, applies the approved moves on that row not yet folded and then the pending ones in entry order, moved for the figure fields
@@ -1818,8 +1818,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   request id or send changed.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
-  Entry (Stock count, Sale or purchase, Borrow or lend, Gift, Repayment, Reward redemption, Automatic offsets, Amend a ledger row, Revive a
-  cancelled row), Customers (Add ID, Appoint existing customer, Amend ID, Map placement), Pricing (Customer tier, Tips, Customer drift, Printed
+  Entry (**grouped by use under small eyebrows, 18 Oct 2026**: Everyday, Sale or purchase, Repayment, Stock count; Now and then, Gift, Loan, Rewards, Offsets; Fixing, Correct a row, Reopen a cancelled order;
+  a form not listed follows them), Customers (Add ID, Appoint existing customer, Amend ID, Map placement), Pricing (Customer tier, Tips, Customer drift, Printed
   board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, "← Entry") that returns him
   to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are
   untouched, shown and hidden by `sweep` from `fOpen` (the form open, a slug), so what he has typed survives Back and opening another form.
@@ -2429,6 +2429,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `claim.view-slip` | Same card, while its slip is being opened or could not be | Opens the sealed slip again with the slip key the page holds, on this device only. |
 | `code.close` | Code sheet | Closes the sheet. |
 | `code.value` | Code sheet | The eight-symbol code, read only. |
+| `approve.to-payment` | Desk row card of a customer's claim (key: the draft id) | Opens that claim's payment card on Orders > Payments; sends nothing. The row's own Approve stays shut. |
 | `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
 | `draft.reject` | Same card | Rejects it, or the trip. |
 | `ended.sign-in` | Shown when the Access session has ended | Loads /all again, which is the Access login. |

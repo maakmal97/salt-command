@@ -24,7 +24,7 @@ const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threa
   sheet: "/all/sheet", links: "/all/refs", inputs: "/all/maker/inputs" };
 /* Record's forms by name, the part each is in, in the order the page draws them */
 const MENU = {
-  entry: ["Stock count", "Sale or purchase", "Loan", "Gift", "Repayment", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
+  entry: ["Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
   pricing: ["Price level", "Desk reminders", "Price drift", "Partner", "Printed sizes"]
 };
@@ -462,6 +462,12 @@ export async function run({ ok, pageWork }) {
     for (const part of ["entry", "customers", "pricing"]) { await p.tap("part.record." + part); seen[part] = [p.menu(), p.formsOpen(), p.retained()]; }
     ok(same(seen, { entry: [MENU.entry, [], ["Unsent entry"]], customers: [MENU.customers, [], []], pricing: [MENU.pricing, [], []] }),
       "Entry, Customers and Pricing are each a menu of their forms by name, no form shown, and the retained input kept on Entry: " + JSON.stringify(seen));
+    /* 18 Oct 2026 (clarity part 4): Entry's forms stand in three groups by how often they are used, each under a small eyebrow, and every row keeps its slug */
+    const lst = d.querySelector('#makerMenu .formlist[data-in="record.entry"]');
+    const groups = lst ? [...lst.children].map((n) => n.classList.contains("salt-eyebrow") ? "# " + n.textContent : n.querySelector(".salt-inbox-row__title").textContent + "=" + n.getAttribute("data-key")) : [];
+    ok(same(groups, ["# Everyday", "Sale or purchase=sale-or-purchase", "Repayment=repayment", "Stock count=stock-count", "# Now and then", "Gift=gift", "Loan=loan", "Rewards=rewards", "Offsets=offsets",
+      "# Fixing", "Correct a row=correct-a-row", "Reopen a cancelled order=reopen-a-cancelled-order"]),
+    "Entry's menu is Everyday, Now and then and Fixing, each a small eyebrow over its forms in that order, every row keeping its slug: " + JSON.stringify(groups));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
     ok(rows.length === 18 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !r.querySelector(".salt-inbox-row__action") && !/Open/.test(r.textContent))
       && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 18 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),

@@ -3100,12 +3100,13 @@ export const OWNER_JS = `
      again: what is typed in one, its retained send and its request ids are kept by closing it, as by opening another. A retained input
      stays on the menu, above the rows. */
   function formSlug(name){ return String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  var ENTRY_GROUPS=[['Everyday',['sale-or-purchase','repayment','stock-count']],['Now and then',['gift','loan','rewards','offsets']],['Fixing',['correct-a-row','reopen-a-cancelled-order']]];
   function recordMenu(box,note){
     fOpen=null;
     var back=el('button','aback','← Entry'); back.type='button'; back.id='makerFormBack'; back.setAttribute('data-back','form'); back.setAttribute('data-formback','');
     back.setAttribute('data-in','record.entry record.customers record.pricing'); actOn(back,'record.form-back');
     box.insertBefore(back,note.nextSibling);
-    var menu=el('div','formmenu'), lists={}, anchor=back;
+    var menu=el('div','formmenu'), lists={}, anchor=back, entryRows={};
     menu.id='makerMenu'; menu.setAttribute('data-formmenu','');
     ['entry','customers','pricing'].forEach(function(part){
       var list=el('div','formlist'); list.setAttribute('data-in','record.'+part); lists[part]=list; menu.appendChild(list);
@@ -3121,8 +3122,16 @@ export const OWNER_JS = `
       title.appendChild(el('span',null,name)); main.appendChild(title);
       row.appendChild(main);
       row.addEventListener('click', function(){ openForm(slug); });
-      lists[part].appendChild(row);
+      if(part==='entry') entryRows[slug]=row; else lists[part].appendChild(row);
     });
+    /* 18 Oct 2026, CLARITY PART 4: Entry's forms are grouped by how often he uses them, each group under a small eyebrow. A form not listed goes at the end of Fixing. */
+    var seen={};
+    ENTRY_GROUPS.forEach(function(g){
+      var have=g[1].filter(function(s){ return entryRows[s]; }); if(!have.length) return;
+      var head=el('p','salt-eyebrow salt-eyebrow--copper ghead',g[0]); head.setAttribute('data-group',formSlug(g[0])); lists.entry.appendChild(head);
+      have.forEach(function(s){ seen[s]=1; lists.entry.appendChild(entryRows[s]); });
+    });
+    Object.keys(entryRows).forEach(function(s){ if(!seen[s]) lists.entry.appendChild(entryRows[s]); });
     /* PHASE 4a (12 Oct 2026): THE FORM OPEN IS A PANE. The retained input and the menu are one column and the forms the pane beside it, moved into
        them and never drawn again; the grid is one column below 860px, where the form takes the menu's place and has its way back. */
     var grid=el('div','recgrid'), list=el('div','reclist'), pane=el('div','recpane');
@@ -4764,8 +4773,22 @@ export const OWNER_JS = `
     });
     tb.appendChild(body); return tb;
   }
-  function apDetails(g){
+  /* 18 Oct 2026, CLARITY PART 4: a refusal is said with a verb. The reason's own words stay where no verb can be built from them. */
+  var NOT_TAKEN=[[/YYYY-MM-DD/,'fix the date'],[/no date|date it|the date|a date/i,'add the date'],[/no cost/i,'add the cost'],[/reason/i,'add the reason'],[/quantity|units that|the units|ringgit/i,'add the amount'],[/no OPEN order|settled or cancelled/i,'check the order'],[/reseed/i,'reseed the mirror']];
+  function notTaken(why){
+    var w=noBook(why||'The Desk could not take this entry.');
+    for(var i=0;i<NOT_TAKEN.length;i++) if(NOT_TAKEN[i][0].test(w)) return 'Not taken: '+NOT_TAKEN[i][1];
+    return 'Not taken: '+w;
+  }
+  /* the waiting claim a claim draft answers, by the id its entry carries */
+  function claimOf(d){
+    var e=d.entry||{}, c=e.claim||(e.fulfil&&e.fulfil.claim)||e.claimId, id=c&&typeof c==='object'?c.id:c;
+    return makerClaims.filter(function(x){ return String(x.id)===String(id); })[0]||null;
+  }
+  function apDetails(g,src){
     var panel=el('div','rdet rdet--row'); panel.hidden=true;
+    /* 18 Oct 2026, CLARITY PART 4: where the entry came from lives here, and the row's id in the list below; the head leads with the customer and the sale */
+    if(src) panel.appendChild(el('p','maker-facts salt-approve__entry',src));
     g.drafts.forEach(function(d,i){
       if(g.drafts.length>1) panel.appendChild(el('h4','',(g.trip?'Row ':'Move ')+(i+1)+' of '+g.drafts.length+': '+moveWord(d)));
       if(d.reasoning) panel.appendChild(el('p','salt-approve__reason',noBook(d.reasoning)));
@@ -4781,12 +4804,11 @@ export const OWNER_JS = `
     draftGroups(pendingRows).forEach(function(g){
       var draft=g.lead, card=makerCard(draftRoot,'draft:'+draft.id,'salt-approve apcard'), head=el('div','salt-approve__head apphead');
       var rid=g.tripMoves?'':draftRid(draft), from=draftFrom(draft), when=fmtWhen(isoAt(draft.id)||draft.date||(draft.entry||{}).date||''), party=el('span','salt-approve__party');
-      /* the head: the row, the customer's code and the book's mark; then where the entry came from, and when */
-      party.appendChild(document.createTextNode((rid?rid+' · ':'')+(draftParty(draft)||'no code')));
+      /* the head: the customer's code and the book's mark */
+      party.appendChild(document.createTextNode(draftParty(draft)||'no code'));
       if(g.tripMoves) party.appendChild(document.createTextNode(' · '+tripMoveRows(g).length+' books, one order'));
       else if(draft.product&&(draft.collection==='sales'||draft.collection==='purchases')){ party.appendChild(document.createTextNode(' · ')); party.appendChild(bookMark(draft.product)); }
       head.appendChild(party);
-      head.appendChild(el('span','salt-approve__entry',[from?'from '+from:'',when].filter(Boolean).join(', ')));
       card.appendChild(head);
       var kind=groupKind(g), verb=kind==='other'?entryWord(draft.entry||{}):AP_WORD[kind], fg=groupFigures(g), closed=kind==='close'?closeSay(g):'';
       card.appendChild(el('h3','apverb',verb+(closed?': '+closed:'')));
@@ -4803,8 +4825,13 @@ export const OWNER_JS = `
       if(fg&&fg.approvedBefore) card.appendChild(el('p','salt-insight aphalf','Half approved: '+(fg.approvedBefore===1?'one move':fg.approvedBefore+' moves')+' on this row approved before, waiting to be booked; '+(g.drafts.length===1?'this one waits for you.':'these wait for you.')));
       askLines(g).forEach(function(line){ var p=el('p','salt-insight apflag'), bang=el('span','apbang','!'); bang.setAttribute('aria-hidden','true'); p.appendChild(bang); p.appendChild(document.createTextNode(' '+line)); card.appendChild(p); });
       var claim=g.drafts.some(draftClaim);
-      if(claim) card.appendChild(el('p','salt-insight','Answer this through the payment card.'));
-      var panel=apDetails(g), acts=el('div','salt-approve__actions'); card.appendChild(acts);
+      if(claim){
+        /* 18 Oct 2026, CLARITY PART 4: the claim's answer is on its payment card, and this opens that card (Orders > Payments, the claim's card open) */
+        var to=actOn(el('button','salt-ghost aplink','Answer through the payment card'),'approve.to-payment',draft.id); to.type='button';
+        to.addEventListener('click', function(){ var c=claimOf(draft); if(c) makerClaimOpen=c.u+':'+c.id; goPlace('orders','payments')(); });
+        card.appendChild(to);
+      }
+      var panel=apDetails(g,[from?'from '+from:'',when].filter(Boolean).join(', ')), acts=el('div','salt-approve__actions'); card.appendChild(acts);
       var approve=makerButton(acts,[approveLabel(g),'draft.approve'],function(){ approveDraft(draft,approve,'draft:'+draft.id+':approve'); },true);
       approve.disabled=!!claim; ynTag(approve,'draft:'+draft.id+':approve');
       var reject=makerButton(acts,[g.trip?rejectWord(g.drafts.length):g.drafts.length>1?'Reject all':'Reject','draft.reject'],function(){ rejectDraft(draft,reject,'draft:'+draft.id+':reject'); },false);
@@ -4815,8 +4842,8 @@ export const OWNER_JS = `
       makerFoot(card,'draft:'+draft.id);
     });
     (makerData.refused||[]).forEach(function(refused){
-      var card=makerCard(draftRoot); card.appendChild(el('h3','','Entry not taken'));
-      card.appendChild(el('p','salt-insight',noBook(refused.why||'The Desk could not take this entry.')));
+      var card=makerCard(draftRoot);
+      card.appendChild(el('p','salt-insight',notTaken(refused.why)));
     });
     if(!pendingRows.length&&!(makerData.refused||[]).length) draftRoot.appendChild(el('p','rnone','Nothing waits for your approval.'));
     if(queueRoot){
@@ -4831,7 +4858,7 @@ export const OWNER_JS = `
       if(bad.length){ var ub=el('p','msg bad',unreadableLine(bad)); ub.setAttribute('data-unreadable',''); queueRoot.appendChild(ub); }
       if(!held.length&&!bad.length) queueRoot.appendChild(el('p','rnone','Nothing is waiting for the Desk.'));
       held.forEach(function(entry){
-        var card=makerCard(queueRoot), title=entry.state==='refused'?'Entry the Desk refused':'Entry waiting for the Desk'; card.setAttribute('data-key',entry.id);
+        var card=makerCard(queueRoot), title=entry.state==='refused'?'The Desk refused this entry':'Entry waiting for the Desk'; card.setAttribute('data-key',entry.id);
         card.appendChild(el('h4','',title));
         card.appendChild(el('p','maker-facts',entryLine(entry)+', '+(entry.state==='refused'?'refused':'waiting for the Desk')+'.'));
         if(entry.device) card.appendChild(el('p','maker-facts','From another device.'));

@@ -350,8 +350,8 @@
  {
   "name": "the menu leaves a form out",
   "file": "stmt/owner.js",
-  "find": "      lists[part].appendChild(row);",
-  "replace": "      if(slug!=='gift') lists[part].appendChild(row);"
+  "find": "if(part==='entry') entryRows[slug]=row; else lists[part].appendChild(row);",
+  "replace": "if(part==='entry'){ if(slug!=='gift') entryRows[slug]=row; } else lists[part].appendChild(row);"
  },
  {
   "name": "the menu lists every form under Entry",
@@ -694,5 +694,11 @@
   "file": "stmt/owner.js",
   "find": "o.again&&o.again.length?'send again':''].filter(Boolean);",
   "replace": "o.again&&o.again.length?'send again':'', o.status==='placed'?'to decide':''].filter(Boolean);"
+ },
+ {
+  "name": "Entry's forms are not grouped in his order",
+  "file": "stmt/owner.js",
+  "find": "['Everyday',['sale-or-purchase','repayment','stock-count']]",
+  "replace": "['Everyday',['repayment','sale-or-purchase','stock-count']]"
  }
 ]

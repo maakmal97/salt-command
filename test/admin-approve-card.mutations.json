@@ -48,10 +48,10 @@
   "replace": "if(!e.type&&e.payload) return '';"
  },
  {
-  "name": "the head loses the row id",
+  "name": "the Details lose the source line",
   "file": "stmt/owner.js",
-  "find": "party.appendChild(document.createTextNode((rid?rid+' · ':'')+(draftParty(draft)||'no code')));",
-  "replace": "party.appendChild(document.createTextNode(draftParty(draft)||'no code'));"
+  "find": "if(src) panel.appendChild(el('p','maker-facts salt-approve__entry',src));",
+  "replace": ""
  },
  {
   "name": "the head loses the book's mark",
@@ -196,5 +196,17 @@
   "file": "src/approve-figures.js",
   "find": "for (const s of sales) { if (!s) continue; const k = E.ovKey(s); if (k && !byRid.has(k)) byRid.set(k, s); }",
   "replace": ""
+ },
+ {
+  "name": "the row id leads the head again",
+  "file": "stmt/owner.js",
+  "find": "party.appendChild(document.createTextNode(draftParty(draft)||'no code'));",
+  "replace": "party.appendChild(document.createTextNode((rid?rid+' · ':'')+(draftParty(draft)||'no code')));"
+ },
+ {
+  "name": "the claim link opens no card",
+  "file": "stmt/owner.js",
+  "find": "if(c) makerClaimOpen=c.u+':'+c.id; goPlace",
+  "replace": "goPlace"
  }
 ]

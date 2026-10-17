@@ -724,6 +724,7 @@ body.ended>*:not(#aEnded){display:none}
 /* 14 OCT 2026 (Record): a form row is the tap, no Open word; a row to approve opens its detail by a tap on the card, its head the control; its figures stand on one grid so they align down the cards; an offset is a row of a code, its figure and one Add */
 .adm .formrow{min-height:44px}
 .adm .apphead{min-height:44px;align-items:center}
+.adm .aplink{min-height:44px;background:none;border:0;padding:0 4px;text-decoration:underline;color:var(--salt-brass)}
 .adm .apverb{margin:0}
 .adm .apnow{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .adm .apnow th,.adm .apnow td{text-align:right;padding:4px 0 4px 12px;font-weight:400}
@@ -1539,7 +1540,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<p class="lead" id="makerDraftStatus">Reading.</p>'
         + '<div id="makerDrafts"></div>'
         /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
-        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Sent, not yet drafted</span></summary>'
+        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">sent, waiting for the drafter</span></summary>'
         + '<div class="salt-plan__body">'
         + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
         + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'

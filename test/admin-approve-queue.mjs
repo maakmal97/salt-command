@@ -82,8 +82,8 @@ export async function run({ ok, pageWork }) {
     const head = c.querySelector(":scope > .salt-approve__head");
     const partyText = head && head.querySelector(".salt-approve__party").cloneNode(true);
     if (partyText) partyText.querySelectorAll(".pwith").forEach((x) => x.replaceWith("[mark]"));
-    ok(!!head && partyText.textContent === "CX1-ZED · [mark]" && head.querySelector(".salt-approve__entry").textContent === "from phone, 10 Oct 2026",
-      "its head is the recipe's: the party's code and the book's mark, and where the entry came from and when: " + (head && head.textContent));
+    ok(!!head && partyText.textContent === "CX1-ZED · [mark]" && !head.querySelector(".salt-approve__entry") && c.querySelector(".rdet--row .salt-approve__entry").textContent === "from phone, 10 Oct 2026",
+      "its head is the recipe's: the party's code and the book's mark, and where the entry came from and when sits in Details: " + (head && head.textContent));
     /* 12 Oct 2026 (Phase 5): a new row's cost and margin are the system's Metric row, a label over its figure, and not a line of the card's own */
     const facts = [...c.querySelectorAll(":scope > .maker-facts")], reason = c.querySelector(".salt-approve__reason");
     const figures = c.querySelector(":scope > .salt-metrics.salt-metrics--sm"), cells = figures ? [...figures.children].map((x) => [x.querySelector(".salt-metrics__label").textContent, x.querySelector(".salt-metrics__value").textContent]) : [];
@@ -128,6 +128,18 @@ export async function run({ ok, pageWork }) {
     ok(SITE_RECIPES.includes(".salt-approve {") && SITE_RECIPES.includes(".salt-approve__head") && restated.length === 0,
       "the page carries the recipe whole and restates none of it: its own rules naming it (" + mine.map((r) => r[0]).join(", ") + ") set " + (restated.length ? restated.join(", ") : "no property the recipe sets"));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
+  /* 18 Oct 2026 (clarity part 4): every status line has a verb and says what to do; where no verb can be built the reason's own words follow Not taken: */
+  const WHYS = [["a movement with no date", "Not taken: add the date"], ["the date is not a date in YYYY-MM-DD: 5/10", "Not taken: fix the date"], ["a loss needs a reason. Without one it is shrinkage", "Not taken: add the reason"],
+    ["a count needs a quantity", "Not taken: add the amount"], ["no OPEN order on the book matches X", "Not taken: check the order"], ["the entry carries no payload the desk can read", "Not taken: the entry carries no payload the desk can read"]];
+  p = await open({ review: (j) => ({ ...j, refused: WHYS.map(([why]) => ({ why })) }) });
+  try {
+    await enterRecord(p);
+    const lines = [...p.d.querySelectorAll("#makerDrafts p.salt-insight")].map((x) => x.textContent).filter((x) => /^Not taken/.test(x));
+    ok(J(lines) === J(WHYS.map((x) => x[1])) && !/Entry not taken/.test(p.d.getElementById("makerDrafts").textContent),
+      "a refused entry says Not taken and what to do, from its reason, or the reason's own words: " + J(lines));
+    ok(!/Sent, not yet drafted/.test(p.d.getElementById("makerQueue").textContent) && /sent, waiting for the drafter/.test(p.d.getElementById("makerQueue").textContent) && !/Entry the Desk refused/.test(p.d.getElementById("makerQueueReview").textContent),
+      "and the queue reads 2 sent, waiting for the drafter, and a refused entry that the Desk refused it");
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 2. THE QUEUE IS A FOLD, SHUT, TITLED AND COUNTED */
   p = await open();
@@ -137,7 +149,7 @@ export async function run({ ok, pageWork }) {
     const fold = d.getElementById("makerQueue"), sum = fold && fold.querySelector(":scope > summary"), count = d.getElementById("makerQueueCount"), body = d.getElementById("makerQueueReview");
     ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("salt-plan") && fold.open === false && !!sum && sum.getAttribute("data-act") === "record.queue-toggle",
       "the server-held queue is the system's Plan fold, shut until he taps it, its summary a control with its own act");
-    ok(!!count && count.classList.contains("salt-plan__id") && count.textContent === "2" && d.getElementById("makerQueueTitle").textContent === "Sent, not yet drafted"
+    ok(!!count && count.classList.contains("salt-plan__id") && count.textContent === "2" && d.getElementById("makerQueueTitle").textContent === "sent, waiting for the drafter"
       && sum.contains(count) && sum.contains(d.getElementById("makerQueueTitle")) && !!body && fold.contains(body),
     "it is titled and counted, though shut, the count read off the entries the server holds: " + (sum && sum.textContent));
     ok(byAct(body, "queue.withdraw", "q-1") && byAct(body, "queue.withdraw", "q-2") && fold.open === false,

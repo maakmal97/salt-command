@@ -115,9 +115,11 @@ export async function run({ ok, pageWork }) {
     const s267 = p.card("2026-10-15T12:48:33.817Z"), s262 = p.card("2026-10-15T12:52:26.992Z");
     /* B. the head */
     const head = s267 && s267.querySelector(".salt-approve__head");
-    ok(!!head && markless(head.querySelector(".salt-approve__party")) === "s267 · CS6-BS-R · [mark]" && head.querySelector(".salt-approve__party svg.psym")
-      && head.querySelector(".salt-approve__entry").textContent === "from laptop, 15 Oct 2026, 20:48" && !/no code/.test(d.getElementById("makerDrafts").textContent),
-    "the head is the row, the customer's code read off the draft (no \"no code\" for a correction), the book's mark, and from where and when: " + (head && head.textContent));
+    ok(!!head && markless(head.querySelector(".salt-approve__party")) === "CS6-BS-R · [mark]" && head.querySelector(".salt-approve__party svg.psym")
+      && !head.querySelector(".salt-approve__entry") && s267.querySelector(".rdet--row .salt-approve__entry").textContent === "from laptop, 15 Oct 2026, 20:48" && !/no code/.test(d.getElementById("makerDrafts").textContent),
+    "the head is the customer's code read off the draft (no \"no code\" for a correction) and the book's mark; the row and where and when it came from are in Details: " + (head && head.textContent));
+    ok(!/s267/.test(head.textContent) && /s267/.test(s267.querySelector(".rdet--row").textContent) && !/r-fixture|2026-10-15T12/.test(head.textContent),
+      "the row's id is no part of the head; it stands in Details with the source: " + head.textContent);
     const claimCard = p.card("2026-10-15T12:50:00.000Z");
     ok(!!claimCard && byAct(claimCard, "draft.approve").disabled && !byAct(s267, "draft.approve").disabled && s267.querySelectorAll(".rdet--row .salt-approve__reason").length === 1,
       "a customer's claim on the same row stands on a card of its own, shut, and his take-back on that row stays his to approve");
@@ -186,6 +188,18 @@ export async function run({ ok, pageWork }) {
     byAct(p.card("2026-10-15T12:52:26.992Z"), "draft.approve").click(); await p.work.quiet(); await p.go();
     ok(J(p.approves()) === J(["2026-10-15T12:52:26.992Z"]) && /^Move 1, close the order, was not approved: The Counter could not do that\. Try again\. The moves after it wait under Approve\./.test(said(p, "draft:2026-10-15T12:52:26.992Z")) && /the row moved/.test(said(p, "draft:2026-10-15T12:52:26.992Z")),
       "a refusal of the first move sends nothing after it, and says the rest wait: " + J(p.approves()) + " " + said(p, "draft:2026-10-15T12:52:26.992Z"));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  /* 18 Oct 2026 (clarity part 4): a claim's row says what to do, and the button opens that payment's card on Orders > Payments */
+  p = await open(() => [{ ...CLAIM(), entry: { ...CLAIM().entry, claim: { id: "c-2" } } }]);
+  try {
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
+    const c = p.card(CLAIM().id), go = c && byAct(c, "approve.to-payment", CLAIM().id);
+    ok(!!go && go.tagName === "BUTTON" && go.textContent === "Answer through the payment card" && !/Answer this/.test(c.textContent) && byAct(c, "draft.approve").disabled,
+      "a claim's row offers Answer through the payment card, a button with its act, and keeps its Approve shut: " + (c && c.textContent.slice(0, 200)));
+    go.click(); await p.work.quiet();
+    const row = byAct(p.d, "claim.open", "abcd-efgh:c-2");
+    ok(!!row && row.getAttribute("aria-current") === "true" && p.approves().length === 0 && !p.posts.some((x) => /\/(approve|reject|received)$/.test(x.route)),
+      "and it opens the payment card of that claim, c-2, on Orders > Payments, sending nothing");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   /* a half-approved order: the move left reads from the one approved, and says so */
   p = await open(() => { const left = [CASH()]; approveFigures(book(), left, [CLOSE()]); return left; });

@@ -456,6 +456,13 @@ export async function auditStates({ pageWork }) {
     await t.click(byAct(t.d, "part.orders.done"));
     states.push(["Completed, paged", actAudit(t.d)]);
   } finally { t.w.close(); }
+  /* a customer's claim among the rows to approve: its link to the payment card (clarity part 4) */
+  const cl = await richOwnerPage({ pageWork, review: (j) => ({ ...j, drafts: [draft("d-c", { entry: { type: "SELL", party: "CX1-ZED", date: "2026-10-10", claim: { id: "c-1" } } })] }) });
+  try {
+    await cl.work.quiet();
+    await t.click(byAct(cl.d, "nav.orders")); await t.click(byAct(cl.d, "part.orders.approve"));
+    states.push(["a claim's row to approve", actAudit(cl.d)]);
+  } finally { cl.w.close(); }
   return states;
 }
 
