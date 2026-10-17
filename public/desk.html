@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="2f4e7ea7f6ebe33a";
+var SALT_BUILD_ID="66654a25dcf7bcb2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10168,7 +10168,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1150","d":"17 Oct 2026","t":"COLLECTION OF 2 UNITS OF SALT RECORDED FOR CS6-PER ON S270","n":["<b>ONE CORRECTION FOLDED.</b> The correction on s270 records 2 units of salt collected by CS6-PER on 17 Oct 2026: deliveredQty 0 to 2, deliveredOn 2026-10-17, handover collected. It was preapproved by Counter Admin. No cash moved, as the RM230 was already paid, and no price or cost was changed.","<b>INVENTORY.</b> The shelf rolls out by 2 units to CS6-PER. Salt stock was last counted on 3 Oct 2026, so the figure still rests on that count and the roll alone."]}];
+const evolution=[{"v": "v1151", "d": "17 Oct 2026", "t": "ONE ROW, SEVERAL ORDERS", "n": ["<b>A ROW TWO ORDERS SHARE.</b> Completed orders of one account, product and day that the book holds as one row of their sum, on a key whose row is cancelled, take that row together, as CK4-SEN's two of 30 Sep take s219; the tie-out reads the row as their sum, and a difference is said on each.", "<b>NOTHING ONE OF THEM DOES MOVES THE SHARED ROW ALONE.</b> The return leg restates or cancels neither from it, the reconcile queues no stage of one of them against it, and a pair that moves in part goes back whole.", "<b>ACCEPT AGAIN BOOKS NO SECOND ROW.</b> An order whose pending row was rejected and whose row is on the book by another road is agreed already. Pricing rules unchanged."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10312,7 +10312,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Oct 2026, 20:47 KL';
+const LAST_UPDATED='17 Oct 2026, 21:18 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
