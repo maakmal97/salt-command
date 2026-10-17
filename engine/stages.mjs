@@ -491,9 +491,13 @@ export function cashTap(o, at, body, ctx) {
  *  collection, a closed order's size). A row on a trip carries the trip's one delivery or none, so the order keeps its own. `moved` is what the order
  *  will hold once the same pass has carried the handovers back. */
 /** 17 Oct 2026 (the first live tie-out, s224): what the row has out, as its order can hold it. An offset settled in units (settledKg) counts as
- *  handed over beside the goods collected, so a row can read more out than its size; an order never holds more than its size. */
+ *  handed over beside the goods collected, so a row can read more out than its size; that excess an order never holds. Goods collected past
+ *  the size are another matter (a hand fold, or a Correction cutting the size under what is out): they are read whole, so the order is never
+ *  shrunk to hide them and the tie-out still shows them (Fable's review). */
 export function rowOut(row) {
-  return +Math.min(+(row && row.qty) || 0, +POSITION_ENGINE.txEffDeliv(row) || 0).toFixed(3);
+  const all = +POSITION_ENGINE.txEffDeliv(row) || 0, qty = +(row && row.qty) || 0;
+  const goods = (+(row && row.deliveredQty) || 0) + (+(row && row.advanceUnits) || 0);
+  return +(goods > qty + 0.0004 ? all : Math.min(qty, all)).toFixed(3);
 }
 
 export function termsFromRow(o, row, moved) {

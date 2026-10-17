@@ -1902,23 +1902,23 @@ const AMEND_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\
 /* 17 Oct 2026 (Fable's review): A SETTLED ORDER IS RESTATED ONLY WHEN NOTHING OF ITS OWN IS ON ITS WAY TO THE ROW: any draft naming it undecided or
    not on the mirror yet (a Received, cash, a handover, as well as an amendment), any yes of his waiting in any stage, or a close or redate */
 const ORDER_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND (status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1";
-/* 17 Oct 2026 (the first live tie-out): his yes waiting for its draft is on its way for a day. A yes is spent within minutes of the tap; ones
-   waiting since 02 and 12 Oct named moves the book took by a Correction, and held their orders as on their way for good. Older, a yes holds
-   nothing, and the tie-out names it. */
+/* 17 Oct 2026 (the first live tie-out): his yes waiting on a row the site is to make is on its way for a day. Such a yes is spent within minutes
+   of the tap; ones waiting since 02 and 12 Oct named moves the book took by a Correction, and held their orders as on their way for good. Older,
+   it holds nothing, and the tie-out names it. A yes whose own entry is queued (entry_at) waits for the drafter however long that takes. */
 const YES_FRESH_MS = 24 * 3600000;
 const yesFresh = (now = Date.now()) => new Date(now - YES_FRESH_MS).toISOString();
 export async function orderInFlight(env, o) {
   if (await closeOnItsWay(env, o)) return true;
   try {
     if (await env.SALT_LEDGER.prepare(ORDER_FLIGHT).bind('%"orderId":"' + o.id + '"%').first()) return true;
-    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND status='waiting' AND at > ?2 LIMIT 1").bind(o.id, yesFresh()).first());
+    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1").bind(o.id, yesFresh()).first());
   } catch (e) { return true; }
 }
 export async function termsInFlight(env, o) {
   if (await closeOnItsWay(env, o)) return true;
   try {
     if (await env.SALT_LEDGER.prepare(AMEND_FLIGHT).bind('%"orderId":"' + o.id + '"%').first()) return true;
-    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='amend' AND status='waiting' AND at > ?2 LIMIT 1").bind(o.id, yesFresh()).first());
+    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='amend' AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1").bind(o.id, yesFresh()).first());
   } catch (e) { return true; }
 }
 export async function tellSite(env, fixes, mirror) {
@@ -2043,7 +2043,7 @@ export async function tieOut(env, mirror, now = new Date()) {
   try { snap = await env.SALT_LEDGER.prepare("SELECT v, at FROM snapshot WHERE one=1").first(); } catch (e) { snap = null; }
   const v = (snap && snap.v) || null, told = await env.SALT_QUEUE.get(TOLD_MARK);
   try {
-    const old = (await env.SALT_LEDGER.prepare("SELECT order_id, stage, at FROM preapproval WHERE status='waiting' AND at <= ?1 ORDER BY at LIMIT 20").bind(yesFresh(now.getTime())).all()).results || [];
+    const old = (await env.SALT_LEDGER.prepare("SELECT order_id, stage, at FROM preapproval WHERE status='waiting' AND entry_at IS NULL AND json_extract(shown,'$.offer') IS NULL AND at <= ?1 ORDER BY at LIMIT 20").bind(yesFresh(now.getTime())).all()).results || [];
     for (const y of old) faults.push({ order: y.order_id, what: ["your yes to its " + y.stage + " of " + String(y.at).slice(0, 10) + " never reached Approve, so it holds nothing: tap it again if the move is still owed"] });
   } catch (e) { /* the yeses are read again next pass */ }
   if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS) {

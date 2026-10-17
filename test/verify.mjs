@@ -49419,7 +49419,7 @@ await (async () => {
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the follow was not driven against the real schema"); return; }
   const O = await import("../stmt/orders.js");
   const { reconcileOrders, deskPass, tellSite, tieOut } = await import("../src/orders.js");
-  const O_DESK = await import("../src/orders.js");
+  const O_DESK = await import("../src/orders.js"), SG = await import("../engine/stages.mjs");
   const { runDrafter } = await import("../src/drafter.js");
   const { applyAmend } = await import("../tools/fold.mjs");
   const PE = (await import("../engine/position.mjs")).default;
@@ -49943,6 +49943,9 @@ await (async () => {
     const ofrT29 = await tellSite(denv), ew3 = await orderOf(EW.o.id), tieKg = await tieOut(denv);
     const ewOut = (tieKg.faults || []).concat(tieKg.waiting || []).find((f) => f.order === EW.o.id && f.what.some((w) => /handed over/.test(w)));
     ok(!ofrT29.failed && ew3.moved === 1 && !ewOut, tag + ", units settled in kind beside the goods out leave the order at its size, and the tie-out level: " + J({ failed: ofrT29.failed, moved: ew3.moved, out: ewOut }));
+    /* Fable's review: goods collected past the size are read whole, never capped, so the order is not shrunk and the tie-out shows them */
+    ok(SG.rowOut({ qty: 1, deliveredQty: 2, settledKg: 0 }) === 2 && SG.rowOut({ qty: 2, deliveredQty: 2, settledKg: 1 }) === 2,
+      tag + ", only units settled in kind past the size are capped; goods collected past it are read whole: " + J([SG.rowOut({ qty: 1, deliveredQty: 2 }), SG.rowOut({ qty: 2, deliveredQty: 2, settledKg: 1 })]));
     /* (urhoba and s252) a Correction of the delivery alone moves the key: the order follows its row */
     const ehRow = correct(EH.rid, { delivery: 4 });
     const ofrT30 = await tellSite(denv), eh2 = await orderOf(EH.o.id);
@@ -49957,6 +49960,17 @@ await (async () => {
     yes(new Date().toISOString());
     const flyNew = await O_DESK.orderInFlight(denv, await orderOf(EG.o.id));
     db.prepare("DELETE FROM preapproval WHERE order_id=?").run(EG.o.id);
+    /* Fable's review: an old yes whose own entry is queued still holds; an old offer of his waits on their take and is never called a lost yes */
+    const old = new Date(Date.now() - 26 * 3600000).toISOString();
+    db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,entry,entry_at,status,at) VALUES (?,?,?,?,?,?,?,?,?,?)")
+      .run(EG.o.id + "|cash|q", EG.o.id, EG.u, "cash", "h", "{}", "{}", old, "waiting", old);
+    const flyQueued = await O_DESK.orderInFlight(denv, await orderOf(EG.o.id));
+    db.prepare("DELETE FROM preapproval WHERE order_id=?").run(EG.o.id);
+    db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,status,at) VALUES (?,?,?,?,?,?,?,?)")
+      .run(EG.o.id + "|ack|o", EG.o.id, EG.u, "ack", "h", J({ offer: { kind: "accept" } }), "waiting", old);
+    const tieOffer = await tieOut(denv), offerFault = (tieOffer.faults || []).find((f) => f.order === EG.o.id && f.what.some((w) => /never reached Approve/.test(w)));
+    db.prepare("DELETE FROM preapproval WHERE order_id=?").run(EG.o.id);
+    ok(flyQueued === true && !offerFault, tag + ", an old yes whose entry is queued still holds its order, and an old offer is never named a lost yes: " + J({ flyQueued, offerFault }));
     ok(flyOld === false && !!yesFault && flyNew === true,
       tag + ", a yes waiting over a day for its draft holds its order no longer and is named by the tie-out; a fresh one still holds it: " + J({ flyOld, flyNew, fault: yesFault }));
   }

@@ -34,7 +34,10 @@
   {"name": "v1147: the return leg reads every unit out", "file": "src/orders.js", "find": "    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = rowOut(row);", "replace": "    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);"},
   {"name": "v1147: the tie-out reads every unit out", "file": "src/orders.js", "find": "        const paid = f2(POSITION_ENGINE.txPaid(row)), moved = rowOut(row);", "replace": "        const paid = f2(POSITION_ENGINE.txPaid(row)), moved = f3(POSITION_ENGINE.txEffDeliv(row));"},
   {"name": "v1147: a delivery Correction is not followed", "file": "src/orders.js", "find": " || deliveryWas(r, +total) ? r : null;", "replace": " ? r : null;"},
-  {"name": "v1147: a stale yes still holds its order", "file": "src/orders.js", "find": "WHERE order_id=?1 AND status='waiting' AND at > ?2 LIMIT 1\").bind(o.id, yesFresh()).first());", "replace": "WHERE order_id=?1 AND status='waiting' LIMIT 1\").bind(o.id).first());"},
+  {"name": "v1147: a stale yes still holds its order", "file": "src/orders.js", "find": "WHERE order_id=?1 AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1\").bind(o.id, yesFresh()).first());", "replace": "WHERE order_id=?1 AND status='waiting' LIMIT 1\").bind(o.id).first());"},
   {"name": "v1147: a fresh yes holds nothing", "file": "src/orders.js", "find": "const YES_FRESH_MS = 24 * 3600000;", "replace": "const YES_FRESH_MS = -3600000;"},
-  {"name": "v1147: the tie-out names no stale yes", "file": "src/orders.js", "find": "    for (const y of old) faults.push(", "replace": "    for (const y of []) faults.push("}
+  {"name": "v1147: the tie-out names no stale yes", "file": "src/orders.js", "find": "    for (const y of old) faults.push(", "replace": "    for (const y of []) faults.push("},
+  {"name": "v1147: goods past the size are capped too", "file": "engine/stages.mjs", "find": "return +(goods > qty + 0.0004 ? all : Math.min(qty, all)).toFixed(3);", "replace": "return +Math.min(qty, all).toFixed(3);"},
+  {"name": "v1147: a queued yes ages out", "file": "src/orders.js", "find": "WHERE order_id=?1 AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1", "replace": "WHERE order_id=?1 AND status='waiting' AND (at > ?2) LIMIT 1"},
+  {"name": "v1147: an old offer is a lost yes", "file": "src/orders.js", "find": "AND json_extract(shown,'$.offer') IS NULL AND at <= ?1", "replace": "AND at <= ?1"}
 ]
