@@ -5,14 +5,21 @@
  *      will stand once the moves waiting fold
  *   B  Counter Admin's review read drops a row a live site order holds (by its key), and keeps one whose site order ended
  *   C  the page: a row under its stage with its figure; a site order paid or handed in full under Delivered or paid; the row card's handover,
- *      payment, change and cancel, each Record's own ledger-amend; Completed paged fifty at a time */
+ *      payment, change and cancel, each Record's own ledger-amend; Completed paged fifty at a time
+ *   D  his answer: a cancel once goods are out cancels the rest, closing the order at what was handed over (a row's at the Desk's closeAt, a
+ *      site order's by the close Finish at fewer units sends), anything paid above it a refund
+ *   E  his answer: a completed order keeps Amend, on the site, the Desk's restate and the ledger's road, and figures that leave it owing open
+ *      it again at Ready */
 import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import desk from "../src/worker.js";
 import { handleMaker } from "../stmt/maker.js";
 import { readBook as toolsBook } from "../tools/book.mjs";
 import { buildSeed } from "../tools/d1.mjs";
-import { flowStage } from "../src/maker-inputs.js";
+import { flowStage, makerLedgerAmendment } from "../src/maker-inputs.js";
+import { handoverTap, restateTap } from "../engine/stages.mjs";
+import { decideDesk, applyEvent } from "../stmt/orders.js";
+import { readBook } from "../src/drafter.js";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
 const J = JSON.stringify;
@@ -40,7 +47,8 @@ async function fixture() {
     sale("fc1", "CQ9-ZED", 1, 110, { cancelled: true }),
     sale("fw1", "CQ9-ZED", 1, 110, { deliveredQty: 1, defaulted: true }),
     sale("ft1", "CQ8-ZED", 1, 110, { delivery: 10, trip: T }), sale("ft2", "CQ8-ZED", 2, 30, { product: "oil", trip: T }),
-    sale("fs1", "CQ7-ZED", 1, 110), sale("fs2", "CQ6-ZED", 1, 110));
+    sale("fs1", "CQ7-ZED", 1, 110), sale("fs2", "CQ6-ZED", 1, 110),
+    sale("fx1", "CQ5-ZED", 2, 200, { deliveredQty: 1, cash: 150 }));
   const db = new DatabaseSync(":memory:"), migrations = new URL("../migrations/", import.meta.url);
   for (const file of readdirSync(migrations).filter((f) => /^\d+_.*\.sql$/.test(f)).sort())
     db.exec(readFileSync(new URL(file, migrations), "utf8"));
@@ -70,7 +78,7 @@ async function fixture() {
     return { status: res.status, j: await res.json() };
   };
   const deskGet = async (path) => (await desk.fetch(new Request("https://desk" + path, { headers: { "X-Counter-Maker-Key": key } }), deskEnv, { waitUntil() {} })).json();
-  return { env, call, deskGet };
+  return { env, call, deskGet, mirror: () => readBook(D1) };
 }
 
 export async function run({ ok, pageWork }) {
@@ -99,15 +107,44 @@ export async function run({ ok, pageWork }) {
   ok(pay.status === 200 && fa.paid === 50 && fa.owed === 60 && fa.waiting === 1 && fa.stage === "confirmed",
     "a row reads as it will stand once the moves waiting on it fold, so a payment is never asked for twice: " + J({ status: pay.status, error: pay.j.error, fa }));
 
+  /* D. CANCEL THE REST: the Desk's figure for a row, and a site order's close at what is already out */
+  ok(by.fx1 === undefined && (r0.rows || []).some((r) => r.rid === "fx1" && r.closeAt === 100 && r.stage === "confirmed") && !("closeAt" in by.fa1) && !("closeAt" in by.fh1),
+    "a row with goods out and some left reads what it closes at, the same rate for what went; one with none out, or all out, reads none: " + J((r0.rows || []).filter((r) => r.rid === "fx1")));
+  const so = { id: "20261014010002-flowac", code: "CQ5-ZED", u: "u-flow-5", product: "salt", qty: 2, total: 200, delivery: 0, mode: "collect", paid: 150, moved: 1, movedOn: D, status: "ready",
+    ledgerKey: "CQ5-ZED|2026-10-14|200", payments: [], history: [] };
+  const close = handoverTap(so, { qty: 1, close: true }, new Date("2026-10-17T02:00:00.000Z"));
+  ok(close.entry && close.entry.status === "Close" && close.entry.total === 100 && close.refund === 50 && close.site.handover.close === true,
+    "a site order closed at the unit already out is a close of its own, its total restated at the same rate, and the RM 50 paid above it a refund: " + J({ status: close.entry && close.entry.status, total: close.entry && close.entry.total, refund: close.refund, error: close.error }));
+
+  /* E. A COMPLETED ORDER KEEPS AMEND */
+  const done = { ...so, qty: 1, total: 110, paid: 110, moved: 1, status: "done", history: [{ at: "x", status: "ready", by: "desk" }, { at: "y", status: "done", by: "desk" }] };
+  const up = decideDesk(JSON.parse(J(done)), { restate: { qty: 1, total: 130, delivery: 0 } }, "2026-10-17T02:00:01.000Z");
+  const reopened = up.ev && applyEvent(JSON.parse(J(done)), up.ev).order;
+  const down = decideDesk(JSON.parse(J(done)), { restate: { qty: 1, total: 100, delivery: 0 } }, "2026-10-17T02:00:02.000Z");
+  const still = down.ev && applyEvent(JSON.parse(J(done)), down.ev).order;
+  ok(reopened && reopened.status === "ready" && reopened.total === 130 && still && still.status === "done" && still.total === 100,
+    "the order book takes his Amend on a completed order, opening it again at Ready when it leaves RM 20 owing, and leaving it completed when it owes nothing: " + J({ up: up.error || (reopened && reopened.status), down: down.error || (still && still.status) }));
+  const tap = restateTap(done, new Date("2026-10-17T02:00:03.000Z"), { total: 130 }, { book: null, room: null, earlier: [], live: null });
+  ok(tap.status === 503 && /mirror/.test(tap.error || ""), "the Desk's Amend no longer turns a completed order away for its status: " + J(tap));
+  const mb = await f.mirror();
+  const viaLedger = makerLedgerAmendment({ at: "2026-10-17T02:00:04.000Z", rid: "fd1", kind: "Correction", date: "2026-10-17", fields: { total: 120 } }, mb,
+    { order: { ...done, id: "20261014010003-flowad", qty: 1, total: 110, delivery: 0 } });
+  ok(viaLedger.restate && viaLedger.restate.order === "20261014010003-flowad" && viaLedger.restate.total === 120,
+    "a Correction of a completed site order's price on the ledger's road is sent as its Amend, so the order and the row change together: " + J(viaLedger));
+
   /* C. THE PAGE */
   const ROWS = [
     { rid: "fa1", party: "CQ9-ZED", product: "salt", date: D, key: "k1", qty: 1, total: 110, delivery: 0, paid: 0, owed: 110, handed: 0, left: 1, waiting: 0, stage: "confirmed" },
-    { rid: "fp1", party: "CQ9-ZED", product: "salt", date: D, key: "k2", qty: 1, total: 110, delivery: 0, paid: 110, owed: 0, handed: 0, left: 1, waiting: 0, stage: "paid" }]
+    { rid: "fp1", party: "CQ9-ZED", product: "salt", date: D, key: "k2", qty: 1, total: 110, delivery: 0, paid: 110, owed: 0, handed: 0, left: 1, waiting: 0, stage: "paid" },
+    { rid: "fx1", party: "CQ5-ZED", product: "salt", date: D, key: "k3", qty: 2, total: 200, delivery: 0, paid: 150, owed: 50, handed: 1, left: 1, waiting: 0, stage: "confirmed", closeAt: 100 }]
     .concat(Array.from({ length: 60 }, (_, i) => ({ rid: "fz" + i, party: "CQ9-ZED", product: "salt", date: D, key: "kz" + i, qty: 1, total: 110, delivery: 0, paid: 110, owed: 0, handed: 1, left: 0, waiting: 0, stage: "done" })));
+  const PART = { id: "20261014010004-flowae", u: "u-flow-4", status: "ready", qty: 2, total: 200, delivery: 0, paid: 0, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
+  const DONE = { id: "20261014010005-flowaf", u: "u-flow-6", status: "done", qty: 1, total: 110, delivery: 0, paid: 110, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
   const ORDER = { id: "o-pay", u: "u-flow-3", status: "acknowledged", qty: 1, total: 100, delivery: 0, paid: 100, moved: 0, product: "salt", at: D + "T01:00:00.000Z", payments: [], msgs: [] };
   const open = async () => {
-    const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER], drafts: [], queue: [], trips: [], sameDay: [], rows: ROWS }),
-      extra: (route, body) => route === "/all/maker/inputs/ledger-amend" ? { ok: true, draft: body.at, status: "pending" } : undefined });
+    const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE], drafts: [], queue: [], trips: [], sameDay: [], rows: ROWS }),
+      extra: (route, body) => route === "/all/maker/inputs/ledger-amend" ? { ok: true, draft: body.at, status: "pending" }
+        : /^[/]all[/]maker[/]orders[/][^/]+[/]handed$/.test(route) ? { ok: true, order: PART } : undefined });
     await p.work.quiet();
     p.tap = async (act, key) => { const e = byAct(p.d, act, key); if (e) e.click(); await p.work.quiet(); return !!e; };
     p.sent = (route) => p.posts.filter((x) => x.route === route).map((x) => x.body);
@@ -130,10 +167,10 @@ export async function run({ ok, pageWork }) {
       "a site order paid in full and not handed over is under Delivered or paid: " + ((rowOf("o-pay") || { getAttribute: () => "" }).getAttribute("data-in")));
     ok(!!p.d.querySelector('[data-part="paid"]') && /Delivered or paid/.test(text(p.d.querySelector('[data-part="paid"]'))) && /Received/.test(text(p.d.querySelector('[data-part="placed"]'))),
       "the stages read Received, Agreed, Ready, Delivered or paid, Completed and Ended");
-    const done = () => [...p.d.querySelectorAll('[data-act="order.open"]')].filter((b) => /orders\.done/.test(b.getAttribute("data-in")) && /^row:fz/.test(b.getAttribute("data-key"))).length;
+    const done = () => [...p.d.querySelectorAll('[data-act="order.open"]')].filter((b) => /orders\.done/.test(b.getAttribute("data-in"))).length;
     const n0 = done();
     await p.tap("orders.more", "done");
-    ok(n0 === 50 && done() === 60, "Completed shows fifty and Show 50 more the rest: " + J([n0, done()]));
+    ok(n0 === 50 && done() === 61, "Completed shows fifty and Show 50 more the rest: " + J([n0, done()]));
     await p.tap("order.open", "row:fa1");
     const card = p.card("row:fa1");
     ok(!!card && /Owed RM 110\.00 Paid RM 0\.00 Handed 0 of 1 unit/.test(text(card.querySelector(".salt-metrics"))) && !!byAct(card, "row.cancel", "fa1"),
@@ -146,5 +183,21 @@ export async function run({ ok, pageWork }) {
     const sent = p.sent("/all/maker/inputs/ledger-amend").map((b) => [b.rid, b.kind, b.cash, b.movedUnits, b.fields]);
     ok(J(sent) === J([["fa1", "Fulfilment", 0, 1, undefined], ["fa1", "Fulfilment", 60, 0, undefined], ["fa1", "Correction", undefined, undefined, { total: 95 }]]),
       "the card's handover, payment and change are Record's own ledger-amend, each under Approve: " + J(sent));
+    await p.tap("order.open", "row:fx1");
+    const fx = p.card("row:fx1");
+    ok(!!fx && !byAct(fx, "row.cancel", "fx1") && !!byAct(fx, "row.cancel-rest", "fx1"), "a row with goods out has Cancel the rest in place of Cancel");
+    await p.tap("row.cancel-rest", "fx1"); await p.tap("ask.go", "row.cancel-rest:fx1");
+    const rest = p.sent("/all/maker/inputs/ledger-amend").filter((b) => b.rid === "fx1").map((b) => [b.kind, b.fields]);
+    ok(J(rest) === J([["Correction", { qty: 1, total: 100 }]]), "Cancel the rest on a row sends one Correction closing it at what went, at the Desk's figure: " + J(rest));
+    await p.tap("part.orders.ready");
+    await p.tap("order.open", PART.id);
+    const pc = p.card(PART.id);
+    ok(!!pc && !byAct(pc, "order.cancel") && !!byAct(pc, "order.cancel-rest"), "a site order with a unit out has Cancel the rest in place of Cancel");
+    await p.tap("order.cancel-rest"); await p.tap("order.ask-go", PART.id);
+    const closes = p.posts.filter((x) => /[/]handed$/.test(x.route)).map((x) => [x.route.split("/")[4], x.body.qty, x.body.close]);
+    ok(J(closes) === J([[PART.id, 1, true]]), "and it sends the close at the unit already out: " + J(closes));
+    await p.tap("part.orders.done");
+    await p.tap("order.open", DONE.id);
+    ok(!!byAct(p.card(DONE.id), "order.amend"), "a completed order's card keeps Change the order");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 }

@@ -3030,6 +3030,16 @@ export const OWNER_JS = `
           yes:function(){ makerMove(order,Object.assign({status:'cancelled'},why.note()),'Order cancelled.'); }});
       },false);
       makerAskTag(order,can,'cancel');
+    }else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&+order.moved>0&&+order.moved<+order.qty-0.0004){
+      /* his answer of 17 Oct 2026: A CANCEL ONCE GOODS ARE OUT CANCELS THE REST. The order closes at what was handed over, the Desk restating its total
+         (the close Finish at fewer units sends), and anything paid above that opens as a refund */
+      var rest=makerButton(acts,['Cancel the rest','order.cancel-rest'],function(){
+        var n=+(+order.moved).toFixed(3);
+        makerAsk(order,rest,'cancel-rest',{title:'Cancel the rest of this order?', go:'Cancel the rest', keep:'Keep the order',
+          say:['The order ends at the '+units(n)+' handed over, and the Desk restates its total. Anything they paid above it opens as a refund for you to return.'],
+          yes:function(){ makerTap(order,'handed',{qty:n,close:true},'Sent to the Desk: the order ends at what was handed over.'); }});
+      },false);
+      makerAskTag(order,rest,'cancel-rest');
     }
   }
   /* PHASE 1c (11 Oct 2026): RECORD'S FORMS ARE A MENU. Entry, Customers and Pricing each list their forms by name, a row of the system's
@@ -4294,6 +4304,14 @@ export const OWNER_JS = `
         return amend(send,{kind:'Cancellation'},'Sent. The cancellation waits under Approve.');
       },false);
     }
+    if(live&&r.closeAt!=null){
+      makerButton(acts,['Cancel the rest','row.cancel-rest',r.rid],async function(send){
+        var over=Math.round((r.paid-r.closeAt-(r.delivery||0))*100)/100;
+        if(!await ownerAsk(send.button,'row.cancel-rest:'+r.rid,{title:'Cancel the rest of this order?', plain:true, go:'Cancel the rest', keep:'Keep it',
+          say:['The order ends at the '+units(r.handed)+' handed over, for '+rm(r.closeAt)+(r.delivery>0.004?' and the delivery':'')+'.'+(over>0.004?' They paid '+rm(over)+' more than that, which opens as a refund you owe them.':'')]})) return;
+        return amend(send,{kind:'Correction',fields:{qty:r.handed,total:r.closeAt}},'Sent. The order ends at what was handed over once it is approved.');
+      },false);
+    }
     historyBlock(card,{rid:r.rid},'line:'+r.rid,null,key);
     card.appendChild(detailBox('row.details',key,[['Row',r.rid],['Day',r.date?fmtWhen(r.date):'Undated']].concat(r.trip?[['Order of several books',r.trip]]:[])));
     makerCardFoot(card,acts,key,false,false);
@@ -4475,6 +4493,11 @@ export const OWNER_JS = `
     if(!order){ card.appendChild(el('h3','','Cash held for an order not on this read')); card.appendChild(detailBox('order.details',e.id,[['Reference',e.id]])); }
     if(order){
       orderHead(card,order);
+      /* his answer of 17 Oct 2026: a completed order keeps Change the order; figures that leave it owing open it again at Ready */
+      if(order.status==='done'&&!order.test&&!makerAgainAck(order)){
+        var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
+        change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
+      }
       if(order.status==='done') historyBlock(card,{order:order.id},'order:'+order.id,order,e.id);   /* plan 4 */
       if(makerAgainAck(order)) again=makerAcceptAgain(card,order,acts);
       makerAgain(card,order,acts);

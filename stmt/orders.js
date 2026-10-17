@@ -968,7 +968,7 @@ export function decideDesk(order, body, at) {
     return { ev: { kind: "restate", at, book: true, qty: +r.qty.toFixed(3), total: +r.total.toFixed(2), delivery: +r.delivery.toFixed(2), paid: +r.paid.toFixed(2), moved: +r.moved.toFixed(3) } };
   }
   if (body && body.restate) {
-    if (!PAYABLE.includes(order.status)) return { error: "an order that is " + order.status + " cannot be amended", status: 409 };
+    if (!PAYABLE.includes(order.status) && order.status !== "done") return { error: "an order that is " + order.status + " cannot be amended", status: 409 };
     const r = body.restate, q = r.qty, t = r.total, d = r.delivery;
     if (!isNum(q) || !(q > 0) || q > 1000000 || q < (+order.moved || 0) - 0.0004) return { error: "the size has to be above nothing and not under what is handed over", status: 400 };
     if (!isNum(t) || !(t > 0) || t > 1000000) return { error: "the goods' price has to be a figure above nothing", status: 400 };
@@ -1238,11 +1238,12 @@ export function applyEvent(order, ev) {
       order.paid = ev.paid; q.paid = ev.paid; order.moved = ev.moved; q.moved = ev.moved; order.queued = q;
       if (order.moved <= 0.0004) { delete order.movedOn; delete order.movedAt; }
       order.history.push({ at, status: order.status, by: "desk", note: "the book's figures: " + ev.paid.toFixed(2) + " paid, " + ev.moved + " unit handed over" });
-      if (order.status === "done" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {
-        const was = order.history.filter((h) => h && h.status && h.status !== "done").slice(-1)[0];
-        order.status = order.moved > 0.0004 ? "ready" : was ? was.status : "ready";   /* goods out: it was at Ready */
-        order.history.push({ at, status: order.status, by: "desk", note: "open again: the book's figures leave it owing" });
-      }
+    }
+    /* his answer of 17 Oct 2026: a completed order keeps Amend, and figures that leave it owing money or goods open it again */
+    if (order.status === "done" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {
+      const was = order.history.filter((h) => h && h.status && h.status !== "done").slice(-1)[0];
+      order.status = order.moved > 0.0004 ? "ready" : was ? was.status : "ready";   /* goods out: it was at Ready */
+      order.history.push({ at, status: order.status, by: "desk", note: "open again: " + (ev.book ? "the book's figures leave" : "the amendment leaves") + " it owing" });
     }
     done = settle(order, at);
   } else if (ev.kind === "handover") {

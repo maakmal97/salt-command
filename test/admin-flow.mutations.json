@@ -15,5 +15,16 @@
 { "name": "page: change sends every field", "file": "stmt/owner.js", "find": "if(Math.abs(t-r.total)>0.004) f.total=t;", "replace": "f.total=t; f.qty=q;" },
 { "name": "page: no cancel on a row", "file": "stmt/owner.js", "find": "if(live&&r.handed<=0.0005){\n      makerButton(acts,['Cancel order'", "replace": "if(false){\n      makerButton(acts,['Cancel order'" },
 { "name": "page: Delivered or paid tab gone", "file": "stmt/page.js", "find": "[\"paid\", \"Delivered or paid\"], ", "replace": "" },
-{ "name": "page: the orders strip hides Delivered or paid", "file": "stmt/page.js", "find": "orders.ready orders.paid orders.done", "replace": "orders.ready orders.done" }
+{ "name": "page: the orders strip hides Delivered or paid", "file": "stmt/page.js", "find": "orders.ready orders.paid orders.done", "replace": "orders.ready orders.done" },
+{"name": "closeAt: offered with nothing out", "file": "src/maker-inputs.js", "find": "!ended && line.handed > 0.0005 && line.left > 0.0005 ? { closeAt", "replace": "!ended && line.left > 0.0005 ? { closeAt"},
+{"name": "closeAt: the whole total", "file": "src/maker-inputs.js", "find": "r2(E.closeGoods(st.row.total, +st.row.qty, line.handed))", "replace": "r2(st.row.total)"},
+{"name": "row: no Cancel the rest", "file": "stmt/owner.js", "find": "    if(live&&r.closeAt!=null){", "replace": "    if(false){"},
+{"name": "row: Cancel the rest closes at the whole size", "file": "stmt/owner.js", "find": "fields:{qty:r.handed,total:r.closeAt}", "replace": "fields:{qty:r.qty,total:r.closeAt}"},
+{"name": "site: no Cancel the rest", "file": "stmt/owner.js", "find": "&&+order.moved>0&&+order.moved<+order.qty-0.0004){", "replace": "&&false){"},
+{"name": "site: Cancel the rest is a part handover", "file": "stmt/owner.js", "find": "makerTap(order,'handed',{qty:n,close:true},'Sent to the Desk: the order ends at what was handed over.');", "replace": "makerTap(order,'handed',{qty:n},'Sent to the Desk: the order ends at what was handed over.');"},
+{"name": "order book: Amend on a completed order refused", "file": "stmt/orders.js", "find": "if (!PAYABLE.includes(order.status) && order.status !== \"done\") return { error: \"an order that is \"", "replace": "if (!PAYABLE.includes(order.status)) return { error: \"an order that is \""},
+{"name": "order book: an amended completed order never reopens", "file": "stmt/orders.js", "find": "    if (order.status === \"done\" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {\n      const was", "replace": "    if (ev.book && order.status === \"done\" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {\n      const was"},
+{"name": "Desk: Amend on a completed order refused", "file": "engine/stages.mjs", "find": "if (!AGREED_ON_SITE.includes(o.status) && o.status !== \"done\") return { status: 409", "replace": "if (!AGREED_ON_SITE.includes(o.status)) return { status: 409"},
+{"name": "ledger road: a completed order's row changes alone", "file": "src/maker-inputs.js", "find": "if (order && (AGREED_ON_SITE.includes(order.status) || order.status === \"done\")) {", "replace": "if (order && AGREED_ON_SITE.includes(order.status)) {"},
+{"name": "page: no Change on a completed order", "file": "stmt/owner.js", "find": "if(order.status==='done'&&!order.test&&!makerAgainAck(order)){", "replace": "if(false){"}
 ]

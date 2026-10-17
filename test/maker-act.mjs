@@ -424,8 +424,9 @@ export async function auditStates({ pageWork }) {
   const day = { ...trip, trip: undefined, rids: ["dy-1", "dy-2"], party: "CX2-ZED", lines: [line("dy-1", "salt", 1, 200), line("dy-2", "oil", 2, 100)] };
   /* his flow (17 Oct 2026): a row of the book as an order, and Completed paged (test/admin-flow.mjs proves what each does) */
   const bookRow = (rid, stage, f) => ({ rid, party: "CX3-ZED", product: "salt", date: "2026-10-10", key: "CX3-ZED|2026-10-10|200|" + rid, qty: 1, total: 200, delivery: 10, paid: 0, owed: 210, handed: 0, left: 1, waiting: 0, stage, ...f });
-  const rows = [bookRow("rw-1", "confirmed")].concat(Array.from({ length: 51 }, (_, i) => bookRow("rd-" + i, "done", { paid: 210, owed: 0, handed: 1, left: 0 })));
-  const t = await richOwnerPage({ pageWork, review: (j) => ({ ...j, trips: [trip], sameDay: [day], rows }),
+  const rows = [bookRow("rw-1", "confirmed"), bookRow("rw-2", "confirmed", { qty: 2, total: 400, owed: 410, handed: 1, left: 1, closeAt: 200 })].concat(Array.from({ length: 51 }, (_, i) => bookRow("rd-" + i, "done", { paid: 210, owed: 0, handed: 1, left: 0 })));
+  const part = { id: "20261010010000-actprt", u: "u-act-part", status: "ready", qty: 2, total: 200, delivery: 0, paid: 0, moved: 1, product: "salt", mode: "collect", at: "2026-10-10T01:00:00.000Z", payments: [], msgs: [], history: [] };
+  const t = await richOwnerPage({ pageWork, review: (j) => ({ ...j, orders: (j.orders || []).concat([part]), trips: [trip], sameDay: [day], rows }),
     extra: (route) => route === "/all/maker/trip-split" ? { ok: true, split: { trip: trip.trip, amount: 50, shares: [{ rid: "tr-1", product: "salt", rm: 50, owed: 200 }] } } : undefined });
   try {
     await t.work.quiet();
@@ -438,6 +439,10 @@ export async function auditStates({ pageWork }) {
     states.push(["a buyer's same-day rows offered as one order", actAudit(t.d)]);
     t.card("row:rw-1"); await t.work.quiet();
     states.push(["a row of the book as an order", actAudit(t.d)]);
+    t.card("row:rw-2"); await t.work.quiet();
+    states.push(["a row of the book with goods out", actAudit(t.d)]);
+    await t.click(byAct(t.d, "part.orders.ready")); t.card(part.id); await t.work.quiet();
+    states.push(["a site order with goods out", actAudit(t.d)]);
     await t.click(byAct(t.d, "part.orders.done"));
     states.push(["Completed, paged", actAudit(t.d)]);
   } finally { t.w.close(); }

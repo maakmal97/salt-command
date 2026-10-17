@@ -235,9 +235,10 @@ export async function run({ ok, pageWork }) {
     const made = fT.drafts().slice(n0).map((d) => [d.amends, J(d.entry.payload.fields)]);
     ok(cut.status === 409 && J(cut.j.restate) === J({ order: "20261015000000-un3", qty: 1, total: 95, delivery: 0 }) && /customer's order/.test(cut.j.error || "")
       && mixed.status === 400 && /on their own/.test(mixed.j.error || "") && !mixed.j.restate
-      && other.status === 200 && doneRow.status === 200 && J(made) === J([["zu3", J({ handover: "collected" })], ["zu2", J({ total: 120 })]]),
-    "a Correction of an agreed site order's price is refused by the ledger's road and names the order's Amend; mixed with another field it is refused; "
-      + "another field, or a row whose order is done, is drafted as before: " + J({ cut: cut.j, mixed: mixed.j.error, other: other.status, done: doneRow.status, made }));
+      && other.status === 200 && doneRow.status === 409 && J(doneRow.j.restate) === J({ order: "20261002000000-un2", qty: 1, total: 120, delivery: 0 })
+      && J(made) === J([["zu3", J({ handover: "collected" })]]),
+    "a Correction of an agreed site order's price is refused by the ledger's road and names the order's Amend, and so is one whose order is completed (his answer "
+      + "of 17 Oct 2026: a completed order keeps Amend); mixed with another field it is refused; another field is drafted as before: " + J({ cut: cut.j, mixed: mixed.j.error, other: other.status, done: doneRow.status, made }));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); }
   /* a trip row's delivery is the trip's, and a caller that asked for no site order is not told the site could not be read */
   const tBook = await fT.mirror(), z3 = tBook.sales.find((s) => s.rid === "zu3");

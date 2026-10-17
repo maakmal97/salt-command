@@ -2513,6 +2513,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.claim-not-found` | Same card | Asks, on the Sheet, whether to answer that claim Not found. |
 | `order.claim-received` | Order card (key: the order id), one for each claim waiting (key: the claim's moment) | Asks, on the Sheet, whether to confirm the money they say they sent. |
 | `order.decline` | Order card (key: the order id), placed | Asks on a sheet, with a reason, then declines the order. |
+| `order.cancel-rest` | An agreed or ready order with goods out and some left | Asks, then closes the order at what was handed over, as Finish at fewer units does; anything paid above it opens as a refund. |
 | `order.details` | Every order card, and the card of cash held for an order not on the read (key: the order id) | Opens the order's reference, when it was placed and how it goes, as a list of names and values. |
 | `order.fee-0` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 0. |
 | `order.fee-10` | Order card (key: the order id), placed for delivery | Chooses a delivery charge of RM 10. |
@@ -2701,6 +2702,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `row.handover` | A row of the book as an order (key: the row) | Sends a handover of those units through Record's own input, a Fulfilment for approval. |
 | `row.pay-amount` | A row of the book as an order (key: the row) | What they paid, cash or bank, in RM; what is owed by default. |
 | `row.pay` | A row of the book as an order (key: the row) | Sends the payment through Record's own input, a Fulfilment for approval. |
+| `row.cancel-rest` | A row of the book as an order with goods out and some left (key: the row) | Asks, then sends one Correction closing it at what was handed over, at the Desk's figure for that; anything paid above it opens as a refund. |
 | `row.change-units` | A row of the book as an order (key: the row) | The order's units, to change. |
 | `row.change-total` | A row of the book as an order (key: the row) | The goods' price, to change. |
 | `row.change-delivery` | A row of the book as an order not on a trip (key: the row) | The delivery charge, to change; a trip's is changed by hand. |

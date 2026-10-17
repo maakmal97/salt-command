@@ -527,7 +527,8 @@ export function settledFromRow(o, row) {
  *  Amendment drafts ({status, committed_at}), live: a yes waiting on an amendment or null }. */
 export function restateTap(o, at, body, ctx) {
   const { book, room, earlier, live } = ctx;
-  if (!AGREED_ON_SITE.includes(o.status)) return { status: 409, error: "this order is " + o.status + ", so its figures are not amended" };
+  /* his answer of 17 Oct 2026: a completed order keeps Amend; figures that leave it owing open it again on the site */
+  if (!AGREED_ON_SITE.includes(o.status) && o.status !== "done") return { status: 409, error: "this order is " + o.status + ", so its figures are not amended" };
   const num = (v) => typeof v === "number" && Number.isFinite(v);
   const qty = body && body.qty !== undefined ? body.qty : +o.qty;
   const total = body && body.total !== undefined ? body.total : +o.total;

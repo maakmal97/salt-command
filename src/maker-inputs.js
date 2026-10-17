@@ -424,7 +424,10 @@ export function makerRows(book, held = [], onTrips = []) {
     .map((s) => {
       const st = standing([s], held)[0], line = tripLine(st);
       const ended = !!(st.row.cancelled || st.row.defaulted);
-      return { ...line, party: s.customer, date: s.date || null, key: E.ovKey(s), ...(s.trip ? { trip: s.trip } : {}),
+      /* his answer of 17 Oct 2026: a cancel once goods are out cancels the rest, the order closing at what was handed over at the same rate
+         (the engine's closeGoods, as a site order's close); anything paid above that is a refund the fold raises */
+      const closeAt = !ended && line.handed > 0.0005 && line.left > 0.0005 ? { closeAt: r2(E.closeGoods(st.row.total, +st.row.qty, line.handed)) } : {};
+      return { ...line, ...closeAt, party: s.customer, date: s.date || null, key: E.ovKey(s), ...(s.trip ? { trip: s.trip } : {}),
         ...(st.row.cancelled ? { cancelled: true } : {}), ...(st.row.defaulted ? { writtenOff: true } : {}),
         ...(s.goodwill ? { gift: true } : {}), stage: flowStage({ ...line, ended }) };
     })
@@ -914,7 +917,7 @@ export function makerLedgerAmendment(body, book, undoCtx = null) {
   if (sale && body.kind === "Correction" && body.undo === undefined && fields.some((k) => terms.includes(k))) {
     const ctx = undoCtx || {}, order = ctx.order;   /* no context asked for: no site order to name */
     if (ctx.siteError) return { error: "The site's orders could not be read, so a change of units, price or delivery waits until they can be." };
-    if (order && AGREED_ON_SITE.includes(order.status)) {
+    if (order && (AGREED_ON_SITE.includes(order.status) || order.status === "done")) {
       if (fields.some((k) => !terms.includes(k)))
         return { error: "This row is a customer's order: send its units, price or delivery on their own, so the order changes with the row." };
       const f = body.fields;
