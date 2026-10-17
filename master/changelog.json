@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1150",
+  "d": "17 Oct 2026",
+  "t": "COLLECTION OF 2 UNITS OF SALT RECORDED FOR CS6-PER ON S270",
+  "n": [
+   "<b>ONE CORRECTION FOLDED.</b> The correction on s270 records 2 units of salt collected by CS6-PER on 17 Oct 2026: deliveredQty 0 to 2, deliveredOn 2026-10-17, handover collected. It was preapproved by Counter Admin. No cash moved, as the RM230 was already paid, and no price or cost was changed.",
+   "<b>INVENTORY.</b> The shelf rolls out by 2 units to CS6-PER. Salt stock was last counted on 3 Oct 2026, so the figure still rests on that count and the roll alone."
+  ]
+ },
+ {
   "v": "v1149",
   "d": "17 Oct 2026",
   "t": "PAYMENT OF RM230 ON CS6-PER'S ORDER S270, NO STOCK MOVED",
