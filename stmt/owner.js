@@ -3668,6 +3668,8 @@ export const OWNER_JS = `
   function orderPartsOf(order){
     if(!ordOpen(order)&&order.test) return '';
     if(order.writtenOff) return 'orders.ended';   /* written off on the book: it ended there (17 Oct 2026) */
+    /* and an Agree he rejected under Approve has no row behind it: it waits under Received, to be agreed again (17 Oct 2026) */
+    if(order.status==='acknowledged'&&(order.again||[]).indexOf('ack')>=0) return 'orders.placed';
     var st=STAGE_OF[order.status]||'ended';
     if(st==='confirmed'||st==='ready'){
       var q=Number(order.qty)||0, out=q>0&&Number(order.moved||0)>=q-0.0005, paid=Number(order.paid||0), owed=Number(order.total||0)+Number(order.delivery||0)-paid;
@@ -3932,6 +3934,9 @@ export const OWNER_JS = `
     card.appendChild(metrics(agreed
       ?[['Owed',rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))],['Paid',rm(order.paid||0)],['Handed',moved+' of '+units(order.qty)]].concat(+order.claimed>0?[['Says sent',rm(order.claimed)]]:[])
       :[['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
+    /* 17 Oct 2026: a refund the book still owes them on this order's row */
+    var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
+    if(+owes>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(owes)+' on this order. Close it on the Desk once it is paid.'));
     card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]
       .concat(agreed?[['Goods',rm(order.total)],['Delivery',order.delivery?rm(order.delivery):'']]:[])));
   }
@@ -4260,6 +4265,7 @@ export const OWNER_JS = `
     head.appendChild(chip(st[0],st[1])); card.appendChild(head);
     card.appendChild(metrics([['Owed',rm(r.owed)],['Paid',rm(r.paid)],['Handed',String(+(+r.handed||0).toFixed(3))+' of '+units(r.qty)]]));
     if(r.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(r.waiting===1?'the move':'the '+r.waiting+' moves')+' waiting under Approve '+(r.waiting===1?'is':'are')+' approved.'));
+    if(+r.refund>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(r.refund)+' on this order. Close it on the Desk once it is paid.'));
     function amend(send,body,said){
       return send('/all/maker/inputs/ledger-amend',Object.assign({at:new Date().toISOString(),rid:r.rid,date:tripToday()},body))
         .then(function(){ return loadMaker(); }).then(function(){ makerSay(key,said); });

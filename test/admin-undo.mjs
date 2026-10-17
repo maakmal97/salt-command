@@ -266,7 +266,7 @@ export async function run({ ok, pageWork }) {
   const sd = { ...JSON.parse(J(sO)), status: "done", history: [{ at: "x", status: "ready", by: "desk" }, { at: "y", status: "done", by: "site" }] };
   const bk1 = decideDesk(JSON.parse(J(sd)), { restate: { qty: 1, total: 120, delivery: 0, paid: 110, moved: 1, book: true } }, "2026-10-17T01:00:00.000Z");
   const bo = applyEvent(JSON.parse(J(sd)), bk1.ev).order;
-  const bk2 = decideDesk({ ...JSON.parse(J(sd)), status: "ready" }, { restate: { qty: 1, total: 120, delivery: 0, paid: 110, moved: 1, book: true } }, "2026-10-17T01:00:01.000Z");
+  const bk2 = decideDesk({ ...JSON.parse(J(sd)), status: "placed" }, { restate: { qty: 1, total: 120, delivery: 0, paid: 110, moved: 1, book: true } }, "2026-10-17T01:00:01.000Z");
   const bk3 = decideDesk({ ...JSON.parse(J(sd)), paid: 130 }, { restate: { qty: 1, total: 120, delivery: 0, paid: 110, moved: 1, book: true } }, "2026-10-17T01:00:02.000Z");
   const bk4 = applyEvent(JSON.parse(J(sd)), decideDesk(JSON.parse(J(sd)), { restate: { qty: 1, total: 90, delivery: 0, paid: 90, moved: 1, book: true } }, "2026-10-17T01:00:03.000Z").ev).order;
  const bk5 = applyEvent({ ...JSON.parse(J(sd)), history: [{ at: "x", status: "acknowledged", by: "desk" }, { at: "y", status: "done", by: "site" }] },
@@ -277,7 +277,7 @@ export async function run({ ok, pageWork }) {
     "a settled order with goods out opens again at Ready, and one the book says moved nothing keeps no handover day: " + J([bk5.status, bk6.moved, bk6.movedOn || null, bk6.status]));
   ok(bk1.ev && bo.status === "ready" && bo.total === 120 && bo.paid === 110 && bo.queued.paid === 110 && bk2.status === 409 && bk3.status === 409
     && bk4.status === "done" && bk4.paid === 90 && bk4.queued.paid === 90 && wakes(bk1.ev, bo, false) === null,
-  "the order book takes the book's figures whole on a settled order alone, never over a move it has not told, opens one left owing at its state before, "
+  "the order book takes the book's figures whole on an agreed or settled order alone (17 Oct 2026: an agreed one too), never over a move it has not told, opens one left owing at its state before, "
     + "and a cut with its money stays settled: " + J([bo.status, bo.total, bo.paid, bk2.error, bk3.error, bk4.status, bk4.paid]));
   const fTDown = await fixture({ siteDown: true });
   const cutDown = await fTDown.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T06:00:04.000Z", rid: "zu3", kind: "Correction", date: "2026-10-16", fields: { total: 95 } });

@@ -1828,7 +1828,12 @@ function strayRow(o, k, idx, product) {
   const twins = mine.some((r) => idx.rows.get(PE.ovKey(r)) > 1);
   if (PE.ownerCode(party) === o.code) {
     const r = twins ? null : sole(mine.filter((x) => !x.cancelled && !x.defaulted));   /* a row he voided or wrote off is no restated row */
-    return r && new RegExp("\\btotal " + (+total) + " to ").test(r.mod || "") ? r : null;   /* the Correction names the old figure, not any correction */
+    if (r) return new RegExp("\\btotal " + (+total) + " to ").test(r.mod || "") ? r : null;   /* the Correction names the old figure, not any correction */
+    /* 17 Oct 2026, HIS FLOW: and a row a Correction re-dated, its mod naming the key's day as the old one, at the key's figure or one the mod names */
+    const was = new RegExp("\\bdate " + day + " to "), moved = rows.filter((x) => PE.ownerCode(x.customer) === o.code && (x.product || "salt") === product
+      && x.date !== day && !x.cancelled && !x.defaulted && was.test(x.mod || ""));
+    const m = moved.some((x) => idx.rows.get(PE.ovKey(x)) > 1) ? null : sole(moved);
+    return m && (+((+m.total || 0) + (+m.delivery || 0)).toFixed(2) === +total || new RegExp("\\btotal " + (+total) + " to ").test(m.mod || "")) ? m : null;
   }
   if (rows.some((r) => PE.ownerCode(r.customer) === PE.ownerCode(party))) return null;
   return twins ? null : sole(mine.filter((r) => +r.qty === +o.qty && +((+r.total || 0) + (+r.delivery || 0)).toFixed(2) === +total));
@@ -1955,6 +1960,19 @@ export async function tellSite(env, fixes, mirror) {
     }
     const ledger = {};
     const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);
+    /* 17 Oct 2026, HIS FLOW: money or goods LOWERED on the book (a Correction, never an undo, which its fix tells) reach an agreed order too, as the
+       book's figures whole, once nothing of the order's own is on its way and the site holds no move the book has not heard */
+    if (sole && !fixWaits.has(o.id) && (paid < (+o.paid || 0) - 0.004 || moved < (+o.moved || 0) - 0.0004)) {
+      const s = settledFromRow(Object.assign({}, o, { status: "done" }), row);
+      if (s && !(await orderInFlight(env, o))) {
+        const d = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ restate: { ...s, book: true } })
+        });
+        if (!d || !d.ok) failed.push({ id: o.id, why: "the site would not take its row's figures" + (d ? " (http " + d.status + ")" : "") });
+        else told++;
+      }
+      continue;
+    }
     if (paid > (+o.paid || 0) + 0.004) ledger.paid = paid;
     if (moved > (+o.moved || 0) + 0.0004) ledger.moved = moved;
     if (Object.keys(ledger).length) {

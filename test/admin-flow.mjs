@@ -40,6 +40,7 @@ async function fixture() {
   const source = await toolsBook();
   const ledger = JSON.parse(JSON.stringify(source.ledger)), version = source.version;
   source.w.close();
+  ledger.customerRefunds = (ledger.customerRefunds || []).concat([{ party: "CQ9-ZED", rid: "fp1", amount: 30, since: D, note: "n" }, { party: "CQ9-ZED", rid: "fa1", amount: 15, since: D, paidOn: D, note: "n" }]);
   ledger.sales.push(
     sale("fa1", "CQ9-ZED", 1, 110),
     sale("fp1", "CQ9-ZED", 1, 110, { cash: 110 }),
@@ -96,6 +97,8 @@ export async function run({ ok, pageWork }) {
     && by.fc1.cancelled === true && by.fw1.writtenOff === true && by.fa1.owed === 110 && by.fa1.left === 1 && by.fa1.key === "CQ9-ZED|2026-10-14|110",
   "the Desk reads every row with no trip card as an order at its stage, with its key and what it owes: " + J(mine.map((r) => [r.rid, r.stage, r.owed, r.left, r.key])));
   ok(!by.ft1 && !by.ft2 && (r0.trips || []).some((t) => t.trip === T), "a row on a trip card is that card's, never a second order: " + J(Object.keys(by)));
+  ok(by.fp1.refund === 30 && !("refund" in by.fa1) && (r0.refunds || {})["CQ9-ZED|2026-10-14|110"] === 30,
+    "an open refund on a row rides on its card's figures and, by the row's key, for a site order's card: " + J({ fp1: by.fp1.refund, refunds: r0.refunds }));
   ok(!(r0.rows || []).some((r) => r.rid === "fy1" || r.rid === "fy2") && (r0.sameDay || []).some((d) => J(d.rids) === J(["fy1", "fy2"])),
     "a buyer's same-day rows offered as one order are that card's, never drawn twice: " + J((r0.sameDay || []).map((d) => d.rids)));
 
@@ -103,7 +106,7 @@ export async function run({ ok, pageWork }) {
   await f.env.STMT.put("order:u-flow-1:20261014010000-flowaa", J({ id: "20261014010000-flowaa", u: "u-flow-1", status: "acknowledged", ledgerKey: "CQ7-ZED|2026-10-14|110", qty: 1, total: 110, product: "salt", at: D + "T01:00:00.000Z" }));
   await f.env.STMT.put("order:u-flow-2:20261014010001-flowab", J({ id: "20261014010001-flowab", u: "u-flow-2", status: "cancelled", ledgerKey: "CQ6-ZED|2026-10-14|110", qty: 1, total: 110, product: "salt", at: D + "T01:00:00.000Z" }));
   const rv = await f.call("/all/maker/review"), got = (rv.j.rows || []).map((r) => r.rid);
-  ok(rv.status === 200 && !got.includes("fs1") && got.includes("fs2") && got.includes("fa1"),
+  ok(rv.status === 200 && !got.includes("fs1") && got.includes("fs2") && got.includes("fa1") && (rv.j.refunds || {})["CQ9-ZED|2026-10-14|110"] === 30,
     "the review read drops the row a live site order holds and keeps one whose site order ended: " + J({ status: rv.status, error: rv.j.error, fs: got.filter((x) => /^f/.test(x)) }));
 
   const pay = await f.call("/all/maker/inputs/ledger-amend", { at: "2026-10-16T02:00:01.000Z", rid: "fa1", kind: "Fulfilment", date: "2026-10-16", cash: 50, movedUnits: 0 });
@@ -166,10 +169,12 @@ export async function run({ ok, pageWork }) {
     .concat(Array.from({ length: 60 }, (_, i) => ({ rid: "fz" + i, party: "CQ9-ZED", product: "salt", date: D, key: "kz" + i, qty: 1, total: 110, delivery: 0, paid: 110, owed: 0, handed: 1, left: 0, waiting: 0, stage: "done" })));
   const PART = { id: "20261014010004-flowae", u: "u-flow-4", status: "ready", qty: 2, total: 200, delivery: 0, paid: 0, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
   const DONE = { id: "20261014010005-flowaf", u: "u-flow-6", status: "done", qty: 1, total: 110, delivery: 0, paid: 110, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
+  const AGAIN = { id: "20261014010007-flowah", u: "u-flow-8", status: "acknowledged", again: ["ack"], qty: 1, total: 110, delivery: 0, paid: 0, moved: 0, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
+  const OWED = { id: "20261014010008-flowai", u: "u-flow-9", status: "acknowledged", ledgerKey: "CQ3-ZED|2026-10-14|110", qty: 1, total: 110, delivery: 0, paid: 0, moved: 0, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
   const WOFF = { id: "20261014010006-flowag", u: "u-flow-7", status: "ready", qty: 1, total: 110, delivery: 0, paid: 0, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [], writtenOff: "2026-10-16T00:00:00.000Z" };
   const ORDER = { id: "o-pay", u: "u-flow-3", status: "acknowledged", qty: 1, total: 100, delivery: 0, paid: 100, moved: 0, product: "salt", at: D + "T01:00:00.000Z", payments: [], msgs: [] };
   const open = async () => {
-    const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE, WOFF], drafts: [], queue: [], trips: [], sameDay: [], rows: ROWS }),
+    const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE, WOFF, AGAIN, OWED], refunds: { "CQ3-ZED|2026-10-14|110": 25 }, drafts: [], queue: [], trips: [], sameDay: [], rows: ROWS }),
       extra: (route, body) => route === "/all/maker/inputs/ledger-amend" ? { ok: true, draft: body.at, status: "pending" }
         : /^[/]all[/]maker[/]orders[/][^/]+[/]handed$/.test(route) ? { ok: true, order: PART } : undefined });
     await p.work.quiet();
@@ -224,6 +229,10 @@ export async function run({ ok, pageWork }) {
     const closes = p.posts.filter((x) => /[/]handed$/.test(x.route)).map((x) => [x.route.split("/")[4], x.body.qty, x.body.close]);
     ok(J(closes) === J([[PART.id, 1, true]]), "and it sends the close at the unit already out: " + J(closes));
     ok(/orders\.ended/.test((rowOf(WOFF.id) || { getAttribute: () => "" }).getAttribute("data-in")), "an order written off on the book is under Ended");
+    ok(/orders\.placed/.test((rowOf(AGAIN.id) || { getAttribute: () => "" }).getAttribute("data-in")), "an order whose Agree he rejected waits under Received, to be agreed again");
+    await p.tap("part.orders.confirmed");
+    await p.tap("order.open", OWED.id);
+    ok(/refund of RM 25\.00/.test(text(p.card(OWED.id))), "a site order's card says the refund the book owes on its row: " + text(p.card(OWED.id)).slice(0, 200));
     await p.tap("part.orders.done");
     await p.tap("order.open", DONE.id);
     ok(!!byAct(p.card(DONE.id), "order.amend"), "a completed order's card keeps Change the order");

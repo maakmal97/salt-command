@@ -49437,7 +49437,7 @@ await (async () => {
       const self = mk([]);
       self.bind = (...a) => { if (failFor && a[0] === failFor && /FROM preapproval .*stage<>'ack'/.test(sql)) throw new Error("D1 fixture: not now"); return mk(a); };
       return self; } };
-    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4", "5"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
+    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4", "5", "6", "7"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
     const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, J(doc));
     let seq = 0, ver = 0;
     const OPEN = { byKey: {}, position: {} };
@@ -49851,6 +49851,20 @@ await (async () => {
     const ofrT22 = await tellSite(denv), eo = await orderOf(EO.o.id);
     ok(!ofrT22.failed && eo.status !== "cancelled", tag + ", a hand-cancelled row with goods out leaves its order and the pass clean: " + J({ failed: ofrT22.failed, status: eo.status }));
     delete eoRow.cancelled; putRow(eoRow); reseed();
+    /* V7: a row a Correction re-dated is followed by its order; money lowered on the book reaches an agreed order */
+    const ER = await agreed(24, { unit: 127, total: 127 }, false);
+    const erRow = correct(ER.rid, { date: "2026-10-01" });
+    const ofrT23 = await tellSite(denv), er = await orderOf(ER.o.id);
+    ok(!ofrT23.failed && er.ledgerKey === PE.ovKey(erRow) && er.ledgerKey !== ER.key,
+      tag + ", an order follows its row when a Correction re-dates it: " + J({ failed: ofrT23.failed, was: ER.key, now: er.ledgerKey, row: PE.ovKey(erRow) }));
+    const EL = await agreed(25, { unit: 129, total: 129 }, true);
+    correct(EL.rid, { cash: 60 });
+    await tellSite(denv);
+    const el1 = await orderOf(EL.o.id);
+    correct(EL.rid, { cash: 20 });
+    const ofrT24 = await tellSite(denv), el2 = await orderOf(EL.o.id);
+    ok(el1.paid === 60 && !ofrT24.failed && el2.paid === 20 && el2.status !== "done" && el2.moved === 1,
+      tag + ", money lowered on the book reaches an agreed order, as it does a settled one: " + J({ failed: ofrT24.failed, paid: [el1.paid, el2.paid], status: el2.status }));
     correct(EW.rid, { defaulted: false });
     const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
     ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));

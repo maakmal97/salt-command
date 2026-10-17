@@ -22,7 +22,7 @@ import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
-import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerUndo, makerRows } from "./maker-inputs.js";
+import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerUndo, makerRows, openRefunds } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
 import POSITION_ENGINE from "../engine/position.mjs";
@@ -728,9 +728,11 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     let body;
     try { body = await res.json(); } catch (error) { return json({ ok: false, error: "The rows waiting could not be read." }, 503); }
     try {
-      const book = await readBook(env.SALT_LEDGER);
+      const book = await withRefunds(env.SALT_LEDGER, await readBook(env.SALT_LEDGER));
       if (!book.version) throw new Error("the mirror is being seeded");
-      const held = await makerHeldMoves(env), cards = makerTrips(book, held);
+      const held = await makerHeldMoves(env), cards = makerTrips(book, held), refunds = openRefunds(book);
+      /* an open refund by the key of its row, for a site order's card */
+      body.refunds = Object.fromEntries(book.sales.filter((s) => s && refunds[s.rid]).map((s) => [POSITION_ENGINE.ovKey(s), refunds[s.rid]]));
       Object.assign(body, cards, { rows: makerRows(book, held, cards.trips.flatMap((t) => t.lines.map((l) => l.rid)).concat(cards.sameDay.flatMap((d) => d.rids))) });
     } catch (error) { body.tripsError = "Orders of several books could not be read."; }
     return json(body);

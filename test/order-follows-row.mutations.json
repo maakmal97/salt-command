@@ -15,5 +15,8 @@
   {"name": "a book cancel queues a second cancellation", "file": "stmt/orders.js", "find": "if (ev.book) { order.queued = Object.assign({}, order.queued || {}, { cancel: \"book\" }); h.book = true; }", "replace": "if (ev.book) { h.book = true; }"},
   {"name": "a written-off order is chased", "file": "stmt/orders.js", "find": "ROWED.includes(o.status) && !o.writtenOff && aheadOnGoods(o);", "replace": "ROWED.includes(o.status) && aheadOnGoods(o);"},
   {"name": "a write-off undone stays written off", "file": "stmt/orders.js", "find": "if (ev.on) order.writtenOff = at; else delete order.writtenOff;", "replace": "order.writtenOff = at;"},
-  {"name": "Fable B: a hand cancel with goods out is sent", "file": "src/orders.js", "find": "row.cancelled ? (out ? null : \"cancelled\")", "replace": "row.cancelled ? \"cancelled\""}
+  {"name": "Fable B: a hand cancel with goods out is sent", "file": "src/orders.js", "find": "row.cancelled ? (out ? null : \"cancelled\")", "replace": "row.cancelled ? \"cancelled\""},
+  {"name": "V7: a re-dated row is not followed", "file": "src/orders.js", "find": "&& x.date !== day && !x.cancelled && !x.defaulted && was.test(x.mod || \"\"));", "replace": "&& false);"},
+  {"name": "V7: money lowered on the book stays on the order", "file": "src/orders.js", "find": "if (sole && !fixWaits.has(o.id) && (paid < (+o.paid || 0) - 0.004 || moved < (+o.moved || 0) - 0.0004)) {", "replace": "if (false) {"},
+  {"name": "V7: the order book refuses an agreed order the book's figures", "file": "stmt/orders.js", "find": "if (!ROWED.includes(order.status)) return { error: \"only an agreed order takes the book's figures whole\", status: 409 };", "replace": "if (order.status !== \"done\") return { error: \"only an agreed order takes the book's figures whole\", status: 409 };"}
 ]

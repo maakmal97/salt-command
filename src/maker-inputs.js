@@ -418,8 +418,14 @@ export function flowStage(f) {
   const out = f.qty > 0 && f.handed >= f.qty - 0.0005, paid = f.owed <= 0.004;
   return out && paid ? "done" : out || (paid && f.paid > 0.004) ? "paid" : f.ready ? "ready" : "confirmed";
 }
+/* 17 Oct 2026: a refund the book still owes on a row (customerRefunds with no paidOn), by rid, which a row card and an order's card show */
+export function openRefunds(book) {
+  const out = {};
+  for (const r of (book && book.customerRefunds) || []) if (r && r.rid && !r.paidOn && +r.amount > 0.004) out[r.rid] = r2((out[r.rid] || 0) + +r.amount);
+  return out;
+}
 export function makerRows(book, held = [], onTrips = []) {
-  const E = POSITION_ENGINE, carded = new Set(onTrips);
+  const E = POSITION_ENGINE, carded = new Set(onTrips), refunds = openRefunds(book);
   return ((book && book.sales) || []).filter((s) => s && s.rid && !carded.has(s.rid) && code(s.customer, [s.customer]))
     .map((s) => {
       const st = standing([s], held)[0], line = tripLine(st);
@@ -429,7 +435,7 @@ export function makerRows(book, held = [], onTrips = []) {
       const closeAt = !ended && line.handed > 0.0005 && line.left > 0.0005 ? { closeAt: r2(E.closeGoods(st.row.total, +st.row.qty, line.handed)) } : {};
       return { ...line, ...closeAt, party: s.customer, date: s.date || null, key: E.ovKey(s), ...(s.trip ? { trip: s.trip } : {}),
         ...(st.row.cancelled ? { cancelled: true } : {}), ...(st.row.defaulted ? { writtenOff: true } : {}),
-        ...(s.goodwill ? { gift: true } : {}), stage: flowStage({ ...line, ended }) };
+        ...(s.goodwill ? { gift: true } : {}), ...(refunds[s.rid] ? { refund: refunds[s.rid] } : {}), stage: flowStage({ ...line, ended }) };
     })
     .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")) || b.rid.localeCompare(a.rid, "en", { numeric: true }));
 }

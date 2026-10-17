@@ -959,7 +959,7 @@ export function decideDesk(order, body, at) {
      the book is the record once nothing of the site's is on its way to it. Owing after it, the order opens again at the state it held before. */
   if (body && body.restate && body.restate.book === true) {
     const r = body.restate, told = order.queued || {};
-    if (order.status !== "done") return { error: "only a settled order takes the book's figures whole", status: 409 };
+    if (!ROWED.includes(order.status)) return { error: "only an agreed order takes the book's figures whole", status: 409 };
     const fig = (v, lo) => isNum(v) && v >= lo && v <= 1000000;
     if (!fig(r.qty, 0.0005) || !fig(r.total, 0.005) || !fig(r.delivery, 0) || !fig(r.paid, 0) || !fig(r.moved, 0) || r.moved > r.qty + 0.0004
       || (r.delivery > 0 && order.mode !== "deliver")) return { error: "the book's figures are not an order's", status: 400 };
