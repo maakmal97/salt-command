@@ -3969,6 +3969,34 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .mapfrom,.mapto,input[id^="driftIn_"]{padding-left:10px;}
 /* 18 Oct 2026: the map's two dates sit in a row that shrinks them, so each holds the date, its two steppers and Today */
 .mapperiod .dtin{width:310px;flex:0 0 auto;}
+/* 18 Oct 2026, the restock date card (expDraw): a row a book, its light, figures and what customers read on the left, the
+   day and its two actions in a column of one width on the right, so every book's control lines up; stacked on a phone */
+.expgrid{display:flex;flex-direction:column;margin-top:10px;border-top:1px solid var(--salt-line-faint);}
+.exprow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 20px;align-items:center;padding:12px 0 12px 14px;
+  border-bottom:1px solid var(--salt-line-faint);border-left:3px solid transparent;}
+.exprow--green{--explight:var(--salt-verdigris);}
+.exprow--yellow{--explight:var(--salt-amber);}
+.exprow--red{--explight:var(--salt-ember);}
+.exprow--asks{border-left-color:var(--explight);background:color-mix(in srgb, var(--explight) 6%, transparent);}
+.expwho{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.expbook{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.expbook b{color:var(--salt-salt);font-size:15px;}
+.explight{width:10px;height:10px;border-radius:50%;flex:0 0 10px;background:var(--explight);box-shadow:0 0 8px -1px var(--explight);}
+.expword,.expask{font-family:var(--salt-font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--salt-text-muted);}
+.expask{color:var(--salt-copper);border:1px solid var(--salt-copper);border-radius:999px;padding:2px 8px;}
+.expfig{display:flex;gap:4px 16px;flex-wrap:wrap;font-family:var(--salt-font-mono);font-size:13px;color:var(--salt-salt);}
+.expnote{font-size:13px;color:var(--salt-text-muted);}
+.expctl{display:flex;align-items:center;gap:8px;}
+.expctl .dtin{width:310px;flex:0 0 auto;}
+.expctl input[type="date"]{padding-left:10px;}
+.expact{display:flex;gap:8px;}
+@media(max-width:720px){
+  .exprow{grid-template-columns:minmax(0,1fr);padding-left:10px;}
+  .expctl{flex-wrap:wrap;}
+  .expctl .dtin{width:100%;flex:1 1 100%;}
+  .expact{flex:1 1 100%;}
+  .expact .salt-ghost{flex:1 1 0;}
+}
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
 .qask.under{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
@@ -19446,8 +19474,19 @@ function expDraw(){
   const head=document.getElementById('expHead'),n=document.getElementById('expN'),fold=document.getElementById('expFold');
   if(head)head.textContent=ask?'Restock date: '+ask+(ask===1?' book asks':' books ask'):'Restock date';
   if(n)n.textContent=String(ask);if(fold&&ask&&!fold.dataset.shown){fold.open=true;fold.dataset.shown='1';}
-  box.innerHTML=ids.map(p=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><b>${esc((PRODUCTS[p]&&PRODUCTS[p].name)||p)}</b><span class="dsc">${L[p].light}, ${units(L[p].shelf)} held, ${units(L[p].commit)} committed</span>`
-    +dateIn('exp_'+p,EXPECTED[p]||'')+`<button type="button" class="salt-ghost salt-ghost--lit" data-expset="${esc(p)}">Set</button><button type="button" class="salt-ghost" data-expclr="${esc(p)}">Clear</button></div>`).join('');
+  /* 18 Oct 2026, his "redesign this": one row a book, the light first in its own colour (the Counter's three tokens), the
+     figures number first, what customers read now, and the day and its actions in one column that lines up down the card */
+  const LW={green:'Green',yellow:'Yellow',red:'Red'};
+  box.innerHTML='<div class="expgrid">'+ids.map(p=>{
+    const l=L[p],d=EXPECTED[p]||'',asks=l.light!=='green'&&!(d&&d>=today);
+    const note=d&&d<today?'Passed '+dShow(d)+'. Set a new day.'
+      :d?(l.light==='green'?'Set for '+dShow(d)+'. Shown when the light turns.':'Customers read: More by '+dShow(d)+'.')
+      :asks?'No day set. Customers see the light alone.':'No day needed while green.';
+    return `<div class="exprow exprow--${esc(l.light)}${asks?' exprow--asks':''}"><div class="expwho">`
+      +`<div class="expbook"><span class="explight" aria-hidden="true"></span><b>${esc((PRODUCTS[p]&&PRODUCTS[p].name)||p)}</b><span class="expword">${LW[l.light]||esc(l.light)}</span>${asks?'<span class="expask">Asks</span>':''}</div>`
+      +`<div class="expfig"><span>${units(l.shelf)} held</span><span>${units(l.commit)} committed</span></div><div class="expnote">${note}</div></div>`
+      +`<div class="expctl">${dateIn('exp_'+p,d)}<span class="expact"><button type="button" class="salt-ghost salt-ghost--lit" data-expset="${esc(p)}">Set</button><button type="button" class="salt-ghost" data-expclr="${esc(p)}"${d?'':' disabled'}>Clear</button></span></div></div>`;
+  }).join('')+'</div>';
   box.querySelectorAll('button[data-expset]').forEach(b=>{b.onclick=()=>expPost(b.dataset.expset,false);});
   box.querySelectorAll('button[data-expclr]').forEach(b=>{b.onclick=()=>expPost(b.dataset.expclr,true);});
 }

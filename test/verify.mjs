@@ -53202,6 +53202,21 @@ await (async () => {
     await w.eval("expLoad(true)");
     ok(w.eval("EXPECTED").salt === "2099-02-03" && w.document.getElementById("exp_salt") && w.document.getElementById("exp_salt").value === "2099-02-03"
       && /^Restock date/.test(w.document.getElementById("expHead").textContent), "the card reads the dates and draws one control a book, holding the day");
+    /* 18 Oct 2026, the redesign: a row a book in one grid, the light its class and its word, Asks where the head counts one,
+       Clear shut with no day to clear, and the control one fixed width so the books line up */
+    {
+      const L = w.eval("expLights()"), today = w.eval("TODAY.toISOString().slice(0,10)"), E = w.eval("EXPECTED");
+      const rows = [...w.document.querySelectorAll("#expRows .expgrid > .exprow")], ids = Object.keys(L);
+      const bad = ids.filter((p, i) => {
+        const r = rows[i], asks = L[p].light !== "green" && !(E[p] && E[p] >= today), clr = r && r.querySelector(`button[data-expclr="${p}"]`);
+        return !r || !r.classList.contains("exprow--" + L[p].light) || r.classList.contains("exprow--asks") !== asks || !!r.querySelector(".expask") !== asks
+          || r.querySelector(".expword").textContent.toLowerCase() !== L[p].light || !r.querySelector(".expctl #exp_" + p) || !clr || clr.disabled !== !E[p];
+      });
+      const css = [...w.document.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+      ok(rows.length === ids.length && bad.length === 0 && /\.expctl \.dtin\{width:310px;flex:0 0 auto;\}/.test(css)
+        && /\.exprow\{display:grid;grid-template-columns:minmax\(0,1fr\) auto;/.test(css),
+        "the restock card is one row a book: its light, Asks where a day is wanted, Clear shut with no day, the control 310px in a column of its own: " + JSON.stringify(bad));
+    }
     w.document.getElementById("exp_salt").value = "2099-03-04";
     await w.eval("expPost('salt',false)");
     ok(sent.some((x) => x[0] === "expected" && x[1] === "POST" && x[2].product === "salt" && x[2].on === "2099-03-04"), "Set sends the book and the day");
