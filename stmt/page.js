@@ -1375,6 +1375,9 @@ const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=
      gives it the screen's height, the longer side of the screen upright and the shorter lying down; --app-h feeds the body's min-height under 1080px */
   + "(function(){try{if(navigator.standalone===true){var r=document.documentElement,f=function(){var a=Math.max(screen.width,screen.height),b=Math.min(screen.width,screen.height);"
   + "r.style.setProperty('--app-h',(window.innerWidth>window.innerHeight?b:a)+'px');};r.setAttribute('data-app','1');f();window.addEventListener('resize',f);}}catch(e){}})();";
+/* 18 Oct 2026: THE LIGHT, the system's Aurora as the Desk draws it (tools/stmt-style.mjs carries the recipe), the first thing in the body of the Counter and Salt Account. Not on guestPage (the guest board, the shut page and the 404): their source names no brand, and every salt- class would be one */
+const AURORA = '<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div>'
+  + '<div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>';
 const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="tide"><head><meta charset="utf-8">'
   + '<meta name="google" content="notranslate">'
   + '<meta name="theme-color" content="' + GROUND.tide + '">';
@@ -1384,7 +1387,7 @@ function guestPage(inner, nonce, title) {
     + '<meta name="robots" content="noindex,nofollow,noarchive">'
     + '<meta name="referrer" content="no-referrer">'
     + "<title>" + title + "</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
+    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>" 
     + '<div class="panel">' + inner + "</div></body></html>";
 }
 
@@ -1497,7 +1500,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* his page is Salt Account, as its manifest says; the customer's is Salt Counter */
     + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Account" : "Salt Counter") + '">'
     + "<title>" + (owner ? "Salt Account" : "Salt Counter") + "</title>"
-    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>"
+    + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>" + AURORA
     + (owner
       ? '<div id="roster" class="gate adm">'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the

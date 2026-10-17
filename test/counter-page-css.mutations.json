@@ -32,5 +32,12 @@
  {"name":"a head over the links is not the eyebrow","file":"stmt/owner.js","find":"el('p','ghead salt-eyebrow salt-eyebrow--copper',heads[i])","replace":"el('p','ghead',heads[i])"},
  {"name":"the tier picker is not the system's field","file":"stmt/owner.js","find":"var sel=el('select','fld salt-field__input'); sel.setAttribute('aria-label','Price list their friend sees')","replace":"var sel=el('select','fld'); sel.setAttribute('aria-label','Price list their friend sees')"},
  {"name":"the report card is not the glass card","file":"stmt/owner.js","find":"el('div','acard salt-glass-card salt-glass-card--radius-md'+(r.departed?' off':''))","replace":"el('div','acard'+(r.departed?' off':''))"},
- {"name":"the report card's figures are not the Metric row","file":"stmt/owner.js","find":"var g=el('div','agrid salt-metrics salt-metrics--sm');","replace":"var g=el('div','agrid');"}
+ {"name":"the report card's figures are not the Metric row","file":"stmt/owner.js","find":"var g=el('div','agrid salt-metrics salt-metrics--sm');","replace":"var g=el('div','agrid');"},
+ {"name":"the Aurora loses a blob colour from the recipes the page carries","file":"stmt/statement-css.js","find":".salt-aurora__blob--copper { background: var(--salt-copper); }","replace":""},
+ {"name":"a carried Aurora rule differs from the system s","file":"stmt/statement-css.js","find":"filter: blur(100px);","replace":"filter: blur(60px);"},
+ {"name":"the page draws the card Aurora, not the fixed page one","file":"stmt/page.js","find":"<div class=\"salt-aurora salt-aurora--page salt-aurora--fixed\" aria-hidden=\"true\">","replace":"<div class=\"salt-aurora salt-aurora--page\" aria-hidden=\"true\">"},
+ {"name":"the Aurora loses its brass blob","file":"stmt/page.js","find":"  + '<div class=\"salt-aurora__blob salt-aurora__blob--brass\"></div></div>';","replace":"  + '</div>';"},
+ {"name":"the stacking rule loses the weight over the recipe","file":"stmt/statement-css.js","find":"body>.salt-aurora{z-index:-1}","replace":".salt-aurora{z-index:-1}"},
+ {"name":"the hand gradient comes back on the body","file":"stmt/statement-css.js","find":"line-height:1.6;-webkit-font-smoothing:antialiased}","replace":"line-height:1.6;-webkit-font-smoothing:antialiased;background-image:radial-gradient(900px 560px at -10% 6%, var(--salt-brass), transparent 58%)}"},
+ {"name":"the system s no-Aurora in print is left out","file":"stmt/statement-css.js","find":"}\\n@media print {\\n  .salt-aurora { display: none; }\\n}","replace":"}"}
 ]
