@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1146",
+  "d": "17 Oct 2026",
+  "t": "THE ORDER AND THE BOOK TIE OUT, AND THE LEDGER SAYS SO",
+  "n": [
+   "<b>WHAT THE BOOK LOWERS, THE ORDER LOWERS.</b> Money or a handover taken back on a row reaches its agreed order, as it did a settled one, waiting while a move of the order's own is on its way; an offset settled in kind raises the order's paid; a row a Correction re-dates takes its order with it; a key two live orders name is neither's row.",
+   "<b>REFUNDS AND WAITS ON THE CARD.</b> A refund the book owes on a row is said on its card, the site order's included; an ended order whose move waits under Approve says the book keeps the row until it is approved.",
+   "<b>THE TIE-OUT.</b> After each version and every six hours, every five minutes while not clean, the Desk checks every site order against its row: units, goods, delivery, paid, handed over and the end. Counter Admin's Ledger shows Order and book with each difference by order and row, a claim or a move on its way listed as waiting, a rejected Agree naming Accept again, a stalled return leg naming the order that held it, and Check now. Pricing rules unchanged."
+  ]
+ },
+ {
   "v": "v1145",
   "d": "17 Oct 2026",
   "t": "EVERY ROW OF THE BOOK IS AN ORDER ON COUNTER ADMIN, AND WHAT THE BOOK ENDS THE ORDER ENDS",
