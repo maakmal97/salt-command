@@ -1429,7 +1429,7 @@ const adminStrip = (p, list, cls, label) => '<div class="salt-tabs aparts' + cls
    its id, its act and its address, and PARTS is both strips together (stmt/owner.js), so only the drawing is split. */
 const ADMIN_ORDER_STAGES = ["placed", "confirmed", "ready", "paid", "done", "ended"];
 const adminParts = (p) => p === "orders"
-  ? adminStrip(p, ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), " aparts--stages", "Order stages")
+  ? adminStrip(p, ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), " salt-tabs--arrows aparts--stages", "Order stages")
     + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k)), " aparts--minor", "Other orders")
   : adminStrip(p, ADMIN_PARTS[p], "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
