@@ -49479,11 +49479,12 @@ await (async () => {
     /* every mark the desk sends the site, by order; a Counter deployed before this version keeps a mark's key and drops its side */
     const marks = [], restates = [];
     let oldCounter = false;
-    let siteDown = false;
+    let siteDown = false, markFail = null;
     const siteFetch = (url, init) => {
       let b = null;
       try { b = init && typeof init.body === "string" ? JSON.parse(init.body) : null; } catch (e) { b = null; }
       if (siteDown && b && (b.restate || b.ledger)) return Promise.resolve(new Response("{}", { status: 503 }));
+      if (markFail && b && b.mark && b.mark.ledgerKey && String(url).includes(markFail)) return Promise.resolve(new Response("{}", { status: 503 }));
       if (b && b.restate) restates.push(decodeURIComponent(String(url).split("/").pop()));
       if (b && b.mark) {
         marks.push(Object.assign({ id: decodeURIComponent(String(url).split("/").pop()) }, b.mark));
@@ -49944,21 +49945,50 @@ await (async () => {
     const pair = sales().filter((x) => !had.has(x.rid) && PE.ownerCode(x.customer) === scode);
     setup(pair.length === 2, "both pending rows landed: " + J(pair.map((x) => x.rid)));
     const k1 = (await orderOf(SA1.id)).ledgerKey;
-    await O.deskMove(senv, shu, SA2.id, { mark: { ledgerKey: k1 } });
     const [ra, rb] = [pair.find((x) => +x.total === 141), pair.find((x) => +x.total === 143)];
+    /* an acknowledged pair is never a group: a stage of one would restate the shared row to its figures alone */
+    const k2 = (await orderOf(SA2.id)).ledgerKey;
+    await O.deskMove(senv, shu, SA2.id, { mark: { ledgerKey: k1 } });
+    ra.cancelled = true; putRow(ra); rb.qty = 2; rb.total = 284; putRow(rb); reseed();
+    await tellSite(denv);
+    const ack1 = await orderOf(SA1.id);
+    ok(ack1.ledgerKey === k1, tag + ", an acknowledged pair never takes a shared row: " + J(ack1.ledgerKey));
+    delete ra.cancelled; putRow(ra); rb.qty = 1; rb.total = 143; putRow(rb); reseed();
+    await O.deskMove(senv, shu, SA2.id, { mark: { ledgerKey: k2 } });
+    /* both collected and paid in full, as s218's pair: completed, each on its own row */
+    ra.cash = 141; ra.deliveredQty = 1; putRow(ra); rb.cash = 143; rb.deliveredQty = 1; putRow(rb); reseed();
+    await tellSite(denv);
+    setup((await orderOf(SA1.id)).status === "done" && (await orderOf(SA2.id)).status === "done", "both orders completed on their rows");
+    await O.deskMove(senv, shu, SA2.id, { mark: { ledgerKey: k1 } });
     db.prepare("UPDATE draft SET status='rejected', committed_at=NULL WHERE id=?").run(SA2ack);   /* as s218's pair: a pending row rejected, its row booked by hand */
-    ra.cancelled = true; putRow(ra); rb.qty = 2; rb.total = 284; putRow(rb); reseed();   /* a hand fold: one row of their sum, the other a cancelled stub */
+    ra.cancelled = true; ra.cash = 0; ra.deliveredQty = 0; putRow(ra); rb.qty = 2; rb.total = 284; rb.cash = 284; rb.deliveredQty = 2; putRow(rb); reseed();   /* a hand fold: one row of their sum, the other a cancelled stub */
+    /* a pair that moves in part goes back whole, and is tried whole again */
+    markFail = SA2.id;
+    const ofrHalf = await tellSite(denv), half1 = await orderOf(SA1.id), half2 = await orderOf(SA2.id);
+    markFail = null; reseed();
+    ok(ofrHalf.failed && half1.ledgerKey === k1 && half2.ledgerKey === k1, tag + ", a pair that moves in part goes back whole: " + J([half1.ledgerKey, half2.ledgerKey]));
     const ofrT31 = await tellSite(denv), sa1 = await orderOf(SA1.id), sa2 = await orderOf(SA2.id), tieShare = await tieOut(denv);
     const shareIn = (t) => (t.faults || []).concat(t.waiting || []).filter((f) => [SA1.id, SA2.id].includes(f.order));
     ok(!ofrT31.failed && sa1.ledgerKey === PE.ovKey(rb) && sa2.ledgerKey === PE.ovKey(rb) && sa1.status !== "cancelled" && sa2.status !== "cancelled" && !shareIn(tieShare).length,
       tag + ", two orders the book holds as one row of their sum take it together, are never cancelled by the dead key, and tie out as its sum: "
       + J({ failed: ofrT31.failed, keys: [sa1.ledgerKey, sa2.ledgerKey, PE.ovKey(rb)], status: [sa1.status, sa2.status], tie: shareIn(tieShare) }));
     /* and a row that is not their sum is never taken, and the tie-out names the difference */
-    rb.cash = 50; putRow(rb); reseed();
+    /* Accept again on a rejected pending row whose order has its row by another road books no second row */
+    const pvA = await call("/orders/" + SA2.id + "/preview", {}), agA = await call("/orders/" + SA2.id + "/accept", { hash: pvA.j.hash });
+    ok(agA.status === 409 && /on the book already/.test(agA.j.error || ""), tag + ", Accept again on an order whose row is on the book already is refused: " + J({ s: agA.status, j: agA.j }));
+    /* and the reconcile queues no stage of one of them against the row they share */
+    await O.deskMove(senv, shu, SA1.id, { mark: { moved: 0 } });
+    const before = drafts(SA1.id).length;
+    await reconcileOrders(denv);
+    const sa1w = await orderOf(SA1.id);
+    await O.deskMove(senv, shu, SA1.id, { mark: { moved: 1 } });
+    ok(drafts(SA1.id).length === before && /shares its row on the book with another order/.test((sa1w.sync || {}).why || ""),
+      tag + ", the reconcile queues no stage of one order against a row it shares: " + J({ drafts: drafts(SA1.id).length - before, sync: sa1w.sync }));
+    rb.cash = 250; putRow(rb); reseed();
     const tieOff = await tieOut(denv);
-    ok(shareIn(tieOff).length === 2 && shareIn(tieOff).every((f) => f.what.some((w) => /paid RM 0 on its 2 orders, RM 50 on the row/.test(w))),
+    ok(shareIn(tieOff).length === 2 && shareIn(tieOff).every((f) => f.what.some((w) => /paid RM 284 on its 2 orders, RM 250 on the row/.test(w))),
       tag + ", a shared row that is not its orders' sum is a difference on each, said as the sum: " + J(shareIn(tieOff)));
-    rb.cash = 0; putRow(rb); reseed();
+    rb.cash = 284; putRow(rb); reseed();
     /* a row of their size whose goods are not their sum is never taken */
     await O.deskMove(senv, shu, SA1.id, { mark: { ledgerKey: k1 } }); await O.deskMove(senv, shu, SA2.id, { mark: { ledgerKey: k1 } });
     rb.total = 290; putRow(rb); reseed();

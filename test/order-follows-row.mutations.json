@@ -44,5 +44,9 @@
   {"name": "v1149: the tie-out reads each order alone", "file": "src/orders.js", "find": "const g = !ended ? sums.get(k) : null, fig = g || o,", "replace": "const g = null, fig = g || o,"},
   {"name": "v1149: the group's wants refuse it", "file": "src/orders.js", "find": "wants.get(nk) !== (shared ? groups.get(k).length : 1)", "replace": "wants.get(nk) !== 1"},
   {"name": "v1149: a rejected pending row holds the group", "file": "src/orders.js", "find": "if (!a || !(a.landed || a.status === \"rejected\")) { landed = false; break; } }", "replace": "if (!a || !a.landed) { landed = false; break; } }"},
-  {"name": "v1149: a pending row on its way does not hold the group", "file": "src/orders.js", "find": "if (!a || !(a.landed || a.status === \"rejected\")) { landed = false; break; } }", "replace": "if (false) { landed = false; break; } }"}
+  {"name": "v1149: a pending row on its way does not hold the group", "file": "src/orders.js", "find": "if (!a || !(a.landed || a.status === \"rejected\")) { landed = false; break; } }", "replace": "if (false) { landed = false; break; } }"},
+  {"name": "Fable v1149: an acknowledged pair is a group", "file": "src/orders.js", "find": "o.forFriend || o.status !== \"done\") continue;", "replace": "o.forFriend || [\"cancelled\", \"declined\"].includes(o.status)) continue;"},
+  {"name": "Fable v1149: a half-moved pair stays half", "file": "src/orders.js", "find": "if (!b.order || b.order.ledgerKey !== nk) { failed.push({ id: o.id, why: \"the site would not take its row's key\" + b.why }); if (shared) await undoGroup(k); continue; }", "replace": "if (!b.order || b.order.ledgerKey !== nk) { failed.push({ id: o.id, why: \"the site would not take its row's key\" + b.why }); continue; }"},
+  {"name": "Fable v1149: Accept again books a second row", "file": "src/orders.js", "find": "if (b && (b.sales || []).some((s) => !s.cancelled && POSITION_ENGINE.ovKey(s) === k)) return", "replace": "if (false) return"},
+  {"name": "Fable v1149: the reconcile queues a stage on a shared row", "file": "src/orders.js", "find": "if (job !== \"ack\" && await shares(ledgerKeyOf(order), order)) {", "replace": "if (false) {"}
 ]

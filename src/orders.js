@@ -441,6 +441,12 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
     : "they asked for a price on this order: send them an offer, which they take or decline" };
   /* one pending row an order: a yes already given is followed, never given twice; an offer they declined or he withdrew is
      no longer his yes, and goes here rather than at the minute's pass */
+  /* 17 Oct 2026 (Fable's review): a rejected pending row whose order has its row on the book by another road (s218's pair, on s219) is agreed already:
+     Accept again would book a second row beside it, or follow its old yes onto the rejected one */
+  if (o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && await rejectedOf(db, id, "ack")) {
+    const b = mirror ? await mirror().catch(() => null) : null, k = ledgerKeyOf(o);
+    if (b && (b.sales || []).some((s) => !s.cancelled && POSITION_ENGINE.ovKey(s) === k)) return { ok: false, status: 409, error: "its row is on the book already, so there is nothing to accept again" };
+  }
   let live = await livePre(db, id, "ack");
   if (live && isOfferPre(live) && live.status === "waiting" && !live.entry && o.price && (!ASKING.includes(o.price.state) || acceptClosed(o, at))) {
     await voidOffers(db, id, at.toISOString()); live = await livePre(db, id, "ack");
@@ -452,6 +458,8 @@ export async function acceptOrder(env, id, body, by, now, mirror) {
     : isOfferPre(live) ? "an offer is open on this order, waiting on their answer" : "its row is being drafted: look again in a moment" };
   const again = o.status !== "placed" && ROWED_ON_SITE.includes(o.status) && !!(await rejectedOf(db, id, "ack"));
   if (o.status !== "placed" && !again) return { ok: false, status: 409, error: "this order is " + o.status + ", so there is nothing to accept" };
+  /* 17 Oct 2026 (Fable's review): a rejected pending row whose order has its row on the book by another road (s218's pair, on s219) is agreed already:
+     Accept again would book a second row beside it */
   const delivery = again ? (+o.delivery || 0) : chargeOf(body);
   if (o.mode === "deliver" && delivery == null) return { ok: false, status: 400, error: "choose the delivery charge first" };
   const pr = again ? { price: null } : priceOf(body);
@@ -1578,6 +1586,14 @@ export async function reconcileOrders(env, read, mirror) {
   const now = new Date();
   let queued = 0; const unmapped = [], failed = [], waiting = [], dropped = [];
   const STAGE_WORD = { claim: "payment they say they sent", pay: "payment", move: "handover", close: "close", cancel: "withdrawal" };
+  /* a row orders share is read off every order, not only those with work: once, and only for a row whose size is not its order's (Fable's review) */
+  let allNamed = null;
+  const shares = async (k, order) => {
+    const at = onBook && onBook[k];
+    if (!at || Math.abs((+at.q || 0) - (+order.qty || 0)) < 0.0005) return false;
+    if (!allNamed) { const all = await listOrders(env, true).catch(() => ({ ok: false })); allNamed = all.ok ? namedKeys(all.orders) : namedKeys(owing); }
+    return allNamed.get(k) > 1;
+  };
   for (const o of owing) {
     const code = users[o.u] || null;
     const q = o.queued || {}, mark = {}; const order = Object.assign({}, o);
@@ -1604,6 +1620,12 @@ export async function reconcileOrders(env, read, mirror) {
       }
       for (const job of mark.cancel ? [] : (o.work || [])) {
         let e = null;
+        /* a row orders share takes no stage of one of them: each would restate it to that order's figures alone (Fable's review) */
+        if (job !== "ack" && await shares(ledgerKeyOf(order), order)) {
+          waiting.push(o.id);
+          state = { state: "waiting", why: "it shares its row on the book with another order, so its " + (STAGE_WORD[job] || job) + " is made on the row itself, under Record" };
+          break;
+        }
         if (job !== "ack" && !(onBook && onBook[ledgerKeyOf(order)])) {
           waiting.push(o.id);
           /* A REJECTED ROW STAYS SAID (24 Sep 2026): a row he rejected never reaches the book, so every
@@ -1861,6 +1883,7 @@ async function repoint(db, id, nk, party) {
 }
 /* the one live row a group of orders on a dead key shares, as its key, or null: their account, product and day, size, goods and delivery their sum */
 function sharedOk(os, k, orders, idx) {
+  if ((idx.rows.get(k) || 0) > 1) return null;   /* twins at the key: one of them may be an order's own (Fable's review) */
   const PE = POSITION_ENGINE, at = idx.rows.get(k) ? idx.byKey.get(k) : null;
   if (at && !at.cancelled && !at.defaulted) return null;   /* they name a live row: shared already, or twins, never moved */
   const code = os[0].code, product = os[0].product || "salt", day = k.split("|")[1];
@@ -1883,11 +1906,11 @@ async function followRows(env, orders, idx) {
   /* 17 Oct 2026 (s218 and s219): ONE ROW, SEVERAL ORDERS. Two orders of 1 unit for RM 8, one account, product and day, the book holds as one row of
      2 units for RM 16 (s219), and the key both name (s218) is cancelled. Orders naming one key whose row is cancelled or gone take, together, the one
      live row of their account, product and day whose size, goods and delivery are their sum, when no other order names it and each order's own
-     pending row has landed or was rejected. Their figures are then read as that sum (tieOut), and none is restated from it (tellSite, namedKeys). */
+     pending row has landed or was rejected, all completed with nothing on its way. Their figures are then read as that sum (tieOut), and none is restated from it (tellSite, namedKeys). */
   const groups = new Map(), sharing = new Set();
   for (const o of orders) {
     const k = ledgerKeyOf(o);
-    if (!k || !o.code || o.test || o.forFriend || ["cancelled", "declined"].includes(o.status)) continue;
+    if (!k || !o.code || o.test || o.forFriend || o.status !== "done") continue;   /* completed only: every stage queues one order's figures (Fable's review) */
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k).push(o);
   }
@@ -1895,7 +1918,7 @@ async function followRows(env, orders, idx) {
     if (os.length < 2 || !sharedOk(os, k, orders, idx)) continue;
     const nk = sharedOk(os, k, orders, idx), row = idx.byKey.get(nk);
     let landed = true;
-    for (const o of os) { const a = await closeOnItsWay(env, o) ? null : await fate(env, o.queued && o.queued.ack); if (!a || !(a.landed || a.status === "rejected")) { landed = false; break; } }   /* landed, or rejected: no row of its own is to come (s218's pair) */
+    for (const o of os) { const a = await orderInFlight(env, o) ? null : await fate(env, o.queued && o.queued.ack); if (!a || !(a.landed || a.status === "rejected")) { landed = false; break; } }   /* landed, or rejected: no row of its own is to come (s218's pair) */
     if (!landed) continue;
     for (const o of os) { sharing.add(o.id); plan.push({ o, k, nk, friend: false, party: row.customer, shared: true }); }
   }
@@ -1911,18 +1934,26 @@ async function followRows(env, orders, idx) {
   for (const o of orders) { const k = ledgerKeyOf(o); if (k) wants.set(k, (wants.get(k) || 0) + 1); }
   for (const p of plan) if (p.nk !== p.k) wants.set(p.nk, (wants.get(p.nk) || 0) + 1);
   let followed = 0;
+  const broke = new Set(), movedIn = new Map();
+  /* a group that moved in part goes back, so it is tried whole next pass: one left on the dead key alone would read that key's row */
+  const undoGroup = async (k) => {
+    broke.add(k);
+    for (const m of movedIn.get(k) || []) { const b = await answerOf(await markOrder(env, m.u, m.id, { ledgerKey: k })); if (b.order && b.order.ledgerKey === k) m.ledgerKey = k; }
+  };
   for (const { o, k, nk, friend, party, shared } of plan) {
+    if (shared && broke.has(k)) continue;
     if (nk !== k && wants.get(nk) !== (shared ? groups.get(k).length : 1)) continue;
     if (!!o.forFriend !== friend) {
       const b = await answerOf(await markOrder(env, o.u, o.id, { forFriend: friend }));
       if (!b.order || b.order.forFriend !== friend) { failed.push({ id: o.id, why: "the site would not take its row's side" + b.why }); continue; }
       o.forFriend = friend;
     }
-    try { await repoint(env.SALT_LEDGER, o.id, nk, party); } catch (e) { failed.push({ id: o.id, why: "its waiting yes could not be pointed at the row" }); continue; }
+    try { await repoint(env.SALT_LEDGER, o.id, nk, party); } catch (e) { failed.push({ id: o.id, why: "its waiting yes could not be pointed at the row" }); if (shared) await undoGroup(k); continue; }
     if (nk !== k) {
       const b = await answerOf(await markOrder(env, o.u, o.id, { ledgerKey: nk }));
-      if (!b.order || b.order.ledgerKey !== nk) { failed.push({ id: o.id, why: "the site would not take its row's key" + b.why }); continue; }
+      if (!b.order || b.order.ledgerKey !== nk) { failed.push({ id: o.id, why: "the site would not take its row's key" + b.why }); if (shared) await undoGroup(k); continue; }
       o.ledgerKey = nk;
+      if (shared) movedIn.set(k, (movedIn.get(k) || []).concat([o]));
     }
     followed++;
   }
