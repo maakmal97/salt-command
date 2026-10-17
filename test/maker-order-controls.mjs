@@ -354,9 +354,9 @@ export async function run({ ok }) {
     await until(() => button("20261003090004-can", "Send the cancellation again"));
     /* plan 4 (16 Oct 2026): a done order's History is a read, and its Undo is drawn only once the Desk has said what it would undo */
     const gone = card("20261003090005-gone");
-    ok(!!gone && [...gone.querySelectorAll("button, input")].filter((n) => !/^undo[.]history/.test(n.getAttribute("data-act") || "")).length === 0
+    ok(!!gone && [...gone.querySelectorAll("button, input")].filter((n) => !/^(undo[.]history|order[.]amend)/.test(n.getAttribute("data-act") || "")).length === 0
       && (!/done/.test(gone.getAttribute("data-in") || "") || !!gone.querySelector('[data-act="undo.history"]')),
-      "A closed order with nothing rejected has a card of its figures and nothing to move it by (it had none at all before Phase 1c); a done one reads its History.");
+      "A closed order with nothing rejected has a card of its figures and nothing to move it by (it had none at all before Phase 1c); a done one reads its History and keeps Change the order (17 Oct 2026): " + JSON.stringify(gone && [...gone.querySelectorAll("button, input")].map((n) => n.getAttribute("data-act"))));
     button("20261003090004-can", "Send the cancellation again").click();
     ok(!!doc.getElementById("ynSheet") && posts.length === 4, "Offering a stage again asks on the Sheet, and sends nothing until its action is tapped");
     sheetGo(); await settle(5);

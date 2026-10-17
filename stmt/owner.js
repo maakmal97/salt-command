@@ -4495,8 +4495,8 @@ export const OWNER_JS = `
       orderHead(card,order);
       /* his answer of 17 Oct 2026: a completed order keeps Change the order; figures that leave it owing open it again at Ready */
       if(order.status==='done'&&!order.test&&!makerAgainAck(order)){
-        var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
-        change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
+        var redo=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,redo); },false);
+        redo.setAttribute('data-amend',''); makerAskTag(order,redo,'amend');
       }
       if(order.status==='done') historyBlock(card,{order:order.id},'order:'+order.id,order,e.id);   /* plan 4 */
       if(makerAgainAck(order)) again=makerAcceptAgain(card,order,acts);

@@ -113,12 +113,12 @@ export async function run({ ok }) {
     const up = O.decideDesk({ ...o, status: "ready" }, { restate: { qty: 3, total: 300, delivery: 0 } }, at);
     ok(up.ev && up.ev.kind === "restate" && up.ev.total === 300 && up.ev.qty === 3, "An amendment of the goods' price becomes a restate event: " + JSON.stringify(up));
     const refused = [
-      O.decideDesk({ ...o, status: "done" }, { restate: { qty: 3, total: 300, delivery: 0 } }, at),
+      O.decideDesk({ ...o, status: "cancelled" }, { restate: { qty: 3, total: 300, delivery: 0 } }, at),
       O.decideDesk({ ...o, moved: 2 }, { restate: { qty: 1, total: 95, delivery: 0 } }, at),
       O.decideDesk(o, { restate: { qty: 3, total: 0, delivery: 0 } }, at),
       O.decideDesk(o, { restate: { qty: 3, total: 285, delivery: 5 } }, at),
       O.decideDesk({ ...o, payments: [{ claim: "waiting", amount: 10, at }] }, { restate: { qty: 3, total: 300, delivery: 0 } }, at)];
-    ok(refused.every((r) => r.error), "The order book refuses an amendment of a done order, a size under what is handed over, no goods price, a charge on a collection, or one with a claim waiting: "
+    ok(refused.every((r) => r.error), "The order book refuses an amendment of a cancelled order (a completed one keeps Amend, his answer of 17 Oct 2026), a size under what is handed over, no goods price, a charge on a collection, or one with a claim waiting: "
       + refused.map((r) => r.error || "accepted").join(" | "));
     /* 06 Oct 2026: under what they paid is taken, as a close under it is; the ledger raises the refund for the difference */
     const underPaidEv = O.decideDesk({ ...o, status: "ready", paid: 280, delivery: 0 }, { restate: { qty: 3, total: 270, delivery: 0 } }, at);
