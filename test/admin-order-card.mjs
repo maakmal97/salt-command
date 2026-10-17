@@ -123,19 +123,35 @@ export async function run({ ok, pageWork }) {
     const moves = () => foot() ? [...foot().querySelectorAll(".maker-foot__acts [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a)) : null;
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await p.tapRow("ord-p1");
-    ok(same(moves(), ["order.accept", "order.decline"]) && foot().classList.contains("has") && p.cardOf("ord-p1").lastElementChild === foot(),
-      "a placed order's foot holds Accept first and Decline beside it, and is the last part of the card: " + JSON.stringify(moves()));
-    ok(["order.accept", "order.decline"].every((a) => [...d.querySelectorAll('#makerReview [data-act="' + a + '"]')].every((e) => foot().contains(e))),
-      "and neither stands anywhere else on the card");
+    /* 18 Oct 2026 (clarity, part 3): the answer leads the card, Agree at the top with its terms beside it; the foot keeps Decline alone, a ghost danger button */
+    const leadOf = (id) => p.cardOf(id).querySelector(".ordlead"), termsOf = (id) => (leadOf(id).querySelector(".ordterms") || { textContent: "" }).textContent;
+    ok(same(moves(), ["order.decline"]) && foot().classList.contains("has") && p.cardOf("ord-p1").lastElementChild === foot() && byAct(d, "order.decline", "ord-p1").classList.contains("salt-ghost--danger"),
+      "a placed order's foot holds Decline alone, a ghost danger button, and is the last part of the card: " + JSON.stringify(moves()));
+    ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && leadOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
+      && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".maker-fields")) & 4),
+      "Agree is the filled pill at the top of the card, ahead of every field, and not in the foot");
+    ok(/^Collect . RM 200\.00$/.test(termsOf("ord-p1")), "and the terms it will send stand beside it in one line: " + termsOf("ord-p1"));
     await p.tapRow("ord-p2");
-    ok(same(moves(), ["order.decline"]) && !!foot().classList.contains("has"), "a delivery with no charge chosen has Decline alone in its foot: " + JSON.stringify(moves()));
+    ok(same(moves(), ["order.decline"]) && !!foot().classList.contains("has") && !byAct(d, "order.accept"), "a delivery with no charge chosen has Decline alone in its foot: " + JSON.stringify(moves()));
+    const wait = () => leadOf("ord-p2").querySelector("[data-accept-wait]");
+    ok(!!wait() && wait().textContent === "Choose the delivery charge" && termsOf("ord-p2") === "Choose the delivery charge" && !wait().disabled && leadOf("ord-p2").parentNode === p.cardOf("ord-p2"),
+      "and the lead says Choose the delivery charge, as a button that sends nothing, never a half-filled Agree: " + (wait() || {}).textContent);
+    const fold = (id, k) => p.cardOf(id).querySelector('details[data-fold="' + k + '"]');
+    ok(!!fold("ord-p2", "terms") && !fold("ord-p2", "terms").open && !!fold("ord-p2", "answer") && !fold("ord-p2", "answer").open, "Change terms and Answer them are folded, shut by default");
+    const postsBefore = p.posts.length; wait().click(); await p.work.quiet();
+    ok(fold("ord-p2", "terms").open && p.posts.length === postsBefore, "and the stand-in opens Change terms for the charge, and sends nothing");
     byAct(d, "order.fee-10", "ord-p2").click(); await p.work.quiet();
-    ok(same(moves(), ["order.accept", "order.decline"]), "and Accept joins it, first, once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
+    ok(same(moves(), ["order.decline"]) && leadOf("ord-p2").firstElementChild === byAct(d, "order.accept") && !wait(), "and Agree takes its place at the top once the charge is chosen and the figures are read: " + JSON.stringify(moves()));
+    ok(termsOf("ord-p2") === "Delivery RM 10.00 · their 08:00 to 12:00 on 12 Oct", "with the terms written beside it: " + termsOf("ord-p2"));
+    byAct(d, "order.fee-15", "ord-p2").click(); await p.work.quiet();
+    ok(termsOf("ord-p2") === "Delivery RM 15.00 · their 08:00 to 12:00 on 12 Oct", "and the terms follow the charge as it is changed: " + termsOf("ord-p2"));
+    byAct(d, "order.fee-10", "ord-p2").click(); await p.work.quiet();
     await p.tapRow("ord-p4");
     ok(same(moves(), ["order.withdraw-offer", "order.decline"]), "an order with an offer out has Withdraw the offer in its foot, with Decline, and no Accept: " + JSON.stringify(moves()));
     await part("confirmed");
     await p.tapRow("ord-a1");
-    ok(same(moves(), ["order.ready-collect", "order.ready-deliver", "order.cancel"]), "an agreed order's foot holds Ready to collect and Ready to deliver, and Cancel order: " + JSON.stringify(moves()));
+    ok(same(moves(), ["order.cancel"]) && same([...leadOf("ord-a1").querySelectorAll("[data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => /^order\.(ready|claim)/.test(a) && !/cancel-retained$/.test(a)), ["order.ready-collect", "order.ready-deliver", "order.claim-received", "order.claim-not-found", "order.claim-received", "order.claim-not-found"]),
+      "an agreed order's foot holds Cancel order, and its one main action, Ready to collect or deliver, stands at the top with their claim's answer: " + JSON.stringify([moves(), [...leadOf("ord-a1").querySelectorAll("[data-act]")].map((e) => e.getAttribute("data-act"))]));
     ok(!foot().contains(byAct(d, "order.received")) && !foot().contains(byAct(d, "order.amend")) && !foot().contains(byAct(d, "order.claim-received")),
       "while its claims, Received and Amend stay in the body of the card");
     await p.tapRow("ord-a2");
@@ -143,8 +159,8 @@ export async function run({ ok, pageWork }) {
       "an order with a rejected pending row has Accept again first in its foot, with the stages he rejected offered again: " + JSON.stringify(moves()));
     await part("ready");
     await p.tapRow("ord-r1");
-    ok(same(moves(), ["order.handed", "order.cancel"]) && !foot().contains(byAct(d, "order.handed-units")) && !foot().contains(byAct(d, "order.handed-rest")),
-      "a ready order's foot holds Record handover and Cancel order, the units and the tiles that make it a close staying in the body: " + JSON.stringify(moves()));
+    ok(same(moves(), ["order.cancel"]) && [byAct(d, "order.handed"), byAct(d, "order.handed-units"), byAct(d, "order.handed-rest")].every((e) => !!e && leadOf("ord-r1").contains(e)),
+      "a ready order's foot holds Cancel order, and Handed over with its units and the tiles that make it a close stand at the top: " + JSON.stringify(moves()));
     byAct(d, "order.pay", "ord-r1").click(); await p.work.quiet();
     ok(!!foot().querySelector("[data-maker-say]") && /Choose Bank or Cash first/.test(foot().querySelector("[data-maker-say]").textContent) && foot().lastElementChild === foot().querySelector("[data-maker-say]"),
       "the card's answer lands in its foot, under its moves: " + (foot().querySelector("[data-maker-say]") || {}).textContent);
@@ -362,7 +378,7 @@ export async function run({ ok, pageWork }) {
     byAct(d, "order.cash-undo").click(); await p.work.quiet();
     await part("confirmed"); await tapRow("ord-a1");
     const a1 = cardOf("ord-a1");
-    ok(!byAct(a1, "order.pay-by", "cash") && !!byAct(a1, "order.claim-received") && before(money(a1), byAct(a1, "order.claim-received")) && before(byAct(a1, "order.claim-received"), byAct(a1, "order.pay-amount")) && before(byAct(a1, "order.pay"), byAct(a1, "order.reply-text")),
-      "an agreed order's Money received holds their claim first, then Bank and no cash, with the reply below");
+    ok(!byAct(a1, "order.pay-by", "cash") && !!byAct(a1, "order.claim-received") && before(byAct(a1, "order.claim-received"), money(a1)) && before(money(a1), byAct(a1, "order.pay-amount")) && before(byAct(a1, "order.pay"), byAct(a1, "order.reply-text")),
+      "an agreed order answers their claim at the top, then its Money received holds Bank and no cash, with the reply below");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

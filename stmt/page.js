@@ -503,6 +503,15 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm #oOrders,.adm #oRecord{max-width:760px}
 .adm .aparts{margin:0 0 20px}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
+/* 18 OCT 2026 (clarity, part 3): Orders' stages are the first strip, the rest a smaller one beneath it; an order's card leads with its answer and folds the rest */
+.adm .aparts--stages{margin-bottom:10px}
+.adm .aparts--minor{margin-top:0;gap:var(--salt-space-1)}
+.adm .ordlead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.adm .ordlead:empty{display:none}
+.adm .ordlead>.maker-field,.adm .ordlead>.salt-options{flex:1 1 100%}
+.adm .ordterms{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted);flex:1 1 12em}
+.adm .ordfold>summary .salt-plan__title{grid-column:1 / -1}
+.adm .ordfold__body>*+*{margin-top:12px}
 .adm .abody{display:flex;flex-direction:column;gap:28px}
 .adm .aplace input{max-width:100%}
 .adm .maker-card{margin:14px 0}
@@ -1401,9 +1410,17 @@ const ADMIN_PARTS = {
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* a place's parts strip: every part is a control with an act of its own, part.<place>.<part> (docs/STATEMENTS.md) */
-const adminParts = (p) => '<div class="salt-tabs aparts" role="tablist" aria-label="' + ADMIN_PLACES.filter((x) => x[0] === p)[0][1] + '" data-place="' + p + '">'
-  + ADMIN_PARTS[p].map(([k, w], i) => '<button type="button" class="salt-tabs__pill" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
-    + '" aria-selected="' + (i ? "false" : "true") + '">' + w + "</button>").join("") + "</div>";
+const adminStrip = (p, list, cls, label) => '<div class="salt-tabs aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
+  + list.map(([k, w]) => '<button type="button" class="salt-tabs__pill" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
+    + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div>";
+/* 18 Oct 2026 (Counter Admin clarity, part 3): Orders draws its parts as two strips of one list. The six stages come first, in the order an order moves (a tab strip
+   with each stage's count, since the Steps recipe is a drawing and not a row of controls); Approve, Payments, Group and Ledger stand apart beneath, smaller. Every part keeps
+   its id, its act and its address, and PARTS is both strips together (stmt/owner.js), so only the drawing is split. */
+const ADMIN_ORDER_STAGES = ["placed", "confirmed", "ready", "paid", "done", "ended"];
+const adminParts = (p) => p === "orders"
+  ? adminStrip(p, ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), " aparts--stages", "Order stages")
+    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k)), " aparts--minor", "Other orders")
+  : adminStrip(p, ADMIN_PARTS[p], "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account yet"]];

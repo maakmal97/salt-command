@@ -103,8 +103,7 @@ export async function run({ ok, pageWork }) {
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
       const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
-      const strip = d.querySelector('.aparts[data-place="' + place + '"]');
-      const part = strip && (strip.querySelector('[aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
+      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
     /* the 30-second read, as the page set it: the one live interval of that length */

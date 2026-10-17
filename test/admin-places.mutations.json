@@ -38,14 +38,14 @@
  {
   "name": "a strip is no longer the system's tabs",
   "file": "stmt/page.js",
-  "find": "<div class=\"salt-tabs aparts\" role=\"tablist\"",
-  "replace": "<div class=\"aparts\" role=\"tablist\""
+  "find": "'<div class=\"salt-tabs aparts' + cls + '\"",
+  "replace": "'<div class=\"aparts' + cls + '\""
  },
  {
   "name": "a strip is no tablist",
   "file": "stmt/page.js",
-  "find": "<div class=\"salt-tabs aparts\" role=\"tablist\"",
-  "replace": "<div class=\"salt-tabs aparts\""
+  "find": "' + cls + '\" role=\"tablist\" aria-label=\"'",
+  "replace": "' + cls + '\" aria-label=\"'"
  },
  {
   "name": "a part's tab is no tab",

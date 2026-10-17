@@ -89,8 +89,7 @@ export async function run({ ok, pageWork }) {
     p.tap = async (act, key) => { const c = byAct(d, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
     p.where = () => {
       const place = (d.querySelector('.salt-appbar .place[aria-current="page"]') || { getAttribute: () => "" }).getAttribute("data-m");
-      const strip = d.querySelector('.aparts[data-place="' + place + '"]');
-      const part = strip && (strip.querySelector('[aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
+      const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
     return p;
@@ -109,7 +108,18 @@ export async function run({ ok, pageWork }) {
     "each stage of Orders lists a row for the orders that stand in it, a declined one in Ended: " + JSON.stringify(stage));
     const all = Object.values(stage).join().split(",").filter(Boolean);
     ok(all.length === 11 && new Set(all).size === all.length, "and every order is in exactly one stage, none in two: " + all.join());
+    /* 18 Oct 2026 (clarity, part 3): THE STAGES ARE ONE STRIP IN THE ORDER AN ORDER MOVES, AND THE REST A SMALLER ONE BENEATH; both are one list of parts to the address and the reads */
+    const strips = [...d.querySelectorAll('.aparts[data-place="orders"]')], partsOf = (s) => [...s.querySelectorAll("[data-part]")].map((b) => b.getAttribute("data-part")).join();
+    ok(strips.length === 2 && partsOf(strips[0]) === "placed,confirmed,ready,paid,done,ended" && partsOf(strips[1]) === "approve,payments,group,ledger" && strips[1].classList.contains("aparts--minor")
+      && strips.every((s) => s.classList.contains("salt-tabs") && s.getAttribute("role") === "tablist"),
+    "Orders draws two strips, the six stages in the order an order moves and then Approve, Payments, Group and Ledger, smaller: " + JSON.stringify(strips.map(partsOf)));
+    const reach = [];
+    for (const part of ["approve", "payments", "group", "ledger", "ended", "paid", "placed"]) { await p.tap("part.orders." + part); const w = p.where(); if (w !== "orders/" + part) reach.push(part + ">" + w); }
+    ok(reach.length === 0 && [...strips[1].querySelectorAll("button")].every((b) => /^part[.]orders[.]/.test(b.getAttribute("data-act"))), "and every part is still reached at its own act and address, in either strip: " + JSON.stringify(reach));
     await byAct(d, "part.orders.placed").click(); await p.work.quiet();
+    const sizeRow = byAct(d, "order.open", "ord-p3"), sizeWords = (sizeRow.textContent.match(/units?/g) || []).length;
+    ok(sizeWords === 1 && !/to decide/.test(sizeRow.textContent) && (sizeRow.querySelector(".mtile .sr") || {}).textContent.length > 0 && !/unit/.test(sizeRow.querySelector(".mtile .sr").textContent),
+      "a row says the size once, in the tile caption, and no to decide the stage already says: " + sizeRow.textContent + sizeWords + sizeRow.querySelector(".mtile .sr").textContent);
     const row = byAct(d, "order.open", "ord-p3"), mark = row && row.querySelector(".mtile"), main = row && row.querySelector(".salt-inbox-row__main");
     ok(row && row.tagName === "BUTTON" && row.classList.contains("salt-inbox-row") && !!mark && !!mark.querySelector("svg.psym") && /^CX1-ZED/.test(main.querySelector(".salt-inbox-row__title").textContent)
       && /1 unit/.test(mark.textContent) && row.querySelector(".salt-inbox-row__action").textContent === "RM 100.00"
@@ -201,8 +211,8 @@ export async function run({ ok, pageWork }) {
     ok(same(p.cardsIn(), ["ord-p1"]) && byAct(d, "order.open", "ord-p1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open")
       && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current"),
     "a row opens that order's card alone, marks itself current and stands the list and the card side by side: " + JSON.stringify(p.cardsIn()));
-    const want = ["order.details", "order.total", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
-      "order.reply", "order.no-reply", "order.accept", "order.decline"];
+    const want = ["order.details", "order.accept", "order.terms", "order.total", "order.answer", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
+      "order.reply", "order.no-reply", "order.decline"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet, and Details for its reference: " + JSON.stringify(got));
     /* his decision 6 of 11 Oct 2026: the card reads its own preview on opening, once, and has no Preview button */

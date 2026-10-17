@@ -38,8 +38,8 @@
  {
   "name": "the Preview button is back",
   "file": "stmt/owner.js",
-  "find": "        card.appendChild(qsay); card.appendChild(qfigs);\n",
-  "replace": "        card.appendChild(qsay); card.appendChild(qfigs); makerButton(card,['Preview','order.preview'],makerPlacedRead,false);\n"
+  "find": "        tf.body.appendChild(qsay); tf.body.appendChild(qfigs);\n",
+  "replace": "        tf.body.appendChild(qsay); tf.body.appendChild(qfigs); makerButton(card,['Preview','order.preview'],makerPlacedRead,false);\n"
  },
  {
   "name": "an order with a rejected pending row reads nothing on opening",
@@ -50,13 +50,13 @@
  {
   "name": "Accept stands in the body of the card",
   "file": "stmt/owner.js",
-  "find": "accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);",
+  "find": "accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);",
   "replace": "accept.setAttribute('data-accept',''); card.appendChild(accept);"
  },
  {
   "name": "Accept stands after Decline",
   "file": "stmt/owner.js",
-  "find": "accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);",
+  "find": "accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);",
   "replace": "accept.setAttribute('data-accept','');"
  },
  {
@@ -74,13 +74,13 @@
  {
   "name": "Ready stands in the body of the card",
   "file": "stmt/owner.js",
-  "find": "          makerButton(acts,[m[1],'order.ready-'+m[0]]",
+  "find": "          makerButton(lead,[m[1],'order.ready-'+m[0]]",
   "replace": "          makerButton(card,[m[1],'order.ready-'+m[0]]"
  },
  {
   "name": "Record handover stands in the body of the card",
   "file": "stmt/owner.js",
-  "find": "        var handed=makerButton(acts,['Handed over, '+units(order.qty),'order.handed']",
+  "find": "        var handed=makerButton(lead,['Handed over, '+units(order.qty),'order.handed']",
   "replace": "        var handed=makerButton(card,['Handed over, '+units(order.qty),'order.handed']"
  },
  {
@@ -352,5 +352,59 @@
   "file": "stmt/owner.js",
   "find": "        if(order.status==='ready'){ makerCashControls(card,order); cashed=true; } else makerPayControl(card,order,false);\n",
   "replace": "        { makerCashControls(card,order); cashed=true; }\n"
+ },
+ {
+  "name": "Agree stands in the foot, not at the top",
+  "file": "stmt/owner.js",
+  "find": "          },true); accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);",
+  "replace": "          },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);"
+ },
+ {
+  "name": "the terms do not follow the charge",
+  "file": "stmt/owner.js",
+  "find": "terms.textContent='Delivery '+rm(d)",
+  "replace": "terms.textContent='Delivery '+rm(10)"
+ },
+ {
+  "name": "the stand-in for Agree does not ask for the charge",
+  "file": "stmt/owner.js",
+  "find": "pick?'Choose the delivery charge':bad?",
+  "replace": "pick?'Reading the figures':bad?"
+ },
+ {
+  "name": "the stand-in does not open Change terms",
+  "file": "stmt/owner.js",
+  "find": "function(){ tf.open=true; var r=",
+  "replace": "function(){ var r="
+ },
+ {
+  "name": "a fold opens by itself",
+  "file": "stmt/owner.js",
+  "find": "d.open=ordFolds[k]==null?!!open:!!ordFolds[k];",
+  "replace": "d.open=true;"
+ },
+ {
+  "name": "Decline is not a danger ghost",
+  "file": "stmt/owner.js",
+  "find": "dec.classList.add('salt-ghost--danger');",
+  "replace": ""
+ },
+ {
+  "name": "Ready stays in the foot",
+  "file": "stmt/owner.js",
+  "find": "          makerButton(lead,[m[1],",
+  "replace": "          makerButton(acts,[m[1],"
+ },
+ {
+  "name": "Handed over stays in the foot",
+  "file": "stmt/owner.js",
+  "find": "var handed=makerButton(lead,['Handed over, '",
+  "replace": "var handed=makerButton(acts,['Handed over, '"
+ },
+ {
+  "name": "their claim's answer stays below the money",
+  "file": "stmt/owner.js",
+  "find": "          var got=makerButton(lead,[onBook?",
+  "replace": "          var got=makerButton(card,[onBook?"
  }
 ]

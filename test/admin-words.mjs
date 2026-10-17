@@ -348,8 +348,10 @@ export async function run({ ok, pageWork }) {
     byAct(d, "nav.orders").click(); await work.quiet();
     const tiles = [...d.querySelectorAll(".mtile")];
     const seen = (t) => t.textContent.replace(t.querySelector(".sr")?.textContent || "", "");
-    const wrong = tiles.filter((t) => !SIZE.test(t.querySelector(".mq")?.textContent || "") || !SHAPE_SIZE.test(t.querySelector(".sr")?.textContent || "") || !t.querySelector("svg.psym")
-      || t.querySelector(".mq")?.getAttribute("aria-hidden") !== "true" || SHAPE_WORD.test(seen(t)) || /[a-z]{3,}/i.test(seen(t).replace(/units?/g, ""))).map((t) => t.textContent);
+    /* 18 Oct 2026 (clarity, part 3): a ROW's tile says the size once, in its caption, so its reader line is the shape alone and the caption is not hidden from a reader */
+    const rowTile = (t) => !!t.closest(".ordrow"), SHAPE_ONLY = new RegExp("^(" + SHAPES.join("|") + ")$");
+    const wrong = tiles.filter((t) => !SIZE.test(t.querySelector(".mq")?.textContent || "") || !(rowTile(t) ? SHAPE_ONLY : SHAPE_SIZE).test(t.querySelector(".sr")?.textContent || "") || !t.querySelector("svg.psym")
+      || t.querySelector(".mq")?.getAttribute("aria-hidden") !== (rowTile(t) ? null : "true") || SHAPE_WORD.test(seen(t)) || /[a-z]{3,}/i.test(seen(t).replace(/units?/g, ""))).map((t) => t.textContent);
     ok(tiles.length >= 4 && wrong.length === 0,
       "each order tile on Orders is the book's mark with its size beneath, 2 units, no word for the book and no shape word, and a reader is told the shape and the size: " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
     byAct(d, "nav.orders").click(); await work.quiet();

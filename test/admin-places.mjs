@@ -89,10 +89,10 @@ export async function run({ ok, pageWork }) {
 
     /* 2. THE STRIPS */
     const strips = [...d.querySelectorAll(".aparts")];
-    const stripOf = (place) => strips.find((s) => s.getAttribute("data-place") === place);
-    const form = (place) => { const s = stripOf(place); return s ? [...s.querySelectorAll("button")].map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent + ":" + b.getAttribute("data-act")) : null; };
+    const stripsOf = (place) => strips.filter((s) => s.getAttribute("data-place") === place);
+    const form = (place) => { const s = stripsOf(place); return s.length ? s.flatMap((x) => [...x.querySelectorAll("button")]).map((b) => b.getAttribute("data-part") + ":" + b.firstChild.textContent + ":" + b.getAttribute("data-act")) : null; };
     const wantParts = (place) => PARTS[place].map(([k, t]) => k + ":" + t + ":part." + place + "." + k);
-    ok(strips.length === 4 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
+    ok(strips.length === 5 && ["orders", "customers", "record", "shop"].every((m) => same(form(m), wantParts(m))),
       "Orders, Customers, Record and Shop each have their parts in order, each tab with its act: " + JSON.stringify(["orders", "customers", "record", "shop"].map(form)));
     ok(strips.every((s) => s.classList.contains("salt-tabs") && s.getAttribute("role") === "tablist" && s.getAttribute("aria-label")
       && [...s.querySelectorAll("button")].every((b) => b.classList.contains("salt-tabs__pill") && b.getAttribute("role") === "tab"))
@@ -104,7 +104,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.orders");
     ok(p.where() === "orders orders/placed", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
     await p.tap("part.orders.ready");
-    const pills = [...stripOf("orders").querySelectorAll("button")].map((b) => b.getAttribute("aria-selected")).join();
+    const pills = stripsOf("orders").flatMap((x) => [...x.querySelectorAll("button")]).map((b) => b.getAttribute("aria-selected")).join();
     ok(p.where() === "orders orders/ready" && pills === "false,false,true,false,false,false,false,false,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
     await p.tap("nav.customers"); await p.tap("nav.orders");
     ok(p.where() === "orders orders/placed", "and a place he comes back to opens on its first part again: " + p.where());

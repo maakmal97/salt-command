@@ -2,7 +2,7 @@
  {
   "name": "a row has no mark",
   "file": "stmt/owner.js",
-  "find": "      b.appendChild(bookTile(o.product,o.qty));\n      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));",
+  "find": "      b.appendChild(tile);\n      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));",
   "replace": "      t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));"
  },
  {
@@ -50,8 +50,8 @@
  {
   "name": "a row says nothing of the units",
   "file": "stmt/owner.js",
-  "find": "b.appendChild(bookTile(o.product,o.qty));",
-  "replace": "b.appendChild(bookTile(o.product,0));"
+  "find": "var tile=bookTile(o.product,o.qty), tsr=",
+  "replace": "var tile=bookTile(o.product,0), tsr="
  },
  {
   "name": "listing the orders previews each",
@@ -670,5 +670,29 @@
   "file": "stmt/owner.js",
   "find": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);",
   "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
+ },
+ {
+  "name": "the stages have no strip of their own",
+  "file": "stmt/page.js",
+  "find": "    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k)), \" aparts--minor\", \"Other orders\")",
+  "replace": "    + \"\""
+ },
+ {
+  "name": "Delivered or paid is drawn with the rest",
+  "file": "stmt/page.js",
+  "find": "const ADMIN_ORDER_STAGES = [\"placed\", \"confirmed\", \"ready\", \"paid\", \"done\", \"ended\"];",
+  "replace": "const ADMIN_ORDER_STAGES = [\"placed\", \"confirmed\", \"ready\", \"done\", \"ended\"];"
+ },
+ {
+  "name": "a row says the size twice",
+  "file": "stmt/owner.js",
+  "find": "if(tsr) tsr.textContent=pshape(o.product); if(tq) tq.removeAttribute('aria-hidden');",
+  "replace": ""
+ },
+ {
+  "name": "a placed row says to decide",
+  "file": "stmt/owner.js",
+  "find": "o.again&&o.again.length?'send again':''].filter(Boolean);",
+  "replace": "o.again&&o.again.length?'send again':'', o.status==='placed'?'to decide':''].filter(Boolean);"
  }
 ]

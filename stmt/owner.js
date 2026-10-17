@@ -44,7 +44,8 @@ export const OWNER_JS = `
      and retained send is as it was. Re-entering a place reads again, as it always did. */
   var placeNow='needs', partNow='', PARTS={}, fOpen=null;
   [].forEach.call(document.querySelectorAll('.aparts'), function(strip){
-    PARTS[strip.getAttribute('data-place')]=[].map.call(strip.querySelectorAll('[data-part]'), function(b){ return b.getAttribute('data-part'); });
+    /* a place may draw its parts as two strips (Orders: the stages, then the rest): PARTS is both, in the order they are drawn */
+    var pl=strip.getAttribute('data-place'); PARTS[pl]=(PARTS[pl]||[]).concat([].map.call(strip.querySelectorAll('[data-part]'), function(b){ return b.getAttribute('data-part'); }));
   });
   /* what a place reads when it is entered, and what a part reads when it is entered. The stages of Orders are one list that its
      place reads once, so moving between them is a filter and never a second read. */
@@ -2661,6 +2662,17 @@ export const OWNER_JS = `
      (the read, the count). The card is found by its key when the answer comes, since a redraw replaces it; a card that has gone
      (the order left the open list, the row was decided) hands its answer to the list's line, so it is never lost. A foot below
      the screen (a tall card, a tap near its head) is scrolled to, clear of the bottom bar, so the answer is seen. */
+  /* 18 Oct 2026 (Counter Admin clarity, part 3): A FOLDED SECTION of an order's card is the system's Plan fold, shut until a tap. Its state is kept by the order and
+     the section, so a redraw (a read that changed, a tap) leaves it as he left it. body is where its controls go; the summary is a control of its own (order.<thing>). */
+  var ordFolds={};
+  function ordFold(card,title,act,orderId,section,open){
+    var d=el('details','salt-plan ordfold'), sm=el('summary'), k=orderId+'|'+section;
+    d.setAttribute('data-fold',section); d.open=ordFolds[k]==null?!!open:!!ordFolds[k];
+    sm.appendChild(el('span','salt-plan__title',title)); actOn(sm,act,orderId); d.appendChild(sm);
+    var body=el('div','salt-plan__body ordfold__body'); d.appendChild(body);
+    d.addEventListener('toggle',function(){ ordFolds[k]=d.open; });
+    card.appendChild(d); d.body=body; return d;
+  }
   function makerFoot(card,key){
     var say=el('p','maker-say'); say.setAttribute('role','status'); say.setAttribute('aria-live','polite');
     say.setAttribute('data-maker-say',key); card.appendChild(say); return say;
@@ -3036,22 +3048,24 @@ export const OWNER_JS = `
     /* 15 Oct 2026: their last line stands above the reply, so the field has something to answer (the card drew no line of theirs before; Needs you did) */
     var theirs=((order&&order.msgs)||[]).filter(function(m){ return m.by==='customer'&&m.text; }).slice(-1)[0];
     if(theirs) card.appendChild(el('p','maker-facts','They wrote, '+fmtWhen(theirs.at)+': '+theirs.text));
-    var said=makerField(card,['Answer them','order.reply-text'],'text','');
+    /* 18 Oct 2026 (part 3): the reply is folded under Answer them, shut until a tap; a closed order's, which is all its card holds, stands open */
+    var rf=ordFold(card,'Answer them','order.answer',order.id,'answer',!!replyOnly||orderAsked(order)), body=rf.body;
+    var said=makerField(body,['Answer them','order.reply-text'],'text','');
     makerQuick().forEach(function(line,i){
-      makerButton(card,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
+      makerButton(body,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false).setAttribute('data-quick','');
     });
-    var keep=makerButton(card,['Save this line','order.quick-keep'],function(){
+    var keep=makerButton(body,['Save this line','order.quick-keep'],function(){
       makerSay(order.id,makerQuickKeep(said.value));
       keepWord();
     },false);
     keep.setAttribute('data-keep','');
     function keepWord(){ var t=said.value.trim().replace(/[ ]+/g,' '); keep.textContent=t&&makerQuick().indexOf(t)>=0?'Forget it':'Save this line'; }
     said.addEventListener('input',keepWord);
-    makerButton(card,['Send','order.reply'],function(){
+    makerButton(body,['Send','order.reply'],function(){
       if(!said.value.trim()) return;
       makerMove(order,{message:said.value.trim()},'Reply sent.');
     },false);
-    makerButton(card,['No reply needed','order.no-reply'],function(){ makerMove(order,{noReply:true},'No reply needed recorded.'); },false);
+    makerButton(body,['No reply needed','order.no-reply'],function(){ makerMove(order,{noReply:true},'No reply needed recorded.'); },false);
     /* his decision 4 of 11 Oct 2026: a Decline or a Cancel asks on the page's Sheet, and the reason is asked there, on tiles */
     if(order.status==='placed'){
       var dec=makerButton(acts,['Decline','order.decline'],function(){
@@ -3060,7 +3074,7 @@ export const OWNER_JS = `
           say:['It is declined and goes no further. The customer is told, with your reason if you give one.'],
           yes:function(){ makerMove(order,Object.assign({status:'declined'},why.note()),'Order declined.'); }});
       },false);
-      makerAskTag(order,dec,'decline');
+      makerAskTag(order,dec,'decline'); dec.classList.add('salt-ghost--danger');
     }else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&!(+order.moved>0)){
       var can=makerButton(acts,['Cancel','order.cancel'],function(){
         var why=makerWhy(order);
@@ -3729,13 +3743,16 @@ export const OWNER_JS = `
     var main=el('span','salt-inbox-row__main'), t=el('span','salt-inbox-row__title'), side=el('span','salt-inbox-row__side');
     if(o){
       /* the stage is the part he is in, so the row carries one pill, Waiting on you, and says why in its line */
-      b.appendChild(bookTile(o.product,o.qty));
+      /* 18 Oct 2026 (part 3): the size is said once. The tile's reader line holds the shape alone and its caption is the one place the units are written */
+      var tile=bookTile(o.product,o.qty), tsr=tile.querySelector('.sr'), tq=tile.querySelector('.mq');
+      if(tsr) tsr.textContent=pshape(o.product); if(tq) tq.removeAttribute('aria-hidden');
+      b.appendChild(tile);
       t.appendChild(whoTag(el('span',null,codeByUser(o.u)),codeOfUser(o.u)));
       /* ONE PILL AT MOST, and only a state the stage does not already say: Placed always waits on him, so its rows carry no Waiting on you; on any
          other stage the pill says he is wanted there (a question, a payment they say they sent). Practice, then Cash held, then Waiting on you. */
       var pillOf=o.test?['mist','Practice']:makerCashHeld[e.id]?['brass','Cash held']:(e.waits&&e.parts.indexOf('orders.placed')<0)?['copper','Waiting on you']:null;
       if(pillOf) t.appendChild(chip(pillOf[0],pillOf[1]));
-      var why=[orderAsked(o)?'asked a question':'', ordPays(o).length?'says sent':'', o.again&&o.again.length?'send again':'', o.status==='placed'?'to decide':''].filter(Boolean);
+      var why=[orderAsked(o)?'asked a question':'', ordPays(o).length?'says sent':'', o.again&&o.again.length?'send again':''].filter(Boolean);
       main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
@@ -3991,13 +4008,14 @@ export const OWNER_JS = `
         card.appendChild(el('p','maker-facts','Wanted '+String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10))+'.'));
       /* 10 Oct 2026: their exact spot is sealed to his key: the Desk opens it, this page only says it was shared */
       if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','They shared a pin. Open it on the Desk to price the delivery.'));
-      var againAck=makerAgainAck(order), quoteStart=null;
+      var againAck=makerAgainAck(order), quoteStart=null, lead=el('div','ordlead');
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval.
          16 Oct 2026 (plan 5, part 2): Change the order stands under the head, where the figures it changes are read, in place of below the money; it opens
          the same Sheet and sends the same restate (stage amend), so nothing about what it books moved */
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
         change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
+        card.appendChild(lead);   /* the stage's one main action stands here, at the top (part 3 of the clarity change) */
       }
       if(order.status==='placed'&&makerAccHeld(order)){
         var ap=order.price, apf=ap.offer||{};
@@ -4008,7 +4026,13 @@ export const OWNER_JS = `
       }else if(order.status==='placed'){
         var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','maker-fields');
         var total=makerField(form,['Price (goods)','order.total'],'number',quote.total==null?order.total:quote.total);
-        card.appendChild(form);
+        /* 18 Oct 2026 (Counter Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
+           it in one line and kept in step with the choices; the price, the delivery charge and the time are folded under Change terms, shut until a tap.
+           Until the figures are read the pill is a stand-in, never a send: it asks for the charge (and opens it) or says it is reading. */
+        card.appendChild(lead);
+        var terms=el('p','ordterms'); terms.setAttribute('aria-live','polite'); lead.appendChild(terms);
+        var tf=ordFold(card,'Change terms','order.terms',order.id,'terms',false);
+        tf.body.appendChild(form);
         /* a sheet of several placed orders asks for the delivery charge once, on its first order (the Desk's ordPvDelivery):
            the others hide the chips and send nought */
         var group=open.filter(function(o){ return order.sheet&&o.u===order.u&&o.sheet===order.sheet; }).sort(function(a,b){ return String(a.id).localeCompare(String(b.id)); });
@@ -4025,6 +4049,27 @@ export const OWNER_JS = `
         function makerPlacedSay(text,bad,error){
           qsay.className=bad?'msg':'salt-insight'; qsay.textContent=text; withDetails(qsay,error); qfigs.textContent='';
           var accept=card.querySelector('[data-accept]'); if(accept) accept.remove();
+          termsDraw(); waitDraw(bad);
+        }
+        /* the terms Agree will send, read off the card's current choices */
+        function termsDraw(){
+          var d=makerPlacedDelivery(), w=makerPlacedWin(), at;
+          if(order.mode!=='deliver') terms.textContent='Collect · '+rm(Number(total.value)||0);
+          else if(follower) terms.textContent='Delivery on the first order';
+          else if(d==null) terms.textContent='Choose the delivery charge';
+          else{
+            if(w) at=mwDayLabel(w.slice(0,10))+', '+mwPad(+w.slice(11,13))+':00 to '+mwPad(+w.slice(11,13)+4)+':00';
+            else at=order.slot&&order.slotSpan?'their '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(String(order.slot).slice(0,10)):'as soon as it can';
+            terms.textContent='Delivery '+rm(d)+' · '+at;
+          }
+        }
+        function waitDraw(bad){
+          var old=lead.querySelector('[data-accept-wait]'); if(old) old.remove();
+          var pick=makerPlacedDelivery()==null&&!follower&&order.mode==='deliver';
+          var b=el('button','btn salt-pill salt-pill--md',pick?'Choose the delivery charge':bad?'Figures not read':'Reading the figures'); b.type='button';
+          b.setAttribute('data-accept-wait',''); actOn(b,'order.accept-wait');
+          if(pick) b.addEventListener('click',function(){ tf.open=true; var r=tf.querySelector('input[type=radio]'); if(r&&r.focus) r.focus(); }); else b.disabled=true;
+          lead.insertBefore(b,lead.firstChild);
         }
         /* any failed or in-flight preview, and any changed input, clears the usable quote/hash and takes Accept away:
            none of it is usable until a fresh exact-input preview succeeds (immediate safety requirement) */
@@ -4047,9 +4092,11 @@ export const OWNER_JS = `
           qsay.className='salt-insight'; qsay.textContent='Figures read. Check them before you agree.';
           qfigs.textContent=''; makerPlacedReading(qfigs,q.result);
           var old=card.querySelector('[data-accept]'); if(old) old.remove();
+          var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();
+          termsDraw();
           /* a sheet's lines take its first order's window, as they take its one delivery charge */
           var wv=makerPlacedWin(), yes=makerNeedsYes(order,q.total,wv);
-          var accept=makerButton(acts,[(yes?'Ask them, ':'Agree, ')+rm(q.result.quote)+(q.result.delivery>0?' + '+rm(q.result.delivery):''),yes?'order.send-yes':'order.accept'],function(){
+          var accept=makerButton(lead,[(yes?'Ask them, ':'Agree, ')+rm(q.result.quote)+(q.result.delivery>0?' + '+rm(q.result.delivery):''),yes?'order.send-yes':'order.accept'],function(){
             var s=makerQuotes[order.id]; if(!s||!s.hash) return;
             /* version 2: a raise or another window goes to them as an offer, for their yes; never on a sheet, which the Desk refuses */
             if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
@@ -4057,7 +4104,7 @@ export const OWNER_JS = `
             var body={total:s.total,delivery:s.delivery,hash:s.hash};
             if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Agreed and sent to the Desk.',order.id);
-          },true); accept.setAttribute('data-accept',''); acts.insertBefore(accept,acts.firstChild);
+          },true); accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);
         }
         /* 13 Oct 2026 (stress, High): A CHOICE THAT DID NOT SAVE IS NOT SHOWN AS CHOSEN. The charge and the time are held on this card until the
            figures are read; a read that fails (a 500, no connection) leaves the radio he just pressed ticked over figures nobody read. The choice
@@ -4124,12 +4171,12 @@ export const OWNER_JS = `
           otherField.closest('label').hidden=chip.value!=='other';
           otherField.addEventListener('input',function(){ chip.other=otherField.value; makerPlacedInvalidate(); });
           otherField.addEventListener('change',makerPlacedRead);
-          card.appendChild(fieldset);
+          tf.body.appendChild(fieldset);
         }
         /* 13 Oct 2026 (stress, Medium): THE FIGURES STAND UNDER THE CHARGE, above the time. They were drawn after the whole Delivery time fieldset, 1,270px down a phone's
            card, so a charge pressed there had its answer a screen away (the status line of a read, its figures, its failure). The time still re-reads them, and is a
            fieldset's height below them. */
-        card.appendChild(qsay); card.appendChild(qfigs);
+        tf.body.appendChild(qsay); tf.body.appendChild(qfigs);
         /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
         var win=makerWin[order.id]||(makerWin[order.id]={value:'',day:''});
         if(deliver&&!order.wantBy){
@@ -4158,7 +4205,7 @@ export const OWNER_JS = `
           wset.appendChild(wgrid);
           wset.appendChild(el('p','salt-insight',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'. Choose another and they will be asked.'
             :'They want it as soon as it can; choose a window and it goes with Agree.'));
-          card.appendChild(wset);
+          tf.body.appendChild(wset);
         }
         function makerPlacedDelivery(){
           if(!deliver) return 0;
@@ -4171,7 +4218,7 @@ export const OWNER_JS = `
       }else if(order.status==='acknowledged'){
         /* Ready says how the goods go, as the Desk's card does; the order book records the mode at Ready */
         [['collect','Ready to collect'],['deliver','Ready to deliver']].forEach(function(m){
-          makerButton(acts,[m[1],'order.ready-'+m[0]],function(){
+          makerButton(lead,[m[1],'order.ready-'+m[0]],function(){
             makerMove(order,{status:'ready',mode:m[0]},'Order marked '+m[1].toLowerCase()+'.');
           },(order.mode||'collect')===m[0]).setAttribute('data-mode',m[0]);
         });
@@ -4180,11 +4227,11 @@ export const OWNER_JS = `
         /* 16 Oct 2026 (plan 5, part 3): THE UNITS FIELD HAS ONE BUTTON. Handed over and Finish at fewer units were two buttons on one field; now the field
            has one, and fewer units than ordered show two tiles under it: More to come (the default, a part handover, as Handed over sent it) or That is all
            (a close at these units, asked on the Sheet, as Finish at fewer units sent it). The button says which. Each body is the one its old button sent. */
-        var qty=makerField(card,['Units handed over','order.handed-units'],'number',order.qty), rest=null;
-        if(!order.test){ rest=makerTilesIn(card,['The rest','order.handed-rest'],[{value:'more',label:'More to come'},{value:'all',label:'That is all'}]); rest.setAttribute('data-close',''); }
+        var qty=makerField(lead,['Units handed over','order.handed-units'],'number',order.qty), rest=null;
+        if(!order.test){ rest=makerTilesIn(lead,['The rest','order.handed-rest'],[{value:'more',label:'More to come'},{value:'all',label:'That is all'}]); rest.setAttribute('data-close',''); }
         var handedPart=function(){ var n=Number(qty.value); return !!rest&&n>0&&n<Number(order.qty); };
         var handedEnds=function(){ return handedPart()&&rest.value==='all'; };
-        var handed=makerButton(acts,['Handed over, '+units(order.qty),'order.handed'],function(){
+        var handed=makerButton(lead,['Handed over, '+units(order.qty),'order.handed'],function(){
           if(!handedEnds()){ makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }
           /* a close at what was handed over: the order ends at these units, its total restated by the Desk */
           var n=Number(qty.value);
@@ -4208,7 +4255,7 @@ export const OWNER_JS = `
           var onBook=payOnBook(order,payment);
           /* 12 Oct 2026 (Phase 2b, his decision 4 of 11 Oct): a claim's Received and its Not found ask on the page's Sheet, restating who and how much, and
              one action sends what the tap sent, the same route, body and request id */
-          var got=makerButton(card,[onBook?'Already recorded, '+rm(payment.amount):'Yes, I got '+rm(payment.amount),'order.claim-received',payment.at],function(){
+          var got=makerButton(lead,[onBook?'Already recorded, '+rm(payment.amount):'Yes, I got '+rm(payment.amount),'order.claim-received',payment.at],function(){
             makerAsk(order,got,'claim-'+payment.at,{title:onBook?'Already recorded, '+rm(payment.amount)+'?':'Received '+rm(payment.amount)+' from '+codeByUser(order.u)+'?', plain:true,
               go:onBook?'Yes, already recorded':'Yes, received', keep:'Not yet',
               say:[onBook?rm(payment.amount)+' is more than this order still owes, so you recorded it another way. Nothing more is recorded, and the customer is told it arrived.'
@@ -4216,7 +4263,7 @@ export const OWNER_JS = `
               yes:function(){ orderReceived(order,payment); }});
           },false);
           makerAskTag(order,got,'claim-'+payment.at);
-          var lost=makerButton(card,['Not found, '+rm(payment.amount),'order.claim-not-found',payment.at],function(){
+          var lost=makerButton(lead,['Not found, '+rm(payment.amount),'order.claim-not-found',payment.at],function(){
             makerAsk(order,lost,'lost-'+payment.at,{title:'Not found '+rm(payment.amount)+' from '+codeByUser(order.u)+'?', go:'Not found', keep:'Not yet',
               say:['The claim is answered Not found and nothing is recorded. The customer is told.'],
               yes:function(){ makerMove(order,{claim:payment.at,amount:payment.amount},'Claim answered Not found.'); }});
