@@ -1927,8 +1927,19 @@ export async function tellSite(env, fixes, mirror) {
   for (const o of r.orders) {
     if (!o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const row = byKey.get(ledgerKeyOf(o));   /* V4a: never a salt twin's row by the old shape */
-    if (!row || row.cancelled) continue;
+    if (!row) continue;
     const sole = rows.get(ledgerKeyOf(o)) === 1;   /* a key two rows share names neither: byKey keeps one of the twins */
+    /* 17 Oct 2026, HIS FLOW: what the book ended, the order ends: a row cancelled there cancels its order, and a write-off marks it written off
+       (or undone, clears it), once nothing of the order's own is on its way to the row */
+    const end = row.cancelled ? "cancelled" : !!row.defaulted !== !!o.writtenOff ? (row.defaulted ? "writtenOff" : "restored") : null;
+    if (end && sole && !fixWaits.has(o.id) && !(await orderInFlight(env, o))) {
+      const b = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bookEnd: end })
+      });
+      if (!b || !b.ok) failed.push({ id: o.id, why: "the site would not take its row's end" + (b ? " (http " + b.status + ")" : "") });
+      else told++;
+    }
+    if (row.cancelled || row.defaulted) continue;
     if (o.status === "done") {
       /* 17 Oct 2026, his yes: a settled order takes all its row states, its money and goods included, once nothing is on its way to the row */
       const s = sole && !fixWaits.has(o.id) ? settledFromRow(o, row) : null;

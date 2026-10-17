@@ -49437,7 +49437,7 @@ await (async () => {
       const self = mk([]);
       self.bind = (...a) => { if (failFor && a[0] === failFor && /FROM preapproval .*stage<>'ack'/.test(sql)) throw new Error("D1 fixture: not now"); return mk(a); };
       return self; } };
-    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
+    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
     const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, J(doc));
     let seq = 0, ver = 0;
     const OPEN = { byKey: {}, position: {} };
@@ -49821,6 +49821,33 @@ await (async () => {
       && sy2.total === 97 && sy2.paid === 97,
       tag + ", a settled order is never restated to a twin's row, waits while a draft of its own is on its way, and takes an undo by its fix alone: "
       + J({ failed: ofrT18.failed, sx: [sx.status, sx.paid], sy: [sy.total, sy2.total], sz: sz && sz.paid, restates }));
+    /* 17 Oct 2026, HIS FLOW: what the book ended, the order ends. A row cancelled on the book cancels its agreed order and queues nothing; a row
+       written off marks its order written off, out of every chase, and the write-off undone clears it */
+    const EC = await agreed(20, { unit: 119, total: 119 }, false), EW = await agreed(21, { unit: 121, total: 121 }, true);
+    correct(EC.rid, { cancelled: true });
+    correct(EW.rid, { defaulted: true });
+    const ofrT20 = await tellSite(denv), ec = await orderOf(EC.o.id), ew = await orderOf(EW.o.id);
+    await reconcileOrders(denv);
+    const ecDrafts = drafts(EC.o.id).filter((d) => d.e.status === "Cancellation").length;
+    ok(!ofrT20.failed && ec.status === "cancelled" && ec.queued.cancel === "book" && !O.orderWork(ec).includes("cancel") && ecDrafts === 0
+      && !!ew.writtenOff && !O.isAdvance(ew) && ew.status !== "cancelled",
+      tag + ", a row cancelled on the book cancels its order with no second cancellation queued, and one written off marks its order written off and unchased: "
+      + J({ failed: ofrT20.failed, ec: [ec.status, ec.queued && ec.queued.cancel, ecDrafts], ew: [ew.status, ew.writtenOff, O.isAdvance(ew)] }));
+    /* and never while a move of the order's own is on its way to the row: the book's end waits for it */
+    const EP = await agreed(22, { unit: 123, total: 123 }, false);
+    correct(EP.rid, { cancelled: true });
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,party,product,amends,amend_kind,drafter,drafted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+      .run("2026-10-17T00:00:01.000Z", "pending", "sales", J({ at: "2026-10-17T00:00:01.000Z", orderId: EP.o.id, payload: { mode: "amend", kind: "Fulfilment" } }), "{}", "a move", EP.code, "salt", EP.rid, "Fulfilment", "test", "2026-10-17T00:00:01.000Z");
+    reseed();
+    await tellSite(denv);
+    const ep1 = await orderOf(EP.o.id);
+    db.prepare("DELETE FROM draft WHERE id=?").run("2026-10-17T00:00:01.000Z"); reseed();
+    await tellSite(denv);
+    const ep2 = await orderOf(EP.o.id);
+    ok(ep1.status !== "cancelled" && ep2.status === "cancelled", tag + ", the book's cancel waits while a move of the order's own is on its way: " + J([ep1.status, ep2.status]));
+    correct(EW.rid, { defaulted: false });
+    const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
+    ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));
   }
 
   /* THE COUNTER: the order at Ready, handed as the site hands it, beside the bucket's row sealed as a part of To pay now */

@@ -9,7 +9,8 @@
  *   D  his answer: a cancel once goods are out cancels the rest, closing the order at what was handed over (a row's at the Desk's closeAt, a
  *      site order's by the close Finish at fewer units sends), anything paid above it a refund
  *   E  his answer: a completed order keeps Amend, on the site, the Desk's restate and the ledger's road, and figures that leave it owing open
- *      it again at Ready */
+ *      it again at Ready
+ *   F  what the book ended, the order ends: the order book's refusals for the book's cancel and write-off, and a written-off order under Ended */
 import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import desk from "../src/worker.js";
@@ -132,6 +133,18 @@ export async function run({ ok, pageWork }) {
   ok(viaLedger.restate && viaLedger.restate.order === "20261014010003-flowad" && viaLedger.restate.total === 120,
     "a Correction of a completed site order's price on the ledger's road is sent as its Amend, so the order and the row change together: " + J(viaLedger));
 
+  /* F. WHAT THE BOOK ENDED, THE ORDER ENDS: the order book's side (the return leg is proved in "28 Sep 2026, fix 3") */
+  const ag = { ...so, paid: 0, moved: 0, status: "acknowledged" };
+  const bc = decideDesk(JSON.parse(J(ag)), { bookEnd: "cancelled" }, "2026-10-17T02:00:05.000Z");
+  const bcOut = decideDesk(JSON.parse(J({ ...ag, moved: 1 })), { bookEnd: "cancelled" }, "2026-10-17T02:00:06.000Z");
+  const bcClaim = decideDesk(JSON.parse(J({ ...ag, payments: [{ at: "x", amount: 5, claim: "waiting" }] })), { bookEnd: "cancelled" }, "2026-10-17T02:00:07.000Z");
+  const wo = decideDesk(JSON.parse(J(so)), { bookEnd: "writtenOff" }, "2026-10-17T02:00:08.000Z");
+  const woTwice = decideDesk(JSON.parse(J({ ...so, writtenOff: "x" })), { bookEnd: "writtenOff" }, "2026-10-17T02:00:09.000Z");
+  const placedEnd = decideDesk(JSON.parse(J({ ...ag, status: "placed" })), { bookEnd: "cancelled" }, "2026-10-17T02:00:10.000Z");
+  ok(bc.ev && bc.ev.status === "cancelled" && bc.ev.book === true && /already out/.test(bcOut.error || "") && /waits on this order/.test(bcClaim.error || "")
+    && wo.ev && wo.ev.kind === "writeoff" && wo.ev.on === true && woTwice.none === true && /agreed order/.test(placedEnd.error || ""),
+  "the order book takes the book's cancel of an agreed order with nothing out and no claim waiting, and its write-off once: " + J({ bc, bcOut: bcOut.error, bcClaim: bcClaim.error, wo, woTwice, placedEnd: placedEnd.error }));
+
   /* C. THE PAGE */
   const ROWS = [
     { rid: "fa1", party: "CQ9-ZED", product: "salt", date: D, key: "k1", qty: 1, total: 110, delivery: 0, paid: 0, owed: 110, handed: 0, left: 1, waiting: 0, stage: "confirmed" },
@@ -140,9 +153,10 @@ export async function run({ ok, pageWork }) {
     .concat(Array.from({ length: 60 }, (_, i) => ({ rid: "fz" + i, party: "CQ9-ZED", product: "salt", date: D, key: "kz" + i, qty: 1, total: 110, delivery: 0, paid: 110, owed: 0, handed: 1, left: 0, waiting: 0, stage: "done" })));
   const PART = { id: "20261014010004-flowae", u: "u-flow-4", status: "ready", qty: 2, total: 200, delivery: 0, paid: 0, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
   const DONE = { id: "20261014010005-flowaf", u: "u-flow-6", status: "done", qty: 1, total: 110, delivery: 0, paid: 110, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
+  const WOFF = { id: "20261014010006-flowag", u: "u-flow-7", status: "ready", qty: 1, total: 110, delivery: 0, paid: 0, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [], writtenOff: "2026-10-16T00:00:00.000Z" };
   const ORDER = { id: "o-pay", u: "u-flow-3", status: "acknowledged", qty: 1, total: 100, delivery: 0, paid: 100, moved: 0, product: "salt", at: D + "T01:00:00.000Z", payments: [], msgs: [] };
   const open = async () => {
-    const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE], drafts: [], queue: [], trips: [], sameDay: [], rows: ROWS }),
+    const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE, WOFF], drafts: [], queue: [], trips: [], sameDay: [], rows: ROWS }),
       extra: (route, body) => route === "/all/maker/inputs/ledger-amend" ? { ok: true, draft: body.at, status: "pending" }
         : /^[/]all[/]maker[/]orders[/][^/]+[/]handed$/.test(route) ? { ok: true, order: PART } : undefined });
     await p.work.quiet();
@@ -196,6 +210,7 @@ export async function run({ ok, pageWork }) {
     await p.tap("order.cancel-rest"); await p.tap("order.ask-go", PART.id);
     const closes = p.posts.filter((x) => /[/]handed$/.test(x.route)).map((x) => [x.route.split("/")[4], x.body.qty, x.body.close]);
     ok(J(closes) === J([[PART.id, 1, true]]), "and it sends the close at the unit already out: " + J(closes));
+    ok(/orders\.ended/.test((rowOf(WOFF.id) || { getAttribute: () => "" }).getAttribute("data-in")), "an order written off on the book is under Ended");
     await p.tap("part.orders.done");
     await p.tap("order.open", DONE.id);
     ok(!!byAct(p.card(DONE.id), "order.amend"), "a completed order's card keeps Change the order");

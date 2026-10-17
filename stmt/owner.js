@@ -3667,6 +3667,7 @@ export const OWNER_JS = `
      for a row of the book, the same rule) */
   function orderPartsOf(order){
     if(!ordOpen(order)&&order.test) return '';
+    if(order.writtenOff) return 'orders.ended';   /* written off on the book: it ended there (17 Oct 2026) */
     var st=STAGE_OF[order.status]||'ended';
     if(st==='confirmed'||st==='ready'){
       var q=Number(order.qty)||0, out=q>0&&Number(order.moved||0)>=q-0.0005, paid=Number(order.paid||0), owed=Number(order.total||0)+Number(order.delivery||0)-paid;
@@ -3918,7 +3919,7 @@ export const OWNER_JS = `
   }
   /* an order's head, as every card of an order says it: who by code, what and for how much; its stage as a chip, the four money words, and its reference small */
   function orderHead(card,order){
-    var st=ORD_STAGE[order.status]||['mist',String(order.status||'')], line=el('p','lead');
+    var st=order.writtenOff?['mist','Written off']:ORD_STAGE[order.status]||['mist',String(order.status||'')], line=el('p','lead');
     var orderTitle=el('h3','');
     orderTitle.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u)));
     orderTitle.appendChild(document.createTextNode(', ')); orderTitle.appendChild(bookMark(order.product));

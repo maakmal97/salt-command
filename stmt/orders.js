@@ -386,7 +386,7 @@ export const aheadOnGoods = (o) => {
   const movedF = +o.qty > 0 ? (+o.moved || 0) / +o.qty : 0;
   return movedF > paidF + 1e-9 && dueOf(o) > 0.004;
 };
-export const isAdvance = (o) => !!o && ROWED.includes(o.status) && aheadOnGoods(o);
+export const isAdvance = (o) => !!o && ROWED.includes(o.status) && !o.writtenOff && aheadOnGoods(o);   /* a write-off is never chased (approachable) */
 export const CHASE_KEY = (u) => "chased:" + u;
 /** An hour in whole hours since the epoch: the same hour twice is the same bucket, and no clock is read twice. */
 export const hourOf = (at) => Math.floor(new Date(at).getTime() / 3600000);
@@ -1021,6 +1021,23 @@ export function decideDesk(order, body, at) {
     return { ev: Object.assign({ kind: "price", at, state: "withdrawn", by: "desk", offer: order.price.offer ? order.price.offer.id : null },
       !(+order.total > 0) && !(+order.paid > 0) ? { cancel: true } : {}) };
   }
+  /* 17 Oct 2026, HIS FLOW: WHAT THE BOOK ENDED, THE ORDER ENDS. The return leg (src/orders.js tellSite) sends a row cancelled on the book as the
+     order's cancellation, which queues nothing, the row being cancelled already; and a row written off as the order written off, which takes
+     it out of every chase and into Ended, or back again when the write-off is undone. Neither while a claim of theirs waits. */
+  if (body && body.bookEnd !== undefined) {
+    const e = body.bookEnd;
+    if (!ROWED.includes(order.status)) return { error: "only an agreed order follows its row's end", status: 409 };
+    if (claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
+    if (e === "cancelled") {
+      if ((+order.moved || 0) > 0.0004) return { error: "the goods are already out, so the book's cancellation is not this order's", status: 409 };
+      return { ev: { kind: "status", at, status: "cancelled", by: "desk", book: true } };
+    }
+    if (e === "writtenOff" || e === "restored") {
+      if ((e === "writtenOff") === !!order.writtenOff) return { none: true };
+      return { ev: { kind: "writeoff", at, on: e === "writtenOff" } };
+    }
+    return { error: "the book ends an order by a cancellation or a write-off", status: 400 };
+  }
   const status = String((body && body.status) || "");
   /* its own states only (26 Sep 2026): a bare NEXT[status] read "constructor" or "__proto__" off Object.prototype, and
      .includes threw on it where any other unknown state is refused */
@@ -1089,7 +1106,12 @@ export function applyEvent(order, ev) {
     order.status = ev.status;
     const h = { at, status: ev.status, by: ev.by };
     if (ev.note) h.note = ev.note;
+    /* the book cancelled the row already: its cancellation is owed to no one, so the reconcile queues none */
+    if (ev.book) { order.queued = Object.assign({}, order.queued || {}, { cancel: "book" }); h.note = "cancelled on the book"; }
     order.history.push(h);
+  } else if (ev.kind === "writeoff") {
+    if (ev.on) order.writtenOff = at; else delete order.writtenOff;
+    order.history.push({ at, status: order.status, by: "desk", note: ev.on ? "written off on the book" : "the write-off undone on the book" });
   } else if (ev.kind === "method") {
     order.method = ev.method; order.account = ev.account; order.methodAt = at;
     order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account });
