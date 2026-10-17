@@ -1,0 +1,54 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-17T12:44:21.313Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "qty": 2,
+    "total": 230,
+    "cash": 0,
+    "date": "2026-10-17",
+    "customer": "CS6-PER"
+   },
+   "reasoning": "Fulfilment against CS6-PER's order of 2 unit for RM 230 agreed 2026-10-17. RM 230 and 0 unit move on 2026-10-17, against RM 230 and 2 unit outstanding. Leaves RM 0 and 2 unit outstanding. The row itself is NOT recomputed here: ovAmend in the master applies it, so there is one definition of what a fulfilment does rather than two.",
+   "flags": [],
+   "amends": "s270",
+   "amendKind": "Fulfilment",
+   "entry": {
+    "at": "2026-10-17T12:44:21.313Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 0,
+    "total": 230,
+    "status": "Payment",
+    "by": "customer",
+    "claim": true,
+    "claimId": "a20261017124421-u6puwq",
+    "raw": "Payment of RM 230 on CS6-PER, against the account (claim a20261017124421-u6puwq), by qr via gx",
+    "payload": {
+     "mode": "amend",
+     "kind": "Fulfilment",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "rid": "s270",
+     "orderKey": "CS6-PER|2026-10-17|230",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-17",
+     "qty": 0,
+     "total": 0,
+     "cash": 230,
+     "kg": 0,
+     "note": "Paid on the statements site against the account, by qr via gx."
+    }
+   },
+   "decidedAt": "2026-10-17T12:44:44.763Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
