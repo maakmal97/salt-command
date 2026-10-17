@@ -1,0 +1,61 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-17T12:20:19.424Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CS6-PER",
+    "qty": 2,
+    "total": 230,
+    "cash": 0,
+    "date": "2026-10-17",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261017120517-w6r8bw, acknowledged, to collect. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 2 unit of salt to CS6-PER for RM 230, RM 115/unit. Costed at RM 58/unit from COGS off the latest purchase p040 landed 2026-10-15: RM 1400 quote plus RM 50 freight over 25 unit, so RM 114 on the goods at 49.6%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-17 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "CS6-PER typically pays about RM 100/unit for salt across 14 orders; this one is RM 115, 15% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-17T12:20:19.424Z",
+    "type": "SELL",
+    "party": "CS6-PER",
+    "qty": 2,
+    "total": 230,
+    "status": "Pending",
+    "raw": "SELL CS6-PER 2 salt RM 230, nothing paid, nothing moved (order 20261017120517-w6r8bw)",
+    "orderKey": "CS6-PER|2026-10-17|230",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CS6-PER",
+     "newId": null,
+     "date": "2026-10-17",
+     "qty": 2,
+     "total": 230,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261017120517-w6r8bw, acknowledged, to collect. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261017120517-w6r8bw"
+   },
+   "decidedAt": "2026-10-17T12:20:24.292Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
