@@ -1,6 +1,6 @@
 {
- "v": "v1154",
- "stamped": "18 Oct 2026, 02:01 KL",
+ "v": "v1155",
+ "stamped": "18 Oct 2026, 02:07 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 20.89,
+  "STATED_STOCK": 20.39,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -7981,9 +7981,35 @@
     "total": 70,
     "cash": 0,
     "date": "2026-10-18",
-    "deliveredQty": 0,
-    "note": "<b>NEW PENDING SALE ON 18 OCT: 0.5 UNIT OF SALT TO CA3-KP FOR RM70.</b> Ordered on the statements site, order 20261017180101-wwzhxw, acknowledged, to collect, priced at RM70 on this order, placed at RM80. Nothing paid, nothing handed over. The goods total of RM70 sits above the desk's floor total of RM29 and below its ask total of RM80 for 0.5 unit. CA3-KP has no committed salt order, so no median rate or range, RM0 outstanding and 0 units on credit, against a credit cap of 1. The row carries the drafter's cost of RM58 a unit, COGS off the latest purchase p040, and the fold keeps it. The drafter flagged that there is no rate of theirs to compare with; the figures agree, as there is no history. The full RM70 remains outstanding, and the goods are still to be collected.",
-    "rid": "s271"
+    "deliveredQty": 0.5,
+    "note": "<b>CORRECTION ON S271, 18 OCT: 0.5 UNIT OF SALT COLLECTED BY CA3-KP.</b> Three fields change: deliveredQty from 0 to 0.5, deliveredOn from unset to 2026-10-18, handover from unset to collected. The order is RM70 for 0.5 unit, nothing paid. The dossier gives no floor or ask for this size, so the rate cannot be set against the desk's ladder. CA3-KP has one order, median rate 140, range 140 to 140, RM70 outstanding before this and 0 units on credit. The dossier gives no credit cap, so the drafter's advance flag stays open. The drafter's other flag, no committed salt order, is not answered by the figures. The cost is unchanged. The full RM70 remains outstanding. <b>NEW PENDING SALE ON 18 OCT: 0.5 UNIT OF SALT TO CA3-KP FOR RM70.</b> Ordered on the statements site, order 20261017180101-wwzhxw, acknowledged, to collect, priced at RM70 on this order, placed at RM80. Nothing paid, nothing handed over. The goods total of RM70 sits above the desk's floor total of RM29 and below its ask total of RM80 for 0.5 unit. CA3-KP has no committed salt order, so no median rate or range, RM0 outstanding and 0 units on credit, against a credit cap of 1. The row carries the drafter's cost of RM58 a unit, COGS off the latest purchase p040, and the fold keeps it. The drafter flagged that there is no rate of theirs to compare with; the figures agree, as there is no history. The full RM70 remains outstanding, and the goods are still to be collected.",
+    "rid": "s271",
+    "deliveredOn": "2026-10-18",
+    "handover": "collected",
+    "mod": "corrected on 2026-10-18: deliveredQty 0 to 0.5; deliveredOn (unset) to 2026-10-18; handover (unset) to collected",
+    "amend": [
+     {
+      "date": "2026-10-18",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-18",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0.5,
+      "note": "<b>CORRECTION ON S271, 18 OCT: 0.5 UNIT OF SALT COLLECTED BY CA3-KP.</b> Three fields change: deliveredQty from 0 to 0.5, deliveredOn from unset to 2026-10-18, handover from unset to collected. The order is RM70 for 0.5 unit, nothing paid. The dossier gives no floor or ask for this size, so the rate cannot be set against the desk's ladder. CA3-KP has one order, median rate 140, range 140 to 140, RM70 outstanding before this and 0 units on credit. The dossier gives no credit cap, so the drafter's advance flag stays open. The drafter's other flag, no committed salt order, is not answered by the figures. The cost is unchanged. The full RM70 remains outstanding.",
+      "was": {
+       "deliveredQty": 0,
+       "deliveredOn": null,
+       "handover": null
+      },
+      "cost": 29
+     }
+    ],
+    "cost": 29
    }
   ],
   "contacts": [
@@ -8675,9 +8701,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-17T18:01:23.787Z",
+  "QUEUE_COMMITTED": "2026-10-17T18:06:40.477Z",
   "PRICING": {
-   "takenAt": "2026-10-17T18:01:57.712Z",
+   "takenAt": "2026-10-17T18:07:19.365Z",
    "sizes": [
     0.5,
     1,
@@ -9827,6 +9853,23 @@
       "loyal": false,
       "rare": false
      }
+    },
+    "CA3-KP": {
+     "salt": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 0,
+      "sinceLastDays": 0,
+      "perMonth": 1.01,
+      "unitsPerMonth": 0.51,
+      "smallShare": 1,
+      "bigShare": 0,
+      "frequent": false,
+      "small": true,
+      "bigger": false,
+      "loyal": false,
+      "rare": false
+     }
     }
    },
    "profileRule": {
@@ -9982,15 +10025,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.3
+         "v": 0.297029702970297
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07533842547077063,
        "avgDel": {
-        "n": 215,
-        "kg": 551.81,
-        "mean": 2.5666
+        "n": 216,
+        "kg": 552.31,
+        "mean": 2.557
        }
       },
       "policy": {
@@ -15873,10 +15916,10 @@
      ]
     }
    },
-   "v": "v1154"
+   "v": "v1155"
   },
   "OPEN": {
-   "at": "2026-10-17T18:01:58.620Z",
+   "at": "2026-10-17T18:07:19.826Z",
    "count": 11,
    "byKey": {
     "CA3-KP|2026-10-18|70": {
@@ -15886,12 +15929,15 @@
      "q": 0.5,
      "t": 70,
      "cash": 0,
-     "mv": 0,
-     "st": "part",
+     "mv": 0.5,
+     "st": "dueMoney",
      "oweRM": 70,
-     "oweUnits": 0.5,
      "rid": "s271",
-     "key": "CA3-KP|2026-10-18|70"
+     "deliveredOn": "2026-10-18",
+     "handover": "collected",
+     "key": "CA3-KP|2026-10-18|70",
+     "age": 0,
+     "exp": 70
     },
     "CS6-BS-R|2026-10-15|220": {
      "d": "2026-10-15",
@@ -16066,13 +16112,13 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 20.89,
-     "free": 19.39,
+     "onHand": 20.39,
+     "free": 18.89,
      "owedOut": 1.5,
-     "coverDays": 3.7,
+     "coverDays": 3.6,
      "rate": 4.67,
-     "owedToYou": 625,
-     "promised": 2,
+     "owedToYou": 695,
+     "promised": 1.5,
      "short": 0
     },
     "oil": {
@@ -16116,7 +16162,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1154"
+   "v": "v1155"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16124,7 +16170,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1154"
+   "v": "v1155"
   },
   "REWARD": {
    "stated": {
@@ -16136,7 +16182,7 @@
      }
     }
    },
-   "v": "v1154"
+   "v": "v1155"
   }
  }
 }
