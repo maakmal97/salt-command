@@ -2773,6 +2773,22 @@ start, the apps' own names *Salt Account*, *Salt Counter*, *Salt Command*, *Salt
 Desk keeps its book names; this page does not.** `test/admin-words.mjs` draws the whole page and fails on any book of `ledger/book.json` PRODUCTS in a word, an aria
 name or a title, and on any drawn shape word.
 
+**One word for one thing, on the Desk and here** (18 Oct 2026, part 5 of `docs/plan-counter-admin-clarity.html`, his yes). Where the two surfaces name
+the same thing, this table is the word; a new card takes its word from here, and a word that differs between them is put to him, never changed unasked.
+
+| Thing | Desk | Salt Account |
+|---|---|---|
+| An order placed, not yet answered | Pending | Received (stage) |
+| His yes to an order | Accept | Agree (button), Agreed (stage) |
+| Goods ready | Ready to deliver, Ready to collect | Ready |
+| Goods out | Handed over | Handed over |
+| Money in | Received | Received (button), Delivered or paid (stage) |
+| A drafted row his to decide | Approve, under Order book | Approve, under Orders |
+| What waits on him | Waiting on you | Needs you |
+
+**Open, his to decide:** *Received* names an order's first stage here and money in on both surfaces, so one card can show the stage *Received* and the
+button *Received*; and his yes is *Accept* on the Desk, *Agree* here.
+
 ### Unsent entries say so, and every id and row keeps its detail behind Details (Phase 4c, 12 Oct 2026)
 
 **An entry sent from this phone and not confirmed says so on every place.** `makerButton` keeps a retained send whole in the phone's storage
