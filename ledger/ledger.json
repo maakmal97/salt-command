@@ -1,6 +1,6 @@
 {
- "v": "v1144",
- "stamped": "17 Oct 2026, 11:06 KL",
+ "v": "v1148",
+ "stamped": "17 Oct 2026, 20:20 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7930,6 +7930,16 @@
     "deliveredOn": "2026-10-16",
     "handover": "collected",
     "cost": 348
+   },
+   {
+    "customer": "CS6-PER",
+    "qty": 2,
+    "total": 230,
+    "cash": 0,
+    "date": "2026-10-17",
+    "deliveredQty": 0,
+    "note": "<b>NEW PENDING SALE ON 17 OCT: 2 UNITS OF SALT TO CS6-PER FOR RM230.</b> Ordered on the statements site, order 20261017120517-w6r8bw, acknowledged, to collect. RM0 paid and nothing delivered. The goods total of RM230 is above the desk's floor of RM116 and below its ask of RM250, both for 2 units; that is RM115 a unit against RM58 and RM125. CS6-PER has a median rate of RM85.52, a range of RM7 to RM116, RM0 outstanding before and 0 units on credit, against a cap of 2. The cost carried is the inventory's own rate. The drafter flagged the rate as 15% above the usual RM100; the rate is higher, as flagged, and well above the median shown. The full RM230 and the 2 units remain outstanding.",
+    "rid": "s270"
    }
   ],
   "contacts": [
@@ -8612,9 +8622,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-17T03:05:17.129Z",
+  "QUEUE_COMMITTED": "2026-10-17T12:20:19.424Z",
   "PRICING": {
-   "takenAt": "2026-10-17T03:06:19.287Z",
+   "takenAt": "2026-10-17T12:20:59.759Z",
    "sizes": [
     0.5,
     1,
@@ -8847,23 +8857,6 @@
       "rare": false
      }
     },
-    "CJ4-BJ": {
-     "salt": {
-      "name": "large and regular",
-      "orders": 8,
-      "tenureDays": 111,
-      "sinceLastDays": 8,
-      "perMonth": 2.19,
-      "unitsPerMonth": 15.07,
-      "smallShare": 0.13,
-      "bigShare": 0.88,
-      "frequent": true,
-      "small": false,
-      "bigger": true,
-      "loyal": true,
-      "rare": false
-     }
-    },
     "CS6-PER": {
      "salt": {
       "name": "consistent mid",
@@ -8908,6 +8901,23 @@
       "small": false,
       "bigger": true,
       "loyal": false,
+      "rare": false
+     }
+    },
+    "CJ4-BJ": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 8,
+      "tenureDays": 111,
+      "sinceLastDays": 8,
+      "perMonth": 2.19,
+      "unitsPerMonth": 15.07,
+      "smallShare": 0.13,
+      "bigShare": 0.88,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": true,
       "rare": false
      }
     },
@@ -10219,56 +10229,6 @@
         840
        ]
       ],
-      "CJ4-BJ": [
-       [
-        0.5,
-        80
-       ],
-       [
-        1,
-        140
-       ],
-       [
-        1.5,
-        200
-       ],
-       [
-        2,
-        250
-       ],
-       [
-        2.5,
-        300
-       ],
-       [
-        3,
-        340
-       ],
-       [
-        3.5,
-        380
-       ],
-       [
-        4,
-        420
-       ],
-       [
-        4.5,
-        460
-       ],
-       [
-        5,
-        500
-       ],
-       [
-        6.25,
-        600
-       ],
-       [
-        12.5,
-        990
-       ]
-      ],
       "CS6-PER": [
        [
         0.5,
@@ -10317,6 +10277,56 @@
        [
         12.5,
         870
+       ]
+      ],
+      "CJ4-BJ": [
+       [
+        0.5,
+        80
+       ],
+       [
+        1,
+        140
+       ],
+       [
+        1.5,
+        200
+       ],
+       [
+        2,
+        250
+       ],
+       [
+        2.5,
+        300
+       ],
+       [
+        3,
+        340
+       ],
+       [
+        3.5,
+        380
+       ],
+       [
+        4,
+        420
+       ],
+       [
+        4.5,
+        460
+       ],
+       [
+        5,
+        500
+       ],
+       [
+        6.25,
+        600
+       ],
+       [
+        12.5,
+        990
        ]
       ],
       "CE4-CHE": [
@@ -12325,8 +12335,8 @@
      ],
      "drift": {
       "CS6-BS": -0.7,
-      "CJ4-BJ": 0.0824,
       "CS6-PER": -0.4908,
+      "CJ4-BJ": 0.0824,
       "CE4-CHE": -0.4883,
       "CM4-MK": 0.3,
       "CK4-SEN": -0.4179,
@@ -12648,7 +12658,7 @@
         450
        ]
       ],
-      "CJ4-BJ": [
+      "CS6-PER": [
        [
         10,
         130
@@ -12670,7 +12680,7 @@
         450
        ]
       ],
-      "CS6-PER": [
+      "CJ4-BJ": [
        [
         10,
         130
@@ -13822,7 +13832,7 @@
         1500
        ]
       ],
-      "CJ4-BJ": [
+      "CS6-PER": [
        [
         1,
         60
@@ -13844,7 +13854,7 @@
         1500
        ]
       ],
-      "CS6-PER": [
+      "CJ4-BJ": [
        [
         1,
         60
@@ -14945,7 +14955,7 @@
         60
        ]
       ],
-      "CJ4-BJ": [
+      "CS6-PER": [
        [
         1,
         8
@@ -14959,7 +14969,7 @@
         60
        ]
       ],
-      "CS6-PER": [
+      "CJ4-BJ": [
        [
         1,
         8
@@ -15701,12 +15711,26 @@
      ]
     }
    },
-   "v": "v1144"
+   "v": "v1148"
   },
   "OPEN": {
-   "at": "2026-10-17T03:06:20.077Z",
-   "count": 10,
+   "at": "2026-10-17T12:21:00.651Z",
+   "count": 11,
    "byKey": {
+    "CS6-PER|2026-10-17|230": {
+     "d": "2026-10-17",
+     "p": "CS6-PER",
+     "dir": "S",
+     "q": 2,
+     "t": 230,
+     "cash": 0,
+     "mv": 0,
+     "st": "part",
+     "oweRM": 230,
+     "oweUnits": 2,
+     "rid": "s270",
+     "key": "CS6-PER|2026-10-17|230"
+    },
     "CS6-BS-R|2026-10-15|220": {
      "d": "2026-10-15",
      "p": "CS6-BS-R",
@@ -15884,9 +15908,9 @@
      "free": 21.39,
      "owedOut": 1.5,
      "coverDays": 4.3,
-     "rate": 4.79,
+     "rate": 4.88,
      "owedToYou": 625,
-     "promised": 1.5,
+     "promised": 3.5,
      "short": 0
     },
     "oil": {
@@ -15930,7 +15954,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1144"
+   "v": "v1148"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15938,7 +15962,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1144"
+   "v": "v1148"
   },
   "REWARD": {
    "stated": {
@@ -15950,7 +15974,7 @@
      }
     }
    },
-   "v": "v1144"
+   "v": "v1148"
   }
  }
 }
