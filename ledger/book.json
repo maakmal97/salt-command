@@ -524,7 +524,8 @@
     "CA6-CYB-R",
     "CM4-TO-R",
     "CI5-PER",
-    "CN4-BSL"
+    "CN4-BSL",
+    "CA3-KP"
   ],
   "associates": [
     "CS6-BS",
@@ -784,6 +785,11 @@
       3.05,
       101.8,
       "Mahkota Cheras"
+    ],
+    "CA3-KP": [
+      2.72,
+      102.24,
+      "Kuala Pilah"
     ]
   },
   "TIER_OF": {
@@ -802,6 +808,9 @@
     },
     "CN4-BSL": {
       "salt": -0.5
+    },
+    "CA3-KP": {
+      "salt": 0
     }
   },
   "PEOPLE": {
@@ -921,7 +930,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-17T12:46:33.070Z",
+  "QUEUE_COMMITTED": "2026-10-17T16:10:47.352Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
