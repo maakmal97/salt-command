@@ -964,7 +964,8 @@ await (async () => {
 section("Build — patches, scripts, no externals");
 await (async () => {
   let built = true;
-  try { execFileSync("node", ["tools/build.mjs"], { cwd: REPO, stdio: "pipe" }); }
+  /* 17 Oct 2026: built from the LIVE master, as public/ is: the frozen one wrote a desk whose PLACED lacked every point since the freeze, and F14 then read it */
+  try { execFileSync("node", ["tools/build.mjs"], { cwd: REPO, stdio: "pipe", env: liveEnv() }); }
   catch (e) { built = false; console.log("  (build failed: " + (e.stderr ? e.stderr.toString().split("\n")[0] : e.message) + ")"); }
   ok(built, "build.mjs exits 0");
 
