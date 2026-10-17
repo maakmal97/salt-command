@@ -94,7 +94,7 @@ export async function run({ ok }) {
       "over the whole book every Open row reads Open and every Pending row Pending, and the count is every order on it");
     ok((await call("/all/maker/ledger", {}, { email: "other@example.test" })).status === 403,
       "another identity is refused the ledger");
-    ok((await call("/all/maker/ledger", { method: "POST", body: "{}" })).status === 405, "the ledger is read by GET alone");
+    ok((await call("/all/maker/ledger", { method: "PUT", body: "{}" })).status === 405, "the ledger is read by GET, and checked again by POST (Check now, 17 Oct 2026), and nothing else");
     const wrong = await desk.fetch(new Request("https://desk.test/_internal/maker/ledger", { headers: { "X-Counter-Maker-Key": "x".repeat(40) } }), deskEnv, { waitUntil() {} });
     const bare = await desk.fetch(new Request("https://desk.test/_internal/maker/ledger"), deskEnv, { waitUntil() {} });
     ok(wrong.status === 404 && bare.status === 404, "the Desk's end of the bridge answers the ledger only to its capability");

@@ -40,7 +40,6 @@
 {"name": "V7: no refund on a row", "file": "src/maker-inputs.js", "find": "...(refunds[s.rid] ? { refund: refunds[s.rid] } : {}), ", "replace": ""},
 {"name": "V7: a paid refund still counts", "file": "src/maker-inputs.js", "find": "if (r && r.rid && !r.paidOn && +r.amount > 0.004)", "replace": "if (r && r.rid && +r.amount > 0.004)"},
 {"name": "V7: no refunds for orders", "file": "stmt/maker.js", "find": "refunds: drafts.refunds && typeof drafts.refunds === \"object\" ? drafts.refunds : {},", "replace": "refunds: {},"},
-{"name": "V7: a rejected Agree stays under Agreed", "file": "stmt/owner.js", "find": "    if(order.status==='acknowledged'&&(order.again||[]).indexOf('ack')>=0) return 'orders.placed';\n", "replace": ""},
 {"name": "V7: an order's card says no refund", "file": "stmt/owner.js", "find": "    if(+owes>0.004) card.appendChild(", "replace": "    if(false) card.appendChild("},
 {"name": "V8: an ended order's waiting move is not said", "file": "stmt/owner.js", "find": "if(waitN&&!ordOpen(order)) card.appendChild(", "replace": "if(false) card.appendChild("},
 {"name": "V9: the Ledger draws no tie-out", "file": "stmt/owner.js", "find": "    drawLedger(j);\n    drawTieout(j.tieout);\n  }", "replace": "    drawLedger(j);\n  }"},

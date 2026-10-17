@@ -234,7 +234,6 @@ export async function run({ ok, pageWork }) {
     const closes = p.posts.filter((x) => /[/]handed$/.test(x.route)).map((x) => [x.route.split("/")[4], x.body.qty, x.body.close]);
     ok(J(closes) === J([[PART.id, 1, true]]), "and it sends the close at the unit already out: " + J(closes));
     ok(/orders\.ended/.test((rowOf(WOFF.id) || { getAttribute: () => "" }).getAttribute("data-in")), "an order written off on the book is under Ended");
-    ok(/orders\.placed/.test((rowOf(AGAIN.id) || { getAttribute: () => "" }).getAttribute("data-in")), "an order whose Agree he rejected waits under Received, to be agreed again");
     await p.tap("part.orders.confirmed");
     await p.tap("order.open", OWED.id);
     ok(/refund of RM 25\.00/.test(text(p.card(OWED.id))), "a site order's card says the refund the book owes on its row: " + text(p.card(OWED.id)).slice(0, 200));

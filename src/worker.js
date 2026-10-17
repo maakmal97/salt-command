@@ -2366,7 +2366,7 @@ export default {
           if (!ts.ok || ts.told || ts.followed || ts.fixed || ts.refused || ts.waiting || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));
         } catch (e) { console.log("orders return leg FAILED: " + String((e && e.stack) || e)); }
         /* 17 Oct 2026, HIS FLOW: THE TIE-OUT, after each version the book moves to and every six hours, kept for Counter Admin's Ledger */
-        try {
+        if (env.SALT_LEDGER && env.SALT_QUEUE) try {
           const last = await env.SALT_QUEUE.get(TIEOUT_KEY, "json");
           const snapV = await env.SALT_LEDGER.prepare("SELECT v FROM snapshot WHERE one=1").first();
           const due = !last || !last.ok || (snapV && last.v !== snapV.v) || Date.now() - Date.parse(last.at || 0) > 6 * 3600000;

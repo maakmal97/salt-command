@@ -1597,7 +1597,7 @@ export const OWNER_JS = `
     var root=document.getElementById('led-tie'); if(!root) return;
     root.textContent='';
     root.appendChild(el('h3','','Order and book'));
-    if(!t) root.appendChild(el('p','rnone','Not checked yet. The Desk checks after each version.'));
+    if(!t) root.appendChild(el('p','salt-insight','Not checked yet. The Desk checks after each version.'));
     else if(!t.ok) root.appendChild(el('p','msg bad','Not checked: '+(t.error||'the Desk could not read it')+'.'));
     else{
       root.appendChild(el('p',t.clean?'salt-insight':'msg bad',(t.clean?'Every site order matches its row on the book':(t.faults.length===1?'One difference':t.faults.length+' differences')+' between the orders and the book')
@@ -3690,8 +3690,6 @@ export const OWNER_JS = `
   function orderPartsOf(order){
     if(!ordOpen(order)&&order.test) return '';
     if(order.writtenOff) return 'orders.ended';   /* written off on the book: it ended there (17 Oct 2026) */
-    /* and an Agree he rejected under Approve has no row behind it: it waits under Received, to be agreed again (17 Oct 2026) */
-    if(order.status==='acknowledged'&&(order.again||[]).indexOf('ack')>=0) return 'orders.placed';
     var st=STAGE_OF[order.status]||'ended';
     if(st==='confirmed'||st==='ready'){
       var q=Number(order.qty)||0, out=q>0&&Number(order.moved||0)>=q-0.0005, paid=Number(order.paid||0), owed=Number(order.total||0)+Number(order.delivery||0)-paid;

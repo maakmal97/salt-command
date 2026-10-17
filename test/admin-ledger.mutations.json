@@ -68,7 +68,7 @@
  {
   "name": "the bridge does not let the ledger through",
   "file": "stmt/maker.js",
-  "find": "    || path === \"/_internal/maker/ledger\" && method === \"GET\"\n",
+  "find": "    || path === \"/_internal/maker/ledger\" && [\"GET\", \"POST\"].includes(method)\n",
   "replace": ""
  },
  {
@@ -78,9 +78,9 @@
   "replace": "return { kind: \"offsets\" };"
  },
  {
-  "name": "the Counter lets a POST read the ledger",
+  "name": "the Counter lets a PUT read the ledger",
   "file": "stmt/maker.js",
-  "find": "    if (op.kind === \"ledger\") {\n      if (method !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);\n",
+  "find": "    if (op.kind === \"ledger\") {\n      if (method !== \"GET\" && method !== \"POST\") return json({ ok: false, error: \"method not allowed\" }, 405);\n",
   "replace": "    if (op.kind === \"ledger\") {\n"
  },
  {
