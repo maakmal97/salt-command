@@ -1203,7 +1203,7 @@ acknowledging, and the drafter flags it again when the row is queued.
 `wrangler.jsonc`, sending `STMT_DESK_KEY`, a secret the same on both Workers. The direction is
 desk to site for orders; the site's reverse `DESK` binding reads only `/stmt/rev` with the shared
 key to verify live statements, never the ledger or an order. The
-Site orders card in Enter (cloud desk) is the taps.
+Site orders card under Order book (cloud desk) is the taps.
 
 **AN ORDER REACHES THE BOOK IN STAGES, AND NO TAP WRITES** (v694, his instruction of 18 Sep 2026;
 it reached it once, at the end, as a sale paid and delivered in full on the day). **Site orders moves

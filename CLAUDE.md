@@ -142,15 +142,17 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
 ## The one surface
 
 **Retired surfaces:** see MEMORY.md. The
-built desk is seven destinations (`VIEWS`): Today, Order book, Stock, Pricing, Network, Record,
-Enter. Old ids remain addresses (`/desk#book`, `/desk#network`). **The rail is two levels at
+built desk is six destinations (`VIEWS`): Today, Order book, Stock, Pricing, Network, Record. Enter left
+on 17 Oct 2026 (his word): Waiting on you and Approve read under Order book, Plans and Entries under Today,
+the restock date on Stock, and its count is Order book's `.navwait` chip. Old ids remain addresses
+(`/desk#book`, `/desk#network`, `/desk#enter` through `VIEW_ALIAS`). **The rail is two levels at
 most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
 feature folded out of sight reads to him as missing: name every part where the eye lands.
 Everything the desk shows, cost and margin included, is served at the desk's URL, behind the Access login. **It installs as
 Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`); its
 `<title>` stays Salt Command, the build's anchor.
 
-In cloud mode Enter carries **Add ID**, **Amend ID** and **Approve**. A code is derived from the
+**Add ID**, **Amend ID** and **Approve** are Counter Admin's; the Desk reads them. A code is derived from the
 name and place (`deriveCode`), never typed or picked, and changes only when they change; Amend ID
 re-keys it wherever the book holds it, prose and history keeping the old. The fold refuses a code
 the master's own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, CM6-HCM): those are hand folds.
@@ -390,7 +392,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
   `thr:<username>`): the KV road refuses a line rather than keep a second copy. Read every 2 seconds only while open and
   showing; his line wakes them as `message`, a tap opening `#thread`. The same rules as an order's: never a ledger note,
-  his words through `siteWords`, every line escaped; a test account's lives in its fixture. **His Chat** is Enter's Waiting on
+  his words through `siteWords`, every line escaped; a test account's lives in its fixture. **His Chat** is Order book's Waiting on
   you until Step 9: a thread whose last line is theirs is an Asked act, the rest listed under Chat, read every 2 seconds
   only while one is open, through the keyed `/threads`.
 - **How was your order, asked once** (F10, his Q9b): at the first chase slot two days after the last handover of an
@@ -481,7 +483,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   sealed on their phone to the slip key under `salt-pin v1` (`stmt/pin.js`), ciphertext alone on the Counter for 30 days,
   opened only on the Desk with the one unlock: the fee's point ahead of `vault-addr`, filed as their place only on his tap: the card's, or File all for every customer with no point (his choice of 13 Oct 2026),
   one passphrase for the batch; never filed without one.
-- **The restock light** (F4, his decision of 05 Oct 2026): per book, the engine's `restockLight` over the shelf and `commitments().commitUnits`: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf (free stock below what is agreed, the engine's `coverable` false), red when the shelf is out. Sealed in each customer's price list (`supply`, outside the stamp) at publish and drawn as a coloured border on the mark, never a figure or the word stock; yellow or red carry "More by DD Mon" from the desk's `expected` date (KV `expected`, set in Enter through `/expected`, never named restock). Ordering is never refused.
+- **The restock light** (F4, his decision of 05 Oct 2026): per book, the engine's `restockLight` over the shelf and `commitments().commitUnits`: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf (free stock below what is agreed, the engine's `coverable` false), red when the shelf is out. Sealed in each customer's price list (`supply`, outside the stamp) at publish and drawn as a coloured border on the mark, never a figure or the word stock; yellow or red carry "More by DD Mon" from the desk's `expected` date (KV `expected`, set on Stock through `/expected`, never named restock). Ordering is never refused.
 - **The chase, tapered** (his decision D5, hours amended by V5 on 29 Sep 2026): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
   customer holding goods unpaid (`isAdvance`) every hour from 08:00 to 22:00 Kuala Lumpur (`chaseSlot`) for three days from
   their oldest unpaid handover, then at 10:00, 14:00 and 18:00 (`chaseDue`), from
