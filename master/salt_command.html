@@ -10032,7 +10032,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1142","d":"16 Oct 2026","t":"A CUSTOMER'S ORDER STATES WHAT ITS ROW STATES","n":["<b>THE RETURN LEG CARRIES A ROW'S FIGURES TO ITS ORDER.</b> A Correction of a row's size, goods or delivery reached the book alone, so the Counter's order kept its old figure (CR3-DAM's s263: RM65 on the book, RM80 on the order). An agreed order now takes its row's size, goods and delivery on the next pass, except while his own Amend or a close is still on its way to the row, or a payment they say they sent waits.","<b>A CORRECTION OF A SITE ORDER'S TERMS GOES AS THE ORDER'S AMEND.</b> Counter Admin's Correct a row sends a change of an agreed site order's units, price or delivery through the order's restate, so the floor, any refund and their page follow together; mixed with another field it is refused, and a trip row's delivery is changed by hand.","<b>A SETTLED ORDER IS NOT RESTATED.</b> An order already done keeps its figures on the Counter; a Correction of its row reaches the book alone, as before."]}];
+const evolution=[{"v":"v1143","d":"17 Oct 2026","t":"A SETTLED ORDER STATES WHAT ITS ROW STATES","n":["<b>COUNTER ADMIN ASKS FOR A HANDOVER ONLY WHILE UNITS ARE LEFT.</b> CR3-DAM's order at Ready had its 0.5 unit collected and the card still drew the units field and Handed over, 0.5 unit; the field now shows only while units remain.","<b>A SETTLED ORDER TAKES ITS ROW'S FIGURES WHOLE.</b> A Correction of a settled row reached the book alone (s223 cut to RM260 with RM260 paid, its order at RM310 paid; s258 made 2 units for RM16, its order 1 for RM8). The return leg now sends a settled order its row's size, goods, delivery, paid and handed over, down as well as up, once nothing of its own is on its way to the row, no claim waits, no undo fix is unsent and no twin shares its key; left owing, it opens again, at Ready with goods out.","<b>NO BANNER.</b> The customer is not woken by the book's figures, as with his own Amend."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10176,7 +10176,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='16 Oct 2026, 21:09 KL';
+const LAST_UPDATED='17 Oct 2026, 09:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

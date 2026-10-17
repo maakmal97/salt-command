@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1143",
+  "d": "17 Oct 2026",
+  "t": "A SETTLED ORDER STATES WHAT ITS ROW STATES",
+  "n": [
+   "<b>COUNTER ADMIN ASKS FOR A HANDOVER ONLY WHILE UNITS ARE LEFT.</b> CR3-DAM's order at Ready had its 0.5 unit collected and the card still drew the units field and Handed over, 0.5 unit; the field now shows only while units remain.",
+   "<b>A SETTLED ORDER TAKES ITS ROW'S FIGURES WHOLE.</b> A Correction of a settled row reached the book alone (s223 cut to RM260 with RM260 paid, its order at RM310 paid; s258 made 2 units for RM16, its order 1 for RM8). The return leg now sends a settled order its row's size, goods, delivery, paid and handed over, down as well as up, once nothing of its own is on its way to the row, no claim waits, no undo fix is unsent and no twin shares its key; left owing, it opens again, at Ready with goods out.",
+   "<b>NO BANNER.</b> The customer is not woken by the book's figures, as with his own Amend."
+  ]
+ },
+ {
   "v": "v1142",
   "d": "16 Oct 2026",
   "t": "A CUSTOMER'S ORDER STATES WHAT ITS ROW STATES",
