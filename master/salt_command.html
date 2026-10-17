@@ -10040,7 +10040,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1144","d":"17 Oct 2026","t":"CN4-BSL REGISTERED AS A CUSTOMER AT SALT -0.5","n":["<b>ONE ROSTER ENTRY FOLDED.</b> CN4-BSL is added to the roster as a customer with a salt tier of -0.5, and is filed as a point on the map. The directory is not touched, so no name or place travels with the row. Nothing unusual: the drafter raised no flags.","<b>INVENTORY UNCHANGED.</b> No sale, purchase or count moved. The shelf stays at 22.89 units, with stock cost at RM56 and replacement cost at RM58."]}];
+const evolution=[{"v": "v1145", "d": "17 Oct 2026", "t": "EVERY ROW OF THE BOOK IS AN ORDER ON COUNTER ADMIN, AND WHAT THE BOOK ENDS THE ORDER ENDS", "n": ["<b>ALL 249 LIVE ROWS IN THE STAGES.</b> Counter Admin's stages read Received, Agreed, Ready, Delivered or paid, Completed and Ended. Every live row with no site order is a card at the stage its figures put it, with Record's own handover, payment, change, cancel and History; Completed is paged fifty at a time.", "<b>HIS THREE ANSWERS.</b> A cancel once goods are out cancels the rest: the order closes at what was handed over at the same rate, keeping the handover's day, and anything paid above it opens as a refund. A completed order keeps Change the order and opens again at Ready when it is left owing. A change of a row's units or price is refused under the floor on every road.", "<b>THE BOOK'S END REACHES THE ORDER.</b> A row cancelled on the book cancels its agreed order with no second cancellation queued; a row written off marks its order written off, out of every chase and under Ended, cleared if the write-off is undone. The book's own words never reach the customer's page. Pricing rules unchanged."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10184,7 +10184,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='17 Oct 2026, 11:06 KL';
+const LAST_UPDATED='17 Oct 2026, 15:45 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
