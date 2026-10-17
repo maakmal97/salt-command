@@ -4070,7 +4070,8 @@ export const OWNER_JS = `
             makerMove(order,{status:'ready',mode:m[0]},'Order marked '+m[1].toLowerCase()+'.');
           },(order.mode||'collect')===m[0]).setAttribute('data-mode',m[0]);
         });
-      }else if(order.status==='ready'){
+      }else if(order.status==='ready'&&Number(order.moved||0)<Number(order.qty)-0.0004){
+        /* 17 Oct 2026 (his word on CR3-DAM's order): asked only while units are left to hand over; all handed over, the card's figures say so */
         /* 16 Oct 2026 (plan 5, part 3): THE UNITS FIELD HAS ONE BUTTON. Handed over and Finish at fewer units were two buttons on one field; now the field
            has one, and fewer units than ordered show two tiles under it: More to come (the default, a part handover, as Handed over sent it) or That is all
            (a close at these units, asked on the Sheet, as Finish at fewer units sent it). The button says which. Each body is the one its old button sent. */
