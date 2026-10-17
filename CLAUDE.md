@@ -53,7 +53,8 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      delivery, the engine's `txOwed`**; nothing reads the total less the cash. **Everything on an agreed order is
      amendable after Accept** (his decision of 06 Oct 2026): the units, the goods' price and the delivery charge,
      each a Correction for approval (`restateOrder`, stage `amend`, status `Amendment`) from Counter Admin and from
-     the Desk; the floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
+     the Desk; a completed order too, which opens again at Ready when the change leaves it owing (his answer of 17 Oct
+     2026); the floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
      ack digest follow the amended row, and a retry carries an immutable rid. **A trip of several
      books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
    - **SALT IS THE SET PRICE AND EACH CUSTOMER'S DRIFT** (Model B, his decision of 05 Oct 2026). Per
