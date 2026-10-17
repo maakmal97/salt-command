@@ -1859,6 +1859,20 @@ async function repoint(db, id, nk, party) {
     await db.prepare("UPDATE preapproval SET entry=?1 WHERE id=?2 AND entry_at IS NULL").bind(JSON.stringify(e), p.id).run();
   }
 }
+/* the one live row a group of orders on a dead key shares, as its key, or null: their account, product and day, size, goods and delivery their sum */
+function sharedOk(os, k, orders, idx) {
+  const PE = POSITION_ENGINE, at = idx.rows.get(k) ? idx.byKey.get(k) : null;
+  if (at && !at.cancelled && !at.defaulted) return null;   /* they name a live row: shared already, or twins, never moved */
+  const code = os[0].code, product = os[0].product || "salt", day = k.split("|")[1];
+  if (os.some((o) => o.code !== code || (o.product || "salt") !== product)) return null;
+  const sum = (f) => +os.reduce((a, o) => a + (+o[f] || 0), 0).toFixed(3);
+  const hits = [...idx.byKey.values()].filter((r) => PE.ownerCode(r.customer) === code && !PE.isBucket(r.customer) && (r.product || "salt") === product
+    && r.date === day && !r.cancelled && !r.defaulted && idx.rows.get(PE.ovKey(r)) === 1
+    && Math.abs(+r.qty - sum("qty")) < 0.0005 && Math.abs(+r.total - sum("total")) < 0.005 && (r.trip || Math.abs((+r.delivery || 0) - sum("delivery")) < 0.005));
+  if (hits.length !== 1) return null;
+  const nk = PE.ovKey(hits[0]);
+  return orders.some((o) => ledgerKeyOf(o) === nk) ? null : nk;
+}
 async function followRows(env, orders, idx) {
   const plan = [], failed = [], amended = new Map(), miss = new Set();
   for (const o of orders) if (o.code && ledgerKeyOf(o) && !idx.rows.get(ledgerKeyOf(o))) miss.add(o.id);
@@ -1866,9 +1880,28 @@ async function followRows(env, orders, idx) {
     if (miss.size) for (const r of (await env.SALT_LEDGER.prepare(AMENDS).bind('%"orderId":%').all()).results || [])
       if (miss.has(r.oid)) amended.set(r.oid, (amended.get(r.oid) || new Set()).add(r.amends));
   } catch (e) { return { followed: 0, failed: [{ id: null, why: "the drafts could not be read, so no order follows its row this pass" }] }; }
+  /* 17 Oct 2026 (s218 and s219): ONE ROW, SEVERAL ORDERS. Two orders of 1 unit for RM 8, one account, product and day, the book holds as one row of
+     2 units for RM 16 (s219), and the key both name (s218) is cancelled. Orders naming one key whose row is cancelled or gone take, together, the one
+     live row of their account, product and day whose size, goods and delivery are their sum, when no other order names it and each order's own
+     pending row has landed or was rejected. Their figures are then read as that sum (tieOut), and none is restated from it (tellSite, namedKeys). */
+  const groups = new Map(), sharing = new Set();
   for (const o of orders) {
     const k = ledgerKeyOf(o);
-    if (!k || !o.code) continue;
+    if (!k || !o.code || o.test || o.forFriend || ["cancelled", "declined"].includes(o.status)) continue;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(o);
+  }
+  for (const [k, os] of groups) {
+    if (os.length < 2 || !sharedOk(os, k, orders, idx)) continue;
+    const nk = sharedOk(os, k, orders, idx), row = idx.byKey.get(nk);
+    let landed = true;
+    for (const o of os) { const a = await closeOnItsWay(env, o) ? null : await fate(env, o.queued && o.queued.ack); if (!a || !(a.landed || a.status === "rejected")) { landed = false; break; } }   /* landed, or rejected: no row of its own is to come (s218's pair) */
+    if (!landed) continue;
+    for (const o of os) { sharing.add(o.id); plan.push({ o, k, nk, friend: false, party: row.customer, shared: true }); }
+  }
+  for (const o of orders) {
+    const k = ledgerKeyOf(o);
+    if (!k || !o.code || sharing.has(o.id)) continue;
     const row = idx.rows.get(k) ? idx.byKey.get(k) : await rowOf(env, o, k, idx, amended);
     if (!row || POSITION_ENGINE.ownerCode(row.customer) !== o.code) continue;
     const nk = POSITION_ENGINE.ovKey(row), friend = POSITION_ENGINE.isBucket(row.customer);
@@ -1878,8 +1911,8 @@ async function followRows(env, orders, idx) {
   for (const o of orders) { const k = ledgerKeyOf(o); if (k) wants.set(k, (wants.get(k) || 0) + 1); }
   for (const p of plan) if (p.nk !== p.k) wants.set(p.nk, (wants.get(p.nk) || 0) + 1);
   let followed = 0;
-  for (const { o, k, nk, friend, party } of plan) {
-    if (nk !== k && wants.get(nk) !== 1) continue;
+  for (const { o, k, nk, friend, party, shared } of plan) {
+    if (nk !== k && wants.get(nk) !== (shared ? groups.get(k).length : 1)) continue;
     if (!!o.forFriend !== friend) {
       const b = await answerOf(await markOrder(env, o.u, o.id, { forFriend: friend }));
       if (!b.order || b.order.forFriend !== friend) { failed.push({ id: o.id, why: "the site would not take its row's side" + b.why }); continue; }
@@ -2059,6 +2092,15 @@ export async function tieOut(env, mirror, now = new Date()) {
   const byKey = new Map(), n = new Map();
   for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }
   const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3), named = namedKeys(r.orders);
+  /* a row several live orders name is their sum (17 Oct 2026, s219): each is read against it with the others */
+  const sums = new Map();
+  for (const o of r.orders) {
+    if (o.test || !o.ledgerKey || ["cancelled", "declined"].includes(o.status) || !(named.get(ledgerKeyOf(o)) > 1)) continue;
+    const k = ledgerKeyOf(o), g = sums.get(k) || { n: 0, qty: 0, total: 0, delivery: 0, paid: 0, moved: 0, off: 0 };
+    for (const f of ["qty", "total", "delivery", "paid", "moved"]) g[f] += +o[f] || 0;
+    g.n++; if (o.writtenOff) g.off++;
+    sums.set(k, g);
+  }
   let orders = 0;
   for (const o of r.orders) {
     if (o.test || !o.ledgerKey || !ROWED_ON_SITE.concat(["cancelled", "declined"]).includes(o.status)) continue;
@@ -2067,18 +2109,20 @@ export async function tieOut(env, mirror, now = new Date()) {
     orders++;
     const diff = [];
     if (!row) diff.push("no row on the book under " + k);
-    else if (!ended && (named.get(k) || 0) > 1) diff.push("another order names its key, so the row is neither's");
     else if ((n.get(k) || 0) > 1) diff.push("two rows share its key, so neither is its");
     else {
+      const g = !ended ? sums.get(k) : null, fig = g || o, on = g ? "on its " + g.n + " orders" : "on the order";
+      const off = g ? (g.off === g.n ? true : g.off === 0 ? false : null) : !!o.writtenOff;
       if (!!row.cancelled !== ended) diff.push(row.cancelled ? "the row is cancelled and the order is " + o.status : "the order is " + o.status + " and its row is live");
       if (!ended) {
-        if (!!row.defaulted !== !!o.writtenOff) diff.push(row.defaulted ? "the row is written off and the order is not" : "the order is written off and its row is not");
-        if (Math.abs(f3(row.qty) - f3(o.qty)) > 0.0004) diff.push("units " + f3(o.qty) + " on the order, " + f3(row.qty) + " on the row");
-        if (Math.abs(f2(row.total) - f2(o.total)) > 0.004) diff.push("goods RM " + f2(o.total) + " on the order, RM " + f2(row.total) + " on the row");
-        if (!row.trip && Math.abs(f2(row.delivery) - f2(o.delivery)) > 0.004) diff.push("delivery RM " + f2(o.delivery) + " on the order, RM " + f2(row.delivery) + " on the row");
+        if (off === null) diff.push("some of the orders on its row are written off and some are not");
+        else if (!!row.defaulted !== off) diff.push(row.defaulted ? "the row is written off and the order is not" : "the order is written off and its row is not");
+        if (Math.abs(f3(row.qty) - f3(fig.qty)) > 0.0004) diff.push("units " + f3(fig.qty) + " " + on + ", " + f3(row.qty) + " on the row");
+        if (Math.abs(f2(row.total) - f2(fig.total)) > 0.004) diff.push("goods RM " + f2(fig.total) + " " + on + ", RM " + f2(row.total) + " on the row");
+        if (!row.trip && Math.abs(f2(row.delivery) - f2(fig.delivery)) > 0.004) diff.push("delivery RM " + f2(fig.delivery) + " " + on + ", RM " + f2(row.delivery) + " on the row");
         const paid = f2(POSITION_ENGINE.txPaid(row)), moved = rowOut(row);
-        if (Math.abs(paid - f2(o.paid)) > 0.004) diff.push("paid RM " + f2(o.paid) + " on the order, RM " + paid + " on the row");
-        if (Math.abs(moved - f3(o.moved)) > 0.0004) diff.push("handed over " + f3(o.moved) + " on the order, " + moved + " on the row");
+        if (Math.abs(paid - f2(fig.paid)) > 0.004) diff.push("paid RM " + f2(fig.paid) + " " + on + ", RM " + paid + " on the row");
+        if (Math.abs(moved - f3(fig.moved)) > 0.0004) diff.push("handed over " + f3(fig.moved) + " " + on + ", " + moved + " on the row");
       }
     }
     if (!diff.length) continue;

@@ -20,11 +20,10 @@
   {"name": "V7: money lowered on the book stays on the order", "file": "src/orders.js", "find": "if (sole && !fixWaits.has(o.id) && (paid < (+o.paid || 0) - 0.004 || moved < (+o.moved || 0) - 0.0004)) {", "replace": "if (false) {"},
   {"name": "V7: the order book refuses an agreed order the book's figures", "file": "stmt/orders.js", "find": "if (!ROWED.includes(order.status)) return { error: \"only an agreed order takes the book's figures whole\", status: 409 };", "replace": "if (order.status !== \"done\") return { error: \"only an agreed order takes the book's figures whole\", status: 409 };"},
   {"name": "V8: an offset on the row is not money on the order", "file": "src/orders.js", "find": "    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = rowOut(row);", "replace": "    const paid = +(+row.cash || 0).toFixed(2), moved = rowOut(row);"},
-  {"name": "V9: the tie-out reads no money", "file": "src/orders.js", "find": "if (Math.abs(paid - f2(o.paid)) > 0.004) diff.push(", "replace": "if (false) diff.push("},
+  {"name": "V9: the tie-out reads no money", "file": "src/orders.js", "find": "if (Math.abs(paid - f2(fig.paid)) > 0.004) diff.push(", "replace": "if (false) diff.push("},
   {"name": "V9: a stalled return leg is silent", "file": "src/orders.js", "find": "if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS)", "replace": "if (false)"},
   {"name": "V9: a stall is read at once", "file": "src/orders.js", "find": "const TIEOUT_STALL_MS = 15 * 60000;", "replace": "const TIEOUT_STALL_MS = -1;"},
   {"name": "Fable V9: two orders on one key both read the row", "file": "src/orders.js", "find": "    if (named.get(ledgerKeyOf(o)) > 1) continue;", "replace": ""},
-  {"name": "Fable V9: the tie-out does not see two orders on one key", "file": "src/orders.js", "find": "    else if (!ended && (named.get(k) || 0) > 1) diff.push(", "replace": "    else if (false) diff.push("},
   {"name": "Fable V9: the lowering branch skips what rose", "file": "src/orders.js", "find": "      /* nothing sent (a move of its own on its way): what rose on the book is still told, below (Fable's review) */\n    }", "replace": "      continue;\n    }"},
   {"name": "Fable V9: a refused pass is not kept", "file": "src/orders.js", "find": "if (failed.length) await env.SALT_QUEUE.put(TOLD_FAILED,", "replace": "if (false) await env.SALT_QUEUE.put(TOLD_FAILED,"},
   {"name": "Fable V9: a kept refusal never clears", "file": "src/orders.js", "find": "else await env.SALT_QUEUE.delete(TOLD_FAILED); } catch (e) {}", "replace": "} catch (e) {}"},
@@ -39,5 +38,11 @@
   {"name": "v1147: the tie-out names no stale yes", "file": "src/orders.js", "find": "    for (const y of old) faults.push(", "replace": "    for (const y of []) faults.push("},
   {"name": "v1147: goods past the size are capped too", "file": "engine/stages.mjs", "find": "return +(goods > qty + 0.0004 ? all : Math.min(qty, all)).toFixed(3);", "replace": "return +Math.min(qty, all).toFixed(3);"},
   {"name": "v1147: a queued yes ages out", "file": "src/orders.js", "find": "WHERE order_id=?1 AND status='waiting' AND (entry_at IS NOT NULL OR at > ?2) LIMIT 1", "replace": "WHERE order_id=?1 AND status='waiting' AND (at > ?2) LIMIT 1"},
-  {"name": "v1147: an old offer is a lost yes", "file": "src/orders.js", "find": "AND json_extract(shown,'$.offer') IS NULL AND at <= ?1", "replace": "AND at <= ?1"}
+  {"name": "v1147: an old offer is a lost yes", "file": "src/orders.js", "find": "AND json_extract(shown,'$.offer') IS NULL AND at <= ?1", "replace": "AND at <= ?1"},
+  {"name": "v1149: a shared row is never followed", "file": "src/orders.js", "find": "    if (os.length < 2 || !sharedOk(os, k, orders, idx)) continue;", "replace": "    if (true) continue;"},
+  {"name": "v1149: a shared row need not be their sum", "file": "src/orders.js", "find": "&& Math.abs(+r.qty - sum(\"qty\")) < 0.0005 && Math.abs(+r.total - sum(\"total\")) < 0.005", "replace": "&& Math.abs(+r.qty - sum(\"qty\")) < 0.0005"},
+  {"name": "v1149: the tie-out reads each order alone", "file": "src/orders.js", "find": "const g = !ended ? sums.get(k) : null, fig = g || o,", "replace": "const g = null, fig = g || o,"},
+  {"name": "v1149: the group's wants refuse it", "file": "src/orders.js", "find": "wants.get(nk) !== (shared ? groups.get(k).length : 1)", "replace": "wants.get(nk) !== 1"},
+  {"name": "v1149: a rejected pending row holds the group", "file": "src/orders.js", "find": "if (!a || !(a.landed || a.status === \"rejected\")) { landed = false; break; } }", "replace": "if (!a || !a.landed) { landed = false; break; } }"},
+  {"name": "v1149: a pending row on its way does not hold the group", "file": "src/orders.js", "find": "if (!a || !(a.landed || a.status === \"rejected\")) { landed = false; break; } }", "replace": "if (false) { landed = false; break; } }"}
 ]

@@ -49900,7 +49900,7 @@ await (async () => {
     await O.deskMove(senv, EH.u, EH.o.id, { mark: { ledgerKey: EG.key } });
     correct(EG.rid, { cash: 40 });
     const ofrT27 = await tellSite(denv), eg1 = await orderOf(EG.o.id), eh1 = await orderOf(EH.o.id), tieTwo = await tieOut(denv);
-    const twoOf = (id) => (tieTwo.faults || []).find((f) => f.order === id && f.what.some((w) => /another order names its key/.test(w)));
+    const twoOf = (id) => (tieTwo.faults || []).find((f) => f.order === id && f.what.some((w) => /units 2 on its 2 orders, 1 on the row/.test(w)));
     await O.deskMove(senv, EH.u, EH.o.id, { mark: { ledgerKey: EH.key } });
     reseed();
     const ofrT28 = await tellSite(denv), eg2 = await orderOf(EG.o.id);
@@ -49935,6 +49935,43 @@ await (async () => {
     const ejIn = (t, g) => (t[g] || []).find((f) => f.order === EJ.o.id);
     ok(ejIn(tieOn, "waiting") && !ejIn(tieOn, "faults") && ejIn(tieRej, "faults") && /rejected under Approve: tap Accept again/.test(ejIn(tieRej, "faults").what.join("; ")),
       tag + ", an order whose pending row is on its way waits, and one whose row he rejected is a difference naming the re-offer: " + J({ on: ejIn(tieOn, "waiting"), rej: ejIn(tieRej, "faults") }));
+    /* v1149 (s218 and s219): two orders of one account and day the book holds as ONE row of their sum, the key both name cancelled. Both take that row
+       together, are never cancelled by the dead key, and the tie-out reads the row as their sum */
+    const [shu, scode] = WHO[26];
+    const SA1 = await place(shu, { unit: 141, total: 141 }); await accept(SA1);
+    const SA2 = await place(shu, { unit: 143, total: 143 }), SA2ack = await accept(SA2);
+    let had = new Set(sales().map((x) => x.rid)); fold();
+    const pair = sales().filter((x) => !had.has(x.rid) && PE.ownerCode(x.customer) === scode);
+    setup(pair.length === 2, "both pending rows landed: " + J(pair.map((x) => x.rid)));
+    const k1 = (await orderOf(SA1.id)).ledgerKey;
+    await O.deskMove(senv, shu, SA2.id, { mark: { ledgerKey: k1 } });
+    const [ra, rb] = [pair.find((x) => +x.total === 141), pair.find((x) => +x.total === 143)];
+    db.prepare("UPDATE draft SET status='rejected', committed_at=NULL WHERE id=?").run(SA2ack);   /* as s218's pair: a pending row rejected, its row booked by hand */
+    ra.cancelled = true; putRow(ra); rb.qty = 2; rb.total = 284; putRow(rb); reseed();   /* a hand fold: one row of their sum, the other a cancelled stub */
+    const ofrT31 = await tellSite(denv), sa1 = await orderOf(SA1.id), sa2 = await orderOf(SA2.id), tieShare = await tieOut(denv);
+    const shareIn = (t) => (t.faults || []).concat(t.waiting || []).filter((f) => [SA1.id, SA2.id].includes(f.order));
+    ok(!ofrT31.failed && sa1.ledgerKey === PE.ovKey(rb) && sa2.ledgerKey === PE.ovKey(rb) && sa1.status !== "cancelled" && sa2.status !== "cancelled" && !shareIn(tieShare).length,
+      tag + ", two orders the book holds as one row of their sum take it together, are never cancelled by the dead key, and tie out as its sum: "
+      + J({ failed: ofrT31.failed, keys: [sa1.ledgerKey, sa2.ledgerKey, PE.ovKey(rb)], status: [sa1.status, sa2.status], tie: shareIn(tieShare) }));
+    /* and a row that is not their sum is never taken, and the tie-out names the difference */
+    rb.cash = 50; putRow(rb); reseed();
+    const tieOff = await tieOut(denv);
+    ok(shareIn(tieOff).length === 2 && shareIn(tieOff).every((f) => f.what.some((w) => /paid RM 0 on its 2 orders, RM 50 on the row/.test(w))),
+      tag + ", a shared row that is not its orders' sum is a difference on each, said as the sum: " + J(shareIn(tieOff)));
+    rb.cash = 0; putRow(rb); reseed();
+    /* a row of their size whose goods are not their sum is never taken */
+    await O.deskMove(senv, shu, SA1.id, { mark: { ledgerKey: k1 } }); await O.deskMove(senv, shu, SA2.id, { mark: { ledgerKey: k1 } });
+    rb.total = 290; putRow(rb); reseed();
+    await tellSite(denv);
+    const sa3 = await orderOf(SA1.id), sa4 = await orderOf(SA2.id);
+    ok(sa3.ledgerKey === k1 && sa4.ledgerKey === k1, tag + ", a row of their size whose goods are not their sum is never taken: " + J([sa3.ledgerKey, sa4.ledgerKey, PE.ovKey(rb)]));
+    rb.total = 284; putRow(rb); reseed();
+    /* and never while one of their pending rows is still on its way */
+    db.prepare("UPDATE draft SET status='pending', committed_at=NULL WHERE id=?").run(SA2ack); reseed();
+    await tellSite(denv);
+    const sa5 = await orderOf(SA1.id);
+    db.prepare("UPDATE draft SET status='rejected', committed_at=NULL WHERE id=?").run(SA2ack); reseed();
+    ok(sa5.ledgerKey === k1, tag + ", a group waits while one of its pending rows is on its way: " + J(sa5.ledgerKey));
     correct(EW.rid, { defaulted: false });
     const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
     ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));
