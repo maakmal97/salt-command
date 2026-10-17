@@ -60,5 +60,7 @@
  {"name": "a key derived to seal an envelope is extractable", "file": "stmt/owner.js", "find": "base,{name:'AES-GCM',length:256},false,['encrypt']);", "replace": "base,{name:'AES-GCM',length:256},true,['encrypt']);"},
  {"name": "the place form stops saying filing replaces what is on file", "file": "stmt/owner.js", "find": "+' Filing a new link replaces it.'", "replace": "+''"},
  {"name": "the place form stops naming the source of the filed point", "file": "stmt/owner.js", "find": "+(from?', from '+from:'')+(day?", "replace": "+(day?"},
- {"name": "the place form stops naming the day the point was filed", "file": "stmt/owner.js", "find": "+(day?', filed '+day:'')+'.';", "replace": "+'.';"}
+ {"name": "the place form stops naming the day the point was filed", "file": "stmt/owner.js", "find": "+(day?', filed '+day:'')+'.';", "replace": "+'.';"},
+ {"name": "a gazetteer place is refused at Add ID again", "file": "stmt/owner.js", "find": "for(var i=0;!said&&result.how==='list'&&i<parts.length;i++){", "replace": "for(var i=0;false;i++){"},
+ {"name": "a gazetteer locality the page verified is not public to the saved entry", "file": "stmt/owner.js", "find": "if(makerGeo.official().indexOf(word)>=0||makerVerifiedWords.has(word))return true;", "replace": "if(makerGeo.official().indexOf(word)>=0)return true;"}
 ]

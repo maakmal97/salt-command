@@ -219,6 +219,13 @@ export async function run({ ok, pageWork }) {
   ok(!!sentAdd && same(Object.keys(sentAdd.body), ["at", "code", "kind", "parent", "tiers", "vault"]) && sentAdd.body.code === "CZ10-TBC" && shape(sentAdd.body.vault)
     && !!addNames && addNames["CZ10-TBC"] === "Zed Tester (to be confirmed)" && addNames["CX1-ZED"] === fix.nameOf["CX1-ZED"] && !JSON.stringify(sentAdd.body).includes("Zed Tester"),
     "Add ID, on the held key, sends the short code and a sealed name map that opens to the held names and the new one, and no plaintext name: " + (sentAdd && Object.keys(sentAdd.body)));
+  /* 17 Oct 2026: a place off the official list that the gazetteer carries is filed with the wording the gazetteer matched; every such place was refused before,
+     first by the locality check and then by the saved entry's public word check, so no customer with one could be added */
+  type(byAct(f2.add, "record.add-id.name"), "Zed Tester"); type(byAct(f2.add, "record.add-id.place"), "Bandar Sungai Long, Mahkota Cheras");
+  await p.send(f2.add, "record.add-id.send");
+  const sentGaz = p.posts.filter((x) => /add-id$/.test(x.route)).at(-1), gazNames = sentGaz && sentGaz !== sentAdd && await openEnvelope(sentGaz.body.vault, PASS);
+  ok(!!gazNames && sentGaz.body.code === "CZ10-BSL" && same(sentGaz.body.geo, [3.05, 101.8, "Mahkota Cheras"]) && gazNames["CZ10-BSL"] === "Zed Tester (Bandar Sungai Long, Mahkota Cheras)",
+    "Add ID with a gazetteer place sends the point and the matched locality, the full wording only in the sealed names: " + (sentGaz ? JSON.stringify([sentGaz.body.code, sentGaz.body.geo]) : "") + " | " + f2.add.textContent.slice(-160));
 
   /* Place on the map: the rounded point comes out of the held places */
   type(partyOf, "CX1-ZED");

@@ -1860,8 +1860,19 @@ export const OWNER_JS = `
   }
       /* a locality is public when the official list carries it or this phone verified it (placeFromText) and kept the word */
       /* a filed locality is always an official place name, so a saved entry is checked against the bundled official names; no word is stored */
+      /* 17 Oct 2026: and a gazetteer locality this page verified (makerLocalityPoint, makerVerifySaved), held in memory only */
+      var makerVerifiedWords=new Set();
+      async function makerVerifySaved(){
+        try{
+          for(var key of Object.keys(localStorage)){
+            if(key.indexOf('saltMakerPending:')!==0)continue;
+            var body=(JSON.parse(localStorage.getItem(key))||{}).body||{}, word=Array.isArray(body.geo)?body.geo[2]:null;
+            if(typeof word==='string'&&!makerVerifiedWords.has(word)){var found=await makerGeo.find(word);if(found.how==='list'&&found.point)makerVerifiedWords.add(word);}
+          }
+        }catch(e){}
+      }
       function makerPublicWord(word){
-        if(makerGeo.official().indexOf(word)>=0)return true;
+        if(makerGeo.official().indexOf(word)>=0||makerVerifiedWords.has(word))return true;
         var found=false;makerGeo.picks().forEach(function(point,label){if(label.split(',')[0].trim()===word)found=true;});
         return found;
       }
@@ -2110,13 +2121,20 @@ export const OWNER_JS = `
     var result=picked?{point:picked}:await makerGeo.find(value);
     if(!result.point)throw new Error(result.how==='ambiguous'
       ?'That place matches more than one. Choose its district from the list.'
-      :'That place is not on the list. Place it on the Desk first.');
+      :'That place is not on the list. Add its area after a comma, or leave it blank.');
     /* the point travels with its locality, the Desk's own geoWhere: a point is never filed without the words before the place's first comma */
     var parts=value.split(',').map(function(w){return w.trim();}).filter(Boolean), official=new Set();
     makerGeo.picks().forEach(function(point,label){official.add(label.split(',')[0].trim());});
     if(result.name)official.add(result.name);
     var said=parts.find(function(w){return official.has(w);})||(result.how==='area'&&result.name?result.name:'');
+    /* 17 Oct 2026: a place found on the gazetteer files the part of the wording the gazetteer itself carries, as the Worker's
+       officialVaultPoint accepts; before this every unlisted place was refused here, so no new customer could be added with one */
+    for(var i=0;!said&&result.how==='list'&&i<parts.length;i++){
+      var alone=await makerGeo.find(parts[i]);
+      if(alone.how==='list'&&alone.point&&alone.point[0]===result.point[0]&&alone.point[1]===result.point[1])said=parts[i];
+    }
     if(!said)throw new Error('That place has no locality to file with its point. Choose it from the list.');
+    makerVerifiedWords.add(said);
     var where=makerGeo.where(result.point.map(function(number){return Math.round(number*100)/100;}),said);
     if(where.length!==3)throw new Error('That place has no locality to file with its point. Choose it from the list.');
     return where;
@@ -3606,6 +3624,7 @@ export const OWNER_JS = `
     try{
       makerCashRestore();
       var reading=await refs('/all/maker/review');
+      await makerVerifySaved();
       if(gen!==makerGen) return;
       nGot('review');
       if(!changed('review', reading)&&poll) return;
