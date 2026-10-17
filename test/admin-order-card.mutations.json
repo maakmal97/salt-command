@@ -62,13 +62,13 @@
  {
   "name": "Decline stands in the body of the card",
   "file": "stmt/owner.js",
-  "find": "      var dec=makerButton(acts,['Decline','order.decline'],function(){",
+  "find": "      var dec=makerButton(tail,['Decline','order.decline'],function(){",
   "replace": "      var dec=makerButton(card,['Decline','order.decline'],function(){"
  },
  {
   "name": "Cancel order stands in the body of the card",
   "file": "stmt/owner.js",
-  "find": "      var can=makerButton(acts,['Cancel','order.cancel'],function(){",
+  "find": "      var can=makerButton(tail,['Cancel','order.cancel'],function(){",
   "replace": "      var can=makerButton(card,['Cancel','order.cancel'],function(){"
  },
  {

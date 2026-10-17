@@ -62,8 +62,8 @@
  {
   "name": "every tab of the place is marked",
   "file": "stmt/owner.js",
-  "find": "&&b.getAttribute('data-part')===partNow?'true':'false'",
-  "replace": "&&true?'true':'false'"
+  "find": "&&b.getAttribute('data-part')===partNow;",
+  "replace": "&&true;"
  },
  {
   "name": "the place left is still marked",
