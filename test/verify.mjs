@@ -13315,7 +13315,8 @@ await (async () => {
 
   /* AND NOTHING ELSE MOVED: the ids are the addresses, so every /desk#tab link still lands.
      A rename that took an id with it would pass every assertion above. */
-  for (const id of ["today", "money", "stock", "price", "people", "book", "enter"]) {
+  /* 17 Oct 2026: Enter left the rail (his word); #enter stays an address, asserted on the cloud desk under S1 1.12 */
+  for (const id of ["today", "money", "stock", "price", "people", "book"]) {
     ok(new RegExp('data-s="' + id + '"').test(nav), `#${id} is still a tab in the rail`);
   }
   const viewsSrc = masterRail.slice(masterRail.indexOf("const VIEWS=["), masterRail.indexOf("const VIEW_OF="));
@@ -14849,15 +14850,15 @@ await (async () => {
   try {
     const order = rd22("VIEWS.map(function(v){return v.id+':'+v.name;})");
     const railOrder = [...nav22.matchAll(/<button class="tab[^"]*" data-s="([a-z]+)">([^<]+)</g)].map((x) => x[1] + ":" + x[2]);
-    ok(order.length === 7 && railOrder.join(" ") === order.join(" "), "the rail lists the seven destinations VIEWS names, in its order: " + railOrder.join(" "));
+    ok(order.length === 6 && railOrder.join(" ") === order.join(" "), "the rail lists the six destinations VIEWS names, in its order: " + railOrder.join(" "));
     const look = (view) => rd22("(function(){switchTab('" + view + "');var t=document.querySelector('.rail .tab[data-s=\"" + view + "\"]'),d=t&&t.nextElementSibling;"
       + "var sec=document.getElementById('sec-" + view + "'),h=sec&&sec.querySelector('h1');"
       + "return {solo:!!t&&t.classList.contains('solo'),subs:(d&&d.classList.contains('subs'))?[].map.call(d.querySelectorAll('.sub'),function(b){return b.textContent;}):null,"
       + "pills:sec?[].map.call(sec.querySelectorAll('.vpill'),function(b){return b.textContent;}):[],h1:h?h.textContent:null,"
       + "allSolo:[].map.call(document.querySelectorAll('.rail .tab.solo'),function(x){return x.dataset.s;})};})()");
     const money = look("money");
-    ok(!money.solo && JSON.stringify(money.subs) === '["Receivables","Financials"]' && JSON.stringify(money.pills) === '["Receivables","Financials"]' && money.h1 === "Receivables",
-      "the Order book lists Receivables and Financials beneath it and across its page, and opens on a page headed Receivables: " + JSON.stringify(money));
+    ok(!money.solo && JSON.stringify(money.subs) === '["Receivables","Financials","Site orders","Approve"]' && JSON.stringify(money.pills) === '["Receivables","Financials","Site orders","Approve"]' && money.h1 === "Receivables",
+      "the Order book lists Receivables, Financials, Site orders and Approve (Enter's two since 17 Oct 2026) beneath it and across its page, and opens on a page headed Receivables: " + JSON.stringify(money));
     const price = look("price");
     ok(price.solo && price.subs === null && price.pills.length === 0, "Pricing, with one page, lists nothing under itself and draws its own block: " + JSON.stringify(price));
     ok(JSON.stringify(price.allSolo) === '["price"]', "and it is the only destination that does: " + JSON.stringify(price.allSolo));
@@ -39085,19 +39086,33 @@ await (async () => {
     await new Promise((r) => setTimeout(r, 100));
     return { w, asked };
   };
-  const badge = (w, s) => { const b = w.document.querySelector('.tab[data-s="' + s + '"] .navct'); return b ? b.textContent : ""; };
+  const badge = (w, s) => { const b = w.document.querySelector('.tab[data-s="' + s + '"] .navct:not(.navwait)'); return b ? b.textContent : ""; };
+  const waitBadge = (w) => { const b = w.document.querySelector('.tab[data-s="money"] .navwait'); return b ? b.textContent : ""; };
   let open = [];
   try {
     const a = await cold("today", "k-fixture"); open.push(a.w);
     ok(a.w.SALT_CLOUD === true && a.asked.includes("orders") && a.asked.includes("drafts?status=pending"),
       "a cold open reads the orders and the drafts once the ping says it is the cloud desk: " + JSON.stringify(a.asked));
-    ok(badge(a.w, "enter") === "1", "the Enter badge counts the order placed on the site: " + JSON.stringify(badge(a.w, "enter")));
+    ok(waitBadge(a.w) === "1", "Order book's waiting chip counts the order placed on the site: " + JSON.stringify(waitBadge(a.w)));
+    /* 17 Oct 2026, his word: Enter left the desk. Its parts read under Order book and Today, the restock date on Stock */
+    ok(!a.w.document.querySelector('.tab[data-s="enter"]') && !a.w.document.getElementById("sec-enter"),
+      "the rail carries no Enter and the page no Enter section");
+    const moved = JSON.parse(a.w.eval("JSON.stringify({orders:VIEW_OF.orders,approve:VIEW_OF.approve,plans:VIEW_OF.plans,add:VIEW_OF.add})"));
+    ok(JSON.stringify(moved) === '{"orders":"money","approve":"money","plans":"today","add":"today"}',
+      "Waiting on you and Approve read under Order book, Plans and Entries under Today: " + JSON.stringify(moved));
+    a.w.eval("switchTab('inventory')"); await new Promise((r) => setTimeout(r, 50));
+    const expStock = !!a.w.document.querySelector("#sec-stock #expFold");
+    a.w.eval("switchTab('orders')"); await new Promise((r) => setTimeout(r, 50));
+    ok(expStock && !a.w.document.querySelector("#sec-money #expFold") && !!a.w.document.getElementById("ordBox"), "the restock date is on Stock and no longer under Waiting on you: " + JSON.stringify({ expStock }));
     const now = Number(a.w.eval("allActions().filter(function(x){return x.sev==='now';}).length"));
     const hasRow = a.w.eval("actions().some(function(x){return x.kind==='orders';})") === true;
     ok(hasRow && badge(a.w, "today") === String(now),
       "and Today's count, with Site orders not on screen, is the Now list that carries it: " + JSON.stringify({ badge: badge(a.w, "today"), now, hasRow }));
 
     const b = await cold("orders", "k-fixture"); open.push(b.w);
+    const e = await cold("enter", "k-fixture"); open.push(e.w);
+    const landed = JSON.parse(e.w.eval("JSON.stringify([curTab,curAddr,location.hash])"));
+    ok(JSON.stringify(landed) === '["money","orders","#orders"]', "an old #enter address lands on Waiting on you under Order book: " + JSON.stringify(landed));
 
     const c = await cold("today", ""); open.push(c.w);
     await new Promise((r) => setTimeout(r, 200));
@@ -39197,7 +39212,7 @@ await (async () => {
     wakeUp({ salt: "wake" }); await nap(1000); wakeUp({ salt: "wake" });
     await nap(Number(w.SALT_WAKE_MS) + 800); await settle();
     const burst = reads(), box1 = w.document.getElementById("apBox");
-    const badge = (w.document.querySelector('.tab[data-s="enter"] .navct') || {}).textContent || "";
+    const badge = (w.document.querySelector('.tab[data-s="money"] .navwait') || {}).textContent || "";
     ok(JSON.stringify(burst) === '{"rev":1,"drafts":1,"orders":1}' && !!box1 && /data-id="d1"/.test(box1.innerHTML)
       && /CC9-OKR/.test(box1.innerHTML) && badge === "1",
       "a push wakes the open desk: one refresh for a burst reads the build, the drafts and the orders once each, the row "
@@ -46321,8 +46336,8 @@ await (async () => {
   ok(tagsR > 30 && nR(bodyR, /class="tag salt-status(?=[" ])/g) === tagsR, "every state tag is the system's chip (" + tagsR + ")");
   ok(!/\n\.tag\{/.test(dR) && /\.tag\.paid\{--salt-status-tone:var\(--salt-verdigris\);\}/.test(dR) && /\.salt-status \{[^}]*color: var\(--salt-status-tone\)/.test(sR),
     "the layer binds the desk's words to the chip's one tone variable and states no chip of its own");
-  ok(/<nav class="rail salt-rail" id="tabs"/.test(bodyR) && nR(bodyR, /class="tab(?: on)? salt-rail__tab" data-s="/g) === 7 && /d\.className='subs salt-rail__parts'/.test(mR) && /class="sub salt-rail__part\$\{/.test(mR),
-    "the rail, its seven destinations and their parts are the system's");
+  ok(/<nav class="rail salt-rail" id="tabs"/.test(bodyR) && nR(bodyR, /class="tab(?: on)? salt-rail__tab" data-s="/g) === 6 && /d\.className='subs salt-rail__parts'/.test(mR) && /class="sub salt-rail__part\$\{/.test(mR),
+    "the rail, its six destinations and their parts are the system's");
   ok(/t\.setAttribute\('aria-current',on\?'page':'false'\)/.test(mR) && /\.salt-rail__tab\[aria-current="page"\]/.test(sR) && /t\.classList\.toggle\('salt-rail__tab--solo',solo\)/.test(mR),
     "the open destination is read from aria-current, and a lone one closes its own block");
   ok(!/\n\.rail\{/.test(dR) && !/\n\.tab\{/.test(dR) && !/\n\.tab\.on\{/.test(dR) && !/\.subs \.sub\{/.test(dR) && /\.sub:not\(\.salt-rail__part\)\{/.test(dR),
@@ -53174,7 +53189,7 @@ await (async () => {
     ok(rows().length === 0, "and nothing is asked before the dates have been read");
     /* the card and its calls */
     w.eval("EXPECTED_READ=true;EXPECTED={};");
-    ok(/id="expFold"/.test(w.eval("tabOrders()")), "Enter carries the Restock date card");
+    ok(/id="expFold"/.test(w.eval("invHead()")) && !/id="expFold"/.test(w.eval("tabOrders()")), "Stock carries the Restock date card, and Waiting on you no longer does");
     w.document.body.insertAdjacentHTML("beforeend", '<details id="expFold"><summary><span id="expN"></span><span id="expHead"></span></summary><div id="expRows"></div><div id="expMsg"></div></details>');
     const sent = [];
     w.fetch = async (q, init) => { sent.push([String(q), (init && init.method) || "GET", init && init.body ? JSON.parse(init.body) : null]);

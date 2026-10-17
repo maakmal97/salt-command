@@ -64,7 +64,8 @@ export async function run({ ok }) {
       for (const part of parts) {
         w.eval("switchTab(" + JSON.stringify(part) + ")");
         await settle(); await settle();
-        if (part === "orders") { w.eval("expDraw();ordDraw();"); }
+        if (part === "orders") { w.eval("ordDraw();"); }
+        if (part === "inventory") { w.eval("expDraw();"); }
         const scope = D.body;
         const controls = [...scope.querySelectorAll("button, a[onclick], [onclick], summary")].filter((e) => !e.closest("#queueBox") && !e.closest(".rail") && !e.closest("#tabs") && !e.closest(".vnav"));
         for (const e of controls) {
@@ -96,7 +97,7 @@ export async function run({ ok }) {
 
     /* ---- the writes the Desk keeps still work ---- */
     posts.length = 0;
-    w.eval("switchTab('orders')"); await settle(); await settle();
+    w.eval("switchTab('inventory')"); await settle(); await settle();   /* the restock date is on Stock since 17 Oct 2026 */
     w.eval("expDraw()");
     const inp = D.getElementById("exp_salt");
     if (inp) inp.value = "2099-12-31";

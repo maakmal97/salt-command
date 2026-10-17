@@ -4502,7 +4502,6 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
       <button class="tab salt-rail__tab" data-s="price">Pricing</button>
       <button class="tab salt-rail__tab" data-s="people">Network</button>
       <button class="tab salt-rail__tab" data-s="book">Record</button>
-      <button class="tab salt-rail__tab" data-s="enter">Enter</button>
     </div>
     <div class="railfoot salt-rail__foot">
     </div>
@@ -4527,7 +4526,6 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
     <div class="sec" id="sec-price"></div>
     <div class="sec" id="sec-people"></div>
     <div class="sec" id="sec-book"></div>
-    <div class="sec" id="sec-enter"></div>
   </main>
 </div>
 </div>
@@ -13884,7 +13882,11 @@ function restockCard(){
 }
 /* ============ TAB: INVENTORY & MARGIN ============ */
 function invHead(){return `<h1>On hand</h1>
-  <div class="dsc dsclead">What to restock, what is on the inventory, what it cost, and how long it lasts.</div>`;}
+  <div class="dsc dsclead">What to restock, what is on the inventory, what it cost, and how long it lasts.</div>`
+  /* 17 Oct 2026: the restock date came here from Enter; only the cloud desk reaches /expected */
+  +(cloudMode()?`<details class="salt-plan ordnote" id="expFold"><summary><span class="salt-plan__id" id="expN">&middot;</span><span class="salt-plan__title" id="expHead">Restock date</span></summary>
+  <div class="salt-plan__body" id="expCard"><div class="dsc">The day the next lot is expected, per book. Customers see it as More by while the light is yellow or red.</div><div id="expRows" style="margin-top:6px">Reading it.</div>
+    <div class="dsc" id="expMsg" style="margin-top:6px"></div></div></details>`:'');}
 function tabInventory(){
   /* v365: openingFor(PROD), not the bare `opening` (Salt's alone). The KPI above these
      tables already used the product-aware helper, which is why it was right while these
@@ -17931,8 +17933,9 @@ const qTx=()=>queue.filter(q=>!(q.payload&&(q.payload.mode==='plan'||q.payload.m
    that row, so it is counted once, as the row. */
 const enterCount=()=>{const acts=ordActs(),behind=new Set();acts.forEach(a=>(a.drafts||[]).forEach(id=>behind.add(id)));
   return new Set(qTx().map(q=>q.at).concat(AP_DRAFTS.map(d=>d.id).filter(id=>!behind.has(id)))).size+acts.length;};
-function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if(!b)return;
-  let c=b.querySelector('.navct');const n=enterCount();
+/* 17 Oct 2026: Enter left the desk, so its count rides on Order book as a second chip, .navwait, after the open positions */
+function apBadge(){try{const b=document.querySelector('.tab[data-s="money"]');if(!b)return;
+  let c=b.querySelector('.navwait');const n=enterCount();
   /* v385: AND WHERE THE DRAFTS COULD NOT BE READ THE BADGE SAYS SO RATHER THAN COUNTING THEM
      AS NONE. This is the half of the failed read that is visible when Approve is NOT the part
      on screen, which is most of the time, so it is the half that matters more. "3?" means at
@@ -17940,15 +17943,15 @@ function apBadge(){try{const b=document.querySelector('.tab[data-s="enter"]');if
      it in words, because a punctuation mark is not a signal on its own. */
   const unread=cloudMode()&&(apNeedKey||!!apUnread);
   if(!n&&!unread){if(c)c.remove();return;}
-  if(!c){c=document.createElement('span');c.className='navct salt-rail__count';b.appendChild(c);}
+  if(!c){c=document.createElement('span');c.className='navct salt-rail__count navwait';b.appendChild(c);}
   c.textContent=unread?(n?n+'?':'?'):n;
-  c.title=unread?'The drafts could not be read, so this count is a floor and not a total.':'';
+  c.title=unread?'The drafts could not be read, so this count is a floor and not a total.':'Waiting on you, decided on Counter Admin';
 }catch(e){
   /* v385: NOT SWALLOWED. There is no element to paint a notice into, this being the rail and not
      a part, so the console is all that is left; but a badge that throws leaves the LAST count
      standing, and a stale count on the one chip that says how much is waiting is a worse lie
      than no chip at all. Named so it can be found. */
-  try{console.error('apBadge: the Enter count could not be drawn, so the chip may be stale',e);}catch(_){}
+  try{console.error('apBadge: the waiting count could not be drawn, so the chip may be stale',e);}catch(_){}
 }}
 function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
   const txq=qTx();
@@ -19385,9 +19388,6 @@ function tabOrders(){
   <div class="salt-plan__body" id="bullCard"><div class="dsc">A still card on Home in Salt Counter, for everyone who opens it.</div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
     <div class="dsc" style="margin-top:6px">Set and cleared on Counter Admin.</div></div></details>
-  <details class="salt-plan ordnote" id="expFold"><summary><span class="salt-plan__id" id="expN">&middot;</span><span class="salt-plan__title" id="expHead">Restock date</span></summary>
-  <div class="salt-plan__body" id="expCard"><div class="dsc">The day the next lot is expected, per book. Customers see it as More by while the light is yellow or red.</div><div id="expRows" style="margin-top:6px">Reading it.</div>
-    <div class="dsc" id="expMsg" style="margin-top:6px"></div></div></details>
   <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>`;
 }
 /* v763, his instruction of 21 Sep 2026: a CLOSED order can be opened. The card has shown the open
@@ -22274,15 +22274,19 @@ const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProdu
    work as addresses and as links: switchTab maps them to the view that holds them and opens
    the fold, so nothing that pointed at a tab has to change. */
 const VIEWS=[
-  {id:'today', name:'Today',            lead:'today',         parts:['overview','forward']},
-  {id:'money', name:'Order book',       lead:'receivables',   parts:['financials']},
+  {id:'today', name:'Today',            lead:'today',         parts:['overview','forward','plans','add']},
+  {id:'money', name:'Order book',       lead:'receivables',   parts:['financials','orders','approve']},
   {id:'stock', name:'Stock',            lead:'inventory',     parts:['sourcing']},
   {id:'price', name:'Pricing',          lead:'pricing',       parts:[]},
   {id:'people',name:'Network',          lead:'concentration', parts:['network','map']},
-  {id:'book',  name:'Record',           lead:'ledger',        parts:['analysis']},   /* v802: the Journal left the desk, his word of 23 Sep 2026: master/changelog.json is the reference */   /* v747: the ID stays 'book', so every /desk#book address still lands */
-  {id:'enter', name:'Enter',            lead:'orders',        parts:['approve','plans','add']}
+  {id:'book',  name:'Record',           lead:'ledger',        parts:['analysis']}   /* v802: the Journal left the desk, his word of 23 Sep 2026: master/changelog.json is the reference */   /* v747: the ID stays 'book', so every /desk#book address still lands */
 ];
+/* 17 OCT 2026, HIS WORD: ENTER LEFT THE DESK. Since #62 every move is on Counter Admin, so what Enter held reads under the
+   views it belongs to: Waiting on you and Approve under Order book, Plans and Entries under Today, the restock date on Stock.
+   #enter is still an address: it lands on Waiting on you. */
+const VIEW_ALIAS={enter:'orders'};
 const VIEW_OF={}; VIEWS.forEach(v=>{VIEW_OF[v.id]=v.id;VIEW_OF[v.lead]=v.id;v.parts.forEach(p=>{VIEW_OF[p]=v.id;});});
+Object.keys(VIEW_ALIAS).forEach(a=>{VIEW_OF[a]=VIEW_OF[VIEW_ALIAS[a]];});
 const PART_Q={today:'what needs doing, ranked by the money at stake',
   overview:'every rule the desk trades by, and the register of what is breached',
   forward:'the next thirty days of inventory and cash, day by day',
@@ -22301,13 +22305,13 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   orders:'what customers ordered on the statements site, where each order stands, and their Chat',
   plans:'what the desk noticed, from the book on this load'};
 /* the chart and wiring passes each tab needs after its HTML is in the document */
-const PART_DRAW={inventory:()=>drawPerProduct([trackCharts]),
+const PART_DRAW={inventory:()=>{drawPerProduct([trackCharts]);expLoad();},
   pricing:()=>{drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]);pbWire();},
   today:()=>drawTodayCharts(), concentration:()=>drawConcCharts(),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
-  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();expLoad();}, plans:()=>hushLoad()};
+  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();}, plans:()=>hushLoad()};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
    remove it everywhere. There were TWO of these on every part, which is most of why it read
    as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
@@ -22423,9 +22427,9 @@ function navCounts(){
   // live counts on the rail: open+pending positions, queued entries; fold 5 keeps the two figures it computes (railCounts)
   const rc=railCounts();
   const put=(sel,n)=>{const b=document.querySelector('.tab[data-s="'+sel+'"]');if(!b)return;
-    let c=b.querySelector('.navct');
+    let c=b.querySelector('.navct:not(.navwait)');
     if(!n){if(c)c.remove();return;}
-    if(!c){c=document.createElement('span');c.className='navct salt-rail__count';b.appendChild(c);}
+    if(!c){c=document.createElement('span');c.className='navct salt-rail__count';b.insertBefore(c,b.querySelector('.navwait'));}
     c.textContent=n;};
   put('money',rc.open);
   /* v385: the Enter badge has ONE writer, and it is not this one. planN was computed here
@@ -22512,6 +22516,7 @@ function renderNow(){recompute();
 function switchTab(s){
   /* v341: an old tab id is an address into a view. v343: the view shows that part, and the
      view's own button takes it back to its lead. */
+  s=VIEW_ALIAS[s]||s;
   const view=VIEW_OF[s]||'today', V=VIEWS.find(v=>v.id===view);
   VIEW_PART[view]=(view!==s)?s:V.lead;
   curTab=view;document.body.setAttribute('data-sec',view);[...document.querySelectorAll('.tab')].forEach(t=>{const on=t.dataset.s===view;t.classList.toggle('on',on);t.setAttribute('aria-current',on?'page':'false');});[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+view));render();
