@@ -547,6 +547,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 12 OCT 2026 (PHASE 4a): the few, fixed choices of a form are the system's Option tiles (stmt/owner.js, makerTiles), a fieldset whose legend is the field's label.
    The recipe sets the tile, its 44px and its chosen edge; the page only gives the group the row to itself in a row of fields. */
 .adm .maker-tiles{flex:1 1 100%;min-width:0}
+.adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.adm .maker-marks .salt-option__face{justify-content:center}
 .adm .maker-sizes{flex:1 1 100%;min-width:0}
 .adm .maker-sizes .salt-options__grid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
 .adm .maker-cover{display:flex;align-items:center;gap:10px;min-height:44px}

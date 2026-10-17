@@ -2034,7 +2034,9 @@ export const OWNER_JS = `
     set.fill=function(list){
       var on=set.querySelector('input:checked'), kept=on?on.value:null, offered=list.some(function(item){ return String(item.value)===kept; });
       grid.textContent='';
-      grid.className='salt-options__grid'+(list.length!==3&&list.every(function(item){ return String(item.label).length<=14; })?' salt-options__grid--2':'');
+      /* tiles that are marks alone (the books) sit compact and centred, never a wide box with a mark in its corner */
+      grid.className='salt-options__grid'+(list.length&&list.every(function(item){ return item.mark; })?' maker-marks'
+        :list.length!==3&&list.every(function(item){ return String(item.label).length<=14; })?' salt-options__grid--2':'');
       list.forEach(function(item,i){
         var lab=el('label','salt-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face');
         radio.type='radio'; radio.name=name; radio.value=String(item.value);
@@ -3497,6 +3499,7 @@ export const OWNER_JS = `
         var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));
         var driftValue=makerField(driftSection,['Drift, -1 to +1','record.drift.value'],'number','','0.05');
         driftValue.min='-1'; driftValue.max='1';
+        driftValue.removeAttribute('inputmode');   /* an iPhone's decimal pad has no minus key; its number keyboard does */
         var driftState=el('p','msg'); driftSection.appendChild(driftState);
         var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
         var driftPending=false, driftAt=null, driftSignature='';

@@ -122,10 +122,19 @@ export async function run({ ok, pageWork }) {
     ok(books.length >= 8 && books.every((r) => !r.nextElementSibling.querySelector(".salt-option__label") && /^(Cube|Droplet|Lozenge|Capsule|Ring)$/.test(r.nextElementSibling.querySelector(".sr").textContent)
       && r.nextElementSibling.textContent.replace(r.nextElementSibling.querySelector(".sr").textContent, "").replace(/[A-Z]/g, "").trim() === ""),
     "a book's tile is its mark alone: no label, no word for the book, the shape told to a reader (" + books.length + " tiles)");
+    const markGrids = new Set(books.map((r) => r.closest(".salt-options__grid")));
+    ok([...markGrids].every((g) => g.classList.contains("maker-marks") && !g.classList.contains("salt-options__grid--2"))
+      && radios.filter((r) => r.closest(".maker-marks")).every((r) => r.nextElementSibling.querySelector("svg.psym")),
+    "a group of marks alone is laid compact (maker-marks), never two wide boxes across with a mark in a corner, and only marks are: " + markGrids.size + " groups");
+    const driftField = byAct(p.d, "record.drift.value");
+    ok(driftField && driftField.min === "-1" && driftField.max === "1" && !driftField.hasAttribute("inputmode"),
+      "the drift field takes a minus: from -1, and no decimal pad (an iPhone's has no minus key)");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.salt-option__face\s*\{[^}]*min-height:\s*var\(--salt-tap\)/.test(css) && /--salt-tap:\s*44px/.test(css)
       && /\.salt-option__input\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/.test(css),
     "the recipe makes the face 44px high and lays the radio over the whole tile, so a tile is 44px in both dimensions and the tile is the hit area");
+    ok(/\.adm \.maker-marks\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(88px,\s*1fr\)\)/.test(css) && /\.adm \.maker-marks \.salt-option__face\s*\{[^}]*justify-content:\s*center/.test(css),
+      "a group of marks lays tiles 88px and over, as many as fit, each mark centred in its tile");
     ok(/\.adm \.maker-tiles\s*\{[^}]*flex:\s*1 1 100%[^}]*min-width:\s*0/.test(css),
       "a group fills the row of its form's flex layout and may shrink, so its tiles wrap inside a narrow pane instead of widening it");
     const group = tileGroup(p.form("Sale or purchase"), "Handover");

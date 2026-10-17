@@ -310,5 +310,29 @@
   "file": "stmt/owner.js",
   "find": "if(item.mark) face.appendChild(bookMark(item.mark,28)); else face.appendChild(el('span','salt-option__label',item.label));",
   "replace": "face.appendChild(el('span','salt-option__label',item.label));"
+ },
+ {
+  "name": "a group of marks is two wide boxes across",
+  "file": "stmt/owner.js",
+  "find": "return item.mark; })?' maker-marks'",
+  "replace": "return item.mark; })?' salt-options__grid--2'"
+ },
+ {
+  "name": "a group of marks has no compact grid",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-marks{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}",
+  "replace": ".adm .maker-marks{grid-template-columns:repeat(2,minmax(0,1fr))}"
+ },
+ {
+  "name": "a mark sits in its tile's corner",
+  "file": "stmt/page.js",
+  "find": ".adm .maker-marks .salt-option__face{justify-content:center}",
+  "replace": ".adm .maker-marks .salt-option__face{justify-content:flex-start}"
+ },
+ {
+  "name": "the drift field keeps the decimal pad",
+  "file": "stmt/owner.js",
+  "find": "        driftValue.removeAttribute('inputmode');",
+  "replace": ""
  }
 ]
