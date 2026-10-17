@@ -20,7 +20,7 @@
 import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck } from "./drafter.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerTierAcceptAll, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerUndo, makerRows, openRefunds } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
@@ -712,12 +712,18 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
   }
   if (p === "/_internal/maker/ledger") {
     /* Counter Admin's mini ledger: Open, Pending and the latest orders, read off the mirror and priced by nothing here */
-    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    if (m !== "GET" && m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     if (!env.SALT_LEDGER) return json({ ok: false, error: "the Desk mirror is required" }, 503);
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "the mirror is being seeded" }, 503);
     const ledger = makerLedgerMini(book);
-    return ledger.error ? json({ ok: false, error: ledger.error }, 503) : json({ ok: true, version: book.version, ...ledger });
+    /* 17 Oct 2026: the tie-out the minute pass kept, read as it is; a POST (Check now) makes a fresh one and keeps it in its place */
+    let tieout = null;
+    try {
+      tieout = m === "POST" ? await tieOut(env) : await env.SALT_QUEUE.get(TIEOUT_KEY, "json");
+      if (m === "POST" && tieout) await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tieout));
+    } catch (e) { tieout = { ok: false, error: "the tie-out could not be read" }; }
+    return ledger.error ? json({ ok: false, error: ledger.error }, 503) : json({ ok: true, version: book.version, ...ledger, tieout });
   }
   if (p === "/_internal/maker/drafts") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -2359,6 +2365,17 @@ export default {
           const ts = await tellSite(env, undefined, mirror);
           if (!ts.ok || ts.told || ts.followed || ts.fixed || ts.refused || ts.waiting || ts.failed) console.log("orders return leg: " + JSON.stringify(ts));
         } catch (e) { console.log("orders return leg FAILED: " + String((e && e.stack) || e)); }
+        /* 17 Oct 2026, HIS FLOW: THE TIE-OUT, after each version the book moves to and every six hours, kept for Counter Admin's Ledger */
+        try {
+          const last = await env.SALT_QUEUE.get(TIEOUT_KEY, "json");
+          const snapV = await env.SALT_LEDGER.prepare("SELECT v FROM snapshot WHERE one=1").first();
+          const due = !last || !last.ok || (snapV && last.v !== snapV.v) || Date.now() - Date.parse(last.at || 0) > 6 * 3600000;
+          if (due) {
+            const tie = await tieOut(env, mirror);
+            await env.SALT_QUEUE.put(TIEOUT_KEY, JSON.stringify(tie));
+            if (!tie.ok || !tie.clean) console.log("orders tie-out: " + JSON.stringify(tie));
+          }
+        } catch (e) { console.log("orders tie-out FAILED: " + String((e && e.stack) || e)); }
         /* fold 5.6: ONE READ OF THE SITE for the nudge and the reconcile together (tickRead), after the return
            leg so the owed orders are read as it left them. Failed or unread, each step asks for its own. */
         let read = null;

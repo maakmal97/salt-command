@@ -443,6 +443,8 @@ export async function auditStates({ pageWork }) {
     states.push(["a row of the book with goods out", actAudit(t.d)]);
     await t.click(byAct(t.d, "part.orders.ready")); t.card(part.id); await t.work.quiet();
     states.push(["a site order with goods out", actAudit(t.d)]);
+    await t.click(byAct(t.d, "part.orders.ledger")); await t.work.quiet();
+    states.push(["the Ledger with its tie-out", actAudit(t.d)]);
     await t.click(byAct(t.d, "part.orders.done"));
     states.push(["Completed, paged", actAudit(t.d)]);
   } finally { t.w.close(); }

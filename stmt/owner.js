@@ -1587,8 +1587,30 @@ export const OWNER_JS = `
     var j;
     try{ j=await refs('/all/maker/ledger'); }catch(error){ refusal(status,error); return; }
     if(!status.isConnected||placeNow!=='orders'||partNow!=='ledger') return;
-    status.textContent='The folded book: '+j.orders+(j.orders===1?' order':' orders')+'. A site order not yet on the book is under Placed.';
+    status.textContent='The folded book: '+j.orders+(j.orders===1?' order':' orders')+'. A site order not yet on the book is under Received.';
     drawLedger(j);
+    drawTieout(j.tieout);
+  }
+  /* 17 Oct 2026, HIS FLOW: THE TIE-OUT. Every site order against its row, read by the Desk after each version and every six hours: clean, or each
+     difference by order and row; a difference a move on its way explains is listed apart, as waiting. Check now asks the Desk for a fresh one. */
+  function drawTieout(t){
+    var root=document.getElementById('led-tie'); if(!root) return;
+    root.textContent='';
+    root.appendChild(el('h3','','Order and book'));
+    if(!t) root.appendChild(el('p','rnone','Not checked yet. The Desk checks after each version.'));
+    else if(!t.ok) root.appendChild(el('p','msg bad','Not checked: '+(t.error||'the Desk could not read it')+'.'));
+    else{
+      root.appendChild(el('p',t.clean?'salt-insight':'msg bad',(t.clean?'Every site order matches its row on the book':(t.faults.length===1?'One difference':t.faults.length+' differences')+' between the orders and the book')
+        +', '+t.orders+(t.orders===1?' order':' orders')+' checked against book '+t.v+' at '+fmtWhen(t.at)+'.'));
+      [['faults','Differences'],['waiting','Waiting on a move under Approve']].forEach(function(g){
+        if(!(t[g[0]]||[]).length) return;
+        root.appendChild(el('h4','',g[1]));
+        t[g[0]].forEach(function(f){ root.appendChild(el('p','maker-facts',(f.order?f.order:'')+(f.rid?' · '+f.rid:'')+(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.')); });
+      });
+    }
+    makerButton(root,['Check now','ledger.tieout'],async function(){
+      var j=await refs('/all/maker/ledger',{}); drawLedger(j); drawTieout(j.tieout);
+    },false);
   }
   /* A GROUP ORDER (the pool): open one, see who is in by units, and Close. Close closes it, tells each joiner once and sends
      each joined order for acknowledgement; one the Desk would not accept is listed under the pool with its reason, and Close

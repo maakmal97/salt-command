@@ -1524,7 +1524,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="makerPools" aria-live="polite"></div></section>'
         /* 16 Oct 2026: THE MINI LEDGER, three tables of the folded book in this order: Open orders, Pending orders and the latest twenty. Every other part of Orders
            is shut while it shows (stmt/owner.js, loadLedger). */
-        + '<div id="oLedger" data-in="orders.ledger"><p class="lead" id="ledgerStatus" role="status">Reading.</p>'
+        + '<div id="oLedger" data-in="orders.ledger"><p class="lead" id="ledgerStatus" role="status">Reading.</p><section class="ledgrp" id="led-tie" aria-label="Order and book"></section>'
         + [["open", "Open orders"], ["pending", "Pending orders"], ["recent", "Latest 20 orders"]].map(([k, w]) => '<section class="ledgrp" aria-labelledby="led-' + k + '-h"><h2 id="led-' + k + '-h">' + w
           + '</h2><div class="salt-table-wrap" id="led-' + k + '" tabindex="0" role="region" aria-labelledby="led-' + k + '-h"></div></section>').join("") + "</div>"
         + "</div></div>"

@@ -2708,6 +2708,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `row.change-delivery` | A row of the book as an order not on a trip (key: the row) | The delivery charge, to change; a trip's is changed by hand. |
 | `row.change` | A row of the book as an order (key: the row) | Sends what changed as one Correction for approval. |
 | `row.cancel` | A row of the book as an order, nothing handed over (key: the row) | Asks, then sends a Cancellation for approval; anything paid opens as a refund. |
+| `ledger.tieout` | Orders > Ledger, under Order and book | Check now: asks the Desk to tie every site order to its row again, and shows what it found. |
 | `orders.more` | Under Completed or Ended, past fifty orders (key: the stage) | Shows fifty more. |
 | `trip.details` | An order of several books, or a buyer's same-day rows, under Orders (key: trip:<id> or day:<rows>) | Opens the order's id, day and rows. |
 | `trip.hand-units` | An order of several books (key: the row) | The units of that line to hand over; full by default, fewer for a part. |

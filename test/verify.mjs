@@ -49418,7 +49418,7 @@ await (async () => {
   try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the follow was not driven against the real schema"); return; }
   const O = await import("../stmt/orders.js");
-  const { reconcileOrders, deskPass, tellSite } = await import("../src/orders.js");
+  const { reconcileOrders, deskPass, tellSite, tieOut } = await import("../src/orders.js");
   const { runDrafter } = await import("../src/drafter.js");
   const { applyAmend } = await import("../tools/fold.mjs");
   const PE = (await import("../engine/position.mjs")).default;
@@ -49870,6 +49870,18 @@ await (async () => {
     correct(EF.rid, { settledRM: 31 });
     const ofrT25 = await tellSite(denv), ef = await orderOf(EF.o.id);
     ok(!ofrT25.failed && ef.paid === 31, tag + ", an offset settled in kind on the row raises its order's paid: " + J({ failed: ofrT25.failed, paid: ef.paid }));
+    /* V9: THE TIE-OUT. A row changed on the book and not yet told is a difference by order and row; the return leg stalled past a quarter of an
+       hour is one of its own; once told, the order is level again */
+    const efRow = saleOf(EF.rid); efRow.cash = 50; putRow(efRow); reseed();
+    const tie1 = await tieOut(denv), tieLate = await tieOut(denv, undefined, new Date(Date.now() + 16 * 60000));
+    const efFault = (t) => (t.faults || []).find((f) => f.order === EF.o.id);
+    await tellSite(denv);
+    const tie2 = await tieOut(denv);
+    ok(tie1.ok && tie1.orders > 10 && efFault(tie1) && efFault(tie1).rid === EF.rid && /paid RM 31 on the order, RM 81 on the row/.test(efFault(tie1).what.join("; "))
+      && !tie1.faults.some((f) => f.what === "return leg") && tieLate.faults.some((f) => f.what === "return leg")
+      && tie2.ok && !efFault(tie2) && !tie2.faults.some((f) => f.what === "return leg"),
+      tag + ", the tie-out names an order whose row moved untold, a return leg stalled past fifteen minutes, and nothing once told: "
+      + J({ tie1: efFault(tie1), late: tieLate.faults.filter((f) => f.what === "return leg"), tie2: (tie2.faults || []).filter((f) => f.order === EF.o.id), n: tie1.orders }));
     correct(EW.rid, { defaulted: false });
     const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
     ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));

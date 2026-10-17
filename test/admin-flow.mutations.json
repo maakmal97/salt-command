@@ -42,5 +42,7 @@
 {"name": "V7: no refunds for orders", "file": "stmt/maker.js", "find": "refunds: drafts.refunds && typeof drafts.refunds === \"object\" ? drafts.refunds : {},", "replace": "refunds: {},"},
 {"name": "V7: a rejected Agree stays under Agreed", "file": "stmt/owner.js", "find": "    if(order.status==='acknowledged'&&(order.again||[]).indexOf('ack')>=0) return 'orders.placed';\n", "replace": ""},
 {"name": "V7: an order's card says no refund", "file": "stmt/owner.js", "find": "    if(+owes>0.004) card.appendChild(", "replace": "    if(false) card.appendChild("},
-{"name": "V8: an ended order's waiting move is not said", "file": "stmt/owner.js", "find": "if(waitN&&!ordOpen(order)) card.appendChild(", "replace": "if(false) card.appendChild("}
+{"name": "V8: an ended order's waiting move is not said", "file": "stmt/owner.js", "find": "if(waitN&&!ordOpen(order)) card.appendChild(", "replace": "if(false) card.appendChild("},
+{"name": "V9: the Ledger draws no tie-out", "file": "stmt/owner.js", "find": "    drawLedger(j);\n    drawTieout(j.tieout);\n  }", "replace": "    drawLedger(j);\n  }"},
+{"name": "V9: a difference is not named", "file": "stmt/owner.js", "find": "(f.what?': '+[].concat(f.what).join('; '):f.why?f.why:'')+'.'", "replace": "'.'"}
 ]

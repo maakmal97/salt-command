@@ -85,7 +85,7 @@ async function deskCall(env, path, method, body) {
     || /^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
     || path === "/_internal/maker/offsets" && method === "GET"
-    || path === "/_internal/maker/ledger" && method === "GET"
+    || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)
     || path === "/_internal/maker/inputs/offset" && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
     || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(path) && method === "POST"
@@ -383,8 +383,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       return json(await deskCall(env, "/_internal/maker/geo/expand", "POST", parsed.body));
     }
     if (op.kind === "ledger") {
-      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
-      return json(await deskCall(env, "/_internal/maker/ledger", "GET"));
+      if (method !== "GET" && method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+      return json(await deskCall(env, "/_internal/maker/ledger", method, method === "POST" ? {} : undefined));
     }
     if (op.kind === "offsets") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

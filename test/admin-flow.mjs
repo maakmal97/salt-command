@@ -177,7 +177,10 @@ export async function run({ ok, pageWork }) {
   const open = async () => {
     const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE, WOFF, AGAIN, OWED, GONE], refunds: { "CQ3-ZED|2026-10-14|110": 25 },
       drafts: [{ id: "2026-10-17T03:00:00.000Z", status: "pending", collection: "sales", entry: { orderId: GONE.id, status: "Cancellation", payload: { mode: "amend", kind: "Cancellation" } }, row: {} }], queue: [], trips: [], sameDay: [], rows: ROWS }),
-      extra: (route, body) => route === "/all/maker/inputs/ledger-amend" ? { ok: true, draft: body.at, status: "pending" }
+      extra: (route, body) => route === "/all/maker/ledger" ? { ok: true, version: 1, orders: 0, open: [], pending: [], recent: [],
+          tieout: body ? { ok: true, at: "2026-10-17T03:00:00.000Z", v: "v1146", orders: 38, clean: true, faults: [], waiting: [] }
+            : { ok: true, at: "2026-10-17T02:00:00.000Z", v: "v1145", orders: 38, clean: false, faults: [{ order: ORDER.id, rid: "s1", what: ["paid RM 100 on the order, RM 60 on the row"] }], waiting: [] } }
+        : route === "/all/maker/inputs/ledger-amend" ? { ok: true, draft: body.at, status: "pending" }
         : /^[/]all[/]maker[/]orders[/][^/]+[/]handed$/.test(route) ? { ok: true, order: PART } : undefined });
     await p.work.quiet();
     p.tap = async (act, key) => { const e = byAct(p.d, act, key); if (e) e.click(); await p.work.quiet(); return !!e; };
@@ -241,5 +244,13 @@ export async function run({ ok, pageWork }) {
     await p.tap("part.orders.done");
     await p.tap("order.open", DONE.id);
     ok(!!byAct(p.card(DONE.id), "order.amend"), "a completed order's card keeps Change the order");
+    await p.tap("part.orders.ledger");
+    const tieText = () => text(p.d.getElementById("led-tie"));
+    const t1 = tieText();
+    await p.tap("ledger.tieout");
+    const t2 = tieText();
+    ok(/One difference between the orders and the book, 38 orders checked against book v1145/.test(t1) && /paid RM 100 on the order, RM 60 on the row/.test(t1)
+      && /Every site order matches its row on the book, 38 orders checked against book v1146/.test(t2) && p.sent("/all/maker/ledger").length === 1,
+    "the Ledger says the tie-out, each difference by order and row, and Check now asks the Desk for a fresh one: " + J([t1.slice(0, 200), t2.slice(0, 160)]));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 }

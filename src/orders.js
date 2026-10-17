@@ -2004,6 +2004,58 @@ export async function tellSite(env, fixes, mirror) {
     failed.length ? { failed } : {});
 }
 
+/* ---- THE TIE-OUT (17 Oct 2026, HIS FLOW: "exactly the same at any given point") ---------------------------------------------
+ * Every site order that has a row against the row: size, goods, delivery (a trip row's is its trip's, so not read), paid, handed over,
+ * and the end (cancelled with cancelled, written off with written off). A difference a move of the order's own on its way explains
+ * (orderInFlight) is listed as waiting, never as a fault; an order whose key names no row is a fault unless its pending row or a close
+ * is still to land. And the return leg itself: a book version the Counter has not been told of for TIEOUT_STALL_MS is a fault, so a
+ * stalled pass is never silent. The answer is kept at KV TIEOUT_KEY for Counter Admin's Ledger; a clean one is the proof. */
+export const TIEOUT_KEY = "orders:tieout";
+const TIEOUT_STALL_MS = 15 * 60000;
+export async function tieOut(env, mirror, now = new Date()) {
+  const at = now.toISOString(), faults = [], waiting = [];
+  let snap = null;
+  try { snap = await env.SALT_LEDGER.prepare("SELECT v, at FROM snapshot WHERE one=1").first(); } catch (e) { snap = null; }
+  const v = (snap && snap.v) || null, told = await env.SALT_QUEUE.get(TOLD_MARK);
+  if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS)
+    faults.push({ what: "return leg", why: "the Counter has not been told of book " + v + " since " + snap.at + " (last told " + (told || "never") + ")" });
+  const r = await listOrders(env, true);
+  if (!r.ok) return { at, v, ok: false, error: "the site's orders could not be read: " + (r.error || "") };
+  const book = await (mirror ? mirror() : readBook(env.SALT_LEDGER)).catch(() => null);
+  if (!book || !book.sales) return { at, v, ok: false, error: "the book could not be read" };
+  const byKey = new Map(), n = new Map();
+  for (const s of book.sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); n.set(k, (n.get(k) || 0) + 1); }
+  const f2 = (x) => +(+x || 0).toFixed(2), f3 = (x) => +(+x || 0).toFixed(3);
+  let orders = 0;
+  for (const o of r.orders) {
+    if (o.test || !o.ledgerKey || !ROWED_ON_SITE.concat(["cancelled", "declined"]).includes(o.status)) continue;
+    const k = ledgerKeyOf(o), row = byKey.get(k), ended = ["cancelled", "declined"].includes(o.status);
+    if (ended && !row) continue;   /* withdrawn before its row landed, or its row dropped: nothing to tie */
+    orders++;
+    const diff = [];
+    if (!row) diff.push("no row on the book under " + k);
+    else if ((n.get(k) || 0) > 1) diff.push("two rows share its key, so neither is its");
+    else {
+      if (!!row.cancelled !== ended) diff.push(row.cancelled ? "the row is cancelled and the order is " + o.status : "the order is " + o.status + " and its row is live");
+      if (!ended) {
+        if (!!row.defaulted !== !!o.writtenOff) diff.push(row.defaulted ? "the row is written off and the order is not" : "the order is written off and its row is not");
+        if (Math.abs(f3(row.qty) - f3(o.qty)) > 0.0004) diff.push("units " + f3(o.qty) + " on the order, " + f3(row.qty) + " on the row");
+        if (Math.abs(f2(row.total) - f2(o.total)) > 0.004) diff.push("goods RM " + f2(o.total) + " on the order, RM " + f2(row.total) + " on the row");
+        if (!row.trip && Math.abs(f2(row.delivery) - f2(o.delivery)) > 0.004) diff.push("delivery RM " + f2(o.delivery) + " on the order, RM " + f2(row.delivery) + " on the row");
+        const paid = f2(POSITION_ENGINE.txPaid(row)), moved = f3(POSITION_ENGINE.txEffDeliv(row));
+        if (Math.abs(paid - f2(o.paid)) > 0.004) diff.push("paid RM " + f2(o.paid) + " on the order, RM " + paid + " on the row");
+        if (Math.abs(moved - f3(o.moved)) > 0.0004) diff.push("handed over " + f3(o.moved) + " on the order, " + moved + " on the row");
+      }
+    }
+    if (!diff.length) continue;
+    const item = { order: o.id, ...(row && row.rid ? { rid: row.rid } : {}), what: diff };
+    if (await orderInFlight(env, o)) waiting.push(item);
+    else if (!row) { const ack = await fate(env, o.queued && o.queued.ack); if (!ack || !ack.landed) waiting.push(item); else faults.push(item); }
+    else faults.push(item);
+  }
+  return { at, v, told, ok: true, orders, clean: !faults.length, faults, waiting };
+}
+
 /* ---- A LINE THE DESK WROTE BY MISTAKE, TAKEN BACK (28 Sep 2026, fix 4, his answers on CE5-SA's three orders) ------
  * Cash received was tapped by mistake on three of one account's orders, and the site kept each as money paid in cash.
  * The book has been put right by Corrections; the site is put right here: EACH CORRECTION IS A LINE OF THIS LIST, added by
