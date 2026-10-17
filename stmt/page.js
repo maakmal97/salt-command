@@ -5270,19 +5270,25 @@ const CLIENT_JS = `
      I am back moves to Did you send, so the question no longer waits on the page losing and regaining focus (blur and focus stay as
      the fallback). The figure is fixed as the sheet opens, so a poll landing while they pay cannot move it. */
   var paySh=document.getElementById('paySheet'), payScr=document.getElementById('payScrim'), PS=null;
-  var PAYNUM={}, payNumAsked=false;
-  /* asked once a visit, on their own session (his read-only view has none and asks nothing); an answer that did not come lets the
-     next open ask again. The number shows only when it is 10 to 15 digits, whatever the Worker sent. */
+  var PAYNUM={}, payNumAsked=false, payNumAt=0;
+  /* asked as a sheet opens, on their own session (his read-only view has none and asks nothing), one ask at a time and again only
+     once the last answer is a minute old (PAY_FRESH_MS); an answer that did not come lets the next open ask again. The number
+     shows only when it is 10 to 15 digits, whatever the Worker sent. WITH IT, down (17 Oct 2026): which accounts QR Command has
+     under maintenance now, read live off its own state; each is laid on PAY's flag, so payHref, and with it payInto, never offers or links
+     one, a bank chosen before the answer included. No down leaves the flags as they were. */
   function payNumLoad(){
-    if(payNumAsked||view||!session) return;
+    if(payNumAsked||view||!session||Date.now()-payNumAt<PAY_FRESH_MS) return;
     payNumAsked=true;
     api('/pay/accounts').then(function(r){
-      var a=r.body&&r.body.ok&&r.body.accounts;
-      if(!a||typeof a!=='object'){ payNumAsked=false; return; }
-      PAYNUM=a;
-      if(PS&&PS.step==='pay'&&PS.acct) drawPay();
+      payNumAsked=false;
+      var a=r.body&&r.body.ok&&r.body.accounts, dn=r.body&&r.body.ok&&r.body.down;
+      if(!a||typeof a!=='object') return;
+      PAYNUM=a; payNumAt=Date.now();
+      if(dn&&typeof dn==='object') PAY.forEach(function(x){ if(typeof dn[x.key]==='boolean') x.maintenance=dn[x.key]; });
+      if(PS&&PS.step==='pay') drawPay();
     });
   }
+  var PAY_FRESH_MS=60000;
   function numOf(key){
     var x=PAYNUM[key], n=x&&typeof x.number==='string'?x.number:'';
     return /^[0-9]{10,15}$/.test(n)?n:'';

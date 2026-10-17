@@ -45,7 +45,10 @@
 			"service": "salt-command"
 		},
 		// Separate maker capability; never reuse the read-only revision credential.
-		{ "binding": "DESK_MAKER", "service": "salt-command" }
+		{ "binding": "DESK_MAKER", "service": "salt-command" },
+		// QR COMMAND, READ ONLY (17 Oct 2026): its public /state.json, which accounts are under maintenance now,
+		// so the pay sheet never offers one (stmt/paystate.js). Unbound or unreachable, the baked flags stand.
+		{ "binding": "QRCMD", "service": "jb3zkzyqguu5" }
 	],
 	// THE ORDER BOOK (S10, D10, his answer of 24 Sep 2026): ONE Durable Object for the whole site's
 	// orders, stmt/orderbook.js, SQLite-backed by choice; the account is on Workers Paid (FACTS.md §4). The migration makes the
