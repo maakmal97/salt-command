@@ -1565,10 +1565,8 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   hours and the notice to Shop; the Desk's line has none. **One filled pill, only where the page already has that exact action as a single
   tap**: Approve (Approve both or Approve all on a trip) on a Desk row is Orders > Approve's own function (`approveDraft`: the same question, on the page's Sheet, the same request,
   the same answer line; a customer's claim row has none, it is answered through Received on its order), and the guest link, the refused
-  account and the accounts not sent keep the action they had. **Nothing in Needs you books money**: Agree, Yes received and Cash stay on
-  their cards in Orders. A practice account's order, claim or thread is drawn after the real ones in its severity, labelled Practice, and
-  counted nowhere. The line under the title is "N now, M soon, as at HH:MM", or "Nothing needs you", and **names what could not be read**
-  ("Not read: orders and rows and messages"), so a failed read is never taken for nothing waiting; the chips under it (All, Orders, Payments,
+  account and the accounts not sent keep the action they had. **A card is titled by what to do, verb first, then who, with the figure under it** (17 Oct 2026, "Agree CQ5-HAR's order", "Confirm CW4-FEL's RM 500.00", "Reply to CX7-LUM"); the kind word is a small eyebrow. **Its main button is on the card and reaches the same function the full card's button calls**, never a new road: Reply and Agree (which needs the delivery charge and the window) open the full card; a money tap asks once on the card, "Confirm RM 500.00 received from CW4-FEL?" with Yes and Cancel, and Yes calls `orderReceived` (an order with one payment waiting; several open the full card) or `sendClaimAnswer` (a payment against the account, after its rows are read as the card does; rows needing a look open the full card), under the one request id and busy flag the full card uses, so a second tap sends nothing. Practice accounts leave Now, Soon and Watch for one folded line at the foot, "Practice: N", which opens them in place, and are counted nowhere. The line under the title is "12 to do now · 11 soon", or "Nothing needs you"; **a failed read is named by its own banner**
+  ("Couldn't read orders and rows and messages"), so a failed read is never taken for nothing waiting; the chips under it (All, Orders, Payments,
   Messages, Rows, Accounts) filter the one list and read nothing; they are drawn as the parts strip is (a `tablist` of `tab` pills, the one in
   force `aria-selected`), because the recipe draws a selected pill from `aria-selected` and `aria-pressed` is styled on a ghost alone. **Every item of the bars carries its count**: Needs you the Now, Orders
   the open orders (not ended or completed; only Needs you counts what waits on him), Customers the threads asked and the links waiting,
@@ -2465,6 +2463,13 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `nav.orders` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Orders, on the first stage with something waiting (Placed when none), reading the orders and the claims again. |
 | `nav.record` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Record, on Entry. |
 | `nav.shop` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Shop, on Hours. |
+| `need.agree` | Needs you card for an order placed | Opens that order's full card in Orders, where the delivery charge and the window are asked. Books nothing. |
+| `need.reply` | Needs you card for a message asked | Opens that thread (an order's question, the order's card). Sends nothing. |
+| `need.review` | Needs you card for an order with several payments waiting, or a step to send again | Opens that order's card. Books nothing. |
+| `need.received` | Needs you card for a payment they say they sent (key: the order, or the user and claim) | Asks once on the card; the Yes (`need.ask-yes`) sends what the full card's Received sends, the same request id. |
+| `need.ask-yes` | The ask on a Needs you payment card | Sends the answer once; both buttons are off while it is out. |
+| `need.ask-no` | The ask on a Needs you payment card | Cancels the ask and sends nothing. |
+| `need.fold.practice` | The folded line at the foot of Needs you | Opens or shuts the practice accounts' cards in place. |
 | `need.approve-row` | Needs you card for a Desk row to approve | Approves that row, or the trip it rides, asking first and sending what Orders > Approve's Approve sends. |
 | `need.copy-link` | Same card, once the link is shown | Copies that link. |
 | `need.kind.accounts` | The chips under Needs you's title | Shows only the cards about accounts and guest links. Reads nothing. |

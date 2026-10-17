@@ -162,10 +162,10 @@
   "replace": "<div class=\"ordgrid\"><div id=\"makerReview\" class=\"ordopen\"></div><div id=\"makerOrderList\" class=\"ordlist\"></div></div>"
  },
  {
-  "name": "a question on an order is no card on Needs you",
+  "name": "a question on an order is only Soon",
   "file": "stmt/owner.js",
-  "find": "        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, what:cut(last.text), why:'On their order.', practice:t, open:to}));",
-  "replace": ""
+  "find": "L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to}, function(c){",
+  "replace": "L.push(item('soon','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to}, function(c){"
  },
  {
   "name": "a question on an order is Soon, not Now",

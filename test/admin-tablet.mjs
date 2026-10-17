@@ -7,7 +7,7 @@
  * .adm is a rule the customer's page is handed. Every assertion was proved red by its own mutation (test/admin-tablet.mutations.json, run with tools/section.mjs).
  *   1  every rule of his page at 768px, 860px and below them is under .adm (the customer's own tablet rules come before his and are test/counter-tablet.mjs's)
  *   2  Needs you and Customers: the list beside the account from 860px, the account sticky and scrolling inside itself, its foot above the App bar to 1080px
- *   3  nothing opens by itself: the column beside the list says Tap a card, and is drawn only while no account is open
+ *   3  nothing opens by itself: the column beside the list says Choose a card to see it in full, and is drawn only while no account is open
  *   4  Sheets: a centred 560px dialog from 768px, the 460px drawer from 860px, placement only     5  a 620px column and short fields two up from 768px
  *   6  from 1080px Shop is 760px, the rows to approve lie two up, Messages stands the thread beside its list
  *   7  Shop's hours fit a phone of 320 to 371px
@@ -70,8 +70,8 @@ export async function run({ ok, pageWork }) {
       "the invitation is not drawn on a phone, drawn beside the list from 860px, and not drawn beside an account that is open: " + [base, wide, open].join(" | "));
     const kids = (id) => [...d.getElementById(id).parentElement.children].map((c) => c.id || c.className).join("|");
     const words = [...d.querySelectorAll(".panenone")].map((p) => p.textContent);
-    ok(kids("nopen") === "|nopen|rnone panenone" && kids("aopen") === "rlist|aopen|rnone panenone" && words.length === 2 && words.every((w) => w === "Tap a card"),
-      "Needs you's column and Customers' each hold the list, the account's pane and then the invitation, which says Tap a card: " + kids("nopen") + " , " + kids("aopen") + " " + JSON.stringify(words));
+    ok(kids("nopen") === "|nopen|rnone panenone" && kids("aopen") === "rlist|aopen|rnone panenone" && words.length === 2 && words.every((w) => w === "Choose a card to see it in full."),
+      "Needs you's column and Customers' each hold the list, the account's pane and then the invitation, which says Choose a card to see it in full: " + kids("nopen") + " , " + kids("aopen") + " " + JSON.stringify(words));
   }
 
   /* 4. SHEETS: a centred 560px dialog from 768 to 859px, the 460px drawer from 860px (the system's own from 1080px), placement only */

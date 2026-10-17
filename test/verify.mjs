@@ -19171,7 +19171,7 @@ await (async () => {
     ok(D.getElementById("mHome").hidden === false && /Needs you/.test(D.querySelector("#mHome h1").textContent),
       "his page opens on Needs you");
     /* this fixture has no Desk, so the maker reads fail and the line counts what could be read (plan 1) */
-    ok(await until(() => /^1 now, 3 soon( in what could be read)?[.]/.test(D.getElementById("nCount").textContent)),
+    ok(await until(() => /^1 to do now . 3 soon$/.test(D.getElementById("nCount").textContent)),
       "one waits now and three soon, and the line says so: " + D.getElementById("nCount").textContent);
     ok(cards().map((x) => x.getAttribute("data-need")).join(",") === ["k:" + uL, "s", "l:" + lid, "n:" + uN].join(","),
       "a card each, Now before Soon and the oldest first: the locked account, then to send, the link, no account: " + JSON.stringify(cards().map((x) => x.getAttribute("data-need"))));
@@ -19184,12 +19184,12 @@ await (async () => {
       "the link's card names the associate by code and carries the tier it quotes, Approve and Decline");
     btn(lc, "Approve").click();
     ok(await until(async () => JSON.parse(await kv.get("g:" + lid)).approved === true) && await until(() => /Approved[.] It opens now/.test((card("l:" + lid) || {}).textContent || ""))
-      && await until(() => /^1 now, 2 soon/.test(D.getElementById("nCount").textContent)),
+      && await until(() => /^1 to do now . 2 soon/.test(D.getElementById("nCount").textContent)),
       "Approve on the card opens the link, the card says so and the count drops: " + JSON.stringify([(card("l:" + lid) || {}).textContent, D.getElementById("nCount").textContent]));
 
     /* the account refused at an address: why, and a link in two taps, so the share never waits on the making */
     const kc = card("k:" + uL);
-    ok(/locked out until \d\d:\d\d/.test(kc.querySelector(".need-what").textContent)
+    ok(/Locked out until \d\d:\d\d/.test(kc.querySelector(".need-what").textContent)
       && /Too many wrong passwords[.] If it was them, send a sign-in link[.] Last signed in by link, 02 Sep 2026[.]/.test(kc.textContent),
       "the card says the customer is locked out and until when, with why and how they last signed in: " + kc.textContent);
     const sl = btn(kc, "Send a sign-in link");
@@ -20528,11 +20528,11 @@ await (async () => {
     const card = (key) => D.querySelector('#nlist [data-need="' + key + '"]');
     const party = (key) => card(key) && card(key).querySelector('[data-act="need.open"]');
     /* his decision 9 of 11 Oct 2026: NOTHING OPENS BY ITSELF. On a desk the cards are drawn and the pane stays empty: no account is read, no card is marked current, and
-       the column beside the list says Tap a card (a first card picked for him opened an account he had not asked for, and read its story) */
+       the column beside the list says Choose a card to see it in full (a first card picked for him opened an account he had not asked for, and read its story) */
     ok(await until(() => card("l:" + lid) && card("k:" + uL) && card("n:" + uN)) && await work.quiet()
       && pane.hidden && pane.textContent === "" && !D.getElementById("mHome").classList.contains("open") && !D.querySelector("#nlist [aria-current]")
-      && !hits.some((x) => /^GET \/all\/account\//.test(x)) && /^Tap a card$/.test((D.querySelector("#mHome .panenone") || {}).textContent || ""),
-    "on a desk, Needs you draws its cards and opens nothing by itself: the pane is empty, no card is marked current, no account is read, and the column says Tap a card: "
+      && !hits.some((x) => /^GET \/all\/account\//.test(x)) && /^Choose a card to see it in full[.]$/.test((D.querySelector("#mHome .panenone") || {}).textContent || ""),
+    "on a desk, Needs you draws its cards and opens nothing by itself: the pane is empty, no card is marked current, no account is read, and the column says Choose a card to see it in full: "
       + JSON.stringify([pane.hidden, pane.textContent, !!D.querySelector("#nlist [aria-current]"), hits.filter((x) => /account/.test(x))]));
     /* his decision 7 of 11 Oct 2026: LOOKING MAKES NO LINK. The account a tap opens is drawn beside the list, and its story read is the
        sign that the draw ran: once the page is quiet, nothing it sent writes and no link is filed */

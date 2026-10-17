@@ -349,7 +349,7 @@ export async function run({ ok, pageWork }) {
   const baseCount = { needs: +base.counts().needs, orders: +base.counts().orders, customers: base.counts().customers };
   const baseLine = base.d.getElementById("nCount").textContent;
   base.w.close();
-  const nowOf = (line) => +(/^([0-9]+) now/.exec(line) || [])[1];
+  const nowOf = (line) => +(/^([0-9]+) to do now/.exec(line) || [])[1];
   st = state(); st.asked = true;
   p = await open(st);
   try {
@@ -361,7 +361,7 @@ export async function run({ ok, pageWork }) {
     "a question of theirs on an order, unanswered, is a Now card: the Message kind, who by code, their words, which order and how long: " + (c1 && c1.textContent));
     ok(!!c9 && c9.getAttribute("data-sev") === "now" && c9.querySelector(".need-what").textContent === "Why was it declined?" && c9.querySelector(".salt-action__money").textContent === "1 h",
       "and so is one on an order that is closed: " + (c9 && c9.textContent));
-    ok(!!ex && ex.hasAttribute("data-practice") && /Practice/.test(ex.querySelector(".need-who").parentElement.textContent),
+    ok(!!ex && ex.hasAttribute("data-practice") && /Practice/.test(ex.textContent),
       "and a practice account's is drawn and labelled Practice");
     const now = p.counts();
     ok(+now.needs === baseCount.needs + 2 && +now.orders === baseCount.orders && now.customers === baseCount.customers,

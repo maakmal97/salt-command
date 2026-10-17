@@ -134,14 +134,8 @@
  {
   "name": "a practice order is counted in Orders",
   "file": "stmt/owner.js",
-  "find": "return !o.test&&ordWaits(o);",
-  "replace": "return ordWaits(o);"
- },
- {
-  "name": "a practice claim is counted in Orders",
-  "file": "stmt/owner.js",
-  "find": ".length+waitingClaims().filter(function(c){ return !c.test; }).length);",
-  "replace": ".length+waitingClaims().length);"
+  "find": "return !o.test&&ordOpen(o); }).length);",
+  "replace": "return ordOpen(o); }).length);"
  },
  {
   "name": "a practice thread is counted in Customers",
@@ -176,8 +170,8 @@
  {
   "name": "a message opens no thread",
   "file": "stmt/owner.js",
-  "find": "open:function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(t.u); }});",
-  "replace": "open:function(){ showPlace('customers','messages',{fresh:true, push:true}); }});"
+  "find": "open:function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(t.u); }}, function(c){",
+  "replace": "open:function(){ showPlace('customers','messages',{fresh:true, push:true}); }}, function(c){"
  },
  {
   "name": "a link opens Accounts",
@@ -200,14 +194,14 @@
  {
   "name": "an order has an Agree",
   "file": "stmt/owner.js",
-  "find": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o), practice:t, open:to}));",
-  "replace": "L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o), practice:t, open:to}, function(c){ c._add(pill(['Agree','need.agree'])); }));"
+  "find": "mainButton(c,'Agree','need.agree','o:'+o.id, to);",
+  "replace": ""
  },
  {
   "name": "a payment has a Received",
   "file": "stmt/owner.js",
-  "find": "practice:!!c.test, open:goPlace('orders','payments')}));",
-  "replace": "practice:!!c.test, open:goPlace('orders','payments')}, function(c){ c._add(pill(['Received','need.received'])); }));"
+  "find": "function(card){ claimPayButton(card,c); }));",
+  "replace": "function(card){}));"
  },
  {
   "name": "a customer's claim row can be approved",
@@ -464,8 +458,8 @@
  {
   "name": "an order card says its book in words",
   "file": "stmt/owner.js",
-  "find": "function orderWhat(o){ return units(o.qty)+', '+rm(o.total); }",
-  "replace": "function orderWhat(o){ return units(o.qty)+' '+o.product+', '+rm(o.total); }"
+  "find": "function orderWhat(o){ return units(o.qty)+' · '+rm(o.total); }",
+  "replace": "function orderWhat(o){ return units(o.qty)+' '+o.product+' · '+rm(o.total); }"
  },
  {
   "name": "an order card loses its book's mark",
@@ -506,8 +500,8 @@
  {
   "name": "the count reads as whole with a read failed",
   "file": "stmt/owner.js",
-  "find": "+(bad.length?' in what could be read.':'.')",
-  "replace": "+'.'"
+  "find": ".filter(Boolean).join(' · ')",
+  "replace": ".filter(Boolean).join(' · ')+(bad.length?' in what could be read.':'')"
  },
  {
   "name": "Retry reads nothing",
@@ -676,5 +670,47 @@
   "file": "src/maker-inputs.js",
   "find": "  if (hold == null) return { today, owedError:",
   "replace": "  if (false) return { today, owedError:"
+ },
+ {
+  "name": "a card's title does not lead with the verb",
+  "file": "stmt/owner.js",
+  "find": "{who:who, head:'Agree ', rest:\"'s order\"",
+  "replace": "{who:who, rest:\"'s order\""
+ },
+ {
+  "name": "an order's Agree on the card does nothing",
+  "file": "stmt/owner.js",
+  "find": "mainButton(c,'Agree','need.agree','o:'+o.id, to);",
+  "replace": "mainButton(c,'Agree','need.agree','o:'+o.id, function(){});"
+ },
+ {
+  "name": "Cancel on a money ask sends it",
+  "file": "stmt/owner.js",
+  "find": "n.addEventListener('click', function(){ if(needBusy[key]) return; delete needAsk[key]; drawNeeds(); });",
+  "replace": "n.addEventListener('click', function(){ yes(); });"
+ },
+ {
+  "name": "a money ask can be confirmed again while its send is out",
+  "file": "stmt/owner.js",
+  "find": "y.addEventListener('click', function(){ if(needBusy[key]) return; yes(); });",
+  "replace": "y.addEventListener('click', function(){ yes(); });"
+ },
+ {
+  "name": "a claim's Received sends a hash of its own",
+  "file": "stmt/owner.js",
+  "find": "        send(r.hash);",
+  "replace": "        send('x'.repeat(64));"
+ },
+ {
+  "name": "practice items stay among Now, Soon and Watch",
+  "file": "stmt/owner.js",
+  "find": "var practiceList=shown.filter(function(i){ return i.practice; }); shown=shown.filter(function(i){ return !i.practice; });",
+  "replace": "var practiceList=[];"
+ },
+ {
+  "name": "the summary drops its words",
+  "file": "stmt/owner.js",
+  "find": "now?now+' to do now':''",
+  "replace": "now?now+' now':''"
  }
 ]

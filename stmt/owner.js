@@ -1280,6 +1280,13 @@ export const OWNER_JS = `
   }
   /* a claim's rows, one line each, as the card and the Received sheet show them */
   function makerClaimRowLine(row){ return (fmtWhen(row.date)||'Undated')+': '+rm(row.rm)+' of '+rm(row.owed); }
+  /* the one send of a claim's answer, under the request id it was first given: the card's Sheet and Needs you's card both call it */
+  async function sendClaimAnswer(claim,key,pending){
+    var who=codeByUser(claim.u);
+    await refs('/all/maker/claims/'+claim.u+'/'+claim.id+'/'+pending.action,pending.body); delete makerClaimRequests[key];
+    makerClaimSaid=pending.action==='notfound'?'Answered Not found. '+who+' is told.':pending.body.covered?'Already recorded. '+who+' is told.':'Recorded. '+who+' is told.';
+    makerClaimOpen=null; await loadMakerClaims(); await loadMaker();
+  }
   function makerClaimCard(root,claim,key){
     var card=makerCard(root,'claim:'+key), route='/all/maker/claims/'+claim.u+'/'+claim.id, acts=el('div','maker-foot__acts'), who=codeByUser(claim.u);
     var turn=0, preview=null, said=el('p','salt-insight'), note=el('div','maker-quote');
@@ -1324,9 +1331,7 @@ export const OWNER_JS = `
     async function claimPost(pending){
       if(pending.busy) return; pending.busy=true; [receipt,covered,lost].forEach(function(b){ b.disabled=true; });
       try{
-        await refs(route+'/'+pending.action,pending.body); delete makerClaimRequests[key];
-        makerClaimSaid=pending.action==='notfound'?'Answered Not found. '+who+' is told.':pending.body.covered?'Already recorded. '+who+' is told.':'Recorded. '+who+' is told.';
-        makerClaimOpen=null; await loadMakerClaims(); await loadMaker();
+        await sendClaimAnswer(claim,key,pending);
       }catch(error){ refusal(answer,error,'Not confirmed. Try the same answer again: '); lost.disabled=false; if(preview) claimShow(preview); }
       pending.busy=false;
     }
@@ -2709,7 +2714,14 @@ export const OWNER_JS = `
   function makerTap(order,action,body,message){
     var key=order.id+action+JSON.stringify(body), rid=makerRids[key]||(makerRids[key]=mintRid());
     return makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/'+action,
-      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; });
+      Object.assign({rid:rid},body),message,order.id).then(function(done){ if(done) delete makerRids[key]; return done; });
+  }
+  /* a claim above what the order still owes is money he recorded another way; orderReceived is the one send of a claim's Received, the card's Sheet and Needs you's card alike */
+  function payOnBook(order,payment){ return Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004; }
+  function orderReceived(order,payment){
+    var onBook=payOnBook(order,payment);
+    return makerTap(order,'received',onBook?{amount:payment.amount,claim:payment.at,covered:true}:{amount:payment.amount,claim:payment.at},
+      onBook?'Already recorded. Nothing more is recorded.':'Sent to the Desk.');
   }
   var MAKER_CASH_MS=10000, makerCashHeld={}, makerCashSaid={};
   var MAKER_CASH_PREFIX='saltMakerCash:', makerCashStorageError='';
@@ -4193,7 +4205,7 @@ export const OWNER_JS = `
         var moneyHead=el('h4','','Money received'); moneyHead.setAttribute('data-sect','money'); moneyHead.tabIndex=-1; card.appendChild(moneyHead);
         (order.payments||[]).filter(function(payment){ return payment.claim==='waiting'; }).forEach(function(payment){
           /* a claim above what the order still owes is money he recorded another way: the Desk's Received, already recorded */
-          var onBook=Number(payment.amount)>Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)+0.004;
+          var onBook=payOnBook(order,payment);
           /* 12 Oct 2026 (Phase 2b, his decision 4 of 11 Oct): a claim's Received and its Not found ask on the page's Sheet, restating who and how much, and
              one action sends what the tap sent, the same route, body and request id */
           var got=makerButton(card,[onBook?'Already recorded, '+rm(payment.amount):'Yes, I got '+rm(payment.amount),'order.claim-received',payment.at],function(){
@@ -4201,10 +4213,7 @@ export const OWNER_JS = `
               go:onBook?'Yes, already recorded':'Yes, received', keep:'Not yet',
               say:[onBook?rm(payment.amount)+' is more than this order still owes, so you recorded it another way. Nothing more is recorded, and the customer is told it arrived.'
                 :'The Desk records '+rm(payment.amount)+' against this order, and the customer is told it arrived.'],
-              yes:function(){
-                makerTap(order,'received',onBook?{amount:payment.amount,claim:payment.at,covered:true}:{amount:payment.amount,claim:payment.at},
-                  onBook?'Already recorded. Nothing more is recorded.':'Sent to the Desk.');
-              }});
+              yes:function(){ orderReceived(order,payment); }});
           },false);
           makerAskTag(order,got,'claim-'+payment.at);
           var lost=makerButton(card,['Not found, '+rm(payment.amount),'order.claim-not-found',payment.at],function(){
@@ -4941,8 +4950,9 @@ export const OWNER_JS = `
      that did not get through, a stage he rejected, a guest link, an ID with no account, accounts nobody has been sent, money owed past its term
      and goods paid for and not handed over. WATCH is an override in force and a notice set. A practice item is drawn after the real ones, labelled, and counted nowhere.
      A card is its kind word, who (the code), what, its age, one Open that goes to the detail, and, only where the page already has that
-     exact action as one tap, one filled pill that calls the same function with the same guards. NOTHING HERE BOOKS MONEY: Agree, Yes
-     received and Cash stay on their cards in Orders, which Open reaches. Read off what the places read anyway (/all/sheet, /all/refs, the
+     exact action as one tap, one filled pill that calls the same function with the same guards. A card is titled by what to do, verb first (17 Oct 2026).
+     A MONEY TAP ASKS ONCE ON THE CARD, then calls the order or claim card's own send (orderReceived, sendClaimAnswer); Agree, which needs the delivery and the window, and Cash
+     open the full card in Orders. Read off what the places read anyway (/all/sheet, /all/refs, the
      review, the claims, the threads, the hours and the notice). A tap is answered on its own card. */
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=30000;
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice'],['book','what is owed']];
@@ -5036,10 +5046,18 @@ export const OWNER_JS = `
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
     c.appendChild(el('span','salt-action__kind',o.word));
-    title.appendChild(whoTag(el('span','need-who',o.who),o.who));
+    /* 17 Oct 2026 (Counter Admin clarity, part 2): THE TITLE SAYS WHAT TO DO, verb first, then who: head + code + rest. The figure and the book's mark stand under it. */
+    var what=null;
+    if(o.what||o.mark){ what=el(o.head?'p':'span','need-what'); if(o.mark) what.appendChild(bookMark(o.mark)); if(o.what) what.appendChild(document.createTextNode((o.mark?' ':'')+o.what)); }
+    if(o.head){
+      var hd=el('span','need-head'); hd.appendChild(document.createTextNode(o.head)); hd.appendChild(whoTag(el('span','need-who',o.who),o.who));
+      if(o.rest) hd.appendChild(document.createTextNode(o.rest));
+      title.appendChild(hd);
+    }else title.appendChild(whoTag(el('span','need-who',o.who),o.who));
     if(o.practice) title.appendChild(chip('mist','Practice'));
-    if(o.what||o.mark){ var what=el('span','need-what'); if(o.mark) what.appendChild(bookMark(o.mark)); if(o.what) what.appendChild(document.createTextNode((o.mark?' ':'')+o.what)); title.appendChild(what); }
+    if(what&&!o.head) title.appendChild(what);
     body.appendChild(title);
+    if(what&&o.head) body.appendChild(what);
     if(o.why) body.appendChild(el('p','salt-action__why',o.why));
     c.appendChild(body);
     c.appendChild(el('span','salt-action__money salt-action__money--nil',ageOf(o.at)));
@@ -5049,9 +5067,22 @@ export const OWNER_JS = `
     c._body=body; c._add=function(b){ if(!go.parentNode) c.appendChild(go); c.classList.add('need--act'); go.insertBefore(b, op); };
     return c;
   }
+  /* a card's main button, on the card: it opens the full card where that action has inputs the card asks for, or asks in place where it is money */
+  var needAsk={}, needBusy={}, needNote={};
+  function mainButton(c,label,act,key,fn){ var b=pill([label,act,key]); b.addEventListener('click', fn); c._add(b); return b; }
+  function needSays(c,key){ if(needNote[key]){ var n=noteOf(c); n.textContent=needNote[key]; n.className+=' bad'; } }
+  /* a money tap asks once, on the card, before any request: Yes sends, Cancel sends nothing, and while a send is out both are off */
+  function askBox(c,key,question,yes){
+    var q=el('p','nask',question); q.setAttribute('role','group'); c._body.appendChild(q);
+    var y=pill([needBusy[key]?'Sending.':'Yes','need.ask-yes',key]), n=ghost(['Cancel','need.ask-no',key]);
+    y.disabled=n.disabled=!!needBusy[key];
+    y.addEventListener('click', function(){ if(needBusy[key]) return; yes(); });
+    n.addEventListener('click', function(){ if(needBusy[key]) return; delete needAsk[key]; drawNeeds(); });
+    c._add(y); c._add(n);
+  }
   function noteOf(c){ var m=el('p','nnote'); m.setAttribute('role','status'); c._body.appendChild(m); return m; }
   /* S9 fix: FROM 860PX NEEDS YOU STANDS BESIDE AN ACCOUNT (the plan's f13w, his decision 9 of 11 Oct 2026), as Customers does: the one he
-     opened from a card, and NOTHING OPENS BY ITSELF (the column says Tap a card until he taps, and only the card he tapped is marked
+     opened from a card, and NOTHING OPENS BY ITSELF (the column says Choose a card until he taps, and only the card he tapped is marked
      current). The pane is drawn again only when its account changes or the sheet is read again, so a redraw of the list never takes
      a tap in flight off the open card. wide() is the
      two panes' width, which the page's CSS shares at 860px; the rail's 1080px is the system's own switch and nothing here reads it. */
@@ -5114,7 +5145,7 @@ export const OWNER_JS = `
   }
   function linkNeed(r){
     var who=codeByUser(r.by), done=moved&&moved.id===r.id;
-    return item('soon','accounts','Link','l:'+r.id, r.made, {who:who, what:'guest link, made '+when(r.made),
+    return item('soon','accounts','Link','l:'+r.id, r.made, {who:who, head:'Approve ', rest:"'s guest link", what:'Made '+when(r.made),
       why:'A link for a friend. It opens nothing until you approve it.', open:goPlace('customers','links'), counts:waitingLink(r)&&!done}, function(c){
       if(done){ noteOf(c).textContent=moved.t; return; }
       if(tiers.length){
@@ -5139,7 +5170,7 @@ export const OWNER_JS = `
      them. The brake holds fifteen minutes from its last miss (the Worker's FAIL_TTL), so its age is read back from the moment it lets go. */
   function lockNeed(a){
     var L=a.locked, s=a.seen, held=Date.parse(L.until);
-    return item('now','accounts','Locked','k:'+a.username, held>0?new Date(held-900000).toISOString():'', {who:a.code||a.username, u:a.username, what:'locked out'+(L.until?' until '+hm(L.until):''),
+    return item('now','accounts','Locked','k:'+a.username, held>0?new Date(held-900000).toISOString():'', {who:a.code||a.username, u:a.username, head:'Unlock ', what:'Locked out'+(L.until?' until '+hm(L.until):''),
       why:'Too many wrong passwords. If it was them, send a sign-in link.'
         +(s&&s.opens?' Last signed in'+(howOf(s)?' '+howOf(s):'')+', '+dayMon(s.last)+'.':' Has never signed in.'),
       open:function(){ openNeed(a.username); }}, function(c){
@@ -5149,7 +5180,7 @@ export const OWNER_JS = `
     });
   }
   function bareNeed(a){
-    return item('soon','accounts','Account','n:'+a.username, '', {who:a.code||a.username, u:a.username, what:'no account yet', why:waitLine(),
+    return item('soon','accounts','Account','n:'+a.username, '', {who:a.code||a.username, u:a.username, head:'Set up ', rest:"'s account", what:'No account yet', why:waitLine(),
       open:function(){ openNeed(a.username); }}, function(c){
       var sh=pill(['Show the guest price list','need.show-link']);
       c._add(sh);
@@ -5189,7 +5220,7 @@ export const OWNER_JS = `
   function ordWaits(o){ return orderWaits(o); }
   /* an order's Open goes to Orders, the stage it stands at, with that order's card open (Phase 1c) */
   function orderOpener(id){ return function(){ var e=ordEntries[id], st=e?e.parts.replace('orders.',''):'placed'; showPlace('orders',st,{fresh:true, push:true}); openOrder(id); }; }
-  function orderWhat(o){ return units(o.qty)+', '+rm(o.total); }
+  function orderWhat(o){ return units(o.qty)+' · '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
   /* a Desk row to approve: the same tap, the same question and the same request as Approve row on Orders > Approve (approveDraft). A row
@@ -5197,7 +5228,7 @@ export const OWNER_JS = `
      from the live row, and outlives it once the row is decided. */
   function rowNeed(d){
     var g=groupOf(d), claim=g.drafts.some(draftClaim), sibs=g.trip?g.drafts:[], said=needSaid['d:'+d.id], who=draftParty(d)||'no code';
-    return item('soon','rows','Row','d:'+d.id, isoAt(d.id), {who:who,
+    return item('soon','rows','Row','d:'+d.id, isoAt(d.id), {who:who, head:'Approve ', rest:"'s row",
       mark:d.qty==null||g.tripMoves?'':d.product, what:g.tripMoves?moveWord(d)+', '+tripMoveRows(g).length+' books, one order'
         :d.amends?[draftRid(d),moveWord(d)].filter(Boolean).join(', ')+(g.drafts.length>1&&!g.trip?', '+g.drafts.length+' moves':''):rowWhat(d),
       why:claim?'Answer this through the payment card.'
@@ -5233,7 +5264,7 @@ export const OWNER_JS = `
       why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('orders','approve')});
   }
   function entryNeed(r, key){
-    return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', what:'did not get through',
+    return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', head:'Check ', rest:"'s entry", what:'Did not get through',
       why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('orders','approve')});
   }
   /* an entry kept on this phone and not confirmed (Phase 4c): Soon, his own work; its Open is Record, on the entry's own section, where Send again, Update and send and Discard are */
@@ -5244,8 +5275,10 @@ export const OWNER_JS = `
   }
   function threadNeed(t){
     var last=t.msgs[t.msgs.length-1];
-    return item('now','messages','Message','m:'+t.u, last.at, {who:codeByUser(t.u), what:cut(last.text), practice:!!t.test,
-      open:function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(t.u); }});
+    return item('now','messages','Message','m:'+t.u, last.at, {who:codeByUser(t.u), head:'Reply to ', what:cut(last.text), practice:!!t.test,
+      open:function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(t.u); }}, function(c){
+      mainButton(c,'Reply','need.reply','m:'+t.u, function(){ showPlace('customers','messages',{fresh:true, push:true}); openMakerThread(t.u); });
+    });
   }
   /* ---- 15 Oct 2026 (plan 1, parts 3 and 4): WHAT IS OWED, BOTH WAYS, as Soon cards, his own work. The figures are the Desk's (/all/maker/inputs, owedMoney
      and owedGoods: src/maker-inputs.js owedBothWays over the engine's txAdvance, txUnpaidSince, the term and txStat), so nothing is reckoned here.
@@ -5298,14 +5331,14 @@ export const OWNER_JS = `
   }
   function moneyNeed(m){
     var first=m.rows[0];
-    return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, what:rm(m.rm)+' past term',
+    return item('soon','payments','Owed','$:'+m.party, m.since, {who:m.party, head:'Collect '+rm(m.rm)+' from ', what:'Past term',
       why:'Handed over '+fmtWhen(m.since)+', due '+fmtWhen(m.due)+'.'+(m.rows.length>1?' '+m.rows.length+' orders; the oldest opens.':''),
       open:function(){ owedGo(first,'[data-sect="money"]'); }}, function(c){
       var b=ghost(['Record payment','need.owed-pay',m.party]); b.addEventListener('click', function(){ owedGo(first,'[data-sect="money"]'); }); c._add(b);
     });
   }
   function goodsNeed(r){
-    return item('soon','orders','To hand over','g:'+r.rid, r.date||'', {who:r.party, mark:r.product, what:units(r.units)+' paid, not handed over',
+    return item('soon','orders','To hand over','g:'+r.rid, r.date||'', {who:r.party, head:'Hand over to ', mark:r.product, what:units(r.units)+' paid, not handed over',
       why:r.date?'Ordered '+fmtWhen(r.date)+'.':'', open:function(){ owedGo(r,'[data-act="order.handed-units"]'); }}, function(c){
       var b=ghost(['Handover','need.owed-hand',r.rid]); b.addEventListener('click', function(){ owedGo(r,'[data-act="order.handed-units"]'); }); c._add(b);
     });
@@ -5378,28 +5411,75 @@ export const OWNER_JS = `
       var tn=noteOf(c); tn.textContent=t.why; withDetails(tn,t.whyErr);
     });
   }
+  /* THE MONEY BUTTONS OF NEEDS YOU. One payment waiting on an order: Received asks once on the card, then sends what the order card's Received sends (orderReceived,
+     makerTap: one request id until it lands, makerBusy). More than one: the full card, which lists them. */
+  function orderPayButton(c, o, pays){
+    var key='p:'+o.id, who=codeByUser(o.u);
+    if(pays.length!==1){ mainButton(c,'Review','need.review',key, orderOpener(o.id)); needSays(c,key); return; }
+    var pp=pays[0], onBook=payOnBook(o,pp);
+    if(!needAsk[key]) mainButton(c,onBook?'Already recorded':'Received','need.received',key, function(){ delete needNote[key]; needAsk[key]=true; drawNeeds(); });
+    else askBox(c,key,onBook?'Already recorded, '+rm(pp.amount)+'?':'Confirm '+rm(pp.amount)+' received from '+who+'?', function(){
+      needBusy[key]=true; drawNeeds();
+      orderReceived(o,pp).then(function(done){
+        delete needBusy[key];
+        if(done) delete needAsk[key]; else needNote[key]=makerSaid[o.id]||'Not confirmed. Try again.';
+        drawNeeds();
+      });
+    });
+    needSays(c,key);
+  }
+  /* A payment against the account: its rows are read first (the card's own preview), and when they settle cleanly Received asks once on the card and sends
+     the card's request (sendClaimAnswer, the same request id). Rows that need a look open the full card. */
+  function claimPayButton(c, claim){
+    var key='c:'+claim.u+':'+claim.id, who=codeByUser(claim.u), ask=needAsk[key];
+    function full(){ delete needAsk[key]; makerClaimOpen=key; goPlace('orders','payments')(); }
+    function send(hash){
+      var body={hash:hash}, intended=JSON.stringify({action:'received',body:body});
+      var req=makerClaimRequests[key]||(makerClaimRequests[key]={intended:intended,action:'received',body:Object.assign({rid:mintRid()},body),busy:false});
+      if(req.busy) return;
+      req.busy=true; needBusy[key]=true; drawNeeds();
+      sendClaimAnswer(claim,key,req).then(function(){ delete needAsk[key]; },function(e){ needNote[key]='Not confirmed: '+e.message; }).then(function(){ req.busy=false; delete needBusy[key]; drawNeeds(); });
+    }
+    if(!ask){
+      mainButton(c,'Received','need.received',key, function(){ delete needNote[key]; if(makerClaimRequests[key]){ full(); return; } needAsk[key]={}; drawNeeds(); });
+    }else askBox(c,key,'Confirm '+rm(claim.amount)+' received from '+who+'?', function(){
+      /* Yes reads the rows first, as the card's own Received does; rows that need a look open the full card instead of sending */
+      needBusy[key]=true; drawNeeds();
+      refs('/all/maker/claims/'+claim.u+'/'+claim.id+'/preview',{}).then(function(r){
+        delete needBusy[key];
+        if(r.booked||r.left>0.004){ full(); return; }
+        send(r.hash);
+      },function(e){ delete needBusy[key]; needNote[key]='Could not read the rows: '+e.message; drawNeeds(); });
+    });
+    needSays(c,key);
+  }
   /* every card there is, ranked: Now before Soon before Watch, a real one before a practice one, the oldest first, those with no age last */
   function needItems(){
     var L=[], real=sheetRows.filter(function(a){ return !a.test; }), orders=makerData&&makerData.orders||[];
     needN=0;
     orders.filter(ordWaits).forEach(function(o){
       var who=codeByUser(o.u), t=!!o.test, to=orderOpener(o.id), pays=ordPays(o);
-      if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o), practice:t, open:to}));
+      if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:"'s order", mark:o.product, what:orderWhat(o), practice:t, open:to}, function(c){
+        /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it */
+        mainButton(c,'Agree','need.agree','o:'+o.id, to);
+      }));
       /* a question of theirs on the order that he has not answered (the Worker's awaitingAnswer), as an account's thread is Now when asked */
       if(orderAsked(o)){
         var last=o.msgs[o.msgs.length-1];
-        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, what:cut(last.text), why:'On their order.', practice:t, open:to}));
+        L.push(item('now','messages','Message','om:'+o.id, last.at, {who:who, head:'Reply to ', what:cut(last.text), why:'On their order.', practice:t, open:to}, function(c){
+          mainButton(c,'Reply','need.reply','om:'+o.id, to);
+        }));
       }
       if(pays.length){
         var sum=pays.reduce(function(s,p){ return s+(+p.amount||0); },0), first=pays.map(function(p){ return p.at||''; }).filter(Boolean).sort()[0]||'';
-        L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, what:'says they paid '+rm(sum), practice:t, open:to}));
+        L.push(item('now','payments','Payment','p:'+o.id, first, {who:who, head:'Confirm ', rest:"'s "+rm(sum), what:'Says they paid', practice:t, open:to}, function(c){ orderPayButton(c,o,pays); }));
       }
-      if(o.again&&o.again.length) L.push(item('soon','orders','Order','a:'+o.id, o.at, {who:who, mark:o.product, what:orderWhat(o),
-        why:'A step you rejected waits to be sent again.', practice:t, open:to}));
+      if(o.again&&o.again.length) L.push(item('soon','orders','Order','a:'+o.id, o.at, {who:who, head:'Send ', rest:"'s order again", mark:o.product, what:orderWhat(o),
+        why:'A step you rejected waits to be sent again.', practice:t, open:to}, function(c){ mainButton(c,'Review','need.review','a:'+o.id, to); }));
     });
     waitingClaims().forEach(function(c){
-      L.push(item('now','payments','Payment','c:'+c.u+':'+c.id, c.at, {who:codeByUser(c.u), what:'says they paid '+rm(c.amount),
-        practice:!!c.test, open:goPlace('orders','payments')}));
+      L.push(item('now','payments','Payment','c:'+c.u+':'+c.id, c.at, {who:codeByUser(c.u), head:'Confirm ', rest:"'s "+rm(c.amount), what:'Says they paid',
+        practice:!!c.test, open:goPlace('orders','payments')}, function(card){ claimPayButton(card,c); }));
     });
     makerThreads.filter(makerThreadAsked).forEach(function(t){ L.push(threadNeed(t)); });
     real.filter(function(a){ return a.account&&a.locked; }).forEach(function(a){ L.push(lockNeed(a)); });
@@ -5459,7 +5539,7 @@ export const OWNER_JS = `
     if(!needsReady()){ nCount.textContent='Reading what needs you.'; return; }
     var now=0, soon=0;
     items.forEach(function(i){ if(i.practice||!i.counts) return; if(i.sev==='now') now++; else if(i.sev==='soon') soon++; });
-    nCount.textContent=now||soon?[now?now+' now':'', soon?soon+' soon':''].filter(Boolean).join(', ')+(bad.length?' in what could be read.':'.')
+    nCount.textContent=now||soon?[now?now+' to do now':'', soon?soon+' soon':''].filter(Boolean).join(' · ')
       :bad.length?'Nothing in what could be read.':'Nothing needs you.';
   }
   function drawNeeds(){
@@ -5473,6 +5553,7 @@ export const OWNER_JS = `
       if(nKind!=='all'&&!have[nKind]){ nKind='all'; shown=items; [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x.getAttribute('data-chip')==='all'?'true':'false'); }); }
     }
     nlist.textContent='';
+    var practiceList=shown.filter(function(i){ return i.practice; }); shown=shown.filter(function(i){ return !i.practice; });
     if(!shown.length&&needsReady()) nlist.appendChild(el('p','rnone',nKind==='all'&&!needsBad().length?'Nothing needs you.':'Nothing here.'));
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
@@ -5488,6 +5569,13 @@ export const OWNER_JS = `
       box.appendChild(h);
       group.forEach(function(i){ box.appendChild(i.make()); });
     });
+    /* 17 Oct 2026: practice accounts leave Now, Soon and Watch for one folded line at the foot, which opens them in place */
+    if(practiceList.length){
+      var pb=el('details','nfold'); pb.setAttribute('data-sev','practice'); if(nFoldOpen.practice) pb.open=true;
+      pb.addEventListener('toggle', function(){ nFoldOpen.practice=pb.open; });
+      var ph=el('summary','salt-eyebrow salt-eyebrow--mist nsev','Practice: '+practiceList.length); ph.setAttribute('data-sev','practice'); ph.setAttribute('data-act','need.fold.practice');
+      pb.appendChild(ph); practiceList.forEach(function(i){ pb.appendChild(i.make()); }); nlist.appendChild(pb);
+    }
     drawNeedOpen(false);
   }
   function redrawLead(){ drawLead(needItems()); }

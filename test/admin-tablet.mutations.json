@@ -38,8 +38,8 @@
  {
   "name": "Customers' column does not say Tap a card",
   "file": "stmt/page.js",
-  "find": "<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'",
-  "replace": "<div id=\"aopen\" hidden></div></div>'"
+  "find": "<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>",
+  "replace": "<div id=\"aopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>"
  },
  {
   "name": "the tablet dialog is a rule for every Sheet, the customer's too",
@@ -208,5 +208,11 @@
   "file": "stmt/page.js",
   "find": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER PAGE'S",
   "replace": "EVERY RULE FROM HERE TO THE GUEST LINK IS THE OWNER'S PAGE"
+ },
+ {
+  "name": "Needs you's empty pane says Tap a card",
+  "file": "stmt/page.js",
+  "find": "'</div><div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'",
+  "replace": "'</div><div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'"
  }
 ]

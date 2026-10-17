@@ -14,7 +14,7 @@
  {
   "name": "the column beside Needs you does not say Tap a card",
   "file": "stmt/page.js",
-  "find": "<div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Tap a card</p></div>'",
+  "find": "<div id=\"nopen\" hidden></div><p class=\"rnone panenone\">Choose a card to see it in full.</p></div>'",
   "replace": "<div id=\"nopen\" hidden></div></div>'"
  }
 ]

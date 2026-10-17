@@ -412,6 +412,14 @@ export async function auditStates({ pageWork }) {
     await o.work.quiet();
     states.push(["a day with money and goods owed", actAudit(o.d)]);
   } finally { o.w.close(); }
+  /* 17 Oct 2026 (Counter Admin clarity, part 2): a payment on the card asking once, and a practice account folded at the foot */
+  const k = await richOwnerPage({ pageWork, review: (j) => { const a = j.orders.find((x) => x.id === "ord-a1"); a.payments = a.payments.filter((x) => x.claim === "waiting").slice(0, 1); return j; },
+    claims: (j) => { j.claims.push({ id: "c-x", u: "u-practice", amount: 10, state: "waiting", test: true, at: new Date().toISOString() }); return j; } });
+  try {
+    await k.work.quiet();
+    await k.click(byAct(k.d, "need.received", "p:ord-a1"));
+    states.push(["a payment asking once on its Needs you card, a practice account folded", actAudit(k.d)]);
+  } finally { k.w.close(); }
   const q = await richOwnerPage({ pageWork, failInputs: true });
   try {
     await q.work.quiet();
