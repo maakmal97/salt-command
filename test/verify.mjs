@@ -49940,8 +49940,8 @@ await (async () => {
     ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));
     /* v1147, the first live tie-out. (s224) an offset settled in units beside the goods collected reads more out than the row's size: the order holds its size */
     correct(EW.rid, { settledKg: 1, settledRM: 50 });
-    const ofrT29 = await tellSite(denv), ew3 = await orderOf(EW.o.id), tieKg = await tieOut(denv);
-    const ewOut = (tieKg.faults || []).concat(tieKg.waiting || []).find((f) => f.order === EW.o.id && f.what.some((w) => /handed over/.test(w)));
+    const ofrT29 = await tellSite(denv), ew3 = await orderOf(EW.o.id), tieUnits = await tieOut(denv);
+    const ewOut = (tieUnits.faults || []).concat(tieUnits.waiting || []).find((f) => f.order === EW.o.id && f.what.some((w) => /handed over/.test(w)));
     ok(!ofrT29.failed && ew3.moved === 1 && !ewOut, tag + ", units settled in kind beside the goods out leave the order at its size, and the tie-out level: " + J({ failed: ofrT29.failed, moved: ew3.moved, out: ewOut }));
     /* Fable's review: goods collected past the size are read whole, never capped, so the order is not shrunk and the tie-out shows them */
     ok(SG.rowOut({ qty: 1, deliveredQty: 2, settledKg: 0 }) === 2 && SG.rowOut({ qty: 2, deliveredQty: 2, settledKg: 1 }) === 2,
