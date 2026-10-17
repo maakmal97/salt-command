@@ -312,7 +312,7 @@ export async function run({ ok }) {
     await until(() => say("20261003090001-ack")?.textContent);
     ok(say("20261003090001-ack")?.textContent === "Order marked ready to deliver."
       && say("20261003090001-ack").getAttribute("role") === "status" && say("20261003090001-ack").getAttribute("aria-live") === "polite"
-      && !/ready to deliver/.test(list()) && /open orders/.test(list()) && !say("20261003090002-rdy")?.textContent
+      && !/ready to deliver/.test(list()) && /^\d+ orders?$/.test(list()) && !say("20261003090002-rdy")?.textContent
       && scrolls.some((s) => s.id === "20261003090001-ack" && s.options && s.options.block === "nearest"),
       "An order's answer lands in the foot of the card tapped, a polite status line, not on the list's line and not on another card: "
       + JSON.stringify({ card: say("20261003090001-ack")?.textContent, other: say("20261003090002-rdy")?.textContent, list: list() }));

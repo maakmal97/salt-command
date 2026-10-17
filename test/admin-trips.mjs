@@ -203,6 +203,10 @@ export async function run({ ok, pageWork }) {
     const text = (n) => (n && n.textContent || "").replace(/\s+/g, " ").trim();
     ok(!!rowEl && /orders\.confirmed/.test(rowEl.getAttribute("data-in")) && rowEl.querySelectorAll("svg.psym").length === 3 && /RM 271\.00/.test(text(rowEl)),
       "the order of several books is one row under Agreed, a mark a line and what it owes: " + text(rowEl));
+    /* 18 Oct 2026, his screenshot: the marks stand in the tile column, so the line is not squeezed into 84px and the figure keeps the right */
+    const tile = rowEl && rowEl.firstElementChild, what = rowEl && rowEl.querySelector(".salt-inbox-row__what");
+    ok(!!tile && tile.classList.contains("mtile") && tile.querySelectorAll("svg.psym").length === 3 && !!what && !what.querySelector("svg.psym") && text(what) === "one order",
+      "and its marks are the row's tile, its line the words alone: " + text(what));
     ok(!!card && text(card.querySelector("h3")) === "CX9-ZED, 3 books, 14 Oct 2026" && text(card.querySelector(".salt-metrics")) === "Owed RM 271.00 Paid RM 0.00 Handed 0 of 3 lines",
       "its card's head reads owed, paid and the lines handed over across every line: " + text(card && card.querySelector(".salt-metrics")));
     const ls = card ? [...card.querySelectorAll(".tripline")] : [];
@@ -213,6 +217,15 @@ export async function run({ ok, pageWork }) {
     const hands = p.sent("/all/maker/inputs/ledger-amend");
     ok(J(hands.map((b) => [b.rid, b.kind, b.cash, b.movedUnits])) === J([["zt1", "Fulfilment", 0, 1], ["zt2", "Fulfilment", 0, 10], ["zt3", "Fulfilment", 0, 5]])
       && new Set(hands.map((b) => b.at)).size === 3, "Handover all sends one handover a line, every line in full, each its own request: " + J(hands));
+    /* 18 Oct 2026, his screenshot: the line over the list counts the cards of the stage in view, never the site's open orders across every stage */
+    const shown = (st) => [...p.d.querySelectorAll("#makerOrderList .ordrow")].filter((r) => r.getAttribute("data-in") === "orders." + st).length;
+    const line = () => text(p.d.getElementById("makerReviewStatus"));
+    await p.tap("part.orders.confirmed");
+    const nAgreed = shown("confirmed"), atAgreed = line();
+    await p.tap("part.orders.placed");
+    const nPlaced = shown("placed"), atPlaced = line();
+    ok(nAgreed >= 2 && atAgreed === nAgreed + " orders" && atPlaced === nPlaced + (nPlaced === 1 ? " order" : " orders") && nPlaced !== nAgreed,
+      "the line over the list counts the stage in view, and moves with the stage: " + J({ atAgreed, nAgreed, atPlaced, nPlaced }));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   p = await open({ refuse: "zt3" });
   try {

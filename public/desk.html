@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="a1f84d627b01b55a";
+var SALT_BUILD_ID="a7a192167942f32f";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -4093,6 +4093,8 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 /* fields with no inner padding of their own (the drift box, the map's two dates) sat their text on the edge, which
    the recipe's brass edge made plain (09 Oct 2026): 10px in, as the other fields */
 .mapfrom,.mapto,input[id^="driftIn_"]{padding-left:10px;}
+/* 18 Oct 2026: the map's two dates sit in a row that shrinks them, so each holds the date, its two steppers and Today */
+.mapperiod .dtin{width:310px;flex:0 0 auto;}
 .qask{background:var(--salt-well);border-color:var(--salt-line-faint);color:var(--salt-brass);font-weight:500;}
 .qask.none{color:var(--salt-mist);}
 .qask.under{color:var(--salt-ember);border-color:color-mix(in srgb, var(--salt-ember) 45%, transparent);}
@@ -13883,8 +13885,8 @@ function tabMap(){
       <span class="viewsw"><button${!MAP_FROM&&!MAP_TO?' class="on"':''} onclick="mapPeriod()">All time</button></span>
       <button class="vbtn salt-pill salt-pill--sm mapplay" onclick="mapPlay()">${MAP_PLAY?'Stop':'Play by month'}</button>
       <span style="display:inline-flex;align-items:center;gap:8px"><input class="mapmonth" type="range" min="0" max="${ms.length-1}" value="${mi<0?ms.length-1:mi}" oninput="mapMonth(this.value)" aria-label="Month" style="width:150px;min-height:var(--tap)"><b class="mapmonthname" style="color:var(--ink)">${whole?MAP_MON[+MAP_FROM.slice(5,7)-1]+' '+MAP_FROM.slice(0,4):NIL}</b></span>
-      <label style="display:inline-flex;align-items:center;gap:6px">From ${dateIn('mapFrom',MAP_FROM,' class="mapfrom" onchange="mapPeriod(this.value,MAP_TO)" style="min-height:var(--tap);padding-right:74px"')}</label>
-      <label style="display:inline-flex;align-items:center;gap:6px">To ${dateIn('mapTo',MAP_TO,' class="mapto" onchange="mapPeriod(MAP_FROM,this.value)" style="min-height:var(--tap);padding-right:74px"')}</label>
+      <label style="display:inline-flex;align-items:center;gap:6px">From ${dateIn('mapFrom',MAP_FROM,' class="mapfrom" onchange="mapPeriod(this.value,MAP_TO)" style="min-height:var(--tap)"')}</label>
+      <label style="display:inline-flex;align-items:center;gap:6px">To ${dateIn('mapTo',MAP_TO,' class="mapto" onchange="mapPeriod(MAP_FROM,this.value)" style="min-height:var(--tap)"')}</label>
     </div>`:''}
     <div class="maplegend" style="margin-bottom:9px">${legend}</div>
     ${MAP_NET?`<div class="mapnetnote" style="margin-bottom:9px;font-size:12px;color:var(--mut)">Network: ${net.length} line${net.length===1?'':'s'} from ${netAssoc} associate${netAssoc===1?'':'s'} to the customers they brought in${netMiss.length?`; ${netMiss.length} not drawn, a party with no point`:''}.</div>`:''}

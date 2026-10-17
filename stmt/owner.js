@@ -131,6 +131,7 @@ export const OWNER_JS = `
       /* a strip scrolls sideways on a narrow screen: the part he is in is brought into view */
       var sp=b.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,b.offsetLeft-sp.offsetLeft-12); });
     sweep();
+    if(placeNow==='orders'&&moved2&&makerData) paintOrdStatus();
     say('');
     unsentPaint();
     if(fresh&&PLACE_READ[placeNow]) PLACE_READ[placeNow]();
@@ -3784,9 +3785,11 @@ export const OWNER_JS = `
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(r.total||0)+Number(r.delivery||0))));
     }else if(e.trip||e.day){
       /* an order of several books: the buyer's code, a mark a line, and what the order owes, the Desk's figure */
-      var g=e.trip||e.day, what=el('span','salt-inbox-row__what');
+      /* 18 Oct 2026: the marks stand in the tile column, as one book's tile does, so the line and the figure keep their own columns */
+      var g=e.trip||e.day, what=el('span','salt-inbox-row__what'), tile=el('span','mtile');
       t.appendChild(whoTag(el('span',null,g.party),g.party));
-      g.lines.forEach(function(l){ what.appendChild(bookMark(l.product)); what.appendChild(document.createTextNode(' ')); });
+      g.lines.forEach(function(l){ tile.appendChild(bookMark(l.product)); });
+      b.appendChild(tile);
       what.appendChild(document.createTextNode(e.trip?'one order':'same day, not one order'));
       main.appendChild(what);
       side.appendChild(el('span','salt-inbox-row__action',rm(g.owed)));
@@ -3794,6 +3797,13 @@ export const OWNER_JS = `
     main.insertBefore(t,main.firstChild); b.appendChild(main); b.appendChild(side);
     b.addEventListener('click', function(){ openOrder(e.id); });
     return b;
+  }
+  /* 18 Oct 2026: the line over the list counts the stage in view, every card it holds (a book row and an order of several books too), never
+     the site's open orders across every stage, which read "2 open orders" over one card */
+  function paintOrdStatus(){
+    var status=document.getElementById('makerReviewStatus'); if(!status) return;
+    var n=Object.keys(ordEntries).filter(function(k){ return ordEntries[k].parts==='orders.'+partNow; }).length;
+    status.textContent=n+(n===1?' order':' orders');
   }
   /* a count on the pill of each stage whose orders wait on him, and on Payments for the payments they say they sent; a practice order is not counted, as the rail does not */
   function paintOrdCounts(){
@@ -3928,7 +3938,6 @@ export const OWNER_JS = `
     var open=(makerData.orders||[]).filter(ordOpen);
     var pendingRows=(makerData.drafts||[]).filter(function(d){ return d.status==='pending'; });
     makerOpenOrders=open;
-    if(status) status.textContent=open.length+(open.length===1?' open order':' open orders');
     if(draftStatus) draftStatus.textContent=pendingRows.length+(pendingRows.length===1?' row':' rows')+' waiting for your approval';
     /* a row for each order of its stage, a done or ended one (fifty a stage at most) as well; an order whose cash is held is marked Waiting on you
        with its Undo, whatever else it is, and a held cash with no order on the read is a row of its own, in Placed */
@@ -3958,6 +3967,7 @@ export const OWNER_JS = `
     (makerData.trips||[]).forEach(function(t){ entries.push({id:'trip:'+t.trip, trip:t, parts:'orders.confirmed', waits:false}); });
     (makerData.sameDay||[]).forEach(function(t){ entries.push({id:'day:'+t.rids.join('+'), day:t, parts:'orders.confirmed', waits:false}); });
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
+    if(status) paintOrdStatus();
     list.textContent='';
     entries.forEach(function(e){ list.appendChild(orderRow(e)); });
     /* a done or ended stage lists the orders with nothing asked of him (fifty at most) and every one that waits on him, which is never dropped; the note
