@@ -1,6 +1,6 @@
 {
- "v": "v1148",
- "stamped": "17 Oct 2026, 20:20 KL",
+ "v": "v1149",
+ "stamped": "17 Oct 2026, 20:45 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -7935,11 +7935,28 @@
     "customer": "CS6-PER",
     "qty": 2,
     "total": 230,
-    "cash": 0,
+    "cash": 230,
     "date": "2026-10-17",
     "deliveredQty": 0,
     "note": "<b>NEW PENDING SALE ON 17 OCT: 2 UNITS OF SALT TO CS6-PER FOR RM230.</b> Ordered on the statements site, order 20261017120517-w6r8bw, acknowledged, to collect. RM0 paid and nothing delivered. The goods total of RM230 is above the desk's floor of RM116 and below its ask of RM250, both for 2 units; that is RM115 a unit against RM58 and RM125. CS6-PER has a median rate of RM85.52, a range of RM7 to RM116, RM0 outstanding before and 0 units on credit, against a cap of 2. The cost carried is the inventory's own rate. The drafter flagged the rate as 15% above the usual RM100; the rate is higher, as flagged, and well above the median shown. The full RM230 and the 2 units remain outstanding.",
-    "rid": "s270"
+    "rid": "s270",
+    "amend": [
+     {
+      "date": "2026-10-17",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-17",
+      "kind": "Fulfilment",
+      "cash": 230,
+      "kg": 0,
+      "note": "<b>PAYMENT OF RM230 ON 17 OCT AGAINST ORDER S270, 2 UNITS OF SALT FOR CS6-PER.</b> Paid on the statements site against the account, by qr via gx, claim a20261017124421-u6puwq. The cash moves from RM0 to RM230 and no unit moves. Before this, RM230 and 2 units were outstanding; it leaves RM0 owed and the 2 units still to be collected. The goods total of RM230 stands above the desk's floor total and below its ask total for 2 units, as the order note records. CS6-PER has a median rate of RM85.52, a range of RM7 to RM116, RM230 outstanding before and 0 units on credit. The cost carried is the inventory's own rate and is unchanged. The drafter flagged nothing. The 2 units remain outstanding for delivery."
+     }
+    ],
+    "paidOn": "2026-10-17"
    }
   ],
   "contacts": [
@@ -8622,9 +8639,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-17T12:20:19.424Z",
+  "QUEUE_COMMITTED": "2026-10-17T12:44:21.313Z",
   "PRICING": {
-   "takenAt": "2026-10-17T12:20:59.759Z",
+   "takenAt": "2026-10-17T12:45:22.135Z",
    "sizes": [
     0.5,
     1,
@@ -8678,7 +8695,7 @@
     {
      "id": "int:nocost",
      "sev": "watch",
-     "title": "3 priced sales carry no cost of their own"
+     "title": "4 priced sales carry no cost of their own"
     },
     {
      "id": "int:underfloor",
@@ -8860,13 +8877,13 @@
     "CS6-PER": {
      "salt": {
       "name": "consistent mid",
-      "orders": 14,
+      "orders": 15,
       "tenureDays": 101,
-      "sinceLastDays": 3,
-      "perMonth": 4.22,
-      "unitsPerMonth": 13.26,
-      "smallShare": 0.29,
-      "bigShare": 0.36,
+      "sinceLastDays": 0,
+      "perMonth": 4.52,
+      "unitsPerMonth": 13.86,
+      "smallShare": 0.27,
+      "bigShare": 0.33,
       "frequent": true,
       "small": false,
       "bigger": false,
@@ -15711,10 +15728,10 @@
      ]
     }
    },
-   "v": "v1148"
+   "v": "v1149"
   },
   "OPEN": {
-   "at": "2026-10-17T12:21:00.651Z",
+   "at": "2026-10-17T12:45:22.919Z",
    "count": 11,
    "byKey": {
     "CS6-PER|2026-10-17|230": {
@@ -15723,12 +15740,12 @@
      "dir": "S",
      "q": 2,
      "t": 230,
-     "cash": 0,
+     "cash": 230,
      "mv": 0,
-     "st": "part",
-     "oweRM": 230,
+     "st": "oweStock",
      "oweUnits": 2,
      "rid": "s270",
+     "paidOn": "2026-10-17",
      "key": "CS6-PER|2026-10-17|230"
     },
     "CS6-BS-R|2026-10-15|220": {
@@ -15905,9 +15922,9 @@
     "salt": {
      "name": "Salt",
      "onHand": 22.89,
-     "free": 21.39,
-     "owedOut": 1.5,
-     "coverDays": 4.3,
+     "free": 19.39,
+     "owedOut": 3.5,
+     "coverDays": 3.9,
      "rate": 4.88,
      "owedToYou": 625,
      "promised": 3.5,
@@ -15954,7 +15971,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1148"
+   "v": "v1149"
   },
   "TERMS": {
    "ceiling": 250,
@@ -15962,7 +15979,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1148"
+   "v": "v1149"
   },
   "REWARD": {
    "stated": {
@@ -15974,7 +15991,7 @@
      }
     }
    },
-   "v": "v1148"
+   "v": "v1149"
   }
  }
 }

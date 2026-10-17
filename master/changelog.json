@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1149",
+  "d": "17 Oct 2026",
+  "t": "PAYMENT OF RM230 ON CS6-PER'S ORDER S270, NO STOCK MOVED",
+  "n": [
+   "<b>PAYMENT FOLDED AGAINST S270.</b> CS6-PER paid RM230 on the statements site, by qr via gx, against the account, on 17 Oct 2026. It was preapproved by Counter Admin and the drafter raised no flags. The order itself is unchanged: 2 units of salt for RM230.",
+   "<b>INVENTORY UNMOVED.</b> No goods left on this row, so salt stays at 22.89 units and the stock cost stays at RM56. The 2 units on the order remain undelivered and still count among those promised."
+  ]
+ },
+ {
   "v": "v1148",
   "d": "17 Oct 2026",
   "t": "ONE PENDING SALE OF 2 UNITS OF SALT TO CS6-PER, NO STOCK MOVED",
