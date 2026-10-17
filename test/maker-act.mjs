@@ -298,9 +298,9 @@ export async function drawEverything(p) {
   await click(byAct(d, "nav.record"));
   await click(byAct(d, "part.record.entry"));
   await click(byAct(d, "record.trade.add-book"));
-  /* Record > Approve (Phase 2c): the Desk's rows are the Approve card and the queue is a fold, shut and counted; Approve, Reject and a held entry's Withdraw each ask on the page's Sheet, let go with Keep.
+  /* Orders > Approve (Phase 2c): the Desk's rows are the Approve card and the queue is a fold, shut and counted; Approve, Reject and a held entry's Withdraw each ask on the page's Sheet, let go with Keep.
      The group order's Close and the notice's Set and Clear ask on it too, each below where its own part is entered. */
-  await click(byAct(d, "part.record.approve"));
+  await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.approve"));
   const row = d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]');
   p.snap("the rows to approve, the queue shut");
   await click(byAct(row, "draft.approve")); p.snap("a Desk row's Approve, asking on the sheet"); await click(byAct(d, "ask.keep"));

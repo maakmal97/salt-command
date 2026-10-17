@@ -14,8 +14,8 @@
  {
   "name": "Orders loses its Ended part",
   "file": "stmt/page.js",
-  "find": "[\"done\", \"Completed\"], [\"ended\", \"Ended\"], [\"payments\", \"Payments\"]",
-  "replace": "[\"done\", \"Completed\"], [\"payments\", \"Payments\"]"
+  "find": "[\"done\", \"Completed\"], [\"ended\", \"Ended\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]",
+  "replace": "[\"done\", \"Completed\"], [\"approve\", \"Approve\"], [\"payments\", \"Payments\"]"
  },
  {
   "name": "Shop loses its Practice part",
@@ -110,8 +110,8 @@
  {
   "name": "the Desk's rows show under Entry",
   "file": "stmt/page.js",
-  "find": "<section data-in=\"record.approve\" aria-label=\"Rows to approve\">",
-  "replace": "<section data-in=\"record.entry\" aria-label=\"Rows to approve\">"
+  "find": "<section id=\"oApprove\" data-in=\"orders.approve\" aria-label=\"Rows to approve\">",
+  "replace": "<section id=\"oApprove\" data-in=\"record.entry\" aria-label=\"Rows to approve\">"
  },
  {
   "name": "the tier form moves to Entry",
@@ -358,5 +358,23 @@
   "file": "stmt/owner.js",
   "find": "showPlace(mm, mm===placeNow?partNow:'', {fresh:true,push:true}); return; }",
   "replace": "showPlace(mm,'',{fresh:true,push:true}); return; }"
+ },
+ {
+  "name": "the old #record/approve address lands on Entry",
+  "file": "stmt/owner.js",
+  "find": "var PART_ADDR={'record/approve':['orders','approve']};",
+  "replace": "var PART_ADDR={};"
+ },
+ {
+  "name": "Approve stays on Record's strip",
+  "file": "stmt/page.js",
+  "find": "record: [[\"entry\", \"Entry\"]",
+  "replace": "record: [[\"approve\", \"Approve\"], [\"entry\", \"Entry\"]"
+ },
+ {
+  "name": "Orders' Approve reads nothing when entered",
+  "file": "stmt/owner.js",
+  "find": "    'orders.approve':function(){ loadMaker(); },\n",
+  "replace": ""
  }
 ]

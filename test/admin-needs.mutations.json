@@ -156,10 +156,10 @@
   "replace": "makerThreadAsked(t); }).length);"
  },
  {
-  "name": "Record has no count",
+  "name": "Record carries a count again",
   "file": "stmt/owner.js",
-  "find": "setCount('record', pendingRows().length);",
-  "replace": ""
+  "find": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);",
+  "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);\n    setCount('record', pendingRows().length);"
  },
  {
   "name": "the line counts a practice item",
@@ -171,7 +171,7 @@
   "name": "an order opens the Desk rows",
   "file": "stmt/owner.js",
   "find": "to=orderOpener(o.id), pays=ordPays(o);",
-  "replace": "to=goPlace('record','approve'), pays=ordPays(o);"
+  "replace": "to=goPlace('record','entry'), pays=ordPays(o);"
  },
  {
   "name": "a message opens no thread",
@@ -188,7 +188,7 @@
  {
   "name": "a row opens Orders",
   "file": "stmt/owner.js",
-  "find": "open:goPlace('record','approve')}, function(c){\n      if(!claim){",
+  "find": "open:goPlace('orders','approve')}, function(c){\n      if(!claim){",
   "replace": "open:goPlace('orders','waiting')}, function(c){\n      if(!claim){"
  },
  {

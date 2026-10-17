@@ -447,7 +447,7 @@ export async function run({ ok, pageWork }) {
   p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [], drafts: [ud], queue: [], trips: [], sameDay: [] }) });
   try {
     await p.work.quiet();
-    byAct(p.d, "nav.record").click(); await p.work.quiet(); byAct(p.d, "part.record.approve").click(); await p.work.quiet();
+    byAct(p.d, "nav.orders").click(); await p.work.quiet(); byAct(p.d, "part.orders.approve").click(); await p.work.quiet();
     const c = p.d.querySelector("#makerDrafts [data-maker-card]");
     ok(!!c && text(c.querySelector(".apverb")) === "Undo a payment" && text(byAct(c, "draft.approve")) === "Approve: zu1 owes RM 220.00",
       "an undo lands under Approve as one card, saying what it undoes, and its button the result: " + (c && [text(c.querySelector(".apverb")), text(byAct(c, "draft.approve"))]));

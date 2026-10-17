@@ -286,7 +286,7 @@ export async function run({ ok }) {
       for (let i = 0; i < 200 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    /* an order's card is drawn for the order opened alone (Phase 1c), so asking for it opens it; a Desk row's card is Record > Approve's, an Approve card (Phase 2c) found by its key, and stands */
+    /* an order's card is drawn for the order opened alone (Phase 1c), so asking for it opens it; a Desk row's card is Orders > Approve's, an Approve card (Phase 2c) found by its key, and stands */
     const card = (id) => cardOf(doc, id) || doc.querySelector('#makerDrafts [data-maker-card="draft:' + id + '"]');
     const button = (id, text) => card(id) && [...card(id).querySelectorAll("button")].find((b) => b.textContent === text);
     const field = (id, label) => {

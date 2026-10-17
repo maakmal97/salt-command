@@ -352,8 +352,8 @@ export async function run({ ok, pageWork }) {
       || t.querySelector(".mq")?.getAttribute("aria-hidden") !== "true" || SHAPE_WORD.test(seen(t)) || /[a-z]{3,}/i.test(seen(t).replace(/units?/g, ""))).map((t) => t.textContent);
     ok(tiles.length >= 4 && wrong.length === 0,
       "each order tile on Orders is the book's mark with its size beneath, 2 units, no word for the book and no shape word, and a reader is told the shape and the size: " + tiles.length + " tiles; " + JSON.stringify(wrong.slice(0, 2)));
-    byAct(d, "nav.record").click(); await work.quiet();
-    byAct(d, "part.record.approve").click(); await work.quiet();
+    byAct(d, "nav.orders").click(); await work.quiet();
+    byAct(d, "part.orders.approve").click(); await work.quiet();
     byAct(d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(); await work.quiet();
     const sheet = [...d.querySelectorAll(".salt-sheet .mtile")].map((t) => [t.querySelector(".mq")?.textContent, (t.querySelector(".sr")?.textContent || "").split(" ")[0]]);
     ok(sheet.length === 2 && sheet.every((s) => s[0] === "1 unit" && SHAPES.includes(s[1])) && new Set(sheet.map((s) => s[1])).size === 2,
@@ -394,7 +394,7 @@ export async function run({ ok, pageWork }) {
     const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh)]); byAct(all.d, keep).click(); await all.work.quiet(); };
     byAct(all.d, "nav.orders").click(); await all.work.quiet();
     await asked(() => byAct(cardOf(all.d, "ord-r1"), "order.cancel").click(), "order.ask-keep");
-    byAct(all.d, "nav.record").click(); byAct(all.d, "part.record.approve").click(); await all.work.quiet();
+    byAct(all.d, "nav.orders").click(); byAct(all.d, "part.orders.approve").click(); await all.work.quiet();
     await asked(() => byAct(all.d.querySelector('#makerDrafts [data-maker-card="draft:d-2"]'), "draft.approve").click(), "ask.keep");
     ok(sheets.length === 2 && sheets.every(([tiles, said]) => tiles >= 1 && said.length > 3 && !said.some(([t]) => BOOK_NAMED.test(t))) && !sheets.flatMap(([, said]) => said).some(([t, hidden]) => !hidden && SHAPE_WORD.test(t)),
       "the Sheets that ask draw a tile for the order or the rows they restate, and name no book and draw no shape word while they are open: " + JSON.stringify(sheets.map(([tiles, said]) => [tiles, said.length])));

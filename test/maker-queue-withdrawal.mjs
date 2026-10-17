@@ -473,7 +473,7 @@ export async function run({ ok, worker, handleMaker }) {
       const action = doc.querySelector("#makerQueueReview .maker-queue-action");
       const emptyUi = !doc.querySelector("#makerReview .maker-card button, #makerDrafts .maker-card button") && !action;
       if (width === 1280) ok(!emptyUi && doc.querySelector("#makerQueueReview").textContent.includes("Entry waiting for the Desk")
-        && doc.querySelector("#makerQueueReview").textContent.includes("From another device.") && !/server-held/i.test(doc.querySelector("#oRecord").textContent),
+        && doc.querySelector("#makerQueueReview").textContent.includes("From another device.") && !/server-held/i.test(doc.querySelector("#oOrders").textContent),
       "the desktop Counter review draws an uploaded device entry in plain words, from another device, with no note on the server's boundary");
       const styles = [...doc.querySelectorAll("style")].map((style) => style.textContent).join("\n");
       const target = styles.match(/\.maker-queue-action\{([^}]+)\}/)?.[1] || "";

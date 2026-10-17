@@ -275,7 +275,7 @@ export async function run({ ok, pageWork }) {
   approveFigures(mb, ds, []);
   p = await open({ drafts: ds });
   try {
-    await p.tap("nav.record"); await p.tap("part.record.approve");
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
     const cards = [...p.d.querySelectorAll("#makerDrafts [data-maker-card]")];
     const c1 = cards[0], c2 = cards[1], btn = (c) => byAct(c, "draft.approve").textContent;
     ok(cards.length === 2 && ds.every((d) => d.figures) && ds.slice(0, 3).every((d) => d.figures.trip === T)

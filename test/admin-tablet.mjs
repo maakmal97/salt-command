@@ -136,7 +136,7 @@ export async function run({ ok, pageWork }) {
   /* 6. FROM 1080px, THE LAPTOP: Shop is one column of 760px, the rows to approve lie two up, and Messages stands the thread beside the thread list */
   {
     const q = "(min-width:1080px)";
-    const shop = at(q, ".adm #oShop"), wide = at(q, ".adm #oRecord>.abody>section:not(#makerInputs)"), narrow = at("(min-width:860px)", ".adm #oRecord>.abody>section:not(#makerInputs)");
+    const shop = at(q, ".adm #oShop"), wide = at(q, ".adm #oOrders>.abody>#oApprove"), narrow = at("(min-width:860px)", ".adm #oOrders>.abody>#oApprove");
     ok(/max-width: 760px/.test(shop) && /max-width: none/.test(wide) && /max-width: 600px/.test(narrow),
       "from 1080px Shop is one column of 760px and the rows to approve have the width for two, and from 860px they keep their 600px column: " + [shop, wide, narrow].join(" | "));
     const two = at(q, ".adm #makerDrafts"), card = at(q, ".adm #makerDrafts>.maker-card"), note = at(q, ".adm #makerDrafts>.rnone");

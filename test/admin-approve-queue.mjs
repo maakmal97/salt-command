@@ -1,6 +1,6 @@
 /* test/admin-approve-queue.mjs: THE ROWS TO APPROVE, THE QUEUE, AND NO NATIVE CONFIRM (Phase 2c of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "The rows to approve").
  *
- * A Desk row waiting for him is a card on Record > Approve (and a pill on Needs you). His decisions of 11 Oct 2026 shape it: 4, a Sheet replaces every native confirm, and the phone leads a
+ * A Desk row waiting for him is a card on Orders > Approve (and a pill on Needs you). His decisions of 11 Oct 2026 shape it: 4, a Sheet replaces every native confirm, and the phone leads a
  * draft with the cost and margin read off the draft and computes nothing, its flags frozen at drafting. What is proved here, each check red under its own mutation
  * (test/admin-approve-queue.mutations.json):
  *   1  the row to approve wears the system's Approve recipe: its markup carries the recipe's classes, the page restates none of the recipe's rules, the figures lead the flags, the flags are chips,
@@ -68,7 +68,7 @@ export async function run({ ok, pageWork }) {
     };
     return p;
   };
-  const enterRecord = async (p) => { await p.tap("nav.record"); await p.tap("part.record.approve"); };
+  const enterRecord = async (p) => { await p.tap("nav.orders"); await p.tap("part.orders.approve"); };
 
   /* 1. THE ROW TO APPROVE IS THE SYSTEM'S APPROVE CARD (since plan 2 of 16 Oct 2026 it says the change; test/admin-approve-card.mjs proves what it says) */
   let p = await open({ review: (j) => { j.drafts[0].reasoning = "Priced under their usual."; return j; } });
@@ -144,7 +144,7 @@ export async function run({ ok, pageWork }) {
       "and its two entries are drawn inside it, so a shut fold hides them from the eye and reads nothing away");
     sum.click(); await p.work.quiet();
     ok(fold.open === true, "a tap on its summary opens it");
-    await p.tap("nav.orders"); await p.tap("nav.record");
+    await p.tap("nav.record"); await p.tap("nav.orders"); await p.tap("part.orders.approve");
     ok(d.getElementById("makerQueue") === fold && fold.open === true && !!byAct(d.getElementById("makerQueueReview"), "queue.withdraw", "q-1"),
       "and a redraw of the entries leaves it open: it is the fold, not the entries, that he set");
     sum.click(); await p.work.quiet();
@@ -243,7 +243,7 @@ export async function run({ ok, pageWork }) {
     const before = pill();
     pill().click(); await p.work.quiet();
     ok(p.title() === "Approve this row?" && p.inSheet("ask.go").textContent === "Approve the sale" && !!p.inSheet("ask.go", "need:draft:d-1:approve") && p.posted(route("approve", "d-1")).length === 0 && p.confirms.length === 0,
-      "the pill opens the very Sheet Record > Approve asks on, and sends nothing as it opens");
+      "the pill opens the very Sheet Orders > Approve asks on, and sends nothing as it opens");
     p.inSheet("ask.keep").click(); await p.work.quiet();
     ok(!p.sheet() && pill() === before && !pill().disabled && d.activeElement === pill() && p.posted(route("approve", "d-1")).length === 0,
       "a no leaves the pill on, the card undrawn and the focus on the pill");

@@ -682,7 +682,7 @@ body.ended>*:not(#aEnded){display:none}
 }
 @media (min-width:860px){
   .adm #oRecord{max-width:none}
-  .adm #oRecord>.abody>section:not(#makerInputs){max-width:600px}
+  .adm #oOrders>.abody>#oApprove{max-width:600px}
   .adm .recgrid{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:20px;align-items:start}
   .adm .recgrid.open .recnone{display:none}
   .adm .recpane{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
@@ -695,7 +695,7 @@ body.ended>*:not(#aEnded){display:none}
    queue's fold, under them, keeps the whole width), and Messages stands the thread beside the thread list, sticky and scrolling inside itself, as Customers stands an account
    beside its list. Nothing opens by itself: the column beside the threads is empty until a tap. */
 @media (min-width:1080px){
-  .adm #oRecord>.abody>section:not(#makerInputs){max-width:none}
+  .adm #oOrders>.abody>#oApprove{max-width:none}
   .adm #makerDrafts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
   .adm #makerDrafts>.maker-card{margin:0}
   .adm #makerDrafts>.rnone{grid-column:1/-1}
@@ -1395,9 +1395,9 @@ function noticeCard(b) {
    its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
 const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
 const ADMIN_PARTS = {
-  orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
-  record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
+  record: [["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* a place's parts strip: every part is a control with an act of its own, part.<place>.<part> (docs/STATEMENTS.md) */
@@ -1518,6 +1518,13 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<section id="oSplit" data-in="orders.placed orders.confirmed orders.ready orders.paid orders.done orders.ended" aria-label="Orders">'
         + '<p class="lead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
+        + '<section id="oApprove" data-in="orders.approve" aria-label="Rows to approve">'
+        + '<p class="lead" id="makerDraftStatus">Reading.</p>'
+        + '<div id="makerDrafts"></div>'
+        /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
+        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Sent, not yet drafted</span></summary>'
+        + '<div class="salt-plan__body">'
+        + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
         + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'
         + '<section data-in="orders.group" aria-labelledby="makerPoolsTitle"><h2 id="makerPoolsTitle">Group orders</h2>'
         + '<p class="lead">Customers join a bulk order. When you close it, each order comes to you to agree.</p>'
@@ -1569,21 +1576,14 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="clist"></div>'
         + "</div>"
         + "</div></div>"
-        /* RECORD: his own entries. Approve is the Desk's rows waiting for him and the entries the server holds; the other three parts
-           are the forms, which the Desk checks and holds for review before they change the book. */
+        /* RECORD: his own entries, the forms, which the Desk checks and holds for review before they change the book. The Desk's rows waiting for
+           him and the entries the server holds are Approve, under Orders (17 Oct 2026, as the Desk's Order book took it). */
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
         + '<p class="salt-eyebrow salt-eyebrow--copper">Salt Account<span class="clk" data-clock></span></p>'
         + "<h1>Record</h1>"
-        + '<p class="lead">Everything here waits for your approval under Approve.</p>'
+        + '<p class="lead">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
         + adminParts("record")
         + '<div class="abody">'
-        + '<section data-in="record.approve" aria-label="Rows to approve">'
-        + '<p class="lead" id="makerDraftStatus">Reading.</p>'
-        + '<div id="makerDrafts"></div>'
-        /* 12 Oct 2026 (Phase 2c): the queue is the system's Plan fold, SHUT, titled and counted (the count is the entries the server holds, drawn with them) and opened by a tap */
-        + '<details id="makerQueue" class="salt-plan"><summary data-act="record.queue-toggle"><span class="salt-plan__id" id="makerQueueCount">0</span><span class="salt-plan__title" id="makerQueueTitle">Sent, not yet drafted</span></summary>'
-        + '<div class="salt-plan__body">'
-        + '<div id="makerQueueReview" aria-live="polite"></div></div></details></section>'
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
         + "</div></div>"
         /* SHOP: the counter itself. The practice accounts are the two he opens to try the customer's page. */

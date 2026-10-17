@@ -111,7 +111,7 @@ export async function run({ ok, pageWork }) {
   let p = await open(make);
   try {
     const d = p.d;
-    await p.tap("nav.record"); await p.tap("part.record.approve");
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
     const s267 = p.card("2026-10-15T12:48:33.817Z"), s262 = p.card("2026-10-15T12:52:26.992Z");
     /* B. the head */
     const head = s267 && s267.querySelector(".salt-approve__head");
@@ -174,7 +174,7 @@ export async function run({ ok, pageWork }) {
   p = await open(make);
   try {
     p.refuse[route("approve", "2026-10-15T12:52:27.992Z")] = "already approved";
-    await p.tap("nav.record"); await p.tap("part.record.approve");
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
     byAct(p.card("2026-10-15T12:52:26.992Z"), "draft.approve").click(); await p.work.quiet(); await p.go();
     ok(J(p.approves()) === J(["2026-10-15T12:52:26.992Z", "2026-10-15T12:52:27.992Z"]) && /^1 of 2 approved\. Move 2, payment received, was not approved: The Counter could not do that\. Try again\.Details/.test(said(p, "draft:2026-10-15T12:52:26.992Z")) && /already approved/.test(said(p, "draft:2026-10-15T12:52:26.992Z")),
       "a refusal of the second move is named, with the first approved: " + said(p, "draft:2026-10-15T12:52:26.992Z"));
@@ -182,7 +182,7 @@ export async function run({ ok, pageWork }) {
   p = await open(make);
   try {
     p.refuse[route("approve", "2026-10-15T12:52:26.992Z")] = "the row moved";
-    await p.tap("nav.record"); await p.tap("part.record.approve");
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
     byAct(p.card("2026-10-15T12:52:26.992Z"), "draft.approve").click(); await p.work.quiet(); await p.go();
     ok(J(p.approves()) === J(["2026-10-15T12:52:26.992Z"]) && /^Move 1, close the order, was not approved: The Counter could not do that\. Try again\. The moves after it wait under Approve\./.test(said(p, "draft:2026-10-15T12:52:26.992Z")) && /the row moved/.test(said(p, "draft:2026-10-15T12:52:26.992Z")),
       "a refusal of the first move sends nothing after it, and says the rest wait: " + J(p.approves()) + " " + said(p, "draft:2026-10-15T12:52:26.992Z"));
@@ -190,7 +190,7 @@ export async function run({ ok, pageWork }) {
   /* a half-approved order: the move left reads from the one approved, and says so */
   p = await open(() => { const left = [CASH()]; approveFigures(book(), left, [CLOSE()]); return left; });
   try {
-    await p.tap("nav.record"); await p.tap("part.record.approve");
+    await p.tap("nav.orders"); await p.tap("part.orders.approve");
     const c = p.card(CASH().id);
     ok(!!c && /^Half approved: one move on this row approved before, waiting to be booked; this one waits for you\.$/.test((c.querySelector(".aphalf") || {}).textContent || "")
       && c.querySelector(".apverb").textContent === "Payment received" && byAct(c, "draft.approve").textContent === "Approve: s262 paid",

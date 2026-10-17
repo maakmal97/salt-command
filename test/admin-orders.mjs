@@ -327,7 +327,7 @@ export async function run({ ok, pageWork }) {
     ok(/position: sticky/.test(pane) && /overflow-y: auto/.test(pane) && /max-height: calc[(]100vh - 48px[)]/.test(pane) && !/salt-bar-h/.test(pane) && /salt-bar-h/.test(band),
       "the pane is sticky and scrolls inside itself, and between 860 and 1080px its height gives up the App bar's: " + pane + " | " + band);
     const back = at("(min-width:860px)", ".adm #makerFormBack")[0] || "", wide = at("(min-width:860px)", ".adm #oRecord")[0] || "";
-    const approve = at("(min-width:860px)", ".adm #oRecord>.abody>section:not(#makerInputs)")[0] || "";
+    const approve = at("(min-width:860px)", ".adm #oOrders>.abody>#oApprove")[0] || "";
     ok(/display: none/.test(back) && /max-width: none/.test(wide) && /max-width: 600px/.test(approve),
       "from 860px the way back is not drawn (the menu is beside the form), Record widens for its forms and the rows to approve keep their column: " + [back, wide, approve].join(" | "));
     const d = new JSDOM(html).window.document;
@@ -364,8 +364,8 @@ export async function run({ ok, pageWork }) {
     ok(!!ex && ex.hasAttribute("data-practice") && /Practice/.test(ex.querySelector(".need-who").parentElement.textContent),
       "and a practice account's is drawn and labelled Practice");
     const now = p.counts();
-    ok(+now.needs === baseCount.needs + 2 && +now.orders === baseCount.orders + 2 && now.customers === baseCount.customers,
-      "it is counted on Needs you and on Orders, the two real ones and not the practice one, and Customers (the threads) is as it was: " + JSON.stringify([baseCount, now]));
+    ok(+now.needs === baseCount.needs + 2 && +now.orders === baseCount.orders && now.customers === baseCount.customers,
+      "it is counted on Needs you, the two real ones and not the practice one; Orders counts open orders, so a question on an order changes nothing there; Customers (the threads) is as it was: " + JSON.stringify([baseCount, now]));
     ok(nowOf(d.getElementById("nCount").textContent) === nowOf(baseLine) + 2, "the line under the title counts it: " + d.getElementById("nCount").textContent);
     await p.tap("need.kind.messages");
     ok(["om:ord-r1", "om:ord-c9", "om:ex-2"].every((k) => !!card(k)) && p.needs().every((k) => /^(m|om):/.test(k)), "the Messages chip shows it beside the account threads: " + p.needs().join());
@@ -457,8 +457,8 @@ export async function run({ ok, pageWork }) {
       && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 18 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
     "a row is the system's Inbox row, named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
     /* 14 Oct 2026 (Record): the title and its lead stand once; Offsets are two lists, never one, each offer one row with one Add */
-    ok(d.querySelectorAll("#oRecord h1").length === 1 && (d.getElementById("oRecord").textContent.match(/Everything here waits for your approval under Approve/g) || []).length === 1
-      && !d.querySelector("#makerInputs > h2") && !d.querySelector('#oRecord section[data-in="record.approve"] > h2') && !/Rows to approve/.test(d.getElementById("oRecord").textContent),
+    ok(d.querySelectorAll("#oRecord h1").length === 1 && (d.getElementById("oRecord").textContent.match(/Each waits for your approval under Orders > Approve/g) || []).length === 1
+      && !d.querySelector("#makerInputs > h2") && !d.querySelector('#oApprove > h2') && !/Rows to approve/.test(d.getElementById("oRecord").textContent),
     "Record's title and lead are drawn once: no second Record heading over the forms, no Rows to approve heading under the part strip");
     await p.tap("record.form", "offsets");
     const offs = d.querySelector('#makerInputs [data-form="offsets"]'), lists = offs ? [...offs.querySelectorAll("[data-offers]")] : [];

@@ -140,7 +140,7 @@ export async function run({ ok, pageWork }) {
     ok(forms >= 10 && seen >= 25 && bad.length === 0, `every label on Record's ${forms} forms is the system's Field label, and every legend its label modifier (${seen} read; bare: ${bad.slice(0, 3).join(" | ") || "none"})`);
 
     /* a book on a row wears the Product tag, the book's mark in it and no word for the book (his word of 12 Oct 2026), its hue the book's own accent token, and no style attribute (the Counter's policy refuses one) */
-    await click(byAct(d, "part.record.approve"));
+    await click(byAct(d, "nav.orders")); await click(byAct(d, "part.orders.approve"));
     const bare = (x) => { const g = x.cloneNode(true); g.querySelectorAll(".salt-producttag").forEach((t) => t.replaceWith("[tag]")); return g.textContent.trim(); };
     const line = [...d.querySelectorAll("#makerDrafts .maker-facts")].find((x) => x.querySelector(".salt-producttag--oil"));
     const tag = line && line.querySelector(".salt-producttag");

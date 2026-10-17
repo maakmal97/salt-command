@@ -77,7 +77,7 @@ export async function run({ ok, pageWork }) {
   } });
   try {
     const d = p.d;
-    await p.click(byAct(d, "nav.record")); await p.click(byAct(d, "part.record.approve"));
+    await p.click(byAct(d, "nav.orders")); await p.click(byAct(d, "part.orders.approve"));
     const row = d.querySelector('#makerDrafts [data-maker-card="draft:d-1"]'), box = row && row.querySelector(".rdet--row");
     ok(!!box && box.hidden && same(pairs(box), [["Reference", "d-1"], ["Units", "2.5 units"], ["Price", "RM 280.00"], ["Cost", "RM 150.00"], ["Row reference", "s-77"], ["Who", "CX1-ZED"],
       ["Order date", "10 Oct 2026"], ["Cancelled", "No"], ["Units delivered", "1 unit"], ["Mixed key", "x"], ["Sizes", "1, 5, 10"], ["Nested", "Price: RM 5.00, Units: 1 unit"]]),
@@ -100,14 +100,14 @@ export async function run({ ok, pageWork }) {
   p = await open();
   try {
     const d = p.d;
-    await p.click(byAct(d, "nav.record")); await p.click(byAct(d, "part.record.approve"));
+    await p.click(byAct(d, "nav.orders")); await p.click(byAct(d, "part.orders.approve"));
     p.posts.length = 0;
     const boxes = [...d.querySelectorAll("details.rdet")], heads = [...d.querySelectorAll('#makerDrafts [data-act="row.proposed"]')];
     boxes.forEach((b) => { b.open = true; });
     heads.forEach((h) => h.click());
     await p.work.quiet();
     ok(boxes.length >= 2 && heads.length >= 2 && boxes.every((b) => b.querySelector("summary").getAttribute("data-act")) && p.posts.length === 0,
-      "opening every Details on Record > Approve sends nothing, and each is a control with an act: " + boxes.length + " " + JSON.stringify(p.posts));
+      "opening every Details on Orders > Approve sends nothing, and each is a control with an act: " + boxes.length + " " + JSON.stringify(p.posts));
     ok(boxes.every((b) => b.querySelector(".salt-ledger") && b.querySelectorAll(".salt-ledger__row").length >= 1), "each holds a list of names and values");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

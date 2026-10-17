@@ -128,7 +128,7 @@
  {
   "name": "the rows to approve keep a 600px section on a laptop",
   "file": "stmt/page.js",
-  "find": "  .adm #oRecord>.abody>section:not(#makerInputs){max-width:none}\n",
+  "find": "  .adm #oOrders>.abody>#oApprove{max-width:none}\n",
   "replace": ""
  },
  {

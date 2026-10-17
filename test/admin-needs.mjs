@@ -165,9 +165,9 @@ export async function run({ ok, pageWork }) {
 
     /* 4. THE COUNTS ON THE BARS */
     const rail = p.counts(".salt-rail"), bar = p.counts(".salt-appbar");
-    ok(same(rail, { needs: "9", orders: "9", customers: "2", record: "4", shop: "" }) && same(rail, bar),
-      "Needs you counts what is Now, Orders what waits on him there (orders and claims), Customers the threads asked and the links waiting, Record the rows waiting, "
-      + "Shop none, the same on the rail and on the bar, and no practice item in any: " + JSON.stringify([rail, bar]));
+    ok(same(rail, { needs: "9", orders: "9", customers: "2", record: "", shop: "" }) && same(rail, bar),
+      "Needs you counts what is Now, Orders the open orders (not ended or completed), Customers the threads asked and the links waiting, "
+      + "Record and Shop none, the same on the rail and on the bar, and no practice item in any: " + JSON.stringify([rail, bar]));
 
     /* 5. OPEN */
     const open1 = async (key, where, then) => {
@@ -182,7 +182,7 @@ export async function run({ ok, pageWork }) {
       await open1("o:ord-p1", "orders/placed"), await open1("p:ord-a1", "orders/confirmed"), await open1("c:" + U1 + ":c-1", "orders/payments"),
       await open1("m:" + U1, "customers/messages", () => (shown(d.getElementById("makerChatOpen")) && d.getElementById("makerChatOpen").getAttribute("data-key") === U1 ? "" : "the thread was not opened")),
       await open1("k:" + U3, "customers/accounts", () => (shown(d.getElementById("aopen")) && /CX3-ZED/.test(d.getElementById("aopen").textContent) ? "" : "the account was not opened")),
-      await open1("d:" + ago(6), "record/approve"), await open1("x:0", "record/approve"), await open1("l:w1", "customers/links"),
+      await open1("d:" + ago(6), "orders/approve"), await open1("x:0", "orders/approve"), await open1("l:w1", "customers/links"),
       await open1("s", "customers/accounts", () => (byAct(d, "filter.unsent") || d.querySelector('#afil [data-f="unsent"]')).getAttribute("aria-pressed") === "true" ? "" : "the Not sent filter was not set"),
       await open1("w:hours", "shop/hours"), await open1("w:notice", "shop/notice")
     ].filter(Boolean);
@@ -213,7 +213,7 @@ export async function run({ ok, pageWork }) {
       "and no card of any kind carries Agree, Accept, Received or Cash; an owed card's one way is a ghost that opens, never a filled pill");
     ok(same(pills(p.card("d:" + ago(6))), ["Approve the sale"]) && same(pills(p.card("d:" + ago(3))), ["Approve both"]) && !p.card("d:" + ago(1)) && pills(p.card("d:" + ago(0.5))).length === 0
       && /Answer this through the payment card/.test(p.card("d:" + ago(0.5)).textContent),
-    "a Desk row has its Approve, saying the result (a trip one card, Approve both), and a customer's claim row none, as on Record > Approve");
+    "a Desk row has its Approve, saying the result (a trip one card, Approve both), and a customer's claim row none, as on Orders > Approve");
     ok(same(pills(p.card("l:w1")), ["Approve"]) && same(pills(p.card("k:" + U3)), ["Send a sign-in link"]) && same(pills(p.card("s")), ["Send sign-in links one by one"]),
       "the guest link, the refused account and the accounts not sent keep the one filled action they had");
     ok(p.cards().every((c) => pills(c).length <= 1), "no card has more than one filled pill");
@@ -243,10 +243,10 @@ export async function run({ ok, pageWork }) {
     ok(!!needAsked && /^Approve this row?/.test(needAsked) && p.posts.filter((x) => /approve$/.test(x.route)).length === 0, "he is asked first, on the page's Sheet, and nothing is sent as it opens: " + needAsked);
     byAct(sheet(), "ask.keep").click(); await p.work.quiet();
     ok(!sheet() && p.posts.filter((x) => /approve$/.test(x.route)).length === 0, "declining sends nothing");
-    byAct(d, "nav.record").click(); await p.work.quiet();
+    byAct(d, "nav.orders").click(); await p.work.quiet(); byAct(d, "part.orders.approve").click(); await p.work.quiet();
     const recordButton = [...d.querySelectorAll('#makerDrafts [data-maker-card="draft:' + id + '"] [data-act="draft.approve"]')][0];
     recordButton.click(); await p.work.quiet();
-    ok(!!needAsked && same(needAsked, question()), "Record > Approve asks the very same question: " + JSON.stringify([needAsked, question()]));
+    ok(!!needAsked && same(needAsked, question()), "Orders > Approve asks the very same question: " + JSON.stringify([needAsked, question()]));
     byAct(sheet(), "ask.keep").click(); await p.work.quiet();
     byAct(d, "nav.needs").click(); await p.work.quiet();
     const release = p.hold("/all/maker/drafts/" + encodeURIComponent(id) + "/approve");
@@ -254,7 +254,7 @@ export async function run({ ok, pageWork }) {
     byAct(sheet(), "ask.go").click();
     for (let i = 0; i < 100 && !p.work.inFlight(); i++) await new Promise((r) => setTimeout(r, 5));
     ok(p.posts.filter((x) => /approve$/.test(x.route)).length === 1 && p.posts.find((x) => /approve$/.test(x.route)).route === "/all/maker/drafts/" + encodeURIComponent(id) + "/approve"
-      && same(p.posts.find((x) => /approve$/.test(x.route)).body, {}), "his yes sends the one request Record > Approve sends: the same route and an empty body");
+      && same(p.posts.find((x) => /approve$/.test(x.route)).body, {}), "his yes sends the one request Orders > Approve sends: the same route and an empty body");
     ok(byAct(p.card("d:" + id), "need.approve-row").disabled, "while it is out the pill is off");
     byAct(p.card("d:" + id), "need.approve-row").click();
     ok(p.posts.filter((x) => /approve$/.test(x.route)).length === 1, "and a second tap sends nothing");
@@ -262,8 +262,8 @@ export async function run({ ok, pageWork }) {
     const done = p.card("d:" + id);
     ok(done && /Row approved[.]/.test(done.textContent) && !done.querySelector(".salt-pill") && done.getAttribute("data-sev") === "soon",
       "the answer stays on the card he tapped, though the row is no longer there: " + (done && done.textContent));
-    ok(/^9 now, 12 soon/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "3",
-      "and the row is no longer counted: " + d.getElementById("nCount").textContent);
+    ok(/^9 now, 12 soon/.test(d.getElementById("nCount").textContent) && p.counts(".salt-rail").record === "",
+      "and the row is no longer counted, and Record carries no badge: " + d.getElementById("nCount").textContent);
     byAct(d, "nav.customers").click(); await p.work.quiet();
     byAct(d, "nav.needs").click(); await p.work.quiet();
     ok(!p.card("d:" + id), "the answer goes when he leaves Needs you");
@@ -403,9 +403,9 @@ export async function run({ ok, pageWork }) {
     const d = p.d, c = p.card("qx");
     ok(c && c.getAttribute("data-sev") === "soon" && /1 queue entry unreadable: q:laptop-x/.test(c.textContent) && p.card("o:ord-p1") && p.card("q:q-2"),
       "Needs you says \"1 queue entry unreadable: q:laptop-x\" as a Soon card, and every other card stands: " + (c && c.textContent));
-    byAct(d, "nav.record").click(); await p.work.quiet();
+    byAct(d, "nav.orders").click(); await p.work.quiet(); byAct(d, "part.orders.approve").click(); await p.work.quiet();
     const line = d.querySelector("#makerQueueReview [data-unreadable]");
-    ok(line && line.textContent === "1 queue entry unreadable: q:laptop-x", "and Record's queue names it too: " + (line && line.textContent));
+    ok(line && line.textContent === "1 queue entry unreadable: q:laptop-x", "and Orders > Approve's queue names it too: " + (line && line.textContent));
   } finally { p.w.close(); }
 
   /* 9. THE 30-SECOND READ */

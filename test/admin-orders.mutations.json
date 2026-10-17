@@ -536,7 +536,7 @@
  {
   "name": "the rows to approve widen with the forms",
   "file": "stmt/page.js",
-  "find": "  .adm #oRecord>.abody>section:not(#makerInputs){max-width:600px}\n",
+  "find": "  .adm #oOrders>.abody>#oApprove{max-width:600px}\n",
   "replace": ""
  },
  {
@@ -664,5 +664,11 @@
   "file": "stmt/owner.js",
   "find": "makerButton(row,['Add','record.offset.send']",
   "replace": "makerButton(row,['Send the offset','record.offset.send']"
+ },
+ {
+  "name": "Orders counts what waits on him, not the orders open",
+  "file": "stmt/owner.js",
+  "find": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);",
+  "replace": "    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);"
  }
 ]

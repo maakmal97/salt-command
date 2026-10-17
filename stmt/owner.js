@@ -12,10 +12,10 @@
  * say(), el(), stamp(), un, pw, whoacct, busy and OWNER live.
  *
  * WHAT IT DRAWS. Five places (his decision of 11 Oct 2026): Needs you, a card for each thing waiting on him with its
- * action on it; Orders, the Counter's orders by stage, the payments customers say they sent and the group orders;
+ * action on it; Orders, the Counter's orders by stage, Approve, the payments customers say they sent and the group orders;
  * Customers, the accounts (one list, read off /all/sheet, the publish's account list merged with the opens this
  * Worker records, a row opening the account's card), their messages, guest links and the associates' report card;
- * Record, the Desk's rows waiting for him and his own entries; and Shop, the hours, the notice, the practice
+ * Record, his own entries (Approve, the Desk's rows waiting for him, is under Orders); and Shop, the hours, the notice, the practice
  * accounts and This device, whose Look is Night or Tide for this page. View as them opens the account the customer's own way,
  * through the form. */
 
@@ -54,13 +54,13 @@ export const OWNER_JS = `
     record:function(){ loadMakerInputs(); }
   };
   var PART_READ={
+    'orders.approve':function(){ loadMaker(); },
     'orders.group':function(){ loadMakerPools(); },
     'orders.ledger':function(){ loadLedger(); },
     'customers.accounts':function(){ drawRoster(); if(!sheet&&!sheetBusy) loadSheet(); },
     'customers.messages':function(){ loadMakerThreads(false); },
     'customers.links':function(){ if(linksRead) drawLinks(); else if(!linksBusy) loadLinks(); },
     'customers.associates':function(){ if(!cards) loadCards(); else drawCards(); },
-    'record.approve':function(){ loadMaker(); },
     'shop.hours':function(){ loadMakerHours(); },
     'shop.notice':function(){ loadMakerBulletin(); },
     'shop.practice':function(){ if(sheet) drawTest(); else if(!sheetBusy) loadSheet(); }
@@ -90,8 +90,11 @@ export const OWNER_JS = `
      section went: #maker is Orders, #more is Shop, #accounts and #links are those parts of Customers, #cards the associates' report card. */
   var ADDR={needs:['needs',''], orders:['orders',''], customers:['customers',''], record:['record',''], shop:['shop',''],
     maker:['orders',''], more:['shop',''], accounts:['customers','accounts'], links:['customers','links'], cards:['customers','associates']};
+  /* 17 Oct 2026: Approve moved from Record to Orders, as the Desk's Order book took it; the old address #record/approve lands there */
+  var PART_ADDR={'record/approve':['orders','approve']};
   function addrOf(h){
     var t=String(h||'').replace(/^#/,'').split('/'), k=t[0];
+    if(Object.prototype.hasOwnProperty.call(PART_ADDR,k+'/'+t[1])){ var m=PART_ADDR[k+'/'+t[1]]; return {place:m[0], part:m[1]}; }
     if(!Object.prototype.hasOwnProperty.call(ADDR,k)) return null;
     var a=ADDR[k], part=t[1]||a[1];
     return {place:a[0], part:(PARTS[a[0]]||[]).indexOf(part)>=0?part:''};
@@ -3822,7 +3825,7 @@ export const OWNER_JS = `
   /* a row's Approve and Reject, and a trip's: Approve, or Approve both for two books and Approve all for more */
   function approveWord(n){ return n?(n===2?'Approve both':'Approve all'):'Approve'; }
   function rejectWord(n){ return n?(n===2?'Reject both':'Reject all'):'Reject'; }
-  /* THE ONE APPROVE of a Desk row, Record > Approve's button and Needs you's pill alike: the same question, the same request, the same
+  /* THE ONE APPROVE of a Desk row, Orders > Approve's button and Needs you's pill alike: the same question, the same request, the same
      answer line. It resolves true when the row was approved, false when it was not, and nothing when it was not asked (he declined, or a
      tap is already out). opener is the control that asked and key what it asks (its data-yn); going is told when he says yes, before the request goes. */
   /* PLAN 2 (16 Oct 2026): ONE CARD, ONE APPROVE. The Sheet lists every draft the card holds, as it stood when he tapped; his yes decides exactly those. A trip is one
@@ -4540,7 +4543,7 @@ export const OWNER_JS = `
     if(again) again();
     return card;
   }
-  /* the Desk's rows waiting for him and the entries the server holds, on Record > Approve */
+  /* the Desk's rows waiting for him and the entries the server holds, on Orders > Approve */
   /* 16 Oct 2026, PLAN 2 OF docs/plans-counter-admin.html: THE APPROVE CARD, FOR A PERSON. Still the system's approve card (salt-approve, carried whole by SITE_RECIPES and
      restated nowhere), now saying what the change does rather than what the order is. Its head is the row, the customer's code and the book's mark, and where the entry
      came from and when; then one plain verb; then Now and After, Paid, Owed and Handed over, read off the engine's figures the Desk sends with the draft (src/approve-figures.js)
@@ -5189,7 +5192,7 @@ export const OWNER_JS = `
   function orderWhat(o){ return units(o.qty)+', '+rm(o.total); }
   function waitingClaims(){ return makerClaims.filter(function(c){ return c.state==='waiting'; }); }
   function pendingRows(){ return (makerData&&makerData.drafts||[]).filter(function(d){ return d.status==='pending'; }); }
-  /* a Desk row to approve: the same tap, the same question and the same request as Approve row on Record > Approve (approveDraft). A row
+  /* a Desk row to approve: the same tap, the same question and the same request as Approve row on Orders > Approve (approveDraft). A row
      that is a customer's claim is answered through Received on its order, so it has no pill. The answer stays on the card, which is drawn
      from the live row, and outlives it once the row is decided. */
   function rowNeed(d){
@@ -5199,7 +5202,7 @@ export const OWNER_JS = `
         :d.amends?[draftRid(d),moveWord(d)].filter(Boolean).join(', ')+(g.drafts.length>1&&!g.trip?', '+g.drafts.length+' moves':''):rowWhat(d),
       why:claim?'Answer this through the payment card.'
         :sibs.length?(sibs.length===2?'Two books, one trip. Approve decides both.':sibs.length+' books, one trip. Approve decides all of them.'):'',
-      open:goPlace('record','approve')}, function(c){
+      open:goPlace('orders','approve')}, function(c){
       if(!claim){
         var ap=pill([approveLabel(g),'need.approve-row']);
         ap.disabled=!!makerBusy; ynTag(ap,'need:draft:'+d.id+':approve');
@@ -5219,7 +5222,7 @@ export const OWNER_JS = `
   }
   /* a row he has just approved stays where he tapped it, saying what happened, and no longer waits on him */
   function decidedNeed(k, said){
-    return item('soon','rows','Row',k, '', {who:said.who, what:'', why:said.t, counts:false, open:goPlace('record','approve')});
+    return item('soon','rows','Row',k, '', {who:said.who, what:'', why:said.t, counts:false, open:goPlace('orders','approve')});
   }
   /* 15 Oct 2026 (plan 1, part 2): a device's queue key the Desk could not read (malformed, or with no matching device), named so he can mend it;
      every other entry is read beside it */
@@ -5227,11 +5230,11 @@ export const OWNER_JS = `
   function unreadableLine(keys){ return keys.length+(keys.length===1?' queue entry':' queue entries')+' unreadable: '+keys.join(', '); }
   function unreadableNeed(keys){
     return item('soon','rows','Entry','qx', '', {who:'Desk queue', what:unreadableLine(keys),
-      why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('record','approve')});
+      why:'Every other entry is read as usual. No entry is withdrawn until that key is mended.', open:goPlace('orders','approve')});
   }
   function entryNeed(r, key){
     return item('soon','rows','Entry',key, isoAt(r.at||r.seenAt||r.id), {who:r.party||'Desk', what:'did not get through',
-      why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('record','approve')});
+      why:noBook(r.why||'The Desk could not take this entry.'), open:goPlace('orders','approve')});
   }
   /* an entry kept on this phone and not confirmed (Phase 4c): Soon, his own work; its Open is Record, on the entry's own section, where Send again, Update and send and Discard are */
   function unsentNeed(u){
@@ -5426,12 +5429,11 @@ export const OWNER_JS = `
       return (isFinite(ta)&&ta!==tb)?ta-tb:a.n-b.n;
     });
   }
-  /* the count on each item of the bars: what waits on him there, a practice item never counted. Shop has none. */
+  /* the count on each item of the bars: Needs you counts what waits on him; Orders counts the orders still open (not ended or completed); Customers what asks him. Record and Shop have none. A practice item is never counted. */
   function drawCounts(items){
     setCount('needs', items.filter(function(i){ return i.sev==='now'&&!i.practice; }).length);
-    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordWaits(o); }).length+waitingClaims().filter(function(c){ return !c.test; }).length);
+    setCount('orders', (makerData&&makerData.orders||[]).filter(function(o){ return !o.test&&ordOpen(o); }).length);
     setCount('customers', makerThreads.filter(function(t){ return !t.test&&makerThreadAsked(t); }).length+links.filter(waitingLink).length);
-    setCount('record', pendingRows().length);
   }
   function needsReady(){ return NEED_SRC.every(function(s){ return nSrc[s[0]]; }); }
   function needsBad(){ return NEED_SRC.filter(function(s){ return nSrc[s[0]]&&nSrc[s[0]]!=='ok'; }).map(function(s){ return s[1]; }); }
