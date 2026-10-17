@@ -8254,6 +8254,11 @@ await (async () => {
     const pd = padOf('input[id^="driftIn_"]');
     wF.eval("switchTab('map');");
     const pf = padOf(".mapfrom"), pt = padOf(".mapto");
+    /* 18 Oct 2026: an inline 74px on the map's two dates outranked the 162px dateIn() keeps for two steppers and Today, and its
+       row shrank the field, so the steppers sat on the date; each now keeps the 162px and is 310px wide, its date 138px clear */
+    const wide = [...wF.document.querySelectorAll(".mapperiod .dtin")].map((d) => [wF.getComputedStyle(d).width, parseFloat(wF.getComputedStyle(d.querySelector("input")).paddingRight)]);
+    ok(pf === 10 && pt === 10 && wide.length === 2 && wide.every(([w, r]) => w === "310px" && r === 162),
+      "the map's From and To keep 10px inside, 162px clear of their steppers and Today, at 310px wide: " + JSON.stringify(wide));
   }
 })();
 
