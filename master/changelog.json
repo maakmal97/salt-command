@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1147",
+  "d": "17 Oct 2026",
+  "t": "WHAT THE FIRST LIVE TIE-OUT FOUND, MENDED",
+  "n": [
+   "<b>AN ORDER HOLDS NO MORE OUT THAN ITS SIZE.</b> Units settled in kind beside the goods collected no longer read as more handed over than the order holds; goods collected past the size are still read whole, so the tie-out shows them.",
+   "<b>A DELIVERY CORRECTION KEEPS ITS ORDER.</b> A key is goods plus delivery, so a Correction of the delivery alone moved the row away from its order; the order now follows its row, as it does a re-dated one.",
+   "<b>A DAY-OLD YES HOLDS NOTHING.</b> His yes waiting a day for a row the site was to make no longer holds its order as on its way, and the tie-out names it so it can be tapped again; a yes whose own entry is queued, and an offer waiting on their take, hold as before. Pricing rules unchanged."
+  ]
+ },
+ {
   "v": "v1146",
   "d": "17 Oct 2026",
   "t": "THE ORDER AND THE BOOK TIE OUT, AND THE LEDGER SAYS SO",
