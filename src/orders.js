@@ -2073,7 +2073,7 @@ export async function tieOut(env, mirror, now = new Date()) {
     else if (!row) {
       const ack = await fate(env, o.queued && o.queued.ack);
       /* its pending row rejected under Approve is no row to come: the re-offer is owed */
-      if (ack && ack.status === "rejected") faults.push({ ...item, what: diff.concat(["its pending row was rejected under Approve: offer it again or cancel the order"]) });
+      if (ack && ack.status === "rejected") faults.push({ ...item, what: diff.concat(["its pending row was rejected under Approve: tap Accept again or cancel the order"]) });
       else if (!ack || !ack.landed) waiting.push(item); else faults.push(item);
     }
     else faults.push(item);

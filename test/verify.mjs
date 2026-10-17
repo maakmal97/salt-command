@@ -49932,7 +49932,7 @@ await (async () => {
     db.prepare("UPDATE draft SET status='rejected' WHERE id=?").run(EJ.ack); reseed();
     const tieRej = await tieOut(denv);
     const ejIn = (t, g) => (t[g] || []).find((f) => f.order === EJ.o.id);
-    ok(ejIn(tieOn, "waiting") && !ejIn(tieOn, "faults") && ejIn(tieRej, "faults") && /rejected under Approve: offer it again/.test(ejIn(tieRej, "faults").what.join("; ")),
+    ok(ejIn(tieOn, "waiting") && !ejIn(tieOn, "faults") && ejIn(tieRej, "faults") && /rejected under Approve: tap Accept again/.test(ejIn(tieRej, "faults").what.join("; ")),
       tag + ", an order whose pending row is on its way waits, and one whose row he rejected is a difference naming the re-offer: " + J({ on: ejIn(tieOn, "waiting"), rej: ejIn(tieRej, "faults") }));
     correct(EW.rid, { defaulted: false });
     const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
