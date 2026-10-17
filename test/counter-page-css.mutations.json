@@ -30,7 +30,7 @@
  {"name":"a guest link is not the glass card","file":"stmt/owner.js","find":"el('details','glink salt-glass-card salt-glass-card--radius-md'+(r.revoked?' off':''))","replace":"el('details','glink'+(r.revoked?' off':''))"},
  {"name":"a guest link's label is not the Field label","file":"stmt/owner.js","find":"el('span','gt salt-field__label',r.standing","replace":"el('span','gt',r.standing"},
  {"name":"a head over the links is not the eyebrow","file":"stmt/owner.js","find":"el('p','ghead salt-eyebrow salt-eyebrow--copper',heads[i])","replace":"el('p','ghead',heads[i])"},
- {"name":"the tier picker is not the system's field","file":"stmt/owner.js","find":"var sel=el('select','fld salt-field__input'); sel.setAttribute('aria-label','Price list their friend sees')","replace":"var sel=el('select','fld'); sel.setAttribute('aria-label','Price list their friend sees')"},
+ {"name":"the tier picker is not the system's field","file":"stmt/owner.js","find":"var sel=el('select','fld salt-field__input salt-field__select'); sel.setAttribute('aria-label','Price list their friend sees')","replace":"var sel=el('select','fld'); sel.setAttribute('aria-label','Price list their friend sees')"},
  {"name":"the report card is not the glass card","file":"stmt/owner.js","find":"el('div','acard salt-glass-card salt-glass-card--radius-md'+(r.departed?' off':''))","replace":"el('div','acard'+(r.departed?' off':''))"},
  {"name":"the report card's figures are not the Metric row","file":"stmt/owner.js","find":"var g=el('div','agrid salt-metrics salt-metrics--sm');","replace":"var g=el('div','agrid');"},
  {"name":"the Aurora loses a blob colour from the recipes the page carries","file":"stmt/statement-css.js","find":".salt-aurora__blob--copper { background: var(--salt-copper); }","replace":""},
@@ -39,5 +39,16 @@
  {"name":"the Aurora loses its brass blob","file":"stmt/page.js","find":"  + '<div class=\"salt-aurora__blob salt-aurora__blob--brass\"></div></div>';","replace":"  + '</div>';"},
  {"name":"the stacking rule loses the weight over the recipe","file":"stmt/statement-css.js","find":"body>.salt-aurora{z-index:-1}","replace":".salt-aurora{z-index:-1}"},
  {"name":"the hand gradient comes back on the body","file":"stmt/statement-css.js","find":"line-height:1.6;-webkit-font-smoothing:antialiased}","replace":"line-height:1.6;-webkit-font-smoothing:antialiased;background-image:radial-gradient(900px 560px at -10% 6%, var(--salt-brass), transparent 58%)}"},
- {"name":"the system s no-Aurora in print is left out","file":"stmt/statement-css.js","find":"}\\n@media print {\\n  .salt-aurora { display: none; }\\n}","replace":"}"}
+ {"name":"the system s no-Aurora in print is left out","file":"stmt/statement-css.js","find":"}\\n@media print {\\n  .salt-aurora { display: none; }\\n}","replace":"}"},
+ {"name":"a heading goes back to 600","file":"stmt/statement-css.js","find":"font-weight:300;letter-spacing:.04em;line-height:1.12;","replace":"font-weight:600;letter-spacing:.04em;line-height:1.12;"},
+ {"name":"a total goes back to 700","file":"stmt/statement-css.js","find":".amt{font-size:var(--salt-text-lg);font-weight:500;","replace":".amt{font-size:var(--salt-text-lg);font-weight:700;"},
+ {"name":"his page sets a bold of its own again","file":"stmt/page.js","find":".adm .apbang{font-weight:500}","replace":".adm .apbang{font-weight:700}"},
+ {"name":"the door heading goes back to 24px","file":"stmt/page.js","find":".gate h1{font-size:1.75rem;","replace":".gate h1{font-size:var(--salt-text-xl);"},
+ {"name":"the page starts 44px down again","file":"stmt/statement-css.js","find":"margin:0;padding:22px 18px 60px;","replace":"margin:0;padding:44px 20px 60px;"},
+ {"name":"the rail stands 28px from the column again","file":"stmt/page.js","find":".gate.adm{max-width:1180px;margin-top:0;display:flex;gap:20px;","replace":".gate.adm{max-width:1180px;margin-top:0;display:flex;gap:28px;"},
+ {"name":"the bar is not the system s Desk bar","file":"stmt/page.js","find":"<header class=\"salt-deskbar abar\">","replace":"<header class=\"abar\">"},
+ {"name":"the bar loses the clock","file":"stmt/page.js","find":"<div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>","replace":"<div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"},
+ {"name":"the Desk bar recipe is not carried","file":"stmt/statement-css.js","find":".salt-deskbar__name {","replace":".salt-deskbar__nm {"},
+ {"name":"a select is not the system s","file":"stmt/owner.js","find":"var tierCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.tier.customer')","replace":"var tierCode=actOn(el('select','fld salt-field__input'),'record.tier.customer')"},
+ {"name":"the open list is the well again","file":"stmt/statement-css.js","find":".salt-field__select option { background: var(--salt-slate);","replace":".salt-field__select option { background: var(--salt-well);"}
 ]

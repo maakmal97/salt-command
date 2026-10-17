@@ -813,7 +813,7 @@ export const OWNER_JS = `
           }
         }
         if(tiers.length){
-          var sel=el('select','fld salt-field__input'); sel.setAttribute('aria-label','Price list their friend sees'); actOn(sel,'link.tier');
+          var sel=el('select','fld salt-field__input salt-field__select'); sel.setAttribute('aria-label','Price list their friend sees'); actOn(sel,'link.tier');
           var o0=el('option',null,'Follows '+codeByUser(r.by)); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
           /* Ambassador is the floor and never a guest's, so the picker starts at the first of five */
           tiers.slice(1,6).forEach(function(t){ var o=el('option',null,t); o.value=t; if(r.level===t)o.selected=true; sel.appendChild(o); });
@@ -2207,7 +2207,7 @@ export const OWNER_JS = `
     var parties=(catalog.parties||[]).filter(function(code){return !code.endsWith('-R');});
     var books=catalog.products||[];
     var addSelect=function(root,label,items){
-      var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]), select=actOn(el('select','fld salt-field__input'),L[1],L[2]);
+      var L=labOf(label), wrap=el('label','maker-field'), title=el('span','lbl salt-field__label',L[0]), select=actOn(el('select','fld salt-field__input salt-field__select'),L[1],L[2]);
       items.forEach(function(item){var option=el('option',null,item.label);option.value=item.value;select.appendChild(option);});
       wrap.appendChild(title);wrap.appendChild(select);root.appendChild(wrap);return select;
     };
@@ -3198,7 +3198,7 @@ export const OWNER_JS = `
       tradeSection.appendChild(el('p','msg','Goods and delivery are entered separately.'));
       box.appendChild(tradeSection);
       var direction=makerTilesIn(tradeSection,['Sale or purchase','record.trade.direction'],[{value:'sale',label:'Sale'},{value:'purchase',label:'Purchase'}]);
-      var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('select','fld salt-field__input'),'record.trade.party');
+      var tradeProduct=makerTilesIn(tradeSection,['Book','record.trade.book'],[]), tradeParty=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.party');
       var partyLabel=el('label','maker-field','Who');
       partyLabel.appendChild(tradeParty);
       tradeSection.appendChild(partyLabel);
@@ -3210,7 +3210,7 @@ export const OWNER_JS = `
       var carriage=makerField(tradeSection,['Delivery','record.trade.delivery'],'number','0','0.01');
       var attribution=el('div','maker-trade-attribution');
       var tradeStream=makerTilesIn(attribution,['Through an associate?','record.trade.stream'],[{value:'',label:'No'},{value:'R2',label:'They resell'},{value:'R3',label:'They introduced the buyer'}]);
-      var tradeAssoc=actOn(el('select','fld salt-field__input'),'record.trade.associate'), tradeDown=actOn(el('select','fld salt-field__input'),'record.trade.end-customer');
+      var tradeAssoc=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.associate'), tradeDown=actOn(el('select','fld salt-field__input salt-field__select'),'record.trade.end-customer');
       var assocLabel=el('label','maker-field','Which associate'), downLabel=el('label','maker-field','Their customer (optional)');
       assocLabel.appendChild(tradeAssoc); downLabel.appendChild(tradeDown);
       attribution.appendChild(assocLabel); attribution.appendChild(downLabel);
@@ -3421,7 +3421,7 @@ export const OWNER_JS = `
       if(!tierCodes.length||!tierBooks.length||!(catalog.tierNames||[]).length){
         tierSection.appendChild(el('p','msg','No customer has a level to set.'));
       }else{
-        var tierCode=actOn(el('select','fld salt-field__input'),'record.tier.customer'), tierCodeWrap=el('label','maker-field','Customer');
+        var tierCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.tier.customer'), tierCodeWrap=el('label','maker-field','Customer');
         tierCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; tierCode.appendChild(option); });
         tierCodeWrap.appendChild(tierCode); tierSection.appendChild(tierCodeWrap);
         var tierProduct=makerTilesIn(tierSection,['Book','record.tier.book'],tierBooks.map(function(item){ return bookItem(item.product); }));
@@ -3494,7 +3494,7 @@ export const OWNER_JS = `
       if(!driftCodes.length||!driftBooks.length){
         driftSection.appendChild(el('p','msg','No customer has a drift to set.'));
       }else{
-        var driftCode=actOn(el('select','fld salt-field__input'),'record.drift.customer'), driftCodeWrap=el('label','maker-field','Customer');
+        var driftCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.drift.customer'), driftCodeWrap=el('label','maker-field','Customer');
         driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
         driftCodeWrap.appendChild(driftCode); driftSection.appendChild(driftCodeWrap);
         var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));
@@ -3559,7 +3559,7 @@ export const OWNER_JS = `
         if(!partnerCodes.length){
           partnerSection.appendChild(el('p','msg','No customer is left to make a partner.'));
         }else{
-          var partnerCode=actOn(el('select','fld salt-field__input'),'record.partner.customer'), partnerCodeWrap=el('label','maker-field','Customer');
+          var partnerCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.partner.customer'), partnerCodeWrap=el('label','maker-field','Customer');
           partnerCodes.forEach(function(c){ var option=el('option',null,c); option.value=c; partnerCode.appendChild(option); });
           partnerCodeWrap.appendChild(partnerCode); partnerSection.appendChild(partnerCodeWrap);
           var partnerAnswer=el('p','msg'); partnerAnswer.setAttribute('role','status'); partnerSection.appendChild(partnerAnswer);
@@ -3619,7 +3619,7 @@ export const OWNER_JS = `
       if(!tips.length){
         tipSection.appendChild(el('p','msg','The Desk is showing no reminder to hide.'));
       }else{
-        var tipId=actOn(el('select','fld salt-field__input'),'record.tip.tip');
+        var tipId=actOn(el('select','fld salt-field__input salt-field__select'),'record.tip.tip');
         tips.forEach(function(tip){ var option=el('option',null,tip.title+(tip.hush===null?' (hidden for good)':tip.hush?' (hidden until '+fmtWhen(tip.hush)+')':'')); option.value=tip.id; tipId.appendChild(option); });
         var tipWrap=el('label','maker-field','Reminder'); tipWrap.appendChild(tipId); tipSection.appendChild(tipWrap);
         var tipFor=makerTilesIn(tipSection,['Hide for','record.tip.for'],[{value:'7',label:'7 days'},{value:'30',label:'30 days'},{value:'',label:'For good'}]);
@@ -3661,10 +3661,10 @@ export const OWNER_JS = `
       }); });
       if(!choices.length) throw new Error('No priced size is on their list.');
       note.textContent='One order, at their current prices. You agree it next, under Orders.';
-      var label=el('label','maker-field','Size and price'), pick=actOn(el('select','fld salt-field__input'),'orderfor.size');
+      var label=el('label','maker-field','Size and price'), pick=actOn(el('select','fld salt-field__input salt-field__select'),'orderfor.size');
       choices.forEach(function(choice,index){ var option=el('option',null,optionBook(choice.product)+units(choice.qty)+', '+rm(choice.total));
         option.value=String(index); pick.appendChild(option); }); label.appendChild(pick); box.appendChild(label);
-      var modeLabel=el('label','maker-field','Collect or deliver'), mode=actOn(el('select','fld salt-field__input'),'orderfor.mode');
+      var modeLabel=el('label','maker-field','Collect or deliver'), mode=actOn(el('select','fld salt-field__input salt-field__select'),'orderfor.mode');
       [['collect','Collected'],['deliver','Delivered']].forEach(function(item){ var option=el('option',null,item[1]); option.value=item[0]; mode.appendChild(option); });
       modeLabel.appendChild(mode); box.appendChild(modeLabel);
       var place=makerField(box,['Delivery place','orderfor.place'],'text',''), want=makerField(box,['Wanted by (optional)','orderfor.want'],'date','');
@@ -4216,7 +4216,7 @@ export const OWNER_JS = `
           if(days.indexOf(win.day)<0) win.day=days.indexOf(theirs)>=0?theirs:(days[0]||'');
           var wset=el('fieldset','salt-options'), wgrid=el('div','salt-options__grid salt-options__grid--2');
           wset.appendChild(el('legend','salt-options__legend','Delivery time'));
-          var dl=el('label','salt-field'), ds=el('select','salt-field__input');
+          var dl=el('label','salt-field'), ds=el('select','salt-field__input salt-field__select');
           dl.appendChild(el('span','salt-field__label','Day')); ds.setAttribute('data-winday',''); actOn(ds,'order.window-day');
           days.forEach(function(d){ var op=el('option','',mwDayLabel(d)); op.value=d; op.selected=d===win.day; ds.appendChild(op); });
           dl.appendChild(ds); wset.appendChild(dl);
@@ -5246,7 +5246,7 @@ export const OWNER_JS = `
       why:'A link for a friend. It opens nothing until you approve it.', open:goPlace('customers','links'), counts:waitingLink(r)&&!done}, function(c){
       if(done){ noteOf(c).textContent=moved.t; return; }
       if(tiers.length){
-        var f=el('div','salt-field'), lab=el('label','salt-field__label','Price list their friend sees'), sel=el('select','fld salt-field__input');
+        var f=el('div','salt-field'), lab=el('label','salt-field__label','Price list their friend sees'), sel=el('select','fld salt-field__input salt-field__select');
         sel.id='npin'+r.id; lab.htmlFor=sel.id; actOn(sel,'need.link-tier');
         var o0=el('option',null,'Follows '+who); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
         /* Ambassador is the floor and never a guest's */
