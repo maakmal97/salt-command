@@ -1236,10 +1236,11 @@ export function applyEvent(order, ev) {
       /* the book's money and goods, and what the ledger has been told of them with it, so the reconcile queues nothing for them */
       const q = Object.assign({}, order.queued || {});
       order.paid = ev.paid; q.paid = ev.paid; order.moved = ev.moved; q.moved = ev.moved; order.queued = q;
+      if (order.moved <= 0.0004) { delete order.movedOn; delete order.movedAt; }
       order.history.push({ at, status: order.status, by: "desk", note: "the book's figures: " + ev.paid.toFixed(2) + " paid, " + ev.moved + " unit handed over" });
       if (order.status === "done" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {
         const was = order.history.filter((h) => h && h.status && h.status !== "done").slice(-1)[0];
-        order.status = was ? was.status : "ready";
+        order.status = order.moved > 0.0004 ? "ready" : was ? was.status : "ready";   /* goods out: it was at Ready */
         order.history.push({ at, status: order.status, by: "desk", note: "open again: the book's figures leave it owing" });
       }
     }

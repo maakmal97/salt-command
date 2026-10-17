@@ -98,5 +98,7 @@
   { "name": "the order book takes the book's figures on an order not settled", "file": "stmt/orders.js", "find": "    if (order.status !== \"done\") return { error: \"only a settled order takes the book's figures whole\", status: 409 };", "replace": "" },
   { "name": "the order book takes the book's figures over a move it has not told", "file": "stmt/orders.js", "find": "return { error: \"the order holds a move the book has not heard yet\", status: 409 };", "replace": "{}" },
   { "name": "a settled order left owing stays settled", "file": "stmt/orders.js", "find": "      if (order.status === \"done\" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {\n        const was", "replace": "      if (false) {\n        const was" },
-  { "name": "the book's money leaves the ledger's mark behind", "file": "stmt/orders.js", "find": "order.paid = ev.paid; q.paid = ev.paid;", "replace": "order.paid = ev.paid;" }
+  { "name": "the book's money leaves the ledger's mark behind", "file": "stmt/orders.js", "find": "order.paid = ev.paid; q.paid = ev.paid;", "replace": "order.paid = ev.paid;" },
+  { "name": "a settled order with goods out opens again where it was", "file": "stmt/orders.js", "find": "order.status = order.moved > 0.0004 ? \"ready\" : was ? was.status : \"ready\";", "replace": "order.status = was ? was.status : \"ready\";" },
+  { "name": "a settled order the book says moved nothing keeps its handover day", "file": "stmt/orders.js", "find": "      if (order.moved <= 0.0004) { delete order.movedOn; delete order.movedAt; }\n", "replace": "" }
 ]

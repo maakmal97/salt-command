@@ -49475,11 +49475,12 @@ await (async () => {
     const senv = Object.assign({ STMT: skv, STMT_DESK_KEY: "desk-key" }, store ? { ORDERBOOK: bk.ns, ORDER_STORE: store, ORDER_MOVE_IN: "1" } : {});
     await dkv.put("stmt-users", J(Object.fromEntries(WHO)));
     /* every mark the desk sends the site, by order; a Counter deployed before this version keeps a mark's key and drops its side */
-    const marks = [];
+    const marks = [], restates = [];
     let oldCounter = false;
     const siteFetch = (url, init) => {
       let b = null;
       try { b = init && typeof init.body === "string" ? JSON.parse(init.body) : null; } catch (e) { b = null; }
+      if (b && b.restate) restates.push(decodeURIComponent(String(url).split("/").pop()));
       if (b && b.mark) {
         marks.push(Object.assign({ id: decodeURIComponent(String(url).split("/").pop()) }, b.mark));
         if (oldCounter && "forFriend" in b.mark) { delete b.mark.forFriend; init = Object.assign({}, init, { body: J(b) }); }
@@ -49803,6 +49804,22 @@ await (async () => {
       && so.total === 135 && so.paid === 115 && so.status !== "done" && so.history.some((h) => /open again/.test(h.note || "")),
       tag + ", a settled order takes its corrected row's goods, size, money and goods handed over, down as well as up, and one the row leaves owing opens again: "
       + J({ failed: ofrT16.failed, sc: [sc.status, sc.total, sc.paid], su: [su.status, su.qty, su.total, su.paid, su.moved], so: [so.status, so.total, so.paid] }));
+    /* Fable's review: a key two rows share is followed by neither; a draft of the order's own on its way holds it; an undo fix not yet sent is the one road */
+    const SX = await settledOf(18, 116), SY = await settledOf(19, 117), SZ = store ? await settledOf(1, 118) : null;   /* an undo's fix is the order book's alone */
+    const rx = saleOf(SX.rid); addRow({ rid: "s9950", customer: rx.customer, date: rx.date, qty: 1, total: 116, delivery: 0, cash: 0, deliveredQty: 0 });
+    correct(SY.rid, { total: 97, cash: 97 });
+    db.prepare("INSERT INTO draft (id,status,collection,entry,row,reasoning,party,product,amends,amend_kind,drafter,drafted_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+      .run("2026-10-17T00:00:00.000Z", "pending", "sales", J({ at: "2026-10-17T00:00:00.000Z", orderId: SY.o.id, payload: { mode: "amend", kind: "Fulfilment" } }), "{}", "a move", SY.code, "salt", SY.rid, "Fulfilment", "test", "2026-10-17T00:00:00.000Z");
+    if (SZ) { const rz = saleOf(SZ.rid); rz.cash = 0; rz.amend = (rz.amend || []).concat([{ date: rz.date, kind: "Correction", cash: 0, kg: 0, note: "n", undoes: 1, took: { cash: 118 } }]); putRow(rz); }
+    reseed();
+    restates.length = 0;
+    const ofrT18 = await tellSite(denv), sx = await orderOf(SX.o.id), sy = await orderOf(SY.o.id), sz = SZ ? await orderOf(SZ.o.id) : null;
+    db.prepare("DELETE FROM draft WHERE id=?").run("2026-10-17T00:00:00.000Z"); reseed();
+    const ofrT19 = await tellSite(denv), sy2 = await orderOf(SY.o.id);
+    ok(!ofrT18.failed && sx.paid === 116 && sx.status === "done" && sy.total === 117 && (!SZ || (sz.paid === 0 && !restates.includes(SZ.o.id))) && !restates.includes(SX.o.id)
+      && sy2.total === 97 && sy2.paid === 97,
+      tag + ", a settled order is never restated to a twin's row, waits while a draft of its own is on its way, and takes an undo by its fix alone: "
+      + J({ failed: ofrT18.failed, sx: [sx.status, sx.paid], sy: [sy.total, sy2.total], sz: sz && sz.paid, restates }));
   }
 
   /* THE COUNTER: the order at Ready, handed as the site hands it, beside the bucket's row sealed as a part of To pay now */

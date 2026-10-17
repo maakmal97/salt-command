@@ -1887,6 +1887,16 @@ async function followRows(env, orders, idx) {
    as on its way, as a close's landing does, or his yes waiting to be drafted), or a close
    or redate on its way: the order already says what the row will. A read that fails is read as on its way. */
 const AMEND_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\"status\":\"Amendment\"%' AND (status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1";
+/* 17 Oct 2026 (Fable's review): A SETTLED ORDER IS RESTATED ONLY WHEN NOTHING OF ITS OWN IS ON ITS WAY TO THE ROW: any draft naming it undecided or
+   not on the mirror yet (a Received, cash, a handover, as well as an amendment), any yes of his waiting in any stage, or a close or redate */
+const ORDER_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND (status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1";
+export async function orderInFlight(env, o) {
+  if (await closeOnItsWay(env, o)) return true;
+  try {
+    if (await env.SALT_LEDGER.prepare(ORDER_FLIGHT).bind('%"orderId":"' + o.id + '"%').first()) return true;
+    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND status='waiting' LIMIT 1").bind(o.id).first());
+  } catch (e) { return true; }
+}
 export async function termsInFlight(env, o) {
   if (await closeOnItsWay(env, o)) return true;
   try {
@@ -1909,15 +1919,20 @@ export async function tellSite(env, fixes, mirror) {
   const byKey = new Map(), rows = new Map(), byRid = new Map();
   for (const s of sales) { const k = POSITION_ENGINE.ovKey(s); byKey.set(k, s); rows.set(k, (rows.get(k) || 0) + 1); if (s.rid) byRid.set(s.rid, s); }
   const { followed, failed } = await followRows(env, r.orders, { byKey, rows, byRid });
+  /* a fix not yet sent to an order (an undo on its row) is the one road for what it takes back: a settled order waits for it (Fable's review) */
+  const allFixes = (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows));
+  const fixedDone = (await env.SALT_QUEUE.get(FIXED_MARK, "json").catch(() => null)) || {};
+  const fixWaits = new Set(allFixes.filter((f) => !fixedDone[f.id]).map((f) => f.order));
   let told = 0;
   for (const o of r.orders) {
     if (!o.ledgerKey || ["cancelled", "declined"].includes(o.status)) continue;
     const row = byKey.get(ledgerKeyOf(o));   /* V4a: never a salt twin's row by the old shape */
     if (!row || row.cancelled) continue;
+    const sole = rows.get(ledgerKeyOf(o)) === 1;   /* a key two rows share names neither: byKey keeps one of the twins */
     if (o.status === "done") {
       /* 17 Oct 2026, his yes: a settled order takes all its row states, its money and goods included, once nothing is on its way to the row */
-      const s = settledFromRow(o, row);
-      if (!s || await termsInFlight(env, o)) continue;
+      const s = sole && !fixWaits.has(o.id) ? settledFromRow(o, row) : null;
+      if (!s || await orderInFlight(env, o)) continue;
       const d = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ restate: Object.assign({}, s, { book: true }) })
       });
@@ -1939,7 +1954,7 @@ export async function tellSite(env, fixes, mirror) {
     /* 16 Oct 2026: AND THE ORDER STATES WHAT ITS ROW STATES. A Correction on the row (Counter Admin's Corrections, a hand fold) changed
        the book alone, so the order kept its old figure (CR3-DAM's s263: RM65 on the book, RM80 on the order). The row wins, except
        while a change of the order's own is on its way to the row: his Amend and a close tell the order at the tap, before it folds. */
-    const terms = termsFromRow(o, row, ledger.moved);
+    const terms = sole ? termsFromRow(o, row, ledger.moved) : null;
     if (!terms || await termsInFlight(env, o)) continue;
     const t = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ restate: terms })
@@ -1949,7 +1964,7 @@ export async function tellSite(env, fixes, mirror) {
   }
   /* fix 4: the committed list's corrections, sent on the list of orders this pass already read; and (plan 4) each undo the book now holds
      on a site order's row, taking back off the order what it took back off the row, once, by its own id */
-  const fx = await sendFixes(env, r.orders, (fixes || SITE_FIXES).concat(undoFixes(r.orders, byKey, rows)));
+  const fx = await sendFixes(env, r.orders, allFixes);
   failed.push(...(fx.failed || []));
   /* the mark moves only on a clean pass, so an order the site refused is tried again next minute
      rather than waiting for the next fold */
