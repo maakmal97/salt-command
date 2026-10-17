@@ -4002,28 +4002,51 @@ export const OWNER_JS = `
     sweep();
   }
   /* an order's head, as every card of an order says it: who by code, what and for how much; its stage as a chip, the four money words, and its reference small */
+  /* 18 Oct 2026 (his word: the customer's order card is the design): THE HEAD IS THE CUSTOMER'S. The book's tile with its size, the stage and who and when beside
+     it, the goods' track (Placed, Confirmed, Ready, Collected or Delivered), then the money on its own lines, the classes the Counter's order screen draws (oHead,
+     oSteps, oMoney in stmt/page.js), so the two read alike. Admin keeps what is his alone: the code, Owed, what they say they sent, and Handed while goods remain. */
+  function ordSteps(order){
+    var names=['Placed','Confirmed','Ready',order.mode==='deliver'?'Delivered':'Collected'], q=+order.qty||0, mv=+order.moved||0, all=mv>0&&mv>=q-0.0004;
+    var cur=order.status==='done'?4:all?3:(order.status==='ready'||mv>0)?2:order.status==='acknowledged'?1:0;
+    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label','Where the goods are');
+    names.forEach(function(n,i){
+      var li=el('li','salt-steps__step'+(i<cur?' salt-steps__step--done':i===cur?' salt-steps__step--now':''),n);
+      if(i===cur) li.setAttribute('aria-current','step');
+      ol.appendChild(li);
+    });
+    return ol;
+  }
+  function ordLine(label,value,flag,cls){
+    var r=el('div','salt-ledger__row'), l=el('div','salt-ledger__line');
+    l.appendChild(el('span','salt-ledger__label',label)); l.appendChild(el('span','salt-ledger__value'+(cls?' '+cls:''),value));
+    r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
+    return r;
+  }
   function orderHead(card,order){
-    var st=order.writtenOff?['mist','Written off']:ORD_STAGE[order.status]||['mist',String(order.status||'')], line=el('p','lead');
-    var orderTitle=el('h3','');
-    orderTitle.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u)));
-    orderTitle.appendChild(document.createTextNode(', ')); orderTitle.appendChild(bookMark(order.product));
-    orderTitle.appendChild(document.createTextNode(' '+units(order.qty)+', '+rm(order.total)+(order.delivery?' + '+rm(order.delivery):'')));
-    card.appendChild(orderTitle);
-    line.appendChild(chip(st[0],st[1])); card.appendChild(line);
-    /* 15 Oct 2026: an agreed order's head is its progress, what is owed, what is paid and what is handed over, and what they say they sent; the goods and the
-       delivery charge are already in the title and stand in Details. A placed, declined or cancelled order has no agreed figure to owe, so it keeps Goods. */
+    var st=order.writtenOff?['mist','Written off']:ORD_STAGE[order.status]||['mist',String(order.status||'')];
+    var head=el('div','ohead lead'), t=el('h3'), side=el('div'), sub=el('p','sub2');
+    t.appendChild(mtile(order.product,order.qty)); head.appendChild(t);
+    side.appendChild(chip(st[0],st[1]));
+    sub.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u)));
+    sub.appendChild(document.createTextNode(' · Ordered '+fmtWhen(order.at)+', '+(order.mode==='deliver'?'to deliver':'to collect')));
+    side.appendChild(sub); head.appendChild(side); card.appendChild(head);
     var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
-    card.appendChild(metrics(agreed
-      ?[['Owed',rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))],['Paid',rm(order.paid||0)],['Handed',moved+' of '+units(order.qty)]].concat(+order.claimed>0?[['Says sent',rm(order.claimed)]]:[])
-      :[['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
+    if(!order.writtenOff&&order.status!=='declined'&&order.status!=='cancelled') card.appendChild(ordSteps(order));
+    var L=el('div','ordmoney salt-ledger salt-ledger--plain'), paid=+order.paid||0, owed=Math.max(0,Number(order.total||0)+Number(order.delivery||0)-paid);
+    L.appendChild(ordLine('Goods',rm(order.total),agreed&&typeof order.asked==='number'&&Math.abs(order.asked-(+order.total||0))>0.004?'Set when you agreed it. They placed it at '+rm(order.asked):''));
+    if(order.mode==='deliver'&&(agreed||order.delivery)) L.appendChild(ordLine('Delivery',rm(order.delivery||0)));
+    if(agreed||paid>0) L.appendChild(ordLine('Paid',rm(paid)));
+    if(+order.claimed>0) L.appendChild(ordLine('Says sent',rm(order.claimed),'Waiting for your Received'));
+    if(agreed) L.appendChild(ordLine('Owed',rm(owed),'',owed>0.004?'odue':''));
+    if(agreed&&moved<(+order.qty||0)-0.0004) L.appendChild(ordLine('Handed',moved+' of '+units(order.qty)));
+    card.appendChild(L);
     /* 17 Oct 2026: an ended order's last move is under Approve until he decides it, and the book keeps its row live until then */
     var waitN=((makerData&&makerData.drafts)||[]).filter(function(d){ return d.status==='pending'&&d.entry&&d.entry.orderId===order.id; }).length;
     if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
     var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
     if(+owes>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(owes)+' on this order. Close it on the Desk once it is paid.'));
-    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]
-      .concat(agreed?[['Goods',rm(order.total)],['Delivery',order.delivery?rm(order.delivery):'']]:[])));
+    card.appendChild(detailBox('order.details',order.id,[['Reference',order.id],['Placed',fmtWhen(order.at)],['Way',order.mode==='deliver'?'Delivery':order.mode==='collect'?'Collection':'']]));
   }
   /* the card of an open order: every control it had, on the order opened alone */
   function orderCard(root,order){
@@ -4032,7 +4055,7 @@ export const OWNER_JS = `
       var card=makerCard(root,order.id), acts=el('div','maker-foot__acts'), cashed=false; card.setAttribute('data-in',orderPartsOf(order));
       orderHead(card,order);
       /* the stage's main action stands directly under the head (its title and stage chip), above Goods and Details */
-      function leadPlace(){ card.insertBefore(lead,card.children[2]||null); }
+      function leadPlace(){ card.insertBefore(lead,card.querySelector(':scope > .ordmoney')); }
       /* 10 Oct 2026: the delivery time they asked for, the part of its window inside the hours, while goods are still to go */
       if(order.mode==='deliver'&&order.slot&&order.slotSpan&&!((+order.moved||0)>=(+order.qty||0)-0.004))
         card.appendChild(el('p','maker-facts','Wanted '+String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10))+'.'));
@@ -4565,15 +4588,18 @@ export const OWNER_JS = `
     return 'Undo: '+h.rid+(a.owed>0.004?' owes '+rm(a.owed):' paid');
   }
   function historyBlock(card,ref,key,order,sayKey){
-    var box=el('div','undohist'), list=el('div','undolist'), said=el('p','msg'); said.setAttribute('role','status'); box.setAttribute('data-history',key);
-    box.appendChild(el('h4','','History'));
-    makerButton(box,[undoRead[key]?'Read it again':'History','undo.history',key],async function(){
+    /* 18 Oct 2026: the customer's fold (oHist in stmt/page.js), shut until a tap; opening it reads the moves once, and Read it again stays inside */
+    var box=el('details','undohist salt-plan'), sm=el('summary'), cnt=el('span','salt-plan__id','·'), body=el('div','salt-plan__body'),
+        list=el('div','undolist'), said=el('p','msg'); said.setAttribute('role','status'); box.setAttribute('data-history',key);
+    actOn(sm,'undo.fold',key); sm.appendChild(cnt); sm.appendChild(el('span','salt-plan__title','What happened, step by step')); box.appendChild(sm); box.appendChild(body);
+    var read=makerButton(body,[undoRead[key]?'Read it again':'Read the moves','undo.history',key],async function(){
       said.textContent='Reading.';
       var j=await refs('/all/maker/undo',ref);
-      undoRead[key]=j.history; drawHist(j.history); said.textContent='';
+      undoRead[key]=j.history; drawHist(j.history); said.textContent=''; box.open=true;
     },false);
+    box.addEventListener('toggle',function(){ if(box.open&&!undoRead[key]&&read&&read.click) read.click(); });
     function drawHist(h){
-      list.textContent='';
+      list.textContent=''; cnt.textContent=String(h.moves.length);
       if(!h.moves.length) list.appendChild(el('p','rnone','Nothing booked since the row was entered.'));
       h.moves.forEach(function(m){
         var line=el('div','undomove'); line.setAttribute('data-move',String(m.i));
@@ -4584,8 +4610,8 @@ export const OWNER_JS = `
       if(h.undo&&h.undo.blocked){ var w=el('p','salt-insight',h.undo.blocked); w.setAttribute('data-undo-blocked',''); list.appendChild(w); }
       else if(!h.undo&&h.why&&h.moves.length){ var n=el('p','salt-insight','The newest move is not undone here: '+h.why+'.'); n.setAttribute('data-undo-none',''); list.appendChild(n); }
     }
-    box.appendChild(list); box.appendChild(said); card.appendChild(box);
-    if(undoRead[key]) drawHist(undoRead[key]);
+    body.appendChild(list); body.appendChild(said); card.appendChild(box);
+    if(undoRead[key]){ drawHist(undoRead[key]); box.open=true; }
     return box;
   }
   function undoButton(line,h,m,key,order,sayKey){

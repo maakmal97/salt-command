@@ -65,7 +65,7 @@ export async function run({ ok, pageWork }) {
     c = cardOf("ord-a1");
     const amend = byAct(c, "order.amend"), money = [...c.querySelectorAll("h4")].find((h) => h.textContent === "Money received");
     const firstField = c.querySelector("input, select, textarea");
-    ok(!!amend && before(c.querySelector(".salt-metrics"), amend) && before(amend, money) && before(amend, firstField) && !c.querySelector(".maker-foot").contains(amend),
+    ok(!!amend && before(c.querySelector(".ordmoney"), amend) && before(amend, money) && before(amend, firstField) && !c.querySelector(".maker-foot").contains(amend),
       "B1: Change the order stands under the head, above the money and every field of the card, never in the foot");
     amend.click(); await p.work.quiet();
     const units = sheetOf() && byAct(sheetOf(), "order.amend-units");

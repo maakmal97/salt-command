@@ -100,5 +100,6 @@
   { "name": "a settled order left owing stays settled", "file": "stmt/orders.js", "find": "    if (order.status === \"done\" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {\n      const was", "replace": "    if (false) {\n      const was" },
   { "name": "the book's money leaves the ledger's mark behind", "file": "stmt/orders.js", "find": "order.paid = ev.paid; q.paid = ev.paid;", "replace": "order.paid = ev.paid;" },
   { "name": "a settled order with goods out opens again where it was", "file": "stmt/orders.js", "find": "order.status = order.moved > 0.0004 ? \"ready\" : was ? was.status : \"ready\";", "replace": "order.status = was ? was.status : \"ready\";" },
-  { "name": "a settled order the book says moved nothing keeps its handover day", "file": "stmt/orders.js", "find": "      if (order.moved <= 0.0004) { delete order.movedOn; delete order.movedAt; }\n", "replace": "" }
+  { "name": "a settled order the book says moved nothing keeps its handover day", "file": "stmt/orders.js", "find": "      if (order.moved <= 0.0004) { delete order.movedOn; delete order.movedAt; }\n", "replace": "" },
+  { "name": "History is a box, not the customer's fold", "file": "stmt/owner.js", "find": "var box=el('details','undohist salt-plan'), sm=el('summary')", "replace": "var box=el('div','undohist salt-plan'), sm=el('summary')" }
 ]

@@ -129,8 +129,9 @@ export async function run({ ok, pageWork }) {
     ok(same(moves(), []) && !foot().classList.contains("has") && same(tail("ord-p1"), ["order.decline"]) && byAct(d, "order.decline", "ord-p1").classList.contains("salt-ghost--danger")
       && !byAct(d, "order.decline", "ord-p1").closest(".maker-foot") && p.cardOf("ord-p1").querySelector(".ordend").nextElementSibling === foot(),
       "Decline stands in the flow at the card's end, a ghost danger button, never in a sticky foot: " + JSON.stringify([moves(), tail("ord-p1")]));
-    ok(!!(p.cardOf("ord-p1").querySelector(".ordlead").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".salt-metrics")) & 4) && p.cardOf("ord-p1").querySelector(".ordlead").previousElementSibling.classList.contains("lead"),
-      "and the main action stands directly under the card's head, ahead of Goods and Details"); 
+    ok(!!(p.cardOf("ord-p1").querySelector(".ordlead").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".ordmoney")) & 4) && p.cardOf("ord-p1").querySelector(".ordlead").previousElementSibling.classList.contains("salt-steps")
+      && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead"),
+      "and the main action stands directly under the card's head and its track, ahead of Goods and Details"); 
     ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && leadOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
       && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".maker-fields")) & 4),
       "Agree is the filled pill at the top of the card, ahead of every field, and not in the foot");
@@ -348,7 +349,8 @@ export async function run({ ok, pageWork }) {
     const cardOf = (id) => [...d.querySelectorAll("#makerReview [data-maker-card]")].find((c) => c.getAttribute("data-maker-card") === id) || null;
     const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & w.Node.DOCUMENT_POSITION_FOLLOWING);
     const typed = (el, v) => { el.value = v; el.dispatchEvent(new w.Event("input", { bubbles: true })); };
-    const head = (id) => (cardOf(id).querySelector(".salt-metrics") || { textContent: "" }).textContent.replace(/\s+/g, " ");
+    /* 18 Oct 2026: the head's money is the customer's lines, a label and its figure a row */
+    const head = (id) => [...cardOf(id).querySelectorAll(".ordmoney .salt-ledger__line")].map((l) => [...l.children].map((c) => c.textContent).join(" ")).join(" ");
     const money = (c) => [...c.querySelectorAll("h4")].find((h) => h.textContent === "Money received");
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await tapRow("ord-p1");
@@ -356,9 +358,10 @@ export async function run({ ok, pageWork }) {
       "a placed order keeps Goods in its head, with no figure owed: " + head("ord-p1"));
     await part("ready"); await tapRow("ord-r1");
     const r1 = cardOf("ord-r1");
-    ok(/Owed RM 60\.00/.test(head("ord-r1")) && /Paid RM 40\.00/.test(head("ord-r1")) && /Handed 0\.5 of 1/.test(head("ord-r1")) && /Says sent RM 20\.00/.test(head("ord-r1")) && !/Goods/.test(head("ord-r1")),
-      "a ready order's head is what it owes, what is paid, what is handed over and what they say they sent: " + head("ord-r1"));
-    ok(/Goods\s*RM 100\.00/.test(r1.querySelector(".rdet").textContent), "and its goods stand in Details");
+    ok(/Owed RM 60\.00/.test(head("ord-r1")) && /Paid RM 40\.00/.test(head("ord-r1")) && /Handed 0\.5 of 1/.test(head("ord-r1")) && /Says sent RM 20\.00/.test(head("ord-r1")) && /^Goods RM 100\.00 /.test(head("ord-r1")),
+      "a ready order's head is its goods, what is paid, what they say they sent, what it owes and what is handed over: " + head("ord-r1"));
+    ok(!/Goods/.test(r1.querySelector(".rdet").textContent) && r1.querySelectorAll(".salt-steps__step--done").length === 2 && /Ready/.test(r1.querySelector(".salt-steps__step--now").textContent),
+      "so Details no longer repeats them, and the track stands at Ready");
     await tapRow("ord-r2");
     ok(!/Says sent/.test(head("ord-r2")) && /Owed RM 100\.00/.test(head("ord-r2")) && /Handed 0 of 1/.test(head("ord-r2")), "an order with no claim says none: " + head("ord-r2"));
     /* plan 5 (16 Oct 2026): Bank and Cash are two tiles over one amount; the one button says the figure and the road (test/admin-card5.mjs proves the rest) */

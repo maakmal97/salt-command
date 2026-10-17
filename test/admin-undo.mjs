@@ -392,6 +392,10 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.orders"); await p.tap("part.orders.ready");
     const card = p.card("ord-r1");
     ok(!!card && !!byAct(card, "undo.history", "order:ord-r1"), "an agreed order's card has its History");
+    /* 18 Oct 2026: the customer's fold, shut until a tap */
+    const fold = card && card.querySelector('[data-history="order:ord-r1"]');
+    ok(!!fold && fold.tagName === "DETAILS" && fold.classList.contains("salt-plan") && !fold.open && text(fold.querySelector(".salt-plan__title")) === "What happened, step by step",
+      "its History is the customer's fold, What happened, step by step, shut: " + (fold && fold.outerHTML.slice(0, 120)));
     await p.tap("undo.history", "order:ord-r1");
     ok(J(p.sent("/all/maker/undo")) === J([{ order: "ord-r1" }]), "read by its order: " + J(p.sent("/all/maker/undo")));
     await p.tap("undo.open", "order:ord-r1");
