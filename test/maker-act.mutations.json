@@ -26,14 +26,14 @@
  {
   "name": "B1 two controls in one card share an act: Send reply and No reply needed",
   "file": "stmt/owner.js",
-  "find": "makerButton(card,['No reply needed','order.no-reply'],",
-  "replace": "makerButton(card,['No reply needed','order.reply'],"
+  "find": "makerButton(body,['No reply needed','order.no-reply'],",
+  "replace": "makerButton(body,['No reply needed','order.reply'],"
  },
  {
   "name": "B2 the quick replies lose their key, so two in one card share an act and nothing tells them apart (the table is unchanged)",
   "file": "stmt/owner.js",
-  "find": "makerButton(card,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false)",
-  "replace": "makerButton(card,[line,'order.quick-reply'],function(){ said.value=line; keepWord(); },false)"
+  "find": "makerButton(body,[line,'order.quick-reply',i],function(){ said.value=line; keepWord(); },false)",
+  "replace": "makerButton(body,[line,'order.quick-reply'],function(){ said.value=line; keepWord(); },false)"
  },
  {
   "name": "C1 an act is renamed in the page and not in the table",

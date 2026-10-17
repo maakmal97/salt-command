@@ -5244,7 +5244,7 @@ export const OWNER_JS = `
      them. The brake holds fifteen minutes from its last miss (the Worker's FAIL_TTL), so its age is read back from the moment it lets go. */
   function lockNeed(a){
     var L=a.locked, s=a.seen, held=Date.parse(L.until);
-    return item('now','accounts','Locked','k:'+a.username, held>0?new Date(held-900000).toISOString():'', {who:a.code||a.username, u:a.username, head:'Unlock ', what:'Locked out'+(L.until?' until '+hm(L.until):''),
+    return item('now','accounts','Locked','k:'+a.username, held>0?new Date(held-900000).toISOString():'', {who:a.code||a.username, u:a.username, head:'Send ', rest:' a sign-in link', what:'Locked out'+(L.until?' until '+hm(L.until):''),
       why:'Too many wrong passwords. If it was them, send a sign-in link.'
         +(s&&s.opens?' Last signed in'+(howOf(s)?' '+howOf(s):'')+', '+dayMon(s.last)+'.':' Has never signed in.'),
       open:function(){ openNeed(a.username); }}, function(c){
@@ -5496,7 +5496,7 @@ export const OWNER_JS = `
       needBusy[key]=true; drawNeeds();
       orderReceived(o,pp).then(function(done){
         delete needBusy[key];
-        if(done) delete needAsk[key]; else needNote[key]=makerSaid[o.id]||'Not confirmed. Try again.';
+        if(done) delete needAsk[key]; else needNote[key]=done===undefined?'Busy, try again.':makerSaid[o.id]||'Not confirmed. Try again.';
         drawNeeds();
       });
     });
@@ -5505,17 +5505,17 @@ export const OWNER_JS = `
   /* A payment against the account: its rows are read first (the card's own preview), and when they settle cleanly Received asks once on the card and sends
      the card's request (sendClaimAnswer, the same request id). Rows that need a look open the full card. */
   function claimPayButton(c, claim){
-    var key='c:'+claim.u+':'+claim.id, who=codeByUser(claim.u), ask=needAsk[key];
-    function full(){ delete needAsk[key]; makerClaimOpen=key; goPlace('orders','payments')(); }
+    var key='c:'+claim.u+':'+claim.id, ck=claim.u+':'+claim.id, who=codeByUser(claim.u), ask=needAsk[key];
+    function full(){ delete needAsk[key]; makerClaimOpen=ck; goPlace('orders','payments')(); }
     function send(hash){
       var body={hash:hash}, intended=JSON.stringify({action:'received',body:body});
-      var req=makerClaimRequests[key]||(makerClaimRequests[key]={intended:intended,action:'received',body:Object.assign({rid:mintRid()},body),busy:false});
+      var req=makerClaimRequests[ck]||(makerClaimRequests[ck]={intended:intended,action:'received',body:Object.assign({rid:mintRid()},body),busy:false});
       if(req.busy) return;
       req.busy=true; needBusy[key]=true; drawNeeds();
-      sendClaimAnswer(claim,key,req).then(function(){ delete needAsk[key]; },function(e){ needNote[key]='Not confirmed: '+e.message; }).then(function(){ req.busy=false; delete needBusy[key]; drawNeeds(); });
+      sendClaimAnswer(claim,ck,req).then(function(){ delete needAsk[key]; },function(e){ if(e&&e.detail&&e.detail.differs) delete makerClaimRequests[ck]; needNote[key]='Not confirmed: '+e.message; }).then(function(){ req.busy=false; delete needBusy[key]; drawNeeds(); });
     }
     if(!ask){
-      mainButton(c,'Received','need.received',key, function(){ delete needNote[key]; if(makerClaimRequests[key]){ full(); return; } needAsk[key]={}; drawNeeds(); });
+      mainButton(c,'Received','need.received',key, function(){ delete needNote[key]; if(makerClaimRequests[ck]){ full(); return; } needAsk[key]={}; drawNeeds(); });
     }else askBox(c,key,'Confirm '+rm(claim.amount)+' received from '+who+'?', function(){
       /* Yes reads the rows first, as the card's own Received does; rows that need a look open the full card instead of sending */
       needBusy[key]=true; drawNeeds();

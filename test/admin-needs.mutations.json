@@ -712,5 +712,29 @@
   "file": "stmt/owner.js",
   "find": "now?now+' to do now':''",
   "replace": "now?now+' now':''"
+ },
+ {
+  "name": "a claim answered from the card keeps its request apart from the full card",
+  "file": "stmt/owner.js",
+  "find": "var req=makerClaimRequests[ck]||(makerClaimRequests[ck]={intended:intended,action:'received'",
+  "replace": "var req=makerClaimRequests[key]||(makerClaimRequests[key]={intended:intended,action:'received'"
+ },
+ {
+  "name": "the card opens the full claim card under another key",
+  "file": "stmt/owner.js",
+  "find": "makerClaimOpen=ck; goPlace('orders','payments')(); }",
+  "replace": "makerClaimOpen=key; goPlace('orders','payments')(); }"
+ },
+ {
+  "name": "a differs refusal keeps the old request for the next Yes",
+  "file": "stmt/owner.js",
+  "find": "if(e&&e.detail&&e.detail.differs) delete makerClaimRequests[ck]; ",
+  "replace": ""
+ },
+ {
+  "name": "the locked card title says Unlock again",
+  "file": "stmt/owner.js",
+  "find": "head:'Send ', rest:' a sign-in link', what:'Locked out'",
+  "replace": "head:'Unlock ', what:'Locked out'"
  }
 ]

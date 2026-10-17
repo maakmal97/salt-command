@@ -225,10 +225,10 @@ export async function run({ ok, pageWork }) {
       "an order has Agree, a message Reply, a payment against the account Received, and an order with several payments Review, on the card: " + JSON.stringify([pills(p.card("o:ord-p1")), pills(p.card("m:" + U1)), pills(p.card("p:ord-a1"))]));
     /* 10. THE VERB FIRST, AND THE BUTTON ON THE CARD (17 Oct 2026, part 2) */
     const TITLES = [["o:ord-p1", "Agree CX1-ZED's order", "2 units · RM 200.00"], ["p:ord-a1", "Confirm CX1-ZED's RM 530.00", "Says they paid"], ["c:" + U1 + ":c-1", "Confirm CX1-ZED's RM 50.00", "Says they paid"],
-      ["m:" + U1, "Reply to CX1-ZED", "Hello"], ["d:" + ago(6), "Approve CX1-ZED's row", null], ["k:" + U3, "Unlock " + "CX3-ZED", null], ["a:ord-a2", "Send CX1-ZED's order again", null],
+      ["m:" + U1, "Reply to CX1-ZED", "Hello"], ["d:" + ago(6), "Approve CX1-ZED's row", null], ["k:" + U3, "Send CX3-ZED a sign-in link", null], ["a:ord-a2", "Send CX1-ZED's order again", null],
       ["$:CX1-ZED", "Collect RM 150.00 from CX1-ZED", "Past term"], ["g:row-1", "Hand over to CX2-ZED", null]];
     const got = TITLES.map(([k]) => (p.card(k) ? p.title(p.card(k)) : null)), want = TITLES.map(([, t]) => t);
-    ok(got.every((t, i) => t === want[i] || (want[i] && want[i].startsWith("Unlock") && /^Unlock /.test(t))),
+    ok(got.every((t, i) => t === want[i]),
       "each card's title says what to do, verb first, then who: " + JSON.stringify(got));
     ok(p.words(p.card("o:ord-p1")).what === "2 units · RM 200.00" && !/ now| tier|level/i.test(p.card("o:ord-p1").textContent),
       "and the figure stands under it, with the book as a mark and no level or tier word: " + p.words(p.card("o:ord-p1")).what);
@@ -594,6 +594,44 @@ export async function run({ ok, pageWork }) {
       await q.tap("need.agree", "o:ord-p1");
       ok(q.where() === "orders/placed" && q.posts.filter((x) => /\/accept$/.test(x.route)).length === n && !!q.d.querySelector('[data-act="order.agree"], .maker-card'),
         "an order's Agree opens its full card in Orders and books nothing: " + q.where());
+    } finally { q.w.close(); }
+  }
+
+  /* 12. A CLAIM ANSWERED FROM THE CARD SHARES THE FULL CARD'S SEND (18 Oct 2026): one retained request per claim, whichever card asked, so money is sent once */
+  {
+    const C1 = U1 + ":c-1", route = "/all/maker/claims/" + U1 + "/c-1/received", nap = (ms) => new Promise((r) => setTimeout(r, ms));
+    const sends = (q) => q.posts.filter((x) => x.route === route), previews = (q) => q.posts.filter((x) => x.route === "/all/maker/claims/" + U1 + "/c-1/preview");
+    const yesOnCard = async (q) => { await q.tap("need.received", "c:" + C1); byAct(q.card("c:" + C1), "need.ask-yes", "c:" + C1).click(); await nap(30); };
+    let q = await open(state());
+    try {
+      const release = q.hold(route);
+      await yesOnCard(q);
+      ok(sends(q).length === 1, "Yes on the Needs you card sends the claim's Received once, the answer still to come: " + sends(q).length);
+      byAct(q.d, "nav.orders").click(); await nap(40); byAct(q.d, "part.orders.payments").click(); await nap(40);
+      byAct(q.d, "claim.open", C1).click(); await nap(40);
+      byAct(q.d, "claim.received", C1).click(); await nap(40);
+      ok(sends(q).length === 1 && !q.d.getElementById("ynSheet"), "Yes on the full card while the first is unanswered sends nothing more: " + sends(q).length);
+      release(); await q.work.quiet();
+      ok(sends(q).length === 1 && typeof sends(q)[0].body.rid === "string", "so the claim is answered once, under one request id: " + JSON.stringify(sends(q)));
+    } finally { q.w.close(); }
+    q = await open(state(), { claimPreview: (j) => ({ ...j, left: 20 }) });
+    try {
+      await yesOnCard(q); await q.work.quiet();
+      ok(q.where() === "orders/payments" && !!byAct(q.d, "claim.received", C1) && sends(q).length === 0,
+        "rows that need a look open the full claim card, and send nothing: " + q.where());
+    } finally { q.w.close(); }
+    let refusing = true, reads = 0;
+    q = await open(state(), { extra: (r) => {
+      if (r === "/all/maker/claims/" + U1 + "/c-1/preview" && ++reads > 1) return { ok: true, hash: "d".repeat(64), rows: [], left: 0, booked: false };
+      if (r === route && refusing) return { refuse: "The rows changed. Preview them again.", detail: { differs: true } };
+      return undefined;
+    } });
+    try {
+      await yesOnCard(q); await q.work.quiet();
+      refusing = false;
+      byAct(q.card("c:" + C1), "need.ask-yes", "c:" + C1).click(); await q.work.quiet();
+      ok(previews(q).length === 2 && sends(q).length === 2 && sends(q)[1].body.hash === "d".repeat(64) && sends(q)[1].body.rid !== sends(q)[0].body.rid,
+        "after the rows moved, the next Yes reads them again and sends the new hash under a new request id: " + JSON.stringify(sends(q)));
     } finally { q.w.close(); }
   }
 
