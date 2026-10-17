@@ -18,6 +18,7 @@ import { readBook as toolsBook } from "../tools/book.mjs";
 import { buildSeed } from "../tools/d1.mjs";
 import { readBook, draftRow } from "../src/drafter.js";
 import { approveFigures } from "../src/approve-figures.js";
+import { makerTrips } from "../src/maker-inputs.js";
 import { plan } from "../tools/fold.mjs";
 import POSITION_ENGINE from "../engine/position.mjs";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
@@ -81,6 +82,7 @@ async function fixture() {
 }
 
 export async function run({ ok, pageWork }) {
+  const text0 = (n) => (n && n.textContent || "").replace(/\s+/g, " ").trim();
   const f = await fixture();
   const mine = (list, code) => (list || []).filter((t) => t.party === code);
   const at = (n) => new Date(Date.parse("2026-10-16T02:00:00.000Z") + n * 1000).toISOString();
@@ -91,6 +93,16 @@ export async function run({ ok, pageWork }) {
   ok(trip0.trip === T && trip0.owed === 271 && trip0.paid === 0 && trip0.handedLines === 0 && trip0.waiting === 0
     && J((trip0.lines || []).map((l) => [l.rid, l.product, l.qty, l.total, l.delivery, l.owed, l.left])) === J([["zt1", "salt", 1, 110, 10, 120, 1], ["zt2", "oil", 10, 116, 0, 116, 10], ["zt3", "rice", 5, 35, 0, 35, 5]]),
   "an open trip is one card on the review read: owed RM 271 across its three lines, the delivery on its one row, each line its book, units, total and what is left: " + J(trip0));
+  /* 18 Oct 2026, his question: an order of several books stands at the stage its lines put it, as a row does (the Desk's flowStage). A trip
+     collected whole and owing is Delivered, one whose payment waits under Approve as well is Done, and one untouched stays Agreed */
+  const hs = (rid, c, p, q, t, trip) => sale(rid, c, p, q, t, { trip, deliveredQty: q, deliveredOn: D });
+  const sb = { sales: [hs("hd1", "CX3-ZED", "salt", 1, 130, "t1791900000005"), hs("hd2", "CX3-ZED", "rice", 2, 15, "t1791900000005"),
+    hs("pd1", "CX2-ZED", "salt", 1, 130, "t1791900000006"), hs("pd2", "CX2-ZED", "rice", 2, 15, "t1791900000006")], purchases: [] };
+  const sHeld = [["pd1", 130], ["pd2", 15]].map(([rid, cash], i) => ({ at: at(40 + i), payload: { mode: "amend", direction: "SELL", kind: "Fulfilment", rid, cash, kg: 0, date: "2026-10-16" } }));
+  const st = makerTrips(sb, sHeld).trips, stOf = (c) => (mine(st, c)[0] || {}).stage;
+  ok(trip0.stage === "confirmed" && stOf("CX3-ZED") === "paid" && mine(st, "CX3-ZED")[0].owed === 145,
+    "a trip untouched is Agreed, and one collected whole and owing RM 145 is Delivered, where one row in that state sits: " + J([trip0.stage, st.map((t) => [t.party, t.stage, t.owed])]));
+  ok(stOf("CX2-ZED") === "done", "a trip collected whole and paid in full, the payment waiting under Approve, is Done: " + J(st.map((t) => [t.party, t.stage, t.owed])));
   ok(J(mine(r0.sameDay, "CX8-ZED").map((t) => t.rids)) === J([["yd1", "yd2"]]) && !mine(r0.sameDay, "CX7-ZED").length && !mine(r0.sameDay, "CX6-ZED").length && !mine(r0.sameDay, "CX9-ZED").length,
     "a buyer's same-day rows of two books with one delivery are offered as one order; two rows of one book, two deliveries or rows already on a trip are not: " + J((r0.sameDay || []).filter((t) => /^CX[6-9]-ZED$/.test(t.party)).map((t) => [t.party, t.rids])));
 
@@ -269,11 +281,28 @@ export async function run({ ok, pageWork }) {
     ok(!!day && /delivery staying on yd1/.test(day.textContent) && j.length === 1 && J(j[0].rids) === J(["yd1", "yd2"]),
       "a buyer's same-day rows are offered as one order, one tap sending both rows: " + J(j));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
+  /* 18 Oct 2026: the list files a trip and a same-day group at the stage the Desk read, and the stage's line and its paging count them */
+  const TH = { ...TRIP, trip: "t1791900000005", party: "CX3-ZED", owed: 145, handedLines: 3, stage: "paid" }, TD = { ...TRIP, trip: "t1791900000006", party: "CX2-ZED", owed: 0, paid: 271, handedLines: 3, stage: "done" };
+  p = await open({ review: { trips: [TRIP, TH, TD], sameDay: [{ ...DAY, stage: "paid" }] } });
+  try {
+    await p.tap("nav.orders");
+    const inOf = (k) => { const r = p.d.querySelector('[data-act="order.open"][data-key="' + k + '"]'); return r ? r.getAttribute("data-in") : null; };
+    ok(inOf("trip:" + T) === "orders.confirmed" && inOf("trip:" + TH.trip) === "orders.paid" && inOf("trip:" + TD.trip) === "orders.done",
+      "a trip is listed at its stage: untouched under Agreed, collected and owing under Delivered, paid in full under Done: " + J([inOf("trip:" + T), inOf("trip:" + TH.trip), inOf("trip:" + TD.trip)]));
+    ok(inOf("day:yd1+yd2") === "orders.paid", "a same-day group is listed at its stage too: " + inOf("day:yd1+yd2"));
+    await p.tap("part.orders.done");
+    const doneN = [...p.d.querySelectorAll("#makerOrderList .ordrow")].filter((r) => r.getAttribute("data-in") === "orders.done").length;
+    ok(text0(p.d.getElementById("makerReviewStatus")) === doneN + (doneN === 1 ? " order" : " orders") && doneN >= 1,
+      "the line over Done counts the trip filed there: " + text0(p.d.getElementById("makerReviewStatus")));
+  } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
   p = await open({ review: { trips: [], sameDay: [], tripsError: "Orders of several books could not be read." } });
   try {
     await p.tap("nav.orders"); await p.tap("part.orders.confirmed");
     ok(!!p.d.querySelector("[data-trips-error]") && /could not be read/.test(p.d.querySelector("[data-trips-error]").textContent),
       "orders of several books that could not be read are said, never read as none");
+    await p.tap("part.orders.paid");
+    ok(!!p.d.querySelector("[data-trips-error]") && !p.d.querySelector("[data-trips-error]").hidden,
+      "and said under Delivered as well, where such an order may stand");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.stack)); } finally { p.w.close(); }
 
   /* the approve card: the handovers of an order's lines are one card, and so is a join */
