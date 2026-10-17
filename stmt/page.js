@@ -504,8 +504,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aparts{margin:0 0 20px}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 18 OCT 2026 (clarity, part 3): Orders' stages are the first strip, the rest a smaller one beneath it; an order's card leads with its answer and folds the rest */
+.adm .aparts--stages,.adm .aparts--minor{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.adm .aparts--stages .salt-tabs__pill,.adm .aparts--minor .salt-tabs__pill{flex:0 0 auto;white-space:nowrap;scroll-snap-align:start}
 .adm .aparts--stages{margin-bottom:10px}
 .adm .aparts--minor{margin-top:0;gap:var(--salt-space-1)}
+.adm .aparts--minor .salt-tabs__pill{padding-inline:var(--salt-space-3)}
+.adm .ordend{display:flex;margin-top:16px}
 .adm .ordlead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
 .adm .ordlead:empty{display:none}
 .adm .ordlead>.maker-field,.adm .ordlead>.salt-options{flex:1 1 100%}

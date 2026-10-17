@@ -700,5 +700,17 @@
   "file": "stmt/owner.js",
   "find": "['Everyday',['sale-or-purchase','repayment','stock-count']]",
   "replace": "['Everyday',['repayment','sale-or-purchase','stock-count']]"
+ },
+ {
+  "name": "a strip wraps",
+  "file": "stmt/page.js",
+  "find": "{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type",
+  "replace": "{overflow-x:auto;scroll-snap-type"
+ },
+ {
+  "name": "a strip does not scroll",
+  "file": "stmt/page.js",
+  "find": "overflow-x:auto;scroll-snap-type:x proximity;",
+  "replace": "scroll-snap-type:x proximity;"
  }
 ]

@@ -406,5 +406,17 @@
   "file": "stmt/owner.js",
   "find": "          var got=makerButton(lead,[onBook?",
   "replace": "          var got=makerButton(card,[onBook?"
+ },
+ {
+  "name": "the main action stands below Goods and Details",
+  "file": "stmt/owner.js",
+  "find": "function leadPlace(){ card.insertBefore(lead,card.children[2]||null); }",
+  "replace": "function leadPlace(){ card.appendChild(lead); }"
+ },
+ {
+  "name": "Decline stands in the sticky foot",
+  "file": "stmt/owner.js",
+  "find": "var dec=makerButton(tail,['Decline'",
+  "replace": "var dec=makerButton(acts,['Decline'"
  }
 ]

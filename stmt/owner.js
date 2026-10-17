@@ -126,7 +126,10 @@ export const OWNER_JS = `
     [].forEach.call(document.querySelectorAll('.place[data-m]'), function(b){
       if(b.getAttribute('data-m')===placeNow) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     [].forEach.call(document.querySelectorAll('.aparts button[data-part]'), function(b){
-      b.setAttribute('aria-selected', b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow?'true':'false'); });
+      var on=b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow;
+      b.setAttribute('aria-selected', on?'true':'false');
+      /* a strip scrolls sideways on a narrow screen: the part he is in is brought into view */
+      var sp=b.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,b.offsetLeft-sp.offsetLeft-12); });
     sweep();
     say('');
     unsentPaint();
@@ -3067,8 +3070,9 @@ export const OWNER_JS = `
     },false);
     makerButton(body,['No reply needed','order.no-reply'],function(){ makerMove(order,{noReply:true},'No reply needed recorded.'); },false);
     /* his decision 4 of 11 Oct 2026: a Decline or a Cancel asks on the page's Sheet, and the reason is asked there, on tiles */
+    var tail=el('div','ordend');
     if(order.status==='placed'){
-      var dec=makerButton(acts,['Decline','order.decline'],function(){
+      var dec=makerButton(tail,['Decline','order.decline'],function(){
         var why=makerWhy(order);
         makerAsk(order,dec,'decline',{title:'Decline this order?', go:'Decline the order', keep:'Keep the order', extra:why.nodes,
           say:['It is declined and goes no further. The customer is told, with your reason if you give one.'],
@@ -3076,7 +3080,7 @@ export const OWNER_JS = `
       },false);
       makerAskTag(order,dec,'decline'); dec.classList.add('salt-ghost--danger');
     }else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&!(+order.moved>0)){
-      var can=makerButton(acts,['Cancel','order.cancel'],function(){
+      var can=makerButton(tail,['Cancel','order.cancel'],function(){
         var why=makerWhy(order);
         makerAsk(order,can,'cancel',{title:'Cancel this order?', go:'Cancel the order', keep:'Keep the order', extra:why.nodes,
           say:[+order.paid>0?rm(+order.paid)+' is paid on it, so a refund to the customer opens for you to return.':'Nothing is paid on it.'],
@@ -3086,7 +3090,7 @@ export const OWNER_JS = `
     }else if((order.status==='acknowledged'||order.status==='ready')&&!order.closed&&!(+order.claimed>0)&&+order.moved>0&&+order.moved<+order.qty-0.0004){
       /* his answer of 17 Oct 2026: A CANCEL ONCE GOODS ARE OUT CANCELS THE REST. The order closes at what was handed over, the Desk restating its total
          (the close Finish at fewer units sends), and anything paid above that opens as a refund */
-      var rest=makerButton(acts,['Cancel the rest','order.cancel-rest'],function(){
+      var rest=makerButton(tail,['Cancel the rest','order.cancel-rest'],function(){
         var n=+(+order.moved).toFixed(3);
         makerAsk(order,rest,'cancel-rest',{title:'Cancel the rest of this order?', go:'Cancel the rest', keep:'Keep the order',
           say:['The order ends at the '+units(n)+' handed over, and the Desk restates its total. Anything they paid above it opens as a refund for you to return.'],
@@ -3094,6 +3098,8 @@ export const OWNER_JS = `
       },false);
       makerAskTag(order,rest,'cancel-rest');
     }
+    /* Decline and Cancel stand apart at the card's end, in the flow and never sticky */
+    if(tail.children.length) card.appendChild(tail);
   }
   /* PHASE 1c (11 Oct 2026): RECORD'S FORMS ARE A MENU. Entry, Customers and Pricing each list their forms by name, a row of the system's
      Inbox row for each, and a row opens that form alone with a way back. The forms are the sections they were, moved and never drawn
@@ -4012,6 +4018,8 @@ export const OWNER_JS = `
     {
       var card=makerCard(root,order.id), acts=el('div','maker-foot__acts'), cashed=false; card.setAttribute('data-in',orderPartsOf(order));
       orderHead(card,order);
+      /* the stage's main action stands directly under the head (its title and stage chip), above Goods and Details */
+      function leadPlace(){ card.insertBefore(lead,card.children[2]||null); }
       /* 10 Oct 2026: the delivery time they asked for, the part of its window inside the hours, while goods are still to go */
       if(order.mode==='deliver'&&order.slot&&order.slotSpan&&!((+order.moved||0)>=(+order.qty||0)-0.004))
         card.appendChild(el('p','maker-facts','Wanted '+String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10))+'.'));
@@ -4024,7 +4032,7 @@ export const OWNER_JS = `
       if(!againAck&&(order.status==='acknowledged'||order.status==='ready')){
         var change=makerButton(card,['Change the order','order.amend'],function(){ amendOpen(order,change); },false);
         change.setAttribute('data-amend',''); makerAskTag(order,change,'amend');
-        card.appendChild(lead);   /* the stage's one main action stands here, at the top (part 3 of the clarity change) */
+        leadPlace();   /* the stage's one main action stands under the head, above Goods and Details (part 3 of the clarity change) */
       }
       if(order.status==='placed'&&makerAccHeld(order)){
         var ap=order.price, apf=ap.offer||{};
@@ -4038,7 +4046,7 @@ export const OWNER_JS = `
         /* 18 Oct 2026 (Counter Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
            it in one line and kept in step with the choices; the price, the delivery charge and the time are folded under Change terms, shut until a tap.
            Until the figures are read the pill is a stand-in, never a send: it asks for the charge (and opens it) or says it is reading. */
-        card.appendChild(lead);
+        leadPlace();
         var terms=el('p','ordterms'); terms.setAttribute('aria-live','polite'); lead.appendChild(terms);
         var tf=ordFold(card,'Change terms','order.terms',order.id,'terms',false);
         tf.body.appendChild(form);
@@ -4288,7 +4296,7 @@ export const OWNER_JS = `
       /* cash held for the order shuts every control of the card, the reply's too, which is drawn after the cash block: its Undo or Retry alone stays live */
       if(cashed&&(makerCashHeld[order.id]||makerCashStorageError)) [].forEach.call(card.querySelectorAll('button,input,select'),function(n){
         if(!n.hasAttribute('data-maker-cash-undo')&&!n.hasAttribute('data-maker-cash-retry')) n.disabled=true; });
-      makerCardFoot(card,acts,order.id,cashed,!!quoteStart);
+      makerCardFoot(card,acts,order.id,cashed,false);
       if(quoteStart) quoteStart();
       return card;
     }

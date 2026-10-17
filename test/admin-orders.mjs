@@ -113,6 +113,8 @@ export async function run({ ok, pageWork }) {
     ok(strips.length === 2 && partsOf(strips[0]) === "placed,confirmed,ready,paid,done,ended" && partsOf(strips[1]) === "approve,payments,group,ledger" && strips[1].classList.contains("aparts--minor")
       && strips.every((s) => s.classList.contains("salt-tabs") && s.getAttribute("role") === "tablist"),
     "Orders draws two strips, the six stages in the order an order moves and then Approve, Payments, Group and Ledger, smaller: " + JSON.stringify(strips.map(partsOf)));
+    const stripCss = ownerCss().top(".adm .aparts--stages,.adm .aparts--minor").join();
+    ok(/flex-wrap:\s*nowrap/.test(stripCss) && /overflow-x:\s*auto/.test(stripCss), "and a strip is one row that scrolls sideways on a narrow screen, never wrapping: " + stripCss);
     const reach = [];
     for (const part of ["approve", "payments", "group", "ledger", "ended", "paid", "placed"]) { await p.tap("part.orders." + part); const w = p.where(); if (w !== "orders/" + part) reach.push(part + ">" + w); }
     ok(reach.length === 0 && [...strips[1].querySelectorAll("button")].every((b) => /^part[.]orders[.]/.test(b.getAttribute("data-act"))), "and every part is still reached at its own act and address, in either strip: " + JSON.stringify(reach));
@@ -211,7 +213,7 @@ export async function run({ ok, pageWork }) {
     ok(same(p.cardsIn(), ["ord-p1"]) && byAct(d, "order.open", "ord-p1").getAttribute("aria-current") === "true" && d.getElementById("oSplit").classList.contains("open")
       && !byAct(d, "order.open", "ord-p2").hasAttribute("aria-current"),
     "a row opens that order's card alone, marks itself current and stands the list and the card side by side: " + JSON.stringify(p.cardsIn()));
-    const want = ["order.details", "order.accept", "order.terms", "order.total", "order.answer", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
+    const want = ["order.accept", "order.details", "order.terms", "order.total", "order.answer", "order.reply-text", "order.quick-reply", "order.quick-reply", "order.quick-keep",
       "order.reply", "order.no-reply", "order.decline"];
     const got = p.acts("ord-p1");
     ok(same(got, want), "the card has the controls it had, less the reason, which is asked on the Decline's Sheet, and Details for its reference: " + JSON.stringify(got));

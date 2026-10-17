@@ -76,7 +76,7 @@ export async function run({ ok, pageWork }) {
       "B2: and its Sheet sends the same restate, the amend stage's Correction for approval: " + JSON.stringify(re));
     await part("ready"); await tapRow("ord-r1");
     c = cardOf("ord-r1");
-    ok(before(byAct(c, "order.amend"), byAct(c, "order.handed-units")), "B3: on a Ready order it stands above the units too");
+    ok(before(byAct(c, "order.handed-units"), byAct(c, "order.amend")), "B3: on a Ready order the units, its main action, stand under the head and Change the order follows them");
 
     /* C. THE UNITS FIELD HAS ONE BUTTON */
     const rest = () => cardOf("ord-r1").querySelector("fieldset[data-close]");
