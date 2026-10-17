@@ -100,6 +100,11 @@ export const RECIPE_HEADS = [
      (PRODUCTS.accent in ledger/book.json, reached as the system's --salt-product-* token). Product tag is his page's alone:
      no customer's page draws one, and the site's rule that a product is a mark and never a word stands. */
   "/* ---- Metric row ---- */", "/* ---- Table (synced to the desk", "/* ---- Product tag:",
+  /* 18 OCT 2026, HIS WORD: THE LIGHT IS THE SYSTEM'S, as the Desk draws it. The ground was two radial gradients restated here at a fraction of the
+     orbs' strength, so the glass rail and cards read flat black on the Counter and warm on the Desk. Aurora is carried whole and both pages draw
+     .salt-aurora--page --fixed first in the body; the layer below only lays it under the content. The system's last section comes with it: no Aurora under
+     reduced transparency or on paper, and the pane fill where a renderer cannot frost the glass. */
+  "/* ---- Aurora ---- */", "/* ---- Where the frost cannot be drawn ----",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");
@@ -136,13 +141,11 @@ html{-webkit-text-size-adjust:100%}
 body{
   margin:0;padding:44px 20px 60px;
   color:var(--salt-text);
-  background:
-    radial-gradient(1200px 640px at 82% -12%, color-mix(in srgb, var(--salt-copper) 16%, transparent) 0%, transparent 62%),
-    radial-gradient(900px 560px at -10% 6%, color-mix(in srgb, var(--salt-brass) 10%, transparent) 0%, transparent 58%),
-    var(--salt-obsidian);
-  background-attachment:fixed;
+  background:var(--salt-obsidian);
   font-family:var(--salt-font-display);
   font-size:var(--salt-text-md);line-height:1.6;-webkit-font-smoothing:antialiased}
+/* the light is the system's Aurora (SITE_RECIPES), the first thing in the body; laid under every block of the page and over the body's ground, a selector that outweighs the recipe's z-index, which the recipes, coming later, would otherwise win */
+body>.salt-aurora{z-index:-1}
 
 /* FIGURES IN MONO, SENTENCES IN THE DISPLAY FACE. Decision 3 of the identity, and the whole
    figure vocabulary of a statement is listed here once. */

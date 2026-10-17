@@ -35,7 +35,7 @@
  {"name":"a swatch token drifts from the system","file":"stmt/statement-css.js","find":"--salt-swatch-tide-accent: #7fd1c0;","replace":"--salt-swatch-tide-accent: #7fd1c1;"},
  {"name":"a tile draws the wrong theme's accent","file":"stmt/page.js","find":"var(--salt-swatch-tide-accent) 0 13px","replace":"var(--salt-swatch-night-accent) 0 13px"},
  {"name":"the page's CSS writes a colour as a literal","file":"stmt/page.js","find":".look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose)}","replace":".look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:#a4bbbf}"},
- {"name":"the body's glow is a literal again","file":"stmt/statement-css.js","find":"color-mix(in srgb, var(--salt-copper) 16%, transparent)","replace":"rgba(184,115,51,.16)"},
+ {"name":"the body takes a glow of the layer's own again","file":"stmt/statement-css.js","find":"color:var(--salt-text);\\n  background:var(--salt-obsidian);","replace":"color:var(--salt-text);\\n  background:radial-gradient(900px 560px at -10% 6%, color-mix(in srgb, var(--salt-brass) 10%, transparent) 0%, transparent 58%),var(--salt-obsidian);"},
  {"name":"a print ink is a literal again","file":"stmt/statement-css.js","find":".pend{color:var(--salt-paper-steel)}","replace":".pend{color:#41586e}"},
  {"name":"a print ink falls under 4.5:1 on the paper","file":"stmt/statement-css.js","find":".pend{color:var(--salt-paper-steel)}","replace":".pend{color:var(--salt-paper-edge)}"},
  {"name":"the generated stylesheet drops a Tide token","file":"stmt/statement-css.js","find":"--salt-brass: #7fd1c0;","replace":""},

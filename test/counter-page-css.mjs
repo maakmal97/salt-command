@@ -53,6 +53,24 @@ export async function run({ ok, pageWork }) {
   ok(!/salt-producttag/.test(PAGE_SRC.replace(/\/\*[\s\S]*?\*\//g, "")) && /salt-producttag/.test(OWNER_SRC),
     "and the Product tag is drawn by Salt Account's script alone: nothing a customer's page draws names it, so a book is still a mark there and never a word");
 
+  /* ---- 1b. the light is the system's Aurora, as the Desk draws it (18 Oct 2026): carried whole, the first thing in both bodies, laid under the content, and no light of the
+     page's own. The ground was two radial gradients at a fraction of the orbs' strength, so the glass rail read flat black on the Counter and warm on the Desk ---- */
+  {
+    const { JSDOM } = await import("jsdom");
+    const key = ([sel, body, media]) => squash(media) + "|" + squash(sel) + "{" + squash(body) + "}", have = new Set(rulesOf(SITE_RECIPES).map(key));
+    const aur = rulesOf(ds).filter(([sel]) => /\.salt-aurora/.test(sel)), lost = aur.filter((r) => !have.has(key(r))).map((r) => (r[2] ? r[2] + " " : "") + r[0]);
+    ok(aur.length >= 16 && aur.filter((r) => r[2]).length === 2 && lost.length === 0,
+      `the Aurora is in the recipes the page carries, ${aur.length} rules whole, Tide's blobs and the system's own no-Aurora under reduced transparency and in print among them (missing: ${lost.join(", ") || "none"})`);
+    const pages = [["the customer's", landingPage("abcd-efgh", "nct", null)], ["Salt Account's", landingPage("", "nct", { master: "fixture-master", accounts: [] })]];
+    const drawn = pages.map(([w, h]) => { const a = new JSDOM(h).window.document.body.firstElementChild;
+      return [w, !!a && a.matches(".salt-aurora.salt-aurora--page.salt-aurora--fixed[aria-hidden=true]") && a.querySelectorAll(":scope > .salt-aurora__blob--copper, :scope > .salt-aurora__blob--brass").length === 2]; });
+    ok(drawn.every(([, y]) => y), "both pages draw the page Aurora, fixed and hidden from a reader, as the first thing in the body with its copper and brass blobs: " + drawn.map(([w, y]) => w + " " + (y ? "yes" : "no")).join(", "));
+    const layer = rulesOf(STATEMENT_CSS + pageCss), under = layer.filter(([sel, body, media]) => !media && sel === "body>.salt-aurora" && decl(body, "z-index") === "-1");
+    const hand = layer.filter(([, body]) => /radial-gradient/.test(body) && /(^|;)\s*background(-image)?\s*:/.test(body)).map((r) => r[0]);
+    ok(under.length === 1 && hand.filter((s) => /^(html|body)\b/.test(s)).length === 0,
+      `the page lays the Aurora under its content by a selector that outweighs the recipe's own z-index (${under.length}), and draws no light of its own on the ground (${hand.join(" ") || "none"})`);
+  }
+
   /* ---- 2. what PAGE_CSS keeps is placement: no rule under .adm sets a recipe's material, nor one of the page's classes that wear a recipe ---- */
   const MATERIAL = /(^|;)\s*(background(-color|-image)?|border(-[a-z]+)*|border-radius|box-shadow|font-family|font-size|font-weight|letter-spacing|text-transform|color)\s*:/;
   const WEARS = /(^|\.)(lbl|pane|acard|glink|ghead|gt|mos|maker-hours|grow|look-tile)(\.|:|$|\[)/;
