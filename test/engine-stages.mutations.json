@@ -2,8 +2,8 @@
  {
   "name": "a stage function mutates the order it is handed",
   "file": "engine/stages.mjs",
-  "find": "const handed = Object.assign({}, o, { movedOn: klDate(at), moved: qty });",
-  "replace": "const handed = Object.assign(o, { movedOn: klDate(at), moved: qty });"
+  "find": "const handed = Object.assign({}, o, { movedOn: still ? o.movedOn : klDate(at), moved: qty });",
+  "replace": "const handed = Object.assign(o, { movedOn: still ? o.movedOn : klDate(at), moved: qty });"
  },
  {
   "name": "Accept's floor refusal is removed",

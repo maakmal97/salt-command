@@ -34,5 +34,7 @@
 {"name": "Fable 1: a close at what is out restamps the row's day", "file": "engine/stages.mjs", "find": "movedOn: still ? o.movedOn : klDate(at), moved: qty", "replace": "movedOn: klDate(at), moved: qty"},
 {"name": "Fable 1: a close at what is out writes a handover on the order", "file": "stmt/orders.js", "find": "const moves = !(ev.close && order.movedOn && Math.abs(+ev.units - (+order.moved || 0)) < 0.0004);", "replace": "const moves = true;"},
 {"name": "Fable 2: the ledger's road prices under the floor", "file": "src/maker-inputs.js", "find": "if (fl && fl.exact && t < fl.floor - 0.005)", "replace": "if (false)"},
-{"name": "Fable 3: same-day rows drawn twice", "file": "src/worker.js", "find": ".concat(cards.sameDay.flatMap((d) => d.rids))", "replace": ""}
+{"name": "Fable 3: same-day rows drawn twice", "file": "src/worker.js", "find": ".concat(cards.sameDay.flatMap((d) => d.rids))", "replace": ""},
+{"name": "Fable A: the book's lines reach the customer", "file": "stmt/orders.js", "find": "  if (Array.isArray(v.history)) v.history = v.history.filter((h) => !(h && h.inner));\n", "replace": ""},
+{"name": "Fable A: a book cancel carries a note", "file": "stmt/orders.js", "find": "{ cancel: \"book\" }); h.book = true; }", "replace": "{ cancel: \"book\" }); h.note = \"cancelled on the book\"; }"}
 ]

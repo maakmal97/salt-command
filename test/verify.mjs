@@ -49437,7 +49437,7 @@ await (async () => {
       const self = mk([]);
       self.bind = (...a) => { if (failFor && a[0] === failFor && /FROM preapproval .*stage<>'ack'/.test(sql)) throw new Error("D1 fixture: not now"); return mk(a); };
       return self; } };
-    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
+    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4", "5"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
     const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, J(doc));
     let seq = 0, ver = 0;
     const OPEN = { byKey: {}, position: {} };
@@ -49845,6 +49845,12 @@ await (async () => {
     await tellSite(denv);
     const ep2 = await orderOf(EP.o.id);
     ok(ep1.status !== "cancelled" && ep2.status === "cancelled", tag + ", the book's cancel waits while a move of the order's own is on its way: " + J([ep1.status, ep2.status]));
+    /* Fable's review: a row with goods out cancelled by hand is not the order's to cancel, and is never sent, so the pass stays clean */
+    const EO = await agreed(23, { unit: 125, total: 125 }, true);
+    const eoRow = saleOf(EO.rid); eoRow.cancelled = true; putRow(eoRow); reseed();   /* a hand fold: the Correction road refuses it */
+    const ofrT22 = await tellSite(denv), eo = await orderOf(EO.o.id);
+    ok(!ofrT22.failed && eo.status !== "cancelled", tag + ", a hand-cancelled row with goods out leaves its order and the pass clean: " + J({ failed: ofrT22.failed, status: eo.status }));
+    delete eoRow.cancelled; putRow(eoRow); reseed();
     correct(EW.rid, { defaulted: false });
     const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
     ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));

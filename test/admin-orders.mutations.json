@@ -62,8 +62,8 @@
  {
   "name": "a closed order is not listed in any stage",
   "file": "stmt/owner.js",
-  "find": "    if(!ordOpen(order)&&order.test) return '';\n    var st=STAGE_OF",
-  "replace": "    if(!ordOpen(order)) return '';\n    var st=STAGE_OF"
+  "find": "    if(!ordOpen(order)&&order.test) return '';\n    if(order.writtenOff)",
+  "replace": "    if(!ordOpen(order)) return '';\n    if(order.writtenOff)"
  },
  {
   "name": "a row opens no card",

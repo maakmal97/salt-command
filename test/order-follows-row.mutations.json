@@ -9,10 +9,11 @@
   { "name": "a settled order is restated to a twin's row", "file": "src/orders.js", "find": "const s = sole && !fixWaits.has(o.id) ? settledFromRow(o, row) : null;", "replace": "const s = !fixWaits.has(o.id) ? settledFromRow(o, row) : null;" },
   { "name": "a settled order is restated over an undo fix not yet sent", "file": "src/orders.js", "find": "const s = sole && !fixWaits.has(o.id) ? settledFromRow(o, row) : null;", "replace": "const s = sole ? settledFromRow(o, row) : null;" },
   { "name": "a settled order is restated over a draft of its own on its way", "file": "src/orders.js", "find": "      if (!s || await orderInFlight(env, o)) continue;", "replace": "      if (!s || await termsInFlight(env, o)) continue;" },
-  {"name": "the book's cancel never reaches the order", "file": "src/orders.js", "find": "const end = row.cancelled ? \"cancelled\" : !!row.defaulted", "replace": "const end = row.cancelled ? null : !!row.defaulted"},
+  {"name": "the book's cancel never reaches the order", "file": "src/orders.js", "find": "const end = row.cancelled ? (out ? null : \"cancelled\") : !!row.defaulted", "replace": "const end = row.cancelled ? null : !!row.defaulted"},
   {"name": "the book's write-off never reaches the order", "file": "src/orders.js", "find": ": !!row.defaulted !== !!o.writtenOff ? (row.defaulted ? \"writtenOff\" : \"restored\") : null;", "replace": ": null;"},
   {"name": "the book's end goes while a move is on its way", "file": "src/orders.js", "find": "if (end && sole && !fixWaits.has(o.id) && !(await orderInFlight(env, o))) {", "replace": "if (end && sole) {"},
-  {"name": "a book cancel queues a second cancellation", "file": "stmt/orders.js", "find": "if (ev.book) { order.queued = Object.assign({}, order.queued || {}, { cancel: \"book\" }); h.note = \"cancelled on the book\"; }", "replace": "if (ev.book) { h.note = \"cancelled on the book\"; }"},
+  {"name": "a book cancel queues a second cancellation", "file": "stmt/orders.js", "find": "if (ev.book) { order.queued = Object.assign({}, order.queued || {}, { cancel: \"book\" }); h.book = true; }", "replace": "if (ev.book) { h.book = true; }"},
   {"name": "a written-off order is chased", "file": "stmt/orders.js", "find": "ROWED.includes(o.status) && !o.writtenOff && aheadOnGoods(o);", "replace": "ROWED.includes(o.status) && aheadOnGoods(o);"},
-  {"name": "a write-off undone stays written off", "file": "stmt/orders.js", "find": "if (ev.on) order.writtenOff = at; else delete order.writtenOff;", "replace": "order.writtenOff = at;"}
+  {"name": "a write-off undone stays written off", "file": "stmt/orders.js", "find": "if (ev.on) order.writtenOff = at; else delete order.writtenOff;", "replace": "order.writtenOff = at;"},
+  {"name": "Fable B: a hand cancel with goods out is sent", "file": "src/orders.js", "find": "row.cancelled ? (out ? null : \"cancelled\")", "replace": "row.cancelled ? \"cancelled\""}
 ]

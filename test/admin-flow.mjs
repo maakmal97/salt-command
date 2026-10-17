@@ -19,7 +19,7 @@ import { readBook as toolsBook } from "../tools/book.mjs";
 import { buildSeed } from "../tools/d1.mjs";
 import { flowStage, makerLedgerAmendment } from "../src/maker-inputs.js";
 import { handoverTap, restateTap } from "../engine/stages.mjs";
-import { decideDesk, applyEvent } from "../stmt/orders.js";
+import { decideDesk, applyEvent, customerView } from "../stmt/orders.js";
 import { readBook } from "../src/drafter.js";
 import { richOwnerPage, byAct } from "./maker-act.mjs";
 
@@ -150,6 +150,10 @@ export async function run({ ok, pageWork }) {
   const wo = decideDesk(JSON.parse(J(so)), { bookEnd: "writtenOff" }, "2026-10-17T02:00:08.000Z");
   const woTwice = decideDesk(JSON.parse(J({ ...so, writtenOff: "x" })), { bookEnd: "writtenOff" }, "2026-10-17T02:00:09.000Z");
   const placedEnd = decideDesk(JSON.parse(J({ ...ag, status: "placed" })), { bookEnd: "cancelled" }, "2026-10-17T02:00:10.000Z");
+  const woOrder = applyEvent(JSON.parse(J({ ...so, history: [] })), wo.ev).order, bcOrder = applyEvent(JSON.parse(J({ ...ag, history: [] })), bc.ev).order;
+  const seenBy = (o) => (customerView(o).history || []).map((h) => h.note || "");
+  ok(woOrder.writtenOff && seenBy(woOrder).length === 0 && seenBy(reopened).every((n) => !/open again|book/.test(n)) && seenBy(bcOrder).every((n) => !n),
+    "the book's own words (written off, its figures, open again) and a book cancel's note never reach the customer's page: " + J({ wo: seenBy(woOrder), re: seenBy(reopened), bc: seenBy(bcOrder) }));
   ok(bc.ev && bc.ev.status === "cancelled" && bc.ev.book === true && /already out/.test(bcOut.error || "") && /waits on this order/.test(bcClaim.error || "")
     && wo.ev && wo.ev.kind === "writeoff" && wo.ev.on === true && woTwice.none === true && /agreed order/.test(placedEnd.error || ""),
   "the order book takes the book's cancel of an agreed order with nothing out and no claim waiting, and its write-off once: " + J({ bc, bcOut: bcOut.error, bcClaim: bcClaim.error, wo, woTwice, placedEnd: placedEnd.error }));

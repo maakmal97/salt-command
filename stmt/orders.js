@@ -293,6 +293,8 @@ export const customerView = (o) => {
   const day = o && typeof o.ledgerKey === "string" ? o.ledgerKey.split("|")[1] : "";
   if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(day || "")) v.rowOn = day;
   /* S6: a claim's `queued` names the desk's entry for it, which is the desk's bookkeeping */
+  /* 17 Oct 2026 (Fable's review): a line in the book's own words (`inner`: a write-off, the book's figures, an order opened again) is the desk's alone */
+  if (Array.isArray(v.history)) v.history = v.history.filter((h) => !(h && h.inner));
   if (Array.isArray(v.payments)) v.payments = v.payments.map((p) => { if (!p || !p.queued) return p; const c = Object.assign({}, p); delete c.queued; return c; });
   /* 05 Oct 2026: a negotiation, through its own whitelist (priceView) */
   if (o && o.price) v.price = priceView(o.price);
@@ -1107,11 +1109,11 @@ export function applyEvent(order, ev) {
     const h = { at, status: ev.status, by: ev.by };
     if (ev.note) h.note = ev.note;
     /* the book cancelled the row already: its cancellation is owed to no one, so the reconcile queues none */
-    if (ev.book) { order.queued = Object.assign({}, order.queued || {}, { cancel: "book" }); h.note = "cancelled on the book"; }
+    if (ev.book) { order.queued = Object.assign({}, order.queued || {}, { cancel: "book" }); h.book = true; }
     order.history.push(h);
   } else if (ev.kind === "writeoff") {
     if (ev.on) order.writtenOff = at; else delete order.writtenOff;
-    order.history.push({ at, status: order.status, by: "desk", note: ev.on ? "written off on the book" : "the write-off undone on the book" });
+    order.history.push({ at, status: order.status, by: "desk", inner: true, note: ev.on ? "written off on the book" : "the write-off undone on the book" });
   } else if (ev.kind === "method") {
     order.method = ev.method; order.account = ev.account; order.methodAt = at;
     order.history.push({ at, status: order.status, by: "customer", method: ev.method, account: ev.account });
@@ -1259,13 +1261,13 @@ export function applyEvent(order, ev) {
       const q = Object.assign({}, order.queued || {});
       order.paid = ev.paid; q.paid = ev.paid; order.moved = ev.moved; q.moved = ev.moved; order.queued = q;
       if (order.moved <= 0.0004) { delete order.movedOn; delete order.movedAt; }
-      order.history.push({ at, status: order.status, by: "desk", note: "the book's figures: " + ev.paid.toFixed(2) + " paid, " + ev.moved + " unit handed over" });
+      order.history.push({ at, status: order.status, by: "desk", inner: true, note: "the book's figures: " + ev.paid.toFixed(2) + " paid, " + ev.moved + " unit handed over" });
     }
     /* his answer of 17 Oct 2026: a completed order keeps Amend, and figures that leave it owing money or goods open it again */
     if (order.status === "done" && (dueOf(order) > 0.004 || owedUnits(order) > 0.004)) {
       const was = order.history.filter((h) => h && h.status && h.status !== "done").slice(-1)[0];
       order.status = order.moved > 0.0004 ? "ready" : was ? was.status : "ready";   /* goods out: it was at Ready */
-      order.history.push({ at, status: order.status, by: "desk", note: "open again: " + (ev.book ? "the book's figures leave" : "the amendment leaves") + " it owing" });
+      order.history.push({ at, status: order.status, by: "desk", inner: true, note: "open again: " + (ev.book ? "the book's figures leave" : "the amendment leaves") + " it owing" });
     }
     done = settle(order, at);
   } else if (ev.kind === "handover") {

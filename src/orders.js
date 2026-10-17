@@ -1931,7 +1931,9 @@ export async function tellSite(env, fixes, mirror) {
     const sole = rows.get(ledgerKeyOf(o)) === 1;   /* a key two rows share names neither: byKey keeps one of the twins */
     /* 17 Oct 2026, HIS FLOW: what the book ended, the order ends: a row cancelled there cancels its order, and a write-off marks it written off
        (or undone, clears it), once nothing of the order's own is on its way to the row */
-    const end = row.cancelled ? "cancelled" : !!row.defaulted !== !!o.writtenOff ? (row.defaulted ? "writtenOff" : "restored") : null;
+    /* a cancel of a row with goods out (a hand fold) is not the order's: the site would refuse it for good, so it is never sent (Fable's review) */
+    const out = POSITION_ENGINE.txEffDeliv(row) > 0.0004 || (+o.moved || 0) > 0.0004;
+    const end = row.cancelled ? (out ? null : "cancelled") : !!row.defaulted !== !!o.writtenOff ? (row.defaulted ? "writtenOff" : "restored") : null;
     if (end && sole && !fixWaits.has(o.id) && !(await orderInFlight(env, o))) {
       const b = await site(env, "/desk/orders/" + encodeURIComponent(o.u) + "/" + encodeURIComponent(o.id), {
         method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ bookEnd: end })
