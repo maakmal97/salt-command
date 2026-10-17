@@ -49437,7 +49437,7 @@ await (async () => {
       const self = mk([]);
       self.bind = (...a) => { if (failFor && a[0] === failFor && /FROM preapproval .*stage<>'ack'/.test(sql)) throw new Error("D1 fixture: not now"); return mk(a); };
       return self; } };
-    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4", "5", "6", "7"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
+    const WHO = ["a", "b", "c", "d", "e", "f", "g", "h", "j", "k", "m", "n", "p", "q", "r", "s", "t", "x", "y", "z", "2", "3", "4", "5", "6", "7", "8"].map((x, i) => ["fx3" + x + "-" + (store ? "mmmm" : "nnnn"), "CF" + (i + 2) + "-" + (store ? "MQ" : "NQ")]);
     const setState = (k, doc) => db.prepare("INSERT OR REPLACE INTO state (key,doc) VALUES (?,?)").run(k, J(doc));
     let seq = 0, ver = 0;
     const OPEN = { byKey: {}, position: {} };
@@ -49865,6 +49865,11 @@ await (async () => {
     const ofrT24 = await tellSite(denv), el2 = await orderOf(EL.o.id);
     ok(el1.paid === 60 && !ofrT24.failed && el2.paid === 20 && el2.status !== "done" && el2.moved === 1,
       tag + ", money lowered on the book reaches an agreed order, as it does a settled one: " + J({ failed: ofrT24.failed, paid: [el1.paid, el2.paid], status: el2.status }));
+    /* V8: an offset (value settled in kind, settledRM) is money on the row, and its order's paid follows it */
+    const EF = await agreed(26, { unit: 131, total: 131 }, false);
+    correct(EF.rid, { settledRM: 31 });
+    const ofrT25 = await tellSite(denv), ef = await orderOf(EF.o.id);
+    ok(!ofrT25.failed && ef.paid === 31, tag + ", an offset settled in kind on the row raises its order's paid: " + J({ failed: ofrT25.failed, paid: ef.paid }));
     correct(EW.rid, { defaulted: false });
     const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
     ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));

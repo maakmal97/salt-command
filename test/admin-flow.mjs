@@ -172,9 +172,11 @@ export async function run({ ok, pageWork }) {
   const AGAIN = { id: "20261014010007-flowah", u: "u-flow-8", status: "acknowledged", again: ["ack"], qty: 1, total: 110, delivery: 0, paid: 0, moved: 0, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
   const OWED = { id: "20261014010008-flowai", u: "u-flow-9", status: "acknowledged", ledgerKey: "CQ3-ZED|2026-10-14|110", qty: 1, total: 110, delivery: 0, paid: 0, moved: 0, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
   const WOFF = { id: "20261014010006-flowag", u: "u-flow-7", status: "ready", qty: 1, total: 110, delivery: 0, paid: 0, moved: 1, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [], writtenOff: "2026-10-16T00:00:00.000Z" };
+  const GONE = { id: "20261014010009-flowaj", u: "u-flow-10", status: "cancelled", qty: 1, total: 110, delivery: 0, paid: 0, moved: 0, product: "salt", mode: "collect", at: D + "T01:00:00.000Z", payments: [], msgs: [], history: [] };
   const ORDER = { id: "o-pay", u: "u-flow-3", status: "acknowledged", qty: 1, total: 100, delivery: 0, paid: 100, moved: 0, product: "salt", at: D + "T01:00:00.000Z", payments: [], msgs: [] };
   const open = async () => {
-    const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE, WOFF, AGAIN, OWED], refunds: { "CQ3-ZED|2026-10-14|110": 25 }, drafts: [], queue: [], trips: [], sameDay: [], rows: ROWS }),
+    const p = await richOwnerPage({ pageWork, bare: true, review: (j) => ({ ...j, orders: [ORDER, PART, DONE, WOFF, AGAIN, OWED, GONE], refunds: { "CQ3-ZED|2026-10-14|110": 25 },
+      drafts: [{ id: "2026-10-17T03:00:00.000Z", status: "pending", collection: "sales", entry: { orderId: GONE.id, status: "Cancellation", payload: { mode: "amend", kind: "Cancellation" } }, row: {} }], queue: [], trips: [], sameDay: [], rows: ROWS }),
       extra: (route, body) => route === "/all/maker/inputs/ledger-amend" ? { ok: true, draft: body.at, status: "pending" }
         : /^[/]all[/]maker[/]orders[/][^/]+[/]handed$/.test(route) ? { ok: true, order: PART } : undefined });
     await p.work.quiet();
@@ -233,6 +235,9 @@ export async function run({ ok, pageWork }) {
     await p.tap("part.orders.confirmed");
     await p.tap("order.open", OWED.id);
     ok(/refund of RM 25\.00/.test(text(p.card(OWED.id))), "a site order's card says the refund the book owes on its row: " + text(p.card(OWED.id)).slice(0, 200));
+    await p.tap("part.orders.ended");
+    await p.tap("order.open", GONE.id);
+    ok(/waits under Approve/.test(text(p.card(GONE.id))), "a cancelled order whose cancellation waits under Approve says the book keeps the row until then: " + text(p.card(GONE.id)).slice(0, 200));
     await p.tap("part.orders.done");
     await p.tap("order.open", DONE.id);
     ok(!!byAct(p.card(DONE.id), "order.amend"), "a completed order's card keeps Change the order");

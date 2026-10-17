@@ -3934,6 +3934,9 @@ export const OWNER_JS = `
     card.appendChild(metrics(agreed
       ?[['Owed',rm(Math.max(0,Number(order.total||0)+Number(order.delivery||0)-Number(order.paid||0)))],['Paid',rm(order.paid||0)],['Handed',moved+' of '+units(order.qty)]].concat(+order.claimed>0?[['Says sent',rm(order.claimed)]]:[])
       :[['Goods',rm(order.total)]].concat(order.delivery?[['Delivery',rm(order.delivery)]]:[],+order.paid>0?[['Paid',rm(order.paid)]]:[])));
+    /* 17 Oct 2026: an ended order's last move is under Approve until he decides it, and the book keeps its row live until then */
+    var waitN=((makerData&&makerData.drafts)||[]).filter(function(d){ return d.status==='pending'&&d.entry&&d.entry.orderId===order.id; }).length;
+    if(waitN&&!ordOpen(order)) card.appendChild(el('p','salt-insight',(waitN===1?'Its move waits':'Its '+waitN+' moves wait')+' under Approve: the book keeps the row as it was until you approve.'));
     /* 17 Oct 2026: a refund the book still owes them on this order's row */
     var owes=makerData&&makerData.refunds&&order.ledgerKey&&makerData.refunds[order.ledgerKey];
     if(+owes>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(owes)+' on this order. Close it on the Desk once it is paid.'));
