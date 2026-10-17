@@ -3653,16 +3653,24 @@ export const OWNER_JS = `
     return !order.test&&(again||orderAsked(order));
   }
   var STAGE_OF={placed:'placed', acknowledged:'confirmed', ready:'ready', done:'done'};
+  /* 17 Oct 2026, HIS FLOW: an agreed order whose goods are all out, or that is paid in full, is Delivered or paid until it is both (the Desk's flowStage
+     for a row of the book, the same rule) */
   function orderPartsOf(order){
     if(!ordOpen(order)&&order.test) return '';
-    return 'orders.'+(STAGE_OF[order.status]||'ended');
+    var st=STAGE_OF[order.status]||'ended';
+    if(st==='confirmed'||st==='ready'){
+      var q=Number(order.qty)||0, out=q>0&&Number(order.moved||0)>=q-0.0005, paid=Number(order.paid||0), owed=Number(order.total||0)+Number(order.delivery||0)-paid;
+      if(out||(owed<=0.004&&paid>0.004)) st='paid';
+    }
+    return 'orders.'+st;
   }
   /* PHASE 1c (11 Oct 2026): ORDERS ARE A LIST AND A DETAIL. #makerOrderList holds a row for each order of the part showing, the system's
      Inbox row: who by code, the mark and its units, the stage and what is asked of him, the figure and the age. A row opens that order's
      card in #makerReview, today's card with every control, request and guard as it was, drawn for the order opened and no other. From 860px
      the list stands beside the card; below it the card takes the list's place, with a way back. A row has no preview: that read is the
      card's. Leaving the place or the part closes the card. */
-  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null;
+  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null, ordMore={};
+  function ordShown(st){ return ordMore[st]||50; }
   var ORD_STAGE={placed:['copper','Waiting on you'], acknowledged:['brass','Agreed'], ready:['verdigris','Ready'], done:['mist','Done'], declined:['mist','Declined'], cancelled:['mist','Cancelled']};
   function ordInPart(e){ return e.parts.split(' ').indexOf('orders.'+partNow)>=0; }
   function orderRow(e){
@@ -3681,6 +3689,14 @@ export const OWNER_JS = `
       main.appendChild(el('span','salt-inbox-row__what',[o.mode==='deliver'?'Deliver':o.mode==='collect'?'Collect':''].concat(e.waits?why.slice(0,1):[]).filter(Boolean).join(', ')));
       side.appendChild(el('span','salt-inbox-row__age',ageOf(o.at)));
       side.appendChild(el('span','salt-inbox-row__action',rm(Number(o.total||0)+Number(o.delivery||0))));
+    }else if(e.row){
+      /* a row of the book: the buyer's code, the mark and its units, and what it owes, the Desk's figure */
+      var r=e.row;
+      b.appendChild(bookTile(r.product,r.qty));
+      t.appendChild(whoTag(el('span',null,r.party),r.party));
+      main.appendChild(el('span','salt-inbox-row__what',[r.rid, r.cancelled?'cancelled':r.writtenOff?'written off':r.owed>0.004?'owes '+rm(r.owed):'', r.waiting>0?'waits under Approve':''].filter(Boolean).join(', ')));
+      side.appendChild(el('span','salt-inbox-row__age',r.date?fmtWhen(r.date):'Undated'));
+      side.appendChild(el('span','salt-inbox-row__action',rm(Number(r.total||0)+Number(r.delivery||0))));
     }else if(e.trip||e.day){
       /* an order of several books: the buyer's code, a mark a line, and what the order owes, the Desk's figure */
       var g=e.trip||e.day, what=el('span','salt-inbox-row__what');
@@ -3729,7 +3745,7 @@ export const OWNER_JS = `
     if(!e) return;
     var back=el('button','aback','← Orders'); back.type='button'; back.setAttribute('data-back','orders'); back.setAttribute('data-in',e.parts); actOn(back,'order.back');
     root.appendChild(back);
-    if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else if(e.trip) tripCard(root,e); else if(e.day) dayCard(root,e); else orderPlainCard(root,e);
+    if(e.order&&ordOpen(e.order)) orderCard(root,e.order); else if(e.row) rowCard(root,e); else if(e.trip) tripCard(root,e); else if(e.day) dayCard(root,e); else orderPlainCard(root,e);
     focusOrderAt();
   }
   function openOrder(id){
@@ -3831,7 +3847,7 @@ export const OWNER_JS = `
     if(draftStatus) draftStatus.textContent=pendingRows.length+(pendingRows.length===1?' row':' rows')+' waiting for your approval';
     /* a row for each order of its stage, a done or ended one (fifty a stage at most) as well; an order whose cash is held is marked Waiting on you
        with its Undo, whatever else it is, and a held cash with no order on the read is a row of its own, in Placed */
-    var held=Object.keys(makerCashHeld), entries=[], known={}, settled={}, closedAll={}, STAGES=['placed','confirmed','ready','done','ended'];
+    var held=Object.keys(makerCashHeld), entries=[], known={}, settled={}, closedAll={}, STAGES=['placed','confirmed','ready','paid','done','ended'];
     (makerData.orders||[]).forEach(function(o){
       known[o.id]=true;
       var parts=orderPartsOf(o);
@@ -3839,9 +3855,18 @@ export const OWNER_JS = `
       var waits=orderWaits(o)||held.indexOf(o.id)>=0, stage=parts.replace('orders.','');
       if(!ordOpen(o)){
         closedAll[stage]=(closedAll[stage]||0)+1;
-        if(!waits&&(settled[stage]=(settled[stage]||0)+1)>50) return;
+        if(!waits&&(settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;
       }
       entries.push({id:o.id, order:o, parts:parts, waits:waits});
+    });
+    /* 17 Oct 2026, HIS FLOW: every live row of the book with no live site order is an order here, at the stage the Desk read off its figures */
+    (makerData.rows||[]).forEach(function(r){
+      var stage=r.stage==='done'||r.stage==='ended'||r.stage==='paid'?r.stage:'confirmed';
+      if(stage==='done'||stage==='ended'){
+        closedAll[stage]=(closedAll[stage]||0)+1;
+        if((settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;
+      }
+      entries.push({id:'row:'+r.rid, row:r, parts:'orders.'+stage, waits:false});
     });
     held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, parts:'orders.placed', waits:true}); });
     /* plan 3 (16 Oct 2026): an order of several books on the book is agreed, one card for all its lines; a buyer's same-day rows that could be one stand beside it */
@@ -3854,10 +3879,15 @@ export const OWNER_JS = `
        counts what the list shows against every order of the stage */
     ['done','ended'].forEach(function(st){
       var shownN=entries.filter(function(e){ return e.parts==='orders.'+st; }).length;
-      if(shownN<(closedAll[st]||0)){ var more=el('p','rnone',shownN+' of '+closedAll[st]+' closed orders are shown.'); more.setAttribute('data-in','orders.'+st); list.appendChild(more); }
+      if(shownN<(closedAll[st]||0)){
+        var more=el('p','rnone',shownN+' of '+closedAll[st]+' closed orders are shown.'); more.setAttribute('data-in','orders.'+st); list.appendChild(more);
+        /* 17 Oct 2026: Completed is paged, fifty more a tap */
+        var next=el('button','salt-ghost','Show 50 more'); next.type='button'; next.setAttribute('data-in','orders.'+st); actOn(next,'orders.more',st);
+        next.addEventListener('click',function(){ ordMore[st]=ordShown(st)+50; drawMaker(); }); list.appendChild(next);
+      }
     });
     /* a stage with nothing in it says so, so an empty one is never read as a fault */
-    [['placed','No placed orders.'],['confirmed','No confirmed orders.'],['ready','No orders ready.'],['done','No done orders.'],['ended','No ended orders.']].forEach(function(p){
+    [['placed','No orders received.'],['confirmed','No agreed orders.'],['ready','No orders ready.'],['paid','No orders delivered or paid.'],['done','No completed orders.'],['ended','No ended orders.']].forEach(function(p){
       if(entries.some(function(e){ return e.parts==='orders.'+p[0]; })) return;
       var none=el('p','rnone',p[1]); none.setAttribute('data-in','orders.'+p[0]); list.appendChild(none);
     });
@@ -4201,6 +4231,71 @@ export const OWNER_JS = `
     }
     if(t.owed>0.004) tripPayBlock(card,t,key);
     card.appendChild(detailBox('trip.details',key,[['Order',t.trip],['Day',t.date?fmtWhen(t.date):'']].concat(t.lines.map(function(l){ return ['Row',l.rid]; }))));
+    makerCardFoot(card,acts,key,false,false);
+    return card;
+  }
+  /* 17 Oct 2026, HIS FLOW: A ROW OF THE BOOK WITH NO SITE ORDER IS AN ORDER HERE TOO, at the stage its figures put it (the Desk's flowStage). Its moves
+     are Record's own (ledger-amend), each under Approve: a handover or a payment a Fulfilment, a change of units, price or delivery a Correction, a
+     cancel a Cancellation; History and Undo are the row's. Every figure is the Desk's, as the row will stand once the moves waiting fold. */
+  var ROW_STAGE={confirmed:['brass','Agreed'], paid:['verdigris','Delivered or paid'], done:['mist','Completed'], ended:['mist','Ended']};
+  function rowCard(root,e){
+    var r=e.row, key=e.id, card=makerCard(root,key), acts=el('div','maker-foot__acts'), live=!r.cancelled&&!r.writtenOff;
+    card.setAttribute('data-in',e.parts); card.setAttribute('data-row',r.rid);
+    var title=el('h3','');
+    title.appendChild(whoTag(el('span',null,r.party),r.party)); title.appendChild(document.createTextNode(', ')); title.appendChild(bookMark(r.product));
+    title.appendChild(document.createTextNode(' '+units(r.qty)+', '+rm(r.total)+(r.delivery>0.004?' + '+rm(r.delivery):'')));
+    card.appendChild(title);
+    var st=r.cancelled?['mist','Cancelled']:r.writtenOff?['mist','Written off']:ROW_STAGE[r.stage]||['mist',String(r.stage)], head=el('p','lead');
+    head.appendChild(chip(st[0],st[1])); card.appendChild(head);
+    card.appendChild(metrics([['Owed',rm(r.owed)],['Paid',rm(r.paid)],['Handed',String(+(+r.handed||0).toFixed(3))+' of '+units(r.qty)]]));
+    if(r.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(r.waiting===1?'the move':'the '+r.waiting+' moves')+' waiting under Approve '+(r.waiting===1?'is':'are')+' approved.'));
+    function amend(send,body,said){
+      return send('/all/maker/inputs/ledger-amend',Object.assign({at:new Date().toISOString(),rid:r.rid,date:tripToday()},body))
+        .then(function(){ return loadMaker(); }).then(function(){ makerSay(key,said); });
+    }
+    if(live&&r.left>0.0005){
+      var hand=el('div','maker-fields rowhand'), n=makerField(hand,['Units to hand over','row.hand-units',r.rid,r.product],'number',r.left);
+      makerButton(hand,['Record handover','row.handover',r.rid],function(send){
+        var v=Number(n.value);
+        if(!(v>0&&v<=r.left+0.0005)) throw new Error('Type from 0.01 to '+units(r.left)+'.');
+        return amend(send,{kind:'Fulfilment',cash:0,movedUnits:v},'Sent. The handover waits under Approve.');
+      },true);
+      card.appendChild(hand);
+    }
+    if(live&&r.owed>0.004){
+      var pay=el('div','maker-fields rowpay'), a=makerField(pay,['Paid, RM, cash or bank','row.pay-amount',r.rid],'number',r.owed);
+      makerButton(pay,['Record payment','row.pay',r.rid],function(send){
+        var v=Math.round(Number(a.value)*100)/100;
+        if(!(v>0.004&&v<=r.owed+0.004)) throw new Error('Type from 0.01 to '+rm(r.owed)+'.');
+        return amend(send,{kind:'Fulfilment',cash:v,movedUnits:0},'Sent. '+rm(v)+' waits under Approve.');
+      },!(r.left>0.0005));
+      card.appendChild(pay);
+    }
+    if(live){
+      card.appendChild(el('h4','','Change the order'));
+      var ch=el('div','maker-fields rowchange'), cq=makerField(ch,['Units','row.change-units',r.rid,r.product],'number',r.qty), ct=makerField(ch,['Price (goods)','row.change-total',r.rid],'number',r.total);
+      /* a row on a trip carries the trip's one delivery: that is changed by hand */
+      var cd=r.trip?null:makerField(ch,['Delivery','row.change-delivery',r.rid],'number',r.delivery||0);
+      makerButton(ch,['Send the change','row.change',r.rid],function(send){
+        var f={}, q=Number(cq.value), t=Math.round(Number(ct.value)*100)/100, d=cd?Math.round(Number(cd.value)*100)/100:null;
+        if(!(q>0)||!(t>=0)||(cd&&!(d>=0))) throw new Error('Type the units, the price and the delivery, none below nought.');
+        if(Math.abs(q-r.qty)>0.0004) f.qty=q;
+        if(Math.abs(t-r.total)>0.004) f.total=t;
+        if(cd&&Math.abs(d-(r.delivery||0))>0.004) f.delivery=d;
+        if(!Object.keys(f).length) throw new Error('Nothing changed.');
+        return amend(send,{kind:'Correction',fields:f},'Sent. The change waits under Approve.');
+      },false);
+      card.appendChild(ch);
+    }
+    if(live&&r.handed<=0.0005){
+      makerButton(acts,['Cancel order','row.cancel',r.rid],async function(send){
+        if(!await ownerAsk(send.button,'row.cancel:'+r.rid,{title:'Cancel this order?', plain:true, go:'Cancel order', keep:'Keep it',
+          say:[r.paid>0.004?'The row is cancelled, and the '+rm(r.paid)+' they paid opens as a refund you owe them.':'The row is cancelled. Nothing was paid or handed over.']})) return;
+        return amend(send,{kind:'Cancellation'},'Sent. The cancellation waits under Approve.');
+      },false);
+    }
+    historyBlock(card,{rid:r.rid},'line:'+r.rid,null,key);
+    card.appendChild(detailBox('row.details',key,[['Row',r.rid],['Day',r.date?fmtWhen(r.date):'Undated']].concat(r.trip?[['Order of several books',r.trip]]:[])));
     makerCardFoot(card,acts,key,false,false);
     return card;
   }

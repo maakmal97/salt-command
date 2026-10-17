@@ -19,7 +19,7 @@ import { richOwnerPage, byAct } from "./maker-act.mjs";
 const PLACES = ["needs", "orders", "customers", "record", "shop"];
 const LABELS = ["Needs you", "Orders", "Customers", "Record", "Shop"];
 const PARTS = {
-  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -105,7 +105,7 @@ export async function run({ ok, pageWork }) {
     ok(p.where() === "orders orders/placed", "a place opens on its first part, marked in the bars and in its strip: " + p.where());
     await p.tap("part.orders.ready");
     const pills = [...stripOf("orders").querySelectorAll("button")].map((b) => b.getAttribute("aria-selected")).join();
-    ok(p.where() === "orders orders/ready" && pills === "false,false,true,false,false,false,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
+    ok(p.where() === "orders orders/ready" && pills === "false,false,true,false,false,false,false,false,false", "a part he taps is the one marked, and only that one: " + p.where() + " " + pills);
     await p.tap("nav.customers"); await p.tap("nav.orders");
     ok(p.where() === "orders orders/placed", "and a place he comes back to opens on its first part again: " + p.where());
     const counts = [...d.querySelectorAll(".salt-rail [data-count]")].map((e) => e.getAttribute("data-count") + "=" + e.textContent).filter((x) => !/=$/.test(x));
@@ -140,7 +140,7 @@ export async function run({ ok, pageWork }) {
     const stage = {};
     for (const [part] of PARTS.orders) { await p.tap("part.orders." + part); stage[part] = rows(); }
     ok(stage.placed === "ord-p1,ord-p2,ord-p3,ord-p4" && stage.confirmed === "ord-a1,ord-a2" && stage.ready === "ord-r1,ord-r2,ord-r3"
-      && stage.done === "" && stage.ended === "ord-x1,ord-c1,ord-c2" && stage.payments === "" && stage.group === "",
+      && stage.paid === "" && stage.done === "" && stage.ended === "ord-x1,ord-c1,ord-c2" && stage.payments === "" && stage.group === "",
     "an order is a row in the one stage it stands at, a declined or cancelled one in Ended, and none in two: " + JSON.stringify(stage));
     const empty = await drawn({ pageWork, review: () => ({ ok: true, orders: [], drafts: [], refused: [], queue: [] }) });
     try {
@@ -152,7 +152,7 @@ export async function run({ ok, pageWork }) {
       }
       await empty.tap("nav.record");
       none.rows = [...empty.d.querySelectorAll("#makerDrafts .rnone")].filter(shown).map((e) => e.textContent).join();
-      ok(none.placed === "No placed orders." && none.confirmed === "No confirmed orders." && none.ready === "No orders ready." && none.done === "No done orders." && none.ended === "No ended orders."
+      ok(none.placed === "No orders received." && none.confirmed === "No agreed orders." && none.ready === "No orders ready." && none.paid === "No orders delivered or paid." && none.done === "No completed orders." && none.ended === "No ended orders."
         && none.rows === "Nothing waits for your approval.",
       "a part with nothing in it says so, and a part with something says nothing: " + JSON.stringify(none));
     } finally { empty.w.close(); }

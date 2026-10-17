@@ -26,8 +26,8 @@
  {
   "name": "a number's order ids compare as text",
   "file": "src/maker-inputs.js",
-  "find": "{ numeric: true }",
-  "replace": "{ numeric: false }"
+  "find": "{ numeric: true });\n  rows.sort",
+  "replace": "{ numeric: false });\n  rows.sort"
  },
  {
   "name": "a written-off order still owes",
@@ -128,8 +128,8 @@
  {
   "name": "an undated row says nothing",
   "file": "stmt/owner.js",
-  "find": "r.date?fmtWhen(r.date):'Undated'",
-  "replace": "r.date?fmtWhen(r.date):''"
+  "find": "el('td','l',r.date?fmtWhen(r.date):'Undated')",
+  "replace": "el('td','l',r.date?fmtWhen(r.date):'')"
  },
  {
   "name": "a book is drawn as its word",

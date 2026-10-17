@@ -2554,10 +2554,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.customers.messages` | The strip under Customers (tab: Messages) | Shows the account conversations, reading the threads. |
 | `part.customers.links` | The strip under Customers (tab: Links) | Shows the guest links, reading them once. |
 | `part.customers.associates` | The strip under Customers (tab: Associates) | Shows the associates' report card, reading it once. |
-| `part.orders.placed` | The strip under Orders (tab: Placed) | Shows the placed orders, reading them. |
-| `part.orders.confirmed` | The strip under Orders (tab: Confirmed) | Shows the confirmed orders (agreed, not yet ready). |
+| `part.orders.placed` | The strip under Orders (tab: Received) | Shows the orders placed and not yet agreed, reading them. |
+| `part.orders.confirmed` | The strip under Orders (tab: Agreed) | Shows the agreed orders, and every row of the book with nothing paid or handed over in full. |
 | `part.orders.ready` | The strip under Orders (tab: Ready) | Shows the orders marked ready. |
-| `part.orders.done` | The strip under Orders (tab: Done) | Shows the orders handed over and closed. |
+| `part.orders.paid` | The strip under Orders (tab: Delivered or paid) | Shows the orders handed over in full or paid in full, not yet both. |
+| `part.orders.done` | The strip under Orders (tab: Completed) | Shows the orders handed over and closed. |
 | `part.orders.ended` | The strip under Orders (tab: Ended) | Shows the declined and cancelled orders. |
 | `part.orders.payments` | The strip under Orders (tab: Payments) | Shows the payments they say they sent. |
 | `part.orders.group` | The strip under Orders (tab: Group) | Shows the group orders, reading them. |
@@ -2695,6 +2696,17 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.trade.units` | Record, sale or purchase | The units. |
 | `refusal.details` | Under any refusal the Counter or the Desk gave in its own words | Opens the server's own words under the plain sentence. |
 | `row.proposed` | Any card showing a row, one for each (key: the row's id, or preview) | Opens the row's reference (a Desk row's) and its figures as a list of names and values, never JSON. |
+| `row.details` | A row of the book as an order under Orders (key: row:<rid>) | Opens the row and its day, and the order of several books it rides on. |
+| `row.hand-units` | A row of the book as an order (key: the row) | The units to hand over; what is left by default, fewer for a part. |
+| `row.handover` | A row of the book as an order (key: the row) | Sends a handover of those units through Record's own input, a Fulfilment for approval. |
+| `row.pay-amount` | A row of the book as an order (key: the row) | What they paid, cash or bank, in RM; what is owed by default. |
+| `row.pay` | A row of the book as an order (key: the row) | Sends the payment through Record's own input, a Fulfilment for approval. |
+| `row.change-units` | A row of the book as an order (key: the row) | The order's units, to change. |
+| `row.change-total` | A row of the book as an order (key: the row) | The goods' price, to change. |
+| `row.change-delivery` | A row of the book as an order not on a trip (key: the row) | The delivery charge, to change; a trip's is changed by hand. |
+| `row.change` | A row of the book as an order (key: the row) | Sends what changed as one Correction for approval. |
+| `row.cancel` | A row of the book as an order, nothing handed over (key: the row) | Asks, then sends a Cancellation for approval; anything paid opens as a refund. |
+| `orders.more` | Under Completed or Ended, past fifty orders (key: the stage) | Shows fifty more. |
 | `trip.details` | An order of several books, or a buyer's same-day rows, under Orders (key: trip:<id> or day:<rows>) | Opens the order's id, day and rows. |
 | `trip.hand-units` | An order of several books (key: the row) | The units of that line to hand over; full by default, fewer for a part. |
 | `trip.handover` | An order of several books (key: the trip) | Sends one handover a line through Record's own input, each line its own request; a line the Desk refuses holds only itself. |

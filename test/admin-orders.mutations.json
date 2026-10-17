@@ -62,8 +62,8 @@
  {
   "name": "a closed order is not listed in any stage",
   "file": "stmt/owner.js",
-  "find": "    return 'orders.'+(STAGE_OF[order.status]||'ended');\n  }",
-  "replace": "    if(!ordOpen(order)) return '';\n    return 'orders.'+(STAGE_OF[order.status]||'ended');\n  }"
+  "find": "    if(!ordOpen(order)&&order.test) return '';\n    var st=STAGE_OF",
+  "replace": "    if(!ordOpen(order)) return '';\n    var st=STAGE_OF"
  },
  {
   "name": "a row opens no card",
@@ -398,8 +398,8 @@
  {
   "name": "the owner's script names a variable the customer page names a function",
   "file": "stmt/owner.js",
-  "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null;",
-  "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null;"
+  "find": "  var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null, ordMore={};",
+  "replace": "  var oOpen=null, ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null, ordMore={};"
  },
  {
   "name": "a row tap always takes him to the top",
@@ -452,20 +452,20 @@
  {
   "name": "the closed note counts only the closed orders with nothing else asked",
   "file": "stmt/owner.js",
-  "find": "      if(shownN<(closedAll[st]||0)){ var more=el('p','rnone',shownN+' of '+closedAll[st]+' closed orders are shown.');",
-  "replace": "      if(settled[st]>50){ var more=el('p','rnone','50 of '+settled[st]+' closed orders are shown.');"
+  "find": "      if(shownN<(closedAll[st]||0)){\n        var more=el('p','rnone',shownN+' of '+closedAll[st]+' closed orders are shown.');",
+  "replace": "      if(settled[st]>ordShown(st)){\n        var more=el('p','rnone',ordShown(st)+' of '+settled[st]+' closed orders are shown.');"
  },
  {
   "name": "the closed note does not count an order that also waits on him",
   "file": "stmt/owner.js",
-  "find": "        closedAll[stage]=(closedAll[stage]||0)+1;\n",
-  "replace": ""
+  "find": "        closedAll[stage]=(closedAll[stage]||0)+1;\n        if(!waits&&",
+  "replace": "        if(!waits&&"
  },
  {
   "name": "the closed list drops an order that also waits on him",
   "file": "stmt/owner.js",
-  "find": "if(!waits&&(settled[stage]=(settled[stage]||0)+1)>50) return;",
-  "replace": "if((settled[stage]=(settled[stage]||0)+1)>50) return;"
+  "find": "if(!waits&&(settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;",
+  "replace": "if((settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;"
  },
  {
   "name": "leaving the part keeps the form open",
@@ -554,8 +554,8 @@
  {
   "name": "an order stands in two stages",
   "file": "stmt/owner.js",
-  "find": "    return 'orders.'+(STAGE_OF[order.status]||'ended');\n  }",
-  "replace": "    return 'orders.'+(STAGE_OF[order.status]||'ended')+(orderWaits(order)?' orders.placed':'');\n  }"
+  "find": "    return 'orders.'+st;\n  }",
+  "replace": "    return 'orders.'+st+(orderWaits(order)?' orders.placed':'');\n  }"
  },
  {
   "name": "the count includes practice orders",

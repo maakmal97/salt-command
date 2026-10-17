@@ -52409,6 +52409,11 @@ await (async () => {
   await (await import("./admin-undo.mjs")).run({ ok, pageWork });
 })();
 
+section("Salt Account: every live row of the book is an order at its stage, Delivered or paid between Ready and Completed (his flow, 17 Oct 2026)");
+await (async () => {
+  await (await import("./admin-flow.mjs")).run({ ok, pageWork });
+})();
+
 section("Salt Account: the order card's Bank and Cash over one amount, Change the order under the head, and one button on the units (plan 5, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-card5.mjs")).run({ ok, pageWork });

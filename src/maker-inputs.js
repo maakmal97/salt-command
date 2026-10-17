@@ -408,6 +408,28 @@ export function makerTrips(book, held = []) {
     .map((rows) => ({ rids: rows.map((s) => s.rid), ...tripCard(rows, held) })).sort(byDate);
   return { trips, sameDay };
 }
+/* 17 Oct 2026, HIS FLOW (docs/order-flow-map.html): EVERY LIVE ROW OF THE BOOK IS AN ORDER ON COUNTER ADMIN, not only the 38 a site order made.
+   A stage is read off the row's figures as they will stand once the moves waiting on it fold (standing), by one rule the page keeps for a site
+   order too (flowStage): ended when cancelled or written off; completed when every unit is out and nothing is owed; delivered or paid when
+   either is whole and the other is not; else agreed. A row on a trip card is that card's, and a row a live site order holds is that order's
+   (stmt/maker.js drops those by key), so no order is drawn twice. */
+export function flowStage(f) {
+  if (f.ended) return "ended";
+  const out = f.qty > 0 && f.handed >= f.qty - 0.0005, paid = f.owed <= 0.004;
+  return out && paid ? "done" : out || (paid && f.paid > 0.004) ? "paid" : f.ready ? "ready" : "confirmed";
+}
+export function makerRows(book, held = [], onTrips = []) {
+  const E = POSITION_ENGINE, carded = new Set(onTrips);
+  return ((book && book.sales) || []).filter((s) => s && s.rid && !carded.has(s.rid) && code(s.customer, [s.customer]))
+    .map((s) => {
+      const st = standing([s], held)[0], line = tripLine(st);
+      const ended = !!(st.row.cancelled || st.row.defaulted);
+      return { ...line, party: s.customer, date: s.date || null, key: E.ovKey(s), ...(s.trip ? { trip: s.trip } : {}),
+        ...(st.row.cancelled ? { cancelled: true } : {}), ...(st.row.defaulted ? { writtenOff: true } : {}),
+        ...(s.goodwill ? { gift: true } : {}), stage: flowStage({ ...line, ended }) };
+    })
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")) || b.rid.localeCompare(a.rid, "en", { numeric: true }));
+}
 const tripRowsOf = (book, trip) => ((book && book.sales) || []).filter((s) => s && s.rid && s.trip === trip && !s.cancelled);
 export function makerTripSplit(body, book, held = []) {
   const E = POSITION_ENGINE;

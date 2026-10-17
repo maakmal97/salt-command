@@ -14,8 +14,8 @@
  {
   "name": "Orders loses its Ended part",
   "file": "stmt/page.js",
-  "find": "[\"done\", \"Done\"], [\"ended\", \"Ended\"], [\"payments\", \"Payments\"]",
-  "replace": "[\"done\", \"Done\"], [\"payments\", \"Payments\"]"
+  "find": "[\"done\", \"Completed\"], [\"ended\", \"Ended\"], [\"payments\", \"Payments\"]",
+  "replace": "[\"done\", \"Completed\"], [\"payments\", \"Payments\"]"
  },
  {
   "name": "Shop loses its Practice part",
@@ -158,7 +158,7 @@
  {
   "name": "an empty Confirmed part says nothing",
   "file": "stmt/owner.js",
-  "find": "['confirmed','No confirmed orders.']",
+  "find": "['confirmed','No agreed orders.']",
   "replace": "['confirmed','']"
  },
  {

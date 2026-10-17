@@ -1,0 +1,19 @@
+[
+{ "name": "flowStage: paid in full is not delivered or paid", "file": "src/maker-inputs.js", "find": "out || (paid && f.paid > 0.004) ? \"paid\"", "replace": "out ? \"paid\"" },
+{ "name": "flowStage: ready is never read", "file": "src/maker-inputs.js", "find": ": f.ready ? \"ready\" : \"confirmed\"", "replace": ": \"confirmed\"" },
+{ "name": "flowStage: ended loses to completed", "file": "src/maker-inputs.js", "find": "  if (f.ended) return \"ended\";\n", "replace": "" },
+{ "name": "makerRows: trip rows listed twice", "file": "src/maker-inputs.js", "find": "s && s.rid && !carded.has(s.rid) && code(", "replace": "s && s.rid && code(" },
+{ "name": "makerRows: rows read without the moves waiting", "file": "src/maker-inputs.js", "find": "const st = standing([s], held)[0], line", "replace": "const st = standing([s], [])[0], line" },
+{ "name": "makerRows: a defaulted row is not ended", "file": "src/maker-inputs.js", "find": "const ended = !!(st.row.cancelled || st.row.defaulted);", "replace": "const ended = !!st.row.cancelled;" },
+{ "name": "review: rows not passed", "file": "stmt/maker.js", "find": "unreadable, trips, sameDay, rows,", "replace": "unreadable, trips, sameDay, rows: drafts.rows || [], rowsHeld: rows," },
+{ "name": "review: site orders not filtered", "file": "stmt/maker.js", "find": "drafts.rows.filter((r) => r && !held.has(r.key))", "replace": "drafts.rows.filter((r) => r)" },
+{ "name": "review: an ended site order still holds its row", "file": "stmt/maker.js", "find": "!o.test && ![\"declined\", \"cancelled\"].includes(o.status) && typeof o.ledgerKey", "replace": "!o.test && typeof o.ledgerKey" },
+{ "name": "page: a site order paid in full stays Agreed", "file": "stmt/owner.js", "find": "if(out||(owed<=0.004&&paid>0.004)) st='paid';", "replace": "if(out) st='paid';" },
+{ "name": "page: rows never listed", "file": "stmt/owner.js", "find": "(makerData.rows||[]).forEach(function(r){", "replace": "([]).forEach(function(r){" },
+{ "name": "page: no paging", "file": "stmt/owner.js", "find": "next.addEventListener('click',function(){ ordMore[st]=ordShown(st)+50; drawMaker(); });", "replace": "next.addEventListener('click',function(){ drawMaker(); });" },
+{ "name": "page: handover sends cash", "file": "stmt/owner.js", "find": "return amend(send,{kind:'Fulfilment',cash:0,movedUnits:v},'Sent. The handover waits under Approve.');", "replace": "return amend(send,{kind:'Fulfilment',cash:v,movedUnits:0},'Sent. The handover waits under Approve.');" },
+{ "name": "page: change sends every field", "file": "stmt/owner.js", "find": "if(Math.abs(t-r.total)>0.004) f.total=t;", "replace": "f.total=t; f.qty=q;" },
+{ "name": "page: no cancel on a row", "file": "stmt/owner.js", "find": "if(live&&r.handed<=0.0005){\n      makerButton(acts,['Cancel order'", "replace": "if(false){\n      makerButton(acts,['Cancel order'" },
+{ "name": "page: Delivered or paid tab gone", "file": "stmt/page.js", "find": "[\"paid\", \"Delivered or paid\"], ", "replace": "" },
+{ "name": "page: the orders strip hides Delivered or paid", "file": "stmt/page.js", "find": "orders.ready orders.paid orders.done", "replace": "orders.ready orders.done" }
+]

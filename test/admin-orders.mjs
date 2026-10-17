@@ -164,7 +164,7 @@ export async function run({ ok, pageWork }) {
     const d = p.d;
     await p.enter();
     const pill = (part) => { const b = byAct(d, "part.orders." + part); const c = b.querySelector(".salt-tabs__count"); return b.firstChild.textContent + ":" + (c ? c.textContent : ""); };
-    ok(same(["placed", "confirmed", "ready", "done", "ended", "payments", "group"].map(pill), ["Placed:4", "Confirmed:2", "Ready:", "Done:", "Ended:1", "Payments:2", "Group:"]),
+    ok(same(["placed", "confirmed", "ready", "paid", "done", "ended", "payments", "group"].map(pill), ["Received:4", "Agreed:2", "Ready:", "Delivered or paid:", "Completed:", "Ended:1", "Payments:2", "Group:"]),
       "a stage whose orders wait on him carries their count on its pill (practice not counted), Payments the claims, and the rest none: " + JSON.stringify(["placed", "confirmed", "ready", "done", "ended", "payments"].map(pill)));
     ok(p.where() === "orders/placed" && !d.getElementById("makerReviewTitle") && !/Choose an order to see it here/.test(d.getElementById("oOrders").textContent)
       && !d.querySelector("#oSplit > h2") && d.getElementById("oSplit").getAttribute("aria-label") === "Orders",

@@ -20,8 +20,8 @@
  {
   "name": "the Desk's drafts read carries no orders of several books",
   "file": "src/worker.js",
-  "find": "Object.assign(body, makerTrips(book, await makerHeldMoves(env)));",
-  "replace": "Object.assign(body, {});"
+  "find": "      Object.assign(body, cards, { rows:",
+  "replace": "      Object.assign(body, {}, { rows:"
  },
  {
   "name": "the Counter's review drops the Desk's orders of several books",

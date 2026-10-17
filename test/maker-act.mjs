@@ -422,7 +422,10 @@ export async function auditStates({ pageWork }) {
   const line = (rid, product, qty, total) => ({ rid, product, qty, total, delivery: 0, paid: 0, owed: total, handed: 0, left: qty, waiting: 0, open: true });
   const trip = { trip: "t1791900000000", party: "CX1-ZED", date: "2026-10-10", owed: 300, paid: 0, handedLines: 0, waiting: 0, lines: [line("tr-1", "salt", 1, 200), line("tr-2", "oil", 2, 100)] };
   const day = { ...trip, trip: undefined, rids: ["dy-1", "dy-2"], party: "CX2-ZED", lines: [line("dy-1", "salt", 1, 200), line("dy-2", "oil", 2, 100)] };
-  const t = await richOwnerPage({ pageWork, review: (j) => ({ ...j, trips: [trip], sameDay: [day] }),
+  /* his flow (17 Oct 2026): a row of the book as an order, and Completed paged (test/admin-flow.mjs proves what each does) */
+  const bookRow = (rid, stage, f) => ({ rid, party: "CX3-ZED", product: "salt", date: "2026-10-10", key: "CX3-ZED|2026-10-10|200|" + rid, qty: 1, total: 200, delivery: 10, paid: 0, owed: 210, handed: 0, left: 1, waiting: 0, stage, ...f });
+  const rows = [bookRow("rw-1", "confirmed")].concat(Array.from({ length: 51 }, (_, i) => bookRow("rd-" + i, "done", { paid: 210, owed: 0, handed: 1, left: 0 })));
+  const t = await richOwnerPage({ pageWork, review: (j) => ({ ...j, trips: [trip], sameDay: [day], rows }),
     extra: (route) => route === "/all/maker/trip-split" ? { ok: true, split: { trip: trip.trip, amount: 50, shares: [{ rid: "tr-1", product: "salt", rm: 50, owed: 200 }] } } : undefined });
   try {
     await t.work.quiet();
@@ -433,6 +436,10 @@ export async function auditStates({ pageWork }) {
     states.push(["an order of several books, its split read", actAudit(t.d)]);
     t.card("day:dy-1+dy-2"); await t.work.quiet();
     states.push(["a buyer's same-day rows offered as one order", actAudit(t.d)]);
+    t.card("row:rw-1"); await t.work.quiet();
+    states.push(["a row of the book as an order", actAudit(t.d)]);
+    await t.click(byAct(t.d, "part.orders.done"));
+    states.push(["Completed, paged", actAudit(t.d)]);
   } finally { t.w.close(); }
   return states;
 }

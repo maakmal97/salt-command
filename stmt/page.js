@@ -1395,7 +1395,7 @@ function noticeCard(b) {
    its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
 const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
 const ADMIN_PARTS = {
-  orders: [["placed", "Placed"], ["confirmed", "Confirmed"], ["ready", "Ready"], ["done", "Done"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
+  orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
   record: [["approve", "Approve"], ["entry", "Entry"], ["customers", "Customers"], ["pricing", "Pricing"]],
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
@@ -1515,7 +1515,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + adminParts("orders")
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
-        + '<section id="oSplit" data-in="orders.placed orders.confirmed orders.ready orders.done orders.ended" aria-label="Orders">'
+        + '<section id="oSplit" data-in="orders.placed orders.confirmed orders.ready orders.paid orders.done orders.ended" aria-label="Orders">'
         + '<p class="lead" id="makerReviewStatus">Reading.</p>'
         + '<div class="ordgrid"><div id="makerOrderList" class="ordlist"></div><div id="makerReview" class="ordopen"></div></div></section>'
         + '<section data-in="orders.payments" aria-labelledby="makerClaimsTitle"><h2 id="makerClaimsTitle">Payments they say they sent</h2><div id="makerClaims" aria-live="polite"></div></section>'

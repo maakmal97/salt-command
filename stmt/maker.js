@@ -447,7 +447,10 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       const unreadable = Array.isArray(queue.unreadable) ? queue.unreadable.filter((k) => typeof k === "string" && /^q:[A-Za-z0-9._-]{1,80}$/.test(k)).slice(0, 20) : [];
       /* plan 3: the orders of several books the Desk read with the drafts, or that it could not read them */
       const trips = Array.isArray(drafts.trips) ? drafts.trips : [], sameDay = Array.isArray(drafts.sameDay) ? drafts.sameDay : [];
-      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable, trips, sameDay,
+      /* 17 Oct 2026: every live row of the book is an order here; a row a live site order holds is drawn as that order, by its key */
+      const held = new Set(orders.filter((o) => !o.test && !["declined", "cancelled"].includes(o.status) && typeof o.ledgerKey === "string").map((o) => o.ledgerKey));
+      const rows = Array.isArray(drafts.rows) ? drafts.rows.filter((r) => r && !held.has(r.key)) : [];
+      return json({ ok: true, orders, drafts: drafts.drafts || [], refused: drafts.refused || [], queue: queue.entries, unreadable, trips, sameDay, rows,
         ...(typeof drafts.tripsError === "string" || !Array.isArray(drafts.trips) ? { tripsError: drafts.tripsError || "Orders of several books could not be read." } : {}) });
     }
     if (op.kind === "queue") {
