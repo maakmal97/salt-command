@@ -19,7 +19,7 @@
   {"name": "V7: a re-dated row is not followed", "file": "src/orders.js", "find": "&& x.date !== day && !x.cancelled && !x.defaulted && was.test(x.mod || \"\"));", "replace": "&& false);"},
   {"name": "V7: money lowered on the book stays on the order", "file": "src/orders.js", "find": "if (sole && !fixWaits.has(o.id) && (paid < (+o.paid || 0) - 0.004 || moved < (+o.moved || 0) - 0.0004)) {", "replace": "if (false) {"},
   {"name": "V7: the order book refuses an agreed order the book's figures", "file": "stmt/orders.js", "find": "if (!ROWED.includes(order.status)) return { error: \"only an agreed order takes the book's figures whole\", status: 409 };", "replace": "if (order.status !== \"done\") return { error: \"only an agreed order takes the book's figures whole\", status: 409 };"},
-  {"name": "V8: an offset on the row is not money on the order", "file": "src/orders.js", "find": "const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);", "replace": "const paid = +(+row.cash || 0).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);"},
+  {"name": "V8: an offset on the row is not money on the order", "file": "src/orders.js", "find": "    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = rowOut(row);", "replace": "    const paid = +(+row.cash || 0).toFixed(2), moved = rowOut(row);"},
   {"name": "V9: the tie-out reads no money", "file": "src/orders.js", "find": "if (Math.abs(paid - f2(o.paid)) > 0.004) diff.push(", "replace": "if (false) diff.push("},
   {"name": "V9: a stalled return leg is silent", "file": "src/orders.js", "find": "if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS)", "replace": "if (false)"},
   {"name": "V9: a stall is read at once", "file": "src/orders.js", "find": "const TIEOUT_STALL_MS = 15 * 60000;", "replace": "const TIEOUT_STALL_MS = -1;"},
@@ -30,5 +30,11 @@
   {"name": "Fable V9: a kept refusal never clears", "file": "src/orders.js", "find": "else await env.SALT_QUEUE.delete(TOLD_FAILED); } catch (e) {}", "replace": "} catch (e) {}"},
   {"name": "Fable V9: a stall names nobody", "file": "src/orders.js", "find": "? \"; held by \" + held.failed.map(", "replace": "? \"\" + held.failed.slice(0, 0).map("},
   {"name": "Fable V9: a rejected Agree is waiting", "file": "src/orders.js", "find": "if (ack && ack.status === \"rejected\") faults.push(", "replace": "if (false) faults.push("},
-  {"name": "Fable V9: a waiting claim is a difference", "file": "src/orders.js", "find": "if ((o.payments || []).some((p) => p && p.claim === \"waiting\")) waiting.push(", "replace": "if (false) waiting.push("}
+  {"name": "Fable V9: a waiting claim is a difference", "file": "src/orders.js", "find": "if ((o.payments || []).some((p) => p && p.claim === \"waiting\")) waiting.push(", "replace": "if (false) waiting.push("},
+  {"name": "v1147: the return leg reads every unit out", "file": "src/orders.js", "find": "    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = rowOut(row);", "replace": "    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);"},
+  {"name": "v1147: the tie-out reads every unit out", "file": "src/orders.js", "find": "        const paid = f2(POSITION_ENGINE.txPaid(row)), moved = rowOut(row);", "replace": "        const paid = f2(POSITION_ENGINE.txPaid(row)), moved = f3(POSITION_ENGINE.txEffDeliv(row));"},
+  {"name": "v1147: a delivery Correction is not followed", "file": "src/orders.js", "find": " || deliveryWas(r, +total) ? r : null;", "replace": " ? r : null;"},
+  {"name": "v1147: a stale yes still holds its order", "file": "src/orders.js", "find": "WHERE order_id=?1 AND status='waiting' AND at > ?2 LIMIT 1\").bind(o.id, yesFresh()).first());", "replace": "WHERE order_id=?1 AND status='waiting' LIMIT 1\").bind(o.id).first());"},
+  {"name": "v1147: a fresh yes holds nothing", "file": "src/orders.js", "find": "const YES_FRESH_MS = 24 * 3600000;", "replace": "const YES_FRESH_MS = -3600000;"},
+  {"name": "v1147: the tie-out names no stale yes", "file": "src/orders.js", "find": "    for (const y of old) faults.push(", "replace": "    for (const y of []) faults.push("}
 ]

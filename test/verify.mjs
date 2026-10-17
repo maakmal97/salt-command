@@ -49419,6 +49419,7 @@ await (async () => {
   if (!DatabaseSync) { skipOff("node:sqlite is unavailable here, so the follow was not driven against the real schema"); return; }
   const O = await import("../stmt/orders.js");
   const { reconcileOrders, deskPass, tellSite, tieOut } = await import("../src/orders.js");
+  const O_DESK = await import("../src/orders.js");
   const { runDrafter } = await import("../src/drafter.js");
   const { applyAmend } = await import("../tools/fold.mjs");
   const PE = (await import("../engine/position.mjs")).default;
@@ -49937,6 +49938,27 @@ await (async () => {
     correct(EW.rid, { defaulted: false });
     const ofrT21 = await tellSite(denv), ew2 = await orderOf(EW.o.id);
     ok(!ofrT21.failed && !ew2.writtenOff && O.isAdvance(ew2), tag + ", the write-off undone on the book clears it on the order, which is chased again: " + J({ failed: ofrT21.failed, w: ew2.writtenOff }));
+    /* v1147, the first live tie-out. (s224) an offset settled in units beside the goods collected reads more out than the row's size: the order holds its size */
+    correct(EW.rid, { settledKg: 1, settledRM: 50 });
+    const ofrT29 = await tellSite(denv), ew3 = await orderOf(EW.o.id), tieKg = await tieOut(denv);
+    const ewOut = (tieKg.faults || []).concat(tieKg.waiting || []).find((f) => f.order === EW.o.id && f.what.some((w) => /handed over/.test(w)));
+    ok(!ofrT29.failed && ew3.moved === 1 && !ewOut, tag + ", units settled in kind beside the goods out leave the order at its size, and the tie-out level: " + J({ failed: ofrT29.failed, moved: ew3.moved, out: ewOut }));
+    /* (urhoba and s252) a Correction of the delivery alone moves the key: the order follows its row */
+    const ehRow = correct(EH.rid, { delivery: 4 });
+    const ofrT30 = await tellSite(denv), eh2 = await orderOf(EH.o.id);
+    ok(!ofrT30.failed && eh2.ledgerKey === PE.ovKey(ehRow) && eh2.ledgerKey !== EH.key,
+      tag + ", an order follows its row when a Correction changes the delivery alone: " + J({ failed: ofrT30.failed, was: EH.key, now: eh2.ledgerKey, row: PE.ovKey(ehRow), mod: ehRow.mod }));
+    /* (stale yeses) his yes waiting a day for its draft holds nothing, and the tie-out names it; a fresh one is still on its way */
+    const yes = (at) => db.prepare("INSERT INTO preapproval (id,order_id,u,stage,hash,shown,status,at) VALUES (?,?,?,?,?,?,?,?)")
+      .run(EG.o.id + "|cash|" + at, EG.o.id, EG.u, "cash", "h", "{}", "waiting", at);
+    yes(new Date(Date.now() - 26 * 3600000).toISOString());
+    const flyOld = await O_DESK.orderInFlight(denv, await orderOf(EG.o.id)), tieYes = await tieOut(denv);
+    const yesFault = (tieYes.faults || []).find((f) => f.order === EG.o.id && f.what.some((w) => /never reached Approve/.test(w)));
+    yes(new Date().toISOString());
+    const flyNew = await O_DESK.orderInFlight(denv, await orderOf(EG.o.id));
+    db.prepare("DELETE FROM preapproval WHERE order_id=?").run(EG.o.id);
+    ok(flyOld === false && !!yesFault && flyNew === true,
+      tag + ", a yes waiting over a day for its draft holds its order no longer and is named by the tie-out; a fresh one still holds it: " + J({ flyOld, flyNew, fault: yesFault }));
   }
 
   /* THE COUNTER: the order at Ready, handed as the site hands it, beside the bucket's row sealed as a part of To pay now */

@@ -490,6 +490,12 @@ export function cashTap(o, at, body, ctx) {
  *  agree or the order cannot take them now (not agreed, a claim of theirs waiting, a size under what is out, a charge on a
  *  collection, a closed order's size). A row on a trip carries the trip's one delivery or none, so the order keeps its own. `moved` is what the order
  *  will hold once the same pass has carried the handovers back. */
+/** 17 Oct 2026 (the first live tie-out, s224): what the row has out, as its order can hold it. An offset settled in units (settledKg) counts as
+ *  handed over beside the goods collected, so a row can read more out than its size; an order never holds more than its size. */
+export function rowOut(row) {
+  return +Math.min(+(row && row.qty) || 0, +POSITION_ENGINE.txEffDeliv(row) || 0).toFixed(3);
+}
+
 export function termsFromRow(o, row, moved) {
   if (!o || !row || !AGREED_ON_SITE.includes(o.status)) return null;
   if ((o.payments || []).some((p) => p && p.claim === "waiting")) return null;
@@ -515,7 +521,7 @@ export function settledFromRow(o, row) {
   if ((+o.paid || 0) > (+told.paid || 0) + 0.004 || (+o.moved || 0) > (+told.moved || 0) + 0.0004) return null;
   const qty = +(+row.qty).toFixed(3), total = +(+row.total).toFixed(2);
   const delivery = row.trip ? +(+(o.delivery || 0)).toFixed(2) : +(+(row.delivery || 0)).toFixed(2);
-  const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);
+  const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = rowOut(row);
   if (!(qty > 0) || !(total > 0) || !(delivery >= 0) || !(paid >= 0) || !(moved >= 0)) return null;
   if (qty > 1000000 || total > 1000000 || delivery > 1000000 || paid > 1000000 || moved > qty + 0.0004) return null;
   if (delivery > 0.004 && o.mode !== "deliver") return null;

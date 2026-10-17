@@ -29,7 +29,7 @@ import PRICING_ENGINE from "../engine/pricing.mjs";
 /* S1b: THE ENTRY EACH STAGE MAKES lives in engine/stages.mjs (pure); this reads, calls it, and queues. The builders stay named here for every importer. */
 import { rm, chargeOf, priceOf, advanceOf, acceptEntry, floorRefusal, ackRowWanted, stageAgainst, jobEntry, againEntry, keyGivenBack,
   handoverTap, receivedTap, cashTap, restateTap, pastRoom, claimRows, claimOrderFlight, claimEntry,
-  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow } from "../engine/stages.mjs";
+  stageAt, keyAfter, closedKey, ledgerKeyOf, partyOnBook, bucketFor, termsFromRow, settledFromRow, rowOut } from "../engine/stages.mjs";
 export { orderKeyFor, partyOnBook, ledgerKeyOf, pendingEntry, payEntry, claimEntry, handoverEntry, redateFrom, closeEntry, closedKey, cancelEntry,
   amendEntry, stageAt, advanceOf, claimOrderFlight } from "../engine/stages.mjs";
 
@@ -1821,6 +1821,13 @@ async function rowOf(env, o, k, idx, amended) {
    re-keyed the customer, so the key's party is a code no row holds now: the one row of the order's own account (code or bucket)
    at that day, figure, size and product. (b) the key's party is the order's own, and the row that carried it was restated by a
    Correction (its mod says so): the one row of that account, product and day, whatever its figure and size are now. */
+/* 17 Oct 2026 (the first live tie-out, urhoba and s252): a key's figure is goods plus delivery, so a Correction of the delivery alone moves the key;
+   the row is the order's when its mod names a delivery that, with its goods, is the key's figure */
+function deliveryWas(r, total) {
+  for (const m of String(r.mod || "").matchAll(/\bdelivery (\d+(?:\.\d+)?|\(unset\)) to /g))   /* a delivery never set is none */
+    if (+((+r.total || 0) + (m[1] === "(unset)" ? 0 : +m[1])).toFixed(2) === total) return true;
+  return false;
+}
 function strayRow(o, k, idx, product) {
   const [party, day, total] = k.split("|"), PE = POSITION_ENGINE, rows = [...idx.byKey.values()];
   const sole = (l) => l.length === 1 && idx.rows.get(PE.ovKey(l[0])) === 1 ? l[0] : null;   /* byKey keeps one of two twins */
@@ -1828,7 +1835,7 @@ function strayRow(o, k, idx, product) {
   const twins = mine.some((r) => idx.rows.get(PE.ovKey(r)) > 1);
   if (PE.ownerCode(party) === o.code) {
     const r = twins ? null : sole(mine.filter((x) => !x.cancelled && !x.defaulted));   /* a row he voided or wrote off is no restated row */
-    if (r) return new RegExp("\\btotal " + (+total) + " to ").test(r.mod || "") ? r : null;   /* the Correction names the old figure, not any correction */
+    if (r) return new RegExp("\\btotal " + (+total) + " to ").test(r.mod || "") || deliveryWas(r, +total) ? r : null;   /* the Correction names the old figure, not any correction */
     /* 17 Oct 2026, HIS FLOW: and a row a Correction re-dated, its mod naming the key's day as the old one, at the key's figure or one the mod names */
     const was = new RegExp("\\bdate " + day + " to "), moved = rows.filter((x) => PE.ownerCode(x.customer) === o.code && (x.product || "salt") === product
       && x.date !== day && !x.cancelled && !x.defaulted && was.test(x.mod || ""));
@@ -1895,18 +1902,23 @@ const AMEND_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND entry LIKE '%\
 /* 17 Oct 2026 (Fable's review): A SETTLED ORDER IS RESTATED ONLY WHEN NOTHING OF ITS OWN IS ON ITS WAY TO THE ROW: any draft naming it undecided or
    not on the mirror yet (a Received, cash, a handover, as well as an amendment), any yes of his waiting in any stage, or a close or redate */
 const ORDER_FLIGHT = "SELECT 1 FROM draft WHERE entry LIKE ?1 AND (status='pending' OR (status='approved' AND (committed_at IS NULL OR committed_at > (SELECT at FROM snapshot WHERE one=1)))) LIMIT 1";
+/* 17 Oct 2026 (the first live tie-out): his yes waiting for its draft is on its way for a day. A yes is spent within minutes of the tap; ones
+   waiting since 02 and 12 Oct named moves the book took by a Correction, and held their orders as on their way for good. Older, a yes holds
+   nothing, and the tie-out names it. */
+const YES_FRESH_MS = 24 * 3600000;
+const yesFresh = (now = Date.now()) => new Date(now - YES_FRESH_MS).toISOString();
 export async function orderInFlight(env, o) {
   if (await closeOnItsWay(env, o)) return true;
   try {
     if (await env.SALT_LEDGER.prepare(ORDER_FLIGHT).bind('%"orderId":"' + o.id + '"%').first()) return true;
-    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND status='waiting' LIMIT 1").bind(o.id).first());
+    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND status='waiting' AND at > ?2 LIMIT 1").bind(o.id, yesFresh()).first());
   } catch (e) { return true; }
 }
 export async function termsInFlight(env, o) {
   if (await closeOnItsWay(env, o)) return true;
   try {
     if (await env.SALT_LEDGER.prepare(AMEND_FLIGHT).bind('%"orderId":"' + o.id + '"%').first()) return true;
-    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='amend' AND status='waiting' LIMIT 1").bind(o.id).first());
+    return !!(await env.SALT_LEDGER.prepare("SELECT 1 FROM preapproval WHERE order_id=?1 AND stage='amend' AND status='waiting' AND at > ?2 LIMIT 1").bind(o.id, yesFresh()).first());
   } catch (e) { return true; }
 }
 export async function tellSite(env, fixes, mirror) {
@@ -1962,7 +1974,7 @@ export async function tellSite(env, fixes, mirror) {
       continue;
     }
     const ledger = {};
-    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = +(+POSITION_ENGINE.txEffDeliv(row)).toFixed(3);
+    const paid = +(+POSITION_ENGINE.txPaid(row)).toFixed(2), moved = rowOut(row);
     /* 17 Oct 2026, HIS FLOW: money or goods LOWERED on the book (a Correction, never an undo, which its fix tells) reach an agreed order too, as the
        book's figures whole, once nothing of the order's own is on its way and the site holds no move the book has not heard */
     if (sole && !fixWaits.has(o.id) && (paid < (+o.paid || 0) - 0.004 || moved < (+o.moved || 0) - 0.0004)) {
@@ -2030,6 +2042,10 @@ export async function tieOut(env, mirror, now = new Date()) {
   let snap = null;
   try { snap = await env.SALT_LEDGER.prepare("SELECT v, at FROM snapshot WHERE one=1").first(); } catch (e) { snap = null; }
   const v = (snap && snap.v) || null, told = await env.SALT_QUEUE.get(TOLD_MARK);
+  try {
+    const old = (await env.SALT_LEDGER.prepare("SELECT order_id, stage, at FROM preapproval WHERE status='waiting' AND at <= ?1 ORDER BY at LIMIT 20").bind(yesFresh(now.getTime())).all()).results || [];
+    for (const y of old) faults.push({ order: y.order_id, what: ["your yes to its " + y.stage + " of " + String(y.at).slice(0, 10) + " never reached Approve, so it holds nothing: tap it again if the move is still owed"] });
+  } catch (e) { /* the yeses are read again next pass */ }
   if (v && told !== v && snap.at && now.getTime() - Date.parse(snap.at) > TIEOUT_STALL_MS) {
     let held = null;
     try { held = await env.SALT_QUEUE.get(TOLD_FAILED, "json"); } catch (e) { held = null; }
@@ -2060,7 +2076,7 @@ export async function tieOut(env, mirror, now = new Date()) {
         if (Math.abs(f3(row.qty) - f3(o.qty)) > 0.0004) diff.push("units " + f3(o.qty) + " on the order, " + f3(row.qty) + " on the row");
         if (Math.abs(f2(row.total) - f2(o.total)) > 0.004) diff.push("goods RM " + f2(o.total) + " on the order, RM " + f2(row.total) + " on the row");
         if (!row.trip && Math.abs(f2(row.delivery) - f2(o.delivery)) > 0.004) diff.push("delivery RM " + f2(o.delivery) + " on the order, RM " + f2(row.delivery) + " on the row");
-        const paid = f2(POSITION_ENGINE.txPaid(row)), moved = f3(POSITION_ENGINE.txEffDeliv(row));
+        const paid = f2(POSITION_ENGINE.txPaid(row)), moved = rowOut(row);
         if (Math.abs(paid - f2(o.paid)) > 0.004) diff.push("paid RM " + f2(o.paid) + " on the order, RM " + paid + " on the row");
         if (Math.abs(moved - f3(o.moved)) > 0.0004) diff.push("handed over " + f3(o.moved) + " on the order, " + moved + " on the row");
       }
