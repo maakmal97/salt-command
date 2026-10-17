@@ -3954,18 +3954,20 @@ export const OWNER_JS = `
       entries.push({id:o.id, order:o, parts:parts, waits:waits});
     });
     /* 17 Oct 2026, HIS FLOW: every live row of the book with no live site order is an order here, at the stage the Desk read off its figures */
-    (makerData.rows||[]).forEach(function(r){
-      var stage=r.stage==='done'||r.stage==='ended'||r.stage==='paid'?r.stage:'confirmed';
+    /* 18 Oct 2026: an order of several books and a buyer's same-day rows are filed the same way, at the stage the Desk read off their lines */
+    function bookEntry(id,key,g){
+      var stage=g.stage==='done'||g.stage==='ended'||g.stage==='paid'?g.stage:'confirmed';
       if(stage==='done'||stage==='ended'){
         closedAll[stage]=(closedAll[stage]||0)+1;
         if((settled[stage]=(settled[stage]||0)+1)>ordShown(stage)) return;
       }
-      entries.push({id:'row:'+r.rid, row:r, parts:'orders.'+stage, waits:false});
-    });
+      var e={id:id, parts:'orders.'+stage, waits:false}; e[key]=g; entries.push(e);
+    }
+    (makerData.rows||[]).forEach(function(r){ bookEntry('row:'+r.rid,'row',r); });
     held.filter(function(id){ return !known[id]; }).forEach(function(id){ entries.push({id:id, order:null, parts:'orders.placed', waits:true}); });
-    /* plan 3 (16 Oct 2026): an order of several books on the book is agreed, one card for all its lines; a buyer's same-day rows that could be one stand beside it */
-    (makerData.trips||[]).forEach(function(t){ entries.push({id:'trip:'+t.trip, trip:t, parts:'orders.confirmed', waits:false}); });
-    (makerData.sameDay||[]).forEach(function(t){ entries.push({id:'day:'+t.rids.join('+'), day:t, parts:'orders.confirmed', waits:false}); });
+    /* plan 3 (16 Oct 2026): an order of several books on the book is one card for all its lines; a buyer's same-day rows that could be one stand beside it */
+    (makerData.trips||[]).forEach(function(t){ bookEntry('trip:'+t.trip,'trip',t); });
+    (makerData.sameDay||[]).forEach(function(t){ bookEntry('day:'+t.rids.join('+'),'day',t); });
     ordEntries={}; entries.forEach(function(e){ ordEntries[e.id]=e; });
     if(status) paintOrdStatus();
     list.textContent='';
@@ -3986,7 +3988,7 @@ export const OWNER_JS = `
       if(entries.some(function(e){ return e.parts==='orders.'+p[0]; })) return;
       var none=el('p','rnone',p[1]); none.setAttribute('data-in','orders.'+p[0]); list.appendChild(none);
     });
-    if(makerData.tripsError){ var te=el('p','msg bad',makerData.tripsError); te.setAttribute('data-in','orders.confirmed'); te.setAttribute('data-trips-error',''); list.appendChild(te); }
+    if(makerData.tripsError){ var te=el('p','msg bad',makerData.tripsError); te.setAttribute('data-in','orders.confirmed orders.paid orders.done orders.ended'); te.setAttribute('data-trips-error',''); list.appendChild(te); }
     makerButton(list,['Refresh','maker.refresh'],loadMaker,false);
     /* 13 Oct 2026 (stress, Medium): Refresh answers under itself; its refusal went to the list's line at the head of Orders, a screen above it */
     var refreshSaid=el('p','msg osaid'); refreshSaid.id='makerRefreshSaid'; refreshSaid.setAttribute('role','status'); refreshSaid.setAttribute('aria-live','polite'); list.appendChild(refreshSaid);

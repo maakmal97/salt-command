@@ -2,8 +2,8 @@
  {
   "name": "the trip's head adds what is paid, not what is owed",
   "file": "src/maker-inputs.js",
-  "find": "owed: r2(lines.reduce((a, l) => a + l.owed, 0)), paid:",
-  "replace": "owed: r2(lines.reduce((a, l) => a + l.paid, 0)), paid:"
+  "find": "const owed = r2(lines.reduce((a, l) => a + l.owed, 0)), paid =",
+  "replace": "const owed = r2(lines.reduce((a, l) => a + l.paid, 0)), paid ="
  },
  {
   "name": "two rows of one book are offered as one order",
@@ -250,5 +250,47 @@
   "file": "stmt/owner.js",
   "find": "    if(placeNow==='orders'&&moved2&&makerData) paintOrdStatus();\n",
   "replace": ""
+ },
+ {
+  "name": "a trip's stage is never read off its lines",
+  "file": "src/maker-inputs.js",
+  "find": "waiting: lines.reduce((a, l) => a + l.waiting, 0), lines, stage };",
+  "replace": "waiting: lines.reduce((a, l) => a + l.waiting, 0), lines, stage: \"confirmed\" };"
+ },
+ {
+  "name": "a trip reads its goods out off no line",
+  "file": "src/maker-inputs.js",
+  "find": "flowStage({ qty: lines.length, handed: handedLines, owed,",
+  "replace": "flowStage({ qty: lines.length, handed: 0, owed,"
+ },
+ {
+  "name": "a trip reads what it owes as never whole",
+  "file": "src/maker-inputs.js",
+  "find": "handed: handedLines, owed, paid, ended:",
+  "replace": "handed: handedLines, owed: 1, paid, ended:"
+ },
+ {
+  "name": "the list files every trip under Agreed",
+  "file": "stmt/owner.js",
+  "find": "bookEntry('trip:'+t.trip,'trip',t);",
+  "replace": "entries.push({id:'trip:'+t.trip, trip:t, parts:'orders.confirmed', waits:false});"
+ },
+ {
+  "name": "the list files every same-day group under Agreed",
+  "file": "stmt/owner.js",
+  "find": "bookEntry('day:'+t.rids.join('+'),'day',t);",
+  "replace": "entries.push({id:'day:'+t.rids.join('+'), day:t, parts:'orders.confirmed', waits:false});"
+ },
+ {
+  "name": "the line over the list counts no trip",
+  "file": "stmt/owner.js",
+  "find": "return ordEntries[k].parts==='orders.'+partNow; }",
+  "replace": "return ordEntries[k].parts==='orders.'+partNow&&!ordEntries[k].trip; }"
+ },
+ {
+  "name": "a trips read that failed is said under Agreed alone",
+  "file": "stmt/owner.js",
+  "find": "te.setAttribute('data-in','orders.confirmed orders.paid orders.done orders.ended');",
+  "replace": "te.setAttribute('data-in','orders.confirmed');"
  }
 ]
