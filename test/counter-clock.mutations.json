@@ -20,7 +20,7 @@
  {
   "name": "the bar loses the clock",
   "file": "stmt/page.js",
-  "find": "<div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>",
-  "replace": "<div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"
+  "find": "Salt Account</div><div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>",
+  "replace": "Salt Account</div><div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"
  }
 ]

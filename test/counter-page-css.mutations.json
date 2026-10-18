@@ -47,8 +47,16 @@
  {"name":"the page starts 44px down again","file":"stmt/statement-css.js","find":"margin:0;padding:22px 18px 60px;","replace":"margin:0;padding:44px 20px 60px;"},
  {"name":"the rail stands 28px from the column again","file":"stmt/page.js","find":".gate.adm{max-width:1180px;margin-top:0;display:flex;gap:20px;","replace":".gate.adm{max-width:1180px;margin-top:0;display:flex;gap:28px;"},
  {"name":"the bar is not the system s Desk bar","file":"stmt/page.js","find":"<header class=\"salt-deskbar abar\">","replace":"<header class=\"abar\">"},
- {"name":"the bar loses the clock","file":"stmt/page.js","find":"<div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>","replace":"<div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"},
+ {"name":"the bar loses the clock","file":"stmt/page.js","find":"Salt Account</div><div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>","replace":"Salt Account</div><div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"},
  {"name":"the Desk bar recipe is not carried","file":"stmt/statement-css.js","find":".salt-deskbar__name {","replace":".salt-deskbar__nm {"},
  {"name":"a select is not the system s","file":"stmt/owner.js","find":"var tierCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.tier.customer')","replace":"var tierCode=actOn(el('select','fld salt-field__input'),'record.tier.customer')"},
- {"name":"the open list is the well again","file":"stmt/statement-css.js","find":".salt-field__select option { background: var(--salt-slate);","replace":".salt-field__select option { background: var(--salt-well);"}
+ {"name":"the open list is the well again","file":"stmt/statement-css.js","find":".salt-field__select option { background: var(--salt-slate);","replace":".salt-field__select option { background: var(--salt-well);"},
+ {"name":"the customer bar is not the system s Desk bar","file":"stmt/page.js","find":"'<header class=\"salt-deskbar cbar\">","replace":"'<header class=\"cbar\">"},
+ {"name":"the customer bar shows on a phone too","file":"stmt/page.js","find":".cclock:empty{display:none}\n.cbar{display:none}\n","replace":".cclock:empty{display:none}\n"},
+ {"name":"the customer bar never shows","file":"stmt/page.js","find":"  .cbar{display:flex}\n","replace":""},
+ {"name":"the header clock stays beside the bar s","file":"stmt/page.js","find":"  .chead .cclock{display:none}\n","replace":""},
+ {"name":"the rail keeps its foot","file":"stmt/page.js","find":"'<span class=\"salt-rail__count\" data-n=\"' + t + '\"></span></button>').join(\"\") + \"</div></nav>\";","replace":"'<span class=\"salt-rail__count\" data-n=\"' + t + '\"></span></button>').join(\"\") + \"</div>\" + '<p class=\"salt-rail__foot cfoot\" data-wholine>' + whoAs() + \"</p></nav>\";"},
+ {"name":"the rail keeps its brand","file":"stmt/page.js","find":"  return '<nav class=\"salt-rail salt-appbar__rail\" aria-label=\"Salt Counter\">'","replace":"  return '<nav class=\"salt-rail salt-appbar__rail\" aria-label=\"Salt Counter\"><div class=\"salt-rail__brand\"><b class=\"salt-title\">Salt Counter</b></div>'"},
+ {"name":"a section head is the browser s bold","file":"stmt/statement-css.js","find":"h2,h3,h4{font-weight:500}","replace":"h2,h3,h4{margin-top:0}"},
+ {"name":"the list keeps half the width with nothing open","file":"stmt/page.js","find":"  .oplace.oplace--one{grid-template-columns:minmax(0,1fr)}\n","replace":""}
 ]

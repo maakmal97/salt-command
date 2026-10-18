@@ -261,9 +261,9 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header (digits only: every word shown is the table's) */
 .cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
 .cclock:empty{display:none}
+.cbar{display:none}
 .cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 /* a username is a credential, so the rail's capitals never reach it */
-.cfoot .mono{text-transform:none;letter-spacing:.02em}
 .home{max-width:620px;margin:0 auto}
 .home .hcol>div{margin:0 0 24px}
 .home .hcol>:empty{display:none}
@@ -300,6 +300,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   .cshell{display:flex;gap:28px;align-items:flex-start;max-width:1240px;margin:0 auto;padding-bottom:48px}
   .cmain{flex:1 1 auto;min-width:0}
   .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
+  .cbar{display:flex}
+  .chead .cclock{display:none}
   .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
 }
@@ -466,6 +468,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 @media (max-width:859.98px){#pOrder.o-open>:not(.oplace){display:none}.oplace.o-open>.olistcol{display:none}.oplace.o-open{margin-top:0}}
 @media (min-width:860px){
   .oplace{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
+  /* with no order to open beside it, the list takes the width (18 Oct 2026: the right column stood empty) */
+  .oplace.oplace--one{grid-template-columns:minmax(0,1fr)}
   .oback{display:none}
   /* the open order stands still while the list scrolls beside it, its thread in reach inside it */
   .oscreen{position:sticky;top:24px;max-height:calc(100vh - 48px);overflow-y:auto}
@@ -617,9 +621,8 @@ body.ended>*:not(#aEnded){display:none}
 .aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-well)}
 .aring svg{width:22px;height:22px}
-/* the rail's brand, where a rail carries one (18 Oct 2026: the owner's page carries its name in the bar instead) */
-.salt-rail__brand .salt-title{font-size:1.2rem;white-space:nowrap}
-.adm .abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
+/* 18 Oct 2026: no rail carries a brand; the name stands in the Desk bar, the ring and the name, the clock under it */
+.abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
 .salt-rail__tab .salt-appbar__place{color:inherit}
 .adm #mFoot:empty{display:none}
 .adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
@@ -1463,11 +1466,9 @@ const PLACE_ICONS = {
 const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.slice(1) + '"' : "") + ' data-t="' + t + '"' + (t === "home" ? ' aria-current="page"' : "") + (t === "card" ? " hidden" : "");
 function placesRail() {
   return '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Counter">'
-    + '<div class="salt-rail__brand"><span class="aring">' + glyphSvg("ring", 22) + '</span><b class="salt-title">Salt Counter</b></div>'
     + '<div class="salt-rail__group">' + PLACES.map(([t, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo"' + placeAttrs(t, true) + ">"
       + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", "", "place." + t) + "</span>"
-      + '<span class="salt-rail__count" data-n="' + t + '"></span></button>').join("") + "</div>"
-    + '<p class="salt-rail__foot cfoot" data-wholine>' + whoAs() + "</p></nav>";
+      + '<span class="salt-rail__count" data-n="' + t + '"></span></button>').join("") + "</div></nav>";
 }
 function placesBar() {
   /* C22 (29 Sep 2026): the bar is Places, so two landmarks never share one name */
@@ -1696,6 +1697,10 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div></div>"
     /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
        sits in it, on every view of the saved app */
+    /* 18 OCT 2026, HIS WORD: THE DESK'S BAR, from 1080px where the rail stands, as the Desk's: the app's name and the clock, which the
+       header's own eyebrow carries on a phone */
+    + (owner ? "" : '<header class="salt-deskbar cbar"><div class="salt-deskbar__brand"><span class="aring">' + glyphSvg("ring", 22) + '</span>'
+      + '<div class="abartext"><div class="salt-deskbar__name">Salt Counter</div><div class="salt-deskbar__meta"><span class="clk" data-clock></span></div></div></div></header>')
     + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
     + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
@@ -4900,7 +4905,7 @@ const CLIENT_JS = `
   }
   /* on a phone the open order is the whole tab, with the way back at its head */
   function oPlace(){
-    var id=oShownId(), o=oFind(id), open=!!(draft.oOpen&&o), place=el('div','oplace'+(open?' o-open':''));
+    var id=oShownId(), o=oFind(id), open=!!(draft.oOpen&&o), place=el('div','oplace'+(open?' o-open':'')+(o?'':' oplace--one'));
     place.id='oArea';
     pOrder.classList.toggle('o-open',open);
     /* New is read against what this device had seen when the order was opened, and stays until it is left; the

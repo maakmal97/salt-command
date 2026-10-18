@@ -159,6 +159,8 @@ body>.salt-aurora{z-index:-1}
 .w{max-width:620px;margin:0 auto}
 .eyebrow{font-size:var(--salt-text-xs);letter-spacing:.32em;color:var(--salt-copper);
   font-weight:500;margin:0 0 10px;text-transform:uppercase}
+/* a section head is the system's 500, never the browser's bold (18 Oct 2026) */
+h2,h3,h4{font-weight:500}
 h1,h2.stmth{margin:0;font-size:var(--salt-text-2xl);font-weight:300;letter-spacing:.04em;line-height:1.12;
   font-family:var(--salt-font-display)}
 .meta{color:var(--salt-text-muted);font-size:var(--salt-text-sm);margin:10px 0 0}

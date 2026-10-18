@@ -90,6 +90,19 @@ export async function run({ ok, pageWork }) {
       && bar.querySelectorAll(".salt-deskbar__meta [data-clock]").length === 1 && od.querySelectorAll("#roster [data-clock]").length === 1 && !od.querySelector("#roster .salt-rail__brand")
       && ![...od.querySelectorAll("#roster .salt-eyebrow")].some((e) => /Salt Account/.test(e.textContent)),
       "Salt Account is headed by the system's Desk bar, carried whole: its name, the one clock under it, and no brand in the rail nor a name repeated over each place");
+    /* the customer's page: the same bar from 1080px, where its rail stands, with the clock the header's eyebrow carries on a phone; a rail with no brand
+       and no foot, the username standing once, under the place's name; a section head at the system's 500, not the browser's bold; and Orders' list the
+       whole width while no order stands open beside it */
+    const cd = new JSDOM(landingPage("abcd-efgh", "nct", null)).window.document, cbar = cd.querySelector(".cmain > .salt-deskbar.cbar"), rail = cd.querySelector(".cshell .salt-rail");
+    const wide = (sel, prop, v) => own.some(([s, b, m]) => /min-width:\s*1080px/.test(m) && s === sel && decl(b, prop) === v);
+    ok(!!cbar && cbar.querySelector(".salt-deskbar__brand .salt-deskbar__name").textContent === "Salt Counter" && cbar.querySelectorAll(".salt-deskbar__meta [data-clock]").length === 1
+      && own.some(([s, b, m]) => !m && s === ".cbar" && decl(b, "display") === "none") && wide(".cbar", "display", "flex") && wide(".chead .cclock", "display", "none"),
+      "the customer's page is headed by the same Desk bar from 1080px, the app's name and the clock in it, the header's own clock left to the phone");
+    ok(!!rail && !rail.querySelector(".salt-rail__brand") && !rail.querySelector(".salt-rail__foot") && cd.querySelectorAll(".cshell [data-wholine]").length === 1 && !!cd.querySelector(".chead [data-wholine]"),
+      "its rail carries neither a brand nor a foot, so the username stands once, under the place's name");
+    ok(own.some(([s, b, m]) => !m && s === "h2,h3,h4" && decl(b, "font-weight") === "500")
+      && own.some(([s, b, m]) => /min-width:\s*860px/.test(m) && s === ".oplace.oplace--one" && decl(b, "grid-template-columns") === "minmax(0,1fr)"),
+      "a section head is at the system's 500, and from 860px Orders' list takes the width while no order stands open beside it");
   }
 
   /* ---- 2. what PAGE_CSS keeps is placement: no rule under .adm sets a recipe's material, nor one of the page's classes that wear a recipe ---- */
