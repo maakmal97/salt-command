@@ -53811,5 +53811,37 @@ await (async () => {
   await (await import("./desk-parallel-reads.mjs")).run({ ok });
 })();
 
+section("designsync --drift: design/ against the design system's checkout (his word of 18 Oct 2026)");
+await (async () => {
+  /* A change to salt-ds reaches every surface in the same piece of work, and --drift is how a session sees one that has
+     not: green while design/ is the checkout's, red on a changed stylesheet or a renamed face, and quiet (exit 0) where no
+     checkout is, as in CI. The checkout here is a stand-in built from design/ itself, so the run needs no salt-ds. */
+  const { tmpdir } = await import("node:os");
+  const { cpSync } = await import("node:fs");
+  const ds = join(tmpdir(), "salt-ds-drift-" + process.pid);
+  rmSync(ds, { recursive: true, force: true });
+  mkdirSync(join(ds, "src"), { recursive: true });
+  cpSync(join(REPO, "design", "salt-ds.css"), join(ds, "src", "styles.css"));
+  cpSync(join(REPO, "design", "fonts.css"), join(ds, "src", "fonts-local.css"));
+  cpSync(join(REPO, "design", "fonts"), join(ds, "src", "fonts"), { recursive: true });
+  const drift = (root) => spawnSync(process.execPath, [join(REPO, "tools", "designsync.mjs"), "--drift"], { cwd: REPO, encoding: "utf8", env: { ...process.env, SALT_DS: root } });
+  try {
+    const level = drift(ds);
+    ok(level.status === 0 && /ok\s+design\/ is/.test(level.stdout), "designsync --drift: green while design/ is the checkout's, byte for byte");
+    writeFileSync(join(ds, "src", "styles.css"), readFileSync(join(ds, "src", "styles.css"), "utf8") + "\n:root { --drift-probe: 0; }\n");
+    const moved = drift(ds);
+    ok(moved.status === 1 && /DRIFT design\/salt-ds\.css/.test(moved.stdout), "designsync --drift: red when the design system's stylesheet moved");
+    cpSync(join(REPO, "design", "salt-ds.css"), join(ds, "src", "styles.css"));
+    const css = readFileSync(join(ds, "src", "fonts-local.css"), "utf8");
+    const face = /([\w-]+)-latin\.woff2/.exec(css)[1];
+    writeFileSync(join(ds, "src", "fonts-local.css"), css.split(face + "-latin.woff2").join("probe-latin.woff2"));
+    cpSync(join(ds, "src", "fonts", face + "-latin.woff2"), join(ds, "src", "fonts", "probe-latin.woff2"));
+    const renamed = drift(ds);
+    ok(renamed.status === 1 && /faces are[^\n]*probe-latin\.woff2/.test(renamed.stdout), "designsync --drift: red, naming FONT_FILES, when the design system renames a face");
+    const none = drift(join(ds, "absent"));
+    ok(none.status === 0 && /skip\s+no design system/.test(none.stdout), "designsync --drift: quiet where no checkout is, as in CI");
+  } finally { rmSync(ds, { recursive: true, force: true }); }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
 process.exit(fail ? 1 : 0);
