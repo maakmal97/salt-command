@@ -53,14 +53,14 @@
  {"name":"What this pays shows no lines","file":"stmt/page.js","find":"wb.appendChild(invNode(c.lines,true));","replace":"wb.appendChild(el('div'));"},
  {"name":"the number is grouped in threes","file":"stmt/page.js","find":"for(var i=0;i<n.length;i+=4) o.push(n.slice(i,i+4));","replace":"for(var i=0;i<n.length;i+=3) o.push(n.slice(i,i+3));"},
  {"name":"the number is shown as filed, ungrouped","file":"stmt/page.js","find":"nr=lrow(tw('pay.acctNo'),groupFours(num),","replace":"nr=lrow(tw('pay.acctNo'),num,"},
- {"name":"Copy puts the grouped number on the clipboard","file":"stmt/page.js","find":"nv.appendChild(copyBtn(num,'pay.acctCopy'))","replace":"nv.appendChild(copyBtn(groupFours(num),'pay.acctCopy'))"},
- {"name":"Copy puts the reference's number on the account row","file":"stmt/page.js","find":"nv.appendChild(copyBtn(num,'pay.acctCopy'))","replace":"nv.appendChild(copyBtn(user,'pay.acctCopy'))"},
+ {"name":"Copy puts the grouped number on the clipboard","file":"stmt/page.js","find":"nv.appendChild(copyBtn(num,'pay.acctCopy',true))","replace":"nv.appendChild(copyBtn(groupFours(num),'pay.acctCopy',true))"},
+ {"name":"Copy puts the reference's number on the account row","file":"stmt/page.js","find":"nv.appendChild(copyBtn(num,'pay.acctCopy',true))","replace":"nv.appendChild(copyBtn(user,'pay.acctCopy',true))"},
  {"name":"the number is shown on Scan a code","file":"stmt/page.js","find":"num=PS.rail==='transfer'&&ac?numOf(PS.acct):'';","replace":"num=ac?numOf(PS.acct):'';"},
  {"name":"the number is shown before a bank is chosen","file":"stmt/page.js","find":"num=PS.rail==='transfer'&&ac?numOf(PS.acct):'';","replace":"num=PS.rail==='transfer'?(numOf(PS.acct)||numOf('maybank')):'';"},
  {"name":"the page draws any number the Worker sends","file":"stmt/page.js","find":"return /^[0-9]{10,15}$/.test(n)?n:'';","replace":"return n;"},
  {"name":"the page draws a number of four digits","file":"stmt/page.js","find":"return /^[0-9]{10,15}$/.test(n)?n:'';","replace":"return /^[0-9]{4,15}$/.test(n)?n:'';"},
  {"name":"the account row names no bank","file":"stmt/page.js","find":"lrow(tw('pay.acctNo'),groupFours(num),ac.bank||ac.name)","replace":"lrow(tw('pay.acctNo'),groupFours(num),'')"},
- {"name":"the account number row is never added","file":"stmt/page.js","find":"nv.appendChild(copyBtn(num,'pay.acctCopy')); L.appendChild(nr);","replace":"nv.appendChild(copyBtn(num,'pay.acctCopy'));"},
+ {"name":"the account number row is never added","file":"stmt/page.js","find":"nv.appendChild(copyBtn(num,'pay.acctCopy',true)); L.appendChild(nr);","replace":"nv.appendChild(copyBtn(num,'pay.acctCopy',true));"},
  {"name":"Copy is not a ghost","file":"stmt/page.js","find":"var b=el('button','salt-ghost'); b.type='button'; b.setAttribute('aria-label',tw(labelKey));","replace":"var b=el('button','btn'); b.type='button'; b.setAttribute('aria-label',tw(labelKey));"},
  {"name":"the pill stays dark with a number","file":"stmt/page.js","find":"go=el('button','salt-pill salt-pill--md',tw('pay.iPaid')); go.type='button';","replace":"go=el('button','salt-pill salt-pill--md',tw('pay.iPaid')); go.type='button'; go.disabled=true;"},
  {"name":"I have paid is not the filled pill","file":"stmt/page.js","find":"go=el('button','salt-pill salt-pill--md',tw('pay.iPaid'));","replace":"go=el('button','salt-ghost',tw('pay.iPaid'));"},
@@ -183,5 +183,7 @@
  {"name": "a refused live read is trusted", "file": "stmt/paystate.js", "find": "    if (!r.ok) return null;\n", "replace": ""},
  {"name": "the sheet ignores down", "file": "stmt/page.js", "find": "      if(dn&&typeof dn==='object') PAY.forEach(function(x){ if(typeof dn[x.key]==='boolean') x.maintenance=dn[x.key]; });\n", "replace": ""},
  {"name": "the live state is asked once a visit for good", "file": "stmt/page.js", "find": "||Date.now()-payNumAt<PAY_FRESH_MS) return;", "replace": "||payNumAt>0) return;"},
- {"name": "the live state is asked at every open", "file": "stmt/page.js", "find": "||Date.now()-payNumAt<PAY_FRESH_MS) return;", "replace": ") return;"}
+ {"name": "the live state is asked at every open", "file": "stmt/page.js", "find": "||Date.now()-payNumAt<PAY_FRESH_MS) return;", "replace": ") return;"},
+ {"name": "copying the number marks nothing", "file": "stmt/page.js", "find": "nv.appendChild(copyBtn(num,'pay.acctCopy',true))", "replace": "nv.appendChild(copyBtn(num,'pay.acctCopy'))"},
+ {"name": "the copy keeps no visit", "file": "stmt/page.js", "find": "if(away&&PS&&payAmt()) payAway(payAmt());", "replace": ""}
 ]

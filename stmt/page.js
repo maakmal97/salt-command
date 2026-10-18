@@ -5517,9 +5517,13 @@ const CLIENT_JS = `
        on the clipboard. The bank's name is the account's own from the rails (PAY), the one a banking app lists. */
     var L=el('div','salt-ledger salt-ledger--plain payref'), said=statusLine(PS.said), ac=acct(PS.acct), num=PS.rail==='transfer'&&ac?numOf(PS.acct):'';
     said.hidden=!PS.said;
-    function copyBtn(text,labelKey){
+    /* away: copying the account number is leaving for their banking app (18 Oct 2026, a customer back from paying did not
+       know where to go on): it marks the visit as the payment page's link does, so coming back, or a reload while away,
+       turns the sheet to Did you send and the slip */
+    function copyBtn(text,labelKey,away){
       var b=el('button','salt-ghost'); b.type='button'; b.setAttribute('aria-label',tw(labelKey)); b.appendChild(glyph('copy',18));
       b.addEventListener('click',async function(){
+        if(away&&PS&&payAmt()) payAway(payAmt());
         var t; try{ await navigator.clipboard.writeText(text); t=tw('pay.copied'); }catch(e){ t=tw('pay.copyFail'); }
         if(!PS) return; PS.said=t; said.textContent=t; said.hidden=false;
       });
@@ -5527,7 +5531,7 @@ const CLIENT_JS = `
     }
     if(num){
       var nr=lrow(tw('pay.acctNo'),groupFours(num),ac.bank||ac.name); nr.id='payAcctNo';
-      var nv=nr.querySelector('.salt-ledger__value'); nv.className+=' acctno'; nv.appendChild(copyBtn(num,'pay.acctCopy')); L.appendChild(nr);
+      var nv=nr.querySelector('.salt-ledger__value'); nv.className+=' acctno'; nv.appendChild(copyBtn(num,'pay.acctCopy',true)); L.appendChild(nr);
     }
     var rr=lrow(tw('pay.ref'),user,tw('pay.refHint')); rr.querySelector('.salt-ledger__value').appendChild(copyBtn(user,'pay.refCopy'));
     L.appendChild(rr); if(!cash){ body.appendChild(L); body.appendChild(said); }

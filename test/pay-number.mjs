@@ -471,6 +471,14 @@ export async function run({ ok, okOff, pageWork, KV }) {
     ok(tap.tile === "var(--salt-tap)" && tap.copy === "var(--salt-tap)|var(--salt-tap)" && tap.pill === "var(--salt-tap)" && tap.open === "var(--salt-tap)" && tap.summary === "var(--salt-tap)",
       "a tap is 44px both ways on the bank tiles, both Copy buttons, the pill, the ghost link and the fold's summary: " + JSON.stringify(tap));
 
+    /* copying the number is leaving for the banking app (18 Oct 2026): the visit is kept for a reload, and coming back asks */
+    const keptCopy = A.q();
+    A.w.dispatchEvent(new A.w.Event("blur")); A.w.dispatchEvent(new A.w.Event("focus"));
+    const backQ = tx(A.d.querySelector("#payBody .paycheck h3")), backSlipOrYes = !!A.d.getElementById("paySent");
+    ok(!!keptCopy && keptCopy.away.amt === 303 && keptCopy.away.acct === "maybank" && keptCopy.away.rail === "transfer" && backQ === "Did you send RM 303.00?" && backSlipOrYes && A.posts().length === 0,
+      "Copy on the account number keeps the visit, so back from the banking app the sheet asks Did you send, with nothing posted: " + JSON.stringify([keptCopy, backQ]));
+    [...A.d.querySelectorAll("#payFoot button")].find((b) => tx(b) === "Not yet").click();
+
     /* with the number: the ghost link stays (D8), the claim is asked at I have paid (D7) with no blur or focus, and posts the same body */
     const openLink = A.d.getElementById("payOpen");
     ok(!!openLink && openLink.tagName === "A" && tx(openLink) === "Open the payment page" && openLink.classList.contains("salt-ghost") && openLink.getAttribute("href") === payHref("maybank", "transfer", 303, UN)
