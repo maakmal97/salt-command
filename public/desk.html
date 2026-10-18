@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="853ca09a1bb46c2e";
+var SALT_BUILD_ID="92d36620e1bfd852";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10288,7 +10288,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1160","d":"18 Oct 2026","t":"CA4-P1 REGISTERED AS A CUSTOMER; NO FIGURE MOVES","n":["<b>ONE ROSTER ENTRY FOLDED.</b> CA4-P1 is added to the roster as a customer, with a map point of about a kilometre taken from where its place was found, and a statement username on the next free spare account if there is one. It was decided by Counter Admin on 18 Oct 2026. The drafter raised no flags.","<b>INVENTORY UNTOUCHED.</b> No sale, purchase, count or loan is in this batch, so stock stays at 20.39 units and the cost basis does not move. The directory is not touched: no name or place travels."]}];
+const evolution=[{"v":"v1161","d":"18 Oct 2026","t":"THE LAST THREE PRICING CONSTANTS MOVE INTO THE SHARED ENGINE; NOTHING PRICES DIFFERENTLY","n":["<b>PRICE, LADDER AND THE LOCK SWITCH NOW LIVE IN ENGINE/RULES.</b> The size bands and floors, the ladder and the price-lock switch were the last pricing constants standing in the desk's own script. They are now in the shared rules module, inlined back under the same names, so a Worker can import what the desk runs. Text, keys and order are unchanged.","<b>NO FIGURE MOVES.</b> The pricing snapshot on the frozen book equals the one taken before the rule tables moved, field for field, and the lock stays off. No sale, purchase, count or loan is touched."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10432,7 +10432,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Oct 2026, 16:11 KL';
+const LAST_UPDATED='18 Oct 2026, 17:29 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
