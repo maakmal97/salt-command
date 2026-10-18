@@ -22,5 +22,11 @@
   "file": "master/salt_command.html",
   "find": "function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}",
   "replace": "function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}\n{\nconst second=function lateOf(code){return POSITION_ENGINE.lateOffer(POSITION_ENGINE.payDelays(sales,ownerOf(code)||code,TODAY.toISOString().slice(0,10),RULES),RULES);};\n}"
+ },
+ {
+  "name": "the master's snapshot suggestion carries no reason",
+  "file": "tools/book.mjs",
+  "find": "o[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};",
+  "replace": "o[id]={pct:g.pct,why:''};"
  }
 ]

@@ -20,7 +20,7 @@ const book = () => ({
   },
   pricing: {
     byProduct: {
-      salt: { stockCost: 40, lift: { "CX1-ZED": 0, "CX2-ZED": 0 }, suggest: { "CX1-ZED": 0, "CX2-ZED": 0.25 },
+      salt: { stockCost: 40, lift: { "CX1-ZED": 0, "CX2-ZED": 0 }, suggest: { "CX1-ZED": { pct: 0, why: "" }, "CX2-ZED": { pct: 0.25, why: "paid 20% over, paid late" }, "AX1-ZED": { pct: 0.1, why: "CX9-NAME paid RM 12 margin" } },
         inputs: { policy: { tierRule: { drift: true } } } },
       oil: { stockCost: 8, inputs: { policy: { tierRule: { fixed: true } } } }
     }
@@ -45,6 +45,9 @@ export async function run({ ok } = {}) {
   check(driftCard("CX2-ZED").held === false && driftCard("CX2-ZED").value === null && driftCard("CX2-ZED").current === 0
     && driftCard("CX2-ZED").suggest === 0.25 && driftCard("CX1-ZED").suggest === 0,
   "an unheld customer is the Set Price (nought) with the engine's suggestion beside it, and a held zero carries its own");
+  check(driftCard("CX2-ZED").why === "paid 20% over, paid late" && driftCard("CX1-ZED").why === ""
+    && driftCard("AX1-ZED").suggest === 0.1 && driftCard("AX1-ZED").why === "",
+  "the suggestion carries its reason, the engine's few words, and a reason that is anything else (a name, a figure) is left behind: " + JSON.stringify(catalog.driftCards.map((item) => [item.code, item.suggest, item.why])));
 
   const set = (tier) => makerTierSet({ at, code: "CX2-ZED", product: "salt", tier }, mirror);
   for (const value of [0, 0.05, 0.35, 1, 2]) {
@@ -102,8 +105,8 @@ export async function run({ ok } = {}) {
       parties: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
       tierCustomers: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
       driftCustomers: ["CX1-ZED", "CX2-ZED"],
-      driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: 0, current: 0, suggest: 0 },
-        { code: "CX2-ZED", product: "salt", held: false, value: null, current: 0, suggest: 0.25 }]
+      driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: 0, current: 0, suggest: 0, why: "" },
+        { code: "CX2-ZED", product: "salt", held: false, value: null, current: 0, suggest: 0.25, why: "paid late" }]
     }
   };
   const dom = new JSDOM(landingPage("", "maker-drift-nonce", { master: "fixture-master", accounts: [] }), {
@@ -155,7 +158,7 @@ export async function run({ ok } = {}) {
     check(drift.textContent.includes("Set by you: 0%."),
       "the UI labels a held zero as set by him");
     selects[0].value = "CX2-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    check(drift.textContent.includes("No % set: the Set Price. Suggested +25%.") && clearButton.hidden && !useButton.hidden,
+    check(drift.textContent.includes("No % set: the Set Price. Suggested +25%: paid late.") && clearButton.hidden && !useButton.hidden,
       "none held reads as the Set Price with the suggestion beside it, and Clear is unavailable when nothing is held");
     useButton.click();
     check(value.value === "0.25" && calls.length === 0,

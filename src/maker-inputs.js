@@ -204,7 +204,12 @@ function driftCustomerCode(id) {
   return typeof id === "string" && !id.startsWith("S") && !POSITION_ENGINE.isBucket(id);
 }
 
-/** The held % lift (0 to 2) or nought, and the engine's suggestion beside it, which the Desk's drift card reads; no pricing is computed here. */
+/** The suggestion's reason crosses to Counter Admin only as the engine's own few words (suggestWhy: 'paid 10% over', 'written off', 'paid very late',
+ *  'paid late', joined by a comma), so it names no one and no margin; anything else is left behind. */
+const SUGGEST_WHY = /^(paid [0-9]{1,3}% over|written off|paid very late|paid late)(, (paid [0-9]{1,3}% over|written off|paid very late|paid late))?$/;
+const suggestWhyOk = (value) => typeof value === "string" && value.length <= 40 && SUGGEST_WHY.test(value);
+
+/** The held % lift (0 to 2) or nought, and the engine's suggestion with its reason beside it, which the Desk's drift card reads; no pricing is computed here. */
 function driftCards(book, roster, products) {
   const driftProducts = products.filter((item) => item.drift).map((item) => item.product);
   const held = object(book.state.TIER_OF) ? book.state.TIER_OF : {};
@@ -215,8 +220,9 @@ function driftCards(book, roster, products) {
         && PRICING_ENGINE.driftOk(held[id][product]);
       const lift = book.pricing.byProduct[product].lift, sug = book.pricing.byProduct[product].suggest;
       const current = object(lift) && PRICING_ENGINE.driftOk(lift[id]) ? lift[id] : null;
-      const suggest = object(sug) && PRICING_ENGINE.driftOk(sug[id]) ? sug[id] : null;
-      cards.push({ code: id, product, held: !!set, value: set ? held[id][product] : null, current, suggest });
+      const given = object(sug) && object(sug[id]) ? sug[id] : null;
+      const suggest = given && PRICING_ENGINE.driftOk(given.pct) ? given.pct : null;
+      cards.push({ code: id, product, held: !!set, value: set ? held[id][product] : null, current, suggest, why: suggest !== null && suggestWhyOk(given.why) ? given.why : "" });
     }
   }
   return cards;

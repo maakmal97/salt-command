@@ -202,5 +202,23 @@
   "file": "engine/apply.mjs",
   "find": "entry.tiers = keptTs.length ? keptTiers : {};",
   "replace": "if (!keptTs.length) { out.refused.push({ id: it.id, why: \"old\" }); continue; } entry.tiers = keptTiers;"
+ },
+ {
+  "name": "the reason leaves out how far over the Set Price they paid",
+  "file": "engine/pricing.mjs",
+  "find": "if((+x.paidOver||0)>=0.0249)w.push('paid '+Math.round(x.paidOver*100)+'% over');",
+  "replace": ""
+ },
+ {
+  "name": "a write-off is called a late",
+  "file": "engine/pricing.mjs",
+  "find": "if((+x.risk||0)>=0.3)w.push('written off');else if",
+  "replace": "if(false)w.push('written off');else if"
+ },
+ {
+  "name": "the snapshot's suggestion carries no reason",
+  "file": "engine/snapshot.mjs",
+  "find": "suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};",
+  "replace": "suggest[id]={pct:g.pct,why:''};"
  }
 ]

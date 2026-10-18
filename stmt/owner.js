@@ -3403,7 +3403,7 @@ export const OWNER_JS = `
         function driftFormat(value){ var n=Math.round(Number(value)*100); return n>0?'+'+n+'%':'0%'; }
         function driftRefresh(){
           var card=driftCardOf();
-          var hint=card&&typeof card.suggest==='number'?' Suggested '+driftFormat(card.suggest)+'.':'';
+          var hint=card&&typeof card.suggest==='number'?' Suggested '+driftFormat(card.suggest)+(card.suggest>0&&typeof card.why==='string'&&card.why?': '+card.why:'')+'.':'';
           if(card&&card.held) driftState.textContent='Set by you: '+driftFormat(card.value)+'.'+hint;
           else driftState.textContent='No % set: the Set Price.'+hint;
           useSuggest.hidden=!(card&&typeof card.suggest==='number');

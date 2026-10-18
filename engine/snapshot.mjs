@@ -292,7 +292,7 @@ function pricing(B,R,today,over=null){
     const cards={};
     ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
     let lift=null,suggest=null;
-    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]=g.pct;});}
+    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
     out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
       lift?{lift,suggest}:{});

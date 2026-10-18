@@ -146,8 +146,13 @@ export async function run({ ok }) {
   "the sum rounds to the nearest 5% (22% to 20%, 23% to 25%), is held to 200%, and a good record suggests nothing");
   /* and read off the record by the desk's own readers */
   const sg = withPeople.suggest || {};
-  ok(sg["CZ9-ON"] === 0 && sg["CZ9-PO"] === 0.2 && sg["CZ9-LA"] === 0.2 && sg["CZ9-LP"] === 0.4 && sg["CZ9-FW"] === 0 && sg["CZ9-LO"] === 0 && sg["CZ9-GD"] === 0,
+  const pc = (id) => sg[id] && sg[id].pct;
+  ok(pc("CZ9-ON") === 0 && pc("CZ9-PO") === 0.2 && pc("CZ9-LA") === 0.2 && pc("CZ9-LP") === 0.4 && pc("CZ9-FW") === 0 && pc("CZ9-LO") === 0 && pc("CZ9-GD") === 0,
     "off the record: on time at the Set Price 0, 20% over 20%, ten days late 20%, both 40%, two orders only 0, under the Set Price 0, twelve on time 0: " + JSON.stringify(sg["CZ9-ON"] === undefined ? sg : Object.keys(people).map((id) => [id, sg[id]])));
+  /* and each carries its reason, the engine's few words (suggestWhy), which Counter Admin shows beside the % */
+  ok(sg["CZ9-ON"].why === "" && sg["CZ9-PO"].why === "paid 20% over" && sg["CZ9-LA"].why === "paid very late" && /^paid 20% over, paid (very )?late$/.test(sg["CZ9-LP"].why) && sg["CZ9-GD"].why === ""
+    && E.suggestWhy({ pct: 0.3, paidOver: 0, risk: 0.3 }).join() === "written off" && E.suggestWhy({ pct: 0.1, paidOver: 0.01, risk: 0.1 }).join() === "paid late",
+    "the snapshot's suggestion is {pct, why}: no reason for none, 'paid 20% over', 'paid very late', both together, and 'written off' for a write-off: " + JSON.stringify(Object.keys(people).map((id) => [id, sg[id]])));
   ok((base.partners || []).length > 0 && (base.partners || []).every((id) => (withPeople.lift || {})[id] === "partner" && sg[id] === undefined),
     "a partner is 'partner' in the lift and has no suggestion");
 

@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="f8500c9525fa33fa";
+var SALT_BUILD_ID="2d8f42724dd368d2";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -7652,6 +7652,14 @@ function suggestPct(sig,ratios,S){
   const step=n('step',0.05), pct=Math.min(2,Math.max(0,Math.round((paidOver+risk)/step+1e-9)*step));
   return {pct:+pct.toFixed(2),paidOver:+paidOver.toFixed(4),risk:risk};
 }
+/* THE SUGGESTION'S REASON, in a few words, from what suggestPct returned: 'paid 10% over', 'written off', 'paid very late', 'paid late', joined by a comma.
+   The one place the words are made: the Desk's card and Counter Admin's Their % form both show it. It names no one and no margin. */
+function suggestWhy(sg){
+  const w=[],x=sg||{};
+  if((+x.paidOver||0)>=0.0249)w.push('paid '+Math.round(x.paidOver*100)+'% over');
+  if((+x.risk||0)>=0.3)w.push('written off');else if((+x.risk||0)>=0.2)w.push('paid very late');else if((+x.risk||0)>0)w.push('paid late');
+  return w;
+}
 /* A card is the board's own price for the size, the same function for a stated board and the Set Price: what a customer paid before
    never lowers it (the cap was retired on 27 Sep 2026), and the floor still lifts it, to the first ten above, the only thing that can
    move a card off its board. R and fixed stay in the signature so no caller breaks, and nothing here reads them. */
@@ -7749,7 +7757,7 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
-        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
@@ -8046,7 +8054,7 @@ function pricing(B,R,today,over=null){
     const cards={};
     ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
     let lift=null,suggest=null;
-    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]=g.pct;});}
+    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
     out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
       lift?{lift,suggest}:{});
@@ -17177,9 +17185,7 @@ function driftSay(d){const n=Math.round((+d||0)*100);return n>0?'+'+n+'%':'0%';}
 /* the engine's suggestion in a line: the % and, in a few words, why */
 function suggestSay(sg){
   if(!sg||!(sg.pct>0.0001))return 'No % suggested';
-  const w=[];
-  if(sg.paidOver>=0.0249)w.push('paid '+Math.round(sg.paidOver*100)+'% over');
-  if(sg.risk>=0.3)w.push('written off');else if(sg.risk>=0.2)w.push('paid very late');else if(sg.risk>0)w.push('paid late');
+  const w=PRICING_ENGINE.suggestWhy(sg);
   return 'Suggested '+driftSay(sg.pct)+(w.length?': '+w.join(', '):'');
 }
 /* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. It is made on Counter Admin (a name-free `partner` entry for a code already on the

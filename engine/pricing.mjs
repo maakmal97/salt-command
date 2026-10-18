@@ -588,6 +588,14 @@ function suggestPct(sig,ratios,S){
   const step=n('step',0.05), pct=Math.min(2,Math.max(0,Math.round((paidOver+risk)/step+1e-9)*step));
   return {pct:+pct.toFixed(2),paidOver:+paidOver.toFixed(4),risk:risk};
 }
+/* THE SUGGESTION'S REASON, in a few words, from what suggestPct returned: 'paid 10% over', 'written off', 'paid very late', 'paid late', joined by a comma.
+   The one place the words are made: the Desk's card and Counter Admin's Their % form both show it. It names no one and no margin. */
+function suggestWhy(sg){
+  const w=[],x=sg||{};
+  if((+x.paidOver||0)>=0.0249)w.push('paid '+Math.round(x.paidOver*100)+'% over');
+  if((+x.risk||0)>=0.3)w.push('written off');else if((+x.risk||0)>=0.2)w.push('paid very late');else if((+x.risk||0)>0)w.push('paid late');
+  return w;
+}
 /* A card is the board's own price for the size, the same function for a stated board and the Set Price: what a customer paid before
    never lowers it (the cap was retired on 27 Sep 2026), and the floor still lifts it, to the first ten above, the only thing that can
    move a card off its board. R and fixed stay in the signature so no caller breaks, and nothing here reads them. */
@@ -685,7 +693,7 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
-        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 export default PRICING_ENGINE;
