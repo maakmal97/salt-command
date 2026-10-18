@@ -62,7 +62,7 @@ export const OWNER_JS = `
     'customers.messages':function(){ loadMakerThreads(false); },
     'customers.links':function(){ if(linksRead) drawLinks(); else if(!linksBusy) loadLinks(); },
     'customers.associates':function(){ if(!cards) loadCards(); else drawCards(); },
-    'shop.hours':function(){ loadMakerHours(); },
+    'shop.hours':function(){ loadMakerHours(); loadMakerPoints(); },
     'shop.notice':function(){ loadMakerBulletin(); },
     'shop.practice':function(){ if(sheet) drawTest(); else if(!sheetBusy) loadSheet(); }
   };
@@ -5012,6 +5012,60 @@ export const OWNER_JS = `
   function hoursSaid(where,text,error){
     var mine=document.getElementById(where==='week'?'makerHoursSaved':'makerHoursMessage'), other=document.getElementById(where==='week'?'makerHoursMessage':'makerHoursSaved');
     if(other) other.textContent='';
+    if(!mine) return;
+    if(error) refusal(mine,error); else mine.textContent=text;
+    if(mine.scrollIntoView) mine.scrollIntoView({block:'nearest'});
+  }
+  /* COUNTER BATCH A (18 Oct 2026, his decisions): HIS COLLECTION POINTS, under Shop hours. A point is a code (one capital letter and one
+     or two digits, as A2) and its place, typed as two figures or read off a pasted Maps link on this device; no label and no address. The
+     list is the Counter's own (maker:points), never the Desk's; Ready to collect offers it, and an order keeps its own copy, so a point
+     removed here moves no order already waiting at it. */
+  var makerPoints=null, makerPointsDraft=null;
+  async function loadMakerPoints(){
+    if(placeNow!=='shop') return;
+    try{ makerPoints=await refs('/all/maker/points'); makerPointsDraft=null; drawMakerPoints(); }
+    catch(error){ var s=document.getElementById('makerPointsStatus'); if(s) refusal(s,error); }
+  }
+  function pointPlace(text){
+    var reading=makerGeo.link(text);
+    if(reading&&Number.isFinite(reading.lat)&&Number.isFinite(reading.lng)) return {lat:reading.lat,lng:reading.lng};
+    var two=String(text||'').split(',').map(function(x){ return x.trim(); });
+    if(two.length!==2||!two[0]||!two[1]) return null;
+    var lat=Number(two[0]), lng=Number(two[1]);
+    return Number.isFinite(lat)&&Number.isFinite(lng)?{lat:Math.round(lat*1e5)/1e5,lng:Math.round(lng*1e5)/1e5}:null;
+  }
+  function drawMakerPoints(){
+    var root=document.getElementById('makerPoints'), status=document.getElementById('makerPointsStatus');
+    if(!root||!makerPoints) return;
+    root.textContent='';
+    var list=makerPointsDraft||((makerPoints.points&&makerPoints.points.list)||[]).slice();
+    status.textContent=list.length?list.length+(list.length===1?' point':' points')+'. Ready to collect asks which one.':'No points yet. Ready to collect needs one.';
+    var rows=el('ul','maker-points');
+    list.forEach(function(p,i){
+      var li=el('li','maker-row'); li.appendChild(el('span','maker-point-code','Point '+p.code));
+      li.appendChild(el('span','msg',p.lat.toFixed(5)+', '+p.lng.toFixed(5)));
+      makerButton(li,['Remove','points.remove',p.code],function(){ list.splice(i,1); makerPointsDraft=list; drawMakerPoints(); },false);
+      rows.appendChild(li);
+    });
+    root.appendChild(rows);
+    var add=el('div','maker-fields'), code=makerField(add,['Code','points.code'],'text',''), where=makerField(add,['Place, as two figures or a Maps link','points.place'],'text','');
+    code.setAttribute('maxlength','3'); code.setAttribute('autocapitalize','characters'); code.setAttribute('spellcheck','false');
+    root.appendChild(add);
+    makerButton(root,['Add','points.add'],function(){
+      var c=String(code.value||'').trim().toUpperCase(), place=pointPlace(where.value);
+      if(!/^[A-Z][0-9]{1,2}$/.test(c)){ pointsSaid('A code is one capital letter and one or two digits, such as A2.'); return; }
+      if(!place){ pointsSaid('Give the place as two figures, latitude then longitude, or paste a Maps link with a point.'); return; }
+      if(list.some(function(p){ return p.code===c; })){ pointsSaid('Point '+c+' is on the list already.'); return; }
+      if(list.length>=20){ pointsSaid('Twenty points at most.'); return; }
+      list.push({code:c,lat:place.lat,lng:place.lng}); makerPointsDraft=list; drawMakerPoints(); pointsSaid('Point '+c+' added. Save to keep it.');
+    },false);
+    makerButton(root,['Save the points','points.save'],function(){
+      return refs('/all/maker/points',{list:list}).then(function(value){ makerPoints=value; makerPointsDraft=null; drawMakerPoints(); pointsSaid('Points saved.'); })
+        .catch(function(error){ pointsSaid(null,error); });
+    },true);
+  }
+  function pointsSaid(text,error){
+    var mine=document.getElementById('makerPointsMessage');
     if(!mine) return;
     if(error) refusal(mine,error); else mine.textContent=text;
     if(mine.scrollIntoView) mine.scrollIntoView({block:'nearest'});

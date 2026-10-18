@@ -271,6 +271,11 @@ export async function examplePaynum(env, u) {
   return numbersOf({ v: 1, accounts: (fix && fix.paynum) || null });
 }
 
+/** COUNTER BATCH A (18 Oct 2026): THE TEST ACCOUNTS' COLLECTION POINT, invented and never one of his: "Z9", on a public square.
+ *  Counter Admin offers it, and only it, at Ready on an example order, and stmt/maker.js resolves an example order's point from it,
+ *  so no real point's place is ever written into a fixture. */
+export const EXAMPLE_POINTS = Object.freeze([Object.freeze({ code: "Z9", lat: 3.14786, lng: 101.69369 })]);
+
 /** The fixture's bulletin, for a test account while he has none of his own set. */
 export async function exampleBulletin(env, u) {
   const fix = await fixNow(env, u);

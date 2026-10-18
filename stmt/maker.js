@@ -1,5 +1,6 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose } from "./orders.js";
-import { accountRecord, exampleAccount, isTest, isExample, EXAMPLE_ID, TEST_USERS } from "./testfix.js";
+import { accountRecord, exampleAccount, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
+import { POINTS_KEY, readPoints, validatePoints } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
 
 const OWNER_EMAIL = "maakmal97@icloud.com";
@@ -187,6 +188,22 @@ async function makerHours(request, env, method) {
   return json({ ok: false, error: "Set a weekly schedule, a temporary open/closed override, or clear the override." }, 400);
 }
 
+/* COUNTER BATCH A (18 Oct 2026): HIS COLLECTION POINTS, Counter KV maker:points, as the hours are: written here directly, no Desk
+   hop, one shape a POST (the whole list), checked by validatePoints. The answer carries the test accounts' invented list beside his,
+   which his page offers at Ready on an example order and nowhere else. Removing a code an open order sits at is allowed: the order
+   keeps its own copy. */
+async function makerPoints(request, env, method) {
+  if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
+  if (method === "GET") return json({ ok: true, points: await readPoints(env), examples: EXAMPLE_POINTS });
+  if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const parsed = await bodyOf(request);
+  if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+  const next = validatePoints(parsed.body);
+  if (next.error) return json({ ok: false, error: next.error }, 400);
+  await env.STMT.put(POINTS_KEY, JSON.stringify(next));
+  return json({ ok: true, points: next, examples: EXAMPLE_POINTS });
+}
+
 function internalOperation(path) {
   if (path === "/all/maker/trade-cover") return { kind: "trade-cover" };
   if (path === "/all/maker/trade-reading") return { kind: "trade-reading" };
@@ -197,6 +214,7 @@ function internalOperation(path) {
   const withdrawal = /^\/all\/maker\/queue\/([^/]+)\/withdraw$/.exec(path);
   if (withdrawal) return { kind: "queue-withdraw", id: withdrawal[1] };
   if (path === "/all/maker/hours") return { kind: "hours" };
+  if (path === "/all/maker/points") return { kind: "points" };
   if (path === "/all/maker/inputs") return { kind: "inputs" };
   if (path === "/all/maker/vault") return { kind: "vault" };
   if (path === "/all/maker/vault/addr") return { kind: "vault-addr" };
@@ -271,6 +289,7 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       return json(await deskCall(env, "/_internal/maker/undo", "POST", parsed.body));
     }
     if (op.kind === "hours") return await makerHours(request, env, method);
+    if (op.kind === "points") return await makerPoints(request, env, method);
     /* THE POOL, A GROUP ORDER: his read of every one, his opening of one (a product, a size, a target, a closing day), and his
        Close. Close is the order book's first (each joiner told once), then each joined order is previewed and accepted through
        the Desk, as his own Accept on its card would be; a joined order the Desk will not accept is written on the pool as
