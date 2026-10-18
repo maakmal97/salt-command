@@ -1,26 +1,251 @@
-<!doctype html><html lang=en-GB><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Counter Batch A plan</title>
+<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Counter Batch A plan</title>
 <style>
-:root{--bg:#f4f3fb;--pane:#fff;--ink:#23232e;--dim:#5b5b6e;--line:#dedcef;--or:#ff6a2b;--vi:#6b5cff;--mi:#12b886;--ort:#b3410c;--mit:#0b7a58}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#292a36;--pane:#343543;--ink:#ececf4;--dim:#b9b9cc;--line:#4a4b5e;--ort:#ff9a6b;--mit:#5fe0b4}}
-:root[data-theme=dark]{--bg:#292a36;--pane:#343543;--ink:#ececf4;--dim:#b9b9cc;--line:#4a4b5e;--ort:#ff9a6b;--mit:#5fe0b4}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:900px;margin:0 auto;padding:20px 16px 48px}h1{font-size:1.6rem;margin:0 0 4px;line-height:1.2}h1 span{color:var(--ort)}
-h2{font-size:1.25rem;margin:40px 0 8px;padding:8px 12px;background:var(--vi);color:#fff;border-radius:12px}
-h3{font-size:1.05rem;margin:20px 0 8px;padding-left:10px;border-left:6px solid var(--or)}p{margin:6px 0}.dim{color:var(--dim)}
-.hero{background:var(--pane);border:2px solid var(--vi);border-radius:16px;padding:14px 18px;margin:14px 0}
-.f{background:var(--pane);border:1px solid var(--line);border-left:6px solid var(--or);border-radius:12px;padding:12px 14px;margin:10px 0}.f.m{border-left-color:var(--vi)}.f.l{border-left-color:var(--mi)}
-ul,ol{margin:6px 0;padding-left:20px}li{margin:3px 0}code{font-size:.88em;overflow-wrap:anywhere}a{color:var(--vi)}
-.tw{overflow-x:auto;background:var(--pane);border-radius:12px;border:1px solid var(--line)}table{border-collapse:collapse;width:100%;min-width:600px;font-size:.88rem}
-th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}thead th{background:var(--or);color:#2b0e00;font-size:.8rem}
-.t{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.75rem;font-weight:600;white-space:nowrap}.t.d{background:var(--mi);color:#04281c}.t.s{background:var(--or);color:#2b0e00}.t.x{background:var(--vi);color:#fff}
-</style><main>
-<h1>Counter Batch A: build plan <span>18 Oct 2026</span></h1>
-<p class=dim>Plan only: nothing is built, bumped or pushed. Source: the Batch A canvas (<a href="https://claude.ai/artifact/BcXJxjS6WK4Pn7qB4RFHDR">mockup</a>) and his decisions of 18 Oct 2026. Planned from <code>origin/master</code> at <code>bf00ee0c</code> (v1163). Figures in the mockup are illustrative.</p>
+:root{--base:#f0f2fc;--glass:#ffffff;--glass-2:#f5f6fe;--glass-solid:#ffffff;--brd:#dcdde6;--brd-2:#c1c3d1;--well:#eeeffa;--veil:rgba(255,255,255,.86);--menu:#ffffff;--fill-1:#f4f4fc;--fill-2:#ebecf7;--hair:#dfe1e9;--edge:transparent;--bf:none;--sh:0 1px 2px rgba(30,20,60,.05),0 14px 30px -16px rgba(30,20,60,.2);--tip:#ffffff;--ink:#181928;--ink-2:#525466;--ink-3:#7d7f8f;--page:#f0f2fc;--lead:#b23e00;--counter:#5c47ea;--bridge:#007452;--good:#007448;--warn:#855e00;--bad:#b5374d;--lead-2:#8e3000;--lead-v:#ff6a2b;--lead-l:#e95609;--counter-v:#6b5cff;--counter-l:#6b5cff;--bridge-v:#12b886;--bridge-l:#00996e;--field:#ff6a2b;--on-lead:#ffffff;--on-counter:#ffffff;--on-bridge:#ffffff;--on-good:#ffffff;--on-warn:#ffffff;--on-bad:#ffffff;--on-field:#0e0e18;--on-solid:#ffffff;--s1:#f15700;--s2:#00976d;--s3:#0083e0;--s4:#c142ba;--s5:#6f67f8;--s6:#00919d;color-scheme:light;--fs:15px;--lh:1.6;--h1:45.6px;--pad:26px;--gap:24px;--gap-in:14px;--r:26.4px;--r-sm:16.8px;--wrap:1080px;--pill:999px;--tap:40px;--measure:66ch;--t:200ms cubic-bezier(.4,0,.2,1);--bf-veil:blur(14px) saturate(150%);--display:"Bricolage Grotesque",-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;--sans:"DM Sans",-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;--ui:"DM Sans",-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;--mono:"SF Mono",ui-monospace,"Cascadia Code",Menlo,Consolas,monospace;--fig:var(--display);--w-display:750;--track-display:-.035em;--lh-h1:1.0;--w-head:700;--track-head:-.02em;--label-case:none;--label-variant:normal;--label-track:0;--label-size:12.5px;--kicker:var(--lead);--h1-case:none;--h1-colour:var(--ink);--stretch-display:100%;--h2:1.4em;}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--base:#292a36;--glass:#343543;--glass-2:#3d3e4e;--glass-solid:#343543;--brd:#454754;--brd-2:#5b5c6c;--well:#242530;--veil:rgba(41,42,54,0.88);--menu:#353744;--fill-1:#383947;--fill-2:#3f4151;--hair:#454754;--edge:rgba(255,255,255,.05);--bf:none;--sh:0 14px 30px -16px rgba(0,0,0,.6);--tip:#3a3c4a;--ink:#f2f3fa;--ink-2:#bbbdcb;--ink-3:#8f91a2;--page:#292a36;--lead:#ffa483;--counter:#b0b5ff;--bridge:#41d29e;--good:#6ee7a8;--warn:#ffcf7a;--bad:#ffa2aa;--lead-2:#e38b6b;--lead-v:#ff6a2b;--lead-l:#ff6a2b;--counter-v:#6b5cff;--counter-l:#7f7dff;--bridge-v:#12b886;--bridge-l:#12b886;--field:#ff6a2b;--on-lead:#0e0e18;--on-counter:#0e0e18;--on-bridge:#0e0e18;--on-good:#0e0e18;--on-warn:#0e0e18;--on-bad:#0e0e18;--on-field:#0e0e18;--on-solid:#0e0e18;--s1:#ff7036;--s2:#00b381;--s3:#0090f6;--s4:#d051c8;--s5:#7c78ff;--s6:#00a0ad;color-scheme:dark}}:root[data-theme="dark"]{--base:#292a36;--glass:#343543;--glass-2:#3d3e4e;--glass-solid:#343543;--brd:#454754;--brd-2:#5b5c6c;--well:#242530;--veil:rgba(41,42,54,0.88);--menu:#353744;--fill-1:#383947;--fill-2:#3f4151;--hair:#454754;--edge:rgba(255,255,255,.05);--bf:none;--sh:0 14px 30px -16px rgba(0,0,0,.6);--tip:#3a3c4a;--ink:#f2f3fa;--ink-2:#bbbdcb;--ink-3:#8f91a2;--page:#292a36;--lead:#ffa483;--counter:#b0b5ff;--bridge:#41d29e;--good:#6ee7a8;--warn:#ffcf7a;--bad:#ffa2aa;--lead-2:#e38b6b;--lead-v:#ff6a2b;--lead-l:#ff6a2b;--counter-v:#6b5cff;--counter-l:#7f7dff;--bridge-v:#12b886;--bridge-l:#12b886;--field:#ff6a2b;--on-lead:#0e0e18;--on-counter:#0e0e18;--on-bridge:#0e0e18;--on-good:#0e0e18;--on-warn:#0e0e18;--on-bad:#0e0e18;--on-field:#0e0e18;--on-solid:#0e0e18;--s1:#ff7036;--s2:#00b381;--s3:#0090f6;--s4:#d051c8;--s5:#7c78ff;--s6:#00a0ad;color-scheme:dark}@media print{:root{--base:#f0f2fc;--glass:#ffffff;--glass-2:#f5f6fe;--glass-solid:#ffffff;--brd:#dcdde6;--brd-2:#c1c3d1;--well:#eeeffa;--veil:rgba(255,255,255,.86);--menu:#ffffff;--fill-1:#f4f4fc;--fill-2:#ebecf7;--hair:#dfe1e9;--edge:transparent;--bf:none;--sh:0 1px 2px rgba(30,20,60,.05),0 14px 30px -16px rgba(30,20,60,.2);--tip:#ffffff;--ink:#181928;--ink-2:#525466;--ink-3:#7d7f8f;--page:#f0f2fc;--lead:#b23e00;--counter:#5c47ea;--bridge:#007452;--good:#007448;--warn:#855e00;--bad:#b5374d;--lead-2:#8e3000;--lead-v:#ff6a2b;--lead-l:#e95609;--counter-v:#6b5cff;--counter-l:#6b5cff;--bridge-v:#12b886;--bridge-l:#00996e;--field:#ff6a2b;--on-lead:#ffffff;--on-counter:#ffffff;--on-bridge:#ffffff;--on-good:#ffffff;--on-warn:#ffffff;--on-bad:#ffffff;--on-field:#0e0e18;--on-solid:#ffffff;--s1:#f15700;--s2:#00976d;--s3:#0083e0;--s4:#c142ba;--s5:#6f67f8;--s6:#00919d;color-scheme:light}}
+*,*::before,*::after{box-sizing:border-box}
+html{font-synthesis:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--base);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+.hs{position:relative;isolation:isolate;min-height:100vh;font-size:var(--fs);line-height:var(--lh);overflow-wrap:break-word;
+font-kerning:normal;font-variant-ligatures:common-ligatures contextual}
+.hs::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:var(--base)}
+.hs.contained{min-height:0;overflow:hidden}.hs.contained::before,.hs.contained::after,.hs.contained .orb{position:absolute}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:var(--gap) 22px 88px;display:flex;flex-direction:column;gap:var(--gap)}
+:where(.wrap>main){display:flex;flex-direction:column;gap:var(--gap)}  
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-9999px}.skip:focus{left:16px;top:16px;z-index:20}
+a{color:var(--link,var(--counter));text-underline-offset:3px;text-decoration-thickness:1px}
+img,svg,canvas,video{max-width:100%}
+hr{border:0;border-top:1px solid var(--hair);margin:var(--pad) 0}
+::selection{background:color-mix(in srgb,var(--lead) 26%,transparent)}
+.glass,.pane{background:var(--glass-solid);background:var(--glass);-webkit-backdrop-filter:var(--bf);backdrop-filter:var(--bf);
+border:1px solid var(--brd);border-radius:var(--r);box-shadow:var(--sh),inset 0 1px 0 var(--edge);padding:var(--pad);min-width:0}
+.veil{background:var(--veil);-webkit-backdrop-filter:var(--bf-veil);backdrop-filter:var(--bf-veil);border:1px solid var(--brd)}
+.well{background:var(--well);border:1px solid var(--brd);border-radius:var(--r-sm);padding:14px 16px}
+.field{background:var(--field);color:var(--on-field);border-radius:var(--r);padding:var(--pad);border:0}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass,.pane,.veil{background:var(--glass-solid)}}
+@media (prefers-reduced-transparency:reduce){.glass,.pane,.veil{background:var(--glass-solid);-webkit-backdrop-filter:none;backdrop-filter:none}}
+h1,h2,h3,h4,p,ul,ol,dl,dd,figure,blockquote{margin:0}
+h1,h2,h3,h4{font-family:var(--display);text-wrap:balance}
+h1,.giant,.fit{overflow-wrap:anywhere}  
+h1{font-size:clamp(calc(var(--h1)*.62),calc(4.2vw + 14px),var(--h1));line-height:var(--lh-h1);font-weight:var(--w-display);letter-spacing:var(--track-display);
+text-transform:var(--h1-case);font-stretch:var(--stretch-display);color:var(--h1-colour)}
+h1 .g{color:var(--lead);background:linear-gradient(120deg,var(--lead-l),var(--counter-l));
+background:linear-gradient(120deg in oklab,var(--lead-l),var(--counter-l));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+@media (forced-colors:active){h1 .g{-webkit-text-fill-color:currentColor;background:none}}
+h2{font-size:var(--h2);font-weight:var(--w-head);letter-spacing:var(--track-head);line-height:1.2}
+h3{font-size:1.07em;font-weight:var(--w-head);line-height:1.3}
+p,li,dd{text-wrap:pretty}
+.kicker,.label,caption,th,details>summary,.badge,.chip,.tab,.btn,.delta,.legend,.coord,input,select,textarea{font-family:var(--ui)}
+.kicker{display:block;font-size:var(--label-size);text-transform:var(--label-case);font-variant-caps:var(--label-variant);
+letter-spacing:var(--label-track);font-weight:700;color:var(--kicker)}
+.label{display:block;font-size:var(--label-size);text-transform:var(--label-case);font-variant-caps:var(--label-variant);
+letter-spacing:var(--label-track);font-weight:650;color:var(--ink-2)}
+.stand{font-size:1.14em;line-height:1.5;color:var(--ink-2);max-width:60ch}
+.prose{max-width:var(--measure)}
+.prose>*+*,.stack>*+*{margin-top:.85em}
+.prose>h2,.prose>h3{margin-top:1.5em}
+.meta,small{font-size:.87em;color:var(--ink-2)}
+.basis{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink-2);letter-spacing:.2px}
+.num,.fig,td.n,th.n{font-family:var(--fig);font-variant-numeric:tabular-nums lining-nums;white-space:nowrap}
+.unit{font-size:.6em;font-weight:500;color:var(--ink-2);margin-left:.12em;letter-spacing:0}
+:is(.fig,.giant,.num)>.unit:first-child{margin:0 .2em 0 0}
+code,pre,.mono{font-family:var(--mono);font-size:.86em}
+pre{margin:0;white-space:pre-wrap}
+.nocase{text-transform:none;font-variant-caps:normal}
+.c-lead{color:var(--lead)}.c-counter{color:var(--counter)}.c-bridge{color:var(--bridge)}
+.c-good{color:var(--good)}.c-warn{color:var(--warn)}.c-bad{color:var(--bad)}.dim{color:var(--ink-2)}
+.dropcap>p:first-of-type::first-letter{float:left;font-family:var(--display);font-size:3.3em;line-height:.86;
+padding:.07em .09em 0 0;font-weight:600;color:var(--lead)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.row.between{justify-content:space-between}
+.grid{display:grid;gap:var(--gap-in);grid-template-columns:repeat(auto-fit,minmax(min(100%,var(--min,220px)),1fr))}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:12px;font-weight:600;color:var(--ink-2);padding:5px 12px;border-radius:var(--pill);background:var(--fill-1);border:1px solid var(--brd)}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:10px 22px}
+.topbar>.veil{max-width:var(--wrap);margin:0 auto;border-radius:var(--pill);padding:8px 18px;min-height:48px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hero{display:flex;flex-direction:column;gap:12px}
+.hero.dash{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px}
+.hero.dash h1{font-size:calc(var(--h1)*.74)}
+.hero.announce{text-align:center;align-items:center;padding:calc(var(--pad)*2) var(--pad)}
+.hero.announce h1{font-size:calc(var(--h1)*1.3)}
+.bento{display:grid;gap:var(--gap-in);grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-flow:dense}
+.bento>*{grid-column:span 4;min-width:0}
+.bento>.s3{grid-column:span 3}.bento>.s5{grid-column:span 5}.bento>.s6{grid-column:span 6}.bento>.s7{grid-column:span 7}
+.bento>.s8{grid-column:span 8}.bento>.s9{grid-column:span 9}.bento>.s12{grid-column:span 12}.bento>.tall{grid-row:span 2}
+.split{display:grid;gap:var(--gap);grid-template-columns:minmax(0,var(--side,320px)) minmax(0,1fr);align-items:start}
+.split.flip{grid-template-columns:minmax(0,1fr) minmax(0,var(--side,320px))}
+.split>.stick{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px)}
+.editorial{display:grid;gap:var(--gap) calc(var(--gap)*1.5);grid-template-columns:minmax(0,var(--measure)) minmax(0,1fr);align-items:start}
+.editorial>aside{font-family:var(--ui);font-size:.84em;line-height:1.5;color:var(--ink-2);padding-top:10px;border-top:1px solid var(--brd)}
+.pull{font-family:var(--display);font-size:1.55em;line-height:1.28;font-weight:var(--w-head);letter-spacing:-.012em;color:var(--lead);
+padding:14px 0 0;border-top:2px solid var(--lead);max-width:34ch}
+.console{display:grid;gap:var(--gap-in);grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));align-content:start}
+.deck{scroll-snap-type:y mandatory}
+.slide{min-height:100svh;display:flex;flex-direction:column;justify-content:center;gap:var(--gap);scroll-snap-align:start}
+@media (max-width:760px){.bento>*,.bento>[class*=s]{grid-column:span 12}
+.split,.split.flip,.editorial{grid-template-columns:minmax(0,1fr)}.split>.stick{position:static}}
+@media (max-width:600px){:root{--pad:18px;--gap:16px}.wrap,.topbar{padding-left:16px;padding-right:16px}
+.poster{aspect-ratio:var(--ratio-phone,3/5)}}  
+.do{display:flex;flex-direction:column;gap:8px;list-style:none;padding:0}
+.do>li,.do>.act{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:12px 16px;border-radius:var(--r-sm);
+background:var(--fill-1);border:1px solid var(--brd);box-shadow:inset 3px 0 0 var(--rail,var(--warn))}
+.do>.over{--rail:var(--bad)}.do>.due{--rail:var(--warn)}.do>.clear{--rail:var(--good)}
+.do .what{flex:1 1 240px;font-weight:600}.do .who,.do .when{font-size:.87em;color:var(--ink-2)}
+.ask{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.opt{text-align:left;font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.opt small{color:var(--ink-2)}
+.stat{display:flex;flex-direction:column;gap:6px;min-width:0}
+.stat .fig{font-size:calc(var(--fs)*2.1);font-weight:700;letter-spacing:-.02em;line-height:1.08}
+.giant{display:block;font-family:var(--display);font-size:clamp(56px,10vw,132px);line-height:.9;font-weight:var(--w-display);
+letter-spacing:-.045em;font-variant-numeric:tabular-nums lining-nums;font-stretch:var(--stretch-display)}
+.delta{width:fit-content;font-size:12px;font-weight:700;padding:3px 9px;border-radius:var(--pill);font-variant-numeric:tabular-nums;white-space:nowrap}
+.delta:is(.up,.good){color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.delta:is(.down,.bad){color:var(--bad);background:color-mix(in srgb,var(--bad) 16%,transparent)}
+.parts{display:flex;gap:2px;height:12px;border-radius:var(--r-sm);overflow:hidden;background:var(--well)}
+.parts>i{flex:0 0 var(--v,0%);background:var(--s1)}.parts>i:nth-child(2){background:var(--s2)}.parts>i:nth-child(3){background:var(--s3)}.parts>i:nth-child(4){background:var(--s4)}
+.delta.flat{color:var(--ink-2);background:var(--fill-2)}
+.item,.opt{background:var(--fill-1);border:1px solid var(--brd);border-radius:var(--r-sm);padding:16px 18px;transition:background var(--t),border-color var(--t)}
+.item:hover,.opt:hover{background:var(--fill-2);border-color:var(--brd-2)}
+.item.on,.opt.on,.opt[aria-pressed="true"]{background:color-mix(in srgb,var(--lead) 10%,transparent);border-color:color-mix(in srgb,var(--lead) 45%,transparent)}
+.badge{display:inline-block;width:fit-content;font-size:11px;font-weight:700;padding:4px 10px;border-radius:var(--pill);letter-spacing:.4px;color:var(--ink-2);background:var(--fill-2);white-space:nowrap}
+.badge.good,.badge.warn,.badge.bad,.badge.lead,.badge.counter,.badge.bridge{color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent)}
+.badge.good{--c:var(--good);--on:var(--on-good)}.badge.warn{--c:var(--warn);--on:var(--on-warn)}.badge.bad{--c:var(--bad);--on:var(--on-bad)}
+.badge.lead{--c:var(--lead);--on:var(--on-lead)}.badge.counter{--c:var(--counter);--on:var(--on-counter)}.badge.bridge{--c:var(--bridge);--on:var(--on-bridge)}
+.badge.solid{color:var(--on,var(--on-good));background:var(--c,var(--good))}
+.sticker{display:inline-block;width:fit-content;transform:rotate(-2.5deg);font-family:var(--display);font-weight:800;font-size:13px;padding:6px 12px;
+border-radius:10px;background:var(--field);color:var(--on-field);box-shadow:0 2px 0 color-mix(in srgb,var(--ink) 18%,transparent)}
+.call{display:block;padding:15px 19px;border-radius:var(--r-sm);border:1px solid var(--brd);background:var(--fill-1);font-size:.94em}
+.call>b:first-child{display:block;margin-bottom:3px;font-family:var(--ui);font-size:11.5px;text-transform:uppercase;letter-spacing:1px;color:var(--c,var(--ink-2))}
+.call.tip{--c:var(--good)}.call.warn{--c:var(--warn)}.call.risk{--c:var(--bad)}.call.note{--c:var(--counter)}.call.key{--c:var(--lead)}
+.call.tip,.call.warn,.call.risk,.call.note,.call.key{background:color-mix(in srgb,var(--c) 9%,transparent);border-color:color-mix(in srgb,var(--c) 32%,transparent)}
+.prov{outline:1px dashed var(--warn);outline-offset:3px;border-radius:4px}
+.btn{cursor:pointer;font-size:13.5px;font-weight:600;color:var(--ink);padding:10px 16px;border-radius:calc(var(--r-sm) * .9);
+border:1px solid var(--brd-2);background:var(--fill-2);transition:background var(--t),transform var(--t);display:inline-flex;align-items:center;gap:8px;
+min-height:var(--tap);text-decoration:none}
+.btn:hover{background:var(--glass-2);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,var(--lead),var(--lead-2));border-color:transparent;color:var(--on-lead)}
+.tabs{display:inline-flex;flex-wrap:wrap;gap:4px;background:var(--well);border-radius:calc(var(--r-sm) + 6px);padding:4px}
+.tab{border:1px solid transparent;border-radius:var(--pill);padding:7px 15px;font-size:13px;font-weight:600;color:var(--ink-2);background:none;cursor:pointer;min-height:var(--tap)}
+.tab[aria-selected="true"]{background:var(--glass-2);border-color:var(--brd-2);color:var(--ink)}
+details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;min-height:var(--tap);
+font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--ink-2)}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"\203A";color:var(--ink-3);font-size:16px;font-weight:700;transition:transform var(--t)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>summary~*{margin-top:10px}
+dialog{color:var(--ink);padding:0;border:0;background:none;max-width:min(560px,92vw)}
+dialog::backdrop{background:var(--veil);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.steps{display:flex;flex-wrap:wrap;gap:10px;list-style:none;padding:0;counter-reset:s}
+.steps>li{counter-increment:s;display:flex;align-items:center;gap:10px;font-weight:600;color:var(--ink-2)}
+.steps>li::before{content:counter(s);width:40px;height:40px;border-radius:calc(var(--r-sm) * .9);display:grid;place-items:center;
+background:var(--fill-2);border:1px solid var(--brd);font-variant-numeric:tabular-nums}
+.steps>.now{color:var(--ink)}.steps>.now::before{background:var(--lead);color:var(--on-lead);border-color:transparent}
+.steps>.done::before{content:"\2713";background:var(--good);color:var(--on-good);border-color:transparent}
+.progress{position:relative;height:8px;border-radius:var(--pill);background:var(--well);border:1px solid var(--brd)}
+.progress>i{display:block;height:100%;width:var(--v,0%);border-radius:inherit;background:linear-gradient(90deg,var(--lead-v),var(--bridge-v))}
+.progress>b{position:absolute;top:-4px;bottom:-4px;left:var(--at);width:2px;border-radius:1px;background:var(--ink)}
+.timeline{list-style:none;padding:0 0 0 26px;position:relative;display:flex;flex-direction:column;gap:18px}
+.timeline::before{content:"";position:absolute;left:7px;top:6px;bottom:0;width:2px;background:linear-gradient(var(--brd-2),transparent)}
+.timeline>li{position:relative}
+.timeline>li::before{content:"";position:absolute;left:-26px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--lead)}
+.timeline>li.todo::before{background:var(--glass-solid);border:2px solid var(--brd-2)}
+.timeline>li.now::before{box-shadow:0 0 0 5px color-mix(in srgb,var(--lead) 25%,transparent)}
+.compare{display:grid;grid-template-columns:1fr 1fr auto;gap:8px 14px;align-items:center}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translateX(-50%);z-index:9;padding:11px 18px;
+border-radius:var(--r-sm);font-weight:600;background:var(--good);color:var(--on-good)}
+.copy{float:right;font-size:11px;min-height:0;padding:5px 10px}
+.theme-toggle{min-height:32px;padding:5px 12px;font-size:12px}
+.skeleton{background:var(--fill-2);border-radius:var(--r-sm);min-height:1.2em}
+.stale{color:var(--ink-2)}
+.t-lead{background:color-mix(in oklab,var(--lead-v) 13%,var(--glass-solid))}.t-counter{background:color-mix(in oklab,var(--counter-v) 13%,var(--glass-solid))}
+.t-bridge{background:color-mix(in oklab,var(--bridge-v) 14%,var(--glass-solid))}
+.folio{display:flex;flex-wrap:wrap;gap:4px 18px;justify-content:space-between;font-family:var(--ui);font-size:12px;letter-spacing:.05em;
+color:var(--ink-2);padding-bottom:9px;border-bottom:1px solid var(--brd-2)}
+.ticker{display:flex;gap:22px;overflow-x:auto;white-space:nowrap;font-family:var(--fig);font-size:12.5px;font-variant-numeric:tabular-nums;
+padding:9px 2px;border-block:1px solid var(--brd);scrollbar-width:none}
+.ticker b{font-weight:600;color:var(--ink);margin-right:6px}
+.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:7px;vertical-align:1px;
+animation:hs-pulse 2.4s ease-out infinite}
+@keyframes hs-pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--good) 55%,transparent)}70%,100%{box-shadow:0 0 0 7px transparent}}
+.coord{font-size:11.5px;letter-spacing:.06em;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.titleblock{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr));border:1px solid var(--brd-2);font-family:var(--mono);font-size:12px}
+.titleblock>div{padding:7px 10px;border-right:1px solid var(--brd);border-bottom:1px solid var(--brd)}
+.titleblock b{display:block;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.scalebar{display:inline-grid;grid-template-columns:repeat(4,28px);height:6px;border:1px solid var(--ink-2);vertical-align:middle}
+.scalebar>i:nth-child(odd){background:var(--ink-2)}
+.dimension{position:relative;display:inline-block;padding-top:8px;border-top:1px solid var(--counter)}
+.dimension::before,.dimension::after{content:"";position:absolute;top:-5px;width:1px;height:9px;background:var(--counter)}
+.dimension::before{left:0}.dimension::after{right:0}
+.balloon{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:11px;border:1px solid var(--lead);
+font:600 11px/1 var(--mono);color:var(--lead);vertical-align:1px}
+.poster{position:relative;overflow:hidden;overflow:clip;aspect-ratio:var(--ratio,4/5);width:min(100%,var(--poster-w,760px));margin:0 auto;
+border-radius:var(--r);background:var(--field);color:var(--on-field);padding:calc(var(--pad)*1.4);display:flex;flex-direction:column;justify-content:space-between}
+.hs :is(.field,.poster) :is(h1,h2,h3,p,li,.kicker,.label,.meta,.dim,.stand,.basis,small,.fig,.unit,.giant,a){color:var(--on-field);-webkit-text-fill-color:currentColor;background:none}
+.chart{position:relative;height:var(--h,300px)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--ink-2)}
+.legend>span{display:inline-flex;align-items:center;gap:7px}
+.legend>span::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c,var(--s1))}
+.spark{display:inline-block;width:var(--w,104px);height:var(--h,28px);vertical-align:middle}
+.spark svg{display:block;width:100%;height:100%;overflow:visible}
+.heat{display:grid;grid-template-columns:repeat(var(--n,14),minmax(0,var(--cell,26px)));gap:3px}
+.heat>i{aspect-ratio:1;border-radius:3px;background:var(--fill-2)}
+.heat>[data-v="1"]{background:color-mix(in oklab,var(--lead-v) 35%,var(--fill-2))}
+.heat>[data-v="2"]{background:color-mix(in oklab,var(--lead-v) 65%,var(--fill-2))}
+.heat>[data-v="3"]{background:var(--lead-v)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.93em}
+caption{text-align:left;font-size:12px;text-transform:var(--caption-case,uppercase);letter-spacing:1px;font-weight:700;color:var(--ink-2);padding-bottom:8px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.9px;font-weight:700;color:var(--ink-2);text-align:left;padding:9px 12px;border-bottom:1px solid var(--brd-2)}
+tbody th{font-family:inherit;font-size:inherit;text-transform:none;letter-spacing:0;color:var(--ink);font-weight:600;border-bottom:1px solid var(--hair)}
+td{padding:10px 12px;border-bottom:1px solid var(--hair);vertical-align:top}
+td.n,th.n{text-align:right}
+td.hl{color:var(--lead);font-weight:650}
+tbody tr:hover>*{background:var(--fill-1)}
+tfoot td,tfoot th,tr.total>*{font-weight:700;border-top:1px solid var(--brd-2);border-bottom:0}
+:where(a,button,summary,input,select,textarea,[tabindex]):focus-visible{outline:2px solid var(--counter);outline-offset:2px;border-radius:6px}
+:where(a,button,summary,input,select,textarea):focus:not(:focus-visible){outline:none}
+button{font:inherit}
+input,select,textarea{background:var(--well);border:1px solid var(--brd);color:var(--ink);border-radius:var(--r-sm);padding:10px 13px;font-size:inherit;min-height:var(--tap)}
+select{-webkit-appearance:none;appearance:none;padding-right:36px;background-repeat:no-repeat;
+background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);
+background-position:calc(100% - 19px) 55%,calc(100% - 14px) 55%;background-size:5px 5px,5px 5px}
+select[multiple],select[size]:not([size="1"]){background-image:none;padding-right:13px}
+select option,select optgroup{background:var(--menu);color:var(--ink)}  
+input::placeholder,textarea::placeholder{color:var(--ink-2)}
+input:focus,select:focus,textarea:focus{border-color:var(--counter)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@page{margin:18mm 14mm}
+@media print{body{background:#fff}.orb,.topbar,.toast,.copy,.theme-toggle{display:none!important}.hs::before,.hs::after{background:#fff!important;-webkit-mask:none;mask:none}
+.glass,.pane,.item,.well,.call{break-inside:avoid;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+thead{display:table-header-group}.wrap{max-width:none;padding:0}h1 .g{-webkit-text-fill-color:currentColor;background:none}}
+.hs[data-direction=studio]::before{background:radial-gradient(900px 620px at -5% -10%,color-mix(in oklab,var(--lead-v) 20%,transparent),transparent 62%),
+radial-gradient(760px 560px at 105% 0%,color-mix(in oklab,var(--counter-v) 16%,transparent),transparent 60%),var(--base)}
+.hs[data-direction=studio] :is(.glass,.pane){border-color:transparent}
+.hs[data-direction=studio] .mesh{min-height:120px;border-radius:calc(var(--r) - 8px);background:radial-gradient(at 18% 22%,var(--lead-v) 0,transparent 58%),
+radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(at 55% 92%,var(--bridge-v) 0,transparent 60%),var(--fill-2)}
+.hs[data-direction=studio] .stat .fig{font-weight:750;letter-spacing:-.035em;font-size:calc(var(--fs)*2.5)}
+.hs[data-direction=studio] :is(.btn,.tabs){border-radius:var(--pill)}
+.hs[data-direction=studio] :is(.item,.chip){border-color:transparent;background:var(--fill-2)}
+</style>
+</head><body>
+<div class="hs lg" data-direction="studio" data-palette="Sorbet" data-tuning="Sorbet" data-density="comfortable" data-scheme="light+dark">
+<div class="wrap">
+<style>.tablewrap table{min-width:640px}.glass code{overflow-wrap:anywhere}</style>
+<header class=hero>
+<p class=kicker>Salt Counter · 18 Oct 2026</p><h1>Counter Batch A: <span class=g>build plan</span></h1>
+<p class=meta>Plan only: nothing is built, bumped or pushed. Source: the Batch A canvas (<a href="https://claude.ai/artifact/BcXJxjS6WK4Pn7qB4RFHDR">mockup</a>) and his decisions of 18 Oct 2026. Planned from <code>origin/master</code> at <code>bf00ee0c</code> (v1163). Figures in the mockup are illustrative.</p>
 
-<div class=hero><b>In one paragraph.</b> Batch A ships as <b>one salt-command version, one commit per part</b>, after one salt-ds minor release that adds the missing recipes (rule 6: salt-ds first, then propagate to the Desk, the Counter and QR Command). The only part that changes data or routes is the <b>per-order collection point</b> (parts 2 and 3), so the version runs the full suite; every page part is display-only and is checked on its sections plus the gate as it goes. Nothing prices: no part reads or writes a price, floor, drift or row. Twelve Ask items wait on his answer, each with a recommendation.</div>
-
-<h2 id=items>1. What each drawn element becomes</h2>
-<div class=tw><table><thead><tr><th>#<th>Drawn<th>Lives today<th>Becomes<th>Part</tr></thead><tbody>
+<p class=stand>Batch A ships as <b>one salt-command version, one commit per part</b>, after one salt-ds minor release that adds the missing recipes (rule 6: salt-ds first, then propagate to the Desk, the Counter and QR Command). The only part that changes data or routes is the <b>per-order collection point</b> (parts 2 and 3), so the version runs the full suite; every page part is display-only and is checked on its sections plus the gate as it goes. Nothing prices: no part reads or writes a price, floor, drift or row. Twelve Ask items wait on his answer, each with a recommendation.</p>
+<div class=grid>
+<div class=stat><span class=label>Parts</span><span class=fig>13</span><span class=meta>P0 in salt-ds, P1 to P12 in one version</span></div>
+<div class=stat><span class=label>Display-only</span><span class=fig>8</span><span class=meta>sections plus the gate</span></div>
+<div class=stat><span class=label>Full suite</span><span class=fig>2</span><span class=meta>P2 and P3, the collection point</span></div>
+<div class=stat><span class=label>Ask</span><span class=fig>12</span><span class=meta>each with a recommendation</span></div>
+</div></header>
+<main class=stack>
+<section class=glass><h2 id=items>1. What each drawn element becomes</h2>
+<div class=tablewrap><table><caption class=sr-only>What each drawn element becomes</caption><thead><tr><th scope=col>#<th scope=col>Drawn<th scope=col>Lives today<th scope=col>Becomes<th scope=col>Part</tr></thead><tbody>
 <tr><td>1<td>Live order pill (phone); order banner at the top of Home (wide)<td>Nothing; nearest is <code>homeNeeds</code> (page.js ~5680)<td><code>homeLive</code>: the newest open order's state, time and point with its pin; a pill above the App bar under 1080px, a banner card at the head of Home from 1080px<td>P9</tr>
 <tr><td>2<td>Order detail hero band, short reference<td><code>oHead</code> (~4504)<td><code>oBand</code>: reference (<code>orderRef</code>), state as the heading, one sentence of when, mark and size, point and pin<td>P7</tr>
 <tr><td>3<td>Stepper with drawn marks and times<td><code>oSteps</code>, <code>salt-steps</code>, no times (~4516)<td>Marks per step (receipt, tick, box, bag or van), time off <code>o.at</code> and <code>o.history[].at</code>, Next on the step to come<td>P7</tr>
@@ -38,9 +263,8 @@ th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px soli
 <tr><td>new<td>Rail with "Salt Counter" over it<td><code>placesRail()</code> (~1467), no title<td><code>salt-title</code> over the rail from 1080px; "Signed in as" with the username in the rail's brand slot<td>P6</tr>
 <tr><td>pt<td>Collection point, code and pin<td>Nothing<td>Section 3 below<td>P2, P3</tr>
 </tbody></table></div>
-<p class=dim>Not in Batch A: Order again (item 4, Batch B; <code>homeAgain</code> stays as it is), "Paid on time" (Ask 8), the order note in Details (Ask 9). To pay now, the overdue gate (D9, V5), Needs you, Coming up, the rating card, the pool card and the bell keep their places at the head of Home; the mockup leaves them out only because its figures are illustrative (Ask 11).</p>
-
-<h2 id=point>2. The collection point, end to end</h2>
+<p class=meta>Not in Batch A: Order again (item 4, Batch B; <code>homeAgain</code> stays as it is), "Paid on time" (Ask 8), the order note in Details (Ask 9). To pay now, the overdue gate (D9, V5), Needs you, Coming up, the rating card, the pool card and the bell keep their places at the head of Home; the mockup leaves them out only because its figures are illustrative (Ask 11).</p></section>
+<section class=glass><h2 id=point>2. The collection point, end to end</h2>
 <p>His decision: the point is set <b>per order at Ready</b> on Counter Admin, read by the Desk, and shown to the customer as a code ("Point A2") with a pin that opens the maps app. Ready today takes only <code>status</code> and <code>mode</code>, travels Counter Admin, then <code>stmt/maker.js</code>, then the Desk Worker, then the Counter's <code>/desk/orders</code>, then the order book. The point rides the same road.</p>
 
 <h3>2.1 The points list (part 2)</h3>
@@ -74,51 +298,49 @@ th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px soli
 </ul>
 
 <h3>2.4 Test accounts</h3>
-<p><code>FEATURES</code> gains "ready at a collection point" and "collection point changed"; <code>build()</code> gains two example orders at Ready to collect on <code>0000-0000</code> (point "Z9", invented coordinates on a public landmark, never one of his points), one after a Change point; <code>FIX_VERSION</code> 9 to 10. A tap on an example order answers as a customer's would (Ready, Change point) through the fixture only.</p>
+<p><code>FEATURES</code> gains "ready at a collection point" and "collection point changed"; <code>build()</code> gains two example orders at Ready to collect on <code>0000-0000</code> (point "Z9", invented coordinates on a public landmark, never one of his points), one after a Change point; <code>FIX_VERSION</code> 9 to 10. A tap on an example order answers as a customer's would (Ready, Change point) through the fixture only.</p></section>
+<section class=glass><h2 id=parts>3. Parts, in landing order</h2>
+<p class=meta><span class="badge good">display</span> = display-only: its sections plus the gate as it goes (his yes of 18 Oct 2026). <span class="badge warn">full</span> = changes a route or data: full suite. <span class="badge lead">ds</span> = salt-ds repo. Every new assertion is proved red by its own mutation (<code>tools/section.mjs --mutations</code>) before its green counts. The version runs the full suite once on the unbumped tree before the number is taken, because parts 2 and 3 are not display-only.</p>
 
-<h2 id=parts>3. Parts, in landing order</h2>
-<p class=dim><span class="t d">display</span> = display-only: its sections plus the gate as it goes (his yes of 18 Oct 2026). <span class="t s">full</span> = changes a route or data: full suite. <span class="t x">ds</span> = salt-ds repo. Every new assertion is proved red by its own mutation (<code>tools/section.mjs --mutations</code>) before its green counts. The version runs the full suite once on the unbumped tree before the number is taken, because parts 2 and 3 are not display-only.</p>
-
-<div class="f m"><b>P0 <span class="t x">ds</span> salt-ds 1.7.0: the missing recipes.</b>
+<div class="item t-counter"><b>P0 <span class="badge lead">ds</span> salt-ds 1.7.0: the missing recipes.</b>
 <ul><li>New in <code>src/styles.css</code> (Night and Tide) and <code>src/tokens.ts</code>: <code>salt-status__glyph</code>; <code>salt-steps__mark</code>, <code>__time</code>, step states done, now and next; <code>salt-notice</code> (lines, <code>__pause</code> 44px, rotation by class, every line shown and the pause hidden under <code>prefers-reduced-motion: reduce</code>); <code>salt-ledger__sub</code> and <code>salt-ledger__row--due</code>; <code>salt-band</code>; <code>salt-empty</code>; <code>salt-glass-card--link</code> (focus ring; no lift under reduced motion); <code>salt-pin</code> (44px round link); <code>salt-glance</code>. No new colour unless contrast needs one.</li>
 <li>Checks: <code>npm run contrast</code> green in both themes; version bump; PR and merge (push on green). Then <code>npm run propagate -- --salt-command &lt;wt&gt; --qr-command &lt;wt&gt;</code>; QR Command takes the additive CSS and changes nothing it draws.</li></ul></div>
 
-<div class=f><b>P1 <span class="t d">display</span> Design pulled into salt-command.</b> <code>design/salt-ds.css</code> (<code>designsync --pull</code>, <code>--sync</code>); <code>tools/stmt-style.mjs</code> <code>RECIPE_HEADS</code> gains Root, Brand title and the new heads; <code>stmt/statement-css.js</code> (<code>--sync</code>); build.
+<div class=item><b>P1 <span class="badge good">display</span> Design pulled into salt-command.</b> <code>design/salt-ds.css</code> (<code>designsync --pull</code>, <code>--sync</code>); <code>tools/stmt-style.mjs</code> <code>RECIPE_HEADS</code> gains Root, Brand title and the new heads; <code>stmt/statement-css.js</code> (<code>--sync</code>); build.
 <br>Asserts: <i>every new head is carried once and nothing restated</i> (extends <code>test/counter-page-css.mjs</code>); <i>designsync --drift ok</i>. Sections: Counter page CSS, two themes, Desk design sync; gate.</div>
 
-<div class=f><b>P2 <span class="t s">full</span> The points list.</b> Files in 2.1.
+<div class=item><b>P2 <span class="badge warn">full</span> The points list.</b> Files in 2.1.
 <br>Asserts: <i>validatePoints refuses a roster-shaped code, a label, 21 points, a point outside Malaysia</i>; <i>/all/maker/points refuses without the verified owner</i>; <i>the public desk and the master carry no points key or coordinates</i>; <i>the Admin card draws for the test accounts from examplePoints only</i>.</div>
 
-<div class=f><b>P3 <span class="t s">full</span> Ready carries the point; Change point; the Desk reads it.</b> Files: <code>stmt/owner.js</code>, <code>stmt/maker.js</code>, <code>src/maker.js</code>, <code>src/orders.js</code>, <code>src/worker.js</code> (relay only; no new action), <code>stmt/points.js</code> (<code>resolvePoint</code>), <code>stmt/worker.js</code>, <code>stmt/orderbook.js</code>, <code>stmt/orders.js</code>, <code>stmt/push.js</code> (kind list only), <code>stmt/sw.js</code>, <code>stmt/words.js</code>, <code>tools/testfix.mjs</code>, <code>stmt/testfix.js</code>, <code>master/salt_command.html</code> (3b: the Desk's order line), then build. Fable reviews this part before it lands.
+<div class=item><b>P3 <span class="badge warn">full</span> Ready carries the point; Change point; the Desk reads it.</b> Files: <code>stmt/owner.js</code>, <code>stmt/maker.js</code>, <code>src/maker.js</code>, <code>src/orders.js</code>, <code>src/worker.js</code> (relay only; no new action), <code>stmt/points.js</code> (<code>resolvePoint</code>), <code>stmt/worker.js</code>, <code>stmt/orderbook.js</code>, <code>stmt/orders.js</code>, <code>stmt/push.js</code> (kind list only), <code>stmt/sw.js</code>, <code>stmt/words.js</code>, <code>tools/testfix.mjs</code>, <code>stmt/testfix.js</code>, <code>master/salt_command.html</code> (3b: the Desk's order line), then build. Fable reviews this part before it lands.
 <br>Asserts: <i>collect Ready without a point is refused at maker, Desk and order book</i>; <i>a point on a delivery is refused</i>; <i>an unknown code is refused</i>; <i>a retry with the same rid lands once and ignores a new pointAt</i>; <i>a retry of a landed Ready after its code is removed answers again, not 400</i>; <i>the same rid with another code is 409</i>; <i>an example order resolves its point from examplePoints and keeps pointAt out of the stored request</i>; <i>editing A2 after Ready moves no order</i>; <i>a part handover leaves point and pointAt untouched</i>; <i>customerView carries pointAt only at Ready to collect with goods still to hand over, never after, and not on an order reopened by a fix undo or an amendment that leaves only money owing</i>; <i>none of the five Desk roads (allOrders, both ordersOwing, replaceOrder, deskMove) carries pointAt</i>; <i>a Change point history line carries the code and no coordinates</i>; <i>no ledger entry or note carries the point</i>; <i>Change point is refused once no goods are left to hand over</i>; <i>point beside Decline or Cancel is refused</i>; <i>point-moved wakes with fixed words and no code</i>; <i>the fixture cases exist for both FEATURES lines</i>.</div>
 
-<div class=f><b>P4 <span class="t d">display</span> A glyph on every state chip.</b> <code>stmt/page.js</code> (<code>stateChip</code>, glyph map), <code>stmt/owner.js</code> where it draws the same chip.
+<div class=item><b>P4 <span class="badge good">display</span> A glyph on every state chip.</b> <code>stmt/page.js</code> (<code>stateChip</code>, glyph map), <code>stmt/owner.js</code> where it draws the same chip.
 <br>Asserts: <i>every state word maps to exactly one glyph</i>; <i>the glyph is aria-hidden and the word unchanged</i> (pins "One word per state", <code>test/counter-state-words.mjs</code>).</div>
 
-<div class=f><b>P5 <span class="t d">display</span> Orders: the card, the tabs, the columns, the empty states.</b> <code>stmt/page.js</code> (<code>oRow</code>, <code>oBuckets</code>, <code>oList</code>, new <code>oTabs</code>, <code>oEmpty</code>, PAGE_CSS from 860px), <code>stmt/words.js</code> (<code>ord.tab.*</code>, <code>ord.empty.*</code>).
+<div class=item><b>P5 <span class="badge good">display</span> Orders: the card, the tabs, the columns, the empty states.</b> <code>stmt/page.js</code> (<code>oRow</code>, <code>oBuckets</code>, <code>oList</code>, new <code>oTabs</code>, <code>oEmpty</code>, PAGE_CSS from 860px), <code>stmt/words.js</code> (<code>ord.tab.*</code>, <code>ord.empty.*</code>).
 <br>Asserts: <i>All counts every order; Open, To pay and Done partition as defined (Done = Complete, Declined, Cancelled; To pay = oOwes)</i>; <i>the tab row is one line at 320px with 44px pills</i>; <i>from 860px two columns and no tab row</i>; <i>the whole card is one link whose name carries date, size, state and owed</i>; <i>each empty state has one action</i>; <i>no product word</i>.</div>
 
-<div class=f><b>P6 <span class="t d">display</span> Wide shell: "Salt Counter" over the rail.</b> <code>stmt/page.js</code> (<code>placesRail</code>, PAGE_CSS 1080px).
+<div class=item><b>P6 <span class="badge good">display</span> Wide shell: "Salt Counter" over the rail.</b> <code>stmt/page.js</code> (<code>placesRail</code>, PAGE_CSS 1080px).
 <br>Asserts: <i>the only brand on the page is "Salt Counter"</i> (extends the brand scan); <i>the rail's brand slot shows the username, never a roster code</i>.</div>
 
-<div class=f><b>P7 <span class="t d">display</span> Order detail: band, stepper, money, Message, Details.</b> <code>stmt/page.js</code> (<code>oBand</code>, <code>oSteps</code>, <code>oMoney</code>, <code>oAct</code>, <code>oDetails</code>, <code>orderRef</code>, <code>pointHref</code>), <code>stmt/words.js</code> (<code>oh.ref</code>, <code>oh.at</code>, <code>pt.*</code>, <code>om.by*</code>, <code>od.*</code>); <code>stmt/owner.js</code> shows the same reference on the order card so a quoted reference finds its order.
+<div class=item><b>P7 <span class="badge good">display</span> Order detail: band, stepper, money, Message, Details.</b> <code>stmt/page.js</code> (<code>oBand</code>, <code>oSteps</code>, <code>oMoney</code>, <code>oAct</code>, <code>oDetails</code>, <code>orderRef</code>, <code>pointHref</code>), <code>stmt/words.js</code> (<code>oh.ref</code>, <code>oh.at</code>, <code>pt.*</code>, <code>om.by*</code>, <code>od.*</code>); <code>stmt/owner.js</code> shows the same reference on the order card so a quoted reference finds its order.
 <br>Asserts: <i>orderRef is stable, 7 symbols from the 30-letter alphabet, never the id or a roster code</i>; <i>the stepper's times come from history and Next sits on the step to come</i>; <i>the pin's href carries the code and coordinates only and is 44px</i>; <i>no pin once collected</i>; <i>every payment line names its way and day</i>; <i>Message shows on every stage</i>; <i>Details carries no note</i>.</div>
 
-<div class=f><b>P8 <span class="t d">display</span> Home: the Today card and the rotating notice.</b> <code>stmt/page.js</code> (<code>noticeCard</code>, <code>bullDraw</code>, new <code>todayCard</code>, rotation timer in the nonce'd script), <code>stmt/words.js</code> (<code>today.*</code>, <code>bull.pause</code>, <code>bull.play</code>); <code>test/verify.mjs</code> sections v732 (26210) and S7 7.5 (41442) rewritten from "still" to "rotates, pauses, stacks"; <code>CLAUDE.md</code> D14 line.
+<div class=item><b>P8 <span class="badge good">display</span> Home: the Today card and the rotating notice.</b> <code>stmt/page.js</code> (<code>noticeCard</code>, <code>bullDraw</code>, new <code>todayCard</code>, rotation timer in the nonce'd script), <code>stmt/words.js</code> (<code>today.*</code>, <code>bull.pause</code>, <code>bull.play</code>); <code>test/verify.mjs</code> sections v732 (26210) and S7 7.5 (41442) rewritten from "still" to "rotates, pauses, stacks"; <code>CLAUDE.md</code> D14 line.
 <br>Asserts: <i>one line shows at a time and the next follows after 6 s</i>; <i>Pause stops it and is 44px with a name</i>; <i>under reduced motion every line shows and no timer runs</i>; <i>the card is not a live region</i>; <i>the open or closed line reads /hours</i>.</div>
 
-<div class=f><b>P9 <span class="t d">display</span> Home: live order, reward meter, This year.</b> <code>stmt/page.js</code> (<code>homeLive</code>, <code>homeReward</code>, <code>homeYear</code>, <code>drawHome</code> order), <code>stmt/words.js</code> (<code>hl.*</code>, <code>hr.*</code>, <code>hy.*</code>).
+<div class=item><b>P9 <span class="badge good">display</span> Home: live order, reward meter, This year.</b> <code>stmt/page.js</code> (<code>homeLive</code>, <code>homeReward</code>, <code>homeYear</code>, <code>drawHome</code> order), <code>stmt/words.js</code> (<code>hl.*</code>, <code>hr.*</code>, <code>hy.*</code>).
 <br>Asserts: <i>the pill shows under 1080px and the banner from 1080px, never both</i>; <i>the pill does not cover the pay foot or the App bar</i>; <i>the reward card draws only for an associate and never names a level</i>; <i>This year adds up to the statement's rows</i>; <i>To pay now and the overdue gate still lead Home</i>; <i>no "monthly" or "By month" anywhere in the words</i>.</div>
 
-<div class=f><b>P10 <span class="t d">display</span> Account: the glance strip.</b> <code>stmt/page.js</code> (<code>acctGlance</code>), <code>stmt/words.js</code>.
+<div class=item><b>P10 <span class="badge good">display</span> Account: the glance strip.</b> <code>stmt/page.js</code> (<code>acctGlance</code>), <code>stmt/words.js</code>.
 <br>Asserts: <i>the strip's owed figure equals To pay now</i>; <i>its link opens that order</i>; <i>nothing in it names a roster code</i>.</div>
 
-<div class=f><b>P11 Docs.</b> <code>docs/STATEMENTS.md</code> (Home order, Orders tabs, the point), <code>docs/DESIGN.md</code> (the new recipes, reduced motion), <code>CLAUDE.md</code> (the point under the Counter rules; D14), <code>MEMORY.md</code>.</div>
+<div class=item><b>P11 Docs.</b> <code>docs/STATEMENTS.md</code> (Home order, Orders tabs, the point), <code>docs/DESIGN.md</code> (the new recipes, reduced motion), <code>CLAUDE.md</code> (the point under the Counter rules; D14), <code>MEMORY.md</code>.</div>
 
-<div class="f l"><b>P12 The version.</b> Queue first (<code>drain.mjs --status</code>, <code>drafts.mjs --list</code> and <code>--approved</code>, a staged <code>_to_fold.json</code>); full suite on the unbumped tree; fetch, bump off origin's tip, changelog, build, gate, push within a minute. The <code>src/</code> and master changes move <code>rev.json</code>, so Actions deploys the Desk and the Counter. After: live <code>/rev</code>, a counter-render pass at 390, 1180 and 1440 in Night and Tide, and the hit test.</div>
-
-<h2 id=rules>4. Checked against the rules</h2>
-<div class=tw><table><thead><tr><th>Rule<th>How Batch A keeps it</tr></thead><tbody>
+<div class="item t-bridge"><b>P12 The version.</b> Queue first (<code>drain.mjs --status</code>, <code>drafts.mjs --list</code> and <code>--approved</code>, a staged <code>_to_fold.json</code>); full suite on the unbumped tree; fetch, bump off origin's tip, changelog, build, gate, push within a minute. The <code>src/</code> and master changes move <code>rev.json</code>, so Actions deploys the Desk and the Counter. After: live <code>/rev</code>, a counter-render pass at 390, 1180 and 1440 in Night and Tide, and the hit test.</div></section>
+<section class=glass><h2 id=rules>4. Checked against the rules</h2>
+<div class=tablewrap><table><caption class=sr-only>Rules and how Batch A keeps them</caption><thead><tr><th scope=col>Rule<th scope=col>How Batch A keeps it</tr></thead><tbody>
 <tr><td>No brand but "Salt Counter"<td>The rail title is the one brand; P6 asserts it.</td></tr>
 <tr><td>Marks only, no product words<td>Every card and the band draw <code>psym</code>/<code>mtile</code>; screen readers hear the shape; P5 and P9 extend the <code>PRODUCT_WORDS</code> scan.</td></tr>
 <tr><td>Never a level<td>The reward card reads <code>reward.left</code> only; P9 asserts no <code>LEVEL_WORDS</code>.</td></tr>
@@ -131,11 +353,10 @@ th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px soli
 <tr><td>Nothing prices<td>No part touches <code>engine/</code>, the board, the floor or a row; the point makes no ledger stage.</td></tr>
 <tr><td>Rule 2 and the leak checks<td>The point is a code; its coordinates are his own, in Counter KV, sent to one customer while their order waits; never in git, the Desk, a note or a banner.</td></tr>
 <tr><td>Every customer feature lands with its case<td>P3 adds both FEATURES lines and cases; display parts reuse existing cases (Ready, paid, cancelled, done).</td></tr>
-</tbody></table></div>
-
-<h2 id=ask>5. Ask</h2>
+</tbody></table></div></section>
+<section class=glass><h2 id=ask>5. Ask</h2>
 <ol>
-<li><b>The notice rotates (reverses D14).</b> Recommended: yes, as decided 18 Oct; the two still-card sections and the D14 line change with it.</li>
+<li><b>The notice rotates (reverses D14).</b> Recommended: yes, as decided 18 Oct; the two still-card sections and the D14 line change with it.</li>
 <li><b>Point coordinates live in Counter KV only, typed or pasted on Counter Admin, and reach a customer only while their order is Ready to collect.</b> Recommended: yes.</li>
 <li><b>Point codes are one letter and one or two digits ("Point A2").</b> Recommended: yes; it cannot collide with a roster code.</li>
 <li><b>The point is a snapshot at Ready; editing A2 later moves no order.</b> Recommended: yes; Change point moves one order on purpose.</li>
@@ -147,8 +368,8 @@ th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px soli
 <li><b>The short reference is derived from the order's id and shown on Counter Admin too.</b> Recommended: yes, so a customer can quote it.</li>
 <li><b>To pay now, the overdue gate, Needs you and Coming up stay above everything on Home.</b> Recommended: yes (D9).</li>
 <li><b>A collect Ready is refused without a point.</b> Recommended: yes; a delivery needs none.</li>
-</ol>
-<h2 id=review>6. Review</h2>
+</ol></section>
+<section class=glass><h2 id=review>6. Review</h2>
 <p>Fable 5.1, read-only, on section 2, P2 and P3, against the code. Nine findings, all applied above:</p>
 <ol>
 <li><b>Blocker:</b> coordinates would reach the Desk on four roads besides the one named; <code>deskOrderView</code> now covers all five (2.3).</li>
@@ -161,5 +382,8 @@ th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px soli
 <li>Nit: the history line carries the code only.</li>
 <li>Nit: where coordinates rest, said in 2.3.</li>
 </ol>
-<p id=recheck>Re-check by the same reviewer: all nine resolved, no new problem in the data path or the route. Two nits from the re-check, applied: <code>point</code> is admitted only beside a collect Ready or alone, never beside Decline or Cancel; Change point needs goods still to hand over, like the customer gate.</p>
+<p id=recheck>Re-check by the same reviewer: all nine resolved, no new problem in the data path or the route. Two nits from the re-check, applied: <code>point</code> is admitted only beside a collect Ready or alone, never beside Decline or Cancel; Change point needs goods still to hand over, like the customer gate.</p></section>
 </main>
+</div>
+</div>
+</body></html>
