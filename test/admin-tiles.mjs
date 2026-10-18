@@ -13,7 +13,6 @@ import { richOwnerPage, byAct, tile, tileGroup, tileValue, tileValues } from "./
 import { landingPage } from "../stmt/page.js";
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const TIERS = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
 
 /* what Record's forms are told, widened so every kind of choice is on offer: a row of each direction, a correction of each kind of value, a second associate */
 function told(j) {
@@ -43,14 +42,8 @@ const GROUPS = [
   ["Gift", "Handover", "record.gift.handover", ["", "collected", "delivered"], ""],
   ["Correct a row", "What to do", "record.amend.kind", ["Correction", "Fulfilment", "Cancellation"], "Correction"],
   ["New customer", "Role", "record.add-id.role", ["customer", "supplier", "reseller", "referral", "downstream", "bucket"], "customer"],
-  ["New customer", "Starting level, salt", "record.add-id.tier", ["", ...TIERS], "Silver"],
   ["New customer", "Starting price drift, salt", "record.add-id.drift", ["", "0.25", "typed"], ""],
   ["Make an associate", "As", "record.appoint.role", ["reseller", "referral"], null],
-  ["Price level", "Book", "record.tier.book", ["salt"], "salt"],
-  ["Price level", "Level", "record.tier.level", ["", ...TIERS, "__bands"], ""],
-  ["Price level", "Small sizes", "record.tier.band-small", TIERS, "Ambassador"],
-  ["Price level", "Mid sizes", "record.tier.band-mid", TIERS, "Ambassador"],
-  ["Price level", "Big sizes", "record.tier.band-big", TIERS, "Ambassador"],
   ["Price drift", "Book", "record.drift.book", ["salt"], "salt"],
   ["Printed sizes", "Book", "record.house.book", ["salt"], "salt"],
   ["Desk reminders", "Hide for", "record.tip.for", ["7", "30", ""], "7"]
@@ -94,11 +87,11 @@ export async function run({ ok, pageWork }) {
     ok(bad.length === 0 && found.length === GROUPS.length,
       "each of the " + GROUPS.length + " few, fixed choices of the forms is a group of tiles in its own form, offering its values in order with the one a select began on chosen (none for the appointment's role), "
         + "and no other group is drawn: " + JSON.stringify(bad) + " " + found.length);
-    const keyed = tileGroup(p.form("New customer"), "Starting level, salt").querySelectorAll("input");
-    ok(same([...keyed].map((r) => r.getAttribute("data-key")), ["salt-none", ...TIERS.map((t) => "salt-" + t)]),
+    const keyed = tileGroup(p.form("New customer"), "Starting price drift, salt").querySelectorAll("input");
+    ok(same([...keyed].map((r) => r.getAttribute("data-key")), ["salt-none", "salt-0.25", "salt-typed"]),
       "a group drawn once for each book keys its tiles by the book first, the empty value 'none': " + [...keyed].map((r) => r.getAttribute("data-key")).join());
     const parties = ["record.trade.party", "record.trade.associate", "record.trade.end-customer", "record.loan.party", "record.gift.party", "record.repay.loan", "record.amend.row",
-      "record.amend.field", "record.revive.row", "record.add-id.parent", "record.appoint.customer", "record.amend-id.party", "record.place.party", "record.tier.customer", "record.drift.customer", "record.tip.tip"];
+      "record.amend.field", "record.revive.row", "record.add-id.parent", "record.appoint.customer", "record.amend-id.party", "record.place.party", "record.drift.customer", "record.tip.tip"];
     const stay = parties.filter((act) => { const c = byAct(p.d, act); return !c || c.tagName !== "SELECT"; });
     ok(stay.length === 0, "a party, a row, a loan, a field or a reminder, a list as long as the book, stays a select: " + JSON.stringify(stay));
     const legends = found.map((g) => g.querySelector("legend")).filter(Boolean);
@@ -113,7 +106,7 @@ export async function run({ ok, pageWork }) {
     const radios = [...p.d.querySelectorAll("#makerInputs fieldset.maker-tiles input")];
     const names = new Map();
     for (const r of radios) { const g = r.closest("fieldset"); names.set(r.name, new Set([...(names.get(r.name) || []), g])); }
-    ok(radios.length > 60 && [...names.values()].every((gs) => gs.size === 1) && radios.every((r) => !!r.name && /^tiles[0-9]+$/.test(r.name)),
+    ok(radios.length > 30 && [...names.values()].every((gs) => gs.size === 1) && radios.every((r) => !!r.name && /^tiles[0-9]+$/.test(r.name)),
       "every group is one radio group of its own, so it is one tab stop and the arrows move the choice: " + radios.length + " tiles in " + names.size + " groups");
     ok(radios.every((r) => !r.disabled && r.getAttribute("tabindex") === null && r.closest("label.salt-option") && r.nextElementSibling && r.nextElementSibling.classList.contains("salt-option__face")
       && (r.nextElementSibling.querySelector(".salt-option__label") || { textContent: "" }).textContent.length + (r.nextElementSibling.querySelector("svg.psym") ? (r.nextElementSibling.querySelector(".sr") || { textContent: "" }).textContent.length : 0) > 0),
@@ -165,11 +158,11 @@ export async function run({ ok, pageWork }) {
     books.fill([{ value: "candy", label: "candy" }, { value: "rice", label: "rice" }]);
     ok(books.value === "candy", "and falls to its first tile when it is not: " + books.value);
     const role = (v) => tile(p.form("New customer"), "Role", v);
-    const level = tileGroup(p.form("New customer"), "Starting level, salt"), drift = tileGroup(p.form("New customer"), "Starting price drift, salt");
+    const drift = tileGroup(p.form("New customer"), "Starting price drift, salt");
     role("supplier");
-    const shut = [level.disabled, drift.disabled, level.querySelector("input").matches(":disabled")];
+    const shut = [drift.disabled, drift.querySelector("input").matches(":disabled")];
     role("customer");
-    ok(same(shut, [true, true, true]) && !level.disabled && !drift.disabled, "a supplier has no starting level or drift, so the groups are shut with every tile in them, and open again for a customer: " + shut.join());
+    ok(same(shut, [true, true]) && !drift.disabled, "a supplier has no starting price drift, so the group is shut with every tile in it, and open again for a customer: " + shut.join());
     drift.value = "nothing";
     ok(drift.value === "" && ![...drift.querySelectorAll("input")].some((r) => r.checked), "a value no tile offers leaves none chosen, as a select left none");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
@@ -289,18 +282,6 @@ export async function run({ ok, pageWork }) {
     }
     p.type(byAct(editor, "record.amend.field"), "party");
     ok(tileValues(editor, "New value") === null && byAct(editor, "record.amend.value").tagName === "SELECT", "a code, a list as long as the book, stays a select in a correction");
-    /* the level of a customer, and the three bands */
-    const tier = p.form("Price level");
-    for (const level of tileValues(tier, "Level").filter((v) => v !== "__bands")) {
-      tile(tier, "Level", level);
-      check("level '" + level + "'", await send("/all/maker/inputs/tier-set", tier, "record.tier.send"), { code: "CX1-ZED", product: "salt", tier: level || null });
-    }
-    tile(tier, "Level", "__bands");
-    tile(tier, "Small sizes", "Gold"); tile(tier, "Mid sizes", "Platinum"); tile(tier, "Big sizes", "Titanium");
-    check("the bands", await send("/all/maker/inputs/tier-set", tier, "record.tier.send"), { tier: { small: "Gold", mid: "Platinum", big: "Titanium" } });
-    const bandsBox = tileGroup(tier, "Small sizes").parentNode;
-    tile(tier, "Level", "");
-    ok(bandsBox.hidden === true, "the bands are shown for 'a level by order size' alone");
     /* a reminder hushed for a time */
     const tip = p.form("Desk reminders");
     for (const days of tileValues(tip, "Hide for")) {

@@ -526,12 +526,12 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 - **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Every shut id (unknown,
   malformed, withdrawn, declined, waiting), and any longer path under `/g/`, answers ONE styled 404
-  page, `shutPage`, the same words for all; a board ends with how to order. **One standing link per tier**, ensured on Salt Account's first
-  read of its links and kept for good; Ambassador is never a guest's; Bronze's old link opens the
-  stranger's board. A standing link reads `tboard:<n>`, never `board:`. **An associate may mint
+  page, `shutPage`, the same words for all; a board ends with how to order. **Every link reads the one `guestboard`, the Set Price**
+  (the levels are gone, 18 Oct 2026); an old record's `tier` or `level` is ignored. **One standing link, for strangers**, ensured on Salt Account's first
+  read of its links and kept for good. **An associate may mint
   their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline
   is its own state, `declined`: shut like a withdrawn link, and Not approved to the associate. A link
-  may instead name its introducer and follow them, recomputed every publish as `gboard:<id>`.
+  may name its introducer, as his note only.
 - **What a customer sees is as fresh as the last publish**: price lists are sealed at publish time. A new input
   to a sealed document that lives outside git calls `wantPublish` at its write road, or the lists go stale.
 

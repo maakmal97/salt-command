@@ -9378,20 +9378,20 @@ await (async () => {
         kp.privateKey, new TextEncoder().encode(h + "." + c))));
     };
 
-    /* the boards, written the way tools/stmt-publish.mjs writes them. 18 Oct 2026: the levels are gone, so a link's board is the Set Price
-       whoever introduced it; two introducers are still needed to tell two links apart by id and by introducer, and they are the first two
-       customers the live book holds a salt card for. Part 3b removes the links. */
-    const { boardList, guestBoard } = await import("../tools/pricelist.mjs");
+    /* the board, written the way tools/stmt-publish.mjs writes it. 18 Oct 2026: the levels are gone, so EVERY link reads the one guest
+       board, the Set Price, whoever introduced it; two introducers are still needed to tell two links apart by id and by introducer,
+       and they are the first two customers the live book holds a salt card for. */
+    const { guestBoard } = await import("../tools/pricelist.mjs");
     const { readBook } = await import("../tools/book.mjs");
     const gbook = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const gpricing = (await readBook()).ledger.PRICING;
     const gIds = Object.keys((gpricing.byProduct.salt || {}).cards || {});
-    const boards = { 1: boardList(1, gbook, gpricing, new Date()), 2: boardList(2, gbook, gpricing, new Date()) };
+    const board = guestBoard(gbook, gpricing, new Date());
     const cheapCode = gIds[0], dearCode = gIds[1];
     const gRoster = [{ code: cheapCode, username: "introone" }, { code: dearCode, username: "introtwo" }];
 
     const gkv = new KV();
-    for (const t of [1, 2]) await gkv.put("board:" + t, JSON.stringify(boards[t]));
+    await gkv.put("guestboard", JSON.stringify(board));
     await gkv.put("roster", JSON.stringify(gRoster));
     const genv = { STMT: gkv, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
     const gq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
@@ -9409,11 +9409,9 @@ await (async () => {
     ok(one && two && one.id !== two.id && one.introducer === "introone" && two.introducer === "introtwo",
       "two links mint with different ids, each naming the customer who is introducing");
     /* AND NO LEVEL IS THE RULE'S: every link serves the Set Price, whoever introduced it, and no product names a level. */
-    const gOne = guestBoard(cheapCode, gbook, gpricing, new Date());
-    const gTwo = guestBoard(dearCode, gbook, gpricing, new Date());
-    ok(gOne.products.length > 0 && Object.values(gOne.levels).every((v) => v == null) && Object.values(gTwo.levels).every((v) => v == null)
-      && JSON.stringify(gOne.products) === JSON.stringify(gTwo.products) && JSON.stringify(gOne.products) === JSON.stringify(boards[2].products),
-      "every link is the Set Price whoever introduced it, the same board a stranger sees, and no product carries a level");
+    ok(board.products.length > 0 && !("introducer" in board) && !("levels" in board)
+      && board.products.every((p) => !("tier" in p) && !("level" in p) && !("fellBack" in p) && !("tierName" in p)),
+      "the guest board is the Set Price for everybody and no product on it carries a level");
     ok((await (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
       headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
       body: JSON.stringify({ introducer: "nobodyhere", label: "x" }) }), genv)).json()).ok === false,
@@ -9434,30 +9432,39 @@ await (async () => {
     ok(one.qr.startsWith("data:image/svg+xml,") && /<rect /.test(svg) && !/stroke/.test(svg),
       "the QR travels as a data URI of RECTANGLES, never a stroked path, which does not decode");
 
-    /* THE LINK'S OWN BOARD, FROM BOTH ENDS. Every figure distinct to the other link must be absent, or
-       a link could be serving the wrong board and still look right on the sizes the two happen to
-       share. v658: the boards are per link and written by the publish, so they are put here the way
-       the publish puts them, under the link's own id. */
-    await gkv.put("gboard:" + one.id, JSON.stringify(gOne));
-    await gkv.put("gboard:" + two.id, JSON.stringify(gTwo));
+    /* EVERY LINK READS THE ONE BOARD, which the publish writes under `guestboard`. */
     const figs = (b) => b.products.flatMap((p) => p.sizes.map((r) => r.price));
     const shown = (html, ns) => ns.every((n) => html.includes(n.toLocaleString("en-MY",
       { minimumFractionDigits: 0, maximumFractionDigits: 2 })));
     const g1 = await stmtWorker.fetch(gq("/g/" + one.id), genv), h1 = await g1.text();
     const h2 = await (await stmtWorker.fetch(gq("/g/" + two.id), genv)).text();
-    ok(g1.status === 200 && figs(gOne).length > 0 && shown(h1, figs(gOne)) && shown(h2, figs(gTwo)),
-      "a link shows every figure of its own board, the Set Price at each size");
-    ok(JSON.stringify(figs(gOne)) === JSON.stringify(figs(gTwo)) && JSON.stringify(figs(gOne)) === JSON.stringify(figs(boards[2])),
-      "and both links, and the board a stranger sees, carry the same figures, since no level is held");
-    /* AND A LINK MINTED SINCE THE LAST PUBLISH HAS NO BOARD OF ITS OWN, so it must fall back to the
-       one every stranger sees rather than to an empty page. */
+    ok(g1.status === 200 && figs(board).length > 0 && shown(h1, figs(board)) && shown(h2, figs(board)),
+      "both links show every figure of the one board, the Set Price at each size");
+    /* AND A LINK MINTED SINCE THE LAST PUBLISH reads the same board with nothing written for it */
     const fresh = await mintLink("introone", "Just minted");
     const hFresh = await (await stmtWorker.fetch(gq("/g/" + fresh.id), genv)).text();
-    ok(shown(hFresh, figs(boards[2])),
-      "a link with no board written yet falls back to the board a stranger sees, never to an empty page");
+    ok(shown(hFresh, figs(board)), "a link minted since the last publish shows the same board, never an empty page");
+    ok(!/the only price for this product/.test(h1), "and no pane says its price is its only one, since no level is held");
 
-    ok(/the only price for this product/.test(h1) === gOne.products.some((p) => p.fellBack),
-      "a one-tier product says its price is its only one rather than implying a discount");
+    /* 18 Oct 2026 (Part 3b): NOTHING READS A LEVEL OR AN OLD BOARD KEY. A record from before carries tier 2, a level and a standing
+       mark, and the store still holds board:1, board:2, tboard:k, gboard:<id> and tiers with other figures: the link serves the Set
+       Price board and none of theirs. A reader of any of those keys, or of a link's level, shows a decoy figure. */
+    const old = { id: "abcd-ab2c", tier: 2, introducer: null, level: "Titanium", standing: true, approved: true,
+      label: "Titanium", made: "2026-09-20T00:00:00.000Z", by: "standing", opens: 0, first: null, last: null, revoked: false };
+    await gkv.put("g:" + old.id, JSON.stringify(old));
+    const decoy = (n) => JSON.stringify({ week: { label: "decoy" }, products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: n }] }] });
+    for (const [k, n] of [["board:1", 7771.11], ["board:2", 7772.22], ["tboard:1", 7773.33], ["tboard:4", 7774.44], ["gboard:" + old.id, 7775.55], ["gboard:" + two.id, 7776.66]])
+      await gkv.put(k, decoy(n));
+    await gkv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+    const hOld = await (await stmtWorker.fetch(gq("/g/" + old.id), genv)).text();
+    ok(shown(hOld, figs(board)) && !/777[1-6]/.test(hOld) && !/decoy/.test(hOld),
+      "a link whose record carries tier 2 and a level serves the Set Price board, and reads no level board, no board:1 or board:2 and no board of its own");
+    const hOne = await (await stmtWorker.fetch(gq("/g/" + two.id), genv)).text();
+    ok(shown(hOne, figs(board)) && !/777[1-6]/.test(hOne), "and a link's old per-link board is read by nobody either");
+    const strip = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const reads = ["stmt/worker.js", "stmt/refs.js", "stmt/owner.js", "stmt/maker.js", "tools/pricelist.mjs", "tools/stmt-publish.mjs"]
+      .filter((f) => /tboard:|board:1|board:2|gboard|\.level\b|"tiers"|\/level\b|accept-all/.test(strip(readFileSync(join(REPO, f), "utf8"))));
+    ok(!reads.length, "no executable line in the Counter or the publisher reads tboard:, board:1, board:2, gboard, a link's level, the tiers key or Accept every suggestion: " + reads.join(", "));
     ok(!/<script/.test(h1) && /script-src 'none'/.test(g1.headers.get("content-security-policy") || ""),
       "the guest page carries no script and forbids it outright");
     ok(!/Statements|Username|Password/.test(h1),
@@ -9487,21 +9494,20 @@ await (async () => {
   /* THE BOARDS A STRANGER OPENS (rewritten 18 Oct 2026: the stated Tier 1 and the levels are gone, so the forced one-stated-end and
      same-size shapes went with them). Salt is a Set Price book and every guest board is that price. */
   {
-    const { boardList: bl, tierBoard: tb } = await import("../tools/pricelist.mjs");
+    const { guestBoard: gb } = await import("../tools/pricelist.mjs");
     const { readBook: rb } = await import("../tools/book.mjs");
     const { boardPage: bp } = await import("../stmt/page.js");
     const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
     const px = (await rb()).ledger.PRICING;
-    const healthy = bl(2, bk, px, new Date());
-    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0)
-      && healthy.products.every((p) => !p.fellBack),
-      "the board a stranger opens prices every size of every book off its Set Price or fixed board and falls back to nothing: "
-      + JSON.stringify(healthy.products.map((p) => [p.product, p.sizes.length, !!p.fellBack])));
+    const healthy = gb(bk, px, new Date());
+    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0),
+      "the board a stranger opens prices every size of every book off its Set Price or fixed board: "
+      + JSON.stringify(healthy.products.map((p) => [p.product, p.sizes.length])));
     /* v785: A BOOK WITH NO COST IS LEFT OFF, forced rather than waited for. */
     const noCost = JSON.parse(JSON.stringify(px));
     const c0 = noCost.byProduct.salt.inputs.cost;
     c0.repl = null; c0.lot = null; c0.quoteRate = 0; c0.freightRate = 0; c0.latest = null;   /* the shape an empty book carries: no latest lot since 05 Oct 2026 */
-    const struck = bl(2, bk, noCost, new Date()), whole = bl(2, bk, px, new Date());
+    const struck = gb(bk, noCost, new Date()), whole = gb(bk, px, new Date());
     ok(whole.products.some((p) => p.product === "salt") && !struck.products.some((p) => p.product === "salt")
       && struck.products.length === whole.products.length - 1,
       "a book whose cost stack is nothing is left off the board and the other books stay: "
@@ -9511,8 +9517,7 @@ await (async () => {
       + JSON.stringify(whole.products.map((p) => [p.product, Math.min(...p.sizes.map((r) => r.price))])));
     /* v787: A GUEST BOARD NAMES NO LEVEL ON ANY BOOK. The DATA: no product on the standing boards or the two live ones carries a name.
        The PAGE: handed a product that does carry one, it draws the fallback note and never the name. */
-    const everyBoard = [1, 2, 3, 4, 5].map((k) => tb(k, bk, px, new Date()))
-      .concat([bl(1, bk, px, new Date()), bl(2, bk, px, new Date())]);
+    const everyBoard = [whole];
     ok(everyBoard.every((b) => b.products.length > 0 && b.products.every((p) => !("tierName" in p))),
       "no book on any board carries a level's name: " + JSON.stringify(everyBoard.map((b) => b.products.map((p) => p.product))));
     const levelWords = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze", "Tier 1", "Tier 2"];
@@ -9626,7 +9631,7 @@ await (async () => {
     return s; };
   const list = PL.priceList("CX0-AA", bookP, setCard(["CX0-AA"]), nowP);
   const saltL = list.products.find(p => p.product === "salt");
-  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && list.soon.length === 0 && saltL && saltL.basis === "card" && saltL.tier === null && saltL.levels === null
+  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && list.soon.length === 0 && saltL && saltL.basis === "card" && !("tier" in saltL) && !("levels" in saltL)
       && !("rate" in saltL) && !("orders" in saltL),
     "the list is stamped with the week and carries both products, salt on its card with no level, no rate and no order count of theirs on it");
   const Cs = PE.costStack(snap.byProduct.salt.inputs.cost), Ps = snap.byProduct.salt.inputs.policy;
@@ -15434,7 +15439,7 @@ await (async () => {
     const book47 = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales: rd47("sales") };
     const deskOn47 = (p) => rd47("(function(){setProd('" + p + "');recompute();var x=pbPrices('CZ9-CD');setProd('salt');recompute();return x;})()");
     const list47 = PL47.priceList("CZ9-CD", book47, snap47, new Date()), tool47 = list47.products.find((p) => p.product === "salt"), desk47 = deskOn47("salt");
-    ok(tool47 && tool47.tier === null && !("rate" in tool47) && JSON.stringify(tool47.sizes.map((r) => r.price)) === JSON.stringify(desk47.map((r) => r.price)),
+    ok(tool47 && !("tier" in tool47) && !("rate" in tool47) && JSON.stringify(tool47.sizes.map((r) => r.price)) === JSON.stringify(desk47.map((r) => r.price)),
       "the desk's printed board and the customer's own page quote the same prices, off the one rule: " + JSON.stringify(desk47.map((r) => r.price)));
     const SET47 = (q) => sb47.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices.slice(-1)[0];
     ok(tool47.sizes.every((r) => r.price >= SET47(r.q) - 0.009) && tool47.sizes.some((r) => r.price > SET47(r.q) + 0.009),
@@ -16921,7 +16926,7 @@ await (async () => {
   const kv = new KV();
   await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
   await kv.put("roster", JSON.stringify([]));
-  await kv.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 150 }] }] }));
+  await kv.put("guestboard", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] }));
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-1", u);
   await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw),
     wrap: await C.wrapKey(pw, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
@@ -17014,7 +17019,7 @@ await (async () => {
   const kv = new KV();
   await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
   await kv.put("roster", JSON.stringify([]));
-  await kv.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 150 }] }] }));
+  await kv.put("guestboard", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] }));
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-13", u);
   const cardDoc = { at: "2026-09-18T00:00:00Z", products: [{ product: "salt", name: "Salt", unit: "unit",
     summary: { bought: 100, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null, lines: [{ date: "2026-09-01", kind: "own", qty: 1, rm: 100 }] }] };
@@ -17351,7 +17356,7 @@ await (async () => {
       + JSON.stringify({ link: l.status, remembered: m.status, password: p.status }));
   } finally { kv.put = realPut; }
 })();
-section("S1 1.34: the Links panel counts the tiers off the list, Bronze's kept link says what it opens, and a withdrawn link is not waiting");
+section("S1 1.34: the Links panel lists the one standing link, an old level link reads as a standing link naming no level, and a withdrawn link is not waiting");
 await (async () => {
   /* 24 SEP 2026 (L36, L37): the panel said "The five, one for each tier" over four tiers and warned "Only 4
      of the five are made" with every link made; Bronze's kept link was captioned "quote Bronze", a level
@@ -17362,7 +17367,6 @@ await (async () => {
   const RF = await import("../stmt/refs.js");
   const { JSDOM } = await import("jsdom");
   const kv = new KV();
-  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
   await kv.put("roster", JSON.stringify([]));
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-34", u);
   await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw),
@@ -17399,11 +17403,13 @@ await (async () => {
     /* ---- every tier's link made: four, and nothing said to be missing ---- */
     const D1 = await panel();
     const heads1 = [...D1.querySelectorAll("#glist .ghead")].map((x) => x.textContent), text1 = D1.getElementById("glist").textContent;
-    ok(D1.querySelectorAll("#glist .glink").length === 4 && heads1.includes("One link per price level") && !/five/i.test(text1) && !/Only \d/.test(text1),
-      "with a link for each of the four tiers the heading counts four off the list and nothing is said to be missing: " + JSON.stringify({ heads1, only: (/Only[^.]*\./.exec(text1) || [""])[0] }));
+    ok(D1.querySelectorAll("#glist .glink").length === 1 && heads1.join() === "Standing link" && !/five|Titanium|Platinum|Gold|Silver|Bronze/i.test(text1) && !/Only \d/.test(text1),
+      "the panel opens on the one standing link, named by no level and with nothing said to be missing: " + JSON.stringify({ heads1, n: D1.querySelectorAll("#glist .glink").length }));
 
     /* ---- Bronze's kept link, and a pending link its associate withdrew ---- */
-    const bronze = await RF.mintRef({ STMT: kv }, { level: "Bronze", label: "Bronze", by: "standing" });
+    /* a link as the store held it before the levels went: a level, a tier and a standing mark, its label the level's name */
+    const bronze = { id: "brnz-m2c3", tier: 2, introducer: null, level: "Bronze", standing: true, approved: true, label: "Bronze", made: "2026-09-01T00:00:00.000Z", by: "standing", opens: 0, first: null, last: null, revoked: false };
+    await kv.put("g:" + bronze.id, JSON.stringify(bronze));
     const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u, password: pw }) })).json()).session;
     const my = (path) => site(path, { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" });
     const gone = (await (await my("/my/refs")).json()).ref.id, still = (await (await my("/my/refs")).json()).ref.id;
@@ -17413,8 +17419,8 @@ await (async () => {
     const groupOf = (id) => { let g = null; for (const n of D2.getElementById("glist").children) { if (n.classList.contains("ghead")) g = n.textContent; if (n === cardOf(id)) return g; } return null; };
     await until(() => cardOf(gone) && cardOf(still) && cardOf(bronze.id));
     const bh4 = cardOf(bronze.id) ? cardOf(bronze.id).querySelector("h4").textContent : "";
-    ok(!/quote Bronze/.test(bh4) && /An old link, kept/.test(bh4),
-      "Bronze's kept link is called an old link, kept, not a level the book no longer has: " + JSON.stringify(bh4));
+    ok(cardOf(bronze.id) && !/Bronze/.test(cardOf(bronze.id).textContent) && /For strangers/.test(bh4),
+      "a link that still carries a level is listed as a standing link and names no level: " + JSON.stringify(bh4));
     ok(groupOf(still) === "Waiting on you" && groupOf(gone) !== "Waiting on you",
       "a pending link its associate withdrew is not waiting on him, while the one still pending is: " + JSON.stringify([groupOf(still), groupOf(gone)]));
     ok(cardOf(gone) && ![...cardOf(gone).querySelectorAll("button")].some((b) => /Approve|Decline/.test(b.textContent))
@@ -17440,7 +17446,9 @@ await (async () => {
   await kv.put("issue", "2026-09-01");
   await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
     accounts: [{ code: "CX0-AA", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
-  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  /* a second link beside the standing one the listing makes */
+  await kv.put("g:shop-m2c3", JSON.stringify({ id: "shop-m2c3", introducer: u, standing: false, approved: true, label: "a shop",
+    made: "2026-09-20T00:00:00.000Z", by: "", opens: 0, first: null, last: null, revoked: false }));
   const TEAM = "maakmal", AUD = "aud-s1-35", KID = "kid-s1-35";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
     publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
@@ -17498,7 +17506,7 @@ await (async () => {
       "and with one that takes it, Copied, with that same link on the clipboard: " + JSON.stringify({ note: note(), copied: clip.got.length }));
     clip.ok = false;
     D.querySelector('button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
-    ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a tier");
+    ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a link");
     const [l1, l2] = [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link");
     l1.click();
     ok(await until(() => l1.textContent !== "Copy link") && l1.textContent === "Copy failed",
@@ -17927,8 +17935,8 @@ await (async () => {
 
     /* the waiting link: Approve on the card moves it, and the card says so where he tapped */
     const lc = card("l:" + lid);
-    ok(/CX1-AS/.test(lc.textContent) && lc.querySelector("select") && btn(lc, "Approve") && btn(lc, "Decline"),
-      "the link's card names the associate by code and carries the tier it quotes, Approve and Decline");
+    ok(/CX1-AS/.test(lc.textContent) && !lc.querySelector("select") && btn(lc, "Approve") && btn(lc, "Decline"),
+      "the link's card names the associate by code, offers no price level to pick, and carries Approve and Decline");
     btn(lc, "Approve").click();
     ok(await until(async () => JSON.parse(await kv.get("g:" + lid)).approved === true) && await until(() => /Approved[.] It opens now/.test((card("l:" + lid) || {}).textContent || ""))
       && await until(() => /^1 to do now . 2 soon/.test(D.getElementById("nCount").textContent)),
@@ -17960,9 +17968,9 @@ await (async () => {
     ok(/Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(nc.textContent) && !btn(nc, "Send, after the update"),
       "an ID with no account says when it is made, offers the guest price list and has no Send at all");
     btn(nc, "Show the guest price list").click();
-    const silver = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"level":"Silver"/.test(v) && /"standing":true/.test(v)));
-    ok(await until(() => nc.querySelector(".glink .gu") && nc.querySelector(".glink .gu").textContent.endsWith("/g/" + silver.id)),
-      "and Show the guest price list draws the standing Silver link on the card");
+    const standingRec = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"standing":true/.test(v)));
+    ok(await until(() => nc.querySelector(".glink .gu") && nc.querySelector(".glink .gu").textContent.endsWith("/g/" + standingRec.id)),
+      "and Show the guest price list draws the standing link on the card");
 
     /* the accounts nobody has been sent */
     const sc = card("s");
@@ -18728,7 +18736,7 @@ await (async () => {
     ok(await until(() => btn("k:" + uM, "Share the link")) && (await ots()) === 2, "and once made the redrawn card offers Share the link, one link made for it, not two");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S9 fix UX-R2: a move on a link that fails, and a tier pinned, are answered on the card tapped, in Needs you and in Links");
+section("S9 fix UX-R2: a move on a link that fails is answered on the card tapped, in Needs you and in Links");
 await (async () => {
   /* Approve, Decline and the tier pin answered a failure only in the page's own line, under every card and off a
      phone's screen, so a tap that failed changed nothing he could see. */
@@ -18786,10 +18794,7 @@ await (async () => {
       && !JSON.parse(await kv.get("g:" + lid)).approved,
       "Approve that never went out says so on the card, which keeps its buttons: " + JSON.stringify(note(card())));
     cut.on = false;
-    const sel = card().querySelector("select");
-    sel.value = "Gold"; sel.dispatchEvent(new win.Event("change", { bubbles: true }));
-    ok(await until(() => /That link now shows the Gold price list[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
-      "a tier pinned on the card is answered on the card: " + JSON.stringify(note(card())));
+    ok(!card().querySelector("select"), "and the card offers no price level to pin");
     /* the same in Links */
     D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     const lcard = () => D.querySelector('#glist [data-link="' + lid + '"]');
@@ -19063,9 +19068,9 @@ await (async () => {
       && JSON.stringify(by(us[0]).seen) === JSON.stringify({ first: "2026-09-02T01:00:00Z", last: "2026-09-20T01:00:00Z", opens: 3, how: "link" })
       && by(us[59]).seen && by(us[59]).seen.opens === 1 && by(us[1]).sent === "2026-09-04T01:00:00Z"
       && by(us[59]).sent === "2026-09-05T01:00:00Z" && by(us[2]).sent === "2026-09-06T01:00:00Z" && by(us[4]).seen === null && by(us[4]).sent === null
-      && by(us[3]).alerts === 1 && one.j.stranger === "Silver" && one.j.desk === null
+      && by(us[3]).alerts === 1 && !("stranger" in one.j) && one.j.desk === null
       && JSON.stringify(by(us[0]).qr) === JSON.stringify(realQr(url0).map((l) => l.join(""))),
-      "the list reads as before across both chunks of keys: seen and sent from the first and the last account, the old-lapse tick, alerts, the stranger's level, the QR: "
+      "the list reads as before across both chunks of keys: seen and sent from the first and the last account, the old-lapse tick, alerts, no level, the QR: "
       + JSON.stringify({ status: one.status, n: A.length, s0: by(us[0]).seen, t59: by(us[59]).sent, t2: by(us[2]).sent, err: A.length ? null : one.j }));
     const count = (log, op) => log.filter((e) => e.op === op).length;
     const perKey = one.log.filter((e) => e.op === "get" && /^(seen|sent):/.test(e.k)).length;
@@ -19074,9 +19079,9 @@ await (async () => {
       "120 keys cost two bulk reads and nothing a key; no tick is listed or rewritten, and the read writes nothing: "
       + JSON.stringify({ ops: one.log.length, bulk: count(one.log, "bulk"), perKey, lists: one.log.filter((e) => e.op === "list").map((e) => e.prefix), writes: count(one.log, "put") + count(one.log, "delete") }));
     const rounds = new Set(one.log.map((e) => e.after)).size;
-    /* eight since 29 Sep 2026: each of the two test accounts' records is read in the first round */
-    ok(rounds === 2 && one.log.filter((e) => e.after === 0).length === 8,
-      "the heads are read at once and the accounts' keys after them: two rounds, eight reads in the first: "
+    /* seven since 18 Oct 2026 (the tier names are no longer read; eight since 29 Sep 2026): each of the two test accounts' records is read in the first round */
+    ok(rounds === 2 && one.log.filter((e) => e.after === 0).length === 7,
+      "the heads are read at once and the accounts' keys after them: two rounds, seven reads in the first: "
       + JSON.stringify({ rounds, first: one.log.filter((e) => e.after === 0).map((e) => e.op + " " + (e.prefix || e.k)) }));
     ok(e1 - e0 === 60 && e2 - e1 === 0 && two.status === 200 && JSON.stringify(two.j.accounts.map((a) => a.qr)) === JSON.stringify(A.map((a) => a.qr)),
       "each account's QR is encoded once an isolate: sixty on the first open, none on the second, and the same codes: "
@@ -19161,7 +19166,7 @@ await (async () => {
     "130 links are read in two chunks of at most 100 keys and all come back: "
     + JSON.stringify({ n: Array.isArray(got130.out) ? got130.out.length : got130.out, bulk: got130.log.filter((e) => e.op === "bulk").map((e) => e.k.length) }));
 })();
-section("S9 fix R2: an ID with no account reads the stranger's level off the sheet, on Needs you and on its Accounts row, whether or not the links have loaded");
+section("S9 fix R2: an ID with no account offers the guest price list on Needs you and on its Accounts row, whether or not the links have loaded");
 await (async () => {
   /* Needs you named the level off /all/refs while stage 14 names it off /all/sheet: two sources, and until the links
      landed (or if they never did) the card said "the stranger's link". The sheet is the one source now, and the
@@ -19198,7 +19203,7 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
-    ok(sj.ok && sj.stranger === "Silver", "the account list names the stranger's level off the book's names: " + JSON.stringify(sj.stranger));
+    ok(sj.ok && !("stranger" in sj), "the account list names no level for a stranger: " + JSON.stringify(Object.keys(sj)));
     /* the links never load: only the sheet does */
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       w.fetch = async (q, o) => { o = o || {};
@@ -19209,7 +19214,7 @@ await (async () => {
     const nc = () => D.querySelector('#nlist [data-need="n:' + uN + '"]');
     ok(await until(() => nc() && /Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(nc().textContent)
       && [...nc().querySelectorAll("button")].some((b) => b.textContent === "Show the guest price list")),
-      "Needs you names the Silver link with only the sheet read: " + (nc() || {}).textContent);
+      "Needs you offers the guest price list with only the sheet read: " + (nc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     ok(await until(() => row(uN) && row(uN).textContent.startsWith("CX3-NO")
@@ -23641,7 +23646,7 @@ await (async () => {
   /* ---- the guest board, as the Worker serves it: lettered marks, and the letter's face in its own styles ---- */
   const RF8 = await import("../stmt/refs.js");
   const genv8 = { STMT: new KV() };
-  await genv8.STMT.put("board:2", JSON.stringify({ week: { label: "28 Sep 2026" },
+  await genv8.STMT.put("guestboard", JSON.stringify({ week: { label: "28 Sep 2026" },
     products: BOOKS8.concat(["spare"]).map((product) => ({ product, unit: "unit", sizes: [{ q: 1, price: 10 }] })) }));
   const g8 = await RF8.mintRef(genv8, { label: "f8" });
   const gr8 = await W8.fetch(new Request("https://k7m3p2.example/g/" + g8.id), genv8), board8 = await gr8.text();
@@ -23687,7 +23692,7 @@ await (async () => {
   const RF = await import("../stmt/refs.js");
   const kv = new KV(), env = { STMT: kv };
   const g = (id, e) => W.fetch(new Request("https://k7m3p2.example/g/" + id), e || env);
-  await kv.put("board:2", JSON.stringify({ week: { label: "21 Sep 2026" },
+  await kv.put("guestboard", JSON.stringify({ week: { label: "21 Sep 2026" },
     products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }, { q: 2.5, price: 350 }] }] }));
   const open = await RF.mintRef(env, { label: "open" });
   const waiting = await RF.mintRef(env, { introducer: "abcd-efgh", by: "abcd-efgh" });
@@ -24273,75 +24278,55 @@ await (async () => {
     process.off("unhandledRejection", onErr); process.off("uncaughtException", onErr);
   }
 })();
-section("v699: a standing link reads its level's board, so minting one between publishes can never be wrong");
+section("v699: a standing link needs no board of its own, so minting one between publishes can never be wrong");
 await (async () => {
-  /* THE HOLE v696 LEFT, ITS OWN SHAPE. The five standing links are minted the first time he opens
-     the Links panel, and their boards were written per link by the publish. So a link minted since
-     the last publish had no board of its own and fell back to board:2, which is the LAST level:
-     four of the five would have quoted Bronze until the next deploy, silently.
-     A STANDING LINK IS A LEVEL, and a level's board does not depend on which link points at it. The
-     five boards are written by the publish under tboard:<level>, and a standing link reads its own
-     level's. Nothing is published per link, so minting one can never be wrong.
-     tboard:, not board:, deliberately: board:2 already means the LAST level, not the second. */
+  /* THE HOLE v696 LEFT, ITS OWN SHAPE. The standing links are minted the first time he opens the Links panel, and their boards were
+     written per link by the publish, so a link minted since the last publish had no board and fell back to another's, silently.
+     18 Oct 2026: THE LEVELS ARE GONE. There is ONE guest board, `guestboard`, and one standing link for strangers; every link,
+     standing, introduced or minted since the publish, reads that board, so nothing is published per link. */
   const stmtW98 = (await import("../stmt/worker.js")).default;
   const R98 = await import("../stmt/refs.js");
-  const NAMES98 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
   const kv98 = new KV(), env98 = { STMT: kv98 };
-  await kv98.put("tiers", JSON.stringify(NAMES98));
-  /* five level boards and the old fallback, each saying plainly which one it is */
-  for (let k = 1; k <= 5; k++) await kv98.put("tboard:" + k, JSON.stringify({ level: k, tierName: NAMES98[k], standing: true,
-    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 100 + k }] }] }));
-  await kv98.put("board:2", JSON.stringify({ level: 5, tierName: "Bronze",
-    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 999 }] }] }));
-
-  const five = await R98.ensureStanding(env98, NAMES98);
-  ok(five.length === 5, "the five are minted, exactly as a first open of the Links panel mints them");
+  await kv98.put("guestboard", JSON.stringify({ week: { label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: 101 }] }] }));
   const open98 = async (id) => (await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + id), env98)).text();
   const priceOf = (html) => { const m = /RM\s*([0-9,]+)/.exec(html.replace(/<[^>]*>/g, " ")); return m ? +m[1].replace(/,/g, "") : null; };
 
-  const served = [];
-  for (const r of five) served.push(priceOf(await open98(r.id)));
-  ok(JSON.stringify(served) === JSON.stringify([101, 102, 103, 104, 105]),
-    "each of the five serves ITS OWN level's board with nothing published under its id: " + JSON.stringify(served));
-  ok(!served.includes(999), "and not one of them falls back to the board a stranger sees, which is what v696 would have done");
-  ok((await kv98.list({ prefix: "gboard:" })).keys.length === 0,
-    "nothing at all is written per standing link: there is no gboard: key in the store");
+  const one = await R98.ensureStanding(env98), again = await R98.ensureStanding(env98);
+  ok(one && one.standing === true && again.id === one.id && (await R98.listRefs(env98)).length === 1
+    && !("level" in one) && !("tier" in one),
+    "the one standing link is minted once, ensured again as the same id, and carries no level or tier");
+  ok(priceOf(await open98(one.id)) === 101, "and it serves the guest board with nothing published under its id");
+  ok((await kv98.list({ prefix: "gboard:" })).keys.length === 0 && (await kv98.list({ prefix: "tboard:" })).keys.length === 0,
+    "nothing at all is written per link: there is no gboard: or tboard: key in the store");
 
-  /* the introducer links of v658 are untouched: theirs DOES depend on who handed it out */
+  /* an old standing record, from the five: it is adopted as the standing link, and none is made over it */
+  const kvOld = new KV(), envOld = { STMT: kvOld };
+  await kvOld.put("guestboard", await kv98.get("guestboard"));
+  const oldRec = { id: "ttnm-m2c3", tier: 2, introducer: null, level: "Titanium", standing: true, approved: true, label: "Titanium",
+    made: "2026-09-18T00:00:00.000Z", by: "standing", opens: 3, first: null, last: null, revoked: false };
+  await kvOld.put("g:" + oldRec.id, JSON.stringify(oldRec));
+  const adopted = await R98.ensureStanding(envOld);
+  ok(adopted.id === oldRec.id && (await R98.listRefs(envOld)).length === 1 && priceOf(await (await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + oldRec.id), envOld)).text()) === 101,
+    "a standing link from the five is adopted as the standing link, none is minted over it, and it opens the one board");
+
+  /* the introducer links of v658 read the same board: it no longer depends on who handed it out */
   const intro98 = await R98.mintRef(env98, { introducer: "abcd-efgh", label: "a shop" });
-  await kv98.put("gboard:" + intro98.id, JSON.stringify({ introducer: "CX0-AA",
-    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 777 }] }] }));
-  ok(priceOf(await open98(intro98.id)) === 777, "a link that names an introducer still reads its own board, because that one does follow them");
+  ok(priceOf(await open98(intro98.id)) === 101 && !("level" in intro98) && !("tier" in intro98) && intro98.standing === false,
+    "a link that names an introducer reads the same board, and carries no level");
   const fresh98 = await R98.mintRef(env98, { introducer: "abcd-efgh", label: "minted since the publish" });
-  ok(priceOf(await open98(fresh98.id)) === 999,
-    "and one minted since the last publish still falls back to the board every stranger sees, which is the cap a guest board cannot pass");
+  ok(priceOf(await open98(fresh98.id)) === 101, "and one minted since the last publish reads it too");
 
-  /* a level whose board has not been written yet, and a store with no tier names at all */
-  await kv98.delete("tboard:3");
-  const gold = five.find((r) => r.level === "Gold");
-  ok(priceOf(await open98(gold.id)) === 999, "a level whose board is missing falls back to the stranger's board rather than serving nothing");
+  /* a store with no board written at all: a page, never a refusal or a throw */
   const kvNo = new KV();
-  for (const r of five) await kvNo.put("g:" + r.id, JSON.stringify(r));
-  await kvNo.put("board:2", await kv98.get("board:2"));
-  /* every level board IS here; what is missing is the names that turn a level into one of them, so
-     serving anything but the stranger's board would mean a level had been guessed at */
-  for (let k = 1; k <= 5; k++) if (await kv98.get("tboard:" + k)) await kvNo.put("tboard:" + k, await kv98.get("tboard:" + k));
-  ok(priceOf(await (await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + five[0].id), { STMT: kvNo })).text()) === 999,
-    "and with no tier names written at all it falls back rather than throwing");
-  ok((await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + five[0].id), { STMT: kvNo })).status === 200,
-    "which is a board, not a refusal");
+  await kvNo.put("g:" + one.id, JSON.stringify(one));
+  ok((await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + one.id), { STMT: kvNo })).status === 200,
+    "with no board written yet a link answers a page and not a refusal");
 
-  /* THE PUBLISH WRITES THE FIVE, AND THE HOURLY RUN RETIRES NOBODY */
+  /* THE PUBLISH WRITES THE ONE BOARD, AND THE HOURLY RUN RETIRES NOBODY */
   const PUBSRC = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
-  /* 23 Sep 2026: one a tier, however many the book names, four since Bronze went */
-  ok(/for \(let k = 1; k < \(\(pricing\.tierNames \|\| \[\]\)\.length \|\| 6\); k\+\+\) \{\n\s+plan\.puts\.push\(\{ key: "tboard:" \+ k, value: JSON\.stringify\(tierBoard\(k, bookNow, pricing, madeAt\)\) \}\);/.test(PUBSRC),
-    "the publish writes one board per level, from the same snapshot the sealed lists are struck from");
-  /* v709: ANY link carrying a level is left to its level's board, not only one of the five, because
-     he may pin a tier on an associate's; and one waiting on him serves nothing, so nothing is
-     written for it either. */
-  ok(/if \(rec && rec\.level\) \{ standing\+\+; continue; \}/.test(PUBSRC)
-    && /if \(rec && rec\.approved === false\) \{ orphans\+\+; continue; \}/.test(PUBSRC),
-    "and writes nothing under the id of a link that carries a level, nor of one still waiting on him");
+  ok(/plan\.puts\.push\(\{ key: "guestboard", value: JSON\.stringify\(guestBoard\(bookNow, pricing, new Date\(\)\)\) \}\);/.test(PUBSRC),
+    "the publish writes the one guest board under guestboard, from the same snapshot the sealed lists are struck from");
   const { planPublish } = await import("../tools/stmt-publish.mjs");
   ok(/const retire = !\(opts && opts\.noRetire\);/.test(PUBSRC) && /if \(r\.records\.length && retire\)/.test(PUBSRC),
     "the retirement is behind a flag the hourly run clears");
@@ -24368,8 +24353,9 @@ await (async () => {
       writeFileSync(join(dir55, "_kv", u + ".json"), JSON.stringify({ u, issued: "2026-09-01", issues: ["2026-09-01"],
         verifier: await C55.makeVerifier(pw), wrap: await C55.wrapKey(pw, ck), env: await C55.encryptWith(ck, JSON.stringify({ statements: [] })) }) + "\n");
     }
-    /* the links as stmt/refs.js mintRef writes them: three standing, one pinned to a level on approval, two following an
-       introducer, one waiting on him, one that does not parse; and a g: key that is not a link */
+    /* the links as the store holds them (older ones carry a tier and a level): three standing, one pinned to a level on approval,
+       two following an introducer, one waiting on him, one that does not parse; and a g: key that is not a link. The publish
+       reads none of them since 18 Oct 2026, and writes no board for one. */
     const link = (id, o) => JSON.stringify(Object.assign({ id, tier: 2, introducer: null, level: null, standing: false, approved: true,
       label: "", made: "2026-09-20T00:00:00.000Z", by: "", opens: 0, first: null, last: null, revoked: false }, o));
     const site0 = () => new Map([
@@ -24401,24 +24387,10 @@ await (async () => {
       }
       throw new Error("the stub does not know " + op);
     };
-    const asRead = (s) => [...s.keys()].filter((k) => /^g:[a-z0-9]{4}-[a-z0-9]{4}$/.test(k))
-      .map((k) => { let r = null; try { r = JSON.parse(s.get(k)); } catch (e) { r = null; } return [k.slice(2), r]; });
-    const want = JSON.stringify(asRead(site0()));
     const gets = (c) => c.filter((x) => x.startsWith("kv key get g:")).length;
     const lists = (c) => c.filter((x) => x.startsWith("kv key list")).length;
     const quietly = (fn) => { const log = console.log, said = []; console.log = (...m) => said.push(m.join(" ")); try { return [fn(), said]; } finally { console.log = log; } };
-
-    /* ---- the links: one list and one bulk get ---- */
-    const cA = [], [gotA] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cA)));
-    ok(JSON.parse(want).length === 8 && JSON.stringify(gotA) === want,
-      "the bulk read hands back every link's record exactly as a get per link reads it, an unreadable one as null: " + (gotA || []).length);
-    ok(cA.join() === "kv key list g:,kv bulk get", "the eight links are read in two spawns, one list and one bulk get, not a get each: " + cA.join());
-    const cB = [], [gotB, saidB] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cB, "fails")));
-    ok(JSON.stringify(gotB) === want && gets(cB) === 8 && saidB.some((l) => /^::warning::the links' bulk read did not answer/.test(l)),
-      "when the bulk get fails, each link is read by a get of its own, the same records, and the log says so: " + gets(cB));
-    const cC = [], [gotC] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cC, "other")));
-    ok(JSON.stringify(gotC) === want && gets(cC) === 8,
-      "and an answer in a shape it does not read is not taken for eight empty links: it reads them one at a time: " + gets(cC));
+    ok(P55.readRefs === undefined, "the publish no longer reads the guest links, since every link reads the one board");
 
     /* ---- the whole publish, driven through main against the stub ---- */
     const run55 = async (argv, run, key, sleep) => {
@@ -24450,14 +24422,13 @@ await (async () => {
 
     /* ---- the hourly run with prices, which is the one that reads the links ---- */
     const sP = site0(), cP = [], saidP = await run55(["--no-retire"], wr55(sP, new Map(), cP), K55);
-    const boards = [...sP.keys()].filter((k) => k.startsWith("gboard:")).sort();
-    const intro = (k) => { try { return JSON.parse(sP.get(k)).introducer; } catch (e) { return null; } };
-    ok(saidP.includes("returned") && boards.join() === "gboard:gaaa-2222,gboard:gccc-2222"
-      && intro("gboard:gaaa-2222") === "CZ9-AAA" && intro("gboard:gccc-2222") === "CZ9-BBB",
-      "the priced hourly run writes a board for each link following an introducer on the roster, and none for a standing, pinned, waiting or unreadable one: "
+    const boards = [...sP.keys()].filter((k) => /^(g|t)?board:|^guestboard$|^tiers$/.test(k)).sort();
+    const gb = (() => { try { return JSON.parse(sP.get("guestboard")); } catch (e) { return null; } })();
+    ok(saidP.includes("returned") && boards.join() === "guestboard" && gb && gb.products.length > 0 && !("introducer" in gb) && !("levels" in gb),
+      "the priced hourly run writes the one guest board and no board per link, per level or per introducer, and no level names: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 2 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 12 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
-      "in twelve spawns, the restock dates among them: one bulk read for links and one for account verification, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 0 && cP.length === 10 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
+      "in ten spawns, the restock dates among them: one bulk read for account verification, no read of the links at all, no list, and each test account's record read for its fixture: " + cP.join());
 
     /* ---- 03 Oct 2026, run 37122717841: the account read-back meets KV's eventual consistency ----
        The store answers the account records' bulk read with what it held BEFORE the put for the first `lag` reads (or
@@ -25759,8 +25730,8 @@ await (async () => {
     const sheetRes = await W143.fetch(new Request("https://k7m3p2.example/all/sheet", { headers: { "cf-access-jwt-assertion": jwt } }), env);
     const sheetJ = await sheetRes.json();
     const wlk = sheetJ.accounts.find((a) => a.code === "CZ9-WLK"), ltr = sheetJ.accounts.find((a) => a.code === "CZ9-LTR");
-    ok(sheetRes.status === 200 && wlk && wlk.account === true && ltr && ltr.account === false && sheetJ.stranger === "Silver",
-      "his list has the walk-in's account, the other code with none, and the stranger's level off the book's names: "
+    ok(sheetRes.status === 200 && wlk && wlk.account === true && ltr && ltr.account === false && !("stranger" in sheetJ),
+      "his list has the walk-in's account, the other code with none, and names no level: "
       + JSON.stringify({ wlk: wlk && wlk.account, ltr: ltr && ltr.account, stranger: sheetJ.stranger }));
     const { landingPage: lp143 } = await import("../stmt/page.js");
     const { JSDOM: JD143 } = await import("jsdom");
@@ -26205,7 +26176,7 @@ await (async () => {
   const broken = await tick8([{ doc: "not json at all" }]);
   ok(broken.sent.length === 0, "a row that will not parse is not read as an open refund, and does not throw");
 })();
-section("v709: an associate mints their own link, it is shut until he approves it, and he may set its tier");
+section("v709: an associate mints their own link, it is shut until he approves it, and he may approve or decline it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "if they want to refer to a customer, they will be able to mint
      their own link, just like how I'd choose a customer and generate the link. It will need to be
@@ -26217,13 +26188,9 @@ await (async () => {
   const stmtW9 = (await import("../stmt/worker.js")).default;
   const R9 = await import("../stmt/refs.js");
   const C9 = await import("../tools/stmt-crypto.mjs");
-  const NAMES9 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
 
   const kv9 = new KV();
-  await kv9.put("tiers", JSON.stringify(NAMES9));
-  await kv9.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 999 }] }] }));
-  for (let k = 1; k <= 5; k++) await kv9.put("tboard:" + k, JSON.stringify({ level: k, tierName: NAMES9[k],
-    products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 100 + k }] }] }));
+  await kv9.put("guestboard", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: 101 }] }] }));
   const mk9 = async (isAssoc) => {
     const u = C9.newUsername(), pw = C9.newPassword(), ck = await C9.contentKey("s9", u);
     const rec = { u, issued: "2026-09-01", verifier: await C9.makeVerifier(pw), wrap: await C9.wrapKey(pw, ck),
@@ -26296,8 +26263,8 @@ await (async () => {
       body ? { method: "POST", body: JSON.stringify(body) } : { method: body === undefined ? "GET" : "POST" })), envAll);
 
     const listed = await (await his("/all/refs")).json();
-    ok(listed.ok && JSON.stringify(listed.tiers) === JSON.stringify(NAMES9),
-      "his listing carries the tier names, so his picker never states what the tiers are called");
+    ok(listed.ok && !("tiers" in listed) && listed.refs.filter((r) => r.standing).length === 1,
+      "his listing carries no tier names, and holds the one standing link");
     const dec = await (await his("/all/refs/" + made.ref.id + "/decline", {})).json();
     /* D13, 24 SEP 2026: DECLINE IS ITS OWN STATE. It wrote approved:false, the pending state itself,
        so the associate read "waiting" for ever; it keeps that (the door stays shut by the one test)
@@ -26308,28 +26275,21 @@ await (async () => {
     const app = await (await his("/all/refs/" + made.ref.id + "/approve", {})).json();
     ok(app.ok && app.ref.approved === true && app.ref.declined === false && (await guest(made.ref.id)).status === 200,
       "and approving it opens it, quoting the board it would have quoted all along");
-    /* THE FLOOR IS NOT A TIER A GUEST MAY BE QUOTED. Ambassador is index 0; pinning it would
-       silently serve the board instead of what he picked. */
-    const floor9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Ambassador" })).json();
-    ok(floor9.ok === false && /not a tier a guest may be quoted/.test(floor9.error || ""),
-      "the floor is refused outright rather than quietly serving the board: " + JSON.stringify(floor9.error));
-    const junk9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Diamond" })).json();
-    ok(junk9.ok === false, "and a tier that is not on this book is refused too");
-    const set9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Gold" })).json();
-    ok(set9.ok && set9.ref.level === "Gold", "a tier he picks is set through his own route");
+    /* THE LEVEL ROUTE IS GONE: a link has no level to set, and a request for one finds no route. */
+    const lvl9 = await his("/all/refs/" + made.ref.id + "/level", { level: "Gold" });
+    ok(lvl9.status === 404 && !("level" in JSON.parse(await kv9.get("g:" + made.ref.id))),
+      "there is no route to pin a level on a link, and none is written: " + lvl9.status);
   } finally { globalThis.fetch = realFetch9; }
 
-  /* ---- the tier he may change, and the floor he may not pick ---- */
+  /* ---- the one board, and the one standing link ---- */
   const priceOf = async (id) => { const h = (await (await guest(id)).text()).replace(/<[^>]*>/g, " ");
     const m = /RM\s*([0-9,]+)/.exec(h); return m ? +m[1].replace(/,/g, "") : null; };
-  ok((await priceOf(made.ref.id)) === 103,
-    "and a tier he pins is read off that level's own board, with nothing published for the link itself");
-  const pinned = JSON.parse(await kv9.get("g:" + made.ref.id));
-  ok(pinned.standing !== true,
-    "a link he pinned a tier on is NOT one of the five: standing stays false, or ensureStanding would adopt it as one he hands to strangers");
-  ok((await R9.ensureStanding(env9, NAMES9)).length === 5
-    && (await R9.listRefs(env9)).filter((r) => r.standing).length === 5,
-    "and the five are still exactly five after an associate has minted and he has pinned a tier");
+  ok((await priceOf(made.ref.id)) === 101, "an approved associate's link opens the one guest board");
+  const approved9 = JSON.parse(await kv9.get("g:" + made.ref.id));
+  ok(approved9.standing !== true && !("level" in approved9) && !("tier" in approved9),
+    "and carries no level, and is NOT the standing link: standing stays false, or ensureStanding would adopt it as the one he hands to strangers");
+  ok((await R9.ensureStanding(env9)).standing === true && (await R9.listRefs(env9)).filter((r) => r.standing).length === 1,
+    "and the standing link is still exactly one after an associate has minted and he has approved");
 
   /* ---- their own, and nobody else's ---- */
   const theirs = await (await my("/my/refs", A9.session)).json();
@@ -49557,7 +49517,7 @@ section("Counter maker revives a cancelled order; only a clean revival, as the o
 await (async () => {
   await (await import("./maker-revive.mjs")).run({ ok });
 })();
-section("Counter maker reward spends book; Accept tier proposals keeps its request id");
+section("Counter maker reward spends book; Record has no Accept every suggestion");
 await (async () => {
   await (await import("./maker-reward-spend.mjs")).run({ ok });
 })();
@@ -50844,9 +50804,9 @@ await (async () => {
     cardOf(doc, "20260929120000-makr");
     cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */
     ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Stock count"
-      && ["Sale or purchase", "Price level", "Loan", "Repayment", "Gift", "Rewards", "New customer", "Change a name or place", "Place on the map"]
+      && ["Sale or purchase", "Price drift", "Loan", "Repayment", "Gift", "Rewards", "New customer", "Change a name or place", "Place on the map"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
-      "Maker exposes the remaining typed Enter and Network actions beside stock, trade and held-tier inputs");
+      "Maker exposes the remaining typed Enter and Network actions beside stock, trade and customer % inputs");
     /* his decision 6 of 11 Oct 2026: the card read its own preview when it was opened; there is no Preview button to press */
     for (let i = 0; i < 100 && !doc.querySelector("[data-accept]"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     ok(/on RM 56\.00 cost/.test(cards[0].textContent) && /RM 44\.00/.test(cards[0].textContent) && /44%/.test(cards[0].textContent)
@@ -50944,9 +50904,8 @@ await (async () => {
       && addRequests[2].body.code === "CX1-AB-R" && addRequests[2].body.kind === "bucket"
       && addRequests[2].body.vault === null,
       "downstream IDs derive under their parent, while a nameless resale bucket sends no vault entry");
-    ok(JSON.stringify(addRequests[0].body.tiers) === '{"salt":"Silver"}' && addRequests[1].body.tiers === null
-      && addRequests[2].body.tiers === null,
-      "Counter Add ID offers a starting tier per tiered book, preselected as the Desk does, and sends none for a downstream or a resale account");
+    ok(addRequests[0].body.tiers === null && addRequests[1].body.tiers === null && addRequests[2].body.tiers === null,
+      "Counter Add ID offers no starting level and sends no tiers unless a starting % is chosen, and none for a downstream or a resale account");
     const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Change a name or place");
     const amendFields = amendId.querySelectorAll("input");
     amendFields[0].value = "Ben"; amendFields[1].value = "Pudu";
@@ -52027,14 +51986,14 @@ await (async () => {
   const snap = pricingSnapshot(w), id13 = Object.keys(snap.byProduct.salt.cards || {})[0];
   const L13 = PL.priceList(id13, bk12, snap, new Date()), s13 = L13.products.find((p) => p.product === "salt");
   const none13 = PL.priceList("CX0-ZZ", bk12, snap, new Date());
-  ok(s13 && s13.basis === "card" && s13.tier === null && JSON.stringify(s13.sizes.map((x) => [x.q, x.price])) === JSON.stringify(snap.byProduct.salt.cards[id13])
+  ok(s13 && s13.basis === "card" && !("tier" in s13) && !("levels" in s13) && JSON.stringify(s13.sizes.map((x) => [x.q, x.price])) === JSON.stringify(snap.byProduct.salt.cards[id13])
     && none13.soon.some((x) => x.product === "salt"),
     "a customer's salt list is their drift card from the desk, size for size, with no level on it, and a code with no card has salt coming: " + JSON.stringify(s13 && s13.sizes.slice(0, 3)));
   /* and a stranger, by any guest or standing link, is quoted the Set Price: a drift book has no level for a link to follow */
   const set13 = JSON.stringify(snap.byProduct.salt.ladder.map((r) => r.prices[r.prices.length - 1]));
   const gs = (b) => JSON.stringify((b.products.find((p) => p.product === "salt") || { sizes: [] }).sizes.map((x) => x.price));
-  ok([PL.boardList(1, bk12, snap, new Date()), PL.tierBoard(1, bk12, snap, new Date()), PL.guestBoard(id13, bk12, snap, new Date())].every((b) => gs(b) === set13),
-    "every guest and standing link quotes salt at the Set Price: " + set13);
+  ok(gs(PL.guestBoard(bk12, snap, new Date())) === set13 && PL.boardList === undefined && PL.tierBoard === undefined,
+    "the one guest board, which every guest and standing link reads, quotes salt at the Set Price: " + set13);
   /* 14. THE DRAFTER AND THE FOLD TAKE A DRIFT ON SALT AND REFUSE A LEVEL THERE */
   const D = await import("../src/drafter.js"), F = await import("../tools/fold.mjs");
   const mir = { sales: [], purchases: [], state: { roster: ["CZ9-DA"], PRODUCTS: { salt: { name: "Salt" } }, TIER_OF: { "CZ9-DA": { salt: 0.2 } } },
@@ -52073,8 +52032,8 @@ await (async () => {
     "a bucket owner's drift reads their whole history, the -R bucket's orders in it, and the bucket answers as its owner: " + JSON.stringify(s16));
   /* 17. HIS PAGE'S GUEST-LINK LEAD NAMES NO LEVEL: the prices follow the introducer, never past the stranger's board */
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(/A guest link opens one price list[.] The prices follow the customer you name[.]/.test(pg17) && !/two levels above/.test(pg17),
-    "the guest-link lead says the prices follow the customer he names, in the glossary's words, and no longer two levels above");
+  ok(/A guest link opens the Set Price list, the same for everybody[.]/.test(pg17) && !/prices follow|two levels above/.test(pg17),
+    "the guest-link lead says every link opens the Set Price list, and no longer that the prices follow the customer he names");
   /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
      The snapshot leaves a drift book out of tierOf and carries its % apart (byProduct.salt.lift, the hand or nought), so no
      reader meets a number where it looks for a level. First the contract over the book as it stands, whoever holds what; then
@@ -52096,7 +52055,7 @@ await (async () => {
   const list18 = s18 && PL.priceList(id18, bk12, s18, new Date()), salt18 = list18 && list18.products.find((p) => p.product === "salt"), oil18 = list18 && list18.products.find((p) => p.product === "oil");
   ok(id18 && s18 && s18.tierOf === undefined && sS18.lift[id18] === 0.7 && d18 === 0.7
     && sS18.cards[id18].length > 5 && sS18.cards[id18].every(([q, x]) => x === E.driftAt(q, C18, sS18.inputs.policy, 0.7).p)
-    && salt18 && salt18.basis === "card" && salt18.tier === null && JSON.stringify(salt18.sizes.map((x) => [x.q, x.price])) === JSON.stringify(sS18.cards[id18])
+    && salt18 && salt18.basis === "card" && !("tier" in salt18) && JSON.stringify(salt18.sizes.map((x) => [x.q, x.price])) === JSON.stringify(sS18.cards[id18])
     && oil18 && oil18.basis === "board",
     "a customer holding a % on salt is carded salt at the Set Price lifted 70%, size for size, with oil on its stated board whatever is held there: " + JSON.stringify({ lift: sS18 && sS18.lift[id18], d: d18, cards: sS18 && sS18.cards[id18].slice(0, 2) }));
   try { w.close(); } catch (e) { /* best effort */ }

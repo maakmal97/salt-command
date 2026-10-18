@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="11c29526dc3da632";
+var SALT_BUILD_ID="5166e86251503a99";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -6995,7 +6995,7 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/(offset|trip-pay|trip-join)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/(offset|trip-pay|trip-join)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))

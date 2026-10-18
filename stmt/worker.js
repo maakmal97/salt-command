@@ -1255,8 +1255,8 @@ function cardQr(url) {
   return q;
 }
 async function ownerSheet(env, origin) {
-  const [sheet, accounts, locks, alerts, desk, names] = await Promise.all([env.STMT.get("sheet", "json"), roster(env),
-    lockedOut(env), alertsOn(env), env.STMT.get(DESK_WAITING, "json"), env.STMT.get("tiers", "json")]);
+  const [sheet, accounts, locks, alerts, desk] = await Promise.all([env.STMT.get("sheet", "json"), roster(env),
+    lockedOut(env), alertsOn(env), env.STMT.get(DESK_WAITING, "json")]);
   const rows = sheet && Array.isArray(sheet.accounts) ? sheet.accounts : [];
   const byUser = new Map(rows.map((a) => [a.username, a]));
   const issue = sheet ? sheet.issue || null : null;
@@ -1294,10 +1294,7 @@ async function ownerSheet(env, origin) {
      and whether an order has moved since that reading (the `touched` mark, which every move writes), for the desk page
      may not have been open since */
   const touched = marks ? marks.touched : null;
-  /* D15: the level a stranger is quoted, the ladder's last (`names`, read with the heads), so the card of an ID still
-     waiting for its account can say which standing link to show. Named by the book through the publish, never here. */
-  const stranger = Array.isArray(names) && names.length ? String(names[names.length - 1]) : null;
-  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out, stranger,
+  return { ok: true, at: sheet ? sheet.at || null : null, issue, month, accounts: out,
     desk: desk ? { n: +desk.n || 0, at: desk.at || null, moved: !!(touched && desk.at && String(touched) > String(desk.at)) } : null };
 }
 
@@ -1340,8 +1337,8 @@ export async function testStatement() {
 function testPrices() {
   const now = new Date(), day = now.toISOString().slice(0, 10);
   return { at: now.toISOString(), week: { monday: day, sunday: day, label: "this week" }, since: day,
-    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "tier", tier: "Silver", levels: 4,
-      rate: null, orders: 0, sizes: [{ q: 1, price: 120 }, { q: 2.5, price: 280 }, { q: 5, price: 540 }] }],
+    products: [{ product: "salt", name: "Salt", unit: "unit", basis: "card",
+      sizes: [{ q: 1, price: 120 }, { q: 2.5, price: 280 }, { q: 5, price: 540 }] }],
     soon: [] };
 }
 /* FOLD 2.7 (26 Sep 2026): THE WRAPS ARE MADE ON HIS PAGE, AND THIS WORKER NEVER DERIVES ABOVE 100,000 ROUNDS.
@@ -1523,33 +1520,22 @@ async function handleRefs(request, env, p, m, origin, who) {
   if (!who) return json({ ok: false, error: "Access required" }, 401);
 
   if (p === "/all/refs") {
-    /* v696, his instruction of 18 Sep 2026: five links, one per tier. They are ENSURED on the
-       listing rather than made on a tap, so the answer to "what are my links" is always exactly
-       five and there is nothing to remember. Idempotent: a level that already has one keeps the id
-       it was given, because an id handed to a stranger must never change what it opens. */
+    /* 18 Oct 2026: the price levels are gone, so there is ONE standing link, for strangers, ENSURED on the listing rather than
+       made on a tap. Idempotent: a standing link already held keeps the id it was given, because an id handed to a
+       stranger must never change what it opens. */
     if (m === "GET") {
-      let names = null;
-      try { names = await env.STMT.get("tiers", "json"); } catch (e) { names = null; }
-      await ensureStanding(env, names);
-      /* the five come back in the LADDER's order, not the order they happened to be minted in:
-         he reads them as a ladder, so they are listed as one. Everything else keeps newest first. */
-      /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) goes after the ladder */
-      const rank = (r) => (r.standing && Array.isArray(names) && names.indexOf(r.level) >= 0) ? names.indexOf(r.level) : 99;
-      const all = (await listRefs(env)).sort((a, b) => rank(a) - rank(b));
-      /* v709: the level names ride with the list, so his picker never states what the tiers are
-         called: the book decides that and this is the one road it travels. */
-      return json({ ok: true, refs: all.map((r) => refOut(origin, r)), tiers: Array.isArray(names) ? names : [] });
+      await ensureStanding(env);
+      const all = await listRefs(env);
+      return json({ ok: true, refs: all.map((r) => refOut(origin, r)) });
     }
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const b = await readJson(request);
     if (!b) return json({ ok: false, error: "send it as application/json" }, 400);
     /* ============ v658, HIS RULE: A LINK NAMES ITS INTRODUCER ============
        It was pinned to tier 1 or tier 2, which were the two boards the desk had. The board is the
-       ladder now, and a guest's level is derived from the customer who handed the link out: two
-       above them where there is room, else one, capped at the last. So what the route takes is the
-       introducer's USERNAME, checked against the roster the publish writes, and the level itself is
-       never typed and never stored: the publish computes it from the introducer's tier at that
-       moment, so a link follows its introducer up. */
+       ladder now, and a guest's level is derived from the customer who handed the link out. 18 Oct 2026: the levels are gone;
+       the introducer is only his note of who handed it out, checked against the roster the publish writes, and the link opens
+       the one guest board. */
     const introducer = String(b.introducer || "").toLowerCase().trim();
     if (!introducer) return json({ ok: false, error: "a link names the customer who is introducing" }, 400);
     let known = false;
@@ -1562,14 +1548,12 @@ async function handleRefs(request, env, p, m, origin, who) {
     if (!rec) return json({ ok: false, error: "could not mint an unused id; try again" }, 500);
     return json({ ok: true, ref: refOut(origin, rec) });
   }
-  const mm = /^\/all\/refs\/([^/]+)\/(revoke|restore|approve|decline|level)$/.exec(p);
+  const mm = /^\/all\/refs\/([^/]+)\/(revoke|restore|approve|decline)$/.exec(p);
   if (!mm) return notFound();
   const id = normRef(mm[1]);
   if (!id) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-  /* v709: his word on a link an associate minted, and the tier he may change on it. A level he
-     does not set leaves it on the v658 rule, where the associate is the introducer: "if need be"
-     means it works without him. */
+  /* v709: his word on a link an associate minted. */
   /* 24 SEP 2026, HIS DECISION D13: DECLINE IS ITS OWN STATE. It wrote approved:false, which IS the
      pending state, so a declined link read "waiting" to the associate for ever and stayed in his queue.
      It keeps approved:false, so the door and the publish, which test that alone, stay shut on it, and
@@ -1579,18 +1563,6 @@ async function handleRefs(request, env, p, m, origin, who) {
     const rec0 = await setRef(env, id, { approved: yes, declined: !yes });
     if (!rec0) return json({ ok: false, error: "no such link" }, 404);
     return json({ ok: true, ref: refOut(origin, rec0) });
-  }
-  if (mm[2] === "level") {
-    const b = await readJson(request);
-    const want = b && b.level === null ? null : String((b && b.level) || "");
-    let names = null;
-    try { names = await env.STMT.get("tiers", "json"); } catch (e) { names = null; }
-    /* Ambassador is index 0 and is the floor, never a guest's: a level off the five is refused
-       rather than quietly serving the board. */
-    if (want !== null && !(Array.isArray(names) && names.indexOf(want) >= 1)) return json({ ok: false, error: "that is not a tier a guest may be quoted" }, 400);
-    const rec1 = await setRef(env, id, { level: want });
-    if (!rec1) return json({ ok: false, error: "no such link" }, 404);
-    return json({ ok: true, ref: refOut(origin, rec1) });
   }
   const rec = await revokeRef(env, id, mm[2] === "revoke");
   if (!rec) return json({ ok: false, error: "no such link" }, 404);
@@ -1627,32 +1599,13 @@ async function handleGuest(request, env, id) {
      answer the same 404 by design. */
   if (!rec || rec.revoked || rec.approved === false) return shut();
   await markOpen(env, rec);
-  /* v698: A STANDING LINK READS ITS LEVEL'S BOARD, not one written under its own id. The five are
-     minted the first time he opens the Links panel, so one minted since the last publish would have
-     had no board of its own and fallen back to board:2, which is the LAST level: four of the five
-     would have quoted Bronze until the next deploy. A level's board does not depend on which link
-     points at it, so there is nothing to publish per link and minting one can never be wrong.
-     v658: a link that names an INTRODUCER still reads its own board, because that one does depend
-     on who handed it out. A link minted since the last publish has none yet, and a stranger is
-     never left looking at an empty page, so it falls back to the board every stranger sees, which
-     is the cap a guest board can never pass. */
-  const levelKey = async () => {
-    /* v709: keyed on the LEVEL alone. It wanted `standing` too, and setting that on an associate's
-       link to make this work would have had ensureStanding adopt it as one of the five he hands to
-       strangers. A level is a level whoever minted the link. */
-    if (!rec.level) return null;
-    try {
-      const names = await env.STMT.get("tiers", "json");
-      const k = Array.isArray(names) ? names.indexOf(rec.level) : -1;
-      return k >= 1 ? "tboard:" + k : null;
-    } catch (e) { return null; }
-  };
+  /* 18 Oct 2026: EVERY LINK READS THE ONE GUEST BOARD, the Set Price, whoever minted it and whatever an older record carries
+     (a `tier`, a `level`, a standing mark): nothing about a link decides the prices, so minting one can never be wrong. A
+     stranger is never left looking at an empty page on a failed read; the board page says there is nothing yet. */
   let prices = null;
-  const own = (await levelKey()) || ("gboard:" + rec.id);
-  try { prices = await env.STMT.get(own, "json"); } catch (e) { prices = null; }
-  if (!prices) { try { prices = await env.STMT.get("board:2", "json"); } catch (e) { prices = null; } }
+  try { prices = await env.STMT.get("guestboard", "json"); } catch (e) { prices = null; }
   const nonce = guestNonce();
-  return guestHtml(boardPage({ tier: rec.tier, prices }, nonce), nonce, 200);
+  return guestHtml(boardPage({ prices }, nonce), nonce, 200);
 }
 
 const worker = {

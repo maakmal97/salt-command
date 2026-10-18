@@ -48,11 +48,11 @@ function priceList(now) {
   const monday = klDay(new Date(now.getTime() - ((new Date(now).getUTCDay() + 6) % 7) * 864e5));
   const list = { at: now.toISOString(), week: { monday, sunday: monday, label: "this week" }, since: klDay(new Date(now.getTime() - 60 * 864e5)),
     products: [
-      { product: "salt", name: "Salt", unit: "unit", basis: "card", tier: null, levels: null, supply: { light: "yellow", by: klDay(new Date(now.getTime() + 9 * 864e5)) },
+      { product: "salt", name: "Salt", unit: "unit", basis: "card", supply: { light: "yellow", by: klDay(new Date(now.getTime() + 9 * 864e5)) },
         sizes: [{ q: 1, price: 110 }, { q: 2.5, price: 270 }, { q: 5, price: 530 }, { q: 12.5, price: 1300 }], grid: exampleGrid() },
-      { product: "oil", name: "Oil", unit: "unit", basis: "board", tier: null, levels: null, supply: { light: "red", by: null }, sizes: [{ q: 1, price: 40 }, { q: 3, price: 115 }] },
-      { product: "candy", name: "Candy", unit: "unit", basis: "board", tier: null, levels: null, supply: { light: "green", by: null }, sizes: [{ q: 1, price: 12 }, { q: 4, price: 45 }] },
-      { product: "rice", name: "Rice", unit: "unit", basis: "board", tier: null, levels: null, sizes: [{ q: 1, price: 9 }, { q: 2, price: 17 }] }
+      { product: "oil", name: "Oil", unit: "unit", basis: "board", supply: { light: "red", by: null }, sizes: [{ q: 1, price: 40 }, { q: 3, price: 115 }] },
+      { product: "candy", name: "Candy", unit: "unit", basis: "board", supply: { light: "green", by: null }, sizes: [{ q: 1, price: 12 }, { q: 4, price: 45 }] },
+      { product: "rice", name: "Rice", unit: "unit", basis: "board", sizes: [{ q: 1, price: 9 }, { q: 2, price: 17 }] }
     ],
     soon: [{ product: "spare", name: "Spare" }] };
   list.digest = createHash("sha256").update("testfix\n" + JSON.stringify(list.products.map((p) => [p.product, p.sizes, p.grid || null]))).digest("hex");

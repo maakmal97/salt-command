@@ -11,7 +11,7 @@
  * Needs STMT_URL (the Counter's address, never in the public desk) and STMT_DESK_KEY (the shared key) in the
  * environment, and wrangler's login. THE ALLOW-LIST IS THE WHOLE SAFETY: `allowed` is the one place a key is named,
  * every list and every delete goes through it, and a key outside it throws before wrangler is asked. Every other
- * prefix (u:, ot:, rem:, push:, dev:, seen:, sent:, g:, gboard:, board:, tboard:, slip:, slipkey, sheet, tiers,
+ * prefix (u:, ot:, rem:, push:, dev:, seen:, sent:, g:, gboard:, board:, tboard:, guestboard, slip:, slipkey, sheet, tiers,
  * roster, issue, assoc, desk-waiting, testfix:, pk:, pkd:, maker:hours) is never listed here, let alone deleted. */
 import { againIfLapsed } from "./cloudflare.mjs";
 import { DATA_DIR } from "./book.mjs";

@@ -196,7 +196,7 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
   uses the `DESK_MAKER` service binding and a dedicated `COUNTER_MAKER_KEY` to call only
   `/_internal/maker/drafts`, `/_internal/maker/queue` and its timestamped withdraw action,
   draft decisions, named order-stage actions, and typed
-  `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/tier-accept-all`, `inputs/house-sizes`, `inputs/hush`, `inputs/loan`,
+  `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/house-sizes`, `inputs/hush`, `inputs/loan`,
   `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id` and
   `inputs/place` and `inputs/ledger-amend` operations. `vault` and `vault/addr` are read-only envelope routes; Add/Amend ID
   encrypts names on the device before sending the sealed envelope, and placement opens the encrypted

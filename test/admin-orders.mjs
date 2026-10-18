@@ -26,7 +26,7 @@ const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threa
 const MENU = {
   entry: ["Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
-  pricing: ["Price level", "Desk reminders", "Price drift", "Partner", "Printed sizes"]
+  pricing: ["Desk reminders", "Price drift", "Partner", "Printed sizes"]
 };
 const order = (id, status, patch = {}) => ({ id, u: U1, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100, status, ...patch });
 
@@ -354,9 +354,9 @@ export async function run({ ok, pageWork }) {
     await p.tap("nav.record");
     const grid = p.d.getElementById("makerFormGrid"), list = grid && grid.querySelector(".reclist"), pane = grid && grid.querySelector(".recpane");
     ok(!!grid && !!list && !!pane && [...grid.children].map((c) => c.className).join() === "reclist,recpane" && grid.classList.contains("recgrid") && !grid.classList.contains("open")
-      && !!list.querySelector("#makerMenu") && !!list.querySelector("section[data-formmenu]") && pane.querySelectorAll("section.maker-input[data-form]").length === 18
+      && !!list.querySelector("#makerMenu") && !!list.querySelector("section[data-formmenu]") && pane.querySelectorAll("section.maker-input[data-form]").length === 17
       && !list.querySelector("section[data-form]") && !!pane.querySelector(".recnone"),
-    "the menu and the retained input stand in one column and the 18 forms in the pane beside it, with an invitation to choose one: " + (grid && [...grid.children].map((c) => c.className).join()));
+    "the menu and the retained input stand in one column and the 17 forms in the pane beside it, with an invitation to choose one: " + (grid && [...grid.children].map((c) => c.className).join()));
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 
   /* 5. A CUSTOMER'S QUESTION ON AN ORDER is a Now card on Needs you, counted as an account thread's is */
@@ -474,8 +474,8 @@ export async function run({ ok, pageWork }) {
       "# Fixing", "Correct a row=correct-a-row", "Reopen a cancelled order=reopen-a-cancelled-order"]),
     "Entry's menu is Everyday, Now and then and Fixing, each a small eyebrow over its forms in that order, every row keeping its slug: " + JSON.stringify(groups));
     const rows = [...d.querySelectorAll('#makerMenu [data-act="record.form"]')], kept = d.querySelector("#makerInputs section[data-formmenu]"), menuEl = d.getElementById("makerMenu");
-    ok(rows.length === 18 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !r.querySelector(".salt-inbox-row__action") && !/Open/.test(r.textContent))
-      && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 18 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
+    ok(rows.length === 17 && rows.every((r) => r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && /^[a-z0-9-]+$/.test(r.getAttribute("data-key")) && !r.querySelector(".salt-inbox-row__action") && !/Open/.test(r.textContent))
+      && new Set(rows.map((r) => r.getAttribute("data-key"))).size === 17 && !!kept && !!(kept.compareDocumentPosition(menuEl) & 4),
     "a row is the system's Inbox row, named by its act and a key of its own, below the retained input: " + rows.map((r) => r.getAttribute("data-key")).join());
     /* 14 Oct 2026 (Record): the title and its lead stand once; Offsets are two lists, never one, each offer one row with one Add */
     ok(d.querySelectorAll("#oRecord h1").length === 1 && (d.getElementById("oRecord").textContent.match(/Each waits for your approval under Orders > Approve/g) || []).length === 1
@@ -508,7 +508,7 @@ export async function run({ ok, pageWork }) {
         if (!(p.formsOpen().length === 0 && same(p.menu(), MENU[part]) && !gridOpen() && !row.hasAttribute("aria-current") && !shown(back) && d.activeElement === row)) bad.push(name + " (back)");
       }
     }
-    ok(bad.length === 0, "each of the 18 forms opens alone from its row and no other form shows, its row marked and the grid open, a way back named for the part, nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
+    ok(bad.length === 0, "each of the 17 forms opens alone from its row and no other form shows, its row marked and the grid open, a way back named for the part, nothing read or sent, and Back returns him to the row: " + JSON.stringify(bad));
     await p.tap("part.record.entry");
     await p.tap("record.form", "sale-or-purchase");
     const units = byAct(d, "record.trade.units"), form = units.closest("section");

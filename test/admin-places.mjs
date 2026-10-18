@@ -42,7 +42,7 @@ const SHOWS = {
 const FORMS = {
   entry: ["Unsent entry", "Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
-  pricing: ["Price level", "Desk reminders", "Price drift", "Partner", "Printed sizes"]
+  pricing: ["Desk reminders", "Price drift", "Partner", "Printed sizes"]
 };
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", pools: "/all/maker/pools", inputs: "/all/maker/inputs", offsets: "/all/maker/offsets",

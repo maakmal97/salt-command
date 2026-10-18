@@ -159,11 +159,7 @@ export const OWNER_JS = `
   /* 23 SEP 2026: THE ACCOUNT IS ONE LIVE DOCUMENT (v769), so there is no issue for an account to be
      missing from. A row with no totals is a username with nothing behind it, and that is what it
      says. D15 (24 Sep 2026): the fold binds a spare account at Add ID and this run's publish opens it,
-     so a row reads this only when no spare was free, and the laptop's next update makes it. The level
-     is the stranger's, named by the book through the sheet, never here; S9 fix: the sheet is the one
-     source, so Needs you, a row and a card say the same level the moment the sheet lands, whether or not
-     the links have. */
-  var stranger=null;
+     so a row reads this only when no spare was free, and the laptop's next update makes it. */
   function waitLine(){ return 'Their account comes with the next update. Show them the guest price list meanwhile.'; }
   function flagLine(a){
     if(!a.t||!a.flag) return waitLine();
@@ -183,8 +179,8 @@ export const OWNER_JS = `
     try{
       var j=await refs('/all/sheet');
       nGot('sheet');
-      if(!changed('sheet',[j.accounts,j.desk,j.stranger,j.issue])&&quiet===true) return;
-      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null; stranger=j.stranger||null;
+      if(!changed('sheet',[j.accounts,j.desk,j.issue])&&quiet===true) return;
+      sheet={}; sheetAt=j.at||null; sheetRows=j.accounts||[]; sheetIssue=j.issue||null;
       sheetRows.forEach(function(a){ sheet[a.username]=a; });
       drawRoster(); drawTest(); drawNeeds(); drawNeedOpen(true);
       if(aOpen) openCard(aOpen);
@@ -731,17 +727,12 @@ export const OWNER_JS = `
     /* the page's klBits and MON3, so a day here is written exactly as the customer's page writes one */
     try{ var p=klBits(iso); return p.day+' '+MON3[+p.month-1]+' '+p.year; }catch(e){ return ''; }
   }
-  /* v696, his instruction of 18 Sep 2026: ONE LINK PER TIER. They stand at the top, in the ladder's
-     own order, each named by its level; anything minted against a customer sits below them under its
-     own heading. HOW MANY IS THE BOOK'S (24 Sep 2026): the count is read off the tier list the route
-     sends, never written here, because "the five" outlived the fifth tier by a day. */
+  /* 18 Oct 2026: the price levels are gone, so every link opens the one guest board and none is named by a level. The standing
+     link for strangers stands at the top; anything minted against a customer sits below under its own heading. */
   function drawLinks(){
     var glist=document.getElementById('glist');
     glist.textContent='';
     if(!links.length){ glist.appendChild(el('p','rnone','No links yet.')); return; }
-    /* the guest tiers are the list less Ambassador, the floor, which is never a guest's */
-    var want=tiers.slice(1);
-    var made=want.filter(function(t){ return links.some(function(r){ return r.standing&&r.level===t; }); }).length;
     var isWaiting=waitingLink;
     /* UX8, 24 Sep 2026: AN ASSOCIATE'S LINK STAYS THEIRS once he has decided on it. Approved or declined, it went
        under "made against a customer" as "Tier 2, (no label)", with nothing to say who minted it */
@@ -754,7 +745,7 @@ export const OWNER_JS = `
        so the one group he has to act on is the one at the top. */
     var seq=[], heads={};
     if(waiting.length){ heads[seq.length]='Waiting on you'; seq=seq.concat(waiting); }
-    if(standing.length){ heads[seq.length]='One link per price level'; seq=seq.concat(standing); }
+    if(standing.length){ heads[seq.length]='Standing link'; seq=seq.concat(standing); }
     if(assoc.length){ heads[seq.length]='Made by associates'; seq=seq.concat(assoc); }
     if(older.length){ heads[seq.length]='Older links'; seq=seq.concat(older); }
     seq.forEach(function(r,i){
@@ -765,27 +756,23 @@ export const OWNER_JS = `
       card.open=!!(openLinks[r.id]||(moved&&moved.id===r.id)||(linkSaid&&linkSaid.id===r.id));
       card.addEventListener('toggle', function(){ if(card.open) openLinks[r.id]=true; else delete openLinks[r.id]; });
       var declined=r.declined===true, pending=r.approved===false&&!declined;
-      /* a standing link whose level the book no longer names (Bronze, 23 Sep 2026) is kept because it
-         was handed out, and it opens the board a stranger sees, never the level it still carries */
-      var retired=r.standing&&want.length&&want.indexOf(r.level)<0;
       var sum=el('summary','gsum'); actOn(sum,'link.open',r.id);
       var top=el('span','gtop');
-      top.appendChild(el('span','gt salt-field__label',r.standing?r.level:(declined?'Not approved':(r.level?r.level:(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):(r.label||'Level '+r.tier)))))));
+      top.appendChild(el('span','gt salt-field__label',r.standing?'Standing link':(declined?'Not approved':(pending?'Waiting on you':(isAssoc(r)?'Follows '+codeByUser(r.by):(r.label||'Link'))))));
       if(r.revoked) top.appendChild(chip('mist','Withdrawn'));
       sum.appendChild(top);
       sum.appendChild(el('span','gs', (r.opens
         ? 'Opened '+r.opens+' time'+(r.opens===1?'':'s')+', last '+stampDay(r.last)
         : 'Never opened, made '+stampDay(r.made))));
       card.appendChild(sum);
-      card.appendChild(el('h4','gwho',retired?'An old link, kept'
-        :r.standing?'For strangers'
+      card.appendChild(el('h4','gwho',r.standing?'For strangers, opens the Set Price list'
         :declined?('Made by '+(r.by?codeByUser(r.by):'an associate')+', not approved, so it stays shut')
         :(pending?('Made by '+(r.by?codeByUser(r.by):'an associate')+', shut until you approve it')
         :isAssoc(r)?('Made by '+codeByUser(r.by))
         :(r.label||'(no note)'))));
       card.appendChild(el('code','gu',r.url));
       var img=document.createElement('img');
-      img.src=r.qr; img.alt='QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
+      img.src=r.qr; img.alt=r.standing?'QR to the guest price list':'QR to the guest price list for '+(r.label||r.id); img.width=180; img.height=180;
       card.appendChild(img);
       var row=el('div','grow');
       var copy=el('button','salt-ghost','Copy link'); copy.type='button'; actOn(copy,'link.copy');
@@ -812,21 +799,12 @@ export const OWNER_JS = `
             row.appendChild(de);
           }
         }
-        if(tiers.length){
-          var sel=el('select','fld salt-field__input salt-field__select'); sel.setAttribute('aria-label','Price list their friend sees'); actOn(sel,'link.tier');
-          var o0=el('option',null,'Follows '+codeByUser(r.by)); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
-          /* Ambassador is the floor and never a guest's, so the picker starts at the first of five */
-          tiers.slice(1,6).forEach(function(t){ var o=el('option',null,t); o.value=t; if(r.level===t)o.selected=true; sel.appendChild(o); });
-          sel.addEventListener('change', function(){ setLevel(r, sel.value); });
-          card.appendChild(sel);
-        }
       }
       card.appendChild(row);
       if(moved&&moved.id===r.id){ var mv=el('p','msg',moved.t); mv.setAttribute('role','status'); card.appendChild(mv); }
       if(linkSaid&&linkSaid.id===r.id){ var ls=el('p','msg'); ls.setAttribute('role','status'); saidOn(r, ls); card.appendChild(ls); }
       glist.appendChild(card);
     });
-    if(want.length&&made<want.length) glist.appendChild(el('p','rnone','One level link is not made yet; it comes with the next update.'));
   }
   /* S9 9.7, HIS D13: WHEN ACCESS LAPSES, SAY SO. A request under /all after the Access session has ended is
      sent to the Access login, a redirect a fetch cannot follow, and every tap read "Failed to fetch". Asked not
@@ -907,11 +885,9 @@ export const OWNER_JS = `
     'Choose an associate on the roster.':'Choose an associate from the list.',
     'That offset is not on offer: the reward is spent or held, the order is settled, or it already has a correction waiting.':'That offset is no longer on offer. Read the offers again.',
     'Choose a customer on the roster, not a resale account.':'Choose a customer, not a resale account.',
-    'This product has no customer tiers.':'This book has no price levels.',
+    'This product has no customer tiers.':'This book has no Set Price to lift.',
     'A supplier cannot hold customer drift.':'A supplier has no price drift.',
     'Choose a % lift from 0 to 200% (0 to 2), or clear it.':'Choose a % from 0 to 200, or clear it.',
-    'Choose a tier or a set of small, mid and big tiers.':'Choose a level, or a level for each order size.',
-    'There is no tier proposal to accept.':'There is no suggested level to accept.',
     'Choose the sizes to hide from the board.':'Choose the sizes to leave off the printed list.',
     "A size to hide must be one of this book's board sizes.":'Choose sizes from this book printed list.',
     'Every size is unticked, so there is no board to make.':'Every size is unticked, so there is nothing to print.',
@@ -1852,7 +1828,7 @@ export const OWNER_JS = `
         /* a refusal that leaves nothing to retry (no proposal to accept) clears the retained request and its Cancel */
         /* a gift the Desk already holds queued is refused before anything is recorded: nothing to retry, so the form is free again */
         if(error.status===409&&error.detail&&error.detail.queuedTwin&&path==='/all/maker/inputs/gift'){makerClear(path);pending=null;cancel.hidden=true;}
-        if(error.status===400&&(path==='/all/maker/inputs/tier-accept-all'||path==='/all/maker/inputs/hush'||path==='/all/maker/inputs/partner')){makerClear(path);pending=null;cancel.hidden=true;}
+        if(error.status===400&&(path==='/all/maker/inputs/hush'||path==='/all/maker/inputs/partner')){makerClear(path);pending=null;cancel.hidden=true;}
         /* a point the Desk refuses (not an official locality) leaves nothing to retry, and its word must not stay saved */
         if(error.status===400&&(path==='/all/maker/inputs/add-id'||path==='/all/maker/inputs/amend-id'||path==='/all/maker/inputs/place')){makerClear(path);pending=null;cancel.hidden=true;}
         if(error.status===400&&path==='/all/maker/inputs/house-sizes'){makerClear(path);pending=null;cancel.hidden=true;}
@@ -1930,7 +1906,7 @@ export const OWNER_JS = `
          have to open Record to learn that one waits: a banner over every place says how many and opens them, and each is a Soon card on Needs you. Both only READ the
          phone's own storage and send nothing; Send again, Update and send and Discard stay Record's, on the entry's own section, exactly as they were. */
       var UNSENT_WORD={'add-id':'new customer','appoint-existing':'appointment','amend-id':'change of name or place','place':'map placement','stock-count':'stock count','sale':'sale','purchase':'purchase',
-        'tier-set':'price setting','partner':'partner','tier-accept-all':'set of price levels','house-sizes':'set of printed sizes','hush':'reminder','loan':'loan','repay':'repayment','gift':'gift','redeem':'reward','ledger-amend':'correction','offset':'offset'};
+        'tier-set':'price setting','partner':'partner','house-sizes':'set of printed sizes','hush':'reminder','loan':'loan','repay':'repayment','gift':'gift','redeem':'reward','ledger-amend':'correction','offset':'offset'};
       /* what one kept entry is, from its storage key: never a name or a place, which a kept entry holds only sealed; a record that will not read is still an entry */
       function unsentRead(storageKey){
         var path=storageKey.slice('saltMakerPending:'.length), body=null;
@@ -2016,7 +1992,7 @@ export const OWNER_JS = `
   function makerForm(part){ var section=el('section','maker-input'); section.setAttribute('data-in','record.'+part); return section; }
   function retainedPart(path){
     var k=path.split('/').pop();
-    return ['add-id','amend-id','appoint-existing','place'].indexOf(k)>=0?'customers':['house-sizes','hush','tier-set','partner','tier-accept-all'].indexOf(k)>=0?'pricing':'entry';
+    return ['add-id','amend-id','appoint-existing','place'].indexOf(k)>=0?'customers':['house-sizes','hush','tier-set','partner'].indexOf(k)>=0?'pricing':'entry';
   }
   /* 12 Oct 2026 (PHASE 4a): OPTION TILES for the few, fixed choices of a form (a book, a direction, a handover, a kind, a role, a level, yes or no): the system's
      Option recipe, a real radio each, so the group is one tab stop, the arrows move the choice and a tile is 44px. The group is a fieldset that answers where the
@@ -2465,13 +2441,6 @@ export const OWNER_JS = `
     idPlace.closest('label').appendChild(el('span','msg','Optional. Blank gives TBC until the place is confirmed.'));
     var idGate=makerVaultGate(id);
     var idLink=makerField(id,['Maps or Waze link','record.add-id.link'],'text','');
-    var tierBooks=books.filter(function(item){return item.tiered;});
-    var tierNames=catalog.tierNames||[], idTiers=tierBooks.map(function(item){
-      var sel=makerTilesIn(id,['Starting level','record.add-id.tier',item.product,item.product],[{value:'',label:'Not set'}]
-        .concat(tierNames.map(function(name){return {value:name,label:name};})));
-      sel.value=tierNames.length?tierNames[tierNames.length-1]:'';
-      return {product:item.product,select:sel};
-    });
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var presets=item.driftPresets||[];
@@ -2490,7 +2459,6 @@ export const OWNER_JS = `
       idName.disabled=bucket;idPlace.disabled=bucket;idGate.hidden=bucket;idLink.disabled=bucket;
       idParent.disabled=!needsParent;
       var canStart=idCanStart(idKind.value);
-      idTiers.forEach(function(item){item.select.disabled=!canStart;});
       idDrifts.forEach(function(item){item.select.disabled=!canStart;item.typed.disabled=!canStart;});
     });
     idKind.dispatchEvent(new Event('change'));
@@ -2503,7 +2471,6 @@ export const OWNER_JS = `
       var kind=idKind.value, parentCode=(kind==='bucket'||kind==='downstream')?idParent.value:null;
       var tiers={};
       if(idCanStart(kind)){
-        idTiers.forEach(function(item){if(item.select.value)tiers[item.product]=item.select.value;});
         for(var driftIndex=0;driftIndex<idDrifts.length;driftIndex++){
           var driftItem=idDrifts[driftIndex], choice=driftItem.select.value, driftValue;
           if(choice==='typed'){
@@ -3413,83 +3380,10 @@ export const OWNER_JS = `
         tradeAt=null;tradeSignature='';coverChoices.forEach(function(choice){choice.read();});
       });
       direction.addEventListener('change',function(){ tradeSend.textContent='Send the '+direction.value; });
-      var tierSection=makerForm('pricing');
-      tierSection.appendChild(el('h3',null,'Price level'));
-      tierSection.appendChild(el('p','msg','Set the level a customer is priced at, or let the Desk suggest one.'));
-      tradeSection.parentNode.insertBefore(tierSection,tradeSection.nextSibling);
-      var tierCodes=catalog.tierCustomers||[], tierBooks=(catalog.products||[]).filter(function(item){ return item.tiered; });
-      if(!tierCodes.length||!tierBooks.length||!(catalog.tierNames||[]).length){
-        tierSection.appendChild(el('p','msg','No customer has a level to set.'));
-      }else{
-        var tierCode=actOn(el('select','fld salt-field__input salt-field__select'),'record.tier.customer'), tierCodeWrap=el('label','maker-field','Customer');
-        tierCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; tierCode.appendChild(option); });
-        tierCodeWrap.appendChild(tierCode); tierSection.appendChild(tierCodeWrap);
-        var tierProduct=makerTilesIn(tierSection,['Book','record.tier.book'],tierBooks.map(function(item){ return bookItem(item.product); }));
-        var tierValue=makerTilesIn(tierSection,['Level','record.tier.level'],[['','Let the Desk decide']].concat((catalog.tierNames||[]).map(function(name){ return [name,name]; }),[['__bands','A level by order size']])
-          .map(function(item){ return {value:item[0],label:item[1]}; }));
-        var bandBox=el('div','maker-bands'), bandSel={};
-        bandBox.hidden=true;
-        [['small','Small sizes'],['mid','Mid sizes'],['big','Big sizes']].forEach(function(item){
-          bandSel[item[0]]=makerTilesIn(bandBox,[item[1],'record.tier.band-'+item[0]],(catalog.tierNames||[]).map(function(name){ return {value:name,label:name}; }));
-        });
-        tierSection.appendChild(bandBox);
-        var tierState=el('p','msg'), useProposal=actOn(el('button','salt-ghost','Use the suggestion'),'record.tier.use-proposal'), useOffer=actOn(el('button','salt-ghost','Use the late-payer level'),'record.tier.use-offer');
-        useProposal.type='button'; useOffer.type='button';
-        tierSection.appendChild(tierState); tierSection.appendChild(useProposal); tierSection.appendChild(useOffer);
-        function tierPut(level){
-          if(level&&typeof level==='object'){ tierValue.value='__bands'; ['small','mid','big'].forEach(function(k){ if(level[k]) bandSel[k].value=level[k]; }); }
-          else tierValue.value=level||'';
-          bandBox.hidden=tierValue.value!=='__bands';
-        }
-        function tierCardOf(){
-          return (catalog.tierCards||[]).filter(function(c){ return c.code===tierCode.value&&c.product===tierProduct.value; })[0]||null;
-        }
-        function tierSay(level){
-          return typeof level==='string'?level:['small','mid','big'].map(function(k){ return k+' '+level[k]; }).join(', ');
-        }
-        function tierRefresh(){
-          var c=tierCardOf(), lines=[];
-          if(c&&c.held) lines.push('Now: '+tierSay(c.held)+'.');
-          else if(c&&c.proposed) lines.push('Suggested: '+tierSay(c.proposed)+', not applied.');
-          else lines.push('No level set or suggested.');
-          if(c&&c.late) lines.push('Late payer: suggested '+c.late.level+(c.late.why?', '+noBook(c.late.why):'')+'.');
-          tierState.textContent=lines.join(' ');
-          useProposal.hidden=!(c&&(c.proposed||c.held)); useOffer.hidden=!(c&&c.late);
-        }
-        tierValue.addEventListener('change',function(){ bandBox.hidden=tierValue.value!=='__bands'; });
-        tierCode.addEventListener('change',tierRefresh); tierProduct.addEventListener('change',tierRefresh);
-        useProposal.onclick=function(){ var c=tierCardOf(); if(c) tierPut(c.proposed||c.held); };
-        useOffer.onclick=function(){ var c=tierCardOf(); if(c&&c.late) tierPut(c.late.level); };
-        tierRefresh();
-        var tierAnswer=el('p','msg'); tierAnswer.setAttribute('role','status'); tierSection.appendChild(tierAnswer);
-        var tierPending=false, tierAt=null, tierSignature='';
-        makerButton(tierSection,['Send the level','record.tier.send'],async function(send){
-          if(tierPending) return;
-          var level=tierValue.value==='__bands'?{small:bandSel.small.value,mid:bandSel.mid.value,big:bandSel.big.value}:(tierValue.value||null);
-          var body={code:tierCode.value,product:tierProduct.value,tier:level};
-          var check=JSON.stringify(body); if(check!==tierSignature){ tierSignature=check; tierAt=new Date().toISOString(); }
-          body.at=tierAt; tierPending=true;
-          try{ await send('/all/maker/inputs/tier-set',body); tierAnswer.textContent='Sent. The level changes once you approve it.'; loadMaker(); }
-          catch(error){ refusal(tierAnswer,error); }
-          tierPending=false;
-        },true,function(){ tierAt=null; tierSignature=''; });
-        /* A1: the Desk's Accept all. The Desk reads its own proposals; held tiers and tiers already waiting are left alone.
-           Each new Accept is its own request; a retry is the button's retained request, which keeps the id it was sent under. */
-        var allAnswer=el('p','msg'); allAnswer.setAttribute('role','status'); tierSection.appendChild(allAnswer);
-        var allPending=false;
-        makerButton(tierSection,['Accept every suggestion','record.tier.accept-all'],async function(send){
-          if(allPending) return;
-          allPending=true;
-          try{ await send('/all/maker/inputs/tier-accept-all',{at:new Date().toISOString()});
-            allAnswer.textContent='Sent. Levels already set do not change.'; loadMaker(); }
-          catch(error){ refusal(allAnswer,error); }
-          allPending=false;
-        },false);
-      }
       var driftSection=makerForm('pricing');
       driftSection.appendChild(el('h3',null,'Price drift'));
       driftSection.appendChild(el('p','msg','Only on a book with price drift. Lifts one customer on the Set Price by a % (0 to 2, so 0.2 is 20%); 0 is the Set Price, the least anyone pays. Clear sets it back to 0.'));
-      tradeSection.parentNode.insertBefore(driftSection,tierSection.nextSibling);
+      tradeSection.parentNode.insertBefore(driftSection,tradeSection.nextSibling);
       var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
       if(!driftCodes.length||!driftBooks.length){
         driftSection.appendChild(el('p','msg','No customer has a drift to set.'));
@@ -3619,7 +3513,7 @@ export const OWNER_JS = `
       var tipSection=makerForm('pricing');
       tipSection.appendChild(el('h3',null,'Desk reminders'));
       tipSection.appendChild(el('p','msg','Hide a reminder for a while.'));
-      tierSection.parentNode.insertBefore(tipSection,tierSection.nextSibling);
+      tradeSection.parentNode.insertBefore(tipSection,tradeSection.nextSibling);
       var tips=catalog.tips||[];
       if(!tips.length){
         tipSection.appendChild(el('p','msg','The Desk is showing no reminder to hide.'));
@@ -5021,28 +4915,18 @@ export const OWNER_JS = `
     if(error) refusal(mine,error); else mine.textContent=text;
     if(mine.scrollIntoView) mine.scrollIntoView({block:'nearest'});
   }
-  var tiers=[];
   async function loadLinks(quiet){
     var poll=quiet===true;
     if(!poll) moved=null;
     linksBusy=true;
     try{
       var j=await refs('/all/refs'); nGot('links');
-      var diff=changed('links',[j.refs,j.tiers]);
-      links=j.refs||[]; tiers=j.tiers||[]; linksRead=true;
+      var diff=changed('links',[j.refs]);
+      links=j.refs||[]; linksRead=true;
       if(diff||!poll){ drawLinks(); drawNeeds(); if(!poll){ say(''); linkSay(''); } }
     }
     catch(e){ nGot('links', e); if(!poll) sayFail(e); }
     finally{ linksBusy=false; }
-  }
-  async function setLevel(r, level){
-    linkSaid=null;
-    try{
-      var j=await refs('/all/refs/'+r.id+'/level', {level: level||null});
-      for(var i=0;i<links.length;i++) if(links[i].id===j.ref.id) links[i]=j.ref;
-      linkSaid={id:r.id, t:level?('That link now shows the '+level+' price list.'):'That link follows its associate again.'};
-    }catch(e){ linkSaid={id:r.id, t:e.message, bad:true, err:e}; }
-    drawLinks(); drawNeeds(); say('');
   }
   /* 11 Oct 2026: A MOVE ON A LINK IS SENT ONCE. While it is out the card's move buttons are off, on Needs you and on Links,
      and a second tap, on a button a redraw put in their place, sends nothing. */
@@ -5136,7 +5020,7 @@ export const OWNER_JS = `
     p.appendChild(document.createTextNode(units(qty)+(product?' ':''))); if(product) p.appendChild(bookTag(product));
     p.appendChild(document.createTextNode(', '+rm(total))); return p;
   }
-  var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Price level', REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
+  var ENTRY_WORD={SELL:'Sale', BUY:'Purchase', AMEND:'Correction', TIER:'Price %', REPAY:'Repayment', RENAME:'Name or place change', REDEEM:'Reward', PRICE:'Price change', PLACE:'Map placement', PARTNER:'Partner', OBS:'Reminder', GIFT:'Gift', COUNT:'Stock count', ADDID:'New customer', LOAN:'Loan'};
   function entryWord(e){ return ENTRY_WORD[e&&e.type]||(e&&e.type)||'Entry'; }
   /* what a Desk row is, in the order a person says it: the kind, the size, the sum; its book is the mark its card draws before these words (needCard, mark) */
   function rowWhat(d){ var e=d.entry||{}; return [entryWord(e), d.qty==null?'':units(d.qty), rm(d.total)].filter(Boolean).join(', '); }
@@ -5228,9 +5112,9 @@ export const OWNER_JS = `
     mHome.classList.toggle('open', !!a); nopen.hidden=!a; nopen.textContent=''; nopen.setAttribute('data-u', a?nOpen:'');
     if(a) acctPane(nopen, a);
   }
-  /* the stranger's standing link is what an ID with no account is shown */
+  /* the standing link for strangers is what an ID with no account is shown */
   function strangerLink(){
-    return links.filter(function(r){ return r.standing&&r.level===stranger&&!r.revoked; })[0]||null;
+    return links.filter(function(r){ return r.standing&&!r.revoked; })[0]||null;
   }
   /* A LINK SIGNS THEM IN IN TWO TAPS: the first makes it, the second shares it, so the share sheet never
      waits on a key derivation and a round trip inside one tap (the plan's must-not-ship list).
@@ -5276,15 +5160,6 @@ export const OWNER_JS = `
     return item('soon','accounts','Link','l:'+r.id, r.made, {who:who, head:'Approve ', rest:"'s guest link", what:'Made '+when(r.made),
       why:'A link for a friend. It opens nothing until you approve it.', open:goPlace('customers','links'), counts:waitingLink(r)&&!done}, function(c){
       if(done){ noteOf(c).textContent=moved.t; return; }
-      if(tiers.length){
-        var f=el('div','salt-field'), lab=el('label','salt-field__label','Price list their friend sees'), sel=el('select','fld salt-field__input salt-field__select');
-        sel.id='npin'+r.id; lab.htmlFor=sel.id; actOn(sel,'need.link-tier');
-        var o0=el('option',null,'Follows '+who); o0.value=''; if(!r.level)o0.selected=true; sel.appendChild(o0);
-        /* Ambassador is the floor and never a guest's */
-        tiers.slice(1).forEach(function(t){ var o=el('option',null,t); o.value=t; if(r.level===t)o.selected=true; sel.appendChild(o); });
-        sel.addEventListener('change', function(){ setLevel(r, sel.value); });
-        f.appendChild(lab); f.appendChild(sel); c._body.appendChild(f);
-      }
       var ap=pill(['Approve','need.link-approve']), de=ghost(['Decline','need.link-decline']);
       ap.setAttribute('data-move',''); de.setAttribute('data-move','');
       ap.addEventListener('click', function(){ moveLink(r,'approve'); });

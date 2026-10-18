@@ -89,8 +89,6 @@ const MAPPED = [
   "This product has no customer tiers.",
   "A supplier cannot hold customer drift.",
   "Choose a % lift from 0 to 200% (0 to 2), or clear it.",
-  "Choose a tier or a set of small, mid and big tiers.",
-  "There is no tier proposal to accept.",
   "Choose an active book.",
   "Choose the sizes to hide from the board.",
   "A size to hide must be one of this book's board sizes.",
