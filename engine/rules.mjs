@@ -272,7 +272,7 @@ const TIER_RULE={
         points:[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]],
         suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
-        presets:{Set:0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
+        presets:{"Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
         rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
         /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
            walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */

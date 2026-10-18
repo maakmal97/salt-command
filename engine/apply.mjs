@@ -385,15 +385,15 @@ function describe(item) {
   switch (item.collection) {
     case "sales": return `SELL ${r.customer} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.date ? " on " + r.date : " (pending, undated)"}`;
     case "purchases": return `BUY ${r.supplier} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.pending ? " (pending lot)" : ""}`;
-    case "count": return `COUNT ${r.product} ${r.qty} unit on ${r.date} (book said ${r.was}, drift ${r.drift})`;
+    case "count": return `COUNT ${r.product} ${r.qty} unit on ${r.date} (book said ${r.was}, difference ${r.drift})`;
     case "loss": return `LOSS ${r.kg} unit ${r.product} on ${r.date}: ${r.why}`;
     case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.form === "cash" ? "RM " + r.valueRM + " in cash" : r.valueKg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
     case "repayment": return `REPAY ${r.form === "cash" ? "RM " + r.rm : r.kg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "to" : "from"} ${r.party} on loan ${r.loan}, ${r.date}${r.settles ? ", settling it" : ""}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
-    case "roster": if (r.partner) return `PARTNER ${r.code}: pays cost`; return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
+    case "roster": if (r.partner) return `PARTNER ${r.code}: pays the Floor`; return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
     case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
-    case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLift(v)).join(" ")).join(", ")}`;
+    case "tierset": return `THEIR % ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLift(v)).join(" ")).join(", ")}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
     default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
   }
@@ -410,7 +410,7 @@ export function planBatch(book, staged, notes, ctx) {
      and never reads it as a %: 0.3 then meant 30% of the floor, now 30% on the Set Price. A clear (null) carries no figure and passes. */
   const liftAt = Date.parse(PRICING_RULES.RULES.liftSince);
   const oldLift = (it, p, v) => driftBooks().includes(p) && v !== null && v !== undefined && Date.parse((it.entry && it.entry.at) || it.id) < liftAt;
-  const oldLiftWhy = (c, p) => `${c}'s ${p} figure was set before ${PRICING_RULES.RULES.liftSince}, in the old drift unit (-1 to +1); set it again as a % from 0 to 200 (0 to 2)`;
+  const oldLiftWhy = (c, p) => `${c}'s ${p} figure was set before ${PRICING_RULES.RULES.liftSince}, in the old unit (-1 to +1); set it again as a % from 0 to 200 (0 to 2)`;
   const out = { items: [], refused: [], moves: [] };
   let tagged = 0;
   let rows = (staged && staged.approved) || [];
@@ -746,7 +746,7 @@ export function planBatch(book, staged, notes, ctx) {
       if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ")}` }); continue; }
       if (rtOld.length) { out.refused.push({ id: it.id, why: rtOld.map((p) => oldLiftWhy(r.code, p)).join(" and ") }); continue; }
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null, partner };
-      if (partner) entry.does.push(`make ${r.code} a partner: they pay cost, the floor to the sen, on every book; they keep every associate property`);
+      if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
       if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life, on the next free spare account where there is one`);
@@ -792,8 +792,8 @@ export function planBatch(book, staged, notes, ctx) {
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
       const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift, 0 to 2), held as a tier was; none on any other */
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
-        out.refused.push({ id: it.id, why: !codes.length ? "a tier entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
-          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ") });
+        out.refused.push({ id: it.id, why: !codes.length ? "a % entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
+          : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ") });
         continue;
       }
       const oldTs = pairs.filter((x) => oldLift(it, x[1], x[2]));
@@ -922,7 +922,7 @@ function bookItem(book, it, c) {
       /* v504: every count is kept; the leak is charged from the drift of the last three */
       book.COUNTS = book.COUNTS || [];
       book.COUNTS.push({ product: c.product, date: c.date, qty: c.qty, was: c.was != null ? c.was : null, drift: c.drift != null ? c.drift : null });
-      const sentence = `COUNTED AT ${notes.version} on ${c.date}: the ${c.product} inventory held ${c.qty} against ${c.was != null ? c.was : "?"} on the roll, a drift of ${c.drift != null ? c.drift : "?"}. A COUNT AND NOT A ROLL, so COUNT_ON.${c.product} moves to ${c.date}.` + (n.note ? " " + String(n.note).trim() : "");
+      const sentence = `COUNTED AT ${notes.version} on ${c.date}: the ${c.product} inventory held ${c.qty} against ${c.was != null ? c.was : "?"} on the roll, a difference of ${c.drift != null ? c.drift : "?"}. A COUNT AND NOT A ROLL, so COUNT_ON.${c.product} moves to ${c.date}.` + (n.note ? " " + String(n.note).trim() : "");
       const key = c.product === "salt" ? "STATED_STOCK" : "PROD_OPENING";
       book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
     } else if (it.append === "selfUseLog" || it.append === "lostDemand" || it.append === "loans") {

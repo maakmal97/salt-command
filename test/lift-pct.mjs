@@ -173,7 +173,7 @@ export async function run({ ok }) {
   const plan = (x) => F.plan(bk, { ok: true, count: 1, approved: [x] }, null);
   const why = (x) => (plan(x).refused[0] || {}).why || "";
   const pOld = plan(ts(before, 0.3)), pNew = plan(ts(after, 0.3));
-  ok(/old drift unit/.test(why(ts(before, 0.3))) && /old drift unit/.test(why(ts(before, 0))) && /old drift unit/.test(why(ad(before, 0.2)))
+  ok(/in the old unit/.test(why(ts(before, 0.3))) && /in the old unit/.test(why(ts(before, 0))) && /in the old unit/.test(why(ad(before, 0.2)))
     && pOld.refused.length === 1 && pNew.refused.length === 0 && JSON.stringify(pNew).indexOf("0.3") >= 0
     && plan(ts(before, null)).refused.length === 0 && /not held per customer/.test(why(ts(before, "Gold", "oil"))) && /not held per customer/.test(why(ts(before, 0.2, "oil"))),
   "the fold refuses a salt % stamped before " + since + ", a tierset and an Add ID alike, naming why, files one stamped after it, lets a clear through, and refuses any figure on oil, a fixed board: " + JSON.stringify([why(ts(before, 0.3)), why(ad(before, 0.2))]));

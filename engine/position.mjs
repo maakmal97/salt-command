@@ -220,7 +220,7 @@ function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,note=
    appoints them on the R2 stream with their -R account, so every associate property comes with the standing. */
 function partnerEntry({at,code,raw}){
   return {at,type:'PARTNER',party:code,qty:null,total:null,status:'partner',
-    raw:raw===undefined?'Make '+code+' a partner: pays cost, keeps every associate property':raw,
+    raw:raw===undefined?'Make '+code+' a partner: pays the Floor, keeps every associate property':raw,
     payload:{mode:'partner',code}};
 }
 function renameEntry({at,from,to,geo=null,raw}){
