@@ -52,8 +52,14 @@ const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
 [hidden]{display:none!important}
 /* S7 7.5 (his D14 of 24 Sep 2026): the notice is a still card on Home, the system's insight, a line a paragraph */
-.hnote p{margin:0}
-.hnote p+p{margin-top:6px}
+/* Counter Batch A: the Today card, and the notice in it */
+.today{display:flex;flex-direction:column;gap:12px}
+.today__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:var(--salt-tap);margin:-12px 0 -4px}
+.today__clock{margin-left:auto;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;color:var(--salt-mist-bright)}
+.today__line{margin:0;font-size:var(--salt-text-md);line-height:1.45;color:var(--salt-salt)}
+.today__when{color:var(--salt-brass)}
+.today .salt-notice{border-top:1px solid var(--salt-line-faint);padding-top:12px}
+.today .salt-notice__head{min-height:20px}
 /* The gate, in the same material as the document behind it. One filled control, the
    brass-to-copper pill, because this is the one thing on the page that produces something;
    decision 5 of the identity. Everything else is a hairline or a word. */
@@ -1445,12 +1451,21 @@ function guestPage(inner, nonce, title) {
     statement, the prices, the lock -- is then the customer's own code, opened the customer's own
     way. Only the door changes. The route that serves this is behind Cloudflare Access and verifies
     the token itself; see stmt/access.js. */
-/* THE NOTICE (20 Sep 2026; S7 7.5, his D14 of 24 Sep 2026): a still card at the head of Home, every line standing, drawn at
-   first paint and hidden until there is a line to show. It was a band across the top of every page, running as one
-   track or changing a line every four seconds; the mode it was set in is no longer read. */
+/* COUNTER BATCH A (his decisions of 18 Oct 2026, reversing S7 7.5's still card of his D14): THE TODAY CARD at the head of Home. The time in
+   Kuala Lumpur, whether the Counter is open and until when or when it opens (off /hours, once signed in), and his notice, one line at a time,
+   the next every six seconds, with Pause. Under reduced motion every line stands and nothing turns. Nothing in it is a live region: a line
+   that changes is never read out unasked. Drawn at first paint with the notice's lines; the open or closed line waits for /hours. */
 function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
-  return '<div id="bull" class="salt-insight hnote"' + (lines.length ? "" : " hidden") + ">" + lines.map((l) => "<p>" + esc(l) + "</p>").join("") + "</div>";
+  return '<section id="today" class="today salt-glass-card salt-glass-card--radius-lg"' + wl("today.aria") + ">"
+    + '<div class="today__head"><span id="todayOpen" class="today__open" hidden></span><span class="today__clock" data-clock></span></div>'
+    + '<p id="todayLine" class="today__line" hidden></p>'
+    + '<div id="bull" class="salt-notice hnote"' + (lines.length ? "" : " hidden") + ">"
+    + '<div class="salt-notice__head">' + wt("span", 'class="salt-eyebrow salt-eyebrow--copper"', "bull.h")
+    + '<span class="salt-notice__tools"><span class="salt-notice__dots" aria-hidden="true"></span>'
+    + '<button type="button" class="salt-notice__pause" aria-pressed="false" hidden' + wl("bull.pause") + ">" + "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M9 6 V18 M15 6 V18\"></path></svg>" + "</button></span></div>"
+    + '<div class="salt-notice__lines">' + lines.map((l, i) => '<p class="salt-notice__line' + (i ? "" : " salt-notice__line--on") + '">' + esc(l) + "</p>").join("") + "</div></div>"
+    + "</section>";
 }
 /* S9 9.2: SALT ACCOUNT'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
@@ -1819,14 +1834,55 @@ const CLIENT_JS = `
      happened through the natural three-minute expiry. Every await below is followed by a ticket
      check, and lock() bumps the ticket, so anything still in flight lands on nothing. */
   var POLL_MS=__POLL__, bundle=null, at=0, ticket=0, busy=false;
-  /* THE NOTICE (20 Sep 2026): drawn from what the page was served with, read again every sixth poll. S7 7.5, his D14:
-     a still card on Home, every line standing, so nothing runs, changes or is told again to a screen reader */
-  var BULL=__BULL__, bullN=0;
+  /* THE NOTICE (20 Sep 2026): drawn from what the page was served with, read again every sixth poll. Counter Batch A (his decision of
+     18 Oct 2026): one line at a time, the next every BULL_MS, a dot a line and Pause to hold it; under reduced motion every line stands
+     and neither the dots, Pause nor a timer is drawn. The card is never a live region. */
+  var BULL=__BULL__, bullN=0, BULL_MS=6000, bullAt=0, bullHeld=false, bullTimer=null;
+  function bullStill(){ try{ return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
+  function bullShow(){
+    var box=document.getElementById('bull'); if(!box) return;
+    [].forEach.call(box.querySelectorAll('.salt-notice__line'),function(p,i){ p.classList.toggle('salt-notice__line--on',i===bullAt); });
+    [].forEach.call(box.querySelectorAll('.salt-notice__dot'),function(d,i){ d.classList.toggle('salt-notice__dot--on',i===bullAt); });
+  }
+  function bullTurn(){ var n=(BULL.lines||[]).length; if(bullHeld||n<2) return; bullAt=(bullAt+1)%n; bullShow(); }
   function bullDraw(b){
     BULL=b||{lines:[]};
     var box=document.getElementById('bull'); if(!box) return;
-    var lines=BULL.lines||[]; box.hidden=!lines.length; box.textContent='';
-    lines.forEach(function(l){ var p=document.createElement('p'); p.textContent=l; box.appendChild(p); });
+    var lines=BULL.lines||[], still=bullStill(), turns=lines.length>1&&!still;
+    box.hidden=!lines.length;
+    var ls=box.querySelector('.salt-notice__lines'), dots=box.querySelector('.salt-notice__dots'), pz=box.querySelector('.salt-notice__pause');
+    ls.textContent=''; dots.textContent='';
+    if(bullAt>=lines.length) bullAt=0;
+    lines.forEach(function(l,i){
+      var p=document.createElement('p'); p.className='salt-notice__line'; p.textContent=l; ls.appendChild(p);
+      if(turns){ var d=document.createElement('span'); d.className='salt-notice__dot'; dots.appendChild(d); }
+    });
+    dots.hidden=!turns; pz.hidden=!turns;
+    bullShow();
+    if(bullTimer){ clearInterval(bullTimer); bullTimer=null; }
+    if(turns) bullTimer=setInterval(bullTurn,BULL_MS);
+  }
+  (function(){
+    var pz=document.querySelector('#bull .salt-notice__pause'); if(!pz) return;
+    pz.addEventListener('click',function(){
+      bullHeld=!bullHeld; pz.setAttribute('aria-pressed',bullHeld?'true':'false');
+      pz.setAttribute('aria-label',tw(bullHeld?'bull.play':'bull.pause')); pz.setAttribute('data-wl',bullHeld?'bull.play':'bull.pause');
+    });
+  })();
+  /* the open or closed line, off /hours: Open until the next change, or Closed and when it opens; nothing while the hours are not read */
+  function hhmm(iso){ try{ var k=klBits(iso); return k.hour+':'+k.minute; }catch(e){ return ''; } }
+  function sameDay(iso){ try{ var a=klBits(iso), b=klBits(new Date().toISOString()); return a.day===b.day&&a.month===b.month&&a.year===b.year; }catch(e){ return false; } }
+  function todayDraw(){
+    var chip=document.getElementById('todayOpen'), line=document.getElementById('todayLine'); if(!chip||!line) return;
+    var h=counterHours, known=!!h&&!hoursError&&typeof h.open==='boolean';
+    chip.hidden=!known; line.hidden=!known;
+    if(!known){ chip.textContent=''; line.textContent=''; return; }
+    chip.className='today__open salt-status salt-status--'+(h.open?'verdigris':'mist'); chip.textContent=tw(h.open?'today.open':'today.closed');
+    line.textContent='';
+    var at=h.open?h.nextChange:h.nextOpen, lead=el('span','today__when');
+    if(at) lead.textContent=h.open?tw(sameDay(at)?'today.until':'today.untilOn',{t:hhmm(at), d:stamp(at)}):tw(sameDay(at)?'today.opens':'today.opensOn',{t:hhmm(at), d:stamp(at)});
+    if(lead.textContent){ line.appendChild(lead); line.appendChild(document.createTextNode(' ')); }
+    line.appendChild(document.createTextNode(tw(h.open?'today.openB':'today.closedB')));
   }
   /* the test account asks on its session, and is answered the fixture's notice while none of his is set (stmt/testfix.js) */
   var TESTS=__TEST_USERS__;
@@ -6086,6 +6142,7 @@ const CLIENT_JS = `
       if(!result||typeof result.open!=='boolean') throw new Error(tw('hours.unavailable'));
       counterHours=result; hoursError=false;
     }catch(error){ hoursError=true; }
+    if(before!==JSON.stringify([counterHours,hoursError])) todayDraw();
     if(before!==JSON.stringify([counterHours,hoursError])&&tab==='order'&&!view) drawOrder();
     /* 10 Oct 2026: a sheet opened before the hours arrived offers the windows they leave, now they are here */
     if(before!==JSON.stringify([counterHours,hoursError])&&osh&&draft.step==='form') sheetDraw();

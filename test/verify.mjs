@@ -26215,7 +26215,7 @@ await (async () => {
   ok(/wr\(\["kv", "key", "put", name, "--path", file\]\)/.test(src) && !/"put", name, JSON\.stringify/.test(src),
     "the only KV put in drain.mjs goes through --path, never a JSON argument the shell can strip");
 })();
-section("v732: a bulletin is set from Enter, stands on Salt Counter (a still card on Home since S7 7.5), and never names the desk, a code or a level");
+section("v732: a bulletin is set from Enter, stands on Salt Counter (Home's Today card, one line at a time since Counter Batch A), and never names the desk, a code or a level");
 await (async () => {
   /* 20 Sep 2026, his instruction: at the top of Salt Counter, space for a running bulletin he sets from Enter on
      the desk, running or changing. One clear key on the site, set over the binding on the desk key, spliced into
@@ -26248,26 +26248,26 @@ await (async () => {
     "the public read is read only, anything past it is the site's 404, an unknown desk path is still a 404, the desk key still gates the orders, and a set with no JSON is refused");
   await req("/desk/bulletin", "POST", { lines: ["Closed Friday", "Back Monday"], mode: "change" }, D);
 
-  /* ---- 2. THE PAGE CARRIES IT AT FIRST PAINT, with the script's copy spliced. S7 7.5 (his D14 of 24 Sep 2026): a still
-     card at the head of Home, every line standing, where it was a band across the top of the door and every page ---- */
+  /* ---- 2. THE PAGE CARRIES IT AT FIRST PAINT, with the script's copy spliced. Counter Batch A (his decision of 18 Oct 2026, reversing
+     S7 7.5's still card): the notice is in Home's Today card at its head, the first line on and the rest waiting their turn ---- */
   const door = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
   const bodyAt = door.indexOf("<body>");
   ok(bodyAt > 0 && !door.slice(bodyAt, bodyAt + 120).includes('id="bull"')
-    && /<div id="pHome" class="home"><div class="hcol"><div id="bull" class="salt-insight hnote"><p>Closed Friday<\/p><p>Back Monday<\/p><\/div>/.test(door),
-    "the notice is no longer the first thing in the body: it is a still card at the head of Home, every line standing and not hidden");
+    && /<div id="pHome" class="home"><div class="hcol"><section id="today" [^>]*>[\s\S]*?<div id="bull" class="salt-notice hnote">[\s\S]*?<div class="salt-notice__lines"><p class="salt-notice__line salt-notice__line--on">Closed Friday<\/p><p class="salt-notice__line">Back Monday<\/p><\/div>/.test(door),
+    "the notice is no longer the first thing in the body: it is in the Today card at the head of Home, its first line on and the next waiting, not hidden");
   ok(!/bullrun|data-mode|[.]bull[{[ ]/.test(door) && !/<div id="bull"[^>]*style=/.test(door)
     && /var BULL=\{"lines":\["Closed Friday","Back Monday"\]\}/.test(door),
-    "nothing on the page runs or changes, the card carries no style attribute, and the script is served its own copy of the lines alone");
+    "the mode it was set in is not read, the card carries no style attribute, and the script is served its own copy of the lines alone");
   await req("/desk/bulletin", "POST", { lines: ["Tuesday <b>3</b>"], mode: "run" }, D);
   const door2 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(/<div id="bull" class="salt-insight hnote"><p>Tuesday &lt;b&gt;3&lt;\/b&gt;<\/p><\/div>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]\}/.test(door2),
+  ok(/<p class="salt-notice__line salt-notice__line--on">Tuesday &lt;b&gt;3&lt;\/b&gt;<\/p>/.test(door2) && /var BULL=\{"lines":\["Tuesday \\u003cb>3\\u003c\/b>"\]\}/.test(door2),
     "a line is escaped on the card and in the script's copy");
   r = await J(await req("/desk/bulletin", "POST", { lines: [] }, D));
   const door3 = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
-  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<div id="bull" class="salt-insight hnote" hidden><\/div>/.test(door3) && !/Tuesday/.test(door3),
+  ok(r.b.ok && r.b.cleared === true && (await skv.get("bulletin")) === null && /<div id="bull" class="salt-notice hnote" hidden>/.test(door3) && !/salt-notice__line"?>/.test(door3.replace(/<script[\s\S]*?<\/script>/g, "")) && !/Tuesday/.test(door3),
     "an empty set clears the key, and the page then carries the card hidden with nothing in it");
 
-  /* ---- 3. THE PAGE, DRIVEN: the card draws from the served copy, stands still, and follows the poll ---- */
+  /* ---- 3. THE PAGE, DRIVEN: the card draws from the served copy, turns a line every six seconds, and follows the poll ---- */
   await req("/desk/bulletin", "POST", { lines: ["First line", "Second line"], mode: "change" }, D);
   const { JSDOM } = await import("jsdom");
   const html = await (await stmtW.fetch(new Request("https://site.test/"), senv)).text();
@@ -26279,12 +26279,13 @@ await (async () => {
       return { ok: false, status: 404, json: async () => ({ ok: false }) }; };
   } });
   try {
-    const d = dom.window.document, tr = () => [...d.querySelectorAll("#bull > p")].map((x) => x.textContent).join("|");
-    ok(tr() === "First line|Second line" && !d.getElementById("bull").hidden && !ticks.includes(4000),
-      "the page draws every line of the served notice, standing, with no timer to change it: " + JSON.stringify([tr(), ticks]));
+    const d = dom.window.document, tr = () => [...d.querySelectorAll("#bull .salt-notice__line")].map((x) => x.textContent).join("|");
+    ok(tr() === "First line|Second line" && !d.getElementById("bull").hidden && ticks.includes(6000) && !ticks.includes(4000)
+      && d.querySelectorAll("#bull .salt-notice__line--on").length === 1,
+      "the page draws every line of the served notice, one on at a time, with a six-second timer to turn it: " + JSON.stringify([tr(), ticks]));
     await dom.window.eval("bullRead()");
-    ok(tr() === "Only line" && served.includes("/bulletin") && !d.querySelector("#bull [style]"),
-      "a read that finds a different notice redraws it, still: " + JSON.stringify(tr()));
+    ok(tr() === "Only line" && served.includes("/bulletin") && !d.querySelector("#bull [style]") && d.querySelector("#bull .salt-notice__pause").hidden,
+      "a read that finds a different notice redraws it, a single line standing with no Pause: " + JSON.stringify(tr()));
     await dom.window.eval("bullDraw({lines:[]})");
     ok(d.getElementById("bull").hidden && tr() === "", "and an empty notice hides the card");
     ok(/if\(\+\+bullN%6===0\) await bullRead\(\);/.test(html), "the open page reads the bulletin again every sixth poll, once a minute");
@@ -41458,7 +41459,7 @@ await (async () => {
   } finally { c.W.close(); }
 })();
 
-section("S7 7.5: a Set on the desk asks before it wakes every phone, and the notice is Home's still card");
+section("S7 7.5: a Set on the desk asks before it wakes every phone, and the notice heads Home in its Today card");
 await (async () => {
   /* HIS D14 OF 24 SEP 2026 ("all recommended"): "A still card on Home, with no running or changing band. A Set asks before
      it wakes every phone." Every Set woke every phone on the site (v761), with nothing said at the tap. The desk's card
@@ -41467,8 +41468,9 @@ await (async () => {
   const { JSDOM: JD75 } = await import("jsdom");
   const dom = new JD75(lp75("", "n75", null, { lines: ["Closed Friday"] }), { url: "https://site.test/" });
   try {
-    const D = dom.window.document, bull = D.getElementById("bull"), col = D.querySelector("#pHome > .hcol");
-    ok(bull && bull.parentNode === col && col.firstElementChild === bull && !!bull.closest("#tabs[hidden]") && D.body.firstElementChild.id !== "bull",
+    /* Counter Batch A (18 Oct 2026): the notice stands in the Today card, which heads Home */
+    const D = dom.window.document, bull = D.getElementById("bull"), col = D.querySelector("#pHome > .hcol"), today = D.getElementById("today");
+    ok(bull && today && bull.parentNode === today && today.parentNode === col && col.firstElementChild === today && !!bull.closest("#tabs[hidden]") && D.body.firstElementChild.id !== "bull",
       "on the page the notice heads Home, inside the places the door keeps hidden, and no longer heads every page: "
       + JSON.stringify([bull && bull.parentNode && bull.parentNode.className, D.body.firstElementChild.id]));
   } finally { dom.window.close(); }
@@ -42792,36 +42794,9 @@ await (async () => {
   } finally { w.close(); }
 })();
 
-section("S7 7.5: the notice stands still for everyone, and is no live region");
+section("Counter Batch A: the Today card heads Home: the clock, open or closed off /hours, the notice turning every six seconds with Pause, every line standing under reduced motion, no live region (18 Oct 2026; it was S7 7.5's still card)");
 await (async () => {
-  /* L51 of the Counter study: the changing bulletin swapped its line every four seconds whatever the reader had asked
-     for, inside a role=status live region, so a screen reader was read a new line every four seconds for as long as
-     the page was open. Under prefers-reduced-motion the lines now stand still, all of them; otherwise the changing
-     line is hidden from the live region and every line is told to it once. The timer is captured, never waited for. */
-  const { landingPage: lpB } = await import("../stmt/page.js");
-  const { JSDOM: JDB } = await import("jsdom");
-  const lines = ["Closed Friday", "Open Saturday", "New sizes"];
-  const open = (reduce) => {
-    const timers = [];
-    const dom = new JDB(lpB("", "nl51", null, { lines, mode: "change" }), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
-      win.matchMedia = (q) => ({ matches: reduce && /prefers-reduced-motion:\s*reduce/.test(q), media: q, addListener() {}, removeListener() {} });
-      win.setInterval = (f, ms) => { if (ms === 4000) timers.push(f); return 900 + timers.length; };
-      win.fetch = async () => ({ ok: false, status: 404, json: async () => ({ ok: false }) });
-    } });
-    return { dom, d: dom.window.document, timers };
-  };
-  const still = open(true), moving = open(false);
-  try {
-    /* S7 7.5, HIS D14 OF 24 SEP 2026: a still card for everyone, reduced motion or not, set in changing mode or not; it
-       is part of Home, read where it stands, so it is no live region to be read again on every poll */
-    const shown = (g) => [...g.d.querySelectorAll("#bull > p")].map((x) => x.textContent);
-    for (const g of [still, moving]) {
-      const box = g.d.getElementById("bull");
-      ok(g.timers.length === 0 && JSON.stringify(shown(g)) === JSON.stringify(lines) && !box.hidden && !box.hasAttribute("role") && !box.hasAttribute("aria-live"),
-        (g === still ? "under reduced motion" : "without it") + ", no four-second timer is set and every line stands still, in no live region: "
-        + JSON.stringify([g.timers.length, shown(g), box.getAttribute("role")]));
-    }
-  } finally { still.dom.window.close(); moving.dom.window.close(); }
+  await (await import("./counter-today.mjs")).run({ ok });
 })();
 
 section("S6 6.2: To pay now heads Home, a line for each thing due with when it is due (V2's invoice), one Pay, and what is coming up in Home's Coming up");

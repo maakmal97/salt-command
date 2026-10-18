@@ -1,0 +1,17 @@
+[
+ {"name":"the notice stands still","file":"stmt/page.js","find":"    if(turns) bullTimer=setInterval(bullTurn,BULL_MS);\n","replace":""},
+ {"name":"the notice turns every four seconds","file":"stmt/page.js","find":"BULL_MS=6000,","replace":"BULL_MS=4000,"},
+ {"name":"every line is on","file":"stmt/page.js","find":"p.classList.toggle('salt-notice__line--on',i===bullAt);","replace":"p.classList.toggle('salt-notice__line--on',true);"},
+ {"name":"the dots do not follow","file":"stmt/page.js","find":"d.classList.toggle('salt-notice__dot--on',i===bullAt);","replace":"d.classList.toggle('salt-notice__dot--on',i===0);"},
+ {"name":"Pause holds nothing","file":"stmt/page.js","find":"if(bullHeld||n<2) return;","replace":"if(n<2) return;"},
+ {"name":"Pause keeps its name","file":"stmt/page.js","find":"      pz.setAttribute('aria-label',tw(bullHeld?'bull.play':'bull.pause'));","replace":"      pz.setAttribute('aria-label',tw('bull.pause'));"},
+ {"name":"Pause never says it is pressed","file":"stmt/page.js","find":"bullHeld=!bullHeld; pz.setAttribute('aria-pressed',bullHeld?'true':'false');","replace":"bullHeld=!bullHeld;"},
+ {"name":"reduced motion still turns","file":"stmt/page.js","find":"turns=lines.length>1&&!still;","replace":"turns=lines.length>1;"},
+ {"name":"a single line turns with a Pause","file":"stmt/page.js","find":"turns=lines.length>1&&!still;","replace":"turns=lines.length>0&&!still;"},
+ {"name":"the card is a live region","file":"stmt/page.js","find":"'<section id=\"today\" class=\"today salt-glass-card salt-glass-card--radius-lg\"' + wl(\"today.aria\") + \">\"","replace":"'<section id=\"today\" aria-live=\"polite\" class=\"today salt-glass-card salt-glass-card--radius-lg\"' + wl(\"today.aria\") + \">\""},
+ {"name":"the clock leaves the card","file":"stmt/page.js","find":"<span class=\"today__clock\" data-clock></span>","replace":""},
+ {"name":"open reads Closed","file":"stmt/page.js","find":"chip.textContent=tw(h.open?'today.open':'today.closed');","replace":"chip.textContent=tw('today.closed');"},
+ {"name":"the hours are never drawn","file":"stmt/page.js","find":"    if(before!==JSON.stringify([counterHours,hoursError])) todayDraw();\n","replace":""},
+ {"name":"unread hours still show","file":"stmt/page.js","find":"    chip.hidden=!known; line.hidden=!known;","replace":"    chip.hidden=false; line.hidden=false;"},
+ {"name":"closed says nothing of when it opens","file":"stmt/page.js","find":"tw(sameDay(at)?'today.opens':'today.opensOn',{t:hhmm(at), d:stamp(at)})","replace":"''"}
+]
