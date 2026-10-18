@@ -17822,7 +17822,7 @@ await (async () => {
   const wake = async (summary) => { const sw = runSw(summary), waits = []; sw.L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return sw.shown[0]; };
   const bOrd = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 1, placed: 1 });
   const bRow = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 0 });
-  ok(bOrd && bOrd.t === "New order" && /^Acknowledge it on the desk\./.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders/newest"
+  ok(bOrd && bOrd.t === "New order" && /^Acknowledge it on Counter Admin./.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders/newest"
     && bRow && bRow.t === "Waiting on you" && bRow.opt.body === "Today: approve 2 rows." && bRow.opt.data.url === "./",
     "an order waiting is the banner's title and opens Orders; without one the banner is as it was: " + JSON.stringify({ bOrd, bRow }));
   {
@@ -34220,7 +34220,7 @@ await (async () => {
   const bQuiet = await wake9({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 0 });
   ok(bRefund && bRefund.opt.body === "Now: pay back 1 refund.",
     "the morning round names a refund still owed, which it never did: " + (bRefund && bRefund.opt.body));
-  ok(bBoth && bBoth.t === "New order" && bBoth.opt.body === "Acknowledge it on the desk.\nNow: pay back 1 refund.\nToday: approve 2 rows.",
+  ok(bBoth && bBoth.t === "New order" && bBoth.opt.body === "Acknowledge it on Counter Admin.\nNow: pay back 1 refund.\nToday: approve 2 rows.",
     "an order still leads and no longer hides a refund, a row owed a decision or a shelf not counted: " + (bBoth && bBoth.opt.body));
   ok(bQuiet && bQuiet.opt.body === "Nothing waiting, and nothing owed a decision." && bQuiet.t === "All square",
     "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
@@ -39778,11 +39778,11 @@ await (async () => {
     "an acknowledged order is still named as waiting on him, and never asked to be acknowledged again: " + JSON.stringify(b1 && [b1.t, b1.opt.body]));
   await place();
   const b2 = await wake(await summary());
-  ok(b2 && b2.t === "New order" && b2.opt.body === "Acknowledge it on the desk.\n1 order waiting on you.",
+  ok(b2 && b2.t === "New order" && b2.opt.body === "Acknowledge it on Counter Admin.\n1 order waiting on you.",
     "a new one beside it is the title, and the one already agreed rides in the body: " + JSON.stringify(b2 && [b2.t, b2.opt.body]));
   await place();
   const b3 = await wake(await summary());
-  ok(b3 && b3.t === "2 new orders" && b3.opt.body === "Acknowledge them on the desk.\n1 order waiting on you.",
+  ok(b3 && b3.t === "2 new orders" && b3.opt.body === "Acknowledge them on Counter Admin.\n1 order waiting on you.",
     "two to agree are them, not it: " + JSON.stringify(b3 && [b3.t, b3.opt.body]));
 })();
 
@@ -50329,7 +50329,7 @@ await (async () => {
     k = await push(Object.assign({}, quiet, { placed: 3, orders: 3, pending: 1 }), {});
   ok(i.shown[0].t === "A customer says they paid" && i.shown[0].opt.body === "Check it arrived, then tap Received or Not found.\nNow: pay back 1 refund.\n1 order waiting on you."
     && j.shown[0].t === "A customer cancelled" && j.shown[0].opt.body === "Tap to see which order."
-    && k.shown[0].t === "3 new orders" && k.shown[0].opt.body === "Acknowledge them on the desk.\nToday: approve 1 row.",
+    && k.shown[0].t === "3 new orders" && k.shown[0].opt.body === "Acknowledge them on Counter Admin.\nToday: approve 1 row.",
     "a payment, a withdrawal and new orders each say their own sentence, and the tail follows it: " + JSON.stringify([i, j, k].map((x) => [x.shown[0].t, x.shown[0].opt.body])));
 })();
 
