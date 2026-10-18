@@ -1,8 +1,74 @@
 [
-  {"name": "the per-entry roll is skipped", "file": "engine/apply.mjs", "find": "const from = book.STATED_STOCK, to = r2(from - out + inn); book.STATED_STOCK = to; rolls.push", "replace": "const from = book.STATED_STOCK, to = r2(from - out + inn); rolls.push"},
-  {"name": "the salt fallback rate is read once, before the batch, not before the entry", "file": "engine/apply.mjs", "find": "stockCost: stockCostOf(book), nextRid: ctx.nextRid", "replace": "stockCost: (ctx.staged.zzSc === undefined ? (ctx.staged.zzSc = stockCostOf(book)) : ctx.staged.zzSc), nextRid: ctx.nextRid"},
-  {"name": "the reducer drops sortBook", "file": "test/apply-entry.mjs", "find": "  ctx.sortBook(book);\n  return book;", "replace": "  return book;"},
-  {"name": "the reducer drops QUEUE_COMMITTED", "file": "test/apply-entry.mjs", "find": "if (newest && newest > (book.QUEUE_COMMITTED || \"\")) book.QUEUE_COMMITTED = newest;", "replace": ""},
-  {"name": "the reducer applies no rename", "file": "test/apply-entry.mjs", "find": "    E.renameInBook(book, rn.pairs);\n", "replace": ""},
-  {"name": "a move is attributed to no entry", "file": "engine/apply.mjs", "find": "MOVE_OF.get(m) === it.id", "replace": "MOVE_OF.get(m) === undefined"}
+ {
+  "name": "the per-entry roll is skipped",
+  "file": "engine/apply.mjs",
+  "find": "const from = book.STATED_STOCK, to = r2(from - out + inn); book.STATED_STOCK = to; rolls.push",
+  "replace": "const from = book.STATED_STOCK, to = r2(from - out + inn); rolls.push"
+ },
+ {
+  "name": "the salt fallback rate is read once, before the batch, not before the entry",
+  "file": "engine/apply.mjs",
+  "find": "stockCost: stockCostOf(book), nextRid: ctx.nextRid",
+  "replace": "stockCost: (ctx.staged.zzSc === undefined ? (ctx.staged.zzSc = stockCostOf(book)) : ctx.staged.zzSc), nextRid: ctx.nextRid"
+ },
+ {
+  "name": "a move is attributed to no entry",
+  "file": "engine/apply.mjs",
+  "find": "MOVE_OF.get(m) === it.id",
+  "replace": "MOVE_OF.get(m) === undefined"
+ },
+ {
+  "name": "the batch is booked newest entry first",
+  "file": "engine/apply.mjs",
+  "find": "  for (const it of p.items) {\n    const r = applyEntry(",
+  "replace": "  for (const it of p.items.slice().reverse()) {\n    const r = applyEntry("
+ },
+ {
+  "name": "every entry is handed the whole plan's moves",
+  "file": "engine/apply.mjs",
+  "find": "moves: movesOf(p, it) });\n    moves.push",
+  "replace": "moves: p.moves });\n    moves.push"
+ },
+ {
+  "name": "the roll note starts from the last roll's figure",
+  "file": "engine/apply.mjs",
+  "find": "const from = rs[0].from, counted",
+  "replace": "const from = rs[rs.length - 1].from, counted"
+ },
+ {
+  "name": "the note names the last roll, not the count that stands",
+  "file": "engine/apply.mjs",
+  "find": "const to = counted ? (prod === \"salt\" ? book.STATED_STOCK : (book.PROD_OPENING || {})[prod].stated) : rs[rs.length - 1].to;",
+  "replace": "const to = rs[rs.length - 1].to;"
+ },
+ {
+  "name": "a rename already applied no longer carries a later row",
+  "file": "engine/apply.mjs",
+  "find": "    for (const rn of renames) E.renameInBook(book, rn.pairs);   /* a rename already applied",
+  "replace": "    /* a rename already applied"
+ },
+ {
+  "name": "a rename is held to the end of the batch",
+  "file": "engine/apply.mjs",
+  "find": "      E.renameInBook(book, rn.pairs);   // PLACED is a map keyed by code, so a point filed earlier moves with the code\n      if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }   // v633: and a new place moves it on\n      renames.push(rn);",
+  "replace": "      renames.push(rn);"
+ },
+ {
+  "name": "each entry writes its own roll note",
+  "file": "engine/apply.mjs",
+  "find": "const byProd = {};\n  for (const m of entryMoves) {",
+  "replace": "const byProd = {};\n  for (const m of entryMoves.slice(0, 1)) {"
+ },
+ {
+  "name": "a refused trip row leaves its siblings in the plan",
+  "file": "engine/apply.mjs",
+  "find": "  if (held.size) {",
+  "replace": "  if (false) {"
+ },
+ {
+  "name": "a batch leaves QUEUE_COMMITTED where it was",
+  "file": "engine/apply.mjs",
+  "find": "  if (newest && newest > (book.QUEUE_COMMITTED || \"\")) book.QUEUE_COMMITTED = newest;\n  sortBook(book);\n  return { book, plan: p, folded, newest, moves, renames };",
+  "replace": "  sortBook(book);\n  return { book, plan: p, folded, newest, moves, renames };"
+ }
 ]

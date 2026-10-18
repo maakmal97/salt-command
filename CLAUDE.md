@@ -247,8 +247,10 @@ a row naming no product being salt. What is keyed by product: `docs/PRODUCTS.md`
   refused and what rolls is `fold.mjs`; the model writes only the notes. No key, a call that will
   not go through, or a reply twice against the house rules all land on `tools/foldnotes.mjs`,
   which records no judgement and says so in every note. A refusal by `fold.mjs` leaves the batch
-  staged. CI holds the API key and the Cloudflare token, nothing else. **A count and the lots it
-  follows are two folds**: the fold counts, then rolls.
+  staged. CI holds the API key and the Cloudflare token, nothing else. **A batch books in EVENT ORDER**
+  (`applyInto` is `applyEntry` over the entries, his answers of 16 Oct 2026): a count stands and only the moves after it change
+  it, a rename applies where it stands, an Add ID books before the trade naming it, a trip books whole or not at all, and the
+  roll note is one a product for the batch.
 - **A change to `cloud-commit.yml` never tests itself**: it is not on its own push paths. Dispatch
   a run by hand and read the step list, since a skipped step is green too. After any push read the
   run's annotation: a billing refusal looks like an ordinary red run.

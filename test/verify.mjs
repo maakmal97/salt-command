@@ -15000,7 +15000,7 @@ await (async () => {
   const res28 = F28.apply(book28, { ok: true, count: 2, approved: [ren28, sale28] }, notes28, master28);
   const sold28 = book28.sales.find((s) => s.note === "fixture row");
   ok(res28.ok && !!sold28 && sold28.customer === "CZ9-SEG-R" && book28.roster.includes("CZ9-SEG") && book28.roster.includes("CZ9-SEG-R") && !book28.roster.includes("CZ9-TBC") && book28.associates.includes("CZ9-SEG"),
-    "the rename folds last, so a sale approved after it under the old account moves too: " + (res28.ok ? JSON.stringify(sold28 && sold28.customer) : res28.problems.join("; ")));
+    "a rename applies where it stands and still carries a sale approved after it under the old account: " + (res28.ok ? JSON.stringify(sold28 && sold28.customer) : res28.problems.join("; ")));
   const plan28 = (from, to, bk) => F28.plan(bk, { ok: true, count: 1, approved: [{ ...ren28, row: { from, to } }] }, null).refused.map((x) => x.why).join(" ");
   const live28 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   if (!live28.roster.includes("CJ4-OKR")) live28.roster.push("CJ4-OKR");
@@ -51146,7 +51146,7 @@ await (async () => {
   await (await import("./engine-cards.mjs")).run({ ok });
 })();
 
-section("S1d-1: applyEntry books one entry, and the entries reduced in order end where the batch ends");
+section("S1d-1: applyEntry books one entry, and a batch is its entries booked in event order");
 await (async () => {
   await (await import("./apply-entry.mjs")).run({ ok });
 })();
