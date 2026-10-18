@@ -4568,7 +4568,7 @@ const RULES={
   floorTo:5,
   /* 18 Oct 2026: the moment a salt customer's figure turned from a drift (-1 to +1) into a % lift (0 to 2). The fold drops a tierset or an
      Add ID salt tier stamped before it, with a note: it was set in the old unit. The session that bumps sets the exact time. No semicolon here. */
-  liftSince:"2026-10-18T00:00:00Z",
+  liftSince:"2026-10-18T17:30:00Z",
   lateResetRepeat:3,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
@@ -9933,7 +9933,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1163","d":"18 Oct 2026","t":"THE BOOK, A SHADOW DURABLE OBJECT, IS LOADED AT EACH FOLD; NOTHING READS IT","n":["<b>A SECOND COPY OF THE FOLDED BOOK NOW SITS BESIDE GIT.</b> The Desk Worker holds a SQLite Durable Object, Book, that the chain refills from the folded book after the D1 re-seed. Each row is stamped when it was first booked, the load is idempotent, and a failed load is said and never blocks a fold.","<b>NO READER, NO FIGURE MOVES.</b> The desk, the Counter, the drafter and the fold do not ask the Book anything; git stays the source. Its way back is a new migration tag deleting the class."]}];
+const evolution=[{"v":"v1164","d":"19 Oct 2026","t":"THREE PRICES: FLOOR, SET PRICE, CEILING; THE LEVELS ARE GONE","n":["<b>THE FLOOR IS COGS AND FREIGHT, UP TO THE NEXT RM 5.</b> Every book: the latest purchase's quote and trip freight over its units, times the size, the order total rounded up to the next RM 5. The Ceiling is three times the Floor on every book (oil and candy were twice, rice two and a half). A partner pays the Floor. Oil, candy and rice keep their typed boards; no board price moves.","<b>SALT'S SET PRICE IS THE LEAST ANY CUSTOMER PAYS.</b> 2.5 times the Floor at half a unit, 2 at 1 unit, 1.67 at 6.25 and 1.33 at 12.5, sliding in the log of size and flat above 12.5. The margin in ringgit never falls as the order grows, and a unit never costs more in a bigger order, judged on the exact rate, so a large order no longer slides to the Floor. At COGS RM 58 a unit: RM 75, 120, 605 and 980 at 0.5, 1, 6.25 and 12.5 units.","<b>EACH CUSTOMER'S PRICE IS HIS %.</b> Their % lifts the Set Price toward the Ceiling, the same at every size. The record only suggests a % (paid late, paid above the Set Price) and never moves a price, so a late payer is no longer priced up unasked. Every customer starts at 0%. A figure in the old drift scale, or sent without its unit, books as no %.","<b>THE FIVE LEVELS ARE GONE</b> from the engine, the Desk, the drafter, the fold, Counter Admin and the guest links: one guest board, the Set Price, and old links keep opening. Every surface says Floor, Set Price, Ceiling."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10077,7 +10077,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Oct 2026, 18:58 KL';
+const LAST_UPDATED='19 Oct 2026, 01:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

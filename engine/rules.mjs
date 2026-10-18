@@ -27,7 +27,7 @@ const RULES={
   floorTo:5,
   /* 18 Oct 2026: the moment a salt customer's figure turned from a drift (-1 to +1) into a % lift (0 to 2). The fold drops a tierset or an
      Add ID salt tier stamped before it, with a note: it was set in the old unit. The session that bumps sets the exact time. No semicolon here. */
-  liftSince:"2026-10-18T00:00:00Z",
+  liftSince:"2026-10-18T17:30:00Z",
   lateResetRepeat:3,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},

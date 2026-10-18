@@ -176,8 +176,8 @@
  {
   "name": "the switch moment is set far in the future, so a figure stamped after it is dropped as well",
   "file": "engine/rules.mjs",
-  "find": "liftSince:\"2026-10-18T00:00:00Z\",",
-  "replace": "liftSince:\"2099-10-18T00:00:00Z\","
+  "find": "liftSince:\"2026-10-18T17:30:00Z\",",
+  "replace": "liftSince:\"2099-10-18T17:30:00Z\","
  },
  {
   "name": "the Add ID road is outside the dated gate: its old figure is held",
