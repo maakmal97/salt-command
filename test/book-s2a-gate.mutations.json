@@ -1,0 +1,4 @@
+[
+  {"name":"the service token is not let through for the load","file":"src/worker.js","find":"\"POST /push/send\", \"POST /book/load\"]);","replace":"\"POST /push/send\"]);"},
+  {"name":"the push key opens the load","file":"src/worker.js","find":"|| (bk && secretMatches(String(request.headers.get(\"X-Book-Key\") || \"\"), bk));","replace":"|| (bk && secretMatches(String(request.headers.get(\"X-Book-Key\") || \"\"), bk)) || pushKeyOk(request, env);"}
+]

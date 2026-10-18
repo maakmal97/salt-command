@@ -333,8 +333,7 @@ and carries on). Minting cannot run in CI, by design. Amend ID needs nothing. Hi
   host and the Counter's `/all`, set outside the repo's config; the Worker's own JWT check is the
   second lock, its team and audience in `wrangler.jsonc`, a change deployed by hand. The Worker verifies the
   JWT signature, issuer, audience, expiry and exact email from the Access header or cookie; a header
-  alone is not identity. The CI service token passes only `GET /rev` and `POST /push/send`; the vault
-  tools send his own token. The Counter's `/all` applies the same verified-email rule, while customer
+  alone is not identity. The CI service token passes only `GET /rev`, `POST /push/send` and `POST /book/load` (S2a: the shadow Book's load, which also needs its own key `SALT_BOOK_KEY` or the write key, takes only the book, and answers counts and a digest, never a row); the vault tools send his own token. The Counter's `/all` applies the same verified-email rule, while customer
   sign-in routes outside `/all` remain unchanged.
 - **Writes need `X-Salt-Key` = `SALT_WRITE_KEY`, and so do the reads that carry cost or trade:
   `/queue`, `/ledger`, `/drafts`, `/orders`, `/stmt-users`, and the places' `/vault/addr` and

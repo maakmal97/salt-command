@@ -1,0 +1,20 @@
+[
+  {"name":"an unchanged row is revised on every load","file":"src/book.js","find":"if (was.h !== r.h) { sql.exec(\"UPDATE rows","replace":"if (true) { sql.exec(\"UPDATE rows"},
+  {"name":"a new row is stamped with a fixed moment, not the load's","file":"src/book.js","find":"r.coll, r.key, r.doc, r.h, at); n.added++; continue; }","replace":"r.coll, r.key, r.doc, r.h, \"1970-01-01T00:00:00Z\"); n.added++; continue; }"},
+  {"name":"a revision moves booked_at","file":"src/book.js","find":"revised_at = ?, gone_at = NULL","replace":"revised_at = ?, booked_at = '2099-01-01T00:00:00Z', gone_at = NULL"},
+  {"name":"a row the book dropped is not marked gone","file":"src/book.js","find":"for (const r of held.values()) if (!r.gone_at) {","replace":"for (const r of held.values()) if (false) {"},
+  {"name":"a returning row stays gone","file":"src/book.js","find":"else if (was.gone_at) {","replace":"else if (false) {"},
+  {"name":"an empty sales or purchases load is accepted","file":"src/book.js","find":"if (!Array.isArray(book.sales) || !book.sales.length || !Array.isArray(book.purchases) || !book.purchases.length)","replace":"if (false)"},
+  {"name":"a duplicate rid-less row is dropped","file":"src/book.js","find":"for (let n = 2; seen.has(key); n++) key = base + \"#\" + n;","replace":"if (seen.has(key)) continue;"},
+  {"name":"PRICING is not carried","file":"src/book.js","find":"if (pricing !== undefined && pricing !== null) {","replace":"if (false) {"},
+  {"name":"the answer carries a row","file":"src/book.js","find":"return Response.json(this.load(p, body.rev));","replace":"return Response.json({ ...this.load(p, body.rev), first: p.rows[0] && p.rows[0].doc + \"cost\" });"},
+  {"name":"the load route is open to any caller","file":"src/worker.js","find":"  if (!good) return needsKey();\n  if (!env.BOOK)","replace":"  if (false) return needsKey();\n  if (!env.BOOK)"},
+  {"name":"a drafter-side reader of the Book appears","file":"src/worker.js","find":"return json({ ok: true, cloud: true, writes: [\"queue\"] });","replace":"{ await env.BOOK?.get(1); return json({ ok: true, cloud: true, writes: [\"queue\"] }); }"},
+  {"name":"the binding is renamed","file":"wrangler.jsonc","find":"{ \"name\": \"BOOK\", \"class_name\": \"Book\" }","replace":"{ \"name\": \"BOOKX\", \"class_name\": \"Book\" }"},
+  {"name":"the migration is not SQLite-backed","file":"wrangler.jsonc","find":"\"new_sqlite_classes\": [\"Book\"]","replace":"\"new_classes\": [\"Book\"]"},
+  {"name":"a 4xx is retried","file":"tools/book-load.mjs","find":"if (r.status < 500) return","replace":"if (false) return"},
+  {"name":"a 5xx is not retried","file":"tools/book-load.mjs","find":"{ tries = 3,","replace":"{ tries = 1,"},
+  {"name":"a missing key still posts","file":"tools/book-load.mjs","find":"if (!key) return { ok: false, error: \"SALT_BOOK_KEY is not set, so the Book was not loaded\" };","replace":""},
+  {"name":"a failed load blocks the fold","file":".github/workflows/cloud-commit.yml","find":"        if: steps.plan.outputs.deploy == '1'\n        continue-on-error: true\n        env:\n          SALT_BOOK_KEY","replace":"        if: steps.plan.outputs.deploy == '1'\n        env:\n          SALT_BOOK_KEY"},
+  {"name":"PRICING.takenAt is held, so a replayed fold reads as a revision","file":"src/book.js","find":"const { takenAt, ...steady } = pricing; const doc = canon(steady);","replace":"const doc = canon(pricing);"}
+]
