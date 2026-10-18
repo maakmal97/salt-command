@@ -62,8 +62,8 @@ export async function run({ ok, pageWork }) {
 
   const good = read(), low = read({ qty: 3, total: 100 });
   ok(good.margin.rm === 88 && good.goods === 130 && good.floor.under === false && good.floor.warn === null
-    && low.margin.rm === -26 && low.floor.under === true && low.floor.short === 26
-    && /RM 100 for the goods is RM 26 under the floor of RM 126/.test(low.floor.warn),
+    && low.margin.rm === -26 && low.floor.under === true && low.floor.short === 30
+    && /RM 100 for the goods is RM 30 under the Floor of RM 130/.test(low.floor.warn),
   "trade reading: margin in RM over cost, and a refusal-style line when the goods are under the floor " + JSON.stringify({ good: good.margin, low: low.floor }));
 
   const buy = makerTradeReading({ direction: "purchase", product: "salt", qty: 100, total: 4400, freight: 200 }, book);
@@ -128,8 +128,8 @@ export async function run({ ok, pageWork }) {
       const box = page.section.querySelector(".maker-reading"), text = () => box.textContent;
       page.change("Units", "3"); page.change("Price (goods)", "100"); await page.work.quiet();
       const warn = [...box.querySelectorAll("p.msg.bad")].map((p) => p.textContent).join("|");
-      ok(!box.hidden && /Cost a unit RM 42[.]00/.test(text()) && /margin -?RM 26[.]00|margin RM -26[.]00/.test(text()) && /Floor RM 126[.]00 for 3 units/.test(text())
-        && /RM 26 under the floor of RM 126/.test(warn) && /Their usual RM 140[.]00 a unit over 3 orders/.test(text()),
+      ok(!box.hidden && /Cost a unit RM 42[.]00/.test(text()) && /margin -?RM 26[.]00|margin RM -26[.]00/.test(text()) && /Floor RM 130[.]00 for 3 units/.test(text())
+        && /RM 30 under the Floor of RM 130/.test(warn) && /Their usual RM 140[.]00 a unit over 3 orders/.test(text()),
       "trade reading page: before Send the form shows cost, margin, the floor, a warning under it and their usual " + text());
       page.change("Date", "2099-08-01"); await page.work.quiet();
       ok(!/latest purchase/.test(text()) && /Cost a unit RM/.test(text()),

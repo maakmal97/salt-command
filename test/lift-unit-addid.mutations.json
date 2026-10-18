@@ -1,0 +1,14 @@
+[
+ {
+  "name": "the drafter drops the unit from an Add ID row",
+  "file": "src/drafter.js",
+  "find": "pay.tiers && pay.unit === \"pct\" ? { unit: \"pct\" } : {}",
+  "replace": "{}"
+ },
+ {
+  "name": "the drafter stays quiet about a starting % with no unit",
+  "file": "src/drafter.js",
+  "find": "if (pay.tiers && pay.unit !== \"pct\") flags.push(",
+  "replace": "if (false) flags.push("
+ }
+]

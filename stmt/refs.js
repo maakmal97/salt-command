@@ -4,18 +4,10 @@
  * tell apart, and each opening a landing page that shows ONE BOARD'S PRICES AND NOTHING ELSE. No
  * statement, no order, no account.
  *
- * SINCE v696 THERE IS ONE STANDING LINK PER TIER (his instruction, 18 Sep 2026: "for the
- * guest links, produce exactly 5 links, for the five tier pricing"). Since 23 Sep 2026 the tiers are
- * four, Titanium, Platinum, Gold and Silver; Ambassador is the floor and never a guest's. Bronze's
- * link was kept, because an id already handed out must keep opening something: it names a level the
- * book no longer has, so it opens the stranger's board, which is Silver's. Each standing link carries its LEVEL, is minted once and kept for good, so an id already
- * handed out never changes what it opens, and he picks which of the five to give a stranger.
- *
- * SINCE v658 A LINK MAY INSTEAD NAME ITS INTRODUCER. The board is the ladder, so a guest's
- * level is derived: two above the introducer's where there is room, else one, capped at the last.
- * The level is NOT stored here. It is computed by the publish from the introducer's tier at that
- * moment and written as the link's own board, so a link follows its introducer up when he moves
- * them, and a level frozen into a record can never fall out of step with the book.
+ * 18 OCT 2026, HIS DECISION: THE FIVE PRICE LEVELS ARE GONE, so a link has no level and every link opens the ONE guest board,
+ * the Set Price. There is one standing link, for strangers, ensured and kept for good. Records made before carry a `tier`, a
+ * `level` or a `standing` mark for a level: they are read and ignored, so an id already handed out keeps opening the board.
+ * A link may still NAME ITS INTRODUCER, the customer who handed it out, which is only a note for him: it prices nothing.
  *
  * THE ID IS THE CREDENTIAL, and that is the whole gate. There is no password, because there is
  * nothing here worth a password: a board price is a thing he prints and hands to strangers, and the
@@ -55,9 +47,7 @@
  * so the door stays shut by the very test above and nothing that reads only `approved` can open it,
  * while every reader that says "waiting" leaves it out. Approving it later clears the mark.
  *
- * "IF NEED BE" MEANS IT WORKS WITHOUT HIM. An approved link with no level follows the v658 rule, the
- * associate being the introducer, so the guest is quoted two levels above theirs. He may pin a level
- * instead, and then it reads that level's board and needs nothing published for it (v699).
+ * Approving it is the whole of his word on it: it then opens the guest board like any other.
  *
  * NO LABEL FROM AN ASSOCIATE. A label is HIS note (below), and a note typed by a customer would be
  * the first plaintext anybody but him has ever put into this store. He can label one when he
@@ -103,21 +93,17 @@ export function cleanLabel(s) {
 
 /** Mint one. Collides at about one in 10^11 for forty links, and is checked anyway because the
  *  cost is one read and the failure would silently re-point a link already handed out. */
-export async function mintRef(env, { introducer, tier, label, by, level }) {
-  /* v658: `tier` is kept on the record for the links minted before the introducer rule, so an old
-     one still opens; nothing reads it to price any more. A new link carries its introducer instead.
-     v696: or its LEVEL, which is what the five standing links carry. */
-  const t = Number(tier) === 1 ? 1 : 2;
+export async function mintRef(env, { introducer, label, by, standing }) {
   for (let i = 0; i < 5; i++) {
     const id = newRef();
     if (await env.STMT.get(RKEY(id))) continue;
     /* v709: `by` is who minted it. Empty or "standing" is him, and his links are open at once; an
        associate's username means it waits. `standing` stays FALSE for an associate's link, or
-       ensureStanding would adopt it as one of the five he hands to strangers. */
+       ensureStanding would adopt it as the one he hands to strangers. */
     const mintedBy = String(by || "");
     const mine = !mintedBy || mintedBy === "standing";
-    const rec = { id, tier: t, introducer: String(introducer || "").toLowerCase() || null,
-      level: level || null, standing: mine && !!level,
+    const rec = { id, introducer: String(introducer || "").toLowerCase() || null,
+      standing: mine && !!standing,
       approved: mine,
       label: cleanLabel(label), made: new Date().toISOString(),
       by: mintedBy, opens: 0, first: null, last: null, revoked: false };
@@ -127,24 +113,14 @@ export async function mintRef(env, { introducer, tier, label, by, level }) {
   return null;
 }
 
-/* ONE FOR EACH TIER, ALWAYS (v696). Ensured rather than minted on a tap, so the answer to "what
- * are my links" is always one a tier and he never has to remember to make them. It is idempotent:
- * a level that already has a standing link keeps the id it was given, because an id handed to a
- * stranger must never change what it opens. Ambassador is not among them; it is the floor.
- *
- * The names come from the book, through the roster the publish writes, so the desk decides what the
- * levels are called and this file never states them. With no names to hand it makes none, rather
- * than inventing five. */
-export async function ensureStanding(env, names) {
-  const want = Array.isArray(names) ? names.slice(1).filter((x) => typeof x === "string" && x) : [];
-  if (!want.length) return [];
+/* THE ONE STANDING LINK, ALWAYS (18 Oct 2026; v696 made one a tier). Ensured rather than minted on a tap, so the answer to
+ * "what are my links" always holds the link he shows a stranger. Idempotent: a standing link already in the store, whatever
+ * it once carried, keeps its id, because an id handed to a stranger must never change what it opens; a withdrawn one stays
+ * withdrawn, and none is made over it. */
+export async function ensureStanding(env) {
   const have = await listRefs(env);
-  const out = [];
-  for (const level of want) {
-    const found = have.find((r) => r.standing && r.level === level);
-    out.push(found || await mintRef(env, { level, label: level, by: "standing" }));
-  }
-  return out.filter(Boolean);
+  const found = have.find((r) => r.standing);
+  return found || await mintRef(env, { label: "Strangers", by: "standing", standing: true });
 }
 
 /** The record, or null when there is none. Never throws on a malformed value. */
@@ -200,7 +176,6 @@ export async function setRef(env, id, patch) {
   const rec = await readRef(env, id);
   if (!rec) return null;
   for (const k of ["approved", "revoked", "declined"]) if (k in (patch || {})) rec[k] = !!patch[k];
-  if (patch && "level" in patch) rec.level = patch.level || null;
   if (patch && typeof patch.label === "string") rec.label = cleanLabel(patch.label);
   await env.STMT.put(RKEY(rec.id), JSON.stringify(rec));
   return rec;

@@ -1,0 +1,20 @@
+[
+ {
+  "name": "the drafter drops the unit from a tierset row: the fold would read a % as a figure from a page cached before the switch",
+  "file": "src/drafter.js",
+  "find": "if (pay.unit === \"pct\") row.unit = \"pct\";",
+  "replace": ""
+ },
+ {
+  "name": "the drafter stays quiet about a tierset figure with no unit",
+  "file": "src/drafter.js",
+  "find": "if (t !== null && pay.unit !== \"pct\") flags.push(",
+  "replace": "if (false) flags.push("
+ },
+ {
+  "name": "the drafter asks a unit of a clear as well as a figure",
+  "file": "src/drafter.js",
+  "find": "if (t !== null && pay.unit !== \"pct\") flags.push(",
+  "replace": "if (pay.unit !== \"pct\") flags.push("
+ }
+]

@@ -1,0 +1,14 @@
+[
+ {
+  "name": "Add ID sends its starting % with no unit: the Desk would take it as a figure from a page cached before the % lift",
+  "file": "stmt/owner.js",
+  "find": "if(tiers)idBody.unit='pct';",
+  "replace": ""
+ },
+ {
+  "name": "the Worker drops the unit when it files the Add ID entry",
+  "file": "src/maker-inputs.js",
+  "find": "geo: body.geo || null, tiers, unit: tiers != null ? \"pct\" : null });",
+  "replace": "geo: body.geo || null, tiers });"
+ }
+]

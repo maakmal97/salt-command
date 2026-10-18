@@ -353,7 +353,7 @@ export async function run({ ok, okOff, pageWork, KV }) {
   /* ---- 6: a guest board is a page of prices that forbids script outright, and no filed number reaches it, nor the shut page */
   await kv.put("paynum", record());
   await kv.put("g:aaaa-bbbb", JSON.stringify({ id: "aaaa-bbbb" }));
-  await kv.put("board:2", JSON.stringify({ week: { label: "Week of 05 Oct 2026" }, products: [{ product: "salt", unit: "unit", fellBack: false, sizes: [{ q: 1, price: 12.5 }, { q: 5, price: 55 }] }] }));
+  await kv.put("guestboard", JSON.stringify({ week: { label: "Week of 05 Oct 2026" }, products: [{ product: "salt", unit: "unit", fellBack: false, sizes: [{ q: 1, price: 12.5 }, { q: 5, price: 55 }] }] }));
   const board = await stmtW.fetch(new Request("https://k7m3p2.example/g/aaaa-bbbb"), env), boardHtml = await board.text();
   const shutRes = await stmtW.fetch(new Request("https://k7m3p2.example/g/zzzz-zzzz"), env), shutHtml = await shutRes.text();
   ok(board.status === 200 && /RM 12\.50/.test(boardHtml) && /script-src 'none'/.test(board.headers.get("content-security-policy") || "") && !/<script/.test(boardHtml)

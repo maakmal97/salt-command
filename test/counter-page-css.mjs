@@ -246,8 +246,8 @@ export async function run({ ok, pageWork }) {
       && moves.filter((b) => /^link\.(copy|restore|approve)$/.test(b.getAttribute("data-act"))).every((b) => !b.classList.contains("salt-ghost--danger")),
     `a guest link is the system's glass card, its label the Field label and its moves ghosts, Withdraw and Decline the danger ghost (${links.length} links, ${moves.length} moves)`);
     const heads = [...d.querySelectorAll("#oLinks .ghead")], picks = [...d.querySelectorAll(".glink select")];
-    ok(heads.length >= 1 && heads.every((h) => h.classList.contains("salt-eyebrow") && h.classList.contains("salt-eyebrow--copper")) && picks.length >= 1 && picks.every((s) => s.classList.contains("salt-field__input")),
-      `the heads over the links are the system's copper eyebrow (${heads.length}) and the tier picker is its field (${picks.length})`);
+    ok(heads.length >= 1 && heads.every((h) => h.classList.contains("salt-eyebrow") && h.classList.contains("salt-eyebrow--copper")) && picks.length === 0,
+      `the heads over the links are the system's copper eyebrow (${heads.length}) and no level picker is drawn (${picks.length})`);
     await click(byAct(d, "part.customers.associates"));
     const card = d.querySelector("#clist .acard"), cells = card ? [...card.querySelectorAll(".agrid > .acell")] : [];
     ok(!!card && card.classList.contains("salt-glass-card") && card.querySelector(".agrid").classList.contains("salt-metrics") && card.querySelector(".agrid").classList.contains("salt-metrics--sm")

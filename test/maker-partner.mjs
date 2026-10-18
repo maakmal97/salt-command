@@ -44,8 +44,8 @@ export async function run({ ok, KV, worker, REPO } = {}) {
   } finally { w.close(); }
   const fixedOnly = book(); fixedOnly.pricing.byProduct.salt.inputs.policy.tierRule = { fixed: true };
   const levelBook = book(); levelBook.pricing.byProduct.salt.inputs.policy.tierRule = { multiples: [1, 2] };
-  check(make("CX1-ZED", fixedOnly).error === "A partner is made on a book with price drift." && !!make("CX1-ZED", levelBook).error,
-    "a book with no price drift refuses it");
+  check(make("CX1-ZED", fixedOnly).error === "A partner is made on a book with a Set Price." && !!make("CX1-ZED", levelBook).error,
+    "a book with no Set Price refuses it");
   const waiting = POSITION_ENGINE.partnerEntry({ at: "2026-10-01T07:00:00.000Z", code: "CX1-ZED" });
   check(makerPartner({ at, code: "CX1-ZED" }, mirror, [waiting]).twin === true && !makerPartner({ at, code: "CX2-ZED" }, mirror, [waiting]).error
     && !makerPartner({ at: waiting.at, code: "CX1-ZED" }, mirror, [waiting]).error,

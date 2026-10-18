@@ -114,10 +114,10 @@
   "replace": "<section id=\"oApprove\" data-in=\"record.entry\" aria-label=\"Rows to approve\">"
  },
  {
-  "name": "the tier form moves to Entry",
+  "name": "the Their % form moves to Entry",
   "file": "stmt/owner.js",
-  "find": "var tierSection=makerForm('pricing');",
-  "replace": "var tierSection=makerForm('entry');"
+  "find": "var driftSection=makerForm('pricing');",
+  "replace": "var driftSection=makerForm('entry');"
  },
  {
   "name": "Add ID moves to Pricing",

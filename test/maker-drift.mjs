@@ -1,4 +1,5 @@
-/* Counter Admin: salt drift set/clear through the existing tier-set road, with held zero distinct from automatic. */
+/* Counter Admin: a salt customer's % lift (0 to 2) set/clear through the existing tier-set road, a held zero distinct from none held, and the
+   engine's suggestion beside it (18 Oct 2026: nothing automatic prices). */
 import { makerInputCatalog, makerTierSet } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
@@ -18,10 +19,9 @@ const book = () => ({
     PEOPLE: { departed: [] }
   },
   pricing: {
-    tierNames: ["Gold", "Silver"],
     byProduct: {
-      salt: { stockCost: 40, drift: { "CX1-ZED": 0, "CX2-ZED": 0.35 },
-        inputs: { policy: { tierRule: { drift: { up: 0.3, down: 0.2 } } } } },
+      salt: { stockCost: 40, lift: { "CX1-ZED": 0, "CX2-ZED": 0 }, suggest: { "CX1-ZED": { pct: 0, why: "" }, "CX2-ZED": { pct: 0.25, why: "paid 20% over, paid late" }, "AX1-ZED": { pct: 0.1, why: "CX9-NAME paid RM 12 margin" } },
+        inputs: { policy: { tierRule: { drift: true } } } },
       oil: { stockCost: 8, inputs: { policy: { tierRule: { fixed: true } } } }
     }
   }
@@ -42,31 +42,42 @@ export async function run({ ok } = {}) {
     "the drift selector includes non-supplier customers and omits suppliers and resale buckets");
   check(driftCard("CX1-ZED").held === true && driftCard("CX1-ZED").value === 0 && driftCard("CX1-ZED").current === 0,
     "a held zero is represented as an override rather than automatic drift");
-  check(driftCard("CX2-ZED").held === false && driftCard("CX2-ZED").value === null && driftCard("CX2-ZED").current === 0.35,
-    "an unheld customer is represented as automatic record drift");
+  check(driftCard("CX2-ZED").held === false && driftCard("CX2-ZED").value === null && driftCard("CX2-ZED").current === 0
+    && driftCard("CX2-ZED").suggest === 0.25 && driftCard("CX1-ZED").suggest === 0,
+  "an unheld customer is the Set Price (nought) with the engine's suggestion beside it, and a held zero carries its own");
+  check(driftCard("CX2-ZED").why === "paid 20% over, paid late" && driftCard("CX1-ZED").why === ""
+    && driftCard("AX1-ZED").suggest === 0.1 && driftCard("AX1-ZED").why === "",
+  "the suggestion carries its reason, the engine's few words, and a reason that is anything else (a name, a figure) is left behind: " + JSON.stringify(catalog.driftCards.map((item) => [item.code, item.suggest, item.why])));
 
-  const set = (tier) => makerTierSet({ at, code: "CX2-ZED", product: "salt", tier }, mirror);
-  for (const value of [-1, -0.35, 0, 0.35, 1]) {
+  const set = (tier, unit = "pct") => makerTierSet({ at, code: "CX2-ZED", product: "salt", tier, unit }, mirror);
+  for (const value of [0, 0.05, 0.35, 1, 2]) {
     const result = set(value);
     check(result.entry?.type === "TIER" && result.entry.payload.mode === "tierset"
       && result.draft?.collection === "tierset" && result.draft.row.tiers["CX2-ZED"].salt === value,
-    "the existing tier-set constructor and drafter preserve drift " + value);
+    "the existing tier-set constructor and drafter preserve a % lift of " + value);
   }
   const cleared = set(null);
   check(cleared.entry?.payload.mode === "tierset" && cleared.draft?.row.tiers["CX2-ZED"].salt === null,
     "null uses the existing tierset draft to clear the held override");
-  check([-1.01, 1.01, "0", "Gold", undefined].every((value) => !!set(value).error)
+  check([-1, -0.01, 2.01, 3, "0", "Gold", undefined].every((value) => !!set(value).error)
     && !!makerTierSet({ at, code: "CX2-ZED", product: "oil", tier: 0.25 }, mirror).error,
-  "out-of-range, nonnumeric, level, missing and fixed-book drift inputs are refused");
+  "out-of-range (a negative, or past 2), nonnumeric, level, missing and fixed-book inputs are refused");
+  /* 19 Oct 2026: the unit is the gate. A Counter Admin page cached from before the % lift sends the old field's 0.3 with no unit, and it is refused here by unit, not by time. */
+  const unitless = makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.3 }, mirror), oldUnit = set(0.3, "drift");
+  check(/Reload Counter Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && !oldUnit.entry && !set(null, undefined).error
+    && !makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: null }, mirror).error
+    && set(0.3).entry.payload.unit === "pct" && set(null).entry.payload.unit === undefined,
+  "a salt figure with no unit pct is refused with a plain message to reload Counter Admin, a clear needs no unit, and a figure sent with it carries unit pct in the entry: " + JSON.stringify([unitless.error, oldUnit.error]));
   check(!!makerTierSet({ at, code: "SP1-ZED", product: "salt", tier: 0.25 }, mirror).error,
     "supplier codes cannot receive customer drift");
-  check(set(1.01).error === "Choose a drift from -1 to +1, or clear it.",
-    "the Maker validates drift bounds with the shared pricing engine before constructing an entry");
+  check(set(2.01).error === "Choose a % lift from 0 to 200% (0 to 2), or clear it." && !set(2).error && !set(0).error,
+    "the Maker validates the % lift bounds, 0 to 2, with the shared pricing engine before constructing an entry");
+  /* 18 Oct 2026: the levels are gone, so a book with neither a Set Price nor a fixed board takes no figure of his at all */
   const tierBook = book();
   tierBook.pricing.byProduct.salt.inputs.policy.tierRule = { multiples: [1, 2] };
-  check(!!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.25 }, tierBook).error
-    && makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: "Gold" }, tierBook).draft?.row.tiers["CX2-ZED"].salt === "Gold",
-  "level books retain their tier shape and refuse numeric drift");
+  check(!!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.25, unit: "pct" }, tierBook).error
+    && !!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: "Gold", unit: "pct" }, tierBook).error,
+  "a book with no Set Price takes neither a numeric lift nor a level word");
 
   const forwarded = [];
   const key = "counter-maker-test-key-0123456789abcdef";
@@ -83,7 +94,7 @@ export async function run({ ok } = {}) {
   for (const tier of [0, null]) {
     const response = await handleMaker(new Request("https://counter.test/all/maker/inputs/tier-set", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ at, code: "CX2-ZED", product: "salt", tier })
+      body: JSON.stringify({ at, code: "CX2-ZED", product: "salt", tier, unit: "pct" })
     }), env, "/all/maker/inputs/tier-set", identity);
     check(response.status === 200 && forwarded.at(-1).path === "/_internal/maker/inputs/tier-set"
       && forwarded.at(-1).key === key && forwarded.at(-1).body.tier === tier,
@@ -99,9 +110,9 @@ export async function run({ ok } = {}) {
       products: [{ product: "salt", drift: true, tiered: false }, { product: "oil", fixed: true, drift: false, tiered: false }],
       parties: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
       tierCustomers: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
-      driftCustomers: ["CX1-ZED", "CX2-ZED"], tierNames: [],
-      driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: 0, current: 0 },
-        { code: "CX2-ZED", product: "salt", held: false, value: null, current: 0.35 }]
+      driftCustomers: ["CX1-ZED", "CX2-ZED"],
+      driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: 0, current: 0, suggest: 0, why: "" },
+        { code: "CX2-ZED", product: "salt", held: false, value: null, current: 0, suggest: 0.25, why: "paid late" }]
     }
   };
   const dom = new JSDOM(landingPage("", "maker-drift-nonce", { master: "fixture-master", accounts: [] }), {
@@ -136,28 +147,35 @@ export async function run({ ok } = {}) {
     const doc = dom.window.document;
     doc.querySelector('button[data-act="nav.record"]').click();
     const loaded = await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")]
-      .some((heading) => heading.textContent === "Price drift"));
+      .some((heading) => heading.textContent === "Their %"));
     check(loaded, "the owner page renders the Counter customer drift controls");
     const drift = [...doc.querySelectorAll("#makerInputs .maker-input")]
-      .find((section) => section.querySelector("h3")?.textContent === "Price drift");
+      .find((section) => section.querySelector("h3")?.textContent === "Their %");
     const selects = drift.querySelectorAll("select"), value = drift.querySelector('input[type="number"]');
-    const setButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Send the drift");
-    const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Follow their record");
+    const setButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Send their %");
+    const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Set back to 0");
+    const useButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Use the suggestion");
     check([...selects[0].options].map((option) => option.value).join() === "CX1-ZED,CX2-ZED",
       "the Counter drift selector uses the customer-only catalog and excludes suppliers");
     check(selects.length === 1 && tileValues(drift, "Book").join() === "salt",
       "the UI offers salt and omits fixed books from its drift tiles");
-    check(value.min === "-1" && value.max === "1" && value.step === "0.05",
-      "the UI bounds the numeric input to the drift range");
-    check(drift.textContent.includes("Set by hand: +0.00 (scale -1 to +1)."),
-      "the UI labels a held zero as an override");
+    check(value.min === "0" && value.max === "2" && value.step === "0.05",
+      "the UI bounds the numeric input to the % lift range, 0 to 2");
+    check(drift.textContent.includes("Set by you: 0%."),
+      "the UI labels a held zero as set by him");
     selects[0].value = "CX2-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    check(drift.textContent.includes("From their record: +0.35.") && clearButton.hidden,
-      "automatic record drift is labeled separately and Clear is unavailable when no override is held");
+    check(drift.textContent.includes("No % set: the Set Price. Suggested +25%: paid late.") && clearButton.hidden && !useButton.hidden,
+      "none held reads as the Set Price with the suggestion beside it, and Clear is unavailable when nothing is held");
+    useButton.click();
+    check(value.value === "0.25" && calls.length === 0,
+      "Use the suggestion fills the box with the suggested % and sends nothing");
     selects[0].value = "CX1-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    value.value = "1.01"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    check(drift.textContent.includes("Enter a drift from -1 to +1.") && calls.length === 0,
-      "the Counter rejects a drift outside the range before sending an input");
+    value.value = "2.01"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    check(drift.textContent.includes("Enter a % from 0 to 2 (0.2 is 20%).") && calls.length === 0,
+      "the Counter rejects a % past 2 before sending an input");
+    value.value = "-0.1"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    check(drift.textContent.includes("Enter a % from 0 to 2 (0.2 is 20%).") && calls.length === 0,
+      "and a negative one");
     await waitFor(() => !setButton.disabled);
     value.value = "0"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const retained = await waitFor(() => calls.length === 1 && !setButton.disabled && !clearButton.disabled);
@@ -178,8 +196,8 @@ export async function run({ ok } = {}) {
       "a successful same-value Set gets a fresh request timestamp on the next intentional tap");
     value.value = "0.125"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const rounded = await waitFor(() => calls.length === 4 && !setButton.disabled);
-    check(rounded && calls[3].body.tier === 0.13,
-      "Counter drift rounds to two decimals exactly like the incumbent Desk driftSet");
+    check(rounded && calls[3].body.tier === 0.13 && calls.slice(0, 4).every((call) => call.body.unit === "pct"),
+      "Counter drift rounds to two decimals exactly like the incumbent Desk driftSet, and every figure it sends carries unit pct");
     clearButton.click();
     const clearSent = await waitFor(() => calls.length === 5);
     check(clearSent && calls[4].body.tier === null && calls[4].body.product === "salt",

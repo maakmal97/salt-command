@@ -22,6 +22,12 @@ const RULES={
   /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
      information only, the floor being COGS and nothing pricing off the leak */
   leakInfoFrom:0.25,
+  /* 18 Oct 2026, his decision: the Floor is the order total rounded UP to the next multiple of this, RM 5. The engine's floorTotal reads
+     it as the policy's `floorTo`, and costTotal is the same total to the sen for a reader that measures cost and not a price. No semicolon here. */
+  floorTo:5,
+  /* 18 Oct 2026: the moment a salt customer's figure turned from a drift (-1 to +1) into a % lift (0 to 2). The fold drops a tierset or an
+     Add ID salt tier stamped before it, with a note: it was set in the old unit. The session that bumps sets the exact time. No semicolon here. */
+  liftSince:"2026-10-18T17:30:00Z",
   lateResetRepeat:3,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
@@ -247,22 +253,26 @@ const PRICE_ENGINE={
 };
 
 const LADDER_BY={
-  /* v564: tier1 null, and it is an ENTRY rather than an omission. ladderFor spreads LADDER under
-     the override, so leaving it out would hand oil SALT'S two anchors: every oil size clamps to
-     12.5, the rate lands at RM70 a unit, and ten units of oil that Tier 2 sells at RM130 would be
-     quoted RM700. Oil has one tier on its own merits too: its board is his stated price at all
-     five sizes and the 50 unit rung already earns 3%, so there is nothing for a second tier to sit
-     under. Give it two ends here the day he states them. */
-  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
+  /* 18 Oct 2026: LADDER rounds to the five now (salt's grid), so oil names its ten */
+  oil:{round:{to:10, up:true}, anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
   /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
-  candy:{round:{to:1, up:true}, tier1:null},
-  rice:{round:{to:1, up:true}, tier1:null}
+  candy:{round:{to:1, up:true}},
+  rice:{round:{to:1, up:true}}
 };
 
 const TIER_RULE={
-  salt:{drift:{up:0.3, down:0.2}, mS:2.813, qS:0.5, mB:1.363, qB:12.5, ceilingX:3,
+  /* 18 Oct 2026, HIS DECISION: SALT'S SET PRICE IS THE MINIMUM ANY NON-PARTNER PAYS, a multiple of the Floor on his four points
+     (`points`, [size, multiple]: 2.5 at half a unit, 2 at one, 1.67 at 6.25, 1.33 at 12.5), sliding in the log of size between
+     them and flat beyond the ends. A customer's figure is a % lift on it (0 to 2, held in TIER_OF), applied inside the walk
+     (the engine's driftWalk); nothing automatic prices. `drift` stays as the marker that makes salt a per-customer book, and
+     `auto` only feeds the record's good and bad on the card. `suggest` is the suggestion's constants (the engine's
+     suggestPct): a share added for a written-off, a long late, a late; the days over which an open overdue counts as long; how
+     many of the last salt sales are read; the step it rounds to; and the settled rows below which it suggests nothing. */
+  salt:{drift:true, ceilingX:3,
+        points:[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]],
+        suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
-        presets:{Better:-0.3, Standard:0, Higher:0.3},
+        presets:{"Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
         rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
         /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
            walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */
@@ -276,19 +286,17 @@ const TIER_RULE={
   /* 15 OCT 2026, HIS WORD: oil is ordered in tens, its smallest unit step. The grid's step IS the order step (the Worker's onStep reads
      it), and oil's prices do not move when it goes from 1 to 10: the five points are the five typed rungs. Salt stays at a quarter
      and a coarser step there would raise most of its prices, the walk running through every point (docs/PRODUCTS.md section 9). */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:10, max:50}},
+  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:2, grid:{min:1, step:1, max:30}},
+  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
-     `ceilingX` times that floor, capped down to the book's grid. Twice the floor; rice two and a half, an assumption the
-     changelog states. A typed price inside the band does not move. */
-  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:2.5, grid:{min:1, step:1, max:10}}
+     `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
+     oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
+  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
 };
-
-const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];
 
 const SHRINK_ATTRIB=1;
 
@@ -365,30 +373,11 @@ const LADDER={
   basis:'floor',        // v504: the ask is a MARGIN ON THE FLOOR, one basis; anchorX and floor stay for the markup road a book without anchorG takes
   anchorG:0.47,         // v504: the margin on price at anchorQ; 0.47 reproduces the 2.5 unit ask of RM 250 on the day it was set
   gLo:0.25, gHi:0.667,  // v504: the clamps, 0.33x and 2.00x markup said as margins
-  round:{to:10, up:true},// his instruction: to the nearest ten, ROUNDED UP
+  round:{to:5, up:true},// 18 Oct 2026, his decision: to the nearest five, ROUNDED UP (was ten; oil keeps its ten in LADDER_BY)
   taper:'supplier',     // 'supplier' measures it off the book's own quote, quoteFor(PROD); a number here overrides
-  /* ============ v564: TIER 1, HIS TWO STATED ENDS (his instruction, 10 Sep 2026) ============
-     "The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5
-     unit is 875." So the board carries two levels, and everything above this line is Tier 2's,
-     unchanged in every figure at every size.
-     THESE ARE THE WHOLE OF TIER 1 AND THEY ARE PRICES, NOT A LEVEL. Two ends is two numbers and the
-     derived road has room for one: anchorG is a level on the supplier's taper. His pair implies a
-     taper of -0.167 against the supplier's -0.121, so no level on that shape reaches both, and RM875
-     is not even a multiple of ten, which the house rounding is. The engine therefore takes these two
-     verbatim and interpolates the RATE between them in the log of size, clamped at each end. See
-     tier1Walk in the ENGINE block for the argument in full.
-     RM120 a unit at the small end falling to RM70 at the large: against Tier 2's RM140 and RM92,
-     Tier 1 is 86% of the ask at half a unit and 76% of it at twelve and a half. Every rung clears
-     break-even, from 2.13x at half a unit to 1.25x at twelve and a half.
-     RETIRED AT v656, and the two ends are gone rather than left unread. The ladder names five levels
-     on live costs and each customer holds one: Titanium reads RM50 at half a unit and RM860 at twelve
-     and a half, within a ten of the pair above at the top and under it at the bottom, so the trade
-     level he stated is now derived and moves with the cost of salt instead of standing still. A book
-     with no ladder keeps the mechanism, which is why tier1Walk and tier1Anchors stay in the engine. */
-  tier1:null
 };
 
 const PRICE_LOCK_ON=false;
 
-const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON };
+const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON };
 export default PRICING_RULES;

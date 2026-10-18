@@ -1,0 +1,38 @@
+[
+ {
+  "name": "the guest door reads board:2 again",
+  "file": "stmt/worker.js",
+  "find": "prices = await env.STMT.get(\"guestboard\", \"json\");",
+  "replace": "prices = await env.STMT.get(\"board:2\", \"json\");"
+ },
+ {
+  "name": "the guest door reads a level's board for a link that carries a level",
+  "file": "stmt/worker.js",
+  "find": "prices = await env.STMT.get(\"guestboard\", \"json\");",
+  "replace": "prices = await env.STMT.get(rec.level ? \"tboard:1\" : \"guestboard\", \"json\");"
+ },
+ {
+  "name": "the guest door reads a board of the link's own again",
+  "file": "stmt/worker.js",
+  "find": "prices = await env.STMT.get(\"guestboard\", \"json\");",
+  "replace": "prices = await env.STMT.get(\"gboard:\" + rec.id, \"json\");"
+ },
+ {
+  "name": "the guest door falls back to board:1 when the guest board is missing",
+  "file": "stmt/worker.js",
+  "find": "try { prices = await env.STMT.get(\"guestboard\", \"json\"); } catch (e) { prices = null; }",
+  "replace": "try { prices = (await env.STMT.get(\"guestboard\", \"json\")) || (await env.STMT.get(\"board:1\", \"json\")); } catch (e) { prices = null; }"
+ },
+ {
+  "name": "the publish writes the levels' boards again",
+  "file": "tools/stmt-publish.mjs",
+  "find": "plan.puts.push({ key: \"guestboard\",",
+  "replace": "plan.puts.push({ key: \"tboard:1\", value: \"{}\" }); plan.puts.push({ key: \"guestboard\","
+ },
+ {
+  "name": "Salt Account reads a link's level again",
+  "file": "stmt/owner.js",
+  "find": "return links.filter(function(r){ return r.standing&&!r.revoked; })[0]||null;",
+  "replace": "return links.filter(function(r){ return r.standing&&r.level==='Silver'&&!r.revoked; })[0]||null;"
+ }
+]

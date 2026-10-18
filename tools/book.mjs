@@ -46,7 +46,7 @@ export const LEDGER = {
   INTRODUCTIONS: "INTRODUCTIONS",
   /* v633: where each party is on the map, a point to 0.01 degrees filed by Add ID, Amend ID or a place entry; renamed with its code */
   PLACED: "PLACED",
-  /* v643: each customer's tier, a level name from TIER_NAMES in the master, set on the phone and folded; renamed with its code */
+  /* v643: each customer's held figure per product (18 Oct 2026: a % lift on the Set Price, 0 to 2), set on the phone and folded; renamed with its code */
   TIER_OF: "TIER_OF",
   /* v616 and v618: REWARD_OPENING and CUSTOMER_REWARD_OPENING retired; the whole-ledger recounts replaced them. */
   AWARDS: "AWARDS",
@@ -271,7 +271,7 @@ export function pricingSnapshot(w) {
        is set, read, and put back. Restoring it matters: this runs inside the extract, and
        leaving the desk on the wrong book would silently change what is extracted next. */
     const before = call("PROD");
-    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null, rungs = null, drift = null;
+    let floors = null, repl = null, stockCost = null, inputs = null, sizesHere = sizes, ladder = null, cards = null, rungs = null, lift = null, suggest = null;
     try {
       /* v407, round seven, MATERIAL: PROD was assigned bare and the walk was never re-run, so
          every walk-derived global stayed on the PREVIOUS book and all twenty-four oil floors came
@@ -303,14 +303,17 @@ export function pricingSnapshot(w) {
       /* 05 Oct 2026 (any quantity at an automatic price): EACH CUSTOMER'S DRIFT on a drift book, the desk's own driftOf, so the
          price list's grid and the desk Worker's card at a size off the board are the engine's quoteAt on the same inputs the
          cards above were struck on. The rule travels in the policy (pxPolicy carries TIER_RULE, its grid with it). */
-      drift = call("(function(){if(typeof driftBook!=='function'||!driftBook(PROD)||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){if(isPartner(id)){o[id]='partner';return;}var d=driftOf(id,PROD);if(d&&typeof d.d==='number'&&isFinite(d.d))o[id]=d.d;});return o;})()");
+      /* 18 Oct 2026: the map is `lift` now (a held % lift, 0 to 2, or 0; a partner 'partner'), so an old reader finds nothing and falls back to the board;
+         `suggest` is the engine's suggested % for each customer with its short reason, {pct, why}, and prices nothing. */
+      lift = call("(function(){if(typeof driftBook!=='function'||!driftBook(PROD)||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){if(isPartner(id)){o[id]='partner';return;}var d=driftOf(id,PROD);if(d&&typeof d.d==='number'&&isFinite(d.d))o[id]=d.d;});return o;})()");
+      suggest = call("(function(){if(typeof driftBook!=='function'||!driftBook(PROD)||typeof tierCustomers!=='function')return null;var o={};tierCustomers().forEach(function(id){if(isPartner(id))return;var g=suggestOf(id,PROD);if(g&&typeof g.pct==='number'&&isFinite(g.pct))o[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});return o;})()");
       floors = {};
       for (const q of sizesHere) {
         floors[q] = { floor: numOrNull(call("floorTotal(" + q + ")")) };   // v502: one floor per size
       }
     } catch (e) { /* a product the desk cannot price yields nulls, which the drafter must handle */ }
     finally { if (before != null) { try { w.eval("PROD=" + JSON.stringify(before) + ";if(typeof recompute==='function')recompute();"); } catch (e) { } } }
-    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, drift ? { drift } : {});
+    byProduct[p] = Object.assign({ stockCost, replCost: repl, floors, inputs, sizes: sizesHere, rungs, ladder, cards, partners: call("typeof partners!=='undefined'?partners.slice():[]") }, lift ? { lift, suggest } : {});
   }
 
   return {
@@ -320,13 +323,6 @@ export function pricingSnapshot(w) {
     shrinkAttrib: call("SHRINK_ATTRIB"),
     /* A5: the Whiteboard's live observations as the desk reads them, id and words only, for Counter Maker to list and hush */
     obs: obsList(call("(function(){try{return typeof observations==='function'?observations().live.map(function(o){return {id:o.id,sev:o.sev,title:String(o.title)};}):null;}catch(e){return null;}})()")),
-    tierNames: call("typeof TIER_NAMES!=='undefined'?TIER_NAMES:null"),   // v643: the levels' names, for the drafter's tier check
-    /* v651: every customer's tier for each product, the one held on the book or, until he sets one, the one proposed from
-       what they pay for it; a product with neither is left out, and their page reads its price as coming soon */
-    tierOf: call("(function(){if(typeof tierBoards!=='function')return null;var b=tierBoards(),o={};tierCustomers().forEach(function(id){PROD_IDS.forEach(function(p){if(typeof driftBook==='function'&&driftBook(p))return;var t=(TIER_OF[id]||{})[p]||(typeof ruleProposal==='function'?ruleProposal(id,p,b):tierProposal(id,p,b));if(t){o[id]=o[id]||{};o[id][p]=t;}});});return o;})()"),
-    /* a late payer is OFFERED a level down on a book that names levels (V5c): the desk's own lateOf, lateDown and lateWhy, so Counter Admin
-       reads the offer the Tiers card shows. Prices nothing; a drift book names none */
-    lateOffers: call("(function(){if(typeof lateOf!=='function'||typeof lateDown!=='function'||typeof tierBoards!=='function')return null;var b=tierBoards(),o={};tierCustomers().forEach(function(id){var lt=lateOf(id);if(!lt.on)return;var d={};PROD_IDS.forEach(function(p){if(typeof driftBook==='function'&&driftBook(p))return;var t=(TIER_OF[id]||{})[p]||(typeof ruleProposal==='function'?ruleProposal(id,p,b):tierProposal(id,p,b));var dn=t?lateDown(t):null;if(dn)d[p]=dn;});if(Object.keys(d).length)o[id]={why:lateWhy(lt),down:d};});return o;})()"),
     /* v666: how each customer buys each product, the desk's own reading, so the price list and the drafter read the same
        profile the desk shows rather than working one out of their own. Prices nothing yet. */
     profileOf: call("(function(){if(typeof buyerProfile!=='function')return null;var o={},keep=PROD;try{tierCustomers().forEach(function(id){PROD_IDS.forEach(function(p){var f=buyerProfile(id,p);if(f){o[id]=o[id]||{};o[id][p]=f;}});});}finally{PROD=keep;}return o;})()"),

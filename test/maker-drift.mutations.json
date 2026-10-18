@@ -1,0 +1,32 @@
+[
+ {
+  "name": "the reason is dropped on the way to Counter Admin",
+  "file": "src/maker-inputs.js",
+  "find": "suggest !== null && suggestWhyOk(given.why) ? given.why : \"\"",
+  "replace": "\"\""
+ },
+ {
+  "name": "any reason crosses, a name or a figure included",
+  "file": "src/maker-inputs.js",
+  "find": "suggest !== null && suggestWhyOk(given.why) ? given.why : \"\"",
+  "replace": "suggest !== null ? given.why : \"\""
+ },
+ {
+  "name": "the form shows the % without its reason",
+  "file": "stmt/owner.js",
+  "find": "+(card.suggest>0&&typeof card.why==='string'&&card.why?': '+card.why:'')",
+  "replace": "+''"
+ },
+ {
+  "name": "the maker input takes a salt figure with no unit: a page cached from before the % lift can queue 0.3 as 30%",
+  "file": "src/maker-inputs.js",
+  "find": "if (body.tier !== null && body.unit !== \"pct\") return { error: OLD_UNIT };",
+  "replace": ""
+ },
+ {
+  "name": "Their % form sends its figure with no unit",
+  "file": "stmt/owner.js",
+  "find": "tier:value,unit:'pct'}",
+  "replace": "tier:value}"
+ }
+]

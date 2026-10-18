@@ -3,12 +3,13 @@
  * the rows, the cost stamps, the rids, the counts, the roll and the renames, in the order the fold has always done them.
  *
  * PURE. No fs, no child process, no clock, no reading of the master, and it never mutates what it is handed: applyBatch works on a
- * clone and returns it. What the fold read from disk or the clock comes in through `ctx`: { tierNames, driftBooks, pinnedInMaster(code),
+ * clone and returns it. What the fold read from disk or the clock comes in through `ctx`: { driftBooks, pinnedInMaster(code),
  * today, reward } for the plan, and { nextRid, sortBook } for the booking, the last two being tools/rid.mjs's and tools/sort-ledger.mjs's, which
  * read files and so stay outside.
  * It is NOT in tools/engine.mjs's list, so the master's ENGINE block does not carry it, and nothing under stmt/ may import it. */
 import POSITION_ENGINE from "./position.mjs";
 import PRICING_ENGINE from "./pricing.mjs";
+import PRICING_RULES from "./rules.mjs";
 import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } from "../src/drafter.js";
 
@@ -367,9 +368,8 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
   if ((+pay.cash || 0) > 0.009 && row.total > 0 && row.cash >= E.txOwed(row) - 0.009) row.paidOn = pay.date;   /* v738: paid in full is the goods and the delivery */
 }
 
-/* v670: a tier as words, one level or a band set spelled band by band, so a refusal or a plan line never reads [object Object] */
-const sayLevel = (v) => v == null ? "not set" : typeof v === "number" ? "drift " + (v > 0 ? "+" : "") + v : typeof v === "string" ? v
-  : (typeof v === "object" ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v));
+/* a held figure as words, so a refusal or a plan line never reads [object Object]: a % lift on the Set Price, or what was sent */
+const sayLift = (v) => v == null ? "not set" : typeof v === "number" ? (+(v * 100).toFixed(2)) + "% lift" : typeof v === "object" ? JSON.stringify(v) : String(v);
 const APPOINTS = POSITION_ENGINE.ADDID_APPOINTS;
 export const STATEMENT_KINDS = ["customer", "reseller", "referral"];
 function describe(item) {
@@ -385,15 +385,15 @@ function describe(item) {
   switch (item.collection) {
     case "sales": return `SELL ${r.customer} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.date ? " on " + r.date : " (pending, undated)"}`;
     case "purchases": return `BUY ${r.supplier} ${r.qty} unit ${prodOf(r)} RM${r.total}${r.pending ? " (pending lot)" : ""}`;
-    case "count": return `COUNT ${r.product} ${r.qty} unit on ${r.date} (book said ${r.was}, drift ${r.drift})`;
+    case "count": return `COUNT ${r.product} ${r.qty} unit on ${r.date} (book said ${r.was}, difference ${r.drift})`;
     case "loss": return `LOSS ${r.kg} unit ${r.product} on ${r.date}: ${r.why}`;
     case "loan": return `${r.direction === "in" ? "BORROW" : "LEND"} ${r.form === "cash" ? "RM " + r.valueRM + " in cash" : r.valueKg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "from" : "to"} ${r.party} on ${r.date}`;
     case "repayment": return `REPAY ${r.form === "cash" ? "RM " + r.rm : r.kg + " unit " + (r.product || "salt")} ${r.direction === "in" ? "to" : "from"} ${r.party} on loan ${r.loan}, ${r.date}${r.settles ? ", settling it" : ""}`;
     case "lostDemand": return `LOST SALE ${r.kg} unit ${r.product}${r.party ? " to " + r.party : ""} on ${r.date}: ${r.why}`;
-    case "roster": if (r.partner) return `PARTNER ${r.code}: pays cost`; return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
+    case "roster": if (r.partner) return `PARTNER ${r.code}: pays the Floor`; return `${APPOINTS[r.kind] ? "APPOINT" : "REGISTER"} ${r.code} as ${r.kind}${r.parent ? " under " + r.parent : ""}${r.tiers ? " at " + Object.entries(r.tiers).map(([p, t]) => p + " " + t).join(", ") : ""}`;
     case "rename": return `RENAME ${r.from} to ${r.to}`;
     case "place": return `PLACE ${Object.keys(r.places || {}).join(", ")} on the map`;
-    case "tierset": return `TIER ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLevel(v)).join(" ")).join(", ")}`;
+    case "tierset": return `THEIR % ${Object.entries(r.tiers || {}).map(([c, t]) => c + " " + Object.entries(t || {}).map(([p, v]) => p + " " + sayLift(v)).join(" ")).join(", ")}`;
     case "priceset": return `SET THE BOARD for ${r.product}${Object.keys(r.prices || {}).length ? ": " + Object.entries(r.prices).map(([q, p]) => `${q} unit at RM${p}`).join(", ") : ""}${(r.hide || []).length ? `, hiding ${r.hide.join(", ")} unit` : ""}`;
     default: return `${item.collection}: ${JSON.stringify(r).slice(0, 80)}`;
   }
@@ -401,10 +401,23 @@ function describe(item) {
 
 /* ---- the plan: what each item would do, and what is refused ----------------------------- */
 export function planBatch(book, staged, notes, ctx) {
-  /* what the fold read from disk and the clock comes in through ctx: { tierNames, driftBooks, pinnedInMaster(code), today, reward } */
+  /* what the fold read from disk and the clock comes in through ctx: { driftBooks, pinnedInMaster(code), today, reward } */
   const TODAY = ctx.today, pinnedInMaster = ctx.pinnedInMaster;
-  const tierNames = () => ctx.tierNames, driftBooks = () => ctx.driftBooks;
-  const tierOk = (p, v) => driftBooks().includes(p) ? PRICING_ENGINE.driftOk(v) : PRICING_ENGINE.levelShapeOk(v, tierNames());
+  const driftBooks = () => ctx.driftBooks;
+  /* a figure of his is a % lift on a book that has a Set Price and nothing on any other: oil, candy and rice are fixed boards */
+  const tierOk = (p, v) => driftBooks().includes(p) && PRICING_ENGINE.driftOk(v);
+  /* 18 OCT 2026, HIS DECISION: A SALT FIGURE SET IN THE OLD UNIT (a drift, -1 to +1) IS DROPPED, NEVER READ AS A %:
+     0.3 then meant 30% of the floor, now 30% on the Set Price, and everyone starts at 0%. The batch is not refused: the customer books on the Set Price with
+     no figure held, and a note says the old figure was dropped. A tierset whose only content was such a figure folds as a no-op. A clear (null) carries no figure.
+     19 OCT 2026: THE UNIT IS THE GATE, THE STAMP IS THE SECOND NET. The new forms send unit "pct" with every salt figure (on the row: row.unit); a figure with
+     none came from a page cached from before the deploy, whose `at` is the page's own clock and can be later than the switch. The stamp still drops one
+     stamped before RULES.liftSince, whatever its unit. */
+  const liftAt = Date.parse(PRICING_RULES.RULES.liftSince);
+  const oldWhy = (it, p, v) => !(driftBooks().includes(p) && v !== null && v !== undefined) ? null
+    : (it.row && it.row.unit) !== "pct" ? "without the % unit"
+    : Date.parse((it.entry && it.entry.at) || it.id) < liftAt ? "before " + PRICING_RULES.RULES.liftSince : null;
+  const oldLift = (it, p, v) => oldWhy(it, p, v) !== null;
+  const oldLiftNote = (c, ps, why) => `dropped the old figure: ${c}'s ${ps.join(" and ")} figure was set ${why}, in the old unit (-1 to +1), so ${c} stays on the Set Price at 0%`;
   const out = { items: [], refused: [], moves: [] };
   let tagged = 0;
   let rows = (staged && staged.approved) || [];
@@ -736,10 +749,11 @@ export function planBatch(book, staged, notes, ctx) {
       if (onRoster && !appoints && !partner) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
-      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => driftBooks().includes(p) ? !PRICING_ENGINE.driftOk(rt[p]) : !tierNames().includes(rt[p]));   /* 05 Oct 2026: a drift on a drift book, a level on any other */   // v645, per product since v646
-      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLevel(rt[p]) + (driftBooks().includes(p) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ")}` }); continue; }
-      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null, partner };
-      if (partner) entry.does.push(`make ${r.code} a partner: they pay cost, the floor to the sen, on every book; they keep every associate property`);
+      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p])), rtBad = Object.keys(rt).filter((p) => !rtOld.includes(p) && !tierOk(p, rt[p]));   /* a % lift on a book with a Set Price, nothing on any other */   // v645, per product since v646
+      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ")}` }); continue; }
+      const rtKept = Object.fromEntries(Object.entries(rt).filter(([p]) => !rtOld.includes(p)));
+      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: Object.keys(rtKept).length ? rtKept : null, partner };
+      if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
       if (STATEMENT_KINDS.includes(r.kind)) entry.does.push(`give ${r.code} a statement username if they have none, kept for life, on the next free spare account where there is one`);
@@ -749,6 +763,7 @@ export function planBatch(book, staged, notes, ctx) {
          reading them, which is the part that is true whatever the numbers are. */
       if (appoints) entry.does.push(`appoint ${r.code} an associate: R2 and R3 credit reaches them, their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench`);
       if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, which holds what they buy to sell on`);
+      if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld, oldWhy(it, rtOld[0], rt[rtOld[0]])));
     } else if (it.collection === "priceset") {
       /* v354: A PRICE EDIT MOVES NO STOCK AND NO CASH. It REPLACES that product's entry in
          PRICE_SET rather than merging into it, so the form on the desk is the whole statement of
@@ -780,19 +795,21 @@ export function planBatch(book, staged, notes, ctx) {
       entry.place = r.places;
       entry.does.push(`file ${codes.join(", ")} as ${codes.length === 1 ? "a point" : "points"} on the map, about a kilometre each`);
     } else if (it.collection === "tierset") {
-      /* v643: a customer's tier for each product (v646), checked against the book it folds into and the level names the
-         master states; a null clears the product's tier */
+      /* v643: a customer's held figure for each product (v646), checked against the book it folds into; a null clears it */
       const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
-      /* v670: a tier may be a band set, so the check is the engine's shape rule rather than a name lookup */
-      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a drift, -1 to +1, on a drift book, held as a tier was; a level on any other */
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift, 0 to 2), held as a tier was; none on any other */
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
-        out.refused.push({ id: it.id, why: !codes.length ? "a tier entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
-          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLevel(x[2]) + (driftBooks().includes(x[1]) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ") });
+        out.refused.push({ id: it.id, why: !codes.length ? "a % entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
+          : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ") });
         continue;
       }
-      entry.tiers = r.tiers;
-      entry.does.push(`set ${pairs.map(([c, p, v]) => `${c}'s ${p} tier to ${sayLevel(v)}`).join(", ")}`);
+      const oldTs = pairs.filter((x) => oldLift(it, x[1], x[2])), keptTs = pairs.filter((x) => !oldLift(it, x[1], x[2]));
+      const keptTiers = {};
+      for (const [c, p, v] of keptTs) (keptTiers[c] = keptTiers[c] || {})[p] = v;
+      entry.tiers = keptTs.length ? keptTiers : {};   /* a tierset of old figures alone folds as a no-op: the item is filed, the book unchanged */
+      if (keptTs.length) entry.does.push(`set ${keptTs.map(([c, p, v]) => `${c}'s ${p} figure to ${sayLift(v)}`).join(", ")}`);
+      for (const c of [...new Set(oldTs.map((x) => x[0]))]) entry.does.push(oldLiftNote(c, oldTs.filter((x) => x[0] === c).map((x) => x[1]), oldWhy(it, oldTs.find((x) => x[0] === c)[1], oldTs.find((x) => x[0] === c)[2])));
     } else if (it.collection === "rename") {
       /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
          between the draft and the fold. What moves is the engine's renamePairs, as on the card. */
@@ -915,7 +932,7 @@ function bookItem(book, it, c) {
       /* v504: every count is kept; the leak is charged from the drift of the last three */
       book.COUNTS = book.COUNTS || [];
       book.COUNTS.push({ product: c.product, date: c.date, qty: c.qty, was: c.was != null ? c.was : null, drift: c.drift != null ? c.drift : null });
-      const sentence = `COUNTED AT ${notes.version} on ${c.date}: the ${c.product} inventory held ${c.qty} against ${c.was != null ? c.was : "?"} on the roll, a drift of ${c.drift != null ? c.drift : "?"}. A COUNT AND NOT A ROLL, so COUNT_ON.${c.product} moves to ${c.date}.` + (n.note ? " " + String(n.note).trim() : "");
+      const sentence = `COUNTED AT ${notes.version} on ${c.date}: the ${c.product} inventory held ${c.qty} against ${c.was != null ? c.was : "?"} on the roll, a difference of ${c.drift != null ? c.drift : "?"}. A COUNT AND NOT A ROLL, so COUNT_ON.${c.product} moves to ${c.date}.` + (n.note ? " " + String(n.note).trim() : "");
       const key = c.product === "salt" ? "STATED_STOCK" : "PROD_OPENING";
       book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
     } else if (it.append === "selfUseLog" || it.append === "lostDemand" || it.append === "loans") {

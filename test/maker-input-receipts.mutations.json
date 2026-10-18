@@ -6,9 +6,9 @@
     "replace": "},true,function(){});"
   },
   {
-    "name": "tier confirmed cache not released",
+    "name": "their % confirmed cache not released",
     "file": "stmt/owner.js",
-    "find": "},true,function(){ tierAt=null; tierSignature=''; });",
+    "find": "},true,driftReceiptComplete);",
     "replace": "},true,function(){});"
   },
   {
@@ -36,10 +36,10 @@
     "replace": "qty:qty.value===''?null:Number(qty.value)+1"
   },
   {
-    "name": "tier wrong generated body",
+    "name": "their % wrong generated body",
     "file": "stmt/owner.js",
-    "find": "var body={code:tierCode.value,product:tierProduct.value,tier:level};",
-    "replace": "var body={code:'CX2-ZED',product:tierProduct.value,tier:level};"
+    "find": "var body={code:driftCode.value,product:driftProduct.value,tier:value,unit:'pct'};",
+    "replace": "var body={code:'CX2-ZED',product:driftProduct.value,tier:value,unit:'pct'};"
   },
   {
     "name": "house wrong generated body",

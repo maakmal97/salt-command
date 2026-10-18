@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="6beebdb098dbaa1f";
+var SALT_BUILD_ID="ae84aad5b6b11f59";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -668,11 +668,6 @@ details.rcard>summary .rname{font-size:14px;font-weight:800;color:var(--ink);}
 details.rcard>summary .rsum{margin-left:auto;font-size:12px;color:var(--mut);}
 details.rcard>summary .rsum b{color:var(--ink);}
 .rtag{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--mut);}
-/* ============ THE TIER PILL ============
-   The pill is the system's .salt-tier recipe (the DESIGN base block): a word and a dot in the tier's colour
-   inside a hairline, never a fill. The desk owns only its place: v259 sat it 8px off the name, as .sbadge is,
-   because a name and its tier read as one word; the pill itself holds one line (the recipe's nowrap). */
-.tierpill{margin-left:8px;margin-right:2px;}
 /* ============ QUICK MARK ON A PENDING LEDGER CARD (v253) ============
    Three buttons, and they are deliberately quiet: a pending order is the one state where the
    next action is obvious, so the card offers it rather than making him cross to Transaction,
@@ -729,7 +724,7 @@ details.rcard>summary .rsum b{color:var(--ink);}
 /* the sticky first column carries a name AND a pill AND sometimes a state badge, so it is
    told to take the room rather than fold them (Liquid Glass: a taller row beats hidden text,
    and a wider column beats a pill broken across two lines) */
-td.l .tierpill,td.l .sbadge{flex:0 0 auto;}
+td.l .sbadge{flex:0 0 auto;}
 /* ============ TWO PRODUCTS ON ONE PAGE (v262) ============
    The switcher was a filter, so half the desk was always hidden and the half on screen was
    easy to mistake for the whole. A product band now heads each block instead. */
@@ -4549,9 +4544,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .def{color:var(--salt-ember);}
 .prov{color:var(--salt-brass);}
 .mod,.pendingt{color:var(--salt-steel);}
-/* the tier pill is the system's .salt-tier recipe; the desk keeps its measured 10.5px face, which is under the system's 11px floor, so
-   it is the one value of the pill's the layer states (the recipe is read at the floor) */
-.tierpill{font-size:10.5px;}
 .provbar{font-size:11px;letter-spacing:.06em;background:color-mix(in srgb, var(--salt-brass) 8%, transparent);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
 .gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),color-mix(in srgb, var(--salt-product-salt) 76%, var(--salt-mist)));
@@ -4916,6 +4908,12 @@ const RULES={
   /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
      information only, the floor being COGS and nothing pricing off the leak */
   leakInfoFrom:0.25,
+  /* 18 Oct 2026, his decision: the Floor is the order total rounded UP to the next multiple of this, RM 5. The engine's floorTotal reads
+     it as the policy's `floorTo`, and costTotal is the same total to the sen for a reader that measures cost and not a price. No semicolon here. */
+  floorTo:5,
+  /* 18 Oct 2026: the moment a salt customer's figure turned from a drift (-1 to +1) into a % lift (0 to 2). The fold drops a tierset or an
+     Add ID salt tier stamped before it, with a note: it was set in the old unit. The session that bumps sets the exact time. No semicolon here. */
+  liftSince:"2026-10-18T17:30:00Z",
   lateResetRepeat:3,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
@@ -5141,22 +5139,26 @@ const PRICE_ENGINE={
 };
 
 const LADDER_BY={
-  /* v564: tier1 null, and it is an ENTRY rather than an omission. ladderFor spreads LADDER under
-     the override, so leaving it out would hand oil SALT'S two anchors: every oil size clamps to
-     12.5, the rate lands at RM70 a unit, and ten units of oil that Tier 2 sells at RM130 would be
-     quoted RM700. Oil has one tier on its own merits too: its board is his stated price at all
-     five sizes and the 50 unit rung already earns 3%, so there is nothing for a second tier to sit
-     under. Give it two ends here the day he states them. */
-  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
+  /* 18 Oct 2026: LADDER rounds to the five now (salt's grid), so oil names its ten */
+  oil:{round:{to:10, up:true}, anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
   /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
-  candy:{round:{to:1, up:true}, tier1:null},
-  rice:{round:{to:1, up:true}, tier1:null}
+  candy:{round:{to:1, up:true}},
+  rice:{round:{to:1, up:true}}
 };
 
 const TIER_RULE={
-  salt:{drift:{up:0.3, down:0.2}, mS:2.813, qS:0.5, mB:1.363, qB:12.5, ceilingX:3,
+  /* 18 Oct 2026, HIS DECISION: SALT'S SET PRICE IS THE MINIMUM ANY NON-PARTNER PAYS, a multiple of the Floor on his four points
+     (`points`, [size, multiple]: 2.5 at half a unit, 2 at one, 1.67 at 6.25, 1.33 at 12.5), sliding in the log of size between
+     them and flat beyond the ends. A customer's figure is a % lift on it (0 to 2, held in TIER_OF), applied inside the walk
+     (the engine's driftWalk); nothing automatic prices. `drift` stays as the marker that makes salt a per-customer book, and
+     `auto` only feeds the record's good and bad on the card. `suggest` is the suggestion's constants (the engine's
+     suggestPct): a share added for a written-off, a long late, a late; the days over which an open overdue counts as long; how
+     many of the last salt sales are read; the step it rounds to; and the settled rows below which it suggests nothing. */
+  salt:{drift:true, ceilingX:3,
+        points:[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]],
+        suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
-        presets:{Better:-0.3, Standard:0, Higher:0.3},
+        presets:{"Set Price":0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
         rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
         /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
            walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */
@@ -5170,19 +5172,17 @@ const TIER_RULE={
   /* 15 OCT 2026, HIS WORD: oil is ordered in tens, its smallest unit step. The grid's step IS the order step (the Worker's onStep reads
      it), and oil's prices do not move when it goes from 1 to 10: the five points are the five typed rungs. Salt stays at a quarter
      and a coarser step there would raise most of its prices, the walk running through every point (docs/PRODUCTS.md section 9). */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:10, max:50}},
+  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:2, grid:{min:1, step:1, max:30}},
+  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
-     `ceilingX` times that floor, capped down to the book's grid. Twice the floor; rice two and a half, an assumption the
-     changelog states. A typed price inside the band does not move. */
-  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:2.5, grid:{min:1, step:1, max:10}}
+     `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
+     oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
+  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
 };
-
-const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];
 
 const SHRINK_ATTRIB=1;
 
@@ -5259,32 +5259,13 @@ const LADDER={
   basis:'floor',        // v504: the ask is a MARGIN ON THE FLOOR, one basis; anchorX and floor stay for the markup road a book without anchorG takes
   anchorG:0.47,         // v504: the margin on price at anchorQ; 0.47 reproduces the 2.5 unit ask of RM 250 on the day it was set
   gLo:0.25, gHi:0.667,  // v504: the clamps, 0.33x and 2.00x markup said as margins
-  round:{to:10, up:true},// his instruction: to the nearest ten, ROUNDED UP
+  round:{to:5, up:true},// 18 Oct 2026, his decision: to the nearest five, ROUNDED UP (was ten; oil keeps its ten in LADDER_BY)
   taper:'supplier',     // 'supplier' measures it off the book's own quote, quoteFor(PROD); a number here overrides
-  /* ============ v564: TIER 1, HIS TWO STATED ENDS (his instruction, 10 Sep 2026) ============
-     "The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5
-     unit is 875." So the board carries two levels, and everything above this line is Tier 2's,
-     unchanged in every figure at every size.
-     THESE ARE THE WHOLE OF TIER 1 AND THEY ARE PRICES, NOT A LEVEL. Two ends is two numbers and the
-     derived road has room for one: anchorG is a level on the supplier's taper. His pair implies a
-     taper of -0.167 against the supplier's -0.121, so no level on that shape reaches both, and RM875
-     is not even a multiple of ten, which the house rounding is. The engine therefore takes these two
-     verbatim and interpolates the RATE between them in the log of size, clamped at each end. See
-     tier1Walk in the ENGINE block for the argument in full.
-     RM120 a unit at the small end falling to RM70 at the large: against Tier 2's RM140 and RM92,
-     Tier 1 is 86% of the ask at half a unit and 76% of it at twelve and a half. Every rung clears
-     break-even, from 2.13x at half a unit to 1.25x at twelve and a half.
-     RETIRED AT v656, and the two ends are gone rather than left unread. The ladder names five levels
-     on live costs and each customer holds one: Titanium reads RM50 at half a unit and RM860 at twelve
-     and a half, within a ten of the pair above at the top and under it at the bottom, so the trade
-     level he stated is now derived and moves with the cost of salt instead of standing still. A book
-     with no ladder keeps the mechanism, which is why tier1Walk and tier1Anchors stay in the engine. */
-  tier1:null
 };
 
 const PRICE_LOCK_ON=false;
 
-const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON };
+const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON };
 /* ==== END ENGINE rules ==== */
 /* ==== ENGINE qr: generated from engine/qr.mjs by tools/engine.mjs. Edit the module, never this block. ==== */
 /* engine/qr.mjs: A QR ENCODER, WRITTEN OUT RATHER THAN INSTALLED.
@@ -5871,15 +5852,13 @@ function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,d
 }
 /* a Whiteboard tip's id: its family, then codes, dates and figures (a decimal total included) */
 const TIP_ID=/^[a-z]{2,8}(?::[A-Za-z0-9.-]{1,24}){1,5}$/;
-function tierSetEntry({at,tiers,raw}){
+function tierSetEntry({at,tiers,unit=null,raw}){
   const codes=Object.keys(tiers),copied={};
-  codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{
-    const t=tiers[c][p];copied[c][p]=t&&typeof t==='object'?Object.assign({},t):t;
-  });});
-  const say=t=>t==null?'not set':typeof t==='string'?t:['small','mid','big'].filter(k=>t[k]).map(k=>k+' '+t[k]).join(', ');
+  codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{copied[c][p]=tiers[c][p];});});
+  const say=t=>t==null?'not set':typeof t==='number'?(+(t*100).toFixed(2))+'% lift':String(t);
   return {at,type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
     raw:raw===undefined?'Set '+codes.map(c=>c+': '+Object.keys(copied[c]).map(p=>p+' '+say(copied[c][p])).join(', ')).join('; '):raw,
-    payload:{mode:'tierset',tiers:copied}};
+    payload:{mode:'tierset',tiers:copied,...(unit?{unit}:{})}};
 }
 function loanEntry({at,product,direction,party,date,form,amount,note=null,raw}){
   const cash=form==='cash',type=direction==='in'?'BORROW':'LEND';
@@ -5913,17 +5892,17 @@ function rebateOffsetEntry({at,party,date,sale,units,rm,raw,auto=false}){
     orderKey:ovKey(sale),date,fields:{settledRM:+((+sale.settledRM||0)+rm).toFixed(2),
       rebate:true,rebateKg:+((+sale.rebateKg||0)+units).toFixed(2)}}};
 }
-function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,note=null,raw}){
+function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,unit=null,note=null,raw}){
   return {at,type:'ADDID',party:code,qty:null,total:null,status:'addid',
     raw:raw===undefined?'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''):raw,
-    payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers}};
+    payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers,...(unit?{unit}:{})}};
 }
 /* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. One name-free entry naming a code already on the roster; the
    drafter makes it a roster row carrying partner:true, which the fold files in `partners` and, if they are no associate yet,
    appoints them on the R2 stream with their -R account, so every associate property comes with the standing. */
 function partnerEntry({at,code,raw}){
   return {at,type:'PARTNER',party:code,qty:null,total:null,status:'partner',
-    raw:raw===undefined?'Make '+code+' a partner: pays cost, keeps every associate property':raw,
+    raw:raw===undefined?'Make '+code+' a partner: pays the Floor, keeps every associate property':raw,
     payload:{mode:'partner',code}};
 }
 function renameEntry({at,from,to,geo=null,raw}){
@@ -6079,8 +6058,8 @@ function payDelays(sales,party,today,rules){
    same day). On time is paid within the term (RULES.holdDays, his answer); a short delay is past it and under the lock
    (RULES.lockDays), a long one the lock or more. It turns on at one long delay, or at a second short delay within
    RULES.lateWindowDays of the one before; one payment on time turns it off. Within the window after that, any delay turns
-   it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It OFFERS a level down; it prices
-   nothing (his answer of 29 Sep 2026). `late` and `run` are V5b2c's reading of the same walk, for PREPAY after lateness:
+   it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It prices
+   nothing (his answer of 29 Sep 2026); the suggested % reads it. `late` and `run` are V5b2c's reading of the same walk, for PREPAY after lateness:
    whether any delay is in the history, and how many payments on time follow the last. */
 function lateOffer(delays,rules){
   const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,
@@ -7163,13 +7142,13 @@ function vaultPendingOk(record,publicWord=()=>false){
     &&envelope(v.names)&&(v.places===null||envelope(v.places));
   const fields=['at','expectedRevision','names','places','pair','code','kind','parent','geo','tiers','vault','addrVault',
     'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
-    'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
+    'stream','associate','assoc','downstream','trip','level','tier','unit','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
     'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover',
     'shares','rids','undo'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','delivered','collected',
-    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
+    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
   const appointment=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/appoint-existing$/.test(record.path);
@@ -7199,7 +7178,7 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/(offset|trip-pay|trip-join)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/(offset|trip-pay|trip-join)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))
@@ -7286,10 +7265,8 @@ return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEnt
  *      tiers       the supplier's live quote tiers, for the taper ({qty,total} each)
  *      boardSizes  the sizes the board quotes, for walking an off-board size against them
  *      stated      prices HE has set, by size, overriding the derived ask (PRICE_SET[product])
- *      tier1       the second level's two stated ends, by size; absent means this book has one tier
- *      tierRule    the tier rule, {cogs,overhead,multiples,round,decay,from,rungs}, or a stated
- *                  board {fixed,rungs}; a book with one IS its ladder, and the ask is the last level (v656)
- *      lastLevel   the last level's name, what a stranger is quoted (TIER_NAMES' last)
+ *      tierRule    the book's rule: a stated board {fixed,rungs} or the Set Price {drift,points,rungs}; a book with
+ *                  one IS its board, and the ask is the board's price (v656; the five levels went on 18 Oct 2026)
  * and costStack() takes the input record the desk's pxInputs() gathers (see there).
  *
  * PORTED VERBATIM. The bodies are the desk's, with the globals replaced by C, P and I. Every
@@ -7554,77 +7531,6 @@ function ladderWalk(sizes,C,P){
   });
   return out;
 }
-/* ============ v564: TWO TIERS ON THE BOARD (his instruction, 10 Sep 2026) ============
-   TIER 2 IS THE LADDER ABOVE AND NOT ONE OF ITS FIGURES MOVES. It stays the default ask, the one
-   priceLadder().ask returns, the one the customer price list is drawn toward and the one the
-   drafter measures a row against. Tier 1 is a SECOND level beneath it, and it is STATED rather
-   than derived: he gives the two ends, RM 60 at half a unit and RM 875 at twelve and a half, and
-   the rate between them is interpolated in the LOG of size, which is this desk's house method and
-   the one the retired tier board used at v251.
-
-   WHY STATED AND NOT A SECOND anchorG, WHICH WAS TRIED FIRST. Two ends is two numbers, and the
-   derived road has room for one: a level pinned at anchorQ plus the SUPPLIER'S taper. Measured,
-   his pair implies a taper of -0.167 against the supplier's -0.121, so no level on the supplier's
-   shape reaches both ends, and that gap is the whole point of a relationship price. Worse, RM 875
-   IS NOT A MULTIPLE OF TEN: the house rounding is up to the ten, so no curve rounded by it can
-   ever print the figure he gave. The two anchors are therefore taken VERBATIM and only the sizes
-   BETWEEN them are rounded, which is cappedBoard's old rule and the only one that can be honest
-   about a number he typed.
-
-   IT OBEYS THE SAME TWO LAWS AS THE ASK. The rate may not rise with size, repaired the same way,
-   one grid step down and never through the floor. And the gap to break-even is NAMED rather than
-   hidden: per v552 a price he has stated is quoted even under its floor, and every rung here is
-   his own rate, so none is lifted. Nothing on salt is under its floor today; `under` is the
-   mechanism for the day a cost rise puts one there.
-
-   OUTSIDE HIS TWO ANCHORS THE RATE IS CLAMPED, never extrapolated, exactly as ladderMarkup
-   clamps at LADDER.at: a 25 unit lot is asked the 12.5 rate and not a rate the policy never
-   stated.
-
-   A BOOK WITH NO tier1 HAS NO TIER 1, and oil is one. Its board is his stated price at every one
-   of its five sizes and its 50 unit rung already earns 3%, so there is nothing for a second tier
-   to sit under, and inheriting salt's RM 120 a unit would quote RM 700 for ten units of oil that
-   Tier 2 sells at RM 130. LADDER_BY.oil says tier1:null for that reason. */
-function tier1Anchors(P){
-  const A=P.tier1; if(!A)return null;
-  const ks=Object.keys(A).map(Number).filter(q=>q>0&&+A[q]>0).sort((a,b)=>a-b);
-  if(ks.length<2)return null;
-  const lo=ks[0], hi=ks[ks.length-1], rLo=+A[lo]/lo, rHi=+A[hi]/hi;
-  /* v566: TWO ANCHORS MEANS TWO SIZES, AND THE COUNT ABOVE DOES NOT SAY THAT. {0.5:60,"0.50":60}
-     is two keys naming one size: it passes ks.length<2, lands hi===lo, and the exponent becomes
-     Math.log(1)/Math.log(1), which is NaN. Every interpolated rung then prices NaN while reading
-     TRUTHY at every guard downstream, so the board would print a column of blanks under a heading
-     that says the tier is stated. A tier stated at one size is not stated. */
-  if(!(hi>lo))return null;
-  /* the rate in the log of size, fitted to the two ends rather than typed */
-  return {ks:ks, lo:lo, hi:hi, rLo:rLo, rHi:rHi, b:Math.log(rHi/rLo)/Math.log(hi/lo)};
-}
-function tier1Walk(sizes,C,P){
-  const A=tier1Anchors(P); if(!A)return null;
-  const out=[]; let prevRate=Infinity;
-  sizes.forEach(q=>{
-    const fl=floorTotal(q,C,P);
-    const pin=A.ks.find(k=>Math.abs(k-q)<0.009);
-    const x=Math.min(A.hi,Math.max(A.lo,+q||A.lo));          // clamped, never extrapolated
-    let p=pin!=null?+P.tier1[pin]:ladderRound(A.rLo*Math.pow(x/A.lo,A.b)*q,P.LADDER);
-    /* the rate law, and rounding up is what breaks it here too. A pinned end is never moved. */
-    if(pin==null&&q>0&&prevRate<Infinity&&p/q>prevRate+1e-9){
-      const stepped=Math.floor((prevRate*q+1e-9)/P.LADDER.round.to)*P.LADDER.round.to;
-      if(stepped>0&&stepped>fl+0.009)p=stepped;
-    }
-    out.push({q:q,p:p,stated:pin!=null,under:+Math.max(0,fl-p).toFixed(2)});
-    if(q>0)prevRate=Math.min(prevRate,p/q);
-  });
-  return out;
-}
-/* Tier 1 at ANY size, walked against the board sizes beneath it, for the same reason ladderAsk is. */
-function tier1Ask(q,C,P){
-  if(!P.tier1)return null;
-  const board=Array.isArray(P.boardSizes)?P.boardSizes:[];
-  const upTo=board.filter(s=>s<q-1e-9); upTo.push(q);
-  const w=tier1Walk(upTo,C,P);
-  return w?w[w.length-1]:null;
-}
 /* the ask at ANY size, walked against the board sizes beneath it so an off-board quote is judged
    against prices the desk actually quotes rather than against a neighbour it invented. */
 function ladderAsk(q,C,P){
@@ -7661,7 +7567,7 @@ function lotCost(q,C,opts){
    through. That is a different job from this one and it keeps the name.
    v234: built per LOT, so delivery is floored once per order and not once per unit. A named lot
    floor is kept as a mechanism and is empty as a policy. */
-function floorTotal(q,C,P,eff,opts){
+function costTotal(q,C,P,eff,opts){
   const per=eff!=null?eff:(C.effEx!=null?C.effEx:C.eff);
   const del=0;   // v502: delivery is an input per order, never part of the floor; see lotCost
   /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR SAYS SO. Nothing in this stack had ever paid him
@@ -7674,6 +7580,16 @@ function floorTotal(q,C,P,eff,opts){
   const named=(P.lotFloor||{})[String(q)];        // kept as a mechanism, empty as a policy
   if(named!=null&&named>t)t=named;
   return +t.toFixed(2);
+}
+/* 18 OCT 2026, HIS DECISION: THE FLOOR IS THE ORDER TOTAL ROUNDED UP TO THE NEXT RM 5 (P.floorTo, RULES.floorTo, 5; the one
+   fallback below is for a hand-built policy that carries none). costTotal above is COGS times the size to the sen and nothing
+   else: it is what a COST reader measures (margin on cost, a break-even rate, a probe that must stay straight-line in the
+   buying rate). floorTotal is what a PRICE reader refuses, lifts, quotes a partner or boards against. A total a hair over a
+   multiple of five by floating point (35.0000001) stays there, so the up-round never lifts an exact RM 35 to RM 40. */
+const FLOOR_TO_FALLBACK=5;
+function floorTotal(q,C,P,eff,opts){
+  const t=costTotal(q,C,P,eff,opts), to=(P&&P.floorTo>0)?+P.floorTo:FLOOR_TO_FALLBACK;
+  return +(Math.ceil(t/to-1e-6)*to).toFixed(2);
 }
 /* The reference prices at any size. The floor is exact, because rounding a floor down would put
    it under itself; the ask rounds UP to the ten, which is the house rule. MARGIN IS STRUCK ON THE
@@ -7709,14 +7625,11 @@ function priceLadder(q,C,P,opts){
      cost of the size, to the ringgit and at every size on both books, so this one multiple is the
      margin the board is actually taking: over 1.00x earns, 1.00x earns nothing, under 1.00x is a
      price he has stated below break-even and `under` says by how much. */
-  /* ============ v656, HIS DECISION OF 15 SEP 2026: THE BOARD IS THE LADDER ============
-     A stranger is quoted BRONZE, the level a new customer starts at, so the ask at every size is
-     the last of the five tiers rather than a margin derived on the floor. Everything downstream
-     follows from this one line, because everything downstream reads this ask: ladderRow's row
-     zero, the board, the printed card, the guest links, enginePrice and every margin struck on
-     the board. The derived figure is kept beside it as `derived`, with its own floorX and under,
-     because the Pricing page shows the two against each other and a reader is owed what the board
-     used to ask. A book with NO tierRule keeps the derived ask: it has no ladder to be. */
+  /* THE BOARD IS THE SET PRICE (v656, his decision of 15 Sep 2026; the levels went on 18 Oct 2026). A book with a tierRule, a stated
+     board or the Set Price, quotes that board's price at the size, so the ask at every size is the board rather than a margin
+     derived on the floor. Everything downstream reads this ask: ladderRow's row zero, the board, the printed card, the guest
+     links, enginePrice and every margin struck on the board. The derived figure is kept beside it as `derived`, with its own
+     floorX and under, because the Pricing page shows the two against each other. A book with NO tierRule keeps the derived ask. */
   {const t=P.tierRule?fiveTierAt(q,C,P):null;
    const b=(t&&t.prices&&t.prices.length)?t.prices[t.prices.length-1]:null;
    if(b!=null&&isFinite(b)){
@@ -7728,75 +7641,24 @@ function priceLadder(q,C,P,opts){
               rung:t.rung,fromLadder:true};}}
   out.ask.floorX=+(out.ask.total/Math.max(0.01,fl)).toFixed(3);
   out.ask.under=+Math.max(0,fl-out.ask.total).toFixed(2);
-  /* v564: TIER 1 BESIDE THE ASK, on the same cost stack and the same floor, so every surface reads
-     one engine for both levels. null on a book with no stated second tier. The figures beside the
-     total are derived back from the answer, exactly as the ask's are. */
-  /* v566: AND `over`, WHICH IS THE RELATION BETWEEN THE TIERS. Tier 1 is walked against the rate
-     law and the floor and against nothing else, so nothing in the engine or on the board knew
-     whether the cheaper tier was still the cheaper one. It need not be: Tier 2 is DERIVED from a
-     floor that moves with the cost of salt, while Tier 1's two ends are figures he typed and do
-     not move at all, so a fall in the lot rate walks Tier 2 down through a frozen Tier 1 from the
-     small end up. A stated price he has set is quoted anyway, which is v552's rule and is not
-     reopened here: this MEASURES the inversion in the same shape as `under`, RM by RM, and the
-     board says so. It does not clamp. Clamping would make a second place that prices, and there
-     is one place that prices. */
-  {const t=tier1Ask(q,C,P);
-   out.tier1=t?{total:t.p,rate:+(t.p/q).toFixed(2),
-                markup:+((t.p/cogs-1)*100).toFixed(2),markupX:+(t.p/cogs-1).toFixed(4),
-                margin:+(((t.p-lot)/t.p)*100).toFixed(1),
-                floorX:+(t.p/Math.max(0.01,fl)).toFixed(3),under:t.under,
-                over:+Math.max(0,t.p-out.ask.total).toFixed(2),stated:!!t.stated}:null;}
   out.ceiling=at(LADDER.ceiling,true);
   return out;
 }
-/* ============ v564: TWO ROWS WHERE THE BOOK HAS TWO TIERS ============
-   v328 made this one row and said why: a second row should have to be a real second thing rather
-   than a tier that is no longer one. It is one now, so there are two, and the ORDER IS LOAD
-   BEARING. Row zero is TIER 2, the default ask, because that is what every reader of this array
-   already takes row zero to be: the phone, the D1 mirror and the suite all read [0] rather than
-   hunting for a code, on v328's own argument that a fallback which quietly carries a panel hides
-   a fault. Putting the cheaper tier first would have silently cut every quoted price. The BOARD
-   prints them cheapest-first, which is a rendering decision and is made where the board renders. */
+/* ============ ONE ROW: THE SET PRICE ============
+   18 Oct 2026, HIS DECISION: THE FIVE LEVELS ARE GONE. A book has the Floor, its Set Price and the Ceiling, and the board's one
+   row is the Set Price, what a stranger is quoted. THE CODE STAYS 'T2' AND ROW ZERO STAYS LOAD BEARING: the phone, the D1 mirror,
+   the Worker and the suite read [0] and choose by code, so renaming the code would break every one of them to say what the
+   name already says. There is no second row. */
 function ladderRow(sizes,C,P){
   const col=(k)=>sizes.map(q=>{try{const L=priceLadder(q,C,P);
     return L&&L[k]&&L[k].total!=null?+L[k].total:null;}catch(e){return null;}});
-  /* v656: THE ROW SAYS WHAT IT IS. With a ladder the ask is the last level, the one a new customer starts
-     at, and a row still headed "Tier 2" would print that name over the ladder's prices on the board,
-     the printed card and a guest link alike. The CODE is untouched: row zero is read by code and by
-     index across the phone, the mirror and the suite, and renaming it would break every one of them
-     to say the same thing the name already says. */
-  const laddered=!!P.tierRule;
-  const rows=[{
-    code:'T2', name:laddered?(P.lastLevel||'Tier 2'):'Tier 2', dflt:true,
-    who:laddered?'the level a new customer starts at, the last of the ladder':'the default ask, graded by size, tapered as the supplier tapers',
+  return [{
+    code:'T2', name:'Set Price', dflt:true,
+    who:'what a stranger is quoted, the least any customer but a partner pays',
     prices:col('ask')
   }];
-  /* v566: GATED ON tier1Anchors, NOT ON THE RAW FIELD. priceLadder decides whether a book HAS a
-     Tier 1 by asking tier1Anchors, which needs two usable anchors; this asked whether the field
-     was truthy. A book stating one end satisfied the second and not the first, so the payload
-     carried a row NAMED "Tier 1" whose every price was null, beside a desk saying the tier is not
-     stated on this book. Two gates on one fact is one gate too many. */
-  /* v656: AND THE STATED SECOND TIER RETIRES WITH THE DERIVED ASK. Tier 1 was the trade level,
-     stated at its two ends and interpolated between them; the ladder names five levels on live
-     costs and each customer holds one, so a second hand-typed level is a second thing that prices.
-     The machinery stays for a book with no ladder, and salt's two ends are gone from LADDER. */
-  if(!laddered&&tier1Anchors(P))rows.push({
-    code:'T1', name:'Tier 1', dflt:false, who:'stated at its two ends, the rate interpolated between them',
-    prices:col('tier1')
-  });
-  return rows;
 }
-/* ============ AMBASSADOR AND THE TIERS, OFF HIS WORKBOOK (his decisions of 14 and 15 Sep, restated 23 Sep 2026) ============
-   23 Sep 2026, salt-command pricing_v2.xlsx: Ambassador and FOUR tiers, Titanium to Silver. prices[0] is
-   Ambassador, COGS times one and the overhead, up to the ten. Each tier is COGS times its multiple less
-   `decay` for every unit of size past `from`, never under Ambassador, and rounded DOWN or UP to the ten as
-   its column says: salt's are 2.1 down, 2.1 up, 2.5 down and 2.5 up, falling 0.09 a unit from half a unit.
-   TWO GUARDS, IN THIS ORDER, kept on his word of 23 Sep. A better level always pays less: each sits at
-   least a ten over the one below, the higher lifting where two meet. And the rate may not rise with size
-   (v328): a price steps down to the ten that holds it flat only where that keeps the first. They move
-   fourteen of the sheet's 48 tier cells: all four at half a unit and at twelve and a half, three at 2 unit, and Gold at 1.5,
-   2.5 and 3 unit. */
-/* ============ 19 SEP 2026, HIS INSTRUCTION: A PRODUCT MAY HAVE ONE STATED PRICE AND NO TIERS ============
+/* ============ 19 SEP 2026, HIS INSTRUCTION: A PRODUCT MAY HAVE ONE STATED PRICE ============
    "For oil, there will no longer be pricing tier since it is not the main product, just a single pricing
    tier. Start at 130 for 10 to 450 at 50. This is the only price for oil, fixed for all."
    A TIER_RULE carrying `fixed` is a board he has typed, one price a rung and the same for every customer.
@@ -7850,75 +7712,54 @@ function fiveTiers(sizes,C,P){
               set:x.set,ceiling:x.ceiling,drift:true};
     });
   }
-  if(!R||!Array.isArray(R.multiples)||!R.multiples.length||!Array.isArray(R.rungs)||!R.rungs.length)return null;
-  /* up to the ten as the workbook's CEILING does: a column landing exactly on a ten stays there, where
-     floating point would read RM28 x 2.5 as 70.00000000000001 and round it to RM80 */
-  const to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
-  const rungs=R.rungs.map(Number).sort((a,b)=>a-b);
-  /* 23 SEP 2026, HIS WORKBOOK (salt-command pricing_v2.xlsx): COGS IS THE SUPPLIER'S QUOTE, the highest rate
-     on it, RM56 a unit at 700 a 12.5 unit lot; the live landed cost where the book has no quote */
-  const qr=(P.tiers||[]).filter(t=>t&&t.qty>0&&t.total>0).map(t=>t.total/t.qty);
-  const per=(R.cogs==='quote'&&qr.length)?Math.max.apply(null,qr):null;
-  const prevRate=R.multiples.map(()=>Infinity);
-  return sizes.map(q=>{
-    let rung=0; rungs.forEach((r,i)=>{if(r<=q+0.009)rung=i;});
-    const fl=floorTotal(q,C,P), cogs=per!=null?+(per*q).toFixed(2):Math.round(ladderCogs(q,C));
-    /* the sheet's columns: Ambassador is COGS plus the overhead, up to the ten; each tier is COGS times its
-       multiple less `decay` a unit of size past `from`, never under Ambassador, rounded the way its column
-       rounds. Ambassador never goes under break-even either. */
-    const amb=Math.max(up(cogs*(1+R.overhead)),up(fl));
-    const cols=R.multiples.map((m,k)=>{const raw=Math.max(cogs*(m-R.decay*(q-R.from)),amb);
-      return R.round[k]==='down'?down(raw):up(raw);});
-    const prices=[amb];
-    cols.forEach((raw,k)=>{
-      const least=prices[k]+to;
-      let p=Math.max(raw,least);
-      if(q>0&&p/q>prevRate[k]+1e-9){
-        const stepped=Math.floor((prevRate[k]*q+1e-9)/to)*to;
-        if(stepped>=least)p=stepped;
-      }
-      prices.push(p);
-      if(q>0)prevRate[k]=Math.min(prevRate[k],p/q);
-    });
-    return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
-  });
+  return null;
 }
-/* ============ 05 OCT 2026, HIS DECISION: THE SET PRICE AND THE DRIFT (Model B, salt) ============
-   Per size three figures: the Floor (floorTotal, COGS times the size), the Ceiling (R.ceilingX times the floor) and the
-   SET PRICE between them, which the board quotes a stranger. The Set Price is the floor times a multiple sliding in the log
-   of size from R.mS at R.qS to R.mB at R.qB, clamped outside them, rounded DOWN to the grid, lifted to the first ten at or
-   above the floor, capped at the ten at or below the ceiling, and walked smallest to largest under the rate law (v328): a
-   rate rising with size steps down to the ten that holds it flat, never through the floor.
-   A NAMED CUSTOMER HOLDS A DRIFT d in [-1, +1]. Up: the Set Price plus d times the lesser of the room to the ceiling and
-   R.drift.up times the floor; down: less |d| times the lesser of the room to the floor and R.drift.down times the floor.
-   Then the same grid, lift, cap and walk, so a drifted price stays inside [floor, ceiling] and never rises in rate with
-   size. One walk answers both, the Set Price being the drift of nought. */
+/* ============ 18 OCT 2026, HIS DECISION: THE SET PRICE IS THE MINIMUM, AND A CUSTOMER'S FIGURE IS A % LIFT ON IT (salt) ============
+   Per size three figures: the Floor (floorTotal, COGS times the size up to the next RM 5), the Ceiling (R.ceilingX times the
+   floor, down to the grid) and the SET PRICE between them, the least any customer but a partner pays and what a stranger is quoted.
+   The Set Price is the floor times a multiple (setMultiple) that slides in the log of size between R.points, [size, multiple]
+   pairs, and is flat beyond the first and the last. THE WALK runs the grid smallest first and keeps one running rate r, EXACT
+   and never compounded: r = the lesser of r and floor x multiple x (1 + pct) over the size; the price is r times the size down to
+   the grid (RM 5); then lifted, to the grid, so that its ringgit margin over the floor never falls under the largest margin of any
+   smaller size already walked; then held between the floor and the ceiling. The quoted rate may therefore rise by under one grid step over the
+   size between two quarters: the law is on the exact rate, his choice. The margin lift is path dependent, so the one walk
+   answers driftAt, quoteGrid and the board alike, every grid point from the grid's least up to the size asked.
+   pct is the customer's held % lift, 0 to 2 (driftOk), applied inside the walk to the multiple at every size; 0 is the Set Price.
+   Nothing automatic sets it: autoDrift reads the record for the card and prices nothing, and suggestPct only suggests. */
 function setMultiple(q,R){
-  const lo=+R.qS, hi=+R.qB, g=Math.min(1,Math.max(0,Math.log(hi/q)/Math.log(hi/lo)));
-  return +R.mB+(+R.mS-+R.mB)*g;
+  const pts=(R.points||[]).map(x=>[+x[0],+x[1]]).filter(x=>x[0]>0&&isFinite(x[1])).sort((a,b)=>a[0]-b[0]);
+  if(!pts.length)return 1;
+  if(!(q>pts[0][0]))return pts[0][1];
+  const last=pts[pts.length-1];
+  if(q>=last[0])return last[1];
+  for(let i=0;i<pts.length-1;i++){
+    if(q<pts[i+1][0]){const a=pts[i],b=pts[i+1];return a[1]+(b[1]-a[1])*Math.log(q/a[0])/Math.log(b[0]/a[0]);}
+  }
+  return last[1];
 }
-/* a drift is a number from -1 to +1; anything else is not one */
-function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1-1e-9&&v<=1+1e-9;}
-function driftWalk(sizes,C,P,d){
+/* a held % lift is a number from 0 to 2; anything else is not one */
+function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1e-9&&v<=2+1e-9;}
+function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
-  const cx=+R.ceilingX>0?+R.ceilingX:3, D=R.drift||{}, upC=D.up!=null?+D.up:0.3, dnC=D.down!=null?+D.down:0.2;
-  const dd=driftOk(d)?Math.max(-1,Math.min(1,d)):0;
-  /* a rate rising with size steps down to the ten that holds it flat; where that ten is under the floor, to the floor's own
-     ten (06 Oct 2026): keeping the raw price there let a drifted grid jump RM330 at 24 unit, where the floor first binds */
-  const walk=(q,raw,lift,prev)=>{
-    let p=raw;
-    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;p=st>=lift-0.009?st:Math.min(raw,lift);}
-    return p;
-  };
-  let prevS=Infinity, prevP=Infinity;
+  const cx=+R.ceilingX>0?+R.ceilingX:3;
+  const k=driftOk(pct)?Math.max(0,Math.min(2,+pct)):0;
+  let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
-    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lift=up(fl), cap=Math.max(down(ceil),lift);
-    const box=v=>Math.min(Math.max(v,lift),cap);
-    const s=walk(q,box(down(fl*setMultiple(q,R))),lift,prevS);
-    const raw=dd>0?s+dd*Math.min(ceil-s,upC*fl):dd<0?s-(-dd)*Math.min(s-fl,dnC*fl):s;
-    const p=dd===0?s:walk(q,box(down(raw)),lift,prevP);
-    if(q>0){prevS=Math.min(prevS,s/q);prevP=Math.min(prevP,p/q);}
-    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s,p:p,d:dd};
+    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
+    const step=(r,mg,lift)=>{
+      const rate=Math.min(r,fl*m*lift/q);
+      let p=down(rate*q);
+      if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));
+      const capped=p>hi+1e-9;
+      p=Math.min(Math.max(p,lo),hi);
+      /* where the Ceiling holds the price, the running rate follows it down to the Ceiling's own, so the next size is held to it: the
+         Ceiling's rate rises with the Floor's round-up (3 times a step), and without this a high % could be quoted more a unit on more units */
+      return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fl)};
+    };
+    const s=step(rS,mS,1);rS=s.rate;mS=s.mg;
+    let p=s.p;
+    if(k>0){const x=step(rP,mP,1+k);rP=x.rate;mP=x.mg;p=x.p;}
+    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
   });
 }
 /* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============
@@ -7951,13 +7792,14 @@ function walkSizes(R,sizes){
   const out=[];all.forEach(x=>{if(!out.length||Math.abs(out[out.length-1]-x)>=0.009)out.push(x);});
   return out;
 }
-/* the drift price at ANY size, walked against every rung and grid point beneath it (walkSizes), as fiveTierAt walks a level */
+/* the drift price at ANY size, walked against every rung and grid point beneath it (walkSizes), as fiveTierAt walks a rung */
 function driftAt(q,C,P,d){
   const R=P.tierRule;if(!R||!R.drift||!(q>0))return null;
   const sizes=walkSizes(R,[q]).filter(r=>r<q-0.009).concat([q]);
   const w=driftWalk(sizes,C,P,d);return w[w.length-1];
 }
-/* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). The caller reads the record off the book with
+/* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). 18 OCT 2026: IT PRICES NOTHING NOW. The card reads
+   its good and bad, and the figure that prices is the % lift he holds or nought. The caller reads the record off the book with
    the desk's own readers (buyerProfile, payDelays, lateOffer, txWrittenOff) and hands the signals in; A is the rule's
    weights. Good, 0 to 1: paid on time (a share of settlements within the term, read only from A.minSettled of them), how
    often, how much, and how many orders, nought when the last is over A.staleDays old. Bad, 0 to 1: the late flag (a half,
@@ -7976,75 +7818,50 @@ function autoDrift(s,A){
   const r4=v=>+v.toFixed(4);
   return {d:r4(d),G:r4(G),B:r4(B),P:r4(P),Fq:r4(Fq),V:r4(V),T:r4(T)};
 }
-/* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
-   (THE CAP, RETIRED ON HIS DECISION OF 27 SEP 2026: see cardPrice below. Kept as the record of what it did.)
-   T is the price of the customer's tier for the product at the size, R what their own recent rate comes to at it (null with
-   no history), F the floor. The tier is a ceiling: their own rate can only lower it, and a price that lands under the floor
-   lifts clear of it. The one rule the desk's printed board and the customer's page both quote. A product with no tier is
-   never priced at all: the callers leave it out, and the page says its price is coming.
-
-   v660, HIS INSTRUCTION OF 16 SEP 2026: DOWN TO THE TEN, NEVER UP. It rounded their rate to the NEAREST five, which rounds
-   UP as often as down: a customer paying RM108 a unit was carded RM110, so "never above what they pay" held only to the
-   nearest five. Measured over all 432 priced cells on the salt book, 63 of them sat RM1 to RM2 above the customer's own
-   rate. Rounding DOWN to the ten settles it and costs RM385 across those cells.
-   THE FLOOR STILL LIFTS, AND IT IS THE ONE THING THAT CAN STILL PUT A CARD OVER THEIR RATE. A price may not go under
-   break-even, so a rate below the floor lifts to the first ten above it; on today's costs that is 18 cells, and it is the
-   floor talking, not the rounding. The grid is the ten the ladder itself rounds to, so a card and a board price sit on the
-   same grid for the first time. */
-/* ============ v670, HIS DECISIONS OF 16 SEP 2026: A LEVEL MAY DIFFER BY THE SIZE OF THE ORDER ============
-   A customer's tier on a product is either one level name, the same at every size, or a BAND SET {small, mid, big}:
-   small is an order up to and including B.smallUpTo units, big is from B.bigFrom units, mid is between, the cuts being
-   the book's own quartiles of size (1 and 3 units for salt on 16 Sep 2026). It is how the rules he chose will price a
-   habitual small buyer better on half a unit and a unit and a level worse at three, and a loyal bigger buyer better as
-   the order grows. THE ONE PLACE A SIZE IS TURNED INTO A LEVEL, shared by the desk, the customer's price list and the fold,
-   so the band a size falls in cannot be decided twice. A band left out takes mid, and a missing mid takes whichever of
-   small and big is there, so a partly filled set never leaves a size unpriced. null with nothing held. */
-function levelAt(held,q,B){
-  if(held==null)return null;
-  if(typeof held==='string')return held;
-  if(typeof held!=='object'||Array.isArray(held))return null;
-  const b=B||{smallUpTo:1,bigFrom:3};
-  const band=q<=b.smallUpTo+0.0001?'small':(q>=b.bigFrom-0.0001?'big':'mid');
-  return held[band]||held.mid||held.small||held.big||null;
+/* ============ 18 OCT 2026, HIS DECISION: THE ENGINE SUGGESTS A % LIFT AND NEVER SETS ONE ============
+   sig is driftSignals (late, lateLong, writtenOff, overdueDays, settled); ratios are the rate each of the customer's recent salt sales
+   paid over the Set Price rate at that sale's size, oldest first; S is the rule's suggest block. paidOver is the median of the last
+   S.recent ratios less one, nought if below; risk is S.writtenOff for anything written off, else S.longLate for a long late or an open
+   overdue past S.overdueDays, else S.late for a late; the suggestion is their sum to the nearest S.step, held 0 to 2, and nought for
+   a customer with fewer than S.minSettled settled rows. Good record suggests nothing. Returns {pct, paidOver, risk}. Prices nothing:
+   the desk and Counter Admin show it, and his tap sets it (a tierset), like any figure of his. */
+function suggestPct(sig,ratios,S){
+  const s=S||{}, x=sig||{}, n=(k,v)=>s[k]!=null?+s[k]:v;
+  if((+x.settled||0)<n('minSettled',3))return {pct:0,paidOver:0,risk:0};
+  const rs=(ratios||[]).filter(v=>typeof v==='number'&&isFinite(v)&&v>0).slice(-n('recent',5)).sort((a,b)=>a-b);
+  const med=rs.length?(rs.length%2?rs[(rs.length-1)/2]:(rs[rs.length/2-1]+rs[rs.length/2])/2):1;
+  const paidOver=Math.max(0,med-1);
+  const risk=(+x.writtenOff||0)>0.009?n('writtenOff',0.3):(x.lateLong||(+x.overdueDays||0)>n('overdueDays',14))?n('longLate',0.2):x.late?n('late',0.1):0;
+  const step=n('step',0.05), pct=Math.min(2,Math.max(0,Math.round((paidOver+risk)/step+1e-9)*step));
+  return {pct:+pct.toFixed(2),paidOver:+paidOver.toFixed(4),risk:risk};
 }
-/* v670: a held tier is well formed if it is a level name, or a band set naming only small, mid and big, each a level
-   name, with at least one band. The drafter and the fold both ask it, so a shape the desk cannot price is refused at the
-   door rather than folded; null, which clears a product, is handled by the callers. */
-function levelShapeOk(v,names){
-  if(typeof v==='string')return names.indexOf(v)>=0;
-  if(!v||typeof v!=='object'||Array.isArray(v))return false;
-  const ks=Object.keys(v);
-  return ks.length>0&&ks.every(k=>(k==='small'||k==='mid'||k==='big')&&names.indexOf(v[k])>=0);
+/* THE SUGGESTION'S REASON, in a few words, from what suggestPct returned: 'paid 10% over', 'written off', 'paid very late', 'paid late', joined by a comma.
+   The one place the words are made: the Desk's card and Counter Admin's Their % form both show it. It names no one and no margin. */
+function suggestWhy(sg){
+  const w=[],x=sg||{};
+  if((+x.paidOver||0)>=0.0249)w.push('paid '+Math.round(x.paidOver*100)+'% over');
+  if((+x.risk||0)>=0.3)w.push('written off');else if((+x.risk||0)>=0.2)w.push('paid very late');else if((+x.risk||0)>0)w.push('paid late');
+  return w;
 }
-/* 19 SEP 2026: A STATED BOARD IS THE PRICE, AND THE CAP DOES NOT APPLY TO IT (his decision). The
-   never-above-what-they-pay rule of 15 Sep exists to stop a customer being carded above their own rate
-   by a TIER that sits above it. With one price for everybody there is no tier to be above them, so the
-   cap has nothing to protect against and would only hold two customers below the board he has typed.
-   He was asked and chose the board: "this is the only price for oil, fixed for all". The floor still
-   lifts, because that is break-even and not a preference. */
-/* ============ 27 SEP 2026, HIS DECISION: THE CAP IS RETIRED, AND A CARD IS ITS TIER ============
-   What a customer paid before no longer lowers their price, so every card is one of the tier prices on the board. Measured
-   that day, 36 of 41 accounts had a size carded under their tier by the cap, 27 of them RM10 to RM60 under it at one unit,
-   and eight sat under Ambassador, the lowest tier; the cap was also the one weekly thing on their list, its window closing
-   each Monday. THE FLOOR STILL LIFTS, to the first ten above, and is now the only thing that can move a card off its tier.
-   R and fixed stay in the signature so no caller breaks, and nothing here reads them: a tier and a stated board are priced
-   alike. */
+/* A card is the board's own price for the size, the same function for a stated board and the Set Price: what a customer paid before
+   never lowers it (the cap was retired on 27 Sep 2026), and the floor still lifts it, to the first ten above, the only thing that can
+   move a card off its board. R and fixed stay in the signature so no caller breaks, and nothing here reads them. */
 function cardPrice(R,F,T,fixed){
   return (T!=null&&T<F-0.009)?Math.ceil((F-0.009)/10)*10:T;
 }
-/* v652: THE LADDER AT ANY SIZE. The rungs with the size among them, walked as fiveTiers walks them, and that size's row: at a
+/* v652: THE BOARD AT ANY SIZE. The rungs with the size among them, walked as fiveTiers walks them, and that size's row: at a
    rung it is the ladder's own row, and between rungs the rate law has walked every smaller size first. */
 function fiveTierAt(q,C,P){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const sizes=R.rungs.map(Number).filter(r=>Math.abs(r-q)>0.009).concat([q]).sort((a,b)=>a-b);
-  return fiveTiers(sizes,C,P).find(r=>Math.abs(r.q-q)<0.009);
+  return (fiveTiers(sizes,C,P)||[]).find(r=>Math.abs(r.q-q)<0.009);
 }
 /* ============ 05 OCT 2026, HIS DECISION: A NAMED CUSTOMER'S PRICE AT ANY SIZE, ONE RULE ============
    What the desk's cardQuote answered on a drift book and a stated board, moved here so the desk, the Counter's sealed
    grid and the desk Worker's card read one function. A stated board: the size's own row, pro rata on its rung's rate and
    rounded down, between the floor and the ceiling, the same for everybody. A drift book: the Set Price moved by the
    customer's drift d, walked through every grid point beneath the size. Either way never under the floor, through the
-   one cardPrice. A book priced by levels (no drift, no board) is not this function's: null. */
+   one cardPrice. A book with neither a drift nor a board is not this function's: null. */
 /* A STATED BOARD OVER ITS GRID (06 Oct 2026, his rule that the rate never rises across the grid). A size between rungs is
    its rung's rate times the size, rounded down to the ringgit: down to the book's ten, oil's rate rose within a band (13 unit
    RM160, 14 unit RM180), and walking that flat pushed the band under his next typed rung. The floor's ten and the ceiling
@@ -8067,8 +7884,10 @@ function fixedWalk(sizes,C,P){
     return {q:r.q,p:p};
   });
 }
-/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS COST. d is 'partner' for a party the book names in `partners`, and the price at
-   every size on every book is the floor itself, to the sen: COGS and nothing else, no profit and no rounding up to the ten. */
+/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS THE FLOOR. d is 'partner' for a party the book names in `partners`, and the price at
+   every size on every book is floorTotal itself: COGS times the size, no profit, and (18 Oct 2026) up to the next RM 5 like
+   the Floor everyone is held to. It is NOT recomputed anywhere else, so it equals floorTotal, the snapshot's floors and the
+   drafter's floor at every size. */
 function quoteAt(q,C,P,d){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const F=floorTotal(q,C,P);
@@ -8120,9 +7939,8 @@ function board(sizes,C,P){
 
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
-        tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
-        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,
+        floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
@@ -8136,7 +7954,7 @@ return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMa
    C is the context every reader takes: { B, R, today, W, over }.
      B  the book: sales, purchases, opening (by book), statedStockBy, statedStock, loanDrawUnits() (a function: only salt reads it),
         supplierReceivable, counts, selfUseLog, quotes, priceSet, costRule, defaultProd
-     R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES (all in engine/rules.mjs),
+     R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE (all in engine/rules.mjs),
         and LADDER, PRICE and PRICE_LOCK_ON (S1e), all in engine/rules.mjs
      today  a Date, the page-load clock in the desk
      W  what the walk of the book in view gave: buyUnits, selfUse, wavgBuy, stockCost. In the desk these are its globals, read as they
@@ -8294,15 +8112,13 @@ function inputs(C,p){
 }
 function policy(C,p){
   const R=C.R,pq=C.B.quotes[p]||null;
-  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, lotFloor:R.PRICE.lotFloor||{},
+  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, floorTo:(R.RULES&&R.RULES.floorTo)||0, lotFloor:R.PRICE.lotFloor||{},
     stated:setPricesFor(C,p),
-    tier1:ladderFor(C,p).tier1||null,
     tierRule:R.TIER_RULE[p]||null,
-    lastLevel:R.TIER_NAMES[R.TIER_NAMES.length-1],
     tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:sizesFor(C,p)};
 }
-/* the five tiers for a book, on its own rungs; null for a book with no rule. `cost` is a function, read only when there is a rule */
+/* the board for a book, on its own rungs (its stated prices, or its floor, Set Price and Ceiling); null for a book with no rule. `cost` is a function, read only when there is a rule */
 function fiveTiers(C,p,cost){
   const R=C.R.TIER_RULE[p];
   const sizes=R?R.rungs.concat(sizesFor(C,p).filter(q=>!R.rungs.some(r=>Math.abs(r-q)<0.009))).sort((a,b)=>a-b):null;
@@ -8310,9 +8126,8 @@ function fiveTiers(C,p,cost){
 }
 
 /* S1c-iii: THE CARDS AND THE DRIFT. Whose account a code is, who is a person, who pays cost, and what each customer is quoted.
-   Added to C: B.roster, B.partners, B.tierOf (the hand-set TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
-   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh), and C.tierAt(code,q), the level machinery
-   (tierProposal, ruleProposal), which no live book uses: without it a book that names levels quotes null, never a wrong figure. */
+   Added to C: B.roster, B.partners, B.tierOf (the held % lifts, TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
+   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh). */
 const viaMemo=(C,k,f)=>C.memo?C.memo(k,f):f();
 const isResellAcct=id=>typeof id==='string'&&id.slice(-2)==='-R';
 const ownerOf=id=>isResellAcct(id)?id.slice(0,-2):id;      /* the desk's isBucket has been always false since v265 */
@@ -8361,13 +8176,27 @@ function driftSignals(C,prod,code){
     late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
     overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RU.holdDays),0)};
 }
+/* 18 OCT 2026, HIS DECISION: THE FIGURE THAT PRICES IS THE % LIFT HE HOLDS, OR NOUGHT. `d` is that figure (0 to 2) and nothing automatic reaches it:
+   `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
   const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
   const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
-  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
+  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
 }
 function driftOf(C,p,code){return viaMemo(C,'drift|'+(ownerOf(code)||code)+'|'+p,()=>driftNowS(C,p,code));}
+/* THE SUGGESTED % LIFT (his decision of 18 Oct 2026): the engine's suggestPct over the record's signals and the rate each of the customer's
+   last S.recent salt sales paid over the Set Price rate at that sale's size (today's Set Price, the cost being today's). Prices nothing. */
+function suggestOf(C,p,code){
+  const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
+  return viaMemo(C,'suggest|'+(ownerOf(code)||code)+'|'+p,()=>{
+    const who=ownerOf(code)||code,S=R.suggest||{},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:R});
+    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&x.date&&x.total>0&&x.qty>0)
+      .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
+    const ratios=rows.map(x=>{const set=PRICING_ENGINE.quoteAt(x.qty,K,P,0);return set>0?(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty):null;}).filter(v=>v!=null);
+    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S);
+  });
+}
 function tierCustomers(C){
   const rev={};
   C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
@@ -8375,17 +8204,15 @@ function tierCustomers(C){
   return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
 }
 function cost(C,p){const o=C.over||{cost:null,shrink:null};return viaMemo(C,'pxCost|'+p+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.costStack(inputs(C,p)));}
-/* a named customer's price at any size: a partner the floor to the sen; a stated board the board; a drift book the Set Price moved by their drift */
-function cardQuote(C,p,code,q,t){
+/* a named customer's price at any size: a partner the Floor (RM 5 up); a stated board the board; a drift book the Set Price moved by their drift */
+function cardQuote(C,p,code,q){
   if(!(q>0))return null;
   const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
-  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
+  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost; 18 Oct 2026, the Floor, rounded up to the next RM 5
   const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
   if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
   if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
-  if(t==null)t=C.tierAt?C.tierAt(code,q):-1;if(t<0)return null;
-  if(!row||row.prices[t]==null)return null;
-  return +PRICING_ENGINE.cardPrice(null,PRICING_ENGINE.floorTotal(q,K,policy(C,p)),row.prices[t]).toFixed(2);}
+  return null;}
 
 /* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
 function ctxFor(B,R,prod,today,over){
@@ -8409,11 +8236,11 @@ function pricing(B,R,today,over=null){
     Object.keys(f.floors).forEach(q=>{floors[q]={floor:r4(f.floors[q].floor)};});
     const cards={};
     ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
-    let drift=null;
-    if(driftBook(C,p)){drift={};ids.forEach(id=>{if(isPartner(C,id)){drift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))drift[id]=d.d;});}
+    let lift=null,suggest=null;
+    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
     out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
-      drift?{drift}:{});
+      lift?{lift,suggest}:{});
   }
   return out;
 }
@@ -8421,7 +8248,7 @@ function pricing(B,R,today,over=null){
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
   inputs,policy,fiveTiers,figures,
-  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,tierCustomers,cost,cardQuote,pricing};
+  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
 
 /* ==== END ENGINE snapshot ==== */
@@ -9322,27 +9149,7 @@ const PLACED={
     "Presint 17"
   ]
 };
-const TIER_OF={
-  "CS6-BS": {
-    "oil": "Platinum",
-    "salt": -0.7
-  },
-  "CZ5-TM": {
-    "oil": "Titanium"
-  },
-  "CI5-PER": {
-    "salt": -0.3
-  },
-  "CM4-MK": {
-    "salt": 0.3
-  },
-  "CN4-BSL": {
-    "salt": -0.5
-  },
-  "CA3-KP": {
-    "salt": 0
-  }
-};
+const TIER_OF={};
 const PEOPLE={
   "banned": [
     {
@@ -10471,7 +10278,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1163","d":"18 Oct 2026","t":"THE BOOK, A SHADOW DURABLE OBJECT, IS LOADED AT EACH FOLD; NOTHING READS IT","n":["<b>A SECOND COPY OF THE FOLDED BOOK NOW SITS BESIDE GIT.</b> The Desk Worker holds a SQLite Durable Object, Book, that the chain refills from the folded book after the D1 re-seed. Each row is stamped when it was first booked, the load is idempotent, and a failed load is said and never blocks a fold.","<b>NO READER, NO FIGURE MOVES.</b> The desk, the Counter, the drafter and the fold do not ask the Book anything; git stays the source. Its way back is a new migration tag deleting the class."]}];
+const evolution=[{"v":"v1164","d":"19 Oct 2026","t":"THREE PRICES: FLOOR, SET PRICE, CEILING; THE LEVELS ARE GONE","n":["<b>THE FLOOR IS COGS AND FREIGHT, UP TO THE NEXT RM 5.</b> Every book: the latest purchase's quote and trip freight over its units, times the size, the order total rounded up to the next RM 5. The Ceiling is three times the Floor on every book (oil and candy were twice, rice two and a half). A partner pays the Floor. Oil, candy and rice keep their typed boards; no board price moves.","<b>SALT'S SET PRICE IS THE LEAST ANY CUSTOMER PAYS.</b> 2.5 times the Floor at half a unit, 2 at 1 unit, 1.67 at 6.25 and 1.33 at 12.5, sliding in the log of size and flat above 12.5. The margin in ringgit never falls as the order grows, and a unit never costs more in a bigger order, judged on the exact rate, so a large order no longer slides to the Floor. At COGS RM 58 a unit: RM 75, 120, 605 and 980 at 0.5, 1, 6.25 and 12.5 units.","<b>EACH CUSTOMER'S PRICE IS HIS %.</b> Their % lifts the Set Price toward the Ceiling, the same at every size. The record only suggests a % (paid late, paid above the Set Price) and never moves a price, so a late payer is no longer priced up unasked. Every customer starts at 0%. A figure in the old drift scale, or sent without its unit, books as no %.","<b>THE FIVE LEVELS ARE GONE</b> from the engine, the Desk, the drafter, the fold, Counter Admin and the guest links: one guest board, the Set Price, and old links keep opening. Every surface says Floor, Set Price, Ceiling."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10615,7 +10422,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Oct 2026, 18:58 KL';
+const LAST_UPDATED='19 Oct 2026, 01:30 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -11337,50 +11144,6 @@ function marginCurve(){
   return {fitted:true,n,a:+a.toFixed(4),b:+b.toFixed(4),r2,at,
           spread:{lo:+at(12.5).toFixed(3),hi:+at(0.5).toFixed(3)}};
 }
-/* WHICH CATEGORY A PARTY IS IN, from the ledger. */
-function custTier(id){
-  if(!id||isBucket(id))return null;
-  const own=ownerOf(id);
-  const rows=pricedSales.filter(s=>ownerOf(s.customer)===own&&!s.cancelled&&s.qty>0);
-  const rev=+rows.reduce((a,s)=>a+((s.total||0)-txPendRM(s)),0).toFixed(2);
-  const n=rows.length;
-  const last=rows.length?rows.map(s=>s.date).sort().slice(-1)[0]:null;
-  const quiet=last?dAge(last):null;
-  /* ASSOCIATE is a standing, not a spend: anyone who resells or refers holds it however
-     little he has bought himself, because what he is worth is what he brings. */
-  const assoc=(typeof associateIds==='function')&&associateIds().indexOf(own)>=0;
-  const R=PRICE_ENGINE.rules;
-  let code;
-  /* v245: three tests, first match wins. Associate no longer buys a PRICE tier: a
-     reseller's economics live in his rebate and his free units, not in a discount he
-     also gets, and the engine was pricing him identically to Loyal anyway. He is still
-     an associate everywhere else on the desk. */
-  if(rev>=R.specialRev&&n>=R.specialOrders)code='T1';
-  /* AN ASSOCIATE NEVER FALLS TO THE FULL ASK. Folding Associate into Tier II dropped the
-     principal reseller to Tier III on his single direct order, because what he is worth to
-     this desk is what he BRINGS and none of that is his own buying. The standing is now a
-     FLOOR rather than a tier of its own: it stops him paying the no-history price, and it
-     no longer buys a discount the engine was pricing identically to Loyal anyway. */
-  else if(assoc)code='T2';
-  else if(n<=1)code='T3';
-  else code='T2';
-  const t=PRICE_ENGINE.tiers.find(x=>x.code===code);
-  return {id,code,name:t.name,rel:t.rel,rev,n,quiet,assoc,
-    why:code==='T1'?`${fmt0(rev)} over ${n} orders`
-      :code==='T3'?'one order, no history'
-      :assoc&&n<=1?'resells or refers'
-      :`${n} orders`};
-}
-function tierCounts(){
-  const out={};PRICE_ENGINE.tiers.forEach(t=>out[t.code]={code:t.code,name:t.name,n:0,rev:0,ids:[]});
-  /* ONE ROW PER PERSON. A reselling account is the same man as his parent code, so counting
-     both put him in two categories at once and double-counted his revenue. */
-  [...new Set(pricedSales.map(s=>ownerOf(s.customer)))].filter(isPerson).forEach(id=>{
-    const t=custTier(id);if(!t||!out[t.code])return;
-    const own=+pricedSales.filter(x=>ownerOf(x.customer)===id).reduce((a,x)=>a+((x.total||0)-txPendRM(x)),0).toFixed(2);
-    out[t.code].n++;out[t.code].rev+=own;out[t.code].ids.push(id);});
-  return Object.values(out);
-}
 /* the price of ONE order of q units at tier T, built from the bottom. Returns every
    component so the Pricing tab can show the stack rather than assert the total. */
 function enginePrice(q,tierCode,opts){
@@ -12065,32 +11828,19 @@ function tierPrice(code,q){
    A product with no entry inherits LADDER whole, exactly as sizesBy and anchors fall back. */
 /* LADDER_BY lives in engine/rules.mjs (inlined in the ENGINE block above) */
 function ladderFor(p){return SNAPSHOT_ENGINE.ladderFor(snapCtx(),p||PROD);}
-/* ============ AMBASSADOR AND THE TIERS, PER BOOK (his workbook of 23 Sep 2026, salt-command pricing_v2.xlsx) ============
-   Salt is Ambassador and FOUR tiers. COGS is the supplier's quote, RM56 a unit (700 a 12.5 unit lot), and moves
-   only when the quote does. Ambassador is COGS plus the overhead, half again, up to the ten. The tiers are the
-   sheet's four columns, Titanium first: 2.1 times COGS rounded down, 2.1 up, 2.5 down, 2.5 up, each multiple
-   falling 0.045 every half unit of size past half a unit and never under Ambassador. The engine keeps its two
-   guards over the sheet, on his word of 23 Sep: a better level pays at least a ten less, and the rate never
-   rises with size. So 1 unit reads RM90, 110, 120, 130 and 140. fiveTiers in the ENGINE block reads it; since
-   v656 the board's ask is its last level, and since v651 a customer's own price list is the level they hold. */
 /* ============ 05 OCT 2026, HIS DECISION: SALT IS A SET PRICE AND A DRIFT (Model B) ============
-   Ambassador and the four tiers are retired for salt. Per size: the Floor (COGS times the size), the Ceiling (ceilingX
-   times the floor) and the Set Price, the floor times a multiple sliding in the log of size from mS at qS to mB at qB, down
-   to the ten, lifted to the floor, capped at the ceiling and walked under the rate law: at COGS RM64 it reads RM90, 160,
+   The five levels are gone (18 Oct 2026). Per size: the Floor (COGS times the size), the Ceiling (ceilingX
+   times the floor) and the Set Price, the floor times a multiple sliding in the log of size between R.points (18 Oct 2026: 2.5, 2,
+   1.67 and 1.33 at 0.5, 1, 6.25 and 12.5), down to the grid, lifted to the floor, capped at the ceiling and walked (engine driftWalk; on 05 Oct 2026, at COGS RM64) it read RM90, 160,
    220, 280, 330, 380, 430, 480, 520, 560, 660 and 1,090 on the rungs, every rung walked with the grid's own sizes (05 Oct
    2026, any amount: `grid`, from min in steps to max, each point priced by the engine's quoteAt and sealed per customer, so
    the rate never rises across the whole grid). A stranger is quoted the Set Price. Each customer
-   holds a drift from -1 to +1, hand-set (TIER_OF, folded as `tierset`) or read off their record (`auto`, the engine's
-   autoDrift), which moves the Set Price by up to `drift.up` of the floor towards the ceiling or `drift.down` of it towards
-   the floor (driftAt in the ENGINE block). */
+   holds a % lift from 0 to 2, set by him (TIER_OF, folded as `tierset`), nought where none is held (18 Oct 2026: the Set Price is the least
+   anyone but a partner pays, and nothing automatic prices), applied inside the engine's driftWalk (driftAt in the ENGINE block). */
 /* TIER_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* 05 OCT 2026, HIS DECISION: EACH BOOK'S GRID, {min, step, max}, read off its rule: the quantities the Counter quotes at once.
    Above max the only way in is Negotiate. Null for a book with none. */
 function gridFor(p){return PRICING_ENGINE.gridOf(TIER_RULE[p||PROD]);}
-/* the levels' names, cheapest first: Ambassador, on his word alone and earning no free units; Titanium to
-   Silver are the tiers, and a new customer starts at Silver, the last. Bronze went on 23 Sep 2026, his choice
-   when the workbook came down to four tiers; nobody held it. */
-/* TIER_NAMES lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* THE SUPPLIER'S OWN ELASTICITY, FITTED RATHER THAN TYPED. Least squares of ln(rate) on ln(qty)
    across every tier of the live quote. It returns the exponent and the r-squared, and the r-squared
    is reported on the tab rather than hidden: a ladder that does not actually follow a power law
@@ -12140,15 +11890,11 @@ const REF={
   floor:LADDER.floor,      // NOT the refusal line any more: the line a rate-law step-down may not pass through
   ceiling:LADDER.ceiling   // the top of the band
 };
-/* ============ v564: TWO COLUMNS, CHEAPEST FIRST ============
-   The order here is the BOARD'S reading order and it is deliberately not the payload's. v247's rule
-   for reading a board is that price rises strictly left to right, so Tier 1 prints first; the
-   engine's ladderRow puts Tier 2 at index zero instead, because every reader of that array takes
-   index zero to be the quoted ask and reordering it would have cut every quoted price in silence.
-   Two orders, each right for its own reader, stated in both places. */
+/* ============ THE BOARD'S ONE COLUMN: THE SET PRICE ============
+   18 Oct 2026: the five levels went and so did the stated Tier 1, so the board reads one column beside the Floor and the Ceiling.
+   Row zero of the engine's ladderRow is the Set Price (code T2, load bearing), the same figure the cell here carries. */
 const REF_POINTS=[
-  {k:'tier1', label:'Tier 1', m:null, why:'stated at its two ends, the rate interpolated between them'},
-  {k:'ask',   label:'the ask', m:null, why:'the level a new customer starts at, the last of the five'}
+  {k:'ask',   label:'Set Price', m:null, why:'what a stranger is quoted, the least any customer but a partner pays'}
 ];
 /* The lot cost a price has to beat: the salt, after the leak, plus ONE delivery for the order. */
 function lotCost(q,opts){ return PRICING_ENGINE.lotCost(q,pxCost(),opts); }
@@ -12302,6 +12048,8 @@ function boardHeadroomOLD(includeSS){
 }
 /* the money floor for a lot: the band margin floor, or a named lot floor, whichever bites */
 function floorTotal(q,eff,opts){ return PRICING_ENGINE.floorTotal(q,pxCost(),pxPolicy(),eff,opts); }
+/* 18 Oct 2026: the same total to the sen, for a reader that MEASURES COST (margin on cost, a break-even rate); floorTotal rounds up to the RM 5 */
+function costTotal(q,eff,opts){ return PRICING_ENGINE.costTotal(q,pxCost(),pxPolicy(),eff,opts); }
 /* base per-unit price before any signal or party move, anchored to the two prices above */
 function ladderRate(q){
   const R=PRICE.aRetail.total/PRICE.aRetail.q, W=PRICE.aWhole.total/PRICE.aWhole.q;
@@ -12532,7 +12280,7 @@ function snapCtx(){return snapCtx._c||(snapCtx._c={
     get roster(){return roster;},get partners(){return typeof partners!=='undefined'?partners:[];},get tierOf(){return TIER_OF;},get prodOrder(){return PROD_ORDER;}},
   R:PRICING_RULES,
   get today(){return TODAY;},get over(){return pxOver;},
-  memo(k,f){return renderMemo(k,f);},tierAt(code,q){return cardTierAt(code,q);},
+  memo(k,f){return renderMemo(k,f);},
   fn:{lateOf(code){return lateOf(code);},buyerProfile(p,code){return buyerProfile(code,p);},driftOfNow(p,code){return driftOfNow(code,p);},driftOf(p,code){return driftOf(code,p);}},
   W:{get buyUnits(){return buyUnits;},get selfUse(){return selfUse;},get wavgBuy(){return wavgBuy;},get stockCost(){return stockCostFor(PROD);}}});}
 function posInputs(pr){return SNAPSHOT_ENGINE.posInputs(snapCtx(),pr||PROD);}
@@ -12681,19 +12429,10 @@ const TAB_LABEL={today:'To do',forward:'Next 30 days',overview:'Rules',receivabl
   network:'Associates',map:'Coverage',ledger:'Ledger',sourcing:'Sourcing',
   pricing:'The board'};
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
-/* v245: THE PRICE TIER LEADS. custBadges() carries a RECENCY badge, Dormant/Loyal/Regular/New,
-   which is a different question from what the customer pays; both now show, price tier first,
-   because that is the one that decides a quote. */
-const tierPill=id=>{
-  const t=(typeof custTier==='function')?custTier(id):null;
-  if(!t)return '';
-  const cls=t.code==='T1'?'salt-tier--1':t.code==='T2'?'salt-tier--2':'salt-tier--3';
-  return `<span class="tierpill salt-tier ${cls}" title="${esc(t.name)}: ${esc(t.why||'')}"><span class="salt-tier__dot"></span>${esc(t.name)}</span>`;
-};
 /* noHi drops the High-margin badge. The database row prints cumulative margin in its own
    column and sorts on it, so the badge there restates the neighbouring cell and costs 18px
    of row height on a phone. The approach board has no margin column and keeps it. */
-const custBadgeHtml=(bm,id,noHi)=>{let h=tierPill(id);const b=bm&&bm[id];if(!b)return h;if(b.tier)h+=` <span class="sbadge ${b.tier.c}">${b.tier.l}</span>`;if(b.hi&&!noHi)h+=' <span class="sbadge bhi" title="top quarter by cumulative margin">High-margin</span>';return h;};
+const custBadgeHtml=(bm,id,noHi)=>{let h='';const b=bm&&bm[id];if(!b)return h;if(b.tier)h+=` <span class="sbadge ${b.tier.c}">${b.tier.l}</span>`;if(b.hi&&!noHi)h+=' <span class="sbadge bhi" title="top quarter by cumulative margin">High-margin</span>';return h;};
 const DIAMOND=['CJ4-OKR'];/* manually-awarded Diamond rank: top associate, special basis only */
 /* v615: the founding partner only. His network moved to INTRODUCTIONS in the book, where every
    declared introduction now sits; his referral of CG5-SB is stamped on its row and needed no copy. */
@@ -12792,7 +12531,7 @@ function tabOverview(){
 /* ============ v794, HIS INSTRUCTION OF 23 SEP 2026: TODAY IS EVERY BOOK AT ONCE ============
    "Combine all books view, as not all products have something to note, or watch", and not too convoluted to read. Today read
    the book in view alone, so a restock due on oil sat unseen while salt was open. eachBook runs a reader on every book and puts
-   the one in view back, as tierBoards does. allActions merges what actions() finds on each: an item the same on every book
+   the one in view back. allActions merges what actions() finds on each: an item the same on every book
    (a refund, a rule, a site order, the queue) is listed once and carries no tag, and one a book raised on its own carries that
    book's tag. Nothing is summed across books in units, because a unit of salt and a unit of oil are not the same thing. */
 /* a book with no lot and no sale has nothing to say: it would only report itself under its own trigger (spare, 23 Sep) */
@@ -13762,7 +13501,7 @@ function drawAnalysis(){
         .map(s=>({x:s.qty,y:+(txGoods(s)/s.qty).toFixed(2),id:s.customer,d:s.date}));
       const qs=[];for(let q=0.5;q<=13;q+=0.25)qs.push(+q.toFixed(2));
       const line=qs.map(q=>({x:q,y:+pxQuote(q,sg.net,0).perUnit.toFixed(2)}));
-      const floor=qs.map(q=>({x:q,y:+(floorTotal(q,c.eff)/q).toFixed(2)}));
+      const floor=qs.map(q=>({x:q,y:+(costTotal(q,c.eff)/q).toFixed(2)}));
       freshChart(blkEl('anScatter'),{type:'scatter',
         data:{datasets:[
           {label:'Orders',data:dots,backgroundColor:tcol('ice',.55),borderColor:tcol('ice'),pointRadius:5},
@@ -15409,7 +15148,7 @@ function ifrsPanel(){
     <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
     <table class="salt-table fintab istmt" style="margin-top:8px"><tbody>
       ${L('At cost',F.atCost,{ref:'IAS 2.10',n:`${units(F.closeUnits)} at ${fmt(stockCostFor(PROD)+F.freightPerUnit)} landed`})}
-      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the lowest automatic drift, the least a customer is quoted without his word':'at '+TIER_NAMES[1]+', the lowest level any customer is quoted'}`:'no selling price established for this product'})}
+      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the Set Price, the least a customer but a partner is quoted':'at the stated price, the same for everybody'}`:'no selling price established for this product'})}
       ${L('<b>Carrying amount</b>',F.carrying,{cls:'tot',ref:'IAS 2.9',n:F.nrvTested?(F.writeDown>0?`written down by ${fmt0(F.writeDown)}`:'cost is lower, so cost'):'cost, untested against NRV'})}
     </tbody></table>
     <!-- the untested-NRV paragraph went at v401: the NRV row already reads "no selling price
@@ -16143,8 +15882,8 @@ const HOL_MAP=(()=>{const m={};KL_HOLIDAYS.forEach(h=>{m[h.d]=h.n;});return m;})
 const OBS_FAM={
   rhythm   :{lbl:'Demand rhythm',   q:'when demand arrives, and what to buy against it'},
   integrity:{lbl:'Integrity',       q:'the book disagreeing with itself'},
-  customer :{lbl:'Customers',       q:'who is drifting, and what it is worth'},
-  pricing  :{lbl:'Pricing drift',   q:'margin moving under prices that are not'},
+  customer :{lbl:'Customers',       q:'who is slipping away, and what it is worth'},
+  pricing  :{lbl:'Margin movement', q:'margin moving under prices that are not'},
   promo    :{lbl:'Worth doing',     q:'sized before it is proposed'},
   upkeep   :{lbl:'Desk upkeep',     q:'counts, locks and unattributed figures'},
 };
@@ -16663,11 +16402,11 @@ function observations(){
              :(H.headroom===0?'The board has no headroom left at all'
              :`The buying rate can rise ${fmt(H.headroom)} a unit, ${pct}%, before a card breaches`),
         why:H.unbounded
-          ? 'Walking the replacement rate up two hundred ringgit found no tier going under its own floor, so nothing on the printed board is close to breaching.'
+          ? 'Walking the replacement rate up two hundred ringgit found no price going under its Floor, so nothing on the printed board is close to breaching.'
           : `The cards are frozen numbers and the floors move with cost, so every ringgit on the buying rate eats headroom that never comes back until the cards are redrawn. At ${fmt(H.firstAt)} a unit ${esc(H.firstTier)} goes under floor first${H.hits&&H.hits.length?`, worst at ${units(H.hits[H.hits.length-1].q)} by ${fmt(H.hits[H.hits.length-1].shortBy)}`:''}. ${urgent?'Under a tenth of the live rate this is the week’s most urgent pricing fact.':''} Headroom also falls when the leak worsens or delivery rises, not only when the supplier moves.`,
         ev:[`live replacement rate ${fmt(H.live)} a unit`,
             H.unbounded?'no breach found up to two hundred ringgit above the live rate':`safe to ${fmt(H.safeTo)}, first breach at ${fmt(H.firstAt)}`,
-            H.hits&&H.hits.length?`${H.hits.length} tier price${H.hits.length===1?'':'s'} would breach at that rate`:'nothing breaches']});
+            H.hits&&H.hits.length?`${H.hits.length} price${H.hits.length===1?'':'s'} would breach at that rate`:'nothing breaches']});
     }
   }catch(e){}
   /* CARDS ALREADY UNDER FLOOR TODAY. Reported, never clamped: a tier may sit under floor
@@ -16679,7 +16418,7 @@ function observations(){
       const worst=under.slice().sort((a,b)=>b.short-a.short)[0];
       add({id:'px:underfloor:'+PROD,fam:'pricing',sev:'watch',conf:'measured',rm:null,tab:'pricing',
         title:`${under.length} printed card ${under.length===1?'price sits':'prices sit'} under its own floor`,
-        why:`Worst is ${esc(worst.code)} at ${units(worst.q)}, ${fmt0(worst.p)} against a floor of ${fmt0(worst.p+worst.short)}, short by ${fmt(worst.short)}. The engine reports and does not clamp, which is deliberate: a tier may sit under floor as a standing concession, and the desk shows it rather than quietly repricing. Decide each one, then either lift the card or record the concession.`,
+        why:`Worst is ${esc(worst.code)} at ${units(worst.q)}, ${fmt0(worst.p)} against a floor of ${fmt0(worst.p+worst.short)}, short by ${fmt(worst.short)}. The engine reports and does not clamp, which is deliberate: a price may sit under the Floor as a standing concession, and the desk shows it rather than quietly repricing. Decide each one, then either lift the card or record the concession.`,
         ev:under.slice(0,8).map(u=>`${esc(u.code)} at ${units(u.q)}: ${fmt0(u.p)}, short ${fmt(u.short)}`)});
     }
   }catch(e){}
@@ -16812,7 +16551,7 @@ function tabPlans(){
   return `<details class="obsec noticed"${acts?' open':''}><summary>Noticed <span class="q">what the desk saw in the book on this load</span><span class="ct${live.length?'':' zero'}">${live.length}</span></summary><div style="padding-bottom:12px">
   <div class="kpis k4">
     <div class="kpi salt-kpi ${acts?'r':'g'}"><div class="l salt-kpi__label">Act</div><div class="v salt-kpi__value">${acts}</div><div class="n salt-kpi__note">${acts?'costs something to ignore':'nothing pressing'}</div></div>
-    <div class="kpi salt-kpi ${watch?'gold':'g'}"><div class="l salt-kpi__label">Watch</div><div class="v salt-kpi__value">${watch}</div><div class="n salt-kpi__note">${watch?'moving the wrong way':'nothing drifting'}</div></div>
+    <div class="kpi salt-kpi ${watch?'gold':'g'}"><div class="l salt-kpi__label">Watch</div><div class="v salt-kpi__value">${watch}</div><div class="n salt-kpi__note">${watch?'moving the wrong way':'nothing slipping'}</div></div>
     <div class="kpi salt-kpi p"><div class="l salt-kpi__label">At stake</div><div class="v salt-kpi__value">${stake>0.009?fmt0(stake):NIL}</div><div class="n salt-kpi__note">where an item names a figure</div></div>
     <div class="kpi salt-kpi"><div class="l salt-kpi__label">Hushed</div><div class="v salt-kpi__value">${hushed.length}</div><div class="n salt-kpi__note">${hushed.length?'dismissed or snoozed':'nothing hidden'}</div></div>
   </div>
@@ -17547,23 +17286,16 @@ function ifrsPL(p){
      answer is null rather than salt's board applied to a different commodity. IAS 2.9 still
      requires the lower of cost and NRV, so a null is reported as an untested carrying
      amount rather than quietly treated as passing. */
-  /* ============ v656: NRV IS TITANIUM, NOT THE ASK ============
-     The ask became the ladder's BRONZE at v656, and NRV read the ask. Left alone it would have lifted
-     the estimated selling price of every unit in stock to the level a stranger pays, which is not
-     what this inventory sells for: every named customer is quoted their own level capped at what they
-     pay, and on the book today they sit at Titanium and Platinum, with two at Bronze. IAS 2.6 asks for
-     the estimated selling price IN THE ORDINARY COURSE OF BUSINESS, so the ordinary course is the
-     levels his customers are actually on, and the prudent end of that range is TITANIUM, the lowest
-     level any customer is quoted. It is the estimate that keeps the lower-of-cost-and-NRV test worth
-     running: at Bronze the test can never bind and the line would be decoration.
-     Ambassador is deliberately not the basis. It is the floor, it is his word alone, and pricing the
-     whole shelf at it would write inventory down to break-even on a level nobody is on. */
+  /* ============ NRV IS THE LOWEST PRICE ANY CUSTOMER IS QUOTED (IAS 2.6, v656; the levels went on 18 Oct 2026) ============
+     IAS 2.6 asks for the estimated selling price IN THE ORDINARY COURSE OF BUSINESS, and the prudent end of that range is the lowest
+     price a customer is quoted: on a book with a Set Price, the Set Price itself (a % of nought, a partner aside), and on a stated board
+     its one price. It keeps the lower-of-cost-and-NRV test worth running; the Ceiling is never the basis. */
   const hasBoard=(P===DEFAULT_PROD);
   const nrvRate=hasBoard?(function(){try{
     const q=Math.max(0.5,del.mean||1), toSell=(delShare(P).v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);
     const row=(typeof TIER_RULE!=='undefined'&&TIER_RULE[P])?PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()):null;
-    /* 05 Oct 2026: on a drift book the prudent end of the ordinary course is the lowest price an automatic drift quotes */
-    if(row&&row.drift){const lo=PRICING_ENGINE.driftAt(q,pxCost(),pxPolicy(),-((TIER_RULE[P].auto||{}).cap||0.5));return lo?+(lo.p/q-toSell).toFixed(4):null;}
+    /* on a book with a Set Price the prudent end of the ordinary course is the lowest price quoted: the Set Price, a % lift of nought */
+    if(row&&row.drift){const lo=PRICING_ENGINE.driftAt(q,pxCost(),pxPolicy(),0);return lo?+(lo.p/q-toSell).toFixed(4):null;}
     if(row&&row.prices&&row.prices.length>1)return +(row.prices[1]/q-toSell).toFixed(4);
     const x=pxQuote(q,pxSignals().net,0);
     return x&&x.perUnit?+(x.perUnit-toSell).toFixed(4):null;}catch(e){return null;}})():null;
@@ -17588,29 +17320,18 @@ function pxPolicy(){return SNAPSHOT_ENGINE.policy(snapCtx(),PROD);}
 /* one render quotes about 950 times off the same stack, so it is read once a render per book and per override
    (boardHeadroom walks pxOver.cost mid-render); outside a render it is computed fresh */
 function pxCost(){ return renderMemo('pxCost|'+PROD+'|'+pxOver.cost+'|'+pxOver.shrink, ()=>PRICING_ENGINE.costStack(pxInputs())); }
-/* the five tiers for the book in view, on its own rungs; null for a book with no rule */
+/* the board for the book in view, on its own rungs; null for a book with no rule */
 function fiveTiersNow(){return SNAPSHOT_ENGINE.fiveTiers(snapCtx(),PROD,pxCost);}
-/* ============ v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, BEFORE ANY QUOTE READS IT ============
-   A tier for each product since v646 (his instruction of 15 Sep 2026): a customer can hold Gold on salt and Silver on oil.
-   A tier held is TIER_OF on the book, code to product to level: set on the Customers page, queued, drafted as `tierset`,
-   approved and folded, so it moves only on his word. A product with none held is PROPOSED the tier nearest what they pay
-   for it: the level whose prices sit closest to their own rate (pbOwnRate) across that book's board sizes. Never
-   Ambassador, which is his word alone; and a product they have never bought is proposed nothing and reads not set until he
-   sets it. QUOTED EVERYWHERE SINCE v651 AND v652: the customer's price list, the printed board and every
-   quote the desk makes to a named customer read TIER_OF through cardQuote. */
+/* ============ EACH CUSTOMER'S HELD FIGURE, BEFORE ANY QUOTE READS IT ============
+   TIER_OF on the book is code to product to figure (18 Oct 2026: a % lift on the Set Price, 0 to 2): set on Counter Admin or at
+   Add ID, queued, drafted as `tierset`, approved and folded, so it moves only on his word. The five price levels this once held
+   are gone. Every quote the desk makes to a named customer reads it through cardQuote. */
 /* 23 SEP 2026, HIS WORDS: "each customer will be quoted differently for salt, but everyone will have the same quote for oil,
-   candy and rice". A book whose rule is a stated board has no tier to hold, so no tier is offered, proposed or set on it. */
+   candy and rice". A book whose rule is a stated board holds no figure per customer, so none is offered or set on it. */
 function tieredBooks(){return PROD_IDS.filter(p=>TIER_RULE[p]&&!TIER_RULE[p].fixed);}
-function tierBoards(){
-  const keep=PROD,out={};
-  try{PROD_IDS.forEach(p=>{if(!TIER_RULE[p])return;PROD=p;recompute();out[p]=fiveTiersNow();});}
-  finally{PROD=keep;recompute();}
-  return out;
-}
 /* ============ v666, HIS DECISIONS OF 16 SEP 2026: A PROFILE FOR EACH CUSTOMER ON EACH PRODUCT ============
-   How a customer buys, read off their own priced orders: how often, how big, how loyal, how late. It PRICES NOTHING at
-   this version. It is measured and shown first, the way the five tiers were drawn beside the board at v641 before any quote
-   read them, because four rules will move a level on it and each is only as good as the reading under it.
+   How a customer buys, read off their own priced orders: how often, how big, how loyal, how late. It PRICES NOTHING:
+   the Their % card and the suggested % read it, and his tap sets a figure.
    THE NUMBERS ARE HIS, cut from the book. On 16 Sep 2026 the 133 priced salt orders put the median customer at 1.83 orders a
    month, one unit and three units at the lower and upper quartiles of size, and the whole book under three months old, so
    loyalty is counted in orders and not in time; the ten-day credit term is RULES.creditDays, and nobody had then been late
@@ -17618,158 +17339,69 @@ function tierBoards(){
 /* PROFILE_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* the profile of one customer on one product; null for a product they have never bought at a price */
 function buyerProfile(code,prod){return SNAPSHOT_ENGINE.buyerProfile(snapCtx(),prod||PROD,code);}
-/* v655, HIS DECISION OF 16 SEP 2026: THE TIER IS PROPOSED AT THE SIZES THEY BUY, and read a unit, so a size they never take
-   cannot decide their level. It was measured across every size on the board, which handed the decision to the biggest rung:
-   adding 80 and 100 unit to oil moved two customers a level on sizes neither of them buys (v654). */
-function tierProposal(code,prod,boards){
-  if(!tieredBooks().includes(prod))return null;   /* 23 Sep 2026: a stated board is one price for all; no level is proposed on it */
-  if(driftBook(prod))return null;   /* 05 Oct 2026: a drift book holds no level; its customers hold a drift (driftOf) */
-  const B=(boards[prod]||[]).filter(r=>sizesFor(prod).some(s=>Math.abs(s-r.q)<0.009)),own=pbOwnRate(code,prod);
-  if(!B.length||own.rate==null)return null;
-  const mine=pbOrders(code,prod).map(s=>B.reduce((best,r)=>Math.abs(r.q-s.qty)<Math.abs(best.q-s.qty)?r:best,B[0]));
-  const gap=t=>mine.reduce((a,r)=>a+Math.abs(r.prices[t]/r.q-own.rate),0);
-  let tier=1;for(let t=2;t<TIER_NAMES.length;t++)if(gap(t)<gap(tier)-1e-9)tier=t;
-  return TIER_NAMES[tier];
-}
-/* ============ v671, HIS RULES OF 16 SEP 2026: THE PROPOSAL MOVES A LEVEL ON HOW THEY BUY ============
-   tierProposal reads the level nearest what a customer pays. These rules move it on their profile and the stock, and what
-   they return is still a PROPOSAL: a tier HELD on the book is his word and is never moved by a rule, only offered one.
-   His four, in the order they are applied:
-   1. A LATE PAYER (V5c, his answers of 29 Sep 2026, in place of rare and late twice): OFFERED a level down on the Tiers
-      card, never priced one, so it is not here; here a late payer takes no promotion, rules 3 and 4.
-   2. FREQUENT AND SMALL: one level worse from three units, the last level staying there; their normal level below that. A band
-      set. NO BETTER LEVEL ON HALF A UNIT OR A UNIT, his decision of 16 Sep 2026: their own rate already covers it, because a
-      card is never above what they pay and these customers pay a keen rate on exactly those sizes. Measured that day, the
-      three small-and-often customers were all proposed Titanium, where the only better level is Ambassador, his word alone,
-      so a better small band would have had nowhere to go and the rule's one effect is the drop.
-   3. LOYAL AND BUYING BIGGER: one level better from three units, never past Platinum: not Ambassador and not Titanium, his
-      words. A band set. A customer who is both small-and-frequent and loyal-and-bigger takes rule 2, the one about the
-      sizes they actually buy most.
-   4. SALES HAVE SLOWED: while the three-day sale rate has sat under half the typical for three days running and no lot has
-      landed since, every band is offered one level better, never past Platinum and never worse than it already is. It
-      lapses when the next lot is received.
-   A band set whose three bands agree is returned as one level, so a rule that changes nothing leaves nothing to read. */
-const PLATINUM_CAP=2;   /* an index into TIER_NAMES: the best level a promotion reaches, his "not Ambassador or Titanium" */
-function slowdown(prod){
-  const DAY=86400000, P=prod||PROD, today=TODAY.getTime(), byDay={};
-  const iso=t=>new Date(t).toISOString().slice(0,10);
-  pSales(P).filter(s=>pbPriced(s)&&s.date&&s.qty>0).forEach(s=>{byDay[s.date]=(byDay[s.date]||0)+s.qty;});
-  const units=(from,to)=>Object.keys(byDay).reduce((a,k)=>{const t=new Date(k).getTime();return t>=from&&t<=to?a+byDay[k]:a;},0);
-  /* a day is UNDER when the three days ending on it sold, a day, under half the typical day of the twenty-eight ending on it */
-  const under=d=>{const typ=units(d-27*DAY,d)/28;return typ>0&&units(d-2*DAY,d)/3<typ*0.5-1e-9;};
-  const lots=pPurch(P).filter(x=>x.receivedOn&&+x.receivedQty>0).map(x=>new Date(x.receivedOn).getTime()).filter(t=>t<=today);
-  const lastLot=lots.length?Math.max.apply(null,lots):-Infinity;
-  /* THE UNDER DAYS ARE COUNTED BACK FROM TODAY AND THE COUNT STOPS AT THE LATEST LOT. A promotion lasts until the next lot, his
-     words, so a lot ends it; and a slowdown that carries on past the lot has to be held for three days after it to start a new
-     one. Counting through the lot instead let a restock end a promotion for a day and restart it the next, so while sales stayed
-     flat no lot ever ended it, which a forced check caught on 16 Sep 2026. Three days running starts it, his choice that day. */
-  let run=0;
-  for(let d=today;d>lastLot&&run<90&&under(d);d-=DAY)run++;
-  return {on:run>=3,since:run>=3?iso(today-(run-3)*DAY):null,lastLot:isFinite(lastLot)?iso(lastLot):null};
-}
 /* V5c: THE LATE PAYER, across every book and their bucket, read by the engine's walk (payDelays, lateOffer) */
 function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}
-/* ============ 05 OCT 2026, HIS DECISION: EACH CUSTOMER'S DRIFT ON A DRIFT BOOK ============
-   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price moved by their drift, d from -1 to +1.
-   HAND-SET WINS: a number held in TIER_OF[code][book], set on the Drift card or at Add ID, queued and folded as `tierset`,
-   a null clearing it. Otherwise AUTOMATIC, the engine's autoDrift over the record the desk's own readers make: buyerProfile on
-   that book for how often, how much and how many; payDelays, across every book, for the settlements paid within the term
-   (RULES.holdDays) and the oldest open overdue; lateOf for the late flag; txWrittenOff for anything written off. A late payer
-   is priced up, his decision of 05 Oct 2026, superseding the offer-only rule of 29 Sep. */
+/* ============ 18 OCT 2026, HIS DECISION: EACH CUSTOMER'S % LIFT ON A DRIFT BOOK ============
+   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price lifted by their %, d from 0 to 2 (0% to 200%),
+   the Set Price being the least anyone but a partner pays. THE FIGURE IS HIS: a number held in TIER_OF[code][book], set on Counter Admin or
+   at Add ID, queued and folded as `tierset`, a null clearing it, and nought where none is held. Nothing automatic prices: the engine's
+   autoDrift over the record (buyerProfile, payDelays, lateOf, txWrittenOff) only fills the card's good and bad, and suggestOf is its
+   suggestion, from what they paid over the Set Price on their last salt sales and how they pay (suggestPct). */
 function driftBook(p){return SNAPSHOT_ENGINE.driftBook(snapCtx(),p||PROD);}
 function driftSignals(code,prod){return SNAPSHOT_ENGINE.driftSignals(snapCtx(),prod||PROD,code);}
 /* the Drift card and the price lists ask each customer's drift about four times a render: kept for the render, by customer and book */
 function driftOf(code,prod){return SNAPSHOT_ENGINE.driftOf(snapCtx(),prod||PROD,code);}
 function driftOfNow(code,prod){return SNAPSHOT_ENGINE.driftOfNow(snapCtx(),prod||PROD,code);}
-/* the level a late payer is offered: one down from what they are quoted, a band set read at its mid; none at the last level */
-function lateDown(v){const N=TIER_NAMES,cur=v&&typeof v==='object'?v.mid:v,i=N.indexOf(cur);return i<0||i>=N.length-1?null:N[i+1];}
-function lateWhy(l){
-  const w=RULES.lateWindowDays;
-  const why=l.why==='long'?(l.open?'unpaid ':'paid ')+nDays(l.days)+' after the handover'
-    :l.why==='shorts'?'paid late twice within '+nDays(w)
-    :'late again within '+nDays(w)+' of paying on time';
-  return why+(l.need>1?', '+l.streak+' of '+l.need+' on time since':'');
-}
-function ruleProposal(code,prod,boards){
-  const base=tierProposal(code,prod,boards);if(!base)return null;
-  const N=TIER_NAMES,last=N.length-1,i=N.indexOf(base),pf=buyerProfile(code,prod);
-  if(!pf)return base;
-  const better=(k,cap)=>Math.min(k,Math.max(cap,k-1)), worse=k=>Math.min(last,k+1), late=lateOf(code).on;
-  let set={small:i,mid:i,big:i};
-  if(pf.frequent&&pf.small)set={small:i,mid:i,big:worse(i)};
-  else if(!late&&pf.loyal&&pf.bigger)set={small:i,mid:i,big:better(i,PLATINUM_CAP)};
-  if(!late&&slowdown(prod).on)Object.keys(set).forEach(k=>{set[k]=better(set[k],PLATINUM_CAP);});
-  if(set.small===set.mid&&set.mid===set.big)return N[set.mid];
-  return {small:N[set.small],mid:N[set.mid],big:N[set.big]};
-}
+/* 18 Oct 2026: the engine's suggested % lift for a customer, {pct, paidOver, risk}. It prices nothing: his tap sets a figure. */
+function suggestOf(code,prod){return SNAPSHOT_ENGINE.suggestOf(snapCtx(),prod||PROD,code);}
 /* every customer on the roster, those who have bought first and largest first; a resale account stands with its associate
-   and a supplier holds no tier. Since v646 one who has not bought yet is listed too, so a tier can be set before they do. */
+   and a supplier holds no figure. One who has not bought yet is listed too, so a figure can be set before they do. */
 function tierCustomers(){return SNAPSHOT_ENGINE.tierCustomers(snapCtx());}
-/* what waits for approval, code to product to level, a null clearing one; a registration's starting tiers wait too (v645) */
+/* what waits for approval, code to product to figure, a null clearing one; a registration's starting figure waits too (v645) */
 function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
   queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
   return o;}
-/* v670: a band set is spelled out band by band, so a queued entry never reads [object Object] */
-function levelSay(v){return v==null?'not set':typeof v==='number'?'drift '+driftSay(v):typeof v==='string'?v:(['small','mid','big'].filter(k=>v[k]).map(k=>k+' '+v[k]).join(', ')||JSON.stringify(v));}
 /* ============ 05 OCT 2026: THE DRIFT CARD ============
    One row a customer on each drift book: the drift read off their record (good and bad beside it), the one he has set if he
    has, what it quotes at 1, 3 and 12.5 unit, and a box to set or clear his. Set and Clear queue a `tierset` carrying the
    number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Set Price, so
    a row drifting up says the signal there is terms or prepayment. */
-function driftSay(d){return (d>0?'+':d<0?'\u2212':'')+Math.abs(d).toFixed(2);}
+/* a % as the card says it: +10%, or 0% */
+function driftSay(d){const n=Math.round((+d||0)*100);return n>0?'+'+n+'%':'0%';}
+/* the engine's suggestion in a line: the % and, in a few words, why */
+function suggestSay(sg){
+  if(!sg||!(sg.pct>0.0001))return 'No % suggested';
+  const w=PRICING_ENGINE.suggestWhy(sg);
+  return 'Suggested '+driftSay(sg.pct)+(w.length?': '+w.join(', '):'');
+}
 /* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. It is made on Counter Admin (a name-free `partner` entry for a code already on the
    roster). The desk shows the standing of one queued before B5 of #62 at once, as the fold will file it: the code in `partners`, and an
    associate (with the -R account) if they were none, so cardQuote reads the floor and the bench lists them before the fold lands. */
 function partnerQueued(code){return queue.some(q=>q&&q.payload&&q.payload.mode==='partner'&&q.payload.code===code);}
 function partnerNote(id){
   if(partners.indexOf(id)>=0||isBucket(id))return '';
-  return partnerQueued(id)?'<span class="iref">Waiting under Approve: partner, pays cost</span>':'';
+  return partnerQueued(id)?'<span class="iref">Waiting under Approve: partner, pays the Floor</span>':'';
 }
 function driftCard(){
   const ids=tierCustomers(),books=tieredBooks().filter(driftBook);if(!ids.length||!books.length)return '';
-  const keep=PROD,waiting=tierQueued();let hand=0,up=0,down=0;const rows=[];
+  const keep=PROD,waiting=tierQueued();let hand=0,up=0;const rows=[];
   try{books.forEach(p=>{PROD=p;recompute();
     ids.forEach(id=>{
       if(isPartner(id)){   /* 06 Oct 2026, his decision: a partner pays cost, so no drift moves their price and none is set here */
         const atP=[1,3,12.5].map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
-        rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>Partner</b>${partnerQueued(id)?' &middot; waiting under Approve':''}<br><span class="iref">at cost, the floor to the sen; no drift applies</span><br><span class="iref">${atP}</span></div></td></tr>`);return;}
+        rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>Partner</b>${partnerQueued(id)?' &middot; waiting under Approve':''}<br><span class="iref">pays the Floor; no % applies</span><br><span class="iref">${atP}</span></div></td></tr>`);return;}
       const dr=driftOf(id,p),w=!!waiting[id]&&p in waiting[id],wv=w?waiting[id][p]:undefined;
-      if(dr.hand!=null)hand++;if(dr.d>0.0001)up++;else if(dr.d<-0.0001)down++;
+      if(dr.hand!=null)hand++;if(dr.d>0.0001)up++;
       const at=[1,3,12.5].map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
-      const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set '+driftSay(dr.hand)+', auto '+driftSay(dr.auto):'auto '+driftSay(dr.auto));
-      const why='good '+dr.G.toFixed(2)+', bad '+dr.B.toFixed(2)+(dr.sig.late?' (late payer)':'')+(dr.sig.writtenOff>0.009?' (written off)':'');
-      const terms=dr.d>0.0001?'<br><span class="iref">Up barely moves half a unit or one: there the signal is terms or prepayment.</span>':'';
-      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${driftSay(dr.d)}</b><br><span class="iref">${state}; ${why}</span><br><span class="iref">${at}</span>${terms}</div>${partnerNote(id)}</td></tr>`);
+      const sg=suggestOf(id,p)||{pct:0,paidOver:0,risk:0};
+      const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set by you &middot; ':'')+suggestSay(sg);
+      rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${dr.d>0.0001?driftSay(dr.d):'Set Price'}</b><br><span class="iref">${state}</span><br><span class="iref">${at}</span></div>${partnerNote(id)}</td></tr>`);
     });});}
   finally{PROD=keep;recompute();}
-  return `<div class="card"><div class="cardh">Drift <span class="sub">each customer's price against the Set Price; read off their record unless you set one</span></div>
-    <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Drift, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-    <div class="insight salt-insight">${hand} of ${rows.length} drifts are set by you, ${up} customers sit above the Set Price and ${down} below; a drift runs from \u22121 to +1, read off the record within \u00b10.5, and moves a price at most ${Math.round(((TIER_RULE[books[0]].drift||{}).up||0.3)*100)}% of the floor up and ${Math.round(((TIER_RULE[books[0]].drift||{}).down||0.2)*100)}% down, never past the floor or the ceiling.</div></div>`;
+  return `<div class="card"><div class="cardh">Each customer's % on the Set Price <span class="sub">yours to set; the suggestion is the engine's</span></div>
+    <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Their %, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
+    <div class="insight salt-insight">${hand} of ${rows.length} are set by you and ${up} sit above the Set Price. A % runs from 0 to 200 and none goes past the Ceiling. Under about 7% moves nothing at half a unit to 1 unit.</div></div>`;
 }
-function tierCard(){
-  if(tieredBooks().length&&tieredBooks().every(driftBook))return driftCard();   /* 05 Oct 2026: no book holds a level now */
-  const ids=tierCustomers();if(!ids.length)return '';
-  const boards=tierBoards(),waiting=tierQueued();let open=0,held=0;
-  const cell=(id,p)=>{const h=(TIER_OF[id]||{})[p]||null,w=!!waiting[id]&&p in waiting[id],prop=h||w?null:ruleProposal(id,p,boards);
-    const shown=w?waiting[id][p]:(h||prop),pf=buyerProfile(id,p);
-    /* v666: how they buy sits beside the tier they hold, so the reading a rule will move a level on is in view first */
-    const state=(w?'waiting':h?'held':prop?'proposed':'not set')+(pf?' &middot; '+pf.name:'');
-    /* V5c: a late payer is OFFERED a level down beside what they are quoted, held or proposed; he chooses it and Sets it */
-    const lt=shown?lateOf(id):{on:false},off=lt.on?lateDown(shown):null;
-    const lateLine=off?`<br><span class="iref latepay">Late payer: offered ${off}, ${lateWhy(lt)}</span>`:'';
-    if(h)held++;if(prop)open++;
-    /* v670: A BAND SET IS SHOWN FOR WHAT IT IS, and the dropdown offers to keep it. It cannot select one level name, so it would
-       otherwise sit on "Not set", and Set would have read that as a clear. Choosing a level replaces the bands with it. */
-    const bands=shown&&typeof shown==='object';
-    const bandLine=bands?`<br><span class="iref">${levelSay(shown)}</span>`:'';
-    /* one line a product, so a dropdown keeps the width of its longest level on a phone rather than sharing a row with the others */
-    return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="min-width:5em;line-height:1.25">${PRODUCTS[p].name}<br><span class="iref">${state}</span>${bandLine}${lateLine}</div><b>${shown?levelSay(shown):'not set'}</b></div>`;};
-  const body=ids.map(id=>`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label">${tieredBooks().map(p=>cell(id,p)).join('')}</td></tr>`).join('');
-  return `<div class="card"><div class="cardh">Tiers <span class="sub">one for each product; it is what they are quoted</span></div>
-    <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Tier for each product</th></tr></thead><tbody>${body}</tbody></table></div>
-    <div class="insight salt-insight">${held} of ${ids.length*tieredBooks().length} product tiers are held; ${PROD_IDS.filter(p=>TIER_RULE[p]&&TIER_RULE[p].fixed).map(p=>PRODUCTS[p].name).join(', ')} are one price for everybody; a tier moves only when you approve it, and a product a customer has never bought is proposed nothing until you set it.</div></div>`;
-}
-
 /* ---- layer 3: five readings, each worth a few points, summed then clamped ---- */
 /* Analysis asks a book's signals 18 times a render; keyed like pxCost, whose cost boardHeadroom moves mid-render */
 function pxSignals(){return renderMemo('pxSignals|'+PROD+'|'+pxOver.cost+'|'+pxOver.shrink,pxSignalsNow);}
@@ -19064,8 +18696,8 @@ function tabConcentration(){
 
   <div style="margin-top:16px">${crCard}</div>
 
-  <h2 style="margin-top:18px">Tiers <span class="rule"></span></h2>
-  ${tierCard()}
+  <h2 style="margin-top:18px">Their % <span class="rule"></span></h2>
+  ${driftCard()}
 
   <h2 style="margin-top:18px">Where the book leans <span class="rule"></span></h2>
   <div class="chartbox" style="height:230px"><canvas id="ccPareto"></canvas></div>
@@ -19412,7 +19044,7 @@ function tabNetwork(){
       <div class="nstream ni">
         <div class="nsh"><span class="tag salt-status" style="background:rgba(228,233,236,.16);color:var(--ice)">R3</span> Brought you</div>
         <div class="nsw">First-order value of each new customer they introduce.</div>
-        <div class="nswhy">Network growth. For the reward, the margin on every order of each customer they introduced counts in the same pool, one level only, against a hurdle ${rewardR3Hurdle(PROD)} times higher, since each of those orders also counts for its own customer.</div>
+        <div class="nswhy">Network growth. For the reward, the margin on every order of each customer they introduced counts in the same pool, one step down only, against a hurdle ${rewardR3Hurdle(PROD)} times higher, since each of those orders also counts for its own customer.</div>
       </div>
     </div>
     <!-- ============ v385: THE THREE FIGURES ON THIS CARD WERE WRONG ============
@@ -19878,7 +19510,7 @@ function pxMarket(){
   /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): `fl` IS THE ENGINE'S FLOOR over the same units, floorTotal at
      each order's own size on one cost stack, per unit; a segment is under its floor when p is under fl. The 20%
      margin on price each segment was judged against is retired. */
-  const P=pxPolicy(), flOf=(r,k,C)=>r.reduce((a,s)=>a+PRICING_ENGINE.floorTotal(s.qty,C,P)/s.qty*(s.qty-txPendUnitsRaw(s)),0)/k;
+  const P=pxPolicy(), flOf=(r,k,C)=>r.reduce((a,s)=>a+PRICING_ENGINE.costTotal(s.qty,C,P)/s.qty*(s.qty-txPendUnitsRaw(s)),0)/k;
   const seg=f=>{const r=rows.filter(f);
     /* 29 Sep 2026: the floor is divided by the units as sold, never the count rounded for print; rounded first, a
        fractional pending count put the bulk floor a cent over the engine's (68.63 for 68.62) */
@@ -19993,7 +19625,7 @@ function pxHead(){
   <!-- v385: "a printed card" is language from before v326, when the board was four frozen tier
        cards. There are none: the board is one derived ladder and what goes stale is a price
        already agreed with somebody. The sentence now names that. -->
-  <div class="dsc dsclead">What the board asks today, and how much room is left before a price already agreed stops paying.</div>`;
+  <div class="dsc dsclead">What the board charges today, and how much room is left before a price already agreed stops paying.</div>`;
 }
 /* ============ PRINT A BOARD (v507, his instruction of 07 Sep 2026) ============
    Choose the ID, tick the sizes, and print JUST the unit, the price and the customer's statement
@@ -20026,30 +19658,16 @@ function pbOrders(code,prod){const before=pbWeekMonday();   /* v643: prod names 
 function pbOwnRate(code,prod){const rows=pbOrders(code,prod).map(s=>(s.total)/s.qty);
   if(!rows.length)return {rate:null,orders:0};
   return {rate:+Math.max.apply(null,rows).toFixed(2),orders:rows.length};}
-/* v652: THE CUSTOMER'S TIER FOR THE PRODUCT IN VIEW, held or proposed; -1 with neither.
-   v670: what is HELD may be a band set, a level for each size of order, so the held value is read in one place and a size
-   is turned into a level by the engine's levelAt at the size being quoted. cardTier keeps its meaning, "is this product
-   priced for them at all", and reads their NORMAL level, a mid-sized order's, which any held value or proposal answers. */
-function heldLevel(code){const who=ownerOf(code);if(driftBook(PROD))return null;return (TIER_OF[who]||{})[PROD]||ruleProposal(who,PROD,{[PROD]:fiveTiersNow()});}
-function cardTierAt(code,q){return TIER_NAMES.indexOf(PRICING_ENGINE.levelAt(heldLevel(code),q,PROFILE_RULE));}
-function cardTier(code){if(driftBook(PROD))return 0;return cardTierAt(code,(PROFILE_RULE.smallUpTo+PROFILE_RULE.bigFrom)/2);}   /* 05 Oct 2026: every customer on a drift book is priced, at their drift */   /* their normal level: a mid-sized order's */
 /* v651 and v652, HIS DECISIONS OF 15 AND 16 SEP 2026: A NAMED CUSTOMER'S PRICE AT ANY SIZE, the one rule every quote to them
    reads: the printed board, the approach offer, Today's worth and the reward cover's gap. The price of their tier for the
    product in view, off the ladder walked through that size, never under the floor, through the engine's one cardPrice, as
-   tools/pricelist.mjs quotes the customer's own page. No tier for the product, held or proposed, and there is nothing to
+   tools/pricelist.mjs quotes the customer's own page. A book with neither a Set Price nor a stated board has nothing to
    quote: null, as their page reads the price as coming soon. 27 SEP 2026, HIS DECISION: what they paid before no longer
-   lowers it (the cap is retired, engine's cardPrice), so their own rate is not read here. */
-/* 19 SEP 2026: A TYPED BOARD IS QUOTED TO EVERYBODY, tier or no tier (his instruction). The no-tier
-   refusal above is right where a LEVEL decides the price and wrong where he has typed one price for
-   all: it would have left thirty of thirty-six customers with no oil price on the desk and on their
-   own page, and it is why the desk printed nothing for oil the day the tiers came off. */
+   lowers it (the cap is retired, engine's cardPrice), so their own rate is not read here. A typed board is quoted to everybody. */
 function isPartner(code){return SNAPSHOT_ENGINE.isPartner(snapCtx(),code);}
-function cardQuote(code,q,t){return SNAPSHOT_ENGINE.cardQuote(snapCtx(),PROD,code,q,t);}
-/* v670: each size reads its own level, so a customer on a band set is printed their small, mid and big levels where they fall */
+function cardQuote(code,q){return SNAPSHOT_ENGINE.cardQuote(snapCtx(),PROD,code,q);}
+/* each size is the customer's card price for it, the Set Price lifted by their % or the typed board */
 function pbPrices(code){
-  /* a typed board needs no tier to be printed; a tiered product still does */
-  const fixedBoard=!!((TIER_RULE[PROD]||{}).fixed);
-  if(!fixedBoard&&cardTier(code)<0)return [];
   return shownSizes(PROD).slice().sort((a,b)=>a-b).map(q=>({q,price:cardQuote(code,q)})).filter(x=>x.price!=null);}
 /* v564: AND THE SITE'S ADDRESS, for the QR. It comes down the same keyed road as the usernames
    and is never in this file: /desk is public by his decision of 11 Aug and the statements site is
@@ -20065,7 +19683,7 @@ function pbCard(){
   const sizes=shownSizes(PROD).slice().sort((a,b)=>a-b);
   return `<div class="card" id="pbCard" style="margin-top:12px">
     <div class="cardh">Print a board <span class="sub">the mark, the figures, the username and a QR to his page</span></div>
-    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Set Price moved by their drift, set on Clients or read off their record; on the other books the board; never under the floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
+    <div class="dsc">Choose the customer, tick the sizes, then Print, or save it as JPG, PDF or HTML; on the phone the share sheet offers Save Image and Save to Files. The sheet is the crystal, one line per size, his username and a QR that opens his own statements page. The prices are their own: on salt the Set Price lifted by their %, set on Clients; on the other books the board; never under the Floor. The same list their statement page shows. Copy as text puts the same lines and the link on the clipboard.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
       <select id="pbWho" aria-label="Customer" style="min-height:44px;padding:8px 10px;font-size:16px">${who.map(id=>`<option value="${esc(id)}">${esc(codeOf(id))}</option>`).join('')}</select>
       <button class="vbtn salt-pill salt-pill--sm" id="pbPrint" type="button">Print</button>
@@ -20099,7 +19717,7 @@ async function pbSheet(){
   return {code,user,url,rows,soon:!all.length,product:(PRODUCTS[PROD]&&PRODUCTS[PROD].name)||PROD,week:pbWeekMonday()};}
 /* v651: nothing to put on the sheet, and why: no size ticked, or no tier for the product in view */
 function pbEmpty(sh,m){if(sh&&sh.rows.length)return false;
-  if(m)m.textContent=sh&&sh.soon?codeOf(sh.code)+' has no '+sh.product+' tier yet, so there is no price to print: set one on Clients.':'Tick at least one size.';return true;}
+  if(m)m.textContent=sh&&sh.soon?codeOf(sh.code)+' has no '+sh.product+' price yet, so there is nothing to print.':'Tick at least one size.';return true;}
 /* v537: THE PRINTED BOARD IS THE LOGO AND THE NUMBERS (his instruction, 08 Sep 2026). v538, his
    two calls the same hour: on the identity's own ground, not white, and NO WORDS AT ALL. The
    crystal alone, the username the list is tagged to, then one line per size carrying two bare
@@ -20352,7 +19970,7 @@ function tabPricing(){
       +`applied to this product's cost. It borrows the SHAPE and not the arithmetic: the alternative was showing `
       +`${esc(PRODUCTS[A.from]?PRODUCTS[A.from].name:A.from)}'s prices against a different cost base, which is what it did until v260 `
       +`and which quoted ${fmt0(850)} for a 12.5 lot of oil. `
-      +(med!=null?`Against it, the trade actually written cleared <b>${fmt(med)}/unit</b>, so treat this as a placeholder and give me three prices per tier when you have them.`
+      +(med!=null?`Against it, the trade actually written cleared <b>${fmt(med)}/unit</b>, so treat this as a placeholder and give me a price for each size when you have them.`
                  :`Nothing has traded yet, so there is nothing to check it against.`)
       +`</div>`;})()}
   <!-- ============ THREE OF THE FOUR TILES WERE THE TABLE BELOW THEM (v393) ============
@@ -20377,10 +19995,8 @@ function tabPricing(){
         :`buying can reach ${fmt(hr.safeTo)}/unit before a live price fails, ${hr.pct}% above today; <b>${hr.firstTier}</b> falls first at ${fmt(hr.firstAt)}`}</div></div>
   </div>
 
-  <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${(()=>{let t1=null;try{t1=priceLadder(shownSizes(PROD)[0]).tier1;}catch(e){}
-    if(t1)return 'two tiers: Tier 1 stated at its ends, Tier 2 derived from cost';
-    if(driftBook(PROD))return 'the Set Price, what a stranger is quoted; a customer&rsquo;s drift moves it between the floor and the ceiling';
-    return TIER_RULE[PROD]?`the ladder&rsquo;s ${TIER_NAMES[TIER_NAMES.length-1]}, what a stranger is quoted`:'one ladder, tapered at the rate the supplier tapers';})()}</span> <span class="rule"></span></h2>
+  <h2 style="margin-top:18px">The board <span class="sub" style="font-weight:400">${driftBook(PROD)?'the Floor, the Set Price a stranger is quoted, and the Ceiling; a customer&rsquo;s % lifts the Set Price towards the Ceiling'
+    :TIER_RULE[PROD]?'the Floor, the one price for everybody, and the Ceiling':'one ladder, tapered at the rate the supplier tapers'}</span> <span class="rule"></span></h2>
   ${(()=>{const tb=tierBoard();
     /* ============ THE ASK SAYS WHICH FLOOR IT CLEARS (v381) ============
        THE BOARD HAS BEEN PRINTING ASKS THAT DO NOT CLEAR THEIR OWN FLOOR, IN BLACK, WITH
@@ -20404,37 +20020,11 @@ function tabPricing(){
        the floor are one number, equal to the ringgit at every size on both books, so the column can
        carry all three names honestly and the multiple beside it is ask over that: over 1.00x earns,
        1.00x earns nothing, under 1.00x is a price he has stated below break-even. */
-    /* ============ v564: TWO TIERS, AND THE MARKUP MOVED INTO THE ASKS ============
-       HIS INSTRUCTION, 10 SEP 2026: the board shows Tier 1 and Tier 2. Tier 2 is the column that
-       was here and not one of its figures moves. Tier 1 prints to its LEFT, because cheapest-first
-       is the order the tiers earn and the order v247 asked a board to read in.
-       THE MARKUP COLUMN DID NOT GO, IT MOVED INTO EACH ASK. v552 put effective cost in front of the
-       ask and v554 named the multiple Markup rather than Margin; both still hold. What cannot hold
-       is ONE markup column beside TWO asks: it would have to pick a tier, and would then silently
-       describe one of them while sitting level with both. So each tier cell carries its own
-       multiple on its own last line, under its own rate and margin.
-       AND FIVE COLUMNS IS WHAT THE BOARD HAS ROOM FOR. It gets 325px of a 375px screen (v330), so
-       six was not available and the sixth would have been the one he reads to a customer. */
-    const T1on=tb.some(r=>{try{return !!priceLadder(r.q).tier1;}catch(e){return false;}});
-    /* ============ v749: EVERY LEVEL IN THE STACK ============ his instruction of 20 Sep 2026, on the two
-       cards together: show it for all tiers, probably combinable. The stack carried COGS, the floor and ONE
-       level, the board's last, so the rate, the margin and the multiple of break-even existed for the price a
-       stranger pays and for no other; the other five were bare totals in a card of their own further down the
-       page. One table now, a column a level, every cell carrying the same four lines. v564 said five columns
-       was what 325px of a 375px screen had room for and it was right: the table scrolls sideways in a .tscroll,
-       which is what the card being folded in already did with its own six columns. The separate card is GONE
-       rather than left beside it, because one set of prices printed by two pieces of code is how the two drift. */
+    /* THE BOARD READS THREE FIGURES (18 Oct 2026, his decision: the five levels and the stated Tier 1 are gone): the Floor, the Set Price
+       and the Ceiling, each size a row, the Set Price's cell carrying its rate, its margin and its multiple of break-even. Five columns
+       is what 325px of a 375px screen has room for (v330), and the table scrolls sideways in a .tscroll beyond that. */
     const five=fiveTiersNow(), fiveBy={};
     if(five)five.forEach(g=>{fiveBy[g.q]=g;});
-    /* A BOOK'S LEVELS ARE ITS OWN, AND TIER_NAMES IS SALT'S SIX. Salt's rule carries five multiples and yields
-       six levels with Ambassador at the floor; oil's is a fixed price a size, so it yields two, Ambassador and
-       the one a stranger is quoted, and CLAUDE.md has called it a genuine one-tier book since the guest boards
-       were written. A shorter book therefore takes the FIRST name and the LAST of the rest, because its top
-       level IS the board and the board is the last name (v656). The card folded in here printed all six heads
-       over oil's two cells, ragged, from v641 until now: a head asserted against TIER_NAMES and a body read
-       off the engine agree with each other on salt and were never compared to each other on oil. */
-    const lvlN=(five&&five.length)?Math.max.apply(null,five.map(g=>(g.prices||[]).length)):0;
-    const levels=lvlN?(driftBook(PROD)?['Floor','Set price']:[TIER_NAMES[0]].concat(TIER_NAMES.slice(TIER_NAMES.length-(lvlN-1)))):null;   /* 05 Oct 2026: a drift book's two columns are its floor and its Set Price */
     /* AND A SIZE OFF THE BOARD IS STILL PRICED HERE, which is what the card folded in said in its own words at
        v657: it drew every rung and marked the ones the board does not print, while this table has only ever
        drawn the board's own. Every rung, in the ladder's order, marked; the under-floor census below still
@@ -20446,31 +20036,22 @@ function tabPricing(){
       ?`<th class="hs${last?' r':''}" tabindex="0">${label}<span class="hb">${hint}</span></th>`
       :`<th>${label}</th>`;
     const head=`<tr><th class="l salt-table__label">Size</th><th>COGS</th>`
-      +hth('Eff. cost','break-even, the floor')
-      +(levels
-        ?levels.map((n,i)=>hth(n,i===0?'the floor he may go to':i===levels.length-1?'the board, and what a stranger pays':'',i===levels.length-1)).join('')
-        :(T1on?hth('Tier 1','stated at its ends'):'')
-          +hth(T1on?'Tier 2':(TIER_RULE[PROD]?TIER_NAMES[TIER_NAMES.length-1]:'Ask'),T1on?'the default ask':'rate, margin, &times; eff. cost',true))
+      +hth('Floor','break-even, the least he may go to')
+      +hth('Set Price','what a stranger is quoted, the least any customer but a partner pays')
+      +hth('Ceiling','the most anyone is quoted',true)
       +`</tr>`;
-    /* one cell, both tiers, so the two can never be printed by two pieces of code that drift. The
-       four lines are the total, the rate, the margin on price and the multiple of break-even; each
-       turns crimson on its own test, and a price under break-even is crimson on the total itself. */
-    /* v749: a level's own cell. The four lines are the ask's, and the two derived figures are struck on the
-       FLOOR, as tCell's are: margin is what is left over break-even, and the multiple is the price over it. */
-    const lvlCell=(total,floor,q,last)=>{
-      const bad=total<floor-0.009, rate=q>0?total/q:0;
-      const margin=total>0?(total-floor)/total*100:0, x=floor>0?total/floor:0;
-      return `<td${last?' style="font-weight:600"':''}><b${bad?' style="color:var(--crim)"':''}>${fmt0(total)}</b>`
-        +`<div style="font-size:10px;color:var(--dim)">${fmt(rate)}</div>`
-        +`<div style="font-size:10px;color:${margin<0?'var(--crim)':'var(--dim)'}">${margin.toFixed(0)}% margin</div>`
-        +`<div style="font-size:10px;color:${x<1?'var(--crim)':'var(--dim)'}">${x.toFixed(2)}x eff.</div></td>`;};
+    /* the Set Price's cell: the total, the rate, the margin on price and the multiple of break-even; each turns crimson on its own
+       test, and a price under break-even is crimson on the total itself. */
     const tCell=cl=>{
       if(!cl)return '';
       const bad=cl.under>0.009;
-      return `<td><b${bad?' style="color:var(--crim)"':''}>${fmt0(cl.total)}</b>`
+      return `<td style="font-weight:600"><b${bad?' style="color:var(--crim)"':''}>${fmt0(cl.total)}</b>`
         +`<div style="font-size:10px;color:var(--dim)">${fmt(cl.rate)}</div>`
         +`<div style="font-size:10px;color:${cl.margin<0?'var(--crim)':'var(--dim)'}">${cl.margin.toFixed(0)}% margin</div>`
         +`<div style="font-size:10px;color:${cl.floorX<1?'var(--crim)':'var(--dim)'}">${cl.floorX.toFixed(2)}x eff.</div></td>`;};
+    /* the Ceiling's cell: the most a customer is quoted at the size, the engine's own figure on the row (null on a book with no rule) */
+    const cCell=(c,q)=>c==null?'<td class="mono" style="color:var(--dim)">'+NIL+'</td>'
+      :`<td class="mono">${fmt0(c)}<div style="font-size:10px;color:var(--dim)">${fmt(q>0?c/q:0)}</div></td>`;
     /* v564: ONE TAG, BECAUSE THERE HAS BEEN ONE FLOOR SINCE v502. This read the collected floor
        into flC and printed "collect only" where the ask cleared that and not the delivered one.
        v502 removed the pair: floorTotal ignores the collects option and the suite asserts the two
@@ -20478,50 +20059,21 @@ function tabPricing(){
        the "collect only" branch has been unreachable, and the distinction the tag drew no longer
        exists. The row now flags a price under break-even, on either tier, and says which. */
     const rows=tbAll.map(r=>{const L=priceLadder(r.q);
-      const badT1=!!(L.tier1&&L.tier1.under>0.009), badT2=L.ask.under>0.009;
-      /* v566: AND THE ROW SAYS WHEN THE CHEAPER TIER IS NOT THE CHEAPER ONE. The two columns are
-         printed cheapest-first in a fixed order, which is v247's rule for reading a board, so an
-         inverted row runs from higher to lower with nothing saying so. `over` is the RM by which
-         Tier 1 exceeds the ask at that size, measured in the engine beside `under`.
-         The under-floor tag also NAMES Tier 2 now: it printed a bare "under floor" while naming
-         Tier 1 in the other branch, which on a two-tier board leaves the reader to guess which
-         column the tag is about. */
-      const badOver=!!(L.tier1&&L.tier1.over>0.009);
-      const tag=badOver?' <span class="tag salt-status def">Tier 1 above Tier 2</span>'
-        :badT1&&badT2?' <span class="tag salt-status def">both under floor</span>'
-        :badT2?' <span class="tag salt-status def">'+(T1on?'Tier 2 under floor':'under floor')+'</span>'
-        :badT1?' <span class="tag salt-status def">Tier 1 under floor</span>':'';
-      return `<tr${badT1||badT2||badOver?' style="background:color-mix(in srgb,var(--salt-ember) 7%,transparent)"':''}><td class="l salt-table__label">${units(r.q)}${r.off?'<div class="iref">off the board</div>':''}`
+      const bad=L.ask.under>0.009;
+      const tag=bad?' <span class="tag salt-status def">under floor</span>':'';
+      return `<tr${bad?' style="background:color-mix(in srgb,var(--salt-ember) 7%,transparent)"':''}><td class="l salt-table__label">${units(r.q)}${r.off?'<div class="iref">off the board</div>':''}`
       +tag+`</td>`
       +`<td class="mono" style="color:var(--dim)">${fmt0(L.cogs)}</td>`
-      /* v552: effective cost, which IS break-even and IS the floor, moved in front of the margin and
-         the ask so the row reads left to right the way the ask is built. It was the last column. */
+      /* effective cost IS break-even and IS the floor (v552), so the Floor column is that figure with its rate beneath */
       +`<td class="mono" style="color:var(--crim)">${fmt0(L.floor.total)}`
          +`<div style="font-size:10px;color:var(--dim)">${fmt(L.floor.rate)}</div></td>`
-      +(levels
-        /* the row always has as many cells as the head has columns: a shown size the ladder has no rung for,
-           and a rung short of a level, both keep the row's shape rather than sliding the table sideways */
-        ?levels.map((n,i)=>{const p=fiveBy[r.q]&&fiveBy[r.q].prices[i];
-          return (p==null)?'<td class="mono" style="color:var(--dim)">'+NIL+'</td>':lvlCell(p,L.floor.total,r.q,i===levels.length-1);}).join('')
-        :(T1on?tCell(L.tier1):'')+tCell(L.ask))+`</tr>`;}).join('');
-      /* v564: the Markup and Ask cells that stood here are now tCell, called once per tier above.
-         v330's reason for stacking the rate and the margin on their own lines is why tCell does:
-         on one line the sub-label read "RM 120.00 - 32% margin" and forced the column to 160px of
-         the 325px the board has on a 375px screen, pushing the ask itself half off the edge. The
-         multiple joins them as a fourth line for the same reason, rather than as a sixth column. */
-    /* v564: the under-floor census reads BOTH tiers, and it reads `under` rather than comparing the
-       total to the floor itself. They are the same test on a derived ask and not on a stated one:
-       since v552 a price he has stated is quoted below break-even and carries the gap in `under`,
-       which is the only figure that distinguishes a decision from a fault. */
-    const flagged=[],inverted=[];
+      +tCell(L.ask)+cCell(fiveBy[r.q]&&fiveBy[r.q].ceiling,r.q)+`</tr>`;}).join('');
+    /* the under-floor census reads `under` rather than comparing the total to the floor itself. They are the same test on a derived ask
+       and not on a stated one: since v552 a price he has stated is quoted below break-even and carries the gap in `under`, which is
+       the only figure that distinguishes a decision from a fault. */
+    const flagged=[];
     tb.forEach(r=>{const L=priceLadder(r.q);
-      if(L.tier1&&L.tier1.under>0.009)flagged.push({who:'Tier 1',q:r.q,rm:L.tier1.under});
-      if(L.ask.under>0.009)flagged.push({who:T1on?'Tier 2':'the ask',q:r.q,rm:L.ask.under});
-      /* v566: this read `under` and nothing else, so a board printing Tier 1 ABOVE Tier 2
-         at half its sizes still ended on "Every price on the board, on both tiers, clears
-         break-even": true, and the wrong question. Both tiers clearing their floor says nothing
-         about which of the two is the cheaper one. */
-      if(L.tier1&&L.tier1.over>0.009)inverted.push({q:r.q,rm:L.tier1.over});});
+      if(L.ask.under>0.009)flagged.push({who:'the Set Price',q:r.q,rm:L.ask.under});});
     return `<div class="card"><div class="tscroll"><table class="salt-table pxboard fivetier"><thead>${head}</thead><tbody>${rows}</tbody></table></div>
     <!-- v393: the break-even definition that stood here went with the rest of the standing
          prose. The setup table below states it as a figure, which is the register this asks for. -->
@@ -20541,11 +20093,10 @@ function tabPricing(){
          neither can grow into the limit. The definition of the two floors is in the fold below. -->
     <!-- v749: the sentence the five-tier card carried, moved with the levels. ONE SENTENCE, because stripMethod
          keeps an .insight only as far as its first full stop. -->
-    ${levels&&driftBook(PROD)?`<div class="insight salt-insight">The Set Price is the board a stranger is quoted; each customer's drift moves it towards the floor or towards ${(TIER_RULE[PROD].ceilingX||3)} times it, never past either.</div>`:''}
-    ${levels&&!driftBook(PROD)?`<div class="insight salt-insight">${levels[0]} pays the floor, each level sits at least ${fmt0(10)} over the one below, and ${levels[levels.length-1]} is the board: it is what a stranger is quoted and where a new customer starts.</div>`:''}
+    ${driftBook(PROD)?`<div class="insight salt-insight">The Set Price is the least any customer but a partner pays and what a stranger is quoted; a customer's % lifts it, never past ${(TIER_RULE[PROD].ceilingX||3)} times the Floor.</div>`:''}
+    ${!driftBook(PROD)&&TIER_RULE[PROD]?`<div class="insight salt-insight">The Set Price is one price for everybody, held between the Floor and ${(TIER_RULE[PROD].ceilingX||3)} times it.</div>`:''}
     ${flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--crim)"><b>${flagged.length} price${flagged.length===1?'':'s'} on this board sit${flagged.length===1?'s':''} under break-even</b>: ${flagged.map(f=>f.who+' at '+units(f.q)+', short '+fmt(f.rm)).join('; ')}.</div>`:''}
-    ${inverted.length?`<div class="insight salt-insight" style="border-left-color:var(--crim)"><b>Tier 1 costs more than Tier 2 at ${inverted.length} of ${tb.length} size${tb.length===1?'':'s'}</b>, so the board falls to the right where it should rise: ${inverted.map(f=>units(f.q)+' by '+fmt(f.rm)).join('; ')}. Tier 2 is derived from a floor that moves with the cost of salt; his two Tier 1 ends do not move at all.</div>`:''}
-    ${!flagged.length&&!inverted.length?`<div class="insight salt-insight" style="border-left-color:var(--grn)">Every price on the board, on ${T1on?'both tiers':'the one tier'}, clears break-even${T1on?', and Tier 1 is under Tier 2 at every size':''}.</div>`:''}
+    ${!flagged.length?`<div class="insight salt-insight" style="border-left-color:var(--grn)">Every price on the board clears break-even.</div>`:''}
     <!-- v393: THE MARGIN SETUP IS THE BOARD'S DERIVATION, SO IT SITS IN THE BOARD'S CARD.
          It was its own open h2 one section down, restating in prose what these six figures
          say. The prose went; the figures are the ask's derivation and stay open. -->
@@ -20557,24 +20108,17 @@ function tabPricing(){
       /* the note is NOT run through esc(): it carries entities. Data inside it is escaped. */
       const sR=(lab,v,n)=>`<tr><td class="l salt-table__label">${lab}<div class="iref">${n||''}</div></td><td class="mono">${v}</td></tr>`;
       return `<table class="salt-table fintab istmt" style="margin-top:12px"><tbody>
-      ${LD.anchorG!=null?sR('Level',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor`):sR('Level',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
+      ${LD.anchorG!=null?sR('Anchor',(LD.anchorG*100).toFixed(0)+'% margin',`typed, at ${units(LD.anchorQ)}, on the floor`):sR('Anchor',LD.anchorX.toFixed(3)+'x',`typed, at ${units(LD.anchorQ)} on cogs`)}
       ${sR('Taper',(sT.b!=null?sT.b.toFixed(3):NIL),sT.b!=null?`fitted to ${esc(sSup)}&rsquo;s quote ladder${sT.r2!=null?`, r&sup2; ${sT.r2.toFixed(2)}`:''}, ${units(LD.at.lo)} to ${units(LD.at.hi)}${sBor?`; <b>${esc(sOwn)}&rsquo;s own ladder is on the book and is not the one this is fitted to</b>`:''}`:'no supplier ladder to fit')}
       ${sR('Ceiling',LD.ceiling.toFixed(2)+'x','does not bind at any printed size')}
-      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`:''}; no leak, delivery or time in it`)
+      ${sC.rule==='latestCogs'?sR('Floor','COGS',`${fmt(sC.effEx)} a unit${sC.latest?`, the latest purchase${sC.latest.rid?' '+esc(sC.latest.rid):''}: ${fmt(sC.latest.quote)} quote plus ${fmt(sC.latest.freight)} freight over ${units(sC.latest.units)}`:''}; times the size, up to the next RM 5; no leak, delivery or time in it`)
         :sR('Floor','break-even',`${fmt(sC.effEx)} a unit after the leak, from the last three lots and the last three counts; delivery and his time are not in it`)}
       ${sC.rule==='latestCogs'&&sC.shrink>=RULES.leakInfoFrom?sR('After the leak',fmt(sC.afterLeak),`information only: ${(sC.shrink*100).toFixed(0)}% of what is bought never sells; nothing prices off it`):''}
       <!-- round 5: the asks' own markups, for the board-column reason: the curve ends read
            0.62x to 0.12x on oil while the stated board actually runs 0.62x to 0.15x. -->
       <tr class="tot"><td class="l salt-table__label"><b>Markup across the board</b><div class="iref">${units(sSZ[0])} down to ${units(sSZ[sSZ.length-1])}</div></td><td class="mono"><b>${sLo.ask.markupX.toFixed(2)}x to ${sHi.ask.markupX.toFixed(2)}x</b></td></tr>
       <tr class="tot"><td class="l salt-table__label"><b>Margin it returns</b><div class="iref">struck on the lot cost, not on cogs</div></td><td class="mono"><b>${sLo.ask.margin.toFixed(1)}% to ${sHi.ask.margin.toFixed(1)}%</b></td></tr>
-      ${sRz!=null?sR('Weighted by what he trades',sRz.toFixed(2)+'x','the level the book actually returns'):''}
-      <!-- v564: the six rows above are TIER 2'S derivation, which is the only one there was until
-           today. Tier 1 is not derived at all, so it gets its own row saying what it IS rather than
-           being folded into a table of levels and tapers it does not use. -->
-      ${(()=>{const A=(typeof PRICING_ENGINE!=='undefined'&&PRICING_ENGINE.tier1Anchors)?PRICING_ENGINE.tier1Anchors(pxPolicy()):null;
-        if(!A)return sR('Tier 1',NIL,'not stated on this book, so the board carries one tier');
-        return sR('Tier 1',fmt(A.rLo)+' to '+fmt(A.rHi)+'/unit',
-          `stated at ${units(A.lo)} and ${units(A.hi)}, ${fmt0(A.lo*A.rLo)} and ${fmt0(A.hi*A.rHi)}; the rate between them is interpolated in the log of size, taper ${A.b.toFixed(3)} against the supplier&rsquo;s ${(sT.b!=null?sT.b.toFixed(3):NIL)}`);})()}
+      ${sRz!=null?sR('Weighted by what he trades',sRz.toFixed(2)+'x','the multiple the book actually returns'):''}
     </tbody></table>
     <!-- v506, his instruction of 07 Sep 2026: the three cards read as three things, and nothing
          walked the reader from COGS to the floor to the ask. This is that walk, one row per size,
@@ -20586,12 +20130,12 @@ function tabPricing(){
          stated prices and an interpolation between them, which the row in the table above states in
          full. Heading a derivation "ask" while the board prints two of them is how a reader comes to
          believe the wrong one was derived. -->
-    <div class="cardh" style="margin-top:14px">From cost to ${T1on?'Tier 2':'the ask'} <span class="sub">${sC.rule==='latestCogs'?'COGS is the floor':'COGS, then the leak, is the floor'}; ${driftBook(PROD)?'the ask is the Set Price':TIER_RULE[PROD]?`the ask is the ladder&rsquo;s ${TIER_NAMES[TIER_NAMES.length-1]}`:'the floor at the size&rsquo;s margin is the ask'}${T1on?'. Tier 1 is stated, not derived':''}</span></div>
-    <div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Ask</th></tr></thead><tbody>
+    <div class="cardh" style="margin-top:14px">From cost to the Set Price <span class="sub">${sC.rule==='latestCogs'?'COGS is the floor':'COGS, then the leak, is the floor'}; ${driftBook(PROD)||TIER_RULE[PROD]?'the Set Price is the board&rsquo;s price':'the floor at the size&rsquo;s margin is the price'}</span></div>
+    <div class="tblw"><table class="salt-table fintab istmt"><thead><tr><th class="l salt-table__label">Size</th><th>COGS</th><th>Leak</th><th>Floor</th><th>Margin</th><th>Floor &divide; (1 &minus; margin)</th><th>Set Price</th></tr></thead><tbody>
       ${sSZ.map(q=>{const L=priceLadder(q);const cogs=L.cogs,fl=L.floor.total,g=L.marginX;const raw=g!=null?fl/(1-g):null;
         return `<tr><td class="l salt-table__label">${units(q)}</td><td class="mono">${fmt(cogs)}</td><td class="mono">+${fmt(fl-cogs)}</td><td class="mono"><b>${fmt(fl)}</b></td><td class="mono">${g!=null?(g*100).toFixed(1)+'%':NIL}</td><td class="mono">${raw!=null?fmt(raw):NIL}</td><td class="mono"><b>${fmt0(L.ask.total)}</b>${L.ask.lawStepped?' <span class="iref">stepped</span>':''}</td></tr>`;}).join('')}
     </tbody></table></div>
-    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the floor is that times the size, earns nothing and carries no leak.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?`The ask is the Set Price: the floor times a multiple sliding in the log of size from ${TIER_RULE[PROD].mS} at ${units(TIER_RULE[PROD].qS)} to ${TIER_RULE[PROD].mB} at ${units(TIER_RULE[PROD].qB)}, down to the ten, lifted to the floor, capped at ${TIER_RULE[PROD].ceilingX} times it, and never rising in rate with size. The margin columns are the old derived ask, for reference.`:TIER_RULE[PROD]?`The ask is ${TIER_NAMES[TIER_NAMES.length-1]}, the level a new customer starts at: COGS times the level's multiple, less a step a rung, rounded up to the ten, each level at least a ten over the one below and never rising in rate with size.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}${T1on?' Tier 1 takes his two stated ends verbatim and rounds only the sizes between them, because RM 875 is not a multiple of ten.':''}</div>
+    <div class="dsc" style="margin-top:8px">${sC.rule==='latestCogs'?`COGS is ${fmt(sC.landed)} a unit off the latest purchase, quote plus freight; the Floor is that times the size, up to the next RM 5; it earns nothing and carries no leak.`:`COGS is ${fmt(sC.landed)} a unit landed; the leak adds ${((sC.shrink/(1-sC.shrink))*100).toFixed(1)}% of it, so the floor is ${fmt(sC.effEx)} a unit and earns nothing.`} ${driftBook(PROD)?(()=>{const pts=(TIER_RULE[PROD].points||[]).slice().sort((x,y)=>x[0]-y[0]),p0=pts[0],p1=pts[pts.length-1];return `The Set Price is the Floor times a multiple sliding in the log of size from ${p0?p0[1]:NIL} at ${p0?units(p0[0]):NIL} to ${p1?p1[1]:NIL} at ${p1?units(p1[0]):NIL}, down to the RM 5, lifted so its margin never falls under a smaller size's, and held between the Floor and ${TIER_RULE[PROD].ceilingX} times it. A customer's % lifts the multiple at every size. The margin columns are the old derived price, for reference.`;})():TIER_RULE[PROD]?`The Set Price is the one price he typed for the size, held between the Floor and ${TIER_RULE[PROD].ceilingX} times it.`:'The ask is rounded up to the ten, then may step down to keep the rate from rising with size, never below its floor.'}</div>
     ${sFlat>=2?`<div class="insight salt-insight" style="border-left-color:var(--gold)"><b>The taper stops at ${units(LD.at.hi)}, so ${sFlat} of the ${sSZ.length} printed sizes carry the same ${sHi.markupX.toFixed(2)}x.</b></div>`
       :''}`;})()}
     ${pbCard()}
@@ -20708,7 +20252,7 @@ function tabPricing(){
     </tbody></table>
     <div class="dsc" style="margin-top:8px">The markup is struck on cogs and the margin on the cost to serve, which is why they are different numbers.${R.wanted&&isFinite(R.wanted)&&Math.abs(R.wanted-R.price)>0.5?` The retired engine would have asked ${fmt0(R.wanted)}.`:''}</div>`;})()}</div>`;})()}
 
-  <h2 style="margin-top:22px">The book, measured <span class="sub" style="font-weight:400">what the ladder has achieved, which sets no ask</span> <span class="rule"></span></h2>
+  <h2 style="margin-top:22px">The book, measured <span class="sub" style="font-weight:400">what the ladder has achieved, which sets no price</span> <span class="rule"></span></h2>
   <div class="two">
     <div class="chartbox"><canvas id="pxShapeChart"></canvas></div>
     <div class="chartbox"><canvas id="pxTimeChart"></canvas></div>
@@ -20724,7 +20268,7 @@ function tabPricing(){
          word for word, the only restatement left inside a book on this view. The fold it names
          carries the figure and the reason; what is left here is the part that is only true of
          the five settings above. -->
-    <div class="dsc" style="margin-top:9px">Changing any of these five numbers changes the comparison in <b>What a unit costs, and what it returns</b> and changes no ask.</div>
+    <div class="dsc" style="margin-top:9px">Changing any of these five numbers changes the comparison in <b>What a unit costs, and what it returns</b> and changes no price.</div>
     </details>`;})()}
   <details class="obsec"><summary>What each size earns <span class="q">ringgit a unit, board against trade</span></summary>
   <div class="dsc" style="margin-bottom:9px">Margin as a percentage flatters a big lot. <b>Ringgit per unit</b> is the figure that decides which trade is worth doing, because a unit is the thing in short supply here, not a customer. Everything below is measured on the <b>effective cost of ${fmt(c.eff)}</b>, which is what the next unit costs to replace once shrinkage is carried.</div>
@@ -20911,7 +20455,7 @@ function tabPricing(){
 
   </details>
   <details class="obsec"><summary>What the two charts plot <span class="q">and what is deliberately not on them</span><span class="ct">nothing fitted</span></summary>
-  <div class="dsc">Left: the ask per unit at each printed size, against the floor it has to clear, which is the same figure as effective cost and as break-even, with Tier 1 beside it where the book states one. A flat line is a ladder that has stopped rewarding size, and the gap between the ask and the floor it clears is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s ask for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
+  <div class="dsc">Left: the Set Price per unit at each printed size, against the cost floor it has to clear, which is the same figure as effective cost and as break-even; the Floor itself is that rounded up to the next RM 5. A flat line is a ladder that has stopped rewarding size, and the gap between the Set Price and the cost floor it clears is all the room there is. Right: every priced order ever written, plotted at the rate actually paid on the day it was agreed, grouped into three lot bands taken from this book&rsquo;s own board, with today&rsquo;s Set Price for each band drawn as a dashed line. There is no fitted curve on either chart and no elasticity anywhere on this desk.</div>
   </details>
   <details class="obsec"><summary>Price response <span class="q">what has sold at each price</span></summary>
   <div class="dsc" style="margin-bottom:9px">What you have actually sold at each price. Volume tells you where the business really sits; revenue tells you which price is carrying it. Prices are grouped to the nearest ringgit, and the axis lists only the prices you have traded at, so the gaps are not to scale.</div>
@@ -21039,14 +20583,14 @@ function priceNote(){
   /* 08 Sep 2026: ONE THRESHOLD FOR THE COUNT AND THE SENTENCE. 27 Sep 2026: the threshold is the engine's
      floor at each order's own size, on one cost stack, over the units priceBuckets counts */
   const C=pxCost(),P=pxPolicy(),sold=pricedSales.filter(s=>s.qty-txPendUnitsRaw(s)>0&&s.total>0);
-  const flRate=s=>PRICING_ENGINE.floorTotal(s.qty,C,P)/s.qty, rates=sold.map(flRate);
+  const flRate=s=>PRICING_ENGINE.costTotal(s.qty,C,P)/s.qty, rates=sold.map(flRate);
   const lo=Math.min.apply(null,rates), hi=Math.max.apply(null,rates);
   const underUnits=sold.filter(s=>txGoods(s)/s.qty<flRate(s)-0.009).reduce((a,s)=>a+s.qty-txPendUnitsRaw(s),0),totUnits=pts.reduce((a,x)=>a+x.kg,0);
   /* 27 Sep 2026, v900's book: A FLOOR TOTAL IS TO THE SEN, so its rate is known to half a sen over the size: a half
      unit's RM 31.18 reads RM 62.36/unit beside RM 62.35 at one unit, with nothing in the floor moving by size. The
      floor is one rate, named at one unit, while every size's rate is that figure to the sen its total is rounded to;
      a range is printed only when the floor itself moves with size. */
-  const f1=PRICING_ENGINE.floorTotal(1,C,P), one=sold.every(s=>Math.abs(flRate(s)-f1)<=0.005+0.005/s.qty+1e-9);
+  const f1=PRICING_ENGINE.costTotal(1,C,P), one=sold.every(s=>Math.abs(flRate(s)-f1)<=0.005+0.005/s.qty+1e-9);
   const line=one?`the ${fmt(f1)}/unit floor`:`the floor at its size, ${fmt(lo)} to ${fmt(hi)}/unit`;
   /* THE INSIGHT CARRIES THE CLAIM AND NOTHING ELSE, for the reason Customers found: being under
      NOTE_MIN is a property of the template PLUS today's figures. With the definition attached this
@@ -21122,18 +20666,11 @@ function drawBoardCharts(){
            and labelling it as a different thing, under a caption explaining a RM20 gap that has
            not existed for a week. The same v502 retirement took the "collect only" tag at v564. */
         const c=pxCost(),tb=tierBoard();
-        const T1chart=tb.some(r=>{try{return !!priceLadder(r.q).tier1;}catch(e){return false;}});
-        /* v564: TWO ASK SERIES WHERE THE BOOK HAS TWO TIERS. A chart of the board that drew one of
-           its two levels would be the "folded reads as missing" fault in its purest form: the second
-           tier would exist on the table six inches above and nowhere on the picture of it. Tier 1 is
-           the same brass, dashed and unfilled, so the eye reads it as the same family one level down.
-           An all-null series never throws, so the map returns null per point and the series is only
-           pushed where a Tier 1 exists at all. */
+        /* THE THREE FIGURES (18 Oct 2026, his decision: the levels are gone): the Set Price, the Floor and the Ceiling, each a rate a unit. The
+           Ceiling is the engine's own figure on the board's row, drawn where the book has one. */
+        const fiveC=fiveTiersNow()||[], ceilOf=q=>{const g=fiveC.find(x=>Math.abs(x.q-q)<0.009);return g&&g.ceiling!=null&&q>0?+(g.ceiling/q).toFixed(2):null;};
         const ds=[
-          /* v566: the label is conditional, as every other tier-facing string on this view is. It
-             was hardcoded, so OIL's chart carried a legend reading "Tier 2 ask" on a book whose own
-             table head three inches above reads "Ask" and which has no second tier at all. */
-          {label:T1chart?'Tier 2 ask':'ask',borderColor:tcol('brass'),backgroundColor:tcol('brass'),tension:.25,pointRadius:3,borderWidth:2,
+          {label:'Set Price',borderColor:tcol('brass'),backgroundColor:tcol('brass'),tension:.25,pointRadius:3,borderWidth:2,
             data:tb.map(r=>{let p=null;try{p=priceLadder(r.q).ask.rate;}catch(e){}return p;})},
           /* v567: ONE LINE, NAMED FOR ALL THREE THINGS IT IS. v566 swept a duplicate floor series
              off this chart and left its TWIN standing one line below: "effective cost" drew
@@ -21144,12 +20681,12 @@ function drawBoardCharts(){
              which is the fault v566 said it was fixing. His report, 10 Sep 2026: "floor and eff.
              cost being the same". The board's own column three inches above has carried all three
              names on one figure since v552 and this now reads the same way. */
-          {label:'floor, eff. cost, break-even',borderColor:tcol('ember'),borderDash:[5,4],borderWidth:1.5,pointRadius:0,
+          {label:'Floor',borderColor:tcol('ember'),borderDash:[5,4],borderWidth:1.5,pointRadius:0,
             data:tb.map(r=>+(r.floor/r.q).toFixed(2))}
         ];
-        if(T1chart)
-          ds.splice(1,0,{label:'Tier 1',borderColor:tcol('copper'),borderDash:[6,3],tension:.25,pointRadius:3,borderWidth:2,
-            data:tb.map(r=>{let p=null;try{const t=priceLadder(r.q).tier1;p=t?t.rate:null;}catch(e){}return p;})});
+        if(tb.some(r=>ceilOf(r.q)!=null))
+          ds.push({label:'Ceiling',borderColor:tcol('copper'),borderDash:[6,3],tension:.25,pointRadius:0,borderWidth:1.5,
+            data:tb.map(r=>ceilOf(r.q))});
         freshChart(a,{type:'line',data:{labels:tb.map(r=>units(r.q)),datasets:ds},
           options:Object.assign(base('The board and its floor, per unit (RM/unit)'),{})});
       }

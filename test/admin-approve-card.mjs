@@ -44,7 +44,7 @@ const CASH = () => ({ id: "2026-10-15T12:52:27.992Z", status: "pending", collect
 /* a new sale with three flags that ask (the twin's in capitals), one that does not, and no figures of the Desk's: two lines are drawn, in sentence case */
 const FLAGGED = () => ({ id: "2026-10-15T13:10:00.000Z", status: "pending", collection: "sales", party: "CX1-ZED", product: "salt", qty: 1, total: 80,
   entry: { at: "2026-10-15T13:10:00.000Z", type: "SELL", party: "CX1-ZED", makerRequest: "f".repeat(64) }, row: { qty: 1, total: 80 }, cost: { total: 56 }, margin: { rm: 24, pct: 30 },
-  flags: ["RM 80 for the goods is RM 10 under the floor of RM 90, which is what the order costs to take out: COGS times the size.",
+  flags: ["RM 80 for the goods is RM 10 under the Floor of RM 90: the order costs RM 88 to take out: COGS times the size; the Floor is that rounded up to the next RM 5.",
     "Booked to CX1-ZED as R2: CX1 buys it to sell on.",
     "This matches s9 on the book by party, date, size and total and is not marked a SECOND order, so the fold will refuse it as a replay.",
     "RM 120 is recorded as paid against a row worth RM 80, so it would be RM 40 overpaid."] });
@@ -142,7 +142,7 @@ export async function run({ ok, pageWork }) {
     ok(J(lines(s267)) === J(["! CS6-BS will owe RM 240.00 (under the RM 250.00 ceiling)."]) && J(lines(s262)) === J([]),
       "the take-back asks one thing, what the customer will owe against the ceiling; the trail and the advance it means to make ask nothing; a close that lowers what is owed says nothing: " + J([lines(s267), lines(s262)]));
     const fl = p.card(FLAGGED().id), over = p.card(OVER().id);
-    ok(J(lines(fl)) === J(["! RM 80 for the goods is RM 10 under the floor of RM 90.", "! This matches s9 on the book by party, date, size and total and is not marked a second order, so the fold will refuse it as a replay."])
+    ok(J(lines(fl)) === J(["! RM 80 for the goods is RM 10 under the Floor of RM 90.", "! This matches s9 on the book by party, date, size and total and is not marked a second order, so the fold will refuse it as a replay."])
       && lines(fl).every((t) => !/\b(?!RM\b)[A-Z]{2,}\b/.test(t.replace(/CX1-ZED/g, ""))) && !fl.querySelector(".salt-approve__flags, .salt-status"),
     "two lines at most, those that ask a decision, in sentence case and no capitals, and no pill: " + J(lines(fl)));
     ok(J(lines(over)) === J(["! CN3-WM will owe RM 255.00, over the RM 250.00 ceiling."]), "over the ceiling is said as over: " + J(lines(over)));

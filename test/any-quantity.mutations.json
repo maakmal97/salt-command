@@ -1,7 +1,7 @@
 [
- {"name": "oil's step back to one", "find": "rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:10, max:50}}", "replace": "rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:1, max:50}}"},
+ {"name": "oil's step back to one", "find": "rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}}", "replace": "rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:1, max:50}}"},
  {"name": "salt's step a half", "find": "grid:{min:0.5, step:0.25, max:25}}", "replace": "grid:{min:0.5, step:0.5, max:25}}"},
- {"name": "candy's step a half", "find": "ceilingX:2, grid:{min:1, step:1, max:30}}", "replace": "ceilingX:2, grid:{min:1, step:0.5, max:30}}"},
+ {"name": "candy's step a half", "find": "ceilingX:3, grid:{min:1, step:1, max:30}}", "replace": "ceilingX:3, grid:{min:1, step:0.5, max:30}}"},
  {"name": "the Worker takes an off-step ask over the max", "file": "stmt/orders.js", "find": "(past || q <= g.max + 1e-9) && Math.abs(k - Math.round(k)) < 1e-6", "replace": "(past || q <= g.max + 1e-9) && (past || Math.abs(k - Math.round(k)) < 1e-6)"},
  {"name": "the Worker takes a size under the first", "file": "stmt/orders.js", "find": "return q >= g.min - 1e-9 && (past", "replace": "return (past"},
  {"name": "the Worker ignores the step", "file": "stmt/orders.js", "find": "if (stepsOk(g) && !onStep(qty, g, past)) return refusal(\"offStep\"", "replace": "if (false) return refusal(\"offStep\""},

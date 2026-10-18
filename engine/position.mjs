@@ -170,15 +170,13 @@ function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,d
 }
 /* a Whiteboard tip's id: its family, then codes, dates and figures (a decimal total included) */
 const TIP_ID=/^[a-z]{2,8}(?::[A-Za-z0-9.-]{1,24}){1,5}$/;
-function tierSetEntry({at,tiers,raw}){
+function tierSetEntry({at,tiers,unit=null,raw}){
   const codes=Object.keys(tiers),copied={};
-  codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{
-    const t=tiers[c][p];copied[c][p]=t&&typeof t==='object'?Object.assign({},t):t;
-  });});
-  const say=t=>t==null?'not set':typeof t==='string'?t:['small','mid','big'].filter(k=>t[k]).map(k=>k+' '+t[k]).join(', ');
+  codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{copied[c][p]=tiers[c][p];});});
+  const say=t=>t==null?'not set':typeof t==='number'?(+(t*100).toFixed(2))+'% lift':String(t);
   return {at,type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
     raw:raw===undefined?'Set '+codes.map(c=>c+': '+Object.keys(copied[c]).map(p=>p+' '+say(copied[c][p])).join(', ')).join('; '):raw,
-    payload:{mode:'tierset',tiers:copied}};
+    payload:{mode:'tierset',tiers:copied,...(unit?{unit}:{})}};
 }
 function loanEntry({at,product,direction,party,date,form,amount,note=null,raw}){
   const cash=form==='cash',type=direction==='in'?'BORROW':'LEND';
@@ -212,17 +210,17 @@ function rebateOffsetEntry({at,party,date,sale,units,rm,raw,auto=false}){
     orderKey:ovKey(sale),date,fields:{settledRM:+((+sale.settledRM||0)+rm).toFixed(2),
       rebate:true,rebateKg:+((+sale.rebateKg||0)+units).toFixed(2)}}};
 }
-function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,note=null,raw}){
+function addIdEntry({at,code,kind,parent=null,rev=null,geo=null,tiers=null,unit=null,note=null,raw}){
   return {at,type:'ADDID',party:code,qty:null,total:null,status:'addid',
     raw:raw===undefined?'Add '+code+' to the roster as '+kind+(parent?' under '+parent:''):raw,
-    payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers}};
+    payload:{mode:'addid',code,kind,parent,rev,note,geo,tiers,...(unit?{unit}:{})}};
 }
 /* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. One name-free entry naming a code already on the roster; the
    drafter makes it a roster row carrying partner:true, which the fold files in `partners` and, if they are no associate yet,
    appoints them on the R2 stream with their -R account, so every associate property comes with the standing. */
 function partnerEntry({at,code,raw}){
   return {at,type:'PARTNER',party:code,qty:null,total:null,status:'partner',
-    raw:raw===undefined?'Make '+code+' a partner: pays cost, keeps every associate property':raw,
+    raw:raw===undefined?'Make '+code+' a partner: pays the Floor, keeps every associate property':raw,
     payload:{mode:'partner',code}};
 }
 function renameEntry({at,from,to,geo=null,raw}){
@@ -378,8 +376,8 @@ function payDelays(sales,party,today,rules){
    same day). On time is paid within the term (RULES.holdDays, his answer); a short delay is past it and under the lock
    (RULES.lockDays), a long one the lock or more. It turns on at one long delay, or at a second short delay within
    RULES.lateWindowDays of the one before; one payment on time turns it off. Within the window after that, any delay turns
-   it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It OFFERS a level down; it prices
-   nothing (his answer of 29 Sep 2026). `late` and `run` are V5b2c's reading of the same walk, for PREPAY after lateness:
+   it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It prices
+   nothing (his answer of 29 Sep 2026); the suggested % reads it. `late` and `run` are V5b2c's reading of the same walk, for PREPAY after lateness:
    whether any delay is in the history, and how many payments on time follow the last. */
 function lateOffer(delays,rules){
   const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,
@@ -1462,13 +1460,13 @@ function vaultPendingOk(record,publicWord=()=>false){
     &&envelope(v.names)&&(v.places===null||envelope(v.places));
   const fields=['at','expectedRevision','names','places','pair','code','kind','parent','geo','tiers','vault','addrVault',
     'from','to','product','party','date','qty','total','cash','delivery','freight','hand','deliveredQty','receivedQty',
-    'stream','associate','assoc','downstream','trip','level','tier','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
+    'stream','associate','assoc','downstream','trip','level','tier','unit','form','direction','amount','loan','rid','movedUnits','fields','sameDay','handover',
     'cost','settledRM','settledKg','rebateKg','coverUnits','coverRM','agreedOn','paidOn','deliveredOn','receivedOn',
     'id','until','cancelledOn','unpriced','cancelled','pending','inTransit','defaulted','rebate','goodwill','hide','orderCode','second','extras','cover',
     'shares','rids','undo'];
   const enumWords=['customer','supplier','reseller','referral','downstream','bucket','cash','goods','in','out',
     'SELL','BUY','Correction','Fulfilment','Cancellation','Payment','Receipt','Default','R1','R2','R3','salt','oil','candy','rice','delivered','collected',
-    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big'];
+    'Ambassador','Titanium','Platinum','Gold','Silver','A','T1','T2','T3','T4','small','mid','big','pct'];
   const house=object(record)&&typeof record.path==='string'&&/\/house-sizes$/.test(record.path);
   const offset=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/offset$/.test(record.path);
   const appointment=object(record)&&typeof record.path==='string'&&/^\/?all\/maker\/inputs\/appoint-existing$/.test(record.path);
@@ -1498,7 +1496,7 @@ function vaultPendingOk(record,publicWord=()=>false){
       (fields.includes(k)||enumWords.includes(k)||/^[CS][A-Z0-9]+-[A-Z0-9]+(?:-[A-Za-z0-9]+)*$/.test(k))&&safe(n,k));
   };
   if(!object(record)||Object.keys(record).some(k=>!['path','body','base','desired','input'].includes(k))
-    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/(offset|trip-pay|trip-join)|vault\/pair)$/.test(record.path)
+    ||typeof record.path!=='string'||!/^\/?((all\/maker\/inputs|vault\/inputs)\/(add-id|appoint-existing|amend-id|place|stock-count|sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|ledger-amend)|all\/maker\/inputs\/(offset|trip-pay|trip-join)|vault\/pair)$/.test(record.path)
     ||!object(record.body)||!safe(record.body,'body'))return false;
   if(appointment&&(Object.keys(record).some(k=>!['path','body'].includes(k))
     ||Object.keys(record.body).length!==3||Object.keys(record.body).some(k=>!['at','code','kind'].includes(k))

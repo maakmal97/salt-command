@@ -131,11 +131,10 @@ export async function run({ ok }) {
       "with no REWARD in the mirror the spend is refused as unconfigured and nothing is queued: " + none.status + " " + JSON.stringify(noneBody));
   } finally { w.close(); }
 
-  /* ---- Accept tier proposals in the actual owner script ---- */
+  /* ---- 18 Oct 2026: the price levels are gone, so Record offers no Accept every suggestion and no Price level form ---- */
   const posts = [];
-  const answers = [];
   const catalog = { parties: [], loans: [], rewards: [], correctionFields: [], rows: [], tierCustomers: ["CX1-AB"],
-    tierNames: ["Titanium", "Silver"], products: [{ product: "salt", tiered: true }] };
+    products: [{ product: "salt", tiered: true }] };
   const browser = new JSDOM(landingPage("", "fixture", { master: "local-master", accounts: [] }), {
     url: "https://counter.fixture.test/all", runScripts: "dangerously", pretendToBeVisual: true,
     beforeParse(window) {
@@ -144,11 +143,7 @@ export async function run({ ok }) {
       window.scrollTo = () => {}; window.confirm = () => true;
       window.fetch = async (path, init) => {
         const where = String(path);
-        if (init && init.method === "POST" && where === "/all/maker/inputs/tier-accept-all") {
-          posts.push(JSON.parse(init.body));
-          const [status, body] = answers.shift() || [200, { ok: true }];
-          return Response.json(body, { status });
-        }
+        if (init && init.method === "POST") posts.push(where);
         if (where === "/all/maker/review") return Response.json({ ok: true, drafts: [], orders: [] });
         if (where === "/all/maker/claims") return Response.json({ ok: true, claims: [] });
         if (where === "/all/maker/threads") return Response.json({ ok: true, threads: [] });
@@ -165,30 +160,12 @@ export async function run({ ok }) {
       for (let i = 0; i < 200 && !predicate(); i++) await new Promise((resolve) => setTimeout(resolve, 10));
       return !!predicate();
     };
-    const pause = (ms = 40) => new Promise((resolve) => setTimeout(resolve, ms));
-    const section = () => [...doc.querySelectorAll("#makerInputs .maker-input")].find((s) => s.querySelector("h3") && s.querySelector("h3").textContent === "Price level");
-    const accept = () => section() && [...section().querySelectorAll("button")].find((b) => b.textContent === "Accept every suggestion");
-    const retained = () => Object.keys(window.localStorage).filter((k) => k.includes("tier-accept-all"));
-    const press = async (n) => { await until(() => accept() && !accept().disabled); accept().click(); await until(() => posts.length >= n); await pause(); };
     doc.querySelector('[data-act="nav.record"]').click();
-    await until(() => accept());
-    const isAt = (v) => typeof v === "string" && !Number.isNaN(Date.parse(v));
-
-    answers.push([503, { ok: false, error: "The Desk did not answer." }]);
-    await press(1);
-    await press(2);
-    ok(posts.length === 2 && isAt(posts[0].at) && Object.keys(posts[0]).join() === "at" && posts[1].at === posts[0].at,
-      "Accept tier proposals sends its request id alone, and the retry after a failure keeps it: " + JSON.stringify(posts));
-    await press(3);
-    ok(isAt(posts[2].at) && posts[2].at !== posts[0].at, "once the proposals have landed, the next Accept is a new request: " + JSON.stringify(posts[2]));
-
-    answers.push([400, { ok: false, error: "There is no tier proposal to accept." }]);
-    await press(4);
-    await until(() => accept() && !accept().disabled);
-    const visibleCancels = [...section().querySelectorAll("button")].filter((b) => b.textContent === "Discard" && !b.hidden);
-    ok(retained().length === 0 && visibleCancels.length === 0 && /no tier proposal/.test(section().textContent),
-      "a refusal with nothing to accept lets the request go, hides Cancel and says why: " + JSON.stringify({ retained: retained(), cancels: visibleCancels.length }));
-    await press(5);
-    ok(isAt(posts[4].at) && posts[4].at !== posts[3].at, "and the next Accept after that refusal is a new request: " + JSON.stringify(posts.slice(3)));
+    await until(() => doc.querySelector("#makerInputs .maker-input"));
+    const heads = [...doc.querySelectorAll("#makerInputs .maker-input h3")].map((h) => h.textContent);
+    const buttons = [...doc.querySelectorAll("#makerInputs button")].map((b) => b.textContent);
+    ok(heads.length > 0 && !heads.includes("Price level") && !buttons.includes("Accept every suggestion") && !buttons.includes("Send the level")
+      && !doc.querySelector('[data-act^="record.tier."]') && !posts.some((x) => /tier-accept-all/.test(x)),
+      "Record has no Price level form and no Accept every suggestion, and sends nothing to a route that is gone: " + JSON.stringify({ heads, posts }));
   } finally { browser.window.close(); }
 }

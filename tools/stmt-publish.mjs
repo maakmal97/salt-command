@@ -284,42 +284,6 @@ function readAccountWrites(expected, outDir, run = execFileSync) {
   }
   return actual;
 }
-/* v658: the guest links themselves, so a board can be written for each. They live in the site's own
-   store under g:, which this tool already reads through wrangler's login.
-   ONE LIST AND ONE BULK GET, NOT A GET PER LINK (fold 5.5, 26 Sep 2026): each link was a wrangler
-   process of its own, eight of the nineteen a publish spawned, and the publish runs every two hours. The
-   ids go to <dir>/refs-keys.json, a hundred a call (the store's limit). `kv bulk get` is open beta in
-   wrangler, so a failure, or an answer in a shape read here as anything but text or null for every
-   key asked, falls back to one get per link with a warning: a link's board is never lost to it.
-   [id, record] pairs, a record null where it does not parse, exactly as the get per link read it. */
-export function readRefs(dir, run = execFileSync) {
-  const ids = listKeys("g:", run).map((k) => k.slice(2)).filter((x) => /^[a-z0-9]{4}-[a-z0-9]{4}$/.test(x));
-  const parse = (t) => { try { return JSON.parse(t); } catch (e) { return null; } };
-  try {
-    const out = [], file = join(dir, "refs-keys.json");
-    for (let i = 0; i < ids.length; i += 100) {
-      const part = ids.slice(i, i + 100);
-      writeFileSync(file, JSON.stringify(part.map((id) => "g:" + id)));
-      const t = String(wrangler(["kv", "bulk", "get", file, "--remote", "--binding", "STMT"], {}, run));
-      const got = JSON.parse(t.slice(t.indexOf("{")));
-      for (const id of part) {
-        /* the API answers each key's text, or null; wrangler's local store answers {value}; a key
-           missing from the answer is undefined, which is neither, and so falls back */
-        const v = got["g:" + id], text = v && typeof v === "object" ? v.value : v;
-        if (text !== null && typeof text !== "string") throw new Error("g:" + id + " is not in its answer as text");
-        out.push([id, text === null ? null : parse(text)]);
-      }
-    }
-    return out;
-  } catch (e) {
-    console.log("::warning::the links' bulk read did not answer (" + e.message + "); reading them one at a time");
-    return ids.map((id) => [id, readRef(id, run)]);
-  }
-}
-function readRef(id, run = execFileSync) {
-  try { return JSON.parse(wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "g:" + id], {}, run)); }
-  catch (e) { return null; }
-}
 function listKeys(prefix, run = execFileSync) {
   const t = wrangler(["kv", "key", "list", "--remote", "--binding", "STMT", "--prefix", prefix], {}, run);
   const i = t.indexOf("[");
@@ -471,66 +435,17 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
       + " associates over " + assoc.products.length + " book(s)");
   }
 
-  /* THE TWO GUEST BOARDS (10 Sep 2026). A referral link opens one tier's board and nothing else, so
-     both are written on every publish, beside the sealed per-customer lists and from the same
-     snapshot, which is what keeps a guest and a customer from ever being quoted off different
-     inputs. They are NOT sealed: a board is the price he prints and hands to strangers, and the
-     link's own id is what decides who gets to read one. tools/pricelist.mjs states that argument.
-     No snapshot, no boards, exactly as no snapshot means no price lists. */
+  /* THE GUEST BOARD (10 Sep 2026; 18 Oct 2026: ONE BOARD, THE SET PRICE). Every referral link opens this board and nothing else,
+     written on every publish beside the sealed per-customer lists and from the same snapshot, which is what keeps a guest and a
+     customer from ever being quoted off different inputs. The five levels are gone, so nothing about a link changes what it
+     reads: no board per level, none per introducer. It is NOT sealed: a board is the price he prints and hands to strangers, and
+     the link's own id decides who gets to read one (tools/pricelist.mjs). Keys from before (board:1, board:2, tiers, tboard:*,
+     gboard:*) are left in the store and nothing reads them. No snapshot, no board, exactly as no snapshot means no price lists. */
   if (pricing) {
-    const { boardList, guestBoard, tierBoard } = await import("./pricelist.mjs");
+    const { guestBoard } = await import("./pricelist.mjs");
     const bookNow = JSON.parse(readFileSync(join(REPO, "ledger", "book.json"), "utf8"));
-    const madeAt = new Date();
-    for (const tier of [1, 2]) {
-      plan.puts.push({ key: "board:" + tier, value: JSON.stringify(boardList(tier, bookNow, pricing, madeAt)) });
-    }
-    /* v696: the level NAMES, so the Worker can ensure one standing link per tier without stating
-       what the tiers are called. The book decides that, and this is the one road it travels. */
-    if (Array.isArray(pricing.tierNames) && pricing.tierNames.length)
-      plan.puts.push({ key: "tiers", value: JSON.stringify(pricing.tierNames) });
-    /* ============ v698: A BOARD PER LEVEL, NOT PER STANDING LINK ============
-       v696 wrote a board under each standing link's own id, which left a hole its own shape: the
-       five are minted the first time he opens the Links panel, so any minted since the last publish
-       had no board and fell back to board:2, the board a stranger sees. Four of the five would have
-       quoted Bronze until the next deploy.
-       A standing link IS a level, and a level's board does not depend on which link points at it.
-       So the five boards are written here, keyed by level, and a standing link reads its own level's
-       board. Nothing has to be published for a link to be right, so minting one can never be wrong.
-       tboard:, not board:, deliberately: board:1 and board:2 are the OLD two-board names and board:2
-       already means the LAST level, not the second. Reusing them would make 2 mean two things. */
-    /* one a tier, four since 23 Sep 2026: Bronze's tboard:5 is left where it lies and nothing reads it, a link whose
-       level the book no longer names reading the stranger's board instead */
-    for (let k = 1; k < ((pricing.tierNames || []).length || 6); k++) {
-      plan.puts.push({ key: "tboard:" + k, value: JSON.stringify(tierBoard(k, bookNow, pricing, madeAt)) });
-    }
-    /* ============ v658: AND ONE BOARD PER LINK, FROM ITS INTRODUCER'S LEVEL ============
-       A guest link is quoted two levels above the customer who handed it out, capped at the last,
-       per product. That level is never stored on the link: it is computed HERE, on every publish,
-       so a link follows its introducer the moment he moves them. A link whose introducer is not on
-       this issue's roster gets none, and the Worker falls back to the board every stranger sees. */
-    /* ============ v696, HIS INSTRUCTION: FIVE LINKS, ONE PER TIER ============
-       A STANDING link is a level and nothing else, so its board is written from that level alone and
-       follows nobody. The Worker mints the five on the first open of the Links panel; this writes
-       their boards on every publish, exactly as it does for the links that name an introducer. */
-    const byUser = plan.users || {};
-    let boards = 0, orphans = 0, standing = 0;
-    for (const [id, rec] of readRefs(outDir, run)) {
-      /* v698: a standing link needs nothing written under its own id; it reads its level's board.
-         v709: and so does ANY link carrying a level, including one he pinned when approving an
-         associate's, because the Worker keys on the level alone now. */
-      if (rec && rec.level) { standing++; continue; }
-      /* a link waiting on him serves nothing, so nothing is written for it either */
-      if (rec && rec.approved === false) { orphans++; continue; }
-      const user = rec && String(rec.introducer || "").toLowerCase();
-      const code = user ? byUser[user] : null;
-      if (!code) { orphans++; continue; }
-      plan.puts.push({ key: "gboard:" + id, value: JSON.stringify(guestBoard(code, bookNow, pricing, madeAt)) });
-      boards++;
-    }
-    console.log("and both guest boards, tier 1 and tier 2, and the five level boards"
-      + (standing ? " the " + standing + " standing link" + (standing === 1 ? "" : "s") + " read" : "")
-      + (boards ? ", plus " + boards + " link board" + (boards === 1 ? "" : "s") + " from their introducers" : "")
-      + (orphans ? " (" + orphans + " link" + (orphans === 1 ? "" : "s") + " names no customer on this roster and falls back to the board)" : ""));
+    plan.puts.push({ key: "guestboard", value: JSON.stringify(guestBoard(bookNow, pricing, new Date())) });
+    console.log("and the guest board, the Set Price, which every guest link reads");
   }
   /* each test account's fixture, read off its record in the store: a read that fails leaves that fixture as it is and
      says so, since the test accounts are his and count nowhere, and the publish of every real account goes on */

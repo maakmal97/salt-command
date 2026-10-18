@@ -7,7 +7,7 @@
    C is the context every reader takes: { B, R, today, W, over }.
      B  the book: sales, purchases, opening (by book), statedStockBy, statedStock, loanDrawUnits() (a function: only salt reads it),
         supplierReceivable, counts, selfUseLog, quotes, priceSet, costRule, defaultProd
-     R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES (all in engine/rules.mjs),
+     R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE (all in engine/rules.mjs),
         and LADDER, PRICE and PRICE_LOCK_ON (S1e), all in engine/rules.mjs
      today  a Date, the page-load clock in the desk
      W  what the walk of the book in view gave: buyUnits, selfUse, wavgBuy, stockCost. In the desk these are its globals, read as they
@@ -167,15 +167,13 @@ function inputs(C,p){
 }
 function policy(C,p){
   const R=C.R,pq=C.B.quotes[p]||null;
-  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, lotFloor:R.PRICE.lotFloor||{},
+  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, floorTo:(R.RULES&&R.RULES.floorTo)||0, lotFloor:R.PRICE.lotFloor||{},
     stated:setPricesFor(C,p),
-    tier1:ladderFor(C,p).tier1||null,
     tierRule:R.TIER_RULE[p]||null,
-    lastLevel:R.TIER_NAMES[R.TIER_NAMES.length-1],
     tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:sizesFor(C,p)};
 }
-/* the five tiers for a book, on its own rungs; null for a book with no rule. `cost` is a function, read only when there is a rule */
+/* the board for a book, on its own rungs (its stated prices, or its floor, Set Price and Ceiling); null for a book with no rule. `cost` is a function, read only when there is a rule */
 function fiveTiers(C,p,cost){
   const R=C.R.TIER_RULE[p];
   const sizes=R?R.rungs.concat(sizesFor(C,p).filter(q=>!R.rungs.some(r=>Math.abs(r-q)<0.009))).sort((a,b)=>a-b):null;
@@ -183,9 +181,8 @@ function fiveTiers(C,p,cost){
 }
 
 /* S1c-iii: THE CARDS AND THE DRIFT. Whose account a code is, who is a person, who pays cost, and what each customer is quoted.
-   Added to C: B.roster, B.partners, B.tierOf (the hand-set TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
-   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh), and C.tierAt(code,q), the level machinery
-   (tierProposal, ruleProposal), which no live book uses: without it a book that names levels quotes null, never a wrong figure. */
+   Added to C: B.roster, B.partners, B.tierOf (the held % lifts, TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
+   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh). */
 const viaMemo=(C,k,f)=>C.memo?C.memo(k,f):f();
 const isResellAcct=id=>typeof id==='string'&&id.slice(-2)==='-R';
 const ownerOf=id=>isResellAcct(id)?id.slice(0,-2):id;      /* the desk's isBucket has been always false since v265 */
@@ -234,13 +231,27 @@ function driftSignals(C,prod,code){
     late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
     overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RU.holdDays),0)};
 }
+/* 18 OCT 2026, HIS DECISION: THE FIGURE THAT PRICES IS THE % LIFT HE HOLDS, OR NOUGHT. `d` is that figure (0 to 2) and nothing automatic reaches it:
+   `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
   const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
   const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
-  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
+  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
 }
 function driftOf(C,p,code){return viaMemo(C,'drift|'+(ownerOf(code)||code)+'|'+p,()=>driftNowS(C,p,code));}
+/* THE SUGGESTED % LIFT (his decision of 18 Oct 2026): the engine's suggestPct over the record's signals and the rate each of the customer's
+   last S.recent salt sales paid over the Set Price rate at that sale's size (today's Set Price, the cost being today's). Prices nothing. */
+function suggestOf(C,p,code){
+  const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
+  return viaMemo(C,'suggest|'+(ownerOf(code)||code)+'|'+p,()=>{
+    const who=ownerOf(code)||code,S=R.suggest||{},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:R});
+    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&x.date&&x.total>0&&x.qty>0)
+      .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
+    const ratios=rows.map(x=>{const set=PRICING_ENGINE.quoteAt(x.qty,K,P,0);return set>0?(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty):null;}).filter(v=>v!=null);
+    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S);
+  });
+}
 function tierCustomers(C){
   const rev={};
   C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
@@ -248,17 +259,15 @@ function tierCustomers(C){
   return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
 }
 function cost(C,p){const o=C.over||{cost:null,shrink:null};return viaMemo(C,'pxCost|'+p+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.costStack(inputs(C,p)));}
-/* a named customer's price at any size: a partner the floor to the sen; a stated board the board; a drift book the Set Price moved by their drift */
-function cardQuote(C,p,code,q,t){
+/* a named customer's price at any size: a partner the Floor (RM 5 up); a stated board the board; a drift book the Set Price moved by their drift */
+function cardQuote(C,p,code,q){
   if(!(q>0))return null;
   const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
-  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
+  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost; 18 Oct 2026, the Floor, rounded up to the next RM 5
   const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
   if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
   if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
-  if(t==null)t=C.tierAt?C.tierAt(code,q):-1;if(t<0)return null;
-  if(!row||row.prices[t]==null)return null;
-  return +PRICING_ENGINE.cardPrice(null,PRICING_ENGINE.floorTotal(q,K,policy(C,p)),row.prices[t]).toFixed(2);}
+  return null;}
 
 /* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
 function ctxFor(B,R,prod,today,over){
@@ -282,11 +291,11 @@ function pricing(B,R,today,over=null){
     Object.keys(f.floors).forEach(q=>{floors[q]={floor:r4(f.floors[q].floor)};});
     const cards={};
     ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
-    let drift=null;
-    if(driftBook(C,p)){drift={};ids.forEach(id=>{if(isPartner(C,id)){drift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))drift[id]=d.d;});}
+    let lift=null,suggest=null;
+    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]={pct:g.pct,why:PRICING_ENGINE.suggestWhy(g).join(', ')};});}
     out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
-      drift?{drift}:{});
+      lift?{lift,suggest}:{});
   }
   return out;
 }
@@ -294,7 +303,7 @@ function pricing(B,R,today,over=null){
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
   inputs,policy,fiveTiers,figures,
-  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,tierCustomers,cost,cardQuote,pricing};
+  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
 
 export default SNAPSHOT_ENGINE;

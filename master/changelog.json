@@ -1,5 +1,16 @@
 [
  {
+  "v": "v1164",
+  "d": "19 Oct 2026",
+  "t": "THREE PRICES: FLOOR, SET PRICE, CEILING; THE LEVELS ARE GONE",
+  "n": [
+   "<b>THE FLOOR IS COGS AND FREIGHT, UP TO THE NEXT RM 5.</b> Every book: the latest purchase's quote and trip freight over its units, times the size, the order total rounded up to the next RM 5. The Ceiling is three times the Floor on every book (oil and candy were twice, rice two and a half). A partner pays the Floor. Oil, candy and rice keep their typed boards; no board price moves.",
+   "<b>SALT'S SET PRICE IS THE LEAST ANY CUSTOMER PAYS.</b> 2.5 times the Floor at half a unit, 2 at 1 unit, 1.67 at 6.25 and 1.33 at 12.5, sliding in the log of size and flat above 12.5. The margin in ringgit never falls as the order grows, and a unit never costs more in a bigger order, judged on the exact rate, so a large order no longer slides to the Floor. At COGS RM 58 a unit: RM 75, 120, 605 and 980 at 0.5, 1, 6.25 and 12.5 units.",
+   "<b>EACH CUSTOMER'S PRICE IS HIS %.</b> Their % lifts the Set Price toward the Ceiling, the same at every size. The record only suggests a % (paid late, paid above the Set Price) and never moves a price, so a late payer is no longer priced up unasked. Every customer starts at 0%. A figure in the old drift scale, or sent without its unit, books as no %.",
+   "<b>THE FIVE LEVELS ARE GONE</b> from the engine, the Desk, the drafter, the fold, Counter Admin and the guest links: one guest board, the Set Price, and old links keep opening. Every surface says Floor, Set Price, Ceiling."
+  ]
+ },
+ {
   "v": "v1163",
   "d": "18 Oct 2026",
   "t": "THE BOOK, A SHADOW DURABLE OBJECT, IS LOADED AT EACH FOLD; NOTHING READS IT",

@@ -20,7 +20,6 @@ import { hoursStatus } from "../stmt/hours.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
 import { opened } from "../tools/payload.mjs";
-import LEVEL_ENGINE from "../engine/pricing.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -66,36 +65,6 @@ const skipOff = (m) => { console.log("  SKIP: " + m); };
    which is a property of the data and can change under you.
    The floor keeps a margin for these, and the margin is not room for a section to fall out. */
 const skipData = (m) => { console.log("  SKIP (no data): " + m); };
-/* 05 OCT 2026: SALT PRICES BY EACH CUSTOMER'S DRIFT, AND NO LIVE BOOK READS THE LEVEL LADDER NOW. The level machinery
-   (fiveTiers' multiples, levelAt, the proposal and its rules, the guest and standing boards) stays in the engine, the desk
-   and the publish, so the sections that prove it put salt's last level rule back, in their own window (levelWindow) or
-   their own copy of the pricing snapshot (levelSnap), and hand it the held levels they need. What the live book does is
-   proved in the drift section. A HELD DRIFT IS A NUMBER AND BELONGS TO THE DRIFT RULE (the book holds one since v1075, CS6-BS at
-   -0.7): on the level rule put back it is not a level, and production never reads it as one, since the snapshot leaves a drift
-   book out of tierOf and carries the drift apart. So the window sets the live book's salt drifts aside, then applies `held`;
-   whichever customer holds one next, the sections below see only the levels they hand in. */
-const LEVEL_SALT = { cogs: "quote", overhead: 0.5, multiples: [2.1, 2.1, 2.5, 2.5], round: ["down", "up", "down", "up"],
-  decay: 0.09, from: 0.5, rungs: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5] };
-const levelWindow = (w, held) => {
-  w.eval("TIER_RULE.salt=" + JSON.stringify(LEVEL_SALT) + ";"
-    + "Object.keys(TIER_OF).forEach(function(c){var t=TIER_OF[c];if(!t||typeof t.salt!=='number')return;t=Object.assign({},t);delete t.salt;if(Object.keys(t).length)TIER_OF[c]=t;else delete TIER_OF[c];});"
-    + Object.entries(held || {}).map(([c, v]) =>
-    "TIER_OF[" + JSON.stringify(c) + "]=Object.assign({},TIER_OF[" + JSON.stringify(c) + "],{salt:" + JSON.stringify(v) + "});").join("")
-    + "if(typeof recompute==='function')recompute();");
-  return w;
-};
-const levelSnap = (pricing, held) => {
-  const c = JSON.parse(JSON.stringify(pricing));
-  const s = c.byProduct && c.byProduct.salt;
-  if (s && s.inputs && s.inputs.policy) {
-    s.inputs.policy.tierRule = JSON.parse(JSON.stringify(LEVEL_SALT));
-    const C = LEVEL_ENGINE.costStack(s.inputs.cost);
-    s.ladder = (LEVEL_ENGINE.fiveTiers(s.sizes, C, s.inputs.policy) || []).map((r) => ({ q: r.q, prices: r.prices, fixed: !!r.fixed }));
-  }
-  c.tierOf = c.tierOf || {};
-  for (const [code, v] of Object.entries(held || {})) c.tierOf[code] = Object.assign({}, c.tierOf[code], { salt: v });
-  return c;
-};
 /* C15 AND C13 (29 Sep 2026): THE COUNTER DRAWS THE LIVE DOCUMENT OR SAYS IT COULD NOT BE READ, never a sealed issue in its
    place. A page fixture whose bundle carries the one document it shows seals that document as the live one beside it. */
 const TEST_DESK_BUILD = "a".repeat(16);
@@ -2118,15 +2087,15 @@ await (async () => {
   /* v502: one floor per size, the goods after the leak; RM80 at 1 unit clears the RM79.5 floor. */
   ok(cut.flags.every(f => !/under the floor/.test(f)), "RM80 against a RM79.5 floor is not flagged: there is one floor now, and it clears it");
   const under = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), book);
-  ok(under.flags.some(f => /RM 9.5 under the floor of RM 79.5/.test(f)) && under.flags.some(f => /what the order costs to take out/.test(f)),
+  ok(under.flags.some(f => /RM 9.5 under the Floor of RM 79.5/.test(f)) && under.flags.some(f => /rounded up to the next RM 5/.test(f) && !/what the order costs to take out/.test(f)),
     "RM70 is flagged as RM9.5 under the RM79.5 floor, by how much, and the flag says what the floor IS");
   /* 05 Oct 2026, his settled rule: the floor is COGS off the latest lot with no leak in it, and the flag says so */
-  ok(under.flags.some(f => /under the floor of RM 79\.5/.test(f) && /the goods at COGS, purchase plus freight off the latest lot/.test(f) && !/after the leak/.test(f)),
+  ok(under.flags.some(f => /under the Floor of RM 79\.5/.test(f) && /the goods at COGS, purchase plus freight off the latest lot/.test(f) && !/after the leak/.test(f)),
     "and it names the floor as the goods at COGS off the latest lot, never the goods after the leak");
   /* v502: a delivery charge inside the total is taken out before the floor is read */
   /* 19 Sep 2026: the carriage sits BESIDE the total now, so the fixture states the goods and the carriage rather than an all-in figure with the carriage buried in it. */
   const withDel = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 75, delivery: 20, cash: 95, kg: 1, date: "2026-08-16" }), book);
-  ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 75 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the floor of RM 79.5/.test(f)),
+  ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 75 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the Floor of RM 79.5/.test(f)),
     "RM75 of goods with RM20 of carriage beside it is RM95 owed, and the floor is read against the goods");
   /* v728: A CARRIAGE ABOVE THE GOODS IS NO LONGER A FAULT, and stating that is the point of this
      assertion now. It was a real rule while the charge sat INSIDE the total, where it could not
@@ -2216,7 +2185,7 @@ await (async () => {
   ok(!wayUnder.flags.some((f) => /less than half the lowest/.test(f)),
     "five gifts do not pad the observed range into a check this book has too few real salt rates to support: "
       + JSON.stringify(wayUnder.flags.filter((f) => /less than half/.test(f))));
-  ok(wayUnder.flags.some((f) => /under the floor/.test(f)) && wayUnder.flags.some((f) => /loses money/.test(f)),
+  ok(wayUnder.flags.some((f) => /under the Floor/.test(f)) && wayUnder.flags.some((f) => /loses money/.test(f)),
     "and the RM20 row is still caught, by the floor and by its own cost, which are the checks that do not need a sample");
 
   /* AND WHAT THE ZERO TEST IS ACTUALLY FOR, which is not the median. A median of nought switches
@@ -2571,8 +2540,9 @@ await (async () => {
   ok(B.timePerOrder === P.timePerOrder && !("deliveryCharge" in B) && P.boardSizes.every((q) => "floor" in B.floors[q] && !("delivered" in B.floors[q])),
     "the board states one floor per size and no delivery charge");
   ok(P.boardSizes.every((q) => Math.abs(E.floorTotal(q, C, P) - E.floorTotal(q, C, P, null, { collects: true })) < 1e-9
-      && Math.abs(E.floorTotal(q, C, P) - (C.effEx * q + P.timePerOrder)) < 0.02),
-    "the floor is the goods after the leak plus the time charge, and collecting or delivering does not move it");
+      && Math.abs(E.costTotal(q, C, P) - (C.effEx * q + P.timePerOrder)) < 0.02
+      && E.floorTotal(q, C, P) >= E.costTotal(q, C, P) - 1e-9 && E.floorTotal(q, C, P) < E.costTotal(q, C, P) + 5),
+    "the cost is the goods after the leak plus the time charge, the floor that rounded up to the next RM 5, and collecting or delivering does not move it");
   /* HIS TIME IS PER ORDER AND NEVER PER UNIT. Raising it by T lifts a floor by at most T,
      whatever the size; a per-unit charge would lift a 12.5 lot by 12.5 times as much. */
   const T = 40, more = { ...P, timePerOrder: (P.timePerOrder || 0) + T };
@@ -4394,41 +4364,16 @@ await (async () => {
      derived ask, so the shape that was salt's two-tier board no longer exists on either, and the
      single column is headed by the LEVEL a stranger is quoted rather than the word Ask. The count of
      each shape is still asserted, so a second column reappearing fails here rather than on the phone. */
-  /* RESTATED AT v749: A COLUMN A LEVEL, AND AS MANY AS THAT BOOK HAS. The one column was the board's last level;
-     every level carries its own now, so the count is three (size, COGS, break-even) plus the book's own levels,
-     which is six for salt and two for oil, whose rule is a fixed price a size. The count is still asserted per
-     book rather than as a range, so a column appearing or going missing fails here rather than on the phone. */
-  /* RESTATED 27 SEP 2026: A BOOK WITH NO COST DRAWS NO BOARD (rule 5), so it is not counted here, and a board drawn
-     for one is a count over and fails this line. */
-  const lvlOf = JSON.parse(w.eval("JSON.stringify(PROD_IDS.slice().reverse().map(function(p){setProdView(p);if(!(pxCost().landed>0))return 0;"
-    + "var g=fiveTiersNow();return g?Math.max.apply(null,g.map(function(x){return x.prices.length;})):1;}).filter(function(n){return n>0;}))"));
-  const wantCols = lvlOf.map((n) => 3 + n);
-  ok(heads.length === wantCols.length && heads.every((h, i) => h.length === wantCols[i]),
-    `each board carries a column a level (${heads.map((h) => h.length + " cols").join(", ")} against ${wantCols.join(", ")})`);
-  ok(heads.every((h) => !h.some((c) => /^Tier 1/.test(c))), "and no board carries the retired Tier 1 column");
-  const lastLevel = String(w.eval("TIER_NAMES[TIER_NAMES.length-1]"));
-  /* 05 Oct 2026: a drift book's board is its floor and its Set Price, so its last column is headed Set price; the
-     books are read in the order lvlOf was */
-  const driftOfB = JSON.parse(w.eval("JSON.stringify(PROD_IDS.slice().reverse().map(function(p){setProdView(p);if(!(pxCost().landed>0))return null;return !!(TIER_RULE[p]&&TIER_RULE[p].drift);}).filter(function(x){return x!==null;}))"));
-  /* v780: a book with NO ladder carries the plain Ask column, which the engine keeps for exactly
-     that case, so the rule is about boards that HAVE levels. Stated both ways so neither half can
-     go quiet: a levelled board ends on the last level, a ladderless one ends on Ask. */
-  /* 27 SEP 2026: AND THE LADDERLESS HALF IS FORCED, because the one book with no ladder, spare, has no cost either and
-     now draws no board, which left this half reading nothing. A book with no ladder and a cost: the first with no
-     TIER_RULE, else the last with its rule lifted, given a cost through the stack's own override (pxOver.cost, which
-     boardHeadroom walks and nothing on screen sets) only if it has none; both put back, and salt's board redrawn. */
-  const forced = JSON.parse(w.eval("(function(){var p=PROD_IDS.filter(function(x){return !TIER_RULE[x];})[0]||PROD_IDS[PROD_IDS.length-1];"
-    + "var rule=TIER_RULE[p],cost=pxOver.cost;try{delete TIER_RULE[p];setProdView(p);if(!(pxCost().landed>0))pxOver.cost=10;switchTab('pricing');"
-    + "var t=[].filter.call(document.querySelectorAll('.sec.on table.pxboard'),function(x){return /^COGS/.test(x.rows[0].cells[1].textContent);})[0];"
-    + "return JSON.stringify(t?[].map.call(t.rows[0].cells,function(c){return c.textContent.replace(/[\\r\\n\\t ]+/g,' ').trim();}):null);}"
-    + "finally{if(rule)TIER_RULE[p]=rule;pxOver.cost=cost;setProdView(PROD_IDS[0]);switchTab('pricing');}})()"));
-  const levelled = heads.filter((h, i) => lvlOf[i] > 1), flat = heads.filter((h, i) => lvlOf[i] <= 1).concat(forced ? [forced] : []);
-  const lastWant = heads.map((h, i) => driftOfB[i] ? "Set price" : lastLevel);
-  ok(levelled.length > 0 && heads.every((h, i) => lvlOf[i] <= 1 || h[h.length - 1].indexOf(lastWant[i]) === 0) && driftOfB.some(Boolean),
-    `and each levelled board's LAST column is headed by what a stranger is quoted, the Set price on a drift book and ${lastLevel} on a ladder (${levelled.map((h) => h[h.length - 1]).join(" / ")})`);
-  ok(flat.length > 0 && flat.every((h) => /^Ask/.test(h[h.length - 1])),
-    `and a book with no ladder ends on Ask instead (${flat.map((h) => h[h.length - 1]).join(" / ") || "none"})`);
-  ok(heads.every((h) => !h.some((c) => /^Margin/.test(c))), "and no column on the board is headed Margin any more");
+  /* RESTATED 18 OCT 2026: EVERY BOARD READS THREE FIGURES. The five levels and the stated Tier 1 are gone, so a board that draws is size, COGS, then
+     the Floor, the Set Price and the Ceiling: five columns on every book, the count asserted per board so a column appearing or going missing
+     fails here rather than on the phone. A book with NO COST DRAWS NO BOARD (rule 5, 27 Sep 2026), so it is not counted. */
+  ok(heads.length >= 4 && heads.every((h) => h.length === 5),
+    `each board carries size, COGS, the Floor, the Set Price and the Ceiling (${heads.map((h) => h.length + " cols").join(", ")})`);
+  ok(heads.every((h) => /^Floor/.test(h[2]) && /^Set Price/.test(h[3]) && /^Ceiling/.test(h[4])),
+    `headed by those three words and no others (${heads.map((h) => h.slice(2).join(" | ")).join(" / ")})`);
+  ok(heads.every((h) => !h.some((c) => /^(Tier|Ambassador|Titanium|Platinum|Gold|Silver|Ask|Eff\. cost|Margin|Markup)/.test(c))),
+    "and no column is a tier, a level, the old Ask, Eff. cost, Margin or Markup");
+
   ok(heads.every((h) => !h.some((c) => /^Markup/.test(c))), "and the Markup column is gone from the head, because it moved into the cells");
   {
     /* v564: v554's RULE IN ITS NEW PLACE. The multiple must name its basis or "2.49x" reads as
@@ -4440,61 +4385,24 @@ await (async () => {
     const boardTx = String(w.eval(bd + ".textContent"));
     const nRows = Number(w.eval(bd + ".rows.length")) - 1;
     const mult = boardTx.match(/[0-9]+\.[0-9]{2}x eff\./g) || [];
-    /* v749: one a LEVEL CELL rather than one a row, since every level carries the four lines now */
-    const nLvl = Number(w.eval(bd + ".rows[0].cells.length")) - 3;
-    ok(nRows > 1 && nLvl > 0 && mult.length === nRows * nLvl,
-      `every cell of every level carries the multiple and says it is of effective cost (${mult.length} over ${nRows} sizes and ${nLvl} levels)`);
+    /* 18 Oct 2026: the Set Price's cell is the one that carries the four lines, so one multiple a row */
+    ok(nRows > 1 && mult.length === nRows,
+      `every Set Price cell carries the multiple and says it is of effective cost (${mult.length} over ${nRows} sizes)`);
     ok(!/[0-9]x markup/i.test(boardTx), "and nowhere on the board is the multiple called a markup without its basis");
   }
-  /* ============ v564: TIER 1 IS HIS TWO PRICES, PROVED ON THE BOARD AND IN THE ENGINE ============
-     THE ANCHORS ARE THE POINT OF THE ASSERTION. RM875 is not a multiple of ten and the house
-     rounding is up to the ten, so a derived curve can print RM880 and never RM875; the reason the
-     engine takes the ends verbatim is so the board says what he said. Asserted on the RENDERED
-     table, because that is what he reads, and again on the engine, because that is what the phone,
+  /* ============ 18 OCT 2026: THE BOARD AND THE ENGINE CARRY ONE ROW, THE SET PRICE ============
+     Tier 1 was his two stated prices (RM60 at half a unit, RM875 at twelve and a half) and retired at v656; the mechanism that read them
+     went with the levels. Asserted on the RENDERED table, because that is what he reads, and on the engine, because that is what the phone,
      the mirror and the price list read. */
   {
-    /* FORCE THE BOOK. This section runs with OIL active: the first cut asserted salt's RM60 and
-       RM875 against whatever pxPolicy() happened to return and read oil's RM10 and RM160 asks,
-       which is the "coupled to live state" trap in my own comment four lines up. The board check
-       above reads each book's board in turn since v625, when the Price view began drawing the book in view only. */
+    /* FORCE THE BOOK: this section runs with OIL active, and the board check above reads each book's board in turn since v625. */
     const keepProd = String(w.eval("PROD"));
     w.eval("setProd('salt');recompute();");
-    /* RESTATED AT v656. His two ends, RM60 at half a unit and RM875 at twelve and a half, were the
-       whole of Tier 1, and the engine took them verbatim BECAUSE RM875 is not a multiple of ten and
-       a derived curve could only ever print RM880. The ladder replaced the level: Titanium is derived
-       on live costs at both ends and moves with the cost of salt, which his two frozen figures could
-       not. So the assertion is that the ends are GONE from the policy and from the engine, and that
-       the mechanism that read them is still there for a book with no ladder. */
     const P1 = JSON.parse(w.eval("JSON.stringify(pxPolicy())"));
-    ok(P1.tier1 == null, "salt's policy carries no stated Tier 1 ends any more: " + JSON.stringify(P1.tier1));
+    ok(P1.tier1 === undefined && P1.lastLevel === undefined, "salt's policy carries no stated Tier 1 ends and no level name: " + JSON.stringify([P1.tier1, P1.lastLevel]));
     const L05 = JSON.parse(w.eval("JSON.stringify(priceLadder(0.5))"));
     const L125 = JSON.parse(w.eval("JSON.stringify(priceLadder(12.5))"));
-    const kept = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.tier1Ask(0.5,pxCost(),Object.assign({},pxPolicy(),{tier1:{0.5:60,12.5:875}})))"));
-    ok(L05.tier1 == null && L125.tier1 == null && kept && kept.p === 60,
-      `and the engine prints no second tier, while the mechanism still answers a book that states one (${L05.tier1} and ${L125.tier1}, held ${kept && kept.p})`);
-    /* v566: "TIER 2 DOES NOT MOVE" WAS PINNED TO RM70 AND RM1,150, WHICH THE BOOK DERIVES.
-       Salt has no stated price, so both come out of today's cost stack: an ordinary lot landing at
-       a different rate turns this red while proving nothing, which is the "coupled to live state"
-       trap this section's own comment names. The CLAIM is that Tier 1's presence changes nothing
-       about the ask, so it is asserted against the same engine with tier1 stripped from the policy
-       and nothing else altered. That goes red the day the ask reads tier1, which is the only way
-       Tier 2 could move, and it does not care what salt costs. */
-    const bothWays = JSON.parse(w.eval("JSON.stringify(shownSizes('salt').map(function(q){"
-      + "var p=pxPolicy(), c=pxCost(), p2={}; for(var k in p)p2[k]=p[k]; p2.tier1=null;"
-      + "return {q:q, withTier1:PRICING_ENGINE.priceLadder(q,c,p).ask.total,"
-      + " without:PRICING_ENGINE.priceLadder(q,c,p2).ask.total};}))"));
-    ok(bothWays.length > 1 && bothWays.every((x) => Math.abs(x.withTier1 - x.without) < 0.009),
-      `while TIER 2 DOES NOT MOVE: the ask is the same at all ${bothWays.length} sizes with Tier 1 in the policy and with it stripped out`);
-    /* ============ RESTATED AT v656: ONE COLUMN, AND IT IS THE LADDER'S ============
-       Everything from here to the forced walks below proved the LIVE board's Tier 1: that his RM875
-       printed verbatim, that the fourth and fifth columns were the two tiers, and that a swap of the
-       two cells went red. There is one tier column now and no book states a second, so the same
-       three claims are made about the column that exists. The cell-by-cell read is the one that
-       matters and is kept in the same shape: it is the only check that would catch a board printing
-       one level's prices under another's name.
-       26 Sep 2026, his call: the check that the ask stands above the retired tier's two ends (RM60 at half a
-       unit, RM875 at twelve and a half) is dropped, and so is the one that the forced pair sits at or under
-       the ask; both compared a retired tier with a live ask, which a lower quote moves, so neither was a fault. */
+    ok(L05.tier1 === undefined && L125.tier1 === undefined, `and the engine prints no second tier (${L05.tier1} and ${L125.tier1})`);
     const boardTx = String(w.eval("(function(){var ts=document.querySelectorAll('.sec.on table.pxboard');"
       + "for(var i=0;i<ts.length;i++)if(/^COGS/.test(ts[i].rows[0].cells[1].textContent))return ts[i].textContent;return '';})()"));
     ok(boardTx.length > 0 && boardTx.indexOf("RM 875") < 0,
@@ -4506,156 +4414,32 @@ await (async () => {
       + "var head=[].map.call(t.rows[0].cells,function(c){return c.textContent.replace(/\\s+/g,' ').trim();});"
       + "var num=function(c){var m=c.textContent.replace(/,/g,'').match(/-?[0-9]+(\\.[0-9]+)?/);return m?+m[0]:null;};"
       + "var rows=[].slice.call(t.tBodies[0].rows).map(function(r){"
-      /* v749: the ask is the LAST cell of the row, the board's own level; the fourth is now the first level */
-      + "  return {size:r.cells[0].textContent.replace(/\\s+/g,' ').trim(), ask:num(r.cells[r.cells.length-1]), first:num(r.cells[3])};});"
+      + "  return {size:r.cells[0].textContent.replace(/\\s+/g,' ').trim(), ask:num(r.cells[3]), ceiling:num(r.cells[4])};});"
       + "return {head:head, rows:rows};})())"));
     const engineByRow = JSON.parse(w.eval("JSON.stringify(shownSizes('salt').map(function(q){"
       + "var L=priceLadder(q);return {q:q,ask:L.ask.total};}))"));
-    /* 05 Oct 2026: salt is a drift book, its board the Floor and the Set price */
-    const saltDrift = w.eval("driftBook('salt')") === true;
-    const lastName = saltDrift ? "Set price" : String(w.eval("TIER_NAMES[TIER_NAMES.length-1]"));
-    const firstName = saltDrift ? "Floor" : String(w.eval("TIER_NAMES[0]"));
-    ok(cellsBySize && cellsBySize.head.length > 4 && cellsBySize.head[3].indexOf(firstName) === 0
-      && cellsBySize.head[cellsBySize.head.length - 1].indexOf(lastName) === 0,
-      `the fourth column is ${firstName}, at the floor, and the last is ${lastName}, the board (${cellsBySize ? cellsBySize.head.slice(3).join(" | ") : "no board"})`);
+    ok(cellsBySize && cellsBySize.head.length === 5 && /^Set Price/.test(cellsBySize.head[3]),
+      `the fourth column is the Set Price, the board (${cellsBySize ? cellsBySize.head.slice(2).join(" | ") : "no board"})`);
     {
       const n = Math.min(cellsBySize ? cellsBySize.rows.length : 0, engineByRow.length);
       let placed = n > 0;
       for (let i = 0; i < n; i++) if (cellsBySize.rows[i].ask !== engineByRow[i].ask) placed = false;
-      ok(placed, `and every printed cell is the engine's ask for its own size, at all ${n} of them: print any other level here and this goes red`);
+      ok(placed, `and every printed Set Price cell is the engine's ask for its own size, at all ${n} of them: print any other figure here and this goes red`);
     }
-    /* THE TWO LAWS, ON A FORCED PAIR. They were read off the live policy, which no longer states a
-       tier: tier1Walk would answer nothing and all three would pass on an empty array, which is an
-       assertion that cannot fail. The pair is forced here for exactly the reason the forced walks
-       below force theirs, and the mechanism is what is being proved, not the book. */
-    const sz = JSON.parse(w.eval("JSON.stringify(shownSizes('salt'))"));
-    const POL1 = "Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875}})";
-    const walked = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.tier1Walk(" + JSON.stringify(sz) + ", pxCost(), " + POL1 + "))"));
-    let fall = true, clears = true;
-    for (let i = 1; i < walked.length; i++) if (walked[i].p / walked[i].q > walked[i - 1].p / walked[i - 1].q + 1e-9) fall = false;
-    sz.forEach((q, i) => {
-      const L = JSON.parse(w.eval("JSON.stringify(priceLadder(" + q + "))"));
-      if (walked[i].p < L.floor.total - 0.009) clears = false;
-    });
-    ok(walked.length === sz.length && walked[0].p === 60, "a book that DOES state two ends is still walked between them: " + JSON.stringify(walked.map((x) => x.p)));
-    ok(fall, "Tier 1's rate never rises with size, the same law the ask obeys");
-    /* v566: AND THAT ONE CANNOT FAIL ON THESE ANCHORS, SO IT IS NOT THE INSTRUMENT IT LOOKS LIKE.
-       His pair falls (RM120 a unit to RM70), so the interpolation is monotone by construction and
-       the step-down branch in tier1Walk never runs: delete the branch and the assertion above
-       stays green. FORCE a pair that rises — RM60 a unit at half a unit against RM80 at twelve and
-       a half — and the law must drag every larger rung back down. */
-    /* 14 Sep 2026: THE PAIR IS WALKED ON A FORCED COST. The step-down refuses a step that would land under the
-       floor, and v639's count lifted salt's floor to RM61.15 a unit, over the RM60 this pair steps back to, so the
-       check went red on the cost and not on the law. The claim is the law, so the floor is forced to RM1 a unit,
-       under any rung; and a second walk forces it to RM65, over the step, to prove the guard that refused it. */
-    const walkAt = (per) => JSON.parse(w.eval("JSON.stringify((function(){"
-      + "var p=pxPolicy(), p2={}; for(var k in p)p2[k]=p[k]; p2.tier1={0.5:30, 12.5:1000};"
-      + "var c=pxCost(), c2={}; for(var j in c)c2[j]=c[j]; c2.eff=" + per + "; c2.effEx=" + per + ";"
-      + "var wlk=PRICING_ENGINE.tier1Walk(shownSizes('salt'), c2, p2);"
-      + "return wlk.map(function(x){return {q:x.q, rate:+(x.p/x.q).toFixed(4), stated:!!x.stated, under:x.under};});})())"));
-    const rising = walkAt(1);
-    ok(walkAt(65).filter((x) => !x.stated).every((x) => x.under === 0),
-      "and the step-down never takes an interpolated rung under its floor: on a floor of RM65 a unit, over the RM60 it would step to, every rung keeps clear");
-    {
-      /* WHAT THE LAW HOLDS AND WHAT IT DOES NOT. The guard skips a PINNED end, because a figure he
-         typed is quoted as he typed it, which is v552's rule. So on a rising pair the interpolated
-         rungs are dragged back to the small end's rate and the two stated ends print verbatim,
-         RM80 a unit at twelve and a half included. Both halves are asserted: the first goes red if
-         the step-down branch is deleted, the second if someone later clamps a stated end. */
-      const interp = rising.filter((x) => !x.stated), ends = rising.filter((x) => x.stated);
-      let held = true, prev = Infinity;
-      interp.forEach((x) => { if (x.rate > prev + 1e-9) held = false; prev = Math.min(prev, x.rate); });
-      ok(interp.length > 2 && held,
-        `and the law is exercised, not assumed: on anchors that RISE (RM60 a unit to RM80) every interpolated rung is walked back to ${interp[0].rate}/unit or under, never up toward the far end`);
-      ok(ends.length === 2 && ends[0].rate === 60 && ends[1].rate === 80,
-        `while his two stated ends print verbatim through it, the rising one included (${ends.map((e) => e.q + "u at " + e.rate).join(", ")})`);
-    }
-    ok(clears, "every rung of the forced pair clears break-even on today's cost, so none carries a gap");
-    /* AND A BOOK WITH NO SECOND TIER RETURNS NOTHING RATHER THAN SALT'S. Without the explicit
-       tier1:null in LADDER_BY, ladderFor spreads LADDER underneath and oil inherits salt's ends:
-       every oil size clamps to 12.5, the rate lands at RM70 a unit, and ten units of oil that
-       Tier 2 sells at RM130 would be quoted RM700. This is the assertion that catches that. */
+    /* ROW ZERO IS THE DEFAULT ASK AND THAT IS LOAD BEARING. The phone, the D1 mirror and the board check above all read [0] rather than
+       hunting for a code, so the row is asserted by CODE and by NAME and not taken on trust: one row, T2, the Set Price. */
     w.eval("setProd('oil');recompute();");
-    const Poil = JSON.parse(w.eval("JSON.stringify(pxPolicy())"));
     const Loil = JSON.parse(w.eval("JSON.stringify(priceLadder(10))"));
-    ok(!Poil.tier1 && Loil.tier1 === null,
-      "oil declares no Tier 1 and is handed none, rather than inheriting salt's RM120 a unit");
-    /* v656: the figure was RM130, which was a price he had typed. It is the ladder's last level now, so what is
-       asserted is that it IS that level rather than any particular ringgit the cost basis moves. */
     const oilLast = JSON.parse(w.eval("JSON.stringify((function(){var r=PRICING_ENGINE.fiveTierAt(10,pxCost(),pxPolicy());return r?r.prices[r.prices.length-1]:null;})())"));
-    ok(Loil.ask.total === oilLast && Loil.ask.fromLadder, `and oil's ask at its 10 unit minimum is the ladder's last level (${Loil.ask.total})`);
+    ok(Loil.tier1 === undefined && Loil.ask.total === oilLast && Loil.ask.fromLadder, `oil's ask at its 10 unit minimum is its board's price (${Loil.ask.total})`);
     const rowsOil = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.ladderRow(shownSizes('oil'), pxCost(), pxPolicy()))"));
-    ok(rowsOil.length === 1 && rowsOil[0].code === "T2" && rowsOil[0].dflt === true,
-      "the payload row for a one-tier book is the default ask alone");
+    ok(rowsOil.length === 1 && rowsOil[0].code === "T2" && rowsOil[0].dflt === true && rowsOil[0].name === "Set Price",
+      "the payload row for a one-price book is the Set Price alone, at code T2");
     w.eval("setProd('salt');recompute();");
     const rowsSalt = JSON.parse(w.eval("JSON.stringify(PRICING_ENGINE.ladderRow(shownSizes('salt'), pxCost(), pxPolicy()))"));
-    /* ROW ZERO IS THE DEFAULT ASK AND THAT IS LOAD BEARING. The phone, the D1 mirror and the board
-       check above all read [0] rather than hunting for a code, on v328's argument that a fallback
-       which quietly carries a panel hides a fault. Putting Tier 1 first would have cut every
-       quoted price in silence, so the order is asserted by NAME and not taken on trust. */
-    /* v656: SALT CARRIES ONE ROW TOO, since its two stated ends retired with the derived ask. Row zero is still
-       T2 and still the default, which is the half that is load bearing; the second row is simply not there. */
-    ok(rowsSalt.length === 1 && rowsSalt[0].code === "T2" && rowsSalt[0].dflt === true,
-      `the payload is the default ask alone, at row zero (${rowsSalt.map((r) => r.code).join(", ")})`);
-    /* 14 Sep 2026: against the engine's own two figures at the smallest size, not RM70 and RM60. The ask is derived,
-       and v639's count moved it to RM80, which turned this red while row zero went on quoting the ask.
-       16 Sep 2026: AND v673's COUNT BROUGHT THE FLOORS DOWN, so the forced book's ask at half a unit met Tier 1's stated
-       RM60 (it meets it at 1 and 2 units too, where Tier 1 is held to the ask), and the smallest size could no longer tell
-       the two rows apart. Each row is now matched by code to the engine's own figure for it at every size, and the two
-       must differ at one size at least, so a row carrying the other's prices shows on any book. */
     const L0 = JSON.parse(w.eval("JSON.stringify(priceLadder(shownSizes('salt')[0]))"));
-    const forced = JSON.parse(w.eval("JSON.stringify((function(){var C=pxCost(),P=Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875},tierRule:null}),S=shownSizes('salt');"
-      + "var fig=function(k){return S.map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,P);return L&&L[k]&&L[k].total!=null?+L[k].total:null;});};"
-      + "return {rows:PRICING_ENGINE.ladderRow(S,C,P),ask:fig('ask'),t1:fig('tier1')};})())"));
-    const [f0, f1] = forced.rows;
-    ok(rowsSalt[0].prices[0] === L0.ask.total && forced.rows.length === 2 && f0.code === "T2" && f1.code === "T1"
-      && JSON.stringify(f0.prices) === JSON.stringify(forced.ask) && JSON.stringify(f1.prices) === JSON.stringify(forced.t1)
-      && f0.prices.some((x, i) => x > f1.prices[i]),
-      `so row zero still quotes the ask and not the cheaper tier, on this book and on one forced to two (${rowsSalt[0].prices[0]}; forced ${f0.code} ${f0.prices.join(",")} then ${f1.code} ${f1.prices.join(",")})`);
-    /* ============ v566: THE THREE GATES AND THE ONE RELATION ============ */
-    /* A TIER STATED AT ONE SIZE IS NOT STATED. {0.5:60,"0.50":60} is two KEYS naming one size: it
-       passed the ks.length<2 count, landed hi===lo, and made the exponent Math.log(1)/Math.log(1),
-       which is NaN. Every rung then priced NaN while reading truthy at every guard downstream. */
-    const oneSize = JSON.parse(w.eval("JSON.stringify((function(){"
-      + "var p=pxPolicy(), p2={}; for(var k in p)p2[k]=p[k]; p2.tier1={0.5:60, '0.50':60};"
-      + "var a=PRICING_ENGINE.tier1Anchors(p2);"
-      + "var L=PRICING_ENGINE.priceLadder(2.5, pxCost(), p2);"
-      + "var rows=PRICING_ENGINE.ladderRow(shownSizes('salt'), pxCost(), p2);"
-      + "return {anchors:a, tier1:L.tier1, rows:rows.length};})())"));
-    ok(oneSize.anchors === null && oneSize.tier1 === null && oneSize.rows === 1,
-      `two anchor keys naming ONE size is no tier at all, rather than a column of NaN (anchors ${oneSize.anchors}, tier1 ${oneSize.tier1}, rows ${oneSize.rows})`);
-    /* ONE GATE ON ONE FACT. ladderRow asked whether P.tier1 was truthy while priceLadder asked
-       tier1Anchors, so a book stating ONE end got a row NAMED "Tier 1" with every price null. */
-    const oneEnd = JSON.parse(w.eval("JSON.stringify((function(){"
-      + "var p=pxPolicy(), p2={}; for(var k in p)p2[k]=p[k]; p2.tier1={12.5:875};"
-      + "var rows=PRICING_ENGINE.ladderRow(shownSizes('salt'), pxCost(), p2);"
-      + "return {n:rows.length, codes:rows.map(function(r){return r.code;}),"
-      + " tier1:PRICING_ENGINE.priceLadder(2.5, pxCost(), p2).tier1};})())"));
-    ok(oneEnd.n === 1 && oneEnd.codes[0] === "T2" && oneEnd.tier1 === null,
-      `a tier stated at one end only is refused by BOTH gates, so no row of nulls reaches the payload (${oneEnd.n} row: ${oneEnd.codes.join(", ")})`);
-    /* AND THE ONE RELATION BETWEEN THE TIERS IS MEASURED, so a board carrying two can say when it fails.
-       Tier 2 is derived from a floor that moves; stated Tier 1 ends do not move at all, so a stated
-       price or a fall in the lot rate walks Tier 2 down through a frozen Tier 1.
-       RESTATED AT v656, IN THE ENGINE ALONE. It drove the LIVE book by writing PRICE_SET and read the
-       rendered board for its tags and its sentence. Neither half survives the switch: no book states a
-       second tier now and the board draws one column, so the rendered half was measuring a shape that
-       cannot occur, and the figures came out null rather than zero. The CLAIM is the engine's and it is
-       asserted there, on a policy forced to the shape the claim is about: a stated pair, no ladder, and
-       a stated price at 5 unit that drags the derived ask under the frozen tier. */
-    const invert = JSON.parse(w.eval("JSON.stringify((function(){"
-      + "var base=Object.assign({},pxPolicy(),{tier1:{0.5:60, 12.5:875},tierRule:null});"
-      + "var C=pxCost();"
-      + "var clean=shownSizes('salt').map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,base);return L.tier1?L.tier1.over:null;});"
-      + "var p2=Object.assign({},base,{stated:{'5':350}});"
-      + "var bad=shownSizes('salt').map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,p2);"
-      + "  return {q:q,over:L.tier1?L.tier1.over:null,t1:L.tier1?L.tier1.total:null,t2:L.ask.total};})"
-      + "  .filter(function(x){return x.over>0.009;});"
-      + "return {cleanAllZero:clean.length>0&&clean.every(function(v){return v===0;}), bad:bad};})())"));
-    ok(invert.cleanAllZero, "on a book that states two tiers, the cheaper one is under the ask at every size and its over figure is nil throughout");
-    ok(invert.bad.length > 0 && invert.bad.every((x) => x.t1 > x.t2 + 0.009),
-      `and a stated RM350 at 5 unit pulls the derived ask under the frozen tier, which the engine measures ringgit by ringgit (${invert.bad.length} inverted: ${JSON.stringify(invert.bad.map((x) => [x.q, x.t1, x.t2]))})`);
-    /* v646: the drawing rule retired with the tier ceiling, and the desk's printed board and the customer's page now quote
-       through the engine's one cardPrice, so there are no two copies left to hold together; v646's section proves they agree. */
+    ok(rowsSalt.length === 1 && rowsSalt[0].code === "T2" && rowsSalt[0].name === "Set Price" && rowsSalt[0].dflt === true && rowsSalt[0].prices[0] === L0.ask.total,
+      `and salt's payload is the Set Price alone, at row zero (${rowsSalt.map((r) => r.code + " " + r.name).join(", ")})`);
     w.eval("setProd(" + JSON.stringify(keepProd) + ");recompute();");   // put the desk back on the book this section was on
   }
   ok(String(w.eval("document.querySelector('.sec.on table.pxboard').textContent")).indexOf("% margin") >= 0,
@@ -4687,9 +4471,9 @@ await (async () => {
     const lots = read("pPurch(PROD).filter(x=>poLive(x)&&poRecvUnits(x)>0.0001&&x.qty>0)");
     const top = lots.map((x, i) => ({ x, i, d: x.receivedOn || x.date || "" })).sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : a.i - b.i)).pop();
     const per = top ? (top.x.total + (+top.x.freight || 0)) / top.x.qty : NaN;
-    const fl = read("shownSizes(PROD).map(function(q){return [q,floorTotal(q)];})");
-    ok(fl.length > 0 && fl.every(([q, v]) => Math.abs(v - +(per * q).toFixed(2)) < 0.006),
-      `${bk}: the floor is COGS off the latest lot times the size and nothing else, RM ${per.toFixed(2)} a unit: ${JSON.stringify(fl)}`);
+    const fl = read("shownSizes(PROD).map(function(q){return [q,floorTotal(q),costTotal(q)];})");
+    ok(fl.length > 0 && fl.every(([q, v, c]) => Math.abs(c - +(per * q).toFixed(2)) < 0.006 && v === Math.ceil(c / 5 - 1e-6) * 5),
+      `${bk}: the cost is COGS off the latest lot times the size to the sen and the floor is that up to the next RM 5, RM ${per.toFixed(2)} a unit: ${JSON.stringify(fl)}`);
   }
   w.eval("setProd('salt');recompute();");
   w.eval("setProd('oil');recompute();");
@@ -8236,50 +8020,6 @@ await (async () => {
   }
 })();
 
-section("Tier pill: the system's .salt-tier recipe owns the pill's material");
-await (async () => {
-  /* 09 Oct 2026: the tier pill group of the migration (CLAUDE.md rule 6). tierPill() carries the system's `.salt-tier`
-     recipe beside the desk's own `.tierpill`, which keeps only the pill's place (the margin beside the name) and its measured 10.5px face, under the system's 11px floor;
-     the hairline, the tint, the glow, the dot, the weight and the spacing are the recipe's. */
-  const mT = readFileSync(process.env.SALT_MASTER || FROZEN_MASTER, "utf8");
-  const bT = readFileSync(join(REPO, "public", "desk.html"), "utf8");
-  const mark = (s) => /class="tierpill salt-tier \$\{cls\}"/.test(s) && /<span class="salt-tier__dot">/.test(s)
-    && /'salt-tier--1'/.test(s) && /'salt-tier--2'/.test(s) && /'salt-tier--3'/.test(s);
-  ok(mark(mT) && mark(bT), "the pill's markup carries .salt-tier, its dot and its tier modifier, in the master and in the build");
-  ok(/\.salt-tier--1 \{/.test(mT) && /\.salt-tier__dot \{/.test(mT), "and the recipe it names is in the DESIGN base block");
-  const a = mT.indexOf("<style>"), b = mT.indexOf("</style>", a);
-  const own = mT.slice(a, b).replace(/\/\* ==== DESIGN (\w+):[\s\S]*?END DESIGN \1 ==== \*\//g, "") + "\n" + readFileSync(join(REPO, "design", "desk.css"), "utf8");
-  const css = own.replace(/\/\*[\s\S]*?\*\//g, "");
-  const restated = [];
-  for (const m of css.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
-    if (!/\.tierpill|\.salt-tier/.test(m[1])) continue;
-    const props = m[2].split(";").map((x) => x.split(":")[0].trim()).filter((x) => x && !/^(margin-(left|right)|flex|font-size)$/.test(x));
-    if (props.length) restated.push(`${m[1].trim().slice(0, 40)} {${props.join(",")}}`);
-  }
-  ok(restated.length === 0, `no desk rule restates the pill's material, which the recipe owns (found ${restated.join(" | ") || "none"})`);
-  ok(!/@keyframes tierglow|animation:\s*tierglow/.test(css), "the retired glow animation is not carried in the desk's own layers");
-  const { openMaster: omT } = await import("../tools/payload.mjs");
-  const { w: wT } = await omT(process.env.SALT_MASTER || undefined);
-  wT.eval("setProd('salt');recompute();");
-  const by = wT.eval("(()=>{const r={};for(const id of [...new Set(pricedSales.map(s=>s.customer))]){const t=custTier(id);if(t&&!r[t.code])r[t.code]=id}return r})()");
-  const seen = {};
-  for (const [code, id] of Object.entries(by)) {
-    const host = wT.document.createElement("div");
-    host.innerHTML = wT.eval(`tierPill(${JSON.stringify(id)})`);
-    wT.document.body.appendChild(host);
-    const e = host.firstElementChild, cs = wT.getComputedStyle(e);
-    seen[code] = { e, cs, cls: e.className, dot: wT.getComputedStyle(e.firstElementChild) };
-  }
-  ok(["T1", "T2", "T3"].every((c) => seen[c] && seen[c].cls === `tierpill salt-tier salt-tier--${c[1]}`), `each tier draws its own modifier (${Object.entries(seen).map(([c, s]) => `${c} ${s.cls}`).join("; ")})`);
-  const same = (k, v) => Object.values(seen).every((s) => s.cs[k] === v);
-  ok(same("fontSize", "10.5px") && same("fontWeight", "500") && same("textTransform", "uppercase") && same("letterSpacing", "1.47px") && same("paddingLeft", "9px") && same("whiteSpace", "nowrap"),
-    `the cascade gives every pill the desk's measured face and padding (${seen.T1?.cs.fontSize}, ${seen.T1?.cs.fontWeight}, ${seen.T1?.cs.letterSpacing}, ${seen.T1?.cs.paddingLeft})`);
-  ok(same("marginLeft", "8px") && same("animationName", "none"), "and the desk's own place beside the name, with no animation");
-  ok(seen.T1.cs.color === "var(--salt-salt)" && seen.T2.cs.color === "var(--salt-brass-soft)" && seen.T3.cs.color === "var(--salt-brass)", "tier one is salt, two soft brass and three brass");
-  ok(/55%/.test(seen.T1.cs.boxShadow) && seen.T2.cs.boxShadow === "none" && seen.T3.cs.boxShadow === "none" && seen.T1.cs.opacity === "1" && seen.T3.cs.opacity === "0.85", "only the first tier glows, and the third is dimmed");
-  ok(Object.values(seen).every((s) => s.dot.width === "5px" && s.dot.borderRadius === "50%"), "the dot is the recipe's 5px circle");
-})();
-
 section("Product bands: the system's .salt-product and .salt-producttag recipes own the band and the stamp");
 await (async () => {
   /* 09 Oct 2026: the product bands and tags group of the migration (CLAUDE.md rule 6). The heading that says which book a
@@ -9612,27 +9352,20 @@ await (async () => {
         kp.privateKey, new TextEncoder().encode(h + "." + c))));
     };
 
-    /* the boards, written the way tools/stmt-publish.mjs writes them. v658: a link's own board comes
-       from its INTRODUCER, so two introducers on different levels are needed to tell two links apart,
-       and they are picked off the live book by their levels rather than named, so the assertion does
-       not go vacuous the day he moves somebody. */
-    const { boardList, guestBoard } = await import("../tools/pricelist.mjs");
+    /* the board, written the way tools/stmt-publish.mjs writes it. 18 Oct 2026: the levels are gone, so EVERY link reads the one guest
+       board, the Set Price, whoever introduced it; two introducers are still needed to tell two links apart by id and by introducer,
+       and they are the first two customers the live book holds a salt card for. */
+    const { guestBoard } = await import("../tools/pricelist.mjs");
     const { readBook } = await import("../tools/book.mjs");
     const gbook = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-    /* 05 Oct 2026: salt prices by drift on the live book, so the level a link follows is proved on salt's last level rule,
-       two introducers placed on the first and the last level */
-    const gLive = (await readBook()).ledger.PRICING;
-    const gIds = Object.keys((gLive.byProduct.salt || {}).cards || {});
-    const gN = gLive.tierNames || [];
-    const gpricing = levelSnap(gLive, { [gIds[0]]: gN[1], [gIds[1]]: gN[gN.length - 1] });
-    const boards = { 1: boardList(1, gbook, gpricing, new Date()), 2: boardList(2, gbook, gpricing, new Date()) };
-    const gnames = gpricing.tierNames || [];
-    const byLevel = (n) => Object.keys(gpricing.tierOf || {}).find((c) => gnames.indexOf((gpricing.tierOf[c] || {}).salt) === n);
-    const cheapCode = byLevel(1) || byLevel(2), dearCode = byLevel(gnames.length - 1) || byLevel(gnames.length - 2) || byLevel(3);
+    const gpricing = (await readBook()).ledger.PRICING;
+    const gIds = Object.keys((gpricing.byProduct.salt || {}).cards || {});
+    const board = guestBoard(gbook, gpricing, new Date());
+    const cheapCode = gIds[0], dearCode = gIds[1];
     const gRoster = [{ code: cheapCode, username: "introone" }, { code: dearCode, username: "introtwo" }];
 
     const gkv = new KV();
-    for (const t of [1, 2]) await gkv.put("board:" + t, JSON.stringify(boards[t]));
+    await gkv.put("guestboard", JSON.stringify(board));
     await gkv.put("roster", JSON.stringify(gRoster));
     const genv = { STMT: gkv, ACCESS_TEAM: TEAM, ACCESS_AUD: AUD };
     const gq = (path, opts = {}) => new Request("https://k7m3p2.example" + path, opts);
@@ -9649,25 +9382,10 @@ await (async () => {
     const two = await mintLink("introtwo", "Market stall, Kajang");
     ok(one && two && one.id !== two.id && one.introducer === "introone" && two.introducer === "introtwo",
       "two links mint with different ids, each naming the customer who is introducing");
-    /* AND THE LEVEL IS THE RULE'S, per product: two above the introducer where there is room, else
-       one, never past the board a stranger sees. Read off the same function the publish calls. */
-    const gOne = guestBoard(cheapCode, gbook, gpricing, new Date());
-    const gTwo = guestBoard(dearCode, gbook, gpricing, new Date());
-    const heldAt = (code, p) => gnames.indexOf(((gpricing.tierOf || {})[code] || {})[p]);
-    /* 19 Sep 2026: A PRODUCT WITH ONE STATED PRICE HAS NO LEVEL TO BE TWO ABOVE, so the rule is read
-       where a level exists and oil is asserted to carry none. Every guest sees oil's one board. */
-    const levelled = Object.keys(gOne.levels).filter((p) => gOne.levels[p] != null);
-    ok(levelled.length > 0
-      && levelled.every((p) => {
-        const t = heldAt(cheapCode, p);
-        return gnames.indexOf(gOne.levels[p]) === (t < 0 ? gnames.length - 1 : Math.min(t + 2, gnames.length - 1));
-      })
-      && gOne.levels.oil == null,
-      "a link is quoted two levels above its introducer where there is room, and oil carries no level at all because it has one price: "
-      + JSON.stringify([gpricing.tierOf[cheapCode], gOne.levels]));
-    ok(gnames.indexOf(gTwo.levels.salt) === gnames.length - 1 && heldAt(dearCode, "salt") >= gnames.length - 3,
-      "and an introducer near the top hands out the board itself, capped rather than running off the end: "
-      + JSON.stringify([gpricing.tierOf[dearCode], gTwo.levels]));
+    /* AND NO LEVEL IS THE RULE'S: every link serves the Set Price, whoever introduced it, and no product names a level. */
+    ok(board.products.length > 0 && !("introducer" in board) && !("levels" in board)
+      && board.products.every((p) => !("tier" in p) && !("level" in p) && !("fellBack" in p) && !("tierName" in p)),
+      "the guest board is the Set Price for everybody and no product on it carries a level");
     ok((await (await stmtWorker.fetch(gq("/all/refs", { method: "POST",
       headers: { "cf-access-jwt-assertion": await token(), "content-type": "application/json" },
       body: JSON.stringify({ introducer: "nobodyhere", label: "x" }) }), genv)).json()).ok === false,
@@ -9688,38 +9406,51 @@ await (async () => {
     ok(one.qr.startsWith("data:image/svg+xml,") && /<rect /.test(svg) && !/stroke/.test(svg),
       "the QR travels as a data URI of RECTANGLES, never a stroked path, which does not decode");
 
-    /* THE LINK'S OWN BOARD, FROM BOTH ENDS. Every figure distinct to the other link must be absent, or
-       a link could be serving the wrong board and still look right on the sizes the two happen to
-       share. v658: the boards are per link and written by the publish, so they are put here the way
-       the publish puts them, under the link's own id. */
-    await gkv.put("gboard:" + one.id, JSON.stringify(gOne));
-    await gkv.put("gboard:" + two.id, JSON.stringify(gTwo));
+    /* EVERY LINK READS THE ONE BOARD, which the publish writes under `guestboard`. */
     const figs = (b) => b.products.flatMap((p) => p.sizes.map((r) => r.price));
-    const onlyIn = (a, b) => figs(a).filter((x) => !figs(b).includes(x));
     const shown = (html, ns) => ns.every((n) => html.includes(n.toLocaleString("en-MY",
       { minimumFractionDigits: 0, maximumFractionDigits: 2 })));
     const g1 = await stmtWorker.fetch(gq("/g/" + one.id), genv), h1 = await g1.text();
     const h2 = await (await stmtWorker.fetch(gq("/g/" + two.id), genv)).text();
-    ok(g1.status === 200 && onlyIn(gOne, gTwo).length > 0 && shown(h1, onlyIn(gOne, gTwo)) && !shown(h1, onlyIn(gTwo, gOne)),
-      "a link shows every figure that is its own board's alone and none that is the other link's alone");
-    ok(shown(h2, onlyIn(gTwo, gOne)) && !shown(h2, onlyIn(gOne, gTwo)),
-      "and the other link is the other way round");
-    /* AND A LINK MINTED SINCE THE LAST PUBLISH HAS NO BOARD OF ITS OWN, so it must fall back to the
-       one every stranger sees rather than to an empty page. */
+    ok(g1.status === 200 && figs(board).length > 0 && shown(h1, figs(board)) && shown(h2, figs(board)),
+      "both links show every figure of the one board, the Set Price at each size");
+    /* AND A LINK MINTED SINCE THE LAST PUBLISH reads the same board with nothing written for it */
     const fresh = await mintLink("introone", "Just minted");
     const hFresh = await (await stmtWorker.fetch(gq("/g/" + fresh.id), genv)).text();
-    ok(shown(hFresh, onlyIn(boards[2], boards[1])),
-      "a link with no board written yet falls back to the board a stranger sees, never to an empty page");
+    ok(shown(hFresh, figs(board)), "a link minted since the last publish shows the same board, never an empty page");
+    ok(!/the only price for this product/.test(h1), "and no pane says its price is its only one, since no level is held");
+    /* 18 Oct 2026 (Part 4): BETWEEN A DEPLOY AND THE NEXT PUBLISH the `guestboard` key can be missing, or hold no product: the link
+       says prices are being updated, in the table's own words, and draws no list, no size and no figure */
+    const kept = await gkv.get("guestboard");
+    gkv.m.delete("guestboard");
+    const gGone = await stmtWorker.fetch(gq("/g/" + fresh.id), genv), hGone = await gGone.text();
+    await gkv.put("guestboard", JSON.stringify({ week: { label: "x" }, products: [] }));
+    const hNone = await (await stmtWorker.fetch(gq("/g/" + fresh.id), genv)).text();
+    await gkv.put("guestboard", kept);
+    const wordsOf = (h) => h.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    ok(gGone.status === 200 && [hGone, hNone].every((h) => /Prices are being updated/.test(wordsOf(h)) && !/<table/.test(h) && !/RM\s*[0-9]/.test(wordsOf(h))
+      && !/No price list has been written/.test(h)),
+      "a guest link with no board key, or a board with no product, says prices are being updated and draws no list: " + wordsOf(hGone).slice(0, 160));
 
-    /* the design invariant, independent of which board the route served */
-    const twoTier = gOne.products.find((p) => !p.fellBack);
-    const pairs = twoTier ? twoTier.sizes.map((r, i) => [r.price, gTwo.products
-      .find((x) => x.product === twoTier.product).sizes[i].price]) : [];
-    ok(pairs.length > 0 && pairs.every(([a, b]) => a <= b),
-      "and a link off a cheaper introducer is never more expensive than one off a nearer-the-top introducer, at any size");
-
-    ok(/the only price for this product/.test(h1) === gOne.products.some((p) => p.fellBack),
-      "a one-tier product says its price is its only one rather than implying a discount");
+    /* 18 Oct 2026 (Part 3b): NOTHING READS A LEVEL OR AN OLD BOARD KEY. A record from before carries tier 2, a level and a standing
+       mark, and the store still holds board:1, board:2, tboard:k, gboard:<id> and tiers with other figures: the link serves the Set
+       Price board and none of theirs. A reader of any of those keys, or of a link's level, shows a decoy figure. */
+    const old = { id: "abcd-ab2c", tier: 2, introducer: null, level: "Titanium", standing: true, approved: true,
+      label: "Titanium", made: "2026-09-20T00:00:00.000Z", by: "standing", opens: 0, first: null, last: null, revoked: false };
+    await gkv.put("g:" + old.id, JSON.stringify(old));
+    const decoy = (n) => JSON.stringify({ week: { label: "decoy" }, products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: n }] }] });
+    for (const [k, n] of [["board:1", 7771.11], ["board:2", 7772.22], ["tboard:1", 7773.33], ["tboard:4", 7774.44], ["gboard:" + old.id, 7775.55], ["gboard:" + two.id, 7776.66]])
+      await gkv.put(k, decoy(n));
+    await gkv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+    const hOld = await (await stmtWorker.fetch(gq("/g/" + old.id), genv)).text();
+    ok(shown(hOld, figs(board)) && !/777[1-6]/.test(hOld) && !/decoy/.test(hOld),
+      "a link whose record carries tier 2 and a level serves the Set Price board, and reads no level board, no board:1 or board:2 and no board of its own");
+    const hOne = await (await stmtWorker.fetch(gq("/g/" + two.id), genv)).text();
+    ok(shown(hOne, figs(board)) && !/777[1-6]/.test(hOne), "and a link's old per-link board is read by nobody either");
+    const strip = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const reads = ["stmt/worker.js", "stmt/refs.js", "stmt/owner.js", "stmt/maker.js", "tools/pricelist.mjs", "tools/stmt-publish.mjs"]
+      .filter((f) => /tboard:|board:1|board:2|gboard|\.level\b|"tiers"|\/level\b|accept-all/.test(strip(readFileSync(join(REPO, f), "utf8"))));
+    ok(!reads.length, "no executable line in the Counter or the publisher reads tboard:, board:1, board:2, gboard, a link's level, the tiers key or Accept every suggestion: " + reads.join(", "));
     ok(!/<script/.test(h1) && /script-src 'none'/.test(g1.headers.get("content-security-policy") || ""),
       "the guest page carries no script and forbids it outright");
     ok(!/Statements|Username|Password/.test(h1),
@@ -9746,70 +9477,23 @@ await (async () => {
     globalThis.fetch = realFetch;
   }
 
-  /* A TIER 1 ROW THAT CARRIES NO PRICES IS NOT A TIER (10 Sep 2026). engine/pricing.mjs offers the
-     Tier 1 row on a bare `if(P.tier1)` while every other path gates on tier1Anchors, which wants two
-     usable ends; so a book with one stated end, or with two keys naming the same size, produces a
-     row named "Tier 1" whose prices are null or NaN. Today's book has neither shape, so this FORCES
-     both rather than waiting for the data to produce them: an assertion that needs the book's
-     cooperation is an assertion that sleeps. */
+  /* THE BOARDS A STRANGER OPENS (rewritten 18 Oct 2026: the stated Tier 1 and the levels are gone, so the forced one-stated-end and
+     same-size shapes went with them). Salt is a Set Price book and every guest board is that price. */
   {
-    const { boardList: bl } = await import("../tools/pricelist.mjs");
+    const { guestBoard: gb } = await import("../tools/pricelist.mjs");
     const { readBook: rb } = await import("../tools/book.mjs");
+    const { boardPage: bp } = await import("../stmt/page.js");
     const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-    /* 05 Oct 2026: on salt's last level rule, the live book having no ladder */
-    const px = levelSnap((await rb()).ledger.PRICING);
-    const bend = (tier1) => {
-      const copy = JSON.parse(JSON.stringify(px));
-      for (const p of Object.keys(copy.byProduct || {})) {
-        if (copy.byProduct[p].inputs && copy.byProduct[p].inputs.policy) {
-          copy.byProduct[p].inputs.policy.tier1 = tier1;
-        }
-      }
-      return copy;
-    };
-    /* v656: THE LADDER ANSWERS FIRST, so a broken pair of ends cannot empty a guest board at all: the
-       cheaper link is the ladder's first level and the other one its last. The fallback is what
-       answers a book with NO ladder, and that is where the one-stated-end case is now forced, because
-       an assertion aimed at a path the data can no longer reach is an assertion that sleeps. */
-    const noLadder = (tier1) => {
-      const copy = bend(tier1);
-      for (const p of Object.keys(copy.byProduct || {})) {
-        if (copy.byProduct[p].inputs && copy.byProduct[p].inputs.policy) copy.byProduct[p].inputs.policy.tierRule = null;
-      }
-      return copy;
-    };
-    /* v780: WHICH BOOKS FALL BACK IS A PROPERTY OF THE BOOK, not a name. This excluded the book
-       called "oil" by name, so every book opened after it counted as one that must not fall back,
-       when a book with no ladder falls back by design. Asked of the snapshot instead, and stated
-       both ways so neither half sleeps. */
-    /* A LADDER IS multiples, NOT merely a tierRule. Oil's rule is a FIXED price a size, which is
-       why oil falls back and why this check used to exclude it by name; candy, rice and spare have
-       no rule at all. Salt is the one book that prices every size off a ladder. */
-    const hasLadder = (pid) => Array.isArray((((((px || {}).byProduct || {})[pid] || {}).inputs || {}).policy || {}).tierRule ? ((((px.byProduct[pid] || {}).inputs || {}).policy || {}).tierRule).multiples : null);
-    const oneEnd = bl(1, bk, noLadder({ 0.5: 60 }), new Date());
-    const sameSize = bl(1, bk, noLadder({ 0.5: 60, "0.50": 875 }), new Date());
-    const healthy = bl(1, bk, px, new Date());
-    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0)
-      && healthy.products.filter((p) => hasLadder(p.product)).length > 0
-      && healthy.products.filter((p) => hasLadder(p.product)).every((p) => !p.fellBack)
-      && healthy.products.filter((p) => !hasLadder(p.product)).every((p) => p.fellBack),
-      "with a ladder, the cheaper guest link prices every size off it and falls back to nothing: "
-      + JSON.stringify(healthy.products.map((p) => [p.product, p.sizes.length, !!p.fellBack])));
-    ok(oneEnd.products.length > 0 && oneEnd.products.every((p) => p.sizes.length > 0 && p.fellBack),
-      "and on a book with NO ladder, ONE stated end falls back to the tier that has prices rather than an empty table");
-    ok(sameSize.products.length > 0 && sameSize.products.every((p) => p.sizes.length > 0
-      && p.sizes.every((r) => Number.isFinite(r.price))),
-      "and two anchors naming one size cannot put NaN in front of a stranger");
-    /* v785: A BOOK WITH NO COST IS LEFT OFF, forced rather than waited for. v780 opened three books
-       empty and every publish since put each on all five guest boards at RM 0 at twelve sizes, the
-       fallback row's zeros being finite. Salt keeps its ladder and is struck of its cost in a copy,
-       which is the case a test on the prices would miss (10, 20, 30, a ten a level), and must vanish
-       from the board while the rest stay; and the live boards carry no RM 0 at any size, which
-       today's empty books make a real check rather than a tautology. */
+    const px = (await rb()).ledger.PRICING;
+    const healthy = gb(bk, px, new Date());
+    ok(healthy.products.length > 0 && healthy.products.every((p) => p.sizes.length > 0),
+      "the board a stranger opens prices every size of every book off its Set Price or fixed board: "
+      + JSON.stringify(healthy.products.map((p) => [p.product, p.sizes.length])));
+    /* v785: A BOOK WITH NO COST IS LEFT OFF, forced rather than waited for. */
     const noCost = JSON.parse(JSON.stringify(px));
     const c0 = noCost.byProduct.salt.inputs.cost;
     c0.repl = null; c0.lot = null; c0.quoteRate = 0; c0.freightRate = 0; c0.latest = null;   /* the shape an empty book carries: no latest lot since 05 Oct 2026 */
-    const struck = bl(2, bk, noCost, new Date()), whole = bl(2, bk, px, new Date());
+    const struck = gb(bk, noCost, new Date()), whole = gb(bk, px, new Date());
     ok(whole.products.some((p) => p.product === "salt") && !struck.products.some((p) => p.product === "salt")
       && struck.products.length === whole.products.length - 1,
       "a book whose cost stack is nothing is left off the board and the other books stay: "
@@ -9817,28 +9501,18 @@ await (async () => {
     ok(whole.products.length > 0 && whole.products.every((p) => p.sizes.length > 0 && p.sizes.every((r) => r.price > 0)),
       "and no board a stranger opens carries RM 0 at any size, empty books included: "
       + JSON.stringify(whole.products.map((p) => [p.product, Math.min(...p.sizes.map((r) => r.price))])));
-    /* v787: A GUEST BOARD NAMES NO LEVEL ON ANY BOOK (his instruction of 22 Sep 2026). Oil's pane was
-       headed "Bronze" on every level's board, Titanium's included: a book that falls back to ladderRow
-       took that row's name onto the board and the page printed it, while salt's pinned row had none.
-       Two rules, each forced on its own. The DATA: every ladder is nulled so every book would take a
-       named row, and no product on any of the five standing boards, nor on the two live ones, carries
-       a name. The PAGE: handed a product that does carry one, it draws the fallback note and never the
-       name, so a name that reaches it from anywhere is still not drawn. */
-    const { tierBoard: tb } = await import("../tools/pricelist.mjs");
-    const { boardPage: bp } = await import("../stmt/page.js");
-    const namedRows = noLadder(null);
-    const everyBoard = [1, 2, 3, 4, 5].map((k) => tb(k, bk, namedRows, new Date()))
-      .concat([bl(1, bk, px, new Date()), bl(2, bk, px, new Date())]);
+    /* v787: A GUEST BOARD NAMES NO LEVEL ON ANY BOOK. The DATA: no product on the standing boards or the two live ones carries a name.
+       The PAGE: handed a product that does carry one, it draws neither the name nor a note (the fallback note was removed on 18 Oct 2026). */
+    const everyBoard = [whole];
     ok(everyBoard.every((b) => b.products.length > 0 && b.products.every((p) => !("tierName" in p))),
-      "no book on any board carries a level's name, every ladder nulled or not: "
-      + JSON.stringify(everyBoard.map((b) => b.products.map((p) => p.product))));
-    const levelWords = (px.tierNames || []).filter(Boolean).concat(["Tier 1", "Tier 2"]);
+      "no book on any board carries a level's name: " + JSON.stringify(everyBoard.map((b) => b.products.map((p) => p.product))));
+    const levelWords = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze", "Tier 1", "Tier 2"];
     const visible = (h) => h.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " ");
     const handedName = visible(bp({ prices: { week: { label: "x" }, products: [{ product: "oil", name: "Oil", unit: "unit",
       tierName: "Bronze", fellBack: true, sizes: [{ q: 10, price: 130 }] }] } }, "n"));
     ok(everyBoard.every((b) => { const v = visible(bp({ prices: b }, "n")); return levelWords.every((w) => !v.includes(w)); })
-      && !handedName.includes("Bronze") && handedName.includes("The only price for this product"),
-      "and the page names no level on any pane, even when handed one: " + levelWords.join(", "));
+      && !handedName.includes("Bronze") && !handedName.includes("The only price for this product"),
+      "and the page names no level on any pane and draws no fallback note, even when handed a product that carries one: " + levelWords.join(", "));
   }
 
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
@@ -9932,39 +9606,29 @@ await (async () => {
   const { pricingSnapshot } = await import("../tools/book.mjs");
   const { openMaster } = await import("../tools/payload.mjs");
   const { w: wP } = await openMaster();
-  /* 05 Oct 2026: a held level is proved on salt's last level rule; the drift book's list is the drift section's */
-  const liveSnap = pricingSnapshot(wP), snap = levelSnap(liveSnap);
+  /* 18 Oct 2026: SALT IS A SET PRICE BOOK AND NO LEVEL IS HELD. A customer's list is the snapshot's card for them at each board size, which
+     the fixture codes below (on no roster) lack, so each is given one: the Set Price at every size, the last price on the engine's own ladder. */
+  const liveSnap = pricingSnapshot(wP), snap = liveSnap;
   const bookP = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales };
   const nowP = new Date("2026-09-03T06:20:00Z");
-  /* v651: the tiers ride the snapshot, one for each product; these fixture codes are on no roster, so each list is given its own */
-  const tiered = (tierOf) => ({ ...snap, tierOf });
-  const list = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Silver", oil: "Silver" } }), nowP);
+  const setCard = (ids) => { const s = JSON.parse(JSON.stringify(snap)), sb = s.byProduct.salt;
+    sb.cards = Object.assign({}, sb.cards); sb.lift = Object.assign({}, sb.lift);
+    ids.forEach((id) => { sb.cards[id] = sb.ladder.map((r) => [r.q, r.prices[r.prices.length - 1]]); sb.lift[id] = 0; });
+    return s; };
+  const list = PL.priceList("CX0-AA", bookP, setCard(["CX0-AA"]), nowP);
   const saltL = list.products.find(p => p.product === "salt");
-  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && list.soon.length === 0 && saltL && saltL.basis === "tier" && !("rate" in saltL) && !("orders" in saltL),
-    "the list is stamped with the week and carries both products, salt on its tier with no rate or order count of theirs on it");
-  /* v651: the customer's tier for the product at each size, off the snapshot's ladder, through the engine's cardPrice */
+  ok(list.week.monday === "2026-08-31" && list.products.length === 2 && list.soon.length === 0 && saltL && saltL.basis === "card" && !("tier" in saltL) && !("levels" in saltL)
+      && !("rate" in saltL) && !("orders" in saltL),
+    "the list is stamped with the week and carries both products, salt on its card with no level, no rate and no order count of theirs on it");
   const Cs = PE.costStack(snap.byProduct.salt.inputs.cost), Ps = snap.byProduct.salt.inputs.policy;
   const floorC = q => PE.floorTotal(q, Cs, Ps);
-  const tierAt = (q, t) => snap.byProduct.salt.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices[t];
-  const bronze = snap.tierNames.indexOf("Silver"), gold = snap.tierNames.indexOf("Gold");
-  const wrong = saltL.sizes.filter(x => x.price !== tierAt(x.q, bronze) || "delivered" in x);
-  const under = saltL.sizes.filter(x => tierAt(x.q, bronze) > 130 * x.q + 0.009).length;
-  ok(saltL.tier === "Silver" && wrong.length === 0 && under > 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL),
-    "a customer holding Silver is quoted Silver at every board size, the " + under + " sizes where their own rate of 130 sits under it included; one price, no delivery on the list");
-  const goldL = PL.priceList("CX0-AA", bookP, tiered({ "CX0-AA": { salt: "Gold" } }), nowP), goldS = goldL.products.find(p => p.product === "salt");
-  /* 19 Sep 2026: OIL IS PRICED FOR EVERYBODY, held tier or none, because he has typed one board for
-     all. The "no tier, no price" rule is right where a level decides the price and would otherwise
-     have told thirty of thirty-six customers their oil price was still coming. */
-  ok(goldS && goldS.tier === "Gold" && goldS.sizes.every(x => x.price === tierAt(x.q, gold))
-    && goldL.soon.length === 0 && goldL.products.some((x) => x.product === "oil"),
-    "a customer holding Gold on salt is quoted Gold's price at each size, whatever they paid before, and oil is priced too because its board needs no tier");
-  const cheap = PL.priceList("CX0-CH", { ...bookP, sales: [{ date: "2026-07-01", customer: "CX0-CH", qty: 1, total: 1, cash: 1, deliveredQty: 1 }] }, tiered({ "CX0-CH": { salt: "Silver" } }), nowP).products[0];
-  ok(!("rate" in cheap) && cheap.sizes.every(x => x.price === tierAt(x.q, bronze) && x.price >= floorC(x.q) - 0.009),
-    "a customer who once paid RM 1 a unit is quoted their tier at every size, never their old rate and never under the floor");
-  const fresh = PL.priceList("CX0-ZZ", bookP, tiered({ "CX0-ZZ": { salt: "Silver" } }), nowP), none = PL.priceList("CX0-ZZ", bookP, snap, nowP);
-  ok(fresh.products[0].basis === "tier" && fresh.products[0].sizes.every(x => x.price === tierAt(x.q, bronze))
-    && JSON.stringify(none.soon.map((s) => s.product)) === '["salt"]' && none.products.some((x) => x.product === "oil"),
-    "a customer with no history is quoted the tier set for them, and with no tier SALT is coming soon while oil is priced anyway: "
+  const setAt = (q) => snap.byProduct.salt.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices.slice(-1)[0];
+  const wrong = saltL.sizes.filter(x => x.price !== setAt(x.q) || x.price < floorC(x.q) - 0.009 || "delivered" in x);
+  ok(wrong.length === 0 && saltL.sizes.length === snap.sizes.length && !("delivery" in saltL) && saltL.grid && saltL.grid.p.length > 12,
+    "a customer on the Set Price is quoted it at every board size, never under the floor, whatever they paid before; one price, no delivery on the list, and the any-quantity grid beside it");
+  const none = PL.priceList("CX0-ZZ", bookP, snap, nowP);
+  ok(JSON.stringify(none.soon.map((s) => s.product)) === '["salt"]' && none.products.some((x) => x.product === "oil"),
+    "a customer with no card is told SALT is coming soon while oil is priced anyway, because its board needs no tier: "
       + JSON.stringify([none.soon.map((x) => x.product), none.products.map((x) => x.product)]));
 
   /* THE RAILS SHIP WITHOUT A NUMBER. */
@@ -10023,7 +9687,7 @@ await (async () => {
   let b = await r.json();
   ok(r.status === 200 && b.ok && typeof b.session === "string" && b.session.length >= 20 && b.prices && b.prices.week === "2026-08-31",
     "a correct password answers with a session and the sealed price list");
-  ok(JSON.parse(await C.decryptWith(ck, b.prices)).products[0].tier === "Silver" && !JSON.stringify(b.prices).includes('"tier":"Silver"'),   // v588: the plaintext is what must not show; a quoted key cannot turn up in base64 by chance
+  ok(JSON.parse(await C.decryptWith(ck, b.prices)).products[0].basis === "card" && !JSON.stringify(b.prices).includes('"basis":"card"'),   // v588: the plaintext is what must not show; a quoted key cannot turn up in base64 by chance
     "the list opens under the content key and is ciphertext on the wire");
   const rm = await (await stmtWorker.fetch(sj("/open", { u: un, password: "master-pass", master: "master-pass" }), senv)).json();
   ok(rm.ok && rm.byMaster && rm.session === null, "the owner's override gets no session: the owner does not order");
@@ -12595,8 +12259,10 @@ await (async () => {
     const { w } = await omA();
     const snap = pricingSnapshot(w);
     /* v651: a product with no tier is not priced, so the fixture holds one on each book */
-    /* 05 Oct 2026: on salt's last level rule, a fixture code having no drift card */
-    const list = PL.priceList("CX0-ZZ", bkR, levelSnap(snap, { "CX0-ZZ": "Silver" }), new Date("2026-09-08T04:00:00Z"));
+    /* 18 Oct 2026: a fixture code having no card is given the Set Price at every size, the last price on the engine's own ladder */
+    const cardSnap = JSON.parse(JSON.stringify(snap)), sbC = cardSnap.byProduct.salt;
+    sbC.cards = Object.assign({}, sbC.cards, { "CX0-ZZ": sbC.ladder.map((r) => [r.q, r.prices[r.prices.length - 1]]) });
+    const list = PL.priceList("CX0-ZZ", bkR, cardSnap, new Date("2026-09-08T04:00:00Z"));
     const oilL = list.products.find((p) => p.product === "oil"), saltL = list.products.find((p) => p.product === "salt");
     ok(oilL && saltL && oilL.sizes.map((x) => x.q).join() === snap.byProduct.oil.sizes.join() && saltL.sizes.map((x) => x.q).join() === snap.byProduct.salt.sizes.join() && oilL.sizes[0].q !== saltL.sizes[0].q,
       `each product's list is drawn on its own board sizes (oil ${oilL && oilL.sizes.map((x) => x.q).join("/")}, salt ${saltL && saltL.sizes.map((x) => x.q).join("/")})`);
@@ -13001,7 +12667,7 @@ await (async () => {
         `${p}: and it is a size this book's board actually prints (${got.q} in ${got.board.join(", ")})`);
     }
     w7.eval("setProd('salt');recompute();switchTab('price');");
-    const cap = String(w7.eval("(function(){var d=[].filter.call(document.querySelectorAll('.sec.on .dsc'),function(x){return /the ask per unit at each printed size/.test(x.textContent);})[0];return d?d.textContent.replace(/\\s+/g,' '):'';})()"));
+    const cap = String(w7.eval("(function(){var d=[].filter.call(document.querySelectorAll('.sec.on .dsc'),function(x){return /the Set Price per unit at each printed size/.test(x.textContent);})[0];return d?d.textContent.replace(/\\s+/g,' '):'';})()"));
     ok(cap.length > 0, "the board chart's caption renders");
     ok(cap.indexOf("against its floor and the effective cost") < 0 && /same figure as effective cost/.test(cap),
       "and it stops promising two lines where one is drawn, naming the one figure's three names instead");
@@ -13981,12 +13647,12 @@ await (async () => {
       "the boundary register reads the engine's floor at the order's own size: one closed sale added under it, RM 50 short, and the open one named under that floor: "
       + JSON.stringify({ ft, cost, b0, b1 }));
 
-    /* the engine's floor over the units each segment sold, from floorTotal, and the realised rates */
+    /* the engine's floor over the units each segment sold, from costTotal (the cost readers measure to the sen, 18 Oct 2026), and the realised rates */
     const E = rdR("(function(){var rows=pricedSales.filter(function(s){return s.total>0&&s.qty>0;});"
-      + "function agg(rs){var k=0,f=0,rm=0;rs.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);k+=m;f+=floorTotal(s.qty)/s.qty*m;rm+=s.total-txPendUnitsRaw(s)*txPrice(s);});return {k:k,fl:+(f/k).toFixed(2),p:+(rm/k).toFixed(2)};}"
+      + "function agg(rs){var k=0,f=0,rm=0;rs.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);k+=m;f+=costTotal(s.qty)/s.qty*m;rm+=s.total-txPendUnitsRaw(s)*txPrice(s);});return {k:k,fl:+(f/k).toFixed(2),p:+(rm/k).toFixed(2)};}"
       + "var sold=rows.filter(function(s){return s.qty-txPendUnitsRaw(s)>0;}),u=0,t=0;"
-      + "sold.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);t+=m;if(txGoods(s)/s.qty<floorTotal(s.qty)/s.qty-0.009)u+=m;});"
-      + "return {all:agg(rows),small:agg(rows.filter(function(s){return s.qty<PX.bulkFrom;})),bulk:agg(rows.filter(function(s){return s.qty>=PX.bulkFrom;})),share:(u/t*100).toFixed(0),rate:fmt(floorTotal(1))};})()");
+      + "sold.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);t+=m;if(txGoods(s)/s.qty<costTotal(s.qty)/s.qty-0.009)u+=m;});"
+      + "return {all:agg(rows),small:agg(rows.filter(function(s){return s.qty<PX.bulkFrom;})),bulk:agg(rows.filter(function(s){return s.qty>=PX.bulkFrom;})),share:(u/t*100).toFixed(0),rate:fmt(costTotal(1))};})()");
     const mk = rdR("pxMarket()");
     const pricing = rdR(txt("tabPricing()"));
     /* 3. the market segments stand against that floor, and the prose prints it */
@@ -14000,7 +13666,7 @@ await (async () => {
        named to the sen moves the floor by half a sen times the slope, 1.33 at a 25% leak, so RM 0.01 holds with room. */
     const lever = rdR("(function(){var keepC=pxOver.cost,keepS=pxOver.shrink,out=[];try{[null,0,5,10,15,20,25].forEach(function(sh){pxOver.cost=keepC;pxOver.shrink=sh;var m=pxMarket();pxOver.cost=m.needRate;"
       + "var rs=pricedSales.filter(function(s){return s.total>0&&s.qty>=PX.bulkFrom;}),k=0,f=0;"
-      + "rs.forEach(function(s){var u=s.qty-txPendUnitsRaw(s);k+=u;f+=floorTotal(s.qty)/s.qty*u;});out.push({leak:sh,need:m.needRate,p:m.bulk.p,fl:+(f/k).toFixed(4)});});return out;}"
+      + "rs.forEach(function(s){var u=s.qty-txPendUnitsRaw(s);k+=u;f+=costTotal(s.qty)/s.qty*u;});out.push({leak:sh,need:m.needRate,p:m.bulk.p,fl:+(f/k).toFixed(4)});});return out;}"
       + "finally{pxOver.cost=keepC;pxOver.shrink=keepS;}})()");
     ok(lever.length === 7 && lever.every((x) => x.need != null && Math.abs(x.fl - x.p) < 0.01),
       "the buying rate the lever names is the one at which the engine's bulk floor meets the realised bulk price, on the book's leak and on leaks from 0% to 25%: " + JSON.stringify(lever));
@@ -14014,7 +13680,7 @@ await (async () => {
        at ten buying rates a sen apart the sentence names the one floor, at one unit, and a charge per order, which
        does move the floor with size, still prints the range */
     const notes = rdR("(function(){var keepC=pxOver.cost,t=PRICE_ENGINE.timePerOrder,c0=pxCost().lot,out=[];"
-      + "function read(){var d=document.createElement('div');d.innerHTML=priceNote();return {at:pxOver.cost,rate:fmt(floorTotal(1)),t:d.textContent.replace(/\\s+/g,' ').slice(0,140)};}"
+      + "function read(){var d=document.createElement('div');d.innerHTML=priceNote();return {at:pxOver.cost,rate:fmt(costTotal(1)),t:d.textContent.replace(/\\s+/g,' ').slice(0,140)};}"
       + "try{for(var i=0;i<10;i++){pxOver.cost=+(c0+i*0.01).toFixed(2);out.push(read());}pxOver.cost=keepC;PRICE_ENGINE.timePerOrder=5;out.push(read());}"
       + "finally{pxOver.cost=keepC;if(t===undefined)delete PRICE_ENGINE.timePerOrder;else PRICE_ENGINE.timePerOrder=t;}return out;})()");
     const ranged = notes.slice(0, 10).filter((x) => !x.t.includes("% of your volume has sold under the " + x.rate + "/unit floor"));
@@ -15191,8 +14857,6 @@ await (async () => {
   /* ---- the desk, before and after ---- */
   const { openMaster: om34 } = await import("../tools/payload.mjs");
   const { w: w34 } = await om34();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w34);
   const rd34 = (e) => JSON.parse(String(w34.eval("JSON.stringify(" + e + ")")));
   try {
     const row34 = (o) => JSON.stringify(Object.assign({ customer: "CZ9-WO", product: "salt", qty: 1, cost: 50, deliveredQty: 1 }, o));
@@ -15478,260 +15142,6 @@ await (async () => {
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w38.close(); } catch (e) { /* best effort */ } }
 })();
 
-section("v641: the five tiers are the floor and the workbook's four columns, guarded, drawn beside the board and quoted by it since v656");
-await (async () => {
-  /* HIS DECISIONS OF 14 AND 15 SEP 2026. Tier I pays the floor, rounded up to the ten; Tiers II to V are his pricing
-     workbook's four columns; each tier sits at least a ten over the one below; the rate may not rise with size where a step
-     down keeps that. Proved on the master's own TIER_RULE and the inlined engine, on FORCED costs, never on today's, because
-     the floor moves with every count. Each assertion was proved red by mutation. */
-  const { openMaster: om40 } = await import("../tools/payload.mjs");
-  const { w: w40 } = await om40();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w40);
-  const rd40 = (e) => JSON.parse(String(w40.eval("JSON.stringify(" + e + ")")));
-  try {
-    /* THE WORKBOOK AS READ ON 14 SEP 2026: size, the row's COGS, then its four column prices. The landed rates reproduce
-       every COGS to the ringgit, so the formula is proved on the sheet's own inputs. */
-    const SHEET = {
-      salt: { landed: 46.72, rows: [[0.5,23,50,60,70,90],[1,47,100,120,140,160],[1.5,70,140,170,200,230],[2,93,180,220,260,300],[2.5,117,220,260,310,360],[3,140,250,300,350,410],[3.5,164,280,340,400,460],[4,187,310,370,440,500],[4.5,210,340,400,470,530],[5,234,370,430,500,560],[6.25,292,440,520,590,660],[12.5,584,850,980,1110,1250]] },
-      oil: { landed: 7.8355, rows: [[10,78,110,150,190,230],[20,157,210,290,370,440],[30,235,300,420,530,650],[40,313,380,540,690,850],[50,392,460,650,850,1040],[80,627,690,1010,1320,1640],[100,784,830,1220,1610,2000]] },
-    };
-    /* the engine on a forced cost stack: this landed rate, and a floor of `per` a unit */
-    const walk40 = (p, landed, per, sizes, mults) => rd40("(function(){setProd('" + p + "');var R=Object.assign({},TIER_RULE['" + p + "']" + (mults ? ",{multiples:" + JSON.stringify(mults) + "}" : "") + "),P=Object.assign({},pxPolicy(),{tierRule:R}),"
-      + "C=Object.assign({},pxCost(),{landed:" + landed + ",eff:" + per + ",effEx:" + per + "});"
-      + "return PRICING_ENGINE.fiveTiers(" + (sizes ? JSON.stringify(sizes) : "R.rungs") + ",C,P);})()");
-    const ten40 = (v) => Math.ceil(v / 10 - 1e-9) * 10;
-    /* v644: the rule's multiples run evenly from 1.0 to 2.5 and no longer carry the workbook's 1.5 and 2.0, so the workbook's
-       own four multiples are handed to the engine, with the master's start, step and rungs, to prove the formula itself */
-    /* ============ 23 SEP 2026: THE PRICING_V2 WORKBOOK, AS ITS OWN CELLS ============
-       salt-command pricing_v2.xlsx, its formulas worked through outside the desk on the day: size, then the Floor column
-       (Ambassador), then the four tier columns, each before any guard. COGS is the quote's RM28 a half unit, so the forced
-       landed rate above no longer moves it, which is itself asserted. The 14 Sep sheet stays in SHEET as the dated record. */
-    const V2 = [[0.5,50,50,60,70,70],[1,90,110,120,130,140],[1.5,130,160,170,200,210],[2,170,220,230,260,270],[2.5,210,260,270,320,330],[3,260,310,320,380,390],
-      [3.5,300,350,360,430,440],[4,340,390,400,480,490],[4.5,380,430,440,530,540],[5,420,470,480,580,590],[6.25,530,550,560,690,700],[12.5,1050,1050,1050,1050,1050]];
-    const got1 = walk40("salt", SHEET.salt.landed, 1), bad1 = [];
-    V2.forEach((r, i) => { const g = got1[i]; if (!g || g.q !== r[0] || Math.abs(g.cogs - 56 * r[0]) > 0.01 || JSON.stringify(g.cols) !== JSON.stringify(r.slice(2))) bad1.push({ q: r[0], got: g && [g.cogs, ...g.cols] }); });
-    ok(bad1.length === 0, "the master's rule reproduces the pricing_v2 workbook: COGS at the quote's RM56 a unit and all 48 tier columns before any guard " + JSON.stringify(bad1));
-    const bad2 = got1.filter((g, i) => g.prices[0] !== V2[i][1]);
-    ok(bad2.length === 0, "and Ambassador is the sheet's Floor column, COGS plus half again up to the ten, at every size " + JSON.stringify(bad2.slice(0, 2)));
-    /* v642: the board he approved moved with his restructure of 15 Sep and is asserted in that section */
-    /* THE GUARDS ON A GRID: landed from a fifth of the sheet's rate to double it, the floor from that rate to 1.8 times it,
-       both books. Each law is restated from the outputs alone, and the grid is shown to exercise each guard. */
-    const grid = [];
-    /* SALT ALONE SINCE 19 SEP 2026: these are the laws of the five-tier ladder, and oil no longer has
-       one. Thirty-five forced costs rather than seventy, and the laws are unchanged; oil's stated
-       board keeps its own, different laws, which its own section proves. */
-    for (const p of ["salt"]) for (const k of [0.2, 0.45, 0.7, 1, 1.3, 1.65, 2]) for (const f of [1, 1.15, 1.31, 1.5, 1.8]) {
-      const landed = +(SHEET[p].landed * k).toFixed(4), per = +(landed * f).toFixed(4);
-      grid.push({ p, landed, per, rows: walk40(p, landed, per) });
-    }
-    const under = [], order = [], rate = [];
-    let lifted = 0, stepped = 0;
-    grid.forEach((G) => {
-      const prev = G.rows[0].prices.map(() => Infinity);
-      G.rows.forEach((g) => {
-        const fl = G.per * g.q;
-        g.prices.forEach((x, t) => {
-          if (x < fl - 0.009) under.push({ G: [G.p, G.landed, G.per], q: g.q, t, x });
-          if (t && x < g.prices[t - 1] + 10) order.push({ G: [G.p, G.landed, G.per], q: g.q, t, x, below: g.prices[t - 1] });
-          if (t && x > g.cols[t - 1]) lifted++;
-          if (t && x < g.cols[t - 1]) stepped++;
-          /* Ambassador is the sheet's Floor column, never walked (23 Sep 2026): stepping it down would take it under
-             COGS plus the overhead, which is the floor the sheet states. The law binds the four tiers. */
-          if (t && x / g.q > prev[t] + 1e-9) {
-            const least = t ? g.prices[t - 1] + 10 : ten40(fl), down = Math.floor((prev[t] * g.q + 1e-9) / 10) * 10;
-            if (down >= least) rate.push({ G: [G.p, G.landed, G.per], q: g.q, t, x, down, least });
-          }
-          prev[t] = Math.min(prev[t], x / g.q);
-        });
-      });
-    });
-    ok(grid.length === 35 && under.length === 0, `no price on any tier sits under its floor, across ${grid.length} forced costs ` + JSON.stringify(under.slice(0, 2)));
-    ok(order.length === 0, "and a better tier always pays less: every tier at least RM10 over the one below, at every size " + JSON.stringify(order.slice(0, 2)));
-    ok(rate.length === 0, "and a tier's rate rises with size only where the step down would meet the tier below or cross the floor " + JSON.stringify(rate.slice(0, 2)));
-    ok(lifted > 0 && stepped > 0, `and the grid exercises both guards rather than assuming them: ${lifted} prices lifted over their column, ${stepped} stepped under it`);
-    /* 23 Sep 2026: RM28 of COGS at half a unit times 2.5 is exactly RM70, which floating point reads as 70.00000000000001 */
-    const dust = walk40("salt", 20, 1, [0.5])[0];
-    ok(dust.cogs === 28 && dust.cols[2] === 70 && dust.cols[3] === 70, "a column landing exactly on a ten stays on it, rounded down or up: RM28 of COGS times 2.5 is RM70 in both columns, not RM60 or RM80 " + JSON.stringify(dust.cols));
-    /* oil's rungs are five since 19 Sep, so 150 unit falls on the last of them rather than the seventh */
-    const off = walk40("salt", 46.72, 1, [0.25, 7, 20]).map((g) => g.rung).concat(walk40("oil", 7.8355, 1, [5, 60, 150]).map((g) => g.rung));
-    ok(JSON.stringify(off) === JSON.stringify([0, 10, 11, 0, 4, 4]), "a size off the board takes the rung at or below it: salt's 0.25, 7 and 20 unit on rungs 0, 10 and 11, oil's 5, 60 and 150 on 0, 4 and 6 " + JSON.stringify(off));
-    /* THE CARD, read cell by cell against the engine, on each book in turn */
-    const cards = ["salt", "oil"].map((p) => rd40("(function(){setProdView('" + p + "');switchTab('pricing');var t=document.querySelector('.sec.on table.pxboard.fivetier');if(!t)return null;"
-      + "var num=function(c){var m=c.textContent.replace(/,/g,'').match(/[0-9]+/);return m?+m[0]:null;};"   /* the first figure in a level's cell is its total, the three under it are its rate, margin and multiple */
-      /* v749: THREE COLUMNS ALONG, AND THE NAMES ARE THE BOOK'S OWN. The levels moved into the price stack, which
-         opens Size, COGS and Eff. cost; and a book shorter than the six takes the first name and the last of the rest,
-         which is what oil is: its rule is a fixed price a size, so it has two levels and had six heads over two cells
-         from v641 until v749, ragged, because the head was asserted against TIER_NAMES and the body against the engine
-         and the two were never asked to agree with each other. */
-      + "var lvlN=Math.max.apply(null,fiveTiersNow().map(function(g){return g.prices.length;}));"
-      + "var names=[TIER_NAMES[0]].concat(TIER_NAMES.slice(TIER_NAMES.length-(lvlN-1)));"
-      + "return {head:[].map.call(t.rows[0].cells,function(c){return (c.firstChild?(c.firstChild.textContent||''):c.textContent).trim();}),names:names,cells:[].map.call(t.tBodies[0].rows,function(r){return [].slice.call(r.cells,3,3+names.length).map(num);}),"
-      + "want:fiveTiersNow().map(function(g){return g.prices;})};})()"));
-    /* v657: AND THE HEAD ENDS THERE. It carried an "Ask today" column while the ladder was staged, so the two could be
-       read against each other; the board IS the last level since v656, so that column printed the Bronze column twice
-       under two names. The length is asserted, not just the slice, or the duplicate could come back unseen. */
-    ok(cards.every((c) => c && JSON.stringify(c.head.slice(3, 3 + c.names.length)) === JSON.stringify(c.names)
-      && c.cells.length > 4 && JSON.stringify(c.cells) === JSON.stringify(c.want)
-      && c.head.length === 3 + c.names.length),
-      "the Pricing page draws every level for each book, headed by its name and nothing after it, every cell the engine's price " + JSON.stringify(cards.map((c) => c && c.head)));
-    /* RESTATED AT v656, AND INVERTED. It held the staging: the policy carried no tier rule and adding one moved no cell of
-       the board, which was the whole of "quoted nowhere yet". The board IS the ladder now, so the same two facts are asserted
-       the other way round, and the second one is the load-bearing half: strip the rule out of the policy and the board must
-       change, or the ask is coming from somewhere else. */
-    const onBoard = ["salt", "oil"].map((p) => rd40("(function(){setProd('" + p + "');var P=pxPolicy(),C=pxCost(),S=sizesFor('" + p + "');"
-      + "var bare=Object.assign({},P);delete bare.tierRule;"
-      /* THE PRICES, NOT THE BOARD OBJECT. Comparing the whole board passed on the row NAME alone, which the rule also
-         decides, so the assertion stayed green with the ask reverted to the derived figure. It is the cells that matter. */
-      + "var px=function(x){return JSON.stringify(PRICING_ENGINE.board(S,C,x).tiers[0].prices);};"
-      + "return {inPolicy:P.tierRule!=null,moves:px(P)!==px(bare),at:PRICING_ENGINE.board(S,C,P).tiers[0].prices[0]};})()"));
-    ok(onBoard.every((x) => x.inPolicy && x.moves), "and the board is the ladder: the policy every quote reads carries the tier rule, and taking it away moves the board " + JSON.stringify(onBoard));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w40.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v642: the ladder is Ambassador at the floor and five named tiers, Titanium to Bronze, with Silver new at 2.25");
-await (async () => {
-  /* HIS RESTRUCTURE OF 15 SEP 2026. Ambassador pays the floor itself, up to the ten, on his word alone; the tiers Titanium,
-     Platinum, Gold, Silver and Bronze are the workbook's columns at 1.0, 1.5, 2.0, 2.25 and 2.5, so 0.5 unit of salt starts
-     them at RM50, 60, 70, 80 and 90; a new customer starts at Bronze. Forced costs throughout. Each assertion was proved red
-     by mutation. */
-  const { openMaster: om42 } = await import("../tools/payload.mjs");
-  const { w: w42 } = await om42();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w42);
-  const rd42 = (e) => JSON.parse(String(w42.eval("JSON.stringify(" + e + ")")));
-  try {
-    const walk42 = (p, landed, per, sizes) => rd42("(function(){setProd('" + p + "');var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE['" + p + "']}),"
-      + "C=Object.assign({},pxCost(),{landed:" + landed + ",eff:" + per + ",effEx:" + per + "});"
-      + "return PRICING_ENGINE.fiveTiers(" + (sizes ? JSON.stringify(sizes) : "TIER_RULE['" + p + "'].rungs") + ",C,P);})()");
-    ok(JSON.stringify(rd42("TIER_NAMES")) === JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]),
-      "the levels are named cheapest first, Ambassador then Titanium, Platinum, Gold and Silver; Bronze went on 23 Sep 2026 " + JSON.stringify(rd42("TIER_NAMES")));
-    /* 23 SEP 2026, pricing_v2: salt's COGS is the supplier's quote, so a forced landed cost no longer moves the ladder. The
-       15 Sep columns, Silver between Gold and Bronze, are superseded and asserted by the pricing_v2 section instead. */
-    const start = walk42("salt", 46, 1, [0.5])[0];
-    ok(start.cogs === 28 && JSON.stringify(start.prices) === JSON.stringify([50, 60, 70, 80, 90]),
-      "0.5 unit of salt reads RM50, 60, 70, 80 and 90 on the quote's COGS of RM28 whatever the landed cost " + JSON.stringify(start));
-    /* THE BOARD HE APPROVED ON 15 SEP 2026, on the costs it was read at: salt landed at RM46.72 with a floor of RM61.147136 a
-       unit, oil at RM7.8355 with RM8.7285. Oil's Titanium lifts a ten over Ambassador at 80 and 100 unit.
-       v644: the multiples run evenly from 1.0 to 2.5, his decision of the same day, and the board moved with them. */
-    const DECIDED = {
-      salt: [[40,50,60,70,80,90],[70,100,110,130,150,160],[100,140,160,190,210,230],[130,180,210,240,270,300],[160,220,250,290,320,360],[190,250,290,330,370,410],[220,280,330,370,410,460],[250,310,360,400,450,500],[280,340,390,440,480,530],[310,370,420,460,510,560],[390,440,500,550,610,660],[770,850,950,1050,1150,1250]],
-      oil: [[90,110,140,170,200,230],[180,210,270,330,390,440],[270,300,390,470,560,650],[350,380,500,620,730,850],[440,460,600,750,900,1040],[700,710,930,1160,1400,1640],[880,890,1120,1420,1710,2000]],
-    };
-    /* SALT'S HALF OF THAT BOARD STANDS; OIL'S WAS SUPERSEDED ON 19 SEP, when he retired oil's tiers
-       for one typed board. The oil rows he approved on 15 Sep are left in DECIDED above as the dated
-       record they are, and are no longer asserted against a rule that no longer prices oil. */
-    /* AND SALT'S HALF WAS SUPERSEDED ON 23 SEP by the pricing_v2 workbook, four tiers on the quote's RM56; DECIDED.salt stays
-       as the dated record and the new board is asserted in the pricing_v2 section. */
-    /* BREAKEVEN IS THE FLOOR ITSELF, his answer of 15 Sep. On oil's costs COGS plus 20% (RM93.60 at 10 unit) sits over the floor
-       (RM87.28), which is exactly where "the higher of the two" would have lifted Ambassador; it does not. */
-    const amb = walk42("oil", 7.8355, 8.7285, [10])[0];
-    ok(amb.prices[0] === 90 && amb.cogs * 1.2 > amb.floor + 0.009, "Ambassador pays the floor up to the ten, RM90 for 10 unit of oil, not the RM100 that COGS plus 20% would ask " + JSON.stringify(amb));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w42.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v643: each customer holds a tier for each product, set on the phone and folded, proposed from what they pay and quoted nowhere yet");
-await (async () => {
-  /* HIS DECISIONS OF 15 SEP 2026. Each customer's tier comes before any quote reads it, starting nearest what they pay, never
-     Ambassador without his word; one for each product since v646, whose own section holds what that added. Fixture customers
-     and forced costs throughout; the expected proposal is restated here from the boards and the fixture's own rates. Each
-     assertion was proved red by mutation. */
-  const { openMaster: om43 } = await import("../tools/payload.mjs");
-  const { draftRow: dr43 } = await import("../src/drafter.js");
-  const F43 = await import("../tools/fold.mjs");
-  const { w: w43 } = await om43();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w43);
-  const rd43 = (e) => JSON.parse(String(w43.eval("JSON.stringify(" + e + ")")));
-  const NAMES43 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
-  try {
-    const sale43 = (rid, customer, product, date, qty, total) => ({ rid, customer, product, date, qty, total, cost: 1, cash: total, deliveredQty: qty, deliveredOn: date });
-    const fx43 = [
-      sale43("z643g1", "CZ9-TG", "salt", "2026-08-01", 2.5, 300), sale43("z643g2", "CZ9-TG", "salt", "2026-08-02", 2.5, 300), sale43("z643g3", "CZ9-TG", "salt", "2026-08-03", 2.5, 300),
-      sale43("z643a1", "CZ9-TA", "salt", "2026-08-01", 2.5, 155), sale43("z643a2", "CZ9-TA", "salt", "2026-08-02", 2.5, 155), sale43("z643a3", "CZ9-TA", "salt", "2026-08-03", 2.5, 155),
-      sale43("z643o1", "CZ9-TO", "salt", "2026-08-01", 2.5, 360),
-      sale43("z643o2", "CZ9-TO", "oil", "2026-08-01", 10, 150), sale43("z643o3", "CZ9-TO", "oil", "2026-08-02", 10, 150), sale43("z643o4", "CZ9-TO", "oil", "2026-08-03", 10, 150),
-    ];
-    /* the boards on forced costs, salt landed at RM46.72 with a floor of RM61.147136 a unit and oil at RM7.8355 with RM8.7285 */
-    w43.eval("(function(){['CZ9-TG','CZ9-TA','CZ9-TO'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx43) + ");queue=[];applyOverlay();"
-      + "window.FB43={};[['salt',46.72,61.147136],['oil',7.8355,8.7285]].forEach(function(x){setProd(x[0]);var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE[x[0]]}),C=Object.assign({},pxCost(),{landed:x[1],eff:x[2],effEx:x[2]});"
-      + "FB43[x[0]]={board:PRICING_ENGINE.fiveTiers(TIER_RULE[x[0]].rungs,C,P),sizes:sizesFor(x[0])};});setProd('salt');})()");
-    const FB = rd43("FB43");
-    /* v655: the level nearest what they pay a unit AT THE SIZE THEY BUY, which is the size every fixture order here is struck at */
-    const nearest43 = (p, q, rate, from) => { const r = FB[p].board.find((x) => Math.abs(x.q - q) < 0.009); let best = from;
-      for (let t = from + 1; t < NAMES43.length; t++) if (Math.abs(r.prices[t] / q - rate) < Math.abs(r.prices[best] / q - rate) - 1e-9) best = t; return NAMES43[best]; };
-    const prop43 = rd43("(function(){var b={salt:FB43.salt.board,oil:FB43.oil.board};return {TG:tierProposal('CZ9-TG','salt',b),TA:tierProposal('CZ9-TA','salt',b),TOo:tierProposal('CZ9-TO','oil',b),TOs:tierProposal('CZ9-TO','salt',b)};})()");
-    /* 23 SEP 2026: oil is one stated price for everybody, so nobody is proposed a tier on it */
-    ok(prop43.TG === nearest43("salt", 2.5, 120, 1) && prop43.TOs === nearest43("salt", 2.5, 144, 1) && prop43.TG !== prop43.TOs && prop43.TOo === null,
-      `a customer holding no tier on a product is proposed the tier nearest what they pay for it, and none on oil: CZ9-TG salt ${prop43.TG}, CZ9-TO oil ${prop43.TOo} and salt ${prop43.TOs}`);
-    ok(prop43.TA === "Titanium" && nearest43("salt", 2.5, 62, 0) === "Ambassador", `and never Ambassador: CZ9-TA pays at the floor, nearest Ambassador, and is proposed ${prop43.TA}`);
-    /* THE CARD: a tier held, one waiting in the queue, one proposed */
-    const cell43 = "var cell=function(c,p){var s=[].filter.call(t.querySelectorAll('select'),function(x){return x.id==='tierSel_'+c+'_'+p;})[0];return s?{sel:s.value,state:s.parentNode.querySelector('.iref').textContent.trim()}:null;};";
-    const card43 = rd43("(function(){TIER_OF['CZ9-TG']={salt:'Gold'};queue=[{at:'2026-09-15T00:00:00.000Z',type:'TIER',status:'tierset',raw:'Set CZ9-TO: Salt Platinum',payload:{mode:'tierset',tiers:{'CZ9-TO':{salt:'Platinum'}}}}];"
-      + "setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');if(!t)return null;" + cell43 + "return {TG:cell('CZ9-TG','salt'),TO:cell('CZ9-TO','salt'),TA:cell('CZ9-TA','salt'),TOo:cell('CZ9-TO','oil')};})()");
-    /* v666: the state reads the tier's standing first and then how they buy ("held · occasional mid"), so it is read by
-       its leading word; the profile beside it has its own assertions in the v666 section */
-    /* 27 Sep 2026: this was "a tier moves no price", true of CZ9-TA only because they pay at the floor and the cap held every
-       card there. With the cap retired their tier IS their card, and the ask and the phone's board still move for nobody. */
-    const px43 = rd43("(function(){var own=function(){return JSON.stringify(pbPrices('CZ9-TA'));},rest=function(){return JSON.stringify([priceLadder(2.5).ask.total,PRICING_ENGINE.board(sizesFor('salt'),pxCost(),pxPolicy())]);};"
-      + "delete TIER_OF['CZ9-TA'];var a=[own(),rest()];TIER_OF['CZ9-TA']={salt:'Titanium',oil:'Gold'};var b=[own(),rest()];TIER_OF['CZ9-TA']={salt:'Silver'};var c=[own(),rest()];delete TIER_OF['CZ9-TA'];delete TIER_OF['CZ9-TG'];"
-      + "return {rest:a[1]===b[1]&&b[1]===c[1],own:b[0]!==c[0]};})()");
-    ok(px43.rest === true && px43.own === true,
-      "a tier moves the customer's own card and nothing else: their printed board differs between Titanium and Silver, and the ask and the phone's board read the same with any tier held: " + JSON.stringify(px43));
-
-    /* ---- the drafter ---- */
-    const mir43 = { sales: [], purchases: [], state: { roster: ["CZ9-TA", "CZ9-TB", "CZ9-TB-R"], PRODUCTS: { salt: { name: "Salt" }, oil: { name: "Oil" } }, TIER_OF: { "CZ9-TB": { salt: "Silver" } } }, pricing: { tierNames: NAMES43 } };
-    const en43 = (p) => ({ at: "2026-09-15T09:00:00.000Z", payload: { mode: "tierset", ...p } });
-    const d43 = dr43(en43({ tiers: { "CZ9-TA": { salt: "Gold" }, "CZ9-TB": { salt: "Titanium" } } }), mir43);
-    ok(!d43.skip && d43.collection === "tierset" && JSON.stringify(d43.row.tiers) === '{"CZ9-TA":{"salt":"Gold"},"CZ9-TB":{"salt":"Titanium"}}' && /CZ9-TB's Salt moves from Silver to Titanium/.test(d43.flags.join(" ")) && /moves no cash and no stock/.test(d43.reasoning) && /never the board/.test(d43.reasoning),
-      "a tier entry drafts as its own collection, flagging a customer it moves: " + (d43.skip || JSON.stringify(d43.row) + " " + d43.flags.join(" ")));
-    for (const [p, why, m] of [[{ tiers: { "CZ9-NOT": { salt: "Gold" } } }, /CZ9-NOT is not on the roster/], [{ tiers: { "CZ9-TB-R": { salt: "Gold" } } }, /resale account/], [{ tiers: { "CZ9-TA": { salt: "Diamond" } } }, /Diamond is not a tier/],
-      [{ tiers: {} }, /names no customer/], [{ tiers: { "CZ9-TA": { salt: "Gold" } } }, /Gold is not a tier/, { ...mir43, pricing: null }]]) {
-      const s = dr43(en43(p), m || mir43).skip || "";
-      ok(why.test(s), "the drafter refuses the tier entry " + JSON.stringify(p) + (m ? " with no level names on the mirror" : "") + ": " + (s || "drafted"));
-    }
-
-    /* ---- the fold: the tier is filed on the book, and follows a rename ---- */
-    const master43 = readFileSync(FROZEN_MASTER, "utf8");
-    const book43 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-    book43.roster.push("CZ9-TA", "CZ9-TB"); book43.TIER_OF = { "CZ9-TB": { salt: "Silver" } };
-    const it43 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
-    /* 05 Oct 2026: the fold refuses by book and salt takes a drift now, so a level is filed on oil, a book that names none */
-    const res43 = F43.apply(book43, { ok: true, count: 2, approved: [it43(1, "tierset", { tiers: { "CZ9-TA": { oil: "Gold" } } }), it43(2, "rename", { from: "CZ9-TB", to: "CZ9-TC" })] },
-      { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master43);
-    const T43 = book43.TIER_OF || {};
-    ok(res43.ok && JSON.stringify(T43["CZ9-TA"]) === '{"oil":"Gold"}' && JSON.stringify(T43["CZ9-TC"]) === '{"salt":"Silver"}' && !("CZ9-TB" in T43),
-      "the fold files the tier on the book, and a rename takes the tier with the code: " + (res43.ok ? JSON.stringify(T43) : res43.problems));
-    const ref43 = F43.plan(book43, { ok: true, count: 2, approved: [it43(3, "tierset", { tiers: { "CZ9-TA": { oil: "Diamond" } } }), it43(4, "tierset", { tiers: { "CZ9-GONE": { salt: "Gold" } } })] }, null).refused.map((x) => x.why).join(" | ");
-    ok(/Diamond is not a tier/.test(ref43) && /CZ9-GONE is not a customer on the roster/.test(ref43), "the fold refuses a tier the desk does not name, and a code that left the roster: " + ref43);
-    ok(/'tierset','label'\)/.test(readFileSync(join(REPO, "migrations", "0010_tier.sql"), "utf8")), "and 0010 rebuilds the draft table once for both the tier and the label to come");
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w43.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v644: the tiers' multiples run evenly from 1.0 to 2.5, so 1 unit of salt reads his RM100, 110, 130, 150 and 160");
-await (async () => {
-  /* HIS DECISION OF 15 SEP 2026. His prices for 1 unit of salt include RM110 and RM130, which the 1.5 and 2.0 columns never
-     printed; multiples spaced evenly from 1.0 to 2.5 print both, and keep 0.5 unit at RM50 to RM90. Forced costs. Each
-     assertion was proved red by mutation. */
-  const { openMaster: om44 } = await import("../tools/payload.mjs");
-  const { w: w44 } = await om44();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w44);
-  const rd44 = (e) => JSON.parse(String(w44.eval("JSON.stringify(" + e + ")")));
-  try {
-    const R44 = rd44("TIER_RULE");
-    /* SUPERSEDED ON 23 SEP 2026 by the pricing_v2 workbook: four columns, not five evenly spaced, and COGS off the quote. The
-       heading stays as the dated record of 15 Sep; what is asserted is the rule that replaced it, beside oil's stated board. */
-    const S44 = R44.salt;
-    ok(JSON.stringify(S44.multiples) === "[2.1,2.1,2.5,2.5]" && JSON.stringify(S44.round) === '["down","up","down","up"]' && S44.overhead === 0.5
-      && S44.decay === 0.09 && S44.from === 0.5 && S44.cogs === "quote" && R44.oil.multiples === undefined && Object.keys(R44.oil.fixed).length === 5,
-      "salt's tiers are the workbook's four columns, 2.1 down and up and 2.5 down and up, and oil keeps its typed board of five: " + JSON.stringify([S44, R44.oil.fixed]));
-    const one = rd44("(function(){setProd('salt');var P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),C=Object.assign({},pxCost(),{landed:46.72,eff:1,effEx:1});return PRICING_ENGINE.fiveTiers([0.5,1],C,P);})()");
-    ok(one[0].cogs === 28 && JSON.stringify(one[0].cols) === "[50,60,70,70]" && one[1].cogs === 56 && JSON.stringify(one[1].cols) === "[110,120,130,140]",
-      "on the quote's COGS, the sheet's columns read RM50, 60, 70 and 70 at half a unit and RM110, 120, 130 and 140 at 1 unit: " + JSON.stringify(one.map((g) => g.cols)));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w44.close(); } catch (e) { /* best effort */ } }
-})();
-
 section("v645: Add ID starts a new customer at the tiers chosen, and the fold files them");
 await (async () => {
   /* HIS DECISION OF 15 SEP 2026: a new customer or Add ID includes a starting tier, one for each product since v646. A customer
@@ -15742,10 +15152,7 @@ await (async () => {
   const { draftRow: dr45 } = await import("../src/drafter.js");
   const F45 = await import("../tools/fold.mjs");
   const { webcrypto: wc45 } = await import("node:crypto");
-  const NAMES45 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
   const { w: w45 } = await om45();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w45);
   if (!w45.crypto || !w45.crypto.subtle) { try { Object.defineProperty(w45, "crypto", { value: wc45, configurable: true }); } catch (e) { w45.crypto = wc45; } }
   const rd45 = (e) => JSON.parse(String(w45.eval("JSON.stringify(" + e + ")")));
   try {
@@ -15758,11 +15165,16 @@ await (async () => {
     const st45 = await settle45(), q45 = rd45("queue.map(function(x){return {p:x.payload,raw:x.raw};})"), all45 = JSON.stringify(rd45("queue"));
 
     /* ---- the drafter ---- */
-    const mir45 = { sales: [], purchases: [], state: { roster: [], associates: [], PRODUCTS: { salt: { name: "Salt" }, oil: { name: "Oil" } } }, pricing: { tierNames: NAMES45 } };
+    const mir45 = { sales: [], purchases: [], state: { roster: [], associates: [], PRODUCTS: { salt: { name: "Salt" }, oil: { name: "Oil" } } },
+      pricing: { byProduct: { salt: { inputs: { policy: { tierRule: { drift: { up: 0.3, down: 0.2 } } } } }, oil: { inputs: { policy: { tierRule: { fixed: true } } } } } } };
     const en45 = (p) => ({ at: "2026-09-15T09:00:00.000Z", payload: { mode: "addid", parent: null, ...p } });
-    const d45 = dr45(en45({ code: "CZ9-NEWT", kind: "customer", tiers: { salt: "Gold" } }), mir45);
-    ok(!d45.skip && d45.collection === "roster" && JSON.stringify(d45.row.tiers) === '{"salt":"Gold"}' && /starts them at Salt Gold/.test(d45.reasoning), "a registration drafts with its starting tiers: " + (d45.skip || JSON.stringify(d45.row)));
-    for (const [p, why] of [[{ code: "CZ9-NEWT", kind: "customer", tiers: { salt: "Diamond" } }, /Diamond is not a tier/], [{ code: "SZ9-SUP", kind: "supplier", tiers: { salt: "Gold" } }, /a supplier holds no tier/]]) {
+    /* 18 Oct 2026: the starting figure is salt's % lift on the Set Price, 0 to 2; a level word is refused on every book */
+    const d45 = dr45(en45({ code: "CZ9-NEWT", kind: "customer", tiers: { salt: 0.5 }, unit: "pct" }), mir45);
+    ok(!d45.skip && d45.collection === "roster" && JSON.stringify(d45.row.tiers) === '{"salt":0.5}' && d45.row.unit === "pct" && !d45.flags.some((f) => /no unit/.test(f)), "a registration drafts with its starting % lift and its unit pct: " + (d45.skip || JSON.stringify(d45.row)));
+    /* 19 Oct 2026: a starting % with no unit is the old form's: it drafts, carries no unit and says the fold drops it */
+    const d45n = dr45(en45({ code: "CZ9-NEWT", kind: "customer", tiers: { salt: 0.5 } }), mir45);
+    ok(!d45n.skip && d45n.row.unit === undefined && d45n.flags.some((f) => /no unit/.test(f) && /drops it/.test(f)), "and one with no unit drafts without it and flags that the fold drops it: " + (d45n.skip || JSON.stringify([d45n.row, d45n.flags])));
+    for (const [p, why] of [[{ code: "CZ9-NEWT", kind: "customer", tiers: { salt: "Gold" } }, /Gold is not a % from 0 to 200/], [{ code: "CZ9-NEWT", kind: "customer", tiers: { oil: "Gold" } }, /Gold is not held per customer/], [{ code: "SZ9-SUP", kind: "supplier", tiers: { salt: 0.5 } }, /a supplier holds no starting %/]]) {
       const s = dr45(en45(p), mir45).skip || "";
       ok(why.test(s), "the drafter refuses the registration " + JSON.stringify(p) + ": " + (s || "drafted"));
     }
@@ -15772,64 +15184,12 @@ await (async () => {
     const book45 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); book45.TIER_OF = {};
     const it45 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
     /* 05 Oct 2026: the fold refuses by book and salt takes a drift now, so a level is filed on oil, a book that names none */
-    const res45 = F45.apply(book45, { ok: true, count: 1, approved: [it45(1, "roster", { code: "CZ9-NEWT", kind: "customer", parent: null, note: null, tiers: { oil: "Gold" } })] },
+    const res45 = F45.apply(book45, { ok: true, count: 1, approved: [it45(1, "roster", { code: "CZ9-NEWT", kind: "customer", parent: null, note: null, tiers: { salt: 0.5 }, unit: "pct" })] },
       { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master45);
-    ok(res45.ok && book45.roster.includes("CZ9-NEWT") && JSON.stringify(book45.TIER_OF["CZ9-NEWT"]) === '{"oil":"Gold"}', "the fold registers the customer and files the starting tiers on the book: " + (res45.ok ? JSON.stringify(book45.TIER_OF) : res45.problems));
+    ok(res45.ok && book45.roster.includes("CZ9-NEWT") && JSON.stringify(book45.TIER_OF["CZ9-NEWT"]) === '{"salt":0.5}', "the fold registers the customer and files the starting % lift on the book: " + (res45.ok ? JSON.stringify(book45.TIER_OF) : res45.problems));
     const ref45 = F45.plan(book45, { ok: true, count: 1, approved: [it45(2, "roster", { code: "CZ9-NEWU", kind: "customer", parent: null, note: null, tiers: { oil: "Diamond" } })] }, null).refused.map((x) => x.why).join(" ");
-    ok(/Diamond is not a tier/.test(ref45), "and refuses a registration carrying a tier the desk does not name: " + ref45);
+    ok(/Diamond is not held per customer/.test(ref45), "and refuses a registration carrying a level word on a book that holds none per customer: " + ref45);
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w45.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v646: a tier for each product, and a product a customer has never bought is proposed nothing until he sets one");
-await (async () => {
-  /* HIS INSTRUCTION OF 15 SEP 2026. Each customer holds a tier for each product, chosen from a dropdown for each and sent
-     through Approve. A product they have never bought is proposed nothing and reads not set, and a customer who has bought
-     nothing yet is listed so a tier can be set before they do. Fixture customers; each assertion was proved red by mutation. */
-  const { openMaster: om46 } = await import("../tools/payload.mjs");
-  const { draftRow: dr46 } = await import("../src/drafter.js");
-  const F46 = await import("../tools/fold.mjs");
-  const { w: w46 } = await om46();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w46);
-  const rd46 = (e) => JSON.parse(String(w46.eval("JSON.stringify(" + e + ")")));
-  const NAMES46 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
-  try {
-    const sale46 = (rid, date) => ({ rid, customer: "CZ9-PS", product: "salt", date, qty: 2.5, total: 300, cost: 1, cash: 300, deliveredQty: 2.5, deliveredOn: date });
-    w46.eval("(function(){['CZ9-PS','CZ9-NB'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify([sale46("z646p1", "2026-08-01"), sale46("z646p2", "2026-08-02")]) + ");queue=[];applyOverlay();setProdView('salt');})()");
-    const pr46 = rd46("(function(){var b=tierBoards();return {salt:tierProposal('CZ9-PS','salt',b),oil:tierProposal('CZ9-PS','oil',b),none:tierProposal('CZ9-NB','salt',b)};})()");
-    ok(NAMES46.includes(pr46.salt) && pr46.salt !== "Ambassador" && pr46.oil === null && pr46.none === null,
-      "a product a customer has never bought is proposed nothing, beside the tier proposed for one they have: " + JSON.stringify(pr46));
-    const card46 = rd46("(function(){switchTab('people');var t=document.querySelector('.sec.on table.tiertab');if(!t)return null;"
-      + "var cell=function(c,p){var s=[].filter.call(t.querySelectorAll('select'),function(x){return x.id==='tierSel_'+c+'_'+p;})[0];return s?{sel:s.value,state:s.parentNode.querySelector('.iref').textContent.trim()}:null;};"
-      + "return {PSs:cell('CZ9-PS','salt'),PSo:cell('CZ9-PS','oil'),NBs:cell('CZ9-NB','salt'),NBo:cell('CZ9-NB','oil')};})()");
-    /* v666: read by the leading word, as above; a product never bought has no profile, so it still reads exactly "not set" */
-    /* 23 SEP 2026: oil is one price for everybody, so the card draws no oil tier at all */
-    /* 10 Oct 2026: Accept reads the rules (ruleProposal), and a live slowdown on salt (his rule 4, counted back from today) lifts
-       every proposal a level; held off here, so this reads only which products are proposed, whatever the day */
-
-    /* ---- the drafter ---- */
-    const mir46 = { sales: [], purchases: [], state: { roster: ["CZ9-TA", "CZ9-TB"], associates: [], PRODUCTS: { salt: { name: "Salt" }, oil: { name: "Oil" } }, TIER_OF: { "CZ9-TB": { salt: "Silver" } } }, pricing: { tierNames: NAMES46 } };
-    const en46 = (p) => ({ at: "2026-09-15T09:00:00.000Z", payload: p });
-    const clr46 = dr46(en46({ mode: "tierset", tiers: { "CZ9-TB": { salt: null } } }), mir46);
-    const refD46 = [[{ mode: "tierset", tiers: { "CZ9-TA": { gold: "Gold" } } }, /gold is not a product on this book/], [{ mode: "tierset", tiers: { "CZ9-TA": "Gold" } }, /the tier entry for CZ9-TA names no product/],
-      [{ mode: "addid", code: "CZ9-NEWV", kind: "customer", parent: null, tiers: { gold: "Gold" } }, /gold is not a product on this book/]].map(([p, why]) => { const s = dr46(en46(p), mir46).skip || ""; return [why.test(s), s]; });
-    ok(!clr46.skip && JSON.stringify(clr46.row.tiers) === '{"CZ9-TB":{"salt":null}}' && /CZ9-TB's Salt moves from Silver to not set/.test(clr46.flags.join(" ")) && refD46.every((x) => x[0]),
-      "the drafter drafts a cleared tier with its flag, and refuses a product not on the book and an entry naming no product: " + JSON.stringify(refD46.map((x) => x[1])));
-
-    /* ---- the fold ---- */
-    const master46 = readFileSync(FROZEN_MASTER, "utf8");
-    const book46 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-    book46.roster.push("CZ9-TA", "CZ9-TB"); book46.TIER_OF = { "CZ9-TA": { salt: "Gold", oil: "Silver" }, "CZ9-TB": { salt: "Silver" } };
-    const it46 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
-    const res46 = F46.apply(book46, { ok: true, count: 1, approved: [it46(1, "tierset", { tiers: { "CZ9-TA": { oil: null }, "CZ9-TB": { salt: null } } })] },
-      { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master46);
-    ok(res46.ok && JSON.stringify(book46.TIER_OF["CZ9-TA"]) === '{"salt":"Gold"}' && !("CZ9-TB" in book46.TIER_OF),
-      "the fold clears a product's tier, and a customer left with none leaves the book's tiers: " + (res46.ok ? JSON.stringify(book46.TIER_OF) : res46.problems));
-    const ref46 = F46.plan(book46, { ok: true, count: 3, approved: [it46(2, "tierset", { tiers: { "CZ9-TA": { gold: "Gold" } } }), it46(3, "tierset", { tiers: { "CZ9-TA": {} } }),
-      it46(4, "roster", { code: "CZ9-NEWV", kind: "customer", parent: null, note: null, tiers: { gold: "Gold" } })] }, null).refused.map((x) => x.why);
-    ok(ref46.length === 3 && /gold is not a product on this book/.test(ref46[0]) && /names no product/.test(ref46[1]) && /gold is not a product on this book/.test(ref46[2]),
-      "and refuses a product not on the book, and a tier entry naming no product: " + ref46.join(" | "));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w46.close(); } catch (e) { /* best effort */ } }
 })();
 
 section("S4 4.1: the publish seals a digest of each price list's figures, inside the list and in the clear beside it, and the clock never moves it");
@@ -15842,9 +15202,10 @@ await (async () => {
   const C41 = await import("../tools/stmt-crypto.mjs");
   const cost41 = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {},
     costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
-  const pricing41 = (p2) => ({ sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"],
-    tierOf: { "CX0-DGA": { salt: "Silver" }, "CX0-DGB": { salt: "Silver" } },
-    byProduct: { salt: { sizes: [1, 2], inputs: { cost: cost41, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100] }, { q: 2, prices: [150, 170, p2] }] } } });
+  /* 18 Oct 2026: a customer's list is their card, the Set Price at each size (the last price of the ladder row) */
+  const pricing41 = (p2) => ({ sizes: [1, 2],
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost: cost41, policy: {} }, ladder: [{ q: 1, prices: [100], drift: true }, { q: 2, prices: [p2], drift: true }],
+      cards: { "CX0-DGA": [[1, 100], [2, p2]], "CX0-DGB": [[1, 100], [2, p2]] } } } });
   const users41 = { "CX0-DGA": "abcd-efgh", "CX0-DGB": "hjkm-npqr" };
   const tmp41 = join(REPO, "test", "tmp", "s4-digest-" + Date.now());
   try {
@@ -15953,60 +15314,46 @@ await (async () => {
   const { pricingSnapshot: ps47 } = await import("../tools/book.mjs");
   const PL47 = await import("../tools/pricelist.mjs");
   const { w: w47 } = await om47();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w47);
   const rd47 = (e) => JSON.parse(String(w47.eval("JSON.stringify(" + e + ")")));
   let page47 = null;
   try {
-    /* four salt orders at 80, 112, 120 and 110 a unit, so the best of the last four is 120 (v655), and no oil */
+    /* RESTATED 18 OCT 2026: the five levels are gone. A customer's price is the Set Price lifted by the % held for them (0 to 2), never under
+       the floor, and salt has no price for a customer with no figure held; a typed board is the same for everybody. */
     const sale47 = (rid, date, qty, total) => ({ rid, customer: "CZ9-CD", product: "salt", date, qty, total, cost: 1, cash: total, deliveredQty: qty, deliveredOn: date });
     const fx47 = [sale47("z647a", "2026-08-01", 0.5, 40), sale47("z647b", "2026-08-02", 12.5, 1400), sale47("z647c", "2026-08-03", 2.5, 300), sale47("z647d", "2026-08-04", 1, 110)];
-    w47.eval("(function(){if(roster.indexOf('CZ9-CD')<0)roster.push('CZ9-CD');BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx47) + ");queue=[];applyOverlay();TIER_OF['CZ9-CD']={salt:'Gold'};setProd('salt');recompute();})()");
+    w47.eval("(function(){if(roster.indexOf('CZ9-CD')<0)roster.push('CZ9-CD');BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx47) + ");queue=[];applyOverlay();TIER_OF['CZ9-CD']={salt:0.5};setProd('salt');recompute();})()");
     const snap47 = ps47(w47);
-    /* v671: a proposal may now be a band set, so every value is checked for a shape that prices rather than for a bare name */
-    const PE47 = (await import("../engine/pricing.mjs")).default;
-    ok(snap47.tierOf && JSON.stringify(snap47.tierOf["CZ9-CD"]) === '{"salt":"Gold"}' && Object.values(snap47.tierOf).every((t) => Object.values(t).every((n) => PE47.levelShapeOk(n, snap47.tierNames)))
-      && snap47.byProduct.salt.ladder.length === 12 && snap47.byProduct.oil.ladder.length === 5
+    const sb47 = snap47.byProduct.salt;
+    ok(snap47.tierNames === undefined && snap47.tierOf === undefined && sb47.cards && Array.isArray(sb47.cards["CZ9-CD"]) && sb47.cards["CZ9-CD"].length === 12
+      && sb47.lift && sb47.lift["CZ9-CD"] === 0.5 && sb47.ladder.length === 12 && snap47.byProduct.oil.ladder.length === 5
       && snap47.byProduct.oil.ladder.every((r) => r.fixed),
-      "the pricing snapshot carries each customer's tier for each product, held or proposed, and each book's ladder at its own rungs: salt's twelve, and oil's five marked as the typed board they are: " + JSON.stringify(snap47.tierOf && snap47.tierOf["CZ9-CD"]));
-    ok(JSON.stringify(snap47.byProduct.salt.ladder.map((r) => r.prices)) === JSON.stringify(rd47("(function(){setProd('salt');recompute();return fiveTiersNow().map(function(r){return r.prices;});})()")),
+      "the pricing snapshot carries no level names, each customer's card at salt's twelve sizes with the % held for them, and oil's five marked as the typed board they are: " + JSON.stringify(Object.keys(snap47)));
+    ok(JSON.stringify(sb47.ladder.map((r) => r.prices)) === JSON.stringify(rd47("(function(){setProd('salt');recompute();return fiveTiersNow().map(function(r){return r.prices;});})()")),
       "and the ladder it carries is the desk's own");
     const book47 = { PRODUCTS: { salt: { name: "Salt", unit: "unit" }, oil: { name: "Oil", unit: "unit" } }, PROD_ORDER: ["salt", "oil"], sales: rd47("sales") };
     const deskOn47 = (p) => rd47("(function(){setProd('" + p + "');recompute();var x=pbPrices('CZ9-CD');setProd('salt');recompute();return x;})()");
     const list47 = PL47.priceList("CZ9-CD", book47, snap47, new Date()), tool47 = list47.products.find((p) => p.product === "salt"), desk47 = deskOn47("salt");
-    ok(tool47 && tool47.tier === "Gold" && !("rate" in tool47) && JSON.stringify(tool47.sizes.map((r) => r.price)) === JSON.stringify(desk47.map((r) => r.price)),
+    ok(tool47 && !("tier" in tool47) && !("rate" in tool47) && JSON.stringify(tool47.sizes.map((r) => r.price)) === JSON.stringify(desk47.map((r) => r.price)),
       "the desk's printed board and the customer's own page quote the same prices, off the one rule: " + JSON.stringify(desk47.map((r) => r.price)));
-    /* 27 Sep 2026, the cap retired: Gold's price at every size, including those where their best rate of 120 a unit is under it */
-    const gold47 = snap47.tierNames.indexOf("Gold"), T47 = (q) => snap47.byProduct.salt.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices[gold47];
-    ok(tool47.sizes.every((r) => r.price === T47(r.q)) && tool47.sizes.some((r) => T47(r.q) > 120 * r.q + 0.009),
-      "and Gold's price at every size, where their own rate of 120 a unit sits under it too: " + JSON.stringify(tool47.sizes.filter((r) => T47(r.q) > 120 * r.q + 0.009).map((r) => r.q)));
+    const SET47 = (q) => sb47.ladder.find((r) => Math.abs(r.q - q) < 0.009).prices.slice(-1)[0];
+    ok(tool47.sizes.every((r) => r.price >= SET47(r.q) - 0.009) && tool47.sizes.some((r) => r.price > SET47(r.q) + 0.009),
+      "and at a lift of 0.5 every size is at least the Set Price and some are over it, whatever the customer paid before");
     const oilDesk47 = deskOn47("oil");
-    /* 19 SEP 2026: OIL IS PRICED WITH NO TIER AT ALL, because he has typed one board for everybody.
-       The "no tier, no price" rule stands for salt, where a level decides the price; it is the reason
-       this customer's oil was coming soon and would have been for thirty of the thirty-six. */
+    /* A typed board is priced for a customer holding no figure at all, and a figure held on it changes nothing */
     ok(list47.soon.length === 0 && list47.products.some((x) => x.product === "oil") && oilDesk47.length > 0,
-      "a product with a typed board is priced for a customer holding no tier in it at all, and the printed board has it to print: "
+      "a product with a typed board is priced for a customer holding nothing in it, and the printed board has it to print: "
         + JSON.stringify([list47.soon.map((x) => x.product), list47.products.map((x) => x.product), oilDesk47.length]));
     page47 = list47;
-    w47.eval("TIER_OF['CZ9-CD']={salt:'Gold',oil:'Silver'};");
-    const snapO47 = ps47(w47), listO47 = PL47.priceList("CZ9-CD", book47, snapO47, new Date()), oilT47 = listO47.products.find((p) => p.product === "oil");
-    const silver47 = snapO47.tierNames.indexOf("Silver"), oilD47 = deskOn47("oil");
-    /* 19 SEP 2026: SETTING A TIER ON A TYPED BOARD CHANGES NOTHING, which is what "fixed for all"
-       means. CS6-BS still holds Platinum on oil from before the change and is quoted the board like
-       everybody else; the held value is neither honoured nor an error, it simply has nothing to say. */
-    /* the board price is the LAST column, and on a typed board it is the only one; comparing against
-       Silver's index would read undefined, which is the shape of the crash this whole change had to
-       be walked through twice */
-    const oilBoardAt = (q) => { const row = snapO47.byProduct.oil.ladder.find((x) => Math.abs(x.q - q) < 0.009); return row.prices[row.prices.length - 1]; };
-    ok(oilT47 && listO47.soon.length === 0 && oilT47.sizes.every((r) => r.price === oilBoardAt(r.q))
-      && JSON.stringify(oilT47.sizes.map((r) => r.price)) === JSON.stringify(oilD47.map((r) => r.price))
-      && JSON.stringify(oilD47.map((r) => r.price)) === JSON.stringify([130, 240, 330, 400, 450]),
-      "and setting a tier on a typed board changes not one price, on their page and the printed board alike: " + JSON.stringify(oilD47.map((r) => r.price)));
-    w47.eval("TIER_OF['CZ9-CD']={oil:'Silver'};");
-    const snapP47 = ps47(w47), prop47 = rd47("tierProposal('CZ9-CD','salt',tierBoards())");
-    const listP47 = PL47.priceList("CZ9-CD", book47, snapP47, new Date()).products.find((p) => p.product === "salt");
-    ok(prop47 && snapP47.tierOf["CZ9-CD"].salt === prop47 && listP47 && listP47.tier === prop47 && JSON.stringify(listP47.sizes.map((r) => r.price)) === JSON.stringify(deskOn47("salt").map((r) => r.price)),
-      "a product holding no tier is quoted the tier proposed from what they pay for it, on the printed board as on their page: " + prop47);
+    const oilBoardAt = (q) => { const row = snap47.byProduct.oil.ladder.find((x) => Math.abs(x.q - q) < 0.009); return row.prices[row.prices.length - 1]; };
+    const oilT47 = list47.products.find((p) => p.product === "oil");
+    ok(oilT47 && oilT47.sizes.every((r) => r.price === oilBoardAt(r.q))
+      && JSON.stringify(oilT47.sizes.map((r) => r.price)) === JSON.stringify(oilDesk47.map((r) => r.price))
+      && JSON.stringify(oilDesk47.map((r) => r.price)) === JSON.stringify([130, 240, 330, 400, 450]),
+      "and oil is the board for everybody, on their page and the printed board alike: " + JSON.stringify(oilDesk47.map((r) => r.price)));
+    w47.eval("delete TIER_OF['CZ9-CD'];setProd('salt');recompute();");
+    const snapN47 = ps47(w47), listN47 = PL47.priceList("CZ9-NONE", book47, snapN47, new Date());
+    ok(JSON.stringify(listN47.soon.map((x) => x.product)) === '["salt"]',
+      "a code with no card for salt reads salt coming soon, which a product with no price is: " + JSON.stringify(listN47.soon.map((x) => x.product)));
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w47.close(); } catch (e) { /* best effort */ } }
 
   /* THE CUSTOMER'S OWN PAGE, driven: the sealed list opened in the page with the real crypto, one product priced and one not */
@@ -16063,200 +15410,6 @@ await (async () => {
     && /Ordering opens once your prices are set\./.test(both47.order) && !both47.orderable,
     "and with no tier on either product, both marks read coming soon and ordering waits for the prices to be set: " + JSON.stringify(both47 && both47.order.slice(0, 80)));
 })();
-
-section("v652: a named customer is quoted their own card price everywhere the desk quotes them, the reward cover's gap included");
-await (async () => {
-  /* HIS DECISIONS OF 15 AND 16 SEP 2026. cardQuote is the one rule: the approach offer and Today's worth read it through
-     nextBest, the reward cover measures its gap against it, and the printed board is it at the shown sizes. A size between
-     rungs reads the ladder walked through that size. Fixture customers; each assertion was proved red by mutation. */
-  const PE52 = (await import("../engine/pricing.mjs")).default;
-  const { openMaster: om52 } = await import("../tools/payload.mjs");
-  const { w: w52 } = await om52();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w52);
-  const rd52 = (e) => JSON.parse(String(w52.eval("JSON.stringify(" + e + ")")));
-  try {
-    /* THE ENGINE, on forced costs: at every rung the ladder's own row; between rungs the guard holds and the rate never rises */
-    const R52 = rd52("TIER_RULE.salt"), P52 = { ...rd52("(function(){setProd('salt');recompute();return pxPolicy();})()"), tierRule: R52 };
-    const C52 = { ...rd52("pxCost()"), landed: 46.72, eff: 61.147136, effEx: 61.147136 };
-    const lad52 = PE52.fiveTiers(R52.rungs, C52, P52), mid52 = PE52.fiveTierAt(7, C52, P52), below52 = lad52.find((r) => r.q === 6.25);
-    const rungs52 = R52.rungs.every((q) => JSON.stringify(PE52.fiveTierAt(q, C52, P52).prices) === JSON.stringify(lad52.find((r) => r.q === q).prices));
-    ok(rungs52 && mid52 && mid52.q === 7 && mid52.prices.every((p, t) => !t || p >= mid52.prices[t - 1] + 10)
-      && mid52.prices.every((p, t) => p / 7 <= below52.prices[t] / 6.25 + 1e-9 || (t > 0 && p === mid52.prices[t - 1] + 10)),
-      "the ladder at any rung is the ladder's own row, and at 7 unit between rungs each level is a ten over the one below and asks no more a unit than 6.25 does: " + JSON.stringify(mid52.prices));
-
-    /* THE DESK: CZ9-QB has paid RM 100 a unit on two lots of 7 after a lot of 2 at RM 550, and holds a tier other than the
-       one proposed, so the held tier is the one read */
-    const sale52 = (rid, customer, date, qty, total, cost) => ({ rid, customer, product: "salt", date, qty, total, cost, cash: total, deliveredQty: qty, deliveredOn: date });
-    const today52 = rd52("TODAY.toISOString().slice(0,10)");
-    /* v655: the RM550 lot earns the reward and then falls out of the four-order window, so their own rate is the RM100 they pay now */
-    const fx52 = [sale52("z652a", "CZ9-QB", "2026-07-01", 2, 1100, 100), sale52("z652b", "CZ9-QB", "2026-07-10", 7, 700, 350), sale52("z652c", "CZ9-QB", "2026-07-20", 7, 700, 350),
-      sale52("z652i", "CZ9-QB", "2026-07-25", 7, 700, 350), sale52("z652j", "CZ9-QB", "2026-07-30", 7, 700, 350),
-      sale52("z652d", "CZ9-QN", today52, 2, 240, 100), sale52("z652e", "CZ9-QN", today52, 2, 240, 100)];
-    w52.eval("(function(){['CZ9-QB','CZ9-QN'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx52) + ");queue=[];applyOverlay();setProd('salt');recompute();})()");
-    /* 27 Sep 2026: never Silver either, the stranger's level, so their card and the board's ask stay two different figures below */
-    const prop52 = rd52("tierProposal('CZ9-QB','salt',tierBoards())"), held52 = prop52 === "Platinum" ? "Gold" : "Platinum";
-    w52.eval("TIER_OF['CZ9-QB']={salt:" + JSON.stringify(held52) + "};recompute();");
-    const card52 = rd52("(function(){var t=cardTier('CZ9-QB'),pol=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),row=PRICING_ENGINE.fiveTierAt(7,pxCost(),pol);"
-      + "return {t:t,held:TIER_NAMES.indexOf(" + JSON.stringify(held52) + "),seven:cardQuote('CZ9-QB',7),want:+PRICING_ENGINE.cardPrice(null,floorTotal(7),row.prices[t]).toFixed(2),"
-      + "one:cardQuote('CZ9-QB',1),oneTier:PRICING_ENGINE.fiveTierAt(1,pxCost(),pol).prices[t],own:pbOwnRate('CZ9-QB').rate,"
-      + "board:pbPrices('CZ9-QB').map(function(r){return r.price;}),each:shownSizes('salt').slice().sort(function(a,b){return a-b;}).map(function(q){return cardQuote('CZ9-QB',q);})};})()");
-    /* 27 SEP 2026, HIS DECISION: THE CAP IS RETIRED. Their RM 100 a unit sits under their tier at a unit and lowers none of it */
-    ok(card52.t === card52.held && held52 !== prop52 && card52.seven === card52.want && card52.own < card52.oneTier && card52.one === card52.oneTier && JSON.stringify(card52.board) === JSON.stringify(card52.each),
-      "a customer's card price at any size is the price of the tier they hold off the ladder walked through it, their own rate under it lowering nothing, and the printed board is that rule at the shown sizes: " + JSON.stringify([held52, card52.seven, card52.one, card52.oneTier, card52.own]));
-    const nb52 = rd52("(function(){var n=nextBest('CZ9-QB');return {n:n,card:cardQuote('CZ9-QB',n?n.q:0),eff:pxCost().eff,none:nextBest('CZ9-QN'),noneTier:cardTier('CZ9-QN')};})()");
-    ok(nb52.n && nb52.n.q === 7 && nb52.n.total === nb52.card && nb52.n.profit === +(nb52.card - nb52.eff * 7).toFixed(2) && nb52.none === null && nb52.noneTier === -1,
-      "the approach offer is their card price at their usual lot, and what it would earn is struck on it; a customer with no tier for the product is offered nothing: " + JSON.stringify(nb52.n && [nb52.n.q, nb52.n.total, nb52.n.profit]));
-    const cv52 = rd52("(function(){var c1=cardQuote('CZ9-QB',1);return {c1:c1,board:priceLadder(1).ask.total,free:(customerRewards().find(function(r){return r.id==='CZ9-QB';})||{}).free||0,"
-      + "under:coverPlan('CZ9-QB',1,c1-30),at:coverPlan('CZ9-QB',1,c1)};})()");
-    ok(cv52.free > 0 && cv52.c1 !== cv52.board && cv52.under && cv52.under.ask === cv52.c1 && cv52.under.gap === 30 && cv52.at === null,
-      "the reward cover measures its gap against their own price, not the board's ask: " + JSON.stringify({ card: cv52.c1, board: cv52.board, gap: cv52.under && cv52.under.gap }));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w52.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v655: a customer's own rate is the best of their last four orders, and their tier is proposed at the sizes they buy");
-await (async () => {
-  /* HIS DECISIONS OF 16 SEP 2026, off the order book: a sale struck is the best price strikeable with that customer, so their
-     card reads the BEST of their last four priced orders where it read the middle one, and the tier proposed is the level
-     nearest that rate a unit AT THE SIZES THEY BUY, so a size they never take cannot decide their level. Fixture customers
-     with rates chosen to tell the two rules apart; each assertion was proved red by mutation. */
-  const PL55 = await import("../tools/pricelist.mjs");
-  const { openMaster: om55 } = await import("../tools/payload.mjs");
-  const { w: w55 } = await om55();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w55);
-  const rd55 = (e) => JSON.parse(String(w55.eval("JSON.stringify(" + e + ")")));
-  try {
-    /* four orders of 1 unit at 90, 100, 110 and 200: the middle is 105, the best is 200, and a fifth older one is out of the window */
-    const sale55 = (rid, c, date, qty, total) => ({ rid, customer: c, product: "salt", date, qty, total, cost: 1, cash: total, deliveredQty: qty, deliveredOn: date });
-    const fx55 = [sale55("z655a", "CZ9-BR", "2026-06-01", 1, 400), sale55("z655b", "CZ9-BR", "2026-07-01", 1, 90), sale55("z655c", "CZ9-BR", "2026-07-02", 1, 100),
-      sale55("z655d", "CZ9-BR", "2026-07-03", 1, 110), sale55("z655e", "CZ9-BR", "2026-07-04", 1, 200)];
-    w55.eval("(function(){['CZ9-BR','CZ9-SM'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(fx55) + ");queue=[];applyOverlay();setProd('salt');recompute();})()");
-    /* CZ9-SM buys half a unit and nothing else, at a rate where the level nearest it at half a unit is neither the level
-       nearest it at 12.5 unit nor the level nearest it summed over the whole board. 26 SEP 2026: THAT RATE IS READ OFF THE
-       BOARD IT IS PROPOSED ON, NEVER TYPED. It was RM100, then RM120 once the pricing_v2 board stopped telling the three apart
-       at RM100 on 23 Sep (the salt board had moved under it on 22 Sep already): a typed rate holds only while the live cost
-       keeps the board where it stood the day it was typed, so a fold that moves the quote turned a version that changed
-       nothing red. The half-unit row's own level rates are tried first, then every RM10 across the board, and the first that
-       tells the three apart, each reading with one nearest level and no tie, is the fixture's rate. The readings are the
-       test's own, off the board's rows; tierProposal's answer is only ever compared with them. */
-    const lad55 = rd55("tierBoards().salt.map(function(r){return {q:r.q,prices:r.prices};})"), names55 = rd55("TIER_NAMES");
-    const pick55 = (score) => { const s = names55.map((n, k) => (k ? score(k) : Infinity)); const lo = Math.min(...s);
-      return s.filter((x) => Math.abs(x - lo) < 1e-6).length === 1 ? names55[s.indexOf(lo)] : null; };
-    const nearAt55 = (row, R) => (row ? pick55((k) => Math.abs(row.prices[k] / row.q - R)) : null);
-    const wholeAt55 = (R) => pick55((k) => lad55.reduce((a, r) => a + Math.abs(r.prices[k] / r.q - R), 0));
-    const half55 = lad55.find((r) => Math.abs(r.q - 0.5) < 0.009), big55 = lad55.find((r) => Math.abs(r.q - 12.5) < 0.009);
-    const rates55 = lad55.flatMap((r) => r.prices.map((p) => p / r.q)), grid55 = [];
-    for (let R = Math.ceil(Math.min(...rates55) / 10) * 10; R <= Math.max(...rates55); R += 10) grid55.push(R);
-    const R55 = (half55 ? half55.prices.slice(1).map((p) => +(p / 0.5).toFixed(2)) : []).concat(grid55).find((R) => {
-      const h = nearAt55(half55, R), b = nearAt55(big55, R), a = wholeAt55(R);
-      return h && b && a && h !== b && h !== a; });
-    const at55 = R55 == null ? null : { half: nearAt55(half55, R55), big: nearAt55(big55, R55), whole: wholeAt55(R55) };
-    if (R55 != null) w55.eval("BASE_SALES.push.apply(BASE_SALES," + JSON.stringify(["z655f", "z655g", "z655h"].map((rid, i) =>
-      sale55(rid, "CZ9-SM", "2026-07-" + String(1 + 7 * i).padStart(2, "0"), 0.5, +(R55 / 2).toFixed(2)))) + ");queue=[];applyOverlay();setProd('salt');recompute();");
-    const r55 = rd55("(function(){return {rate:pbOwnRate('CZ9-BR').rate,orders:pbOwnRate('CZ9-BR').orders,window:pbOrders('CZ9-BR').map(function(s){return s.rid;})};})()");
-    ok(r55.rate === 200 && r55.orders === 4 && JSON.stringify(r55.window) === '["z655b","z655c","z655d","z655e"]',
-      "their own rate is the best of the last four priced orders, not the middle one, and the fifth and older is out of the window: " + JSON.stringify(r55));
-    const tool55 = PL55.ownRate(rd55("sales"), "CZ9-BR", "salt", "2026-09-01");
-    ok(tool55.rate === 200 && tool55.orders === 4, "and tools/pricelist.mjs's ownRate reads the same rate off the same four: " + JSON.stringify(tool55));
-    /* THE PROPOSAL AT THEIR OWN SIZES. CZ9-SM buys half a unit only; the level nearest their rate at half a unit is not the
-       level nearest it across the whole board, because the board's big rungs ask far less a unit. The board is read again
-       beside the proposal, so the three readings are the ones the proposal was made against. */
-    const p55 = R55 == null ? null : rd55("(function(){var b=tierBoards(),got=tierProposal('CZ9-SM','salt',b);"
-      + "var keep=PRICE_ENGINE.sizesBy.salt.slice();PRICE_ENGINE.sizesBy.salt=keep.filter(function(q){return q<=2.5;});recompute();"
-      + "var cut=tierProposal('CZ9-SM','salt',tierBoards());PRICE_ENGINE.sizesBy.salt=keep;recompute();"
-      + "return {got:got,cut:cut,same:JSON.stringify(b.salt.map(function(r){return {q:r.q,prices:r.prices};})),rate:pbOwnRate('CZ9-SM').rate};})()");
-    ok(!!p55 && p55.same === JSON.stringify(lad55) && p55.rate === R55 && p55.got === at55.half && p55.got === p55.cut
-      && p55.got !== at55.whole && at55.half !== at55.big,
-      "a tier is proposed at the sizes they buy: at RM" + R55 + " a unit, off this board, half a unit gives " + (at55 && at55.half)
-      + " where the biggest rung would give " + (at55 && at55.big) + " and the whole board " + (at55 && at55.whole)
-      + ", the proposal is " + (p55 && p55.got) + ", and taking every rung above 2.5 unit off the board leaves it at " + (p55 && p55.cut));
-    /* AND WHAT IT IS WORTH: the card of a customer whose best is above their middle rises to the best, never past their tier */
-    const card55 = rd55("(function(){TIER_OF['CZ9-BR']={salt:'Silver'};recompute();var lad=fiveTiersNow(),t=TIER_NAMES.indexOf('Silver');"
-      + "var one=lad.find(function(r){return Math.abs(r.q-1)<0.009;});var mid=Math.round(105/5)*5,best=Math.round(200/5)*5;"
-      + "var px=cardQuote('CZ9-BR',1);delete TIER_OF['CZ9-BR'];recompute();"
-      + "return {px:px,tier:one.prices[t],mid:mid,best:best};})()");
-    ok(card55.px === Math.min(card55.tier, card55.best) && card55.px > card55.mid,
-      "and their card reads the best they have paid, capped by their tier: " + JSON.stringify(card55));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w55.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v656: the board is the ladder, so a stranger is quoted Bronze and a stated price decides nothing");
-await (async () => {
-  /* HIS DECISION OF 15 SEP 2026, off the pricing workbook. The ask at every printed size is the last of the five levels,
-     the one a new customer starts at, on live costs. Tier 1's two stated ends and oil's five typed prices retire with the
-     derived ask, and NRV moves to Titanium, the lowest level any customer is quoted, because reading it off the ask would
-     have valued the shelf at what a stranger pays. Each assertion was proved red by mutation. */
-  const { openMaster: om56 } = await import("../tools/payload.mjs");
-  const { w: w56 } = await om56();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w56);
-  const rd56 = (e) => JSON.parse(String(w56.eval("JSON.stringify(" + e + ")")));
-  try {
-    /* 1. THE ASK IS THE LAST LEVEL, at every printed size on both books, and the derived figure it replaced is kept beside it.
-       Read off the ENGINE through the desk's own policy, not off a stub: the claim is about what the desk quotes. */
-    const ask56 = rd56("(function(){var out={};['salt','oil'].forEach(function(p){setProd(p);recompute();"
-      + "var C=pxCost(),P=pxPolicy();out[p]=shownSizes(p).map(function(q){var L=PRICING_ENGINE.priceLadder(q,C,P),"
-      + "f=PRICING_ENGINE.fiveTierAt(q,C,P);return {q:q,ask:L.ask.total,last:f?f.prices[f.prices.length-1]:null,"
-      + "derived:L.derived?L.derived.total:null,fromLadder:!!L.ask.fromLadder};});});setProd('salt');recompute();return out;})()");
-    const every56 = Object.keys(ask56).every((p) => ask56[p].length > 4
-      && ask56[p].every((r) => r.ask === r.last && r.fromLadder && r.derived != null))
-      && Object.keys(ask56).some((p) => ask56[p].some((r) => r.derived !== r.ask));
-    ok(every56, "the ask at every printed size is the ladder's last level, with the derived figure kept beside it: salt at 1 unit "
-      + JSON.stringify(ask56.salt.find((r) => Math.abs(r.q - 1) < 0.009)) + ", oil at 10 " + JSON.stringify(ask56.oil.find((r) => Math.abs(r.q - 10) < 0.009)));
-    /* 2. ONE ROW, NAMED FOR THE LEVEL, AND INDEX ZERO IS STILL THE ASK. The code is load bearing across the phone, the
-       mirror and the guest links, so it may not move; the NAME must, or the board prints "Tier 2" over the ladder. */
-    const row56 = rd56("(function(){setProd('salt');recompute();var R=PRICING_ENGINE.ladderRow(shownSizes('salt'),pxCost(),pxPolicy());"
-      + "return {n:R.length,code:R[0].code,name:R[0].name,dflt:!!R[0].dflt,last:TIER_NAMES[TIER_NAMES.length-1],"
-      + "t1:R.some(function(r){return r.code==='T1';})};})()");
-    ok(row56.n === 1 && row56.code === "T2" && row56.name === row56.last && row56.dflt && !row56.t1,
-      "the board is one row, index zero, still coded T2 and now named for the level: " + JSON.stringify(row56));
-    /* 3. A STATED PRICE DECIDES NOTHING. The strongest form of the claim: put a price on the policy at every printed size,
-       far from the ladder, and the board does not move. PRICE_SET is not merely empty, it is unread. */
-    const stated56 = rd56("(function(){setProd('salt');recompute();var C=pxCost(),P=pxPolicy(),S=shownSizes('salt');"
-      + "var st={};S.forEach(function(q){st[String(q)]=11;});"
-      + "var a=PRICING_ENGINE.ladderRow(S,C,P),b=PRICING_ENGINE.ladderRow(S,C,Object.assign({},P,{stated:st}));"
-      + "return {same:JSON.stringify(a[0].prices)===JSON.stringify(b[0].prices),prices:a[0].prices};})()");
-    ok(stated56.same && stated56.prices.every((x) => x > 11),
-      "a price stated at every size moves no cell of the board: " + JSON.stringify(stated56.prices));
-    /* 4. AND NO CUSTOMER'S PRICE MOVES WITH THE BOARD. Their price is their tier capped at what they pay, so lifting the
-       ask must not reach it: forced by pricing one customer at both, and by the rule the engine states. */
-    const card56 = rd56("(function(){setProd('salt');recompute();"
-      + "var who=roster.filter(function(c){return c.slice(-2)!=='-R'&&cardTier(c)>=0&&pbOwnRate(c).rate!=null;});"
-      + "var rows=who.map(function(c){var q=1,ask=PRICING_ENGINE.priceLadder(q,pxCost(),pxPolicy()).ask.total;"
-      + "return {c:c,card:cardQuote(c,q),ask:ask};}).filter(function(r){return r.card!=null;});"
-      + "return {n:rows.length,under:rows.filter(function(r){return r.card<r.ask-0.009;}).length,"
-      + "over:rows.filter(function(r){return r.card>r.ask+0.009;}).length,one:rows[0]||null};})()");
-    ok(card56.n > 5 && card56.over === 0 && card56.under > 0,
-      "every named customer's own price sits at or under the stranger's ask, " + card56.under + " of " + card56.n + " under it: " + JSON.stringify(card56.one));
-    /* 5. NRV IS TITANIUM, NOT THE ASK. Read off the statement the accounts print, against both levels at the same size, so
-       the assertion fails whichever way the basis drifts. */
-    const nrv56 = rd56("(function(){setProd('salt');recompute();var F=ifrsPL('salt');"
-      + "var q=Math.max(0.5,avgDelivery('salt').mean||1),C=pxCost(),P=pxPolicy();"
-      + "var row=PRICING_ENGINE.fiveTierAt(q,C,P),toSell=(delShare('salt').v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);"
-      /* guarded so that a policy carrying no rule FAILS here with its figures rather than throwing and taking the rest of the section with it */
-      + "if(!row||!row.prices)return {rate:F.nrvRate,tit:null,bronze:null,tested:!!F.nrvTested,carrying:F.carrying,atCost:F.atCost,units:currentStock};"
-      + "return {rate:F.nrvRate,tit:+(row.prices[1]/q-toSell).toFixed(4),bronze:+(row.prices[row.prices.length-1]/q-toSell).toFixed(4),"
-      + "tested:!!F.nrvTested,carrying:F.carrying,atCost:F.atCost,units:currentStock};})()");
-    /* 26 Sep 2026 (plan fold 4.3): THE CARRYING AMOUNT IS THE LOWER of cost and the shelf's own count at Titanium, worked out
-       here, and never pinned to cost: an oversold shelf (19 Sep, -0.1 unit) carries at the NRV, the lower of two negatives,
-       and the check read that as a fault on the fold that moved the count. */
-    const low56 = nrv56.tit == null ? null : Math.min(nrv56.atCost, +(nrv56.units * nrv56.tit).toFixed(2));
-    ok(nrv56.tested && Math.abs(nrv56.rate - nrv56.tit) < 0.01 && nrv56.rate < nrv56.bronze - 0.01 && low56 != null && Math.abs(nrv56.carrying - low56) < 0.011,
-      "the shelf is valued at Titanium less costs to sell, not at the stranger's Bronze, and carried at the lower of that and cost: "
-      + JSON.stringify(Object.assign({ lower: low56 }, nrv56)));
-    /* 6. AND THE DRAFTER REFUSES A PRICE, because a phone left on an older build can still queue one and a folded figure
-       nothing reads is worse than a refusal. */
-    const D56 = await import("../src/drafter.js");
-    const book56 = rd56("(function(){return {PRODUCTS:PRODUCTS,state:{PRICING:{byProduct:{salt:{floors:{}}}}}};})()");
-    const draft56 = D56.draftRow({ at: "2026-09-16T00:00:00.000Z", payload: { mode: "price", product: "salt", prices: { "1": 500 }, hide: [] } }, book56);
-    const hide56 = D56.draftRow({ at: "2026-09-16T00:00:01.000Z", payload: { mode: "price", product: "salt", prices: {}, hide: [3] } }, book56);
-    ok(draft56 && draft56.skip && /stated price is not folded/.test(draft56.skip) && hide56 && hide56.collection === "priceset"
-      && JSON.stringify(hide56.row.hide) === "[3]" && !Object.keys(hide56.row.prices).length,
-      "a queued price is refused and a size taken off the board still folds: " + JSON.stringify([draft56.skip, hide56 && hide56.row]));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w56.close(); } catch (e) { /* best effort */ } }
-})();
-
 
 section("S4 4.3: the order is a sheet, with size tiles and their prices, the usual size, the last way and place, and the total with Review in the foot");
 await (async () => {
@@ -17182,397 +16335,6 @@ await (async () => {
     "the month is their first PRICED order, so a cancelled, a defaulted and an award with no cash are not it: " + PL59.since(s59, "CZ9-SN"));
 })();
 
-section("v660: every card lands on the ten and never under its floor, and since 27 Sep 2026 it is the level they hold");
-await (async () => {
-  /* HIS INSTRUCTION OF 16 SEP 2026: "round down such that it is as close as possible to their current rate, and never
-     higher, to the nearest 10". The rule read the NEAREST five, which rounds up as often as down: measured over all 432
-     priced cells on the salt book, 63 sat RM1 to RM2 above the customer's own rate. Asserted on the whole live book rather
-     than on a fixture, because the claim is about every card the desk hands out, and the one thing that can still put a
-     card over a rate is the FLOOR, which is separated out here rather than tolerated. */
-  const { openMaster: om60 } = await import("../tools/payload.mjs");
-  const { w: w60 } = await om60();
-  const rd60 = (e) => JSON.parse(String(w60.eval("JSON.stringify(" + e + ")")));
-  try {
-    const cells = rd60("(function(){var res={};['salt','oil'].forEach(function(p){setProd(p);recompute();"
-      + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0,offTier=0;"
-      + "roster.filter(function(c){return c.slice(-2)!=='-R'&&!isPartner(c);}).forEach(function(c){"   /* v1029: a partner pays cost, off the ten by his decision */
-      /* 23 Sep 2026: a stated board is carded to everybody, so only a tiered book is gated on the tier */
-      + "  if(!TIER_RULE[p].fixed&&cardTier(c)<0)return; var own=pbOwnRate(c).rate;"
-      /* v671: the level is read at each size, because a band set holds a different level for a big order than a small one */
-      + "  shownSizes(p).forEach(function(q){ var v=cardQuote(c,q); if(v==null)return; n++; tot+=v;"
-      + "    if(Math.abs(v/10-Math.round(v/10))<1e-9)onTen++;"
-      + "    var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()), t=cardTierAt(c,q);"
-      + "    if(row&&v>row.prices[t]+0.009)overTier++;"
-      + "    var F=floorTotal(q); if(v<F-0.009)under++;"
-      + "    if(row&&!TIER_RULE[p].fixed&&Math.abs(v-row.prices[t])>0.009&&v!==Math.ceil((F-0.009)/10)*10)offTier++;"
-      + "    if(own!=null&&v>own*q+0.009)over.push({c:c,q:q,card:v,own:+(own*q).toFixed(2),"
-      + "      byFloor:v===Math.ceil((F-0.009)/10)*10});});});"
-      + "res[p]={n:n,onTen:onTen,under:under,overTier:overTier,offTier:offTier,over:over.length,"
-      + " overByFloor:over.filter(function(x){return x.byFloor;}).length,"
-      + " sample:over.slice(0,2),total:Math.round(tot)};});setProd('salt');recompute();return res;})()");
-    /* 1. EVERY CARD ON THE TEN, on both books. The grid is the one the ladder itself rounds to, so a card and a board
-       price sit on the same grid; a card landing on a five would be the old rule still running somewhere. */
-    ok(Object.keys(cells).every((p) => cells[p].n > 20 && cells[p].onTen === cells[p].n),
-      "every priced card on both books lands on a ten: " + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].onTen + "/" + cells[p].n)));
-    /* 2. AND NONE UNDER ITS FLOOR. The floor is the line no price goes under, and a coarser grid makes it easier to cross. */
-    ok(Object.keys(cells).every((p) => cells[p].under === 0),
-      "and not one of them sits under its own floor: " + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].under)));
-    /* 2b. AND NONE ABOVE THEIR TIER EITHER. The tier is the ceiling and the rate only ever lowers it; without this the cap
-       could be lifted out of cardPrice and every assertion above would stay green, which a mutation showed. */
-    ok(Object.keys(cells).every((p) => cells[p].overTier === 0),
-      "and none above the level they hold: " + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].overTier)));
-    /* 3. 27 SEP 2026, HIS DECISION: THE CAP IS RETIRED. It said nothing above what they pay; now every salt card is the level
-       they hold at that size, the floor aside, and what they paid before moves none of it. The cards above their own rate are
-       counted beside it, so the check cannot pass on a book where no rate sits under a tier. */
-    ok(cells.salt.offTier === 0 && cells.salt.over > 0,
-      "every salt card is the level they hold, " + cells.salt.over + " of them above what that customer has paid: "
-      + JSON.stringify(Object.keys(cells).map((p) => p + " " + cells[p].offTier + " off their level, " + cells[p].over + " over their rate"))
-      + " " + JSON.stringify(cells.salt.sample));
-    ok(cells.oil && cells.oil.over > 0 && cells.oil.overByFloor === 0,
-      "and oil's typed board DOES sit above what some have paid, which is the decision he took on 19 Sep and not the floor talking: "
-        + JSON.stringify([cells.oil.over + " over", cells.oil.overByFloor + " by the floor"]));
-    /* 4. AND THE TOOL THAT WRITES THE CUSTOMER'S PAGE AGREES, because two copies of one rule are two rules. */
-    const PL60 = await import("../tools/pricelist.mjs");
-    const { pricingSnapshot: ps60 } = await import("../tools/book.mjs");
-    const bk60 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-    const snap60 = ps60(w60);   /* it reads the open master, as every other caller does */
-    const who60 = Object.keys(snap60.tierOf || {}).filter((c) => c.slice(-2) !== "-R");
-    /* 23 Sep 2026: each on its own book's grid, the ten for salt and oil and the ringgit for candy and rice, whose rates he
-       states in single ringgit */
-    let checked = 0, offTen = 0;
-    for (const c of who60.slice(0, 12)) {
-      const list = PL60.priceList(c, bk60, snap60, new Date());
-      for (const p of list.products) { const to = snap60.byProduct[p.product].inputs.policy.LADDER.round.to;
-        for (const r of p.sizes) { checked++; if (Math.abs(r.price / to - Math.round(r.price / to)) > 1e-9) offTen++; } }
-    }
-    ok(checked > 40 && offTen === 0 && snap60.byProduct.salt.inputs.policy.LADDER.round.to === 10,
-      "and every price on the customer's own page is on its book's grid too, the ten for salt, over " + checked + " of them across twelve accounts");
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w60.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v666: each customer has a profile on each product, read off their own orders, and it prices nothing yet");
-await (async () => {
-  /* HIS DECISIONS OF 16 SEP 2026. Frequent is two orders a month, small is half a unit or one, loyal is six orders with the
-     last inside thirty days, buying bigger is four in ten at three units or more, rare is under one a month or nothing for
-     sixty days, and late is twice past the ten-day credit term. Fixture customers dated off the desk's own TODAY, so every
-     boundary is forced rather than waited for; each assertion was proved red by mutation. */
-  const { openMaster: om61 } = await import("../tools/payload.mjs");
-  const { w: w61 } = await om61();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w61);
-  const rd61 = (e) => JSON.parse(String(w61.eval("JSON.stringify(" + e + ")")));
-  try {
-    /* the fixtures are built in the page so their dates are the desk's own days back from TODAY */
-    w61.eval("(function(){var D=86400000,ago=function(n){return new Date(TODAY.getTime()-n*D).toISOString().slice(0,10);};"
-      + "var s=function(rid,c,n,q,tot,paidAfter){var d=ago(n),r={rid:rid,customer:c,product:'salt',date:d,qty:q,total:tot,cost:1,deliveredQty:q,deliveredOn:d};"
-      + "  if(paidAfter==null){r.cash=tot;r.paidOn=d;}else if(paidAfter<0){r.cash=0;}else{r.cash=tot;r.paidOn=ago(n-paidAfter);} return r;};"
-      + "var fx=[];"
-      /* CZ9-OFT: small and often, eight single units across 40 days */
-      + "for(var i=0;i<8;i++)fx.push(s('z661a'+i,'CZ9-OFT',5+i*5,1,100));"
-      /* CZ9-THN: the same eight single units spread across 285 days, which is under one a month: small, rare */
-      + "for(var j=0;j<8;j++)fx.push(s('z661b'+j,'CZ9-THN',5+j*40,1,100));"
-      /* CZ9-LOY: six orders, last 10 days ago, four of them at 3 units: loyal and buying bigger */
-      + "[10,20,30,40,50,60].forEach(function(n,k){fx.push(s('z661c'+k,'CZ9-LOY',n,k<4?3:1,k<4?300:100));});"
-      /* CZ9-GON: the same six orders but the last 31 days ago: not loyal */
-      + "[31,41,51,61,71,81].forEach(function(n,k){fx.push(s('z661d'+k,'CZ9-GON',n,1,100));});"
-      /* CZ9-LAT: paid on day 10 once (on time) and on day 11 twice (late), plus one still owed 12 days: three late */
-      + "fx.push(s('z661e0','CZ9-LAT',90,1,100,10));fx.push(s('z661e1','CZ9-LAT',80,1,100,11));fx.push(s('z661e2','CZ9-LAT',70,1,100,11));fx.push(s('z661e3','CZ9-LAT',12,1,100,-1));"
-      /* CZ9-ONE: a single unit last week, which is not four a month */
-      + "fx.push(s('z661f0','CZ9-ONE',7,1,100));"
-      + "['CZ9-OFT','CZ9-THN','CZ9-LOY','CZ9-GON','CZ9-LAT','CZ9-ONE'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});"
-      + "BASE_SALES.push.apply(BASE_SALES,fx);queue=[];applyOverlay();setProd('salt');recompute();})()");
-    const pf = rd61("(function(){var o={};['CZ9-OFT','CZ9-THN','CZ9-LOY','CZ9-GON','CZ9-LAT','CZ9-ONE'].forEach(function(c){o[c]=buyerProfile(c,'salt');});return o;})()");
-
-    /* 1. FREQUENCY TELLS THE SAME ORDERS APART. Eight single units in 40 days is small and often; the same eight across 240
-       days is small and rare. Both halves, so a threshold that ignored the calendar would fail one of them. */
-    ok(pf["CZ9-OFT"].name === "small and often" && pf["CZ9-OFT"].frequent && pf["CZ9-OFT"].small
-      && pf["CZ9-THN"].name === "small and rare" && !pf["CZ9-THN"].frequent && pf["CZ9-THN"].small,
-      "the same small orders read small and often when frequent and small and rare when spread thin: "
-      + JSON.stringify([pf["CZ9-OFT"].perMonth, pf["CZ9-THN"].perMonth]));
-    /* 2. LOYAL NEEDS BOTH HALVES: six orders, and still buying. The last order at 10 days is loyal, at 31 days it is not. */
-    ok(pf["CZ9-LOY"].loyal && pf["CZ9-LOY"].bigger && !pf["CZ9-GON"].loyal && pf["CZ9-GON"].orders === 6,
-      "six orders with the last inside thirty days is loyal, and the same six with the last at 31 days is not: "
-      + JSON.stringify({ loy: [pf["CZ9-LOY"].orders, pf["CZ9-LOY"].sinceLastDays, pf["CZ9-LOY"].bigShare], gon: pf["CZ9-GON"].sinceLastDays }));
-    /* 3. V5c (his answers of 29 Sep 2026): HOW LATE THEY PAY IS NO LONGER THE PROFILE'S. It is read from the handover across
-       every book by the engine's payDelays and lateOffer (lateOf); the profile carries no late reading, and the same
-       customer, paid ten and eleven days after each handover and owing one twelve days on, is a late payer there. */
-    const lat = rd61("lateOf('CZ9-LAT')");
-    ok(!("late" in pf["CZ9-LAT"]) && !("lateTwice" in pf["CZ9-LAT"]) && lat.on === true && lat.why === "long" && lat.open === true && lat.days === 12,
-      "the profile reads no lateness, and the late payer is read from the handover by lateOf: "
-      + JSON.stringify({ keys: Object.keys(pf["CZ9-LAT"]).filter((k) => /late/i.test(k)), lat }));
-    /* 4. RARE ON EITHER COUNT: the thin customer buys under once a month, and the customer gone 31 days is not yet rare. */
-    ok(pf["CZ9-THN"].rare && !pf["CZ9-GON"].rare && !pf["CZ9-OFT"].rare,
-      "rare is under one order a month or nothing for sixty days, so the thin buyer is rare and the one gone a month is not yet: "
-      + JSON.stringify({ thin: [pf["CZ9-THN"].perMonth, pf["CZ9-THN"].sinceLastDays], gone: [pf["CZ9-GON"].perMonth, pf["CZ9-GON"].sinceLastDays] }));
-    /* 5. ONE ORDER LAST WEEK IS NOT FOUR A MONTH. Read over a floor of thirty days, or every new customer arrives frequent. */
-    ok(pf["CZ9-ONE"].name === "one-off" && !pf["CZ9-ONE"].frequent && pf["CZ9-ONE"].perMonth < 2,
-      "a single order last week reads one-off and not frequent, because the rate is read over at least thirty days: " + pf["CZ9-ONE"].perMonth);
-    /* 6. IT PRICES NOTHING. Every card on the book is the same with the profile answering as it does and with it answering
-       the opposite of everything; a quote that moved would mean a rule is already reading it. */
-    const same = rd61("(function(){setProd('salt');recompute();var who=roster.filter(function(c){return cardTier(c)>=0;});"
-      + "var read=function(){return who.map(function(c){return shownSizes('salt').map(function(q){return cardQuote(c,q);}).join(',');}).join('|');};"
-      /* v671: THE PROFILE PRICES NOW, AND ONLY THROUGH THE RULES. So the rules are switched off (ruleProposal reads the plain
-         proposal) and the profile is turned inside out: every card staying put proves it has no other road to a price */
-      + "var keepR=ruleProposal;ruleProposal=function(c,p,b){return tierProposal(c,p,b);};"
-      + "var a,b,keep=buyerProfile;try{a=read();"
-      + "buyerProfile=function(){return {name:'large and regular',orders:99,perMonth:99,frequent:true,small:false,bigger:true,loyal:true,rare:true};};"
-      + "try{b=read();}finally{buyerProfile=keep;}}finally{ruleProposal=keepR;}"
-      + "return {same:a===b,n:who.length};})()");
-    ok(same.same && same.n > 10, "and it prices only through the rules: with them set aside, every card on the book is unchanged when the profile reads the opposite of everything (" + same.n + " customers)");
-    /* 7. IT IS IN VIEW where the tier is set, beside the tier, per product */
-    const card = rd61("(function(){setProdView('salt');switchTab('people');var t=document.querySelector('.sec.on table.tiertab');"
-      + "if(!t)return null;return [].slice.call(t.tBodies[0].rows).map(function(r){return r.textContent.replace(/\\s+/g,' ');}).filter(function(x){return x.indexOf('CZ9-OFT')>=0;})[0]||null;})()");
-    ok(card && /small and often/.test(card), "the Tiers card shows how they buy beside the tier they hold: " + (card || "").slice(0, 90));
-    /* 8. AND THE SNAPSHOT CARRIES THE SAME READING, so the price list and the drafter never work out one of their own */
-    const { pricingSnapshot: ps61 } = await import("../tools/book.mjs");
-    const snap61 = ps61(w61);
-    ok(snap61.profileOf && snap61.profileOf["CZ9-OFT"] && snap61.profileOf["CZ9-OFT"].salt
-      && snap61.profileOf["CZ9-OFT"].salt.name === pf["CZ9-OFT"].name && snap61.profileRule && snap61.profileRule.smallUpTo === 1 && !("lateTimes" in snap61.profileRule),
-      "and the pricing snapshot carries the desk's own profile and rule: " + JSON.stringify(snap61.profileOf && snap61.profileOf["CZ9-OFT"]));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w61.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v670: a customer's level can differ by the size of the order, read band by band in one place");
-await (async () => {
-  /* HIS DECISIONS OF 16 SEP 2026. A tier is one level, or a band set {small, mid, big} cut at one unit and three, the book's own
-     quartiles. The engine's levelAt turns a size into a level for the desk, the customer's price list and the fold alike. No
-     band set exists on the book at this version, so every customer is quoted exactly as before; the rules that propose band
-     sets come next. Forced fixtures; each assertion was proved red by mutation. */
-  const PE67 = (await import("../engine/pricing.mjs")).default;
-  const B67 = { smallUpTo: 1, bigFrom: 3 };
-  /* 1. THE BANDS, AND THE FALLBACK. A name is the same at every size; a set gives small up to and including a unit, big from
-     three, mid between; a band left out takes mid. The edges are asserted exactly, because an off-by-one band is a wrong price. */
-  const set67 = { small: "Titanium", mid: "Gold", big: "Silver" };
-  ok(["Gold", "Gold", "Gold"].join() === [0.5, 2, 12.5].map((q) => PE67.levelAt("Gold", q, B67)).join()
-    && [0.5, 1, 1.5, 2.5, 3, 12.5].map((q) => PE67.levelAt(set67, q, B67)).join() === "Titanium,Titanium,Gold,Gold,Silver,Silver"
-    && PE67.levelAt({ small: "Titanium", mid: "Gold" }, 3, B67) === "Gold" && PE67.levelAt(null, 1, B67) === null,
-    "a level reads the same at every size, a band set reads small to one unit, mid between and big from three, and a missing band takes mid");
-  /* 2. THE SHAPES THAT PRICE, AND THE ONES THAT DO NOT, asked of the one check the drafter and the fold both use */
-  const N67 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
-  ok(PE67.levelShapeOk("Gold", N67) && PE67.levelShapeOk(set67, N67) && PE67.levelShapeOk({ big: "Silver" }, N67)
-    && !PE67.levelShapeOk("Diamond", N67) && !PE67.levelShapeOk({ huge: "Gold" }, N67) && !PE67.levelShapeOk({ small: "Diamond" }, N67)
-    && !PE67.levelShapeOk({}, N67) && !PE67.levelShapeOk(["Gold"], N67),
-    "a level or a band set of real levels is a tier; an unknown level, an unknown band, an empty set and a list are not");
-  const { openMaster: om67 } = await import("../tools/payload.mjs");
-  const { w: w67 } = await om67();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w67);
-  const rd67 = (e) => JSON.parse(String(w67.eval("JSON.stringify(" + e + ")")));
-  try {
-    /* CZ9-BND holds a band set and has no orders, so no rate of their own lowers anything and the level's price binds */
-    w67.eval("(function(){if(roster.indexOf('CZ9-BND')<0)roster.push('CZ9-BND');TIER_OF['CZ9-BND']={salt:{small:'Titanium',mid:'Gold',big:'Silver'}};queue=[];setProd('salt');recompute();})()");
-    /* 3. THE DESK QUOTES EACH SIZE AT ITS OWN BAND'S LEVEL, checked against the ladder's own price for that level at that size */
-    const q67 = rd67("(function(){var out=[];[1,2,3,12.5].forEach(function(q){var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());"
-      + "out.push({q:q,quote:cardQuote('CZ9-BND',q),want:{1:row.prices[1],2:row.prices[3],3:row.prices[4],12.5:row.prices[4]}[q]});});return out;})()");
-    ok(q67.length === 4 && q67.every((r) => r.quote != null && r.quote === r.want),
-      "a customer on a band set is quoted Titanium at a unit, Gold at two and Silver from three: " + JSON.stringify(q67.map((r) => [r.q, r.quote, r.want])));
-    /* 4. AND THE PRINTED BOARD FOLLOWS THE SAME BANDS, size by size */
-    const pb67 = rd67("(function(){return pbPrices('CZ9-BND').map(function(r){return [r.q,r.price,cardQuote('CZ9-BND',r.q)];});})()");
-    ok(pb67.length > 4 && pb67.every((r) => r[1] === r[2]), "the printed board prints each size at its own band's level: " + JSON.stringify(pb67.slice(0, 4)));
-    /* 5. THE CUSTOMER'S OWN PAGE AGREES WITH THE DESK AT EVERY SIZE, through the snapshot, which carries the band set */
-    const PL67 = await import("../tools/pricelist.mjs");
-    const { pricingSnapshot: ps67 } = await import("../tools/book.mjs");
-    const bk67 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-    const snap67 = ps67(w67);
-    const list67 = PL67.priceList("CZ9-BND", bk67, snap67, new Date()).products.find((p) => p.product === "salt");
-    const desk67 = rd67("(function(){var o={};shownSizes('salt').forEach(function(q){o[q]=cardQuote('CZ9-BND',q);});return o;})()");
-    ok(list67 && list67.sizes.length > 4 && list67.sizes.every((r) => r.price === desk67[r.q]) && list67.tier === "Gold"
-      && list67.levels && list67.levels.big === "Silver",
-      "and the customer's own price list prints the same price at every size, with their normal level the mid band's: "
-      + JSON.stringify({ tier: list67 && list67.tier, first: list67 && list67.sizes.slice(0, 3) }));
-    /* 6. THE DRAFTER TAKES A BAND SET THROUGH APPROVE, AND REFUSES A SHAPE THAT WOULD NOT PRICE */
-    const D67 = await import("../src/drafter.js");
-    const bookD = { state: { roster: ["CZ9-BND"], TIER_OF: {}, PRODUCTS: { salt: { name: "Salt" } } }, pricing: { tierNames: N67 } };
-    const good = D67.draftRow({ at: "2026-09-16T01:00:00.000Z", payload: { mode: "tierset", tiers: { "CZ9-BND": { salt: set67 } } } }, bookD);
-    const bad = D67.draftRow({ at: "2026-09-16T01:00:01.000Z", payload: { mode: "tierset", tiers: { "CZ9-BND": { salt: { huge: "Gold" } } } } }, bookD);
-    ok(good && good.collection === "tierset" && JSON.stringify(good.row.tiers["CZ9-BND"].salt) === JSON.stringify(set67)
-      && !/object Object/.test(good.reasoning) && bad && bad.skip && /huge/.test(bad.skip) && /is not a tier/.test(bad.skip),
-      "the drafter carries a band set through and spells it out, and refuses a band it does not know: " + JSON.stringify([good && (good.reasoning ? good.reasoning.slice(0, 80) : good.skip), bad && (bad.skip || bad.collection)]));
-    /* 7. THE TIERS CARD SHOWS THE BANDS AND OFFERS TO KEEP THEM, and Set on that customer queues nothing: it used to read the
-       dropdown's unmatched value as "not set" and would have queued a clear */
-    const card67 = rd67("(function(){setProdView('salt');switchTab('people');var s=document.getElementById('tierSel_CZ9-BND_salt');"
-      + "if(!s)return null;var before=queue.length;tierSet('CZ9-BND');"
-      + "return {sel:s.value,text:s.parentNode.textContent.replace(/\\s+/g,' '),queued:queue.length-before};})()");
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w67.close(); } catch (e) { /* best effort */ } }
-})();
-
-section("v671: the proposal moves a level on how a customer buys: late, small, loyal, and sales slowing");
-await (async () => {
-  /* HIS RULES OF 16 SEP 2026. Rare and late twice: down a level everywhere. Frequent and small: down a level from three units, and
-     NOTHING better on half a unit or a unit, because their own rate covers it (his decision that day). Loyal and buying bigger:
-     up a level from three units, never past Platinum. Sales slowed for three days running: every band up a level, never past
-     Platinum, until the next lot lands. A held tier is never moved by a rule. The rule is asked with its inputs forced, the base
-     proposal, the profile and the stock, so each branch is proved on its own; each assertion was proved red by mutation. */
-  const { openMaster: om71 } = await import("../tools/payload.mjs");
-  const { w: w71 } = await om71();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w71);
-  const rd71 = (e) => JSON.parse(String(w71.eval("JSON.stringify(" + e + ")")));
-  try {
-    /* a harness in the page: force the base proposal, the profile and the slowdown, ask the rule, then put all three back */
-    /* V5c: a flag 'late' forces the late payer's reading (lateOf) on, which the rules read in place of rare and late twice */
-    w71.eval("window.__ask71=function(base,flags,slow){var kT=tierProposal,kB=buyerProfile,kS=slowdown,kL=lateOf;"
-      + "tierProposal=function(){return base;};"
-      + "buyerProfile=function(){if(flags===null)return null;var f={name:'fixture',orders:9};['frequent','small','loyal','bigger','rare'].forEach(function(k){f[k]=flags.indexOf(k)>=0;});return f;};"
-      + "slowdown=function(){return {on:!!slow,since:null,endedBy:null};};"
-      + "lateOf=function(){return flags&&flags.indexOf('late')>=0?{on:true,need:1,streak:0,why:'long',days:5,open:false,since:null}:{on:false};};"
-      + "try{return ruleProposal('CZ9-RUL','salt',{});}finally{tierProposal=kT;buyerProfile=kB;slowdown=kS;lateOf=kL;}};");
-    const ask = (base, flags, slow) => rd71("__ask71(" + JSON.stringify(base) + "," + JSON.stringify(flags) + "," + !!slow + ")");
-
-    /* 1. V5c (his answers of 29 Sep 2026, in place of rare and late twice): A LATE PAYER IS PRICED NO LEVEL DOWN BY A RULE, it
-       is only offered one on the Tiers card; and no promotion reaches them, neither loyal and bigger nor a slowdown. The small
-       buyer's drop still applies, being about the sizes they buy. */
-    ok(ask("Gold", ["rare", "late"]) === "Gold" && ask("Gold", ["late"], true) === "Gold" && ask("Gold", [], true) === "Platinum"
-      && ask("Gold", ["loyal", "bigger", "late"]) === "Gold"
-      && JSON.stringify(ask("Gold", ["frequent", "small", "late"])) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }),
-      "a late payer is moved no level down by a rule, takes no promotion from a slowdown or from buying bigger, and the small buyer's drop still stands");
-    /* 2. FREQUENT AND SMALL: the drop from three units and nothing better below it, his decision; Bronze has nowhere to drop */
-    const small = ask("Gold", ["frequent", "small"]);
-    ok(JSON.stringify(small) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }) && ask("Silver", ["frequent", "small"]) === "Silver"
-      && JSON.stringify(ask("Titanium", ["frequent", "small"])) === JSON.stringify({ small: "Titanium", mid: "Titanium", big: "Platinum" }),
-      "frequent and small drops a level from three units only, with no better level on the small band, and the last level stays one level: " + JSON.stringify(small));
-    /* 3. LOYAL AND BUYING BIGGER: a level up from three units, never past Platinum, and never a level down for someone above it */
-    ok(JSON.stringify(ask("Gold", ["loyal", "bigger"])) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Platinum" })
-      && ask("Platinum", ["loyal", "bigger"]) === "Platinum" && ask("Titanium", ["loyal", "bigger"]) === "Titanium" && ask("Gold", ["loyal"]) === "Gold",
-      "loyal and buying bigger lifts the big band a level, stops at Platinum, never lowers a Titanium customer, and loyal alone moves nothing");
-    /* 4. A CUSTOMER WHO IS BOTH takes the small-buyer rule, the one about the sizes they buy most */
-    ok(JSON.stringify(ask("Gold", ["frequent", "small", "loyal", "bigger"])) === JSON.stringify({ small: "Gold", mid: "Gold", big: "Silver" }),
-      "a customer both small-and-frequent and loyal-and-bigger takes the small-buyer rule");
-    /* 5. SALES SLOWING: every band a level better, never past Platinum and never worse than it was */
-    ok(ask("Silver", [], true) === "Gold" && ask("Gold", [], true) === "Platinum" && ask("Platinum", [], true) === "Platinum" && ask("Titanium", [], true) === "Titanium"
-      && JSON.stringify(ask("Gold", ["frequent", "small"], true)) === JSON.stringify({ small: "Platinum", mid: "Platinum", big: "Gold" }),
-      "a slowdown lifts every band a level, stops at Platinum, lowers nobody, and stacks on the small buyer's drop");
-    /* 6. NO PROFILE LEAVES THE PROPOSAL AS IT WAS, AND NO PROPOSAL IS STILL NOTHING */
-    ok(ask("Gold", null) === "Gold" && ask(null, ["rare", "late"]) === null,
-      "with no profile the proposal is unchanged, and with no proposal there is nothing for a rule to move");
-
-    /* 7. THE SLOWDOWN ITSELF, on forced sales and lots: two units a day for a month and then nothing is a slowdown held for
-       three days, it is off again once a lot lands on or after it began, and two quiet days are not enough */
-    /* sales and purchases are const arrays, so their rows are swapped for the fixture's in place and put back, whatever happens */
-    const slow = rd71("(function(){var D=86400000,ago=function(n){return new Date(TODAY.getTime()-n*D).toISOString().slice(0,10);};"
-      + "var mk=function(quiet){var r=[];for(var n=40;n>quiet;n--)r.push({date:ago(n),qty:2,total:200,cash:200,deliveredQty:2,deliveredOn:ago(n),customer:'CZ9-SLW',product:'salt'});return r;};"
-      + "var keepS=sales.slice(),keepP=purchases.slice();"
-      + "var test=function(quiet,lotAgo){sales.length=0;[].push.apply(sales,mk(quiet));purchases.length=0;"
-      + "  if(lotAgo!=null)purchases.push({receivedOn:ago(lotAgo),receivedQty:10,qty:10,total:100,cash:100,date:ago(lotAgo),supplier:'SZ9-SLW',product:'salt'});"
-      + "  try{return slowdown('salt');}finally{sales.length=0;[].push.apply(sales,keepS);purchases.length=0;[].push.apply(purchases,keepP);}};"
-      + "return {held:test(5,null),lotAfter:test(5,1),lotBefore:test(5,20),twoQuiet:test(2,null),"
-      + " midRestart:test(9,5),midTooSoon:test(9,2),restored:sales.length===keepS.length&&purchases.length===keepP.length};})()");
-    ok(slow.restored && slow.held.on && !slow.lotAfter.on && slow.lotBefore.on && !slow.twoQuiet.on,
-      "five quiet days after a steady month is a slowdown, a lot landing since ends it, a lot before it does not, and two quiet days are not one: "
-      + JSON.stringify(slow));
-    /* AND A LOT IN THE MIDDLE OF A SLOWDOWN RESETS IT. Nine quiet days with a lot five days ago: the count restarts at the lot, the
-       five days since are held, so a new promotion runs from the third of them. With the lot two days ago only two quiet days
-       follow it and there is no promotion. Counting through the lot had let a restock end a promotion for a day and then start
-       it again, so a restock never ended one while sales stayed flat. */
-    ok(slow.midRestart.on && slow.midRestart.lastLot && slow.midRestart.since > slow.midRestart.lastLot && !slow.midTooSoon.on,
-      "a lot in the middle of a slowdown resets the count: three quiet days after it start a new promotion and two do not: "
-      + JSON.stringify([slow.midRestart, slow.midTooSoon]));
-
-    /* 8. IT REACHES THE LIVE QUOTE, AND NEVER A HELD TIER. A customer proposed Gold who buys small and often is quoted Gold at a
-       unit and Silver at twelve and a half; the same profile on a customer HOLDING Gold is quoted Gold at both. No orders, so no
-       rate of their own lowers either price and the level binds. */
-    const live = rd71("(function(){['CZ9-RUL','CZ9-HLD'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});TIER_OF['CZ9-HLD']={salt:'Gold'};setProd('salt');recompute();"
-      + "var kT=tierProposal,kB=buyerProfile,kS=slowdown,kL=lateOf;tierProposal=function(){return 'Gold';};"
-      /* 10 Oct 2026: the slowdown and the late payer held off too, as __ask71 does, so a live slowdown (counted back from
-         today) does not lift the small band and turn this red on a quiet week */
-      + "slowdown=function(){return {on:false,since:null,lastLot:null};};lateOf=function(){return {on:false};};"
-      + "buyerProfile=function(){return {name:'small and often',orders:9,frequent:true,small:true,loyal:false,bigger:false,rare:false};};"
-      + "try{var row=function(q){return PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy());};"
-      + "return {rul1:cardQuote('CZ9-RUL',1),rul12:cardQuote('CZ9-RUL',12.5),hld12:cardQuote('CZ9-HLD',12.5),gold1:row(1).prices[3],gold12:row(12.5).prices[3],silver12:row(12.5).prices[4]};"
-      + "}finally{tierProposal=kT;buyerProfile=kB;slowdown=kS;lateOf=kL;delete TIER_OF['CZ9-HLD'];}})()");
-    ok(live.rul1 === live.gold1 && live.rul12 === live.silver12 && live.hld12 === live.gold12 && live.silver12 > live.gold12,
-      "the rule reaches a proposed customer's live quote, Gold at a unit and Silver at twelve and a half, and leaves a held Gold customer at Gold: " + JSON.stringify(live));
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w71.close(); } catch (e) { /* best effort */ } }
-})();
-section("V5c (29 Sep 2026): a late payer is read from the handover across every book, and offered a level down, never priced one");
-await (async () => {
-  /* HIS ANSWERS OF 29 SEP 2026, in place of rare and late twice. Each row's delay is counted in days from its handover:
-     paid within the term (RULES.holdDays) is on time, past it and under the lock (RULES.lockDays) a short delay, the lock
-     or more a long one. One long delay, or a second short one within RULES.lateWindowDays of the one before, turns the
-     offer on; one payment on time turns it off; a delay within the window after that turns it on again, and then it takes
-     RULES.lateResetRepeat payments on time in a row. It offers a level down on the Tiers card and prices nothing. Forced
-     fixtures; each assertion was proved red by mutation. */
-  const E5c = (await import("../engine/position.mjs")).default;
-  const R5c = { holdDays: 1, lockDays: 4, lateWindowDays: 90, lateResetRepeat: 3 };
-  const row = (o) => Object.assign({ customer: "CZ9-PAY", product: "salt", qty: 1, total: 100, cost: 1, deliveredQty: 1 }, o);
-  const S = [
-    row({ rid: "a", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-02" }),
-    row({ rid: "b", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-06" }),
-    /* two handovers, each paid two and three days after it: the delay is the latest-covered stage's, 3, never 7 */
-    row({ rid: "c", date: "2026-09-01", qty: 2, total: 200, deliveredQty: 2, cash: 200, amend: [{ kind: "Fulfilment", date: "2026-09-01", kg: 1 },
-      { kind: "Fulfilment", date: "2026-09-05", kg: 1 }, { kind: "Payment", date: "2026-09-02", cash: 100 }, { kind: "Payment", date: "2026-09-08", cash: 100 }] }),
-    row({ rid: "d", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100 }),            /* paid on a day only assumed: neither way */
-    row({ rid: "e", date: "2026-09-01", cash: 0 }),                                           /* no handover day: neither way */
-    row({ rid: "f", date: "2026-09-20", deliveredOn: "2026-09-20", cash: 0 }),               /* unpaid nine days on: open */
-    row({ rid: "f2", date: "2026-09-28", deliveredOn: "2026-09-28", cash: 0 }),              /* unpaid inside the term: not listed */
-    row({ rid: "g", date: "2026-08-01", deliveredOn: "2026-08-01", cash: 0, defaulted: true }),  /* a write-off: the lock */
-    row({ rid: "h", customer: "CZ9-OTH", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 0 }),
-    row({ rid: "i", customer: "CZ9-PAY-R", product: "oil", date: "2026-09-10", deliveredOn: "2026-09-10", cash: 100, paidOn: "2026-09-12" }),
-    row({ rid: "j", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 100, paidOn: "2026-09-02", cancelled: true }),
-    row({ rid: "k", date: "2026-09-01", deliveredOn: "2026-09-01", cash: 0, goodwill: true })];
-  const del = E5c.payDelays(S, "CZ9-PAY", "2026-09-29", R5c);
-  /* 1. THE DELAYS, row by row */
-  ok(JSON.stringify(del.map((x) => [x.on, x.days, x.open])) === JSON.stringify([["2026-09-02", 1, false], ["2026-09-06", 5, false], ["2026-09-08", 3, false],
-    ["2026-09-29", 9, true], ["2026-08-05", 4, false], ["2026-09-12", 2, false]]),
-    "each row's delay counts from its handover: a stated day less the handover, a trail stage by stage, unpaid past the term open, "
-    + "a write-off the lock; an assumed day, an undated handover, another party, a cancelled row and a gift count neither way, a bucket and every book do: "
-    + JSON.stringify(del));
-  /* 2. THE OFFER'S WALK */
-  const d = (on, days) => ({ on, d: on, days, open: false });
-  const L = (xs) => E5c.lateOffer(xs, R5c);
-  const reset = [d("2026-06-01", 4), d("2026-06-02", 1), d("2026-07-01", 2)];
-  ok(!L([d("2026-09-01", 2)]).on && !L([d("2026-09-01", 1), d("2026-09-02", 1)]).on
-    && L([d("2026-06-01", 2), d("2026-08-01", 3)]).why === "shorts" && !L([d("2026-05-01", 2), d("2026-08-01", 3)]).on
-    && L([d("2026-09-01", 4)]).why === "long" && !L([d("2026-09-01", 3)]).on && !L([d("2026-09-01", 4), d("2026-09-02", 1)]).on,
-    "one short delay is nothing, two within ninety days turn it on and two further apart do not; one of the lock or more turns it on, one under it does not, and one payment on time turns it off");
-  const r3 = L(reset), r5 = L(reset.concat([d("2026-07-02", 0), d("2026-07-03", 1)])), r6 = L(reset.concat([d("2026-07-02", 0), d("2026-07-03", 1), d("2026-07-04", 1)]));
-  const far = L([d("2026-01-01", 4), d("2026-01-02", 1), d("2026-06-01", 2)]);
-  ok(r3.on && r3.why === "repeat" && r3.need === 3 && r5.on && r5.streak === 2 && !r6.on && !far.on,
-    "a delay within ninety days of turning off turns it on again, and then it takes three payments on time in a row; past the window a lone short delay is nothing: "
-    + JSON.stringify([r3, r5, r6, far]));
-  const lr = (xs) => { const s = L(xs); return [s.late, s.run]; };
-  ok(JSON.stringify([lr([]), lr([d("2026-09-01", 1)]), lr([d("2026-09-01", 2)]), lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 1)]),
-    lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 5), d("2026-09-04", 0)]), lr([d("2026-06-01", 4), d("2026-06-02", 0)])]) === '[[false,0],[false,1],[true,0],[true,2],[true,1],[true,1]]',
-    "V5b2c reads the one walk for prepay: any delay in all history, and the payments on time in a row since the last, whether or not the offer is on: "
-    + JSON.stringify([lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 1)]), lr([d("2026-09-01", 2), d("2026-09-02", 0), d("2026-09-03", 5), d("2026-09-04", 0)])]));
-  ok(!L([d("2026-09-01", 1), d("2026-09-01", 5)]).on,
-    "a delay settled on the day of a payment on time is walked before it, so the payment turns it off");
-
-  const { openMaster: om5c } = await import("../tools/payload.mjs");
-  const { w: w5c } = await om5c();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w5c);
-  const rd5c = (e) => JSON.parse(String(w5c.eval("JSON.stringify(" + e + ")")));
-  try {
-    /* CZ9-LTP holds Gold on salt and paid an oil row six days after its handover: late on salt's card too. CZ9-LTS holds Silver,
-       with the same delay: nowhere lower to offer. CZ9-OKP paid on time. */
-    w5c.eval("(function(){var D=86400000,ago=function(n){return new Date(TODAY.getTime()-n*D).toISOString().slice(0,10);};"
-      + "var s=function(rid,c,p,n,paid){var d=ago(n);return {rid:rid,customer:c,product:p,date:d,qty:1,total:100,cost:1,deliveredQty:1,deliveredOn:d,cash:100,paidOn:ago(n-paid)};};"
-      + "['CZ9-LTP','CZ9-LTS','CZ9-OKP'].forEach(function(c){if(roster.indexOf(c)<0)roster.push(c);});"
-      + "TIER_OF['CZ9-LTP']={salt:'Gold'};TIER_OF['CZ9-LTS']={salt:'Silver'};TIER_OF['CZ9-OKP']={salt:'Gold'};"
-      + "BASE_SALES.push(s('z5c1','CZ9-LTP','oil',20,6),s('z5c2','CZ9-LTS','salt',20,6),s('z5c3','CZ9-OKP','salt',20,1));"
-      + "queue=[];applyOverlay();setProd('salt');recompute();})()");
-    const lt = rd5c("{ltp:lateOf('CZ9-LTP'),lts:lateOf('CZ9-LTS'),okp:lateOf('CZ9-OKP')}");
-    ok(lt.ltp.on && lt.ltp.why === "long" && lt.ltp.days === 6 && lt.lts.on && !lt.okp.on,
-      "the desk reads a late payer across every book, an oil row counting on salt: " + JSON.stringify(lt));
-    /* 3. THE TIERS CARD OFFERS THE LEVEL DOWN BESIDE WHAT THEY HOLD, and none at the last level or to a prompt payer */
-    const cards = rd5c("(function(){setProdView('salt');switchTab('people');var o={};['CZ9-LTP','CZ9-LTS','CZ9-OKP'].forEach(function(c){"
-      + "var s=document.getElementById('tierSel_'+c+'_salt');o[c]=s?s.parentNode.textContent.replace(/\\s+/g,' '):null;});return o;})()");
-    /* 4. THE OFFER PRICES NOTHING: every customer holding a tier is quoted the same with every customer read late and with
-       none (a proposed tier loses its promotion when late, rule 1, which is the rules' and not the offer's) */
-    const same = rd5c("(function(){setProd('salt');recompute();var who=roster.filter(function(c){return cardTier(c)>=0&&TIER_OF[c]&&TIER_OF[c].salt;});"
-      + "var read=function(){return who.map(function(c){return shownSizes('salt').map(function(q){return cardQuote(c,q);}).join(',');}).join('|');};"
-      + "var k=lateOf,a,b,c;try{lateOf=function(){return {on:false};};a=read();lateOf=function(){return {on:true,need:1,streak:0,why:'long',days:9,open:true,since:null};};b=read();}finally{lateOf=k;}"
-      + "return {same:a===b,n:who.length,held:cardQuote('CZ9-LTP',1)};})()");
-    /* the Counter reads the same offer: the snapshot's lateOffers is the desk's lateDown over what is held, none at the last level or to a prompt payer */
-    const { pricingSnapshot: snap5c } = await import("../tools/book.mjs");
-    const lo5c = snap5c(w5c).lateOffers || {};
-    ok(lo5c['CZ9-LTP'] && lo5c['CZ9-LTP'].down.salt === 'Silver' && lo5c['CZ9-LTP'].why === 'paid 6 days after the handover' && !lo5c['CZ9-LTS'] && !lo5c['CZ9-OKP'],
-      "the pricing snapshot carries the late-payer offer the Tiers card shows: Silver to a late Gold holder, nothing at the last level or to a prompt payer: " + JSON.stringify(lo5c));
-    /* 05 Oct 2026: the held levels are the fixtures' now, salt's book levels retired for the drift */
-    ok(same.same && same.n >= 3 && same.held != null, "and the offer prices nothing: every held customer's quote is unchanged whether everyone is late or no one (" + same.n + " customers)");
-  } finally { await new Promise((r) => setTimeout(r, 200)); try { w5c.close(); } catch (e) { /* best effort */ } }
-})();
 section("v672: the word he banned lives on only in the dated records");
 await (async () => {
   /* v672: HIS RULE OF 24 AUG 2026 BANS ONE WORD IN EVERY FORM, on every surface, comments included, and it had come back: in
@@ -17769,8 +16531,8 @@ await (async () => {
     ok(as.h1 === "Associates" && co.h1 === "Coverage" && co.hash === "#map",
       "Associates keeps its name, and the map is headed Coverage at its old address: " + JSON.stringify({ as, co }));
     const card = String(w77.eval("pbCard()")), empty = String(w77.eval("(function(){var m={textContent:''};pbEmpty({rows:[],soon:true,code:'CX0-AA',product:'salt'},m);return m.textContent;})()"));
-    ok(/set on Clients/.test(card) && !/Customers/.test(card) && /set one on Clients\./.test(empty),
-      "the board card sends him to Clients to set a tier: " + JSON.stringify(empty));
+    ok(/set on Clients/.test(card) && !/Customers/.test(card) && /nothing to print\./.test(empty) && !/tier/.test(empty),
+      "the board card sends him to Clients for their %, and says plainly when a book has no price to print: " + JSON.stringify(empty));
   } finally { try { w77.close(); } catch (e) { /* best effort */ } }
 })();
 section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point in it is named by them first");
@@ -18058,7 +16820,7 @@ await (async () => {
   const kv = new KV();
   await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
   await kv.put("roster", JSON.stringify([]));
-  await kv.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 150 }] }] }));
+  await kv.put("guestboard", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] }));
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-1", u);
   await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw),
     wrap: await C.wrapKey(pw, ck), env: await C.encryptWith(ck, JSON.stringify({ statements: [] })) }));
@@ -18151,7 +16913,7 @@ await (async () => {
   const kv = new KV();
   await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
   await kv.put("roster", JSON.stringify([]));
-  await kv.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 150 }] }] }));
+  await kv.put("guestboard", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: 150 }] }] }));
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-13", u);
   const cardDoc = { at: "2026-09-18T00:00:00Z", products: [{ product: "salt", name: "Salt", unit: "unit",
     summary: { bought: 100, soldFor: 0, onward: 0, introduced: 0, referred: 0 }, reward: null, lines: [{ date: "2026-09-01", kind: "own", qty: 1, rm: 100 }] }] };
@@ -18488,7 +17250,7 @@ await (async () => {
       + JSON.stringify({ link: l.status, remembered: m.status, password: p.status }));
   } finally { kv.put = realPut; }
 })();
-section("S1 1.34: the Links panel counts the tiers off the list, Bronze's kept link says what it opens, and a withdrawn link is not waiting");
+section("S1 1.34: the Links panel lists the one standing link, an old level link reads as a standing link naming no level, and a withdrawn link is not waiting");
 await (async () => {
   /* 24 SEP 2026 (L36, L37): the panel said "The five, one for each tier" over four tiers and warned "Only 4
      of the five are made" with every link made; Bronze's kept link was captioned "quote Bronze", a level
@@ -18499,7 +17261,6 @@ await (async () => {
   const RF = await import("../stmt/refs.js");
   const { JSDOM } = await import("jsdom");
   const kv = new KV();
-  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
   await kv.put("roster", JSON.stringify([]));
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s1-34", u);
   await kv.put("u:" + u, JSON.stringify({ u, assoc: true, issued: "2026-09-01", verifier: await C.makeVerifier(pw),
@@ -18536,11 +17297,13 @@ await (async () => {
     /* ---- every tier's link made: four, and nothing said to be missing ---- */
     const D1 = await panel();
     const heads1 = [...D1.querySelectorAll("#glist .ghead")].map((x) => x.textContent), text1 = D1.getElementById("glist").textContent;
-    ok(D1.querySelectorAll("#glist .glink").length === 4 && heads1.includes("One link per price level") && !/five/i.test(text1) && !/Only \d/.test(text1),
-      "with a link for each of the four tiers the heading counts four off the list and nothing is said to be missing: " + JSON.stringify({ heads1, only: (/Only[^.]*\./.exec(text1) || [""])[0] }));
+    ok(D1.querySelectorAll("#glist .glink").length === 1 && heads1.join() === "Standing link" && !/five|Titanium|Platinum|Gold|Silver|Bronze/i.test(text1) && !/Only \d/.test(text1),
+      "the panel opens on the one standing link, named by no level and with nothing said to be missing: " + JSON.stringify({ heads1, n: D1.querySelectorAll("#glist .glink").length }));
 
     /* ---- Bronze's kept link, and a pending link its associate withdrew ---- */
-    const bronze = await RF.mintRef({ STMT: kv }, { level: "Bronze", label: "Bronze", by: "standing" });
+    /* a link as the store held it before the levels went: a level, a tier and a standing mark, its label the level's name */
+    const bronze = { id: "brnz-m2c3", tier: 2, introducer: null, level: "Bronze", standing: true, approved: true, label: "Bronze", made: "2026-09-01T00:00:00.000Z", by: "standing", opens: 0, first: null, last: null, revoked: false };
+    await kv.put("g:" + bronze.id, JSON.stringify(bronze));
     const sess = (await (await site("/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ u, password: pw }) })).json()).session;
     const my = (path) => site(path, { method: "POST", headers: { "X-Stmt-Session": sess, "content-type": "application/json" }, body: "{}" });
     const gone = (await (await my("/my/refs")).json()).ref.id, still = (await (await my("/my/refs")).json()).ref.id;
@@ -18550,8 +17313,8 @@ await (async () => {
     const groupOf = (id) => { let g = null; for (const n of D2.getElementById("glist").children) { if (n.classList.contains("ghead")) g = n.textContent; if (n === cardOf(id)) return g; } return null; };
     await until(() => cardOf(gone) && cardOf(still) && cardOf(bronze.id));
     const bh4 = cardOf(bronze.id) ? cardOf(bronze.id).querySelector("h4").textContent : "";
-    ok(!/quote Bronze/.test(bh4) && /An old link, kept/.test(bh4),
-      "Bronze's kept link is called an old link, kept, not a level the book no longer has: " + JSON.stringify(bh4));
+    ok(cardOf(bronze.id) && !/Bronze/.test(cardOf(bronze.id).textContent) && /For strangers/.test(bh4),
+      "a link that still carries a level is listed as a standing link and names no level: " + JSON.stringify(bh4));
     ok(groupOf(still) === "Waiting on you" && groupOf(gone) !== "Waiting on you",
       "a pending link its associate withdrew is not waiting on him, while the one still pending is: " + JSON.stringify([groupOf(still), groupOf(gone)]));
     ok(cardOf(gone) && ![...cardOf(gone).querySelectorAll("button")].some((b) => /Approve|Decline/.test(b.textContent))
@@ -18577,7 +17340,9 @@ await (async () => {
   await kv.put("issue", "2026-09-01");
   await kv.put("sheet", JSON.stringify({ at: "2026-09-21T00:00:00Z", issue: "2026-09-01",
     accounts: [{ code: "CX0-AA", username: u, issued: "2026-09-01", t: { owed: 0, toGet: 0, refund: 0, pend: 0 }, flag: "clear" }] }));
-  await kv.put("tiers", JSON.stringify(["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]));
+  /* a second link beside the standing one the listing makes */
+  await kv.put("g:shop-m2c3", JSON.stringify({ id: "shop-m2c3", introducer: u, standing: false, approved: true, label: "a shop",
+    made: "2026-09-20T00:00:00.000Z", by: "", opens: 0, first: null, last: null, revoked: false }));
   const TEAM = "maakmal", AUD = "aud-s1-35", KID = "kid-s1-35";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
     publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
@@ -18635,7 +17400,7 @@ await (async () => {
       "and with one that takes it, Copied, with that same link on the clipboard: " + JSON.stringify({ note: note(), copied: clip.got.length }));
     clip.ok = false;
     D.querySelector('button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
-    ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a tier");
+    ok(await until(() => [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link").length >= 2), "Links draws a card a link");
     const [l1, l2] = [...D.querySelectorAll("#glist button")].filter((b) => b.textContent === "Copy link");
     l1.click();
     ok(await until(() => l1.textContent !== "Copy link") && l1.textContent === "Copy failed",
@@ -19064,8 +17829,8 @@ await (async () => {
 
     /* the waiting link: Approve on the card moves it, and the card says so where he tapped */
     const lc = card("l:" + lid);
-    ok(/CX1-AS/.test(lc.textContent) && lc.querySelector("select") && btn(lc, "Approve") && btn(lc, "Decline"),
-      "the link's card names the associate by code and carries the tier it quotes, Approve and Decline");
+    ok(/CX1-AS/.test(lc.textContent) && !lc.querySelector("select") && btn(lc, "Approve") && btn(lc, "Decline"),
+      "the link's card names the associate by code, offers no price level to pick, and carries Approve and Decline");
     btn(lc, "Approve").click();
     ok(await until(async () => JSON.parse(await kv.get("g:" + lid)).approved === true) && await until(() => /Approved[.] It opens now/.test((card("l:" + lid) || {}).textContent || ""))
       && await until(() => /^1 to do now . 2 soon/.test(D.getElementById("nCount").textContent)),
@@ -19097,9 +17862,9 @@ await (async () => {
     ok(/Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(nc.textContent) && !btn(nc, "Send, after the update"),
       "an ID with no account says when it is made, offers the guest price list and has no Send at all");
     btn(nc, "Show the guest price list").click();
-    const silver = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"level":"Silver"/.test(v) && /"standing":true/.test(v)));
-    ok(await until(() => nc.querySelector(".glink .gu") && nc.querySelector(".glink .gu").textContent.endsWith("/g/" + silver.id)),
-      "and Show the guest price list draws the standing Silver link on the card");
+    const standingRec = JSON.parse((await kv.list({ prefix: "g:" })).keys.map((k) => kv.m.get(k.name)).find((v) => /"standing":true/.test(v)));
+    ok(await until(() => nc.querySelector(".glink .gu") && nc.querySelector(".glink .gu").textContent.endsWith("/g/" + standingRec.id)),
+      "and Show the guest price list draws the standing link on the card");
 
     /* the accounts nobody has been sent */
     const sc = card("s");
@@ -19864,7 +18629,7 @@ await (async () => {
     ok(await until(() => btn("k:" + uM, "Share the link")) && (await ots()) === 2, "and once made the redrawn card offers Share the link, one link made for it, not two");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S9 fix UX-R2: a move on a link that fails, and a tier pinned, are answered on the card tapped, in Needs you and in Links");
+section("S9 fix UX-R2: a move on a link that fails is answered on the card tapped, in Needs you and in Links");
 await (async () => {
   /* Approve, Decline and the tier pin answered a failure only in the page's own line, under every card and off a
      phone's screen, so a tap that failed changed nothing he could see. */
@@ -19922,10 +18687,7 @@ await (async () => {
       && !JSON.parse(await kv.get("g:" + lid)).approved,
       "Approve that never went out says so on the card, which keeps its buttons: " + JSON.stringify(note(card())));
     cut.on = false;
-    const sel = card().querySelector("select");
-    sel.value = "Gold"; sel.dispatchEvent(new win.Event("change", { bubbles: true }));
-    ok(await until(() => /That link now shows the Gold price list[.]/.test(note(card()))) && JSON.parse(await kv.get("g:" + lid)).level === "Gold",
-      "a tier pinned on the card is answered on the card: " + JSON.stringify(note(card())));
+    ok(!card().querySelector("select"), "and the card offers no price level to pin");
     /* the same in Links */
     D.querySelector('.salt-appbar button[data-m="customers"]').click(); D.querySelector('[data-act="part.customers.links"]').click();
     const lcard = () => D.querySelector('#glist [data-link="' + lid + '"]');
@@ -20199,9 +18961,9 @@ await (async () => {
       && JSON.stringify(by(us[0]).seen) === JSON.stringify({ first: "2026-09-02T01:00:00Z", last: "2026-09-20T01:00:00Z", opens: 3, how: "link" })
       && by(us[59]).seen && by(us[59]).seen.opens === 1 && by(us[1]).sent === "2026-09-04T01:00:00Z"
       && by(us[59]).sent === "2026-09-05T01:00:00Z" && by(us[2]).sent === "2026-09-06T01:00:00Z" && by(us[4]).seen === null && by(us[4]).sent === null
-      && by(us[3]).alerts === 1 && one.j.stranger === "Silver" && one.j.desk === null
+      && by(us[3]).alerts === 1 && !("stranger" in one.j) && one.j.desk === null
       && JSON.stringify(by(us[0]).qr) === JSON.stringify(realQr(url0).map((l) => l.join(""))),
-      "the list reads as before across both chunks of keys: seen and sent from the first and the last account, the old-lapse tick, alerts, the stranger's level, the QR: "
+      "the list reads as before across both chunks of keys: seen and sent from the first and the last account, the old-lapse tick, alerts, no level, the QR: "
       + JSON.stringify({ status: one.status, n: A.length, s0: by(us[0]).seen, t59: by(us[59]).sent, t2: by(us[2]).sent, err: A.length ? null : one.j }));
     const count = (log, op) => log.filter((e) => e.op === op).length;
     const perKey = one.log.filter((e) => e.op === "get" && /^(seen|sent):/.test(e.k)).length;
@@ -20210,9 +18972,9 @@ await (async () => {
       "120 keys cost two bulk reads and nothing a key; no tick is listed or rewritten, and the read writes nothing: "
       + JSON.stringify({ ops: one.log.length, bulk: count(one.log, "bulk"), perKey, lists: one.log.filter((e) => e.op === "list").map((e) => e.prefix), writes: count(one.log, "put") + count(one.log, "delete") }));
     const rounds = new Set(one.log.map((e) => e.after)).size;
-    /* eight since 29 Sep 2026: each of the two test accounts' records is read in the first round */
-    ok(rounds === 2 && one.log.filter((e) => e.after === 0).length === 8,
-      "the heads are read at once and the accounts' keys after them: two rounds, eight reads in the first: "
+    /* seven since 18 Oct 2026 (the tier names are no longer read; eight since 29 Sep 2026): each of the two test accounts' records is read in the first round */
+    ok(rounds === 2 && one.log.filter((e) => e.after === 0).length === 7,
+      "the heads are read at once and the accounts' keys after them: two rounds, seven reads in the first: "
       + JSON.stringify({ rounds, first: one.log.filter((e) => e.after === 0).map((e) => e.op + " " + (e.prefix || e.k)) }));
     ok(e1 - e0 === 60 && e2 - e1 === 0 && two.status === 200 && JSON.stringify(two.j.accounts.map((a) => a.qr)) === JSON.stringify(A.map((a) => a.qr)),
       "each account's QR is encoded once an isolate: sixty on the first open, none on the second, and the same codes: "
@@ -20297,7 +19059,7 @@ await (async () => {
     "130 links are read in two chunks of at most 100 keys and all come back: "
     + JSON.stringify({ n: Array.isArray(got130.out) ? got130.out.length : got130.out, bulk: got130.log.filter((e) => e.op === "bulk").map((e) => e.k.length) }));
 })();
-section("S9 fix R2: an ID with no account reads the stranger's level off the sheet, on Needs you and on its Accounts row, whether or not the links have loaded");
+section("S9 fix R2: an ID with no account offers the guest price list on Needs you and on its Accounts row, whether or not the links have loaded");
 await (async () => {
   /* Needs you named the level off /all/refs while stage 14 names it off /all/sheet: two sources, and until the links
      landed (or if they never did) the card said "the stranger's link". The sheet is the one source now, and the
@@ -20334,7 +19096,7 @@ await (async () => {
     const h = b64u(JSON.stringify({ alg: "RS256", kid: KID, typ: "JWT" })), c = b64u(JSON.stringify(claims));
     const tok = h + "." + c + "." + b64u(new Uint8Array(await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp.privateKey, new TextEncoder().encode(h + "." + c))));
     const sj = await (await site("/all/sheet", { headers: { "cf-access-jwt-assertion": tok } })).json();
-    ok(sj.ok && sj.stranger === "Silver", "the account list names the stranger's level off the book's names: " + JSON.stringify(sj.stranger));
+    ok(sj.ok && !("stranger" in sj), "the account list names no level for a stranger: " + JSON.stringify(Object.keys(sj)));
     /* the links never load: only the sheet does */
     win = new JSDOM(await (await site("/all", { headers: { "cf-access-jwt-assertion": tok } })).text(), { url: "https://k7m3p2.example/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
       w.fetch = async (q, o) => { o = o || {};
@@ -20345,7 +19107,7 @@ await (async () => {
     const nc = () => D.querySelector('#nlist [data-need="n:' + uN + '"]');
     ok(await until(() => nc() && /Their account comes with the next update[.] Show them the guest price list meanwhile[.]/.test(nc().textContent)
       && [...nc().querySelectorAll("button")].some((b) => b.textContent === "Show the guest price list")),
-      "Needs you names the Silver link with only the sheet read: " + (nc() || {}).textContent);
+      "Needs you offers the guest price list with only the sheet read: " + (nc() || {}).textContent);
     D.querySelector('.salt-appbar button[data-m="customers"]').click();
     const row = (u) => D.querySelector('#rlist [data-u="' + u + '"]');
     ok(await until(() => row(uN) && row(uN).textContent.startsWith("CX3-NO")
@@ -24777,7 +23539,7 @@ await (async () => {
   /* ---- the guest board, as the Worker serves it: lettered marks, and the letter's face in its own styles ---- */
   const RF8 = await import("../stmt/refs.js");
   const genv8 = { STMT: new KV() };
-  await genv8.STMT.put("board:2", JSON.stringify({ week: { label: "28 Sep 2026" },
+  await genv8.STMT.put("guestboard", JSON.stringify({ week: { label: "28 Sep 2026" },
     products: BOOKS8.concat(["spare"]).map((product) => ({ product, unit: "unit", sizes: [{ q: 1, price: 10 }] })) }));
   const g8 = await RF8.mintRef(genv8, { label: "f8" });
   const gr8 = await W8.fetch(new Request("https://k7m3p2.example/g/" + g8.id), genv8), board8 = await gr8.text();
@@ -24823,7 +23585,7 @@ await (async () => {
   const RF = await import("../stmt/refs.js");
   const kv = new KV(), env = { STMT: kv };
   const g = (id, e) => W.fetch(new Request("https://k7m3p2.example/g/" + id), e || env);
-  await kv.put("board:2", JSON.stringify({ week: { label: "21 Sep 2026" },
+  await kv.put("guestboard", JSON.stringify({ week: { label: "21 Sep 2026" },
     products: [{ product: "salt", unit: "unit", sizes: [{ q: 1, price: 150 }, { q: 2.5, price: 350 }] }] }));
   const open = await RF.mintRef(env, { label: "open" });
   const waiting = await RF.mintRef(env, { introducer: "abcd-efgh", by: "abcd-efgh" });
@@ -25328,12 +24090,13 @@ await (async () => {
   const { siteWords, wordsIn } = WL;
   const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const msrc = readFileSync(FROZEN_MASTER, "utf8");
-  const tierNames = JSON.parse((/const TIER_NAMES=(\[[^\]]*\]);/.exec(msrc) || [, "[]"])[1].replace(/'/g, '"'));
+  /* 18 Oct 2026: the master names no level, so the lock's list is the retired names kept as banned words and nothing in the master pins it */
+  const tierNames = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
   const names = Object.values(book.PRODUCTS || {}).filter((p) => !p.retired).map((p) => String(p.name).toLowerCase());
 
   /* ---- the lists ---- */
-  ok(tierNames.length >= 4 && tierNames.every((n) => WL.LEVEL_WORDS.includes(n.toLowerCase())) && WL.LEVEL_WORDS.includes("bronze"),
-    "every level the master names is on the lock's list, Bronze's old name kept: " + JSON.stringify(tierNames));
+  ok(!/const TIER_NAMES=/.test(msrc) && tierNames.every((n) => WL.LEVEL_WORDS.includes(n.toLowerCase())) && WL.LEVEL_WORDS.includes("bronze"),
+    "the master names no level, and every retired level name stays on the lock's list, Bronze's old name kept: " + JSON.stringify(tierNames));
   ok(names.length >= 4 && names.every((w) => WL.PRODUCT_WORDS.includes(w)) && WL.PRODUCT_WORDS.length === names.length,
     "every book's name is on the product list, and the list holds nothing else: " + JSON.stringify(names.filter((w) => !WL.PRODUCT_WORDS.includes(w))));
   const all = WL.LEVEL_WORDS.concat(WL.PRODUCT_WORDS);
@@ -25409,185 +24172,55 @@ await (async () => {
     process.off("unhandledRejection", onErr); process.off("uncaughtException", onErr);
   }
 })();
-section("v696: the guest links are five, one for each tier, and each one is a level and nothing else");
+section("v699: a standing link needs no board of its own, so minting one between publishes can never be wrong");
 await (async () => {
-  /* HIS INSTRUCTION OF 18 SEP 2026: "for the guest links, produce exactly 5 links, for the five
-     tier pricing." A link used to name the customer who handed it out and follow them (v658); the
-     five stand for the ladder instead. They are ENSURED on the listing rather than made on a tap,
-     minted once and kept for good, because an id already handed to a stranger must never change
-     what it opens. Ambassador is the floor and is never one of them. */
-  const R96 = await import("../stmt/refs.js");
-  const PL96 = await import("../tools/pricelist.mjs");
-  /* the fixture keeps the five of 18 Sep 2026: the mechanism is one standing link a tier, however many tiers there are */
-  const NAMES = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
-
-  const kv96 = new KV();
-  const env96 = { STMT: kv96 };
-  await kv96.put("tiers", JSON.stringify(NAMES));
-
-  /* ---- the five are ensured, in the ladder's order, once ---- */
-  const first = await R96.ensureStanding(env96, NAMES);
-  ok(first.length === 5 && first.map((r) => r.level).join(",") === "Titanium,Platinum,Gold,Silver,Bronze",
-    "five standing links, one for each tier, and the floor is not among them: " + first.map((r) => r.level).join(","));
-  ok(first.every((r) => r.standing === true && R96.REF_RE.test(r.id) && !r.introducer && r.revoked === false),
-    "each is its own credential, stands for a level and names no customer");
-  ok(new Set(first.map((r) => r.id)).size === 5, "and no two of them share an id");
-  const again = await R96.ensureStanding(env96, NAMES);
-  ok(JSON.stringify(again.map((r) => r.id)) === JSON.stringify(first.map((r) => r.id)),
-    "ensuring them twice mints nothing: an id handed to a stranger never changes what it opens");
-  ok((await R96.listRefs(env96)).length === 5, "and there are exactly five, not ten");
-  ok((await R96.ensureStanding({ STMT: new KV() }, null)).length === 0
-    && (await R96.ensureStanding({ STMT: new KV() }, ["Ambassador"])).length === 0
-    && (await R96.ensureStanding({ STMT: new KV() }, ["Ambassador", "Titanium"])).length === 1,
-    "with no names to hand it makes none, rather than inventing five, and with one tier it makes one");
-
-  /* ---- a standing link beside one that names a customer ---- */
-  const intro = await R96.mintRef(env96, { introducer: "abcd-efgh", label: "a shop" });
-  ok(intro && intro.standing === false && intro.level === null && intro.introducer === "abcd-efgh",
-    "a link minted against a customer is not a standing one and carries no level");
-  ok((await R96.ensureStanding(env96, NAMES)).length === 5 && (await R96.listRefs(env96)).length === 6,
-    "and it does not become one, nor stop the five being the five");
-
-  /* ---- the board a standing link serves is that level and nothing else ---- */
-  const bookN = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-  const { pricingSnapshot: ps96 } = await import("../tools/book.mjs");
-  const { openMaster: om96 } = await import("../tools/payload.mjs");
-  const { w: w96 } = await om96();
-  /* 05 Oct 2026: the level machinery, proved on salt's last level rule (levelWindow) */
-  levelWindow(w96);
-  const snap96 = ps96(w96);
-  if (snap96 && snap96.byProduct) {
-    const at96 = new Date("2026-09-15T02:00:00Z");
-    /* the boards are the LIVE book's levels, four since 23 Sep 2026 */
-    const LIVE = snap96.tierNames, TOP = LIVE.length - 1;
-    const boards = LIVE.slice(1).map((n, i) => PL96.tierBoard(i + 1, bookN, snap96, at96));
-    ok(boards.length === 4 && boards.every((b, i) => b.standing === true && b.level === i + 1 && b.tierName === LIVE[i + 1]),
-      "each board says which level it is and names it: " + boards.map((b) => b.tierName).join(","));
-    const salt = boards.map((b) => (b.products.find((x) => x.product === "salt") || {}).sizes)
-      .map((z) => (z && z.length ? z[z.length - 1].price : null));
-    ok(salt.every((x) => x != null) && new Set(salt).size === TOP && salt.every((x, i) => i === 0 || x > salt[i - 1]),
-      "and the prices are one a level, climbing with the ladder, the last of them the one a stranger is quoted: " + JSON.stringify(salt));
-    ok(PL96.tierBoard(9, bookN, snap96, at96).level === TOP && PL96.tierBoard(0, bookN, snap96, at96).level === 1,
-      "a level off either end is held to the ladder, so nothing can serve the floor by mistake");
-    ok(!("introducer" in boards[0]) && !("levels" in boards[0]),
-      "a standing board follows nobody: it carries no introducer and no per-product level to track");
-  } else skipData("no pricing snapshot on this machine, so the five boards were not priced");
-  try { w96.close(); } catch (e) { /* best effort */ }
-
-  /* ---- the listing route, driven behind a real Access token ---- */
-  const stmtW96 = (await import("../stmt/worker.js")).default;
-  const realFetch96 = globalThis.fetch;
-  const TEAM96 = "maakmal", AUD96 = "aud-96", KID96 = "kid-96";
-  const kp96 = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
-    publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
-  const pub96 = await crypto.subtle.exportKey("jwk", kp96.publicKey);
-  globalThis.fetch = async (u) => {
-    if (String(u) === "https://" + TEAM96 + ".cloudflareaccess.com/cdn-cgi/access/certs")
-      return new Response(JSON.stringify({ keys: [{ ...pub96, kid: KID96, kty: "RSA" }] }));
-    throw new Error("the Access gate reached for " + u);
-  };
-  const b64u96 = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const token96 = async () => {
-    const claims = { iss: "https://" + TEAM96 + ".cloudflareaccess.com", aud: [AUD96], email: "maakmal97@icloud.com", exp: Math.floor(Date.now() / 1000) + 600 };
-    const h = b64u96(JSON.stringify({ alg: "RS256", kid: KID96, typ: "JWT" })), c = b64u96(JSON.stringify(claims));
-    const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", kp96.privateKey, new TextEncoder().encode(h + "." + c));
-    return h + "." + c + "." + b64u96(new Uint8Array(sig));
-  };
-  try {
-    const kv2 = new KV();
-    await kv2.put("tiers", JSON.stringify(NAMES));
-    const env2 = { STMT: kv2, ACCESS_TEAM: TEAM96, ACCESS_AUD: AUD96 };
-    /* the FIRST level is made first, and listRefs hands back the newest first, so minting order
-       and ladder order disagree end to end: the order this comes back in can only be the ladder's */
-    await R96.mintRef(env2, { level: "Titanium", label: "Titanium", by: "standing" });
-    const get96 = async (tok) => stmtW96.fetch(new Request("https://k7m3p2.example/all/refs",
-      tok ? { headers: { "cf-access-jwt-assertion": tok } } : {}), env2);
-    ok((await get96(null)).status === 401 && (await kv2.list({ prefix: "g:" })).keys.length === 1,
-      "the route refuses without Access, and mints nothing on the way out: the one link made by hand above is still the only one");
-    const tok96 = await token96();
-    const j1 = await (await get96(tok96)).json();
-    ok(j1.ok && j1.refs.length === 5 && j1.refs.map((r) => r.level).join(",") === "Titanium,Platinum,Gold,Silver,Bronze",
-      "opening the panel makes the five and hands them back in the ladder's order: " + j1.refs.map((r) => r.level).join(","));
-    ok(j1.refs.every((r) => /\/g\/[a-z0-9-]{9}$/.test(r.url) && r.qr.startsWith("data:image/svg+xml,")),
-      "each carries its own address and a QR drawn in the Worker");
-    const j2 = await (await get96(tok96)).json();
-    ok(JSON.stringify(j2.refs.map((r) => r.id)) === JSON.stringify(j1.refs.map((r) => r.id)) && j2.refs.length === 5,
-      "and opening it again is still the same five, with the same ids");
-    const kv3 = new KV();   /* no tiers written yet: the publish has not run */
-    const j3 = await (await stmtW96.fetch(new Request("https://k7m3p2.example/all/refs",
-      { headers: { "cf-access-jwt-assertion": tok96 } }), { STMT: kv3, ACCESS_TEAM: TEAM96, ACCESS_AUD: AUD96 })).json();
-    ok(j3.ok && j3.refs.length === 0, "with no tiers written yet it makes none and says so by being empty, rather than inventing five");
-  } finally { globalThis.fetch = realFetch96; }
-})();
-section("v699: a standing link reads its level's board, so minting one between publishes can never be wrong");
-await (async () => {
-  /* THE HOLE v696 LEFT, ITS OWN SHAPE. The five standing links are minted the first time he opens
-     the Links panel, and their boards were written per link by the publish. So a link minted since
-     the last publish had no board of its own and fell back to board:2, which is the LAST level:
-     four of the five would have quoted Bronze until the next deploy, silently.
-     A STANDING LINK IS A LEVEL, and a level's board does not depend on which link points at it. The
-     five boards are written by the publish under tboard:<level>, and a standing link reads its own
-     level's. Nothing is published per link, so minting one can never be wrong.
-     tboard:, not board:, deliberately: board:2 already means the LAST level, not the second. */
+  /* THE HOLE v696 LEFT, ITS OWN SHAPE. The standing links are minted the first time he opens the Links panel, and their boards were
+     written per link by the publish, so a link minted since the last publish had no board and fell back to another's, silently.
+     18 Oct 2026: THE LEVELS ARE GONE. There is ONE guest board, `guestboard`, and one standing link for strangers; every link,
+     standing, introduced or minted since the publish, reads that board, so nothing is published per link. */
   const stmtW98 = (await import("../stmt/worker.js")).default;
   const R98 = await import("../stmt/refs.js");
-  const NAMES98 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
   const kv98 = new KV(), env98 = { STMT: kv98 };
-  await kv98.put("tiers", JSON.stringify(NAMES98));
-  /* five level boards and the old fallback, each saying plainly which one it is */
-  for (let k = 1; k <= 5; k++) await kv98.put("tboard:" + k, JSON.stringify({ level: k, tierName: NAMES98[k], standing: true,
-    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 100 + k }] }] }));
-  await kv98.put("board:2", JSON.stringify({ level: 5, tierName: "Bronze",
-    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 999 }] }] }));
-
-  const five = await R98.ensureStanding(env98, NAMES98);
-  ok(five.length === 5, "the five are minted, exactly as a first open of the Links panel mints them");
+  await kv98.put("guestboard", JSON.stringify({ week: { label: "14 Sep 2026" },
+    products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: 101 }] }] }));
   const open98 = async (id) => (await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + id), env98)).text();
   const priceOf = (html) => { const m = /RM\s*([0-9,]+)/.exec(html.replace(/<[^>]*>/g, " ")); return m ? +m[1].replace(/,/g, "") : null; };
 
-  const served = [];
-  for (const r of five) served.push(priceOf(await open98(r.id)));
-  ok(JSON.stringify(served) === JSON.stringify([101, 102, 103, 104, 105]),
-    "each of the five serves ITS OWN level's board with nothing published under its id: " + JSON.stringify(served));
-  ok(!served.includes(999), "and not one of them falls back to the board a stranger sees, which is what v696 would have done");
-  ok((await kv98.list({ prefix: "gboard:" })).keys.length === 0,
-    "nothing at all is written per standing link: there is no gboard: key in the store");
+  const one = await R98.ensureStanding(env98), again = await R98.ensureStanding(env98);
+  ok(one && one.standing === true && again.id === one.id && (await R98.listRefs(env98)).length === 1
+    && !("level" in one) && !("tier" in one),
+    "the one standing link is minted once, ensured again as the same id, and carries no level or tier");
+  ok(priceOf(await open98(one.id)) === 101, "and it serves the guest board with nothing published under its id");
+  ok((await kv98.list({ prefix: "gboard:" })).keys.length === 0 && (await kv98.list({ prefix: "tboard:" })).keys.length === 0,
+    "nothing at all is written per link: there is no gboard: or tboard: key in the store");
 
-  /* the introducer links of v658 are untouched: theirs DOES depend on who handed it out */
+  /* an old standing record, from the five: it is adopted as the standing link, and none is made over it */
+  const kvOld = new KV(), envOld = { STMT: kvOld };
+  await kvOld.put("guestboard", await kv98.get("guestboard"));
+  const oldRec = { id: "ttnm-m2c3", tier: 2, introducer: null, level: "Titanium", standing: true, approved: true, label: "Titanium",
+    made: "2026-09-18T00:00:00.000Z", by: "standing", opens: 3, first: null, last: null, revoked: false };
+  await kvOld.put("g:" + oldRec.id, JSON.stringify(oldRec));
+  const adopted = await R98.ensureStanding(envOld);
+  ok(adopted.id === oldRec.id && (await R98.listRefs(envOld)).length === 1 && priceOf(await (await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + oldRec.id), envOld)).text()) === 101,
+    "a standing link from the five is adopted as the standing link, none is minted over it, and it opens the one board");
+
+  /* the introducer links of v658 read the same board: it no longer depends on who handed it out */
   const intro98 = await R98.mintRef(env98, { introducer: "abcd-efgh", label: "a shop" });
-  await kv98.put("gboard:" + intro98.id, JSON.stringify({ introducer: "CX0-AA",
-    week: { label: "14 Sep 2026" }, products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 777 }] }] }));
-  ok(priceOf(await open98(intro98.id)) === 777, "a link that names an introducer still reads its own board, because that one does follow them");
+  ok(priceOf(await open98(intro98.id)) === 101 && !("level" in intro98) && !("tier" in intro98) && intro98.standing === false,
+    "a link that names an introducer reads the same board, and carries no level");
   const fresh98 = await R98.mintRef(env98, { introducer: "abcd-efgh", label: "minted since the publish" });
-  ok(priceOf(await open98(fresh98.id)) === 999,
-    "and one minted since the last publish still falls back to the board every stranger sees, which is the cap a guest board cannot pass");
+  ok(priceOf(await open98(fresh98.id)) === 101, "and one minted since the last publish reads it too");
 
-  /* a level whose board has not been written yet, and a store with no tier names at all */
-  await kv98.delete("tboard:3");
-  const gold = five.find((r) => r.level === "Gold");
-  ok(priceOf(await open98(gold.id)) === 999, "a level whose board is missing falls back to the stranger's board rather than serving nothing");
+  /* a store with no board written at all: a page, never a refusal or a throw */
   const kvNo = new KV();
-  for (const r of five) await kvNo.put("g:" + r.id, JSON.stringify(r));
-  await kvNo.put("board:2", await kv98.get("board:2"));
-  /* every level board IS here; what is missing is the names that turn a level into one of them, so
-     serving anything but the stranger's board would mean a level had been guessed at */
-  for (let k = 1; k <= 5; k++) if (await kv98.get("tboard:" + k)) await kvNo.put("tboard:" + k, await kv98.get("tboard:" + k));
-  ok(priceOf(await (await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + five[0].id), { STMT: kvNo })).text()) === 999,
-    "and with no tier names written at all it falls back rather than throwing");
-  ok((await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + five[0].id), { STMT: kvNo })).status === 200,
-    "which is a board, not a refusal");
+  await kvNo.put("g:" + one.id, JSON.stringify(one));
+  ok((await stmtW98.fetch(new Request("https://k7m3p2.example/g/" + one.id), { STMT: kvNo })).status === 200,
+    "with no board written yet a link answers a page and not a refusal");
 
-  /* THE PUBLISH WRITES THE FIVE, AND THE HOURLY RUN RETIRES NOBODY */
+  /* THE PUBLISH WRITES THE ONE BOARD, AND THE HOURLY RUN RETIRES NOBODY */
   const PUBSRC = readFileSync(join(REPO, "tools", "stmt-publish.mjs"), "utf8");
-  /* 23 Sep 2026: one a tier, however many the book names, four since Bronze went */
-  ok(/for \(let k = 1; k < \(\(pricing\.tierNames \|\| \[\]\)\.length \|\| 6\); k\+\+\) \{\n\s+plan\.puts\.push\(\{ key: "tboard:" \+ k, value: JSON\.stringify\(tierBoard\(k, bookNow, pricing, madeAt\)\) \}\);/.test(PUBSRC),
-    "the publish writes one board per level, from the same snapshot the sealed lists are struck from");
-  /* v709: ANY link carrying a level is left to its level's board, not only one of the five, because
-     he may pin a tier on an associate's; and one waiting on him serves nothing, so nothing is
-     written for it either. */
-  ok(/if \(rec && rec\.level\) \{ standing\+\+; continue; \}/.test(PUBSRC)
-    && /if \(rec && rec\.approved === false\) \{ orphans\+\+; continue; \}/.test(PUBSRC),
-    "and writes nothing under the id of a link that carries a level, nor of one still waiting on him");
+  ok(/plan\.puts\.push\(\{ key: "guestboard", value: JSON\.stringify\(guestBoard\(bookNow, pricing, new Date\(\)\)\) \}\);/.test(PUBSRC),
+    "the publish writes the one guest board under guestboard, from the same snapshot the sealed lists are struck from");
   const { planPublish } = await import("../tools/stmt-publish.mjs");
   ok(/const retire = !\(opts && opts\.noRetire\);/.test(PUBSRC) && /if \(r\.records\.length && retire\)/.test(PUBSRC),
     "the retirement is behind a flag the hourly run clears");
@@ -25614,8 +24247,9 @@ await (async () => {
       writeFileSync(join(dir55, "_kv", u + ".json"), JSON.stringify({ u, issued: "2026-09-01", issues: ["2026-09-01"],
         verifier: await C55.makeVerifier(pw), wrap: await C55.wrapKey(pw, ck), env: await C55.encryptWith(ck, JSON.stringify({ statements: [] })) }) + "\n");
     }
-    /* the links as stmt/refs.js mintRef writes them: three standing, one pinned to a level on approval, two following an
-       introducer, one waiting on him, one that does not parse; and a g: key that is not a link */
+    /* the links as the store holds them (older ones carry a tier and a level): three standing, one pinned to a level on approval,
+       two following an introducer, one waiting on him, one that does not parse; and a g: key that is not a link. The publish
+       reads none of them since 18 Oct 2026, and writes no board for one. */
     const link = (id, o) => JSON.stringify(Object.assign({ id, tier: 2, introducer: null, level: null, standing: false, approved: true,
       label: "", made: "2026-09-20T00:00:00.000Z", by: "", opens: 0, first: null, last: null, revoked: false }, o));
     const site0 = () => new Map([
@@ -25647,24 +24281,10 @@ await (async () => {
       }
       throw new Error("the stub does not know " + op);
     };
-    const asRead = (s) => [...s.keys()].filter((k) => /^g:[a-z0-9]{4}-[a-z0-9]{4}$/.test(k))
-      .map((k) => { let r = null; try { r = JSON.parse(s.get(k)); } catch (e) { r = null; } return [k.slice(2), r]; });
-    const want = JSON.stringify(asRead(site0()));
     const gets = (c) => c.filter((x) => x.startsWith("kv key get g:")).length;
     const lists = (c) => c.filter((x) => x.startsWith("kv key list")).length;
     const quietly = (fn) => { const log = console.log, said = []; console.log = (...m) => said.push(m.join(" ")); try { return [fn(), said]; } finally { console.log = log; } };
-
-    /* ---- the links: one list and one bulk get ---- */
-    const cA = [], [gotA] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cA)));
-    ok(JSON.parse(want).length === 8 && JSON.stringify(gotA) === want,
-      "the bulk read hands back every link's record exactly as a get per link reads it, an unreadable one as null: " + (gotA || []).length);
-    ok(cA.join() === "kv key list g:,kv bulk get", "the eight links are read in two spawns, one list and one bulk get, not a get each: " + cA.join());
-    const cB = [], [gotB, saidB] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cB, "fails")));
-    ok(JSON.stringify(gotB) === want && gets(cB) === 8 && saidB.some((l) => /^::warning::the links' bulk read did not answer/.test(l)),
-      "when the bulk get fails, each link is read by a get of its own, the same records, and the log says so: " + gets(cB));
-    const cC = [], [gotC] = quietly(() => P55.readRefs(out55, wr55(site0(), new Map(), cC, "other")));
-    ok(JSON.stringify(gotC) === want && gets(cC) === 8,
-      "and an answer in a shape it does not read is not taken for eight empty links: it reads them one at a time: " + gets(cC));
+    ok(P55.readRefs === undefined, "the publish no longer reads the guest links, since every link reads the one board");
 
     /* ---- the whole publish, driven through main against the stub ---- */
     const run55 = async (argv, run, key, sleep) => {
@@ -25696,14 +24316,13 @@ await (async () => {
 
     /* ---- the hourly run with prices, which is the one that reads the links ---- */
     const sP = site0(), cP = [], saidP = await run55(["--no-retire"], wr55(sP, new Map(), cP), K55);
-    const boards = [...sP.keys()].filter((k) => k.startsWith("gboard:")).sort();
-    const intro = (k) => { try { return JSON.parse(sP.get(k)).introducer; } catch (e) { return null; } };
-    ok(saidP.includes("returned") && boards.join() === "gboard:gaaa-2222,gboard:gccc-2222"
-      && intro("gboard:gaaa-2222") === "CZ9-AAA" && intro("gboard:gccc-2222") === "CZ9-BBB",
-      "the priced hourly run writes a board for each link following an introducer on the roster, and none for a standing, pinned, waiting or unreadable one: "
+    const boards = [...sP.keys()].filter((k) => /^(g|t)?board:|^guestboard$|^tiers$/.test(k)).sort();
+    const gb = (() => { try { return JSON.parse(sP.get("guestboard")); } catch (e) { return null; } })();
+    ok(saidP.includes("returned") && boards.join() === "guestboard" && gb && gb.products.length > 0 && !("introducer" in gb) && !("levels" in gb),
+      "the priced hourly run writes the one guest board and no board per link, per level or per introducer, and no level names: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 2 && gets(cP) === 0 && lists(cP) === 1 && cP.length === 12 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
-      "in twelve spawns, the restock dates among them: one bulk read for links and one for account verification, no get per link, no list but the links', and each test account's record read for its fixture: " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 0 && cP.length === 10 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
+      "in ten spawns, the restock dates among them: one bulk read for account verification, no read of the links at all, no list, and each test account's record read for its fixture: " + cP.join());
 
     /* ---- 03 Oct 2026, run 37122717841: the account read-back meets KV's eventual consistency ----
        The store answers the account records' bulk read with what it held BEFORE the put for the first `lag` reads (or
@@ -26966,8 +25585,8 @@ await (async () => {
     const sheetRes = await W143.fetch(new Request("https://k7m3p2.example/all/sheet", { headers: { "cf-access-jwt-assertion": jwt } }), env);
     const sheetJ = await sheetRes.json();
     const wlk = sheetJ.accounts.find((a) => a.code === "CZ9-WLK"), ltr = sheetJ.accounts.find((a) => a.code === "CZ9-LTR");
-    ok(sheetRes.status === 200 && wlk && wlk.account === true && ltr && ltr.account === false && sheetJ.stranger === "Silver",
-      "his list has the walk-in's account, the other code with none, and the stranger's level off the book's names: "
+    ok(sheetRes.status === 200 && wlk && wlk.account === true && ltr && ltr.account === false && !("stranger" in sheetJ),
+      "his list has the walk-in's account, the other code with none, and names no level: "
       + JSON.stringify({ wlk: wlk && wlk.account, ltr: ltr && ltr.account, stranger: sheetJ.stranger }));
     const { landingPage: lp143 } = await import("../stmt/page.js");
     const { JSDOM: JD143 } = await import("jsdom");
@@ -27412,7 +26031,7 @@ await (async () => {
   const broken = await tick8([{ doc: "not json at all" }]);
   ok(broken.sent.length === 0, "a row that will not parse is not read as an open refund, and does not throw");
 })();
-section("v709: an associate mints their own link, it is shut until he approves it, and he may set its tier");
+section("v709: an associate mints their own link, it is shut until he approves it, and he may approve or decline it");
 await (async () => {
   /* HIS INSTRUCTION OF 18 SEP 2026: "if they want to refer to a customer, they will be able to mint
      their own link, just like how I'd choose a customer and generate the link. It will need to be
@@ -27424,13 +26043,9 @@ await (async () => {
   const stmtW9 = (await import("../stmt/worker.js")).default;
   const R9 = await import("../stmt/refs.js");
   const C9 = await import("../tools/stmt-crypto.mjs");
-  const NAMES9 = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver", "Bronze"];
 
   const kv9 = new KV();
-  await kv9.put("tiers", JSON.stringify(NAMES9));
-  await kv9.put("board:2", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 999 }] }] }));
-  for (let k = 1; k <= 5; k++) await kv9.put("tboard:" + k, JSON.stringify({ level: k, tierName: NAMES9[k],
-    products: [{ product: "salt", name: "Salt", unit: "unit", tierName: "", sizes: [{ q: 1, price: 100 + k }] }] }));
+  await kv9.put("guestboard", JSON.stringify({ products: [{ product: "salt", name: "Salt", unit: "unit", sizes: [{ q: 1, price: 101 }] }] }));
   const mk9 = async (isAssoc) => {
     const u = C9.newUsername(), pw = C9.newPassword(), ck = await C9.contentKey("s9", u);
     const rec = { u, issued: "2026-09-01", verifier: await C9.makeVerifier(pw), wrap: await C9.wrapKey(pw, ck),
@@ -27503,8 +26118,8 @@ await (async () => {
       body ? { method: "POST", body: JSON.stringify(body) } : { method: body === undefined ? "GET" : "POST" })), envAll);
 
     const listed = await (await his("/all/refs")).json();
-    ok(listed.ok && JSON.stringify(listed.tiers) === JSON.stringify(NAMES9),
-      "his listing carries the tier names, so his picker never states what the tiers are called");
+    ok(listed.ok && !("tiers" in listed) && listed.refs.filter((r) => r.standing).length === 1,
+      "his listing carries no tier names, and holds the one standing link");
     const dec = await (await his("/all/refs/" + made.ref.id + "/decline", {})).json();
     /* D13, 24 SEP 2026: DECLINE IS ITS OWN STATE. It wrote approved:false, the pending state itself,
        so the associate read "waiting" for ever; it keeps that (the door stays shut by the one test)
@@ -27515,28 +26130,21 @@ await (async () => {
     const app = await (await his("/all/refs/" + made.ref.id + "/approve", {})).json();
     ok(app.ok && app.ref.approved === true && app.ref.declined === false && (await guest(made.ref.id)).status === 200,
       "and approving it opens it, quoting the board it would have quoted all along");
-    /* THE FLOOR IS NOT A TIER A GUEST MAY BE QUOTED. Ambassador is index 0; pinning it would
-       silently serve the board instead of what he picked. */
-    const floor9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Ambassador" })).json();
-    ok(floor9.ok === false && /not a tier a guest may be quoted/.test(floor9.error || ""),
-      "the floor is refused outright rather than quietly serving the board: " + JSON.stringify(floor9.error));
-    const junk9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Diamond" })).json();
-    ok(junk9.ok === false, "and a tier that is not on this book is refused too");
-    const set9 = await (await his("/all/refs/" + made.ref.id + "/level", { level: "Gold" })).json();
-    ok(set9.ok && set9.ref.level === "Gold", "a tier he picks is set through his own route");
+    /* THE LEVEL ROUTE IS GONE: a link has no level to set, and a request for one finds no route. */
+    const lvl9 = await his("/all/refs/" + made.ref.id + "/level", { level: "Gold" });
+    ok(lvl9.status === 404 && !("level" in JSON.parse(await kv9.get("g:" + made.ref.id))),
+      "there is no route to pin a level on a link, and none is written: " + lvl9.status);
   } finally { globalThis.fetch = realFetch9; }
 
-  /* ---- the tier he may change, and the floor he may not pick ---- */
+  /* ---- the one board, and the one standing link ---- */
   const priceOf = async (id) => { const h = (await (await guest(id)).text()).replace(/<[^>]*>/g, " ");
     const m = /RM\s*([0-9,]+)/.exec(h); return m ? +m[1].replace(/,/g, "") : null; };
-  ok((await priceOf(made.ref.id)) === 103,
-    "and a tier he pins is read off that level's own board, with nothing published for the link itself");
-  const pinned = JSON.parse(await kv9.get("g:" + made.ref.id));
-  ok(pinned.standing !== true,
-    "a link he pinned a tier on is NOT one of the five: standing stays false, or ensureStanding would adopt it as one he hands to strangers");
-  ok((await R9.ensureStanding(env9, NAMES9)).length === 5
-    && (await R9.listRefs(env9)).filter((r) => r.standing).length === 5,
-    "and the five are still exactly five after an associate has minted and he has pinned a tier");
+  ok((await priceOf(made.ref.id)) === 101, "an approved associate's link opens the one guest board");
+  const approved9 = JSON.parse(await kv9.get("g:" + made.ref.id));
+  ok(approved9.standing !== true && !("level" in approved9) && !("tier" in approved9),
+    "and carries no level, and is NOT the standing link: standing stays false, or ensureStanding would adopt it as the one he hands to strangers");
+  ok((await R9.ensureStanding(env9)).standing === true && (await R9.listRefs(env9)).filter((r) => r.standing).length === 1,
+    "and the standing link is still exactly one after an associate has minted and he has approved");
 
   /* ---- their own, and nobody else's ---- */
   const theirs = await (await my("/my/refs", A9.session)).json();
@@ -30882,75 +29490,6 @@ await (async () => {
   /* and each is a line on the page, measured rather than read off the stylesheet */
   const disp = String(w.eval('(function(){var e=document.querySelector(".lmove .ltext .chg");return e?getComputedStyle(e).display:"nothing drawn";})()'));
   ok(disp === "block", "each change occupies its own line on the built desk: " + disp);
-})();
-
-section("v749: the price stack carries every level, and the five-tier card is folded into it");
-await (async () => {
-  /* his instruction of 20 Sep 2026, on the two cards side by side: show it for all tiers, probably combinable.
-     The stack gave COGS, the floor and ONE level's rate, margin and multiple, the board's last; the other five
-     were bare totals in a card further down. One table now. */
-  const { openMaster } = await import("../tools/payload.mjs");
-  const { w } = await openMaster();
-  const read = (p) => JSON.parse(String(w.eval("(function(){setProdView(" + JSON.stringify(p) + ");switchTab('pricing');"
-    + "var sec=document.querySelector('.sec.on');"
-    + "var t=sec.querySelector('table.pxboard');if(!t)return JSON.stringify({err:'no stack table'});"
-    + "var lbl=function(c){return (c.firstChild?(c.firstChild.textContent||''):c.textContent).trim();};"
-    + "var lvlN=Math.max.apply(null,fiveTiersNow().map(function(g){return g.prices.length;}));"
-    + "var names=[TIER_NAMES[0]].concat(TIER_NAMES.slice(TIER_NAMES.length-(lvlN-1)));"
-    /* 05 Oct 2026: a drift book's two columns are its floor and its Set Price */
-    + "var drift=driftBook(PROD);if(drift)names=['Floor','Set price'];"
-    + "var body=[].map.call(t.tBodies[0].rows,function(r){return {cells:r.cells.length,"
-    + "lvl:[].slice.call(r.cells,3).map(function(c){return c.textContent.trim();}),size:lbl(r.cells[0])};});"
-    + "return JSON.stringify({drift:drift,names:names,head:[].map.call(t.rows[0].cells,lbl),body:body,"
-    + "tables:sec.querySelectorAll('table.fivetier').length,cards:sec.querySelectorAll('.card').length,"
-    + "want:fiveTiersNow().map(function(g){return g.prices;}),"
-    + "floors:fiveTiersNow().map(function(g){return priceLadder(g.q).floor.total;}),"
-    + "insight:[].map.call(sec.querySelectorAll('.insight'),function(d){return d.textContent;}).join(' ')});})()")));
-
-  for (const p of ["salt", "oil"]) {
-    const t = read(p);
-    ok(!t.err, p + ": the stack table is on the page: " + (t.err || "yes"));
-    /* THE HEAD IS THE BOOK'S OWN LEVELS. oil's rule is a fixed price a size, so it has two levels where salt
-       has six, and the card folded in here printed six heads over its two cells from v641 until now. */
-    ok(JSON.stringify(t.head) === JSON.stringify(["Size", "COGS", "Eff. cost"].concat(t.names)),
-      p + ": the head is size, COGS, the floor and then a column a level: " + JSON.stringify(t.head));
-    ok(t.body.every((r) => r.cells === 3 + t.names.length),
-      p + ": every row has as many cells as the head has columns: " + JSON.stringify(t.body.map((r) => r.cells)));
-    /* EVERY LEVEL CARRIES THE FOUR LINES THE ASK HAS CARRIED SINCE v564, not a bare total */
-    ok(t.body.every((r) => r.lvl.every((c) => /RM/.test(c) && /% margin/.test(c) && /x eff\./.test(c))),
-      p + ": every level's cell carries its total, rate, margin and multiple of break-even: " + JSON.stringify(t.body[0] && t.body[0].lvl[0]));
-    /* and the prices are the engine's, in the ladder's own order, every rung of it */
-    const drawn = t.body.map((r) => r.lvl.map((c) => +(c.replace(/,/g, "").match(/[0-9]+/) || [0])[0]));
-    ok(JSON.stringify(drawn) === JSON.stringify(t.want),
-      p + ": every cell is the engine's price for that level, every rung drawn: " + JSON.stringify(drawn.slice(0, 2)) + " against " + JSON.stringify(t.want.slice(0, 2)));
-    /* AND THE TWO DERIVED FIGURES ARE THE ARITHMETIC, not a label. Margin is what is left over break-even and the
-       multiple is the price over it, which is what the ask has meant since v552; a cell carrying the words and the
-       wrong figures reads exactly like one carrying the right ones. */
-    const sums = [];
-    t.want.forEach((ps, i) => ps.forEach((px, j) => {
-      const m = Math.round((px - t.floors[i]) / px * 100) + "% margin";
-      const x = (px / t.floors[i]).toFixed(2) + "x eff.";
-      const cell = t.body[i] && t.body[i].lvl[j];
-      if (!cell || cell.indexOf(m) < 0 || cell.indexOf(x) < 0) sums.push({ size: t.body[i] && t.body[i].size, level: t.names[j], want: m + " " + x, got: cell });
-    }));
-    ok(!sums.length, p + ": every level's margin is struck on break-even and its multiple is the price over it: " + (sums.length ? JSON.stringify(sums.slice(0, 2)) : t.want.length + " rows checked"));
-    ok(t.tables === 1, p + ": one table on the page carries the levels, not two: " + t.tables);
-    ok(t.drift ? /The Set Price is the board a stranger is quoted/.test(t.insight) && !/pays the floor/.test(t.insight)
-      : /pays the floor/.test(t.insight) && new RegExp(t.names[t.names.length - 1] + " is the board").test(t.insight),
-      p + ": and the sentence about the levels moved with them, the Set Price's on a drift book: " + (t.drift ? "drift " : "") + (/pays the floor|Set Price is the board/.test(t.insight) ? "present" : "gone"));
-  }
-
-  /* A SIZE OFF THE BOARD IS STILL PRICED, which is what the folded-in card said at v657. Forced, because
-     every size is on the board today and an assertion that cannot reach the state it describes proves nothing. */
-  const off = JSON.parse(String(w.eval("(function(){setProdView('salt');"
-    + "var was=PRICE_SET&&PRICE_SET.salt?JSON.parse(JSON.stringify(PRICE_SET.salt)):null;"
-    + "PRICE_SET.salt=Object.assign({},PRICE_SET.salt||{},{hide:[1]});recompute();switchTab('pricing');"
-    + "var t=document.querySelector('.sec.on table.pxboard');"
-    + "var rows=[].map.call(t.tBodies[0].rows,function(r){return r.cells[0].textContent.trim();});"
-    + "if(was)PRICE_SET.salt=was; else delete PRICE_SET.salt; recompute();"
-    + "return JSON.stringify({rows:rows,marked:rows.filter(function(x){return /off the board/.test(x);})});})()")));
-  ok(off.rows.length === 12 && off.marked.length === 1 && /^1 unit/.test(off.marked[0]),
-    "a size taken off the board keeps its row and says it is off: " + JSON.stringify(off.marked));
 })();
 
 section("v750: the three orders of 16, 18 and 19 September each read 5 unit, RM420 and RM15 of carriage, completed");
@@ -35799,8 +34338,7 @@ await (async () => {
       first() { const r = st.get(...a); return r === undefined ? null : r; }, all() { return { results: st.all(...a) }; } });
     const self = mk([]); self.bind = (...a) => mk(a); return self; } };
   const CODE = "CX1-AB", U = "abcd-efgh";
-  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
-    tierOf: { [CODE]: { salt: "Gold" } }, profileRule: { smallUpTo: 1, bigFrom: 3 },
+  const PRICING = { v: "v900", takenAt: "2026-09-24T00:00:00.000Z", profileRule: { smallUpTo: 1, bigFrom: 3 },
     byProduct: { salt: { stockCost: 56, floors: { "1": { floor: 80 }, "2": { floor: 150 }, "3": { floor: 215 } }, inputs: null, sizes: [1, 2, 3],
       ladder: [{ q: 1, prices: [84, 100, 110, 120, 130], fixed: false }, { q: 2, prices: [170, 180, 190, 200, 220], fixed: false }],
       cards: { [CODE]: [[1, 100], [2, 190]] } } } };
@@ -35834,7 +34372,7 @@ await (async () => {
     "the cost, the margin on the goods and the floor, as the drafter reads them: " + JSON.stringify({ cost: j.cost, margin: j.margin, floor: j.floor }));
   ok(j.usual && j.usual.rate === 100 && j.usual.orders === 3 && j.usual.dir === "below" && j.usual.off === -20 && j.usual.far === true,
     "their usual, with which way this order sits from it and whether it is as far as the flag's line: " + JSON.stringify(j.usual));
-  ok(j.card === 190 && /^Gold at 2 unit$/.test(j.cardNote),
+  ok(j.card === 190 && /^their card at 2 unit$/.test(j.cardNote),
     "their card at this size, the desk's own cardQuote carried in the snapshot, beside the RM 160 their page quoted: " + JSON.stringify({ card: j.card, note: j.cardNote }));
   ok(j.told === "They see Placed: Waiting for us to confirm." && j.pricing && j.pricing.v === "v900" && /^[0-9a-f]{16}$/.test(j.pricing.digest)
     && /^[0-9a-f]{64}$/.test(j.hash) && !("entry" in j),
@@ -40871,8 +39409,8 @@ await (async () => {
         + JSON.stringify(t.hs.map((c) => c.divs)));
       /* THE WORDS ARE KEPT, IN FULL, and they are still IN the cell, so the one reader who cannot hover
          is read the column's meaning with its name rather than losing it. */
-      ok(hinted.some((c) => c.hint === "break-even, the floor")
-        && hinted.some((c) => /what a stranger pays/.test(c.hint)),
+      ok(hinted.some((c) => c.hint === "break-even, the least he may go to")
+        && hinted.some((c) => /what a stranger is quoted/.test(c.hint)) && hinted.some((c) => c.hint === "the most anyone is quoted"),
         p + ": the lines that were under the headings are the hints, word for word: " + JSON.stringify(hinted.map((c) => c.hint)));
       ok(hinted.every((c) => c.all.startsWith(c.label) && c.all.includes(c.hint)),
         p + ": and each stays inside its own heading, name first: " + JSON.stringify(hinted[0] && hinted[0].all));
@@ -42596,15 +41134,17 @@ await (async () => {
   const PLr = await import("../tools/pricelist.mjs");
   const cost = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {},
     costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
-  const pricingFor = (cols) => ({ sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"], tierOf: { "CX0-NC": { salt: "Silver" } },
-    byProduct: { salt: { sizes: [1, 2], inputs: { cost, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100].slice(0, cols) }, { q: 2, prices: [150, 170, 190].slice(0, cols) }] } } });
+  /* 18 Oct 2026: a customer's card is the Set Price at each size; a card with no size on it is the missing column of the old levels */
+  const pricingFor = (cols) => ({ sizes: [1, 2],
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost, policy: {} }, ladder: [{ q: 1, prices: [100], drift: true }, { q: 2, prices: [190], drift: true }],
+      cards: { "CX0-NC": [[1, 100], [2, 190]].slice(0, cols ? 2 : 0) } } } });
   const bookR = { PRODUCTS: { salt: { name: "Salt", unit: "unit" } }, PROD_ORDER: ["salt"], sales: [] };
   const at = new Date("2026-09-03T06:00:00Z");
-  const full = PLr.priceList("CX0-NC", bookR, pricingFor(3), at), short = PLr.priceList("CX0-NC", bookR, pricingFor(1), at);
+  const full = PLr.priceList("CX0-NC", bookR, pricingFor(2), at), short = PLr.priceList("CX0-NC", bookR, pricingFor(0), at);
   ok(full.products.length === 1 && full.products[0].sizes.length === 2,
-    "the fixture prices when the board has the level's column, so the case below is the missing column and nothing else");
+    "the fixture prices when the customer's card has its sizes, so the case below is the missing card and nothing else");
   ok(!short.products.length && short.soon.length === 1 && short.soon[0].product === "salt",
-    "with no column for their level every size drops out, and the product is coming soon rather than a list with no sizes: "
+    "with no size on their card every size drops out, and the product is coming soon rather than a list with no sizes: "
     + JSON.stringify({ products: short.products.map((p) => [p.product, p.sizes.length]), soon: short.soon.map((p) => p.product) }));
 
   const { landingPage: lpR } = await import("../stmt/page.js");
@@ -45152,77 +43692,6 @@ await (async () => {
     "the rule that hides the rail's brand beside the page lives in the layer, where it outranks the recipe");
 })();
 
-section("23 Sep 2026: the pricing_v2 workbook, salt on four tiers and one price for oil, candy and rice");
-await (async () => {
-  /* HIS WORKBOOK OF 23 SEP 2026 and his answers that day: salt is Ambassador and four tiers on the quote's RM56 with the
-     engine's two guards kept, Bronze goes, candy and rice are stated a unit, and every customer gets the same oil, candy and
-     rice price. The salt figures are the ones read off the sheet with the guards applied, before the engine was touched, so
-     they are the workbook's and not the code's own echo. Each assertion was proved red by its own mutation, one at a time. */
-  const { openMaster } = await import("../tools/payload.mjs");
-  const { w } = await openMaster();
-  /* HIS WORKBOOK RATES ARE PROVED ON THE BOOK AS IT STOOD AT v895 (commit c8f1e053), the version
-     before the 27 Sep hand count that first moved rice's floor past RM60 at 10 units. Read from
-     git rather than guessed: at v895, ledger/book.json carried PROD_OPENING.candy.stated:null,
-     .rice.stated:85, and no COUNTS row for salt, candy or rice dated after 2026-09-23 (salt),
-     2026-09-24 (rice) and never (candy, which had no count at all). Pinning v896's three rows by
-     their exact figures only survives v896: he folds a hand count every few days, and the next
-     one would land after this section's own reset and fail it again exactly as v896 did. A DATE
-     CUTOFF survives every count from here on, because the book only grows forward: nothing for
-     these three products dated after 2026-09-24 belongs in the window the workbook was proved
-     against, whatever figures a later count carries. Applied on this window's copy only, never
-     on the live book. COUNT_ON is left alone: neither pxLeakCharge nor its sold window reads it
-     (checked in the master: its only readers are countedFor's display fallback and actions()'s
-     "Never counted" breach, neither of which this section touches), so there is nothing there
-     for a later count to move that this section could fail on. */
-  w.eval(`(()=>{
-    for(let i=COUNTS.length-1;i>=0;i--){
-      const c=COUNTS[i];
-      if(['salt','candy','rice'].includes(c.product)&&c.date>'2026-09-24')COUNTS.splice(i,1);
-    }
-    PROD_OPENING.candy.stated=null;
-    PROD_OPENING.rice.stated=85;
-  })()`);
-  /* 05 Oct 2026: his workbook's columns are proved on salt's last level rule; the live salt book prices by drift */
-  levelWindow(w);
-  const v = JSON.parse(w.eval(`JSON.stringify((()=>{const keep=PROD,o={};
-    const ask=(p,qs)=>{PROD=p;recompute();return qs.map(q=>PRICING_ENGINE.priceLadder(q,pxCost(),pxPolicy()).ask.total);};
-    PROD='salt';recompute();o.salt=Object.fromEntries(fiveTiersNow().map(r=>[r.q,r.prices]));
-    o.candy=ask('candy',[1,9,10,20,29,30]);o.rice=ask('rice',[1,4,5,9,10]);
-    PROD='salt';recompute();o.row=PRICING_ENGINE.ladderRow([1],pxCost(),pxPolicy())[0].name;
-    o.names=TIER_NAMES;o.tiered=tieredBooks();o.oilProp=tierCustomers().map(id=>tierProposal(id,'oil',tierBoards())).filter(Boolean).length;
-    PROD=keep;recompute();return o;})())`));
-  const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  ok(eq(v.salt["0.5"], [50, 60, 70, 80, 90]) && eq(v.salt["1"], [90, 110, 120, 130, 140]) && eq(v.salt["3"], [260, 310, 320, 370, 390])
-    && eq(v.salt["6.25"], [530, 550, 560, 690, 700]) && eq(v.salt["12.5"], [1050, 1060, 1070, 1080, 1090]),
-    "salt reads the workbook on RM56 with both guards: " + JSON.stringify(v.salt));
-  ok(eq(v.candy, [60, 540, 550, 1100, 1595, 1500]) && eq(v.rice, [8, 32, 35, 63, 60]),
-    "candy and rice are his rates a unit, to the ringgit: " + JSON.stringify({ candy: v.candy, rice: v.rice }));
-  ok(eq(v.names, ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"]) && v.row === "Silver",
-    "Bronze is gone and a stranger's row is named for the last level: " + JSON.stringify({ names: v.names, row: v.row }));
-  ok(eq(v.tiered, ["salt"]) && v.oilProp === 0, "a tier is salt's alone; nobody is proposed one on oil (" + v.oilProp + ")");
-
-  const { priceList } = await import("../tools/pricelist.mjs");
-  const { readBook } = await import("../tools/book.mjs");
-  const book = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
-  const pricing = (await readBook()).ledger.PRICING;
-  /* 05 Oct 2026: every customer the desk cards, salt's drift cards and any book's held level */
-  const lists = [...new Set([...Object.keys(pricing.tierOf || {}), ...Object.keys((pricing.byProduct.salt || {}).cards || {})])]
-    .filter((c) => !(book.partners || []).includes(c))   /* v1029: a partner pays cost, so is carded apart */
-    .map((c) => priceList(c, book, pricing, new Date()));
-  const fixed = lists.flatMap((L) => L.products.filter((p) => p.product !== "salt"));
-  const same = (pr) => new Set(fixed.filter((p) => p.product === pr).map((p) => JSON.stringify(p.sizes))).size === 1;
-  const candyQs = (fixed.find((p) => p.product === "candy") || { sizes: [] }).sizes.map((x) => x.q);
-  ok(lists.length > 20 && ["oil", "candy", "rice"].every(same) && fixed.every((p) => p.basis === "board" && p.tier == null),
-    "every customer is carded the same oil, candy and rice, with no level and so no mark");
-  ok(eq(candyQs, [1, 5, 10, 20, 30]), "a stated board reaches the list at every printed size, not only its rungs: " + JSON.stringify(candyQs));
-
-  const { ensureStanding } = await import("../stmt/refs.js");
-  const skv = new KV();
-  const made = await ensureStanding({ STMT: skv }, v.names);
-  ok(eq(made.map((r) => r.level), ["Titanium", "Platinum", "Gold", "Silver"]), "one standing link a tier, four of them: " + JSON.stringify(made.map((r) => r.level)));
-  try { w.close(); } catch (e) { /* best effort */ }
-})();
-
 section("v794: Today is every book at once, an item on every book listed once and a book's own item tagged with it");
 await (async () => {
   /* HIS INSTRUCTION OF 23 SEP 2026: combine every book on Today, not too convoluted to read, a great overview in its entirety.
@@ -45624,7 +44093,7 @@ await (async () => {
   function probe() {
     const ago = (n) => new Date(TODAY.getTime() - n * 864e5).toISOString().slice(0, 10);
     const row = (rid, customer, n, paid) => ({ rid, customer, qty: 1, total: 100, cost: 50, cash: paid === false ? 0 : 100, deliveredQty: 1, deliveredOn: ago(n), date: ago(n) });
-    ["CZ9-DU", "CZ9-LP", "CZ9-OW", "CZ9-FR", "CZ9-FR-R", "CZ9-ON", "CZ9-FU"].forEach((c) => { if (roster.indexOf(c) < 0) roster.push(c); TIER_OF[c] = { salt: TIER_NAMES[TIER_NAMES.length - 1] }; });
+    ["CZ9-DU", "CZ9-LP", "CZ9-OW", "CZ9-FR", "CZ9-FR-R", "CZ9-ON", "CZ9-FU"].forEach((c) => { if (roster.indexOf(c) < 0) roster.push(c); TIER_OF[c] = { salt: 0.5 }; });
     BASE_SALES.push(
       row("z817a", "CZ9-DU", 30), row("z817b", "CZ9-DU", 20),           // gap 10, due 10 days ago: due now
       row("z817c", "CZ9-LP", 60), row("z817d", "CZ9-LP", 55),           // gap 5, due 50 days ago: lapsing
@@ -45670,7 +44139,7 @@ await (async () => {
   function probe2() {
     const d = (n) => new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth() - 1, n)).toISOString().slice(0, 10);
     if (roster.indexOf("CZ9-HR") < 0) roster.push("CZ9-HR");
-    TIER_OF["CZ9-HR"] = { salt: TIER_NAMES[TIER_NAMES.length - 1] };
+    TIER_OF["CZ9-HR"] = { salt: 0.5 };
     BASE_SALES.splice(0, BASE_SALES.length,
       { rid: "z817m", customer: "CZ9-HR", qty: 1, total: 100, cost: 50, cash: 100, deliveredQty: 1, deliveredOn: d(2), date: d(2) },
       { rid: "z817n", customer: "CZ9-HR", qty: 1, total: 100, cost: 50, cash: 100, deliveredQty: 1, deliveredOn: d(4), date: d(4) });
@@ -46075,12 +44544,10 @@ await (async () => {
     if (!v.keys) skipData("no customer whose drift moves the price at 12.5 unit on the drift book");
     else ok(v.keys.sD === v.keys.s0,
       "inside one render a stated book's row at a size never answers the drift book's quote at it: " + JSON.stringify(v.keys));
-    /* the override is in the key, and nothing of the customer is: on a level rule the row's own prices are quoted, so a cost moved
-       mid-render (boardHeadroom's walk) must read its own row, and customers on different held levels, a band set and a partner,
-       asked at the same sizes in one render, each read their own price off the one kept row. */
+    /* the override is in the key, and nothing of the customer is: a cost moved mid-render (boardHeadroom's walk) must read its own row,
+       and customers on different percentages and a partner, asked at the same sizes in one render, each read their own price off the one kept row. */
     const ids = v.ids.filter((x) => x !== "CM4-TO").slice(0, 3);
-    const held = { [ids[0]]: "Gold", [ids[1]]: "Silver", [ids[2]]: { small: "Silver", mid: "Gold", big: "Platinum" } };
-    const h = JSON.parse(levelWindow(w, held).eval(`JSON.stringify((function(){
+    const h = JSON.parse(w.eval(`JSON.stringify((function(){
       var keep=window.renderMemo,bare=function(k,f){return /^tierAt[|]/.test(k)?f():keep(k,f);};
       var who=${JSON.stringify(ids.concat(["CM4-TO"]))},sizes=[0.5,1,3,5,12.5],id=who[0],q=12.5;
       var all=function(){return who.map(function(c){return sizes.map(function(z){return cardQuote(c,z);});});};
@@ -46089,9 +44556,9 @@ await (async () => {
         var b=cardQuote(id,q),bf;window.renderMemo=bare;try{bf=cardQuote(id,q);}finally{window.renderMemo=keep;}
         pxOver.cost=s;return {mem:mem,fresh:fresh,a:a,b:b,bf:bf,back:cardQuote(id,q)};}finally{RENDER_MEMO=null;}})())`));
     ok(h.a > 0 && h.b > h.a && h.b === h.bf && h.back === h.a,
-      "inside one render a cost override moved mid-way quotes the level's own row at that cost, as read fresh, and moving it back quotes the first: " + JSON.stringify({ a: h.a, b: h.b, bf: h.bf, back: h.back }));
-    ok(JSON.stringify(h.mem) === JSON.stringify(h.fresh) && new Set(h.mem.map((r) => JSON.stringify(r))).size === h.mem.length,
-      "customers on different held levels, a band set and a partner quote each their own price off the one kept row, as built fresh: " + JSON.stringify(h.mem));
+      "inside one render a cost override moved mid-way quotes the row at that cost, as read fresh, and moving it back quotes the first: " + JSON.stringify({ a: h.a, b: h.b, bf: h.bf, back: h.back }));
+    ok(JSON.stringify(h.mem) === JSON.stringify(h.fresh),
+      "customers on different percentages and a partner quote each their own price off the one kept row, as built fresh: " + JSON.stringify(h.mem));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -49599,9 +48066,43 @@ section("15 Oct 2026: spare is retired, the Counter's words are the live books, 
 await (async () => {
   await (await import("./spare-retired.mjs")).run({ ok });
 })();
-section("06 Oct 2026: a partner pays cost, the floor to the sen on every book, nobody else's price moved");
+section("06 Oct 2026: a partner pays cost, the Floor (RM 5 up since 18 Oct 2026) on every book, nobody else's price moved");
 await (async () => {
   await (await import("./partner.mjs")).run({ ok });
+})();
+section("18 Oct 2026: the Floor rounds up to the next RM 5, the Ceiling is three times it on every book, the partner pays the Floor");
+await (async () => {
+  await (await import("./floor-basis.mjs")).run({ ok });
+})();
+section("18 Oct 2026: salt's Set Price is the minimum on his four points, his % per customer prices, the engine only suggests");
+await (async () => {
+  await (await import("./lift-pct.mjs")).run({ ok });
+})();
+
+section("18 Oct 2026: the five price levels are gone from the engine, the Desk, the drafter and the fold");
+await (async () => {
+  /* HIS DECISION OF 18 OCT 2026: salt is a Set Price and a per-customer %, and no book is priced by a named level. What remains is the Set Price
+     row at code T2 (row zero is load bearing: the phone, the mirror and the suite read [0]) and the word guards that keep a level word from a
+     customer. The names below are searched as whole words, so a longer name that merely contains one does not trip it. */
+  const E = (await import("../engine/pricing.mjs")).default;
+  const gone = ["TIER_NAMES", "levelAt", "levelShapeOk", "tier1Ask", "tier1Anchors", "tier1Walk", "tierProposal", "ruleProposal", "cardTier", "heldLevel", "custTier", "tierPill"];
+  const word = (w) => new RegExp("\\b" + w + "\\b");
+  const master = readFileSync(FROZEN_MASTER, "utf8");
+  const files = ["pricing", "rules", "snapshot", "position", "apply"].map((n) => [n, readFileSync(join(REPO, "engine", n + ".mjs"), "utf8")]);
+  const named = [["the master", master]].concat(files.map(([n, s]) => ["engine/" + n, s]), [["tools/book", readFileSync(join(REPO, "tools", "book.mjs"), "utf8")],
+    ["tools/fold", readFileSync(join(REPO, "tools", "fold.mjs"), "utf8")], ["src/drafter", readFileSync(join(REPO, "src", "drafter.js"), "utf8")],
+    ["src/maker-inputs", readFileSync(join(REPO, "src", "maker-inputs.js"), "utf8")]]);
+  const left = named.flatMap(([n, s]) => gone.filter((w) => word(w).test(s)).map((w) => n + ": " + w));
+  ok(left.length === 0, "the master, the engine, the fold, the drafter and Counter Admin's inputs define or call no TIER_NAMES, levelAt, levelShapeOk, tier1Ask, level proposal or level pill: " + JSON.stringify(left));
+  ok(!/tierpill/i.test(master) && !/tierpill/i.test(readFileSync(join(REPO, "design", "desk.css"), "utf8")), "and the desk has no level pill and no rule for one");
+  ok(gone.every((w) => typeof E[w] === "undefined"), "and the pricing engine exports none of them");
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w } = await openMaster(process.env.SALT_MASTER || undefined);
+  try {
+    const rows = JSON.parse(String(w.eval("JSON.stringify((function(){setProd('salt');recompute();return PRICING_ENGINE.ladderRow(shownSizes('salt'),pxCost(),pxPolicy());})())")));
+    ok(rows.length === 1 && rows[0].code === "T2" && rows[0].name === "Set Price" && rows[0].dflt === true,
+      "the payload ladder is one row, the Set Price at code T2: " + JSON.stringify(rows.map((r) => [r.code, r.name])));
+  } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
 section("09 Oct 2026: a partner is set from the phone and keeps every associate property");
 await (async () => {
@@ -49656,7 +48157,7 @@ section("Counter maker revives a cancelled order; only a clean revival, as the o
 await (async () => {
   await (await import("./maker-revive.mjs")).run({ ok });
 })();
-section("Counter maker reward spends book; Accept tier proposals keeps its request id");
+section("Counter maker reward spends book; Record has no Accept every suggestion");
 await (async () => {
   await (await import("./maker-reward-spend.mjs")).run({ ok });
 })();
@@ -49791,6 +48292,11 @@ await (async () => {
   await (await import("./desk-queue-recovery.mjs")).run({ ok, KV, worker });
 })();
 
+section("18 Oct 2026: every surface says Floor, Set Price, Ceiling and Their %, with no tier, level or drift word, and a guest page with no board says prices are being updated");
+await (async () => {
+  await (await import("./pricing-words.mjs")).run({ ok });
+})();
+
 section("13 Oct 2026: B5 of #62, the Desk is a dashboard: no control writes the book, and the writes it keeps still work");
 await (async () => {
   await (await import("./desk-dashboard.mjs")).run({ ok });
@@ -49821,8 +48327,6 @@ await (async () => {
   await deskVaultChecks.run({ ok });
   const incumbentChecks = await import("./desk-maker-constructors.mjs");
   await incumbentChecks.run({ ok });
-  await (await import("./maker-tier-accept.mjs")).run({ ok, KV, worker, handleMaker, REPO });
-  await (await import("./maker-tier-bands.mjs")).run({ ok, REPO });
   await (await import("./maker-offsets.mjs")).run({ ok });
   await (await import("./maker-house-sizes.mjs")).run({ ok, KV, worker, handleMaker, REPO });
   await (await import("./maker-addid-tiers.mjs")).run({ ok });
@@ -50945,9 +49449,9 @@ await (async () => {
     cardOf(doc, "20260929120000-makr");
     cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */
     ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Stock count"
-      && ["Sale or purchase", "Price level", "Loan", "Repayment", "Gift", "Rewards", "New customer", "Change a name or place", "Place on the map"]
+      && ["Sale or purchase", "Their %", "Loan", "Repayment", "Gift", "Rewards", "New customer", "Change a name or place", "Place on the map"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
-      "Maker exposes the remaining typed Enter and Network actions beside stock, trade and held-tier inputs");
+      "Maker exposes the remaining typed Enter and Network actions beside stock, trade and customer % inputs");
     /* his decision 6 of 11 Oct 2026: the card read its own preview when it was opened; there is no Preview button to press */
     for (let i = 0; i < 100 && !doc.querySelector("[data-accept]"); i++) await new Promise((resolve) => setTimeout(resolve, 10));
     ok(/on RM 56\.00 cost/.test(cards[0].textContent) && /RM 44\.00/.test(cards[0].textContent) && /44%/.test(cards[0].textContent)
@@ -51045,9 +49549,8 @@ await (async () => {
       && addRequests[2].body.code === "CX1-AB-R" && addRequests[2].body.kind === "bucket"
       && addRequests[2].body.vault === null,
       "downstream IDs derive under their parent, while a nameless resale bucket sends no vault entry");
-    ok(JSON.stringify(addRequests[0].body.tiers) === '{"salt":"Silver"}' && addRequests[1].body.tiers === null
-      && addRequests[2].body.tiers === null,
-      "Counter Add ID offers a starting tier per tiered book, preselected as the Desk does, and sends none for a downstream or a resale account");
+    ok(addRequests[0].body.tiers === null && addRequests[1].body.tiers === null && addRequests[2].body.tiers === null,
+      "Counter Add ID offers no starting level and sends no tiers unless a starting % is chosen, and none for a downstream or a resale account");
     const amendId = [...doc.querySelectorAll("#makerInputs .maker-input")].find((section) => section.querySelector("h3").textContent === "Change a name or place");
     const amendFields = amendId.querySelectorAll("input");
     amendFields[0].value = "Ben"; amendFields[1].value = "Pudu";
@@ -51879,8 +50382,10 @@ await (async () => {
   ok(lights.salt.light === "yellow" && lights.salt.by === "2026-10-12" && lights.oil.light === "red" && lights.oil.by === null && lights.candy.light === "green" && lights.candy.by === null,
     "supplyLights is the engine's light and day per book: " + JSON.stringify(lights));
   const cost = { repl: 50, freightRate: 0, shrinkRate: 0, avgDel: { n: 0, mean: 0 }, attrib: {}, costBasis: { txnPerDelivery: { rm: 0 }, freightPerTrip: { rm: 0 }, deliveredShare: { v: 0 } } };
-  const pricing = { sizes: [1, 2], tierNames: ["Ambassador", "Titanium", "Silver"], tierOf: { "CX0-NC": { salt: "Silver" } },
-    byProduct: { salt: { sizes: [1, 2], inputs: { cost, policy: {} }, ladder: [{ q: 1, prices: [80, 90, 100] }, { q: 2, prices: [150, 170, 190] }] } } };
+  /* 18 Oct 2026: a customer's list is their card, the Set Price at each size */
+  const pricing = { sizes: [1, 2],
+    byProduct: { salt: { sizes: [1, 2], inputs: { cost, policy: {} }, ladder: [{ q: 1, prices: [100], drift: true }, { q: 2, prices: [190], drift: true }],
+      cards: { "CX0-NC": [[1, 100], [2, 190]] } } } };
   const bookR = { PRODUCTS: { salt: { name: "Salt", unit: "unit" } }, PROD_ORDER: ["salt"], sales: [] };
   const now = new Date("2026-10-05T06:00:00Z");
   const withS = PL.priceList("CX0-NC", bookR, pricing, now, lights), without = PL.priceList("CX0-NC", bookR, pricing, now);
@@ -51893,7 +50398,7 @@ await (async () => {
   mkdirSync(join(tmp, "2026-09", "_kv"), { recursive: true });
   const users = JSON.parse(readFileSync(join(REPO, "statements", "_users.json"), "utf8"));
   const code = Object.keys(users)[0], uu = users[code], ck = await C.contentKey("test-secret", uu);
-  pricing.tierOf = { [code]: { salt: "Silver" } };
+  pricing.byProduct.salt.cards = { [code]: [[1, 100], [2, 190]] };
   writeFileSync(join(tmp, "_users.json"), JSON.stringify({ [code]: uu }));
   writeFileSync(join(tmp, "2026-09", "_kv", uu + ".json"), JSON.stringify({ u: uu, issued: "2026-09-01", issues: ["2026-09-01"], verifier: await C.makeVerifier("pw-f4"), wrap: await C.wrapKey("pw-f4", ck),
     env: await C.encryptWith(ck, JSON.stringify({ statements: [{ issued: "2026-09-01", body: "x" }] })) }));
@@ -51967,7 +50472,8 @@ await (async () => {
     `the stack's basis is the latest lot, RM 750 quote plus RM 50 freight over 12.5 unit, RM 64 a unit, no leak and no delivery share in it (${JSON.stringify([C.lot, C.freight, C.landed, C.eff, C.effEx])})`);
   ok(C.afterLeak === 80 && C.shrink > 0, `and the leak is still measured, carried beside it as RM ${C.afterLeak} after the leak, for information`);
   const P = { LADDER: { round: { to: 10, up: true } }, minPerUnit: 0, timePerOrder: 0, lotFloor: {} };
-  ok([0.5, 1, 2.5, 12.5].every((q) => E.floorTotal(q, C, P) === +(64 * q).toFixed(2)), "the floor is COGS times the size, to the sen, at every size");
+  ok([0.5, 1, 2.5, 12.5].every((q) => E.costTotal(q, C, P) === +(64 * q).toFixed(2) && E.floorTotal(q, C, P) === Math.ceil(64 * q / 5) * 5),
+    "the cost is COGS times the size, to the sen, at every size, and the floor is that up to the next RM 5 (18 Oct 2026): " + JSON.stringify([0.5, 1, 2.5, 12.5].map((q) => [E.costTotal(q, C, P), E.floorTotal(q, C, P)])));
   /* the control: the same inputs under the old stack price off the trailing rate, the averaged freight and the leak */
   const Cs = E.costStack(Object.assign({}, base, { costRule: { kind: "stack" }, latest }));
   ok(Cs.effEx > 64 + 0.009 && Cs.lot === 55, `the rule is what moved it: the same inputs on the measured stack read RM ${Cs.effEx} a unit off the trailing RM 55`);
@@ -51985,10 +50491,10 @@ await (async () => {
   const Rn = Object.assign({}, R); delete Rn.ceilingX;
   const gn = E.fiveTiers([10], C8, Object.assign({}, P, { tierRule: Rn }))[0];
   ok(gn.prices[1] === 200, "and a board with no ceilingX states its typed price, so the cap is the rule's own parameter");
-  const C34 = E.costStack(Object.assign({}, base, { costRule: { kind: "latestCogs" }, latest: { quote: 34, freight: 0, units: 10, rate: 3.4 } }));
-  const gr = E.fiveTiers([1, 5], C34, Object.assign({}, P, { LADDER: { round: { to: 1, up: true } }, tierRule: { fixed: { "1": 9, "5": 35 }, rungs: [1, 5], ceilingX: 2.5 } }));
-  ok(gr[0].prices[1] === 8 && gr[0].capped === true && gr[1].prices[1] === 35 && gr[1].capped === false,
-    `rice's ceiling is two and a half times the floor, down to its ringgit: RM 9 at 1 unit over RM 8.50 caps to RM 8, RM 35 at 5 stays (${JSON.stringify(gr.map((r) => r.prices[1]))})`);
+  const C34 = E.costStack(Object.assign({}, base, { costRule: { kind: "latestCogs" }, latest: { quote: 50, freight: 0, units: 10, rate: 5 } }));
+  const gr = E.fiveTiers([1, 5], C34, Object.assign({}, P, { LADDER: { round: { to: 1, up: true } }, tierRule: { fixed: { "1": 17, "5": 70 }, rungs: [1, 5], ceilingX: 3 } }));
+  ok(gr[0].prices[1] === 15 && gr[0].capped === true && gr[1].prices[1] === 70 && gr[1].capped === false,
+    `a ceiling of three times the floor holds a board down to its ringgit: RM 17 at 1 unit over RM 15 caps to RM 15, RM 70 at 5 under RM 75 stays (${JSON.stringify(gr.map((r) => r.prices[1]))})`);
 
   /* THE LIVE BOOKS */
   const { openMaster } = await import("../tools/payload.mjs");
@@ -52006,7 +50512,7 @@ await (async () => {
   ok(live.every((b, i) => want[i] != null && Math.abs(b.cogs - want[i]) < 0.0001),
     "and each is its latest landed lot's quote plus freight over its units: " + JSON.stringify(live.map((b, i) => [b.p, b.cogs, want[i] && +want[i].toFixed(4)])));
   const capped = live.filter((b) => b.fixed);
-  ok(capped.length === 3 && capped.map((b) => b.capX).join() === "2,2,2.5", "oil and candy carry a ceiling of twice the floor and rice two and a half: " + JSON.stringify(capped.map((b) => [b.p, b.capX])));
+  ok(capped.length === 3 && capped.map((b) => b.capX).join() === "3,3,3", "oil, candy and rice carry a ceiling of three times the floor, as salt does (18 Oct 2026; twice, twice and two and a half before): " + JSON.stringify(capped.map((b) => [b.p, b.capX])));
   ok(capped.every((b) => Object.keys(b.fixed).every((k) => { const r = b.rows.find((x) => Math.abs(x[0] - +k) < 0.009); return r && r[1] === +b.fixed[k] && r[1] >= r[2] - 0.009 && r[1] <= b.capX * r[2] + 0.009; })),
     "and every typed price on them sits inside its band today, so none moves: " + JSON.stringify(capped.map((b) => [b.p, b.rows.map((r) => r[1])])));
   /* the desk's own road caps a typed price over the line: oil's 10 unit typed at RM 500 in the window comes down to the ten
@@ -52014,8 +50520,8 @@ await (async () => {
   const forced = JSON.parse(w.eval(`(function(){var R=TIER_RULE.oil,was=R.fixed['10'];R.fixed['10']=500;try{PROD='oil';recompute();
     var r=(fiveTiersNow()||[]).find(function(x){return x.q===10;});return JSON.stringify({p:r?r.prices[r.prices.length-1]:null,floor:r?r.floor:null});}
     finally{R.fixed['10']=was;recompute();}})()`));
-  ok(forced.p === Math.floor(2 * forced.floor / 10 + 1e-9) * 10 && forced.p < 500,
-    `and on the desk a typed RM 500 at 10 unit of oil is held to RM ${forced.p}, the ten under twice its RM ${forced.floor} floor`);
+  ok(forced.p === Math.floor(3 * forced.floor / 10 + 1e-9) * 10 && forced.p < 500,
+    `and on the desk a typed RM 500 at 10 unit of oil is held to RM ${forced.p}, the ten under three times its RM ${forced.floor} floor`);
   /* THE AFTER-LEAK FIGURE, INFORMATION ONLY, beside the floor on a book losing a quarter or more of what it buys */
   /* which books lose a quarter is live data (the counts of 06 Oct 2026 took rice to 24.998%), so the line is driven at the
      live quarter and at a line under every book's leak and over every book's: all shown, then none, whatever the book holds */
@@ -52034,13 +50540,13 @@ await (async () => {
   w.eval("setProd('salt');recompute();");
 })();
 
-/* 05 OCT 2026, HIS DECISION: SALT IS ONE SET PRICE, MOVED BY EACH CUSTOMER'S DRIFT (Model B). Per size the floor (COGS times
-   the size), the ceiling (three times it) and the Set Price between them: the floor times a multiple sliding in the log of size
-   from 2.813 at half a unit to 1.363 at 12.5, down to the ten, lifted, capped and walked under the rate law. A drift from -1 to
-   +1 moves it up by d times the lesser of the room to the ceiling and 0.3 of the floor, or down by |d| times the lesser of the
-   room to the floor and 0.2 of it. The drift is read off the record unless he sets one; a late payer is priced up. The held
-   salt levels retired with it. Each assertion was proved red by its own mutation, one at a time. */
-section("05 Oct 2026: salt is the Set Price moved by each customer's drift, read off their record unless he sets one");
+/* 05 OCT 2026, HIS DECISION: SALT IS ONE SET PRICE, WITH A FIGURE PER CUSTOMER (Model B); 18 OCT 2026: THE SET PRICE IS THE MINIMUM, AND THE
+   FIGURE IS HIS % LIFT. Per size the floor (COGS times the size, up to the five), the ceiling (three times it) and the Set Price between
+   them: the floor times a multiple sliding in the log of size between his four points, down to the five, lifted by the ringgit margin of the
+   smaller sizes and held between the floor and the ceiling. A customer's % (0 to 2) is applied inside that walk; nothing automatic prices:
+   the record is read for the card and the engine only suggests one (test/lift-pct.mjs holds the new rule's own checks). Each assertion was
+   proved red by its own mutation, one at a time. */
+section("05 Oct 2026: salt is the Set Price and a per-customer figure, his to set (18 Oct 2026: a % lift on the Set Price, nothing automatic)");
 await (async () => {
   const E = (await import("../engine/pricing.mjs")).default;
   const { openMaster } = await import("../tools/payload.mjs");
@@ -52048,37 +50554,37 @@ await (async () => {
   const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
   w.eval("setProd('salt');recompute();");
   const R = rd("TIER_RULE.salt"), P = { ...rd("pxPolicy()"), tierRule: R };
-  /* 1. THE MULTIPLE at its two anchors, held beyond them, and halfway in the log of size at 2.5 unit */
+  /* 1. THE MULTIPLE at his four points, held beyond them, and halfway in the log of size at 2.5 unit (between 1 and 6.25) */
   const m = (q) => +E.setMultiple(q, R).toFixed(4);
-  ok(m(0.5) === 2.813 && m(12.5) === 1.363 && m(0.25) === 2.813 && m(25) === 1.363 && m(2.5) === 2.088,
-    "the Set multiple is 2.813 at half a unit and 1.363 at 12.5, held beyond them, and 2.088 at 2.5 unit, halfway in the log: " + JSON.stringify([0.5, 12.5, 0.25, 25, 2.5].map(m)));
+  ok(m(0.5) === 2.5 && m(1) === 2 && m(6.25) === 1.67 && m(12.5) === 1.33 && m(0.25) === 2.5 && m(25) === 1.33 && m(2.5) === 1.835,
+    "the Set multiple is 2.5, 2, 1.67 and 1.33 at 0.5, 1, 6.25 and 12.5, held beyond them, and 1.835 at 2.5 unit, halfway in the log: " + JSON.stringify([0.5, 1, 6.25, 12.5, 0.25, 25, 2.5].map(m)));
   /* 2. HIS TWO WORKED BOARDS, on RM 64 and RM 59 of COGS */
   const Cof = (c) => ({ eff: c, effEx: c, landed: c });
-  const setAt = (c) => E.driftWalk(R.rungs, Cof(c), P, 0).map((r) => r.set);
-  ok(JSON.stringify(setAt(64)) === "[90,160,220,280,330,380,430,480,520,560,670,1090]"
-    && JSON.stringify(setAt(59)) === "[80,140,200,250,300,350,390,440,480,520,610,1000]",
-    "the Set Price reads 90, 160 ... 1,090 on RM 64 of COGS and 80, 140 ... 1,000 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
-  /* 3. THE DRIFT BOTH WAYS at 12.5 unit on RM 64: floor 800, Set 1,090, ceiling 2,400. Up: 1,090 + d x min(1,310, 240); down:
-     1,090 - |d| x min(290, 160) */
-  const at125 = [-1, -0.5, 0, 0.5, 1].map((d) => E.driftAt(12.5, Cof(64), P, d).p);
-  /* 05 Oct 2026, HIS DECISION, THE WHOLE GRID IS WALKED: driftAt walks every quarter beneath 12.5, so the ends of the drift
-     come down where a quarter's rate held them (930 to 900, 1,210 to 1,200, 1,330 to 1,300); the Set Price stays 1,090 */
-  ok(JSON.stringify(at125) === "[900,1010,1090,1200,1300]",
-    "at 12.5 unit on RM 64 a drift of -1, -0.5, 0, +0.5 and +1 reads 900, 1,010, 1,090, 1,200 and 1,300, walked over the grid: " + JSON.stringify(at125));
+  const setAt = (c) => E.driftWalk(E.walkSizes(R, R.rungs), Cof(c), P, 0).filter((r) => R.rungs.some((q) => Math.abs(q - r.q) < 0.009)).map((r) => r.set);
+  /* 18 OCT 2026: the Floor rounds up to the RM 5 and the curve is his four points, walked over the whole grid (the board's own path), so the rungs
+     read these figures; they were 95, 160, 230 ... and 80, 150, 205 ... on the two ends and the ten of 05 Oct */
+  ok(JSON.stringify(setAt(64)) === "[85,130,185,240,290,350,395,450,500,545,665,1080]"
+    && JSON.stringify(setAt(59)) === "[75,120,170,225,275,320,370,420,465,500,615,1000]",
+    "the Set Price reads 85, 130 ... 1,080 on RM 64 of COGS and 75, 120 ... 1,000 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
+  /* 3. THE % LIFT at 12.5 unit on RM 64: floor 800, Set 1,080, ceiling 2,400. A % scales the multiple inside the walk, so 10% reads 1,175,
+     20% 1,275, 50% 1,595 and 100% 2,125, each on the whole grid beneath */
+  const at125 = [0, 0.1, 0.2, 0.5, 1].map((d) => E.driftAt(12.5, Cof(64), P, d).p);
+  ok(JSON.stringify(at125) === "[1080,1175,1275,1595,2125]",
+    "at 12.5 unit on RM 64 a % of 0, 10, 20, 50 and 100 reads 1,080, 1,175, 1,275, 1,595 and 2,125 on the five grid, walked over it: " + JSON.stringify(at125));
   /* 4. EVERY DRIFT STAYS IN THE BOX, on the ten, on its side of the Set Price, and never rises in rate with size where a ten
      down would still clear the floor */
   const bad4 = [];
-  for (const c of [59, 64]) for (const d of [-1, -0.6, -0.2, 0, 0.3, 0.7, 1]) {
-    const rows = E.driftWalk(R.rungs, Cof(c), P, d);
+  for (const c of [59, 64]) for (const d of [0, 0.05, 0.2, 0.5, 1, 2]) {
+    const rows = E.driftWalk(E.walkSizes(R, R.rungs), Cof(c), P, d);
     rows.forEach((r, i) => {
-      const lift = Math.ceil(r.floor / 10 - 1e-9) * 10, cap = Math.max(Math.floor(r.ceiling / 10 + 1e-9) * 10, lift);
-      if (r.p < lift || r.p > cap || r.p % 10) bad4.push([c, d, r.q, "box", r.p, lift, cap]);
-      if ((d > 0 && r.p < r.set) || (d < 0 && r.p > r.set)) bad4.push([c, d, r.q, "side", r.p, r.set]);
-      if (i && r.p / r.q > rows[i - 1].p / rows[i - 1].q + 1e-9 && r.p - 10 >= lift) bad4.push([c, d, r.q, "rate", r.p]);
+      const to = P.LADDER.round.to, lift = Math.ceil(r.floor / to - 1e-9) * to, cap = Math.max(Math.floor(r.ceiling / to + 1e-9) * to, lift);
+      if (r.p < lift || r.p > cap || r.p % to) bad4.push([c, d, r.q, "box", r.p, lift, cap]);
+      if (r.p < r.set) bad4.push([c, d, r.q, "side", r.p, r.set]);
+      if (i && r.p / r.q - rows[i - 1].p / rows[i - 1].q > to / r.q + 1e-9) bad4.push([c, d, r.q, "rate", r.p]);
     });
   }
-  ok(!bad4.length, "every drifted price at every rung sits on the ten between the floor and the ceiling, on its side of the Set Price, its rate never rising with size: " + JSON.stringify(bad4.slice(0, 4)));
-  /* 5. THE AUTOMATIC DRIFT, off the record */
+  ok(!bad4.length, "every priced size, a % of 0 to 200 on the grid, sits on the five between the floor and the ceiling and never under the Set Price, its rate never rising by a step: " + JSON.stringify(bad4.slice(0, 4)));
+  /* 5. WHAT THE RECORD READS (18 Oct 2026: it fills the card's good and bad and prices nothing) */
   const A = R.auto, good = { settled: 12, onTime: 12, perMonth: 8, unitsPerMonth: 20, orders: 24, sinceLastDays: 3 };
   const best = E.autoDrift(good, A), longLate = E.autoDrift({ ...good, late: true, lateLong: true }, A);
   const shortLate = E.autoDrift({ late: true }, A), wo = E.autoDrift({ ...good, writtenOff: 260 }, A), od = E.autoDrift({ overdueDays: 7 }, A);
@@ -52087,86 +50593,89 @@ await (async () => {
     "a long late payer and a write-off read bad 1 and +0.5 whatever their good, a short late and a week overdue half: " + JSON.stringify([longLate.d, wo.d, shortLate.d, od.B]));
   ok(E.autoDrift({ settled: 2, onTime: 2 }, A).P === 0 && E.autoDrift({ orders: 24, sinceLastDays: 61 }, A).T === 0 && E.autoDrift({ orders: 24, sinceLastDays: 59 }, A).T === 1,
     "paying on time counts from three settlements, and the orders count for nothing after sixty days without one");
-  /* 6. THE DESK QUOTES EVERY NAMED CUSTOMER THEIR DRIFT at every size the board shows */
+  /* 6. THE DESK QUOTES EVERY NAMED CUSTOMER THEIR HELD % (nought where none) at every size the board shows */
   const q6 = rd("(function(){setProd('salt');recompute();var C=pxCost(),P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),bad=[],n=0,moved=0;"
     + "tierCustomers().filter(function(id){return !isPartner(id);}).forEach(function(id){var d=driftOf(id,'salt').d;if(Math.abs(d)>0.0001)moved++;shownSizes('salt').forEach(function(q){n++;"
     + "var x=PRICING_ENGINE.driftAt(q,C,P,d).p;if(cardQuote(id,q)!==x)bad.push([id,q,cardQuote(id,q),x]);});});return {n:n,moved:moved,bad:bad.slice(0,3)};})()");
-  ok(q6.n > 200 && q6.moved > 20 && !q6.bad.length, "every named customer is quoted the Set Price moved by their own drift at every size, " + q6.moved + " of them off nought: " + JSON.stringify(q6));
-  /* 7. HIS HAND-SET DRIFT WINS over the automatic one, which is still read beside it. The customer is the first with none set
-     (the book holds a hand-set drift since v1075, and the next customer to hold one must not move this): then the first reading
-     is the automatic drift itself, and the drift he sets in the test reads as the hand while the automatic stays what it was. */
+  ok(q6.n > 200 && q6.moved === 0 && !q6.bad.length, "every named customer is quoted the Set Price lifted by their own held % at every size, " + q6.moved + " of them off nought, the book holding none today: " + JSON.stringify(q6));
+  /* 7. HIS HAND-SET % is the figure that prices, the record still read beside it. The customer is the first with none set: the first
+     reading is nought, and the % he sets in the test reads as the hand while the record's reading stays what it was. */
   const free = "tierCustomers().find(function(c){return !isPartner(c)&&driftOf(c,'salt').hand==null;})";
   const h7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],a=driftOf(id,'salt'),q0=cardQuote(id,12.5);"
     + "TIER_OF[id]=Object.assign({},keep,{salt:1});var b=driftOf(id,'salt'),q1=cardQuote(id,12.5);if(keep)TIER_OF[id]=keep;else delete TIER_OF[id];"
     + "return {id:id,first:a.hand,auto:a.auto,hand:b.hand,d:b.d,bAuto:b.auto,q0:q0,q1:q1,top:PRICING_ENGINE.driftAt(12.5,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),1).p};})()");
-  ok(h7.id && h7.first === null && h7.hand === 1 && h7.d === 1 && h7.bAuto === h7.auto && h7.q1 === h7.top && h7.q1 > h7.q0, "a drift he sets wins over the one read off the record, and quotes the top of the drift: " + JSON.stringify(h7));
-  /* and one he already holds is his word too: the book's own hand-set customers read the hand beside their automatic drift,
-     and what the desk quotes them is the Set Price moved by the hand (forced here, so it holds with none on the book) */
-  const k7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],o=null;TIER_OF[id]=Object.assign({},keep,{salt:-0.7});"
-    + "try{var d=driftOf(id,'salt');o={hand:d.hand,d:d.d,auto:d.auto,card:cardQuote(id,3),set:PRICING_ENGINE.driftAt(3,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),-0.7).p};}"
+  ok(h7.id && h7.first === null && h7.hand === 1 && h7.d === 1 && h7.bAuto === h7.auto && h7.q1 === h7.top && h7.q1 > h7.q0, "a % he sets prices, and quotes the top of the lift: " + JSON.stringify(h7));
+  /* and one he already holds is his word too: it reads as the hand, and what the desk quotes is the Set Price lifted by it (forced here, so it holds with none on the book) */
+  const k7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],o=null;TIER_OF[id]=Object.assign({},keep,{salt:0.7});"
+    + "try{var d=driftOf(id,'salt');o={hand:d.hand,d:d.d,card:cardQuote(id,3),set:PRICING_ENGINE.driftAt(3,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),0.7).p};}"
     + "finally{if(keep)TIER_OF[id]=keep;else delete TIER_OF[id];}return o;})()");
-  ok(k7 && k7.hand === -0.7 && k7.d === -0.7 && k7.auto !== -0.7 && k7.card === k7.set,
-    "and a drift already held reads as the hand beside the automatic one, and is the drift the customer is quoted: " + JSON.stringify(k7));
-  /* 8. A LATE PAYER IS PRICED UP (his decision), where the levels only offered one a level down */
-  const l8 = rd("(function(){var id=tierCustomers().find(function(c){var x=driftOf(c,'salt');return x.hand==null&&x.B===0;}),k=lateOf,a,b,da,db;"
-    + "try{lateOf=function(){return {on:false};};a=cardQuote(id,12.5);da=driftOf(id,'salt').d;"
-    + "lateOf=function(){return {on:true,why:'long',days:20,open:true,need:1,streak:0,since:null};};b=cardQuote(id,12.5);db=driftOf(id,'salt').d;}finally{lateOf=k;}"
-    + "return {id:id,a:a,b:b,da:da,db:db};})()");
-  ok(l8.id && l8.db === 0.5 && l8.da <= 0 && l8.b > l8.a, "the same customer read as a long late payer drifts to +0.5 and is quoted more: " + JSON.stringify(l8));
-  /* 9. NRV ON A DRIFT BOOK is the lowest an automatic drift quotes, -0.5, at the mean delivery */
+  ok(k7 && k7.hand === 0.7 && k7.d === 0.7 && k7.card === k7.set,
+    "and a % already held reads as the hand and is the figure the customer is quoted: " + JSON.stringify(k7));
+  /* 8. A LATE PAYER IS NO LONGER PRICED UP (18 Oct 2026: nothing automatic prices): the price and the figure stay, the record's reading and the suggestion move */
+  const l8 = rd("(function(){var id=tierCustomers().find(function(c){if(isPartner(c))return false;var x=driftOf(c,'salt');return x.hand==null&&x.sig.settled>=3&&!x.sig.late&&x.sig.writtenOff<0.01;}),k=lateOf,a,b,da,db,sa,sb;"
+    + "try{lateOf=function(){return {on:false};};a=cardQuote(id,12.5);da=driftOf(id,'salt').d;sa=suggestOf(id,'salt').pct;"
+    + "lateOf=function(){return {on:true,why:'long',days:20,open:true,need:1,streak:0,since:null};};b=cardQuote(id,12.5);db=driftOf(id,'salt').d;sb=suggestOf(id,'salt').pct;}finally{lateOf=k;}"
+    + "return {id:id,a:a,b:b,da:da,db:db,sa:sa,sb:sb,auto:[driftOf(id,'salt').auto]};})()");
+  ok(l8.id && l8.a === l8.b && l8.da === 0 && l8.db === 0 && l8.sb >= l8.sa + 0.2 - 1e-9, "the same customer read as a long late payer is quoted the same and holds the same (nought), and the suggestion rises by 20%: " + JSON.stringify(l8));
+  /* 9. NRV ON A DRIFT BOOK is the Set Price, the least anyone but a partner is quoted, at the mean delivery */
   const n9 = rd("(function(){setProd('salt');recompute();var F=ifrsPL('salt');var q=Math.max(0.5,avgDelivery('salt').mean||1),"
     + "toSell=(delShare('salt').v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q),P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt});"
-    + "return {rate:F.nrvRate,low:+(PRICING_ENGINE.driftAt(q,pxCost(),P,-0.5).p/q-toSell).toFixed(4),set:+(PRICING_ENGINE.driftAt(q,pxCost(),P,0).p/q-toSell).toFixed(4)};})()");
-  ok(n9.rate != null && Math.abs(n9.rate - n9.low) < 0.0001 && n9.low < n9.set,
-    "the shelf's NRV on the drift book is the lowest an automatic drift quotes, -0.5, under the Set Price, less the costs to sell: " + JSON.stringify(n9));
+    + "return {rate:F.nrvRate,set:+(PRICING_ENGINE.driftAt(q,pxCost(),P,0).p/q-toSell).toFixed(4),lifted:+(PRICING_ENGINE.driftAt(q,pxCost(),P,0.2).p/q-toSell).toFixed(4)};})()");
+  ok(n9.rate != null && Math.abs(n9.rate - n9.set) < 0.0001 && n9.set < n9.lifted,
+    "the shelf's NRV on the drift book is the Set Price, under a lifted one, less the costs to sell: " + JSON.stringify(n9));
   /* 10. THE DRIFT CARD: Set queues his figure, one out of range is refused, Clear queues the clear */
   const c10 = rd("(function(){setProdView('salt');switchTab('people');var id=" + free + ",el=document.getElementById('driftIn_'+id+'_salt');if(!el)return {el:false};"
     + "var n0=queue.length;el.value='0.4';driftSet(id,'salt');var q1=queue.length>n0?queue[queue.length-1].payload:null;"
     + "var n1=queue.length,el2=document.getElementById('driftIn_'+id+'_salt');el2.value='2';driftSet(id,'salt');var refused=queue.length===n1;"
     + "driftClear(id,'salt');var q2=queue[queue.length-1].payload;queue.splice(n0);render();"
     + "return {el:true,set:q1&&q1.tiers[id],refused:refused,clear:q2&&q2.tiers[id]};})()");
-  /* 11. ADD ID STARTS A CUSTOMER ON THE AUTOMATIC DRIFT, or on Better, Standard, Higher or one typed */
+  /* 11. ADD ID STARTS A CUSTOMER ON NO % (the Set Price), or on a preset or one typed: test/maker-addid-drift.mjs */
   /* 12. THE MIGRATION: no customer holds a salt level on the book, and nobody is proposed one */
   const bk12 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const held12 = Object.keys(bk12.TIER_OF || {}).filter((c) => bk12.TIER_OF[c] && "salt" in bk12.TIER_OF[c] && typeof bk12.TIER_OF[c].salt !== "number");
-  const prop12 = rd("tierCustomers().filter(function(c){return tierProposal(c,'salt',tierBoards())||ruleProposal(c,'salt',tierBoards())||cardTier(c)!==0;}).length");
-  ok(!held12.length && prop12 === 0, "no customer holds a salt level, none is proposed one, and every card reads the drift: " + JSON.stringify([held12.length, prop12]));
+  const prop12 = rd("typeof tierProposal!=='undefined'||typeof ruleProposal!=='undefined'||typeof cardTier!=='undefined'||typeof levelAt!=='undefined'");
+  ok(!held12.length && prop12 === false, "no customer holds a salt level, the desk has no level to propose or read, and every card reads the Set Price and the held %: " + JSON.stringify([held12.length, prop12]));
   /* 13. THE CUSTOMER'S PAGE: a salt list is the desk's own card, size for size; a code with no card has salt coming */
   const { pricingSnapshot } = await import("../tools/book.mjs");
   const PL = await import("../tools/pricelist.mjs");
   const snap = pricingSnapshot(w), id13 = Object.keys(snap.byProduct.salt.cards || {})[0];
   const L13 = PL.priceList(id13, bk12, snap, new Date()), s13 = L13.products.find((p) => p.product === "salt");
   const none13 = PL.priceList("CX0-ZZ", bk12, snap, new Date());
-  ok(s13 && s13.basis === "card" && s13.tier === null && JSON.stringify(s13.sizes.map((x) => [x.q, x.price])) === JSON.stringify(snap.byProduct.salt.cards[id13])
+  ok(s13 && s13.basis === "card" && !("tier" in s13) && !("levels" in s13) && JSON.stringify(s13.sizes.map((x) => [x.q, x.price])) === JSON.stringify(snap.byProduct.salt.cards[id13])
     && none13.soon.some((x) => x.product === "salt"),
     "a customer's salt list is their drift card from the desk, size for size, with no level on it, and a code with no card has salt coming: " + JSON.stringify(s13 && s13.sizes.slice(0, 3)));
   /* and a stranger, by any guest or standing link, is quoted the Set Price: a drift book has no level for a link to follow */
   const set13 = JSON.stringify(snap.byProduct.salt.ladder.map((r) => r.prices[r.prices.length - 1]));
   const gs = (b) => JSON.stringify((b.products.find((p) => p.product === "salt") || { sizes: [] }).sizes.map((x) => x.price));
-  ok([PL.boardList(1, bk12, snap, new Date()), PL.tierBoard(1, bk12, snap, new Date()), PL.guestBoard(id13, bk12, snap, new Date())].every((b) => gs(b) === set13),
-    "every guest and standing link quotes salt at the Set Price: " + set13);
+  ok(gs(PL.guestBoard(bk12, snap, new Date())) === set13 && PL.boardList === undefined && PL.tierBoard === undefined,
+    "the one guest board, which every guest and standing link reads, quotes salt at the Set Price: " + set13);
   /* 14. THE DRAFTER AND THE FOLD TAKE A DRIFT ON SALT AND REFUSE A LEVEL THERE */
   const D = await import("../src/drafter.js"), F = await import("../tools/fold.mjs");
   const mir = { sales: [], purchases: [], state: { roster: ["CZ9-DA"], PRODUCTS: { salt: { name: "Salt" } }, TIER_OF: { "CZ9-DA": { salt: 0.2 } } },
-    pricing: { tierNames: rd("TIER_NAMES"), byProduct: { salt: { inputs: { policy: { tierRule: { drift: { up: 0.3, down: 0.2 } } } } } } } };
-  const en = (s) => ({ at: "2026-10-05T01:00:00.000Z", payload: { mode: "tierset", tiers: { "CZ9-DA": { salt: s } } } });
-  const d1 = D.draftRow(en(-0.4), mir), d2 = D.draftRow(en("Gold"), mir), d3 = D.draftRow(en(1.5), mir);
-  ok(d1 && !d1.skip && d1.row.tiers["CZ9-DA"].salt === -0.4 && /drift \+0\.2 to drift -0\.4/.test(d1.flags.join(" ")) && /Gold is not a drift/.test(d2.skip || "") && /not a drift/.test(d3.skip || ""),
-    "the drafter takes a drift on salt, flags the move, and refuses a level or a drift past one: " + JSON.stringify([d1 && d1.flags, d2.skip, d3.skip]));
+    pricing: { byProduct: { salt: { inputs: { policy: { tierRule: { drift: true } } } } } } };
+  const en = (s, unit = "pct") => ({ at: "2026-10-05T01:00:00.000Z", payload: { mode: "tierset", tiers: { "CZ9-DA": { salt: s } }, unit } });
+  const d1 = D.draftRow(en(0.4), mir), d2 = D.draftRow(en("Gold"), mir), d3 = D.draftRow(en(2.5), mir), d4 = D.draftRow(en(-0.4), mir);
+  ok(d1 && !d1.skip && d1.row.tiers["CZ9-DA"].salt === 0.4 && /20% lift to 40% lift/.test(d1.flags.join(" ")) && /Gold is not a % from 0 to 200/.test(d2.skip || "") && /not a % from 0 to 200/.test(d3.skip || "") && /not a % from 0 to 200/.test(d4.skip || ""),
+    "the drafter takes a % on salt, flags the move, and refuses a level, a % past 200 and a negative one: " + JSON.stringify([d1 && d1.flags, d2.skip, d3.skip, d4.skip]));
+  /* 19 Oct 2026: the unit travels into the row; a figure with none drafts without it and the flag says the fold drops it (a clear needs none) */
+  const d1n = D.draftRow(en(0.4, null), mir), d1c = D.draftRow(en(null, null), mir);
+  ok(d1.row.unit === "pct" && !d1.flags.some((f) => /no unit/.test(f)) && d1n && !d1n.skip && d1n.row.unit === undefined && d1n.flags.some((f) => /no unit/.test(f) && /drops it/.test(f))
+    && d1c && !d1c.skip && d1c.row.unit === undefined && !d1c.flags.some((f) => /no unit/.test(f)),
+  "the drafter carries unit pct into the row, flags a figure with no unit as one the fold drops, and asks no unit of a clear: " + JSON.stringify([d1.row, d1n.row, d1n.flags, d1c.flags]));
   const bkF = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); bkF.roster.push("CZ9-DA");
-  const itF = (n, s) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { salt: s } } }, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
-  const pl = F.plan(bkF, { ok: true, count: 2, approved: [itF(1, 0.4), itF(2, 1.5)] }, null);
-  ok(pl.refused.length === 1 && /drift \+1\.5 is not a drift from -1 to \+1/.test(pl.refused[0].why) && JSON.stringify(pl).indexOf("drift +0.4") >= 0,
-    "the fold files a drift as it filed a tier and refuses one past +1: " + JSON.stringify(pl.refused));
+  const itF = (n, s) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { salt: s } }, unit: "pct" }, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
+  const pl = F.plan(bkF, { ok: true, count: 2, approved: [itF(1, 0.4), itF(2, 2.5)] }, null);
+  ok(pl.refused.length === 1 && /250% lift is not a % from 0 to 200 \(0 to 2\)/.test(pl.refused[0].why) && JSON.stringify(pl).indexOf("40% lift") >= 0,
+    "the fold files a % as it filed a tier and refuses one past 2: " + JSON.stringify(pl.refused));
   /* and it refuses BY BOOK, as the drafter does: salt takes no level, oil (a stated board) takes no drift, and oil still
      takes a level; the Add ID road the same */
-  const itP = (n, p, v) => ({ id: "2099-01-01T00:00:00.01" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { [p]: v } } }, entry: { at: "2099-01-01T00:00:00.01" + n + "Z", payload: {} } });
-  const itA = (n, p, v) => ({ id: "2099-01-01T00:00:00.02" + n + "Z", collection: "roster", row: { code: "CZ9-DB" + n, kind: "customer", tiers: { [p]: v } }, entry: { at: "2099-01-01T00:00:00.02" + n + "Z", payload: {} } });
+  const itP = (n, p, v) => ({ id: "2099-01-01T00:00:00.01" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { [p]: v } }, unit: "pct" }, entry: { at: "2099-01-01T00:00:00.01" + n + "Z", payload: {} } });
+  const itA = (n, p, v) => ({ id: "2099-01-01T00:00:00.02" + n + "Z", collection: "roster", row: { code: "CZ9-DB" + n, kind: "customer", tiers: { [p]: v }, unit: "pct" }, entry: { at: "2099-01-01T00:00:00.02" + n + "Z", payload: {} } });
   const why = (x) => (F.plan(bkF, { ok: true, count: 1, approved: [x] }, null).refused[0] || {}).why || "";
-  const byBook = [why(itP(1, "salt", "Gold")), why(itP(2, "oil", 0.4)), why(itP(3, "oil", "Gold")), why(itA(4, "salt", "Gold")), why(itA(5, "oil", 0.3)), why(itA(6, "salt", -0.3))];
-  ok(/Gold is not a drift/.test(byBook[0]) && /drift \+0\.4 is not a tier/.test(byBook[1]) && byBook[2] === ""
-    && /Gold is not a drift/.test(byBook[3]) && /drift \+0\.3 is not a tier/.test(byBook[4]) && !/drift|tier/.test(byBook[5]),
-    "the fold refuses by book: a level on salt and a drift on oil are refused, a level on oil and a drift on salt are filed, at a tier entry and at Add ID: " + JSON.stringify(byBook));
+  const byBook = [why(itP(1, "salt", "Gold")), why(itP(2, "oil", 0.4)), why(itP(3, "oil", "Gold")), why(itA(4, "salt", "Gold")), why(itA(5, "oil", 0.3)), why(itA(6, "salt", 0.3))];
+  ok(/Gold is not a % from 0 to 200/.test(byBook[0]) && /40% lift is not held per customer/.test(byBook[1]) && /Gold is not held per customer/.test(byBook[2])
+    && /Gold is not a % from 0 to 200/.test(byBook[3]) && /30% lift is not held per customer/.test(byBook[4]) && byBook[5] === "",
+    "the fold refuses by book: a level on salt is refused, and a level or a % on oil, a fixed board, is refused; a % on salt is filed, at a tier entry and at Add ID: " + JSON.stringify(byBook));
   /* 15. A LOT PARTLY LANDED IS COSTED OVER THE UNITS RECEIVED; one with nothing received is passed over (review, 05 Oct 2026) */
   const PE = (await import("../engine/position.mjs")).default;
   const lots15 = [{ rid: "pA", date: "2026-09-01", qty: 10, total: 500, freight: 20 },
@@ -52183,34 +50692,32 @@ await (async () => {
     "a bucket owner's drift reads their whole history, the -R bucket's orders in it, and the bucket answers as its owner: " + JSON.stringify(s16));
   /* 17. HIS PAGE'S GUEST-LINK LEAD NAMES NO LEVEL: the prices follow the introducer, never past the stranger's board */
   const pg17 = readFileSync(join(REPO, "stmt", "page.js"), "utf8");
-  ok(/A guest link opens one price list[.] The prices follow the customer you name[.]/.test(pg17) && !/two levels above/.test(pg17),
-    "the guest-link lead says the prices follow the customer he names, in the glossary's words, and no longer two levels above");
+  ok(/A guest link opens the Set Price list, the same for everybody[.]/.test(pg17) && !/prices follow|two levels above/.test(pg17),
+    "the guest-link lead says every link opens the Set Price list, and no longer that the prices follow the customer he names");
   /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
-     The snapshot leaves a drift book out of tierOf and carries its drifts apart (byProduct.salt.drift, the hand winning), so no
+     The snapshot leaves a drift book out of tierOf and carries its % apart (byProduct.salt.lift, the hand or nought), so no
      reader meets a number where it looks for a level. First the contract over the book as it stands, whoever holds what; then
      the mixed entry forced on the first customer with none, so it is proved with no such customer on the book. */
   const driftBooks18 = Object.entries(snap.byProduct).filter(([, b]) => b.inputs && b.inputs.policy && b.inputs.policy.tierRule && b.inputs.policy.tierRule.drift).map(([p]) => p);
-  const held18 = Object.entries(snap.tierOf || {}).flatMap(([c, t]) => Object.entries(t).map(([p, v]) => [c, p, v]));
-  const badTier18 = held18.filter(([, p, v]) => driftBooks18.includes(p) || !E.levelShapeOk(v, snap.tierNames));
-  const drifts18 = driftBooks18.flatMap((p) => Object.entries(snap.byProduct[p].drift || {}));
+  const drifts18 = driftBooks18.flatMap((p) => Object.entries(snap.byProduct[p].lift || {}));
   const badDrift18 = drifts18.filter(([, v]) => v !== "partner" && !E.driftOk(v));
-  ok(driftBooks18.includes("salt") && held18.length > 0 && !badTier18.length && drifts18.length > 20 && !badDrift18.length,
-    "the snapshot's tierOf holds a level shape on a level-named book and nothing on a drift book, whose drifts all travel apart as a number from -1 to +1 or partner: "
-    + JSON.stringify({ driftBooks: driftBooks18, levels: held18.length, badTier: badTier18.slice(0, 3), drifts: drifts18.length, badDrift: badDrift18.slice(0, 3) }));
+  ok(driftBooks18.includes("salt") && snap.tierOf === undefined && snap.tierNames === undefined && drifts18.length > 20 && !badDrift18.length,
+    "the snapshot carries no level names and no held level, and the % of a drift book all travel as a number from 0 to 2 or partner: "
+    + JSON.stringify({ driftBooks: driftBooks18, tierOf: snap.tierOf, drifts: drifts18.length, badDrift: badDrift18.slice(0, 3) }));
   const id18 = String(w.eval(free)), at18 = JSON.stringify(id18), keep18 = rd("TIER_OF[" + at18 + "]||null");
   let s18 = null, d18 = null;
   try {
-    w.eval("TIER_OF[" + at18 + "]={oil:'Platinum',salt:-0.7};recompute();");
+    w.eval("TIER_OF[" + at18 + "]={oil:'Platinum',salt:0.7};recompute();");
     s18 = pricingSnapshot(w);
     d18 = rd("driftOf(" + at18 + ",'salt').d");
   } finally { w.eval((keep18 ? "TIER_OF[" + at18 + "]=" + JSON.stringify(keep18) : "delete TIER_OF[" + at18 + "]") + ";recompute();"); }
   const sS18 = s18 && s18.byProduct.salt, C18 = sS18 && E.costStack(sS18.inputs.cost);
   const list18 = s18 && PL.priceList(id18, bk12, s18, new Date()), salt18 = list18 && list18.products.find((p) => p.product === "salt"), oil18 = list18 && list18.products.find((p) => p.product === "oil");
-  ok(id18 && s18 && JSON.stringify(s18.tierOf[id18]) === '{"oil":"Platinum"}' && sS18.drift[id18] === -0.7 && d18 === -0.7
-    && sS18.cards[id18].length > 5 && sS18.cards[id18].every(([q, x]) => x === E.driftAt(q, C18, sS18.inputs.policy, -0.7).p)
-    && salt18 && salt18.basis === "card" && salt18.tier === null && JSON.stringify(salt18.sizes.map((x) => [x.q, x.price])) === JSON.stringify(sS18.cards[id18])
+  ok(id18 && s18 && s18.tierOf === undefined && sS18.lift[id18] === 0.7 && d18 === 0.7
+    && sS18.cards[id18].length > 5 && sS18.cards[id18].every(([q, x]) => x === E.driftAt(q, C18, sS18.inputs.policy, 0.7).p)
+    && salt18 && salt18.basis === "card" && !("tier" in salt18) && JSON.stringify(salt18.sizes.map((x) => [x.q, x.price])) === JSON.stringify(sS18.cards[id18])
     && oil18 && oil18.basis === "board",
-    "a customer holding a drift on salt and a level on oil is carded salt at the Set Price moved by -0.7, size for size, with the level left on oil's stated board: " + JSON.stringify({ tierOf: s18 && s18.tierOf[id18], drift: sS18 && sS18.drift[id18], d: d18, cards: sS18 && sS18.cards[id18].slice(0, 2) }));
+    "a customer holding a % on salt is carded salt at the Set Price lifted 70%, size for size, with oil on its stated board whatever is held there: " + JSON.stringify({ lift: sS18 && sS18.lift[id18], d: d18, cards: sS18 && sS18.cards[id18].slice(0, 2) }));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 

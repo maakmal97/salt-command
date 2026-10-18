@@ -101,8 +101,8 @@ bound it stays there, and a `make_statements` retry and Send look under the user
 username (`registerAccounts` in `tools/fold.mjs`, one line in `_users.json`, no key needed), and the
 publish in the same run seals the live statement and price list into it, so a walk-in signs in within
 the fold's few minutes. With none free the fold mints a bare username as before; Salt Account then reads
-"Made at the next laptop update. Until then, show the Silver link." (the level is the ladder's last,
-from `tiers`), and `update.mjs` mints the account.
+"Made at the next laptop update. Until then, show the price list link." (the one standing link, for strangers),
+and `update.mjs` mints the account.
 **One username, one code**: the next spare is the same on every machine, so two folds from one base
 take the same one and git merges their lines cleanly. The fold, the gate and the publish each refuse a
 `_users.json` giving one username to two codes (`oneCodeEach`), before anything is written.
@@ -365,31 +365,19 @@ thing a curious customer could still notice. A custom domain on the statements W
 fix: a `routes` block in `wrangler.stmt.jsonc`, and `SALT_BASE_URL` (or the default at the top
 of `tools/make_statements.mjs`) changed to match before the next issue, since the QR carries it.
 
-**On a drift book (salt since 05 Oct 2026) every link quotes the Set Price**: no level exists there
-for a standing link or an introducer to pick, so `boardList` falls back to `ladderRow`'s ask.
-
-**THE GUEST LINKS ARE FIVE, ONE FOR EACH TIER** (v696, his instruction of 18 Sep 2026: "for the
-guest links, produce exactly 5 links, for the five tier pricing"). The five levels a guest may be
-quoted are Titanium, Platinum, Gold, Silver and Bronze; Ambassador is the floor and never a guest's.
-A standing link carries its `level` and `standing: true`, and `ensureStanding` in `stmt/refs.js`
-makes the missing ones on Salt Account's first read of its links (Needs you or Links): **ensured, not minted on a tap**, so
-the answer to "what are my links" is always exactly five and there is nothing to remember. It is
-idempotent, and a level that already has one keeps the id it was given, because an id handed to a
-stranger must never change what it opens. The level names travel from the book to the Worker as the
-KV key `tiers`, written by every publish; with no names to hand it makes none rather than inventing
-five. Each standing board is `tierBoard(level, ...)` in `tools/pricelist.mjs`, which is `boardList`
-with the level pinned, so there is one definition of what a board is.
-
-**A STANDING LINK READS ITS LEVEL'S BOARD, NOT ONE WRITTEN UNDER ITS OWN ID** (v699). The publish
-writes `tboard:1` to `tboard:5` on every run, and `handleGuest` resolves a standing link's level
-against the `tiers` names and reads that key. v699 closed a hole v696 left in its own shape: the
-five are minted the first time his page reads the links, so any minted since the last publish had no
-board of its own and fell back to `board:2`, which is the LAST level; four of the five would have
-quoted Bronze until the next deploy. A level's board does not depend on which link points at it, so
-nothing is published per standing link and minting one can never be wrong. `tboard:` and not
-`board:`, because `board:2` already means the last level and not the second. A link that names an
-INTRODUCER still reads its own `gboard:<id>`, because that one does depend on who handed it out, and
-still falls back to `board:2` when it was minted since the last publish.
+**EVERY GUEST LINK OPENS ONE BOARD, THE SET PRICE** (18 Oct 2026, his decision: the five price levels are gone). The
+publish writes the one guest board under the KV key `guestboard` (`guestBoard(book, pricing, now)` in `tools/pricelist.mjs`:
+the engine's `quoteAt` at a lift of nought, so salt's Set Price and a stated board's own price for oil, candy and rice),
+and `handleGuest` reads that key for every link, whoever minted it and whatever its record carries. A record from before
+(a `tier`, a `level`, a `standing` mark for a level) is read and ignored, so an id already handed out keeps opening the
+board; the old keys `board:1`, `board:2`, `tboard:*`, `gboard:*` and `tiers` are left in the store and nothing reads them.
+There is **one standing link, for strangers**: `ensureStanding` in `stmt/refs.js` makes it on Salt Account's first read of
+its links (adopting a standing link already held, whatever level it once carried, and never making one over it), so the
+answer to "what are my links" always holds the link he shows a stranger. A link may still name its introducer, which is
+only his note of who handed it out; it prices nothing. Nothing is published per link, so minting one can never be wrong,
+and the one gap is the minutes between a deploy and its publish, when `guestboard` is not yet written (or holds no
+product) and a link answers a page that says "Prices are being updated. Please check back shortly." (`board.none`), with no list,
+size or note under it; `test/pricing-words.mjs` and the guest section of `test/verify.mjs` hold it.
 
 **THE PUBLISH RUNS ON EVERY RUN BUT THE KEY PROBE** (v701, his question of 18 Sep 2026: can the
 publish be on any trigger?). It can. It needs nothing the job produces: it reads `ledger/book.json`
@@ -407,7 +395,7 @@ reads, and what moves it:
 | Site orders, claims and messages | the Counter's order book | nothing: none is sealed, and an order reaches a list once it is a row on the book, so through git |
 | The restock date | the Counter's KV `expected`, written only through the desk's `/expected` | the desk marks KV `publish:wanted`, and its minute cron dispatches |
 | The day: the drift's days since the last order and oldest overdue, the restock date's lapse (`restockSupply`), the week line, `pay`'s `late` | the clock | the desk's minute cron asks once a Kuala Lumpur day, 00:05 to 03:00 MYT; the page counts `late` and the hold, hide and lock stages on its own day besides |
-| A guest link minted or approved since the last publish | the Counter's KV `g:` | nothing yet: it reads `board:2` until the next publish (below) |
+| A guest link minted or approved since the last publish | the Counter's KV `g:` | nothing: every link reads the one `guestboard` |
 
 The desk Worker's `wantPublish` writes `publish:wanted` `{at, reason}`; `publishWanted`, on the minute cron, sends
 one `stage_only` dispatch named `publish: <reason>` when the mark is newer than the last such dispatch
@@ -798,13 +786,12 @@ and "Nothing on your account yet". Nothing about the statements changed.
 
 **THE CUSTOMER SEES NO LEVEL** (S4 4.10, his D11 of 24 Sep 2026, reversing v659's "a very subtle tier
 level, in symbol and colour"). Prices drew a glyph in the level's colour beside each product (`MARK`, v659
-to S4); it is gone, and nothing on the page reads the level. The name still travels inside the sealed list,
-as it has since v651, and the suite holds two lists differing only in level to the same Prices, to the
-character. **Nor their own rate, nor a word that prices differ between customers** (his instruction of 27 Sep
+to S4); it is gone, and nothing on the page reads a level. There are no price levels since 18 Oct 2026, and the
+sealed list carries none: a customer is quoted the Set Price lifted by their %, which the page never names. **Nor their own rate, nor a word that prices differ between customers** (his instruction of 27 Sep
 2026): a product's pane is its mark and its sizes, the lead says nothing of history or of a week, and the
 retired words are deleted from `stmt/words.js`, whose every word is served in the page's source. Since the
 cap was retired the same day, the sealed list carries no `rate` or `orders`, and `basis` is `tier` or `board`;
-the suite holds three lists differing only in history to the same Prices, to the character.
+the suite holds three lists differing only in history to the same Prices, to the character. The `basis` is `card` or `board`.
 
 **AND THEY ARE GREETED AS PERSONALLY AS THIS SITE CAN** (v659, the same instruction). The hour is
 theirs, off their own device, so Home's heading is Good morning, Good afternoon or Good evening
@@ -819,19 +806,19 @@ would put names, encrypted, into the committed `_kv` records, where today there 
 **The price list is a second sealed document beside the live statement.** The deploy writes
 it in the same publish, under the same content key, so the site still holds nothing it can
 read. `tools/pricelist.mjs` is the whole rule: since v651 (his decisions of 15 Sep 2026) each board
-size is the price of the customer's tier for that product, the tier held on the book or proposed from
-what they pay for it, lifted only to clear the floor: the engine's `cardPrice`, which the desk's
+size is the customer's quote for that product: the Set Price lifted by their %, or a stated board's price, never under
+the Floor and never over the Ceiling (18 Oct 2026): the engine's `cardPrice`, which the desk's
 printed board calls too, and the suite holds the two equal. **The cap is retired** (his decision of
 27 Sep 2026): until then the tier was a ceiling, lowered to the best unit rate of their last four orders
 before the week's Monday (v655), rounded down to the ten (v660); now what they paid before lowers
-nothing, and nothing on the list is weekly. The v510 draw toward the ask retired with v651. **A product with no tier, held or proposed, is not priced**: the list carries it in `soon`,
+nothing, and nothing on the list is weekly. The v510 draw toward the ask retired with v651. **A product with neither a Set Price nor a board is not priced**: the list carries it in `soon`,
 the page says its price is coming soon, and the order sheet does not offer it. One
 price per size, for the goods (v502): delivery is not on the list. It is a figure
 he types **when he acknowledges the order** (v694; it was at ready until then, and the order becomes
 a row at the acknowledgement, so the charge has to be settled there), the customer sees goods plus
 delivery as the sum to pay, and the sale carries it as its own field, `delivery`, inside the total. Nothing outside the
 engine prices: the publish opens the master in jsdom for the desk's PRICING inputs (the same the
-drafter reads), which carry each customer's tier and the ladder, and calls `floorTotal` and
+drafter reads), which carry each customer's quotes, their % and the ladder, and calls `floorTotal` and
 `cardPrice`. `node tools/pricelist.mjs --show <CODE>` prints what
 a customer sees. `--no-prices` on the publish leaves the list out.
 **The list's stamp is a digest of its figures** (S4 4.1), never `prices.at`, which the scheduled publish moves:
@@ -1473,11 +1460,11 @@ exists the page says notifications are not switched on.
 - **Any quantity at an automatic price.** Each book's `TIER_RULE` carries `grid`, {min, step, max}: salt 0.5 to 25 in
   quarters, oil 10 to 50 in tens, candy 1 to 30 and rice 1 to 10 in ones (his word of 15 Oct 2026: each book is ordered in its
   smallest unit step, and `step` is that setting, read by the page's field, the Worker's `onStep` and nothing else). The publish seals each customer's `grid`
-  ({min, step, max, p[]}, the engine's `quoteGrid` at their drift) beside the board's `sizes`, and writes the steps alone,
+  ({min, step, max, p[]}, the engine's `quoteGrid` at their %) beside the board's `sizes`, and writes the steps alone,
   no price, in the clear beside the stamp (`priceSteps`). The stamp covers the grid. The page reads every figure through one
   `priceAt(P, q)` and works nothing out. The Worker refuses a size off the step (`offStep`) or over the max (`overMax`,
   Negotiate's alone, and still a whole number of steps from the min: oil 60 is asked for, oil 55 is refused) and **a Place with no stamp** against a stamped list (as moved, 409 with the list). The desk Worker's
-  card at any size is the engine's `quoteAt` on the snapshot's inputs and the drift it carries per code (`cardAt`).
+  card at any size is the engine's `quoteAt` on the snapshot's inputs and the % it carries per code (`lift`, read by `cardAt`).
 - **Negotiate.** An order placed with `ask` (a figure of theirs optional, a number only) waits in `price` (asked). His offer
   is the goods alone (`POST /orders/<id>/offer`): drafted as Accept drafts it (never under the floor), filed as an ack
   pre-approval with no entry and `shown.offer`, digested on the row's figures and flags only (`offerDigest`), open 48 hours.
@@ -1614,7 +1601,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   many addresses and when it opens, never an address; the count off each key's listing metadata, which the
   brake writes, never a read a key, since anyone can mint `fail:` keys) with Send a sign-in link in two taps, one to make
   it and one to share it, so the share sheet never waits on the derivation; an ID with no account, which the
-  fold leaves only when no spare was free (the stranger's standing link, its level the sheet's `stranger`, the one source, and its Accounts row saying the
+  fold leaves only when no spare was free (the standing link for strangers, and its Accounts row saying the
   same; Send off until the laptop mints it); and the accounts neither ticked sent
   nor ever opened, with **Send them in turn** (S9 9.6): each account's sign-in link is made as its turn
   opens, Share is a tap of its own, and a share that goes through ticks the account sent (the `sent:` tick
@@ -1842,7 +1829,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
   Entry (**grouped by use under small eyebrows, 18 Oct 2026**: Everyday, Sale or purchase, Repayment, Stock count; Now and then, Gift, Loan, Rewards, Offsets; Fixing, Correct a row, Reopen a cancelled order;
-  a form not listed follows them), Customers (Add ID, Appoint existing customer, Amend ID, Map placement), Pricing (Customer tier, Tips, Customer drift, Printed
+  a form not listed follows them), Customers (Add ID, Appoint existing customer, Amend ID, Map placement), Pricing (Their %, Tips, Printed
   board sizes). A row opens **that form alone, in the menu's place**, with a way back at the head (`record.form-back`, "← Entry") that returns him
   to the row he came from. **The form is the node it was, moved and never drawn again**: its fields, its retained send and its request ids are
   untouched, shown and hidden by `sweep` from `fOpen` (the form open, a slug), so what he has typed survives Back and opening another form.
@@ -1858,13 +1845,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   and the way back is not drawn. **Below 860px** the form open takes the menu's place and has its way back, and the pane's invitation to choose one is not
   drawn. `sweep` no longer hides the menu while a form is open: the CSS decides by width, as it does for Orders.
   **The few, fixed choices of a form are the system's Option tiles** (Phase 4a, 12 Oct 2026, `test/admin-tiles.mjs`, its mutations in
-  `test/admin-tiles.mutations.json`): where a form asked in a `<select>` for a book, a direction, a handover, a kind of entry, a role, a level, a drift, a
+  `test/admin-tiles.mutations.json`): where a form asked in a `<select>` for a book, a direction, a handover, a kind of entry, a role, a starting %, a
   stream or a time to hide a reminder, it asks in `makerTiles` (`stmt/owner.js`), a fieldset (`salt-options maker-tiles`) whose legend is the field's label and
   a real radio in each tile (`salt-option`, face 44px, the radio laid over the whole tile), so the group is one tab stop, the arrows move the choice and a
   tile is a 44px target in both dimensions. The group answers where the select did: `.value` is the tile chosen (`''` when none is), `.disabled` shuts every
-  tile (a supplier has no starting level or drift), the radios' `change` and `input` bubble to it, and `fill(items)` draws the tiles again, keeping the choice
+  tile (a supplier has no starting %), the radios' `change` and `input` bubble to it, and `fill(items)` draws the tiles again, keeping the choice
   while it is still offered, else the first tile (the appointment's role starts with none chosen, as its select did). **Each radio keeps its select's act**,
-  keyed by its value (`none` for the empty one) and, for a group drawn once for each book, by that book first (`record.add-id.tier`, key `salt-Silver`), so the
+  keyed by its value (`none` for the empty one) and, for a group drawn once for each book, by that book first (`record.add-id.drift`, key `salt-typed`), so the
   act table below and the audit are as they were. **What a form sends is the value it always sent**: no route, body, field, request id, retained send,
   timestamp or signature cache, completion hook or `entryFault` changed. A **party, a row, a loan, a field or a reminder, a list as long as the book, stays
   a select**, and so does a code in a correction.
@@ -2020,17 +2007,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   and hands to strangers, and the link exists to say WHICH stranger. `stmt/refs.js` mints, lists,
   revokes and counts opens; it prices nothing, and neither does `tools/pricelist.mjs`, which reads
   the same engine the desk does.
-- **A LINK NAMES ITS INTRODUCER AND FOLLOWS THEM** (v658, his rule). Minting takes the introducing
+- **A LINK MAY NAME ITS INTRODUCER** (v658; since 18 Oct 2026 only as his note). Minting takes the introducing
   customer's USERNAME, checked against the roster the publish writes; a username nobody holds is
-  refused. The guest's level is **two above the introducer's where there is room, else one, capped
-  at the last**, per product, and a product the introducer holds no tier on falls to the last level,
-  which is what a stranger is quoted anyway. **The level is never stored on the link.** Every
-  publish computes it from the introducer's tier at that moment and writes the link's own board as
-  `gboard:<id>` (`guestBoard` in `tools/pricelist.mjs`), so moving a customer up moves every link
-  they gave out. A link minted since the last publish has no board yet and falls back to `board:2`,
-  the board every stranger sees, which is also the cap. `board:1` and `board:2` are still written,
-  as Titanium and the last level (Silver since v793, Bronze before it). The level's NAME is not on the guest page, for the same reason it
-  is not on a customer's.
+  refused. The guest's level, two above the introducer's, went with the levels: every link opens the one
+  `guestboard`, so no board is written per link and moving a customer moves nothing a link shows.
 - **Print a board** (v564) saves HTML, PDF or JPG: crystal, sizes, username, then a QR to
   `<site>/?u=<username>`. The publish writes KV `stmt-site` and keyed `GET /stmt-users` returns
   it, so the laptop has no username and no QR.
@@ -2055,17 +2035,16 @@ Desk's own refusals for goods out or a claim waiting. An acceptance order moves 
 (actor `deskorder`, the same `decideDesk`), marked `test` in the review. The Desk's `/order-again`
 and `/words` private routes carry the Maker review's offered-again stages and the word check. Desk draft
 decisions use `handleDraftDecide`, so double decisions and site-order effects retain the normal
-checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/tier-accept-all`, `inputs/house-sizes`, `inputs/hush`,
+checks. Typed inputs are `inputs/stock-count`, `inputs/sale`, `inputs/purchase`, `inputs/tier-set`, `inputs/house-sizes`, `inputs/hush`,
 `inputs/loan`, `inputs/repay`, `inputs/gift`, `inputs/redeem`, `inputs/add-id`, `inputs/amend-id`
-and `inputs/place`. On the drift book, `inputs/tier-set` accepts the existing `tierset` shape with a
-numeric `-1..+1` override rounded to two decimals like the Desk (zero is held) or `null` to restore
-automatic record drift; supplier codes
-and resale buckets are excluded; level books retain their tier and band shapes, and fixed books
-remain refused. The Counter shows held versus automatic drift from the seeded snapshot and offers
-no control on fixed books. Add ID is separate: drift books offer Automatic by default, the active
-rule's presets and a typed `-1..+1` starting drift; a valid choice travels in the existing `addid`
+and `inputs/place`. On a book with a Set Price, `inputs/tier-set` accepts the existing `tierset` shape with a
+numeric `0..2` (their %, 0% to 200%) like the Desk (zero is held) or `null` to set it back to 0; supplier codes
+and resale buckets are excluded, and fixed books remain refused. The Counter shows the % held and the engine's
+suggestion, as a %, from the seeded snapshot and offers no control on fixed books. Add ID is separate: a book with a
+Set Price offers Not set by default, the active rule's presets (Set Price, +5%, +10%, +15%, +20%, +30%) and another %,
+`0..2`; a valid choice travels in the existing `addid`
 entry and pair-vault route, while an invalid typed value is refused before vault preparation.
-Automatic leaves the drift unset. No pricing is done on either road. These inputs use the existing
+Not set leaves the % unheld, which is 0%, the Set Price. No pricing is done on either road. These inputs use the existing
 Position Engine constructors and drafter checks, go
 through the existing queue and wait for review. Loans and repayments retain their loan rows; gifts
 use the goodwill sale shape; redemption derives reward balance on the Desk and offsets the oldest
@@ -2078,7 +2057,7 @@ an arbitrary code is never accepted. Date and inventory-cost requirements remain
 Each input button disables its controls while sending and persists the
 whole request (including timestamp and ciphertext) before transport. A retained input must be
 retried, reviewed or explicitly cancelled; editing the form does not replace that request.
-Record count, Send tier for review, Hush tip and Send board sizes for review release their
+Record count, Send their % for review, Hush tip and Send board sizes for review release their
 timestamp/signature cache only on confirmed completion, including the button's direct retained
 retry. A subsequent intentional action with the same values gets a fresh timestamp. Automatic
 offsets use that same retained sender, not a date-keyed request rebuilt from the form: after a
@@ -2472,7 +2451,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.label` | Links | Who the link is for. |
 | `link.make` | Links | Makes a guest link. |
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
-| `link.tier` | Same card | Sets the tier it quotes. |
 | `link.withdraw` | Link card | Withdraws the link. |
 | `look.night` | Shop, This device, Look | Night for Salt Account on this device, at once, kept here. |
 | `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
@@ -2507,7 +2485,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `need.owed-pay` | Needs you card for money owed past term (key: the customer's code) | Opens the oldest such row's site order at Money received, or Record's Correct a row on that row as goods or cash moved. Books nothing. |
 | `need.retry` | The banner over Needs you's title when a read failed | Reads every source again, the ones that failed among them; the banner goes once all get through. |
 | `need.link-decline` | Same card | Declines the link, which stays shut. |
-| `need.link-tier` | Needs you card for a guest link an associate made | Sets the tier that link quotes, or leaves it following the associate. |
 | `need.open` | Every Needs you card (key: the card's key) | Goes to the detail of what the card is about: Orders, the order's stage, with that order's card open, that thread in Customers > Messages, that account (beside the list on a desktop, on Accounts on a phone), Customers > Links, Orders > Approve, Record on the part an unsent entry belongs to, Shop. |
 | `need.fold.soon` | Needs you, the Soon heading | Opens or folds the Soon cards; folded when drawn, and once opened it stays open across redraws (14 Oct 2026). |
 | `need.fold.watch` | Needs you, the Watch heading | Opens or folds the Watch cards, the same way. |
@@ -2606,7 +2583,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.orders.ledger` | The strip under Orders (tab: Ledger) | Shows the mini ledger, reading the folded book: Open orders, Pending orders and the latest 20 orders. |
 | `part.record.customers` | The strip under Record (tab: Customers) | Shows the menu of the forms that add, change or place a customer, one form at a time. |
 | `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |
-| `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's tier or drift, the printed board sizes and the tips, one form at a time. |
+| `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's %, the printed board sizes and the tips, one form at a time. |
 | `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours and the collection points, reading both. |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
@@ -2624,15 +2601,14 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `pool.target` | Group orders | The target, in units. |
 | `queue.details` | Server-held entry card (key: the entry id) | Opens the entry's reference, when it was sent and its state, as a list of names and values. |
 | `queue.withdraw` | Server-held entry card (key: the entry id) | Withdraws the uploaded entry, or finishes a withdrawal begun. |
-| `record.add-id.drift` | Record, Add ID, one for each drift book (key: the book) | The starting drift: automatic, a preset or typed. |
-| `record.add-id.drift-value` | Record, Add ID, one for each drift book (key: the book) | The typed starting drift, from -1 to +1. |
+| `record.add-id.drift` | Record, Add ID, one for each book with a Set Price (key: the book) | The starting %: not set, a preset or another %. |
+| `record.add-id.drift-value` | Record, Add ID, one for each book with a Set Price (key: the book) | The starting % when it is another %, from 0 to 2. |
 | `record.add-id.link` | Record, Add ID | A Maps or Waze link, read on this device. |
 | `record.add-id.name` | Record, Add ID | The name, which never leaves this device in the clear. |
 | `record.add-id.parent` | Record, Add ID | The parent or associate, for a downstream buyer or a resale account. |
 | `record.add-id.place` | Record, Add ID | The locality, from the official list. |
 | `record.add-id.role` | Record, Add ID | Customer, supplier, reseller, referral, downstream buyer or resale account. |
 | `record.add-id.send` | Record, Add ID | Encrypts on this device and sends the ID for review. |
-| `record.add-id.tier` | Record, Add ID, one for each tiered book (key: the book) | The starting tier. |
 | `record.amend-id.link` | Record, Amend ID | A Maps or Waze link, read on this device. |
 | `record.amend-id.name` | Record, Amend ID | The new name, kept on this device. |
 | `record.amend-id.party` | Record, Amend ID | The party to re-key. |
@@ -2655,13 +2631,14 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.count.date` | Record, stock count | The day counted. |
 | `record.count.send` | Record, stock count | Records the count. |
 | `record.count.units` | Record, stock count | The units counted. |
-| `record.drift.book` | Record, customer drift | The book. |
-| `record.drift.clear` | Record, customer drift | Clears it, returning the customer to automatic drift. |
-| `record.drift.customer` | Record, customer drift | The customer. |
-| `record.drift.set` | Record, customer drift | Sets the held drift for review. |
-| `record.drift.value` | Record, customer drift | The drift, from -1 to +1. |
+| `record.drift.book` | Record, Their % | The book. |
+| `record.drift.clear` | Record, Their % | Sets it back to 0, the Set Price. |
+| `record.drift.customer` | Record, Their % | The customer. |
+| `record.drift.set` | Record, Their % | Sends their % for review. |
+| `record.drift.suggest` | Record, Their % | Fills the box with the engine's suggested %; it sends nothing. |
+| `record.drift.value` | Record, Their % | Their %, from 0 to 2 (0.2 is 20%). |
 | `record.partner.customer` | Record, partner | The customer to make a partner. |
-| `record.partner.make` | Record, partner | Queues a name-free partner entry for review, as the Desk's Make partner does; a partner pays cost. Drift books only. |
+| `record.partner.make` | Record, partner | Queues a name-free partner entry for review, as the Desk's Make partner does; a partner pays the Floor. Books with a Set Price only. |
 | `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the pane beside the menu from 860px and in the menu's place below it, with a way back. Reads and sends nothing. |
 | `record.form-back` | The head of an open Record form | Closes the form and returns to the menu, to the row it came from. Nothing typed is lost. |
 | `record.gift.book` | Record, gift | The book. |
@@ -2701,16 +2678,6 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.revive.date` | Record, revive a cancelled row | The day recorded. |
 | `record.revive.row` | Record, revive a cancelled row | The cancelled row. |
 | `record.revive.send` | Record, revive a cancelled row | Sends the revival for review. |
-| `record.tier.accept-all` | Record, customer tier | Sends every proposal for review. |
-| `record.tier.band-big` | Record, customer tier | The level for the big sizes. |
-| `record.tier.band-mid` | Record, customer tier | The level for the mid sizes. |
-| `record.tier.band-small` | Record, customer tier | The level for the small sizes. |
-| `record.tier.book` | Record, customer tier | The book. |
-| `record.tier.customer` | Record, customer tier | The customer. |
-| `record.tier.level` | Record, customer tier | The held level, or clear it, or the three bands. |
-| `record.tier.send` | Record, customer tier | Sends the tier for review. |
-| `record.tier.use-offer` | Record, customer tier | Fills the level from the late-payer offer. |
-| `record.tier.use-proposal` | Record, customer tier | Fills the level from the proposal. |
 | `record.tip.for` | Record, tips | How long: seven or thirty days, or dismiss. |
 | `record.tip.send` | Record, tips | Hushes the tip. |
 | `record.tip.tip` | Record, tips | The tip to hush. |

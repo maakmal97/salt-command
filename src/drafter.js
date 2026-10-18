@@ -410,7 +410,9 @@ export function floorFor(book, product, qty) {
     try {
       const C = PRICING_ENGINE.costStack(snap.inputs.cost);
       const x = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy);
-      if (isNum(x)) return { floor: +x.toFixed(2), at: qty, exact: true, time };
+      /* 19 Oct 2026: the Floor is the cost rounded up to the next RM 5, so what the order costs is its own figure (costTotal), never the Floor */
+      const cost = PRICING_ENGINE.costTotal(qty, C, snap.inputs.policy);
+      if (isNum(x)) return { floor: +x.toFixed(2), cost: isNum(cost) ? +cost.toFixed(2) : null, at: qty, exact: true, time };
     } catch (e) { /* fall through to the carded sizes */ }
   }
   /* the carded sizes are what the snapshot holds; an odd size takes the nearest carded one
@@ -550,7 +552,11 @@ export function flagsFor(entry, row, book, priced) {
     const made = isNum(fl.time) && fl.time > 0
       ? `the goods at COGS, purchase plus freight off the latest lot, and RM ${round(fl.time)} for your time`
       : "the goods at COGS, purchase plus freight off the latest lot";
-    flags.push(`RM ${round(total)} for the goods is RM ${round(fl.floor - total)} under the floor of RM ${round(fl.floor)}${at}, which is what the order costs to take out: ${made}, with nothing above them.`);
+    /* 19 Oct 2026: THE FLOOR IS THE PRICE FLOOR, NOT THE COST. It is the cost rounded up to the next RM 5, so the flag names the
+       Floor for the comparison and the exact cost (costTotal) where it says what the order costs. The carded-size road holds
+       the Floor alone and says only what it is made of. */
+    const costs = isNum(fl.cost) ? `the order costs RM ${round(fl.cost)} to take out: ${made}; the Floor is that rounded up to the next RM 5` : `the Floor is ${made}, rounded up to the next RM 5`;
+    flags.push(`RM ${round(total)} for the goods is RM ${round(fl.floor - total)} under the Floor of RM ${round(fl.floor)}${at}: ${costs}.`);
   }
 
   /* 4. BELOW COST. Separate from the floor because it is a different fact and the book has
@@ -1033,7 +1039,7 @@ export function draftRow(entry, book) {
         flags.push(`Counting zero against ${round(pos.promised)} unit of promises means every open order on the book is unmeetable until a lot lands.`);
       }
     } else {
-      flags.push("The mirror carries no position for this product, so the drift could not be worked out. The count still stands; the comparison does not.");
+      flags.push("The mirror carries no position for this product, so the difference could not be worked out. The count still stands; the comparison does not.");
     }
     const since = snap && snap.countedOn && snap.countedOn[prod];
     return {
@@ -1041,7 +1047,7 @@ export function draftRow(entry, book) {
       row: { product: prod, qty: q, date: when, was: pos ? pos.onHand : null, drift },
       flags,
       reasoning: `Counted ${round(q)} unit of ${prod} by hand on ${when}`
-        + (pos ? `, against ${round(pos.onHand)} on the book: a drift of ${drift > 0 ? "+" : ""}${drift}.` : ".")
+        + (pos ? `, against ${round(pos.onHand)} on the book: a difference of ${drift > 0 ? "+" : ""}${drift}.` : ".")
         + (since ? ` The last count was ${since}.` : "")
         + " A count wins over the ledger, and the fold sets the stated stock and moves COUNT_ON to this date.",
     };
@@ -1202,21 +1208,20 @@ export function draftRow(entry, book) {
     const parent = pay.parent || null;
     if (kind === "bucket" && !parent) return { skip: "a bucket sits under a party, and which party is a judgement" };
     if (pay.geo != null && !geoFiled(pay.geo)) return { skip: geoOf(pay.geo) ? "the point given for the place has no locality beside it" : "the point given for the place is not in Malaysia" };   // v633
-    /* v645: the starting tier chosen at Add ID, for each product since v646, checked against the book's products and the
-       level names the desk's PRICING snapshot carries */
+    /* v645: the starting figure chosen at Add ID, for each product since v646, checked against the book's products: a % lift
+       from 0 to 2 on a book with a Set Price, and nothing on any other */
     const products = (book.state && book.state.PRODUCTS) || {};
     const tierLine = (t) => Object.keys(t).map((p) => `${(products[p] && products[p].name) || p} ${t[p]}`).join(", ");
     if (pay.tiers != null) {
-      const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
       const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
       const ps = (typeof pay.tiers === "object" && !Array.isArray(pay.tiers)) ? Object.keys(pay.tiers) : [];
-      if (!ps.length) return { skip: "a starting tier names no product" };
+      if (!ps.length) return { skip: "a starting % names no product" };
       for (const p of ps) {
         if (!products[p]) return { skip: `${p} is not a product on this book` };
-        /* 05 Oct 2026: a drift book starts on a drift he picks, -1 to +1; a level is refused there */
-        if (driftB(p) ? !PRICING_ENGINE.driftOk(pay.tiers[p]) : !names.includes(pay.tiers[p])) return { skip: driftB(p) ? `${pay.tiers[p]} is not a drift from -1 to +1` : `${pay.tiers[p]} is not a tier` };
+        /* a book with a Set Price starts on a figure he picks (18 Oct 2026: a % lift, 0 to 2); any other book takes none */
+        if (!(driftB(p) && PRICING_ENGINE.driftOk(pay.tiers[p]))) return { skip: driftB(p) ? `${pay.tiers[p]} is not a % from 0 to 200 (0 to 2)` : `${pay.tiers[p]} is not held per customer on this book` };
       }
-      if (!["customer", "reseller", "referral"].includes(kind)) return { skip: `a ${kind} holds no tier` };
+      if (!["customer", "reseller", "referral"].includes(kind)) return { skip: `a ${kind} holds no starting %` };
     }
 
     const roster = (book.state && book.state.roster) || [];
@@ -1228,6 +1233,8 @@ export function draftRow(entry, book) {
        naming a code the roster already holds is the ordinary road and not a fault. What IS a
        duplicate here is appointing an associate twice, and the fold refuses that outright. */
     const stream = POSITION_ENGINE.ADDID_APPOINTS[kind] || null;
+    /* 19 Oct 2026: a starting % with no unit is the old form's (-1 to +1); the fold drops it, as it drops one stamped before the switch */
+    if (pay.tiers && pay.unit !== "pct") flags.push(`The starting % carries no unit, so it is from the old form: the fold drops it and ${code} starts on the Set Price at 0%.`);
     if (roster.includes(code) && !stream) {
       flags.push(`${code} is ALREADY on the roster. Folding this would list the party twice, and the desk walks the roster to build its own tables.`);
     }
@@ -1250,7 +1257,7 @@ export function draftRow(entry, book) {
       : "";
     return {
       collection: "roster",
-      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}),
+      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}, pay.tiers && pay.unit === "pct" ? { unit: "pct" } : {}),
       flags,
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
         + (pay.tiers ? ` It starts them at ${tierLine(pay.tiers)}.` : "")
@@ -1312,9 +1319,9 @@ export function draftRow(entry, book) {
         + " It moves no cash and no stock. The name stays in the vault; the point travels, with the locality where one was typed.",
     };
   }
-  /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S TIER, one customer or every proposal at once, and since v646 one for
-     each product, code to product to level, a null clearing a product's tier. Codes, products and level names only, the
-     names checked against the ones the desk's PRICING snapshot carries. */
+  /* v643, HIS DECISIONS OF 15 SEP 2026: EACH CUSTOMER'S HELD FIGURE, one customer or several, one for each product, code to
+     product to figure (18 Oct 2026: a % lift on the Set Price, 0 to 2), a null clearing a product's figure. Codes, products and
+     numbers only; the book's rule says which products take one. */
   /* 09 Oct 2026, his decision: A PARTNER IS AN ASSOCIATE WHO PAYS COST. The row is a roster row for someone already on the roster: the fold
      appoints them on the R2 stream with their -R account if they are no associate yet, and files them in `partners`, which the
      engine quotes at the floor. No name travels; the code is the whole of it. */
@@ -1331,7 +1338,7 @@ export function draftRow(entry, book) {
       collection: "roster",
       row: { code, kind: "reseller", parent: null, note: null, partner: true },
       flags: [],
-      reasoning: `Makes ${code} a PARTNER. A partner pays cost: every quote to them, on every book, becomes the floor itself to the sen (COGS times the size), no profit and no rounding up to the ten, and the Drift card sets no drift for them.`
+      reasoning: `Makes ${code} a PARTNER. A partner pays the Floor: every quote to them, on every book, is COGS times the size, up to the next RM 5, no profit, and Their % sets nothing for them.`
         + (isAssoc ? " They are an associate already, so nothing is appointed twice." : ` They are no associate yet, so this APPOINTS them on the R2 stream${resell && !roster.includes(resell) ? `, and ${resell} joins the roster as their resell account` : ""}: the associate credit cap, hurdles and bench come with it.`)
         + " It moves no stock and no cash, and carries no name.",
     };
@@ -1340,28 +1347,27 @@ export function draftRow(entry, book) {
     const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
     const tiers = isObj(pay.tiers) ? pay.tiers : {};
     const codes = Object.keys(tiers);
-    if (!codes.length) return { skip: "a tier entry names no customer" };
+    if (!codes.length) return { skip: "a % entry names no customer" };
     const roster = (book.state && book.state.roster) || [], held = (book.state && book.state.TIER_OF) || {};
     const products = (book.state && book.state.PRODUCTS) || {};
-    const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
     const name = (p) => (products[p] && products[p].name) || p;
     const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
-    const say = (v) => v == null ? "not set" : typeof v === "number" ? "drift " + (v > 0 ? "+" : "") + v : typeof v === "string" ? v
-      : isObj(v) ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v);
+    const say = (v) => v == null ? "not set" : typeof v === "number" ? (+(v * 100).toFixed(2)) + "% lift" : isObj(v) ? JSON.stringify(v) : String(v);
     const row = { tiers: {} }, flags = [];
+    if (pay.unit === "pct") row.unit = "pct";
     for (const c of codes) {
       if (!roster.includes(c)) return { skip: `${c} is not on the roster` };
-      if (POSITION_ENGINE.isBucket(c)) return { skip: `${c} is a resale account, and it holds its associate's tier` };
+      if (POSITION_ENGINE.isBucket(c)) return { skip: `${c} is a resale account, and it holds its associate's %` };
       const ps = isObj(tiers[c]) ? Object.keys(tiers[c]) : [];
-      if (!ps.length) return { skip: `the tier entry for ${c} names no product` };
+      if (!ps.length) return { skip: `the % entry for ${c} names no product` };
       row.tiers[c] = {};
       for (const p of ps) {
         const t = tiers[c][p], was = isObj(held[c]) ? held[c][p] : null;
         if (!products[p]) return { skip: `${p} is not a product on this book` };
-        /* v670: a tier may be one level or a band set, a level for small, mid and big orders; the engine says which shapes price */
-        /* 05 Oct 2026: on a drift book what is held is a drift, -1 to +1, and a level is refused */
-        if (t !== null && (driftB(p) ? !PRICING_ENGINE.driftOk(t) : !PRICING_ENGINE.levelShapeOk(t, names))) return { skip: driftB(p) ? `${say(t)} is not a drift from -1 to +1` : `${say(t)} is not a tier` };
+        /* on a book with a Set Price what is held is a figure of his (18 Oct 2026: a % lift, 0 to 2); a null clears it; any other book holds none */
+        if (t !== null && !(driftB(p) && PRICING_ENGINE.driftOk(t))) return { skip: driftB(p) ? `${say(t)} is not a % from 0 to 200 (0 to 2)` : `${say(t)} is not held per customer on this book` };
         row.tiers[c][p] = t;
+        if (t !== null && pay.unit !== "pct") flags.push(`${c}'s ${name(p)} figure carries no unit, so it is from the old form: the fold drops it and ${c} stays on the Set Price.`);
         if (was && JSON.stringify(was) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(was)} to ${say(t)}.`);
       }
     }
@@ -1369,8 +1375,8 @@ export function draftRow(entry, book) {
       collection: "tierset",
       row,
       flags,
-      reasoning: `Sets the tiers of ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + Object.keys(row.tiers[c]).map((p) => name(p) + " " + say(row.tiers[c][p])).join(" and ")).join(", ")}.`
-        + " It moves no cash and no stock; a drift moves that customer's own price and never the board.",
+      reasoning: `Sets their % for ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + Object.keys(row.tiers[c]).map((p) => name(p) + " " + say(row.tiers[c][p])).join(" and ")).join(", ")}.`
+        + " It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
     };
   }
   /* A PRICE EDIT (v354). It moves no stock, no cash and no row: it states what the board asks and
@@ -1386,7 +1392,7 @@ export function draftRow(entry, book) {
        shows. A phone left on an older build can still queue one, which is exactly why this refuses
        here rather than trusting the control to be gone. */
     if (Object.keys(prices).length) {
-      return { skip: "the board is the ladder since v656, so a stated price is not folded: set the customer's tier instead" };
+      return { skip: "the board is the ladder since v656, so a stated price is not folded: set the customer's % instead" };
     }
     if (!Object.keys(prices).length && !hide.length && !pay.clearing) {
       return { skip: "the edit sets no price and hides no size, so there is nothing to fold" };
@@ -1412,7 +1418,7 @@ export function draftRow(entry, book) {
       flags,
       reasoning: `Sets which sizes the board prints for ${product}${hide.length ? `, hiding ${hide.join(", ")} unit` : ""}.`
         + " It moves no stock, no cash and no ledger row, and since v656 it sets no price either:"
-        + " the ask at every size is the ladder's last level. A size taken off stays priceable at the"
+        + " the ask at every size is the board's own price. A size taken off stays priceable at the"
         + " counter and off a quote; it simply stops being printed.",
     };
   }

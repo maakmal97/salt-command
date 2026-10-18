@@ -60,12 +60,26 @@ export async function run({ ok }) {
     const { writeBookFile } = await import("../tools/booksync.mjs");
     const text = (book) => { const f = join(dir, "b.json"); writeBookFile(book, f); return readFileSync(f, "utf8"); };
     /* a refusal is an answer too: a thrown error is compared by its message */
-    const go = (F, b) => {
-      const book = JSON.parse(b.book);
+    /* 18 Oct 2026 (the % lift): a salt figure stamped before RULES.liftSince was set in the old unit (-1 to +1) and the working fold DROPS it, with a note,
+       and holds none: the customer stays on the Set Price. So the fold before the move is given the batch without those figures, and the working fold the
+       batch as staged; every other byte is still compared. */
+    const since = Date.parse((await import("../engine/rules.mjs")).default.RULES.liftSince);
+    const noOldLift = (staged) => {
+      const c = JSON.parse(JSON.stringify(staged));
+      for (const it of (c.approved || [])) {
+        if (Date.parse((it.entry && it.entry.at) || it.id) >= since) continue;
+        const r = it.row || {}, t = it.collection === "roster" ? [r.tiers] : it.collection === "tierset" ? Object.values(r.tiers || {}) : [];
+        for (const x of t) if (x && typeof x === "object") delete x.salt;
+        if (it.collection === "roster" && r.tiers && !Object.keys(r.tiers).length) delete r.tiers;
+      }
+      return c;
+    };
+    const go = (F, b, forOld) => {
+      const book = JSON.parse(b.book), staged = forOld ? noOldLift(b.staged) : b.staged;
       try {
-        const p = F.plan(JSON.parse(b.book), b.staged, null);
+        const p = F.plan(JSON.parse(b.book), staged, null);
         const notes = notesFor(p, b.master);
-        const res = F.apply(book, b.staged, notes, b.master);
+        const res = F.apply(book, staged, notes, b.master);
         return JSON.stringify({ plan: p, ok: res.ok, problems: res.problems, folded: res.folded, newest: res.newest, moves: res.moves, renames: res.renames,
           ignored: res.ignored, master: res.master, book: text(book) });
       } catch (e) { return "threw: " + e.message; }
@@ -73,9 +87,9 @@ export async function run({ ok }) {
     let equal = 0, folded = 0;
     /* plan 4 (16 Oct 2026): a Correction's step says what it replaced (`was`), a key the fold before the move never wrote, so it is set
        aside here and only here; every other byte of the plan, the book and the master is still the old fold's */
-    const law = (s) => s.replace(/,(\\)?"was(\\)?":\{[^{}]*\}/g, "");
+    const law = (s) => s.replace(/,(\\)?"was(\\)?":\{[^{}]*\}/g, "").replace(/,"dropped the old figure:[^"]*"/g, "").replace(/ at salt -?[0-9.]+(?=")/g, "");   /* and the dropped figure's note, and the row's own words for it */
     for (const b of bs) {
-      const a = law(go(OLD, b)), c = law(go(NEW, b));
+      const a = law(go(OLD, b, true)), c = law(go(NEW, b));
       const same = a === c;
       if (same) equal++;
       if (!a.startsWith("threw") && JSON.parse(a).ok) folded++;
@@ -111,7 +125,7 @@ export async function run({ ok }) {
     const cnt = { ok: true, count: 1, approved: [{ id: "zz-count", status: "approved", collection: "count", row: { product: "salt", qty: 5 } }] };
     const pc = ENG.planBatch(JSON.parse(b0.book), cnt, null, Object.assign(Object.create(NEW.planCtx), { today: "2031-02-03" }));
     ok(pc.items.length === 1 && pc.items[0].count && pc.items[0].count.date === "2031-02-03", "S1: planBatch dates an undated count by ctx.today");
-    ok(law(outText || "") === law(JSON.parse(go(OLD, b0)).book), "S1: and returns the book the fold before the move wrote");
+    ok(law(outText || "") === law(JSON.parse(go(OLD, b0, true)).book), "S1: and returns the book the fold before the move wrote");
     ok(bs.length >= 1 && equal === bs.length && folded >= 1, `S1: ${equal} of ${bs.length} staged batches replay byte-equal, ${folded} of them folded rather than refused`);
   } finally { Date.now = realNow; rmSync(dir, { recursive: true, force: true }); }
 }

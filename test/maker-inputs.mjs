@@ -10,7 +10,7 @@ export async function run({ ok, KV } = {}) {
     state: {
       PRODUCTS: { salt: { name: "salt" }, oil: { name: "oil" }, spare: { retired: true } },
       roster: ["CX1-ZED", "CX2-ZED", "AX1-ZED", "AX1-ZED-R", "SX1-ZED"],
-      associates: ["AX1-ZED"], TIER_OF: { "CX1-ZED": { salt: "Gold" } },
+      associates: ["AX1-ZED"], TIER_OF: { "CX1-ZED": { salt: 1 } },
       REWARD: { stated: { salt: { margin: 500, associate: { margin: 470, r3Hurdle: 1.2 } } } },
       PROD_OPENING: { salt: { qty: 0, costPerKg: null } },
       loans: [{ rid: "loan-test-1", party: "CX1-ZED", direction: "in", form: "salt", product: "salt",
@@ -18,9 +18,8 @@ export async function run({ ok, KV } = {}) {
       PEOPLE: { departed: [] }
     },
     pricing: {
-      tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
       byProduct: {
-        salt: { stockCost: 40, inputs: { policy: { tierRule: { multiples: [1, 2] } } } },
+        salt: { stockCost: 40, inputs: { policy: { tierRule: { drift: true } } } },
         oil: { stockCost: 8, inputs: { policy: { tierRule: { fixed: true } } } }
       }
     }
@@ -34,7 +33,7 @@ export async function run({ ok, KV } = {}) {
     at, product: "salt", party: "SX1-ZED", date: "2026-10-01", qty: 4, total: 160,
     cash: 160, movedUnits: 4, freight: 12, handover: "collected", ...patch
   }, b);
-  const tier = (patch = {}, b = book()) => makerTierSet({ at, code: "CX1-ZED", product: "salt", tier: "Platinum", ...patch }, b);
+  const tier = (patch = {}, b = book()) => makerTierSet({ at, code: "CX1-ZED", product: "salt", tier: 0.5, unit: "pct", ...patch }, b);
 
   const s = sale();
   check(s.draft?.collection === "sales", "Sale uses the existing sales drafter.");
@@ -139,16 +138,10 @@ export async function run({ ok, KV } = {}) {
   const set = tier();
   check(set.entry?.type === "TIER" && set.entry.payload.mode === "tierset" && set.entry.party === "CX1-ZED",
     "Tier input emits the normal tier queue contract.");
-  check(set.draft?.collection === "tierset" && set.draft.row.tiers["CX1-ZED"].salt === "Platinum",
+  check(set.draft?.collection === "tierset" && set.draft.row.tiers["CX1-ZED"].salt === 0.5,
     "Tier changes use the existing tier drafter.");
   check(set.draft?.flags.length === 1, "The drafter flags movement from the held tier.");
   check(tier({ tier: null }).draft?.row.tiers["CX1-ZED"].salt === null, "Null clears a product's held tier.");
-  const bands = { small: "Gold", big: "Platinum" };
-  const banded = tier({ tier: bands });
-  check(banded.draft?.row.tiers["CX1-ZED"].salt.small === "Gold" && banded.draft.row.tiers["CX1-ZED"].salt.big === "Platinum",
-    "Sparse band sets survive the tier shape check.");
-  bands.small = "Silver";
-  check(banded.entry?.payload.tiers["CX1-ZED"].salt.small === "Gold", "Queued bands do not alias the request.");
   for (const value of [undefined, "", "Unknown", {}, [], { tiny: "Gold" }, { small: "Unknown" }, { mid: null }])
     check(!!tier({ tier: value }).error, "An invalid tier shape is refused.");
   check(!!tier({ code: "AX1-ZED-R" }).error, "Resale accounts hold their associate's tier, never one of their own.");
@@ -161,17 +154,18 @@ export async function run({ ok, KV } = {}) {
     "Tier input cannot forward prose or arbitrary tier maps.");
   const noRule = book(); delete noRule.pricing.byProduct.salt.inputs;
   check(!!tier({}, noRule).error, "Missing tier policy fails closed.");
-  /* 05 Oct 2026: on a drift book a customer's price is their held drift or the automatic record */
-  const driftBook = book(); driftBook.pricing.byProduct.salt.inputs.policy.tierRule = { drift: { up: 0.3, down: 0.2 } };
+  /* 05 Oct 2026: on a drift book a customer's price is their held figure (18 Oct 2026: a % lift, 0 to 2) or the Set Price */
+  const driftBook = book(); driftBook.pricing.byProduct.salt.inputs.policy.tierRule = { drift: true };
   check(tier({ tier: 0.3 }, driftBook).draft?.row.tiers["CX1-ZED"].salt === 0.3
     && tier({ tier: null }, driftBook).draft?.row.tiers["CX1-ZED"].salt === null
     && !!tier({ tier: "Gold" }, driftBook).error,
-    "On a drift book the existing tier-set road accepts a drift and null clear, and refuses a level.");
-  const addDrift = (tiers) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers,
+    "On a drift book the existing tier-set road accepts a % lift and null clear, and refuses a level.");
+  const addDrift = (tiers) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers, unit: "pct",
     vault: { v: 1, salt: "cw==", iv: "aXY=", ct: "Y3Q=" } }, driftBook);
-  check(addDrift({ salt: -0.3 }).entry?.payload.tiers.salt === -0.3 && addDrift({ salt: -0.3 }).draft?.collection === "roster"
-    && /from -1 to \+1, never a level/.test(addDrift({ salt: "Gold" }).error || "") && /from -1 to \+1, never a level/.test(addDrift({ salt: 1.5 }).error || ""),
-    "Add ID on a drift book starts the customer on a drift from -1 to +1 and refuses a level or a drift past one.");
+  check(addDrift({ salt: 0.3 }).entry?.payload.tiers.salt === 0.3 && addDrift({ salt: 0.3 }).draft?.collection === "roster"
+    && /from 0 to 2 \(0% to 200%\)[.]/.test(addDrift({ salt: "Gold" }).error || "") && /from 0 to 2 \(0% to 200%\)[.]/.test(addDrift({ salt: 2.5 }).error || "")
+    && /from 0 to 2 \(0% to 200%\)[.]/.test(addDrift({ salt: -0.3 }).error || ""),
+    "Add ID on a drift book starts the customer on a % lift from 0 to 2 and refuses a level, a negative and a % past 2.");
 
   const loan = makerLedgerInput("loan", { at, form: "salt", direction: "out", product: "salt",
     code: "CX1-ZED", date: "2026-10-01", amount: 2 }, book());

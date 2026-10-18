@@ -682,5 +682,5 @@
  "S10 10.5: under object the book writes no KV, the store-check route is keyed and read-only, and the retirement tool deletes only the order keys": 20,
  "F4 (05 Oct 2026): the restock light, green while the shelf covers what is promised, yellow past it, red when out; a restock date; sealed with the list; a border on the mark": 2790,
  "05 Oct 2026: COGS off the latest purchase, the floor at COGS, a ceiling on every stated board": 1670,
- "05 Oct 2026: salt is the Set Price moved by each customer's drift, read off their record unless he sets one": 3960
+ "05 Oct 2026: salt is the Set Price and a per-customer figure, his to set (18 Oct 2026: a % lift on the Set Price, nothing automatic)": 3960
 }

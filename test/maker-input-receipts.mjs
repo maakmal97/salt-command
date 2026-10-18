@@ -9,8 +9,8 @@ import { tile, tileGroup } from "./maker-act.mjs";
 const context = {
   ok: true, products: ["salt"],
   catalog: {
-    products: [{ product: "salt", tiered: true }],
-    parties: ["CX1-ZED"], tierCustomers: ["CX1-ZED"], tierNames: ["Gold", "Silver"],
+    products: [{ product: "salt", tiered: true, drift: true }],
+    parties: ["CX1-ZED"], driftCustomers: ["CX1-ZED"], driftCards: [],
     houseBoards: { salt: { sizes: [0.5, 1, 2], hidden: [] } },
     tips: [{ id: "margin:zero", title: "Review margin" }]
   }
@@ -23,9 +23,9 @@ const cases = [
       root.querySelector('input[type="number"]').value = changed ? "9" : "4";
       return root.querySelector('input[type="number"]');
     } },
-  { label: "Send the level", path: "tier-set",
-    body: { code: "CX1-ZED", product: "salt", tier: "Gold" },
-    edit(root, changed) { tile(root, "Level", changed ? "Silver" : "Gold"); return tileGroup(root, "Level").querySelector("input:checked"); } },
+  { label: "Send their %", path: "tier-set",
+    body: { code: "CX1-ZED", product: "salt", tier: 0.2, unit: "pct" },
+    edit(root, changed) { const field = root.querySelector('input[type="number"]'); field.value = changed ? "0.3" : "0.2"; return field; } },
   { label: "Send the sizes", path: "house-sizes",
     body: { product: "salt", hide: [0.5] },
     edit(root, changed) { const field = root.querySelector('input[type="checkbox"]'); field.checked = changed; return field; } },
