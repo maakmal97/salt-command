@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1162",
+  "d": "18 Oct 2026",
+  "t": "THE BOOK, A SHADOW DURABLE OBJECT, IS LOADED AT EACH FOLD; NOTHING READS IT",
+  "n": [
+   "<b>A SECOND COPY OF THE FOLDED BOOK NOW SITS BESIDE GIT.</b> The Desk Worker holds a SQLite Durable Object, Book, that the chain refills from the folded book after the D1 re-seed. Each row is stamped when it was first booked, the load is idempotent, and a failed load is said and never blocks a fold.",
+   "<b>NO READER, NO FIGURE MOVES.</b> The desk, the Counter, the drafter and the fold do not ask the Book anything; git stays the source. Its way back is a new migration tag deleting the class."
+  ]
+ },
+ {
   "v": "v1161",
   "d": "18 Oct 2026",
   "t": "THE LAST THREE PRICING CONSTANTS MOVE INTO THE SHARED ENGINE; NOTHING PRICES DIFFERENTLY",

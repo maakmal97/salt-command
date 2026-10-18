@@ -10162,7 +10162,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1161","d":"18 Oct 2026","t":"THE LAST THREE PRICING CONSTANTS MOVE INTO THE SHARED ENGINE; NOTHING PRICES DIFFERENTLY","n":["<b>PRICE, LADDER AND THE LOCK SWITCH NOW LIVE IN ENGINE/RULES.</b> The size bands and floors, the ladder and the price-lock switch were the last pricing constants standing in the desk's own script. They are now in the shared rules module, inlined back under the same names, so a Worker can import what the desk runs. Text, keys and order are unchanged.","<b>NO FIGURE MOVES.</b> The pricing snapshot on the frozen book equals the one taken before the rule tables moved, field for field, and the lock stays off. No sale, purchase, count or loan is touched."]}];
+const evolution=[{"v":"v1162","d":"18 Oct 2026","t":"THE BOOK, A SHADOW DURABLE OBJECT, IS LOADED AT EACH FOLD; NOTHING READS IT","n":["<b>A SECOND COPY OF THE FOLDED BOOK NOW SITS BESIDE GIT.</b> The Desk Worker holds a SQLite Durable Object, Book, that the chain refills from the folded book after the D1 re-seed. Each row is stamped when it was first booked, the load is idempotent, and a failed load is said and never blocks a fold.","<b>NO READER, NO FIGURE MOVES.</b> The desk, the Counter, the drafter and the fold do not ask the Book anything; git stays the source. Its way back is a new migration tag deleting the class."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10306,7 +10306,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Oct 2026, 17:29 KL';
+const LAST_UPDATED='18 Oct 2026, 18:52 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
