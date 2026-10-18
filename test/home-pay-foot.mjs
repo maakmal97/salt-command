@@ -78,9 +78,9 @@ export async function run({ ok, pageWork }) {
     const bare = new JSDOM(landingPage("abcd-efgh", "nhf0", null)).window.document;
     const home = bare.getElementById("pHome"), foot0 = bare.getElementById("homeFoot");
     const kids = [...home.children].map((n) => n.id || n.className.split(" ")[0]).join(" ");
-    ok(!!foot0 && bare.querySelectorAll("#homeFoot").length === 1 && home.lastElementChild === foot0 && kids === "hcol hcol homeFoot"
+    ok(!!foot0 && bare.querySelectorAll("#homeFoot").length === 1 && home.lastElementChild === foot0 && kids === "hcol hcol hLive homeFoot"
       && foot0.hidden && foot0.classList.contains("payfoot") && !foot0.hasChildNodes(),
-      "the foot is Home's last child, after both columns, drawn hidden and empty, so no bar stands there until something is owed: " + kids);
+      "the foot is Home's last child, after both columns and the live order, drawn hidden and empty, so no bar stands there until something is owed: " + kids);
 
     /* ---- 2: something owed, five lines */
     const five = await open({ list: parts(5) });

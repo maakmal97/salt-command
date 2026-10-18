@@ -142,6 +142,13 @@ export const EN = {
   "today.openB": "Order now and we confirm it today.",
   "today.closedB": "You can still order; we confirm it then.",
   "bull.h": "Notice",
+  "hl.h": "Your latest order",
+  "hr.h": "Your reward",
+  "hr.see": "See your card",
+  "hy.h": "This year",
+  "hy.order1": "1 order",
+  "hy.orderN": "{n} orders",
+  "hy.bars": "Orders: {list}",
   "bull.pause": "Pause notices",
   "bull.play": "Play notices",
   /* ---- A PRODUCT'S MARK, named by its shape where a screen reader says it (PSHAPE), never by its product ---- */

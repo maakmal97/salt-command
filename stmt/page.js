@@ -405,11 +405,38 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .payfoot .salt-pill{flex:1 1 auto;padding-left:18px;padding-right:18px}
 /* from 1080px the bar is the rail, so there is nothing to clear: the foot heads the first column in the flow, above the notice
    (the second column spans both rows beside it), where a column that runs long can never push it below the fold */
+/* Counter Batch A: their latest open order. Under 1080px a pill sticking above the App bar and the pay foot (--hfoot, the foot's own height,
+   set by the script); from 1080px a banner in the first column under To pay now. One element, so never both */
+#hLive:empty{display:none}
+.hlive{position:sticky;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) + var(--hfoot,0px) + 8px);z-index:11;
+  display:flex;align-items:center;gap:4px;margin:16px 0 0;padding:0 4px 0 0;border-radius:999px}
+.hlive__go{flex:1 1 auto;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0;min-height:var(--salt-tap);padding:0 14px;
+  border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;justify-content:center}
+.hlive__h{display:none}
+.hlive__row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.hlive__when{font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.hlive__point{font-size:var(--salt-text-sm);color:var(--salt-salt)}
+.hreward{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left;color:inherit;font:inherit}
+.hreward__top{display:flex;align-items:center;gap:12px}
+.hreward__left{font-size:var(--salt-text-md);line-height:1.45}
+.hreward .salt-meter__track{display:block}
+.hreward__see{font-size:var(--salt-text-sm);color:var(--salt-brass)}
+.hyear{display:flex;flex-direction:column;gap:16px}
+.hyear__top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.hyear__n{font-family:var(--salt-font-display);font-size:var(--salt-text-xl)}
+.hyear__units{display:flex;flex-wrap:wrap;gap:12px}
+.hyear__bars{display:flex;align-items:flex-end;gap:6px;height:88px}
+.hyear__col{flex:1 1 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%}
+.hyear__bar{width:100%;max-width:22px;min-height:2px;height:calc(var(--h,0) * 0.64px);border-radius:3px 3px 0 0;background:var(--salt-brass)}
+.hyear__mon{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
 @media (min-width:1080px){
-  .home{grid-template-rows:auto 1fr;row-gap:0}
-  .home>.hcol{grid-column:1;grid-row:2}
-  .home>.hcol+.hcol{grid-column:2;grid-row:1 / span 2}
+  .home{grid-template-rows:auto auto 1fr;row-gap:0}
+  .home>.hcol{grid-column:1;grid-row:3}
+  .home>.hcol+.hcol{grid-column:2;grid-row:1 / span 3}
   .payfoot{position:static;grid-column:1;grid-row:1;margin:0 0 28px}
+  .hlive{position:static;grid-column:1;grid-row:2;margin:0 0 28px;padding:6px 8px 6px 4px;border-radius:var(--salt-radius-lg)}
+  .hlive__go{padding:10px 14px}
+  .hlive__h{display:block}
 }
 .invmore{margin:8px 0 0}
 .invmore>summary .salt-plan__title{grid-column:1 / -1}
@@ -1766,7 +1793,10 @@ export function landingPage(user, nonce, owner, bulletin) {
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
     + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div></div>'
-    + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div></div>'
+    + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div>'
+    /* Counter Batch A: their latest open order, a pill over the App bar and the pay foot on a phone and a banner under To pay now from
+       1080px: one element, so the two are never both shown */
+    + '<div id="hLive"></div>'
     /* PHASE 7A: the foot holding To pay now and its Pay, last in Home so it stays above the bar the whole way down (drawPayHead) */
     + '<div id="homeFoot" class="payfoot" hidden></div></div>'
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
@@ -5545,7 +5575,11 @@ const CLIENT_JS = `
   function drawPayHead(){
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
+    footSet();
   }
+  /* Counter Batch A: the live pill sticks above the pay foot, so the foot's height is the pill's offset; again on a resize */
+  function footSet(){ var f=document.getElementById('homeFoot'), h=document.getElementById('pHome'); if(f&&h) h.style.setProperty('--hfoot',(f.hidden?0:Math.ceil(f.offsetHeight||0))+'px'); }
+  window.addEventListener('resize',footSet);
   /* S6 6.2: WHAT IS COMING UP BEYOND THE ORDERS. Home's Coming up lists the site's orders agreed and not handed over; a
      part the publish sealed that no order of theirs accounts for (a row he entered on the desk) stands under them, with
      its due day and never a Pay. An order is its part when the part is on the day its row is (rowOn), of its mark and
@@ -5944,7 +5978,8 @@ const CLIENT_JS = `
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
     /* V5 (his answer of 29 Sep 2026): a locked account still sees Home, greyed out; only To pay now is live */
-    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain()};
+    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain(),
+      hReward:homeReward(), hYear:homeYear(), hLive:homeLive()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     thDraw();
     drawPayHead();
@@ -6090,6 +6125,88 @@ const CLIENT_JS = `
        Home has it; it stood above them, under To pay) */
     if(fresh()){ var sp=el('button','salt-pill salt-pill--md hfill',tw('ha.all')); sp.type='button'; sp.id='hPrices';
       sp.addEventListener('click',function(){ placeShow('prices',true); }); box.appendChild(sp); }
+    return box;
+  }
+  /* COUNTER BATCH A (his decisions of 18 Oct 2026): THEIR LATEST OPEN ORDER, its state, the moment it last moved, and while it waits at one
+     of his points the point and its pin. Under 1080px a pill that sticks above the App bar and above the pay foot, which sets --hfoot to
+     its own height (drawPayHead); from 1080px a banner under To pay now. A tap opens the order; the pin is its own link beside it. */
+  function lastMoved(o){ var h=o.history||[]; return h.length&&h[h.length-1].at?h[h.length-1].at:o.at; }
+  function homeLive(){
+    var box=el('div'); if(!session||view||!orders.length) return box;
+    var o=orders.filter(function(x){ return !oClosed(x); }).sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); })[0];
+    if(!o) return box;
+    box.className='hlive salt-glass-card salt-glass-card--radius-lg'; box.setAttribute('data-live',o.id);
+    var go=el('button','hlive__go'); go.type='button';
+    go.appendChild(el('span','salt-eyebrow salt-eyebrow--copper hlive__h',tw('hl.h')));
+    var row=el('span','hlive__row');
+    row.appendChild(stateChip(o,'hlive__state'));
+    row.appendChild(el('span','hlive__when mono',stepWhen(lastMoved(o))));
+    var waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
+    if(waits) row.appendChild(el('span','hlive__point',tw('pt.at',{c:o.point})));
+    go.appendChild(row);
+    go.addEventListener('click',function(){ oOpen(o.id); });
+    box.appendChild(go);
+    if(waits&&o.pointAt&&isFinite(o.pointAt.lat)&&isFinite(o.pointAt.lng)) box.appendChild(pinLink(o));
+    return box;
+  }
+  /* THE NEAREST REWARD, an associate's alone, across the books that carry one: its mark, the meter to the next unit and what is theirs to
+     take, in the card's own words. Never a level; never the units to go, which is a margin figure the card does not carry. A tap is Rewards. */
+  function homeReward(){
+    var box=el('div'); if(!assoc||view||!card||!Array.isArray(card.products)) return box;
+    var list=card.products.filter(function(p){ return p.reward&&p.reward.next!=null; }).sort(function(a,b){ return b.reward.next-a.reward.next; }), p=list[0];
+    if(!p) return box;
+    var rw=p.reward, pc=Math.round(rw.next*100);
+    box.appendChild(hHead(tw('hr.h')));
+    var b=el('button','hreward salt-glass-card salt-glass-card--radius-lg salt-glass-card--link'); b.type='button';
+    var top=el('span','hreward__top'), sr=el('span','sr',pshape(p.product)); top.appendChild(sr); top.appendChild(psym(p.product,28));
+    top.appendChild(el('span','hreward__left',tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})));
+    b.appendChild(top);
+    var mtr=el('span','salt-meter rmeter'), ln=el('span','salt-meter__line');
+    ln.appendChild(el('span',null,tw('rew.next'))); ln.appendChild(el('b',null,pc+'%'));
+    var tr=el('span','salt-meter__track'); tr.appendChild(el('span','salt-meter__fill'));
+    mtr.style.setProperty('--salt-fill',String(pc)); mtr.appendChild(ln); mtr.appendChild(tr);
+    b.appendChild(mtr);
+    b.appendChild(el('span','hreward__see',tw('hr.see')));
+    b.addEventListener('click',function(){ placeShow('card',true); });
+    box.appendChild(b);
+    return box;
+  }
+  /* THIS YEAR, off the live statement's own lines: the orders this year in Kuala Lumpur and the units of each mark, a cancelled line not
+     counted (as the statement's foot counts), and a bar for each month from January to this one. The book's marks are told apart by their
+     drawing, and two books' units are never summed. */
+  function yearMark(svg){
+    var d=svg&&svg.querySelector('path'), t=svg&&svg.querySelector('text'), key=(d?d.getAttribute('d'):'')+'|'+(t?t.textContent:''), hit='_';
+    Object.keys(PSYM).forEach(function(k){ if(k==='_'||hit!=='_') return; var s=psym(k,24), sd=s.querySelector('path'), st=s.querySelector('text');
+      if((sd?sd.getAttribute('d'):'')+'|'+(st?st.textContent:'')===key) hit=k; });
+    return hit;
+  }
+  function yearRows(){
+    var lv=bundle&&bundle.statements.filter(function(s){ return s.live&&!s.bad&&s.body; })[0]; if(!lv) return null;
+    var tp=document.createElement('template'); tp.innerHTML=lv.body;
+    var y=String(klBits(new Date().toISOString()).year), out=[];
+    [].forEach.call(tp.content.querySelectorAll('.salt-lines__row[data-m]'),function(r){
+      var m=r.getAttribute('data-m')||'', mq=r.querySelector('.salt-lines__what .mtile .mq');
+      if(m.slice(0,4)!==y||!mq||r.classList.contains('salt-lines__row--cancelled')) return;
+      out.push({m:m, p:yearMark(r.querySelector('.salt-lines__what .mtile svg')), q:parseFloat(String(mq.textContent).replace(/,/g,''))||0});
+    });
+    return out;
+  }
+  function homeYear(){
+    var box=el('div'); if(!bundle||view) return box;
+    var rows=yearRows(); if(!rows||!rows.length) return box;
+    box.appendChild(hHead(tw('hy.h')));
+    var c=el('div','hyear salt-glass-card salt-glass-card--radius-lg'), top=el('div','hyear__top');
+    top.appendChild(el('span','hyear__n',tw(rows.length===1?'hy.order1':'hy.orderN',{n:rows.length})));
+    var by={}, ps=[]; rows.forEach(function(r){ if(!(r.p in by)){ by[r.p]=0; ps.push(r.p); } by[r.p]+=r.q; });
+    var ts=el('span','hyear__units'); ps.forEach(function(p){ ts.appendChild(mtile(p,+by[p].toFixed(2),'unit',24)); }); top.appendChild(ts);
+    c.appendChild(top);
+    var now=+klBits(new Date().toISOString()).month, y=String(klBits(new Date().toISOString()).year), n=[], max=0, said=[], ms=mon3();
+    for(var i=1;i<=now;i++){ var k=y+'-'+('0'+i).slice(-2), v=rows.filter(function(r){ return r.m===k; }).length; n.push(v); if(v>max) max=v; said.push(ms[i-1]+' '+v); }
+    var bars=el('div','hyear__bars'); bars.setAttribute('role','img'); bars.setAttribute('aria-label',tw('hy.bars',{list:said.join(', ')}));
+    n.forEach(function(v,i){ var col=el('span','hyear__col'), bar=el('span','hyear__bar'); bar.style.setProperty('--h',String(max?Math.round(v/max*100):0));
+      bar.setAttribute('data-n',String(v)); col.appendChild(bar); col.appendChild(el('span','hyear__mon',ms[i].charAt(0))); bars.appendChild(col); });
+    c.appendChild(bars);
+    box.appendChild(c);
     return box;
   }
   /* a count beside a place is what waits there: the orders that need them. data-n: data-count is the owner's own */

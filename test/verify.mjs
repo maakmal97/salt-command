@@ -42799,6 +42799,11 @@ await (async () => {
   await (await import("./counter-today.mjs")).run({ ok });
 })();
 
+section("Counter Batch A: Home's live order (a pill on a phone, a banner from 1080px), the nearest reward for an associate and This year off the live statement, To pay now still leading (18 Oct 2026)");
+await (async () => {
+  await (await import("./counter-home.mjs")).run({ ok, pageWork });
+})();
+
 section("S6 6.2: To pay now heads Home, a line for each thing due with when it is due (V2's invoice), one Pay, and what is coming up in Home's Coming up");
 await (async () => {
   /* STAGE 6 OF THE COUNTER REDESIGN (his D9 of 24 Sep 2026). The publish seals `pay` beside owed (v841) and the page

@@ -323,7 +323,7 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   const book = { sales, customerRefunds: [] };
   return { v: FIX_VERSION, u, state, at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
     orders: O, claims, refs, card, assoc: true, thread, pools,
-    bulletin: { lines: ["An example notice: the counter opens late on Friday."] },
+    bulletin: { lines: ["An example notice: the counter opens late on Friday.", "A second example line: it turns to this one after six seconds."] },
     /* 11 Oct 2026: THE LOOK. A device is asked Night or Tide once, then never; a test account says "asked" in its sealed bundle, so
        the page asks at every sign-in whatever the device holds and the Sheet can be tried again. The setting under Account is the same. */
     look: "asked",
@@ -410,8 +410,12 @@ export const FEATURES = [
   ["a thread, theirs and his", (f) => has(f, (o) => (o.msgs || []).some((m) => m.by === "customer") && (o.msgs || []).some((m) => m.by === "desk"))],
   ["the account's thread, theirs and his (Step 7)", (f) => !!f.thread && f.thread.msgs.some((m) => m.by === "customer") && f.thread.msgs.some((m) => m.by === "desk")],
   ["the bulletin", (f) => !!(f.bulletin && f.bulletin.lines && f.bulletin.lines.length)],
+  ["the notice over two lines, one at a time with Pause, in the Today card (Counter Batch A)", (f) => !!(f.bulletin && f.bulletin.lines && f.bulletin.lines.length > 1)],
+  ["their latest open order on Home, a pill on a phone and a banner from 1080px (Counter Batch A)", (f) => has(f, (o) => !["done", "declined", "cancelled"].includes(o.status))],
+  ["This year on Home, off the live statement's lines this year (Counter Batch A)", (f) => !!(f.live && new RegExp('salt-lines__row[^"]*" role="row" data-m="' + new Date(Date.parse(f.at) + 8 * 3600e3).toISOString().slice(0, 4)).test(f.live.body || ""))],
   ["guest links: open, waiting, declined, withdrawn", (f) => ["open", "waiting", "declined", "withdrawn"].every((s) => f.refs.some((r) => refState(r) === s))],
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],
+  ["the nearest reward on Home, its meter to the next unit (Counter Batch A)", (f) => !!(f.card && f.card.products.some((p) => p.reward && p.reward.next != null))],
   ["the restock light: green, yellow with its day, red (F4)", (f) => { const s = ((f.prices && f.prices.products) || []).map((p) => p.supply).filter(Boolean);
     return ["green", "red"].every((l) => s.some((x) => x.light === l)) && s.some((x) => x.light === "yellow" && /^\d{4}-\d{2}-\d{2}$/.test(x.by || "")); }],
   ["order at 6.75 units, any amount off the grid (05 Oct 2026)", (f) => has(f, (o) => Math.abs(+o.qty - 6.75) < 1e-9 && !o.price && o.status !== "placed" && o.total > 0)
