@@ -37,7 +37,7 @@ export async function run({ ok }) {
   const today = new Date(w.eval("TODAY.getTime()"));
   const B = J("({sales:sales,purchases:purchases,opening:PROD_OPENING,statedStockBy:statedStockBy,statedStock:STATED_STOCK,supplierReceivable:typeof supplierReceivable!=='undefined'?supplierReceivable:null,"
     + "counts:COUNTS,selfUseLog:selfUseLog,quotes:QUOTES,priceSet:PRICE_SET,costRule:COST_RULE,defaultProd:DEFAULT_PROD})");
-  const R = { ...RULES_MOD, ...J("({LADDER:LADDER,PRICE:PRICE,PRICE_LOCK_ON:PRICE_LOCK_ON})") };
+  const R = { ...RULES_MOD };
   const keep = w.eval("PROD");
   const books = J("PROD_ORDER");
   let same = 0, n = 0;

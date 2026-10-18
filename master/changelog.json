@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1161",
+  "d": "18 Oct 2026",
+  "t": "THE LAST THREE PRICING CONSTANTS MOVE INTO THE SHARED ENGINE; NOTHING PRICES DIFFERENTLY",
+  "n": [
+   "<b>PRICE, LADDER AND THE LOCK SWITCH NOW LIVE IN ENGINE/RULES.</b> The size bands and floors, the ladder and the price-lock switch were the last pricing constants standing in the desk's own script. They are now in the shared rules module, inlined back under the same names, so a Worker can import what the desk runs. Text, keys and order are unchanged.",
+   "<b>NO FIGURE MOVES.</b> The pricing snapshot on the frozen book equals the one taken before the rule tables moved, field for field, and the lock stays off. No sale, purchase, count or loan is touched."
+  ]
+ },
+ {
   "v": "v1160",
   "d": "18 Oct 2026",
   "t": "CA4-P1 REGISTERED AS A CUSTOMER; NO FIGURE MOVES",
