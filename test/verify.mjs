@@ -14761,7 +14761,7 @@ await (async () => {
     ok(!money.solo && JSON.stringify(money.subs) === '["Receivables","Financials"]' && JSON.stringify(money.pills) === '["Receivables","Financials"]' && money.h1 === "Receivables",
       "Money lists Receivables and Financials (Site orders and Approve left on 18 Oct 2026) beneath it and across its page, and opens on a page headed Receivables: " + JSON.stringify(money));
     const price = look("price");
-    ok(!price.solo && JSON.stringify(price.subs) === '["Pricing","Rules"]' && JSON.stringify(price.pills) === '["Pricing","Rules"]', "Pricing lists its board and Rules (Rules joined it on 18 Oct 2026): " + JSON.stringify(price));
+    ok(!price.solo && JSON.stringify(price.subs) === '["The board","Rules"]' && JSON.stringify(price.pills) === '["The board","Rules"]', "Pricing lists its board and Rules (Rules joined it on 18 Oct 2026): " + JSON.stringify(price));
     const today22 = look("today");
     ok(today22.solo && today22.subs === null && today22.pills.length === 0 && today22.h1 === "To do", "Today, with one page, lists nothing under itself and draws its own block: " + JSON.stringify(today22));
     ok(JSON.stringify(today22.allSolo) === '["today"]', "and it is the only destination that does: " + JSON.stringify(today22.allSolo));
