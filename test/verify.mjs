@@ -47754,6 +47754,9 @@ await (async () => {
     const parts = rd("(function(){var o=[];VIEWS.forEach(function(v){[v.lead].concat(v.parts).forEach(function(p){o.push(p);});});return o;})()");
     const isoAt = [], dashAt = [], houseAt = {};
     w.eval("setProdView('salt')");
+    /* 19 Oct 2026: the Ledger folds rows older than seven days behind its Show older button, counted from the real clock,
+       so the frozen book aged out of view and the census read seven dates. Opened, it reads every row on any day. */
+    w.eval("ledOlder=true");
     for (const p of parts) {
       w.eval("switchTab(" + JSON.stringify(p) + ")");
       const got = rd("(function(){var root=document.getElementById('sec-'+VIEW_OF[" + JSON.stringify(p) + "]),t=[],n,wk=document.createTreeWalker(root,4);"
