@@ -14682,11 +14682,10 @@ await (async () => {
     ok(all24.length === 13 && off24.length === 0, "all thirteen pages open under a heading that is their label" + (off24.length ? ": " + off24.join("; ") : ""));
     const names24 = all24.map((p) => labels24[p]);
     ok(new Set(names24).size === names24.length, "no two pages share a name: " + names24.join(", "));
-    /* 18 Oct 2026, his word: Rules joined Pricing, so Pricing opens on the board beside Rules and keeps its own name; it is the one
-       destination allowed to, and every other still opens on a page of a name of its own */
-    const echo24 = views24.filter((v) => v.pages.length > 1 && v.name !== "Pricing" && labels24[v.pages[0]] === v.name).map((v) => v.name);
-    ok(echo24.length === 0, "no destination with more than one page opens on a page of its own name (Pricing excepted, 18 Oct 2026)" + (echo24.length ? ": " + echo24.join(", ") : ""));
-    ok(labels24.overview === "Rules" && labels24.forward === "Next 30 days" && labels24.network === "Associates" && labels24.pricing === "Pricing",
+    /* 18 Oct 2026: Rules joined Pricing, so Pricing opens on The board, the name its lead carried before it stood alone */
+    const echo24 = views24.filter((v) => v.pages.length > 1 && labels24[v.pages[0]] === v.name).map((v) => v.name);
+    ok(echo24.length === 0, "no destination with more than one page opens on a page of its own name" + (echo24.length ? ": " + echo24.join(", ") : ""));
+    ok(labels24.overview === "Rules" && labels24.forward === "Next 30 days" && labels24.network === "Associates" && labels24.pricing === "The board",
       "the four renamed pages carry their new names: " + JSON.stringify({ overview: labels24.overview, forward: labels24.forward, network: labels24.network, pricing: labels24.pricing }));
   } finally { try { w24.close(); } catch (e) { /* best effort */ } }
 })();
