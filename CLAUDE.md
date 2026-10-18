@@ -145,10 +145,13 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
 ## The one surface
 
 **Retired surfaces:** see MEMORY.md. The
-built desk is six destinations (`VIEWS`): Today, Order book, Stock, Pricing, Network, Record. Enter left
-on 17 Oct 2026 (his word): Waiting on you and Approve read under Order book, Plans and Entries under Today,
-the restock date on Stock, and its count is Order book's `.navwait` chip. Old ids remain addresses
-(`/desk#book`, `/desk#network`, `/desk#enter` through `VIEW_ALIAS`). **The rail is two levels at
+built desk is six destinations (`VIEWS`), thirteen pages: Today (To do, with the Whiteboard folded under it as
+Noticed), Money (Receivables, Financials), Stock (On hand, Next 30 days, Sourcing), Pricing (Pricing, Rules), Network
+(Clients, Associates, Coverage) and Record (Ledger, Analysis). Approve, Site orders and Entries left on 18 Oct 2026 (his
+word): Counter Admin decides them, and the desk still reads the orders and drafts for To do's Waiting on you row, the
+waiting stamp (`ordTell`) and Spots to file on Coverage; this device's alerts sit in the rail beside the theme. Old
+ids remain addresses through `VIEW_ALIAS` (`/desk#enter`, `#orders`, `#approve` land on Money, `#add` and
+`#plans` on Today). **The rail is two levels at
 most.** **One product in view for the whole desk**: `PROD`, set only through `setProdView`. A
 feature folded out of sight reads to him as missing: name every part where the eye lands.
 Everything the desk shows, cost and margin included, is served at the desk's URL, behind the Access login. **It installs as
@@ -397,9 +400,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
   `thr:<username>`): the KV road refuses a line rather than keep a second copy. Read every 2 seconds only while open and
   showing; his line wakes them as `message`, a tap opening `#thread`. The same rules as an order's: never a ledger note,
-  his words through `siteWords`, every line escaped; a test account's lives in its fixture. **His Chat** is Order book's Waiting on
-  you until Step 9: a thread whose last line is theirs is an Asked act, the rest listed under Chat, read every 2 seconds
-  only while one is open, through the keyed `/threads`.
+  his words through `siteWords`, every line escaped; a test account's lives in its fixture. **His Chat** is Counter Admin's:
+  a thread whose last line is theirs counts in the desk's Waiting on you row, read with the orders.
 - **How was your order, asked once** (F10, his Q9b): at the first chase slot two days after the last handover of an
   order all handed over, and under two weeks after it, the ask written on the order first (`rateask`, one of the book's
   writes) so a tick firing twice asks once; one wake a customer a slot, and Home's card for a phone with no push. One
