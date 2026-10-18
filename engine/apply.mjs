@@ -16,7 +16,7 @@ const E = POSITION_ENGINE;
 const r2 = (v) => +(+v).toFixed(2);
 /* which entry made each of a plan's moves (a WeakMap, so the plan's own text is unchanged) */
 const MOVE_OF = new WeakMap(), PLANNED = new WeakSet();
-/* a plan planBatch did not build (or a clone of one) has no attribution; applyInto never calls this (it reads p.moves whole), so it throws rather than answer [] */
+/* a plan planBatch did not build (or a clone of one) has no attribution, so this throws rather than answer [] (applyInto reads it for every entry) */
 export const movesOf = (p, it) => {
   if (!PLANNED.has(p)) throw new Error("movesOf: not a plan built by planBatch");
   return p.moves.filter((m) => MOVE_OF.get(m) === it.id);
@@ -963,12 +963,12 @@ function bookItem(book, it, c) {
     }
     else if (it.rename) renames.push(it.rename);
 }
-/* S1d-i: ONE ENTRY BOOKED AT A TIME, beside the batch (applyInto is untouched in its output). ctx = { nextRid, staged, notes, moves }, moves being this entry's own
+/* S1d: ONE ENTRY BOOKED AT A TIME, the step applyInto folds over a batch. ctx = { nextRid, staged, notes, moves }, moves being this entry's own
    (movesOf(plan, it)). It books the item, then rolls the stated figure of each product the entry moved, at once: a count sets the figure, a move after it adds or
    takes off what stands, and a move before a count is overwritten by it. The salt fallback rate is read on the book before THIS entry. It writes no ROLLED sentence, renames
    nothing and sets neither QUEUE_COMMITTED nor the order of the rows: a wrapper does those once for a batch, from what this returns,
    { id, newest, moves (refund words), renames, rolls: [{ product, out, inn, from, to, uncounted }], entryMoves }.
-   Today's batch law rolls after every row, so a count and a move on one product give count less move in either order; here the order of the entries decides. */
+   The order of the entries decides: a count and a move on one product give 10.5 for a sale then a count of 10.5, and 8.5 for the count then a sale of 2. */
 export function applyEntry(book, it, ctx) {
   const src = ctx.staged.approved.find((x) => x.id === it.id), n = (ctx.notes.rows && ctx.notes.rows[it.id]) || {};
   const moves = [], renames = [];
@@ -985,55 +985,44 @@ export function applyEntry(book, it, ctx) {
   return { id: it.id, newest: it.id, moves, renames, rolls, entryMoves };
 }
 
-/* the same, on a book the caller owns and wants folded IN PLACE (tools/fold.mjs's apply, whose callers hold the book and its rows
-   by identity): `book` is the caller's own working copy and `p` the plan made against it. Everything else goes through applyBatch. */
+/* S1d-ii (18 Oct 2026, his answers of 16 Oct): A BATCH IS ITS ENTRIES BOOKED IN EVENT ORDER, one applyEntry after another, on the book the caller owns and wants folded IN PLACE
+   (tools/fold.mjs's apply, whose callers hold the book and its rows by identity): `book` is the caller's own working copy and `p` the plan made against it. Everything else goes
+   through applyBatch. Each entry rolls the stated figure of what it moved at once, so a count stands and only the moves after it change it (sale then count 10.5, count then sale
+   8.5); a rename applies where it stands, and an Add ID has booked before the trade that names it (the plan orders them). What is written once for the batch is the ROLLED
+   sentence, the sum of every roll of a product, QUEUE_COMMITTED and the sort. */
 export function applyInto(book, p, staged, notes, ctx) {
   const nextRid = ctx.nextRid, sortBook = ctx.sortBook;
-  /* 26 Sep 2026, HIS INSTRUCTION: THE SHELF'S RATE IS DERIVED FROM THE LOTS, so the master has no STOCK_COST line to
-     read or to move. A salt sale leaving the shelf with no cost of its own is costed at the engine's stockBasis on the
-     book as it stands before this batch: salt's received lots, allocated newest-first under the salt count the book
-     states (PROD_OPENING.salt.stated, else STATED_STOCK, as the desk's countedFor reads it), at their goods rate. It is
-     the function the desk's walk runs, so the fold and the desk carry one rate. No salt count stated, no fill, as a
-     master without the line had none. */
-  const stockCost = stockCostOf(book);
-  const fromSalt = book.STATED_STOCK;
-  const moves = [];
+  const moves = [], rolls = [], entryMoves = [];
   let newest = book.QUEUE_COMMITTED || "";
   const folded = [], renames = [];
   for (const it of p.items) {
-    const src = staged.approved.find((x) => x.id === it.id);
-    const n = (notes.rows && notes.rows[it.id]) || {};
-    bookItem(book, it, { src, n, notes, stockCost, nextRid, moves, renames });
-    if (it.id > newest) newest = it.id;
+    const r = applyEntry(book, it, { nextRid, staged, notes, moves: movesOf(p, it) });
+    moves.push(...r.moves);   /* refund words, in entry order */
+    rolls.push(...r.rolls); entryMoves.push(...r.entryMoves);
+    for (const rn of renames) E.renameInBook(book, rn.pairs);   /* a rename already applied carries a row booked after it under the old code, as the fold's last-of-all rename always did */
+    for (const rn of r.renames) {   /* v628, now in booked order: the rename applies when its entry does */
+      E.renameInBook(book, rn.pairs);   // PLACED is a map keyed by code, so a point filed earlier moves with the code
+      if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }   // v633: and a new place moves it on
+      renames.push(rn);
+    }
+    if (r.newest > newest) newest = r.newest;
     folded.push(it.id);
   }
-  /* v628: A RENAME GOES LAST, so a row folded in the same batch under the old code moves with the rest */
-  for (const rn of renames) {
-    E.renameInBook(book, rn.pairs);   // PLACED is a map keyed by code, so a point filed earlier moves with the code
-    if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }   // v633: and a new place moves it on
-  }
-  /* THE ROLL: what physically moved, per product, applied to the stated figure that stands */
+  /* THE ROLL NOTE: one sentence a product for the batch, the entries' rolls summed (from the first, to the last) */
   const byProd = {};
-  for (const m of p.moves) { byProd[m.product] = byProd[m.product] || []; byProd[m.product].push(m); }
+  for (const m of entryMoves) { byProd[m.product] = byProd[m.product] || []; byProd[m.product].push(m); }
   for (const prod of Object.keys(byProd)) {
-    const ms = byProd[prod];
+    const ms = byProd[prod], rs = rolls.filter((x) => x.product === prod && !x.uncounted);
     const out = ms.filter((m) => m.kg < 0).reduce((a, m) => a - m.kg, 0), inn = ms.filter((m) => m.kg > 0).reduce((a, m) => a + m.kg, 0);
+    if (!rs.length) { moves.push({ product: prod, from: null, out, inn, to: null, uncounted: true }); continue; }
     const desc = ms.map((m) => `${Math.abs(m.kg)} unit ${m.kg < 0 ? "to" : "from"} ${m.who} on ${m.when}`).join(", ");
-    if (prod === "salt") {
-      const from = book.STATED_STOCK, to = r2(from - out + inn);
-      book.STATED_STOCK = to;
-      const sentence = `ROLLED AT ${notes.version}: ${desc}, so ${from}${out ? " less " + r2(out) : ""}${inn ? " plus " + r2(inn) : ""} is ${to}. A ROLL AND NOT A COUNT; COUNT_ON is untouched.` + (notes.stockNote ? " " + String(notes.stockNote).trim() : "");
-      book.NOTES = book.NOTES || {}; book.NOTES.STATED_STOCK = [sentence].concat(book.NOTES.STATED_STOCK || []);
-      moves.push({ product: prod, from, out, inn, to });
-    } else {
-      const o = (book.PROD_OPENING || {})[prod];
-      if (o && o.stated != null) {
-        const from = o.stated, to = r2(from - out + inn); o.stated = to;
-        const sentence = `ROLLED AT ${notes.version} (${prod}): ${desc}, so ${from}${out ? " less " + r2(out) : ""}${inn ? " plus " + r2(inn) : ""} is ${to}. A ROLL AND NOT A COUNT; COUNT_ON is untouched.`;
-        book.NOTES = book.NOTES || {}; book.NOTES.PROD_OPENING = [sentence].concat(book.NOTES.PROD_OPENING || []);
-        moves.push({ product: prod, from, out, inn, to });
-      } else moves.push({ product: prod, from: null, out, inn, to: null, uncounted: true });
-    }
+    const from = rs[0].from, to = rs[rs.length - 1].to;
+    const tie = r2(from - out + inn) === to;   /* a count between the moves breaks the sum; the sentence says so */
+    const tail = tie ? "" : " A count of this product came between these moves, so the figure after it starts from the count.";
+    const sentence = `ROLLED AT ${notes.version}${prod === "salt" ? "" : ` (${prod})`}: ${desc}, so ${from}${out ? " less " + r2(out) : ""}${inn ? " plus " + r2(inn) : ""} is ${to}. A ROLL AND NOT A COUNT; COUNT_ON is untouched.${tail}` + (prod === "salt" && notes.stockNote ? " " + String(notes.stockNote).trim() : "");
+    const key = prod === "salt" ? "STATED_STOCK" : "PROD_OPENING";
+    book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
+    moves.push({ product: prod, from, out, inn, to });
   }
   if (newest && newest > (book.QUEUE_COMMITTED || "")) book.QUEUE_COMMITTED = newest;
   sortBook(book);
