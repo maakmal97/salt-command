@@ -14115,21 +14115,7 @@ await (async () => {
   const noDel = { qty: 1, total: 130, cost: 44, row: "{}" };
   ok(/margin 66\.2%/.test(cam(noDel)), `a row with no delivery is unchanged: ${cam(noDel)}`);
 
-  /* THE APPROVE CARD IS PINNED BY ITS SOURCE, DELIBERATELY, AND THIS IS WORTH THE WORDS. The
-     first version of this check ran the formula inside its own jsdom eval and compared the
-     answer to 60%. That assertion cannot fail: it was testing a copy of the line, not the line.
-     Proved by mutation on 12 Sep 2026 - with the card reverted to the full total it stayed
-     green while the three around it went red. The card computes `mar` inline inside the render,
-     with no helper to call, so until there is one the honest instrument is the source pin
-     below, which DID go red on that same mutation. */
-  const msrc2 = readFileSync(FROZEN_MASTER, "utf8");
-  /* 19 Sep 2026: the derivation is gone from all twelve places it was written out; the goods ARE the
-     total. What is pinned is that the margin is struck on the goods and not on what they owe. */
-  ok(/const goods=total;const mar=\(!buy&&goods>0&&cost!=null&&qty\)\?\(\(goods-cost\)\/goods\*100\)/.test(msrc2),
-    "the Approve card's own line strikes the margin on the goods, not on what they owe");
-  ok(/per=qty\?\(total\)\/qty:null/.test(msrc2) && !/per=qty\?\(total-\(\+r\.delivery/.test(msrc2),
-    "and its rate beside it is on the goods too, as it has been since v502, and the derivation is gone");
-
+  /* 18 Oct 2026: the Approve card left the desk, so its source pin went with it; the drafter's own figures stand */
   /* and the drafter's prose, which is what a person reads when deciding */
   const dsrc2 = readFileSync(join(REPO, "src", "drafter.js"), "utf8");
   ok(/const goodsTotal = total;/.test(dsrc2)
