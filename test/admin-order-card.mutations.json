@@ -424,5 +424,8 @@
   "file": "stmt/owner.js",
   "find": "var cur=order.status==='done'?4:all?3:(order.status==='ready'||mv>0)?2:order.status==='acknowledged'?1:0;",
   "replace": "var cur=order.status==='done'?4:all?3:order.status==='acknowledged'?1:0;"
- }
+ },
+ {"name":"Salt Account's chip draws no glyph","file":"stmt/owner.js","find":"    s.appendChild(d); c.appendChild(s); c.appendChild(document.createTextNode(st[1])); return c;","replace":"    c.appendChild(document.createTextNode(st[1])); return c;"},
+ {"name":"Salt Account's placed order takes a tick","file":"stmt/owner.js","find":"placed:['copper','Waiting on you','dot']","replace":"placed:['copper','Waiting on you','tick']"},
+ {"name":"Salt Account's glyph is read aloud","file":"stmt/owner.js","find":"'data-g':k,'aria-hidden':'true',focusable:'false'}","replace":"'data-g':k,focusable:'false'}"}
 ]

@@ -123,6 +123,11 @@ export async function run({ ok, pageWork }) {
     const moves = () => foot() ? [...foot().querySelectorAll(".maker-foot__acts [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a)) : null;
     byAct(d, "nav.orders").click(); await p.work.quiet();
     await p.tapRow("ord-p1");
+    /* Counter Batch A (18 Oct 2026): the order's chip carries the customer page's glyph before its word, aria-hidden */
+    const chipP1 = p.cardOf("ord-p1").querySelector(".ohead .salt-status"), gP1 = chipP1 ? [...chipP1.querySelectorAll("svg")] : [];
+    ok(!!chipP1 && chipP1.textContent === "Waiting on you" && gP1.length === 1 && chipP1.firstChild === gP1[0] && gP1[0].getAttribute("aria-hidden") === "true"
+      && gP1[0].getAttribute("data-g") === "dot" && gP1[0].classList.contains("salt-status__glyph"),
+      "a placed order's chip on Salt Account leads with the dot, aria-hidden, its word unchanged: " + (chipP1 ? chipP1.outerHTML.slice(0, 160) : "none"));
     /* 18 Oct 2026 (clarity, part 3): the answer leads the card, Agree at the top with its terms beside it; the foot keeps Decline alone, a ghost danger button */
     const leadOf = (id) => p.cardOf(id).querySelector(".ordlead"), termsOf = (id) => (leadOf(id).querySelector(".ordterms") || { textContent: "" }).textContent;
     const tail = (id) => [...p.cardOf(id).querySelectorAll(".ordend [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));

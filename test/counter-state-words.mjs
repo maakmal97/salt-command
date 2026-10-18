@@ -138,6 +138,13 @@ export async function run({ ok }) {
     const got = Object.fromEntries(ALL.map((o) => [o.id, R0[o.id] ? chip(o.id) : null]));
     ok(JSON.stringify(got) === JSON.stringify(want),
       "each state is one word on its row under Your orders: Placed, Confirmed, Ready to deliver, Collected, Delivered, Complete, Declined and the two cancellations: " + JSON.stringify(got));
+    /* Counter Batch A (18 Oct 2026): one glyph before each word, aria-hidden, so the word above is still all the chip says */
+    const glyph = (id) => { const c = R0[id] && R0[id].querySelector(".salt-status"), g = c ? [...c.querySelectorAll("svg")] : [];
+      return g.length === 1 && c.firstChild === g[0] && g[0].getAttribute("aria-hidden") === "true" && g[0].classList.contains("salt-status__glyph") ? g[0].getAttribute("data-g") : null; };
+    const wantG = { [A.id]: "dot", [B.id]: "tick", [H.id]: "tick", [R.id]: "tick", [D1.id]: "ticks", [D2.id]: "ticks", [N.id]: "ticks", [E.id]: "cross", [F.id]: "cross", [G.id]: "cross" };
+    const gotG = Object.fromEntries(ALL.map((o) => [o.id, glyph(o.id)]));
+    ok(JSON.stringify(gotG) === JSON.stringify(wantG),
+      "each chip leads with one aria-hidden glyph: a dot while placed, a tick once confirmed or ready, a double tick once handed over or complete, a cross once ended: " + JSON.stringify(gotG));
 
     const screen = async (o) => { R0[o.id].click(); await until(() => S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]')); return S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]'); };
     const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .state')), when: t(s.querySelector('[data-part="when"]')),

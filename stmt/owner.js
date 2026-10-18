@@ -3781,7 +3781,14 @@ export const OWNER_JS = `
      card's. Leaving the place or the part closes the card. */
   var ordOpened=null, ordEntries={}, makerOpenOrders=[], ordAuto=false, ordFocus=null, ordMore={};
   function ordShown(st){ return ordMore[st]||50; }
-  var ORD_STAGE={placed:['copper','Waiting on you'], acknowledged:['brass','Agreed'], ready:['verdigris','Ready'], done:['mist','Done'], declined:['mist','Declined'], cancelled:['mist','Cancelled']};
+  var ORD_STAGE={placed:['copper','Waiting on you','dot'], acknowledged:['brass','Agreed','tick'], ready:['verdigris','Ready','tick'], done:['mist','Done','ticks'], declined:['mist','Declined','cross'], cancelled:['mist','Cancelled','cross']};
+  /* Counter Batch A: an order's chip carries the customer page's glyph before its word (a dot, a tick, a double tick, a cross), aria-hidden */
+  var STAGE_GLYPH={dot:'M8 5.5 A2.5 2.5 0 1 1 7.99 5.5 Z', tick:'M3 8.5 L6.5 12 L13 4.5', ticks:'M1 8.5 L4.5 12 L10.5 4.5 M7.5 11.5 L8 12 L15 4.5', cross:'M4 4 L12 12 M12 4 L4 12'};
+  function stageChip(st){
+    var k=st[2]||'tick', c=chip(st[0],null), s=svgEl('svg',{viewBox:'0 0 16 16','class':'salt-status__glyph','data-g':k,'aria-hidden':'true',focusable:'false'}), d=svgEl('path',{d:STAGE_GLYPH[k]});
+    if(k==='dot') d.setAttribute('fill','currentColor');
+    s.appendChild(d); c.appendChild(s); c.appendChild(document.createTextNode(st[1])); return c;
+  }
   function ordInPart(e){ return e.parts.split(' ').indexOf('orders.'+partNow)>=0; }
   function orderRow(e){
     var o=e.order, b=el('button','salt-inbox-row ordrow'); b.type='button'; b.setAttribute('data-in',e.parts); b.setAttribute('data-order',e.id); actOn(b,'order.open',e.id);
@@ -4052,10 +4059,10 @@ export const OWNER_JS = `
     return r;
   }
   function orderHead(card,order){
-    var st=order.writtenOff?['mist','Written off']:ORD_STAGE[order.status]||['mist',String(order.status||'')];
+    var st=order.writtenOff?['mist','Written off','cross']:ORD_STAGE[order.status]||['mist',String(order.status||'')];
     var head=el('div','ohead lead'), t=el('h3'), side=el('div'), sub=el('p','sub2');
     t.appendChild(mtile(order.product,order.qty)); head.appendChild(t);
-    side.appendChild(chip(st[0],st[1]));
+    side.appendChild(stageChip(st));
     sub.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u)));
     sub.appendChild(document.createTextNode(' · Ordered '+fmtWhen(order.at)+', '+(order.mode==='deliver'?'to deliver':'to collect')));
     side.appendChild(sub); head.appendChild(side); card.appendChild(head);
@@ -4428,7 +4435,7 @@ export const OWNER_JS = `
   /* 17 Oct 2026, HIS FLOW: A ROW OF THE BOOK WITH NO SITE ORDER IS AN ORDER HERE TOO, at the stage its figures put it (the Desk's flowStage). Its moves
      are Record's own (ledger-amend), each under Approve: a handover or a payment a Fulfilment, a change of units, price or delivery a Correction, a
      cancel a Cancellation; History and Undo are the row's. Every figure is the Desk's, as the row will stand once the moves waiting fold. */
-  var ROW_STAGE={confirmed:['brass','Agreed'], paid:['verdigris','Delivered or paid'], done:['mist','Completed'], ended:['mist','Ended']};
+  var ROW_STAGE={confirmed:['brass','Agreed','tick'], paid:['verdigris','Delivered or paid','ticks'], done:['mist','Completed','ticks'], ended:['mist','Ended','cross']};
   function rowCard(root,e){
     var r=e.row, key=e.id, card=makerCard(root,key), acts=el('div','maker-foot__acts'), live=!r.cancelled&&!r.writtenOff;
     card.setAttribute('data-in',e.parts); card.setAttribute('data-row',r.rid);
@@ -4436,8 +4443,8 @@ export const OWNER_JS = `
     title.appendChild(whoTag(el('span',null,r.party),r.party)); title.appendChild(document.createTextNode(', ')); title.appendChild(bookMark(r.product));
     title.appendChild(document.createTextNode(' '+units(r.qty)+', '+rm(r.total)+(r.delivery>0.004?' + '+rm(r.delivery):'')));
     card.appendChild(title);
-    var st=r.cancelled?['mist','Cancelled']:r.writtenOff?['mist','Written off']:ROW_STAGE[r.stage]||['mist',String(r.stage)], head=el('p','lead');
-    head.appendChild(chip(st[0],st[1])); card.appendChild(head);
+    var st=r.cancelled?['mist','Cancelled','cross']:r.writtenOff?['mist','Written off','cross']:ROW_STAGE[r.stage]||['mist',String(r.stage)], head=el('p','lead');
+    head.appendChild(stageChip(st)); card.appendChild(head);
     card.appendChild(metrics([['Owed',rm(r.owed)],['Paid',rm(r.paid)],['Handed',String(+(+r.handed||0).toFixed(3))+' of '+units(r.qty)]]));
     if(r.waiting>0) card.appendChild(el('p','salt-insight','As it will stand once '+(r.waiting===1?'the move':'the '+r.waiting+' moves')+' waiting under Approve '+(r.waiting===1?'is':'are')+' approved.'));
     if(+r.refund>0.004) card.appendChild(el('p','salt-insight','You owe them a refund of '+rm(r.refund)+' on this order. Close it on the Desk once it is paid.'));

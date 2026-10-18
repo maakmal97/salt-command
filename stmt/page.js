@@ -4345,9 +4345,26 @@ const CLIENT_JS = `
     var e=endOf(o);
     return oWord(o.status,o,e?e.by:'');
   }
+  /* COUNTER BATCH A (his decision of 18 Oct 2026): A GLYPH BEFORE EVERY STATE WORD. A dot while it is still being agreed, a tick once
+     agreed or ready, a double tick once the goods are with them or it is complete, a cross once it ended; the word is unchanged and
+     the glyph aria-hidden, so the chip reads the same aloud. The dot is filled, the rest drawn as strokes in the chip's tone. */
+  var CHIP_GLYPH={dot:'M8 5.5 A2.5 2.5 0 1 1 7.99 5.5 Z', tick:'M3 8.5 L6.5 12 L13 4.5', ticks:'M1 8.5 L4.5 12 L10.5 4.5 M7.5 11.5 L8 12 L15 4.5', cross:'M4 4 L12 12 M12 4 L4 12'};
+  function chipGlyph(k){
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
+    s.setAttribute('viewBox','0 0 16 16'); s.setAttribute('class','salt-status__glyph'); s.setAttribute('data-g',k);
+    s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false');
+    d.setAttribute('d',CHIP_GLYPH[k]); if(k==='dot') d.setAttribute('fill','currentColor');
+    s.appendChild(d); return s;
+  }
+  function stateGlyph(o){
+    var s=o.status;
+    return s==='placed'?'dot':(s==='declined'||s==='cancelled')?'cross':(s==='done'||(oPayable(o)&&movedAll(o)))?'ticks':'tick';
+  }
   function stateChip(o,cls){
     var s=o.status, tone=s==='placed'?'steel salt-status--dashed':s==='ready'&&!movedAll(o)?'brass':(s==='acknowledged'||s==='done'||oPayable(o))?'verdigris':'mist';
-    return el('span',(cls?cls+' ':'')+'salt-status salt-status--'+tone,stateWord(o));
+    var c=el('span',(cls?cls+' ':'')+'salt-status salt-status--'+tone);
+    c.appendChild(chipGlyph(stateGlyph(o))); c.appendChild(document.createTextNode(stateWord(o)));
+    return c;
   }
   /* what happened, a step a line, in the same words: the record's notes are the desk's shorthand */
   function histLine(x,o){

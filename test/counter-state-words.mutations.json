@@ -215,5 +215,11 @@
   "find": "[\"order confirmed\", (f) => has(f, (o) => o.status === \"acknowledged\")]",
   "replace": "[\"order acknowledged\", (f) => has(f, (o) => o.status === \"acknowledged\")]"
  },
- {"name": "the Worker's lock refuses no level", "file": "src/orders.js", "find": "if (wordsIn(t, LEVEL_WORDS).length) return \"that names a level, which a customer's page never does\";", "replace": "if (false) return \"that names a level\";"}
+ {"name": "the Worker's lock refuses no level", "file": "src/orders.js", "find": "if (wordsIn(t, LEVEL_WORDS).length) return \"that names a level, which a customer's page never does\";", "replace": "if (false) return \"that names a level\";"},
+ {"name":"the chip draws no glyph","file":"stmt/page.js","find":"    c.appendChild(chipGlyph(stateGlyph(o))); c.appendChild(document.createTextNode(stateWord(o)));","replace":"    c.appendChild(document.createTextNode(stateWord(o)));"},
+ {"name":"the glyph is read aloud","file":"stmt/page.js","find":"    s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false');\n    d.setAttribute('d',CHIP_GLYPH[k]);","replace":"    s.setAttribute('focusable','false');\n    d.setAttribute('d',CHIP_GLYPH[k]);"},
+ {"name":"the glyph follows the word","file":"stmt/page.js","find":"    c.appendChild(chipGlyph(stateGlyph(o))); c.appendChild(document.createTextNode(stateWord(o)));","replace":"    c.appendChild(document.createTextNode(stateWord(o))); c.appendChild(chipGlyph(stateGlyph(o)));"},
+ {"name":"an ended order takes a tick","file":"stmt/page.js","find":"return s==='placed'?'dot':(s==='declined'||s==='cancelled')?'cross':","replace":"return s==='placed'?'dot':(s==='declined')?'cross':"},
+ {"name":"goods handed over take a single tick","file":"stmt/page.js","find":"(s==='done'||(oPayable(o)&&movedAll(o)))?'ticks':'tick';","replace":"(s==='done')?'ticks':'tick';"},
+ {"name":"a placed order takes a tick","file":"stmt/page.js","find":"return s==='placed'?'dot':","replace":"return s==='placedX'?'dot':"}
 ]
