@@ -8543,7 +8543,7 @@ await (async () => {
   /* the books' hues come from the identity, through the book, which is where the extract reads them */
   const bk472 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   ok(bk472.PRODUCTS.salt.accent === "var(--salt-product-salt)" && bk472.PRODUCTS.oil.accent === "var(--salt-product-oil)", "salt is the pale book and oil the golden one, declared in ledger/book.json");
-  ok(m472.includes("D.font.family=\"'JetBrains Mono','Cascadia Mono',Consolas,monospace\"") && m472.includes("D.borderColor=tcol('brass',0.14)"), "Chart.js is told once that figures are mono and hairlines are brass");
+  ok(m472.includes("D.font.family=\"'Geist Mono','Cascadia Mono',Consolas,monospace\"") && m472.includes("D.borderColor=tcol('brass',0.14)"), "Chart.js is told once that figures are mono and hairlines are brass");
   /* the built desk and the install surface carry it too */
   const built472 = readFileSync(join(REPO, "public", "desk.html"), "utf8");
   ok(built472.includes("/* ==== END DESIGN desk ==== */") && built472.includes('aria-label="Salt crystal"'), "the built desk carries the layer and the mark");
@@ -24908,7 +24908,7 @@ await (async () => {
   ok(gr8.status === 200 && gm8.length === 5 && gm8.filter((m) => !m.ring).map((m) => m.lets).join("") === "IGEV" && gm8.filter((m) => m.ring).every((m) => !m.lets)
     && gm8.every((m) => m.px >= 20),
     "the guest board draws its four books' marks with their letters, the Ring bare, none under 20px: " + JSON.stringify(gm8));
-  ok(/\.psym \.plet\{font-family:var\(--salt-font-mono\)/.test(gcss8) && /font-family: 'JetBrains Mono'/.test(gcss8)
+  ok(/\.psym \.plet\{font-family:var\(--salt-font-mono\)/.test(gcss8) && /font-family: 'Geist Mono'/.test(gcss8)
     && /font-src 'self'/.test(gr8.headers.get("content-security-policy") || ""),
     "and the board's own styles carry the letter's mono face, whose file its policy lets load");
 
@@ -46026,16 +46026,16 @@ await (async () => {
 
 section("22 Sep 2026: the brand faces reach every surface, self-hosted");
 await (async () => {
-  /* HIS YES OF 22 SEP 2026 to fetching the fonts. Fraunces and JetBrains Mono were designed into the
+  /* HIS YES OF 22 SEP 2026 to fetching the fonts (the faces Newsreader and Geist Mono since his choice of 18 Oct 2026). Fraunces and JetBrains Mono were designed into the
      identity and never loaded where it mattered, because every surface's policy is self-only. Google
      Fonts' own latin subsets are kept in the design system (fonts/, with their licences) and each surface
      serves them beside its page: the desk from public/fonts/, the Counter from bytes in stmt/fonts.js.
      Each assertion was proved red by mutation, one at a time. */
-  const FF = ["fraunces-latin.woff2", "jetbrains-mono-latin.woff2"];
+  const FF = ["newsreader-latin.woff2", "geist-mono-latin.woff2"];
   const has = (p) => { try { readFileSync(p); return true; } catch (e) { return false; } };
   const mF = readFileSync(FROZEN_MASTER, "utf8");
   const fcss = readFileSync(join(REPO, "design", "fonts.css"), "utf8");
-  ok(/font-family: 'Fraunces'[^}]*url\(fonts\/fraunces-latin\.woff2\)/.test(fcss) && /font-family: 'JetBrains Mono'[^}]*url\(fonts\/jetbrains-mono-latin\.woff2\)/.test(fcss) && !/https?:\/\//.test(fcss),
+  ok(/font-family: 'Newsreader'[^}]*url\(fonts\/newsreader-latin\.woff2\)/.test(fcss) && /font-family: 'Geist Mono'[^}]*url\(fonts\/geist-mono-latin\.woff2\)/.test(fcss) && !/https?:\/\//.test(fcss),
     "the two faces are declared from the page's own fonts/ folder and name no other origin");
   ok(mF.includes("/* ==== DESIGN fonts:") && mF.indexOf("/* ==== DESIGN fonts:") < mF.indexOf("/* ==== DESIGN base:") && mF.includes(fcss.trim()),
     "the desk carries them as a third generated block, before the base and never at the foot");
@@ -46044,6 +46044,12 @@ await (async () => {
   const swF = readFileSync(join(REPO, "public", "sw.js"), "utf8");
   ok(FF.every((f) => swF.includes('"./fonts/' + f + '"')), "the shell precaches both, so the desk reads in its own type offline");
   ok(/font-src 'self'/.test(readFileSync(join(REPO, "public", "_headers"), "utf8")), "and the desk's policy admits its own fonts");
+  /* 18 Oct 2026: the faces became Newsreader and Geist Mono; the retired files ship nowhere and no stack names them */
+  const OLD = ["fraunces-latin.woff2", "jetbrains-mono-latin.woff2"], oldRx = /'(Fraunces|JetBrains Mono)'/, { FONTS: fontsOld } = await import("../stmt/fonts.js");
+  ok(OLD.every((f) => !has(join(REPO, "public", "fonts", f)) && !has(join(REPO, "design", "fonts", f)) && !swF.includes(f))
+    && !oldRx.test(mF) && !oldRx.test(readFileSync(join(REPO, "stmt", "maintenance.js"), "utf8")) && !oldRx.test(readFileSync(join(REPO, "stmt", "statement-css.js"), "utf8"))
+    && !OLD.some((f) => Object.prototype.hasOwnProperty.call(fontsOld, f)),
+    "the retired faces ship from neither surface, the shell caches neither, and no stack in the master or the Counter names them");
   /* the Counter */
   const { expected: fontsExpected } = await import("../tools/stmt-fonts.mjs");
   ok(readFileSync(join(REPO, "stmt", "fonts.js"), "utf8") === fontsExpected(), "stmt/fonts.js is what tools/stmt-fonts.mjs writes from design/fonts/");
@@ -46053,9 +46059,9 @@ await (async () => {
   ok((wF.match(/font-src 'self'/g) || []).length === 2 && /p\.startsWith\("\/fonts\/"\)/.test(wF) && /"content-type": "font\/woff2"/.test(wF),
     "both of the site's policies admit its own fonts and the Worker serves them at /fonts/");
   const stmtWF = (await import("../stmt/worker.js")).default;
-  const rF = await stmtWF.fetch(new Request("https://site.test/fonts/fraunces-latin.woff2"), { STMT: new KV() });
+  const rF = await stmtWF.fetch(new Request("https://site.test/fonts/newsreader-latin.woff2"), { STMT: new KV() });
   const bodyF = Buffer.from(await rF.arrayBuffer());
-  ok(rF.status === 200 && rF.headers.get("content-type") === "font/woff2" && /immutable/.test(rF.headers.get("cache-control") || "") && bodyF.equals(readFileSync(join(REPO, "design", "fonts", "fraunces-latin.woff2"))),
+  ok(rF.status === 200 && rF.headers.get("content-type") === "font/woff2" && /immutable/.test(rF.headers.get("cache-control") || "") && bodyF.equals(readFileSync(join(REPO, "design", "fonts", "newsreader-latin.woff2"))),
     "a request for a face answers the file with a year of cache");
   const r404 = await stmtWF.fetch(new Request("https://site.test/fonts/nothing.woff2"), { STMT: new KV() });
   ok(r404.status === 404, "and a face that is not there is the site's usual 404");
@@ -46073,7 +46079,7 @@ await (async () => {
      each body is checked against an independent decoder, twice, so a spent or crossed array is red. */
   const { FONTS: F5 } = await import("../stmt/fonts.js");
   const { ICON_PNG_B64: I5, ADMIN_ICON_PNG_B64: A5 } = await import("../stmt/icons.js");
-  const assets = [["/fonts/fraunces-latin.woff2", F5["fraunces-latin.woff2"]], ["/fonts/jetbrains-mono-latin.woff2", F5["jetbrains-mono-latin.woff2"]],
+  const assets = [["/fonts/newsreader-latin.woff2", F5["newsreader-latin.woff2"]], ["/fonts/geist-mono-latin.woff2", F5["geist-mono-latin.woff2"]],
     ["/icon.png", I5], ["/icon-key.png", A5]];
   const seen = new Map(assets.map(([p]) => [p, 0]));
   const realAtob = globalThis.atob;
@@ -46102,7 +46108,7 @@ await (async () => {
     try { return (await W.fetch(new Request("https://site.test/fonts/" + name), { STMT: new KV() })).status; }
     catch (e) { return "threw " + e.name; }
   };
-  ok(await st("fraunces-latin.woff2") === 200, "the control: a face the site has still answers 200");
+  ok(await st("newsreader-latin.woff2") === 200, "the control: a face the site has still answers 200");
   for (const name of ["__proto__", "constructor", "toString", "hasOwnProperty"])
     ok(await st(name) === 404, "/fonts/" + name + " is the site's 404, as an unknown face is: " + await st(name));
 })();

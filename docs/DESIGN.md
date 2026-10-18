@@ -56,8 +56,9 @@ smaller one, once this one has been read for a while.
 The CSP is self-only and the build fails on any external load, so the faces arrive as files each
 surface serves itself. They are Google Fonts' own latin subsets, fetched once on his yes of 22 Sep
 2026 and kept in `Code\salt-ds\fonts\` with their OFL licences (`fonts/README.md` holds the
-request): Fraunces, variable over optical size and weight, and JetBrains Mono, variable over
-weight. `src/fonts-local.css` declares them relative to the page. Each surface carries them by its
+request): Newsreader, variable over optical size (6 to 72) and weight (200 to 800), and Geist Mono,
+variable over weight (100 to 900), his choice of 18 Oct 2026 (Fraunces and JetBrains Mono before).
+The files are `newsreader-latin.woff2` (129 KB) and `geist-mono-latin.woff2` (23 KB). `src/fonts-local.css` declares them relative to the page. Each surface carries them by its
 own sync: the desk's `designsync --pull` (`design/fonts.css` and `design/fonts/`, a generated block
 before the base, the files copied to `public/fonts/` and precached by `sw.js`); the Counter's
 `tools/stmt-fonts.mjs` (bytes in `stmt/fonts.js`, served at `/fonts/`, `font-src 'self'`); QR
@@ -66,7 +67,7 @@ in the same order. The vendored stylesheet carries no `@import`, and the pull re
 does. Georgia and Consolas remain the fallbacks.
 
 **Proving a face renders:** on the served page, after `document.fonts.ready`, every entry's
-`status` is `loaded`, `document.fonts.check('16px Fraunces')` is true, and a hidden span measures
+`status` is `loaded`, `document.fonts.check('16px Newsreader')` is true, and a hidden span measures
 wider in the face than in its fallback.
 
 ## The colour mapping
@@ -430,8 +431,8 @@ desk's tokens in `design/desk.css` (`--desk-chart-grid`, `--desk-map-0`, `-1`, `
 
 ## The brand
 
-The identity (obsidian, slate, brass, copper, salt and mist; Fraunces for display, JetBrains Mono
-for figures; the crystal mark) is the private artifact "Business Identity",
+The identity (obsidian, slate, brass, copper, salt and mist; Newsreader for display, Geist Mono
+for figures since 18 Oct 2026; the crystal mark) is the private artifact "Business Identity",
 https://claude.ai/code/artifact/211f8bec-2114-4c51-aaae-48d035119ef2. The finished assets live in
 `Code\salt-ds\brand\` (`node brand/export_brand_assets.cjs`). Their DuitNow QR is the live
 merchant code, whose record now lives in the pay store, `Code\qr-command\data\accounts.json` (the

@@ -1,6 +1,6 @@
 /* Salt Commodities design system
    Built to the Business Identity of 29 Aug 2026: obsidian ground, brass and
-   copper light, liquid glass surfaces, Fraunces display over JetBrains Mono. */
+   copper light, liquid glass surfaces, Newsreader display over Geist Mono (18 Oct 2026; Fraunces over JetBrains Mono before). */
 
 :root {
   /* The six colours of the identity */
@@ -91,8 +91,8 @@
   --salt-text-label: var(--salt-copper);
 
   /* Typography */
-  --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+  --salt-font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --salt-font-mono: 'Geist Mono', 'Cascadia Mono', Consolas, monospace;
 
   /* The type scale in rem since 24 Sep 2026: at the default 16px each is the pixel size it was
      (11, 13, 15, 17, 24, 34, 48, 64, 88), and a browser's own default text size (a desktop browser's
