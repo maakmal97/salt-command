@@ -210,16 +210,6 @@
   "replace": "placed: [\"Sent\", \"Waiting for us to confirm\"],"
  },
  {
-  "name": "the Desk's own card tells him a declined order reads Not taken",
-  "find": "declined:['Declined',''],cancelled:['Cancelled by you','']}[o.status]",
-  "replace": "declined:['Not taken',''],cancelled:['Cancelled by you','']}[o.status]"
- },
- {
-  "name": "the Desk's own card tells him a confirmed order reads Acknowledged",
-  "find": "acknowledged:['Confirmed','being prepared'],",
-  "replace": "acknowledged:['Acknowledged','being prepared'],"
- },
- {
   "name": "a practice account's feature is named for the old word",
   "file": "tools/testfix.mjs",
   "find": "[\"order confirmed\", (f) => has(f, (o) => o.status === \"acknowledged\")]",

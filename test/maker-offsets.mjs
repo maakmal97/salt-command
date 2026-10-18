@@ -49,7 +49,7 @@ export async function run({ ok }) {
       const drafted = (held.pending || []).map((e) => ({ amendKind: e.payload.kind, amends: e.payload.rid || e.payload.orderKey }));
       const refused = (held.refused || []).map((entry) => ({ entry }));
       const made = JSON.parse(w.eval(`(function(){queue=${JSON.stringify(held.queued || [])};AP_DRAFTS=${JSON.stringify(drafted)};AP_REFUSED=${JSON.stringify(refused)};
-        saveQueue=function(){};qPost=function(){return Promise.resolve(true);};apMsg='';autoOffsets();
+        saveQueue=function(){};qPost=function(){return Promise.resolve(true);};autoOffsets();
         return JSON.stringify(queue.filter(function(q){return q&&q.payload&&q.payload.auto;}));})()`));
       return made.map((entry) => ({ code: entry.party, rid: entry.payload.rid, units: entry.payload.fields.rebateKg,
         rm: entry.payload.fields.settledRM, entry }));
