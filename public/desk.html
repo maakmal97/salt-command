@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="957b5627671e4544";
+var SALT_BUILD_ID="e45e7fb0994e7296";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12454,7 +12454,7 @@ const dAhead=d=>(typeof d==='number'?d:dbet(d))<0;
 const TAB_LABEL={today:'To do',forward:'Next 30 days',overview:'Rules',receivables:'Receivables',
   inventory:'On hand',financials:'Financials',analysis:'Analysis',concentration:'Clients',
   network:'Associates',map:'Coverage',ledger:'Ledger',sourcing:'Sourcing',
-  pricing:'Pricing'};
+  pricing:'The board'};
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 /* v245: THE PRICE TIER LEADS. custBadges() carries a RECENCY badge, Dormant/Loyal/Regular/New,
    which is a different question from what the customer pays; both now show, price tier first,
@@ -19763,7 +19763,8 @@ function tabProductQuote(){
    nothing can differ between the two copies; the product name went out of the sentence because
    perProduct already prints it on the block below. */
 function pxHead(){
-  return `<h1>Pricing</h1>
+  /* 18 Oct 2026: Pricing carries Rules now, so its lead is named for what it shows (v624), as it was before it stood alone */
+  return `<h1>The board</h1>
   <!-- v385: "a printed card" is language from before v326, when the board was four frozen tier
        cards. There are none: the board is one derived ladder and what goes stale is a price
        already agreed with somebody. The sentence now names that. -->
