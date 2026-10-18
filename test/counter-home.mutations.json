@@ -12,7 +12,7 @@
  {"name":"the banner sticks from 1080px","file":"stmt/page.js","find":"  .hlive{position:static;grid-column:1;grid-row:2;","replace":"  .hlive{grid-column:1;grid-row:2;"},
  {"name":"the banner sits in the first row","file":"stmt/page.js","find":"  .hlive{position:static;grid-column:1;grid-row:2;","replace":"  .hlive{position:static;grid-column:1;grid-row:1;"},
  {"name":"the live order sits in the second column","file":"stmt/page.js","find":"<div id=\"hYear\"></div></div>'","replace":"<div id=\"hYear\"></div><div id=\"hLive\"></div></div>'"},
- {"name":"the foot's height is never told","file":"stmt/page.js","find":"    footSet();\n  }","replace":"  }"},
+ {"name":"the foot's height is never told","file":"stmt/page.js","find":"    footSet(); glanceDraw();\n  }","replace":"    glanceDraw();\n  }"},
  {"name":"the foot's height stays when it shuts","file":"stmt/page.js","find":"(f.hidden?0:Math.ceil(f.offsetHeight||0))","replace":"Math.ceil(f.offsetHeight||0)"},
  {"name":"the reward for everybody","file":"stmt/page.js","find":"if(!assoc||view||!card||!Array.isArray(card.products)) return box;","replace":"if(view||!card||!Array.isArray(card.products)) return box;"},
  {"name":"the reward is the farthest","file":"stmt/page.js","find":"sort(function(a,b){ return b.reward.next-a.reward.next; })","replace":"sort(function(a,b){ return a.reward.next-b.reward.next; })"},

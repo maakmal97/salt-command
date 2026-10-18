@@ -22022,7 +22022,7 @@ await (async () => {
   const noDecl = missing(each((f) => Object.assign({}, f, { orders: f.orders.filter((o) => o.status !== "declined") })));
   const noLock = missing({ [TU]: all[TU], [TL]: all[TU] });
   ok(noDecl.includes("state declined") && noDecl.includes("declined, with his reason") && noLock.join() === "locked, only for paying (V5)"
-    && missing(each((f) => Object.assign({}, f, { bulletin: { lines: [] } }))).join() === "the bulletin",
+    && missing(each((f) => Object.assign({}, f, { bulletin: { lines: [] } }))).join() === "the bulletin," + F.FEATURES.map(([n]) => n).find((n) => /notice over two lines/.test(n)),
     "and a fixture without a case is red, by its line and off the code, the locked account included: " + JSON.stringify([noDecl, noLock]));
 
   /* ---- 2. THE REAL BOOK IS NEVER READ WITH THE INVENTED ROWS IN IT ---- */
@@ -22179,7 +22179,7 @@ await (async () => {
     const pasted = d.getElementById("un").value;
     d.getElementById("pw").value = TP;
     d.getElementById("f").dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
-    const bl = () => [...d.querySelectorAll("#bull > p")].map((x) => x.textContent).join("|");
+    const bl = () => [...d.querySelectorAll("#bull .salt-notice__line")].map((x) => x.textContent).join("|");
     const sn = () => (d.getElementById("stageNote") || {}).textContent || "";
     for (let i = 0; i < 150 && (bl() !== storedL.bulletin.lines.join("|") || !sn()); i++) await new Promise((r) => setTimeout(r, 100));
     ok(pasted === TL && bl() === storedL.bulletin.lines.join("|") && asked.some((x) => x.length > 0)
@@ -39541,7 +39541,7 @@ await (async () => {
     const scr = pd.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]');
     const line = scr ? scr.querySelector('[data-part="when"] .salt-insight').textContent : "";
     ok(/ Closed at 2 units of the 5 ordered, RM 200.00 for the goods\.$/.test(line), "their page says it was closed there, and at what: " + line);
-    const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => x.textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
+    const steps = scr ? [...scr.querySelectorAll(".salt-steps__step")].map((x) => (x.querySelector(".salt-steps__name") || x).textContent + (x.getAttribute("aria-current") ? "*" : "")) : [];
     const goods = scr ? [...scr.querySelectorAll('[data-part="money"] .salt-ledger__row')].map((x) => x.textContent) : [];
     ok(JSON.stringify(steps) === JSON.stringify(["Placed", "Confirmed", "Ready", "Collected*"]) && scr.querySelector(".state").textContent === "Collected"
       && goods[0] === "GoodsRM 200.002 units handed over of the 5 ordered" && goods.some((g) => /^Still to payRM 200.00The goods are with you$/.test(g)),
@@ -41661,7 +41661,7 @@ await (async () => {
   const script = (html) => { const m = [...html.matchAll(/<script nonce="N">([\s\S]*?)<\/script>/g)].pop(); return m ? m[1] : ""; };
   const parses = (js) => { try { new Function(js); return true; } catch (e) { return false; } };
   const cust = script(landingPage("", "N", null, { lines: typed }));
-  const bull = /var BULL=(\{[^\n]*?\}), bullN=0;/.exec(cust);
+  const bull = /var BULL=(\{[^\n]*?\}), bullN=0,/.exec(cust);
   ok(parses(cust) && !!bull && JSON.stringify(JSON.parse(bull[1]).lines) === JSON.stringify(typed),
     "a notice holding $' $` $& and $$ leaves the customer's script whole, and the page holds each line as typed: " + JSON.stringify([parses(cust), bull && bull[1]]));
   const master = "pa$'ss$`wo$&rd$$";
@@ -42006,7 +42006,7 @@ await (async () => {
     const { D } = a, sp = D.getElementById("hPrices"), tiles = D.querySelector("#hAgain .salt-options__grid");
     const c = col(D).split(",");
     const k0 = D.getElementById("keepCard");
-    ok(c.indexOf("keepCard") < 0 && c.indexOf("payHead") >= 0 && c[c.indexOf("payHead") - 1] === "bull" && c.indexOf("hNeeds") === c.indexOf("payHead") + 1
+    ok(c.indexOf("keepCard") < 0 && c.indexOf("payHead") >= 0 && c[c.indexOf("payHead") - 1] === "today" && c.indexOf("hNeeds") === c.indexOf("payHead") + 1
       && !!k0 && !k0.closest("#pHome") && D.getElementById("thisDevice").contains(k0) && k0.hidden,
       "a new account's Home leads with To pay then Needs you; its install guide stays under This device and is hidden in the saved app: " + JSON.stringify(col(D)));
     ok(!!sp && D.getElementById("hAgain").contains(sp) && before(D, tiles, sp) && !D.getElementById("payHead").querySelector(".salt-pill") && D.getElementById("homeFoot").hidden,
@@ -44085,7 +44085,7 @@ await (async () => {
       d.querySelector('#pOrder [data-row="oX"]').click();
       await until(() => d.querySelector("#pOrder .oscreen"));
       const scr = d.querySelector("#pOrder .oscreen");
-      out.orderPay = [...scr.querySelectorAll(".oact button")].map(t).join();
+      out.orderPay = [...scr.querySelectorAll(".oact button:not(.omsg)")].map(t).join();
       out.lines = [...scr.querySelectorAll(".salt-ledger__row")].map(t);
       return out;
     } finally { dom.window.close(); }

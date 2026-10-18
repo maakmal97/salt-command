@@ -1,6 +1,6 @@
 [
  {"name":"the foot is drawn shown, with nothing in it","file":"stmt/page.js","find":"+ '<div id=\"homeFoot\" class=\"payfoot\" hidden></div></div>'","replace":"+ '<div id=\"homeFoot\" class=\"payfoot\"></div></div>'"},
- {"name":"the foot stands inside the second column, not after it","file":"stmt/page.js","find":"<div class=\"hcol\"><div id=\"hPool\"></div><div id=\"hComing\"></div><div id=\"hAgain\"></div></div>'","replace":"<div class=\"hcol\"><div id=\"hPool\"></div><div id=\"hComing\"></div><div id=\"hAgain\"></div><div id=\"homeFoot\" class=\"payfoot\" hidden></div></div>'"},
+ {"name":"the foot stands inside the second column, not after it","file":"stmt/page.js","find":"<div id=\"hAgain\"></div><div id=\"hReward\"></div><div id=\"hYear\"></div></div>'","replace":"<div id=\"hAgain\"></div><div id=\"hReward\"></div><div id=\"hYear\"></div><div id=\"homeFoot\" class=\"payfoot\" hidden></div></div>'"},
  {"name":"the tile stays in the head beside the foot","file":"stmt/page.js","find":"if(!payFootOn(lines,tot)) box.appendChild(kpiTile(","replace":"if(true) box.appendChild(kpiTile("},
  {"name":"the foot's tile is not ember","file":"stmt/page.js","find":"f.appendChild(kpiTile('ember',tw('pay.now'),rm(tot)));","replace":"f.appendChild(kpiTile('verdigris',tw('pay.now'),rm(tot)));"},
  {"name":"the Pay is not in the foot","file":"stmt/page.js","find":"f.appendChild(pb);","replace":"document.body.appendChild(pb);"},

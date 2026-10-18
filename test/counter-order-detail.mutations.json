@@ -6,7 +6,7 @@
  {"name":"Salt Account shows no reference","file":"stmt/owner.js","find":"    var oref=el('span','mono oref',' · Ref '+orderRef(order.id)); oref.setAttribute('data-ref',''); sub.appendChild(oref);","replace":""},
  {"name":"the band has no state for its heading","file":"stmt/page.js","find":"    h.appendChild(el('h3','state oband__state',stateWord(o)));","replace":"    h.appendChild(el('p','state oband__state',stateWord(o)));"},
  {"name":"the band is no band","file":"stmt/page.js","find":"    var h=el('div','oband salt-band'), top=el('div','salt-band__head');","replace":"    var h=el('div','oband'), top=el('div','salt-band__head');"},
- {"name":"the point stays after collection","file":"stmt/page.js","find":"    var waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);","replace":"    var waits=!!o.point;"},
+ {"name":"the point stays after collection","file":"stmt/page.js","find":"    var waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);\n    if(waits) col.appendChild(","replace":"    var waits=!!o.point;\n    if(waits) col.appendChild("},
  {"name":"the pin names the order's id","file":"stmt/page.js","find":"    var ua=(navigator&&navigator.userAgent)||'', q='Point%20'+code, ll=lat+','+lng;","replace":"    var ua=(navigator&&navigator.userAgent)||'', q='Point%20'+code+'%20'+location.hash, ll=lat+','+lng;"},
  {"name":"an iPhone gets Google Maps","file":"stmt/page.js","find":"    if(/iPhone|iPad|iPod|Macintosh/.test(ua)) return","replace":"    if(/NoSuchDevice/.test(ua)) return"},
  {"name":"Android gets Google Maps","file":"stmt/page.js","find":"    if(/Android/.test(ua)) return 'geo:'","replace":"    if(/NoSuchDevice/.test(ua)) return 'geo:'"},

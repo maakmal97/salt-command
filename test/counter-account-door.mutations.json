@@ -8,8 +8,8 @@
  {
   "name": "Messages falls under This device",
   "file": "stmt/page.js",
-  "find": "<div id=\"acct\" class=\"acct\"><div id=\"aThread\"></div>'\n    + (owner ? \"\" : thisDevice())",
-  "replace": "<div id=\"acct\" class=\"acct\">'\n    + (owner ? \"\" : thisDevice())\n    + '<div id=\"aThread\"></div>'"
+  "find": "<div id=\"aGlance\"></div><div id=\"aThread\"></div>'\n    + (owner ? \"\" : thisDevice())",
+  "replace": "<div id=\"aGlance\"></div>'\n    + (owner ? \"\" : thisDevice())\n    + '<div id=\"aThread\"></div>'"
  },
  {
   "name": "Sign out falls to the foot of the card",

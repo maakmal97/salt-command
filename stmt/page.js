@@ -1895,7 +1895,7 @@ const CLIENT_JS = `
     if(turns) bullTimer=setInterval(bullTurn,BULL_MS);
   }
   (function(){
-    var pz=document.querySelector('#bull .salt-notice__pause'); if(!pz) return;
+    var bx=document.getElementById('bull'), pz=bx&&bx.querySelector('.salt-notice__pause'); if(!pz) return;
     pz.addEventListener('click',function(){
       bullHeld=!bullHeld; pz.setAttribute('aria-pressed',bullHeld?'true':'false');
       pz.setAttribute('aria-label',tw(bullHeld?'bull.play':'bull.pause')); pz.setAttribute('data-wl',bullHeld?'bull.play':'bull.pause');
