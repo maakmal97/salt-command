@@ -909,7 +909,7 @@ export const OWNER_JS = `
     'Choose a customer on the roster, not a resale account.':'Choose a customer, not a resale account.',
     'This product has no customer tiers.':'This book has no price levels.',
     'A supplier cannot hold customer drift.':'A supplier has no price drift.',
-    'Choose a drift from -1 to +1, or clear it.':'Choose a drift from -1 to +1, or clear it.',
+    'Choose a % lift from 0 to 200% (0 to 2), or clear it.':'Choose a % from 0 to 200, or clear it.',
     'Choose a tier or a set of small, mid and big tiers.':'Choose a level, or a level for each order size.',
     'There is no tier proposal to accept.':'There is no suggested level to accept.',
     'Choose the sizes to hide from the board.':'Choose the sizes to leave off the printed list.',
@@ -950,7 +950,7 @@ export const OWNER_JS = `
     'The map point is outside Malaysia or has invalid locality text.':'The map point must be inside Malaysia.',
     'Only a customer, reseller or referral holds a starting tier.':'Only a customer, a reseller or an introducer starts with a price drift.',
     'Starting tiers must name active tiered books.':'Start a drift only on a book that has price drift.',
-    'A starting drift is a number from -1 to +1, never a level.':'A starting drift is a number from -1 to +1.',
+    'A starting lift is a number from 0 to 2 (0% to 200%), never a level.':'A starting % is from 0 to 200.',
     'Starting tiers must use active tiered books and current level names.':'Start a drift only on a book that has price drift.',
     'Each map point must belong to a roster party and remain inside Malaysia.':'Each point must belong to a customer and sit inside Malaysia.',
     'Set hours or mark closed for each day of the week.':'Set hours, or mark closed, for each day.',
@@ -2475,12 +2475,12 @@ export const OWNER_JS = `
     var driftBooks=books.filter(function(item){return item.drift;});
     var idDrifts=driftBooks.map(function(item){
       var presets=item.driftPresets||[];
-      var select=makerTilesIn(id,['Starting price drift','record.add-id.drift',item.product,item.product],[{value:'',label:'Follows their record'}]
+      var select=makerTilesIn(id,['Starting price drift','record.add-id.drift',item.product,item.product],[{value:'',label:'Not set, the Set Price'}]
         .concat(presets.map(function(preset){return {value:String(preset.value),
           label:preset.name+' ('+(preset.value>0?'+':'')+Number(preset.value).toFixed(2)+')'};}))
         .concat([{value:'typed',label:'Typed'}]));
       var typed=makerField(id,['Drift','record.add-id.drift-value',item.product,item.product],'number','',0.05);
-      typed.min='-1';typed.max='1';typed.step='0.05';typed.placeholder='-1 to 1';typed.closest('label').hidden=true;
+      typed.min='0';typed.max='2';typed.step='0.05';typed.placeholder='0 to 2';typed.closest('label').hidden=true;
       select.addEventListener('change',function(){typed.closest('label').hidden=select.value!=='typed';});
       return {product:item.product,select:select,typed:typed};
     });
@@ -2508,8 +2508,8 @@ export const OWNER_JS = `
           var driftItem=idDrifts[driftIndex], choice=driftItem.select.value, driftValue;
           if(choice==='typed'){
             var raw=driftItem.typed.value.trim();driftValue=Number(raw);
-            if(!raw||!Number.isFinite(driftValue)||driftValue< -1||driftValue>1){
-              idStatus.textContent='Enter a drift from -1 to +1.';idBusy=false;return;
+            if(!raw||!Number.isFinite(driftValue)||driftValue<0||driftValue>2){
+              idStatus.textContent='Enter a % from 0 to 2 (0.2 is 20%).';idBusy=false;return;
             }
           }else if(choice!=='')driftValue=Number(choice);
           else continue;
@@ -3488,7 +3488,7 @@ export const OWNER_JS = `
       }
       var driftSection=makerForm('pricing');
       driftSection.appendChild(el('h3',null,'Price drift'));
-      driftSection.appendChild(el('p','msg','Only on a book with price drift. Moves one customer’s price up (+) or down (-); 0 fixes it at the set price; Clear lets it follow their record.'));
+      driftSection.appendChild(el('p','msg','Only on a book with price drift. Lifts one customer on the Set Price by a % (0 to 2, so 0.2 is 20%); 0 is the Set Price, the least anyone pays. Clear sets it back to 0.'));
       tradeSection.parentNode.insertBefore(driftSection,tierSection.nextSibling);
       var driftCodes=catalog.driftCustomers||[], driftBooks=(catalog.products||[]).filter(function(item){ return item.drift; });
       if(!driftCodes.length||!driftBooks.length){
@@ -3498,9 +3498,8 @@ export const OWNER_JS = `
         driftCodes.forEach(function(code){ var option=el('option',null,code); option.value=code; driftCode.appendChild(option); });
         driftCodeWrap.appendChild(driftCode); driftSection.appendChild(driftCodeWrap);
         var driftProduct=makerTilesIn(driftSection,['Book','record.drift.book'],driftBooks.map(function(item){ return bookItem(item.product); }));
-        var driftValue=makerField(driftSection,['Drift, -1 to +1','record.drift.value'],'number','','0.05');
-        driftValue.min='-1'; driftValue.max='1';
-        driftValue.removeAttribute('inputmode');   /* an iPhone's decimal pad has no minus key; its number keyboard does */
+        var driftValue=makerField(driftSection,['Their % lift, 0 to 2','record.drift.value'],'number','','0.05');
+        driftValue.min='0'; driftValue.max='2';
         var driftState=el('p','msg'); driftSection.appendChild(driftState);
         var driftAnswer=el('p','msg'); driftAnswer.setAttribute('role','status'); driftSection.appendChild(driftAnswer);
         var driftPending=false, driftAt=null, driftSignature='';
@@ -3508,12 +3507,13 @@ export const OWNER_JS = `
         function driftCardOf(){
           return (catalog.driftCards||[]).filter(function(card){ return card.code===driftCode.value&&card.product===driftProduct.value; })[0]||null;
         }
-        function driftFormat(value){ return (value>=0?'+':'')+Number(value).toFixed(2); }
+        function driftFormat(value){ return Number(value).toFixed(2); }
         function driftRefresh(){
           var card=driftCardOf();
-          if(card&&card.held) driftState.textContent='Set by hand: '+driftFormat(card.value)+' (scale -1 to +1).';
-          else if(card&&typeof card.current==='number') driftState.textContent='From their record: '+driftFormat(card.current)+'.';
-          else driftState.textContent='From their record. No drift is read yet.';
+          var hint=card&&typeof card.suggest==='number'?' Suggested: '+driftFormat(card.suggest)+'.':'';
+          if(card&&card.held) driftState.textContent='Set by you: '+driftFormat(card.value)+' (0 to 2).'+hint;
+          else driftState.textContent='Not set: the Set Price.'+hint;
+          useSuggest.hidden=!(card&&typeof card.suggest==='number');
           clearDrift.hidden=!(card&&card.held);
         }
         driftCode.addEventListener('change',driftRefresh); driftProduct.addEventListener('change',driftRefresh);
@@ -3521,24 +3521,29 @@ export const OWNER_JS = `
         makerButton(driftActions,['Send the drift','record.drift.set'],async function(send){
           if(driftPending) return;
           var raw=driftValue.value.trim(), value=Number(raw);
-          if(!raw||!Number.isFinite(value)||value < -1||value > 1){
-            driftAnswer.textContent='Enter a drift from -1 to +1.';
+          if(!raw||!Number.isFinite(value)||value < 0||value > 2){
+            driftAnswer.textContent='Enter a % from 0 to 2 (0.2 is 20%).';
             return;
           }
           value=Number(value.toFixed(2));
           var body={code:driftCode.value,product:driftProduct.value,tier:value};
           var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
           body.at=driftAt; driftPending=true;
-          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. The drift changes once you approve it.'; loadMaker(); }
+          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
           catch(error){ refusal(driftAnswer,error); }
           driftPending=false;
         },true,driftReceiptComplete);
-        var clearDrift=makerButton(driftActions,['Follow their record','record.drift.clear'],async function(send){
+        var useSuggest=actOn(el('button','salt-ghost','Use the suggestion'),'record.drift.suggest'); useSuggest.type='button'; driftActions.appendChild(useSuggest);
+        useSuggest.onclick=function(){
+          var card=driftCardOf();
+          if(card&&typeof card.suggest==='number') driftValue.value=String(card.suggest);
+        };
+        var clearDrift=makerButton(driftActions,['Set back to 0','record.drift.clear'],async function(send){
           if(driftPending) return;
           var body={code:driftCode.value,product:driftProduct.value,tier:null};
           var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
           body.at=driftAt; driftPending=true;
-          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their price follows their record once you approve it.'; loadMaker(); }
+          try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their % goes back to 0 once you approve it.'; loadMaker(); }
           catch(error){ refusal(driftAnswer,error); }
           driftPending=false;
         },false,driftReceiptComplete);

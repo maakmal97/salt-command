@@ -276,10 +276,10 @@
   "replace": "'record.add-id.tier',item.product,item.product],[{value:'none',label:'Not set'}]"
  },
  {
-  "name": "a new customer's drift that follows their record sends a word",
+  "name": "a new customer's starting % that is not set sends a word",
   "file": "stmt/owner.js",
-  "find": "'record.add-id.drift',item.product,item.product],[{value:'',label:'Follows their record'}]",
-  "replace": "'record.add-id.drift',item.product,item.product],[{value:'none',label:'Follows their record'}]"
+  "find": "'record.add-id.drift',item.product,item.product],[{value:'',label:'Not set, the Set Price'}]",
+  "replace": "'record.add-id.drift',item.product,item.product],[{value:'none',label:'Not set, the Set Price'}]"
  },
  {
   "name": "an associate appointed sends the stream for the kind",
@@ -330,9 +330,9 @@
   "replace": ".adm .maker-marks .salt-option__face{justify-content:flex-start}"
  },
  {
-  "name": "the drift field keeps the decimal pad",
+  "name": "the % lift field loses the decimal pad",
   "file": "stmt/owner.js",
-  "find": "        driftValue.removeAttribute('inputmode');",
-  "replace": ""
+  "find": "driftValue.min='0'; driftValue.max='2';",
+  "replace": "driftValue.min='0'; driftValue.max='2'; driftValue.removeAttribute('inputmode');"
  }
 ]

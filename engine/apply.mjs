@@ -9,6 +9,7 @@
  * It is NOT in tools/engine.mjs's list, so the master's ENGINE block does not carry it, and nothing under stmt/ may import it. */
 import POSITION_ENGINE from "./position.mjs";
 import PRICING_ENGINE from "./pricing.mjs";
+import PRICING_RULES from "./rules.mjs";
 import { verifiedVaultRegistration } from "../src/vault-pair.js";
 import { CORRECT_BOOL, CORRECT_DATE, CORRECT_NUM_NN, CORRECT_NUM_POS, CORRECT_TEXT } from "../src/drafter.js";
 
@@ -368,7 +369,7 @@ export function applyAmend(row, pay, dir, note) {   /* v413: exported so the sui
 }
 
 /* v670: a tier as words, one level or a band set spelled band by band, so a refusal or a plan line never reads [object Object] */
-const sayLevel = (v) => v == null ? "not set" : typeof v === "number" ? "drift " + (v > 0 ? "+" : "") + v : typeof v === "string" ? v
+const sayLevel = (v) => v == null ? "not set" : typeof v === "number" ? (+(v * 100).toFixed(2)) + "% lift" : typeof v === "string" ? v
   : (typeof v === "object" ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v));
 const APPOINTS = POSITION_ENGINE.ADDID_APPOINTS;
 export const STATEMENT_KINDS = ["customer", "reseller", "referral"];
@@ -405,6 +406,11 @@ export function planBatch(book, staged, notes, ctx) {
   const TODAY = ctx.today, pinnedInMaster = ctx.pinnedInMaster;
   const tierNames = () => ctx.tierNames, driftBooks = () => ctx.driftBooks;
   const tierOk = (p, v) => driftBooks().includes(p) ? PRICING_ENGINE.driftOk(v) : PRICING_ENGINE.levelShapeOk(v, tierNames());
+  /* 18 OCT 2026, HIS DECISION: A SALT FIGURE STAMPED BEFORE THE % LIFT BEGAN WAS SET IN THE OLD UNIT (a drift, -1 to +1). The fold refuses it, naming why,
+     and never reads it as a %: 0.3 then meant 30% of the floor, now 30% on the Set Price. A clear (null) carries no figure and passes. */
+  const liftAt = Date.parse(PRICING_RULES.RULES.liftSince);
+  const oldLift = (it, p, v) => driftBooks().includes(p) && v !== null && v !== undefined && Date.parse((it.entry && it.entry.at) || it.id) < liftAt;
+  const oldLiftWhy = (c, p) => `${c}'s ${p} figure was set before ${PRICING_RULES.RULES.liftSince}, in the old drift unit (-1 to +1); set it again as a % from 0 to 200 (0 to 2)`;
   const out = { items: [], refused: [], moves: [] };
   let tagged = 0;
   let rows = (staged && staged.approved) || [];
@@ -736,8 +742,9 @@ export function planBatch(book, staged, notes, ctx) {
       if (onRoster && !appoints && !partner) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
-      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => driftBooks().includes(p) ? !PRICING_ENGINE.driftOk(rt[p]) : !tierNames().includes(rt[p]));   /* 05 Oct 2026: a drift on a drift book, a level on any other */   // v645, per product since v646
-      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLevel(rt[p]) + (driftBooks().includes(p) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ")}` }); continue; }
+      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => driftBooks().includes(p) ? !PRICING_ENGINE.driftOk(rt[p]) : !tierNames().includes(rt[p])), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p]));   /* 05 Oct 2026: a drift on a drift book, a level on any other */   // v645, per product since v646
+      if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLevel(rt[p]) + (driftBooks().includes(p) ? " is not a % from 0 to 200 (0 to 2)" : " is not a tier")).join(" and ")}` }); continue; }
+      if (rtOld.length) { out.refused.push({ id: it.id, why: rtOld.map((p) => oldLiftWhy(r.code, p)).join(" and ") }); continue; }
       entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null, partner };
       if (partner) entry.does.push(`make ${r.code} a partner: they pay cost, the floor to the sen, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
@@ -785,12 +792,14 @@ export function planBatch(book, staged, notes, ctx) {
       const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
       /* v670: a tier may be a band set, so the check is the engine's shape rule rather than a name lookup */
-      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a drift, -1 to +1, on a drift book, held as a tier was; a level on any other */
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift, 0 to 2), held as a tier was; a level on any other */
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
         out.refused.push({ id: it.id, why: !codes.length ? "a tier entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
-          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLevel(x[2]) + (driftBooks().includes(x[1]) ? " is not a drift from -1 to +1" : " is not a tier")).join(" and ") });
+          : noProd.length ? `the tier entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLevel(x[2]) + (driftBooks().includes(x[1]) ? " is not a % from 0 to 200 (0 to 2)" : " is not a tier")).join(" and ") });
         continue;
       }
+      const oldTs = pairs.filter((x) => oldLift(it, x[1], x[2]));
+      if (oldTs.length) { out.refused.push({ id: it.id, why: oldTs.map((x) => oldLiftWhy(x[0], x[1])).join(" and ") }); continue; }
       entry.tiers = r.tiers;
       entry.does.push(`set ${pairs.map(([c, p, v]) => `${c}'s ${p} tier to ${sayLevel(v)}`).join(", ")}`);
     } else if (it.collection === "rename") {

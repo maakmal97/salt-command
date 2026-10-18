@@ -2595,7 +2595,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `queue.details` | Server-held entry card (key: the entry id) | Opens the entry's reference, when it was sent and its state, as a list of names and values. |
 | `queue.withdraw` | Server-held entry card (key: the entry id) | Withdraws the uploaded entry, or finishes a withdrawal begun. |
 | `record.add-id.drift` | Record, Add ID, one for each drift book (key: the book) | The starting drift: automatic, a preset or typed. |
-| `record.add-id.drift-value` | Record, Add ID, one for each drift book (key: the book) | The typed starting drift, from -1 to +1. |
+| `record.add-id.drift-value` | Record, Add ID, one for each drift book (key: the book) | The typed starting % lift, from 0 to 2. |
 | `record.add-id.link` | Record, Add ID | A Maps or Waze link, read on this device. |
 | `record.add-id.name` | Record, Add ID | The name, which never leaves this device in the clear. |
 | `record.add-id.parent` | Record, Add ID | The parent or associate, for a downstream buyer or a resale account. |
@@ -2626,10 +2626,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `record.count.send` | Record, stock count | Records the count. |
 | `record.count.units` | Record, stock count | The units counted. |
 | `record.drift.book` | Record, customer drift | The book. |
-| `record.drift.clear` | Record, customer drift | Clears it, returning the customer to automatic drift. |
+| `record.drift.clear` | Record, customer drift | Clears it, returning the customer to 0, the Set Price. |
 | `record.drift.customer` | Record, customer drift | The customer. |
-| `record.drift.set` | Record, customer drift | Sets the held drift for review. |
-| `record.drift.value` | Record, customer drift | The drift, from -1 to +1. |
+| `record.drift.set` | Record, customer drift | Sets the held % lift for review. |
+| `record.drift.suggest` | Record, customer drift | Fills the box with the engine's suggested % lift; it sends nothing. |
+| `record.drift.value` | Record, customer drift | The % lift, from 0 to 2 (0.2 is 20%). |
 | `record.partner.customer` | Record, partner | The customer to make a partner. |
 | `record.partner.make` | Record, partner | Queues a name-free partner entry for review, as the Desk's Make partner does; a partner pays cost. Drift books only. |
 | `record.form` | Record, the menu of Entry, Customers and Pricing (key: the form's name as a slug) | Opens that form alone, in the pane beside the menu from 860px and in the menu's place below it, with a way back. Reads and sends nothing. |

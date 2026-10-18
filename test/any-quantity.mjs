@@ -29,31 +29,33 @@ export async function run({ ok }) {
     for (const id of codes) R.rungs.forEach((q, i) => { n1++; const a = E.quoteAt(q, C, P, drift[id]); if (cards[id][i] == null || Math.abs(a - cards[id][i]) > 0.004) diff++; }); }
   ok(n1 > 100 && diff === 0, "the desk's card at every rung of every book is the engine's quoteAt, for every account: " + diff + " of " + n1 + " differ");
 
-  /* 2. THE WALK ONLY EVER LOWERS A RUNG: against the rungs-only walk (the rule before 05 Oct 2026), a drift book's rung moves
-     down or not at all, and a stated board's rung is his typed price exactly */
+  /* 2. A SALT RUNG IS NEVER UNDER THE SET PRICE NOR OVER THE CEILING (18 Oct 2026: the Set Price is the least any customer but a partner pays,
+     and a customer's % only lifts it), and a stated board's rung is his typed price exactly */
   const { R: RS, P: PS, C: CS, codes: cs, drift: ds } = ctx.salt;
-  const before = (q, d) => { const w0 = E.driftWalk(RS.rungs.filter((r) => r < q - 0.009).concat([q]), CS, PS, d); return E.cardPrice(null, E.floorTotal(q, CS, PS), w0[w0.length - 1].p); };
-  let up = 0, down = 0, same = 0;
-  for (const id of cs) for (const q of RS.rungs) { const b = before(q, ds[id]), a = E.quoteAt(q, CS, PS, ds[id]); if (a > b + 0.004) up++; else if (a < b - 0.004) down++; else same++; }
-  ok(up === 0 && down > 0 && same > 0, "walked over the grid, a salt rung moves down or not at all, never up: " + JSON.stringify({ up, down, same }));
+  let under = 0, overCeil = 0, same = 0;
+  const setRow = E.driftWalk(E.walkSizes(RS, RS.rungs), CS, PS, 0);
+  for (const id of cs) for (const q of RS.rungs) { const a = E.quoteAt(q, CS, PS, ds[id]), r = setRow.find((x) => Math.abs(x.q - q) < 0.009);
+    if (a < r.set - 0.004) under++; else if (a > r.ceiling + 0.004) overCeil++; else same++; }
+  ok(under === 0 && overCeil === 0 && same > 100, "a salt rung is never under the Set Price nor over the ceiling, for every account: " + JSON.stringify({ under, overCeil, same }));
   let typedOff = 0;
   for (const p of ["oil", "candy", "rice"]) { const { R, P, C } = ctx[p]; for (const q of R.rungs) if (E.quoteAt(q, C, P, 0) !== +R.fixed[String(q)]) typedOff++; }
   ok(typedOff === 0, "every rung of a stated board quotes his typed price exactly: " + typedOff + " differ");
   /* the worked example is pinned to the COGS it was worked at, RM 64 a unit (lot p035 of 05 Oct 2026), never the live lot's:
      a new salt lot moves the live board by rule 5 and must not turn this red */
   const C64 = { ...CS, repl: 60, lot: 60, freight: 4, landed: 64, inventoriable: 64, eff: 64, effEx: 64 };
-  ok(E.quoteAt(6.25, C64, PS, 0) === 670 && E.quoteAt(1, C64, PS, 0) === 160 && E.quoteAt(12.5, C64, PS, 0) === 1090,
-    "the stranger's board at RM 64 COGS: 6.25 unit comes down to RM 670 (RM 660 before the Floor and the grid moved to the five, 18 Oct 2026) and 1 and 12.5 unit hold at RM 160 and RM 1,090: " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, C64, PS, 0))));
+  ok(E.quoteAt(6.25, C64, PS, 0) === 665 && E.quoteAt(1, C64, PS, 0) === 130 && E.quoteAt(12.5, C64, PS, 0) === 1080,
+    "the stranger's board at RM 64 COGS, on his four points (18 Oct 2026): 1 unit RM 130, 6.25 unit RM 665 and 12.5 unit RM 1,080: " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, C64, PS, 0))));
 
-  /* 3. THE RATE NEVER RISES across each book's grid, for every account; the one exception is where the floor holds the price
-     (the floor's own ten, rule 5), where it can rise by less than a ten over the size */
+  /* 3. THE RATE NEVER RISES BY MORE THAN ONE GRID STEP across each book's grid, for every account (18 Oct 2026, his choice on salt: the
+     law is on the exact rate, the price rounds down to the five, so a rate may rise by under a step over the size between two quarters); where the floor holds
+     the price it can rise by the same */
   let rises = 0, held = 0, pts = 0;
   for (const p of books) { const { P, C, codes, drift } = ctx[p];
     for (const id of codes) { const g = E.quoteGrid(C, P, drift[id]);
       for (let i = 1; i < g.p.length; i++) { pts++; const q0 = g.min + (i - 1) * g.step, q1 = g.min + i * g.step;
-        if (g.p[i] / q1 > g.p[i - 1] / q0 + 1e-9) { const to = P.LADDER.round.to, lift = Math.ceil((E.floorTotal(q1, C, P) - 0.009) / to) * to;
-          if (g.p[i] === lift && g.p[i] - (g.p[i - 1] / q0) * q1 < to) held++; else rises++; } } } }
-  ok(pts > 5000 && rises === 0, "the rate never rises from one grid point to the next on any book, the floor's own ten apart: " + JSON.stringify({ rises, held, pts }));
+        if (g.p[i] / q1 > g.p[i - 1] / q0 + 1e-9) { const to = P.LADDER.round.to;
+          if (g.p[i] - (g.p[i - 1] / q0) * q1 < to + 1e-9) held++; else rises++; } } } }
+  ok(pts > 5000 && rises === 0, "the quoted rate never rises by a step of the grid or more from one grid point to the next on any book: " + JSON.stringify({ rises, held, pts }));
 
   /* 4. THE GRID IS quoteAt AT EVERY POINT, one walk a book; and a book's grid is its TIER_RULE's {min, step, max} */
   let gridOff = 0;

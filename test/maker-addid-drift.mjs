@@ -16,7 +16,7 @@ export async function run({ ok }) {
     tierNames: [],
     byProduct: {
       salt: { stockCost: 40, inputs: { policy: { tierRule: {
-        drift: { up: 0.3, down: 0.2 }, presets: { Better: -0.3, Standard: 0, Higher: 0.3 }
+        drift: true, presets: { Set: 0, "+5%": 0.05, "+10%": 0.1, "+15%": 0.15, "+20%": 0.2, "+30%": 0.3 }
       } } } }
     }
   };
@@ -25,8 +25,9 @@ export async function run({ ok }) {
       PROD_OPENING: { salt: { qty: 0, costPerKg: null } }, PEOPLE: { departed: [] } } };
   const catalog = makerInputCatalog(mirror);
   check(JSON.stringify(catalog.products.find((item) => item.product === "salt").driftPresets)
-    === JSON.stringify([{ name: "Better", value: -0.3 }, { name: "Standard", value: 0 }, { name: "Higher", value: 0.3 }]),
-  "Add ID catalog takes drift preset names and values from the active book rule");
+    === JSON.stringify([{ name: "Set", value: 0 }, { name: "+5%", value: 0.05 }, { name: "+10%", value: 0.1 }, { name: "+15%", value: 0.15 },
+      { name: "+20%", value: 0.2 }, { name: "+30%", value: 0.3 }]),
+  "Add ID catalog takes the % presets, in 5% steps, from the active book rule");
 
   const sqlite = new DatabaseSync(":memory:");
   for (const file of readdirSync(new URL("../migrations/", import.meta.url))
@@ -145,9 +146,9 @@ export async function run({ ok }) {
     check(await waitFor(() => /open on this phone/.test(section.textContent)) && doc.getElementById("vaultPass").value === "",
       "the one unlock opens the page for Add ID, which has no password field of its own");
     check(!!driftSelect && !!typed && driftSelect.value === "" && typed.closest("label").hidden
-      && [...driftSelect.querySelectorAll("input")].map((option) => option.value).join() === ",-0.3,0,0.3,typed"
-      && typed.min === "-1" && typed.max === "1" && typed.step === "0.05",
-    "generated Add ID offers automatic by default, the three rule presets, and a bounded typed drift: "
+      && [...driftSelect.querySelectorAll("input")].map((option) => option.value).join() === ",0,0.05,0.1,0.15,0.2,0.3,typed"
+      && typed.min === "0" && typed.max === "2" && typed.step === "0.05",
+    "generated Add ID offers none by default, the rule presets, and a typed % bounded 0 to 2: "
       + [...section.querySelectorAll("fieldset.maker-tiles legend")].map((legend) => legend.textContent).join("|"));
     if (!driftSelect || !typed) throw new Error("Add ID did not render the starting drift controls.");
     pick("typed");
@@ -161,11 +162,11 @@ export async function run({ ok }) {
     const fields = section.querySelectorAll("input:not([type=radio])");
     const outcomes = [
       { name: "Ada", choice: "", expected: null },
-      { name: "Bert", choice: "-0.3", expected: { salt: -0.3 } },
+      { name: "Bert", choice: "0.05", expected: { salt: 0.05 } },
       { name: "Cora", choice: "0", expected: { salt: 0 } },
       { name: "Dara", choice: "0.3", expected: { salt: 0.3 } },
-      { name: "Eli", choice: "typed", value: "-1", expected: { salt: -1 } },
-      { name: "Faye", choice: "typed", value: "1", expected: { salt: 1 } },
+      { name: "Eli", choice: "typed", value: "0", expected: { salt: 0 } },
+      { name: "Faye", choice: "typed", value: "2", expected: { salt: 2 } },
       { name: "Gail", choice: "typed", value: "0.125", expected: { salt: 0.125 } }
     ];
     for (const outcome of outcomes) {
@@ -199,8 +200,14 @@ export async function run({ ok }) {
     submit.click();
     await waitFor(() => !submit.disabled);
     check(bridged.length === beforeInvalid && pair.revision === revisionBeforeInvalid
-      && status.textContent === "Enter a drift from -1 to +1.",
-    "typed drift 3 is refused before encryption, pair mutation or the Add ID route");
+      && status.textContent === "Enter a % from 0 to 2 (0.2 is 20%).",
+    "a typed % of 3 is refused before encryption, pair mutation or the Add ID route");
+    typed.value = "-0.1";
+    submit.click();
+    await waitFor(() => !submit.disabled);
+    check(bridged.length === beforeInvalid && pair.revision === revisionBeforeInvalid
+      && status.textContent === "Enter a % from 0 to 2 (0.2 is 20%).",
+    "and a negative one");
   } finally {
     dom.window.close();
   }

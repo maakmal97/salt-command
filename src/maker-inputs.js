@@ -226,7 +226,7 @@ function driftCustomerCode(id) {
   return typeof id === "string" && !id.startsWith("S") && !POSITION_ENGINE.isBucket(id);
 }
 
-/** The held override or effective record drift the Desk's drift card reads; no pricing is computed here. */
+/** The held % lift (0 to 2) or nought, and the engine's suggestion beside it, which the Desk's drift card reads; no pricing is computed here. */
 function driftCards(book, roster, products) {
   const driftProducts = products.filter((item) => item.drift).map((item) => item.product);
   const held = object(book.state.TIER_OF) ? book.state.TIER_OF : {};
@@ -235,9 +235,10 @@ function driftCards(book, roster, products) {
     for (const product of driftProducts) {
       const set = object(held[id]) && Object.hasOwn(held[id], product)
         && PRICING_ENGINE.driftOk(held[id][product]);
-      const drift = book.pricing.byProduct[product].drift;
-      const current = object(drift) && PRICING_ENGINE.driftOk(drift[id]) ? drift[id] : null;
-      cards.push({ code: id, product, held: !!set, value: set ? held[id][product] : null, current });
+      const lift = book.pricing.byProduct[product].lift, sug = book.pricing.byProduct[product].suggest;
+      const current = object(lift) && PRICING_ENGINE.driftOk(lift[id]) ? lift[id] : null;
+      const suggest = object(sug) && PRICING_ENGINE.driftOk(sug[id]) ? sug[id] : null;
+      cards.push({ code: id, product, held: !!set, value: set ? held[id][product] : null, current, suggest });
     }
   }
   return cards;
@@ -740,7 +741,7 @@ export function makerTierSet(body, book) {
   if (rule.drift) {
     if (!driftCustomerCode(body.code)) return { error: "A supplier cannot hold customer drift." };
     if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
-      return { error: "Choose a drift from -1 to +1, or clear it." };
+      return { error: "Choose a % lift from 0 to 200% (0 to 2), or clear it." };
   } else {
     const names = (book.pricing && book.pricing.tierNames) || [];
     if (body.tier !== null && !PRICING_ENGINE.levelShapeOk(body.tier, names))
@@ -1153,7 +1154,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
       for (const [product, tier] of Object.entries(tiers)) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
         if (active(product, book) && rule && rule.drift && !PRICING_ENGINE.driftOk(tier))
-          return { error: "A starting drift is a number from -1 to +1, never a level." };
+          return { error: "A starting lift is a number from 0 to 2 (0% to 200%), never a level." };
         if (!active(product, book) || !rule || rule.fixed
           || (!rule.drift && !PRICING_ENGINE.levelShapeOk(tier, book.pricing.tierNames || [])))
           return { error: "Starting tiers must use active tiered books and current level names." };

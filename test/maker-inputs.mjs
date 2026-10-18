@@ -161,17 +161,18 @@ export async function run({ ok, KV } = {}) {
     "Tier input cannot forward prose or arbitrary tier maps.");
   const noRule = book(); delete noRule.pricing.byProduct.salt.inputs;
   check(!!tier({}, noRule).error, "Missing tier policy fails closed.");
-  /* 05 Oct 2026: on a drift book a customer's price is their held drift or the automatic record */
-  const driftBook = book(); driftBook.pricing.byProduct.salt.inputs.policy.tierRule = { drift: { up: 0.3, down: 0.2 } };
+  /* 05 Oct 2026: on a drift book a customer's price is their held figure (18 Oct 2026: a % lift, 0 to 2) or the Set Price */
+  const driftBook = book(); driftBook.pricing.byProduct.salt.inputs.policy.tierRule = { drift: true };
   check(tier({ tier: 0.3 }, driftBook).draft?.row.tiers["CX1-ZED"].salt === 0.3
     && tier({ tier: null }, driftBook).draft?.row.tiers["CX1-ZED"].salt === null
     && !!tier({ tier: "Gold" }, driftBook).error,
-    "On a drift book the existing tier-set road accepts a drift and null clear, and refuses a level.");
+    "On a drift book the existing tier-set road accepts a % lift and null clear, and refuses a level.");
   const addDrift = (tiers) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers,
     vault: { v: 1, salt: "cw==", iv: "aXY=", ct: "Y3Q=" } }, driftBook);
-  check(addDrift({ salt: -0.3 }).entry?.payload.tiers.salt === -0.3 && addDrift({ salt: -0.3 }).draft?.collection === "roster"
-    && /from -1 to \+1, never a level/.test(addDrift({ salt: "Gold" }).error || "") && /from -1 to \+1, never a level/.test(addDrift({ salt: 1.5 }).error || ""),
-    "Add ID on a drift book starts the customer on a drift from -1 to +1 and refuses a level or a drift past one.");
+  check(addDrift({ salt: 0.3 }).entry?.payload.tiers.salt === 0.3 && addDrift({ salt: 0.3 }).draft?.collection === "roster"
+    && /from 0 to 2 \(0% to 200%\), never a level/.test(addDrift({ salt: "Gold" }).error || "") && /from 0 to 2 \(0% to 200%\), never a level/.test(addDrift({ salt: 2.5 }).error || "")
+    && /from 0 to 2 \(0% to 200%\), never a level/.test(addDrift({ salt: -0.3 }).error || ""),
+    "Add ID on a drift book starts the customer on a % lift from 0 to 2 and refuses a level, a negative and a % past 2.");
 
   const loan = makerLedgerInput("loan", { at, form: "salt", direction: "out", product: "salt",
     code: "CX1-ZED", date: "2026-10-01", amount: 2 }, book());

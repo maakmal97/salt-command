@@ -143,7 +143,7 @@ function tierNames() {
   return line ? (line.match(/'([^']+)'/g) || []).map((x) => x.slice(1, -1)) : [];
 }
 /* 05 Oct 2026: the books the master prices by drift, read off its own TIER_RULE (a product whose rule opens with drift), so
-   the fold refuses by book as the drafter does: a drift book takes a drift from -1 to +1 and no level, any other book a
+   the fold refuses by book as the drafter does: a drift book takes a % lift from 0 to 2 and no level, any other book a
    level (or a band set) and no drift */
 function driftBooks() {
   masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");

@@ -1,15 +1,15 @@
 [
  {
-  "name": "a drift figure changes in the engine module (the drift read off the record up by 0.01); the page is untouched, so only the node comparison can see it",
+  "name": "a lift figure changes in the engine module (the lift held, or nought, up by 0.01); the page is untouched, so only the node comparison can see it",
   "file": "engine/snapshot.mjs",
-  "find": "d:hand!=null?hand:a.d,sig:sig",
-  "replace": "d:hand!=null?hand:a.d+0.01,sig:sig"
+  "find": "d:hand!=null?hand:0,sig:sig",
+  "replace": "d:hand!=null?hand:0.01,sig:sig"
  },
  {
-  "name": "the same drift figure changes inside the master's inlined copy (the snapshot leaves the fixture, and the page leaves the module)",
+  "name": "the same lift figure changes inside the master's inlined copy (the snapshot leaves the fixture, and the page leaves the module)",
   "file": "master/salt_command.html",
-  "find": "d:hand!=null?hand:a.d,sig:sig",
-  "replace": "d:hand!=null?hand:a.d+0.01,sig:sig"
+  "find": "d:hand!=null?hand:0,sig:sig",
+  "replace": "d:hand!=null?hand:0.01,sig:sig"
  },
  {
   "name": "isPartner is false for everyone in the engine module: no card is struck at cost and no drift reads 'partner'",

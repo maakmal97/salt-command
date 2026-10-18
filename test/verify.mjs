@@ -50984,6 +50984,10 @@ section("18 Oct 2026: the Floor rounds up to the next RM 5, the Ceiling is three
 await (async () => {
   await (await import("./floor-basis.mjs")).run({ ok });
 })();
+section("18 Oct 2026: salt's Set Price is the minimum on his four points, his % per customer prices, the engine only suggests");
+await (async () => {
+  await (await import("./lift-pct.mjs")).run({ ok });
+})();
 section("09 Oct 2026: a partner is set from the phone and keeps every associate property");
 await (async () => {
   await (await import("./partner-control.mjs")).run({ ok });
@@ -53406,13 +53410,13 @@ await (async () => {
   w.eval("setProd('salt');recompute();");
 })();
 
-/* 05 OCT 2026, HIS DECISION: SALT IS ONE SET PRICE, MOVED BY EACH CUSTOMER'S DRIFT (Model B). Per size the floor (COGS times
-   the size), the ceiling (three times it) and the Set Price between them: the floor times a multiple sliding in the log of size
-   from 2.813 at half a unit to 1.363 at 12.5, down to the ten, lifted, capped and walked under the rate law. A drift from -1 to
-   +1 moves it up by d times the lesser of the room to the ceiling and 0.3 of the floor, or down by |d| times the lesser of the
-   room to the floor and 0.2 of it. The drift is read off the record unless he sets one; a late payer is priced up. The held
-   salt levels retired with it. Each assertion was proved red by its own mutation, one at a time. */
-section("05 Oct 2026: salt is the Set Price moved by each customer's drift, read off their record unless he sets one");
+/* 05 OCT 2026, HIS DECISION: SALT IS ONE SET PRICE, WITH A FIGURE PER CUSTOMER (Model B); 18 OCT 2026: THE SET PRICE IS THE MINIMUM, AND THE
+   FIGURE IS HIS % LIFT. Per size the floor (COGS times the size, up to the five), the ceiling (three times it) and the Set Price between
+   them: the floor times a multiple sliding in the log of size between his four points, down to the five, lifted by the ringgit margin of the
+   smaller sizes and held between the floor and the ceiling. A customer's % (0 to 2) is applied inside that walk; nothing automatic prices:
+   the record is read for the card and the engine only suggests one (test/lift-pct.mjs holds the new rule's own checks). Each assertion was
+   proved red by its own mutation, one at a time. */
+section("05 Oct 2026: salt is the Set Price and a per-customer figure, his to set (18 Oct 2026: a % lift on the Set Price, nothing automatic)");
 await (async () => {
   const E = (await import("../engine/pricing.mjs")).default;
   const { openMaster } = await import("../tools/payload.mjs");
@@ -53420,39 +53424,37 @@ await (async () => {
   const rd = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
   w.eval("setProd('salt');recompute();");
   const R = rd("TIER_RULE.salt"), P = { ...rd("pxPolicy()"), tierRule: R };
-  /* 1. THE MULTIPLE at its two anchors, held beyond them, and halfway in the log of size at 2.5 unit */
+  /* 1. THE MULTIPLE at his four points, held beyond them, and halfway in the log of size at 2.5 unit (between 1 and 6.25) */
   const m = (q) => +E.setMultiple(q, R).toFixed(4);
-  ok(m(0.5) === 2.813 && m(12.5) === 1.363 && m(0.25) === 2.813 && m(25) === 1.363 && m(2.5) === 2.088,
-    "the Set multiple is 2.813 at half a unit and 1.363 at 12.5, held beyond them, and 2.088 at 2.5 unit, halfway in the log: " + JSON.stringify([0.5, 12.5, 0.25, 25, 2.5].map(m)));
+  ok(m(0.5) === 2.5 && m(1) === 2 && m(6.25) === 1.67 && m(12.5) === 1.33 && m(0.25) === 2.5 && m(25) === 1.33 && m(2.5) === 1.835,
+    "the Set multiple is 2.5, 2, 1.67 and 1.33 at 0.5, 1, 6.25 and 12.5, held beyond them, and 1.835 at 2.5 unit, halfway in the log: " + JSON.stringify([0.5, 1, 6.25, 12.5, 0.25, 25, 2.5].map(m)));
   /* 2. HIS TWO WORKED BOARDS, on RM 64 and RM 59 of COGS */
   const Cof = (c) => ({ eff: c, effEx: c, landed: c });
-  const setAt = (c) => E.driftWalk(R.rungs, Cof(c), P, 0).map((r) => r.set);
-  /* 18 OCT 2026: the Floor rounds up to the RM 5 and salt's grid is the five, so the curve (replaced in the next piece of work)
-     reads these figures; they were 90, 160, 220 ... and 80, 140, 200 ... on the ten */
-  ok(JSON.stringify(setAt(64)) === "[95,160,230,280,330,390,435,485,525,565,670,1090]"
-    && JSON.stringify(setAt(59)) === "[80,150,205,260,310,360,405,450,490,520,615,1005]",
-    "the Set Price reads 95, 160 ... 1,090 on RM 64 of COGS and 80, 150 ... 1,005 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
-  /* 3. THE DRIFT BOTH WAYS at 12.5 unit on RM 64: floor 800, Set 1,090, ceiling 2,400. Up: 1,090 + d x min(1,310, 240); down:
-     1,090 - |d| x min(290, 160) */
-  const at125 = [-1, -0.5, 0, 0.5, 1].map((d) => E.driftAt(12.5, Cof(64), P, d).p);
-  /* 05 Oct 2026, HIS DECISION, THE WHOLE GRID IS WALKED: driftAt walks every quarter beneath 12.5, so the ends of the drift
-     come down where a quarter's rate held them (930 to 900, 1,210 to 1,200, 1,330 to 1,300); the Set Price stays 1,090 */
-  ok(JSON.stringify(at125) === "[930,1010,1090,1210,1330]",
-    "at 12.5 unit on RM 64 a drift of -1, -0.5, 0, +0.5 and +1 reads 930, 1,010, 1,090, 1,210 and 1,330 on the five grid, walked over it: " + JSON.stringify(at125));
+  const setAt = (c) => E.driftWalk(E.walkSizes(R, R.rungs), Cof(c), P, 0).filter((r) => R.rungs.some((q) => Math.abs(q - r.q) < 0.009)).map((r) => r.set);
+  /* 18 OCT 2026: the Floor rounds up to the RM 5 and the curve is his four points, walked over the whole grid (the board's own path), so the rungs
+     read these figures; they were 95, 160, 230 ... and 80, 150, 205 ... on the two ends and the ten of 05 Oct */
+  ok(JSON.stringify(setAt(64)) === "[85,130,185,240,290,350,395,450,500,545,665,1080]"
+    && JSON.stringify(setAt(59)) === "[75,120,170,225,275,320,370,420,465,500,615,1000]",
+    "the Set Price reads 85, 130 ... 1,080 on RM 64 of COGS and 75, 120 ... 1,000 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
+  /* 3. THE % LIFT at 12.5 unit on RM 64: floor 800, Set 1,080, ceiling 2,400. A % scales the multiple inside the walk, so 10% reads 1,175,
+     20% 1,275, 50% 1,595 and 100% 2,125, each on the whole grid beneath */
+  const at125 = [0, 0.1, 0.2, 0.5, 1].map((d) => E.driftAt(12.5, Cof(64), P, d).p);
+  ok(JSON.stringify(at125) === "[1080,1175,1275,1595,2125]",
+    "at 12.5 unit on RM 64 a % of 0, 10, 20, 50 and 100 reads 1,080, 1,175, 1,275, 1,595 and 2,125 on the five grid, walked over it: " + JSON.stringify(at125));
   /* 4. EVERY DRIFT STAYS IN THE BOX, on the ten, on its side of the Set Price, and never rises in rate with size where a ten
      down would still clear the floor */
   const bad4 = [];
-  for (const c of [59, 64]) for (const d of [-1, -0.6, -0.2, 0, 0.3, 0.7, 1]) {
-    const rows = E.driftWalk(R.rungs, Cof(c), P, d);
+  for (const c of [59, 64]) for (const d of [0, 0.05, 0.2, 0.5, 1, 2]) {
+    const rows = E.driftWalk(E.walkSizes(R, R.rungs), Cof(c), P, d);
     rows.forEach((r, i) => {
       const to = P.LADDER.round.to, lift = Math.ceil(r.floor / to - 1e-9) * to, cap = Math.max(Math.floor(r.ceiling / to + 1e-9) * to, lift);
       if (r.p < lift || r.p > cap || r.p % to) bad4.push([c, d, r.q, "box", r.p, lift, cap]);
-      if ((d > 0 && r.p < r.set) || (d < 0 && r.p > r.set)) bad4.push([c, d, r.q, "side", r.p, r.set]);
-      if (i && r.p / r.q > rows[i - 1].p / rows[i - 1].q + 1e-9 && r.p - to >= lift) bad4.push([c, d, r.q, "rate", r.p]);
+      if (r.p < r.set) bad4.push([c, d, r.q, "side", r.p, r.set]);
+      if (i && r.p / r.q - rows[i - 1].p / rows[i - 1].q > to / r.q + 1e-9) bad4.push([c, d, r.q, "rate", r.p]);
     });
   }
-  ok(!bad4.length, "every drifted price at every rung sits on the ten between the floor and the ceiling, on its side of the Set Price, its rate never rising with size: " + JSON.stringify(bad4.slice(0, 4)));
-  /* 5. THE AUTOMATIC DRIFT, off the record */
+  ok(!bad4.length, "every priced size, a % of 0 to 200 on the grid, sits on the five between the floor and the ceiling and never under the Set Price, its rate never rising by a step: " + JSON.stringify(bad4.slice(0, 4)));
+  /* 5. WHAT THE RECORD READS (18 Oct 2026: it fills the card's good and bad and prices nothing) */
   const A = R.auto, good = { settled: 12, onTime: 12, perMonth: 8, unitsPerMonth: 20, orders: 24, sinceLastDays: 3 };
   const best = E.autoDrift(good, A), longLate = E.autoDrift({ ...good, late: true, lateLong: true }, A);
   const shortLate = E.autoDrift({ late: true }, A), wo = E.autoDrift({ ...good, writtenOff: 260 }, A), od = E.autoDrift({ overdueDays: 7 }, A);
@@ -53461,45 +53463,43 @@ await (async () => {
     "a long late payer and a write-off read bad 1 and +0.5 whatever their good, a short late and a week overdue half: " + JSON.stringify([longLate.d, wo.d, shortLate.d, od.B]));
   ok(E.autoDrift({ settled: 2, onTime: 2 }, A).P === 0 && E.autoDrift({ orders: 24, sinceLastDays: 61 }, A).T === 0 && E.autoDrift({ orders: 24, sinceLastDays: 59 }, A).T === 1,
     "paying on time counts from three settlements, and the orders count for nothing after sixty days without one");
-  /* 6. THE DESK QUOTES EVERY NAMED CUSTOMER THEIR DRIFT at every size the board shows */
+  /* 6. THE DESK QUOTES EVERY NAMED CUSTOMER THEIR HELD % (nought where none) at every size the board shows */
   const q6 = rd("(function(){setProd('salt');recompute();var C=pxCost(),P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),bad=[],n=0,moved=0;"
     + "tierCustomers().filter(function(id){return !isPartner(id);}).forEach(function(id){var d=driftOf(id,'salt').d;if(Math.abs(d)>0.0001)moved++;shownSizes('salt').forEach(function(q){n++;"
     + "var x=PRICING_ENGINE.driftAt(q,C,P,d).p;if(cardQuote(id,q)!==x)bad.push([id,q,cardQuote(id,q),x]);});});return {n:n,moved:moved,bad:bad.slice(0,3)};})()");
-  ok(q6.n > 200 && q6.moved > 20 && !q6.bad.length, "every named customer is quoted the Set Price moved by their own drift at every size, " + q6.moved + " of them off nought: " + JSON.stringify(q6));
-  /* 7. HIS HAND-SET DRIFT WINS over the automatic one, which is still read beside it. The customer is the first with none set
-     (the book holds a hand-set drift since v1075, and the next customer to hold one must not move this): then the first reading
-     is the automatic drift itself, and the drift he sets in the test reads as the hand while the automatic stays what it was. */
+  ok(q6.n > 200 && q6.moved === 0 && !q6.bad.length, "every named customer is quoted the Set Price lifted by their own held % at every size, " + q6.moved + " of them off nought, the book holding none today: " + JSON.stringify(q6));
+  /* 7. HIS HAND-SET % is the figure that prices, the record still read beside it. The customer is the first with none set: the first
+     reading is nought, and the % he sets in the test reads as the hand while the record's reading stays what it was. */
   const free = "tierCustomers().find(function(c){return !isPartner(c)&&driftOf(c,'salt').hand==null;})";
   const h7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],a=driftOf(id,'salt'),q0=cardQuote(id,12.5);"
     + "TIER_OF[id]=Object.assign({},keep,{salt:1});var b=driftOf(id,'salt'),q1=cardQuote(id,12.5);if(keep)TIER_OF[id]=keep;else delete TIER_OF[id];"
     + "return {id:id,first:a.hand,auto:a.auto,hand:b.hand,d:b.d,bAuto:b.auto,q0:q0,q1:q1,top:PRICING_ENGINE.driftAt(12.5,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),1).p};})()");
-  ok(h7.id && h7.first === null && h7.hand === 1 && h7.d === 1 && h7.bAuto === h7.auto && h7.q1 === h7.top && h7.q1 > h7.q0, "a drift he sets wins over the one read off the record, and quotes the top of the drift: " + JSON.stringify(h7));
-  /* and one he already holds is his word too: the book's own hand-set customers read the hand beside their automatic drift,
-     and what the desk quotes them is the Set Price moved by the hand (forced here, so it holds with none on the book) */
-  const k7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],o=null;TIER_OF[id]=Object.assign({},keep,{salt:-0.7});"
-    + "try{var d=driftOf(id,'salt');o={hand:d.hand,d:d.d,auto:d.auto,card:cardQuote(id,3),set:PRICING_ENGINE.driftAt(3,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),-0.7).p};}"
+  ok(h7.id && h7.first === null && h7.hand === 1 && h7.d === 1 && h7.bAuto === h7.auto && h7.q1 === h7.top && h7.q1 > h7.q0, "a % he sets prices, and quotes the top of the lift: " + JSON.stringify(h7));
+  /* and one he already holds is his word too: it reads as the hand, and what the desk quotes is the Set Price lifted by it (forced here, so it holds with none on the book) */
+  const k7 = rd("(function(){var id=" + free + ",keep=TIER_OF[id],o=null;TIER_OF[id]=Object.assign({},keep,{salt:0.7});"
+    + "try{var d=driftOf(id,'salt');o={hand:d.hand,d:d.d,card:cardQuote(id,3),set:PRICING_ENGINE.driftAt(3,pxCost(),Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt}),0.7).p};}"
     + "finally{if(keep)TIER_OF[id]=keep;else delete TIER_OF[id];}return o;})()");
-  ok(k7 && k7.hand === -0.7 && k7.d === -0.7 && k7.auto !== -0.7 && k7.card === k7.set,
-    "and a drift already held reads as the hand beside the automatic one, and is the drift the customer is quoted: " + JSON.stringify(k7));
-  /* 8. A LATE PAYER IS PRICED UP (his decision), where the levels only offered one a level down */
-  const l8 = rd("(function(){var id=tierCustomers().find(function(c){var x=driftOf(c,'salt');return x.hand==null&&x.B===0;}),k=lateOf,a,b,da,db;"
-    + "try{lateOf=function(){return {on:false};};a=cardQuote(id,12.5);da=driftOf(id,'salt').d;"
-    + "lateOf=function(){return {on:true,why:'long',days:20,open:true,need:1,streak:0,since:null};};b=cardQuote(id,12.5);db=driftOf(id,'salt').d;}finally{lateOf=k;}"
-    + "return {id:id,a:a,b:b,da:da,db:db};})()");
-  ok(l8.id && l8.db === 0.5 && l8.da <= 0 && l8.b > l8.a, "the same customer read as a long late payer drifts to +0.5 and is quoted more: " + JSON.stringify(l8));
-  /* 9. NRV ON A DRIFT BOOK is the lowest an automatic drift quotes, -0.5, at the mean delivery */
+  ok(k7 && k7.hand === 0.7 && k7.d === 0.7 && k7.card === k7.set,
+    "and a % already held reads as the hand and is the figure the customer is quoted: " + JSON.stringify(k7));
+  /* 8. A LATE PAYER IS NO LONGER PRICED UP (18 Oct 2026: nothing automatic prices): the price and the figure stay, the record's reading and the suggestion move */
+  const l8 = rd("(function(){var id=tierCustomers().find(function(c){if(isPartner(c))return false;var x=driftOf(c,'salt');return x.hand==null&&x.sig.settled>=3&&!x.sig.late&&x.sig.writtenOff<0.01;}),k=lateOf,a,b,da,db,sa,sb;"
+    + "try{lateOf=function(){return {on:false};};a=cardQuote(id,12.5);da=driftOf(id,'salt').d;sa=suggestOf(id,'salt').pct;"
+    + "lateOf=function(){return {on:true,why:'long',days:20,open:true,need:1,streak:0,since:null};};b=cardQuote(id,12.5);db=driftOf(id,'salt').d;sb=suggestOf(id,'salt').pct;}finally{lateOf=k;}"
+    + "return {id:id,a:a,b:b,da:da,db:db,sa:sa,sb:sb,auto:[driftOf(id,'salt').auto]};})()");
+  ok(l8.id && l8.a === l8.b && l8.da === 0 && l8.db === 0 && l8.sb >= l8.sa + 0.2 - 1e-9, "the same customer read as a long late payer is quoted the same and holds the same (nought), and the suggestion rises by 20%: " + JSON.stringify(l8));
+  /* 9. NRV ON A DRIFT BOOK is the Set Price, the least anyone but a partner is quoted, at the mean delivery */
   const n9 = rd("(function(){setProd('salt');recompute();var F=ifrsPL('salt');var q=Math.max(0.5,avgDelivery('salt').mean||1),"
     + "toSell=(delShare('salt').v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q),P=Object.assign({},pxPolicy(),{tierRule:TIER_RULE.salt});"
-    + "return {rate:F.nrvRate,low:+(PRICING_ENGINE.driftAt(q,pxCost(),P,-0.5).p/q-toSell).toFixed(4),set:+(PRICING_ENGINE.driftAt(q,pxCost(),P,0).p/q-toSell).toFixed(4)};})()");
-  ok(n9.rate != null && Math.abs(n9.rate - n9.low) < 0.0001 && n9.low < n9.set,
-    "the shelf's NRV on the drift book is the lowest an automatic drift quotes, -0.5, under the Set Price, less the costs to sell: " + JSON.stringify(n9));
+    + "return {rate:F.nrvRate,set:+(PRICING_ENGINE.driftAt(q,pxCost(),P,0).p/q-toSell).toFixed(4),lifted:+(PRICING_ENGINE.driftAt(q,pxCost(),P,0.2).p/q-toSell).toFixed(4)};})()");
+  ok(n9.rate != null && Math.abs(n9.rate - n9.set) < 0.0001 && n9.set < n9.lifted,
+    "the shelf's NRV on the drift book is the Set Price, under a lifted one, less the costs to sell: " + JSON.stringify(n9));
   /* 10. THE DRIFT CARD: Set queues his figure, one out of range is refused, Clear queues the clear */
   const c10 = rd("(function(){setProdView('salt');switchTab('people');var id=" + free + ",el=document.getElementById('driftIn_'+id+'_salt');if(!el)return {el:false};"
     + "var n0=queue.length;el.value='0.4';driftSet(id,'salt');var q1=queue.length>n0?queue[queue.length-1].payload:null;"
     + "var n1=queue.length,el2=document.getElementById('driftIn_'+id+'_salt');el2.value='2';driftSet(id,'salt');var refused=queue.length===n1;"
     + "driftClear(id,'salt');var q2=queue[queue.length-1].payload;queue.splice(n0);render();"
     + "return {el:true,set:q1&&q1.tiers[id],refused:refused,clear:q2&&q2.tiers[id]};})()");
-  /* 11. ADD ID STARTS A CUSTOMER ON THE AUTOMATIC DRIFT, or on Better, Standard, Higher or one typed */
+  /* 11. ADD ID STARTS A CUSTOMER ON NO % (the Set Price), or on a preset or one typed: test/maker-addid-drift.mjs */
   /* 12. THE MIGRATION: no customer holds a salt level on the book, and nobody is proposed one */
   const bk12 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
   const held12 = Object.keys(bk12.TIER_OF || {}).filter((c) => bk12.TIER_OF[c] && "salt" in bk12.TIER_OF[c] && typeof bk12.TIER_OF[c].salt !== "number");
@@ -53522,25 +53522,25 @@ await (async () => {
   /* 14. THE DRAFTER AND THE FOLD TAKE A DRIFT ON SALT AND REFUSE A LEVEL THERE */
   const D = await import("../src/drafter.js"), F = await import("../tools/fold.mjs");
   const mir = { sales: [], purchases: [], state: { roster: ["CZ9-DA"], PRODUCTS: { salt: { name: "Salt" } }, TIER_OF: { "CZ9-DA": { salt: 0.2 } } },
-    pricing: { tierNames: rd("TIER_NAMES"), byProduct: { salt: { inputs: { policy: { tierRule: { drift: { up: 0.3, down: 0.2 } } } } } } } };
+    pricing: { tierNames: rd("TIER_NAMES"), byProduct: { salt: { inputs: { policy: { tierRule: { drift: true } } } } } } };
   const en = (s) => ({ at: "2026-10-05T01:00:00.000Z", payload: { mode: "tierset", tiers: { "CZ9-DA": { salt: s } } } });
-  const d1 = D.draftRow(en(-0.4), mir), d2 = D.draftRow(en("Gold"), mir), d3 = D.draftRow(en(1.5), mir);
-  ok(d1 && !d1.skip && d1.row.tiers["CZ9-DA"].salt === -0.4 && /drift \+0\.2 to drift -0\.4/.test(d1.flags.join(" ")) && /Gold is not a drift/.test(d2.skip || "") && /not a drift/.test(d3.skip || ""),
-    "the drafter takes a drift on salt, flags the move, and refuses a level or a drift past one: " + JSON.stringify([d1 && d1.flags, d2.skip, d3.skip]));
+  const d1 = D.draftRow(en(0.4), mir), d2 = D.draftRow(en("Gold"), mir), d3 = D.draftRow(en(2.5), mir), d4 = D.draftRow(en(-0.4), mir);
+  ok(d1 && !d1.skip && d1.row.tiers["CZ9-DA"].salt === 0.4 && /20% lift to 40% lift/.test(d1.flags.join(" ")) && /Gold is not a % from 0 to 200/.test(d2.skip || "") && /not a % from 0 to 200/.test(d3.skip || "") && /not a % from 0 to 200/.test(d4.skip || ""),
+    "the drafter takes a % on salt, flags the move, and refuses a level, a % past 200 and a negative one: " + JSON.stringify([d1 && d1.flags, d2.skip, d3.skip, d4.skip]));
   const bkF = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); bkF.roster.push("CZ9-DA");
   const itF = (n, s) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { salt: s } } }, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
-  const pl = F.plan(bkF, { ok: true, count: 2, approved: [itF(1, 0.4), itF(2, 1.5)] }, null);
-  ok(pl.refused.length === 1 && /drift \+1\.5 is not a drift from -1 to \+1/.test(pl.refused[0].why) && JSON.stringify(pl).indexOf("drift +0.4") >= 0,
-    "the fold files a drift as it filed a tier and refuses one past +1: " + JSON.stringify(pl.refused));
+  const pl = F.plan(bkF, { ok: true, count: 2, approved: [itF(1, 0.4), itF(2, 2.5)] }, null);
+  ok(pl.refused.length === 1 && /250% lift is not a % from 0 to 200 \(0 to 2\)/.test(pl.refused[0].why) && JSON.stringify(pl).indexOf("40% lift") >= 0,
+    "the fold files a % as it filed a tier and refuses one past 2: " + JSON.stringify(pl.refused));
   /* and it refuses BY BOOK, as the drafter does: salt takes no level, oil (a stated board) takes no drift, and oil still
      takes a level; the Add ID road the same */
   const itP = (n, p, v) => ({ id: "2099-01-01T00:00:00.01" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { [p]: v } } }, entry: { at: "2099-01-01T00:00:00.01" + n + "Z", payload: {} } });
   const itA = (n, p, v) => ({ id: "2099-01-01T00:00:00.02" + n + "Z", collection: "roster", row: { code: "CZ9-DB" + n, kind: "customer", tiers: { [p]: v } }, entry: { at: "2099-01-01T00:00:00.02" + n + "Z", payload: {} } });
   const why = (x) => (F.plan(bkF, { ok: true, count: 1, approved: [x] }, null).refused[0] || {}).why || "";
-  const byBook = [why(itP(1, "salt", "Gold")), why(itP(2, "oil", 0.4)), why(itP(3, "oil", "Gold")), why(itA(4, "salt", "Gold")), why(itA(5, "oil", 0.3)), why(itA(6, "salt", -0.3))];
-  ok(/Gold is not a drift/.test(byBook[0]) && /drift \+0\.4 is not a tier/.test(byBook[1]) && byBook[2] === ""
-    && /Gold is not a drift/.test(byBook[3]) && /drift \+0\.3 is not a tier/.test(byBook[4]) && !/drift|tier/.test(byBook[5]),
-    "the fold refuses by book: a level on salt and a drift on oil are refused, a level on oil and a drift on salt are filed, at a tier entry and at Add ID: " + JSON.stringify(byBook));
+  const byBook = [why(itP(1, "salt", "Gold")), why(itP(2, "oil", 0.4)), why(itP(3, "oil", "Gold")), why(itA(4, "salt", "Gold")), why(itA(5, "oil", 0.3)), why(itA(6, "salt", 0.3))];
+  ok(/Gold is not a % from 0 to 200/.test(byBook[0]) && /40% lift is not a tier/.test(byBook[1]) && byBook[2] === ""
+    && /Gold is not a % from 0 to 200/.test(byBook[3]) && /30% lift is not a tier/.test(byBook[4]) && !/lift|tier/.test(byBook[5]),
+    "the fold refuses by book: a level on salt and a % on oil are refused, a level on oil and a % on salt are filed, at a tier entry and at Add ID: " + JSON.stringify(byBook));
   /* 15. A LOT PARTLY LANDED IS COSTED OVER THE UNITS RECEIVED; one with nothing received is passed over (review, 05 Oct 2026) */
   const PE = (await import("../engine/position.mjs")).default;
   const lots15 = [{ rid: "pA", date: "2026-09-01", qty: 10, total: 500, freight: 20 },
@@ -53560,31 +53560,31 @@ await (async () => {
   ok(/A guest link opens one price list[.] The prices follow the customer you name[.]/.test(pg17) && !/two levels above/.test(pg17),
     "the guest-link lead says the prices follow the customer he names, in the glossary's words, and no longer two levels above");
   /* 18. A HELD DRIFT SITS BESIDE A HELD LEVEL ON A STATED BOARD, as CS6-BS's entry has since v1075 ({oil: "Platinum", salt: -0.7}).
-     The snapshot leaves a drift book out of tierOf and carries its drifts apart (byProduct.salt.drift, the hand winning), so no
+     The snapshot leaves a drift book out of tierOf and carries its % apart (byProduct.salt.lift, the hand or nought), so no
      reader meets a number where it looks for a level. First the contract over the book as it stands, whoever holds what; then
      the mixed entry forced on the first customer with none, so it is proved with no such customer on the book. */
   const driftBooks18 = Object.entries(snap.byProduct).filter(([, b]) => b.inputs && b.inputs.policy && b.inputs.policy.tierRule && b.inputs.policy.tierRule.drift).map(([p]) => p);
   const held18 = Object.entries(snap.tierOf || {}).flatMap(([c, t]) => Object.entries(t).map(([p, v]) => [c, p, v]));
   const badTier18 = held18.filter(([, p, v]) => driftBooks18.includes(p) || !E.levelShapeOk(v, snap.tierNames));
-  const drifts18 = driftBooks18.flatMap((p) => Object.entries(snap.byProduct[p].drift || {}));
+  const drifts18 = driftBooks18.flatMap((p) => Object.entries(snap.byProduct[p].lift || {}));
   const badDrift18 = drifts18.filter(([, v]) => v !== "partner" && !E.driftOk(v));
   ok(driftBooks18.includes("salt") && held18.length > 0 && !badTier18.length && drifts18.length > 20 && !badDrift18.length,
-    "the snapshot's tierOf holds a level shape on a level-named book and nothing on a drift book, whose drifts all travel apart as a number from -1 to +1 or partner: "
+    "the snapshot's tierOf holds a level shape on a level-named book and nothing on a drift book, whose % all travel apart as a number from 0 to 2 or partner: "
     + JSON.stringify({ driftBooks: driftBooks18, levels: held18.length, badTier: badTier18.slice(0, 3), drifts: drifts18.length, badDrift: badDrift18.slice(0, 3) }));
   const id18 = String(w.eval(free)), at18 = JSON.stringify(id18), keep18 = rd("TIER_OF[" + at18 + "]||null");
   let s18 = null, d18 = null;
   try {
-    w.eval("TIER_OF[" + at18 + "]={oil:'Platinum',salt:-0.7};recompute();");
+    w.eval("TIER_OF[" + at18 + "]={oil:'Platinum',salt:0.7};recompute();");
     s18 = pricingSnapshot(w);
     d18 = rd("driftOf(" + at18 + ",'salt').d");
   } finally { w.eval((keep18 ? "TIER_OF[" + at18 + "]=" + JSON.stringify(keep18) : "delete TIER_OF[" + at18 + "]") + ";recompute();"); }
   const sS18 = s18 && s18.byProduct.salt, C18 = sS18 && E.costStack(sS18.inputs.cost);
   const list18 = s18 && PL.priceList(id18, bk12, s18, new Date()), salt18 = list18 && list18.products.find((p) => p.product === "salt"), oil18 = list18 && list18.products.find((p) => p.product === "oil");
-  ok(id18 && s18 && JSON.stringify(s18.tierOf[id18]) === '{"oil":"Platinum"}' && sS18.drift[id18] === -0.7 && d18 === -0.7
-    && sS18.cards[id18].length > 5 && sS18.cards[id18].every(([q, x]) => x === E.driftAt(q, C18, sS18.inputs.policy, -0.7).p)
+  ok(id18 && s18 && JSON.stringify(s18.tierOf[id18]) === '{"oil":"Platinum"}' && sS18.lift[id18] === 0.7 && d18 === 0.7
+    && sS18.cards[id18].length > 5 && sS18.cards[id18].every(([q, x]) => x === E.driftAt(q, C18, sS18.inputs.policy, 0.7).p)
     && salt18 && salt18.basis === "card" && salt18.tier === null && JSON.stringify(salt18.sizes.map((x) => [x.q, x.price])) === JSON.stringify(sS18.cards[id18])
     && oil18 && oil18.basis === "board",
-    "a customer holding a drift on salt and a level on oil is carded salt at the Set Price moved by -0.7, size for size, with the level left on oil's stated board: " + JSON.stringify({ tierOf: s18 && s18.tierOf[id18], drift: sS18 && sS18.drift[id18], d: d18, cards: sS18 && sS18.cards[id18].slice(0, 2) }));
+    "a customer holding a % on salt and a level on oil is carded salt at the Set Price lifted 70%, size for size, with the level left on oil's stated board: " + JSON.stringify({ tierOf: s18 && s18.tierOf[id18], lift: sS18 && sS18.lift[id18], d: d18, cards: sS18 && sS18.cards[id18].slice(0, 2) }));
   try { w.close(); } catch (e) { /* best effort */ }
 })();
 

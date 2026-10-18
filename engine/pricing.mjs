@@ -625,42 +625,52 @@ function fiveTiers(sizes,C,P){
     return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
   });
 }
-/* ============ 05 OCT 2026, HIS DECISION: THE SET PRICE AND THE DRIFT (Model B, salt) ============
-   Per size three figures: the Floor (floorTotal, COGS times the size), the Ceiling (R.ceilingX times the floor) and the
-   SET PRICE between them, which the board quotes a stranger. The Set Price is the floor times a multiple sliding in the log
-   of size from R.mS at R.qS to R.mB at R.qB, clamped outside them, rounded DOWN to the grid, lifted to the first ten at or
-   above the floor, capped at the ten at or below the ceiling, and walked smallest to largest under the rate law (v328): a
-   rate rising with size steps down to the ten that holds it flat, never through the floor.
-   A NAMED CUSTOMER HOLDS A DRIFT d in [-1, +1]. Up: the Set Price plus d times the lesser of the room to the ceiling and
-   R.drift.up times the floor; down: less |d| times the lesser of the room to the floor and R.drift.down times the floor.
-   Then the same grid, lift, cap and walk, so a drifted price stays inside [floor, ceiling] and never rises in rate with
-   size. One walk answers both, the Set Price being the drift of nought. */
+/* ============ 18 OCT 2026, HIS DECISION: THE SET PRICE IS THE MINIMUM, AND A CUSTOMER'S FIGURE IS A % LIFT ON IT (salt) ============
+   Per size three figures: the Floor (floorTotal, COGS times the size up to the next RM 5), the Ceiling (R.ceilingX times the
+   floor, down to the grid) and the SET PRICE between them, the least any customer but a partner pays and what a stranger is quoted.
+   The Set Price is the floor times a multiple (setMultiple) that slides in the log of size between R.points, [size, multiple]
+   pairs, and is flat beyond the first and the last. THE WALK runs the grid smallest first and keeps one running rate r, EXACT
+   and never compounded: r = the lesser of r and floor x multiple x (1 + pct) over the size; the price is r times the size down to
+   the grid (RM 5); then lifted, to the grid, so that its ringgit margin over the floor never falls under the largest margin of any
+   smaller size already walked; then held between the floor and the ceiling. The quoted rate may therefore rise by under one grid step over the
+   size between two quarters: the law is on the exact rate, his choice. The margin lift is path dependent, so the one walk
+   answers driftAt, quoteGrid and the board alike, every grid point from the grid's least up to the size asked.
+   pct is the customer's held % lift, 0 to 2 (driftOk), applied inside the walk to the multiple at every size; 0 is the Set Price.
+   Nothing automatic sets it: autoDrift reads the record for the card and prices nothing, and suggestPct only suggests. */
 function setMultiple(q,R){
-  const lo=+R.qS, hi=+R.qB, g=Math.min(1,Math.max(0,Math.log(hi/q)/Math.log(hi/lo)));
-  return +R.mB+(+R.mS-+R.mB)*g;
+  const pts=(R.points||[]).map(x=>[+x[0],+x[1]]).filter(x=>x[0]>0&&isFinite(x[1])).sort((a,b)=>a[0]-b[0]);
+  if(!pts.length)return 1;
+  if(!(q>pts[0][0]))return pts[0][1];
+  const last=pts[pts.length-1];
+  if(q>=last[0])return last[1];
+  for(let i=0;i<pts.length-1;i++){
+    if(q<pts[i+1][0]){const a=pts[i],b=pts[i+1];return a[1]+(b[1]-a[1])*Math.log(q/a[0])/Math.log(b[0]/a[0]);}
+  }
+  return last[1];
 }
-/* a drift is a number from -1 to +1; anything else is not one */
-function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1-1e-9&&v<=1+1e-9;}
-function driftWalk(sizes,C,P,d){
+/* a held % lift is a number from 0 to 2; anything else is not one */
+function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1e-9&&v<=2+1e-9;}
+function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
-  const cx=+R.ceilingX>0?+R.ceilingX:3, D=R.drift||{}, upC=D.up!=null?+D.up:0.3, dnC=D.down!=null?+D.down:0.2;
-  const dd=driftOk(d)?Math.max(-1,Math.min(1,d)):0;
-  /* a rate rising with size steps down to the ten that holds it flat; where that ten is under the floor, to the floor's own
-     ten (06 Oct 2026): keeping the raw price there let a drifted grid jump RM330 at 24 unit, where the floor first binds */
-  const walk=(q,raw,lift,prev)=>{
-    let p=raw;
-    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;p=st>=lift-0.009?st:Math.min(raw,lift);}
-    return p;
-  };
-  let prevS=Infinity, prevP=Infinity;
+  const cx=+R.ceilingX>0?+R.ceilingX:3;
+  const k=driftOk(pct)?Math.max(0,Math.min(2,+pct)):0;
+  let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
-    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lift=up(fl), cap=Math.max(down(ceil),lift);
-    const box=v=>Math.min(Math.max(v,lift),cap);
-    const s=walk(q,box(down(fl*setMultiple(q,R))),lift,prevS);
-    const raw=dd>0?s+dd*Math.min(ceil-s,upC*fl):dd<0?s-(-dd)*Math.min(s-fl,dnC*fl):s;
-    const p=dd===0?s:walk(q,box(down(raw)),lift,prevP);
-    if(q>0){prevS=Math.min(prevS,s/q);prevP=Math.min(prevP,p/q);}
-    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s,p:p,d:dd};
+    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
+    const step=(r,mg,lift)=>{
+      const rate=Math.min(r,fl*m*lift/q);
+      let p=down(rate*q);
+      if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));
+      const capped=p>hi+1e-9;
+      p=Math.min(Math.max(p,lo),hi);
+      /* where the Ceiling holds the price, the running rate follows it down to the Ceiling's own, so the next size is held to it: the
+         Ceiling's rate rises with the Floor's round-up (3 times a step), and without this a high % could be quoted more a unit on more units */
+      return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fl)};
+    };
+    const s=step(rS,mS,1);rS=s.rate;mS=s.mg;
+    let p=s.p;
+    if(k>0){const x=step(rP,mP,1+k);rP=x.rate;mP=x.mg;p=x.p;}
+    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
   });
 }
 /* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============
@@ -699,7 +709,8 @@ function driftAt(q,C,P,d){
   const sizes=walkSizes(R,[q]).filter(r=>r<q-0.009).concat([q]);
   const w=driftWalk(sizes,C,P,d);return w[w.length-1];
 }
-/* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). The caller reads the record off the book with
+/* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). 18 OCT 2026: IT PRICES NOTHING NOW. The card reads
+   its good and bad, and the figure that prices is the % lift he holds or nought. The caller reads the record off the book with
    the desk's own readers (buyerProfile, payDelays, lateOffer, txWrittenOff) and hands the signals in; A is the rule's
    weights. Good, 0 to 1: paid on time (a share of settlements within the term, read only from A.minSettled of them), how
    often, how much, and how many orders, nought when the last is over A.staleDays old. Bad, 0 to 1: the late flag (a half,
@@ -717,6 +728,23 @@ function autoDrift(s,A){
   const cap=n('cap',0.5), d=Math.min(cap,Math.max(-cap,n('U',0.5)*B-n('D',0.5)*G*(1-B)));
   const r4=v=>+v.toFixed(4);
   return {d:r4(d),G:r4(G),B:r4(B),P:r4(P),Fq:r4(Fq),V:r4(V),T:r4(T)};
+}
+/* ============ 18 OCT 2026, HIS DECISION: THE ENGINE SUGGESTS A % LIFT AND NEVER SETS ONE ============
+   sig is driftSignals (late, lateLong, writtenOff, overdueDays, settled); ratios are the rate each of the customer's recent salt sales
+   paid over the Set Price rate at that sale's size, oldest first; S is the rule's suggest block. paidOver is the median of the last
+   S.recent ratios less one, nought if below; risk is S.writtenOff for anything written off, else S.longLate for a long late or an open
+   overdue past S.overdueDays, else S.late for a late; the suggestion is their sum to the nearest S.step, held 0 to 2, and nought for
+   a customer with fewer than S.minSettled settled rows. Good record suggests nothing. Returns {pct, paidOver, risk}. Prices nothing:
+   the desk and Counter Admin show it, and his tap sets it (a tierset), like any figure of his. */
+function suggestPct(sig,ratios,S){
+  const s=S||{}, x=sig||{}, n=(k,v)=>s[k]!=null?+s[k]:v;
+  if((+x.settled||0)<n('minSettled',3))return {pct:0,paidOver:0,risk:0};
+  const rs=(ratios||[]).filter(v=>typeof v==='number'&&isFinite(v)&&v>0).slice(-n('recent',5)).sort((a,b)=>a-b);
+  const med=rs.length?(rs.length%2?rs[(rs.length-1)/2]:(rs[rs.length/2-1]+rs[rs.length/2])/2):1;
+  const paidOver=Math.max(0,med-1);
+  const risk=(+x.writtenOff||0)>0.009?n('writtenOff',0.3):(x.lateLong||(+x.overdueDays||0)>n('overdueDays',14))?n('longLate',0.2):x.late?n('late',0.1):0;
+  const step=n('step',0.05), pct=Math.min(2,Math.max(0,Math.round((paidOver+risk)/step+1e-9)*step));
+  return {pct:+pct.toFixed(2),paidOver:+paidOver.toFixed(4),risk:risk};
 }
 /* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
    (THE CAP, RETIRED ON HIS DECISION OF 27 SEP 2026: see cardPrice below. Kept as the record of what it did.)
@@ -866,7 +894,7 @@ return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMa
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
-        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 export default PRICING_ENGINE;

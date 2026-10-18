@@ -802,23 +802,10 @@
   },
   "TIER_OF": {
     "CS6-BS": {
-      "oil": "Platinum",
-      "salt": -0.7
+      "oil": "Platinum"
     },
     "CZ5-TM": {
       "oil": "Titanium"
-    },
-    "CI5-PER": {
-      "salt": -0.3
-    },
-    "CM4-MK": {
-      "salt": 0.3
-    },
-    "CN4-BSL": {
-      "salt": -0.5
-    },
-    "CA3-KP": {
-      "salt": 0
     }
   },
   "PEOPLE": {

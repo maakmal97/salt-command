@@ -1213,8 +1213,8 @@ export function draftRow(entry, book) {
       if (!ps.length) return { skip: "a starting tier names no product" };
       for (const p of ps) {
         if (!products[p]) return { skip: `${p} is not a product on this book` };
-        /* 05 Oct 2026: a drift book starts on a drift he picks, -1 to +1; a level is refused there */
-        if (driftB(p) ? !PRICING_ENGINE.driftOk(pay.tiers[p]) : !names.includes(pay.tiers[p])) return { skip: driftB(p) ? `${pay.tiers[p]} is not a drift from -1 to +1` : `${pay.tiers[p]} is not a tier` };
+        /* 05 Oct 2026: a drift book starts on a figure he picks (18 Oct 2026: a % lift, 0 to 2); a level is refused there */
+        if (driftB(p) ? !PRICING_ENGINE.driftOk(pay.tiers[p]) : !names.includes(pay.tiers[p])) return { skip: driftB(p) ? `${pay.tiers[p]} is not a % from 0 to 200 (0 to 2)` : `${pay.tiers[p]} is not a tier` };
       }
       if (!["customer", "reseller", "referral"].includes(kind)) return { skip: `a ${kind} holds no tier` };
     }
@@ -1346,7 +1346,7 @@ export function draftRow(entry, book) {
     const names = (book.pricing && Array.isArray(book.pricing.tierNames)) ? book.pricing.tierNames : [];
     const name = (p) => (products[p] && products[p].name) || p;
     const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
-    const say = (v) => v == null ? "not set" : typeof v === "number" ? "drift " + (v > 0 ? "+" : "") + v : typeof v === "string" ? v
+    const say = (v) => v == null ? "not set" : typeof v === "number" ? (+(v * 100).toFixed(2)) + "% lift" : typeof v === "string" ? v
       : isObj(v) ? (["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ") || JSON.stringify(v)) : String(v);
     const row = { tiers: {} }, flags = [];
     for (const c of codes) {
@@ -1359,8 +1359,8 @@ export function draftRow(entry, book) {
         const t = tiers[c][p], was = isObj(held[c]) ? held[c][p] : null;
         if (!products[p]) return { skip: `${p} is not a product on this book` };
         /* v670: a tier may be one level or a band set, a level for small, mid and big orders; the engine says which shapes price */
-        /* 05 Oct 2026: on a drift book what is held is a drift, -1 to +1, and a level is refused */
-        if (t !== null && (driftB(p) ? !PRICING_ENGINE.driftOk(t) : !PRICING_ENGINE.levelShapeOk(t, names))) return { skip: driftB(p) ? `${say(t)} is not a drift from -1 to +1` : `${say(t)} is not a tier` };
+        /* 05 Oct 2026: on a drift book what is held is a figure of his (18 Oct 2026: a % lift, 0 to 2), and a level is refused */
+        if (t !== null && (driftB(p) ? !PRICING_ENGINE.driftOk(t) : !PRICING_ENGINE.levelShapeOk(t, names))) return { skip: driftB(p) ? `${say(t)} is not a % from 0 to 200 (0 to 2)` : `${say(t)} is not a tier` };
         row.tiers[c][p] = t;
         if (was && JSON.stringify(was) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(was)} to ${say(t)}.`);
       }
@@ -1370,7 +1370,7 @@ export function draftRow(entry, book) {
       row,
       flags,
       reasoning: `Sets the tiers of ${codes.length} ${codes.length === 1 ? "customer" : "customers"}: ${codes.map((c) => c + " " + Object.keys(row.tiers[c]).map((p) => name(p) + " " + say(row.tiers[c][p])).join(" and ")).join(", ")}.`
-        + " It moves no cash and no stock; a drift moves that customer's own price and never the board.",
+        + " It moves no cash and no stock; a % lift moves that customer's own price and never the board.",
     };
   }
   /* A PRICE EDIT (v354). It moves no stock, no cash and no row: it states what the board asks and

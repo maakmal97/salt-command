@@ -1,4 +1,5 @@
-/* Counter Admin: salt drift set/clear through the existing tier-set road, with held zero distinct from automatic. */
+/* Counter Admin: a salt customer's % lift (0 to 2) set/clear through the existing tier-set road, a held zero distinct from none held, and the
+   engine's suggestion beside it (18 Oct 2026: nothing automatic prices). */
 import { makerInputCatalog, makerTierSet } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
 import { landingPage } from "../stmt/page.js";
@@ -20,8 +21,8 @@ const book = () => ({
   pricing: {
     tierNames: ["Gold", "Silver"],
     byProduct: {
-      salt: { stockCost: 40, drift: { "CX1-ZED": 0, "CX2-ZED": 0.35 },
-        inputs: { policy: { tierRule: { drift: { up: 0.3, down: 0.2 } } } } },
+      salt: { stockCost: 40, lift: { "CX1-ZED": 0, "CX2-ZED": 0 }, suggest: { "CX1-ZED": 0, "CX2-ZED": 0.25 },
+        inputs: { policy: { tierRule: { drift: true } } } },
       oil: { stockCost: 8, inputs: { policy: { tierRule: { fixed: true } } } }
     }
   }
@@ -42,31 +43,32 @@ export async function run({ ok } = {}) {
     "the drift selector includes non-supplier customers and omits suppliers and resale buckets");
   check(driftCard("CX1-ZED").held === true && driftCard("CX1-ZED").value === 0 && driftCard("CX1-ZED").current === 0,
     "a held zero is represented as an override rather than automatic drift");
-  check(driftCard("CX2-ZED").held === false && driftCard("CX2-ZED").value === null && driftCard("CX2-ZED").current === 0.35,
-    "an unheld customer is represented as automatic record drift");
+  check(driftCard("CX2-ZED").held === false && driftCard("CX2-ZED").value === null && driftCard("CX2-ZED").current === 0
+    && driftCard("CX2-ZED").suggest === 0.25 && driftCard("CX1-ZED").suggest === 0,
+  "an unheld customer is the Set Price (nought) with the engine's suggestion beside it, and a held zero carries its own");
 
   const set = (tier) => makerTierSet({ at, code: "CX2-ZED", product: "salt", tier }, mirror);
-  for (const value of [-1, -0.35, 0, 0.35, 1]) {
+  for (const value of [0, 0.05, 0.35, 1, 2]) {
     const result = set(value);
     check(result.entry?.type === "TIER" && result.entry.payload.mode === "tierset"
       && result.draft?.collection === "tierset" && result.draft.row.tiers["CX2-ZED"].salt === value,
-    "the existing tier-set constructor and drafter preserve drift " + value);
+    "the existing tier-set constructor and drafter preserve a % lift of " + value);
   }
   const cleared = set(null);
   check(cleared.entry?.payload.mode === "tierset" && cleared.draft?.row.tiers["CX2-ZED"].salt === null,
     "null uses the existing tierset draft to clear the held override");
-  check([-1.01, 1.01, "0", "Gold", undefined].every((value) => !!set(value).error)
+  check([-1, -0.01, 2.01, 3, "0", "Gold", undefined].every((value) => !!set(value).error)
     && !!makerTierSet({ at, code: "CX2-ZED", product: "oil", tier: 0.25 }, mirror).error,
-  "out-of-range, nonnumeric, level, missing and fixed-book drift inputs are refused");
+  "out-of-range (a negative, or past 2), nonnumeric, level, missing and fixed-book inputs are refused");
   check(!!makerTierSet({ at, code: "SP1-ZED", product: "salt", tier: 0.25 }, mirror).error,
     "supplier codes cannot receive customer drift");
-  check(set(1.01).error === "Choose a drift from -1 to +1, or clear it.",
-    "the Maker validates drift bounds with the shared pricing engine before constructing an entry");
+  check(set(2.01).error === "Choose a % lift from 0 to 200% (0 to 2), or clear it." && !set(2).error && !set(0).error,
+    "the Maker validates the % lift bounds, 0 to 2, with the shared pricing engine before constructing an entry");
   const tierBook = book();
   tierBook.pricing.byProduct.salt.inputs.policy.tierRule = { multiples: [1, 2] };
   check(!!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.25 }, tierBook).error
     && makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: "Gold" }, tierBook).draft?.row.tiers["CX2-ZED"].salt === "Gold",
-  "level books retain their tier shape and refuse numeric drift");
+  "level books retain their tier shape and refuse a numeric lift");
 
   const forwarded = [];
   const key = "counter-maker-test-key-0123456789abcdef";
@@ -100,8 +102,8 @@ export async function run({ ok } = {}) {
       parties: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
       tierCustomers: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
       driftCustomers: ["CX1-ZED", "CX2-ZED"], tierNames: [],
-      driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: 0, current: 0 },
-        { code: "CX2-ZED", product: "salt", held: false, value: null, current: 0.35 }]
+      driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: 0, current: 0, suggest: 0 },
+        { code: "CX2-ZED", product: "salt", held: false, value: null, current: 0, suggest: 0.25 }]
     }
   };
   const dom = new JSDOM(landingPage("", "maker-drift-nonce", { master: "fixture-master", accounts: [] }), {
@@ -142,22 +144,29 @@ export async function run({ ok } = {}) {
       .find((section) => section.querySelector("h3")?.textContent === "Price drift");
     const selects = drift.querySelectorAll("select"), value = drift.querySelector('input[type="number"]');
     const setButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Send the drift");
-    const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Follow their record");
+    const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Set back to 0");
+    const useButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Use the suggestion");
     check([...selects[0].options].map((option) => option.value).join() === "CX1-ZED,CX2-ZED",
       "the Counter drift selector uses the customer-only catalog and excludes suppliers");
     check(selects.length === 1 && tileValues(drift, "Book").join() === "salt",
       "the UI offers salt and omits fixed books from its drift tiles");
-    check(value.min === "-1" && value.max === "1" && value.step === "0.05",
-      "the UI bounds the numeric input to the drift range");
-    check(drift.textContent.includes("Set by hand: +0.00 (scale -1 to +1)."),
-      "the UI labels a held zero as an override");
+    check(value.min === "0" && value.max === "2" && value.step === "0.05",
+      "the UI bounds the numeric input to the % lift range, 0 to 2");
+    check(drift.textContent.includes("Set by you: 0.00 (0 to 2)."),
+      "the UI labels a held zero as set by him");
     selects[0].value = "CX2-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    check(drift.textContent.includes("From their record: +0.35.") && clearButton.hidden,
-      "automatic record drift is labeled separately and Clear is unavailable when no override is held");
+    check(drift.textContent.includes("Not set: the Set Price. Suggested: 0.25.") && clearButton.hidden && !useButton.hidden,
+      "none held reads as the Set Price with the suggestion beside it, and Clear is unavailable when nothing is held");
+    useButton.click();
+    check(value.value === "0.25" && calls.length === 0,
+      "Use the suggestion fills the box with the suggested % and sends nothing");
     selects[0].value = "CX1-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    value.value = "1.01"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
-    check(drift.textContent.includes("Enter a drift from -1 to +1.") && calls.length === 0,
-      "the Counter rejects a drift outside the range before sending an input");
+    value.value = "2.01"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    check(drift.textContent.includes("Enter a % from 0 to 2 (0.2 is 20%).") && calls.length === 0,
+      "the Counter rejects a % past 2 before sending an input");
+    value.value = "-0.1"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
+    check(drift.textContent.includes("Enter a % from 0 to 2 (0.2 is 20%).") && calls.length === 0,
+      "and a negative one");
     await waitFor(() => !setButton.disabled);
     value.value = "0"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const retained = await waitFor(() => calls.length === 1 && !setButton.disabled && !clearButton.disabled);

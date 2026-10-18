@@ -3,7 +3,7 @@
       test/fixtures/pricing-before-s1c.json, which the master gave before any of this moved.
    2. NOT CIRCULAR: the engine's pricing(B,R,today) called in node with no page (the book read out of the page as plain data, the rules from
       engine/rules.mjs, LADDER, PRICE and PRICE_LOCK_ON among them since S1e) gives, for every book, the FIXTURE's stockCost, replCost, floors,
-      inputs, sizes, rungs, ladder, cards, partners and drift. The page's delegations are not asked.
+      inputs, sizes, rungs, ladder, cards, partners, lift and suggest. The page's delegations are not asked.
    3. The master's own script holds each moved function once, as a one-line delegation to SNAPSHOT_ENGINE, and the retired bodies nowhere.
    LADDER, PRICE and PRICE_LOCK_ON come from engine/rules.mjs like the rest (S1e), so a Worker imports the same three.
    Mutations: test/engine-cards.mutations.json. */
@@ -17,7 +17,7 @@ import RULES_MOD from "../engine/rules.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const round = (s) => JSON.stringify(s, (k, v) => typeof v === "number" ? Math.round(v * 1e8) / 1e8 : v);
-const FUNCS = ["buyerProfile", "driftSignals", "driftOfNow", "driftOf", "driftBook", "tierCustomers", "pbPriced", "lateOf", "isPartner", "cardQuote"];
+const FUNCS = ["buyerProfile", "driftSignals", "driftOfNow", "driftOf", "suggestOf", "driftBook", "tierCustomers", "pbPriced", "lateOf", "isPartner", "cardQuote"];
 const CONSTS = ["ownerOf", "isResellAcct", "isPerson"];
 const GONE = ["const R=PROFILE_RULE, DAY=86400000", "PRICING_ENGINE.autoDrift(", "PRICING_ENGINE.quoteAt(q,pxCost()", "roster.map(ownerOf)"];
 
@@ -31,7 +31,7 @@ export async function run({ ok }) {
   const fixtureText = readFileSync(join(REPO, "test", "fixtures", "pricing-before-s1c.json"), "utf8");
 
   const snap = pricingSnapshot(w); delete snap.takenAt;
-  ok(round(snap) === fixtureText, "S1c-3: pricingSnapshot() on the frozen book is the one the master gave before the cards and drift moved");
+  ok(round(snap) === fixtureText, "S1c-3: pricingSnapshot() on the frozen book is the one the master gave before the cards and the lift moved");
 
   const J = (e) => JSON.parse(String(w.eval("JSON.stringify(" + e + ")")));
   const today = new Date(w.eval("TODAY.getTime()"));
@@ -58,8 +58,8 @@ export async function run({ ok }) {
     }
   }
   ok(same === n && n > 0, "S1c-3: every field of every book agrees (" + same + " of " + n + ")");
-  ok(Object.values(want).some((b) => b.drift && Object.values(b.drift).includes("partner")) && Object.values(want).some((b) => b.partners && b.partners.length),
-    "S1c-3: the fixture holds a partner and a drift, so the comparison is not vacuous");
+  ok(Object.values(want).some((b) => b.lift && Object.values(b.lift).includes("partner") && b.suggest) && Object.values(want).some((b) => b.partners && b.partners.length),
+    "S1c-3: the fixture holds a partner, a lift and a suggestion, so the comparison is not vacuous");
 
   for (const f of FUNCS) {
     const defs = outside.match(new RegExp("\\bfunction\\s+" + f + "\\s*\\(", "g")) || [];

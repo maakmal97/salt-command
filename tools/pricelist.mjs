@@ -146,7 +146,7 @@ export function priceList(code, book, pricing, now, supply) {
       /* 05 Oct 2026 (any quantity at an automatic price): AND THE GRID, the engine's quoteGrid at their drift, every point from
          the book's min to its max, so the page quotes any quantity off the list and works nothing out. A snapshot carrying no
          drift for them (one taken before this) sends the board alone. No cost and no drift parameter travels, only prices. */
-      const dr = snap.drift && Object.prototype.hasOwnProperty.call(snap.drift, code) ? snap.drift[code] : null;
+      const dr = snap.lift && Object.prototype.hasOwnProperty.call(snap.lift, code) ? snap.lift[code] : null;
       const gridD = typeof dr === "number" || dr === "partner" ? PRICING_ENGINE.quoteGrid(C, P, dr) : null;
       out.products.push(Object.assign({ product: p, name, unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
         basis: "card", tier: null, levels: null, sizes: rowsD }, gridD ? { grid: gridD } : {}));

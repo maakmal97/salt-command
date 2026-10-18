@@ -4610,6 +4610,9 @@ const RULES={
   /* 18 Oct 2026, his decision: the Floor is the order total rounded UP to the next multiple of this, RM 5. The engine's floorTotal reads
      it as the policy's `floorTo`, and costTotal is the same total to the sen for a reader that measures cost and not a price. No semicolon here. */
   floorTo:5,
+  /* 18 Oct 2026: the moment a salt customer's figure turned from a drift (-1 to +1) into a % lift (0 to 2). The fold refuses a tierset or an
+     Add ID salt tier stamped before it: it was set in the old unit. The session that bumps sets the exact time. No semicolon here. */
+  liftSince:"2026-10-18T00:00:00Z",
   lateResetRepeat:3,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
@@ -4849,9 +4852,18 @@ const LADDER_BY={
 };
 
 const TIER_RULE={
-  salt:{drift:{up:0.3, down:0.2}, mS:2.813, qS:0.5, mB:1.363, qB:12.5, ceilingX:3,
+  /* 18 Oct 2026, HIS DECISION: SALT'S SET PRICE IS THE MINIMUM ANY NON-PARTNER PAYS, a multiple of the Floor on his four points
+     (`points`, [size, multiple]: 2.5 at half a unit, 2 at one, 1.67 at 6.25, 1.33 at 12.5), sliding in the log of size between
+     them and flat beyond the ends. A customer's figure is a % lift on it (0 to 2, held in TIER_OF), applied inside the walk
+     (the engine's driftWalk); nothing automatic prices. `drift` stays as the marker that makes salt a per-customer book, and
+     `auto` only feeds the record's good and bad on the card. `suggest` is the suggestion's constants (the engine's
+     suggestPct): a share added for a written-off, a long late, a late; the days over which an open overdue counts as long; how
+     many of the last salt sales are read; the step it rounds to; and the settled rows below which it suggests nothing. */
+  salt:{drift:true, ceilingX:3,
+        points:[[0.5,2.5],[1,2],[6.25,1.67],[12.5,1.33]],
+        suggest:{writtenOff:0.3, longLate:0.2, late:0.1, overdueDays:14, recent:5, step:0.05, minSettled:3},
         auto:{wP:0.35, wF:0.25, wV:0.2, wT:0.2, minSettled:3, perMonth:4, unitsPerMonth:10, orders:12, staleDays:60, overdueDays:14, U:0.5, D:0.5, cap:0.5},
-        presets:{Better:-0.3, Standard:0, Higher:0.3},
+        presets:{Set:0, "+5%":0.05, "+10%":0.1, "+15%":0.15, "+20%":0.2, "+30%":0.3},
         rungs:[0.5,1,1.5,2,2.5,3,3.5,4,4.5,5,6.25,12.5],
         /* 05 Oct 2026, his decision: any quantity from half a unit to 25 in quarters is quoted at once on the Counter, and the
            walk runs through every point of it, so the rate never rises from one quarter to the next (the engine's walkSizes) */
@@ -7588,42 +7600,52 @@ function fiveTiers(sizes,C,P){
     return {q:q,rung:rung,cogs:cogs,floor:+fl.toFixed(2),cols:cols,prices:prices};
   });
 }
-/* ============ 05 OCT 2026, HIS DECISION: THE SET PRICE AND THE DRIFT (Model B, salt) ============
-   Per size three figures: the Floor (floorTotal, COGS times the size), the Ceiling (R.ceilingX times the floor) and the
-   SET PRICE between them, which the board quotes a stranger. The Set Price is the floor times a multiple sliding in the log
-   of size from R.mS at R.qS to R.mB at R.qB, clamped outside them, rounded DOWN to the grid, lifted to the first ten at or
-   above the floor, capped at the ten at or below the ceiling, and walked smallest to largest under the rate law (v328): a
-   rate rising with size steps down to the ten that holds it flat, never through the floor.
-   A NAMED CUSTOMER HOLDS A DRIFT d in [-1, +1]. Up: the Set Price plus d times the lesser of the room to the ceiling and
-   R.drift.up times the floor; down: less |d| times the lesser of the room to the floor and R.drift.down times the floor.
-   Then the same grid, lift, cap and walk, so a drifted price stays inside [floor, ceiling] and never rises in rate with
-   size. One walk answers both, the Set Price being the drift of nought. */
+/* ============ 18 OCT 2026, HIS DECISION: THE SET PRICE IS THE MINIMUM, AND A CUSTOMER'S FIGURE IS A % LIFT ON IT (salt) ============
+   Per size three figures: the Floor (floorTotal, COGS times the size up to the next RM 5), the Ceiling (R.ceilingX times the
+   floor, down to the grid) and the SET PRICE between them, the least any customer but a partner pays and what a stranger is quoted.
+   The Set Price is the floor times a multiple (setMultiple) that slides in the log of size between R.points, [size, multiple]
+   pairs, and is flat beyond the first and the last. THE WALK runs the grid smallest first and keeps one running rate r, EXACT
+   and never compounded: r = the lesser of r and floor x multiple x (1 + pct) over the size; the price is r times the size down to
+   the grid (RM 5); then lifted, to the grid, so that its ringgit margin over the floor never falls under the largest margin of any
+   smaller size already walked; then held between the floor and the ceiling. The quoted rate may therefore rise by under one grid step over the
+   size between two quarters: the law is on the exact rate, his choice. The margin lift is path dependent, so the one walk
+   answers driftAt, quoteGrid and the board alike, every grid point from the grid's least up to the size asked.
+   pct is the customer's held % lift, 0 to 2 (driftOk), applied inside the walk to the multiple at every size; 0 is the Set Price.
+   Nothing automatic sets it: autoDrift reads the record for the card and prices nothing, and suggestPct only suggests. */
 function setMultiple(q,R){
-  const lo=+R.qS, hi=+R.qB, g=Math.min(1,Math.max(0,Math.log(hi/q)/Math.log(hi/lo)));
-  return +R.mB+(+R.mS-+R.mB)*g;
+  const pts=(R.points||[]).map(x=>[+x[0],+x[1]]).filter(x=>x[0]>0&&isFinite(x[1])).sort((a,b)=>a[0]-b[0]);
+  if(!pts.length)return 1;
+  if(!(q>pts[0][0]))return pts[0][1];
+  const last=pts[pts.length-1];
+  if(q>=last[0])return last[1];
+  for(let i=0;i<pts.length-1;i++){
+    if(q<pts[i+1][0]){const a=pts[i],b=pts[i+1];return a[1]+(b[1]-a[1])*Math.log(q/a[0])/Math.log(b[0]/a[0]);}
+  }
+  return last[1];
 }
-/* a drift is a number from -1 to +1; anything else is not one */
-function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1-1e-9&&v<=1+1e-9;}
-function driftWalk(sizes,C,P,d){
+/* a held % lift is a number from 0 to 2; anything else is not one */
+function driftOk(v){return typeof v==='number'&&isFinite(v)&&v>=-1e-9&&v<=2+1e-9;}
+function driftWalk(sizes,C,P,pct){
   const R=P.tierRule||{}, to=P.LADDER.round.to, up=v=>Math.ceil(v/to-1e-9)*to, down=v=>Math.floor(v/to+1e-9)*to;
-  const cx=+R.ceilingX>0?+R.ceilingX:3, D=R.drift||{}, upC=D.up!=null?+D.up:0.3, dnC=D.down!=null?+D.down:0.2;
-  const dd=driftOk(d)?Math.max(-1,Math.min(1,d)):0;
-  /* a rate rising with size steps down to the ten that holds it flat; where that ten is under the floor, to the floor's own
-     ten (06 Oct 2026): keeping the raw price there let a drifted grid jump RM330 at 24 unit, where the floor first binds */
-  const walk=(q,raw,lift,prev)=>{
-    let p=raw;
-    if(q>0&&prev<Infinity&&p/q>prev+1e-9){const st=Math.floor((prev*q+1e-9)/to)*to;p=st>=lift-0.009?st:Math.min(raw,lift);}
-    return p;
-  };
-  let prevS=Infinity, prevP=Infinity;
+  const cx=+R.ceilingX>0?+R.ceilingX:3;
+  const k=driftOk(pct)?Math.max(0,Math.min(2,+pct)):0;
+  let rS=Infinity, rP=Infinity, mS=-Infinity, mP=-Infinity;
   return sizes.map(q=>{
-    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lift=up(fl), cap=Math.max(down(ceil),lift);
-    const box=v=>Math.min(Math.max(v,lift),cap);
-    const s=walk(q,box(down(fl*setMultiple(q,R))),lift,prevS);
-    const raw=dd>0?s+dd*Math.min(ceil-s,upC*fl):dd<0?s-(-dd)*Math.min(s-fl,dnC*fl):s;
-    const p=dd===0?s:walk(q,box(down(raw)),lift,prevP);
-    if(q>0){prevS=Math.min(prevS,s/q);prevP=Math.min(prevP,p/q);}
-    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s,p:p,d:dd};
+    const fl=floorTotal(q,C,P), ceil=+(cx*fl).toFixed(4), lo=up(fl), hi=Math.max(down(ceil),lo), m=setMultiple(q,R);
+    const step=(r,mg,lift)=>{
+      const rate=Math.min(r,fl*m*lift/q);
+      let p=down(rate*q);
+      if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));
+      const capped=p>hi+1e-9;
+      p=Math.min(Math.max(p,lo),hi);
+      /* where the Ceiling holds the price, the running rate follows it down to the Ceiling's own, so the next size is held to it: the
+         Ceiling's rate rises with the Floor's round-up (3 times a step), and without this a high % could be quoted more a unit on more units */
+      return {rate:capped?Math.min(rate,hi/q):rate,p:p,mg:Math.max(mg,p-fl)};
+    };
+    const s=step(rS,mS,1);rS=s.rate;mS=s.mg;
+    let p=s.p;
+    if(k>0){const x=step(rP,mP,1+k);rP=x.rate;mP=x.mg;p=x.p;}
+    return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};
   });
 }
 /* ============ 05 OCT 2026, HIS DECISION: ANY QUANTITY AT AN AUTOMATIC PRICE ============
@@ -7662,7 +7684,8 @@ function driftAt(q,C,P,d){
   const sizes=walkSizes(R,[q]).filter(r=>r<q-0.009).concat([q]);
   const w=driftWalk(sizes,C,P,d);return w[w.length-1];
 }
-/* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). The caller reads the record off the book with
+/* THE AUTOMATIC DRIFT, from a customer's record (his decision of 05 Oct 2026). 18 OCT 2026: IT PRICES NOTHING NOW. The card reads
+   its good and bad, and the figure that prices is the % lift he holds or nought. The caller reads the record off the book with
    the desk's own readers (buyerProfile, payDelays, lateOffer, txWrittenOff) and hands the signals in; A is the rule's
    weights. Good, 0 to 1: paid on time (a share of settlements within the term, read only from A.minSettled of them), how
    often, how much, and how many orders, nought when the last is over A.staleDays old. Bad, 0 to 1: the late flag (a half,
@@ -7680,6 +7703,23 @@ function autoDrift(s,A){
   const cap=n('cap',0.5), d=Math.min(cap,Math.max(-cap,n('U',0.5)*B-n('D',0.5)*G*(1-B)));
   const r4=v=>+v.toFixed(4);
   return {d:r4(d),G:r4(G),B:r4(B),P:r4(P),Fq:r4(Fq),V:r4(V),T:r4(T)};
+}
+/* ============ 18 OCT 2026, HIS DECISION: THE ENGINE SUGGESTS A % LIFT AND NEVER SETS ONE ============
+   sig is driftSignals (late, lateLong, writtenOff, overdueDays, settled); ratios are the rate each of the customer's recent salt sales
+   paid over the Set Price rate at that sale's size, oldest first; S is the rule's suggest block. paidOver is the median of the last
+   S.recent ratios less one, nought if below; risk is S.writtenOff for anything written off, else S.longLate for a long late or an open
+   overdue past S.overdueDays, else S.late for a late; the suggestion is their sum to the nearest S.step, held 0 to 2, and nought for
+   a customer with fewer than S.minSettled settled rows. Good record suggests nothing. Returns {pct, paidOver, risk}. Prices nothing:
+   the desk and Counter Admin show it, and his tap sets it (a tierset), like any figure of his. */
+function suggestPct(sig,ratios,S){
+  const s=S||{}, x=sig||{}, n=(k,v)=>s[k]!=null?+s[k]:v;
+  if((+x.settled||0)<n('minSettled',3))return {pct:0,paidOver:0,risk:0};
+  const rs=(ratios||[]).filter(v=>typeof v==='number'&&isFinite(v)&&v>0).slice(-n('recent',5)).sort((a,b)=>a-b);
+  const med=rs.length?(rs.length%2?rs[(rs.length-1)/2]:(rs[rs.length/2-1]+rs[rs.length/2])/2):1;
+  const paidOver=Math.max(0,med-1);
+  const risk=(+x.writtenOff||0)>0.009?n('writtenOff',0.3):(x.lateLong||(+x.overdueDays||0)>n('overdueDays',14))?n('longLate',0.2):x.late?n('late',0.1):0;
+  const step=n('step',0.05), pct=Math.min(2,Math.max(0,Math.round((paidOver+risk)/step+1e-9)*step));
+  return {pct:+pct.toFixed(2),paidOver:+paidOver.toFixed(4),risk:risk};
 }
 /* ============ v651, HIS DECISIONS OF 15 SEP 2026: A CUSTOMER'S PRICE IS THEIR TIER, NEVER ABOVE WHAT THEY PAY ============
    (THE CAP, RETIRED ON HIS DECISION OF 27 SEP 2026: see cardPrice below. Kept as the record of what it did.)
@@ -7829,7 +7869,7 @@ return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMa
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
-        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,
+        setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
 /* ==== END ENGINE pricing ==== */
@@ -8068,13 +8108,27 @@ function driftSignals(C,prod,code){
     late:!!lt.on,lateLong:!!(lt.on&&lt.why==='long'),writtenOff:+wo.toFixed(2),
     overdueDays:open.reduce((m,x)=>Math.max(m,x.days-RU.holdDays),0)};
 }
+/* 18 OCT 2026, HIS DECISION: THE FIGURE THAT PRICES IS THE % LIFT HE HOLDS, OR NOUGHT. `d` is that figure (0 to 2) and nothing automatic reaches it:
+   `auto`, `G` and `B` are the record's reading (autoDrift) kept for the card, and the suggestion is suggestOf below. */
 function driftOfNow(C,p,code){
   const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
   const who=ownerOf(code)||code,h=(C.B.tierOf[who]||{})[p],hand=PRICING_ENGINE.driftOk(h)?+h:null;
   const sig=driftSignals(C,p,who),a=PRICING_ENGINE.autoDrift(sig,R.auto);
-  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:a.d,sig:sig});
+  return Object.assign({},a,{auto:a.d,hand:hand,d:hand!=null?hand:0,sig:sig});
 }
 function driftOf(C,p,code){return viaMemo(C,'drift|'+(ownerOf(code)||code)+'|'+p,()=>driftNowS(C,p,code));}
+/* THE SUGGESTED % LIFT (his decision of 18 Oct 2026): the engine's suggestPct over the record's signals and the rate each of the customer's
+   last S.recent salt sales paid over the Set Price rate at that sale's size (today's Set Price, the cost being today's). Prices nothing. */
+function suggestOf(C,p,code){
+  const R=C.R.TIER_RULE[p];if(!R||!R.drift)return null;
+  return viaMemo(C,'suggest|'+(ownerOf(code)||code)+'|'+p,()=>{
+    const who=ownerOf(code)||code,S=R.suggest||{},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:R});
+    const rows=pSales(C.B,p).filter(x=>POSITION_ENGINE.ownsCode(who,x.customer)&&pbPriced(x)&&x.date&&x.total>0&&x.qty>0)
+      .sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).slice(-(+S.recent||5));
+    const ratios=rows.map(x=>{const set=PRICING_ENGINE.quoteAt(x.qty,K,P,0);return set>0?(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty):null;}).filter(v=>v!=null);
+    return PRICING_ENGINE.suggestPct(driftSignals(C,p,who),ratios,S);
+  });
+}
 function tierCustomers(C){
   const rev={};
   C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
@@ -8116,11 +8170,11 @@ function pricing(B,R,today,over=null){
     Object.keys(f.floors).forEach(q=>{floors[q]={floor:r4(f.floors[q].floor)};});
     const cards={};
     ids.forEach(id=>{const r=[];shownSizes(C,p).forEach(q=>{const x=cardQuote(C,p,id,q);if(x!=null&&isFinite(x))r.push([q,x]);});if(r.length)cards[id]=r;});
-    let drift=null;
-    if(driftBook(C,p)){drift={};ids.forEach(id=>{if(isPartner(C,id)){drift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))drift[id]=d.d;});}
+    let lift=null,suggest=null;
+    if(driftBook(C,p)){lift={};suggest={};ids.forEach(id=>{if(isPartner(C,id)){lift[id]='partner';return;}const d=driftOf(C,p,id);if(d&&typeof d.d==='number'&&isFinite(d.d))lift[id]=d.d;const g=suggestOf(C,p,id);if(g)suggest[id]=g.pct;});}
     out[p]=Object.assign({stockCost:r4(f.stockCost), replCost:r4(f.replCost), floors, inputs:f.inputs, sizes:f.sizes, rungs:f.rungs,
       ladder:(f.ladder||[]).map(r=>Object.assign({q:r.q,prices:r.prices,fixed:!!r.fixed},r.drift?{drift:true}:{})), cards, partners:B.partners.slice()},
-      drift?{drift}:{});
+      lift?{lift,suggest}:{});
   }
   return out;
 }
@@ -8128,7 +8182,7 @@ function pricing(B,R,today,over=null){
 return {pSales,pPurch,openingFor,countedFor,posInputs,stockCost,hiddenFor,setPricesFor,sizesFor,shownSizes,shSizes,ladderFor,
   latestLot,meanLotQty,priceLockState,delShare,avgDelivery,replRate,replCost,quoteRate,freightRate,leakCharge,shrinkRate,
   inputs,policy,fiveTiers,figures,
-  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,tierCustomers,cost,cardQuote,pricing};
+  ownerOf,isResellAcct,isPerson,pbPriced,isPartner,lateOf,buyerProfile,driftBook,driftSignals,driftOfNow,driftOf,suggestOf,tierCustomers,cost,cardQuote,pricing};
 })();
 
 /* ==== END ENGINE snapshot ==== */
@@ -9031,23 +9085,10 @@ const PLACED={
 };
 const TIER_OF={
   "CS6-BS": {
-    "oil": "Platinum",
-    "salt": -0.7
+    "oil": "Platinum"
   },
   "CZ5-TM": {
     "oil": "Titanium"
-  },
-  "CI5-PER": {
-    "salt": -0.3
-  },
-  "CM4-MK": {
-    "salt": 0.3
-  },
-  "CN4-BSL": {
-    "salt": -0.5
-  },
-  "CA3-KP": {
-    "salt": 0
   }
 };
 const PEOPLE={
@@ -11782,14 +11823,13 @@ function ladderFor(p){return SNAPSHOT_ENGINE.ladderFor(snapCtx(),p||PROD);}
    v656 the board's ask is its last level, and since v651 a customer's own price list is the level they hold. */
 /* ============ 05 OCT 2026, HIS DECISION: SALT IS A SET PRICE AND A DRIFT (Model B) ============
    Ambassador and the four tiers are retired for salt. Per size: the Floor (COGS times the size), the Ceiling (ceilingX
-   times the floor) and the Set Price, the floor times a multiple sliding in the log of size from mS at qS to mB at qB, down
-   to the ten, lifted to the floor, capped at the ceiling and walked under the rate law: at COGS RM64 it reads RM90, 160,
+   times the floor) and the Set Price, the floor times a multiple sliding in the log of size between R.points (18 Oct 2026: 2.5, 2,
+   1.67 and 1.33 at 0.5, 1, 6.25 and 12.5), down to the grid, lifted to the floor, capped at the ceiling and walked (engine driftWalk; on 05 Oct 2026, at COGS RM64) it read RM90, 160,
    220, 280, 330, 380, 430, 480, 520, 560, 660 and 1,090 on the rungs, every rung walked with the grid's own sizes (05 Oct
    2026, any amount: `grid`, from min in steps to max, each point priced by the engine's quoteAt and sealed per customer, so
    the rate never rises across the whole grid). A stranger is quoted the Set Price. Each customer
-   holds a drift from -1 to +1, hand-set (TIER_OF, folded as `tierset`) or read off their record (`auto`, the engine's
-   autoDrift), which moves the Set Price by up to `drift.up` of the floor towards the ceiling or `drift.down` of it towards
-   the floor (driftAt in the ENGINE block). */
+   holds a % lift from 0 to 2, set by him (TIER_OF, folded as `tierset`), nought where none is held (18 Oct 2026: the Set Price is the least
+   anyone but a partner pays, and nothing automatic prices), applied inside the engine's driftWalk (driftAt in the ENGINE block). */
 /* TIER_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */
 /* 05 OCT 2026, HIS DECISION: EACH BOOK'S GRID, {min, step, max}, read off its rule: the quantities the Counter quotes at once.
    Above max the only way in is Negotiate. Null for a book with none. */
@@ -15116,7 +15156,7 @@ function ifrsPanel(){
     <h3 style="margin-top:16px;font-size:14px">Inventory</h3>
     <table class="salt-table fintab istmt" style="margin-top:8px"><tbody>
       ${L('At cost',F.atCost,{ref:'IAS 2.10',n:`${units(F.closeUnits)} at ${fmt(stockCostFor(PROD)+F.freightPerUnit)} landed`})}
-      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the lowest automatic drift, the least a customer is quoted without his word':'at '+TIER_NAMES[1]+', the lowest level any customer is quoted'}`:'no selling price established for this product'})}
+      ${L('Net realisable value',F.nrv,{ref:'IAS 2.6',n:F.nrvTested?`${fmt(F.nrvRate)}/unit less costs to sell, ${driftBook(P)?'at the Set Price, the least a customer but a partner is quoted':'at '+TIER_NAMES[1]+', the lowest level any customer is quoted'}`:'no selling price established for this product'})}
       ${L('<b>Carrying amount</b>',F.carrying,{cls:'tot',ref:'IAS 2.9',n:F.nrvTested?(F.writeDown>0?`written down by ${fmt0(F.writeDown)}`:'cost is lower, so cost'):'cost, untested against NRV'})}
     </tbody></table>
     <!-- the untested-NRV paragraph went at v401: the NRV row already reads "no selling price
@@ -17268,8 +17308,8 @@ function ifrsPL(p){
   const nrvRate=hasBoard?(function(){try{
     const q=Math.max(0.5,del.mean||1), toSell=(delShare(P).v*COST_BASIS.txnPerDelivery.rm)/Math.max(0.01,q);
     const row=(typeof TIER_RULE!=='undefined'&&TIER_RULE[P])?PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()):null;
-    /* 05 Oct 2026: on a drift book the prudent end of the ordinary course is the lowest price an automatic drift quotes */
-    if(row&&row.drift){const lo=PRICING_ENGINE.driftAt(q,pxCost(),pxPolicy(),-((TIER_RULE[P].auto||{}).cap||0.5));return lo?+(lo.p/q-toSell).toFixed(4):null;}
+    /* 05 Oct 2026: on a drift book the prudent end of the ordinary course is the lowest price quoted (18 Oct 2026: the Set Price, a % lift of nought) */
+    if(row&&row.drift){const lo=PRICING_ENGINE.driftAt(q,pxCost(),pxPolicy(),0);return lo?+(lo.p/q-toSell).toFixed(4):null;}
     if(row&&row.prices&&row.prices.length>1)return +(row.prices[1]/q-toSell).toFixed(4);
     const x=pxQuote(q,pxSignals().net,0);
     return x&&x.perUnit?+(x.perUnit-toSell).toFixed(4):null;}catch(e){return null;}})():null;
@@ -17375,18 +17415,19 @@ function slowdown(prod){
 }
 /* V5c: THE LATE PAYER, across every book and their bucket, read by the engine's walk (payDelays, lateOffer) */
 function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}
-/* ============ 05 OCT 2026, HIS DECISION: EACH CUSTOMER'S DRIFT ON A DRIFT BOOK ============
-   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price moved by their drift, d from -1 to +1.
-   HAND-SET WINS: a number held in TIER_OF[code][book], set on the Drift card or at Add ID, queued and folded as `tierset`,
-   a null clearing it. Otherwise AUTOMATIC, the engine's autoDrift over the record the desk's own readers make: buyerProfile on
-   that book for how often, how much and how many; payDelays, across every book, for the settlements paid within the term
-   (RULES.holdDays) and the oldest open overdue; lateOf for the late flag; txWrittenOff for anything written off. A late payer
-   is priced up, his decision of 05 Oct 2026, superseding the offer-only rule of 29 Sep. */
+/* ============ 18 OCT 2026, HIS DECISION: EACH CUSTOMER'S % LIFT ON A DRIFT BOOK ============
+   A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price lifted by their %, d from 0 to 2 (0% to 200%),
+   the Set Price being the least anyone but a partner pays. THE FIGURE IS HIS: a number held in TIER_OF[code][book], set on Counter Admin or
+   at Add ID, queued and folded as `tierset`, a null clearing it, and nought where none is held. Nothing automatic prices: the engine's
+   autoDrift over the record (buyerProfile, payDelays, lateOf, txWrittenOff) only fills the card's good and bad, and suggestOf is its
+   suggestion, from what they paid over the Set Price on their last salt sales and how they pay (suggestPct). */
 function driftBook(p){return SNAPSHOT_ENGINE.driftBook(snapCtx(),p||PROD);}
 function driftSignals(code,prod){return SNAPSHOT_ENGINE.driftSignals(snapCtx(),prod||PROD,code);}
 /* the Drift card and the price lists ask each customer's drift about four times a render: kept for the render, by customer and book */
 function driftOf(code,prod){return SNAPSHOT_ENGINE.driftOf(snapCtx(),prod||PROD,code);}
 function driftOfNow(code,prod){return SNAPSHOT_ENGINE.driftOfNow(snapCtx(),prod||PROD,code);}
+/* 18 Oct 2026: the engine's suggested % lift for a customer, {pct, paidOver, risk}. It prices nothing: his tap sets a figure. */
+function suggestOf(code,prod){return SNAPSHOT_ENGINE.suggestOf(snapCtx(),prod||PROD,code);}
 /* the level a late payer is offered: one down from what they are quoted, a band set read at its mid; none at the last level */
 function lateDown(v){const N=TIER_NAMES,cur=v&&typeof v==='object'?v.mid:v,i=N.indexOf(cur);return i<0||i>=N.length-1?null:N[i+1];}
 function lateWhy(l){
@@ -17416,13 +17457,13 @@ function tierQueued(){const o={},add=(c,t)=>{o[c]=Object.assign(o[c]||{},t);};
   queue.forEach(q=>{const p=q&&q.payload;if(!p)return;if(p.mode==='tierset')Object.keys(p.tiers||{}).forEach(c=>add(c,p.tiers[c]));else if(p.mode==='addid'&&p.tiers)add(p.code,p.tiers);});
   return o;}
 /* v670: a band set is spelled out band by band, so a queued entry never reads [object Object] */
-function levelSay(v){return v==null?'not set':typeof v==='number'?'drift '+driftSay(v):typeof v==='string'?v:(['small','mid','big'].filter(k=>v[k]).map(k=>k+' '+v[k]).join(', ')||JSON.stringify(v));}
+function levelSay(v){return v==null?'not set':typeof v==='number'?'lift '+driftSay(v):typeof v==='string'?v:(['small','mid','big'].filter(k=>v[k]).map(k=>k+' '+v[k]).join(', ')||JSON.stringify(v));}
 /* ============ 05 OCT 2026: THE DRIFT CARD ============
    One row a customer on each drift book: the drift read off their record (good and bad beside it), the one he has set if he
    has, what it quotes at 1, 3 and 12.5 unit, and a box to set or clear his. Set and Clear queue a `tierset` carrying the
    number, folded into TIER_OF as a tier was. Up at half a unit and one unit there is almost no room above the Set Price, so
    a row drifting up says the signal there is terms or prepayment. */
-function driftSay(d){return (d>0?'+':d<0?'\u2212':'')+Math.abs(d).toFixed(2);}
+function driftSay(d){return Math.round((+d||0)*100)+'%';}
 /* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. It is made on Counter Admin (a name-free `partner` entry for a code already on the
    roster). The desk shows the standing of one queued before B5 of #62 at once, as the fold will file it: the code in `partners`, and an
    associate (with the -R account) if they were none, so cardQuote reads the floor and the bench lists them before the fold lands. */
@@ -17433,24 +17474,25 @@ function partnerNote(id){
 }
 function driftCard(){
   const ids=tierCustomers(),books=tieredBooks().filter(driftBook);if(!ids.length||!books.length)return '';
-  const keep=PROD,waiting=tierQueued();let hand=0,up=0,down=0;const rows=[];
+  const keep=PROD,waiting=tierQueued();let hand=0,up=0;const rows=[];
   try{books.forEach(p=>{PROD=p;recompute();
     ids.forEach(id=>{
       if(isPartner(id)){   /* 06 Oct 2026, his decision: a partner pays cost, so no drift moves their price and none is set here */
         const atP=[1,3,12.5].map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
         rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>Partner</b>${partnerQueued(id)?' &middot; waiting under Approve':''}<br><span class="iref">at cost, the floor to the sen; no drift applies</span><br><span class="iref">${atP}</span></div></td></tr>`);return;}
       const dr=driftOf(id,p),w=!!waiting[id]&&p in waiting[id],wv=w?waiting[id][p]:undefined;
-      if(dr.hand!=null)hand++;if(dr.d>0.0001)up++;else if(dr.d<-0.0001)down++;
+      if(dr.hand!=null)hand++;if(dr.d>0.0001)up++;
       const at=[1,3,12.5].map(q=>{const x=cardQuote(id,q);return x!=null?units(q)+' '+fmt0(x):null;}).filter(Boolean).join(' &middot; ');
-      const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set '+driftSay(dr.hand)+', auto '+driftSay(dr.auto):'auto '+driftSay(dr.auto));
-      const why='good '+dr.G.toFixed(2)+', bad '+dr.B.toFixed(2)+(dr.sig.late?' (late payer)':'')+(dr.sig.writtenOff>0.009?' (written off)':'');
-      const terms=dr.d>0.0001?'<br><span class="iref">Up barely moves half a unit or one: there the signal is terms or prepayment.</span>':'';
+      const sg=suggestOf(id,p)||{pct:0,paidOver:0,risk:0};
+      const state=(w?'waiting '+(wv==null?'to clear':driftSay(wv))+' &middot; ':'')+(dr.hand!=null?'set '+driftSay(dr.hand):'not set, the Set Price')+'; suggested '+driftSay(sg.pct);
+      const why='paid '+driftSay(sg.paidOver)+' over the Set Price, risk '+driftSay(sg.risk)+(dr.sig.late?' (late payer)':'')+(dr.sig.writtenOff>0.009?' (written off)':'');
+      const terms=dr.d>0.0001&&dr.d<0.07?'<br><span class="iref">Under about 7% moves nothing at half a unit or one.</span>':'';
       rows.push(`<tr><td class="l salt-table__label mono">${ID(id)}</td><td class="l salt-table__label"><div style="line-height:1.3">${PRODUCTS[p].name} <b>${driftSay(dr.d)}</b><br><span class="iref">${state}; ${why}</span><br><span class="iref">${at}</span>${terms}</div>${partnerNote(id)}</td></tr>`);
     });});}
   finally{PROD=keep;recompute();}
-  return `<div class="card"><div class="cardh">Drift <span class="sub">each customer's price against the Set Price; read off their record unless you set one</span></div>
-    <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Drift, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-    <div class="insight salt-insight">${hand} of ${rows.length} drifts are set by you, ${up} customers sit above the Set Price and ${down} below; a drift runs from \u22121 to +1, read off the record within \u00b10.5, and moves a price at most ${Math.round(((TIER_RULE[books[0]].drift||{}).up||0.3)*100)}% of the floor up and ${Math.round(((TIER_RULE[books[0]].drift||{}).down||0.2)*100)}% down, never past the floor or the ceiling.</div></div>`;
+  return `<div class="card"><div class="cardh">Their % <span class="sub">each customer's lift on the Set Price, the least anyone but a partner pays; yours to set, the suggestion is the engine's</span></div>
+    <div class="tscroll"><table class="salt-table tiertab"><thead><tr><th class="l salt-table__label">Customer</th><th class="l salt-table__label">Their %, and what it quotes</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
+    <div class="insight salt-insight">${hand} of ${rows.length} are set by you and ${up} sit above the Set Price; a % runs from 0 to 200, the Set Price is the least a customer pays, and none goes past the ceiling.</div></div>`;
 }
 function tierCard(){
   if(tieredBooks().length&&tieredBooks().every(driftBook))return driftCard();   /* 05 Oct 2026: no book holds a level now */
@@ -19773,7 +19815,7 @@ function ordOfferBlock(o,when){const p=o.price||{},q=+o.qty||0,t=+o.total||0;
   const dr=o.code&&typeof driftOf==='function'?driftOf(o.code,o.product||'salt'):null,sg=dr&&dr.sig;
   const rec=sg?' Record: '+sg.orders+' order'+(sg.orders===1?'':'s')+', '+sg.onTime+' of '+sg.settled+' paid on time'+(sg.late?', paying late now':'')+'.':'';
   const lines=['They asked for a price on '+units(q)+(typeof p.proposed==='number'?', suggesting '+fmt(p.proposed)+' for the goods':'')+'. '+auto+'.'
-    +(dr&&typeof dr.d==='number'?' Their drift '+(dr.d>0?'+':'')+(+dr.d).toFixed(2)+'.':'')+rec];
+    +(dr&&typeof dr.d==='number'?' Their % on the Set Price '+driftSay(dr.d)+'.':'')+rec];
   if(p.from==='accept'){const f=p.offer||{},sp=/^([0-9:]{5})-([0-9:]{5})$/.exec(String(f.slotSpan||''));
     const what='goods '+fmt(+f.total||0)+(Math.abs((+f.total||0)-t)>0.004?' (they placed it at '+fmt(t)+')':'')+(o.mode==='deliver'?', delivery '+fmt(+f.delivery||0):'')
       +(f.slot&&sp?', delivery between '+sp[1]+' and '+sp[2]+' on '+ordDayLabel(String(f.slot).slice(0,10)):'');

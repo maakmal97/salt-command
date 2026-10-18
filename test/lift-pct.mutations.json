@@ -1,0 +1,188 @@
+[
+ {
+  "name": "the walk drops the ringgit margin lift: 12.5 unit comes down to the 960 the multiple alone gives, and a margin falls across the grid",
+  "file": "engine/pricing.mjs",
+  "find": "if(mg>-Infinity)p=Math.max(p,up(+(fl+mg).toFixed(2)));",
+  "replace": "/* no margin lift */"
+ },
+ {
+  "name": "the multiple at 12.5 unit is 1.34, not his 1.33",
+  "file": "engine/rules.mjs",
+  "find": "[6.25,1.67],[12.5,1.33]],",
+  "replace": "[6.25,1.67],[12.5,1.34]],"
+ },
+ {
+  "name": "the multiple slides in the size, not in the log of the size, between his points",
+  "file": "engine/pricing.mjs",
+  "find": "Math.log(q/a[0])/Math.log(b[0]/a[0])",
+  "replace": "(q-a[0])/(b[0]-a[0])"
+ },
+ {
+  "name": "the multiple is clamped at the first point only: beyond 12.5 it keeps sliding down",
+  "file": "engine/pricing.mjs",
+  "find": "  if(q>=last[0])return last[1];\n",
+  "replace": "  if(q>=last[0])return last[1]-0.01*(q-last[0]);\n"
+ },
+ {
+  "name": "a customer's % is ignored in the walk: every price is the Set Price",
+  "file": "engine/pricing.mjs",
+  "find": "const x=step(rP,mP,1+k);",
+  "replace": "const x=step(rP,mP,1);"
+ },
+ {
+  "name": "the price rounds to the nearest five, not down",
+  "file": "engine/pricing.mjs",
+  "find": "down=v=>Math.floor(v/to+1e-9)*to;\n  const cx=+R.ceilingX>0",
+  "replace": "down=v=>Math.round(v/to)*to;\n  const cx=+R.ceilingX>0"
+ },
+ {
+  "name": "the running rate is the target each time: nothing keeps it from rising",
+  "file": "engine/pricing.mjs",
+  "find": "const rate=Math.min(r,fl*m*lift/q);",
+  "replace": "const rate=fl*m*lift/q;"
+ },
+ {
+  "name": "the Ceiling's own rate no longer holds the next size: a high % is quoted more a unit on more units",
+  "file": "engine/pricing.mjs",
+  "find": "return {rate:capped?Math.min(rate,hi/q):rate,",
+  "replace": "return {rate:rate,"
+ },
+ {
+  "name": "the Ceiling no longer holds a price",
+  "file": "engine/pricing.mjs",
+  "find": "p=Math.min(Math.max(p,lo),hi);\n      /* where the Ceiling",
+  "replace": "p=Math.max(p,lo);\n      /* where the Ceiling"
+ },
+ {
+  "name": "a lifted price carries an extra five on top of the % the customer holds",
+  "file": "engine/pricing.mjs",
+  "find": "return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p,d:k};",
+  "replace": "return {q:q,floor:+fl.toFixed(2),ceiling:+ceil.toFixed(2),set:s.p,p:p>s.p?p+5:p,d:k};"
+ },
+ {
+  "name": "driftAt walks the size alone, not the grid beneath it, so it can disagree with the grid by a step",
+  "file": "engine/pricing.mjs",
+  "find": "const sizes=walkSizes(R,[q]).filter(r=>r<q-0.009).concat([q]);\n  const w=driftWalk(sizes,C,P,d);",
+  "replace": "const sizes=[q];\n  const w=driftWalk(sizes,C,P,d);"
+ },
+ {
+  "name": "quoteGrid walks each size on its own, not the one path, so it can disagree with quoteAt",
+  "file": "engine/pricing.mjs",
+  "find": "else if(R.drift)ps=read(driftWalk(walkSizes(R,qs),C,P,d),false);",
+  "replace": "else if(R.drift)ps=qs.map(q=>{const w=driftWalk([q],C,P,d);return +cardPrice(null,floorTotal(q,C,P),w[0].p).toFixed(2);});"
+ },
+ {
+  "name": "a % may be negative again (the old drift's range)",
+  "file": "engine/pricing.mjs",
+  "find": "v>=-1e-9&&v<=2+1e-9;}",
+  "replace": "v>=-1-1e-9&&v<=2+1e-9;}"
+ },
+ {
+  "name": "a % may be up to 3",
+  "file": "engine/pricing.mjs",
+  "find": "v>=-1e-9&&v<=2+1e-9;}",
+  "replace": "v>=-1e-9&&v<=3;}"
+ },
+ {
+  "name": "the automatic drift prices again: a customer with none held is quoted what the record reads",
+  "file": "engine/snapshot.mjs",
+  "find": "d:hand!=null?hand:0,sig:sig",
+  "replace": "d:hand!=null?hand:a.d,sig:sig"
+ },
+ {
+  "name": "the snapshot carries the map as drift again, which an old reader would read as a drift from -1 to +1",
+  "file": "engine/snapshot.mjs",
+  "find": "lift?{lift,suggest}:{});",
+  "replace": "lift?{drift:lift,suggest}:{});"
+ },
+ {
+  "name": "the Counter's card off the board reads the old drift map",
+  "file": "src/orders.js",
+  "find": "(snap.lift && typeof snap.lift[code] === \"number\" ? snap.lift[code] : null)",
+  "replace": "(snap.drift && typeof snap.drift[code] === \"number\" ? snap.drift[code] : null)"
+ },
+ {
+  "name": "the customer's sealed grid reads the old drift map",
+  "file": "tools/pricelist.mjs",
+  "find": "const dr = snap.lift && Object.prototype.hasOwnProperty.call(snap.lift, code) ? snap.lift[code] : null;",
+  "replace": "const dr = snap.drift && Object.prototype.hasOwnProperty.call(snap.drift, code) ? snap.drift[code] : null;"
+ },
+ {
+  "name": "paid over the Set Price may be negative, so a customer who paid under it lowers their risk",
+  "file": "engine/pricing.mjs",
+  "find": "const paidOver=Math.max(0,med-1);",
+  "replace": "const paidOver=med-1;"
+ },
+ {
+  "name": "the suggestion reads the highest of the last five rates, not the median",
+  "file": "engine/pricing.mjs",
+  "find": "rs[(rs.length-1)/2]",
+  "replace": "rs[rs.length-1]"
+ },
+ {
+  "name": "the suggestion reads the last three sales, not five",
+  "file": "engine/rules.mjs",
+  "find": "overdueDays:14, recent:5, step:0.05",
+  "replace": "overdueDays:14, recent:3, step:0.05"
+ },
+ {
+  "name": "the suggestion is made on one settled row, not three",
+  "file": "engine/rules.mjs",
+  "find": "step:0.05, minSettled:3}",
+  "replace": "step:0.05, minSettled:1}"
+ },
+ {
+  "name": "a late payer's risk is 15%",
+  "file": "engine/rules.mjs",
+  "find": "longLate:0.2, late:0.1,",
+  "replace": "longLate:0.2, late:0.15,"
+ },
+ {
+  "name": "an open overdue counts as long from 7 days, not past 14",
+  "file": "engine/rules.mjs",
+  "find": "late:0.1, overdueDays:14,",
+  "replace": "late:0.1, overdueDays:7,"
+ },
+ {
+  "name": "the suggestion rounds to the nearest 10%",
+  "file": "engine/rules.mjs",
+  "find": "recent:5, step:0.05,",
+  "replace": "recent:5, step:0.1,"
+ },
+ {
+  "name": "the suggestion's paid-over reads the sale's rate against the Set Price total, not its rate",
+  "file": "engine/snapshot.mjs",
+  "find": "(POSITION_ENGINE.txGoods(x)/x.qty)/(set/x.qty)",
+  "replace": "(POSITION_ENGINE.txGoods(x)/x.qty)/set"
+ },
+ {
+  "name": "the dated gate never fires: the fold takes a salt % stamped before the switch",
+  "file": "engine/apply.mjs",
+  "find": "v !== undefined && Date.parse((it.entry && it.entry.at) || it.id) < liftAt;",
+  "replace": "v !== undefined && false;"
+ },
+ {
+  "name": "the dated gate refuses a clear as well as a figure",
+  "file": "engine/apply.mjs",
+  "find": "driftBooks().includes(p) && v !== null && v !== undefined &&",
+  "replace": "driftBooks().includes(p) &&"
+ },
+ {
+  "name": "the dated gate reaches every book, oil's levels included",
+  "file": "engine/apply.mjs",
+  "find": "driftBooks().includes(p) && v !== null && v !== undefined &&",
+  "replace": "v !== null && v !== undefined &&"
+ },
+ {
+  "name": "the switch moment is set far in the future, so a figure stamped after it is refused as well",
+  "file": "engine/rules.mjs",
+  "find": "liftSince:\"2026-10-18T00:00:00Z\",",
+  "replace": "liftSince:\"2099-10-18T00:00:00Z\","
+ },
+ {
+  "name": "the Add ID road is outside the dated gate",
+  "file": "engine/apply.mjs",
+  "find": "rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p]));",
+  "replace": "rtOld = [];"
+ }
+]

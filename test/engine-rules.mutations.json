@@ -8,8 +8,8 @@
  {
   "name": "salt's set-multiple changes inside the master's inlined block (the snapshot moves, and the page leaves the module)",
   "file": "master/salt_command.html",
-  "find": "mS:2.813,",
-  "replace": "mS:2.814,"
+  "find": "points:[[0.5,2.5],",
+  "replace": "points:[[0.5,2.6],"
  },
  {
   "name": "a table is defined a second time in the master's own script (in a block, so the page still loads)",

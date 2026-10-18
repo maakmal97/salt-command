@@ -127,8 +127,8 @@ export async function run({ ok, pageWork }) {
       && radios.filter((r) => r.closest(".maker-marks")).every((r) => r.nextElementSibling.querySelector("svg.psym")),
     "a group of marks alone is laid compact (maker-marks), never two wide boxes across with a mark in a corner, and only marks are: " + markGrids.size + " groups");
     const driftField = byAct(p.d, "record.drift.value");
-    ok(driftField && driftField.min === "-1" && driftField.max === "1" && !driftField.hasAttribute("inputmode"),
-      "the drift field takes a minus: from -1, and no decimal pad (an iPhone's has no minus key)");
+    ok(driftField && driftField.min === "0" && driftField.max === "2" && driftField.getAttribute("inputmode") === "decimal",
+      "the % lift field takes 0 to 2, and a decimal pad (nothing in it is negative, so no minus key is wanted)");
     const css = [...p.d.querySelectorAll("style")].map((s) => s.textContent).join("\n");
     ok(/\.salt-option__face\s*\{[^}]*min-height:\s*var\(--salt-tap\)/.test(css) && /--salt-tap:\s*44px/.test(css)
       && /\.salt-option__input\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/.test(css),
