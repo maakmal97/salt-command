@@ -21651,10 +21651,10 @@ const builders={today:()=>tabToday()+tabPlans(),forward:tabForward,sourcing:()=>
    work as addresses and as links: switchTab maps them to the view that holds them and opens
    the fold, so nothing that pointed at a tab has to change. */
 const VIEWS=[
-  {id:'today', name:'Today',            lead:'today',         parts:['overview','forward']},
+  {id:'today', name:'Today',            lead:'today',         parts:[]},   /* 18 Oct 2026, his word: Rules went to Pricing, Next 30 days to Stock */
   {id:'money', name:'Order book',       lead:'receivables',   parts:['financials']},
-  {id:'stock', name:'Stock',            lead:'inventory',     parts:['sourcing']},
-  {id:'price', name:'Pricing',          lead:'pricing',       parts:[]},
+  {id:'stock', name:'Stock',            lead:'inventory',     parts:['forward','sourcing']},
+  {id:'price', name:'Pricing',          lead:'pricing',       parts:['overview']},
   {id:'people',name:'Network',          lead:'concentration', parts:['network','map']},
   {id:'book',  name:'Record',           lead:'ledger',        parts:['analysis']}   /* v802: the Journal left the desk, his word of 23 Sep 2026: master/changelog.json is the reference */   /* v747: the ID stays 'book', so every /desk#book address still lands */
 ];
