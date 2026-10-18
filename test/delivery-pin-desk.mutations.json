@@ -14,7 +14,7 @@
  {"name":"filing drops the address","find":"pm[code]=Object.assign(entry,{addr:(pm[code]&&pm[code].addr)||null});","replace":"pm[code]=Object.assign(entry,{addr:null});"},
  {"name":"a friend's spot is filed","find":"function pinFileable(o){return !!o&&!!o.code&&!o.forFriend&&","replace":"function pinFileable(o){return !!o&&!!o.code&&"},
  {"name":"a friend's card offers the filing","find":"const can=!same&&pinFileable(o);","replace":"const can=!same&&!!o.code;"},
- {"name":"an agreed order's spot is never opened","find":"  if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>ordDraw());},0);return","replace":"  if(!v){return"},
+ {"name":"an agreed order's spot is never opened","find":"  if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>pinDraw());},0);return","replace":"  if(!v){return"},
  {"name":"the lock keeps the batch's answer","find":"ORD_PIN={};ORD_PIN_ALL='';ORD_PIN_ALL_FOR='';}catch(e){}}","replace":"ORD_PIN={};ORD_PIN_ALL_FOR='';}catch(e){}}"},
  {"name":"the batch takes the oldest order","find":"if(!by[o.code]||String(o.at||'')>String(by[o.code].o.at||''))by[o.code]={o,v};","replace":"if(!by[o.code]||String(o.at||'')<String(by[o.code].o.at||''))by[o.code]={o,v};"},
  {"name":"the batch takes a customer with a point","find":"if(!v||v.st!=='ok'||!pinFileable(o)||feePt(vaultPlaces&&vaultPlaces[o.code]))continue;","replace":"if(!v||v.st!=='ok'||!pinFileable(o))continue;"},

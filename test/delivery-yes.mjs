@@ -231,29 +231,8 @@ export async function run({ ok }) {
     ok(t2.includes(W.EN["np.cLapsed"]) && !t2.includes(W.EN["np.cYes"]), "a lapsed offer says so, and is no longer theirs to take: " + t2.slice(0, 300));
   } finally { await new Promise((r) => setTimeout(r, 60)); dom.window.close(); }
 
-  /* 5. THE DESK'S CARD: Send for their yes when it is needed, the offer said while it is open, Withdraw, and Accept once it lapses */
-  const { openMaster } = await import("../tools/payload.mjs");
-  const { w: mw } = await openMaster(process.env.SALT_MASTER || undefined);
-  const rd = (e) => JSON.parse(String(mw.eval("JSON.stringify(" + e + ")")));
-  const P = { id: "20261010050000-dyes", u: "dyab-cdef", code: "CZ6-DY", status: "placed", mode: "deliver", product: "salt", qty: 1, total: 100, at: "2026-10-10T05:00:00Z", history: [], msgs: [] };
-  const s8 = Wn.slotNext(8, null, Date.now()).slot, s12 = Wn.slotNext(12, null, Date.now()).slot;
-  const card = (o, setup) => { mw.eval("ORD_OPEN=" + JSON.stringify([o]) + ";ORD_PRICE={};ORD_WIN={};ORD_CHIP={};ORD_PV={};" + (setup || "")); return String(mw.eval("ordCard(ORD_OPEN[0])")); };
-  const raise = card(P, "ORD_PRICE['" + P.id + "']=120;"), plain = card(P, "ORD_PRICE['" + P.id + "']=90;"),
-    winOwn = card(Object.assign({}, P, { slot: s12, slotSpan: "12:00-16:00" }), "ORD_WIN['" + P.id + "']='" + s8 + "';"),
-    winAsap = card(P, "ORD_WIN['" + P.id + "']='" + s8 + "';");
-  const open = card(Object.assign({}, P, { price: { state: "offered", from: "accept", offer: { id: "x1", kind: "accept", total: 120, delivery: 10, slot: s8, slotSpan: "09:00-12:00", until: new Date(Date.now() + 20 * H).toISOString() } } }));
-  const lapsed = card(Object.assign({}, P, { yes: "offer", price: { state: "offered", from: "accept", offer: { id: "x1", kind: "accept", total: 120, delivery: 10, until: new Date(Date.now() - H).toISOString() } } }));
-  mw.eval("window.__sent=[];window.fetch=function(u,o){window.__sent.push({u:String(u),b:o&&o.body?JSON.parse(o.body):null});return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({ok:true,offer:{kind:'accept',until:new Date(Date.now()+3600000).toISOString()}});}});};"
-    + "ordLoad=function(){return Promise.resolve();};ordDraw=function(){};");
-  const O2 = Object.assign({}, P, { slot: s12, slotSpan: "12:00-16:00" });
-  mw.eval("ORD_OPEN=" + JSON.stringify([O2]) + ";ORD_PRICE={'" + P.id + "':120};ORD_WIN={'" + P.id + "':'" + s8 + "'};ORD_CHIP={'" + P.id + "':'10'};ordBusy={};"
-    + "ORD_PV={'" + P.id + "':{st:'ok',d:10,p:120,gen:ORD_PV_GEN,j:{hash:'h1',offerHash:'oh1'}}};");
-  const sent = rd("window.__sent")[0];
-  const sib = (id, x) => Object.assign({}, P, { id, sheet: "shY" }, x || {});
-  mw.eval("ORD_OPEN=" + JSON.stringify([sib("20261010050001-dyes"), sib("20261010050002-dyes")]) + ";ORD_PRICE={'20261010050002-dyes':150};ORD_WIN={};ORD_CHIP={'20261010050001-dyes':'10'};"
-    + "window.__sent=[];ORD_SHEET_BUSY='';ORD_SAID=null;ORD_PV={};ORD_OPEN.forEach(function(x,i){ORD_PV[x.id]={st:'ok',d:i?0:10,p:i?150:null,j:{hash:'h'+i}};});");
-
-  /* 6. COUNTER ADMIN: the same road, Send for their yes and Withdraw (#104 parity) */
+  /* 5. COUNTER ADMIN: the road, Send for their yes and Withdraw (#104 parity) */
+  const s12 = Wn.slotNext(12, null, Date.now()).slot;
   const posts = [];
   const orderOf2 = (id, patch = {}) => ({ id, u: "mbab-cdef", product: "salt", qty: 1, total: 100, status: "placed", mode: "deliver", history: [], ...patch });
   const A = "20261010070001-ayes", T = "20261010070002-ayes", K = "20261010070003-ayes";
@@ -314,4 +293,15 @@ export async function run({ ok }) {
     const oT = posts.find((p) => p.kind === "offer" && p.path.includes(T));
     ok(oT && oT.body.slot === other.value && oT.body.total === 100, "another window is sent for their yes with the window: " + JSON.stringify(oT && oT.body));
   } finally { browser.window.close(); }
+
+  /* 6. WHAT STILL WAITS ON HIM, on the Desk's To do (18 Oct 2026: the Desk draws no order card, but it counts the acts): an Accept sent for
+     their yes holds the order while it is open, and once it lapses the order is a new one again at its terms */
+  const { openMaster } = await import("../tools/payload.mjs");
+  const { w: mw } = await openMaster(process.env.SALT_MASTER || undefined);
+  const acts = (o) => JSON.parse(String(mw.eval("JSON.stringify((function(){ORD_OPEN=" + JSON.stringify([o]) + ";AP_DRAFTS=[];return ordActs().map(function(a){return a.kind;});})())")));
+  const pending = { id: "20261010050000-dyes", u: "dyab-cdef", code: "CZ6-DY", status: "placed", mode: "deliver", product: "salt", qty: 1, total: 100, at: "2026-10-10T05:00:00Z", history: [], msgs: [] };
+  const offer = (until) => Object.assign({}, pending, { price: { state: "offered", from: "accept", offer: { id: "x1", kind: "accept", total: 120, delivery: 10, until } } });
+  ok(JSON.stringify(acts(pending)) === '["new"]' && JSON.stringify(acts(offer(new Date(Date.now() + 20 * H).toISOString()))) === "[]" && JSON.stringify(acts(offer(new Date(Date.now() - H).toISOString()))) === '["new"]',
+    "an order is a new act for him, held while his Accept waits for their yes, and new again once that offer has lapsed: "
+    + JSON.stringify([acts(pending), acts(offer(new Date(Date.now() + 20 * H).toISOString())), acts(offer(new Date(Date.now() - H).toISOString()))]));
 }
