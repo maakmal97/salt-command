@@ -2,11 +2,10 @@
    1. pricingSnapshot() on the frozen book (the clock pinned to 16 Oct 2026) is byte-identical, takenAt out and rounded to 8 places, to
       test/fixtures/pricing-before-s1c.json, which the master gave before any of this moved.
    2. NOT CIRCULAR: the engine's pricing(B,R,today) called in node with no page (the book read out of the page as plain data, the rules from
-      engine/rules.mjs, the master's LADDER, PRICE and PRICE_LOCK_ON beside them) gives, for every book, the FIXTURE's stockCost, replCost, floors,
+      engine/rules.mjs, LADDER, PRICE and PRICE_LOCK_ON among them since S1e) gives, for every book, the FIXTURE's stockCost, replCost, floors,
       inputs, sizes, rungs, ladder, cards, partners and drift. The page's delegations are not asked.
    3. The master's own script holds each moved function once, as a one-line delegation to SNAPSHOT_ENGINE, and the retired bodies nowhere.
-   LADDER, PRICE and PRICE_LOCK_ON are still the master's own consts (R is built with them here); a Worker that runs pricing() supplies the
-   same three from its own copy of the master's literals until S1c-iv moves them into engine/rules.mjs.
+   LADDER, PRICE and PRICE_LOCK_ON come from engine/rules.mjs like the rest (S1e), so a Worker imports the same three.
    Mutations: test/engine-cards.mutations.json. */
 import { readFileSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
@@ -43,7 +42,7 @@ export async function run({ ok }) {
   const B = J("({sales:sales,purchases:purchases,opening:PROD_OPENING,statedStockBy:statedStockBy,statedStock:STATED_STOCK,supplierReceivable:typeof supplierReceivable!=='undefined'?supplierReceivable:null,"
     + "counts:COUNTS,selfUseLog:selfUseLog,quotes:QUOTES,priceSet:PRICE_SET,costRule:COST_RULE,defaultProd:DEFAULT_PROD,roster:roster,partners:partners,tierOf:TIER_OF,prodOrder:PROD_ORDER})");
   B.loanDrawUnits = () => loan;
-  const R = { ...RULES_MOD, ...J("({LADDER:LADDER,PRICE:PRICE,PRICE_LOCK_ON:PRICE_LOCK_ON})") };
+  const R = { ...RULES_MOD };
 
   const want = JSON.parse(fixtureText).byProduct;
   const got = JSON.parse(JSON.stringify(SNAPSHOT_ENGINE.pricing(B, R, today)));
