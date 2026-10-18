@@ -20,5 +20,6 @@
  {"name":"a desk keeps the filter row","file":"stmt/page.js","find":"    if(oWide()){\n      /* from 860px","replace":"    if(false){\n      /* from 860px"},
  {"name":"Open says nothing of what is to pay","file":"stmt/page.js","find":"        if(c[0]==='open'&&pay>0.004) hd.appendChild(el('span','ocol__pay',tw('ord.col.toPay',{rm:rm(pay)})));\n","replace":""},
  {"name":"Done's column takes the open orders too","file":"stmt/page.js","find":"[['open',open],['done',B.past]]","replace":"[['open',open],['done',B.past.concat(B.open)]]"},
- {"name":"an order opens by itself on a desk","file":"stmt/page.js","find":"    /* Counter Batch A (18 Oct 2026): nothing opens by itself any more, so a desk opens","replace":"    if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; draft.oAuto=true; }\n    /* Counter Batch A (18 Oct 2026): nothing opens by itself any more, so a desk opens"}
+ {"name":"an order opens by itself on a desk","file":"stmt/page.js","find":"    /* Counter Batch A (18 Oct 2026): nothing opens by itself any more, so a desk opens","replace":"    if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; draft.oAuto=true; }\n    /* Counter Batch A (18 Oct 2026): nothing opens by itself any more, so a desk opens"},
+ {"name":"the rail names a roster code","file":"stmt/page.js","find":"x.textContent=user; });","replace":"x.textContent='CE5-SA'; });"}
 ]

@@ -131,6 +131,7 @@ export const EN = {
   "place.stmt": "Account",
   "place.card": "Rewards",
   "who.as": "Signed in as {u}",
+  "who.rail": "Signed in as",
   /* ---- A PRODUCT'S MARK, named by its shape where a screen reader says it (PSHAPE), never by its product ---- */
   "shape.Cube": "Cube",
   "shape.Droplet": "Droplet",

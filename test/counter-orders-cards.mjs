@@ -10,7 +10,8 @@
  *   2  a tab shows only its orders, and the row is one tablist with one tab selected
  *   3  the card: one control, a link card, named in one sentence, owing in ember, nothing else to press inside it, no product word
  *   4  the empty views: none yet, nothing to pay, nothing done, each with its one way on
- *   5  from 860px: no filter row, two columns, what is to pay over Open, and nothing opened by itself */
+ *   5  from 860px: no filter row, two columns, what is to pay over Open, and nothing opened by itself
+ *   6  (P6) the rail names whose account it is by the username, and Salt Counter is the only brand drawn */
 import { webcrypto } from "node:crypto";
 
 export async function run({ ok }) {
@@ -82,6 +83,12 @@ export async function run({ ok }) {
     ok(JSON.stringify(pay) === JSON.stringify(want([B, R])) && JSON.stringify(done) === JSON.stringify(want([D, E, F])) && JSON.stringify(opn) === JSON.stringify(want([A, B, R])),
       "a tab shows its own orders and no other: " + JSON.stringify({ pay, done, opn }));
 
+    /* ---- 6 (P6): the shell from 1080px: the rail names whose account it is by the username, and Salt Counter is the one brand on the page ---- */
+    const who = S.d.querySelector(".cshell .salt-rail [data-whorail]"), brand = who && who.closest(".salt-rail__brand");
+    const seen = (() => { const out = [], w = S.d.createTreeWalker(S.d.body, 4); while (w.nextNode()) { const n = w.currentNode; if (!/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName)) out.push(n.nodeValue); } return out.join(" "); })();
+    const brands = (seen.match(/Salt [A-Z][a-z]+/g) || []).filter((x, i, l) => l.indexOf(x) === i);
+    ok(!!who && who.textContent === u && !brand.hidden && JSON.stringify(brands) === JSON.stringify(["Salt Counter"]),
+      "the rail says the username under Signed in as, and the only brand the page draws is Salt Counter: " + JSON.stringify({ who: who && who.textContent, brands }));
     /* ---- 3: the card ---- */
     await pick(S, "all");
     S.d.querySelector("#pOrder .olater").click(); await until(() => ids(list(S)).length === 6);

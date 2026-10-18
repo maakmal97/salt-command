@@ -261,7 +261,6 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 /* 14 Oct 2026 (his review): A LIVE CLOCK, Kuala Lumpur time, on the Counter's header (digits only: every word shown is the table's) */
 .cclock{margin:0 0 4px;font-variant-numeric:tabular-nums}
 .cclock:empty{display:none}
-.cbar{display:none}
 .cwho{margin:6px 0 0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 /* a username is a credential, so the rail's capitals never reach it */
 .home{max-width:620px;margin:0 auto}
@@ -300,8 +299,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
   .cshell{display:flex;gap:28px;align-items:flex-start;max-width:1240px;margin:0 auto;padding-bottom:48px}
   .cmain{flex:1 1 auto;min-width:0}
   .cmain .bar,.chead,.home,.cmain .panel{max-width:none}
-  .cbar{display:flex}
   .chead .cclock{display:none}
+  /* Counter Batch A: the rail says whose account it is, so the header does not say it twice */
+  .chead [data-whoas]{display:none}
+  .crtitle{display:block;margin:0 12px 16px;font-size:1.375rem;line-height:1;letter-spacing:0.04em;white-space:nowrap}
+  .crbrand{flex-direction:column;align-items:flex-start;gap:2px}
+  .crbrand .mono{font-size:var(--salt-text-sm);color:var(--salt-salt);text-transform:none;letter-spacing:0}
   .home{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
   .pgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
 }
@@ -1488,8 +1491,13 @@ const PLACE_ICONS = {
 /* a place as a button, on the rail or on the bar; both carry data-t, and Rewards starts hidden. The rail's keeps the tab's
    old id (tPrices, tOrder, tCard), so what found a tab by its id finds its place */
 const placeAttrs = (t, id) => (id ? ' id="t' + t.charAt(0).toUpperCase() + t.slice(1) + '"' : "") + ' data-t="' + t + '"' + (t === "home" ? ' aria-current="page"' : "") + (t === "card" ? " hidden" : "");
+/* COUNTER BATCH A (his decisions of 18 Oct 2026): FROM 1080PX THE APP'S NAME STANDS OVER THE RAIL, the one brand on the page, and the rail's
+   brand slot says whose account it is: Signed in as, then the username (never a roster code), which the header then leaves to the rail. The
+   Desk bar that stood across the top from 18 Oct 2026 is gone with it: the mockup he chose has the name over the rail and no bar. */
 function placesRail() {
   return '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Counter">'
+    + '<p class="salt-title crtitle" aria-hidden="true">Salt Counter</p>'
+    + '<div class="salt-rail__brand crbrand" data-wholine>' + wt("span", 'class="salt-eyebrow salt-eyebrow--mist"', "who.rail") + '<span class="mono" data-whorail></span></div>'
     + '<div class="salt-rail__group">' + PLACES.map(([t, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo"' + placeAttrs(t, true) + ">"
       + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", "", "place." + t) + "</span>"
       + '<span class="salt-rail__count" data-n="' + t + '"></span></button>').join("") + "</div></nav>";
@@ -1724,10 +1732,6 @@ export function landingPage(user, nonce, owner, bulletin) {
     + "</div></div>"
     /* the header names the place and whose account it is, so every customer knows their username; Step 1b: the bell
        sits in it, on every view of the saved app */
-    /* 18 OCT 2026, HIS WORD: THE DESK'S BAR, from 1080px where the rail stands, as the Desk's: the app's name and the clock, which the
-       header's own eyebrow carries on a phone */
-    + (owner ? "" : '<header class="salt-deskbar cbar"><div class="salt-deskbar__brand"><span class="aring">' + glyphSvg("ring", 22) + '</span>'
-      + '<div class="abartext"><div class="salt-deskbar__name">Salt Counter</div><div class="salt-deskbar__meta"><span data-clock></span></div></div></div></header>')
     + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
     + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
@@ -3097,6 +3101,7 @@ const CLIENT_JS = `
     barw.hidden=false; tabs.hidden=false; drawKeep(); drawBell();
     /* S7 7.1: whose account this is, in the header and at the foot of the rail; on his read-only view the bar says it */
     [].forEach.call(tabs.querySelectorAll('[data-whoas]'),function(x){ setW(x,'who.as',{u:'<span class="mono" data-who>'+esch(user)+'</span>'}); });
+    [].forEach.call(tabs.querySelectorAll('[data-whorail]'),function(x){ x.textContent=user; });
     [].forEach.call(tabs.querySelectorAll('[data-wholine]'),function(x){ x.hidden=view; });
     /* v706: Rewards (the card, until S7) is an associate's alone, and nobody else is shown the place at all. It waited on
        a sealed card as well, so an associate the publish had not yet written one for had no way to
