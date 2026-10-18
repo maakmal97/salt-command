@@ -391,7 +391,7 @@
   the Correction lands (the engine's `refundOnOverpay`, the same rule on every sale amendment, a payment over the row
   included, and on the desk's overlay). The board is never repriced; the order book's `restate`
   event moves the figures, never `closed`, and the customer reads "Amended to ...". No push is sent.
-- **The delivery fee by distance** (F15, 29 Sep 2026): a delivery's card under Site orders, opened,
+- **The delivery fee by distance** (F15, 29 Sep 2026; the Desk's Site orders card left on 18 Oct 2026): a delivery's card, opened,
   and the Workbench's Delivery box on a new sale to a chosen party, opened, offer a fee worked on the
   device: `navigator.geolocation` read once, fresh (`hereNow`, kept nowhere), else `_base`; to the
   exact spot the customer shared on that order, opened on the device (`ordPinPoint`, 10 Oct 2026, `docs/STATEMENTS.md`),

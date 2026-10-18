@@ -35,6 +35,7 @@
 #   gh secret set CF_ACCESS_CLIENT_ID      with _SECRET, the Access service token that reads the live
 #   gh secret set CF_ACCESS_CLIENT_SECRET    desk behind the login (here and in ship-check.yml)
 #   gh secret set SALT_PUSH_KEY            opens POST /push/send and nothing else; optional
+#   gh secret set SALT_BOOK_KEY            the shadow Book load (S2a); the same value as the Worker secret; optional, a load without it is said, not run
 #   gh secret set STMT_KEY                 the statements' content key, from statements/_secrets.json
 # The repo variable CLOUDFLARE_ACCOUNT_ID is a variable, not a secret. Outside the repo:
 #   npx wrangler secret put GH_APP_KEY           (the Worker's dispatch on every approval: the GitHub App
@@ -517,6 +518,19 @@ jobs:
           set -euo pipefail
           node tools/ledger.mjs
           node tools/d1.mjs --seed
+
+      # THE SHADOW BOOK (S2a, 18 Oct 2026): refill the Book Durable Object from the folded book. It is idempotent, so a replayed
+      # fold lands once, and READ BY NOTHING, so a failure is said (the step goes red, ::error::) and never blocks or rolls back
+      # the fold: continue-on-error. Needs the repo secret SALT_BOOK_KEY (the Worker's secret of the same name); unset, it says so.
+      # A CHANGE HERE NEVER TESTS ITSELF (not on its own push paths): dispatch a run by hand and read the step list.
+      - name: Load the shadow Book from the book just shipped
+        if: steps.plan.outputs.deploy == '1'
+        continue-on-error: true
+        env:
+          SALT_BOOK_KEY: ${{ secrets.SALT_BOOK_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: node tools/book-load.mjs
 
       # ---- THE STATEMENTS SITE, after everything the ledger needs ------------------------
       # A second Worker on its own address with its own KV store (docs/STATEMENTS.md). Both

@@ -16,7 +16,7 @@ export async function run({ ok, KV, worker }) {
     w.TextEncoder = TextEncoder; w.TextDecoder = TextDecoder;
     w.prompt = () => pass; let confirmed = true; w.confirm = () => confirmed;
     w.localStorage.setItem("saltWriteKey", key);
-    const box = w.document.createElement("div"); box.id = "queueBox"; w.document.body.appendChild(box);   // the Record tab's queue box, on its own
+    const box = w.document.createElement("div"); box.id = "queueBox"; w.document.body.appendChild(box);   // To do's queue box (#queueBox), on its own
     const names = await vaultEncrypt(pass, { "CX1-ZED": "Invented name" });
     const queuePosts = [], vaultPosts = []; let queueMode = "ok", vaultMode = "ok";
     const answer = (body, status = 200) => ({ ok: status < 300, status, json: async () => body });

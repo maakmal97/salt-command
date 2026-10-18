@@ -20,7 +20,7 @@
  *   8  the tile's caption is the size in words alone, the same on the statement's server markup, and the page carries no rule for a shape word
  *   9  no shape word is a product's: what the reader is told, scanned as the product words and the level words, on every screen
  *  10  his answers and his reasons that use the new words pass siteWords, and the locks still refuse
- *  11  what the desk card says they see follows: Placed, Confirmed, Declined, off the page's own words
+ *  11  what the order's card says they see follows: Placed, Confirmed, Declined, off the page's own words
  *  12  the practice accounts show the new words on their orders, and their feature names carry none of the old */
 import { webcrypto } from "node:crypto";
 import vm from "node:vm";
@@ -33,7 +33,6 @@ export async function run({ ok }) {
   const SW = await import("../stmt/sw.js");
   const SO = await import("../src/orders.js");
   const TF = await import("../tools/testfix.mjs");
-  const { openMaster } = await import("../tools/payload.mjs");
   const { JSDOM } = await import("jsdom");
 
   const t = (e) => (e ? e.textContent.replace(/\s+/g, " ").trim() : "");
@@ -299,7 +298,6 @@ export async function run({ ok }) {
       "no product word and no level word in the captions, headings and lines of any screen, what the reader is told included, and none among the five shape words: " + JSON.stringify(where9));
 
     /* ---- 10: his words, through the Worker's lock */
-    const { w: desk } = await openMaster();
     const newWords = ["Placed", "Confirmed", "Declined", "Waiting for us to confirm", "Order confirmed", "Order declined", "More by 20 Oct", "We could not take this order."]
       .concat(SHAPES, ["st.placed", "st.acknowledged", "st.declined", "ow.placed", "ow.confirmed", "ow.declined", "ow.declinedWhy", "hc.placed", "why.placed", "news.confirmed", "news.declined", "sup.by"].map((k) => W.EN[k]));
     const bad = newWords.filter((x) => SO.siteWords(x) !== "" || SO.wordsIn(x, PRODUCTS).length);
@@ -307,14 +305,11 @@ export async function run({ ok }) {
     ok(SO.siteWords("you are Gold") !== "" && SO.siteWords("Placed at CX7-LUM") !== "" && SO.wordsIn("Confirmed: your oil", PRODUCTS).length > 0,
       "and the Worker's lock still refuses a level and a code, and finds a product's word beside them, so the pass above is not a lock that opened");
 
-    /* ---- 11: what the desk card says they see */
+    /* ---- 11: what the order's card says they see */
     const told = ["placed", "acknowledged", "declined"].map((s) => SO.toldOf({ status: s, history: [{ status: s, by: "desk" }] }));
     ok(JSON.stringify(told) === JSON.stringify(["They see Placed: Waiting for us to confirm.", "They see Confirmed.", "They see Declined: We could not take this order."]) && !FAMILY.test(Object.values(SO.CUSTOMER_SEES).flat().join(" ")),
-      "the desk's card tells him what they see in the page's own words: " + JSON.stringify(told));
+      "the card tells him what they see in the page's own words: " + JSON.stringify(told));
 
-    const deskTold = ["placed", "acknowledged", "declined"].map((s) => JSON.parse(String(desk.eval("JSON.stringify(ordTold(" + JSON.stringify({ status: s, mode: "collect", qty: 1, moved: 0, history: [{ status: s, by: "desk" }] }) + "))"))));
-    ok(JSON.stringify(deskTold.map((x) => x.word)) === '["Placed","Confirmed","Declined"]' && deskTold[0].line === "waiting for us to confirm" && deskTold[1].line === "being prepared" && !FAMILY.test(JSON.stringify(deskTold)),
-      "and the Desk's own card, which the master carries, says Placed, Confirmed and Declined, off the page's own words: " + JSON.stringify(deskTold));
 
     /* ---- 12: the practice accounts */
     const all = TF.buildAll(new Date()), fixOrders = Object.values(all).flatMap((f) => f.orders);
