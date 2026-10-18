@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="d988efc6416c9618";
+var SALT_BUILD_ID="3d772e1c34daca22";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -13967,6 +13967,7 @@ function tabMap(){
     <div style="margin-top:8px;font-size:11px;color:var(--mut);line-height:1.5">${esc(AREAS_META.attribution.join('. '))}. States: ${esc(BASEMAP_META.attribution)}. Fetched ${AREAS_META.fetchedOn}, simplified. ${esc(GAZ_META.attribution)}.</div>
   </div>
   ${drill}
+  <div id="pinBox"></div>
   <details class="obsec" open><summary>${dist?'Areas in '+esc(dist.name):'Districts'} <span class="q">${rows.length} ${MAP_METRIC==='credit'?'owing':'with trade'}</span></summary>
   <div class="card"><table class="salt-table"><thead><tr><th class="l salt-table__label">${dist?'Area':'District'}</th><th>Parties</th><th>${MAP_METRICS[MAP_METRIC]}</th><th>Share</th></tr></thead><tbody>
     ${rows.map(r=>`<tr><td class="l salt-table__label">${dist?`<button class="navlink salt-ghost" onclick="mapPick('${r.a.id}')">${esc(areaName(r.a))}</button>`:`<button class="navlink salt-ghost" onclick="mapZoom('${r.a.id}')">${esc(r.a.name)}</button>`}</td><td>${r.t.n}</td><td>${mapFmt(r.t.v)}</td><td>${total&&r.t.v>0?Math.round(r.t.v/total*100)+'%':NIL}</td></tr>`).join('')||`<tr><td class="l salt-table__label" colspan="4" style="color:var(--mut)">${MAP_METRIC==='credit'?'Nothing owed':'No trade'} in the areas drawn.</td></tr>`}
@@ -19609,6 +19610,7 @@ async function ordLoad(quiet){
     if(r.ok){ORD_READ=true;ORD_AT=Date.now();}
   }catch(e){ ordUnread=NO_REPLY; ORD_OPEN=[]; }
   ordDraw();
+  pinDraw();
   ordTell();   /* S9 9.8 fix */
   /* the card follows the site while it is on screen, at the phone's own pace, and v765 adds the two
      guards Approve needed: not over a decision in flight, and not into a pocket */
@@ -19992,7 +19994,7 @@ function ordPinLine(o){
   if(!feeOpen())return '<p class="ordline ordpin">They shared their exact spot, sealed: show names to open it for the fee.</p>';
   if(!vaultSlipKey)return '<p class="ordline ordpin">They shared their exact spot, sealed to a key this device does not hold.</p>';
   /* an agreed order's card reads no fee, so its spot is opened here, once, when the card is drawn unlocked */
-  if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>ordDraw());},0);return '<p class="ordline ordpin">Opening the spot they shared.</p>';}
+  if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>pinDraw());},0);return '<p class="ordline ordpin">Opening the spot they shared.</p>';}
   if(v.st==='looking')return '<p class="ordline ordpin">Opening the spot they shared.</p>';
   if(v.st!=='ok')return `<p class="ordline ordpin" role="status">${esc(v.msg)}</p>`;
   const had=feePt(vaultPlaces&&vaultPlaces[o.code]),same=!!had&&haversineKm(had,v.pt)<0.05;
@@ -20009,7 +20011,7 @@ async function ordPinFile(id){
   if(ORD_PIN[id]!==v)return;   /* locked meanwhile */
   if(why)ORD_PIN[id]=Object.assign({},v,{fileMsg:why});
   else{ORD_PIN[id]=Object.assign({},v,{filed:true,fileMsg:''});try{if(vaultPlaces)vaultPlaces[code]=entry;}catch(e){}}
-  ordDraw();
+  pinDraw();
 }
 /* a spot is filed only as the customer's own place: never a friend's order or an -R bucket's, which name no door of theirs */
 function pinFileable(o){return !!o&&!!o.code&&!o.forFriend&&!/-R$/.test(String(o.code));}
@@ -20040,7 +20042,7 @@ async function ordPinFileAll(){
     for(const {o,v} of list){if(feePt(pm[o.code])){held[o.code]=pm[o.code];continue;}
       pm[o.code]=Object.assign(placeEntry({lat:v.pt.lat,lng:v.pt.lng,src:'pin'}),{addr:(pm[o.code]&&pm[o.code].addr)||null});
       filed.push(o.code);}});
-  if(!vaultSlipKey){ordDraw();return;}   /* locked meanwhile: nothing on screen to mark */
+  if(!vaultSlipKey){pinDraw();return;}   /* locked meanwhile: nothing on screen to mark */
   if(why)ORD_PIN_ALL=why;
   else{
     for(const {o,v} of list)if(filed.includes(o.code)){
@@ -20055,7 +20057,19 @@ async function ordPinFileAll(){
       +(kept?' '+kept+' already had a place filed, which stands.':'');
   }
   ORD_PIN_ALL_FOR=ordPinAllKey(ordPinBatch());
-  ordDraw();
+  pinDraw();
+}
+/* 18 OCT 2026, HIS WORD: SPOTS TO FILE. Site orders left the desk, and Counter Admin opens no spot, so the one place a
+   shared spot is filed as a customer's place is here, on Coverage beside the places: every open delivery that shared one,
+   opened with the one unlock, each filed on its own tap or all at once. Codes until the names are shown. */
+function pinDraw(){
+  const box=document.getElementById('pinBox');if(!box)return;
+  const L=(Array.isArray(ORD_OPEN)?ORD_OPEN:[]).filter(o=>o&&o.pin&&o.mode==='deliver'&&['placed','acknowledged','ready'].includes(o.status));
+  if(!L.length){box.innerHTML='';return;}
+  box.innerHTML=`<div class="card pincard"><div class="cardh">Spots to file <span class="sub">${L.length} shared on an open order</span></div>${ordPinAllLine()}`
+    +L.map(o=>`<div class="pinrow" data-id="${esc(o.id)}"><b>${o.code?codeOf(o.code):'unmapped'}</b>${ordPinLine(o)}</div>`).join('')+'</div>';
+  box.querySelectorAll('button[data-pinfile]').forEach(b=>{b.onclick=()=>ordPinFile(b.dataset.pinfile);});
+  box.querySelectorAll('button[data-pinall]').forEach(b=>{b.onclick=()=>{b.disabled=true;ordPinFileAll();};});
 }
 async function slipView(u,id,at){
   const k=u+'|'+id;
@@ -22519,7 +22533,7 @@ const PART_DRAW={inventory:()=>{drawPerProduct([trackCharts]);expLoad();},
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
-  analysis:()=>drawPerProduct([drawAnalysis]), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();}, plans:()=>hushLoad()};
+  analysis:()=>drawPerProduct([drawAnalysis]), map:()=>pinDraw(), approve:()=>apLoad(), orders:()=>{ordLoad();bullLoad();}, plans:()=>hushLoad()};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
    remove it everywhere. There were TWO of these on every part, which is most of why it read
    as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
