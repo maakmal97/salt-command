@@ -24,7 +24,7 @@ const cases = [
       return root.querySelector('input[type="number"]');
     } },
   { label: "Send their %", path: "tier-set",
-    body: { code: "CX1-ZED", product: "salt", tier: 0.2 },
+    body: { code: "CX1-ZED", product: "salt", tier: 0.2, unit: "pct" },
     edit(root, changed) { const field = root.querySelector('input[type="number"]'); field.value = changed ? "0.3" : "0.2"; return field; } },
   { label: "Send the sizes", path: "house-sizes",
     body: { product: "salt", hide: [0.5] },
