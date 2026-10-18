@@ -2069,15 +2069,15 @@ await (async () => {
   /* v502: one floor per size, the goods after the leak; RM80 at 1 unit clears the RM79.5 floor. */
   ok(cut.flags.every(f => !/under the floor/.test(f)), "RM80 against a RM79.5 floor is not flagged: there is one floor now, and it clears it");
   const under = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 70, cash: 70, kg: 1, date: "2026-08-16" }), book);
-  ok(under.flags.some(f => /RM 9.5 under the floor of RM 79.5/.test(f)) && under.flags.some(f => /what the order costs to take out/.test(f)),
+  ok(under.flags.some(f => /RM 9.5 under the Floor of RM 79.5/.test(f)) && under.flags.some(f => /rounded up to the next RM 5/.test(f) && !/what the order costs to take out/.test(f)),
     "RM70 is flagged as RM9.5 under the RM79.5 floor, by how much, and the flag says what the floor IS");
   /* 05 Oct 2026, his settled rule: the floor is COGS off the latest lot with no leak in it, and the flag says so */
-  ok(under.flags.some(f => /under the floor of RM 79\.5/.test(f) && /the goods at COGS, purchase plus freight off the latest lot/.test(f) && !/after the leak/.test(f)),
+  ok(under.flags.some(f => /under the Floor of RM 79\.5/.test(f) && /the goods at COGS, purchase plus freight off the latest lot/.test(f) && !/after the leak/.test(f)),
     "and it names the floor as the goods at COGS off the latest lot, never the goods after the leak");
   /* v502: a delivery charge inside the total is taken out before the floor is read */
   /* 19 Sep 2026: the carriage sits BESIDE the total now, so the fixture states the goods and the carriage rather than an all-in figure with the carriage buried in it. */
   const withDel = draftRow(entry({ direction: "SELL", party: "CC9-OKR", qty: 1, total: 75, delivery: 20, cash: 95, kg: 1, date: "2026-08-16" }), book);
-  ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 75 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the floor of RM 79.5/.test(f)),
+  ok(!withDel.skip && withDel.row.delivery === 20 && withDel.row.total === 75 && withDel.flags.some(f => /RM 75 for the goods is RM 4.5 under the Floor of RM 79.5/.test(f)),
     "RM75 of goods with RM20 of carriage beside it is RM95 owed, and the floor is read against the goods");
   /* v728: A CARRIAGE ABOVE THE GOODS IS NO LONGER A FAULT, and stating that is the point of this
      assertion now. It was a real rule while the charge sat INSIDE the total, where it could not
@@ -2167,7 +2167,7 @@ await (async () => {
   ok(!wayUnder.flags.some((f) => /less than half the lowest/.test(f)),
     "five gifts do not pad the observed range into a check this book has too few real salt rates to support: "
       + JSON.stringify(wayUnder.flags.filter((f) => /less than half/.test(f))));
-  ok(wayUnder.flags.some((f) => /under the floor/.test(f)) && wayUnder.flags.some((f) => /loses money/.test(f)),
+  ok(wayUnder.flags.some((f) => /under the Floor/.test(f)) && wayUnder.flags.some((f) => /loses money/.test(f)),
     "and the RM20 row is still caught, by the floor and by its own cost, which are the checks that do not need a sample");
 
   /* AND WHAT THE ZERO TEST IS ACTUALLY FOR, which is not the median. A median of nought switches

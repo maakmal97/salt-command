@@ -410,7 +410,9 @@ export function floorFor(book, product, qty) {
     try {
       const C = PRICING_ENGINE.costStack(snap.inputs.cost);
       const x = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy);
-      if (isNum(x)) return { floor: +x.toFixed(2), at: qty, exact: true, time };
+      /* 19 Oct 2026: the Floor is the cost rounded up to the next RM 5, so what the order costs is its own figure (costTotal), never the Floor */
+      const cost = PRICING_ENGINE.costTotal(qty, C, snap.inputs.policy);
+      if (isNum(x)) return { floor: +x.toFixed(2), cost: isNum(cost) ? +cost.toFixed(2) : null, at: qty, exact: true, time };
     } catch (e) { /* fall through to the carded sizes */ }
   }
   /* the carded sizes are what the snapshot holds; an odd size takes the nearest carded one
@@ -550,7 +552,11 @@ export function flagsFor(entry, row, book, priced) {
     const made = isNum(fl.time) && fl.time > 0
       ? `the goods at COGS, purchase plus freight off the latest lot, and RM ${round(fl.time)} for your time`
       : "the goods at COGS, purchase plus freight off the latest lot";
-    flags.push(`RM ${round(total)} for the goods is RM ${round(fl.floor - total)} under the floor of RM ${round(fl.floor)}${at}, which is what the order costs to take out: ${made}, with nothing above them.`);
+    /* 19 Oct 2026: THE FLOOR IS THE PRICE FLOOR, NOT THE COST. It is the cost rounded up to the next RM 5, so the flag names the
+       Floor for the comparison and the exact cost (costTotal) where it says what the order costs. The carded-size road holds
+       the Floor alone and says only what it is made of. */
+    const costs = isNum(fl.cost) ? `the order costs RM ${round(fl.cost)} to take out: ${made}; the Floor is that rounded up to the next RM 5` : `the Floor is ${made}, rounded up to the next RM 5`;
+    flags.push(`RM ${round(total)} for the goods is RM ${round(fl.floor - total)} under the Floor of RM ${round(fl.floor)}${at}: ${costs}.`);
   }
 
   /* 4. BELOW COST. Separate from the floor because it is a different fact and the book has

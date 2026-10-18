@@ -284,8 +284,8 @@ export function makerTradeReading(body, book) {
     const under = goods < fl.floor - 0.005;
     reading.floor = { rm: fl.floor, at: fl.at, exact: fl.exact, under,
       short: under ? +(fl.floor - goods).toFixed(2) : 0,
-      warn: under ? "RM " + (+goods.toFixed(2)) + " for the goods is RM " + (+(fl.floor - goods).toFixed(2)) + " under the floor of RM "
-        + fl.floor + ", which is COGS times the size and nothing else." : null };
+      warn: under ? "RM " + (+goods.toFixed(2)) + " for the goods is RM " + (+(fl.floor - goods).toFixed(2)) + " under the Floor of RM "
+        + fl.floor + ", which is COGS times the size rounded up to the next RM 5." : null };
   }
   if (typeof body.party === "string" && code(body.party, book.state.roster || [])) {
     const who = POSITION_ENGINE.ownerCode(body.party), rates = theirRates(book, who, body.product);

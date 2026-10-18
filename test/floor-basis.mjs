@@ -95,4 +95,19 @@ export async function run({ ok }) {
   ok(JSON.stringify(books.map((p) => snap.byProduct[p].inputs.policy.LADDER.round.to)) === "[5,10,1,1]" && RULES.LADDER.round.to === 5
     && (RULES.LADDER_BY.oil.round || {}).to === 10 && RULES.LADDER_BY.candy.round.to === 1 && RULES.LADDER_BY.rice.round.to === 1,
     "salt's grid is the five, oil's the ten, candy's and rice's the ringgit: " + JSON.stringify(books.map((p) => snap.byProduct[p].inputs.policy.LADDER.round.to)));
+
+  /* 5. THE UNDER-FLOOR FLAG COMPARES WITH THE FLOOR AND NAMES THE COST BY ITS OWN FIGURE (19 Oct 2026): the Floor is the cost rounded up to the next
+     RM 5, so "what the order costs to take out" is costTotal, not the Floor. The flag says RM x under the Floor, then what the order costs, exact. */
+  const { draftRow } = await import("../src/drafter.js");
+  const mir = { sales: [], purchases: [], state: { roster: ["CC9-OKR"], associates: [], PRODUCTS: { salt: { name: "Salt" } } }, pricing: snap };
+  const Cs = E.costStack(S.inputs.cost), PPs = S.inputs.policy;
+  const q5 = Object.keys(S.floors).map(Number).sort((a, b) => a - b).find((q) => E.floorTotal(q, Cs, PPs) - E.costTotal(q, Cs, PPs) > 0.4);
+  const fl5 = floorFor(mir, "salt", q5), total5 = fl5.floor - 20;
+  const d5 = draftRow({ at: "2026-10-19T01:00:00.000Z", payload: { mode: "new", product: "salt", direction: "SELL", party: "CC9-OKR", qty: q5, total: total5, cash: total5, kg: q5, date: "2026-10-19" } }, mir);
+  const flag5 = ((d5 && d5.flags) || []).find((f) => /under the Floor/.test(f)) || "";
+  const num = (re) => { const m = re.exec(flag5); return m ? Number(m[1].replace(/,/g, "")) : null; };
+  ok(q5 > 0 && fl5.cost === E.costTotal(q5, Cs, PPs) && fl5.cost < fl5.floor && fl5.floor === E.floorTotal(q5, Cs, PPs)
+    && num(/is RM ([\d.,]+) under the Floor/) === 20 && num(/under the Floor of RM ([\d.,]+)/) === fl5.floor && num(/costs RM ([\d.,]+) to take out/) === fl5.cost
+    && /rounded up to the next RM 5|that rounded up to the next RM 5/.test(flag5) && !/is what the order costs/.test(flag5) && !/the floor of/.test(flag5),
+    "an order RM 20 under the Floor says so, compares with the Floor, and says what it costs by costTotal (not the Floor): " + flag5 + " | " + JSON.stringify([q5, fl5.cost, fl5.floor]));
 }

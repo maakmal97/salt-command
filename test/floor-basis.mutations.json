@@ -92,5 +92,23 @@
   "file": "engine/rules.mjs",
   "find": "oil:{round:{to:10, up:true}, anchorQ:10,",
   "replace": "oil:{anchorQ:10,"
+ },
+ {
+  "name": "the flag says what the order costs by the Floor, the rounded figure, not by costTotal",
+  "file": "src/drafter.js",
+  "find": "the order costs RM ${round(fl.cost)} to take out",
+  "replace": "the order costs RM ${round(fl.floor)} to take out"
+ },
+ {
+  "name": "the drafter's floor carries the Floor as its cost too",
+  "file": "src/drafter.js",
+  "find": "cost: isNum(cost) ? +cost.toFixed(2) : null,",
+  "replace": "cost: +x.toFixed(2),"
+ },
+ {
+  "name": "the flag calls the Floor what the order costs to take out again",
+  "file": "src/drafter.js",
+  "find": "under the Floor of RM ${round(fl.floor)}${at}: ${costs}.",
+  "replace": "under the floor of RM ${round(fl.floor)}${at}, which is what the order costs to take out: ${costs}."
  }
 ]
