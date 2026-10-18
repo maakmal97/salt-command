@@ -2,7 +2,7 @@ import { openMaster } from "../tools/payload.mjs";
 
 /* B5 of #62: the Desk is a dashboard. Every part is drawn with a fixture of everything that used to carry a control, every
    control on the page is pressed, and nothing may leave the page but the writes the Desk keeps: the restock date, the pin
-   filing through the vault, an alert, the waiting stamp and the previews that store nothing. The recovery panel's Send is the
+   filing through the vault, an alert and the waiting stamp. The recovery panel's Send is the
    only road to /queue. */
 export async function run({ ok }) {
   const swallow = () => { };
@@ -55,6 +55,9 @@ export async function run({ ok }) {
       { at: "2099-01-01T00:00:01.000Z", type: "LOSS", party: null, qty: 2, total: null, status: "unpaid", raw: "Self-use 2 units", payload: { mode: "loss", date: "2026-10-01", product: "salt", kg: 2, why: "other", note: "" } }])
       + ";applyOverlay();localStorage.setItem('saltQueue',JSON.stringify(queue));");
 
+    /* the two reads the Desk keeps, so To do carries its waiting-on-the-site row and Spots to file its rows when they are drawn */
+    await w.eval("apLoad(true)"); await w.eval("ordLoad(true)");
+
     /* ---- draw every part, with the fixture, and press every control that is not the recovery panel's ---- */
     const D = w.document;
     const views = JSON.parse(w.eval("JSON.stringify(VIEWS.map(function(v){return [v.id,[v.lead].concat(v.parts)];}))"));
@@ -64,7 +67,6 @@ export async function run({ ok }) {
       for (const part of parts) {
         w.eval("switchTab(" + JSON.stringify(part) + ")");
         await settle(); await settle();
-        if (part === "orders") { w.eval("ordDraw();"); }
         if (part === "inventory") { w.eval("expDraw();"); }
         const scope = D.body;
         const controls = [...scope.querySelectorAll("button, a[onclick], [onclick], summary")].filter((e) => !e.closest("#queueBox") && !e.closest(".rail") && !e.closest("#tabs") && !e.closest(".vnav"));
@@ -82,7 +84,7 @@ export async function run({ ok }) {
     }
     await settle();
     const forbidden = /^(drafts\/|orders\/[^/]+\/(accept|handed|cash|received|notfound|again|offer|withdraw|restate|amend)|orders\/(?!waiting$)[^/]+$|claims\/[^/]+\/(received|notfound)|threads|bulletin|hush|bio|queue|inputs|draft-now)/;
-    const allowed = /^(expected|orders\/waiting|orders\/[^/]+\/preview|claims\/[^/]+\/preview|geo\/expand|push\/(subscribe|unsubscribe|send)|vault(\/.*)?)$/;
+    const allowed = /^(expected|orders\/waiting|geo\/expand|push\/(subscribe|unsubscribe|send)|vault(\/.*)?)$/;
     const stray = posts.filter((p) => forbidden.test(p.path) || !allowed.test(p.path));
     ok(pressed > 20 && posts.every((p) => allowed.test(p.path)) && !stray.length,
       "pressing every control on every part posts only what the Desk keeps (" + pressed + " pressed): " + (JSON.stringify(stray.slice(0, 4)) || "none"));
@@ -112,15 +114,16 @@ export async function run({ ok }) {
     await w.eval("ordTell()");
     ok(posts.some((p) => p.path === "orders/waiting" && JSON.parse(p.body).n >= 0),
       "the waiting stamp still goes to the site on a load: " + JSON.stringify(posts.map((p) => p.path)));
+    /* the two reads the Desk keeps (18 Oct 2026: no card draws them) fill what To do, the rail and Spots to file read, and post nothing of their own */
     posts.length = 0;
-    w.eval("ORD_PV={};ORD_OPEN=" + JSON.stringify([orders[0]]) + ";ORD_SEL='n1';");
-    await w.eval("ordPreview(ORD_OPEN[0])");
-    ok(posts.some((p) => /^orders\/n1\/preview$/.test(p.path)),
-      "an order's preview, which stores nothing, is still drawn: " + JSON.stringify(posts.map((p) => p.path)));
+    await w.eval("apLoad(true)"); await w.eval("ordLoad(true)");
+    const read = JSON.parse(w.eval("JSON.stringify([AP_DRAFTS.length, ORD_OPEN.length])"));
+    ok(read.join() === "2,11" && posts.every((p) => p.path === "orders/waiting"),
+      "the kept reads of the drafts and the orders fill what To do and Spots to file read, and post only the waiting stamp: " + JSON.stringify([read, posts.map((p) => p.path)]));
 
     /* ---- the recovery panel is the one road to /queue ---- */
     posts.length = 0;
-    w.eval("switchTab('add')"); await settle(); await settle();
+    w.eval("switchTab('today')"); await settle(); await settle();   /* the recovery panel is #queueBox on To do since 18 Oct 2026 */
     w.eval("qSyncState='server';qRecBusy=false;qReceipts=new Set();qRecMsg='';renderQueue()");
     const send = D.querySelector("#qRecovery button[onclick^=\"qRecSend\"]");
     ctl.where = "recovery";

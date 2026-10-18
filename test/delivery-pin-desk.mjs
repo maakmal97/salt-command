@@ -1,5 +1,5 @@
 /* test/delivery-pin-desk.mjs: THE DESK OPENS A DELIVERY'S EXACT SPOT (his decisions of 10 Oct 2026). The desk Worker relays the
- * sealed spot keyed, as it relays a slip, and his service worker never keeps it; the Site orders card opens it with the slip key
+ * sealed spot keyed, as it relays a slip, and his service worker never keeps it; Coverage's Spots to file opens it with the slip key
  * the one unlock holds, under the pin's own info, measures the fee to it ahead of the places vault and the locality, offers to
  * file it as their place through the vault's own road (never for a friend's order or a -R bucket), files every customer with
  * no point in one batch under one passphrase (his choice of 13 Oct 2026), and the lock drops it.
@@ -64,7 +64,7 @@ export async function run({ ok }) {
   const sealedLink = JSON.stringify(await seal(key.pub, { v: 1, link: "https://maps.app.goo.gl/AbCdEf123", src: "link", at: spot.at }, "salt-pin v1"));
   const P1 = "11".repeat(16), P2 = "22".repeat(16), P3 = "33".repeat(16);
   w.eval("try{cloudMode=function(){return true;};}catch(e){};(function(){NAME_VAULT=" + names + ";qSyncState='server';window.prompt=function(){return 'pw';};"
-    + "window.__gets=[];window.__draws=0;window.__realDraw=ordDraw;ordDraw=function(){window.__draws++;};navigator.__defineGetter__&&0;"
+    + "window.__gets=[];window.__draws=0;window.__realDraw=pinDraw;pinDraw=function(){window.__draws++;};navigator.__defineGetter__&&0;"
     + "var A=function(st,j){return Promise.resolve({ok:st===200,status:st,json:function(){return Promise.resolve(j);}});};"
     + "window.fetch=function(u,o){var s=String(u);window.__gets.push(s);"
     + "if(s==='vault/addr')return A(200,{ok:true,vault:" + places + "});if(s==='vault/key')return A(200,{ok:true,vault:" + JSON.stringify(key.vault) + "});"
@@ -156,11 +156,11 @@ export async function run({ ok }) {
   w.eval("wbVaultFile=function(){return Promise.resolve(null);};ORD_PIN_ALL='';");
   await w.eval("ordPinFileAll()");
   ok(/held from before was sent instead/.test(rd("ORD_PIN_ALL")) && rd("ORD_PIN['" + O3b.id + "'].filed") === false, "a write that ran no edit says a held input went instead, and files nothing");
-  /* drawn for real: the strip heads the list, and its tap reaches the batch */
-  const drawn = (() => { try { return rd("(function(){var b=document.getElementById('ordBox');if(!b){b=document.createElement('div');b.id='ordBox';document.body.appendChild(b);}"
-    + "window.__all=0;var keep=ordPinFileAll;ordPinFileAll=function(){window.__all++;};window.__realDraw();var btn=b.querySelector('button[data-pinall]');var first=b.querySelector('.ordlist').firstElementChild;"
+  /* drawn for real, into Coverage's #pinBox: the strip heads the card, and its tap reaches the batch */
+  const drawn = (() => { try { return rd("(function(){var b=document.getElementById('pinBox');if(!b){b=document.createElement('div');b.id='pinBox';document.body.appendChild(b);}"
+    + "window.__all=0;var keep=ordPinFileAll;ordPinFileAll=function(){window.__all++;};window.__realDraw();var btn=b.querySelector('button[data-pinall]');var first=b.querySelector('.pincard').children[1];"
     + "if(btn)btn.click();ordPinFileAll=keep;return {btn:!!btn,taps:window.__all,lead:first&&first.className};})()"); } catch (e) { return { error: String(e && e.message || e) }; } })();
-  ok(drawn.btn === true && drawn.taps === 1 && /ordpinall/.test(drawn.lead || ""), "the order list is headed by the batch's strip, and its button files the batch: " + JSON.stringify(drawn));
+  ok(drawn.btn === true && drawn.taps === 1 && /ordpinall/.test(drawn.lead || ""), "the Spots to file card is headed by the batch's strip, and its button files the batch: " + JSON.stringify(drawn));
 
   /* the lock drops every spot */
   w.eval("lockVault();");

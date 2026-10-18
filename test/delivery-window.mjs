@@ -2,7 +2,7 @@
  * four-hour windows, each its next occurrence inside the Counter's hours (Counter Admin's weekly schedule and manual
  * override), a closed day rolling it to its next open one; a window partly inside says the part inside. The Worker takes
  * what the page offers (one rule, stmt/window.js, carried to the page as text), the order keeps the window and its span,
- * both cards say it, and no ledger entry carries it. Every assertion was proved red by its own mutation. */
+ * Counter Admin's card says it, and no ledger entry carries it. Every assertion was proved red by its own mutation. */
 const U = "wrnd-zwse", PASS = "fixture-pass-window-01";
 
 export async function run({ ok }) {
@@ -95,13 +95,7 @@ export async function run({ ok }) {
   const pe = pendingEntry(Object.assign({}, o, { history: [{ at: iso, status: "acknowledged", by: "desk" }] }), "CX0-AA", iso);
   ok(pe && !/2026-10-12T08|09:00-12:00|slot/.test(JSON.stringify(pe)), "the pending row carries neither the window nor its span");
 
-  /* 6. THE CARDS: the Desk's Site orders card and Counter Admin's say the part of the window inside the hours */
-  const { openMaster } = await import("../tools/payload.mjs");
-  const { w: mw } = await openMaster(process.env.SALT_MASTER || undefined);
-  const line = (x) => String(mw.eval("ordSlotLine(" + JSON.stringify(x) + ")"));
-  const card = line(Object.assign({}, o, { slot: "2030-01-02T08" }));
-  ok(/Delivery wanted between <b>09:00 and 12:00<\/b> on <b>2 Jan<\/b>/.test(card) && line(Object.assign({}, o, { moved: 1 })) === "" && line(Object.assign({}, o, { mode: "collect" })) === "",
-    "the Desk's card says the span and the day while the goods are still to go: " + JSON.stringify(card));
+  /* 6. THE CARD: Counter Admin's order card says the part of the window inside the hours (the Desk draws no order card since 18 Oct 2026) */
   const { OWNER_JS } = await import("../stmt/owner.js");
   ok(/Wanted '\+String\(order\.slotSpan\)\.replace\('-',' to '\)/.test(OWNER_JS), "Counter Admin's order card says the span too");
 

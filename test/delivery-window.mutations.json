@@ -18,8 +18,6 @@
  {"name": "an amendment cannot carry a window", "file": "stmt/orders.js", "find": "\"rid\", \"week\", \"digest\", \"wantBy\", \"slot\"];", "replace": "\"rid\", \"week\", \"digest\", \"wantBy\"];"},
  {"name": "the bridge takes any hour", "file": "src/maker.js", "find": "!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/.test(body.slot)", "replace": "!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}$/.test(body.slot)"},
  {"name": "the pending row carries the window", "file": "engine/stages.mjs", "find": "    + \". Nothing paid and nothing handed over yet.\";", "replace": "    + (order.slot ? \", slot \" + order.slot : \"\") + \". Nothing paid and nothing handed over yet.\";"},
- {"name": "the desk's card says a collection's window", "find": "if(!m||!sp||o.mode!=='deliver'||", "replace": "if(!m||!sp||"},
- {"name": "the desk's card names no span", "find": "Delivery wanted between <b>${sp[1]} and ${sp[2]}</b>", "replace": "Delivery wanted <b>${sp[2]}</b>"},
  {"name": "Counter Admin says no span", "file": "stmt/owner.js", "find": "'Wanted '+String(order.slotSpan).replace('-',' to ')", "replace": "'Wanted '+String(order.slot)"},
  {"name": "a delivery is asked for a day", "file": "stmt/page.js", "find": "    if(draft.mode==='deliver'){\n      var WO=winOpen()", "replace": "    if(false){\n      var WO=winOpen()"},
  {"name": "the span is never said", "file": "stmt/page.js", "find": "cho?tw('sh.winSpan',", "replace": "false?tw('sh.winSpan',"},
