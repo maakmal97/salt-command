@@ -16,5 +16,35 @@
   "file": "master/salt_command.html",
   "find": "/* TIER_NAMES lives in engine/rules.mjs (inlined in the ENGINE block above) */",
   "replace": "{\nconst TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];\n}"
+ },
+ {
+  "name": "PRICE's retail cut-off changes in the engine module",
+  "file": "engine/rules.mjs",
+  "find": "retailTo:6.25,",
+  "replace": "retailTo:6.26,"
+ },
+ {
+  "name": "LADDER's floor changes inside the master's inlined block",
+  "file": "master/salt_command.html",
+  "find": "floor:0.33,",
+  "replace": "floor:0.34,"
+ },
+ {
+  "name": "PRICE_LOCK_ON is switched on in the engine module",
+  "file": "engine/rules.mjs",
+  "find": "const PRICE_LOCK_ON=false;",
+  "replace": "const PRICE_LOCK_ON=true;"
+ },
+ {
+  "name": "LADDER is defined a second time in the master's own script (in a block)",
+  "file": "master/salt_command.html",
+  "find": "/* LADDER lives in engine/rules.mjs (inlined in the ENGINE block above) */",
+  "replace": "{\nconst LADDER={floor:0.33};\n}"
+ },
+ {
+  "name": "PRICE_LOCK_ON is defined a second time in the master's own script (in a block)",
+  "file": "master/salt_command.html",
+  "find": "/* PRICE_LOCK_ON lives in engine/rules.mjs (inlined in the ENGINE block above) */",
+  "replace": "{\nconst PRICE_LOCK_ON=true;\n}"
  }
 ]

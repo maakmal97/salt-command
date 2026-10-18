@@ -335,5 +335,60 @@ const PROFILE_RULE={
   spanFloorDays:30      // orders a month is read over at least thirty days, so one order last week is not four a month
 };
 
-const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE };
+const PRICE={
+  retailTo:6.25,          // this and below is retail
+  wholesaleFrom:12.5,     // this and above is wholesale
+  aRetail:{q:6.25,total:550},     // RM88/unit
+  aWhole:{q:12.5,total:875},      // RM70/unit, the START of the wholesale ladder
+  /* v238: EMPTY, AND THIS WAS THE ONLY THING BREAKING THE LADDER. A hand-typed RM825 floor
+     on the 12.5 unit lot, set when effective cost was RM60.93 and the computed floor there
+     was RM952. On today's basis the computed floor is RM808.70, so the typed figure was
+     RM16 ABOVE it and, at RM66/unit, above the RATE of the 6.25 lot: the cheapest two tiers
+     had to quote a bigger lot at a higher rate per unit than a smaller one. It is not a margin, it is
+     a leftover, and his rule is that only the margin may move a price. */
+  lotFloor:{},
+  retailExp:0.25,         // per-unit decay inside retail
+  bulkExp:0.10
+  /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): floorPct IS RETIRED, and floorPrice with it. It was
+     a 20% margin on price per band, a second floor beside the engine's, and five readings still ran
+     off it: the margin-realised signal, the boundary register, the market segments and their buying
+     lever, and the share of volume under the line. Rule 5 has one floor, COGS plus leakage, one per
+     size: every one of them now reads floorTotal at the order's own size. */
+};
+
+const LADDER={
+  floor:0.33,           // refuse below this at any size, and it is a refusal line rather than a rung
+  ceiling:2.00,         // never ask more than this, whatever the arithmetic says
+  anchorQ:2.5,          // the size the level is pinned at, the geometric middle of the range
+  anchorX:0.958,        // the markup at that size. THE LEVEL LEVER: raise this to charge more.
+  at:{lo:0.5, hi:12.5}, // outside these the taper is clamped, never extrapolated
+  basis:'floor',        // v504: the ask is a MARGIN ON THE FLOOR, one basis; anchorX and floor stay for the markup road a book without anchorG takes
+  anchorG:0.47,         // v504: the margin on price at anchorQ; 0.47 reproduces the 2.5 unit ask of RM 250 on the day it was set
+  gLo:0.25, gHi:0.667,  // v504: the clamps, 0.33x and 2.00x markup said as margins
+  round:{to:10, up:true},// his instruction: to the nearest ten, ROUNDED UP
+  taper:'supplier',     // 'supplier' measures it off the book's own quote, quoteFor(PROD); a number here overrides
+  /* ============ v564: TIER 1, HIS TWO STATED ENDS (his instruction, 10 Sep 2026) ============
+     "The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5
+     unit is 875." So the board carries two levels, and everything above this line is Tier 2's,
+     unchanged in every figure at every size.
+     THESE ARE THE WHOLE OF TIER 1 AND THEY ARE PRICES, NOT A LEVEL. Two ends is two numbers and the
+     derived road has room for one: anchorG is a level on the supplier's taper. His pair implies a
+     taper of -0.167 against the supplier's -0.121, so no level on that shape reaches both, and RM875
+     is not even a multiple of ten, which the house rounding is. The engine therefore takes these two
+     verbatim and interpolates the RATE between them in the log of size, clamped at each end. See
+     tier1Walk in the ENGINE block for the argument in full.
+     RM120 a unit at the small end falling to RM70 at the large: against Tier 2's RM140 and RM92,
+     Tier 1 is 86% of the ask at half a unit and 76% of it at twelve and a half. Every rung clears
+     break-even, from 2.13x at half a unit to 1.25x at twelve and a half.
+     RETIRED AT v656, and the two ends are gone rather than left unread. The ladder names five levels
+     on live costs and each customer holds one: Titanium reads RM50 at half a unit and RM860 at twelve
+     and a half, within a ten of the pair above at the top and under it at the bottom, so the trade
+     level he stated is now derived and moves with the cost of salt instead of standing still. A book
+     with no ladder keeps the mechanism, which is why tier1Walk and tier1Anchors stay in the engine. */
+  tier1:null
+};
+
+const PRICE_LOCK_ON=false;
+
+const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON };
 export default PRICING_RULES;

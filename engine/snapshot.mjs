@@ -8,7 +8,7 @@
      B  the book: sales, purchases, opening (by book), statedStockBy, statedStock, loanDrawUnits() (a function: only salt reads it),
         supplierReceivable, counts, selfUseLog, quotes, priceSet, costRule, defaultProd
      R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES (all in engine/rules.mjs),
-        and the master's LADDER, PRICE and PRICE_LOCK_ON, which are not there yet (S1c-iii)
+        and LADDER, PRICE and PRICE_LOCK_ON (S1e), all in engine/rules.mjs
      today  a Date, the page-load clock in the desk
      W  what the walk of the book in view gave: buyUnits, selfUse, wavgBuy, stockCost. In the desk these are its globals, read as they
         stand (recompute() has run for that book); here figures() walks the book itself
