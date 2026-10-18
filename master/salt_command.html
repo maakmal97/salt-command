@@ -4520,6 +4520,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
    and the sheet must lie over them. ---- */
 .look-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;}
 .look-switch .salt-ghost{padding-left:8px;padding-right:8px;}
+.rail-alert{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:var(--mut);}
+.rail-alert:empty{display:none;}
+.rail-alert span{flex-basis:100%;}
 .look-scrim{z-index:120;}
 .look-sheet{z-index:121;}
 .look-tile{flex-direction:column;align-items:stretch;gap:var(--salt-space-3);min-height:128px;}
@@ -4561,6 +4564,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
       <button type="button" class="salt-ghost" data-look="night" aria-pressed="false">Night</button>
       <button type="button" class="salt-ghost" data-look="tide" aria-pressed="true">Tide</button>
     </div>
+    <!-- 18 Oct 2026, his word: this device's alerts left Site orders for the rail, beside the theme (ordAlertDraw). -->
+    <div class="rail-alert" id="ordAlert" role="group" aria-label="Alerts"></div>
   </nav>
   <main class="main">
     <div class="deskbar salt-deskbar" id="deskbar">
@@ -19454,8 +19459,7 @@ function tabOrders(){
   <details class="salt-plan ordnote" id="bullFold"><summary><span class="salt-plan__id" id="bullN">&middot;</span><span class="salt-plan__title" id="bullHead">Notice</span></summary>
   <div class="salt-plan__body" id="bullCard"><div class="dsc">A still card on Home in Salt Counter, for everyone who opens it.</div>
     <div class="dsc" id="bullNow" style="margin-top:6px">Reading it.</div>
-    <div class="dsc" style="margin-top:6px">Set and cleared on Counter Admin.</div></div></details>
-  <div id="ordAlert" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:12px;color:var(--mut)"></div>`;
+    <div class="dsc" style="margin-top:6px">Set and cleared on Counter Admin.</div></div></details>`;
 }
 /* v763, his instruction of 21 Sep 2026: a CLOSED order can be opened. The card has shown the open
    ones since v499 and, since v752, any whose last line is the customer's; a question about an order
@@ -19480,7 +19484,6 @@ async function ordLoad(quiet){
   }catch(e){ ordUnread=NO_REPLY; ORD_OPEN=[]; }
   ordDraw();
   ordTell();   /* S9 9.8 fix */
-  {const a=document.getElementById('ordAlert');if(a&&!a.dataset.drawn)ordAlertDraw();}
   /* the card follows the site while it is on screen, at the phone's own pace, and v765 adds the two
      guards Approve needed: not over a decision in flight, and not into a pocket */
   if(!ordTimer)ordTimer=setInterval(()=>{const b=document.getElementById('ordBox');
@@ -19586,8 +19589,8 @@ async function ordAlertDraw(note){
     return say('This browser cannot take alerts. On an iPhone, open the desk from the Home Screen: Share, then Add to Home Screen.');
   if(Notification.permission==='denied')return say('Alerts are blocked for this site in the browser settings.');
   let sub=null;try{sub=await (await navigator.serviceWorker.ready).pushManager.getSubscription();}catch(e){}
-  if(sub){ordKeyToSw(saltWriteKey());ordTopicsSync(sub);return say('<b>Alerts on</b> for this device: a customer\'s order, a row waiting for your approval, and the morning round.','<button type="button" class="vbtn salt-pill salt-pill--sm" data-alert="test">Send a test</button><button type="button" class="vbtn salt-pill salt-pill--sm" data-alert="off">Turn off</button>');}
-  say('Alerts are off on this device.','<button type="button" class="vbtn salt-pill salt-pill--sm" data-alert="on">Alert me</button>');
+  if(sub){ordKeyToSw(saltWriteKey());ordTopicsSync(sub);return say('<b>Alerts on</b> for this device: a customer\'s order, a row waiting for your approval, and the morning round.','<button type="button" class="salt-ghost" data-alert="test">Send a test</button><button type="button" class="salt-ghost" data-alert="off">Turn off</button>');}
+  say('Alerts are off on this device.','<button type="button" class="salt-ghost" data-alert="on">Alert me</button>');
 }
 /* v759: the one-a-load upgrade. It is fire and forget: a subscription that is already wide enough is
    written back identical, and a failure changes nothing that was not already true. */
@@ -22867,6 +22870,7 @@ try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();   // ask t
   if(curAddr==='orders'||curAddr==='approve')switchTab(curAddr);
   /* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. One read on load: cloud only, and only where a
      write key is already stored, so a stranger with the URL is neither prompted nor served anything new. */
+  ordAlertDraw();   /* 18 Oct 2026: the rail's alerts, drawn once the desk knows it is the cloud */
   if(saltWriteKey()){apLoad(true);ordLoad(true);expLoad(true);hushLoad(true);}});}catch(e){}
 applyOverlay();                            // uncommitted entries fold in before anything is drawn
 /* v281: a fresh open still lands on Today (v147: the desk opens on what to do), but an
