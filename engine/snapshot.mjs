@@ -7,7 +7,7 @@
    C is the context every reader takes: { B, R, today, W, over }.
      B  the book: sales, purchases, opening (by book), statedStockBy, statedStock, loanDrawUnits() (a function: only salt reads it),
         supplierReceivable, counts, selfUseLog, quotes, priceSet, costRule, defaultProd
-     R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES (all in engine/rules.mjs),
+     R  the rules: COST_BASIS, SHRINK_ATTRIB, PRICE_LOCK, PRICE_ENGINE, LADDER_BY, TIER_RULE (all in engine/rules.mjs),
         and LADDER, PRICE and PRICE_LOCK_ON (S1e), all in engine/rules.mjs
      today  a Date, the page-load clock in the desk
      W  what the walk of the book in view gave: buyUnits, selfUse, wavgBuy, stockCost. In the desk these are its globals, read as they
@@ -169,13 +169,11 @@ function policy(C,p){
   const R=C.R,pq=C.B.quotes[p]||null;
   return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, floorTo:(R.RULES&&R.RULES.floorTo)||0, lotFloor:R.PRICE.lotFloor||{},
     stated:setPricesFor(C,p),
-    tier1:ladderFor(C,p).tier1||null,
     tierRule:R.TIER_RULE[p]||null,
-    lastLevel:R.TIER_NAMES[R.TIER_NAMES.length-1],
     tiers:(pq&&pq.tiers)?pq.tiers:[],
     boardSizes:sizesFor(C,p)};
 }
-/* the five tiers for a book, on its own rungs; null for a book with no rule. `cost` is a function, read only when there is a rule */
+/* the board for a book, on its own rungs (its stated prices, or its floor, Set Price and Ceiling); null for a book with no rule. `cost` is a function, read only when there is a rule */
 function fiveTiers(C,p,cost){
   const R=C.R.TIER_RULE[p];
   const sizes=R?R.rungs.concat(sizesFor(C,p).filter(q=>!R.rungs.some(r=>Math.abs(r-q)<0.009))).sort((a,b)=>a-b):null;
@@ -183,9 +181,8 @@ function fiveTiers(C,p,cost){
 }
 
 /* S1c-iii: THE CARDS AND THE DRIFT. Whose account a code is, who is a person, who pays cost, and what each customer is quoted.
-   Added to C: B.roster, B.partners, B.tierOf (the hand-set TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
-   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh), and C.tierAt(code,q), the level machinery
-   (tierProposal, ruleProposal), which no live book uses: without it a book that names levels quotes null, never a wrong figure. */
+   Added to C: B.roster, B.partners, B.tierOf (the held % lifts, TIER_OF), B.prodOrder; R.RULES and R.PROFILE_RULE; and two hooks the desk
+   fills and a Worker may leave out: C.memo(key,f), the render's cache (none: made fresh). */
 const viaMemo=(C,k,f)=>C.memo?C.memo(k,f):f();
 const isResellAcct=id=>typeof id==='string'&&id.slice(-2)==='-R';
 const ownerOf=id=>isResellAcct(id)?id.slice(0,-2):id;      /* the desk's isBucket has been always false since v265 */
@@ -263,16 +260,14 @@ function tierCustomers(C){
 }
 function cost(C,p){const o=C.over||{cost:null,shrink:null};return viaMemo(C,'pxCost|'+p+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.costStack(inputs(C,p)));}
 /* a named customer's price at any size: a partner the Floor (RM 5 up); a stated board the board; a drift book the Set Price moved by their drift */
-function cardQuote(C,p,code,q,t){
+function cardQuote(C,p,code,q){
   if(!(q>0))return null;
   const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
   if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost; 18 Oct 2026, the Floor, rounded up to the next RM 5
   const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
   if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
   if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
-  if(t==null)t=C.tierAt?C.tierAt(code,q):-1;if(t<0)return null;
-  if(!row||row.prices[t]==null)return null;
-  return +PRICING_ENGINE.cardPrice(null,PRICING_ENGINE.floorTotal(q,K,policy(C,p)),row.prices[t]).toFixed(2);}
+  return null;}
 
 /* a book's moved figures, the Worker's road: the walk is made here, and nothing else is read */
 function ctxFor(B,R,prod,today,over){

@@ -19,7 +19,6 @@ const book = () => ({
     PEOPLE: { departed: [] }
   },
   pricing: {
-    tierNames: ["Gold", "Silver"],
     byProduct: {
       salt: { stockCost: 40, lift: { "CX1-ZED": 0, "CX2-ZED": 0 }, suggest: { "CX1-ZED": 0, "CX2-ZED": 0.25 },
         inputs: { policy: { tierRule: { drift: true } } } },
@@ -64,11 +63,12 @@ export async function run({ ok } = {}) {
     "supplier codes cannot receive customer drift");
   check(set(2.01).error === "Choose a % lift from 0 to 200% (0 to 2), or clear it." && !set(2).error && !set(0).error,
     "the Maker validates the % lift bounds, 0 to 2, with the shared pricing engine before constructing an entry");
+  /* 18 Oct 2026: the levels are gone, so a book with neither a Set Price nor a fixed board takes no figure of his at all */
   const tierBook = book();
   tierBook.pricing.byProduct.salt.inputs.policy.tierRule = { multiples: [1, 2] };
   check(!!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.25 }, tierBook).error
-    && makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: "Gold" }, tierBook).draft?.row.tiers["CX2-ZED"].salt === "Gold",
-  "level books retain their tier shape and refuse a numeric lift");
+    && !!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: "Gold" }, tierBook).error,
+  "a book with no Set Price takes neither a numeric lift nor a level word");
 
   const forwarded = [];
   const key = "counter-maker-test-key-0123456789abcdef";
@@ -101,7 +101,7 @@ export async function run({ ok } = {}) {
       products: [{ product: "salt", drift: true, tiered: false }, { product: "oil", fixed: true, drift: false, tiered: false }],
       parties: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
       tierCustomers: ["CX1-ZED", "CX2-ZED", "SP1-ZED"],
-      driftCustomers: ["CX1-ZED", "CX2-ZED"], tierNames: [],
+      driftCustomers: ["CX1-ZED", "CX2-ZED"],
       driftCards: [{ code: "CX1-ZED", product: "salt", held: true, value: 0, current: 0, suggest: 0 },
         { code: "CX2-ZED", product: "salt", held: false, value: null, current: 0, suggest: 0.25 }]
     }

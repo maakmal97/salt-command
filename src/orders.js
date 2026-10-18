@@ -83,8 +83,9 @@ function site(env, path, init) {
  * The desk's name, a roster code and a level's name are never on Salt Counter. Nothing under stmt/ may
  * hold these literals, so the check lives here, on the one road his own words take to the site: the
  * bulletin. A product's name is his to spend there; the phone warns and lets him.
- * The lists below are the ones the suite pins against the book's names and the master's TIER_NAMES, and the desk's
- * siteSafe mirrors them. English only (the second language was removed on 05 Oct 2026, the owner's decision).
+ * The lists below are the ones the suite pins against the book's names, and the desk's
+ * siteSafe mirrors them. The five level names are gone from the engine (18 Oct 2026) and stay here as a guard, so a word of the old
+ * ladder never reaches a customer. English only (the second language was removed on 05 Oct 2026, the owner's decision).
  * A word with no Latin letter is found as a substring, \b being blind to it, and is never one character. */
 export const LEVEL_WORDS = ["ambassador", "titanium", "platinum", "gold", "silver", "bronze"];
 export const PRODUCT_WORDS = ["salt", "oil", "candy", "rice"];
@@ -293,9 +294,7 @@ export function cardAt(pricing, code, product, qty) {
   const fixed = (snap.ladder || []).some((r) => r && r.fixed);
   const hit = (snap.cards[code] || []).find((x) => Math.abs(x[0] - qty) < 0.009);
   if (hit) {
-    const held = ((pricing.tierOf || {})[code] || {})[product];
-    const level = fixed ? null : PRICING_ENGINE.levelAt(held, qty, pricing.profileRule || { smallUpTo: 1, bigFrom: 3 });
-    return { card: hit[1], cardNote: fixed ? "the board, one price for everybody" : (level ? level : "their card") + " at " + qty + " unit" };
+    return { card: hit[1], cardNote: fixed ? "the board, one price for everybody" : "their card at " + qty + " unit" };
   }
   if (!snap.cards[code]) return { card: null, cardNote: "no tier is held or proposed for them on " + product + ", so there is no card" };
   /* 05 Oct 2026 (any quantity at an automatic price): A SIZE OFF THE BOARD is the engine's quoteAt on the snapshot's own inputs

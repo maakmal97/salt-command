@@ -136,15 +136,8 @@ function readStaged() {
    generated blocks and the version history is refused, a comment included, because a refusal costs a hand fold
    and a miss costs a desk that names a party the book no longer has. */
 let masterLines = null;
-/* v643: the level names, read off the master's own TIER_NAMES line, so a fold refuses a tier the desk does not name */
-function tierNames() {
-  masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
-  const line = masterLines.find((l) => l.startsWith("const TIER_NAMES=["));
-  return line ? (line.match(/'([^']+)'/g) || []).map((x) => x.slice(1, -1)) : [];
-}
 /* 05 Oct 2026: the books the master prices by drift, read off its own TIER_RULE (a product whose rule opens with drift), so
-   the fold refuses by book as the drafter does: a drift book takes a % lift from 0 to 2 and no level, any other book a
-   level (or a band set) and no drift */
+   the fold refuses by book as the drafter does: a drift book takes a % lift from 0 to 2, any other book takes no figure of his */
 function driftBooks() {
   masterLines = masterLines || readFileSync(MASTER, "utf8").split("\n");
   const a = masterLines.findIndex((l) => l.startsWith("const TIER_RULE={"));
@@ -217,7 +210,7 @@ function skeleton(book, staged, p) {
 export const applyAmend = ENGINE_APPLY.applyAmend;
 /* S1a-ii: the plan is the engine's too; what it reads from disk and the clock comes in here, each read only when the plan asks */
 export const planCtx = { today: TODAY, pinnedInMaster,
-  get tierNames() { return tierNames(); }, get driftBooks() { return driftBooks(); }, get reward() { return rewardScheme(); } };
+  get driftBooks() { return driftBooks(); }, get reward() { return rewardScheme(); } };
 export function plan(book, staged, notes) { return ENGINE_APPLY.planBatch(book, staged, notes, planCtx); }
 
 

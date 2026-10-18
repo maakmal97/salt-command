@@ -118,16 +118,7 @@ export function priceList(code, book, pricing, now, supply) {
        The board's own sizes travel in the policy; the snapshot carries them too since today. */
     const sizesHere = (Array.isArray(P.boardSizes) && P.boardSizes.length) ? P.boardSizes
       : ((Array.isArray(snap.sizes) && snap.sizes.length) ? snap.sizes : sizes);
-    /* v651: the customer's tier for this product, held or proposed, priced off the ladder the desk carried into the snapshot.
-       v670: what is held may be a band set, a level for small, mid and big orders, so each size reads its own level through
-       the engine's levelAt, on the band cuts the desk carried in the snapshot. One level still reads the same at every size. */
     const name = (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].name) || p;
-    const names = pricing.tierNames || [];
-    const held = ((pricing.tierOf || {})[code] || {})[p];
-    const bandCuts = pricing.profileRule || { smallUpTo: 1, bigFrom: 3 };
-    /* their NORMAL level is the one a mid-sized order takes, halfway between the two cuts; it answers "is this priced at all"
-       and it is the mark the page draws, a band set's small and big levels being departures from it */
-    const midQ = (bandCuts.smallUpTo + bandCuts.bigFrom) / 2;
     /* 19 SEP 2026: A STATED BOARD HAS NO TIER AND IS PRICED FOR EVERYBODY. The gate below is the
        "no tier, no price" rule, which is right where a level decides the price and wrong where he has
        typed one price for all: it would have told thirty of thirty-six customers their oil price was
@@ -149,35 +140,27 @@ export function priceList(code, book, pricing, now, supply) {
       const dr = snap.lift && Object.prototype.hasOwnProperty.call(snap.lift, code) ? snap.lift[code] : null;
       const gridD = typeof dr === "number" || dr === "partner" ? PRICING_ENGINE.quoteGrid(C, P, dr) : null;
       out.products.push(Object.assign({ product: p, name, unit: (book.PRODUCTS && book.PRODUCTS[p] && book.PRODUCTS[p].unit) || "unit",
-        basis: "card", tier: null, levels: null, sizes: rowsD }, gridD ? { grid: gridD } : {}));
+        basis: "card", tier: null, levels: null, sizes: rowsD }, gridD ? { grid: gridD } : {},
+        (supply && supply[p]) ? { supply: { light: supply[p].light, by: supply[p].by || null } } : {}));
       continue;
     }
-    const t = fixedBoard ? 0 : names.indexOf(PRICING_ENGINE.levelAt(held, midQ, bandCuts));
-    if (t < 0) { out.soon.push({ product: p, name }); continue; }
+    /* 18 Oct 2026: the five levels are gone, so a book with neither a Set Price nor a stated board is not priced */
+    if (!fixedBoard) { out.soon.push({ product: p, name }); continue; }
     const rows = sizesHere.slice().sort((a, b) => a - b).map((q) => {
       const rung = snap.ladder.find((r) => Math.abs(r.q - q) < 0.009);
       /* a size the ladder does not carry is not priced rather than crashing: it happened the day oil
          lost its 80 and 100 rungs while the printed size list still named them */
       if (!rung || !rung.prices || !rung.prices.length) return null;
-      if (fixedBoard) {
-        if (partner) return { q, price: PRICING_ENGINE.quoteAt(q, C, P, "partner") };
-        const board = rung.prices[rung.prices.length - 1];
-        return { q, price: +PRICING_ENGINE.cardPrice(null, PRICING_ENGINE.floorTotal(q, C, P), board, true).toFixed(2) };
-      }
-      const tq = names.indexOf(PRICING_ENGINE.levelAt(held, q, bandCuts));
-      /* 27 Sep 2026, his decision: the cap is retired, so their own rate is not passed */
-      const price = PRICING_ENGINE.cardPrice(null, PRICING_ENGINE.floorTotal(q, C, P), rung.prices[tq]);
-      /* a level the board has no column for is a size NOT PRICED, which is what the caller already
-         knows how to show; it was a TypeError until 19 Sep, and the crash was the only way to find out */
-      if (price == null || !isFinite(price)) return null;
-      return { q, price: +price.toFixed(2) };
+      if (partner) return { q, price: PRICING_ENGINE.quoteAt(q, C, P, "partner") };
+      const board = rung.prices[rung.prices.length - 1];
+      return { q, price: +PRICING_ENGINE.cardPrice(null, PRICING_ENGINE.floorTotal(q, C, P), board, true).toFixed(2) };
     }).filter(Boolean);
     /* 24 Sep 2026: A PRODUCT WITH NO PRICED SIZE IS COMING SOON, never a product with an empty list. Every size
        dropping out above (a level the board has no column for) pushed sizes: [], and the page reads the first size
        to set up the order form, so the Order tab went blank, orders and Notifications with it. */
     if (!rows.length) { out.soon.push({ product: p, name }); continue; }
     /* 05 Oct 2026: a stated board's grid, the same for everybody, the engine's quoteGrid; a level-priced book has none */
-    const gridF = fixedBoard ? PRICING_ENGINE.quoteGrid(C, P, partner ? "partner" : 0) : null;
+    const gridF = PRICING_ENGINE.quoteGrid(C, P, partner ? "partner" : 0);
     out.products.push(Object.assign({
       product: p,
       name,
@@ -185,11 +168,11 @@ export function priceList(code, book, pricing, now, supply) {
       /* 23 Sep 2026: a stated board is the same for everybody, so it is neither their rate nor a level; it carries no
          level, so the page draws no mark (it drew Ambassador's beside oil for every customer from 19 Sep) */
       /* 27 Sep 2026: "yours", a list lowered by their own rate, went with the cap, and so did `rate` and `orders` */
-      basis: fixedBoard ? "board" : "tier",
+      basis: "board",
       /* the page draws ONE mark a product, so `tier` is their normal level, a band set's mid; the set itself travels as
          `levels` for whatever later reads it, and the page still never names either */
-      tier: fixedBoard ? null : names[t],
-      levels: (!fixedBoard && held && typeof held === "object") ? held : null,
+      tier: null,
+      levels: null,
       sizes: rows
     }, gridF ? { grid: gridF } : {}, (supply && supply[p]) ? { supply: { light: supply[p].light, by: supply[p].by || null } } : {}));
   }
@@ -343,20 +326,11 @@ export function tierBoard(level, book, pricing, now) {
  * moves with them on the next deploy.
  */
 export function guestBoard(code, book, pricing, now) {
-  const names = (pricing && pricing.tierNames) || [];
-  /* tierOf is keyed by CODE; the link stores the introducer as a USERNAME and the publish resolves it */
-  const held = ((pricing && pricing.tierOf) || {})[code] || {};
-  /* v671: the introducer may hold, or be proposed, a band set; their NORMAL level is a mid-sized order's, and the link is
-     cut two levels above that */
-  const cuts = (pricing && pricing.profileRule) || { smallUpTo: 1, bigFrom: 3 };
-  const pick = (product, last) => {
-    const t = names.indexOf(PRICING_ENGINE.levelAt(held[product], (cuts.smallUpTo + cuts.bigFrom) / 2, cuts));
-    return t < 0 ? last : Math.min(t + 2, last);
-  };
-  const out = boardList(2, book, pricing, now, pick);
+  /* 18 Oct 2026: the levels are gone, so every guest board is the Set Price whoever introduced them (Part 3b removes the link) */
+  const out = boardList(2, book, pricing, now, (p, last) => last);
   out.introducer = code;
   out.levels = {};
-  for (const p of out.products) out.levels[p.product] = names[p.level] || null;
+  for (const p of out.products) out.levels[p.product] = null;
   return out;
 }
 

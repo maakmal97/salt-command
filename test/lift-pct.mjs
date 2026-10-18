@@ -175,8 +175,8 @@ export async function run({ ok }) {
   const pOld = plan(ts(before, 0.3)), pNew = plan(ts(after, 0.3));
   ok(/old drift unit/.test(why(ts(before, 0.3))) && /old drift unit/.test(why(ts(before, 0))) && /old drift unit/.test(why(ad(before, 0.2)))
     && pOld.refused.length === 1 && pNew.refused.length === 0 && JSON.stringify(pNew).indexOf("0.3") >= 0
-    && plan(ts(before, null)).refused.length === 0 && plan(ts(before, "Gold", "oil")).refused.length === 0 && /not a tier/.test(why(ts(before, 0.2, "oil"))),
-  "the fold refuses a salt % stamped before " + since + ", a tierset and an Add ID alike, naming why, files one stamped after it, lets a clear through, and leaves oil to its own rule: " + JSON.stringify([why(ts(before, 0.3)), why(ad(before, 0.2))]));
+    && plan(ts(before, null)).refused.length === 0 && /not held per customer/.test(why(ts(before, "Gold", "oil"))) && /not held per customer/.test(why(ts(before, 0.2, "oil"))),
+  "the fold refuses a salt % stamped before " + since + ", a tierset and an Add ID alike, naming why, files one stamped after it, lets a clear through, and refuses any figure on oil, a fixed board: " + JSON.stringify([why(ts(before, 0.3)), why(ad(before, 0.2))]));
   ok(Date.parse(since) > Date.parse("2026-10-17T00:00:00Z") && Date.parse(since) < Date.now() + 2 * 86400e3,
     "the switch moment is an instant at the start of this work, not a date in the future: " + since);
   ok(/not a % from 0 to 200/.test(why(ts(after, -0.4))) && /not a % from 0 to 200/.test(why(ts(after, 2.5))) && why(ts(after, 2)) === "" && why(ts(after, 0)) === "" && /not a % from 0 to 200/.test(why(ad(after, -0.3))),

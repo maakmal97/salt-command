@@ -1,0 +1,26 @@
+[
+ {
+  "name": "the master defines TIER_NAMES again (in a block, so the page still loads)",
+  "file": "master/salt_command.html",
+  "find": "/* PROFILE_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */",
+  "replace": "{\nconst TIER_NAMES=[];\n}"
+ },
+ {
+  "name": "the engine's ladder row is named something else than the Set Price (inlined in the master)",
+  "file": "master/salt_command.html",
+  "find": "code:'T2', name:'Set Price', dflt:true,",
+  "replace": "code:'T2', name:'Ask', dflt:true,"
+ },
+ {
+  "name": "the engine's ladder row takes another code than T2 (inlined in the master)",
+  "file": "master/salt_command.html",
+  "find": "code:'T2', name:'Set Price', dflt:true,",
+  "replace": "code:'T3', name:'Set Price', dflt:true,"
+ },
+ {
+  "name": "a levelAt function comes back in the engine's position module",
+  "file": "engine/position.mjs",
+  "find": "function lateOffer(delays,rules){",
+  "replace": "function levelAt(){return null;}\nfunction lateOffer(delays,rules){"
+ }
+]

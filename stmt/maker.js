@@ -88,7 +88,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)
     || path === "/_internal/maker/inputs/offset" && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
-    || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move|restate)$/.test(path) && method === "POST"
@@ -219,7 +219,7 @@ function internalOperation(path) {
   if (path === "/all/maker/ledger") return { kind: "ledger" };
   if (path === "/all/maker/inputs/offset") return { kind: "input", input: "offset" };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
-  const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|partner|tier-accept-all|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.exec(path);
+  const input = /^\/all\/maker\/inputs\/(sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.exec(path);
   if (input) return { kind: "input", input: input[1] };
   const customer = /^\/all\/maker\/customers\/([a-z0-9]{4}-[a-z0-9]{4})\/orders$/.exec(path);
   if (customer) return { kind: "place", u: customer[1] };

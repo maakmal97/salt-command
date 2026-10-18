@@ -8592,14 +8592,7 @@
     "Presint 17"
    ]
   },
-  "TIER_OF": {
-   "CS6-BS": {
-    "oil": "Platinum"
-   },
-   "CZ5-TM": {
-    "oil": "Titanium"
-   }
-  },
+  "TIER_OF": {},
   "AWARDS": {
    "CS6-PER": {
     "units": 1,
@@ -8736,7 +8729,7 @@
   ],
   "QUEUE_COMMITTED": "2026-10-18T08:10:55.627Z",
   "PRICING": {
-   "takenAt": "2026-10-18T11:35:20.094Z",
+   "takenAt": "2026-10-18T11:49:02.440Z",
    "sizes": [
     0.5,
     1,
@@ -8913,29 +8906,6 @@
      "title": "The next fortnight looks ordinary, so buy at the desk's rate"
     }
    ],
-   "tierNames": [
-    "Ambassador",
-    "Titanium",
-    "Platinum",
-    "Gold",
-    "Silver"
-   ],
-   "tierOf": {
-    "CS6-BS": {
-     "oil": "Platinum"
-    },
-    "CZ5-TM": {
-     "oil": "Titanium"
-    }
-   },
-   "lateOffers": {
-    "CS6-BS": {
-     "why": "paid late twice within 90 days",
-     "down": {
-      "oil": "Gold"
-     }
-    }
-   },
    "profileOf": {
     "CS6-BS": {
      "salt": {
@@ -10087,15 +10057,13 @@
          "to": 5,
          "up": true
         },
-        "taper": "supplier",
-        "tier1": null
+        "taper": "supplier"
        },
        "minPerUnit": 0,
        "timePerOrder": 0,
        "floorTo": 5,
        "lotFloor": {},
        "stated": {},
-       "tier1": null,
        "tierRule": {
         "drift": true,
         "ceilingX": 3,
@@ -10169,7 +10137,6 @@
          "max": 25
         }
        },
-       "lastLevel": "Silver",
        "tiers": [
         {
          "qty": 12.5,
@@ -12828,15 +12795,13 @@
          "to": 10,
          "up": true
         },
-        "taper": "supplier",
-        "tier1": null
+        "taper": "supplier"
        },
        "minPerUnit": 0,
        "timePerOrder": 0,
        "floorTo": 5,
        "lotFloor": {},
        "stated": {},
-       "tier1": null,
        "tierRule": {
         "fixed": {
          "10": 130,
@@ -12859,7 +12824,6 @@
          "max": 50
         }
        },
-       "lastLevel": "Silver",
        "tiers": [
         {
          "qty": 10,
@@ -14041,15 +14005,13 @@
          "to": 1,
          "up": true
         },
-        "taper": "supplier",
-        "tier1": null
+        "taper": "supplier"
        },
        "minPerUnit": 0,
        "timePerOrder": 0,
        "floorTo": 5,
        "lotFloor": {},
        "stated": {},
-       "tier1": null,
        "tierRule": {
         "fixed": {
          "1": 60,
@@ -14068,7 +14030,6 @@
          "max": 30
         }
        },
-       "lastLevel": "Silver",
        "tiers": [
         {
          "qty": 10,
@@ -15254,15 +15215,13 @@
          "to": 1,
          "up": true
         },
-        "taper": "supplier",
-        "tier1": null
+        "taper": "supplier"
        },
        "minPerUnit": 0,
        "timePerOrder": 0,
        "floorTo": 5,
        "lotFloor": {},
        "stated": {},
-       "tier1": null,
        "tierRule": {
         "fixed": {
          "1": 8,
@@ -15281,7 +15240,6 @@
          "max": 10
         }
        },
-       "lastLevel": "Silver",
        "tiers": [
         {
          "qty": 100,
@@ -16071,17 +16029,14 @@
          "to": 5,
          "up": true
         },
-        "taper": "supplier",
-        "tier1": null
+        "taper": "supplier"
        },
        "minPerUnit": 0,
        "timePerOrder": 0,
        "floorTo": 5,
        "lotFloor": {},
        "stated": {},
-       "tier1": null,
        "tierRule": null,
-       "lastLevel": "Silver",
        "tiers": [],
        "boardSizes": [
         0.5,
@@ -16135,7 +16090,7 @@
    "v": "v1161"
   },
   "OPEN": {
-   "at": "2026-10-18T11:35:20.734Z",
+   "at": "2026-10-18T11:49:03.006Z",
    "count": 11,
    "byKey": {
     "CZ5-TM|2026-10-18|100": {

@@ -485,9 +485,6 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .def{color:var(--salt-ember);}
 .prov{color:var(--salt-brass);}
 .mod,.pendingt{color:var(--salt-steel);}
-/* the tier pill is the system's .salt-tier recipe; the desk keeps its measured 10.5px face, which is under the system's 11px floor, so
-   it is the one value of the pill's the layer states (the recipe is read at the floor) */
-.tierpill{font-size:10.5px;}
 .provbar{font-size:11px;letter-spacing:.06em;background:color-mix(in srgb, var(--salt-brass) 8%, transparent);border:1px dashed var(--salt-line-strong);color:var(--salt-brass);}
 .provbar b{color:var(--salt-salt);}
 .gem{font-weight:500;letter-spacing:.14em;color:var(--salt-obsidian);background:linear-gradient(135deg,var(--salt-salt),color-mix(in srgb, var(--salt-product-salt) 76%, var(--salt-mist)));

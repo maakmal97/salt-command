@@ -172,10 +172,8 @@ function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,d
 const TIP_ID=/^[a-z]{2,8}(?::[A-Za-z0-9.-]{1,24}){1,5}$/;
 function tierSetEntry({at,tiers,raw}){
   const codes=Object.keys(tiers),copied={};
-  codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{
-    const t=tiers[c][p];copied[c][p]=t&&typeof t==='object'?Object.assign({},t):t;
-  });});
-  const say=t=>t==null?'not set':typeof t==='string'?t:['small','mid','big'].filter(k=>t[k]).map(k=>k+' '+t[k]).join(', ');
+  codes.forEach(c=>{copied[c]={};Object.keys(tiers[c]).forEach(p=>{copied[c][p]=tiers[c][p];});});
+  const say=t=>t==null?'not set':typeof t==='number'?(+(t*100).toFixed(2))+'% lift':String(t);
   return {at,type:'TIER',party:codes.length===1?codes[0]:null,qty:null,total:null,status:'tierset',
     raw:raw===undefined?'Set '+codes.map(c=>c+': '+Object.keys(copied[c]).map(p=>p+' '+say(copied[c][p])).join(', ')).join('; '):raw,
     payload:{mode:'tierset',tiers:copied}};
@@ -378,8 +376,8 @@ function payDelays(sales,party,today,rules){
    same day). On time is paid within the term (RULES.holdDays, his answer); a short delay is past it and under the lock
    (RULES.lockDays), a long one the lock or more. It turns on at one long delay, or at a second short delay within
    RULES.lateWindowDays of the one before; one payment on time turns it off. Within the window after that, any delay turns
-   it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It OFFERS a level down; it prices
-   nothing (his answer of 29 Sep 2026). `late` and `run` are V5b2c's reading of the same walk, for PREPAY after lateness:
+   it on again, and then it takes RULES.lateResetRepeat payments on time in a row. It prices
+   nothing (his answer of 29 Sep 2026); the suggested % reads it. `late` and `run` are V5b2c's reading of the same walk, for PREPAY after lateness:
    whether any delay is in the history, and how many payments on time follow the last. */
 function lateOffer(delays,rules){
   const R=rules||{},term=R.holdDays!=null?+R.holdDays:1,lock=R.lockDays!=null?+R.lockDays:4,

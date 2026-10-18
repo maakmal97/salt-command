@@ -10,7 +10,7 @@ export async function run({ ok, KV } = {}) {
     state: {
       PRODUCTS: { salt: { name: "salt" }, oil: { name: "oil" }, spare: { retired: true } },
       roster: ["CX1-ZED", "CX2-ZED", "AX1-ZED", "AX1-ZED-R", "SX1-ZED"],
-      associates: ["AX1-ZED"], TIER_OF: { "CX1-ZED": { salt: "Gold" } },
+      associates: ["AX1-ZED"], TIER_OF: { "CX1-ZED": { salt: 1 } },
       REWARD: { stated: { salt: { margin: 500, associate: { margin: 470, r3Hurdle: 1.2 } } } },
       PROD_OPENING: { salt: { qty: 0, costPerKg: null } },
       loans: [{ rid: "loan-test-1", party: "CX1-ZED", direction: "in", form: "salt", product: "salt",
@@ -18,9 +18,8 @@ export async function run({ ok, KV } = {}) {
       PEOPLE: { departed: [] }
     },
     pricing: {
-      tierNames: ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"],
       byProduct: {
-        salt: { stockCost: 40, inputs: { policy: { tierRule: { multiples: [1, 2] } } } },
+        salt: { stockCost: 40, inputs: { policy: { tierRule: { drift: true } } } },
         oil: { stockCost: 8, inputs: { policy: { tierRule: { fixed: true } } } }
       }
     }
@@ -34,7 +33,7 @@ export async function run({ ok, KV } = {}) {
     at, product: "salt", party: "SX1-ZED", date: "2026-10-01", qty: 4, total: 160,
     cash: 160, movedUnits: 4, freight: 12, handover: "collected", ...patch
   }, b);
-  const tier = (patch = {}, b = book()) => makerTierSet({ at, code: "CX1-ZED", product: "salt", tier: "Platinum", ...patch }, b);
+  const tier = (patch = {}, b = book()) => makerTierSet({ at, code: "CX1-ZED", product: "salt", tier: 0.5, ...patch }, b);
 
   const s = sale();
   check(s.draft?.collection === "sales", "Sale uses the existing sales drafter.");
@@ -139,16 +138,10 @@ export async function run({ ok, KV } = {}) {
   const set = tier();
   check(set.entry?.type === "TIER" && set.entry.payload.mode === "tierset" && set.entry.party === "CX1-ZED",
     "Tier input emits the normal tier queue contract.");
-  check(set.draft?.collection === "tierset" && set.draft.row.tiers["CX1-ZED"].salt === "Platinum",
+  check(set.draft?.collection === "tierset" && set.draft.row.tiers["CX1-ZED"].salt === 0.5,
     "Tier changes use the existing tier drafter.");
   check(set.draft?.flags.length === 1, "The drafter flags movement from the held tier.");
   check(tier({ tier: null }).draft?.row.tiers["CX1-ZED"].salt === null, "Null clears a product's held tier.");
-  const bands = { small: "Gold", big: "Platinum" };
-  const banded = tier({ tier: bands });
-  check(banded.draft?.row.tiers["CX1-ZED"].salt.small === "Gold" && banded.draft.row.tiers["CX1-ZED"].salt.big === "Platinum",
-    "Sparse band sets survive the tier shape check.");
-  bands.small = "Silver";
-  check(banded.entry?.payload.tiers["CX1-ZED"].salt.small === "Gold", "Queued bands do not alias the request.");
   for (const value of [undefined, "", "Unknown", {}, [], { tiny: "Gold" }, { small: "Unknown" }, { mid: null }])
     check(!!tier({ tier: value }).error, "An invalid tier shape is refused.");
   check(!!tier({ code: "AX1-ZED-R" }).error, "Resale accounts hold their associate's tier, never one of their own.");

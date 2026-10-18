@@ -200,28 +200,6 @@ export function makerQueuedTradeFault(entry, queue) {
   return makerQueuedTradeCheck(entry, queue).error || "";
 }
 
-/** What the Desk's Tiers card shows beside each customer and level-named book: the level held, the proposal (a level or small, mid and
-    big bands) and the late-payer offer one level down. Read from the snapshot; it moves nothing and prices nothing. */
-function tierCards(book, roster, products) {
-  const tiered = products.filter((item) => item.tiered).map((item) => item.product);
-  const names = (book.pricing && book.pricing.tierNames) || [];
-  const proposals = object(book.pricing && book.pricing.tierOf) ? book.pricing.tierOf : {};
-  const late = object(book.pricing && book.pricing.lateOffers) ? book.pricing.lateOffers : {};
-  const held = object(book.state.TIER_OF) ? book.state.TIER_OF : {};
-  const shape = (level) => PRICING_ENGINE.levelShapeOk(level, names) ? level : null;
-  const cards = [];
-  for (const id of roster.filter((value) => !POSITION_ENGINE.isBucket(value))) {
-    for (const product of tiered) {
-      const own = shape((object(held[id]) ? held[id] : {})[product]);
-      const proposed = own ? null : shape((object(proposals[id]) ? proposals[id] : {})[product]);
-      const offer = object(late[id]) && object(late[id].down) && typeof late[id].down[product] === "string" && names.includes(late[id].down[product])
-        ? { level: late[id].down[product], why: typeof late[id].why === "string" ? late[id].why.slice(0, 160) : "" } : null;
-      if (own || proposed || offer) cards.push({ code: id, product, held: own, proposed, late: offer });
-    }
-  }
-  return cards;
-}
-
 function driftCustomerCode(id) {
   return typeof id === "string" && !id.startsWith("S") && !POSITION_ENGINE.isBucket(id);
 }
@@ -574,7 +552,7 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
       ? Object.entries(rule.presets).filter(([name, value]) => typeof name === "string" && name
         && PRICING_ENGINE.driftOk(value)).map(([name, value]) => ({ name, value }))
       : [];
-    return { product, tiered: !!rule && !rule.fixed && !rule.drift, fixed: !!(rule && rule.fixed), drift: !!(rule && rule.drift),
+    return { product, fixed: !!(rule && rule.fixed), drift: !!(rule && rule.drift),
       ...(rule && rule.drift ? { driftPresets } : {}), saleReady: cost > 0, purchaseReady: cost !== null };
   });
   return {
@@ -601,8 +579,6 @@ export function makerInputCatalog(book, hush = {}, pending = [], registrations =
       hidden: ((book.state.PRICE_SET || {})[item.product] || {}).hide || [] }])),
     tips: ((book.pricing && book.pricing.obs) || []).filter((tip) => tip && typeof tip.id === "string" && typeof tip.title === "string")
       .map((tip) => ({ id: tip.id, sev: tip.sev, title: tip.title, hush: Object.hasOwn(hush, tip.id) ? hush[tip.id] : undefined })),
-    tierNames: ((book.pricing && book.pricing.tierNames) || []).filter((value) => typeof value === "string"),
-    tierCards: tierCards(book, bookRoster, products),
     driftCards: driftCards(book, bookRoster, products),
     partners: (book.state.partners || []).filter((value) => code(value, bookRoster)),
     partnerWaiting: (pending || []).filter((entry) => entry && entry.payload && entry.payload.mode === "partner")
@@ -726,7 +702,7 @@ export function makerOffset(body, book, held) {
       + " order, RM" + offer.rm + " settled in kind" }), book);
 }
 
-/** One customer, one product; null clears its held level or drift through the same tierset road. */
+/** One customer, one product; null clears its held % lift through the same tierset road. */
 export function makerTierSet(body, book) {
   if (!object(body) || Object.keys(body).some((key) => !["at", "code", "product", "tier"].includes(key)))
     return { error: "A tier input carries only its timestamp, code, product and tier." };
@@ -737,16 +713,10 @@ export function makerTierSet(body, book) {
     return { error: "Choose a customer on the roster, not a resale account." };
   const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[body.product];
   const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
-  if (!rule || rule.fixed) return { error: "This product has no customer tiers." };
-  if (rule.drift) {
-    if (!driftCustomerCode(body.code)) return { error: "A supplier cannot hold customer drift." };
-    if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
-      return { error: "Choose a % lift from 0 to 200% (0 to 2), or clear it." };
-  } else {
-    const names = (book.pricing && book.pricing.tierNames) || [];
-    if (body.tier !== null && !PRICING_ENGINE.levelShapeOk(body.tier, names))
-      return { error: "Choose a tier or a set of small, mid and big tiers." };
-  }
+  if (!rule || rule.fixed || !rule.drift) return { error: "This product has no customer tiers." };
+  if (!driftCustomerCode(body.code)) return { error: "A supplier cannot hold customer drift." };
+  if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
+    return { error: "Choose a % lift from 0 to 200% (0 to 2), or clear it." };
   return proposed(POSITION_ENGINE.tierSetEntry({
     at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }
   }), book);
@@ -776,48 +746,6 @@ export function makerPartner(body, book, pending = []) {
   return proposed(POSITION_ENGINE.partnerEntry({ at: body.at, code: body.code,
     raw: "Make " + body.code + " a partner: pays cost, keeps every associate property"
       + ((book.state.associates || []).includes(body.code) ? "" : ", appointed an associate on the R2 stream with " + bucket + " as their resell account") }), book);
-}
-
-/* What the Desk's tierQueued reads: tiers waiting in a queued tierset or an Add ID, code to product to level. */
-function waitingTiers(entries, at) {
-  const waiting = {};
-  for (const queued of entries || []) {
-    const q = queued && queued.payload;
-    if (!q || queued.at === at) continue;
-    const tiers = q.mode === "tierset" ? q.tiers : q.mode === "addid" && q.tiers ? { [q.code]: q.tiers } : null;
-    for (const [id, set] of Object.entries(object(tiers) ? tiers : {}))
-      waiting[id] = Object.assign(waiting[id] || {}, set);
-  }
-  return waiting;
-}
-const levelWords = (v) => v == null ? "not set" : typeof v === "string" ? v
-  : ["small", "mid", "big"].filter((k) => v[k]).map((k) => k + " " + v[k]).join(", ");
-
-/** The Desk's tierAcceptAll over the snapshot: the proposals its own ruleProposal drew (PRICING.tierOf, held or proposed),
-    less the tiers held and those already waiting. Nothing is priced here. */
-export function makerTierAcceptAll(body, book, queued) {
-  if (!exact(body, ["at"])) return { error: "Accepting proposals carries only its timestamp." };
-  if (!timestamp(body.at)) return { error: "A tier input needs its canonical request timestamp." };
-  if (!ready(book)) return { error: "The Desk mirror is being seeded." };
-  const names = (book.pricing && book.pricing.tierNames) || [], proposals = (book.pricing && book.pricing.tierOf) || {};
-  const held = book.state.TIER_OF || {}, waiting = waitingTiers(queued, body.at), roster = book.state.roster || [];
-  const tiers = {};
-  for (const [id, set] of Object.entries(object(proposals) ? proposals : {})) {
-    if (!roster.includes(id) || POSITION_ENGINE.isBucket(id)) continue;
-    for (const [product, level] of Object.entries(object(set) ? set : {})) {
-      const rule = book.pricing.byProduct?.[product]?.inputs?.policy?.tierRule;
-      if (!active(product, book) || !rule || rule.fixed || rule.drift) continue;
-      if ((object(held[id]) ? held[id] : {})[product] || (waiting[id] && product in waiting[id])) continue;
-      if (!PRICING_ENGINE.levelShapeOk(level, names)) continue;
-      (tiers[id] = tiers[id] || {})[product] = level;
-    }
-  }
-  const codes = Object.keys(tiers);
-  if (!codes.length) return { error: "There is no tier proposal to accept." };
-  const say = (set) => Object.keys(set).map((product) => (book.state.PRODUCTS[product].name || product) + " " + levelWords(set[product])).join(", ");
-  return proposed(POSITION_ENGINE.tierSetEntry({ at: body.at, tiers,
-    raw: codes.length === 1 ? "Set " + codes[0] + ": " + say(tiers[codes[0]])
-      : "Set " + codes.length + " customers from their proposals: " + codes.map((c) => c + " " + say(tiers[c])).join("; ") }), book);
 }
 
 /* A6: the sizes the printed board shows. The Desk's shQueueHouse queues the sizes he unticks as a hide list and no price:
@@ -1155,9 +1083,8 @@ export function makerLedgerInput(operation, body, book, pending = []) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
         if (active(product, book) && rule && rule.drift && !PRICING_ENGINE.driftOk(tier))
           return { error: "A starting lift is a number from 0 to 2 (0% to 200%), never a level." };
-        if (!active(product, book) || !rule || rule.fixed
-          || (!rule.drift && !PRICING_ENGINE.levelShapeOk(tier, book.pricing.tierNames || [])))
-          return { error: "Starting tiers must use active tiered books and current level names." };
+        if (!active(product, book) || !rule || rule.fixed || !rule.drift)
+          return { error: "Starting tiers must use active books with a Set Price." };
       }
     }
     entry = POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,

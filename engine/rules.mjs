@@ -253,17 +253,11 @@ const PRICE_ENGINE={
 };
 
 const LADDER_BY={
-  /* v564: tier1 null, and it is an ENTRY rather than an omission. ladderFor spreads LADDER under
-     the override, so leaving it out would hand oil SALT'S two anchors: every oil size clamps to
-     12.5, the rate lands at RM70 a unit, and ten units of oil that Tier 2 sells at RM130 would be
-     quoted RM700. Oil has one tier on its own merits too: its board is his stated price at all
-     five sizes and the 50 unit rung already earns 3%, so there is nothing for a second tier to sit
-     under. Give it two ends here the day he states them. */
   /* 18 Oct 2026: LADDER rounds to the five now (salt's grid), so oil names its ten */
-  oil:{round:{to:10, up:true}, anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
+  oil:{round:{to:10, up:true}, anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
   /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
-  candy:{round:{to:1, up:true}, tier1:null},
-  rice:{round:{to:1, up:true}, tier1:null}
+  candy:{round:{to:1, up:true}},
+  rice:{round:{to:1, up:true}}
 };
 
 const TIER_RULE={
@@ -303,8 +297,6 @@ const TIER_RULE={
      oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
   rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
 };
-
-const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];
 
 const SHRINK_ATTRIB=1;
 
@@ -383,28 +375,9 @@ const LADDER={
   gLo:0.25, gHi:0.667,  // v504: the clamps, 0.33x and 2.00x markup said as margins
   round:{to:5, up:true},// 18 Oct 2026, his decision: to the nearest five, ROUNDED UP (was ten; oil keeps its ten in LADDER_BY)
   taper:'supplier',     // 'supplier' measures it off the book's own quote, quoteFor(PROD); a number here overrides
-  /* ============ v564: TIER 1, HIS TWO STATED ENDS (his instruction, 10 Sep 2026) ============
-     "The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5
-     unit is 875." So the board carries two levels, and everything above this line is Tier 2's,
-     unchanged in every figure at every size.
-     THESE ARE THE WHOLE OF TIER 1 AND THEY ARE PRICES, NOT A LEVEL. Two ends is two numbers and the
-     derived road has room for one: anchorG is a level on the supplier's taper. His pair implies a
-     taper of -0.167 against the supplier's -0.121, so no level on that shape reaches both, and RM875
-     is not even a multiple of ten, which the house rounding is. The engine therefore takes these two
-     verbatim and interpolates the RATE between them in the log of size, clamped at each end. See
-     tier1Walk in the ENGINE block for the argument in full.
-     RM120 a unit at the small end falling to RM70 at the large: against Tier 2's RM140 and RM92,
-     Tier 1 is 86% of the ask at half a unit and 76% of it at twelve and a half. Every rung clears
-     break-even, from 2.13x at half a unit to 1.25x at twelve and a half.
-     RETIRED AT v656, and the two ends are gone rather than left unread. The ladder names five levels
-     on live costs and each customer holds one: Titanium reads RM50 at half a unit and RM860 at twelve
-     and a half, within a ten of the pair above at the top and under it at the bottom, so the trade
-     level he stated is now derived and moves with the cost of salt instead of standing still. A book
-     with no ladder keeps the mechanism, which is why tier1Walk and tier1Anchors stay in the engine. */
-  tier1:null
 };
 
 const PRICE_LOCK_ON=false;
 
-const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, TIER_NAMES, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON };
+const PRICING_RULES={ RULES, PRICE_ENGINE, LADDER_BY, TIER_RULE, SHRINK_ATTRIB, COST_BASIS, PRICE_LOCK, PROFILE_RULE, PRICE, LADDER, PRICE_LOCK_ON };
 export default PRICING_RULES;

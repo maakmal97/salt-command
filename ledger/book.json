@@ -800,14 +800,7 @@
       "Presint 17"
     ]
   },
-  "TIER_OF": {
-    "CS6-BS": {
-      "oil": "Platinum"
-    },
-    "CZ5-TM": {
-      "oil": "Titanium"
-    }
-  },
+  "TIER_OF": {},
   "PEOPLE": {
     "banned": [
       {

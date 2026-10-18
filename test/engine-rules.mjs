@@ -12,7 +12,7 @@ import { pricingSnapshot } from "../tools/book.mjs";
 import RULES_MOD from "../engine/rules.mjs";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const NAMES = ["RULES", "PRICE_ENGINE", "LADDER_BY", "TIER_RULE", "TIER_NAMES", "SHRINK_ATTRIB", "COST_BASIS", "PRICE_LOCK", "PROFILE_RULE", "PRICE", "LADDER", "PRICE_LOCK_ON"];
+const NAMES = ["RULES", "PRICE_ENGINE", "LADDER_BY", "TIER_RULE", "SHRINK_ATTRIB", "COST_BASIS", "PRICE_LOCK", "PROFILE_RULE", "PRICE", "LADDER", "PRICE_LOCK_ON"];
 const round = (s) => JSON.stringify(s, (k, v) => typeof v === "number" ? Math.round(v * 1e8) / 1e8 : v);
 
 /* the fixture was taken on 16 Oct 2026 MYT, and the snapshot reads the page's TODAY (lock ages, profiles, drift), so the page opens on that day */
@@ -24,7 +24,7 @@ export async function run({ ok }) {
   const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
   const a = src.indexOf("/* ==== ENGINE rules:"), b = src.indexOf("/* ==== END ENGINE rules ==== */");
   const outside = src.slice(0, a) + src.slice(b);
-  ok(Object.keys(RULES_MOD).join() === NAMES.join(), "S1c-i: engine/rules.mjs exports exactly the nine tables and PRICE, LADDER and PRICE_LOCK_ON (S1e), in order");
+  ok(Object.keys(RULES_MOD).join() === NAMES.join(), "S1c-i: engine/rules.mjs exports exactly the eight tables and PRICE, LADDER and PRICE_LOCK_ON (S1e), in order");
   for (const n of NAMES) {
     const page = JSON.parse(w.eval("JSON.stringify(" + n + ")"));
     const mod = JSON.parse(JSON.stringify(RULES_MOD[n]));

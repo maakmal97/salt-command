@@ -5,19 +5,18 @@ import { makerLedgerInput } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
 import worker from "../src/worker.js";
 
-/* A3: Maker's Add ID starts a customer on a tier per tiered book, as the Desk's Add ID does: inside the addid entry. */
+/* A3: Maker's Add ID starts a customer on a % lift on salt's Set Price (18 Oct 2026; once a level), as the Desk's Add ID does: inside the addid entry. */
 export async function run({ ok }) {
   const at = "2026-10-05T08:00:00.000Z";
   const seal = (label) => ({ v: 1, salt: Buffer.alloc(16).toString("base64"),
     iv: Buffer.alloc(12).toString("base64"), ct: Buffer.from(label.padEnd(16, ".")).toString("base64") });
-  const names = ["Ambassador", "Titanium", "Platinum", "Gold", "Silver"];
-  const pricing = { tierNames: names, byProduct: {
-    salt: { stockCost: 40, inputs: { policy: { tierRule: { multiples: [1, 2] } } } },
+  const pricing = { byProduct: {
+    salt: { stockCost: 40, inputs: { policy: { tierRule: { drift: true } } } },
     oil: { stockCost: 8, inputs: { policy: { tierRule: { fixed: true } } } } } };
   const book = () => ({ version: 1, sales: [], purchases: [], pricing,
     state: { PRODUCTS: { salt: { name: "salt" }, oil: { name: "oil" } }, roster: ["CX1-ZED"], associates: [], PEOPLE: { departed: [] } } });
   const add = (patch = {}) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null,
-    geo: [3.1, 101.7, "Pudu"], tiers: { salt: "Silver" }, vault: seal("names"), ...patch }, book());
+    geo: [3.1, 101.7, "Pudu"], tiers: { salt: 0.5 }, vault: seal("names"), ...patch }, book());
 
   /* the Desk's own Add ID, the live master, for the same input */
   const { w } = await openMaster();
@@ -25,17 +24,17 @@ export async function run({ ok }) {
   } finally { w.close(); }
   const none = add({ tiers: null });
   ok(!none.error && none.entry.payload.tiers === null, "a registration with no starting tier is unchanged");
-  ok(!!add({ tiers: { oil: "Silver" } }).error && !!add({ tiers: { salt: "Silver", oil: "Silver" } }).error,
+  ok(!!add({ tiers: { oil: 0.5 } }).error && !!add({ tiers: { salt: 0.5, oil: 0.5 } }).error,
     "a starting tier on a fixed book is refused, alone or beside a tiered one");
   ok(!!add({ tiers: { salt: "Bronze" } }).error && !!add({ tiers: { salt: { small: "Gold" } } }).error
     && !!add({ tiers: { salt: null } }).error && !!add({ tiers: {} }).error && !!add({ tiers: { spare: "Gold" } }).error,
     "a starting tier with a bad shape, a band set, a null or an unknown book is refused");
-  ok(!!add({ kind: "supplier", tiers: { salt: "Silver" } }).error
-    && !!add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: "Silver" } }).error
-    && !add({ kind: "reseller", tiers: { salt: "Silver" } }).error,
+  ok(!!add({ kind: "supplier", tiers: { salt: 0.5 } }).error
+    && !!add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: 0.5 } }).error
+    && !add({ kind: "reseller", tiers: { salt: 0.5 } }).error,
     "only a customer or an associate takes a starting tier");
-  ok(/holds a starting tier/.test(add({ kind: "supplier", tiers: { salt: "Silver" } }).error)
-    && /holds a starting tier/.test(add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: "Silver" } }).error),
+  ok(/holds a starting tier/.test(add({ kind: "supplier", tiers: { salt: 0.5 } }).error)
+    && /holds a starting tier/.test(add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: 0.5 } }).error),
     "a tier on a supplier or downstream is an input error naming the rule, not a drafter skip");
 
   /* owner auth: the typed route forwards for the verified owner and for no one else */
@@ -43,13 +42,13 @@ export async function run({ ok }) {
   const env = { STMT: { get: async () => null, put: async () => {} }, COUNTER_MAKER_KEY: key,
     DESK_MAKER: { fetch: async (request) => { calls.push({ path: new URL(request.url).pathname, body: await request.json() });
       return new Response(JSON.stringify({ ok: true })); } } };
-  const body = { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7, "Pudu"], tiers: { salt: "Silver" }, vault: seal("names") };
+  const body = { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7, "Pudu"], tiers: { salt: 0.5 }, vault: seal("names") };
   const send = (identity) => handleMaker(new Request("https://counter.test/all/maker/inputs/add-id", { method: "POST", body: JSON.stringify(body) }),
     env, "/all/maker/inputs/add-id", identity);
   const denied = await send({ email: "other@example.test" }), anon = await send(undefined);
   const allowed = await send({ email: "maakmal97@icloud.com" });
   ok(denied.status === 403 && anon.status === 403 && allowed.status === 200 && calls.length === 1
-    && calls[0].path === "/_internal/maker/inputs/add-id" && JSON.stringify(calls[0].body.tiers) === '{"salt":"Silver"}',
+    && calls[0].path === "/_internal/maker/inputs/add-id" && JSON.stringify(calls[0].body.tiers) === '{"salt":0.5}',
     "Add ID with starting tiers reaches the Desk only for the verified owner, and the tiers travel unchanged");
 
   /* the real Worker, pair vault: a retry lands once, a changed tier under the same id is refused */
@@ -72,14 +71,14 @@ export async function run({ ok }) {
   const wenv = { SALT_LEDGER: d1, SALT_QUEUE: kv, COUNTER_MAKER_KEY: key, REQUIRE_ACCESS: "0", VAULT_STORE: "pair" };
   const post = (b) => worker.fetch(new Request("https://desk.test/_internal/maker/inputs/add-id", { method: "POST",
     headers: { "content-type": "application/json", "X-Counter-Maker-Key": key }, body: JSON.stringify(b) }), wenv, { waitUntil() {} });
-  const input = { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7, "Pudu"], tiers: { salt: "Silver" },
+  const input = { at, code: "CZ4-TST", kind: "customer", parent: null, geo: [3.1, 101.7, "Pudu"], tiers: { salt: 0.5 },
     vault: seal("nn"), addrVault: seal("pp"), pair: { expectedRevision: 1, names: seal("nn"), places: seal("pp") } };
-  const first = await post(input), replay = await post(input), changed = await post({ ...input, tiers: { salt: "Gold" } });
-  const fixed = await post({ ...input, at: "2026-10-05T08:01:00.000Z", code: "CZ5-TST", tiers: { oil: "Silver" } });
+  const first = await post(input), replay = await post(input), changed = await post({ ...input, tiers: { salt: 1 } });
+  const fixed = await post({ ...input, at: "2026-10-05T08:01:00.000Z", code: "CZ5-TST", tiers: { oil: 0.5 } });
   const row = sqlite.prepare("SELECT entry FROM draft WHERE id=?").get(at);
   ok(first.status === 200 && (await replay.json()).replay === true && changed.status === 409 && fixed.status === 400
     && sqlite.prepare("SELECT COUNT(*) AS n FROM draft").get().n === 1
-    && JSON.stringify(JSON.parse(row.entry).payload.tiers) === '{"salt":"Silver"}'
+    && JSON.stringify(JSON.parse(row.entry).payload.tiers) === '{"salt":0.5}'
     && sqlite.prepare("SELECT revision FROM vault_pair").get().revision === 2,
     "the real Worker drafts Add ID with its starting tier once on retry, refuses a changed tier under the same id and a fixed book before any write");
 }

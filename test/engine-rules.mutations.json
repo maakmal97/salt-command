@@ -14,8 +14,8 @@
  {
   "name": "a table is defined a second time in the master's own script (in a block, so the page still loads)",
   "file": "master/salt_command.html",
-  "find": "/* TIER_NAMES lives in engine/rules.mjs (inlined in the ENGINE block above) */",
-  "replace": "{\nconst TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];\n}"
+  "find": "/* PROFILE_RULE lives in engine/rules.mjs (inlined in the ENGINE block above) */",
+  "replace": "{\nconst PROFILE_RULE={};\n}"
  },
  {
   "name": "PRICE's retail cut-off changes in the engine module",
