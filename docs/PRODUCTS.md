@@ -27,7 +27,7 @@ Three things name the set of products, and everything else derives from them.
 
 **True `{product: value}` maps.** A new product is a data entry and nothing else:
 `PRODUCTS`, `PROD_OPENING`, `COUNT_ON`, `PRICE_SET`, `COST_RULE`, and `TIER_OF`, which is
-nested customer to product to level name.
+nested customer to product to their % (salt alone, 0 to 2).
 
 **Rows that carry a `product` field:** `sales`, `purchases`, `loans`, `COUNTS`, `selfUseLog`,
 `lostDemand`. The field is optional; see section 6.
@@ -60,10 +60,10 @@ Per-product configuration, all driven off `PROD_IDS`:
 | `stockCostFor(p)` | the inventory rate per product, **derived from that product's lots** since 26 Sep 2026: the walk's `stockCost` (engine `stockBasis`), the stock allocated newest-first onto the received lots at their goods rate, the opening beyond them. `PROD_STOCK_COST` and salt's `STOCK_COST` are gone; nothing is typed. |
 | `QUOTES` | product to a function over the two quote globals; see section 8 |
 | `LADDER_BY` | per-product overrides merged onto the base `LADDER`, read by `ladderFor` |
-| `TIER_RULE` | the five-tier multiples per product. `TIER_NAMES` is NOT per product: one shared list of level names. |
+| `TIER_RULE` | the pricing rule per product: salt's Set Price (`drift`, `points`, `ceilingX`, `suggest`, `presets`) or a stated board (`fixed`, `rungs`, `grid`, `ceilingX`). There are no price levels and no `TIER_NAMES` (18 Oct 2026). |
 | `RULES.creditUnits` | retail and associate credit caps per product, read by `creditCapFor` |
 | `RULES.reorderUnits` | the typed reorder point, now only the fallback for a book with no demand; `reorderFor` reads the measured one from `restockFor` (24 Sep 2026) |
-| `PRICE_ENGINE.anchors` | tier anchor prices per product, with a derive-from-default fallback in `anchorsFor` |
+| `PRICE_ENGINE.anchors` | the cost-ladder anchor prices per product, with a derive-from-default fallback in `anchorsFor` |
 | `PRICE_ENGINE.sizesBy` | the size ladder per product, read by `sizesFor` |
 | `PRICE_ENGINE.boardBy` | which sizes print per product; empty today |
 | `PRICE_ENGINE.markupCurve` | salt only, and **dead**: `tierFloorMarkup` has no callers |
@@ -101,7 +101,7 @@ data-driven: the price list, the guest board, the order form's segment, the orde
 the associate's card all loop over whatever the published data carries. The associates' two
 cards carry every book's sales progress and the reward on the tiered books alone (F9 revised, 28 Sep 2026:
 `associateSnapshot` and `associateCard` in `tools/book.mjs` loop `PROD_ORDER` and fill `reward` only on the
-desk's `tieredBooks()`), so a new book reaches them at once, and its reward only with a tier. There is no
+desk's `tieredBooks()`), so a new book reaches them at once, and its reward only with a Set Price. There is no
 hard-coded list of two anywhere in `stmt/page.js`, `stmt/orders.js`, `stmt/refs.js` or
 `stmt/send.js`.
 
@@ -123,7 +123,7 @@ hues, and it is generated, so a new hue is added upstream and synced.
 - **`src/worker.js` and `src/orders.js`**: the reconcile, the nudge, `queueSale`, `ledgerKey`
   and `ovKey` (code, date, total and, off salt, the product, all through the engine's `ovKey`),
   the order thread and the bulletin all pass a product through opaquely. `siteWords` refuses
-  the desk's name, a roster code's shape and a level's name, in English, and
+  the desk's name, a roster code's shape and a pricing word (`LEVEL_WORDS`, a guard), in English, and
   deliberately does not refuse a product's name; the desk has no word check, since it sends no line.
 - **Push topics.** `ALERT_TOPICS` is `orders`, `approve` and `salt`, where that last one names
   the morning round, not the product. No topic is per-product.
@@ -226,7 +226,7 @@ the case was anticipated.
   Printed book by book, that borrowed figure stated salt's 1 unit as candy's own the moment
   three books were opened, under a sentence beginning *Credit caps are per book*. Since v780 the
   sentence names the books that HAVE a cap and then says which ones borrow one. `anchorsFor`
-  does the same for tier anchors. State the credit cap per product when a book goes live.
+  does the same for the cost ladder's anchors. State the credit cap per product when a book goes live.
 - **`Both books` is hard-coded copy** on Financials and Receivables. It states a count, and at
   three products it states a wrong one.
 - **The reward is salt-only by string comparison**, in five places in the master and two in

@@ -10,39 +10,70 @@
   `latestCogs`). `pxInputs` hands the stack the engine's `latestCogs` over the book's lots (the
   latest landed by received date, the later in the list winning a day), and `costStack` prices
   off its quote plus trip freight over its units, no freight typed reading nought: `lot`,
-  `freight`, `landed`, `eff` and `effEx` are that, and `floorTotal` is it times the size. The
-  leak is still measured; `afterLeak` carries the stack's after-leak figure, printed beside the
-  floor on Pricing where the book loses `RULES.leakInfoFrom` (a quarter) or more, oil and rice
-  today, and nothing prices off it. `replCost()` reads the same lot. A book with no landed lot
-  falls through to the older roads below with nothing added for the leak. A stated board
-  (`fixed`) is held between its floor and `ceilingX` times it, capped down to the book's grid:
-  oil and candy 2, rice 2.5. The fold costs a sale moving goods with no cost of its own at
-  `latestCogs` over that book's lots landed by the movement's day, as the drafter's `cogsFor`
-  does; a gift or reward keeps the shelf's rate. A lot partly landed is costed over the units
+  `freight`, `landed`, `eff` and `effEx` are that. The leak is still measured; `afterLeak` carries
+  the stack's after-leak figure, printed beside the Floor on Pricing where the book loses
+  `RULES.leakInfoFrom` (a quarter) or more, oil and rice today, and nothing prices off it. `replCost()` reads the same lot.
+  A book with no landed lot falls through to the older roads with nothing added for the leak. The fold costs a sale moving
+  goods with no cost of its own at `latestCogs` over that book's lots landed by the movement's day, as the drafter's
+  `cogsFor` does; a gift or reward keeps the shelf's rate. A lot partly landed is costed over the units
   received (`poRecvUnits`), its whole quote and freight on what is on the shelf; a lot with nothing
-  received is not landed and is passed over (review of 05 Oct 2026). The bullets below describe the roads this
-  replaced, kept for a book with no rule.
-- **Salt is the Set Price and each customer's drift** (Model B, his decision of 05 Oct 2026).
-  `TIER_RULE.salt` carries `drift`, `mS`/`qS`, `mB`/`qB`, `ceilingX`, `auto` and `presets` and no
-  `multiples`, so `fiveTiers` answers it with `driftWalk`: each row's `prices` are the floor's ten
-  and the Set Price, flagged `drift`. `cardQuote` prices a named customer at `driftAt` with
-  `driftOf(code).d`: his figure in `TIER_OF` when he set one (a number, -1 to +1, folded as
-  `tierset`), else `autoDrift` over `driftSignals` (paid on time from three settlements, orders a
-  month over 4, units a month over 10, orders over 12 and nought after 60 days quiet; late a half,
-  long late, a write-off or 14 days overdue past `RULES.holdDays` all of it). The Drift card on
-  Customers replaces the Tiers card on a drift book; Add ID offers automatic (the default), Better
-  -0.3, Standard 0, Higher +0.3 or a typed drift. The 41 held salt levels were retired at the switch,
-  oil's two held entries kept. The snapshot carries each customer's quotes as `cards`, which the
-  price list reads (`basis: "card"`); a guest or standing link has no level to follow on a drift
-  book and quotes the Set Price. NRV reads `driftAt` at `-auto.cap`. The drafter, the fold and the
-  maker take a drift on salt and refuse a level there; the maker's tier input refuses salt
-  outright, a drift being his to set on the desk. The level bullets below stand for a book that
-  names levels; the suite proves them on salt's last level rule.
-- **The window is the last three lots** (rate and freight); **the leak is the drift of the
-  last three counts** (`COUNTS` on the book, appended by every fold) over the units sold in
-  those cycles, at landed; **the ask is a margin on the floor** (`ladderMargin`, `anchorG`
-  per book), all v504. One floor per size since v502; `delivery` and `freight` typed per row
-  since v503.
+  received is not landed and is passed over (review of 05 Oct 2026).
+- **The Floor is the order total up to the next RM 5; the Ceiling is 3 times it** (his decisions of 18 Oct 2026).
+  `floorTotal` is COGS times the size rounded up to the next RM 5, one per size on every book; `costTotal` is the
+  exact cost, for the readers that measure cost and not price (the price band's segment floor `flOf`, `flRate` and
+  `f1`, the floor-per-unit chart). `ceilingX` is 3 on every book (oil and candy were 2, rice 2.5). A stated board
+  (`fixed`: oil, candy and rice, his typed rungs, unchanged) is held between the Floor and the Ceiling, capped down to the
+  book's grid. The price grid's `LADDER.round.to` is 5, so a RM 35 Floor is not re-rounded to RM 40.
+- **Salt is the Set Price and their %** (his decisions of 05 and 18 Oct 2026). `TIER_RULE.salt` carries `drift` (the
+  flag that marks a book with a Set Price), `points`, `ceilingX`, `auto`, `suggest` and `presets`. **The Set Price is the
+  least any customer but a partner pays** and what a stranger is quoted. The multiple of the Floor is 2.5 at half a unit,
+  2 at 1, 1.67 at 6.25 and 1.33 at 12.5, sliding in the log of size between points and flat above 12.5. The engine's
+  `driftWalk` walks the grid (half a unit to 25 in quarters) smallest first: the rate is the lesser of the last size's and
+  `Floor * multiple * (1 + %) / q`, on the exact rate and never compounded; the price is that rate times the size, down
+  to RM 5; it is then lifted so the ringgit margin over the Floor never falls below the largest margin of any smaller
+  walked size, and held between the Floor (up to RM 5) and the Ceiling. The quoted rate may therefore rise by under RM 5 a
+  unit between quarters: the rate law is on the exact rate. `quoteAt` and `quoteGrid` are the one rule at any size, so
+  for every % in use and every grid point `quoteGrid(...).p[i]` is `quoteAt(min + i * step, ...)`, and a
+  partner's `quoteAt` is the `floorTotal`, the snapshot's `floors[q]` and the drafter's `floorFor(q).floor`.
+- **Their %** (`TIER_OF[code].salt`, 0 to 2, held until he changes it; `cardQuote` reads it through `driftOf`). It is the
+  lift on the Set Price, applied inside the walk and the same at every size, and nought is the Set Price. **Everyone
+  starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold refuses a `tierset` or an Add ID
+  figure stamped before `RULES.liftSince`, which was in the old unit). He sets it on the Their % card (Network), Counter
+  Admin's Their % form or Add ID (presets Set Price, +5%, +10%, +15%, +20% and +30%, or another %); it is queued,
+  folded as `tierset`, and a null clears it. Under about 7% a % moves nothing at half a unit to 1 unit, which the card says
+  once. **Nothing automatic prices.** `autoDrift` over `driftSignals` fills the card's good and bad only. The card's
+  suggestion is `suggestOf` (the engine's `suggestPct`): the median over their last five salt sales of the rate paid
+  over the Set Price rate at that size, less one and not under nought, plus a share for a write-off (30%), a long late
+  or 14 days overdue (20%) or a late (10%), to the nearest 5%, and nought under `minSettled` settled rows; good signals
+  suggest nothing. The Desk's card says it as "Suggested +10%: paid late"; Counter Admin's Use the suggestion fills the
+  box. The snapshot carries each customer's quotes as `cards`, their % as `lift` and the suggestion as `suggest`, which
+  the price list reads (`basis: "card"`); an older reader that looks for the former map finds nothing and falls back to the board.
+- **A partner pays the Floor** (his decisions of 06 and 18 Oct 2026). Quoted `floorTotal` at every size on every book,
+  RM 5 round-up included, through `quoteAt` with `d` of `'partner'`. **Set from the phone** (his decision of 09 Oct
+  2026): the Their % card's Make partner queues `partnerEntry` (`mode: 'partner'`, the code alone, not an Add ID so the
+  pair vault's gate does not meet it); the drafter returns a `roster` row with `partner: true` and `kind: 'reseller'`;
+  the fold files the code in `partners` and appoints an associate with their -R account if they are none, so a partner
+  keeps every associate property. The desk shows the standing at once and the card reads waiting under Approve.
+  `test/partner-control.mjs`.
+- **NRV is the Set Price on a book that has one, the stated price on a board** (IAS 2.6): the least a customer but a
+  partner is quoted, so the IAS 2.9 test can bind; the Ceiling is never the basis.
+- **There are no price levels** (removed 18 Oct 2026). `TIER_NAMES`, the `fiveTiers` multiples branch, `levelAt`,
+  `levelShapeOk`, `tier1Anchors`, `tier1Walk`, `tier1Ask`, the proposals (`tierProposal`, `ruleProposal`) and the
+  guest boards per level are gone, and so is the legacy Tier I to III badge. The identifiers `TIER_RULE`, `fiveTiers`,
+  `tieredBooks`, `TIER_OF`, the row code `T2` and the `tierset` collection stay; `LEVEL_WORDS` and the private word
+  lists stay as the guard that stops a level word reaching a customer. What is not a pricing level stays: a
+  supplier's quote tiers (`QUOTES.*.tiers`, `buyTaper`, the restock `tier`), an associate's rank, stars and share, and
+  an order rating. The superseded reasoning is in `docs/NOTES.md`.
+- **One rule at any size, the engine's `quoteAt`.** `cardQuote` is `quoteAt`: on a book with a Set Price, the Set Price
+  lifted by their %, **walked through every grid point beneath the size** (`walkSizes`), so the rate never rises across
+  the grid by a step or more; on a stated board the rung's rate times the size, rounded down to the ringgit between rungs,
+  his typed rungs exact (`fixedWalk`). `cardPrice` is called by the price list off the snapshot's `cards`, and on the
+  desk by `cardQuote`, which every quote to a named customer reads: the printed board (`pbPrices`), the approach offer
+  and Today's worth (`nextBest`, no offer with no price), and the reward cover, whose gap is to their card price.
+- **Words** (18 Oct 2026): every surface says Floor, Set Price and Ceiling, and his figure is Their % (presets "Set Price,
+  +5% ... +30%"). No tier, level or drift word is visible on the Desk, Counter Admin or the Counter;
+  `test/pricing-words.mjs` draws every part of every book and reads the source sentences. The stock count's own gap is
+  the Difference.
 - **One delivery for a trip of several books** (his design of 05 Oct 2026): the rows one trip
   carries to one customer on one day share `trip` (`t<ms>`, minted by the Workbench when a sale
   of more than one book carries a delivery); the delivery stays on the active book's row alone,
@@ -66,25 +97,6 @@
   The confirmed-success hook releases the trade's timestamp/signature only after the
   whole-batch answer is confirmed. An uncertain send retains its exact original request,
   including every extra, even when the controls have been edited.
-- **The ask IS the ladder's last level since v656** (his decision of 15 Sep 2026), so the line
-  above describes the DERIVED figure, which is kept beside it as `priceLadder().derived`.
-  `pxPolicy` carries `tierRule`; the override is the one line in `priceLadder`, and row zero of
-  `ladderRow` follows it, still coded `T2` and named for the level. A book with no `tierRule`
-  keeps the derived ask.
-- **Tier 1** (v564) WAS stated at its ends in `LADDER.tier1` (salt 0.5:60, 12.5:875), the rate
-  interpolated in the log of size between them, clamped outside; the ends printed verbatim
-  because RM875 is off the ten grid, and `tier1.over` (v566) measured the RM by which it
-  exceeded the ask. **Retired at v656**: `LADDER.tier1` is null and no book states a second
-  level. `tier1Walk`, `tier1Anchors` and `tier1Ask` stay in the engine and still answer a book
-  that states one, which is what the suite forces to prove them.
-- **Stated prices retired with it.** `PRICE_SET[product].prices` is empty on both books (oil's
-  RM130 to RM450 were his of 09 Sep), the engine's `stated` cannot reach the ask, Set the board
-  is the hide list alone, and `src/drafter.js` refuses a `priceset` row carrying prices.
-- **NRV is Titanium, not the ask** (v656). IAS 2.6 wants the price in the ordinary course, which
-  is the levels his customers are actually on, and the prudent end of that range is the lowest
-  level any of them is quoted. Off Bronze the IAS 2.9 test could never bind.
-- **Ambassador** pays the floor, up to the ten, on his word alone and earning no free units.
-$1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make partner queues `partnerEntry` (`mode: 'partner'`, the code alone, not an Add ID so the pair vault's gate does not meet it); the drafter returns a `roster` row with `partner: true` and `kind: 'reseller'`; the fold files the code in `partners` and appoints an associate with their -R account if they are none, so a partner keeps every associate property. The desk shows the standing at once and the card reads waiting under Approve. `test/partner-control.mjs`.
 - **What the inventory is carried at is DERIVED, and it is not pricing** (his instruction of 26 Sep
   2026). Each book's stock, counted or walked, is allocated newest-first onto its received lots
   (units leave oldest first), and the rate is the units-weighted goods rate of those allocations,
@@ -95,14 +107,6 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
   salt sale with none. No floor or board reads it (`replCost` reaches it only on a book with no lot,
   where it is the opening's rate as before): COGS for pricing is the supplier's quote. Salt's
   `STOCK_COST` and `PROD_STOCK_COST` are gone, and so is the Today note that caught a missed roll.
-- **The five tiers**, Titanium, Platinum, Gold, Silver and Bronze, are columns at multiples
-  running evenly from 1.0 to 2.5 (v644: 1.0, 1.375, 1.75, 2.125, 2.5; 0.5 unit of salt starts
-  them at RM50 to RM90 and 1 unit reads his RM100, 110, 130, 150 and 160), priced by his
-  pricing workbook's formula: COGS to the ringgit times the multiple less a step a rung, up to
-  the ten, each level at least a ten over the one below and the rate law walked under that.
-  v641 drew the ladder, v642 named it.
-- **Why the tiers come before the switch:** a switch alone draws every existing price list up
-  toward Bronze (all 36 salt and all 6 oil customers with history, measured 15 Sep 2026).
 - **The profile** (v666, his decisions of 16 Sep 2026). `buyerProfile(code,prod)` reads a customer's own
   priced orders and returns a name (one-off, small and often, small and rare, large and regular, rare and
   large, consistent mid, occasional mid) and six flags: `frequent`, `small`, `bigger`, `loyal`, `rare`,
@@ -113,9 +117,7 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
   past `RULES.creditDays` (10) or still owed past it; a write-off is not counted, having its own rule (the Credit
   age breach and Today's chase count instead from the handover, past `RULES.holdDays`, as the Counter does). On
   the book that day: small and often CR3-DAM, CA4-DAM, CC5-OKR; loyal eight; late twice nobody. CH5-KLC,
-  who pays RM180 a unit for half-units, reads small and RARE, so a rule keyed to frequency does not hand
-  a premium buyer the preferential rate. **It prices nothing at v666**; the rules that move a level on it
-  come after the level can vary by size.
+  who pays RM180 a unit for half-units, reads small and RARE. **It prices nothing**: it feeds the Their % card's good and bad.
 - **The late payer** (V5c, his answers of 29 Sep 2026, in place of `lateTwice` and rare and late twice). The profile
   reads no lateness; `lateOf(code)` does, across every book and the `-R` bucket, through the engine: `payDelays` gives each
   row's delay in days from its handover (a stated paid day less the first handover; a trail stage by stage, the latest
@@ -124,70 +126,8 @@ $1 **Set from the phone** (his decision of 09 Oct 2026): the Drift card's Make p
   `RULES.holdDays` is on time, past it and under `lockDays` short, `lockDays` or more long. One long delay, or a second
   short one within `RULES.lateWindowDays` (90) of the one before, turns it on; one payment on time turns it off; a delay
   within the window after that turns it on again, and then it takes `RULES.lateResetRepeat` (3) on time in a row. It
-  OFFERS a level down on the Tiers card ("Late payer: offered ...", with why), which he Sets or not; it prices nothing,
-  and a late payer takes no promotion (loyal and bigger, the slowdown). The Counter says it in words off the sealed
+  feeds the Their % card's suggestion (paid late, paid very late, written off), which he takes or not; it prices nothing. The Counter says it in words off the sealed
   `pay.term`, `lock` and `window`: a line under To pay now, the whole rule on the pay sheet. Prepay also reads this walk (V5b2c): any delay in all history puts an order in advance until three payments on time in a row.
-- **A level per band** (v670, his decisions of 16 Sep 2026). A held tier is one level name, or a band set
-  `{small, mid, big}`: small is an order up to and including `PROFILE_RULE.smallUpTo` (1 unit), big from
-  `bigFrom` (3), mid between, the cuts being the book's own quartiles of size. `PRICING_ENGINE.levelAt(held, q,
-  bands)` turns a size into a level for the desk (`cardTierAt`, so every `cardQuote` and the printed board read
-  their own size's level), `tools/pricelist.mjs` (each size of the customer's page) and nothing else; a band left
-  out takes mid, a missing mid whichever of small and big is there. `levelShapeOk` is the one shape check, used by
-  the drafter and the fold, and a refused shape names itself. `cardTier` still answers "is this priced at all" and
-  reads the NORMAL level, a mid-sized order's, which is also the mark on the customer's page. On the Tiers card a
-  band set is spelled out, its dropdown selects "Keep the bands", and Set leaves it alone: without that, Set read
-  the unmatched dropdown as not set and queued a clear. **No band set existed on the book at v670**, so all 50 price
-  lists were identical before and after; the rules that propose one come next.
-- **The four rules** (v671, his rules of 16 Sep 2026). `ruleProposal(code, prod, boards)` takes the level
-  `tierProposal` reads off what they pay and moves it on their profile and the stock, in this order. (1) Rare and
-  late twice: one level worse at every size, Bronze staying Bronze, and no promotion reaches them (retired by V5c:
-  a late payer is offered the level down and takes no promotion, above). (2) Frequent and
-  small: one level worse from 3 units, their normal level below that, and NO better level on half a unit or a unit,
-  his decision that day, because a card is never above their own rate and these customers pay a keen rate on exactly
-  those sizes; on the book the three of them were proposed Titanium, where the only better level is Ambassador, his
-  word alone. The five-unit monthly cap on that benefit was dropped the same day, on his word: with no better level
-  left to bound, it would have moved RM10 in three months. (3) Loyal and buying bigger: one level better from 3 units, never past Platinum (his "not Ambassador or
-  Titanium"), and never a level worse for a customer already above it. A customer who is both (2) and (3) takes (2).
-  (4) `slowdown(prod)`: a day is under when the three days ending on it sold under half the typical day of the 28
-  ending on it; the under days are counted back from today and the count stops at the latest lot received, so a lot
-  ends a promotion and only three more quiet days after it start a new one (counting through the lot restarted a
-  promotion the day after every restock, caught by a forced check). With three running, every band is offered one
-  level better, never past Platinum and never worse. Bands that agree return one level. **A held tier is never
-  moved**: `heldLevel` reads `TIER_OF` first. A proposal is what an un-held customer is quoted, so the rules move live
-  prices: on 16 Sep 2026 four customers, CM4-MK cheaper from 3 units (12.5 units RM1,060 to RM960) and CR3-DAM,
-  CA4-DAM and CC5-OKR higher from 3 units (RM860 to RM960), 28 prices, net +RM650, with no slowdown on either book.
-- **Setting a customer's tiers** (v643; one for each product since v646): on Customers, the
-  Tiers card carries a dropdown for each product with Not set, Set queuing only what changed,
-  or Accept for every open proposal. Or chosen at Add ID as a new customer's starting tiers
-  (v645: Bronze on each product by default, not set leaving one out, for a customer or either
-  kind of associate, never an end buyer, a bucket or a supplier), which the fold files with the
-  registration. A new customer starts at Bronze.
-- **Proposals** (`tierProposal`): a product with none held is proposed the tier nearest what
-  they pay for it a unit **at the sizes they buy** (v655, so a size they never take cannot decide
-  their level), never Ambassador; one they have never bought is proposed nothing and reads
-  not set, and the card lists customers who have bought nothing yet.
-- **The price** (v651): the price of their tier for the product at the size, held or
-  proposed, lifted only to clear the floor, to the first ten above. **The cap is retired (his
-  decision of 27 Sep 2026)**: from v651 their own rate (the best of their last four orders before the
-  week's Monday, v655; rounded down to the ten, v660) lowered the tier, so 36 of 41 accounts were
-  carded under their tier at some size and eight under Ambassador at one unit, and that window was
-  the one weekly thing on their list. `pbOwnRate` and `ownRate` now feed only the proposal. A product
-  with no tier: their page says price coming soon and offers no order for it, and the desk's printed
-  board prints nothing for it.
-  `cardPrice` is called by the price list off the snapshot's `ladder` and `tierOf`
-  (`tools/book.mjs`), and on the desk by `cardQuote` at any size (the ladder walked through it,
-  `fiveTierAt` in the engine), which since v652 every quote to a named customer reads: the
-  printed board (`pbPrices`), the approach offer and Today's worth (`nextBest`, no offer with no
-  tier), and the reward cover, whose gap is to their card price (his decision of 16 Sep 2026,
-  replacing the board's ask of 14 Sep). The v510 draw toward the ask (`adjustedPrice`,
-  `pbAdjusted`) and its loyalty test retired with v651.
-- **One rule at any size, the engine's `quoteAt` (05 Oct 2026).** `cardQuote` is `quoteAt`: on a drift book the Set Price
-  moved by the drift, **walked through every grid point beneath the size** (`walkSizes`), so the rate never rises across
-  the grid; on a stated board the rung's rate times the size, rounded down to the ringgit between rungs, his typed rungs
-  exact (`fixedWalk`). Where the floor binds, the walk steps to the floor's own ten (06 Oct 2026), the one place the rate
-  can rise, by less than a ten. The grid walk moved salt's 6.25 unit Set Price from RM670 to RM660 and lowers most named
-  cards RM10 to RM20 at up to nine rungs; it raises none.
-
 ## The desk
 
 - **Counter maker bridge**: the owner works in Salt Account's Orders, Customers, Record and Shop places (one Maker place until 11 Oct 2026). `/all/maker/*` is

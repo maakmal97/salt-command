@@ -44,51 +44,62 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      sealed issues) are never corrected in place.
    - **COGS is the latest purchase: its quote plus its trip freight, over its units** (the
      engine's `latestCogs`, `COST_RULE` kind `latestCogs` on every book, his rule of 05 Oct 2026).
-     **The floor is COGS times the size and nothing else**, one per size: no leak, no delivery, no
-     time. The leak is measured and printed beside the floor as information only (`afterLeak`, on a
-     book losing `RULES.leakInfoFrom` or more). A stated board is held between its floor and
-     `ceilingX` times it. A sale carries `delivery`, typed per
+     **The Floor is COGS times the size, the ORDER TOTAL rounded up to the next RM 5** (the engine's
+     `floorTotal`, his decision of 18 Oct 2026), one per size and nothing else: no leak, no delivery, no
+     time. `costTotal` is the exact cost, for the readers that measure cost and not price (the price
+     band's segment floor, the floor-per-unit chart); COGS of goods sold, stock value, `afterLeak` and
+     `refundOnOverpay` do not read the Floor. The leak is measured and printed beside the Floor as
+     information only (`afterLeak`, on a book losing `RULES.leakInfoFrom` or more). **The Ceiling is 3
+     times the Floor on every book** (`ceilingX`). A sale carries `delivery`, typed per
      row or offered from distance at `RULES.delivery`, his figure winning, and a lot `freight`,
      typed; `txGoods` strikes every rate on the goods. **What the customer owes is goods plus
      delivery, the engine's `txOwed`**; nothing reads the total less the cash. **Everything on an agreed order is
      amendable after Accept** (his decision of 06 Oct 2026): the units, the goods' price and the delivery charge,
      each a Correction for approval (`restateOrder`, stage `amend`, status `Amendment`) from Counter Admin and from
      the Desk; a completed order too, which opens again at Ready when the change leaves it owing (his answer of 17 Oct
-     2026); the floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
+     2026); the Floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
      ack digest follow the amended row, and a retry carries an immutable rid. **A trip of several
      books shares `trip` and its one delivery sits on ONE row** (`tripFault`; one tap approves the trip).
-   - **SALT IS THE SET PRICE AND EACH CUSTOMER'S DRIFT** (Model B, his decision of 05 Oct 2026). Per
-     size the floor, the ceiling (`ceilingX`, 3, times it) and the Set Price, the floor times
-     `setMultiple` (2.813 at half a unit to 1.363 at 12.5, in the log of size), down to the ten,
-     lifted, capped and walked under the rate law: the engine's `driftWalk` and `driftAt`. The Set
-     Price is what a stranger is quoted. **Row zero of `ladderRow` is the ask and is load bearing**
-     (phone, mirror and suite read `[0]`; the code stays `T2`); choose a row by code, never by index.
-     `PRICE_SET` is cleared and the drafter refuses a new one; the one figure he sets at Accept, on one
-     order, is that row's total, which `PRICE_SET` never records.
-   - **A customer's drift runs from -1 to +1**: up by d times the lesser of the room to the ceiling and
-     `drift.up` (0.3) of the floor, down by |d| times the lesser of the room to the floor and
-     `drift.down` (0.2) of it. **It is read off the record** (`driftOf`, the engine's `autoDrift` over
-     `driftSignals`: good from paying on time, frequency, volume and tenure; bad from `lateOf`, a
-     write-off and the oldest overdue), held within `auto.cap`, **so a late payer is priced up.** A drift
-     he sets on the Drift card or at Add ID wins; it is held in `TIER_OF` and folded as `tierset`, a
-     null handing them back to the record. No salt level is held or proposed.
-   - **The level machinery stays for a book that names one** (`fiveTiers` multiples, `TIER_NAMES`,
-     `levelAt`, `levelShapeOk`, `ruleProposal` over `tierProposal`, the guest and standing boards);
-     no live book does today, and the suite proves it on salt's last level rule (`levelWindow`,
-     `levelSnap`). **A tier or drift is salt's alone**: oil, candy and rice are `fixed` boards, one
-     price for everybody, and `tieredBooks` keeps the Drift card, Accept all and Add ID off them.
-     **NRV on a drift book is the lowest automatic drift**, never the ask. A cheap book put on a derived
-     ladder inverts under the ten-rounding: check the rate law first.
-   - **A customer's price is their drift's, or the price he sets on one order when he acknowledges it,
-     never under the floor; the board is never repriced by it** (`total` on the preview and Accept, the
+   - **SALT'S PRICE IS THE SET PRICE AND THEIR %** (his decisions of 05 and 18 Oct 2026). **The Set Price is the
+     least any customer but a partner pays**, and what a stranger is quoted: per size the Floor times a
+     multiple (2.5 at half a unit, 2 at 1, 1.67 at 6.25, 1.33 at 12.5, sliding in the log of size, flat
+     above 12.5; `TIER_RULE.salt.points`). The grid runs half a unit to 25 in quarters and is walked smallest
+     first (the engine's `driftWalk`, read through `driftAt`, `quoteAt` and `quoteGrid`): the rate is the
+     lesser of the last and this size's multiple on the EXACT rate, never compounded, so the quoted rate may rise
+     by under RM 5 a unit between quarters; the price goes down to RM 5; it is lifted so the ringgit margin over
+     the Floor never falls below the largest margin of a smaller size; and it is held between the Floor and the
+     Ceiling. **Row zero of `ladderRow` is the Set Price and is load bearing** (phone, mirror and suite read
+     `[0]`; the code stays `T2`); choose a row by code, never by index. `PRICE_SET` is cleared and the drafter
+     refuses a new one; the one figure he sets at Accept, on one order, is that row's total, which `PRICE_SET`
+     never records.
+   - **THEIR % is his and nothing else's** (`TIER_OF[code].salt`, a number from 0 to 2, 0% to 200%, and 0 is the Set
+     Price). It lifts the multiple by `1 + %` inside the walk, the same at every size, held under the Ceiling;
+     under about 7% it moves nothing at half a unit to 1 unit. **Everyone starts at 0%**. He sets it on the Desk's
+     Their % card or on Counter Admin, or at Add ID from the presets Set Price, +5%, +10%, +15%,
+     +20% and +30%; it is queued, folded as `tierset`, and a null clears it. **Nothing automatic prices**: the
+     engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
+     `suggestPct`) SUGGESTS a % he may take with Use the suggestion: what they paid over the Set Price on their
+     last five salt sales plus a share for a write-off (30%), a long late or 14 days overdue (20%) or a late
+     (10%), to the nearest 5%, and nought under `minSettled` settled rows. The fold refuses a `tierset` or Add ID
+     figure stamped before `RULES.liftSince`, which was in the old drift unit.
+   - **Oil, candy and rice are `fixed` boards**, one price for everybody, his typed rungs held between the Floor
+     and the Ceiling: a % belongs to salt alone, and `tieredBooks` keeps the Their % card, Add ID's starting %
+     and Counter Admin's % off them. **There are no price levels** (removed 18 Oct 2026): no `TIER_NAMES`,
+     `levelAt` or proposal, and no standing guest link per level. `TIER_RULE`, `fiveTiers`, `TIER_OF`, the
+     `tierset` collection and the `T2` row code stay as identifiers. **NRV on a book with a Set Price is the Set
+     Price**, the least a customer but a partner is quoted, never the Ceiling. A cheap book put on a derived
+     ladder inverts under the RM 5 rounding: check the rate law first.
+   - **A customer's price is the Set Price lifted by their %, or the price he sets on one order when he acknowledges
+     it, never under the Floor; the board is never repriced by it** (`total` on the preview and Accept, the
      site keeping `asked`). What they paid before never lowers it (the cap retired on his decision of
-     27 Sep 2026). **A product with no tier or drift is not priced.** One rule, the engine's `cardPrice`:
-     the desk's `cardQuote`, which every quote to a named customer reads, and the price list, which
-     reads the snapshot's `cards` on a drift book.
-   - **A partner pays cost** (his decision of 06 Oct 2026): a party in the book's `partners` is quoted the floor itself, to the
-     sen, at every size on every book, no profit and no ten-rounding, through the engine's `quoteAt` and `quoteGrid` with
-     `d` of `'partner'`. Above Ambassador and no level or drift: the Drift card names them and sets nothing, and a test that
-     walks every customer leaves them out. A partner is an associate: set from the Drift card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
+     27 Sep 2026). **A product with neither a Set Price nor a board is not priced.** One rule, the engine's
+     `cardPrice`: the desk's `cardQuote`, which every quote to a named customer reads, and the price list, which
+     reads the snapshot's `cards`, and `lift` for a grid point off the board.
+   - **A partner pays the Floor** (his decisions of 06 and 18 Oct 2026): a party in the book's `partners` is quoted the
+     Floor itself, the RM 5 round-up included, at every size on every book, through the engine's `quoteAt` and
+     `quoteGrid` with `d` of `'partner'`; the drafter's `floorFor(q).floor` and the snapshot's `floors[q]` are the same
+     figure. A partner has no % to set: the Their % card names them and sets nothing, and a test that
+     walks every customer leaves them out. A partner is an associate: set from the card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
 6. **The look is the Salt design system applied as a layer.** **A design change he gives goes to `Code\salt-ds` first, then to the Desk, the
    Counter and QR Command in the same piece of work, unasked** (his word of 18 Oct 2026): salt-ds's
    `npm run propagate` and its `CLAUDE.md`; `node tools/designsync.mjs --drift` says whether `design/` is
@@ -390,8 +401,8 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   any stage; theirs capped, his uncapped. **It never rides into a ledger note.** His answer is
   checked by `siteWords` on the desk; every line is escaped on both surfaces. `siteWords` reads
   English off the lists in `src/orders.js`; the Desk sends no line and keeps no word check;
-  the suite pins the lists to the book's names and `TIER_NAMES` and drives every word through it:
-  a new book or level goes on the lists. **Malay is removed everywhere** (his decision of 05 Oct 2026): no table, switch or
+  the suite pins the lists to the book's names and drives every word through it:
+  a new book goes on the lists, and `LEVEL_WORDS` stays as a guard against a level word ever reaching a customer. **Malay is removed everywhere** (his decision of 05 Oct 2026): no table, switch or
   Malay list; the suite asserts none returns.
 - **And one thread an account** (Step 7, his Q5): Home's card and a row on Account open it in a Sheet; theirs 20 a
   Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
@@ -528,7 +539,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   malformed, withdrawn, declined, waiting), and any longer path under `/g/`, answers ONE styled 404
   page, `shutPage`, the same words for all; a board ends with how to order. **Every link reads the one `guestboard`, the Set Price**
   (the levels are gone, 18 Oct 2026); an old record's `tier` or `level` is ignored. **One standing link, for strangers**, ensured on Salt Account's first
-  read of its links and kept for good. **An associate may mint
+  read of its links and kept for good. **Between a deploy and the next publish `guestboard` can be missing, and the page then says "Prices are being updated" and draws no list.** **An associate may mint
   their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline
   is its own state, `declined`: shut like a withdrawn link, and Not approved to the associate. A link
   may name its introducer, as his note only.
