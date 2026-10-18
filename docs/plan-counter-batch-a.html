@@ -1,0 +1,165 @@
+<!doctype html><html lang=en-GB><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Counter Batch A plan</title>
+<style>
+:root{--bg:#f4f3fb;--pane:#fff;--ink:#23232e;--dim:#5b5b6e;--line:#dedcef;--or:#ff6a2b;--vi:#6b5cff;--mi:#12b886;--ort:#b3410c;--mit:#0b7a58}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#292a36;--pane:#343543;--ink:#ececf4;--dim:#b9b9cc;--line:#4a4b5e;--ort:#ff9a6b;--mit:#5fe0b4}}
+:root[data-theme=dark]{--bg:#292a36;--pane:#343543;--ink:#ececf4;--dim:#b9b9cc;--line:#4a4b5e;--ort:#ff9a6b;--mit:#5fe0b4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:900px;margin:0 auto;padding:20px 16px 48px}h1{font-size:1.6rem;margin:0 0 4px;line-height:1.2}h1 span{color:var(--ort)}
+h2{font-size:1.25rem;margin:40px 0 8px;padding:8px 12px;background:var(--vi);color:#fff;border-radius:12px}
+h3{font-size:1.05rem;margin:20px 0 8px;padding-left:10px;border-left:6px solid var(--or)}p{margin:6px 0}.dim{color:var(--dim)}
+.hero{background:var(--pane);border:2px solid var(--vi);border-radius:16px;padding:14px 18px;margin:14px 0}
+.f{background:var(--pane);border:1px solid var(--line);border-left:6px solid var(--or);border-radius:12px;padding:12px 14px;margin:10px 0}.f.m{border-left-color:var(--vi)}.f.l{border-left-color:var(--mi)}
+ul,ol{margin:6px 0;padding-left:20px}li{margin:3px 0}code{font-size:.88em;overflow-wrap:anywhere}a{color:var(--vi)}
+.tw{overflow-x:auto;background:var(--pane);border-radius:12px;border:1px solid var(--line)}table{border-collapse:collapse;width:100%;min-width:600px;font-size:.88rem}
+th,td{padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}thead th{background:var(--or);color:#2b0e00;font-size:.8rem}
+.t{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.75rem;font-weight:600;white-space:nowrap}.t.d{background:var(--mi);color:#04281c}.t.s{background:var(--or);color:#2b0e00}.t.x{background:var(--vi);color:#fff}
+</style><main>
+<h1>Counter Batch A: build plan <span>18 Oct 2026</span></h1>
+<p class=dim>Plan only: nothing is built, bumped or pushed. Source: the Batch A canvas (<a href="https://claude.ai/artifact/BcXJxjS6WK4Pn7qB4RFHDR">mockup</a>) and his decisions of 18 Oct 2026. Planned from <code>origin/master</code> at <code>bf00ee0c</code> (v1163). Figures in the mockup are illustrative.</p>
+
+<div class=hero><b>In one paragraph.</b> Batch A ships as <b>one salt-command version, one commit per part</b>, after one salt-ds minor release that adds the missing recipes (rule 6: salt-ds first, then propagate to the Desk, the Counter and QR Command). The only part that changes data or routes is the <b>per-order collection point</b> (parts 2 and 3), so the version runs the full suite; every page part is display-only and is checked on its sections plus the gate as it goes. Nothing prices: no part reads or writes a price, floor, drift or row. Twelve Ask items wait on his answer, each with a recommendation.</div>
+
+<h2 id=items>1. What each drawn element becomes</h2>
+<div class=tw><table><thead><tr><th>#<th>Drawn<th>Lives today<th>Becomes<th>Part</tr></thead><tbody>
+<tr><td>1<td>Live order pill (phone); order banner at the top of Home (wide)<td>Nothing; nearest is <code>homeNeeds</code> (page.js ~5680)<td><code>homeLive</code>: the newest open order's state, time and point with its pin; a pill above the App bar under 1080px, a banner card at the head of Home from 1080px<td>P9</tr>
+<tr><td>2<td>Order detail hero band, short reference<td><code>oHead</code> (~4504)<td><code>oBand</code>: reference (<code>orderRef</code>), state as the heading, one sentence of when, mark and size, point and pin<td>P7</tr>
+<tr><td>3<td>Stepper with drawn marks and times<td><code>oSteps</code>, <code>salt-steps</code>, no times (~4516)<td>Marks per step (receipt, tick, box, bag or van), time off <code>o.at</code> and <code>o.history[].at</code>, Next on the step to come<td>P7</tr>
+<tr><td>5<td>Message on every order<td><code>oThread</code>/<code>oSay</code> (~4649), at the foot<td>A Message ghost beside Pay on every order, every stage, Done included; it opens the composer<td>P7</tr>
+<tr><td>6<td>Order card: date and chip on top, total right, line below<td><code>oRow</code>, <code>salt-inbox-row</code> (~4438)<td>A whole-card link (<code>salt-glass-card--link</code>): date and chip, mark and size, what is owed (<code>oWhy</code>), total<td>P5</tr>
+<tr><td>7<td>A glyph on every state chip<td><code>stateChip</code> (~4345), word only<td>Dot for open stages, tick for Confirmed and Ready, double tick for Collected, Delivered and Complete, cross for Declined and Cancelled; glyph <code>aria-hidden</code>, word unchanged<td>P4</tr>
+<tr><td>8<td>Receipt-style money block, how paid<td><code>oMoney</code> (~4589); method only in history<td>Total, each payment with its way and day (<code>methodWord</code> over <code>payments[]</code>), Still to pay in ember with its when (<code>payWhenKey</code>)<td>P7</tr>
+<tr><td>9<td>Details fold<td><code>oHist</code> fold (~4732)<td><code>details</code>: Ordered at, Way, window or point, reference; the history fold stays<td>P7</tr>
+<tr><td>13<td>Tabs on Your orders<td><code>oBuckets</code>/<code>oList</code>, no filter (~4455)<td>Phone: one row, All, Open, To pay, Done with counts. From 860px: Open and Done columns, no filter row<td>P5</tr>
+<tr><td>14<td>Glance strip on Account<td><code>#aThread</code>, <code>thisDevice()</code>, statement<td>Top of Account: what is owed and when (link to the order), the thread row, the statement row (Up to date, units)<td>P10</tr>
+<tr><td>15<td>Reward meter on Home, associates only<td>Rewards place, <code>drawCard</code> meter (~3108)<td><code>homeReward</code>: the nearest reward across the tiered books, mark and meter, "7 more units and it is yours"; never a level; hidden unless <code>assoc</code><td>P9</tr>
+<tr><td>16<td>Empty states, a mark and one action<td><code>ord.noneYet</code> only<td><code>salt-empty</code>: Orders empty, Done empty (the one action is See open orders), Statement empty<td>P5</tr>
+<tr><td>new<td>Today card: clock, open or closed, rotating notice<td>Live clock (verify 49794), <code>/hours</code>, still <code>noticeCard</code> (~1411)<td>One card: clock, Open until or Opens at off <code>/hours</code>, the bulletin lines rotating every 6 s, a Pause control, all lines stacked under reduced motion. Reverses D14 (Ask 1)<td>P8</tr>
+<tr><td>new<td>This year tile, monthly bars<td>Nothing<td>One "This year" card off the sealed statement's rows (units, orders, bars by month); no "Each month" heading (Ask 7)<td>P9</tr>
+<tr><td>new<td>Rail with "Salt Counter" over it<td><code>placesRail()</code> (~1467), no title<td><code>salt-title</code> over the rail from 1080px; "Signed in as" with the username in the rail's brand slot<td>P6</tr>
+<tr><td>pt<td>Collection point, code and pin<td>Nothing<td>Section 3 below<td>P2, P3</tr>
+</tbody></table></div>
+<p class=dim>Not in Batch A: Order again (item 4, Batch B; <code>homeAgain</code> stays as it is), "Paid on time" (Ask 8), the order note in Details (Ask 9). To pay now, the overdue gate (D9, V5), Needs you, Coming up, the rating card, the pool card and the bell keep their places at the head of Home; the mockup leaves them out only because its figures are illustrative (Ask 11).</p>
+
+<h2 id=point>2. The collection point, end to end</h2>
+<p>His decision: the point is set <b>per order at Ready</b> on Counter Admin, read by the Desk, and shown to the customer as a code ("Point A2") with a pin that opens the maps app. Ready today takes only <code>status</code> and <code>mode</code>, travels Counter Admin, then <code>stmt/maker.js</code>, then the Desk Worker, then the Counter's <code>/desk/orders</code>, then the order book. The point rides the same road.</p>
+
+<h3>2.1 The points list (part 2)</h3>
+<ul>
+<li><b>Store:</b> Counter KV <code>maker:points</code>, <code>{v:1, list:[{code, lat, lng}]}</code>, at most 20. Modelled on Hours (<code>maker:hours</code>, <code>stmt/hours.js</code>): written by <code>stmt/maker.js</code> directly, no Desk hop. <b>Never in git</b> (the repo is public), never in the Desk build or the master.</li>
+<li><b>Code:</b> one capital letter and one or two digits, <code>^[A-Z][0-9]{1,2}$</code>, so it can never match the roster-code pattern <code>siteWords</code> refuses and names no place. Shown as "Point A2" (<code>pt.code</code>).</li>
+<li><b>Coordinates:</b> typed as "lat, lng" or read from a pasted Maps link on the device (<code>makerGeo.link</code>, already in <code>stmt/owner.js</code>), rounded to 5 decimals, held within Malaysia's bounding box. No label, no address, no note field: nothing free-text that could carry a place name.</li>
+<li><b>Routes:</b> <code>GET|POST /all/maker/points</code> (verified owner, Access JWT plus the exact email), one shape per POST, validated by <code>validatePoints</code>. Removing a code an open order still sits at is allowed: the order holds its own copy (2.2).</li>
+<li><b>Counter Admin:</b> a Points card under Hours (<code>loadMakerPoints</code>, <code>drawMakerPoints</code> in <code>stmt/owner.js</code>): list, Add, Remove, Save.</li>
+<li><b>Files:</b> new <code>stmt/points.js</code>; <code>stmt/maker.js</code>; <code>stmt/owner.js</code>; <code>stmt/words.js</code> (Admin words); <code>stmt/testfix.js</code> (<code>examplePoints</code>, an invented list for the test accounts' Admin view, like <code>exampleBulletin</code>).</li>
+</ul>
+
+<h3>2.2 Ready carries the point (part 3)</h3>
+<ol>
+<li><b>Counter Admin:</b> "Ready to collect" opens a Sheet of the points (last used first, one 44px button each); a tap sends <code>makerMove(order, {status:'ready', mode:'collect', point:'A2'})</code>. "Ready to deliver" is unchanged and sends no point. <code>makerMove</code> keys its rid on order id plus body, so a different point is a different move with its own rid.</li>
+<li><b><code>stmt/maker.js</code>:</b> <code>orderMoveFault</code> admits <code>point</code> and counts a point-only body as a fourth kind of move (beside status, message and noReply); <code>sameMove</code>'s key list gains <code>point</code>. The code's shape is checked up front; <b>whether it is in <code>maker:points</code> is checked only after <code>deskSeen</code> says the move is new</b> (refusal <code>e.pointUnknown</code>), so a retry of a landed Ready still answers <code>{again:true}</code> after A2 is removed (Fable 3).</li>
+<li><b>One resolver, both roads (Fable 4):</b> <code>resolvePoint(list, code)</code> in <code>stmt/points.js</code>. Real orders: <code>stmt/worker.js</code> resolves from <code>maker:points</code>. Example orders never pass <code>stmt/worker.js</code> (<code>stmt/maker.js</code> goes to <code>exampleAccount</code>, then <code>fixtureAccountMove</code>): <code>stmt/maker.js</code> resolves from <code>examplePoints</code>. Either way <code>pointAt</code> travels as a <b>sibling of <code>body</code></b>, merged into <code>decideDesk</code>'s input after the seen check (the real <code>desk</code> op near orderbook.js 637-642; <code>fixtureAccountMove</code> near 402), and never into the stored <code>request</code>, which is built from <code>body</code> less <code>rid</code> (near 635) and compared whole (near 358).</li>
+<li><b>Desk Worker:</b> <code>src/worker.js</code> rides Change point on the existing <code>move</code> action as <code>{rid, point}</code>, so its route regex and dispatch (near 1071, 1095-1107) need no new action (Fable 2). <code>makerOrderFault</code> (<code>src/maker.js</code> near 66, 114) widens its one-move count to the four kinds, checks the shape only, admits <code>point</code> only beside <code>status:'ready'</code> with <code>mode:'collect'</code> or alone (so never beside Decline, Cancel or a delivery), and refuses a <code>mode:'collect'</code> Ready without <code>point</code>; <code>orderMoveFault</code> applies the same rule; <code>moveOrder</code> (<code>src/orders.js</code>) relays the code. The Desk never sees coordinates (2.3).</li>
+<li><b>Order book (<code>stmt/orders.js</code>):</b> <code>decideDesk</code> takes a point-only body in its own branch ahead of the status test (near 1043; today an empty status falls to "not a state the desk sets"), refuses a collect Ready with no resolved point (<code>e.pointNeeded</code>) and a point on a delivery; a Ready event is <code>{kind:'status', status:'ready', mode:'collect', point, pointAt}</code>, a Change point event <code>{kind:'point', point, pointAt}</code>; <code>applyEvent</code> sets <code>order.point</code> and <code>order.pointAt</code>, and its history line is <code>{at, by:'desk', point}</code> with no coordinates, since <code>history</code> travels whole (Fable 8). A part handover leaves both untouched (handover branch near 1273-1288; Fable 5). The point is a snapshot: editing or removing A2 later moves no order already at Ready.</li>
+<li><b>Change point:</b> allowed while the order is Ready to collect with goods still to hand over (<code>owedUnits</code>, the same test as 2.3), its own rid, the same checks; <code>wakes</code> (near 1346, which keys on <code>kind:'status'</code> today) gains <code>kind:'point'</code> giving <code>{k:'point-moved', o}</code> (fixed words, no code in the banner); <code>marksOf</code>'s default is right. It is undone by changing it back; it makes no ledger stage, so plan 4's Undo (<code>undoOf</code>, payments and handovers) is untouched. Nothing undoes a Ready today, and Batch A adds nothing that does.</li>
+</ol>
+
+<h3>2.3 Who reads what</h3>
+<ul>
+<li><b>Customer (<code>customerView</code>):</b> <code>point</code> joins <code>CUSTOMER_FIELDS</code>. <code>pointAt</code> is <b>not</b> on the whitelist: <code>customerView</code> adds it only while <code>status</code> is <code>ready</code>, <code>mode</code> is <code>collect</code> <b>and goods are still to be handed over</b>. That third test matters: <code>applyEvent</code> sets <code>status</code> back to <code>ready</code> directly on a fix undo (near 1238) and on an amendment that leaves money owing (near 1269), and a customer who owes only money is not waiting at the point (Fable 6). After collection, cancellation or decline the code stays (Details reads "Collected at Point A2") and the coordinates leave every answer, the test fixture's included (<code>tools/testfix.mjs</code> passes orders through <code>customerView</code>).</li>
+<li><b>Desk (Fable 1):</b> the raw order doc leaves the Counter on five roads, and <code>deskOrderView</code> (drops <code>pointAt</code>) is applied on every one in <code>stmt/worker.js</code>: the <code>/desk/orders</code> GET (<code>allOrders</code>), both <code>?work=1</code> roads (<code>ordersOwing</code>), the <code>replaceOrder</code> answer and the <code>deskMove</code> answer, which <code>src/worker.js</code> hands straight to the Desk page. <code>src/orders.js</code> passes through what arrives, so the strip must be Counter-side. The <code>deskseen</code> op returns the raw doc to Counter Admin only, behind the owner's two locks: acceptable. The Desk reads <code>point</code> only, and its order line says "Point A2" (master, part 3b). Ready makes no ledger stage, so no note can carry it; an assertion holds that. The Desk's D1 holds no order doc.</li>
+<li><b>Where coordinates do rest (Fable 9):</b> his points in <code>maker:points</code>; each order's snapshot in the order book's event and order tables, its KV write-behind and the laptop's <code>tools/orders-kv.mjs</code> backups. All Counter-side or laptop, none in git; the backups stay gitignored.</li>
+<li><b>Push:</b> Ready keeps its words (<code>news.ready-collect.*</code>); the banner names no point. <code>point-moved</code> is added to <code>stmt/sw.js</code> kinds and <code>news.*</code>; <code>sealedNews</code> already lets only <code>k, o, v, t, m</code> through.</li>
+<li><b>Maps link (page):</b> <code>pointHref(code, lat, lng)</code>: <code>https://maps.apple.com/?ll=LAT,LNG&amp;q=Point%20A2</code> on iPhone, iPad and Mac; <code>geo:LAT,LNG?q=LAT,LNG(Point%20A2)</code> on Android; <code>https://www.google.com/maps/search/?api=1&amp;query=LAT,LNG</code> elsewhere. The label is the code only. The mockup's <code>?q=Point%20A2</code> searches the words and finds nothing; the build uses the coordinates. A plain navigation: CSP unaffected, no third-party load (rule 4).</li>
+<li><b>Leak checks:</b> the public desk scan (verify 654) and <code>tools/ledger.mjs</code> already pass a code like "A2" (too short, no roster shape). New assertions: no <code>lat</code>/<code>lng</code> of <code>pointAt</code> in <code>public/desk.html</code>, any ledger note or any Desk answer.</li>
+</ul>
+
+<h3>2.4 Test accounts</h3>
+<p><code>FEATURES</code> gains "ready at a collection point" and "collection point changed"; <code>build()</code> gains two example orders at Ready to collect on <code>0000-0000</code> (point "Z9", invented coordinates on a public landmark, never one of his points), one after a Change point; <code>FIX_VERSION</code> 9 to 10. A tap on an example order answers as a customer's would (Ready, Change point) through the fixture only.</p>
+
+<h2 id=parts>3. Parts, in landing order</h2>
+<p class=dim><span class="t d">display</span> = display-only: its sections plus the gate as it goes (his yes of 18 Oct 2026). <span class="t s">full</span> = changes a route or data: full suite. <span class="t x">ds</span> = salt-ds repo. Every new assertion is proved red by its own mutation (<code>tools/section.mjs --mutations</code>) before its green counts. The version runs the full suite once on the unbumped tree before the number is taken, because parts 2 and 3 are not display-only.</p>
+
+<div class="f m"><b>P0 <span class="t x">ds</span> salt-ds 1.7.0: the missing recipes.</b>
+<ul><li>New in <code>src/styles.css</code> (Night and Tide) and <code>src/tokens.ts</code>: <code>salt-status__glyph</code>; <code>salt-steps__mark</code>, <code>__time</code>, step states done, now and next; <code>salt-notice</code> (lines, <code>__pause</code> 44px, rotation by class, every line shown and the pause hidden under <code>prefers-reduced-motion: reduce</code>); <code>salt-ledger__sub</code> and <code>salt-ledger__row--due</code>; <code>salt-band</code>; <code>salt-empty</code>; <code>salt-glass-card--link</code> (focus ring; no lift under reduced motion); <code>salt-pin</code> (44px round link); <code>salt-glance</code>. No new colour unless contrast needs one.</li>
+<li>Checks: <code>npm run contrast</code> green in both themes; version bump; PR and merge (push on green). Then <code>npm run propagate -- --salt-command &lt;wt&gt; --qr-command &lt;wt&gt;</code>; QR Command takes the additive CSS and changes nothing it draws.</li></ul></div>
+
+<div class=f><b>P1 <span class="t d">display</span> Design pulled into salt-command.</b> <code>design/salt-ds.css</code> (<code>designsync --pull</code>, <code>--sync</code>); <code>tools/stmt-style.mjs</code> <code>RECIPE_HEADS</code> gains Root, Brand title and the new heads; <code>stmt/statement-css.js</code> (<code>--sync</code>); build.
+<br>Asserts: <i>every new head is carried once and nothing restated</i> (extends <code>test/counter-page-css.mjs</code>); <i>designsync --drift ok</i>. Sections: Counter page CSS, two themes, Desk design sync; gate.</div>
+
+<div class=f><b>P2 <span class="t s">full</span> The points list.</b> Files in 2.1.
+<br>Asserts: <i>validatePoints refuses a roster-shaped code, a label, 21 points, a point outside Malaysia</i>; <i>/all/maker/points refuses without the verified owner</i>; <i>the public desk and the master carry no points key or coordinates</i>; <i>the Admin card draws for the test accounts from examplePoints only</i>.</div>
+
+<div class=f><b>P3 <span class="t s">full</span> Ready carries the point; Change point; the Desk reads it.</b> Files: <code>stmt/owner.js</code>, <code>stmt/maker.js</code>, <code>src/maker.js</code>, <code>src/orders.js</code>, <code>src/worker.js</code> (relay only; no new action), <code>stmt/points.js</code> (<code>resolvePoint</code>), <code>stmt/worker.js</code>, <code>stmt/orderbook.js</code>, <code>stmt/orders.js</code>, <code>stmt/push.js</code> (kind list only), <code>stmt/sw.js</code>, <code>stmt/words.js</code>, <code>tools/testfix.mjs</code>, <code>stmt/testfix.js</code>, <code>master/salt_command.html</code> (3b: the Desk's order line), then build. Fable reviews this part before it lands.
+<br>Asserts: <i>collect Ready without a point is refused at maker, Desk and order book</i>; <i>a point on a delivery is refused</i>; <i>an unknown code is refused</i>; <i>a retry with the same rid lands once and ignores a new pointAt</i>; <i>a retry of a landed Ready after its code is removed answers again, not 400</i>; <i>the same rid with another code is 409</i>; <i>an example order resolves its point from examplePoints and keeps pointAt out of the stored request</i>; <i>editing A2 after Ready moves no order</i>; <i>a part handover leaves point and pointAt untouched</i>; <i>customerView carries pointAt only at Ready to collect with goods still to hand over, never after, and not on an order reopened by a fix undo or an amendment that leaves only money owing</i>; <i>none of the five Desk roads (allOrders, both ordersOwing, replaceOrder, deskMove) carries pointAt</i>; <i>a Change point history line carries the code and no coordinates</i>; <i>no ledger entry or note carries the point</i>; <i>Change point is refused once no goods are left to hand over</i>; <i>point beside Decline or Cancel is refused</i>; <i>point-moved wakes with fixed words and no code</i>; <i>the fixture cases exist for both FEATURES lines</i>.</div>
+
+<div class=f><b>P4 <span class="t d">display</span> A glyph on every state chip.</b> <code>stmt/page.js</code> (<code>stateChip</code>, glyph map), <code>stmt/owner.js</code> where it draws the same chip.
+<br>Asserts: <i>every state word maps to exactly one glyph</i>; <i>the glyph is aria-hidden and the word unchanged</i> (pins "One word per state", <code>test/counter-state-words.mjs</code>).</div>
+
+<div class=f><b>P5 <span class="t d">display</span> Orders: the card, the tabs, the columns, the empty states.</b> <code>stmt/page.js</code> (<code>oRow</code>, <code>oBuckets</code>, <code>oList</code>, new <code>oTabs</code>, <code>oEmpty</code>, PAGE_CSS from 860px), <code>stmt/words.js</code> (<code>ord.tab.*</code>, <code>ord.empty.*</code>).
+<br>Asserts: <i>All counts every order; Open, To pay and Done partition as defined (Done = Complete, Declined, Cancelled; To pay = oOwes)</i>; <i>the tab row is one line at 320px with 44px pills</i>; <i>from 860px two columns and no tab row</i>; <i>the whole card is one link whose name carries date, size, state and owed</i>; <i>each empty state has one action</i>; <i>no product word</i>.</div>
+
+<div class=f><b>P6 <span class="t d">display</span> Wide shell: "Salt Counter" over the rail.</b> <code>stmt/page.js</code> (<code>placesRail</code>, PAGE_CSS 1080px).
+<br>Asserts: <i>the only brand on the page is "Salt Counter"</i> (extends the brand scan); <i>the rail's brand slot shows the username, never a roster code</i>.</div>
+
+<div class=f><b>P7 <span class="t d">display</span> Order detail: band, stepper, money, Message, Details.</b> <code>stmt/page.js</code> (<code>oBand</code>, <code>oSteps</code>, <code>oMoney</code>, <code>oAct</code>, <code>oDetails</code>, <code>orderRef</code>, <code>pointHref</code>), <code>stmt/words.js</code> (<code>oh.ref</code>, <code>oh.at</code>, <code>pt.*</code>, <code>om.by*</code>, <code>od.*</code>); <code>stmt/owner.js</code> shows the same reference on the order card so a quoted reference finds its order.
+<br>Asserts: <i>orderRef is stable, 7 symbols from the 30-letter alphabet, never the id or a roster code</i>; <i>the stepper's times come from history and Next sits on the step to come</i>; <i>the pin's href carries the code and coordinates only and is 44px</i>; <i>no pin once collected</i>; <i>every payment line names its way and day</i>; <i>Message shows on every stage</i>; <i>Details carries no note</i>.</div>
+
+<div class=f><b>P8 <span class="t d">display</span> Home: the Today card and the rotating notice.</b> <code>stmt/page.js</code> (<code>noticeCard</code>, <code>bullDraw</code>, new <code>todayCard</code>, rotation timer in the nonce'd script), <code>stmt/words.js</code> (<code>today.*</code>, <code>bull.pause</code>, <code>bull.play</code>); <code>test/verify.mjs</code> sections v732 (26210) and S7 7.5 (41442) rewritten from "still" to "rotates, pauses, stacks"; <code>CLAUDE.md</code> D14 line.
+<br>Asserts: <i>one line shows at a time and the next follows after 6 s</i>; <i>Pause stops it and is 44px with a name</i>; <i>under reduced motion every line shows and no timer runs</i>; <i>the card is not a live region</i>; <i>the open or closed line reads /hours</i>.</div>
+
+<div class=f><b>P9 <span class="t d">display</span> Home: live order, reward meter, This year.</b> <code>stmt/page.js</code> (<code>homeLive</code>, <code>homeReward</code>, <code>homeYear</code>, <code>drawHome</code> order), <code>stmt/words.js</code> (<code>hl.*</code>, <code>hr.*</code>, <code>hy.*</code>).
+<br>Asserts: <i>the pill shows under 1080px and the banner from 1080px, never both</i>; <i>the pill does not cover the pay foot or the App bar</i>; <i>the reward card draws only for an associate and never names a level</i>; <i>This year adds up to the statement's rows</i>; <i>To pay now and the overdue gate still lead Home</i>; <i>no "monthly" or "By month" anywhere in the words</i>.</div>
+
+<div class=f><b>P10 <span class="t d">display</span> Account: the glance strip.</b> <code>stmt/page.js</code> (<code>acctGlance</code>), <code>stmt/words.js</code>.
+<br>Asserts: <i>the strip's owed figure equals To pay now</i>; <i>its link opens that order</i>; <i>nothing in it names a roster code</i>.</div>
+
+<div class=f><b>P11 Docs.</b> <code>docs/STATEMENTS.md</code> (Home order, Orders tabs, the point), <code>docs/DESIGN.md</code> (the new recipes, reduced motion), <code>CLAUDE.md</code> (the point under the Counter rules; D14), <code>MEMORY.md</code>.</div>
+
+<div class="f l"><b>P12 The version.</b> Queue first (<code>drain.mjs --status</code>, <code>drafts.mjs --list</code> and <code>--approved</code>, a staged <code>_to_fold.json</code>); full suite on the unbumped tree; fetch, bump off origin's tip, changelog, build, gate, push within a minute. The <code>src/</code> and master changes move <code>rev.json</code>, so Actions deploys the Desk and the Counter. After: live <code>/rev</code>, a counter-render pass at 390, 1180 and 1440 in Night and Tide, and the hit test.</div>
+
+<h2 id=rules>4. Checked against the rules</h2>
+<div class=tw><table><thead><tr><th>Rule<th>How Batch A keeps it</tr></thead><tbody>
+<tr><td>No brand but "Salt Counter"<td>The rail title is the one brand; P6 asserts it.</td></tr>
+<tr><td>Marks only, no product words<td>Every card and the band draw <code>psym</code>/<code>mtile</code>; screen readers hear the shape; P5 and P9 extend the <code>PRODUCT_WORDS</code> scan.</td></tr>
+<tr><td>Never a level<td>The reward card reads <code>reward.left</code> only; P9 asserts no <code>LEVEL_WORDS</code>.</td></tr>
+<tr><td>Username, never a roster code<td>Greeting, rail and glance use <code>whoAs</code>; <code>orderRef</code> and point codes cannot take the roster shape.</td></tr>
+<tr><td>44px targets<td>Tabs, whole cards, pin, Pause, Message, the point Sheet's buttons; hit test at P12.</td></tr>
+<tr><td>4.5:1 in Night and Tide<td>Ember and verdigris become text colours: both join the Counter's measured token list (<code>test/counter-two-themes.mjs</code>), and salt-ds <code>contrast</code> runs at P0.</td></tr>
+<tr><td>Reduced motion<td>The notice stacks and stops; card links do not lift; the stepper does not animate.</td></tr>
+<tr><td>Template-literal traps<td>Every new CLIENT_JS and owner.js line: no backtick, no lone backslash, <code>[+]</code> and <code>[/]</code>; the jsdom sections parse it. A new assertion scans CLIENT_JS for both, as SW_JS already is.</td></tr>
+<tr><td>British English, no em dashes<td>The em-dash check (verify 23390) covers every new key.</td></tr>
+<tr><td>Nothing prices<td>No part touches <code>engine/</code>, the board, the floor or a row; the point makes no ledger stage.</td></tr>
+<tr><td>Rule 2 and the leak checks<td>The point is a code; its coordinates are his own, in Counter KV, sent to one customer while their order waits; never in git, the Desk, a note or a banner.</td></tr>
+<tr><td>Every customer feature lands with its case<td>P3 adds both FEATURES lines and cases; display parts reuse existing cases (Ready, paid, cancelled, done).</td></tr>
+</tbody></table></div>
+
+<h2 id=ask>5. Ask</h2>
+<ol>
+<li><b>The notice rotates (reverses D14).</b> Recommended: yes, as decided 18 Oct; the two still-card sections and the D14 line change with it.</li>
+<li><b>Point coordinates live in Counter KV only, typed or pasted on Counter Admin, and reach a customer only while their order is Ready to collect.</b> Recommended: yes.</li>
+<li><b>Point codes are one letter and one or two digits ("Point A2").</b> Recommended: yes; it cannot collide with a roster code.</li>
+<li><b>The point is a snapshot at Ready; editing A2 later moves no order.</b> Recommended: yes; Change point moves one order on purpose.</li>
+<li><b>Change point after Ready, with a banner "Your collection point has changed".</b> Recommended: yes.</li>
+<li><b>Maps: Apple Maps on iPhone, iPad and Mac; the phone's default (geo:) on Android; Google Maps on the web elsewhere.</b> Recommended: yes.</li>
+<li><b>The monthly bars on Home sit inside "This year", with no "Each month" heading.</b> Recommended: yes, to keep "monthly" out of the copy.</li>
+<li><b>"Paid on time 13/14" waits for Batch B.</b> Recommended: yes; the sealed document does not carry it and deriving it touches payment terms.</li>
+<li><b>Details leaves out the order note.</b> Recommended: yes; the note is not on the customer whitelist and adding it is a data change.</li>
+<li><b>The short reference is derived from the order's id and shown on Counter Admin too.</b> Recommended: yes, so a customer can quote it.</li>
+<li><b>To pay now, the overdue gate, Needs you and Coming up stay above everything on Home.</b> Recommended: yes (D9).</li>
+<li><b>A collect Ready is refused without a point.</b> Recommended: yes; a delivery needs none.</li>
+</ol>
+<h2 id=review>6. Review</h2>
+<p>Fable 5.1, read-only, on section 2, P2 and P3, against the code. Nine findings, all applied above:</p>
+<ol>
+<li><b>Blocker:</b> coordinates would reach the Desk on four roads besides the one named; <code>deskOrderView</code> now covers all five (2.3).</li>
+<li><b>Blocker:</b> <code>src/worker.js</code> was missing and Change point had no route; it rides <code>move</code> as <code>{rid, point}</code>, both faults widened to four kinds (2.2).</li>
+<li>The unknown-code check ran before the retry answer; moved after <code>deskSeen</code>.</li>
+<li>Example orders never pass <code>stmt/worker.js</code>; one <code>resolvePoint</code> on both roads, <code>pointAt</code> a sibling of <code>body</code>.</li>
+<li>"Ready again for the rest" is unreachable from the Desk; the assertion is now on a part handover.</li>
+<li>A fix undo or an amendment can set Ready directly; the customer gate also needs goods still to hand over.</li>
+<li>Nit: <code>decideDesk</code> needs a point-only branch and <code>wakes</code> a <code>kind:'point'</code> case.</li>
+<li>Nit: the history line carries the code only.</li>
+<li>Nit: where coordinates rest, said in 2.3.</li>
+</ol>
+<p id=recheck>Re-check by the same reviewer: all nine resolved, no new problem in the data path or the route. Two nits from the re-check, applied: <code>point</code> is admitted only beside a collect Ready or alone, never beside Decline or Cancel; Change point needs goods still to hand over, like the customer gate.</p>
+</main>
