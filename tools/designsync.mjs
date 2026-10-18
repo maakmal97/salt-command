@@ -23,6 +23,7 @@
  *                                       (from ../salt-ds, or $SALT_DS)
  *   node tools/designsync.mjs --sync    write both files into the master between the markers
  *   node tools/designsync.mjs --check   exit 1 if either block in the master is not its file
+ *   node tools/designsync.mjs --drift   exit 1 if design/ is not the design system checkout's files
  *
  * THE FILES ARE THE SOURCE. Edit design/desk.css, or the design system and then --pull; run
  * --sync; build. An edit inside the markers is overwritten by the next --sync and fails
@@ -78,6 +79,24 @@ if (mode === "--pull") {
   console.log(`  ok    pulled design/fonts.css and ${FONT_FILES.length} font files into design/fonts/`);
   process.exit(0);
 }
+/* 18 Oct 2026, his word: a change to the design system reaches every surface at once. --drift
+   says whether design/ still is the design system's checkout (none on this machine is not drift). */
+if (mode === "--drift") {
+  if (!existsSync(DS_SRC)) { console.log(`  skip  no design system at ${DS_ROOT} (set SALT_DS)`); process.exit(0); }
+  /* the faces the design system names, read off its own fonts-local.css, so a renamed face is drift too */
+  const faces = [...text(DS_FONTS_CSS).matchAll(/url\(\s*["']?(?:[^"')]*\/)?([^"')/]+\.woff2)/g)].map((m) => m[1]);
+  const same = (a, b) => existsSync(a) && existsSync(b) && readFileSync(a).equals(readFileSync(b));
+  const pairs = [[DS_SRC, BLOCKS[0].file, true], [DS_FONTS_CSS, BLOCKS[2].file, true],
+    ...[...new Set(faces)].map((f) => [resolve(DS_FONTS, f), resolve(FONTS_SRC, f), false])];
+  let bad = 0;
+  for (const [src, dst, txt] of pairs) {
+    const ok = txt ? existsSync(dst) && text(src) === text(dst) : same(src, dst);
+    if (!ok) { console.log(`  DRIFT ${dst.slice(REPO.length + 1).replace(/\\/g, "/")} is not the design system's. Run salt-ds's npm run propagate, or here: --pull, --sync, npm run build`); bad++; }
+  }
+  if (faces.some((f) => !FONT_FILES.includes(f))) { console.log(`  DRIFT the design system's faces are ${faces.join(", ")}; FONT_FILES here and in tools/stmt-fonts.mjs name ${FONT_FILES.join(", ")}`); bad++; }
+  if (!bad) console.log(`  ok    design/ is ${DS_ROOT}, byte for byte`);
+  process.exit(bad ? 1 : 0);
+}
 
 let master = readFileSync(MASTER, "utf8");
 if (mode === "--check") {
@@ -118,5 +137,5 @@ if (mode === "--sync") {
   writeFileSync(MASTER, master, "utf8");
   process.exit(0);
 }
-console.log("usage: node tools/designsync.mjs --pull | --sync | --check");
+console.log("usage: node tools/designsync.mjs --pull | --sync | --check | --drift");
 process.exit(2);
