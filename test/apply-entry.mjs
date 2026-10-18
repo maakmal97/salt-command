@@ -1,36 +1,11 @@
-/* test/apply-entry.mjs: S1d-i of the Book plan. applyEntry books ONE planned entry, beside the batch's applyInto. Reduced over a batch in event order (the entries, then the
-   renames, QUEUE_COMMITTED and sortBook, which a wrapper does once) it must leave the book applyBatch leaves, bar the ROLLED sentences the wrapper writes. Where the order of a
-   count and a move on one product decides the figure, the entry law and the batch law differ, and that is recorded here, not changed: S1d-ii adopts it. */
-import { batches, notesFor } from "./fold-replay.mjs";
+/* test/apply-entry.mjs: S1d of the Book plan. applyEntry books ONE planned entry, and (S1d-ii, 18 Oct 2026) applyInto is those entries booked in EVENT ORDER: a count stands and
+   only the moves after it change it, a rename applies where it stands, the roll note is one a product for the batch, and a trip books whole or not at all. The replay of the
+   staged batches (test/fold-replay.mjs) holds that no past fold moved. */
 import { execFileSync } from "node:child_process";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-
-/* the reducer a batch wrapper will be: every entry, then the renames, QUEUE_COMMITTED and the sort, once */
-export function reduceEntries(ENG, E, book, p, staged, notes, ctx, movesFor = ENG.movesOf) {
-  let newest = book.QUEUE_COMMITTED || "";
-  const renames = [];
-  for (const it of p.items) {
-    const r = ENG.applyEntry(book, it, { nextRid: ctx.nextRid, staged, notes, moves: movesFor(p, it) });
-    renames.push(...r.renames);
-    if (r.newest > newest) newest = r.newest;
-  }
-  for (const rn of renames) {
-    E.renameInBook(book, rn.pairs);
-    if (rn.geo) { book.PLACED = book.PLACED || {}; book.PLACED[rn.to] = rn.geo; }
-  }
-  if (newest && newest > (book.QUEUE_COMMITTED || "")) book.QUEUE_COMMITTED = newest;
-  ctx.sortBook(book);
-  return book;
-}
-
-const unrolled = (book) => {   /* the book with its ROLLED sentences taken out, which the wrapper writes */
-  const b = JSON.parse(JSON.stringify(book));
-  for (const k of Object.keys(b.NOTES || {})) if (Array.isArray(b.NOTES[k])) b.NOTES[k] = b.NOTES[k].filter((s) => !/^ROLLED AT /.test(s));
-  return JSON.stringify(b);
-};
 
 export async function run({ ok }) {
   const ENG = await import("../engine/apply.mjs"), E = (await import("../engine/position.mjs")).default;
@@ -58,12 +33,6 @@ export async function run({ ok }) {
   for (const it of it3) ENG.applyEntry(c3, it, { nextRid, staged: st3, notes, moves: it.id === "q-5" ? [{ product: "salt", kg: -1, who: "ZZ1-AAA", when: "2030-01-01" }] : [] });
   ok(c3.sales[0].cost === 30, "S1d-1: a salt sale costed off the shelf takes the rate on the book before its own entry, not before the batch");
 
-  /* a rename comes last: a row booked in the same batch under the old code moves with it */
-  const c4 = mk(), st4 = { approved: [sale] };
-  const p4 = { items: [{ id: "q-0", rename: { from: "ZZ1-AAA", to: "ZZ2-BBB", pairs: [["ZZ1-AAA", "ZZ2-BBB"]], geo: null } }, itSale], moves: [] };
-  reduceEntries(ENG, E, c4, p4, st4, { version: "v1", rows: { "q-1": { note: "invented sale" } } }, { nextRid, sortBook }, () => []);
-  ok(c4.sales.length === 1 && c4.sales[0].customer === "ZZ2-BBB" && c4.roster.includes("ZZ2-BBB") && c4.QUEUE_COMMITTED === "q-1", "S1d-1: a rename planned first is applied last, after the sale booked under the old code, and QUEUE_COMMITTED follows the newest entry");
-
   /* movesOf, on a real plan (so it runs on a shallow clone too): a sale delivering 2 and a count on one product, planned by planBatch against the current book plus an invented code */
   { const FOLD = await import(pathToFileURL(join(REPO, "tools", "fold.mjs")).href + "?movesof");
     const bk = (await import("./frozen.mjs")).frozenBook(); bk.roster.push("ZZ1-AAA");
@@ -78,29 +47,37 @@ export async function run({ ok }) {
     ok(threw, "S1d-1: movesOf refuses a plan planBatch did not build, rather than answering none");
   }
 
-  /* 1. the last 20 staged batches, reduced entry by entry */
-  let bs;
-  try { bs = batches(20); } catch (e) { bs = []; }
-  const shallow = (() => { try { return execFileSync("git", ["rev-parse", "--is-shallow-repository"], { cwd: REPO, encoding: "utf8" }).trim() === "true"; } catch (e) { return true; } })();
-  if (!bs.length || shallow) { ok(true, "S1d-1: no staged batch in this clone's history (shallow): the reduction is run on the laptop"); return; }
-  const realNow = Date.now;
-  let same = 0, folded = 0;
-  const differ = [];
-  try {
-    Date.now = () => Date.UTC(2026, 9, 14, 3, 0, 0);   /* pinned before the fold reads its clock */
-    const NEW = await import(pathToFileURL(join(REPO, "tools", "fold.mjs")).href + "?applyentry");
-    for (const x of bs) {
-      const ctx = Object.assign(Object.create(NEW.planCtx), { nextRid, sortBook });
-      const p = NEW.plan(JSON.parse(x.book), x.staged, null), nt = notesFor(p, x.master);
-      const whole = ENG.applyBatch(JSON.parse(x.book), x.staged, nt, ctx);
-      if (!whole.ok) { ok(true, `S1d-1: batch ${x.sha.slice(0, 8)} is refused as a whole, so nothing is reduced`); continue; }
-      folded++;
-      const st = JSON.parse(JSON.stringify(x.staged)), bk = JSON.parse(x.book), pl = ENG.planBatch(bk, st, nt, ctx);   /* planned against the book it is booked into: a correction's target is one of its rows */
-      const red = reduceEntries(ENG, E, bk, pl, st, nt, ctx);
-      const eq = unrolled(red) === unrolled(whole.book);
-      if (eq) same++; else differ.push(x.sha.slice(0, 8));
-      ok(eq, `S1d-1: batch ${x.sha.slice(0, 8)} (${x.staged.count} row(s)) reduced entry by entry ends where applyBatch ends`);
-    }
-  } finally { Date.now = realNow; }
-  ok(folded >= 1 && same === folded, `S1d-1: ${same} of ${folded} folded batches reduce equal${differ.length ? "; not equal: " + differ.join(", ") : ""}`);
+  /* S1d-ii: a batch is its entries in event order, on the current book with invented codes */
+  { const FOLD = await import(pathToFileURL(join(REPO, "tools", "fold.mjs")).href + "?s1d2");
+    const { frozenBook } = await import("./frozen.mjs");
+    const ctx = Object.assign(Object.create(FOLD.planCtx), { nextRid, sortBook });
+    const fb = () => { const bk = frozenBook(); bk.roster.push("ZZ1-AAA"); bk.STATED_STOCK = 10; return bk; };
+    const sl = (id, qty, d, extra) => ({ id, status: "approved", collection: "sales", row: Object.assign({ customer: "ZZ1-AAA", date: d, qty, total: qty * 100, cash: qty * 100, deliveredQty: qty, product: "salt" }, extra || {}) });
+    const ct = (id, q, d) => ({ id, status: "approved", collection: "count", row: { product: "salt", qty: q, date: d } });
+    const rn = (id, from, to) => ({ id, status: "approved", collection: "rename", row: { from, to }, entry: { at: id, payload: { mode: "rename", from, to } } });
+    const go = (rows) => {
+      const bk = fb(), frozen = JSON.stringify(bk), st = { ok: true, count: rows.length, approved: rows };
+      const nt = { version: "v9999", rows: Object.fromEntries(rows.map((r) => [r.id, { note: "note " + r.id }])) };
+      const r = ENG.applyBatch(bk, st, nt, ctx);
+      return Object.assign(r, { untouched: JSON.stringify(bk) === frozen });
+    };
+    const rolled = (r) => ((r.book.NOTES || {}).STATED_STOCK || []).filter((x) => /^ROLLED AT v9999/.test(x));
+    const T = (n) => "2031-01-0" + n;
+    const sc = go([sl("2031-01-02T01", 2, T(2)), ct("2031-01-02T02", 10.5, T(3))]), cs = go([ct("2031-01-02T01", 10.5, T(3)), sl("2031-01-02T02", 2, T(2))]);
+    ok(sc.ok && sc.book.STATED_STOCK === 10.5 && sc.book.QUEUE_COMMITTED === "2031-01-02T02" && cs.ok && cs.book.STATED_STOCK === 8.5 && sc.untouched, "S1d-2: a batch of a sale then a count of 10.5 ends at 10.5, a count then the sale at 8.5, and the book it was given is untouched: " + (sc.book && sc.book.STATED_STOCK) + " / " + (cs.book && cs.book.STATED_STOCK));
+    const two = go([sl("2031-01-02T01", 2, T(2)), sl("2031-01-02T02", 3, T(3))]);
+    ok(two.ok && two.book.STATED_STOCK === 5 && rolled(two).length === 1 && /2 unit to ZZ1-AAA on 2031-01-02, 3 unit to ZZ1-AAA on 2031-01-03, so 10 less 5 is 5\./.test(rolled(two)[0]) && two.moves.filter((m) => m.product === "salt").length === 1 && two.moves.find((m) => m.product === "salt").out === 5,
+      "S1d-2: the roll note is one a batch, the moves summed: " + JSON.stringify(rolled(two)));
+    const mid = go([sl("2031-01-02T01", 2, T(2)), ct("2031-01-02T02", 10.5, T(3)), sl("2031-01-02T03", 1, T(4))]);
+    ok(mid.ok && mid.book.STATED_STOCK === 9.5 && rolled(mid).length === 1 && /so 10 less 3 is 9\.5\..*came between/.test(rolled(mid)[0]) && mid.moves.find((m) => m.product === "salt").to === 9.5,
+      "S1d-2: a count between two moves stands, the moves after it change it, and the one note says a count came between: " + JSON.stringify(rolled(mid)));
+    const after = go([sl("2031-01-02T01", 2, T(2)), rn("2031-01-02T02", "ZZ1-AAA", "ZZ2-BBB")]), before = go([rn("2031-01-02T01", "ZZ1-AAA", "ZZ2-BBB"), sl("2031-01-02T02", 2, T(2))]);
+    const own = (r) => r.ok && r.book.sales.filter((x) => /^note 2031/.test(x.note)).every((x) => x.customer === "ZZ2-BBB") && r.book.roster.includes("ZZ2-BBB") && !r.book.roster.includes("ZZ1-AAA");
+    ok(own(after) && own(before) && after.renames.length === 1, "S1d-2: a rename applies where it stands: a sale booked before it and one booked after it under the old code both end under the new: " + JSON.stringify([after.problems, before.problems]));
+    /* a trip books every row or none: two books and one delivery fold whole; a second delivery refuses the row and holds its sibling, and nothing folds */
+    const tr = (id, product, extra) => sl(id, 1, T(2), Object.assign({ trip: "t1791900000099", product, cash: 0, deliveredQty: 0, total: 100 }, extra || {}));
+    const okTrip = go([tr("2031-01-02T01", "salt", { delivery: 10 }), tr("2031-01-02T02", "oil")]), badTrip = go([tr("2031-01-02T01", "salt", { delivery: 10 }), tr("2031-01-02T02", "oil", { delivery: 5 })]);
+    ok(okTrip.ok && okTrip.book.sales.filter((x) => x.trip === "t1791900000099").length === 2 && !badTrip.ok && badTrip.problems.length === 2 && badTrip.problems.some((x) => /another row of trip/.test(x)) && badTrip.untouched,
+      "S1d-2: a trip books whole or not at all: " + JSON.stringify([okTrip.problems, badTrip.problems]));
+  }
 }
