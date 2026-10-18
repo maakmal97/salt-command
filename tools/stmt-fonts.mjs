@@ -15,7 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-export const FONT_FILES = ["fraunces-latin.woff2", "jetbrains-mono-latin.woff2"];
+export const FONT_FILES = ["newsreader-latin.woff2", "geist-mono-latin.woff2"];
 const TARGET = join(REPO, "stmt", "fonts.js");
 
 /** What stmt/fonts.js should contain, given design/fonts/ now. */
