@@ -30,6 +30,9 @@ import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finish
   acquireDeviceQueueLock, releaseDeviceQueueLock, claimDeviceQueueWithdrawal, finishDeviceQueueWithdrawal,
   queueWithdrawalKey, queueOwnerKey } from "./input-admission.js";
 import { ciAccess, ownerAccess } from "./access.js";
+/* S2a (18 Oct 2026): the shadow Book is a Durable Object exported from the main module, where the BOOK binding looks for its class */
+export { Book } from "./book.js";
+import { BOOK_NAME, MAX_LOAD_BYTES } from "./book.js";
 import { maintenance } from "./maintenance.js";
 import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
 import { officialVaultPoint } from "./vault-locality.js";
@@ -98,7 +101,7 @@ async function accessOk(request, env, p, m) {
      leaked CI secret with the write key must not reach names or places. */
   return CI_ROUTES.has(m + " " + p) && ciAccess(request, env);
 }
-const CI_ROUTES = new Set(["GET /rev", "POST /push/send"]);
+const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
@@ -173,6 +176,18 @@ function pushKeyOk(request, env) {
   let diff = 0;
   for (let i = 0; i < key.length; i++) diff |= got.charCodeAt(i) ^ key.charCodeAt(i);
   return diff === 0;
+}
+
+async function handleBookLoad(request, env, m) {
+  if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  const wk = String(env.SALT_WRITE_KEY || ""), bk = String(env.SALT_BOOK_KEY || "");
+  const good = (wk && secretMatches(String(request.headers.get("X-Salt-Key") || ""), wk))
+    || (bk && secretMatches(String(request.headers.get("X-Book-Key") || ""), bk));
+  if (!good) return needsKey();
+  if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
+  const text = await request.text();
+  if (text.length > MAX_LOAD_BYTES) return json({ ok: false, error: "the load is too large" }, 413);
+  return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/load", { method: "POST", body: text }));
 }
 
 async function readQueuePost(request) {
@@ -2453,7 +2468,7 @@ export default {
     if (!await accessOk(request, env, p, m)) {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
-        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/")
+        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load"
         || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
@@ -2492,6 +2507,12 @@ export default {
       /* the one narrowing: a caller holding only the push key may send, and may do nothing
          else. It cannot subscribe, cannot read the summary and cannot list subscribers. */
       && !(p === "/push/send" && pushKeyOk(request, env))) return needsKey();
+
+    /* S2a: LOAD THE SHADOW BOOK. Behind the Access gate above (the owner, or CI's service token, which CI_ROUTES lets through
+       for this route alone) AND a key of its own: the Book's SALT_BOOK_KEY, or the owner's write key. Each is checked only
+       when its secret is set, so an unset secret opens nothing; the dormant write-key branch of writeOk is NOT used here.
+       The answer carries counts and a digest, never a row. Nothing reads the Book. */
+    if (p === "/book/load") return handleBookLoad(request, env, m);
 
     // --- the desk's HTTP contract -------------------------------------------------
     if (p === "/queue/ping") {

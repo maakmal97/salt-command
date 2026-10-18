@@ -84,6 +84,18 @@
 	// A CRON EDIT IS NOT SHIPPED BY THE AUTO-SYNC LEG, same as every other wrangler.jsonc
 	// change: it does not move rev.json's id, so update.mjs compares equal and skips the
 	// deploy. Deploy this by hand.
+	// THE SHADOW BOOK (S2a of the Book plan, 18 Oct 2026): a SQLite Durable Object, loaded from the folded book by the
+	// chain job and read by nothing. WAY BACK: add a second migration { "tag": "book-v2", "deleted_classes": ["Book"] },
+	// remove this binding and the export in src/worker.js, and deploy by hand. A revert alone does not undo a migration.
+	// Never edit a tag already applied. A wrangler.jsonc change does not move rev.json: deploy this BY HAND too.
+	"durable_objects": {
+		"bindings": [
+			{ "name": "BOOK", "class_name": "Book" }
+		]
+	},
+	"migrations": [
+		{ "tag": "book-v1", "new_sqlite_classes": ["Book"] }
+	],
 	"triggers": {
 		// Every minute: the customer order nudge, and on the quarter-hour the drafter's safety net.
 		// 0 1 is 09:00 in Kuala Lumpur: the morning nudge, which pushes ONLY when something is
