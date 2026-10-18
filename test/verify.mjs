@@ -481,6 +481,18 @@ await (async () => {
       && await gateSaid(await ci("/vault/addr")) === "not authenticated" && await gateSaid(await ci("/vault/key")) === "not authenticated"
       && await gateSaid(await ci("/queue")) === "not authenticated" && (await ci("/rev", ciGood, { method: "POST" })).status === 401,
       "the CI service token opens no other path or method on the Desk");
+    /* S2a: the shadow Book's load is the ONE other route CI's service token passes the gate for, and it still needs its own key. */
+    const bookNs = { idFromName: () => 1, get: () => ({ fetch: async () => Response.json({ ok: true, rows: 3 }) }) };
+    const bookEnv = { ...ciEnv, SALT_BOOK_KEY: "book-key-under-test", BOOK: bookNs };
+    const bookPost = (claims, headers, useEnv = bookEnv) => ci("/book/load", claims, { method: "POST", body: "{}", headers }, useEnv);
+    ok((await bookPost(ciGood, { "X-Book-Key": "book-key-under-test" })).status === 200
+      && (await bookPost(ciGood, { "X-Salt-Key": "write-key-under-test" })).status === 200,
+      "the service token loads the Book with the Book's key, or the write key");
+    ok((await bookPost(ciGood, {})).status === 401 && (await bookPost(ciGood, { "X-Book-Key": "wrong" })).status === 401
+      && (await bookPost(ciGood, { "X-Push-Key": "push-key-under-test" })).status === 401,
+      "the service token alone, a wrong Book key or the push key does not load the Book");
+    ok(await gateSaid(await bookPost({ ...ciGood, common_name: "another-client.access" }, { "X-Book-Key": "book-key-under-test" })) === "not authenticated",
+      "a token that is not the CI client is refused at the gate on POST /book/load");
     /* THE VAULT IS THE OWNER'S (his decision, 3 Oct 2026): a leaked CI secret with the write key must not
        read the pair or write names or places. Each route refused at the gate, the write key offered. */
     const vaultKeyed = { "X-Salt-Key": "write-key-under-test", "content-type": "application/json" };
@@ -53847,6 +53859,131 @@ await (async () => {
     const none = drift(join(ds, "absent"));
     ok(none.status === 0 && /skip\s+no design system/.test(none.stdout), "designsync --drift: quiet where no checkout is, as in CI");
   } finally { rmSync(ds, { recursive: true, force: true }); }
+})();
+
+section("Book S2a: the shadow Book loads once, stamps booked_at, holds every row, and nothing reads it (18 Oct 2026)");
+await (async () => {
+  const { Book, prepare, canon } = await import("../src/book.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const W = await import("../src/worker.js");
+  const BL = await import("../tools/book-load.mjs");
+  const frozen = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
+  const pricing = { takenAt: "invented", floors: { salt: 1 } };   /* takenAt is minted per extract and is not part of what the Book holds */
+  const fresh = () => { const os = H.objectState(); const b = new Book(os, {}); let t = 0; b.clock = () => "2026-10-18T00:00:" + String(10 + t++).padStart(2, "0") + "Z"; return { os, b }; };
+  const load = async (b, book, pr = pricing, rev = "r1") => b.load(await prepare(book, pr), rev);
+  const count = (os, q) => os.db.prepare(q).get().c;
+  const arrays = Object.keys(frozen).filter((k) => Array.isArray(frozen[k]));
+  const rowTotal = arrays.reduce((n, k) => n + frozen[k].length, 0);
+  const stateTotal = Object.keys(frozen).length - arrays.length + 1;
+
+  const { os, b } = fresh();
+  const r1 = await load(b, frozen);
+  ok(r1.ok && r1.added === rowTotal + stateTotal && r1.rows === rowTotal,
+    "a load of the book books every row of every collection and every other key, PRICING too");
+  ok(count(os, "SELECT COUNT(*) AS c FROM rows WHERE gone_at IS NULL") === rowTotal
+    && arrays.every((k) => count(os, "SELECT COUNT(*) AS c FROM rows WHERE coll = '" + k + "'") === frozen[k].length),
+    "the Book holds each collection with exactly the rows the book has");
+  ok(["STATED_STOCK", "PROD_OPENING", "NOTES", "PRICING"].every((k) => count(os, "SELECT COUNT(*) AS c FROM state WHERE k = '" + k + "'") === 1)
+    && JSON.parse(os.db.prepare("SELECT doc FROM state WHERE k = 'STATED_STOCK'").get().doc) === frozen.STATED_STOCK,
+    "STATED_STOCK, PROD_OPENING, NOTES and PRICING are held as documents, the stock to the figure");
+  ok(count(os, "SELECT COUNT(*) AS c FROM rows WHERE booked_at = '2026-10-18T00:00:10Z'") === rowTotal,
+    "every row is stamped booked_at by the load that booked it");
+  const sale = frozen.sales[0];
+  ok(JSON.parse(os.db.prepare("SELECT doc FROM rows WHERE coll = 'sales' AND key = ?").get("r:" + sale.rid).doc).total === sale.total
+    && canon({ b: 1, a: [2, { d: 1, c: 2 }] }) === '{"a":[2,{"c":2,"d":1}],"b":1}',
+    "a rid row is found by its rid, with its content intact, and rows hash with key order aside");
+
+  const stamps = () => os.db.prepare("SELECT coll, key, booked_at, revised_at, gone_at FROM rows ORDER BY coll, key").all().map((r) => JSON.stringify(r)).join("\n");
+  const before = stamps();
+  const r2 = await load(b, frozen, { ...pricing, takenAt: "a later extract" });
+  ok(r2.added === 0 && r2.revised === 0 && r2.gone === 0 && r2.returned === 0 && r2.digest === r1.digest && stamps() === before,
+    "loading the same book again (a retry, a replayed fold) books nothing and moves no stamp");
+  ok(count(os, "SELECT COUNT(*) AS c FROM loads") === 2, "each load, the repeat too, is one line in the load log");
+
+  const more = structuredClone(frozen);
+  more.sales.push({ ...structuredClone(sale), rid: "s9999", total: 1 });
+  const r3 = await load(b, more);
+  ok(r3.added === 1 && r3.rows === rowTotal + 1 && count(os, "SELECT COUNT(*) AS c FROM rows WHERE booked_at = '2026-10-18T00:00:12Z'") === 1
+    && count(os, "SELECT COUNT(*) AS c FROM rows WHERE booked_at = '2026-10-18T00:00:10Z'") === rowTotal,
+    "a new fold's row is booked at its own load and the rows before it keep their booked_at");
+
+  const edit = structuredClone(more);
+  edit.sales.find((x) => x.rid === "s9999").total = 2;
+  const r4 = await load(b, edit);
+  const rv = os.db.prepare("SELECT booked_at, revised_at FROM rows WHERE key = 'r:s9999'").get();
+  ok(r4.revised === 1 && r4.added === 0 && rv.booked_at === "2026-10-18T00:00:12Z" && rv.revised_at === "2026-10-18T00:00:13Z",
+    "a corrected rid row is revised in place and keeps the moment it was first booked");
+
+  const r5 = await load(b, frozen);
+  const gone = os.db.prepare("SELECT gone_at FROM rows WHERE key = 'r:s9999'").get();
+  ok(r5.gone === 1 && r5.rows === rowTotal && gone.gone_at === "2026-10-18T00:00:14Z",
+    "a row the book no longer carries is marked gone, not deleted");
+  const r6 = await load(b, edit);
+  const back = os.db.prepare("SELECT booked_at, gone_at FROM rows WHERE key = 'r:s9999'").get();
+  ok(r6.returned === 1 && r6.revised === 0 && back.gone_at === null && back.booked_at === "2026-10-18T00:00:12Z",
+    "a row that returns is live again with its first booked_at");
+
+  const dup = structuredClone(frozen);
+  dup.COUNTS.push(structuredClone(dup.COUNTS[0]));
+  const bd = fresh();
+  const rd = await load(bd.b, dup);
+  ok(rd.rows === rowTotal + 1 && (await load(bd.b, dup)).added === 0,
+    "two identical rows without a rid are both held, and a repeat of the load still books nothing");
+
+  let refused = 0;
+  for (const bad of [null, {}, { sales: [], purchases: [] }, { sales: [{}], purchases: [] }]) { try { await prepare(bad, pricing); } catch { refused++; } }
+  ok(refused === 4, "a load with no sales or no purchases is refused, so a bad file cannot mark the whole book gone");
+  const via = await bd.b.fetch(new Request("https://book/load", { method: "POST", body: JSON.stringify({ rev: "x", book: frozen, pricing }) }));
+  const viaText = await via.text();
+  ok(via.status === 200 && JSON.parse(viaText).ok && !viaText.includes("cost") && viaText.length < 600
+    && (await bd.b.fetch(new Request("https://book/load", { method: "POST", body: "{" }))).status === 400
+    && (await bd.b.fetch(new Request("https://book/rows"))).status === 404,
+    "the object answers counts and a digest, never a row or a cost; bad input is 400 and any other path 404");
+
+  /* the route: keyed, and shut where no secret is set */
+  const ns = { idFromName: (n) => n, get: () => ({ fetch: (r) => bd.b.fetch(r) }) };
+  const env = { REQUIRE_ACCESS: "0", SALT_WRITE_KEY: "wk", SALT_BOOK_KEY: "bk", BOOK: ns };
+  const post = (headers, e = env, method = "POST") => W.default.fetch(new Request("https://salt.test/book/load", { method, headers, body: method === "POST" ? JSON.stringify({ book: frozen, pricing }) : undefined }), e);
+  ok((await post({})).status === 401 && (await post({ "X-Book-Key": "no" })).status === 401 && (await post({ "X-Salt-Key": "no" })).status === 401,
+    "an unkeyed or wrongly keyed caller cannot load the Book");
+  ok((await post({ "X-Book-Key": "bk" })).status === 200 && (await post({ "X-Salt-Key": "wk" })).status === 200,
+    "the Book's key and the write key each load it");
+  ok((await post({ "X-Book-Key": "" }, { ...env, SALT_BOOK_KEY: "", SALT_WRITE_KEY: "" })).status === 401,
+    "with no secret set an empty key is refused, whatever the write gate's dormant branch does elsewhere");
+  ok((await post({ "X-Book-Key": "bk" }, { ...env, BOOK: undefined })).status === 503 && (await post({ "X-Book-Key": "bk" }, env, "GET")).status === 405,
+    "an unbound Book answers 503 and the route takes POST alone");
+
+  /* the Worker's wiring */
+  const cfg = JSON.parse(readFileSync(join(REPO, "wrangler.jsonc"), "utf8").replace(/\r/g, "").split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n"));
+  ok(W.Book === Book && cfg.durable_objects.bindings.some((x) => x.name === "BOOK" && x.class_name === "Book")
+    && cfg.migrations.length === 1 && cfg.migrations[0].tag === "book-v1" && (cfg.migrations[0].new_sqlite_classes || []).join() === "Book",
+    "the Desk Worker exports Book and binds it as BOOK under one SQLite migration tag");
+  const readers = [];
+  for (const f of readdirSync(join(REPO, "src")).filter((x) => x.endsWith(".js")))
+    readFileSync(join(REPO, "src", f), "utf8").split("\n").forEach((l, i) => { if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)) readers.push(f + ":" + (i + 1)); });
+  ok(readers.length === 2 && readers.every((x) => x.startsWith("worker.js")),
+    "only the load route touches the BOOK binding: no reader, the drafter and orders included (" + readers.join(" ") + ")");
+
+  /* the load tool and the chain step */
+  const body = BL.payload(FROZEN_BOOK, join(REPO, "ledger", "ledger.json"), "abc"); /* book-read-ok: the derived PRICING is the extract's, only its shape is read */
+  ok(JSON.parse(body).book.sales.length === frozen.sales.length && JSON.parse(body).rev === "abc" && !!JSON.parse(body).pricing,
+    "the load tool posts the book and the derived PRICING");
+  let calls = 0; const seq = [500, 502, 200];
+  const flaky = async () => { const st = seq[calls++]; return { status: st, json: async () => (st === 200 ? { ok: true, rows: 1, digest: "d" } : { error: "x" }) }; };
+  const rr = await BL.post("https://x/", body, { SALT_BOOK_KEY: "k" }, { wait: 0, fetchImpl: flaky });
+  ok(rr.ok && calls === 3, "a 5xx is retried and the third try lands");
+  calls = 0;
+  const denied = await BL.post("https://x", body, { SALT_BOOK_KEY: "k" }, { wait: 0, fetchImpl: async () => { calls++; return { status: 401, json: async () => ({ error: "write key required" }) }; } });
+  ok(!denied.ok && calls === 1 && /401/.test(denied.error), "a 401 is said at once and not retried");
+  calls = 0;
+  const nokey = await BL.post("https://x", body, {}, { wait: 0, fetchImpl: async () => { calls++; return {}; } });
+  ok(!nokey.ok && calls === 0 && /SALT_BOOK_KEY/.test(nokey.error), "with no key it says so and sends nothing");
+  const wf = readFileSync(join(REPO, ".github", "workflows", "cloud-commit.yml"), "utf8");
+  const at = wf.indexOf("- name: Load the shadow Book");
+  const stepText = wf.slice(at, wf.indexOf("\n      # ----", at));
+  ok(at > wf.indexOf("- name: Re-seed the mirror") && at < wf.indexOf("- name: Deploy the statements site")
+    && /continue-on-error: true/.test(stepText) && /steps\.plan\.outputs\.deploy == '1'/.test(stepText) && /node tools\/book-load\.mjs/.test(stepText),
+    "the chain loads the Book after the D1 re-seed, only on a deploy, and a failed load never blocks the fold");
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);
