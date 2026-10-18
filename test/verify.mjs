@@ -8767,7 +8767,7 @@ await (async () => {
   await (await import("./pay-number.mjs")).run({ ok, okOff, pageWork, KV });
 })();
 
-section("One word per state, and the mark alone: Placed, Confirmed, Declined, More by, no shape word drawn, on the page, the banners and the Desk (11 and 12 Oct 2026)");
+section("One word per state, and the mark alone: Placed, Confirmed, Declined, More by, no shape word drawn, on the page and the banners (11 and 12 Oct 2026)");
 await (async () => {
   await (await import("./counter-state-words.mjs")).run({ ok });
 })();
