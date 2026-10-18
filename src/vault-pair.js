@@ -120,7 +120,7 @@ export function verifiedVaultRegistration(draft, receipt, outbox) {
     return null;
   const expected = POSITION_ENGINE.addIdEntry({ at: draft.id, code: payload.code, kind: payload.kind,
     parent: payload.parent ?? null, rev: payload.rev ?? null, geo: payload.geo ?? null,
-    tiers: payload.tiers ?? null, note: null });
+    tiers: payload.tiers ?? null, unit: payload.unit ?? null, note: null });
   if (!sameJson(entry, expected)) return null;
   return { id: draft.id, code: payload.code, kind: payload.kind, parent: payload.parent ?? null };
 }

@@ -2501,6 +2501,7 @@ export const OWNER_JS = `
         }
         var idBody={at:new Date().toISOString(),code:code,kind:kind,
           parent:parentCode,tiers:tiers,vault:envelope};
+        if(tiers)idBody.unit='pct';
          if(geo)idBody.geo=geo;
         if(addrEnvelope)idBody.addrVault=addrEnvelope;
         if(idDraft)makerPairBody(idBody,idDraft);
@@ -3419,7 +3420,7 @@ export const OWNER_JS = `
             return;
           }
           value=Number(value.toFixed(2));
-          var body={code:driftCode.value,product:driftProduct.value,tier:value};
+          var body={code:driftCode.value,product:driftProduct.value,tier:value,unit:'pct'};
           var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
           body.at=driftAt; driftPending=true;
           try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their % changes once you approve it.'; loadMaker(); }
@@ -3433,7 +3434,7 @@ export const OWNER_JS = `
         };
         var clearDrift=makerButton(driftActions,['Set back to 0','record.drift.clear'],async function(send){
           if(driftPending) return;
-          var body={code:driftCode.value,product:driftProduct.value,tier:null};
+          var body={code:driftCode.value,product:driftProduct.value,tier:null,unit:'pct'};
           var check=JSON.stringify(body); if(check!==driftSignature){ driftSignature=check; driftAt=new Date().toISOString(); }
           body.at=driftAt; driftPending=true;
           try{ await send('/all/maker/inputs/tier-set',body); driftAnswer.textContent='Sent. Their % goes back to 0 once you approve it.'; loadMaker(); }

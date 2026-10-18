@@ -406,12 +406,18 @@ export function planBatch(book, staged, notes, ctx) {
   const driftBooks = () => ctx.driftBooks;
   /* a figure of his is a % lift on a book that has a Set Price and nothing on any other: oil, candy and rice are fixed boards */
   const tierOk = (p, v) => driftBooks().includes(p) && PRICING_ENGINE.driftOk(v);
-  /* 18 OCT 2026, HIS DECISION: A SALT FIGURE STAMPED BEFORE THE % LIFT BEGAN WAS SET IN THE OLD UNIT (a drift, -1 to +1) AND IS DROPPED, NEVER READ AS A %:
+  /* 18 OCT 2026, HIS DECISION: A SALT FIGURE SET IN THE OLD UNIT (a drift, -1 to +1) IS DROPPED, NEVER READ AS A %:
      0.3 then meant 30% of the floor, now 30% on the Set Price, and everyone starts at 0%. The batch is not refused: the customer books on the Set Price with
-     no figure held, and a note says the old figure was dropped. A tierset whose only content was such a figure folds as a no-op. A clear (null) carries no figure. */
+     no figure held, and a note says the old figure was dropped. A tierset whose only content was such a figure folds as a no-op. A clear (null) carries no figure.
+     19 OCT 2026: THE UNIT IS THE GATE, THE STAMP IS THE SECOND NET. The new forms send unit "pct" with every salt figure (on the row: row.unit); a figure with
+     none came from a page cached from before the deploy, whose `at` is the page's own clock and can be later than the switch. The stamp still drops one
+     stamped before RULES.liftSince, whatever its unit. */
   const liftAt = Date.parse(PRICING_RULES.RULES.liftSince);
-  const oldLift = (it, p, v) => driftBooks().includes(p) && v !== null && v !== undefined && Date.parse((it.entry && it.entry.at) || it.id) < liftAt;
-  const oldLiftNote = (c, ps) => `dropped the old figure: ${c}'s ${ps.join(" and ")} figure was set before ${PRICING_RULES.RULES.liftSince}, in the old unit (-1 to +1), so ${c} stays on the Set Price at 0%`;
+  const oldWhy = (it, p, v) => !(driftBooks().includes(p) && v !== null && v !== undefined) ? null
+    : (it.row && it.row.unit) !== "pct" ? "without the % unit"
+    : Date.parse((it.entry && it.entry.at) || it.id) < liftAt ? "before " + PRICING_RULES.RULES.liftSince : null;
+  const oldLift = (it, p, v) => oldWhy(it, p, v) !== null;
+  const oldLiftNote = (c, ps, why) => `dropped the old figure: ${c}'s ${ps.join(" and ")} figure was set ${why}, in the old unit (-1 to +1), so ${c} stays on the Set Price at 0%`;
   const out = { items: [], refused: [], moves: [] };
   let tagged = 0;
   let rows = (staged && staged.approved) || [];
@@ -757,7 +763,7 @@ export function planBatch(book, staged, notes, ctx) {
          reading them, which is the part that is true whatever the numbers are. */
       if (appoints) entry.does.push(`appoint ${r.code} an associate: R2 and R3 credit reaches them, their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench`);
       if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, which holds what they buy to sell on`);
-      if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld));
+      if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld, oldWhy(it, rtOld[0], rt[rtOld[0]])));
     } else if (it.collection === "priceset") {
       /* v354: A PRICE EDIT MOVES NO STOCK AND NO CASH. It REPLACES that product's entry in
          PRICE_SET rather than merging into it, so the form on the desk is the whole statement of
@@ -803,7 +809,7 @@ export function planBatch(book, staged, notes, ctx) {
       for (const [c, p, v] of keptTs) (keptTiers[c] = keptTiers[c] || {})[p] = v;
       entry.tiers = keptTs.length ? keptTiers : {};   /* a tierset of old figures alone folds as a no-op: the item is filed, the book unchanged */
       if (keptTs.length) entry.does.push(`set ${keptTs.map(([c, p, v]) => `${c}'s ${p} figure to ${sayLift(v)}`).join(", ")}`);
-      for (const c of [...new Set(oldTs.map((x) => x[0]))]) entry.does.push(oldLiftNote(c, oldTs.filter((x) => x[0] === c).map((x) => x[1])));
+      for (const c of [...new Set(oldTs.map((x) => x[0]))]) entry.does.push(oldLiftNote(c, oldTs.filter((x) => x[0] === c).map((x) => x[1]), oldWhy(it, oldTs.find((x) => x[0] === c)[1], oldTs.find((x) => x[0] === c)[2])));
     } else if (it.collection === "rename") {
       /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
          between the draft and the fold. What moves is the engine's renamePairs, as on the card. */

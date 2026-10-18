@@ -33,7 +33,7 @@ export async function run({ ok, KV } = {}) {
     at, product: "salt", party: "SX1-ZED", date: "2026-10-01", qty: 4, total: 160,
     cash: 160, movedUnits: 4, freight: 12, handover: "collected", ...patch
   }, b);
-  const tier = (patch = {}, b = book()) => makerTierSet({ at, code: "CX1-ZED", product: "salt", tier: 0.5, ...patch }, b);
+  const tier = (patch = {}, b = book()) => makerTierSet({ at, code: "CX1-ZED", product: "salt", tier: 0.5, unit: "pct", ...patch }, b);
 
   const s = sale();
   check(s.draft?.collection === "sales", "Sale uses the existing sales drafter.");
@@ -160,7 +160,7 @@ export async function run({ ok, KV } = {}) {
     && tier({ tier: null }, driftBook).draft?.row.tiers["CX1-ZED"].salt === null
     && !!tier({ tier: "Gold" }, driftBook).error,
     "On a drift book the existing tier-set road accepts a % lift and null clear, and refuses a level.");
-  const addDrift = (tiers) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers,
+  const addDrift = (tiers) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers, unit: "pct",
     vault: { v: 1, salt: "cw==", iv: "aXY=", ct: "Y3Q=" } }, driftBook);
   check(addDrift({ salt: 0.3 }).entry?.payload.tiers.salt === 0.3 && addDrift({ salt: 0.3 }).draft?.collection === "roster"
     && /from 0 to 2 \(0% to 200%\)[.]/.test(addDrift({ salt: "Gold" }).error || "") && /from 0 to 2 \(0% to 200%\)[.]/.test(addDrift({ salt: 2.5 }).error || "")

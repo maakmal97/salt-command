@@ -158,20 +158,20 @@
  {
   "name": "the dated gate never fires: a salt figure stamped before the switch is held, in the wrong unit",
   "file": "engine/apply.mjs",
-  "find": "v !== undefined && Date.parse((it.entry && it.entry.at) || it.id) < liftAt;",
-  "replace": "v !== undefined && false;"
+  "find": ": Date.parse((it.entry && it.entry.at) || it.id) < liftAt ? \"before \"",
+  "replace": ": false ? \"before \""
  },
  {
   "name": "the dated gate drops a clear as well as a figure: a clear stamped before it is lost",
   "file": "engine/apply.mjs",
-  "find": "driftBooks().includes(p) && v !== null && v !== undefined &&",
-  "replace": "driftBooks().includes(p) &&"
+  "find": "!(driftBooks().includes(p) && v !== null && v !== undefined) ? null",
+  "replace": "!(driftBooks().includes(p)) ? null"
  },
  {
   "name": "the dated gate reaches every book, oil's levels included",
   "file": "engine/apply.mjs",
-  "find": "driftBooks().includes(p) && v !== null && v !== undefined &&",
-  "replace": "v !== null && v !== undefined &&"
+  "find": "!(driftBooks().includes(p) && v !== null && v !== undefined) ? null",
+  "replace": "!(v !== null && v !== undefined) ? null"
  },
  {
   "name": "the switch moment is set far in the future, so a figure stamped after it is dropped as well",
@@ -194,7 +194,7 @@
  {
   "name": "the Add ID drops the old figure without saying so",
   "file": "engine/apply.mjs",
-  "find": "if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld));",
+  "find": "if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld, oldWhy(it, rtOld[0], rt[rtOld[0]])));",
   "replace": "/* no note */"
  },
  {
@@ -202,6 +202,12 @@
   "file": "engine/apply.mjs",
   "find": "entry.tiers = keptTs.length ? keptTiers : {};",
   "replace": "if (!keptTs.length) { out.refused.push({ id: it.id, why: \"old\" }); continue; } entry.tiers = keptTiers;"
+ },
+ {
+  "name": "the unit gate never fires: a salt figure queued with no unit from a page cached before the deploy, stamped after the switch, folds as a % lift",
+  "file": "engine/apply.mjs",
+  "find": "(it.row && it.row.unit) !== \"pct\" ? \"without the % unit\"",
+  "replace": "false ? \"without the % unit\""
  },
  {
   "name": "the reason leaves out how far over the Set Price they paid",

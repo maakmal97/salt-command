@@ -49,7 +49,7 @@ export async function run({ ok } = {}) {
     && driftCard("AX1-ZED").suggest === 0.1 && driftCard("AX1-ZED").why === "",
   "the suggestion carries its reason, the engine's few words, and a reason that is anything else (a name, a figure) is left behind: " + JSON.stringify(catalog.driftCards.map((item) => [item.code, item.suggest, item.why])));
 
-  const set = (tier) => makerTierSet({ at, code: "CX2-ZED", product: "salt", tier }, mirror);
+  const set = (tier, unit = "pct") => makerTierSet({ at, code: "CX2-ZED", product: "salt", tier, unit }, mirror);
   for (const value of [0, 0.05, 0.35, 1, 2]) {
     const result = set(value);
     check(result.entry?.type === "TIER" && result.entry.payload.mode === "tierset"
@@ -62,6 +62,12 @@ export async function run({ ok } = {}) {
   check([-1, -0.01, 2.01, 3, "0", "Gold", undefined].every((value) => !!set(value).error)
     && !!makerTierSet({ at, code: "CX2-ZED", product: "oil", tier: 0.25 }, mirror).error,
   "out-of-range (a negative, or past 2), nonnumeric, level, missing and fixed-book inputs are refused");
+  /* 19 Oct 2026: the unit is the gate. A Counter Admin page cached from before the % lift sends the old field's 0.3 with no unit, and it is refused here by unit, not by time. */
+  const unitless = makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.3 }, mirror), oldUnit = set(0.3, "drift");
+  check(/Reload Counter Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && !oldUnit.entry && !set(null, undefined).error
+    && !makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: null }, mirror).error
+    && set(0.3).entry.payload.unit === "pct" && set(null).entry.payload.unit === undefined,
+  "a salt figure with no unit pct is refused with a plain message to reload Counter Admin, a clear needs no unit, and a figure sent with it carries unit pct in the entry: " + JSON.stringify([unitless.error, oldUnit.error]));
   check(!!makerTierSet({ at, code: "SP1-ZED", product: "salt", tier: 0.25 }, mirror).error,
     "supplier codes cannot receive customer drift");
   check(set(2.01).error === "Choose a % lift from 0 to 200% (0 to 2), or clear it." && !set(2).error && !set(0).error,
@@ -69,8 +75,8 @@ export async function run({ ok } = {}) {
   /* 18 Oct 2026: the levels are gone, so a book with neither a Set Price nor a fixed board takes no figure of his at all */
   const tierBook = book();
   tierBook.pricing.byProduct.salt.inputs.policy.tierRule = { multiples: [1, 2] };
-  check(!!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.25 }, tierBook).error
-    && !!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: "Gold" }, tierBook).error,
+  check(!!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.25, unit: "pct" }, tierBook).error
+    && !!makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: "Gold", unit: "pct" }, tierBook).error,
   "a book with no Set Price takes neither a numeric lift nor a level word");
 
   const forwarded = [];
@@ -88,7 +94,7 @@ export async function run({ ok } = {}) {
   for (const tier of [0, null]) {
     const response = await handleMaker(new Request("https://counter.test/all/maker/inputs/tier-set", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ at, code: "CX2-ZED", product: "salt", tier })
+      body: JSON.stringify({ at, code: "CX2-ZED", product: "salt", tier, unit: "pct" })
     }), env, "/all/maker/inputs/tier-set", identity);
     check(response.status === 200 && forwarded.at(-1).path === "/_internal/maker/inputs/tier-set"
       && forwarded.at(-1).key === key && forwarded.at(-1).body.tier === tier,
@@ -190,8 +196,8 @@ export async function run({ ok } = {}) {
       "a successful same-value Set gets a fresh request timestamp on the next intentional tap");
     value.value = "0.125"; value.dispatchEvent(new dom.window.Event("input", { bubbles: true })); setButton.click();
     const rounded = await waitFor(() => calls.length === 4 && !setButton.disabled);
-    check(rounded && calls[3].body.tier === 0.13,
-      "Counter drift rounds to two decimals exactly like the incumbent Desk driftSet");
+    check(rounded && calls[3].body.tier === 0.13 && calls.slice(0, 4).every((call) => call.body.unit === "pct"),
+      "Counter drift rounds to two decimals exactly like the incumbent Desk driftSet, and every figure it sends carries unit pct");
     clearButton.click();
     const clearSent = await waitFor(() => calls.length === 5);
     check(clearSent && calls[4].body.tier === null && calls[4].body.product === "salt",

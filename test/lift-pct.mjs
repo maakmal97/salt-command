@@ -12,6 +12,8 @@
    5. The suggestion: paid over the Set Price on the last five sales plus the risk, to the nearest 5%, nothing under three settled rows.
    6. The fold DROPS a salt figure stamped before the switch moment (old unit), a tierset and an Add ID alike, with a note and no refusal: the customer
       books on the Set Price at 0%, a tierset of nothing else is a no-op, and one stamped after it is filed as a %.
+      Since 19 Oct 2026 the unit is the first gate: a salt figure with no unit "pct" on its row (a page cached from before the deploy, its own clock
+      later than the switch) is dropped the same way, and one with it is held.
    Mutations: test/lift-pct.mutations.json. */
 import { openMaster } from "../tools/payload.mjs";
 import { pricingSnapshot } from "../tools/book.mjs";
@@ -174,8 +176,9 @@ export async function run({ ok }) {
   const F = await import("../tools/fold.mjs"), A = await import("../engine/apply.mjs"), { nextRid } = await import("../tools/rid.mjs"), { sortBook } = await import("../tools/sort-ledger.mjs");
   const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); bk.roster.push("CZ9-DA");
   const since = RULES_MOD.RULES.liftSince, before = new Date(Date.parse(since) - 3600e3).toISOString(), after = new Date(Date.parse(since) + 3600e3).toISOString();
-  const ts = (stamp, v, p = "salt") => ({ id: stamp, collection: "tierset", row: { tiers: { "CZ9-DA": { [p]: v } } }, entry: { at: stamp, payload: {} } });
-  const ad = (stamp, v, p = "salt") => ({ id: stamp, collection: "roster", row: { code: "CZ9-DB", kind: "customer", tiers: { [p]: v } }, entry: { at: stamp, payload: {} } });
+  const ts = (stamp, v, p = "salt") => ({ id: stamp, collection: "tierset", row: { tiers: { "CZ9-DA": { [p]: v } }, unit: "pct" }, entry: { at: stamp, payload: {} } });
+  const ad = (stamp, v, p = "salt") => ({ id: stamp, collection: "roster", row: { code: "CZ9-DB", kind: "customer", tiers: { [p]: v }, unit: "pct" }, entry: { at: stamp, payload: {} } });
+  const noUnit = (x) => { const c = JSON.parse(JSON.stringify(x)); delete c.row.unit; return c; };   /* the same entry from a page cached from before the deploy: no unit */
   const plan = (x) => F.plan(bk, { ok: true, count: 1, approved: [x] }, null);
   const why = (x) => (plan(x).refused[0] || {}).why || "";
   const planned = plan(ts(before, 0.3)), plannedAd = plan(ad(before, 0.2)), plannedNeg = plan(ts(before, -0.5)), plannedMix = plan({ id: before, collection: "tierset", row: { tiers: { "CZ9-DA": { salt: 0.3, oil: null } } }, entry: { at: before, payload: {} } });
@@ -193,6 +196,17 @@ export async function run({ ok }) {
   ok(apOld.ok && !(apOld.book.TIER_OF || {})["CZ9-DB"] && apOld.book.roster.includes("CZ9-DB")
     && apTs.ok && !(apTs.book.TIER_OF || {})["CZ9-DA"] && apNew.ok && fl((apNew.book.TIER_OF || {})["CZ9-DB"]) === fl({ salt: 0.2 }),
   "folded into the book, the old Add ID registers the customer with no held %, the old tierset holds nothing, and the same figure stamped after the switch is held as 0.2: " + fl([apOld.problems, (apOld.book || {}).TIER_OF && apOld.book.TIER_OF["CZ9-DB"]]));
+  /* 19 Oct 2026: THE UNIT IS THE GATE, NOT THE CLOCK. A Counter Admin page cached from before the deploy sends 0.3 (meaning 30% of the floor) with its own
+     clock, later than the switch, and no unit: the fold drops it as it drops one stamped before, a tierset and an Add ID alike; with unit "pct" it is the %. */
+  const nuTs = plan(noUnit(ts(after, 0.3))), nuAd = plan(noUnit(ad(after, 0.3))), apNuTs = applied(noUnit(ts(after, 0.3))), apNuAd = applied(noUnit(ad(after, 0.3))), apPct = applied(ts(after, 0.3));
+  ok(nuTs.refused.length === 0 && nuTs.items.length === 1 && fl(nuTs.items[0].tiers) === "{}" && /dropped the old figure/.test(nuTs.items[0].does.join()) && /without the % unit/.test(nuTs.items[0].does.join())
+    && nuAd.refused.length === 0 && nuAd.items[0].roster.tiers === null && nuAd.items[0].roster.register === true && /dropped the old figure/.test(nuAd.items[0].does.join()),
+  "a salt figure queued with no unit, stamped after the switch, is dropped with a note and the batch is not refused, a tierset and an Add ID alike: " + fl([nuTs.items[0] && nuTs.items[0].does, nuAd.items[0] && nuAd.items[0].does]));
+  ok(apNuTs.ok && !(apNuTs.book.TIER_OF || {})["CZ9-DA"] && apNuAd.ok && apNuAd.book.roster.includes("CZ9-DB") && !(apNuAd.book.TIER_OF || {})["CZ9-DB"]
+    && apPct.ok && fl((apPct.book.TIER_OF || {})["CZ9-DA"]) === fl({ salt: 0.3 }),
+  "and folded into the book it holds nothing (no 30% lift), where the same figure with unit pct is held as 0.3: " + fl([apNuTs.problems, (apNuTs.book || {}).TIER_OF && apNuTs.book.TIER_OF["CZ9-DA"], (apPct.book || {}).TIER_OF && apPct.book.TIER_OF["CZ9-DA"]]));
+  ok(plan(noUnit(ts(after, null))).refused.length === 0 && fl(plan(noUnit(ts(after, null))).items[0].tiers) === fl({ "CZ9-DA": { salt: null } }) && /not held per customer/.test(why(noUnit(ts(after, 0.2, "oil")))),
+  "a clear needs no unit, and a figure on oil is still refused by book: " + fl(plan(noUnit(ts(after, null))).items[0] && plan(noUnit(ts(after, null))).items[0].tiers));
   const pNew = plan(ts(after, 0.3));
   ok(pNew.refused.length === 0 && fl(pNew.items[0].tiers) === fl({ "CZ9-DA": { salt: 0.3 } }) && plan(ts(before, null)).refused.length === 0 && fl(plan(ts(before, null)).items[0].tiers) === fl({ "CZ9-DA": { salt: null } })
     && /not held per customer/.test(why(ts(before, "Gold", "oil"))) && /not held per customer/.test(why(ts(before, 0.2, "oil"))),

@@ -15290,8 +15290,11 @@ await (async () => {
       pricing: { byProduct: { salt: { inputs: { policy: { tierRule: { drift: { up: 0.3, down: 0.2 } } } } }, oil: { inputs: { policy: { tierRule: { fixed: true } } } } } } };
     const en45 = (p) => ({ at: "2026-09-15T09:00:00.000Z", payload: { mode: "addid", parent: null, ...p } });
     /* 18 Oct 2026: the starting figure is salt's % lift on the Set Price, 0 to 2; a level word is refused on every book */
-    const d45 = dr45(en45({ code: "CZ9-NEWT", kind: "customer", tiers: { salt: 0.5 } }), mir45);
-    ok(!d45.skip && d45.collection === "roster" && JSON.stringify(d45.row.tiers) === '{"salt":0.5}', "a registration drafts with its starting % lift: " + (d45.skip || JSON.stringify(d45.row)));
+    const d45 = dr45(en45({ code: "CZ9-NEWT", kind: "customer", tiers: { salt: 0.5 }, unit: "pct" }), mir45);
+    ok(!d45.skip && d45.collection === "roster" && JSON.stringify(d45.row.tiers) === '{"salt":0.5}' && d45.row.unit === "pct" && !d45.flags.some((f) => /no unit/.test(f)), "a registration drafts with its starting % lift and its unit pct: " + (d45.skip || JSON.stringify(d45.row)));
+    /* 19 Oct 2026: a starting % with no unit is the old form's: it drafts, carries no unit and says the fold drops it */
+    const d45n = dr45(en45({ code: "CZ9-NEWT", kind: "customer", tiers: { salt: 0.5 } }), mir45);
+    ok(!d45n.skip && d45n.row.unit === undefined && d45n.flags.some((f) => /no unit/.test(f) && /drops it/.test(f)), "and one with no unit drafts without it and flags that the fold drops it: " + (d45n.skip || JSON.stringify([d45n.row, d45n.flags])));
     for (const [p, why] of [[{ code: "CZ9-NEWT", kind: "customer", tiers: { salt: "Gold" } }, /Gold is not a % from 0 to 200/], [{ code: "CZ9-NEWT", kind: "customer", tiers: { oil: "Gold" } }, /Gold is not held per customer/], [{ code: "SZ9-SUP", kind: "supplier", tiers: { salt: 0.5 } }, /a supplier holds no starting %/]]) {
       const s = dr45(en45(p), mir45).skip || "";
       ok(why.test(s), "the drafter refuses the registration " + JSON.stringify(p) + ": " + (s || "drafted"));
@@ -15302,7 +15305,7 @@ await (async () => {
     const book45 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); book45.TIER_OF = {};
     const it45 = (n, collection, row) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection, row, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
     /* 05 Oct 2026: the fold refuses by book and salt takes a drift now, so a level is filed on oil, a book that names none */
-    const res45 = F45.apply(book45, { ok: true, count: 1, approved: [it45(1, "roster", { code: "CZ9-NEWT", kind: "customer", parent: null, note: null, tiers: { salt: 0.5 } })] },
+    const res45 = F45.apply(book45, { ok: true, count: 1, approved: [it45(1, "roster", { code: "CZ9-NEWT", kind: "customer", parent: null, note: null, tiers: { salt: 0.5 }, unit: "pct" })] },
       { version: "v9998", date: "01 Jan 2099", title: "FIXTURE", notes: ["fixture"], rows: {} }, master45);
     ok(res45.ok && book45.roster.includes("CZ9-NEWT") && JSON.stringify(book45.TIER_OF["CZ9-NEWT"]) === '{"salt":0.5}', "the fold registers the customer and files the starting % lift on the book: " + (res45.ok ? JSON.stringify(book45.TIER_OF) : res45.problems));
     const ref45 = F45.plan(book45, { ok: true, count: 1, approved: [it45(2, "roster", { code: "CZ9-NEWU", kind: "customer", parent: null, note: null, tiers: { oil: "Diamond" } })] }, null).refused.map((x) => x.why).join(" ");
@@ -52015,19 +52018,24 @@ await (async () => {
   const D = await import("../src/drafter.js"), F = await import("../tools/fold.mjs");
   const mir = { sales: [], purchases: [], state: { roster: ["CZ9-DA"], PRODUCTS: { salt: { name: "Salt" } }, TIER_OF: { "CZ9-DA": { salt: 0.2 } } },
     pricing: { byProduct: { salt: { inputs: { policy: { tierRule: { drift: true } } } } } } };
-  const en = (s) => ({ at: "2026-10-05T01:00:00.000Z", payload: { mode: "tierset", tiers: { "CZ9-DA": { salt: s } } } });
+  const en = (s, unit = "pct") => ({ at: "2026-10-05T01:00:00.000Z", payload: { mode: "tierset", tiers: { "CZ9-DA": { salt: s } }, unit } });
   const d1 = D.draftRow(en(0.4), mir), d2 = D.draftRow(en("Gold"), mir), d3 = D.draftRow(en(2.5), mir), d4 = D.draftRow(en(-0.4), mir);
   ok(d1 && !d1.skip && d1.row.tiers["CZ9-DA"].salt === 0.4 && /20% lift to 40% lift/.test(d1.flags.join(" ")) && /Gold is not a % from 0 to 200/.test(d2.skip || "") && /not a % from 0 to 200/.test(d3.skip || "") && /not a % from 0 to 200/.test(d4.skip || ""),
     "the drafter takes a % on salt, flags the move, and refuses a level, a % past 200 and a negative one: " + JSON.stringify([d1 && d1.flags, d2.skip, d3.skip, d4.skip]));
+  /* 19 Oct 2026: the unit travels into the row; a figure with none drafts without it and the flag says the fold drops it (a clear needs none) */
+  const d1n = D.draftRow(en(0.4, null), mir), d1c = D.draftRow(en(null, null), mir);
+  ok(d1.row.unit === "pct" && !d1.flags.some((f) => /no unit/.test(f)) && d1n && !d1n.skip && d1n.row.unit === undefined && d1n.flags.some((f) => /no unit/.test(f) && /drops it/.test(f))
+    && d1c && !d1c.skip && d1c.row.unit === undefined && !d1c.flags.some((f) => /no unit/.test(f)),
+  "the drafter carries unit pct into the row, flags a figure with no unit as one the fold drops, and asks no unit of a clear: " + JSON.stringify([d1.row, d1n.row, d1n.flags, d1c.flags]));
   const bkF = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); bkF.roster.push("CZ9-DA");
-  const itF = (n, s) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { salt: s } } }, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
+  const itF = (n, s) => ({ id: "2099-01-01T00:00:00.00" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { salt: s } }, unit: "pct" }, entry: { at: "2099-01-01T00:00:00.00" + n + "Z", payload: {} } });
   const pl = F.plan(bkF, { ok: true, count: 2, approved: [itF(1, 0.4), itF(2, 2.5)] }, null);
   ok(pl.refused.length === 1 && /250% lift is not a % from 0 to 200 \(0 to 2\)/.test(pl.refused[0].why) && JSON.stringify(pl).indexOf("40% lift") >= 0,
     "the fold files a % as it filed a tier and refuses one past 2: " + JSON.stringify(pl.refused));
   /* and it refuses BY BOOK, as the drafter does: salt takes no level, oil (a stated board) takes no drift, and oil still
      takes a level; the Add ID road the same */
-  const itP = (n, p, v) => ({ id: "2099-01-01T00:00:00.01" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { [p]: v } } }, entry: { at: "2099-01-01T00:00:00.01" + n + "Z", payload: {} } });
-  const itA = (n, p, v) => ({ id: "2099-01-01T00:00:00.02" + n + "Z", collection: "roster", row: { code: "CZ9-DB" + n, kind: "customer", tiers: { [p]: v } }, entry: { at: "2099-01-01T00:00:00.02" + n + "Z", payload: {} } });
+  const itP = (n, p, v) => ({ id: "2099-01-01T00:00:00.01" + n + "Z", collection: "tierset", row: { tiers: { "CZ9-DA": { [p]: v } }, unit: "pct" }, entry: { at: "2099-01-01T00:00:00.01" + n + "Z", payload: {} } });
+  const itA = (n, p, v) => ({ id: "2099-01-01T00:00:00.02" + n + "Z", collection: "roster", row: { code: "CZ9-DB" + n, kind: "customer", tiers: { [p]: v }, unit: "pct" }, entry: { at: "2099-01-01T00:00:00.02" + n + "Z", payload: {} } });
   const why = (x) => (F.plan(bkF, { ok: true, count: 1, approved: [x] }, null).refused[0] || {}).why || "";
   const byBook = [why(itP(1, "salt", "Gold")), why(itP(2, "oil", 0.4)), why(itP(3, "oil", "Gold")), why(itA(4, "salt", "Gold")), why(itA(5, "oil", 0.3)), why(itA(6, "salt", 0.3))];
   ok(/Gold is not a % from 0 to 200/.test(byBook[0]) && /40% lift is not held per customer/.test(byBook[1]) && /Gold is not held per customer/.test(byBook[2])

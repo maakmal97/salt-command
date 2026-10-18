@@ -180,7 +180,9 @@ export async function run({ ok }) {
       const entry = call && (await sqlite.prepare("SELECT entry,row FROM draft WHERE id=?").get(body.at));
       const draft = entry && JSON.parse(entry.entry);
       const want = outcome.expected;
-      const tiersMatch = want === null ? body.tiers === null : JSON.stringify(body.tiers) === JSON.stringify(want);
+      /* 19 Oct 2026: a starting % leaves the form, the route and the draft with unit pct; a registration with none carries no unit */
+      const tiersMatch = want === null ? body.tiers === null && body.unit === undefined && draft?.payload.unit === undefined
+        : JSON.stringify(body.tiers) === JSON.stringify(want) && body.unit === "pct" && draft?.payload.unit === "pct";
       const draftMatches = want === null ? draft?.payload.tiers === null
         : JSON.stringify(draft?.payload.tiers) === JSON.stringify(want);
       const names = body.pair?.names ? await decrypt(body.pair.names) : {};

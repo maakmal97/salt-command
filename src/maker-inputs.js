@@ -708,10 +708,12 @@ export function makerOffset(body, book, held) {
       + " order, RM" + offer.rm + " settled in kind" }), book);
 }
 
+const OLD_UNIT = "This Counter Admin page is out of date and sends the old unit for a %. Reload Counter Admin and send it again.";
+
 /** One customer, one product; null clears its held % lift through the same tierset road. */
 export function makerTierSet(body, book) {
-  if (!object(body) || Object.keys(body).some((key) => !["at", "code", "product", "tier"].includes(key)))
-    return { error: "A % input carries only its timestamp, code, product and %." };
+  if (!object(body) || Object.keys(body).some((key) => !["at", "code", "product", "tier", "unit"].includes(key)))
+    return { error: "A % input carries only its timestamp, code, product, % and unit." };
   if (!timestamp(body.at)) return { error: "A % input needs its canonical request timestamp." };
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!active(body.product, book)) return { error: "Choose an active product." };
@@ -723,8 +725,10 @@ export function makerTierSet(body, book) {
   if (!driftCustomerCode(body.code)) return { error: "A supplier has no % on the Set Price." };
   if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
     return { error: "Choose a % lift from 0 to 200% (0 to 2), or clear it." };
+  /* 19 Oct 2026: a figure travels with its unit. A Counter Admin page cached from before the % lift still sends 0.3 meaning 30% of the floor; it is refused here, by unit and not by time. */
+  if (body.tier !== null && body.unit !== "pct") return { error: OLD_UNIT };
   return proposed(POSITION_ENGINE.tierSetEntry({
-    at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }
+    at: body.at, tiers: { [body.code]: { [body.product]: body.tier } }, unit: body.tier !== null ? "pct" : null
   }), book);
 }
 
@@ -1068,7 +1072,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
         qty: free, earned: state.earned, applied: state.applied, balance: state.held });
     }
   } else if (operation === "add-id") {
-    if (!exact(body, ["at", "code", "kind", "parent", "geo", "tiers", "vault", "addrVault"])
+    if (!exact(body, ["at", "code", "kind", "parent", "geo", "tiers", "unit", "vault", "addrVault"])
       || !/^[A-Z]{1,3}[0-9]{0,2}[A-Z0-9-]*$/.test(body.code) || !["customer", "supplier", "reseller", "referral", "downstream", "bucket"].includes(body.kind))
       return { error: "An ID entry carries only codes, role, point, starting % and the encrypted vault envelope." };
     if (body.kind === "bucket") {
@@ -1085,6 +1089,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
       if (!["customer", "reseller", "referral"].includes(body.kind))
         return { error: "Only a customer, reseller or referral holds a starting %." };
       if (!object(tiers) || !Object.keys(tiers).length) return { error: "A starting % must name an active book with a Set Price." };
+      if (body.unit !== "pct") return { error: OLD_UNIT };
       for (const [product, tier] of Object.entries(tiers)) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
         if (active(product, book) && rule && rule.drift && !PRICING_ENGINE.driftOk(tier))
@@ -1095,7 +1100,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
     }
     entry = POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,
       parent: body.parent || null, rev: body.kind === "reseller" ? "R2" : body.kind === "referral" ? "R3" : null,
-      geo: body.geo || null, tiers });
+      geo: body.geo || null, tiers, unit: tiers != null ? "pct" : null });
   } else if (operation === "amend-id") {
     if (!exact(body, ["at", "from", "to", "geo", "vault", "addrVault"])
       || !realCode(body.from, roster) || POSITION_ENGINE.isBucket(body.from)

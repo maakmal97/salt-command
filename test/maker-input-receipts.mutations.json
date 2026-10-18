@@ -38,8 +38,8 @@
   {
     "name": "their % wrong generated body",
     "file": "stmt/owner.js",
-    "find": "var body={code:driftCode.value,product:driftProduct.value,tier:value};",
-    "replace": "var body={code:'CX2-ZED',product:driftProduct.value,tier:value};"
+    "find": "var body={code:driftCode.value,product:driftProduct.value,tier:value,unit:'pct'};",
+    "replace": "var body={code:'CX2-ZED',product:driftProduct.value,tier:value,unit:'pct'};"
   },
   {
     "name": "house wrong generated body",

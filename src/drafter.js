@@ -1227,6 +1227,8 @@ export function draftRow(entry, book) {
        naming a code the roster already holds is the ordinary road and not a fault. What IS a
        duplicate here is appointing an associate twice, and the fold refuses that outright. */
     const stream = POSITION_ENGINE.ADDID_APPOINTS[kind] || null;
+    /* 19 Oct 2026: a starting % with no unit is the old form's (-1 to +1); the fold drops it, as it drops one stamped before the switch */
+    if (pay.tiers && pay.unit !== "pct") flags.push(`The starting % carries no unit, so it is from the old form: the fold drops it and ${code} starts on the Set Price at 0%.`);
     if (roster.includes(code) && !stream) {
       flags.push(`${code} is ALREADY on the roster. Folding this would list the party twice, and the desk walks the roster to build its own tables.`);
     }
@@ -1249,7 +1251,7 @@ export function draftRow(entry, book) {
       : "";
     return {
       collection: "roster",
-      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}),
+      row: Object.assign({ code, kind, parent, note: pay.note || null }, geoOf(pay.geo) ? { geo: geoOf(pay.geo) } : {}, pay.tiers ? { tiers: { ...pay.tiers } } : {}, pay.tiers && pay.unit === "pct" ? { unit: "pct" } : {}),
       flags,
       reasoning: `${stream && roster.includes(code) ? "Appoints" : "Registers"} ${code} as a ${kind}${parent ? ` under ${parent}` : ""}.`
         + (pay.tiers ? ` It starts them at ${tierLine(pay.tiers)}.` : "")
@@ -1346,6 +1348,7 @@ export function draftRow(entry, book) {
     const driftB = (p) => !!(((((book.pricing || {}).byProduct || {})[p] || {}).inputs || {}).policy || {}).tierRule && !!book.pricing.byProduct[p].inputs.policy.tierRule.drift;
     const say = (v) => v == null ? "not set" : typeof v === "number" ? (+(v * 100).toFixed(2)) + "% lift" : isObj(v) ? JSON.stringify(v) : String(v);
     const row = { tiers: {} }, flags = [];
+    if (pay.unit === "pct") row.unit = "pct";
     for (const c of codes) {
       if (!roster.includes(c)) return { skip: `${c} is not on the roster` };
       if (POSITION_ENGINE.isBucket(c)) return { skip: `${c} is a resale account, and it holds its associate's %` };
@@ -1358,6 +1361,7 @@ export function draftRow(entry, book) {
         /* on a book with a Set Price what is held is a figure of his (18 Oct 2026: a % lift, 0 to 2); a null clears it; any other book holds none */
         if (t !== null && !(driftB(p) && PRICING_ENGINE.driftOk(t))) return { skip: driftB(p) ? `${say(t)} is not a % from 0 to 200 (0 to 2)` : `${say(t)} is not held per customer on this book` };
         row.tiers[c][p] = t;
+        if (t !== null && pay.unit !== "pct") flags.push(`${c}'s ${name(p)} figure carries no unit, so it is from the old form: the fold drops it and ${c} stays on the Set Price.`);
         if (was && JSON.stringify(was) !== JSON.stringify(t)) flags.push(`${c}'s ${name(p)} moves from ${say(was)} to ${say(t)}.`);
       }
     }
