@@ -1,0 +1,15 @@
+[
+ {"name":"the glance is never drawn","file":"stmt/page.js","find":"    var box=el('div'); if(!session||view||!bundle) return box;\n    box.className='salt-glance aglance';","replace":"    var box=el('div'); return box;\n    box.className='salt-glance aglance';"},
+ {"name":"the glance sits under the thread","file":"stmt/page.js","find":"<div id=\"aGlance\"></div><div id=\"aThread\"></div>","replace":"<div id=\"aThread\"></div><div id=\"aGlance\"></div>"},
+ {"name":"owed is its own sum","file":"stmt/page.js","find":"tw('pay.now'),rm(tot),","replace":"tw('pay.now'),rm(tot+1),"},
+ {"name":"owed is never ember","file":"stmt/page.js","find":"due?'salt-glance__item--due':''","replace":"''"},
+ {"name":"owed says no due day","file":"stmt/page.js","find":"due?invWhen(first||L[0],false):tw('pay.nothing')","replace":"tw('pay.nothing')"},
+ {"name":"owed links nowhere","file":"stmt/page.js","find":"due&&first?'#o='+encodeURIComponent(first.o.id):''","replace":"''"},
+ {"name":"the link opens nothing","file":"stmt/page.js","find":"function(){ oOpen(first.o.id); });","replace":"function(){});"},
+ {"name":"nothing to pay still links","file":"stmt/page.js","find":"glanceItem(due&&first?","replace":"glanceItem(first?"},
+ {"name":"a reply is not said","file":"stmt/page.js","find":"thWaiting()?tw('gl.reply'):","replace":"false?tw('gl.reply'):"},
+ {"name":"the thread opens nothing","file":"stmt/page.js","find":"function(a){ thOpen(a); });","replace":"function(a){});"},
+ {"name":"the statement says no moment","file":"stmt/page.js","find":"!bad&&liveAt?tw('gl.asAt',{d:Dd(stamp,liveAt)}):''","replace":"''"},
+ {"name":"the glance names the code","file":"stmt/page.js","find":"    box.className='salt-glance aglance';","replace":"    box.className='salt-glance aglance'; box.setAttribute('data-code','CJ4-OKR');"},
+ {"name":"the glance is redrawn only with Home","file":"stmt/page.js","find":"    footSet(); glanceDraw();","replace":"    footSet();"}
+]

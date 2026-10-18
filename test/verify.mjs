@@ -42122,10 +42122,10 @@ await (async () => {
     "the page's own sheet is read, with its 1080px blocks; resolved at a width no @media is left, and the block for print is dropped");
   const wide = [1080, 1280].map(shape), narrow = [1079, 390, 320].map(shape);
   /* 11 Oct 2026 (Phase 7d part 2): the device comes first in the reading order, Messages, This device, then the statement, and the grid still puts Messages and the statement in the first column and This device in the second */
-  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div#aThread section#thisDevice div.acct__main" && s.placed === "1/0 2/0 1/0"),
-    "from 1080px Account is a grid of two columns, Messages and the statement placed in the first and This device placed by the grid into the second, beside them: " + JSON.stringify(wide));
-  ok(narrow.every((s) => s.display === "flex" && s.dir === "column" && s.kids === "div#aThread section#thisDevice div.acct__main"),
-    "below 1080px it is one column in reading order, Messages, then This device, then the statement: " + JSON.stringify(narrow));
+  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div#aGlance div#aThread section#thisDevice div.acct__main" && s.placed === "1/0 1/0 2/0 1/0"),
+    "from 1080px Account is a grid of two columns, the glance, Messages and the statement placed in the first and This device placed by the grid into the second, beside them: " + JSON.stringify(wide));
+  ok(narrow.every((s) => s.display === "flex" && s.dir === "column" && s.kids === "div#aGlance div#aThread section#thisDevice div.acct__main"),
+    "below 1080px it is one column in reading order, the glance, Messages, then This device, then the statement: " + JSON.stringify(narrow));
 })();
 
 section("S7 polish: Home's Coming up is one list, a part he entered the same row as an order's");
@@ -42802,6 +42802,11 @@ await (async () => {
 section("Counter Batch A: Home's live order (a pill on a phone, a banner from 1080px), the nearest reward for an associate and This year off the live statement, To pay now still leading (18 Oct 2026)");
 await (async () => {
   await (await import("./counter-home.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter Batch A: the glance heads Account: To pay now at Home's own figure with a link to its order, the thread and the statement, no roster code (18 Oct 2026)");
+await (async () => {
+  await (await import("./counter-glance.mjs")).run({ ok, pageWork });
 })();
 
 section("S6 6.2: To pay now heads Home, a line for each thing due with when it is due (V2's invoice), one Pay, and what is coming up in Home's Coming up");

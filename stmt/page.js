@@ -335,6 +335,8 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
    leaves none); from 1080px This device stands beside, as it did */
 .acct{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
 #aThread:empty{display:none}
+#aGlance:empty{display:none}
+.aglance .salt-glance__value{overflow-wrap:anywhere}
 .mfil .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 
 .devcard{margin:0}
@@ -345,7 +347,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .devout{width:100%;margin-top:14px}
 @media (min-width:1080px){
   .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;row-gap:28px;align-items:start}
-  #aThread,.acct__main{grid-column:1}
+  #aGlance,#aThread,.acct__main{grid-column:1}
   .devcard{grid-column:2;grid-row:1 / span 2}
 }
 /* S6 6.2: To pay now, Home's first answer since S7 7.1, its parts on the plain Ledger list */
@@ -1802,7 +1804,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* S7 7.3: ACCOUNT, what drawAccount(el) puts in a place. 11 Oct 2026 (Phase 7d part 2): Messages, then This device, then the
        statement (its one month filter placed beside the list it filters and nothing after it) under a gap of its
        own; This device stands beside them from 1080px */
-    + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aThread"></div>'
+    + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aGlance"></div><div id="aThread"></div>'
     + (owner ? "" : thisDevice())
     + '<div class="acct__main">'
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
@@ -5575,7 +5577,7 @@ const CLIENT_JS = `
   function drawPayHead(){
     [['payHead',payHeadNode],['homeFoot',payFootNode]].forEach(function(p){
       var was=document.getElementById(p[0]), n=p[1](); if(was&&was.outerHTML!==n.outerHTML) was.replaceWith(n); });
-    footSet();
+    footSet(); glanceDraw();
   }
   /* Counter Batch A: the live pill sticks above the pay foot, so the foot's height is the pill's offset; again on a resize */
   function footSet(){ var f=document.getElementById('homeFoot'), h=document.getElementById('pHome'); if(f&&h) h.style.setProperty('--hfoot',(f.hidden?0:Math.ceil(f.offsetHeight||0))+'px'); }
@@ -6303,8 +6305,39 @@ const CLIENT_JS = `
   function homeThread(){ var box=el('div'); if(!session||view) return box; box.appendChild(hHead(tw('th.h'))); box.appendChild(thRow()); return box; }
   /* Home's card and Account's row alone, as drawHome draws them, for a change to the thread and nothing else */
   function thHome(){ var was=document.getElementById('hThread'); if(was){ var n=homeThread(); n.id='hThread'; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); } thDraw(); }
+  /* COUNTER BATCH A (his decision of 18 Oct 2026): THE GLANCE at the head of Account. To pay now, the same figure Home's tile shows, with when
+     it is due and a link to the order it is for; the thread, with a reply waiting said; the statement, up to date as at its moment. Nothing in it
+     names a code: the account is theirs by its username alone. Drawn with Home and with To pay now, replaced only when it reads differently. */
+  function glanceItem(href,cls,label,value,note,go){
+    var a=el(href?'a':'div','salt-glance__item'+(cls?' '+cls:''));
+    if(href){ a.href=href; a.addEventListener('click',function(ev){ ev.preventDefault(); go(a); }); }
+    a.appendChild(el('span','salt-glance__label',label)); a.appendChild(el('span','salt-glance__value',value));
+    if(note) a.appendChild(el('span','salt-glance__note',note));
+    return a;
+  }
+  function acctGlance(){
+    var box=el('div'); if(!session||view||!bundle) return box;
+    box.className='salt-glance aglance';
+    if(!staleNow()&&!liveBad()){
+      var L=nowOf(), tot=invTotal(L), due=tot>0.004, first=L.filter(function(x){ return x.o; })[0];
+      var it=glanceItem(due&&first?'#o='+encodeURIComponent(first.o.id):'',due?'salt-glance__item--due':'',tw('pay.now'),rm(tot),
+        due?invWhen(first||L[0],false):tw('pay.nothing'),function(){ oOpen(first.o.id); });
+      it.setAttribute('data-glance','owed'); box.appendChild(it);
+    }
+    var n=thread.msgs.length, th=glanceItem('#thread','',tw('th.row'),thWaiting()?tw('gl.reply'):n?tw(n===1?'gl.line1':'gl.lineN',{n:n}):tw('gl.noLine'),'',function(a){ thOpen(a); });
+    th.setAttribute('data-glance','thread'); box.appendChild(th);
+    var bad=liveBad(), lv=bundle.statements.filter(function(s){ return s.live; })[0];
+    if(lv||bad){
+      var st=glanceItem(bad?'':'#account','',tw('gl.stmt'),tw(bad?'gl.unread':'gl.upToDate'),!bad&&liveAt?tw('gl.asAt',{d:Dd(stamp,liveAt)}):'',
+        function(){ var o=document.getElementById('out'); if(o) try{ o.scrollIntoView({block:'start'}); }catch(e){} });
+      st.setAttribute('data-glance','stmt'); box.appendChild(st);
+    }
+    return box;
+  }
+  function glanceDraw(){ var a=document.getElementById('aGlance'); if(!a) return; var n=acctGlance(); n.id='aGlance'; if(a.outerHTML!==n.outerHTML) a.replaceWith(n); }
   /* Account's row, drawn with Home: replaced only when it reads differently, so a tap is never lost to a redraw */
   function thDraw(){
+    glanceDraw();
     var a=document.getElementById('aThread'); if(!a) return;
     var n=el('div'); n.id='aThread'; if(session&&!view) n.appendChild(thRow());
     if(a.outerHTML!==n.outerHTML) a.replaceWith(n);
@@ -6339,7 +6372,7 @@ const CLIENT_JS = `
   function thSay(t){ if(thSaid){ thSaid.textContent=t||''; thSaid.hidden=!t; } }
   function thOpen(from){
     if(!thSheetEl||!session||view) return;
-    thFrom=from||null; thFromId=from&&from.closest&&from.closest('#aThread')?'aThread':'hThread'; draft.thSince=seenGet().o[thKey()]||'';
+    thFrom=from||null; thFromId=from&&from.closest&&from.closest('#aThread')?'aThread':from&&from.closest&&from.closest('#aGlance')?'aGlance':'hThread'; draft.thSince=seenGet().o[thKey()]||'';
     bkOpen('th',thClose);
     thScrim.hidden=false; thSheetEl.hidden=false; behind();
     try{ thSheetEl.focus(); }catch(e){}
@@ -6353,7 +6386,7 @@ const CLIENT_JS = `
     if(thTimer){ clearInterval(thTimer); thTimer=null; }
     if(!thSheetEl||thSheetEl.hidden) return;
     thSheetEl.hidden=true; thScrim.hidden=true; behind(); bkDrop('th'); thSay('');
-    focusBack(thFrom,function(){ return (document.getElementById(thFromId)||document).querySelector('.throw'); });
+    focusBack(thFrom,function(){ return (document.getElementById(thFromId)||document).querySelector('.throw, [data-glance="thread"]'); });
   }
   /* read only while the Sheet is open and the page is showing; a read that a later one overtook is let go */
   async function thRead(){
