@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="0893942bfbb561b9";
+var SALT_BUILD_ID="defccd88353c38c1";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -12454,7 +12454,7 @@ const dAhead=d=>(typeof d==='number'?d:dbet(d))<0;
 const TAB_LABEL={today:'To do',forward:'Next 30 days',overview:'Rules',receivables:'Receivables',
   inventory:'On hand',financials:'Financials',analysis:'Analysis',concentration:'Clients',
   network:'Associates',map:'Coverage',ledger:'Ledger',sourcing:'Sourcing',
-  pricing:'Pricing',plans:'Whiteboard'};
+  pricing:'Pricing'};
 const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 /* v245: THE PRICE TIER LEADS. custBadges() carries a RECENCY badge, Dormant/Loyal/Regular/New,
    which is a different question from what the customer pays; both now show, price tier first,
@@ -16582,8 +16582,9 @@ function tabPlans(){
     :(R.all.orders>=40?'Enough to read a direction from, not enough to forecast with.'
                       :'A thin book: every factor below is shrunk towards no effect before it reaches an instruction.');
 
-  return `<h1>Whiteboard</h1>
-  <div class="dsc dsclead" style="margin-bottom:12px">What the desk noticed, from the book on this load.</div>
+  /* 18 OCT 2026, HIS WORD: the Whiteboard is no page of its own. It stands under To do as Noticed, open while an item costs
+     something to ignore, so what to do and what the desk noticed are one page. */
+  return `<details class="obsec noticed"${acts?' open':''}><summary>Noticed <span class="q">what the desk saw in the book on this load</span><span class="ct${live.length?'':' zero'}">${live.length}</span></summary><div style="padding-bottom:12px">
   <div class="kpis k4">
     <div class="kpi salt-kpi ${acts?'r':'g'}"><div class="l salt-kpi__label">Act</div><div class="v salt-kpi__value">${acts}</div><div class="n salt-kpi__note">${acts?'costs something to ignore':'nothing pressing'}</div></div>
     <div class="kpi salt-kpi ${watch?'gold':'g'}"><div class="l salt-kpi__label">Watch</div><div class="v salt-kpi__value">${watch}</div><div class="n salt-kpi__note">${watch?'moving the wrong way':'nothing drifting'}</div></div>
@@ -16595,7 +16596,7 @@ function tabPlans(){
   ${rhythmCaveat?`<div class="insight salt-insight">${esc(rhythmCaveat)}</div>`:''}
   ${fam('rhythm')}${fam('integrity')}${fam('customer')}${fam('pricing')}${fam('promo')}${fam('upkeep')}
   ${live.length?'':'<div class="dsc" style="margin-top:16px">Nothing to raise. Every rule ran and none of them found anything, which is not the same as nothing being wrong.</div>'}
-  ${hushed.length?`<details class="obsec"><summary>Hushed <span class="q">dismissed or snoozed, kept so the decision is visible</span><span class="ct">${hushed.length}</span></summary><div style="padding-bottom:12px">${hushed.map(obsCard).join('')}</div></details>`:''}
+  ${hushed.length?`<details class="obsec"><summary>Hushed <span class="q">dismissed or snoozed, kept so the decision is visible</span><span class="ct">${hushed.length}</span></summary><div style="padding-bottom:12px">${hushed.map(obsCard).join('')}</div></details>`:''}</div></details>
   `;
 }
 /* ============ TAB: CHANGELOG ============ */
@@ -19360,7 +19361,7 @@ async function hushLoad(quiet){
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
   if(!j||!j.ok||!j.hush||typeof j.hush!=='object')return;
   const was=JSON.stringify(HUSH);HUSH=j.hush;HUSH_READ=true;
-  if(was!==JSON.stringify(HUSH)&&(curAddr==='plans'||curAddr==='today'))render();
+  if(was!==JSON.stringify(HUSH)&&curAddr==='today')render();
 }
 /* ---- Alerts (v675, and EVERY WAKE SINCE v759). The switch left with the phone app at v387, so the
    Worker's nudge woke nobody and a customer's order arrived in silence; v675 brought it back for ORDERS
@@ -21767,7 +21768,7 @@ function setProdView(pr){
   PROD=pr; try{localStorage.setItem('saltProd',pr);}catch(e){}
   recompute(); render();
 }
-const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight salt-insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),pricing:()=>pxHead()+perProduct(tabPricing),plans:tabPlans};
+const builders={today:()=>tabToday()+tabPlans(),forward:tabForward,sourcing:()=>{const b=perProduct(tabSourcing,{skipEmpty:true});return srcHead()+(b||'<div class="card"><div class="insight salt-insight">No purchases or sales on any book yet, so there is nothing to source against.</div></div>');},analysis:()=>anaHead()+perProduct(tabAnalysis),map:tabMap,overview:tabOverview,inventory:()=>invHead()+perProduct(tabInventory,{head:()=>units(currentStock)+' on hand'}),financials:()=>consoBlock()+consoCashBlock()+perProduct(tabFinancials),ledger:tabLedger,concentration:tabConcentration,network:tabNetwork,receivables:()=>consoOrderBlock()+perProduct(tabReceivables),pricing:()=>pxHead()+perProduct(tabPricing)};
 /* ============ SEVEN VIEWS OVER FIFTEEN TABS (v341, move 4 of the rebuild) ============
    The fifteen tabs were fifteen reports stacked: a megabyte to open for one figure, with the
    method prose standing open on every one. A view leads with one tab open, folds that tab's
@@ -21777,7 +21778,7 @@ const builders={today:tabToday,forward:tabForward,sourcing:()=>{const b=perProdu
    work as addresses and as links: switchTab maps them to the view that holds them and opens
    the fold, so nothing that pointed at a tab has to change. */
 const VIEWS=[
-  {id:'today', name:'Today',            lead:'today',         parts:['overview','forward','plans']},
+  {id:'today', name:'Today',            lead:'today',         parts:['overview','forward']},
   {id:'money', name:'Order book',       lead:'receivables',   parts:['financials']},
   {id:'stock', name:'Stock',            lead:'inventory',     parts:['sourcing']},
   {id:'price', name:'Pricing',          lead:'pricing',       parts:[]},
@@ -21788,7 +21789,7 @@ const VIEWS=[
    views it belongs to: Waiting on you and Approve under Order book, Plans and Entries under Today, the restock date on Stock.
    #enter is still an address: it lands on Waiting on you. */
 /* 18 OCT 2026, HIS WORD: Approve, Site orders and Entries left the desk too; each address lands where its figures are. */
-const VIEW_ALIAS={enter:'receivables',orders:'receivables',approve:'receivables',add:'today'};
+const VIEW_ALIAS={enter:'receivables',orders:'receivables',approve:'receivables',add:'today',plans:'today'};
 const VIEW_OF={}; VIEWS.forEach(v=>{VIEW_OF[v.id]=v.id;VIEW_OF[v.lead]=v.id;v.parts.forEach(p=>{VIEW_OF[p]=v.id;});});
 Object.keys(VIEW_ALIAS).forEach(a=>{VIEW_OF[a]=VIEW_OF[VIEW_ALIAS[a]];});
 const PART_Q={today:'what needs doing, ranked by the money at stake',
@@ -21803,16 +21804,15 @@ const PART_Q={today:'what needs doing, ranked by the money at stake',
   network:'associates, their downstream buckets and the rewards',
   map:'where the book is concentrated, drawn as heat',
   ledger:'every row on the book, and a statement of account for any party',
-  analysis:'the month read four ways',
-  plans:'what the desk noticed, from the book on this load'};
+  analysis:'the month read four ways'};
 /* the chart and wiring passes each tab needs after its HTML is in the document */
 const PART_DRAW={inventory:()=>{drawPerProduct([trackCharts]);expLoad();},
   pricing:()=>{drawPerProduct([wirePricing,drawPriceCharts,drawEarnChart,drawBoardCharts]);pbWire();},
-  today:()=>drawTodayCharts(), concentration:()=>drawConcCharts(),
+  today:()=>{drawTodayCharts();hushLoad();}, concentration:()=>drawConcCharts(),
   receivables:()=>drawPerProduct([drawRecvCharts]), financials:()=>drawPerProduct([drawFinCharts]),
   network:()=>drawNetworkCharts(), ledger:()=>{drawLedgerCharts();wireLedger();ledFit();},
   sourcing:()=>drawPerProduct([drawSourcingCharts,drawOutlookChart]), forward:()=>drawFwdCharts(),
-  analysis:()=>drawPerProduct([drawAnalysis]), map:()=>pinDraw(), plans:()=>hushLoad()};
+  analysis:()=>drawPerProduct([drawAnalysis]), map:()=>pinDraw()};
 /* THE METHOD PROSE GOES (v372). HIS INSTRUCTION OF 26 Aug: Method and caveats is useless,
    remove it everywhere. There were TWO of these on every part, which is most of why it read
    as clutter: applyNotes() hid the long paragraphs behind a pill and cut the lead and every
