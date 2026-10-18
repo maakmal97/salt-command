@@ -138,12 +138,12 @@ export async function run({ ok } = {}) {
     const doc = dom.window.document;
     doc.querySelector('button[data-act="nav.record"]').click();
     const loaded = await waitFor(() => [...doc.querySelectorAll("#makerInputs .maker-input h3")]
-      .some((heading) => heading.textContent === "Price drift"));
+      .some((heading) => heading.textContent === "Their %"));
     check(loaded, "the owner page renders the Counter customer drift controls");
     const drift = [...doc.querySelectorAll("#makerInputs .maker-input")]
-      .find((section) => section.querySelector("h3")?.textContent === "Price drift");
+      .find((section) => section.querySelector("h3")?.textContent === "Their %");
     const selects = drift.querySelectorAll("select"), value = drift.querySelector('input[type="number"]');
-    const setButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Send the drift");
+    const setButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Send their %");
     const clearButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Set back to 0");
     const useButton = [...drift.querySelectorAll("button")].find((button) => button.textContent === "Use the suggestion");
     check([...selects[0].options].map((option) => option.value).join() === "CX1-ZED,CX2-ZED",
@@ -152,10 +152,10 @@ export async function run({ ok } = {}) {
       "the UI offers salt and omits fixed books from its drift tiles");
     check(value.min === "0" && value.max === "2" && value.step === "0.05",
       "the UI bounds the numeric input to the % lift range, 0 to 2");
-    check(drift.textContent.includes("Set by you: 0.00 (0 to 2)."),
+    check(drift.textContent.includes("Set by you: 0%."),
       "the UI labels a held zero as set by him");
     selects[0].value = "CX2-ZED"; selects[0].dispatchEvent(new dom.window.Event("change", { bubbles: true }));
-    check(drift.textContent.includes("Not set: the Set Price. Suggested: 0.25.") && clearButton.hidden && !useButton.hidden,
+    check(drift.textContent.includes("No % set: the Set Price. Suggested +25%.") && clearButton.hidden && !useButton.hidden,
       "none held reads as the Set Price with the suggestion beside it, and Clear is unavailable when nothing is held");
     useButton.click();
     check(value.value === "0.25" && calls.length === 0,

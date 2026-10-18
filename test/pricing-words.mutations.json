@@ -1,0 +1,84 @@
+[
+ {
+  "name": "the Whiteboard's pricing family is called Pricing drift again",
+  "find": "lbl:'Margin movement', q:'margin moving under prices that are not'",
+  "replace": "lbl:'Pricing drift', q:'margin moving under prices that are not'"
+ },
+ {
+  "name": "the % card's note about under 7% is gone",
+  "find": " Under about 7% moves nothing at half a unit to 1 unit.</div></div>`;",
+  "replace": "</div></div>`;"
+ },
+ {
+  "name": "the suggestion says Proposed, not Suggested",
+  "find": "return 'Suggested '+driftSay(sg.pct)",
+  "replace": "return 'Proposed '+driftSay(sg.pct)"
+ },
+ {
+  "name": "the suggestion drops its reason",
+  "find": "(w.length?': '+w.join(', '):'')",
+  "replace": "''"
+ },
+ {
+  "name": "a % of 5 reads 0.05 on the card",
+  "find": "return n>0?'+'+n+'%':'0%';}",
+  "replace": "return n>0?String(d):'0%';}"
+ },
+ {
+  "name": "the Network card heading is Price drift",
+  "find": "<h2 style=\"margin-top:18px\">Their % <span class=\"rule\"></span></h2>",
+  "replace": "<h2 style=\"margin-top:18px\">Price drift <span class=\"rule\"></span></h2>"
+ },
+ {
+  "name": "the partner row says no drift applies",
+  "find": "pays the Floor; no % applies",
+  "replace": "pays the Floor; no drift applies"
+ },
+ {
+  "name": "Counter Admin's % card is headed Price drift",
+  "file": "stmt/owner.js",
+  "find": "el('h3',null,'Their %')",
+  "replace": "el('h3',null,'Price drift')"
+ },
+ {
+  "name": "Counter Admin's Add ID group is headed Starting price drift",
+  "file": "stmt/owner.js",
+  "find": "['Starting %','record.add-id.drift'",
+  "replace": "['Starting price drift','record.add-id.drift'"
+ },
+ {
+  "name": "the Worker's refusal for a supplier talks of drift again",
+  "file": "src/maker-inputs.js",
+  "find": "\"A supplier has no % on the Set Price.\"",
+  "replace": "\"A supplier cannot hold customer drift.\""
+ },
+ {
+  "name": "the drafter skips a starting tier again",
+  "file": "src/drafter.js",
+  "find": "\"a starting % names no product\"",
+  "replace": "\"a starting tier names no product\""
+ },
+ {
+  "name": "the fold's count line says drift again",
+  "file": "engine/apply.mjs",
+  "find": "(book said ${r.was}, difference ${r.drift})",
+  "replace": "(book said ${r.was}, drift ${r.drift})"
+ },
+ {
+  "name": "a guest with no board is told no price list has been written",
+  "file": "stmt/words.js",
+  "find": "\"board.none\": \"Prices are being updated. Please check back shortly.\"",
+  "replace": "\"board.none\": \"No price list has been written yet.\""
+ },
+ {
+  "name": "the empty guest page still draws the goods and size lines",
+  "file": "stmt/page.js",
+  "find": "+ (products.length ? '<p class=\"lead\">'",
+  "replace": "+ (true ? '<p class=\"lead\">'"
+ },
+ {
+  "name": "the printed board card says drift again",
+  "find": "on salt the Set Price lifted by their %, set on Clients",
+  "replace": "on salt the Set Price moved by their drift, set on Clients"
+ }
+]

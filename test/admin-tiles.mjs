@@ -42,9 +42,9 @@ const GROUPS = [
   ["Gift", "Handover", "record.gift.handover", ["", "collected", "delivered"], ""],
   ["Correct a row", "What to do", "record.amend.kind", ["Correction", "Fulfilment", "Cancellation"], "Correction"],
   ["New customer", "Role", "record.add-id.role", ["customer", "supplier", "reseller", "referral", "downstream", "bucket"], "customer"],
-  ["New customer", "Starting price drift, salt", "record.add-id.drift", ["", "0.25", "typed"], ""],
+  ["New customer", "Starting %, salt", "record.add-id.drift", ["", "0.25", "typed"], ""],
   ["Make an associate", "As", "record.appoint.role", ["reseller", "referral"], null],
-  ["Price drift", "Book", "record.drift.book", ["salt"], "salt"],
+  ["Their %", "Book", "record.drift.book", ["salt"], "salt"],
   ["Printed sizes", "Book", "record.house.book", ["salt"], "salt"],
   ["Desk reminders", "Hide for", "record.tip.for", ["7", "30", ""], "7"]
 ];
@@ -87,7 +87,7 @@ export async function run({ ok, pageWork }) {
     ok(bad.length === 0 && found.length === GROUPS.length,
       "each of the " + GROUPS.length + " few, fixed choices of the forms is a group of tiles in its own form, offering its values in order with the one a select began on chosen (none for the appointment's role), "
         + "and no other group is drawn: " + JSON.stringify(bad) + " " + found.length);
-    const keyed = tileGroup(p.form("New customer"), "Starting price drift, salt").querySelectorAll("input");
+    const keyed = tileGroup(p.form("New customer"), "Starting %, salt").querySelectorAll("input");
     ok(same([...keyed].map((r) => r.getAttribute("data-key")), ["salt-none", "salt-0.25", "salt-typed"]),
       "a group drawn once for each book keys its tiles by the book first, the empty value 'none': " + [...keyed].map((r) => r.getAttribute("data-key")).join());
     const parties = ["record.trade.party", "record.trade.associate", "record.trade.end-customer", "record.loan.party", "record.gift.party", "record.repay.loan", "record.amend.row",
@@ -158,11 +158,11 @@ export async function run({ ok, pageWork }) {
     books.fill([{ value: "candy", label: "candy" }, { value: "rice", label: "rice" }]);
     ok(books.value === "candy", "and falls to its first tile when it is not: " + books.value);
     const role = (v) => tile(p.form("New customer"), "Role", v);
-    const drift = tileGroup(p.form("New customer"), "Starting price drift, salt");
+    const drift = tileGroup(p.form("New customer"), "Starting %, salt");
     role("supplier");
     const shut = [drift.disabled, drift.querySelector("input").matches(":disabled")];
     role("customer");
-    ok(same(shut, [true, true]) && !drift.disabled, "a supplier has no starting price drift, so the group is shut with every tile in it, and open again for a customer: " + shut.join());
+    ok(same(shut, [true, true]) && !drift.disabled, "a supplier has no starting %, so the group is shut with every tile in it, and open again for a customer: " + shut.join());
     drift.value = "nothing";
     ok(drift.value === "" && ![...drift.querySelectorAll("input")].some((r) => r.checked), "a value no tile offers leaves none chosen, as a select left none");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }

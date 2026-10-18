@@ -9445,6 +9445,18 @@ await (async () => {
     const hFresh = await (await stmtWorker.fetch(gq("/g/" + fresh.id), genv)).text();
     ok(shown(hFresh, figs(board)), "a link minted since the last publish shows the same board, never an empty page");
     ok(!/the only price for this product/.test(h1), "and no pane says its price is its only one, since no level is held");
+    /* 18 Oct 2026 (Part 4): BETWEEN A DEPLOY AND THE NEXT PUBLISH the `guestboard` key can be missing, or hold no product: the link
+       says prices are being updated, in the table's own words, and draws no list, no size and no figure */
+    const kept = await gkv.get("guestboard");
+    gkv.m.delete("guestboard");
+    const gGone = await stmtWorker.fetch(gq("/g/" + fresh.id), genv), hGone = await gGone.text();
+    await gkv.put("guestboard", JSON.stringify({ week: { label: "x" }, products: [] }));
+    const hNone = await (await stmtWorker.fetch(gq("/g/" + fresh.id), genv)).text();
+    await gkv.put("guestboard", kept);
+    const wordsOf = (h) => h.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    ok(gGone.status === 200 && [hGone, hNone].every((h) => /Prices are being updated/.test(wordsOf(h)) && !/<table/.test(h) && !/RM\s*[0-9]/.test(wordsOf(h))
+      && !/No price list has been written/.test(h)),
+      "a guest link with no board key, or a board with no product, says prices are being updated and draws no list: " + wordsOf(hGone).slice(0, 160));
 
     /* 18 Oct 2026 (Part 3b): NOTHING READS A LEVEL OR AN OLD BOARD KEY. A record from before carries tier 2, a level and a standing
        mark, and the store still holds board:1, board:2, tboard:k, gboard:<id> and tiers with other figures: the link serves the Set
@@ -9516,7 +9528,7 @@ await (async () => {
       "and no board a stranger opens carries RM 0 at any size, empty books included: "
       + JSON.stringify(whole.products.map((p) => [p.product, Math.min(...p.sizes.map((r) => r.price))])));
     /* v787: A GUEST BOARD NAMES NO LEVEL ON ANY BOOK. The DATA: no product on the standing boards or the two live ones carries a name.
-       The PAGE: handed a product that does carry one, it draws the fallback note and never the name. */
+       The PAGE: handed a product that does carry one, it draws neither the name nor a note (the fallback note was removed on 18 Oct 2026). */
     const everyBoard = [whole];
     ok(everyBoard.every((b) => b.products.length > 0 && b.products.every((p) => !("tierName" in p))),
       "no book on any board carries a level's name: " + JSON.stringify(everyBoard.map((b) => b.products.map((p) => p.product))));
@@ -9525,8 +9537,8 @@ await (async () => {
     const handedName = visible(bp({ prices: { week: { label: "x" }, products: [{ product: "oil", name: "Oil", unit: "unit",
       tierName: "Bronze", fellBack: true, sizes: [{ q: 10, price: 130 }] }] } }, "n"));
     ok(everyBoard.every((b) => { const v = visible(bp({ prices: b }, "n")); return levelWords.every((w) => !v.includes(w)); })
-      && !handedName.includes("Bronze") && handedName.includes("The only price for this product"),
-      "and the page names no level on any pane, even when handed one: " + levelWords.join(", "));
+      && !handedName.includes("Bronze") && !handedName.includes("The only price for this product"),
+      "and the page names no level on any pane and draws no fallback note, even when handed a product that carries one: " + levelWords.join(", "));
   }
 
   /* the vendored encoder is the one encoder, or the site draws a QR from code nobody is testing */
@@ -12694,7 +12706,7 @@ await (async () => {
         `${p}: and it is a size this book's board actually prints (${got.q} in ${got.board.join(", ")})`);
     }
     w7.eval("setProd('salt');recompute();switchTab('price');");
-    const cap = String(w7.eval("(function(){var d=[].filter.call(document.querySelectorAll('.sec.on .dsc'),function(x){return /the ask per unit at each printed size/.test(x.textContent);})[0];return d?d.textContent.replace(/\\s+/g,' '):'';})()"));
+    const cap = String(w7.eval("(function(){var d=[].filter.call(document.querySelectorAll('.sec.on .dsc'),function(x){return /the Set Price per unit at each printed size/.test(x.textContent);})[0];return d?d.textContent.replace(/\\s+/g,' '):'';})()"));
     ok(cap.length > 0, "the board chart's caption renders");
     ok(cap.indexOf("against its floor and the effective cost") < 0 && /same figure as effective cost/.test(cap),
       "and it stops promising two lines where one is drawn, naming the one figure's three names instead");
@@ -15280,7 +15292,7 @@ await (async () => {
     /* 18 Oct 2026: the starting figure is salt's % lift on the Set Price, 0 to 2; a level word is refused on every book */
     const d45 = dr45(en45({ code: "CZ9-NEWT", kind: "customer", tiers: { salt: 0.5 } }), mir45);
     ok(!d45.skip && d45.collection === "roster" && JSON.stringify(d45.row.tiers) === '{"salt":0.5}', "a registration drafts with its starting % lift: " + (d45.skip || JSON.stringify(d45.row)));
-    for (const [p, why] of [[{ code: "CZ9-NEWT", kind: "customer", tiers: { salt: "Gold" } }, /Gold is not a % from 0 to 200/], [{ code: "CZ9-NEWT", kind: "customer", tiers: { oil: "Gold" } }, /Gold is not held per customer/], [{ code: "SZ9-SUP", kind: "supplier", tiers: { salt: 0.5 } }, /a supplier holds no tier/]]) {
+    for (const [p, why] of [[{ code: "CZ9-NEWT", kind: "customer", tiers: { salt: "Gold" } }, /Gold is not a % from 0 to 200/], [{ code: "CZ9-NEWT", kind: "customer", tiers: { oil: "Gold" } }, /Gold is not held per customer/], [{ code: "SZ9-SUP", kind: "supplier", tiers: { salt: 0.5 } }, /a supplier holds no starting %/]]) {
       const s = dr45(en45(p), mir45).skip || "";
       ok(why.test(s), "the drafter refuses the registration " + JSON.stringify(p) + ": " + (s || "drafted"));
     }
@@ -16637,8 +16649,8 @@ await (async () => {
     ok(as.h1 === "Associates" && co.h1 === "Coverage" && co.hash === "#map",
       "Associates keeps its name, and the map is headed Coverage at its old address: " + JSON.stringify({ as, co }));
     const card = String(w77.eval("pbCard()")), empty = String(w77.eval("(function(){var m={textContent:''};pbEmpty({rows:[],soon:true,code:'CX0-AA',product:'salt'},m);return m.textContent;})()"));
-    ok(/set on Clients/.test(card) && !/Customers/.test(card) && /set one on Clients\./.test(empty),
-      "the board card sends him to Clients to set a tier: " + JSON.stringify(empty));
+    ok(/set on Clients/.test(card) && !/Customers/.test(card) && /nothing to print\./.test(empty) && !/tier/.test(empty),
+      "the board card sends him to Clients for their %, and says plainly when a book has no price to print: " + JSON.stringify(empty));
   } finally { try { w77.close(); } catch (e) { /* best effort */ } }
 })();
 section("v678: Kuala Lumpur is shaded by its eleven constituencies, and a point in it is named by them first");
@@ -49652,6 +49664,11 @@ await (async () => {
   await (await import("./desk-queue-recovery.mjs")).run({ ok, KV, worker });
 })();
 
+section("18 Oct 2026: every surface says Floor, Set Price, Ceiling and Their %, with no tier, level or drift word, and a guest page with no board says prices are being updated");
+await (async () => {
+  await (await import("./pricing-words.mjs")).run({ ok });
+})();
+
 section("13 Oct 2026: B5 of #62, the Desk is a dashboard: no control writes the book, and the writes it keeps still work");
 await (async () => {
   await (await import("./desk-dashboard.mjs")).run({ ok });
@@ -50804,7 +50821,7 @@ await (async () => {
     cardOf(doc, "20260929120000-makr");
     cards = doc.querySelectorAll("#makerReview .maker-card, #makerDrafts .maker-card");   /* the redraw replaced the cards read above */
     ok(doc.querySelector("#makerInputs .maker-input h3").textContent === "Stock count"
-      && ["Sale or purchase", "Price drift", "Loan", "Repayment", "Gift", "Rewards", "New customer", "Change a name or place", "Place on the map"]
+      && ["Sale or purchase", "Their %", "Loan", "Repayment", "Gift", "Rewards", "New customer", "Change a name or place", "Place on the map"]
         .every((title) => [...doc.querySelectorAll("#makerInputs .maker-input h3")].some((heading) => heading.textContent === title)),
       "Maker exposes the remaining typed Enter and Network actions beside stock, trade and customer % inputs");
     /* his decision 6 of 11 Oct 2026: the card read its own preview when it was opened; there is no Preview button to press */

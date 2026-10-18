@@ -1601,7 +1601,7 @@ async function handleGuest(request, env, id) {
   await markOpen(env, rec);
   /* 18 Oct 2026: EVERY LINK READS THE ONE GUEST BOARD, the Set Price, whoever minted it and whatever an older record carries
      (a `tier`, a `level`, a standing mark): nothing about a link decides the prices, so minting one can never be wrong. A
-     stranger is never left looking at an empty page on a failed read; the board page says there is nothing yet. */
+     stranger is never left looking at an empty page on a failed read; the board page says prices are being updated. */
   let prices = null;
   try { prices = await env.STMT.get("guestboard", "json"); } catch (e) { prices = null; }
   const nonce = guestNonce();

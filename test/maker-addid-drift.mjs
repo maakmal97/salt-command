@@ -16,7 +16,7 @@ export async function run({ ok }) {
     tierNames: [],
     byProduct: {
       salt: { stockCost: 40, inputs: { policy: { tierRule: {
-        drift: true, presets: { Set: 0, "+5%": 0.05, "+10%": 0.1, "+15%": 0.15, "+20%": 0.2, "+30%": 0.3 }
+        drift: true, presets: { "Set Price": 0, "+5%": 0.05, "+10%": 0.1, "+15%": 0.15, "+20%": 0.2, "+30%": 0.3 }
       } } } }
     }
   };
@@ -25,7 +25,7 @@ export async function run({ ok }) {
       PROD_OPENING: { salt: { qty: 0, costPerKg: null } }, PEOPLE: { departed: [] } } };
   const catalog = makerInputCatalog(mirror);
   check(JSON.stringify(catalog.products.find((item) => item.product === "salt").driftPresets)
-    === JSON.stringify([{ name: "Set", value: 0 }, { name: "+5%", value: 0.05 }, { name: "+10%", value: 0.1 }, { name: "+15%", value: 0.15 },
+    === JSON.stringify([{ name: "Set Price", value: 0 }, { name: "+5%", value: 0.05 }, { name: "+10%", value: 0.1 }, { name: "+15%", value: 0.15 },
       { name: "+20%", value: 0.2 }, { name: "+30%", value: 0.3 }]),
   "Add ID catalog takes the % presets, in 5% steps, from the active book rule");
 
@@ -133,11 +133,11 @@ export async function run({ ok }) {
     const section = [...doc.querySelectorAll("#makerInputs .maker-input")]
       .find((item) => item.querySelector("h3")?.textContent === "New customer");
     const driftSelect = [...section.querySelectorAll("fieldset.maker-tiles")]
-      .find((group) => group.querySelector("legend").textContent.startsWith("Starting price drift"));
+      .find((group) => group.querySelector("legend").textContent.startsWith("Starting %"));
     const driftLabel = driftSelect && legendLabel(driftSelect.querySelector("legend"));   /* the words, then the book's code that its mark stands for: the page draws the mark alone */
     const pick = (value) => tile(section, driftLabel, value);   /* the drift is a group of tiles, and a tap on one is the change */
     const typed = [...section.querySelectorAll("input[type=number]")]
-      .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Drift"));
+      .find((input) => input.closest("label")?.querySelector(".lbl")?.textContent.startsWith("Other %"));
     /* the form's own answer line is the last status in it; the first is the one unlock's (Phase 4b) */
     const status = [...section.querySelectorAll('[role="status"]')].at(-1);
     doc.querySelector('[data-act="vault.unlock"]').click();

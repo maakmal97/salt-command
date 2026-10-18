@@ -163,8 +163,8 @@ export async function run({ ok, KV } = {}) {
   const addDrift = (tiers) => makerLedgerInput("add-id", { at, code: "CZ4-TST", kind: "customer", parent: null, geo: null, tiers,
     vault: { v: 1, salt: "cw==", iv: "aXY=", ct: "Y3Q=" } }, driftBook);
   check(addDrift({ salt: 0.3 }).entry?.payload.tiers.salt === 0.3 && addDrift({ salt: 0.3 }).draft?.collection === "roster"
-    && /from 0 to 2 \(0% to 200%\), never a level/.test(addDrift({ salt: "Gold" }).error || "") && /from 0 to 2 \(0% to 200%\), never a level/.test(addDrift({ salt: 2.5 }).error || "")
-    && /from 0 to 2 \(0% to 200%\), never a level/.test(addDrift({ salt: -0.3 }).error || ""),
+    && /from 0 to 2 \(0% to 200%\)[.]/.test(addDrift({ salt: "Gold" }).error || "") && /from 0 to 2 \(0% to 200%\)[.]/.test(addDrift({ salt: 2.5 }).error || "")
+    && /from 0 to 2 \(0% to 200%\)[.]/.test(addDrift({ salt: -0.3 }).error || ""),
     "Add ID on a drift book starts the customer on a % lift from 0 to 2 and refuses a level, a negative and a % past 2.");
 
   const loan = makerLedgerInput("loan", { at, form: "salt", direction: "out", product: "salt",

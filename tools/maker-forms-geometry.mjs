@@ -117,7 +117,7 @@ try {
 
     /* every form with choices to make: each of its tiles 44px and the radio over it */
     for (const [part, title, want] of [["part.record.entry", "Stock count", 2], ["part.record.entry", "Loan", 6], ["part.record.entry", "Gift", 5], ["part.record.entry", "Correct a row", 3],
-      ["part.record.customers", "New customer", 8], ["part.record.customers", "Make an associate", 2], ["part.record.pricing", "Price drift", 1], ["part.record.pricing", "Desk reminders", 3]]) {
+      ["part.record.customers", "New customer", 8], ["part.record.customers", "Make an associate", 2], ["part.record.pricing", "Their %", 1], ["part.record.pricing", "Desk reminders", 3]]) {
       await openForm(page, part, title);
       const f = await tiles(page, title);
       report(!f.error && f.count >= want && f.bad.length === 0 && !f.overflow, `${width}px ${title}: its ${f.count} tiles are 44px with the radio over each`, JSON.stringify(f.error ? f : { count: f.count, bad: f.bad.slice(0, 2), overflow: f.overflow }));

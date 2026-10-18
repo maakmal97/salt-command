@@ -26,7 +26,7 @@ const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", threa
 const MENU = {
   entry: ["Sale or purchase", "Repayment", "Stock count", "Gift", "Loan", "Rewards", "Offsets", "Correct a row", "Reopen a cancelled order"],
   customers: ["New customer", "Make an associate", "Change a name or place", "Place on the map"],
-  pricing: ["Desk reminders", "Price drift", "Partner", "Printed sizes"]
+  pricing: ["Desk reminders", "Their %", "Partner", "Printed sizes"]
 };
 const order = (id, status, patch = {}) => ({ id, u: U1, product: "salt", delivery: 0, paid: 0, msgs: [], payments: [], history: [], mode: "collect", qty: 1, total: 100, status, ...patch });
 

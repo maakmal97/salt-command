@@ -1332,9 +1332,6 @@ export function boardPage(guest, nonce) {
   const body = products.length
     ? products.map((p) => '<div class="pane salt-glass-card salt-glass-card--radius-md">'
         + '<h2 class="pmark" aria-label="' + esc(PSHAPE[String(p.product || "").toLowerCase()] || PSHAPE._) + '">' + psymSvg(p.product, 30) + "</h2>"
-        /* v787: a level is never named on a pane, on any book (his instruction, 22 Sep 2026). The board
-           carries no name since v787, and this line draws none, so a name that reaches it is not drawn either. */
-        + (p.fellBack ? '<p class="sub2">' + wd("board.only") + "</p>" : "")
         + '<div class="tblw"><table><thead><tr><th class="l">' + wd("board.size") + "</th><th>" + wd("board.price") + "</th></tr></thead><tbody>"
         + p.sizes.map((r) => "<tr><td class=\"l\">" + esc(unitsOf(r.q, p.unit))
             + "</td><td>" + esc(rm(r.price)) + "</td></tr>").join("")
@@ -1342,9 +1339,9 @@ export function boardPage(guest, nonce) {
     : '<p class="lead">' + wd("board.none") + "</p>";
   /* C21 (29 Sep 2026): a guest page opens on its h1, and each board's mark is an h2 under it */
   return guestPage('<h1 class="gh">' + wd("board.h") + "</h1>"
-    + '<p class="lead">' + (week ? fillHtml(EN["board.week"], { w: esc(week) }, "en") + " " : "")
-    + wd("board.goods") + " " + wd("deliv") + " "
-    + wd("board.ask") + "</p>"
+    + (products.length ? '<p class="lead">' + (week ? fillHtml(EN["board.week"], { w: esc(week) }, "en") + " " : "")
+      + wd("board.goods") + " " + wd("deliv") + " "
+      + wd("board.ask") + "</p>" : "")
     + body
     /* S8 8.2: A STRANGER IS TOLD WHAT TO DO NEXT, in words and with no brand. The board is all they
        have, and it named no way to order. */

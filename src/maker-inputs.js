@@ -705,16 +705,16 @@ export function makerOffset(body, book, held) {
 /** One customer, one product; null clears its held % lift through the same tierset road. */
 export function makerTierSet(body, book) {
   if (!object(body) || Object.keys(body).some((key) => !["at", "code", "product", "tier"].includes(key)))
-    return { error: "A tier input carries only its timestamp, code, product and tier." };
-  if (!timestamp(body.at)) return { error: "A tier input needs its canonical request timestamp." };
+    return { error: "A % input carries only its timestamp, code, product and %." };
+  if (!timestamp(body.at)) return { error: "A % input needs its canonical request timestamp." };
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
   if (!active(body.product, book)) return { error: "Choose an active product." };
   if (!code(body.code, book.state.roster || []) || POSITION_ENGINE.isBucket(body.code))
     return { error: "Choose a customer on the roster, not a resale account." };
   const snapshot = book.pricing && book.pricing.byProduct && book.pricing.byProduct[body.product];
   const rule = snapshot && snapshot.inputs && snapshot.inputs.policy && snapshot.inputs.policy.tierRule;
-  if (!rule || rule.fixed || !rule.drift) return { error: "This product has no customer tiers." };
-  if (!driftCustomerCode(body.code)) return { error: "A supplier cannot hold customer drift." };
+  if (!rule || rule.fixed || !rule.drift) return { error: "This book has no Set Price to put a % on." };
+  if (!driftCustomerCode(body.code)) return { error: "A supplier has no % on the Set Price." };
   if (body.tier !== null && !PRICING_ENGINE.driftOk(body.tier))
     return { error: "Choose a % lift from 0 to 200% (0 to 2), or clear it." };
   return proposed(POSITION_ENGINE.tierSetEntry({
@@ -736,7 +736,7 @@ export function makerPartner(body, book, pending = []) {
       && book.pricing.byProduct[product].inputs.policy.tierRule;
     return !!rule && !!rule.drift && !rule.fixed;
   });
-  if (!driftBook) return { error: "A partner is made on a book with price drift." };
+  if (!driftBook) return { error: "A partner is made on a book with a Set Price." };
   if (!code(body.code, book.state.roster || []) || POSITION_ENGINE.isBucket(body.code))
     return { error: "Choose a customer on the roster, not a resale account." };
   if ((book.state.partners || []).includes(body.code)) return { error: body.code + " is already a partner." };
@@ -744,7 +744,7 @@ export function makerPartner(body, book, pending = []) {
     return { error: body.code + " is already waiting under Approve as a partner.", twin: true };
   const bucket = POSITION_ENGINE.appointBucket("reseller", body.code);
   return proposed(POSITION_ENGINE.partnerEntry({ at: body.at, code: body.code,
-    raw: "Make " + body.code + " a partner: pays cost, keeps every associate property"
+    raw: "Make " + body.code + " a partner: pays the Floor, keeps every associate property"
       + ((book.state.associates || []).includes(body.code) ? "" : ", appointed an associate on the R2 stream with " + bucket + " as their resell account") }), book);
 }
 
@@ -1064,7 +1064,7 @@ export function makerLedgerInput(operation, body, book, pending = []) {
   } else if (operation === "add-id") {
     if (!exact(body, ["at", "code", "kind", "parent", "geo", "tiers", "vault", "addrVault"])
       || !/^[A-Z]{1,3}[0-9]{0,2}[A-Z0-9-]*$/.test(body.code) || !["customer", "supplier", "reseller", "referral", "downstream", "bucket"].includes(body.kind))
-      return { error: "An ID entry carries only codes, role, point, tiers and the encrypted vault envelope." };
+      return { error: "An ID entry carries only codes, role, point, starting % and the encrypted vault envelope." };
     if (body.kind === "bucket") {
       if (!realCode(body.parent, roster) || body.vault !== null || body.geo != null || body.tiers != null)
         return { error: "A resale account has a parent code and no name vault." };
@@ -1077,14 +1077,14 @@ export function makerLedgerInput(operation, body, book, pending = []) {
     const tiers = body.tiers == null ? null : body.tiers;
     if (tiers != null) {
       if (!["customer", "reseller", "referral"].includes(body.kind))
-        return { error: "Only a customer, reseller or referral holds a starting tier." };
-      if (!object(tiers) || !Object.keys(tiers).length) return { error: "Starting tiers must name active tiered books." };
+        return { error: "Only a customer, reseller or referral holds a starting %." };
+      if (!object(tiers) || !Object.keys(tiers).length) return { error: "A starting % must name an active book with a Set Price." };
       for (const [product, tier] of Object.entries(tiers)) {
         const snapshot = book.pricing?.byProduct?.[product], rule = snapshot?.inputs?.policy?.tierRule;
         if (active(product, book) && rule && rule.drift && !PRICING_ENGINE.driftOk(tier))
-          return { error: "A starting lift is a number from 0 to 2 (0% to 200%), never a level." };
+          return { error: "A starting % is a number from 0 to 2 (0% to 200%)." };
         if (!active(product, book) || !rule || rule.fixed || !rule.drift)
-          return { error: "Starting tiers must use active books with a Set Price." };
+          return { error: "A starting % must name an active book with a Set Price." };
       }
     }
     entry = POSITION_ENGINE.addIdEntry({ at: body.at, code: body.code, kind: body.kind,

@@ -33,8 +33,8 @@ export async function run({ ok }) {
     && !!add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: 0.5 } }).error
     && !add({ kind: "reseller", tiers: { salt: 0.5 } }).error,
     "only a customer or an associate takes a starting tier");
-  ok(/holds a starting tier/.test(add({ kind: "supplier", tiers: { salt: 0.5 } }).error)
-    && /holds a starting tier/.test(add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: 0.5 } }).error),
+  ok(/holds a starting %/.test(add({ kind: "supplier", tiers: { salt: 0.5 } }).error)
+    && /holds a starting %/.test(add({ kind: "downstream", parent: "CX1-ZED", tiers: { salt: 0.5 } }).error),
     "a tier on a supplier or downstream is an input error naming the rule, not a drafter skip");
 
   /* owner auth: the typed route forwards for the verified owner and for no one else */
