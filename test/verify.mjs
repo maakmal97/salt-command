@@ -22626,13 +22626,13 @@ await (async () => {
     signIn();
     ok(await until(() => !!D.querySelector("#out .salt-lines")) && !D.getElementById("stmtFoot") && !/ISSUE|Earlier statements/.test(vis()),
       "the Counter draws the live document alone: no earlier statements, no issue");
-    /* C14: the first read of orders failed; the list and Home say so, never None yet, and Try again reads it */
+    /* C14: the first read of orders failed; the list and Home say so, never the empty state (No orders yet; Counter Batch A P5 replaced "None yet."), and Try again reads it */
     const oArea = () => D.getElementById("oArea");
-    ok(await until(() => !!oArea() && !!oArea().querySelector('[data-unread="ord.unread"]')) && !oArea().textContent.includes(EN["ord.noneYet"])
+    ok(await until(() => !!oArea() && !!oArea().querySelector('[data-unread="ord.unread"]')) && !oArea().textContent.includes(EN["ord.empty.none.t"])
       && !!D.querySelector('#hNeeds [data-unread="ord.unread"]') && !/KV/.test(vis()),
       "a failed read of orders says so on Orders and Home, never None yet: " + JSON.stringify(oArea() && oArea().textContent.slice(0, 120)));
     oArea().querySelector("[data-unread] button").click();
-    ok(await until(() => oArea().textContent.includes(EN["ord.noneYet"])) && !D.querySelector('[data-unread="ord.unread"]'),
+    ok(await until(() => oArea().textContent.includes(EN["ord.empty.none.t"])) && !D.querySelector('[data-unread="ord.unread"]'),
       "and Try again reads them, the line gone with the failure");
     signOutTap(D);
     await until(() => !D.getElementById("gate").hidden);
@@ -32791,7 +32791,7 @@ await (async () => {
   } });
   const w = dom.window, d = w.document;
   const list = () => d.querySelector("#pOrder [data-olist]");
-  const seq = () => [...list().children].map((x) => x.getAttribute("data-row") || x.textContent);
+  const seq = () => [...list().children].filter((x) => !x.classList.contains("otabs")).map((x) => x.getAttribute("data-row") || x.textContent);
   const row = (id) => d.querySelector('#pOrder [data-row="' + id + '"]');
   try {
     d.getElementById("un").value = u; d.getElementById("pw").value = pass;
@@ -32811,9 +32811,11 @@ await (async () => {
     ok(f2 && f2.getAttribute("aria-expanded") === "true" && !!row(DONE) && !!row(GONE),
       "opening the fold draws them under it: " + JSON.stringify(seq()));
     const r = row(OWES);
-    ok(r.tagName === "BUTTON" && r.classList.contains("salt-inbox-row") && !!r.querySelector("svg.psym") && /1 unit/.test(r.textContent)
-      && !!r.querySelector(".salt-status") && /23 Sep/.test((r.querySelector(".salt-inbox-row__age") || {}).textContent)
-      && (r.querySelector(".salt-inbox-row__action") || {}).textContent === "RM 90.00" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
+    /* Counter Batch A P5: an order is a card, the day and time on top with the state, then the mark and size, the why and the figure */
+    ok(r.tagName === "BUTTON" && r.classList.contains("ocard") && !!r.querySelector("svg.psym") && /1 unit/.test(r.textContent)
+      && !!r.querySelector(".ocard__top .salt-status") && /23 Sep 2026, 09:00/.test((r.querySelector(".ocard__when") || {}).textContent)
+      && /RM 90.00 to pay/.test((r.querySelector(".ocard__what") || {}).textContent)
+      && (r.querySelector(".ocard__total") || {}).textContent === "RM 90.00" && !r.querySelector("input, textarea, select, .salt-thread, .hist"),
       "a row is one tap: the mark and the size with the state, the day and the figure, and nothing of the order's own screen: " + JSON.stringify(r.textContent));
     r.click();
     const scr = d.querySelector("#pOrder .oscreen");
@@ -33234,8 +33236,12 @@ await (async () => {
   const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
   const current = (d) => [...d.querySelectorAll("#pOrder [data-row][aria-current=true]")].map((b) => b.getAttribute("data-row"));
   await drive(true, async (w, d) => {
+    /* Counter Batch A P5 (18 Oct 2026): nothing opens by itself on a desk, so it opens on the Open and Done columns */
+    ok(shownOf(d) === null && current(d).length === 0 && !!d.querySelector('#pOrder [data-row="' + P + '"]') && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
+      "on a desk no order is open until one is tapped, the list standing whole with no row marked: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
     ok(shownOf(d) === O && JSON.stringify(current(d)) === JSON.stringify([O]) && !!d.querySelector('#pOrder [data-row="' + P + '"]'),
-      "on a desk the list stands beside an open order without a tap, what needs them first, its row marked: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
+      "a tap opens that order beside the list, its row marked: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
     d.querySelector('#pOrder [data-row="' + P + '"]').click();
     ok(shownOf(d) === P && JSON.stringify(current(d)) === JSON.stringify([P]) && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
       "and a tap on another row opens that one beside the same list: " + JSON.stringify({ shown: shownOf(d), current: current(d) }));
@@ -33468,11 +33474,13 @@ await (async () => {
     } finally { w.close(); }
   };
   const shownOf = (d) => { const s = d.querySelector("#pOrder .oscreen"); return s && s.getAttribute("data-order"); };
+  /* Counter Batch A P5 (his decision of 18 Oct 2026): a desk opens on the Open and Done columns and NO order opens by itself, so
+     there is no order a desk opened by itself to go when the width drops: the way back to the list is only for a tapped order */
   await drive(true, async (w, d, turn) => {
     const wideShown = shownOf(d);
     turn(false);
-    ok(wideShown === O && !shownOf(d) && !d.getElementById("pOrder").classList.contains("o-open") && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
-      "an order the desk opened by itself goes when the width drops below 1080px, and the list is back: " + JSON.stringify({ wide: wideShown, narrow: shownOf(d) }));
+    ok(wideShown === null && !shownOf(d) && !d.getElementById("pOrder").classList.contains("o-open") && !!d.querySelector('#pOrder [data-row="' + O + '"]'),
+      "on a desk no order opens by itself, and the list is still there when the width drops below 860px: " + JSON.stringify({ wide: wideShown, narrow: shownOf(d) }));
   });
   await drive(true, async (w, d, turn) => {
     d.querySelector('#pOrder [data-row="' + P + '"]').click();
@@ -33480,22 +33488,22 @@ await (async () => {
     ok(shownOf(d) === P && d.getElementById("pOrder").classList.contains("o-open"),
       "and an order they tapped stays open when the width drops: " + JSON.stringify({ narrow: shownOf(d) }));
   });
-  /* his reply on the order a desk opened by itself: the order form stands above it, so it may be off screen */
+  /* his reply on an order: nothing is opened for them on a desk, so it is marked seen only once the row is tapped */
   const seen = (w) => { try { return (JSON.parse(w.localStorage.getItem("salt-stmt-seen") || "null") || { o: {} }).o; } catch (e) { return {}; } };
   const rowText = (d, id) => (d.querySelector('#pOrder [data-row="' + id + '"]') || {}).textContent || "";
   await drive(true, async (w, d) => {
-    ok(shownOf(d) === O && !!d.querySelector("#pOrder .oscreen .salt-bubble__new") && !seen(w)[O] && /a reply for you/.test(rowText(d, O)),
-      "an order a desk opened by itself marks nothing seen: his line is New and its row still says a reply is waiting: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
+    ok(shownOf(d) === null && !seen(w)[O] && /a reply for you/.test(rowText(d, O)),
+      "on a desk nothing opens by itself, so nothing is marked seen and the row still says a reply is waiting: " + JSON.stringify({ shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
-    ok(seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .salt-bubble__new"),
-      "a tap on its row, already open, marks it seen and clears its row, his line staying New while it is open: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
+    ok(shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)) && !!d.querySelector("#pOrder .oscreen .salt-bubble__new"),
+      "a tap on its row opens it beside the list, marks it seen and clears its row, his line staying New while it is open: " + JSON.stringify({ seen: seen(w), row: rowText(d, O) }));
   });
   /* a banner's tap: on a desk, for the order it opened by itself at sign-in; on a phone, for one left open under another tab */
   await drive(true, async (w, d) => {
     /* S7 7.1: the place turned to carries aria-current, which the App bar and the rail draw */
     const tab = d.querySelector('#tabs button[data-t="order"]').getAttribute("aria-current");
     ok(tab === "page" && shownOf(d) === O && seen(w)[O] === "2026-09-24T05:00:00Z" && !/a reply for you/.test(rowText(d, O)),
-      "a desk opened at a banner's address for the order it opens by itself turns to it and marks his reply seen: " + JSON.stringify({ tab, shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
+      "a desk opened at a banner's address for an order turns to it and marks his reply seen: " + JSON.stringify({ tab, shown: shownOf(d), seen: seen(w), row: rowText(d, O) }));
   }, { hash: "#o=" + O });
   await drive(false, async (w, d, turn, sw, fx) => {
     d.querySelector('#pOrder [data-row="' + O + '"]').click();
@@ -33747,12 +33755,15 @@ await (async () => {
   };
   const payOf = (d) => [...d.querySelectorAll('#pOrder .oscreen [data-part="act"] button')].find((b) => /^Pay RM/.test(b.textContent));
   const filled = (d) => [...d.querySelectorAll("#pOrder .salt-pill")].map((b) => b.textContent);
+  /* Counter Batch A P5: nothing opens by itself on a desk, so the order is tapped open first */
   await drive(true, async (w, d) => {
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
     const pay = payOf(d);
     ok(!!d.getElementById("oNew") && !!pay && !pay.classList.contains("salt-pill") && pay.classList.contains("salt-ghost") && JSON.stringify(filled(d)) === JSON.stringify(["New order"]),
       "on a desk, with New order beside the open order, its Pay is the lit ghost and New order the one filled control: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
   });
   await drive(true, async (w, d) => {
+    d.querySelector('#pOrder [data-row="' + O + '"]').click();
     const pay = payOf(d);
     ok(!!d.getElementById("oLimit") && !d.getElementById("oNew") && !!pay && pay.classList.contains("salt-pill") && JSON.stringify(filled(d)) === JSON.stringify(["Pay RM 90.00"]),
       "at the limit, said in New order's place, nothing else is filled and the open order's Pay is: " + JSON.stringify({ pay: pay && pay.className, filled: filled(d) }));
@@ -43295,7 +43306,7 @@ await (async () => {
       + JSON.stringify({ once, refused, sent: st.sent }));
     const lines = [...scr().querySelectorAll(".salt-ledger__row")].map((x) => [".salt-ledger__label", ".salt-ledger__value", ".salt-ledger__flag"].map((q) => t(x.querySelector(q))).join("|"));
     const hist = [...scr().querySelectorAll('[data-part="hist"] li')].map(t);
-    const row = t(d.querySelector('#pOrder [data-row="oA"] .salt-inbox-row__what'));
+    const row = t(d.querySelector('#pOrder [data-row="oA"] .ocard__what'));
     ok(lines.includes("Sent by you|RM 150.00|Waiting for us to confirm") && lines.includes("Still to pay|RM 0.00|Sent, waiting for us to confirm")
       && !/Paid in full|You paid|Pay RM/.test(t(scr())) && hist.some((x) => / You sent RM 150.00 by DuitNow Transfer to Maybank, waiting for us to confirm it$/.test(x))
       && /Sent, waiting for us to confirm\. We tell you when it arrives\./.test(t(scr())) && row === "RM 150.00 sent, waiting for us to confirm",
@@ -43323,7 +43334,7 @@ await (async () => {
       + JSON.stringify({ said, pill }));
     dB.querySelector('button[data-t="order"]').click();
     await until(() => dB.querySelector('#pOrder [data-row="oB"]'));
-    const why = t(dB.querySelector('#pOrder [data-row="oB"] .salt-inbox-row__what'));
+    const why = t(dB.querySelector('#pOrder [data-row="oB"] .ocard__what'));
     dB.querySelector('#pOrder [data-row="oB"]').click();
     const scrB = dB.querySelector("#pOrder .oscreen");
     const lost = [...scrB.querySelectorAll(".salt-ledger__row")].map((x) => t(x.querySelector(".salt-ledger__label")) + "|" + t(x.querySelector(".salt-ledger__value")));
@@ -44768,8 +44779,8 @@ await (async () => {
     && /b\.setAttribute\('aria-current','page'\); else b\.removeAttribute\('aria-current'\)/.test(pgY),
     "the places are the system's, and a tap moves aria-current with the open one");
   /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order; F8 (Step
-     1a.2) stood it beside the head's card */
-  ok(/\+'salt-status salt-status--'\+tone,stateWord\(o\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /side\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
+     1a.2) stood it beside the head's card; Counter Batch A P4 put an aria-hidden glyph before the word, so the word is a text node after it */
+  ok(/\+'salt-status salt-status--'\+tone\);\s*c\.appendChild\(chipGlyph\(stateGlyph\(o\)\)\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /side\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
     "an order's state is the system's chip, in its tone");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),
@@ -51246,6 +51257,11 @@ await (async () => {
 section("Failures on brand: Home says Not updated since the last read in place of its figure when a read fails, and the next good read clears it (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-offline-line.mjs")).run({ ok });
+})();
+
+section("Counter Batch A: your orders as cards, filtered on a phone, Open and Done as two columns on a desk, each empty view with one way on (18 Oct 2026)");
+await (async () => {
+  await (await import("./counter-orders-cards.mjs")).run({ ok });
 })();
 
 section("Salt Account: the order card reads its preview on opening, asks on a sheet, keeps its moves at its foot, and its tick is a 44px target");

@@ -440,6 +440,30 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .olist .olab:first-child{margin-top:4px}
 .olist .salt-inbox-row{margin:0 0 8px}
 .olater{width:100%;margin-top:10px}
+/* Counter Batch A (18 Oct 2026): the order card, the phone's filter row and the desk's two columns */
+.ocard{display:flex;flex-direction:column;gap:12px;width:100%;margin:0 0 12px;padding:20px;text-align:left;font:inherit}
+.ocard[aria-current]{border-color:var(--salt-brass)}
+.ocard__top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ocard__when{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright);white-space:nowrap}
+.ocard__main{display:flex;align-items:center;gap:12px;min-height:var(--salt-tap)}
+.ocard__main .mtile{flex:none}
+.ocard__what{flex:1;min-width:0;font-size:var(--salt-text-sm);color:var(--salt-prose)}
+.ocard__what.odue{color:var(--salt-ember)}
+.ocard__total{font-family:var(--salt-font-mono);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ocard--ended .ocard__total{color:var(--salt-mist-bright)}
+.otabs{flex-wrap:nowrap;margin:0 0 16px}
+.otabs .salt-tabs__pill{flex:1 1 auto;min-height:var(--salt-tap);min-width:0;display:inline-flex;align-items:center;justify-content:center;padding:8px 10px;white-space:nowrap}
+.otabs .salt-tabs__count{margin-left:6px}
+.oempty{margin:0 0 12px}
+.oempty .salt-ghost{min-height:var(--salt-tap)}
+.ocols{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 24px;align-items:start}
+@media (min-width:860px){.olist{container-type:inline-size}}
+@container (min-width:620px){.ocols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ocol{min-width:0}
+.ocol__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:var(--salt-tap)}
+.ocol__head .olab{margin:0;display:inline-flex;align-items:center;gap:8px}
+.ocol__n{color:var(--salt-mist-bright)}
+.ocol__pay{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:0.12em;text-transform:uppercase;color:var(--salt-ember);white-space:nowrap}
 .oback{margin:0 0 12px}
 .ohead{display:flex;align-items:center;gap:6px 14px;margin:0 0 16px}
 .ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0}
@@ -4475,31 +4499,105 @@ const CLIENT_JS = `
     return b;
   }
   function oBuckets(){ var n=[],p=[],e=[]; orders.forEach(function(o){ (oNeeds(o)?n:oClosed(o)?e:p).push(o); }); return {needs:n,open:p,past:e}; }
+  /* COUNTER BATCH A (his decisions of 18 Oct 2026): AN ORDER IS A CARD, the whole card one control. Its day and time with its state on top,
+     then the mark and size, what it waits on (to pay in ember) or how it ended, and the figure; its name says all of it in one sentence. */
+  function oCardWhy(o){
+    var w=oWhy(o); if(w) return w;
+    var owed=o.total+(+o.delivery||0), paid=+o.paid||0;
+    if(paid>0.004&&paid>=owed-0.004) return tw('why.paidFull');
+    if(paid<=0.004&&(o.status==='declined'||o.status==='cancelled')) return tw('why.nothingPaid');
+    return '';
+  }
+  function oCard(o,shown){
+    var b=el('button','orow ocard salt-glass-card salt-glass-card--radius-lg salt-glass-card--link'+(oClosed(o)?' ocard--ended':'')); b.type='button'; b.setAttribute('data-row',o.id);
+    if(o.id===shown) b.setAttribute('aria-current','true');
+    var top=el('span','ocard__top'); top.appendChild(el('span','ocard__when',stamp(o.at))); top.appendChild(stateChip(o)); b.appendChild(top);
+    var main=el('span','ocard__main'), why=oCardWhy(o);
+    main.appendChild(mtile(o.product,o.qty,oUnit(o),32));
+    main.appendChild(el('span','ocard__what'+(oOwes(o)?' odue':''),why));
+    main.appendChild(el('span','ocard__total',rm(o.total+(+o.delivery||0))));
+    b.appendChild(main);
+    b.setAttribute('aria-label',tw(why?'ord.cardAriaWhy':'ord.cardAria',{d:oDay(o.at), a:Uq(o.qty,oUnit(o)), s:stateWord(o), w:why}));
+    b.addEventListener('click',function(){ oOpen(o.id); });
+    return b;
+  }
+  /* the four ways to look at them on a phone; from 860px Open and Done stand as two columns and there is no filter row */
+  var OTABS=[['all','ord.tab.all'],['open','ord.tab.open'],['pay','ord.tab.pay'],['done','ord.tab.done']];
+  function oOf(k){ return k==='open'?orders.filter(function(o){ return !oClosed(o); }):k==='pay'?orders.filter(oOwes):k==='done'?orders.filter(oClosed):orders.slice(); }
+  function oTabs(){
+    var cur=draft.oTab||'all', row=el('div','salt-tabs otabs'); row.setAttribute('role','tablist'); row.setAttribute('aria-label',tw('ord.tabs'));
+    OTABS.forEach(function(t){
+      var b=el('button','salt-tabs__pill'+(t[0]===cur?' salt-tabs__pill--active':''),tw(t[1])); b.type='button'; b.setAttribute('role','tab');
+      b.setAttribute('data-otab',t[0]); b.setAttribute('aria-selected',t[0]===cur?'true':'false');
+      b.appendChild(el('span','salt-tabs__count',String(oOf(t[0]).length)));
+      b.addEventListener('click',function(){ draft.oTab=t[0]; oDraw(); var n=pOrder.querySelector('[data-otab="'+t[0]+'"]'); if(n) try{ n.focus({preventScroll:true}); }catch(e){} });
+      row.appendChild(b);
+    });
+    return row;
+  }
+  /* an empty view: its mark, a heading, one sentence and the one way on */
+  function oEmpty(k){
+    var box=el('div','oempty salt-empty'), mk=el('span','salt-empty__mark'); mk.setAttribute('aria-hidden','true');
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
+    s.setAttribute('viewBox','0 0 24 24'); d.setAttribute('d','M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5');
+    s.appendChild(d); mk.appendChild(s); box.appendChild(mk);
+    box.appendChild(el('h3','salt-empty__title',tw('ord.empty.'+k+'.t'))); box.appendChild(el('p','salt-empty__text',tw('ord.empty.'+k+'.b')));
+    var go=null;
+    if(k==='none'){ var nb=(oTopEl&&oTopEl.querySelector('#oNew'))||document.getElementById('oNew'); if(nb){ go=el('button','salt-ghost salt-ghost--lit',tw('ord.empty.none.go')); go.addEventListener('click',function(){ sheetOpen(null,null,go); }); } }
+    else{ var to=k==='done'?'open':'all'; go=el('button','salt-ghost salt-ghost--lit',tw('ord.empty.'+k+'.go')); go.addEventListener('click',function(){ draft.oTab=to; oDraw(); }); }
+    if(go){ go.type='button'; go.setAttribute('data-oempty',k); box.appendChild(go); }
+    return box;
+  }
+  function oFold(box,past,shown){
+    var eb=el('button','salt-ghost olater',tw(past.length===1?'ord.earlier1':'ord.earlierN',{n:past.length})); eb.type='button';
+    eb.setAttribute('aria-expanded',draft.oEarlier?'true':'false');
+    eb.addEventListener('click',function(){ draft.oEarlier=!draft.oEarlier; oDraw(); });
+    box.appendChild(eb);
+    if(draft.oEarlier) past.forEach(function(o){ box.appendChild(oCard(o,shown)); });
+  }
   function oList(shown){
     var box=el('div','olist'); box.setAttribute('data-olist','');
     if(ordersFailed) box.appendChild(unreadNode('ord.unread',retryOrders));
-    if(!orders.length){ if(!ordersFailed) box.appendChild(el('p','lead',tw('ord.noneYet'))); return box; }
+    if(!orders.length){ if(!ordersFailed) box.appendChild(oEmpty('none')); return box; }
     var B=oBuckets();
-    function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oRow(o,shown)); }); }
-    if(B.needs.length) sec(tw('x.needs'),B.needs);
-    if(B.open.length) sec(tw('ord.open'),B.open);
-    if(B.past.length){
-      var eb=el('button','salt-ghost olater',tw(B.past.length===1?'ord.earlier1':'ord.earlierN',{n:B.past.length})); eb.type='button';
-      eb.setAttribute('aria-expanded',draft.oEarlier?'true':'false');
-      eb.addEventListener('click',function(){ draft.oEarlier=!draft.oEarlier; oDraw(); });
-      box.appendChild(eb);
-      if(draft.oEarlier) B.past.forEach(function(o){ box.appendChild(oRow(o,shown)); });
+    if(oWide()){
+      /* from 860px: Open and Done, two columns where the list has the room and one under the other beside an open order */
+      var cols=el('div','ocols'), open=B.needs.concat(B.open), pay=orders.filter(oOwes).reduce(function(s,o){ return s+oToPay(o); },0);
+      [['open',open],['done',B.past]].forEach(function(c){
+        var col=el('section','ocol ocol--'+c[0]); col.setAttribute('aria-label',tw('ord.col.'+c[0]));
+        var hd=el('div','ocol__head'), h=el('h3','salt-eyebrow salt-eyebrow--copper olab',tw('ord.tab.'+c[0]));
+        h.appendChild(el('span','ocol__n',String(c[1].length))); hd.appendChild(h);
+        if(c[0]==='open'&&pay>0.004) hd.appendChild(el('span','ocol__pay',tw('ord.col.toPay',{rm:rm(pay)})));
+        col.appendChild(hd);
+        if(!c[1].length) col.appendChild(oEmpty(c[0]));
+        else if(c[0]==='done'&&c[1].length>12){ c[1].slice(0,12).forEach(function(o){ col.appendChild(oCard(o,shown)); }); oFold(col,c[1].slice(12),shown); }
+        else c[1].forEach(function(o){ col.appendChild(oCard(o,shown)); });
+        cols.appendChild(col);
+      });
+      box.appendChild(cols);
+      return box;
     }
+    box.appendChild(oTabs());
+    var k=draft.oTab||'all';
+    if(k==='all'){
+      function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oCard(o,shown)); }); }
+      if(B.needs.length) sec(tw('x.needs'),B.needs);
+      if(B.open.length) sec(tw('ord.open'),B.open);
+      if(B.past.length) oFold(box,B.past,shown);
+      return box;
+    }
+    var list=oOf(k);
+    if(!list.length) box.appendChild(oEmpty(k)); else list.forEach(function(o){ box.appendChild(oCard(o,shown)); });
     return box;
   }
-  /* S5 5.6 (f12w): FROM 860PX THE LIST STANDS BESIDE AN OPEN ORDER (Phase 7d: it was 1080px, the rail's, and is the width the style turns on), so one is always open there: what needs them
-     first, else the newest. It is then the one open, so it stays put while the list moves under a poll. An order
-     opened this way is marked oAuto, and goes when the width drops below 860px: on a phone nothing is open until
-     it is tapped. */
+  /* S5 5.6 (f12w): FROM 860PX THE LIST STANDS BESIDE AN OPEN ORDER (Phase 7d: it was 1080px, the rail's, and is the width the style turns on).
+     Counter Batch A (18 Oct 2026): an order stands there once it is tapped, never by itself, so a desk opens on the Open and Done
+     columns; an order marked oAuto (none is now) went when the width dropped below 860px. */
   function oWide(){ try{ return !!(window.matchMedia&&window.matchMedia('(min-width: 860px)').matches); }catch(e){ return false; } }
   function oShownId(){
     if(draft.oOpen&&!oFind(draft.oOpen)) draft.oOpen='';
-    if(!draft.oOpen&&orders.length&&oWide()){ var B=oBuckets(); draft.oOpen=(B.needs[0]||B.open[0]||B.past[0]).id; draft.oAuto=true; }
+    /* Counter Batch A (18 Oct 2026): nothing opens by itself any more, so a desk opens on the Open and Done columns and an order
+       stands beside them once it is tapped */
     return draft.oOpen||'';
   }
   try{

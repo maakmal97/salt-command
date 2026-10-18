@@ -160,7 +160,7 @@ export async function run({ ok }) {
       "a declined order reads Declined, then his reason, and its history says Declined: " + JSON.stringify([sE.head, sE.when, sE.hist]));
     ok(/Sent by you/.test(sH.money) && /Waiting for us to confirm/.test(sH.money) && !/Sent, waiting/.test(sH.money.replace(/Sent, waiting for us to confirm/, "")),
       "a claim of theirs waiting is Waiting for us to confirm beside what they sent: " + JSON.stringify(sH.money));
-    const whyA = t(R0[A.id].querySelector(".salt-inbox-row__what"));
+    const whyA = t(R0[A.id].querySelector(".ocard__what"));
     tab(S, "home");
     await until(() => /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))));
     ok(whyA === "Waiting for us to confirm" && /Waiting for us to confirm/.test(t(S.d.getElementById("hComing"))),
