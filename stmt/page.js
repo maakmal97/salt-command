@@ -1700,7 +1700,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* 18 OCT 2026, HIS WORD: THE DESK'S BAR, from 1080px where the rail stands, as the Desk's: the app's name and the clock, which the
        header's own eyebrow carries on a phone */
     + (owner ? "" : '<header class="salt-deskbar cbar"><div class="salt-deskbar__brand"><span class="aring">' + glyphSvg("ring", 22) + '</span>'
-      + '<div class="abartext"><div class="salt-deskbar__name">Salt Counter</div><div class="salt-deskbar__meta"><span class="clk" data-clock></span></div></div></div></header>')
+      + '<div class="abartext"><div class="salt-deskbar__name">Salt Counter</div><div class="salt-deskbar__meta"><span data-clock></span></div></div></div></header>')
     + '<header class="chead">' + (owner ? "" : bellBox()) + '<p class="salt-eyebrow cclock" data-clock></p>' + wt("h1", 'id="placeT"', "place.home")
     + '<p class="cwho" data-wholine>' + whoAs() + '<span id="cstay"></span></p></header>'
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is

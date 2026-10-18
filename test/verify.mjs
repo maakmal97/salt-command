@@ -42308,8 +42308,8 @@ await (async () => {
   try {
     const { W, D } = a, head = () => D.getElementById("placeT").textContent;
     ok(shown(D) === "pHome" && current(D) === "bar:home,rail:home" && /^Good (morning|afternoon|evening)$/.test(head())
-      && [...D.querySelectorAll("#tabs [data-who]")].map((x) => x.textContent).join(",") === u + "," + u,
-      "signed in, Home opens first, marked on the bar and the rail, greeted, with the username in the header and at the rail's foot: "
+      && [...D.querySelectorAll("#tabs [data-who]")].map((x) => x.textContent).join(",") === u,
+      "signed in, Home opens first, marked on the bar and the rail, greeted, with the username once, in the header (the rail's foot that repeated it went on 18 Oct 2026): "
       + JSON.stringify([shown(D), current(D), head()]));
     /* S7 merge: Home's To pay now is stage 6's (#payHead), its Pay #payNow */
     /* the words, not the drawing: a mark's letter (Step 1a.2) is aria-hidden */
