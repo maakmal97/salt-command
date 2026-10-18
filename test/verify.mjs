@@ -71,7 +71,7 @@ const skipData = (m) => { console.log("  SKIP (no data): " + m); };
 const LEVEL_SALT = { cogs: "quote", overhead: 0.5, multiples: [2.1, 2.1, 2.5, 2.5], round: ["down", "up", "down", "up"],
   decay: 0.09, from: 0.5, rungs: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6.25, 12.5] };
 const levelWindow = (w, held) => {
-  w.eval("TIER_RULE.salt=" + JSON.stringify(LEVEL_SALT) + ";"
+  w.eval("TIER_RULE.salt=" + JSON.stringify(LEVEL_SALT) + ";LADDER.round={to:10,up:true};"   /* 18 Oct 2026: salt's grid is the five, the retired level rule's was the ten */
     + "Object.keys(TIER_OF).forEach(function(c){var t=TIER_OF[c];if(!t||typeof t.salt!=='number')return;t=Object.assign({},t);delete t.salt;if(Object.keys(t).length)TIER_OF[c]=t;else delete TIER_OF[c];});"
     + Object.entries(held || {}).map(([c, v]) =>
     "TIER_OF[" + JSON.stringify(c) + "]=Object.assign({},TIER_OF[" + JSON.stringify(c) + "],{salt:" + JSON.stringify(v) + "});").join("")
@@ -83,6 +83,7 @@ const levelSnap = (pricing, held) => {
   const s = c.byProduct && c.byProduct.salt;
   if (s && s.inputs && s.inputs.policy) {
     s.inputs.policy.tierRule = JSON.parse(JSON.stringify(LEVEL_SALT));
+    s.inputs.policy.LADDER = Object.assign({}, s.inputs.policy.LADDER, { round: { to: 10, up: true } });
     const C = LEVEL_ENGINE.costStack(s.inputs.cost);
     s.ladder = (LEVEL_ENGINE.fiveTiers(s.sizes, C, s.inputs.policy) || []).map((r) => ({ q: r.q, prices: r.prices, fixed: !!r.fixed }));
   }
@@ -2553,8 +2554,9 @@ await (async () => {
   ok(B.timePerOrder === P.timePerOrder && !("deliveryCharge" in B) && P.boardSizes.every((q) => "floor" in B.floors[q] && !("delivered" in B.floors[q])),
     "the board states one floor per size and no delivery charge");
   ok(P.boardSizes.every((q) => Math.abs(E.floorTotal(q, C, P) - E.floorTotal(q, C, P, null, { collects: true })) < 1e-9
-      && Math.abs(E.floorTotal(q, C, P) - (C.effEx * q + P.timePerOrder)) < 0.02),
-    "the floor is the goods after the leak plus the time charge, and collecting or delivering does not move it");
+      && Math.abs(E.costTotal(q, C, P) - (C.effEx * q + P.timePerOrder)) < 0.02
+      && E.floorTotal(q, C, P) >= E.costTotal(q, C, P) - 1e-9 && E.floorTotal(q, C, P) < E.costTotal(q, C, P) + 5),
+    "the cost is the goods after the leak plus the time charge, the floor that rounded up to the next RM 5, and collecting or delivering does not move it");
   /* HIS TIME IS PER ORDER AND NEVER PER UNIT. Raising it by T lifts a floor by at most T,
      whatever the size; a per-unit charge would lift a 12.5 lot by 12.5 times as much. */
   const T = 40, more = { ...P, timePerOrder: (P.timePerOrder || 0) + T };
@@ -4670,9 +4672,9 @@ await (async () => {
     const lots = read("pPurch(PROD).filter(x=>poLive(x)&&poRecvUnits(x)>0.0001&&x.qty>0)");
     const top = lots.map((x, i) => ({ x, i, d: x.receivedOn || x.date || "" })).sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : a.i - b.i)).pop();
     const per = top ? (top.x.total + (+top.x.freight || 0)) / top.x.qty : NaN;
-    const fl = read("shownSizes(PROD).map(function(q){return [q,floorTotal(q)];})");
-    ok(fl.length > 0 && fl.every(([q, v]) => Math.abs(v - +(per * q).toFixed(2)) < 0.006),
-      `${bk}: the floor is COGS off the latest lot times the size and nothing else, RM ${per.toFixed(2)} a unit: ${JSON.stringify(fl)}`);
+    const fl = read("shownSizes(PROD).map(function(q){return [q,floorTotal(q),costTotal(q)];})");
+    ok(fl.length > 0 && fl.every(([q, v, c]) => Math.abs(c - +(per * q).toFixed(2)) < 0.006 && v === Math.ceil(c / 5 - 1e-6) * 5),
+      `${bk}: the cost is COGS off the latest lot times the size to the sen and the floor is that up to the next RM 5, RM ${per.toFixed(2)} a unit: ${JSON.stringify(fl)}`);
   }
   w.eval("setProd('salt');recompute();");
   w.eval("setProd('oil');recompute();");
@@ -14066,12 +14068,12 @@ await (async () => {
       "the boundary register reads the engine's floor at the order's own size: one closed sale added under it, RM 50 short, and the open one named under that floor: "
       + JSON.stringify({ ft, cost, b0, b1 }));
 
-    /* the engine's floor over the units each segment sold, from floorTotal, and the realised rates */
+    /* the engine's floor over the units each segment sold, from costTotal (the cost readers measure to the sen, 18 Oct 2026), and the realised rates */
     const E = rdR("(function(){var rows=pricedSales.filter(function(s){return s.total>0&&s.qty>0;});"
-      + "function agg(rs){var k=0,f=0,rm=0;rs.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);k+=m;f+=floorTotal(s.qty)/s.qty*m;rm+=s.total-txPendUnitsRaw(s)*txPrice(s);});return {k:k,fl:+(f/k).toFixed(2),p:+(rm/k).toFixed(2)};}"
+      + "function agg(rs){var k=0,f=0,rm=0;rs.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);k+=m;f+=costTotal(s.qty)/s.qty*m;rm+=s.total-txPendUnitsRaw(s)*txPrice(s);});return {k:k,fl:+(f/k).toFixed(2),p:+(rm/k).toFixed(2)};}"
       + "var sold=rows.filter(function(s){return s.qty-txPendUnitsRaw(s)>0;}),u=0,t=0;"
-      + "sold.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);t+=m;if(txGoods(s)/s.qty<floorTotal(s.qty)/s.qty-0.009)u+=m;});"
-      + "return {all:agg(rows),small:agg(rows.filter(function(s){return s.qty<PX.bulkFrom;})),bulk:agg(rows.filter(function(s){return s.qty>=PX.bulkFrom;})),share:(u/t*100).toFixed(0),rate:fmt(floorTotal(1))};})()");
+      + "sold.forEach(function(s){var m=s.qty-txPendUnitsRaw(s);t+=m;if(txGoods(s)/s.qty<costTotal(s.qty)/s.qty-0.009)u+=m;});"
+      + "return {all:agg(rows),small:agg(rows.filter(function(s){return s.qty<PX.bulkFrom;})),bulk:agg(rows.filter(function(s){return s.qty>=PX.bulkFrom;})),share:(u/t*100).toFixed(0),rate:fmt(costTotal(1))};})()");
     const mk = rdR("pxMarket()");
     const pricing = rdR(txt("tabPricing()"));
     /* 3. the market segments stand against that floor, and the prose prints it */
@@ -14085,7 +14087,7 @@ await (async () => {
        named to the sen moves the floor by half a sen times the slope, 1.33 at a 25% leak, so RM 0.01 holds with room. */
     const lever = rdR("(function(){var keepC=pxOver.cost,keepS=pxOver.shrink,out=[];try{[null,0,5,10,15,20,25].forEach(function(sh){pxOver.cost=keepC;pxOver.shrink=sh;var m=pxMarket();pxOver.cost=m.needRate;"
       + "var rs=pricedSales.filter(function(s){return s.total>0&&s.qty>=PX.bulkFrom;}),k=0,f=0;"
-      + "rs.forEach(function(s){var u=s.qty-txPendUnitsRaw(s);k+=u;f+=floorTotal(s.qty)/s.qty*u;});out.push({leak:sh,need:m.needRate,p:m.bulk.p,fl:+(f/k).toFixed(4)});});return out;}"
+      + "rs.forEach(function(s){var u=s.qty-txPendUnitsRaw(s);k+=u;f+=costTotal(s.qty)/s.qty*u;});out.push({leak:sh,need:m.needRate,p:m.bulk.p,fl:+(f/k).toFixed(4)});});return out;}"
       + "finally{pxOver.cost=keepC;pxOver.shrink=keepS;}})()");
     ok(lever.length === 7 && lever.every((x) => x.need != null && Math.abs(x.fl - x.p) < 0.01),
       "the buying rate the lever names is the one at which the engine's bulk floor meets the realised bulk price, on the book's leak and on leaks from 0% to 25%: " + JSON.stringify(lever));
@@ -14099,7 +14101,7 @@ await (async () => {
        at ten buying rates a sen apart the sentence names the one floor, at one unit, and a charge per order, which
        does move the floor with size, still prints the range */
     const notes = rdR("(function(){var keepC=pxOver.cost,t=PRICE_ENGINE.timePerOrder,c0=pxCost().lot,out=[];"
-      + "function read(){var d=document.createElement('div');d.innerHTML=priceNote();return {at:pxOver.cost,rate:fmt(floorTotal(1)),t:d.textContent.replace(/\\s+/g,' ').slice(0,140)};}"
+      + "function read(){var d=document.createElement('div');d.innerHTML=priceNote();return {at:pxOver.cost,rate:fmt(costTotal(1)),t:d.textContent.replace(/\\s+/g,' ').slice(0,140)};}"
       + "try{for(var i=0;i<10;i++){pxOver.cost=+(c0+i*0.01).toFixed(2);out.push(read());}pxOver.cost=keepC;PRICE_ENGINE.timePerOrder=5;out.push(read());}"
       + "finally{pxOver.cost=keepC;if(t===undefined)delete PRICE_ENGINE.timePerOrder;else PRICE_ENGINE.timePerOrder=t;}return out;})()");
     const ranged = notes.slice(0, 10).filter((x) => !x.t.includes("% of your volume has sold under the " + x.rate + "/unit floor"));
@@ -17315,19 +17317,19 @@ await (async () => {
   const rd60 = (e) => JSON.parse(String(w60.eval("JSON.stringify(" + e + ")")));
   try {
     const cells = rd60("(function(){var res={};['salt','oil'].forEach(function(p){setProd(p);recompute();"
-      + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0,offTier=0;"
+      + "var n=0,onTen=0,under=0,over=[],tot=0,overTier=0,offTier=0,to=pxPolicy().LADDER.round.to;"
       + "roster.filter(function(c){return c.slice(-2)!=='-R'&&!isPartner(c);}).forEach(function(c){"   /* v1029: a partner pays cost, off the ten by his decision */
       /* 23 Sep 2026: a stated board is carded to everybody, so only a tiered book is gated on the tier */
       + "  if(!TIER_RULE[p].fixed&&cardTier(c)<0)return; var own=pbOwnRate(c).rate;"
       /* v671: the level is read at each size, because a band set holds a different level for a big order than a small one */
       + "  shownSizes(p).forEach(function(q){ var v=cardQuote(c,q); if(v==null)return; n++; tot+=v;"
-      + "    if(Math.abs(v/10-Math.round(v/10))<1e-9)onTen++;"
+      + "    if(Math.abs(v/to-Math.round(v/to))<1e-9)onTen++;"
       + "    var row=PRICING_ENGINE.fiveTierAt(q,pxCost(),pxPolicy()), t=cardTierAt(c,q);"
       + "    if(row&&v>row.prices[t]+0.009)overTier++;"
       + "    var F=floorTotal(q); if(v<F-0.009)under++;"
-      + "    if(row&&!TIER_RULE[p].fixed&&Math.abs(v-row.prices[t])>0.009&&v!==Math.ceil((F-0.009)/10)*10)offTier++;"
+      + "    if(row&&!TIER_RULE[p].fixed&&Math.abs(v-row.prices[t])>0.009&&v!==Math.ceil((F-0.009)/to)*to)offTier++;"
       + "    if(own!=null&&v>own*q+0.009)over.push({c:c,q:q,card:v,own:+(own*q).toFixed(2),"
-      + "      byFloor:v===Math.ceil((F-0.009)/10)*10});});});"
+      + "      byFloor:v===Math.ceil((F-0.009)/to)*to});});});"
       + "res[p]={n:n,onTen:onTen,under:under,overTier:overTier,offTier:offTier,over:over.length,"
       + " overByFloor:over.filter(function(x){return x.byFloor;}).length,"
       + " sample:over.slice(0,2),total:Math.round(tot)};});setProd('salt');recompute();return res;})()");
@@ -17366,8 +17368,8 @@ await (async () => {
       for (const p of list.products) { const to = snap60.byProduct[p.product].inputs.policy.LADDER.round.to;
         for (const r of p.sizes) { checked++; if (Math.abs(r.price / to - Math.round(r.price / to)) > 1e-9) offTen++; } }
     }
-    ok(checked > 40 && offTen === 0 && snap60.byProduct.salt.inputs.policy.LADDER.round.to === 10,
-      "and every price on the customer's own page is on its book's grid too, the ten for salt, over " + checked + " of them across twelve accounts");
+    ok(checked > 40 && offTen === 0 && snap60.byProduct.salt.inputs.policy.LADDER.round.to === 5,
+      "and every price on the customer's own page is on its book's grid too, the five for salt (18 Oct 2026, the ten before), over " + checked + " of them across twelve accounts");
   } finally { await new Promise((r) => setTimeout(r, 200)); try { w60.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -50974,9 +50976,13 @@ section("15 Oct 2026: spare is retired, the Counter's words are the live books, 
 await (async () => {
   await (await import("./spare-retired.mjs")).run({ ok });
 })();
-section("06 Oct 2026: a partner pays cost, the floor to the sen on every book, nobody else's price moved");
+section("06 Oct 2026: a partner pays cost, the Floor (RM 5 up since 18 Oct 2026) on every book, nobody else's price moved");
 await (async () => {
   await (await import("./partner.mjs")).run({ ok });
+})();
+section("18 Oct 2026: the Floor rounds up to the next RM 5, the Ceiling is three times it on every book, the partner pays the Floor");
+await (async () => {
+  await (await import("./floor-basis.mjs")).run({ ok });
 })();
 section("09 Oct 2026: a partner is set from the phone and keeps every associate property");
 await (async () => {
@@ -53332,7 +53338,8 @@ await (async () => {
     `the stack's basis is the latest lot, RM 750 quote plus RM 50 freight over 12.5 unit, RM 64 a unit, no leak and no delivery share in it (${JSON.stringify([C.lot, C.freight, C.landed, C.eff, C.effEx])})`);
   ok(C.afterLeak === 80 && C.shrink > 0, `and the leak is still measured, carried beside it as RM ${C.afterLeak} after the leak, for information`);
   const P = { LADDER: { round: { to: 10, up: true } }, minPerUnit: 0, timePerOrder: 0, lotFloor: {} };
-  ok([0.5, 1, 2.5, 12.5].every((q) => E.floorTotal(q, C, P) === +(64 * q).toFixed(2)), "the floor is COGS times the size, to the sen, at every size");
+  ok([0.5, 1, 2.5, 12.5].every((q) => E.costTotal(q, C, P) === +(64 * q).toFixed(2) && E.floorTotal(q, C, P) === Math.ceil(64 * q / 5) * 5),
+    "the cost is COGS times the size, to the sen, at every size, and the floor is that up to the next RM 5 (18 Oct 2026): " + JSON.stringify([0.5, 1, 2.5, 12.5].map((q) => [E.costTotal(q, C, P), E.floorTotal(q, C, P)])));
   /* the control: the same inputs under the old stack price off the trailing rate, the averaged freight and the leak */
   const Cs = E.costStack(Object.assign({}, base, { costRule: { kind: "stack" }, latest }));
   ok(Cs.effEx > 64 + 0.009 && Cs.lot === 55, `the rule is what moved it: the same inputs on the measured stack read RM ${Cs.effEx} a unit off the trailing RM 55`);
@@ -53350,10 +53357,10 @@ await (async () => {
   const Rn = Object.assign({}, R); delete Rn.ceilingX;
   const gn = E.fiveTiers([10], C8, Object.assign({}, P, { tierRule: Rn }))[0];
   ok(gn.prices[1] === 200, "and a board with no ceilingX states its typed price, so the cap is the rule's own parameter");
-  const C34 = E.costStack(Object.assign({}, base, { costRule: { kind: "latestCogs" }, latest: { quote: 34, freight: 0, units: 10, rate: 3.4 } }));
-  const gr = E.fiveTiers([1, 5], C34, Object.assign({}, P, { LADDER: { round: { to: 1, up: true } }, tierRule: { fixed: { "1": 9, "5": 35 }, rungs: [1, 5], ceilingX: 2.5 } }));
-  ok(gr[0].prices[1] === 8 && gr[0].capped === true && gr[1].prices[1] === 35 && gr[1].capped === false,
-    `rice's ceiling is two and a half times the floor, down to its ringgit: RM 9 at 1 unit over RM 8.50 caps to RM 8, RM 35 at 5 stays (${JSON.stringify(gr.map((r) => r.prices[1]))})`);
+  const C34 = E.costStack(Object.assign({}, base, { costRule: { kind: "latestCogs" }, latest: { quote: 50, freight: 0, units: 10, rate: 5 } }));
+  const gr = E.fiveTiers([1, 5], C34, Object.assign({}, P, { LADDER: { round: { to: 1, up: true } }, tierRule: { fixed: { "1": 17, "5": 70 }, rungs: [1, 5], ceilingX: 3 } }));
+  ok(gr[0].prices[1] === 15 && gr[0].capped === true && gr[1].prices[1] === 70 && gr[1].capped === false,
+    `a ceiling of three times the floor holds a board down to its ringgit: RM 17 at 1 unit over RM 15 caps to RM 15, RM 70 at 5 under RM 75 stays (${JSON.stringify(gr.map((r) => r.prices[1]))})`);
 
   /* THE LIVE BOOKS */
   const { openMaster } = await import("../tools/payload.mjs");
@@ -53371,7 +53378,7 @@ await (async () => {
   ok(live.every((b, i) => want[i] != null && Math.abs(b.cogs - want[i]) < 0.0001),
     "and each is its latest landed lot's quote plus freight over its units: " + JSON.stringify(live.map((b, i) => [b.p, b.cogs, want[i] && +want[i].toFixed(4)])));
   const capped = live.filter((b) => b.fixed);
-  ok(capped.length === 3 && capped.map((b) => b.capX).join() === "2,2,2.5", "oil and candy carry a ceiling of twice the floor and rice two and a half: " + JSON.stringify(capped.map((b) => [b.p, b.capX])));
+  ok(capped.length === 3 && capped.map((b) => b.capX).join() === "3,3,3", "oil, candy and rice carry a ceiling of three times the floor, as salt does (18 Oct 2026; twice, twice and two and a half before): " + JSON.stringify(capped.map((b) => [b.p, b.capX])));
   ok(capped.every((b) => Object.keys(b.fixed).every((k) => { const r = b.rows.find((x) => Math.abs(x[0] - +k) < 0.009); return r && r[1] === +b.fixed[k] && r[1] >= r[2] - 0.009 && r[1] <= b.capX * r[2] + 0.009; })),
     "and every typed price on them sits inside its band today, so none moves: " + JSON.stringify(capped.map((b) => [b.p, b.rows.map((r) => r[1])])));
   /* the desk's own road caps a typed price over the line: oil's 10 unit typed at RM 500 in the window comes down to the ten
@@ -53379,8 +53386,8 @@ await (async () => {
   const forced = JSON.parse(w.eval(`(function(){var R=TIER_RULE.oil,was=R.fixed['10'];R.fixed['10']=500;try{PROD='oil';recompute();
     var r=(fiveTiersNow()||[]).find(function(x){return x.q===10;});return JSON.stringify({p:r?r.prices[r.prices.length-1]:null,floor:r?r.floor:null});}
     finally{R.fixed['10']=was;recompute();}})()`));
-  ok(forced.p === Math.floor(2 * forced.floor / 10 + 1e-9) * 10 && forced.p < 500,
-    `and on the desk a typed RM 500 at 10 unit of oil is held to RM ${forced.p}, the ten under twice its RM ${forced.floor} floor`);
+  ok(forced.p === Math.floor(3 * forced.floor / 10 + 1e-9) * 10 && forced.p < 500,
+    `and on the desk a typed RM 500 at 10 unit of oil is held to RM ${forced.p}, the ten under three times its RM ${forced.floor} floor`);
   /* THE AFTER-LEAK FIGURE, INFORMATION ONLY, beside the floor on a book losing a quarter or more of what it buys */
   /* which books lose a quarter is live data (the counts of 06 Oct 2026 took rice to 24.998%), so the line is driven at the
      live quarter and at a line under every book's leak and over every book's: all shown, then none, whatever the book holds */
@@ -53420,26 +53427,28 @@ await (async () => {
   /* 2. HIS TWO WORKED BOARDS, on RM 64 and RM 59 of COGS */
   const Cof = (c) => ({ eff: c, effEx: c, landed: c });
   const setAt = (c) => E.driftWalk(R.rungs, Cof(c), P, 0).map((r) => r.set);
-  ok(JSON.stringify(setAt(64)) === "[90,160,220,280,330,380,430,480,520,560,670,1090]"
-    && JSON.stringify(setAt(59)) === "[80,140,200,250,300,350,390,440,480,520,610,1000]",
-    "the Set Price reads 90, 160 ... 1,090 on RM 64 of COGS and 80, 140 ... 1,000 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
+  /* 18 OCT 2026: the Floor rounds up to the RM 5 and salt's grid is the five, so the curve (replaced in the next piece of work)
+     reads these figures; they were 90, 160, 220 ... and 80, 140, 200 ... on the ten */
+  ok(JSON.stringify(setAt(64)) === "[95,160,230,280,330,390,435,485,525,565,670,1090]"
+    && JSON.stringify(setAt(59)) === "[80,150,205,260,310,360,405,450,490,520,615,1005]",
+    "the Set Price reads 95, 160 ... 1,090 on RM 64 of COGS and 80, 150 ... 1,005 on RM 59: " + JSON.stringify([setAt(64), setAt(59)]));
   /* 3. THE DRIFT BOTH WAYS at 12.5 unit on RM 64: floor 800, Set 1,090, ceiling 2,400. Up: 1,090 + d x min(1,310, 240); down:
      1,090 - |d| x min(290, 160) */
   const at125 = [-1, -0.5, 0, 0.5, 1].map((d) => E.driftAt(12.5, Cof(64), P, d).p);
   /* 05 Oct 2026, HIS DECISION, THE WHOLE GRID IS WALKED: driftAt walks every quarter beneath 12.5, so the ends of the drift
      come down where a quarter's rate held them (930 to 900, 1,210 to 1,200, 1,330 to 1,300); the Set Price stays 1,090 */
-  ok(JSON.stringify(at125) === "[900,1010,1090,1200,1300]",
-    "at 12.5 unit on RM 64 a drift of -1, -0.5, 0, +0.5 and +1 reads 900, 1,010, 1,090, 1,200 and 1,300, walked over the grid: " + JSON.stringify(at125));
+  ok(JSON.stringify(at125) === "[930,1010,1090,1210,1330]",
+    "at 12.5 unit on RM 64 a drift of -1, -0.5, 0, +0.5 and +1 reads 930, 1,010, 1,090, 1,210 and 1,330 on the five grid, walked over it: " + JSON.stringify(at125));
   /* 4. EVERY DRIFT STAYS IN THE BOX, on the ten, on its side of the Set Price, and never rises in rate with size where a ten
      down would still clear the floor */
   const bad4 = [];
   for (const c of [59, 64]) for (const d of [-1, -0.6, -0.2, 0, 0.3, 0.7, 1]) {
     const rows = E.driftWalk(R.rungs, Cof(c), P, d);
     rows.forEach((r, i) => {
-      const lift = Math.ceil(r.floor / 10 - 1e-9) * 10, cap = Math.max(Math.floor(r.ceiling / 10 + 1e-9) * 10, lift);
-      if (r.p < lift || r.p > cap || r.p % 10) bad4.push([c, d, r.q, "box", r.p, lift, cap]);
+      const to = P.LADDER.round.to, lift = Math.ceil(r.floor / to - 1e-9) * to, cap = Math.max(Math.floor(r.ceiling / to + 1e-9) * to, lift);
+      if (r.p < lift || r.p > cap || r.p % to) bad4.push([c, d, r.q, "box", r.p, lift, cap]);
       if ((d > 0 && r.p < r.set) || (d < 0 && r.p > r.set)) bad4.push([c, d, r.q, "side", r.p, r.set]);
-      if (i && r.p / r.q > rows[i - 1].p / rows[i - 1].q + 1e-9 && r.p - 10 >= lift) bad4.push([c, d, r.q, "rate", r.p]);
+      if (i && r.p / r.q > rows[i - 1].p / rows[i - 1].q + 1e-9 && r.p - to >= lift) bad4.push([c, d, r.q, "rate", r.p]);
     });
   }
   ok(!bad4.length, "every drifted price at every rung sits on the ten between the floor and the ceiling, on its side of the Set Price, its rate never rising with size: " + JSON.stringify(bad4.slice(0, 4)));

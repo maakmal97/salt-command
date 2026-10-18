@@ -1,4 +1,4 @@
-/* test/partner.mjs: his decision of 06 Oct 2026, A PARTNER PAYS COST. A party in `partners` is quoted the floor itself, to the sen, at
+/* test/partner.mjs: his decision of 06 Oct 2026, A PARTNER PAYS COST (the Floor, RM 5 up, since 18 Oct 2026). A party in `partners` is quoted the floor itself at
    every size on every book, through the engine's quoteAt and quoteGrid ('partner'), the desk's cardQuote and the Counter's sealed list;
    nobody else's price moves. Run on the live master's own inputs; a failure names a count, never a code. */
 import { FROZEN_BOOK } from "./frozen.mjs";
@@ -35,7 +35,7 @@ export async function run({ ok }) {
     const o = priceList(other, book, snap, Date.now()).products.find((x) => x.product === p);
     if (!o || o.sizes.some((x) => x.price < E.floorTotal(x.q, C, P) - 0.006)) moved++;
   }
-  ok(n > 10 && offEngine === 0, "the engine's partner quote is the floor to the sen at every rung: " + offEngine + " of " + n + " off");
+  ok(n > 10 && offEngine === 0, "the engine's partner quote is the Floor at every rung: " + offEngine + " of " + n + " off");
   ok(offDesk === 0, "the desk's card for a partner is the floor at every rung of every book: " + offDesk + " off");
   ok(offList === 0 && offGrid === 0, "a partner's sealed list and grid are the floor on every book: " + offList + " sizes, " + offGrid + " grid points off");
   /* the Drift card names a partner as such and offers no drift to set; an associate who is no partner keeps theirs */

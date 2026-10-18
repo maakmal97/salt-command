@@ -4607,6 +4607,9 @@ const RULES={
   /* 05 Oct 2026: a book losing this share of what it buys or more prints the stack's after-leak figure beside its floor, as
      information only, the floor being COGS and nothing pricing off the leak */
   leakInfoFrom:0.25,
+  /* 18 Oct 2026, his decision: the Floor is the order total rounded UP to the next multiple of this, RM 5. The engine's floorTotal reads
+     it as the policy's `floorTo`, and costTotal is the same total to the sen for a reader that measures cost and not a price. No semicolon here. */
+  floorTo:5,
   lateResetRepeat:3,
   fullProvDays:21,
   reorderUnits:{salt:15, oil:20},
@@ -4838,7 +4841,8 @@ const LADDER_BY={
      quoted RM700. Oil has one tier on its own merits too: its board is his stated price at all
      five sizes and the 50 unit rung already earns 3%, so there is nothing for a second tier to sit
      under. Give it two ends here the day he states them. */
-  oil:{anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
+  /* 18 Oct 2026: LADDER rounds to the five now (salt's grid), so oil names its ten */
+  oil:{round:{to:10, up:true}, anchorQ:10, anchorX:0.62, at:{lo:10, hi:50}, floor:0, anchorG:0.36, gLo:0, tier1:null},   /* v504: 0.36 reproduces RM130 at 10 on the floor basis */
   /* 23 Sep 2026: stated a unit in single ringgit, so they round to the ringgit and not the ten */
   candy:{round:{to:1, up:true}, tier1:null},
   rice:{round:{to:1, up:true}, tier1:null}
@@ -4861,16 +4865,16 @@ const TIER_RULE={
   /* 15 OCT 2026, HIS WORD: oil is ordered in tens, its smallest unit step. The grid's step IS the order step (the Worker's onStep reads
      it), and oil's prices do not move when it goes from 1 to 10: the five points are the five typed rungs. Salt stays at a quarter
      and a coarser step there would raise most of its prices, the walk running through every point (docs/PRODUCTS.md section 9). */
-  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:2, grid:{min:10, step:10, max:50}},
+  oil:{fixed:{"10":130,"20":240,"30":330,"40":400,"50":450}, rungs:[10,20,30,40,50], ceilingX:3, grid:{min:10, step:10, max:50}},
   /* 23 SEP 2026, HIS INSTRUCTION: candy and rice are single tier too, stated a unit. Candy RM60 a unit under 10,
      RM55 from 10 to 29 (his answer that day), RM50 from 30. Rice RM8 a unit, RM7 from 5, RM6 from 10. A size
      between rungs is its rung's rate times the size, which is what a rate a unit means; both books round to the
      ringgit (LADDER_BY) so a rate of RM8 is not rounded to a ten. */
-  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:2, grid:{min:1, step:1, max:30}},
+  candy:{fixed:{"1":60,"10":550,"30":1500}, rungs:[1,10,30], ceilingX:3, grid:{min:1, step:1, max:30}},
   /* 05 OCT 2026, HIS DECISION: each stated board is held between its floor, COGS times the size, and a ceiling of
-     `ceilingX` times that floor, capped down to the book's grid. Twice the floor; rice two and a half, an assumption the
-     changelog states. A typed price inside the band does not move. */
-  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:2.5, grid:{min:1, step:1, max:10}}
+     `ceilingX` times that floor, capped down to the book's grid. Three times the floor on every book (18 Oct 2026, his decision;
+     oil and candy were twice, rice two and a half). A typed price inside the band does not move. */
+  rice:{fixed:{"1":8,"5":35,"10":60}, rungs:[1,5,10], ceilingX:3, grid:{min:1, step:1, max:10}}
 };
 
 const TIER_NAMES=['Ambassador','Titanium','Platinum','Gold','Silver'];
@@ -4950,7 +4954,7 @@ const LADDER={
   basis:'floor',        // v504: the ask is a MARGIN ON THE FLOOR, one basis; anchorX and floor stay for the markup road a book without anchorG takes
   anchorG:0.47,         // v504: the margin on price at anchorQ; 0.47 reproduces the 2.5 unit ask of RM 250 on the day it was set
   gLo:0.25, gHi:0.667,  // v504: the clamps, 0.33x and 2.00x markup said as margins
-  round:{to:10, up:true},// his instruction: to the nearest ten, ROUNDED UP
+  round:{to:5, up:true},// 18 Oct 2026, his decision: to the nearest five, ROUNDED UP (was ten; oil keeps its ten in LADDER_BY)
   taper:'supplier',     // 'supplier' measures it off the book's own quote, quoteFor(PROD); a number here overrides
   /* ============ v564: TIER 1, HIS TWO STATED ENDS (his instruction, 10 Sep 2026) ============
      "The current one shown on the board is Tier 2. For Tier 1, the 0.5 unit is 60 while the 12.5
@@ -7352,7 +7356,7 @@ function lotCost(q,C,opts){
    through. That is a different job from this one and it keeps the name.
    v234: built per LOT, so delivery is floored once per order and not once per unit. A named lot
    floor is kept as a mechanism and is empty as a policy. */
-function floorTotal(q,C,P,eff,opts){
+function costTotal(q,C,P,eff,opts){
   const per=eff!=null?eff:(C.effEx!=null?C.effEx:C.eff);
   const del=0;   // v502: delivery is an input per order, never part of the floor; see lotCost
   /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR SAYS SO. Nothing in this stack had ever paid him
@@ -7365,6 +7369,16 @@ function floorTotal(q,C,P,eff,opts){
   const named=(P.lotFloor||{})[String(q)];        // kept as a mechanism, empty as a policy
   if(named!=null&&named>t)t=named;
   return +t.toFixed(2);
+}
+/* 18 OCT 2026, HIS DECISION: THE FLOOR IS THE ORDER TOTAL ROUNDED UP TO THE NEXT RM 5 (P.floorTo, RULES.floorTo, 5; the one
+   fallback below is for a hand-built policy that carries none). costTotal above is COGS times the size to the sen and nothing
+   else: it is what a COST reader measures (margin on cost, a break-even rate, a probe that must stay straight-line in the
+   buying rate). floorTotal is what a PRICE reader refuses, lifts, quotes a partner or boards against. A total a hair over a
+   multiple of five by floating point (35.0000001) stays there, so the up-round never lifts an exact RM 35 to RM 40. */
+const FLOOR_TO_FALLBACK=5;
+function floorTotal(q,C,P,eff,opts){
+  const t=costTotal(q,C,P,eff,opts), to=(P&&P.floorTo>0)?+P.floorTo:FLOOR_TO_FALLBACK;
+  return +(Math.ceil(t/to-1e-6)*to).toFixed(2);
 }
 /* The reference prices at any size. The floor is exact, because rounding a floor down would put
    it under itself; the ask rounds UP to the ten, which is the house rule. MARGIN IS STRUCK ON THE
@@ -7758,8 +7772,10 @@ function fixedWalk(sizes,C,P){
     return {q:r.q,p:p};
   });
 }
-/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS COST. d is 'partner' for a party the book names in `partners`, and the price at
-   every size on every book is the floor itself, to the sen: COGS and nothing else, no profit and no rounding up to the ten. */
+/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS THE FLOOR. d is 'partner' for a party the book names in `partners`, and the price at
+   every size on every book is floorTotal itself: COGS times the size, no profit, and (18 Oct 2026) up to the next RM 5 like
+   the Floor everyone is held to. It is NOT recomputed anywhere else, so it equals floorTotal, the snapshot's floors and the
+   drafter's floor at every size. */
 function quoteAt(q,C,P,d){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const F=floorTotal(q,C,P);
@@ -7812,7 +7828,7 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
+        floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
         setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();
@@ -7985,7 +8001,7 @@ function inputs(C,p){
 }
 function policy(C,p){
   const R=C.R,pq=C.B.quotes[p]||null;
-  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, lotFloor:R.PRICE.lotFloor||{},
+  return {LADDER:ladderFor(C,p), minPerUnit:R.PRICE_ENGINE.minPerUnit||0, timePerOrder:R.PRICE_ENGINE.timePerOrder||0, floorTo:(R.RULES&&R.RULES.floorTo)||0, lotFloor:R.PRICE.lotFloor||{},
     stated:setPricesFor(C,p),
     tier1:ladderFor(C,p).tier1||null,
     tierRule:R.TIER_RULE[p]||null,
@@ -8066,11 +8082,11 @@ function tierCustomers(C){
   return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
 }
 function cost(C,p){const o=C.over||{cost:null,shrink:null};return viaMemo(C,'pxCost|'+p+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.costStack(inputs(C,p)));}
-/* a named customer's price at any size: a partner the floor to the sen; a stated board the board; a drift book the Set Price moved by their drift */
+/* a named customer's price at any size: a partner the Floor (RM 5 up); a stated board the board; a drift book the Set Price moved by their drift */
 function cardQuote(C,p,code,q,t){
   if(!(q>0))return null;
   const o=C.over||{cost:null,shrink:null},K=cost(C,p),P=Object.assign({},policy(C,p),{tierRule:C.R.TIER_RULE[p]});
-  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost, the floor to the sen
+  if(isPartner(C,code))return PRICING_ENGINE.quoteAt(q,K,P,'partner');   // 06 Oct 2026, his decision: a partner pays cost; 18 Oct 2026, the Floor, rounded up to the next RM 5
   const row=viaMemo(C,'tierAt|'+p+'|'+q+'|'+o.cost+'|'+o.shrink,()=>PRICING_ENGINE.fiveTierAt(q,K,P));
   if(row&&row.fixed)return PRICING_ENGINE.quoteAt(q,K,P,0);
   if(row&&row.drift){const dr=driftS(C,p,code);return PRICING_ENGINE.quoteAt(q,K,P,dr?dr.d:0);}
@@ -11993,6 +12009,8 @@ function boardHeadroomOLD(includeSS){
 }
 /* the money floor for a lot: the band margin floor, or a named lot floor, whichever bites */
 function floorTotal(q,eff,opts){ return PRICING_ENGINE.floorTotal(q,pxCost(),pxPolicy(),eff,opts); }
+/* 18 Oct 2026: the same total to the sen, for a reader that MEASURES COST (margin on cost, a break-even rate); floorTotal rounds up to the RM 5 */
+function costTotal(q,eff,opts){ return PRICING_ENGINE.costTotal(q,pxCost(),pxPolicy(),eff,opts); }
 /* base per-unit price before any signal or party move, anchored to the two prices above */
 function ladderRate(q){
   const R=PRICE.aRetail.total/PRICE.aRetail.q, W=PRICE.aWhole.total/PRICE.aWhole.q;
@@ -13452,7 +13470,7 @@ function drawAnalysis(){
         .map(s=>({x:s.qty,y:+(txGoods(s)/s.qty).toFixed(2),id:s.customer,d:s.date}));
       const qs=[];for(let q=0.5;q<=13;q+=0.25)qs.push(+q.toFixed(2));
       const line=qs.map(q=>({x:q,y:+pxQuote(q,sg.net,0).perUnit.toFixed(2)}));
-      const floor=qs.map(q=>({x:q,y:+(floorTotal(q,c.eff)/q).toFixed(2)}));
+      const floor=qs.map(q=>({x:q,y:+(costTotal(q,c.eff)/q).toFixed(2)}));
       freshChart(blkEl('anScatter'),{type:'scatter',
         data:{datasets:[
           {label:'Orders',data:dots,backgroundColor:tcol('ice',.55),borderColor:tcol('ice'),pointRadius:5},
@@ -20234,7 +20252,7 @@ function pxMarket(){
   /* 27 Sep 2026, HIS APPROVAL ("Rule 5 readings"): `fl` IS THE ENGINE'S FLOOR over the same units, floorTotal at
      each order's own size on one cost stack, per unit; a segment is under its floor when p is under fl. The 20%
      margin on price each segment was judged against is retired. */
-  const P=pxPolicy(), flOf=(r,k,C)=>r.reduce((a,s)=>a+PRICING_ENGINE.floorTotal(s.qty,C,P)/s.qty*(s.qty-txPendUnitsRaw(s)),0)/k;
+  const P=pxPolicy(), flOf=(r,k,C)=>r.reduce((a,s)=>a+PRICING_ENGINE.costTotal(s.qty,C,P)/s.qty*(s.qty-txPendUnitsRaw(s)),0)/k;
   const seg=f=>{const r=rows.filter(f);
     /* 29 Sep 2026: the floor is divided by the units as sold, never the count rounded for print; rounded first, a
        fractional pending count put the bulk floor a cent over the engine's (68.63 for 68.62) */
@@ -21394,14 +21412,14 @@ function priceNote(){
   /* 08 Sep 2026: ONE THRESHOLD FOR THE COUNT AND THE SENTENCE. 27 Sep 2026: the threshold is the engine's
      floor at each order's own size, on one cost stack, over the units priceBuckets counts */
   const C=pxCost(),P=pxPolicy(),sold=pricedSales.filter(s=>s.qty-txPendUnitsRaw(s)>0&&s.total>0);
-  const flRate=s=>PRICING_ENGINE.floorTotal(s.qty,C,P)/s.qty, rates=sold.map(flRate);
+  const flRate=s=>PRICING_ENGINE.costTotal(s.qty,C,P)/s.qty, rates=sold.map(flRate);
   const lo=Math.min.apply(null,rates), hi=Math.max.apply(null,rates);
   const underUnits=sold.filter(s=>txGoods(s)/s.qty<flRate(s)-0.009).reduce((a,s)=>a+s.qty-txPendUnitsRaw(s),0),totUnits=pts.reduce((a,x)=>a+x.kg,0);
   /* 27 Sep 2026, v900's book: A FLOOR TOTAL IS TO THE SEN, so its rate is known to half a sen over the size: a half
      unit's RM 31.18 reads RM 62.36/unit beside RM 62.35 at one unit, with nothing in the floor moving by size. The
      floor is one rate, named at one unit, while every size's rate is that figure to the sen its total is rounded to;
      a range is printed only when the floor itself moves with size. */
-  const f1=PRICING_ENGINE.floorTotal(1,C,P), one=sold.every(s=>Math.abs(flRate(s)-f1)<=0.005+0.005/s.qty+1e-9);
+  const f1=PRICING_ENGINE.costTotal(1,C,P), one=sold.every(s=>Math.abs(flRate(s)-f1)<=0.005+0.005/s.qty+1e-9);
   const line=one?`the ${fmt(f1)}/unit floor`:`the floor at its size, ${fmt(lo)} to ${fmt(hi)}/unit`;
   /* THE INSIGHT CARRIES THE CLAIM AND NOTHING ELSE, for the reason Customers found: being under
      NOTE_MIN is a property of the template PLUS today's figures. With the definition attached this

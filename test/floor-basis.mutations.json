@@ -1,0 +1,96 @@
+[
+ {
+  "name": "floorTotal stops rounding: it returns the total to the sen",
+  "file": "engine/pricing.mjs",
+  "find": "return +(Math.ceil(t/to-1e-6)*to).toFixed(2);",
+  "replace": "return +t.toFixed(2);"
+ },
+ {
+  "name": "floorTotal rounds to the NEAREST five, so it goes down as often as up",
+  "file": "engine/pricing.mjs",
+  "find": "return +(Math.ceil(t/to-1e-6)*to).toFixed(2);",
+  "replace": "return +(Math.round(t/to)*to).toFixed(2);"
+ },
+ {
+  "name": "floorTotal rounds up to the next ten, a literal where the policy's multiple should be read",
+  "file": "engine/pricing.mjs",
+  "find": "return +(Math.ceil(t/to-1e-6)*to).toFixed(2);",
+  "replace": "return +(Math.ceil(t/10-1e-6)*10).toFixed(2);"
+ },
+ {
+  "name": "floorTotal ignores the policy's floorTo and always takes the fallback",
+  "file": "engine/pricing.mjs",
+  "find": "to=(P&&P.floorTo>0)?+P.floorTo:FLOOR_TO_FALLBACK;",
+  "replace": "to=FLOOR_TO_FALLBACK;"
+ },
+ {
+  "name": "costTotal loses a place: it is no longer the total to the sen",
+  "file": "engine/pricing.mjs",
+  "find": "if(named!=null&&named>t)t=named;\n  return +t.toFixed(2);",
+  "replace": "if(named!=null&&named>t)t=named;\n  return +t.toFixed(1);"
+ },
+ {
+  "name": "costTotal itself rounds up to the five, so the cost readers measure the Floor",
+  "file": "engine/pricing.mjs",
+  "find": "if(named!=null&&named>t)t=named;\n  return +t.toFixed(2);",
+  "replace": "if(named!=null&&named>t)t=named;\n  return Math.ceil(t/5)*5;"
+ },
+ {
+  "name": "the partner is quoted the cost to the sen again, not the Floor",
+  "file": "engine/pricing.mjs",
+  "find": "if(d==='partner')return +F.toFixed(2);",
+  "replace": "if(d==='partner')return +costTotal(q,C,P).toFixed(2);"
+ },
+ {
+  "name": "the partner's sealed list is the cost to the sen, not the Floor",
+  "file": "tools/pricelist.mjs",
+  "find": "if (partner) return { q, price: PRICING_ENGINE.quoteAt(q, C, P, \"partner\") };",
+  "replace": "if (partner) return { q, price: PRICING_ENGINE.costTotal(q, C, P) };"
+ },
+ {
+  "name": "the drafter's floor reads the cost to the sen, not the Floor",
+  "file": "src/drafter.js",
+  "find": "const x = PRICING_ENGINE.floorTotal(qty, C, snap.inputs.policy);",
+  "replace": "const x = PRICING_ENGINE.costTotal(qty, C, snap.inputs.policy);"
+ },
+ {
+  "name": "the desk's floorTotal wrapper (the snapshot's floors, the board) reads the cost to the sen",
+  "find": "function floorTotal(q,eff,opts){ return PRICING_ENGINE.floorTotal(q,pxCost(),pxPolicy(),eff,opts); }",
+  "replace": "function floorTotal(q,eff,opts){ return PRICING_ENGINE.costTotal(q,pxCost(),pxPolicy(),eff,opts); }"
+ },
+ {
+  "name": "RULES states a floorTo of ten",
+  "file": "engine/rules.mjs",
+  "find": "  floorTo:5,\n",
+  "replace": "  floorTo:10,\n"
+ },
+ {
+  "name": "oil's ceiling goes back to twice the floor in the engine's rules",
+  "file": "engine/rules.mjs",
+  "find": "rungs:[10,20,30,40,50], ceilingX:3,",
+  "replace": "rungs:[10,20,30,40,50], ceilingX:2,"
+ },
+ {
+  "name": "rice's ceiling goes back to two and a half times on the page",
+  "find": "rungs:[1,5,10], ceilingX:3,",
+  "replace": "rungs:[1,5,10], ceilingX:2.5,"
+ },
+ {
+  "name": "candy's ceiling goes back to twice in the engine's rules",
+  "file": "engine/rules.mjs",
+  "find": "rungs:[1,10,30], ceilingX:3,",
+  "replace": "rungs:[1,10,30], ceilingX:2,"
+ },
+ {
+  "name": "salt's grid goes back to the ten",
+  "file": "engine/rules.mjs",
+  "find": "round:{to:5, up:true},// 18 Oct 2026",
+  "replace": "round:{to:10, up:true},// 18 Oct 2026"
+ },
+ {
+  "name": "oil loses its own ten and takes salt's five",
+  "file": "engine/rules.mjs",
+  "find": "oil:{round:{to:10, up:true}, anchorQ:10,",
+  "replace": "oil:{anchorQ:10,"
+ }
+]

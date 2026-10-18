@@ -393,7 +393,7 @@ function lotCost(q,C,opts){
    through. That is a different job from this one and it keeps the name.
    v234: built per LOT, so delivery is floored once per order and not once per unit. A named lot
    floor is kept as a mechanism and is empty as a policy. */
-function floorTotal(q,C,P,eff,opts){
+function costTotal(q,C,P,eff,opts){
   const per=eff!=null?eff:(C.effEx!=null?C.effEx:C.eff);
   const del=0;   // v502: delivery is an input per order, never part of the floor; see lotCost
   /* v352: AN ORDER COSTS HIM TIME AND THE FLOOR SAYS SO. Nothing in this stack had ever paid him
@@ -406,6 +406,16 @@ function floorTotal(q,C,P,eff,opts){
   const named=(P.lotFloor||{})[String(q)];        // kept as a mechanism, empty as a policy
   if(named!=null&&named>t)t=named;
   return +t.toFixed(2);
+}
+/* 18 OCT 2026, HIS DECISION: THE FLOOR IS THE ORDER TOTAL ROUNDED UP TO THE NEXT RM 5 (P.floorTo, RULES.floorTo, 5; the one
+   fallback below is for a hand-built policy that carries none). costTotal above is COGS times the size to the sen and nothing
+   else: it is what a COST reader measures (margin on cost, a break-even rate, a probe that must stay straight-line in the
+   buying rate). floorTotal is what a PRICE reader refuses, lifts, quotes a partner or boards against. A total a hair over a
+   multiple of five by floating point (35.0000001) stays there, so the up-round never lifts an exact RM 35 to RM 40. */
+const FLOOR_TO_FALLBACK=5;
+function floorTotal(q,C,P,eff,opts){
+  const t=costTotal(q,C,P,eff,opts), to=(P&&P.floorTo>0)?+P.floorTo:FLOOR_TO_FALLBACK;
+  return +(Math.ceil(t/to-1e-6)*to).toFixed(2);
 }
 /* The reference prices at any size. The floor is exact, because rounding a floor down would put
    it under itself; the ask rounds UP to the ten, which is the house rule. MARGIN IS STRUCK ON THE
@@ -799,8 +809,10 @@ function fixedWalk(sizes,C,P){
     return {q:r.q,p:p};
   });
 }
-/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS COST. d is 'partner' for a party the book names in `partners`, and the price at
-   every size on every book is the floor itself, to the sen: COGS and nothing else, no profit and no rounding up to the ten. */
+/* 06 OCT 2026, HIS DECISION: A PARTNER PAYS THE FLOOR. d is 'partner' for a party the book names in `partners`, and the price at
+   every size on every book is floorTotal itself: COGS times the size, no profit, and (18 Oct 2026) up to the next RM 5 like
+   the Floor everyone is held to. It is NOT recomputed anywhere else, so it equals floorTotal, the snapshot's floors and the
+   drafter's floor at every size. */
 function quoteAt(q,C,P,d){
   const R=P.tierRule;if(!R||!(q>0))return null;
   const F=floorTotal(q,C,P);
@@ -853,7 +865,7 @@ function board(sizes,C,P){
 return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         tier1Anchors:tier1Anchors,tier1Walk:tier1Walk,tier1Ask:tier1Ask,
-        floorTotal:floorTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
+        floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,levelAt:levelAt,levelShapeOk:levelShapeOk,
         setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,
         gridOf:gridOf,gridSizes:gridSizes,onGrid:onGrid,walkSizes:walkSizes,fixedWalk:fixedWalk,quoteAt:quoteAt,quoteGrid:quoteGrid};
 })();

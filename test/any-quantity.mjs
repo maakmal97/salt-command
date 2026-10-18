@@ -42,8 +42,8 @@ export async function run({ ok }) {
   /* the worked example is pinned to the COGS it was worked at, RM 64 a unit (lot p035 of 05 Oct 2026), never the live lot's:
      a new salt lot moves the live board by rule 5 and must not turn this red */
   const C64 = { ...CS, repl: 60, lot: 60, freight: 4, landed: 64, inventoriable: 64, eff: 64, effEx: 64 };
-  ok(E.quoteAt(6.25, C64, PS, 0) === 660 && E.quoteAt(1, C64, PS, 0) === 160 && E.quoteAt(12.5, C64, PS, 0) === 1090,
-    "the stranger's board at RM 64 COGS: 6.25 unit comes down to RM 660 and 1 and 12.5 unit hold at RM 160 and RM 1,090: " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, C64, PS, 0))));
+  ok(E.quoteAt(6.25, C64, PS, 0) === 670 && E.quoteAt(1, C64, PS, 0) === 160 && E.quoteAt(12.5, C64, PS, 0) === 1090,
+    "the stranger's board at RM 64 COGS: 6.25 unit comes down to RM 670 (RM 660 before the Floor and the grid moved to the five, 18 Oct 2026) and 1 and 12.5 unit hold at RM 160 and RM 1,090: " + JSON.stringify([1, 6.25, 12.5].map((q) => E.quoteAt(q, C64, PS, 0))));
 
   /* 3. THE RATE NEVER RISES across each book's grid, for every account; the one exception is where the floor holds the price
      (the floor's own ten, rule 5), where it can rise by less than a ten over the size */
@@ -51,8 +51,8 @@ export async function run({ ok }) {
   for (const p of books) { const { P, C, codes, drift } = ctx[p];
     for (const id of codes) { const g = E.quoteGrid(C, P, drift[id]);
       for (let i = 1; i < g.p.length; i++) { pts++; const q0 = g.min + (i - 1) * g.step, q1 = g.min + i * g.step;
-        if (g.p[i] / q1 > g.p[i - 1] / q0 + 1e-9) { const lift = Math.ceil((E.floorTotal(q1, C, P) - 0.009) / 10) * 10;
-          if (g.p[i] === lift && g.p[i] - (g.p[i - 1] / q0) * q1 < 10) held++; else rises++; } } } }
+        if (g.p[i] / q1 > g.p[i - 1] / q0 + 1e-9) { const to = P.LADDER.round.to, lift = Math.ceil((E.floorTotal(q1, C, P) - 0.009) / to) * to;
+          if (g.p[i] === lift && g.p[i] - (g.p[i - 1] / q0) * q1 < to) held++; else rises++; } } } }
   ok(pts > 5000 && rises === 0, "the rate never rises from one grid point to the next on any book, the floor's own ten apart: " + JSON.stringify({ rises, held, pts }));
 
   /* 4. THE GRID IS quoteAt AT EVERY POINT, one walk a book; and a book's grid is its TIER_RULE's {min, step, max} */

@@ -1331,7 +1331,7 @@ export function draftRow(entry, book) {
       collection: "roster",
       row: { code, kind: "reseller", parent: null, note: null, partner: true },
       flags: [],
-      reasoning: `Makes ${code} a PARTNER. A partner pays cost: every quote to them, on every book, becomes the floor itself to the sen (COGS times the size), no profit and no rounding up to the ten, and the Drift card sets no drift for them.`
+      reasoning: `Makes ${code} a PARTNER. A partner pays cost: every quote to them, on every book, becomes the Floor itself (COGS times the size, up to the next RM 5), no profit, and the Drift card sets no drift for them.`
         + (isAssoc ? " They are an associate already, so nothing is appointed twice." : ` They are no associate yet, so this APPOINTS them on the R2 stream${resell && !roster.includes(resell) ? `, and ${resell} joins the roster as their resell account` : ""}: the associate credit cap, hurdles and bench come with it.`)
         + " It moves no stock and no cash, and carries no name.",
     };
