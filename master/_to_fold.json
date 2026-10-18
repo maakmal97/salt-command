@@ -1,0 +1,59 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-18T06:23:02.611Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CZ5-TM",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-10-18",
+    "deliveredQty": 0,
+    "note": "Ordered on the statements site, order 20261018051516-6h1chg, acknowledged, to collect, priced at RM 110 on this order, placed at RM 130. Nothing paid and nothing handed over yet."
+   },
+   "reasoning": "Sold 1 unit of salt to CZ5-TM for RM 110, RM 110/unit. Costed at RM 58/unit from COGS off the latest purchase p040 landed 2026-10-15: RM 1400 quote plus RM 50 freight over 25 unit, so RM 52 on the goods at 47.3%. Nothing was paid and nothing moved, so the row is PENDING, dated 2026-10-18 as the day it was agreed: it draws no stock and books no revenue until something moves. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-18T06:23:02.611Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 1,
+    "total": 110,
+    "status": "Pending",
+    "raw": "SELL CZ5-TM 1 salt RM 110, nothing paid, nothing moved (order 20261018051516-6h1chg)",
+    "orderKey": "CZ5-TM|2026-10-18|110",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "newId": null,
+     "date": "2026-10-18",
+     "qty": 1,
+     "total": 110,
+     "delivery": 0,
+     "cash": 0,
+     "kg": 0,
+     "assoc": null,
+     "stream": null,
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": "Ordered on the statements site, order 20261018051516-6h1chg, acknowledged, to collect, priced at RM 110 on this order, placed at RM 130. Nothing paid and nothing handed over yet.",
+     "handover": null,
+     "second": null
+    },
+    "orderId": "20261018051516-6h1chg"
+   },
+   "decidedAt": "2026-10-18T06:23:08.021Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
