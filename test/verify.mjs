@@ -44275,7 +44275,7 @@ await (async () => {
     ok(JSON.stringify(tIn) === JSON.stringify(linked("transfer", 70)) && tIn.includes("wise") && !tIn.includes("spay") && tPicked === ""
       && tGo === "BUTTON disabled" && tCap === "Choose which of our accounts to pay into."
       && a1.tagName === "A" && a1.getAttribute("href") === payHref("maybank", "transfer", 70, u) && a1.target === "_blank" && t(a1) === "Show the account number"
-      && cap() === "Opens our payment page with the account number. Come back here after paying."
+      && cap() === "Opens our payment page with the account number. Once you have paid, tap Paid? Go back there, and tell us here."
       && /to Maybank$/.test(t(d.querySelectorAll("#payBody .salt-option__detail")[0])),
       "Transfer offers every account payHref links and no suspended one, chooses none, and once they choose Maybank, Show opens the pay page at that account, rail and figure: "
       + JSON.stringify({ tIn, tPicked, href: a1.getAttribute("href") }));
