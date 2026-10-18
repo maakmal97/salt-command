@@ -64,12 +64,12 @@ export async function run({ ok }) {
     const rolled = (r) => ((r.book.NOTES || {}).STATED_STOCK || []).filter((x) => /^ROLLED AT v9999/.test(x));
     const T = (n) => "2031-01-0" + n;
     const sc = go([sl("2031-01-02T01", 2, T(2)), ct("2031-01-02T02", 10.5, T(3))]), cs = go([ct("2031-01-02T01", 10.5, T(3)), sl("2031-01-02T02", 2, T(2))]);
-    ok(sc.ok && sc.book.STATED_STOCK === 10.5 && sc.book.QUEUE_COMMITTED === "2031-01-02T02" && cs.ok && cs.book.STATED_STOCK === 8.5 && sc.untouched, "S1d-2: a batch of a sale then a count of 10.5 ends at 10.5, a count then the sale at 8.5, and the book it was given is untouched: " + (sc.book && sc.book.STATED_STOCK) + " / " + (cs.book && cs.book.STATED_STOCK));
+    ok(sc.ok && sc.book.STATED_STOCK === 10.5 && sc.book.QUEUE_COMMITTED === "2031-01-02T02" && /now stands is 10\.5\./.test(rolled(sc)[0]) && sc.moves.find((m) => m.product === "salt").to === 10.5 && cs.ok && cs.book.STATED_STOCK === 8.5 && sc.untouched, "S1d-2: a batch of a sale then a count of 10.5 ends at 10.5, a count then the sale at 8.5, and the book it was given is untouched: " + (sc.book && sc.book.STATED_STOCK) + " / " + (cs.book && cs.book.STATED_STOCK));
     const two = go([sl("2031-01-02T01", 2, T(2)), sl("2031-01-02T02", 3, T(3))]);
     ok(two.ok && two.book.STATED_STOCK === 5 && rolled(two).length === 1 && /2 unit to ZZ1-AAA on 2031-01-02, 3 unit to ZZ1-AAA on 2031-01-03, so 10 less 5 is 5\./.test(rolled(two)[0]) && two.moves.filter((m) => m.product === "salt").length === 1 && two.moves.find((m) => m.product === "salt").out === 5,
       "S1d-2: the roll note is one a batch, the moves summed: " + JSON.stringify(rolled(two)));
     const mid = go([sl("2031-01-02T01", 2, T(2)), ct("2031-01-02T02", 10.5, T(3)), sl("2031-01-02T03", 1, T(4))]);
-    ok(mid.ok && mid.book.STATED_STOCK === 9.5 && rolled(mid).length === 1 && /so 10 less 3 is 9\.5\..*came between/.test(rolled(mid)[0]) && mid.moves.find((m) => m.product === "salt").to === 9.5,
+    ok(mid.ok && mid.book.STATED_STOCK === 9.5 && rolled(mid).length === 1 && /from 10; a count of this product came in this batch and stands, so the figure that now stands is 9\.5\./.test(rolled(mid)[0]) && mid.moves.find((m) => m.product === "salt").to === 9.5,
       "S1d-2: a count between two moves stands, the moves after it change it, and the one note says a count came between: " + JSON.stringify(rolled(mid)));
     const after = go([sl("2031-01-02T01", 2, T(2)), rn("2031-01-02T02", "ZZ1-AAA", "ZZ2-BBB")]), before = go([rn("2031-01-02T01", "ZZ1-AAA", "ZZ2-BBB"), sl("2031-01-02T02", 2, T(2))]);
     const own = (r) => r.ok && r.book.sales.filter((x) => /^note 2031/.test(x.note)).every((x) => x.customer === "ZZ2-BBB") && r.book.roster.includes("ZZ2-BBB") && !r.book.roster.includes("ZZ1-AAA");

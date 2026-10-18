@@ -1016,10 +1016,13 @@ export function applyInto(book, p, staged, notes, ctx) {
     const out = ms.filter((m) => m.kg < 0).reduce((a, m) => a - m.kg, 0), inn = ms.filter((m) => m.kg > 0).reduce((a, m) => a + m.kg, 0);
     if (!rs.length) { moves.push({ product: prod, from: null, out, inn, to: null, uncounted: true }); continue; }
     const desc = ms.map((m) => `${Math.abs(m.kg)} unit ${m.kg < 0 ? "to" : "from"} ${m.who} on ${m.when}`).join(", ");
-    const from = rs[0].from, to = rs[rs.length - 1].to;
-    const tie = r2(from - out + inn) === to;   /* a count between the moves breaks the sum; the sentence says so */
-    const tail = tie ? "" : " A count of this product came between these moves, so the figure after it starts from the count.";
-    const sentence = `ROLLED AT ${notes.version}${prod === "salt" ? "" : ` (${prod})`}: ${desc}, so ${from}${out ? " less " + r2(out) : ""}${inn ? " plus " + r2(inn) : ""} is ${to}. A ROLL AND NOT A COUNT; COUNT_ON is untouched.${tail}` + (prod === "salt" && notes.stockNote ? " " + String(notes.stockNote).trim() : "");
+    const from = rs[0].from, counted = p.items.some((it) => it.count && it.count.product === prod);
+    /* a count of this product in the batch stands whatever came before it, so the note names the figure that stands, not the last roll's */
+    const to = counted ? (prod === "salt" ? book.STATED_STOCK : (book.PROD_OPENING || {})[prod].stated) : rs[rs.length - 1].to;
+    const sums = `${from}${out ? " less " + r2(out) : ""}${inn ? " plus " + r2(inn) : ""}`;
+    const sentence = `ROLLED AT ${notes.version}${prod === "salt" ? "" : ` (${prod})`}: ${desc}, ` + (counted
+      ? `from ${from}; a count of this product came in this batch and stands, so the figure that now stands is ${to}.`
+      : `so ${sums} is ${to}.`) + ` A ROLL AND NOT A COUNT; COUNT_ON is untouched.` + (prod === "salt" && notes.stockNote ? " " + String(notes.stockNote).trim() : "");
     const key = prod === "salt" ? "STATED_STOCK" : "PROD_OPENING";
     book.NOTES = book.NOTES || {}; book.NOTES[key] = [sentence].concat(book.NOTES[key] || []);
     moves.push({ product: prod, from, out, inn, to });

@@ -32,14 +32,14 @@
  {
   "name": "the roll note starts from the last roll's figure",
   "file": "engine/apply.mjs",
-  "find": "const from = rs[0].from, to",
-  "replace": "const from = rs[rs.length - 1].from, to"
+  "find": "const from = rs[0].from, counted",
+  "replace": "const from = rs[rs.length - 1].from, counted"
  },
  {
-  "name": "a count between the moves goes unsaid",
+  "name": "the note names the last roll, not the count that stands",
   "file": "engine/apply.mjs",
-  "find": "const tie = r2(from - out + inn) === to;",
-  "replace": "const tie = true;"
+  "find": "const to = counted ? (prod === \"salt\" ? book.STATED_STOCK : (book.PROD_OPENING || {})[prod].stated) : rs[rs.length - 1].to;",
+  "replace": "const to = rs[rs.length - 1].to;"
  },
  {
   "name": "a rename already applied no longer carries a later row",
