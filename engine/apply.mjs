@@ -408,10 +408,10 @@ export function planBatch(book, staged, notes, ctx) {
   const tierOk = (p, v) => driftBooks().includes(p) && PRICING_ENGINE.driftOk(v);
   /* 18 OCT 2026, HIS DECISION: A SALT FIGURE STAMPED BEFORE THE % LIFT BEGAN WAS SET IN THE OLD UNIT (a drift, -1 to +1) AND IS DROPPED, NEVER READ AS A %:
      0.3 then meant 30% of the floor, now 30% on the Set Price, and everyone starts at 0%. The batch is not refused: the customer books on the Set Price with
-     no figure held, and a note says the old drift was dropped. A tierset whose only content was such a figure folds as a no-op. A clear (null) carries no figure. */
+     no figure held, and a note says the old figure was dropped. A tierset whose only content was such a figure folds as a no-op. A clear (null) carries no figure. */
   const liftAt = Date.parse(PRICING_RULES.RULES.liftSince);
   const oldLift = (it, p, v) => driftBooks().includes(p) && v !== null && v !== undefined && Date.parse((it.entry && it.entry.at) || it.id) < liftAt;
-  const oldLiftNote = (c, ps) => `dropped the old drift: ${c}'s ${ps.join(" and ")} figure was set before ${PRICING_RULES.RULES.liftSince}, in the old unit (-1 to +1), so ${c} stays on the Set Price at 0%`;
+  const oldLiftNote = (c, ps) => `dropped the old figure: ${c}'s ${ps.join(" and ")} figure was set before ${PRICING_RULES.RULES.liftSince}, in the old unit (-1 to +1), so ${c} stays on the Set Price at 0%`;
   const out = { items: [], refused: [], moves: [] };
   let tagged = 0;
   let rows = (staged && staged.approved) || [];

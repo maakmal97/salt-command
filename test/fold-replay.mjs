@@ -87,7 +87,7 @@ export async function run({ ok }) {
     let equal = 0, folded = 0;
     /* plan 4 (16 Oct 2026): a Correction's step says what it replaced (`was`), a key the fold before the move never wrote, so it is set
        aside here and only here; every other byte of the plan, the book and the master is still the old fold's */
-    const law = (s) => s.replace(/,(\\)?"was(\\)?":\{[^{}]*\}/g, "").replace(/,"dropped the old drift:[^"]*"/g, "").replace(/ at salt -?[0-9.]+(?=")/g, "");   /* and the dropped figure's note, and the row's own words for it */
+    const law = (s) => s.replace(/,(\\)?"was(\\)?":\{[^{}]*\}/g, "").replace(/,"dropped the old figure:[^"]*"/g, "").replace(/ at salt -?[0-9.]+(?=")/g, "");   /* and the dropped figure's note, and the row's own words for it */
     for (const b of bs) {
       const a = law(go(OLD, b, true)), c = law(go(NEW, b));
       const same = a === c;

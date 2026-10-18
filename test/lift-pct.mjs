@@ -181,9 +181,9 @@ export async function run({ ok }) {
   const planned = plan(ts(before, 0.3)), plannedAd = plan(ad(before, 0.2)), plannedNeg = plan(ts(before, -0.5)), plannedMix = plan({ id: before, collection: "tierset", row: { tiers: { "CZ9-DA": { salt: 0.3, oil: null } } }, entry: { at: before, payload: {} } });
   const fl = (x) => JSON.stringify(x);
   ok(plannedAd.refused.length === 0 && plannedAd.items.length === 1 && plannedAd.items[0].roster.tiers === null && plannedAd.items[0].roster.register === true
-    && plannedAd.items[0].does.some((d) => /dropped the old drift/.test(d) && /stays on the Set Price at 0%/.test(d)),
-  "an Add ID stamped before " + since + " carrying a salt figure is not refused: it books with no % and a note saying the old drift was dropped: " + fl(plannedAd.items[0] && plannedAd.items[0].does));
-  ok(planned.refused.length === 0 && planned.items.length === 1 && fl(planned.items[0].tiers) === "{}" && planned.items[0].does.length === 1 && /dropped the old drift/.test(planned.items[0].does[0])
+    && plannedAd.items[0].does.some((d) => /dropped the old figure/.test(d) && /stays on the Set Price at 0%/.test(d)),
+  "an Add ID stamped before " + since + " carrying a salt figure is not refused: it books with no % and a note saying the old figure was dropped: " + fl(plannedAd.items[0] && plannedAd.items[0].does));
+  ok(planned.refused.length === 0 && planned.items.length === 1 && fl(planned.items[0].tiers) === "{}" && planned.items[0].does.length === 1 && /dropped the old figure/.test(planned.items[0].does[0])
     && plannedNeg.refused.length === 0 && fl(plannedNeg.items[0].tiers) === "{}",
   "and a tierset of that salt figure alone, in the old unit (0.3, -0.5), is a no-op that is filed, not refused, with the same note: " + fl([planned.items, plannedNeg.refused]));
   ok(plannedMix.refused.length === 0 && fl(plannedMix.items[0].tiers) === fl({ "CZ9-DA": { oil: null } }),
