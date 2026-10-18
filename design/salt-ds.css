@@ -2283,12 +2283,231 @@ a.salt-journal__ref:hover { text-decoration: underline; text-underline-offset: 2
   box-shadow: 0 0 26px -2px rgba(var(--salt-brass-rgb, 197, 160, 89), 0.5), 0 12px 34px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 var(--salt-highlight);
 }
 
+/* ---- Status glyph: a drawn mark before a state chip's word (18 Oct 2026, Counter Batch A). A dot for a stage
+   still open, a tick for one agreed, a double tick for goods handed over and a cross for one that ended; the word
+   is unchanged and the mark is aria-hidden, so the chip reads the same aloud. It takes the chip's tone. ---- */
+
+.salt-status__glyph {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.55em;
+  vertical-align: -0.15em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---- Steps, marked: the order's track as drawn marks with their times (18 Oct 2026, Counter Batch A). Each step
+   is a 44px disc holding its glyph (__mark), its name under it and the time it happened (__time), the way between
+   them a two-pixel line. Done is verdigris, now is brass with a ring of its tint, next (the step to come) and any
+   after it a dashed field edge; the names keep Steps' own colours. Nothing animates. Where the track no longer
+   fits side by side, the marks stand in a column, the name and time beside each, and the lines are not drawn. ---- */
+
+.salt-steps--marks { gap: 0 4px; font-size: var(--salt-text-xs); }
+.salt-steps--marks .salt-steps__step { position: relative; align-items: center; text-align: center; gap: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+.salt-steps--marks .salt-steps__step::before { display: none; }
+.salt-steps--marks .salt-steps__step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 21px;
+  left: calc(50% + 22px);
+  width: calc(100% + 4px - 44px);
+  height: 2px;
+  border-radius: 2px;
+  background: var(--salt-well);
+  box-shadow: inset 0 0 0 1px var(--salt-edge-field);
+}
+.salt-steps--marks .salt-steps__step--done:not(:last-child)::after { background: var(--salt-verdigris); box-shadow: none; }
+.salt-steps__mark {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--salt-slate);
+  border: 1.5px dashed var(--salt-edge-field);
+  color: var(--salt-mist);
+}
+.salt-steps__mark svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.salt-steps__step--done .salt-steps__mark { border: 1.5px solid var(--salt-verdigris); color: var(--salt-verdigris); }
+.salt-steps__step--now .salt-steps__mark, .salt-steps__step[aria-current="step"] .salt-steps__mark {
+  border: 2px solid var(--salt-brass);
+  color: var(--salt-brass);
+  box-shadow: 0 0 0 4px var(--salt-tint, rgba(197, 160, 89, 0.12));
+}
+.salt-steps__time { font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0; color: var(--salt-mist-bright); white-space: nowrap; }
+.salt-steps__step--now .salt-steps__time, .salt-steps__step[aria-current="step"] .salt-steps__time { color: var(--salt-salt); }
+.salt-steps__step--next .salt-steps__time { color: var(--salt-mist-light); }
+@container salt-steps (max-width: 24em) {
+  .salt-steps--marks .salt-steps__step { flex-direction: row; text-align: left; padding: 0.2em 0; }
+  .salt-steps--marks .salt-steps__step:not(:last-child)::after { display: none; }
+  .salt-steps--marks .salt-steps__time { margin-left: auto; }
+}
+
+/* ---- Notice: the lines he posts, one at a time (18 Oct 2026, Counter Batch A; it reverses the still card of D14).
+   The lines share one cell of a grid (__lines), so the card keeps the height of the longest and nothing below it
+   moves; the page's script moves --on from line to line and dot to dot, and Pause (__pause, 44px, named) holds it.
+   The card is not a live region: a line that changes is never read out unasked. Under reduced motion every line
+   stands, one under another, and neither the dots nor Pause are drawn, since nothing turns. ---- */
+
+.salt-notice { display: flex; flex-direction: column; gap: var(--salt-space-1); min-width: 0; }
+.salt-notice__head { display: flex; justify-content: space-between; align-items: center; gap: var(--salt-space-3); min-height: var(--salt-tap); }
+.salt-notice__tools { display: flex; align-items: center; gap: var(--salt-space-2); }
+.salt-notice__dots { display: flex; gap: 6px; }
+.salt-notice__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--salt-line-strong); }
+.salt-notice__dot--on { background: var(--salt-brass); }
+.salt-notice__lines { display: grid; }
+.salt-notice__line {
+  grid-area: 1 / 1;
+  margin: 0;
+  font-size: var(--salt-text-md);
+  line-height: 1.5;
+  color: var(--salt-prose);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0s linear 0.4s;
+}
+.salt-notice__line--on { opacity: 1; visibility: visible; transition: opacity 0.4s ease, visibility 0s; }
+.salt-notice__pause {
+  width: var(--salt-tap);
+  height: var(--salt-tap);
+  margin-right: -12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--salt-mist-light);
+  cursor: pointer;
+}
+.salt-notice__pause:hover { color: var(--salt-brass); }
+.salt-notice__pause:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -4px; }
+.salt-notice__pause svg { width: 16px; height: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .salt-notice__lines { display: flex; flex-direction: column; gap: var(--salt-space-2); }
+  .salt-notice__line { opacity: 1; visibility: visible; transition: none; }
+  .salt-notice__dots, .salt-notice__pause { display: none; }
+}
+
+/* ---- Ledger list, receipt: a money block read like a receipt (18 Oct 2026, Counter Batch A). A line may carry a
+   quieter line under its label (__sub: how and when it was paid), and the last row, what is still owed, stands
+   apart on a hairline with its figure in ember and a size up. ---- */
+
+.salt-ledger__sub { display: block; margin-top: 2px; font-family: var(--salt-font-display); font-size: var(--salt-text-sm); letter-spacing: 0; text-transform: none; color: var(--salt-mist-bright); }
+.salt-ledger__row--due { border-bottom: 0; border-top: 1px solid var(--salt-line-faint); padding-top: var(--salt-space-3); }
+.salt-ledger__row--due .salt-ledger__label { color: var(--salt-salt); font-weight: 600; }
+.salt-ledger__row--due .salt-ledger__value { color: var(--salt-ember); font-weight: 700; font-size: 1.125rem; }
+
+/* ---- Band: the head of one record, lit (18 Oct 2026, Counter Batch A). A tinted card, never frosted, with the
+   record's short reference at its top right (__ref, mono brass), its state as the heading, one sentence of when,
+   and a foot under a hairline (__foot) holding what it is and where. ---- */
+
+.salt-band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--salt-space-3);
+  padding: var(--salt-space-5);
+  border-radius: var(--salt-radius-lg);
+  background: var(--salt-tint, rgba(197, 160, 89, 0.07));
+  border: 1px solid var(--salt-line-strong);
+  min-width: 0;
+}
+.salt-band__head { display: flex; justify-content: space-between; align-items: center; gap: var(--salt-space-3); }
+.salt-band__ref { font-family: var(--salt-font-mono); font-size: 1rem; font-weight: 600; letter-spacing: 0.08em; color: var(--salt-brass); white-space: nowrap; }
+.salt-band__when { margin: 0; font-size: 1rem; color: var(--salt-prose); }
+.salt-band__foot { display: flex; align-items: center; gap: var(--salt-space-3); padding-top: var(--salt-space-3); border-top: 1px solid var(--salt-line); min-width: 0; }
+
+/* ---- Empty state: a mark and one way on (18 Oct 2026, Counter Batch A). A dashed disc holding the place's own
+   glyph, a heading, one sentence, and the one action, a lit ghost. ---- */
+
+.salt-empty { display: flex; flex-direction: column; align-items: center; gap: var(--salt-space-3); padding: var(--salt-space-6) var(--salt-space-5); text-align: center; }
+.salt-empty__mark {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--salt-tint, rgba(197, 160, 89, 0.07));
+  border: 1px dashed var(--salt-line-strong);
+  color: var(--salt-brass);
+}
+.salt-empty__mark svg { width: 56px; height: 56px; fill: none; stroke: currentColor; stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+.salt-empty__title { margin: 0; font-size: 1.375rem; font-weight: 400; color: var(--salt-salt); }
+.salt-empty__text { margin: 0; max-width: 26ch; font-size: var(--salt-text-md); color: var(--salt-prose); }
+
+/* ---- Glass card, link: a whole card that is one way somewhere (18 Oct 2026, Counter Batch A). It keeps the card's
+   colours, takes the brass ring on focus, and lifts a pixel under the pointer, which it does not under reduced
+   motion. ---- */
+
+.salt-glass-card--link { display: block; text-decoration: none; color: var(--salt-salt); cursor: pointer; transition: border-color 0.2s ease, transform 0.2s ease; }
+.salt-glass-card--link:hover { border-color: var(--salt-line-strong); transform: translateY(-1px); }
+.salt-glass-card--link:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .salt-glass-card--link { transition: none; }
+  .salt-glass-card--link:hover { transform: none; }
+}
+
+/* ---- Pin: a 44px disc that opens the maps app at a point (18 Oct 2026, Counter Batch A). A link, tinted, with the
+   strong hairline and a brass glyph; it carries its own name, since it holds only a mark. ---- */
+
+.salt-pin {
+  flex: none;
+  width: var(--salt-tap);
+  height: var(--salt-tap);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--salt-tint, rgba(197, 160, 89, 0.07));
+  border: 1px solid var(--salt-line-strong);
+  color: var(--salt-brass);
+  text-decoration: none;
+}
+.salt-pin:hover { border-color: var(--salt-brass); }
+.salt-pin:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-pin svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- Glance: an account at a glance, a few rows that each go somewhere (18 Oct 2026, Counter Batch A). A row is
+   44px at least, its label in copper caps over its figure, a note beside it; a row owed is in ember. The rows sit
+   side by side where they fit and stack where they do not. ---- */
+
+.salt-glance { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: var(--salt-space-3); min-width: 0; }
+.salt-glance__item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--salt-tap);
+  min-width: 0;
+  padding: var(--salt-space-4) var(--salt-space-5);
+  border-radius: var(--salt-radius-lg);
+  background: var(--salt-glass);
+  border: 1px solid var(--salt-line);
+  color: var(--salt-salt);
+  text-decoration: none;
+}
+a.salt-glance__item:hover { border-color: var(--salt-line-strong); }
+a.salt-glance__item:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: 2px; }
+.salt-glance__label { font-family: var(--salt-font-mono); font-size: var(--salt-text-xs); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--salt-copper); }
+.salt-glance__value { font-family: var(--salt-font-mono); font-size: var(--salt-text-lg); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--salt-salt); }
+.salt-glance__note { font-size: var(--salt-text-sm); color: var(--salt-prose); }
+.salt-glance__item--due .salt-glance__value { color: var(--salt-ember); }
+
 /* ---- Where the frost cannot be drawn ----
    A backdrop blur needs a renderer that has one and a reader who accepts transparency; where either
    is missing the pane fill stands in, and under reduced transparency the aurora is not drawn at all.
    Last in the file so it wins over every recipe above. ---- */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve { background: var(--salt-pane); }
+  .salt-glass-card, .salt-rail, .salt-kpi, .salt-action, .salt-approve, .salt-glance__item { background: var(--salt-pane); }
 }
 @media (prefers-reduced-transparency: reduce) {
   .salt-aurora { display: none; }

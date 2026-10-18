@@ -58,5 +58,9 @@
  {"name":"the rail keeps its foot","file":"stmt/page.js","find":"'<span class=\"salt-rail__count\" data-n=\"' + t + '\"></span></button>').join(\"\") + \"</div></nav>\";","replace":"'<span class=\"salt-rail__count\" data-n=\"' + t + '\"></span></button>').join(\"\") + \"</div>\" + '<p class=\"salt-rail__foot cfoot\" data-wholine>' + whoAs() + \"</p></nav>\";"},
  {"name":"the rail keeps its brand","file":"stmt/page.js","find":"  return '<nav class=\"salt-rail salt-appbar__rail\" aria-label=\"Salt Counter\">'","replace":"  return '<nav class=\"salt-rail salt-appbar__rail\" aria-label=\"Salt Counter\"><div class=\"salt-rail__brand\"><b class=\"salt-title\">Salt Counter</b></div>'"},
  {"name":"a section head is the browser s bold","file":"stmt/statement-css.js","find":"h2,h3,h4{font-weight:500}","replace":"h2,h3,h4{margin-top:0}"},
- {"name":"the list keeps half the width with nothing open","file":"stmt/page.js","find":"  .oplace.oplace--one{grid-template-columns:minmax(0,1fr)}\n","replace":""}
+ {"name":"the list keeps half the width with nothing open","file":"stmt/page.js","find":"  .oplace.oplace--one{grid-template-columns:minmax(0,1fr)}\n","replace":""},
+ {"name":"the Pin recipe is left out of the recipes the page carries","file":"tools/stmt-style.mjs","find":"\"/* ---- Glass card, link:\", \"/* ---- Pin:\",","replace":"\"/* ---- Glass card, link:\","},
+ {"name":"a carried rule of the Pin differs from the system's","file":"stmt/statement-css.js","find":".salt-pin:hover { border-color: var(--salt-brass); }","replace":".salt-pin:hover { border-color: var(--salt-copper); }"},
+ {"name":"the notice's reduced-motion rule is not carried","file":"stmt/statement-css.js","find":".salt-notice__dots, .salt-notice__pause { display: none; }","replace":""},
+ {"name":"the page restates the Band","file":"stmt/page.js","find":".psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}","replace":".psym{display:inline-block;vertical-align:-0.22em;color:var(--salt-brass)}\n.salt-band{padding:4px}"}
 ]

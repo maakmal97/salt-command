@@ -107,6 +107,11 @@ export const RECIPE_HEADS = [
   "/* ---- Aurora ---- */", "/* ---- Where the frost cannot be drawn ----",
   /* and the Desk bar, which heads Salt Account as it heads the Desk (18 Oct 2026) */
   "/* ---- Desk bar (synced to the desk",
+  /* COUNTER BATCH A (18 Oct 2026, salt-ds 1.7.0): the root and the brand title, which head the wide rail as Salt Counter, and the nine recipes the
+     batch drew: the state chip's glyph, the marked steps, the turning notice, the receipt, the band, the empty state, the card that is a link, the pin
+     and the glance. Carried before the page uses them, so each part of the batch changes markup and never this list. */
+  "/* ---- Root ---- */", "/* ---- Brand title ---- */", "/* ---- Status glyph:", "/* ---- Steps, marked:", "/* ---- Notice:",
+  "/* ---- Ledger list, receipt:", "/* ---- Band:", "/* ---- Empty state:", "/* ---- Glass card, link:", "/* ---- Pin:", "/* ---- Glance:",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");

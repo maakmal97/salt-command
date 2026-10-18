@@ -22,7 +22,7 @@ function rulesOf(css, media = "") {
     const head = css.slice(i, open).trim();
     let d = 1, j = open + 1; while (j < css.length && d) { if (css[j] === "{") d++; else if (css[j] === "}") d--; j++; }
     const body = css.slice(open + 1, j - 1);
-    if (/^@(media|supports)/.test(head)) out.push(...rulesOf(body, head));
+    if (/^@(media|supports|container)/.test(head)) out.push(...rulesOf(body, head));
     else if (!head.startsWith("@")) out.push([head, body, media]);
     i = j;
   }
@@ -52,6 +52,20 @@ export async function run({ ok, pageWork }) {
     `Table, Product tag and Metric row are in the recipes the page carries, ${wanted.length} rules whole and in the system's words, with none of its notes (missing: ${missing.join(" ") || "none"})`);
   ok(!/salt-producttag/.test(PAGE_SRC.replace(/\/\*[\s\S]*?\*\//g, "")) && /salt-producttag/.test(OWNER_SRC),
     "and the Product tag is drawn by Salt Account's script alone: nothing a customer's page draws names it, so a book is still a mark there and never a word");
+
+  /* ---- 1a. Counter Batch A's recipes (salt-ds 1.7.0, 18 Oct 2026): each new head is carried once, every rule of it whole as the system holds it, @media
+     ones included, so the batch's markup wears them and the page restates none ---- */
+  {
+    const key = ([sel, body, media]) => squash(media) + "|" + squash(sel) + "{" + squash(body) + "}", have = new Set(rulesOf(SITE_RECIPES).map(key));
+    const batch = ["/* ---- Root ---- */", "/* ---- Brand title ---- */", "/* ---- Status glyph:", "/* ---- Steps, marked:", "/* ---- Notice:", "/* ---- Ledger list, receipt:",
+      "/* ---- Band:", "/* ---- Empty state:", "/* ---- Glass card, link:", "/* ---- Pin:", "/* ---- Glance:"];
+    const once = batch.filter((h) => RECIPE_HEADS.filter((x) => x === h).length === 1);
+    const want = rulesOf(ds).filter(([sel]) => /\.salt-(status__glyph|steps--marks|steps__mark|steps__time|steps__step--next|notice|ledger__sub|ledger__row--due|band|empty|glass-card--link|pin|glance)(?![a-z])/.test(sel));
+    const lost = want.filter((r) => !have.has(key(r))).map((r) => (r[2] ? r[2] + " " : "") + r[0]);
+    const restated = R.filter(([sel]) => /\.salt-(status__glyph|steps__mark|notice|band|empty|pin|glance)(?![a-z])/.test(sel) && !/^\.[\w-]+ \.salt-/.test(sel)).map((r) => r[0]);
+    ok(once.length === batch.length && want.length >= 60 && want.filter((r) => r[2]).length >= 8 && lost.length === 0 && restated.length === 0,
+      `Batch A's ${batch.length} heads are carried once each (${once.length}), ${want.length} rules whole (${want.filter((r) => r[2]).length} under @media or @container), the reduced-motion and container ones among them (missing: ${lost.slice(0, 4).join(", ") || "none"}), and the page restates none (${restated.join(" ") || "none"})`);
+  }
 
   /* ---- 1b. the light is the system's Aurora, as the Desk draws it (18 Oct 2026): carried whole, the first thing in both bodies, laid under the content, and no light of the
      page's own. The ground was two radial gradients at a fraction of the orbs' strength, so the glass rail read flat black on the Counter and warm on the Desk ---- */
