@@ -1,6 +1,6 @@
 {
- "v": "v1158",
- "stamped": "18 Oct 2026, 14:23 KL",
+ "v": "v1159",
+ "stamped": "18 Oct 2026, 15:47 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -8022,12 +8022,34 @@
    {
     "customer": "CZ5-TM",
     "qty": 1,
-    "total": 110,
+    "total": 100,
     "cash": 0,
     "date": "2026-10-18",
     "deliveredQty": 0,
-    "note": "<b>NEW PENDING SALE ON 18 OCT: 1 UNIT OF SALT TO CZ5-TM FOR RM110.</b> Ordered on the statements site, order 20261018051516-6h1chg, acknowledged, to collect, priced at RM110 on this order, placed at RM130. Nothing paid, nothing handed over. The goods total of RM110 sits above the floor total of RM58 and below the ask total of RM140 for 1 unit. CZ5-TM has 5 orders, median rate 110, range 95 to 110, RM0 outstanding before this and 0 units on credit against a cap of 1. The cost is RM58 per unit, COGS off the latest purchase p040, which is the inventory's own rate. The drafter raised no flags. The full RM110 remains outstanding and the unit is still to be collected.",
-    "rid": "s272"
+    "note": "<b>AMENDED 18 OCT: GOODS TOTAL RM110 TO RM100.</b> <b>CORRECTION ON S272, 18 OCT: GOODS TOTAL FOR CZ5-TM MOVES FROM RM110 TO RM100.</b> Order 20261018051516-6h1chg, 1 unit of salt, is amended after acceptance. The total goes from 110 to 100 and delivery is set from unset to 0. Preapproved by Counter Admin. The dossier gives no reason for the change. CZ5-TM has 6 orders, median rate 110, range 95 to 110, RM110 outstanding before this and 0 units on credit. The drafter raised no flags. The row stays pending with nothing paid and nothing handed over, so the full RM100 remains outstanding and the unit is still to be collected. The cost is untouched. <b>NEW PENDING SALE ON 18 OCT: 1 UNIT OF SALT TO CZ5-TM FOR RM110.</b> Ordered on the statements site, order 20261018051516-6h1chg, acknowledged, to collect, priced at RM110 on this order, placed at RM130. Nothing paid, nothing handed over. The goods total of RM110 sits above the floor total of RM58 and below the ask total of RM140 for 1 unit. CZ5-TM has 5 orders, median rate 110, range 95 to 110, RM0 outstanding before this and 0 units on credit against a cap of 1. The cost is RM58 per unit, COGS off the latest purchase p040, which is the inventory's own rate. The drafter raised no flags. The full RM110 remains outstanding and the unit is still to be collected.",
+    "rid": "s272",
+    "delivery": 0,
+    "mod": "corrected on 2026-10-18: total 110 to 100; delivery (unset) to 0",
+    "amend": [
+     {
+      "date": "2026-10-18",
+      "kind": "Fulfilment",
+      "cash": 0,
+      "kg": 0,
+      "note": "as booked"
+     },
+     {
+      "date": "2026-10-18",
+      "kind": "Correction",
+      "cash": 0,
+      "kg": 0,
+      "note": "<b>CORRECTION ON S272, 18 OCT: GOODS TOTAL FOR CZ5-TM MOVES FROM RM110 TO RM100.</b> Order 20261018051516-6h1chg, 1 unit of salt, is amended after acceptance. The total goes from 110 to 100 and delivery is set from unset to 0. Preapproved by Counter Admin. The dossier gives no reason for the change. CZ5-TM has 6 orders, median rate 110, range 95 to 110, RM110 outstanding before this and 0 units on credit. The drafter raised no flags. The row stays pending with nothing paid and nothing handed over, so the full RM100 remains outstanding and the unit is still to be collected. The cost is untouched.",
+      "was": {
+       "total": 110,
+       "delivery": null
+      }
+     }
+    ]
    }
   ],
   "contacts": [
@@ -8719,9 +8741,9 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-18T06:23:02.611Z",
+  "QUEUE_COMMITTED": "2026-10-18T07:46:56.746Z",
   "PRICING": {
-   "takenAt": "2026-10-18T06:23:48.199Z",
+   "takenAt": "2026-10-18T07:47:30.421Z",
    "sizes": [
     0.5,
     1,
@@ -15934,25 +15956,25 @@
      ]
     }
    },
-   "v": "v1158"
+   "v": "v1159"
   },
   "OPEN": {
-   "at": "2026-10-18T06:23:49.188Z",
+   "at": "2026-10-18T07:47:31.359Z",
    "count": 11,
    "byKey": {
-    "CZ5-TM|2026-10-18|110": {
+    "CZ5-TM|2026-10-18|100": {
      "d": "2026-10-18",
      "p": "CZ5-TM",
      "dir": "S",
      "q": 1,
-     "t": 110,
+     "t": 100,
      "cash": 0,
      "mv": 0,
      "st": "part",
-     "oweRM": 110,
+     "oweRM": 100,
      "oweUnits": 1,
      "rid": "s272",
-     "key": "CZ5-TM|2026-10-18|110"
+     "key": "CZ5-TM|2026-10-18|100"
     },
     "CS6-BS-R|2026-10-15|220": {
      "d": "2026-10-15",
@@ -16177,7 +16199,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1158"
+   "v": "v1159"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16185,7 +16207,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1158"
+   "v": "v1159"
   },
   "REWARD": {
    "stated": {
@@ -16197,7 +16219,7 @@
      }
     }
    },
-   "v": "v1158"
+   "v": "v1159"
   }
  }
 }
