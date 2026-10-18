@@ -368,7 +368,7 @@
  {
   "name": "an unchanged sheet is drawn",
   "file": "stmt/owner.js",
-  "find": "if(!changed('sheet',[j.accounts,j.desk,j.stranger,j.issue])&&quiet===true) return;",
+  "find": "if(!changed('sheet',[j.accounts,j.desk,j.issue])&&quiet===true) return;",
   "replace": ""
  },
  {
