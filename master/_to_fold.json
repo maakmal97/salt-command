@@ -1,0 +1,71 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-18T07:46:56.746Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "rid": "s272",
+    "qty": 1,
+    "total": 110,
+    "cash": 0,
+    "date": "2026-10-18",
+    "product": "salt",
+    "changes": [
+     {
+      "field": "total",
+      "from": 110,
+      "to": 100
+     },
+     {
+      "field": "delivery",
+      "from": null,
+      "to": 0
+     }
+    ],
+    "customer": "CZ5-TM"
+   },
+   "reasoning": "Correction against CZ5-TM's order of 1 unit for RM 110 dated 2026-10-18 (s272). Sets total from 110 to 100, delivery from unset to 0. It moves no cash and no stock: it changes what the row says about itself. The row is not rewritten here. The fold applies the patch, so there is one definition of what a correction does rather than two.",
+   "flags": [],
+   "amends": "s272",
+   "amendKind": "Correction",
+   "entry": {
+    "at": "2026-10-18T07:46:56.746Z",
+    "type": "SELL",
+    "party": "CZ5-TM",
+    "qty": 1,
+    "total": 100,
+    "status": "Amendment",
+    "raw": "Amended CZ5-TM, order 20261018051516-6h1chg: goods RM 110 to 100",
+    "payload": {
+     "mode": "amend",
+     "kind": "Correction",
+     "direction": "SELL",
+     "party": "CZ5-TM",
+     "rid": null,
+     "orderKey": "CZ5-TM|2026-10-18|110",
+     "orderCode": null,
+     "linkTo": null,
+     "assoc": null,
+     "downstream": null,
+     "date": "2026-10-18",
+     "qty": 0,
+     "total": 0,
+     "cash": 0,
+     "kg": 0,
+     "fields": {
+      "qty": 1,
+      "total": 100,
+      "delivery": 0
+     },
+     "note": "Amended after Accept for order 20261018051516-6h1chg: goods RM 110 to 100."
+    },
+    "orderId": "20261018051516-6h1chg"
+   },
+   "decidedAt": "2026-10-18T07:46:58.132Z",
+   "decidedBy": "preapproved by Counter Admin"
+  }
+ ]
+}
