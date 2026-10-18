@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="eb070d771c6244d9";
+var SALT_BUILD_ID="93a7438b4a109b3d";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -1516,33 +1516,33 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
 details.obs>summary{min-height:var(--tap);}
 /* ==== DESIGN fonts: generated from design/fonts.css, vendored from Code/salt-ds src/fonts-local.css, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */
 /* THE BRAND FACES, SELF-HOSTED, AND THE ONLY WAY THEY LOAD (his instruction of 22 Sep 2026: no Google
-   Fonts). The files are Google's own latin subsets, fetched once and kept in src/fonts/ beside this
+   Fonts; the faces became Newsreader and Geist Mono on 18 Oct 2026, his choice). The files are Google's own latin subsets, fetched once and kept in src/fonts/ beside this
    file with their OFL licences; nothing here loads off another origin. A page that LINKS this file
    resolves fonts/ against it; a page that INLINES these rules (the desk, the Counter, QR Command)
    serves fonts/ beside itself. Both are variable fonts and the weight ranges below are the files'
    own, so a 700 resolves to the face and is never synthesised. Symbols outside the latin range (a
    tick, a triangle) fall to the system face, as they always did. */
 @font-face {
-  font-family: 'Fraunces';
+  font-family: 'Newsreader';
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 200 800;
   font-display: swap;
-  src: url(fonts/fraunces-latin.woff2) format('woff2');
+  src: url(fonts/newsreader-latin.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
-  font-family: 'JetBrains Mono';
+  font-family: 'Geist Mono';
   font-style: normal;
-  font-weight: 400 800;
+  font-weight: 100 900;
   font-display: swap;
-  src: url(fonts/jetbrains-mono-latin.woff2) format('woff2');
+  src: url(fonts/geist-mono-latin.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 /* ==== END DESIGN fonts ==== */
 /* ==== DESIGN base: generated from design/salt-ds.css, vendored from Code/salt-ds src/styles.css, by tools/designsync.mjs. Edit the design system, --pull, --sync; never this block. ==== */
 /* Salt Commodities design system
    Built to the Business Identity of 29 Aug 2026: obsidian ground, brass and
-   copper light, liquid glass surfaces, Fraunces display over JetBrains Mono. */
+   copper light, liquid glass surfaces, Newsreader display over Geist Mono (18 Oct 2026; Fraunces over JetBrains Mono before). */
 
 :root {
   /* The six colours of the identity */
@@ -1633,8 +1633,8 @@ details.obs>summary{min-height:var(--tap);}
   --salt-text-label: var(--salt-copper);
 
   /* Typography */
-  --salt-font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --salt-font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+  --salt-font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --salt-font-mono: 'Geist Mono', 'Cascadia Mono', Consolas, monospace;
 
   /* The type scale in rem since 24 Sep 2026: at the default 16px each is the pixel size it was
      (11, 13, 15, 17, 24, 34, 48, 64, 88), and a browser's own default text size (a desktop browser's
@@ -10227,7 +10227,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1156","d":"18 Oct 2026","t":"CA3-KP SETTLES S271 IN FULL BY CASH AT THE COUNTER","n":["<b>ONE FULFILMENT FOLDED.</b> Cash of RM70 from CA3-KP, taken at the counter on 18 Oct, is applied to order s271 (0.5 unit of salt, RM70). It settles the order in full, so nothing is left outstanding. The dossier shows no move and no lot, so the inventory did nothing: stock stays at 20.39 and the cost basis is unchanged."]}];
+const evolution=[{"v":"v1157","d":"18 Oct 2026","t":"THE BRAND FACES BECOME NEWSREADER OVER GEIST MONO","n":["<b>HIS CHOICE OF 18 OCT 2026.</b> Fraunces gives way to Newsreader for display and JetBrains Mono to Geist Mono for figures, on the Desk and the Counter, from salt-ds 1.6.0. Both are Google's own latin subsets under the OFL, served by each surface itself as before; the body stays at weight 340 and titles at 300.","<b>NOTHING MOVES BUT THE TYPE.</b> Over all seventeen Desk parts and four Counter places, in Night and Tide, at phone and desktop width, no row, tab or cell wraps or spills that did not before and no tap target shrinks. The shell cache moves to v8 so an installed desk drops the retired files."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10371,7 +10371,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Oct 2026, 02:09 KL';
+const LAST_UPDATED='18 Oct 2026, 08:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18232,7 +18232,7 @@ function chartTheme(){
   if(Chart.__salted)return; Chart.__salted=true;
   try{
     const D=Chart.defaults;
-    D.font.family="'JetBrains Mono','Cascadia Mono',Consolas,monospace";   /* v472: figures are mono, charts included */
+    D.font.family="'Geist Mono','Cascadia Mono',Consolas,monospace";   /* v472: figures are mono, charts included */
     D.font.size=11;
     if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)D.animation=false;
     else{D.animation.duration=420;D.animation.easing='easeOutQuart';}

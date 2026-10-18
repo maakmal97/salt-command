@@ -10101,7 +10101,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1156","d":"18 Oct 2026","t":"CA3-KP SETTLES S271 IN FULL BY CASH AT THE COUNTER","n":["<b>ONE FULFILMENT FOLDED.</b> Cash of RM70 from CA3-KP, taken at the counter on 18 Oct, is applied to order s271 (0.5 unit of salt, RM70). It settles the order in full, so nothing is left outstanding. The dossier shows no move and no lot, so the inventory did nothing: stock stays at 20.39 and the cost basis is unchanged."]}];
+const evolution=[{"v":"v1157","d":"18 Oct 2026","t":"THE BRAND FACES BECOME NEWSREADER OVER GEIST MONO","n":["<b>HIS CHOICE OF 18 OCT 2026.</b> Fraunces gives way to Newsreader for display and JetBrains Mono to Geist Mono for figures, on the Desk and the Counter, from salt-ds 1.6.0. Both are Google's own latin subsets under the OFL, served by each surface itself as before; the body stays at weight 340 and titles at 300.","<b>NOTHING MOVES BUT THE TYPE.</b> Over all seventeen Desk parts and four Counter places, in Night and Tide, at phone and desktop width, no row, tab or cell wraps or spills that did not before and no tap target shrinks. The shell cache moves to v8 so an installed desk drops the retired files."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10245,7 +10245,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='18 Oct 2026, 02:09 KL';
+const LAST_UPDATED='18 Oct 2026, 08:44 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
