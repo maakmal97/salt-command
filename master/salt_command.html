@@ -4510,7 +4510,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
          fifteen flat tabs this rail carried before v341 made the seven destinations, which group already. -->
     <div class="railgroup salt-rail__group">
       <button class="tab on salt-rail__tab" data-s="today">Today</button>
-      <button class="tab salt-rail__tab" data-s="money">Order book</button>
+      <button class="tab salt-rail__tab" data-s="money">Money</button>
       <button class="tab salt-rail__tab" data-s="stock">Stock</button>
       <button class="tab salt-rail__tab" data-s="price">Pricing</button>
       <button class="tab salt-rail__tab" data-s="people">Network</button>
@@ -19490,7 +19490,7 @@ function pinDraw(){
 }
 /* Step 7: every account's thread rides in the orders read as one item, waiting on him while their line is the last */
 function thrItem(t){return Object.assign({},t,{id:'t:'+t.u,kind:'thread'});}
-/* the banner opens desk#orders/newest (public/sw.js); the orders are Counter Admin's, so it lands on the desk's Order book */
+/* the banner opens desk#orders/newest (public/sw.js); the orders are Counter Admin's, so it lands on the desk's Money */
 function ordWakeAddr(h){return h==='orders/newest'?'orders':h;}
 /* the rail's Today count includes what is waiting on the site, so it is recounted when THAT changes, not on every read */
 function waitRecount(){const n=ordActs().map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
@@ -21560,7 +21560,7 @@ function consoOrderBlock(){
   const pend=+sales.reduce((a,s)=>a+txPendRM(s),0).toFixed(2);
   const pendB=+purchases.filter(x=>x.pending&&!x.defaulted).reduce((a,x)=>a+(+x.total||0),0).toFixed(2);
   const cell=(cls,l,v,note)=>`<div class="kpi salt-kpi ${cls}"><div class="l salt-kpi__label">${l}</div><div class="v salt-kpi__value">${v}</div><div class="n salt-kpi__note">${note}</div></div>`;
-  return `<h1>Receivables</h1>`+consoHd('Every book')   /* v622: the page's own name, which the Order book destination opens on */
+  return `<h1>Receivables</h1>`+consoHd('Every book')   /* v622: the page's own name, which the Money destination opens on */
     +`<div class="conso"><div class="kpis k4">`
     +cell('gold','Owed to you',fmt0(n),g>0.009?`${fmt0(g)} gross; the ladder has already discounted ${fmt0(+(g-n).toFixed(2))}`:'nothing owed to you')
     +cell(o&&o.pr>=0.5?'r':'','Chase first',o?ID(o.who):NIL,o
@@ -21652,7 +21652,7 @@ const builders={today:()=>tabToday()+tabPlans(),forward:tabForward,sourcing:()=>
    the fold, so nothing that pointed at a tab has to change. */
 const VIEWS=[
   {id:'today', name:'Today',            lead:'today',         parts:[]},   /* 18 Oct 2026, his word: Rules went to Pricing, Next 30 days to Stock */
-  {id:'money', name:'Order book',       lead:'receivables',   parts:['financials']},
+  {id:'money', name:'Money',            lead:'receivables',   parts:['financials']},   /* 18 Oct 2026, his word: Order book, now that the orders are Counter Admin's */
   {id:'stock', name:'Stock',            lead:'inventory',     parts:['forward','sourcing']},
   {id:'price', name:'Pricing',          lead:'pricing',       parts:['overview']},
   {id:'people',name:'Network',          lead:'concentration', parts:['network','map']},
