@@ -468,14 +468,27 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .ocol__n{color:var(--salt-mist-bright)}
 .ocol__pay{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:0.12em;text-transform:uppercase;color:var(--salt-ember);white-space:nowrap}
 .oback{margin:0 0 12px}
-.ohead{display:flex;align-items:center;gap:6px 14px;margin:0 0 16px}
-.ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0}
-.ohead>div{min-width:0}
-.ohead .sub2{margin:6px 0 0}
+.adm .ohead{display:flex;align-items:center;gap:6px 14px;margin:0 0 16px}
+.adm .ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0}
+.adm .ohead>div{min-width:0}
+.adm .ohead .sub2{margin:6px 0 0}
 .odue{color:var(--salt-ember)}
 /* the part of an order their reward paid: a line of its own under the part it belongs to (coverTo) */
 .pcover{display:block;margin-top:2px}
-.oact .salt-pill,.oact>.salt-ghost{width:100%;margin-top:16px}
+.oact{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px}
+.oact .salt-pill,.oact>.salt-ghost{width:100%;margin:0;min-height:var(--salt-tap)}
+.oact>.msg{grid-column:1/-1}
+/* Counter Batch A: the band, the marked steps, Details */
+.oband{margin:0 0 16px}
+.oband__state{margin:0;font-family:var(--salt-font-display);font-size:1.75rem;font-weight:400;line-height:1.1;letter-spacing:0}
+.oband .salt-band__foot .mtile{flex:none}
+.oband__what{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.oband__what .sub2{margin:0}
+.oband__point{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
+.salt-steps--marks{margin:0 0 16px}
+.odet{margin-top:18px}
+.odet__sum{display:flex;align-items:center;min-height:var(--salt-tap);cursor:pointer;list-style:none}
+.odet__sum::-webkit-details-marker{display:none}
 .omsgs{margin-top:22px}
 .omsgs .olab{display:flex;justify-content:space-between;margin:0 0 10px}
 .omsgs .salt-bubble__text{white-space:pre-wrap}
@@ -645,11 +658,11 @@ body.ended>*:not(#aEnded){display:none}
    open account stands: beside the list on a desk, in its place on a phone, with a way back. */
 .gate.adm{max-width:600px;margin-top:32px;padding-bottom:calc(var(--salt-bar-h) + 32px + env(safe-area-inset-bottom))}
 .adm .amain .salt-eyebrow{margin:0 0 6px}
-.aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
+.adm .aring{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--salt-brass);
   border:1px solid var(--salt-line);border-radius:var(--salt-radius-sm);background:var(--salt-well)}
-.aring svg{width:22px;height:22px}
-/* 18 Oct 2026: no rail carries a brand; the name stands in the Desk bar, the ring and the name, the clock under it */
-.abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
+.adm .aring svg{width:22px;height:22px}
+/* 18 Oct 2026: no rail of his carries a brand; the name stands in the Desk bar, the ring and the name, the clock under it */
+.adm .abartext{display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
 .salt-rail__tab .salt-appbar__place{color:inherit}
 .adm #mFoot:empty{display:none}
 .adm .afind{display:flex;flex-direction:column;gap:12px;margin:0 0 16px}
@@ -4626,27 +4639,83 @@ const CLIENT_JS = `
     if(k==='pay'&&!oOwes(o) || k==='withdraw'&&!((oPayable(o)||o.status==='placed')&&!(+o.moved>0))) k='state';
     return {k:k, t:tap?tap.t:''};
   }
+  /* COUNTER BATCH A (his decisions of 18 Oct 2026): AN ORDER'S SHORT REFERENCE, seven symbols of the site's 30 (no 0, 1, I, L, O or U), four
+     then three, derived from its id and never the id: the same on the card he works the order from, so a reference they quote finds it, and never a
+     roster code's shape (that is two letters and a digit, then two or three letters) */
+  var REF_ALPHA='23456789ABCDEFGHJKMNPQRSTVWXYZ';
+  function refHash(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h>>>0; }
+  function orderRef(id){
+    var a=refHash(String(id||'')), b=refHash(String(id||'')+'#'), out='';
+    for(var i=0;i<4;i++){ out+=REF_ALPHA.charAt(a%30); a=Math.floor(a/30); }
+    out+='-';
+    for(var j=0;j<3;j++){ out+=REF_ALPHA.charAt(b%30); b=Math.floor(b/30); }
+    return out;
+  }
+  /* THE PIN to a collection point: their maps app at the point's place, named by its code alone. Apple Maps on an iPhone, iPad or Mac, the
+     geo: link Android hands to its maps app, Google Maps anywhere else; a plain navigation, so nothing is loaded from elsewhere */
+  function pointHref(code,lat,lng){
+    var ua=(navigator&&navigator.userAgent)||'', q='Point%20'+code, ll=lat+','+lng;
+    if(/iPhone|iPad|iPod|Macintosh/.test(ua)) return 'https://maps.apple.com/?ll='+ll+'&q='+q;
+    if(/Android/.test(ua)) return 'geo:'+ll+'?q='+ll+'('+q+')';
+    return 'https://www.google.com/maps/search/?api=1&query='+ll;
+  }
+  function pinSvg(){
+    var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), d=document.createElementNS(NS,'path');
+    s.setAttribute('viewBox','0 0 24 24'); s.setAttribute('aria-hidden','true'); s.setAttribute('focusable','false');
+    d.setAttribute('d','M12 21 C12 21 5 14.6 5 9.6 A7 7 0 0 1 19 9.6 C19 14.6 12 21 12 21 Z M12 7.2 A2.4 2.4 0 1 0 12 12 A2.4 2.4 0 1 0 12 7.2');
+    s.appendChild(d); return s;
+  }
+  function pinLink(o){
+    var a=el('a','salt-pin opin'); a.href=pointHref(o.point,o.pointAt.lat,o.pointAt.lng);
+    if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
+    a.setAttribute('aria-label',tw('pt.pin',{c:o.point})); a.appendChild(pinSvg());
+    return a;
+  }
+  /* THE BAND, the order's head: its reference, its state as the heading, then what it is and how it goes, and, while it waits at one of
+     his points, the point and its pin */
   function oHead(o){
-    /* the order's head as a card: the mark a button with its caption under it, its state and how beside (his notes of 28 Sep and 11 Oct 2026) */
-    var h=el('div','ohead'), t=el('h3'), side=el('div');
-    t.appendChild(mtile(o.product,o.qty,oUnit(o)));
-    h.appendChild(t);
-    side.appendChild(stateChip(o,'state'));
-    side.appendChild(el('p','sub2',tw('oh.'+(o.mode==='deliver'?(o.place?'deliverTo':'deliver'):'collect')+(o.forFriend?'F':''),
+    var h=el('div','oband salt-band'), top=el('div','salt-band__head');
+    top.appendChild(el('span','salt-eyebrow salt-eyebrow--copper',tw('oh.order')));
+    var ref=el('span','salt-band__ref oref',orderRef(o.id)); ref.setAttribute('data-ref',''); top.appendChild(ref);
+    h.appendChild(top);
+    h.appendChild(el('h3','state oband__state',stateWord(o)));
+    var foot=el('div','salt-band__foot'), col=el('span','oband__what');
+    foot.appendChild(mtile(o.product,o.qty,oUnit(o)));
+    col.appendChild(el('span','sub2',tw('oh.'+(o.mode==='deliver'?(o.place?'deliverTo':'deliver'):'collect')+(o.forFriend?'F':''),
       {t:Dd(stamp,o.at), p:o.place||''})));
-    h.appendChild(side);
+    var waits=o.point&&o.status==='ready'&&o.mode==='collect'&&!movedAll(o);
+    if(waits) col.appendChild(el('span','oband__point',tw('pt.at',{c:o.point})));
+    foot.appendChild(col);
+    if(waits&&o.pointAt&&isFinite(o.pointAt.lat)&&isFinite(o.pointAt.lng)) foot.appendChild(pinLink(o));
+    h.appendChild(foot);
     return h;
   }
-  /* GOODS ONLY: a declined or cancelled order has no track to show */
+  /* GOODS ONLY: a declined or cancelled order has no track to show. Counter Batch A: each step a drawn mark (a receipt, a tick, a box, then
+     a bag or a van), the moment it happened under its name, and Next on the step to come */
+  var STEP_GLYPH={placed:'M6.5 3.5 H17.5 V20.5 L15.3 19.2 L13.1 20.5 L10.9 19.2 L8.7 20.5 L6.5 19.2 Z M9.5 8 H14.5 M9.5 11.5 H14.5 M9.5 15 H12.5',
+    confirmed:'M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M8 12.3 L11 15.2 L16.2 9.2', ready:'M4 8 L12 4 L20 8 V16 L12 20 L4 16 Z M4 8 L12 12 L20 8 M12 12 V20',
+    collected:'M6 8 H18 L17 20 H7 Z M9 8 V6.5 A3 3 0 0 1 15 6.5 V8',
+    delivered:'M2.5 7 H14 V16 H2.5 Z M14 10 H18 L21.5 13.2 V16 H14 M6.5 19 A1.8 1.8 0 1 0 6.5 15.4 A1.8 1.8 0 1 0 6.5 19 M17.5 19 A1.8 1.8 0 1 0 17.5 15.4 A1.8 1.8 0 1 0 17.5 19'};
+  function stepWhen(iso){
+    if(!iso) return '';
+    try{ var k=klBits(iso), n=klBits(new Date().toISOString()); return k.day===n.day&&k.month===n.month&&k.year===n.year?k.hour+':'+k.minute:dmyOf(k); }catch(e){ return ''; }
+  }
   function oSteps(o){
     var w=el('div');
     if(o.status==='declined'||o.status==='cancelled') return w;
-    var names=[tw('st.placed'),tw('st.acknowledged'),tw('st.ready'),tw(o.mode==='deliver'?'st.delivered':'st.collected')];
+    var d=o.mode==='deliver', keys=['placed','confirmed','ready',d?'delivered':'collected'];
+    var names=[tw('st.placed'),tw('st.acknowledged'),tw('st.ready'),tw(d?'st.delivered':'st.collected')];
     var cur=o.status==='done'?4:movedAll(o)?3:(o.status==='ready'||(+o.moved||0)>0)?2:o.status==='acknowledged'?1:0;
-    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label',tw('oh.steps'));
+    var at=[o.at,firstAt(o,'acknowledged'),firstAt(o,'ready'),''];
+    var ol=el('ol','salt-steps salt-steps--marks'); ol.setAttribute('aria-label',tw('oh.steps'));
     names.forEach(function(n,i){
-      var li=el('li','salt-steps__step'+(i<cur?' salt-steps__step--done':i===cur?' salt-steps__step--now':''),n);
+      var li=el('li','salt-steps__step'+(i<cur?' salt-steps__step--done':i===cur?' salt-steps__step--now':i===cur+1?' salt-steps__step--next':''));
       if(i===cur) li.setAttribute('aria-current','step');
+      var mk=el('span','salt-steps__mark'), NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg'), p=document.createElementNS(NS,'path');
+      mk.setAttribute('aria-hidden','true'); s.setAttribute('viewBox','0 0 24 24'); p.setAttribute('d',STEP_GLYPH[keys[i]]); s.appendChild(p); mk.appendChild(s);
+      li.appendChild(mk); li.appendChild(el('span','salt-steps__name',n));
+      var when=i<=cur?(i===3?(o.movedOn?ymdDay(o.movedOn):''):stepWhen(at[i])):i===cur+1?tw('oh.next'):'';
+      if(when) li.appendChild(el('span','salt-steps__time',when));
       ol.appendChild(li);
     });
     w.appendChild(ol); return w;
@@ -4718,7 +4787,15 @@ const CLIENT_JS = `
     L.appendChild(lrow(tw('om.goods'),rm(o.total),o.closed&&o.closed.qty?tw('om.handed',{a:Uq(o.qty,oUnit(o)), b:o.closed.qty})
       :typeof o.asked==='number'&&Math.abs(o.asked-(+o.total||0))>0.004?tw('om.placedAt',{rm:rm(o.asked)}):''));
     if(d) L.appendChild(o.status==='placed'?lrow(tw('sh.delivery'),'',o.place?tw('om.setToP',{p:o.place}):tw('om.set')):lrow(tw('sh.delivery'),rm(o.delivery||0),where));
-    if(paid>0) L.appendChild(lrow(tw('om.paid'),rm(paid)));
+    /* Counter Batch A: each payment we have, with its way and its day, where they add up to what is paid; else one line */
+    var conf=(o.payments||[]).filter(function(x){ return x&&(!x.claim||x.claim==='received')&&+x.amount>0; }),
+        csum=conf.reduce(function(s,x){ return s+(+x.amount); },0);
+    if(paid>0&&conf.length&&Math.abs(csum-paid)<0.005) conf.forEach(function(x){
+      var r=lrow(tw('om.paid'),rm(+x.amount)), lab=r.querySelector('.salt-ledger__label');
+      lab.appendChild(el('span','salt-ledger__sub',x.method?tw('om.byOn',{m:function(L){ return methodWord(x.method,x.account,L); }, d:Dd(oDay,x.at)}):tw('om.on',{d:Dd(oDay,x.at)})));
+      L.appendChild(r);
+    });
+    else if(paid>0) L.appendChild(lrow(tw('om.paid'),rm(paid)));
     if(claimed>0) L.appendChild(lrow(tw('om.sentByYou'),rm(claimed),tw(oSlipWord(o))));
     var ac=oPayable(o)?oAcct(o):0;
     if(ac>0.004) L.appendChild(lrow(tw('om.sentAcct'),rm(ac),tw(acctWaiting()>0.004?'om.waiting':'om.received')));
@@ -4726,9 +4803,11 @@ const CLIENT_JS = `
     if(oPayable(o)) oLost(o).forEach(function(x){ L.appendChild(lrow(tw('om.notFound'),rm(x.amount),tw('om.checkBank'),'odue')); });
     if(oPayable(o)){
       var tp=oToPay(o);
-      L.appendChild(tp>0.004
+      var still=tp>0.004
         ?lrow(tw('pay.still'),rm(tp),payWhen(o),'odue')
-        :lrow(tw('pay.still'),rm(0),tw(claimed>0||ac>0.004&&acctWaiting()>0.004?'om.sentWaiting':'om.paidFull')));
+        :lrow(tw('pay.still'),rm(0),tw(claimed>0||ac>0.004&&acctWaiting()>0.004?'om.sentWaiting':'om.paidFull'));
+      if(tp>0.004) still.classList.add('salt-ledger__row--due');
+      L.appendChild(still);
     }
     return L;
   }
@@ -4746,8 +4825,30 @@ const CLIENT_JS = `
       pb.addEventListener('click',function(){ openPay(orderCtx(o.id),pb,'pay:'+o.id); });
       a.appendChild(pb);
     }
+    /* Counter Batch A: Message beside Pay on every order, every stage, Done included: it takes them to the composer */
+    if(!view){
+      var mb=el('button','salt-ghost omsg',tw('oa.msg')); mb.type='button'; mb.setAttribute('data-msg',o.id);
+      mb.addEventListener('click',function(){ var s=pOrder.querySelector('.oscreen[data-order="'+o.id+'"] input[data-say]'); if(s){ try{ s.scrollIntoView({block:'center'}); }catch(e){} try{ s.focus({preventScroll:true}); }catch(e){} } });
+      a.appendChild(mb);
+    }
     if(tp.k==='pay'&&tp.t) a.appendChild(statusLine(tp.t));
     return a;
+  }
+  /* DETAILS, folded: when it was ordered, the way, the window or the point, and the reference; no note. Kept open across a poll */
+  function oDetails(o){
+    var w=el('div');
+    var f=el('details','odet salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm'), s=el('summary','odet__sum');
+    s.appendChild(el('span','salt-eyebrow salt-eyebrow--copper',tw('od.h'))); f.appendChild(s);
+    if((draft.oDet||{})[o.id]) f.open=true;
+    f.addEventListener('toggle',function(){ (draft.oDet=draft.oDet||{})[o.id]=f.open; });
+    var L=el('div','salt-ledger salt-ledger--plain');
+    L.appendChild(lrow(tw('od.at'),stamp(o.at)));
+    L.appendChild(lrow(tw('od.way'),tw(o.mode==='deliver'?'od.deliver':'od.collect')));
+    if(o.slot&&o.slotSpan) L.appendChild(lrow(tw('od.window'),tw('od.windowAt',{d:function(L){ return ymdDay(winDay(o.slot),L); }, a:winPart(o.slotSpan,0), b:winPart(o.slotSpan,1)})));
+    if(o.point) L.appendChild(lrow(tw('od.point'),tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point})));
+    var rr=lrow(tw('od.ref'),orderRef(o.id)); L.appendChild(rr);
+    f.appendChild(L); w.appendChild(f);
+    return w;
   }
   /* ---- S5 5.4 (24 Sep 2026): THE MESSAGES, on the system's Bubble and thread. Their lines stand right with where
      each one is: Sending, Sent (stored, never read: there are no read receipts), or, lost on the way, Not sent with
@@ -5015,7 +5116,7 @@ const CLIENT_JS = `
     tapSaid(o,'price',b.ok?'':wErr(b,'np.notSent'));
     await loadOrders(); if(mine!==ticket) return; oDraw();
   }
-  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, price:oPrice, act:oAct, rate:oRate, thread:oThread, say:oSay, hist:oHist, foot:oFoot};
+  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, price:oPrice, act:oAct, rate:oRate, thread:oThread, say:oSay, details:oDetails, hist:oHist, foot:oFoot};
   /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
      that says English (S13-L1) */
   function oPartOf(k,o){ var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return n; }

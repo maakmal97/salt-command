@@ -24571,7 +24571,7 @@ await (async () => {
     if (row95) row95.click();
     const card95 = d95.querySelector("#pOrder .oscreen");
     /* F8: a row's mark is a tile, its figure under it (his "number alone"), and the shape rides in the tile's words */
-    ok(row95 && row95.querySelector(".mtile svg.psym") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector("h3 svg.psym") && /Droplet/.test(card95.textContent)
+    ok(row95 && row95.querySelector(".mtile svg.psym") && /Droplet/.test(row95.textContent) && card95 && card95.querySelector(".oband svg.psym") && /Droplet/.test(card95.textContent)
       && !/\b(salt|oil)\b/i.test(card95.textContent + " " + row95.textContent),
       "an order's row and its own screen carry the mark of what was ordered and never its name: " + JSON.stringify(card95 && card95.textContent.slice(0, 60)));
     /* text node by text node (25 Sep 2026): textContent runs a heading into the next line, and "GaramGood" hides a word */
@@ -24747,9 +24747,9 @@ await (async () => {
     const row8 = [...D8.querySelectorAll("#pOrder [data-row] svg.psym")];
     all8.push(...census8(D8.getElementById("pOrder")));
     D8.querySelector("#pOrder [data-row]").click();
-    await until8(() => D8.querySelector("#pOrder .ohead svg.psym"));
-    const screen8 = [...D8.querySelectorAll("#pOrder .ohead svg.psym")];
-    all8.push(...census8(D8.querySelector("#pOrder .ohead")));
+    await until8(() => D8.querySelector("#pOrder .oband svg.psym"));
+    const screen8 = [...D8.querySelectorAll("#pOrder .oband svg.psym")];
+    all8.push(...census8(D8.querySelector("#pOrder .oband")));
     /* the order sheet: its choice of book, then the check before Place */
     D8.getElementById("oNew").click();
     await until8(() => D8.querySelectorAll("#osheet svg.psym").length >= 3);
@@ -25244,7 +25244,7 @@ await (async () => {
      marks and bold, so a piece of it passes when the element carries the mark. */
   const PAYN = new Set(JSON.stringify((await import("../stmt/pay.js")).PAY_ACCOUNTS).match(/"[^"]*"/g).map((x) => JSON.parse(x))
     .concat(["DuitNow Transfer", "DuitNow QR", "JomPAY", "Touch 'n Go Business"]));
-  const DATA = (t) => /^(abcd-efgh|RM [0-9.,]+|RM|[0-9:., -]+|STMT|SAIDQ|PLACEQ|LABELQ|Salt Counter)$/.test(t) || PAYN.has(t);
+  const DATA = (t) => /^(abcd-efgh|RM [0-9.,]+|RM|[0-9:., -]+|STMT|SAIDQ|PLACEQ|LABELQ|Salt Counter|[2-9A-HJ-NP-TV-Z]{4}-[2-9A-HJ-NP-TV-Z]{3})$/.test(t) || PAYN.has(t);
   const look = () => { const w = (n) => { for (const c of n.childNodes) {
     if (c.nodeType === 3) { const t = c.textContent.trim(), k = c.parentNode.closest("[data-w]");
       if (t.includes("§")) marked.add(t);
@@ -32866,7 +32866,7 @@ await (async () => {
     const r = d.querySelector('#pOrder [data-row="' + id + '"]'); if (r) r.click();
     return scr() && scr().getAttribute("data-order") === id;
   };
-  const lines = () => [...scr().querySelectorAll(".salt-ledger__row")].map((r) => [r.querySelector(".salt-ledger__label").textContent,
+  const lines = () => [...scr().querySelectorAll('[data-part="money"] .salt-ledger__row')].map((r) => [r.querySelector(".salt-ledger__label").textContent,
     r.querySelector(".salt-ledger__value").textContent, (r.querySelector(".salt-ledger__flag") || {}).textContent || ""]);
   const pills = () => [...scr().querySelectorAll(".salt-pill")].filter((b) => !b.closest("[hidden]")).map((b) => b.textContent);
   try {
@@ -32877,7 +32877,7 @@ await (async () => {
 
     ok(open(ADV), "the delivered, unpaid order opens");
     const steps = [...scr().querySelectorAll("ol.salt-steps > li")];
-    ok(steps.map((s) => s.textContent).join("|") === "Placed|Confirmed|Ready|Delivered"
+    ok(steps.map((s) => s.querySelector(".salt-steps__name").textContent).join("|") === "Placed|Confirmed|Ready|Delivered"
       && steps.slice(0, 3).every((s) => s.classList.contains("salt-steps__step--done")) && steps[3].getAttribute("aria-current") === "step"
       && !/pa(y|id)/i.test(part("steps").textContent),
       "the goods are on their own track, at Delivered, with nothing about money on it: " + JSON.stringify(steps.map((s) => s.className)));
@@ -42343,7 +42343,7 @@ await (async () => {
     openO("oA"); claim();
     await until(() => said(d, "Sent, waiting for us to confirm."));
     const rec = said(scr(), "Sent, waiting for us to confirm.");
-    ok(rec && d.getElementById("paySheet").hidden && !scr().querySelector(".oact button") && /Sent, waiting for us to confirm/.test(scr().querySelector('[data-part="money"]').textContent)
+    ok(rec && d.getElementById("paySheet").hidden && !scr().querySelector(".oact button:not(.omsg)") && /Sent, waiting for us to confirm/.test(scr().querySelector('[data-part="money"]').textContent)
       && !/Paid in full/.test(scr().textContent) && after(scr().querySelector(".salt-insight"), rec),
       "sent in full, Pay is gone, nothing says paid, and the answer stands under the order's state instead of vanishing with it");
 
@@ -44228,7 +44228,7 @@ await (async () => {
         out.row = t(d.querySelector('#pOrder [data-row="oN"]'));
         d.querySelector('#pOrder [data-row="oN"]').click();
         await until(() => d.querySelector("#pOrder .oscreen"));
-        out.lines = [...d.querySelectorAll("#pOrder .oscreen .salt-ledger__row")].map(t);
+        out.lines = [...d.querySelectorAll('#pOrder .oscreen [data-part="money"] .salt-ledger__row')].map(t);
       }
       return out;
     } finally { dom.window.close(); }
@@ -44241,7 +44241,7 @@ await (async () => {
   const byHand = await read(0, [order(70, [nf])], []);
   const alone = await read(0, [order(0, [nf])], []);
   const lost = (x) => x.lines.some((l) => /^Not found yet/.test(l)) || /not found/.test(x.row);
-  ok(!lost(again) && again.lines.some((l) => /^Paid ?RM 70/.test(l)) && !lost(byHand) && lost(alone),
+  ok(!lost(again) && again.lines.some((l) => /^Paid.*RM 70/.test(l)) && !lost(byHand) && lost(alone),
     "on an order, a Not found goes once they sent it again, and once nothing is owed, and stands while it is the newest word and still owed: " + JSON.stringify({ again, byHand, alone }));
   const acf = { id: "c9", at: iso(-30), amount: 20, method: "qr", account: "tng", state: "notfound", answered: iso(-20) };
   const sentAgain = await read(40, [], [acf, { id: "c10", at: iso(-10), amount: 20, method: "qr", account: "tng", state: "received", answered: iso(-50) }]);
@@ -44780,8 +44780,8 @@ await (async () => {
     "the places are the system's, and a tap moves aria-current with the open one");
   /* S5 5.3: the chip is drawn in one place, stateChip, its word the customer's and its tone read off the order; F8 (Step
      1a.2) stood it beside the head's card; Counter Batch A P4 put an aria-hidden glyph before the word, so the word is a text node after it */
-  ok(/\+'salt-status salt-status--'\+tone\);\s*c\.appendChild\(chipGlyph\(stateGlyph\(o\)\)\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /side\.appendChild\(stateChip\(o,'state'\)\)/.test(pgY),
-    "an order's state is the system's chip, in its tone");
+  ok(/\+'salt-status salt-status--'\+tone\);\s*c\.appendChild\(chipGlyph\(stateGlyph\(o\)\)\); c\.appendChild\(document\.createTextNode\(stateWord\(o\)\)\)/.test(pgY) && /tone=s==='placed'\?'steel salt-status--dashed':/.test(pgY) && /t\.appendChild\(stateChip\(o\)\)/.test(pgY) && /top\.appendChild\(stateChip\(o\)\)/.test(pgY) && /h\.appendChild\(el\('h3','state oband__state',stateWord\(o\)\)\)/.test(pgY),
+    "an order's state is the system's chip, in its tone, on its row and card; its own screen's band says the word alone (Counter Batch A P7)");
   const pcssY = pgY.slice(pgY.indexOf("const PAGE_CSS = " + String.fromCharCode(96)), pgY.indexOf(String.fromCharCode(96) + ";", pgY.indexOf("const PAGE_CSS = ")));
   ok(!/\.btn\{[^}]*background/.test(pcssY) && !/\.tabs button\.on\{/.test(pcssY) && !/\n\.state\{/.test(pcssY) && !/\n\.fld\{[^}]*background/.test(pcssY) && /\.btn\{margin-top:18px;width:100%\}/.test(pcssY),
     "the page's own layer keeps geometry and states no look the recipe owns");
@@ -51262,6 +51262,11 @@ await (async () => {
 section("Counter Batch A: your orders as cards, filtered on a phone, Open and Done as two columns on a desk, each empty view with one way on (18 Oct 2026)");
 await (async () => {
   await (await import("./counter-orders-cards.mjs")).run({ ok });
+})();
+
+section("Counter Batch A: an order's own screen, the band with its reference and point, the marked steps, the receipt, Message on every stage, Details (18 Oct 2026)");
+await (async () => {
+  await (await import("./counter-order-detail.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: the order card reads its preview on opening, asks on a sheet, keeps its moves at its foot, and its tick is a 44px target");

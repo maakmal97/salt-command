@@ -148,7 +148,7 @@ export async function run({ ok }) {
 
     const screen = async (o) => { R0[o.id].click(); await until(() => S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]')); return S.d.querySelector('#pOrder .oscreen[data-order="' + o.id + '"]'); };
     const parts = (s) => ({ head: t(s.querySelector('[data-part="head"] .state')), when: t(s.querySelector('[data-part="when"]')),
-      steps: [...s.querySelectorAll('[data-part="steps"] li')].map(t).join("|"), money: t(s.querySelector('[data-part="money"]')), hist: t(s.querySelector('[data-part="hist"]')) });
+      steps: [...s.querySelectorAll('[data-part="steps"] li .salt-steps__name')].map(t).join("|"), money: t(s.querySelector('[data-part="money"]')), hist: t(s.querySelector('[data-part="hist"]')) });
     const sA = parts(await screen(A)), sB = parts(await screen(B)), sH = parts(await screen(H)), sD2 = parts(await screen(D2)), sE = parts(await screen(E)), sN = parts(await screen(N));
     ok(sA.head === "Placed" && /^Waiting for us to confirm\. You will see it change here\./.test(sA.when) && sA.steps === "Placed|Confirmed|Ready|Collected",
       "a placed order's own screen reads Placed, Waiting for us to confirm, and its steps run Placed, Confirmed, Ready, Collected: " + JSON.stringify(sA));

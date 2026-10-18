@@ -4065,6 +4065,8 @@ export const OWNER_JS = `
     side.appendChild(stageChip(st));
     sub.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u)));
     sub.appendChild(document.createTextNode(' · Ordered '+fmtWhen(order.at)+', '+(order.mode==='deliver'?'to deliver':'to collect')));
+    /* Counter Batch A: the reference the customer sees on their order, so one they quote finds it here */
+    var oref=el('span','mono oref',' · Ref '+orderRef(order.id)); oref.setAttribute('data-ref',''); sub.appendChild(oref);
     side.appendChild(sub); head.appendChild(side); card.appendChild(head);
     var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
     if(!order.writtenOff&&order.status!=='declined'&&order.status!=='cancelled') card.appendChild(ordSteps(order));
