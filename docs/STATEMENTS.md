@@ -713,6 +713,29 @@ intervention) would let Back pass over a Sheet drawn on an untouched page, such 
 The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
 `test/counter-account-door.mutations.json`) drives all of it through the generated page in jsdom.
 
+### Counter Batch A: the point, the order's own screen, Home and Account (18 Oct 2026, his "all recommended")
+
+- **Collection points.** His list is Counter KV `maker:points`, edited on Salt Account under Shop > Hours (`points.*` above). A collect
+  Ready asks which point and is refused without one; a delivery needs none. The point is copied onto the order (`point`, `pointAt`), so a
+  later edit of the list moves no order. Change point, while the order waits with goods owed, writes a `point` event ("point moved to A3"),
+  wakes the customer (`point-moved`) and shows in their history as "We moved your collection point to Point A3". The customer is given
+  `pointAt` only while the order waits ready to collect with goods still owed; the five Desk roads never carry it.
+- **Orders** are cards, the whole card one control: All, Open, To pay and Done on a phone, Open and Done as two columns from 860px, nothing
+  opened by itself. An empty view has its mark, a sentence and one way on.
+- **An order's own screen** is a band (an "Order" eyebrow, a short reference derived from the id such as R9MB-7AK, the state as its heading,
+  the mark, how it goes and, while it waits at a point, the point and its pin), the steps marked with their moments and Next, a receipt with
+  one Paid row a payment, Message on every stage, and Details (ordered at, way, window, point, reference). Salt Account shows the same reference.
+- **Every state word has a glyph** before it (dot, tick, double tick, cross), aria-hidden, the word unchanged.
+- **Home**: the Today card first (the time in Kuala Lumpur, Open until or Closed and when it opens off `/hours`, and the notice turning a line
+  every six seconds with Pause; under reduced motion every line stands). To pay now and the overdue gate still lead, then Needs you and Coming
+  up. Their latest open order is one element: a pill above the App bar and the pay foot on a phone (the foot's height is `--hfoot`), a banner
+  under To pay now from 1080px. An associate sees the nearest reward with its meter, in the card's words, never a level and never the units to
+  go (a margin figure the card does not carry). This year counts this year's lines of the live statement, each mark's units on their own and a
+  bar a month, a cancelled line not counted.
+- **Account** opens on the glance: To pay now at Home's own figure with its due word and a link to its order, the thread, and the statement up
+  to date as at its moment. Nothing in it names a roster code.
+- **From 1080px** the rail is titled Salt Counter and says "Signed in as" with the username; the customer's Desk bar is gone.
+
 ### Failures and public pages on brand (Phase 7d part 4, 12 Oct 2026, his yes of 11 Oct)
 
 **A read that fails says when the page last read.** After the orders' read has worked once (`readAt`, stamped by `loadOrders` on a good answer), a read that

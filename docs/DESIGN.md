@@ -323,6 +323,15 @@ picker stay retired (the suite fails if any returns): nothing keys on a clock, t
   book hue it shares with Night, rice, 5.47 and 4.91, and of Tide's own tokens mist, 6.03 and 5.41. The lit slate and the
   aurora's core stay advice, as in `Code\salt-ds` (`DESIGN.md`, `npm run contrast`).
 
+## 18 Oct 2026: Counter Batch A, the recipes salt-ds 1.7.0 added
+
+salt-ds#13 (1.7.0) added, for both themes: `salt-status__glyph` (the mark before a state word), `salt-steps--marks` with
+`__mark`, `__name`, `__time` and the done, now and next states, `salt-notice` (lines one at a time, `__pause` at 44px, dots), `salt-ledger__sub`
+and `__row--due`, `salt-band` (an order's head with its reference), `salt-empty`, `salt-glass-card--link` (a whole card that is one control),
+`salt-pin` and `salt-glance`. The Counter uses them as they are; its own CSS only lays them out. Ember and verdigris became text colours, so
+both joined the Counter's measured contrast list. **Under reduced motion** the notice stacks every line with no dots, Pause or timer, a card link
+does not lift and the steps do not animate.
+
 ## 11 Oct 2026: the Counter wears Night or Tide, chosen on each device
 
 His decision, final: the same two themes on the customer's site (`stmt/`), the same rule as the Desk. Night is the design system's

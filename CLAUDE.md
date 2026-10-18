@@ -424,8 +424,9 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   Pay; every Pay opens one sheet (D8: no account chosen for them, the username the reference, QR
   Command through `payHref`, never named), and on return it asks once, Did you send it: a claim reads "sent, waiting for
   us to confirm" until his answer (D7). **The bulletin** is KV `bulletin`, set through the desk's keyed `/bulletin` and
-  checked by `siteWords`: a still card on Home (his D14; no running or changing mode), and a Set asks before it wakes
-  every phone.
+  checked by `siteWords`: in Home's Today card, one line at a time, the next every six seconds with Pause, every line standing
+  under reduced motion and never a live region (Counter Batch A, his decision of 18 Oct 2026, reversing D14's still card), and a
+  Set asks before it wakes every phone.
 - **An associate is asked who an order is for, first (Me / A friend)**: a friend's books to their `-R` bucket
   through the engine's `bookR2`, and the `orderKey` is built on the bucket. **A bucket is not its
   own person**: `ownsCode` reads the code and the bucket together; a bucket has no statement and no
@@ -489,6 +490,12 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   sealed on their phone to the slip key under `salt-pin v1` (`stmt/pin.js`), ciphertext alone on the Counter for 30 days,
   opened only on the Desk with the one unlock: the fee's point ahead of `vault-addr`, filed as their place only on his tap: the card's, or File all for every customer with no point (his choice of 13 Oct 2026),
   one passphrase for the batch; never filed without one.
+- **A collection point** (Counter Batch A, his decisions of 18 Oct 2026): his points are Counter KV `maker:points`
+  (`{v:1, list:[{code, lat, lng}]}`, a code one capital and one or two digits, so never a roster code's shape), kept on Salt
+  Account under Shop > Hours. **A collect Ready names one and is refused without**; the order keeps the point as a snapshot
+  (`pointAt`), so editing the list moves no order, and Change point moves one on purpose (a `point` event, its wake
+  `point-moved`). The customer reads `pointAt` only while the order waits ready to collect with goods still owed
+  (`customerView`); `deskOrderView` strips it on every Desk road. Their pin opens Apple Maps, the phone's `geo:` or Google Maps.
 - **The restock light** (F4, his decision of 05 Oct 2026): per book, the engine's `restockLight` over the shelf and `commitments().commitUnits`: green while free stock covers what is agreed, yellow the moment the commitments exceed the shelf (free stock below what is agreed, the engine's `coverable` false), red when the shelf is out. Sealed in each customer's price list (`supply`, outside the stamp) at publish and drawn as a coloured border on the mark, never a figure or the word stock; yellow or red carry "More by DD Mon" from the desk's `expected` date (KV `expected`, set on Stock through `/expected`, never named restock). Ordering is never refused.
 - **The chase, tapered** (his decision D5, hours amended by V5 on 29 Sep 2026): the site's hourly cron (`wrangler.stmt.jsonc`) wakes a
   customer holding goods unpaid (`isAdvance`) every hour from 08:00 to 22:00 Kuala Lumpur (`chaseSlot`) for three days from
