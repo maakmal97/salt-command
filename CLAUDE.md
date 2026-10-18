@@ -89,7 +89,10 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      sen, at every size on every book, no profit and no ten-rounding, through the engine's `quoteAt` and `quoteGrid` with
      `d` of `'partner'`. Above Ambassador and no level or drift: the Drift card names them and sets nothing, and a test that
      walks every customer leaves them out. A partner is an associate: set from the Drift card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
-6. **The look is the Salt design system applied as a layer.** Material, type and colour are
+6. **The look is the Salt design system applied as a layer.** **A design change he gives goes to `Code\salt-ds` first, then to the Desk, the
+   Counter and QR Command in the same piece of work, unasked** (his word of 18 Oct 2026): salt-ds's
+   `npm run propagate` and its `CLAUDE.md`; `node tools/designsync.mjs --drift` says whether `design/` is
+   still the salt-ds checkout's. Material, type and colour are
    decided in `design/desk.css` over the vendored `design/salt-ds.css`: edit there, `--sync`,
    build, never a hex in the master's older layers. Chart series read the identity's hexes
    directly (`salt-ds/src/tokens.ts`), so a palette change is two places; product hues are
