@@ -399,7 +399,7 @@ export class OrderBook {
             /* Counter Admin's move on an example order: the order book's own decideDesk, in this fixture alone */
             const previous = doc.orders.find((o) => o.id === a.id);
             if (!previous) return { ok: false, error: "No such acceptance order.", status: 404 };
-            const decision = decideDesk(previous, a.body, at);
+            const decision = decideDesk(previous, a.pointAt !== undefined ? Object.assign({}, a.body, { pointAt: a.pointAt }) : a.body, at);
             if (decision.error) return no(decision, decision.status || 400);
             order = decision.none ? previous : applyEvent(previous, decision.ev).order;
             doc.orders[doc.orders.findIndex((o) => o.id === a.id)] = order;
@@ -640,8 +640,10 @@ export class OrderBook {
           return { ok: false, error: "That request id already names different content.", status: 409 };
         return { ok: true, order, again: true };
       }
-      const d = decideDesk(order, body, at);
-      if (d.error) return { ok: false, error: d.error, status: d.status || 400 };
+      /* Counter Batch A: the point's place is a sibling of the body, joined only now, after the retry was answered, so a retry of a
+         landed Ready whose point he has since removed is still answered again, and the stored request is never the place */
+      const d = decideDesk(order, a.pointAt !== undefined ? Object.assign({}, body, { pointAt: a.pointAt }) : body, at);
+      if (d.error) return { ok: false, error: d.error, status: d.status || 400, ...(d.code ? { code: d.code } : {}) };
       if (d.none) return { ok: true, order, none: true };
       if (rd) d.ev.request = request;
       return this.append(d.ev.kind === "fix" ? fx : rd, u, id, d.ev, order);

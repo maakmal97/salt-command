@@ -2953,6 +2953,33 @@ export const OWNER_JS = `
   /* the control that asks carries its data-yn from the moment it is drawn, so a card redrawn while its sheet is open still has the control to give focus back to */
   function makerAskKey(order,kind){ return 'order:'+order.id+':'+kind; }
   function makerAskTag(order,btn,kind){ btn.setAttribute('data-yn',makerAskKey(order,kind)); return btn; }
+  /* COUNTER BATCH A: WHICH POINT. Ready to collect and Change point open the page's Sheet over his points (the test accounts' own on an
+     example order), the one used last first, one 44px button each; a tap sends the move under its own request id, so another point is
+     another move. With no point on the list, the Sheet says where to add one and sends nothing. */
+  function pointLast(code){
+    var at='';
+    ((makerData&&makerData.orders)||[]).forEach(function(o){ (o.history||[]).forEach(function(h){ if(h&&h.point===code&&String(h.at)>at) at=String(h.at); }); });
+    return at;
+  }
+  async function pointPick(order,opener,kind){
+    if(!makerPoints){ try{ makerPoints=await refs('/all/maker/points'); }catch(error){ makerSay(order.id,error.message,error); return; } }
+    var list=(order.test?makerPoints.examples:makerPoints.points&&makerPoints.points.list)||[];
+    if(kind==='change') list=list.filter(function(p){ return p.code!==order.point; });
+    list=list.slice().sort(function(a,b){ var x=pointLast(a.code), y=pointLast(b.code); return x<y?1:x>y?-1:a.code<b.code?-1:1; });
+    var grid=el('div','maker-point-pick');
+    list.forEach(function(p){
+      var b=actOn(el('button','salt-ghost','Point '+p.code),'order.point',p.code); b.type='button';
+      b.addEventListener('click',function(){
+        ynShut();
+        makerMove(order,kind==='ready'?{status:'ready',mode:'collect',point:p.code}:{point:p.code},
+          kind==='ready'?'Order marked ready to collect at Point '+p.code+'.':'Collection point changed to Point '+p.code+'.');
+      });
+      grid.appendChild(b);
+    });
+    makerAsk(order,opener,'point',{title:kind==='ready'?'Ready to collect at which point?':'Move it to which point?', plain:true, go:'Choose a point', keep:'Not yet',
+      say:[list.length?'They are told where, with a pin that opens their maps app.':(kind==='ready'?'No point is on the list yet.':'No other point is on the list.')+' Add one under Shop, Shop hours.'], extra:[grid]});
+    var go=document.getElementById('ynGo'); if(go) go.hidden=true;
+  }
   function makerAsk(order,opener,kind,q){
     ynOpen({title:q.title, opener:opener, again:ynFind(makerAskKey(order,kind)), go:q.go, keep:q.keep, yes:q.yes,
       body:[makerAskRow(order)].concat(q.say.map(function(s){ return el('p',null,s); })).concat(q.extra||[])});
@@ -4273,11 +4300,20 @@ export const OWNER_JS = `
       }else if(order.status==='acknowledged'){
         /* Ready says how the goods go, as the Desk's card does; the order book records the mode at Ready */
         [['collect','Ready to collect'],['deliver','Ready to deliver']].forEach(function(m){
-          makerButton(lead,[m[1],'order.ready-'+m[0]],function(){
+          var b=makerButton(lead,[m[1],'order.ready-'+m[0]],function(){
+            /* Counter Batch A (his answer of 18 Oct 2026): a collection is ready at one of his points, chosen on a Sheet */
+            if(m[0]==='collect'){ pointPick(order,b,'ready'); return; }
             makerMove(order,{status:'ready',mode:m[0]},'Order marked '+m[1].toLowerCase()+'.');
-          },(order.mode||'collect')===m[0]).setAttribute('data-mode',m[0]);
+          },(order.mode||'collect')===m[0]);
+          b.setAttribute('data-mode',m[0]); if(m[0]==='collect') makerAskTag(order,b,'point');
         });
       }else if(order.status==='ready'&&Number(order.moved||0)<Number(order.qty)-0.0004){
+        /* Counter Batch A: where it waits, and Change point while goods are still to hand over */
+        if(order.mode==='collect'){
+          lead.appendChild(el('p','msg maker-point-at',order.point?'At Point '+order.point+'.':'No collection point named.'));
+          var moveTo=makerButton(lead,['Change point','order.point-change'],function(){ pointPick(order,moveTo,'change'); },false);
+          makerAskTag(order,moveTo,'point');
+        }
         /* 17 Oct 2026 (his word on CR3-DAM's order): asked only while units are left to hand over; all handed over, the card's figures say so */
         /* 16 Oct 2026 (plan 5, part 3): THE UNITS FIELD HAS ONE BUTTON. Handed over and Finish at fewer units were two buttons on one field; now the field
            has one, and fewer units than ordered show two tiles under it: More to come (the default, a part handover, as Handed over sent it) or That is all
@@ -5065,10 +5101,10 @@ export const OWNER_JS = `
     },true);
   }
   function pointsSaid(text,error){
-    var mine=document.getElementById('makerPointsMessage');
-    if(!mine) return;
-    if(error) refusal(mine,error); else mine.textContent=text;
-    if(mine.scrollIntoView) mine.scrollIntoView({block:'nearest'});
+    var line=document.getElementById('makerPointsMessage');
+    if(!line) return;
+    if(error) refusal(line,error); else line.textContent=text;
+    if(line.scrollIntoView) line.scrollIntoView({block:'nearest'});
   }
   var tiers=[];
   async function loadLinks(quiet){

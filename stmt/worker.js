@@ -61,7 +61,8 @@ import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord,
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
-import { mintSession, dropSession, sessionUser, SESSION_TTL, customerView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
+import { readPoints, resolvePoint } from "./points.js";
+import { mintSession, dropSession, sessionUser, SESSION_TTL, customerView, deskOrderView, allOrders, ordersOwing, placeOrder, replaceOrder, customerMove, deskMove, orderMarks, dropOrders, toChase, chaseDue, markChased, chaseSlot, toRate, markRateAsk, readsBoth, checkStores, storeCompare, claimAccount, claimView, allClaims, deskClaim, CLAIM_ID_RE,
   threadOf, threadView, sayThread, allThreads, deskThread, expectedSet, poolsOf, poolJoin, poolView, accountBook } from "./orders.js";
 
 const UKEY = (u) => "u:" + u;
@@ -996,10 +997,11 @@ async function handleDesk(request, env, p, m) {
     const q = new URL(request.url).searchParams;
     /* v694: the orders with a stage the ledger has not been told about, whatever state they are
        in. A completed order still owes its last entries, so this is not the open list. */
-    if (q.get("work") === "1") return json({ ok: true, orders: await ordersOwing(env) });
+    /* Counter Batch A: every road that hands the Desk the raw order hands it deskOrderView, the point's place left out */
+    if (q.get("work") === "1") return json({ ok: true, orders: (await ordersOwing(env)).map(deskOrderView) });
     /* S9 9.8: and, when the desk's page asks, how many associate links wait in Salt Account: a count, no link, no name */
     const links = q.get("links") === "1" ? { links: (await listRefs(env)).filter(linkWaiting).length } : {};
-    return json(Object.assign({ ok: true, orders: await allOrders(env, q.get("all") === "1") }, links));
+    return json(Object.assign({ ok: true, orders: (await allOrders(env, q.get("all") === "1")).map(deskOrderView) }, links));
   }
   /* S9 9.8: WHAT WAITS ON THE DESK, told by the desk (src/orders.js tellWaiting) as one figure, for Salt Account's
      line. A count and its moment, nothing else: no order, no code and no way to the desk. */
@@ -1083,7 +1085,7 @@ async function handleDesk(request, env, p, m) {
     const marks = await orderMarks(env);
     /* fold 5.6: with ?work=1, the orders owing a stage beside the marks, as /desk/orders?work=1 lists them, so the
        desk's minute is one trip here and not two; without it the answer is the marks alone, as it was */
-    if (new URL(request.url).searchParams.get("work") === "1") return json(Object.assign({ ok: true }, marks, { orders: await ordersOwing(env) }));
+    if (new URL(request.url).searchParams.get("work") === "1") return json(Object.assign({ ok: true }, marks, { orders: (await ordersOwing(env)).map(deskOrderView) }));
     return json(Object.assign({ ok: true }, marks));
   }
   const replacement = /^\/desk\/orders\/([^/]+)\/([^/]+)\/replace$/.exec(p);
@@ -1093,15 +1095,19 @@ async function handleDesk(request, env, p, m) {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
     const result = await replaceOrder(env, u, replacement[2], await readJson(request));
     return result.error ? refuse(result, "prices" in result ? { prices: result.prices } : {})
-      : json({ ok: true, order: result.order });
+      : json({ ok: true, order: deskOrderView(result.order) });
   }
   const mm =/^\/desk\/orders\/([^/]+)\/([^/]+)$/.exec(p);
   if (!mm) return notFound();
   const u = normUser(mm[1]);
   if (!u || !OID_RE.test(mm[2])) return notFound();
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-  const r = await deskMove(env, u, mm[2], await readJson(request));
-  return r.error ? json({ ok: false, error: r.error }, r.status || 400) : json({ ok: true, order: r.order, push: r.push, ...(r.again ? { again: true } : {}) });
+  /* Counter Batch A: a collection point named on the move is looked up here, in his list on Counter KV, and rides beside the body;
+     a code the list lacks rides as no place, and the book refuses it only once it knows the move is new (a retry is answered first) */
+  const moveBody = await readJson(request);
+  const pointAt = moveBody && typeof moveBody === "object" && moveBody.point !== undefined ? resolvePoint((await readPoints(env)).list, moveBody.point) : undefined;
+  const r = await deskMove(env, u, mm[2], moveBody, pointAt);
+  return r.error ? json({ ok: false, error: r.error, ...(r.code ? { code: r.code } : {}) }, r.status || 400) : json({ ok: true, order: deskOrderView(r.order), push: r.push, ...(r.again ? { again: true } : {}) });
 }
 
 /* ---- THE OWNER'S LIST (10 Sep 2026) ---------------------------------------------------------

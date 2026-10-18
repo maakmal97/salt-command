@@ -44,7 +44,7 @@
   {
     "name": "a foot below the screen is not scrolled to",
     "file": "stmt/owner.js",
-    "find": "if(line.scrollIntoView) line.scrollIntoView({block:'nearest'});",
-    "replace": ""
+    "find": "else line.textContent=text;\n    if(line.scrollIntoView) line.scrollIntoView({block:'nearest'});",
+    "replace": "else line.textContent=text;"
   }
 ]

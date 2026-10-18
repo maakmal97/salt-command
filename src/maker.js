@@ -63,7 +63,7 @@ export function makerOrderFault(action, body) {
     again: ["stage", "rid", "drop"],
     restate: ["qty", "total", "delivery", "rid", "undo"],
     notfound: ["rid", "claim", "amount"],
-    move: ["rid", "status", "note", "message", "noReply", "mode"],
+    move: ["rid", "status", "note", "message", "noReply", "mode", "point"],
     amend: ["u", "product", "qty", "mode", "place", "forFriend", "rid", "week", "digest", "wantBy", "slot"],
     take: []
   };
@@ -111,8 +111,15 @@ export function makerOrderFault(action, body) {
   if (action === "notfound" && (body.claim === undefined || !(body.amount > 0)))
     return "Name the claim and its amount.";
   if (action === "move") {
-    const kinds = [body.status !== undefined, body.message !== undefined, body.noReply !== undefined].filter(Boolean).length;
-    if (kinds !== 1) return "Send one move: a status, a reply, or No reply needed.";
+    /* Counter Batch A: a collection point alone is a fourth move, Change point; the code's shape only is checked here, and
+       whether it is on his list by the Counter, which alone holds it. The Desk never sees a point's place */
+    const kinds = [body.status !== undefined, body.message !== undefined, body.noReply !== undefined, body.point !== undefined && body.status === undefined].filter(Boolean).length;
+    if (kinds !== 1) return "Send one move: a status, a reply, No reply needed or a collection point.";
+    if (body.point !== undefined && (typeof body.point !== "string" || !/^[A-Z][0-9]{1,2}$/.test(body.point)))
+      return "A collection point is one capital letter and one or two digits.";
+    if (body.point !== undefined && body.status !== undefined && !(body.status === "ready" && body.mode === "collect"))
+      return "A collection point goes only with Ready to collect, or alone.";
+    if (body.status === "ready" && body.mode === "collect" && body.point === undefined) return "Ready to collect names its collection point.";
     if (body.status !== undefined && !["ready", "declined", "cancelled"].includes(body.status))
       return "Choose Ready, Decline or Cancel.";
     if (body.message !== undefined && (typeof body.message !== "string" || !body.message.trim() || body.message.length > 200))

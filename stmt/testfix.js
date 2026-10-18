@@ -32,7 +32,7 @@ export const TEST_PASS = "0000-0000-0000-0000";
 export const TESTS = { [TEST_USER]: "open", [TEST_LOCKED]: "locked" };
 export const TEST_USERS = Object.keys(TESTS);
 export const isTest = (u) => Object.prototype.hasOwnProperty.call(TESTS, String(u || ""));
-export const FIX_VERSION = 9;   /* 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
+export const FIX_VERSION = 10;   /* 10: two orders ready at a collection point, one moved to another (Counter Batch A, 18 Oct 2026); 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
 export const fixKey = (u) => "testfix:" + u;
 
 /** The fixture for this account as read, or null: a test account's alone, and only the one it was sealed for. */
@@ -271,10 +271,10 @@ export async function examplePaynum(env, u) {
   return numbersOf({ v: 1, accounts: (fix && fix.paynum) || null });
 }
 
-/** COUNTER BATCH A (18 Oct 2026): THE TEST ACCOUNTS' COLLECTION POINT, invented and never one of his: "Z9", on a public square.
+/** COUNTER BATCH A (18 Oct 2026): THE TEST ACCOUNTS' COLLECTION POINT, invented and never one of his: "Z9" and "Z8", on public squares.
  *  Counter Admin offers it, and only it, at Ready on an example order, and stmt/maker.js resolves an example order's point from it,
  *  so no real point's place is ever written into a fixture. */
-export const EXAMPLE_POINTS = Object.freeze([Object.freeze({ code: "Z9", lat: 3.14786, lng: 101.69369 })]);
+export const EXAMPLE_POINTS = Object.freeze([Object.freeze({ code: "Z9", lat: 3.14786, lng: 101.69369 }), Object.freeze({ code: "Z8", lat: 3.1579, lng: 101.7123 })]);
 
 /** The fixture's bulletin, for a test account while he has none of his own set. */
 export async function exampleBulletin(env, u) {

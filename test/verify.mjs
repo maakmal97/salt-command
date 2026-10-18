@@ -46,6 +46,12 @@ function workflowBash() {
    another is not a floor, and a red run nobody reads is the same as no run.
    okOff counts as a pass or a fail exactly as ok does. It is subtracted from the FLOOR only, so
    the floor measures what every machine reaches and CI and the laptop can agree on it. */
+/* COUNTER BATCH A (18 Oct 2026): a collect Ready names one of his points. READY_PT is that move; PT_AT is the place a point resolves to
+   (the example list's Z9), what the order book and deskMove take beside the body; PT_KV seeds Counter KV maker:points with it, for the
+   roads that look the code up there. Older sections that ready a collect order carry these; none of their assertions changed. */
+const READY_PT = { status: "ready", point: "Z9" };
+const PT_AT = { lat: 3.14786, lng: 101.69369 };
+const PT_KV = JSON.stringify({ v: 1, list: [{ code: "Z9", ...PT_AT }] });
 let offMachine = 0;
 const okOff = (c, m) => { offMachine++; ok(c, m); };
 const skipOff = (m) => { console.log("  SKIP: " + m); };
@@ -10180,8 +10186,9 @@ await (async () => {
   const n1 = await nudgeOrders(denv), n2 = await nudgeOrders(denv);
   ok(n1.ok && n1.newest === o3.at && (await dkv.get("orders:nudged")) === o3.at && n2.ok && n2.sent === 0 && !n2.newest,
     "the nudge marks the newest placement and does not nudge twice for it");
+  await kv.put("maker:points", PT_KV);
   for (const st of ["acknowledged", "ready"])
-    b = await (await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: st }) }), denv)).json();
+    b = await (await deskWorker.fetch(req("/orders/" + unmapped + "/" + o3.id, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(st === "ready" ? READY_PT : { status: st }) }), denv)).json();
   const rc1 = await reconcileOrders(denv);
   ok(b.ok && /no desk code/.test(b.warn || "") && rc1.ok && rc1.queued === 0 && JSON.stringify(rc1.unmapped) === JSON.stringify([o3.id])
     && ordersQueue(dkv).length === 1,
@@ -25181,8 +25188,9 @@ await (async () => {
   }
   const bare = await show(null);
   /* 10 Oct 2026: confirm, his Accept sent for their yes, is the twentieth kind, its one body the twenty-eighth banner; 16 Oct 2026 (plan 4):
-     corrected, a step taken back, the twenty-first, its three cases the thirty-first */
-  ok(!own.length && kinds.length === 21 && seen.length === 31 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
+     corrected, a step taken back, the twenty-first, its three cases the thirty-first; 18 Oct 2026 (Counter Batch A):
+     point-moved, a collection point changed, the twenty-second, its one body the thirty-second */
+  ok(!own.length && kinds.length === 22 && seen.length === 32 && seen.every(([, s, w]) => s && JSON.stringify(s) === JSON.stringify(w))
     && bare && bare[0] === WD.EN["news.order"] && bare[1] === WD.EN["news.update"],
     "the banner writes no words of its own and shows each kind's title and each case's body, and the fixed words, from the table: "
     + JSON.stringify({ own, seen: seen.filter(([, s, w]) => JSON.stringify(s) !== JSON.stringify(w)) }));
@@ -34516,7 +34524,7 @@ await (async () => {
   const place = async (mode, qty) => (await O.placeOrder(env, u, { product: "salt", qty, mode, unit: 100, total: 100 * qty, week: "", place: mode === "deliver" ? "Taman Contoh" : "" })).order;
   const a = await place("collect", 2);
   const ack = await say(() => O.deskMove(env, u, a.id, { status: "acknowledged", mode: "collect" }));
-  await say(() => O.deskMove(env, u, a.id, { status: "ready" }));
+  await say(() => O.deskMove(env, u, a.id, READY_PT, PT_AT));
   await say(() => O.deskMove(env, u, a.id, { message: "Come after five" }));
   await say(() => O.deskMove(env, u, a.id, { handover: { units: 1 } }));
   await say(() => O.deskMove(env, u, a.id, { handover: { units: 2 } }));
@@ -35443,7 +35451,7 @@ await (async () => {
       place: mode === "deliver" ? "Taman Contoh" : "" })).order; ids.push(o.id); return o.id; };
     const a = await place("collect", 2);
     await say(() => O.deskMove(env, u, a, { status: "acknowledged", mode: "collect" }));
-    await say(() => O.deskMove(env, u, a, { status: "ready" }));
+    await say(() => O.deskMove(env, u, a, READY_PT, PT_AT));
     await say(() => O.deskMove(env, u, a, { message: "Come after five" }));
     await say(() => O.deskMove(env, u, a, { handover: { units: 1 } }));
     await say(() => O.deskMove(env, u, a, { handover: { units: 2 } }));
@@ -36336,9 +36344,9 @@ await (async () => {
 
   /* 4. THE SITE TAKES A PRICE AT THE ACKNOWLEDGEMENT ALONE */
   const agreed = { id: "o1", u: U1, status: "acknowledged", mode: "collect", qty: 1, total: 100, history: [] };
-  const onReady = O.decideDesk(agreed, { status: "ready", mode: "collect", total: 90 }, "2026-09-29T01:00:00Z");
+  const onReady = O.decideDesk(agreed, { status: "ready", mode: "collect", total: 90, point: "Z9", pointAt: PT_AT }, "2026-09-29T01:00:00Z");
   const onAck = O.decideDesk({ id: "o2", u: U1, status: "placed", mode: "collect", qty: 1, total: 100, history: [] }, { status: "acknowledged", total: 90 }, "2026-09-29T01:00:00Z");
-  ok(onReady.error && onReady.status === 400 && onAck.ev && onAck.ev.total === 90, "the Counter refuses a price on any move but the acknowledgement: " + JSON.stringify({ onReady, ack: onAck.ev && onAck.ev.total }));
+  ok(/a price is set only/.test(onReady.error || "") && onReady.status === 400 && onAck.ev && onAck.ev.total === 90, "the Counter refuses a price on any move but the acknowledgement: " + JSON.stringify({ onReady, ack: onAck.ev && onAck.ev.total }));
 
   /* 5. 18 Oct 2026: the Desk's order card with its Price field (ordCard, ORD_PV) left with the tab; Counter Admin sends the price and the digest
      to the preview and accept routes driven in 1 to 3 above. */
@@ -44961,8 +44969,9 @@ await (async () => {
     "paid in advance says pay now and on credit says when, Ready and a whole handover carry owed, waiting or paid, a part "
     + "none, his reason and his line ride as his words: " + JSON.stringify(got));
 
-  const ready = (o) => { const d = decideDesk(ord(o), { status: "ready" }, at); return d.ev ? "ev" : d.status; };
-  const moves = [ready({ moved: 1 }), ready({ moved: 0 }), ready({ moved: 3 }), ready({ status: "acknowledged" }), ready({ status: "done", moved: 1 })];
+  /* Counter Batch A: Ready again for the rest names no point (the order keeps its own); a first Ready to collect names one */
+  const ready = (o, first) => { const d = decideDesk(ord(o), first ? { ...READY_PT, pointAt: PT_AT } : { status: "ready" }, at); return d.ev ? "ev" : d.status; };
+  const moves = [ready({ moved: 1 }), ready({ moved: 0 }), ready({ moved: 3 }), ready({ status: "acknowledged" }, true), ready({ status: "done", moved: 1 })];
   ok(JSON.stringify(moves) === JSON.stringify(["ev", 409, 409, "ev", 409]),
     "Ready again is his while part is handed over and units are still owed, and refused with nothing handed over, "
     + "nothing left, or the order done: " + JSON.stringify(moves));
@@ -47276,7 +47285,7 @@ await (async () => {
     return o;
   };
   const oS = await agreed(salt), oO = await agreed(oil);
-  const made = await O.deskMove(senv, U, oO.id, { status: "ready", mode: "collect" });
+  const made = await O.deskMove(senv, U, oO.id, { status: "ready", mode: "collect", point: "Z9" }, PT_AT);
   const siteOf = async (id) => (await O.ordersOf(senv, U)).find((x) => x.id === id);
   const drawn = async () => { const c = (await O.claimAccount(senv, U, { amount: 100, method: "transfer", account: "wise" })).claim;
     const pv = await call("/claims/" + c.id + "/preview", {});
@@ -48272,7 +48281,7 @@ await (async () => {
 
     /* A: collected and at Ready, then moved to the bucket, as s211 is to be */
     const A = await agreed(0, {}, true);
-    await O.deskMove(senv, A.u, A.o.id, { status: "ready" });
+    await O.deskMove(senv, A.u, A.o.id, READY_PT, PT_AT);
     const rowA = moveToBucket(A);
     setup(rowA.customer === R(A.code) && /\bstream [^;,]* to /.test(rowA.mod || ""), "the fold's R2 Correction moved " + A.rid + ": " + J(rowA));
     /* B: never amended, landed, then moved */
@@ -48865,7 +48874,7 @@ await (async () => {
     const o = (await O.placeOrder(R.senv, u, Object.assign({ product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" }, extra || {}))).order;
     await O.deskMove(R.senv, u, o.id, { status: "acknowledged", mode: "collect" });
     await O.deskMove(R.senv, u, o.id, { mark: { ack: "2026-09-27T01:00:00.000Z", ledgerKey: code + "|2026-09-27|" + o.total } });
-    await O.deskMove(R.senv, u, o.id, { status: "ready" });
+    await O.deskMove(R.senv, u, o.id, READY_PT, PT_AT);
     await O.deskMove(R.senv, u, o.id, { handover: { units: o.qty, mode: "collect" } });
     await O.deskMove(R.senv, u, o.id, { mark: { moved: o.qty } });
     for (const amount of cash || [o.total]) { await clockPast(new Date().toISOString()); await O.deskMove(R.senv, u, o.id, { cash: { amount } }); }
@@ -48882,7 +48891,7 @@ await (async () => {
   const C = await (async () => {
     const o = (await O.placeOrder(R.senv, u, { product: "salt", qty: 1, mode: "collect", unit: 110, total: 110, week: "" })).order;
     await O.deskMove(R.senv, u, o.id, { status: "acknowledged", mode: "collect" });
-    await O.deskMove(R.senv, u, o.id, { status: "ready" });
+    await O.deskMove(R.senv, u, o.id, READY_PT, PT_AT);
     await O.customerMove(R.senv, u, o.id, "pay", { amount: 110, method: "transfer", account: "wise" });
     const x = (await O.allOrders(R.senv, true)).find((y) => y.id === o.id);
     setup(x && (x.payments || []).length === 1 && x.payments[0].claim === "waiting", "order " + o.id + " claimed by its customer: " + J(x && x.payments));
@@ -49565,6 +49574,11 @@ await (async () => {
 section("Counter maker order controls: close, Ready mode, offer again, quick replies");
 await (async () => {
   await (await import("./maker-order-controls.mjs")).run({ ok });
+})();
+
+section("Counter Batch A: the collection point, set at Ready on Counter Admin, read by the customer only while the order waits there, never by the Desk (18 Oct 2026)");
+await (async () => {
+  await (await import("./counter-points.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");

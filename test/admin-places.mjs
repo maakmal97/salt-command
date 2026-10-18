@@ -46,7 +46,7 @@ const FORMS = {
 };
 /* what each entry reads, by route: the place on tapping its item, the part on tapping its tab */
 const ROUTES = { review: "/all/maker/review", claims: "/all/maker/claims", pools: "/all/maker/pools", inputs: "/all/maker/inputs", offsets: "/all/maker/offsets",
-  hours: "/all/maker/hours", ledger: "/all/maker/ledger", bulletin: "/all/maker/bulletin", threads: "/all/maker/threads", assoc: "/all/assoc" };
+  hours: "/all/maker/hours", points: "/all/maker/points", ledger: "/all/maker/ledger", bulletin: "/all/maker/bulletin", threads: "/all/maker/threads", assoc: "/all/assoc" };
 const reads = (...names) => names.map((n) => ROUTES[n]).sort();
 
 const shown = (el) => { for (let e = el; e && e.id !== "roster"; e = e.parentElement) if (e.hidden) return false; return !!el; };
@@ -199,11 +199,11 @@ export async function run({ ok, pageWork }) {
       const entry = [];
       const step = async (act, want) => { const got = await r.tap(act); entry.push([act, got, want]); return got; };
       await step("nav.needs", reads());
-      await step("nav.shop", reads("hours"));
+      await step("nav.shop", reads("hours", "points"));
       await step("part.shop.notice", reads("bulletin"));
       await step("part.shop.practice", reads());
       await step("part.shop.device", reads());
-      await step("part.shop.hours", reads("hours"));
+      await step("part.shop.hours", reads("hours", "points"));
       await step("nav.orders", reads("review", "claims"));
       for (const part of ["confirmed", "ready", "done", "ended", "payments", "placed"]) await step("part.orders." + part, reads());
       await step("part.orders.group", reads("pools"));

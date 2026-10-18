@@ -74,8 +74,8 @@
  {
   "name": "Ready stands in the body of the card",
   "file": "stmt/owner.js",
-  "find": "          makerButton(lead,[m[1],'order.ready-'+m[0]]",
-  "replace": "          makerButton(card,[m[1],'order.ready-'+m[0]]"
+  "find": "          var b=makerButton(lead,[m[1],'order.ready-'+m[0]]",
+  "replace": "          var b=makerButton(card,[m[1],'order.ready-'+m[0]]"
  },
  {
   "name": "Record handover stands in the body of the card",
@@ -392,8 +392,8 @@
  {
   "name": "Ready stays in the foot",
   "file": "stmt/owner.js",
-  "find": "          makerButton(lead,[m[1],",
-  "replace": "          makerButton(acts,[m[1],"
+  "find": "          var b=makerButton(lead,[m[1],",
+  "replace": "          var b=makerButton(acts,[m[1],"
  },
  {
   "name": "Handed over stays in the foot",

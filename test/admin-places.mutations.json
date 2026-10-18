@@ -296,8 +296,8 @@
  {
   "name": "Hours reads nothing",
   "file": "stmt/owner.js",
-  "find": "'shop.hours':function(){ loadMakerHours(); },",
-  "replace": "'shop.hours':function(){ },"
+  "find": "'shop.hours':function(){ loadMakerHours(); loadMakerPoints(); },",
+  "replace": "'shop.hours':function(){ loadMakerPoints(); },"
  },
  {
   "name": "Needs you reads the threads",

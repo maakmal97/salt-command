@@ -4339,7 +4339,7 @@ const CLIENT_JS = `
     return k?tw(k):st;
   }
   /* S11 11.7: the event that ended an order, whose note is his reason for a decline or a cancellation of his */
-  function endOf(o){ var h=(o.history||[]).filter(function(x){ return x&&x.status===o.status; }); return h.length?h[h.length-1]:null; }
+  function endOf(o){ var h=(o.history||[]).filter(function(x){ return x&&x.status===o.status&&!/^point moved to /.test(String(x.note||'')); }); return h.length?h[h.length-1]:null; }
   function stateWord(o){
     if(oPayable(o)&&movedAll(o)) return tw(o.mode==='deliver'?'st.delivered':'st.collected');
     var e=endOf(o);
@@ -4368,6 +4368,8 @@ const CLIENT_JS = `
     if((m=/^amended to ([0-9.]+) unit, ([0-9.]+) goods, ([0-9.]+) delivery$/.exec(n))) return tw('hist.amended',{a:Uq(+m[1],oUnit(o)), g:rm(+m[2]), d:rm(+m[3])});
     if((m=/^([0-9.]+) unit (delivered|collected)$/.exec(n))) return tw('hist.'+m[2],{a:Uq(+m[1],oUnit(o))});
     if((m=/^price (asked|offered|confirm|taken|passed|withdrawn)(, order cancelled)?$/.exec(n))) return tw('hist.price.'+m[1]+(m[2]?'Cx':''));
+    /* Counter Batch A: his Change point, a line of its own, never a second Ready */
+    if((m=/^point moved to ([A-Z][0-9]{1,2})$/.exec(n))) return tw('hist.pointMoved',{p:m[1]});
     if(x.method) return tw('hist.chose'+by,how);
     return n?tw('hist.withNote',{s:oWord(x.status,o,x.by), n:n}):oWord(x.status,o,x.by);
   }

@@ -76,6 +76,9 @@ export async function run({ ok }) {
     }), env);
     const u = "abcd-efgh", at = new Date().toISOString(), digest = "orders-list";
     await queue.put("stmt-users", JSON.stringify({ [u]: "CX1-AB" }));
+    /* Counter Batch A: a collect Ready names one of his points; Z9 is on the Counter's list here and on the test accounts' own */
+    const PT_AT = { lat: 3.14786, lng: 101.69369 };
+    await store.put("maker:points", JSON.stringify({ v: 1, list: [{ code: "Z9", ...PT_AT }] }));
     const base = { product: "salt", qty: 2, total: 190, unit: 95, mode: "collect", place: "", forFriend: false, week: "", digest, rid: "orders-fixture-base-01" };
     let serial = 10;
     /* a real order in the book, brought to the state asked; an acknowledged one has its row's key, as the Desk marks it */
@@ -84,7 +87,7 @@ export async function run({ ok }) {
       order.id = "2026" + "1003" + "070" + String(serial).padStart(3, "0") + "-r" + serial;
       harness.book.append(null, u, order.id, { kind: "place", at, order }, null);
       if (state !== "placed") harness.book.run("desk", { u, id: order.id, body: { status: "acknowledged", mode: "collect" } });
-      if (state === "ready") harness.book.run("desk", { u, id: order.id, body: { status: "ready" } });
+      if (state === "ready") harness.book.run("desk", { u, id: order.id, body: { status: "ready", point: "Z9" }, pointAt: PT_AT });
       for (const [key, value] of Object.entries(patch)) {
         const now = harness.book.order(u, order.id);
         if (key === "cash") harness.book.run("desk", { u, id: order.id, body: { cash: { amount: value } } });
@@ -112,10 +115,10 @@ export async function run({ ok }) {
       "Order moves refuse a missing or non-owner identity and a missing or wrong private capability, and move nothing.");
 
     /* Ready */
-    const readyEarly = await move(idA, { status: "ready", rid: rid(4) });
+    const readyEarly = await move(idA, { status: "ready", mode: "collect", point: "Z9", rid: rid(4) });
     ok(readyEarly.status === 409 && book(idA).status === "placed", "Ready is refused on an order not yet acknowledged.");
     const idB = make("acknowledged");
-    const readyBody = { status: "ready", rid: rid(5) };
+    const readyBody = { status: "ready", mode: "collect", point: "Z9", rid: rid(5) };
     const first = await move(idB, readyBody), second = await move(idB, readyBody);
     const afterRetry = book(idB);
     ok(first.status === 200 && book(idB).status === "ready" && second.status === 200 && (await second.json()).again === true
@@ -191,11 +194,11 @@ export async function run({ ok }) {
     ok(quietRetry.status === 200 && (await quietRetry.json()).again === true, "No reply needed retried under its request id is answered from the order book.");
 
     /* shape refusals */
-    const shapes = [[{ status: "ready" }, "no request id"], [{ status: "ready", rid: "short" }, "a short request id"],
-      [{ rid: rid(20) }, "no move"], [{ status: "ready", message: "x", rid: rid(21) }, "two moves"],
-      [{ status: "done", rid: rid(22) }, "an unsupported status"], [{ status: "ready", note: "x", rid: rid(23) }, "a reason on Ready"],
+    const shapes = [[{ status: "ready", mode: "collect", point: "Z9" }, "no request id"], [{ status: "ready", mode: "collect", point: "Z9", rid: "short" }, "a short request id"],
+      [{ rid: rid(20) }, "no move"], [{ status: "ready", mode: "collect", point: "Z9", message: "x", rid: rid(21) }, "two moves"],
+      [{ status: "done", rid: rid(22) }, "an unsupported status"], [{ status: "ready", mode: "collect", point: "Z9", note: "x", rid: rid(23) }, "a reason on Ready"],
       [{ message: " ", rid: rid(24) }, "an empty reply"], [{ message: "x".repeat(201), rid: rid(25) }, "a long reply"],
-      [{ noReply: false, rid: rid(26) }, "No reply needed false"], [{ status: "ready", rid: rid(27), total: 1 }, "an extra field"],
+      [{ noReply: false, rid: rid(26) }, "No reply needed false"], [{ status: "ready", mode: "collect", point: "Z9", rid: rid(27), total: 1 }, "an extra field"],
       [{ status: "declined", note: "x".repeat(141), rid: rid(28) }, "a long reason"]];
     const refused = await Promise.all(shapes.map(([body]) => move(idB, body)));
     ok(refused.every((r) => r.status === 400) && book(idB).status === "ready",
@@ -206,14 +209,14 @@ export async function run({ ok }) {
     ok(deskRefused.every((r) => r.status === 400) && book(idB).status === "ready",
       "The Desk's own route refuses every malformed move too, whatever the Counter let through: " + shapes.map(([, name], i) => name + "=" + deskRefused[i].status).join(", "));
     /* the order book's own once-only rule, under the Counter's pre-read of it */
-    const idR = make("acknowledged"), keep = { status: "ready", rid: rid(60) };
-    const r1 = harness.book.run("desk", { u, id: idR, body: keep });
-    let r2; try { r2 = harness.book.run("desk", { u, id: idR, body: keep }); } catch (error) { r2 = { ok: false, error: error.message }; }
+    const idR = make("acknowledged"), keep = { status: "ready", mode: "collect", point: "Z9", rid: rid(60) };
+    const r1 = harness.book.run("desk", { u, id: idR, body: keep, pointAt: PT_AT });
+    let r2; try { r2 = harness.book.run("desk", { u, id: idR, body: keep, pointAt: PT_AT }); } catch (error) { r2 = { ok: false, error: error.message }; }
     let r3; try { r3 = harness.book.run("desk", { u, id: idR, body: { status: "cancelled", rid: keep.rid } }); } catch (error) { r3 = { ok: false, error: error.message }; }
     ok(r1.ok && !r1.again && r2.ok && r2.again === true && r3.ok === false && r3.status === 409
       && book(idR).history.filter((h) => h.status === "ready").length === 1,
       "The order book answers a repeated request id once and refuses the same id with other content.");
-    const idGone = await move("20261003070999-nope", { status: "ready", rid: rid(29) });
+    const idGone = await move("20261003070999-nope", { status: "ready", mode: "collect", point: "Z9", rid: rid(29) });
     ok(idGone.status === 404, "A move on an order the Counter does not hold is a 404.");
 
     /* Not found on a claim */
@@ -271,7 +274,7 @@ export async function run({ ok }) {
     /* an acceptance order moves in its fixture alone */
     const realEvents = harness.db.prepare("SELECT COUNT(*) AS n FROM ev").get().n, realOrders = harness.db.prepare("SELECT COUNT(*) AS n FROM ord").get().n;
     const sqlBefore = sqls.length;
-    const exReadyBody = { status: "ready", rid: rid(40) };
+    const exReadyBody = { status: "ready", mode: "collect", point: "Z9", rid: rid(40) };
     const exReady = await move(exId, exReadyBody), exRetry = await move(exId, exReadyBody);
     const exChanged = await move(exId, { status: "cancelled", rid: exReadyBody.rid });
     const exState = (await exampleAccount(env, TEST_USER)).orders;
@@ -282,7 +285,7 @@ export async function run({ ok }) {
     const exCancelled = await move(exCancel, { status: "cancelled", note: "Example reason", rid: rid(41) });
     const exPaidRefused = await move(exPaid, { status: "cancelled", rid: rid(42) });
     const exClaimRefused = await move(exClaim, { status: "cancelled", rid: rid(43) });
-    const exReadyEarly = await move("20261003070000-exaa5", { status: "ready", rid: rid(44) });
+    const exReadyEarly = await move("20261003070000-exaa5", { status: "ready", mode: "collect", point: "Z9", rid: rid(44) });
     const exState2 = (await exampleAccount(env, TEST_USER)).orders;
     ok(exCancelled.status === 200 && exState2.find((o) => o.id === exCancel).status === "cancelled"
       && exState2.find((o) => o.id === exCancel).history.at(-1).note === "Example reason"
@@ -330,7 +333,7 @@ export async function run({ ok }) {
     ok(exAction.status === 409, "An acceptance order still cannot use the real stage routes.");
     const realViaDesk = await desk.fetch(new Request("https://desk.fixture.test/_internal/maker/orders/" + exId + "/move", {
       method: "POST", headers: { "X-Counter-Maker-Key": env.COUNTER_MAKER_KEY, "content-type": "application/json" },
-      body: JSON.stringify({ status: "ready", rid: rid(49) }) }), deskEnv, {});
+      body: JSON.stringify({ status: "ready", mode: "collect", point: "Z9", rid: rid(49) }) }), deskEnv, {});
     ok(realViaDesk.status === 404 || realViaDesk.status === 409, "The Desk's own move route cannot reach an acceptance order.");
   } finally { globalThis.fetch = originalFetch; }
 }

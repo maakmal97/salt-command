@@ -54,7 +54,7 @@
   { "name": "the undo fix also runs the old take-back of the handover", "file": "stmt/orders.js", "find": "if (f.unmove && !f.undo) {", "replace": "if (f.unmove) {" },
   { "name": "an undo wakes nobody", "file": "stmt/orders.js", "find": "|| (ev.kind === \"restate\" && ev.undo)) return { k: \"corrected\"", "replace": "|| false) return { k: \"corrected\"" },
   { "name": "an undone change of terms reaches the order as an amendment", "file": "stmt/orders.js", "find": "r.undo === true ? { undo: true } : {}", "replace": "{}" },
-  { "name": "the banner has no words for an undo", "file": "stmt/sw.js", "find": "\"offer\", \"confirm\", \"corrected\"];", "replace": "\"offer\", \"confirm\"];" },
+  { "name": "the banner has no words for an undo", "file": "stmt/sw.js", "find": "\"offer\", \"confirm\", \"corrected\", \"point-moved\"];", "replace": "\"offer\", \"confirm\", \"point-moved\"];" },
   { "name": "Undo is offered on an older move", "file": "stmt/owner.js", "find": "if(h.undo&&h.undo.i===m.i&&", "replace": "if(h.undo&&" },
   { "name": "Undo is offered on a move that waits", "file": "stmt/owner.js", "find": "&&!h.undo.blocked) undoButton(", "replace": ") undoButton(" },
   { "name": "a trip line has no History", "file": "stmt/owner.js", "find": "historyBlock(row,{rid:l.rid},'line:'+l.rid,null,key); });", "replace": " });" },

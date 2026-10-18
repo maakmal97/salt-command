@@ -2545,6 +2545,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.quick-keep` | Same card | Keeps the reply as a quick reply on this device, or forgets it. |
 | `order.quick-reply` | Same card, one for each kept line (key: its place in the list) | Fills the reply with that line. |
 | `order.ready-collect` | Order card (key: the order id), acknowledged | Marks the order ready to collect. |
+| `order.point` | The sheet Ready to collect and Change point ask on, one for each of his points (key: the point code) | Chooses that point: the order is marked ready to collect there, or moved to it. |
+| `order.point-change` | Order card (key: the order id), ready to collect with goods still to hand over | Opens the sheet that moves the order to another collection point. |
 | `order.ready-deliver` | Order card (key: the order id), acknowledged | Marks the order ready to deliver. |
 | `order.reason` | The sheet a Decline or a Cancel asks on (key: the order id) | The reason sent to the customer, in his words. |
 | `order.reason-place` | Same sheet, an order to be delivered | Picks the place line as the reason. |
@@ -2582,10 +2584,15 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.record.customers` | The strip under Record (tab: Customers) | Shows the menu of the forms that add, change or place a customer, one form at a time. |
 | `part.record.entry` | The strip under Record (tab: Entry) | Shows the menu of the forms for a count, a sale or purchase, a loan, a gift, a repayment, a reward, an offset, a correction and a revival, one form at a time. |
 | `part.record.pricing` | The strip under Record (tab: Pricing) | Shows the menu of the forms for a customer's tier or drift, the printed board sizes and the tips, one form at a time. |
-| `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours, reading them. |
+| `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours and the collection points, reading both. |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
 | `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Account, reading nothing. |
+| `points.add` | Collection points | Adds the point typed to the list, unsaved. |
+| `points.code` | Collection points | The point code: one capital letter and one or two digits, such as A2. |
+| `points.place` | Collection points | Its place: two figures, latitude and longitude, or a Maps link read on this device. |
+| `points.remove` | Collection points (key: the point code) | Takes the point off the list, unsaved. |
+| `points.save` | Collection points | Saves the list. |
 | `pool.close` | Group order card (key: the pool id) | Closes it and sends each joined order for acknowledgement, or sends the ones left again. |
 | `pool.closes-on` | Group orders | The day it closes, optional. |
 | `pool.open` | Group orders | Opens the group order. |

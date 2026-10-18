@@ -384,6 +384,8 @@ async function concurrentFixture(ok) {
   fix.orders = fix.orders.filter((o) => !o.slot);
   /* and the order paid before anything moved (11 Oct 2026, Phase 7d part 1), the case Cancel's Sheet names a refund on, for the same room */
   fix.orders = fix.orders.filter((o) => !/-ex47$/.test(o.id));
+  /* and the order ready at one collection point then moved to another (18 Oct 2026, Counter Batch A), open too, for the same room */
+  fix.orders = fix.orders.filter((o) => !/-ex26$/.test(o.id));
   const open = fix.orders.filter((o) => ["placed", "acknowledged", "ready"].includes(o.status));
   fix.orders = fix.orders.filter((o) => o !== open.at(-1));
   fix.salt = "concurrent-fixture"; fix.makerOrders = fix.orders; fix.makerBook = { sales: [] };

@@ -55,7 +55,7 @@ export async function run({ ok }) {
       order.id = "2026" + "1006" + "080" + String(serial).padStart(3, "0") + "-a" + serial;
       harness.book.append(null, u, order.id, { kind: "place", at, order }, null);
       harness.book.run("desk", { u, id: order.id, body: { status: "acknowledged", mode: patch.mode || "collect", delivery: patch.mode === "deliver" ? 5 : 0 } });
-      if (state === "ready") harness.book.run("desk", { u, id: order.id, body: { status: "ready" } });
+      if (state === "ready") harness.book.run("desk", { u, id: order.id, body: { status: "ready", point: "Z9" }, pointAt: { lat: 3.14786, lng: 101.69369 } });
       harness.book.append(null, u, order.id, { kind: "mark", at, mark: { ledgerKey: "CX1-AB|" + at.slice(0, 10) + "|salt|" + order.id } }, harness.book.order(u, order.id));
       return order.id;
     };

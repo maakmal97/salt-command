@@ -159,7 +159,7 @@ export async function run({ ok }) {
       order.id = "2026" + "1003" + "080" + String(serial).padStart(3, "0") + "-c" + serial;
       harness.book.append(null, u, order.id, { kind: "place", at, order }, null);
       if (state !== "placed") harness.book.run("desk", { u, id: order.id, body: { status: "acknowledged", mode: "collect" } });
-      if (state === "ready") harness.book.run("desk", { u, id: order.id, body: { status: "ready" } });
+      if (state === "ready") harness.book.run("desk", { u, id: order.id, body: { status: "ready", point: "Z9" }, pointAt: { lat: 3.14786, lng: 101.69369 } });
       if (state === "cancelled") harness.book.run("desk", { u, id: order.id, body: { status: "cancelled" } });
       return order.id;
     };
@@ -208,7 +208,7 @@ export async function run({ ok }) {
     const m1 = await owner("/all/maker/orders/" + idAck + "/move", readyDeliver), m2 = await owner("/all/maker/orders/" + idAck + "/move", readyDeliver);
     ok(m1.status === 200 && book(idAck).status === "ready" && book(idAck).mode === "deliver" && m2.status === 200 && (await m2.json()).again === true,
       "Ready to deliver moves an acknowledged collect order to ready and to deliver, once: " + JSON.stringify([m1.status, book(idAck).mode]));
-    const m3 = await owner("/all/maker/orders/" + idAck + "/move", { ...readyDeliver, mode: "collect" });
+    const m3 = await owner("/all/maker/orders/" + idAck + "/move", { ...readyDeliver, mode: "collect", point: "Z9" });
     ok(m3.status === 409 && book(idAck).mode === "deliver", "The same request id with the other mode is refused.");
     const modeShapes = [{ status: "declined", mode: "deliver", rid: rid(5) }, { status: "ready", mode: "fly", rid: rid(6) },
       { message: "Ready soon", mode: "deliver", rid: rid(7) }, { noReply: true, mode: "collect", rid: rid(8) }];

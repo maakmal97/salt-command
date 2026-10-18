@@ -18,7 +18,7 @@ import { createHash } from "node:crypto";
 import { decidePlace, decideDesk, decideCustomer, decideAccountClaim, decideThread, applyEvent, MODES, METHODS, VERDICTS, OPEN_STATES,
   ROWED, customerView, rateDue, MAX_OPEN, openCount } from "../stmt/orders.js";
 import { PAY_ACCOUNTS } from "../stmt/pay.js";
-import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS } from "../stmt/testfix.js";
+import { TEST_USER, FIX_VERSION, TESTS, TEST_USERS, EXAMPLE_POINTS } from "../stmt/testfix.js";
 import { unwrapKey, encryptWith } from "./stmt-crypto.mjs";
 import { liveFor, holdTerm, stageDays, ceilingRM } from "./make_statements.mjs";
 import { priceSteps } from "./pricelist.mjs";
@@ -76,6 +76,9 @@ const priceOf = (list, product, q) => {
   return s ? s.price : 0;   /* past the grid: a price asked, placed at nothing */
 };
 
+/* Counter Batch A: Ready to collect names one of the test accounts' invented points, its place beside it as the Counter resolves it */
+const AT = (code) => { const p = EXAMPLE_POINTS.find((x) => x.code === code); return { point: code, pointAt: { lat: p.lat, lng: p.lng } }; };
+const READY_AT = (code = "Z9") => Object.assign({ status: "ready" }, AT(code));
 /* one order, taken through the order book's own moves: each step is [moment, who, body] */
 function order(id, list, placedAt, place, steps, hours) {
   const body = Object.assign({ unit: 0, week: list.week.monday, digest: list.digest }, place);
@@ -137,10 +140,10 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
   O.push(order(oid(35, "04"), list, T(35), { product: "salt", qty: 2.5, mode: "collect", forFriend: true }, [
     [T(35, 20), "desk", { status: "acknowledged", total: 260 }]].concat(W ? [
     [T(34), "customer", Object.assign({ action: "pay", amount: 100, slip: "e1a1b2c3d4e5f60718293a4b5c6d7e8f" }, rail("transfer"))]] : [], [
-    [T(1, 10), "desk", { status: "ready" }]])));
+    [T(1, 10), "desk", READY_AT()]])));
   /* COLLECTED and paid in cash: complete */
   O.push(order(oid(9, "05"), list, T(9), { product: "salt", qty: 1, mode: "collect" }, [
-    [T(9, 20), "desk", { status: "acknowledged" }], [T(8), "desk", { status: "ready" }],
+    [T(9, 20), "desk", { status: "acknowledged" }], [T(8), "desk", READY_AT()],
     [T(8, 30), "desk", { handover: { units: 1 } }], [T(8, 31), "desk", { cash: { amount: 110 } }]]));
   /* DELIVERED and paid by a transfer he received: complete */
   O.push(order(oid(12, "06"), list, T(12), { product: "candy", qty: 4, mode: "deliver", place: "Taman Rekaan" }, [
@@ -162,13 +165,16 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(4, 20), "desk", { status: "acknowledged", prepay: true }], [T(4, 30), "customer", pay("transfer")],
     [T(4, 35), "customer", Object.assign({ action: "pay", amount: 530 }, rail("transfer"))],
     [T(4, 50), "desk", { verdict: { kind: "received", claim: T(4, 35), amount: 530 } }],
-    [T(3, 10), "desk", { status: "ready" }], [T(3, 30), "desk", { handover: { units: 2.5 } }], [T(2, 10), "desk", { status: "ready" }],
+    [T(3, 10), "desk", READY_AT()], [T(3, 30), "desk", { handover: { units: 2.5 } }], [T(2, 10), "desk", { status: "ready" }],
     /* PLAN 4 (16 Oct 2026): A HANDOVER RECORDED BY MISTAKE, TAKEN BACK: one unit too many, undone on the book; the order follows by its
        undo fix, the unit off what they hold, and the page says so in a line of its own */
     [T(2, 12), "desk", { handover: { units: 3.5 } }], [T(2, 14), "desk", { fix: { id: "un-ex14-5", undo: true, unmove: 1 } }],
     [T(2, 20), "desk", { restate: { qty: 5, total: 540, delivery: 0 } }]]));
   O.push(order(oid(3, "15"), list, T(3), { product: "salt", qty: 2.5, mode: "collect", wantBy: klDay(new Date(Date.parse(T(3)) + 6 * 864e5)) }, [
     [T(3, 20), "desk", { status: "acknowledged" }], [T(0, 40), "desk", { handover: { units: 2.5 } }]]));
+  /* COUNTER BATCH A: READY TO COLLECT AT ONE POINT, THEN MOVED TO ANOTHER (Change point), nothing yet handed over */
+  O.push(order(oid(2, "26"), list, T(2, 5), { product: "oil", qty: 1, mode: "collect" }, [
+    [T(2, 25), "desk", { status: "acknowledged" }], [T(1, 30), "desk", READY_AT("Z8")], [T(1, 40), "desk", AT("Z9")]]));
   /* WITHDRAWN by them */
   O.push(order(oid(14, "07"), list, T(14), { product: "rice", qty: 1, mode: "collect" }, [
     [T(14, 40), "customer", { action: "cancel" }]]));
@@ -181,7 +187,7 @@ export function build(now = new Date(), state = "open", u = TEST_USER) {
     [T(17), "desk", { status: "cancelled", note: "The road was shut that day." }]]));
   /* CLOSED at what was handed over: 2.5 of 5, then paid by JomPAY, which he confirmed */
   O.push(order(oid(21, "10"), list, T(21), { product: "salt", qty: 5, mode: "collect" }, [
-    [T(21, 20), "desk", { status: "acknowledged" }], [T(20), "desk", { status: "ready" }],
+    [T(21, 20), "desk", { status: "acknowledged" }], [T(20), "desk", READY_AT()],
     [T(20, 30), "desk", { handover: { units: 2.5, close: true, total: 265 } }],
     [T(20, 40), "customer", pay("jompay")],
     [T(20, 45), "customer", Object.assign({ action: "pay", amount: 265 }, rail("jompay"))],
@@ -357,6 +363,10 @@ export const FEATURES = [
   ["a group order closed, its order confirmed (Pool)", (f) => (f.pools || []).some((p) => p.state === "closed"
     && p.joins.some((j) => has(f, (o) => o.id === j.oid && o.pool === p.id && ROWED.includes(o.status) && hist(o, (h) => h.status === "acknowledged"))))],
   ["order ready", (f) => has(f, (o) => o.status === "ready")],
+  ["ready at a collection point (Counter Batch A)", (f) => has(f, (o) => o.status === "ready" && o.mode === "collect" && /^[A-Z][0-9]{1,2}$/.test(o.point || "")
+    && !!o.pointAt && Number.isFinite(o.pointAt.lat) && +o.qty - (+o.moved || 0) > 0.004)],
+  ["collection point changed (Counter Batch A)", (f) => has(f, (o) => o.status === "ready" && (o.history || []).filter((h) => h && h.point).length > 1
+    && (o.history || []).some((h) => h && h.point && h.point !== o.point))],
   ["order complete, collected", (f) => has(f, (o) => o.status === "done" && o.mode === "collect")],
   ["order complete, delivered", (f) => has(f, (o) => o.status === "done" && o.mode === "deliver")],
   ["withdrawn by them", (f) => has(f, (o) => o.status === "cancelled" && hist(o, (h) => h.status === "cancelled" && h.by === "customer"))],

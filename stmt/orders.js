@@ -63,6 +63,7 @@ import { SLIP_ID_RE } from "./slip.js";
 import { accountRecord } from "./testfix.js";
 import { slotTake, SLOT_RE, SPAN_RE } from "./window.js";
 import { hoursConfig } from "./hours.js";
+import { isPointCode } from "./points.js";
 
 export const SESSION_TTL = 900;
 export const OPEN_STATES = ["placed", "acknowledged", "ready"];
@@ -284,10 +285,24 @@ export async function storeCompare(env) {
    F10: `rating` is theirs and travels; `rateAsk`, the moment they were asked, is the desk's and does not. */
 export const CUSTOMER_FIELDS = ["id", "u", "at", "status", "product", "qty", "unit", "mode", "place", "forFriend", "prepay", "sheet", "week",
   "total", "asked", "delivery", "paid", "payments", "claimed", "moved", "movedOn", "method", "account", "history", "msgs", "closed", "rowOn", "rating", "wantBy", "replacement", "replaces", "pool",
-  "slot", "slotSpan"];
+  "slot", "slotSpan", "point"];
+/* COUNTER BATCH A (18 Oct 2026, his decisions): WHERE AN ORDER WAITS. The point's code travels (Details reads "Collected at Point A2"
+   after); its place, the snapshot taken at Ready (pointAt), only while the order waits at it: Ready, to collect, with goods still to
+   hand over. A fix undo or an amendment can set Ready on an order owing only money, and a customer who owes money is not waiting there. */
+export const atPoint = (o) => !!o && o.status === "ready" && o.mode === "collect" && owedUnits(o) > 0.004
+  && !!o.pointAt && Number.isFinite(o.pointAt.lat) && Number.isFinite(o.pointAt.lng);
+/* and the Desk never reads a point's place: every road that hands it the raw order (stmt/worker.js) hands it this */
+export const deskOrderView = (o) => {
+  if (!o || typeof o !== "object" || o.pointAt === undefined) return o;
+  const c = Object.assign({}, o); delete c.pointAt; return c;
+};
+/* the place a move carries, resolved before it reached the book from his list (or the test accounts'), or none */
+const pointAtOf = (b) => b && b.pointAt && typeof b.pointAt === "object" && Number.isFinite(b.pointAt.lat) && Number.isFinite(b.pointAt.lng)
+  ? { lat: +b.pointAt.lat, lng: +b.pointAt.lng } : null;
 export const customerView = (o) => {
   const v = {};
   for (const k of CUSTOMER_FIELDS) if (o && o[k] !== undefined) v[k] = o[k];
+  if (atPoint(o)) v.pointAt = { lat: o.pointAt.lat, lng: o.pointAt.lng };
   /* S6 fix: the day its row is on the book as, read off the key, so the page can tell which part of To pay now is this
      order's and never asks for its money twice. The key itself names a roster code and never travels. */
   const day = o && typeof o.ledgerKey === "string" ? o.ledgerKey.split("|")[1] : "";
@@ -1040,6 +1055,17 @@ export function decideDesk(order, body, at) {
     }
     return { error: "the book ends an order by a cancellation or a write-off", status: 400 };
   }
+  /* COUNTER BATCH A: CHANGE POINT, his move on an order waiting at one, with goods still to hand over; its own request id, the same
+     checks as Ready's. It makes no ledger stage, and is undone by changing it back. */
+  if (body && body.point !== undefined && body.status === undefined) {
+    if (!isPointCode(body.point)) return { error: "a point's code is one capital letter and one or two digits", status: 400 };
+    if (order.status !== "ready" || order.mode !== "collect") return { error: "only an order ready to collect waits at a point", status: 409 };
+    if (owedUnits(order) <= 0.004) return { error: "everything on this order is handed over, so it waits at no point", status: 409 };
+    const where = pointAtOf(body);
+    if (!where) return Object.assign(refusal("pointUnknown"), { status: 400 });
+    if (order.point === body.point && order.pointAt && order.pointAt.lat === where.lat && order.pointAt.lng === where.lng) return { none: true };
+    return { ev: { kind: "point", at, point: body.point, pointAt: where } };
+  }
   const status = String((body && body.status) || "");
   /* its own states only (26 Sep 2026): a bare NEXT[status] read "constructor" or "__proto__" off Object.prototype, and
      .includes threw on it where any other unknown state is refused */
@@ -1066,6 +1092,18 @@ export function decideDesk(order, body, at) {
   if (body && body.total !== undefined && (!isNum(body.total) || !(body.total > 0) || body.total > 1000000)) return { error: "the price set has to be a figure above nothing", status: 400 };
   const ev = { kind: "status", at, status, by: "desk" };
   if ((status === "ready" || status === "acknowledged") && body && MODES.includes(body.mode)) ev.mode = body.mode;
+  /* COUNTER BATCH A (his answer of 18 Oct 2026): A COLLECTION IS READY AT A POINT. Ready to collect names one of his points and keeps
+     its place as it stands now (a snapshot: editing the point later moves no order); Ready again for the rest keeps the one it has
+     unless he names another. A point never rides on a delivery, a Decline or a Cancel. */
+  if (status === "ready" && (ev.mode || order.mode) === "collect") {
+    if (body && body.point !== undefined || !again) {
+      if (!body || body.point === undefined) return Object.assign(refusal("pointNeeded"), { status: 400 });
+      if (!isPointCode(body.point)) return { error: "a point's code is one capital letter and one or two digits", status: 400 };
+      const where = pointAtOf(body);
+      if (!where) return Object.assign(refusal("pointUnknown"), { status: 400 });
+      ev.point = body.point; ev.pointAt = where;
+    }
+  } else if (body && body.point !== undefined) return { error: "a point goes only with Ready to collect", status: 400 };
   if (status === "acknowledged" && body && isNum(body.total) && Math.abs(body.total - (+order.total || 0)) > 0.004) ev.total = +body.total.toFixed(2);
   /* v502: delivery is a figure the owner types; v694 moved it to the acknowledgement, because
      that is where the order becomes a row and the row carries the charge inside its total. */
@@ -1108,9 +1146,14 @@ export function applyEvent(order, ev) {
     order.status = ev.status;
     const h = { at, status: ev.status, by: ev.by };
     if (ev.note) h.note = ev.note;
+    /* the code on the history line, never the place: the history travels whole */
+    if (ev.point) { order.point = ev.point; order.pointAt = { lat: ev.pointAt.lat, lng: ev.pointAt.lng }; h.point = ev.point; }
     /* the book cancelled the row already: its cancellation is owed to no one, so the reconcile queues none */
     if (ev.book) { order.queued = Object.assign({}, order.queued || {}, { cancel: "book" }); h.book = true; }
     order.history.push(h);
+  } else if (ev.kind === "point") {
+    order.point = ev.point; order.pointAt = { lat: ev.pointAt.lat, lng: ev.pointAt.lng };
+    order.history.push({ at, status: order.status, by: "desk", point: ev.point, note: "point moved to " + ev.point });
   } else if (ev.kind === "writeoff") {
     if (ev.on) order.writtenOff = at; else delete order.writtenOff;
     order.history.push({ at, status: order.status, by: "desk", inner: true, note: ev.on ? "written off on the book" : "the write-off undone on the book" });
@@ -1351,6 +1394,8 @@ export function wakes(ev, order, done) {
     return w;
   }
   if (ev.kind === "say" && ev.by === "desk") return { k: "reply", o, t: ev.text, m: ev.at };
+  /* Counter Batch A: a point changed, in fixed words; the banner names no point */
+  if (ev.kind === "point") return { k: "point-moved", o };
   /* 05 Oct 2026: his offer, its own kind (news.offer): never the figure, the product or a name */
   if (ev.kind === "offer") return { k: ev.offer && ev.offer.kind === "accept" ? "confirm" : "offer", o };
   /* Step 7: his line on the account's thread, its own kind; a tap opens the thread, never an order */
@@ -1523,7 +1568,7 @@ const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done
   declined: OPEN_STATES, cancelled: OPEN_STATES };
 
 /** The owner's moves, from the phone through the desk's Worker. Every change wakes the customer. */
-export async function deskMove(env, u, id, body) {
+export async function deskMove(env, u, id, body, pointAt) {
   if (body && body.status === "acknowledged" && body.slot !== undefined) body = await ackSlot(env, body);
   if (body && body.offer && body.offer.kind === "accept" && body.offer.slot) {
     const s = await ackSlot(env, { slot: body.offer.slot });
@@ -1531,7 +1576,9 @@ export async function deskMove(env, u, id, body) {
     body = Object.assign({}, body, { offer: Object.assign({}, body.offer, { slot: s.slot, slotSpan: s.slotSpan }) });
   }
   if (onBook(env)) {
-    const r = await bookMove(env, "desk", { u, id, body });
+    /* the point's place rides beside the body, never in it: the request kept under the id is the body, and a retry is
+       answered from it before the place is looked at (Counter Batch A) */
+    const r = await bookMove(env, "desk", Object.assign({ u, id, body }, pointAt !== undefined ? { pointAt } : {}));
     if (r.error) return r;
     if (!r.wake) return Object.assign({ order: r.order }, r.again ? { again: true } : {});
     const push = await wakeCustomer(env, u, r.wake);
@@ -1544,7 +1591,7 @@ export async function deskMove(env, u, id, body) {
   /* fix 4: a correction is one event under its own id, which only the order book keeps */
   if (body && body.fix) return { error: FIX_ON_KV, status: 503 };
   const order = await env.STMT.get(OKEY(u, id), "json");
-  const d = decideDesk(order, body, new Date().toISOString());
+  const d = decideDesk(order, pointAt !== undefined ? Object.assign({}, body, { pointAt }) : body, new Date().toISOString());
   if (d.error) return d;
   if (d.none) return { order };
   const { done } = applyEvent(order, d.ev);

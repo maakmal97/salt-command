@@ -1,6 +1,6 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose } from "./orders.js";
 import { accountRecord, exampleAccount, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
-import { POINTS_KEY, readPoints, validatePoints } from "./points.js";
+import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
 
 const OWNER_EMAIL = "maakmal97@icloud.com";
@@ -17,7 +17,7 @@ const allowedOwner = (identity) =>
 /* his order controls, the same shape the Desk's makerOrderFault holds, checked here too because an example order never
    reaches the Desk's route */
 function orderMoveFault(action, body) {
-  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo"] : ["rid", "status", "note", "message", "noReply", "mode"];
+  const fields = action === "notfound" ? ["rid", "claim", "amount"] : action === "restate" ? ["rid", "qty", "total", "delivery", "undo"] : ["rid", "status", "note", "message", "noReply", "mode", "point"];
   if (Object.keys(body).some((key) => !fields.includes(key))) return "Unsupported order action fields.";
   if (!RID_RE.test(String(body.rid || ""))) return "Send the action's immutable request id.";
   if (action === "restate") {
@@ -30,8 +30,13 @@ function orderMoveFault(action, body) {
   if (action === "notfound")
     return typeof body.claim === "string" && Number.isFinite(Date.parse(body.claim))
       && typeof body.amount === "number" && Number.isFinite(body.amount) && body.amount > 0 ? "" : "Name the claim and its amount.";
-  const kinds = ["status", "message", "noReply"].filter((key) => body[key] !== undefined).length;
-  if (kinds !== 1) return "Send one move: a status, a reply, or No reply needed.";
+  /* Counter Batch A: a point alone is a fourth move, Change point; beside a status it is Ready to collect's */
+  const kinds = ["status", "message", "noReply"].filter((key) => body[key] !== undefined).length + (body.point !== undefined && body.status === undefined ? 1 : 0);
+  if (kinds !== 1) return "Send one move: a status, a reply, No reply needed or a collection point.";
+  if (body.point !== undefined && !isPointCode(body.point)) return "A collection point is one capital letter and one or two digits.";
+  if (body.point !== undefined && body.status !== undefined && !(body.status === "ready" && body.mode === "collect"))
+    return "A collection point goes only with Ready to collect, or alone.";
+  if (body.status === "ready" && body.mode === "collect" && body.point === undefined) return "Ready to collect names its collection point.";
   if (body.status !== undefined && !["ready", "declined", "cancelled"].includes(body.status)) return "Choose Ready, Decline or Cancel.";
   if (body.message !== undefined && (typeof body.message !== "string" || !body.message.trim() || body.message.length > 200))
     return "A reply is 1 to 200 characters.";
@@ -49,7 +54,7 @@ function sameMove(action, body, kept) {
   if (!kept || typeof kept !== "object") return false;
   if (action === "notfound") return !!kept.verdict && kept.verdict.kind === "notfound" && kept.verdict.claim === body.claim
     && Math.abs(+kept.verdict.amount - body.amount) <= 0.004 && Object.keys(kept).length === 1;
-  const keys = ["status", "note", "message", "noReply", "mode"];
+  const keys = ["status", "note", "message", "noReply", "mode", "point"];
   /* the Desk adds `maker` to a status move; it is the Desk's own, never the owner's content */
   return Object.keys(kept).every((key) => keys.includes(key) || key === "maker") && keys.every((key) => kept[key] === body[key]);
 }
@@ -544,8 +549,11 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
           if (Math.abs(waiting.amount - rest.amount) > 0.004) return json({ ok: false, error: "That claim amount has changed." }, 409);
           move = { verdict: { kind: "notfound", claim: waiting.at, amount: waiting.amount } };
         }
+        /* Counter Batch A: an example order's point is the test accounts' own, resolved here, never from his list; its place
+           rides beside the move and never into the request kept under the id */
+        const pointAt = rest.point !== undefined ? resolvePoint(EXAMPLE_POINTS, rest.point) : undefined;
         const result = await exampleAccount(env, u, { actor: "deskorder", id: op.id, rid,
-          request: { id: op.id, action: op.action, body: rest }, body: move });
+          request: { id: op.id, action: op.action, body: rest }, body: move, ...(pointAt !== undefined ? { pointAt } : {}) });
         return json(result.ok ? { ok: true, order: result.order, test: true, ...(result.again ? { again: true } : {}) } : result,
           result.ok ? 200 : result.status || 503);
       }

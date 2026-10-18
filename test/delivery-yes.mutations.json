@@ -11,7 +11,7 @@
  {"name": "the acknowledgement drops the window they said yes to", "file": "stmt/orders.js", "find": " || (order.price && order.price.from === \"accept\" && order.price.state === \"taken\" && order.price.offer && order.price.offer.slot === body.slot))", "replace": ")"},
  {"name": "the acknowledgement takes any window over theirs", "file": "stmt/orders.js", "find": "order.price.offer.slot === body.slot)))", "replace": "!!body.slot)))"},
  {"name": "his offer wakes as Negotiate's", "file": "stmt/orders.js", "find": "\"accept\" ? \"confirm\" : \"offer\"", "replace": "\"accept\" ? \"offer\" : \"offer\""},
- {"name": "the push has no words for it", "file": "stmt/sw.js", "find": "\"offer\", \"confirm\", \"corrected\"];", "replace": "\"offer\", \"corrected\"];"},
+ {"name": "the push has no words for it", "file": "stmt/sw.js", "find": "\"offer\", \"confirm\", \"corrected\", \"point-moved\"];", "replace": "\"offer\", \"corrected\", \"point-moved\"];"},
  {"name": "Accept agrees a raise alone", "file": "src/orders.js", "find": "  if (!again && needsYes(o, { total: pr.price, slot: win.slot }))", "replace": "  if (false)"},
  {"name": "the take drafts at their placed price", "file": "src/orders.js", "find": "off.delivery || 0, at, { orders: f.orders }, off.total, mirror)", "replace": "off.delivery || 0, at, { orders: f.orders }, null, mirror)"},
  {"name": "the offer's window is not cut to the hours", "file": "stmt/orders.js", "find": "    const s = await ackSlot(env, { slot: body.offer.slot });\n    if (!s.slot) return { error: \"that window has passed: choose another\", status: 400 };\n    body = Object.assign({}, body, { offer: Object.assign({}, body.offer, { slot: s.slot, slotSpan: s.slotSpan }) });", "replace": ""},
