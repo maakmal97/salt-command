@@ -406,11 +406,12 @@ export function planBatch(book, staged, notes, ctx) {
   const driftBooks = () => ctx.driftBooks;
   /* a figure of his is a % lift on a book that has a Set Price and nothing on any other: oil, candy and rice are fixed boards */
   const tierOk = (p, v) => driftBooks().includes(p) && PRICING_ENGINE.driftOk(v);
-  /* 18 OCT 2026, HIS DECISION: A SALT FIGURE STAMPED BEFORE THE % LIFT BEGAN WAS SET IN THE OLD UNIT (a drift, -1 to +1). The fold refuses it, naming why,
-     and never reads it as a %: 0.3 then meant 30% of the floor, now 30% on the Set Price. A clear (null) carries no figure and passes. */
+  /* 18 OCT 2026, HIS DECISION: A SALT FIGURE STAMPED BEFORE THE % LIFT BEGAN WAS SET IN THE OLD UNIT (a drift, -1 to +1) AND IS DROPPED, NEVER READ AS A %:
+     0.3 then meant 30% of the floor, now 30% on the Set Price, and everyone starts at 0%. The batch is not refused: the customer books on the Set Price with
+     no figure held, and a note says the old drift was dropped. A tierset whose only content was such a figure folds as a no-op. A clear (null) carries no figure. */
   const liftAt = Date.parse(PRICING_RULES.RULES.liftSince);
   const oldLift = (it, p, v) => driftBooks().includes(p) && v !== null && v !== undefined && Date.parse((it.entry && it.entry.at) || it.id) < liftAt;
-  const oldLiftWhy = (c, p) => `${c}'s ${p} figure was set before ${PRICING_RULES.RULES.liftSince}, in the old unit (-1 to +1); set it again as a % from 0 to 200 (0 to 2)`;
+  const oldLiftNote = (c, ps) => `dropped the old drift: ${c}'s ${ps.join(" and ")} figure was set before ${PRICING_RULES.RULES.liftSince}, in the old unit (-1 to +1), so ${c} stays on the Set Price at 0%`;
   const out = { items: [], refused: [], moves: [] };
   let tagged = 0;
   let rows = (staged && staged.approved) || [];
@@ -742,10 +743,10 @@ export function planBatch(book, staged, notes, ctx) {
       if (onRoster && !appoints && !partner) { out.refused.push({ id: it.id, why: `${r.code} is already on the roster` }); continue; }
       if (appoints && (book.associates || []).includes(r.code)) { out.refused.push({ id: it.id, why: `${r.code} is already an associate` }); continue; }
       const resell = POSITION_ENGINE.appointBucket(r.kind, r.code);
-      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtBad = Object.keys(rt).filter((p) => !tierOk(p, rt[p])), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p]));   /* a % lift on a book with a Set Price, nothing on any other */   // v645, per product since v646
+      const rt = r.tiers || {}, rtOff = Object.keys(rt).filter((p) => !(book.PRODUCTS || {})[p]), rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p])), rtBad = Object.keys(rt).filter((p) => !rtOld.includes(p) && !tierOk(p, rt[p]));   /* a % lift on a book with a Set Price, nothing on any other */   // v645, per product since v646
       if (rtOff.length || rtBad.length) { out.refused.push({ id: it.id, why: rtOff.length ? `${rtOff.join(" and ")} is not a product on this book` : `${rtBad.map((p) => sayLift(rt[p]) + (driftBooks().includes(p) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ")}` }); continue; }
-      if (rtOld.length) { out.refused.push({ id: it.id, why: rtOld.map((p) => oldLiftWhy(r.code, p)).join(" and ") }); continue; }
-      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: r.tiers || null, partner };
+      const rtKept = Object.fromEntries(Object.entries(rt).filter(([p]) => !rtOld.includes(p)));
+      entry.roster = { code: r.code, register: !onRoster, appoint: appoints, resell: resell && !(book.roster || []).includes(resell) ? resell : null, geo: r.geo || null, tiers: Object.keys(rtKept).length ? rtKept : null, partner };
       if (partner) entry.does.push(`make ${r.code} a partner: they pay the Floor, up to the next RM 5, on every book; they keep every associate property`);
       if (entry.roster.register) entry.does.push(`append ${r.code} to the roster (the directory is not touched)`);
       if (r.geo) entry.does.push(`file ${r.code} as a point on the map, about a kilometre, where its place was found`);
@@ -756,6 +757,7 @@ export function planBatch(book, staged, notes, ctx) {
          reading them, which is the part that is true whatever the numbers are. */
       if (appoints) entry.does.push(`appoint ${r.code} an associate: R2 and R3 credit reaches them, their credit cap moves from the retail one to the associate one, their turnover hurdles to the associate hurdle, and they leave the customer reward table for the network bench`);
       if (entry.roster.resell) entry.does.push(`append ${entry.roster.resell} to the roster as their resell account, which holds what they buy to sell on`);
+      if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld));
     } else if (it.collection === "priceset") {
       /* v354: A PRICE EDIT MOVES NO STOCK AND NO CASH. It REPLACES that product's entry in
          PRICE_SET rather than merging into it, so the form on the desk is the whole statement of
@@ -790,16 +792,18 @@ export function planBatch(book, staged, notes, ctx) {
       /* v643: a customer's held figure for each product (v646), checked against the book it folds into; a null clears it */
       const codes = Object.keys(r.tiers || {}), off = codes.filter((c) => !(book.roster || []).includes(c) || E.isBucket(c));
       const pairs = codes.flatMap((c) => Object.entries((r.tiers[c] && typeof r.tiers[c] === "object") ? r.tiers[c] : {}).map(([p, v]) => [c, p, v]));
-      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift, 0 to 2), held as a tier was; none on any other */
+      const noProd = codes.filter((c) => !pairs.some((x) => x[0] === c)), offP = pairs.filter((x) => !(book.PRODUCTS || {})[x[1]]), bad = pairs.filter((x) => x[2] !== null && !oldLift(it, x[1], x[2]) && !tierOk(x[1], x[2]));   /* 05 Oct 2026: a figure of his on a drift book (18 Oct 2026: a % lift, 0 to 2), held as a tier was; none on any other */
       if (!codes.length || off.length || noProd.length || offP.length || bad.length) {
         out.refused.push({ id: it.id, why: !codes.length ? "a % entry names no customer" : off.length ? `${off.join(" and ")} is not a customer on the roster`
           : noProd.length ? `the % entry for ${noProd.join(" and ")} names no product` : offP.length ? `${offP.map((x) => x[1]).join(" and ")} is not a product on this book` : bad.map((x) => sayLift(x[2]) + (driftBooks().includes(x[1]) ? " is not a % from 0 to 200 (0 to 2)" : " is not held per customer on this book")).join(" and ") });
         continue;
       }
-      const oldTs = pairs.filter((x) => oldLift(it, x[1], x[2]));
-      if (oldTs.length) { out.refused.push({ id: it.id, why: oldTs.map((x) => oldLiftWhy(x[0], x[1])).join(" and ") }); continue; }
-      entry.tiers = r.tiers;
-      entry.does.push(`set ${pairs.map(([c, p, v]) => `${c}'s ${p} figure to ${sayLift(v)}`).join(", ")}`);
+      const oldTs = pairs.filter((x) => oldLift(it, x[1], x[2])), keptTs = pairs.filter((x) => !oldLift(it, x[1], x[2]));
+      const keptTiers = {};
+      for (const [c, p, v] of keptTs) (keptTiers[c] = keptTiers[c] || {})[p] = v;
+      entry.tiers = keptTs.length ? keptTiers : {};   /* a tierset of old figures alone folds as a no-op: the item is filed, the book unchanged */
+      if (keptTs.length) entry.does.push(`set ${keptTs.map(([c, p, v]) => `${c}'s ${p} figure to ${sayLift(v)}`).join(", ")}`);
+      for (const c of [...new Set(oldTs.map((x) => x[0]))]) entry.does.push(oldLiftNote(c, oldTs.filter((x) => x[0] === c).map((x) => x[1])));
     } else if (it.collection === "rename") {
       /* v628, AMEND ID: checked again against the book it folds into, since a code can be taken or retired
          between the draft and the fold. What moves is the engine's renamePairs, as on the card. */

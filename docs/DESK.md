@@ -37,8 +37,8 @@
   partner's `quoteAt` is the `floorTotal`, the snapshot's `floors[q]` and the drafter's `floorFor(q).floor`.
 - **Their %** (`TIER_OF[code].salt`, 0 to 2, held until he changes it; `cardQuote` reads it through `driftOf`). It is the
   lift on the Set Price, applied inside the walk and the same at every size, and nought is the Set Price. **Everyone
-  starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold refuses a `tierset` or an Add ID
-  figure stamped before `RULES.liftSince`, which was in the old unit). He sets it on the Their % card (Network), Counter
+  starts at 0%** (the held figures were removed in the 18 Oct 2026 version, and the fold drops a `tierset` or an Add ID
+  figure stamped before `RULES.liftSince`, which was in the old unit, with a note, and refuses nothing for it). He sets it on the Their % card (Network), Counter
   Admin's Their % form or Add ID (presets Set Price, +5%, +10%, +15%, +20% and +30%, or another %); it is queued,
   folded as `tierset`, and a null clears it. Under about 7% a % moves nothing at half a unit to 1 unit, which the card says
   once. **Nothing automatic prices.** `autoDrift` over `driftSignals` fills the card's good and bad only. The card's

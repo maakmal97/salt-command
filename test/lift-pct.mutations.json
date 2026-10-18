@@ -156,13 +156,13 @@
   "replace": "(POSITION_ENGINE.txGoods(x)/x.qty)/set"
  },
  {
-  "name": "the dated gate never fires: the fold takes a salt % stamped before the switch",
+  "name": "the dated gate never fires: a salt figure stamped before the switch is held, in the wrong unit",
   "file": "engine/apply.mjs",
   "find": "v !== undefined && Date.parse((it.entry && it.entry.at) || it.id) < liftAt;",
   "replace": "v !== undefined && false;"
  },
  {
-  "name": "the dated gate refuses a clear as well as a figure",
+  "name": "the dated gate drops a clear as well as a figure: a clear stamped before it is lost",
   "file": "engine/apply.mjs",
   "find": "driftBooks().includes(p) && v !== null && v !== undefined &&",
   "replace": "driftBooks().includes(p) &&"
@@ -174,15 +174,33 @@
   "replace": "v !== null && v !== undefined &&"
  },
  {
-  "name": "the switch moment is set far in the future, so a figure stamped after it is refused as well",
+  "name": "the switch moment is set far in the future, so a figure stamped after it is dropped as well",
   "file": "engine/rules.mjs",
   "find": "liftSince:\"2026-10-18T00:00:00Z\",",
   "replace": "liftSince:\"2099-10-18T00:00:00Z\","
  },
  {
-  "name": "the Add ID road is outside the dated gate",
+  "name": "the Add ID road is outside the dated gate: its old figure is held",
   "file": "engine/apply.mjs",
-  "find": "rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p]));",
-  "replace": "rtOld = [];"
+  "find": "rtOld = Object.keys(rt).filter((p) => oldLift(it, p, rt[p])),",
+  "replace": "rtOld = [],"
+ },
+ {
+  "name": "a tierset stamped before the switch loses all its content, not only the salt figure",
+  "file": "engine/apply.mjs",
+  "find": "keptTs = pairs.filter((x) => !oldLift(it, x[1], x[2]));",
+  "replace": "keptTs = [];"
+ },
+ {
+  "name": "the Add ID drops the old figure without saying so",
+  "file": "engine/apply.mjs",
+  "find": "if (rtOld.length) entry.does.push(oldLiftNote(r.code, rtOld));",
+  "replace": "/* no note */"
+ },
+ {
+  "name": "a tierset of an old figure alone is refused again, as before",
+  "file": "engine/apply.mjs",
+  "find": "entry.tiers = keptTs.length ? keptTiers : {};",
+  "replace": "if (!keptTs.length) { out.refused.push({ id: it.id, why: \"old\" }); continue; } entry.tiers = keptTiers;"
  }
 ]

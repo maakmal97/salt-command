@@ -10,7 +10,8 @@
    4. A % is 0 to 2 (driftOk), and nothing automatic prices: customers with a long late, a write-off or a perfect record are quoted the Set
       Price, an old held drift (-0.7) is read as none, and the snapshot carries the map as \`lift\`, never \`drift\`, with the suggestion beside it.
    5. The suggestion: paid over the Set Price on the last five sales plus the risk, to the nearest 5%, nothing under three settled rows.
-   6. The fold refuses a salt % stamped before the switch moment, a tierset and an Add ID alike, and files one stamped after it.
+   6. The fold DROPS a salt figure stamped before the switch moment (old unit), a tierset and an Add ID alike, with a note and no refusal: the customer
+      books on the Set Price at 0%, a tierset of nothing else is a no-op, and one stamped after it is filed as a %.
    Mutations: test/lift-pct.mutations.json. */
 import { openMaster } from "../tools/payload.mjs";
 import { pricingSnapshot } from "../tools/book.mjs";
@@ -165,18 +166,32 @@ export async function run({ ok }) {
     "a snapshot from before, which carries the map as drift, is read as none: no grid and no card off the board, the board alone");
 
   /* 6. THE DATED GATE, in the fold's plan */
-  const F = await import("../tools/fold.mjs");
+  const F = await import("../tools/fold.mjs"), A = await import("../engine/apply.mjs"), { nextRid } = await import("../tools/rid.mjs"), { sortBook } = await import("../tools/sort-ledger.mjs");
   const bk = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")); bk.roster.push("CZ9-DA");
   const since = RULES_MOD.RULES.liftSince, before = new Date(Date.parse(since) - 3600e3).toISOString(), after = new Date(Date.parse(since) + 3600e3).toISOString();
   const ts = (stamp, v, p = "salt") => ({ id: stamp, collection: "tierset", row: { tiers: { "CZ9-DA": { [p]: v } } }, entry: { at: stamp, payload: {} } });
   const ad = (stamp, v, p = "salt") => ({ id: stamp, collection: "roster", row: { code: "CZ9-DB", kind: "customer", tiers: { [p]: v } }, entry: { at: stamp, payload: {} } });
   const plan = (x) => F.plan(bk, { ok: true, count: 1, approved: [x] }, null);
   const why = (x) => (plan(x).refused[0] || {}).why || "";
-  const pOld = plan(ts(before, 0.3)), pNew = plan(ts(after, 0.3));
-  ok(/in the old unit/.test(why(ts(before, 0.3))) && /in the old unit/.test(why(ts(before, 0))) && /in the old unit/.test(why(ad(before, 0.2)))
-    && pOld.refused.length === 1 && pNew.refused.length === 0 && JSON.stringify(pNew).indexOf("0.3") >= 0
-    && plan(ts(before, null)).refused.length === 0 && /not held per customer/.test(why(ts(before, "Gold", "oil"))) && /not held per customer/.test(why(ts(before, 0.2, "oil"))),
-  "the fold refuses a salt % stamped before " + since + ", a tierset and an Add ID alike, naming why, files one stamped after it, lets a clear through, and refuses any figure on oil, a fixed board: " + JSON.stringify([why(ts(before, 0.3)), why(ad(before, 0.2))]));
+  const planned = plan(ts(before, 0.3)), plannedAd = plan(ad(before, 0.2)), plannedNeg = plan(ts(before, -0.5)), plannedMix = plan({ id: before, collection: "tierset", row: { tiers: { "CZ9-DA": { salt: 0.3, oil: null } } }, entry: { at: before, payload: {} } });
+  const fl = (x) => JSON.stringify(x);
+  ok(plannedAd.refused.length === 0 && plannedAd.items.length === 1 && plannedAd.items[0].roster.tiers === null && plannedAd.items[0].roster.register === true
+    && plannedAd.items[0].does.some((d) => /dropped the old drift/.test(d) && /stays on the Set Price at 0%/.test(d)),
+  "an Add ID stamped before " + since + " carrying a salt figure is not refused: it books with no % and a note saying the old drift was dropped: " + fl(plannedAd.items[0] && plannedAd.items[0].does));
+  ok(planned.refused.length === 0 && planned.items.length === 1 && fl(planned.items[0].tiers) === "{}" && planned.items[0].does.length === 1 && /dropped the old drift/.test(planned.items[0].does[0])
+    && plannedNeg.refused.length === 0 && fl(plannedNeg.items[0].tiers) === "{}",
+  "and a tierset of that salt figure alone, in the old unit (0.3, -0.5), is a no-op that is filed, not refused, with the same note: " + fl([planned.items, plannedNeg.refused]));
+  ok(plannedMix.refused.length === 0 && fl(plannedMix.items[0].tiers) === fl({ "CZ9-DA": { oil: null } }),
+    "a tierset stamped before it with other content keeps that content and drops only the salt figure: " + fl(plannedMix.items[0] && plannedMix.items[0].tiers));
+  const applied = (x) => { const b2 = JSON.parse(JSON.stringify(bk)); return A.applyBatch(b2, { ok: true, count: 1, approved: [x] }, { version: "v0", date: "18 Oct 2026", title: "T", notes: [], rows: { [x.id]: { note: "n", what: "w" } }, stockNote: "s" }, Object.assign(Object.create(F.planCtx), { nextRid, sortBook })); };
+  const apOld = applied(ad(before, 0.2)), apNew = applied(ad(after, 0.2)), apTs = applied(ts(before, 0.3));
+  ok(apOld.ok && !(apOld.book.TIER_OF || {})["CZ9-DB"] && apOld.book.roster.includes("CZ9-DB")
+    && apTs.ok && !(apTs.book.TIER_OF || {})["CZ9-DA"] && apNew.ok && fl((apNew.book.TIER_OF || {})["CZ9-DB"]) === fl({ salt: 0.2 }),
+  "folded into the book, the old Add ID registers the customer with no held %, the old tierset holds nothing, and the same figure stamped after the switch is held as 0.2: " + fl([apOld.problems, (apOld.book || {}).TIER_OF && apOld.book.TIER_OF["CZ9-DB"]]));
+  const pNew = plan(ts(after, 0.3));
+  ok(pNew.refused.length === 0 && fl(pNew.items[0].tiers) === fl({ "CZ9-DA": { salt: 0.3 } }) && plan(ts(before, null)).refused.length === 0 && fl(plan(ts(before, null)).items[0].tiers) === fl({ "CZ9-DA": { salt: null } })
+    && /not held per customer/.test(why(ts(before, "Gold", "oil"))) && /not held per customer/.test(why(ts(before, 0.2, "oil"))),
+  "a salt % stamped after " + since + " is filed as it stands, a clear passes, and a figure on oil, a fixed board, is still refused before or after: " + fl([why(ts(before, "Gold", "oil")), why(ts(before, 0.2, "oil"))]));
   ok(Date.parse(since) > Date.parse("2026-10-17T00:00:00Z") && Date.parse(since) < Date.now() + 2 * 86400e3,
     "the switch moment is an instant at the start of this work, not a date in the future: " + since);
   ok(/not a % from 0 to 200/.test(why(ts(after, -0.4))) && /not a % from 0 to 200/.test(why(ts(after, 2.5))) && why(ts(after, 2)) === "" && why(ts(after, 0)) === "" && /not a % from 0 to 200/.test(why(ad(after, -0.3))),
