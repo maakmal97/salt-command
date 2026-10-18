@@ -527,7 +527,8 @@
     "CM4-TO-R",
     "CI5-PER",
     "CN4-BSL",
-    "CA3-KP"
+    "CA3-KP",
+    "CA4-P1"
   ],
   "associates": [
     "CS6-BS",
@@ -792,6 +793,11 @@
       2.72,
       102.24,
       "Kuala Pilah"
+    ],
+    "CA4-P1": [
+      2.92,
+      101.7,
+      "Presint 17"
     ]
   },
   "TIER_OF": {
@@ -932,7 +938,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-18T07:46:56.746Z",
+  "QUEUE_COMMITTED": "2026-10-18T08:10:55.627Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
