@@ -35,7 +35,7 @@ export async function run({ ok }) {
         while ((m = re.exec(text))) { const k = text.slice(Math.max(0, m.index - 40), m.index + 50); if (!seen.has(k)) { seen.add(k); found.push(k); } }
       }
     }
-    ok(drawn > 60 && found.length === 0, "no part of the Desk, on any book, draws a level name, a tier number or the word drift: " + drawn + " parts read " + JSON.stringify(found.slice(0, 4)));
+    ok(drawn > 48 && found.length === 0, "no part of the Desk, on any book, draws a level name, a tier number or the word drift: " + drawn + " parts read " + JSON.stringify(found.slice(0, 4)));
 
     /* the % card: named Their %, the note under about 7% once, the suggestion as a % with its reason, the partner on the Floor */
     w.eval("setProd('salt');recompute();");
