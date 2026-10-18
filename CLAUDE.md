@@ -35,7 +35,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    run out (his decision of 10 Oct 2026). It carries the real trading ledger; no real name, key or
    password is ever committed, in any form, hashed included.
 4. **No third-party loads at runtime.** Inline CSS and JS, no CDN; the build fails on an external
-   `src`, `url(` or `@import`. CSP is self-only, so Fraunces and JetBrains Mono are self-hosted
+   `src`, `url(` or `@import`. CSP is self-only, so Newsreader and Geist Mono are self-hosted
    files from `Code\salt-ds\fonts`, carried by each surface's own sync.
 5. **Copy and price.** Detail in `docs/DESK.md`.
    - **RM and unit only.** The goods are **inventory** in copy; **Stock** is the rail's
