@@ -10162,7 +10162,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1168","d":"19 Oct 2026","t":"ONE CUSTOMER REGISTERED, ONE CODE RE-KEYED","n":["<b>FOLDED: TWO ROSTER ROWS, NO MONEY OR STOCK.</b> CJ5-CHE is added to the roster as a customer at salt 0, and CN4-BSL is re-keyed to CN4-MC with 0 orders and 0 lots. Both were decided by Counter Admin on 19 Oct. The drafter raised no flags on either.","<b>INVENTORY UNTOUCHED.</b> No sale, lot or count is in this batch. Stock stays at 20.39 units and the stock cost stays at RM56 per unit."]}];
+const evolution=[{"v":"v1169","d":"19 Oct 2026","t":"A STOCK LIGHT TURNING WAKES THE DESK","n":["<b>A BOOK'S STOCK LIGHT TURNING YELLOW OR RED RINGS SALT DESK ONCE</b>, opening Stock. Each publish keeps the lights it sealed and the next one compares; a light that holds or gets better rings nothing, and no book, code or figure travels in the banner.","<b>THE FIRST PUBLISH ONLY WRITES THE LIGHTS DOWN</b>: a book already yellow or red then rings nothing until it turns again. A wake that does not go through is a line in the log, and the publish carries on."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10306,7 +10306,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='19 Oct 2026, 16:41 KL';
+const LAST_UPDATED='19 Oct 2026, 16:57 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

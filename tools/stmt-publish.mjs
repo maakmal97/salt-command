@@ -65,6 +65,39 @@ export function readExpected(run = execFileSync) {
   }
 }
 
+/* A STOCK LIGHT TURNING WAKES THE DESK (19 Oct 2026, the notifications plan: Salt Desk informs). The lights each publish seals are
+   kept beside the lists in the site's store, `stocklights` ({book: light}, riding the same bulk put), and the next publish compares.
+   A book that turns yellow or red from a better colour posts {"tag":"stock"} once to the Desk's /push/send, which keeps it as the
+   last inform; no book, code or figure travels. A book the last publish did not light (a first run, a new book, an unread store)
+   is not a turn. Only CI holds PUSH_KEY, and a failed post is a line in the log, never a failed publish. */
+const LIGHT_RANK = { green: 0, yellow: 1, red: 2 };
+export const stockLights = (supply) => Object.fromEntries(Object.entries(supply || {}).map(([p, v]) => [p, v && v.light]).filter(([, l]) => l in LIGHT_RANK));
+export function stockTurned(prev, now) {
+  return Object.entries(now || {}).some(([p, l]) => LIGHT_RANK[l] > 0 && prev && prev[p] in LIGHT_RANK && LIGHT_RANK[l] > LIGHT_RANK[prev[p]]);
+}
+/* the last publish's lights; none yet, or a store that does not read, is null and nothing is compared */
+export function readStockLights(run = execFileSync) {
+  try { const t = String(againIfLapsed(() => wrangler(["kv", "key", "get", "--remote", "--binding", "STMT", "stocklights"], { stdio: ["ignore", "pipe", "pipe"] }, run)));
+    const j = JSON.parse(t.slice(t.indexOf("{"))); return j && typeof j === "object" ? j : null; }
+  catch (e) {
+    if (!/ - 404:/.test(wranglerSaid(e))) console.log("::warning::the last stock lights did not read, so no light change is woken this run: " + wranglerSaid(e));
+    return null;
+  }
+}
+export const PUSH_URL = "https://salt-command.qyts8mh72kyg.workers.dev/push/send";
+export async function stockWake(prev, now, env = process.env, post = globalThis.fetch) {
+  if (!stockTurned(prev, now)) return null;
+  if (!env.PUSH_KEY) { console.log("a stock light turned; no PUSH_KEY here, so nothing is woken"); return null; }
+  const headers = { "X-Push-Key": env.PUSH_KEY, "content-type": "application/json" };
+  if (env.CF_ACCESS_CLIENT_ID && env.CF_ACCESS_CLIENT_SECRET) {
+    headers["CF-Access-Client-Id"] = env.CF_ACCESS_CLIENT_ID; headers["CF-Access-Client-Secret"] = env.CF_ACCESS_CLIENT_SECRET;
+  }
+  try {
+    const r = await post(PUSH_URL, { method: "POST", headers, body: JSON.stringify({ tag: "stock" }), signal: AbortSignal.timeout(15000) });
+    console.log("a stock light turned: push/send stock -> " + r.status); return r.status;
+  } catch (e) { console.log("::warning::a stock light turned and the wake did not go: " + String((e && e.message) || e)); return null; }
+}
+
 export async function planPublish(root, key, now, existingKeys, storedIssue, pricing, assoc, opts) {
   /* S14: ONE USERNAME, ONE CODE (tools/stmt-pool.mjs), refused before anything is sealed or put, or the
      account would carry whichever code sorts last and the other would drop off every list in silence */
@@ -306,9 +339,10 @@ export async function fixtureEntry(recText, now = new Date()) {
   return { key: fixKey(rec.u), value: JSON.stringify(await sealFixture(build(now, TESTS[rec.u], rec.u), rec, TEST_PASS)) };
 }
 
-/* `run` spawns every wrangler call and `out` is where the bulk files go; the suite hands in its own */
+/* `run` spawns every wrangler call and `out` is where the bulk files go; the suite hands in its own, and `lit` the lights it
+   wants this run to read (the frozen book's are all green) */
 export async function main(argv = process.argv, { run = execFileSync, out = join(REPO, "statements", ".publish"),
-  sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+  sleep = (ms) => new Promise((r) => setTimeout(r, ms)), lit = (s) => s } = {}) {
   const dryAt = argv.indexOf("--dry");
   const dry = dryAt >= 0;
   const outDir = dry ? resolve(argv[dryAt + 1] || out) : out;
@@ -345,7 +379,7 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
      way tools/d1.mjs --seed already does in the step before this one. About ten seconds. A dry run
      skips it, and so does --no-prices, and the records then go up without a list. */
   /* a failed read of the restock dates (readExpected) drops every date from the lists for this hour; the lights still go up */
-  let pricing = null, assoc = null, supply = null; const cards = {};
+  let pricing = null, assoc = null, supply = null, lastLights = null; const cards = {};
   if (!dry && !argv.includes("--no-prices") && key) {
     const { readBook, associateSnapshot } = await import("./book.mjs");
     /* v691: one window, two readings. The associates' report card comes off the same desk the
@@ -357,8 +391,9 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
     try {
       const { supplySnapshot } = await import("./book.mjs"), { supplyLights } = await import("./pricelist.mjs");
       const raw = supplySnapshot(rb.w);
-      supply = raw ? supplyLights(raw, readExpected(run), klToday(new Date())) : null;
+      supply = raw ? lit(supplyLights(raw, readExpected(run), klToday(new Date()))) : null;
       if (!supply) console.log("::warning::the restock light did not read, so no list carries one this run");
+      else lastLights = readStockLights(run);
     } catch (e) { console.log("::warning::no restock light: " + e.message); }
     try { assoc = associateSnapshot(rb.w); } catch (e) { console.log("::warning::no associates snapshot: " + e.message); }
     /* v706: and one card per associate, off the SAME window, so a card and a price can never be
@@ -410,6 +445,8 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
     .map(([username, code]) => ({ code, username }))
     .sort((a, b) => String(a.code).localeCompare(String(b.code)));
   plan.puts.push({ key: "roster", value: JSON.stringify(rosterList) });
+  /* the lights sealed this run, for the next publish to compare (stockWake); a run with no light keeps the last */
+  if (supply) plan.puts.push({ key: "stocklights", value: JSON.stringify(stockLights(supply)) });
 
   /* v691: the report card is in the plan (planPublish puts it); this only says so out loud */
   if (Object.keys(cards).length) console.log("and " + Object.keys(cards).length + " associate(s) carry their own card, sealed on their own record");
@@ -477,6 +514,8 @@ export async function main(argv = process.argv, { run = execFileSync, out = join
   if (dry) { console.log("wrote " + putFile + ", " + delFile + " and " + usersFile); return; }
 
   wrangler(["kv", "bulk", "put", putFile, "--remote", "--binding", "STMT"], { stdio: "inherit" }, run);
+  /* the lights are written, so a turn is woken now, before any read-back could stop the run and lose it */
+  if (supply) await stockWake(lastLights, stockLights(supply));
   const accountRecords = plan.puts.filter((record) => String(record.key || "").startsWith("u:")
     && !TEST_USERS.includes(String(record.key).slice(2)));
   const accountCheck = await confirmAccountWrites(accountRecords, (recs) => readAccountWrites(recs, outDir, run), sleep);

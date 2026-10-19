@@ -596,6 +596,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           STMT_KEY: ${{ secrets.STMT_KEY }}
+          # a book's stock light turning yellow or red posts {"tag":"stock"} to the Desk once (tools/stmt-publish.mjs
+          # stockWake), the same optional key and Access headers as Wake the phone; a failed post never fails the publish
+          PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           if [ -z "${STMT_KEY:-}" ]; then
