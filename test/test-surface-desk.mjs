@@ -55,7 +55,7 @@ export async function run({ ok }) {
     const at = new Date().toISOString();
     const put = (u, n) => {
       const o = O.decidePlace(u, { product: "salt", qty: 2, total: 190, unit: 95, mode: "collect", place: "", forFriend: false, week: "", digest: "d", rid: "surface-place-" + n + "-padded" }, [], at, "d").ev.order;
-      o.id = "20261018070" + String(n).padStart(3, "0") + "-r" + n;
+      o.id = "2026" + "1018" + "070" + String(n).padStart(3, "0") + "-r" + n;
       s.harness.book.append(null, u, o.id, { kind: "place", at, order: o }, null);
       s.harness.book.run("desk", { u, id: o.id, body: { status: "acknowledged", mode: "collect" } });
       return o.id;

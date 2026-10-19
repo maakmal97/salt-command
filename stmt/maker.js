@@ -88,7 +88,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/vault/key" && method === "GET"
     || /^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(path) && method === "GET"
     || /^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(path) && method === "POST"
-    || /^\/_internal\/maker\/fixture-claims\/0000-000[0-2]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
+    || TEST_USERS.includes(path.split("/")[4]) && /^\/_internal\/maker\/fixture-claims\/[0-9]{4}-[0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
     || path === "/_internal/maker/offsets" && method === "GET"
     || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)

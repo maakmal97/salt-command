@@ -20,6 +20,7 @@
  * through the form. */
 
 import { MAKER_GEO_JS } from "./maker-geo.js";
+import { TEST_USERS } from "./testusers.js";
 
 export const OWNER_JS = `
   var makerGeo=${MAKER_GEO_JS};
@@ -5816,19 +5817,21 @@ export const OWNER_JS = `
     if(OWNER.master) body.wrapMaster=await wrapUnder(new TextEncoder().encode(OWNER.master), ck);
     return body;
   }
-  /* TWO TEST ACCOUNTS (his answer of 29 Sep 2026: a second account, not a switch), made and taken away together: one open,
-     where a claim of theirs waits so it can order, and one locked, only for paying. The same zeros open both. */
-  var TEST_LINE='Password 0000-0000-0000-0000 for both. Username 0000-0000 can order; 0000-0001 is locked, for paying only.';
+  /* THE TEST ACCOUNTS (his answer of 29 Sep 2026: a second account, not a switch; a third, fresh, on 18 Oct 2026), made and taken away
+     together: one open with every case a customer sees, one locked, only for paying, and one fresh with room to order. The same zeros open
+     all three; the names are stmt/testusers.js's list. */
+  var TEST_ALL=${JSON.stringify(TEST_USERS)};
+  var TEST_LINE='Password 0000-0000-0000-0000 for all three. Username 0000-0000 shows every case; 0000-0001 is locked, for paying only; 0000-0002 is fresh, with room to order.';
   function drawTest(){
     var box=document.getElementById('mTest'); if(!box) return;
     /* a pair made by halves (a tap cut off between its two sends) keeps Make, for the one missing (Fable's review) */
     var have=sheetRows.filter(function(a){ return a.test; }).map(function(a){ return a.username; });
-    var need=['0000-0000','0000-0001'].filter(function(u){ return have.indexOf(u)<0; }), on=!need.length;
+    var need=TEST_ALL.filter(function(u){ return have.indexOf(u)<0; }), on=!need.length;
     box.textContent='';
     box.appendChild(el('p','lead', on
-      ? 'Two practice accounts are open. '+TEST_LINE+' Nothing they do is recorded.'
-      : have.length ? 'Only practice account '+have[0]+' is open. One tap makes the other.'
-      : 'No practice accounts. One tap makes two you can open anywhere: one that can order, one locked. Nothing they do is recorded.'));
+      ? 'Three practice accounts are open. '+TEST_LINE+' Nothing they do is recorded.'
+      : have.length ? 'Practice account'+(have.length>1?'s ':' ')+have.join(' and ')+(have.length>1?' are':' is')+' open. One tap makes '+need.join(' and ')+'.'
+      : 'No practice accounts. One tap makes three you can open anywhere: one with every case, one locked, one fresh. Nothing they do is recorded.'));
     var b=el('button','btn quiet salt-ghost', on?'Remove the practice accounts':'Make the practice accounts'); b.type='button'; actOn(b,'more.test-accounts');
     b.addEventListener('click', async function(){
       b.disabled=true; say(on?'Removing...':'Making...','wait');

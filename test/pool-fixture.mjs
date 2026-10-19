@@ -15,7 +15,7 @@ export async function fixture({ ok, KV, skipOff }) {
     && order(open).status === "placed" && open.closesOn > "2026-10-05" && order(shut).status === "acknowledged" && shut.closedAt && !!shut.seedUnits && !!open.seedUnits && open.seedUnits + open.q < open.target,
     "one pool is open with the account's placed order in it and a closing day ahead, one closed with its order confirmed, each order collected and carrying its pool: " + JSON.stringify(f.pools.map((p) => [p.state, order(p).status])));
   const view = O.customerView(order(open));
-  ok(view.pool === open.id && Object.values(all).every((x) => x.pools.length === 2), "the order's view carries the pool, and the locked account has the same two");
+  ok(view.pool === open.id && [TF.TEST_USER, TF.TEST_LOCKED].every((x) => all[x].pools.length === 2), "the order's view carries the pool, and the locked account has the same two");
   /* the lines are the suite's: a fixture with no pools fails them */
   const bare = { ...f, pools: [] };
   ok(lines.every(([, t]) => !t(bare)) && lines.every(([, t]) => !t({ ...f, pools: undefined })), "and each line is red without its pool");

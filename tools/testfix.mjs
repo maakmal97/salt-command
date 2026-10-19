@@ -5,7 +5,8 @@
  * real customer's account. This builds, for the moment it is given, an invented account holding a case of every
  * feature a customer sees, and the publish seals it for the test account alone (sealFixture). The Worker lays it
  * over the test account's own record and orders and nothing else (stmt/testfix.js), so no count reads it. There are
- * two (his answer of 29 Sep 2026): 0000-0000 open, a claim of theirs waiting so it can order, and 0000-0001 locked.
+ * three: 0000-0000 open, a claim of theirs waiting, and 0000-0001 locked (his answer of 29 Sep 2026); and 0000-0002 fresh,
+ * with room to order (the test surface, his answers of 18 Oct 2026), built by fresh() below from the same case builders.
  *
  * EVERYTHING HERE IS INVENTED: the code, the places, the words, the prices. The orders are made by the order
  * book's own decide and apply functions, so an order here has the shape a real one has and cannot drift from it;
@@ -103,10 +104,51 @@ export function overdueDays(state) {
   return { open: lock + 3, locked: lock + 1 }[state];
 }
 
+/* THE FRESH ACCOUNT, 0000-0002 (the test surface, his answers of 18 Oct 2026): room to order. One order placed and one ready, so two
+   are open and three more fit under the limit of five; three handed over in full, one of them at a size since taken off the list
+   (Order again must say so); one withdrawn by them and one declined, which Order again skips; a group order open to join, joined by
+   nobody here; no claim waiting and nothing owed past its term, so no gate stands. The same order() and moves as the other two. */
+function fresh(now, u) {
+  const list = priceList(now), T = (n, m) => ago(now, n, m);
+  const oid = (n, k) => T(n, 0).replace(/[-:.TZ]/g, "").slice(0, 14) + "-ex" + k;
+  const rail = railFor(offeredMethods().find((m) => m !== "cod"));
+  /* the list as it stood: oil at two units as well, a size the list no longer carries */
+  const was = Object.assign({}, list, { products: list.products.map((p) => p.product === "oil" ? Object.assign({}, p, { sizes: p.sizes.concat([{ q: 2, price: 78 }]) }) : p) });
+  const O = [
+    order(oid(0, "f1"), list, T(0, 10), { product: "salt", qty: 2.5, mode: "collect" }, []),
+    order(oid(1, "f2"), list, T(1, 10), { product: "candy", qty: 4, mode: "collect" }, [[T(1, 30), "desk", { status: "acknowledged" }], [T(0, 30), "desk", READY_AT()]]),
+    order(oid(6, "f3"), list, T(6), { product: "salt", qty: 1, mode: "collect" }, [[T(6, 20), "desk", { status: "acknowledged" }], [T(5), "desk", READY_AT()],
+      [T(5, 30), "desk", { handover: { units: 1 } }], [T(5, 31), "desk", { cash: { amount: 110 } }]]),
+    order(oid(9, "f4"), list, T(9), { product: "rice", qty: 2, mode: "deliver", place: "Taman Rekaan" }, [[T(9, 20), "desk", { status: "acknowledged", delivery: 3 }],
+      [T(8), "desk", { status: "ready" }], [T(8, 30), "desk", { handover: { units: 2, mode: "deliver" } }], [T(8, 31), "desk", { cash: { amount: 20 } }]]),
+    order(oid(12, "f5"), was, T(12), { product: "oil", qty: 2, mode: "collect" }, [[T(12, 20), "desk", { status: "acknowledged" }], [T(11), "desk", READY_AT()],
+      [T(11, 30), "desk", { handover: { units: 2 } }], [T(11, 40), "customer", Object.assign({ action: "method" }, rail)],
+      [T(11, 45), "customer", Object.assign({ action: "pay", amount: 78 }, rail)], [T(11, 50), "desk", { verdict: { kind: "received", claim: T(11, 45), amount: 78 } }]]),
+    order(oid(3, "f6"), list, T(3), { product: "rice", qty: 1, mode: "collect" }, [[T(3, 20), "customer", { action: "cancel" }]]),
+    order(oid(4, "f7"), list, T(4), { product: "oil", qty: 1, mode: "collect" }, [[T(4, 30), "desk", { status: "declined", note: "None of this size this week." }]])];
+  const sales = [];
+  for (const o of O) {
+    if (!ROWED.includes(o.status)) continue;
+    const day = klDay(new Date(o.at));
+    o.ledgerKey = FIX_CODE + "|" + day + "|" + o.qty + "|" + o.product;
+    sales.push(Object.assign({ rid: "x" + (sales.length + 1), date: day, customer: FIX_CODE, qty: o.qty, total: o.total, product: o.product,
+      cash: +o.paid || 0, deliveredQty: +o.moved || 0 }, o.delivery ? { delivery: o.delivery } : {},
+      o.movedOn ? { deliveredOn: o.movedOn, handover: o.mode === "deliver" ? "delivered" : "collected" } : {}, +o.paid > 0 ? { paidOn: o.movedOn || day } : {}));
+  }
+  const pools = [{ id: "p" + T(1, 0).replace(/[-:.TZ]/g, "").slice(0, 14) + "-exf1", kind: "pool", at: T(1), product: "salt", q: 2.5, target: 12.5, state: "open",
+    closesOn: klDay(new Date(now.getTime() + 4 * 864e5)), joins: [], seedUnits: 5 }];
+  const card = { at: now.toISOString(), products: [{ product: "salt", name: "Salt", unit: "unit", summary: { bought: 110, soldFor: 0, onward: 0, introduced: 0, referred: 0 },
+    reward: { earned: 0, taken: 0, left: 0, next: 0.9, held: false }, lines: [{ date: T(6).slice(0, 10), kind: "own", qty: 1, rm: 110 }] }] };
+  const book = { sales, customerRefunds: [] }, paynum = { maybank: { number: "0".repeat(13) } };
+  return { v: FIX_VERSION, u, state: "fresh", at: now.toISOString(), code: FIX_CODE, book, live: liveFor(book, FIX_CODE, now, U), prices: list,
+    orders: O, claims: [], refs: [], card, assoc: true, thread: null, pools, bulletin: null, look: "asked", paynum };
+}
+
 /** The fixture for the moment `now`, in one state: the invented book, the orders, the claims, the links, the card and the rest. */
 export function build(now = new Date(), state = "open", u = TEST_USER) {
   now = new Date(now);
   U = u;
+  if (state === "fresh") return fresh(now, u);
   /* ONLY OPEN HAS A CLAIM WAITING, since any claim of theirs waiting lifts the hold and every stage */
   const W = state === "open";
   const list = priceList(now), T = (n, m) => ago(now, n, m);
@@ -436,6 +478,9 @@ export const FEATURES = [
   ["another window waiting on their yes (10 Oct 2026)", (f) => has(f, (o) => o.status === "placed" && accYes(o, f) && !!o.slot && !!o.price.offer.slot && o.price.offer.slot !== o.slot)],
   ["an offer for their yes lapsed, then agreed at their terms (10 Oct 2026)", (f) => has(f, (o) => o.status === "acknowledged" && o.price && o.price.from === "accept"
     && o.price.state === "offered" && Math.abs(o.price.offer.total - o.total) > 0.004)],
+  ["a fresh account with room to order: two open, three more under the limit (the test surface, 18 Oct 2026)", (f) => f.state === "fresh"
+    && openCount(f.orders.filter((o) => OPEN_STATES.includes(o.status))) === 2 && !f.claims.some((c) => c.state === "waiting")
+    && f.orders.some((o) => o.status === "done" && !f.prices.products.some((p) => p.product === o.product && (p.sizes.some((s) => s.q === o.qty) || p.grid)))],
   ["orders open at the limit, so New order opens on the limit and each Cancel there asks in a Sheet (Phase 7d, 11 Oct 2026)", (f) => {
     const open = f.orders.filter((o) => OPEN_STATES.includes(o.status));
     return openCount(open) >= MAX_OPEN && open.some((o) => !(+o.moved > 0)); }],

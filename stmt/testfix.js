@@ -4,11 +4,13 @@
  * THE TEST ACCOUNT (v689, his instruction of 18 Sep 2026): one account he can open anywhere, that counts nowhere, and
  * that he can destroy with one tap. ITS NAME IS THE POINT: zeros are not in the alphabet a real username is drawn from,
  * so this one cannot collide with an account and cannot be arrived at by mistyping one. A SECOND, 0000-0001, stands
- * locked (his answer of 29 Sep 2026: a second account, not a switch): a one is outside the alphabet as well. Both open
- * with the same zeros.
+ * locked (his answer of 29 Sep 2026: a second account, not a switch): a one is outside the alphabet as well. A THIRD,
+ * 0000-0002, stands fresh, with room to order (the test surface, his answers of 18 Oct 2026). All three open with the same
+ * zeros, and their names are one list, stmt/testusers.js.
  *
  * THE FIXTURE. The publish builds an invented account for each (tools/testfix.mjs): the first open, a claim of theirs
- * waiting so it can order, the second locked, only for paying. Each is sealed under its own account's key and put at
+ * waiting, every case a customer sees; the second locked, only for paying; the third fresh, two orders open and room for
+ * three more. Each is sealed under its own account's key and put at
  * fixKey(u). Here it is LAID OVER that account as it is read, and never written anywhere an order, a claim or a link
  * lives: its orders are not in the order book or under order:, its claims not under aclaim:, its links not under g:.
  * So every reader that counts (the desk's reconcile, his lists, the chase, the report card) cannot see it, by
@@ -25,14 +27,10 @@ import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyE
 import { refusal } from "./words.js";
 import { numbersOf } from "./paynum.js";
 
-export const TEST_USER = "0000-0000";
-export const TEST_LOCKED = "0000-0001";
+import { TEST_USER, TEST_LOCKED, TEST_FRESH, TESTS, TEST_USERS, isTest } from "./testusers.js";
+export { TEST_USER, TEST_LOCKED, TEST_FRESH, TESTS, TEST_USERS, isTest };
 export const TEST_PASS = "0000-0000-0000-0000";
-/* each test account and the state its fixture stands in */
-export const TESTS = { [TEST_USER]: "open", [TEST_LOCKED]: "locked" };
-export const TEST_USERS = Object.keys(TESTS);
-export const isTest = (u) => Object.prototype.hasOwnProperty.call(TESTS, String(u || ""));
-export const FIX_VERSION = 10;   /* 10: two orders ready at a collection point, one moved to another (Counter Batch A, 18 Oct 2026); 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
+export const FIX_VERSION = 11;   /* 11: the third account, 0000-0002, fresh with room to order (the test surface, 19 Oct 2026); 10: two orders ready at a collection point, one moved to another (Counter Batch A, 18 Oct 2026); 9: an invented account number for the pay sheet, so the publish seals the fixture afresh (Phase 7b, 11 Oct 2026); 8: the look, asked at every sign-in (11 Oct 2026); 7: his Accept for their yes, a raise and another window waiting on them, and one lapsed (10 Oct 2026) */
 export const fixKey = (u) => "testfix:" + u;
 
 /** The fixture for this account as read, or null: a test account's alone, and only the one it was sealed for. */

@@ -20640,8 +20640,8 @@ await (async () => {
   const { normUser: nu89, normPass: np89, TEST_USER: TU89, TEST_PASS: TP89 } = await import("../stmt/worker.js");
   ok(TU89 === "0000-0000" && TP89 === "0000-0000-0000-0000" && nu89("0000-0000") === TU89 && nu89("0000 0000") === TU89
     && nu89("1111-1111") === "" && nu89("0000-000") === "" && nu89("0123-4567") === "" && nu89("0aaa-bbbb") === ""
-    && np89("0".repeat(16)) === TP89 && nu89("0000 0001") === "0000-0001" && nu89("0000-0002") === "" && nu89("0000-0010") === "",
-    "the door takes the test accounts' zeros, and the second's one, and nothing else that is not of the alphabet");
+    && np89("0".repeat(16)) === TP89 && nu89("0000 0001") === "0000-0001" && nu89("0000-0002") === "0000-0002" && nu89("0000-0003") === "" && nu89("0000-0010") === "",
+    "the door takes the test accounts' zeros, the second's one and the third's two, and nothing else that is not of the alphabet");
 
   const realFetch89 = globalThis.fetch;
   try {
@@ -20770,8 +20770,8 @@ await (async () => {
   /* ---- 1. A CASE OF EVERY FEATURE across the two accounts, and the check is red on a fixture missing one ---- */
   const missing = F.missing;
   ok(missing(all).length === 0 && F.FEATURES.length >= 35 && F.derivedCases(fix).length >= 14
-    && Object.keys(all).join() === TU + "," + TL && F.stageOf(all[TU]) === 0 && F.stageOf(all[TL]) === 3,
-    "the two test accounts hold a case of every feature a customer sees, each line and each state, way, rail and claim answer the code"
+    && Object.keys(all).join() === TU + "," + TL + ",0000-0002" && F.stageOf(all[TU]) === 0 && F.stageOf(all[TL]) === 3 && F.stageOf(all["0000-0002"]) === 0,
+    "the three test accounts hold a case of every feature a customer sees, each line and each state, way, rail and claim answer the code"
       + " names, the first open and the second locked: " + JSON.stringify([missing(all), F.stageOf(all[TU]), F.stageOf(all[TL])]));
   /* a rail the site stops taking is no fixture lost: with no account taking a transfer, the rest is still built */
   const { PAY_ACCOUNTS: PA } = await import("../stmt/pay.js"), shut = PA.filter((a) => a.transfer);
@@ -20782,7 +20782,7 @@ await (async () => {
     "and a rail the site stops taking costs its own case and nothing else: " + JSON.stringify(offTransfer));
   const each = (fn) => Object.fromEntries(Object.entries(all).map(([s, f]) => [s, fn(f)]));
   const noDecl = missing(each((f) => Object.assign({}, f, { orders: f.orders.filter((o) => o.status !== "declined") })));
-  const noLock = missing({ [TU]: all[TU], [TL]: all[TU] });
+  const noLock = missing({ [TU]: all[TU], [TL]: all[TU], "0000-0002": all["0000-0002"] });
   ok(noDecl.includes("state declined") && noDecl.includes("declined, with his reason") && noLock.join() === "locked, only for paying (V5)"
     && missing(each((f) => Object.assign({}, f, { bulletin: { lines: [] } }))).join() === "the bulletin," + F.FEATURES.map(([n]) => n).find((n) => /notice over two lines/.test(n)),
     "and a fixture without a case is red, by its line and off the code, the locked account included: " + JSON.stringify([noDecl, noLock]));
@@ -21034,14 +21034,14 @@ await (async () => {
     await until27(() => [...D27.querySelectorAll("#mTest button")].some((b) => b.textContent === "Remove the practice accounts"));
     const rec27 = await kv27.get("u:" + TU27, "json"), sent27 = posted27[0] || {};
     const recL27 = await kv27.get("u:0000-0001", "json"), sentL27 = posted27[1] || {};
-    ok(posted27.length === 2 && sent27.u === TU27 && sentL27.u === "0000-0001" && !!rec27 && rec27.test === true && !!recL27 && recL27.test === true
+    ok(posted27.length === 3 && sent27.u === TU27 && sentL27.u === "0000-0001" && (posted27[2] || {}).u === "0000-0002" && posted27[2].key !== sent27.key && !!rec27 && rec27.test === true && !!recL27 && recL27.test === true
       && typeof sent27.key === "string" && Buffer.from(sent27.key, "base64").length === 32 && sent27.key !== sentL27.key
       && JSON.stringify(rec27.wrap) === JSON.stringify(sent27.wrap) && JSON.stringify(rec27.wrapMaster) === JSON.stringify(sent27.wrapMaster)
       && JSON.stringify(recL27.wrap) === JSON.stringify(sentL27.wrap),
-      "his page's one tap makes both test accounts, each from a key and two wraps it made itself, and each record carries those wraps as sent: "
+      "his page's one tap makes the three test accounts, each from a key and two wraps it made itself, and each record carries those wraps as sent: "
       + JSON.stringify({ posted: posted27.map((b) => b.u), rec: [!!rec27, !!recL27], fields: Object.keys(sent27) }));
     const made27 = rounds27.slice(pageBefore27);
-    ok(made27.filter((x) => x.who === "page" && x.n === 150000).length === 4 && made27.some((x) => x.who === "worker" && x.n === 10000)
+    ok(made27.filter((x) => x.who === "page" && x.n === 150000).length === 6 && made27.some((x) => x.who === "worker" && x.n === 10000)
       && Math.max(...made27.filter((x) => x.who === "worker").map((x) => x.n)) <= 100000,
       "each account's two wraps are derived on his page at 150,000 rounds, and the Worker derives only the 10,000-round verifier: " + JSON.stringify(made27));
     const opened27 = rec27 && rec27.wrapMaster ? await C27.unwrapKey(MASTER27, rec27.wrapMaster).catch(() => null) : null;
@@ -21066,7 +21066,7 @@ await (async () => {
     if (btnB27("Make the practice accounts")) btnB27("Make the practice accounts").dispatchEvent(new domB27.window.Event("click", { bubbles: true }));
     await until27(() => btnB27("Remove the practice accounts"));
     const recB27 = await kv27.get("u:" + TU27, "json");
-    ok(/Only practice account 0000-0000 is open[.] One tap makes the other[.]/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
+    ok(/Practice accounts 0000-0000 and 0000-0002 are open[.] One tap makes 0000-0001[.]/.test(leadB27) && postedB27.map((b) => b.u).join() === "0000-0001"
       && !!(await kv27.get("u:0000-0001", "json")) && JSON.stringify(recB27.wrap) === JSON.stringify(rec27.wrap),
       "with only one of the pair live, his page says so and one tap makes the one missing, the other untouched: " + JSON.stringify([leadB27, postedB27.map((b) => b.u)]));
 
@@ -24321,8 +24321,8 @@ await (async () => {
     ok(saidP.includes("returned") && boards.join() === "guestboard" && gb && gb.products.length > 0 && !("introducer" in gb) && !("levels" in gb),
       "the priced hourly run writes the one guest board and no board per link, per level or per introducer, and no level names: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 0 && cP.length === 10 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001"),
-      "in ten spawns, the restock dates among them: one bulk read for account verification, no read of the links at all, no list, and each test account's record read for its fixture: " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 0 && cP.length === 11 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001") && cP.includes("kv key get u:0000-0002"),
+      "in eleven spawns, the restock dates among them: one bulk read for account verification, no read of the links at all, no list, and each test account's record read for its fixture: " + cP.join());
 
     /* ---- 03 Oct 2026, run 37122717841: the account read-back meets KV's eventual consistency ----
        The store answers the account records' bulk read with what it held BEFORE the put for the first `lag` reads (or
@@ -48030,6 +48030,11 @@ await (async () => {
 section("Counter test surface P1: the Desk's stateless fixture-check (words, the yes rule, a close's goods) and 0000-0002 in the Desk's literals (19 Oct 2026)");
 await (async () => {
   await (await import("./test-surface-desk.mjs")).run({ ok });
+})();
+
+section("Counter test surface P2: one list of test users, and 0000-0002 fresh with room to order (19 Oct 2026)");
+await (async () => {
+  await (await import("./test-surface-fixture.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter maker cancels a paid order: the approver is told, the fold opens one refund");

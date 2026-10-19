@@ -67,6 +67,7 @@
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideReplace, decideCustomer, decideDesk,
   applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE,
   isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS, claimWaits, isAdvance, graceOver } from "./orders.js";
+import { TEST_USERS } from "./testusers.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -340,7 +341,7 @@ export class OrderBook {
   run(op, a) {
     const at = new Date().toISOString();
     if (op === "fixture-account") {
-      if (!["0000-0000", "0000-0001"].includes(a.u) || typeof a.generation !== "string"
+      if (!TEST_USERS.includes(a.u) || typeof a.generation !== "string"
         || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace", "deskorder", "pjoin", "place"].includes(a.actor))
         return { ok: false, error: "An acceptance account needs its publication.", status: 400 };
       return this.state.storage.transactionSync(() => {
@@ -450,7 +451,7 @@ export class OrderBook {
       });
     }
     if (op === "fixture-thread") {
-      if (!["0000-0000", "0000-0001"].includes(a.u) || typeof a.generation !== "string"
+      if (!TEST_USERS.includes(a.u) || typeof a.generation !== "string"
         || a.generation.length > 1024 || !["read", "customer", "desk"].includes(a.actor))
         return { ok: false, error: "A fixture thread needs its account and publication.", status: 400 };
       return this.state.storage.transactionSync(() => {
