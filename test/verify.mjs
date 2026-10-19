@@ -48249,6 +48249,11 @@ await (async () => {
   await (await import("./counter-c-help.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Batch C: a placed order says how long he usually takes to confirm while the Counter is open, and when it opens while closed (P4)");
+await (async () => {
+  await (await import("./counter-c-confirm-line.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });

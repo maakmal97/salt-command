@@ -1,0 +1,12 @@
+[
+ {"name":"the line never drawn","file":"stmt/page.js","find":"    if(s==='placed') confirmLine(o,put,p);","replace":"    if(s==='placed') put('ow.placed');"},
+ {"name":"no count","file":"stmt/page.js","find":"put('ow.within',{d:esch(confirmDur(c.mins))}); p.appendChild(document.createTextNode(' ')); put('ow.measured',{n:c.n}); return; }","replace":"put('ow.within',{d:esch(confirmDur(c.mins))}); return; }"},
+ {"name":"minutes only","file":"stmt/page.js","find":"    return a&&r?a+' '+tw('ow.mins',{n:r}):a||tw('ow.mins',{n:r});","replace":"    return tw('ow.mins',{n:m});"},
+ {"name":"an hour said as hours","file":"stmt/page.js","find":"a=h===0?'':h===1?tw('ow.hour'):tw('ow.hours',{n:h});","replace":"a=h===0?'':tw('ow.hours',{n:h});"},
+ {"name":"nine are enough","file":"stmt/page.js","find":"if(c&&c.n>=10&&c.n<=30&&c.mins>=15){","replace":"if(c&&c.n>=1&&c.n<=30&&c.mins>=15){"},
+ {"name":"the figure while closed","file":"stmt/page.js","find":"    if(!H.open){ put('ow.shut');","replace":"    if(!H.open&&!c){ put('ow.shut');"},
+ {"name":"closed without the opening","file":"stmt/page.js","find":"      if(H.nextOpen){ p.appendChild(document.createTextNode(' ')); put('ow.opens',","replace":"      if(false){ p.appendChild(document.createTextNode(' ')); put('ow.opens',"},
+ {"name":"the hours error read as open","file":"stmt/page.js","find":"    var H=!hoursError&&counterHours&&typeof counterHours.open==='boolean'?counterHours:null, c=H&&H.confirm;","replace":"    var H=counterHours||{open:true,confirm:{mins:45,n:30}}, c=H&&H.confirm;"},
+ {"name":"an ask gets the figure","file":"stmt/page.js","find":"    if(!H||o.price){ put('ow.placed'); return; }","replace":"    if(!H){ put('ow.placed'); return; }"},
+ {"name":"the measured line reworded","file":"stmt/words.js","find":"\"ow.measured\": \"Measured from our last {n} orders, not a promise.\"","replace":"\"ow.measured\": \"From our last {n} orders.\""}
+]

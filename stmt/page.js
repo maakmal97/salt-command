@@ -5139,6 +5139,22 @@ const CLIENT_JS = `
   }
   /* where it stands and when, in one sentence, off the record's own moments. S11 11.7: an order he ended says so
      with his reason; S11 11.9: one he closed at what was handed over says the size it was and the size it is. */
+  /* COUNTER BATCH C (20 Oct 2026, item 19): a placed order waiting on his Accept says how long he usually takes, off /hours: open with
+     ten or more measured, the figure and its count; closed, when it opens and no figure; anything else (under ten, the hours not read,
+     an ask or an offer on it) today's line. The figure is site-wide, measured by the Counter (stmt/confirm.js), never this order's. */
+  function confirmDur(m){
+    var h=Math.floor(m/60), r=m%60, a=h===0?'':h===1?tw('ow.hour'):tw('ow.hours',{n:h});
+    return a&&r?a+' '+tw('ow.mins',{n:r}):a||tw('ow.mins',{n:r});
+  }
+  function confirmLine(o,put,p){
+    var H=!hoursError&&counterHours&&typeof counterHours.open==='boolean'?counterHours:null, c=H&&H.confirm;
+    if(!H||o.price){ put('ow.placed'); return; }
+    if(!H.open){ put('ow.shut');
+      if(H.nextOpen){ p.appendChild(document.createTextNode(' ')); put('ow.opens',{t:esch(hhmm(H.nextOpen)), d:function(L){ return esch(oDay(H.nextOpen,L)); }}); }
+      return; }
+    if(c&&c.n>=10&&c.n<=30&&c.mins>=15){ put('ow.within',{d:esch(confirmDur(c.mins))}); p.appendChild(document.createTextNode(' ')); put('ow.measured',{n:c.n}); return; }
+    put('ow.placed');
+  }
   function oWhen(o){
     /* S13: each a whole sentence from the table, its day in bold, his reason a slot */
     var w=el('div'), p=el('p','salt-insight'), d=o.mode==='deliver', mv=+o.moved||0, paid=+o.paid||0, s=o.status, e=endOf(o),
@@ -5146,7 +5162,7 @@ const CLIENT_JS = `
         why=e&&e.note?esch(/[.!?]$/.test(e.note.trim())?e.note.trim():e.note.trim()+'.'):'', back=tw(paid>0?'ow.refunded':'ow.nothingOwed',{rm:rm(paid)}),
         went=function(x){ return function(L){ return esch(x(L)||wordIn(L,'ow.dayWent')); }; }, sz=function(q){ return function(L){ return esch(unitsOf(q,oUnit(o),L)); }; };
     function put(k,sl){ p.appendChild(setW(el('span'),k,sl)); }
-    if(s==='placed') put('ow.placed');
+    if(s==='placed') confirmLine(o,put,p);
     else if(s==='done') put('ow.done');
     else if(s==='declined'){ put(why?'ow.declinedWhy':'ow.declined',{why:why}); p.appendChild(document.createTextNode(' '+back)); }
     else if(s==='cancelled'&&e&&e.by==='desk'){ put(why?'ow.cancelUsWhy':'ow.cancelUs',{why:why}); p.appendChild(document.createTextNode(' '+back)); }

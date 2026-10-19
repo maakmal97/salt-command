@@ -23,7 +23,7 @@ export const ord = (id, status, at, extra = {}) => Object.assign({ id, status, a
 /* handed over in full: moved is the size, done */
 export const done = (id, at, extra = {}) => ord(id, "done", at, Object.assign({ moved: extra.qty || 1, movedOn: at.slice(0, 10), paid: extra.total || 100 }, extra));
 
-export async function open({ ok, pageWork, orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0 } = {}) {
+export async function open({ ok, pageWork, orders = [], assoc = false, late = 0, list = LIST(), poll = true, width = 0, hours = null } = {}) {
   const P = await import("../stmt/page.js");
   const C = await import("../tools/stmt-crypto.mjs");
   const { JSDOM } = await import("jsdom");
@@ -59,6 +59,8 @@ export async function open({ ok, pageWork, orders = [], assoc = false, late = 0,
       }
       if (p === "/links") return j({ ok: true, links: [], max: 3 });
       if (p === "/pools") return j({ ok: true, pools: [] });
+      /* Counter Batch C: the hours, and the measured confirm time on them, when a test gives them; unread otherwise, as before */
+      if (p === "/hours" && hours) return j(typeof hours === "function" ? hours() : hours);
       return j({ ok: false }, 404);
     };
     work = pageWork(win);
