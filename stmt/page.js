@@ -321,6 +321,16 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .panel{max-width:620px;margin:0 auto}
 .panel h2,.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 18px}
+/* Counter Batch B: the basket's + beside each size, its minus and its count once tallied, and the pane's line of what is in it */
+.szwrap{display:flex;align-items:center;gap:8px}
+.szwrap>.szrow{flex:1 1 auto;min-width:0}
+.szadd{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.szadd .salt-orb{width:var(--salt-tap);height:var(--salt-tap);min-width:var(--salt-tap);min-height:var(--salt-tap);display:inline-flex;align-items:center;justify-content:center}
+.szadd .salt-orb:disabled{opacity:.45;cursor:not-allowed}
+.bkn{min-width:1.5em;text-align:center;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums;font-weight:700;color:var(--salt-copper)}
+.bkline[hidden]{display:none}
+.bkline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px}
+.bkline__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
 /* Counter Batch B: the way on Prices, its words and Change on one line while they fit */
 .pway[hidden]{display:none}
 .pway{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:-6px 0 18px}
@@ -3582,10 +3592,12 @@ const CLIENT_JS = `
     /* S4 4.8: THE STAMP SAYS WHEN THE LIST WAS WRITTEN, "Prices as at Thu 24 Sep, 11:59" in Kuala Lumpur, where "for the week
        of" stayed on an open page for good; a list sealed before it carried a time keeps its week. Every size is a tap. */
     var tapTo=!view&&!hold;
+    bsRows=[]; bsPanes=[];
     pPrices.appendChild(el('p','lead',tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
       {d:Dd(pricesAt,prices.at), w:prices.week&&prices.week.label||''})));
     pPrices.appendChild(el('p','lead',tw('pr.goods',{deliv:Wk('deliv')})));
     var pw=el('div','pway'); pw.id='pWay'; pPrices.appendChild(pw); wayDraw();
+    if(tapTo){ var bl=el('p','salt-insight salt-insight--copper',limitLine()); bl.id='bkLim'; bl.hidden=true; pPrices.appendChild(bl); }
     if(prices.since) pPrices.appendChild(el('p','sub2',tw('pr.since',{m:Dd(monthOf,prices.since)})));
     /* S7 7.2: the books stand in a grid, two across from 1080px */
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
@@ -3605,9 +3617,13 @@ const CLIENT_JS = `
         var v=el('span','salt-ledger__value',rm(r.price)); line.appendChild(v); row.appendChild(line);
         if(tapTo){ row.type='button'; row.setAttribute('data-q',String(r.q)); v.appendChild(oGlyph('next','ochev'));
           row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }
-        L.appendChild(row);
+        /* COUNTER BATCH B: the size's + beside its row, never inside it */
+        if(tapTo){ var sw=el('div','szwrap'); sw.appendChild(row); sw.appendChild(bsAdd(p,r.q)); L.appendChild(sw); }
+        else L.appendChild(row);
       });
-      pane.appendChild(L); grid.appendChild(pane);
+      pane.appendChild(L);
+      if(tapTo){ var bkl=el('div','bkline'); bkl.hidden=true; pane.appendChild(bkl); bsPanes.push({P:p, node:bkl}); }
+      grid.appendChild(pane);
     });
     /* his instruction of 15 Sep 2026: a product with no tier set is not priced, and says so */
     soon.forEach(function(p){
@@ -3616,6 +3632,7 @@ const CLIENT_JS = `
       pane.appendChild(el('p','sub2',tw('pr.soon')));
       grid.appendChild(pane);
     });
+    bsPatch();
   }
 
   /* COUNTER BATCH B: THE WAY ON PRICES, "Delivering to {place}" or "Collecting", with Change opening the sheet at How it reaches you. Patched
@@ -3632,6 +3649,60 @@ const CLIENT_JS = `
     ch.addEventListener('click',function(){ sheetOpen(null,null,ch);
       var m=osh&&osh.box.querySelector('[data-k^="mode:"][aria-pressed="true"]'); if(m) try{ m.focus({preventScroll:true}); }catch(e){} });
     pw.appendChild(ch);
+  }
+  /* COUNTER BATCH B (his answers of 18 Oct 2026): THE BASKET. A + beside each size adds it to what they will order of that mark, and taps
+     on one mark SUM into one line, priced at the summed amount's own figure off the list: two taps on 5 units are 10 units at the 10-unit
+     figure, never twice the 5. It is page memory alone (draft.bk, product to amount; draft.bkTaps, the taps a size, kept only while they add
+     up to the line), lost on a reload and at sign-out. A + greys where the sum has no price (past the grid, off a board) and, with five
+     orders open, every + greys and the limit is said: a basket is one sheet and counts once. Minus never refuses. A tap patches the controls,
+     the line and the bar where they stand, so focus stays. The page prices nothing: every figure is priceAt over the sealed list. */
+  var bsRows=[], bsPanes=[];
+  function bsOf(p){ var b=draft.bk||{}; return Object.prototype.hasOwnProperty.call(b,p)?+b[p]:0; }
+  function bsTapsOf(p){ var t=(draft.bkTaps||{})[p]||{}, s=0, k=Object.keys(t); k.forEach(function(q){ s+=(+q)*t[q]; }); return k.length&&Math.abs(s-bsOf(p))<1e-6?t:null; }
+  function bsSet(p,amt){ draft.bk=draft.bk||{}; if(amt>1e-9) draft.bk[p]=String(+amt.toFixed(6)); else { delete draft.bk[p]; if(draft.bkTaps) delete draft.bkTaps[p]; } }
+  function bsDrop(p){ bsSet(p,0); }
+  function bsOn(){ return !view&&!hold&&!hidePrices; }
+  function bsCanAdd(P,q){ return bsOn()&&openN()<OMAX&&priceAt(P,+(bsOf(P.product)+(+q)).toFixed(6))!=null; }
+  function bsAdd(P,q){
+    var box=el('span','szadd'), w=pshape(P.product)+' '+unitsOf(q,P.unit);
+    var plus=el('button','salt-orb szplus'); plus.type='button'; plus.setAttribute('data-add',String(q));
+    plus.appendChild(oGlyph('plus')); plus.appendChild(el('span','sr',tw('bk.add',{w:w})));
+    plus.addEventListener('click',function(){ if(!bsCanAdd(P,q)) return;
+      var t=bsTapsOf(P.product)||{}; t[q]=(t[q]||0)+1;
+      bsSet(P.product,bsOf(P.product)+(+q)); (draft.bkTaps=draft.bkTaps||{})[P.product]=t; bsPatch(); });
+    box.appendChild(plus);
+    bsRows.push({P:P, q:q, box:box, plus:plus, w:w});
+    return box;
+  }
+  /* the controls a size, the line a pane and the limit, patched in place */
+  function bsPatch(){
+    var lim=document.getElementById('bkLim'); if(lim) lim.hidden=!(bsOn()&&openN()>=OMAX);
+    bsRows.forEach(function(R){
+      R.plus.disabled=!bsCanAdd(R.P,R.q);
+      var t=bsTapsOf(R.P.product), n=t&&t[R.q]||0, mi=R.box.querySelector('.szless'), nb=R.box.querySelector('.bkn');
+      if(n>0){
+        if(!nb){ nb=el('span','bkn'); nb.setAttribute('aria-hidden','true'); R.box.insertBefore(nb,R.plus); }
+        nb.textContent=String(n);
+        if(!mi){ mi=el('button','salt-orb szless'); mi.type='button'; mi.setAttribute('data-less',String(R.q)); mi.appendChild(oGlyph('minus')); mi.appendChild(el('span','sr'));
+          mi.addEventListener('click',function(){ var tt=bsTapsOf(R.P.product);
+            if(!tt||!tt[R.q]){ bsDrop(R.P.product); }
+            else { tt[R.q]--; if(!tt[R.q]) delete tt[R.q]; bsSet(R.P.product,bsOf(R.P.product)-(+R.q)); if(draft.bkTaps&&draft.bkTaps[R.P.product]) draft.bkTaps[R.P.product]=tt; }
+            bsPatch(); });
+          R.box.insertBefore(mi,nb); }
+        mi.querySelector('.sr').textContent=tw('bk.less',{w:R.w, n:n});
+      } else { if(mi){ var had=mi===document.activeElement; mi.remove(); if(had) try{ R.plus.focus({preventScroll:true}); }catch(e){} } if(nb) nb.remove(); }
+    });
+    bsPanes.forEach(function(B){
+      var p=B.P.product, a=bsOf(p), t=bsTapsOf(p), N=B.node; N.textContent=''; N.hidden=!(a>0)||!bsOn(); if(N.hidden) return;
+      var parts=t?Object.keys(t).sort(function(x,y){ return +y-(+x); }).reduce(function(s,q){ for(var i=0;i<t[q];i++) s.push(String(+q)); return s; },[]):[];
+      N.appendChild(el('span','bkline__t',parts.length>1?tw('bk.inTaps',{q:unitsOf(a,B.P.unit), t:parts.join(' + ')}):tw('bk.in',{q:unitsOf(a,B.P.unit)})));
+      if(priceAt(B.P,a)==null){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g?tw('e.offStep',{s:g.step, n:g.min}):tw('bk.noPrice'))); }
+      var rb=el('button','salt-ghost bkline__out',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-bkout','');
+      rb.appendChild(el('span','sr',' '+pshape(p)));
+      rb.addEventListener('click',function(){ bsDrop(p); bsPatch(); var f=bsRows.filter(function(R){ return R.P.product===p; })[0]; if(f) try{ f.plus.focus({preventScroll:true}); }catch(e){} });
+      N.appendChild(rb);
+    });
+    if(typeof bsBarDraw==='function') bsBarDraw();
   }
   /* ---- ORDER: the form, then every order and where it stands ---- */
   /* S1 1.4, 24 SEP 2026: A DROPPED REQUEST ANSWERS LIKE A REFUSAL, IN WORDS. It threw, so Place stayed
@@ -3726,7 +3797,7 @@ const CLIENT_JS = `
   function oLive(){ return orders.filter(function(o){ return OPEN_ST.indexOf(o.status)>=0; }); }
   /* V4b: a sheet counts once, as the Worker counts it (stmt/orders.js, openCount) */
   function openN(){ var k={}; oLive().forEach(function(o){ k[o.sheet||o.id]=1; }); return Object.keys(k).length; }
-  var GLYPH={close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
+  var GLYPH={plus:'M8 3 V13 M3 8 H13', minus:'M3 8 H13', close:'M4 4 L12 12 M12 4 L4 12', back:'M10 3.5 L5.5 8 L10 12.5', next:'M6 3.5 L10.5 8 L6 12.5', tick:'M3 8.5 L6.5 12 L13 4.5'};
   function oGlyph(k,cls,px){
     var NS='http://www.w3.org/2000/svg', s=document.createElementNS(NS,'svg');
     s.setAttribute('viewBox','0 0 16 16'); s.setAttribute('width',px||16); s.setAttribute('height',px||16);
@@ -3823,7 +3894,7 @@ const CLIENT_JS = `
     s.wrap.parentNode.removeChild(s.wrap);
     behind();
     bkDrop('o');
-    wayDraw();
+    wayDraw(); bsPatch();
     focusBack(s.opener);
   }
   /* the customer's own ways out (the scrim, Close, Escape) wait while Place is on its way: closed then, the answer had
@@ -6155,6 +6226,7 @@ const CLIENT_JS = `
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     thDraw();
     wayDraw();
+    bsPatch();
     drawPayHead();
     placeCounts();
     placeTitle();

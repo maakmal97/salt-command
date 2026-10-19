@@ -458,6 +458,8 @@ export const FEATURES = [
   ["Collect and Deliver tiles on Home, each opening the sheet with its way (Counter Batch B)", (f) => f.prices.products.some((p) => p.sizes && p.sizes.length) && stageOf(f) === 0],
   ["Order again on an order handed over in full, its size still on the list (Counter Batch B)", (f) => has(f, (o) => +o.moved > 0 && +o.moved >= +o.qty - 0.0004
     && !["cancelled", "declined"].includes(o.status) && !o.pool && f.prices.products.some((p) => p.product === o.product && (p.sizes.some((z) => z.q === o.qty) || onGrid(p.grid, o.qty))))],
+  ["a basket of two marks on Prices, under the open-order limit (Counter Batch B)", (f) => f.prices.products.filter((p) => p.sizes && p.sizes.length).length > 1 && stageOf(f) === 0
+    && new Set(f.orders.filter((o) => OPEN_STATES.includes(o.status)).map((o) => o.sheet || o.id)).size < 5],
   ["the way on Prices, the newest order's, a delivery with its place (Counter Batch B)", (f) => { const n = f.orders.slice().sort((a, b) => String(b.at).localeCompare(String(a.at)))[0];
     return !!n && n.mode === "deliver" && !!String(n.place || "").trim(); }],
   ["This year on Home, off the live statement's lines this year (Counter Batch A)", (f) => !!(f.live && new RegExp('salt-lines__row[^"]*" role="row" data-m="' + new Date(Date.parse(f.at) + 8 * 3600e3).toISOString().slice(0, 4)).test(f.live.body || ""))],

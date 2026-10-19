@@ -1,0 +1,15 @@
+[
+ {"name":"a tap sets the size, never sums","file":"stmt/page.js","find":"      bsSet(P.product,bsOf(P.product)+(+q));","replace":"      bsSet(P.product,+q);"},
+ {"name":"the + past the grid stays live","file":"stmt/page.js","find":"return bsOn()&&openN()<OMAX&&priceAt(P,+(bsOf(P.product)+(+q)).toFixed(6))!=null;","replace":"return bsOn()&&openN()<OMAX;"},
+ {"name":"the + checks the size alone","file":"stmt/page.js","find":"return bsOn()&&openN()<OMAX&&priceAt(P,+(bsOf(P.product)+(+q)).toFixed(6))!=null;","replace":"return bsOn()&&openN()<OMAX&&priceAt(P,+q)!=null;"},
+ {"name":"the limit greys nothing","file":"stmt/page.js","find":"return bsOn()&&openN()<OMAX&&priceAt","replace":"return bsOn()&&priceAt"},
+ {"name":"the limit is not said","file":"stmt/page.js","find":"if(lim) lim.hidden=!(bsOn()&&openN()>=OMAX);","replace":"if(lim) lim.hidden=true;"},
+ {"name":"a sheet counts each order","file":"stmt/page.js","find":"  function openN(){ var k={}; oLive().forEach(function(o){ k[o.sheet||o.id]=1; }); return Object.keys(k).length; }","replace":"  function openN(){ return oLive().length; }"},
+ {"name":"a tap redraws the list","file":"stmt/page.js","find":"(draft.bkTaps=draft.bkTaps||{})[P.product]=t; bsPatch(); });","replace":"(draft.bkTaps=draft.bkTaps||{})[P.product]=t; drawPrices(); });"},
+ {"name":"the badge counts nothing","file":"stmt/page.js","find":"        nb.textContent=String(n);","replace":"        nb.textContent='1';"},
+ {"name":"minus takes nothing off","file":"stmt/page.js","find":"bsSet(R.P.product,bsOf(R.P.product)-(+R.q));","replace":"bsSet(R.P.product,bsOf(R.P.product));"},
+ {"name":"focus falls off with the minus","file":"stmt/page.js","find":"var had=mi===document.activeElement; mi.remove(); if(had) try{ R.plus.focus({preventScroll:true}); }catch(e){} }","replace":"mi.remove(); }"},
+ {"name":"the + carries the product","file":"stmt/page.js","find":"plus.setAttribute('data-add',String(q));","replace":"plus.setAttribute('data-add',String(q)); plus.setAttribute('data-p',P.product);"},
+ {"name":"a size's row fills the basket","file":"stmt/page.js","find":"          row.addEventListener('click',function(){ sheetOpen(p.product,r.q,row); }); }","replace":"          row.addEventListener('click',function(){ bsSet(p.product,+r.q); sheetOpen(p.product,r.q,row); }); }"},
+ {"name":"the + under the gate","file":"stmt/page.js","find":"        if(tapTo){ var sw=el(","replace":"        if(true){ var sw=el("}
+]

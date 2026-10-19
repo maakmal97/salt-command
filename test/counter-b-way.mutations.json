@@ -1,7 +1,7 @@
 [
  {"name":"the oldest order sets the way","file":"stmt/page.js","find":"    var L=oLatest(function(){ return true; });\n    if(draft.mode==null&&!L) return null;","replace":"    var L=orders.slice().sort(function(a,b){ return String(a.at).localeCompare(String(b.at)); })[0];\n    if(draft.mode==null&&!L) return null;"},
  {"name":"the sheet's choice is not read","file":"stmt/page.js","find":"var mode=draft.mode!=null?draft.mode:L&&L.mode==='deliver'?'deliver':'collect'","replace":"var mode=L&&L.mode==='deliver'?'deliver':'collect'"},
- {"name":"a closed sheet leaves the line","file":"stmt/page.js","find":"    bkDrop('o');\n    wayDraw();\n","replace":"    bkDrop('o');\n"},
+ {"name":"a closed sheet leaves the line","file":"stmt/page.js","find":"    bkDrop('o');\n    wayDraw(); bsPatch();\n","replace":"    bkDrop('o');\n    bsPatch();\n"},
  {"name":"the place is read as markup","file":"stmt/page.js","find":"    pw.appendChild(el('span','pway__t',w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl')));","replace":"    var sp=el('span','pway__t'); sp.innerHTML=w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl'); pw.appendChild(sp);"},
  {"name":"Change leaves focus on the sheet","file":"stmt/page.js","find":"      var m=osh&&osh.box.querySelector('[data-k^=\"mode:\"][aria-pressed=\"true\"]'); if(m) try{ m.focus({preventScroll:true}); }catch(e){} });","replace":"      });"},
  {"name":"a line before any order","file":"stmt/page.js","find":"    if(draft.mode==null&&!L) return null;\n","replace":""},

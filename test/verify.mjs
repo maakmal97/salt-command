@@ -48188,6 +48188,11 @@ await (async () => {
   await (await import("./counter-b-again.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Batch B: the basket's + and minus on Prices, taps on one mark summed at the sum's own figure, greyed past a price or at five open (P4)");
+await (async () => {
+  await (await import("./counter-b-plus.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });
