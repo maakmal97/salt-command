@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1180",
+  "d": "20 Oct 2026",
+  "t": "OIL COUNT: 3.5 UNITS ON HAND AGAINST 50 ON THE BOOK",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> Oil was counted at 3.5 units on 20 Oct 2026 against 50 on the book, a gap of -46.5 units. The count wins over the ledger, so the stated oil inventory becomes 3.5 and the oil count date moves from 6 Oct to 20 Oct. The dossier gives no reason for the gap.",
+   "<b>INVENTORY EFFECT.</b> Only oil moved. Salt stock stays at 14.89 units with its cost basis of RM56 a unit, and no lot landed. The self-use figure for oil rises from 144 to 190.5, while the other oil floors and the ask stay as they were."
+  ]
+ },
+ {
   "v": "v1179",
   "d": "20 Oct 2026",
   "t": "ONE ADVANCE SALE OF SALT TO CS6-PER",

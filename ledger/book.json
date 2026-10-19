@@ -69,7 +69,7 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 50
+      "stated": 3.5
     },
     "candy": {
       "qty": 0,
@@ -90,7 +90,7 @@
   "STATED_STOCK": 14.89,
   "COUNT_ON": {
     "salt": "2026-10-03",
-    "oil": "2026-10-06",
+    "oil": "2026-10-20",
     "candy": "2026-10-06",
     "rice": "2026-10-06",
     "spare": null
@@ -120,7 +120,8 @@
     {"product":"salt","date":"2026-10-03","qty":0,"was":2.25,"drift":-2.25},
     {"product":"oil","date":"2026-10-06","qty":0,"was":20,"drift":-20},
     {"product":"candy","date":"2026-10-06","qty":14,"was":14,"drift":0},
-    {"product":"rice","date":"2026-10-06","qty":32,"was":37,"drift":-5}
+    {"product":"rice","date":"2026-10-06","qty":32,"was":37,"drift":-5},
+    {"product":"oil","date":"2026-10-20","qty":3.5,"was":50,"drift":-46.5}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -931,7 +932,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-19T19:50:30.573Z",
+  "QUEUE_COMMITTED": "2026-10-19T19:57:31.369Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1126,6 +1127,7 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v1180 on 2026-10-20: the oil inventory held 3.5 against 50 on the roll, a difference of -46.5. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-20. <b>OIL COUNT ON 20 OCT: 3.5 UNITS COUNTED AGAINST 50 ON THE BOOK.</b> The last oil count was on 6 Oct. The difference is -46.5 units, and the dossier gives no reason for it. Approved by Counter Admin. The count wins over the ledger, so the stated oil inventory is set to 3.5 and the oil count date moves to 20 Oct. The drafter flagged the -46.5 units as unaccounted for, to be booked as shrinkage across every unit sold. The figures confirm the gap but do not explain it. The floors move as follows: floor1 stays at 10, floor2 at 20, floor125 at 100 and ask1 at 10, while self-use rises from 144 to 190.5. No price or party is attached, so there is no cost on this row and nothing is left outstanding.",
       "ROLLED AT v1176 (oil): 50 unit from SP7-PUD on 2026-10-19, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1113 (oil): 10 unit to CS6-PER on 2026-10-15, so 10 less 10 is 0. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1112 (rice): 5 unit to CS6-PER on 2026-10-15, so 29 less 5 is 24. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",

@@ -1,6 +1,6 @@
 {
- "v": "v1179",
- "stamped": "20 Oct 2026, 03:54 KL",
+ "v": "v1180",
+ "stamped": "20 Oct 2026, 03:58 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -73,7 +73,7 @@
    "oil": {
     "qty": 5,
     "costPerKg": 7.666666666666667,
-    "stated": 50
+    "stated": 3.5
    },
    "candy": {
     "qty": 0,
@@ -94,7 +94,7 @@
   "STATED_STOCK": 14.89,
   "COUNT_ON": {
    "salt": "2026-10-03",
-   "oil": "2026-10-06",
+   "oil": "2026-10-20",
    "candy": "2026-10-06",
    "rice": "2026-10-06",
    "spare": null
@@ -281,6 +281,13 @@
     "qty": 32,
     "was": 37,
     "drift": -5
+   },
+   {
+    "product": "oil",
+    "date": "2026-10-20",
+    "qty": 3.5,
+    "was": 50,
+    "drift": -46.5
    }
   ],
   "purchases": [
@@ -8793,7 +8800,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-19T19:50:30.573Z",
+  "QUEUE_COMMITTED": "2026-10-19T19:57:31.369Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -12611,12 +12618,12 @@
        "repl": 7.72,
        "freightRate": 0.2083,
        "leak": {
-        "ratio": 3.75,
-        "leak": 75,
-        "sold": 20,
+        "ratio": 1.0813,
+        "leak": 86.5,
+        "sold": 80,
         "cycles": 3,
-        "from": "2026-09-19",
-        "to": "2026-10-06"
+        "from": "2026-09-24",
+        "to": "2026-10-20"
        },
        "costRule": {
         "kind": "latestCogs",
@@ -12642,7 +12649,7 @@
         }
        },
        "attrib": 1,
-       "shrinkRate": 0.2511827956989247,
+       "shrinkRate": 0.35118279569892474,
        "avgDel": {
         "n": 18,
         "kg": 271,
@@ -16017,10 +16024,10 @@
      ]
     }
    },
-   "v": "v1179"
+   "v": "v1180"
   },
   "OPEN": {
-   "at": "2026-10-19T19:54:47.142Z",
+   "at": "2026-10-19T19:58:21.756Z",
    "count": 11,
    "byKey": {
     "CS6-PER|2026-10-19|45": {
@@ -16224,10 +16231,10 @@
     },
     "oil": {
      "name": "Oil",
-     "onHand": 50,
-     "free": 50,
+     "onHand": 3.5,
+     "free": 3.5,
      "owedOut": 0,
-     "coverDays": 16.6,
+     "coverDays": 0.8,
      "rate": 3.26,
      "owedToYou": 0,
      "promised": 0,
@@ -16258,12 +16265,12 @@
    },
    "countedOn": {
     "salt": "2026-10-03",
-    "oil": "2026-10-06",
+    "oil": "2026-10-20",
     "candy": "2026-10-06",
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1179"
+   "v": "v1180"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16271,7 +16278,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1179"
+   "v": "v1180"
   },
   "REWARD": {
    "stated": {
@@ -16283,7 +16290,7 @@
      }
     }
    },
-   "v": "v1179"
+   "v": "v1180"
   }
  }
 }
