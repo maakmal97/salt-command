@@ -1,0 +1,69 @@
+{
+ "ok": true,
+ "count": 1,
+ "approved": [
+  {
+   "id": "2026-10-19T17:44:03.240Z",
+   "status": "approved",
+   "collection": "sales",
+   "row": {
+    "customer": "CM4-TO-R",
+    "qty": 5,
+    "total": 457,
+    "cost": 290,
+    "cash": 475,
+    "delivery": 18,
+    "handover": "delivered",
+    "date": "2026-10-19",
+    "deliveredQty": 5,
+    "deliveredOn": "2026-10-19",
+    "paidOn": "2026-10-19",
+    "rev": "R2"
+   },
+   "reasoning": "Sold 5 unit of salt to CM4-TO-R for RM 457, with RM 18 of delivery beside it, RM 475 owed, RM 91.4/unit. Costed at RM 58/unit from COGS off the latest purchase p040 landed 2026-10-15: RM 1400 quote plus RM 50 freight over 25 unit, so RM 167 on the goods at 36.5%. Paid in full and delivered in full on 2026-10-19. Drafted from the queued entry; the figures come from the mirror and the desk's own pricing snapshot, and nothing is committed until this is approved.",
+   "flags": [
+    "Booked to CM4-TO-R as R2: CM4-TO buys it to sell on.",
+    "CM4-TO typically pays about RM 56/unit for salt across 4 orders; this one is RM 91.4, 63.2% above that."
+   ],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-19T17:44:03.240Z",
+    "type": "SELL",
+    "party": "CM4-TO-R",
+    "qty": 5,
+    "total": 457,
+    "status": "paid",
+    "raw": "Sell 5 unit salt to CM4-TO-R for RM457 on 2026-10-19 plus RM18 delivery, delivered, RM475 cash, 5 unit moved → Completed (R2 via CM4-TO)",
+    "payload": {
+     "mode": "new",
+     "product": "salt",
+     "direction": "SELL",
+     "party": "CM4-TO",
+     "newId": null,
+     "date": "2026-10-19",
+     "qty": 5,
+     "total": 457,
+     "delivery": 18,
+     "freight": 0,
+     "cash": 475,
+     "kg": 5,
+     "assoc": "CM4-TO",
+     "stream": "R2",
+     "downstream": null,
+     "kind": null,
+     "orderCode": null,
+     "linkTo": null,
+     "note": null,
+     "handover": "delivered",
+     "second": null,
+     "more": null,
+     "coverFree": null
+    },
+    "makerRequest": "56a6135500950725f762ece9e7a0af0f513e6635e049034e4dd487dd138eedc5"
+   },
+   "decidedAt": "2026-10-19T17:46:43.790Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
