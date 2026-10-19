@@ -135,6 +135,133 @@ export async function run({ ok }) {
     ok(fade.tables >= 5 && fade.reads >= fade.tables * 3 && fade.writes >= fade.tables && fade.firstW > fade.lastR && fade.more,
       "the scroll fade reads every table's widths first, then writes the classes (more where wider than the box): " + JSON.stringify(fade));
 
+    /* ---------------------------------------------------------------- F2 */
+    /* a recording library: a chart is an object with its canvas and its config, and can be told it is gone */
+    w.eval(`window.__made=[];window.Chart=function(c,cfg){this.canvas=c;this.cfg=cfg;this.gone=false;window.__made.push(this);};
+      window.Chart.prototype.destroy=function(){this.gone=true;};
+      window.Chart.prototype.unbindEvents=function(){this.unbound=(this.unbound||0)+1;};window.Chart.prototype.bindEvents=function(){this.rebound=(this.rebound||0)+1;};window.Chart.register=function(){};
+      window.Chart.defaults={font:{},animation:{},plugins:{tooltip:{},legend:{labels:{}}},elements:{line:{},point:{}}};
+      window.__td=function(id){return window.__made.filter(function(c){return c.canvas&&(id?c.canvas.id===id:/^td/.test(c.canvas.id));});};`);
+    /* Today's own two charts: drawn once, and a tap away and back puts the same ones back */
+    const today = rd(`(function(){
+      CHART_KEEP.clear();window.__made.length=0;
+      switchTab('today');var first=__td().length,a=__td();
+      switchTab('money');switchTab('today');switchTab('money');switchTab('today');
+      var k=document.getElementById('tdKindChart');
+      return {first:first,after:__td().length,seated:a.length>0&&k===a[0].canvas&&k.isConnected,live:a.every(function(c){return !c.gone;}),kept:CHART_KEEP.size};})()`);
+    ok(today.first === 2 && today.after === 2 && today.seated && today.live,
+      "Today's two charts are drawn once; a tap away and back, twice over, builds none and puts the kept canvas where the page has an empty one: " + JSON.stringify(today));
+    const moved = rd(`(function(){
+      var before=__td().length,old=__td();
+      window.__r=BASE_SALES.filter(function(s){return (s.total-(+s.cash||0))>1&&!s.cancelled&&(+s.deliveredQty||0)>0;}).sort(function(a,b){return (b.total-(+b.cash||0))-(a.total-(+a.cash||0));})[0];
+      window.__was=window.__r.cash;window.__r.cash=window.__r.total;applyOverlay();
+      switchTab('money');switchTab('today');
+      var built=__td().length-before,goneOld=old.filter(function(c){return c.gone;}).length;
+      window.__r.cash=window.__was;applyOverlay();
+      return {built:built,goneOld:goneOld};})()`);
+    ok(moved.built >= 1 && moved.goneOld >= 1, "a change in the book redraws the chart whose picture it changes, and lets the old one go: " + JSON.stringify(moved));
+
+    /* freshChart on its own, over a canvas of its own: the signature is the look, the inputs and the whole config */
+    const probe = (body) => rd(`(function(){
+      var host=document.createElement('div');host.className='vpart';host.setAttribute('data-tab','zzprobe');document.body.appendChild(host);
+      var seat=function(id){host.innerHTML='<div class="chartbox">'+(id?'<canvas id="'+id+'"></canvas>':'<canvas></canvas>')+'</div>';return host.querySelector('canvas');};
+      var cfgA={type:'bar',data:{labels:['a'],datasets:[{data:[1]}]},options:{}};
+      var cfgB={type:'bar',data:{labels:['a'],datasets:[{data:[2]}]},options:{}};
+      CHART_KEEP.clear();window.__made.length=0;
+      try{${body}}finally{host.parentNode.removeChild(host);CHART_KEEP.clear();}})()`);
+    const same = probe(`var a=freshChart(seat('zp1'),cfgA);var c2=seat('zp1');var b=freshChart(c2,cfgA);
+      return {built:window.__made.length,same:a===b,seated:host.querySelector('canvas')===a.canvas&&c2.parentNode===null,live:!a.gone};`);
+    ok(same.built === 1 && same.same && same.seated && same.live, "the same picture asked for again (same seat, look, inputs and config) is the kept chart on its kept canvas: " + JSON.stringify(same));
+    /* and a kept canvas that has changed places has its resize watch moved to the new box, once the render's work is over, never during it */
+    const seatedAt = rd(`(function(){
+      var host=document.createElement('div');host.className='vpart';host.setAttribute('data-tab','zzseat');document.body.appendChild(host);window.__seatHost=host;
+      var seat=function(){host.innerHTML='<canvas id="zs1"></canvas>';return host.querySelector('canvas');};
+      var cfg={type:'bar',data:{labels:['a'],datasets:[{data:[1]}]}};
+      CHART_KEEP.clear();window.__made.length=0;
+      var a=freshChart(seat(),cfg);var b=freshChart(seat(),cfg);window.__seatChart=b;
+      return {same:a===b,during:b.rebound||0};})()`);
+    await new Promise((r) => setTimeout(r, 0));
+    const seatedAfter = rd(`(function(){var c=window.__seatChart,r={unbound:c.unbound||0,rebound:c.rebound||0};window.__seatHost.parentNode.removeChild(window.__seatHost);CHART_KEEP.clear();return r;})()`);
+    ok(seatedAt.same && seatedAt.during === 0 && seatedAfter.unbound === 1 && seatedAfter.rebound === 1,
+      "a kept canvas put in a new place has its events and size re-bound to it once, after the render's own work: " + JSON.stringify({ seatedAt, seatedAfter }));
+    const cfgMoved = probe(`var a=freshChart(seat('zp1'),cfgA);var b=freshChart(seat('zp1'),cfgB);
+      return {built:window.__made.length,diff:a!==b,oldGone:a.gone,live:!b.gone};`);
+    ok(cfgMoved.built === 2 && cfgMoved.diff && cfgMoved.oldGone && cfgMoved.live, "a changed config builds a new chart and lets the old one go: " + JSON.stringify(cfgMoved));
+    const stamp = probe(`var a=freshChart(seat('zp1'),cfgA);DATA_STAMP++;var b=freshChart(seat('zp1'),cfgA);
+      return {built:window.__made.length,diff:a!==b,oldGone:a.gone};`);
+    ok(stamp.built === 2 && stamp.diff && stamp.oldGone, "the book moving (its stamp) builds the chart anew even with the same config: " + JSON.stringify(stamp));
+    const idless = probe(`var a=freshChart(seat(''),cfgA);var b=freshChart(seat(''),cfgA);
+      return {built:window.__made.length,kept:CHART_KEEP.size};`);
+    ok(idless.built === 2 && idless.kept === 0, "a canvas with no id is never kept: " + JSON.stringify(idless));
+    const lru = rd(`(function(){
+      var host=document.createElement('div');host.className='vpart';host.setAttribute('data-tab','zzlru');document.body.appendChild(host);
+      CHART_KEEP.clear();window.__made.length=0;
+      try{
+        for(var i=0;i<CHART_KEEP_MAX+10;i++){host.innerHTML='<canvas id="zl'+i+'"></canvas>';freshChart(host.querySelector('canvas'),{type:'bar',data:{labels:[i],datasets:[{data:[i]}]}});}
+        var gone=window.__made.filter(function(c){return c.gone;}).length;
+        return {size:CHART_KEEP.size,max:CHART_KEEP_MAX,gone:gone,oldestGone:window.__made[0].gone,newestLive:!window.__made[window.__made.length-1].gone};
+      }finally{host.parentNode.removeChild(host);CHART_KEEP.clear();}})()`);
+    ok(lru.size === lru.max && lru.gone === 10 && lru.oldestGone && lru.newestLive, "no more than CHART_KEEP_MAX charts are held, the longest unused let go first: " + JSON.stringify(lru));
+
+    /* a theme switch still rebuilds, even where every token is the same in both looks (so the config is too) */
+    const STUB = ["salt-salt", "salt-brass", "salt-copper", "salt-verdigris", "salt-ember", "salt-steel", "salt-product-salt", "salt-mist-light", "salt-brass-soft",
+      "salt-obsidian", "salt-slate", "salt-line-strong", "desk-chart-grid"];
+    const look = rd(`(function(){
+      var de=document.documentElement,hex=${JSON.stringify(STUB)};
+      hex.forEach(function(k,i){de.style.setProperty('--'+k,'#0a0b'+(10+i).toString(16));});
+      try{
+        lookSet('tide');CHART_KEEP.clear();window.__made.length=0;
+        switchTab('today');var first=__td().length;switchTab('money');switchTab('today');var again=__td().length;
+        lookSet('night');var night=__td().length;
+        var kinds=__td('tdKindChart');
+        var cfgSame=kinds.length===2&&JSON.stringify(kinds[0].cfg)===JSON.stringify(kinds[1].cfg);
+        return {first:first,again:again,night:night,cfgSame:cfgSame,theme:lookNow()};
+      }finally{hex.forEach(function(k){de.style.removeProperty('--'+k);});lookSet('tide');}})()`);
+    ok(look.first === 2 && look.again === 2 && look.night === 4 && look.cfgSame && look.theme === "night",
+      "a theme switch rebuilds the charts of the part showing though both looks gave the same config: " + JSON.stringify(look));
+
+    /* the tokens: read once a look, and the other look's values the moment it is chosen */
+    const tok = rd(`(function(){
+      lookSet('tide');TOK=null;
+      var n=0,o=window.getComputedStyle;window.getComputedStyle=function(){n++;return o.apply(window,arguments);};
+      var a,b,c;
+      try{a=tcol('ink');tcol('ink');tcol('ink',0.5);tcol('brass');tcol('brass');}finally{window.getComputedStyle=o;}
+      var reads=n;
+      var tide=tcol('ink');lookSet('night');var night=tcol('ink');lookSet('tide');var back=tcol('ink');
+      var de=document.documentElement;de.style.setProperty('--salt-salt','#123456');var stub=tcol('ink');de.style.removeProperty('--salt-salt');
+      return {reads:reads,tide:tide,night:night,back:back,stub:stub,hue:typeof hue};})()`);
+    ok(tok.reads === 2 && tok.tide && tok.night && tok.tide !== tok.night && tok.back === tok.tide && tok.stub === "#123456",
+      "tcol reads each token once a look (two tokens, two reads over five calls), follows a theme switch and a token set on the page at once: " + JSON.stringify(tok));
+
+    /* the ledger's column widths: measured once for a markup, taken from the last measure when the same ledger is drawn again */
+    const led = rd(`(function(){
+      var P=Element.prototype,o=P.getBoundingClientRect,n=0,wd=Object.getOwnPropertyDescriptor(window,'innerWidth');
+      P.getBoundingClientRect=function(){n++;var r=o.apply(this,arguments);return {width:/lc-|cqty|cprc|ctot|lstate/.test(this.className||'')?88:0,height:0,top:0,left:0,right:0,bottom:0};};
+      LED_FIT=null;
+      try{
+        switchTab('book');var first=n,css=document.querySelector('.sec.on .ledwrap').style.getPropertyValue('--lc-date');
+        n=0;switchTab('money');switchTab('book');var again=n,css2=document.querySelector('.sec.on .ledwrap').style.getPropertyValue('--lc-date');
+        n=0;Object.defineProperty(window,'innerWidth',{configurable:true,value:(window.innerWidth||1024)-300});switchTab('money');switchTab('book');var resized=n;
+        Object.defineProperty(window,'innerWidth',wd||{configurable:true,value:1024});switchTab('money');switchTab('book');   /* measured again at the old width, so the next change is the markup's alone */
+        window.__rr=BASE_SALES[BASE_SALES.length-1];window.__rw=window.__rr.total;window.__rr.total=window.__rr.total+1111;applyOverlay();
+        n=0;switchTab('money');switchTab('book');var changed=n;
+        window.__rr.total=window.__rw;applyOverlay();
+        return {first:first,css:css,again:again,css2:css2,resized:resized,changed:changed};
+      }finally{P.getBoundingClientRect=o;}})()`);
+    ok(led.first > 0 && led.css === '90px' && led.again === 0 && led.css2 === '90px' && led.resized > 0 && led.changed > 0,
+      "the ledger measures its columns once for a markup and a window width, takes them from that measure when drawn again, and measures anew for another markup or width: " + JSON.stringify(led));
+
+    /* the number formats are the same text as before, made once */
+    const nf = rd(`(function(){
+      var vals=[0,-0,1,-1,0.004,-0.004,0.005,0.5,1.005,12.5,1234.5,1234567.891,-98765.4321,1e6,1e21,NaN,Infinity,'12.5','abc',null,undefined,2.675,0.0001,-0.0001];
+      var bad=[];
+      vals.forEach(function(n){
+        var f=CUR+' '+noNegZero(Number(n).toLocaleString('en-MY',{minimumFractionDigits:(Math.abs(n%1)>1e-9?2:0),maximumFractionDigits:2}));
+        var f0=CUR+' '+noNegZero(Number(n).toLocaleString('en-MY',{maximumFractionDigits:0}));
+        var u=noNegZero(Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}))+' unit';
+        if(fmt(n)!==f)bad.push(['fmt',String(n),fmt(n),f]);if(fmt0(n)!==f0)bad.push(['fmt0',String(n),fmt0(n),f0]);if(units(n)!==u)bad.push(['units',String(n),units(n),u]);});
+      return {n:vals.length,bad:bad.slice(0,4)};})()`);
+    ok(nf.n > 20 && nf.bad.length === 0, "fmt, fmt0 and units give exactly the text toLocaleString gave, over the awkward values: " + JSON.stringify(nf));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 
 }

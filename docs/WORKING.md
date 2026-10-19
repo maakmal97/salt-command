@@ -304,6 +304,11 @@ Each of these stayed green, or read clean, through a real fault.
   fresh walk sets `SESSION_MEMO=null`. A probe that changes state from inside a builder and reads either again gets the
   first answer; read outside a render. Count the work by wrapping `allActionsNow` and `approachSplitNow`, since a memo
   hit is a call, and expect none on a warm desk.
+- **Charts are kept with their canvas** (F2): `freshChart` puts the kept canvas where the render wrote an empty one when
+  the look, the inputs and the whole config are as they were (`CHART_KEEP`, at most 60). A test with a recording `Chart`
+  that draws twice and expects two constructions must clear `CHART_KEEP` or change the config. Design tokens are cached
+  per look and `<html>`'s style attribute (`TOK`), so a stub set with `style.setProperty` is seen at once; the ledger's
+  column widths per markup and window width (`LED_FIT`).
 - **`evolution` sits in the middle of the master**, not at the end: `slice(0,
   indexOf("const evolution=["))` searches only the first third. Use `slice(0, evAt) +
   slice(stampAt)`.

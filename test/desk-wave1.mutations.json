@@ -11,5 +11,22 @@
  {"name":"eachBook never walks it again","find":"finally{PROD=keep;if(!walked)recompute();}","replace":"finally{PROD=keep;}"},
  {"name":"eachBook walks the books in their own order","find":"order=live.indexOf(keep)<0?live:live.filter(p=>p!==keep).concat([keep])","replace":"order=live"},
  {"name":"the fade reads and writes a table at a time","find":"const read=list.map(w=>({w,sw:w.scrollWidth,cw:w.clientWidth,sl:w.scrollLeft}));","replace":"const read=list.map(w=>({w,get sw(){return w.scrollWidth;},get cw(){return w.clientWidth;},get sl(){return w.scrollLeft;}}));"},
- {"name":"the library arriving renders the part again","find":"const done=ok=>{if(ok)chartTheme();const q=chartWait;","replace":"const done=ok=>{if(ok){chartTheme();render();}const q=chartWait;"}
+ {"name":"the library arriving renders the part again","find":"const done=ok=>{if(ok)chartTheme();const q=chartWait;","replace":"const done=ok=>{if(ok){chartTheme();render();}const q=chartWait;"},
+ {"name":"a chart is never kept","find":"CHART_KEEP.set(key,{sig,chart,canvas:el});","replace":""},
+ {"name":"the signature leaves out the look","find":"return lookNow()+'|'+inputKey()+'|'+JSON.stringify(","replace":"return inputKey()+'|'+JSON.stringify("},
+ {"name":"the signature leaves out the inputs","find":"return lookNow()+'|'+inputKey()+'|'+JSON.stringify(","replace":"return lookNow()+'|'+JSON.stringify("},
+ {"name":"the signature leaves out the config","find":"JSON.stringify(cfg,(k,v)=>typeof v==='function'?String(v):v)","replace":"''"},
+ {"name":"the kept canvas is not put in the page","find":"el.parentNode.replaceChild(kept.canvas,el);","replace":""},
+ {"name":"a kept canvas is not told it has moved","find":"    chartSettle(kept.chart);\n    return kept.chart;","replace":"    return kept.chart;"},
+ {"name":"a kept canvas is told during the render","find":"Promise.resolve().then(()=>{\n    CHART_SEATED.splice(0)","replace":"(f=>f())(()=>{\n    CHART_SEATED.splice(0)"},
+ {"name":"a changed chart leaves the old one alive","find":"if(kept)chartLetGo(key);","replace":"if(kept)CHART_KEEP.delete(key);"},
+ {"name":"no limit on the charts held","find":"while(CHART_KEEP.size>CHART_KEEP_MAX)chartLetGo(CHART_KEEP.keys().next().value);","replace":""},
+ {"name":"a canvas with no id is kept","find":"if(!el||!el.id)return null;","replace":"if(!el)return null;"},
+ {"name":"the tokens are read every time","find":"let v=TOK.v.get(name);","replace":"let v=undefined;"},
+ {"name":"the tokens ignore the look","find":"key=(de.getAttribute('data-theme')||'')+'|'+(de.getAttribute('style')||'');","replace":"key=(de.getAttribute('style')||'');"},
+ {"name":"the tokens ignore the page's own style","find":"key=(de.getAttribute('data-theme')||'')+'|'+(de.getAttribute('style')||'');","replace":"key=(de.getAttribute('data-theme')||'');"},
+ {"name":"the money format keeps a fraction digit","find":"NF_0to2=new Intl.NumberFormat('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2})","replace":"NF_0to2=new Intl.NumberFormat('en-MY',{minimumFractionDigits:1,maximumFractionDigits:2})"},
+ {"name":"the ledger always measures its columns","find":"if(LED_FIT&&LED_FIT.sig===sig){for(const k in LED_FIT.w)wrap.style.setProperty('--lc-'+k,LED_FIT.w[k]+'px');return;}","replace":""},
+ {"name":"the ledger widths ignore the window width","find":"+lookNow()+'|'+(window.innerWidth||0);","replace":"+lookNow();"},
+ {"name":"the ledger widths ignore the markup","find":"const sig=html.length+'|'+h+'|'+fonts+'|'+lookNow()","replace":"const sig=fonts+'|'+lookNow()"}
 ]

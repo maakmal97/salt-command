@@ -10202,9 +10202,13 @@ const FIGURE=/RM\s?\d|\d[\d.,]*\s?unit\b|\d[\d.,]*\s?%/;
    format's own precision, all read "-0" before, which prints "clear by -0 unit" beside a
    inventory sitting exactly at its mark. */
 const noNegZero=s=>/^-0(\.0+)?$/.test(s)?s.slice(1):s;
-const fmt=n=>CUR+' '+noNegZero(Number(n).toLocaleString('en-MY',{minimumFractionDigits:(Math.abs(n%1)>1e-9?2:0),maximumFractionDigits:2}));
-const fmt0=n=>CUR+' '+noNegZero(Number(n).toLocaleString('en-MY',{maximumFractionDigits:0}));
-const units=n=>noNegZero(Number(n).toLocaleString('en-MY',{maximumFractionDigits:2}))+' unit';
+/* F2 (19 Oct 2026): THE FORMATTERS ARE MADE ONCE. toLocaleString with options builds an Intl.NumberFormat on every call, and
+   fmt, fmt0 and units are called a thousand times a part (the Ledger tap spent 900 ms of 3.4 s there on the phone profile).
+   Number(n).toLocaleString(l,o) is defined as new Intl.NumberFormat(l,o).format(Number(n)), so the text is the same. */
+const NF_2=new Intl.NumberFormat('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2}),NF_0to2=new Intl.NumberFormat('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2}),NF_0=new Intl.NumberFormat('en-MY',{maximumFractionDigits:0}),NF_U=new Intl.NumberFormat('en-MY',{maximumFractionDigits:2});
+const fmt=n=>CUR+' '+noNegZero((Math.abs(n%1)>1e-9?NF_2:NF_0to2).format(Number(n)));
+const fmt0=n=>CUR+' '+noNegZero(NF_0.format(Number(n)));
+const units=n=>noNegZero(NF_U.format(Number(n)))+' unit';
 /* D2 (29 Sep 2026, the fault list): ONE nil for a cell or a figure with nothing to show. It was an em
    dash in some 96 places, a mark the house never writes; a hyphen is the accountant's nil. */
 const NIL='-';
@@ -12599,13 +12603,12 @@ function drawTodayCharts(){
       const byKind={};
       a.filter(x=>x.rm>0.009).forEach(x=>{byKind[x.kind]=(byKind[x.kind]||0)+x.rm;});
       const keys=Object.keys(byKind).sort((x,y)=>byKind[y]-byKind[x]);
-      if(tdKindObj){try{tdKindObj.destroy();}catch(e){}tdKindObj=null;}
-      if(tdCoverObj){try{tdCoverObj.destroy();}catch(e){}tdCoverObj=null;}
+      tdKindObj=null;tdCoverObj=null;   /* F2: freshChart keeps a chart whose data is unchanged, so nothing is destroyed here */
       if(k){
         if(!keys.length){
           chartEmpty(k,'Nothing on the list carries a figure today.');
         }else{
-          tdKindObj=new Chart(k,{type:'bar',data:{labels:keys.map(x=>KIND[x]||x),
+          tdKindObj=freshChart(k,{type:'bar',data:{labels:keys.map(x=>KIND[x]||x),
             datasets:[{data:keys.map(x=>+byKind[x].toFixed(2)),
               backgroundColor:keys.map(x=>COL[x]||tcol('ink',0.40)),borderWidth:0,
               borderRadius:4,barThickness:16}]},
@@ -12624,7 +12627,7 @@ function drawTodayCharts(){
           /* v794: each book's cover beside its own trigger, both in days at that book's own rate, so every bar is read
              against the one next to it; a book with no recent trade has no rate and is left off */
           const trig=p=>B[p].rate>0?+(B[p].trig/B[p].rate).toFixed(1):0;
-          tdCoverObj=new Chart(c,{type:'bar',data:{labels:rated.map(p=>PRODUCTS[p].name),
+          tdCoverObj=freshChart(c,{type:'bar',data:{labels:rated.map(p=>PRODUCTS[p].name),
             datasets:[{label:'Cover',data:rated.map(p=>B[p].days),backgroundColor:rated.map(p=>B[p].below?tcol('ember'):tcol('verdigris')),
                        borderWidth:0,borderRadius:4,maxBarThickness:22},
                       {label:'Trigger',data:rated.map(trig),backgroundColor:tcol('ink',0.40),borderWidth:0,borderRadius:4,maxBarThickness:22}]},
@@ -12739,19 +12742,18 @@ function drawFwdCharts(){
     try{
       const A=fwdAll(),f=A.cash,labs=f.rows.map(r=>r.d===0?'today':'d+'+r.d);
       /* v796: a book's colour is its token, read off the page, so the chart and the tags agree and no hex is written here */
-      const hue=p=>{const m=/var\((--[^)]+)\)/.exec(PRODUCTS[p].accent||'');return (m&&getComputedStyle(document.documentElement).getPropertyValue(m[1]).trim())||tcol('steel');};
+      const hue=p=>{const m=/var\((--[^)]+)\)/.exec(PRODUCTS[p].accent||'');return (m&&tokenRead(m[1]))||tcol('steel');};
       const opt=(t,pre,post)=>({responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{color:tcol('ink',0.66),boxWidth:12,font:{size:11}}},
                  title:{display:true,text:t,color:tcol('ink'),font:{size:12}}},
         scales:{x:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),maxTicksLimit:12}},
                 y:{grid:{color:tcol('grid')},ticks:{color:tcol('ink',0.66),callback:v=>pre+v+(post||'')}}}});
-      if(fwdStockObj){try{fwdStockObj.destroy();}catch(e){}fwdStockObj=null;}
-      if(fwdCashObj){try{fwdCashObj.destroy();}catch(e){}fwdCashObj=null;}
+      fwdStockObj=null;fwdCashObj=null;   /* F2: kept by freshChart */
       /* each book as a share of what it holds today, committed orders first and then its rate; a book holding nothing is flat at nought */
-      fwdStockObj=new Chart(s,{type:'line',data:{labels:labs,datasets:A.ids.map(p=>{const r=A.per[p].f.rows,h=r[0].inventory+r[0].serv;
+      fwdStockObj=freshChart(s,{type:'line',data:{labels:labs,datasets:A.ids.map(p=>{const r=A.per[p].f.rows,h=r[0].inventory+r[0].serv;
         return {label:PRODUCTS[p].name,data:r.map(x=>h>0.009?+(x.inventory/h*100).toFixed(1):0),borderColor:hue(p),backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2};})
       },options:opt('Inventory left, as a share of what each book holds today','','%')});
-      fwdCashObj=new Chart(k,{type:'line',data:{labels:labs,datasets:[
+      fwdCashObj=freshChart(k,{type:'line',data:{labels:labs,datasets:[
         {label:f.cashKnown?'Cash held':'Cash movement from today',data:f.rows.map(r=>r.cash),borderColor:tcol('copper'),backgroundColor:'transparent',tension:.2,pointRadius:0,borderWidth:2}
       ]},options:opt(f.cashKnown?'Cash position (RM), every book':'Cash movement from today (RM), every book','')});
     }catch(e){                                     /* v385: same empty catch as Today's, same probe */
@@ -14946,8 +14948,7 @@ function drawNetworkCharts(){
     try{
       const rs=networkStats();
       if(lgOrEmpty(el,rs.length))return;
-      if(nwPartnerObj){try{nwPartnerObj.destroy();}catch(e){}}
-      nwPartnerObj=new Chart(el,{type:'bar',data:{labels:rs.map(r=>codeOf(r.id)),datasets:[
+      nwPartnerObj=freshChart(el,{type:'bar',data:{labels:rs.map(r=>codeOf(r.id)),datasets:[
         {label:'Bought himself',data:rs.map(r=>+(r.direct||0).toFixed(2)),backgroundColor:tcol('ice'),borderWidth:0},
         {label:'Sold for you',data:rs.map(r=>+(r.indirect||0).toFixed(2)),backgroundColor:tcol('steel'),borderWidth:0},
         {label:'Brought you',data:rs.map(r=>+(r.r3||0).toFixed(2)),backgroundColor:tcol('brass'),borderWidth:0}]},
@@ -14968,8 +14969,17 @@ function drawNetworkCharts(){
    layout, every cell of every column is measured across the head, the rows and the steps, and the
    widest becomes that column's track, with the default as its floor. A desk with no layout engine
    measures nothing and keeps the defaults. */
+/* F2 (19 Oct 2026): the widths are a function of the ledger's markup (and the fonts it is set in), so a ledger drawn again from the
+   same markup, as a tap away and back does, takes them from the last measure instead of letting the grid out to max-content and
+   laying it out twice more (190 ms of a 394 ms Ledger tap on the phone profile). Kept only once the fonts are loaded; a measure
+   that found no layout (any false) is never kept. */
+let LED_FIT=null;
 function ledFit(){
   const wrap=document.querySelector('.sec.on .ledwrap');if(!wrap)return;
+  const html=wrap.innerHTML,fonts=(document.fonts&&document.fonts.status)||'loaded';
+  let h=0;for(let i=0;i<html.length;i++)h=(h*31+html.charCodeAt(i))|0;
+  const sig=html.length+'|'+h+'|'+fonts+'|'+lookNow()+'|'+(window.innerWidth||0);   /* the window's width stands for the media rules that move a font or a gap */
+  if(LED_FIT&&LED_FIT.sig===sig){for(const k in LED_FIT.w)wrap.style.setProperty('--lc-'+k,LED_FIT.w[k]+'px');return;}
   const cols=[['e','.lc-e',30],['date','.lc-date',74],['party','.lc-party',72],['prod','.lc-prod',56],['qty','.cqty',60],['price','.cprc',84],['tot','.ctot',108],['state','.lstate',108]];
   wrap.classList.add('lmeasure');
   const w={};let any=false;
@@ -14977,6 +14987,7 @@ function ledFit(){
   wrap.classList.remove('lmeasure');
   if(!any)return;
   for(const k in w)wrap.style.setProperty('--lc-'+k,w[k]+'px');
+  if(fonts==='loaded')LED_FIT={sig,w};
 }
 function drawLedgerCharts(){
   const el=document.getElementById('lgTimeChart');
@@ -14994,8 +15005,7 @@ function drawLedgerCharts(){
         (by[x.date]=by[x.date]||{rm:0,k:0}).rm+=x.total;by[x.date].k+=x.qty;});
       const days=Object.keys(by).sort();
       if(!days.length){chartEmpty(el,'No dated sale in this selection.');return;}
-      if(lgTimeObj){try{lgTimeObj.destroy();}catch(e){}}
-      lgTimeObj=new Chart(el,{data:{labels:days.map(d=>d.slice(5)),datasets:[
+      lgTimeObj=freshChart(el,{data:{labels:days.map(d=>d.slice(5)),datasets:[
         {type:'bar',label:'RM written',data:days.map(d=>+by[d].rm.toFixed(2)),backgroundColor:tcol('ice',.5),borderWidth:0,borderRadius:2},
         {type:'line',label:'Units',data:days.map(d=>+by[d].k.toFixed(2)),yAxisID:'y1',borderColor:tcol('brass'),backgroundColor:'transparent',pointRadius:2,borderWidth:2,tension:.25}]},
         options:{responsive:true,maintainAspectRatio:false,
@@ -17911,13 +17921,25 @@ function ensureChart(cb){
    ink and the map's own steps are the desk's tokens in design/desk.css (--desk-chart-grid, --desk-map-*), each restated
    for Tide there, since the identity holds no token for them. A page with no stylesheet reads '' and Chart.js keeps its
    own default. */
+/* F2 (19 Oct 2026): THE TOKENS ARE READ ONCE A LOOK. Each tcol was a getComputedStyle read of <html>, and the first after a render's
+   markup is written makes the browser recalculate every style (150 to 215 ms a tap on the phone profile, a chart's worth of them
+   at a time). The values are kept against the look (data-theme) and <html>'s own style attribute (where a stub or a runtime token
+   is set), and dropped when the window is resized, since a token may follow a width. */
+let TOK=null;
+function tokenRead(name){
+  const de=document.documentElement,key=(de.getAttribute('data-theme')||'')+'|'+(de.getAttribute('style')||'');
+  if(!TOK||TOK.key!==key)TOK={key,v:new Map()};
+  let v=TOK.v.get(name);
+  if(v===undefined){v='';try{v=getComputedStyle(de).getPropertyValue(name).trim();}catch(e){}TOK.v.set(name,v);}
+  return v;
+}
+try{window.addEventListener('resize',()=>{TOK=null;});}catch(e){}
 function tcol(role,a){
   const R={ink:'salt-salt',brass:'salt-brass',copper:'salt-copper',verdigris:'salt-verdigris',ember:'salt-ember',steel:'salt-steel',
     ice:'salt-product-salt',mist:'salt-mist-light',soft:'salt-brass-soft',obsidian:'salt-obsidian',slate:'salt-slate',
     grid:'desk-chart-grid',mvoid:'desk-map-void',mcore:'desk-map-core',m0:'desk-map-0',m1:'desk-map-1',
     medge:'desk-map-edge',mname:'desk-map-name',mstate:'desk-map-state'};
-  let v='';
-  try{v=getComputedStyle(document.documentElement).getPropertyValue('--'+(R[role]||role)).trim();}catch(e){}
+  let v=tokenRead('--'+(R[role]||role));
   if(a==null||!v)return v;
   let m=/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(v),c=null;
   if(m){const h=m[1].length===3?m[1].replace(/./g,'$&$&'):m[1];c=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16));}
@@ -17965,10 +17987,62 @@ function chartTheme(){
    blank the first. */
 let DRAW_BLK=null;
 function blkEl(id){return (DRAW_BLK||document).querySelector('[id="'+id+'"]');}
+/* F2 (19 Oct 2026): LIGHT TAPS. A tap rebuilt every chart of the part it showed from nothing (300 to 530 ms on the phone profile),
+   though a part drawn again with the same book, the same figures and the same look draws the same picture. A part's markup is
+   written afresh each render, so the canvases are new and empty; a chart is therefore kept WITH ITS CANVAS, under the canvas's
+   place (the part, the book's block, its id), against a signature of the look, the inputs (badgeKey without the book in view) and the
+   whole config; when the same chart is asked for again with the same signature, the kept canvas takes the empty one's seat and
+   Chart.js (which watches its canvas leave and join the page) sizes itself to the new container and draws once, with no
+   animation. Anything else, a theme switch or one figure moved, builds anew and lets the old one go. At most CHART_KEEP_MAX
+   are held, the longest unused first out. A canvas with no id is never kept. */
+const CHART_KEEP=new Map(),CHART_KEEP_MAX=60;
+function chartSeat(el){
+  if(!el||!el.id)return null;
+  const b=el.closest?el.closest('.prodblock'):null,v=el.closest?el.closest('.vpart'):null;
+  return (v&&v.dataset.tab||'')+'|'+(b&&b.dataset.prod||'')+'|'+el.id;
+}
+function chartSig(cfg){
+  try{return lookNow()+'|'+inputKey()+'|'+JSON.stringify(cfg,(k,v)=>typeof v==='function'?String(v):v);}catch(e){return null;}
+}
+/* A kept canvas that has changed places is sized to its new box and its resize watch moved to it (Chart.js observes the box the
+   canvas had when it was bound, and that one is gone). unbindEvents and bindEvents do both, and the second ends in a resize. Done
+   once the render's own work is over (a microtask), so it reads a layout the part has already needed, not one of its own. */
+let CHART_SEATED=[];
+function chartSettle(chart){
+  CHART_SEATED.push(chart);
+  if(CHART_SEATED.length>1)return;
+  Promise.resolve().then(()=>{
+    CHART_SEATED.splice(0).forEach(ch=>{
+      try{
+        if(!ch.canvas||!ch.canvas.isConnected)return;
+        if(ch.unbindEvents&&ch.bindEvents){ch.unbindEvents();ch.bindEvents();}
+        else if(ch.resize)ch.resize();
+      }catch(e){}
+    });
+  });
+}
+function chartLetGo(key){
+  const k=CHART_KEEP.get(key);CHART_KEEP.delete(key);
+  if(k){try{k.chart.destroy();}catch(e){}}
+}
 function freshChart(el,cfg){
   if(!el||!window.Chart)return null;
+  const key=chartSeat(el),sig=key?chartSig(cfg):null,kept=key?CHART_KEEP.get(key):null;
+  if(kept&&sig!==null&&kept.sig===sig&&kept.canvas!==el&&el.parentNode){
+    [...el.attributes].forEach(a=>{if(a.name!=='style'&&a.name!=='width'&&a.name!=='height')kept.canvas.setAttribute(a.name,a.value);});
+    el.parentNode.replaceChild(kept.canvas,el);
+    CHART_KEEP.delete(key);CHART_KEEP.set(key,kept);   /* now the newest */
+    chartSettle(kept.chart);
+    return kept.chart;
+  }
+  if(kept)chartLetGo(key);
   try{const old=Chart.getChart?Chart.getChart(el):null;if(old)old.destroy();}catch(e){}
-  return new Chart(el,cfg);
+  const chart=new Chart(el,cfg);
+  if(key&&sig!==null){
+    CHART_KEEP.set(key,{sig,chart,canvas:el});
+    while(CHART_KEEP.size>CHART_KEEP_MAX)chartLetGo(CHART_KEEP.keys().next().value);
+  }
+  return chart;
 }
 /* v384: A DRAW THAT THROWS NOW SAYS SO, AND FOR FIVE DAYS NOTHING DID. The catch below was
    empty, so a chart that failed left its canvas blank and reported nothing at all. That is the
@@ -18636,10 +18710,10 @@ function drawConcCharts(){
     try{
       const c=concentration();
       const GRID=tcol('grid'),TICK=tcol('ink',0.66);
-      [ccParetoObj,ccScatterObj].forEach(o=>{if(o){try{o.destroy();}catch(e){}}});
+      ccParetoObj=null;ccScatterObj=null;   /* F2: kept by freshChart */
       if(p){
         let run=0;const cum=c.bc.map(x=>{run+=x.rev;return +(run/c.tot*100).toFixed(1);});
-        ccParetoObj=new Chart(p,{data:{labels:c.bc.map(x=>codeOf(x.id)),datasets:[
+        ccParetoObj=freshChart(p,{data:{labels:c.bc.map(x=>codeOf(x.id)),datasets:[
           {type:'bar',label:'Revenue',data:c.bc.map(x=>+x.rev.toFixed(2)),
            backgroundColor:tcol('ice'),borderWidth:0,borderRadius:3,order:2},
           {type:'line',label:'Cumulative share',data:cum,yAxisID:'y1',borderColor:tcol('brass'),
@@ -18693,7 +18767,7 @@ function drawConcCharts(){
         if(!pts.length){chartEmpty(s,'No priced orders on this book yet.');return;}
         const xs=pts.map(z=>z.x), xlo=Math.min.apply(null,xs)*0.9, xhi=Math.max.apply(null,xs)*1.05;
         const ord=n=>n+((n%100>=11&&n%100<=13)?'th':({1:'st',2:'nd',3:'rd'})[n%10]||'th');
-        ccScatterObj=new Chart(s,{data:{datasets:[
+        ccScatterObj=freshChart(s,{data:{datasets:[
           {type:'line',label:'Average margin '+wAvg.toFixed(1)+'%',
            data:[{x:xlo,y:+wAvg.toFixed(1)},{x:xhi,y:+wAvg.toFixed(1)}],
            borderColor:tcol('soft'),borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,order:1},
