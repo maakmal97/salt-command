@@ -1,0 +1,143 @@
+{
+ "ok": true,
+ "count": 2,
+ "approved": [
+  {
+   "id": "2026-10-19T08:39:35.219Z",
+   "status": "approved",
+   "collection": "roster",
+   "row": {
+    "code": "CJ5-CHE",
+    "kind": "customer",
+    "parent": null,
+    "note": null,
+    "geo": [
+     3.05,
+     101.77,
+     "Cheras"
+    ],
+    "tiers": {
+     "salt": 0
+    },
+    "unit": "pct"
+   },
+   "reasoning": "Registers CJ5-CHE as a customer. It starts them at Salt 0. It touches no figure: the fold appends the code to the roster. THE NAME AND THE PLACE ARE NOT HERE AND MUST NOT BE: the directory is typed at the laptop and never travels.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-19T08:39:35.219Z",
+    "type": "ADDID",
+    "party": "CJ5-CHE",
+    "qty": null,
+    "total": null,
+    "status": "addid",
+    "raw": "Add CJ5-CHE to the roster as customer",
+    "payload": {
+     "mode": "addid",
+     "code": "CJ5-CHE",
+     "kind": "customer",
+     "parent": null,
+     "rev": null,
+     "note": null,
+     "geo": [
+      3.05,
+      101.77,
+      "Cheras"
+     ],
+     "tiers": {
+      "salt": 0
+     },
+     "unit": "pct"
+    }
+   },
+   "decidedAt": "2026-10-19T08:40:48.204Z",
+   "decidedBy": "Counter Admin",
+   "vaultReceipt": {
+    "id": "2026-10-19T08:39:35.219Z",
+    "fingerprint": "cef5f2cc725ac68056212ecdbd8f7dc12d80fdddb1b462ff141798f8fbc6b3e9",
+    "request_fingerprint": "30fd3e87ace0fa4dfafd8c70aafd64fd318e03d3b468f2ec12cff8a07529f239",
+    "revision": 6,
+    "operation": "add-id"
+   },
+   "vaultOutbox": {
+    "id": "2026-10-19T08:39:35.219Z",
+    "entry": {
+     "at": "2026-10-19T08:39:35.219Z",
+     "type": "ADDID",
+     "party": "CJ5-CHE",
+     "qty": null,
+     "total": null,
+     "status": "addid",
+     "raw": "Add CJ5-CHE to the roster as customer",
+     "payload": {
+      "mode": "addid",
+      "code": "CJ5-CHE",
+      "kind": "customer",
+      "parent": null,
+      "rev": null,
+      "note": null,
+      "geo": [
+       3.05,
+       101.77,
+       "Cheras"
+      ],
+      "tiers": {
+       "salt": 0
+      },
+      "unit": "pct"
+     }
+    },
+    "state": "complete",
+    "completed_at": "2026-10-19T08:39:42.605Z"
+   }
+  },
+  {
+   "id": "2026-10-19T08:40:25.200Z",
+   "status": "approved",
+   "collection": "rename",
+   "row": {
+    "from": "CN4-BSL",
+    "to": "CN4-MC",
+    "pairs": [
+     [
+      "CN4-BSL",
+      "CN4-MC"
+     ]
+    ],
+    "orders": 0,
+    "lots": 0,
+    "geo": [
+     3.05,
+     101.8,
+     "Mahkota Cheras"
+    ]
+   },
+   "reasoning": "Re-keys CN4-BSL to CN4-MC wherever the book names it: 0 orders, 0 lots, the roster and every list that carries the code. The old code is retired outright; notes, the changelog and issued statements keep saying what was true when they were written. The statement account moves to the new code and its username stays. It moves no cash and no stock. Its place on the map moves with it, to the point the new place was found at. THE NAME AND THE PLACE ARE NOT HERE: the phone filed them in the vault, encrypted.",
+   "flags": [],
+   "amends": null,
+   "amendKind": null,
+   "entry": {
+    "at": "2026-10-19T08:40:25.200Z",
+    "type": "RENAME",
+    "party": "CN4-BSL",
+    "qty": null,
+    "total": null,
+    "status": "rename",
+    "raw": "Amend ID: re-key CN4-BSL to CN4-MC wherever the book names it",
+    "payload": {
+     "mode": "rename",
+     "from": "CN4-BSL",
+     "to": "CN4-MC",
+     "geo": [
+      3.05,
+      101.8,
+      "Mahkota Cheras"
+     ]
+    }
+   },
+   "decidedAt": "2026-10-19T08:40:50.788Z",
+   "decidedBy": "Counter Admin"
+  }
+ ]
+}
