@@ -8,7 +8,8 @@
  * In Counter hours: both moments inside the weekly hours as they stand now (hoursStatus with no manual override, which would
  * recolour past moments), each moment passed as a number. Left out: any order with a price (an ask haggled before Accept, or an
  * Accept sent to them as an offer), a group order, the test accounts, and an order never accepted. A replacement is measured
- * from the root of its chain, walked back over every order and falling back to its own placing on a missing link or a loop. */
+ * from the root of its chain, walked back over every order and falling back to its own placing on a missing link or a loop.
+ * With no weekly hours filed the Counter reads as open at every moment, so every Accept counts, overnight ones included. */
 import { hoursStatus } from "./hours.js";
 import { isTest } from "./testusers.js";
 

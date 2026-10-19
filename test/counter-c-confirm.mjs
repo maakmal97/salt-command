@@ -85,7 +85,6 @@ export async function run({ ok }) {
   ok(J(r7) === J({ mins: 15, n: 10 }), "an Accept sent as an offer, a haggled ask, a group order and a test account are left out: " + J(r7));
 
   /* ---- 8 ---- */
-  const chain = set(Array(10).fill(15));
   const root = Object.assign(mk(T0 + 8 * 86400000, 0), { status: "cancelled", history: [{ at: iso(T0 + 8 * 86400000), status: "placed" }, { at: iso(T0 + 8 * 86400000 + 20 * 60000), status: "cancelled" }] });
   const mid = Object.assign(mk(T0 + 8 * 86400000 + 20 * 60000, 0), { replaces: root.id, status: "cancelled", history: [{ at: iso(T0 + 8 * 86400000 + 20 * 60000), status: "placed" }] });
   const tip = Object.assign(mk(T0 + 8 * 86400000 + 40 * 60000, 80), { replaces: mid.id });
@@ -93,7 +92,7 @@ export async function run({ ok }) {
     "a replacement of a replacement is placed when its root was");
   /* nine others and the tip: from its root the middle two are 60 and 120 (90); from its own placing they would be 60 and 80 (75) */
   const r8 = C.confirmWithin(set([60, 60, 60, 60, 60, 200, 200, 200, 200]).concat([root, mid, tip]), cfg);
-  ok(J(r8) === J({ mins: 90, n: 10 }) && chain.length === 10, "and counts from there, 120 minutes and not 80: " + J(r8));
+  ok(J(r8) === J({ mins: 90, n: 10 }), "and counts from there, 120 minutes and not 80: " + J(r8));
   const a = mk(T0 + 10 * 86400000, 45), b = mk(T0 + 10 * 86400000 + 600000, 45);
   a.replaces = b.id; b.replaces = a.id;
   const lost = Object.assign(mk(T0 + 10 * 86400000 + 1200000, 45), { replaces: "20260101000000-gone" });
