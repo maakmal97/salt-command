@@ -1,0 +1,3 @@
+[
+  {"name":"the snapshot mints takenAt again","file":"tools/book.mjs","find":"Book's parity could not match git's; tools/d1.mjs and src/book.js still strip one from an older extract */\n    sizes,","replace":"Book's parity could not match git's; tools/d1.mjs and src/book.js still strip one from an older extract */\n    takenAt: new Date().toISOString(),\n    sizes,"}
+]

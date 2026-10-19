@@ -29,7 +29,9 @@ export async function run({ ok }) {
   const src = readFileSync(process.env.SALT_MASTER || join(REPO, "master", "salt_command.html"), "utf8");
   const outside = src.replace(/\/\* ==== ENGINE (\w+):[\s\S]*?\/\* ==== END ENGINE \1 ==== \*\//g, "");
 
-  const snap = pricingSnapshot(w); delete snap.takenAt;
+  const snap = pricingSnapshot(w);
+  ok(!("takenAt" in snap), "S2b: the snapshot mints no takenAt, so the same book gives one PRICING and the Book's parity can match git's (test/book-s2b-snapshot.mutations.json)");
+  delete snap.takenAt;
   ok(round(snap) === readFileSync(join(REPO, "test", "fixtures", "pricing-before-s1c.json"), "utf8"),
     "S1c-ii: pricingSnapshot() on the frozen book is the one the master gave before the glue moved");
 

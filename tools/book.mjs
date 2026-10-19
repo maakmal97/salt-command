@@ -317,7 +317,8 @@ export function pricingSnapshot(w) {
   }
 
   return {
-    takenAt: new Date().toISOString(),
+    /* S2b (20 Oct 2026): no takenAt. It was minted per extract and read nowhere, so the same book gave two PRICINGs and the
+       Book's parity could not match git's; tools/d1.mjs and src/book.js still strip one from an older extract */
     sizes,
     ref: call("REF"),                       // the markup-on-cost ladder: floor, good, great, ceiling
     shrinkAttrib: call("SHRINK_ATTRIB"),
