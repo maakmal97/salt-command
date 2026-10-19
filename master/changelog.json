@@ -1,5 +1,31 @@
 [
  {
+  "v": "v1181",
+  "d": "20 Oct 2026",
+  "t": "THREE STOCK COUNTS ON 20 OCT: OIL, CANDY AND RICE ALL SHORT",
+  "n": [
+   "<b>THREE COUNTS FOLDED, ALL SHORT.</b> Oil was counted at 45 unit against 50 on the book (-5), candy at 6 against 11 (-5) and rice at 15 against 24 (-9). Each was decided by Counter Admin. The dossier gives no reason for any gap, and none is offered here.",
+   "<b>WHAT THE INVENTORY DID.</b> Each count wins over the ledger, so the stated stock for oil, candy and rice is reset to the counted figure and COUNT_ON for each moves to 20 Oct 2026. The gaps book as shrinkage across every unit sold. Salt was not counted and stays as it was."
+  ]
+ },
+ {
+  "v": "v1180",
+  "d": "20 Oct 2026",
+  "t": "OIL COUNT: 3.5 UNITS ON HAND AGAINST 50 ON THE BOOK",
+  "n": [
+   "<b>ONE COUNT FOLDED.</b> Oil was counted at 3.5 units on 20 Oct 2026 against 50 on the book, a gap of -46.5 units. The count wins over the ledger, so the stated oil inventory becomes 3.5 and the oil count date moves from 6 Oct to 20 Oct. The dossier gives no reason for the gap.",
+   "<b>INVENTORY EFFECT.</b> Only oil moved. Salt stock stays at 14.89 units with its cost basis of RM56 a unit, and no lot landed. The self-use figure for oil rises from 144 to 190.5, while the other oil floors and the ask stay as they were."
+  ]
+ },
+ {
+  "v": "v1179",
+  "d": "20 Oct 2026",
+  "t": "ONE ADVANCE SALE OF SALT TO CS6-PER",
+  "n": [
+   "<b>ONE ROW FOLDED: AN ADVANCE ON SALT.</b> The batch holds a single new sale dated 19 Oct, 0.5 unit of salt to CS6-PER for RM45, collected the same day with no cash taken. It is the only unusual thing in the fold: goods have gone out on credit, so RM45 is now owed. No lot landed, so the cost basis stays as it was. The salt count was last taken on 3 Oct and nothing has changed that."
+  ]
+ },
+ {
   "v": "v1178",
   "d": "20 Oct 2026",
   "t": "THE BOOK'S RECOVERY TEST READS THE LIVE BOOK'S REACH",
