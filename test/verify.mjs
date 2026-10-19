@@ -33134,7 +33134,8 @@ await (async () => {
 
   /* ---- THE WORDS: a kind, never an amount, a product, an order or a name ---- */
   const words = Object.values(NEWS);
-  const banned = /salt|oil|candy|rice|titanium|platinum|gold|silver|bronze|ambassador|command|update/i;
+  /* 19 Oct 2026: whole words, never letters inside one: "prices" holds a product's four */
+  const banned = /\b(salt|oil|candy|rice|titanium|platinum|gold|silver|bronze|ambassador|command)\b|\bupdate/i;
   /* S13 13.2: and every word the site's lock knows, off its own lists */
   const WL = await import("../src/orders.js");
   /* Step 1b: a title is letters and spaces, the one exception his line's "Counter says:", whose colon introduces his words;
