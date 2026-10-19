@@ -1,5 +1,22 @@
 [
  {
+  "v": "v1173",
+  "d": "20 Oct 2026",
+  "t": "THE SHADOW BOOK CHECKS ITSELF AGAINST GIT AT EVERY FOLD",
+  "n": [
+   "<b>EACH LOAD OF THE BOOK READS BACK WHAT IT HOLDS</b>, out of its own store: every collection's count and a digest over its rows, and every document's digest. The fold's step works the same from git and names any collection or document that differs; a difference turns the step red and never holds up the fold.",
+   "<b>THE LOAD LINE COUNTS ROWS AND DOCUMENTS APART</b>: the first load's 433 rows and 450 booked were 433 rows and 17 documents. The pricing snapshot no longer carries a moment it was taken, so the same book always gives the same prices to compare."
+  ]
+ },
+ {
+  "v": "v1172",
+  "d": "20 Oct 2026",
+  "t": "ONE CANCELLATION: CZ5-TM ORDER OF 18 OCT WITHDRAWN",
+  "n": [
+   "<b>CANCELLATION FOLDED.</b> The desk withdrew CZ5-TM's pending order of 1 unit for RM100 (s272, 18 Oct) on the statements site, order 20261018051516-6h1chg. Counter Admin preapproved it and the drafter raised no flags. Nothing had been paid or handed over, so no cash or stock moves and the inventory is untouched. The order now counts nowhere."
+  ]
+ },
+ {
   "v": "v1171",
   "d": "19 Oct 2026",
   "t": "SALT BOARD: SIZES 3.5 AND 4.5 UNIT HIDDEN",

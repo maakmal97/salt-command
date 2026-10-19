@@ -143,7 +143,7 @@ measurement of the desk.
 - **A tool that gates a deploy asserts its own ok lines when run as a child.** Copy the `isMain`
   line from `tools/fold.mjs` (`pathToFileURL(process.argv[1]).href`): a hand-built `file:///` check
   is false on the Linux runner, and the tool silently does nothing and exits 0.
-- **`tools/d1.mjs --verify` cries wolf**: `PRICING.takenAt` and `OPEN.at` are minted per extract.
+- **`tools/d1.mjs --verify` cries wolf**: `OPEN.at` is minted per extract (`PRICING.takenAt` was too, until S2b of 20 Oct 2026).
   Use `--status` (version, record count, seed time) and spot-check a value the fold changed. D1
   reads go by `--command`; `--file` returns a summary with no rows.
 
