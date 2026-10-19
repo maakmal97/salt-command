@@ -40793,7 +40793,7 @@ await (async () => {
     ok(rows.map((r) => r.id).join(",") === "oA,oP,," && rows.filter((r) => r.bits[2] === "18 " + MON3[8] + " 2026").length === 1,
       "the part the site's order accounts for is drawn once, as that order; the two it does not follow the orders: " + JSON.stringify(rows.map((r) => [r.id, r.bits[2]])));
     ok(JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])) === JSON.stringify([["Cube 2.5 units|2.5 units", "", "Due when you receive it", "16 " + MON3[8] + " 2026", "RM 250.00"],
-      ["Cube 1 unit|1 unit", "","On behalf of a friend. Due when you receive it", "17 " + MON3[8] + " 2026", "RM 120.00"]]) && !/salt|Gold|Silver/i.test(t(box)),
+      ["Cube 1 unit|1 unit", "","On behalf of a friend. Due when you receive it", "17 " + MON3[8] + " 2026", "RM 120.00"]]) && !/\b(salt|gold|silver)\b/i.test(box.innerHTML.replace(/<[^>]*>/g, " ")),   /* 19 Oct 2026: whole words, spaced at every tag */
       "a part he entered says it is due when they receive it, never offers to pay now, and names no product: " + JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])));
     box.querySelectorAll(".salt-inbox-row")[2].click();
     ok(!D.getElementById("pStmt").hidden && D.getElementById("pHome").hidden,
