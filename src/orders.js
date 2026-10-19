@@ -2293,7 +2293,7 @@ export async function ordersWaiting(env, since) {
    surface. This asks the Counter to wake Salt Admin ({k, o?, t?}, k one of order, pay, cancel, said, rate, take, pass, approve)
    and answers {ok, devices, sent, failed}; anything but a clean answer is {ok:false, devices:0}, so the caller keeps ringing the
    Desk. KV `admin:on` follows the last answer (two days on the key): set while Salt Admin holds a subscribed device, which is the
-   moment the Desk drops its order banners (the summary's adminOn), gone when it holds none. */
+   moment the Desk drops its order banners (the summary's adminOn), gone when it holds none or the wake failed. */
 export async function wakeAdmin(env, news) {
   let out = { ok: false, devices: 0, sent: 0, failed: 0 };
   try {
@@ -2304,8 +2304,9 @@ export async function wakeAdmin(env, news) {
     }
   } catch { /* a relay with a bad minute leaves the Desk ringing */ }
   try {
-    if (out.ok && env.SALT_QUEUE) {
-      if (out.devices > 0) await env.SALT_QUEUE.put(ADMIN_ON, "1", { expirationTtl: 2 * 86400 });
+    if (env.SALT_QUEUE) {
+      /* a wake that failed clears the flag as well: the Desk is about to ring itself, and its banner must not strip what it is ringing for */
+      if (out.ok && out.devices > 0) await env.SALT_QUEUE.put(ADMIN_ON, "1", { expirationTtl: 2 * 86400 });
       else await env.SALT_QUEUE.delete(ADMIN_ON);
     }
   } catch { /* the flag is a convenience; the next wake sets it again */ }

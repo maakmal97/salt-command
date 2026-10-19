@@ -223,7 +223,7 @@ async function readQueuePost(request) {
    interruption on a phone that cannot act on it, and it will be there in the panel when he
    next looks. Failures here are swallowed for the same reason the drafting is: a push service
    having a bad minute must never fail the queue write that triggered it. */
-async function pushIfDrafted(env, result) {
+export async function pushIfDrafted(env, result) {
   try {
     /* S11: a row his own yes approved as it was drafted waits on nobody, so it wakes nobody */
     if (result && result.drafted - ((result.approved || []).length) > 0) {

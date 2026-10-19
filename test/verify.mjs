@@ -51025,6 +51025,11 @@ await (async () => {
   await (await import("./desk-parallel-reads.mjs")).run({ ok });
 })();
 
+section("Notifications: Salt Admin acts, Salt Desk informs (19 Oct 2026)");
+await (async () => {
+  await (await import("./desk-informs.mjs")).run({ ok });
+})();
+
 section("designsync --drift: design/ against the design system's checkout (his word of 18 Oct 2026)");
 await (async () => {
   /* A change to salt-ds reaches every surface in the same piece of work, and --drift is how a session sees one that has
