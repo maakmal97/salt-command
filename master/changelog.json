@@ -1,5 +1,15 @@
 [
  {
+  "v": "v1170",
+  "d": "19 Oct 2026",
+  "t": "THE DESK OPENS ONCE, TAPS LIGHT AND PAINTS FIRST",
+  "n": [
+   "<b>THE DESK'S DERIVED READS ARE KEPT BETWEEN RENDERS</b>, keyed by what they read and the overlay stamp, and its charts are kept with their canvas, so a tap redraws only what moved; theme tokens are read once a look and number formats made once.",
+   "<b>A TAP WRITES THE PART'S TEXT FIRST</b>; the charts, the table fades and the rail's count follow in tasks of their own after a painted frame, and a later tap cancels what is left.",
+   "<b>A NEW BUILD LOADS ITSELF ONCE THE DESK GOES IDLE</b>: never over a focused field, an open sheet or the open rail, and never over a figure typed and not yet set."
+  ]
+ },
+ {
   "v": "v1169",
   "d": "19 Oct 2026",
   "t": "A STOCK LIGHT TURNING WAKES THE DESK",
