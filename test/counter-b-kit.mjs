@@ -34,7 +34,8 @@ export async function open({ ok, pageWork, orders = [], assoc = false, late = 0,
   const body = { ok: true, assoc, wrap: await C.wrapKey(pass, ck), session: "sess-bb-abcdefghij", liveStatus: "current",
     live: Object.assign({ at: stamped.at, buildId: BUILD }, await C.encryptWith(ck, JSON.stringify(stamped))),
     env: await C.encryptWith(ck, JSON.stringify({ statements: [] })), prices: await C.encryptWith(ck, JSON.stringify(list)) };
-  const st = { orders: orders.map((o) => JSON.parse(JSON.stringify(o))), posts: [], polls: [], n: 0 };
+  /* refuse: the products whose Place answers as a dropped request (503), until the check lifts it */
+  const st = { orders: orders.map((o) => JSON.parse(JSON.stringify(o))), posts: [], polls: [], n: 0, refuse: new Set() };
   let work;
   const dom = new JSDOM(P.landingPage(u, "nbb", null), { url: "https://site.test/", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(win) {
     try { Object.defineProperty(win, "crypto", { value: webcrypto, configurable: true }); } catch (e) { win.crypto = webcrypto; }
@@ -48,7 +49,9 @@ export async function open({ ok, pageWork, orders = [], assoc = false, late = 0,
       if (p === "/open" || p === "/account") return j(body);
       if (p === "/orders" && m === "GET") return j({ ok: true, orders: JSON.parse(JSON.stringify(st.orders)), claims: [] });
       if (p === "/orders" && m === "POST") {
-        const b = JSON.parse(init.body); st.posts.push(b);
+        const b = JSON.parse(init.body);
+        if (st.refuse.has(b.product)) return j({ ok: false }, 503);
+        st.posts.push(b);
         const o = ord("bbnew-" + String(++st.n).padStart(3, "0"), "placed", new Date().toISOString(),
           { product: b.product, qty: b.qty, total: b.total, mode: b.mode, place: b.place || "", sheet: b.sheet || undefined });
         st.orders.push(o);

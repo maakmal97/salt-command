@@ -327,7 +327,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .szadd{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 .szadd .salt-orb{width:var(--salt-tap);height:var(--salt-tap);min-width:var(--salt-tap);min-height:var(--salt-tap);display:inline-flex;align-items:center;justify-content:center}
 .szadd .salt-orb:disabled{opacity:.45;cursor:not-allowed}
-.bkn{min-width:1.5em;text-align:center;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums;font-weight:700;color:var(--salt-copper)}
+.bkn{min-width:1.5em;text-align:center;font-family:var(--salt-font-mono);font-variant-numeric:tabular-nums;color:var(--salt-copper)}
 .bkline[hidden]{display:none}
 .bkline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px}
 .bkline__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
@@ -3733,7 +3733,7 @@ const CLIENT_JS = `
     if(had) try{ go.focus({preventScroll:true}); }catch(e){}
   }
   function bsReview(go){
-    var ls=bsLines(); if(!ls.length||ls.some(function(x){ return x.t==null; })) return;
+    var ls=bsLines(); if(!ls.length||ls.some(function(x){ return x.t==null; })||view||hold||!lapse.hidden) return;
     draft.pick={}; ls.forEach(function(x){ draft.pick[x.P.product]=String(x.a); });
     draft.src='basket'; draft.sheetKeep=''; draft.amend=''; draft.pool='';
     sheetOpen(null,null,go);
@@ -4514,7 +4514,7 @@ const CLIENT_JS = `
         if(rmOk){ var rb=el('button','salt-ghost bkrm',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-k','rm:'+c.lines.indexOf(l));
           rb.appendChild(el('span','sr',' '+pshape(l.product)+' '+unitsOf(l.q,l.unit)));
           rb.addEventListener('click',function(){ if(draft.busy||c.lines.some(function(x){ return x.placed; })) return;
-            if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); draft.sheetKeep=''; bsPatch();
+            if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); bsPatch();
             if(picked()&&!formWhy()) reviewSheet(); else toForm(); });
           L.lastChild.appendChild(rb); } });
       row(tw('sh.total'),rm(sheetSum(c)));

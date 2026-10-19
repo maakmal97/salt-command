@@ -10,8 +10,9 @@
  *   3  Remove on the check: one line left, a fresh rid and no sheet id, and the basket follows
  *   4  a change in the sheet writes back; a line with no price greys Review and says why
  *   5  Sent forgets the sizes placed on the sheet's own road too, so the next sheet does not offer them again
- *   6  the bar sticks above the App bar under 1080px and to the foot of the column from 1080px */
-import { open, done, txt, ago } from "./counter-b-kit.mjs";
+ *   6  the bar sticks above the App bar under 1080px and to the foot of the column from 1080px
+ *   7  after a partial place, Remove on the re-reviewed check keeps the sheet id, so the basket still counts once (Fable's review) */
+import { open, done, txt, ago, LIST } from "./counter-b-kit.mjs";
 
 export async function run({ ok, pageWork }) {
   const P = await import("../stmt/page.js");
@@ -82,6 +83,22 @@ export async function run({ ok, pageWork }) {
     const base = /\.bkbar\{z-index:10;position:sticky;margin-top:24px;bottom:calc\(var\(--salt-bar-h\) \+ env\(safe-area-inset-bottom,0px\) - 1px\)/.test(css);
     const wide = /@media \(min-width:1080px\)\{\s*\.bkbar\{bottom:0;/.test(css);
     ok(base && wide, "the bar sticks above the App bar on a phone and to the foot of the column from 1080px, where the bar is the rail: " + JSON.stringify([base, wide]));
+
+    /* ---- 7 ---- */
+    const three = LIST(); three.products.push({ product: "candy", unit: "unit", basis: "board", sizes: [{ q: 1, price: 12 }] });
+    const Q = await page({ orders: [], list: three });
+    plus(Q, 0, 1).click(); plus(Q, 1, 1).click(); plus(Q, 2, 1).click();
+    Q.st.refuse.add("oil");
+    Q.d.getElementById("bkGo").click(); await Q.settle();
+    Q.d.getElementById("oPlace").click(); await Q.settle();
+    Q.d.getElementById("oBack").click(); await Q.settle();
+    Q.d.getElementById("oGo").click(); await Q.settle();
+    Q.d.querySelector('#osheet [data-k="rm:1"]').click(); await Q.settle();
+    Q.st.refuse.clear();
+    Q.d.getElementById("oPlace").click(); await Q.settle();
+    const qp = Q.st.posts.map((b) => [b.product, b.sheet]);
+    ok(qp.length === 2 && qp[0][0] === "salt" && qp[1][0] === "oil" && /^[0-9a-f]{32}$/.test(qp[0][1] || "") && qp[1][1] === qp[0][1],
+      "after one line placed and one refused, Change, Review and Remove keep the sheet id, so the rest go under it and the basket counts once: " + JSON.stringify(qp));
   } catch (e) { ok(false, "counter-b-bar stopped on an error: " + (e && e.stack)); }
   finally { pages.forEach((p) => p.close()); }
 }
