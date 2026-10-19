@@ -4839,7 +4839,8 @@ await (async () => {
   let vocab = 0, cross = 0, invalid = 0, noted = 0;
   for (const s of run.sheets) {
     const text = words(s.html);
-    if (/\b(cost|margin|tier|floor|shrink|profit)/i.test(text)) { vocab++; console.log("  leak vocabulary on " + s.who); }
+    /* 19 Oct 2026: the word and its endings, never the start of another word (costly, Costa) or Math.floor */
+    if (/(?<!Math\.)\b(cost|margin|tier|floor|shrink|profit)(s|ed|ing|age)?\b/i.test(text)) { vocab++; console.log("  leak vocabulary on " + s.who); }
     for (const c of codes) if (c !== s.who && alone(s.html, c)) { cross++; console.log("  " + s.who + " carries " + c); }
     if (s.html.includes("Invalid Date")) invalid++;
     for (const row of book.sales) if (row.customer === s.who && row.note
