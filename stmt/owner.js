@@ -5897,6 +5897,77 @@ export const OWNER_JS = `
       try{ history.replaceState(null,'',addrFor(placeNow, partNow)); }catch(e){}
     }
   }
+  /* ---- SALT ADMIN'S OWN NOTIFICATIONS (19 Oct 2026, docs/plan-notifications.html section 3) ---------------------------------------------
+     Shop > This device. Its worker is /all/sw.js at scope /all (the customer's worker at the root never sees this page), its subscriptions are
+     filed by /all/push/subscribe under opush:, and the Counter's own VAPID key is the one the site publishes at /push/key. The browser's question
+     is asked from the Turn on tap alone. A registration whose scope is not exactly /all is never taken for Admin's, so Turn off can never undo a
+     customer's. A tap on a banner is told here where to go (the worker posts { salt: 'admin', hash }), and the page opens that place. */
+  function alertCan(){ return ('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window); }
+  function alertPaint(on, note){
+    var st=document.getElementById('alertState'), a=document.getElementById('alertOn'), b=document.getElementById('alertOff'), n=document.getElementById('alertNote');
+    if(!st||!a||!b) return;
+    st.textContent=on?'On':'Off'; a.hidden=on; b.hidden=!on; a.disabled=false; b.disabled=false;
+    if(note&&n) n.textContent=note;
+  }
+  function alertKey(k){ var raw=atob(k.replace(/-/g,'+').replace(/_/g,'/')), out=new Uint8Array(raw.length); for(var i=0;i<raw.length;i++) out[i]=raw.charCodeAt(i); return out; }
+  function alertIsAdmin(reg){ try{ return !!reg&&new URL(reg.scope).pathname==='/all'; }catch(e){ return false; } }
+  function alertActive(reg){
+    return new Promise(function(done){
+      var w=reg.installing||reg.waiting||reg.active;
+      if(!w||w.state==='activated') return done(reg);
+      w.addEventListener('statechange', function(){ if(w.state==='activated') done(reg); });
+    });
+  }
+  async function alertFile(sub){
+    var j=sub.toJSON?sub.toJSON():null;
+    if(!j||!j.keys) throw new Error('This phone gave no notification keys. Try again.');
+    await refs('/all/push/subscribe',{endpoint:sub.endpoint, keys:{p256dh:j.keys.p256dh, auth:j.keys.auth}});
+  }
+  async function alertTurnOn(){
+    var a=document.getElementById('alertOn'); a.disabled=true;
+    try{
+      if(!alertCan()){ alertPaint(false,'This browser cannot take notifications. On an iPhone, add Salt Admin to the Home Screen first.'); return; }
+      var k=await (await fetch('/push/key',{cache:'no-store'})).json();
+      if(!k.key||!k.configured){ alertPaint(false,'Notifications are not set up on the site yet.'); return; }
+      var perm=await Notification.requestPermission();
+      if(perm!=='granted'){ alertPaint(false,'The browser did not allow notifications. Allow them in its settings, then tap again.'); return; }
+      var reg=await alertActive(await navigator.serviceWorker.register('/all/sw.js',{scope:'/all'}));
+      var sub=(await reg.pushManager.getSubscription())||(await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:alertKey(k.key)}));
+      await alertFile(sub);
+      alertPaint(true,'Salt Admin rings this phone for what waits on your decision.');
+    }catch(e){ alertPaint(false,(e&&e.message)||'Notifications could not be turned on. Try again.'); }
+  }
+  async function alertTurnOff(){
+    var b=document.getElementById('alertOff'); b.disabled=true;
+    try{
+      var reg=await navigator.serviceWorker.getRegistration('/all'), sub=alertIsAdmin(reg)?await reg.pushManager.getSubscription():null;
+      if(sub){ await refs('/all/push/unsubscribe',{endpoint:sub.endpoint}); await sub.unsubscribe(); }
+      alertPaint(false,'Notifications are off on this phone.');
+    }catch(e){ alertPaint(true,(e&&e.message)||'Notifications could not be turned off. Try again.'); }
+  }
+  /* on opening: a phone already subscribed says On, and files the subscription again so a record the site lost is put back */
+  async function alertRead(){
+    try{
+      if(!alertCan()||Notification.permission!=='granted') return;
+      var reg=await navigator.serviceWorker.getRegistration('/all'), sub=alertIsAdmin(reg)?await reg.pushManager.getSubscription():null;
+      if(!sub) return;
+      await alertFile(sub);
+      alertPaint(true);
+    }catch(e){ /* the row stays Off; a tap on Turn on tries again */ }
+  }
+  if(!TESTING&&document.getElementById('alertOn')){
+    document.getElementById('alertOn').addEventListener('click', alertTurnOn);
+    document.getElementById('alertOff').addEventListener('click', alertTurnOff);
+    alertRead();
+    try{
+      if('serviceWorker' in navigator&&navigator.serviceWorker.addEventListener) navigator.serviceWorker.addEventListener('message', function(ev){
+        var d=ev&&ev.data;
+        if(!d||d.salt!=='admin'||typeof d.hash!=='string'||view) return;
+        var at=addrOf(d.hash);
+        if(at) showPlace(at.place, at.part, {fresh:true, push:true});
+      });
+    }catch(e){ /* a browser that will not listen still opens the page */ }
+  }
   /* 11 Oct 2026, HIS WORD: SALT ADMIN HAS ITS OWN NIGHT OR TIDE, per device. The head script has set the stored theme (Tide until one is
      chosen); the choice Sheet is the customer's (stmt/page.js, lookAsk), asked once when this page opens on a device that holds none, and
      Shop > This device holds the switch. The rest of the look (kept in localStorage salt-look on this origin, applied at once, no

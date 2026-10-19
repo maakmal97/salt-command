@@ -196,7 +196,7 @@ const links = () => [
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
    sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, and inputsAnswer what Record's forms are told (the books, the customers, the rows, the tips), as the others change theirs. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false, extra = null }) {
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false, extra = null, before = null }) {
   const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {}, wire = [];
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls; noKey: true files the names and places but no slip key; retained is extra [key, value] pairs kept in localStorage; cryptoImpl is the page's crypto; p.wire is every request that left the page */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
@@ -261,6 +261,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
         body: { at: ISO, form: "cash", direction: "in", code: "CX1-ZED", date: "2026-10-01", amount: 5 } }));
       w.localStorage.setItem("saltQuickReplies", JSON.stringify(["On my way", "Thank you"]));
       retained.forEach(([k, v]) => w.localStorage.setItem(k, v));
+      /* before(w): a test's own stubs on the window (a service worker, a Notification) in place before the page's script runs */
+      if (before) before(w);
       w.fetch = async (path, init) => {
         const route = String(path);
         /* everything that leaves the page: the address, the method, the headers and the body, as a test reads them back */

@@ -1266,6 +1266,16 @@ function vaultRow() {
     + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div></div>'
     + '<span class="salt-ledger__flag">One password opens names, places and slips. Seen on this phone only; they lock again when the page is hidden.</span></div>';
 }
+/* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
+   browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
+function alertRow() {
+  return '<div id="alertRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
+    + '<span class="salt-ledger__label" id="alertH">Notifications</span>'
+    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="alertH"><span id="alertState" role="status">Off</span>'
+    + '<button type="button" class="salt-ghost" id="alertOn" data-act="alerts.on">Turn on</button>'
+    + '<button type="button" class="salt-ghost" id="alertOff" data-act="alerts.off" hidden>Turn off</button></span></div></div>'
+    + '<span class="salt-ledger__flag" id="alertNote">Salt Admin rings this phone for what waits on your decision. Asked only when you tap.</span></div>';
+}
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
     + '<div id="vaultSheet" class="salt-sheet adm asheet vaultsheet" role="dialog" aria-modal="true" aria-labelledby="vaultT" tabindex="-1" hidden>'
@@ -1738,7 +1748,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
            shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
         + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle">This device</h2>'
         + '<p class="lead">Night or Tide for Salt Admin on this device. Kept on this device; the Desk keeps its own.</p>'
-        + lookRow(true) + vaultRow() + "</section>"
+        + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</section>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
         + '<nav class="salt-appbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>

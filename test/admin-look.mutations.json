@@ -1,7 +1,7 @@
 [
  {"name":"Shop loses its This device part","file":"stmt/page.js","find":"[\"practice\", \"Practice\"], [\"device\", \"This device\"]]","replace":"[\"practice\", \"Practice\"]]"},
  {"name":"a part's tab loses its act","file":"stmt/page.js","find":"\" data-act=\"part.' + p + \".\" + k","replace":"\" data-act=\"nav.' + p + \".\" + k"},
- {"name":"the Look row is left out of This device","file":"stmt/page.js","find":"+ lookRow(true) + vaultRow() + \"</section>\"","replace":"+ vaultRow() + \"</section>\""},
+ {"name":"the Look row is left out of This device","file":"stmt/page.js","find":"+ lookRow(true) + vaultRow() + (test ? \"\" : alertRow()) + \"</section>\"","replace":"+ vaultRow() + (test ? \"\" : alertRow()) + \"</section>\""},
  {"name":"the lead says the Counter keeps its own","file":"stmt/page.js","find":"Kept on this device; the Desk keeps its own.</p>","replace":"It is kept here only; the Desk and the Counter keep their own.</p>"},
  {"name":"the Look section shows under Hours","file":"stmt/page.js","find":"<section id=\"oLook\" data-in=\"shop.device\"","replace":"<section id=\"oLook\" data-in=\"shop.hours\""},
  {"name":"the Look section shows in every part of Shop","file":"stmt/page.js","find":"<section id=\"oLook\" data-in=\"shop.device\" aria-labelledby","replace":"<section id=\"oLook\" aria-labelledby"},

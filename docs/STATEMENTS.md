@@ -2469,6 +2469,8 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `claim.view-slip` | Same card, while its slip is being opened or could not be | Opens the sealed slip again with the slip key the page holds, on this device only. |
 | `code.close` | Code sheet | Closes the sheet. |
 | `code.value` | Code sheet | The eight-symbol code, read only. |
+| `alerts.off` | Shop, This device, Notifications, once on | Tells the site to stop ringing this phone (`POST /all/push/subscribe`'s counterpart, `/all/push/unsubscribe`) and drops the phone's own subscription. |
+| `alerts.on` | Shop, This device, Notifications | Asks the browser for notifications, registers Salt Admin's own worker (`/all/sw.js`, scope `/all`) and files the subscription at `opush:` through `/all/push/subscribe`. |
 | `approve.to-payment` | Desk row card of a customer's claim (key: the draft id) | Opens that claim's payment card on Orders > Payments; sends nothing. The row's own Approve stays shut. |
 | `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
 | `draft.reject` | Same card | Rejects it, or the trip. |

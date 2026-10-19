@@ -109,11 +109,12 @@ export async function endpointId(endpoint) {
 
 /* v761: `u` is optional. With one, this customer's phones; without, EVERY phone on the site, which
    is what a notice to everybody needs. The prefix is the whole of the difference. */
-export async function listSubs(env, u) {
+export async function listSubs(env, u) { return listUnder(env, u ? "push:" + u + ":" : "push:"); }
+async function listUnder(env, prefix) {
   const out = [];
   let cursor;
   do {
-    const page = await env.STMT.list({ prefix: u ? "push:" + u + ":" : "push:", cursor });
+    const page = await env.STMT.list({ prefix, cursor });
     for (const k of page.keys) {
       const v = await env.STMT.get(k.name);
       if (!v) continue;
@@ -186,5 +187,47 @@ async function wake(env, u, topic, news) {
     return { ok: true, sent, gone, failed, sealed };
   } catch (e) {
     return { ok: false, error: String((e && e.message) || e), sent: 0 };
+  }
+}
+
+/* ---- SALT ADMIN'S OWN BANNERS (19 Oct 2026, docs/plan-notifications.html section 3) --------------------------------
+   The owner's app has its own subscriptions, filed at opush:<hash of the endpoint>, a prefix that is NOT push:, so no customer
+   listing, no per-account count and no Sign out everywhere ever reads them. The sender is the one above (the site's own VAPID pair,
+   sealFor, pruning on 404 and 410); what differs is the payload, which is { k, o } and nothing else: a kind and, when the Desk
+   knows it, an order id. The words are admin-sw.js's; no name, code, amount or product rides. */
+export const OWNER_KINDS = ["order", "pay", "cancel", "said", "rate", "take", "pass", "approve"];
+export const OWNER_ORDER_RE = /^[A-Za-z0-9_-]{1,40}$/;
+export async function wakeOwner(env, news) {
+  const none = { ok: true, devices: 0, sent: 0, failed: 0 };
+  try {
+    const k = news && news.k, o = news && typeof news.o === "string" && OWNER_ORDER_RE.test(news.o) ? news.o : "";
+    if (!OWNER_KINDS.includes(k)) return { ok: false, error: "an unknown kind", devices: 0, sent: 0, failed: 0 };
+    const key = await signingKey(env), pub = env.STMT_VAPID_PUBLIC_KEY;
+    const subs = await listUnder(env, "opush:");
+    if (!subs.length) return none;
+    if (!key || !pub) return { ok: false, error: "push is not configured", devices: subs.length, sent: 0, failed: 0 };
+    const text = JSON.stringify(o ? { k, o } : { k });
+    const topic = "a-" + k + (o ? "-" + (await endpointId(o)).slice(0, 16) : "");
+    const tokens = new Map();
+    let sent = 0, failed = 0, devices = subs.length;
+    for (const s of subs) {
+      let origin;
+      try { origin = new URL(s.endpoint).origin; } catch { failed++; continue; }
+      if (!tokens.has(origin)) tokens.set(origin, await vapidToken(env, key, origin));
+      const keys = pushKeys(s.keys);
+      let body = null;
+      if (keys) { try { body = await sealFor(keys, text); } catch { body = null; } }
+      const headers = { TTL: "3600", Urgency: "high", Topic: topic, Authorization: `vapid t=${tokens.get(origin)}, k=${pub}` };
+      if (body) Object.assign(headers, { "Content-Encoding": "aes128gcm", "Content-Type": "application/octet-stream" });
+      else headers["Content-Length"] = "0";
+      let r;
+      try { r = await fetch(s.endpoint, body ? { method: "POST", headers, body } : { method: "POST", headers }); } catch { failed++; continue; }
+      if (r.status === 404 || r.status === 410) { await env.STMT.delete(s.key); devices--; }
+      else if (r.ok || r.status === 201) sent++;
+      else failed++;
+    }
+    return { ok: true, devices, sent, failed };
+  } catch (e) {
+    return { ok: false, error: String((e && e.message) || e), devices: 0, sent: 0, failed: 0 };
   }
 }

@@ -48034,6 +48034,11 @@ await (async () => {
   await (await import("./maker-communications.mjs")).run({ ok });
 })();
 
+section("Salt Admin notifications: its own worker, subscriptions and the Desk's wake");
+await (async () => {
+  await (await import("./admin-push.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker order moves: Ready, Decline, Cancel, replies and Not found");
 
 await (async () => {

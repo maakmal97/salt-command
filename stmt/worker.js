@@ -41,12 +41,13 @@
 import { landingPage, boardPage, shutPage, notFoundPage, MON3, mtileSvg } from "./page.js";
 import { testShell } from "./testsurface.js";
 import { SW_JS } from "./sw.js";
+import { ADMIN_SW_JS } from "./admin-sw.js";
 import { identity } from "./access.js";
 import { maintenance } from "./maintenance.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC, getMany } from "./refs.js";
 import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
-import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
+import { endpointId, pushKeys, wakeCustomer, wakeEveryone, wakeOwner, OWNER_KINDS, OWNER_ORDER_RE } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
@@ -996,6 +997,17 @@ async function handleDesk(request, env, p, m) {
     const push = await wakeEveryone(env);
     return json(Object.assign({ ok: true }, rec, { push }));
   }
+  /* 19 Oct 2026 (docs/plan-notifications.html section 3): THE DESK WAKES SALT ADMIN. { k, o? }: a kind from the list and, when the
+     Desk knows it, an order id; sealed to each subscription filed under opush: and nothing else. Answers { ok, devices, sent, failed }, which
+     the Desk reads to decide whether it must ring its own banner instead. Called by the Desk alone, on its key: no fixture road comes here. */
+  if (p === "/desk/owner-wake") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    if (!b || typeof b !== "object" || !OWNER_KINDS.includes(b.k) || (b.o !== undefined && !(typeof b.o === "string" && OWNER_ORDER_RE.test(b.o))))
+      return json({ ok: false, error: "send a kind and, if known, an order id" }, 400);
+    const r = await wakeOwner(env, { k: b.k, o: b.o });
+    return json(r, r.ok ? 200 : 502);
+  }
   if (p === "/desk/orders/store-check") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json(await storeCompare(env));
@@ -1749,6 +1761,26 @@ const worker = {
         return new Response(JSON.stringify(own), { headers: Object.assign({}, HEADERS, {
           "content-type": "application/manifest+json; charset=utf-8", "cache-control": "no-store" }) });
       }
+      /* 19 Oct 2026: SALT ADMIN'S OWN SERVICE WORKER AND PUSH SUBSCRIPTIONS (docs/plan-notifications.html section 3). Inside this gate, so both locks
+         hold the script and every subscription. The script may control /all alone; a subscription is filed at opush:<hash of the endpoint>, never
+         push:, so no customer listing, count or Sign out everywhere reads it. */
+      if (p === "/all/sw.js") {
+        if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+        return new Response(ADMIN_SW_JS, { headers: Object.assign({}, HEADERS, {
+          "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store", "Service-Worker-Allowed": "/all" }) });
+      }
+      if (p === "/all/push/subscribe" || p === "/all/push/unsubscribe") {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        const ep = b && b.endpoint;
+        if (typeof ep !== "string" || ep.length > 1000 || !/^https:\/\/\S+$/.test(ep)) return json({ ok: false, error: "send the subscription's https endpoint" }, 400);
+        const id = await endpointId(ep);
+        if (p === "/all/push/unsubscribe") { await env.STMT.delete("opush:" + id); return json({ ok: true }); }
+        const keys = pushKeys(b.keys);
+        if (!keys) return json({ ok: false, error: "send the subscription's two keys" }, 400);
+        await env.STMT.put("opush:" + id, JSON.stringify({ endpoint: ep, keys, at: new Date().toISOString() }));
+        return json({ ok: true, id });
+      }
       if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin, who);
       if (p === "/all/sheet") {
         if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
@@ -1975,7 +2007,7 @@ const worker = {
       || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m, ctx);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {
