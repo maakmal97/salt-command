@@ -48173,6 +48173,11 @@ await (async () => {
   await (await import("./counter-points.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Batch B: the way on Prices, the newest order's or the sheet's, with Change to How it reaches you (P1)");
+await (async () => {
+  await (await import("./counter-b-way.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });

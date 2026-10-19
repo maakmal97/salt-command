@@ -442,6 +442,10 @@ export const EN = {
   "pr.goods": "The price is for the goods. {deliv}",
   "pr.since": "Buying with us since {m}.",
   "pr.soon": "Price coming soon.",
+  "pr.wayColl": "Collecting",
+  "pr.wayDeliv": "Delivering to {p}",
+  "pr.wayDelivNone": "Delivering",
+  "pr.wayChange": "Change",
   /* F4, HIS DECISION OF 05 OCT 2026: THE LIGHT ON A BOOK'S MARK, a coloured border, said aloud by these and never a figure or
      the word for what is held. Green while what is on the shelf covers what is promised, yellow when it does not, red when
      the shelf is out; yellow and red carry the day he expects the next lot, once he sets one. Ordering is never refused. */

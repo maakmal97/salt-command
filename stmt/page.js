@@ -321,6 +321,10 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .panel{max-width:620px;margin:0 auto}
 .panel h2,.panel h1.gh{font-size:var(--salt-text-lg);margin:0 0 4px}
 .panel p.lead{color:var(--salt-mist-bright);font-size:.875rem;line-height:1.6;margin:0 0 18px}
+/* Counter Batch B: the way on Prices, its words and Change on one line while they fit */
+.pway[hidden]{display:none}
+.pway{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:-6px 0 18px}
+.pway__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
 /* THE ISSUES, as a strip of dates. The current one leads; the rest are the record. A pill is
    a word in mono with a hairline, and the chosen one is brass: no filled badge. S7 polish: now only Rewards' months,
    inside its card, so it starts at the card's edge: centred, it stood 170px in from everything else from 1080px */
@@ -3575,6 +3579,7 @@ const CLIENT_JS = `
     pPrices.appendChild(el('p','lead',tw((prices.at&&pricesAt(prices.at)?'pr.asAt':'pr.week')+(tapTo?'Tap':''),
       {d:Dd(pricesAt,prices.at), w:prices.week&&prices.week.label||''})));
     pPrices.appendChild(el('p','lead',tw('pr.goods',{deliv:Wk('deliv')})));
+    var pw=el('div','pway'); pw.id='pWay'; pPrices.appendChild(pw); wayDraw();
     if(prices.since) pPrices.appendChild(el('p','sub2',tw('pr.since',{m:Dd(monthOf,prices.since)})));
     /* S7 7.2: the books stand in a grid, two across from 1080px */
     var grid=el('div','pgrid'); pPrices.appendChild(grid);
@@ -3607,6 +3612,21 @@ const CLIENT_JS = `
     });
   }
 
+  /* COUNTER BATCH B: THE WAY ON PRICES, "Delivering to {place}" or "Collecting", with Change opening the sheet at How it reaches you. Patched
+     in place (a sheet closed, the orders read again), never by drawing the list again. None with no way yet, and no Change where nothing is
+     ordered from here (his read-only view, the overdue gate) */
+  function wayDraw(){
+    var pw=document.getElementById('pWay'); if(!pw) return;
+    var w=wayNow(), tapTo=!view&&!hold;
+    pw.textContent=''; pw.hidden=!w; if(!w) return;
+    var pl=w.place.trim();
+    pw.appendChild(el('span','pway__t',w.mode==='deliver'?(pl?tw('pr.wayDeliv',{p:pl}):tw('pr.wayDelivNone')):tw('pr.wayColl')));
+    if(!tapTo) return;
+    var ch=el('button','salt-ghost pway__go',tw('pr.wayChange')); ch.type='button'; ch.id='pWayGo';
+    ch.addEventListener('click',function(){ sheetOpen(null,null,ch);
+      var m=osh&&osh.box.querySelector('[data-k^="mode:"][aria-pressed="true"]'); if(m) try{ m.focus({preventScroll:true}); }catch(e){} });
+    pw.appendChild(ch);
+  }
   /* ---- ORDER: the form, then every order and where it stands ---- */
   /* S1 1.4, 24 SEP 2026: A DROPPED REQUEST ANSWERS LIKE A REFUSAL, IN WORDS. It threw, so Place stayed
      busy and Send stayed grey for good; now every caller clears its busy state and shows this beside the
@@ -3719,6 +3739,15 @@ const CLIENT_JS = `
     var i=best.indexOf('|'); return {product:best.slice(0,i), q:best.slice(i+1)};
   }
   function oLatest(pick){ var l=null; orders.forEach(function(o){ if(pick(o)&&(!l||String(o.at)>String(l.at))) l=o; }); return l; }
+  /* COUNTER BATCH B (his answers of 18 Oct 2026): THE WAY AND THE PLACE THE NEXT SHEET OPENS ON, one read for the sheet and the line on
+     Prices, so the two never differ: what was chosen in a sheet on this page, else the newest order's. It writes nothing; with no order
+     and nothing chosen there is no way yet, and Prices draws no line */
+  function wayNow(){
+    var L=oLatest(function(){ return true; });
+    if(draft.mode==null&&!L) return null;
+    var mode=draft.mode!=null?draft.mode:L&&L.mode==='deliver'?'deliver':'collect', W=draft.place!=null?null:oLatest(function(o){ return !!o.place; });
+    return {mode:mode==='deliver'?'deliver':'collect', place:draft.place!=null?String(draft.place):W?String(W.place):''};
+  }
   function oSoldHas(p,q){ var P=sold().filter(function(x){ return x.product===p; })[0];
     return !!P&&(q==null||priceAt(P,q)!=null); }
   /* a size the sheet may hold: priced, or past the grid's max for a price to be asked */
@@ -3748,8 +3777,9 @@ const CLIENT_JS = `
         draft.pick[P0.product]=String(U&&U.product===P0.product&&oSoldHas(U.product,U.q)?U.q:P0.sizes[0].q); }
     }
     /* the way and the place are the last order's, and the hint says so while the place is still that one */
-    if(draft.mode==null){ var L=oLatest(function(){ return true; }); draft.mode=L&&L.mode==='deliver'?'deliver':'collect'; }
-    if(draft.place==null){ var W=oLatest(function(o){ return !!o.place; }); draft.place=W?W.place:''; draft.placeWas=draft.place; }
+    var WN=wayNow();
+    if(draft.mode==null) draft.mode=WN?WN.mode:'collect';
+    if(draft.place==null){ draft.place=WN?WN.place:''; draft.placeWas=draft.place; }
     draft.step=!amend&&openN()>=OMAX?'limit':'form'; draft.snote=''; draft.check=null;
     if(!osh){
       var wrap=el('div'); wrap.id='osheet';
@@ -3787,6 +3817,7 @@ const CLIENT_JS = `
     s.wrap.parentNode.removeChild(s.wrap);
     behind();
     bkDrop('o');
+    wayDraw();
     focusBack(s.opener);
   }
   /* the customer's own ways out (the scrim, Close, Escape) wait while Place is on its way: closed then, the answer had
@@ -6088,6 +6119,7 @@ const CLIENT_JS = `
       hReward:homeReward(), hYear:homeYear(), hLive:homeLive()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     thDraw();
+    wayDraw();
     drawPayHead();
     placeCounts();
     placeTitle();

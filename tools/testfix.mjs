@@ -454,6 +454,8 @@ export const FEATURES = [
   ["the bulletin", (f) => !!(f.bulletin && f.bulletin.lines && f.bulletin.lines.length)],
   ["the notice over two lines, one at a time with Pause, in the Today card (Counter Batch A)", (f) => !!(f.bulletin && f.bulletin.lines && f.bulletin.lines.length > 1)],
   ["their latest open order on Home, a pill on a phone and a banner from 1080px (Counter Batch A)", (f) => has(f, (o) => !["done", "declined", "cancelled"].includes(o.status))],
+  ["the way on Prices, the newest order's, a delivery with its place (Counter Batch B)", (f) => { const n = f.orders.slice().sort((a, b) => String(b.at).localeCompare(String(a.at)))[0];
+    return !!n && n.mode === "deliver" && !!String(n.place || "").trim(); }],
   ["This year on Home, off the live statement's lines this year (Counter Batch A)", (f) => !!(f.live && new RegExp('salt-lines__row[^"]*" role="row" data-m="' + new Date(Date.parse(f.at) + 8 * 3600e3).toISOString().slice(0, 4)).test(f.live.body || ""))],
   ["guest links: open, waiting, declined, withdrawn", (f) => ["open", "waiting", "declined", "withdrawn"].every((s) => f.refs.some((r) => refState(r) === s))],
   ["an associate's card, with a reward", (f) => !!(f.card && f.card.products.some((p) => p.reward) && f.card.products.some((p) => !p.reward))],
