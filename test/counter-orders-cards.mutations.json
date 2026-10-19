@@ -3,7 +3,7 @@
  {"name":"To pay counts every open order","file":"stmt/page.js","find":"k==='pay'?orders.filter(oOwes)","replace":"k==='pay'?orders.filter(function(o){ return !oClosed(o); })"},
  {"name":"Done leaves out the ended orders","file":"stmt/page.js","find":"k==='done'?orders.filter(oClosed)","replace":"k==='done'?orders.filter(function(o){ return o.status==='done'; })"},
  {"name":"the filter row is no tablist","file":"stmt/page.js","find":"row.setAttribute('role','tablist'); ","replace":""},
- {"name":"every count is all of them","file":"stmt/page.js","find":"b.appendChild(el('span','salt-tabs__count',String(oOf(t[0]).length)));","replace":"b.appendChild(el('span','salt-tabs__count',String(orders.length)));"},
+ {"name":"every count is all of them","file":"stmt/page.js","find":"b.appendChild(el('span','salt-segment__count',String(oOf(t[0]).length)));","replace":"b.appendChild(el('span','salt-segment__count',String(orders.length)));"},
  {"name":"a tab shows every order","file":"stmt/page.js","find":"    var list=oOf(k);\n","replace":"    var list=orders.slice();\n"},
  {"name":"the card has no name of its own","file":"stmt/page.js","find":"    b.setAttribute('aria-label',tw(why?'ord.cardAriaWhy':'ord.cardAria',{d:oDay(o.at), a:Uq(o.qty,oUnit(o)), s:stateWord(o), w:why}));\n","replace":""},
  {"name":"the card's name leaves out what it waits on","file":"stmt/page.js","find":"tw(why?'ord.cardAriaWhy':'ord.cardAria',","replace":"tw('ord.cardAria',"},

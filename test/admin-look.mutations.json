@@ -7,7 +7,7 @@
  {"name":"the Look section shows in every part of Shop","file":"stmt/page.js","find":"<section id=\"oLook\" data-in=\"shop.device\" aria-labelledby","replace":"<section id=\"oLook\" aria-labelledby"},
  {"name":"the row's Night has no act","parked":"tide-off","file":"stmt/page.js","find":"data-look=\"night\" aria-pressed=\"false\"' + act(\"look.night\"), \"look.night\")","replace":"data-look=\"night\" aria-pressed=\"false\"', \"look.night\")"},
  {"name":"the row's Tide has the wrong act","parked":"tide-off","file":"stmt/page.js","find":"data-look=\"tide\" aria-pressed=\"true\"' + act(\"look.tide\"), \"look.tide\")","replace":"data-look=\"tide\" aria-pressed=\"true\"' + act(\"look.night\"), \"look.tide\")"},
- {"name":"the pair is not a group","file":"stmt/page.js","find":"<span class=\"salt-ledger__value lookset\" role=\"group\" aria-labelledby=\"lookH\">","replace":"<span class=\"salt-ledger__value lookset\" aria-labelledby=\"lookH\">"},
+ {"name":"the pair is not a group","file":"stmt/page.js","find":"<span class=\"salt-ledger__value lookset salt-segment\" role=\"group\" aria-labelledby=\"lookH\">","replace":"<span class=\"salt-ledger__value lookset salt-segment\" aria-labelledby=\"lookH\">"},
  {"name":"the Sheet's tiles have no acts","file":"stmt/page.js","find":"data-look=\"' + k + '\"' + act(\"look.sheet-\" + k) + \">\"","replace":"data-look=\"' + k + '\"' + \">\""},
  {"name":"Close has no act","file":"stmt/page.js","find":"id=\"lookX\"' + act(\"look.sheet-close\") + wl(\"x.close\")","replace":"id=\"lookX\"' + wl(\"x.close\")"},
  {"name":"Salt Admin carries no Sheet","file":"stmt/page.js","find":"        + lookSheet(true) + vaultSheet()\n","replace":"        + vaultSheet()\n"},
@@ -39,7 +39,7 @@
  {"name":"the setting's tap does nothing","file":"stmt/page.js","find":"if(lookRow) lookRow.addEventListener('click',function(ev){ var t=ev.target.closest('[data-look]'); if(t) lookSet(t.getAttribute('data-look')); });","replace":""},
  {"name":"the setting's held button is never marked","file":"stmt/page.js","find":"b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow()));","replace":""},
  {"name":"the theme in force always reads Tide","file":"stmt/page.js","find":"return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide'; }","replace":"return 'tide'; }"},
- {"name":"the row's ghosts are no longer the system's","file":"stmt/page.js","find":"class=\"salt-ghost\" data-look=\"night\"","replace":"class=\"look-x\" data-look=\"night\""},
+ {"name":"the row's options are no longer the system's","file":"stmt/page.js","find":"class=\"salt-segment__opt salt-segment__opt--active\" data-look=\"night\"","replace":"class=\"look-x\" data-look=\"night\""},
  {"name":"a part's tab is shorter than a tap","file":"stmt/page.js","find":".adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}","replace":".adm .aparts .salt-tabs__pill{min-height:32px;min-width:var(--salt-tap)}"},
  {"name":"the tap token is smaller","file":"stmt/statement-css.js","find":"--salt-tap: 44px;","replace":"--salt-tap: 40px;"}
 ]

@@ -520,9 +520,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .ocard__what.odue{color:var(--salt-ember)}
 .ocard__total{font-family:var(--salt-font-mono);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
 .ocard--ended .ocard__total{color:var(--salt-mist-bright)}
-.otabs{flex-wrap:nowrap;margin:0 0 16px}
-.otabs .salt-tabs__pill{flex:1 1 auto;min-height:var(--salt-tap);min-width:0;display:inline-flex;align-items:center;justify-content:center;padding:8px 10px;white-space:nowrap}
-.otabs .salt-tabs__count{margin-left:6px}
+.otabs{margin:0 0 16px}
 .oempty{margin:0 0 12px}
 .oempty .salt-ghost{min-height:var(--salt-tap)}
 .ocols{display:grid;grid-template-columns:minmax(0,1fr);gap:8px 24px;align-items:start}
@@ -619,6 +617,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .aplace{min-width:0}
 .adm #oOrders,.adm #oRecord{max-width:760px}
 .adm .aparts{margin:0 0 20px}
+.adm .aparts.salt-segment{max-width:30rem}
 .adm .aparts .salt-tabs__pill{min-height:var(--salt-tap);min-width:var(--salt-tap)}
 /* 18 OCT 2026 (clarity, part 3): Orders' stages are the first strip, the rest a smaller one beneath it; an order's card leads with its answer and folds the rest */
 .adm .aparts--stages,.adm .aparts--minor{flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
@@ -1058,7 +1057,7 @@ body.ended>*:not(#aEnded){display:none}
 .look-swatch--night{background:radial-gradient(circle 14px at 70% 50%,var(--salt-swatch-night-accent) 0 13px,transparent 14px),var(--salt-swatch-night-ground)}
 .look-swatch--tide{background:radial-gradient(circle 14px at 70% 50%,var(--salt-swatch-tide-accent) 0 13px,transparent 14px),var(--salt-swatch-tide-ground)}
 .look-note{margin:var(--salt-space-3) 0 0;font-size:var(--salt-text-sm);color:var(--salt-prose)}
-.lookset{display:flex;gap:8px}
+.lookset{width:min(100%,15rem)}
 .adm #vaultState{align-self:center;font-size:var(--salt-text-sm);color:var(--salt-prose)}
 .adm.vaultsheet .salt-sheet__body > * + *{margin-top:14px}
 .adm.vaultsheet .salt-sheet__foot{flex-direction:column;align-items:stretch}
@@ -1289,9 +1288,9 @@ function lookRow(owner) {
   const act = (a) => (owner ? ' data-act="' + a + '"' : "");
   return '<div id="lookRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + wt("span", 'class="salt-ledger__label" id="lookH"', "look.h")
-    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="lookH">'
-    + wt("button", 'type="button" class="salt-ghost" data-look="night" aria-pressed="true"' + act("look.night"), "look.night")
-    + wt("button", 'type="button" class="salt-ghost" data-look="tide" aria-pressed="false" disabled' + act("look.tide"), "look.tide")
+    + '<span class="salt-ledger__value lookset salt-segment" role="group" aria-labelledby="lookH">'
+    + wt("button", 'type="button" class="salt-segment__opt salt-segment__opt--active" data-look="night" aria-pressed="true"' + act("look.night"), "look.night")
+    + wt("button", 'type="button" class="salt-segment__opt" data-look="tide" aria-pressed="false" disabled' + act("look.tide"), "look.tide")
     + "</span></div></div></div>";
 }
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
@@ -1566,8 +1565,12 @@ const ADMIN_PARTS = {
   shop: [["hours", "Hours"], ["notice", "Notice"], ["practice", "Practice"], ["device", "This device"]]
 };
 /* a place's parts strip: every part is a control with an act of its own, part.<place>.<part> (docs/STATEMENTS.md) */
-const adminStrip = (p, list, cls, label) => '<div class="salt-tabs aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
-  + list.map(([k, w]) => '<button type="button" class="salt-tabs__pill" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
+/* 20 Oct 2026 (Counter Batch C, item 21): a place whose parts fit a phone's slider draws them as one, measured in Chromium at 358px:
+   Record's three. Customers' and Shop's four (Associates, This device) and the six kinds of Needs you do not fit equal columns there,
+   and Orders' second strip shares its choice with the stages, so it can stand with none chosen; those stay a strip of pills. */
+const ADMIN_SLIDERS = ["record"];
+const adminStrip = (p, list, cls, label, seg = !cls && ADMIN_SLIDERS.includes(p)) => '<div class="' + (seg ? "salt-segment" : "salt-tabs") + ' aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
+  + list.map(([k, w]) => '<button type="button" class="' + (seg ? "salt-segment__opt" : "salt-tabs__pill") + '" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
     + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div>";
 /* 18 Oct 2026 (Salt Admin clarity, part 3): Orders draws its parts as two strips of one list. The six stages come first, in the order an order moves (a tab strip
    with each stage's count, since the Steps recipe is a drawing and not a row of controls); Approve, Payments, Group and Ledger stand apart beneath, smaller. Every part keeps
@@ -2291,6 +2294,15 @@ const CLIENT_JS = `
   }
 
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
+  /* 20 Oct 2026 (Counter Batch C, item 21): a choice of two to six is the system's slider, .salt-segment. Its columns (--n, the options
+     shown) and its thumb (--i, the one chosen) are set here, since the page's style-src refuses a style attribute; the chosen option is
+     the one marked aria-selected or aria-pressed, and carries the recipe's active class. Every handler that moves a choice calls it. */
+  function segSync(g){
+    if(!g) return;
+    var b=[].filter.call(g.children,function(x){ return x.tagName==='BUTTON'&&!x.hidden; }), at=0;
+    b.forEach(function(x,k){ var on=x.getAttribute('aria-selected')==='true'||x.getAttribute('aria-pressed')==='true'; x.classList.toggle('salt-segment__opt--active',on); if(on) at=k; });
+    g.style.setProperty('--n',String(b.length||1)); g.style.setProperty('--i',String(at));
+  }
   /* 28 Sep 2026: NO DRAW ASKS WHETHER THE PAGE IS STILL THERE. A page that has gone runs no script, and jsdom from 30.1.0 keeps
      a closed window's document, so the guard S9 and the S7 merge put on every late draw could never fire (docs/WORKING.md 3) */
   /* C5 (29 Sep 2026): ONE MONEY FORM ON THE COUNTER, RM and two places, as the statement's lines print it */
@@ -3293,6 +3305,7 @@ const CLIENT_JS = `
   function lookMark(){
     if(!lookRow) return;
     [].forEach.call(lookRow.querySelectorAll('[data-look]'),function(b){ b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow())); });
+    segSync(lookRow.querySelector('.lookset'));
   }
   function lookSet(t){
     if(t!=='night') return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
@@ -4898,14 +4911,15 @@ const CLIENT_JS = `
   var OTABS=[['all','ord.tab.all'],['open','ord.tab.open'],['pay','ord.tab.pay'],['done','ord.tab.done']];
   function oOf(k){ return k==='open'?orders.filter(function(o){ return !oClosed(o); }):k==='pay'?orders.filter(oOwes):k==='done'?orders.filter(oClosed):orders.slice(); }
   function oTabs(){
-    var cur=draft.oTab||'all', row=el('div','salt-tabs otabs'); row.setAttribute('role','tablist'); row.setAttribute('aria-label',tw('ord.tabs'));
+    var cur=draft.oTab||'all', row=el('div','salt-segment otabs'); row.setAttribute('role','tablist'); row.setAttribute('aria-label',tw('ord.tabs'));
     OTABS.forEach(function(t){
-      var b=el('button','salt-tabs__pill'+(t[0]===cur?' salt-tabs__pill--active':''),tw(t[1])); b.type='button'; b.setAttribute('role','tab');
+      var b=el('button','salt-segment__opt',tw(t[1])); b.type='button'; b.setAttribute('role','tab');
       b.setAttribute('data-otab',t[0]); b.setAttribute('aria-selected',t[0]===cur?'true':'false');
-      b.appendChild(el('span','salt-tabs__count',String(oOf(t[0]).length)));
+      b.appendChild(el('span','salt-segment__count',String(oOf(t[0]).length)));
       b.addEventListener('click',function(){ draft.oTab=t[0]; oDraw(); var n=pOrder.querySelector('[data-otab="'+t[0]+'"]'); if(n) try{ n.focus({preventScroll:true}); }catch(e){} });
       row.appendChild(b);
     });
+    segSync(row);
     return row;
   }
   /* an empty view: its mark, a heading, one sentence and the one way on */

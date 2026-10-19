@@ -70,7 +70,7 @@ export async function run({ ok }) {
   try {
     /* ---- 1 and 2: the counts, and each tab its own orders ---- */
     const S = await open({ orders: ALL });
-    const counts = Object.fromEntries(["all", "open", "pay", "done"].map((k) => [k, tabOf(S, k) ? t(tabOf(S, k).querySelector(".salt-tabs__count")) : null]));
+    const counts = Object.fromEntries(["all", "open", "pay", "done"].map((k) => [k, tabOf(S, k) ? t(tabOf(S, k).querySelector(".salt-segment__count")) : null]));
     ok(JSON.stringify(counts) === JSON.stringify({ all: "6", open: "3", pay: "2", done: "3" }),
       "All counts every order, Open the three not done, To pay the two owing, Done the complete, declined and cancelled: " + JSON.stringify(counts));
     const row = S.d.querySelector("#pOrder .otabs"), tabs = row ? [...row.querySelectorAll('[role="tab"]')] : [];

@@ -1,0 +1,96 @@
+/* test/counter-c-counter-slider.mjs: THE SLIDER ON THE COUNTER (Counter Batch C, P11, item 21; his word of 20 Oct 2026).
+ *
+ * The Counter's choices of two to six that fit a phone are the system's slider, .salt-segment: the Look row (the customer's and Salt
+ * Admin's), the Orders tabs and Salt Admin's Record strip. Measured in Chromium at 358px, Customers' and Shop's four, the six kinds of
+ * Needs you and the months stay strips of pills, as do the stage arrows and Orders' second strip, which can stand with none chosen.
+ * The page's style-src refuses a style attribute, so segSync sets --n and --i from the script in each handler that moves a choice.
+ * Every check observes the page in jsdom or the stylesheet it carries; each was proved red by its own mutation
+ * (test/counter-c-counter-slider.mutations.json, tools/section.mjs).
+ *   1  the recipe is carried in SITE_RECIPES, with its 44px option, its reduced-motion rule and its greyed option
+ *   2  the customer's Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed and inert
+ *   3  the Orders tabs are a slider of four with their counts, and a tap moves the thumb and aria-selected together
+ *   4  Salt Admin's Record strip is a slider of three, the thumb following each part entered; a hidden option takes no column
+ *   5  the strips that do not fit stay pills: Customers, Shop, the stages, Orders' second strip, the kinds, the months
+ *   6  no rule of the page lowers a slider's option under 44px */
+import { JSDOM, VirtualConsole } from "jsdom";
+import { webcrypto } from "node:crypto";
+import { open, ord, ago } from "./counter-b-kit.mjs";
+
+const EMPTY = { ok: true, accounts: [], refs: [], tiers: [], claims: [], threads: [], pools: [], lines: [], orders: [], drafts: [], refused: [], queue: [] };
+const J = (o) => JSON.stringify(o);
+const seg = (g) => g && { cls: g.className, n: g.style.getPropertyValue("--n"), i: g.style.getPropertyValue("--i"),
+  on: [...g.querySelectorAll("button")].map((b) => (b.classList.contains("salt-segment__opt--active") ? 1 : 0)).join("") };
+
+export async function run({ ok, pageWork }) {
+  const P = await import("../stmt/page.js?" + Date.now());
+  const { SITE_RECIPES } = await import("../stmt/statement-css.js?" + Date.now());
+  const wins = [];
+  try {
+    /* ---- 1 ---- */
+    const R = SITE_RECIPES.replace(/\/\*[\s\S]*?\*\//g, "");
+    ok(/\.salt-segment \{[^}]*grid-template-columns: repeat\(var\(--n\)/.test(R) && /\.salt-segment__opt \{[^}]*min-height: 44px/.test(R)
+      && /@media \(prefers-reduced-motion: reduce\) \{\s*\.salt-segment::before \{ transition: none; \}/.test(R) && /\.salt-segment__opt:disabled[^{]*\{[^}]*opacity/.test(R),
+      "the Counter carries the slider: equal columns, 44px options, still under reduced motion, a greyed option");
+
+    /* ---- 2 and 3: the customer's page ---- */
+    const A = await open({ pageWork, orders: [ord("c1", "done", ago(300), { paid: 100, moved: 1 }), ord("c2", "placed", ago(100)), ord("c3", "acknowledged", ago(50))] });
+    wins.push(A);
+    const look = A.d.querySelector("#lookRow .lookset"), tide = A.d.querySelector('#lookRow [data-look="tide"]');
+    ok(look && look.classList.contains("salt-segment") && J(seg(look)) === J({ cls: look.className, n: "2", i: "0", on: "10" }) && tide.disabled && tide.classList.contains("salt-segment__opt"),
+      "the Look row is a slider of two, Night chosen and marked, the thumb at it, Tide greyed: " + J(seg(look)));
+    tide.disabled = false; tide.click(); await A.settle();
+    ok(A.d.documentElement.getAttribute("data-theme") === "night" && seg(look).i === "0", "and a forced tap on Tide moves nothing: " + J(seg(look)));
+    const row = () => A.d.querySelector("#pOrder .otabs");
+    const r1 = seg(row());
+    ok(row() && row().classList.contains("salt-segment") && r1.n === "4" && r1.i === "0" && r1.on === "1000" && row().querySelectorAll(".salt-segment__count").length === 4
+      && [...row().querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
+      "the Orders tabs are a slider of four, each with its count, the thumb on All: " + J(r1));
+    row().querySelector('[data-otab="pay"]').click(); await A.settle();
+    const r2 = seg(row()), sel = [...row().querySelectorAll("button")].map((b) => b.getAttribute("aria-selected") === "true" ? 1 : 0).join("");
+    ok(r2.i === "2" && r2.on === "0010" && sel === "0010", "a tap on To pay moves the thumb, the active mark and aria-selected together: " + J([r2, sel]));
+    const mf = A.d.getElementById("mfil");
+    ok(mf && mf.classList.contains("salt-tabs") && !mf.classList.contains("salt-segment"), "the months stay a strip of pills");
+
+    /* ---- 4 and 5: Salt Admin ---- */
+    const errs = [], vc = new VirtualConsole(); vc.on("jsdomError", (e) => errs.push(String(e.message || e)));
+    let work;
+    const dom = new JSDOM(P.landingPage("", "nco", { master: "fixture-master", accounts: [] }), { url: "https://counter.fixture.test/all", runScripts: "dangerously",
+      pretendToBeVisual: true, virtualConsole: vc, beforeParse(w) {
+        Object.defineProperty(w, "crypto", { value: webcrypto, configurable: true });
+        w.scrollTo = () => {}; w.confirm = () => true; w.setTimeout = () => 0; w.clearTimeout = () => {}; w.setInterval = () => 0; w.clearInterval = () => {};
+        w.localStorage.setItem("salt-look", "night");
+        w.fetch = async () => ({ ok: true, status: 200, type: "basic", json: async () => EMPTY });
+        work = pageWork(w);
+      } });
+    wins.push({ close: () => dom.window.close() });
+    const d = dom.window.document;
+    await work.quiet();
+    const rec = d.querySelector('.aparts[data-place="record"]');
+    ok(rec && rec.classList.contains("salt-segment") && seg(rec).n === "3" && [...rec.querySelectorAll("button")].every((b) => b.classList.contains("salt-segment__opt")),
+      "Salt Admin's Record strip is a slider of three: " + J(seg(rec)));
+    const go = async (h) => { dom.window.location.hash = h; dom.window.dispatchEvent(new dom.window.HashChangeEvent("hashchange")); await work.quiet(); };
+    await go("#record/pricing");
+    const g1 = seg(rec);
+    await go("#record/customers");
+    const g2 = seg(rec);
+    ok(g1.i === "2" && g1.on === "001" && g2.i === "1" && g2.on === "010", "and its thumb follows each part entered, Pricing then Customers: " + J([g1, g2]));
+    rec.querySelector('[data-part="entry"]').hidden = true;
+    await go("#record/pricing");
+    const g3 = seg(rec);
+    ok(g3.n === "2" && g3.i === "1", "an option hidden leaves the columns: two shown, the thumb on the second: " + J(g3));
+    rec.querySelector('[data-part="entry"]').hidden = false;
+    const pills = ['.aparts[data-place="customers"]', '.aparts[data-place="shop"]', ".aparts--stages", ".aparts--minor", ".nchips"].map((s) => {
+      const g = d.querySelector(s); return [s, !!g && g.classList.contains("salt-tabs") && !g.classList.contains("salt-segment") && [...g.querySelectorAll("button")].every((b) => b.classList.contains("salt-tabs__pill"))]; });
+    ok(pills.every((x) => x[1]), "Customers, Shop, the stages, Orders' second strip and the kinds stay strips of pills: " + J(pills));
+    const al = d.querySelector("#lookRow .lookset");
+    ok(al && al.classList.contains("salt-segment") && seg(al).n === "2" && seg(al).on === "10", "Salt Admin's Look row is the same slider: " + J(seg(al)));
+    ok(errs.length === 0, "and his page drew without an error: " + J(errs.slice(0, 2)));
+
+    /* ---- 6 ---- */
+    const own = P.landingPage("abcd-efgh", "nxx", null).replace(/\/\*[\s\S]*?\*\//g, "");
+    const low = [...own.matchAll(/([^{}]*(?:\.otabs|\.lookset|\.salt-segment)[^{}]*)\{([^}]*)\}/g)].filter((m) => /min-height\s*:\s*(?!\s)(?!44px|var\(--salt-tap\))/.test(m[2]) || /(?:^|;)\s*height\s*:/.test(m[2]));
+    ok(low.length === 0, "no rule of the page lowers a slider's option under 44px: " + J(low.map((m) => m[0].slice(-80))));
+  } finally {
+    for (const w of wins) try { w.close(); } catch (e) { /* closed */ }
+  }
+}

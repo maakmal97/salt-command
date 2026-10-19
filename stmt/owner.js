@@ -134,6 +134,7 @@ export const OWNER_JS = `
       b.setAttribute('aria-selected', on?'true':'false');
       /* a strip scrolls sideways on a narrow screen: the part he is in is brought into view */
       var sp=b.parentNode; if(on&&sp.scrollWidth>sp.clientWidth) sp.scrollLeft=Math.max(0,b.offsetLeft-sp.offsetLeft-12); });
+    [].forEach.call(document.querySelectorAll('.aparts.salt-segment'),segSync);
     sweep();
     if(placeNow==='orders'&&moved2&&makerData) paintOrdStatus();
     say('');

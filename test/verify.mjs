@@ -48234,6 +48234,11 @@ await (async () => {
   await (await import("./counter-c-desk-slider.mjs")).run({ ok, master: process.env.SALT_MASTER || FROZEN_MASTER });
 })();
 
+section("Counter Batch C: the Counter's Look row, Orders tabs and Salt Admin's Record strip are the slider; the strips that do not fit a phone stay pills (P11)");
+await (async () => {
+  await (await import("./counter-c-counter-slider.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });

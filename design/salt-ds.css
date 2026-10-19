@@ -1414,7 +1414,7 @@ label.salt-field__label {
   border-radius: var(--salt-radius-pill);
   min-width: 0;
   min-height: 44px;
-  padding: 0 10px;
+  padding: 0 6px;   /* 10px until 1.9.2: "Next 30 days" in three columns at a phone's 358px wants 6 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

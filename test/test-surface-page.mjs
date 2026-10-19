@@ -98,7 +98,7 @@ export async function run({ ok, pageWork }) {
       "A write that went through in one pane is told on the channel, and the other pane re-reads at once: " + JSON.stringify([before, A.seen.paths.filter((p) => p === "GET /all/test/c/orders").length]));
 
     /* ---- 3: storage, over a sign-in and a sign-out (two taps), which drops this phone's remembered account and seen marks */
-    B.d.querySelector('button.salt-ghost[data-look="night"]').click();   /* a look chosen here is this pane's own */
+    B.d.querySelector('button.salt-segment__opt[data-look="night"]').click();   /* a look chosen here is this pane's own */
     B.d.getElementById("lock").click(); B.d.getElementById("lock").click();
     await until(() => !B.d.getElementById("gate").hidden, 40);
     ok(B.seen.sets.length > 0 && B.seen.writes.length > B.seen.sets.length && B.seen.writes.every((k) => k.indexOf("salt-test:") === 0) && B.w.localStorage.getItem("salt-stmt-seen") === "real-phone" && B.w.localStorage.getItem("salt-look") === "tide",

@@ -112,6 +112,8 @@ export const RECIPE_HEADS = [
      and the glance. Carried before the page uses them, so each part of the batch changes markup and never this list. */
   "/* ---- Root ---- */", "/* ---- Brand title ---- */", "/* ---- Status glyph:", "/* ---- Steps, marked:", "/* ---- Notice:",
   "/* ---- Ledger list, receipt:", "/* ---- Band:", "/* ---- Empty state:", "/* ---- Glass card, link:", "/* ---- Pin:", "/* ---- Glance:",
+  /* COUNTER BATCH C (20 Oct 2026, salt-ds 1.9): the slider, his pick of three, for a choice of two to six that fits a phone */
+  "/* ---- Segment (",
 ];
 export function siteRecipes() {
   const css = readFileSync(join(REPO, "design", "salt-ds.css"), "utf8");

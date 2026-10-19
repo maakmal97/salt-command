@@ -38,7 +38,7 @@
  {
   "name": "a strip is no longer the system's tabs",
   "file": "stmt/page.js",
-  "find": "'<div class=\"salt-tabs aparts' + cls + '\"",
+  "find": "'<div class=\"' + (seg ? \"salt-segment\" : \"salt-tabs\") + ' aparts' + cls + '\"",
   "replace": "'<div class=\"aparts' + cls + '\""
  },
  {
@@ -50,8 +50,8 @@
  {
   "name": "a part's tab is no tab",
   "file": "stmt/page.js",
-  "find": "<button type=\"button\" class=\"salt-tabs__pill\" role=\"tab\" data-part=\"",
-  "replace": "<button type=\"button\" class=\"salt-tabs__pill\" data-part=\""
+  "find": "+ '\" role=\"tab\" data-part=\"' + k",
+  "replace": "+ '\" data-part=\"' + k"
  },
  {
   "name": "a part's tab loses its act",
