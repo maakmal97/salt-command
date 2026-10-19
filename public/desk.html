@@ -87,7 +87,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="1daabcdca8af494f";
+var SALT_BUILD_ID="256d372f179fe684";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10322,7 +10322,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1177","d":"20 Oct 2026","t":"THE SHADOW BOOK IS PROVED TO RESTORE TO AN EARLIER FOLD","n":["<b>THE BOOK CAN BE PUT BACK AS IT STOOD AT AN EARLIER FOLD</b>, and that is now proved on a test copy of it, never on the live one: the test loads an earlier fold's book and the latest, restores to the first and reads it back against git there, then restores forward and reads it back again. It runs by hand from Actions (Book recovery test).","<b>EVERY FOLD NOW LOGS THE LIVE BOOK'S RESTORE POINT</b>, so a repair by hand lands exactly on a fold. Restoring the live Book has no button: it is a hand step, his yes first, written up in the desk's docs."]}];
+const evolution=[{"v":"v1178","d":"20 Oct 2026","t":"THE BOOK'S RECOVERY TEST READS THE LIVE BOOK'S REACH","n":["<b>THE RECOVERY TEST NOW READS HOW FAR BACK THE LIVE BOOK CAN GO</b>, a minute after its first load, because the platform refuses the first load's own moment as before the database existed. A refusal is said in the test's line instead of failing it unexplained. The restore itself already passed on the live test copy at v1177."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10470,7 +10470,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='20 Oct 2026, 02:06 KL';
+const LAST_UPDATED='20 Oct 2026, 02:24 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
