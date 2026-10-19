@@ -1,5 +1,23 @@
 [
  {
+  "v": "v1176",
+  "d": "20 Oct 2026",
+  "t": "ONE OIL PURCHASE FROM SP7-PUD, 50 UNIT",
+  "n": [
+   "<b>ONE OIL PURCHASE FOLDED.</b> The row is a purchase from SP7-PUD dated 19 Oct: 50 unit of oil for RM380, RM13 freight, RM393 cash, paid and received in full the same day. Approved by Counter Admin and appended to purchases with its note. It matches the 50 unit tier quoted on 23 Sep at RM380 and the party's median of RM7.6 a unit.",
+   "<b>WHAT WAS UNUSUAL AND WHAT THE INVENTORY DID.</b> The drafter flagged that RM393 was paid on an order of RM380. The RM13 difference is the freight on the row, so the figures answer the flag. The 50 unit of oil landed on 19 Oct and is the only move in this fold. Salt stock, stated at 15.39, is not touched."
+  ]
+ },
+ {
+  "v": "v1175",
+  "d": "20 Oct 2026",
+  "t": "ONE SALT SALE TO CM4-TO-R, 5 UNITS",
+  "n": [
+   "<b>FOLDED: ONE NEW SALE.</b> A sale of 5 units of salt to CM4-TO-R on 19 Oct, RM457 on the goods plus RM18 delivery, paid and delivered the same day. It is booked as R2 via CM4-TO. The party has no history on the roster, so the drafter's comparison with CM4-TO's usual RM56 a unit stands as the only benchmark. The goods sit below the ask total and above the floor total.",
+   "<b>INVENTORY.</b> Salt moves down by 5 units. The cost of RM290 is the drafter's COGS at RM58 a unit and the fold keeps it. The stated stock cost of RM56 is not changed by a sale."
+  ]
+ },
+ {
   "v": "v1174",
   "d": "20 Oct 2026",
   "t": "THE COUNTER, BATCH B: THE BASKET, ORDER AGAIN, THE WAY ON PRICES AND HOME'S START TILES",
