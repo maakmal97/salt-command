@@ -65,8 +65,11 @@ export async function page({ ok }) {
     const joins = [...d.querySelectorAll("#hPool [data-pool-join]")].map((b) => b.getAttribute("data-pool-join"));
     ok(joins.join() === P1.id && text(d.querySelector('[data-pool-join]')) === W.EN["hp.join"] && !row(P2.id).querySelector("button") && !row(P3.id).querySelector("button") && !row(P4.id).querySelector("button"),
       "Join is the open pool's one action: a pool they are in, a closed one, and one they are not in that has closed draw none: " + JSON.stringify(joins));
+    /* 19 Oct 2026: whole words, so "price" is not a product, read off the card with a space at every tag so a word alone in
+       its element still stands apart */
+    const spaced = d.getElementById("hPool").innerHTML.replace(/<[^>]*>/g, " ");
     const all = text(d.getElementById("hPool")), bare = d.getElementById("hPool").cloneNode(true);
-    ok(!/salt|oil|candy|rice|ambassador|titanium|platinum|gold|silver|bronze|desk|command/i.test(all.replace(/Cube/g, "")) && !/—/.test(all) && row(P1.id).querySelector("svg.psym"),
+    ok(!/\b(salt|oil|candy|rice|ambassador|titanium|platinum|gold|silver|bronze|desk|command)\b/i.test(spaced.replace(/Cube/g, "")) && !/—/.test(all) && row(P1.id).querySelector("svg.psym"),
       "the card names no product, no level and no brand, and carries the mark: " + JSON.stringify(all.slice(0, 120)));
     row(P2.id).click();
     ok(await wait(() => !!d.querySelector('.oscreen[data-order="' + mine.id + '"]')), "a row they are in opens their order");
