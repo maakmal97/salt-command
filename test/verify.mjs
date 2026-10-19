@@ -21731,7 +21731,9 @@ await (async () => {
     const rfields = [...new Set(rows91.filter((r) => r.reward).flatMap((r) => Object.keys(r.reward)))];
     ok(snap91.products.length >= 1 && rows91.length >= 6 && fields.every((f) => ASSOC_FIELDS.includes(f)) && rfields.every((f) => REWARD_FIELDS.includes(f)),
       "one row per associate per book, on the whitelist and nothing else: " + JSON.stringify(fields));
-    ok(!/margin|profit|floor|cogs/i.test(JSON.stringify(snap91)), "and not one of the seller's words is in it");
+    /* 19 Oct 2026: a word or a part of a camelCase name, never letters inside one */
+    const seller91 = (s) => (s.match(/[A-Za-z]+/g) || []).some((w) => w.split(/(?<=[a-z])(?=[A-Z])/).some((p) => /^(margins?|profits?|floors?|cogs)$/i.test(p)));
+    ok(!seller91(JSON.stringify(snap91)) && seller91('"floorRM"') && !seller91("marginal profitable"), "and not one of the seller's words is in it");
     const roster91 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")).roster;
     ok(rows91.every((r) => roster91.includes(r.id)) && rows91.every((r) => typeof r.departed === "boolean")
       && !/reason|memorial|note/i.test(JSON.stringify(snap91)),
