@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1181",
+  "d": "20 Oct 2026",
+  "t": "THREE STOCK COUNTS ON 20 OCT: OIL, CANDY AND RICE ALL SHORT",
+  "n": [
+   "<b>THREE COUNTS FOLDED, ALL SHORT.</b> Oil was counted at 45 unit against 50 on the book (-5), candy at 6 against 11 (-5) and rice at 15 against 24 (-9). Each was decided by Counter Admin. The dossier gives no reason for any gap, and none is offered here.",
+   "<b>WHAT THE INVENTORY DID.</b> Each count wins over the ledger, so the stated stock for oil, candy and rice is reset to the counted figure and COUNT_ON for each moves to 20 Oct 2026. The gaps book as shrinkage across every unit sold. Salt was not counted and stays as it was."
+  ]
+ },
+ {
   "v": "v1180",
   "d": "20 Oct 2026",
   "t": "OIL COUNT: 3.5 UNITS ON HAND AGAINST 50 ON THE BOOK",

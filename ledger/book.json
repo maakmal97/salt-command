@@ -69,17 +69,17 @@
     "oil": {
       "qty": 5,
       "costPerKg": 7.666666666666667,
-      "stated": 3.5
+      "stated": 45
     },
     "candy": {
       "qty": 0,
       "costPerKg": null,
-      "stated": 11
+      "stated": 6
     },
     "rice": {
       "qty": 0,
       "costPerKg": null,
-      "stated": 24
+      "stated": 15
     },
     "spare": {
       "qty": 0,
@@ -91,8 +91,8 @@
   "COUNT_ON": {
     "salt": "2026-10-03",
     "oil": "2026-10-20",
-    "candy": "2026-10-06",
-    "rice": "2026-10-06",
+    "candy": "2026-10-20",
+    "rice": "2026-10-20",
     "spare": null
   },
   "COUNTS": [
@@ -121,7 +121,10 @@
     {"product":"oil","date":"2026-10-06","qty":0,"was":20,"drift":-20},
     {"product":"candy","date":"2026-10-06","qty":14,"was":14,"drift":0},
     {"product":"rice","date":"2026-10-06","qty":32,"was":37,"drift":-5},
-    {"product":"oil","date":"2026-10-20","qty":3.5,"was":50,"drift":-46.5}
+    {"product":"oil","date":"2026-10-20","qty":3.5,"was":50,"drift":-46.5},
+    {"product":"oil","date":"2026-10-20","qty":45,"was":50,"drift":-5},
+    {"product":"candy","date":"2026-10-20","qty":6,"was":11,"drift":-5},
+    {"product":"rice","date":"2026-10-20","qty":15,"was":24,"drift":-9}
   ],
   "purchases": [
     {"date":"2026-06-27","qty":12.5,"total":800,"supplier":"SF6-KLC","status":"paid","rid":"p001"},
@@ -932,7 +935,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-19T19:57:31.369Z",
+  "QUEUE_COMMITTED": "2026-10-19T19:58:35.042Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},
@@ -1127,6 +1130,9 @@
       "paidSplit: cash landed either side of the 28 Jul count; RM200 inside it, the rest after. Without the split the walk double-counted the RM200."
     ],
     "PROD_OPENING": [
+      "COUNTED AT v1181 on 2026-10-20: the rice inventory held 15 against 24 on the roll, a difference of -9. A COUNT AND NOT A ROLL, so COUNT_ON.rice moves to 2026-10-20. <b>COUNT OF RICE ON 20 OCT: 15 UNIT AGAINST 24 ON THE BOOK.</b> The gap is -9 unit, the largest of the three. The previous count was on 6 Oct, per the drafter. Decided by Counter Admin. No money moves and the row carries no cost. The drafter flagged the -9 as unaccounted for, and the figures do not explain it: the dossier gives no cause, only that the count wins and the gap books as shrinkage. The stated rice inventory is set to 15 and COUNT_ON for rice moves to 20 Oct 2026. The floors stay at floor1 5, floor2 10, floor125 45 and ask1 8. Self-use moves from 17 to 26. Nothing is left outstanding.",
+      "COUNTED AT v1181 on 2026-10-20: the candy inventory held 6 against 11 on the roll, a difference of -5. A COUNT AND NOT A ROLL, so COUNT_ON.candy moves to 2026-10-20. <b>COUNT OF CANDY ON 20 OCT: 6 UNIT AGAINST 11 ON THE BOOK.</b> The gap is -5 unit. The previous count was on 6 Oct, per the drafter. Decided by Counter Admin. No money moves and the row carries no cost. The drafter flagged the -5 as unaccounted for, and the figures do not explain it: the dossier gives no cause, only that the count wins and the gap books as shrinkage. The stated candy inventory is set to 6 and COUNT_ON for candy moves to 20 Oct 2026. The floors stay at floor1 45, floor2 85, floor125 525 and ask1 60. Self-use moves from 1 to 6. Nothing is left outstanding.",
+      "COUNTED AT v1181 on 2026-10-20: the oil inventory held 45 against 50 on the roll, a difference of -5. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-20. <b>COUNT OF OIL ON 20 OCT: 45 UNIT AGAINST 50 ON THE BOOK.</b> The gap is -5 unit. The previous count was on 6 Oct, per the drafter. Decided by Counter Admin. No money moves and the row carries no cost. The drafter flagged the -5 as unaccounted for, and the figures do not explain it: the dossier gives no cause, only that the count wins and the gap books as shrinkage. The stated oil inventory is set to 45 and COUNT_ON for oil moves to 20 Oct 2026. The floors stay at floor1 10, floor2 20, floor125 100 and ask1 10. Self-use moves from 190.5 to 149. Nothing is left outstanding.",
       "COUNTED AT v1180 on 2026-10-20: the oil inventory held 3.5 against 50 on the roll, a difference of -46.5. A COUNT AND NOT A ROLL, so COUNT_ON.oil moves to 2026-10-20. <b>OIL COUNT ON 20 OCT: 3.5 UNITS COUNTED AGAINST 50 ON THE BOOK.</b> The last oil count was on 6 Oct. The difference is -46.5 units, and the dossier gives no reason for it. Approved by Counter Admin. The count wins over the ledger, so the stated oil inventory is set to 3.5 and the oil count date moves to 20 Oct. The drafter flagged the -46.5 units as unaccounted for, to be booked as shrinkage across every unit sold. The figures confirm the gap but do not explain it. The floors move as follows: floor1 stays at 10, floor2 at 20, floor125 at 100 and ask1 at 10, while self-use rises from 144 to 190.5. No price or party is attached, so there is no cost on this row and nothing is left outstanding.",
       "ROLLED AT v1176 (oil): 50 unit from SP7-PUD on 2026-10-19, so 0 plus 50 is 50. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
       "ROLLED AT v1113 (oil): 10 unit to CS6-PER on 2026-10-15, so 10 less 10 is 0. A ROLL AND NOT A COUNT; COUNT_ON is untouched.",
