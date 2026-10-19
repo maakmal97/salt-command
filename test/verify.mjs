@@ -40249,7 +40249,8 @@ await (async () => {
   };
   /* the system's class names and the app's own name are not the book's word */
   const bare = (D) => D.getElementById("pHome").outerHTML.replace(/salt-[a-z_-]+/g, "").replace(/Salt Counter/g, "");
-  const words = /salt|oil|Gold|Silver|Platinum|Titanium|Ambassador/i;
+  /* 19 Oct 2026: whole words, so toilet or Golden, or a random id, is not a product or a level */
+  const words = /\b(salt|oil|gold|silver|platinum|titanium|ambassador)\b/i;
   for (const fresh of [false, true]) {
     const { W, D } = await open(fresh);
     try {
