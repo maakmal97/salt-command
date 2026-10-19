@@ -67,10 +67,11 @@ export async function run({ ok }) {
     "the heading and the sentence hold 4.5:1 on the ground and the ring 3:1: " + [ratio(tide.salt, tide.obsidian), ratio(tide["mist-light"], tide.obsidian), ratio(tide.brass, tide.obsidian)].map((x) => x.toFixed(2)).join(" "));
   ok(/<p>Back on 13 Oct 2026 at 00:01<\/p>/.test(await html({ MAINTENANCE_UNTIL: "2026-10-12T16:01:00Z" }, now).text()), "a window that ends on another day says so on the page");
 
+  /* 19 Oct 2026: whole words, so a CSS counter-reset, a salt- recipe class or a word such as desktop is not a name */
   /* nothing a stranger is handed names the app, the desk, a product, a level or a shape (the page's whole source, its comments included) */
   const O = await import("../src/orders.js");
   const words = body.replace(/<[^>]*>/g, " ");
-  ok(!O.wordsIn(words, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS)).length && !O.siteWords(words) && !/salt|command|counter|desk/i.test(body)
+  ok(!O.wordsIn(words, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS)).length && !O.siteWords(words) && !/\b(salt|command|counter|desk)\b(?![-(])/i.test(body)
     && !Object.values(PG.PSHAPE).some((s) => new RegExp("\\b" + s + "\\b", "i").test(words)),
     "and it names no brand, product, shape or level, in what it says or in its source: " + JSON.stringify(words.replace(/\s+/g, " ").trim().slice(0, 120)));
 
