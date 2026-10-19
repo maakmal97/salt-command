@@ -1,0 +1,9 @@
+[
+ {"name":"the bar never reads Live","file":"stmt/page.js","find":"live.innerHTML='<i></i><span>'+(on?'Live':'Offline')+'</span>';","replace":"live.innerHTML='<i></i><span>Offline</span>';"},
+ {"name":"the dot is never lit","file":"stmt/page.js","find":"live.className='alive '+(on?'on':'off');","replace":"live.className='alive off';"},
+ {"name":"the open status is never shown","file":"stmt/page.js","find":"      open.hidden=false;\n","replace":""},
+ {"name":"open says no time","file":"stmt/page.js","find":"h.open?'Open'+(w?' until '+w:'')","replace":"h.open?'Open'"},
+ {"name":"closed says no day","file":"stmt/page.js","find":":'Closed'+(w?', opens '+w:'');","replace":":'Closed';"},
+ {"name":"a failed read stays Live","file":"stmt/page.js","find":"      catch(e){ paint(false,last); }\n","replace":"      catch(e){ paint(true,last); }\n"},
+ {"name":"the bar is not read again on return","file":"stmt/page.js","find":"document.addEventListener('visibilitychange',function(){ if(!document.hidden) read(); });","replace":""}
+]
