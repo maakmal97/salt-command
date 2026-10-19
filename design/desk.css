@@ -193,8 +193,8 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .byecard .q{color:var(--salt-brass);}
 
 /* ---- 6. THE PARTS STRIP AND THE SWITCHERS: the TabStrip pill, the active one in glass ---- */
-.vnav{gap:8px;margin:0 0 16px;}
-/* the parts strip is the system's .salt-tabs__pill (22 Sep 2026), its open pill read off aria-selected */
+.vnav{margin:0 0 16px;max-width:560px;}
+/* the parts strip is the system's slider, .salt-segment (20 Oct 2026; its pills since 22 Sep 2026), its open part read off aria-selected */
 .viewsw{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-radius:999px;padding:3px;}
 .viewsw button{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-mist);border-radius:999px;}
 .viewsw button.on{background:color-mix(in srgb, var(--salt-salt) 8%, transparent);color:var(--salt-salt);}
@@ -758,8 +758,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
    ghosts (the system's recipe, 44px both ways, the held one read off aria-pressed), side by side. The sheet is the system's Sheet
    with its tiles as Option faces; the desk adds the swatch and the layering, since the desk's floating buttons sit at 96 and 97
    and the sheet must lie over them. ---- */
-.look-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;}
-.look-switch .salt-ghost{padding-left:8px;padding-right:8px;}
+.look-switch{margin-top:10px;}   /* the system's slider since 20 Oct 2026 */
 .look-scrim{z-index:120;}
 .look-sheet{z-index:121;}
 .look-tile{flex-direction:column;align-items:stretch;gap:var(--salt-space-3);min-height:128px;}

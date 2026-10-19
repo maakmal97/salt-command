@@ -87,7 +87,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="5e780fd701a70513";
+var SALT_BUILD_ID="def3d39e37414b67";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -672,10 +672,7 @@ details.obsec>summary .ct.zero{color:var(--dim);}
    lead, which on a 7,000px lead is the same as losing them: the Network sat closed under the
    whole of Customers. A strip of pills at the top of every view names every part it holds,
    the rail lists the active view's parts beneath it, and one part shows at a time. ============ */
-.vnav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;}
-.vpill{font:inherit;font-size:12px;font-weight:700;letter-spacing:.2px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:var(--salt-obsidian);color:var(--mut);cursor:pointer;transition:color .12s,border-color .12s;}
-.vpill:hover{color:var(--ink);}
-.vpill.on{border-color:var(--acc,var(--gold));color:var(--ink);background:color-mix(in srgb, var(--salt-salt) 7%, transparent);}
+/* 20 Oct 2026: the strip is the system's slider (.salt-segment); its own pill rules retired with the pills */
 .subs{display:none;margin:-1px 0 7px 12px;padding-left:9px;border-left:1px solid var(--line);}
 .tab.on+.subs{display:block;}
 .sub{display:block;width:100%;text-align:left;font:inherit;font-size:11.5px;font-weight:600;color:var(--dim);background:none;border:1px solid transparent;padding:4px 8px;border-radius:7px;cursor:pointer;}
@@ -1528,7 +1525,6 @@ body.navopen .navveil{opacity:1;pointer-events:auto;}
    checkbox rows 21, Pricing's "If it will not print" 19 tall, Enter's None and All 40 wide (their width rule was
    the phone's alone) and the Whiteboard's observation rows 42 tall. A summary keeps its marker, so it is raised
    by its line, not made a flex row. The rail's parts are the design system's recipe (D4, salt-ds). */
-.vpill{min-height:var(--tap);display:inline-flex;align-items:center;}
 .lsb{min-width:var(--tap);justify-content:center;}
 .edx{background:none;border:none;color:var(--dim);font-size:19px;line-height:1;cursor:pointer;
   min-width:var(--tap);min-height:var(--tap);display:inline-flex;align-items:center;justify-content:center;}
@@ -2988,6 +2984,8 @@ label.salt-field__label {
 .salt-segment__opt--active, .salt-segment__opt[aria-selected="true"], .salt-segment__opt[aria-checked="true"],
 .salt-segment__opt--active:hover, .salt-segment__opt[aria-selected="true"]:hover, .salt-segment__opt[aria-checked="true"]:hover { color: var(--salt-salt); }
 .salt-segment__opt:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+/* an option that cannot be chosen now (Tide while it is off) greys as a ghost does, and takes no hover */
+.salt-segment__opt:disabled, .salt-segment__opt:disabled:hover { color: var(--salt-mist); opacity: 0.45; cursor: not-allowed; }
 .salt-segment__count { color: var(--salt-brass); margin-left: 6px; }   /* copper is 4.47:1 on Night's thumb */
 @media (prefers-reduced-motion: reduce) {
   .salt-segment::before { transition: none; }
@@ -4340,8 +4338,8 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .byecard .q{color:var(--salt-brass);}
 
 /* ---- 6. THE PARTS STRIP AND THE SWITCHERS: the TabStrip pill, the active one in glass ---- */
-.vnav{gap:8px;margin:0 0 16px;}
-/* the parts strip is the system's .salt-tabs__pill (22 Sep 2026), its open pill read off aria-selected */
+.vnav{margin:0 0 16px;max-width:560px;}
+/* the parts strip is the system's slider, .salt-segment (20 Oct 2026; its pills since 22 Sep 2026), its open part read off aria-selected */
 .viewsw{background:var(--salt-glass-faint);border-color:var(--salt-line-faint);border-radius:999px;padding:3px;}
 .viewsw button{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--salt-mist);border-radius:999px;}
 .viewsw button.on{background:color-mix(in srgb, var(--salt-salt) 8%, transparent);color:var(--salt-salt);}
@@ -4905,8 +4903,7 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
    ghosts (the system's recipe, 44px both ways, the held one read off aria-pressed), side by side. The sheet is the system's Sheet
    with its tiles as Option faces; the desk adds the swatch and the layering, since the desk's floating buttons sit at 96 and 97
    and the sheet must lie over them. ---- */
-.look-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;}
-.look-switch .salt-ghost{padding-left:8px;padding-right:8px;}
+.look-switch{margin-top:10px;}   /* the system's slider since 20 Oct 2026 */
 .look-scrim{z-index:120;}
 .look-sheet{z-index:121;}
 .look-tile{flex-direction:column;align-items:stretch;gap:var(--salt-space-3);min-height:128px;}
@@ -4944,9 +4941,9 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
     <div class="railfoot salt-rail__foot">
     </div>
     <!-- 11 Oct 2026: the theme, kept on this device (lookSet). Two ghosts, the held one aria-pressed; Tide until one is chosen. -->
-    <div class="look-switch" role="group" aria-label="Theme">
-      <button type="button" class="salt-ghost" data-look="night" aria-pressed="true">Night</button>
-      <button type="button" class="salt-ghost" data-look="tide" aria-pressed="false" disabled>Tide</button>
+    <div class="look-switch salt-segment" role="group" aria-label="Theme" style="--n:2;--i:0">
+      <button type="button" class="salt-segment__opt salt-segment__opt--active" data-look="night" aria-pressed="true">Night</button>
+      <button type="button" class="salt-segment__opt" data-look="tide" aria-pressed="false" disabled>Tide</button>
     </div>
     <!-- 18 Oct 2026, his word: this device's alerts left Site orders for the rail, beside the theme (ordAlertDraw). -->
     <div class="rail-alert" id="ordAlert" role="group" aria-label="Alerts"></div>
@@ -21994,7 +21991,7 @@ const LOOK_KEY='salt-look';
 const THEME_PARTS=new Set(['today','overview','forward','receivables','financials','inventory','sourcing','pricing','concentration','network','map','ledger','analysis']);
 function lookNow(){return document.documentElement.getAttribute('data-theme')==='night'?'night':'tide';}
 function lookStore(){try{const v=localStorage.getItem(LOOK_KEY);return v==='night'||v==='tide'?v:'';}catch(e){return null;}}   /* '' nothing chosen, null unreadable */
-function lookMark(){document.querySelectorAll('.look-switch [data-look]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.look===lookNow())));}
+function lookMark(){document.querySelectorAll('.look-switch [data-look]').forEach((b,i)=>{const on=b.dataset.look===lookNow();b.setAttribute('aria-pressed',String(on));b.classList.toggle('salt-segment__opt--active',on);if(on)b.parentNode.style.setProperty('--i',String(i));});}
 function lookRedraw(){
   try{chartTheme();if(typeof curTab==='undefined'||!THEME_PARTS.has(partOf(curTab)))return;render();}
   catch(e){try{console.error('lookRedraw threw',e);}catch(_){}}
@@ -22010,9 +22007,11 @@ function renderNow(late){recompute();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
   const gen=++LATE_GEN;   /* F3: this render owns the later work from here; an earlier render's is cancelled. Taken after the guards: a render that draws nothing cancels nothing */
-  const part=partOf(V.id), all=[V.lead].concat(V.parts);
-  el.innerHTML=(all.length>1?`<div class="vnav" role="tablist">${all.map(p=>`<button class="vpill salt-tabs__pill${p===part?' on':''}" role="tab" aria-selected="${p===part}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('')}</div>`:'')
+  const part=partOf(V.id), all=[V.lead].concat(V.parts), at=Math.max(0,all.indexOf(part)), sig=all.join(' ');
+  const was=el.querySelector('.vnav'), from=was&&was.dataset.sig===sig?(was.style.getPropertyValue('--i')||String(at)):String(at);
+  el.innerHTML=(all.length>1?`<div class="vnav salt-segment" role="tablist" data-sig="${sig}" style="--n:${all.length};--i:${from}">${all.map(p=>`<button class="vpill salt-segment__opt${p===part?' on':''}" role="tab" aria-selected="${p===part}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('')}</div>`:'')
     +`<div class="vpart" data-tab="${part}"></div>`;
+  const nav=el.querySelector('.vnav'); if(nav&&from!==String(at)){void nav.offsetWidth;nav.style.setProperty('--i',String(at));}   /* the thumb slides from the part that was open */
   el.querySelectorAll('.vpill').forEach(b=>{b.onclick=()=>switchTab(b.dataset.s);});
   const vp=el.querySelector('.vpart');
   renderPart(part,vp,late);

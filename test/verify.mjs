@@ -3574,7 +3574,7 @@ section("Views — every part is one tap away (v343)");
 await (async () => {
   const m = readFileSync(FROZEN_MASTER, "utf8");
   ok(/const VIEW_PART=\{\}/.test(m) && /function railSubs\(\)/.test(m), "the master keeps the part each view shows and lists the parts under the rail");
-  ok(/class="vnav"/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
+  ok(/class="vnav[" ]/.test(m) && !/details\.vfold/.test(m), "a view names its parts on a strip; the buried folds are gone");
   /* v732: opening Site orders reads the bulletin and wires its card beside the orders, so the hook is a block */
   const idEngine = (await import("../engine/position.mjs")).default;
   const idEntry = idEngine.addIdEntry({at:"2026-10-01T00:00:00.000Z",code:"CX1-ZED",kind:"customer",parent:null});
@@ -43362,8 +43362,8 @@ await (async () => {
   const ins = (bodyX.match(/class="insight(?=[" ])/g) || []).length;
   ok(ins > 30 && (bodyX.match(/class="insight salt-insight"/g) || []).length === ins && !/\.insight\{/.test(dX),
     "every finding is a .salt-insight and the layer states none (" + ins + ")");
-  ok(/<button class="vpill salt-tabs__pill\$\{p===part\?' on':''\}" role="tab" aria-selected=/.test(mX) && !/\.vpill\{/.test(dX)
-    && /\.salt-tabs__pill\[aria-selected="true"\]/.test(sX),
+  ok(/<button class="vpill salt-segment__opt\$\{p===part\?' on':''\}" role="tab" aria-selected=/.test(mX) && !/\.vpill\{/.test(dX)
+    && /\.salt-segment__opt\[aria-selected="true"\]/.test(sX),
     "the parts strip is the system's, and its open pill is read off aria-selected rather than a second class");
   ok(/<span class="salt-version" id="verChip">/.test(bodyX) && !/\.chip\.ver\{/.test(dX) && /\.salt-version \{[^}]*border: 0;/.test(sX),
     "the version is the system's bare .salt-version");
@@ -48227,6 +48227,11 @@ await (async () => {
 section("Counter Batch C: section and field labels at 600, fields at 0.18em, from salt-ds through the Desk and the Counter (P1)");
 await (async () => {
   await (await import("./counter-c-labels.mjs")).run({ ok });
+})();
+
+section("Counter Batch C: the Desk's strips of two to six options are the sliding segmented control, the thumb moved with the selection (P10)");
+await (async () => {
+  await (await import("./counter-c-desk-slider.mjs")).run({ ok, master: process.env.SALT_MASTER || FROZEN_MASTER });
 })();
 
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");

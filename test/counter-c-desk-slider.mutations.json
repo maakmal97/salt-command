@@ -1,0 +1,12 @@
+[
+ {"name":"the strip stays pills","file":"master/salt_command.html","find":"<div class=\"vnav salt-segment\" role=\"tablist\"","replace":"<div class=\"vnav\" role=\"tablist\""},
+ {"name":"--n fixed at two","file":"master/salt_command.html","find":"style=\"--n:${all.length};--i:${from}\"","replace":"style=\"--n:2;--i:${from}\""},
+ {"name":"the thumb never follows a tap","file":"master/salt_command.html","find":"const nav=el.querySelector('.vnav'); if(nav&&from!==String(at)){void nav.offsetWidth;nav.style.setProperty('--i',String(at));}","replace":"const nav=el.querySelector('.vnav');"},
+ {"name":"the thumb starts on the lead after a redraw","file":"master/salt_command.html","find":"from=was&&was.dataset.sig===sig?(was.style.getPropertyValue('--i')||String(at)):String(at);","replace":"from='0';"},
+ {"name":"an option without the recipe","file":"master/salt_command.html","find":"<button class=\"vpill salt-segment__opt${p===part?' on':''}\"","replace":"<button class=\"vpill${p===part?' on':''}\""},
+ {"name":"the Look switch stays two ghosts","file":"master/salt_command.html","find":"<div class=\"look-switch salt-segment\" role=\"group\" aria-label=\"Theme\" style=\"--n:2;--i:0\">","replace":"<div class=\"look-switch\" role=\"group\" aria-label=\"Theme\">"},
+ {"name":"the held look loses the active class","file":"master/salt_command.html","find":"b.classList.toggle('salt-segment__opt--active',on);if(on)","replace":"if(on)"},
+ {"name":"Tide not greyed","file":"master/salt_command.html","find":"data-look=\"tide\" aria-pressed=\"false\" disabled>Tide","replace":"data-look=\"tide\" aria-pressed=\"false\">Tide"},
+ {"name":"a layer lowers the option","file":"master/salt_command.html","find":".look-switch{margin-top:10px;}","replace":".look-switch{margin-top:10px;}.look-switch .salt-segment__opt{min-height:32px;}"},
+ {"name":"the thumb animates under reduced motion","file":"master/salt_command.html","find":"@media (prefers-reduced-motion: reduce) {\n  .salt-segment::before { transition: none; }\n}","replace":"@media (prefers-reduced-motion: reduce) {\n}"}
+]
