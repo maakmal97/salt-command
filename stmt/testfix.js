@@ -26,6 +26,7 @@
 import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove, joinLive, poolUnits, POOL_ON_KV } from "./orders.js";
 import { refusal } from "./words.js";
 import { numbersOf } from "./paynum.js";
+import { hoursConfig } from "./hours.js";
 
 import { TEST_USER, TEST_LOCKED, TEST_FRESH, TESTS, TEST_USERS, isTest } from "./testusers.js";
 export { TEST_USER, TEST_LOCKED, TEST_FRESH, TESTS, TEST_USERS, isTest };
@@ -138,16 +139,19 @@ export async function exampleReplace(env, u, id, body) {
   return { order };
 }
 
-/** Negotiate: a test account's ask for a price, into its fixture alone, by decidePlace's own rules; a retry once. No
-    desk ever sees it, so the fixture's own cases show what follows (offered, taken, passed, lapsed). */
+/** EVERY PLACE BY A TEST ACCOUNT (the test surface, his answer of 18 Oct 2026; an ask alone before it): into its fixture alone, by
+    decidePlace's own rules over every open order the fixture holds, the page's own count, and the Counter's hours, so a window is
+    taken as on the real road; a retry once. No desk ever sees it, and no mark of the book's is moved. A moved list is answered
+    with the fixture's own sealed list, as placeOrder answers a customer's. */
 export async function examplePlace(env, u, body) {
   const fix = await fixNow(env, u);
   if (!fix) return soon();
   if (!env.ORDERBOOK) return Object.assign(refusal("askStore"), { status: 503 });
   const p = fix.prices || {};
   const result = await exampleAccount(env, u, { actor: "place", body, digest: p.digest || "", steps: p.steps || null,
-    request: body, rid: ridOf(body) || crypto.randomUUID() });
-  return result.ok ? { order: result.order } : { error: result.error, code: result.code, vars: result.vars, status: result.status };
+    hours: await hoursConfig(env), request: body, rid: ridOf(body) || crypto.randomUUID() });
+  return result.ok ? { order: result.order } : Object.assign({ error: result.error, code: result.code, vars: result.vars, status: result.status },
+    result.code === "pricesMoved" ? { status: 409, prices: fix.prices || null } : {});
 }
 
 /** Their claim against a test account, into its fixture: it waits there, as a customer's waits on him; a retry once. */

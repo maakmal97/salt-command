@@ -1,5 +1,5 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose } from "./orders.js";
-import { accountRecord, exampleAccount, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
+import { accountRecord, exampleAccount, examplePlace, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
 
@@ -440,7 +440,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
       const account = await accountRecord(env, op.u);
       if (!account) return json({ ok: false, error: "account not found" }, 404);
-      const result = await placeOrder(env, op.u, body, "desk");
+      /* a test account's order goes to its fixture on this road too, never the book (the test surface, Ask 4) */
+      const result = isTest(op.u) ? await examplePlace(env, op.u, body) : await placeOrder(env, op.u, body, "desk");
       if (!result.order) return json({ ok: false, ...result }, result.status || 400);
       return json({ ok: true, order: customerView(result.order) });
     }

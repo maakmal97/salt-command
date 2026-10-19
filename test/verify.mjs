@@ -18972,9 +18972,9 @@ await (async () => {
       "120 keys cost two bulk reads and nothing a key; no tick is listed or rewritten, and the read writes nothing: "
       + JSON.stringify({ ops: one.log.length, bulk: count(one.log, "bulk"), perKey, lists: one.log.filter((e) => e.op === "list").map((e) => e.prefix), writes: count(one.log, "put") + count(one.log, "delete") }));
     const rounds = new Set(one.log.map((e) => e.after)).size;
-    /* seven since 18 Oct 2026 (the tier names are no longer read; eight since 29 Sep 2026): each of the two test accounts' records is read in the first round */
-    ok(rounds === 2 && one.log.filter((e) => e.after === 0).length === 7,
-      "the heads are read at once and the accounts' keys after them: two rounds, seven reads in the first: "
+    /* eight since 19 Oct 2026 (the third test account; seven since 18 Oct 2026, the tier names no longer read): each test account's record is read in the first round */
+    ok(rounds === 2 && one.log.filter((e) => e.after === 0).length === 8,
+      "the heads are read at once and the accounts' keys after them: two rounds, eight reads in the first: "
       + JSON.stringify({ rounds, first: one.log.filter((e) => e.after === 0).map((e) => e.op + " " + (e.prefix || e.k)) }));
     ok(e1 - e0 === 60 && e2 - e1 === 0 && two.status === 200 && JSON.stringify(two.j.accounts.map((a) => a.qr)) === JSON.stringify(A.map((a) => a.qr)),
       "each account's QR is encoded once an isolate: sixty on the first open, none on the second, and the same codes: "
@@ -20826,11 +20826,13 @@ await (async () => {
   ok(o2.ok && o2.assoc === false && o2.prices.digest === "own-stub" && !o2.card && r2.ok && r2.assoc === false && r2.prices.digest === "real-digest",
     "a fixture sealed for another making of the account is not served, and no other account is ever served one");
 
-  /* Place reads the fixture's list; paid in advance is the desk's at Accept, so Place stamps nothing (V5b2b) */
+  /* THE TEST SURFACE (his answer of 18 Oct 2026, Ask 4): every Place by a test account goes to its fixture, which needs the order book; on
+     the KV road here it is refused, and nothing is written where a real order lives (test/test-surface-place.mjs places into the fixture) */
   const placed = await (await sw.fetch(sj("/orders", { product: "salt", qty: 12.5, mode: "collect", unit: 104, total: 1300, week: "", digest: stored.prices.digest }, S), senv)).json();
-  ok(placed.ok && placed.order.status === "placed" && !("prepay" in placed.order), "an order he places on it is quoted off the fixture's list, and Place stamps nothing about paying in advance: " + JSON.stringify(placed.error || placed.order));
+  const realKeys = (await kv.list({ prefix: "order:" + TU + ":" })).keys.length;
+  ok(placed.ok === false && realKeys === 0, "a Place on the test account never reaches the real orders: with no order book here it is refused, and nothing is written under order: " + JSON.stringify([placed.error, realKeys]));
   const got = await (await sw.fetch(sreq("/orders", { headers: S }), senv)).json(), ids = got.orders.map((o) => o.id);
-  ok(stored.orders.every((o) => ids.includes(o.id)) && ids.includes(placed.order.id) && stored.claims.every((c) => got.claims.some((x) => x.id === c.id))
+  ok(stored.orders.every((o) => ids.includes(o.id)) && stored.claims.every((c) => got.claims.some((x) => x.id === c.id))
     && !got.orders.some((o) => "ledgerKey" in o),
     "its orders are its own and the examples, the claims beside them, as the page is handed any account's: " + ids.length);
   /* ---- EVERY TAP A CUSTOMER HAS ANSWERS AS IT WOULD THEM, on the fixture and nowhere else (his instruction: UAT) ---- */
@@ -20913,8 +20915,8 @@ await (async () => {
   await kv.delete(put.key); await kv.delete(putL.key);
   const without = await reads();
   await kv.put(put.key, fixSaved); await kv.put(putL.key, putL.value);
-  ok(withFix === without && withFix.includes(placed.order.id) && !/-ex[0-9]{2}"/.test(withFix) && !withFix.includes(cl.claim.id),
-    "the desk's reconcile, its claims and the chase read the same with the fixtures as without, after every tap on them: only what he placed himself");
+  ok(withFix === without && !/-ex[0-9]{2}"/.test(withFix) && !withFix.includes(cl.claim.id),
+    "the desk's reconcile, its claims and the chase read the same with the fixtures as without, after every tap on them, a Place included");
 
   /* ---- 5. THE PAGE, signed in to the locked account through the real Worker: the notice read on its session, the lock drawn ---- */
   const { landingPage } = await import("../stmt/page.js");
@@ -21092,7 +21094,9 @@ await (async () => {
     /* UNMADE ON THE ORDER BOOK'S ROAD, its orders go from the book, and another account's stay */
     const sT27 = await O27.mintSession(env27, TU27), sO27 = await O27.mintSession(env27, "aaaa-bbbb");
     const one27 = { product: "salt", qty: 1, mode: "collect", unit: 12, total: 12 };
-    const pT27 = await post27("/orders", Object.assign({}, one27, { rid: "rf27t" }), { "X-Stmt-Session": sT27 });
+    /* a test account's Place goes to its fixture now (the test surface), so a stray order of one in the book, from before, is put there as it stood */
+    const pT27 = await bk27.ns.get(bk27.ns.idFromName("x")).fetch("https://orderbook/place", { method: "POST", body: JSON.stringify({ u: TU27,
+      body: Object.assign({}, one27, { rid: "rf27t-stray-padded" }), rid: "rf27t-stray-padded", digest: "", by: "customer" }) }); void sT27;
     const pO27 = await post27("/orders", Object.assign({}, one27, { rid: "rf27o" }), { "X-Stmt-Session": sO27 });
     const inBook27 = (u) => bk27.db.prepare("SELECT COUNT(*) AS n FROM ord WHERE u = ?").get(u).n + bk27.db.prepare("SELECT COUNT(*) AS n FROM ev WHERE u = ?").get(u).n;
     const had27 = [inBook27(TU27), inBook27("aaaa-bbbb")];
@@ -31052,7 +31056,9 @@ await (async () => {
       if (clock.now() < target) clock.set(target);
     };
     W.rateLimit = false; const tt = await O.mintSession(env, TU), tu = await O.mintSession(env, u); W.rateLimit = true;
-    const t1 = (await call(env, tt, "/orders", place)).b.order.id;
+    /* a test account's Place goes to its fixture now (the test surface), so its stray order in the book, from before, is put there as it stood */
+    const t1 = (await (await bk.ns.get(bk.ns.idFromName("x")).fetch("https://orderbook/place", { method: "POST", body: JSON.stringify({ u: TU,
+      body: Object.assign({ rid: "t1-stray-order-padded" }, place), rid: "t1-stray-order-padded", digest: "", by: "customer" }) })).json()).order.id; void tt;
     await advance(5000);
     const c1 = (await call(env, tu, "/orders", place)).b.order.id;
     await advance(5000);
@@ -48035,6 +48041,11 @@ await (async () => {
 section("Counter test surface P2: one list of test users, and 0000-0002 fresh with room to order (19 Oct 2026)");
 await (async () => {
   await (await import("./test-surface-fixture.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter test surface P3: every test placement into the fixture, on every road, and one open-order count on page and Worker (19 Oct 2026)");
+await (async () => {
+  await (await import("./test-surface-place.mjs")).run({ ok });
 })();
 
 section("Counter maker cancels a paid order: the approver is told, the fold opens one refund");

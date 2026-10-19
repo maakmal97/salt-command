@@ -467,8 +467,9 @@ async function handleCustomer(request, env, p, m, ctx) {
     if (tp.error) return refuse(tp);
     const pb = tp.body;
     if (isTest(u) && pb) delete pb.pin;
-    /* Negotiate: a test account's ask is written into its fixture alone, so no desk ever sees it */
-    const r = isTest(u) && pb && pb.ask === true ? await examplePlace(env, u, pb) : await placeOrder(env, u, pb);
+    /* THE TEST SURFACE (his answer of 18 Oct 2026, Ask 4): EVERY PLACE BY A TEST ACCOUNT, an ask or not, is written into its fixture
+       alone, so no order of theirs reaches the book, its marks or the Desk; with no fixture sealed yet it waits for the publish */
+    const r = isTest(u) ? await examplePlace(env, u, pb) : await placeOrder(env, u, pb);
     /* S4 4.2: a moved list answers 409 with the list as it stands, sealed; the page opens it with the key it holds */
     if (r.error) return refuse(r, "prices" in r ? { prices: r.prices } : {});
     /* filed only once the order is recorded and names it: a refused Place, or a retry answered with an order naming another,
