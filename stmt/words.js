@@ -1028,6 +1028,30 @@ export const EN = {
 
 export const WORDS = { en: EN };
 
+/* THE TEST SURFACE'S SHELL (his answers of 18 Oct 2026), his page at /all/test and nobody else's: kept apart from EN so no customer
+   page carries them. No product word, no roster code, and no name but Salt Counter's. */
+export const TS = {
+  "ts.title": "Practice",
+  "ts.lead": "Three practice accounts. Nothing they do is recorded.",
+  "ts.acct": "Account",
+  "ts.open": "0000-0000, every case",
+  "ts.locked": "0000-0001, locked",
+  "ts.fresh": "0000-0002, fresh",
+  "ts.customer": "Customer",
+  "ts.admin": "Admin",
+  "ts.views": "Views",
+  "ts.reset": "Reset this account",
+  "ts.resetAll": "Reset all",
+  "ts.empty": "Start empty",
+  "ts.ask": "Tap again to clear it",
+  "ts.done": "Reset. Both views read it again.",
+  "ts.emptied": "Started empty. Both views read it again.",
+  "ts.fail": "That did not go through. Try again.",
+  "ts.make": "Make the practice accounts",
+  "ts.none": "Not made yet.",
+  "ts.waiting": "Made. Its examples come with the next publish.",
+};
+
 /** A key's words with its slots filled. A slot's value may be a function of the language the words were found in (a date
  *  says its month in that language). A slot not given stays as written, so a missing one shows rather than vanishes. */
 export function fill(w, s, L) {

@@ -48063,6 +48063,11 @@ await (async () => {
   await (await import("./test-surface-page.mjs")).run({ ok, pageWork });
 })();
 
+section("19 Oct 2026: the test surface's shell at /all/test (P7)");
+await (async () => {
+  await (await import("./test-surface-shell.mjs")).run({ ok });
+})();
+
 section("Counter maker cancels a paid order: the approver is told, the fold opens one refund");
 await (async () => {
   await (await import("./maker-paid-cancel.mjs")).run({ ok });

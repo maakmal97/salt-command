@@ -1,0 +1,20 @@
+[
+ {"name":"the shell frames other origins","file":"stmt/worker.js","find":"connect-src 'self'; frame-src 'self'; style-src","replace":"connect-src 'self'; frame-src *; style-src"},
+ {"name":"a waiting account reads as ready","file":"stmt/worker.js","find":"!(await env.STMT.get(fixKey(t))) ? \"waiting\" : \"ready\"","replace":"\"ready\""},
+ {"name":"the shell is served outside the gate","file":"stmt/worker.js","find":"    /* the test surface's short address: a redirect to /all/test and nothing more, so it serves nothing outside /all's gate */\n","replace":"    if (p === \"/all/test\" && request.method === \"GET\") return new Response(testShell(\"x\", {}), { headers: { \"content-type\": \"text/html\" } });\n"},
+ {"name":"the customer frame keeps the fresh account","file":"stmt/testsurface.js","find":"function reload(){ cv.src='/all/test/c?u='+encodeURIComponent(cur);","replace":"function reload(){ cv.src='/all/test/c?u='+encodeURIComponent(FRESH);"},
+ {"name":"Make shows for every account","file":"stmt/testsurface.js","find":"make.hidden=s!=='none';","replace":"make.hidden=false;"},
+ {"name":"Start empty shows on every account","file":"stmt/testsurface.js","find":"cur=u; empty.hidden=u!==FRESH;","replace":"cur=u; empty.hidden=false;"},
+ {"name":"Reset clears at the first tap","file":"stmt/testsurface.js","find":"if(!t){ btn.textContent=W['ts.ask'];","replace":"if(false){ btn.textContent=W['ts.ask'];"},
+ {"name":"the arm never lets go","file":"stmt/testsurface.js","find":"t=setTimeout(function(){ t=null; btn.textContent=W[word]; }, ARM); return; }","replace":"t=setTimeout(function(){}, ARM); return; }"},
+ {"name":"the views are not read again after a reset","file":"stmt/testsurface.js","find":"if(r.ok&&j&&j.ok){ note(W[done]); reload(); }","replace":"if(r.ok&&j&&j.ok){ note(W[done]); }"},
+ {"name":"Reset all names one account","file":"stmt/testsurface.js","find":"function(){ return {all:true}; }","replace":"function(){ return {u:cur}; }"},
+ {"name":"Start empty resets in full","file":"stmt/testsurface.js","find":"function(){ return {u:FRESH, empty:true}; }","replace":"function(){ return {u:FRESH}; }"},
+ {"name":"an account face is short of 44px","file":"stmt/testsurface.js","find":".ts-accts .salt-option__face{min-width:var(--salt-tap);box-sizing:border-box}","replace":".ts-accts .salt-option__face{box-sizing:border-box}"},
+ {"name":"the views never stand side by side","file":"stmt/testsurface.js","find":".ts-views{display:grid;grid-template-columns:1fr 1fr;gap:16px}","replace":".ts-views{display:block}"},
+ {"name":"the desk shows one view","file":"stmt/testsurface.js","find":".ts-views iframe[hidden]{display:block}","replace":".ts-views iframe[hidden]{}"},
+ {"name":"a tab does not switch the view","file":"stmt/testsurface.js","find":"cv.hidden=!c; av.hidden=c;","replace":"cv.hidden=false; av.hidden=true;"},
+ {"name":"the lead is drawn in a faint colour","file":"stmt/testsurface.js","find":".ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-mist);","replace":".ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-obsidian);"},
+ {"name":"the shell names Salt Account","file":"stmt/words.js","find":"  \"ts.make\": \"Make the practice accounts\",","replace":"  \"ts.make\": \"Make it in Salt Account\","},
+ {"name":"the shell names a product","file":"stmt/words.js","find":"  \"ts.open\": \"0000-0000, every case\",","replace":"  \"ts.open\": \"0000-0000, every case of salt\","}
+]

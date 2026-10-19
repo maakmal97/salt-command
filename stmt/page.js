@@ -1450,7 +1450,7 @@ export function notFoundPage(nonce) { return onePage("nf", nonce); }
    the head, every read in a try), and a page that cannot run one (a guest board, the shut page) stays Tide, since no device's
    choice can be read there. The two grounds are the system's obsidian at each theme; the suite holds them equal to it. */
 const GROUND = { night: "#05080a", tide: "#03141a" };
-const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=\"theme-color\"]');"
+export const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=\"theme-color\"]');"
   + "document.documentElement.setAttribute('data-theme',t);if(m)m.setAttribute('content',t==='night'?'" + GROUND.night + "':'" + GROUND.tide + "');return t;}"
   + "(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();"
   /* the iPhone's saved app marks the root before first paint (navigator.standalone is that app's alone; Android's installed pages have a viewport the screen is not) and
@@ -1460,7 +1460,7 @@ const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=
 /* 18 Oct 2026: THE LIGHT, the system's Aurora as the Desk draws it (tools/stmt-style.mjs carries the recipe), the first thing in the body of the Counter and Salt Account. Not on guestPage (the guest board, the shut page and the 404): their source names no brand, and every salt- class would be one */
 const AURORA = '<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div>'
   + '<div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>';
-const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="tide"><head><meta charset="utf-8">'
+export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="tide"><head><meta charset="utf-8">'
   + '<meta name="google" content="notranslate">'
   + '<meta name="theme-color" content="' + GROUND.tide + '">';
 function guestPage(inner, nonce, title) {

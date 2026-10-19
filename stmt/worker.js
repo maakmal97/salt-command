@@ -39,6 +39,7 @@
  * must never be able to reach the ledger's code even by accident.
  */
 import { landingPage, boardPage, shutPage, notFoundPage, MON3, mtileSvg } from "./page.js";
+import { testShell } from "./testsurface.js";
 import { SW_JS } from "./sw.js";
 import { identity } from "./access.js";
 import { maintenance } from "./maintenance.js";
@@ -1841,6 +1842,16 @@ const worker = {
         }
         const keep = typeof b.keep === "string" && /^[0-9a-f]{64}$/.test(b.keep) ? b.keep : "";
         return json(Object.assign({ ok: true }, await signOutEverywhere(env, u, keep)));
+      }
+      /* THE TEST SURFACE'S SHELL (his answers of 18 Oct 2026): the frame around the two views, and where each test account stands: not
+         made (no record), made and waiting for the publish (no sealed fixture yet), or ready */
+      if (p === "/all/test" && m === "GET") {
+        const state = {};
+        for (const t of TEST_USERS) state[t] = !(await env.STMT.get("u:" + t)) ? "none" : !(await env.STMT.get(fixKey(t))) ? "waiting" : "ready";
+        const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
+        return new Response(testShell(nonce, state), { headers: Object.assign({ "content-type": "text/html; charset=utf-8", "cache-control": "no-store",
+          "content-security-policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; font-src 'self'; "
+            + "connect-src 'self'; frame-src 'self'; style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'" }, HEADERS) });
       }
       if (p === "/all/test") {
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
