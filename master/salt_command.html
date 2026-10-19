@@ -10153,7 +10153,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1166","d":"19 Oct 2026","t":"THE COUNTER'S TEST SURFACE: BOTH VIEWS AT ONCE, ON THE PRACTICE ACCOUNTS ALONE","n":["<b>/ALL/TEST SHOWS THE CUSTOMER AND COUNTER ADMIN SIDE BY SIDE</b>, behind the same two locks as Salt Account. Choose a practice account and both views follow it; a tap in one shows in the other within a moment. From 1080px the views stand side by side, on a phone they are two tabs.","<b>A THIRD PRACTICE ACCOUNT, 0000-0002, IS FRESH</b>: two orders open and room for three more. Tap Make the practice accounts on Salt Account, and the next publish gives it its examples.","<b>EVERY MOVE ON A PRACTICE ACCOUNT STAYS IN ITS EXAMPLES</b>: a Place on any road, and Counter Admin's Accept (with a Pay first switch), offer, Handed over, a close short, Cash and Received. Nothing reaches the book, the Desk's queue or anyone's phone.","<b>RESET PUTS AN ACCOUNT BACK</b> as the last publish left it, after one tap to ask; Reset all does every account, and Start empty clears the fresh one."]}];
+const evolution=[{"v":"v1167","d":"19 Oct 2026","t":"SALT ADMIN, AND ONE BANNER PER EVENT","n":["<b>THE OWNER'S APP IS SALT ADMIN AGAIN</b> (it was Salt Account), one name in every line of copy, Counter Admin included. An installed icon keeps its old name until it is added to the home screen again, which is also the install that takes its notifications.","<b>SALT ADMIN WAKES HIM FOR WHAT WAITS ON HIS DECISION</b>: a new order, a customer's line, a claim, a cancellation, their answer to an offer, rows to approve. Its own worker at /all/sw.js, its own subscriptions, a bell under Shop &gt; This device, asked only from a tap. A tap opens the place that answers it.","<b>SALT DESK ONLY INFORMS</b>: folded and live, a fold refused, the suite red, a refund held, the morning digest. It rings an order banner itself only while no Salt Admin device was reached, so nothing is lost before the bell is on.","<b>MASTER'S SUITE IS GREEN AGAIN UNDER TIDE OFF</b>: two Counter page checks read the served Night, and the needles of the parked Tide sections are skipped while they are parked."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10297,7 +10297,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='19 Oct 2026, 11:33 KL';
+const LAST_UPDATED='19 Oct 2026, 16:28 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
