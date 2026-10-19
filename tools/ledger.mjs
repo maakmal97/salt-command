@@ -70,6 +70,7 @@ const NOT_LEDGER = new Set([
      fields are drawn as money and as units. Presentation of a correction, never a fact about one. */,
   "ALERT_TOPICS" /* v759: which of the desk's wakes this device asks for. A setting on a phone, not a fact. */,
   "SESSION_MEMO", "TOK", "CHART_SEATED", "LED_FIT" /* F1, F2 (19 Oct 2026): what the desk has derived and the tokens it has read, kept between renders; scratch, dropped when an input moves */,
+  "LATE_GEN", "LATE", "WARM_T" /* F3 (19 Oct 2026): the number of the render that owns the later work, the job it left, the pending warm timer; scratch */,
   "VIEWS", "VIEW_OF", "VIEW_ALIAS", "PART_Q", "PART_DRAW", "VIEW_PART" /* v341: the views (six since Enter left, 17 Oct 2026) over the tabs; navigation, not the book */,
   "EDFORM" /* v363: the row editor's form spec. Labels, control kinds and hints for the thirty
      editable attributes: presentation of the book, never the book. It is data-shaped because a

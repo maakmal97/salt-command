@@ -264,6 +264,137 @@ export async function run({ ok }) {
     ok(nf.n > 20 && nf.bad.length === 0, "fmt, fmt0 and units give exactly the text toLocaleString gave, over the awkward values: " + JSON.stringify(nf));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 
+  /* -------------------------------------------------------------------- F3 */
+  {
+    const { w: v } = await openMaster(process.env.SALT_MASTER || undefined, { late: true });   /* a window as the browser has it: the deferral on */
+    const vr = (e) => JSON.parse(String(v.eval("JSON.stringify(" + e + ")")));
+    try {
+      /* the rig: a Chart that counts what it is asked to draw, the frame and the task queue in the test's hands, and the three
+         later steps counted (the draw pass, the table fades, the rail's count) */
+      v.eval(`window.__ch=0;window.__tabs=[];window.__fade=0;window.__nc=0;window.__walks=0;
+        window.Chart=function(c,cfg){window.__ch++;this.canvas=c;this.cfg=cfg;this.destroy=function(){};};window.Chart.register=function(){};
+        window.Chart.defaults={font:{},animation:{},plugins:{tooltip:{},legend:{labels:{}}},elements:{line:{},point:{}}};
+        window.__odp=drawPass;drawPass=function(t,e){window.__tabs.push(t);return window.__odp.apply(this,arguments);};
+        window.__otf=tscrollFadeAll;tscrollFadeAll=function(l){window.__fade++;return window.__otf.apply(this,arguments);};
+        window.__onc=navCounts;navCounts=function(){window.__nc++;return window.__onc.apply(this,arguments);};
+        window.__oa=allActionsNow;allActionsNow=function(){window.__walks++;return window.__oa.apply(this,arguments);};
+        window.__zero=function(){window.__ch=0;window.__tabs=[];window.__fade=0;window.__nc=0;window.__walks=0;};
+        window.__frames=[];window.requestAnimationFrame=function(f){window.__frames.push(f);return window.__frames.length;};
+        window.__tasks=[];window.__realST=window.setTimeout;
+        window.setTimeout=function(f,ms){if(!(ms>0)){window.__tasks.push(f);return -1;}return window.__realST.apply(window,arguments);};
+        window.__frame=function(){var q=window.__frames.splice(0);q.forEach(function(f){f();});};
+        window.__task=function(){var f=window.__tasks.shift();if(f)f();return !!f;};
+        window.__drain=function(){var n=0;while(window.__task()&&n++<200);};`);
+      const seen = () => vr("{charts:__ch,tabs:__tabs,fades:__fade,counts:__nc,frames:__frames.length}");
+      /* settle the page's own open, then count from nothing */
+      v.eval("__frame();__drain();switchTab('network');__frame();__drain();__zero();");
+
+      /* 1. a tap's synchronous path draws no chart, counts no rail and reads no table's width; its text is in the page */
+      const sync = vr(`(function(){switchTab('pricing');var s=document.querySelector('.sec.on');
+        return {charts:__ch,tabs:__tabs,fades:__fade,counts:__nc,frames:__frames.length,text:s.querySelectorAll('.vpart h1,.vpart .dsc,.vpart table').length>0,
+        canvases:s.querySelectorAll('canvas').length,wrapped:s.querySelectorAll('.tscroll').length};})()`);
+      ok(sync.charts === 0 && sync.tabs.length === 0 && sync.counts === 0 && sync.fades === 0 && sync.text && sync.canvases > 0 && sync.wrapped > 0 && sync.frames === 1,
+        "a tap writes the part's text, its canvases and its table wrappers and asks for one frame, and draws no chart, runs no draw pass, counts no rail and reads no table's width: " + JSON.stringify(sync));
+
+      /* 2. nothing runs until a frame has been painted; then each step has a task of its own, in order: charts, fades, count */
+      v.eval("__drain();");
+      const noFrame = seen();
+      ok(noFrame.charts === 0 && noFrame.counts === 0 && noFrame.fades === 0, "the later work waits for a painted frame: queued tasks alone draw, count and fade nothing: " + JSON.stringify(noFrame));
+      v.eval("__frame();");
+      const t0 = seen(); v.eval("__task();");   /* the frame's setTimeout 0 starts the work: the draw pass */
+      const t1 = seen(); v.eval("__task();");   /* the next task: the table fades */
+      const t2 = seen(); v.eval("__task();");   /* the next: the rail's count */
+      const t3 = seen();
+      ok(t0.charts === 0 && t1.charts > 0 && t1.tabs.length === 1 && t1.fades === 0 && t1.counts === 0
+        && t2.fades >= 1 && t2.counts === 0 && t3.counts === 1,
+        "after the frame the charts are drawn in one task, the fades in the next and the rail's count in the one after: " + JSON.stringify([t0, t1, t2, t3]));
+
+      /* 3. a tap on another part before the deferred work runs cancels the stale work: only the last part is drawn, and counted once */
+      v.eval("__zero();switchTab('pricing');switchTab('sourcing');__frame();__drain();");
+      const stale = seen(), cur = vr("curAddr");
+      ok(stale.tabs.length === 1 && stale.tabs[0] === "sourcing" && cur === "sourcing" && stale.counts === 1,
+        "two taps before the frame draw the second part alone and count the rail once; the first's draw pass, fades and count are cancelled: " + JSON.stringify({ stale, cur }));
+
+      /* ... and half way: the first tap's charts are drawn, its fades and count still waiting, and a second tap lands */
+      v.eval("__zero();switchTab('pricing');__frame();__task();");
+      const half = seen();
+      v.eval("switchTab('network');__frame();__drain();");
+      const after = seen();
+      ok(half.tabs.length === 1 && half.counts === 0 && after.tabs.length === 2 && after.tabs[1] === "network" && after.counts === 1,
+        "a tap that lands between the steps of the last one cancels the steps still waiting, and the new part is drawn and counted: " + JSON.stringify({ half, after }));
+
+      /* ... and the part may be gone by the time the frame comes: nothing is drawn onto what is no longer in the page */
+      v.eval("__zero();switchTab('pricing');document.querySelector('.sec.on').innerHTML='';__frame();__drain();");
+      const gone = seen();
+      ok(gone.tabs.length === 0, "a part that has left the page before the frame is not drawn on: " + JSON.stringify(gone));
+
+      /* 4. a render that is not a tap does all of it at once and cancels what a tap had left for later */
+      v.eval("__zero();switchTab('pricing');render();");
+      const all = seen();
+      v.eval("__frame();__drain();");
+      const left = seen();
+      ok(all.tabs.length === 1 && all.counts === 1 && all.fades >= 1 && left.tabs.length === 1 && left.counts === 1,
+        "a render that is not a tap draws, fades and counts at once, and the tap's later work, cancelled by it, then does nothing: " + JSON.stringify({ all, left }));
+
+      /* 5. lateFlush runs what is left now, and only once */
+      v.eval("__zero();switchTab('pricing');lateFlush();lateFlush();__frame();__drain();");
+      const fl = seen();
+      ok(fl.tabs.length === 1 && fl.counts === 1, "lateFlush runs the draw pass, the fades and the count that a tap left, once: " + JSON.stringify(fl));
+
+      /* 6. the ledger sets its kept columns on the tap's own paint, so they do not move after it */
+      const col = vr(`(function(){
+        var sigOf=function(){var w=document.querySelector('.sec.on .ledwrap'),html=w.innerHTML,fonts=(document.fonts&&document.fonts.status)||'loaded',h=0;
+          for(var i=0;i<html.length;i++)h=(h*31+html.charCodeAt(i))|0;return html.length+'|'+h+'|'+fonts+'|'+lookNow()+'|'+(window.innerWidth||0);};
+        var P=CSSStyleDeclaration.prototype,op=P.setProperty,log=[];P.setProperty=function(n,x){log.push(n+'='+x);return op.apply(this,arguments);};
+        var T=DOMTokenList.prototype,oa=T.add;T.add=function(c){if(c==='lmeasure')log.push('measure');return oa.apply(this,arguments);};
+        try{
+          switchTab('ledger');lateFlush();LED_FIT={sig:sigOf(),w:{e:77}};
+          switchTab('network');lateFlush();
+          log.length=0;switchTab('ledger');
+          var painted=log.filter(function(l){return l==='--lc-e=77px';}).length;
+          lateFlush();
+          LED_FIT=null;switchTab('network');lateFlush();log.length=0;switchTab('ledger');
+          var unmeasured=log.filter(function(l){return /^--lc-|^measure$/.test(l);}).length;
+        }finally{P.setProperty=op;T.add=oa;}
+        return {painted:painted,unmeasured:unmeasured};})()`);
+      ok(col.painted === 1 && col.unmeasured === 0, "a ledger drawn again from the markup it was measured on has its columns set on the tap's own paint, and one never measured is not measured before it: " + JSON.stringify(col));
+
+      /* 7. the whole chain runs by itself on the browser's own frame and timers */
+      v.eval(`window.requestAnimationFrame=function(f){return window.__realST.call(window,f,0);};window.setTimeout=window.__realST;`);
+      v.eval("__zero();switchTab('sourcing');");
+      const early = seen();
+      for (let i = 0; i < 100 && vr("__nc") < 1; i++) await new Promise((r) => setTimeout(r, 50));   /* the steps are tasks of the page's own: as long as they take */
+      const ran = seen();
+      ok(early.charts === 0 && early.counts === 0 && ran.tabs.length === 1 && ran.counts === 1,
+        "on the browser's own frame and timers a tap paints first and the charts, the fades and the count follow by themselves: " + JSON.stringify({ early, ran }));
+
+      /* 8. the rail's count is warmed once the desk's reads settle, so the first tap after them finds it kept */
+      v.eval(`window.__tasks=[];window.requestAnimationFrame=function(f){window.__frames.push(f);return 1;};`);
+      v.eval("switchTab('network');lateFlush();SESSION_MEMO=null;railCounts._c=null;__zero();window.SALT_CLOUD=true;");
+      const cold = vr("(function(){switchTab('sourcing');lateFlush();return __walks;})()");   /* the flip with nothing warmed: the tap walks */
+      v.eval("switchTab('network');lateFlush();window.SALT_CLOUD=false;switchTab('sourcing');lateFlush();window.SALT_CLOUD=true;warmSoon();");
+      await new Promise((r) => setTimeout(r, 650));
+      const warm2 = vr("(function(){__zero();switchTab('network');lateFlush();return __walks;})()");
+      ok(cold >= 1 && warm2 === 0, "after the desk learns it is the cloud the rail's count is read once it settles, so the next tap walks no book (a tap with nothing warmed walks): " + JSON.stringify({ cold, warm: warm2 }));
+
+      /* and each read that settles asks for it: the restock date, the hushes, and the waiting list the drafts and orders reads move */
+      const reads = {
+        expLoad: [`window.fetch=function(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({ok:true,expected:{}});}});};`, `expLoad(true)`],
+        hushLoad: [`window.fetch=function(){return Promise.resolve({ok:true,status:200,json:function(){return Promise.resolve({ok:true,hush:{}});}});};`, `hushLoad(true)`],
+        waitRecount: [``, `(window.__ko=ORD_OPEN,ORD_OPEN=[{id:'zt9',status:'placed',total:100,delivery:0,paid:0,at:new Date().toISOString(),code:'ZT9-TST'}],ordWaitWas=ordActs().map(function(a){return a.kind+':'+(a.o&&a.o.id);}).join(','),waitRecount())`],
+      };
+      for (const k of Object.keys(reads)) {
+        v.eval(`window.SALT_CLOUD=true;${reads[k][0]};switchTab('network');lateFlush();`);
+        const walked = vr(`(function(){__zero();${reads[k][1]};return __walks;})()`);
+        await new Promise((r) => setTimeout(r, 700));
+        v.eval("__zero();");
+        const next = vr("(function(){switchTab('sourcing');lateFlush();return __walks;})()");
+        ok(next === 0, "once " + k + " has settled the rail's count is kept, and the next tap walks no book: " + JSON.stringify({ walked, next }));
+        v.eval("if(window.__ko)ORD_OPEN=window.__ko;");
+      }
+    } finally { try { v.close(); } catch (e) { /* best effort */ } }
+  }
+
   /* -------------------------------------------------------------------- R2 */
   const buildSrc = readFileSync(new URL("../tools/build.mjs", import.meta.url), "utf8");
   const arr = /const PWA_BLOCK = (\[[\s\S]*?\n\])\.join\(EOL\);/.exec(buildSrc);

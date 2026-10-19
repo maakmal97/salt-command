@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="48399b7e8029a49f";
+var SALT_BUILD_ID="1b83bdaf3dc0d07e";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -15120,12 +15120,13 @@ function drawNetworkCharts(){
    laying it out twice more (190 ms of a 394 ms Ledger tap on the phone profile). Kept only once the fonts are loaded; a measure
    that found no layout (any false) is never kept. */
 let LED_FIT=null;
-function ledFit(){
+function ledFit(cachedOnly){
   const wrap=document.querySelector('.sec.on .ledwrap');if(!wrap)return;
   const html=wrap.innerHTML,fonts=(document.fonts&&document.fonts.status)||'loaded';
   let h=0;for(let i=0;i<html.length;i++)h=(h*31+html.charCodeAt(i))|0;
   const sig=html.length+'|'+h+'|'+fonts+'|'+lookNow()+'|'+(window.innerWidth||0);   /* the window's width stands for the media rules that move a font or a gap */
   if(LED_FIT&&LED_FIT.sig===sig){for(const k in LED_FIT.w)wrap.style.setProperty('--lc-'+k,LED_FIT.w[k]+'px');return;}
+  if(cachedOnly)return;
   const cols=[['e','.lc-e',30],['date','.lc-date',74],['party','.lc-party',72],['prod','.lc-prod',56],['qty','.cqty',60],['price','.cprc',84],['tot','.ctot',108],['state','.lstate',108]];
   wrap.classList.add('lmeasure');
   const w={};let any=false;
@@ -19326,6 +19327,7 @@ async function expLoad(quiet){
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
   if(!j||!j.ok||!j.expected||typeof j.expected!=='object'){const m=document.getElementById('expMsg');if(m&&!quiet)m.textContent='The restock dates could not be read.';return;}
   const was=JSON.stringify(EXPECTED),first=!EXPECTED_READ;EXPECTED=j.expected;EXPECTED_READ=true;
+  warmSoon();
   expDraw();
   if((first||was!==JSON.stringify(EXPECTED))&&curAddr==='today')render();
 }
@@ -19347,6 +19349,7 @@ async function hushLoad(quiet){
   try{ let r=await go(); if(r.status===401&&!quiet&&saltAskWriteKey())r=await go(); if(r.ok){try{j=await r.json();}catch(e){}} }catch(e){}
   if(!j||!j.ok||!j.hush||typeof j.hush!=='object')return;
   const was=JSON.stringify(HUSH);HUSH=j.hush;HUSH_READ=true;
+  warmSoon();
   if(was!==JSON.stringify(HUSH)&&curAddr==='today')render();
 }
 /* ---- Alerts (v675, and EVERY WAKE SINCE v759). The switch left with the phone app at v387, so the
@@ -19605,7 +19608,7 @@ function thrItem(t){return Object.assign({},t,{id:'t:'+t.u,kind:'thread'});}
 /* the banner opens desk#orders/newest (public/sw.js); the orders are Counter Admin's, so it lands on the desk's Money */
 function ordWakeAddr(h){return h==='orders/newest'?'orders':h;}
 /* the rail's Today count includes what is waiting on the site, so it is recounted when THAT changes, not on every read */
-function waitRecount(){const n=ordActs().map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
+function waitRecount(){warmSoon();const n=ordActs().map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
 /* ====== WHAT AN Add ID TAP WILL ACTUALLY DO (v570) ======================================
    THREE PLACES ON THIS PAGE ASK and they must not answer differently: the preview, which
    decides whether Record is even enabled; the Record handler, which refuses on its own line;
@@ -21792,7 +21795,7 @@ function stripMethod(el){
     blocks.forEach(b=>{if(b!==keep&&!b.classList.contains('insight')&&b.parentNode)b.parentNode.removeChild(b);});
   });
 }
-function renderPart(tab,el){
+function renderPart(tab,el,late){
   el.innerHTML=builders[tab]();
   /* D10: where the parts strip already names this part, its h1 says it to a screen reader alone, so the pill and a
      heading do not say the same word twice; the h1 stays in the page as its one heading */
@@ -21804,6 +21807,10 @@ function renderPart(tab,el){
      WHOLE draw pass for a part, so a throw before the first chart lost every chart on the tab
      with no message anywhere. It reports where the part is rather than only in the console,
      because the console is not where anyone reads this desk. */
+  if(!late)drawPass(tab,el);   /* F3: a tap's draw pass runs after the paint (lateRun), the text is already in the page */
+  dSweep(el);   /* D1: at once, so a part reads 28 Sep 2026 the moment it is drawn; the observer takes what comes later */
+}
+function drawPass(tab,el){
   try{if(PART_DRAW[tab])PART_DRAW[tab]();}
   catch(e){
     try{console.error('renderPart: the draw pass for '+tab+' threw',e);}catch(_){}
@@ -21812,7 +21819,6 @@ function renderPart(tab,el){
     n.textContent='The charts on this part could not be drawn: '+((e&&e.message)||e)+'. Every figure they draw is in the tables above.';
     el.appendChild(n);
   }
-  dSweep(el);   /* D1: at once, so a part reads 28 Sep 2026 the moment it is drawn; the observer takes what comes later */
 }
 let curTab='today';   // v147: the desk opens on what to do, not on what happened
 let curAddr='today';  // v365: the PART showing, not just the view; #inventory and #sourcing share a view but not an address
@@ -21849,7 +21855,44 @@ function railSubs(){
     const cur=partOf(V.id);
     d.innerHTML=[V.lead].concat(V.parts).map(p=>`<button class="sub salt-rail__part${(V.id===curTab&&p===cur)?' on':''}" aria-current="${(V.id===curTab&&p===cur)?'page':'false'}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('');});
 }
-function render(){RENDER_MEMO={};try{renderNow();}finally{RENDER_MEMO=null;}}   /* fold 4.1: the memo lives for one render */
+function render(late){RENDER_MEMO={};try{renderNow(late===true);}finally{RENDER_MEMO=null;}}   /* fold 4.1: the memo lives for one render. F3: render(true), a tap's, leaves the charts, the rail counts and the table fades for after the paint */
+/* F3 (19 Oct 2026): A TAP PAINTS THE PART'S TEXT FIRST. A tap rebuilt the part's text and then, in the same task, drew its charts
+   (Chart.js, 0.8 to 1.3 s on Pricing and Network on the phone profile), counted the rail (0.5 to 0.6 s on the Record tap) and read every
+   table's width for the fade (0.7 to 0.8 s at open), so the paint the tap waits for came after all of it. switchTab asks for render(true):
+   the text is written and the page is left to paint, then lateRun does the rest, each step in a task of its own, after a painted frame
+   (requestAnimationFrame, then setTimeout 0). Every render takes a number from LATE_GEN, and a step whose number is no longer the
+   latest does nothing, so a tap on another part, or any render, cancels what the earlier one had left: the work is never drawn on a part
+   that has gone. A render that is not a tap (a queue post, a name toggle, the look, a data refresh) does all of it at once, as before.
+   Where there is no frame to wait for (a window with no requestAnimationFrame) or the page says so (SALT_SYNC_DRAW, the suite's way
+   of reading a part the moment it is drawn), the steps run at once. lateFlush runs what is left now. */
+let LATE_GEN=0,LATE=null;
+function lateOn(){try{return typeof window.requestAnimationFrame==='function'&&!window.SALT_SYNC_DRAW;}catch(e){return false;}}
+function lateRun(gen,steps){
+  const job=LATE={gen,steps,i:0};
+  const step=()=>{
+    if(job.i>=steps.length||job.gen!==LATE_GEN)return false;
+    const f=steps[job.i++];
+    try{f();}catch(e){try{console.error('lateRun: a step threw',e);}catch(_){}}
+    return job.i<steps.length;
+  };
+  const go=()=>{if(step())setTimeout(go,0);};
+  job.flush=()=>{while(step());};
+  let started=false;
+  const start=()=>{if(started)return;started=true;go();};
+  requestAnimationFrame(()=>setTimeout(start,0));
+  setTimeout(start,1500);   /* a page that is not showing paints no frame; the work still follows, it is only not urgent */
+}
+function lateFlush(){if(LATE&&LATE.flush)LATE.flush();}
+/* F3: THE RAIL'S COUNT IS WARMED WHEN THE DESK LEARNS WHAT IT IS. The first render after the ping's answer (cloudMode) and the first
+   reads (the restock date, the hushes, the drafts, the orders) saw a new key and walked every book again, on the Record tap
+   (0.6 s). The answers they flip are not figures a tap can wait for, so once they settle (no new one for 400 ms) the count is read,
+   outside any tap, and the tap finds it kept. */
+let WARM_T=0;
+function warmSoon(){
+  if(!lateOn())return;
+  clearTimeout(WARM_T);
+  WARM_T=setTimeout(()=>{WARM_T=0;try{railCounts();}catch(e){}},400);
+}
 /* 11 Oct 2026: TWO THEMES, NIGHT AND TIDE, CHOSEN ON EACH DEVICE (his word). The head script set data-theme before the first paint;
    lookSet is the change: the attribute and the browser bar (saltLook), the key, the switch's held state and a redraw. A chart
    holds the colours it was built with and the map is a string, so the part showing is rendered once more in the new tokens; a
@@ -21870,17 +21913,23 @@ function lookSet(t){
   try{localStorage.setItem(LOOK_KEY,t);}catch(e){}
   lookMark();lookRedraw();
 }
-function renderNow(){recompute();
+function renderNow(late){recompute();
+  const gen=++LATE_GEN;   /* F3: this render owns the later work from here; an earlier render's is cancelled */
+  late=late&&lateOn();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
   const part=partOf(V.id), all=[V.lead].concat(V.parts);
   el.innerHTML=(all.length>1?`<div class="vnav" role="tablist">${all.map(p=>`<button class="vpill salt-tabs__pill${p===part?' on':''}" role="tab" aria-selected="${p===part}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('')}</div>`:'')
     +`<div class="vpart" data-tab="${part}"></div>`;
   el.querySelectorAll('.vpill').forEach(b=>{b.onclick=()=>switchTab(b.dataset.s);});
-  renderPart(part,el.querySelector('.vpart'));
+  const vp=el.querySelector('.vpart');
+  renderPart(part,vp,late);
   wireSwitchers(el);            // the parts strip: written here, not by renderPart
-  renderQueue();renderProvBar();navCounts();railSubs();
-  try{wrapTables();}catch(e){}}
+  renderQueue();renderProvBar();if(!late)navCounts();railSubs();
+  try{wrapTables(late);}catch(e){}
+  /* the ledger's columns, once measured, are set now, on the markup the draw pass will see (tables wrapped; a cheap read of what was kept), so they do not move after the paint */
+  if(late&&part==='ledger'){try{ledFit(true);}catch(e){}}
+  if(late)lateRun(gen,[()=>{if(vp.isConnected)drawPass(part,vp);},()=>wrapTables(),()=>navCounts()]);}   /* the charts, then the fades, then the rail's count */
 /* ============ KEY MESSAGE vs DATABASE (v210) ============
    The desk had grown to 52% prose. Not one word of it was wasted when it was written,
    and almost all of it was in the way on the ninety-ninth reading. This demotes rather
@@ -21906,7 +21955,7 @@ function switchTab(s){
   s=VIEW_ALIAS[s]||s;
   const view=VIEW_OF[s]||'today', V=VIEWS.find(v=>v.id===view);
   VIEW_PART[view]=(view!==s)?s:V.lead;
-  curTab=view;document.body.setAttribute('data-sec',view);[...document.querySelectorAll('.tab')].forEach(t=>{const on=t.dataset.s===view;t.classList.toggle('on',on);t.setAttribute('aria-current',on?'page':'false');});[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+view));render();
+  curTab=view;document.body.setAttribute('data-sec',view);[...document.querySelectorAll('.tab')].forEach(t=>{const on=t.dataset.s===view;t.classList.toggle('on',on);t.setAttribute('aria-current',on?'page':'false');});[...document.querySelectorAll('.sec')].forEach(x=>x.classList.toggle('on',x.id==='sec-'+view));render(true);
   if(window.__navClose)window.__navClose();
   const addr=(VIEW_PART[view]===V.lead)?view:VIEW_PART[view];
   curAddr=addr;
@@ -21927,12 +21976,12 @@ function switchTab(s){
   /* v273: if the page was ALREADY at the top no scroll event fires, so the back-to-top
      button would stay lit from the tab you just left. Ask it to re-read directly. */
   try{if(window._totopSync)window._totopSync();}catch(e){}
-  try{wrapTables();railIntoView();}catch(e){}}
+  try{wrapTables(lateOn());railIntoView();}catch(e){}}
 /* v276: EVERY TABLE GETS A SCROLL CONTAINER, AT RUNTIME. Done here rather than in the 58
    render sites because a rule applied by hand in 58 places is a rule that will be missed in
    the 59th, which is the same reasoning that put deskctl and parityScan on this desk. It is
    idempotent: a table already wrapped is left alone. */
-function wrapTables(){
+function wrapTables(skipFade){
   document.querySelectorAll('.sec.on table').forEach(t=>{
     const p=t.parentNode;
     if(p&&p.classList&&p.classList.contains('tscroll'))return;
@@ -21945,6 +21994,7 @@ function wrapTables(){
      touch screen says nothing about either */
   /* a table in a closed card is measured when the card opens: reading its width shut makes the browser lay out
      the hidden card on its own, about 1 ms a table, 41 ms on Network's 39 */
+  if(skipFade)return;   /* F3: a tap's fade is one of its later steps */
   tscrollFadeAll([...document.querySelectorAll('.sec.on .tscroll')].filter(w=>!w.closest('details:not([open])')));
 }
 /* F1 (19 Oct 2026): EVERY WIDTH IS READ BEFORE ANY CLASS IS WRITTEN. The fade was read and written one table at a time, so each
@@ -22179,6 +22229,7 @@ try{qInit().then(()=>{if(queueCleared&&qSyncState==='server')qPost();   // ask t
      and read nothing. They run here instead, once the answer is in; the part on screen is opened again
      so it draws the cloud's card. */
   if(!cloudMode())return;
+  warmSoon();   /* F3: the desk now knows it is the cloud, a new key for every kept read: counted once it settles, not on the first tap */
   /* v385: THE RAIL KNOWS BEFORE APPROVE IS OPENED. One read on load: cloud only, and only where a
      write key is already stored, so a stranger with the URL is neither prompted nor served anything new. */
   ordAlertDraw();   /* 18 Oct 2026: the rail's alerts, drawn once the desk knows it is the cloud */

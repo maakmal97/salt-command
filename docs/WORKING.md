@@ -309,6 +309,13 @@ Each of these stayed green, or read clean, through a real fault.
   that draws twice and expects two constructions must clear `CHART_KEEP` or change the config. Design tokens are cached
   per look and `<html>`'s style attribute (`TOK`), so a stub set with `style.setProperty` is seen at once; the ledger's
   column widths per markup and window width (`LED_FIT`).
+- **A tap paints its text first** (F3): `switchTab` calls `render(true)`, which writes the part and leaves the draw pass
+  (`drawPass`: the charts and wiring), the table fades (`wrapTables()`) and the rail's count (`navCounts`) to `lateRun`, one
+  task each after a painted frame; any later render takes a new `LATE_GEN` and cancels what is left. Every other
+  `render()` does all of it at once. `tools/payload.mjs` opens a window with `SALT_SYNC_DRAW` set so the suite reads a part
+  the moment `switchTab` returns; `openMaster(master, { late: true })` opens one as the browser has it, and `lateFlush()`
+  runs what a tap left. The Desk learns it is the cloud after the first render, which moves the key of every kept read:
+  `warmSoon` reads the rail's count 400 ms after the last such read, so the first tap finds it kept.
 - **`evolution` sits in the middle of the master**, not at the end: `slice(0,
   indexOf("const evolution=["))` searches only the first third. Use `slice(0, evAt) +
   slice(stampAt)`.

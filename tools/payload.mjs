@@ -61,6 +61,10 @@ export async function openMaster(masterPath = MASTER, opts = {}) {
       };
       Object.defineProperty(w, "localStorage", { value: stub, configurable: true });
       Object.defineProperty(w, "sessionStorage", { value: stub, configurable: true });
+      /* 19 Oct 2026 (F3): a tap leaves its charts, the rail's count and the table fades for after the paint, which a real browser has.
+         A window opened here reads a part the moment switchTab returns, as every section was written to; { late: true } opens one as
+         the browser does, for the section that tests the deferral (SALT_SYNC_DRAW, master/salt_command.html lateOn). */
+      if (!opts.late) w.SALT_SYNC_DRAW = true;
       /* 11 Oct 2026, two themes: a window opens as a device that has chosen Night, the look every section was written against, so the
          choice sheet is not asked and nothing reads Tide's colours by accident. { fresh: true } leaves the store empty, a device's first
          open; { before(w, store) } runs once the stub is in place, to seed it or to wrap it. */
