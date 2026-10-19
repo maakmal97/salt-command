@@ -163,18 +163,26 @@ export async function run({ ok }) {
     const { d, posted, asked } = A;
     d.getElementById("oNew").click();
     d.querySelector('#osheet [data-k="mode:1"]').click();
-    ok(await wait(() => !!d.getElementById("oPinHere")) && !!d.getElementById("oPinLink"), "a delivery offers Use my location and a map link once the key is filed");
-    ok(d.getElementById("oGo").disabled, "with neither the area nor the spot, Review waits");
+    ok(!d.getElementById("oPinHere") && d.getElementById("oGo").disabled, "the form itself no longer draws the exact spot; with no spot picked Review waits (Counter Batch C, his answer 4 of 20 Oct 2026)");
+    d.getElementById("spAdd").click();
+    await wait(() => !!d.getElementById("spName"));
+    await new Promise((r) => setTimeout(r, 200));   /* the key is read once the step first draws, and only a form is redrawn when it lands: a redraw by the name picks it up */
+    d.querySelector('#osheet [data-k="spn:0"]').click();
+    ok(await wait(() => !!d.getElementById("oPinHere")) && !!d.getElementById("oPinLink"), "the Add a spot step offers Use my location and a map link once the key is filed");
+    ok(d.getElementById("spUse").disabled, "with neither the area nor the spot, Use this spot waits");
     d.getElementById("oPinHere").click();
-    ok(await wait(() => !!d.getElementById("oPinOff")) && asked.length === 1 && asked[0].maximumAge === 0 && !d.getElementById("oGo").disabled,
-      "Use my location reads the phone once, fresh, and the spot stands in for the area: " + JSON.stringify(asked));
+    ok(await wait(() => !!d.getElementById("oPinOff")) && asked.length === 1 && asked[0].maximumAge === 0 && d.getElementById("spUse").disabled,
+      "Use my location reads the phone once, fresh; the spot no longer stands in for the area, which the step still asks for before Use (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify(asked));
+    d.getElementById("oWhere").value = "Veloria"; d.getElementById("oWhere").dispatchEvent(new A.w.Event("input", { bubbles: true }));
+    d.getElementById("spUse").click();
+    await wait(() => !d.getElementById("spUse") && !d.getElementById("oGo").disabled);
     d.getElementById("oGo").click();
     ok(d.getElementById("osheet").textContent.includes(W.EN["sh.pinShared"]), "the check says the spot is shared, sealed");
     d.getElementById("oPlace").click();
     ok(await wait(() => posted.length === 1), "Place sends the order");
     const env = posted[0] && posted[0].pin, got = env && typeof env === "object" ? await open(pair.privateKey, env, "salt-pin v1") : null;
-    ok(got && got.lat === 3.1412 && got.lng === 101.6865 && got.src === "gps" && !JSON.stringify(posted[0]).includes("101.6865") && posted[0].place === "",
-      "and the spot leaves sealed to his key, opened only by it, with nothing of the point in the clear: " + JSON.stringify(got));
+    ok(got && got.lat === 3.1412 && got.lng === 101.6865 && got.src === "gps" && !JSON.stringify(posted[0]).includes("101.6865") && posted[0].place === "Veloria",
+      "and the spot leaves sealed to his key, opened only by it, with nothing of the point in the clear (the order carries the spot's area as its place): " + JSON.stringify(got));
   } finally { await new Promise((r) => setTimeout(r, 80)); A.w.close(); }
   /* no key filed, no spot offered; a phone that will not share says so and the area is asked for */
   const B = await drive(null, null);
@@ -182,14 +190,17 @@ export async function run({ ok }) {
     const { d } = B;
     d.getElementById("oNew").click(); d.querySelector('#osheet [data-k="mode:1"]').click();
     await new Promise((r) => setTimeout(r, 150));
+    d.getElementById("spAdd").click(); await new Promise((r) => setTimeout(r, 100));
     ok(!d.getElementById("oPinHere") && !!d.getElementById("oWhere"), "with no key filed no spot is offered, and the area is asked as ever");
   } finally { B.w.close(); }
   const D = await drive(pub, null);
   try {
     const { d } = D;
     d.getElementById("oNew").click(); d.querySelector('#osheet [data-k="mode:1"]').click();
+    d.getElementById("spAdd").click(); await wait(() => !!d.getElementById("spName"));
+    await new Promise((r) => setTimeout(r, 200)); d.querySelector('#osheet [data-k="spn:0"]').click();
     await wait(() => !!d.getElementById("oPinHere")); d.getElementById("oPinHere").click();
-    ok(await wait(() => d.getElementById("osheet").textContent.includes(W.EN["sh.pinNo"])) && !d.getElementById("oPinOff") && d.getElementById("oGo").disabled,
-      "a phone that will not share its location says so, and Review waits for the area");
+    ok(await wait(() => d.getElementById("osheet").textContent.includes(W.EN["sh.pinNo"])) && !d.getElementById("oPinOff") && d.getElementById("spUse").disabled,
+      "a phone that will not share its location says so, and Use this spot waits for the area");
   } finally { D.w.close(); }
 }

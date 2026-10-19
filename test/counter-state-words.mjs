@@ -178,7 +178,8 @@ export async function run({ ok }) {
     await until(() => L.d.getElementById("oNew"));
     L.d.getElementById("oNew").click();
     [...L.d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Deliver to me").click();
-    const wh = L.d.getElementById("oWhere"); wh.value = "Old market"; wh.dispatchEvent(new L.w.Event("input", { bubbles: true }));
+    L.d.getElementById("spAdd").click(); L.d.querySelector('#osheet [data-k="spn:0"]').click();
+    const wh = L.d.getElementById("oWhere"); wh.value = "Old market"; wh.dispatchEvent(new L.w.Event("input", { bubbles: true })); L.d.getElementById("spUse").click();
     const formText = t(L.d.getElementById("osheet"));
     L.d.getElementById("oGo").click();
     const checkText = t(L.d.getElementById("osheet")), delRow = [...L.d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => t(r.querySelector(".salt-ledger__label")) === "Delivery");

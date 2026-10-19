@@ -10,6 +10,13 @@ const BUILD = "c".repeat(16);
 export const kl = (n) => new Date(Date.now() + 8 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
 export const ago = (h) => new Date(Date.now() - h * 3600e3).toISOString();
 export const txt = (e) => { if (!e) return ""; const c = e.cloneNode(true); c.querySelectorAll("svg,.sr").forEach((x) => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
+/* a delivery's Where to is a saved spot (Counter Batch C, his answer 4 of 20 Oct 2026): Add a spot, a preset name, the area, Use this spot; the spot is picked */
+export function addSpot(d, w, place, name = 0) {
+  d.getElementById("spAdd").click();
+  d.querySelector('#osheet [data-k="spn:' + name + '"]').click();
+  const x = d.getElementById("oWhere"); x.value = place; x.dispatchEvent(new w.Event("input", { bubbles: true }));
+  d.getElementById("spUse").click();
+}
 export const until = async (f, n = 300) => { for (let i = 0; i < n && !f(); i++) await new Promise((r) => setTimeout(r, 15)); return f(); };
 
 /* salt on a grid from 0.5 to 25 in quarters, a unit at RM 100 to 5 units and RM 98 above, its board on it; oil on a board alone */

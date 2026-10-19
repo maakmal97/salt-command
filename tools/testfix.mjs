@@ -500,6 +500,8 @@ export const FEATURES = [
   /* Counter Batch C: drawn on every customer's Account, the test accounts' included, from no data of theirs */
   ["Help under Account, four answers (Counter Batch C)", () => true],
   ["the confirm time on a placed order waiting on his Accept (Counter Batch C)", (f) => has(f, (o) => o.status === "placed" && !o.price)],
+  /* the spots live on the phone, never in a fixture: a delivery the sheet can be opened on is all they need */
+  ["saved spots in the order sheet, kept on this phone (Counter Batch C)", (f) => f.prices.products.some((p) => p.sizes && p.sizes.length) && stageOf(f) === 0],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];
 /* THE STAGE THE PAGE DRAWS (stmt/page.js stageNow): nothing while a claim of theirs waits or nothing is overdue, else by

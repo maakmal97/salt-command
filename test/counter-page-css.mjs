@@ -181,9 +181,9 @@ export async function run({ ok, pageWork }) {
     if (!CONTROL.test(s.last.replace(/::?[\w-]+(\([^)]*\))?/g, ""))) continue;
     for (const p of ["min-height", "min-width", "height", "width"]) { const v = decl(body, p); if (!v) continue; const n = px(v, NIGHT); if (n !== null && n < 44) under.push(s.sel + " " + p + " " + v); }
   }
-  const LABELLED = [".rem input", ".pay input[type=radio]"], tapped = (sel) => R.some(([s, b]) => s.split(",").map((x) => x.trim()).includes(sel) && /min-height:\s*var\(--salt-tap\)/.test(b));
-  ok(under.every((u) => LABELLED.some((l) => u.startsWith(l + " "))) && tapped(".rem") && tapped(".pay label"),
-    `no control the page sizes is under 44px either way, bar the two native boxes whose label is the tap (${under.length} under: ${under.join(" | ") || "none"})`);
+  const LABELLED = [".rem input", ".pay input[type=radio]", ".spsave input"], tapped = (sel) => R.some(([s, b]) => s.split(",").map((x) => x.trim()).includes(sel) && /min-height:\s*var\(--salt-tap\)/.test(b));
+  ok(under.every((u) => LABELLED.some((l) => u.startsWith(l + " "))) && tapped(".rem") && tapped(".pay label") && tapped(".spsave"),
+    `no control the page sizes is under 44px either way, bar the three native boxes whose label is the tap (Save on this phone, Counter Batch C) (${under.length} under: ${under.join(" | ") || "none"})`);
   const strips = [".mos .salt-tabs__pill", ".mfil .salt-tabs__pill", ".adm .aparts .salt-tabs__pill", ".adm .nchips .salt-tabs__pill"];
   ok(strips.every((s) => R.some(([sel, b]) => sel === s && /min-height:\s*var\(--salt-tap\)/.test(b) && /min-width:\s*var\(--salt-tap\)/.test(b))) && /--salt-tap:\s*44px/.test(ds),
     "and every tab strip the page draws sets its pills to the system's 44px token both ways, which is 44px");

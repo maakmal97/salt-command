@@ -10,7 +10,7 @@
  *   3  no day wanted from an earlier sheet rides into it
  *   4  none under the overdue gate
  *   5  the card holds no button; a poll that hands an order over brings its Order again, and focus on a ghost stays */
-import { open, ord, done, txt, ago, LIST } from "./counter-b-kit.mjs";
+import { open, ord, done, txt, ago, LIST, addSpot } from "./counter-b-kit.mjs";
 
 export async function run({ ok, pageWork }) {
   const pages = [];
@@ -42,10 +42,14 @@ export async function run({ ok, pageWork }) {
     A.d.querySelector('#pOrder button[data-row="oD"]').click(); await A.settle();
     const line = txt(A.d.querySelector('.oscreen [data-part="again"] p'));
     A.d.querySelector('.oscreen [data-part="again"] [data-again]').click(); await A.settle();
+    /* a delivery opens on the form, no spot picked, Review waiting (Counter Batch C, his answer 4 of 20 Oct 2026): the area is added as a spot, then Review */
+    const waits = !!A.d.getElementById("spAdd") && A.d.getElementById("oGo").disabled;
+    addSpot(A.d, A.w, "Veloria"); await A.settle();
+    A.d.getElementById("oGo").click(); await A.settle();
     const sheet = A.d.getElementById("osheet"), checkTxt = txt(sheet);
     A.d.getElementById("oPlace").click(); await A.settle();
     const b = A.st.posts[0] || {};
-    ok(line === "RM 250.00 today, same size and place" && /Check/.test(checkTxt) && /RM 250\.00/.test(checkTxt) && !/RM 240\.00/.test(checkTxt) && A.st.posts.length === 1
+    ok(waits && line === "RM 250.00 today, same size, delivered" && /Check/.test(checkTxt) && /RM 250\.00/.test(checkTxt) && !/RM 240\.00/.test(checkTxt) && A.st.posts.length === 1
       && b.total === 250 && b.qty === 2.5 && b.mode === "deliver" && b.place === "Veloria" && /^[0-9a-f]{32}$/.test(b.rid || "") && !("sheet" in b) && !b.note,
       "a tap opens the check at today's figure off the list, never what the order came to, and Place posts one body with a fresh rid, no sheet and no note: " + JSON.stringify({ line, b }));
 

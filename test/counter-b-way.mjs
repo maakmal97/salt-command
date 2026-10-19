@@ -8,7 +8,7 @@
  *   3  a place shows as text, never markup
  *   4  Change opens the sheet with focus on the way chosen
  *   5  no line with no order; no Change under the overdue gate; nothing at all while prices are hidden */
-import { open, ord, txt, ago } from "./counter-b-kit.mjs";
+import { open, ord, txt, ago, addSpot } from "./counter-b-kit.mjs";
 
 export async function run({ ok, pageWork }) {
   const pages = [];
@@ -24,7 +24,7 @@ export async function run({ ok, pageWork }) {
     /* ---- 2 ---- */
     const go = A.d.getElementById("pWayGo"); go.click(); await A.settle();
     const deliv = A.d.querySelector('#osheet [data-k="mode:1"]'); deliv.click(); await A.settle();
-    const where = A.d.getElementById("oWhere"); where.value = "Zarvo"; where.dispatchEvent(new A.w.Event("input", { bubbles: true }));
+    addSpot(A.d, A.w, "Zarvo"); await A.settle();
     A.d.querySelector('#osheet [data-k="close"]').click(); await A.settle();
     ok(!A.d.getElementById("osheet") && line(A) === "Delivering to Zarvo",
       "a way chosen in a sheet and closed is the line on Prices, as the next sheet opens on it: " + line(A));
@@ -36,8 +36,8 @@ export async function run({ ok, pageWork }) {
     /* ---- 4 ---- */
     B.d.getElementById("pWayGo").click(); await B.settle();
     const ae = B.d.activeElement;
-    ok(!!B.d.getElementById("osheet") && !!ae && ae.getAttribute("data-k") === "mode:1" && ae.getAttribute("aria-pressed") === "true" && B.d.getElementById("oWhere").value === "Veloria",
-      "Change opens the order sheet with focus on How it reaches you, the way chosen, and the place filled: " + (ae && ae.getAttribute("data-k")));
+    ok(!!B.d.getElementById("osheet") && !!ae && ae.getAttribute("data-k") === "mode:1" && ae.getAttribute("aria-pressed") === "true" && !B.d.getElementById("oWhere") && !!B.d.getElementById("spAdd") && B.d.getElementById("oGo").disabled,
+      "Change opens the order sheet with focus on How it reaches you, the way chosen, no spot picked and Review waiting (the place is no longer filled: Counter Batch C, his answer 4 of 20 Oct 2026): " + (ae && ae.getAttribute("data-k")));
 
     /* ---- 5 ---- */
     const N = await page({ orders: [] });

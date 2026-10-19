@@ -150,7 +150,11 @@ export async function run({ ok }) {
     opt.click();
     const hint = [...d.querySelectorAll("#osheet .salt-field__hint")].map((x) => x.textContent).join(" | ");
     ok(/Delivery will be between 09:00 and 10:00 on /.test(hint), "a window partly inside the hours says the part inside: " + hint);
+    /* Counter Batch C, his answer 4 of 20 Oct 2026: the area lives in a spot, picked through Add a spot, so the window is chosen first and the spot after */
+    d.getElementById("spAdd").click(); await new Promise((r) => setTimeout(r, 60));
+    d.querySelector('#osheet [data-k="spn:0"]').click(); await new Promise((r) => setTimeout(r, 60));
     d.getElementById("oWhere").value = "Taman Contoh"; d.getElementById("oWhere").dispatchEvent(new w.Event("input", { bubbles: true }));
+    d.getElementById("spUse").click(); await new Promise((r) => setTimeout(r, 60));
     d.getElementById("oGo").click();
     const check = d.getElementById("osheet").textContent;
     ok(check.includes(W.EN["sh.winRow"]) && /between 09:00 and 10:00/.test(check), "the check says the delivery time and its span: " + check.slice(0, 240));

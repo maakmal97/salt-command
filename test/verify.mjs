@@ -20,6 +20,9 @@ import { hoursStatus } from "../stmt/hours.js";
 import { unionByAt, pruneCommitted } from "../tools/drain.mjs";
 import { NAME_STOPWORDS, NAME_COLLISIONS, areaNameSet, publishedLocalities } from "../tools/book.mjs";
 import { opened } from "../tools/payload.mjs";
+/* a delivery's Where to is a saved spot (Counter Batch C, his answer 4 of 20 Oct 2026): Add a spot, a preset name, the area, Use this spot */
+const spotAddTo = (d, w, place) => { d.getElementById("spAdd").click(); d.querySelector('#osheet [data-k="spn:0"]').click();
+  const x = d.getElementById("oWhere"); x.value = place; x.dispatchEvent(new w.Event("input", { bubbles: true })); d.getElementById("spUse").click(); };
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, "..");
@@ -15545,12 +15548,11 @@ await (async () => {
       "the size they order most is tagged your usual and chosen to begin with: " + JSON.stringify(tiles.map((t) => [t.q, t.on, /usual/.test(t.label)])));
     const pressed = (t) => { const b = [...d.querySelectorAll("#osheet button.salt-ghost")].find((x) => x.textContent === t); return b && b.getAttribute("aria-pressed"); };
     const where = d.getElementById("oWhere");
-    ok(pressed("Deliver to me") === "true" && pressed("I will collect") === "false" && where && where.value === "Old market"
-      && /^Same as last time[.]/.test(d.querySelector("#osheet .salt-field__hint").textContent),
-      "the way is the last order's and the place the last one given, and the hint says so: " + JSON.stringify({ where: where && where.value }));
+    ok(pressed("Deliver to me") === "true" && pressed("I will collect") === "false" && !where && !!d.getElementById("spAdd") && !/Same as last time/.test(d.getElementById("osheet").textContent),
+      "the way is the last order's; the place is no longer the last one given, no spot is picked and no Same as last time hint is drawn (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify({ where: where && where.value }));
     const foot = d.querySelector("#osheet .salt-sheet__foot");
-    ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && !d.getElementById("oGo").disabled,
-      "the total and Review, the one filled control, sit in the sheet's foot: " + JSON.stringify(foot && foot.textContent));
+    ok(foot && foot.contains(d.getElementById("oGo")) && d.getElementById("oGo").classList.contains("salt-pill") && /^RM 250/.test(foot.textContent) && d.getElementById("oGo").disabled && /Pick where it is going, or add a spot[.]/.test(foot.textContent),
+      "the total and Review, the one filled control, sit in the sheet's foot, Review waiting for a spot and saying so (Counter Batch C, his answer 4 of 20 Oct 2026): " + JSON.stringify(foot && foot.textContent));
     const one = d.querySelector('#osheet input[name="osize"][value="1"]');
     one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
     ok(/^RM 110/.test(d.querySelector("#osheet .salt-sheet__foot").textContent), "a tap on another size moves the total with it");
@@ -16010,7 +16012,7 @@ await (async () => {
     ok(lead.some((t) => t.includes(ONE)) && !lead.some((t) => /acknowledged/.test(t)), "Prices says it, in the customer's word for the step: " + JSON.stringify(lead.find((t) => /Delivery/.test(t))));
     d.getElementById("oNew").click();
     [...d.querySelectorAll("#osheet button")].find((b) => b.textContent === "Deliver to me").click();
-    const wh = d.getElementById("oWhere"); wh.value = "Old market"; wh.dispatchEvent(new w.Event("input", { bubbles: true }));
+    spotAddTo(d, w, "Old market");
     d.getElementById("oGo").click();
     const says = [...d.querySelectorAll("#osheet .salt-insight")].map((x) => x.textContent);
     const row = [...d.querySelectorAll("#osheet .salt-ledger__row")].find((r) => r.querySelector(".salt-ledger__label").textContent === "Delivery");
@@ -40070,9 +40072,13 @@ await (async () => {
     D.querySelectorAll("#hAgain button.htile")[1].click();
     const sheet = () => (D.getElementById("osheet") || { textContent: "" }).textContent;
     const hero = () => D.querySelector("#osheet .mhero .mtile");
-    ok(/Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2 units" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
+    /* Counter Batch C, his answer 4 of 20 Oct 2026: a delivery opens with no spot picked, so the tile opens the form at its size and
+       way, Review waiting for a spot; one added, the check reads as before */
+    const onSize = D.querySelector('#osheet input[name="osize"]:checked'), waits = !!(D.getElementById("oGo") && D.getElementById("oGo").disabled) && !!D.getElementById("spAdd");
+    if (D.getElementById("spAdd")) { spotAddTo(D, a.W, "Veloria"); if (D.getElementById("oGo")) D.getElementById("oGo").click(); }
+    ok(onSize && onSize.value === "2" && waits && /Check your order/.test(sheet()) && hero() && said(hero()) === "Cube 2 units|2 units" && /PriceRM 200/.test(sheet()) && /HowDelivered to Veloria/.test(sheet())
       && !/Side gate/.test(sheet()) && D.getElementById("oPlace") && D.getElementById("oPlace").textContent === "Place order",
-      "a tap opens the check with the same size, way and place at today's price, and not the old order's note: " + JSON.stringify(sheet().slice(0, 140)));
+      "a tap opens the sheet at the same size and way with no spot picked, and with one added the check reads today's price without the old order's note: " + JSON.stringify(sheet().slice(0, 140)));
     D.getElementById("oPlace").click();
     /* waited to Order placed, so nothing the answer draws lands on a closed window */
     for (let i = 0; i < 200 && !/Order placed/.test(sheet()); i++) await new Promise((r) => setTimeout(r, 20));
@@ -40556,6 +40562,8 @@ await (async () => {
     D.getElementById("f").dispatchEvent(new W.Event("submit", { bubbles: true, cancelable: true }));
     for (let i = 0; i < 200 && !D.querySelector("#hAgain button"); i++) await new Promise((r) => setTimeout(r, 25));
     D.querySelector("#hAgain button").click();
+    /* Counter Batch C, his answer 4 of 20 Oct 2026: a delivery opens with no spot picked, so one is added and Review taken to the check */
+    if (D.getElementById("spAdd")) { spotAddTo(D, W, "Veloria"); if (D.getElementById("oGo")) D.getElementById("oGo").click(); }
     for (let i = 0; i < 100 && !D.querySelector('#osheet .salt-sheet__head button[data-k="back"]'); i++) await new Promise((r) => setTimeout(r, 20));
     const back = D.querySelector('#osheet .salt-sheet__head button[data-k="back"]'), title = D.getElementById("oshT");
     ok(!!back && !!title && /Check your order/.test(title.textContent) && back.classList.contains("salt-orb") && cs(title).flexShrink === "1" && cs(back).flexShrink === "0",
@@ -41203,7 +41211,7 @@ await (async () => {
     for (let i = 0; i < 100 && !d.getElementById("oNew"); i++) await new Promise((r) => setTimeout(r, 50));
     d.getElementById("oNew").click();
     button("Deliver to me").click();
-    type(d.getElementById("oWhere"), "Old market");
+    spotAddTo(d, w, "Old market");
     d.getElementById("oAddNote").click();
     type(d.getElementById("oSay"), "Ring the bell");
     d.getElementById("oGo").click();
@@ -41217,12 +41225,12 @@ await (async () => {
     /* and the way back opens the form again, holding what was typed; once the placement has answered */
     for (let i = 0; i < 100 && d.getElementById("oPlace"); i++) await new Promise((r) => setTimeout(r, 50));
     d.getElementById("oNew").click();
-    type(d.getElementById("oWhere"), "Old market");
+    spotAddTo(d, w, "Old market");
     d.getElementById("oGo").click();
     button("Change").click();
-    const back = d.getElementById("oWhere");
-    ok(!!back && !back.readOnly && back.value === "Old market",
-      "Change goes back to the form, the place kept and taking typing again");
+    const back = d.querySelector('#osheet [data-k="spot:0"]');
+    ok(!!back && !back.disabled && !d.getElementById("oGo").disabled,
+      "Change goes back to the form, the spot kept picked and the choice open again");
   } finally { w.close(); }
 })();
 
@@ -48252,6 +48260,11 @@ await (async () => {
 section("Counter Batch C: a placed order says how long he usually takes to confirm while the Counter is open, and when it opens while closed (P4)");
 await (async () => {
   await (await import("./counter-c-confirm-line.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter Batch C: saved spots on the phone, up to three an account, none picked on opening, Remove with no confirm, kept through Log out (P5)");
+await (async () => {
+  await (await import("./counter-c-spots.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");

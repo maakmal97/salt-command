@@ -20,11 +20,12 @@ export async function run({ ok, pageWork }) {
     const A = await page({ orders: [done("o1", ago(300), { mode: "deliver", place: "Veloria" }), done("o2", ago(100))] });
     tile(A, "deliver").click(); await A.settle();
     const p1 = pressed(A), where = A.d.getElementById("oWhere");
+    const waiting = !!A.d.getElementById("spAdd") && A.d.getElementById("oGo").disabled;
     A.d.querySelector('#osheet [data-k="close"]').click(); await A.settle();
     tile(A, "collect").click(); await A.settle();
     const p0 = pressed(A);
-    ok(p1 === "mode:1" && !!where && where.value === "Veloria" && p0 === "mode:0" && txt(A.d.querySelector("#hStart .hlab")) === "New order",
-      "Deliver to me opens the order sheet with Deliver pressed and the last place filled, though the last order was collected; I will collect opens it with Collect pressed: " + JSON.stringify([p1, p0]));
+    ok(p1 === "mode:1" && !where && waiting && p0 === "mode:0" && txt(A.d.querySelector("#hStart .hlab")) === "New order",
+      "Deliver to me opens the order sheet with Deliver pressed, no spot picked and Review waiting (the last place is no longer filled: Counter Batch C, his answer 4 of 20 Oct 2026); I will collect opens it with Collect pressed: " + JSON.stringify([p1, p0]));
 
     /* ---- 2 ---- */
     const N = await page({ orders: [done("o1", ago(100))] });
