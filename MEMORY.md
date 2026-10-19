@@ -25,6 +25,9 @@
 ## Counter test surface
 - Live as v1166 (`2e876db5`, 19 Oct 2026): `/all/test` behind `/all`'s two locks; Cloud commit `39195289245` deployed both Workers, proved live `/rev` at `0bd585f1e036adde` and passed all three suite parts. `0000-0002` has no fixture until he taps Make the practice accounts on Salt Account and a publish runs. Owner acceptance not yet given.
 
+## Notifications
+- Live as v1167 (`e35ee35b`, 19 Oct 2026; Cloud commit `39223032636`: chain, three suite parts and CI green): Salt Admin (was Salt Account) has its own worker `/all/sw.js` and `opush:` subscriptions; the Desk rings orders and approvals only while no Salt Admin send goes through (KV `admin:on`). He has not yet re-added Salt Admin to the home screen or turned its bell on (Shop > This device), so the Desk still rings for now. The stock-light banner has its Desk side only: nothing posts `{"tag":"stock"}` yet (it needs `tools/stmt-publish.mjs` to compare lights).
+
 ## Partner
 - `partners` in `ledger/book.json` = CM4-TO since v1029 (06 Oct 2026): pays the Floor, the order total up to the next RM 5, on every book (since 18 Oct 2026; it was cost to the sen). The CBDO role stays unheld, his answer. The Their % card's Make partner sets one (09 Oct 2026) and a partner is always an associate with a -R account; CM4-TO was made one by hand in the same version.
 
