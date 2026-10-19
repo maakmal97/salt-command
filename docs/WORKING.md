@@ -303,7 +303,9 @@ Each of these stayed green, or read clean, through a real fault.
   through `applyOverlay()` (or push onto a list, which moves its length) or the kept answer stands; one that must see a
   fresh walk sets `SESSION_MEMO=null`. A probe that changes state from inside a builder and reads either again gets the
   first answer; read outside a render. Count the work by wrapping `allActionsNow` and `approachSplitNow`, since a memo
-  hit is a call, and expect none on a warm desk.
+  hit is a call, and expect none on a warm desk. No kept key holds a name: the vault term of `badgeKey` and a chart's
+  signature carry `keyHash` of the names and of the config, and `lockVault` empties `SESSION_MEMO`, the rail's count
+  and every kept chart.
 - **Charts are kept with their canvas** (F2): `freshChart` puts the kept canvas where the render wrote an empty one when
   the look, the inputs and the whole config are as they were (`CHART_KEEP`, at most 60). A test with a recording `Chart`
   that draws twice and expects two constructions must clear `CHART_KEEP` or change the config. Design tokens are cached

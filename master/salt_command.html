@@ -12475,6 +12475,7 @@ function allActionsNow(){
    and the cost overrides (PROD, pxOver), the roster Add ID extends, and the two clocks: TODAY, and the wall clock ordPriceAct
    reads against an offer's end. The constants (RULES, TIER_OF, PRODUCTS, PEOPLE, PLACED) are keyed too, since the cost is nil.
    A key that cannot be built (a read before the desk has loaded) caches nothing. The key is the text itself, never a hash. */
+function keyHash(s){let a=2166136261,b=5381;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);a^=c;a=Math.imul(a,16777619);b=(Math.imul(b,33)^c)|0;}return (a>>>0).toString(36)+(b>>>0).toString(36)+'.'+s.length.toString(36);}   /* two 32-bit hashes (FNV-1a and djb2) and the length: a kept key tells the same text from another, and holds none of it */
 function badgeKey(noProd){
   try{
     const lapsed=(Array.isArray(ORD_OPEN)?ORD_OPEN:[]).map(o=>o&&o.price&&o.price.offer?(new Date().toISOString()>String(o.price.offer.until)?1:0):'-').join('');
@@ -12483,7 +12484,7 @@ function badgeKey(noProd){
     return JSON.stringify([noProd?0:PROD,TODAY.getTime(),cloudMode(),EXPECTED_READ,EXPECTED,HUSH_READ,HUSH,DATA_STAMP,sales.length,purchases.length,
       customerRefunds.length,loans.length,cashAdjust.length,selfUseLog.length,lostDemand.length,contacts.length,supplierReceivable,statedStockBy,
       PRICE_SET,pxOver,queue,AP_DRAFTS,ORD_OPEN,lapsed,roster,associates,partners,addedParties,PB_MONDAY,RULES,TIER_OF,PRODUCTS,PEOPLE,PLACED,
-      revealed,revealed?vaultNames:0,newIds]);
+      revealed,revealed?keyHash(JSON.stringify(vaultNames)):0,newIds]);   /* a short hash of the names, never the names: a kept key sits in memory long after the lock */
   }catch(e){return null;}
 }
 function railCounts(){
@@ -16708,6 +16709,9 @@ async function vaultReveal(pass){
 }
 /* F14: the places go with the names, whatever locks them: the auto-lock on leaving the app, Hide names, any other; F13: the slip key too */
 function lockVault(){vaultNames={};vaultPlaces={};vaultSlipKey=null;revealed=false;try{fillNameLookup({});}catch(e){}
+  /* F1, F2 (review, 19 Oct 2026): what the desk kept while the names were open goes with them: the kept To do list and band (their text carries ID()
+     names), the rail's count, and every kept chart (its labels carry them). Every caller draws again at once. */
+  try{SESSION_MEMO=null;railCounts._c=null;[...CHART_KEEP.keys()].forEach(chartLetGo);}catch(e){}
   try{ORD_PIN={};ORD_PIN_ALL='';ORD_PIN_ALL_FOR='';}catch(e){}}   /* a shared spot goes with the places */
 /* ONE IDENTIFIER PER PARTY. The id carried in the ledger and the code shown on screen
    are the SAME string, always. So when a vault name implies a different code, the answer
@@ -17973,6 +17977,9 @@ function chartTheme(){
     L.usePointStyle=true;L.pointStyle='circle';L.boxWidth=7;L.boxHeight=7;
     D.elements.line.borderCapStyle='round';D.elements.line.borderJoinStyle='round';
     D.elements.point.hoverRadius=5;
+    /* F2 (review, 19 Oct 2026): a kept canvas put back in the page is updated by Chart.js in its 'attach' mode, which has no transition of its own and so
+       ran the whole 420 ms entrance again on every revisit (30 bar animations measured in Chromium). It is drawn where it was, at once, like a resize. */
+    D.transitions=D.transitions||{};D.transitions.attach={animation:{duration:0}};
   }catch(e){}
 }
 /* v281: PER-PRODUCT CHARTS ACTUALLY DRAW PER PRODUCT. perProduct() emits a tab's markup
@@ -18004,7 +18011,7 @@ function chartSeat(el){
   return (v&&v.dataset.tab||'')+'|'+(b&&b.dataset.prod||'')+'|'+el.id;
 }
 function chartSig(cfg){
-  try{return lookNow()+'|'+inputKey()+'|'+JSON.stringify(cfg,(k,v)=>typeof v==='function'?String(v):v);}catch(e){return null;}
+  try{return lookNow()+'|'+inputKey()+'|'+keyHash(JSON.stringify(cfg,(k,v)=>typeof v==='function'?String(v):v));}catch(e){return null;}   /* the config's labels may carry names: its hash, not its text */
 }
 /* A kept canvas that has changed places is sized to its new box and its resize watch moved to it (Chart.js observes the box the
    canvas had when it was bound, and that one is gone). unbindEvents and bindEvents do both, and the second ends in a resize. Done

@@ -80,6 +80,26 @@ export async function run({ ok }) {
       const s = step(k, a, b);
       ok(s.same && s.back, "a changed " + k + " leaves the kept list equal to a fresh walk, and put back again: " + JSON.stringify(s));
     }
+    /* ...and these five do not change what the list says, so a kept list that ignored them would still equal a fresh walk. Each is therefore asked
+       the other way: moved alone (the queue without applyOverlay, which would move the book's stamp), it must drop the kept answer, and put back it
+       must drop it again. Red on its own when its term leaves the key. */
+    const moves = [
+      ["draft", `window.__kd=AP_DRAFTS;AP_DRAFTS=[{id:'d9',status:'pending',entry:{orderId:'zt9',status:'Payment',by:'customer'}}]`, `AP_DRAFTS=window.__kd`],
+      ["hush", `window.__kh=HUSH;HUSH={zt9:'2999-01-01'}`, `HUSH=window.__kh`],
+      ["expected", `window.__ke=EXPECTED;EXPECTED={salt:'2999-01-01'}`, `EXPECTED=window.__ke`],
+      ["override", `pxOver.party='ZT9'`, `pxOver.party=''`],
+      ["queue", `queue.push({at:'2999-01-01T00:00:00Z',raw:'probe',payload:{mode:'obs',id:'zt9',act:'dismiss'}})`, `queue.pop()`],
+    ];
+    for (const [k, a, b] of moves) {
+      const r = rd(`(function(){
+        var x=allActions(),x2=allActions();
+        ${a};
+        var y=allActions();
+        ${b};
+        var z=allActions();
+        return {kept:x===x2,dropped:x!==y,droppedBack:z!==y,sameAsFirst:JSON.stringify(z)===JSON.stringify(x)};})()`);
+      ok(r.kept && r.dropped && r.droppedBack && r.sameAsFirst, "the key holds " + k + " by itself: moving it alone drops the kept list, and putting it back drops it again: " + JSON.stringify(r));
+    }
 
     /* a product switch: each book's approach list is its own, kept under its own name */
     const books = rd(`(function(){
@@ -100,6 +120,30 @@ export async function run({ ok }) {
       var locked=JSON.stringify(allActions()).includes('Zed Trader');
       return {open:open,locked:locked,code:JSON.stringify(allActions()).includes('CN3-WM')};})()`);
     ok(vault.open && !vault.locked && vault.code, "the list names a party while the vault is open and returns to the code the moment it is locked: " + JSON.stringify(vault));
+
+    /* what is kept holds no name: a key is a short hash of the names, a kept chart's signature a hash of its labels, and a lock empties the lot */
+    const held = rd(`(function(){
+      var N='Zed Trader',host=document.createElement('div');host.className='vpart';host.setAttribute('data-tab','zzvault');document.body.appendChild(host);
+      var made=[];window.Chart=window.Chart||function(c,cfg){this.canvas=c;this.cfg=cfg;this.destroy=function(){};};
+      try{
+        vaultNames={'CN3-WM':N};revealed=true;SESSION_MEMO=null;railCounts._c=null;CHART_KEEP.clear();
+        var named=JSON.stringify(allActions()).includes(N);railCounts();
+        host.innerHTML='<canvas id="zv1"></canvas>';freshChart(host.querySelector('canvas'),{type:'bar',data:{labels:[N,'CN3-WM'],datasets:[{data:[1,2]}]}});
+        var keys=[SESSION_MEMO.k,railCounts._c.k,badgeKey(),badgeKey(true)],sigs=[];CHART_KEEP.forEach(function(e,k){sigs.push(e.sig,k);});
+        var open={named:named,keys:keys.concat(sigs).filter(function(s){return String(s).indexOf(N)>=0;}).length,sigs:sigs.length,
+          keyA:badgeKey(true)};
+        vaultNames={'CN3-WM':'Other Name'};var keyB=badgeKey(true);vaultNames={'CN3-WM':N};var keyA2=badgeKey(true);
+        var moves={differs:open.keyA!==keyB,steady:open.keyA===keyA2};
+        var memoBefore=allActions();
+        lockVault();
+        var after={kept:CHART_KEEP.size,memoGone:SESSION_MEMO===null,railGone:railCounts._c===null,again:allActions()!==memoBefore,named:JSON.stringify(allActions()).includes(N),
+          keys:[SESSION_MEMO&&SESSION_MEMO.k,railCounts._c&&railCounts._c.k].filter(function(s){return s&&String(s).indexOf(N)>=0;}).length};
+        return {open:open,moves:moves,after:after};
+      }finally{host.parentNode.removeChild(host);CHART_KEEP.clear();lockVault();}})()`);
+    ok(held.open.named && held.open.sigs >= 2 && held.open.keys === 0 && held.moves.differs && held.moves.steady,
+      "while the vault is open no kept key, chart signature or key holds a name, and the key still moves when a name does and not when none does: " + JSON.stringify({ open: { ...held.open, keyA: undefined }, moves: held.moves }));
+    ok(held.after.kept === 0 && held.after.memoGone && held.after.railGone && held.after.again && !held.after.named && held.after.keys === 0,
+      "a lock empties the kept charts and misses the kept list: the next read is a new walk without the name: " + JSON.stringify(held.after));
 
     /* 3. each live book is walked once, not twice, and the answer keeps the books' order */
     const eb = rd(`(function(){
@@ -193,6 +237,14 @@ export async function run({ ok }) {
     const idless = probe(`var a=freshChart(seat(''),cfgA);var b=freshChart(seat(''),cfgA);
       return {built:window.__made.length,kept:CHART_KEEP.size};`);
     ok(idless.built === 2 && idless.kept === 0, "a canvas with no id is never kept: " + JSON.stringify(idless));
+    /* a kept canvas put back in the page is updated by Chart.js in its 'attach' mode: given no transition it ran the whole entrance again (proved in Chromium) */
+    const attach = rd(`(function(){
+      var keep=window.Chart;
+      try{window.Chart=function(){};window.Chart.defaults={font:{},animation:{},plugins:{tooltip:{},legend:{labels:{}}},elements:{line:{},point:{}},transitions:{resize:{animation:{duration:0}}}};
+        chartTheme();var t=window.Chart.defaults.transitions;
+        return {attach:t.attach&&t.attach.animation&&t.attach.animation.duration,resize:t.resize.animation.duration};}
+      finally{window.Chart=keep;}})()`);
+    ok(attach.attach === 0 && attach.resize === 0, "a chart put back in the page has no entrance of its own: the library's attach mode takes no time: " + JSON.stringify(attach));
     const lru = rd(`(function(){
       var host=document.createElement('div');host.className='vpart';host.setAttribute('data-tab','zzlru');document.body.appendChild(host);
       CHART_KEEP.clear();window.__made.length=0;
@@ -389,11 +441,15 @@ export async function run({ ok }) {
       };
       for (const k of Object.keys(reads)) {
         v.eval(`window.SALT_CLOUD=true;${reads[k][0]};switchTab('network');lateFlush();`);
-        const walked = vr(`(function(){__zero();${reads[k][1]};return __walks;})()`);
-        await new Promise((r) => setTimeout(r, 700));
+        const k0 = vr("badgeKey()");                                          /* the count is kept against this key */
+        v.eval(`${reads[k][1]};`);
+        for (let i = 0; i < 20; i++) await new Promise((r) => setImmediate(r));   /* the stubbed fetch answers within a few ticks */
+        const k1 = vr("badgeKey()");
+        await new Promise((r) => setTimeout(r, 700));                         /* the warm waits 400 ms after the last read */
+        const warmed = vr("railCounts._c!==null&&railCounts._c.k===badgeKey()");
         v.eval("__zero();");
         const next = vr("(function(){switchTab('sourcing');lateFlush();return __walks;})()");
-        ok(next === 0, "once " + k + " has settled the rail's count is kept, and the next tap walks no book: " + JSON.stringify({ walked, next }));
+        ok(k0 !== k1 && warmed && next === 0, "once " + k + " has moved the key and settled, the rail's count is kept against the new key and the next tap walks no book: " + JSON.stringify({ moved: k0 !== k1, warmed, next }));
         v.eval("if(window.__ko)ORD_OPEN=window.__ko;");
       }
     } finally { try { v.close(); } catch (e) { /* best effort */ } }
@@ -409,15 +465,15 @@ export async function run({ ok }) {
   if (tickSrc) {
     const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
     const rig = () => {
-      const t = { fresh: 0, intervals: [], timeouts: [], listeners: {}, vis: "visible", active: null, dialog: null, chips: 0, onLoad: null };
+      const t = { fresh: 0, intervals: [], timeouts: [], listeners: {}, vis: "visible", active: null, sheets: [], navopen: false, chips: 0, onLoad: null };
       const doc = {
         get visibilityState() { return t.vis; }, get activeElement() { return t.active; },
-        querySelector: (s) => (/dialog/.test(s) ? t.dialog : null),
+        querySelectorAll: (s) => t.sheets.filter((e) => s.includes(e.kind === "native" ? "dialog[open]" : "[role=\"dialog\"]")),
         addEventListener: (type, fn) => { (t.listeners[type] = t.listeners[type] || []).push(fn); },
         createElement: () => { t.chips++; return { setAttribute() { }, set onclick(f) { } }; },
-        body: { appendChild() { } },
+        body: { appendChild() { }, classList: { contains: (c) => c === "navopen" && t.navopen } },
       };
-      const win = { SALT_CLOUD: true, addEventListener: (type, fn) => { if (type === "load") t.onLoad = fn; } };
+      const win = { SALT_CLOUD: true, getComputedStyle: (e) => e.style, addEventListener: (type, fn) => { if (type === "load") t.onLoad = fn; } };
       const fetchStub = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ id: "NEWID", v: "v9" }) });
       new Function("window", "document", "fetch", "setInterval", "setTimeout", "location", "navigator", "SALT_REV_MS", "SALT_BUILD_ID", "saltFresh",
         "queue", "qSyncState", "qPost", "qNewestAt", "qSentThrough", "qDirty", tickSrc)(
@@ -451,12 +507,20 @@ export async function run({ ok }) {
       t.twoSeconds();                                             /* idle twice in a row */
       ok(held === 0 && t.fresh === 1, "a focus that moves from one field to another is never reloaded over: the count restarts at each busy look: " + JSON.stringify({ held, fresh: t.fresh }));
     }
-    {
-      const t = rig(); t.dialog = {}; await t.start();
-      t.twoSeconds(); t.twoSeconds();
-      const open = t.fresh;
-      t.dialog = null; t.fire("close"); t.drain(); t.twoSeconds();
-      ok(open === 0 && t.fresh === 1, "an open dialog holds the reload, and its closing lets it through on the second idle look: " + JSON.stringify({ open, fresh: t.fresh }));
+    /* the Desk's sheets are <div role="dialog">, not <dialog>: a sheet holding only buttons has no field to hold the focus */
+    const SHEET = { kind: "role", hidden: false, closest: () => null, style: { display: "block", visibility: "visible" } };
+    for (const [what, sheets, navopen] of [["a sheet (role=dialog) with only buttons in it", [SHEET], false], ["a native <dialog> that is open", [{ ...SHEET, kind: "native" }], false], ["the rail opened over the page", [], true]]) {
+      const t = rig(); t.sheets = sheets; t.navopen = navopen; await t.start();
+      for (let i = 0; i < 4; i++) t.twoSeconds();
+      const open = t.fresh, chips = t.chips;
+      t.sheets = []; t.navopen = false; t.twoSeconds();
+      const first = t.fresh; t.twoSeconds();
+      ok(open === 0 && chips === 1 && first === 0 && t.fresh === 1, what + " holds the reload however long it stays open, and closing it lets the build through on the second idle look: " + JSON.stringify({ open, chips, first, fresh: t.fresh }));
+    }
+    for (const [what, sheet] of [["a sheet that is shut (hidden)", { ...SHEET, hidden: true }], ["a sheet inside a hidden holder", { ...SHEET, closest: () => ({}) }],
+      ["a sheet with display none", { ...SHEET, style: { display: "none", visibility: "visible" } }], ["a sheet with visibility hidden", { ...SHEET, style: { display: "block", visibility: "hidden" } }]]) {
+      const t = rig(); t.sheets = [sheet]; await t.start();
+      ok(t.fresh === 1 && t.chips === 0, what + " does not hold the reload: " + JSON.stringify({ chips: t.chips, fresh: t.fresh }));
     }
     {
       const t = rig(); t.active = INPUT; await t.start();

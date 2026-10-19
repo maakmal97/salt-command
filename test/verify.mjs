@@ -1087,14 +1087,14 @@ await (async () => {
     const idleSrc = (html.match(/function idle\(\)\{[\s\S]*?\}catch\(e\)\{return false;\}\}/) || [])[0];
     ok(!!idleSrc, "the built desk carries the freshness idle test");
     if (idleSrc) {
-      const runIdle = (q, doc) => new Function("queue", "document", idleSrc + "\nreturn idle();")(q, doc);
-      const quiet = { activeElement: null, querySelector: () => null };
+      const runIdle = (q, doc) => new Function("queue", "document", "window", idleSrc + "\nreturn idle();")(q, doc,{ getComputedStyle: (e) => e.style });
+      const body = { classList: { contains: () => false } }, quiet = { activeElement: null, body, querySelectorAll: () => [] };   /* 19 Oct 2026: the dialog test reads the role, and the open rail (R2 review) */
       ok(runIdle([{ at: "2026-09-03T00:50:58.174Z" }], quiet) === true,
         "a queued entry does not block the auto-reload: it is in localStorage and survives one");
       ok(runIdle([], quiet) === true, "an empty queue with nothing focused is idle");
-      ok(runIdle([{ at: "x" }], { activeElement: { tagName: "INPUT" }, querySelector: () => null }) === false,
+      ok(runIdle([{ at: "x" }], { activeElement: { tagName: "INPUT" }, body, querySelectorAll: () => [] }) === false,
         "a focused field still blocks the reload, which is what the rule is for");
-      ok(runIdle([], { activeElement: null, querySelector: () => ({}) }) === false,
+      ok(runIdle([], { activeElement: null, body, querySelectorAll: () => [{ hidden: false, style: { display: "block", visibility: "visible" } }] }) === false,
         "an open dialog still blocks it");
       ok(runIdle([], null) === false, "and a throw reads as not idle, never as idle");
     }
