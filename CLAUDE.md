@@ -172,6 +172,13 @@ Everything the desk shows, cost and margin included, is served at the desk's URL
 Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`); its
 `<title>` stays Salt Command, the build's anchor.
 
+**Notifications: one event, one surface** (his answers of 19 Oct 2026, `docs/plan-notifications.html`). Salt Admin
+wakes him for what waits on his decision (a new order, a customer's line, a claim, a cancellation, their answer to an
+offer, rows to approve), through its own worker `/all/sw.js` and `opush:` subscriptions on the Counter, rung by the
+Desk's `wakeAdmin` over `/desk/owner-wake`. Salt Desk only informs (folded and live, a fold refused, the suite red,
+a refund held, the morning digest); it rings an order banner itself only while no Salt Admin device answers
+(KV `admin:on`). Salt Counter's customer wakes are unchanged. A new event goes to one of the three, never two.
+
 **Add ID**, **Amend ID** and **Approve** are Salt Admin's; the Desk reads them. A code is derived from the
 name and place (`deriveCode`), never typed or picked, and changes only when they change; Amend ID
 re-keys it wherever the book holds it, prose and history keeping the old. The fold refuses a code
