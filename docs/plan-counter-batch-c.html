@@ -889,19 +889,19 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <div class="wrap">
 <header class=hero>
 <span class=kicker>Salt Counter · Counter Batch C plan · 20 Oct 2026</span>
-<h1>Batch C is <span class=g>planned</span>, waiting on his answers</h1>
-<p class=stand>Help on Account, saved spots on the phone, the measured confirm time and bolder section labels. The spots ride the pin that exists today, so the Counter stores nothing new; the confirm figure is one site-wide number the Counter's own cron measures. The Desk moves twice (its pin reader and its labels), so this is one Desk version, built after v1174 through <code>counter-batch-build</code> on his yes.</p>
+<h1>Batch C is <span class=g>ready to build</span>, every Ask answered</h1>
+<p class=stand>Help on Account, saved spots on the phone, the measured confirm time, bolder section labels and, his word of 20 Oct 2026, a sliding segmented control in place of the pill tab strips. The spots ride the pin that exists today, so the Counter stores nothing new; the confirm figure is one site-wide number the Counter's own cron measures. The Desk moves twice (its pin reader and its labels), so this is one Desk version, built after v1174 through <code>counter-batch-build</code> on his yes.</p>
 <div class=grid>
-<div class=stat><span class=label>Parts</span><span class=fig>11</span><span class=meta>P0 and Q1 in their own repos, P1 to P9 one version</span></div>
-<div class=stat><span class=label>Display-only</span><span class=fig>4</span><span class=meta>P1, P2, P4, Q1: sections plus the gate</span></div>
+<div class=stat><span class=label>Parts</span><span class=fig>13</span><span class=meta>P0 and Q1 in their own repos, P1 to P11 one version</span></div>
+<div class=stat><span class=label>Display-only</span><span class=fig>6</span><span class=meta>P1, P2, P4, P10, P11, Q1: sections plus the gate</span></div>
 <div class=stat><span class=label>Full suite</span><span class=fig>4</span><span class=meta>P3, P5, P6, P7: data and the pin</span></div>
-<div class=stat><span class=label>Ask</span><span class=fig>15</span><span class=meta>one line each, a recommended answer</span></div>
+<div class=stat><span class=label>Ask</span><span class=fig>15</span><span class=meta>all answered, 20 Oct 2026; 3 and 4 no</span></div>
 </div></header>
 
 <section class="sec glass stack" data-tone=lead><div class=sec-head><span class=kicker>1 · The one thing</span><h2>What the build is</h2></div>
 <div class="call key"><b>One Desk version, a salt-ds minor before it, a QR Command pull beside it</b>Item 20 is rule 6: salt-ds first, then the Desk, the Counter and QR Command in one piece of work. Item 18's pin gains two sealed fields the Desk must read, so the master moves and the version is a Desk version.</div>
 <ul class="points tick">
-<li><b>salt-ds part (P0):</b> no recipe is missing (every class the boards use is in <code>RECIPE_HEADS</code>, <code>tools/stmt-style.mjs</code> 77 to 111); the part only raises the label weights, a minor bump 1.8.0 to 1.9.0, merged with <code>--squash</code>.</li>
+<li><b>salt-ds part (P0):</b> every class the boards use is carried (<code>RECIPE_HEADS</code>, <code>tools/stmt-style.mjs</code> 77 to 111); the part raises the label weights and adds one recipe, the sliding segmented control (item 21), a minor bump 1.8.0 to 1.9.0, merged with <code>--squash</code>.</li>
 <li><b>Nothing new on the Counter's store:</b> spots live in the customer's phone; the pin is filed exactly as today (<code>stmt/pin.js</code>). The confirm figure is one KV value, site-wide, never a customer's.</li>
 <li><b>Nothing prices:</b> no part reads or moves a figure the customer pays.</li>
 <li><b>Tide is off</b> (19 Oct 2026): the boards are drawn in Tide; the build is checked in Night, and Tide's tokens are kept level.</li>
@@ -911,6 +911,7 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <section class="sec glass stack" data-tone=counter><div class=sec-head><span class=kicker>2 · Evidence</span><h2>What each drawn element becomes</h2></div>
 <div class=tablewrap><table class=set><caption class=sr-only>What each drawn element becomes</caption>
 <thead><tr><th scope=col class="c-n n">Item</th><th scope=col>Drawn</th><th scope=col>Lives today</th><th scope=col>Becomes</th><th scope=col class=state>Part</th></tr></thead><tbody>
+<tr><td class="c-n n">21<td>(his word of 20 Oct 2026, not drawn) a slider in place of the pill tab strips<td><code>.salt-tabs</code> and <code>.salt-tabs__pill</code> (salt-ds <code>src/styles.css</code>, Tab strip): 14 uses in <code>stmt/</code>, 18 in the master, none in QR Command; the stage arrows <code>salt-tabs--arrows</code><td>A new salt-ds recipe <code>salt-segment</code>; every strip of 2 to 6 options moves to it; longer strips and the stage arrows stay<td class=state><span class="badge counter">P0 P10 P11</span></tr>
 <tr><td class="c-n n">20<td>Section labels at 600, field labels 600 and 0.18em<td><code>.salt-eyebrow</code> 500 / 0.24em (salt-ds <code>src/styles.css</code> 354); <code>.salt-field__label</code> 500 / 0.14em (889); the Desk's own <code>h2</code>, <code>.qfield label</code>, <code>.lclabel</code> at 500 (<code>design/desk.css</code> 80, 268, 409)<td>salt-ds raises both recipes and <code>.salt-options__legend--label</code>; the Desk's three own rules follow; the Counter takes it through <code>stmt-style</code>; QR Command pulls<td class=state><span class="badge counter">P0 P1 Q1</span></tr>
 <tr><td class="c-n n">17<td>Help card on Account: Paying, Delivery, Collecting, Changing an order<td>Nothing; <code>#acct</code> holds the glance strip, the thread, This device and the statement (<code>stmt/page.js</code> 1870 to 1876)<td>A <code>section#aHelp</code> glass card after This device, four native <code>&lt;details&gt;</code> on the order's own fold pattern (<code>.odet</code>, page CSS 563), words <code>help.*</code><td class=state><span class="badge good">P2</span></tr>
 <tr><td class="c-n n">19<td>"Usually confirmed within 45 minutes", "Measured from our last 30 orders, not a promise."; closed: "We confirm when the Counter opens", "Opens at 09:00, Sun 19 Oct."<td><code>oWhen</code> draws <code>ow.placed</code> (page.js 5113, words.js 727); hours reach the page on <code>GET /hours</code> (<code>loadCounterHours</code> 6567)<td>The cron measures <code>confirm:within</code> (P3); <code>publicHours</code> carries it; <code>oWhen</code> draws the open, closed or unknown line (P4)<td class=state><span class="badge warn">P3</span> <span class="badge good">P4</span></tr>
@@ -925,14 +926,14 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <ul class=points>
 <li><b>Store:</b> localStorage <code>salt-spots:&lt;username&gt;</code>, at most three <code>{id, label, place, unit, pt}</code>: <code>label</code> up to 24 characters (Shop, Store, Warehouse or typed), <code>place</code> the area words under <code>draft.place</code>'s own rule (60), <code>unit</code> up to 40 and optional, <code>pt</code> optional and one of today's three point shapes. Read and written in <code>try</code>, as <code>salt-look</code> is; a store that throws leaves the sheet as today.</li>
 <li><b>Per account:</b> keyed by username, so a phone holding a kept second account shows each its own. The test shim's <code>salt-test:</code> namespace keeps <code>/all/test</code>'s spots apart.</li>
-<li><b>Lifetime:</b> until Remove, or Log out of this phone (<code>logOut</code>, page.js 2907): the signed-in account's key is dropped whether or not it is the kept one (2914 clears the others only when <code>!other</code>). Sign out everywhere cannot reach a phone; the next open there finds them until that phone logs out (Ask 3).</li>
+<li><b>Lifetime:</b> until Remove (his answer 3, no): Log out keeps them, as it keeps the passkey and the look, so the same phone signing in again finds them; Sign out everywhere cannot reach a phone either. A new phone starts with none.</li>
 <li><b>Save on this phone</b> off: a one-off spot, used for this order and stored nowhere.</li>
 <li><b>At three:</b> Add a spot gives way to <code>sp.full</code>, "Three saved. Remove one to add another." Remove asks no confirm.</li>
 </ul>
 <h3>The sheet</h3>
 <ul class=points>
 <li><b>Where to</b> lists the spots as <code>salt-option__face--tap</code> radios, each with an Edit ghost (named "Edit Shop", 44px) and Add a spot. Picking one sets <code>draft.place = spot.place</code>, <code>draft.spot = spot.id</code> and the seal input; today's free-text area stays inside Add a spot as Area.</li>
-<li><b>Default:</b> the spot this phone used last (<code>salt-spots</code> keeps its order), else none picked (Ask 4).</li>
+<li><b>Default:</b> none picked (his answer 4, no): the customer picks a spot on each order, and Next waits until they do; the list keeps the order they were saved in.</li>
 <li><b>Next</b> waits for a spot when delivering, as it waits for an area today (<code>sh.whyWhere</code>, 4166). The gate's pin pass becomes <code>draft.pin &amp;&amp; draft.pin.src !== 'unit'</code>, so a unit alone never stands in for the area words.</li>
 <li><b>Amend before Accept</b> cannot carry a pin: page.js 4401 sends none, <code>stmt/orders.js</code> 732 to 735 refuses a <code>pin</code> key (<code>amendShape</code>) and the amend route runs no <code>takePin</code>. So Change order shows the spot as kept (<code>draft.pinKept</code>) and hides the picker and the unit; <code>decideReplace</code> (737) re-attaches the original pin (Ask 7).</li>
 </ul>
@@ -989,18 +990,27 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <li><b>QR Command:</b> uses neither recipe; the pull keeps it level, and its own <code>.q</code> labels and <code>details.obsec&gt;summary</code> (<code>src/app/app.css</code> 127 to 129) go to 600 (Ask 2).</li>
 </ul></section>
 
+<section class="sec glass stack" data-tone=good><div class=sec-head><span class=kicker>5b · The plan</span><h2>The slider in place of tab pills</h2><span class=meta>Item 21, his word of 20 Oct 2026: a sliding segmented control (his pick of three), for every multi-option pill strip.</span></div>
+<ul class=points>
+<li><b>Recipe <code>salt-segment</code> in salt-ds (P0):</b> one track (<code>--salt-panel</code>, the field edge at 3:1) holding its options as equal columns (<code>--n</code>), a brass thumb behind the chosen one placed by <code>--i</code>, sliding 0.25s and not at all under reduced motion; options in mono caps at the pill's size, the chosen one in <code>--salt-salt</code>, the rest <code>--salt-mist</code>, each 4.5:1 on the track and the thumb in Night and Tide (<code>npm run contrast</code> measures them); 44px options; the selection read from <code>aria-selected</code> or <code>aria-checked</code>, as the Tab strip does. A head added to <code>RECIPE_HEADS</code> so the Counter carries it.</li>
+<li><b>Which strips:</b> every <code>salt-tabs</code> strip of 2 to 6 options, on the Desk (the master's strips, its rail Look switch) and the Counter (Look Night and Tide, the order tabs <code>otabs</code>, Salt Admin's parts <code>aparts</code> and kinds <code>nchips</code> where they hold 6 or fewer). The builder lists each strip with its count first.</li>
+<li><b>Stay as they are:</b> the stage arrows (<code>salt-tabs--arrows</code>, his shape of 18 Oct 2026) and any strip of more than 6, such as the months filter <code>mfil</code>: a slider of a dozen columns has no room at 390.</li>
+<li><b>Behaviour unchanged:</b> the same buttons, roles, handlers and keys; each handler that moves the selection also sets <code>--i</code>; Tide's greyed button keeps its greying inside the slider.</li>
+<li><b>QR Command</b> has no strip, so Q1 only pulls the recipe.</li>
+</ul></section>
+
 <section class="sec glass stack" data-tone=warn><div class=sec-head><span class=kicker>6 · Watch</span><h2>Watch while building</h2></div>
 <ul class="points warn">
 <li><b>Template literal:</b> the new page code is in <code>CLIENT_JS</code>: no backtick, no lone backslash, <code>var</code> and string joins, <code>[/]</code> in a regex.</li>
 <li><b>The point on the phone</b> is the customer's own data on their own phone; it never travels unsealed. The suite proves no <code>/orders</code> body carries <code>label</code>, <code>unit</code> or <code>pt</code> in the clear.</li>
 <li><b>The leak checks:</b> spot presets and help copy are invented words and plain English; no place name from the directory enters the page.</li>
 <li><b>Batch B's sheet:</b> the spot list sits in the delivery step Batch B's basket and Order again also open; Order again and the basket must not pre-pick a spot the phone no longer holds.</li>
-<li><b>Older sections re-aimed:</b> <code>test/delivery-pin.mjs</code> and <code>delivery-pin-desk.mjs</code> (their <code>spot</code> fixture), any section reading <code>ow.placed</code> on a placed order, the Desk's label weights in its CSS sections. Grep <code>test/</code> for every class and key moved before a display-only push.</li>
+<li><b>Older sections re-aimed:</b> <code>test/delivery-pin.mjs</code> and <code>delivery-pin-desk.mjs</code> (their <code>spot</code> fixture), any section reading <code>ow.placed</code> on a placed order, the Desk's label weights in its CSS sections; every section reading <code>salt-tabs__pill</code>, <code>[role=tab]</code> or a moved strip's classes, on the Desk and the Counter, re-aimed for item 21. Grep <code>test/</code> for every class and key moved before a display-only push.</li>
 <li><b>Book S2c</b> runs in parallel: take the number last, after fetch.</li>
 </ul></section>
 
 <section class="sec glass stack" data-tone=good><div class=sec-head><span class=kicker>7 · Parts</span><h2>Parts, in landing order</h2><span class=meta>Every new assertion is proved red by its own mutation (<code>tools/section.mjs --mutations</code>), in its own <code>test/counter-c-*.mjs</code> section, titled "Counter Batch C:".</span></div>
-<div class="item verdict"><span class="badge counter">salt-ds</span><p><b>P0 Bolder labels in salt-ds (20).</b> <code>src/styles.css</code> 354, 889, 956; <code>package.json</code> 1.9.0; <code>contrast</code> green; a PR merged with <code>--squash</code>, then <code>npm run propagate</code> to salt-command and QR Command. Checks: the built CSS reads 600 on each of the three rules, each reverted by its own mutation.</p></div>
+<div class="item verdict"><span class="badge counter">salt-ds</span><p><b>P0 Bolder labels and the slider in salt-ds (20, 21).</b> <code>src/styles.css</code> 354, 889, 956, and the new <code>salt-segment</code> recipe beside the Tab strip, its contrast pairs in <code>scripts/contrast.mjs</code>; two commits; <code>package.json</code> 1.9.0; <code>contrast</code> green; a PR merged with <code>--squash</code>, then <code>npm run propagate</code> to salt-command and QR Command. Checks: the built CSS reads 600 on each of the three rules, each reverted by its own mutation.</p></div>
 <div class="item verdict"><span class="badge good">Display-only</span><p><b>P1 The pull, the Desk's own labels (20).</b> <code>design/salt-ds.css</code> (pull), <code>design/desk.css</code> 80, 268, 409, <code>designsync --sync</code>, <code>stmt/statement-css.js</code> regenerated, build. Checks: <code>designsync --drift</code> level; the Counter's carried eyebrow and field label at 600; the Desk's three rules at 600 and fields at 0.18em; Night and Tide contrast unchanged.</p></div>
 <div class="item verdict"><span class="badge good">Display-only</span><p><b>P2 Help on Account (17).</b> <code>stmt/page.js</code> (<code>#aHelp</code> after <code>thisDevice()</code>), <code>stmt/words.js</code> <code>help.h</code>, <code>help.pay</code>, <code>help.payA</code>, <code>help.deliv</code>, <code>help.delivA</code>, <code>help.coll</code>, <code>help.collA</code>, <code>help.change</code>, <code>help.changeA</code>; a <code>FEATURES</code> line "help". Checks: the four answers word for word; each summary 44px by a hit test; closed by default; absent on Salt Admin; no em dash.</p></div>
 <div class="item verdict"><span class="badge warn">Full suite</span><p><b>P3 The confirm figure measured (19).</b> New <code>stmt/confirm.js</code>; <code>stmt/worker.js</code> <code>scheduled</code>; <code>stmt/maker.js</code> <code>publicHours</code>. Checks: median odd and even; the first <code>acknowledged</code> line wins over a later one; 3 goes to 15, 14 to 15, 16 to 30, 45 stays 45; an even count takes the mean of the middle two before rounding; an ISO-string moment inside hours counts; a looping or broken <code>replaces</code> chain falls back without a throw; the manual override ignored; the compute runs at an hour with no chase slot; a throw in it leaves the chase running; nine gives null, ten a figure; only the latest 30; a placement or Accept out of hours left out; any order with <code>price</code>, a group order and a test account left out; a replacement chain from its root; a stale KV value dropped; <code>/hours</code> carries <code>{mins, n}</code> and nothing else of the orders.</p></div>
@@ -1008,7 +1018,9 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <div class="item verdict"><span class="badge warn">Full suite</span><p><b>P5 Saved spots on the phone (18).</b> <code>stmt/page.js</code> (spot list in <code>drawForm</code>, sheet step <code>spot</code>, <code>spotsRead</code>/<code>spotsWrite</code>, <code>logOut</code>), words <code>sp.*</code>; <code>FIX_VERSION</code> stays (no fixture data). Checks: three saved hides Add a spot and shows <code>sp.full</code>; Save off stores nothing; Remove drops one with no confirm; two usernames keep two lists; Log out drops the account's; a throwing store leaves today's sheet; Next waits with no spot; Edit names its spot; every control 44px.</p></div>
 <div class="item verdict"><span class="badge warn">Full suite</span><p><b>P6 The pin carries label and unit (18).</b> <code>stmt/page.js</code> <code>pinSeal</code>, <code>oPlaceIt</code>; <code>stmt/words.js</code> <code>od.sealed</code>; <code>test/delivery-pin.mjs</code> re-aimed. Checks, opening with the test key: a point and a unit seal both; a unit alone seals <code>src:'unit'</code> with no point; neither seals nothing; the <code>/orders</code> body carries none of label, unit or point in the clear; a sealed pin under <code>PIN_MAX</code> at the longest label and unit, and <code>pinShape</code> accepting both new shapes; a typed unit over 40 cut before sealing; a unit alone does not pass the area gate; an amend body with <code>pin</code> still refused 400 and the replacement keeping the original's pin.</p></div>
 <div class="item verdict"><span class="badge warn">Full suite</span><p><b>P7 The Desk reads label and unit (18).</b> <code>master/salt_command.html</code> <code>ordPinPoint</code>, <code>ordPinLine</code>, <code>pinFileable</code>; <code>stmt/owner.js</code> 4034; <code>test/delivery-pin-desk.mjs</code> re-aimed. Checks: label and unit shown after unlock; a unit alone reads its own line, is not fileable and is skipped by File all; filing writes the point alone; a slip-info seal still refused.</p></div>
-<div class="item verdict"><span class="badge lead">Docs</span><p><b>P8 Docs.</b> <code>docs/STATEMENTS.md</code> (spots, the pin's fields, the confirm figure), <code>docs/DESIGN.md</code> (label weights), the <code>CLAUDE.md</code> line on the exact spot (label and unit sealed with it; spots on the phone only) and a line for the confirm figure.</p></div>
+<div class="item verdict"><span class="badge good">Display-only</span><p><b>P10 Sliders on the Desk (21).</b> <code>master/salt_command.html</code> strips of 2 to 6 options to <code>salt-segment</code>, each handler setting <code>--i</code>; <code>design/desk.css</code> only for a token. Checks: each moved strip carries <code>salt-segment</code> and <code>--n</code> equal to its options; a tap moves <code>--i</code> and <code>aria-selected</code> together; the arrows and long strips untouched; 44px by a hit test; no transition under reduced motion.</p></div>
+<div class="item verdict"><span class="badge good">Display-only</span><p><b>P11 Sliders on the Counter (21).</b> <code>stmt/page.js</code> (Look, <code>otabs</code>) and <code>stmt/owner.js</code> or the Admin builder in page.js (<code>aparts</code>, <code>nchips</code> where 6 or fewer); <code>tools/stmt-style.mjs</code> <code>RECIPE_HEADS</code>; <code>stmt/statement-css.js</code> regenerated. Checks: as P10, plus the recipe carried in <code>SITE_RECIPES</code>, Tide's greyed button still inert, and <code>mfil</code> still a pill strip.</p></div>
+<div class="item verdict"><span class="badge lead">Docs</span><p><b>P8 Docs.</b> <code>docs/STATEMENTS.md</code> (spots, the pin's fields, the confirm figure), <code>docs/DESIGN.md</code> (label weights, the slider and which strips take it), the <code>CLAUDE.md</code> line on the exact spot (label and unit sealed with it; spots on the phone only) and a line for the confirm figure.</p></div>
 <div class="item verdict"><span class="badge counter">Version</span><p><b>P9 The version.</b> Queue first, the full suite on the unbumped tree, fetch, bump off origin's tip, changelog, build, gate, push; the chain deploys the Desk and the Counter; live <code>/rev</code>; the render pass at 390, 1180 and 1440 in Night.</p></div>
 <div class="item verdict"><span class="badge good">Display-only</span><p><b>Q1 QR Command (20).</b> Its own PR in <code>qr-command</code>: the pull through its <code>tools/designsync.mjs</code>, its <code>.q</code> and <code>details.obsec&gt;summary</code> at 600 (Ask 2); its own checks. Lands with P1's version, in the same piece of work.</p></div>
 </section>
@@ -1017,7 +1029,7 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <ol class=points>
 <li><b>Batch B is live</b> (v1174, 20 Oct 2026); Batch C builds on its sheet and on Batch A's order detail and glance strip.</li>
 <li><b>P0</b> in salt-ds, merged, propagated.</li>
-<li><b>P1</b> the pull, then <b>P3</b> and <b>P6, P7</b> (the data, Fable checked), then <b>P2, P4, P5</b> (the page), <b>P8</b> docs, <b>P9</b> the number.</li>
+<li><b>P1</b> the pull, <b>P10</b> and <b>P11</b> the sliders, then <b>P3</b> and <b>P6, P7</b> (the data, Fable checked), then <b>P2, P4, P5</b> (the page), <b>P8</b> docs, <b>P9</b> the number.</li>
 <li><b>Q1</b> merged the same day as P9.</li>
 <li><b>His acceptance:</b> Help, spots and the confirm line on <code>/all/test</code>; the Desk's spot line by a real delivery order with a unit, since a test account's pin is never filed.</li>
 </ol></section>
@@ -1034,31 +1046,33 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
 <tr><td class=c-short>British English<td>The em-dash check covers every new key.</tr>
 </tbody></table></div></section>
 
-<section class="sec glass stack" data-tone=counter><div class=sec-head><span class=kicker>10 · Decided</span><h2>His answers of 18 Oct 2026</h2></div>
+<section class="sec glass stack" data-tone=counter><div class=sec-head><span class=kicker>10 · Decided</span><h2>His answers of 18 and 20 Oct 2026</h2></div>
 <ul class="points tick">
 <li><b>17 Help:</b> the four answers as drafted; "under To pay" names Home's To pay card.</li>
 <li><b>18 Saved spots:</b> on this phone only; label and unit sealed in the salt-pin with the point; nothing new on the Counter; a new phone starts with none.</li>
 <li><b>19 Confirm time:</b> measured as above; "Usually confirmed within" and "not a promise" kept.</li>
 <li><b>20 Labels:</b> salt-ds first, then the Desk, the Counter and QR Command.</li>
+<li><b>21 Slider (20 Oct 2026):</b> a sliding segmented control in place of the pill tab strips, his pick of three.</li>
+<li><b>The Ask list (20 Oct 2026):</b> every item as recommended except 3 (Log out keeps the spots) and 4 (no spot picked by default).</li>
 </ul></section>
 
-<section class="sec glass stack" data-tone=warn><div class=sec-head><span class=kicker>11 · Ask</span><h2>Ask list, a recommended answer each</h2></div>
+<section class="sec glass stack" data-tone=warn><div class=sec-head><span class=kicker>11 · Ask</span><h2>Ask list, answered 20 Oct 2026</h2><span class=meta>All as recommended, except 3 and 4: no.</span></div>
 <div class=tablewrap><table class=set><caption class=sr-only>Questions for him</caption>
-<thead><tr><th scope=col class="c-n n">#</th><th scope=col>Question</th><th scope=col>Recommended</th></tr></thead><tbody>
-<tr><td class="c-n n">1<td>Section labels at 600 or 700?<td>600, as drawn</tr>
+<thead><tr><th scope=col class="c-n n">#</th><th scope=col>Question</th><th scope=col>His answer</th></tr></thead><tbody>
+<tr><td class="c-n n">1<td>Section labels at 600 or 700?<td>600</tr>
 <tr><td class="c-n n">2<td>QR Command: raise its own labels to 600 too, or only pull?<td>Raise them</tr>
-<tr><td class="c-n n">3<td>Log out of this phone drops that account's saved spots?<td>Yes</tr>
-<tr><td class="c-n n">4<td>The sheet opens on the spot this phone used last?<td>Yes</tr>
+<tr><td class="c-n n">3<td>Log out of this phone drops that account's saved spots?<td>No: kept</tr>
+<tr><td class="c-n n">4<td>The sheet opens on the spot this phone used last?<td>No: none picked</tr>
 <tr><td class="c-n n">5<td>A unit typed with no exact spot is sealed as a pin with no point, still <code>salt-pin v1</code>?<td>Yes</tr>
 <tr><td class="c-n n">6<td>The order's details row reads "Spot or unit: Sealed" for both?<td>Yes</tr>
-<tr><td class="c-n n">7<td>Change order before Accept keeps the sealed spot and unit as placed (a new spot means a message on the order)?<td>Yes, as today</tr>
+<tr><td class="c-n n">7<td>Change order before Accept keeps the sealed spot and unit as placed (a new spot means a message on the order)?<td>Yes</tr>
 <tr><td class="c-n n">8<td>File on the Desk files the point alone, never the unit or label?<td>Yes</tr>
 <tr><td class="c-n n">9<td>The confirm figure counts only orders placed and accepted in Counter hours, judged on today's weekly hours?<td>Yes</tr>
 <tr><td class="c-n n">10<td>Measured hourly by the Counter and carried on its hours, not sealed in each statement?<td>Yes</tr>
 <tr><td class="c-n n">11<td>Over an hour it reads "1 hour 15 minutes"?<td>Yes</tr>
-<tr><td class="c-n n">12<td>At most three spots a phone; Remove asks no confirm?<td>Yes, as drawn</tr>
-<tr><td class="c-n n">13<td>With no spot saved, Next waits until one is added?<td>Yes, as drawn</tr>
-<tr><td class="c-n n">14<td>The confirm line shows its live count, 10 to 30?<td>Yes, as drawn</tr>
+<tr><td class="c-n n">12<td>At most three spots a phone; Remove asks no confirm?<td>Yes</tr>
+<tr><td class="c-n n">13<td>With no spot saved, Next waits until one is added?<td>Yes</tr>
+<tr><td class="c-n n">14<td>The confirm line shows its live count, 10 to 30?<td>Yes</tr>
 <tr><td class="c-n n">15<td>He accepts the Desk's spot line on a real delivery order with a unit?<td>Yes</tr>
 </tbody></table></div></section>
 
