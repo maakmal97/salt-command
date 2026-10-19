@@ -34,8 +34,9 @@ export async function run({ ok }) {
     ok(/<html[^>]* data-theme="(?:night|tide)"/.test(html) && /translate="no"/.test(html) && /name="viewport"/.test(html) && /name="robots" content="noindex/.test(html) && !/<script/i.test(html)
       && /[.]appmark\{display:block/.test(html) && /url\(\/fonts\//.test(html) && !/https?:\/\//.test(html),
       `${name} is themed (Night while Tide is off, 19 Oct 2026), kept from the translator and from search, with a viewport, the frame's own faces and spacing for the ring, no script and no address`);
+    /* 19 Oct 2026: whole words, so a salt- recipe class or a word such as desktop is not a name */
     const words = visible(html), src = html.replace(/<style[\s\S]*?<\/style>/g, " ");
-    ok(!O.wordsIn(words, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS)).length && !O.siteWords(words) && !/salt|command|counter|desk/i.test(src)
+    ok(!O.wordsIn(words, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS)).length && !O.siteWords(words) && !/\b(salt|command|counter|desk)\b(?![-(])/i.test(src)
       && !Object.values(PG.PSHAPE).some((s) => new RegExp("\\b" + s + "\\b", "i").test(words)),
       `${name} names no brand, product, shape or level, in what it says or in its source: ` + JSON.stringify(words));
     dom.window.close();
