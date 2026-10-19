@@ -178,8 +178,9 @@ const GENERAL = [
   "That input operation is not available.",
 ];
 const GENERAL_SENTENCE = "The Counter could not do that. Try again.";
-/* words a person does not say: nothing a mapped sentence says may carry one */
-const JARGON = /roster|timestamp|mirror|envelope|canonical|fingerprint|snapshot|immutable|\btier|\bfold|\bseed|patch|vault|\bstream|finite|\bR[23]\b|Add ID|Salt Admin|payload|input\b/i;
+/* words a person does not say: nothing a mapped sentence says may carry one (19 Oct 2026: patch and finite start a word, so
+   "dispatched" and "definitely" are plain English) */
+const JARGON = /roster|timestamp|mirror|envelope|canonical|fingerprint|snapshot|immutable|\btier|\bfold|\bseed|\bpatch|vault|\bstream|\bfinite|\bR[23]\b|Add ID|Salt Admin|payload|input\b/i;
 
 /* the sentences the redesign glossary names, and the ones people meet most, exactly */
 const NAMED = [
