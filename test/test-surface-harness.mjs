@@ -21,8 +21,10 @@ export class Store {
   }
 }
 
+/* each surface signs with its own key under its own kid: the Access check keeps keys by issuer and kid for the process, and the sections share one */
+let surfaces = 0;
 export async function surface(opts = {}) {
-  const store = new Store(), queue = new Store(), team = "surface-fixture", audience = opts.audience ?? "surface-audience", kid = "surface-key";
+  const store = new Store(), queue = new Store(), team = "surface-fixture", audience = opts.audience ?? "surface-audience", kid = "surface-key-" + (++surfaces);
   const signing = await webcrypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048,
     publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
   const publicKey = await webcrypto.subtle.exportKey("jwk", signing.publicKey);

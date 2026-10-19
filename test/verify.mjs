@@ -43411,8 +43411,8 @@ await (async () => {
   const { FONTS: fontsF } = await import("../stmt/fonts.js");
   ok(FF.every((f) => Buffer.from(fontsF[f] || "", "base64").equals(readFileSync(join(REPO, "design", "fonts", f)))), "and its bytes are the files");
   const wF = readFileSync(join(REPO, "stmt", "worker.js"), "utf8");
-  ok((wF.match(/font-src 'self'/g) || []).length === 2 && /p\.startsWith\("\/fonts\/"\)/.test(wF) && /"content-type": "font\/woff2"/.test(wF),
-    "both of the site's policies admit its own fonts and the Worker serves them at /fonts/");
+  ok((wF.match(/font-src 'self'/g) || []).length === 3 && /p\.startsWith\("\/fonts\/"\)/.test(wF) && /"content-type": "font\/woff2"/.test(wF),
+    "each of the site's three policies (the guest pages, the account page and the test surface's shell) admits its own fonts and the Worker serves them at /fonts/");
   const stmtWF = (await import("../stmt/worker.js")).default;
   const rF = await stmtWF.fetch(new Request("https://site.test/fonts/newsreader-latin.woff2"), { STMT: new KV() });
   const bodyF = Buffer.from(await rF.arrayBuffer());

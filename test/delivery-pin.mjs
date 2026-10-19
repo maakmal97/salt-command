@@ -91,6 +91,10 @@ export async function run({ ok }) {
   /* a test account's spot is dropped before the order is asked for, and never filed */
   const ttok = "q".repeat(24);
   await skv.put("sess:" + createHash("sha256").update(ttok).digest("hex"), JSON.stringify({ u: "0000-0000", at: new Date().toISOString() }));
+  /* every Place by a test account goes to its fixture (the test surface, P3), so the account has one, as the publish seals it */
+  const TF = await import("../stmt/testfix.js");
+  await skv.put("u:0000-0000", JSON.stringify({ test: true, wrap: { salt: "pin-wrap" } }));
+  await skv.put(TF.fixKey("0000-0000"), JSON.stringify({ v: TF.FIX_VERSION, salt: "pin-wrap", at: "2026-10-18T07:00:00.000Z", env: { iv: "pin-iv" }, claims: [], orders: [], makerBook: { sales: [] } }));
   const tpost = await stmtW.fetch(new Request("https://site.test/orders", { method: "POST", headers: { "content-type": "application/json", "X-Stmt-Session": ttok },
     body: JSON.stringify(Object.assign({}, base, { place: "Taman", rid: "h".repeat(32), pin: await seal(pub, spot, "salt-pin v1") })) }), senv);
   const tj = await tpost.json();
