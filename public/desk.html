@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="ae84aad5b6b11f59";
+var SALT_BUILD_ID="fb785fcdd76406bd";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10278,7 +10278,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1164","d":"19 Oct 2026","t":"THREE PRICES: FLOOR, SET PRICE, CEILING; THE LEVELS ARE GONE","n":["<b>THE FLOOR IS COGS AND FREIGHT, UP TO THE NEXT RM 5.</b> Every book: the latest purchase's quote and trip freight over its units, times the size, the order total rounded up to the next RM 5. The Ceiling is three times the Floor on every book (oil and candy were twice, rice two and a half). A partner pays the Floor. Oil, candy and rice keep their typed boards; no board price moves.","<b>SALT'S SET PRICE IS THE LEAST ANY CUSTOMER PAYS.</b> 2.5 times the Floor at half a unit, 2 at 1 unit, 1.67 at 6.25 and 1.33 at 12.5, sliding in the log of size and flat above 12.5. The margin in ringgit never falls as the order grows, and a unit never costs more in a bigger order, judged on the exact rate, so a large order no longer slides to the Floor. At COGS RM 58 a unit: RM 75, 120, 605 and 980 at 0.5, 1, 6.25 and 12.5 units.","<b>EACH CUSTOMER'S PRICE IS HIS %.</b> Their % lifts the Set Price toward the Ceiling, the same at every size. The record only suggests a % (paid late, paid above the Set Price) and never moves a price, so a late payer is no longer priced up unasked. Every customer starts at 0%. A figure in the old drift scale, or sent without its unit, books as no %.","<b>THE FIVE LEVELS ARE GONE</b> from the engine, the Desk, the drafter, the fold, Counter Admin and the guest links: one guest board, the Set Price, and old links keep opening. Every surface says Floor, Set Price, Ceiling."]}];
+const evolution=[{"v":"v1165","d":"19 Oct 2026","t":"THE COUNTER, BATCH A: COLLECTION POINTS, THE ORDER'S OWN SCREEN, HOME AND ACCOUNT","n":["<b>A COLLECT ORDER IS READY AT ONE OF HIS POINTS.</b> Counter Admin keeps the points under Shop &gt; Hours, a code and a place each; Ready to collect asks which and is refused without one. The order keeps the point it was given, Change point moves it and tells them, and the customer sees the point and a pin to their maps app only while the goods wait there. The Desk never carries it.","<b>ORDERS ARE CARDS, AND AN ORDER HAS ITS OWN SCREEN.</b> All, Open, To pay and Done on a phone, Open and Done side by side from 860px. An order opens on a band with a short reference (shown on Counter Admin too), the steps with their moments, a receipt, Message at every stage and Details. Every state word has its mark.","<b>HOME LEADS WITH TODAY.</b> The time, whether the Counter is open and until when, and the notice a line at a time with Pause, every line standing for a reader who asks for less motion. To pay now still leads, then their latest open order (a pill on a phone, a banner from 1080px), an associate's nearest reward and This year off their statement.","<b>ACCOUNT OPENS ON A GLANCE</b>: To pay now at Home's own figure with its order, the thread and the statement. From 1080px the rail is titled Salt Counter and says who is signed in."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10422,7 +10422,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='19 Oct 2026, 01:30 KL';
+const LAST_UPDATED='19 Oct 2026, 09:23 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
