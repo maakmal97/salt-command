@@ -1,9 +1,13 @@
 [
- {"name":"the bar never reads Live","file":"stmt/page.js","find":"live.innerHTML='<i></i><span>'+(on?'Live':'Offline')+'</span>';","replace":"live.innerHTML='<i></i><span>Offline</span>';"},
- {"name":"the dot is never lit","file":"stmt/page.js","find":"live.className='alive '+(on?'on':'off');","replace":"live.className='alive off';"},
- {"name":"the open status is never shown","file":"stmt/page.js","find":"      open.hidden=false;\n","replace":""},
- {"name":"open says no time","file":"stmt/page.js","find":"h.open?'Open'+(w?' until '+w:'')","replace":"h.open?'Open'"},
- {"name":"closed says no day","file":"stmt/page.js","find":":'Closed'+(w?', opens '+w:'');","replace":":'Closed';"},
- {"name":"a failed read stays Live","file":"stmt/page.js","find":"      catch(e){ paint(false,last); }\n","replace":"      catch(e){ paint(true,last); }\n"},
- {"name":"the bar is not read again on return","file":"stmt/page.js","find":"document.addEventListener('visibilitychange',function(){ if(!document.hidden) read(); });","replace":""}
+ {"name":"the bar never reads Live","file":"stmt/owner.js","find":"live.innerHTML='<i></i><span>'+(on?'Live':'Offline')+'</span>';","replace":"live.innerHTML='<i></i><span>Offline</span>';"},
+ {"name":"the dot is never lit","file":"stmt/owner.js","find":"live.className='abarlive '+(on?'on':'off');","replace":"live.className='abarlive off';"},
+ {"name":"the hours are never shown","file":"stmt/owner.js","find":"if(hrs.hidden===!!txt) hrs.hidden=!txt;","replace":"hrs.hidden=true;"},
+ {"name":"open says no time","file":"stmt/owner.js","find":"h.open?'Open'+(w?' until '+w:'')","replace":"h.open?'Open'"},
+ {"name":"closed says no day","file":"stmt/owner.js","find":":'Closed'+(w?', opens '+w:'');","replace":":'Closed';"},
+ {"name":"a read that cannot go stays Live","file":"stmt/owner.js","find":"if(path===BAR_READ){ barNet=false; barDraw(); }","replace":""},
+ {"name":"a read that reaches it never comes back Live","file":"stmt/owner.js","find":"    if(path===BAR_READ&&!barNet){ barNet=true; barDraw(); }\n","replace":""},
+ {"name":"the bar is not drawn after the Shop read","file":"stmt/owner.js","find":"    shopReading=false;\n    barDraw();\n","replace":"    shopReading=false;\n"},
+ {"name":"a passed moment is still drawn","file":"stmt/owner.js","find":"&&!(at&&Date.parse(at)<=Date.now())","replace":""},
+ {"name":"a lapse leaves it Live","file":"stmt/owner.js","find":"&&!document.body.classList.contains('ended');\n    /* a tick","replace":";\n    /* a tick"},
+ {"name":"the bar reads /hours itself","file":"stmt/owner.js","find":"  function barDraw(){\n","replace":"  function barDraw(){\n    fetch('/hours');\n"}
 ]

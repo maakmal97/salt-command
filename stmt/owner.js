@@ -820,7 +820,7 @@ export const OWNER_JS = `
     lookShut();   /* 11 Oct 2026: the look Sheet gives way; the lapse is what he must see */
     ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */
     makerVaultLock();   /* and every key, name, place and picture the one unlock holds (Phase 4b) */
-    document.getElementById('aEnded').hidden=false; document.body.classList.add('ended');
+    document.getElementById('aEnded').hidden=false; document.body.classList.add('ended'); barDraw();
     /* the Needs poll ends with the sign-in: every poll after a lapse would send seven requests to the login and fail each */
     if(needsTimer){ clearInterval(needsTimer); needsTimer=null; }
   }
@@ -1004,13 +1004,45 @@ export const OWNER_JS = `
                  : {};
     o.redirect='manual';
     var r;
-    try{ r = await fetch(path, o); }catch(e){ throw new Error('Not sent. Check the connection and try again.'); }
+    try{ r = await fetch(path, o); }catch(e){ if(path===BAR_READ){ barNet=false; barDraw(); } throw new Error('Not sent. Check the connection and try again.'); }
+    if(path===BAR_READ&&!barNet){ barNet=true; barDraw(); }
     if(r.type==='opaqueredirect'||r.status===401){ ended(); throw new Error(ENDED); }
     var j = await r.json().catch(function(){ return {}; });
     if(!r.ok||!j.ok) throw refused(j.error, j, r.status);
     return j;
   }
   var makerData=null, makerQuotes={}, makerPv={}, makerFee={}, makerWin={}, makerHours=null, makerBusy=false;
+  /* 19 Oct 2026, his word: THE BAR SAYS WHERE THINGS STAND, as the Desk's line does. Live while this device is on line and his last read of the hours reached the
+     Counter, else Offline; Offline too once the sign-in has ended. Then Open until, or Closed and when it opens, off the hours this page already reads
+     (Needs you's poll and Shop), and nothing once that moment has passed, until the next read. It sends nothing of its own. */
+  /* Live follows the hours read alone, so a tick where some reads fail and others get through does not flip it back and forth */
+  var barNet=navigator.onLine!==false, BAR_READ='/all/maker/hours';
+  function barWhen(iso){
+    var f=function(d){ var p={}; new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short',hourCycle:'h23'})
+      .formatToParts(d).forEach(function(x){ p[x.type]=x.value; }); return p; };
+    try{ var a=f(new Date(iso)), n=f(new Date()); return a.day===n.day&&a.month===n.month?a.hour+':'+a.minute:a.day+' '+a.month; }catch(e){ return ''; }
+  }
+  function barDraw(){
+    var live=document.getElementById('aBarLive'), hrs=document.getElementById('aBarHours'); if(!live||!hrs) return;
+    var on=barNet&&navigator.onLine!==false&&!document.body.classList.contains('ended');
+    /* a tick that finds the same answer changes nothing on the page (R4): each part is written only when it differs */
+    if(live.getAttribute('data-on')!==String(on)){
+      live.setAttribute('data-on',String(on));
+      live.className='abarlive '+(on?'on':'off');
+      live.title=on?'Online: the Counter answered his last read.':'Offline: this device cannot reach the Counter just now.';
+      live.innerHTML='<i></i><span>'+(on?'Live':'Offline')+'</span>';
+    }
+    var h=makerHours&&makerHours.status, at=h&&(h.open?h.nextChange:h.nextOpen), txt='';
+    if(h&&typeof h.open==='boolean'&&!(at&&Date.parse(at)<=Date.now())){
+      var w=at?barWhen(at):'';
+      txt=h.open?'Open'+(w?' until '+w:''):'Closed'+(w?', opens '+w:'');
+    }
+    if(hrs.textContent!==txt) hrs.textContent=txt;
+    if(hrs.hidden===!!txt) hrs.hidden=!txt;
+  }
+  window.barDraw=barDraw;
+  window.addEventListener('online',function(){ barNet=true; barDraw(); });
+  window.addEventListener('offline',barDraw);
   /* PHASE 1b: a part he has begun on is left alone by a poll. Opening a field or tapping a button inside the order cards or the claims marks it
      (in the capture phase, so a redraw its own tap makes clears the mark afterwards); the redraw of that part clears it. */
   var dirty={makerReview:false, makerClaims:false};
@@ -4924,6 +4956,7 @@ export const OWNER_JS = `
     catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) refusal(s,error); }
   }
   function drawMakerHours(){
+    barDraw();
     var root=document.getElementById('makerSchedule'), status=document.getElementById('makerHoursStatus');
     if(!root||!makerHours) return;
     root.textContent='';
@@ -5728,6 +5761,7 @@ export const OWNER_JS = `
     try{ var b=await refs('/all/maker/bulletin'); nGot('notice'); if(changed('notice', b.lines||[])){ makerNotice=b.lines||[]; apply=true; } }
     catch(error){ nGot('notice', error); if(failNew('notice', error)) apply=true; }
     shopReading=false;
+    barDraw();
     if(apply) drawNeeds();
   }
   /* THE POLL runs only while Needs you or Orders is showing and the page is visible, and stops the moment either stops. */
