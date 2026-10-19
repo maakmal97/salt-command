@@ -49,7 +49,7 @@ export async function open({ ok, pageWork, orders = [], assoc = false, late = 0,
       if (p === "/orders" && m === "GET") return j({ ok: true, orders: JSON.parse(JSON.stringify(st.orders)), claims: [] });
       if (p === "/orders" && m === "POST") {
         const b = JSON.parse(init.body); st.posts.push(b);
-        const o = ord("20261019090" + String(++st.n).padStart(3, "0") + "-bb" + st.n, "placed", new Date().toISOString(),
+        const o = ord("bbnew-" + String(++st.n).padStart(3, "0"), "placed", new Date().toISOString(),
           { product: b.product, qty: b.qty, total: b.total, mode: b.mode, place: b.place || "", sheet: b.sheet || undefined });
         st.orders.push(o);
         return j({ ok: true, order: { id: o.id } });

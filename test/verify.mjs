@@ -48183,6 +48183,11 @@ await (async () => {
   await (await import("./counter-b-start.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Batch B: Order again on an order handed over in full whose size is still listed, its screen, its card and Home's tiles, at today's figure, one fresh line (P3)");
+await (async () => {
+  await (await import("./counter-b-again.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });

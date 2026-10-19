@@ -522,6 +522,12 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .pcover{display:block;margin-top:2px}
 .oact{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:16px}
 .oact .salt-pill,.oact>.salt-ghost{width:100%;margin:0;min-height:var(--salt-tap)}
+/* Counter Batch B: Order again, a Pill and today's figure on the order's screen, a ghost under the card in the list */
+.oagain{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:16px}
+.oagain .salt-pill{min-height:var(--salt-tap)}
+.oagain p{margin:0}
+.oagainrow{display:flex;flex-direction:column;gap:8px}
+.oagainrow__go{align-self:flex-start;min-height:var(--salt-tap)}
 .oact>.msg{grid-column:1/-1}
 /* Counter Batch A: the band, the marked steps, Details */
 .oband{margin:0 0 16px}
@@ -4794,7 +4800,7 @@ const CLIENT_JS = `
     eb.setAttribute('aria-expanded',draft.oEarlier?'true':'false');
     eb.addEventListener('click',function(){ draft.oEarlier=!draft.oEarlier; oDraw(); });
     box.appendChild(eb);
-    if(draft.oEarlier) past.forEach(function(o){ box.appendChild(oCard(o,shown)); });
+    if(draft.oEarlier) past.forEach(function(o){ box.appendChild(oItem(o,shown)); });
   }
   function oList(shown){
     var box=el('div','olist'); box.setAttribute('data-olist','');
@@ -4811,8 +4817,8 @@ const CLIENT_JS = `
         if(c[0]==='open'&&pay>0.004) hd.appendChild(el('span','ocol__pay',tw('ord.col.toPay',{rm:rm(pay)})));
         col.appendChild(hd);
         if(!c[1].length) col.appendChild(oEmpty(c[0]));
-        else if(c[0]==='done'&&c[1].length>12){ c[1].slice(0,12).forEach(function(o){ col.appendChild(oCard(o,shown)); }); oFold(col,c[1].slice(12),shown); }
-        else c[1].forEach(function(o){ col.appendChild(oCard(o,shown)); });
+        else if(c[0]==='done'&&c[1].length>12){ c[1].slice(0,12).forEach(function(o){ col.appendChild(oItem(o,shown)); }); oFold(col,c[1].slice(12),shown); }
+        else c[1].forEach(function(o){ col.appendChild(oItem(o,shown)); });
         cols.appendChild(col);
       });
       box.appendChild(cols);
@@ -4821,14 +4827,14 @@ const CLIENT_JS = `
     box.appendChild(oTabs());
     var k=draft.oTab||'all';
     if(k==='all'){
-      function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oCard(o,shown)); }); }
+      function sec(t,list){ box.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper olab',t)); list.forEach(function(o){ box.appendChild(oItem(o,shown)); }); }
       if(B.needs.length) sec(tw('x.needs'),B.needs);
       if(B.open.length) sec(tw('ord.open'),B.open);
       if(B.past.length) oFold(box,B.past,shown);
       return box;
     }
     var list=oOf(k);
-    if(!list.length) box.appendChild(oEmpty(k)); else list.forEach(function(o){ box.appendChild(oCard(o,shown)); });
+    if(!list.length) box.appendChild(oEmpty(k)); else list.forEach(function(o){ box.appendChild(oItem(o,shown)); });
     return box;
   }
   /* S5 5.6 (f12w): FROM 860PX THE LIST STANDS BESIDE AN OPEN ORDER (Phase 7d: it was 1080px, the rail's, and is the width the style turns on).
@@ -4853,6 +4859,32 @@ const CLIENT_JS = `
      the filled Pay while something is due and nothing filled when nothing is; the thread; what happened, folded;
      and Cancel at the foot while the goods have not moved. Built in named parts, each rebuilt on its own. ---- */
   function movedAll(o){ var m=+o.moved||0; return m>0&&m>=(+o.qty||0)-0.0004; }
+  /* COUNTER BATCH B (his answers of 18 Oct 2026): ORDER AGAIN, ONE RULE for the order's screen, its row and Home's tiles: an order handed
+     over in full whose size is still on their list, never a withdrawn, declined or group order, and nothing where nothing is ordered
+     from here (his read-only view, the overdue gate) */
+  function oAgainOk(o){
+    return !!o&&!view&&!hold&&!hidePrices&&movedAll(o)&&o.status!=='cancelled'&&o.status!=='declined'&&!o.pool&&oSoldHas(o.product,o.qty);
+  }
+  function oAgainOf(o){ return {product:o.product, q:o.qty, mode:o.mode==='deliver'?'deliver':'collect', place:o.mode==='deliver'?String(o.place||''):'', forFriend:!!o.forFriend}; }
+  /* on the order's screen: one Pill, and today's figure off the list, never what it came to then */
+  function oAgain(o){
+    var w=el('div','oagain'); if(!oAgainOk(o)) return w;
+    var P=sold().filter(function(x){ return x.product===o.product; })[0], a=oAgainOf(o);
+    var b=el('button','salt-pill salt-pill--md',tw('oa.again')); b.type='button'; b.setAttribute('data-again',o.id);
+    b.addEventListener('click',function(){ againOpen(a,b); });
+    w.appendChild(b);
+    w.appendChild(el('p','sub2',tw(a.mode==='deliver'?'oa.againD':'oa.againC',{rm:rm(priceAt(P,o.qty))})));
+    return w;
+  }
+  /* in the list: the card and, beside it and never inside it, a ghost; the pair is one child of the list, its shape w:<id> */
+  function oItem(o,shown){
+    var c=oCard(o,shown); if(!oAgainOk(o)) return c;
+    var w=el('div','oagainrow'); w.setAttribute('data-wrap',o.id); w.appendChild(c);
+    var g=el('button','salt-ghost oagainrow__go',tw('oa.again')); g.type='button'; g.setAttribute('data-again',o.id);
+    g.setAttribute('aria-label',tw('oa.againAria',{d:oDay(o.at)}));
+    g.addEventListener('click',function(){ againOpen(oAgainOf(o),g); });
+    w.appendChild(g); return w;
+  }
   function firstAt(o,st){ var h=(o.history||[]).filter(function(x){ return x.status===st; })[0]; return h?h.at:''; }
   function ymdDay(s,L){ var m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(s||'')); return m?dmyOf({day:m[3],month:m[2],year:m[1]},L):''; }
   /* what the last tap on this order said, beside the control it came from; where the answer took the control away
@@ -5339,7 +5371,7 @@ const CLIENT_JS = `
     tapSaid(o,'price',b.ok?'':wErr(b,'np.notSent'));
     await loadOrders(); if(mine!==ticket) return; oDraw();
   }
-  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, price:oPrice, act:oAct, rate:oRate, thread:oThread, say:oSay, details:oDetails, hist:oHist, foot:oFoot};
+  var OPARTS={head:oHead, steps:oSteps, when:oWhen, money:oMoney, price:oPrice, act:oAct, again:oAgain, rate:oRate, thread:oThread, say:oSay, details:oDetails, hist:oHist, foot:oFoot};
   /* one part drawn: its name, hidden when empty, and the parts in the slice saying the reader's language inside a screen
      that says English (S13-L1) */
   function oPartOf(k,o){ var n=OPARTS[k](o); n.setAttribute('data-part',k); n.hidden=!n.childNodes.length; return n; }
@@ -5374,7 +5406,10 @@ const CLIENT_JS = `
      that did is drawn again and keeps the focus, holding nothing typed. The open order keeps any part holding the
      focus, and draft.oStale has the next poll draw it once the focus has left; a part that reads the same is left
      as it is, which is always the composer. Only an order opened or gone draws the place again. */
-  function oShape(list){ return [].map.call(list.children,function(x){ return x.getAttribute('data-row')||x.textContent; }).join('|'); }
+  function oShape(list){ return [].map.call(list.children,function(x){ var w=x.getAttribute('data-wrap'); return w?'w:'+w:x.getAttribute('data-row')||x.textContent; }).join('|'); }
+  /* the order's own node in a list, the pair where Order again stands beside the card; and the control in it that had focus, found again */
+  function oNode(box,id){ var r=box.querySelector('[data-row="'+id+'"]'); return r&&r.parentNode&&r.parentNode.getAttribute&&r.parentNode.getAttribute('data-wrap')===id?r.parentNode:r; }
+  function oRefocus(box,id,again){ var f=box.querySelector((again?'[data-again="':'button[data-row="')+id+'"]'); if(f) try{ f.focus({preventScroll:true}); }catch(e){} }
   function oSync(ids){
     var place=document.getElementById('oArea'); if(!place) return;
     var shown=oShownId(), scr=place.querySelector('.oscreen'), sid=scr?scr.getAttribute('data-order'):'';
@@ -5394,14 +5429,14 @@ const CLIENT_JS = `
     }
     var was=place.querySelector('[data-olist]'), nl=oList(shown);
     if(was&&oShape(was)!==oShape(nl)){
-      var fr=ae&&was.contains(ae)?ae.getAttribute('data-row'):null;
+      var inn=ae&&was.contains(ae), fa=inn?ae.getAttribute('data-again'):null, fr=inn?fa||ae.getAttribute('data-row'):null;
       was.replaceWith(nl);
-      var fb=fr&&nl.querySelector('[data-row="'+fr+'"]'); if(fb) try{ fb.focus({preventScroll:true}); }catch(e){}
+      if(fr) oRefocus(nl,fr,!!fa);
     } else if(was) ids.forEach(function(id){
-      var r=was.querySelector('[data-row="'+id+'"]'), n=nl.querySelector('[data-row="'+id+'"]');
+      var r=oNode(was,id), n=oNode(nl,id);
       if(!r||!n||r.outerHTML===n.outerHTML) return;
-      var had=r.contains(ae); r.replaceWith(n);
-      if(had) try{ n.focus({preventScroll:true}); }catch(e){}
+      var had=r.contains(ae), ag=had&&ae.hasAttribute('data-again'); r.replaceWith(n);
+      if(had) oRefocus(n.parentNode||nl,id,ag);
     });
   }
   /* the order already open is brought into view and seen, and its row patched: drawn again, it would lose what is
@@ -6221,7 +6256,7 @@ const CLIENT_JS = `
   function againList(){
     var seen={}, out=[];
     orders.slice().sort(function(a,b){ return String(b.at).localeCompare(String(a.at)); }).forEach(function(o){
-      if(o.status==='declined'||o.status==='cancelled'||!oSoldHas(o.product,o.qty)) return;
+      if(!oAgainOk(o)) return;
       var way=o.mode==='deliver'?'deliver':'collect', where=way==='deliver'?String(o.place||''):'', k=[o.product,o.qty,way,where,!!o.forFriend].join('|');
       if(seen[k]) return; seen[k]=1;
       out.push({product:o.product, q:o.qty, mode:way, place:where, forFriend:!!o.forFriend});
@@ -6230,6 +6265,8 @@ const CLIENT_JS = `
   }
   function againOpen(a,tile){
     draft.mode=a.mode; draft.place=a.place; draft.placeWas=a.place; draft.say=''; draft.noteOpen=false;
+    /* nothing of an earlier sheet rides into this one: its day, its window, its sheet id */
+    draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='';
     if(assoc) draft.forFriend=a.forFriend;
     sheetOpen(a.product,a.q,tile);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();

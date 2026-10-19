@@ -1,0 +1,13 @@
+[
+ {"name":"a placed order is offered again","file":"stmt/page.js","find":"!view&&!hold&&!hidePrices&&movedAll(o)&&o.status!=='cancelled'","replace":"!view&&!hold&&!hidePrices&&o.status!=='cancelled'"},
+ {"name":"a group order is offered again","file":"stmt/page.js","find":"o.status!=='declined'&&!o.pool&&oSoldHas(o.product,o.qty);","replace":"o.status!=='declined'&&oSoldHas(o.product,o.qty);"},
+ {"name":"a size off the list is offered again","file":"stmt/page.js","find":"o.status!=='declined'&&!o.pool&&oSoldHas(o.product,o.qty);","replace":"o.status!=='declined'&&!o.pool;"},
+ {"name":"Order again under the gate","file":"stmt/page.js","find":"return !!o&&!view&&!hold&&!hidePrices&&movedAll(o)","replace":"return !!o&&!view&&!hidePrices&&movedAll(o)"},
+ {"name":"Home's tiles keep the old rule","file":"stmt/page.js","find":"      if(!oAgainOk(o)) return;\n      var way=","replace":"      if(o.status==='declined'||o.status==='cancelled'||!oSoldHas(o.product,o.qty)) return;\n      var way="},
+ {"name":"the screen shows what it came to","file":"stmt/page.js","find":"{rm:rm(priceAt(P,o.qty))}","replace":"{rm:rm(o.total)}"},
+ {"name":"the old line rides along","file":"stmt/page.js","find":"draft.placeWas=a.place; draft.say=''; draft.noteOpen=false;\n    /* nothing","replace":"draft.placeWas=a.place; draft.say='Leave it at the gate'; draft.noteOpen=false;\n    /* nothing"},
+ {"name":"an earlier day rides along","file":"stmt/page.js","find":"    draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='';\n","replace":"    draft.slot=''; draft.sheetKeep='';\n"},
+ {"name":"a stale sheet id rides along","file":"stmt/page.js","find":"    draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='';\n","replace":"    draft.when='soon'; draft.wantBy=''; draft.slot=''; draft.sheetKeep='stale0sheet0id0x';\n"},
+ {"name":"the ghost sits inside the card","file":"stmt/page.js","find":"    var w=el('div','oagainrow'); w.setAttribute('data-wrap',o.id); w.appendChild(c);","replace":"    var w=c; c.setAttribute('data-wrap',o.id);"},
+ {"name":"focus on a ghost is lost","file":"stmt/page.js","find":"      if(fr) oRefocus(nl,fr,!!fa);\n","replace":""}
+]
