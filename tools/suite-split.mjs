@@ -120,14 +120,15 @@ export function plan(text, { jobs, past = {}, costs = {} }) {
    the footer go to test/.shard-<name>.mjs beside verify.mjs, so its relative imports and REPO resolve, and run in a process of
    their own with SUITE_SHARD set; every line of output but the totals goes to `line`, the file is deleted when the process
    closes, and the promise holds the exit code and the totals (null if it never reached the footer). tools/section.mjs runs
-   one section through it, so a section alone runs exactly as it runs here; a shard file on disk is a run live in this checkout. */
-export const shardFile = (name) => join(REPO, "test", `.shard-${name}.mjs`);
-export const shardsOnDisk = () => readdirSync(join(REPO, "test")).filter((f) => /^\.shard-.+\.mjs$/.test(f));
-export function runShard(suite, name, blocks, line = () => {}, env = {}) {
-  const file = shardFile(name);
+   one section through it, so a section alone runs exactly as it runs here; a shard file on disk is a run live in this checkout.
+   `root` is another copy of the checkout to run it in (section.mjs's checkout mutations), so its imports resolve there. */
+export const shardFile = (name, root = REPO) => join(root, "test", `.shard-${name}.mjs`);
+export const shardsOnDisk = (root = REPO) => readdirSync(join(root, "test")).filter((f) => /^\.shard-.+\.mjs$/.test(f));
+export function runShard(suite, name, blocks, line = () => {}, env = {}, root = REPO) {
+  const file = shardFile(name, root);
   writeFileSync(file, [suite.prelude, ...[...blocks].sort((a, b) => a.k - b.k).map((b) => b.text), suite.footer].join("\n"));
   return new Promise((done) => {
-    const p = spawn(process.execPath, ["--max-old-space-size=4096", file], { cwd: REPO, env: { ...process.env, ...env, SUITE_SHARD: name } });
+    const p = spawn(process.execPath, ["--max-old-space-size=4096", file], { cwd: root, env: { ...process.env, ...env, SUITE_SHARD: name } });
     let buf = "", res = null;
     const each = (l) => {
       const m = l.match(/^(\d+) passed, (\d+) failed, across (\d+) sections$/);
