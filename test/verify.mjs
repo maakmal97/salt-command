@@ -4916,12 +4916,19 @@ await (async () => {
      excluded: it is history and describes the code as it was. The banned fragments are
      built by concatenation so this section does not report itself. */
   const fs = await import("node:fs");
-  const KG = "K" + "g", kg = "k" + "g";
-  const ALLOW = new Set(["settled", "rebate", "ref", "costPer", "value"].map((p) => p + KG));
+  const MASS = "K" + "g", mass = "k" + "g";
+  const ALLOW = new Set(["settled", "rebate", "ref", "costPer", "value"].map((p) => p + MASS));
+  /* 19 Oct 2026: the unit is a PART of an identifier, never two letters inside a word: pkg, backgrounds and checkGrid
+     are innocent, while the bare unit with an underscore, a capital or a digit beside it names a mass */
+  const parts = (w) => w.split(/[_$]+|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])/);
   const bannedWord = (w) => {
-    if (w === kg || ALLOW.has(w)) return false;
-    return w.includes(KG) || (w.startsWith(kg) && w.length > 2) || (w.endsWith(kg) && w.length > 2);
+    if (w === mass || ALLOW.has(w)) return false;
+    return parts(w).some((p) => p.toLowerCase() === mass || p.toLowerCase() === mass + "s");
   };
+  for (const w of ["p" + mass, "pac" + mass + "es", "bac" + mass + "rounds", "chec" + MASS + "rid", mass, "settled" + MASS])
+    ok(!bannedWord(w), "a word that only holds the two letters, or the bare data field, is not a unit identifier: " + w);
+  for (const w of [mass + "Price", "per" + MASS, "_" + mass, "units_" + mass, mass + "2", "per" + MASS + "Rate", MASS + "s", mass.toUpperCase() + "_PRICE"])
+    ok(bannedWord(w), "a unit identifier is still banned: " + w);
   const files = [
     "master/salt_command.html",
     ...fs.readdirSync("engine").filter((f) => f.endsWith(".mjs")).map((f) => "engine/" + f),
