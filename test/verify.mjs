@@ -41796,7 +41796,8 @@ await (async () => {
       "Scan a code offers only the accounts with a code and keeps Maybank, Part of it sends the figure typed, and more than is owed opens nothing: "
       + JSON.stringify({ qIn, part, over }));
     const text = live + " " + t(sh());
-    ok(!/QR Command/i.test(text) && !/[0-9]{8,}/.test(text) && !/salt|oil/i.test(text),
+    /* 19 Oct 2026: products as whole words, over the sheet spaced at every tag */
+    ok(!/QR Command/i.test(text) && !/[0-9]{8,}/.test(text) && !/\b(salt|oil)\b/i.test(live + " " + sh().innerHTML.replace(/<[^>]*>/g, " ")),
       "the sheet names no pay page, carries no account number and no product word: " + text.slice(0, 120));
     d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     const closed = sh().hidden;
