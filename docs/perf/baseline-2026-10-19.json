@@ -1,0 +1,964 @@
+{
+ "label": "base-2026-10-19",
+ "at": "2026-10-19T02:58:27.385Z",
+ "commit": "85deaf42",
+ "runs": 3,
+ "profiles": {
+  "laptop": {
+   "w": 1440,
+   "h": 900,
+   "cpu": 1,
+   "net": null,
+   "touch": false,
+   "mobile": false
+  },
+  "tablet": {
+   "w": 820,
+   "h": 1180,
+   "cpu": 2,
+   "net": {
+    "latency": 20,
+    "down": 3750000,
+    "up": 1875000
+   },
+   "touch": true,
+   "mobile": false
+  },
+  "phone": {
+   "w": 390,
+   "h": 844,
+   "cpu": 4,
+   "net": {
+    "latency": 60,
+    "down": 1125000,
+    "up": 187500
+   },
+   "touch": true,
+   "mobile": true
+  }
+ },
+ "surfaces": {
+  "desk": {
+   "payload": {
+    "rawKB": 2185,
+    "gzipKB": 694,
+    "brotliKB": 543
+   },
+   "profiles": {
+    "laptop": {
+     "cold": {
+      "ttfb": 5,
+      "fcp": 140,
+      "lcp": 1176,
+      "dcl": 400,
+      "load": 827,
+      "ready": 952,
+      "tbt": 372,
+      "longTasks": 2,
+      "longest": 422,
+      "cls": 0,
+      "wire": 756,
+      "docKB": 2185,
+      "requests": 5,
+      "heapMB": 9.5,
+      "nodes": 1587,
+      "scrollW": 1440,
+      "viewW": 1440,
+      "signinMs": null,
+      "sw": false,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 3,
+      "fcp": 248,
+      "lcp": 1140,
+      "dcl": 374,
+      "load": 695,
+      "ready": 737,
+      "tbt": 260,
+      "longTasks": 2,
+      "longest": 310,
+      "cls": 0,
+      "wire": 1,
+      "docKB": 2185,
+      "requests": 6,
+      "heapMB": 10.1,
+      "nodes": 1587,
+      "scrollW": 1440,
+      "viewW": 1440,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "today",
+       "inp": 120,
+       "delay": 1,
+       "work": 107,
+       "via": "click",
+       "longest": 109
+      },
+      {
+       "place": "money",
+       "inp": 88,
+       "delay": 1,
+       "work": 45,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "financials",
+       "inp": 60,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "stock",
+       "inp": 80,
+       "delay": 1,
+       "work": 68,
+       "via": "click",
+       "longest": 70
+      },
+      {
+       "place": "forward",
+       "inp": 76,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "sourcing",
+       "inp": 102,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "price",
+       "inp": 224,
+       "delay": 1,
+       "work": 163,
+       "via": "click",
+       "longest": 165
+      },
+      {
+       "place": "overview",
+       "inp": 75,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "people",
+       "inp": 224,
+       "delay": 0,
+       "work": 179,
+       "via": "click",
+       "longest": 180
+      },
+      {
+       "place": "network",
+       "inp": 57,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "map",
+       "inp": 40,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "book",
+       "inp": 192,
+       "delay": 1,
+       "work": 151,
+       "via": "click",
+       "longest": 154
+      },
+      {
+       "place": "analysis",
+       "inp": 146,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      }
+     ],
+     "freshness": {
+      "reloadAfterMs": 8583,
+      "drawnAfterMs": 8996
+     }
+    },
+    "tablet": {
+     "cold": {
+      "ttfb": 4,
+      "fcp": 208,
+      "lcp": 1888,
+      "dcl": 883,
+      "load": 1870,
+      "ready": 1965,
+      "tbt": 1249,
+      "longTasks": 2,
+      "longest": 889,
+      "cls": 0.002,
+      "wire": 756,
+      "docKB": 2185,
+      "requests": 6,
+      "heapMB": 9.5,
+      "nodes": 1587,
+      "scrollW": 820,
+      "viewW": 820,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 3,
+      "fcp": 468,
+      "lcp": 1520,
+      "dcl": 776,
+      "load": 1476,
+      "ready": 1568,
+      "tbt": 623,
+      "longTasks": 2,
+      "longest": 673,
+      "cls": 0.002,
+      "wire": 1,
+      "docKB": 2185,
+      "requests": 6,
+      "heapMB": 10.1,
+      "nodes": 1587,
+      "scrollW": 820,
+      "viewW": 820,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "today",
+       "inp": 247,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "money",
+       "inp": 111,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "financials",
+       "inp": 121,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "stock",
+       "inp": 147,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "forward",
+       "inp": 187,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "sourcing",
+       "inp": 203,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "price",
+       "inp": 419,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "overview",
+       "inp": 118,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "people",
+       "inp": 336,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "network",
+       "inp": 139,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "map",
+       "inp": 83,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "book",
+       "inp": 282,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "analysis",
+       "inp": 365,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      }
+     ],
+     "freshness": {
+      "reloadAfterMs": 9030,
+      "drawnAfterMs": 9778
+     }
+    },
+    "phone": {
+     "cold": {
+      "ttfb": 3,
+      "fcp": 364,
+      "lcp": 3896,
+      "dcl": 2082,
+      "load": 3841,
+      "ready": 4031,
+      "tbt": 2806,
+      "longTasks": 4,
+      "longest": 1618,
+      "cls": 0.007,
+      "wire": 756,
+      "docKB": 2185,
+      "requests": 6,
+      "heapMB": 9.5,
+      "nodes": 1587,
+      "scrollW": 390,
+      "viewW": 390,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 2,
+      "fcp": 728,
+      "lcp": 2752,
+      "dcl": 1389,
+      "load": 2677,
+      "ready": 2857,
+      "tbt": 1217,
+      "longTasks": 3,
+      "longest": 1267,
+      "cls": 0.001,
+      "wire": 1,
+      "docKB": 2185,
+      "requests": 6,
+      "heapMB": 9.5,
+      "nodes": 1587,
+      "scrollW": 390,
+      "viewW": 390,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "today",
+       "inp": 737,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "money",
+       "inp": 278,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "financials",
+       "inp": 314,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "stock",
+       "inp": 542,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "forward",
+       "inp": 512,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "sourcing",
+       "inp": 448,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "price",
+       "inp": 807,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "overview",
+       "inp": 293,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "people",
+       "inp": 816,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "network",
+       "inp": 268,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "map",
+       "inp": 192,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "book",
+       "inp": 956,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      },
+      {
+       "place": "analysis",
+       "inp": 737,
+       "delay": 0,
+       "work": null,
+       "via": "call"
+      }
+     ],
+     "freshness": {
+      "reloadAfterMs": 11021,
+      "drawnAfterMs": 12616
+     }
+    }
+   }
+  },
+  "counter": {
+   "payload": {
+    "rawKB": 584,
+    "gzipKB": 169,
+    "brotliKB": 137
+   },
+   "profiles": {
+    "laptop": {
+     "cold": {
+      "ttfb": 3,
+      "fcp": 120,
+      "lcp": 200,
+      "dcl": 77,
+      "load": 90,
+      "ready": 187,
+      "tbt": 0,
+      "longTasks": 1,
+      "longest": 62,
+      "cls": 0,
+      "wire": 328,
+      "docKB": 584,
+      "requests": 12,
+      "heapMB": 9.5,
+      "nodes": 969,
+      "scrollW": 1440,
+      "viewW": 1440,
+      "signinMs": 44,
+      "sw": false,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 2,
+      "fcp": 52,
+      "lcp": 136,
+      "dcl": 27,
+      "load": 27,
+      "ready": 120,
+      "tbt": 0,
+      "longTasks": 0,
+      "longest": 0,
+      "cls": 0,
+      "wire": 176,
+      "docKB": 584,
+      "requests": 12,
+      "heapMB": 9.5,
+      "nodes": 969,
+      "scrollW": 1440,
+      "viewW": 1440,
+      "signinMs": 50,
+      "sw": false,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "home",
+       "inp": 16,
+       "delay": 1,
+       "work": 1,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "prices",
+       "inp": 24,
+       "delay": 1,
+       "work": 1,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "order",
+       "inp": 32,
+       "delay": 1,
+       "work": 1,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "stmt",
+       "inp": 32,
+       "delay": 1,
+       "work": 0,
+       "via": "click",
+       "longest": 0
+      }
+     ]
+    },
+    "tablet": {
+     "cold": {
+      "ttfb": 3,
+      "fcp": 204,
+      "lcp": 204,
+      "dcl": 268,
+      "load": 275,
+      "ready": 547,
+      "tbt": 18,
+      "longTasks": 2,
+      "longest": 70,
+      "cls": 0.003,
+      "wire": 328,
+      "docKB": 584,
+      "requests": 12,
+      "heapMB": 9.5,
+      "nodes": 969,
+      "scrollW": 820,
+      "viewW": 820,
+      "signinMs": 170,
+      "sw": false,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 2,
+      "fcp": 128,
+      "lcp": 128,
+      "dcl": 113,
+      "load": 114,
+      "ready": 391,
+      "tbt": 26,
+      "longTasks": 1,
+      "longest": 76,
+      "cls": 0,
+      "wire": 176,
+      "docKB": 584,
+      "requests": 12,
+      "heapMB": 9.5,
+      "nodes": 969,
+      "scrollW": 820,
+      "viewW": 820,
+      "signinMs": 180,
+      "sw": false,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "home",
+       "inp": 16,
+       "delay": 2,
+       "work": 2,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "prices",
+       "inp": 16,
+       "delay": 2,
+       "work": 2,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "order",
+       "inp": 32,
+       "delay": 1,
+       "work": 1,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "stmt",
+       "inp": 56,
+       "delay": 1,
+       "work": 1,
+       "via": "click",
+       "longest": 0
+      }
+     ]
+    },
+    "phone": {
+     "cold": {
+      "ttfb": 3,
+      "fcp": 444,
+      "lcp": 1308,
+      "dcl": 637,
+      "load": 682,
+      "ready": 1313,
+      "tbt": 169,
+      "longTasks": 2,
+      "longest": 190,
+      "cls": 0,
+      "wire": 328,
+      "docKB": 584,
+      "requests": 13,
+      "heapMB": 9.5,
+      "nodes": 969,
+      "scrollW": 390,
+      "viewW": 390,
+      "signinMs": 378,
+      "sw": false,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 1,
+      "fcp": 200,
+      "lcp": 872,
+      "dcl": 262,
+      "load": 263,
+      "ready": 877,
+      "tbt": 153,
+      "longTasks": 1,
+      "longest": 203,
+      "cls": 0,
+      "wire": 176,
+      "docKB": 584,
+      "requests": 13,
+      "heapMB": 9.5,
+      "nodes": 969,
+      "scrollW": 390,
+      "viewW": 390,
+      "signinMs": 404,
+      "sw": false,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "home",
+       "inp": 24,
+       "delay": 6,
+       "work": 12,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "prices",
+       "inp": 32,
+       "delay": 5,
+       "work": 6,
+       "via": "click",
+       "longest": 0
+      },
+      {
+       "place": "order",
+       "inp": 72,
+       "delay": 4,
+       "work": 6,
+       "via": "click",
+       "longest": 59
+      },
+      {
+       "place": "stmt",
+       "inp": 176,
+       "delay": 4,
+       "work": 4,
+       "via": "click",
+       "longest": 150
+      }
+     ]
+    }
+   },
+   "account": {
+    "code": "CS6-BS",
+    "statementKB": 32
+   }
+  },
+  "qr": {
+   "payload": {
+    "rawKB": 262,
+    "gzipKB": 84,
+    "brotliKB": 69
+   },
+   "profiles": {
+    "laptop": {
+     "cold": {
+      "ttfb": 2,
+      "fcp": 40,
+      "lcp": 564,
+      "dcl": 99,
+      "load": 120,
+      "ready": 157,
+      "tbt": 0,
+      "longTasks": 1,
+      "longest": 67,
+      "cls": 0.026,
+      "wire": 225,
+      "docKB": 6,
+      "requests": 11,
+      "heapMB": 9.5,
+      "nodes": 98,
+      "scrollW": 1440,
+      "viewW": 1440,
+      "signinMs": null,
+      "sw": false,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 4,
+      "fcp": 32,
+      "lcp": 520,
+      "dcl": 89,
+      "load": 98,
+      "ready": 126,
+      "tbt": 0,
+      "longTasks": 1,
+      "longest": 69,
+      "cls": 0.026,
+      "wire": 7,
+      "docKB": 6,
+      "requests": 11,
+      "heapMB": 9.5,
+      "nodes": 98,
+      "scrollW": 1440,
+      "viewW": 1440,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "tile2",
+       "inp": 48,
+       "delay": 1,
+       "work": 19,
+       "via": "click",
+       "longest": 55
+      },
+      {
+       "place": "tile3",
+       "inp": 48,
+       "delay": 0,
+       "work": 29,
+       "via": "click",
+       "longest": 97
+      },
+      {
+       "place": "tile4",
+       "inp": 40,
+       "delay": 0,
+       "work": 21,
+       "via": "click",
+       "longest": 83
+      }
+     ]
+    },
+    "tablet": {
+     "cold": {
+      "ttfb": 3,
+      "fcp": 188,
+      "lcp": 972,
+      "dcl": 376,
+      "load": 523,
+      "ready": 588,
+      "tbt": 32,
+      "longTasks": 2,
+      "longest": 206,
+      "cls": 0.032,
+      "wire": 225,
+      "docKB": 6,
+      "requests": 11,
+      "heapMB": 9.5,
+      "nodes": 98,
+      "scrollW": 820,
+      "viewW": 820,
+      "signinMs": null,
+      "sw": false,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 4,
+      "fcp": 56,
+      "lcp": 688,
+      "dcl": 207,
+      "load": 255,
+      "ready": 313,
+      "tbt": 0,
+      "longTasks": 1,
+      "longest": 169,
+      "cls": 0.032,
+      "wire": 7,
+      "docKB": 6,
+      "requests": 11,
+      "heapMB": 9.5,
+      "nodes": 98,
+      "scrollW": 820,
+      "viewW": 820,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "tile2",
+       "inp": 120,
+       "delay": 2,
+       "work": 88,
+       "via": "click",
+       "longest": 132
+      },
+      {
+       "place": "tile3",
+       "inp": 184,
+       "delay": 2,
+       "work": 137,
+       "via": "click",
+       "longest": 209
+      },
+      {
+       "place": "tile4",
+       "inp": 200,
+       "delay": 2,
+       "work": 149,
+       "via": "click",
+       "longest": 278
+      }
+     ]
+    },
+    "phone": {
+     "cold": {
+      "ttfb": 3,
+      "fcp": 360,
+      "lcp": 1608,
+      "dcl": 750,
+      "load": 1002,
+      "ready": 1249,
+      "tbt": 528,
+      "longTasks": 3,
+      "longest": 395,
+      "cls": 0,
+      "wire": 225,
+      "docKB": 6,
+      "requests": 11,
+      "heapMB": 9.5,
+      "nodes": 98,
+      "scrollW": 390,
+      "viewW": 390,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "warm": {
+      "ttfb": 3,
+      "fcp": 104,
+      "lcp": 932,
+      "dcl": 386,
+      "load": 395,
+      "ready": 582,
+      "tbt": 239,
+      "longTasks": 1,
+      "longest": 310,
+      "cls": 0,
+      "wire": 7,
+      "docKB": 6,
+      "requests": 11,
+      "heapMB": 9.5,
+      "nodes": 98,
+      "scrollW": 390,
+      "viewW": 390,
+      "signinMs": null,
+      "sw": true,
+      "errors": 0
+     },
+     "taps": [
+      {
+       "place": "tile2",
+       "inp": 232,
+       "delay": 6,
+       "work": 189,
+       "via": "click",
+       "longest": 406
+      },
+      {
+       "place": "tile3",
+       "inp": 248,
+       "delay": 3,
+       "work": 198,
+       "via": "click",
+       "longest": 397
+      },
+      {
+       "place": "tile4",
+       "inp": 184,
+       "delay": 3,
+       "work": 149,
+       "via": "click",
+       "longest": 387
+      }
+     ]
+    }
+   }
+  }
+ }
+}
