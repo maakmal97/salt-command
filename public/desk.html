@@ -87,7 +87,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="50ac7f7538d6bcf4";
+var SALT_BUILD_ID="56d90515ef22fe01";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10318,7 +10318,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1173","d":"20 Oct 2026","t":"THE SHADOW BOOK CHECKS ITSELF AGAINST GIT AT EVERY FOLD","n":["<b>EACH LOAD OF THE BOOK READS BACK WHAT IT HOLDS</b>, out of its own store: every collection's count and a digest over its rows, and every document's digest. The fold's step works the same from git and names any collection or document that differs; a difference turns the step red and never holds up the fold.","<b>THE LOAD LINE COUNTS ROWS AND DOCUMENTS APART</b>: the first load's 433 rows and 450 booked were 433 rows and 17 documents. The pricing snapshot no longer carries a moment it was taken, so the same book always gives the same prices to compare."]}];
+const evolution=[{"v":"v1174","d":"20 Oct 2026","t":"THE COUNTER, BATCH B: THE BASKET, ORDER AGAIN, THE WAY ON PRICES AND HOME'S START TILES","n":["<b>A BASKET ON PRICES.</b> A + beside each size; taps on one mark add up to one line, priced at that amount's own figure on their list, so two 5-unit taps are 10 units at the 10-unit price. A bar shows the goods total, delivery still set when we confirm, and Review places it through the order sheet as one sheet, counted once against the five open. With five open every + greys out and says so. Nothing is kept on the phone.","<b>ORDER AGAIN</b> on an order handed over in full whose size is still on their list: on the order's screen with today's figure, beside its card, and on Home. Never on a withdrawn, declined or group order. It opens the check at today's price, a fresh order with no old note or day.","<b>THE WAY ON PRICES.</b> Under the stamp, Delivering to their place or Collecting, the newest order's or what they chose, with Change to How it reaches you.","<b>HOME STARTS AN ORDER BY ITS WAY.</b> I will collect and Deliver to me, each opening the sheet with that way chosen. A size just placed is no longer offered again on the next sheet."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10466,7 +10466,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='20 Oct 2026, 00:33 KL';
+const LAST_UPDATED='20 Oct 2026, 00:59 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
