@@ -245,7 +245,7 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
       <div class="stat"><span class="label">Desk, phone, one tap</span><span class="fig">512 ms</span><span class="meta">median; worst 956 ms (Record)</span></div>
       <div class="stat"><span class="label">Counter, phone, one tap</span><span class="fig">32 ms</span><span class="meta">worst 176 ms (statement)</span></div>
       <div class="stat"><span class="label">QR, phone, one tap</span><span class="fig">232 ms</span><span class="meta">drawing the code</span></div>
-      <div class="stat"><span class="label">Approve to live Desk</span><span class="fig">1.0 min</span><span class="meta">median; p90 11 min; max 4.4 h</span></div>
+      <div class="stat"><span class="label">Approve to live Desk</span><span class="fig">59 s</span><span class="meta">median since 08 Oct; p90 83 s; worst 176 s</span></div>
       <div class="stat"><span class="label">New build on an open Desk</span><span class="fig">9 to 13 s</span><span class="meta">10 s poll, then the reload</span></div>
     </div>
     <div class="call key"><b>How to read the grades</b>Google's thresholds: a tap is good at 200 ms or less and poor over 500 ms; a page's main paint is good at 2.5 s or less. "Reactive to the second" needs every tap under about 100 ms and every change on screen within a second.</div>
@@ -306,7 +306,7 @@ radial-gradient(at 82% 28%,var(--counter-v) 0,transparent 55%),radial-gradient(a
         <tr><th scope="row">Republished statement or prices</th><td>Counter, open page</td><td>Only on a return to the page or a reload; the 10 s poll never reads the account</td><td><b>Never while it stays open</b></td></tr>
         <tr><th scope="row">QR suspension or tile order</th><td>QR, open page</td><td>Read on open and on return; nothing polls</td><td><b>Never while it stays open</b></td></tr>
         <tr><th scope="row">New build</th><td>A busy Desk (a field focused or a sheet open)</td><td>A "tap to load" chip in place of the reload</td><td>Until he taps</td></tr>
-        <tr><th scope="row">Approved row</th><td>Desk ledger</td><td>Dispatch, fold, build, deploy in Actions, then the 10 s poll</td><td>1.0 min median, 11 min p90, 4.4 h worst (measured, 164 rows since 01 Oct)</td></tr>
+        <tr><th scope="row">Approved row</th><td>Desk ledger</td><td>Dispatch, fold, build, deploy in Actions, then the 10 s poll</td><td>59 s median, 83 s p90, 176 s worst (measured, 105 rows since 08 Oct; the 04 to 07 Oct tail of up to 4.4 h was the lapsed dispatch token, since fixed)</td></tr>
         <tr><th scope="row">Approved row</th><td>Counter statement</td><td>Same run publishes; then a return to the page</td><td>About 1 min, plus the return</td></tr>
         <tr><th scope="row">A customer's order or claim</th><td>Desk</td><td>Read on open, on a push wake (3 s to gather), or after his decision; no poll</td><td>Seconds with push on; else the next open</td></tr>
         <tr><th scope="row">His move on an order</th><td>Counter, open page</td><td>10 s poll while showing</td><td>0 to 10 s</td></tr>
