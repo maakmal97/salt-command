@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1171",
+  "d": "19 Oct 2026",
+  "t": "SALT BOARD: SIZES 3.5 AND 4.5 UNIT HIDDEN",
+  "n": [
+   "<b>ONE BOARD CHANGE FOLDED.</b> The row hides the 3.5 unit and 4.5 unit sizes from the salt board, decided by Counter Admin on 19 Oct 2026. It sets no price, because the board's own price is the ask at every size. The drafter's flag, that two sizes stop being printed, is answered by the entry itself.",
+   "<b>INVENTORY UNCHANGED.</b> No stock, cash or ledger row moved, no lot landed, and the stock cost stays as it was. The hidden sizes remain priceable at the counter and off a quote."
+  ]
+ },
+ {
   "v": "v1170",
   "d": "19 Oct 2026",
   "t": "THE DESK OPENS ONCE, TAPS LIGHT AND PAINTS FIRST",
