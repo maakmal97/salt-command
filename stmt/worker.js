@@ -378,6 +378,20 @@ async function handleCustomer(request, env, p, m, ctx) {
     return json({ ok: true, u, issued: acct.issued || null, assoc: !!acct.assoc,
       card: acct.card || null, env: acct.env, ...live, prices: acct.prices || null });
   }
+  /* R1 (his plan of 19 Oct 2026, wave 1): WHAT TELLS THAT THE ACCOUNT MOVED, and nothing else. An open page reads this on its poll and
+     re-reads /account only when it differs from the stamp it opened with, so a republished statement or price list reaches a page that
+     stays open. The same session check and the same live verdict as /account, but no ciphertext, no figure and no name: the moments the
+     publish stamped in the clear, the build id and the verdict itself ("updating" and "could not be verified" move once a publish lands). */
+  if (p === "/account/stamp") {
+    if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+    const acct = await accountRecord(env, u);
+    if (!acct) return signinAgain("signinOrders");
+    const live = await customerLive(env, u, acct);
+    return json({ ok: true, issued: acct.issued || null, liveStatus: live.liveStatus,
+      live: live.live ? { at: live.live.at || null, buildId: live.live.buildId || null } : null,
+      prices: acct.prices ? { at: acct.prices.at || null, digest: acct.prices.digest || null } : null,
+      card: acct.card ? { at: acct.card.at || null } : null });
+  }
   /* S6 6.6: their word that they sent a figure against the account, for money owed on rows he entered on the desk.
      /claims is the same road under the name the page first asked for. */
   if (p === "/account/claim" || p === "/claims") {
@@ -1623,7 +1637,7 @@ async function handleGuest(request, env, id) {
 /* THE TEST SURFACE'S CUSTOMER ROADS (his answers of 18 Oct 2026): the customer's own routes, run as they run for a customer, on a test
    account's session alone (a real customer's is refused) and only the ones a test account's page needs: no push, passkey, remembered
    phone, hand-over, devices, sign out everywhere or slip. Sign-in takes a test account's username and nothing else. */
-const TEST_C = /^\/(open|logout|account|orders|pools|thread|pay\/accounts|bulletin|hours|my\/refs|orders\/[0-9]{14}-[a-z0-9]{1,8}(\/[a-z]+)?|pools\/p[0-9]{14}-[a-z0-9]{1,8}\/join|my\/refs\/[^/]+)$/;
+const TEST_C = /^\/(open|logout|account|account\/stamp|orders|pools|thread|pay\/accounts|bulletin|hours|my\/refs|orders\/[0-9]{14}-[a-z0-9]{1,8}(\/[a-z]+)?|pools\/p[0-9]{14}-[a-z0-9]{1,8}\/join|my\/refs\/[^/]+)$/;
 async function testCustomer(request, env, ctx, url, q, m) {
   if (!TEST_C.test(q)) return notFound();
   if (q === "/open") {
@@ -1955,7 +1969,7 @@ const worker = {
     }
     /* S3 3.9: the hand-over, minted on a session and opened by its key or its code */
     if (p === "/handover" || p === "/handover/open") return handleHandover(request, env, p, m);
-    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account"
+    if (p === "/orders" || p.startsWith("/orders/") || p === "/push/subscribe" || p === "/remember" || p === "/logout" || p === "/account" || p === "/account/stamp"
       || p === "/account/claim" || p === "/claims" || p === "/slip/key" || p === "/pay/accounts" || p === "/devices" || p === "/devices/signout" || p === "/push/unsubscribe"
       || p === "/passkey/new" || p === "/passkey/save" || p === "/passkey/link" || p === "/passkey/wrap" || p === "/passkey/remove"
       || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m, ctx);

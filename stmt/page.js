@@ -6354,7 +6354,38 @@ const CLIENT_JS = `
   async function refresh(){
     if(document.hidden) return;   /* a hidden page reads nothing, the bulletin included; its return re-reads (reread) */
     await oReread(); await loadCounterHours();
+    await stampRead();   /* R1: a statement or price list published since the page opened */
     if(++bullN%6===0) await bullRead();   /* the bulletin, once a minute on an open page */
+  }
+  /* ---- R1 (his plan of 19 Oct 2026): AN OPEN PAGE FOLLOWS A PUBLISH. The poll reads GET /account/stamp, which answers only the moments
+     and the verdict that tell the account moved (no figure, no ciphertext, no name). When that differs from the stamp the page opened
+     with, and only when the page is idle, it re-opens the sealed documents as a return does (reread), keeping the place and the scroll.
+     A Sheet open, a field focused or a line half typed holds it: stampWas stays, so the next poll asks again. The unchanged stamp
+     reads nothing more. The stamp a body gives is the one the Worker's route gives, so the two are compared like for like. */
+  var stampWas='', stampBusy=false;
+  function stampOf(o){
+    o=o||{};
+    return JSON.stringify([o.liveStatus||'', o.live&&o.live.at||'', o.live&&o.live.buildId||'', o.prices&&o.prices.at||'', o.prices&&o.prices.digest||'',
+      o.card&&o.card.at||'', o.issued||'']);
+  }
+  function idleNow(){
+    if([].some.call(document.querySelectorAll('[role=dialog][aria-modal=true]'),function(d){ return !d.hidden; })) return false;
+    var f=document.activeElement;
+    /* a field the door left focused when it was hidden holds nothing: a browser blurs it, and jsdom does not */
+    if(f&&(/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)||f.isContentEditable)&&!f.closest('[hidden]')) return false;
+    return ![].some.call(document.querySelectorAll('textarea,input:not([type=hidden]):not([type=radio]):not([type=checkbox]):not([type=button]):not([type=submit])'),
+      function(x){ return !!x.value&&!x.closest('[hidden]'); });
+  }
+  async function stampRead(){
+    if(OWNER||!session||!curCk||!stampWas||rereading||stampBusy) return;
+    stampBusy=true;
+    try{
+      var mine=ticket, r=await api('/account/stamp');
+      if(mine!==ticket||!r.body||!r.body.ok) return;
+      if(stampOf(r.body)===stampWas||!idleNow()) return;
+      await reread();
+    }catch(e){ /* the next poll asks again */ }
+    finally{ stampBusy=false; }
   }
 
   /* ---- Step 7 (his Q5 of 28 Sep 2026): THE ACCOUNT'S THREAD. One an account, beside the order threads: Home's card and a
@@ -6737,6 +6768,7 @@ const CLIENT_JS = `
   /* not "unseal": stmt/owner.js declares that name, and spliced in after this, its declaration would win here */
   async function openBeside(body, ck, b){
     var x={assoc:body.assoc===true, card:null, prices:null};
+    stampWas=stampOf(body);   /* R1: what this open was made from, which the poll's stamp is compared with */
     /* C15 (29 Sep 2026): THE ACCOUNT IS THE LIVE DOCUMENT OR NOTHING. A live document that would not open was swallowed,
        and Account drew the sealed 01 Sep issue as the account, old balance and all, while the overdue lead and the hold
        went quiet. Now it is a place held for it (bad), drawn as could-not-be-read with Try again, and show() keeps the

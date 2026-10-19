@@ -49791,6 +49791,16 @@ await (async () => {
   await (await import("./counter-tablet.mjs")).run({ ok });
 })();
 
+section("The Counter's stamp: GET /account/stamp answers what tells an account moved, on the account's own session, and nothing sealed (R1, 19 Oct 2026)");
+await (async () => {
+  await (await import("./counter-stamp-route.mjs")).run({ ok });
+})();
+
+section("The Counter follows a publish: an open, idle page re-opens its statement and price list when the stamp moves, and a Sheet, a field or a half-typed line holds it (R1, 19 Oct 2026)");
+await (async () => {
+  await (await import("./counter-stamp-follow.mjs")).run({ ok, pageWork });
+})();
+
 section("Failures on brand: Home says Not updated since the last read in place of its figure when a read fails, and the next good read clears it (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-offline-line.mjs")).run({ ok });

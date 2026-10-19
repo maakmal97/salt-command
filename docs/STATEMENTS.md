@@ -1554,6 +1554,15 @@ the repo folder:
 Every wrangler command for this site takes `-c wrangler.stmt.jsonc`; without it, wrangler
 addresses the desk.
 
+**An open page follows a publish** (R1 of the Live and fast plan, 19 Oct 2026). The page's 10-second poll reads `GET /account/stamp`
+beside the orders, the hours and the bulletin: on their session, the same check as `/account`, answering only the moments the publish stamped
+in the clear (the live document's `at` and build id, the price list's `at` and digest, the associate card's `at`, the issue) and the
+verdict `customerLive` gives (`current`, `updating`, `unavailable`, or `fixture` for a test account). No ciphertext, no figure, no name.
+`openBeside` records the stamp each open was made from; when a poll's differs and the page is idle (no Sheet open, no field focused, no
+field holding a line half typed), the page re-opens the sealed documents as a return does (`reread`), keeping the place and the scroll.
+Otherwise it waits for the next poll; an unchanged stamp reads nothing more. A test account's stamp is its fixture's, on the plain road and
+under `/all/test/c`. Tests: `test/counter-stamp-route.mjs` and `test/counter-stamp-follow.mjs`.
+
 `REQUIRE_ACCESS` on the desk does not touch this site, and never will: the two share nothing.
 
 ## The master account at `/all`, guest links and printed boards
