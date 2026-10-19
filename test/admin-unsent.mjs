@@ -1,4 +1,4 @@
-/* test/admin-unsent.mjs: AN ENTRY THAT WAITS UNCONFIRMED ON THIS PHONE SAYS SO, ON EVERY PLACE AND ON NEEDS YOU (Phase 4c of the Salt Account redesign, 12 Oct 2026;
+/* test/admin-unsent.mjs: AN ENTRY THAT WAITS UNCONFIRMED ON THIS PHONE SAYS SO, ON EVERY PLACE AND ON NEEDS YOU (Phase 4c of the Salt Admin redesign, 12 Oct 2026;
  * the plan's retained-send words; docs/STATEMENTS.md "Unsent entries").
  *
  * An entry sent from this phone that the Desk has not confirmed is kept whole on the phone (saltMakerPending:<route>) until it is sent again, updated or discarded. It was

@@ -1,4 +1,4 @@
-/* test/admin-order-card.mjs: THE ORDER CARD (Phase 2a of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "The order card").
+/* test/admin-order-card.mjs: THE ORDER CARD (Phase 2a of the Salt Admin redesign, 12 Oct 2026; docs/STATEMENTS.md "The order card").
  *
  * An order opened in Orders is a card (stmt/owner.js orderCard), and his decisions of 11 Oct 2026 shape it: 6, the card reads its own preview
  * when the order is opened and the Preview button is retired; 4, sheets replace every native confirm; 8, cash keeps its ten seconds and its Undo
@@ -127,7 +127,7 @@ export async function run({ ok, pageWork }) {
     const chipP1 = p.cardOf("ord-p1").querySelector(".ohead .salt-status"), gP1 = chipP1 ? [...chipP1.querySelectorAll("svg")] : [];
     ok(!!chipP1 && chipP1.textContent === "Waiting on you" && gP1.length === 1 && chipP1.firstChild === gP1[0] && gP1[0].getAttribute("aria-hidden") === "true"
       && gP1[0].getAttribute("data-g") === "dot" && gP1[0].classList.contains("salt-status__glyph"),
-      "a placed order's chip on Salt Account leads with the dot, aria-hidden, its word unchanged: " + (chipP1 ? chipP1.outerHTML.slice(0, 160) : "none"));
+      "a placed order's chip on Salt Admin leads with the dot, aria-hidden, its word unchanged: " + (chipP1 ? chipP1.outerHTML.slice(0, 160) : "none"));
     /* 18 Oct 2026 (clarity, part 3): the answer leads the card, Agree at the top with its terms beside it; the foot keeps Decline alone, a ghost danger button */
     const leadOf = (id) => p.cardOf(id).querySelector(".ordlead"), termsOf = (id) => (leadOf(id).querySelector(".ordterms") || { textContent: "" }).textContent;
     const tail = (id) => [...p.cardOf(id).querySelectorAll(".ordend [data-act]")].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));

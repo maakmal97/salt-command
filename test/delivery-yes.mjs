@@ -231,7 +231,7 @@ export async function run({ ok }) {
     ok(t2.includes(W.EN["np.cLapsed"]) && !t2.includes(W.EN["np.cYes"]), "a lapsed offer says so, and is no longer theirs to take: " + t2.slice(0, 300));
   } finally { await new Promise((r) => setTimeout(r, 60)); dom.window.close(); }
 
-  /* 5. COUNTER ADMIN: the road, Send for their yes and Withdraw (#104 parity) */
+  /* 5. SALT ADMIN: the road, Send for their yes and Withdraw (#104 parity) */
   const s12 = Wn.slotNext(12, null, Date.now()).slot;
   const posts = [];
   const orderOf2 = (id, patch = {}) => ({ id, u: "mbab-cdef", product: "salt", qty: 1, total: 100, status: "placed", mode: "deliver", history: [], ...patch });
@@ -271,7 +271,7 @@ export async function run({ ok }) {
     doc.querySelector('[data-act="nav.orders"]').click();
     await wait(() => doc.querySelector('[data-act="order.open"]'));
     ok(/Waiting for their yes to RM ?120\.00 \+ RM ?10\.00, until /.test(acard(K).textContent) && !acard(K).querySelector("[data-accept]") && !posts.some((p) => p.kind === "preview" && p.path.includes(K)) && !!button(K, "Take back the offer"),
-      "Counter Admin says an open offer and offers Withdraw, never a second Accept: " + acard(K).textContent.slice(0, 200));
+      "Salt Admin says an open offer and offers Withdraw, never a second Accept: " + acard(K).textContent.slice(0, 200));
     button(K, "Take back the offer").click();
     ok(await wait(() => posts.some((p) => p.kind === "withdraw")) && /^[A-Za-z0-9_-]{16,64}$/.test(posts.find((p) => p.kind === "withdraw").body.rid), "Withdraw posts under its tap's own id");
     await new Promise((r) => setTimeout(r, 250));

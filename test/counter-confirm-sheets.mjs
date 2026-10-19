@@ -1,4 +1,4 @@
-/* test/counter-confirm-sheets.mjs: CANCELLING AND WITHDRAWING ASK IN A SHEET THAT SAYS WHAT GOES (Phase 7d part 1 of the Salt Account and
+/* test/counter-confirm-sheets.mjs: CANCELLING AND WITHDRAWING ASK IN A SHEET THAT SAYS WHAT GOES (Phase 7d part 1 of the Salt Admin and
  * Counter redesign, his yes of 11 Oct 2026, decision 4: replace every native confirm() with a sheet that restates the customer and the
  * figure).
  *

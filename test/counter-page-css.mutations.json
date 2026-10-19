@@ -46,7 +46,7 @@
  {"name":"the page starts 44px down again","file":"stmt/statement-css.js","find":"margin:0;padding:22px 18px 60px;","replace":"margin:0;padding:44px 20px 60px;"},
  {"name":"the rail stands 28px from the column again","file":"stmt/page.js","find":".gate.adm{max-width:1180px;margin-top:0;display:flex;gap:20px;","replace":".gate.adm{max-width:1180px;margin-top:0;display:flex;gap:28px;"},
  {"name":"the bar is not the system s Desk bar","file":"stmt/page.js","find":"<header class=\"salt-deskbar abar\">","replace":"<header class=\"abar\">"},
- {"name":"the bar loses the clock","file":"stmt/page.js","find":"Salt Account</div><div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>","replace":"Salt Account</div><div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"},
+ {"name":"the bar loses the clock","file":"stmt/page.js","find":"Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>","replace":"Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"},
  {"name":"the Desk bar recipe is not carried","file":"stmt/statement-css.js","find":".salt-deskbar__name {","replace":".salt-deskbar__nm {"},
  {"name":"the open list is the well again","file":"stmt/statement-css.js","find":".salt-field__select option { background: var(--salt-slate);","replace":".salt-field__select option { background: var(--salt-well);"},
  {"name":"the header clock stays beside the bar s","file":"stmt/page.js","find":"  .chead .cclock{display:none}\n","replace":""},

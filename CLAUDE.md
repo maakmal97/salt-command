@@ -55,7 +55,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      typed; `txGoods` strikes every rate on the goods. **What the customer owes is goods plus
      delivery, the engine's `txOwed`**; nothing reads the total less the cash. **Everything on an agreed order is
      amendable after Accept** (his decision of 06 Oct 2026): the units, the goods' price and the delivery charge,
-     each a Correction for approval (`restateOrder`, stage `amend`, status `Amendment`) from Counter Admin and from
+     each a Correction for approval (`restateOrder`, stage `amend`, status `Amendment`) from Salt Admin and from
      the Desk; a completed order too, which opens again at Ready when the change leaves it owing (his answer of 17 Oct
      2026); the Floor holds, the board is never repriced, `rowRoom` and `payFault` apply, the site order and the
      ack digest follow the amended row, and a retry carries an immutable rid. **A trip of several
@@ -75,7 +75,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
    - **THEIR % is his and nothing else's** (`TIER_OF[code].salt`, a number from 0 to 2, 0% to 200%, and 0 is the Set
      Price). It lifts the multiple by `1 + %` inside the walk, the same at every size, held under the Ceiling;
      under about 7% it moves nothing at half a unit to 1 unit. **Everyone starts at 0%**. He sets it on the Desk's
-     Their % card or on Counter Admin, or at Add ID from the presets Set Price, +5%, +10%, +15%,
+     Their % card or on Salt Admin, or at Add ID from the presets Set Price, +5%, +10%, +15%,
      +20% and +30%; it is queued, folded as `tierset`, and a null clears it. **Nothing automatic prices**: the
      engine's `autoDrift` over `driftSignals` fills the card's good and bad only, and `suggestOf` (the engine's
      `suggestPct`) SUGGESTS a % he may take with Use the suggestion: what they paid over the Set Price on their
@@ -84,7 +84,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      figure stamped before `RULES.liftSince`, which was in the old drift unit.
    - **Oil, candy and rice are `fixed` boards**, one price for everybody, his typed rungs held between the Floor
      and the Ceiling: a % belongs to salt alone, and `tieredBooks` keeps the Their % card, Add ID's starting %
-     and Counter Admin's % off them. **There are no price levels** (removed 18 Oct 2026): no `TIER_NAMES`,
+     and Salt Admin's % off them. **There are no price levels** (removed 18 Oct 2026): no `TIER_NAMES`,
      `levelAt` or proposal, and no standing guest link per level. `TIER_RULE`, `fiveTiers`, `TIER_OF`, the
      `tierset` collection and the `T2` row code stay as identifiers. **NRV on a book with a Set Price is the Set
      Price**, the least a customer but a partner is quoted, never the Ceiling. A cheap book put on a derived
@@ -162,7 +162,7 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
 built desk is six destinations (`VIEWS`), thirteen pages: Today (To do, with the Whiteboard folded under it as
 Noticed), Money (Receivables, Financials), Stock (On hand, Next 30 days, Sourcing), Pricing (Pricing, Rules), Network
 (Clients, Associates, Coverage) and Record (Ledger, Analysis). Approve, Site orders and Entries left on 18 Oct 2026 (his
-word): Counter Admin decides them, and the desk still reads the orders and drafts for To do's Waiting on you row, the
+word): Salt Admin decides them, and the desk still reads the orders and drafts for To do's Waiting on you row, the
 waiting stamp (`ordTell`) and Spots to file on Coverage; this device's alerts sit in the rail beside the theme. Old
 ids remain addresses through `VIEW_ALIAS` (`/desk#enter`, `#orders`, `#approve` land on Money, `#add` and
 `#plans` on Today). **The rail is two levels at
@@ -172,7 +172,7 @@ Everything the desk shows, cost and margin included, is served at the desk's URL
 Salt Desk** (the build's `apple-mobile-web-app-title`, the manifest's `name` and `short_name`); its
 `<title>` stays Salt Command, the build's anchor.
 
-**Add ID**, **Amend ID** and **Approve** are Counter Admin's; the Desk reads them. A code is derived from the
+**Add ID**, **Amend ID** and **Approve** are Salt Admin's; the Desk reads them. A code is derived from the
 name and place (`deriveCode`), never typed or picked, and changes only when they change; Amend ID
 re-keys it wherever the book holds it, prose and history keeping the old. The fold refuses a code
 the master's own logic quotes (CJ4-OKR, SA5-BTR, SP7-PUD, CM6-HCM): those are hand folds.
@@ -196,7 +196,7 @@ carries it to every reading of what was lost, so no price moves. A new reader of
 approached (`approachable`).
 
 **An undo takes back the newest move on a sale and nothing older** (plan 4, his answers of 16 Oct 2026):
-the engine's `undoOf`, read by Counter Admin's History, the drafter and the fold, from a payment or handover
+the engine's `undoOf`, read by Salt Admin's History, the drafter and the fold, from a payment or handover
 (a Fulfilment) or a Correction's own `was`; nothing is undone while money is on its way or a move waits on
 the row. The fold marks the step `undone` and the undo's own step `undoes` it: **a new reader of the trail
 passes an `undone` step over**. A site order follows by the order book's undo fix and is told by a banner;
@@ -413,7 +413,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   Kuala Lumpur day, his uncapped, the last 200 kept. **In the order book only** (`thr`, oid `thread`, written behind to
   `thr:<username>`): the KV road refuses a line rather than keep a second copy. Read every 2 seconds only while open and
   showing; his line wakes them as `message`, a tap opening `#thread`. The same rules as an order's: never a ledger note,
-  his words through `siteWords`, every line escaped; a test account's lives in its fixture. **His Chat** is Counter Admin's:
+  his words through `siteWords`, every line escaped; a test account's lives in its fixture. **His Chat** is Salt Admin's:
   a thread whose last line is theirs counts in the desk's Waiting on you row, read with the orders.
 - **How was your order, asked once** (F10, his Q9b): at the first chase slot two days after the last handover of an
   order all handed over, and under two weeks after it, the ask written on the order first (`rateask`, one of the book's
@@ -450,7 +450,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   an exact `maakmal97@icloud.com` email check in the Worker. Empty `ACCESS_TEAM` or `ACCESS_AUD`,
   an invalid token or any other email closes `/all`. Customer sign-in routes outside `/all` are not
   Admin routes. **`stmt/owner.js` travels only there.**
-- **An account's card on Salt Account hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
+- **An account's card on Salt Admin hands over the password from his phone** (`pwMaster` under `STMT_MASTER`, in
   `sheet` behind Access, decrypted to the clipboard). The plain password stays laptop-only in
   `_passwords.json`, and no message ever carries it.
 - **A passkey opens the account** (Step 6, his decisions of 29 Sep 2026): saved on This device, any store; the Worker
@@ -463,7 +463,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   gated on the token's SHAPE, so a spent link and an invented one serve the same door. **It is spent
   only on Continue** (asking which account spends nothing), and a spent record answers the page that
   spent it, by its nonce, for two minutes; an app's own browser is sent to Safari or Chrome first.
-- **The hand-over** (his decision D2): a signed-in page, or Salt Account's Show a code, hands the sign-in to
+- **The hand-over** (his decision D2): a signed-in page, or Salt Admin's Show a code, hands the sign-in to
   another app or phone as a key and an eight-symbol code, one use in fifteen minutes, filed under a hash keyed by
   `STMT_HANDOVER_KEY` with the wrap sealed, the code braked per address and site-wide; unset, `/handover` answers 503.
 - **The door** (his D3): one username field and one password field a password manager fills, Show, a
@@ -471,7 +471,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   one refusal; only his page sends a master, so it cannot be typed at a customer's door. Keep me signed
   in (a device key in the browser, the wrapped content key at `rem:<sha256(token)>`, neither opening anything
   alone, thirty days from the last open), log out, which also drops that wrap, this phone's
-  notifications and every hand-over the page minted. Salt Account's **Sign out everywhere** (`POST /all/signout`) ends
+  notifications and every hand-over the page minted. Salt Admin's **Sign out everywhere** (`POST /all/signout`) ends
   every device, unused link and code, and alert on an account, never its `u:` record: the answer to a forwarded link or a
   lost phone. An account's phones and computers are named from the browser (`deviceOf`), never an address. Nothing says phone on a computer. **A lapsed session reopens itself from the remembered
   phone and repeats the request once** (his D1), **only when the phone remembers the account on screen**;
@@ -484,10 +484,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   opens that phone's Settings steps. **The saved app starts at `/app`** (the manifest's `start_url`): with
   nothing remembered, an iPhone opens on One step to finish, the key by Paste or the eight symbols typed
   (`POST /handover/open`), and the app is remembered. A key in the address (`/app#<key>`) is spent by the saved app
-  alone; a browser tab spends only Salt Account's QR (`/app#qr.<key>`), as `{token, tab: true}`, which the Worker
+  alone; a browser tab spends only Salt Admin's QR (`/app#qr.<key>`), as `{token, tab: true}`, which the Worker
   opens only for a key his `/all/handover` minted; an app's own browser spends nothing.
-  Salt Account links its own manifest with credentials, is titled Salt Account (twelve characters, his Q6
-  of 28 Sep 2026; it was Salt Admin, a name kept for the desk's own admin surface to come), has its own icon
+  Salt Admin links its own manifest with credentials, is titled Salt Admin (ten characters, within the twelve iOS shows;
+  his word of 19 Oct 2026, one name for the owner's app everywhere; it was Salt Account from 28 Sep 2026), has its own icon
   (the ring with a keyhole, `/icon-key.png`) and turns into Sign in again when Access lapses.
 - **A customer's banner is a plain sentence of its kind, in his words** (Step 1b, `news.*` in `stmt/words.js`), never an
   amount, a product or a name: `{k, o}` sealed for the one phone (`sealFor`, RFC 8291) under the keys its subscription
@@ -497,7 +497,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   pay-now on an order paid in advance (`prepay`), else on credit. A record with no keys gets the payload-free wake
   and the fixed words. A tap opens that order (`#o=<id>`), and a page already open re-reads first.
 - **A delivery's window and exact spot** (his decisions of 10 Oct 2026): As soon as it can or one of six four-hour windows,
-  one rule on page and Worker (`stmt/window.js`) over Counter Admin's weekly Hours, its span the part inside; his Accept may
+  one rule on page and Worker (`stmt/window.js`) over Salt Admin's weekly Hours, its span the part inside; his Accept may
   answer an as-soon-as delivery with a window, and reminds them to pay now in words only. **A raise or another window than
   theirs is never his Accept's alone** (`needsYes`): it goes to them as an offer of the whole order, their Yes the take, their
   No thanks a cancellation, a lapse or his Withdraw leaving it placed; never on a sheet (`docs/STATEMENTS.md`). The spot is
@@ -548,7 +548,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   its case**: a line in `FEATURES` and the case in `build()`, or the suite is red; states, ways, rails and claim answers
   are asked for off the code itself.
 - **`/all/test` is his test surface**: inside `/all`'s gate, so both locks hold it. It shows one
-  `landingPage` as both views under a base (`__BASE__`, `__TEST__`), and Counter Admin moves example
+  `landingPage` as both views under a base (`__BASE__`, `__TEST__`), and Salt Admin moves example
   orders by composing the Desk's bodies into `decideDesk` with no Desk state. One stateless read,
   `fixture-check` (words, `needsYes`, `closeGoods`), and the claim preview stay on the Desk, and
   nothing is copied out of it. Reset deletes the account's fixture rows, and the next read reseeds
@@ -557,7 +557,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Every shut id (unknown,
   malformed, withdrawn, declined, waiting), and any longer path under `/g/`, answers ONE styled 404
   page, `shutPage`, the same words for all; a board ends with how to order. **Every link reads the one `guestboard`, the Set Price**
-  (the levels are gone, 18 Oct 2026); an old record's `tier` or `level` is ignored. **One standing link, for strangers**, ensured on Salt Account's first
+  (the levels are gone, 18 Oct 2026); an old record's `tier` or `level` is ignored. **One standing link, for strangers**, ensured on Salt Admin's first
   read of its links and kept for good. **Between a deploy and the next publish `guestboard` can be missing, and the page then says "Prices are being updated" and draws no list.** **An associate may mint
   their own, shut until he approves: the test is `approved === false`, NEVER `!approved`.** Decline
   is its own state, `declined`: shut like a withdrawn link, and Not approved to the associate. A link

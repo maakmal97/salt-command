@@ -1,9 +1,9 @@
-/* test/admin-flow.mjs: HIS FLOW (docs/order-flow-map.html, 17 Oct 2026). Every live row of the book is an order on Counter Admin, at the stage
+/* test/admin-flow.mjs: HIS FLOW (docs/order-flow-map.html, 17 Oct 2026). Every live row of the book is an order on Salt Admin, at the stage
  * its figures put it, and every move an earlier stage had stays offered at the later ones where it applies. What is proved here, each check red
  * under its own mutation (test/admin-flow.mutations.json), with invented codes only (rule 2):
  *   A  the Desk's stage rule (flowStage) and its read of every row with no trip card: agreed, delivered or paid, completed, ended, as the row
  *      will stand once the moves waiting fold
- *   B  Counter Admin's review read drops a row a live site order holds (by its key), and keeps one whose site order ended
+ *   B  Salt Admin's review read drops a row a live site order holds (by its key), and keeps one whose site order ended
  *   C  the page: a row under its stage with its figure; a site order paid or handed in full under Delivered or paid; the row card's handover,
  *      payment, change and cancel, each Record's own ledger-amend; Completed paged fifty at a time
  *   D  his answer: a cancel once goods are out cancels the rest, closing the order at what was handed over (a row's at the Desk's closeAt, a

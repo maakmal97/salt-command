@@ -350,19 +350,19 @@ export async function run({ ok, pageWork }) {
 
   for (const scenario of [
     { name: "buyer", direction: "sale", field: "Who",
-      error: "Choose a buyer on the roster. Register a new buyer under Counter Admin > Add ID first, then pick the code.",
+      error: "Choose a buyer on the roster. Register a new buyer under Salt Admin > Add ID first, then pick the code.",
       plain: "Choose a customer from the list. A new customer is added under Record, New customer, first." },
     { name: "supplier", direction: "purchase", field: "Who",
-      error: "Choose a supplier on the roster. Register a new supplier under Counter Admin > Add ID first, then pick the code.",
+      error: "Choose a supplier on the roster. Register a new supplier under Salt Admin > Add ID first, then pick the code.",
       plain: "Choose a supplier from the list. A new supplier is added under Record, New customer, first." },
     { name: "end buyer", direction: "sale", stream: "R2", field: "Their customer (optional)",
-      error: "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code.",
+      error: "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Salt Admin > Add ID first, then pick the code.",
       plain: "Choose their customer from the list, or leave it as Not named. A new customer is added under Record, New customer, first." },
     { name: "referrer", direction: "sale", stream: "R3", field: "Which associate",
-      error: "Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code.",
+      error: "Choose a referrer on the roster. Register a new referrer under Salt Admin > Add ID first, then pick the code.",
       plain: "Choose who introduced the buyer from the list. A new one is added under Record, New customer, first." },
     { name: "associate", direction: "sale", stream: "R2", field: "Which associate",
-      error: "Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code.",
+      error: "Choose an associate on the roster. Register a new associate under Salt Admin > Add ID first, then pick the code.",
       plain: "Choose an associate from the list. A new one is added under Record, New customer, first." }
   ]) {
     const refusedWorld = world(), page = await ownerTrade(refusedWorld, pageWork);
@@ -383,7 +383,7 @@ export async function run({ ok, pageWork }) {
         : scenario.field === "Which associate" ? request.body.assoc : request.body.party) === "CZ9-ZED"
         && refusedWorld.calls.includes("/_internal/maker/inputs/" + scenario.direction)
         && page.section.querySelector('[role="status"]').firstChild.textContent === scenario.plain
-        && page.section.querySelector('[role="status"] .rraw').textContent === scenario.error
+        && page.section.querySelector('[role="status"] .rraw').textContent.replace("Counter Admin", "Salt Admin") === scenario.error
         && counts.every((n) => n === 0) && refusedWorld.puts.length === 0,
         "trade unknown " + scenario.name + ": forged generated-owner input reaches the real bridge/Worker, shows precise Add ID guidance and writes no queue, draft or admission " +
           JSON.stringify({ request, calls: refusedWorld.calls, counts, answer: page.section.querySelector('[role="status"]').textContent }));

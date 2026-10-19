@@ -1,4 +1,4 @@
-/* test/admin-approve-queue.mjs: THE ROWS TO APPROVE, THE QUEUE, AND NO NATIVE CONFIRM (Phase 2c of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "The rows to approve").
+/* test/admin-approve-queue.mjs: THE ROWS TO APPROVE, THE QUEUE, AND NO NATIVE CONFIRM (Phase 2c of the Salt Admin redesign, 12 Oct 2026; docs/STATEMENTS.md "The rows to approve").
  *
  * A Desk row waiting for him is a card on Orders > Approve (and a pill on Needs you). His decisions of 11 Oct 2026 shape it: 4, a Sheet replaces every native confirm, and the phone leads a
  * draft with the cost and margin read off the draft and computes nothing, its flags frozen at drafting. What is proved here, each check red under its own mutation

@@ -1,6 +1,6 @@
-/* test/admin-stress-fixes.mjs: SALT ACCOUNT, THE STRESS RUN'S FINDINGS (13 Oct 2026, his yes: "Fix all six, one build"; the three that are Salt Account's).
+/* test/admin-stress-fixes.mjs: SALT ADMIN, THE STRESS RUN'S FINDINGS (13 Oct 2026, his yes: "Fix all six, one build"; the three that are Salt Admin's).
  *
- * The AFTER stress run of Salt Account (341 controls, 8,909 runs, repo 1548e0d8) found, among others, a delivery charge shown as chosen after its
+ * The AFTER stress run of Salt Admin (341 controls, 8,909 runs, repo 1548e0d8) found, among others, a delivery charge shown as chosen after its
  * read failed, answers a screen or more from the control that caused them, and a tap target of 102 x 19. What is proved here, each check red under
  * its own mutation (test/admin-stress-fixes.mutations.json) and red on 1548e0d8:
  *   1  a delivery charge, or a time, that did not save is not shown as chosen: the radio goes back to the choice the last good read stood on, and

@@ -1,4 +1,4 @@
-/* Counter Maker: a reward spend books. REWARD reaches the mirror through the seed; Counter Admin's Redeem, through the verified
+/* Counter Maker: a reward spend books. REWARD reaches the mirror through the seed; Salt Admin's Redeem, through the verified
    owner and the private capability, builds the entry the Desk's own redeemRebate queues on the same book (an offset against the
    oldest advance, else a free unit), the drafter drafts it pending with a row, the fold writes that row onto the book, and with no
    reward scheme in the mirror the spend is refused and nothing is queued. Then Accept tier proposals, driven in the actual owner

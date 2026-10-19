@@ -1,4 +1,4 @@
-/* test/admin-needs-5s.mjs: COUNTER ADMIN'S NEEDS AND ORDERS ARE READ EVERY 5 SECONDS (R4, his yes of 19 Oct 2026, D12 of the Live and fast plan).
+/* test/admin-needs-5s.mjs: SALT ADMIN'S NEEDS AND ORDERS ARE READ EVERY 5 SECONDS (R4, his yes of 19 Oct 2026, D12 of the Live and fast plan).
  *
  * The poll that read Needs you and Orders every 30 seconds while they show now runs every 5, and a tick that finds what the last found
  * costs nothing on screen: not a card, not the line under the title, not the failure banner. A read that fails again with the same words

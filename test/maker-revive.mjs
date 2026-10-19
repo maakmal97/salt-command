@@ -1,4 +1,4 @@
-/* test/maker-revive.mjs: Counter Admin revives a cancelled order. A cancelled row takes one Correction, cancelled off and its date
+/* test/maker-revive.mjs: Salt Admin revives a cancelled order. A cancelled row takes one Correction, cancelled off and its date
    cleared together, and only while nothing is paid against it and nothing has moved: a paid cancel raised a refund, and a revival
    would count the money twice. The proposal is the Desk's own ledgerAmendmentEntry, drafted by the native drafter over the real
    bridge and mirror; the owner page keeps one request id until it lands. Notes and settlement prose stay on the Desk. */

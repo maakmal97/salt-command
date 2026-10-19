@@ -3,5 +3,5 @@
  {"name":"the fixture counts only its own asks","file":"stmt/orderbook.js","find":"            const open = doc.orders.filter((o) => OPEN_STATES.includes(o.status));\n","replace":"            const open = doc.orders.filter((o) => OPEN_STATES.includes(o.status) && /-ex[0-9a-f]{6}$/.test(o.id));\n"},
  {"name":"the fixture's Place reads no hours","file":"stmt/orderbook.js","find":"{ steps: a.steps || null, hours: a.hours || null, claimWaiting:","replace":"{ steps: a.steps || null, hours: null, claimWaiting:"},
  {"name":"the Worker sends no hours to the fixture","file":"stmt/testfix.js","find":"hours: await hoursConfig(env), request: body,","replace":"hours: null, request: body,"},
- {"name":"Counter Admin's Place for a test account goes to the book","file":"stmt/maker.js","find":"const result = isTest(op.u) ? await examplePlace(env, op.u, body) : await placeOrder(env, op.u, body, \"desk\");","replace":"const result = await placeOrder(env, op.u, body, \"desk\");"}
+ {"name":"Salt Admin's Place for a test account goes to the book","file":"stmt/maker.js","find":"const result = isTest(op.u) ? await examplePlace(env, op.u, body) : await placeOrder(env, op.u, body, \"desk\");","replace":"const result = await placeOrder(env, op.u, body, \"desk\");"}
 ]

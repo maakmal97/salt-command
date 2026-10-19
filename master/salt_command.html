@@ -13587,7 +13587,7 @@ function areaOf(lat,lng,loc){
    its district. Each named once, and what is not known left out. */
 const PLACE_WORDS={rd:'Road',jln:'Jalan',sg:'Sungai',bkt:'Bukit',bdr:'Bandar',tmn:'Taman',kg:'Kampung',kpg:'Kampung'};
 const placeTidy=t=>String(t||'').replace(/\b([A-Za-z]+)\b\.?/g,(m,w)=>PLACE_WORDS[w.toLowerCase()]||m);
-/* the locality travels with a point as its third element; Counter Admin bundles these two (tools/maker-geosync.mjs) */
+/* the locality travels with a point as its third element; Salt Admin bundles these two (tools/maker-geosync.mjs) */
 const placeLocality=pl=>String(pl==null?'':pl).split(',')[0].trim();
 const geoWhere=(pt,pl)=>{const l=placeLocality(pl).slice(0,60);return pt&&l&&!/^(location )?(to be confirmed|tbc)$/i.test(l)?[pt[0],pt[1],l]:pt;};
 function placeWords(loc,lat,lng){
@@ -16389,7 +16389,7 @@ function obsCard(o){
         ${hushed
           ? `<span class="dsc">${o.st.act==='snooze'?`Snoozed to <b>${esc(o.st.until||'')}</b>`:'Dismissed'}${o.st.why?`: ${esc(o.st.why)}`:''}${o.st._q?' &middot; <span class="attn">queued, not yet filed</span>':''}</span>
 `
-          : `<span class="dsc obsid">${esc(o.id)} &middot; Hush on Counter Admin</span>`}
+          : `<span class="dsc obsid">${esc(o.id)} &middot; Hush on Salt Admin</span>`}
       </div>
     </div>
   </details>`;
@@ -16787,7 +16787,7 @@ function renderReveal(){
     ${vaultRevealMsg?`<div style="font-size:12px;color:${/did not open|no vault|Enter the/.test(vaultRevealMsg)?'var(--crim)':'var(--mut)'};margin-bottom:7px">${esc(vaultRevealMsg)}</div>`:''}
     ${!NAME_VAULT?'<div class="dsc" style="margin-bottom:8px">No vault has synced to this device yet. Seed it from the laptop with <b>tools/seed-vault.mjs</b>.</div>':''}
     `:`
-    <div class="note" style="margin:0 0 10px">Read only. Names change through Amend ID on Counter Admin.</div>
+    <div class="note" style="margin:0 0 10px">Read only. Names change through Amend ID on Salt Admin.</div>
     <div class="note warn" style="margin:0 0 10px;border-color:color-mix(in srgb,var(--salt-copper) 30%,transparent);background:color-mix(in srgb,var(--salt-copper) 8%,transparent)"><b>Not encrypted.</b> This is kept in salt_bio.json in the clear, by your instruction. The desk file itself stays clean and the published mirror carries none of it. The phone is a different matter: it only ever receives the sealed envelope and asks for the passphrase.</div>
     <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
       <button id="vreveal" class="vbtn salt-pill salt-pill--sm" style="border-color:var(--vio);background:${revealed?'linear-gradient(135deg,var(--vio),var(--desk-vio-deep))':'transparent'};color:${revealed?'var(--desk-on-solid)':'var(--vio)'}">${revealed?'Hide':'Show'}</button>
@@ -17198,7 +17198,7 @@ function pxCost(){ return renderMemo('pxCost|'+PROD+'|'+pxOver.cost+'|'+pxOver.s
 /* the board for the book in view, on its own rungs; null for a book with no rule */
 function fiveTiersNow(){return SNAPSHOT_ENGINE.fiveTiers(snapCtx(),PROD,pxCost);}
 /* ============ EACH CUSTOMER'S HELD FIGURE, BEFORE ANY QUOTE READS IT ============
-   TIER_OF on the book is code to product to figure (18 Oct 2026: a % lift on the Set Price, 0 to 2): set on Counter Admin or at
+   TIER_OF on the book is code to product to figure (18 Oct 2026: a % lift on the Set Price, 0 to 2): set on Salt Admin or at
    Add ID, queued, drafted as `tierset`, approved and folded, so it moves only on his word. The five price levels this once held
    are gone. Every quote the desk makes to a named customer reads it through cardQuote. */
 /* 23 SEP 2026, HIS WORDS: "each customer will be quoted differently for salt, but everyone will have the same quote for oil,
@@ -17218,7 +17218,7 @@ function buyerProfile(code,prod){return SNAPSHOT_ENGINE.buyerProfile(snapCtx(),p
 function lateOf(code){return SNAPSHOT_ENGINE.lateOf(snapCtx(),code);}
 /* ============ 18 OCT 2026, HIS DECISION: EACH CUSTOMER'S % LIFT ON A DRIFT BOOK ============
    A book whose TIER_RULE carries `drift` (salt) quotes a named customer the Set Price lifted by their %, d from 0 to 2 (0% to 200%),
-   the Set Price being the least anyone but a partner pays. THE FIGURE IS HIS: a number held in TIER_OF[code][book], set on Counter Admin or
+   the Set Price being the least anyone but a partner pays. THE FIGURE IS HIS: a number held in TIER_OF[code][book], set on Salt Admin or
    at Add ID, queued and folded as `tierset`, a null clearing it, and nought where none is held. Nothing automatic prices: the engine's
    autoDrift over the record (buyerProfile, payDelays, lateOf, txWrittenOff) only fills the card's good and bad, and suggestOf is its
    suggestion, from what they paid over the Set Price on their last salt sales and how they pay (suggestPct). */
@@ -17249,7 +17249,7 @@ function suggestSay(sg){
   const w=PRICING_ENGINE.suggestWhy(sg);
   return 'Suggested '+driftSay(sg.pct)+(w.length?': '+w.join(', '):'');
 }
-/* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. It is made on Counter Admin (a name-free `partner` entry for a code already on the
+/* 09 Oct 2026, HIS DECISION: A PARTNER IS AN ASSOCIATE WHO PAYS COST. It is made on Salt Admin (a name-free `partner` entry for a code already on the
    roster). The desk shows the standing of one queued before B5 of #62 at once, as the fold will file it: the code in `partners`, and an
    associate (with the -R account) if they were none, so cardQuote reads the floor and the bench lists them before the fold lands. */
 function partnerQueued(code){return queue.some(q=>q&&q.payload&&q.payload.mode==='partner'&&q.payload.code===code);}
@@ -17648,10 +17648,10 @@ function actions(){
     const acts=ow.acts||[];
     if(acts.length){
       const n=k=>acts.filter(a=>a.kind===k).length;
-      const title=`${acts.length} waiting on you on Counter Admin`;
+      const title=`${acts.length} waiting on you on Salt Admin`;
       const why=(ow.placed.length?`<b>${fmt0(ow.rm)}</b> ordered and not yet agreed. `:'')
         +[['new','new'],['paid','say they paid'],['cash','cash to record'],['asked','waiting on an answer']]
-          .filter(x=>n(x[0])).map(x=>n(x[0])+' '+x[1]).join(', ')+'. Decided on Counter Admin.';
+          .filter(x=>n(x[0])).map(x=>n(x[0])+' '+x[1]).join(', ')+'. Decided on Salt Admin.';
       add(ow.placed.length?'now':'soon','orders',title,ow.rm,why,null);
     }
   }
@@ -17820,7 +17820,7 @@ function renderQueue(){const b=document.getElementById('queueBox');if(!b)return;
      drafter drafts an entry below the watermark that the draft table does not know, so once it
      reaches the cloud it is put to him under Approve like any entry. The old line told him to
      re-record the sale, which would have made a twin of a row the drafter was already drafting. */
-  const stuck=queueStuck?`<div class="dsc" style="margin-top:10px;color:var(--ember)"><b>&#9888; ${queueStuck} entr${queueStuck===1?'y was':'ies were'} not confirmed by the cloud</b> before the ledger was folded past ${queueStuck===1?'it':'them'}. ${queueStuck===1?'It is':'They are'} held here and counted in no figure. The drafter still drafts ${queueStuck===1?'it once it reaches':'them once they reach'} the cloud: decide ${queueStuck===1?'it':'them'} on Counter Admin, and once ${queueStuck===1?'its row is':'their rows are'} in the book, discard the copy held here from the list above.</div>`:'';
+  const stuck=queueStuck?`<div class="dsc" style="margin-top:10px;color:var(--ember)"><b>&#9888; ${queueStuck} entr${queueStuck===1?'y was':'ies were'} not confirmed by the cloud</b> before the ledger was folded past ${queueStuck===1?'it':'them'}. ${queueStuck===1?'It is':'They are'} held here and counted in no figure. The drafter still drafts ${queueStuck===1?'it once it reaches':'them once they reach'} the cloud: decide ${queueStuck===1?'it':'them'} on Salt Admin, and once ${queueStuck===1?'its row is':'their rows are'} in the book, discard the copy held here from the list above.</div>`:'';
   const rec=renderRecovery();
   if(!txq.length){b.innerHTML=rec+cleared+stuck;return;}
   b.innerHTML=rec+cleared+stuck;b.innerHTML+='<div style="margin-top:12px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold)">Live in the desk, awaiting commit ('+txq.length+'), '+qLabel()+'</div>'
@@ -18525,7 +18525,7 @@ function tabConcentration(){
      every card header with a sub, so it is not fixed from this view. */
   const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}, whole ledger</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
     <table class="salt-table"><thead><tr><th class="l salt-table__label">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table>
-    ${cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Counter Admin.</p>':''}</div>`;
+    ${cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</p>':''}</div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the
@@ -18808,7 +18808,7 @@ function resellerCard(r){
     :`Brought-in business is <b>${r.share.toFixed(1)}%</b> of all revenue. The first &#9733; starts at ${starMin}%.`;
   const rebateLine=`<div class="insight salt-insight" style="margin-top:10px">${rated}</div>
     ${rewardTbl}
-    ${freeUnits>0.009&&!held?'<div class="dsc" style="margin-top:9px">Redeem or offset on Counter Admin.</div>':''}`;
+    ${freeUnits>0.009&&!held?'<div class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</div>':''}`;
   // ---- three uniform ledgers ----
   const buys=sales.filter(s=>s.total!=null&&s.customer===r.id&&s.rev!=='R2');
   /* v365: was ${s.date} with no fallback, so a never-dated row (two real cancelled deals,
@@ -19016,7 +19016,7 @@ async function apLoad(quiet){
   ordTell();   /* S9 9.8 fix */
 }
 /* ---- The orders the site holds, read through the Worker's keyed relay (src/orders.js). Since 18 Oct 2026 (his word) the
-   desk draws no card of them: Counter Admin decides every move. The read feeds To do's Waiting on you row, the waiting
+   desk draws no card of them: Salt Admin decides every move. The read feeds To do's Waiting on you row, the waiting
    stamp (ordTell) and Spots to file. ---- */
 let ORD_OPEN=[],ordUnread='',ordNeedKey=false,ordWaitWas='';
 async function ordLoad(quiet){
@@ -19029,8 +19029,8 @@ async function ordLoad(quiet){
     ORD_OPEN=((r.ok&&j&&j.orders)||[]).concat(((r.ok&&j&&j.claims)||[]).filter(c=>c&&c.kind==='account'&&c.state==='waiting'));
     /* Step 7: and every account's thread, his Chat, each a card of its own, waiting on him while their line is the last */
     ORD_OPEN=ORD_OPEN.concat(((r.ok&&j&&j.threads)||[]).map(thrItem));
-    /* S9 9.8: the rail's foot counts the associate links waiting in Salt Account: a count, no link and no name */
-    {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Account':'';}
+    /* S9 9.8: the rail's foot counts the associate links waiting in Salt Admin: a count, no link and no name */
+    {const f=document.querySelector('.rail .railfoot'),n=r.ok&&j?+j.links||0:null;if(f&&n!==null)f.textContent=n?n+(n===1?' link waits':' links wait')+' in Salt Admin':'';}
     if(r.ok){ORD_READ=true;ORD_AT=Date.now();}
   }catch(e){ ordUnread=NO_REPLY; ORD_OPEN=[]; }
   waitRecount();
@@ -19219,7 +19219,7 @@ function ordWaiting(){
   const acts=ordActs(),placed=acts.filter(a=>a.kind==='new').map(a=>a.o),asked=acts.filter(a=>a.kind==='asked').map(a=>a.o);
   return {placed,asked,acts,rm:+placed.reduce((a,o)=>a+(+o.total||0)+(+o.delivery||0),0).toFixed(2)};
 }
-/* S9 9.8 FIX (25 Sep 2026): SALT ACCOUNT'S LINE IS THIS COUNT. Once the orders and the drafts have both been read, and
+/* S9 9.8 FIX (25 Sep 2026): SALT ADMIN'S LINE IS THIS COUNT. Once the orders and the drafts have both been read, and
    neither read failed, the Waiting on you figure Today's row and the Enter badge count (ordActs) goes to the desk Worker
    (POST orders/waiting), which sets the site's desk-waiting mark: one reading, the desk's. A change is sent, and the
    first count of every load, so the mark's moment says when the desk last looked.
@@ -19334,7 +19334,7 @@ async function ordPinFileAll(){
   ORD_PIN_ALL_FOR=ordPinAllKey(ordPinBatch());
   pinDraw();
 }
-/* 18 OCT 2026, HIS WORD: SPOTS TO FILE. Site orders left the desk, and Counter Admin opens no spot, so the one place a
+/* 18 OCT 2026, HIS WORD: SPOTS TO FILE. Site orders left the desk, and Salt Admin opens no spot, so the one place a
    shared spot is filed as a customer's place is here, on Coverage beside the places: every open delivery that shared one,
    opened with the one unlock, each filed on its own tap or all at once. Codes until the names are shown. */
 function pinDraw(){
@@ -19348,7 +19348,7 @@ function pinDraw(){
 }
 /* Step 7: every account's thread rides in the orders read as one item, waiting on him while their line is the last */
 function thrItem(t){return Object.assign({},t,{id:'t:'+t.u,kind:'thread'});}
-/* the banner opens desk#orders/newest (public/sw.js); the orders are Counter Admin's, so it lands on the desk's Money */
+/* the banner opens desk#orders/newest (public/sw.js); the orders are Salt Admin's, so it lands on the desk's Money */
 function ordWakeAddr(h){return h==='orders/newest'?'orders':h;}
 /* the rail's Today count includes what is waiting on the site, so it is recounted when THAT changes, not on every read */
 function waitRecount(){const n=ordActs().map(a=>a.kind+':'+(a.o&&a.o.id)).join(',');if(n!==ordWaitWas){ordWaitWas=n;try{navCounts();}catch(e){}}}
@@ -20018,7 +20018,7 @@ function tabPricing(){
          open inside the board card, which on a 375px phone put the thing he acts on, the
          board, above a screen and a half of controls he touches once a month. It is Do, so
          it stays on this card and one tap away; it is not the Ask, so it is shut. -->
-    <div class="dsc" style="margin-top:12px">Which sizes print on the board is set on Counter Admin.</div>
+    <div class="dsc" style="margin-top:12px">Which sizes print on the board is set on Salt Admin.</div>
     </div>`;})()}
 
   <!-- ============ THE BOARD COMES BEFORE THE CALCULATOR ============
@@ -21416,13 +21416,13 @@ const builders={today:()=>tabToday()+tabPlans(),forward:tabForward,sourcing:()=>
    the fold, so nothing that pointed at a tab has to change. */
 const VIEWS=[
   {id:'today', name:'Today',            lead:'today',         parts:[]},   /* 18 Oct 2026, his word: Rules went to Pricing, Next 30 days to Stock */
-  {id:'money', name:'Money',            lead:'receivables',   parts:['financials']},   /* 18 Oct 2026, his word: Order book, now that the orders are Counter Admin's */
+  {id:'money', name:'Money',            lead:'receivables',   parts:['financials']},   /* 18 Oct 2026, his word: Order book, now that the orders are Salt Admin's */
   {id:'stock', name:'Stock',            lead:'inventory',     parts:['forward','sourcing']},
   {id:'price', name:'Pricing',          lead:'pricing',       parts:['overview']},
   {id:'people',name:'Network',          lead:'concentration', parts:['network','map']},
   {id:'book',  name:'Record',           lead:'ledger',        parts:['analysis']}   /* v802: the Journal left the desk, his word of 23 Sep 2026: master/changelog.json is the reference */   /* v747: the ID stays 'book', so every /desk#book address still lands */
 ];
-/* 17 OCT 2026, HIS WORD: ENTER LEFT THE DESK. Since #62 every move is on Counter Admin, so what Enter held reads under the
+/* 17 OCT 2026, HIS WORD: ENTER LEFT THE DESK. Since #62 every move is on Salt Admin, so what Enter held reads under the
    views it belongs to: Waiting on you and Approve under Order book, Plans and Entries under Today, the restock date on Stock.
    #enter is still an address: it lands on Waiting on you. */
 /* 18 OCT 2026, HIS WORD: Approve, Site orders and Entries left the desk too; each address lands where its figures are. */

@@ -236,7 +236,7 @@
  {
   "name": "the Desk's sentence takes the app's own name",
   "file": "stmt/owner.js",
-  "find": "(?:account|counter|command|desk)",
+  "find": "(?:account|admin|counter|command|desk)",
   "replace": "(?:nothing)"
  },
  {

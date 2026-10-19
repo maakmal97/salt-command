@@ -20,9 +20,9 @@
  {"name": "an emptied list leaves its rows", "find": "if(!L.length){box.innerHTML='';return;}", "replace": "if(!L.length){return;}"},
  {"name": "To do loses the box for held entries", "find": "<div id=\"queueBox\"></div>", "replace": ""},
  {"name": "the Noticed fold has another class", "find": "<details class=\"obsec noticed\"", "replace": "<details class=\"obsec noticedx\""},
- {"name": "the waiting row is not titled for Counter Admin", "find": "const title=`${acts.length} waiting on you on Counter Admin`;", "replace": "const title=`${acts.length} waiting on you`;"},
+ {"name": "the waiting row is not titled for Salt Admin", "find": "const title=`${acts.length} waiting on you on Salt Admin`;", "replace": "const title=`${acts.length} waiting on you`;"},
  {"name": "the waiting row regains a jump button", "find": "ow.rm,why,null);", "replace": "ow.rm,why,'receivables');"},
- {"name": "the waiting row no longer says where it is decided", "find": "+'. Decided on Counter Admin.';", "replace": "+'.';"},
+ {"name": "the waiting row no longer says where it is decided", "find": "+'. Decided on Salt Admin.';", "replace": "+'.';"},
  {"name": "apLoad starts a clock", "find": "}catch(e){ apUnread=NO_REPLY; AP_DRAFTS=[]; AP_REFUSED=[]; }", "replace": "}catch(e){ apUnread=NO_REPLY; AP_DRAFTS=[]; AP_REFUSED=[]; } setInterval(function(){},30000);"},
  {"name": "ordLoad starts a clock", "find": "}catch(e){ ordUnread=NO_REPLY; ORD_OPEN=[]; }", "replace": "}catch(e){ ordUnread=NO_REPLY; ORD_OPEN=[]; } setInterval(function(){},30000);"}
 ]

@@ -1,4 +1,4 @@
-/* test/admin-one-unlock.mjs: ONE UNLOCK OPENS NAMES, PLACES AND THE SLIP KEY, EVERY PLACE READS IT, AND HIDING THE PAGE LOCKS THEM ALL (Phase 4b of the Salt Account
+/* test/admin-one-unlock.mjs: ONE UNLOCK OPENS NAMES, PLACES AND THE SLIP KEY, EVERY PLACE READS IT, AND HIDING THE PAGE LOCKS THEM ALL (Phase 4b of the Salt Admin
  * redesign, 12 Oct 2026, his decision 3 of 11 Oct; docs/STATEMENTS.md "The one unlock").
  *
  * Add ID, Amend ID, Place on the map, an unsent entry and a claim's slip each asked for the vault's password in a field of its own. Now one Sheet, one field,

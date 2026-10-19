@@ -1,4 +1,4 @@
-/* test/admin-tiles.mjs: THE FEW, FIXED CHOICES OF A FORM ARE OPTION TILES (Phase 4a of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "Record's forms").
+/* test/admin-tiles.mjs: THE FEW, FIXED CHOICES OF A FORM ARE OPTION TILES (Phase 4a of the Salt Admin redesign, 12 Oct 2026; docs/STATEMENTS.md "Record's forms").
  *
  * Where a Record form once asked for a book, a direction, a handover, a kind, a role, a level or a length of time in a <select>, it asks in the system's Option
  * tiles (stmt/owner.js, makerTiles): a fieldset whose legend is the field's label and a real radio in each tile, so the group is one tab stop, the arrows move the

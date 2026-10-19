@@ -1,8 +1,8 @@
 /* test/delivery-window.mjs: A DELIVERY'S TIME WINDOW (his decisions of 10 Oct 2026). As soon as it can, or one of six
- * four-hour windows, each its next occurrence inside the Counter's hours (Counter Admin's weekly schedule and manual
+ * four-hour windows, each its next occurrence inside the Counter's hours (Salt Admin's weekly schedule and manual
  * override), a closed day rolling it to its next open one; a window partly inside says the part inside. The Worker takes
  * what the page offers (one rule, stmt/window.js, carried to the page as text), the order keeps the window and its span,
- * Counter Admin's card says it, and no ledger entry carries it. Every assertion was proved red by its own mutation. */
+ * Salt Admin's card says it, and no ledger entry carries it. Every assertion was proved red by its own mutation. */
 const U = "wrnd-zwse", PASS = "fixture-pass-window-01";
 
 export async function run({ ok }) {
@@ -53,7 +53,7 @@ export async function run({ ok }) {
     && H.windowHours({ schedule: { days: [1] } }).schedule === null
     && H.windowHours({ schedule: nine.schedule, manual: { open: true, until: "nope" } }).manual === null
     && H.windowHours({ schedule: nine.schedule }).schedule.days[1].open === "09:00",
-    "the hours a window reads are Counter Admin's, a schedule or override that does not validate reading as none set");
+    "the hours a window reads are Salt Admin's, a schedule or override that does not validate reading as none set");
   const stored = await H.hoursConfig({ STMT: { get: async () => { throw new Error("down"); } } });
   ok(stored.schedule === null && stored.manual === null, "a store that cannot be read offers every window rather than refusing an order");
 
@@ -95,9 +95,9 @@ export async function run({ ok }) {
   const pe = pendingEntry(Object.assign({}, o, { history: [{ at: iso, status: "acknowledged", by: "desk" }] }), "CX0-AA", iso);
   ok(pe && !/2026-10-12T08|09:00-12:00|slot/.test(JSON.stringify(pe)), "the pending row carries neither the window nor its span");
 
-  /* 6. THE CARD: Counter Admin's order card says the part of the window inside the hours (the Desk draws no order card since 18 Oct 2026) */
+  /* 6. THE CARD: Salt Admin's order card says the part of the window inside the hours (the Desk draws no order card since 18 Oct 2026) */
   const { OWNER_JS } = await import("../stmt/owner.js");
-  ok(/Wanted '\+String\(order\.slotSpan\)\.replace\('-',' to '\)/.test(OWNER_JS), "Counter Admin's order card says the span too");
+  ok(/Wanted '\+String\(order\.slotSpan\)\.replace\('-',' to '\)/.test(OWNER_JS), "Salt Admin's order card says the span too");
 
   /* 7. THE SHEET: a delivery asks As soon as it can or a window open now, the span said, and Place sends the window */
   const C = await import("../tools/stmt-crypto.mjs"), { webcrypto } = await import("node:crypto"), { JSDOM } = await import("jsdom");

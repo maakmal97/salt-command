@@ -1,4 +1,4 @@
-/* test/maker-orders.mjs: Counter Admin's order moves (Ready, Decline, Cancel, a reply, No reply needed, Not found), through
+/* test/maker-orders.mjs: Salt Admin's order moves (Ready, Decline, Cancel, a reply, No reply needed, Not found), through
    the verified owner, the private Desk capability and the order book, on real orders and on an acceptance account's. */
 import { webcrypto } from "node:crypto";
 import desk from "../src/worker.js";

@@ -417,7 +417,7 @@ async function concurrentFixture(ok) {
   book.db.close();
 }
 
-/* A real (non-test) account claim decided from Counter Admin through the actual Desk bridge: native claimPreview,
+/* A real (non-test) account claim decided from Salt Admin through the actual Desk bridge: native claimPreview,
    claimReceived with its preapprovals and afterApproval, and notFoundClaim's booked refusal, over the real D1 schema. */
 async function realBridge(ok) {
   const { DatabaseSync } = await import("node:sqlite");
@@ -468,12 +468,12 @@ async function realBridge(ok) {
   const pv = await owner(route + "/preview", {});
   ok(pv.status === 200 && JSON.stringify(pv.j.rows.map((r) => [r.rid, r.rm])) === '[["s20",50],["s21",30]]'
     && pv.j.left === 0 && !pv.j.own && drafts(c1.id).length === 0,
-    "Counter Admin previews a real account claim through native Desk allocation, drafting nothing: " + JSON.stringify(pv.j.rows));
+    "Salt Admin previews a real account claim through native Desk allocation, drafting nothing: " + JSON.stringify(pv.j.rows));
   const yes = await owner(route + "/received", { hash: pv.j.hash, rid: "real-claim-received-0001" });
   const ds = drafts(c1.id);
   ok(yes.status === 200 && ds.length === 2 && ds.every((d) => d.status === "approved" && /^preapproved/.test(d.decided_by))
     && (await O.claimsOf(senv, U)).find((x) => x.id === c1.id).state === "received",
-    "Counter Admin Received on a real claim approves exactly the drawn rows through Desk preapproval and tells the site: "
+    "Salt Admin Received on a real claim approves exactly the drawn rows through Desk preapproval and tells the site: "
     + JSON.stringify(ds.map((d) => [d.status, d.decided_by])));
   const retry = await owner(route + "/received", { hash: pv.j.hash, rid: "real-claim-received-0001" });
   ok(retry.status === 200 && retry.j.again === true && drafts(c1.id).length === 2,

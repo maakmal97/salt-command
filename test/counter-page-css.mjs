@@ -1,6 +1,6 @@
-/* test/counter-page-css.mjs: THE PAGE'S OWN CSS WEARS THE SYSTEM'S RECIPES AND RESTATES NONE, ON BOTH THEMES (Phase 5 of the Salt Account redesign, 12 Oct 2026).
+/* test/counter-page-css.mjs: THE PAGE'S OWN CSS WEARS THE SYSTEM'S RECIPES AND RESTATES NONE, ON BOTH THEMES (Phase 5 of the Salt Admin redesign, 12 Oct 2026).
  *
- * PAGE_CSS (stmt/page.js) is what the customer's page and Salt Account add to the recipes SITE_RECIPES carries. Rule 6 is that a recipe is used and never restated: the
+ * PAGE_CSS (stmt/page.js) is what the customer's page and Salt Admin add to the recipes SITE_RECIPES carries. Rule 6 is that a recipe is used and never restated: the
  * markup carries the system's class beside the page's own, and what the page's CSS keeps is placement. This module reads the CSS the page is served and the owner page's
  * markup, so a deleted restatement cannot come back, a control cannot go under 44px, a text colour cannot fall under 4.5:1 on either theme's ground, and type cannot go
  * under the system's 11px. Every assertion observes the generated stylesheet or a window, and each was proved red by its own mutation (test/counter-page-css.mutations.json,
@@ -44,14 +44,14 @@ export async function run({ ok, pageWork }) {
   const R = rulesOf(pageCss);
   ok(cutAt > 0 && R.length > 300 && pageCss.includes(".look-tile"), `the page's own layer is read off the style it is served in (${R.length} rules after the recipes)`);
 
-  /* ---- 1. the three recipes Salt Account was drawing by hand are carried whole, every rule of them as the system holds it ---- */
+  /* ---- 1. the three recipes Salt Admin was drawing by hand are carried whole, every rule of them as the system holds it ---- */
   const heads = ["/* ---- Metric row ---- */", "/* ---- Table (synced to the desk", "/* ---- Product tag:"];
   const carried = squash(SITE_RECIPES), wanted = rulesOf(ds).filter(([sel]) => /\.salt-(metrics|table|producttag)\b/.test(sel));
   const missing = wanted.filter(([sel, body, media]) => !carried.includes(squash(media ? "" : sel + " {" + body + "}"))).map((r) => r[0]);
   ok(heads.every((h) => RECIPE_HEADS.includes(h)) && new Set(RECIPE_HEADS).size === RECIPE_HEADS.length && wanted.length >= 18 && missing.length === 0 && !SITE_RECIPES.includes("/*"),
     `Table, Product tag and Metric row are in the recipes the page carries, ${wanted.length} rules whole and in the system's words, with none of its notes (missing: ${missing.join(" ") || "none"})`);
   ok(!/salt-producttag/.test(PAGE_SRC.replace(/\/\*[\s\S]*?\*\//g, "")) && /salt-producttag/.test(OWNER_SRC),
-    "and the Product tag is drawn by Salt Account's script alone: nothing a customer's page draws names it, so a book is still a mark there and never a word");
+    "and the Product tag is drawn by Salt Admin's script alone: nothing a customer's page draws names it, so a book is still a mark there and never a word");
 
   /* ---- 1a. Counter Batch A's recipes (salt-ds 1.7.0, 18 Oct 2026): each new head is carried once, every rule of it whole as the system holds it, @media
      ones included, so the batch's markup wears them and the page restates none ---- */
@@ -75,7 +75,7 @@ export async function run({ ok, pageWork }) {
     const aur = rulesOf(ds).filter(([sel]) => /\.salt-aurora/.test(sel)), lost = aur.filter((r) => !have.has(key(r))).map((r) => (r[2] ? r[2] + " " : "") + r[0]);
     ok(aur.length >= 16 && aur.filter((r) => r[2]).length === 2 && lost.length === 0,
       `the Aurora is in the recipes the page carries, ${aur.length} rules whole, Tide's blobs and the system's own no-Aurora under reduced transparency and in print among them (missing: ${lost.join(", ") || "none"})`);
-    const pages = [["the customer's", landingPage("abcd-efgh", "nct", null)], ["Salt Account's", landingPage("", "nct", { master: "fixture-master", accounts: [] })]];
+    const pages = [["the customer's", landingPage("abcd-efgh", "nct", null)], ["Salt Admin's", landingPage("", "nct", { master: "fixture-master", accounts: [] })]];
     const drawn = pages.map(([w, h]) => { const a = new JSDOM(h).window.document.body.firstElementChild;
       return [w, !!a && a.matches(".salt-aurora.salt-aurora--page.salt-aurora--fixed[aria-hidden=true]") && a.querySelectorAll(":scope > .salt-aurora__blob--copper, :scope > .salt-aurora__blob--brass").length === 2]; });
     ok(drawn.every(([, y]) => y), "both pages draw the page Aurora, fixed and hidden from a reader, as the first thing in the body with its copper and brass blobs: " + drawn.map(([w, y]) => w + " " + (y ? "yes" : "no")).join(", "));
@@ -87,23 +87,23 @@ export async function run({ ok, pageWork }) {
 
   /* ---- 1c. the Desk's type, gutter and shell, from salt-ds (18 Oct 2026, his word that the Desk's aesthetic is the one): no weight over the system's 500 in
      the page's own layers (the system keeps 700 for its one filled pill), a heading at the display face's 300 and the Desk's 28px, the page 22px from the top,
-     and Salt Account headed by the system's Desk bar, which carries its name and the clock the rail and every place once carried ---- */
+     and Salt Admin headed by the system's Desk bar, which carries its name and the clock the rail and every place once carried ---- */
   {
     const { JSDOM } = await import("jsdom");
     const own = rulesOf(STATEMENT_CSS + pageCss), heavy = own.filter(([, b]) => /^(600|700|bold|bolder)$/.test(decl(b, "font-weight"))).map((r) => r[0]);
     ok(heavy.length === 0, `the page's own layers set no weight over the system's 500 (heavier: ${heavy.slice(0, 6).join(" | ") || "none"})`);
     const h1 = own.filter(([sel, , m]) => !m && sel.split(",").includes("h1")), gateH1 = own.filter(([sel, , m]) => !m && /^\.(gate|chead) h1$/.test(sel));
     ok(h1.length === 1 && decl(h1[0][1], "font-weight") === "300" && decl(h1[0][1], "letter-spacing") === ".04em" && gateH1.length === 2 && gateH1.every(([, b]) => decl(b, "font-size") === "1.75rem"),
-      "a heading is the display face at 300 with the Desk's tracking, at the Desk's 28px on the door, Salt Account and the customer's places");
+      "a heading is the display face at 300 with the Desk's tracking, at the Desk's 28px on the door, Salt Admin and the customer's places");
     const body = own.filter(([sel, , m]) => !m && sel === "body");
     ok(body.length === 1 && /^22px\b/.test(decl(body[0][1], "padding")) && own.some(([sel, b, m]) => /min-width:\s*1080px/.test(m) && sel === ".gate.adm" && decl(b, "margin-top") === "0" && decl(b, "gap") === "20px"),
-      "the page starts 22px from the top, and from 1080px Salt Account's rail and column stand 20px apart with no margin above, as the Desk's do");
+      "the page starts 22px from the top, and from 1080px Salt Admin's rail and column stand 20px apart with no margin above, as the Desk's do");
     const heads = RECIPE_HEADS.filter((h) => h.startsWith("/* ---- Desk bar"));
     const od = new JSDOM(landingPage("", "nct", { master: "fixture-master", accounts: [] })).window.document, bar = od.querySelector(".amain > .salt-deskbar:first-child");
-    ok(heads.length === 1 && SITE_RECIPES.includes(".salt-deskbar__name {") && !!bar && bar.querySelector(".salt-deskbar__brand .salt-deskbar__name").textContent === "Salt Account"
+    ok(heads.length === 1 && SITE_RECIPES.includes(".salt-deskbar__name {") && !!bar && bar.querySelector(".salt-deskbar__brand .salt-deskbar__name").textContent === "Salt Admin"
       && bar.querySelectorAll(".salt-deskbar__meta [data-clock]").length === 1 && od.querySelectorAll("#roster [data-clock]").length === 1 && !od.querySelector("#roster .salt-rail__brand")
-      && ![...od.querySelectorAll("#roster .salt-eyebrow")].some((e) => /Salt Account/.test(e.textContent)),
-      "Salt Account is headed by the system's Desk bar, carried whole: its name, the one clock under it, and no brand in the rail nor a name repeated over each place");
+      && ![...od.querySelectorAll("#roster .salt-eyebrow")].some((e) => /Salt Admin/.test(e.textContent)),
+      "Salt Admin is headed by the system's Desk bar, carried whole: its name, the one clock under it, and no brand in the rail nor a name repeated over each place");
     /* the customer's page (Counter Batch A, his decisions of 18 Oct 2026): from 1080px the app's name stands over the rail as the one brand, and the
        rail's brand slot says whose account it is, which the header then leaves to it; the Desk bar of 18 Oct is gone; a section head at the system's
        500, not the browser's bold; and Orders' list the whole width while no order stands open beside it */
@@ -190,7 +190,7 @@ export async function run({ ok, pageWork }) {
   const recipeTap = [".salt-ghost", ".salt-pill", ".salt-field__input"].filter((c) => !rulesOf(SITE_RECIPES).some(([sel, b]) => sel.split(",").map((x) => x.trim()).includes(c) && /min-height:\s*var\(--salt-tap\)/.test(b)));
   ok(recipeTap.length === 0, `the ghost, the pill and the field carry the 44px in the recipes themselves (without: ${recipeTap.join(" ") || "none"})`);
 
-  /* ---- 6. the markup wears the recipes: Salt Account, drawn on its busiest day, and read for every label, every guest link, the report card, the hours and a book named on a row ---- */
+  /* ---- 6. the markup wears the recipes: Salt Admin, drawn on its busiest day, and read for every label, every guest link, the report card, the hours and a book named on a row ---- */
   const labelsBad = (d) => [...d.querySelectorAll(".lbl")].filter((n) => !(n.tagName === "LEGEND" ? n.classList.contains("salt-options__legend--label") && n.classList.contains("salt-options__legend") : n.classList.contains("salt-field__label"))).map((n) => n.tagName + " " + n.textContent.slice(0, 24));
   const row = { id: "AX1-ZED", bought: 100, soldFor: 50, introduced: 20, onward: 1, referred: 2, share: 12, rank: 1, stars: 2, founder: true, reward: { earned: 2, taken: 1, left: 1, next: 0.4 } };
   const p = await richOwnerPage({ pageWork, assocAnswer: (j) => ({ ...j, products: [{ product: "salt", name: "salt", rows: [row] }] }) });

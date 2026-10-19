@@ -1,6 +1,6 @@
 [
  {"name":"a test request goes off the base","file":"stmt/page.js","find":"      return TCFG.base+p;","replace":"      return p;"},
- {"name":"Counter Admin's test reads go to the real maker","file":"stmt/page.js","find":"return TCFG.owner?'/all/test/maker/'+p.slice(11):null;","replace":"return TCFG.owner?'/all/maker/'+p.slice(11):null;"},
+ {"name":"Salt Admin's test reads go to the real maker","file":"stmt/page.js","find":"return TCFG.owner?'/all/test/maker/'+p.slice(11):null;","replace":"return TCFG.owner?'/all/maker/'+p.slice(11):null;"},
  {"name":"a test key is written unprefixed","file":"stmt/page.js","find":"setItem:function(k,v){ s.setItem(P+k,String(v)); },","replace":"setItem:function(k,v){ s.setItem(k,String(v)); },"},
  {"name":"a test key is removed unprefixed","file":"stmt/page.js","find":"removeItem:function(k){ s.removeItem(P+k); },","replace":"removeItem:function(k){ s.removeItem(k); },"},
  {"name":"the navigator hides nothing","file":"stmt/page.js","find":"has:function(t,k){ return k==='serviceWorker'||k==='credentials'?false:(k in t); },\n      get:function(t,k){ if(k==='serviceWorker'||k==='credentials') return undefined;","replace":"has:function(t,k){ return (k in t); },\n      get:function(t,k){ if(false) return undefined;"},

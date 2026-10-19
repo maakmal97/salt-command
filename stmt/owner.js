@@ -43,7 +43,7 @@ export const OWNER_JS = `
      brings in, and the address. The place is read on entering it, a part on entering the part, and what neither shows is never read:
      entering Shop reads no order and entering Orders reads no form. Nothing changes below the screen: every route, request body, id
      and retained send is as it was. Re-entering a place reads again, as it always did. */
-  /* the test surface (his answers of 18 Oct 2026): true on Counter Admin under /all/test alone, where it reads the example orders, their
+  /* the test surface (his answers of 18 Oct 2026): true on Salt Admin under /all/test alone, where it reads the example orders, their
      payments and chats, and nothing else (no account list, links, inputs, notice or book) */
   var TESTING=/*__TESTING__*/false;
   var placeNow='needs', partNow='', PARTS={}, fOpen=null;
@@ -862,6 +862,11 @@ export const OWNER_JS = `
     'Units must be above zero.':'Units must be above zero.',
     'Carriage must be a finite, non-negative number.':'Delivery cannot be negative.',
     'Handover is delivered, collected or not stated.':'Say whether it was delivered or collected, or leave it blank.',
+    'Choose a buyer on the roster. Register a new buyer under Salt Admin > Add ID first, then pick the code.':'Choose a customer from the list. A new customer is added under Record, New customer, first.',
+    'Choose a supplier on the roster. Register a new supplier under Salt Admin > Add ID first, then pick the code.':'Choose a supplier from the list. A new supplier is added under Record, New customer, first.',
+    'Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Salt Admin > Add ID first, then pick the code.':'Choose their customer from the list, or leave it as Not named. A new customer is added under Record, New customer, first.',
+    'Choose a referrer on the roster. Register a new referrer under Salt Admin > Add ID first, then pick the code.':'Choose who introduced the buyer from the list. A new one is added under Record, New customer, first.',
+    'Choose an associate on the roster. Register a new associate under Salt Admin > Add ID first, then pick the code.':'Choose an associate from the list. A new one is added under Record, New customer, first.',
     'Choose a buyer on the roster. Register a new buyer under Counter Admin > Add ID first, then pick the code.':'Choose a customer from the list. A new customer is added under Record, New customer, first.',
     'Choose a supplier on the roster. Register a new supplier under Counter Admin > Add ID first, then pick the code.':'Choose a supplier from the list. A new supplier is added under Record, New customer, first.',
     'Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code.':'Choose their customer from the list, or leave it as Not named. A new customer is added under Record, New customer, first.',
@@ -1505,7 +1510,7 @@ export const OWNER_JS = `
       draft.note='';draft.busy=true;makerChatState();
       try{
         if(!draft.saved){
-          if(!OWNER.master) throw new Error('Reload Salt Account, then send the reply again.');
+          if(!OWNER.master) throw new Error('Reload Salt Admin, then send the reply again.');
           var envelope=await makerVaultSeal(OWNER.master,{u:user,body:draft.pending});
           var retained={v:1,u:user,rid:draft.pending.rid,at:new Date().toISOString(),envelope:envelope};
           draft.savedKey=savedPrefix+draft.pending.rid;
@@ -1524,7 +1529,7 @@ export const OWNER_JS = `
       if(draft.busy) return;
       draft.busy=true;makerChatState();
       try{
-        if(!OWNER.master) throw new Error('Reload Salt Account to open the unsent reply.');
+        if(!OWNER.master) throw new Error('Reload Salt Admin to open the unsent reply.');
         var opened=await makerVaultOpen(OWNER.master,draft.saved.envelope);
         if(opened.u!==user) throw new Error('That unsent reply belongs to another account. It was not sent.');
         var body=opened.body;
@@ -2642,7 +2647,7 @@ export const OWNER_JS = `
      (the read, the count). The card is found by its key when the answer comes, since a redraw replaces it; a card that has gone
      (the order left the open list, the row was decided) hands its answer to the list's line, so it is never lost. A foot below
      the screen (a tall card, a tap near its head) is scrolled to, clear of the bottom bar, so the answer is seen. */
-  /* 18 Oct 2026 (Counter Admin clarity, part 3): A FOLDED SECTION of an order's card is the system's Plan fold, shut until a tap. Its state is kept by the order and
+  /* 18 Oct 2026 (Salt Admin clarity, part 3): A FOLDED SECTION of an order's card is the system's Plan fold, shut until a tap. Its state is kept by the order and
      the section, so a redraw (a read that changed, a tap) leaves it as he left it. body is where its controls go; the summary is a control of its own (order.<thing>). */
   var ordFolds={};
   function ordFold(card,title,act,orderId,section,open){
@@ -4023,7 +4028,7 @@ export const OWNER_JS = `
       }else if(order.status==='placed'){
         var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','maker-fields');
         var total=makerField(form,['Price (goods)','order.total'],'number',quote.total==null?order.total:quote.total);
-        /* 18 Oct 2026 (Counter Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
+        /* 18 Oct 2026 (Salt Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
            it in one line and kept in step with the choices; the price, the delivery charge and the time are folded under Change terms, shut until a tap.
            Until the figures are read the pill is a stand-in, never a send: it asks for the charge (and opens it) or says it is reading. */
         leadPlace();
@@ -4632,12 +4637,12 @@ export const OWNER_JS = `
   function draftAt(d){ return String(d&&d.id||''); }
   function draftParty(d){ var e=d.entry||{}, p=e.payload||{}; return d.party||e.party||p.party||''; }
   function draftRid(d){ var r=d.row||{}, f=d.figures||{}; return f.rid||r.rid||(/^[a-z]{1,3}[0-9]+$/i.test(String(d.amends||''))?d.amends:''); }
-  /* where the entry came from: Counter Admin's own inputs carry their request, a site order's its id (his taps on it are the Desk's own), the laptop's queue holds the bare
+  /* where the entry came from: Salt Admin's own inputs carry their request, a site order's its id (his taps on it are the Desk's own), the laptop's queue holds the bare
      payload, and the phone typed the rest */
   function draftFrom(d){
     var e=d.entry||{};
-    if(e.makerRequest) return 'Counter Admin';
-    if(e.orderId) return e.by==='desk'||e.counter?'Counter Admin':'the site';
+    if(e.makerRequest) return 'Salt Admin';
+    if(e.orderId) return e.by==='desk'||e.counter?'Salt Admin':'the site';
     if(!e.type&&e.payload) return 'laptop';
     return e.type?'phone':'';
   }
@@ -5122,7 +5127,7 @@ export const OWNER_JS = `
      a line, bookTile mtile for a card (the mark, and under it "2.5 units"), bookTag the system's Product tag holding the mark, bookItem a tile of a form that is the
      mark alone, and pmarkHead, the customer's, a heading that is the mark alone. A select cannot hold a mark, so an option says the book's letter in brackets, [I],
      and nothing for a book with none. noBook takes a book's name out of a sentence the Desk or the Counter wrote, for the words that are not this page's to change. */
-  var BOOKS=/\\b(salt|oil|candy|rice)\\b(?!\\s+(?:account|counter|command|desk)\\b)/gi;
+  var BOOKS=/\\b(salt|oil|candy|rice)\\b(?!\\s+(?:account|admin|counter|command|desk)\\b)/gi;
   function noBook(text){
     return String(text==null?'':text).replace(BOOKS,function(w,k,at,all){ var before=all.slice(0,at); return /\\bthe\\s+$/i.test(before)?'book':/(^|[.!?]\\s)$/.test(before)?'The book':'the book'; });
   }
@@ -5182,7 +5187,7 @@ export const OWNER_JS = `
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
     c.appendChild(el('span','salt-action__kind',o.word));
-    /* 17 Oct 2026 (Counter Admin clarity, part 2): THE TITLE SAYS WHAT TO DO, verb first, then who: head + code + rest. The figure and the book's mark stand under it. */
+    /* 17 Oct 2026 (Salt Admin clarity, part 2): THE TITLE SAYS WHAT TO DO, verb first, then who: head + code + rest. The figure and the book's mark stand under it. */
     var what=null;
     if(o.what||o.mark){ what=el(o.head?'p':'span','need-what'); if(o.mark) what.appendChild(bookMark(o.mark)); if(o.what) what.appendChild(document.createTextNode((o.mark?' ':'')+o.what)); }
     if(o.head){
@@ -5897,7 +5902,7 @@ export const OWNER_JS = `
       try{ history.replaceState(null,'',addrFor(placeNow, partNow)); }catch(e){}
     }
   }
-  /* 11 Oct 2026, HIS WORD: SALT ACCOUNT HAS ITS OWN NIGHT OR TIDE, per device. The head script has set the stored theme (Tide until one is
+  /* 11 Oct 2026, HIS WORD: SALT ADMIN HAS ITS OWN NIGHT OR TIDE, per device. The head script has set the stored theme (Tide until one is
      chosen); the choice Sheet is the customer's (stmt/page.js, lookAsk), asked once when this page opens on a device that holds none, and
      Shop > This device holds the switch. The rest of the look (kept in localStorage salt-look on this origin, applied at once, no
      reload) is the page's own and is shared. An Access lapse, which ended() reads on a request's answer, takes the Sheet down. */

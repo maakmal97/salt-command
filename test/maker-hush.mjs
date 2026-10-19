@@ -155,5 +155,5 @@ export async function run({ ok, KV, worker, handleMaker, REPO }) {
   ok(owner_js.includes("makerButton(tipSection,['Hide it','record.tip.send']") && owner_js.includes("send('/all/maker/inputs/hush',{at:tipAt,id:tipId.value,until:until})")
     && owner_js.includes("Hidden. The Desk drops it next time it opens.")
     && owner_js.includes("tip.hush===null?' (hidden for good)':tip.hush?' (hidden until '+fmtWhen(tip.hush)+')':''") && !owner_js.includes("from its queue"),
-    "the Counter Admin carries a Hide it control that says what happens: the Desk drops the reminder when it next opens, not a queue");
+    "the Salt Admin carries a Hide it control that says what happens: the Desk drops the reminder when it next opens, not a queue");
 }

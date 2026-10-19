@@ -127,7 +127,7 @@ measurement of the desk.
   there to `@media all` (the phone frame's section, 28 Sep 2026). It also lets a LATER shorthand beat
   an earlier, more specific longhand (`margin:0 0 8px` over `…:last-child{margin-bottom:0}`), which
   no browser does: undo a shorthand with a shorthand, or measure in the Browser pane.
-- **Salt Account shows one part at a time, and jsdom ignores `hidden` in `querySelector` and `click()`** (11 Oct 2026, the five places). A test that only needs a control finds it with `byAct` after entering its place (`enter()` in `test/maker-act.mjs`); a test of what a part SHOWS asks whether any ancestor up to `#roster` is `hidden` (`shown()` in `test/admin-places.mjs`), and of what it READS counts the fetches the entry made (`drawn()` logs them). A page that installs `fetch` after `new JSDOM(...)` and taps at once finds its own first read of the sheet still in flight and skipped: flush the microtasks first, never a `setTimeout` (the suite counts those). A history step is awaited by polling the address, never a pause, and a missing control is a failed check, never a crash.
+- **Salt Admin shows one part at a time, and jsdom ignores `hidden` in `querySelector` and `click()`** (11 Oct 2026, the five places). A test that only needs a control finds it with `byAct` after entering its place (`enter()` in `test/maker-act.mjs`); a test of what a part SHOWS asks whether any ancestor up to `#roster` is `hidden` (`shown()` in `test/admin-places.mjs`), and of what it READS counts the fetches the entry made (`drawn()` logs them). A page that installs `fetch` after `new JSDOM(...)` and taps at once finds its own first read of the sheet still in flight and skipped: flush the microtasks first, never a `setTimeout` (the suite counts those). A history step is awaited by polling the address, never a pause, and a missing control is a failed check, never a crash.
 - **Declaring things to the extract.** A new top-level object or array const in the master fails
   the extract until it is added to `NOT_LEDGER` (configuration) or `LEDGER_KEYS` (the book) in
   `tools/ledger.mjs`. A date field is drawn with `dateIn(id,val,attrs)`: the suite allows one
@@ -266,7 +266,7 @@ Each of these stayed green, or read clean, through a real fault.
   element's own style must be its resting state.
 - **Emulated phones.** A fixed bar is only measured on a phone with `isMobile` and `hasTouch`: a plain
   viewport never grows its layout viewport for something wider than the phone, so the bar stays at the foot
-  whatever overflows (12 Oct 2026, Salt Account's bar). Read its bottom against `visualViewport.offsetTop +
+  whatever overflows (12 Oct 2026, Salt Admin's bar). Read its bottom against `visualViewport.offsetTop +
   height` as well as `innerHeight`, which grows with the layout viewport. Playwright's `fullPage` screenshot turns `(pointer:coarse)` off for good:
   grow the viewport and take a plain shot. **The iPhone's saved app is not Safari and cannot be driven here**: a short document lifted a
   fixed bar there (20pt and 55pt on a 393x852 screen) and nowhere else, so a measured bar at the foot in Chromium proves nothing about it. The harness sets

@@ -3,7 +3,7 @@
  * A point is a code and a place on the map: { code, lat, lng }. The code is one capital letter and one or two digits ("A2"),
  * shown to a customer as "Point A2", so it can never take the roster code's shape and names no place. There is no label, no
  * address and no note: nothing free-text that could carry a place's name. The list is Counter KV `maker:points`,
- * { v: 1, list }, at most twenty, written by Counter Admin alone (stmt/maker.js, the verified owner) and never in git, the
+ * { v: 1, list }, at most twenty, written by Salt Admin alone (stmt/maker.js, the verified owner) and never in git, the
  * Desk build or the master: the coordinates are his. An order set Ready to collect keeps its own copy (`pointAt`, a snapshot),
  * so editing or removing a point later moves no order already waiting at it. */
 

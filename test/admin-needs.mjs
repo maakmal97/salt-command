@@ -11,7 +11,7 @@
  *      no card in Needs you books money
  *   7  the kind chips: filters only, reading nothing
  *   8  a read that failed is said, never taken for nothing waiting
- *  10  (17 Oct 2026, Counter Admin clarity part 2) the verb first: each card's title says what to do, then who and the figure under it; the card's main
+ *  10  (17 Oct 2026, Salt Admin clarity part 2) the verb first: each card's title says what to do, then who and the figure under it; the card's main
  *      button is on the card and reaches the same function as the full card's; a money tap asks once on the card and Cancel sends nothing; practice
  *      accounts are one folded line at the foot, "Practice: N"; the summary reads "12 to do now · 11 soon"
  *   9  the 5-second read: only while Needs you or Orders shows and the page is visible, no read twice at once, nothing drawn when nothing
@@ -389,7 +389,7 @@ export async function run({ ok, pageWork }) {
     ok(same(r.owedGoods.map((x) => [x.party, x.rid, x.units]), [["CC1-ZED", "r-d", 2]]),
       "goods owed are the units still to hand over on a row paid in full, and never on one unpaid, cancelled or a gift: " + JSON.stringify(r.owedGoods));
     const cat = makerInputCatalog(book, {}, [], [], "2026-10-05");
-    ok(same(cat.owedMoney, m) && same(cat.owedGoods, r.owedGoods) && cat.today === "2026-10-05", "and the catalog Counter Admin reads carries both");
+    ok(same(cat.owedMoney, m) && same(cat.owedGoods, r.owedGoods) && cat.today === "2026-10-05", "and the catalog Salt Admin reads carries both");
     const none = owedBothWays({ ...book, state: {} }, "2026-10-05");
     ok(!("owedMoney" in none) && /payment term/.test(none.owedError || ""), "a mirror with no term says so, never that nothing is owed: " + JSON.stringify(none));
   }

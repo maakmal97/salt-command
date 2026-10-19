@@ -1,4 +1,4 @@
-/* test/admin-words.mjs: SALT ACCOUNT SPEAKS PLAINLY (Phase 3 of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "Salt Account speaks plainly").
+/* test/admin-words.mjs: SALT ADMIN SPEAKS PLAINLY (Phase 3 of the Salt Admin redesign, 12 Oct 2026; docs/STATEMENTS.md "Salt Admin speaks plainly").
  *
  * The words on the master's page are the redesign glossary's (3a), a refused move is a plain sentence with the server's own words under Details (3b), and a book
  * has no name at all (his word of 12 Oct 2026): its mark stands alone, named to a reader by its shape. Every word lives in stmt/owner.js and the owner-only strings of stmt/page.js, outside stmt/words.js, so
@@ -66,9 +66,9 @@ const MAPPED = [
   "Units must be above zero.",
   "Carriage must be a finite, non-negative number.",
   "Handover is delivered, collected or not stated.",
-  "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code.",
-  "Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code.",
-  "Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code.",
+  "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Salt Admin > Add ID first, then pick the code.",
+  "Choose a referrer on the roster. Register a new referrer under Salt Admin > Add ID first, then pick the code.",
+  "Choose an associate on the roster. Register a new associate under Salt Admin > Add ID first, then pick the code.",
   "Choose R2 or R3.",
   "An attribution needs an associate and its stream.",
   "Register the associate's resale account first.",
@@ -179,7 +179,7 @@ const GENERAL = [
 ];
 const GENERAL_SENTENCE = "The Counter could not do that. Try again.";
 /* words a person does not say: nothing a mapped sentence says may carry one */
-const JARGON = /roster|timestamp|mirror|envelope|canonical|fingerprint|snapshot|immutable|\btier|\bfold|\bseed|patch|vault|\bstream|finite|\bR[23]\b|Add ID|Counter Admin|payload|input\b/i;
+const JARGON = /roster|timestamp|mirror|envelope|canonical|fingerprint|snapshot|immutable|\btier|\bfold|\bseed|patch|vault|\bstream|finite|\bR[23]\b|Add ID|Salt Admin|payload|input\b/i;
 
 /* the sentences the redesign glossary names, and the ones people meet most, exactly */
 const NAMED = [
@@ -334,10 +334,10 @@ export async function run({ ok, pageWork }) {
   const SHAPE_WORD = new RegExp("\\b(" + SHAPES.join("|") + ")\\b");
   const SIZE = /^[\d.,]+ units?$/, SHAPE_SIZE = new RegExp("^(" + SHAPES.join("|") + ") [\\d.,]+ units?$");
   ok(!SHAPE_WORD.test(strip(OWNER_JS)) && !/\bbook(Name|Head)\b/.test(strip(OWNER_JS)),
-    "Salt Account's own script holds none of the shape words and none of the helpers that named a book (bookName, bookHead)");
+    "Salt Admin's own script holds none of the shape words and none of the helpers that named a book (bookName, bookHead)");
   const customerPage = strip(landingPage("", "words-nonce")), mtileSrc = customerPage.match(/function mtile[\s\S]*?\n  \}/);
   ok(!!mtileSrc && !customerPage.includes("function bookTile") && !/pshape\(product\)\+', '/.test(mtileSrc[0]),
-    "the customer's page carries none of Salt Account's book helpers, and its tile caption is the size alone");
+    "the customer's page carries none of Salt Admin's book helpers, and its tile caption is the size alone");
   const b = await richOwnerPage({ pageWork, assocAnswer: (j) => ({ ...j, products: [{ product: "oil", name: "oil", rows: [] }, { product: "salt", name: "salt", rows: [] }] }) });
   try {
     const { d, work } = b;
@@ -367,10 +367,10 @@ export async function run({ ok, pageWork }) {
   } finally { b.w.close(); }
 
   /* 7. THE WHOLE PAGE, DRAWN: NO BOOK NAME IN ANY WORD, ARIA NAME OR TITLE, AND NO SHAPE WORD DRAWN (his word of 12 Oct 2026). The names are read off the book (ledger/book.json PRODUCTS),
-     so a sixth book is held to it unasked; "Salt Account", "Salt Counter" and the like are the apps' own names and are let through */
+     so a sixth book is held to it unasked; "Salt Admin", "Salt Counter" and the like are the apps' own names and are let through */
   const BOOKS_OF = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")).PRODUCTS;
   const BOOK_NAMES = [...new Set(Object.entries(BOOKS_OF).flatMap(([k, v]) => [k, v.name]))].filter(Boolean);
-  const BOOK_NAMED = new RegExp("\\b(" + BOOK_NAMES.join("|") + ")\\b(?!\\s+(?:account|counter|command|desk)\\b)", "i");
+  const BOOK_NAMED = new RegExp("\\b(" + BOOK_NAMES.join("|") + ")\\b(?!\\s+(?:account|admin|counter|command|desk)\\b)", "i");
   const drawnWords = (root) => {
     const out = [], walk = root.ownerDocument.createTreeWalker(root, 4);
     while (walk.nextNode()) { const n = walk.currentNode, par = n.parentElement; if (par && !/^(SCRIPT|STYLE)$/.test(par.nodeName) && !par.closest("svg") && n.nodeValue.trim()) out.push([n.nodeValue.trim(), !!par.closest(".sr")]); }
@@ -387,7 +387,7 @@ export async function run({ ok, pageWork }) {
     const named = seenWords.filter(([t]) => BOOK_NAMED.test(t)).map(([t]) => t.slice(0, 80));
     const shaped = seenWords.filter(([t, hidden]) => !hidden && SHAPE_WORD.test(t)).map(([t]) => t.slice(0, 80));
     ok(seenWords.length > 400 && named.length === 0,
-      "no book is named anywhere on Salt Account, drawn text, aria names and titles included (" + BOOK_NAMES.join(", ") + "): " + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)));
+      "no book is named anywhere on Salt Admin, drawn text, aria names and titles included (" + BOOK_NAMES.join(", ") + "): " + seenWords.length + " words read; " + JSON.stringify(named.slice(0, 5)));
     /* the Sheets that ask restate a row with its book's tile, and they go when they are answered, so each is read while it is open: an order's Cancel and a trip's Approve */
     const sheets = [];
     const asked = async (open, keep) => { open(); await all.work.quiet(); const sh = all.d.getElementById("ynSheet"); sheets.push([sh.querySelectorAll(".mtile").length, drawnWords(sh)]); byAct(all.d, keep).click(); await all.work.quiet(); };
@@ -399,12 +399,12 @@ export async function run({ ok, pageWork }) {
       "the Sheets that ask draw a tile for the order or the rows they restate, and name no book and draw no shape word while they are open: " + JSON.stringify(sheets.map(([tiles, said]) => [tiles, said.length])));
     const noBook = all.w.__owner("noBook");
     ok(noBook("Salt is cheaper than its floor.") === "The book is cheaper than its floor." && noBook("old product. candy costs RM 46/unit") === "old product. The book costs RM 46/unit"
-      && noBook("Check the rice and the OIL rows") === "Check the book and the book rows" && noBook("Salt Account and the Salt Counter") === "Salt Account and the Salt Counter" && noBook("price, spared, ricer") === "price, spared, ricer"
+      && noBook("Check the rice and the OIL rows") === "Check the book and the book rows" && noBook("Salt Admin and the Salt Counter") === "Salt Admin and the Salt Counter" && noBook("price, spared, ricer") === "price, spared, ricer"
       && seenWords.some(([t]) => / old product[.] The book costs RM 46[/]unit, quoted[.]$/.test(t)) && seenWords.some(([t]) => /^A sale of the book, priced like the book[.]$/.test(t)),
     "a sentence the Desk wrote names its book as 'the book', whole words only, the apps' own names left alone, and the Approve card draws it so: " + JSON.stringify(seenWords.map(([t]) => t).filter((t) => /book/.test(t) && /cost|sale of|cheaper/.test(t)).slice(0, 4)));
     ok(shaped.length === 0 && all.d.querySelectorAll(".mtile").length > 0 && seenWords.some(([t, hidden]) => hidden && SHAPE_WORD.test(t)),
-      "no shape word is drawn on Salt Account, while a reader is still told the shape: " + JSON.stringify(shaped.slice(0, 5)));
-    ok(BOOK_NAMES.length >= 5 && BOOK_NAMED.test("Candy, 2 units") && BOOK_NAMED.test("the rice") && !BOOK_NAMED.test("Salt Account") && !BOOK_NAMED.test("a price of 5"),
+      "no shape word is drawn on Salt Admin, while a reader is still told the shape: " + JSON.stringify(shaped.slice(0, 5)));
+    ok(BOOK_NAMES.length >= 5 && BOOK_NAMED.test("Candy, 2 units") && BOOK_NAMED.test("the rice") && !BOOK_NAMED.test("Salt Admin") && !BOOK_NAMED.test("a price of 5"),
       "the scan itself reads the book's names as whole words and lets the apps' own names through: " + BOOK_NAMES.join(", "));
   } finally { all.w.close(); }
 }

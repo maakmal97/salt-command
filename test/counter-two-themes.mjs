@@ -265,7 +265,7 @@ export async function run({ ok }) {
     if (thb) thb.click();
     ok(!!thb && th.d.documentElement.getAttribute("data-theme") === "night" && th.state().held === "night" && th.errs.length === 0, `and the setting still changes the visit, whose store refuses the write (errors ${th.errs.join(" | ") || "none"})`);
 
-    /* 8. Salt Account: the stored theme from the head script (its own Sheet and switch are proved in test/admin-look.mjs) */
+    /* 8. Salt Admin: the stored theme from the head script (its own Sheet and switch are proved in test/admin-look.mjs) */
     const ownerPage = landingPage("", "nco", { master: "fixture-master", accounts: [] });
     for (const [stored, want] of [[undefined, "tide"], ["night", "night"], ["tide", "tide"], ["dusk", "tide"]]) {
       const dom = new JSDOM(ownerPage, { url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
@@ -274,7 +274,7 @@ export async function run({ ok }) {
       } });
       const dd = dom.window.document;
       ok(dd.documentElement.getAttribute("data-theme") === want && dd.querySelector('meta[name="theme-color"]').getAttribute("content") === (want === "night" ? NIGHT.obsidian : TIDE.obsidian),
-        `Salt Account opens ${want} for ${stored === undefined ? "a store with nothing" : "a store holding " + stored}, its bar at that theme's ground`);
+        `Salt Admin opens ${want} for ${stored === undefined ? "a store with nothing" : "a store holding " + stored}, its bar at that theme's ground`);
       dom.window.close();
     }
     const oThrow = new JSDOM(ownerPage, { url: "https://site.test/all", runScripts: "dangerously", beforeParse(w) {

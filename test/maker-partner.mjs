@@ -1,4 +1,4 @@
-/* Counter Admin: Make partner (B2 of #62), the Desk's partnerMake entry through its own drafter and fold. */
+/* Salt Admin: Make partner (B2 of #62), the Desk's partnerMake entry through its own drafter and fold. */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { webcrypto } from "node:crypto";

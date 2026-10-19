@@ -45,7 +45,7 @@
   suggestion is `suggestOf` (the engine's `suggestPct`): the median over their last five salt sales of the rate paid
   over the Set Price rate at that size, less one and not under nought, plus a share for a write-off (30%), a long late
   or 14 days overdue (20%) or a late (10%), to the nearest 5%, and nought under `minSettled` settled rows; good signals
-  suggest nothing. The Desk's card says it as "Suggested +10%: paid late"; Counter Admin's Use the suggestion fills the
+  suggest nothing. The Desk's card says it as "Suggested +10%: paid late"; Salt Admin's Use the suggestion fills the
   box. The snapshot carries each customer's quotes as `cards`, their % as `lift` and the suggestion as `suggest`, which
   the price list reads (`basis: "card"`); an older reader that looks for the former map finds nothing and falls back to the board.
 - **A partner pays the Floor** (his decisions of 06 and 18 Oct 2026). Quoted `floorTotal` at every size on every book,
@@ -71,7 +71,7 @@
   desk by `cardQuote`, which every quote to a named customer reads: the printed board (`pbPrices`), the approach offer
   and Today's worth (`nextBest`, no offer with no price), and the reward cover, whose gap is to their card price.
 - **Words** (18 Oct 2026): every surface says Floor, Set Price and Ceiling, and his figure is Their % (presets "Set Price,
-  +5% ... +30%"). No tier, level or drift word is visible on the Desk, Counter Admin or the Counter;
+  +5% ... +30%"). No tier, level or drift word is visible on the Desk, Salt Admin or the Counter;
   `test/pricing-words.mjs` draws every part of every book and reads the source sentences. The stock count's own gap is
   the Difference.
 - **One delivery for a trip of several books** (his design of 05 Oct 2026): the rows one trip
@@ -83,7 +83,7 @@
   Approve decides every pending row of the trip** (`tripStmts`, in the tapped row's own batch), never a claim or a site order's
   row. The statement says "plus delivery RM x for one trip of n orders" on the carrier row. A
   lone trip row is no fault: it is the convention the four earlier hand-folded trips used.
-  Counter Admin's Add another book carries the same extra-book figures through its dedicated
+  Salt Admin's Add another book carries the same extra-book figures through its dedicated
   sale/purchase inputs. `makerTradeBatch` checks every book before retaining the immutable
   entries; `queueSale` writes the complete fixed trade batch in one queue document, then the
   native drafter makes the rows. A retry resumes all retained entries, not merely the first
@@ -130,7 +130,7 @@
   `pay.term`, `lock` and `window`: a line under To pay now, the whole rule on the pay sheet. Prepay also reads this walk (V5b2c): any delay in all history puts an order in advance until three payments on time in a row.
 ## The desk
 
-- **Counter maker bridge**: the owner works in Salt Account's Orders, Customers, Record and Shop places (one Maker place until 11 Oct 2026). `/all/maker/*` is
+- **Counter maker bridge**: the owner works in Salt Admin's Orders, Customers, Record and Shop places (one Maker place until 11 Oct 2026). `/all/maker/*` is
   dispatched only after the Counter Worker verifies Cloudflare Access identity and the owner
   email; its handler receives that verified identity, not a request-supplied address. The Counter
   uses the `DESK_MAKER` service binding and a dedicated `COUNTER_MAKER_KEY` to call only
@@ -329,7 +329,7 @@
   provision that same value as `COUNTER_MAKER_KEY` on both Workers, using the appropriate Wrangler
   config for each. Never put the value in either config or source. `STMT_DESK_KEY` is a different
   capability and remains Desk-to-Counter only.
-- **Operating hours**: Salt Account writes `maker:hours` in the Counter KV. The public `/hours`
+- **Operating hours**: Salt Admin writes `maker:hours` in the Counter KV. The public `/hours`
   route returns only the open/closed status and timing; its schedule uses Kuala Lumpur time.
   Customers can still place orders while closed, and the order form tells them confirmation may
   be delayed. A temporary open or closed override expires within 14 days; clearing it returns to

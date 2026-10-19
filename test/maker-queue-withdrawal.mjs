@@ -81,7 +81,7 @@ export async function run({ ok, worker, handleMaker }) {
     && reviewResponse.status === 200 && refused?.state === "refused"
     && refused.why && refused.refusalSource === "cloud-drafter" && refused.seenAt
     && refused.date === refusedEntry.date && refused.device === "phone-A",
-  "Counter Admin sees the drafter's authoritative refusal, source and date for the uniquely server-held device entry");
+  "Salt Admin sees the drafter's authoritative refusal, source and date for the uniquely server-held device entry");
 
   const withdrawPath = "/all/maker/queue/" + encodeURIComponent(at) + "/withdraw";
   const first = await w.call(withdrawPath, "POST", { fingerprint: refused?.fingerprint });

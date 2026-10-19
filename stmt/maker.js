@@ -357,7 +357,7 @@ function internalOperation(path) {
   return null;
 }
 
-/* THE TEST SURFACE (his answers of 18 Oct 2026): what Counter Admin may do under /all/test, on the example orders and the test accounts
+/* THE TEST SURFACE (his answers of 18 Oct 2026): what Salt Admin may do under /all/test, on the example orders and the test accounts
    alone. Every other kind, every real order and every real username answers 404; the reads come from the fixtures and call no Desk route;
    a reply on a test account's thread is written in-process and wakes nobody (Fable's review). */
 const TEST_KINDS = { review: ["GET"], "order-action": ["POST"], "order-move": ["POST"], claim: ["POST"], claims: ["GET"], thread: ["POST"],

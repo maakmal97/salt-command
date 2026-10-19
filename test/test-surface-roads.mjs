@@ -5,7 +5,7 @@
    4. a real customer's session, and a real username at sign-in, are refused under /all/test/c;
    5. push, passkey, remembered phone, hand-over and slip answer 404 there, on a test account's session;
    6. GET /orders under /all/test/c reads the fixture alone: a stray real order of the account is not drawn;
-   7. Counter Admin's review under /all/test reads no Desk route and lists the example orders alone;
+   7. Salt Admin's review under /all/test reads no Desk route and lists the example orders alone;
    8. a real order id, and a real username's claim or thread, are 404 under /all/test/maker;
    9. a reply on a test account's thread under /all/test makes no Desk call, so no wake; on /all it goes round the Desk;
   10. Reset under /all/test restores one account, or all, and refuses Start empty for anyone but 0000-0002. */
@@ -61,7 +61,7 @@ export async function run({ ok }) {
     const bridged = s.bridge.length;
     const rv = await s.owner("/all/test/maker/review", undefined, s.jwt, "GET"), rb = await rv.json();
     ok(rv.status === 200 && s.bridge.length === bridged && rb.orders.length === 1 && rb.orders[0].test === true && !rb.orders.some((o) => o.id === real.id || o.id === stray.id),
-      "Counter Admin's review under /all/test reads no Desk route and lists the example orders alone: " + JSON.stringify([rv.status, s.bridge.slice(bridged), rb.orders.map((o) => o.id)]));
+      "Salt Admin's review under /all/test reads no Desk route and lists the example orders alone: " + JSON.stringify([rv.status, s.bridge.slice(bridged), rb.orders.map((o) => o.id)]));
 
     /* 8. real ids and usernames */
     const rmove = await s.owner("/all/test/maker/orders/" + real.id + "/move", { status: "declined", rid: "surface-road-move-0001" });

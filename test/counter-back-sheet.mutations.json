@@ -186,7 +186,7 @@
   "replace": "      if(d>bkStack.length) return;\n"
  },
  {
-  "name": "Salt Account's Sheets push",
+  "name": "Salt Admin's Sheets push",
   "file": "stmt/page.js",
   "find": "  function bkOpen(n,shut){\n    if(OWNER) return;\n",
   "replace": "  function bkOpen(n,shut){\n"

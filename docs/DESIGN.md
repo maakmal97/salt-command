@@ -287,7 +287,7 @@ read the recipe.
 ## 11 Oct 2026: two themes, Night and Tide, chosen on each device
 
 His word: two themes on every surface, **Night** and **Tide**, kept per device, **Tide until one is chosen**. This is the
-Desk; the Counter follows in the next section (11 Oct 2026), and Salt Account has its own choice (below). Night is the design system's `:root`, the identity as drawn.
+Desk; the Counter follows in the next section (11 Oct 2026), and Salt Admin has its own choice (below). Night is the design system's `:root`, the identity as drawn.
 Tide is `:root[data-theme="tide"]` in `design/salt-ds.css`, pulled from `Code\salt-ds` (acf486e): a teal and blue register
 of the same identity, colour tokens only, so every recipe follows. The four times of day, `salt-time.js` and the clock's
 picker stay retired (the suite fails if any returns): nothing keys on a clock, there is no cross-fade.
@@ -354,7 +354,7 @@ customer chooses is there too ("The customer's look").
   never set the attribute.
 - **Before paint.** Every page that runs script carries `LOOK_HEAD`, a nonce'd script at the top of the head, before the stylesheet:
   it sets `data-theme` on `<html>` and the `theme-color` meta from `salt-look` (`night` or `tide`), Tide when it is unset, holds
-  anything else or cannot be read (every access in a try). The door, the signed-in page, `/app` and Salt Account all come from
+  anything else or cannot be read (every access in a try). The door, the signed-in page, `/app` and Salt Admin all come from
   `landingPage`. A page with `script-src 'none'` (a guest board, the shut page) is served `data-theme="tide"` and Tide's ground in the
   meta, since no device's choice can be read there; the maintenance page does the same and writes Tide's ground, salt, mist-light and brass and its two corner glows into its own
   inline style, with the app's ring inline over the heading (held equal to the system's by the suite); the closed policy admits no
@@ -369,7 +369,7 @@ customer chooses is there too ("The customer's look").
   control holds 5.30:1 at Night and 6.49:1 at Tide on the ends of the accent gradient, and the QR panel's title 17.12:1 and 15.26:1 on
   the panel's paper.
 - **The suite.** The section `the Counter wears Night or Tide, chosen per device (11 Oct 2026)` (`test/counter-two-themes.mjs`, its
-  mutations in `test/counter-two-themes.mutations.json`) drives the door, the signed-in page, Salt Account, a guest board, the shut
+  mutations in `test/counter-two-themes.mutations.json`) drives the door, the signed-in page, Salt Admin, a guest board, the shut
   page and the maintenance page in a window, with a store that holds nothing, either theme, a value that is not a theme, and one that
   throws. The Counter's other sections open with nothing stored, as a device that has not chosen, and are unaffected by the Sheet:
   none of them measures a colour.

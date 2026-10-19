@@ -1,4 +1,4 @@
-/* test/admin-trips.mjs: ORDERS ACROSS SEVERAL BOOKS, COUNTER ADMIN'S HALF (plan 3 of docs/plans-counter-admin.html, 16 Oct 2026).
+/* test/admin-trips.mjs: ORDERS ACROSS SEVERAL BOOKS, SALT ADMIN'S HALF (plan 3 of docs/plans-counter-admin.html, 16 Oct 2026).
  *
  * Prompted 15 Oct 2026: a buyer's salt, oil and rice of 14 Oct were three cards, each handed over and paid on its own. What is proved here,
  * each check red under its own mutation (test/admin-trips.mutations.json), with invented codes only (rule 2):
@@ -8,7 +8,7 @@
  *      moved since he read it, sent as one Fulfilment a share, and refused whole when one share is more than its row can take (rowRoom)
  *   C  These are one order: a Correction a row setting one trip, refused for two deliveries or a book twice, refused while a join waits,
  *      and never offered by Correct a row; the engine, the drafter and the fold each hold a trip together
- *   D  the card on Counter Admin: the head and a line a book, marks and no product word; Handover all and a part, one handover a line, a
+ *   D  the card on Salt Admin: the head and a line a book, marks and no product word; Handover all and a part, one handover a line, a
  *      refused line holding only itself; the split shown before Record; the join's one tap; and the approve card, one card for the moves */
 import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -111,7 +111,7 @@ export async function run({ ok, pageWork }) {
 
   const rv = await f.call("/all/maker/review");
   ok(rv.status === 200 && J(mine(rv.j.trips, "CX9-ZED")) === J([trip0]) && mine(rv.j.sameDay, "CX8-ZED").length === 1 && !("tripsError" in rv.j),
-    "Counter Admin's review read carries them as the Desk read them, and no failure: " + J({ status: rv.status, error: rv.j.error, tripsError: rv.j.tripsError }));
+    "Salt Admin's review read carries them as the Desk read them, and no failure: " + J({ status: rv.status, error: rv.j.error, tripsError: rv.j.tripsError }));
 
   /* B. ONE PAYMENT */
   const s200 = await f.call("/all/maker/trip-split", { trip: T, amount: 200 });
@@ -189,7 +189,7 @@ export async function run({ ok, pageWork }) {
   const pTrip = plan(tbook, { approved: [delFix] });
   ok(pTrip.refused.length === 1 && /delivery on 2 rows/.test(pTrip.refused[0].why), "the fold refuses a correction putting a second delivery on a trip: " + J(pTrip.refused));
 
-  /* D. THE CARD ON COUNTER ADMIN */
+  /* D. THE CARD ON SALT ADMIN */
   const lines = [{ rid: "zt1", product: "salt", qty: 1, total: 110, delivery: 10, paid: 0, owed: 120, handed: 0, left: 1, waiting: 0, open: true },
     { rid: "zt2", product: "oil", qty: 10, total: 116, delivery: 0, paid: 0, owed: 116, handed: 0, left: 10, waiting: 0, open: true },
     { rid: "zt3", product: "rice", qty: 5, total: 35, delivery: 0, paid: 0, owed: 35, handed: 0, left: 5, waiting: 0, open: true }];

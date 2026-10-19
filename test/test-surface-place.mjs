@@ -5,7 +5,7 @@
    3. three more fit and the next is refused at the limit, the one count the page's own GET /orders gives it (five open);
    4. a delivery window wholly outside the Counter's hours is refused in the fixture as on the real road;
    5. 0000-0000, seeded at the limit, can no longer place or join a group order on the Worker either;
-   6. Counter Admin placing for a test account writes to its fixture too, never the book. */
+   6. Salt Admin placing for a test account writes to its fixture too, never the book. */
 import { surface } from "./test-surface-harness.mjs";
 import * as TF from "../tools/testfix.mjs";
 import * as O from "../stmt/orders.js";
@@ -70,13 +70,13 @@ export async function run({ ok }) {
     const j0 = await call("0000-0000", "/pools/" + pool.id + "/join", { qty: pool.q, total: 270, unit: 108, digest: f0.prices.digest, rid: "surface-join-0001-padded", week: f0.prices.week.monday });
     ok(p0.body.code === "openMax" && j0.status !== 200, "0000-0000, seeded at the limit, can no longer place or join a group order on the Worker: " + JSON.stringify([p0, j0]));
 
-    /* 6. Counter Admin's Place for a test account */
+    /* 6. Salt Admin's Place for a test account */
     const b6 = counts();
     const room = (await exampleAccount(s.env, "0000-0002")).orders.find((o) => o.status === "placed" && /-ex[0-9a-f]{6}$/.test(o.id));
     if (room) await call("0000-0002", "/orders/" + room.id + "/cancel", { action: "cancel", rid: "surface-cancel-0002-padded" });
     const admin = await s.owner("/all/maker/customers/0000-0002/orders", rice());
     const ab = await admin.json(), a6 = counts();
     ok(admin.status === 200 && (await exampleAccount(s.env, "0000-0002")).orders.some((o) => o.id === (ab.order || {}).id) && a6.ev === b6.ev && a6.ord === b6.ord && a6.mark === null,
-      "Counter Admin placing for a test account writes to its fixture too, and the book is untouched: " + JSON.stringify([admin.status, ab.error, b6, a6]));
+      "Salt Admin placing for a test account writes to its fixture too, and the book is untouched: " + JSON.stringify([admin.status, ab.error, b6, a6]));
   } finally { s.close(); }
 }

@@ -1,7 +1,7 @@
 /* stmt/testsurface.js: THE TEST SURFACE'S SHELL (his answers of 18 Oct 2026, Asks 1, 3, 8 and 10). His page at /all/test, inside /all's
    gate: the two views as frames of this origin, side by side from 1080px and two tabs on a phone, the account they show, Reset (asked
    once, a second tap within four seconds), Reset all, Start empty for the fresh account, and the way to Make an account not yet made,
-   which is Salt Account's (it seals the account under the master this page never holds). THE VIEWS ARE landingPage, NEVER A COPY: this
+   which is Salt Admin's (it seals the account under the master this page never holds). THE VIEWS ARE landingPage, NEVER A COPY: this
    file draws only the frame around them. Built from the system's carried recipes and tokens alone. */
 import { DOC_OPEN, LOOK_HEAD } from "./page.js";
 import { STATEMENT_CSS, SITE_RECIPES, FONT_FACE_CSS } from "./statement-css.js";

@@ -72,7 +72,7 @@
   "replace": "el('div','salt-sheet ho')"
  },
  {
-  "name": "the choice sheet of Salt Account carries neither .adm nor .asheet",
+  "name": "the choice sheet of Salt Admin carries neither .adm nor .asheet",
   "file": "stmt/page.js",
   "find": "class=\"salt-sheet' + (owner ? \" adm asheet\" : \"\") + '\" role=\"dialog\"",
   "replace": "class=\"salt-sheet\" role=\"dialog\""

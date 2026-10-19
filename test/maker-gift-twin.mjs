@@ -8,7 +8,7 @@ import { plan } from "../tools/fold.mjs";
 import { world } from "./maker-trades.mjs";
 import { answerSheets, tile, tileGroup } from "./maker-act.mjs";
 
-/* A gift sent twice books once (the admin stress triage of 11 Oct 2026, row 7). Counter Admin's Gift keeps its values after
+/* A gift sent twice books once (the admin stress triage of 11 Oct 2026, row 7). Salt Admin's Gift keeps its values after
    "Sent for review", so a second tap is a new input under a fresh request moment. Both drafts could be approved, and the
    fold refuses the second as a replay and leaves the whole batch staged until he rejects it. The Desk route now refuses the
    twin while the first is queued or waiting under Approve, and asks about it while the first is booked, as it does a trade;

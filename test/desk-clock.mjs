@@ -1,6 +1,6 @@
 import { openMaster } from "../tools/payload.mjs";
 
-/* 14 Oct 2026 (his review of Salt Account and the Desk): the Desk's header carries a live clock in Kuala Lumpur time, and a
+/* 14 Oct 2026 (his review of Salt Admin and the Desk): the Desk's header carries a live clock in Kuala Lumpur time, and a
    refusal from the Worker on the queue reads as the Worker's own words with the entry held, never as a server gone. The 409
    that refused every loan repayment (readBook never lifted loans) read "stopped answering" and switched to downloads. */
 export async function run({ ok }) {

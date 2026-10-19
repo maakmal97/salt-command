@@ -97,10 +97,10 @@ the file. Each is sealed as an account is, around an empty bundle, its password 
 `pwMaster` and in the clear under its USERNAME in `_passwords.json`, a spare having no code yet; once
 bound it stays there, and a `make_statements` retry and Send look under the username after the code.
 `tools/update.mjs` warns with that line when fewer than three are free.
-**The fold binds them, never Salt Account**: at Add ID a registration takes the next free spare as its
+**The fold binds them, never Salt Admin**: at Add ID a registration takes the next free spare as its
 username (`registerAccounts` in `tools/fold.mjs`, one line in `_users.json`, no key needed), and the
 publish in the same run seals the live statement and price list into it, so a walk-in signs in within
-the fold's few minutes. With none free the fold mints a bare username as before; Salt Account then reads
+the fold's few minutes. With none free the fold mints a bare username as before; Salt Admin then reads
 "Made at the next laptop update. Until then, show the price list link." (the one standing link, for strangers),
 and `update.mjs` mints the account.
 **One username, one code**: the next spare is the same on every machine, so two folds from one base
@@ -118,7 +118,7 @@ committed, so the same passwords went into git anyway. One place, and that place
 repository. The suite asserts that no generated page contains one.
 
 **Sealed under the master, they also ride with the record** (v688, his decision of 18 Sep 2026),
-as `pwMaster`, so an account's card on Salt Account can hand one over from his phone. That is
+as `pwMaster`, so an account's card on Salt Admin can hand one over from his phone. That is
 ciphertext under the passphrase that already unwraps every account, the publish keeps it out of
 the record a customer fetches, and his page decrypts it in the browser straight to the clipboard.
 `node tools/stmt-seal.mjs statements/<YYYY-MM> [--check]` sealed the issue that went out before
@@ -227,7 +227,7 @@ the vault, D1 or the desk. Nothing a customer holds points at the desk's address
 checks that no statement does either.
 
 **Never offered to a translator** (his decision D12, 24 Sep 2026): every page the site serves, a
-guest's and Salt Account's included, opens `<html lang="en" translate="no">` with Google's
+guest's and Salt Admin's included, opens `<html lang="en" translate="no">` with Google's
 `notranslate` meta (`DOC_OPEN` in `stmt/page.js`), because accepting Chrome's offer sends an
 opened statement to a translation service. The Counter's script then sets `lang` to the language it reads (13.4).
 
@@ -236,10 +236,10 @@ opened statement to a translation service. The Counter's script then sets `lang`
 language lacks is English's, never its name. A figure, a date or a username is a `{n}` slot, and no sentence is
 joined from translated halves. A refusal a customer can meet is `e.<code>` there: the Worker answers
 `{error, code}` through `refusal()`, the order book passing the code and its slots on, and the page words the
-code, the Worker's English standing for one it does not know. Salt Account stays English and unkeyed; a guest's board
+code, the Worker's English standing for one it does not know. Salt Admin stays English and unkeyed; a guest's board
 and a shut link are keyed but English only (no script); `stmt/send.js` is unkeyed.
 
-**English only.** Malay was removed everywhere on 05 Oct 2026, the owner's decision, superseding D12, F7 and the kept `MS` table: `stmt/words.js` holds `EN` alone (`WORDS = { en: EN }`), the page draws no language switch and keeps nothing as `salt-lang`, writes no `/lang` to the Cache, and `stmt/sw.js` words the banner in English; the sign-in message (`stmt/send.js`) is English alone. Salt Account is English on any phone. The suite asserts that no Malay table, switch or word list returns. The superseded D12 and F7 narrative is in `docs/NOTES.md`.
+**English only.** Malay was removed everywhere on 05 Oct 2026, the owner's decision, superseding D12, F7 and the kept `MS` table: `stmt/words.js` holds `EN` alone (`WORDS = { en: EN }`), the page draws no language switch and keeps nothing as `salt-lang`, writes no `/lang` to the Cache, and `stmt/sw.js` words the banner in English; the sign-in message (`stmt/send.js`) is English alone. Salt Admin is English on any phone. The suite asserts that no Malay table, switch or word list returns. The superseded D12 and F7 narrative is in `docs/NOTES.md`.
 
 Each statement carries a QR code and prints the customer's **username**. The QR opens
 `https://k7m3p2.qyts8mh72kyg.workers.dev/?u=<username>`, one landing page for every account,
@@ -371,7 +371,7 @@ the engine's `quoteAt` at a lift of nought, so salt's Set Price and a stated boa
 and `handleGuest` reads that key for every link, whoever minted it and whatever its record carries. A record from before
 (a `tier`, a `level`, a `standing` mark for a level) is read and ignored, so an id already handed out keeps opening the
 board; the old keys `board:1`, `board:2`, `tboard:*`, `gboard:*` and `tiers` are left in the store and nothing reads them.
-There is **one standing link, for strangers**: `ensureStanding` in `stmt/refs.js` makes it on Salt Account's first read of
+There is **one standing link, for strangers**: `ensureStanding` in `stmt/refs.js` makes it on Salt Admin's first read of
 its links (adopting a standing link already held, whatever level it once carried, and never making one over it), so the
 answer to "what are my links" always holds the link he shows a stranger. A link may still name its introducer, which is
 only his note of who handed it out; it prices nothing. Nothing is published per link, so minting one can never be wrong,
@@ -465,8 +465,8 @@ then The Counter, then his own name for it). The icon on a customer's home scree
 something: it is the ONE place on this site where something is called something, and the product
 word is his to spend there. Inside the page a product is still a mark and never a word. What never
 appears is the DESK's name, nor his page's: the customer-page sweeps refuse Salt Command, Salt Desk (the desk as it
-installs, his Q6 of 28 Sep 2026), Salt Account (`/all`, which was Salt Admin until then, twelve characters too) and
-Salt Admin (the desk's admin surface to come). Twelve characters exactly, which is what iOS gives a home screen. The statement's letterhead, the last
+installs, his Q6 of 28 Sep 2026) and Salt Admin (`/all`, which was Salt Account from 28 Sep 2026 and is Salt Admin
+again since 19 Oct 2026, his word: one name for the owner's app everywhere, ten characters). No name passes twelve characters, which is what iOS gives a home screen. The statement's letterhead, the last
 place Salt Command appeared on a customer's page, is gone: `brand` is null for the live statement
 and every new issue, and a statement with no brand carries no eyebrow rather than an empty one.
 Issues already sealed keep the letterhead they were issued with until they are re-issued.
@@ -474,7 +474,7 @@ Issues already sealed keep the letterhead they were issued with until they are r
 ### The hand-over: a key and an eight-symbol code (S3 3.9, his decision D2 of 24 Sep 2026)
 
 An iPhone's Home Screen app keeps its own storage, so what Safari remembers never reaches it. A page already
-signed in (or Salt Account, for a customer at his counter) hands the sign-in across: a long KEY for Paste and for
+signed in (or Salt Admin, for a customer at his counter) hands the sign-in across: a long KEY for Paste and for
 `/app#<key>`, and an eight-symbol CODE to type. Mechanism: `stmt/signin.js`; the door: `handleHandover` in
 `stmt/worker.js`. **The contract the Counter codes to:**
 
@@ -536,7 +536,7 @@ their next sign-in and can change it under Account.
   Once chosen, a device is never asked again.
 - **Look, under Account**: This device holds a Look row of two ghosts, Night and Tide, the held one `aria-pressed`, 44px both ways.
   It applies at once, keeps the choice and needs no reload; on a store that refuses the write it holds for the visit.
-- **His page has its own, below ("His look").** Salt Account (`/all`) opens in the stored theme from the same head script. View as
+- **His page has its own, below ("His look").** Salt Admin (`/all`) opens in the stored theme from the same head script. View as
   them on it asks nothing and shows no setting.
 - **Not on a page with no script**: a guest board, the shut page and the maintenance page are Tide, always.
 - **Words**: `look.h` (Look), `look.sheetH` (Choose your look), `look.night`, `look.tide`, `look.note`, in `stmt/words.js`; no
@@ -545,14 +545,14 @@ their next sign-in and can change it under Account.
   `FEATURES` and the case in `build()`), and a bundle that says so asks at every sign-in whatever the device holds, so the Sheet can
   be tried again; the Look row is the same as anyone's. A real account's bundle says nothing and is asked once.
 
-### His look: Salt Account chooses its own Night or Tide (11 Oct 2026, his decision)
+### His look: Salt Admin chooses its own Night or Tide (11 Oct 2026, his decision)
 
-The same two themes, kept per device and **Tide until one is chosen**, chosen on Salt Account itself: `salt-look` in localStorage on
+The same two themes, kept per device and **Tide until one is chosen**, chosen on Salt Admin itself: `salt-look` in localStorage on
 the Counter's origin, which is also the origin of `/all`. It is apart from the Desk's (another origin) and shared with the Counter's
 own pages on that device: the customer's pages (View as them, a test account) read the same key, so a browser that uses both wears
 one choice on both, there being no second key.
 
-- **The Sheet.** The first time Salt Account opens on a device whose store is readable and holds no choice, the customer's Sheet
+- **The Sheet.** The first time Salt Admin opens on a device whose store is readable and holds no choice, the customer's Sheet
   (`lookSheet(true)` in `stmt/page.js`; the same recipe, markup and script, with the acts below and one line that names Shop, "You can
   change this later under Shop, in This device.") asks over the page, which is already Tide behind it. The owner's script calls
   `lookAsk(null, true)` once at the end of its setup; the customer's own call passes nothing and an owner's account view is refused, so
@@ -569,7 +569,7 @@ one choice on both, there being no second key.
 - **What it shares and what it does not.** Markup (`lookRow`, `lookSheet`) and script (`lookSet`, `lookShut`, `lookMark`, the Sheet's
   focus and key handling) are the customer's; with no argument they draw as they did. The owner's version adds the acts and its own
   line. No new CSS: the look rules are the customer's and apply to both pages.
-- **The suite.** The section "Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)" (`test/admin-look.mjs`, its mutations in
+- **The suite.** The section "Salt Admin wears Night or Tide, chosen on its own (11 Oct 2026)" (`test/admin-look.mjs`, its mutations in
   `test/admin-look.mutations.json`) drives his page in a window with a store that holds nothing, either theme, a value that is not a
   theme and one that throws, and with the Access login's 401; the customer's page is checked drawn as it was. `test/maker-act.mjs`
   audits the Sheet's controls with the rest of his page.
@@ -601,7 +601,7 @@ never left over the signed-out Sheet or the door. The Sheet shows the order as i
 can be cancelled, and a refusal is said beside the control as it was.
 
 The words are keys (`yn.*`, `num.1` to `num.10`, `sh.limit` with its `{n}` slot); the three browser questions' keys (`ord.cancelAsk`,
-`ord.cancelAskPaid`, `lnk.withdrawAsk`) are gone. Salt Account (`stmt/owner.js`) keeps its own questions, another lane's.
+`ord.cancelAskPaid`, `lnk.withdrawAsk`) are gone. Salt Admin (`stmt/owner.js`) keeps its own questions, another lane's.
 
 **The test accounts show every Sheet**: they hold more than five open orders (the limit's list and each Cancel there), an order agreed and paid
 before anything moved (`ex47`, so the Sheet names a refund), and an open and a waiting link (`tools/testfix.mjs` `FEATURES`). The suite section
@@ -609,7 +609,7 @@ before anything moved (`ex47`, so the Sheet names a refund), and an open and a w
 `test/counter-confirm-sheets.mutations.json`) drives all three controls through the generated page in jsdom, with `confirm`, `alert` and
 `prompt` made to throw and count. The 44 px and both themes are measured in a real browser and recorded in the pull request.
 
-**One word per state, and the mark alone** (Phase 7c of the Salt Account and Counter redesign, his decision 10 of 11 Oct 2026; the shape word it drew
+**One word per state, and the mark alone** (Phase 7c of the Salt Admin and Counter redesign, his decision 10 of 11 Oct 2026; the shape word it drew
 beside the mark was taken back by his word of 12 Oct 2026, below). The page named one step four ways (Sent, Acknowledged, agreed, your yes). Now an
 order is one of six words and a claim of theirs has its own. **The record's states do not move** (`placed`, `acknowledged`, `ready`, `done`,
 `declined`, `cancelled`; the fold, the drafter and the order book read them); **the keys of `stmt/words.js` do not move** (S13 13.3 reads the
@@ -626,10 +626,10 @@ table by key); only the customer's words do.
 
 Ready to collect or deliver, Collected or Delivered, Complete and the two cancellations are as they were, and a claim of theirs still reads
 Waiting for us to confirm. No value of the table, and no markup or quoted string in the page's script, holds *acknowledg*, *Not taken* or
-*Expected by* (`stmt/owner.js`, Salt Account's own page, is another lane's and keeps its own words).
+*Expected by* (`stmt/owner.js`, Salt Admin's own page, is another lane's and keeps its own words).
 
 **The mark stands alone** (his word of 12 Oct 2026, "Remove the shapes names in the Order page, and anywhere", which took back the shape word 7c drew beside it, and
-then "and even the name of the product" for Salt Account, below). **No shape word is drawn, on any screen of the Counter**: in a card (`mtile`, `mtileSvg`) the caption
+then "and even the name of the product" for Salt Admin, below). **No shape word is drawn, on any screen of the Counter**: in a card (`mtile`, `mtileSvg`) the caption
 under the mark is the size in words alone, "2.5 units", and a book's heading (`pmarkHead`, Prices and Rewards, the guest board), a size with its mark (`withMark`, the
 order sheet's legends and lines), a mark leading a note (`markLead`) and a mark in a sentence (`markHtml`, which the invoice lines and the pay sheet's note share) are the
 mark alone. **The reader is still told the shape** (`PSHAPE`, by key `shape.<Shape>`): a tile's hidden `.sr` reads "Cube 2.5 units", a heading's `aria-label` is the
@@ -695,7 +695,7 @@ PUSHED AT AN ADDRESS THAT CARRIES A KEY OR A TOKEN** (`bkClean`): the path must 
 pushed, so none is given back). Every Sheet the customer's page draws has a way out of its own (the orb, the scrim, Escape or a button), so none is left that Back cannot
 close; the signed-out Sheet a lapse draws closes on Back too, and the page keeps its Continue line on the bar. The one Sheet whose own controls refuse is the order sheet while
 Place is on its way, and Back is held to the same. A browser that skips a history entry pushed before the person has touched the page (Chrome's history manipulation
-intervention) would let Back pass over a Sheet drawn on an untouched page, such as a lapse on a page left open (unverified: the test browser's Back ignores it). Salt Account pushes nothing (`bkOpen` returns for `OWNER`, and the
+intervention) would let Back pass over a Sheet drawn on an untouched page, such as a lapse on a page left open (unverified: the test browser's Back ignores it). Salt Admin pushes nothing (`bkOpen` returns for `OWNER`, and the
 `popstate` listener is the customer's alone), and the guest board, the shut page and the 404 run no script.
 
 The suite section "Account leads with this device, and the door names the app" (`test/counter-account-door.mjs`, its mutations in
@@ -703,7 +703,7 @@ The suite section "Account leads with this device, and the door names the app" (
 
 ### Counter Batch A: the point, the order's own screen, Home and Account (18 Oct 2026, his "all recommended")
 
-- **Collection points.** His list is Counter KV `maker:points`, edited on Salt Account under Shop > Hours (`points.*` above). A collect
+- **Collection points.** His list is Counter KV `maker:points`, edited on Salt Admin under Shop > Hours (`points.*` above). A collect
   Ready asks which point and is refused without one; a delivery needs none. The point is copied onto the order (`point`, `pointAt`), so a
   later edit of the list moves no order. Change point, while the order waits with goods owed, writes a `point` event ("point moved to A3"),
   wakes the customer (`point-moved`) and shows in their history as "We moved your collection point to Point A3". The customer is given
@@ -712,7 +712,7 @@ The suite section "Account leads with this device, and the door names the app" (
   opened by itself. An empty view has its mark, a sentence and one way on.
 - **An order's own screen** is a band (an "Order" eyebrow, a short reference derived from the id such as R9MB-7AK, the state as its heading,
   the mark, how it goes and, while it waits at a point, the point and its pin), the steps marked with their moments and Next, a receipt with
-  one Paid row a payment, Message on every stage, and Details (ordered at, way, window, point, reference). Salt Account shows the same reference.
+  one Paid row a payment, Message on every stage, and Details (ordered at, way, window, point, reference). Salt Admin shows the same reference.
 - **Every state word has a glyph** before it (dot, tick, double tick, cross), aria-hidden, the word unchanged.
 - **Home**: the Today card first (the time in Kuala Lumpur, Open until or Closed and when it opens off `/hours`, and the notice turning a line
   every six seconds with Pause; under reduced motion every line stands). To pay now and the overdue gate still lead, then Needs you and Coming
@@ -759,7 +759,7 @@ D11 of 24 Sep 2026; three tabs and a fourth until then): **Home**, which opens f
 (the statement and This device, whose Sign out is the one Log out) and **Rewards** for an associate. They sit on the system's App bar
 at the foot of a phone and on its rail from 1080px. **Under 1080px the frame is equal** (his C2 of 28 Sep 2026): 16px on
 every side, each safe area added, the App bar cleared by the same 16px, Home's sections one 24px gap apart and no row's
-margin left after a list; Salt Account's shell takes the same frame, its rule placed after the shell's own, which would
+margin left after a list; Salt Admin's shell takes the same frame, its rule placed after the shell's own, which would
 otherwise win. A place keeps its tab's id (`stmt`, `order`, `card`) and has an
 address (`#home`, `#prices`, `#orders`, `#account`, `#rewards`): a tap writes it, over an empty address or a place's
 and never over a key, and a sign-in opens the place it names once. `placeShow` is the one road between them; a
@@ -946,7 +946,7 @@ with the slip's protocol under its own info, `salt-pin v1`, so a spot never open
 area may then be left empty. `takePin` (`stmt/pin.js`) swaps the envelope for its id before the order book is asked, so
 the book's events hold the id alone; `keepPin` files the ciphertext at `pin:<username>:<id>` for 30 days ONLY ONCE THE
 ORDER IS RECORDED AND NAMES IT, and each read by the desk files it for 30 more. A test account's is never filed. The
-customer reads `pinned` and never the id; Counter Admin says Location shared and opens nothing. **Only the desk opens
+customer reads `pinned` and never the id; Salt Admin says Location shared and opens nothing. **Only the desk opens
 one**: the Site orders card, with the vault open, reads it keyed (`GET /pins/<username>/<id>`, relayed from
 `/desk/pins/...`, never cached by `sw.js`), opens it with the slip key the one unlock holds (`ordPinPoint`), measures the
 fee to it ahead of `vault-addr` and `PLACED` (F15), names it and never its figures, and offers File as their place, which
@@ -969,12 +969,12 @@ reads it. The desk's card says it and how far off (`ordWantLine`) while goods ar
 as it can or one of six windows, 00-04 to 20-24 Kuala Lumpur, each its next occurrence within `SLOT_DAYS` (7) whose start
 is ahead (`slotNext`), and never a day. One rule on page and Worker (`stmt/window.js`, its ES5 carried into the page as
 text): a window the Counter's weekly Hours leave none of is not offered, and one they leave part of says "Delivery will be
-between x and y", the part inside (`slotSpan`, manual override included). The hours are Counter Admin's own (`maker:hours`,
+between x and y", the part inside (`slotSpan`, manual override included). The hours are Salt Admin's own (`maker:hours`,
 served with `GET /hours` as `config`, the weekly schedule and any override in the open, as the page already says them in
 words); none set, every window is whole. The Worker's check at Place is `slotTake`: its end
 ahead, its start at most eight days off, not wholly outside the hours read then; the order carries `slot`
 (`YYYY-MM-DDTHH`) and `slotSpan` (`HH:MM-HH:MM`), a request he manages, never on the row. **His Accept may answer an
-as-soon-as delivery with a window** (Q3), on the desk's card and Counter Admin's, a sheet's lines taking its first order's:
+as-soon-as delivery with a window** (Q3), on the desk's card and Salt Admin's, a sheet's lines taking its first order's:
 the desk's `slotOf` refuses one on a collection or on an order with its own window or day, which stand unchanged (Q2), and
 one ended or more than a week off. The yes carries it in what he was shown (`shown.slot`), `ackOnApproval` sends it from
 there, and `deskMove` cuts it to the hours read at that moment (`ackSlot`), his choice standing whole when they leave none
@@ -1119,7 +1119,7 @@ the id alone (`slipOf`), the first 16 bytes of its SHA-256 in hex, so the paymen
 `slip: <id>`; ONLY ONCE THE CLAIM IS RECORDED AND NAMES IT does `keepSlip` file the ciphertext at `slip:<username>:<id>` for
 30 days, so a refused claim stores nothing. Only a claim carries one: on any other move no claim names it, so it is never filed. The desk reads
 it keyed at `GET /desk/slips/<username>/<id>`, 404 once lapsed. Nothing on the site can open a slip, and nothing
-deletes one: it lapses with its 30 days. Salt Account draws one as a `blob:` URL, so the owner page's policy alone adds
+deletes one: it lapses with its 30 days. Salt Admin draws one as a `blob:` URL, so the owner page's policy alone adds
 `blob:` to its `img-src`; the customer page's stays `'self' data:`. The page says Slip sent on the order while its claim waits, and
 Slip no longer kept after the 30 days.
 **His answer reaches them** (S6 11.14): Received wakes them "Payment received" (or complete); **Not found** files the
@@ -1204,7 +1204,7 @@ chosen there and every other order drafted and accepted at RM 0 (`ordPvDelivery`
 Accept shut until every row is; the other cards keep Decline. While none has moved, the first card also makes the sheet
 Ready and hands it over whole. The one tap is each order's own move in turn (`ordSheetAct` over `ordAct`), the plan of
 charges fixed before the first move, stopping at the first refusal and saying how many went.
-**The Counter Admin card takes the same charge rule** (`stmt/owner.js`, placed-order preview): RM 0, 10, 15 or Other, none chosen by default, and only a sheet's first order asks, the rest sending 0. The distance-based delivery offer is the Desk's alone: it needs the vault's places, which never reach the Counter.
+**The Salt Admin card takes the same charge rule** (`stmt/owner.js`, placed-order preview): RM 0, 10, 15 or Other, none chosen by default, and only a sheet's first order asks, the rest sending 0. The distance-based delivery offer is the Desk's alone: it needs the vault's places, which never reach the Counter.
 The quote is the customer's claim
 off his own list: the owner reads the rate against the party's usual on the phone before
 acknowledging, and the drafter flags it again when the row is queued.
@@ -1432,7 +1432,7 @@ digest of the id), so news of one order never replaces another's on the lock scr
 of his takes a tag and a `Topic` of its own (over the order and the line's moment), so none of his words is replaced
 unseen. **Ready is his to tap again** while units are still owed on an order at ready (his 1.13 and 1.14), telling them
 the rest is ready.
-A tap opens the Counter at `#o=<id>`; a Counter page already open (never a guest board or Salt Account in
+A tap opens the Counter at `#o=<id>`; a Counter page already open (never a guest board or Salt Admin in
 another tab) is sent a message instead, re-reads its orders, patching only what changed, and opens that one,
 or, its session lapsed, keeps it until the phone is back in (reopened from its memory, S3 3.5, or signed in
 on the Sheet). A return to the page (S3 3.5) and a lapse reopened patch the orders the same way, so an open
@@ -1442,8 +1442,8 @@ its check; only the sheet's limit step, which holds nothing typed, follows the o
 fixed words (Order update), so nothing already subscribed went dark; the page re-files the keys at the next
 sign-in. A notice keeps its own road: its wake carries no payload, and the service worker reads
 the public `bulletin` (v761). The lines already up, set again, store nothing and wake nobody
-(`unchanged` in the answer; Salt Account says "That notice is already up. No phone was woken."),
-and Salt Account's Notice box empties once a notice is set (11 Oct 2026). On an
+(`unchanged` in the answer; Salt Admin says "That notice is already up. No phone was woken."),
+and Salt Admin's Notice box empties once a notice is set (11 Oct 2026). On an
 iPhone the page has to be on the Home Screen first; the copy says so. A subscription is filed at
 `push:<username>:<endpoint hash>` with the phone's two keys, `p256dh` and `auth`, when the page sends
 them (`pushKeys` in `stmt/push.js`); a pair that is not one is dropped and the record kept without it,
@@ -1477,7 +1477,7 @@ exists the page says notifications are not switched on.
 - **His Accept, for their yes** (version 2, his decisions of 10 Oct 2026). `needsYes` decides it: goods above what they
   placed it at (to the sen), or a window other than the one they chose. Never his first delivery charge, never a window on an
   order asked for as soon as it can, never a lower price. Accept with either is refused (409, `needsYes`), and the card, or
-  Counter Admin's button, sends it instead as an offer of the whole order as he would agree it (`POST /orders/<id>/offer`
+  Salt Admin's button, sends it instead as an offer of the whole order as he would agree it (`POST /orders/<id>/offer`
   with `slot`, the preview's `offerHash`): `{id, kind: "accept", total, delivery, slot, until}`, `until` from `acceptUntil`
   (48 hours, or the window's start when that is an hour or more ahead and sooner, else its end), the window cut to the hours
   as at an acknowledgement and refused once past. His yes is filed as an offer pre-approval and no row is queued. Their Yes
@@ -1601,7 +1601,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   Orders that redraws nothing (View slip, Close and lock slip) holds the Orders poll off that part until he leaves Orders or
   taps Refresh, and a claim's card opened holds the claims off until it is closed**: what it shows may be stale, and is never disrupted. No route,
   body, request id, retained send, vault or cash rule changed.
-- **Salt Account opens on Needs you** (S9 9.1, the plan's section 5): a card a thing that waits
+- **Salt Admin opens on Needs you** (S9 9.1, the plan's section 5): a card a thing that waits
   on him, its action on the card, the tap answered there. A card about an account opens it with its Open:
   from 1080px beside the list (the first such card's account until he picks one, the
   pane drawn again only when its account changes or the sheet is read), on a phone on Accounts. An associate's waiting link (Approve, the tier
@@ -1632,7 +1632,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   says so in the past tense: "Nothing waited on the desk as at 09:00, and an order has moved since." The
   desk's page reads its orders with the count of
   associate links waiting on his word (`/desk/orders?links=1`, `linkWaiting` in `stmt/refs.js`, the
-  `approved === false` test), and its rail's foot says "N links wait in Salt Account".
+  `approved === false` test), and its rail's foot says "N links wait in Salt Admin".
 - **His places** (S9 9.2, made five on 11 Oct 2026): Needs you, Orders, Customers, Record and Shop; "Maker" is retired on
   screen. The system's App bar on a phone and its Desk rail from 1080px, a count beside a place that has something waiting
   (Needs you, Orders and Customers; Record and Shop have none; see Needs you above). Each place but Needs you has its parts as the system's tab strip, the first
@@ -1788,7 +1788,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   act table. No route, body or request id changed; the Desk's own vault code is untouched, and no route writes `vault-key`.
 - **The approve card says the change, one card and one Approve an order** (plan 2 of `docs/plans-counter-admin.html`, 16 Oct 2026;
   `test/admin-approve-card.mjs`, its mutations in `test/admin-approve-card.mutations.json`). The head is the customer's code (read off the
-  draft, the entry or its payload, so a correction never reads "no code") and the book's mark; **the row's id and where the entry came from (Counter Admin by its `makerRequest`,
+  draft, the entry or its payload, so a correction never reads "no code") and the book's mark; **the row's id and where the entry came from (Salt Admin by its `makerRequest`,
   the site by its `orderId` unless the Desk's own cash, the laptop by a bare payload, else the phone) and when stand in Details** (clarity part 4, 18 Oct 2026). Then one plain verb off the draft's kind, the
   fields it changes and which way (Take back a payment, Payment received, Handover, Change the price, Close the order, New sale, Fix a row ...); Correction and
   Fulfilment stand only in Details. **Now and After** (Paid, Owed, Handed over), only what changes marked, are the Desk's: `src/approve-figures.js` reads each
@@ -1833,7 +1833,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   and `.maker-say` (no recipe draws a sentence line), `.maker-facts` (a meta line) and the customer's invoice lines (Phase 7). **No colour is a literal** in the
   statement layer, its print block or `PAGE_CSS`: the print block is the system's `--salt-paper*` inks and the look swatches its `--salt-swatch-*` tokens
   (`docs/DESIGN.md`). The suite reads `PAGE_CSS` for a restated recipe, for every text colour at 4.5:1 on obsidian, slate and a card's glass on both themes,
-  for a font under 11px and for a control under 44px, and draws Salt Account on its busiest day to read every label, link, card, table and tag. No route, body,
+  for a font under 11px and for a control under 44px, and draws Salt Admin on its busiest day to read every label, link, card, table and tag. No route, body,
   request id or send changed.
 - **Record is a menu of forms, and one + orb opens it** (Phase 1c, 11 Oct 2026, his decision 9): Entry, Customers and Pricing each show a menu, a
   row of the system's Inbox row for every form of the part by name (`record.form`, key the name as a slug), in the order the page draws them:
@@ -1917,12 +1917,12 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   a move on an example order (`-exNN`) is decided by `decideCustomer` and applied by `applyEvent`, a claim against the
   account by `decideAccountClaim`, and each is written back into that fixture, a retry under the same `rid` landing
   once as a customer's does; a link it makes waits on him inside the fixture (its id holds an `l`, which no real link's
-  can), never a `g:` record, which would wait in Salt Account and outlive the account, and a link it withdraws is
+  can), never a `g:` record, which would wait in Salt Admin and outlive the account, and a link it withdraws is
   withdrawn there. None of its slips is filed. **Until the first publish seals a fixture, nothing real is made**: the
   account is no associate, so Links answers the site's 404, and a claim is refused (`e.testSoon`). One KV value an
   account, read and written whole: a tap may take a minute to show on another phone, and two at once may lose one,
   which the next publish puts right. **Every order it places goes to its fixture** (`examplePlace`), on the customer's
-  road and Counter Admin's, never the order book or `order:`; a stray real order from before is cleared by his Remove
+  road and Salt Admin's, never the order book or `order:`; a stray real order from before is cleared by his Remove
   and Make (Ask 10). Making an account deletes its fixture, unmaking takes every account and every fixture, and the next
   publish seals new ones. **A feature a customer sees lands with its case**:
   `FEATURES` lists each with the test of its case, and the suite fails on a line with none; every state, way, rail
@@ -1941,19 +1941,19 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   application and the Worker's own JWT and exact-email check hold every road under it; bare `/test` is a 302 to it and
   serves nothing. **The shell** (`stmt/testsurface.js` `testShell`) holds the two views as frames of this origin, side by
   side from 1080px and two tabs on a phone, the account they show (fresh first), Reset (asked once: a second tap within four
-  seconds), Reset all, Start empty for `0000-0002` alone, and Make, a link to Salt Account's Practice, for an account not
+  seconds), Reset all, Start empty for `0000-0002` alone, and Make, a link to Salt Admin's Practice, for an account not
   made; it says when one is made and waiting for the publish. **The views are `landingPage` under a base**:
   `/all/test/c?u=<test username>`, the customer's page, which signs itself in with the test password, and
-  `/all/test/admin`, Counter Admin with no master and no account list. On these pages alone a shim at the head of the
-  script's scope (`TEST_SHIM` in `stmt/page.js`) puts every request under the base (Counter Admin's `/all/maker/` under
+  `/all/test/admin`, Salt Admin with no master and no account list. On these pages alone a shim at the head of the
+  script's scope (`TEST_SHIM` in `stmt/page.js`) puts every request under the base (Salt Admin's `/all/maker/` under
   `/all/test/maker/`, any other `/all` road refused), keeps storage under `salt-test:` (a sign-in here never clears a real
   phone's memory), registers no service worker, manifest, push or passkey and answers this phone's own roads (devices,
   remember, passkey, push, hand-over, slip) locally; the poll is 2 seconds, and a write that went through is told on the
-  channel `salt-test`, so the other pane re-reads at once. A real page is the page it always was. Counter Admin there draws
+  channel `salt-test`, so the other pane re-reads at once. A real page is the page it always was. Salt Admin there draws
   Needs you, Orders, Payments and Chat, and reads the examples' orders, payments and chats alone. **The roads**:
   `/all/test/c/*` runs the customer's own routes (open, logout, account, orders and an order's moves, pools and a join,
   thread, pay accounts, my refs, bulletin, hours) on a test account's session alone, marked inside the Worker so
-  `GET /orders` reads the fixture alone; `/all/test/maker/*` is Counter Admin on example ids and test usernames alone, its
+  `GET /orders` reads the fixture alone; `/all/test/maker/*` is Salt Admin on example ids and test usernames alone, its
   reads from the fixtures with no Desk call and a thread reply written in-process, so no phone is woken; `POST
   /all/test/reset` takes `{u}`, `{all: true}` or `{u: "0000-0002", empty: true}`. **An example order's Admin moves**
   compose the body the Desk would and run it through `decideDesk` in the fixture (`exampleAction` in `stmt/maker.js`,
@@ -2000,7 +2000,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `maakmal97@icloud.com`; the Worker independently checks that email on `/all` and every `/all/*`
   request. Customer routes outside `/all` keep their sign-in links, passkeys and one-time code.
   This workstream changes code only; it does not verify or change live Access configuration.
-  **When the session lapses, Salt Account
+  **When the session lapses, Salt Admin
   says so** (S9 9.7): every request under `/all` is sent with `redirect: 'manual'`, so Access's redirect
   to its login reads as an opaque redirect rather than "Failed to fetch", and that or the Worker's own
   401 turns the page into "Your admin sign-in has ended" with Sign in again, a link to `/all`. A request
@@ -2053,9 +2053,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   `<site>/?u=<username>`. The publish writes KV `stmt-site` and keyed `GET /stmt-users` returns
   it, so the laptop has no username and no QR.
 
-## Counter Admin maker routes
+## Salt Admin maker routes
 
-The `/all/maker/*` routes are part of the Access-gated Salt Account surface. The Counter Worker
+The `/all/maker/*` routes are part of the Access-gated Salt Admin surface. The Counter Worker
 passes the identity object returned by `identity(request, env)` to `handleMaker`; the handler also
 requires the verified email to match `maakmal97@icloud.com`, trimmed and case-insensitive. No
 client-supplied identity header is read.
@@ -2090,7 +2090,7 @@ eligible advance through a Correction before creating an in-kind redemption; IDs
 the existing roster/rename/place entries. Request bodies are fixed field lists, never generic
 entries or unchecked notes.
 Trade refusals distinguish an unknown buyer, supplier, associate, referrer and end buyer, pointing
-to Counter Admin > Add ID before selecting the code. An R2 end buyer may instead remain Not named;
+to Salt Admin > Add ID before selecting the code. An R2 end buyer may instead remain Not named;
 an arbitrary code is never accepted. Date and inventory-cost requirements remain unchanged.
 Each input button disables its controls while sending and persists the
 whole request (including timestamp and ciphertext) before transport. A retained input must be
@@ -2128,7 +2128,7 @@ renders this reading without deriving a pay state or a refund. An unavailable pr
 explicit. This seeded preview authorizes nothing: sending re-reads the mirror through the
 native amendment and drafter checks, so goods moved since that reading still stop Cancellation.
 
-Counter Admin's Record cash holds the tapped amount on its card for ten seconds before any POST.
+Salt Admin's Record cash holds the tapped amount on its card for ten seconds before any POST.
 Undo cancels that hold and sends nothing. Hiding or leaving the page flushes every unsent hold
 once with `keepalive`; expiry cannot send it again. The card disables other moves while cash is
 held or sending. Once sent, Undo is gone: a lost or refused answer offers Retry cash with the
@@ -2392,9 +2392,9 @@ pause; it is not a vault authority switch. A maintenance refusal retains the bro
 Neither this release nor Access configuration alone proves owner acceptance or authorizes
 removing an incumbent Desk control.
 
-### Every Salt Account control has a stable name: `data-act` (11 Oct 2026)
+### Every Salt Admin control has a stable name: `data-act` (11 Oct 2026)
 
-Salt Account is redesigned in phases, and the third rewrites its words. So that no test and no code finds a control by its
+Salt Admin is redesigned in phases, and the third rewrites its words. So that no test and no code finds a control by its
 label, its class or its place on the page, every control on the owner page carries `data-act="<place>.<thing>"`: lower case,
 hyphens inside a part, named by **what the control does and never by what it says**. A label, a class, an id or the layout may
 change; its act does not. A button, an input that is not hidden, a select, a textarea, a `summary`, a link and anything with
@@ -2420,7 +2420,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 - **A test finds a control by** `byAct(root, act, key)` in `test/maker-act.mjs`: the control with that act, and with a key,
   inside the card or list item that carries it. Tests written before this still find controls by their words; the redesign's third
   phase moves them to acts.
-- **The guard.** The suite's section "Salt Account: every control carries a stable data-act" draws the owner page with the richest
+- **The guard.** The suite's section "Salt Admin: every control carries a stable data-act" draws the owner page with the richest
   fixture the maker harness has (orders at every stage, an account claim with a slip, links waiting, an account card open, the hand-over sheet,
   every Record form, a chat, a group order, the notice, the hours, a turn of sending links) and fails on a control with no act, on
   two with one act in one card, and on this table naming an act the page does not draw or leaving out one it does (a window's hour is
@@ -2490,11 +2490,11 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `link.make` | Links | Makes a guest link. |
 | `link.restore` | Link card of a withdrawn link | Restores the link. |
 | `link.withdraw` | Link card | Withdraws the link. |
-| `look.night` | Shop, This device, Look | Night for Salt Account on this device, at once, kept here. |
+| `look.night` | Shop, This device, Look | Night for Salt Admin on this device, at once, kept here. |
 | `look.sheet-close` | Look Sheet, on a first open | Closes it with Tide kept and nothing stored. |
 | `look.sheet-night` | Same Sheet | Chooses Night, keeps it and closes the Sheet. |
 | `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
-| `look.tide` | Shop, This device, Look | Tide for Salt Account on this device, at once, kept here. |
+| `look.tide` | Shop, This device, Look | Tide for Salt Admin on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
 | `more.test-accounts` | Shop, Practice | Makes or deletes the three test accounts. |
 | `nav.add` | The + orb at the foot of the page, on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
@@ -2625,7 +2625,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `part.shop.hours` | The strip under Shop (tab: Hours) | Shows the operating hours and the collection points, reading both. |
 | `part.shop.notice` | The strip under Shop (tab: Notice) | Shows the notice, reading it. |
 | `part.shop.practice` | The strip under Shop (tab: Practice) | Shows the two practice accounts. |
-| `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Account, reading nothing. |
+| `part.shop.device` | The strip under Shop (tab: This device) | Shows this device's Look, Night or Tide for Salt Admin, reading nothing. |
 | `points.add` | Collection points | Adds the point typed to the list, unsaved. |
 | `points.code` | Collection points | The point code: one capital letter and one or two digits, such as A2. |
 | `points.place` | Collection points | Its place: two figures, latitude and longitude, or a Maps link read on this device. |
@@ -2778,9 +2778,9 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `view.back` | Bar over an account viewed as them | Takes him back to Accounts. |
 
 
-### Salt Account speaks plainly (Phase 3, 12 Oct 2026, the redesign glossary of 11 Oct 2026)
+### Salt Admin speaks plainly (Phase 3, 12 Oct 2026, the redesign glossary of 11 Oct 2026)
 
-Every word on Salt Account is the glossary's (`System\Code\Artifacts\counter-redesign\review\fable-review.md` section 5.2): the number first, a plain
+Every word on Salt Admin is the glossary's (`System\Code\Artifacts\counter-redesign\review\fable-review.md` section 5.2): the number first, a plain
 noun for a heading, no engine word where a person's word exists (a sale, a purchase, a correction; not SELL, BUY, AMEND). The words live in `stmt/owner.js` and the
 owner-only strings of `stmt/page.js`; **nothing is added to `stmt/words.js` and the customer's words are untouched**. Three helpers print a day, a size and a
 sum, so no card prints one its own way: `fmtWhen` (a day is `10 Oct 2026`, a moment `10 Oct 2026, 17:20`, Kuala Lumpur, 24 hours, never ISO or UTC),
@@ -2805,14 +2805,14 @@ a hidden `.sr` or an `aria-label` (`pshape`), never the product. An order's tile
 heading the mark alone (`pmarkHead`, the associates' report card), a row's Product tag the dot and the mark (`bookTag`), a legend or a field about a book ends in the
 mark (a fourth label element, `[words, act, key, book]`), a tile of a form is the mark alone (`bookItem`), and a select, which cannot hold a mark, says the book's
 letter in brackets (`optionBook`, `[I] `). A sentence the Desk or the Counter wrote that names a book reads *the book* (`noBook`: whole words, *The book* at a sentence
-start, the apps' own names *Salt Account*, *Salt Counter*, *Salt Command*, *Salt Desk* left alone), and a Details value that is only a book's name is left out. **The
+start, the apps' own names *Salt Admin*, *Salt Counter*, *Salt Command*, *Salt Desk* left alone), and a Details value that is only a book's name is left out. **The
 Desk keeps its book names; this page does not.** `test/admin-words.mjs` draws the whole page and fails on any book of `ledger/book.json` PRODUCTS in a word, an aria
 name or a title, and on any drawn shape word.
 
 **One word for one thing, on the Desk and here** (18 Oct 2026, part 5 of `docs/plan-counter-admin-clarity.html`, his yes). Where the two surfaces name
 the same thing, this table is the word; a new card takes its word from here, and a word that differs between them is put to him, never changed unasked.
 
-| Thing | Desk | Salt Account |
+| Thing | Desk | Salt Admin |
 |---|---|---|
 | An order placed, not yet answered | Pending | Received (stage) |
 | His yes to an order | Accept | Agree (button), Agreed (stage) |

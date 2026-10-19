@@ -1,4 +1,4 @@
-/* test/admin-place-drafts.mjs: THE PLACE DRAFTS HOLD NO PLAIN PLACES MAP, AND THE LOCK LETS ALL THREE GO (Phase 4c of the Salt Account redesign, 12 Oct 2026;
+/* test/admin-place-drafts.mjs: THE PLACE DRAFTS HOLD NO PLAIN PLACES MAP, AND THE LOCK LETS ALL THREE GO (Phase 4c of the Salt Admin redesign, 12 Oct 2026;
  * Fable's note on #146; docs/STATEMENTS.md "The one unlock").
  *
  * Add ID, Amend ID and Place on the map each keep the last pair of sealed maps they prepared as a draft, so a second tap seals nothing twice. A prepared pair carries the

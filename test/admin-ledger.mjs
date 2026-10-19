@@ -1,4 +1,4 @@
-/* test/admin-ledger.mjs: COUNTER ADMIN'S MINI LEDGER (16 Oct 2026). Orders > Ledger draws three tables in one order, Open orders, Pending orders and the
+/* test/admin-ledger.mjs: SALT ADMIN'S MINI LEDGER (16 Oct 2026). Orders > Ledger draws three tables in one order, Open orders, Pending orders and the
  * latest twenty, from what GET /all/maker/ledger answers, and shows no other part of Orders while it does. The page draws and never decides: the fixture
  * hands it the lists and it must show every row as it came, a book as its mark, a customer as its code. What is proved here, each check red under its own
  * mutation (test/admin-ledger.mutations.json):

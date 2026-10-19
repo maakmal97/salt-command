@@ -10,7 +10,7 @@
  *   D  the Desk: History newest first; nothing undone while money is on its way, a move waits on the row or the site order is behind; a
  *      site order's change of terms goes by restateOrder; rowRoom still holds a payment on the row to what the mirror says
  *   E  the site: the undo fix takes back what the book took back, the line with it, reopens a done order and wakes them with a banner
- *   F  Counter Admin: History on the order card and each trip line, Undo on the newest move alone, its Sheet's Now and After, and the
+ *   F  Salt Admin: History on the order card and each trip line, Undo on the newest move alone, its Sheet's Now and After, and the
  *      approve card's verb and button */
 import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
@@ -337,7 +337,7 @@ export async function run({ ok, pageWork }) {
     && wakes({ kind: "restate", at: "z", qty: 1, total: 100, delivery: 0 }, done, false) === null,
   "never more than the order holds; an undone change of terms wakes them, an amendment of his does not: " + J([over, rest.ev]));
 
-  /* F. COUNTER ADMIN */
+  /* F. SALT ADMIN */
   const HIST = { rid: "zt1", party: "CX9-ZED", product: "salt", handover: "collected", order: null, moves: [{ i: 2, date: D, kind: "Fulfilment", cash: 220, kg: 0, undone: false, changed: null },
     { i: 1, date: D, kind: "Correction", cash: 0, kg: 2, undone: false, changed: null }], undo: { i: 2, kind: "pay", date: D, cash: 220, kg: 0, fields: { cash: 0, paidOn: null },
     now: { paid: 220, owed: 0, handed: 2, qty: 2 }, after: { paid: 0, owed: 220, handed: 2, qty: 2 }, notes: ["An open refund of RM 20 on zt1 is more than the row is paid past once this is undone."], route: "ledger" } };
