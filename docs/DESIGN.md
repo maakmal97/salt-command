@@ -323,6 +323,18 @@ picker stay retired (the suite fails if any returns): nothing keys on a clock, t
   book hue it shares with Night, rice, 5.47 and 4.91, and of Tide's own tokens mist, 6.03 and 5.41. The lit slate and the
   aurora's core stay advice, as in `Code\salt-ds` (`DESIGN.md`, `npm run contrast`).
 
+## 20 Oct 2026: Counter Batch C, the slider and bolder labels (salt-ds 1.9.0 to 1.9.2)
+
+- **Labels at 600** (item 20): `.salt-eyebrow`, `.salt-field__label` (0.18em) and `.salt-options__legend--label` (0.18em) in salt-ds; the
+  Desk's own h2, `.qfield label` and `.lclabel` follow in `design/desk.css`; the Counter takes them through `stmt-style`; QR Command's
+  `.atitle` and `.plabel`.
+- **The sliding segmented control** `salt-segment` (item 21): one track, equal columns (`--n`), a brass-edged thumb at `--i` that slides in
+  0.25s and not at all under reduced motion, options 44px, the selection read from `aria-selected`, `aria-checked` or `--active`, a count
+  in brass. On the Desk: every view's parts strip and the Look switch (`--n` and `--i` set through the style object, so every render writes
+  the same markup). On the Counter: the Look row, the Orders tabs and Salt Admin's Record strip, `--n` and `--i` set by `segSync` (no
+  style attributes under its CSP). **Strips that do not fit a phone stay pills**, measured at 358px: Customers (Associates truncates), Shop
+  (This device), the notice chips, the stage arrows and the month strip (over six).
+
 ## 19 Oct 2026: Counter Batch B, no new recipe
 
 The basket's + and minus are the Orb at the tap size, the bar is the pay foot's pattern (a KPI tile and a Pill on the slate, sticking above the

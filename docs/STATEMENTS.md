@@ -732,7 +732,7 @@ The suite section "Account leads with this device, and the door names the app" (
 - **Home's start tiles.** I will collect and Deliver to me open the sheet with that way chosen (the limit step at five open). None under the
   overdue gate or with nothing priced; greyed and inert on a locked account.
 - **Order again** (`oAgainOk`): only an order handed over in full whose size is still on their list, never a withdrawn, declined or group
-  order, nothing under the gate. A Pill and "{rm} today, same size and place" on the order's screen, a ghost beside its card in the list
+  order, nothing under the gate. A Pill and "{rm} today, same size, delivered" (or ", to collect") on the order's screen, a ghost beside its card in the list
   (`data-wrap` holds the pair; the card keeps `data-row`), and Home's tiles by the same rule. A tap opens the existing check: one line at
   today's figure off the list, a fresh rid, no sheet id, no note, and no day, window or sheet id from an earlier sheet.
 - **The basket.** A + beside each size on Prices; taps on one mark SUM into one line priced at the summed amount's own figure (two taps on 5
@@ -742,6 +742,31 @@ The suite section "Account leads with this device, and the door names the app" (
   and opens its check: one order a line, each its own rid, two or more under one sheet id, which counts once. A change in that sheet writes
   back to the basket; Remove on the check takes a line out while nothing is placed. It is page memory: lost on a reload and at sign-out.
 - **Sent forgets what was placed** on every road (his answer 3, reversing V4b's keep): the next sheet does not offer a size just placed.
+
+### Counter Batch C: saved spots, the sealed name and unit, the confirm time, Help, the sliders (his answers of 20 Oct 2026)
+
+- **Saved spots** (item 18; his answers 3, 4, 12 and 13). A delivery's Where to is the spots kept on this phone for this account, localStorage
+  `salt-spots:<username>`, three at most: a name (Shop, Store, Warehouse or typed, 24), the area words (60), a floor or unit (40) and, if
+  shared, the exact point. **The sheet opens with none picked and Review waits** ("Pick where it is going, or add a spot."), so no last place is
+  filled in, and Order again (Home's tiles and the order's own) opens the form at its size and way. Add a spot and Edit open the sheet's `spot`
+  step; the area is required, a unit never stands in for it. Save on this phone off makes a spot for this order alone, stored nowhere. Remove
+  drops one with no confirm; **Log out keeps them**; a new phone starts with none. A store that throws leaves the old sheet: the area field and
+  the exact spot. Nothing of a spot is sent in the clear but its area words, which travel as `place` as before.
+- **The seal carries the name and unit** (P6). `pinOf` builds what Place seals to the slip key under `salt-pin v1`: the point with `label`
+  and `unit` beside it; a unit with no point as `{label?, unit, src: 'unit'}`; a spot with neither seals nothing. Cut on the phone, so the
+  Worker's `pinShape` and `PIN_MAX` hold unchanged; an amendment still names no spot. The list asks for the slip key as it draws. The check
+  and the order's Details read **Spot or unit: Sealed**, since the Worker cannot tell a point from a unit. The Desk opens it after the one
+  unlock: the card names "Shop · Unit 12A" before the point's line; a unit alone says so, measures no fee and is never filed (File all leaves
+  it out); filing writes the point alone. Salt Admin says "They shared a spot or unit. Open it on the Desk."
+- **The confirm time** (item 19, P3 and P4). `stmt/confirm.js` `confirmWithin`: the median, Place to his first Accept, of his last 30
+  confirmations made in Counter hours (the weekly hours as they stand, the manual switch left out), up to the next quarter hour, 15 minutes
+  at least; an order sent as an offer, with a price, a group order or a test account's is left out, and a replacement is measured from the
+  root of its chain. Filed hourly at KV `confirm:within` (`{mins, n, at}`) by the site's cron and carried on `GET /hours` as `confirm`
+  while under three hours old. A placed order with no price says "Usually confirmed within **45 min**. Measured from our last 30 orders, not
+  a promise." only while the Counter is open and 10 to 30 were measured; while closed, "We confirm when the Counter opens. Opens at **09:00**,
+  21 Oct 2026."; with no hours read, the plain placed line.
+- **Help** (item 17, P2): under Account after This device, four questions as he approved them (paying, delivery, collecting, changing an
+  order), each a row closed until tapped, 44px with its chevron. Not on his own page.
 
 ### Failures and public pages on brand (Phase 7d part 4, 12 Oct 2026, his yes of 11 Oct)
 
