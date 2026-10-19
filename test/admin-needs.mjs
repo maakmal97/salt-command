@@ -14,7 +14,7 @@
  *  10  (17 Oct 2026, Counter Admin clarity part 2) the verb first: each card's title says what to do, then who and the figure under it; the card's main
  *      button is on the card and reaches the same function as the full card's; a money tap asks once on the card and Cancel sends nothing; practice
  *      accounts are one folded line at the foot, "Practice: N"; the summary reads "12 to do now · 11 soon"
- *   9  the 30-second read: only while Needs you or Orders shows and the page is visible, no read twice at once, nothing drawn when nothing
+ *   9  the 5-second read: only while Needs you or Orders shows and the page is visible, no read twice at once, nothing drawn when nothing
  *      changed, a part he has begun on left alone, a tap in flight kept
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
 import { richOwnerPage, byAct, cardOf } from "./maker-act.mjs";
@@ -106,8 +106,8 @@ export async function run({ ok, pageWork }) {
       const part = (d.querySelector('.aparts[data-place="' + place + '"] [aria-selected="true"]') || { getAttribute: () => "" }).getAttribute("data-part");
       return place + (part ? "/" + part : "");
     };
-    /* the 30-second read, as the page set it: the one live interval of that length */
-    p.live = () => p.intervals.filter((i) => i.ms === 30000 && !i.off);
+    /* the 5-second read, as the page set it: the one live interval of that length */
+    p.live = () => p.intervals.filter((i) => i.ms === 5000 && !i.off);
     p.tick = async () => { const t = p.live()[0]; if (t) t.f(); await p.work.quiet(); return !!t; };
     p.hide = (on) => { Object.defineProperty(d, "hidden", { configurable: true, get: () => on }); d.dispatchEvent(new p.w.Event("visibilitychange")); };
     return p;
@@ -431,11 +431,11 @@ export async function run({ ok, pageWork }) {
     ok(line && line.textContent === "1 queue entry unreadable: q:laptop-x", "and Orders > Approve's queue names it too: " + (line && line.textContent));
   } finally { p.w.close(); }
 
-  /* 9. THE 30-SECOND READ */
+  /* 9. THE 5-SECOND READ */
   p = await open(state());
   try {
     const d = p.d;
-    ok(p.live().length === 1, "Needs you sets one read every 30 seconds: " + JSON.stringify(p.intervals.map((i) => i.ms)));
+    ok(p.live().length === 1, "Needs you sets one read every 5 seconds: " + JSON.stringify(p.intervals.map((i) => i.ms)));
     p.reads.length = 0;
     await p.tick();
     ok(same([...p.reads].sort(), [ROUTES.review, ROUTES.claims, ROUTES.threads, ROUTES.hours, ROUTES.bulletin, ROUTES.sheet, ROUTES.links, ROUTES.inputs].sort()),
@@ -471,14 +471,14 @@ export async function run({ ok, pageWork }) {
     byAct(p.d, "nav.shop").click(); await p.work.quiet();
     ok(p.live().length === 0, "and Shop and Record are no different");
     byAct(p.d, "nav.orders").click(); await p.work.quiet();
-    ok(p.live().length === 1, "Orders reads every 30 seconds too");
+    ok(p.live().length === 1, "Orders reads every 5 seconds too");
     p.reads.length = 0; await p.tick();
     ok(same([...p.reads].sort(), [ROUTES.claims, ROUTES.review].sort()), "and what it reads is the orders and the claims, nothing of the rest: " + JSON.stringify(p.reads));
     byAct(p.d, "nav.needs").click(); await p.work.quiet();
     p.hide(true);
     ok(p.live().length === 0, "a hidden page stops it");
     p.reads.length = 0;
-    const ghost = p.intervals.filter((i) => i.ms === 30000).pop();
+    const ghost = p.intervals.filter((i) => i.ms === 5000).pop();
     if (ghost) ghost.f();
     await p.work.quiet();
     ok(p.reads.length === 0, "and a tick that still arrives while the page is hidden reads nothing");
@@ -550,19 +550,19 @@ export async function run({ ok, pageWork }) {
   p = await open(state());
   try {
     const d = p.d;
-    ok(p.live().length === 1, "the 30-second read is running before the lapse");
+    ok(p.live().length === 1, "the 5-second read is running before the lapse");
     p.lapse(true);
     p.reads.length = 0;
     await p.tick();
     const during = p.reads.length;
     ok(d.body.classList.contains("ended") && !d.getElementById("aEnded").hidden && during > 0 && p.live().length === 0,
-      "a lapse met by a poll gives the page way to Sign in again and clears the 30-second read: " + JSON.stringify([d.body.className, during, p.live().length]));
+      "a lapse met by a poll gives the page way to Sign in again and clears the 5-second read: " + JSON.stringify([d.body.className, during, p.live().length]));
     p.reads.length = 0;
     p.hide(true); p.hide(false); await p.work.quiet();
-    for (const i of p.live()) i.f();   /* the next 30 seconds, for any read still set */
+    for (const i of p.live()) i.f();   /* the next 5 seconds, for any read still set */
     await p.work.quiet();
     ok(p.reads.length === 0 && p.live().length === 0,
-      "and a page hidden then shown again, or any later 30 seconds, sends nothing and sets nothing again: " + JSON.stringify([p.reads, p.live().length]));
+      "and a page hidden then shown again, or any later 5 seconds, sends nothing and sets nothing again: " + JSON.stringify([p.reads, p.live().length]));
   } finally { p.w.close(); }
 
   /* 11. THE CARD'S BUTTON REACHES THE SAME ROAD, ONCE; A MONEY TAP ASKS ONCE, ON THE CARD */

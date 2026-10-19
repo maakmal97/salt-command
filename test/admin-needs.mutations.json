@@ -266,29 +266,29 @@
  {
   "name": "a failed review is not noted",
   "file": "stmt/owner.js",
-  "find": "nGot('review', error); apply=true;\n      if(!poll)",
-  "replace": "apply=true;\n      if(!poll)"
+  "find": "nGot('review', error); apply=failNew('review', error)||!poll;\n      if(!poll)",
+  "replace": "apply=failNew('review', error)||!poll;\n      if(!poll)"
  },
  {
   "name": "a failed claims read is not noted",
   "file": "stmt/owner.js",
-  "find": "}catch(error){ nGot('claims', error); apply=true;",
-  "replace": "}catch(error){ apply=true;"
+  "find": "}catch(error){ nGot('claims', error); apply=failNew('claims', error)||!poll;",
+  "replace": "}catch(error){ apply=failNew('claims', error)||!poll;"
  },
  {
   "name": "a failed threads read is not noted",
   "file": "stmt/owner.js",
-  "find": "}catch(error){ nGot('threads', error); apply=true; refusal(status,error); }",
-  "replace": "}catch(error){ apply=true; refusal(status,error); }"
+  "find": "}catch(error){ nGot('threads', error); apply=failNew('threads', error)||quiet!==true; if(apply) refusal(status,error); }",
+  "replace": "}catch(error){ apply=failNew('threads', error)||quiet!==true; if(apply) refusal(status,error); }"
  },
  {
   "name": "a failed hours read is not noted",
   "file": "stmt/owner.js",
-  "find": "catch(error){ nGot('hours', error); apply=true; }",
-  "replace": "catch(error){ apply=true; }"
+  "find": "catch(error){ nGot('hours', error); if(failNew('hours', error)) apply=true; }",
+  "replace": "catch(error){ if(failNew('hours', error)) apply=true; }"
  },
  {
-  "name": "the read is not every 30 seconds",
+  "name": "the read is not every 5 seconds",
   "file": "stmt/owner.js",
   "find": "needsTimer=setInterval(tickPlace, NEED_MS);",
   "replace": "needsTimer=setInterval(tickPlace, 1000);"
@@ -632,8 +632,8 @@
  {
   "name": "a failed owed read is not noted",
   "file": "stmt/owner.js",
-  "find": "}catch(error){ nGot('book', error); apply=true; }",
-  "replace": "}catch(error){ apply=true; }"
+  "find": "}catch(error){ nGot('book', error); apply=failNew('book', error); }",
+  "replace": "}catch(error){ apply=failNew('book', error); }"
  },
  {
   "name": "the owed read is not on the tick",

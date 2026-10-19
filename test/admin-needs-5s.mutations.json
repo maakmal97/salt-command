@@ -1,0 +1,74 @@
+[
+ {
+  "name": "the read is back to every 30 seconds",
+  "file": "stmt/owner.js",
+  "find": "NEED_MS=5000;",
+  "replace": "NEED_MS=30000;"
+ },
+ {
+  "name": "a hidden page keeps the poll set",
+  "file": "stmt/owner.js",
+  "find": "var on=!document.hidden&&!document.body.classList.contains('ended')&&(placeNow==='needs'||placeNow==='orders');",
+  "replace": "var on=!document.body.classList.contains('ended')&&(placeNow==='needs'||placeNow==='orders');"
+ },
+ {
+  "name": "a tick that arrives while the page is hidden still reads",
+  "file": "stmt/owner.js",
+  "find": "if(document.hidden||(placeNow!=='needs'&&placeNow!=='orders')){ needsWatch(); return; }",
+  "replace": "if(placeNow!=='needs'&&placeNow!=='orders'){ needsWatch(); return; }"
+ },
+ {
+  "name": "the line under the title is drawn on every tick",
+  "file": "stmt/owner.js",
+  "find": "if(!tick||needSig()!==sig0) redrawLead();",
+  "replace": "redrawLead();"
+ },
+ {
+  "name": "the signature never moves, so a cleared failure is never drawn",
+  "file": "stmt/owner.js",
+  "find": "function needSig(){ return Object.keys(nSeen)",
+  "replace": "function needSig(){ return ''; } function needSigWas(){ return Object.keys(nSeen)"
+ },
+ {
+  "name": "every failure is new",
+  "file": "stmt/owner.js",
+  "find": "was=nSeen[name+'!']!==s; nSeen[name+'!']=s;",
+  "replace": "was=true; nSeen[name+'!']=s;"
+ },
+ {
+  "name": "the same failed review is drawn again",
+  "file": "stmt/owner.js",
+  "find": "nGot('review', error); apply=failNew('review', error)||!poll;",
+  "replace": "nGot('review', error); apply=true;"
+ },
+ {
+  "name": "the same failed claims read is drawn again",
+  "file": "stmt/owner.js",
+  "find": "nGot('claims', error); apply=failNew('claims', error)||!poll;",
+  "replace": "nGot('claims', error); apply=true;"
+ },
+ {
+  "name": "the same failed threads read is drawn again",
+  "file": "stmt/owner.js",
+  "find": "nGot('threads', error); apply=failNew('threads', error)||quiet!==true;",
+  "replace": "nGot('threads', error); apply=true;"
+ },
+ {
+  "name": "the same failed hours read is drawn again",
+  "file": "stmt/owner.js",
+  "find": "nGot('hours', error); if(failNew('hours', error)) apply=true;",
+  "replace": "nGot('hours', error); apply=true;"
+ },
+ {
+  "name": "the same failed notice read is drawn again",
+  "file": "stmt/owner.js",
+  "find": "nGot('notice', error); if(failNew('notice', error)) apply=true;",
+  "replace": "nGot('notice', error); apply=true;"
+ },
+ {
+  "name": "the same failed owed read is drawn again",
+  "file": "stmt/owner.js",
+  "find": "nGot('book', error); apply=failNew('book', error);",
+  "replace": "nGot('book', error); apply=true;"
+ }
+]

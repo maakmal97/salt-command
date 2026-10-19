@@ -1580,9 +1580,9 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   Messages, Rows, Accounts) filter the one list and read nothing; they are drawn as the parts strip is (a `tablist` of `tab` pills, the one in
   force `aria-selected`), because the recipe draws a selected pill from `aria-selected` and `aria-pressed` is styled on a ghost alone. **Every item of the bars carries its count**: Needs you the Now, Orders
   the open orders (not ended or completed; only Needs you counts what waits on him), Customers the threads asked and the links waiting,
-  Record and Shop none, the same on the rail and the bar and never a practice item. **It is read on entering and again every 30 seconds while it
+  Record and Shop none, the same on the rail and the bar and never a practice item. **It is read on entering and again every 5 seconds while it
   shows**, as Orders is: the orders and rows, the claims, the threads, the hours, the notice, and (after the page has read them once) the
-  accounts and the links; the poll stops when another place shows or the page is hidden, and a page that comes back reads at once. **A tick reads
+  accounts and the links; a tick that finds the same answer, or the same failure, draws nothing (R4, 19 Oct 2026); the poll stops when another place shows or the page is hidden, and a page that comes back reads at once. **A tick reads
   nothing while an account is viewed as them**: the page hides his own then (`#roster` hidden), nobody is looking at it, and the read goes on the
   moment he is back (`tickPlace`). **It also stops
   when his Access sign-in ends**: the read that meets the lapse gives the page way to Sign in again (`ended()`), which clears the poll, and
@@ -1637,7 +1637,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   script hides the rest. **Each place reads only what it shows, on entering it, and a part on entering the part**: Orders reads the
   orders and the claims (the stages are one list, so moving between them reads nothing) and its Approve part the Desk's rows, Record the forms, and
   the parts of Customers and Shop each their own; entering Shop reads no order and entering Orders reads no form (Needs you reads what
-  its cards are drawn from, and not again within 30 seconds of its last read). No route, body,
+  its cards are drawn from, and not again within 5 seconds of its last read). No route, body,
   request id or retained send changed. **The addresses**: `#needs`, `#orders`, `#customers`, `#record`, `#shop` and a part
   as `#orders/ready`; the old ones stay (`#maker` Orders, `#more` Shop, `#accounts` and `#links` those parts of Customers, `#cards`
   the associates' report card). A tap writes the address, so Back and Forward move between places, and a customer's place is never

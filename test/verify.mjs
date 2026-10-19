@@ -49766,9 +49766,14 @@ await (async () => {
   await (await import("./admin-words.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 30 seconds");
+section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 5 seconds");
 await (async () => {
   await (await import("./admin-needs.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: Needs you and Orders are read every 5 seconds, and a tick that finds the same answer draws nothing, a failure said once (R4, 19 Oct 2026)");
+await (async () => {
+  await (await import("./admin-needs-5s.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: Orders open by stage, a list beside the order, and Record a menu");
