@@ -1,0 +1,62 @@
+[
+ {
+  "name": "the route is not reached (the dispatch list lacks it)",
+  "file": "stmt/worker.js",
+  "find": "|| p === \"/account\" || p === \"/account/stamp\"",
+  "replace": "|| p === \"/account\""
+ },
+ {
+  "name": "the test surface's own road does not carry it",
+  "file": "stmt/worker.js",
+  "find": "account|account\\/stamp|orders",
+  "replace": "account|orders"
+ },
+ {
+  "name": "a POST is taken",
+  "file": "stmt/worker.js",
+  "find": "if (p === \"/account/stamp\") {\n    if (m !== \"GET\") return json({ ok: false, error: \"method not allowed\" }, 405);",
+  "replace": "if (p === \"/account/stamp\") {"
+ },
+ {
+  "name": "the stamp carries the sealed statement",
+  "file": "stmt/worker.js",
+  "find": "card: acct.card ? { at: acct.card.at || null } : null });",
+  "replace": "card: acct.card ? { at: acct.card.at || null } : null, env: acct.env });"
+ },
+ {
+  "name": "the stamp carries the sealed price list",
+  "file": "stmt/worker.js",
+  "find": "prices: acct.prices ? { at: acct.prices.at || null, digest: acct.prices.digest || null } : null,",
+  "replace": "prices: acct.prices || null,"
+ },
+ {
+  "name": "the verdict is not the live one",
+  "file": "stmt/worker.js",
+  "find": "const live = await customerLive(env, u, acct);\n    return json({ ok: true, issued: acct.issued || null, liveStatus: live.liveStatus,",
+  "replace": "const live = { live: acct.live || null, liveStatus: \"current\" };\n    return json({ ok: true, issued: acct.issued || null, liveStatus: live.liveStatus,"
+ },
+ {
+  "name": "the live document's moment is left out",
+  "file": "stmt/worker.js",
+  "find": "live: live.live ? { at: live.live.at || null, buildId: live.live.buildId || null } : null,",
+  "replace": "live: null,"
+ },
+ {
+  "name": "the price list's digest is left out",
+  "file": "stmt/worker.js",
+  "find": "digest: acct.prices.digest || null } : null,",
+  "replace": "digest: null } : null,"
+ },
+ {
+  "name": "the card's moment is left out",
+  "file": "stmt/worker.js",
+  "find": "card: acct.card ? { at: acct.card.at || null } : null });",
+  "replace": "card: null });"
+ },
+ {
+  "name": "the issue is left out",
+  "file": "stmt/worker.js",
+  "find": "return json({ ok: true, issued: acct.issued || null, liveStatus: live.liveStatus,",
+  "replace": "return json({ ok: true, issued: null, liveStatus: live.liveStatus,"
+ }
+]

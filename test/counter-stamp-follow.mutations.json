@@ -1,0 +1,74 @@
+[
+ {
+  "name": "the poll never reads the stamp",
+  "file": "stmt/page.js",
+  "find": "    await stampRead();   /* R1: a statement or price list published since the page opened */\n",
+  "replace": ""
+ },
+ {
+  "name": "a moved stamp does not re-open the statement",
+  "file": "stmt/page.js",
+  "find": "      await reread();\n    }catch(e){ /* the next poll asks again */ }",
+  "replace": "    }catch(e){ /* the next poll asks again */ }"
+ },
+ {
+  "name": "an unchanged stamp re-opens the statement anyway",
+  "file": "stmt/page.js",
+  "find": "if(stampOf(r.body)===stampWas||!idleNow()) return;",
+  "replace": "if(!idleNow()) return;"
+ },
+ {
+  "name": "the stamp is never taken at an open",
+  "file": "stmt/page.js",
+  "find": "    stampWas=stampOf(body);   /* R1: what this open was made from, which the poll's stamp is compared with */\n",
+  "replace": ""
+ },
+ {
+  "name": "the live document's moment is not part of the stamp",
+  "file": "stmt/page.js",
+  "find": "o.liveStatus||'', o.live&&o.live.at||'', o.live&&o.live.buildId||'',",
+  "replace": "o.liveStatus||'', '', o.live&&o.live.buildId||'',"
+ },
+ {
+  "name": "the price list is not part of the stamp",
+  "file": "stmt/page.js",
+  "find": "o.prices&&o.prices.at||'', o.prices&&o.prices.digest||'',",
+  "replace": "'', '',"
+ },
+ {
+  "name": "the verdict is not part of the stamp",
+  "file": "stmt/page.js",
+  "find": "return JSON.stringify([o.liveStatus||'', o.live&&o.live.at||''",
+  "replace": "return JSON.stringify(['', o.live&&o.live.at||''"
+ },
+ {
+  "name": "an open Sheet does not hold it",
+  "file": "stmt/page.js",
+  "find": "    if([].some.call(document.querySelectorAll('[role=dialog][aria-modal=true]'),function(d){ return !d.hidden; })) return false;\n    var f=document.activeElement;",
+  "replace": "    var f=document.activeElement;"
+ },
+ {
+  "name": "a focused field does not hold it",
+  "file": "stmt/page.js",
+  "find": "    if(f&&(/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)||f.isContentEditable)&&!f.closest('[hidden]')) return false;\n",
+  "replace": ""
+ },
+ {
+  "name": "a field the door left focused still holds it",
+  "file": "stmt/page.js",
+  "find": "f.isContentEditable)&&!f.closest('[hidden]')) return false;",
+  "replace": "f.isContentEditable)) return false;"
+ },
+ {
+  "name": "a line half typed does not hold it",
+  "file": "stmt/page.js",
+  "find": "    return ![].some.call(document.querySelectorAll('textarea,input:not([type=hidden]):not([type=radio]):not([type=checkbox]):not([type=button]):not([type=submit])'),\n      function(x){ return !!x.value&&!x.closest('[hidden]'); });",
+  "replace": "    return true;"
+ },
+ {
+  "name": "the page loses its place and its scroll on the re-open",
+  "file": "stmt/page.js",
+  "find": "var same=!!keep&&u===user&&!!bundle, t=tab, sy=window.scrollY||0, mf=mfPick;",
+  "replace": "var same=false, t=tab, sy=window.scrollY||0, mf=mfPick;"
+ }
+]

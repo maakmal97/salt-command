@@ -2,14 +2,14 @@
  *
  * Every part of Orders is a list of rows (the system's Inbox row), a row opens that order's card, today's card with every control and
  * request it had, beside the list from 860px and in its place below it; a customer's question on an order is a Now card on Needs you;
- * the 30-second read is silent while an account is viewed as them; one orb opens Record's menu of entries, and Record's forms are a menu of
+ * the 5-second read is silent while an account is viewed as them; one orb opens Record's menu of entries, and Record's forms are a menu of
  * named rows with one form shown at a time. What is proved here, each check red under its own mutation (test/admin-orders.mutations.json):
  *   1  the rows: which orders in which part, each row the mark, who by code, the units, the figure and the age, and nothing read for them
  *   2  a row opens its card: one card, for that order alone, with the controls and the request it had, and a way back
  *   3  back, leaving the part and leaving the place close the card; an order that leaves the part closes it too
  *   4  the split: the list beside the card from 860px, the card in the list's place below it
  *   5  a customer's question on an order is a Now card, counted, opening that order's card, and a closed one has its reply alone
- *   6  the 30-second read is silent while an account is viewed as them
+ *   6  the 5-second read is silent while an account is viewed as them
  * Drawn by the maker harness (test/maker-act.mjs), whose hooks change what each read answers. */
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
@@ -79,7 +79,7 @@ export async function run({ ok, pageWork }) {
     p.cardsIn = () => [...d.querySelectorAll("#makerReview article[data-maker-card]")].map((a) => a.getAttribute("data-maker-card"));
     p.tapRow = async (id) => { const r = byAct(d, "order.open", id); if (r) r.click(); await p.work.quiet(); return !!r; };
     p.acts = (id) => [...d.querySelectorAll('#makerReview [data-maker-card="' + id + '"] [data-act]')].map((e) => e.getAttribute("data-act")).filter((a) => !/[.]cancel-retained$/.test(a));
-    p.live = () => p.intervals.filter((i) => i.ms === 30000 && !i.off);
+    p.live = () => p.intervals.filter((i) => i.ms === 5000 && !i.off);
     p.tick = async () => { const t = p.live()[0]; if (t) t.f(); await p.work.quiet(); return !!t; };
     p.counts = () => Object.fromEntries([...d.querySelectorAll(".salt-rail [data-count]")].map((e) => [e.getAttribute("data-count"), e.textContent]));
     p.needs = () => [...d.querySelectorAll("#nlist [data-need]")].map((c) => c.getAttribute("data-need"));
@@ -416,13 +416,13 @@ export async function run({ ok, pageWork }) {
     } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
   }
 
-  /* 6. THE 30-SECOND READ IS SILENT WHILE AN ACCOUNT IS VIEWED AS THEM: the page hides his own (stmt/page.js show()) and nobody is looking at it */
+  /* 6. THE 5-SECOND READ IS SILENT WHILE AN ACCOUNT IS VIEWED AS THEM: the page hides his own (stmt/page.js show()) and nobody is looking at it */
   for (const place of ["needs", "orders"]) {
     p = await open();
     try {
       const d = p.d, roster = d.getElementById("roster");
       if (place === "orders") await p.enter();
-      ok(p.where().split("/")[0] === place && p.live().length === 1, place + " sets the one 30-second read: " + p.where());
+      ok(p.where().split("/")[0] === place && p.live().length === 1, place + " sets the one 5-second read: " + p.where());
       p.reads.length = 0;
       roster.hidden = true;
       await p.tick(); await p.tick();

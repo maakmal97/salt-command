@@ -20,6 +20,7 @@
  *   8  Salt Account is unchanged: its look Sheet pushes nothing and Escape closes it as before; the guest board carries no script to push with
  * Every assertion observes a signed-in page's window in jsdom. Every code, name, key, token and password is invented. */
 import { webcrypto } from "node:crypto";
+import { TIDE_OFF } from "./tide-off.mjs";
 
 const BUILD = "b".repeat(16);
 
@@ -174,7 +175,7 @@ export async function run({ ok, pageWork }) {
       S.st.down = true; await until(() => shown(S, "outSheet"), 300);
       kinds.push(["the signed-out Sheet", S, () => shown(S, "outSheet"), () => S.d.activeElement === S.d.getElementById("lapseGo")]);
     }
-    {
+    if (!TIDE_OFF) { /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       const L = await open({ look: false });
       await until(() => shown(L, "lookSheet"));
       kinds.push(["the look choice", L, () => shown(L, "lookSheet"), () => true]);
@@ -201,9 +202,10 @@ export async function run({ ok, pageWork }) {
       await goBack(pg); await until(() => !up());
       kindRes.push([name, was, pushed, !up(), stateIs(pg, stacked ? 1 : 0), focused()]);
     }
-    ok(kinds.length === 8 && kindRes.every((r) => r.slice(1).every(Boolean)),
+    ok(kinds.length === (TIDE_OFF ? 7 : 8) && kindRes.every((r) => r.slice(1).every(Boolean)),
       "Pay, the thread, Sign in another device, the signed-out Sheet, the look choice, the bell, the question and the Pay question a reload left each stood on a pushed entry, closed on Back, and left the page at the entry below with the focus on the opener: " + JSON.stringify(kindRes));
-    ok(kinds[6][1].d.getElementById("osheet") && !kinds[6][1].d.getElementById("osheet").hasAttribute("inert"),
+    const qk = kinds.find((k) => k[0] === "the question");
+    ok(qk && qk[1].d.getElementById("osheet") && !qk[1].d.getElementById("osheet").hasAttribute("inert"),
       "and the question's Back left the New order sheet under it, open and let go of");
 
     /* ---- 3: the other Sheets' own controls hand their entry back too */
@@ -218,10 +220,12 @@ export async function run({ ok, pageWork }) {
       tab(T, "stmt"); await until(() => T.d.querySelector("#aThread .throw"));
       T.d.querySelector("#aThread .throw").click(); const upT = stateIs(T, 1); T.d.getElementById("thX").click();
       ownRes.push(["the thread, its orb", upT, await until(() => !shown(T, "thSheet") && stateIs(T, 0))]);
+      if (!TIDE_OFF) { /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       const Lk = await open({ look: false }); await until(() => shown(Lk, "lookSheet")); const upL = stateIs(Lk, 1); Lk.d.getElementById("lookX").click();
       ownRes.push(["the look choice, its orb", upL, await until(() => !shown(Lk, "lookSheet") && stateIs(Lk, 0))]);
       const Lt = await open({ look: false }); await until(() => shown(Lt, "lookSheet")); Lt.d.querySelector("#lookSheet [data-look]").click();
       ownRes.push(["the look choice, a choice", true, await until(() => !shown(Lt, "lookSheet") && stateIs(Lt, 0))]);
+      }
       const Bl = await open({ standalone: true }); await until(() => !Bl.d.getElementById("bellBox").hidden); Bl.d.getElementById("bell").click(); const upB = stateIs(Bl, 1); Bl.d.getElementById("bellDone").click();
       ownRes.push(["the bell, Done", upB, await until(() => !shown(Bl, "bellSheet") && stateIs(Bl, 0))]);
       const So = await open({ orders: [A], fast: true }); So.st.down = true; await until(() => shown(So, "outSheet"), 300); await until(() => stateIs(So, 1)); const upS = stateIs(So, 1); So.d.getElementById("outX").click();
@@ -236,7 +240,7 @@ export async function run({ ok, pageWork }) {
       ownRes.push(["and then the New order sheet on its own entry", sheetStill, stateIs(Q, 0)]);
     }
     ok(ownRes.every((r) => r.slice(1).every(Boolean)), "the close orb, the scrim, Escape, Done, a choice and Keep it each hand their entry back: " + JSON.stringify(ownRes));
-    ok(ownRes.length === 11, "and every one of the eleven was driven: " + ownRes.length);
+    ok(ownRes.length === (TIDE_OFF ? 9 : 11), "and every one of the eleven was driven: " + ownRes.length);
 
     /* the page that closes a Sheet and one Back later has left, for every kind of Sheet: the base entry is the one before the page's own */
     const leaveRes = [];
@@ -245,8 +249,10 @@ export async function run({ ok, pageWork }) {
       await goBack(H); leaveRes.push(["Pay", await until(() => stateIs(H, null))]);
       const T = await open(); tab(T, "stmt"); await until(() => T.d.querySelector("#aThread .throw")); T.d.querySelector("#aThread .throw").click(); T.d.getElementById("thX").click(); await until(() => stateIs(T, 0));
       await goBack(T); leaveRes.push(["the thread", await until(() => stateIs(T, null))]);
+      if (!TIDE_OFF) { /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       const Lk = await open({ look: false }); await until(() => shown(Lk, "lookSheet")); Lk.d.getElementById("lookX").click(); await until(() => stateIs(Lk, 0));
       await goBack(Lk); leaveRes.push(["the look choice", await until(() => stateIs(Lk, null))]);
+      }
       const Bl = await open({ standalone: true }); await until(() => !Bl.d.getElementById("bellBox").hidden); Bl.d.getElementById("bell").click(); Bl.d.getElementById("bellDone").click(); await until(() => stateIs(Bl, 0));
       await goBack(Bl); leaveRes.push(["the bell", await until(() => stateIs(Bl, null))]);
       const Q = await open({ orders: [A, B, Cc, D, E, F] }); const cb = await openLimit(Q); cb.click(); await until(() => Q.d.getElementById("ynSheet"));
@@ -317,6 +323,7 @@ export async function run({ ok, pageWork }) {
     /* the last is not a road the page's own controls reach (a link's page has Continue and no door); its form is submitted by hand to ask the address alone */
     const keyRoads = [["/app#<key>", "https://site.test/app#" + KEY, KEY], ["/app#qr.<key>", "https://site.test/app#qr." + KEY, KEY], ["/app#code", "https://site.test/app#code", "#code"],
       ["/s/<token>", "https://site.test/s/" + TOK, TOK]];
+    if (!TIDE_OFF) { /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
     const keyRes = [];
     for (const [name, url, needle] of keyRoads) {
       const K = await open({ url, look: false, door: false });
@@ -361,6 +368,7 @@ export async function run({ ok, pageWork }) {
       d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })); await flush();
       ok(up && pushes.length === 0 && len === 1 && w.history.length === len && w.history.state === null && d.getElementById("lookSheet").hidden && !errs.length,
         "Salt Account's look Sheet at " + at + " pushes nothing, Escape closes it as before and takes no entry: pushes " + pushes.length + " length " + w.history.length + "/" + len + " errors " + errs.length);
+    }
     }
     const { shutPage, notFoundPage } = await import("../stmt/page.js");
     const frames = [shutPage("n1"), notFoundPage("n1")];

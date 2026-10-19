@@ -403,7 +403,7 @@ export async function run({ ok, pageWork }) {
     pill.click(); await p.work.quiet();
     ok(!!p.sheet() && !d.body.classList.contains("ended"), "a Sheet is open over Needs you, and the page has not lapsed");
     p.lapse(true);
-    const tick = p.intervals.filter((i) => i.ms === 30000 && !i.off)[0];
+    const tick = p.intervals.filter((i) => i.ms === 5000 && !i.off)[0];
     if (tick) tick.f();
     await p.work.quiet();
     ok(!!tick && d.body.classList.contains("ended") && !d.getElementById("aEnded").hidden && !p.sheet() && !d.getElementById("ynWrap") && p.posted(route("approve", "d-1")).length === 0,

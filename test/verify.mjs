@@ -8267,7 +8267,7 @@ await (async () => {
 })();
 
 section("two themes: Night and Tide, chosen per device (11 Oct 2026)");
-await (async () => {
+if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
   /* His word of 11 Oct 2026: two themes, Night and Tide, kept per device (localStorage salt-look), Tide until one is chosen, and a choice sheet
      over a device's first open; a switch in the rail changes it later. This section is the Desk; the Counter and Salt Account follow. The four times
      of day (05 Oct 2026, retired 09 Oct 2026) stay retired: no clock, no cross-fade, no picker of times, and the checks that fail if any returns are
@@ -8500,8 +8500,13 @@ await (async () => {
     "the built desk carries one theme-color meta, the master's, starting at Tide's ground");
 })();
 
-section("the Counter wears Night or Tide, chosen per device (11 Oct 2026)");
+section("Tide is off for now: Night on every device, the Tide button greyed, no Sheet (19 Oct 2026)");
 await (async () => {
+  await (await import("./tide-off.mjs")).run({ ok, master: process.env.SALT_MASTER || FROZEN_MASTER });
+})();
+
+section("the Counter wears Night or Tide, chosen per device (11 Oct 2026)");
+if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
   await (await import("./counter-two-themes.mjs")).run({ ok });
 })();
 
@@ -8655,13 +8660,13 @@ await (async () => {
   w.eval("saltLook('night');window.__cfgs=[];setProd('salt');recompute();switchTab('today');");
   const sw0 = setOf(JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm));
   w.eval("window.__cfgs=[];");
-  w.document.querySelector('.look-switch [data-look="tide"]').click();
+  w.eval("saltLook('tide');lookRedraw();");   /* Tide's button is greyed while Tide is off (19 Oct 2026): the redraw is driven directly */
   const sw1 = setOf(JSON.parse(w.eval("JSON.stringify(window.__ink())")).map(norm));
   ok(sw0.includes("#d4694c") && sw0.includes("rgba(242,244,245,0.66)") && sw1.length > 3 && sw1.includes("#ff8a65") && sw1.includes("rgba(234,246,246,0.66)") && !sw1.includes("#d4694c") && !sw1.includes("rgba(242,244,245,0.66)"),
     `the switch to Tide draws the charts showing again in Tide's colours (${sw0.length} colours before, ${sw1.length} after; Night's ember left: ${sw1.includes("#d4694c")})`);
   w.eval("saltLook('night');MAP_VIEW='*';MAP_PICK=null;setProd('salt');recompute();switchTab('map');");
   const mp0 = setOf(mapInk());
-  w.document.querySelector('.look-switch [data-look="tide"]').click();
+  w.eval("saltLook('tide');lookRedraw();");
   const mp1 = setOf(mapInk());
   ok(mp0.includes("#34454d") && mp1.includes("#244a54") && !mp1.includes("#34454d") && !mp1.includes("#6f8398"), `and draws the map again in Tide's: steps ${mp0.includes("#34454d")} at Night, ${mp1.includes("#244a54")} at Tide, Night's left ${mp1.includes("#34454d")}`);
 })();
@@ -49760,7 +49765,7 @@ await (async () => {
 })();
 
 section("Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)");
-await (async () => {
+if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
 })();
 
@@ -49769,9 +49774,14 @@ await (async () => {
   await (await import("./admin-words.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 30 seconds");
+section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 5 seconds");
 await (async () => {
   await (await import("./admin-needs.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: Needs you and Orders are read every 5 seconds, and a tick that finds the same answer draws nothing, a failure said once (R4, 19 Oct 2026)");
+await (async () => {
+  await (await import("./admin-needs-5s.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: Orders open by stage, a list beside the order, and Record a menu");
@@ -49787,6 +49797,16 @@ await (async () => {
 section("The Counter on a tablet: a dialog below 860px, the drawer and the list beside the open order from 860px, the order sheet's tiles two up, none of its rules under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-tablet.mjs")).run({ ok });
+})();
+
+section("The Counter's stamp: GET /account/stamp answers what tells an account moved, on the account's own session, and nothing sealed (R1, 19 Oct 2026)");
+await (async () => {
+  await (await import("./counter-stamp-route.mjs")).run({ ok });
+})();
+
+section("The Counter follows a publish: an open, idle page re-opens its statement and price list when the stamp moves, and a Sheet, a field or a half-typed line holds it (R1, 19 Oct 2026)");
+await (async () => {
+  await (await import("./counter-stamp-follow.mjs")).run({ ok, pageWork });
 })();
 
 section("Failures on brand: Home says Not updated since the last read in place of its figure when a read fails, and the next good read clears it (12 Oct 2026)");
