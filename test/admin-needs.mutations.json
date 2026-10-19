@@ -730,5 +730,11 @@
   "file": "stmt/owner.js",
   "find": "head:'Send ', rest:' a sign-in link', what:'Locked out'",
   "replace": "head:'Unlock ', what:'Locked out'"
+ },
+ {
+  "name": "Soon opens folded",
+  "file": "stmt/owner.js",
+  "find": "  var nFoldOpen={soon:true}, nKind",
+  "replace": "  var nFoldOpen={}, nKind"
  }
 ]

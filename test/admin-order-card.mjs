@@ -136,7 +136,13 @@ export async function run({ ok, pageWork }) {
       "Decline stands in the flow at the card's end, a ghost danger button, never in a sticky foot: " + JSON.stringify([moves(), tail("ord-p1")]));
     ok(!!(p.cardOf("ord-p1").querySelector(".ordlead").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".ordmoney")) & 4) && p.cardOf("ord-p1").querySelector(".ordlead").previousElementSibling.classList.contains("salt-steps")
       && p.cardOf("ord-p1").querySelector(".salt-steps").previousElementSibling.classList.contains("ohead"),
-      "and the main action stands directly under the card's head and its track, ahead of Goods and Details"); 
+      "and the main action stands directly under the card's head and its track, ahead of Goods and Details");
+    /* 19 Oct 2026 (his word): the track is the Counter's marked steps, a drawn mark on each of the four, Next on the step to come */
+    const trackP1 = p.cardOf("ord-p1").querySelector("ol.salt-steps"), stepsP1 = trackP1 ? [...trackP1.children] : [];
+    ok(!!trackP1 && trackP1.classList.contains("salt-steps--marks") && trackP1.getAttribute("aria-label") === "Where the goods are" && stepsP1.length === 4
+      && stepsP1.every((s) => s.querySelector(".salt-steps__mark svg path[d]") && s.querySelector(".salt-steps__name"))
+      && stepsP1[0].classList.contains("salt-steps__step--now") && stepsP1[1].classList.contains("salt-steps__step--next") && /Next/.test(stepsP1[1].querySelector(".salt-steps__time").textContent),
+      "the card's track is the Counter's marked steps: four drawn marks, Placed now and Next on Confirmed: " + (trackP1 ? trackP1.className + " | " + trackP1.textContent : "none"));
     ok(!foot().contains(byAct(d, "order.accept")) && leadOf("ord-p1").contains(byAct(d, "order.accept")) && leadOf("ord-p1").firstElementChild === byAct(d, "order.accept") && byAct(d, "order.accept").classList.contains("salt-pill")
       && !!(leadOf("ord-p1").compareDocumentPosition(p.cardOf("ord-p1").querySelector(".maker-fields")) & 4),
       "Agree is the filled pill at the top of the card, ahead of every field, and not in the foot");

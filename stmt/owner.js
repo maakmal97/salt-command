@@ -3947,15 +3947,10 @@ export const OWNER_JS = `
   /* 18 Oct 2026 (his word: the customer's order card is the design): THE HEAD IS THE CUSTOMER'S. The book's tile with its size, the stage and who and when beside
      it, the goods' track (Placed, Confirmed, Ready, Collected or Delivered), then the money on its own lines, the classes the Counter's order screen draws (oHead,
      oSteps, oMoney in stmt/page.js), so the two read alike. Admin keeps what is his alone: the code, Owed, what they say they sent, and Handed while goods remain. */
+  /* 19 Oct 2026 (his word): the track is the Counter's own, Batch A's marked steps (oSteps in stmt/page.js): a drawn mark a step, its moment under
+     its name and Next on the step to come, so the two cards draw one chart and a change to it reaches both */
   function ordSteps(order){
-    var names=['Placed','Confirmed','Ready',order.mode==='deliver'?'Delivered':'Collected'], q=+order.qty||0, mv=+order.moved||0, all=mv>0&&mv>=q-0.0004;
-    var cur=order.status==='done'?4:all?3:(order.status==='ready'||mv>0)?2:order.status==='acknowledged'?1:0;
-    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label','Where the goods are');
-    names.forEach(function(n,i){
-      var li=el('li','salt-steps__step'+(i<cur?' salt-steps__step--done':i===cur?' salt-steps__step--now':''),n);
-      if(i===cur) li.setAttribute('aria-current','step');
-      ol.appendChild(li);
-    });
+    var ol=oSteps(order).firstChild; ol.setAttribute('aria-label','Where the goods are');
     return ol;
   }
   function ordLine(label,value,flag,cls){
@@ -5090,7 +5085,7 @@ export const OWNER_JS = `
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=5000;   /* R4, his yes of 19 Oct 2026 (D12): was 30000; a tick that finds the same answer draws nothing */
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice'],['book','what is owed']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
-  var nFoldOpen={}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
+  var nFoldOpen={soon:true}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
   function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; if(!err) delete nSeen[name+'!']; }
   /* R4: a poll that fails again with the same words draws nothing; a new failure does, and a read that gets through forgets it (nGot) */
@@ -5683,7 +5678,7 @@ export const OWNER_JS = `
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
-      /* Now stands open; Soon and Watch are folded behind their heading and a count, kept as he leaves them across a redraw */
+      /* Now stands open; Soon and Watch fold behind their heading and a count, kept as he leaves them across a redraw. Soon opens unfolded (his word of 19 Oct 2026) */
       var h=el(s[0]==='now'?'p':'summary','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+(s[0]==='now'?'':' · '+group.length)); h.setAttribute('data-sev', s[0]); if(s[0]!=='now') h.setAttribute('data-act','need.fold.'+s[0]);
       var box=nlist;
       if(s[0]!=='now'){

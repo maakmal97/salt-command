@@ -247,11 +247,13 @@ export async function run({ ok, pageWork }) {
       && p.cards().filter((c) => byAct(c, "need.open")).every((c) => c.querySelector("button.need-tap.salt-action__title") && c.querySelector(".need-tap .need-who")),
     "a card has no Open button: its title is the one tap (data-act need.open), and the card's own actions stay beside it");
     const folds = [...d.querySelectorAll("#nlist > details.nfold")];
-    ok(same(folds.map((f) => f.getAttribute("data-sev")), ["soon", "watch", "practice"]) && folds.every((f) => !f.open && f.querySelector("summary.nsev") && /^\w+(:| .) \d+$/.test(f.querySelector("summary").textContent))
+    /* 19 Oct 2026 (his word): Soon opens unfolded; Watch and practice stay folded */
+    ok(same(folds.map((f) => f.getAttribute("data-sev")), ["soon", "watch", "practice"]) && same(folds.map((f) => f.open), [true, false, false])
+      && folds.every((f) => f.querySelector("summary.nsev") && /^\w+(:| .) \d+$/.test(f.querySelector("summary").textContent))
       && same(folds.map((f) => f.querySelectorAll("[data-need]").length), [p.keys("soon").length, p.keys("watch").length, 3]) && !d.querySelector("#nlist > [data-need]:not([data-sev=now])"),
-    "Soon and Watch are folded by default behind a heading with their count, Now stands open: " + JSON.stringify(folds.map((f) => [f.open, f.querySelector("summary").textContent])));
-    folds[0].open = true; folds[0].dispatchEvent(new p.w.Event("toggle")); await p.tap("need.kind.all");
-    ok(d.querySelector('#nlist > details[data-sev="soon"]').open, "a fold he opened stays open through a redraw");
+    "Soon opens unfolded, Watch and practice are folded behind a heading with their count, Now stands open: " + JSON.stringify(folds.map((f) => [f.open, f.querySelector("summary").textContent])));
+    folds[0].open = false; folds[0].dispatchEvent(new p.w.Event("toggle")); folds[1].open = true; folds[1].dispatchEvent(new p.w.Event("toggle")); await p.tap("need.kind.all");
+    ok(!d.querySelector('#nlist > details[data-sev="soon"]').open && d.querySelector('#nlist > details[data-sev="watch"]').open, "a fold he closed or opened stays so through a redraw");
   } finally { p.w.close(); }
 
   /* 6b. THE PILL IS THE RECORD BUTTON'S, THE SAME QUESTION AND THE SAME REQUEST */
