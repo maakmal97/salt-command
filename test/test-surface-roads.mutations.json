@@ -1,0 +1,14 @@
+[
+ {"name":"the test roads pass without his identity","file":"stmt/worker.js","find":"      if (!isAdminIdentity(who)) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);","replace":"      if (!isAdminIdentity(who) && !p.startsWith(\"/all/test/\")) return json({ ok: false, error: \"Access required\" }, 401);\n      if (p.startsWith(\"/all/maker/\")) return handleMaker(request, env, p, who);"},
+ {"name":"/test sends elsewhere","file":"stmt/worker.js","find":"{ status: 302, headers: Object.assign({ location: \"/all/test\" }, HEADERS) }","replace":"{ status: 302, headers: Object.assign({ location: \"/all\" }, HEADERS) }"},
+ {"name":"any session is taken","file":"stmt/worker.js","find":"&& !isTest(await sessionUser(request, env)))","replace":"&& !(await sessionUser(request, env)))"},
+ {"name":"any username signs in","file":"stmt/worker.js","find":"if (!b || !isTest(normUser(b.u)) || b.master !== undefined)","replace":"if (!b || !normUser(b.u) || b.master !== undefined)"},
+ {"name":"push is a test road","file":"stmt/worker.js","find":"bulletin|hours|my\\/refs|","replace":"bulletin|hours|push\\/subscribe|my\\/refs|"},
+ {"name":"the test road reads the real book","file":"stmt/worker.js","find":"const mine = TEST_REQ.has(request) ? { orders: [], claims: [], thread: null } : await accountBook(env, u);","replace":"const mine = await accountBook(env, u);"},
+ {"name":"the review under test asks the Desk","file":"stmt/maker.js","find":"  if (op.kind === \"review\") {\n    const orders = await fixtures(","replace":"  if (op.kind === \"review\" && false) {\n    const orders = await fixtures("},
+ {"name":"a real order id is taken under test","file":"stmt/maker.js","find":"  if ((op.kind === \"order-action\" || op.kind === \"order-move\") && !EXAMPLE_ID.test(op.id)) return json({ ok: false, error: \"not found\" }, 404);\n","replace":""},
+ {"name":"a real username is taken under test","file":"stmt/maker.js","find":"if ((op.kind === \"claim\" || op.kind === \"thread\") && !isTest(op.u))","replace":"if (false && !isTest(op.u))"},
+ {"name":"a test thread reply goes round the Desk","file":"stmt/maker.js","find":"  if (op.kind === \"thread\") {\n    const parsed = await bodyOf(request);","replace":"  if (op.kind === \"thread\" && false) {\n    const parsed = await bodyOf(request);"},
+ {"name":"Reset all resets nobody","file":"stmt/worker.js","find":"const users = b.all === true ? TEST_USERS : [b.u];","replace":"const users = [b.u];"},
+ {"name":"Start empty is offered to any test account","file":"stmt/testfix.js","find":"  if (empty && u !== TEST_FRESH) return { ok: false, error: \"Start empty is the fresh account's alone.\", status: 400 };\n","replace":""}
+]

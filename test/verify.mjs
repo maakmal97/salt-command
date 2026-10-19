@@ -48053,6 +48053,11 @@ await (async () => {
   await (await import("./test-surface-moves.mjs")).run({ ok });
 })();
 
+section("Counter test surface P5: the roads under /all/test, inside /all's two locks, the customer's on a test session alone and Counter Admin's on the examples alone (19 Oct 2026)");
+await (async () => {
+  await (await import("./test-surface-roads.mjs")).run({ ok });
+})();
+
 section("Counter maker cancels a paid order: the approver is told, the fold opens one refund");
 await (async () => {
   await (await import("./maker-paid-cancel.mjs")).run({ ok });

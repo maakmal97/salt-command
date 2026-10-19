@@ -57,7 +57,7 @@ import { payDown, liveAccounts } from "./paystate.js";
 import { takePin, keepPin, readPin } from "./pin.js";
 import { handleMaker, publicHours, customerAmend, takeNudge } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, examplePaynum, isExample,
-  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin, examplePlace } from "./testfix.js";
+  exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin, examplePlace, exampleReset } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
    wrangler.stmt.jsonc looks for its class */
 export { OrderBook } from "./orderbook.js";
@@ -91,6 +91,9 @@ const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
    names text/html) is answered with the styled one at the door of the Worker (the end of this file); a page's own fetch, which asks for anything,
    keeps the plain words. */
 const PLAIN404 = new WeakSet();
+/* THE TEST SURFACE (his answers of 18 Oct 2026): a customer request made under /all/test/c, both locks passed and its session a test
+   account's. Marked here, never by a header a client could send, so the customer's road reads that account's fixture alone. */
+const TEST_REQ = new WeakSet();
 const notFound = () => {
   const r = new Response("Not found", { status: 404, headers: Object.assign({ "content-type": "text/plain; charset=utf-8" }, HEADERS) });
   PLAIN404.add(r);
@@ -456,7 +459,8 @@ async function handleCustomer(request, env, p, m, ctx) {
     /* Step 7: and their thread with us, so Home's card moves on the page's own poll */
     /* 06 Oct 2026: the three read from the book in one round trip (accountBook), the answer unchanged */
     if (m === "GET") {
-      const mine = await accountBook(env, u);
+      /* the test surface reads the fixture alone, so a stray order a test account placed on the real road before is never drawn there */
+      const mine = TEST_REQ.has(request) ? { orders: [], claims: [], thread: null } : await accountBook(env, u);
       return json(Object.assign({ ok: true }, await withExamples(env, u, mine.orders.map(customerView), mine.claims.map(claimView)),
         { thread: threadView(isTest(u) ? await exampleThread(env, u) : mine.thread) }));
     }
@@ -1615,6 +1619,23 @@ async function handleGuest(request, env, id) {
   return guestHtml(boardPage({ prices }, nonce), nonce, 200);
 }
 
+/* THE TEST SURFACE'S CUSTOMER ROADS (his answers of 18 Oct 2026): the customer's own routes, run as they run for a customer, on a test
+   account's session alone (a real customer's is refused) and only the ones a test account's page needs: no push, passkey, remembered
+   phone, hand-over, devices, sign out everywhere or slip. Sign-in takes a test account's username and nothing else. */
+const TEST_C = /^\/(open|logout|account|orders|pools|thread|pay\/accounts|bulletin|hours|my\/refs|orders\/[0-9]{14}-[a-z0-9]{1,8}(\/[a-z]+)?|pools\/p[0-9]{14}-[a-z0-9]{1,8}\/join|my\/refs\/[^/]+)$/;
+async function testCustomer(request, env, ctx, url, q, m) {
+  if (!TEST_C.test(q)) return notFound();
+  if (q === "/open") {
+    let b = null;
+    try { b = await request.clone().json(); } catch (e) { b = null; }
+    if (!b || !isTest(normUser(b.u)) || b.master !== undefined) return json({ ok: false, error: "Only a test account signs in here." }, 403);
+  } else if (!["/logout", "/bulletin", "/hours"].includes(q) && !isTest(await sessionUser(request, env)))
+    return json({ ok: false, error: "Only a test account's session is taken here." }, 403);
+  const inner = new Request(url.origin + q + url.search, request);
+  TEST_REQ.add(inner);
+  return worker.fetch(inner, env, ctx);
+}
+
 const worker = {
   async fetch(request, env, ctx) {
     const held = maintenance(request, env);
@@ -1633,13 +1654,14 @@ const worker = {
        'unsafe-inline'. One builder for the customer's door and the owner's. The owner's page alone
        adds blob: to img-src: it draws a decrypted payment slip as a blob: URL (stmt/owner.js), which
        the self-only policy refused. The customer's page stays exactly as strict as it was. */
-    const pageResponse = async (user, owner) => {
+    /* `test` (the test surface): the page under /all/test, framed by its own shell on this origin alone, so frame-ancestors is 'self' */
+    const pageResponse = async (user, owner, test) => {
       const nonce = b64e(crypto.getRandomValues(new Uint8Array(16))).replace(/[^A-Za-z0-9]/g, "");
-      return new Response(landingPage(user, nonce, owner, await readBulletin(env)), {
+      return new Response(landingPage(user, nonce, owner, await readBulletin(env), test), {
         headers: Object.assign({
           "content-type": "text/html; charset=utf-8",
           "content-security-policy":
-            "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; "
+            "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors " + (test ? "'self'" : "'none'") + "; "
             + "img-src 'self' data:" + (owner ? " blob:" : "") + "; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; "
             + "style-src 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'"
         }, HEADERS)
@@ -1653,6 +1675,8 @@ const worker = {
       return g ? handleGuest(request, env, g[1]) : shut();
     }
 
+    /* the test surface's short address: a redirect to /all/test and nothing more, so it serves nothing outside /all's gate */
+    if (p === "/test") return new Response(null, { status: 302, headers: Object.assign({ location: "/all/test" }, HEADERS) });
     /* the master account: the page, the account list, and the links, all behind one check */
     if (p === "/all" || p.startsWith("/all/")) {
       if (!env.STMT) return json({ ok: false, error: "no KV binding" }, 500);
@@ -1669,6 +1693,25 @@ const worker = {
       }
       if (!isAdminIdentity(who)) return json({ ok: false, error: "Access required" }, 401);
       if (p.startsWith("/all/maker/")) return handleMaker(request, env, p, who);
+      /* THE TEST SURFACE (his answers of 18 Oct 2026): his alone, inside this gate, so both locks hold every road under it. Counter
+         Admin's moves on the example orders, the customer's own routes on a test account's session, and Reset. */
+      if (p.startsWith("/all/test/maker/")) return handleMaker(request, env, "/all/maker/" + p.slice("/all/test/maker/".length), who, { test: true });
+      if (p.startsWith("/all/test/c/")) return testCustomer(request, env, ctx, url, p.slice("/all/test/c".length), m);
+      if (p === "/all/test/reset") {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        if (!b || Object.keys(b).some((k) => !["u", "empty", "all"].includes(k)) || (b.all === true) === (b.u !== undefined))
+          return json({ ok: false, error: "Name one test account, or all of them." }, 400);
+        const users = b.all === true ? TEST_USERS : [b.u];
+        if (!users.every(isTest) || b.empty === true && b.all === true) return json({ ok: false, error: "Only a test account is reset." }, 400);
+        const done = [];
+        for (const t of users) {
+          const r = await exampleReset(env, t, b.empty === true);
+          if (!r.ok) return json({ ok: false, error: r.error || "The reset did not complete.", code: r.code, done }, r.status || 503);
+          done.push(t);
+        }
+        return json({ ok: true, reset: done, empty: b.empty === true });
+      }
       /* the referral links, minted and revoked from inside the Access area only */
       /* 19 SEP 2026: HIS OWN APP. The same manifest the customer's gets, pointed at /all and named
          differently, so his home screen carries the admin page rather than a second copy of the

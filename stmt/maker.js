@@ -1,5 +1,5 @@
 import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody } from "./orders.js";
-import { accountRecord, exampleAccount, examplePlace, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
+import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
 
@@ -357,13 +357,65 @@ function internalOperation(path) {
   return null;
 }
 
-export async function handleMaker(request, env, pathname, verifiedIdentity) {
+/* THE TEST SURFACE (his answers of 18 Oct 2026): what Counter Admin may do under /all/test, on the example orders and the test accounts
+   alone. Every other kind, every real order and every real username answers 404; the reads come from the fixtures and call no Desk route;
+   a reply on a test account's thread is written in-process and wakes nobody (Fable's review). */
+const TEST_KINDS = { review: ["GET"], "order-action": ["POST"], "order-move": ["POST"], claim: ["POST"], claims: ["GET"], thread: ["POST"],
+  threads: ["GET"], pools: ["GET"], hours: ["GET"], points: ["GET"] };
+async function testMaker(request, env, op) {
+  const method = request.method;
+  if (!Object.hasOwn(TEST_KINDS, op.kind) || !TEST_KINDS[op.kind].includes(method)) return json({ ok: false, error: "not found" }, 404);
+  if ((op.kind === "order-action" || op.kind === "order-move") && !EXAMPLE_ID.test(op.id)) return json({ ok: false, error: "not found" }, 404);
+  if ((op.kind === "claim" || op.kind === "thread") && !isTest(op.u)) return json({ ok: false, error: "not found" }, 404);
+  const fixtures = async (read) => {
+    const out = [];
+    for (const u of TEST_USERS) {
+      const fixture = await exampleAccount(env, u);
+      if (!fixture.ok) { if (fixture.status === 409) continue; throw Object.assign(new Error(fixture.error), { status: fixture.status || 503 }); }
+      out.push(...read(u, fixture));
+    }
+    return out;
+  };
+  if (op.kind === "review") {
+    const orders = await fixtures((u, f) => f.orders.map((o) => ({ ...o, u: o.u || u, test: true })));
+    return json({ ok: true, test: true, orders, drafts: [], refused: [], queue: [], unreadable: [], trips: [], sameDay: [], rows: [], refunds: {} });
+  }
+  if (op.kind === "claims") return json({ ok: true, test: true, claims: await fixtures((u, f) => f.account.claims.map((c) => ({ ...c, test: true }))) });
+  if (op.kind === "pools") {
+    const pools = [];
+    for (const u of TEST_USERS) pools.push(...(await examplePools(env, u)).map((p) => ({ ...p, test: true })));
+    return json({ ok: true, test: true, pools });
+  }
+  if (op.kind === "threads") {
+    const threads = [];
+    for (const u of TEST_USERS) { const t = await exampleThread(env, u); if (t) threads.push(Object.assign({}, t, { u, code: "TEST", test: true })); }
+    return json({ ok: true, test: true, threads });
+  }
+  if (op.kind === "thread") {
+    const parsed = await bodyOf(request);
+    if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
+    const b = parsed.body;
+    if (Object.keys(b).some((k) => !["rid", "message", "noReply"].includes(k)) || !RID_RE.test(String(b.rid || ""))
+      || (b.noReply === true) === (typeof b.message === "string") || typeof b.message === "string" && (!b.message.trim() || b.message.length > 200))
+      return json({ ok: false, error: "A reply needs its fixed request id and one message of 1 to 200 characters, or No reply needed." }, 400);
+    if (typeof b.message === "string") await fixtureCheck(env, { total: 0, qty: 1, mode: "collect" }, { texts: [b.message] });
+    const r = await exampleDeskSay(env, op.u, b);
+    return r.error ? json({ ok: false, error: r.error, ...(r.code ? { code: r.code } : {}) }, r.status || 400) : json({ ok: true, test: true, thread: r.thread });
+  }
+  return null;   /* the moves and the claim road: the ordinary handlers, which keep example ids and test accounts on their own roads */
+}
+
+export async function handleMaker(request, env, pathname, verifiedIdentity, opts = {}) {
   if (!allowedOwner(verifiedIdentity)) return json({ ok: false, error: "Admin access required" }, 403);
   if (!pathname.startsWith("/all/maker/")) return json({ ok: false, error: "not found" }, 404);
   const op = internalOperation(pathname);
   if (!op) return json({ ok: false, error: "not found" }, 404);
   const method = request.method;
   try {
+    if (opts.test === true) {
+      const answered = await testMaker(request, env, op);
+      if (answered) return answered;
+    }
     if (op.kind === "trade-cover") {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = await bodyOf(request);

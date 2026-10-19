@@ -98,7 +98,9 @@ export async function run({ ok }) {
     await s.putFixture("0000-0000", { makerOrders: seed, orders: seed });
     const e0 = await exampleReset(s.env, "0000-0000", true), e2 = await exampleReset(s.env, "0000-0002", true);
     const empty = await exampleAccount(s.env, "0000-0002"), full = await exampleAccount(s.env, "0000-0000");
-    ok(e0.ok !== true && e2.ok === true && empty.orders.length === 0 && full.orders.length === seed.length,
-      "Start empty is refused for 0000-0000 and starts 0000-0002 with no orders: " + JSON.stringify([e0.error, e2.ok, empty.orders.length, full.orders.length]));
+    /* and the order book's own op refuses it, whatever reaches it */
+    const op0 = s.harness.book.run("fixture-reset", { u: "0000-0000", empty: true, generation: JSON.stringify(["s", "a", "i"]) });
+    ok(e0.ok !== true && e2.ok === true && empty.orders.length === 0 && full.orders.length === seed.length && op0.ok === false && op0.status === 400,
+      "Start empty is refused for 0000-0000, on the road and by the order book's own op, and starts 0000-0002 with no orders: " + JSON.stringify([e0.error, e2.ok, empty.orders.length, full.orders.length, op0]));
   } finally { s.close(); }
 }

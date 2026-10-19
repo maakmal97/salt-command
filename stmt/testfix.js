@@ -86,6 +86,7 @@ export async function exampleAccount(env, u, move = {}) {
  *  publish (his answer of 18 Oct 2026, Ask 8). */
 export async function exampleReset(env, u, empty = false) {
   if (!isTest(u)) return { ok: false, error: "Only a test account is reset.", status: 400 };
+  if (empty && u !== TEST_FRESH) return { ok: false, error: "Start empty is the fresh account's alone.", status: 400 };
   if (!env.ORDERBOOK) return { ok: false, error: "Acceptance storage is unavailable.", status: 503 };
   const fix = empty ? await fixNow(env, u) : null;
   if (empty && !fix) return Object.assign({ ok: false }, soon());
