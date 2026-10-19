@@ -1,4 +1,4 @@
-/* test/maker-placed-preview.mjs: Counter Admin's placed-order preview, driven in the actual owner script. THE CARD READS ITS OWN PREVIEW
+/* test/maker-placed-preview.mjs: Salt Admin's placed-order preview, driven in the actual owner script. THE CARD READS ITS OWN PREVIEW
    (his decision 6 of 11 Oct 2026): opening the order reads it once, a changed input reads it again, a row of the list reads nothing, and
    there is no Preview button. A delivery order chooses none of RM 0, 10, 15 or Other by default and reads nothing until he chooses one; a
    successful read shows the native card/margin/floor/usual comparison, not raw row JSON, and Accept is labelled with the server's quote and

@@ -880,6 +880,13 @@ body.ended>*:not(#aEnded){display:none}
 /* 14 Oct 2026: the live clock beside his page's name */
 .adm .clk{font-variant-numeric:tabular-nums}
 .adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
+/* 19 Oct 2026, his word: THE BAR SAYS WHERE THINGS STAND, as the Desk's line does: a dot and Live or Offline, then Open or Closed off /hours, then the clock; a gap after the dot, as on the Desk */
+.adm .abarlive{display:inline-flex;align-items:center;gap:6px;margin-right:12px}
+.adm .abarlive i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.adm .abarlive.on{color:var(--salt-verdigris)}
+.adm .abarlive.off{color:var(--salt-brass)}
+/* on a phone the word goes while live, as on the Desk: the dot says so; Offline keeps its word */
+@media (max-width:560px){.adm .abarlive.on span{display:none}.adm .abarlive{margin-right:8px}.adm .clk:not(:empty)::before{margin:0 6px}}
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
 .adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
@@ -1246,7 +1253,7 @@ function thisDevice() {
 /* 11 Oct 2026, HIS WORD: THE LOOK. Under Account, in This device, a customer changes Night or Tide for this device: two ghosts, the
    held one aria-pressed, applied at once with no reload. The page opens Tide until a device chooses (LOOK_HEAD). */
 function lookRow(owner) {
-  /* 11 Oct 2026: Salt Account draws the same row in Shop, This device, and its controls carry the acts the owner's page names every
+  /* 11 Oct 2026: Salt Admin draws the same row in Shop, This device, and its controls carry the acts the owner's page names every
      control by (docs/STATEMENTS.md); the customer's row is drawn as it was, with none */
   const act = (a) => (owner ? ' data-act="' + a + '"' : "");
   return '<div id="lookRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
@@ -1256,7 +1263,7 @@ function lookRow(owner) {
     + wt("button", 'type="button" class="salt-ghost" data-look="tide" aria-pressed="false" disabled' + act("look.tide"), "look.tide")
     + "</span></div></div></div>";
 }
-/* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Account, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
+/* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Admin, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
    the one field (stmt/owner.js, makerVaultUnlock), opened from here and from every place that says Locked. The field is never in a form and never remembered. */
 function vaultRow() {
   return '<div id="vaultRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
@@ -1265,6 +1272,16 @@ function vaultRow() {
     + '<button type="button" class="salt-ghost" id="vaultOn" data-act="vault.unlock">Unlock</button>'
     + '<button type="button" class="salt-ghost" id="vaultOff" data-act="vault.lock" hidden>Lock</button></span></div></div>'
     + '<span class="salt-ledger__flag">One password opens names, places and slips. Seen on this phone only; they lock again when the page is hidden.</span></div>';
+}
+/* 19 Oct 2026 (docs/plan-notifications.html section 3): SALT ADMIN'S OWN NOTIFICATIONS, owner only, Shop > This device. A tap turns them on (the
+   browser's question is asked from that tap alone) and a second control turns them off; the state is what this phone holds. Never on the test surface. */
+function alertRow() {
+  return '<div id="alertRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
+    + '<span class="salt-ledger__label" id="alertH">Notifications</span>'
+    + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="alertH"><span id="alertState" role="status">Off</span>'
+    + '<button type="button" class="salt-ghost" id="alertOn" data-act="alerts.on">Turn on</button>'
+    + '<button type="button" class="salt-ghost" id="alertOff" data-act="alerts.off" hidden>Turn off</button></span></div></div>'
+    + '<span class="salt-ledger__flag" id="alertNote">Salt Admin rings this phone for what waits on your decision. Asked only when you tap.</span></div>';
 }
 function vaultSheet() {
   return '<div id="vaultScrim" class="salt-sheet-scrim" hidden></div>'
@@ -1442,7 +1459,7 @@ export function notFoundPage(nonce) { return onePage("nf", nonce); }
 /* S13 13.1, HIS DECISION D12 OF 24 SEP 2026: EVERY PAGE OF THE COUNTER IS KEPT OUT OF THE TRANSLATOR. On a phone set
    to another language, Chrome offers to translate a page, and accepting sends what is on it, an opened statement
    included, to a translation service. translate="no" on the root and Google's notranslate say no for every page:
-   the customer's, a guest board, a shut link and Salt Account. */
+   the customer's, a guest board, a shut link and Salt Admin. */
 /* 11 OCT 2026, HIS WORD: TWO THEMES, NIGHT AND TIDE, ON EVERY SURFACE, KEPT ON EACH DEVICE, TIDE UNTIL ONE IS CHOSEN. Night is
    the design system's :root and Tide its :root[data-theme="tide"], both carried in the page's stylesheet (tools/stmt-style.mjs).
    Every page opens Tide: data-theme="tide" is on the root as served and the browser bar starts at Tide's ground. A page that
@@ -1457,7 +1474,7 @@ export const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('met
      gives it the screen's height, the longer side of the screen upright and the shorter lying down; --app-h feeds the body's min-height under 1080px */
   + "(function(){try{if(navigator.standalone===true){var r=document.documentElement,f=function(){var a=Math.max(screen.width,screen.height),b=Math.min(screen.width,screen.height);"
   + "r.style.setProperty('--app-h',(window.innerWidth>window.innerHeight?b:a)+'px');};r.setAttribute('data-app','1');f();window.addEventListener('resize',f);}}catch(e){}})();";
-/* 18 Oct 2026: THE LIGHT, the system's Aurora as the Desk draws it (tools/stmt-style.mjs carries the recipe), the first thing in the body of the Counter and Salt Account. Not on guestPage (the guest board, the shut page and the 404): their source names no brand, and every salt- class would be one */
+/* 18 Oct 2026: THE LIGHT, the system's Aurora as the Desk draws it (tools/stmt-style.mjs carries the recipe), the first thing in the body of the Counter and Salt Admin. Not on guestPage (the guest board, the shut page and the 404): their source names no brand, and every salt- class would be one */
 const AURORA = '<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div>'
   + '<div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>';
 export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="night"><head><meta charset="utf-8">'
@@ -1499,12 +1516,12 @@ function noticeCard(b) {
     + '<div class="salt-notice__lines">' + lines.map((l, i) => '<p class="salt-notice__line' + (i ? "" : " salt-notice__line--on") + '">' + esc(l) + "</p>").join("") + "</div></div>"
     + "</section>";
 }
-/* S9 9.2: SALT ACCOUNT'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
+/* S9 9.2: SALT ADMIN'S PLACES AND ITS FILTERS. The icons are drawn here, stroked like the product marks,
    and loaded from nowhere; the key is the ring with a keyhole its home-screen icon carries (9.7). */
 /* 11 OCT 2026, HIS DECISION: FIVE PLACES, Needs you, Orders, Customers, Record and Shop. "Maker" is retired on screen. A place but Needs you has
    its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
 const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
-/* THE TEST SURFACE (his answers of 18 Oct 2026): Counter Admin on the practice accounts draws four places, Needs you, Orders, Payments and
+/* THE TEST SURFACE (his answers of 18 Oct 2026): Salt Admin on the practice accounts draws four places, Needs you, Orders, Payments and
    Chat; the last two open a part (the third field), and Record, Shop, the account list, the links, Approve, Group and Ledger are not drawn */
 const TEST_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["orders", "Payments", "payments"], ["customers", "Chat", "messages"]];
 const TEST_PARTS = { orders: ["placed", "confirmed", "ready", "paid", "done", "ended", "payments"], customers: ["messages"] };
@@ -1521,7 +1538,7 @@ const ADMIN_PARTS = {
 const adminStrip = (p, list, cls, label) => '<div class="salt-tabs aparts' + cls + '" role="tablist" aria-label="' + label + '" data-place="' + p + '">'
   + list.map(([k, w]) => '<button type="button" class="salt-tabs__pill" role="tab" data-part="' + k + '" data-act="part.' + p + "." + k
     + '" aria-selected="' + (k === ADMIN_PARTS[p][0][0] ? "true" : "false") + '">' + w + "</button>").join("") + "</div>";
-/* 18 Oct 2026 (Counter Admin clarity, part 3): Orders draws its parts as two strips of one list. The six stages come first, in the order an order moves (a tab strip
+/* 18 Oct 2026 (Salt Admin clarity, part 3): Orders draws its parts as two strips of one list. The six stages come first, in the order an order moves (a tab strip
    with each stage's count, since the Steps recipe is a drawing and not a row of controls); Approve, Payments, Group and Ledger stand apart beneath, smaller. Every part keeps
    its id, its act and its address, and PARTS is both strips together (stmt/owner.js), so only the drawing is split. */
 const ADMIN_ORDER_STAGES = ["placed", "confirmed", "ready", "paid", "done", "ended"];
@@ -1603,25 +1620,25 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
     + '<meta name="mobile-web-app-capable" content="yes">'
     + '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
-    /* his page is Salt Account, as its manifest says; the customer's is Salt Counter */
-    + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Account" : "Salt Counter") + '">'
-    + "<title>" + (owner ? "Salt Account" : "Salt Counter") + "</title>"
+    /* his page is Salt Admin, as its manifest says; the customer's is Salt Counter */
+    + '<meta name="apple-mobile-web-app-title" content="' + (owner ? "Salt Admin" : "Salt Counter") + '">'
+    + "<title>" + (owner ? "Salt Admin" : "Salt Counter") + "</title>"
     + '<style nonce="' + nonce + '">' + FONT_FACE_CSS + STATEMENT_CSS + SITE_RECIPES + PAGE_CSS + "</style></head><body>" + AURORA
     + (owner
       ? '<div id="roster" class="gate adm">'
         /* S9 9.2: HIS PLACES, the phone's App bar and, from 1080px, the Desk rail the bar gives way to (the
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */
-        + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Account">'
+        + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Admin">'
         + '<div class="salt-rail__group">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-rail__tab salt-rail__tab--solo", (m, w, p) =>
           '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + "</span><span>" + w + "</span></span>"
           + (p ? "" : '<span class="salt-rail__count" data-count="' + m + '"></span>'))).join("") + "</div>"
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
         + '<div class="amain">'
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
-           under it. It took the rail's brand and the eyebrow each place repeated ("Salt Account" and the clock). */
+           under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
         + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Account</div><div class="salt-deskbar__meta"><span class="clk" data-clock></span></div></div></div></header>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="abarhours" id="aBarHours" hidden></span><span class="clk" data-clock></span></div></div></div></header>'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
         + '<div id="unsentBar" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
@@ -1734,14 +1751,14 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<p class="lead">A line at the top of every customer account. Setting it also sends them a notification.</p>'
         + '<div id="makerBulletin"></div><p id="makerBulletinStatus" class="msg" role="status" aria-live="polite"></p></section>'
         + '<div id="mTest" class="mtest" data-in="shop.practice"></div>'
-        /* 11 Oct 2026, his word: Salt Account has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
+        /* 11 Oct 2026, his word: Salt Admin has its own Night or Tide, chosen on this device (the Counter origin's localStorage salt-look,
            shared with the Counter's pages on this device and apart from the Desk's), the same row the customer has under Account > This device. The first-open Sheet is below, beside #aEnded. */
         + '<section id="oLook" data-in="shop.device" aria-labelledby="oLookTitle"><h2 id="oLookTitle">This device</h2>'
-        + '<p class="lead">Night or Tide for Salt Account on this device. Kept on this device; the Desk keeps its own.</p>'
-        + lookRow(true) + vaultRow() + "</section>"
+        + '<p class="lead">Night or Tide for Salt Admin on this device. Kept on this device; the Desk keeps its own.</p>'
+        + lookRow(true) + vaultRow() + (test ? "" : alertRow()) + "</section>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
-        + '<nav class="salt-appbar" aria-label="Salt Account">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>
+        + '<nav class="salt-appbar" aria-label="Salt Admin">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>
           '<span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + '</span><span class="salt-appbar__label">' + w + "</span>"
           + (p ? "" : '<span class="salt-appbar__count" data-count="' + m + '"></span>'))).join("") + "</nav>"
         /* PHASE 1c: one + orb, on every place but Record, opens Record's menu of entries (it is shown and hidden by the owner's script); none on the test surface */
@@ -1756,7 +1773,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + lookSheet(true) + vaultSheet()
       : "")
     + '<div id="gate" class="gate"' + (owner ? " hidden" : "") + ">"
-    /* 11 Oct 2026 (Phase 7d part 2, his yes): THE DOOR NAMES THE APP, in its ring and its one name, above Sign in; his own page is Salt Account and carries none */
+    /* 11 Oct 2026 (Phase 7d part 2, his yes): THE DOOR NAMES THE APP, in its ring and its one name, above Sign in; his own page is Salt Admin and carries none */
     + (owner ? "" : '<span class="appmark">' + glyphSvg("ring", 40) + "</span>" + wt("p", 'class="salt-eyebrow salt-eyebrow--copper"', "door.app"))
     + wt("h1", "", "door.h")
     + wt("p", 'class="lead"', "door.lead")
@@ -1781,7 +1798,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     /* S3 fix: a remembered phone the site could not open just now tries again from here, which a saved app with no
        reload needs */
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="remAgain" type="button" hidden', "door.again"))
-    /* S3 3.11: a code from another device, or from Salt Account at the counter. S3 fix: both inside the form's box, so
+    /* S3 3.11: a code from another device, or from Salt Admin at the counter. S3 fix: both inside the form's box, so
        the signed-out Sheet carries them with it */
     + (owner ? "" : wt("button", 'class="btn salt-ghost" id="toCode" type="button"', "door.toCode"))
     /* Step 6 (his decisions of 29 Sep 2026): a passkey saved on the account opens it; drawn where the browser has passkeys */
@@ -1865,7 +1882,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       /* v687: the owner's script travels only on his route. A function replacement, so nothing in
          it is read as a $ pattern. */
       .replace("/*__OWNER_JS__*/", () => (owner ? OWNER_JS : ""))
-      /* the test surface: the shim at the head of the script's scope, the door that signs itself in, and Counter Admin's practice mode;
+      /* the test surface: the shim at the head of the script's scope, the door that signs itself in, and Salt Admin's practice mode;
          on a real page each marker is taken out, leaving the script it always was */
       .replace("/*__TS__*/", () => (test ? TEST_SHIM.replace("__TCFG__", JSON.stringify({ base: String(test.base || ""), owner: !!owner, u: test.u || "", pw: TEST_PASS })) : ""))
       .replace("/*__TS_DOOR__*/", () => (test ? TEST_DOOR : ""))
@@ -1875,7 +1892,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
 }
 
 /* THE TEST SURFACE'S SHIM (his answers of 18 Oct 2026), spliced at the head of the script's scope on a page under /all/test alone. Its
-   names shadow the browser's for everything in the script: fetch puts a request under the base (Counter Admin's /all/maker/ under
+   names shadow the browser's for everything in the script: fetch puts a request under the base (Salt Admin's /all/maker/ under
    /all/test/maker/), refuses any other /all road or a full address, and after a write that went through tells the other pane on the
    channel salt-test, which re-reads at once; localStorage and sessionStorage keep their keys under salt-test:, so a sign-in here never
    clears a real phone's memory (the look is read through from the real key when this pane has none of its own); navigator has no
@@ -2035,6 +2052,7 @@ const CLIENT_JS = `
         .formatToParts(new Date()).forEach(function(x){ p[x.type]=x.value; }); }catch(e){ return; }
       var t=p.hour+':'+p.minute;
       [].forEach.call(document.querySelectorAll('[data-clock]'),function(n){ n.textContent=t; });
+      if(window.barDraw) window.barDraw();
     }
     function clockTick(){ clockPaint(); setTimeout(clockTick,60000-Date.now()%60000+50); }
     clockTick();

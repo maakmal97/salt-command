@@ -1,0 +1,7 @@
+[
+  {"name":"the lights are not kept","file":"tools/stmt-publish.mjs","find":"if (supply) plan.puts.push({ key: \"stocklights\"","replace":"if (false) plan.puts.push({ key: \"stocklights\""},
+  {"name":"the last lights are not read","file":"tools/stmt-publish.mjs","find":"else lastLights = readStockLights(run);","replace":"else lastLights = null;"},
+  {"name":"the publish never wakes","file":"tools/stmt-publish.mjs","find":"  if (supply) await stockWake(lastLights, stockLights(supply));","replace":""},
+  {"name":"the publish wakes over every book as if it were green before","file":"tools/stmt-publish.mjs","find":"await stockWake(lastLights, stockLights(supply))","replace":"await stockWake(Object.fromEntries(Object.keys(stockLights(supply)).map((p) => [p, \"green\"])), stockLights(supply))"},
+  {"name":"the publish compares the light it read, not the one it seals","file":"tools/stmt-publish.mjs","find":"lit(supplyLights(raw, readExpected(run), klToday(new Date())))","replace":"supplyLights(raw, readExpected(run), klToday(new Date()))"}
+]

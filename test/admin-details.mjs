@@ -1,4 +1,4 @@
-/* test/admin-details.mjs: AN ID IS FOR QUOTING, NOT FOR READING, AND A ROW'S DETAILS ARE NAMES AND VALUES (Phase 4c of the Salt Account redesign, 12 Oct 2026;
+/* test/admin-details.mjs: AN ID IS FOR QUOTING, NOT FOR READING, AND A ROW'S DETAILS ARE NAMES AND VALUES (Phase 4c of the Salt Admin redesign, 12 Oct 2026;
  * glossary 5.2 of the redesign review; docs/STATEMENTS.md "Unsent entries say so, and every id and row keeps its detail behind Details").
  *
  * An order's reference was a grey line down its card, a Desk row's figures were a block of JSON, and a claim's id and a held entry's id were nowhere a person could quote

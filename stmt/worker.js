@@ -41,12 +41,13 @@
 import { landingPage, boardPage, shutPage, notFoundPage, MON3, mtileSvg } from "./page.js";
 import { testShell } from "./testsurface.js";
 import { SW_JS } from "./sw.js";
+import { ADMIN_SW_JS } from "./admin-sw.js";
 import { identity } from "./access.js";
 import { maintenance } from "./maintenance.js";
 import QR from "./qr.js";
 import { normRef, mintRef, readRef, listRefs, revokeRef, markOpen, ensureStanding, refsBy, setRef, linkWaiting, MAX_PER_ASSOC, getMany } from "./refs.js";
 import { SIGNIN_RE, SIGNIN_TTL, mintSignin, burnSignin, peekSignin, idOf, pointAt, unpoint, devPrefix, mintHandover, burnHandover, dropHandover, sessKey, deviceOf } from "./signin.js";
-import { endpointId, pushKeys, wakeCustomer, wakeEveryone } from "./push.js";
+import { endpointId, pushKeys, wakeCustomer, wakeEveryone, wakeOwner, OWNER_KINDS, OWNER_ORDER_RE } from "./push.js";
 import { linkMessage, signInMessage, totalsLine, monthNameOf } from "./send.js";
 import { ICON_PNG_B64, ICON_SIZE, ADMIN_ICON_PNG_B64 } from "./icons.js";
 import { FONTS } from "./fonts.js";
@@ -996,6 +997,17 @@ async function handleDesk(request, env, p, m) {
     const push = await wakeEveryone(env);
     return json(Object.assign({ ok: true }, rec, { push }));
   }
+  /* 19 Oct 2026 (docs/plan-notifications.html section 3): THE DESK WAKES SALT ADMIN. { k, o? }: a kind from the list and, when the
+     Desk knows it, an order id; sealed to each subscription filed under opush: and nothing else. Answers { ok, devices, sent, failed }, which
+     the Desk reads to decide whether it must ring its own banner instead. Called by the Desk alone, on its key: no fixture road comes here. */
+  if (p === "/desk/owner-wake") {
+    if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+    const b = await readJson(request);
+    if (!b || typeof b !== "object" || !OWNER_KINDS.includes(b.k) || (b.o !== undefined && !(typeof b.o === "string" && OWNER_ORDER_RE.test(b.o))))
+      return json({ ok: false, error: "send a kind and, if known, an order id" }, 400);
+    const r = await wakeOwner(env, { k: b.k, o: b.o });
+    return json(r, r.ok ? 200 : 502);
+  }
   if (p === "/desk/orders/store-check") {
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     return json(await storeCompare(env));
@@ -1019,11 +1031,11 @@ async function handleDesk(request, env, p, m) {
        in. A completed order still owes its last entries, so this is not the open list. */
     /* Counter Batch A: every road that hands the Desk the raw order hands it deskOrderView, the point's place left out */
     if (q.get("work") === "1") return json({ ok: true, orders: (await ordersOwing(env)).map(deskOrderView) });
-    /* S9 9.8: and, when the desk's page asks, how many associate links wait in Salt Account: a count, no link, no name */
+    /* S9 9.8: and, when the desk's page asks, how many associate links wait in Salt Admin: a count, no link, no name */
     const links = q.get("links") === "1" ? { links: (await listRefs(env)).filter(linkWaiting).length } : {};
     return json(Object.assign({ ok: true, orders: (await allOrders(env, q.get("all") === "1")).map(deskOrderView) }, links));
   }
-  /* S9 9.8: WHAT WAITS ON THE DESK, told by the desk (src/orders.js tellWaiting) as one figure, for Salt Account's
+  /* S9 9.8: WHAT WAITS ON THE DESK, told by the desk (src/orders.js tellWaiting) as one figure, for Salt Admin's
      line. A count and its moment, nothing else: no order, no code and no way to the desk. */
   if (p === "/desk/waiting") {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -1265,7 +1277,7 @@ async function alertsOn(env) {
   } while (cursor);
   return out;
 }
-/* 2.5: SALT ACCOUNT OPENS IN TWO ROUNDS OF READS, not two reads an account one after another (84 of them for 41
+/* 2.5: SALT ADMIN OPENS IN TWO ROUNDS OF READS, not two reads an account one after another (84 of them for 41
    codes, 3 to 7 s). Every head at once, then every account's seen: and sent: keys in KV's bulk form, through
    getMany (stmt/refs.js, which reads the guest links the same way), 100 keys a chunk. */
 /* The QR is most of the sheet's CPU (42 encodes measured 55 ms), and an account's address does not move, so each is
@@ -1712,7 +1724,7 @@ const worker = {
          Admin's moves on the example orders, the customer's own routes on a test account's session, and Reset. */
       if (p.startsWith("/all/test/maker/")) return handleMaker(request, env, "/all/maker/" + p.slice("/all/test/maker/".length), who, { test: true });
       if (p.startsWith("/all/test/c/")) return testCustomer(request, env, ctx, url, p.slice("/all/test/c".length), m);
-      /* the two views, one landingPage each, under their base: the customer's signed in as the test account named, and Counter Admin's
+      /* the two views, one landingPage each, under their base: the customer's signed in as the test account named, and Salt Admin's
          carrying no master and no account list */
       if (m === "GET" && p === "/all/test/c") {
         const tu = normUser(url.searchParams.get("u"));
@@ -1743,11 +1755,31 @@ const worker = {
          is named for that, not for the ledger it reports on. */
       if (p === "/all/manifest.webmanifest") {
         if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
-        const own = { name: "Salt Account", short_name: "Salt Account", start_url: "/all", scope: "/all",
+        const own = { name: "Salt Admin", short_name: "Salt Admin", start_url: "/all", scope: "/all",
           display: "standalone", orientation: "portrait", background_color: "#05080a", theme_color: "#05080a",
           icons: [{ src: "/icon-key.png", sizes: ICON_SIZE + "x" + ICON_SIZE, type: "image/png", purpose: "any maskable" }] };
         return new Response(JSON.stringify(own), { headers: Object.assign({}, HEADERS, {
           "content-type": "application/manifest+json; charset=utf-8", "cache-control": "no-store" }) });
+      }
+      /* 19 Oct 2026: SALT ADMIN'S OWN SERVICE WORKER AND PUSH SUBSCRIPTIONS (docs/plan-notifications.html section 3). Inside this gate, so both locks
+         hold the script and every subscription. The script may control /all alone; a subscription is filed at opush:<hash of the endpoint>, never
+         push:, so no customer listing, count or Sign out everywhere reads it. */
+      if (p === "/all/sw.js") {
+        if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
+        return new Response(ADMIN_SW_JS, { headers: Object.assign({}, HEADERS, {
+          "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store", "Service-Worker-Allowed": "/all" }) });
+      }
+      if (p === "/all/push/subscribe" || p === "/all/push/unsubscribe") {
+        if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+        const b = await readJson(request);
+        const ep = b && b.endpoint;
+        if (typeof ep !== "string" || ep.length > 1000 || !/^https:\/\/\S+$/.test(ep)) return json({ ok: false, error: "send the subscription's https endpoint" }, 400);
+        const id = await endpointId(ep);
+        if (p === "/all/push/unsubscribe") { await env.STMT.delete("opush:" + id); return json({ ok: true }); }
+        const keys = pushKeys(b.keys);
+        if (!keys) return json({ ok: false, error: "send the subscription's two keys" }, 400);
+        await env.STMT.put("opush:" + id, JSON.stringify({ endpoint: ep, keys, at: new Date().toISOString() }));
+        return json({ ok: true, id });
       }
       if (p === "/all/refs" || p.startsWith("/all/refs/")) return handleRefs(request, env, p, m, url.origin, who);
       if (p === "/all/sheet") {
@@ -1923,7 +1955,7 @@ const worker = {
       return new Response(bytes, { headers: Object.assign({}, HEADERS, {
         "content-type": "font/woff2", "cache-control": "public, max-age=31536000, immutable" }) });
     }
-    /* S9 9.7: Salt Account's own icon, the ring with a keyhole (his D13). Outside /all on purpose: a home screen
+    /* S9 9.7: Salt Admin's own icon, the ring with a keyhole (his D13). Outside /all on purpose: a home screen
        fetches an icon without the Access cookie, and a ring names nothing. */
     if (p === "/icon.png" || p === "/icon-key.png") {
       if (m !== "GET" && m !== "HEAD") return json({ ok: false, error: "method not allowed" }, 405);
@@ -1975,7 +2007,7 @@ const worker = {
       || p === "/thread" || p === "/pools" || p.startsWith("/pools/")) return handleCustomer(request, env, p, m, ctx);
     /* v709: an associate's own links, on a session like the orders, and never under /all */
     if (p === "/my/refs" || p.startsWith("/my/refs/")) return handleMyRefs(request, env, p, m, url.origin);
-    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
+    if (p === "/desk/orders" || p.startsWith("/desk/orders/") || p === "/desk/bulletin" || p === "/desk/owner-wake" || p === "/desk/expected" || p === "/desk/waiting" || p === "/desk/claims" || p.startsWith("/desk/claims/") || p.startsWith("/desk/slips/") || p.startsWith("/desk/pins/")
       || p === "/desk/threads" || p.startsWith("/desk/threads/")) return handleDesk(request, env, p, m);
     /* the notice, in the clear, for the page's poll; anything past it is still the site's 404 */
     if (p === "/bulletin") {

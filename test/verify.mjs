@@ -9,7 +9,7 @@ import { FROZEN_BOOK, FROZEN_MASTER, LIVE_BOOK, LIVE_MASTER, liveEnv } from "./f
 import { execFileSync, spawnSync } from "node:child_process";
 import { DATA_DIR, PROJECT_DIR, prodOrder } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, lstatSync, unlinkSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
@@ -3233,7 +3233,7 @@ await (async () => {
       }
     }
 
-    /* 18 Oct 2026: the desk's Approve card (apCard) is gone with the tab; Counter Admin decides every row, so the card's
+    /* 18 Oct 2026: the desk's Approve card (apCard) is gone with the tab; Salt Admin decides every row, so the card's
        before-and-after rendering of a correction is no longer a Desk surface to assert. */
     /* v387: THE OTHER SURFACE WAS THE APP'S AND IT IS RETIRED. Seven assertions here
        covered the phone's Approve-tab Edit button, its row editor, the refused-reason line
@@ -3559,7 +3559,7 @@ await (async () => {
   ok(idEntry.type === "ADDID" && idEntry.payload.mode === "addid" && idEntry.payload.code === "CX1-ZED"
     && idEntry.payload.kind === "customer" && idEntry.payload.parent === null,
     "and constructs the addid entry the drafter knows through the shared engine");
-  /* 18 Oct 2026: the draft cards (and their warnpill flags) left the Desk with Approve; Counter Admin draws them. */
+  /* 18 Oct 2026: the draft cards (and their warnpill flags) left the Desk with Approve; Salt Admin draws them. */
   /* every lead and every part has a question on the strip */
   const q = m.match(/const PART_Q=\{([\s\S]*?)\};/)[1];
   for (const t of ["today","overview","forward","receivables","financials","inventory","sourcing","pricing","concentration","network","map","ledger","analysis"]) {
@@ -4839,7 +4839,8 @@ await (async () => {
   let vocab = 0, cross = 0, invalid = 0, noted = 0;
   for (const s of run.sheets) {
     const text = words(s.html);
-    if (/\b(cost|margin|tier|floor|shrink|profit)/i.test(text)) { vocab++; console.log("  leak vocabulary on " + s.who); }
+    /* 19 Oct 2026: the word and its endings, never the start of another word (costly, Costa) or Math.floor */
+    if (/(?<!Math\.)\b(cost|margin|tier|floor|shrink|profit)(s|ed|ing|age)?\b/i.test(text)) { vocab++; console.log("  leak vocabulary on " + s.who); }
     for (const c of codes) if (c !== s.who && alone(s.html, c)) { cross++; console.log("  " + s.who + " carries " + c); }
     if (s.html.includes("Invalid Date")) invalid++;
     for (const row of book.sales) if (row.customer === s.who && row.note
@@ -4916,12 +4917,19 @@ await (async () => {
      excluded: it is history and describes the code as it was. The banned fragments are
      built by concatenation so this section does not report itself. */
   const fs = await import("node:fs");
-  const KG = "K" + "g", kg = "k" + "g";
-  const ALLOW = new Set(["settled", "rebate", "ref", "costPer", "value"].map((p) => p + KG));
+  const MASS = "K" + "g", mass = "k" + "g";
+  const ALLOW = new Set(["settled", "rebate", "ref", "costPer", "value"].map((p) => p + MASS));
+  /* 19 Oct 2026: the unit is a PART of an identifier, never two letters inside a word: pkg, backgrounds and checkGrid
+     are innocent, while the bare unit with an underscore, a capital or a digit beside it names a mass */
+  const parts = (w) => w.split(/[_$]+|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])/);
   const bannedWord = (w) => {
-    if (w === kg || ALLOW.has(w)) return false;
-    return w.includes(KG) || (w.startsWith(kg) && w.length > 2) || (w.endsWith(kg) && w.length > 2);
+    if (w === mass || ALLOW.has(w)) return false;
+    return parts(w).some((p) => p.toLowerCase() === mass || p.toLowerCase() === mass + "s");
   };
+  for (const w of ["p" + mass, "pac" + mass + "es", "bac" + mass + "rounds", "chec" + MASS + "rid", mass, "settled" + MASS])
+    ok(!bannedWord(w), "a word that only holds the two letters, or the bare data field, is not a unit identifier: " + w);
+  for (const w of [mass + "Price", "per" + MASS, "_" + mass, "units_" + mass, mass + "2", "per" + MASS + "Rate", MASS + "s", mass.toUpperCase() + "_PRICE"])
+    ok(bannedWord(w), "a unit identifier is still banned: " + w);
   const files = [
     "master/salt_command.html",
     ...fs.readdirSync("engine").filter((f) => f.endsWith(".mjs")).map((f) => "engine/" + f),
@@ -8269,7 +8277,7 @@ await (async () => {
 section("two themes: Night and Tide, chosen per device (11 Oct 2026)");
 if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
   /* His word of 11 Oct 2026: two themes, Night and Tide, kept per device (localStorage salt-look), Tide until one is chosen, and a choice sheet
-     over a device's first open; a switch in the rail changes it later. This section is the Desk; the Counter and Salt Account follow. The four times
+     over a device's first open; a switch in the rail changes it later. This section is the Desk; the Counter and Salt Admin follow. The four times
      of day (05 Oct 2026, retired 09 Oct 2026) stay retired: no clock, no cross-fade, no picker of times, and the checks that fail if any returns are
      kept. Night is the design system's :root as drawn, Tide its :root[data-theme="tide"]. Each check below was proved red by its own mutation
      (test/two-themes.mutations.json, run with tools/section.mjs). */
@@ -8510,7 +8518,7 @@ if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked
   await (await import("./counter-two-themes.mjs")).run({ ok });
 })();
 
-section("Salt Account wears the recipes: Table, Product tag and Metric row, no restated geometry, 4.5:1, 44px and 11px on both themes (12 Oct 2026)");
+section("Salt Admin wears the recipes: Table, Product tag and Metric row, no restated geometry, 4.5:1, 44px and 11px on both themes (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-page-css.mjs")).run({ ok, pageWork });
 })();
@@ -10482,7 +10490,8 @@ await (async () => {
         "each card ships a drawn QR matrix, so the code is the image the Share sheet carries");
       /* the same laws the statements live by: no seller's vocabulary, and no other party's code */
       const words = send.replace(/<style>[\s\S]*?<\/style>/g, " ");
-      ok(!/\b(cost|margin|tier|floor|shrink|profit)/i.test(words.replace(/[\s\S]*?var ROWS/, "")),
+      /* 19 Oct 2026: the sheet's script is read too, so Math.floor is the language's, never the seller's word */
+      ok(!/(?<!Math\.)\b(cost|margin|tier|floor|shrink|profit)/i.test(words.replace(/[\s\S]*?var ROWS/, "")),
         "and the sheet speaks none of the seller's vocabulary");
       ok(!existsSync(join(root, "2026-08", "_send_2026-08-01.html")),
         "an archive issue gets no send sheet, having no password and no link to send");
@@ -11602,8 +11611,9 @@ section("27 Sep 2026: tools/section.mjs runs one section as a shard does and nam
 await (async () => {
   /* His instruction of 27 Sep 2026: one section on its own, and its checks proved red, with no upkeep. The tool reads the
      sections through readSuite and runs one through runShard, the two things npm test itself stands on, so what is left to
-     drive here is its own: the needle, the pick, the verdict, the lines a fold writes (--book), the edit put back, the refusal
-     while a run is live, and two runs end to end on v532, whose check on a field no correction may set one master mutation
+     drive here is its own: the needle, the pick, the verdict, the lines a fold writes (--book), the edit put back, checkout
+     mutations run on a lane's copy of the checkout (19 Oct 2026: never the checkout itself, so a run live here stops nothing),
+     the lanes, and two runs end to end on v532, whose check on a field no correction may set one master mutation
      turns red. The tool is started with SUITE_SHARD and SALT_MASTER unset, so it must set both itself. */
   const T = await import("../tools/section.mjs");
   const S = await import("../tools/suite-split.mjs");
@@ -11674,13 +11684,59 @@ await (async () => {
   const target = join(dir, "target.txt");
   writeFileSync(target, "needle\n");
   writeFileSync(join(dir, "edit.json"), JSON.stringify([{ name: "edit", file: "test/tmp/section-tool/target.txt", find: "needle", replace: "moved" }]));
+  /* the lanes: the cores less two, the runs free memory holds at 1.8 GB, --jobs and the mutations, the least, never under one */
+  const G = 1024 ** 3, ln = [T.lanesFor(0, 16, 40 * G, 123), T.lanesFor(4, 16, 40 * G, 123), T.lanesFor(0, 16, 9 * G, 123), T.lanesFor(0, 16, 40 * G, 3), T.lanesFor(0, 2, 0, 5)];
+  ok(JSON.stringify(ln) === "[14,4,3,3,1]",
+    "checkout mutations run on the cores less two, held by --jobs, by the runs three quarters of free memory holds and by their count, and never on none: " + JSON.stringify(ln));
+
+  /* a lane's copy is used only after the section ran green on it unmutated */
+  const lg = [threw(() => T.laneGreen(green, 2)), threw(() => T.laneGreen(red, 2)), threw(() => T.laneGreen(crash, 2))];
+  ok(lg[0] === null && /lane 2's copy .* not green/.test(lg[1] || "") && /not green/.test(lg[2] || ""),
+    "a lane's copy where the section is not green unmutated, red or crashed, is refused before any mutation runs there: " + JSON.stringify(lg));
+
+  /* the pool: each lane its own setup, in the jobs' order; a lane whose setup failed fails the job it took and takes no more */
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const got = await Promise.all(T.pool(Array.from({ length: 6 }, (_, k) => async (made) => { await wait(20 + (k % 3) * 5); return made; }), 3, (n) => "lane" + n));
+  const bad = T.pool(Array.from({ length: 6 }, (_, k) => async (made) => { await wait(20); return made; }), 3, (n) => { if (n === 1) throw new Error("no copy"); return "lane" + n; });
+  const settled = await Promise.allSettled(bad);
+  const pl = { got, lanes: new Set(got).size, failed: settled.filter((x) => x.status === "rejected").map((x) => x.reason.message), fine: settled.filter((x) => x.status === "fulfilled").length };
+  ok(pl.lanes === 3 && got.slice(0, 3).join() === "lane0,lane1,lane2" && JSON.stringify(pl.failed) === '["no copy"]' && pl.fine === 5,
+    "the pool hands each lane what its own setup made, and a lane whose setup failed fails one job and leaves the rest to the others: " + JSON.stringify(pl));
+
+  /* a shard run in another root: its file there, so its imports and its working folder are that root's */
+  const other = join(dir, "root");
+  mkdirSync(join(other, "test"), { recursive: true });
+  const seenAt = [];
+  await S.runShard({ prelude: 'console.log("at " + import.meta.url + " " + process.cwd());', footer: "" }, "root-" + process.pid, [{ k: 0, text: "" }], (l) => seenAt.push(l), {}, other);
+  const atLine = seenAt.find((l) => l.startsWith("at ")) || "";
+  ok(atLine.includes((await import("node:url")).pathToFileURL(join(other, "test")).href + "/.shard-root-") && atLine.endsWith(" " + other) && !existsSync(S.shardFile("root-" + process.pid, other)),
+    "a shard given another root is written into its test folder and runs there, and its file is gone after: " + JSON.stringify(atLine));
+
+  /* the copy: every entry but .git, .claude, node_modules and live shard files; node_modules a junction; .git naming the git folder */
+  const from = join(dir, "from"), to = join(dir, "to");
+  rmSync(from, { recursive: true, force: true }); rmSync(to, { recursive: true, force: true });
+  for (const d of ["test", "stmt", ".git", ".claude", "node_modules/lib"]) mkdirSync(join(from, d), { recursive: true });
+  writeFileSync(join(from, "stmt", "a.js"), "a"); writeFileSync(join(from, "test", ".shard-x.mjs"), ""); writeFileSync(join(from, "test", "keep.mjs"), "k");
+  writeFileSync(join(from, "node_modules", "lib", "i.js"), "i"); writeFileSync(join(from, ".git", "HEAD"), "h");
+  T.copyCheckout(from, to, "C:/somewhere/.git");
+  const cp = { a: existsSync(join(to, "stmt", "a.js")), keep: existsSync(join(to, "test", "keep.mjs")), shard: existsSync(join(to, "test", ".shard-x.mjs")),
+    claude: existsSync(join(to, ".claude")), git: existsSync(join(to, ".git")) && readFileSync(join(to, ".git"), "utf8"), link: lstatSync(join(to, "node_modules")).isSymbolicLink(),
+    through: existsSync(join(to, "node_modules", "lib", "i.js")) };
+  unlinkSync(join(to, "node_modules"));
+  ok(cp.a && cp.keep && !cp.shard && !cp.claude && cp.git === "gitdir: C:/somewhere/.git\n" && cp.link && cp.through && existsSync(join(from, "node_modules", "lib", "i.js")),
+    "a lane's copy holds the checkout but its git folder, .claude and live shard files, links node_modules and names the git folder in a .git file: " + JSON.stringify(cp));
+
+  /* a checkout mutation runs on a copy: a run live here (a shard file) stops nothing, and the checkout's file is never edited */
   const planted = S.shardFile("probe-" + process.pid);
   writeFileSync(planted, "");
-  let refused = { code: null, out: "" };
-  try { refused = await tool([V532, "--mutations", join(dir, "edit.json")]); } finally { rmSync(planted, { force: true }); }
-  ok(refused.code === 1 && refused.out.startsWith("refused: ") && refused.out.includes("test/.shard-probe-" + process.pid + ".mjs")
-      && !/passed/.test(refused.out) && readFileSync(target, "utf8") === "needle\n",
-    "a checkout mutation is refused before anything runs while a shard file says a run is live here, and its file is untouched: " + JSON.stringify(refused.out.trim().slice(0, 300)));
+  let onCopy = { code: null, out: "" }, seen = [];
+  const watch = setInterval(() => seen.push(readFileSync(target, "utf8")), 50);
+  try { onCopy = await tool([V532, "--mutations", join(dir, "edit.json")]); } finally { clearInterval(watch); rmSync(planted, { force: true }); }
+  const ue = onCopy.out.split("\n").find((l) => / edit: /.test(l)) || "";
+  ok(onCopy.code === 1 && /^unmutated: \d+ passed, 0 failed/m.test(onCopy.out) && /checkout mutations, 1 at a time/.test(onCopy.out) && ue.startsWith("UNNOTICED edit: ")
+      && readFileSync(target, "utf8") === "needle\n" && seen.length > 0 && seen.every((t) => t === "needle\n"),
+    "a checkout mutation runs on a lane's copy while a shard file says a run is live here, and the checkout's file is never edited: "
+    + JSON.stringify({ out: onCopy.out.trim().slice(0, 300), seen: [...new Set(seen)] }));
 
   writeFileSync(join(dir, "red.json"), JSON.stringify([{ name: "unknown", find: "c.verdict='unknown'", replace: "c.verdict='unread'" }]));
   writeFileSync(join(dir, "quiet.json"), JSON.stringify([{ name: "stamp", find: "const LAST_UPDATED='", replace: "const LAST_UPDATED_PROBE=1;const LAST_UPDATED='" }]));
@@ -13124,7 +13180,7 @@ await (async () => {
     const dO = q2 ? dR({ at: q2.at, payload: q2.payload }, mirrorO) : { skip: "nothing queued" };
     wRd.eval("sales.splice(sales.findIndex(function(s){return s.rid==='adv-1';}),1);networkStats=window.__ns;recompute();queue=[];");
 
-    /* 18 Oct 2026: the desk's Approve card (apCard) is gone; Counter Admin draws a redemption now. The drafter's row is asserted above. */
+    /* 18 Oct 2026: the desk's Approve card (apCard) is gone; Salt Admin draws a redemption now. The drafter's row is asserted above. */
   } finally { try { wRd.close(); } catch (e) { /* best effort */ } }
 })();
 
@@ -13264,7 +13320,7 @@ await (async () => {
     await wK.eval("apLoad(true)");
     ok(rdK("localStorage.getItem('saltRefusedAts')") === JSON.stringify([BELOW]), "and a failed read does not overwrite it with nothing");
 
-    /* 18 Oct 2026: the refused panel (apRef, apDraw, Withdraw) left with the Approve tab; Counter Admin owns refusals and the withdrawal. */
+    /* 18 Oct 2026: the refused panel (apRef, apDraw, Withdraw) left with the Approve tab; Salt Admin owns refusals and the withdrawal. */
   } finally { try { wK.close(); } catch (e) { /* best effort */ } }
 
   /* ---- THE LOAD, booted for real with a refused entry in storage ----
@@ -13887,7 +13943,7 @@ await (async () => {
     wB.eval("sales").push(own, b1, b2,
       fx("sx04", dayB(3), "CX9-BB", 100), fx("sx05", dayB(2), "CX9-BB-R", 120, { rev: "R2" }), fx("sx06", dayB(1), "CX9-BB-R", 130, { rev: "R2" }));
     ok(wB.pbOwnRate("CX9-AA").rate === 160, "the desk's board reads the same own rate off the code and the bucket, 160");
-    /* 18 Oct 2026: the order card and its usual rate (ordUsual) left the Desk; Counter Admin prices the order now. */
+    /* 18 Oct 2026: the order card and its usual rate (ordUsual) left the Desk; Salt Admin prices the order now. */
   } finally { wB.close(); }
 })();
 
@@ -14616,7 +14672,7 @@ await (async () => {
   ok(m28.amended.join() === "CZ9-TBC" && m28.added.join() === "CZ9-SEG" && m28.kept.join() === "CZ1-OTH" && m28.bio.bio["CZ9-TBC"].raw === "New Name (Seg)" && m28.bio.bio["CZ9-TBC"].was === "Old Name (to be confirmed)" && m28.bio.bio["CZ9-TBC"].note === "kept",
     "the laptop's pull takes an amended spelling from the vault and keeps the old one as was, so the next seed cannot undo it");
 
-  /* 18 Oct 2026: the phone half (the Amend ID pane, its plan and the Approve card for a rename) left the Desk: Counter Admin files the
+  /* 18 Oct 2026: the phone half (the Amend ID pane, its plan and the Approve card for a rename) left the Desk: Salt Admin files the
      name and draws the card. The engine, drafter, fold and vault halves above are what this section still holds. */
 })();
 
@@ -14831,7 +14887,7 @@ await (async () => {
     w31.eval("vaultNames={};revealed=false;switchTab('map');");
     ok(!/Place parties from their recorded places/.test(rd31("document.querySelector('.sec.on').textContent")), "and with the names locked the button is not there");
 
-    /* 18 Oct 2026: the desk's Approve card for a place entry (apCard) is gone; Counter Admin draws it. */
+    /* 18 Oct 2026: the desk's Approve card for a place entry (apCard) is gone; Salt Admin draws it. */
   } finally {
     await new Promise((r) => setTimeout(r, 200)); try { w31.close(); } catch (e) { /* best effort */ }
     rmSync(tmp31, { recursive: true, force: true });
@@ -15476,7 +15532,8 @@ await (async () => {
     const one = d.querySelector('#osheet input[name="osize"][value="1"]');
     one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
     ok(/^RM 110/.test(d.querySelector("#osheet .salt-sheet__foot").textContent), "a tap on another size moves the total with it");
-    ok(!/salt|oil|Gold/i.test(d.getElementById("osheet").outerHTML.replace(/salt-[a-z_-]+/g, "")),
+    /* 19 Oct 2026: whole words, so toilet or Golden, or a random id, is not a product or a level */
+    ok(!/\b(salt|oil|gold)\b/i.test(d.getElementById("osheet").outerHTML.replace(/salt-[a-z_-]+/g, "")),
       "and the sheet carries no product word and no level's name, in its text or its attributes");
     d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     ok(!d.getElementById("osheet"), "Escape closes it");
@@ -16468,7 +16525,7 @@ await (async () => {
   const wake = async (summary) => { const sw = runSw(summary), waits = []; sw.L.push({ waitUntil: (pr) => waits.push(pr) }); await Promise.all(waits); return sw.shown[0]; };
   const bOrd = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 1, placed: 1 });
   const bRow = await wake({ ok: true, pending: 2, refused: 0, countDue: [], orders: 0 });
-  ok(bOrd && bOrd.t === "New order" && /^Acknowledge it on Counter Admin./.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders/newest"
+  ok(bOrd && bOrd.t === "New order" && /^Acknowledge it on Salt Admin./.test(bOrd.opt.body) && bOrd.opt.data.url === "./desk#orders/newest"
     && bRow && bRow.t === "Waiting on you" && bRow.opt.body === "Today: approve 2 rows." && bRow.opt.data.url === "./",
     "an order waiting is the banner's title and opens Orders; without one the banner is as it was: " + JSON.stringify({ bOrd, bRow }));
   {
@@ -16814,7 +16871,7 @@ await (async () => {
   ok(JSON.stringify(narrow85) === '["ledger (max-width:819px)"]',
     "the ledger re-flows its same cells below 820px of its own width, above the 765px its two-row shape needed: " + JSON.stringify(narrow85));
 })();
-section("S1 1.1: Salt Account's link moves are POSTs, so Approve, Withdraw and Restore tapped on the page move the link");
+section("S1 1.1: Salt Admin's link moves are POSTs, so Approve, Withdraw and Restore tapped on the page move the link");
 await (async () => {
   /* 24 SEP 2026 (B01): moveLink called refs(path) with no body, refs sends a GET when it has none,
      and every move on a link is a POST-only route, so each tap came back 405 and nothing moved. The
@@ -16884,11 +16941,11 @@ await (async () => {
       "and a tap on Restore opens it again: " + JSON.stringify({ revoked: (await stored()).revoked, msg: D.getElementById("rmsg").textContent }));
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S1 1.10: Salt Account is named Salt Account and its manifest is fetched with credentials; the customer's page is unchanged");
+section("S1 1.10: Salt Admin is named Salt Admin and its manifest is fetched with credentials; the customer's page is unchanged");
 await (async () => {
   /* 24 SEP 2026 (H10): a manifest link without crossorigin is fetched with no cookies, so behind Access
      his own manifest was refused and the phone saved /all with no name; and the page's two titles said
-     Salt Counter while the manifest says Salt Account. His route only: the customer's page keeps both. */
+     Salt Counter while the manifest says Salt Admin. His route only: the customer's page keeps both. */
   const { landingPage } = await import("../stmt/page.js");
   const own = landingPage("", "n110", { master: "mp110", accounts: [] });
   const cust = landingPage("aaaa-bbbb", "n110", null);
@@ -16897,13 +16954,13 @@ await (async () => {
   const o = tags(own), c = tags(cust);
   ok(o.manifest === '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">',
     "his page asks for its manifest with credentials, so the Access cookie goes with it: " + o.manifest);
-  ok(o.title === "Salt Account" && o.apple === "Salt Account", "his page is Salt Account in the tab and on the iPhone: " + JSON.stringify(o));
+  ok(o.title === "Salt Admin" && o.apple === "Salt Admin", "his page is Salt Admin in the tab and on the iPhone: " + JSON.stringify(o));
   ok(c.manifest === '<link rel="manifest" href="/manifest.webmanifest">' && c.title === "Salt Counter" && c.apple === "Salt Counter"
-    && !/crossorigin|Salt Account|Salt Desk|Salt Admin/.test(cust),
+    && !/crossorigin|Salt Admin|Salt Desk|Salt Admin/.test(cust),
     "and the customer's page is unchanged: Salt Counter, its public manifest, no credentials asked: " + JSON.stringify(c));
   /* the worker a customer's phone installs ships as it is written, comments and all: it names none of his surfaces either */
   const sw110 = await (await (await import("../stmt/worker.js")).default.fetch(new Request("https://k7m3p2.example/sw.js"), { STMT: new KV() })).text();
-  ok(sw110.length > 1000 && /showNotification/.test(sw110) && !/Salt Account|Salt Desk|Salt Admin|Salt Command/i.test(sw110),
+  ok(sw110.length > 1000 && /showNotification/.test(sw110) && !/Salt Admin|Salt Desk|Salt Admin|Salt Command/i.test(sw110),
     "and the service worker a customer's phone installs names none of his surfaces, in a comment or anywhere: "
     + JSON.stringify((sw110.match(/Salt (Account|Desk|Admin|Command)/gi) || []).slice(0, 3)));
 })();
@@ -16985,7 +17042,7 @@ await (async () => {
       "the declined link reads Not approved and only the two still pending read Waiting: " + JSON.stringify(words));
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
-section("S1 1.21: Salt Account's Review opens an account read only, with its orders and links from his gated route and no form");
+section("S1 1.21: Salt Admin's Review opens an account read only, with its orders and links from his gated route and no form");
 await (async () => {
   /* 24 SEP 2026 (M22): an account he opens under the master has no session, because the owner does not
      order, so the page read no orders and drew "None yet." under a live order form and Notify me for
@@ -17302,7 +17359,7 @@ await (async () => {
     /* ---- every tier's link made: four, and nothing said to be missing ---- */
     const D1 = await panel();
     const heads1 = [...D1.querySelectorAll("#glist .ghead")].map((x) => x.textContent), text1 = D1.getElementById("glist").textContent;
-    ok(D1.querySelectorAll("#glist .glink").length === 1 && heads1.join() === "Standing link" && !/five|Titanium|Platinum|Gold|Silver|Bronze/i.test(text1) && !/Only \d/.test(text1),
+    ok(D1.querySelectorAll("#glist .glink").length === 1 && heads1.join() === "Standing link" && !/\b(five|titanium|platinum|gold|silver|bronze)\b/i.test(D1.getElementById("glist").innerHTML.replace(/<[^>]*>/g, " ")) && !/Only \d/.test(text1),
       "the panel opens on the one standing link, named by no level and with nothing said to be missing: " + JSON.stringify({ heads1, n: D1.querySelectorAll("#glist .glink").length }));
 
     /* ---- Bronze's kept link, and a pending link its associate withdrew ---- */
@@ -17327,7 +17384,7 @@ await (async () => {
       "and it carries no Approve or Decline, Restore being the way back: " + JSON.stringify(cardOf(gone) && [...cardOf(gone).querySelectorAll("button")].map((b) => b.textContent)));
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
-section("S1 1.35: Salt Account's Copy and Sign-in link say what really happened when the clipboard or the share sheet refuses");
+section("S1 1.35: Salt Admin's Copy and Sign-in link say what really happened when the clipboard or the share sheet refuses");
 await (async () => {
   /* 24 SEP 2026 (L38, L40): Copy message and Copy link called writeText without awaiting it, so a refused
      clipboard never reached the catch and the button said Copied over nothing; and Sign-in link read
@@ -17753,7 +17810,7 @@ await (async () => {
     } finally { try { W87.close(); } catch (e) { /* best effort */ } }
   } finally { globalThis.fetch = realFetch87; }
 })();
-section("S9 9.1: Salt Account opens on Needs you, a card a thing with its one action on it");
+section("S9 9.1: Salt Admin opens on Needs you, a card a thing with its one action on it");
 await (async () => {
   /* THE PLAN'S SECTION 5 (his "all recommended" of 24 Sep 2026): his home is what waits on him, each card
      carrying the action it needs. Driven end to end on his rendered page against the real Worker: an
@@ -17881,7 +17938,7 @@ section("S9 9.2: Accounts is one list for Send and Review, found by a word, narr
 await (async () => {
   /* THE PLAN'S SECTION 5: Accounts replaces Send and Review with one list, chips for how and when each was
      opened, alerts, owes, locked and no account, a search and filters above it, and a row opening the account.
-     Salt Account's places are the App bar's on a phone and the Desk rail's on a desk. Driven on his rendered page
+     Salt Admin's places are the App bar's on a phone and the Desk rail's on a desk. Driven on his rendered page
      against the real Worker. */
   const W = (await import("../stmt/worker.js")).default;
   const { JSDOM } = await import("jsdom");
@@ -18128,9 +18185,9 @@ await (async () => {
       "and Done leaves the skipped one waiting on Needs you");
   } finally { globalThis.fetch = realFetch; try { if (win) win.close(); } catch (e) { /* best effort */ } }
 })();
-section("S9 9.7: Salt Account has its own icon, the ring with a keyhole, and an ended Access session gives way to Sign in again");
+section("S9 9.7: Salt Admin has its own icon, the ring with a keyhole, and an ended Access session gives way to Sign in again");
 await (async () => {
-  /* HIS D13 OF 24 SEP 2026 (answered with "all recommended"): Salt Account gets its own icon, drawn like the
+  /* HIS D13 OF 24 SEP 2026 (answered with "all recommended"): Salt Admin gets its own icon, drawn like the
      Counter's and naming nothing, and when the Access session behind it lapses the page says so and offers
      Sign in again, where every tap read "Failed to fetch". */
   const W = (await import("../stmt/worker.js")).default;
@@ -18139,7 +18196,7 @@ await (async () => {
   const { JSDOM } = await import("jsdom");
   const { moduleText } = await import("../tools/stmt-icon.mjs");
   ok(moduleText() === readFileSync(join(REPO, "stmt", "icons.js"), "utf8") && /export const ADMIN_ICON_PNG_B64 = "/.test(moduleText()),
-    "stmt/icons.js is the generator's own bytes, Salt Account's icon included");
+    "stmt/icons.js is the generator's own bytes, Salt Admin's icon included");
   const kv = new KV();
   const MASTER = "mp-s9-7";
   const u = C.newUsername(), pw = C.newPassword(), ck = await C.contentKey("s9-7", u);
@@ -18180,7 +18237,7 @@ await (async () => {
 
     /* ---- the icon ---- */
     const kr = await site("/icon-key.png"), cr = await site("/icon.png");
-    ok(kr.status === 200 && /image[/]png/.test(kr.headers.get("content-type")), "Salt Account's icon is served as a PNG, with no Access needed, as a home screen fetches it");
+    ok(kr.status === 200 && /image[/]png/.test(kr.headers.get("content-type")), "Salt Admin's icon is served as a PNG, with no Access needed, as a home screen fetches it");
     const K = png(Buffer.from(await kr.arrayBuffer())), P = png(Buffer.from(await cr.arrayBuffer()));
     const S = K.w, mid = (S - 1) / 2, BRASS = "197,160,89", OBS = "5,8,10";
     const stem = [Math.round(mid), Math.round(mid + S * 0.09)], ring = [Math.round(mid + S * 0.29), Math.round(mid)], corner = [8, 8];
@@ -18190,9 +18247,9 @@ await (async () => {
     ok(K.at(...ring) === P.at(...ring) && K.at(...ring) !== OBS && K.at(...corner) === OBS && P.at(...corner) === OBS,
       "on the Counter's own ring and tile: " + JSON.stringify([K.at(...ring), P.at(...ring)]));
     const mf = await (await site("/all/manifest.webmanifest", acc)).json();
-    ok(mf.name === "Salt Account" && mf.icons.length === 1 && mf.icons[0].src === "/icon-key.png", "his manifest names it: " + JSON.stringify(mf.icons));
-    /* his Q6 of 28 Sep 2026: Salt Account whole under the icon, which an iPhone shows up to twelve characters */
-    ok(mf.short_name === "Salt Account" && mf.short_name.length <= 12, "and its home-screen name is Salt Account, whole in twelve characters: " + JSON.stringify(mf.short_name));
+    ok(mf.name === "Salt Admin" && mf.icons.length === 1 && mf.icons[0].src === "/icon-key.png", "his manifest names it: " + JSON.stringify(mf.icons));
+    /* his Q6 of 28 Sep 2026: Salt Admin whole under the icon, which an iPhone shows up to twelve characters */
+    ok(mf.short_name === "Salt Admin" && mf.short_name.length <= 12, "and its home-screen name is Salt Admin, whole in twelve characters: " + JSON.stringify(mf.short_name));
     const ownHtml = await (await site("/all", acc)).text(), custHtml = await (await site("/")).text();
     ok(/<link rel="apple-touch-icon" href="[/]icon-key[.]png">/.test(ownHtml) && /<link rel="apple-touch-icon" href="[/]icon[.]png">/.test(custHtml) && !custHtml.includes("icon-key"),
       "his page's iPhone icon is his, and the customer's page keeps the Counter's and never names his");
@@ -18233,7 +18290,7 @@ await (async () => {
     ok(await until(() => shown(W4, "aEnded")), "and an account opened under View as them meets the ended session the same way");
   } finally { globalThis.fetch = realFetch; for (const w of wins) { try { w.close(); } catch (e) { /* best effort */ } } }
 })();
-section("S9 9.8: Salt Account counts the orders waiting on the desk and the desk counts the links waiting in Salt Account, each a figure with no link and no name");
+section("S9 9.8: Salt Admin counts the orders waiting on the desk and the desk counts the links waiting in Salt Admin, each a figure with no link and no name");
 await (async () => {
   /* THE PLAN'S SECTION 5: two owner apps remain, and each counts the other's waiting items. The desk tells the
      site its own count as a mark: since the S9 9.8 fix the desk's PAGE sends the Waiting on you figure its Today row
@@ -18262,7 +18319,7 @@ await (async () => {
   link("revk-eeee", { approved: false, revoked: true }); link("stnd-ffff", { standing: true, level: "Silver" });
   link("oldl-gggg", {});   /* an older link carries no approved field at all, and is open */
 
-  /* ---- the site's half: the desk's figure, taken on the desk key and shown on Salt Account ---- */
+  /* ---- the site's half: the desk's figure, taken on the desk key and shown on Salt Admin ---- */
   const post = (body, h) => site("/desk/waiting", { method: "POST", headers: Object.assign({ "content-type": "application/json" }, h), body: JSON.stringify(body) });
   const refused = [(await post({ n: 3 }, {})).status, (await post({ n: -1 }, desk)).status, (await post({ n: 2.5 }, desk)).status, (await post({ n: "3" }, desk)).status,
     (await site("/desk/waiting", { headers: desk })).status];
@@ -18285,7 +18342,7 @@ await (async () => {
   const relayed = await relay({ n: 1 }, true);
   ok(relayed.status === 200 && mark() && mark().n === 1 && !!mark().at, "and on the key it sets the site's mark, with its moment: " + JSON.stringify(mark()));
 
-  /* ---- Salt Account's line ---- */
+  /* ---- Salt Admin's line ---- */
   const TEAM = "maakmal", AUD = "aud-s9-8", KID = "kid-s9-8";
   const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
   const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
@@ -18316,7 +18373,7 @@ await (async () => {
   /* ---- the desk's page: the relay carries the count, and the rail's foot says it ---- */
   const kvd = await worker.fetch(new Request("https://salt-command.example/orders", { headers: { "X-Salt-Key": "k98" } }), Object.assign({}, denv, { SALT_WRITE_KEY: "k98" }));
   const rj = await kvd.json();
-  ok(kvd.status === 200 && rj.links === 2, "the desk's own read of the orders carries the links waiting in Salt Account: " + JSON.stringify(rj.links));
+  ok(kvd.status === 200 && rj.links === 2, "the desk's own read of the orders carries the links waiting in Salt Admin: " + JSON.stringify(rj.links));
   const { openMaster } = await import("../tools/payload.mjs");
   const { w } = await openMaster();
   try {
@@ -18325,9 +18382,9 @@ await (async () => {
     let answer = { ok: true, orders: [], links: 2 };
     w.fetch = async () => ({ ok: true, status: 200, json: async () => answer });
     await w.eval("ordLoad(true)");
-    ok(foot() === "2 links wait in Salt Account" && !w.document.querySelector(".rail .railfoot a"), "the rail's foot counts them, with no link: " + JSON.stringify(foot()));
+    ok(foot() === "2 links wait in Salt Admin" && !w.document.querySelector(".rail .railfoot a"), "the rail's foot counts them, with no link: " + JSON.stringify(foot()));
     answer = { ok: true, orders: [], links: 1 }; await w.eval("ordLoad(true)");
-    ok(foot() === "1 link waits in Salt Account", "one is one: " + JSON.stringify(foot()));
+    ok(foot() === "1 link waits in Salt Admin", "one is one: " + JSON.stringify(foot()));
     answer = { ok: true, orders: [], links: 0 }; await w.eval("ordLoad(true)");
     ok(foot() === "", "and none says nothing: " + JSON.stringify(foot()));
     /* S9 9.8 FIX: ONE READING, THE DESK'S. Once the orders and the drafts have both been read, the page sends the Waiting
@@ -18899,7 +18956,7 @@ await (async () => {
       "and /all/sheet reads no fail: key, so four hundred of them cost it nothing: " + JSON.stringify({ reads: gets.length, fail: gets.filter((k) => k.startsWith("fail:")).length }));
   } finally { globalThis.fetch = realFetch; }
 })();
-section("2.5: Salt Account opens in two rounds of reads: the heads at once, every account's keys in bulk, no tick rewrite, each QR encoded once");
+section("2.5: Salt Admin opens in two rounds of reads: the heads at once, every account's keys in bulk, no tick rewrite, each QR encoded once");
 await (async () => {
   /* The account list read two keys an account one after another (84 for 41 codes) and listed every sent: tick before
      it began, so it opened in 3 to 7 s. Sixty invented codes and an issue make 120 keys, over the bulk form's 100, so
@@ -20325,10 +20382,10 @@ await (async () => {
       "an Android browser can use the account without installing it");
   } finally { for (const x of [a, b, c, d]) { try { if (x) x.win.close(); } catch (e) { /* best effort */ } } }
 })();
-section("S9 fix S9R-2: the desk's count reaches Salt Account with its reading's own moment, and a stale desk never overwrites a newer reading");
+section("S9 fix S9R-2: the desk's count reaches Salt Admin with its reading's own moment, and a stale desk never overwrites a newer reading");
 await (async () => {
   /* Approve polls the drafts alone, and each poll that moved the count sent it over orders read hours before, which the
-     site stamped now: Salt Account said a stale figure was fresh, and a desk left open on Approve overwrote another's. */
+     site stamped now: Salt Admin said a stale figure was fresh, and a desk left open on Approve overwrote another's. */
   const S = (await import("../stmt/worker.js")).default;
   const D = (await import("../src/worker.js")).default;
   const skv = new KV();
@@ -20401,9 +20458,9 @@ await (async () => {
     ok(told.length === 4 && told[3].n === 2 && since(3, tB), "once it has, the same figure goes again, so its moment moves: " + JSON.stringify(told.slice(3)));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 })();
-section("S9 fix S9R-2b: Salt Account's desk line says an order has moved since the desk's reading, where it went on saying the old figure waits");
+section("S9 fix S9R-2b: Salt Admin's desk line says an order has moved since the desk's reading, where it went on saying the old figure waits");
 await (async () => {
-  /* The desk's page is the one writer of the figure, and on his phone the desk and Salt Account are never open together: an
+  /* The desk's page is the one writer of the figure, and on his phone the desk and Salt Admin are never open together: an
      order placed after the desk last looked left "Nothing waits on the desk, as at 09:00" standing as fact. */
   const W = (await import("../stmt/worker.js")).default;
   const C = await import("../tools/stmt-crypto.mjs");
@@ -20580,7 +20637,7 @@ await (async () => {
     const untick = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: false }) });
     ok(untick.status === 200 && !kv88.m.has("sent:2026-09-01:aaaa-bbbb"), "and it can be taken back");
     /* 2.5: the rewrite of a tick carrying the old 61-day lapse is retired (the store held none); the read writes
-       nothing, which the section "2.5: Salt Account opens in two rounds of reads" holds */
+       nothing, which the section "2.5: Salt Admin opens in two rounds of reads" holds */
     const stale = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-08-01", sent: true }) });
     const unknown = await call88("/all/sent/zzzz-zzzz", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "application/json" }, body: JSON.stringify({ issue: "2026-09-01", sent: true }) });
     const notJson = await call88("/all/sent/aaaa-bbbb", { method: "POST", headers: { "cf-access-jwt-assertion": tok88, "content-type": "text/plain" }, body: "sent" });
@@ -21219,7 +21276,7 @@ await (async () => {
       "and the line under it names what the month filters and what stays the whole account's (C9): " + JSON.stringify(mfn));
     pills[0].click();
     ok(new Set(shown()).size === months.length, "and All brings every line back");
-    /* C13 (his yes of 29 Sep 2026, option a): the issues sealed beside it are off the Counter, kept on disk and on Salt Account */
+    /* C13 (his yes of 29 Sep 2026, option a): the issues sealed beside it are off the Counter, kept on disk and on Salt Admin */
     ok(!D.getElementById("stmtFoot") && !D.getElementById("stmtBack") && !/ISSUE|Earlier statements/.test(D.getElementById("pStmt").textContent),
       "the issues sealed beside the live document are never drawn on the Counter");
     /* This device: the phone was filed again on the way in, and Turn off drops it and keeps it off */
@@ -21674,7 +21731,9 @@ await (async () => {
     const rfields = [...new Set(rows91.filter((r) => r.reward).flatMap((r) => Object.keys(r.reward)))];
     ok(snap91.products.length >= 1 && rows91.length >= 6 && fields.every((f) => ASSOC_FIELDS.includes(f)) && rfields.every((f) => REWARD_FIELDS.includes(f)),
       "one row per associate per book, on the whitelist and nothing else: " + JSON.stringify(fields));
-    ok(!/margin|profit|floor|cogs/i.test(JSON.stringify(snap91)), "and not one of the seller's words is in it");
+    /* 19 Oct 2026: a word or a part of a camelCase name, never letters inside one */
+    const seller91 = (s) => (s.match(/[A-Za-z]+/g) || []).some((w) => w.split(/(?<=[a-z])(?=[A-Z])/).some((p) => /^(margins?|profits?|floors?|cogs)$/i.test(p)));
+    ok(!seller91(JSON.stringify(snap91)) && seller91('"floorRM"') && !seller91("marginal profitable"), "and not one of the seller's words is in it");
     const roster91 = JSON.parse(readFileSync(FROZEN_BOOK, "utf8")).roster;
     ok(rows91.every((r) => roster91.includes(r.id)) && rows91.every((r) => typeof r.departed === "boolean")
       && !/reason|memorial|note/i.test(JSON.stringify(snap91)),
@@ -22607,7 +22666,7 @@ await (async () => {
     "a hundred misses across the site shut code sign-in everywhere, a fresh address included");
   ok((await call("/open", { u, password: pw }, {}, env, "203.0.113.200")).status === 200, "and the password door is untouched by it");
 })();
-section("S3 3.13: Salt Account shows a customer at the counter a QR and the eight symbols, minted as the sheet opens and never copied or shared");
+section("S3 3.13: Salt Admin shows a customer at the counter a QR and the eight symbols, minted as the sheet opens and never copied or shared");
 await (async () => {
   /* HIS DECISION D2 OF 24 SEP 2026. At the counter the customer's own phone signs in from his screen: a QR their
      camera opens and eight symbols to type in the saved app. The judges: a copy or a share never waits on a key
@@ -23610,7 +23669,7 @@ await (async () => {
   ok(r0.status === 200 && lastTable >= 0 && at > lastTable && board.slice(at + next.length) === "</p></div></body></html>",
     "the guest board ends with what to do next, after the last price: " + JSON.stringify(board.slice(-90)));
   const words0 = board.replace(/<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]*>/g, " ");
-  ok(!/salt command|\bsalt\b|counter/i.test(words0), "and the words carry no brand and no product");
+  ok(!/salt command|\bsalt\b|\bcounter\b/i.test(words0), "and the words carry no brand and no product");   /* 19 Oct 2026: encounter is not the counter */
 
   /* ---- every shut kind: one page, the board's look, the same words ---- */
   const kinds = [["an id nobody holds", "zzzz-zzzz", env], ["a malformed id", "nope", env], ["a withdrawn link", withdrawn.id, env],
@@ -24072,7 +24131,7 @@ await (async () => {
   ok(!/'lang'|LIVE|LANG\b|\/lang/.test(SW.SW_JS) && SW.swScript(["en", "ms"]) === SW.SW_JS,
     "the service worker as served words its banner in English and reads no language from the Cache");
 })();
-section("S13 13.1: every page of the Counter is kept out of the translator, Salt Account's and a guest's included");
+section("S13 13.1: every page of the Counter is kept out of the translator, Salt Admin's and a guest's included");
 await (async () => {
   /* 24 SEP 2026, his decision D12: on a phone set to another language Chrome offers to translate the page, and accepting
      sends an opened statement to a translation service. Each page as it is served, and his own as the route builds it. */
@@ -24084,8 +24143,8 @@ await (async () => {
   const open = await RF.mintRef(env, { label: "open" });
   const pages = [["the door", await get("/")], ["the door with a username", await get("/?u=abcd-efgh")],
     ["a sign-in link", await get("/s/" + "a".repeat(24))], ["a guest board", await get("/g/" + open.id)],
-    ["a shut link", await get("/g/zzzz-zzzz")], ["Salt Account", P.landingPage("", "n131", { master: "m131", accounts: [] })]];
-  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="night"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
+    ["a shut link", await get("/g/zzzz-zzzz")], ["Salt Admin", P.landingPage("", "n131", { master: "m131", accounts: [] })]];
+  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="(?:night|tide)"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
   const off = pages.filter(([, h]) => !root.test(h)).map(([w, h]) => w + ": " + h.slice(0, 80));
   ok(pages.every(([, h]) => h.length > 1000) && !off.length,
     "every page says translate=no on its root and carries Google's notranslate, before anything else: " + JSON.stringify(off));
@@ -24296,14 +24355,14 @@ await (async () => {
     ok(P55.readRefs === undefined, "the publish no longer reads the guest links, since every link reads the one board");
 
     /* ---- the whole publish, driven through main against the stub ---- */
-    const run55 = async (argv, run, key, sleep) => {
+    const run55 = async (argv, run, key, sleep, more) => {
       const was = { SALT_STATEMENTS_DIR: process.env.SALT_STATEMENTS_DIR, STMT_KEY: process.env.STMT_KEY };
       const log = console.log, err = console.error, exit = process.exit, said = [];
       process.env.SALT_STATEMENTS_DIR = root55;
       if (key) process.env.STMT_KEY = key; else delete process.env.STMT_KEY;
       console.log = console.error = (...m) => said.push(m.join(" "));
       process.exit = (c) => { throw new Error("exit " + c); };
-      try { await P55.main(["node", "stmt-publish.mjs", ...argv], { run, out: out55, sleep }); said.push("returned"); }
+      try { await P55.main(["node", "stmt-publish.mjs", ...argv], Object.assign({ run, out: out55, sleep }, more)); said.push("returned"); }
       catch (e) { said.push("threw " + e.message); }
       finally {
         console.log = log; console.error = err; process.exit = exit;
@@ -24330,8 +24389,8 @@ await (async () => {
     ok(saidP.includes("returned") && boards.join() === "guestboard" && gb && gb.products.length > 0 && !("introducer" in gb) && !("levels" in gb),
       "the priced hourly run writes the one guest board and no board per link, per level or per introducer, and no level names: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 0 && cP.length === 11 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001") && cP.includes("kv key get u:0000-0002"),
-      "in eleven spawns, the restock dates among them: one bulk read for account verification, no read of the links at all, no list, and each test account's record read for its fixture: " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 0 && cP.length === 12 && cP.includes("kv key get expected") && cP.includes("kv key get stocklights") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001") && cP.includes("kv key get u:0000-0002"),
+      "in twelve spawns, the restock dates and the last stock lights among them: one bulk read for account verification, no read of the links at all, no list, and each test account's record read for its fixture: " + cP.join());
 
     /* ---- 03 Oct 2026, run 37122717841: the account read-back meets KV's eventual consistency ----
        The store answers the account records' bulk read with what it held BEFORE the put for the first `lag` reads (or
@@ -24428,6 +24487,9 @@ await (async () => {
       && saidN.includes("returned") && gone(sN) && saidL.includes("returned") && gone(sL) && cL.filter((c) => c === "kv key get issue").length === 2,
       "a deploy's publish whose read of the store's issue fails publishes and retires as ever but clears no attempt counter or older tick, and says so in wrangler's words, where it took the failure for a fresh store and cleared them; wrangler's 404, a fresh store, and a lapsed login run once more still clear them for a new issue: "
       + [saidF, saidN, saidL].map((s) => s.slice(-1)).join(" | "));
+
+    /* ---- 19 Oct 2026: a stock light turning wakes the Desk once (test/stock-light-wake.mjs) ---- */
+    await (await import("./stock-light-wake.mjs")).wiring({ ok, run55, wr55, site0, K55 });
   } finally { rmSync(root55, { recursive: true, force: true }); }
 })();
 section("v700: a customer holding an unpaid advance is chased until it is paid, at its slots since S12 12.3");
@@ -24812,7 +24874,7 @@ await (async () => {
   ok(m.state === "failed" && m.why.length === 200 && m.at.length === 40, "and the reason and the moment are capped");
 
   /* ---- 4. THE CARD READS THE RECORD: 18 Oct 2026, the Site orders card (ordCard) left the Desk with its tab, so the sync line it drew
-     is Counter Admin's now; the record and the drain, which are what this section holds, stand ---- */
+     is Salt Admin's now; the record and the drain, which are what this section holds, stand ---- */
 
   /* ---- 5. THE DRAIN: a key it cannot read is named and left alone, and a rewrite goes through a file ---- */
   const corrupt = "{updated:2026-09-19T03:49:18.402Z,desk:cloud,queue:[{at:2026-09-16T09:39:17.951Z,type:SELL}]}";
@@ -25215,7 +25277,10 @@ await (async () => {
   if (!card6) skipData("this book carries no associate, so the card was not built");
   else {
     const flat = JSON.stringify(card6);
-    ok(!/share|star|rank|margin|profit|floor|cogs|toNext|marginMine|marginIntro/i.test(flat),
+    /* 19 Oct 2026: a word or a part of a camelCase name, never letters inside one, so "start" is not a star nor "frank" a rank */
+    const seller6 = (s) => (s.match(/[A-Za-z]+/g) || []).some((w) => w === "toNext"
+      || w.split(/(?<=[a-z])(?=[A-Z])/).some((p) => /^(share|shares|star|stars|rank|margin|profit|floor|cogs)$/i.test(p)));
+    ok(!seller6(flat) && seller6("marginMine") && seller6('"shareRM"') && !seller6("started frankly"),
       "the card carries no share of his revenue, no stars, no rank and no margin: " + (flat.match(/share|star|rank|margin/ig) || []).join(","));
     const p6 = card6.products[0];
     ok(Object.keys(p6.summary).every((k) => CARD_SUM_FIELDS.includes(k)) && CARD_SUM_FIELDS.every((k) => k in p6.summary),
@@ -25478,7 +25543,7 @@ await (async () => {
   /* D15, the whole road on fixtures: the laptop mints a pool, the fold registers a new code and binds the
      next spare in _users.json (no key in CI), the publish seals it, and the new customer's account opens
      by password and by his sign-in link. A second code in the same batch finds no spare free, takes a
-     bare username as before, and Salt Account says it is made at the next laptop update. */
+     bare username as before, and Salt Admin says it is made at the next laptop update. */
   const { mintPool } = await import("../tools/stmt-account.mjs");
   const { planPublish: pp143 } = await import("../tools/stmt-publish.mjs");
   const { mintUsernames: mu143 } = await import("../tools/fold.mjs");
@@ -25580,7 +25645,7 @@ await (async () => {
     ok(his.status === 200 && byLink.status === 200 && !!byLink.j.session && (await opened(tok, byLink)).v === 1,
       "by link: his page opens it under the master, mints the one-time link, and the link signs them in: " + byLink.status);
 
-    /* ---- SALT ACCOUNT: the bound one is an account; the other says it is made at the next laptop update ---- */
+    /* ---- SALT ADMIN: the bound one is an account; the other says it is made at the next laptop update ---- */
     const kp = await crypto.subtle.generateKey({ name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["sign", "verify"]);
     const pub = await crypto.subtle.exportKey("jwk", kp.publicKey);
     globalThis.fetch = async (u) => {
@@ -25615,7 +25680,7 @@ await (async () => {
       const ltrCard = cardText("CZ9-LTR"), wlkCard = cardText("CZ9-WLK");
       ok(ltrRow.includes("Their account comes with the next update. Show them the guest price list meanwhile.") && !!wlkRow && !wlkRow.includes("next update")
         && ltrCard.includes("Their account comes with the next update. Show them the guest price list meanwhile.") && wlkCard.includes("CZ9-WLK") && !wlkCard.includes("next update"),
-        "Salt Account says the waiting one comes with the next update, and to show the guest price list until then, on its row and its card; the bound one does not: "
+        "Salt Admin says the waiting one comes with the next update, and to show the guest price list until then, on its row and its card; the bound one does not: "
         + JSON.stringify({ ltrRow, wlkRow, ltrCard: ltrCard.slice(0, 120), wlkCard: wlkCard.slice(0, 120) }));
     } finally { try { Wd.close(); } catch (e) { /* best effort */ } }
   } finally {
@@ -26968,7 +27033,7 @@ await (async () => {
       "an app's own browser can use the account and sees optional install guidance without minting a hand-over");
   } finally { wa.W.close(); }
 })();
-section("S3 merge: the QR Salt Account shows at the counter signs in the phone that scans it, while the Safari tab whose Keep Sheet wrote /app#<key> never spends it");
+section("S3 merge: the QR Salt Admin shows at the counter signs in the phone that scans it, while the Safari tab whose Keep Sheet wrote /app#<key> never spends it");
 await (async () => {
   /* 3.13 draws <site>/app#<key> for a customer at his counter to scan with the camera, which opens a browser tab, and
      3.11 spent a key in the address only in a standalone app, so the QR opened a page that asked for the code. The
@@ -27033,13 +27098,13 @@ await (async () => {
       "a browser tab at /app#<key>, the form the Keep Sheet writes, never spends it, whichever tab it is");
   } finally { mine.W.close(); }
 
-  /* a camera's browser tab at Salt Account's QR spends the key and is in */
+  /* a camera's browser tab at Salt Admin's QR spends the key and is in */
   const qr = await drive("https://site.test/app#qr." + tokM, {});
   try {
     await qr.until(() => !qr.D.getElementById("barw").hidden);
     const sent = qr.st.posts.find((x) => x.path === "/handover/open");
     ok(!qr.D.getElementById("barw").hidden && !!sent && sent.body.token === tokM && sent.body.tab === true && !sent.body.code && qr.W.location.hash === "",
-      "a browser tab opened on Salt Account's QR (/app#qr.<key>) spends the key as a tab's, opens the account and forgets the address");
+      "a browser tab opened on Salt Admin's QR (/app#qr.<key>) spends the key as a tab's, opens the account and forgets the address");
     await qr.until(() => qr.store.has("salt-stmt-remember"));
     ok(JSON.parse(qr.store.get("salt-stmt-remember") || "{}").u === uM, "and the phone that scanned it is remembered");
   } finally { qr.W.close(); }
@@ -27682,7 +27747,7 @@ await (async () => {
       "and Copy then copies the fresh key, and the address carries it");
   } finally { await new Promise((r) => setTimeout(r, 60)); W.close(); }
 })();
-section("S3 fix: a browser tab spends only Salt Account's counter QR from its address, so a key one customer sends another never signs the other in");
+section("S3 fix: a browser tab spends only Salt Admin's counter QR from its address, so a key one customer sends another never signs the other in");
 await (async () => {
   /* S3-SEC-6, S3R-3 (24 Sep 2026). After the merge fix any tab with nothing of its own spent /app#<key> with no tap and
      remembered it, and any customer can mint a key for their own account (the Keep Sheet even writes it into the
@@ -28354,7 +28419,7 @@ await (async () => {
   await kv.delete(mine.key);
   ok(await O.sessionUser(req(s), env) === "", "and deleting what it names ends that session, which is what signing an account out everywhere needs");
 })();
-section("S3 fix: Sign out everywhere ends every remembered phone, session and alert on one account, behind Access, from Salt Account's card");
+section("S3 fix: Sign out everywhere ends every remembered phone, session and alert on one account, behind Access, from Salt Admin's card");
 await (async () => {
   /* S3-SEC-2 (24 Sep 2026). Every link now remembers the phone and every open slides it thirty days, so a forwarded
      link or a lost phone stayed signed in for as long as it was used, and the plan's answer, Sign out everywhere (9.4),
@@ -29098,7 +29163,7 @@ await (async () => {
     "and it reaches an ASSOCIATE'S pooled figure and not only a customer table: dropping s031 and s056 "
     + "gives CN3-WM back RM" + (net("CN3-WM") - wmWas).toFixed(2) + ", their own RM" + wmCost);
 
-  /* 18 Oct 2026: the gift tap on the Desk's Enter form (wbGift, wbRecord) left with Enter; Counter Admin queues it. The desk's window closes here. */
+  /* 18 Oct 2026: the gift tap on the Desk's Enter form (wbGift, wbRecord) left with Enter; Salt Admin queues it. The desk's window closes here. */
   w.close();
 
   /* ---- THE DRAFTER MINTS THE CONVENTION, AND NOT THE OTHER ONE ---- */
@@ -31720,7 +31785,7 @@ await (async () => {
 section("S5 5.6: a banner's tap opens its order on the Counter's own page, a stale page re-reads without losing a line, and a desk shows the list beside the open order");
 await (async () => {
   /* 24 SEP 2026, the Counter redesign's stage 5, over stage 12's tap. The service worker told the first window under
-     its scope, which a guest board or Salt Account in another tab also is, and neither can open an order. A page
+     its scope, which a guest board or Salt Admin in another tab also is, and neither can open an order. A page
      already open re-read and drew every order again, the line being typed with it. And on a desk the orders were
      one column under the form, where the plan (f12w) stands the list beside the open order, its thread in view. */
   const { SW_JS } = await import("../stmt/sw.js");
@@ -31743,7 +31808,7 @@ await (async () => {
   const guest = win("https://site.test/g/k7m2p9qr4s"), admin = win("https://site.test/all"), counter = win("https://site.test/?u=abcd-efgh");
   const o1 = await tap([guest, admin, counter]);
   ok(counter.told.length === 1 && counter.told[0].order === id && counter.focused === 1 && !guest.told.length && !admin.told.length && !o1.length,
-    "the tap goes to the Counter's own page, past a guest board and Salt Account open in other tabs: " + JSON.stringify({ counter: counter.told, guest: guest.told.length, admin: admin.told.length }));
+    "the tap goes to the Counter's own page, past a guest board and Salt Admin open in other tabs: " + JSON.stringify({ counter: counter.told, guest: guest.told.length, admin: admin.told.length }));
   const g2 = win("https://site.test/g/k7m2p9qr4s"), o2 = await tap([g2]);
   ok(!g2.told.length && JSON.stringify(o2) === JSON.stringify(["./?u=abcd-efgh#o=" + id]), "and with only a guest board open, the Counter opens at the order: " + JSON.stringify(o2));
 
@@ -32376,7 +32441,7 @@ await (async () => {
   ok(fine.ok === true && spy2.length === 1, "a product's name is his to spend, as it is in the bulletin: " + JSON.stringify(fine.error || "sent"));
   ok(siteWords("your salt is ready") === "" && siteWords("ask Salt Command") !== "", "and the lock is the bulletin's own, not a second copy of it");
 
-  /* 18 Oct 2026: the order card that carried the answer box (ordCard) left the Desk; Counter Admin sends the answer through the same
+  /* 18 Oct 2026: the order card that carried the answer box (ordCard) left the Desk; Salt Admin sends the answer through the same
      /desk route this section drives above. */
 })();
 
@@ -32576,7 +32641,7 @@ await (async () => {
   const bQuiet = await wake9({ ok: true, pending: 0, refused: 0, refunds: 0, countDue: [], orders: 0 });
   ok(bRefund && bRefund.opt.body === "Now: pay back 1 refund.",
     "the morning round names a refund still owed, which it never did: " + (bRefund && bRefund.opt.body));
-  ok(bBoth && bBoth.t === "New order" && bBoth.opt.body === "Acknowledge it on Counter Admin.\nNow: pay back 1 refund.\nToday: approve 2 rows.",
+  ok(bBoth && bBoth.t === "New order" && bBoth.opt.body === "Acknowledge it on Salt Admin.\nNow: pay back 1 refund.\nToday: approve 2 rows.",
     "an order still leads and no longer hides a refund, a row owed a decision or a shelf not counted: " + (bBoth && bBoth.opt.body));
   ok(bQuiet && bQuiet.opt.body === "Nothing waiting, and nothing owed a decision." && bQuiet.t === "All square",
     "and with nothing owed it still says so: " + (bQuiet && bQuiet.opt.body));
@@ -33124,7 +33189,8 @@ await (async () => {
 
   /* ---- THE WORDS: a kind, never an amount, a product, an order or a name ---- */
   const words = Object.values(NEWS);
-  const banned = /salt|oil|candy|rice|titanium|platinum|gold|silver|bronze|ambassador|command|update/i;
+  /* 19 Oct 2026: whole words, never letters inside one: "prices" holds a product's four */
+  const banned = /\b(salt|oil|candy|rice|titanium|platinum|gold|silver|bronze|ambassador|command)\b|\bupdate/i;
   /* S13 13.2: and every word the site's lock knows, off its own lists */
   const WL = await import("../src/orders.js");
   /* Step 1b: a title is letters and spaces, the one exception his line's "Counter says:", whose colon introduces his words;
@@ -34821,7 +34887,7 @@ await (async () => {
   const { w } = await openMaster();
   const terms = termsSnapshot(w);
   ok(terms.ceiling === 250 && terms.holdDays === 1 && terms.lockDays === 4 && terms.lateResetRepeat === 3 && terms.lateWindowDays === 90, "the desk Worker's terms are the master's RULES: " + JSON.stringify(terms));
-  /* 18 Oct 2026: the Desk's order card said the verdict before Accept (ordPvBlock, ordCard); the card is gone, and Counter Admin reads the same
+  /* 18 Oct 2026: the Desk's order card said the verdict before Accept (ordPvBlock, ordCard); the card is gone, and Salt Admin reads the same
      preview through the same route, which sections A to E above drive. */
   try { w.close(); } catch (e) { /* best effort */ }
 })();
@@ -34909,7 +34975,7 @@ await (async () => {
   const onAck = O.decideDesk({ id: "o2", u: U1, status: "placed", mode: "collect", qty: 1, total: 100, history: [] }, { status: "acknowledged", total: 90 }, "2026-09-29T01:00:00Z");
   ok(/a price is set only/.test(onReady.error || "") && onReady.status === 400 && onAck.ev && onAck.ev.total === 90, "the Counter refuses a price on any move but the acknowledgement: " + JSON.stringify({ onReady, ack: onAck.ev && onAck.ev.total }));
 
-  /* 5. 18 Oct 2026: the Desk's order card with its Price field (ordCard, ORD_PV) left with the tab; Counter Admin sends the price and the digest
+  /* 5. 18 Oct 2026: the Desk's order card with its Price field (ordCard, ORD_PV) left with the tab; Salt Admin sends the price and the digest
      to the preview and accept routes driven in 1 to 3 above. */
 })();
 
@@ -37114,7 +37180,7 @@ await (async () => {
     const a = await cold("today", "k-fixture"); open.push(a.w);
     ok(a.w.SALT_CLOUD === true && a.asked.includes("orders") && a.asked.includes("drafts?status=pending"),
       "a cold open reads the orders and the drafts once the ping says it is the cloud desk: " + JSON.stringify(a.asked));
-    ok(waitBadge(a.w) === "" && !a.w.document.querySelector(".navwait"), "18 Oct 2026: no waiting chip stands on the rail, the order placed on the site being Counter Admin's to answer: " + JSON.stringify(waitBadge(a.w)));
+    ok(waitBadge(a.w) === "" && !a.w.document.querySelector(".navwait"), "18 Oct 2026: no waiting chip stands on the rail, the order placed on the site being Salt Admin's to answer: " + JSON.stringify(waitBadge(a.w)));
     /* 17 Oct 2026, his word: Enter left the desk. Its parts read under Order book and Today, the restock date on Stock */
     ok(!a.w.document.querySelector('.tab[data-s="enter"]') && !a.w.document.getElementById("sec-enter"),
       "the rail carries no Enter and the page no Enter section");
@@ -37719,11 +37785,11 @@ await (async () => {
     "an acknowledged order is still named as waiting on him, and never asked to be acknowledged again: " + JSON.stringify(b1 && [b1.t, b1.opt.body]));
   await place();
   const b2 = await wake(await summary());
-  ok(b2 && b2.t === "New order" && b2.opt.body === "Acknowledge it on Counter Admin.\n1 order waiting on you.",
+  ok(b2 && b2.t === "New order" && b2.opt.body === "Acknowledge it on Salt Admin.\n1 order waiting on you.",
     "a new one beside it is the title, and the one already agreed rides in the body: " + JSON.stringify(b2 && [b2.t, b2.opt.body]));
   await place();
   const b3 = await wake(await summary());
-  ok(b3 && b3.t === "2 new orders" && b3.opt.body === "Acknowledge them on Counter Admin.\n1 order waiting on you.",
+  ok(b3 && b3.t === "2 new orders" && b3.opt.body === "Acknowledge them on Salt Admin.\n1 order waiting on you.",
     "two to agree are them, not it: " + JSON.stringify(b3 && [b3.t, b3.opt.body]));
 })();
 
@@ -37826,11 +37892,11 @@ await (async () => {
     ok(seq === "cash:c1,asked:q1,new:n1,paid:p1",
       "one row a customer act, oldest first, and a line he said needs no reply is not one: " + seq);
 
-    /* 18 Oct 2026, his word: the list, its filters and the cards left the desk; the four rows are counted on To do, and the row sends him to Counter Admin */
+    /* 18 Oct 2026, his word: the list, its filters and the cards left the desk; the four rows are counted on To do, and the row sends him to Salt Admin */
     const today = rd("actions().filter(function(a){return a.kind==='orders';})")[0];
-    ok(today && today.title === "4 waiting on you on Counter Admin" && /1 new, 1 say they paid, 1 cash to record, 1 waiting on an answer/.test(today.why)
-      && /Decided on Counter Admin\.$/.test(today.why) && !today.tab,
-      "To do counts the same four rows, by kind, names Counter Admin, and draws no jump button: " + JSON.stringify(today && [today.title, today.why, today.tab]));
+    ok(today && today.title === "4 waiting on you on Salt Admin" && /1 new, 1 say they paid, 1 cash to record, 1 waiting on an answer/.test(today.why)
+      && /Decided on Salt Admin\.$/.test(today.why) && !today.tab,
+      "To do counts the same four rows, by kind, names Salt Admin, and draws no jump button: " + JSON.stringify(today && [today.title, today.why, today.tab]));
     const doc = w.document;
     doc.body.innerHTML = String(w.eval("builders.today()"));
     ok(!doc.getElementById("ordBox") && !doc.getElementById("apBox") && !doc.querySelector("[data-ord]"),
@@ -38828,7 +38894,7 @@ await (async () => {
   ok(news && news.opt.data.url === "./desk#orders/newest" && placed && placed.opt.data.url === "./desk#orders/newest",
     "a wake about a customer's act carries the address of the newest act: " + JSON.stringify([news && news.opt.data.url, placed && placed.opt.data.url]));
 
-  /* 18 Oct 2026, his word: the orders are Counter Admin's, so the address the banner carries lands on the desk's Money and no card opens */
+  /* 18 Oct 2026, his word: the orders are Salt Admin's, so the address the banner carries lands on the desk's Money and no card opens */
   const { openMaster: omO10 } = await import("../tools/payload.mjs");
   const { w } = await omO10();
   try {
@@ -38859,8 +38925,8 @@ await (async () => {
       + "{id:'a2',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'placed',mode:'collect',at:'2026-09-21T02:05:00.000Z',history:[],msgs:[]},"
       + "{id:'a3',u:'wxyz-1234',code:'CE4-CHE',product:'salt',qty:1,total:110,delivery:0,status:'acknowledged',mode:'collect',at:'2026-09-20T02:00:00.000Z',history:[],msgs:[{at:'2026-09-21T03:00:00.000Z',by:'customer',text:'when can I collect'}]}];");
     const row = rd66("actions().filter(function(a){return a.kind==='orders';})")[0];
-    ok(row && row.sev === "now" && row.title === "3 waiting on you on Counter Admin" && /2 new/.test(row.why) && !row.tab,
-      "two placed orders and a question are ONE row (S11 11.4: the rows Waiting on you lists), at Now, naming Counter Admin where they are answered and drawing no jump button: " + JSON.stringify(row && { t: row.title, sev: row.sev, tab: row.tab }));
+    ok(row && row.sev === "now" && row.title === "3 waiting on you on Salt Admin" && /2 new/.test(row.why) && !row.tab,
+      "two placed orders and a question are ONE row (S11 11.4: the rows Waiting on you lists), at Now, naming Salt Admin where they are answered and drawing no jump button: " + JSON.stringify(row && { t: row.title, sev: row.sev, tab: row.tab }));
     ok(row && Math.abs(row.rm - 325) < 0.005,
       "ranked by what was ordered, goods and carriage together, which is what the pending row will carry: " + JSON.stringify(row && row.rm));
     ok(row && /waiting on an answer/.test(row.why),
@@ -39875,12 +39941,12 @@ await (async () => {
   } finally { dom.window.close(); }
 })();
 
-section("Phone frame (28 Sep 2026): under 1080px the Counter and Salt Account keep 16px on every side, each safe area added, clear the App bar by the same 16px, and Home's sections stand one gap apart with no row's margin after a list; from 1080px nothing moves");
+section("Phone frame (28 Sep 2026): under 1080px the Counter and Salt Admin keep 16px on every side, each safe area added, clear the App bar by the same 16px, and Home's sections stand one gap apart with no row's margin after a list; from 1080px nothing moves");
 await (async () => {
   /* HIS C2 OF 28 SEP 2026, with pay terms V2: "when it is on a phone, the margin and buffer for the screen are all treated
      equally, and the app maximises the use of the screen". jsdom runs the cascade (specificity, then order) but applies no
      width query, so the page is read at a width by making each width query that holds there `all`: what is proved is
-     which rule WINS at that width, the fault a phone block placed before the rule it overrides would hide (Salt Account's
+     which rule WINS at that width, the fault a phone block placed before the rule it overrides would hide (Salt Admin's
      own .gate.adm rule came after the first draft's). The geometry itself was measured in the Browser pane at 375px. */
   const { landingPage: lp } = await import("../stmt/page.js");
   const { JSDOM: JD } = await import("jsdom");
@@ -39913,13 +39979,13 @@ await (async () => {
     "on a phone the body keeps 16px on every side with that side's safe area added, the shell keeps only the App bar's height under it, and the door adds nothing beside: "
     + JSON.stringify(phone));
   ok(phoneOwn.roster === "0px|var(--salt-bar-h)" && phoneOwn.body.join() === phone.body.join(),
-    "and Salt Account's shell, whose own rule comes after the Counter's block, starts at the body's edge and clears the bar by the same 16px: " + JSON.stringify(phoneOwn));
+    "and Salt Admin's shell, whose own rule comes after the Counter's block, starts at the body's edge and clears the bar by the same 16px: " + JSON.stringify(phoneOwn));
   ok(phone.hcol === "flex|24px|0px|24px" && phone.rows === "8px|0px" && phone.orows === "8px|0px",
     "Home's sections stand one 24px gap apart, each column's, with nothing after the last, and a list's last row, on Home or in Orders, keeps no margin of its own: "
     + JSON.stringify(phone));
   ok(desk.body.join() === "22px,18px,60px,18px" && desk.shell === "48px" && desk.door === "4px|4px" && deskOwn.roster === "0px|48px"
     && desk.hcol.split("|")[2] === "24px" && desk.rows === "8px|8px" && desk.orows === "8px|8px",
-    "from 1080px nothing moves: the desk keeps its own frame, 22px from the top as the Desk is since 18 Oct 2026, Salt Account with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
+    "from 1080px nothing moves: the desk keeps its own frame, 22px from the top as the Desk is since 18 Oct 2026, Salt Admin with no margin above: " + JSON.stringify({ desk, roster: deskOwn.roster }));
 })();
 
 section("S7 7.4: Order again opens the check at today's price with the same size, way and place");
@@ -40186,7 +40252,8 @@ await (async () => {
   };
   /* the system's class names and the app's own name are not the book's word */
   const bare = (D) => D.getElementById("pHome").outerHTML.replace(/salt-[a-z_-]+/g, "").replace(/Salt Counter/g, "");
-  const words = /salt|oil|Gold|Silver|Platinum|Titanium|Ambassador/i;
+  /* 19 Oct 2026: whole words, so toilet or Golden, or a random id, is not a product or a level */
+  const words = /\b(salt|oil|gold|silver|platinum|titanium|ambassador)\b/i;
   for (const fresh of [false, true]) {
     const { W, D } = await open(fresh);
     try {
@@ -40631,7 +40698,7 @@ await (async () => {
 section("S7 polish: Account stands the statement beside This device from 1080px, and stacks them below it");
 await (async () => {
   /* The plan's f06w family, fold 7.2: from 1080px Account is two columns, the statement on the left and This device on
-     the right. Salt Account's account card (S9 9.3) was also .acct, and its column of one came later in the sheet, so after
+     the right. Salt Admin's account card (S9 9.3) was also .acct, and its column of one came later in the sheet, so after
      the three-way merge Account stacked at every width. The page's CSS is resolved at a width (an @media kept when its
      min-width and max-width hold, dropped when they do not or when it asks anything but a width), and jsdom's cascade
      then says what #acct is and where its two parts land: the computed structure, not a rule's text. */
@@ -40729,7 +40796,7 @@ await (async () => {
     ok(rows.map((r) => r.id).join(",") === "oA,oP,," && rows.filter((r) => r.bits[2] === "18 " + MON3[8] + " 2026").length === 1,
       "the part the site's order accounts for is drawn once, as that order; the two it does not follow the orders: " + JSON.stringify(rows.map((r) => [r.id, r.bits[2]])));
     ok(JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])) === JSON.stringify([["Cube 2.5 units|2.5 units", "", "Due when you receive it", "16 " + MON3[8] + " 2026", "RM 250.00"],
-      ["Cube 1 unit|1 unit", "","On behalf of a friend. Due when you receive it", "17 " + MON3[8] + " 2026", "RM 120.00"]]) && !/salt|Gold|Silver/i.test(t(box)),
+      ["Cube 1 unit|1 unit", "","On behalf of a friend. Due when you receive it", "17 " + MON3[8] + " 2026", "RM 120.00"]]) && !/\b(salt|gold|silver)\b/i.test(box.innerHTML.replace(/<[^>]*>/g, " ")),   /* 19 Oct 2026: whole words, spaced at every tag */
       "a part he entered says it is due when they receive it, never offers to pay now, and names no product: " + JSON.stringify(rows.slice(2).map((r) => [r.size, ...r.bits])));
     box.querySelectorAll(".salt-inbox-row")[2].click();
     ok(!D.getElementById("pStmt").hidden && D.getElementById("pHome").hidden,
@@ -41402,7 +41469,9 @@ await (async () => {
         /* S7 polish: Coming up's part is the Inbox row its orders are; F8, its mark and size a card, its size under the mark */
         coming: [...c.querySelectorAll(".salt-inbox-row")].map((r) => { const m = r.querySelector(":scope > .mtile");
           return [m ? t(m.querySelector(".sr")) + "|" + t(m.querySelector(".mq")) : ""].concat(["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s)))); }),
-        marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c) };
+        marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c),
+        /* 19 Oct 2026: the words spaced at every tag, the marks left out, so a whole-word scan finds a word alone in its element */
+        spaced: [h, c].map((e) => { const x = e.cloneNode(true); x.querySelectorAll("svg").forEach((s) => s.remove()); return x.innerHTML.replace(/<[^>]*>/g, " "); }).join(" ") };
     } finally { dom.window.close(); }
   };
   const part = (o) => Object.assign({ late: false, whole: o.rm, product: "salt", qty: 2.5, got: 2.5, resale: false }, o);
@@ -41428,7 +41497,7 @@ await (async () => {
   const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1] + " " + s.slice(0, 4);
   ok(one.heads.join() === "Coming up" && one.coming.length === 1
     && one.coming[0].join("|") === "Cube 1 unit|1 unit||Due when you receive it|" + age(kl(-1)) + "|RM 110.00"
-    && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
+    && one.marks === 2 && !/\b(salt|oil|gold|silver)\b/i.test(one.spaced),
     "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word, and no Overdue list stands under To pay now: "
     + JSON.stringify([one.heads, one.coming]));
   const two = await open({ term: 3,
@@ -41730,7 +41799,8 @@ await (async () => {
       "Scan a code offers only the accounts with a code and keeps Maybank, Part of it sends the figure typed, and more than is owed opens nothing: "
       + JSON.stringify({ qIn, part, over }));
     const text = live + " " + t(sh());
-    ok(!/QR Command/i.test(text) && !/[0-9]{8,}/.test(text) && !/salt|oil/i.test(text),
+    /* 19 Oct 2026: products as whole words, over the sheet spaced at every tag */
+    ok(!/QR Command/i.test(text) && !/[0-9]{8,}/.test(text) && !/\b(salt|oil)\b/i.test(live + " " + sh().innerHTML.replace(/<[^>]*>/g, " ")),
       "the sheet names no pay page, carries no account number and no product word: " + text.slice(0, 120));
     d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     const closed = sh().hidden;
@@ -43353,7 +43423,7 @@ section("S2 2.11: the Counter carries the recipes it will use, whole, in the sys
 await (async () => {
   /* STAGE 2 OF THE COUNTER REDESIGN, 24 Sep 2026. The nine recipes salt-ds v1.3.0 gained for the Counter, and the ones it
      will use from stage 3 on, are sliced into SITE_RECIPES before any markup uses them. The comments are stripped: the
-     Inbox row's note named Salt Account, which S1 1.10 keeps off a customer's page. */
+     Inbox row's note named Salt Admin, which S1 1.10 keeps off a customer's page. */
   const R = (await import("../stmt/statement-css.js")).SITE_RECIPES;
   const rule = (c) => new RegExp("(^|\\n)" + c.replace(/\./g, "\\.") + "[\\s,{:.\\[]").test(R);
   const missing = [".salt-sheet", ".salt-appbar", ".salt-inbox-row", ".salt-option__face", ".salt-field__input--code", ".salt-lines",
@@ -43364,7 +43434,7 @@ await (async () => {
   const at = (s) => R.indexOf("\n" + s);
   ok(at(".salt-ledger {") >= 0 && at(".salt-ledger {") < at(".salt-ledger--plain") && at(".salt-field__input {") >= 0 && at(".salt-field__input {") < at(".salt-field__input--code"),
     "in the system's own order, so the plain ledger list and the code field come after the rules they modify");
-  ok(!/\/\*|\*\//.test(R) && !/Salt Account|Salt Desk|Salt Admin|Salt Command/.test(R), "and with no comment, so no note of the system's reaches a customer's page");
+  ok(!/\/\*|\*\//.test(R) && !/Salt Admin|Salt Desk|Salt Admin|Salt Command/.test(R), "and with no comment, so no note of the system's reaches a customer's page");
   /* WHOLE, read against the vendored stylesheet and not the tool that made R (S2-CODE-4, 24 Sep 2026): each carried
      section is sliced here by its own head, its comments and the select's two rules (the page loads no data: image) are
      taken out, and what is left must stand in R rule for rule, whitespace aside. A section cut short at a rule boundary
@@ -45025,9 +45095,9 @@ await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
   const lines = readFileSync(join(REPO, "test", "verify.mjs"), "utf8").split("\n");   /* the suite, not a shard of it (tools/suite-split.mjs) */
   const heads = lines.map((l, i) => [l, i]).filter(([l]) => l.startsWith("section("));
-  /* a section parked behind TIDE_OFF (19 Oct 2026) opens with the guard and then the same async function on the one line */
-  const PARKED = 'if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {';
-  const bare = heads.filter(([, i]) => { const n = lines.slice(i + 1).find((l) => l.trim() !== "") || ""; return n !== "await (async () => {" && !n.startsWith(PARKED); }).map(([l]) => l.slice(9, 70));
+  const bare = heads.filter(([, i]) => (lines.slice(i + 1).find((l) => l.trim() !== "") || "") !== "await (async () => {"
+    /* 19 Oct 2026: a section parked while Tide is off is still its own async function, behind its guard */
+    && !(lines.slice(i + 1).find((l) => l.trim() !== "") || "").startsWith('if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {')).map(([l]) => l.slice(9, 70));
   ok(heads.length >= 186 && bare.length === 0 && !lines.some((l) => l === "{"),
     "every section runs in its own async function, so a closed window can be freed: " + heads.length + " sections, bare: " + JSON.stringify(bare));
   const { openMaster: omW } = await import("../tools/payload.mjs");
@@ -47534,7 +47604,7 @@ await (async () => {
     k = await push(Object.assign({}, quiet, { placed: 3, orders: 3, pending: 1 }), {});
   ok(i.shown[0].t === "A customer says they paid" && i.shown[0].opt.body === "Check it arrived, then tap Received or Not found.\nNow: pay back 1 refund.\n1 order waiting on you."
     && j.shown[0].t === "A customer cancelled" && j.shown[0].opt.body === "Tap to see which order."
-    && k.shown[0].t === "3 new orders" && k.shown[0].opt.body === "Acknowledge them on Counter Admin.\nToday: approve 1 row.",
+    && k.shown[0].t === "3 new orders" && k.shown[0].opt.body === "Acknowledge them on Salt Admin.\nToday: approve 1 row.",
     "a payment, a withdrawal and new orders each say their own sentence, and the tail follows it: " + JSON.stringify([i, j, k].map((x) => [x.shown[0].t, x.shown[0].opt.body])));
 })();
 
@@ -48037,6 +48107,11 @@ await (async () => {
   await (await import("./maker-communications.mjs")).run({ ok });
 })();
 
+section("Salt Admin notifications: its own worker, subscriptions and the Desk's wake");
+await (async () => {
+  await (await import("./admin-push.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker order moves: Ready, Decline, Cancel, replies and Not found");
 
 await (async () => {
@@ -48063,7 +48138,7 @@ await (async () => {
   await (await import("./test-surface-moves.mjs")).run({ ok });
 })();
 
-section("Counter test surface P5: the roads under /all/test, inside /all's two locks, the customer's on a test session alone and Counter Admin's on the examples alone (19 Oct 2026)");
+section("Counter test surface P5: the roads under /all/test, inside /all's two locks, the customer's on a test session alone and Salt Admin's on the examples alone (19 Oct 2026)");
 await (async () => {
   await (await import("./test-surface-roads.mjs")).run({ ok });
 })();
@@ -48093,7 +48168,7 @@ await (async () => {
   await (await import("./maker-order-controls.mjs")).run({ ok });
 })();
 
-section("Counter Batch A: the collection point, set at Ready on Counter Admin, read by the customer only while the order waits there, never by the Desk (18 Oct 2026)");
+section("Counter Batch A: the collection point, set at Ready on Salt Admin, read by the customer only while the order waits there, never by the Desk (18 Oct 2026)");
 await (async () => {
   await (await import("./counter-points.mjs")).run({ ok, pageWork });
 })();
@@ -48147,7 +48222,7 @@ await (async () => {
     ["tools/fold", readFileSync(join(REPO, "tools", "fold.mjs"), "utf8")], ["src/drafter", readFileSync(join(REPO, "src", "drafter.js"), "utf8")],
     ["src/maker-inputs", readFileSync(join(REPO, "src", "maker-inputs.js"), "utf8")]]);
   const left = named.flatMap(([n, s]) => gone.filter((w) => word(w).test(s)).map((w) => n + ": " + w));
-  ok(left.length === 0, "the master, the engine, the fold, the drafter and Counter Admin's inputs define or call no TIER_NAMES, levelAt, levelShapeOk, tier1Ask, level proposal or level pill: " + JSON.stringify(left));
+  ok(left.length === 0, "the master, the engine, the fold, the drafter and Salt Admin's inputs define or call no TIER_NAMES, levelAt, levelShapeOk, tier1Ask, level proposal or level pill: " + JSON.stringify(left));
   ok(!/tierpill/i.test(master) && !/tierpill/i.test(readFileSync(join(REPO, "design", "desk.css"), "utf8")), "and the desk has no level pill and no rule for one");
   ok(gone.every((w) => typeof E[w] === "undefined"), "and the pricing engine exports none of them");
   const { openMaster } = await import("../tools/payload.mjs");
@@ -48246,12 +48321,12 @@ await (async () => {
   await (await import("./maker-claims.mjs")).run({ ok });
 })();
 
-section("Counter Admin salt drift set and clear: the held override, automatic record and fixed-book boundary");
+section("Salt Admin salt drift set and clear: the held override, automatic record and fixed-book boundary");
 await (async () => {
   await (await import("./maker-drift.mjs")).run({ ok });
 })();
 
-section("Counter Admin Make partner: the Desk entry, drift books only, owner and bridge key, one retained retry");
+section("Salt Admin Make partner: the Desk entry, drift books only, owner and bridge key, one retained retry");
 await (async () => {
   await (await import("./maker-partner.mjs")).run({ ok, KV, worker, handleMaker, REPO });
 })();
@@ -48361,9 +48436,14 @@ await (async () => {
   await (await import("./desk-clock.mjs")).run({ ok });
 })();
 
-section("14 Oct 2026: the Counter and Salt Account show a live clock");
+section("14 Oct 2026: the Counter and Salt Admin show a live clock");
 await (async () => {
   await (await import("./counter-clock.mjs")).run({ ok });
+})();
+
+section("19 Oct 2026: Salt Admin's bar says Live or Offline and Open or Closed");
+await (async () => {
+  await (await import("./admin-bar-status.mjs")).run({ ok });
 })();
 
 section("Counter maker: verified owner, narrow Desk bridge and hours");
@@ -48581,7 +48661,7 @@ await (async () => {
   const decisionPath = "/all/maker/drafts/" + encodeURIComponent(draftRow.id) + "/reject";
   const decided = await through(decisionPath, "POST", {});
   const repeated = await through(decisionPath, "POST", {});
-  ok(decided.status === 200 && repeated.status === 409 && draftRow.status === "rejected" && draftRow.decided_by === "Counter Admin",
+  ok(decided.status === 200 && repeated.status === 409 && draftRow.status === "rejected" && /^(Salt|Counter) Admin$/.test(draftRow.decided_by),
     "a bridge draft decision uses the normal Desk state transition and refuses a replay");
   const getOrder = await worker.fetch(new Request("https://desk.test/_internal/maker/orders/20260929120000-makr/cash", {
     headers: { "X-Counter-Maker-Key": key }
@@ -49750,48 +49830,48 @@ await (async () => {
   } finally { admin.window.close(); }
 })();
 
-section("Salt Account: every control carries a stable data-act");
+section("Salt Admin: every control carries a stable data-act");
 await (async () => {
   await (await import("./maker-act.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: five places, Needs you, Orders, Customers, Record and Shop, each part reading and showing only its own");
+section("Salt Admin: five places, Needs you, Orders, Customers, Record and Shop, each part reading and showing only its own");
 await (async () => {
   await (await import("./admin-places.mjs")).run({ ok, pageWork });
 })();
 
-section("Counter Admin's mini ledger: Open orders, Pending orders and the latest twenty, read off the folded book by the engine (16 Oct 2026)");
+section("Salt Admin's mini ledger: Open orders, Pending orders and the latest twenty, read off the folded book by the engine (16 Oct 2026)");
 await (async () => {
   await (await import("./maker-ledger.mjs")).run({ ok });
   await (await import("./admin-ledger.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account wears Night or Tide, chosen on its own (11 Oct 2026)");
+section("Salt Admin wears Night or Tide, chosen on its own (11 Oct 2026)");
 if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {   /* parked while Tide is off (19 Oct 2026, his word); back when it returns */
   await (await import("./admin-look.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account speaks plainly: the glossary's words, a refusal as a sentence with its Details, and no book named, only its mark (12 Oct 2026)");
+section("Salt Admin speaks plainly: the glossary's words, a refusal as a sentence with its Details, and no book named, only its mark (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-words.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 5 seconds");
+section("Salt Admin: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 5 seconds");
 await (async () => {
   await (await import("./admin-needs.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: Needs you and Orders are read every 5 seconds, and a tick that finds the same answer draws nothing, a failure said once (R4, 19 Oct 2026)");
+section("Salt Admin: Needs you and Orders are read every 5 seconds, and a tick that finds the same answer draws nothing, a failure said once (R4, 19 Oct 2026)");
 await (async () => {
   await (await import("./admin-needs-5s.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: Orders open by stage, a list beside the order, and Record a menu");
+section("Salt Admin: Orders open by stage, a list beside the order, and Record a menu");
 await (async () => {
   await (await import("./admin-orders.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account uses the width: two panes from 860px with nothing open by itself, and every rule of it under .adm (12 Oct 2026)");
+section("Salt Admin uses the width: two panes from 860px with nothing open by itself, and every rule of it under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-tablet.mjs")).run({ ok, pageWork });
 })();
@@ -49826,62 +49906,62 @@ await (async () => {
   await (await import("./counter-order-detail.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the order card reads its preview on opening, asks on a sheet, keeps its moves at its foot, and its tick is a 44px target");
+section("Salt Admin: the order card reads its preview on opening, asks on a sheet, keeps its moves at its foot, and its tick is a 44px target");
 await (async () => {
   await (await import("./admin-order-card.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
+section("Salt Admin: the claim card reads its rows on opening, draws the slip from the one unlock, and asks on a sheet");
 await (async () => {
   await (await import("./admin-claim-card.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: one unlock opens names, places and the slip key, every place reads it, and hiding the page locks them all (12 Oct 2026)");
+section("Salt Admin: one unlock opens names, places and the slip key, every place reads it, and hiding the page locks them all (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-one-unlock.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: rows to approve wear the approve card, the queue folds away, and no native confirm is left");
+section("Salt Admin: rows to approve wear the approve card, the queue folds away, and no native confirm is left");
 await (async () => {
   await (await import("./admin-approve-queue.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the approve card says the change, one card and one Approve an order (plan 2, 16 Oct 2026)");
+section("Salt Admin: the approve card says the change, one card and one Approve an order (plan 2, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-approve-card.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");
+section("Salt Admin: an order of several books is one card, handed over, paid and made one order as one (plan 3, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-trips.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: History on an order and each line of a trip, Undo on the newest move alone, the site order following with a banner (plan 4, 16 Oct 2026)");
+section("Salt Admin: History on an order and each line of a trip, Undo on the newest move alone, the site order following with a banner (plan 4, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-undo.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: every live row of the book is an order at its stage, Delivered or paid between Ready and Completed (his flow, 17 Oct 2026)");
+section("Salt Admin: every live row of the book is an order at its stage, Delivered or paid between Ready and Completed (his flow, 17 Oct 2026)");
 await (async () => {
   await (await import("./admin-flow.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the order card's Bank and Cash over one amount, Change the order under the head, and one button on the units (plan 5, 16 Oct 2026)");
+section("Salt Admin: the order card's Bank and Cash over one amount, Change the order under the head, and one button on the units (plan 5, 16 Oct 2026)");
 await (async () => {
   await (await import("./admin-card5.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the few, fixed choices of Record's forms are option tiles, each sending the value its select did");
+section("Salt Admin: the few, fixed choices of Record's forms are option tiles, each sending the value its select did");
 await (async () => {
   await (await import("./admin-tiles.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the printed sizes are a grid of tiles, and the weekly hours a table with labelled columns and a Closed until field");
+section("Salt Admin: the printed sizes are a grid of tiles, and the weekly hours a table with labelled columns and a Closed until field");
 await (async () => {
   await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the stress run's findings: a charge that did not save is not shown as chosen, an answer stands beside its control, and For a friend is a 44px target (13 Oct 2026)");
+section("Salt Admin: the stress run's findings: a charge that did not save is not shown as chosen, an answer stands beside its control, and For a friend is a 44px target (13 Oct 2026)");
 await (async () => {
   await (await import("./admin-stress-fixes.mjs")).run({ ok, pageWork });
 })();
@@ -49896,27 +49976,27 @@ await (async () => {
   await (await import("./counter-back-sheet.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the bar of five places is fixed to the screen's foot, nothing frames it in the screen's place, the shell keeps its height clear, and in the iPhone's saved app the document is the screen tall");
+section("Salt Admin: the bar of five places is fixed to the screen's foot, nothing frames it in the screen's place, the shell keeps its height clear, and in the iPhone's saved app the document is the screen tall");
 await (async () => {
   await (await import("./admin-bar-foot.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: the place drafts hold no plain places map once a tap has failed, and the lock lets all three go (12 Oct 2026)");
+section("Salt Admin: the place drafts hold no plain places map once a tap has failed, and the lock lets all three go (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-place-drafts.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: an entry waiting unconfirmed on this phone says so on every place and on Needs you (12 Oct 2026)");
+section("Salt Admin: an entry waiting unconfirmed on this phone says so on every place and on Needs you (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-unsent.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: an id is behind Details, never read out, and a row's Details are names and values, never JSON (12 Oct 2026)");
+section("Salt Admin: an id is behind Details, never read out, and a row's Details are names and values, never JSON (12 Oct 2026)");
 await (async () => {
   await (await import("./admin-details.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: Customers are rows with one state, a link is a row, and a card holds the customer's loans (14 Oct 2026)");
+section("Salt Admin: Customers are rows with one state, a link is a row, and a card holds the customer's loans (14 Oct 2026)");
 await (async () => {
   await (await import("./admin-customers.mjs")).run({ ok, pageWork });
 })();
@@ -51028,6 +51108,16 @@ await (async () => {
   await (await import("./desk-parallel-reads.mjs")).run({ ok });
 })();
 
+section("Notifications: Salt Admin acts, Salt Desk informs (19 Oct 2026)");
+await (async () => {
+  await (await import("./desk-informs.mjs")).run({ ok });
+})();
+
+section("Notifications: a stock light turning yellow or red wakes the Desk once (19 Oct 2026)");
+await (async () => {
+  await (await import("./stock-light-wake.mjs")).run({ ok });
+})();
+
 section("designsync --drift: design/ against the design system's checkout (his word of 18 Oct 2026)");
 await (async () => {
   /* A change to salt-ds reaches every surface in the same piece of work, and --drift is how a session sees one that has
@@ -51187,7 +51277,7 @@ await (async () => {
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");
 await (async () => {
-  /* HIS DECISION OF 18 OCT 2026: Approve, Site orders and Entries left the Desk, Counter Admin deciding every order, claim, chat and
+  /* HIS DECISION OF 18 OCT 2026: Approve, Site orders and Entries left the Desk, Salt Admin deciding every order, claim, chat and
      slip. What stays is read, not drawn: apLoad and ordLoad fill AP_DRAFTS and ORD_OPEN with no timer, for To do's row, the waiting
      stamp and Spots to file. The alerts moved to the rail beside the theme, Spots to file to Coverage, the Whiteboard folded into
      To do as Noticed, and Order book became Money. Each assertion below is proved red by its own mutation (test/lean-desk.mutations.json). */
@@ -51251,7 +51341,7 @@ await (async () => {
     w.eval("ORD_OPEN=[];pinDraw();");
     ok(D.getElementById("pinBox").innerHTML === "", "and with no such order the box is emptied");
 
-    /* 5. TO DO: the queue's box, the Noticed fold, and the waiting row sent to Counter Admin */
+    /* 5. TO DO: the queue's box, the Noticed fold, and the waiting row sent to Salt Admin */
     w.eval("switchTab('today')");
     const sec = D.getElementById("sec-today");
     ok(!!sec.querySelector("#queueBox"), "To do carries the box for the entries held on this device");
@@ -51262,9 +51352,9 @@ await (async () => {
     const holder = D.createElement("div");
     holder.innerHTML = String(w.eval("tabToday()"));
     const act = [...holder.querySelectorAll(".act")].find((a) => /waiting on you/.test(a.querySelector(".actt").textContent));
-    ok(!!act && /1 waiting on you on Counter Admin/.test(act.querySelector(".actt").textContent) && /Decided on Counter Admin\.$/.test(act.querySelector(".actw").textContent.trim())
+    ok(!!act && /1 waiting on you on Salt Admin/.test(act.querySelector(".actt").textContent) && /Decided on Salt Admin\.$/.test(act.querySelector(".actw").textContent.trim())
       && act.querySelectorAll("button").length === 0,
-      "the row for an order waiting on the site names Counter Admin and draws no jump button: " + (act ? act.querySelector(".actt").textContent + " | " + act.querySelectorAll("button").length : "no row"));
+      "the row for an order waiting on the site names Salt Admin and draws no jump button: " + (act ? act.querySelector(".actt").textContent + " | " + act.querySelectorAll("button").length : "no row"));
     w.eval("ORD_OPEN=[];");
 
     /* 6. THE READS KEEP NO CLOCK */

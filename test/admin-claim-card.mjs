@@ -1,4 +1,4 @@
-/* test/admin-claim-card.mjs: THE CLAIM CARD (Phase 2b of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "The claim card").
+/* test/admin-claim-card.mjs: THE CLAIM CARD (Phase 2b of the Salt Admin redesign, 12 Oct 2026; docs/STATEMENTS.md "The claim card").
  *
  * A payment a customer says they sent is a row in Orders > Payments, and the row opened is its card (stmt/owner.js makerClaimCard). His decisions of
  * 11 Oct 2026 shape it: 6, the card reads its own rows when it is opened and never on a row, with no Preview rows button; 3, the slip key is the one unlock the

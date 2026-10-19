@@ -1,4 +1,4 @@
-/* test/maker-order-controls.mjs: Counter Admin's remaining order controls: a handover, a close and a stage offered again
+/* test/maker-order-controls.mjs: Salt Admin's remaining order controls: a handover, a close and a stage offered again
    under an immutable request id the Desk keeps; Ready with collect or deliver; the review offering a rejected stage again
    on a closed order; and the owner page's own controls (Ready to collect or deliver, Close at these units, Offer again,
    the reasons and quick replies), driven in the actual owner script. */

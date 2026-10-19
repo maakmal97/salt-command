@@ -259,7 +259,7 @@ smallest order, `step` the order step, `max` where Negotiate begins. The publish
 (`priceSteps`); the page's field takes `min` and `step` from it, and the Worker's `onStep` (`stmt/orders.js`, from `checkPlacement`,
 which Place, a customer's amendment and Negotiate all pass through) refuses a size under `min` or off the step with `offStep`. Past
 `max` the size is Negotiate's, and still a whole number of steps from `min`. A list from before the grid carries no steps and takes any size.
-Counter Admin's own forms (a trade, an amended order) type what was really handed over and are not held to it.
+Salt Admin's own forms (a trade, an amended order) type what was really handed over and are not held to it.
 
 **The step is also the pricing walk's resolution, so it is not free to move.** The engine walks every grid point beneath a size so the
 rate never rises across the grid (`walkSizes`). Salt's step moved from 0.25 to 0.5 would drop the points between and raise 1,484 of

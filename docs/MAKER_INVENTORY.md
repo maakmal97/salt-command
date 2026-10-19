@@ -1,11 +1,11 @@
 # Counter maker replacement inventory
 
 The inventory is a source/control inventory, not owner acceptance. Desk write controls remain
-available until the replacements pass genuine owner acceptance. All Counter Admin routes below
+available until the replacements pass genuine owner acceptance. All Salt Admin routes below
 remain under the existing verified-owner `/all` boundary. A generic input route is not a
 replacement for an absent control.
 
-"Maker" in the tables below names where a control began. Since 11 Oct 2026 Salt Account has no Maker place: the order review, the claims and the group orders stand in Orders, the Desk's rows, the queue and every form in Record, the chat in Customers (Messages), and the hours and the notice in Shop.
+"Maker" in the tables below names where a control began. Since 11 Oct 2026 Salt Admin has no Maker place: the order review, the claims and the group orders stand in Orders, the Desk's rows, the queue and every form in Record, the chat in Customers (Messages), and the hours and the notice in Shop.
 
 ## Enter, ledger and Network
 
@@ -75,7 +75,7 @@ items. A roster registration's association is not permission to accept a Linked 
 | Account access/devices/signout/handover | `/all/account/<u>`, `/all/signout`, `/all/handover`, `/all/signin/<u>` | Existing owner account operations, not a new Network trading input |
 
 Six per-control probes (appointment, cancellation, drift, queue, registration, reward) were retired on
-12 Oct 2026, his word, after the redesign rebuilt their screens. Salt Account's tap targets are measured
+12 Oct 2026, his word, after the redesign rebuilt their screens. Salt Admin's tap targets are measured
 in a real browser by `node tools/maker-forms-geometry.mjs` (Record's forms and Shop's hours, Night and
 Tide, the saved app) and by each redesign phase's whole-page probe, its numbers in the PR body
 (#151, #153, #154: 0 targets under 44px).

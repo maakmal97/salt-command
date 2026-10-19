@@ -1,6 +1,6 @@
-/* test/admin-look.mjs: SALT ACCOUNT WEARS NIGHT OR TIDE, CHOSEN ON ITS OWN (his word of 11 Oct 2026; docs/STATEMENTS.md "His look").
+/* test/admin-look.mjs: SALT ADMIN WEARS NIGHT OR TIDE, CHOSEN ON ITS OWN (his word of 11 Oct 2026; docs/STATEMENTS.md "His look").
  *
- * Two themes, kept per device (localStorage salt-look on the Counter's origin), Tide until one is chosen. Salt Account (`/all`, built by
+ * Two themes, kept per device (localStorage salt-look on the Counter's origin), Tide until one is chosen. Salt Admin (`/all`, built by
  * landingPage with an owner, its script stmt/owner.js) opens in the stored theme from the head script it shares with the customer's
  * page; this adds what the customer's page already has: the choice Sheet over the page on a first open, and a Look row to change it
  * later, here in a fourth part of Shop, This device. Every assertion observes the page's window, a sign-in's worth of reads stubbed.
@@ -81,7 +81,7 @@ export async function run({ ok, pageWork }) {
       && row.textContent.includes(EN["look.h"]),
       "its section holds the customer's Look row, Night and Tide, each button with its act, once on the page, named Look: " + J(rb.map((b) => b.getAttribute("data-act"))));
     const lead = sec && sec.querySelector("p.lead");
-    ok(lead && lead.textContent === "Night or Tide for Salt Account on this device. Kept on this device; the Desk keeps its own.",
+    ok(lead && lead.textContent === "Night or Tide for Salt Admin on this device. Kept on this device; the Desk keeps its own.",
       "its lead says the choice is kept on this device and that the Desk keeps its own, not the Counter, whose pages on this device read the same key: " + J(lead && lead.textContent));
     const grp = row && row.querySelector('[role="group"]');
     ok(grp && p.d.getElementById(grp.getAttribute("aria-labelledby")).textContent.trim() === EN["look.h"], "the pair is grouped and named Look");
@@ -103,7 +103,7 @@ export async function run({ ok, pageWork }) {
     const f = await open({});
     const s0 = f.state();
     ok(s0.theme === "tide" && s0.bar === TIDE.obsidian && s0.sheet && s0.scrim && s0.kept === null && s0.held === "tide",
-      "on a device that has chosen nothing Salt Account opens Tide, its bar at Tide's ground, with the Sheet and its scrim over it and nothing yet stored: " + J(s0));
+      "on a device that has chosen nothing Salt Admin opens Tide, its bar at Tide's ground, with the Sheet and its scrim over it and nothing yet stored: " + J(s0));
     ok(f.d.activeElement === f.d.getElementById("lookSheet"), "the Sheet takes focus as it opens");
     const lsh = f.d.getElementById("lookSheet"), fb = lsh ? [...lsh.querySelectorAll("button")] : [];
     if (fb.length) fb[fb.length - 1].focus();
@@ -116,7 +116,7 @@ export async function run({ ok, pageWork }) {
     /* 3. A CHOICE KEPT */
     const nn = await open({ store: { "salt-look": "night" } }), tt = await open({ store: { "salt-look": "tide" } }), bad = await open({ store: { "salt-look": "dusk" } });
     ok(nn.state().theme === "night" && nn.state().bar === NIGHT.obsidian && nn.state().held === "night" && !nn.state().sheet && !nn.state().scrim,
-      "with night kept Salt Account opens Night, its bar at Night's ground, the row on Night and no Sheet: " + J(nn.state()));
+      "with night kept Salt Admin opens Night, its bar at Night's ground, the row on Night and no Sheet: " + J(nn.state()));
     ok(tt.state().theme === "tide" && tt.state().bar === TIDE.obsidian && tt.state().held === "tide" && !tt.state().sheet, "with tide kept it opens Tide and asks nothing: " + J(tt.state()));
     ok(bad.state().theme === "tide" && bad.state().bar === TIDE.obsidian && bad.state().sheet, "a value that is no theme counts as nothing kept: Tide, and the Sheet: " + J(bad.state()));
 

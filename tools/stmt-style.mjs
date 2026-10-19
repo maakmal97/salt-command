@@ -94,7 +94,7 @@ export const RECIPE_HEADS = [
   "/* ---- Glass card ---- */", "/* ---- Eyebrow ---- */", "/* ---- KPI tile:", "/* ---- Action:",
   "/* ---- Approve card:", "/* ---- Insight:", "/* ---- Meter:", "/* ---- Ledger list ---- */",
   "/* ---- Queue chip:", "/* ---- QR panel.", "/* ---- Desk rail", "/* ---- Plan:",
-  /* PHASE 5 OF THE SALT ACCOUNT REDESIGN (12 Oct 2026): the three recipes his page was drawing by hand. Metric row, a label over a
+  /* PHASE 5 OF THE SALT ADMIN REDESIGN (12 Oct 2026): the three recipes his page was drawing by hand. Metric row, a label over a
      figure, which the approve card's figures were drawn on maker-facts lines for lack of (#142) and the report card's three
      cells restated; Table, the hours grid; Product tag, the book's name on a row of his page, its hue the book's own accent
      (PRODUCTS.accent in ledger/book.json, reached as the system's --salt-product-* token). Product tag is his page's alone:
@@ -105,7 +105,7 @@ export const RECIPE_HEADS = [
      .salt-aurora--page --fixed first in the body; the layer below only lays it under the content. The system's last section comes with it: no Aurora under
      reduced transparency or on paper, and the pane fill where a renderer cannot frost the glass. */
   "/* ---- Aurora ---- */", "/* ---- Where the frost cannot be drawn ----",
-  /* and the Desk bar, which heads Salt Account as it heads the Desk (18 Oct 2026) */
+  /* and the Desk bar, which heads Salt Admin as it heads the Desk (18 Oct 2026) */
   "/* ---- Desk bar (synced to the desk",
   /* COUNTER BATCH A (18 Oct 2026, salt-ds 1.7.0): the root and the brand title, which head the wide rail as Salt Counter, and the nine recipes the
      batch drew: the state chip's glyph, the marked steps, the turning notice, the receipt, the band, the empty state, the card that is a link, the pin
@@ -130,7 +130,7 @@ export function siteRecipes() {
        stops the generation rather than the suite. */
     .replace(/\n\.salt-field__input\.salt-field__select \{[^}]*\}/, "")
     /* NOT THE COMMENTS (24 Sep 2026). The system's notes name its other surfaces (the Inbox row's
-       names Salt Account, which S1 1.10 keeps off the customer's page) and are a fifth of the bytes;
+       names Salt Admin, which S1 1.10 keeps off the customer's page) and are a fifth of the bytes;
        the rules are carried whole, the prose stays upstream. No recipe holds a string with a comment
        mark in it; one that did would unbalance the braces, which stops the generation. */
     .replace(/\/\*[\s\S]*?\*\//g, "").replace(/\n{3,}/g, "\n\n");

@@ -1,4 +1,4 @@
-/* test/maker-cash-purchase.mjs: Counter Admin's money taps and a purchase lot's own amendments. Cash and a Received
+/* test/maker-cash-purchase.mjs: Salt Admin's money taps and a purchase lot's own amendments. Cash and a Received
    carry an immutable request id the Desk keeps (makerOrderOnce), so a retry is answered from the first answer and never
    books the money twice; the owner page holds one id per tap until it lands. A purchase lot (BUY) takes Payment, Receipt
    and Default from the ledger editor, each sending only its own figure to the Desk's native ledger amendment; a sale

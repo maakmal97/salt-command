@@ -1,4 +1,4 @@
-/* test/tide-off.mjs: TIDE IS OFF FOR NOW (his word of 19 Oct 2026). Every device opens Night on the Desk, the Counter and Salt Account,
+/* test/tide-off.mjs: TIDE IS OFF FOR NOW (his word of 19 Oct 2026). Every device opens Night on the Desk, the Counter and Salt Admin,
  * whatever it kept; the Tide button stays in view, greyed (disabled); no choice Sheet opens, since there is nothing to choose; the
  * stored choice is left as it was and Tide's tokens stay in the stylesheets. The two-themes sections are parked behind TIDE_OFF until
  * Tide returns. Each check is proved red by its own mutation (test/tide-off.mutations.json, run with tools/section.mjs). */

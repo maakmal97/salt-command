@@ -10,7 +10,7 @@
  * it: a PNG encoded by hand, because nothing here draws on a canvas and pulling in an image library
  * for two circles would be a dependency for nothing.
  *
- * SALT ACCOUNT HAS ITS OWN (S9 9.7, his D13 of 24 Sep 2026): the same tile and ring with a keyhole at its
+ * SALT ADMIN HAS ITS OWN (S9 9.7, his D13 of 24 Sep 2026): the same tile and ring with a keyhole at its
  * centre in place of the dot, so his two apps are told apart on one home screen and neither names anything.
  *
  *   node tools/stmt-icon.mjs --sync     write stmt/icons.js
@@ -100,7 +100,7 @@ export function moduleText() {
     + "   customer puts on a home screen may name the business. */\n"
     + "export const ICON_PNG_B64 = \"" + b64 + "\";\n"
     + "export const ICON_SIZE = " + SIZE + ";\n"
-    + "/* Salt Account's own (S9 9.7): the same ring with a keyhole at its centre */\n"
+    + "/* Salt Admin's own (S9 9.7): the same ring with a keyhole at its centre */\n"
     + "export const ADMIN_ICON_PNG_B64 = \"" + iconPng(true).toString("base64") + "\";\n";
 }
 

@@ -106,11 +106,16 @@ measurement of the desk.
   copies, run with `SALT_MASTER=<copy>`; a section that reads the master straight off disk will not
   see the copy, so read `process.env.SALT_MASTER ||` the checkout's path. Those copies run side by
   side, so a section writing fixed files (`test/.v420.*` until 28 Sep 2026) reads its twin's master
-  and fails unmutated: write fixtures into a `mkdtempSync` folder. Tool-file mutations edit the shared checkout: one at a time, restored byte for byte
-  in a `finally`, never while the full suite runs. Check that each mutation actually changed the
+  and fails unmutated: write fixtures into a `mkdtempSync` folder. Checkout-file mutations (any
+  other file) never edit the checkout (19 Oct 2026): each lane copies it into the temp folder
+  (node_modules a junction, `.git` a file naming the git folder) and runs its share there, so many
+  run at once, a killed run leaves nothing behind, and a live suite run stops nothing. Lanes: the
+  cores less two, the free memory at 1.8 GB a run, `--jobs N`, the least; 74 mutations on the
+  order card took 207 s on 8 lanes. A section that writes outside its own checkout (a fixed temp
+  path) must not run two at once: give it a `mkdtempSync` folder. Check that each mutation actually changed the
   text. `tools/section.mjs "<prefix>" --mutations <file.json>` (`[{name, file?, find, replace}]`,
-  no file meaning the master) does all of that and names the checks each one turns red; it exits 1
-  when a mutation turned none red, a crash included.
+  no file meaning the master) does all of that and names the checks each one turns red, in the
+  file's order; it exits 1 when a mutation turned none red, a crash included.
 - **The suite reads a frozen book, not the live one** (S0, 14 Oct 2026). `test/frozen.mjs`, the first import of `verify.mjs` and `tools/section.mjs`, sets `SALT_BOOK` to `test/fixtures/book-frozen.json` (`ledger/book.json` at the sha in `book-frozen.sha`) and `SALT_MASTER` to a temp copy of the CURRENT master with only its BOOK block rendered from that fixture, rebuilt every run and never stored. A phone fold therefore cannot turn a check red. A read goes through `FROZEN_BOOK` / `FROZEN_MASTER`; a check that is about the live files (date order, master matches book, the extract, the gate) reads `LIVE_BOOK` / `LIVE_MASTER` or runs its child with `liveEnv()`. To refresh the fixture on purpose: copy `ledger/book.json` over it and write the new sha; expect checks pinned to older rows to need a look.
 - **Attributing a red suite after a cloud fold:** swap only the book. Run the section on today's
   `ledger/book.json` and on `git show <last green>:ledger/book.json`, same code, same clock:
@@ -127,7 +132,7 @@ measurement of the desk.
   there to `@media all` (the phone frame's section, 28 Sep 2026). It also lets a LATER shorthand beat
   an earlier, more specific longhand (`margin:0 0 8px` over `…:last-child{margin-bottom:0}`), which
   no browser does: undo a shorthand with a shorthand, or measure in the Browser pane.
-- **Salt Account shows one part at a time, and jsdom ignores `hidden` in `querySelector` and `click()`** (11 Oct 2026, the five places). A test that only needs a control finds it with `byAct` after entering its place (`enter()` in `test/maker-act.mjs`); a test of what a part SHOWS asks whether any ancestor up to `#roster` is `hidden` (`shown()` in `test/admin-places.mjs`), and of what it READS counts the fetches the entry made (`drawn()` logs them). A page that installs `fetch` after `new JSDOM(...)` and taps at once finds its own first read of the sheet still in flight and skipped: flush the microtasks first, never a `setTimeout` (the suite counts those). A history step is awaited by polling the address, never a pause, and a missing control is a failed check, never a crash.
+- **Salt Admin shows one part at a time, and jsdom ignores `hidden` in `querySelector` and `click()`** (11 Oct 2026, the five places). A test that only needs a control finds it with `byAct` after entering its place (`enter()` in `test/maker-act.mjs`); a test of what a part SHOWS asks whether any ancestor up to `#roster` is `hidden` (`shown()` in `test/admin-places.mjs`), and of what it READS counts the fetches the entry made (`drawn()` logs them). A page that installs `fetch` after `new JSDOM(...)` and taps at once finds its own first read of the sheet still in flight and skipped: flush the microtasks first, never a `setTimeout` (the suite counts those). A history step is awaited by polling the address, never a pause, and a missing control is a failed check, never a crash.
 - **Declaring things to the extract.** A new top-level object or array const in the master fails
   the extract until it is added to `NOT_LEDGER` (configuration) or `LEDGER_KEYS` (the book) in
   `tools/ledger.mjs`. A date field is drawn with `dateIn(id,val,attrs)`: the suite allows one
@@ -266,7 +271,7 @@ Each of these stayed green, or read clean, through a real fault.
   element's own style must be its resting state.
 - **Emulated phones.** A fixed bar is only measured on a phone with `isMobile` and `hasTouch`: a plain
   viewport never grows its layout viewport for something wider than the phone, so the bar stays at the foot
-  whatever overflows (12 Oct 2026, Salt Account's bar). Read its bottom against `visualViewport.offsetTop +
+  whatever overflows (12 Oct 2026, Salt Admin's bar). Read its bottom against `visualViewport.offsetTop +
   height` as well as `innerHeight`, which grows with the layout viewport. Playwright's `fullPage` screenshot turns `(pointer:coarse)` off for good:
   grow the viewport and take a plain shot. **The iPhone's saved app is not Safari and cannot be driven here**: a short document lifted a
   fixed bar there (20pt and 55pt on a 393x852 screen) and nowhere else, so a measured bar at the foot in Chromium proves nothing about it. The harness sets

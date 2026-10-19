@@ -1,4 +1,4 @@
-/* Counter Admin's Received, on the book already, on an order's own claim: the Desk's native road, a request id kept, and the owner page naming it. */
+/* Salt Admin's Received, on the book already, on an order's own claim: the Desk's native road, a request id kept, and the owner page naming it. */
 import { webcrypto } from "node:crypto";
 import { cardOf } from "./maker-act.mjs";
 import { JSDOM } from "jsdom";
@@ -57,7 +57,7 @@ export async function run({ ok }) {
     const owes = await owner(route, { amount: 285, claim: at, covered: true, rid });
     const body = await owes.json();
     ok(owes.status === 409 && /nothing they recorded is waiting|not waiting any more|still owes/.test(body.error) && !L.requests.has("order:" + rid),
-      "Counter Admin's covered Received reaches the Desk's own native road, which refuses a claim that is not waiting, and keeps nothing under its id: " + owes.status + " " + body.error);
+      "Salt Admin's covered Received reaches the Desk's own native road, which refuses a claim that is not waiting, and keeps nothing under its id: " + owes.status + " " + body.error);
     const bare = await owner(route, { amount: 285, covered: true, rid });
     ok(bare.status === 400, "covered without a named claim is refused at the Counter: " + bare.status);
   } finally { globalThis.fetch = originalFetch; }

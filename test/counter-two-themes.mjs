@@ -265,7 +265,7 @@ export async function run({ ok }) {
     if (thb) thb.click();
     ok(!!thb && th.d.documentElement.getAttribute("data-theme") === "night" && th.state().held === "night" && th.errs.length === 0, `and the setting still changes the visit, whose store refuses the write (errors ${th.errs.join(" | ") || "none"})`);
 
-    /* 8. Salt Account: the stored theme from the head script (its own Sheet and switch are proved in test/admin-look.mjs) */
+    /* 8. Salt Admin: the stored theme from the head script (its own Sheet and switch are proved in test/admin-look.mjs) */
     const ownerPage = landingPage("", "nco", { master: "fixture-master", accounts: [] });
     for (const [stored, want] of [[undefined, "tide"], ["night", "night"], ["tide", "tide"], ["dusk", "tide"]]) {
       const dom = new JSDOM(ownerPage, { url: "https://site.test/all", runScripts: "dangerously", pretendToBeVisual: true, beforeParse(w) {
@@ -274,7 +274,7 @@ export async function run({ ok }) {
       } });
       const dd = dom.window.document;
       ok(dd.documentElement.getAttribute("data-theme") === want && dd.querySelector('meta[name="theme-color"]').getAttribute("content") === (want === "night" ? NIGHT.obsidian : TIDE.obsidian),
-        `Salt Account opens ${want} for ${stored === undefined ? "a store with nothing" : "a store holding " + stored}, its bar at that theme's ground`);
+        `Salt Admin opens ${want} for ${stored === undefined ? "a store with nothing" : "a store holding " + stored}, its bar at that theme's ground`);
       dom.window.close();
     }
     const oThrow = new JSDOM(ownerPage, { url: "https://site.test/all", runScripts: "dangerously", beforeParse(w) {
@@ -300,7 +300,7 @@ export async function run({ ok }) {
 
     /* 10. words: every one by key, English, no brand and no product word */
     const KEYS = ["look.h", "look.sheetH", "look.night", "look.tide", "look.note"];
-    ok(KEYS.every((k) => typeof W.EN[k] === "string" && W.EN[k].length > 0) && W.EN["look.night"] === "Night" && W.EN["look.tide"] === "Tide" && !KEYS.some((k) => /salt|counter|oil|candy|rice|bronze|silver|gold/i.test(W.EN[k])),
+    ok(KEYS.every((k) => typeof W.EN[k] === "string" && W.EN[k].length > 0) && W.EN["look.night"] === "Night" && W.EN["look.tide"] === "Tide" && !KEYS.some((k) => /\b(salt|counter|oil|candy|rice|bronze|silver|gold)\b/i.test(W.EN[k])),   /* 19 Oct 2026: whole words, so price is not rice */
       "the Sheet and the setting are worded by key, plainly, with no brand and no product word");
   } finally { for (const w of wins) { try { w.close(); } catch (e) { /* jsdom */ } } }
 }

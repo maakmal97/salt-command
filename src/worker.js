@@ -20,7 +20,7 @@
 import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, withRefunds, draftRow, tripCheck } from "./drafter.js";
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
-import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
+import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades, wakeAdmin, ADMIN_ON } from "./orders.js";
 import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerUndo, makerRows, openRefunds } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
@@ -101,6 +101,8 @@ async function accessOk(request, env, p, m) {
      leaked CI secret with the write key must not reach names or places. */
   return CI_ROUTES.has(m + " " + p) && ciAccess(request, env);
 }
+/* 19 Oct 2026: the pushes that INFORM the Desk (POST /push/send tags), each kept as KV inform:last for the banner */
+const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock"]);
 const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
@@ -221,10 +223,14 @@ async function readQueuePost(request) {
    interruption on a phone that cannot act on it, and it will be there in the panel when he
    next looks. Failures here are swallowed for the same reason the drafting is: a push service
    having a bad minute must never fail the queue write that triggered it. */
-async function pushIfDrafted(env, result) {
+export async function pushIfDrafted(env, result) {
   try {
     /* S11: a row his own yes approved as it was drafted waits on nobody, so it wakes nobody */
-    if (result && result.drafted - ((result.approved || []).length) > 0) await sendPush(env, { tag: "approve", urgency: "high" });
+    if (result && result.drafted - ((result.approved || []).length) > 0) {
+      /* 19 Oct 2026: a row to approve is Salt Admin's to answer; the Desk is rung only when Admin could not be woken */
+      const a = await wakeAdmin(env, { k: "approve" });
+      if (!a.ok || !(a.sent > 0)) await sendPush(env, { tag: "approve", urgency: "high" });
+    }
   } catch { /* a banner is not worth an error path */ }
 }
 
@@ -2356,7 +2362,9 @@ export default {
         if (daily) {
           let worth = false;
           try {
-            const d = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
+            /* 19 Oct 2026: a row to approve is Salt Admin's once it holds a device, so the Desk's digest no longer counts one */
+            const adminHas = !!(await env.SALT_QUEUE.get(ADMIN_ON));
+            const d = adminHas ? null : await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
             if ((d && d.n) > 0) worth = true;
             /* v708, his instruction of 18 Sep 2026: "if paid, I will need to refund immediately".
                Money he is HOLDING that is somebody else's was the one open figure nothing chased
@@ -2830,6 +2838,14 @@ export default {
        needs the key, and a rule with a convenient exception stops being a rule. */
     if (p === "/push/summary") {
       const out = { ok: true, pending: 0, refused: 0, refunds: 0, now: 0, lines: [] };
+      /* 19 Oct 2026, THE SPLIT: adminOn tells the banner that Salt Admin holds a subscribed device, so the Desk drops what waits
+         on his decision; inform is the last thing the system did that the Desk reports (POST /push/send), once past the mark
+         the banner sends as ?isince=. A word and a moment, never a code, a name or an amount. */
+      try {
+        if (await env.SALT_QUEUE.get(ADMIN_ON)) out.adminOn = true;
+        const inf = await env.SALT_QUEUE.get("inform:last", "json"), isince = url.searchParams.get("isince");
+        if (inf && typeof inf.k === "string" && typeof inf.at === "string" && (!isince || inf.at > isince)) out.inform = { k: inf.k, at: inf.at };
+      } catch (e) { /* a banner is not worth an error path */ }
       try {
         if (env.SALT_LEDGER) {
           const d = await env.SALT_LEDGER.prepare("SELECT COUNT(*) AS n FROM draft WHERE status='pending'").first();
@@ -2865,7 +2881,12 @@ export default {
       if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       let b = {};
       try { b = await request.json(); } catch { /* a bare POST is fine: it is a wake, not a message */ }
-      return json(await sendPush(env, { tag: (b && b.tag) || "salt", urgency: (b && b.urgency) || "normal" }));
+      const tag = (b && b.tag) || "salt";
+      /* 19 Oct 2026: what the system did (a fold live or refused, a suite red, a stock light) is kept a day for the banner to read */
+      if (INFORM_TAGS.has(tag) && env.SALT_QUEUE) {
+        try { await env.SALT_QUEUE.put("inform:last", JSON.stringify({ k: tag, at: new Date().toISOString() }), { expirationTtl: 86400 }); } catch (e) { /* the wake still goes */ }
+      }
+      return json(await sendPush(env, { tag, urgency: (b && b.urgency) || "normal" }));
     }
     if (p === "/push/subscribers") {
       return json({ ok: true, count: (await listSubs(env)).length });

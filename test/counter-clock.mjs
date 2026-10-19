@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { landingPage } from "../stmt/page.js";
 
-/* 14 Oct 2026 (his review): a live clock on the Counter's header and beside Salt Account's name, Kuala Lumpur time, painted
+/* 14 Oct 2026 (his review): a live clock on the Counter's header and beside Salt Admin's name, Kuala Lumpur time, painted
    on load and again when the page comes back into view. */
 export async function run({ ok }) {
   const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -21,6 +21,6 @@ export async function run({ ok }) {
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
   const owner = landingPage("", "nclk2", { master: "", accounts: [] });
   /* 18 Oct 2026: one clock, under the name in the Desk bar that heads every place, as the Desk carries it */
-  const bars = owner.match(/<div class="salt-deskbar__name">Salt Account<\/div><div class="salt-deskbar__meta"><span class="clk" data-clock><\/span><\/div>/g) || [];
-  ok(bars.length === 1, "Salt Account carries the clock under its name in the Desk bar that heads every place: " + bars.length);
+  const bars = owner.match(/<div class="salt-deskbar__name">Salt Admin<\/div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"><\/span><span class="abarhours" id="aBarHours" hidden><\/span><span class="clk" data-clock><\/span><\/div>/g) || [];
+  ok(bars.length === 1, "Salt Admin carries the clock under its name in the Desk bar that heads every place: " + bars.length);
 }

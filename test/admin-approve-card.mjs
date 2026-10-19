@@ -124,7 +124,7 @@ export async function run({ ok, pageWork }) {
     ok(!!claimCard && byAct(claimCard, "draft.approve").disabled && !byAct(s267, "draft.approve").disabled && s267.querySelectorAll(".rdet--row .salt-approve__reason").length === 1,
       "a customer's claim on the same row stands on a card of its own, shut, and his take-back on that row stays his to approve");
     const heads = [...d.querySelectorAll("#makerDrafts .salt-approve__entry")].map((x) => x.textContent.replace(/, .*/, ""));
-    ok(J(heads) === J(["from laptop", "from the site", "from laptop", "from Counter Admin", "from the site"]), "each card says where its entry came from: laptop, Counter Admin, the site: " + J(heads));
+    ok(J(heads) === J(["from laptop", "from the site", "from laptop", "from Salt Admin", "from the site"]), "each card says where its entry came from: laptop, Salt Admin, the site: " + J(heads));
     /* C. one verb */
     const verbs = [...d.querySelectorAll("#makerDrafts .apverb")].map((x) => x.textContent);
     ok(J(verbs) === J(["Take back a payment", "Payment received", "Close the order: RM 540.00, collected, paid cash", "New sale", "Handover"])

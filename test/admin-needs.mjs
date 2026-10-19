@@ -11,7 +11,7 @@
  *      no card in Needs you books money
  *   7  the kind chips: filters only, reading nothing
  *   8  a read that failed is said, never taken for nothing waiting
- *  10  (17 Oct 2026, Counter Admin clarity part 2) the verb first: each card's title says what to do, then who and the figure under it; the card's main
+ *  10  (17 Oct 2026, Salt Admin clarity part 2) the verb first: each card's title says what to do, then who and the figure under it; the card's main
  *      button is on the card and reaches the same function as the full card's; a money tap asks once on the card and Cancel sends nothing; practice
  *      accounts are one folded line at the foot, "Practice: N"; the summary reads "12 to do now · 11 soon"
  *   9  the 5-second read: only while Needs you or Orders shows and the page is visible, no read twice at once, nothing drawn when nothing
@@ -230,7 +230,7 @@ export async function run({ ok, pageWork }) {
     const got = TITLES.map(([k]) => (p.card(k) ? p.title(p.card(k)) : null)), want = TITLES.map(([, t]) => t);
     ok(got.every((t, i) => t === want[i]),
       "each card's title says what to do, verb first, then who: " + JSON.stringify(got));
-    ok(p.words(p.card("o:ord-p1")).what === "2 units · RM 200.00" && !/ now| tier|level/i.test(p.card("o:ord-p1").textContent),
+    ok(p.words(p.card("o:ord-p1")).what === "2 units · RM 200.00" && !/\b(now|tiers?|levels?)\b/i.test(p.card("o:ord-p1").innerHTML.replace(/<[^>]*>/g, " ")),   /* 19 Oct 2026: whole words, spaced at every tag */
       "and the figure stands under it, with the book as a mark and no level or tier word: " + p.words(p.card("o:ord-p1")).what);
     ok(!p.cards().some((c) => p.buttons(c).some((t) => /Accept|Cash/.test(t))) && p.cards().filter(owedCard).every((c) => c.querySelectorAll(".salt-pill").length === 0),
       "and no card carries Accept or Cash; an owed card's one way is a ghost that opens, never a filled pill");
@@ -247,11 +247,13 @@ export async function run({ ok, pageWork }) {
       && p.cards().filter((c) => byAct(c, "need.open")).every((c) => c.querySelector("button.need-tap.salt-action__title") && c.querySelector(".need-tap .need-who")),
     "a card has no Open button: its title is the one tap (data-act need.open), and the card's own actions stay beside it");
     const folds = [...d.querySelectorAll("#nlist > details.nfold")];
-    ok(same(folds.map((f) => f.getAttribute("data-sev")), ["soon", "watch", "practice"]) && folds.every((f) => !f.open && f.querySelector("summary.nsev") && /^\w+(:| .) \d+$/.test(f.querySelector("summary").textContent))
+    /* 19 Oct 2026 (his word): Soon opens unfolded; Watch and practice stay folded */
+    ok(same(folds.map((f) => f.getAttribute("data-sev")), ["soon", "watch", "practice"]) && same(folds.map((f) => f.open), [true, false, false])
+      && folds.every((f) => f.querySelector("summary.nsev") && /^\w+(:| .) \d+$/.test(f.querySelector("summary").textContent))
       && same(folds.map((f) => f.querySelectorAll("[data-need]").length), [p.keys("soon").length, p.keys("watch").length, 3]) && !d.querySelector("#nlist > [data-need]:not([data-sev=now])"),
-    "Soon and Watch are folded by default behind a heading with their count, Now stands open: " + JSON.stringify(folds.map((f) => [f.open, f.querySelector("summary").textContent])));
-    folds[0].open = true; folds[0].dispatchEvent(new p.w.Event("toggle")); await p.tap("need.kind.all");
-    ok(d.querySelector('#nlist > details[data-sev="soon"]').open, "a fold he opened stays open through a redraw");
+    "Soon opens unfolded, Watch and practice are folded behind a heading with their count, Now stands open: " + JSON.stringify(folds.map((f) => [f.open, f.querySelector("summary").textContent])));
+    folds[0].open = false; folds[0].dispatchEvent(new p.w.Event("toggle")); folds[1].open = true; folds[1].dispatchEvent(new p.w.Event("toggle")); await p.tap("need.kind.all");
+    ok(!d.querySelector('#nlist > details[data-sev="soon"]').open && d.querySelector('#nlist > details[data-sev="watch"]').open, "a fold he closed or opened stays so through a redraw");
   } finally { p.w.close(); }
 
   /* 6b. THE PILL IS THE RECORD BUTTON'S, THE SAME QUESTION AND THE SAME REQUEST */
@@ -389,7 +391,7 @@ export async function run({ ok, pageWork }) {
     ok(same(r.owedGoods.map((x) => [x.party, x.rid, x.units]), [["CC1-ZED", "r-d", 2]]),
       "goods owed are the units still to hand over on a row paid in full, and never on one unpaid, cancelled or a gift: " + JSON.stringify(r.owedGoods));
     const cat = makerInputCatalog(book, {}, [], [], "2026-10-05");
-    ok(same(cat.owedMoney, m) && same(cat.owedGoods, r.owedGoods) && cat.today === "2026-10-05", "and the catalog Counter Admin reads carries both");
+    ok(same(cat.owedMoney, m) && same(cat.owedGoods, r.owedGoods) && cat.today === "2026-10-05", "and the catalog Salt Admin reads carries both");
     const none = owedBothWays({ ...book, state: {} }, "2026-10-05");
     ok(!("owedMoney" in none) && /payment term/.test(none.owedError || ""), "a mirror with no term says so, never that nothing is owed: " + JSON.stringify(none));
   }

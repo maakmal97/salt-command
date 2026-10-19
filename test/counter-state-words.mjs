@@ -1,4 +1,4 @@
-/* test/counter-state-words.mjs: ONE WORD PER STATE, AND THE MARK ALONE (Phase 7c of the Salt Account and Counter redesign, his decision 10
+/* test/counter-state-words.mjs: ONE WORD PER STATE, AND THE MARK ALONE (Phase 7c of the Salt Admin and Counter redesign, his decision 10
  * of 11 Oct 2026: Confirmed for acknowledged, Placed for Sent, Declined for Not taken; and his word of 12 Oct 2026, "Remove the shapes names
  * in the Order page, and anywhere", which took back the shape word that 7c drew beside the mark).
  *

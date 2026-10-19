@@ -2,12 +2,12 @@
  * dialogs below 860, the drawer from 860, list beside order from 860 (the same breakpoints as /all); 2-up tiles in the order sheet at 768").
  *
  * jsdom applies no media query, so this reads the page's own stylesheet as rules, by query and selector, and the cascade at a width by rewriting each query that holds there to
- * `all`. The stylesheet is Salt Account's too (stmt/page.js PAGE_CSS), whose own tablet rules are all under .adm (test/admin-tablet.mjs): the customer's carry none, and name only
+ * `all`. The stylesheet is Salt Admin's too (stmt/page.js PAGE_CSS), whose own tablet rules are all under .adm (test/admin-tablet.mjs): the customer's carry none, and name only
  * what the customer's page draws. Where a rule lands on screen (a dialog 560px wide and centred at 768, the drawer from 861, the list beside the order, the open order's foot above
  * the App bar at 1024x768, no sideways scroll, 44px targets) is the Chromium probe's, and its numbers are in the pull request. Each assertion was proved red by its own mutations
  * (test/counter-tablet.mutations.json, run with tools/section.mjs).
  *   1  the customer's tablet rules exist at their widths, the script's own width follows them, and none is under .adm
- *   2  a sheet of the customer's and one of Salt Account's are placed alike at 375, 768, 861, 1000 and 1280px
+ *   2  a sheet of the customer's and one of Salt Admin's are placed alike at 375, 768, 861, 1000 and 1280px
  *   3  the order sheet's tiles are two columns, in the 560px dialog at 768px (not the 364px each had in a sheet as wide as the screen) and in the drawer at 861px
  * Every code, name and amount is invented. */
 import { JSDOM } from "jsdom";

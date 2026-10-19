@@ -43,7 +43,7 @@ export const OWNER_JS = `
      brings in, and the address. The place is read on entering it, a part on entering the part, and what neither shows is never read:
      entering Shop reads no order and entering Orders reads no form. Nothing changes below the screen: every route, request body, id
      and retained send is as it was. Re-entering a place reads again, as it always did. */
-  /* the test surface (his answers of 18 Oct 2026): true on Counter Admin under /all/test alone, where it reads the example orders, their
+  /* the test surface (his answers of 18 Oct 2026): true on Salt Admin under /all/test alone, where it reads the example orders, their
      payments and chats, and nothing else (no account list, links, inputs, notice or book) */
   var TESTING=/*__TESTING__*/false;
   var placeNow='needs', partNow='', PARTS={}, fOpen=null;
@@ -820,7 +820,7 @@ export const OWNER_JS = `
     lookShut();   /* 11 Oct 2026: the look Sheet gives way; the lapse is what he must see */
     ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */
     makerVaultLock();   /* and every key, name, place and picture the one unlock holds (Phase 4b) */
-    document.getElementById('aEnded').hidden=false; document.body.classList.add('ended');
+    document.getElementById('aEnded').hidden=false; document.body.classList.add('ended'); barDraw();
     /* the Needs poll ends with the sign-in: every poll after a lapse would send seven requests to the login and fail each */
     if(needsTimer){ clearInterval(needsTimer); needsTimer=null; }
   }
@@ -862,11 +862,11 @@ export const OWNER_JS = `
     'Units must be above zero.':'Units must be above zero.',
     'Carriage must be a finite, non-negative number.':'Delivery cannot be negative.',
     'Handover is delivered, collected or not stated.':'Say whether it was delivered or collected, or leave it blank.',
-    'Choose a buyer on the roster. Register a new buyer under Counter Admin > Add ID first, then pick the code.':'Choose a customer from the list. A new customer is added under Record, New customer, first.',
-    'Choose a supplier on the roster. Register a new supplier under Counter Admin > Add ID first, then pick the code.':'Choose a supplier from the list. A new supplier is added under Record, New customer, first.',
-    'Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code.':'Choose their customer from the list, or leave it as Not named. A new customer is added under Record, New customer, first.',
-    'Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code.':'Choose who introduced the buyer from the list. A new one is added under Record, New customer, first.',
-    'Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code.':'Choose an associate from the list. A new one is added under Record, New customer, first.',
+    'Choose a buyer on the roster. Register a new buyer under Salt Admin > Add ID first, then pick the code.':'Choose a customer from the list. A new customer is added under Record, New customer, first.',
+    'Choose a supplier on the roster. Register a new supplier under Salt Admin > Add ID first, then pick the code.':'Choose a supplier from the list. A new supplier is added under Record, New customer, first.',
+    'Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Salt Admin > Add ID first, then pick the code.':'Choose their customer from the list, or leave it as Not named. A new customer is added under Record, New customer, first.',
+    'Choose a referrer on the roster. Register a new referrer under Salt Admin > Add ID first, then pick the code.':'Choose who introduced the buyer from the list. A new one is added under Record, New customer, first.',
+    'Choose an associate on the roster. Register a new associate under Salt Admin > Add ID first, then pick the code.':'Choose an associate from the list. A new one is added under Record, New customer, first.',
     'Choose R2 or R3.':'Choose They resell or They introduced the buyer.',
     'An attribution needs an associate and its stream.':'Choose the associate and how they were involved.',
     "Register the associate's resale account first.":'Their resale account is not set up yet. Make them an associate first.',
@@ -1004,13 +1004,45 @@ export const OWNER_JS = `
                  : {};
     o.redirect='manual';
     var r;
-    try{ r = await fetch(path, o); }catch(e){ throw new Error('Not sent. Check the connection and try again.'); }
+    try{ r = await fetch(path, o); }catch(e){ if(path===BAR_READ){ barNet=false; barDraw(); } throw new Error('Not sent. Check the connection and try again.'); }
+    if(path===BAR_READ&&!barNet){ barNet=true; barDraw(); }
     if(r.type==='opaqueredirect'||r.status===401){ ended(); throw new Error(ENDED); }
     var j = await r.json().catch(function(){ return {}; });
     if(!r.ok||!j.ok) throw refused(j.error, j, r.status);
     return j;
   }
   var makerData=null, makerQuotes={}, makerPv={}, makerFee={}, makerWin={}, makerHours=null, makerBusy=false;
+  /* 19 Oct 2026, his word: THE BAR SAYS WHERE THINGS STAND, as the Desk's line does. Live while this device is on line and his last read of the hours reached the
+     Counter, else Offline; Offline too once the sign-in has ended. Then Open until, or Closed and when it opens, off the hours this page already reads
+     (Needs you's poll and Shop), and nothing once that moment has passed, until the next read. It sends nothing of its own. */
+  /* Live follows the hours read alone, so a tick where some reads fail and others get through does not flip it back and forth */
+  var barNet=navigator.onLine!==false, BAR_READ='/all/maker/hours';
+  function barWhen(iso){
+    var f=function(d){ var p={}; new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short',hourCycle:'h23'})
+      .formatToParts(d).forEach(function(x){ p[x.type]=x.value; }); return p; };
+    try{ var a=f(new Date(iso)), n=f(new Date()); return a.day===n.day&&a.month===n.month?a.hour+':'+a.minute:a.day+' '+a.month; }catch(e){ return ''; }
+  }
+  function barDraw(){
+    var live=document.getElementById('aBarLive'), hrs=document.getElementById('aBarHours'); if(!live||!hrs) return;
+    var on=barNet&&navigator.onLine!==false&&!document.body.classList.contains('ended');
+    /* a tick that finds the same answer changes nothing on the page (R4): each part is written only when it differs */
+    if(live.getAttribute('data-on')!==String(on)){
+      live.setAttribute('data-on',String(on));
+      live.className='abarlive '+(on?'on':'off');
+      live.title=on?'Online: the Counter answered his last read.':'Offline: this device cannot reach the Counter just now.';
+      live.innerHTML='<i></i><span>'+(on?'Live':'Offline')+'</span>';
+    }
+    var h=makerHours&&makerHours.status, at=h&&(h.open?h.nextChange:h.nextOpen), txt='';
+    if(h&&typeof h.open==='boolean'&&!(at&&Date.parse(at)<=Date.now())){
+      var w=at?barWhen(at):'';
+      txt=h.open?'Open'+(w?' until '+w:''):'Closed'+(w?', opens '+w:'');
+    }
+    if(hrs.textContent!==txt) hrs.textContent=txt;
+    if(hrs.hidden===!!txt) hrs.hidden=!txt;
+  }
+  window.barDraw=barDraw;
+  window.addEventListener('online',function(){ barNet=true; barDraw(); });
+  window.addEventListener('offline',barDraw);
   /* PHASE 1b: a part he has begun on is left alone by a poll. Opening a field or tapping a button inside the order cards or the claims marks it
      (in the capture phase, so a redraw its own tap makes clears the mark afterwards); the redraw of that part clears it. */
   var dirty={makerReview:false, makerClaims:false};
@@ -1505,7 +1537,7 @@ export const OWNER_JS = `
       draft.note='';draft.busy=true;makerChatState();
       try{
         if(!draft.saved){
-          if(!OWNER.master) throw new Error('Reload Salt Account, then send the reply again.');
+          if(!OWNER.master) throw new Error('Reload Salt Admin, then send the reply again.');
           var envelope=await makerVaultSeal(OWNER.master,{u:user,body:draft.pending});
           var retained={v:1,u:user,rid:draft.pending.rid,at:new Date().toISOString(),envelope:envelope};
           draft.savedKey=savedPrefix+draft.pending.rid;
@@ -1524,7 +1556,7 @@ export const OWNER_JS = `
       if(draft.busy) return;
       draft.busy=true;makerChatState();
       try{
-        if(!OWNER.master) throw new Error('Reload Salt Account to open the unsent reply.');
+        if(!OWNER.master) throw new Error('Reload Salt Admin to open the unsent reply.');
         var opened=await makerVaultOpen(OWNER.master,draft.saved.envelope);
         if(opened.u!==user) throw new Error('That unsent reply belongs to another account. It was not sent.');
         var body=opened.body;
@@ -2642,7 +2674,7 @@ export const OWNER_JS = `
      (the read, the count). The card is found by its key when the answer comes, since a redraw replaces it; a card that has gone
      (the order left the open list, the row was decided) hands its answer to the list's line, so it is never lost. A foot below
      the screen (a tall card, a tap near its head) is scrolled to, clear of the bottom bar, so the answer is seen. */
-  /* 18 Oct 2026 (Counter Admin clarity, part 3): A FOLDED SECTION of an order's card is the system's Plan fold, shut until a tap. Its state is kept by the order and
+  /* 18 Oct 2026 (Salt Admin clarity, part 3): A FOLDED SECTION of an order's card is the system's Plan fold, shut until a tap. Its state is kept by the order and
      the section, so a redraw (a read that changed, a tap) leaves it as he left it. body is where its controls go; the summary is a control of its own (order.<thing>). */
   var ordFolds={};
   function ordFold(card,title,act,orderId,section,open){
@@ -3947,15 +3979,10 @@ export const OWNER_JS = `
   /* 18 Oct 2026 (his word: the customer's order card is the design): THE HEAD IS THE CUSTOMER'S. The book's tile with its size, the stage and who and when beside
      it, the goods' track (Placed, Confirmed, Ready, Collected or Delivered), then the money on its own lines, the classes the Counter's order screen draws (oHead,
      oSteps, oMoney in stmt/page.js), so the two read alike. Admin keeps what is his alone: the code, Owed, what they say they sent, and Handed while goods remain. */
+  /* 19 Oct 2026 (his word): the track is the Counter's own, Batch A's marked steps (oSteps in stmt/page.js): a drawn mark a step, its moment under
+     its name and Next on the step to come, so the two cards draw one chart and a change to it reaches both */
   function ordSteps(order){
-    var names=['Placed','Confirmed','Ready',order.mode==='deliver'?'Delivered':'Collected'], q=+order.qty||0, mv=+order.moved||0, all=mv>0&&mv>=q-0.0004;
-    var cur=order.status==='done'?4:all?3:(order.status==='ready'||mv>0)?2:order.status==='acknowledged'?1:0;
-    var ol=el('ol','salt-steps'); ol.setAttribute('aria-label','Where the goods are');
-    names.forEach(function(n,i){
-      var li=el('li','salt-steps__step'+(i<cur?' salt-steps__step--done':i===cur?' salt-steps__step--now':''),n);
-      if(i===cur) li.setAttribute('aria-current','step');
-      ol.appendChild(li);
-    });
+    var ol=oSteps(order).firstChild; ol.setAttribute('aria-label','Where the goods are');
     return ol;
   }
   function ordLine(label,value,flag,cls){
@@ -4023,7 +4050,7 @@ export const OWNER_JS = `
       }else if(order.status==='placed'){
         var quote=makerQuotes[order.id]||(makerPv[order.id]&&makerPv[order.id].payload)||{}, form=el('div','maker-fields');
         var total=makerField(form,['Price (goods)','order.total'],'number',quote.total==null?order.total:quote.total);
-        /* 18 Oct 2026 (Counter Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
+        /* 18 Oct 2026 (Salt Admin clarity, part 3): THE CARD LEADS WITH THE ANSWER. Agree is the filled pill at the top, the terms it will send written beside
            it in one line and kept in step with the choices; the price, the delivery charge and the time are folded under Change terms, shut until a tap.
            Until the figures are read the pill is a stand-in, never a send: it asks for the charge (and opens it) or says it is reading. */
         leadPlace();
@@ -4632,12 +4659,12 @@ export const OWNER_JS = `
   function draftAt(d){ return String(d&&d.id||''); }
   function draftParty(d){ var e=d.entry||{}, p=e.payload||{}; return d.party||e.party||p.party||''; }
   function draftRid(d){ var r=d.row||{}, f=d.figures||{}; return f.rid||r.rid||(/^[a-z]{1,3}[0-9]+$/i.test(String(d.amends||''))?d.amends:''); }
-  /* where the entry came from: Counter Admin's own inputs carry their request, a site order's its id (his taps on it are the Desk's own), the laptop's queue holds the bare
+  /* where the entry came from: Salt Admin's own inputs carry their request, a site order's its id (his taps on it are the Desk's own), the laptop's queue holds the bare
      payload, and the phone typed the rest */
   function draftFrom(d){
     var e=d.entry||{};
-    if(e.makerRequest) return 'Counter Admin';
-    if(e.orderId) return e.by==='desk'||e.counter?'Counter Admin':'the site';
+    if(e.makerRequest) return 'Salt Admin';
+    if(e.orderId) return e.by==='desk'||e.counter?'Salt Admin':'the site';
     if(!e.type&&e.payload) return 'laptop';
     return e.type?'phone':'';
   }
@@ -4924,6 +4951,7 @@ export const OWNER_JS = `
     catch(error){ var s=document.getElementById('makerHoursStatus'); if(s) refusal(s,error); }
   }
   function drawMakerHours(){
+    barDraw();
     var root=document.getElementById('makerSchedule'), status=document.getElementById('makerHoursStatus');
     if(!root||!makerHours) return;
     root.textContent='';
@@ -5090,7 +5118,7 @@ export const OWNER_JS = `
   var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=5000;   /* R4, his yes of 19 Oct 2026 (D12): was 30000; a tick that finds the same answer draws nothing */
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice'],['book','what is owed']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
-  var nFoldOpen={}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
+  var nFoldOpen={soon:true}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
   function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; if(!err) delete nSeen[name+'!']; }
   /* R4: a poll that fails again with the same words draws nothing; a new failure does, and a read that gets through forgets it (nGot) */
@@ -5122,7 +5150,7 @@ export const OWNER_JS = `
      a line, bookTile mtile for a card (the mark, and under it "2.5 units"), bookTag the system's Product tag holding the mark, bookItem a tile of a form that is the
      mark alone, and pmarkHead, the customer's, a heading that is the mark alone. A select cannot hold a mark, so an option says the book's letter in brackets, [I],
      and nothing for a book with none. noBook takes a book's name out of a sentence the Desk or the Counter wrote, for the words that are not this page's to change. */
-  var BOOKS=/\\b(salt|oil|candy|rice)\\b(?!\\s+(?:account|counter|command|desk)\\b)/gi;
+  var BOOKS=/\\b(salt|oil|candy|rice)\\b(?!\\s+(?:account|admin|counter|command|desk)\\b)/gi;
   function noBook(text){
     return String(text==null?'':text).replace(BOOKS,function(w,k,at,all){ var before=all.slice(0,at); return /\\bthe\\s+$/i.test(before)?'book':/(^|[.!?]\\s)$/.test(before)?'The book':'the book'; });
   }
@@ -5182,7 +5210,7 @@ export const OWNER_JS = `
     if(o.u) c.setAttribute('data-u', o.u);
     if(o.practice) c.setAttribute('data-practice','');
     c.appendChild(el('span','salt-action__kind',o.word));
-    /* 17 Oct 2026 (Counter Admin clarity, part 2): THE TITLE SAYS WHAT TO DO, verb first, then who: head + code + rest. The figure and the book's mark stand under it. */
+    /* 17 Oct 2026 (Salt Admin clarity, part 2): THE TITLE SAYS WHAT TO DO, verb first, then who: head + code + rest. The figure and the book's mark stand under it. */
     var what=null;
     if(o.what||o.mark){ what=el(o.head?'p':'span','need-what'); if(o.mark) what.appendChild(bookMark(o.mark)); if(o.what) what.appendChild(document.createTextNode((o.mark?' ':'')+o.what)); }
     if(o.head){
@@ -5683,7 +5711,7 @@ export const OWNER_JS = `
     SEVS.forEach(function(s){
       var group=shown.filter(function(i){ return i.sev===s[0]; });
       if(!group.length) return;
-      /* Now stands open; Soon and Watch are folded behind their heading and a count, kept as he leaves them across a redraw */
+      /* Now stands open; Soon and Watch fold behind their heading and a count, kept as he leaves them across a redraw. Soon opens unfolded (his word of 19 Oct 2026) */
       var h=el(s[0]==='now'?'p':'summary','salt-eyebrow salt-eyebrow--'+SEVC[s[0]]+' nsev', s[1]+(s[0]==='now'?'':' · '+group.length)); h.setAttribute('data-sev', s[0]); if(s[0]!=='now') h.setAttribute('data-act','need.fold.'+s[0]);
       var box=nlist;
       if(s[0]!=='now'){
@@ -5728,6 +5756,7 @@ export const OWNER_JS = `
     try{ var b=await refs('/all/maker/bulletin'); nGot('notice'); if(changed('notice', b.lines||[])){ makerNotice=b.lines||[]; apply=true; } }
     catch(error){ nGot('notice', error); if(failNew('notice', error)) apply=true; }
     shopReading=false;
+    barDraw();
     if(apply) drawNeeds();
   }
   /* THE POLL runs only while Needs you or Orders is showing and the page is visible, and stops the moment either stops. */
@@ -5897,7 +5926,78 @@ export const OWNER_JS = `
       try{ history.replaceState(null,'',addrFor(placeNow, partNow)); }catch(e){}
     }
   }
-  /* 11 Oct 2026, HIS WORD: SALT ACCOUNT HAS ITS OWN NIGHT OR TIDE, per device. The head script has set the stored theme (Tide until one is
+  /* ---- SALT ADMIN'S OWN NOTIFICATIONS (19 Oct 2026, docs/plan-notifications.html section 3) ---------------------------------------------
+     Shop > This device. Its worker is /all/sw.js at scope /all (the customer's worker at the root never sees this page), its subscriptions are
+     filed by /all/push/subscribe under opush:, and the Counter's own VAPID key is the one the site publishes at /push/key. The browser's question
+     is asked from the Turn on tap alone. A registration whose scope is not exactly /all is never taken for Admin's, so Turn off can never undo a
+     customer's. A tap on a banner is told here where to go (the worker posts { salt: 'admin', hash }), and the page opens that place. */
+  function alertCan(){ return ('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window); }
+  function alertPaint(on, note){
+    var st=document.getElementById('alertState'), a=document.getElementById('alertOn'), b=document.getElementById('alertOff'), n=document.getElementById('alertNote');
+    if(!st||!a||!b) return;
+    st.textContent=on?'On':'Off'; a.hidden=on; b.hidden=!on; a.disabled=false; b.disabled=false;
+    if(note&&n) n.textContent=note;
+  }
+  function alertKey(k){ var raw=atob(k.replace(/-/g,'+').replace(/_/g,'/')), out=new Uint8Array(raw.length); for(var i=0;i<raw.length;i++) out[i]=raw.charCodeAt(i); return out; }
+  function alertIsAdmin(reg){ try{ return !!reg&&new URL(reg.scope).pathname==='/all'; }catch(e){ return false; } }
+  function alertActive(reg){
+    return new Promise(function(done){
+      var w=reg.installing||reg.waiting||reg.active;
+      if(!w||w.state==='activated') return done(reg);
+      w.addEventListener('statechange', function(){ if(w.state==='activated') done(reg); });
+    });
+  }
+  async function alertFile(sub){
+    var j=sub.toJSON?sub.toJSON():null;
+    if(!j||!j.keys) throw new Error('This phone gave no notification keys. Try again.');
+    await refs('/all/push/subscribe',{endpoint:sub.endpoint, keys:{p256dh:j.keys.p256dh, auth:j.keys.auth}});
+  }
+  async function alertTurnOn(){
+    var a=document.getElementById('alertOn'); a.disabled=true;
+    try{
+      if(!alertCan()){ alertPaint(false,'This browser cannot take notifications. On an iPhone, add Salt Admin to the Home Screen first.'); return; }
+      var k=await (await fetch('/push/key',{cache:'no-store'})).json();
+      if(!k.key||!k.configured){ alertPaint(false,'Notifications are not set up on the site yet.'); return; }
+      var perm=await Notification.requestPermission();
+      if(perm!=='granted'){ alertPaint(false,'The browser did not allow notifications. Allow them in its settings, then tap again.'); return; }
+      var reg=await alertActive(await navigator.serviceWorker.register('/all/sw.js',{scope:'/all'}));
+      var sub=(await reg.pushManager.getSubscription())||(await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:alertKey(k.key)}));
+      await alertFile(sub);
+      alertPaint(true,'Salt Admin rings this phone for what waits on your decision.');
+    }catch(e){ alertPaint(false,(e&&e.message)||'Notifications could not be turned on. Try again.'); }
+  }
+  async function alertTurnOff(){
+    var b=document.getElementById('alertOff'); b.disabled=true;
+    try{
+      var reg=await navigator.serviceWorker.getRegistration('/all'), sub=alertIsAdmin(reg)?await reg.pushManager.getSubscription():null;
+      if(sub){ await refs('/all/push/unsubscribe',{endpoint:sub.endpoint}); await sub.unsubscribe(); }
+      alertPaint(false,'Notifications are off on this phone.');
+    }catch(e){ alertPaint(true,(e&&e.message)||'Notifications could not be turned off. Try again.'); }
+  }
+  /* on opening: a phone already subscribed says On, and files the subscription again so a record the site lost is put back */
+  async function alertRead(){
+    try{
+      if(!alertCan()||Notification.permission!=='granted') return;
+      var reg=await navigator.serviceWorker.getRegistration('/all'), sub=alertIsAdmin(reg)?await reg.pushManager.getSubscription():null;
+      if(!sub) return;
+      await alertFile(sub);
+      alertPaint(true);
+    }catch(e){ /* the row stays Off; a tap on Turn on tries again */ }
+  }
+  if(!TESTING&&document.getElementById('alertOn')){
+    document.getElementById('alertOn').addEventListener('click', alertTurnOn);
+    document.getElementById('alertOff').addEventListener('click', alertTurnOff);
+    alertRead();
+    try{
+      if('serviceWorker' in navigator&&navigator.serviceWorker.addEventListener) navigator.serviceWorker.addEventListener('message', function(ev){
+        var d=ev&&ev.data;
+        if(!d||d.salt!=='admin'||typeof d.hash!=='string'||view) return;
+        var at=addrOf(d.hash);
+        if(at) showPlace(at.place, at.part, {fresh:true, push:true});
+      });
+    }catch(e){ /* a browser that will not listen still opens the page */ }
+  }
+  /* 11 Oct 2026, HIS WORD: SALT ADMIN HAS ITS OWN NIGHT OR TIDE, per device. The head script has set the stored theme (Tide until one is
      chosen); the choice Sheet is the customer's (stmt/page.js, lookAsk), asked once when this page opens on a device that holds none, and
      Shop > This device holds the switch. The rest of the look (kept in localStorage salt-look on this origin, applied at once, no
      reload) is the page's own and is shared. An Access lapse, which ended() reads on a request's answer, takes the Sheet down. */

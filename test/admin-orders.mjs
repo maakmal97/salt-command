@@ -439,7 +439,7 @@ export async function run({ ok, pageWork }) {
     const d = p.d, add = d.getElementById("oAdd"), { at, top } = ownerCss();
     ok(!!add && add.tagName === "BUTTON" && add.classList.contains("salt-orb") && add.getAttribute("data-act") === "nav.add" && add.getAttribute("aria-label") === "Record an entry"
       && !!add.querySelector("svg") && d.getElementById("roster").contains(add) && !add.hasAttribute("data-m") && !add.hasAttribute("data-part") && byAct(d, "nav.add") === add,
-    "one + orb stands on Salt Account, found by its act and named by a label: " + (add && add.outerHTML.slice(0, 200)));
+    "one + orb stands on Salt Admin, found by its act and named by a label: " + (add && add.outerHTML.slice(0, 200)));
     const there = [];
     for (const place of ["needs", "orders", "customers", "shop"]) { await p.tap("nav." + place); there.push(shown(add)); }
     ok(there.length === 4 && there.every(Boolean), "it stands on Needs you, Orders, Customers and Shop: " + there.join());

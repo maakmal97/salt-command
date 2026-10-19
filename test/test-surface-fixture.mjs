@@ -5,7 +5,7 @@
    2. it holds a cancelled and a declined order, three handed over in full (one at a size the list no longer carries), a group
       order open to join, and no claim waiting, so no gate stands;
    3. the order book takes 0000-0002 on both fixture ops and refuses a real username on each;
-   4. Salt Account offers Make for each of the three: with two made it makes the third alone, with none all three;
+   4. Salt Admin offers Make for each of the three: with two made it makes the third alone, with none all three;
    5. missing() is empty: every feature line still has its case, the fresh account's own line among them. */
 import { JSDOM, VirtualConsole } from "jsdom";
 import { webcrypto } from "node:crypto";
@@ -53,7 +53,7 @@ export async function run({ ok, pageWork }) {
   ok(res[0].ok === true && res[1].ok === true && res[2].ok === false && res[2].status === 400 && res[3].ok === false && res[3].status === 400,
     "The order book takes 0000-0002 on both fixture ops and refuses a real username on each: " + JSON.stringify(res.map((r) => [r.ok, r.status || 200])));
 
-  /* 4. Salt Account offers Make for each of the three */
+  /* 4. Salt Admin offers Make for each of the three */
   const wins = [];
   const practice = async (made) => {
     const posts = [], errs = [], vc = new VirtualConsole(); vc.on("jsdomError", (e) => errs.push(String(e.message || e)));
@@ -82,7 +82,7 @@ export async function run({ ok, pageWork }) {
   const two = await practice(["0000-0000", "0000-0001"]), none = await practice([]);
   ok(/0000-0002/.test(two.lead) && JSON.stringify(two.posts) === JSON.stringify(["0000-0002"])
     && JSON.stringify(none.posts) === JSON.stringify(["0000-0000", "0000-0001", "0000-0002"]) && !two.errs.length && !none.errs.length,
-    "Salt Account offers Make for each of the three: with two made it names and makes 0000-0002 alone, with none all three: " + JSON.stringify([two, none]));
+    "Salt Admin offers Make for each of the three: with two made it names and makes 0000-0002 alone, with none all three: " + JSON.stringify([two, none]));
   for (const w of wins) w.close();
 
   /* 5. every feature line keeps its case */

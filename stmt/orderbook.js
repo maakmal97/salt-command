@@ -398,7 +398,7 @@ export class OrderBook {
             } else order = decision.none ? previous : applyEvent(previous, decision.ev).order;
             doc.orders[doc.orders.findIndex((o) => o.id === a.id)] = previous;
           } else if (a.actor === "deskorder") {
-            /* Counter Admin's move on an example order: the order book's own decideDesk, in this fixture alone */
+            /* Salt Admin's move on an example order: the order book's own decideDesk, in this fixture alone */
             const previous = doc.orders.find((o) => o.id === a.id);
             if (!previous) return { ok: false, error: "No such acceptance order.", status: 404 };
             const decision = decideDesk(previous, a.pointAt !== undefined ? Object.assign({}, a.body, { pointAt: a.pointAt }) : a.body, at);
@@ -648,7 +648,7 @@ export class OrderBook {
       /* fix 4: a correction from the desk's committed list is one event under its own id: a repeat is answered, never applied */
       const fx = a.body && a.body.fix && typeof a.body.fix.id === "string" ? "d:" + u + ":" + id + ":fix:" + a.body.fix.id : null;
       if (fx && order && this.event(fx)) return { ok: true, order, again: true };
-      /* Counter Admin's move carries an immutable id: a retry is answered once, and the same id with other content refused */
+      /* Salt Admin's move carries an immutable id: a retry is answered once, and the same id with other content refused */
       const rid = a.body && typeof a.body.rid === "string" && RID_RE.test(a.body.rid) ? a.body.rid : null;
       const rd = rid ? "d:" + u + ":" + id + ":rid:" + rid : null;
       const body = rid ? Object.fromEntries(Object.entries(a.body).filter(([k]) => k !== "rid")) : a.body;

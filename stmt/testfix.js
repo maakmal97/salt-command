@@ -18,7 +18,7 @@
  * fixture sealed for the old one is not served.
  * EVERY TAP A CUSTOMER HAS WORKS ON IT: a move on an example order, a claim against the account, a link minted or
  * withdrawn, a Place (examplePlace, on every road since the test surface), each by the order book's own decide and apply,
- * written back into that account's fixture and nowhere else, a retry answered once. Counter Admin's moves on an example
+ * written back into that account's fixture and nowhere else, a retry answered once. Salt Admin's moves on an example
  * order compose the Desk's bodies into decideDesk here too (stmt/maker.js exampleAction), and exampleReset deletes the
  * account's rows so the next read reseeds them (his answers of 18 Oct 2026, the test surface at /all/test). Until the first publish seals one, a claim or a link is refused, never made for real. The next
  * publish seals the examples afresh. Account threads alone use the book's isolated fixture_thread row when its
@@ -257,7 +257,7 @@ export async function examplesRefs(env, u) {
   return (fix && fix.refs) || [];
 }
 /* A LINK A TEST ACCOUNT MINTS is the fixture's, waiting on him as an associate's does, and never a g: record: a real one
-   would wait in Salt Account's count and outlive the account. Its id holds an l, which no real link's can. Null with no
+   would wait in Salt Admin's count and outlive the account. Its id holds an l, which no real link's can. Null with no
    fixture, when the account is no associate and Links is not open to it. */
 export async function exampleMint(env, u, max) {
   const fix = await fixNow(env, u);
@@ -288,7 +288,7 @@ export async function examplePaynum(env, u) {
 }
 
 /** COUNTER BATCH A (18 Oct 2026): THE TEST ACCOUNTS' COLLECTION POINT, invented and never one of his: "Z9" and "Z8", on public squares.
- *  Counter Admin offers it, and only it, at Ready on an example order, and stmt/maker.js resolves an example order's point from it,
+ *  Salt Admin offers it, and only it, at Ready on an example order, and stmt/maker.js resolves an example order's point from it,
  *  so no real point's place is ever written into a fixture. */
 export const EXAMPLE_POINTS = Object.freeze([Object.freeze({ code: "Z9", lat: 3.14786, lng: 101.69369 }), Object.freeze({ code: "Z8", lat: 3.1579, lng: 101.7123 })]);
 

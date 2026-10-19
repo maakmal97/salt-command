@@ -35,13 +35,13 @@
   "replace": "pays the Floor; no drift applies"
  },
  {
-  "name": "Counter Admin's % card is headed Price drift",
+  "name": "Salt Admin's % card is headed Price drift",
   "file": "stmt/owner.js",
   "find": "el('h3',null,'Their %')",
   "replace": "el('h3',null,'Price drift')"
  },
  {
-  "name": "Counter Admin's Add ID group is headed Starting price drift",
+  "name": "Salt Admin's Add ID group is headed Starting price drift",
   "file": "stmt/owner.js",
   "find": "['Starting %','record.add-id.drift'",
   "replace": "['Starting price drift','record.add-id.drift'"

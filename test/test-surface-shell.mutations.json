@@ -15,6 +15,6 @@
  {"name":"the desk shows one view","file":"stmt/testsurface.js","find":".ts-views iframe[hidden]{display:block}","replace":".ts-views iframe[hidden]{}"},
  {"name":"a tab does not switch the view","file":"stmt/testsurface.js","find":"cv.hidden=!c; av.hidden=c;","replace":"cv.hidden=false; av.hidden=true;"},
  {"name":"the lead is drawn in a faint colour","file":"stmt/testsurface.js","find":".ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-mist);","replace":".ts-lead,.ts-say{margin:4px 0 0;color:var(--salt-obsidian);"},
- {"name":"the shell names Salt Account","file":"stmt/words.js","find":"  \"ts.make\": \"Make the practice accounts\",","replace":"  \"ts.make\": \"Make it in Salt Account\","},
+ {"name":"the shell names Salt Admin","file":"stmt/words.js","find":"  \"ts.make\": \"Make the practice accounts\",","replace":"  \"ts.make\": \"Make it in Salt Admin\","},
  {"name":"the shell names a product","file":"stmt/words.js","find":"  \"ts.open\": \"0000-0000, every case\",","replace":"  \"ts.open\": \"0000-0000, every case of salt\","}
 ]

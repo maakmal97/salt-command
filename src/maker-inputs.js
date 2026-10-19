@@ -47,7 +47,7 @@ export function makerTradeEntry(operation, body, book, trip = null, pending = []
     ? ["reseller"] : ["customer", "supplier", "reseller", "referral", "downstream"];
   const partyRegistered = verified.some((item) => item.code === body.party && partyKinds.includes(item.kind));
   if (!code(body.party, roster) && !partyRegistered) return { error:
-    `Choose ${partyKind === "associate" ? "an" : "a"} ${partyKind} on the roster. Register a new ${partyKind} under Counter Admin > Add ID first, then pick the code.` };
+    `Choose ${partyKind === "associate" ? "an" : "a"} ${partyKind} on the roster. Register a new ${partyKind} under Salt Admin > Add ID first, then pick the code.` };
   for (const key of ["qty", "total", "cash", "movedUnits"])
     if (!figure(body[key])) return { error: "Trade figures must be finite, non-negative numbers." };
   if (!(body.qty > 0)) return { error: "Units must be above zero." };
@@ -63,10 +63,10 @@ export function makerTradeEntry(operation, body, book, trip = null, pending = []
       && !code(body[key], roster) && !verified.some((item) => item.code === body[key]
         && (key === "downstream" ? item.kind === "downstream" : item.kind === assocKind)))
       return { error: key === "downstream"
-        ? "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Counter Admin > Add ID first, then pick the code."
+        ? "Choose an end buyer on the roster, or leave End customer as Not named. Register a new end buyer under Salt Admin > Add ID first, then pick the code."
         : body.stream === "R3"
-          ? "Choose a referrer on the roster. Register a new referrer under Counter Admin > Add ID first, then pick the code."
-          : "Choose an associate on the roster. Register a new associate under Counter Admin > Add ID first, then pick the code." };
+          ? "Choose a referrer on the roster. Register a new referrer under Salt Admin > Add ID first, then pick the code."
+          : "Choose an associate on the roster. Register a new associate under Salt Admin > Add ID first, then pick the code." };
   if (body.stream !== undefined && body.stream !== null && !["R2", "R3"].includes(body.stream))
     return { error: "Choose R2 or R3." };
   if (assoc ? !["R2", "R3"].includes(stream) : stream || downstream)
@@ -708,7 +708,7 @@ export function makerOffset(body, book, held) {
       + " order, RM" + offer.rm + " settled in kind" }), book);
 }
 
-const OLD_UNIT = "This Counter Admin page is out of date and sends the old unit for a %. Reload Counter Admin and send it again.";
+const OLD_UNIT = "This Salt Admin page is out of date and sends the old unit for a %. Reload Salt Admin and send it again.";
 
 /** One customer, one product; null clears its held % lift through the same tierset road. */
 export function makerTierSet(body, book) {

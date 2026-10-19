@@ -1,6 +1,6 @@
 [
  {
-  "name": "the reason is dropped on the way to Counter Admin",
+  "name": "the reason is dropped on the way to Salt Admin",
   "file": "src/maker-inputs.js",
   "find": "suggest !== null && suggestWhyOk(given.why) ? given.why : \"\"",
   "replace": "\"\""

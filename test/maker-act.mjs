@@ -1,6 +1,6 @@
 /* test/maker-act.mjs: THE OWNER PAGE'S data-act HOOKS (11 Oct 2026, docs/STATEMENTS.md).
  *
- * byAct is the one way a test finds a control on Salt Account by what it does, never by its words, so a later change of
+ * byAct is the one way a test finds a control on Salt Admin by what it does, never by its words, so a later change of
  * label, class or layout leaves the test where it was. richOwnerPage draws the page as the Counter's maker harness draws it
  * with the richest fixture there is: orders at every stage, a claim, links waiting, an account card open, every Record form,
  * a chat, a group order, the notice, the hours, the hand-over sheet. actAudit reads every control on it. */
@@ -79,7 +79,7 @@ export async function unlockPage(win, work, pass) {
   return work.quiet();
 }
 
-/* A YES OR NO ON SALT ACCOUNT IS A SHEET (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct), never a native confirm. A section that once stubbed window.confirm to say yes or no to whatever the page asked has each
+/* A YES OR NO ON SALT ADMIN IS A SHEET (Phase 2c, 12 Oct 2026, his decision 4 of 11 Oct), never a native confirm. A section that once stubbed window.confirm to say yes or no to whatever the page asked has each
    Sheet answered as it comes up instead: what it said (its title and its words) is put in asked, and answer() is read at that moment, true taking the one action and false the ghost, so a flow that
    awaits the question carries on as the stub's return would have sent it. The page's own ynGo and ynKeep are what is tapped. */
 export function answerSheets(win, asked, answer = () => true) {
@@ -196,7 +196,7 @@ const links = () => [
    next request for that route back (it is worked out when the request is made, so it is as old as the request) until the function it returns is called; fail is the routes
    that fail to be reached; refuse[route] = "the server's words" answers that route as a refusal (409, ok false, those words), as the Counter does; lapse(true) answers every read 401, as Access does when his
    sign-in has ended. probe: true leaves window.__owner(code) in the page, which evaluates code inside the page script's own scope (a test seam, the page is otherwise as served). assocAnswer changes the associates' report card, and inputsAnswer what Record's forms are told (the books, the customers, the rows, the tips), as the others change theirs. */
-export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false, extra = null }) {
+export async function richOwnerPage({ pageWork, failInputs = false, hash = "", review = null, claims = null, claimPreview = null, slip = false, threads = null, hours = null, bulletin = null, sheetAnswer = null, linksAnswer = null, failRoutes = [], probe = false, assocAnswer = null, inputsAnswer = null, retained = [], cryptoImpl = webcrypto, noKey = false, bare = false, extra = null, before = null }) {
   const posts = [], timers = [], store = new Map(), intervals = [], gates = new Map(), fail = new Set(failRoutes), reads = [], refuse = {}, wire = [];
   /* slip: true gives the page the vault's slip key (the passphrase is p.slipPass) and a sealed picture for any slip asked; the blob: URLs it draws are counted in p.urls; noKey: true files the names and places but no slip key; retained is extra [key, value] pairs kept in localStorage; cryptoImpl is the page's crypto; p.wire is every request that left the page */
   const fix = slip ? await slipFixture() : null, urls = { made: [], revoked: [] };
@@ -261,6 +261,8 @@ export async function richOwnerPage({ pageWork, failInputs = false, hash = "", r
         body: { at: ISO, form: "cash", direction: "in", code: "CX1-ZED", date: "2026-10-01", amount: 5 } }));
       w.localStorage.setItem("saltQuickReplies", JSON.stringify(["On my way", "Thank you"]));
       retained.forEach(([k, v]) => w.localStorage.setItem(k, v));
+      /* before(w): a test's own stubs on the window (a service worker, a Notification) in place before the page's script runs */
+      if (before) before(w);
       w.fetch = async (path, init) => {
         const route = String(path);
         /* everything that leaves the page: the address, the method, the headers and the body, as a test reads them back */
@@ -412,7 +414,7 @@ export async function auditStates({ pageWork }) {
     await o.work.quiet();
     states.push(["a day with money and goods owed", actAudit(o.d)]);
   } finally { o.w.close(); }
-  /* 17 Oct 2026 (Counter Admin clarity, part 2): a payment on the card asking once, and a practice account folded at the foot */
+  /* 17 Oct 2026 (Salt Admin clarity, part 2): a payment on the card asking once, and a practice account folded at the foot */
   const k = await richOwnerPage({ pageWork, review: (j) => { const a = j.orders.find((x) => x.id === "ord-a1"); a.payments = a.payments.filter((x) => x.claim === "waiting").slice(0, 1); return j; },
     claims: (j) => { j.claims.push({ id: "c-x", u: "u-practice", amount: 10, state: "waiting", test: true, at: new Date().toISOString() }); return j; } });
   try {
@@ -480,7 +482,7 @@ export async function auditStates({ pageWork }) {
 /* the acts docs/STATEMENTS.md tabulates: the rows of the table under its data-act heading */
 export function docActs() {
   const docs = readFileSync(new URL("../docs/STATEMENTS.md", import.meta.url), "utf8");
-  const from = docs.indexOf("### Every Salt Account control has a stable name"), to = from < 0 ? -1 : docs.indexOf("\n## ", from);
+  const from = docs.indexOf("### Every Salt Admin control has a stable name"), to = from < 0 ? -1 : docs.indexOf("\n## ", from);
   return from < 0 || to < 0 ? null : [...docs.slice(from, to).matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
 }
 /* a window is named by its starting hour, which the clock decides; the Cancel retained input beside a button is its button's act and .cancel-retained */
@@ -493,7 +495,7 @@ export async function run({ ok, pageWork }) {
   const drawn = new Set(states.flatMap(([, a]) => [...a.acts]).map(tabulated).filter(Boolean));
   const busiest = states.find(([name]) => name === "the busy page")[1].controls;
   ok(busiest > 300 && states.every(([, a]) => a.controls > 100) && lacking.length === 0,
-    "every control on Salt Account, drawn as the maker harness draws its busiest day, carries a non-empty data-act ("
+    "every control on Salt Admin, drawn as the maker harness draws its busiest day, carries a non-empty data-act ("
       + states.map(([name, a]) => name + ": " + a.controls).join(", ") + ")" + (lacking.length ? ", and these do not: " + JSON.stringify(lacking) : ""));
   ok(clashing.length === 0, "no two controls in one card share an act unless they are the same control drawn twice"
     + (clashing.length ? ": " + JSON.stringify(clashing) : ""));

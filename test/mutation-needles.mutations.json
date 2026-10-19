@@ -34,17 +34,5 @@
   "file": "test/owner-notice-hours.mutations.json",
   "find": "[\n {\n  \"name\": \"N1",
   "replace": "[\n {\n  \"name\" \"N1"
- },
- {
-  "name": "a parked entry is passed over when Tide is back",
-  "file": "test/mutation-needles.mjs",
-  "find": "if (skipParked && m && typeof m.parked === \"string\") continue;",
-  "replace": "if (m && typeof m.parked === \"string\") continue;"
- },
- {
-  "name": "an entry is passed over for being marked by anything",
-  "file": "test/mutation-needles.mjs",
-  "find": "if (skipParked && m && typeof m.parked === \"string\") continue;",
-  "replace": "if (skipParked && m) continue;"
  }
 ]

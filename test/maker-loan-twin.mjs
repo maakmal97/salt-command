@@ -5,7 +5,7 @@ import { runDrafter } from "../src/drafter.js";
 import { world } from "./maker-trades.mjs";
 import { answerSheets, tile, tileGroup } from "./maker-act.mjs";
 
-/* A loan sent twice books once (the admin stress triage of 11 Oct 2026, row 6). Counter Admin's Borrow or lend keeps its
+/* A loan sent twice books once (the admin stress triage of 11 Oct 2026, row 6). Salt Admin's Borrow or lend keeps its
    values after "Sent for review", so a second tap is a new input under a fresh request moment; the Desk route now refuses
    it while the first is queued or waiting under Approve, and asks about it while the first is booked, as it does a trade. */
 const stamp = (n) => "2099-10-05T01:00:" + String(n).padStart(2, "0") + ".000Z";

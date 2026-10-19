@@ -1,4 +1,4 @@
-/* test/counter-account-door.mjs: ACCOUNT LEADS WITH THIS DEVICE, AND THE DOOR NAMES THE APP (Phase 7d part 2 of the Salt Account and Counter
+/* test/counter-account-door.mjs: ACCOUNT LEADS WITH THIS DEVICE, AND THE DOOR NAMES THE APP (Phase 7d part 2 of the Salt Admin and Counter
  * redesign, his yes of 11 Oct 2026, the plan's section 7 items 7 and 8, and Fable's notes on #133).
  *
  * Every assertion observes a signed-in page's window in jsdom: its markup, the requests its fetch saw and the cascade jsdom runs (no width
@@ -176,7 +176,7 @@ export async function run({ ok }) {
       "the door names the app, Salt Counter, in its ring and one eyebrow line above Sign in, which stays the page's one heading: " + JSON.stringify({ name: t(appName), h1: t(h1) }));
     const ownerGate = new JSDOM(landingPage("", "n7d2e", { master: "fixture-master", accounts: [] }), { url: "https://counter.fixture.test/all" }).window.document.getElementById("gate");
     ok(!!ownerGate && !ownerGate.querySelector('[data-w="door.app"]') && !ownerGate.querySelector(".appmark"),
-      "his own page, which is Salt Account, carries no copy of the customer's door name");
+      "his own page, which is Salt Admin, carries no copy of the customer's door name");
     const help = [...gate.querySelectorAll(".salt-insight")].find((x) => /Lost your password or your link\?/.test(x.textContent));
     ok(!!help && help.children.length === 0 && help.innerHTML === W.fillHtml(W.EN["door.help"], {}, "en") && !/[*]/.test(W.EN["door.help"]) && !/[*]/.test(gate.textContent)
       && gate.querySelectorAll("a, [role=link], b, strong").length === 0 && /Ask us for a new sign-in link\./.test(t(help)),

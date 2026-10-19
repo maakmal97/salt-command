@@ -1,4 +1,4 @@
-/* test/admin-tablet.mjs: SALT ACCOUNT USES THE WIDTH (12 Oct 2026, Phase 6 of the Salt Account redesign, his decision 9 of 11 Oct: "Tablet: two panes and the drawer from
+/* test/admin-tablet.mjs: SALT ADMIN USES THE WIDTH (12 Oct 2026, Phase 6 of the Salt Admin redesign, his decision 9 of 11 Oct: "Tablet: two panes and the drawer from
  * 860 px (a landscape iPad), the app bar kept until 1080, the rail from 1080").
  *
  * jsdom applies no media query, so what is proved here is the page's own stylesheet read as rules, by query and selector, and the owner page's markup. The page's
@@ -90,14 +90,14 @@ export async function run({ ok, pageWork }) {
     const lone = mine(landingPage("", "n", null)).getElementById("lookSheet");
     const own = (e) => !!e && e.classList.contains("adm") && e.classList.contains("asheet");
     ok(own(d.getElementById("lookSheet")) && own(d.getElementById("vaultSheet")) && !!lone && !lone.classList.contains("adm") && !lone.classList.contains("asheet"),
-      "the choice and unlock sheets of Salt Account carry .adm and .asheet beside .salt-sheet, and the customer's choice sheet carries neither: " + d.getElementById("lookSheet").className + " | " + (lone && lone.className));
+      "the choice and unlock sheets of Salt Admin carry .adm and .asheet beside .salt-sheet, and the customer's choice sheet carries neither: " + d.getElementById("lookSheet").className + " | " + (lone && lone.className));
     const p = await richOwnerPage({ pageWork });
     try {
       await p.work.quiet();
       const page = p.d, tap = async (act, key) => { const c = byAct(page, act, key); if (c) c.click(); await p.work.quiet(); return !!c; };
       await tap("nav.orders"); await tap("order.open", "ord-p1"); await tap("order.decline", "ord-p1");
       const yn = page.getElementById("ynSheet");
-      ok(!!yn && yn.classList.contains("salt-sheet") && own(yn), "the sheet that asks Yes or No on Salt Account carries .adm and .asheet: " + (yn && yn.className));
+      ok(!!yn && yn.classList.contains("salt-sheet") && own(yn), "the sheet that asks Yes or No on Salt Admin carries .adm and .asheet: " + (yn && yn.className));
       await tap("order.ask-keep", "ord-p1");
       await tap("nav.customers"); await tap("part.customers.accounts"); await tap("acct.open", "abcd-efgh"); await tap("acct.show-code");
       const ho = page.querySelector(".salt-sheet.ho");

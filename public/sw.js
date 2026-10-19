@@ -154,6 +154,14 @@ const getKey = () => idb("readonly", (st) => st.get("writeKey"));
    for a key never written, so only a string is a mark. */
 const getSince = () => idb("readonly", (st) => st.get("since")).then((v) => (typeof v === "string" ? v : null));
 const putSince = (at) => idb("readwrite", (st) => st.put(String(at), "since"));
+/* THE INFORM MARK (19 Oct 2026): the moment of the newest "the system did something" banner already shown, so one is shown once */
+const getISince = () => idb("readonly", (st) => st.get("isince")).then((v) => (typeof v === "string" ? v : null));
+const putISince = (at) => idb("readwrite", (st) => st.put(String(at), "isince"));
+/* WHAT THE SYSTEM DID, in words and nothing else (the Desk informs; Salt Admin acts). No code, name or amount. */
+const INFORM = { folded: ["Folded and live", "The new version is live.", "./desk"],
+  "fold-refused": ["A fold was refused", "Open the desk to see why.", "./desk"],
+  "suite-red": ["The suite failed on the live build", "The desk is working; the next session reads the run.", "./desk"],
+  stock: ["A stock light changed", "Open Stock to see which.", "./desk#stock"] };
 
 /* THE STATUS IS ONE BANNER, NOT A PILE. It keeps a single tag, so a second wake REPLACES the first rather than
    stacking behind it: four a day that each replace the last is a glance; four that queue up is a chore, and a
@@ -178,10 +186,11 @@ function tail(s) {
 const withTail = (line, t) => (t ? line + "\n" + t : line);
 
 async function banners() {
-  const key = await getKey(), since = await getSince();
+  const key = await getKey(), since = await getSince(), isince = await getISince();
   let s = null;
   try {
-    const r = await fetch("push/summary" + (since ? "?since=" + encodeURIComponent(since) : ""), { cache: "no-store", headers: key ? { "X-Salt-Key": key } : {} });
+    const q = [since ? "since=" + encodeURIComponent(since) : "", isince ? "isince=" + encodeURIComponent(isince) : ""].filter(Boolean).join("&");
+    const r = await fetch("push/summary" + (q ? "?" + q : ""), { cache: "no-store", headers: key ? { "X-Salt-Key": key } : {} });
     if (r.ok) s = await r.json();
   } catch { /* offline, or the desk is down: fall through to the generic banner */ }
 
@@ -189,6 +198,16 @@ async function banners() {
     return { list: [{ title: "Something needs a look", body: "The desk could not say what just now. Open it to see.", tag: "salt" }], newest: null };
   }
   const list = [];
+  /* THE SYSTEM'S OWN NEWS, shown once (19 Oct 2026, P5): past the mark, and only a kind this worker knows */
+  const inf = s.inform && INFORM[s.inform.k] && typeof s.inform.at === "string" && (!isince || s.inform.at > isince) ? s.inform : null;
+  const informed = inf ? [{ title: INFORM[inf.k][0], body: INFORM[inf.k][1], tag: "i-" + inf.k, url: INFORM[inf.k][2] }] : [];
+  /* THE SPLIT (19 Oct 2026, P4): once Salt Admin holds a subscribed device, what waits on his decision is Salt Admin's and the Desk
+     says only what informs: a refund he holds (Now), and the system's own news. Nothing left, a quiet line stands so a push shows one. */
+  if (s.adminOn) {
+    const only = s.refunds ? [{ title: "Waiting on you", body: "Now: pay back " + n1(s.refunds, "refund", "refunds") + ".", tag: "salt" }] : [];
+    const mine = informed.concat(only);
+    return { list: mine.length ? mine : [{ title: "Salt Desk is up to date", body: "Nothing to tell.", tag: "salt" }], newest: null, inform: inf ? inf.at : null };
+  }
   const lines = (s.lines || []).filter((x) => x && typeof x.at === "string" && typeof x.t === "string").slice(0, 3);
   for (const x of lines) list.push({ title: "A customer wrote", body: "“" + x.t + "”", tag: "m-" + x.at, url: "./desk#orders/newest" });
   const newest = lines.length ? lines[lines.length - 1].at : null;
@@ -204,7 +223,7 @@ async function banners() {
     const what = s.news === "A customer says they paid" ? "Check it arrived, then tap Received or Not found."
       : s.news === "A customer cancelled" ? "Tap to see which order." : "Open the desk to look.";
     list.push({ title: s.news, body: withTail(what, t), tag: "salt", url: "./desk#orders/newest" /* the card of the newest act, which is what woke him (S11) */ });
-    return { list, newest };
+    return { list: list.concat(informed), newest, inform: inf ? inf.at : null };
   }
   /* A CUSTOMER ORDER LEADS (16 Sep 2026): it is the one thing here a customer is waiting on, so it
      is the title, and a tap opens the Orders card where it is acknowledged. IT DOES NOT HIDE
@@ -214,13 +233,13 @@ async function banners() {
   const placed = s.placed || 0;
   if (placed) {
     list.push({ title: placed === 1 ? "New order" : placed + " new orders",
-      body: withTail(placed === 1 ? "Acknowledge it on Counter Admin." : "Acknowledge them on Counter Admin.", t), tag: "salt", url: "./desk#orders/newest" });
-    return { list, newest };
+      body: withTail(placed === 1 ? "Acknowledge it on Salt Admin." : "Acknowledge them on Salt Admin.", t), tag: "salt", url: "./desk#orders/newest" });
+    return { list: list.concat(informed), newest, inform: inf ? inf.at : null };
   }
   if (t) list.push({ title: "Waiting on you", body: t, tag: "salt", url: (s.orders || 0) > 0 ? "./desk#orders" : undefined });
   /* a push must show something: a line counts, and only when there is none does "All square" stand */
-  else if (!lines.length) list.push({ title: "All square", body: "Nothing waiting, and nothing owed a decision.", tag: "salt" });
-  return { list, newest };
+  else if (!lines.length && !informed.length) list.push({ title: "All square", body: "Nothing waiting, and nothing owed a decision.", tag: "salt" });
+  return { list: list.concat(informed), newest, inform: inf ? inf.at : null };
 }
 
 /* A PUSH WAKES AN OPEN DESK (26 Sep 2026). The banner reached only this worker, so a desk already on
@@ -249,6 +268,7 @@ self.addEventListener("push", (e) => {
         data: { url: b.url || "./" },
       });
     }
+    if (r.inform) await putISince(r.inform);   /* the inform mark moves once its banner is shown */
     if (r.newest) await putSince(r.newest);   /* the mark moves only once its lines are shown */
   })]));
 });

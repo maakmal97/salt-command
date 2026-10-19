@@ -1,4 +1,4 @@
-/* test/admin-sizes-hours.mjs: PRINTED SIZES ARE A GRID OF TILES, THE WEEKLY HOURS A TABLE WITH LABELLED COLUMNS (Phase 4a of the Salt Account redesign, 12 Oct 2026; docs/STATEMENTS.md "Record's forms" and "Shop").
+/* test/admin-sizes-hours.mjs: PRINTED SIZES ARE A GRID OF TILES, THE WEEKLY HOURS A TABLE WITH LABELLED COLUMNS (Phase 4a of the Salt Admin redesign, 12 Oct 2026; docs/STATEMENTS.md "Record's forms" and "Shop").
  *
  * Printed sizes (Record > Pricing) was a list of checkboxes in a column; it is the system's Option tiles in a grid, a size a tile, ticked while it is printed. Hours (Shop) was a
  * row of three bare controls a day; it is a table whose columns are Day, Opens and Closes, and the override that closes the shop for now is a pair of tiles and a field

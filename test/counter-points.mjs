@@ -1,6 +1,6 @@
 /* test/counter-points.mjs: COUNTER BATCH A'S COLLECTION POINT (his decisions of 18 Oct 2026; docs/plan-counter-batch-a.html, parts 2 and 3).
  *
- * His points are Counter KV maker:points, a code and a place each, written by Counter Admin alone. Ready to collect names one and the
+ * His points are Counter KV maker:points, a code and a place each, written by Salt Admin alone. Ready to collect names one and the
  * order keeps a snapshot of its place (pointAt); Change point moves one order on purpose. The customer reads the place only while the
  * order waits at the point; the Desk never reads it, on any of the five roads the raw order leaves the Counter by. Driven on the real
  * roads (the Counter Worker, the Desk Worker and the order book in node), the owner's page in jsdom, and the fixture's builder. Every
@@ -56,7 +56,7 @@ export async function run({ ok, pageWork }) {
   const L = ledger();
   const deskEnv = { SALT_QUEUE: queue, SALT_LEDGER: L.db, COUNTER_MAKER_KEY: env.COUNTER_MAKER_KEY, STMT_DESK_KEY: env.STMT_DESK_KEY,
     STMT_SITE: { fetch: (url, init) => { calls.site++; return counter.fetch(new Request(url, init), env); } } };
-  /* each layer refuses on its own: a refusal at Counter Admin reaches no Desk, and one at the Desk reaches no Counter */
+  /* each layer refuses on its own: a refusal at Salt Admin reaches no Desk, and one at the Desk reaches no Counter */
   const calls = { desk: 0, site: 0 };
   env.DESK_MAKER = { fetch: (request) => { calls.desk++; return desk.fetch(request, deskEnv, {}); } };
   const originalFetch = globalThis.fetch;
@@ -109,10 +109,10 @@ export async function run({ ok, pageWork }) {
     const deskNo = await deskDirect(idA, { status: "ready", mode: "collect", rid: rid(2) }), c2 = { ...calls };
     const noPoint = [makerNo, deskNo];
     ok(makerNo.status === 400 && c1.desk === c0.desk && deskNo.status === 400 && c2.site === c1.site,
-      "Counter Admin refuses a collect Ready with no point before any Desk is asked, and the Desk before any Counter is: " + JSON.stringify([c0, c1, c2]));
+      "Salt Admin refuses a collect Ready with no point before any Desk is asked, and the Desk before any Counter is: " + JSON.stringify([c0, c1, c2]));
     const bookNo = harness.book.run("desk", { u, id: idA, body: { status: "ready", mode: "collect" } });
     ok(noPoint.every((r) => r.status === 400) && bookNo.ok === false && bookNo.code === "pointNeeded" && book(idA).status === "acknowledged",
-      `Ready to collect with no point is refused by Counter Admin, by the Desk and by the order book (${noPoint.map((r) => r.status).join(",")}, ${bookNo.code})`);
+      `Ready to collect with no point is refused by Salt Admin, by the Desk and by the order book (${noPoint.map((r) => r.status).join(",")}, ${bookNo.code})`);
     const misplaced = [{ status: "ready", mode: "deliver", point: "A2", rid: rid(3) }, { status: "declined", point: "A2", note: "No.", rid: rid(4) },
       { status: "cancelled", point: "A2", rid: rid(5) }];
     const c3 = { ...calls }, atMaker = await Promise.all(misplaced.map((b) => move(idA, b))), c4 = { ...calls };
@@ -120,7 +120,7 @@ export async function run({ ok, pageWork }) {
     ok(c4.desk === c3.desk && c5.site === c4.site, "and a point on a delivery, a Decline or a Cancel the same, each layer on its own: " + JSON.stringify([c3, c4, c5]));
     const atBook = harness.book.run("desk", { u, id: idA, body: { status: "ready", mode: "deliver", point: "A2" }, pointAt: { lat: A2.lat, lng: A2.lng } });
     ok(atMaker.every((r) => r.status === 400) && atDesk.every((r) => r.status === 400) && atBook.ok === false && book(idA).status === "acknowledged" && !book(idA).point,
-      `a point beside a delivery, a Decline or a Cancel is refused at Counter Admin, the Desk and the order book (${atMaker.map((r) => r.status)}/${atDesk.map((r) => r.status)}/${atBook.ok})`);
+      `a point beside a delivery, a Decline or a Cancel is refused at Salt Admin, the Desk and the order book (${atMaker.map((r) => r.status)}/${atDesk.map((r) => r.status)}/${atBook.ok})`);
     const unknown = await move(idA, { status: "ready", mode: "collect", point: "B7", rid: rid(6) }), unknownBody = await unknown.json();
     ok(unknown.status === 400 && unknownBody.error === WORDS.en["e.pointUnknown"] && book(idA).status === "acknowledged",
       "a code his list lacks is refused in the Counter's words, and the order does not move: " + unknown.status + " " + unknownBody.error);

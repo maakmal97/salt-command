@@ -1,4 +1,4 @@
-/* test/maker-accept-again.mjs: Counter Admin's Accept again, driven in the actual owner script. An agreed order whose pending
+/* test/maker-accept-again.mjs: Salt Admin's Accept again, driven in the actual owner script. An agreed order whose pending
    row he rejected reads its preview when it is opened (his decision 6 of 11 Oct 2026: there is no Preview button) and then offers
    Accept again, in place of Ready, the handover, cash, claims and Amend, as the Desk's own card does; the preview sends nothing and the
    accept sends only the preview's digest; a row of the list reads nothing; a done order whose pending row he rejected keeps its card

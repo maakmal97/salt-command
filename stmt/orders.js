@@ -183,7 +183,7 @@ export const fixtureThreadMove = (env, a) => bookMove(env, "fixture-thread", a);
 export const fixtureAccountMove = (env, a) => bookMove(env, "fixture-account", a);
 /* the test surface's Reset: a test account's two fixture rows dropped, or the fresh one's started empty (stmt/orderbook.js) */
 export const fixtureReset = (env, a) => bookMove(env, "fixture-reset", a);
-/** Whether Counter Admin's move under `rid` is on this order already, and the request it was made with. */
+/** Whether Salt Admin's move under `rid` is on this order already, and the request it was made with. */
 export const deskSeen = (env, u, id, rid) => onBook(env) ? bookMove(env, "deskseen", { u, id, rid })
   : Promise.resolve({ ok: false, error: "A move with a request id needs the order book.", status: 503 });
 /* a read on the object road; in the week of reading both, KV answers when the object cannot */
@@ -1084,7 +1084,7 @@ export function decideDesk(order, body, at) {
   if (!again && !NEXT[status].includes(order.status)) return { error: "an order that is " + order.status + " cannot become " + status, status: 409 };
   if (status === "cancelled" && (+order.moved || 0) > 0) return { error: "the goods are already out, so this cannot be cancelled", status: 409 };
   if (status === "cancelled" && claimWaits(order)) return { error: "a payment they say they sent waits on this order: answer it first, Received or Not found", status: 409 };
-  /* Counter Admin's moves (`maker`, his decision of 05 Oct 2026): Ready only on an acknowledged order. Cancel takes a paid
+  /* Salt Admin's moves (`maker`, his decision of 05 Oct 2026): Ready only on an acknowledged order. Cancel takes a paid
      order since 06 Oct 2026, as the Desk's own does: the fold raises the refund from what was paid. Held here so a retry,
      answered earlier from its request id, is never refused for the order having moved on */
   if (body && body.maker === true && status === "ready" && order.status !== "acknowledged") return { error: "only an acknowledged order can be marked ready", status: 409 };
@@ -1596,7 +1596,7 @@ export async function deskMove(env, u, id, body, pointAt) {
     const push = await wakeCustomer(env, u, r.wake);
     return { order: r.order, push };
   }
-  /* Counter Admin's immutable request id is kept only by the order book, so the KV road cannot promise a retry lands once */
+  /* Salt Admin's immutable request id is kept only by the order book, so the KV road cannot promise a retry lands once */
   if (body && body.rid !== undefined) return { error: "A move with a request id needs the order book.", status: 503 };
   /* S6 fix: and Received, on the book already, which takes a claim and its entry's name off the order as Not found does */
   if (body && body.verdict && (body.verdict.kind === "notfound" || body.verdict.covered)) return { error: NOT_FOUND_ON_KV, status: 503 };

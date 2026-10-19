@@ -526,9 +526,10 @@
     "CA6-CYB-R",
     "CM4-TO-R",
     "CI5-PER",
-    "CN4-BSL",
+    "CN4-MC",
     "CA3-KP",
-    "CA4-P1"
+    "CA4-P1",
+    "CJ5-CHE"
   ],
   "associates": [
     "CS6-BS",
@@ -784,11 +785,6 @@
       101.72,
       "Permaisuri"
     ],
-    "CN4-BSL": [
-      3.05,
-      101.8,
-      "Mahkota Cheras"
-    ],
     "CA3-KP": [
       2.72,
       102.24,
@@ -798,9 +794,23 @@
       2.92,
       101.7,
       "Presint 17"
+    ],
+    "CJ5-CHE": [
+      3.05,
+      101.77,
+      "Cheras"
+    ],
+    "CN4-MC": [
+      3.05,
+      101.8,
+      "Mahkota Cheras"
     ]
   },
-  "TIER_OF": {},
+  "TIER_OF": {
+    "CJ5-CHE": {
+      "salt": 0
+    }
+  },
   "PEOPLE": {
     "banned": [
       {
@@ -918,7 +928,7 @@
   "ONE_OFFS": [
     {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
   ],
-  "QUEUE_COMMITTED": "2026-10-18T08:10:55.627Z",
+  "QUEUE_COMMITTED": "2026-10-19T08:40:25.200Z",
   "PRICE_SET": {
     "salt": {
       "prices": {},

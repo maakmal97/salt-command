@@ -2,7 +2,7 @@
  * delivery asked for as soon as it can may be answered at Accept with one of the six windows (Q3), needing no yes of theirs;
  * a window they chose stands and is never changed this version (Q2). The yes carries the window in what he was shown, and the
  * Counter cuts it to its hours as it moves the order, his choice standing whole when the hours leave none of it; one already
- * past is left off rather than stall an approved row. Counter Admin offers the six windows, a sheet's
+ * past is left off rather than stall an approved row. Salt Admin offers the six windows, a sheet's
  * lines taking its first order's. The acknowledgement's words remind them to pay now, words only (Q4). Every code, name and
  * place is invented. Every assertion was proved red by its own mutation. */
 import { readFileSync, readdirSync } from "node:fs";
@@ -156,7 +156,7 @@ export async function run({ ok, KV, assets }) {
 
   function s12w() { return Wn.slotNext(12, null, Date.now()).slot; }
 
-  /* 5. COUNTER ADMIN: the six windows, sent with its Accept, a sheet's lines taking its first order's (#104 parity) */
+  /* 5. SALT ADMIN: the six windows, sent with its Accept, a sheet's lines taking its first order's (#104 parity) */
   const posts = [];
   const orderOf2 = (id, patch = {}) => ({ id, u: "maab-cdef", product: "salt", qty: 1, total: 100, status: "placed", mode: "deliver", history: [], ...patch });
   const A = "20261010060001-awin", B = "20261010060002-awin", T = "20261010060003-awin", PN = "20261010060004-awin";
@@ -208,15 +208,15 @@ export async function run({ ok, KV, assets }) {
     ok(Wn.WINDOWS.length === 6 && days.length >= 7 && JSON.stringify(wins(A)) === JSON.stringify(["As soon as it can"].concat(winsOn(days[0]).map((x) => x[1])))
       && JSON.stringify(dayOpts(A)) === JSON.stringify(days) && wins(B).length === 0
       && JSON.stringify(wins(T)) === JSON.stringify(["Theirs, 12:00 to 16:00 on " + dayName(tDay)].concat(winsOn(tDay).filter((x) => x[0] !== s12w()).map((x) => x[1]))),
-      "Counter Admin offers the coming week's days and a day's windows still to start, none on a sheet's other lines, and theirs first on an order with its own: "
+      "Salt Admin offers the coming week's days and a day's windows still to start, none on a sheet's other lines, and theirs first on an order with its own: "
       + JSON.stringify({ a: wins(A), b: wins(B), t: wins(T), days }));
     const first = winsOn(days[0])[0];
     pick(A, "makerFee", "RM 10"); pick(A, "makerWin", first[1]);
     pick(T, "makerFee", "RM 0");
     const bA = await acceptOf(A), bB = await acceptOf(B), bT = await acceptOf(T);
     ok(bA.slot === first[0] && bB.slot === first[0] && !("slot" in bT) && bA.delivery === 10 && bB.delivery === 0,
-      "Counter Admin's Accept sends the window he picked, its sheet's other line the same, and an order with its own time none: " + JSON.stringify([bA, bB, bT]));
+      "Salt Admin's Accept sends the window he picked, its sheet's other line the same, and an order with its own time none: " + JSON.stringify([bA, bB, bT]));
     ok(/They shared a pin[.] Open it on the Desk/.test(acard(PN).textContent) && !/They shared a pin/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),
-      "Counter Admin says a spot was shared, never its id, and opens nothing: " + acard(PN).textContent.slice(0, 200));
+      "Salt Admin says a spot was shared, never its id, and opens nothing: " + acard(PN).textContent.slice(0, 200));
   } finally { browser.window.close(); }
 }

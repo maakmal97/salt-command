@@ -1,4 +1,4 @@
-/* Counter Admin: a salt customer's % lift (0 to 2) set/clear through the existing tier-set road, a held zero distinct from none held, and the
+/* Salt Admin: a salt customer's % lift (0 to 2) set/clear through the existing tier-set road, a held zero distinct from none held, and the
    engine's suggestion beside it (18 Oct 2026: nothing automatic prices). */
 import { makerInputCatalog, makerTierSet } from "../src/maker-inputs.js";
 import { handleMaker } from "../stmt/maker.js";
@@ -62,12 +62,12 @@ export async function run({ ok } = {}) {
   check([-1, -0.01, 2.01, 3, "0", "Gold", undefined].every((value) => !!set(value).error)
     && !!makerTierSet({ at, code: "CX2-ZED", product: "oil", tier: 0.25 }, mirror).error,
   "out-of-range (a negative, or past 2), nonnumeric, level, missing and fixed-book inputs are refused");
-  /* 19 Oct 2026: the unit is the gate. A Counter Admin page cached from before the % lift sends the old field's 0.3 with no unit, and it is refused here by unit, not by time. */
+  /* 19 Oct 2026: the unit is the gate. A Salt Admin page cached from before the % lift sends the old field's 0.3 with no unit, and it is refused here by unit, not by time. */
   const unitless = makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.3 }, mirror), oldUnit = set(0.3, "drift");
-  check(/Reload Counter Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && !oldUnit.entry && !set(null, undefined).error
+  check(/Reload Salt Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && !oldUnit.entry && !set(null, undefined).error
     && !makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: null }, mirror).error
     && set(0.3).entry.payload.unit === "pct" && set(null).entry.payload.unit === undefined,
-  "a salt figure with no unit pct is refused with a plain message to reload Counter Admin, a clear needs no unit, and a figure sent with it carries unit pct in the entry: " + JSON.stringify([unitless.error, oldUnit.error]));
+  "a salt figure with no unit pct is refused with a plain message to reload Salt Admin, a clear needs no unit, and a figure sent with it carries unit pct in the entry: " + JSON.stringify([unitless.error, oldUnit.error]));
   check(!!makerTierSet({ at, code: "SP1-ZED", product: "salt", tier: 0.25 }, mirror).error,
     "supplier codes cannot receive customer drift");
   check(set(2.01).error === "Choose a % lift from 0 to 200% (0 to 2), or clear it." && !set(2).error && !set(0).error,

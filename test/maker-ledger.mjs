@@ -1,4 +1,4 @@
-/* Counter Admin's mini ledger, the Desk half and the road to it (16 Oct 2026). makerLedgerMini reads the folded book by the engine's own rules and
+/* Salt Admin's mini ledger, the Desk half and the road to it (16 Oct 2026). makerLedgerMini reads the folded book by the engine's own rules and
    states none: Open is the order words that begin Open (Advance and Deferred too), Pending the word Pending, the latest twenty by date then order id
    newest first. The expected lists below are written out by hand from each row's money and goods, never computed by the code under test. The road is the
    verified owner through the bridge, to the Desk's private route that answers only its capability, by GET alone. */

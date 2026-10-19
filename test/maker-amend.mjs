@@ -1,5 +1,5 @@
 /* test/maker-amend.mjs: his decision of 06 Oct 2026, that everything on an agreed order is amendable after Accept (the size,
-   the goods' price, the delivery charge), as one Correction for approval. Counter Admin's restate road under an immutable
+   the goods' price, the delivery charge), as one Correction for approval. Salt Admin's restate road under an immutable
    request id, the Desk's own route, the Desk's refusals (collection, floor, paid, claim, size under what is out), the order
    book's restate event, an acceptance order in its fixture alone, and the owner page's control. */
 import { webcrypto } from "node:crypto";
@@ -156,7 +156,7 @@ export async function run({ ok }) {
     ok(exTap.status === 200 && exNow.total === 295 && exAgain.status === 200 && (await exAgain.json()).again === true
       && exBad.status === 400 && harness.db.prepare("SELECT COUNT(*) AS n FROM ev").get().n === realEvents && L.requests.size === 0,
       "An acceptance order's amendment lands in its fixture alone, once under its id, and the same refusals hold there: " + JSON.stringify([exTap.status, exNow.total, exBad.status]));
-    /* 06 Oct 2026: AND UNDER WHAT THEY PAID, through Counter Admin with the Desk's mirror seeded (the stub D1 above cannot be): the
+    /* 06 Oct 2026: AND UNDER WHAT THEY PAID, through Salt Admin with the Desk's mirror seeded (the stub D1 above cannot be): the
        restate is taken and the answer names the refund the fold raises. The Desk's real-schema proof is in verify.mjs. */
     let DatabaseSync = null;
     try { ({ DatabaseSync } = await import("node:sqlite")); } catch (e) { /* older runtime */ }
@@ -183,7 +183,7 @@ export async function run({ ok }) {
         const over = await tap(idOver, { total: 270, rid: rid(11) });
         const overBody = await over.json().catch(() => ({}));
         ok(over.status === 200 && overBody.ok && overBody.preapproval && overBody.preapproval.refund === 10,
-          "Counter Admin amends a paid order to RM 270 under the RM 280 paid, and the answer names the RM 10 refund the fold raises: " + over.status + " " + JSON.stringify(overBody).slice(0, 240));
+          "Salt Admin amends a paid order to RM 270 under the RM 280 paid, and the answer names the RM 10 refund the fold raises: " + over.status + " " + JSON.stringify(overBody).slice(0, 240));
       } finally { env.DESK_MAKER = keep; }
     }
     void t0; void events;

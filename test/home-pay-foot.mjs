@@ -1,4 +1,4 @@
-/* test/home-pay-foot.mjs: HOME LEADS WITH THE ONE ACTION (Phase 7a of the Salt Account and Counter redesign, his yes of 11 Oct 2026).
+/* test/home-pay-foot.mjs: HOME LEADS WITH THE ONE ACTION (Phase 7a of the Salt Admin and Counter redesign, his yes of 11 Oct 2026).
  *
  * On the customer's Home, To pay now's tile and its one filled Pay stand in a foot that sticks above the App bar, so the pill is never
  * under the bar; the invoice lines under it show three and fold the rest behind "N more"; with nothing to pay now no foot is drawn.

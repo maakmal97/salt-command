@@ -1,4 +1,4 @@
-/* test/admin-places.mjs: SALT ACCOUNT'S FIVE PLACES (11 Oct 2026, his decision; docs/STATEMENTS.md "His places").
+/* test/admin-places.mjs: SALT ADMIN'S FIVE PLACES (11 Oct 2026, his decision; docs/STATEMENTS.md "His places").
  *
  * Needs you, Orders, Customers, Record and Shop; "Maker" is retired on screen. Every place but Needs you has a strip of parts, and
  * the page shows only the part he is in. What is proved here, each check red under its own mutation (test/admin-places.mutations.json):
@@ -83,7 +83,7 @@ export async function run({ ok, pageWork }) {
     const bar = (sel) => [...d.querySelectorAll(sel + " .place[data-m]")].map((b) => b.getAttribute("data-m") + ":" + b.textContent.replace(/\d+$/, "").trim());
     const want = PLACES.map((m, i) => m + ":" + LABELS[i]);
     ok(same(bar(".salt-appbar"), want) && same(bar(".salt-rail"), want),
-      "Salt Account has five places, Needs you, Orders, Customers, Record and Shop, in the App bar and the Desk rail: " + JSON.stringify([bar(".salt-appbar"), bar(".salt-rail")]));
+      "Salt Admin has five places, Needs you, Orders, Customers, Record and Shop, in the App bar and the Desk rail: " + JSON.stringify([bar(".salt-appbar"), bar(".salt-rail")]));
     ok(!/Maker/.test([...d.querySelectorAll(".place, #roster h1, #roster h2, #roster .eyebrow")].map((e) => e.textContent).join(" ")),
       "and none of its items, headings or eyebrows says Maker, a name that is retired on screen");
 

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { openMaster } from "../tools/payload.mjs";
 
 /* 18 Oct 2026 (Part 4 of the pricing basis): every surface he or a customer reads says Floor, Set Price and Ceiling, and his figure
-   per customer is "Their %". No tier, level or drift word is visible on the Desk, Counter Admin or the Counter, nor in a refusal or flag
+   per customer is "Their %". No tier, level or drift word is visible on the Desk, Salt Admin or the Counter, nor in a refusal or flag
    the phone shows. What stays is the supplier's quote tiers (a lot size a supplier prices), a plain "level with", and the stock count's
    own difference. Identifiers (TIER_OF, tierset, fiveTiers) are code, not words, and are not read here. */
 const FORBID = /\bdrift|\btier (?:i{1,3}|[0-9])\b|\b(?:ambassador|titanium|platinum|silver|bronze)\b|\bprice (?:levels?|tiers?)\b|\b(?:customer|pricing|guest|standing|starting) (?:levels?|tiers?)\b|\bstarting tiers?\b|\btiers? (?:entry|input|set|board)\b/i;
@@ -55,7 +55,7 @@ export async function run({ ok }) {
     ok(String(w.eval("[driftSay(0),driftSay(0.05),driftSay(0.2)].join('|')")) === "0%|+5%|+20%", "and a % is said as +5%, +20%, or 0% for the Set Price");
   } finally { w.close(); }
 
-  /* ---- Counter Admin, the Worker's refusals and the drafter's flags: every sentence in the source ---- */
+  /* ---- Salt Admin, the Worker's refusals and the drafter's flags: every sentence in the source ---- */
   const { OWNER_JS } = await import("../stmt/owner.js");
   const files = { "stmt/owner.js": OWNER_JS };
   for (const f of ["src/maker-inputs.js", "src/drafter.js", "engine/apply.mjs", "stmt/words.js"]) files[f] = readFileSync(new URL("../" + f, import.meta.url), "utf8");
@@ -63,7 +63,7 @@ export async function run({ ok }) {
   for (const [f, text] of Object.entries(files)) for (const lit of literals(text)) {
     if (FORBID.test(lit)) bad.push(f + ": " + lit.slice(0, 90));
   }
-  ok(bad.length === 0, "no sentence in Counter Admin, the Counter's words, the Worker's refusals, the drafter's flags or the fold's notes names a level or drift: " + JSON.stringify(bad.slice(0, 4)));
+  ok(bad.length === 0, "no sentence in Salt Admin, the Counter's words, the Worker's refusals, the drafter's flags or the fold's notes names a level or drift: " + JSON.stringify(bad.slice(0, 4)));
   const WD = await import("../stmt/words.js");
   ok(Object.values(WD.EN).every((v) => !FORBID.test(String(v)) && !/\blevels?\b|\btiers?\b/i.test(String(v)))
     && WD.EN["board.none"] === "Prices are being updated. Please check back shortly." && !("board.only" in WD.EN),

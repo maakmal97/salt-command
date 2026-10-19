@@ -30,7 +30,7 @@
   "replace": "plan.puts.push({ key: \"tboard:1\", value: \"{}\" }); plan.puts.push({ key: \"guestboard\","
  },
  {
-  "name": "Salt Account reads a link's level again",
+  "name": "Salt Admin reads a link's level again",
   "file": "stmt/owner.js",
   "find": "return links.filter(function(r){ return r.standing&&!r.revoked; })[0]||null;",
   "replace": "return links.filter(function(r){ return r.standing&&r.level==='Silver'&&!r.revoked; })[0]||null;"

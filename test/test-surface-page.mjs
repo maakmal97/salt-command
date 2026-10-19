@@ -1,5 +1,5 @@
 /* test/test-surface-page.mjs: P6 of the Counter test surface (his answers of 18 Oct 2026, Asks 1, 6, 7 and 8). The page under a base.
-   1. a real page carries nothing of the test surface: the customer's and Counter Admin's, with no test argument or a null one, have no
+   1. a real page carries nothing of the test surface: the customer's and Salt Admin's, with no test argument or a null one, have no
       shim, channel or base, and keep their manifest;
    2. the customer view signs in by itself as the account named, with the published test password, and every request it makes is under
       /all/test/c (a stub refuses any other path);
@@ -7,11 +7,11 @@
    4. it registers no service worker and asks for no passkey;
    5. it re-reads every 2 seconds, not 10;
    6. a write that went through in one pane is told on the channel, and the other pane re-reads at once;
-   7. Counter Admin in test draws four places, Needs you, Orders, Payments and Chat, no Record, Shop, inputs, Approve, account list, links
+   7. Salt Admin in test draws four places, Needs you, Orders, Payments and Chat, no Record, Shop, inputs, Approve, account list, links
       or + orb, reads only the examples' orders, payments and chats under /all/test/maker, and an address of Record lands on Needs you;
    8. an example order's Accept carries his Pay first switch into the preview and the Accept, and its preview is drawn as a practice
       order, with no margin or flags;
-   9. the two views are served inside /all's gate, framed by this origin alone, Counter Admin's with no master, the customer's only for a
+   9. the two views are served inside /all's gate, framed by this origin alone, Salt Admin's with no master, the customer's only for a
       test account. Every code and password here is invented, but the test password, which is published. */
 import { webcrypto } from "node:crypto";
 import { surface } from "./test-surface-harness.mjs";
@@ -104,7 +104,7 @@ export async function run({ ok, pageWork }) {
     ok(B.seen.sets.length > 0 && B.seen.writes.length > B.seen.sets.length && B.seen.writes.every((k) => k.indexOf("salt-test:") === 0) && B.w.localStorage.getItem("salt-stmt-seen") === "real-phone" && B.w.localStorage.getItem("salt-look") === "tide",
       "No localStorage key is written or removed but under salt-test:, and a real phone's keys are left as they were: " + JSON.stringify(B.seen.writes));
 
-    /* ---- 7 and 8: Counter Admin */
+    /* ---- 7 and 8: Salt Admin */
     const order = { id: "20261019010000-exaa1", u, test: true, status: "placed", at, product: "salt", qty: 2, unit: "unit", total: 190, delivery: 0, paid: 0, moved: 0, mode: "collect",
       history: [{ at, status: "placed", by: "customer" }], msgs: [], payments: [] };
     const calls = [];
@@ -136,14 +136,14 @@ export async function run({ ok, pageWork }) {
     ok(JSON.stringify(places) === JSON.stringify(["Needs you", "Orders", "Payments", "Chat"]) && !ad.getElementById("oAdd")
       && !parts.some((x) => /approve|group|ledger|accounts|links|associates|record\.|shop\./.test(x)) && parts.includes("orders.payments") && parts.includes("customers.messages")
       && JSON.stringify(onRecord) === JSON.stringify(["Needs you"]),
-      "Counter Admin in test draws Needs you, Orders, Payments and Chat, no Record, Shop, Approve, account list, links or + orb, and #record lands on Needs you: " + JSON.stringify([places, parts, onRecord]));
+      "Salt Admin in test draws Needs you, Orders, Payments and Chat, no Record, Shop, Approve, account list, links or + orb, and #record lands on Needs you: " + JSON.stringify([places, parts, onRecord]));
     ad.querySelector('nav.salt-rail .place[data-p="payments"]').click(); await tick();
     const onPay = [...ad.querySelectorAll('.aparts[data-place="orders"] [data-part]')].filter((b) => b.getAttribute("aria-selected") === "true").map((b) => b.getAttribute("data-part"));
     ad.querySelector('nav.salt-rail .place[data-p="messages"]').click(); await tick();
     ad.querySelector('nav.salt-rail .place[data-m="orders"]:not([data-p])').click(); await tick();
     const reads = [...new Set(calls.map((c) => c[0]))];
     ok(reads.length >= 3 && reads.every((p) => /^\/all\/test\/maker\/(review|claims|threads)$/.test(p)) && JSON.stringify(onPay) === '["payments"]' && ad.getElementById("nFail").hidden,
-      "Counter Admin in test reads only the examples' orders, payments and chats under /all/test/maker, and Payments opens its part: " + JSON.stringify([reads, onPay]));
+      "Salt Admin in test reads only the examples' orders, payments and chats under /all/test/maker, and Payments opens its part: " + JSON.stringify([reads, onPay]));
 
     ad.querySelector("#makerOrderList .ordrow").click(); await until(() => !!ad.querySelector('[data-act="order.pay-first"]'), 40);
     const first = ad.querySelector('[data-act="order.pay-first"]');
@@ -167,7 +167,7 @@ export async function run({ ok, pageWork }) {
       ok(cv.status === 200 && /frame-ancestors 'self'/.test(cv.headers.get("content-security-policy")) && /"u":"0000-0002"/.test(ch) && /"base":"\/all\/test\/c"/.test(ch)
         && av.status === 200 && /"base":"\/all\/test"/.test(ah) && /var TESTING=true/.test(ah) && !ah.includes(s.env.STMT_MASTER)
         && /"u":""/.test(crh) && none.status === 401 && noneA.status === 401,
-        "The two views are served inside /all's gate, framed by this origin alone, Counter Admin's with no master, the customer's signed in only as a test account: "
+        "The two views are served inside /all's gate, framed by this origin alone, Salt Admin's with no master, the customer's signed in only as a test account: "
         + JSON.stringify([cv.status, av.status, ah.includes(s.env.STMT_MASTER), /"u":""/.test(crh), none.status, noneA.status]));
     } finally { s.close(); }
   } finally { wins.forEach((w) => { try { w.close(); } catch (e) {} }); }

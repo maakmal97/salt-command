@@ -83,7 +83,8 @@ export async function run({ ok, skip }) {
     "his offer of RM 160 is filed as his yes waiting on their answer, no entry queued, open 48 hours: " + JSON.stringify({ st: of.status, e: of.j.error, pre: pre && pre.status, lapse }));
   const leak = JSON.stringify(O.customerView(sA));
   ok(JSON.stringify(Object.keys(vOff)) === JSON.stringify(VIEW) && vOff.delivery === null && vOff.total === 160
-    && !/floor|cost|margin|hash|drift|offerHash|proposed/.test(leak),
+    /* 19 Oct 2026: a word or a part of a camelCase name (offerHash, floorRM), never letters inside one */
+    && !(leak.match(/[A-Za-z]+/g) || []).some((w) => w.split(/(?<=[a-z])(?=[A-Z])/).some((p) => /^(floors?|costs?|margins?|hash|drift|proposed)$/i.test(p))),
     "their page reads the offer as {state, total, delivery: null, until} alone, never a floor, cost, margin, digest, drift or their figure: " + JSON.stringify(vOff));
   /* a tap sent twice files one offer */
   const again = await call("/orders/" + a.id + "/offer", { total: 160, delivery: 0, hash: pv.j.offerHash, rid: tap });

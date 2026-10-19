@@ -3,10 +3,10 @@
  * The head is a band: the order's short reference, its state as the heading, what it is, and while it waits at one of his points, the point and a
  * pin that opens their maps app. The track is drawn marks with the moment of each step and Next on the step to come. The money reads like a
  * receipt, each payment with its way and its day, what is still to pay apart in ember. Message stands beside Pay on every order, every stage.
- * Details, folded, holds when, the way, the point and the reference, and no note. Salt Account shows the same reference on the order's card.
+ * Details, folded, holds when, the way, the point and the reference, and no note. Salt Admin shows the same reference on the order's card.
  * Every assertion observes the generated page in jsdom; each was proved red by its own mutation (test/counter-order-detail.mutations.json, run with
  * tools/section.mjs). Every code, name and password is invented.
- *   1  the reference: seven of the site's symbols, four then three, stable, never the id, never a roster code's shape; Salt Account's card the same
+ *   1  the reference: seven of the site's symbols, four then three, stable, never the id, never a roster code's shape; Salt Admin's card the same
  *   2  the band: the state as its heading, the point while it waits there, and the pin to it, named by its code, carrying its place alone
  *   3  the steps: a mark each, the moment each happened, Next on the one to come
  *   4  the money: each payment with its way and its day, still to pay apart
@@ -89,7 +89,7 @@ export async function run({ ok, pageWork }) {
     try {
       await own.work.quiet(); own.d.querySelector('[data-act="nav.orders"]').click(); await own.work.quiet();
       const card = own.card("ord-a1"), oref = card && card.querySelector("[data-ref]");
-      ok(!!oref && t(oref) === "· Ref " + refR, "Salt Account's card for the same order shows the same reference, so one they quote finds it: " + (oref && t(oref)));
+      ok(!!oref && t(oref) === "· Ref " + refR, "Salt Admin's card for the same order shows the same reference, so one they quote finds it: " + (oref && t(oref)));
     } finally { own.w.close(); }
 
     /* ---- 2: the band, the point and its pin ---- */

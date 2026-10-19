@@ -1,0 +1,16 @@
+[
+  {"name":"the body carries a book","file":"tools/stmt-publish.mjs","find":"body: JSON.stringify({ tag: \"stock\" })","replace":"body: JSON.stringify({ tag: \"stock\", book: \"x\" })"},
+  {"name":"the push key is not sent","file":"tools/stmt-publish.mjs","find":"const headers = { \"X-Push-Key\": env.PUSH_KEY, ","replace":"const headers = { "},
+  {"name":"the Access id is not sent","file":"tools/stmt-publish.mjs","find":"headers[\"CF-Access-Client-Id\"] = env.CF_ACCESS_CLIENT_ID; ","replace":""},
+  {"name":"a light that holds is a turn","file":"tools/stmt-publish.mjs","find":"LIGHT_RANK[l] > LIGHT_RANK[prev[p]]","replace":"LIGHT_RANK[l] >= LIGHT_RANK[prev[p]]"},
+  {"name":"yellow and red rank alike","file":"tools/stmt-publish.mjs","find":"const LIGHT_RANK = { green: 0, yellow: 1, red: 2 };","replace":"const LIGHT_RANK = { green: 0, yellow: 1, red: 1 };"},
+  {"name":"a light getting better is a turn","file":"tools/stmt-publish.mjs","find":"LIGHT_RANK[l] > 0 && prev && prev[p] in LIGHT_RANK && LIGHT_RANK[l] > LIGHT_RANK[prev[p]]","replace":"LIGHT_RANK[l] > 0 && prev && prev[p] in LIGHT_RANK && LIGHT_RANK[l] !== LIGHT_RANK[prev[p]]"},
+  {"name":"a book never lit before counts as green","file":"tools/stmt-publish.mjs","find":"prev && prev[p] in LIGHT_RANK && LIGHT_RANK[l] > LIGHT_RANK[prev[p]]","replace":"LIGHT_RANK[l] > (prev && prev[p] in LIGHT_RANK ? LIGHT_RANK[prev[p]] : 0)"},
+  {"name":"one post a book turned","file":"tools/stmt-publish.mjs","find":"  if (!stockTurned(prev, now)) return null;","replace":"  const many = Object.keys(now || {}).filter((p) => stockTurned({ [p]: prev && prev[p] }, { [p]: now[p] })).length;\n  if (!many) return null;\n  for (let i = 1; i < many; i++) await post(PUSH_URL, { method: \"POST\" });"},
+  {"name":"no push key still posts","file":"tools/stmt-publish.mjs","find":"if (!env.PUSH_KEY) {","replace":"if (false) {"},
+  {"name":"a failed post throws","file":"tools/stmt-publish.mjs","find":"catch (e) { console.log(\"::warning::a stock light turned and the wake did not go: \"","replace":"catch (e) { throw e; console.log(\"::warning::a stock light turned and the wake did not go: \""},
+  {"name":"the kept lights carry the date","file":"tools/stmt-publish.mjs","find":".map(([p, v]) => [p, v && v.light])","replace":".map(([p, v]) => [p, v && v.light + (v.by ? \" \" + v.by : \"\")])"},
+  {"name":"an unknown light word is kept","file":"tools/stmt-publish.mjs","find":".filter(([, l]) => l in LIGHT_RANK));","replace":");"},
+  {"name":"the last lights are read under another key","file":"tools/stmt-publish.mjs","find":"\"STMT\", \"stocklights\"], { stdio","replace":"\"STMT\", \"stocklight\"], { stdio"},
+  {"name":"a missing key reads as no lights at all","file":"tools/stmt-publish.mjs","find":"    return null;\n  }\n}\nexport const PUSH_URL","replace":"    return {};\n  }\n}\nexport const PUSH_URL"}
+]

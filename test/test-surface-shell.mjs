@@ -1,7 +1,7 @@
 /* test/test-surface-shell.mjs: P7 of the Counter test surface (his answers of 18 Oct 2026, Asks 1, 3, 8 and 10). The shell at /all/test.
    1. it is served inside /all's gate alone, its frames this origin's, and says where each test account stands: ready, made and waiting
       for the publish, or not made;
-   2. its frames are the two views, the customer's on the account chosen (the fresh one first) and Counter Admin's; choosing another
+   2. its frames are the two views, the customer's on the account chosen (the fresh one first) and Salt Admin's; choosing another
       account moves the customer's view; Make shows only for an account not made, Start empty only on the fresh one;
    3. Reset asks once: the first tap clears nothing and says so on the control, a second within four seconds resets that account and
       both views read it again, and left alone it lets go;
@@ -61,7 +61,7 @@ export async function run({ ok }) {
     const open0 = [cSrc(), A.d.getElementById("tsMake").hidden];
     ok(first[0] === "/all/test/c?u=0000-0002" && first[1] === "/all/test/admin" && first[2] === true && first[3] === false
       && locked[0] === "/all/test/c?u=0000-0001" && locked[1] === false && locked[2] === true && locked[3] === TS["ts.none"] && open0[0] === "/all/test/c?u=0000-0000" && open0[1] === true,
-      "Its frames are the customer's view on the account chosen, fresh first, and Counter Admin's; Make only for an account not made, Start empty only on the fresh one: " + JSON.stringify([first, locked, open0]));
+      "Its frames are the customer's view on the account chosen, fresh first, and Salt Admin's; Make only for an account not made, Start empty only on the fresh one: " + JSON.stringify([first, locked, open0]));
 
     /* ---- 3: Reset asks once */
     const reset = A.d.getElementById("tsReset");
@@ -123,7 +123,7 @@ export async function run({ ok }) {
   /* ---- 8: words */
   const text = Object.values(TS).join(" ") + " " + new JSDOM(html).window.document.body.textContent;
   const brands = (text.match(/Salt [A-Z][a-z]+/g) || []).filter((b) => b !== "Salt Counter");
-  ok(brands.length === 0 && !/Salt Command|Salt Account|Salt Desk/i.test(html) && !O.wordsIn(text, O.PRODUCT_WORDS).length && !/\bsalt\b/i.test(text.replace(/Salt Counter/g, ""))
+  ok(brands.length === 0 && !/Salt Command|Salt Admin|Salt Desk/i.test(html) && !O.wordsIn(text, O.PRODUCT_WORDS).length && !/\bsalt\b/i.test(text.replace(/Salt Counter/g, ""))
     && !/\b[A-Z]{2}\d-[A-Z]{2,4}\b/.test(text),
     "It carries no brand but Salt Counter, no product word and no roster code: " + JSON.stringify([brands, O.wordsIn(text, O.PRODUCT_WORDS)]));
 }

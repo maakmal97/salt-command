@@ -305,6 +305,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        id: fold
         run: |
           set -euo pipefail
           # NO KEY IS NO LONGER A STOP (his instruction of 22 Sep 2026). It exited 1 here, and on
@@ -337,6 +338,23 @@ jobs:
           git pull -q --rebase origin master
           git push origin HEAD:master
           echo "folded and pushed: $v"
+
+      # THE DESK INFORMS WHEN A FOLD IS REFUSED (19 Oct 2026, the notifications plan P5). The Fold step failing is a refusal or a
+      # fault that leaves the batch staged; this says so on the phone, in words only (the banner names no row), and never fails the
+      # run itself. Same optional secret and curl shape as Wake the phone.
+      - name: Say a fold was refused
+        if: failure() && steps.fold.outcome == 'failure'
+        continue-on-error: true
+        env:
+          PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PUSH_KEY:-}" ]; then echo "No SALT_PUSH_KEY secret; nothing is woken. This step is optional."; exit 0; fi
+          acc=(); if [ -n "${CF_ACCESS_CLIENT_ID:-}" ] && [ -n "${CF_ACCESS_CLIENT_SECRET:-}" ]; then acc=(-H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"); fi
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${acc[@]}" -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"fold-refused"}' https://salt-command.qyts8mh72kyg.workers.dev/push/send)
+          echo "push/send fold-refused -> $code"
 
       # ---- DEPLOY: the phone gets the build, and only then are the rows marked ----------
       # ALREADY SERVING? A re-run, or a push Workers Builds has already shipped, finds the phone
@@ -578,6 +596,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           STMT_KEY: ${{ secrets.STMT_KEY }}
+          # a book's stock light turning yellow or red posts {"tag":"stock"} to the Desk once (tools/stmt-publish.mjs
+          # stockWake), the same optional key and Access headers as Wake the phone; a failed post never fails the publish
+          PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           if [ -z "${STMT_KEY:-}" ]; then
@@ -711,6 +734,22 @@ jobs:
         run: |
           v=$(node -p "require('./master/changelog.json')[0].v")
           node tools/drafts.mjs --refused-note "suite:$v" "The desk's own tests failed after $v went live; the phone is serving $v and working. The next desk session reads run ${{ github.run_id }} and fixes them."
+
+      # THE DESK INFORMS WHEN THE SUITE IS RED (19 Oct 2026, the notifications plan P5): the same verdict and the same guard as the
+      # note above, once for the three parts. A word on the phone, no row, no figure; never fails the run.
+      - name: Wake the phone, the suite is red
+        if: always() && needs.suite.result == 'failure' && steps.live.outputs.same == '1'
+        continue-on-error: true
+        env:
+          PUSH_KEY: ${{ secrets.SALT_PUSH_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PUSH_KEY:-}" ]; then echo "No SALT_PUSH_KEY secret; nothing is woken. This step is optional."; exit 0; fi
+          acc=(); if [ -n "${CF_ACCESS_CLIENT_ID:-}" ] && [ -n "${CF_ACCESS_CLIENT_SECRET:-}" ]; then acc=(-H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET"); fi
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${acc[@]}" -H "X-Push-Key: $PUSH_KEY" -H "content-type: application/json" -d '{"tag":"suite-red"}' https://salt-command.qyts8mh72kyg.workers.dev/push/send)
+          echo "push/send suite-red -> $code"
 
       # v805, HIS WORD OF 23 SEP 2026: "I never know what to do with this." A test notice waited for the next FOLD to clear it,
       # so one raised by a failing suite stayed on the phone through every green run after it, as suite:v791 did through

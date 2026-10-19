@@ -17,7 +17,7 @@
  *   7  NO ADDRESS WITH A KEY OR A TOKEN IS EVER PUSHED: the page at /app#<key>, /app#qr.<key> and /app#code, signed in at the door, opens the look Sheet and
  *      pushes nothing, and closes it without taking an entry that was never pushed; the page at /s/<token> pushes nothing until the link is spent, and then pushes
  *      the clean address
- *   8  Salt Account is unchanged: its look Sheet pushes nothing and Escape closes it as before; the guest board carries no script to push with
+ *   8  Salt Admin is unchanged: its look Sheet pushes nothing and Escape closes it as before; the guest board carries no script to push with
  * Every assertion observes a signed-in page's window in jsdom. Every code, name, key, token and password is invented. */
 import { webcrypto } from "node:crypto";
 import { TIDE_OFF } from "./tide-off.mjs";
@@ -348,7 +348,7 @@ export async function run({ ok, pageWork }) {
     ok(before === 0 && Lk.w.location.pathname === "/" && Lk.push.length === 1 && Lk.push[0].at === "https://site.test/" && !JSON.stringify(Lk.push).includes(TOK) && stateIs(Lk, 1),
       "the page at /s/<token> pushes nothing while the link is waiting, and once it is spent the Sheet pushes the clean address, with no token in any entry: " + JSON.stringify(Lk.push) + " at " + Lk.w.location.href);
 
-    /* ---- 8: Salt Account is unchanged, and the guest board has no script. His page is served at /all, an address the customer's rule would refuse anyway; it is read at / as
+    /* ---- 8: Salt Admin is unchanged, and the guest board has no script. His page is served at /all, an address the customer's rule would refuse anyway; it is read at / as
        well, where only his own page's refusal stands between the Sheet and a push */
     for (const at of ["/all", "/"]) {
       const errs = [], pushes = []; let work;
@@ -367,7 +367,7 @@ export async function run({ ok, pageWork }) {
       const len = w.history.length, up = !!d.getElementById("lookSheet") && !d.getElementById("lookSheet").hidden;
       d.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })); await flush();
       ok(up && pushes.length === 0 && len === 1 && w.history.length === len && w.history.state === null && d.getElementById("lookSheet").hidden && !errs.length,
-        "Salt Account's look Sheet at " + at + " pushes nothing, Escape closes it as before and takes no entry: pushes " + pushes.length + " length " + w.history.length + "/" + len + " errors " + errs.length);
+        "Salt Admin's look Sheet at " + at + " pushes nothing, Escape closes it as before and takes no entry: pushes " + pushes.length + " length " + w.history.length + "/" + len + " errors " + errs.length);
     }
     }
     const { shutPage, notFoundPage } = await import("../stmt/page.js");

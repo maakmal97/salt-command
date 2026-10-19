@@ -81,7 +81,7 @@ export function validateManualHours(value, now = Date.now()) {
 
 export const HOURS_KEY = "maker:hours";
 
-/** The hours as a delivery window reads them (stmt/window.js), from Counter Admin's store: {schedule, manual}, each null
+/** The hours as a delivery window reads them (stmt/window.js), from Salt Admin's store: {schedule, manual}, each null
  *  when unset. A store that cannot be read, or holds what no longer validates, reads as none set, every window open, so a
  *  fault in the hours never stops an order (as the page's own note says, "you can still place an order"). */
 export async function hoursConfig(env) {

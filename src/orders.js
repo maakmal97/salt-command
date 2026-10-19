@@ -72,6 +72,8 @@ const NEWS_WORD = { pay: "A customer says they paid", cancel: "A customer cancel
    the mirror, so comparing the version is one cheap read a minute and a full pass only when there
    is something new to say. It moves only when the whole pass got through. */
 const TOLD_MARK = "orders:told";
+/* 19 Oct 2026: set while Salt Admin holds a subscribed device (wakeAdmin); the Desk's summary reads it as adminOn */
+export const ADMIN_ON = "admin:on";
 
 function site(env, path, init) {
   if (!env.STMT_SITE || !env.STMT_DESK_KEY) return null;
@@ -2287,6 +2289,29 @@ export async function ordersWaiting(env, since) {
    and ignored his No reply needed, so the two apps disagreed. The trade, stated: the figure is as fresh as the desk's
    last read of its orders, and the mark carries its moment, which Salt Account shows. S9 fix: the page sends how old its
    reading is (`age`, whole seconds), passed through, and the site stamps the moment from it. */
+/* 19 Oct 2026, THE SPLIT: Salt Admin is woken for what waits on his decision, Salt Desk only for what informs. One event, one
+   surface. This asks the Counter to wake Salt Admin ({k, o?, t?}, k one of order, pay, cancel, said, rate, take, pass, approve)
+   and answers {ok, devices, sent, failed}; anything but a clean answer is {ok:false, devices:0}, so the caller keeps ringing the
+   Desk. KV `admin:on` follows the last answer (two days on the key): set while Salt Admin holds a subscribed device, which is the
+   moment the Desk drops its order banners (the summary's adminOn), gone when it holds none or the wake failed. */
+export async function wakeAdmin(env, news) {
+  let out = { ok: false, devices: 0, sent: 0, failed: 0 };
+  try {
+    const r = await site(env, "/desk/owner-wake", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(news || {}) });
+    if (r && r.ok) {
+      const b = await r.json().catch(() => null);
+      if (b && b.ok === true && Number.isInteger(b.devices) && b.devices >= 0) out = { ok: true, devices: b.devices, sent: b.sent || 0, failed: b.failed || 0 };
+    }
+  } catch { /* a relay with a bad minute leaves the Desk ringing */ }
+  try {
+    if (env.SALT_QUEUE) {
+      /* a wake that failed clears the flag as well: the Desk is about to ring itself, and its banner must not strip what it is ringing for */
+      if (out.ok && out.sent > 0) await env.SALT_QUEUE.put(ADMIN_ON, "1", { expirationTtl: 2 * 86400 });
+      else await env.SALT_QUEUE.delete(ADMIN_ON);
+    }
+  } catch { /* the flag is a convenience; the next wake sets it again */ }
+  return out;
+}
 export async function tellWaiting(env, n, age) {
   if (!Number.isInteger(n) || n < 0 || n > 9999) return { ok: false, status: 400, error: "send the count as a whole number" };
   const a = Number.isInteger(age) && age >= 0 && age <= 30 * 86400 ? age : 0;
@@ -2361,6 +2386,19 @@ export async function nudgeOrders(env, read) {
        customer had paid. */
     await env.SALT_QUEUE.delete(NEWS_KEY);
   }
-  const p = await sendPush(env, { tag: "orders", urgency: "high" });
+  /* 19 Oct 2026: what waits on his decision wakes Salt Admin, one wake a kind of event; the Desk is rung only when Admin
+     could not be (no answer, or no subscribed device), as it always was. An act the table does not know stays the Desk's. */
+  const word = did ? String(theirs).split("|")[1] : null;
+  const kinds = [];
+  if (placed) kinds.push("order");
+  if (did) kinds.push(NEWS_WORD[word] ? word : null);
+  if (spoke && !kinds.includes("said")) kinds.push("said");
+  let adminSent = 0, viaAdmin = kinds.length > 0 && !kinds.includes(null);
+  for (const k of viaAdmin ? kinds : []) {
+    const w = await wakeAdmin(env, { k });
+    if (!w.ok || !(w.sent > 0)) { viaAdmin = false; break; }
+    adminSent += w.sent;
+  }
+  const p = viaAdmin ? { sent: adminSent } : await sendPush(env, { tag: "orders", urgency: "high" });
   return { ok: true, sent: p.sent || 0, newest: placed ? newest : null, said: spoke ? said : null, did: did ? news : null };
 }

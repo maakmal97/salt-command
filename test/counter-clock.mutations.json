@@ -14,13 +14,13 @@
  {
   "name": "the clock reads another zone's time",
   "file": "stmt/page.js",
-  "find": "try{ new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',",
-  "replace": "try{ new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',hour:'2-digit',"
+  "find": "      try{ new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})",
+  "replace": "      try{ new Intl.DateTimeFormat('en-GB',{timeZone:'UTC',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})"
  },
  {
   "name": "the bar loses the clock",
   "file": "stmt/page.js",
-  "find": "Salt Account</div><div class=\"salt-deskbar__meta\"><span class=\"clk\" data-clock></span></div>",
-  "replace": "Salt Account</div><div class=\"salt-deskbar__meta\"><span class=\"clk\"></span></div>"
+  "find": "Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"abarlive\" id=\"aBarLive\"></span><span class=\"abarhours\" id=\"aBarHours\" hidden></span><span class=\"clk\" data-clock></span></div>",
+  "replace": "Salt Admin</div><div class=\"salt-deskbar__meta\"><span class=\"abarlive\" id=\"aBarLive\"></span><span class=\"abarhours\" id=\"aBarHours\" hidden></span><span class=\"clk\"></span></div>"
  }
 ]
