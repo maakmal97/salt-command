@@ -8766,7 +8766,7 @@ const customerRefunds=[
   {"party":"CZ6-WM","amount":80,"since":"2026-07-24","paidOn":"2026-07-31","note":"RM80 overpayment, refunded 31 Jul."},
   {"party":"CZ4-MK","amount":20,"since":"2026-08-26","paidOn":"2026-09-21","note":"RM20 over-tender, cash payable to set off. Set off on 21 Sep against s190 and s191, 5 unit of salt and 10 of candy for RM920, which he settled with RM900 cash: the two rows carry RM920 as paid and this refund the RM20 back, so the cash nets to the RM900 handed over. Closed on his word of 23 Sep 2026."}
 ];
-const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC9-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN3-WM","CN3-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-BAN","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CM4-TO","CA2-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-AMP","CF5-WM","CE5-SA","CR3-DAM-R","CB7-BJ","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R","CS6-DAM","CZ5-TM","CJ2-KUC","CA6-CYB","CE5-SA-R","CA6-CYB-R","CM4-TO-R","CI5-PER","CN4-BSL","CA3-KP","CA4-P1"];
+const roster=["CA5-SEN","CG5-SB","CJ4-BJ","CR3-DAM","CS6-PER","CN5-TAI","CJ4-OKR","CC9-OKR","CA4-DAM","CE4-CHE","CM6-HCM","CM4-SK","CS6-BS","CS6-BS-R","CM4-MK","CH5-KLC","CI4-OKR","CN3-WM","CN3-WM-R","CZ6-WM","CR4-PJ","CD4-CS","CA5-BAN","CE4-AD","SF6-KLC","SA5-BTR","SM4-KEP","SP7-PUD","CH4-KS","CS6-PER-R","CY2-NIL","CR3-PUD","CH4-MAL","CM4-TO","CA2-SEN","CM6-PJ","CK4-SEN","CZ4-MK","CH6-SET","CD7-SEG","CA7-AMP","CF5-WM","CE5-SA","CR3-DAM-R","CB7-BJ","CJ4-OKR-R","CI4-OKR-R","CE4-AD-R","CS6-DAM","CZ5-TM","CJ2-KUC","CA6-CYB","CE5-SA-R","CA6-CYB-R","CM4-TO-R","CI5-PER","CN4-MC","CA3-KP","CA4-P1","CJ5-CHE"];
 const associates=["CS6-BS","CJ4-OKR","CS6-PER","CN3-WM","CI4-OKR","CE4-AD","CR3-DAM","CE5-SA","CA6-CYB","CM4-TO"];
 const partners=["CM4-TO"];
 const INTRODUCTIONS=[
@@ -9008,11 +9008,6 @@ const PLACED={
     101.72,
     "Permaisuri"
   ],
-  "CN4-BSL": [
-    3.05,
-    101.8,
-    "Mahkota Cheras"
-  ],
   "CA3-KP": [
     2.72,
     102.24,
@@ -9022,9 +9017,23 @@ const PLACED={
     2.92,
     101.7,
     "Presint 17"
+  ],
+  "CJ5-CHE": [
+    3.05,
+    101.77,
+    "Cheras"
+  ],
+  "CN4-MC": [
+    3.05,
+    101.8,
+    "Mahkota Cheras"
   ]
 };
-const TIER_OF={};
+const TIER_OF={
+  "CJ5-CHE": {
+    "salt": 0
+  }
+};
 const PEOPLE={
   "banned": [
     {
@@ -9148,7 +9157,7 @@ const ONE_OFFS=[
   {"id":"CM6-HCM","date":"2026-07-14","note":"One-off; RM104/unit is an outlier."}
 ];
 /* v512, 07 Sep 2026: moved to 06:21:06.691Z past a second entry of the CR3-DAM sale already folded at v510, so the phone stops showing it as provisional; no row folded. */
-const QUEUE_COMMITTED="2026-10-18T08:10:55.627Z";
+const QUEUE_COMMITTED="2026-10-19T08:40:25.200Z";
 /* RETIRED AT v656 on 2026-09-16, his decision of 15 Sep off the pricing workbook: the board is the ladder, so a stated price no longer decides it and oil's five are cleared rather than left unread. The stranger's ask on oil moves from his RM130, 240, 330, 400 and 450 to Bronze at RM230, 440, 650, 850 and 1,040, with 80 and 100 unit at RM1,640 and RM2,000. The old five sat a hair over break-even (the 50 unit tier read 0.93x, RM32.20 UNDER its floor) because they were typed in July against a cost that has moved since; the ladder is struck on today's COGS and moves with it. No customer's price moves with this: every named customer is quoted their own tier capped at what they pay, and a stranger has no history to cap against. The hide list is untouched and still takes a size off the board. */
 /* HIS INSTRUCTION, 09 SEP 2026, AFTER THE v551 OIL COUNT: "The desk quotes to 450, by lowering margin, then for others, quote proportionately." The count read a 23.08 per cent leak from his own figures and lifted the 50 unit oil floor to RM482.20, above the RM450 he had stated, and v353 had the desk lift any stated price that sat under its floor. From v552 it lifts a DERIVED ask only: a price he has set is quoted as set, the gap to break-even is reported beside it rather than hidden, and the 50 unit tier reads 0.93x with RM32.20 under. His other four oil tiers are untouched and already step the margin down proportionately into it: 1.35x, 1.24x, 1.14x, 1.04x, 0.93x. Recorded as his decision, not an error, and the drafter will flag a 50 unit oil sale as under floor for the same reason the board does. */
 const PRICE_SET={
@@ -10153,7 +10162,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1167","d":"19 Oct 2026","t":"SALT ADMIN, AND ONE BANNER PER EVENT","n":["<b>THE OWNER'S APP IS SALT ADMIN AGAIN</b> (it was Salt Account), one name in every line of copy, Counter Admin included. An installed icon keeps its old name until it is added to the home screen again, which is also the install that takes its notifications.","<b>SALT ADMIN WAKES HIM FOR WHAT WAITS ON HIS DECISION</b>: a new order, a customer's line, a claim, a cancellation, their answer to an offer, rows to approve. Its own worker at /all/sw.js, its own subscriptions, a bell under Shop &gt; This device, asked only from a tap. A tap opens the place that answers it.","<b>SALT DESK ONLY INFORMS</b>: folded and live, a fold refused, the suite red, a refund held, the morning digest. It rings an order banner itself only while no Salt Admin device was reached, so nothing is lost before the bell is on.","<b>MASTER'S SUITE IS GREEN AGAIN UNDER TIDE OFF</b>: two Counter page checks read the served Night, and the needles of the parked Tide sections are skipped while they are parked."]}];
+const evolution=[{"v":"v1168","d":"19 Oct 2026","t":"ONE CUSTOMER REGISTERED, ONE CODE RE-KEYED","n":["<b>FOLDED: TWO ROSTER ROWS, NO MONEY OR STOCK.</b> CJ5-CHE is added to the roster as a customer at salt 0, and CN4-BSL is re-keyed to CN4-MC with 0 orders and 0 lots. Both were decided by Counter Admin on 19 Oct. The drafter raised no flags on either.","<b>INVENTORY UNTOUCHED.</b> No sale, lot or count is in this batch. Stock stays at 20.39 units and the stock cost stays at RM56 per unit."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10297,7 +10306,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='19 Oct 2026, 16:28 KL';
+const LAST_UPDATED='19 Oct 2026, 16:41 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */

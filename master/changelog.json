@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1168",
+  "d": "19 Oct 2026",
+  "t": "ONE CUSTOMER REGISTERED, ONE CODE RE-KEYED",
+  "n": [
+   "<b>FOLDED: TWO ROSTER ROWS, NO MONEY OR STOCK.</b> CJ5-CHE is added to the roster as a customer at salt 0, and CN4-BSL is re-keyed to CN4-MC with 0 orders and 0 lots. Both were decided by Counter Admin on 19 Oct. The drafter raised no flags on either.",
+   "<b>INVENTORY UNTOUCHED.</b> No sale, lot or count is in this batch. Stock stays at 20.39 units and the stock cost stays at RM56 per unit."
+  ]
+ },
+ {
   "v": "v1167",
   "d": "19 Oct 2026",
   "t": "SALT ADMIN, AND ONE BANNER PER EVENT",
