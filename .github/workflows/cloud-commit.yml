@@ -300,12 +300,12 @@ jobs:
       # recorded where the phone shows refusals. The Claude Code action is retired from the job;
       # the manual backup stands.
       - name: Fold
-        id: fold
         if: steps.plan.outputs.fold == '1'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        id: fold
         run: |
           set -euo pipefail
           # NO KEY IS NO LONGER A STOP (his instruction of 22 Sep 2026). It exited 1 here, and on
