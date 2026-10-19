@@ -1,6 +1,6 @@
 {
- "v": "v1173",
- "stamped": "20 Oct 2026, 00:33 KL",
+ "v": "v1175",
+ "stamped": "20 Oct 2026, 01:47 KL",
  "source": "master/salt_command.html",
  "ledger": {
   "PRODUCTS": {
@@ -91,7 +91,7 @@
     "stated": null
    }
   },
-  "STATED_STOCK": 20.39,
+  "STATED_STOCK": 15.39,
   "COUNT_ON": {
    "salt": "2026-10-03",
    "oil": "2026-10-06",
@@ -8059,6 +8059,22 @@
     ],
     "cancelled": true,
     "cancelledOn": "2026-10-20"
+   },
+   {
+    "customer": "CM4-TO-R",
+    "qty": 5,
+    "total": 457,
+    "cost": 290,
+    "cash": 475,
+    "delivery": 18,
+    "handover": "delivered",
+    "date": "2026-10-19",
+    "deliveredQty": 5,
+    "deliveredOn": "2026-10-19",
+    "paidOn": "2026-10-19",
+    "rev": "R2",
+    "note": "<b>NEW PAID SALE ON 19 OCT: 5 UNITS OF SALT TO CM4-TO-R, GOODS RM457.</b> Delivered in full and paid in full on 19 Oct, RM18 delivery on top, RM475 cash. Booked as R2 via CM4-TO, approved by Counter Admin. The goods total of RM457 is above the floor total of RM290 and below the ask total of RM495, at RM91.4 a unit against a floor of RM58 and an ask of RM99. CM4-TO-R has no orders on record, no median rate, nothing outstanding and 0 units on credit against a cap of 1. The row carries cost RM290, the drafter's COGS at RM58 a unit off the latest purchase, and the fold keeps it. The drafter flagged that CM4-TO usually pays about RM56 a unit across 4 orders and that this is 63.2% above that. The figures answer it: the rate is well clear of the floor. Nothing is left outstanding.",
+    "rid": "s273"
    }
   ],
   "contacts": [
@@ -8749,7 +8765,7 @@
     "note": "One-off; RM104/unit is an outlier."
    }
   ],
-  "QUEUE_COMMITTED": "2026-10-19T16:01:37.099Z",
+  "QUEUE_COMMITTED": "2026-10-19T17:44:03.240Z",
   "PRICING": {
    "sizes": [
     0.5,
@@ -8782,7 +8798,7 @@
     {
      "id": "cust:cadence:salt",
      "sev": "watch",
-     "title": "8 customers are past their own habit on salt"
+     "title": "7 customers are past their own habit on salt"
     },
     {
      "id": "cust:cadence:candy",
@@ -8892,7 +8908,7 @@
     {
      "id": "cust:oneanddone",
      "sev": "note",
-     "title": "15 of 47 customers have bought exactly once"
+     "title": "16 of 48 customers have bought exactly once"
     },
     {
      "id": "cust:noreply",
@@ -9101,6 +9117,38 @@
       "rare": false
      }
     },
+    "CM4-TO": {
+     "salt": {
+      "name": "large and regular",
+      "orders": 5,
+      "tenureDays": 66,
+      "sinceLastDays": 1,
+      "perMonth": 2.31,
+      "unitsPerMonth": 21.45,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": true,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     },
+     "rice": {
+      "name": "one-off",
+      "orders": 1,
+      "tenureDays": 27,
+      "sinceLastDays": 27,
+      "perMonth": 1.01,
+      "unitsPerMonth": 10.15,
+      "smallShare": 0,
+      "bigShare": 1,
+      "frequent": false,
+      "small": false,
+      "bigger": true,
+      "loyal": false,
+      "rare": false
+     }
+    },
     "CK4-SEN": {
      "salt": {
       "name": "large and regular",
@@ -9178,38 +9226,6 @@
       "frequent": false,
       "small": false,
       "bigger": false,
-      "loyal": false,
-      "rare": false
-     }
-    },
-    "CM4-TO": {
-     "salt": {
-      "name": "rare and large",
-      "orders": 4,
-      "tenureDays": 66,
-      "sinceLastDays": 27,
-      "perMonth": 1.84,
-      "unitsPerMonth": 19.14,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
-      "loyal": false,
-      "rare": false
-     },
-     "rice": {
-      "name": "one-off",
-      "orders": 1,
-      "tenureDays": 27,
-      "sinceLastDays": 27,
-      "perMonth": 1.01,
-      "unitsPerMonth": 10.15,
-      "smallShare": 0,
-      "bigShare": 1,
-      "frequent": false,
-      "small": false,
-      "bigger": true,
       "loyal": false,
       "rare": false
      }
@@ -10041,15 +10057,15 @@
          "rm": 0
         },
         "deliveredShare": {
-         "v": 0.297029702970297
+         "v": 0.30392156862745096
         }
        },
        "attrib": 1,
        "shrinkRate": 0.07533842547077063,
        "avgDel": {
-        "n": 216,
-        "kg": 552.31,
-        "mean": 2.557
+        "n": 217,
+        "kg": 557.31,
+        "mean": 2.5682
        }
       },
       "policy": {
@@ -10518,6 +10534,48 @@
         980
        ]
       ],
+      "CM4-TO": [
+       [
+        0.5,
+        30
+       ],
+       [
+        1,
+        60
+       ],
+       [
+        1.5,
+        90
+       ],
+       [
+        2,
+        120
+       ],
+       [
+        2.5,
+        145
+       ],
+       [
+        3,
+        175
+       ],
+       [
+        4,
+        235
+       ],
+       [
+        5,
+        290
+       ],
+       [
+        6.25,
+        365
+       ],
+       [
+        12.5,
+        725
+       ]
+      ],
       "CK4-SEN": [
        [
         0.5,
@@ -10642,48 +10700,6 @@
        [
         12.5,
         980
-       ]
-      ],
-      "CM4-TO": [
-       [
-        0.5,
-        30
-       ],
-       [
-        1,
-        60
-       ],
-       [
-        1.5,
-        90
-       ],
-       [
-        2,
-        120
-       ],
-       [
-        2.5,
-        145
-       ],
-       [
-        3,
-        175
-       ],
-       [
-        4,
-        235
-       ],
-       [
-        5,
-        290
-       ],
-       [
-        6.25,
-        365
-       ],
-       [
-        12.5,
-        725
        ]
       ],
       "CZ4-MK": [
@@ -12250,10 +12266,10 @@
       "CJ4-BJ": 0,
       "CE4-CHE": 0,
       "CM4-MK": 0,
+      "CM4-TO": "partner",
       "CK4-SEN": 0,
       "CR3-DAM": 0,
       "CN3-WM": 0,
-      "CM4-TO": "partner",
       "CZ4-MK": 0,
       "CC9-OKR": 0,
       "CE4-AD": 0,
@@ -12840,6 +12856,28 @@
         450
        ]
       ],
+      "CM4-TO": [
+       [
+        10,
+        80
+       ],
+       [
+        20,
+        160
+       ],
+       [
+        30,
+        235
+       ],
+       [
+        40,
+        315
+       ],
+       [
+        50,
+        390
+       ]
+      ],
       "CK4-SEN": [
        [
         10,
@@ -12904,28 +12942,6 @@
        [
         50,
         450
-       ]
-      ],
-      "CM4-TO": [
-       [
-        10,
-        80
-       ],
-       [
-        20,
-        160
-       ],
-       [
-        30,
-        235
-       ],
-       [
-        40,
-        315
-       ],
-       [
-        50,
-        390
        ]
       ],
       "CZ4-MK": [
@@ -14078,6 +14094,28 @@
         1500
        ]
       ],
+      "CM4-TO": [
+       [
+        1,
+        45
+       ],
+       [
+        5,
+        210
+       ],
+       [
+        10,
+        420
+       ],
+       [
+        20,
+        840
+       ],
+       [
+        30,
+        1260
+       ]
+      ],
       "CK4-SEN": [
        [
         1,
@@ -14142,28 +14180,6 @@
        [
         30,
         1500
-       ]
-      ],
-      "CM4-TO": [
-       [
-        1,
-        45
-       ],
-       [
-        5,
-        210
-       ],
-       [
-        10,
-        420
-       ],
-       [
-        20,
-        840
-       ],
-       [
-        30,
-        1260
        ]
       ],
       "CZ4-MK": [
@@ -15233,6 +15249,20 @@
         60
        ]
       ],
+      "CM4-TO": [
+       [
+        1,
+        5
+       ],
+       [
+        5,
+        20
+       ],
+       [
+        10,
+        35
+       ]
+      ],
       "CK4-SEN": [
        [
         1,
@@ -15273,20 +15303,6 @@
        [
         10,
         60
-       ]
-      ],
-      "CM4-TO": [
-       [
-        1,
-        5
-       ],
-       [
-        5,
-        20
-       ],
-       [
-        10,
-        35
        ]
       ],
       "CZ4-MK": [
@@ -15973,10 +15989,10 @@
      ]
     }
    },
-   "v": "v1173"
+   "v": "v1175"
   },
   "OPEN": {
-   "at": "2026-10-19T16:33:24.027Z",
+   "at": "2026-10-19T17:47:15.248Z",
    "count": 10,
    "byKey": {
     "CS6-BS-R|2026-10-15|220": {
@@ -16152,11 +16168,11 @@
    "position": {
     "salt": {
      "name": "Salt",
-     "onHand": 20.39,
-     "free": 18.89,
+     "onHand": 15.39,
+     "free": 13.89,
      "owedOut": 1.5,
-     "coverDays": 4,
-     "rate": 4.23,
+     "coverDays": 2.7,
+     "rate": 4.46,
      "owedToYou": 625,
      "promised": 1.5,
      "short": 0
@@ -16202,7 +16218,7 @@
     "rice": "2026-10-06",
     "spare": null
    },
-   "v": "v1173"
+   "v": "v1175"
   },
   "TERMS": {
    "ceiling": 250,
@@ -16210,7 +16226,7 @@
    "lockDays": 4,
    "lateResetRepeat": 3,
    "lateWindowDays": 90,
-   "v": "v1173"
+   "v": "v1175"
   },
   "REWARD": {
    "stated": {
@@ -16222,7 +16238,7 @@
      }
     }
    },
-   "v": "v1173"
+   "v": "v1175"
   }
  }
 }
