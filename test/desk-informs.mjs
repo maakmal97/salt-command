@@ -57,6 +57,19 @@ export async function run({ ok }) {
       "with no Salt Admin device a new order asks the Counter to wake it and, hearing none, still rings the Desk, and the flag is cleared: " + JSON.stringify({ wakes, hit, r }));
   }
 
+  /* 1b. FABLE'S CASE (19 Oct 2026): A DEVICE ON FILE BUT EVERY SEND FAILED. Nothing reached him, so the Desk rings and the flag drops */
+  {
+    const w = await world(); wakes.length = 0; reply = { status: 200, body: { ok: true, sent: 0, failed: 1, devices: 1 } };
+    await w.dkv.put("admin:on", "1");
+    await place(w);
+    let r; const hit = await pushes(async () => { r = await nudgeOrders(w.env); });
+    ok(wakes.length === 1 && hit.length === 1 && !(await w.dkv.get("admin:on")),
+      "a Salt Admin device on file that no send reached still rings the Desk, and the flag is cleared: " + JSON.stringify({ wakes, hit, r }));
+    wakes.length = 0;
+    const hitA = await pushes(async () => { await deskW.pushIfDrafted(w.env, { drafted: 2, approved: [] }); });
+    ok(wakes.length === 1 && hitA.length === 1, "and a row to approve that reached no Admin device rings the Desk: " + JSON.stringify({ wakes, hitA }));
+  }
+
   /* 2. AN ADMIN DEVICE: ADMIN IS USED, THE DESK IS NOT RUNG, THE FLAG IS SET FOR TWO DAYS */
   {
     const w = await world(); wakes.length = 0; reply = { status: 200, body: { ok: true, sent: 2, failed: 0, devices: 2 } };

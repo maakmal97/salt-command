@@ -229,7 +229,7 @@ export async function pushIfDrafted(env, result) {
     if (result && result.drafted - ((result.approved || []).length) > 0) {
       /* 19 Oct 2026: a row to approve is Salt Admin's to answer; the Desk is rung only when Admin could not be woken */
       const a = await wakeAdmin(env, { k: "approve" });
-      if (!a.ok || a.devices === 0) await sendPush(env, { tag: "approve", urgency: "high" });
+      if (!a.ok || !(a.sent > 0)) await sendPush(env, { tag: "approve", urgency: "high" });
     }
   } catch { /* a banner is not worth an error path */ }
 }

@@ -1,17 +1,17 @@
 [
   {"name":"the Desk is never rung, even when Salt Admin cannot be woken","file":"src/orders.js","find":"const p = viaAdmin ? { sent: adminSent } : await sendPush(env, { tag: \"orders\", urgency: \"high\" });","replace":"const p = { sent: adminSent };"},
   {"name":"the Desk is rung even when Salt Admin was woken","file":"src/orders.js","find":"const p = viaAdmin ? { sent: adminSent } : await sendPush(env, { tag: \"orders\", urgency: \"high\" });","replace":"const p = await sendPush(env, { tag: \"orders\", urgency: \"high\" });"},
-  {"name":"a wake that reached no device still counts as used","file":"src/orders.js","find":"if (!w.ok || w.devices === 0) { viaAdmin = false; break; }","replace":"if (!w.ok) { viaAdmin = false; break; }"},
-  {"name":"a wake that failed still counts as used","file":"src/orders.js","find":"if (!w.ok || w.devices === 0) { viaAdmin = false; break; }","replace":"if (w.ok && w.devices === 0) { viaAdmin = false; break; }"},
-  {"name":"a relay that throws counts as a device","file":"src/orders.js","find":"catch { /* a relay with a bad minute leaves the Desk ringing */ }","replace":"catch { out = { ok: true, devices: 1, sent: 0, failed: 0 }; }"},
+  {"name":"a wake that reached no device still counts as used","file":"src/orders.js","find":"if (!w.ok || !(w.sent > 0)) { viaAdmin = false; break; }","replace":"if (!w.ok) { viaAdmin = false; break; }"},
+  {"name":"a wake that failed still counts as used","file":"src/orders.js","find":"if (!w.ok || !(w.sent > 0)) { viaAdmin = false; break; }","replace":"if (w.ok && !(w.sent > 0)) { viaAdmin = false; break; }"},
+  {"name":"a relay that throws counts as a device reached","file":"src/orders.js","find":"catch { /* a relay with a bad minute leaves the Desk ringing */ }","replace":"catch { out = { ok: true, devices: 1, sent: 1, failed: 0 }; }"},
   {"name":"admin:on lives one day, not two","file":"src/orders.js","find":"{ expirationTtl: 2 * 86400 }","replace":"{ expirationTtl: 86400 }"},
-  {"name":"admin:on is set when there are no devices","file":"src/orders.js","find":"if (out.ok && out.devices > 0) await env.SALT_QUEUE.put(ADMIN_ON","replace":"if (out.ok && out.devices >= 0) await env.SALT_QUEUE.put(ADMIN_ON"},
+  {"name":"admin:on is set when there are no devices","file":"src/orders.js","find":"if (out.ok && out.sent > 0) await env.SALT_QUEUE.put(ADMIN_ON","replace":"if (out.ok && out.sent >= 0) await env.SALT_QUEUE.put(ADMIN_ON"},
   {"name":"admin:on is never cleared","file":"src/orders.js","find":"else await env.SALT_QUEUE.delete(ADMIN_ON);","replace":"else { /* kept */ }"},
   {"name":"every act is woken as an order","file":"src/orders.js","find":"if (did) kinds.push(NEWS_WORD[word] ? word : null);","replace":"if (did) kinds.push(\"order\");"},
   {"name":"a line is woken as an order","file":"src/orders.js","find":"if (spoke && !kinds.includes(\"said\")) kinds.push(\"said\");","replace":"if (spoke && !kinds.includes(\"said\")) kinds.push(\"order\");"},
   {"name":"the wake body carries more than k, o and t","file":"src/orders.js","find":"body: JSON.stringify(news || {}) });","replace":"body: JSON.stringify(Object.assign({ name: \"x\" }, news || {})) });"},
   {"name":"a row to approve wakes Admin as an order","file":"src/worker.js","find":"await wakeAdmin(env, { k: \"approve\" });","replace":"await wakeAdmin(env, { k: \"order\" });"},
-  {"name":"a row to approve never rings the Desk","file":"src/worker.js","find":"if (!a.ok || a.devices === 0) await sendPush(env, { tag: \"approve\", urgency: \"high\" });","replace":"if (!a.ok) await sendPush(env, { tag: \"approve\", urgency: \"high\" });"},
+  {"name":"a row to approve never rings the Desk","file":"src/worker.js","find":"if (!a.ok || !(a.sent > 0)) await sendPush(env, { tag: \"approve\", urgency: \"high\" });","replace":"if (!a.ok) await sendPush(env, { tag: \"approve\", urgency: \"high\" });"},
   {"name":"a row his own yes approved wakes Admin","file":"src/worker.js","find":"result.drafted - ((result.approved || []).length) > 0) {","replace":"result.drafted - ((result.approved || []).length) >= 0) {"},
   {"name":"the summary always says adminOn","file":"src/worker.js","find":"if (await env.SALT_QUEUE.get(ADMIN_ON)) out.adminOn = true;","replace":"out.adminOn = true;"},
   {"name":"the summary never hands the inform over","file":"src/worker.js","find":"(!isince || inf.at > isince)) out.inform","replace":"false) out.inform"},
@@ -32,5 +32,8 @@
   {"name":"the inform mark never moves","file":"public/sw.js","find":"if (r.inform) await putISince(r.inform);","replace":"if (false) await putISince(r.inform);"},
   {"name":"the inform mark is never sent","file":"public/sw.js","find":"isince ? \"isince=\" + encodeURIComponent(isince) : \"\"","replace":"\"\""},
   {"name":"a kind the worker does not know is shown as folded","file":"public/sw.js","find":"const inf = s.inform && INFORM[s.inform.k] && typeof","replace":"const inf = s.inform && (INFORM[s.inform.k] || (INFORM[s.inform.k] = INFORM.folded)) && typeof"},
-  {"name":"All square stands beside a system news banner","file":"public/sw.js","find":"else if (!lines.length && !informed.length) list.push","replace":"else if (!lines.length) list.push"}
+  {"name":"All square stands beside a system news banner","file":"public/sw.js","find":"else if (!lines.length && !informed.length) list.push","replace":"else if (!lines.length) list.push"},
+ {"name": "a wake reaching no device but counting one sets the flag", "file": "src/orders.js", "find": "if (out.ok && out.sent > 0) await env.SALT_QUEUE.put(ADMIN_ON", "replace": "if (out.ok && out.devices > 0) await env.SALT_QUEUE.put(ADMIN_ON"},
+ {"name": "an order whose wake reached nobody is not rung on the Desk", "file": "src/orders.js", "find": "if (!w.ok || !(w.sent > 0)) { viaAdmin = false; break; }", "replace": "if (!w.ok || w.devices === 0) { viaAdmin = false; break; }"},
+ {"name": "a row to approve whose wake reached nobody is not rung on the Desk", "file": "src/worker.js", "find": "if (!a.ok || !(a.sent > 0)) await sendPush(env, { tag: \"approve\"", "replace": "if (!a.ok || a.devices === 0) await sendPush(env, { tag: \"approve\""}
 ]

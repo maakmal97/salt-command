@@ -2306,7 +2306,7 @@ export async function wakeAdmin(env, news) {
   try {
     if (env.SALT_QUEUE) {
       /* a wake that failed clears the flag as well: the Desk is about to ring itself, and its banner must not strip what it is ringing for */
-      if (out.ok && out.devices > 0) await env.SALT_QUEUE.put(ADMIN_ON, "1", { expirationTtl: 2 * 86400 });
+      if (out.ok && out.sent > 0) await env.SALT_QUEUE.put(ADMIN_ON, "1", { expirationTtl: 2 * 86400 });
       else await env.SALT_QUEUE.delete(ADMIN_ON);
     }
   } catch { /* the flag is a convenience; the next wake sets it again */ }
@@ -2396,7 +2396,7 @@ export async function nudgeOrders(env, read) {
   let adminSent = 0, viaAdmin = kinds.length > 0 && !kinds.includes(null);
   for (const k of viaAdmin ? kinds : []) {
     const w = await wakeAdmin(env, { k });
-    if (!w.ok || w.devices === 0) { viaAdmin = false; break; }
+    if (!w.ok || !(w.sent > 0)) { viaAdmin = false; break; }
     adminSent += w.sent;
   }
   const p = viaAdmin ? { sent: adminSent } : await sendPush(env, { tag: "orders", urgency: "high" });
