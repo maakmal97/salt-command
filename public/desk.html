@@ -87,7 +87,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="16f808b058c27105";
+var SALT_BUILD_ID="50ac7f7538d6bcf4";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -10318,7 +10318,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1172","d":"20 Oct 2026","t":"ONE CANCELLATION: CZ5-TM ORDER OF 18 OCT WITHDRAWN","n":["<b>CANCELLATION FOLDED.</b> The desk withdrew CZ5-TM's pending order of 1 unit for RM100 (s272, 18 Oct) on the statements site, order 20261018051516-6h1chg. Counter Admin preapproved it and the drafter raised no flags. Nothing had been paid or handed over, so no cash or stock moves and the inventory is untouched. The order now counts nowhere."]}];
+const evolution=[{"v":"v1173","d":"20 Oct 2026","t":"THE SHADOW BOOK CHECKS ITSELF AGAINST GIT AT EVERY FOLD","n":["<b>EACH LOAD OF THE BOOK READS BACK WHAT IT HOLDS</b>, out of its own store: every collection's count and a digest over its rows, and every document's digest. The fold's step works the same from git and names any collection or document that differs; a difference turns the step red and never holds up the fold.","<b>THE LOAD LINE COUNTS ROWS AND DOCUMENTS APART</b>: the first load's 433 rows and 450 booked were 433 rows and 17 documents. The pricing snapshot no longer carries a moment it was taken, so the same book always gives the same prices to compare."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10466,7 +10466,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='20 Oct 2026, 00:17 KL';
+const LAST_UPDATED='20 Oct 2026, 00:33 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
