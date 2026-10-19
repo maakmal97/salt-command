@@ -106,11 +106,16 @@ measurement of the desk.
   copies, run with `SALT_MASTER=<copy>`; a section that reads the master straight off disk will not
   see the copy, so read `process.env.SALT_MASTER ||` the checkout's path. Those copies run side by
   side, so a section writing fixed files (`test/.v420.*` until 28 Sep 2026) reads its twin's master
-  and fails unmutated: write fixtures into a `mkdtempSync` folder. Tool-file mutations edit the shared checkout: one at a time, restored byte for byte
-  in a `finally`, never while the full suite runs. Check that each mutation actually changed the
+  and fails unmutated: write fixtures into a `mkdtempSync` folder. Checkout-file mutations (any
+  other file) never edit the checkout (19 Oct 2026): each lane copies it into the temp folder
+  (node_modules a junction, `.git` a file naming the git folder) and runs its share there, so many
+  run at once, a killed run leaves nothing behind, and a live suite run stops nothing. Lanes: the
+  cores less two, the free memory at 1.8 GB a run, `--jobs N`, the least; 74 mutations on the
+  order card took 207 s on 8 lanes. A section that writes outside its own checkout (a fixed temp
+  path) must not run two at once: give it a `mkdtempSync` folder. Check that each mutation actually changed the
   text. `tools/section.mjs "<prefix>" --mutations <file.json>` (`[{name, file?, find, replace}]`,
-  no file meaning the master) does all of that and names the checks each one turns red; it exits 1
-  when a mutation turned none red, a crash included.
+  no file meaning the master) does all of that and names the checks each one turns red, in the
+  file's order; it exits 1 when a mutation turned none red, a crash included.
 - **The suite reads a frozen book, not the live one** (S0, 14 Oct 2026). `test/frozen.mjs`, the first import of `verify.mjs` and `tools/section.mjs`, sets `SALT_BOOK` to `test/fixtures/book-frozen.json` (`ledger/book.json` at the sha in `book-frozen.sha`) and `SALT_MASTER` to a temp copy of the CURRENT master with only its BOOK block rendered from that fixture, rebuilt every run and never stored. A phone fold therefore cannot turn a check red. A read goes through `FROZEN_BOOK` / `FROZEN_MASTER`; a check that is about the live files (date order, master matches book, the extract, the gate) reads `LIVE_BOOK` / `LIVE_MASTER` or runs its child with `liveEnv()`. To refresh the fixture on purpose: copy `ledger/book.json` over it and write the new sha; expect checks pinned to older rows to need a look.
 - **Attributing a red suite after a cloud fold:** swap only the book. Run the section on today's
   `ledger/book.json` and on `git show <last green>:ledger/book.json`, same code, same clock:

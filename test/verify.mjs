@@ -9,7 +9,7 @@ import { FROZEN_BOOK, FROZEN_MASTER, LIVE_BOOK, LIVE_MASTER, liveEnv } from "./f
 import { execFileSync, spawnSync } from "node:child_process";
 import { DATA_DIR, PROJECT_DIR, prodOrder } from "../tools/book.mjs";
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, lstatSync, unlinkSync } from "node:fs";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import worker from "../src/worker.js";
@@ -11602,8 +11602,9 @@ section("27 Sep 2026: tools/section.mjs runs one section as a shard does and nam
 await (async () => {
   /* His instruction of 27 Sep 2026: one section on its own, and its checks proved red, with no upkeep. The tool reads the
      sections through readSuite and runs one through runShard, the two things npm test itself stands on, so what is left to
-     drive here is its own: the needle, the pick, the verdict, the lines a fold writes (--book), the edit put back, the refusal
-     while a run is live, and two runs end to end on v532, whose check on a field no correction may set one master mutation
+     drive here is its own: the needle, the pick, the verdict, the lines a fold writes (--book), the edit put back, checkout
+     mutations run on a lane's copy of the checkout (19 Oct 2026: never the checkout itself, so a run live here stops nothing),
+     the lanes, and two runs end to end on v532, whose check on a field no correction may set one master mutation
      turns red. The tool is started with SUITE_SHARD and SALT_MASTER unset, so it must set both itself. */
   const T = await import("../tools/section.mjs");
   const S = await import("../tools/suite-split.mjs");
@@ -11674,13 +11675,59 @@ await (async () => {
   const target = join(dir, "target.txt");
   writeFileSync(target, "needle\n");
   writeFileSync(join(dir, "edit.json"), JSON.stringify([{ name: "edit", file: "test/tmp/section-tool/target.txt", find: "needle", replace: "moved" }]));
+  /* the lanes: the cores less two, the runs free memory holds at 1.8 GB, --jobs and the mutations, the least, never under one */
+  const G = 1024 ** 3, ln = [T.lanesFor(0, 16, 40 * G, 123), T.lanesFor(4, 16, 40 * G, 123), T.lanesFor(0, 16, 9 * G, 123), T.lanesFor(0, 16, 40 * G, 3), T.lanesFor(0, 2, 0, 5)];
+  ok(JSON.stringify(ln) === "[14,4,3,3,1]",
+    "checkout mutations run on the cores less two, held by --jobs, by the runs three quarters of free memory holds and by their count, and never on none: " + JSON.stringify(ln));
+
+  /* a lane's copy is used only after the section ran green on it unmutated */
+  const lg = [threw(() => T.laneGreen(green, 2)), threw(() => T.laneGreen(red, 2)), threw(() => T.laneGreen(crash, 2))];
+  ok(lg[0] === null && /lane 2's copy .* not green/.test(lg[1] || "") && /not green/.test(lg[2] || ""),
+    "a lane's copy where the section is not green unmutated, red or crashed, is refused before any mutation runs there: " + JSON.stringify(lg));
+
+  /* the pool: each lane its own setup, in the jobs' order; a lane whose setup failed fails the job it took and takes no more */
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const got = await Promise.all(T.pool(Array.from({ length: 6 }, (_, k) => async (made) => { await wait(20 + (k % 3) * 5); return made; }), 3, (n) => "lane" + n));
+  const bad = T.pool(Array.from({ length: 6 }, (_, k) => async (made) => { await wait(20); return made; }), 3, (n) => { if (n === 1) throw new Error("no copy"); return "lane" + n; });
+  const settled = await Promise.allSettled(bad);
+  const pl = { got, lanes: new Set(got).size, failed: settled.filter((x) => x.status === "rejected").map((x) => x.reason.message), fine: settled.filter((x) => x.status === "fulfilled").length };
+  ok(pl.lanes === 3 && got.slice(0, 3).join() === "lane0,lane1,lane2" && JSON.stringify(pl.failed) === '["no copy"]' && pl.fine === 5,
+    "the pool hands each lane what its own setup made, and a lane whose setup failed fails one job and leaves the rest to the others: " + JSON.stringify(pl));
+
+  /* a shard run in another root: its file there, so its imports and its working folder are that root's */
+  const other = join(dir, "root");
+  mkdirSync(join(other, "test"), { recursive: true });
+  const seenAt = [];
+  await S.runShard({ prelude: 'console.log("at " + import.meta.url + " " + process.cwd());', footer: "" }, "root-" + process.pid, [{ k: 0, text: "" }], (l) => seenAt.push(l), {}, other);
+  const atLine = seenAt.find((l) => l.startsWith("at ")) || "";
+  ok(atLine.includes((await import("node:url")).pathToFileURL(join(other, "test")).href + "/.shard-root-") && atLine.endsWith(" " + other) && !existsSync(S.shardFile("root-" + process.pid, other)),
+    "a shard given another root is written into its test folder and runs there, and its file is gone after: " + JSON.stringify(atLine));
+
+  /* the copy: every entry but .git, .claude, node_modules and live shard files; node_modules a junction; .git naming the git folder */
+  const from = join(dir, "from"), to = join(dir, "to");
+  rmSync(from, { recursive: true, force: true }); rmSync(to, { recursive: true, force: true });
+  for (const d of ["test", "stmt", ".git", ".claude", "node_modules/lib"]) mkdirSync(join(from, d), { recursive: true });
+  writeFileSync(join(from, "stmt", "a.js"), "a"); writeFileSync(join(from, "test", ".shard-x.mjs"), ""); writeFileSync(join(from, "test", "keep.mjs"), "k");
+  writeFileSync(join(from, "node_modules", "lib", "i.js"), "i"); writeFileSync(join(from, ".git", "HEAD"), "h");
+  T.copyCheckout(from, to, "C:/somewhere/.git");
+  const cp = { a: existsSync(join(to, "stmt", "a.js")), keep: existsSync(join(to, "test", "keep.mjs")), shard: existsSync(join(to, "test", ".shard-x.mjs")),
+    claude: existsSync(join(to, ".claude")), git: existsSync(join(to, ".git")) && readFileSync(join(to, ".git"), "utf8"), link: lstatSync(join(to, "node_modules")).isSymbolicLink(),
+    through: existsSync(join(to, "node_modules", "lib", "i.js")) };
+  unlinkSync(join(to, "node_modules"));
+  ok(cp.a && cp.keep && !cp.shard && !cp.claude && cp.git === "gitdir: C:/somewhere/.git\n" && cp.link && cp.through && existsSync(join(from, "node_modules", "lib", "i.js")),
+    "a lane's copy holds the checkout but its git folder, .claude and live shard files, links node_modules and names the git folder in a .git file: " + JSON.stringify(cp));
+
+  /* a checkout mutation runs on a copy: a run live here (a shard file) stops nothing, and the checkout's file is never edited */
   const planted = S.shardFile("probe-" + process.pid);
   writeFileSync(planted, "");
-  let refused = { code: null, out: "" };
-  try { refused = await tool([V532, "--mutations", join(dir, "edit.json")]); } finally { rmSync(planted, { force: true }); }
-  ok(refused.code === 1 && refused.out.startsWith("refused: ") && refused.out.includes("test/.shard-probe-" + process.pid + ".mjs")
-      && !/passed/.test(refused.out) && readFileSync(target, "utf8") === "needle\n",
-    "a checkout mutation is refused before anything runs while a shard file says a run is live here, and its file is untouched: " + JSON.stringify(refused.out.trim().slice(0, 300)));
+  let onCopy = { code: null, out: "" }, seen = [];
+  const watch = setInterval(() => seen.push(readFileSync(target, "utf8")), 50);
+  try { onCopy = await tool([V532, "--mutations", join(dir, "edit.json")]); } finally { clearInterval(watch); rmSync(planted, { force: true }); }
+  const ue = onCopy.out.split("\n").find((l) => / edit: /.test(l)) || "";
+  ok(onCopy.code === 1 && /^unmutated: \d+ passed, 0 failed/m.test(onCopy.out) && /checkout mutations, 1 at a time/.test(onCopy.out) && ue.startsWith("UNNOTICED edit: ")
+      && readFileSync(target, "utf8") === "needle\n" && seen.length > 0 && seen.every((t) => t === "needle\n"),
+    "a checkout mutation runs on a lane's copy while a shard file says a run is live here, and the checkout's file is never edited: "
+    + JSON.stringify({ out: onCopy.out.trim().slice(0, 300), seen: [...new Set(seen)] }));
 
   writeFileSync(join(dir, "red.json"), JSON.stringify([{ name: "unknown", find: "c.verdict='unknown'", replace: "c.verdict='unread'" }]));
   writeFileSync(join(dir, "quiet.json"), JSON.stringify([{ name: "stamp", find: "const LAST_UPDATED='", replace: "const LAST_UPDATED_PROBE=1;const LAST_UPDATED='" }]));
