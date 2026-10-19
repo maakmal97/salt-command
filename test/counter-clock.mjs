@@ -21,6 +21,6 @@ export async function run({ ok }) {
   } finally { dom.window.close(); process.off("unhandledRejection", swallow); }
   const owner = landingPage("", "nclk2", { master: "", accounts: [] });
   /* 18 Oct 2026: one clock, under the name in the Desk bar that heads every place, as the Desk carries it */
-  const bars = owner.match(/<div class="salt-deskbar__name">Salt Admin<\/div><div class="salt-deskbar__meta"><span class="clk" data-clock><\/span><\/div>/g) || [];
+  const bars = owner.match(/<div class="salt-deskbar__name">Salt Admin<\/div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"><\/span><span class="abarhours" id="aBarHours" hidden><\/span><span class="clk" data-clock><\/span><\/div>/g) || [];
   ok(bars.length === 1, "Salt Admin carries the clock under its name in the Desk bar that heads every place: " + bars.length);
 }

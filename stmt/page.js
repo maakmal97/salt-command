@@ -880,6 +880,13 @@ body.ended>*:not(#aEnded){display:none}
 /* 14 Oct 2026: the live clock beside his page's name */
 .adm .clk{font-variant-numeric:tabular-nums}
 .adm .clk:not(:empty)::before{content:"\\00b7";margin:0 8px}
+/* 19 Oct 2026, his word: THE BAR SAYS WHERE THINGS STAND, as the Desk's line does: a dot and Live or Offline, then Open or Closed off /hours, then the clock; a gap after the dot, as on the Desk */
+.adm .abarlive{display:inline-flex;align-items:center;gap:6px;margin-right:12px}
+.adm .abarlive i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:0 0 auto}
+.adm .abarlive.on{color:var(--salt-verdigris)}
+.adm .abarlive.off{color:var(--salt-brass)}
+/* on a phone the word goes while live, as on the Desk: the dot says so; Offline keeps its word */
+@media (max-width:560px){.adm .abarlive.on span{display:none}.adm .abarlive{margin-right:8px}.adm .clk:not(:empty)::before{margin:0 6px}}
 /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER is the same recipe at Soon, over every place, in the column the places keep */
 .adm #unsentBar{max-width:600px;margin:0 0 16px}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
@@ -1631,7 +1638,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
            under it. It took the rail's brand and the eyebrow each place repeated ("Salt Admin" and the clock). */
         + '<header class="salt-deskbar abar"><div class="salt-deskbar__brand"><span class="aring">' + aico("key") + '</span>'
-        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="clk" data-clock></span></div></div></div></header>'
+        + '<div class="abartext"><div class="salt-deskbar__name">Salt Admin</div><div class="salt-deskbar__meta"><span class="abarlive" id="aBarLive"></span><span class="abarhours" id="aBarHours" hidden></span><span class="clk" data-clock></span></div></div></div></header>'
         /* 12 OCT 2026 (PHASE 4c): THE UNSENT-ENTRY BANNER, over every place and shown by the owner's script only while an entry sent from this phone waits unconfirmed on it */
         + '<div id="unsentBar" hidden></div>'
         /* 11 OCT 2026: WHAT IS ON SCREEN IS DECIDED BY data-in, which names the places and the parts an element shows in
@@ -2045,6 +2052,7 @@ const CLIENT_JS = `
         .formatToParts(new Date()).forEach(function(x){ p[x.type]=x.value; }); }catch(e){ return; }
       var t=p.hour+':'+p.minute;
       [].forEach.call(document.querySelectorAll('[data-clock]'),function(n){ n.textContent=t; });
+      if(window.barDraw) window.barDraw();
     }
     function clockTick(){ clockPaint(); setTimeout(clockTick,60000-Date.now()%60000+50); }
     clockTick();

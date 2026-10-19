@@ -48371,6 +48371,11 @@ await (async () => {
   await (await import("./counter-clock.mjs")).run({ ok });
 })();
 
+section("19 Oct 2026: Salt Admin's bar says Live or Offline and Open or Closed");
+await (async () => {
+  await (await import("./admin-bar-status.mjs")).run({ ok });
+})();
+
 section("Counter maker: verified owner, narrow Desk bridge and hours");
 await (async () => {
   const inputChecks = await import("./maker-inputs.mjs");

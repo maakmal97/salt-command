@@ -70,5 +70,7 @@
   "file": "stmt/owner.js",
   "find": "nGot('book', error); apply=failNew('book', error);",
   "replace": "nGot('book', error); apply=true;"
- }
+ },
+ {"name":"every tick rewrites the bar","file":"stmt/owner.js","find":"if(live.getAttribute('data-on')!==String(on)){","replace":"if(true){"},
+ {"name":"every tick rewrites the hours","file":"stmt/owner.js","find":"if(hrs.textContent!==txt) hrs.textContent=txt;","replace":"hrs.textContent=txt;"}
 ]
