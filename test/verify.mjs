@@ -51451,11 +51451,16 @@ await (async () => {
     const copy = () => tables().map((t) => ({ ...t, rows: os.db.prepare(`SELECT * FROM "${t.name}"`).all() }));
     const drop = () => { for (const t of tables()) os.db.exec(`DROP TABLE "${t.name}"`); };
     const history = new Map();
-    let n = 0, armed = null, synced = 0, aborts = 0, live = true;
+    let n = 0, armed = null, synced = 0, aborts = 0, live = true, refuseAll = false;
     os.id = idOf(name);
     os.storage.sync = async () => { synced++; };
     os.storage.getCurrentBookmark = async () => { const bm = "0000" + String(++n).padStart(4, "0") + "-0000b26e-00001538-pitrtest"; history.set(bm, copy()); return bm; };
-    os.storage.getBookmarkForTime = async () => "00000000-0000b26e-00001538-pitrtest";
+    /* as live (20 Oct 2026): a time before the database's first commit is refused; here the commit is a second after the stamp */
+    os.storage.getBookmarkForTime = async (t) => {
+      const at = os.db.prepare("SELECT MIN(at) AS a FROM loads").get().a;
+      if (refuseAll || +t < Date.parse(at) + 1000) throw new Error("Requested time is before this database existed.");
+      return "00000000-0000b26e-00001538-pitrtest";
+    };
     os.storage.onNextSessionRestoreBookmark = async (bm) => { if (!history.has(bm)) throw new Error("no such bookmark"); armed = bm; return os.storage.getCurrentBookmark(); };
     os.storage.deleteAll = async () => drop();
     os.abort = () => { aborts++; live = false; throw new Error("the object was aborted"); };
@@ -51466,7 +51471,7 @@ await (async () => {
       armed = null; live = true; book = new Book(os, env);
     };
     const fetchIt = async (req) => { start(); return book.fetch(req); };
-    return { os, fetch: fetchIt, synced: () => synced, aborts: () => aborts };
+    return { os, fetch: fetchIt, synced: () => synced, aborts: () => aborts, refuse: () => { refuseAll = true; } };
   };
   /* the Worker's side of a verb: the restart's lost answer is the expected one */
   const callOf = (o) => async (body) => {
@@ -51537,7 +51542,14 @@ await (async () => {
   await BP.recover({ call: async (body) => { verbs.push(body.verb); return callOf(seen)(body); }, window: windowOf(L), A, B, ...quick });
   ok(verbs.slice(0, 3).join() === "restart,readback,clear" && verbs[verbs.length - 1] === "clear",
     "a run restarts the test object first, so an arm a dead run left standing lands before the test and not inside it: " + verbs.join());
-  const old = BP.line({ ...r, live: { loads: 40, first: "2026-08-01T00:00:00.000Z", from: "2026-09-21T00:00:00.000Z", reachable: true } });
+  const old = BP.line({ ...r, live: { loads: 40, first: "2026-08-01T00:00:00.000Z", from: "2026-09-21T00:00:00.000Z", since: "29 days", reachable: true } });
+  const shut = object(BOOK_NAME);
+  await shut.fetch(new Request("https://book/load", { method: "POST", body: JSON.stringify({ rev: "r", book: frozen, pricing }) }));
+  shut.refuse();
+  const sw = await shut.fetch(new Request("https://book/window")).then(async (x) => ({ status: x.status, j: await x.json() }), () => null);
+  const sr = await BP.recover({ call: callOf(object(PITR_NAME)), window: windowOf(shut), A, B, ...quick });
+  ok(sw && sw.status === 200 && sw.j.ok === false && /before this database existed/.test(sw.j.error) && sr.error.includes("not in reach (Requested time is before"),
+    "a window the platform refuses is answered, never thrown, and the test's line says what the platform said: " + sr.error);
   ok(BP.line(r).includes("in reach from its first load (") && old.includes("from 2026-09-21T00:00:00.000Z, 29 days back") && !old.includes("first load ("),
     "once the Book is older than the platform's reach, the line says how far back it goes, not that its first load is in reach");
   const odd = object(BOOK_NAME);

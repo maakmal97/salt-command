@@ -97,14 +97,15 @@ export async function recover({ call, window, A, B, tries = 10, sleep = () => ne
     try { await call({ verb: "clear" }); } catch (e) { out.error = out.error || "the test object was not cleared after"; }
   }
   if (out.error) return out;
-  const w = await window();
-  out.live = w && w.ok ? { loads: w.loads, first: w.first, from: w.from, reachable: !!w.reachable } : null;
+  let w;
+  try { w = await window(); } catch (e) { w = { ok: false, error: String((e && e.message) || e) }; }
+  out.live = w && w.ok ? { loads: w.loads, first: w.first, from: w.from, since: w.since, reachable: !!w.reachable } : null;
   if (!out.live || !out.live.reachable) return { ...out, error: "the live Book's history is not in reach (" + (out.live ? "loads " + out.live.loads + ", from " + out.live.from : String((w && w.error) || "no answer").slice(0, 160)) + ")" };
   return { ...out, ok: true };
 }
 
 /* how far back the live Book can go: its first load, or the platform's 29 days once the Book is older */
-const reach = (l) => l.from === l.first ? `from its first load (${l.first}, ${l.loads} loads)` : `from ${l.from}, 29 days back (${l.loads} loads; the first is older)`;
+const reach = (l) => l.since === "first" ? `from its first load (${l.first}, ${l.loads} loads)` : `from ${l.from}, 29 days back (${l.loads} loads; the first is older)`;
 
 /* the one line, to the log and the run summary: names, counts, short shas */
 export function line(r) {

@@ -16,6 +16,9 @@
   {"name":"the fold's line drops the restore point","file":"tools/book-load.mjs","find":"? \"; restore point \" + r.bookmark : \"\";","replace":"? \"\" : \"\";"},
   {"name":"the fold's line prints anything as a restore point","file":"tools/book-load.mjs","find":"const at = typeof r.bookmark === \"string\" && /^[0-9a-zA-Z-]{16,128}$/.test(r.bookmark) ?","replace":"const at = r.bookmark ?"},
   {"name":"the run does not restart first","file":"tools/book-pitr.mjs","find":"    if (!(await call({ verb: \"restart\" })).ok) fail(\"the test object did not restart before the test\");\n","replace":""},
-  {"name":"the line always claims the first load","file":"tools/book-pitr.mjs","find":"const reach = (l) => l.from === l.first ?","replace":"const reach = (l) => true ?"},
-  {"name":"the window reads an unreadable load time","file":"src/book.js","find":"    if (!Number.isFinite(first)) return { ok: true, loads: w.n, reachable: false };\n","replace":""}
+  {"name":"the line always claims the first load","file":"tools/book-pitr.mjs","find":"const reach = (l) => l.since === \"first\" ?","replace":"const reach = (l) => true ?"},
+  {"name":"the window reads an unreadable load time","file":"src/book.js","find":"    if (!Number.isFinite(first)) return { ok: true, loads: w.n, reachable: false };\n","replace":""},
+  {"name":"the window reads the first load's own moment","file":"src/book.js","find":"const from = Math.max(first + 60000, floor);","replace":"const from = Math.max(first, floor);"},
+  {"name":"the window throws the platform's refusal","file":"src/book.js","find":"} catch (e) { return { ok: false, loads: w.n, first: w.first, error:","replace":"} catch (e) { throw e; return { ok: false, loads: w.n, first: w.first, error:"},
+  {"name":"the test hides what the window said","file":"tools/book-pitr.mjs","find":"String((w && w.error) || \"no answer\")","replace":"String(\"no answer\")"}
 ]

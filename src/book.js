@@ -168,17 +168,22 @@ export class Book {
   }
 
   /* S2c, READ ONLY on any object: whether the first load is still inside the platform's 30 days (29, to keep off the edge).
-     Counts, two times and a verdict; nothing is armed. */
+     Counts, two times and a verdict; nothing is armed. A load's `at` is taken a moment before its commit, and the platform refuses
+     a time before the database existed ("Requested time is before this database existed", live, 20 Oct 2026), so the first load
+     is read a minute after its stamp; loads are hours apart. A refusal is answered, never thrown. */
   async window() {
     const s = this.state.storage;
     const w = s.sql.exec("SELECT MIN(at) AS first, COUNT(*) AS n FROM loads").toArray()[0];
     if (!w.n || typeof s.getBookmarkForTime !== "function") return { ok: true, loads: w.n, reachable: false };
     const first = Date.parse(w.first);
     if (!Number.isFinite(first)) return { ok: true, loads: w.n, reachable: false };
-    const from = Math.max(first, Date.now() - 29 * DAY);
-    const then = await s.getBookmarkForTime(from), now = await s.getCurrentBookmark();
-    return { ok: true, loads: w.n, first: w.first, from: new Date(from).toISOString(),
-      reachable: typeof then === "string" && BOOKMARK_RE.test(then) && then <= now };
+    const floor = Date.now() - 29 * DAY, since = first + 60000 >= floor ? "first" : "29 days";
+    const from = Math.max(first + 60000, floor);
+    try {
+      const then = await s.getBookmarkForTime(from), now = await s.getCurrentBookmark();
+      return { ok: true, loads: w.n, first: w.first, from: new Date(from).toISOString(), since,
+        reachable: typeof then === "string" && BOOKMARK_RE.test(then) && then <= now };
+    } catch (e) { return { ok: false, loads: w.n, first: w.first, error: String((e && e.message) || e).slice(0, 200) }; }
   }
 
   /* S2c: THE RECOVERY TEST'S VERBS, on the test object alone (see the header). `restart` aborts the object, so its own answer
