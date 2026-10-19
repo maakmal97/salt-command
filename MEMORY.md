@@ -27,9 +27,9 @@
   salt-ds part, no Worker change. He accepts it on `/all/test` as 0000-0002 (three orders handed over, two open, room to order).
 
 ## Counter Batch C
-- Built on branch `claude/counter-batch-c-build-1e6e8b` (20 Oct 2026): saved spots, the sealed name and unit, the confirm time, Help, labels at
-  600 and the slider (salt-ds#15, #16, #17: 1.9.0 to 1.9.2; QR Command #12 live). KV `confirm:within` is empty until the first hourly
-  cron after the version ships.
+- Live as v1182 (`19b226d7`, 20 Oct 2026; Cloud commit `39318980626`: chain and three suite parts green, live /rev `1a05919acb1d3a29`): saved spots, the sealed name and
+  unit, the confirm time, Help, labels at 600 and the slider (salt-ds#15, #16, #17: 1.9.0 to 1.9.2; QR Command #12 live). KV `confirm:within`
+  is empty until the first hourly cron after the deploy. Owner acceptance not yet given.
 
 ## Counter test surface
 - Live as v1166 (`2e876db5`, 19 Oct 2026): `/all/test` behind `/all`'s two locks; Cloud commit `39195289245` deployed both Workers, proved live `/rev` at `0bd585f1e036adde` and passed all three suite parts. `0000-0002` has no fixture until he taps Make the practice accounts on Salt Account and a publish runs. Owner acceptance not yet given.
