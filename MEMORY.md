@@ -22,6 +22,10 @@
 ## Counter Batch A
 - Built on branch `claude/counter-batch-a-build-b9ddad` (19 Oct 2026), P0 salt-ds#13 (1.7.0) merged; collection points live in Counter KV `maker:points` once the version ships; his list is empty until he fills it on Salt Account, and a collect Ready is refused without one.
 
+## Counter Batch B
+- Built on branch `claude/counter-batch-b-build-0dde24` (20 Oct 2026): the way on Prices, Home's start tiles, Order again, the basket. No
+  salt-ds part, no Worker change. He accepts it on `/all/test` as 0000-0002 (three orders handed over, two open, room to order).
+
 ## Counter test surface
 - Live as v1166 (`2e876db5`, 19 Oct 2026): `/all/test` behind `/all`'s two locks; Cloud commit `39195289245` deployed both Workers, proved live `/rev` at `0bd585f1e036adde` and passed all three suite parts. `0000-0002` has no fixture until he taps Make the practice accounts on Salt Account and a publish runs. Owner acceptance not yet given.
 

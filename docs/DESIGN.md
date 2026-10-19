@@ -323,6 +323,12 @@ picker stay retired (the suite fails if any returns): nothing keys on a clock, t
   book hue it shares with Night, rice, 5.47 and 4.91, and of Tide's own tokens mist, 6.03 and 5.41. The lit slate and the
   aurora's core stay advice, as in `Code\salt-ds` (`DESIGN.md`, `npm run contrast`).
 
+## 19 Oct 2026: Counter Batch B, no new recipe
+
+The basket's + and minus are the Orb at the tap size, the bar is the pay foot's pattern (a KPI tile and a Pill on the slate, sticking above the
+App bar under 1080px, a card at the foot of the column from 1080px), Order again a Pill on the order's screen and a Ghost beside its card, the
+start tiles the Option face as a tap. The tally is mono in copper. Nothing animates.
+
 ## 18 Oct 2026: Counter Batch A, the recipes salt-ds 1.7.0 added
 
 salt-ds#13 (1.7.0) added, for both themes: `salt-status__glyph` (the mark before a state word), `salt-steps--marks` with

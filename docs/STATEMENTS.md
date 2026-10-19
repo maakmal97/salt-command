@@ -724,6 +724,25 @@ The suite section "Account leads with this device, and the door names the app" (
   to date as at its moment. Nothing in it names a roster code.
 - **From 1080px** the rail is titled Salt Counter and says "Signed in as" with the username; the customer's Desk bar is gone.
 
+### Counter Batch B: the basket, Order again, the way on Prices, the start tiles (his answers of 18 Oct 2026)
+
+- **The way on Prices.** Under the stamp one line says how the next order reaches them, "Delivering to {place}" or "Collecting", with Change
+  opening the order sheet at How it reaches you. It is `wayNow()`, the one read the sheet opens on too: what was chosen in a sheet on this page,
+  else the newest order's way and place. No line before a first order; no Change under the overdue gate; nothing while prices are hidden.
+- **Home's start tiles.** I will collect and Deliver to me open the sheet with that way chosen (the limit step at five open). None under the
+  overdue gate or with nothing priced; greyed and inert on a locked account.
+- **Order again** (`oAgainOk`): only an order handed over in full whose size is still on their list, never a withdrawn, declined or group
+  order, nothing under the gate. A Pill and "{rm} today, same size and place" on the order's screen, a ghost beside its card in the list
+  (`data-wrap` holds the pair; the card keeps `data-row`), and Home's tiles by the same rule. A tap opens the existing check: one line at
+  today's figure off the list, a fresh rid, no sheet id, no note, and no day, window or sheet id from an earlier sheet.
+- **The basket.** A + beside each size on Prices; taps on one mark SUM into one line priced at the summed amount's own figure (two taps on 5
+  units are 10 units at the 10-unit figure). A + greys where the sum has no price; with five orders open every + greys and the limit is said.
+  The count beside a size is its taps; minus takes one off; Remove takes the mark out. The bar (a foot above the App bar on a phone, a card
+  from 1080px) adds the list's figures for the goods alone, delivery his at confirmation, and Review copies the priced lines into the sheet
+  and opens its check: one order a line, each its own rid, two or more under one sheet id, which counts once. A change in that sheet writes
+  back to the basket; Remove on the check takes a line out while nothing is placed. It is page memory: lost on a reload and at sign-out.
+- **Sent forgets what was placed** on every road (his answer 3, reversing V4b's keep): the next sheet does not offer a size just placed.
+
 ### Failures and public pages on brand (Phase 7d part 4, 12 Oct 2026, his yes of 11 Oct)
 
 **A read that fails says when the page last read.** After the orders' read has worked once (`readAt`, stamped by `loadOrders` on a good answer), a read that
