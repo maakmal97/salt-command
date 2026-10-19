@@ -25225,7 +25225,10 @@ await (async () => {
   if (!card6) skipData("this book carries no associate, so the card was not built");
   else {
     const flat = JSON.stringify(card6);
-    ok(!/share|star|rank|margin|profit|floor|cogs|toNext|marginMine|marginIntro/i.test(flat),
+    /* 19 Oct 2026: a word or a part of a camelCase name, never letters inside one, so "start" is not a star nor "frank" a rank */
+    const seller6 = (s) => (s.match(/[A-Za-z]+/g) || []).some((w) => w === "toNext"
+      || w.split(/(?<=[a-z])(?=[A-Z])/).some((p) => /^(share|shares|star|stars|rank|margin|profit|floor|cogs)$/i.test(p)));
+    ok(!seller6(flat) && seller6("marginMine") && seller6('"shareRM"') && !seller6("started frankly"),
       "the card carries no share of his revenue, no stars, no rank and no margin: " + (flat.match(/share|star|rank|margin/ig) || []).join(","));
     const p6 = card6.products[0];
     ok(Object.keys(p6.summary).every((k) => CARD_SUM_FIELDS.includes(k)) && CARD_SUM_FIELDS.every((k) => k in p6.summary),
