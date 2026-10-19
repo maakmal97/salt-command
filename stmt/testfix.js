@@ -17,8 +17,10 @@
  * construction. `salt` ties it to the account it was sealed for; an account unmade and made again has a new key, and a
  * fixture sealed for the old one is not served.
  * EVERY TAP A CUSTOMER HAS WORKS ON IT: a move on an example order, a claim against the account, a link minted or
- * withdrawn, each by the order book's own decide and apply, written back into that account's fixture and nowhere else,
- * a retry answered once. Until the first publish seals one, a claim or a link is refused, never made for real. The next
+ * withdrawn, a Place (examplePlace, on every road since the test surface), each by the order book's own decide and apply,
+ * written back into that account's fixture and nowhere else, a retry answered once. Counter Admin's moves on an example
+ * order compose the Desk's bodies into decideDesk here too (stmt/maker.js exampleAction), and exampleReset deletes the
+ * account's rows so the next read reseeds them (his answers of 18 Oct 2026, the test surface at /all/test). Until the first publish seals one, a claim or a link is refused, never made for real. The next
  * publish seals the examples afresh. Account threads alone use the book's isolated fixture_thread row when its
  * binding exists, on either store road; no real events, marks or write-behind read that table. A new publication
  * resets its generation. Binding-less legacy customer fixtures remain in KV; new owner replies refuse there.

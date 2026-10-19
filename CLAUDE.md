@@ -532,8 +532,10 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   intended real account record back after its bulk write. `make_statements` refuses to seal a new issue without
   `--new-issue`; sealed issues are untouched. A question goes on an order, or on the account's thread. The account line shows
   the customer's username, never the roster code.
-- **The test accounts** `0000-0000` (open) and `0000-0001` (locked, his answer of 29 Sep 2026), password
-  `0000-0000-0000-0000` for both, count nowhere, and are made and unmade together. **Between them they show every
+- **The test accounts** `0000-0000` (open), `0000-0001` (locked) and `0000-0002` (fresh, room to order),
+  password `0000-0000-0000-0000` for all, count nowhere, and are made and unmade together. **Every
+  move of theirs, a Place included, lands in their fixture alone** (`fixture_account`), never the
+  order book, `order:`, `aclaim:` or `g:`; one list, `stmt/testusers.js`. **Between them they show every
   feature a customer sees**: the publish seals an invented account for each (`tools/testfix.mjs`, a case of each) at
   KV `testfix:<username>`, and the Worker lays it over that account alone (`stmt/testfix.js` `accountRecord`, the one
   read of a `u:` record on a customer road), never under `order:`, `aclaim:` or `g:`, so no count reads it. **They are
@@ -542,6 +544,12 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   fixture yet nothing real is made. Held and prices hidden are the suite's alone. **A feature a customer sees lands with
   its case**: a line in `FEATURES` and the case in `build()`, or the suite is red; states, ways, rails and claim answers
   are asked for off the code itself.
+- **`/all/test` is his test surface**: inside `/all`'s gate, so both locks hold it. It shows one
+  `landingPage` as both views under a base (`__BASE__`, `__TEST__`), and Counter Admin moves example
+  orders by composing the Desk's bodies into `decideDesk` with no Desk state. One stateless read,
+  `fixture-check` (words, `needsYes`, `closeGoods`), and the claim preview stay on the Desk, and
+  nothing is copied out of it. Reset deletes the account's fixture rows, and the next read reseeds
+  them from the publication.
 - **Guest links `/g/<id>`**: one board, `script-src 'none'`. **The id IS the credential**
   (rejection sampling, never `byte % 30`) and boards are NOT sealed. Every shut id (unknown,
   malformed, withdrawn, declined, waiting), and any longer path under `/g/`, answers ONE styled 404
@@ -561,6 +569,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
 | `engine/qr.mjs` | The ONE QR encoder (byte mode, level M, versions 1 to 10), inlined into the master; `tools/qr.mjs` re-exports it; `qrRectSvg` draws RECTANGLES, a stroked symbol does not scan |
 | `stmt/qr.js` | GENERATED from `engine/qr.mjs` by `tools/qrsync.mjs --sync`; never edit it |
 | `stmt/send.js` | The one copy of the words a customer is sent; the sign-in message is English only |
+| `stmt/testsurface.js` | The shell; the views are `landingPage`, never a copy |
 | `stmt/words.js` | Every word the Counter shows, by key; a customer's refusal is `e.<code>` there, answered `{error, code}` by `refusal()`. English is the only table (`WORDS = { en: EN }`); no language switch, no `LIVE`, no `salt-lang`, no `/lang` Cache entry |
 | `stmt/signin.js` | The one-time link; the two limits it cannot promise away are in its header |
 | `tools/stmt-seal.mjs` | Laptop only: seals an issue's passwords under the master, proving each; pairs a re-keyed code by proof |

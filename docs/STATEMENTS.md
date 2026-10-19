@@ -1631,7 +1631,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   claims under Payments, the group orders under Group, Order for them at the head of the place), **Customers** (Accounts,
   Messages, Links, Associates: the list and the card, the chat, the guest links, the report card), **Record** (Entry,
   Customers, Pricing: the forms by the part they belong to; each waits for his approval under Orders > Approve) and
-  **Shop** (Hours, Notice, Practice, This device: the operating hours, the notice, the two test accounts, and this device's Look,
+  **Shop** (Hours, Notice, Practice, This device: the operating hours, the notice, the three test accounts, and this device's Look,
   see "His look" below). `data-in` on a section, a card or a
   form names the places and parts it shows in (`orders` is every part of Orders, `orders.group` that part alone) and the owner's
   script hides the rest. **Each place reads only what it shows, on entering it, and a part on entering the part**: Orders reads the
@@ -1881,11 +1881,13 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   phone's `navigator.standalone` set), with the page not scrolling sideways, the last control clear of the bar and, in the saved app, the document the screen tall and a short
   place scrolling by no more than a pixel, and proves a lifted bar, a page wider than the phone and a document shorter than the screen red.
 - **The test accounts show every feature a customer sees** (29 Sep 2026, his instruction), so he can try any of them
-  by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are two (his answer of 29
-  Sep 2026, a second account rather than a switch): `0000-0000`, open, a claim of theirs waiting, which reopens
-  ordering (his D9, amended) and lifts every stage of V5, so he can place an order; and `0000-0001`, locked, only for
-  paying, its overdue part past the lock day and nothing of theirs waiting. The same zeros open both; a one is outside
-  the alphabet, as a zero is, and the door lets it through (`normUser`, the page's `shaped` and `unfit`). Held and
+  by signing in with the zeros, exactly as a customer sees it (his acceptance tests). There are three (his answer of 29
+  Sep 2026, a second account rather than a switch; a third on 18 Oct 2026, the test surface): `0000-0000`, open, a claim
+  of theirs waiting, which reopens ordering (his D9, amended) and lifts every stage of V5; `0000-0001`, locked, only for
+  paying, its overdue part past the lock day and nothing of theirs waiting; and `0000-0002`, fresh, two orders open and
+  the rest done, cancelled or declined, so it has room to order (the open-order limit counts every open order, as the
+  page does). The same zeros open all three; a one and a two are outside the alphabet, as a zero is, and the door lets
+  them through (`normUser`, the page's `shaped` and `unfit`). Their names are one list, `stmt/testusers.js`. Held and
   prices hidden are shown by neither and stay the suite's. `tools/testfix.mjs` `build(now, state, u)` makes an
   invented account: its orders driven through
   the order book's own `decidePlace`, `decideDesk`, `decideCustomer` and `applyEvent`, so their shape cannot drift;
@@ -1910,9 +1912,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   withdrawn there. None of its slips is filed. **Until the first publish seals a fixture, nothing real is made**: the
   account is no associate, so Links answers the site's 404, and a claim is refused (`e.testSoon`). One KV value an
   account, read and written whole: a tap may take a minute to show on another phone, and two at once may lose one,
-  which the next publish puts right. Orders it places are real orders on the book, as before, under a username no code
-  maps to. Making an account deletes its fixture, unmaking takes both accounts and both fixtures, and the next publish
-  seals new ones. **A feature a customer sees lands with its case**:
+  which the next publish puts right. **Every order it places goes to its fixture** (`examplePlace`), on the customer's
+  road and Counter Admin's, never the order book or `order:`; a stray real order from before is cleared by his Remove
+  and Make (Ask 10). Making an account deletes its fixture, unmaking takes every account and every fixture, and the next
+  publish seals new ones. **A feature a customer sees lands with its case**:
   `FEATURES` lists each with the test of its case, and the suite fails on a line with none; every state, way, rail
   offered and claim answer is asked for off the code (`derivedCases`), so a new one needs no line to be asked for.
   Step 1b, F10, F15, V4b.2, V5, F13 (a slip sent, and one no longer kept) and the delivery's window and spot (a window
@@ -1925,6 +1928,32 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   and seals under the key. The
   Worker never derives above 100,000: the production runtime refuses PBKDF2 above that and the local one does not,
   so only the suite's spy on SubtleCrypto sees it. A bare `{make: true}` answers 400 with a reason.
+- **The test surface, `/all/test`** (his answers of 18 Oct 2026, Asks 1 to 10), inside `/all`'s gate, so the Access
+  application and the Worker's own JWT and exact-email check hold every road under it; bare `/test` is a 302 to it and
+  serves nothing. **The shell** (`stmt/testsurface.js` `testShell`) holds the two views as frames of this origin, side by
+  side from 1080px and two tabs on a phone, the account they show (fresh first), Reset (asked once: a second tap within four
+  seconds), Reset all, Start empty for `0000-0002` alone, and Make, a link to Salt Account's Practice, for an account not
+  made; it says when one is made and waiting for the publish. **The views are `landingPage` under a base**:
+  `/all/test/c?u=<test username>`, the customer's page, which signs itself in with the test password, and
+  `/all/test/admin`, Counter Admin with no master and no account list. On these pages alone a shim at the head of the
+  script's scope (`TEST_SHIM` in `stmt/page.js`) puts every request under the base (Counter Admin's `/all/maker/` under
+  `/all/test/maker/`, any other `/all` road refused), keeps storage under `salt-test:` (a sign-in here never clears a real
+  phone's memory), registers no service worker, manifest, push or passkey and answers this phone's own roads (devices,
+  remember, passkey, push, hand-over, slip) locally; the poll is 2 seconds, and a write that went through is told on the
+  channel `salt-test`, so the other pane re-reads at once. A real page is the page it always was. Counter Admin there draws
+  Needs you, Orders, Payments and Chat, and reads the examples' orders, payments and chats alone. **The roads**:
+  `/all/test/c/*` runs the customer's own routes (open, logout, account, orders and an order's moves, pools and a join,
+  thread, pay accounts, my refs, bulletin, hours) on a test account's session alone, marked inside the Worker so
+  `GET /orders` reads the fixture alone; `/all/test/maker/*` is Counter Admin on example ids and test usernames alone, its
+  reads from the fixtures with no Desk call and a thread reply written in-process, so no phone is woken; `POST
+  /all/test/reset` takes `{u}`, `{all: true}` or `{u: "0000-0002", empty: true}`. **An example order's Admin moves**
+  compose the body the Desk would and run it through `decideDesk` in the fixture (`exampleAction` in `stmt/maker.js`,
+  one road on `/all` as well): Accept after its preview, with his Pay first switch, since the Desk decides pay-first off
+  the real book; a raise or another window as an offer for their yes; Handed over, a close short at the goods the Desk's
+  `closeGoods` states; Cash; Received. The Desk answers one stateless read, `/_internal/maker/fixture-check` (the word
+  check, the yes rule, a close's goods), and the claim preview, and keeps nothing. **Reset** deletes the account's fixture
+  rows (`fixture-reset`, never moving the real book in), and the next read reseeds them from the publication; Start empty
+  writes an empty one for the fresh account. Links outlive a Reset.
 - **Accounts** (S9 9.2) is one list for what Send and Review were: the system's Inbox row an account, chips
   for where it stands, when and how it was last opened, alerts on (the `push:` keys, counted by
   `alertsOn`), refused at an address and no account; a search and filters (Not sent, Not opened, Owes, Refused, No
@@ -2458,7 +2487,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `look.sheet-tide` | Same Sheet | Chooses Tide, keeps it and closes the Sheet. |
 | `look.tide` | Shop, This device, Look | Tide for Salt Account on this device, at once, kept here. |
 | `maker.refresh` | Orders, Order review | Reads the orders again. |
-| `more.test-accounts` | Shop, Practice | Makes or deletes the two test accounts. |
+| `more.test-accounts` | Shop, Practice | Makes or deletes the three test accounts. |
 | `nav.add` | The + orb at the foot of the page, on every place but Record | Opens Record, on Entry, the menu of entries. Reads what Record reads on entering. |
 | `nav.customers` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Customers, on its Accounts. |
 | `nav.needs` | Rail on a desktop, bar on a phone (one act each, drawn twice) | Opens Needs you. |
