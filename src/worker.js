@@ -21,7 +21,7 @@ import { runDrafter, dryRunDrafter, readBook, bookOnce, withDraftLots, withRefun
 import { approveFigures } from "./approve-figures.js";
 import { sendPush, listSubs } from "./push.js";
 import { listOrders, listClaims, listThreads, threadRelay, slipRelay, pinRelay, moveOrder, ordersWaiting, nudgeOrders, tickRead, reconcileOrders, tellSite, tieOut, TIEOUT_KEY, rekeyOrders, tellWaiting, bulletinRelay, expectedRelay, rejectedOnOrder, previewOrder, dropQueued, acceptOrder, offerOrder, withdrawOffer, takeOffer, amendOrder, ackOnApproval, deskPass, handedOrder, cashOrder, restateOrder, receivedOrder, againOrder, againOf, dropMode, notFoundOrder, notFoundClaim, claimPreview, rowRoom, ledgerKeyOf, claimReceived, findClaim, fixtureClaimPreview, siteWords, findOrder, queueSale, queueResourceTrades } from "./orders.js";
-import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault } from "./maker.js";
+import { makerKeyMatches, makerOrderFault, makerStockCount, makerCommunicationFault, fixtureCheck } from "./maker.js";
 import { makerTrips, makerTripSplit, makerTripPay, makerTripJoin, makerTradeReading, makerCoverPlan, makerInputCatalog, makerTradeBatch, makerTierSet, makerPartner, makerHouseSizes, makerHush, hushGet, hushPut, hushFault, makerQueuedTradeCheck, makerQueuedLoanCheck, makerQueuedGiftCheck, makerLedgerInput, makerLedgerAmendment, makerAmendmentRoom, makerOffsetOffers, makerOffset, makerLedgerMini, makerUndo, makerRows, openRefunds } from "./maker-inputs.js";
 import { makerRequestFingerprint, makerRequestRead, makerRequestClaim, makerRequestFinish, makerAppointmentClaim, makerOrderOnce } from "./maker-request.js";
 import { readVaultRegistrations } from "./vault-pair.js";
@@ -523,13 +523,13 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && p !== "/_internal/maker/threads" && p !== "/_internal/maker/bulletin"
     && p !== "/_internal/maker/claims" && p !== "/_internal/maker/vault/key"
     && !/^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(p)
-    && !/^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
+    && !/^\/_internal\/maker\/fixture-claims\/0000-000[0-2]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(p)
     && !/^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(p)
     && !/^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(p)
     && !/^\/_internal\/maker\/inputs\/(sale|purchase|tier-set|partner|house-sizes|hush|loan|repay|gift|redeem|add-id|appoint-existing|amend-id|place|ledger-amend|trip-pay|trip-join)$/.test(p)
     && !/^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(p)
     && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
-    && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words"
+    && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words" && p !== "/_internal/maker/fixture-check"
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset" && p !== "/_internal/maker/ledger"
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
@@ -560,7 +560,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const result = await slipRelay(env, slip[1], slip[2]);
     return json(result, result.ok ? 200 : (result.status || 502));
   }
-  const example = /^\/_internal\/maker\/fixture-claims\/(0000-000[01])\/(a[0-9]{14}-[a-z0-9]{1,8})\/preview$/.exec(p);
+  const example = /^\/_internal\/maker\/fixture-claims\/(0000-000[0-2])\/(a[0-9]{14}-[a-z0-9]{1,8})\/preview$/.exec(p);
   const claim = /^\/_internal\/maker\/claims\/([a-z0-9]{4}-[a-z0-9]{4})\/(a[0-9]{14}-[a-z0-9]{1,8})\/(preview|received|notfound)$/.exec(p);
   if (example || claim) {
     if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
@@ -575,7 +575,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     let result;
     if (example) result = await fixtureClaimPreview(body, example[1], example[2], body.generation);
     else {
-      if (claim[1] === "0000-0000" || claim[1] === "0000-0001")
+      if (/^0000-000[0-2]$/.test(claim[1]))
         return json({ ok: false, error: "Acceptance claims cannot use the real ledger." }, 409);
       const found = await findClaim(env, claim[2]);
       if (!found.ok) return json(found, found.status || 503);
@@ -794,6 +794,17 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     return read.error ? json({ ok: false, error: read.error }, 400) : json({ ok: true, history: read });
   }
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
+  /* the test surface's one stateless read (src/maker.js fixtureCheck): no state read, nothing written */
+  if (p === "/_internal/maker/fixture-check") {
+    let body;
+    try {
+      const text = await request.text();
+      if (text.length > 16384) return json({ ok: false, error: "request is too large" }, 413);
+      body = JSON.parse(text);
+    } catch { return json({ ok: false, error: "send JSON" }, 400); }
+    const r = fixtureCheck(body);
+    return json(r.body, r.status);
+  }
   if (p === "/_internal/maker/order-again" || p === "/_internal/maker/words") {
     let body;
     try {
@@ -1091,7 +1102,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
         /* his reply, No reply needed, Ready, Decline or Cancel: moveOrder checks every word through siteWords */
         const found = await findOrder(env, id);
         if (!found.ok) result = found;
-        else if (found.order.u === "0000-0000" || found.order.u === "0000-0001")
+        else if (/^0000-000[0-2]$/.test(found.order.u))
           result = { ok: false, status: 409, error: "Acceptance orders cannot use the real order book." };
         else {
           /* `maker` makes the order book hold Ready to an acknowledged order and Cancel (his decision of 05 Oct 2026) to

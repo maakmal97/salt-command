@@ -1,0 +1,13 @@
+[
+ {"name":"fixture-check skips the word check","file":"src/maker.js","find":"    const why = siteWords(text);\n    if (why) return { status: 400, body: { ok: false, error: \"that text says something \" + why } };","replace":"    const why = \"\";\n    if (why) return { status: 400, body: { ok: false, error: \"that text says something \" + why } };"},
+ {"name":"fixture-check never says a yes is needed","file":"src/maker.js","find":"yes: needsYes(o, { total: move.total, slot: win.slot })","replace":"yes: false"},
+ {"name":"fixture-check takes any window as sent","file":"src/maker.js","find":"const win = slotOf({ slot: move.slot }, o, now || new Date());","replace":"const win = { slot: move.slot || null };"},
+ {"name":"fixture-check works the close out itself","file":"src/maker.js","find":"POSITION_ENGINE.closeGoods(order.total, order.qty, move.close)","replace":"+(order.total * move.close / order.qty).toFixed(1)"},
+ {"name":"fixture-check writes to the Desk's KV","file":"src/worker.js","find":"    const r = fixtureCheck(body);\n","replace":"    const r = fixtureCheck(body); await env.SALT_QUEUE.put(\"fixture-check\", \"1\");\n"},
+ {"name":"fixture-check takes another field","file":"src/maker.js","find":"Object.keys(body).some((key) => ![\"order\", \"move\"].includes(key))","replace":"Object.keys(body).some((key) => ![\"order\", \"move\", \"u\"].includes(key))"},
+ {"name":"the maker key is not checked","file":"src/worker.js","find":"  if (!makerKeyMatches(request, env)) return json({ ok: false, error: \"not found\" }, 404);\n  if (p === \"/_internal/maker/queue\") {","replace":"  if (p === \"/_internal/maker/queue\") {"},
+ {"name":"the Desk's preview route keeps two accounts","file":"src/worker.js","find":"    && !/^\\/_internal\\/maker\\/fixture-claims\\/0000-000[0-2]\\/","replace":"    && !/^\\/_internal\\/maker\\/fixture-claims\\/0000-000[01]\\/"},
+ {"name":"the fixture preview keeps two accounts","file":"src/orders.js","find":"if (!/^0000-000[0-2]$/.test(u) || !snapshot?.prepared","replace":"if (!/^0000-000[01]$/.test(u) || !snapshot?.prepared"},
+ {"name":"the real claim road keeps two accounts","file":"src/worker.js","find":"if (/^0000-000[0-2]$/.test(claim[1]))","replace":"if (/^0000-000[01]$/.test(claim[1]))"},
+ {"name":"the Desk's move keeps two accounts","file":"src/worker.js","find":"else if (/^0000-000[0-2]$/.test(found.order.u))","replace":"else if (/^0000-000[01]$/.test(found.order.u))"}
+]

@@ -1,4 +1,5 @@
 import POSITION_ENGINE from "../engine/position.mjs";
+import { siteWords, needsYes, slotOf } from "./orders.js";
 
 export function makerCommunicationFault(kind, body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return "Send a JSON object.";
@@ -38,6 +39,35 @@ export function makerStockCount(body) {
   if (typeof body.qty !== "number" || !Number.isFinite(body.qty) || body.qty < 0 || body.qty > 1000000)
     return { error: "Counted units must be a finite non-negative number." };
   return { entry: POSITION_ENGINE.stockCountEntry(body) };
+}
+
+/* THE COUNTER TEST SURFACE (his answers of 18 Oct 2026, Ask 2): ONE STATELESS READ for a move on an example order. Three rules live
+   only here, and a copy of any would drift: the words a customer may be sent (siteWords), what needs their yes at Accept (slotOf and
+   needsYes) and the goods a close at what was handed over comes to (the engine's closeGoods). The Counter sends the order's terms and
+   the move, and this answers all three from the Desk's own code; it reads no state and writes nothing. Returns { status, body }. */
+export function fixtureCheck(body, now) {
+  const order = body && body.order, move = body && body.move;
+  if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some((key) => !["order", "move"].includes(key))
+    || !order || typeof order !== "object" || Array.isArray(order) || !move || typeof move !== "object" || Array.isArray(move)
+    || Object.keys(order).some((key) => !["total", "qty", "mode", "slot", "wantBy"].includes(key))
+    || Object.keys(move).some((key) => !["texts", "total", "slot", "close"].includes(key)))
+    return { status: 400, body: { ok: false, error: "Send only the order's terms and the move." } };
+  const num = (x) => typeof x === "number" && Number.isFinite(x) && x >= 0 && x <= 1000000;
+  if (!num(order.total) || !num(order.qty) || !(order.qty > 0) || !["collect", "deliver"].includes(order.mode)
+    || [order.slot, order.wantBy].some((x) => x != null && (typeof x !== "string" || x.length > 40))
+    || move.total !== undefined && !num(move.total) || move.close !== undefined && (!num(move.close) || move.close > order.qty)
+    || move.slot !== undefined && move.slot !== null && move.slot !== "" && typeof move.slot !== "string"
+    || move.texts !== undefined && (!Array.isArray(move.texts) || move.texts.length > 4 || move.texts.some((t) => typeof t !== "string" || t.length > 240)))
+    return { status: 400, body: { ok: false, error: "The order's terms or the move are not figures this check reads." } };
+  for (const text of move.texts || []) {
+    const why = siteWords(text);
+    if (why) return { status: 400, body: { ok: false, error: "that text says something " + why } };
+  }
+  const o = { total: order.total, qty: order.qty, mode: order.mode, slot: order.slot || null, wantBy: order.wantBy || "" };
+  const win = slotOf({ slot: move.slot }, o, now || new Date());
+  if (win.error) return { status: win.status || 400, body: { ok: false, error: win.error } };
+  return { status: 200, body: { ok: true, yes: needsYes(o, { total: move.total, slot: win.slot }), slot: win.slot,
+    close: move.close !== undefined ? POSITION_ENGINE.closeGoods(order.total, order.qty, move.close) : null } };
 }
 
 export function makerKeyMatches(request, env) {

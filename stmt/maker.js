@@ -88,7 +88,7 @@ async function deskCall(env, path, method, body) {
     || path === "/_internal/maker/vault/key" && method === "GET"
     || /^\/_internal\/maker\/slips\/[a-z0-9]{4}-[a-z0-9]{4}\/[0-9a-f]{32}$/.test(path) && method === "GET"
     || /^\/_internal\/maker\/claims\/[a-z0-9]{4}-[a-z0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/(preview|received|notfound)$/.test(path) && method === "POST"
-    || /^\/_internal\/maker\/fixture-claims\/0000-000[01]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
+    || /^\/_internal\/maker\/fixture-claims\/0000-000[0-2]\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
     || path === "/_internal/maker/offsets" && method === "GET"
     || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)
@@ -98,7 +98,7 @@ async function deskCall(env, path, method, body) {
     || /^\/_internal\/maker\/drafts\/[^/]+\/(approve|reject)$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|notfound|move|restate)$/.test(path) && method === "POST"
-    || (path === "/_internal/maker/order-again" || path === "/_internal/maker/words") && method === "POST";
+    || (path === "/_internal/maker/order-again" || path === "/_internal/maker/words" || path === "/_internal/maker/fixture-check") && method === "POST";
   if (!allowed) throw new Error("That Desk maker operation is not available.");
   const response = await env.DESK_MAKER.fetch(new Request("https://desk" + path, {
     method,

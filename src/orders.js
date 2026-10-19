@@ -1049,7 +1049,7 @@ export async function offBook(db, orders) {
   return off;
 }
 export async function fixtureClaimPreview(snapshot, u, id, generation) {
-  if (!["0000-0000", "0000-0001"].includes(u) || !snapshot?.prepared
+  if (!/^0000-000[0-2]$/.test(u) || !snapshot?.prepared
     || !Array.isArray(snapshot.account?.sales) || !Array.isArray(snapshot.account?.claims)
     || !Array.isArray(snapshot.orders) || !Number.isInteger(snapshot.account.revision))
     return { ok: false, error: "Publish the new acceptance cases before previewing example claims.", status: 409 };

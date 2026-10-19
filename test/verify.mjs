@@ -48027,6 +48027,11 @@ await (async () => {
   await (await import("./maker-orders.mjs")).run({ ok });
 })();
 
+section("Counter test surface P1: the Desk's stateless fixture-check (words, the yes rule, a close's goods) and 0000-0002 in the Desk's literals (19 Oct 2026)");
+await (async () => {
+  await (await import("./test-surface-desk.mjs")).run({ ok });
+})();
+
 section("Counter maker cancels a paid order: the approver is told, the fold opens one refund");
 await (async () => {
   await (await import("./maker-paid-cancel.mjs")).run({ ok });
