@@ -230,7 +230,7 @@ export async function run({ ok, pageWork }) {
     const got = TITLES.map(([k]) => (p.card(k) ? p.title(p.card(k)) : null)), want = TITLES.map(([, t]) => t);
     ok(got.every((t, i) => t === want[i]),
       "each card's title says what to do, verb first, then who: " + JSON.stringify(got));
-    ok(p.words(p.card("o:ord-p1")).what === "2 units · RM 200.00" && !/ now| tier|level/i.test(p.card("o:ord-p1").textContent),
+    ok(p.words(p.card("o:ord-p1")).what === "2 units · RM 200.00" && !/\b(now|tiers?|levels?)\b/i.test(p.card("o:ord-p1").innerHTML.replace(/<[^>]*>/g, " ")),   /* 19 Oct 2026: whole words, spaced at every tag */
       "and the figure stands under it, with the book as a mark and no level or tier word: " + p.words(p.card("o:ord-p1")).what);
     ok(!p.cards().some((c) => p.buttons(c).some((t) => /Accept|Cash/.test(t))) && p.cards().filter(owedCard).every((c) => c.querySelectorAll(".salt-pill").length === 0),
       "and no card carries Accept or Cash; an owed card's one way is a ghost that opens, never a filled pill");
