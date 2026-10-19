@@ -28,5 +28,12 @@
  {"name":"the money format keeps a fraction digit","find":"NF_0to2=new Intl.NumberFormat('en-MY',{minimumFractionDigits:0,maximumFractionDigits:2})","replace":"NF_0to2=new Intl.NumberFormat('en-MY',{minimumFractionDigits:1,maximumFractionDigits:2})"},
  {"name":"the ledger always measures its columns","find":"if(LED_FIT&&LED_FIT.sig===sig){for(const k in LED_FIT.w)wrap.style.setProperty('--lc-'+k,LED_FIT.w[k]+'px');return;}","replace":""},
  {"name":"the ledger widths ignore the window width","find":"+lookNow()+'|'+(window.innerWidth||0);","replace":"+lookNow();"},
- {"name":"the ledger widths ignore the markup","find":"const sig=html.length+'|'+h+'|'+fonts+'|'+lookNow()","replace":"const sig=fonts+'|'+lookNow()"}
+ {"name":"the ledger widths ignore the markup","find":"const sig=html.length+'|'+h+'|'+fonts+'|'+lookNow()","replace":"const sig=fonts+'|'+lookNow()"},
+ {"name":"the chip never watches","file":"tools/build.mjs","find":"  '    watch();',\n","replace":""},
+ {"name":"the first idle look reloads","file":"tools/build.mjs","find":"'    if(++idleHits>=2)saltFresh();',","replace":"'    if(++idleHits>=1)saltFresh();',"},
+ {"name":"a busy desk is reloaded","file":"tools/build.mjs","find":"if(document.visibilityState!=='visible'||!idle()){idleHits=0;return;}","replace":"if(document.visibilityState!=='visible'){idleHits=0;return;}"},
+ {"name":"a hidden page is reloaded","file":"tools/build.mjs","find":"if(document.visibilityState!=='visible'||!idle()){idleHits=0;return;}","replace":"if(!idle()){idleHits=0;return;}"},
+ {"name":"no look every two seconds","file":"tools/build.mjs","find":"'    idleT=setInterval(recheck,2000);',\n","replace":""},
+ {"name":"no look when a field loses focus","file":"tools/build.mjs","find":"\"    document.addEventListener('focusout',function(){setTimeout(recheck,0);},true);\",\n","replace":""},
+ {"name":"no look when a dialog closes","file":"tools/build.mjs","find":"\"    document.addEventListener('close',function(){setTimeout(recheck,0);},true);\",\n","replace":""}
 ]

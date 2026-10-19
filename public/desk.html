@@ -70,7 +70,7 @@ document.addEventListener('visibilitychange',function(){
    because KV cannot reach a phone; ten seconds is the interval that was asked for.
    IT WILL NOT INTERRUPT YOU. Reloading over a half-typed entry would throw the typing
    away, so it reloads only when the desk is idle: no field focused, no dialog open.
-   Otherwise it offers a chip and waits to be tapped.
+   Otherwise it offers a chip, which loads the build itself once the desk goes idle (R2, below), or when tapped.
    A QUEUED ENTRY NO LONGER COUNTS AS BUSY, corrected 03 Sep 2026 on his report that the
    other tabs stood still after he approved a row on the phone. The rule used to treat any
    entry in the local queue as unsent work. In cloud mode that queue is emptied only by a
@@ -86,7 +86,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="950582fa6a713b66";
+var SALT_BUILD_ID="48399b7e8029a49f";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -107,6 +107,26 @@ var SALT_WAKE_MS=3000;
     chip.setAttribute('style','position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:99999;font:600 13px/1.2 inherit;padding:10px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:rgba(24,15,44,.94);color:#fff;box-shadow:0 6px 24px rgba(0,0,0,.45)');
     chip.onclick=saltFresh;
     document.body.appendChild(chip);
+    watch();
+  }
+  /* R2 (19 Oct 2026): A CHIP LOADS ITSELF ONCE THE DESK GOES IDLE. A new build met a busy desk (a field focused, a dialog open)
+     and waited for a tap on the chip, so a desk left on a field showed the old build until someone touched it. While the
+     chip stands the idle test is asked again: when a field loses focus, when a dialog closes, and every two seconds; the
+     first idle answer only counts, and the second in a row loads the build (a focus that only moves between two fields
+     is never idle on the second look). The same rule as the tick: never over a focused field or an open dialog, and
+     never into a page that is not on screen. */
+  var idleT=null,idleHits=0;
+  function recheck(){
+    if(!chip)return;
+    if(document.visibilityState!=='visible'||!idle()){idleHits=0;return;}
+    if(++idleHits>=2)saltFresh();
+  }
+  function watch(){
+    if(idleT)return;
+    idleHits=0;
+    idleT=setInterval(recheck,2000);
+    document.addEventListener('focusout',function(){setTimeout(recheck,0);},true);
+    document.addEventListener('close',function(){setTimeout(recheck,0);},true);
   }
   function unsent(){
     if(typeof qDirty!=='undefined'&&qDirty)return true;

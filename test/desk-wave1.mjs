@@ -264,4 +264,76 @@ export async function run({ ok }) {
     ok(nf.n > 20 && nf.bad.length === 0, "fmt, fmt0 and units give exactly the text toLocaleString gave, over the awkward values: " + JSON.stringify(nf));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
 
+  /* -------------------------------------------------------------------- R2 */
+  const buildSrc = readFileSync(new URL("../tools/build.mjs", import.meta.url), "utf8");
+  const arr = /const PWA_BLOCK = (\[[\s\S]*?\n\])\.join\(EOL\);/.exec(buildSrc);
+  ok(!!arr, "the build carries the PWA block as a list of lines");
+  const block = arr ? new Function("IDTOKEN", "EOL", "return " + arr[1] + ".join(EOL);")("__ID__", "\n") : "";
+  const tickSrc = (block.match(/\(function\(\)\{\s*var chip=null,timer=null;[\s\S]*?\n\}\)\(\);/) || [])[0];
+  ok(!!tickSrc && tickSrc.includes("function recheck()"), "the shipped freshness block carries the idle re-check");
+  if (tickSrc) {
+    const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+    const rig = () => {
+      const t = { fresh: 0, intervals: [], timeouts: [], listeners: {}, vis: "visible", active: null, dialog: null, chips: 0, onLoad: null };
+      const doc = {
+        get visibilityState() { return t.vis; }, get activeElement() { return t.active; },
+        querySelector: (s) => (/dialog/.test(s) ? t.dialog : null),
+        addEventListener: (type, fn) => { (t.listeners[type] = t.listeners[type] || []).push(fn); },
+        createElement: () => { t.chips++; return { setAttribute() { }, set onclick(f) { } }; },
+        body: { appendChild() { } },
+      };
+      const win = { SALT_CLOUD: true, addEventListener: (type, fn) => { if (type === "load") t.onLoad = fn; } };
+      const fetchStub = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ id: "NEWID", v: "v9" }) });
+      new Function("window", "document", "fetch", "setInterval", "setTimeout", "location", "navigator", "SALT_REV_MS", "SALT_BUILD_ID", "saltFresh",
+        "queue", "qSyncState", "qPost", "qNewestAt", "qSentThrough", "qDirty", tickSrc)(
+        win, doc, fetchStub, (f, ms) => { t.intervals.push([f, ms]); return t.intervals.length; }, (f) => { t.timeouts.push(f); return t.timeouts.length; },
+        {}, {}, 10000, "OLDID", () => { t.fresh++; }, [], "server", () => { }, () => "", "", false);
+      t.start = async () => { t.onLoad(); await flush(); };
+      t.twoSeconds = () => t.intervals.filter(([, ms]) => ms === 2000).forEach(([f]) => f());
+      t.drain = () => { const q = t.timeouts.splice(0); q.forEach((f) => f()); };
+      t.fire = (type) => (t.listeners[type] || []).forEach((f) => f({}));
+      return t;
+    };
+    const INPUT = { tagName: "INPUT" };
+    {
+      const t = rig(); t.active = INPUT; await t.start();
+      for (let i = 0; i < 5; i++) t.twoSeconds();
+      ok(t.chips === 1 && t.fresh === 0, "a busy desk (a field focused) is offered the chip and is not reloaded over, however long it waits: " + JSON.stringify({ chips: t.chips, fresh: t.fresh }));
+    }
+    {
+      const t = rig(); t.active = INPUT; await t.start();
+      t.active = null; t.fire("focusout"); t.drain();
+      const afterOne = t.fresh;
+      t.twoSeconds();
+      ok(afterOne === 0 && t.fresh === 1, "when the field loses focus the desk loads the new build on the second idle look, not the first: " + JSON.stringify({ afterOne, fresh: t.fresh }));
+    }
+    {
+      const t = rig(); t.active = INPUT; await t.start();
+      t.active = null; t.fire("focusout"); t.drain();            /* idle once */
+      t.active = INPUT; t.twoSeconds();                           /* focus came back: not idle, the count starts again */
+      t.active = null; t.twoSeconds();                            /* idle once */
+      const held = t.fresh;
+      t.twoSeconds();                                             /* idle twice in a row */
+      ok(held === 0 && t.fresh === 1, "a focus that moves from one field to another is never reloaded over: the count restarts at each busy look: " + JSON.stringify({ held, fresh: t.fresh }));
+    }
+    {
+      const t = rig(); t.dialog = {}; await t.start();
+      t.twoSeconds(); t.twoSeconds();
+      const open = t.fresh;
+      t.dialog = null; t.fire("close"); t.drain(); t.twoSeconds();
+      ok(open === 0 && t.fresh === 1, "an open dialog holds the reload, and its closing lets it through on the second idle look: " + JSON.stringify({ open, fresh: t.fresh }));
+    }
+    {
+      const t = rig(); t.active = INPUT; await t.start();
+      t.active = null; t.vis = "hidden";
+      for (let i = 0; i < 5; i++) t.twoSeconds();
+      const hidden = t.fresh;
+      t.vis = "visible"; t.twoSeconds(); t.twoSeconds();
+      ok(hidden === 0 && t.fresh === 1, "a page that is not on screen is never reloaded; it is once it shows and is idle: " + JSON.stringify({ hidden, fresh: t.fresh }));
+    }
+    {
+      const t = rig(); await t.start();
+      ok(t.fresh === 1 && t.chips === 0, "an idle desk still loads the new build at once, with no chip: " + JSON.stringify({ chips: t.chips, fresh: t.fresh }));
+    }
+  }
 }
