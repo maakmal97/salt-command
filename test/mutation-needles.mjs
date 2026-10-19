@@ -10,14 +10,18 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { mutate } from "../tools/section.mjs";
+import { TIDE_OFF } from "./tide-off.mjs";
 
 const MASTER = "master/salt_command.html";
 
 /* the faults of one manifest's list, each said as the tool would refuse it; `read` returns a file's text or throws */
-export function manifestFaults(list, read) {
+export function manifestFaults(list, read, skipParked = false) {
   if (!Array.isArray(list) || !list.length) return ["holds no list of mutations"];
   const names = new Set(), faults = [];
   for (const m of list) {
+    /* 19 Oct 2026: an entry marked `parked` belongs to a section parked behind TIDE_OFF (test/tide-off.mjs), and its line was rewritten
+       to turn Tide off; it is passed over while the section is, and read like any other when Tide returns */
+    if (skipParked && m && typeof m.parked === "string") continue;
     if (!m || typeof m.name !== "string" || !m.name || names.has(m.name)) { faults.push("every mutation needs a name of its own: " + JSON.stringify(m && m.name)); continue; }
     names.add(m.name);
     let text;
@@ -42,7 +46,7 @@ export async function run({ ok, REPO }) {
   for (const f of manifests) {
     let list = null;
     try { list = JSON.parse(readFileSync(join(REPO, "test", f), "utf8")); } catch (e) { faults.push(f + ": " + e.message); continue; }
-    for (const why of manifestFaults(list, read)) faults.push(f + ": " + why);
+    for (const why of manifestFaults(list, read, TIDE_OFF)) faults.push(f + ": " + why);
   }
   ok(manifests.length >= 30 && !faults.length,
     "every mutation needle finds its line once, in " + manifests.length + " manifests: " + (faults.join(" | ") || "none"));
@@ -59,4 +63,11 @@ export async function run({ ok, REPO }) {
     && /name of its own: "stale"/.test(bad[5]) && !good.length && manifestFaults([], fake).length === 1 && manifestFaults(null, fake).length === 1,
     "the rule names a needle found nowhere or twice, one that changes nothing, a file that is not there and an entry with no name or a repeated one, and passes a sound list: "
     + JSON.stringify({ bad, good }));
+
+  /* a parked entry (19 Oct 2026): passed over only while its section is parked, and a stale needle all the same once Tide returns */
+  const parked = [{ name: "parked", file: "f.js", find: "three", replace: "3", parked: "Tide is off" }];
+  const whileOff = manifestFaults(parked, fake, true), whenBack = manifestFaults(parked, fake, false);
+  const unmarked = manifestFaults([{ name: "stale", file: "f.js", find: "three", replace: "3" }], fake, true);
+  ok(whileOff.length === 0 && whenBack.length === 1 && /parked: the needle occurs nowhere/.test(whenBack[0]) && unmarked.length === 1,
+    "an entry marked parked is passed over while Tide is off and is a stale needle once it is back, and an unmarked stale needle is a fault either way: " + JSON.stringify({ whileOff, whenBack, unmarked }));
 }

@@ -206,28 +206,32 @@ export async function run({ ok }) {
     /* a theme switch still rebuilds, even where every token is the same in both looks (so the config is too) */
     const STUB = ["salt-salt", "salt-brass", "salt-copper", "salt-verdigris", "salt-ember", "salt-steel", "salt-product-salt", "salt-mist-light", "salt-brass-soft",
       "salt-obsidian", "salt-slate", "salt-line-strong", "desk-chart-grid"];
+    /* Tide is off for now (#197, 19 Oct 2026): lookSet refuses it and the head script forces Night, but the page's theme still changes where saltLook sets
+       data-theme (the way a returning Tide will), so the change is driven so, and redrawn as lookSet redraws */
     const look = rd(`(function(){
+      var L=function(t){saltLook(t);lookRedraw();};
       var de=document.documentElement,hex=${JSON.stringify(STUB)};
       hex.forEach(function(k,i){de.style.setProperty('--'+k,'#0a0b'+(10+i).toString(16));});
       try{
-        lookSet('tide');CHART_KEEP.clear();window.__made.length=0;
+        L('tide');CHART_KEEP.clear();window.__made.length=0;
         switchTab('today');var first=__td().length;switchTab('money');switchTab('today');var again=__td().length;
-        lookSet('night');var night=__td().length;
+        L('night');var night=__td().length;
         var kinds=__td('tdKindChart');
         var cfgSame=kinds.length===2&&JSON.stringify(kinds[0].cfg)===JSON.stringify(kinds[1].cfg);
         return {first:first,again:again,night:night,cfgSame:cfgSame,theme:lookNow()};
-      }finally{hex.forEach(function(k){de.style.removeProperty('--'+k);});lookSet('tide');}})()`);
+      }finally{hex.forEach(function(k){de.style.removeProperty('--'+k);});L('night');}})()`);
     ok(look.first === 2 && look.again === 2 && look.night === 4 && look.cfgSame && look.theme === "night",
       "a theme switch rebuilds the charts of the part showing though both looks gave the same config: " + JSON.stringify(look));
 
     /* the tokens: read once a look, and the other look's values the moment it is chosen */
     const tok = rd(`(function(){
-      lookSet('tide');TOK=null;
+      var L=function(t){saltLook(t);lookRedraw();};
+      L('tide');TOK=null;
       var n=0,o=window.getComputedStyle;window.getComputedStyle=function(){n++;return o.apply(window,arguments);};
       var a,b,c;
       try{a=tcol('ink');tcol('ink');tcol('ink',0.5);tcol('brass');tcol('brass');}finally{window.getComputedStyle=o;}
       var reads=n;
-      var tide=tcol('ink');lookSet('night');var night=tcol('ink');lookSet('tide');var back=tcol('ink');
+      var tide=tcol('ink');L('night');var night=tcol('ink');L('tide');var back=tcol('ink');L('night');
       var de=document.documentElement;de.style.setProperty('--salt-salt','#123456');var stub=tcol('ink');de.style.removeProperty('--salt-salt');
       return {reads:reads,tide:tide,night:night,back:back,stub:stub,hue:typeof hue};})()`);
     ok(tok.reads === 2 && tok.tide && tok.night && tok.tide !== tok.night && tok.back === tok.tide && tok.stub === "#123456",

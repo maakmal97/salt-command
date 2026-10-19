@@ -31,9 +31,9 @@ export async function run({ ok }) {
       && d.querySelector(".panel").firstElementChild === mark
       && hs.join() === "h1" && d.querySelector("h1").textContent === W.EN[h] && d.querySelector("p.lead").textContent === W.EN[p] && d.title === W.EN[title],
       `${name} is the app's ring over its one heading and its line, with its own tab title: ` + JSON.stringify([hs, d.title]));
-    ok(/<html[^>]* data-theme="tide"/.test(html) && /translate="no"/.test(html) && /name="viewport"/.test(html) && /name="robots" content="noindex/.test(html) && !/<script/i.test(html)
+    ok(/<html[^>]* data-theme="night"/.test(html) && /translate="no"/.test(html) && /name="viewport"/.test(html) && /name="robots" content="noindex/.test(html) && !/<script/i.test(html)
       && /[.]appmark\{display:block/.test(html) && /url\(\/fonts\//.test(html) && !/https?:\/\//.test(html),
-      `${name} is Tide, kept from the translator and from search, with a viewport, the frame's own faces and spacing for the ring, no script and no address`);
+      `${name} is Night (Tide is off for now, 19 Oct 2026), kept from the translator and from search, with a viewport, the frame's own faces and spacing for the ring, no script and no address`);
     const words = visible(html), src = html.replace(/<style[\s\S]*?<\/style>/g, " ");
     ok(!O.wordsIn(words, O.PRODUCT_WORDS.concat(O.LEVEL_WORDS)).length && !O.siteWords(words) && !/salt|command|counter|desk/i.test(src)
       && !Object.values(PG.PSHAPE).some((s) => new RegExp("\\b" + s + "\\b", "i").test(words)),
