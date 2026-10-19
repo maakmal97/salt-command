@@ -1,5 +1,14 @@
 [
  {
+  "v": "v1177",
+  "d": "20 Oct 2026",
+  "t": "THE SHADOW BOOK IS PROVED TO RESTORE TO AN EARLIER FOLD",
+  "n": [
+   "<b>THE BOOK CAN BE PUT BACK AS IT STOOD AT AN EARLIER FOLD</b>, and that is now proved on a test copy of it, never on the live one: the test loads an earlier fold's book and the latest, restores to the first and reads it back against git there, then restores forward and reads it back again. It runs by hand from Actions (Book recovery test).",
+   "<b>EVERY FOLD NOW LOGS THE LIVE BOOK'S RESTORE POINT</b>, so a repair by hand lands exactly on a fold. Restoring the live Book has no button: it is a hand step, his yes first, written up in the desk's docs."
+  ]
+ },
+ {
   "v": "v1176",
   "d": "20 Oct 2026",
   "t": "ONE OIL PURCHASE FROM SP7-PUD, 50 UNIT",
