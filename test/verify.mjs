@@ -24085,7 +24085,7 @@ await (async () => {
   const pages = [["the door", await get("/")], ["the door with a username", await get("/?u=abcd-efgh")],
     ["a sign-in link", await get("/s/" + "a".repeat(24))], ["a guest board", await get("/g/" + open.id)],
     ["a shut link", await get("/g/zzzz-zzzz")], ["Salt Account", P.landingPage("", "n131", { master: "m131", accounts: [] })]];
-  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="tide"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
+  const root = /^<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="(?:night|tide)"><head><meta charset="utf-8"><meta name="google" content="notranslate">/;
   const off = pages.filter(([, h]) => !root.test(h)).map(([w, h]) => w + ": " + h.slice(0, 80));
   ok(pages.every(([, h]) => h.length > 1000) && !off.length,
     "every page says translate=no on its root and carries Google's notranslate, before anything else: " + JSON.stringify(off));

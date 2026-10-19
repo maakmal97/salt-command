@@ -10,6 +10,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { mutate } from "../tools/section.mjs";
+import { TIDE_OFF } from "./tide-off.mjs";
 
 const MASTER = "master/salt_command.html";
 
@@ -20,6 +21,7 @@ export function manifestFaults(list, read) {
   for (const m of list) {
     if (!m || typeof m.name !== "string" || !m.name || names.has(m.name)) { faults.push("every mutation needs a name of its own: " + JSON.stringify(m && m.name)); continue; }
     names.add(m.name);
+    if (TIDE_OFF && m.parked === "tide-off") continue;   /* 19 Oct 2026: a needle of a section parked while Tide is off; checked again when it returns */
     let text;
     try { text = read(m.file || MASTER); } catch (e) { faults.push(m.name + ": " + (m.file || MASTER) + " is not a file in this checkout"); continue; }
     try { mutate(text, m); } catch (e) { faults.push(e.message); }
