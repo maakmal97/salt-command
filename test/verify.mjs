@@ -41466,7 +41466,9 @@ await (async () => {
         /* S7 polish: Coming up's part is the Inbox row its orders are; F8, its mark and size a card, its size under the mark */
         coming: [...c.querySelectorAll(".salt-inbox-row")].map((r) => { const m = r.querySelector(":scope > .mtile");
           return [m ? t(m.querySelector(".sr")) + "|" + t(m.querySelector(".mq")) : ""].concat(["title", "what", "age", "action"].map((s) => t(r.querySelector(".salt-inbox-row__" + s)))); }),
-        marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c) };
+        marks: h.querySelectorAll("svg.psym").length + c.querySelectorAll("svg.psym").length, text: t(h) + " " + t(c),
+        /* 19 Oct 2026: the words spaced at every tag, the marks left out, so a whole-word scan finds a word alone in its element */
+        spaced: [h, c].map((e) => { const x = e.cloneNode(true); x.querySelectorAll("svg").forEach((s) => s.remove()); return x.innerHTML.replace(/<[^>]*>/g, " "); }).join(" ") };
     } finally { dom.window.close(); }
   };
   const part = (o) => Object.assign({ late: false, whole: o.rm, product: "salt", qty: 2.5, got: 2.5, resale: false }, o);
@@ -41492,7 +41494,7 @@ await (async () => {
   const age = (s) => s.slice(8) + " " + MON3[+s.slice(5, 7) - 1] + " " + s.slice(0, 4);
   ok(one.heads.join() === "Coming up" && one.coming.length === 1
     && one.coming[0].join("|") === "Cube 1 unit|1 unit||Due when you receive it|" + age(kl(-1)) + "|RM 110.00"
-    && one.marks === 2 && !/salt|oil|Gold|Silver/i.test(one.text),
+    && one.marks === 2 && !/\b(salt|oil|gold|silver)\b/i.test(one.spaced),
     "an order agreed and not yet handed over, with no order of theirs on the site for it, is Home's Coming up, drawn as a mark and never a word, and no Overdue list stands under To pay now: "
     + JSON.stringify([one.heads, one.coming]));
   const two = await open({ term: 3,
