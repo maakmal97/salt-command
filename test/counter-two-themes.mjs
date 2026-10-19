@@ -300,7 +300,7 @@ export async function run({ ok }) {
 
     /* 10. words: every one by key, English, no brand and no product word */
     const KEYS = ["look.h", "look.sheetH", "look.night", "look.tide", "look.note"];
-    ok(KEYS.every((k) => typeof W.EN[k] === "string" && W.EN[k].length > 0) && W.EN["look.night"] === "Night" && W.EN["look.tide"] === "Tide" && !KEYS.some((k) => /salt|counter|oil|candy|rice|bronze|silver|gold/i.test(W.EN[k])),
+    ok(KEYS.every((k) => typeof W.EN[k] === "string" && W.EN[k].length > 0) && W.EN["look.night"] === "Night" && W.EN["look.tide"] === "Tide" && !KEYS.some((k) => /\b(salt|counter|oil|candy|rice|bronze|silver|gold)\b/i.test(W.EN[k])),   /* 19 Oct 2026: whole words, so price is not rice */
       "the Sheet and the setting are worded by key, plainly, with no brand and no product word");
   } finally { for (const w of wins) { try { w.close(); } catch (e) { /* jsdom */ } } }
 }
