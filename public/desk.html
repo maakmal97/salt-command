@@ -87,7 +87,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="256d372f179fe684";
+var SALT_BUILD_ID="5e780fd701a70513";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -1918,7 +1918,7 @@ details.obs>summary{min-height:var(--tap);}
 .salt-eyebrow {
   font-family: var(--salt-font-mono);
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;   /* 500 until 20 Oct 2026: a section's name reads as a heading */
   letter-spacing: 0.24em;
   text-transform: uppercase;
   margin: 0;
@@ -2454,8 +2454,8 @@ details.obs>summary{min-height:var(--tap);}
 label.salt-field__label {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-weight: 600;       /* 500 and 0.14em until 20 Oct 2026 */
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
@@ -2523,7 +2523,8 @@ label.salt-field__label {
 .salt-options__legend--label {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
@@ -2930,6 +2931,66 @@ label.salt-field__label {
 .salt-tabs--arrows .salt-tabs__pill--active::before { background: var(--salt-brass); }
 .salt-tabs--arrows .salt-tabs__pill[aria-selected="true"]::after, .salt-tabs--arrows .salt-tabs__pill--active::after {
   background: linear-gradient(var(--salt-glass), var(--salt-glass)), var(--salt-obsidian);
+}
+
+/* ---- Segment (20 Oct 2026, his pick of three): one choice of two to six, a slider in place of a strip of pills. One
+   track holds the options as equal columns (--n), and a brass-edged thumb sits behind the chosen one (--i, from 0),
+   sliding 0.25s, not at all under reduced motion. The chosen option is read from ARIA (aria-selected for a tab,
+   aria-checked for a radio) or its class, as the Tab strip's is; the page sets --i in the same handler. Longer
+   choices (a dozen months) and the stage arrows stay strips. Each option is 44px tall. ---- */
+
+.salt-segment {
+  --n: 2;
+  --i: 0;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  background: var(--salt-panel);
+  border: 1px solid var(--salt-edge-field);
+  border-radius: var(--salt-radius-pill);
+  padding: 2px;
+}
+.salt-segment::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / var(--n));
+  box-sizing: border-box;
+  border: 1px solid var(--salt-brass);
+  border-radius: var(--salt-radius-pill);
+  background: linear-gradient(var(--salt-glass), var(--salt-glass)), var(--salt-panel);
+  transform: translateX(calc(100% * var(--i)));
+  transition: transform 0.25s ease;
+}
+.salt-segment__opt {
+  font-family: var(--salt-font-mono);
+  font-size: 0.71875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  background: transparent;
+  border: 0;
+  border-radius: var(--salt-radius-pill);
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.salt-segment__opt:hover { color: var(--salt-brass); }
+.salt-segment__opt--active, .salt-segment__opt[aria-selected="true"], .salt-segment__opt[aria-checked="true"],
+.salt-segment__opt--active:hover, .salt-segment__opt[aria-selected="true"]:hover, .salt-segment__opt[aria-checked="true"]:hover { color: var(--salt-salt); }
+.salt-segment__opt:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+.salt-segment__count { color: var(--salt-brass); margin-left: 6px; }   /* copper is 4.47:1 on Night's thumb */
+@media (prefers-reduced-motion: reduce) {
+  .salt-segment::before { transition: none; }
 }
 
 /* ---- Steps: where an order's GOODS are, and nothing else: Sent, Confirmed, Ready, then Collected or
@@ -4163,7 +4224,7 @@ details.rcard>summary .rname,.kpi .n,.appop .apact,
 h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spacing:.04em;line-height:1.1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;}
 /* the section label is an eyebrow: copper mono caps and a brass rule running out */
-h2{font-size:11.5px;font-weight:500;letter-spacing:.18em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
+h2{font-size:11.5px;font-weight:600;letter-spacing:.18em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
 h2 .rule{min-width:16px;}
 h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent);}
 /* v684: from 860px, not 560px, because a desktop's rail stands beside the page there and a
@@ -4351,7 +4412,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 /* ---- 8. FIELDS: the material is the system's .salt-fields on the body (the well, the hairline, the ink,
    the brass focus ring, the placeholder, the option colours); this layer keeps only what is the desk's own:
    the labels, the answer box and its states ---- */
-.qfield label{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
+.qfield label{font-size:11px;font-weight:600;letter-spacing:.18em;color:var(--salt-copper);}
 /* fields with no inner padding of their own (the drift box, the map's two dates) sat their text on the edge, which
    the recipe's brass edge made plain (09 Oct 2026): 10px in, as the other fields */
 .mapfrom,.mapto,input[id^="driftIn_"]{padding-left:10px;}
@@ -4492,7 +4553,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .lcol.ctot .lof,.lcol.cqty .lof{margin-left:4px;}
 .lcol.ctot .lwas,.lcol.cqty .lwas{margin-top:1px;opacity:.8;}
 .lmove .lcol.ctot,.lmove .lcol.cqty{gap:0;}   /* a trail line carries one figure; nothing to space */
-.lclabel{font-weight:500;letter-spacing:.14em;}
+.lclabel{font-weight:600;letter-spacing:.18em;}   /* 600 and .18em, as the field label, since 20 Oct 2026 */
 .lclabel.roleopen{color:var(--salt-product-salt);}
 .lclabel.roleclose{color:var(--salt-verdigris);}
 .submar{color:var(--salt-verdigris);font-weight:500;}

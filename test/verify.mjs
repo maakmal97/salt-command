@@ -48224,6 +48224,11 @@ await (async () => {
   await (await import("./counter-b-bar.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Batch C: section and field labels at 600, fields at 0.18em, from salt-ds through the Desk and the Counter (P1)");
+await (async () => {
+  await (await import("./counter-c-labels.mjs")).run({ ok });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });

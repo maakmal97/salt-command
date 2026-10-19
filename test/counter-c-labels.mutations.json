@@ -1,0 +1,10 @@
+[
+ {"name":"the eyebrow back at 500","file":"design/salt-ds.css","find":"  font-size: 0.75rem;\n  font-weight: 600;   /* 500 until 20 Oct 2026: a section's name reads as a heading */","replace":"  font-size: 0.75rem;\n  font-weight: 500;"},
+ {"name":"the field label back at 0.14em","file":"design/salt-ds.css","find":"  font-weight: 600;       /* 500 and 0.14em until 20 Oct 2026 */\n  letter-spacing: 0.18em;","replace":"  font-weight: 600;\n  letter-spacing: 0.14em;"},
+ {"name":"the legend back at 500","file":"design/salt-ds.css","find":"  font-size: var(--salt-text-xs);\n  font-weight: 600;\n  letter-spacing: 0.18em;\n  text-transform: uppercase;\n  color: var(--salt-copper);\n}","replace":"  font-size: var(--salt-text-xs);\n  font-weight: 500;\n  letter-spacing: 0.18em;\n  text-transform: uppercase;\n  color: var(--salt-copper);\n}"},
+ {"name":"the Counter's field label back at 500","file":"stmt/statement-css.js","find":"label.salt-field__label {\\n  font-family: var(--salt-font-mono);\\n  font-size: var(--salt-text-xs);\\n  font-weight: 600;","replace":"label.salt-field__label {\\n  font-family: var(--salt-font-mono);\\n  font-size: var(--salt-text-xs);\\n  font-weight: 500;"},
+ {"name":"the Desk's h2 back at 500","file":"design/desk.css","find":"h2{font-size:11.5px;font-weight:600;","replace":"h2{font-size:11.5px;font-weight:500;"},
+ {"name":"the answer-box label back at 0.14em","file":"design/desk.css","find":".qfield label{font-size:11px;font-weight:600;letter-spacing:.18em;","replace":".qfield label{font-size:11px;font-weight:600;letter-spacing:.14em;"},
+ {"name":"the ledger column label back at 500","file":"design/desk.css","find":".lclabel{font-weight:600;","replace":".lclabel{font-weight:500;"},
+ {"name":"the master's DESIGN block stale","file":"master/salt_command.html","find":"h2{font-size:11.5px;font-weight:600;","replace":"h2{font-size:11.5px;font-weight:500;"}
+]

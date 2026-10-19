@@ -77,7 +77,7 @@ details.rcard>summary .rname,.kpi .n,.appop .apact,
 h1,.byecard h1{font-family:var(--salt-font-display);font-weight:300;letter-spacing:.04em;line-height:1.1;
   background:var(--salt-gradient-title);-webkit-background-clip:text;background-clip:text;color:transparent;}
 /* the section label is an eyebrow: copper mono caps and a brass rule running out */
-h2{font-size:11.5px;font-weight:500;letter-spacing:.18em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
+h2{font-size:11.5px;font-weight:600;letter-spacing:.18em;color:var(--salt-copper);margin:30px 0 12px;white-space:nowrap;}
 h2 .rule{min-width:16px;}
 h2 .rule{opacity:1;background:linear-gradient(90deg,var(--salt-line),transparent);}
 /* v684: from 860px, not 560px, because a desktop's rail stands beside the page there and a
@@ -265,7 +265,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 /* ---- 8. FIELDS: the material is the system's .salt-fields on the body (the well, the hairline, the ink,
    the brass focus ring, the placeholder, the option colours); this layer keeps only what is the desk's own:
    the labels, the answer box and its states ---- */
-.qfield label{font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--salt-copper);}
+.qfield label{font-size:11px;font-weight:600;letter-spacing:.18em;color:var(--salt-copper);}
 /* fields with no inner padding of their own (the drift box, the map's two dates) sat their text on the edge, which
    the recipe's brass edge made plain (09 Oct 2026): 10px in, as the other fields */
 .mapfrom,.mapto,input[id^="driftIn_"]{padding-left:10px;}
@@ -406,7 +406,7 @@ details.rcard>summary .rname{font-size:16px;font-weight:500;}
 .lcol.ctot .lof,.lcol.cqty .lof{margin-left:4px;}
 .lcol.ctot .lwas,.lcol.cqty .lwas{margin-top:1px;opacity:.8;}
 .lmove .lcol.ctot,.lmove .lcol.cqty{gap:0;}   /* a trail line carries one figure; nothing to space */
-.lclabel{font-weight:500;letter-spacing:.14em;}
+.lclabel{font-weight:600;letter-spacing:.18em;}   /* 600 and .18em, as the field label, since 20 Oct 2026 */
 .lclabel.roleopen{color:var(--salt-product-salt);}
 .lclabel.roleclose{color:var(--salt-verdigris);}
 .submar{color:var(--salt-verdigris);font-weight:500;}

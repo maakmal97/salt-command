@@ -354,7 +354,7 @@
 .salt-eyebrow {
   font-family: var(--salt-font-mono);
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;   /* 500 until 20 Oct 2026: a section's name reads as a heading */
   letter-spacing: 0.24em;
   text-transform: uppercase;
   margin: 0;
@@ -890,8 +890,8 @@
 label.salt-field__label {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  font-weight: 600;       /* 500 and 0.14em until 20 Oct 2026 */
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
@@ -959,7 +959,8 @@ label.salt-field__label {
 .salt-options__legend--label {
   font-family: var(--salt-font-mono);
   font-size: var(--salt-text-xs);
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--salt-copper);
 }
@@ -1366,6 +1367,66 @@ label.salt-field__label {
 .salt-tabs--arrows .salt-tabs__pill--active::before { background: var(--salt-brass); }
 .salt-tabs--arrows .salt-tabs__pill[aria-selected="true"]::after, .salt-tabs--arrows .salt-tabs__pill--active::after {
   background: linear-gradient(var(--salt-glass), var(--salt-glass)), var(--salt-obsidian);
+}
+
+/* ---- Segment (20 Oct 2026, his pick of three): one choice of two to six, a slider in place of a strip of pills. One
+   track holds the options as equal columns (--n), and a brass-edged thumb sits behind the chosen one (--i, from 0),
+   sliding 0.25s, not at all under reduced motion. The chosen option is read from ARIA (aria-selected for a tab,
+   aria-checked for a radio) or its class, as the Tab strip's is; the page sets --i in the same handler. Longer
+   choices (a dozen months) and the stage arrows stay strips. Each option is 44px tall. ---- */
+
+.salt-segment {
+  --n: 2;
+  --i: 0;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  background: var(--salt-panel);
+  border: 1px solid var(--salt-edge-field);
+  border-radius: var(--salt-radius-pill);
+  padding: 2px;
+}
+.salt-segment::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc((100% - 4px) / var(--n));
+  box-sizing: border-box;
+  border: 1px solid var(--salt-brass);
+  border-radius: var(--salt-radius-pill);
+  background: linear-gradient(var(--salt-glass), var(--salt-glass)), var(--salt-panel);
+  transform: translateX(calc(100% * var(--i)));
+  transition: transform 0.25s ease;
+}
+.salt-segment__opt {
+  font-family: var(--salt-font-mono);
+  font-size: 0.71875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--salt-mist);
+  background: transparent;
+  border: 0;
+  border-radius: var(--salt-radius-pill);
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.salt-segment__opt:hover { color: var(--salt-brass); }
+.salt-segment__opt--active, .salt-segment__opt[aria-selected="true"], .salt-segment__opt[aria-checked="true"],
+.salt-segment__opt--active:hover, .salt-segment__opt[aria-selected="true"]:hover, .salt-segment__opt[aria-checked="true"]:hover { color: var(--salt-salt); }
+.salt-segment__opt:focus-visible { outline: 2px solid var(--salt-brass); outline-offset: -2px; }
+.salt-segment__count { color: var(--salt-brass); margin-left: 6px; }   /* copper is 4.47:1 on Night's thumb */
+@media (prefers-reduced-motion: reduce) {
+  .salt-segment::before { transition: none; }
 }
 
 /* ---- Steps: where an order's GOODS are, and nothing else: Sent, Confirmed, Ready, then Collected or
