@@ -57,7 +57,7 @@ import { takeSlip, keepSlip, slipTooBig, slipPub, readSlip, SLIP_ID_RE } from ".
 import { payNumbers } from "./paynum.js";
 import { payDown, liveAccounts } from "./paystate.js";
 import { takePin, keepPin, readPin } from "./pin.js";
-import { handleMaker, publicHours, customerAmend, takeNudge } from "./maker.js";
+import { handleMaker, publicHours, customerAmend, takeNudge, fileConfirm } from "./maker.js";
 import { TEST_USER, TEST_PASS, TESTS, TEST_USERS, isTest, fixKey, accountRecord, withExamples, examplesRefs, exampleBulletin, examplePaynum, isExample,
   exampleMove, exampleReplace, exampleClaim, exampleMint, exampleRevoke, exampleThread, exampleSay, exampleDeskSay, examplePools, exampleJoin, examplePlace, exampleReset } from "./testfix.js";
 /* S10 (D10): the site's one Durable Object is exported from the main module, which is where the binding in
@@ -2073,6 +2073,10 @@ const worker = {
           catch (e) { console.log("orderbook check FAILED: " + String((e && e.stack) || e)); }
         }
         const now = new Date(event && event.scheduledTime ? event.scheduledTime : Date.now());
+        /* Counter Batch C: the confirm time, measured every hour, overnight too, in its own try BEFORE the chase's slot return,
+           so a bad schedule (hoursStatus throws) never skips the chase and the chase's hours never skip the measure */
+        try { await fileConfirm(env, now); }
+        catch (e) { console.log("confirm FAILED: " + String((e && e.stack) || e)); }
         const slot = chaseSlot(now);
         if (slot === null) return;
         let woke = 0, held = 0, quiet = 0;

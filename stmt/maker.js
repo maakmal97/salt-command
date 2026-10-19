@@ -2,6 +2,7 @@ import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools
 import { accountRecord, exampleAccount, examplePlace, examplePools, exampleThread, exampleDeskSay, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
+import { CONFIRM_KEY, confirmWithin, confirmView } from "./confirm.js";
 
 const OWNER_EMAIL = "maakmal97@icloud.com";
 const HEADERS = {
@@ -740,12 +741,26 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
 
 export async function publicHours(env) {
   const value = env.STMT ? await env.STMT.get(HOURS_KEY, "json") : null;
-  if (!value) return Object.assign(hoursStatus(null), { config: windowHours(null) });
+  if (!value) return Object.assign(hoursStatus(null), { config: windowHours(null) }, await confirmOf(env));
   if (value.schedule != null) {
     const valid = validateWeeklyHours(value.schedule);
     if (valid.error) throw new TypeError("Stored operating hours are invalid: " + valid.error);
   }
   /* 10 Oct 2026: and the hours themselves, the weekly days and a manual override, so the order sheet offers the delivery
      windows the Worker takes (stmt/window.js): opening hours, which the page said in words already */
-  return Object.assign(hoursStatus(value), { config: windowHours(value) });
+  return Object.assign(hoursStatus(value), { config: windowHours(value) }, await confirmOf(env));
+}
+/* Counter Batch C (20 Oct 2026): the measured confirm time, {mins, n} and nothing else, while the cron's figure is fresh */
+async function confirmOf(env) {
+  try { const c = confirmView(env.STMT ? await env.STMT.get(CONFIRM_KEY, "json") : null); return c ? { confirm: c } : {}; }
+  catch (e) { return {}; }
+}
+/** The hourly cron's measure: every order (cancelled ones too, for a replacement's root) on the weekly hours as they stand,
+ *  filed at KV confirm:within as {mins, n, at}, or {n: 0, at} under ten. */
+export async function fileConfirm(env, now = new Date()) {
+  const hours = (await env.STMT.get(HOURS_KEY, "json")) || {};
+  const v = confirmWithin(await allOrders(env, true), hours);
+  const rec = Object.assign(v || { n: 0 }, { at: now.toISOString() });
+  await env.STMT.put(CONFIRM_KEY, JSON.stringify(rec));
+  return rec;
 }

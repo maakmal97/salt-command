@@ -48239,6 +48239,11 @@ await (async () => {
   await (await import("./counter-c-counter-slider.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Batch C: the confirm time measured, the median of his last 30 Accepts in Counter hours up to the quarter hour, filed hourly and carried on /hours (P3)");
+await (async () => {
+  await (await import("./counter-c-confirm.mjs")).run({ ok });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });
