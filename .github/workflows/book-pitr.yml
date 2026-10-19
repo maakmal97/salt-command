@@ -1,0 +1,35 @@
+# THE BOOK'S POINT-IN-TIME RECOVERY TEST (S2c of the Book plan, 20 Oct 2026). Dispatched by hand, never on a push or a clock.
+# It loads an earlier fold's book and the tip's into the Book's TEST object (never the live Book), restores the object to the
+# first and forward to the second, each read back against git, and reads the live Book's window. tools/book-pitr.mjs.
+name: Book recovery test
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "The earlier commit to restore to (blank: the newest fold whose book differs from the tip's)"
+        required: false
+        default: ""
+permissions:
+  contents: read
+concurrency:
+  group: book-pitr
+  cancel-in-progress: false
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 200
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+      - name: Restore the test Book and read it back against git
+        env:
+          SALT_BOOK_KEY: ${{ secrets.SALT_BOOK_KEY }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          FROM: ${{ inputs.from }}
+        run: |
+          if [ -n "$FROM" ]; then node tools/book-pitr.mjs --from "$FROM"; else node tools/book-pitr.mjs; fi

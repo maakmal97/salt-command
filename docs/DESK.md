@@ -600,3 +600,25 @@ charges today's ladder to each order's month, so a change of ladder restates the
 - The publish (`tools/book.mjs` `supplySnapshot`, `tools/pricelist.mjs` `supplyLights`) seals `{light, by}` on each product of every customer's list, outside the digest. A date set shows at the next publish, within the hour.
 - **A light turning wakes the Desk once** (19 Oct 2026, `tools/stmt-publish.mjs` `stockWake`): the publish keeps the lights it sealed in the Counter's KV `stocklights` (`{<book>: light}`, in the same bulk put) and, when a book turns yellow or red from a better colour, posts `{"tag":"stock"}` to the Desk's `/push/send` with CI's `SALT_PUSH_KEY` and the Access headers, after the put. A light that holds or gets better, and a book the last publish did not light (a first run, an unread store), posts nothing; no key posts nothing; a failed post is a line in the log. No book, code or figure travels.
 - The Counter draws a coloured border on the book's mark (verdigris, amber, ember; amber is the design system's warning token, since brass is the mark's own colour and the focus colour) with Available, Limited or Out for now in its name, and "More by DD Mon" under it on yellow or red.
+
+## The Book: recovery (S2c, 20 Oct 2026)
+
+The Book (`src/book.js`) is a SQLite Durable Object, and the platform keeps 30 days of its history: a bookmark names a point,
+`onNextSessionRestoreBookmark` arms it, and the next start (after `abort`) opens the storage as it stood there. The arm hands back
+an undo bookmark, so a restore can itself be undone. Recovery is per object: one object's history cannot be put into another.
+
+- **The proof runs on the TEST object** (`PITR_NAME`, `book-pitr-test`), of the same class and namespace, never on the live Book.
+  `.github/workflows/book-pitr.yml` (Book recovery test), dispatched by hand, runs `tools/book-pitr.mjs`: it loads the book at an
+  earlier fold (A, the newest whose book differs from the tip's, or `from`) and the tip's (B), restores to A and reads it back
+  against git at A, restores forward to B and reads it back, clears the test object whatever happened, then reads the live Book's
+  window. The object answers a recovery verb only when its own id is the test name's, and the Worker's `POST /book/pitr` names
+  the test object and nothing else. Its line carries short shas and counts, never a bookmark or a row.
+- **Every fold's log carries the live Book's restore point**: the chain's Load step ends `restore point <bookmark>`, the bookmark
+  taken after the load is synced, so a restore lands on a fold. `getBookmarkForTime` is approximate; use the fold's.
+- **Restoring the LIVE Book has no route, by design.** It is a hand step and his yes first (one line: restore the live Book to the
+  fold of <date>, reversible by its undo bookmark). Add two one-off owner-only verbs on the live object, called seconds apart: `arm`, which
+  arms the chosen restore point and answers the undo bookmark (keep it: it is the way back), then `restart`, which aborts the
+  object, so its own answer is lost. An armed restore also lands on the next eviction, so never leave an arm standing without
+  its restart. Deploy, call the two, read the Book back with the next `node tools/book-load.mjs`
+  (its parity against git at that fold), then remove the verb in the next version. Until S5 git is the source, so the simpler
+  repair is the load itself: the next fold, or `tools/book-load.mjs` from a checkout, puts the live Book level with git.

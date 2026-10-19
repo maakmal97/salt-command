@@ -30,9 +30,22 @@
  * the counts say 0, no stamp moves. The hashes are taken BEFORE the transaction (crypto.subtle is async, and nothing may be
  * awaited inside it). The chain runs one at a time (its concurrency group), so loads arrive in order.
  *
+ * RECOVERY (S2c, 20 Oct 2026). The platform keeps 30 days of this object's history and restores it to a bookmark: arm the
+ * bookmark, abort, and the next start opens the storage as it stood there. That is proved on a SECOND object of this class,
+ * PITR_NAME, never on the live Book: the `pitr` verbs answer only on the object whose id IS the test name's (an allowlist, so the
+ * live Book and any third name are refused), and the Worker's route names the test object and nothing else (tools/book-pitr.mjs
+ * loads the book at an earlier fold, then the tip, restores to the first and back to the second, each read back against git by
+ * book-load's own hand). The live Book is only READ for it: `/window` says whether its first load is still in the platform's
+ * reach, and each load answers its exact bookmark, which the fold's log keeps, so a restore by hand lands on a fold and not near
+ * one. Restoring the live Book has no route: docs/DESK.md, "The Book: recovery", is the hand step, his yes first.
+ *
  * A PLAIN CLASS WITH fetch(), like stmt/orderbook.js: nothing here imports from stmt/ and the suite drives it over node:sqlite.
  */
 export const BOOK_NAME = "book";
+export const PITR_NAME = "book-pitr-test";
+/* the platform's bookmarks are "mostly alphanumeric" with dashes, about 61 characters */
+export const BOOKMARK_RE = /^[0-9a-zA-Z-]{16,128}$/;
+const DAY = 86400000;
 export const MAX_LOAD_BYTES = 8 * 1024 * 1024;
 
 const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -78,7 +91,12 @@ export class Book {
     this.state = state;
     this.env = env;
     this.clock = () => new Date().toISOString();
-    const sql = state.storage.sql;
+    this.schema();
+  }
+
+  /* the three tables; again after the test's deleteAll, which drops the whole database, tables included */
+  schema() {
+    const sql = this.state.storage.sql;
     sql.exec("CREATE TABLE IF NOT EXISTS rows (coll TEXT NOT NULL, key TEXT NOT NULL, doc TEXT NOT NULL, h TEXT NOT NULL, booked_at TEXT NOT NULL, revised_at TEXT, gone_at TEXT, PRIMARY KEY (coll, key))");
     sql.exec("CREATE TABLE IF NOT EXISTS state (k TEXT PRIMARY KEY, doc TEXT NOT NULL, h TEXT NOT NULL, booked_at TEXT NOT NULL, revised_at TEXT)");
     sql.exec("CREATE TABLE IF NOT EXISTS loads (seq INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, rev TEXT, digest TEXT NOT NULL, added INTEGER NOT NULL, revised INTEGER NOT NULL, gone INTEGER NOT NULL, returned INTEGER NOT NULL, rows INTEGER NOT NULL)");
@@ -128,16 +146,84 @@ export class Book {
     return { rows, state };
   }
 
-  /* The route's one verb. Cost is in the request, never in the answer: counts and a digest only. */
+  /* S2c: the exact point after what was just written. sync() first, so the bookmark cannot sit before a load still held behind the
+     output gate. null where the storage keeps no history (the suite's plain harness). */
+  async mark() {
+    const s = this.state.storage;
+    if (typeof s.getCurrentBookmark !== "function") return null;
+    await s.sync();
+    return s.getCurrentBookmark();
+  }
+
+  /* the load, its read-back and its bookmark as one piece: no other request may land between them while the hashes are awaited */
+  held(p, rev) {
+    return this.state.blockConcurrencyWhile(async () => { const r = this.load(p, rev); return { ...r, readback: await this.readback(), bookmark: await this.mark() }; });
+  }
+
+  /* S2c: only the test object answers a recovery verb. An allowlist on its id, failing closed when the namespace is not to hand. */
+  isTest() {
+    const ns = this.env && this.env.BOOK, id = this.state.id;
+    if (!ns || typeof ns.idFromName !== "function" || !id || typeof id.equals !== "function") return false;
+    return id.equals(ns.idFromName(PITR_NAME));
+  }
+
+  /* S2c, READ ONLY on any object: whether the first load is still inside the platform's 30 days (29, to keep off the edge).
+     Counts, two times and a verdict; nothing is armed. A load's `at` is taken a moment before its commit, and the platform refuses
+     a time before the database existed ("Requested time is before this database existed", live, 20 Oct 2026), so the first load
+     is read a minute after its stamp; loads are hours apart. A refusal is answered, never thrown. */
+  async window() {
+    const s = this.state.storage;
+    const w = s.sql.exec("SELECT MIN(at) AS first, COUNT(*) AS n FROM loads").toArray()[0];
+    if (!w.n || typeof s.getBookmarkForTime !== "function") return { ok: true, loads: w.n, reachable: false };
+    const first = Date.parse(w.first);
+    if (!Number.isFinite(first)) return { ok: true, loads: w.n, reachable: false };
+    const floor = Date.now() - 29 * DAY, since = first + 60000 >= floor ? "first" : "29 days";
+    const from = Math.max(first + 60000, floor);
+    try {
+      const then = await s.getBookmarkForTime(from), now = await s.getCurrentBookmark();
+      return { ok: true, loads: w.n, first: w.first, from: new Date(from).toISOString(), since,
+        reachable: typeof then === "string" && BOOKMARK_RE.test(then) && then <= now };
+    } catch (e) { return { ok: false, loads: w.n, first: w.first, error: String((e && e.message) || e).slice(0, 200) }; }
+  }
+
+  /* S2c: THE RECOVERY TEST'S VERBS, on the test object alone (see the header). `restart` aborts the object, so its own answer
+     rarely arrives: the Worker's route answers for it. */
+  async pitr(text) {
+    if (!this.isTest()) return Response.json({ ok: false, error: "the recovery test runs on the test object alone, never the live Book" }, { status: 403 });
+    let body;
+    try { body = JSON.parse(text); } catch (e) { return Response.json({ ok: false, error: "not JSON" }, { status: 400 }); }
+    const s = this.state.storage, verb = body && body.verb;
+    if (verb === "clear") { await s.deleteAll(); this.schema(); return Response.json({ ok: true, cleared: true }); }
+    if (verb === "load") {
+      let p;
+      try { p = await prepare(body.book, body.pricing); } catch (e) { return Response.json({ ok: false, error: String((e && e.message) || e) }, { status: 400 }); }
+      return Response.json(await this.held(p, body.rev));
+    }
+    if (verb === "arm") {
+      const bm = String(body.bookmark || "");
+      if (!BOOKMARK_RE.test(bm)) return Response.json({ ok: false, error: "not a bookmark" }, { status: 400 });
+      return Response.json({ ok: true, undo: await s.onNextSessionRestoreBookmark(bm) });
+    }
+    if (verb === "restart") { this.state.abort("the recovery test restarts the test object"); return Response.json({ ok: true, restarted: true }); }
+    if (verb === "readback") {
+      const loads = s.sql.exec("SELECT COUNT(*) AS c FROM loads").toArray()[0].c;
+      return Response.json({ ok: true, loads, readback: await this.readback(), bookmark: await this.mark() });
+    }
+    return Response.json({ ok: false, error: "no such verb" }, { status: 400 });
+  }
+
+  /* The routes. Cost is in the request, never in the answer: counts, digests and bookmarks only. */
   async fetch(request) {
     const url = new URL(request.url);
-    if (url.pathname !== "/load" || request.method !== "POST") return Response.json({ ok: false, error: "not found" }, { status: 404 });
+    if (url.pathname === "/window" && request.method === "GET") return Response.json(await this.window());
+    const isLoad = url.pathname === "/load" && request.method === "POST", isPitr = url.pathname === "/pitr" && request.method === "POST";
+    if (!isLoad && !isPitr) return Response.json({ ok: false, error: "not found" }, { status: 404 });
     const text = await request.text();
     if (text.length > MAX_LOAD_BYTES) return Response.json({ ok: false, error: "the load is too large" }, { status: 413 });
+    if (isPitr) return this.pitr(text);
     let body, p;
     try { body = JSON.parse(text); p = await prepare(body && body.book, body && body.pricing); }
     catch (e) { return Response.json({ ok: false, error: String((e && e.message) || e) }, { status: 400 }); }
-    /* the load and its read-back as one piece: no other request may land between them while the hashes are awaited */
-    return Response.json(await this.state.blockConcurrencyWhile(async () => { const r = this.load(p, body.rev); return { ...r, readback: await this.readback() }; }));
+    return Response.json(await this.held(p, body.rev));
   }
 }
