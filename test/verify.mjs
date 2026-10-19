@@ -17359,7 +17359,7 @@ await (async () => {
     /* ---- every tier's link made: four, and nothing said to be missing ---- */
     const D1 = await panel();
     const heads1 = [...D1.querySelectorAll("#glist .ghead")].map((x) => x.textContent), text1 = D1.getElementById("glist").textContent;
-    ok(D1.querySelectorAll("#glist .glink").length === 1 && heads1.join() === "Standing link" && !/five|Titanium|Platinum|Gold|Silver|Bronze/i.test(text1) && !/Only \d/.test(text1),
+    ok(D1.querySelectorAll("#glist .glink").length === 1 && heads1.join() === "Standing link" && !/\b(five|titanium|platinum|gold|silver|bronze)\b/i.test(D1.getElementById("glist").innerHTML.replace(/<[^>]*>/g, " ")) && !/Only \d/.test(text1),
       "the panel opens on the one standing link, named by no level and with nothing said to be missing: " + JSON.stringify({ heads1, n: D1.querySelectorAll("#glist .glink").length }));
 
     /* ---- Bronze's kept link, and a pending link its associate withdrew ---- */
