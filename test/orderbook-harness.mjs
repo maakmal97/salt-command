@@ -33,7 +33,8 @@ export function objectState() {
     async getAlarm() { return alarm; },
     async deleteAlarm() { alarm = null; }
   };
-  return { storage, db, alarmAt: () => alarm, clearAlarm: () => { alarm = null; } };
+  /* the platform holds other requests off while fn runs; one test request at a time needs nothing more */
+  return { storage, db, blockConcurrencyWhile: async (fn) => fn(), alarmAt: () => alarm, clearAlarm: () => { alarm = null; } };
 }
 
 /** An ORDERBOOK namespace over one fresh object. `env` is what the object is constructed with. The object

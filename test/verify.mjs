@@ -51224,7 +51224,7 @@ await (async () => {
   ok(refused === 4, "a load with no sales or no purchases is refused, so a bad file cannot mark the whole book gone");
   const via = await bd.b.fetch(new Request("https://book/load", { method: "POST", body: JSON.stringify({ rev: "x", book: frozen, pricing }) }));
   const viaText = await via.text();
-  ok(via.status === 200 && JSON.parse(viaText).ok && !viaText.includes("cost") && viaText.length < 600
+  ok(via.status === 200 && JSON.parse(viaText).ok && !viaText.includes("cost") && viaText.length < 4000
     && (await bd.b.fetch(new Request("https://book/load", { method: "POST", body: "{" }))).status === 400
     && (await bd.b.fetch(new Request("https://book/rows"))).status === 404,
     "the object answers counts and a digest, never a row or a cost; bad input is 400 and any other path 404");
@@ -51273,6 +51273,99 @@ await (async () => {
   ok(at > wf.indexOf("- name: Re-seed the mirror") && at < wf.indexOf("- name: Deploy the statements site")
     && /continue-on-error: true/.test(stepText) && /steps\.plan\.outputs\.deploy == '1'/.test(stepText) && /node tools\/book-load\.mjs/.test(stepText),
     "the chain loads the Book after the D1 re-seed, only on a deploy, and a failed load never blocks the fold");
+})();
+
+section("Book S2b: the Book reads back what it holds and agrees with git, and any difference is named (20 Oct 2026)");
+await (async () => {
+  /* Each assertion is proved red by its own mutation (test/book-s2b.mutations.json). The read-back comes out of the object's own
+     SQLite and git's side is worked by tools/book-load.mjs's own hand, so the check is not one input compared with itself. */
+  const { Book, canon } = await import("../src/book.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const BL = await import("../tools/book-load.mjs");
+  const frozen = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
+  const pricing = { v: "vS2b", floors: { salt: { 1: 60 } }, sizes: [0.5, 1] };
+  const fresh = () => { const os = H.objectState(); let held = 0; os.blockConcurrencyWhile = async (fn) => { held++; return fn(); }; return { os, b: new Book(os, {}), held: () => held }; };
+  const loadVia = async (b, book, pr = pricing) => (await b.fetch(new Request("https://book/load", { method: "POST", body: JSON.stringify({ rev: "r", book, pricing: pr }) }))).json();
+  const par = (book, res, pr = pricing) => BL.compare(BL.expected(book, pr), res.readback);
+  const arrays = Object.keys(frozen).filter((k) => Array.isArray(frozen[k]) && frozen[k].length);
+  const docsTotal = Object.keys(frozen).filter((k) => !Array.isArray(frozen[k])).length + 1;
+
+  const A = fresh();
+  const r1 = await loadVia(A.b, frozen);
+  const p1 = par(frozen, r1);
+  ok(r1.ok && p1.ok && p1.colls === arrays.length && p1.docs === docsTotal && p1.rows === r1.rows,
+    "a load reads back what git holds: every collection and every document agree (" + p1.differ.join(", ") + ")");
+  ok(r1.docs === docsTotal && r1.added === r1.rows + r1.docs,
+    "the answer counts the documents beside the rows, and booked is the two together, which is S2a's 433 rows and 450 booked");
+  ok(A.held() === 1, "the load and its read-back run as one piece, no other request between them");
+
+  let same = true;
+  for (const k of Object.keys(frozen)) for (const x of (Array.isArray(frozen[k]) ? frozen[k] : [frozen[k]])) if (BL.canonical(x) !== canon(x)) same = false;
+  ok(same && BL.canonical(pricing) === canon(pricing), "git's side and the Book spell every row and document the same, so a red is a parity fault and not a spelling one");
+
+  const leaves = [];
+  for (const [k, v] of Object.entries(r1.readback.rows)) leaves.push([k, v.n, v.digest]);
+  for (const [k, v] of Object.entries(r1.readback.state)) leaves.push([k, 0, v]);
+  const names = new Set([...Object.keys(frozen), "PRICING"]);
+  const text = JSON.stringify(r1);
+  ok(leaves.length && leaves.every(([k, n, d]) => names.has(k) && Number.isInteger(n) && /^[0-9a-f]{16}$/.test(d))
+    && Object.keys(r1.readback).join() === "rows,state" && !text.includes(frozen.sales[0].rid) && !text.includes("cost"),
+    "the read-back is names, counts and 16-hex digests only: no row, no value, no rid, so the public log carries nothing new");
+
+  const B = fresh();
+  await loadVia(B.b, frozen);
+  const rid = frozen.sales[0].rid;
+  B.os.db.prepare("UPDATE rows SET doc = ? WHERE coll = 'sales' AND key = ?").run(canon({ ...frozen.sales[0], total: 1 }), "r:" + rid);
+  const pb = par(frozen, { readback: await B.b.readback() });
+  ok(!pb.ok && pb.differ.join() === "sales (" + frozen.sales.length + " rows, other content)",
+    "a row the store mangled is caught from its stored content, not its stored hash: " + pb.differ.join(", "));
+
+  const C = fresh();
+  const extra = structuredClone(frozen);
+  extra.sales.push({ ...structuredClone(frozen.sales[0]), rid: "s9999" });
+  await loadVia(C.b, extra);
+  const rc = await loadVia(C.b, frozen);
+  ok(rc.gone === 1 && par(frozen, rc).ok, "a row the book dropped is kept as gone and left out of the read-back");
+
+  const D = fresh();
+  await loadVia(D.b, frozen);
+  D.os.db.prepare("DELETE FROM rows WHERE coll = 'sales' AND key = ?").run("r:" + rid);
+  const pd = par(frozen, { readback: await D.b.readback() });
+  ok(pd.differ.join() === "sales (git " + frozen.sales.length + " rows, Book " + (frozen.sales.length - 1) + ")",
+    "a missing row is named with both counts: " + pd.differ.join(", "));
+
+  const E = fresh();
+  await loadVia(E.b, frozen);
+  E.os.db.prepare("DELETE FROM state WHERE k = 'NOTES'").run();
+  E.os.db.prepare("INSERT INTO state (k, doc, h, booked_at) VALUES ('ZZ', '1', 'x', 'x')").run();
+  const pe = par(frozen, { readback: await E.b.readback() });
+  ok(pe.differ.includes("NOTES (not in the Book)") && pe.differ.includes("ZZ (only in the Book)"),
+    "a document missing from the Book, and one only the Book holds, are both named: " + pe.differ.join(", "));
+
+  const F = fresh();
+  await loadVia(F.b, frozen);
+  F.os.db.prepare("INSERT INTO rows (coll, key, doc, h, booked_at) VALUES ('stray', 'h:1', '{}', 'x', 'x')").run();
+  F.os.db.prepare("DELETE FROM rows WHERE coll = ?").run(arrays[0]);
+  const pf = par(frozen, { readback: await F.b.readback() });
+  ok(pf.differ.includes("stray (only in the Book, 1 rows)") && pf.differ.includes(arrays[0] + " (not in the Book, git " + frozen[arrays[0]].length + " rows)"),
+    "a collection only the Book holds, and one it lacks, are both named: " + pf.differ.join(", "));
+
+  const G = fresh();
+  const empty = { ...structuredClone(frozen), lostDemand: [] };
+  const rg = await loadVia(G.b, empty);
+  ok(par(empty, rg).ok, "an empty collection books no row and is not a difference");
+
+  const H2 = fresh();
+  const stamped = { ...pricing, takenAt: "2026-10-20T00:00:00.000Z" };
+  const rh = await loadVia(H2.b, frozen, stamped);
+  ok(par(frozen, rh, stamped).differ.join() === "PRICING differs" && par(frozen, rh, pricing).ok,
+    "a takenAt on git's side is red: the Book strips the stamp and git's PRICING is compared as it is");
+
+  const good = BL.line(r1, p1), bad = BL.line(r1, pd);
+  ok(BL.passed(r1, p1) && !BL.passed(r1, pd) && !BL.passed(r1, null) && !BL.passed({ ok: false, error: "x" }, p1)
+    && /parity: the Book agrees with git over \d+ rows in \d+ collections and \d+ documents/.test(good)
+    && /parity FAILED: sales \(git \d+ rows, Book \d+\)/.test(bad) && /parity NOT CHECKED/.test(BL.line(r1, null)),
+    "the step is green only on a load whose read-back agrees, and its line names what differs");
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");

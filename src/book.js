@@ -18,6 +18,13 @@
  *           same stamps. PRICING is not in book.json (it is derived from it, ledger/ledger.json), so the load carries it.
  *   loads   one line a load: when, what changed, and the digest of what it carried.
  *
+ * WHAT A LOAD ANSWERS (S2b, 20 Oct 2026). Counts and digests, never a row or a value: the CI service token reaches the route and
+ * the Actions log is public. `added` counts rows AND documents booked, which is why S2a's first load said "433 rows, 450 booked"
+ * (433 rows and 17 documents); `docs` is the live document count beside `rows`. `readback` is the PARITY half: read back out of
+ * this object's own SQLite after the load commits, per collection the live rows' count and a digest over each row's sha256
+ * RECOMPUTED FROM ITS STORED doc (never the stored h, so a row the store mangled shows), and per document the digest of its stored
+ * doc. tools/book-load.mjs computes the same from git's files by its own hand and names any collection or document that differs.
+ *
  * A LOAD IS IDEMPOTENT. It is one synchronous transaction that books what the object does not hold, revises what changed
  * and marks what is gone, so the same book loaded twice, or a retried or replayed fold, changes nothing the second time:
  * the counts say 0, no stamp moves. The hashes are taken BEFORE the transaction (crypto.subtle is async, and nothing may be
@@ -101,9 +108,24 @@ export class Book {
       /* a key the book no longer carries leaves with it (PRICING alone is the load's own, and stays when a load omits it) */
       for (const r of sql.exec("SELECT k FROM state").toArray()) if (!keep.has(r.k) && r.k !== "PRICING") { sql.exec("DELETE FROM state WHERE k = ?", r.k); n.gone++; }
       const live = sql.exec("SELECT COUNT(*) AS c FROM rows WHERE gone_at IS NULL").toArray()[0].c;
+      const docs = sql.exec("SELECT COUNT(*) AS c FROM state").toArray()[0].c;
       sql.exec("INSERT INTO loads (at, rev, digest, added, revised, gone, returned, rows) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", at, rev == null ? null : String(rev), p.digest, n.added, n.revised, n.gone, n.returned, live);
-      return { ok: true, at, rev: rev == null ? null : String(rev), digest: p.digest, rows: live, ...n };
+      return { ok: true, at, rev: rev == null ? null : String(rev), digest: p.digest, rows: live, docs, ...n };
     });
+  }
+
+  /* THE READ-BACK (S2b): what this object holds, out of its own SQLite. Live rows only (a gone row is kept, not counted). Each
+     digest is the first 16 hex of a sha256: a collection's over its rows' own sha256 in sorted order, a document's over its doc. */
+  async readback() {
+    const sql = this.state.storage.sql, rows = {}, state = {};
+    const by = new Map();
+    for (const r of sql.exec("SELECT coll, doc FROM rows WHERE gone_at IS NULL").toArray()) {
+      if (!by.has(r.coll)) by.set(r.coll, []);
+      by.get(r.coll).push(await sha(r.doc));
+    }
+    for (const [coll, hs] of by) rows[coll] = { n: hs.length, digest: (await sha(hs.sort().join("\n"))).slice(0, 16) };
+    for (const r of sql.exec("SELECT k, doc FROM state").toArray()) state[r.k] = (await sha(r.doc)).slice(0, 16);
+    return { rows, state };
   }
 
   /* The route's one verb. Cost is in the request, never in the answer: counts and a digest only. */
@@ -115,6 +137,7 @@ export class Book {
     let body, p;
     try { body = JSON.parse(text); p = await prepare(body && body.book, body && body.pricing); }
     catch (e) { return Response.json({ ok: false, error: String((e && e.message) || e) }, { status: 400 }); }
-    return Response.json(this.load(p, body.rev));
+    /* the load and its read-back as one piece: no other request may land between them while the hashes are awaited */
+    return Response.json(await this.state.blockConcurrencyWhile(async () => { const r = this.load(p, body.rev); return { ...r, readback: await this.readback() }; }));
   }
 }
