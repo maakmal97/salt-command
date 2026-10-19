@@ -821,7 +821,7 @@ export const OWNER_JS = `
     ynShut(true);   /* 12 Oct 2026: and so does a yes or no left open, as lapsed() and lock() take it, never left standing over the lapse screen */
     makerVaultLock();   /* and every key, name, place and picture the one unlock holds (Phase 4b) */
     document.getElementById('aEnded').hidden=false; document.body.classList.add('ended');
-    /* the 30-second read ends with the sign-in: every poll after a lapse would send seven requests to the login and fail each */
+    /* the Needs poll ends with the sign-in: every poll after a lapse would send seven requests to the login and fail each */
     if(needsTimer){ clearInterval(needsTimer); needsTimer=null; }
   }
   /* ---- A REFUSAL IS A PLAIN SENTENCE, THE SERVER'S OWN WORDS ONE TAP AWAY (Phase 3b, 12 Oct 2026) ---------------------------------
@@ -1203,7 +1203,7 @@ export const OWNER_JS = `
       apply=true;
       if(!show||!root.isConnected||placeNow!=='orders') return;
       drawMakerClaims();
-    }catch(error){ nGot('claims', error); apply=true; if(show&&!poll) refusal(root,error); }
+    }catch(error){ nGot('claims', error); apply=failNew('claims', error)||!poll; if(show&&!poll) refusal(root,error); }
     finally{ claimsReading=false; if(apply){ paintOrdCounts(); drawNeeds(); } }
   }
   /* the claims drawn from the read that stands: a row each, and the card of the one opened under its row. A redraw lets every picture go first, and
@@ -1441,7 +1441,7 @@ export const OWNER_JS = `
       });
       status.textContent=makerThreads.length?makerThreads.filter(function(thread){return !thread.test&&makerThreadAsked(thread);}).length+' waiting for your reply.':'No messages yet.';
       if(makerThreadUser) drawMakerThreadLines();
-    }catch(error){ nGot('threads', error); apply=true; refusal(status,error); }
+    }catch(error){ nGot('threads', error); apply=failNew('threads', error)||quiet!==true; if(apply) refusal(status,error); }
     finally{ makerThreadsReading=false; if(apply) drawNeeds(); }
   }
   function drawMakerThreadLines(){
@@ -3648,7 +3648,7 @@ export const OWNER_JS = `
       drawMaker();
     }catch(error){
       if(gen!==makerGen) return;
-      nGot('review', error); apply=true;
+      nGot('review', error); apply=failNew('review', error)||!poll;
       if(!poll){
         drawMaker();if(status) refusal(status,error); if(rows) refusal(rows,error);
         var failed0=document.getElementById('makerRefreshSaid'); if(failed0){ refusal(failed0,error); if(failed0.scrollIntoView) failed0.scrollIntoView({block:'nearest'}); }
@@ -5087,12 +5087,15 @@ export const OWNER_JS = `
      A MONEY TAP ASKS ONCE ON THE CARD, then calls the order or claim card's own send (orderReceived, sendClaimAnswer); Agree, which needs the delivery and the window, and Cash
      open the full card in Orders. Read off what the places read anyway (/all/sheet, /all/refs, the
      review, the claims, the threads, the hours and the notice). A tap is answered on its own card. */
-  var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=30000;
+  var SEVS=[['now','Now'],['soon','Soon'],['watch','Watch']], SEVC={now:'copper',soon:'brass',watch:'mist'}, NEED_MS=5000;   /* R4, his yes of 19 Oct 2026 (D12): was 30000; a tick that finds the same answer draws nothing */
   var NEED_SRC=[['sheet','accounts'],['links','links'],['review','orders and rows'],['claims','payments'],['threads','messages'],['hours','hours'],['notice','the notice'],['book','what is owed']];
   var nlist=document.getElementById('nlist'), nCount=document.getElementById('nCount'), linksRead=false, linksBusy=false;
   var nFoldOpen={}, nKind='all', needSaid={}, nSrc={}, nSeen={}, needN=0, needsAt=0, needsReading=false, needsTimer=null, makerNotice=null, shopReading=false;
   /* each source says it was read, or why it was not, so a read that failed is never taken for an empty inbox */
-  function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; }
+  function nGot(name, err){ nSrc[name]=err?String(err.message||err):'ok'; if(!err) delete nSeen[name+'!']; }
+  /* R4: a poll that fails again with the same words draws nothing; a new failure does, and a read that gets through forgets it (nGot) */
+  function failNew(name, err){ var s=String(err&&err.message||err), was=nSeen[name+'!']!==s; nSeen[name+'!']=s; return was; }
+  function needSig(){ return Object.keys(nSeen).sort().map(function(k){ return k+'='+nSeen[k]; }).join('|')+JSON.stringify(nSrc); }
   /* a read that finds what it found last time draws nothing: each keeps its last answer */
   function changed(name, value){ var s=JSON.stringify(value), was=nSeen[name]!==s; nSeen[name]=s; return was; }
   function codeByUser(u){ var a=OWNER.accounts.filter(function(x){ return x.username===u; })[0]; return (a&&a.code)||u||'An associate'; }
@@ -5419,7 +5422,7 @@ export const OWNER_JS = `
       nGot('book');
       var v={money:c.owedMoney, goods:c.owedGoods};
       if(changed('book', v)){ owed=v; apply=true; }
-    }catch(error){ nGot('book', error); apply=true; }
+    }catch(error){ nGot('book', error); apply=failNew('book', error); }
     owedReading=false;
     if(apply) drawNeeds();
   }
@@ -5701,18 +5704,19 @@ export const OWNER_JS = `
     drawNeedOpen(false);
   }
   function redrawLead(){ drawLead(needItems()); }
-  /* ---- READING WHAT NEEDS YOU, on entering it and every 30 seconds while it is showing. Everything it shows is read from the sources the
+  /* ---- READING WHAT NEEDS YOU, on entering it and every 5 seconds while it is showing. Everything it shows is read from the sources the
      other places read, each guarding its own read: none starts while another of its kind is out, and a poll that finds the same answer
      draws nothing. The sheet and the links are read again only after the page has read them once (it does at opening). ---- */
-  function readNeeds(force){
+  function readNeeds(force, tick){
     if(needsReading) return;
     if(!force&&needsAt&&Date.now()-needsAt<NEED_MS) return;
     needsReading=true;
+    var sig0=tick?needSig():null;
     var jobs=TESTING?[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true)]:[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop(), loadOwed()];
     /* the sheet and the links are read again once read, or once their read has failed, so a Retry reaches every read that did */
     if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
     if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
-    Promise.all(jobs).then(function(){ needsAt=Date.now(); }, function(){}).then(function(){ needsReading=false; redrawLead(); });
+    Promise.all(jobs).then(function(){ needsAt=Date.now(); }, function(){}).then(function(){ needsReading=false; if(!tick||needSig()!==sig0) redrawLead(); });
   }
   /* what Watch shows: the hours with an override in force, and the notice */
   async function readShop(){
@@ -5720,9 +5724,9 @@ export const OWNER_JS = `
     shopReading=true;
     var apply=false;
     try{ var h=await refs('/all/maker/hours'); nGot('hours'); if(changed('hours', h)){ makerHours=h; apply=true; } }
-    catch(error){ nGot('hours', error); apply=true; }
+    catch(error){ nGot('hours', error); if(failNew('hours', error)) apply=true; }
     try{ var b=await refs('/all/maker/bulletin'); nGot('notice'); if(changed('notice', b.lines||[])){ makerNotice=b.lines||[]; apply=true; } }
-    catch(error){ nGot('notice', error); apply=true; }
+    catch(error){ nGot('notice', error); if(failNew('notice', error)) apply=true; }
     shopReading=false;
     if(apply) drawNeeds();
   }
@@ -5736,7 +5740,7 @@ export const OWNER_JS = `
     if(document.hidden||(placeNow!=='needs'&&placeNow!=='orders')){ needsWatch(); return; }
     /* viewing an account as them hides this page (stmt/page.js): nothing is read for a page nobody is looking at, and the read goes on when he is back */
     if(roster.hidden) return;
-    if(placeNow==='needs') readNeeds(true);
+    if(placeNow==='needs') readNeeds(true, true);
     else { loadMaker(true); loadMakerClaims(true); }
   }
   document.addEventListener('visibilitychange', function(){ needsWatch(); if(!document.hidden&&needsTimer!==null) tickPlace(); });

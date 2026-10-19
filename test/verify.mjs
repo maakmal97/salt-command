@@ -49766,9 +49766,14 @@ await (async () => {
   await (await import("./admin-words.mjs")).run({ ok, pageWork });
 })();
 
-section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 30 seconds");
+section("Salt Account: Needs you ranks what waits on him, Now, Soon and Watch, a card each, counted on both bars and read again every 5 seconds");
 await (async () => {
   await (await import("./admin-needs.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Account: Needs you and Orders are read every 5 seconds, and a tick that finds the same answer draws nothing, a failure said once (R4, 19 Oct 2026)");
+await (async () => {
+  await (await import("./admin-needs-5s.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Account: Orders open by stage, a list beside the order, and Record a menu");
@@ -49784,6 +49789,16 @@ await (async () => {
 section("The Counter on a tablet: a dialog below 860px, the drawer and the list beside the open order from 860px, the order sheet's tiles two up, none of its rules under .adm (12 Oct 2026)");
 await (async () => {
   await (await import("./counter-tablet.mjs")).run({ ok });
+})();
+
+section("The Counter's stamp: GET /account/stamp answers what tells an account moved, on the account's own session, and nothing sealed (R1, 19 Oct 2026)");
+await (async () => {
+  await (await import("./counter-stamp-route.mjs")).run({ ok });
+})();
+
+section("The Counter follows a publish: an open, idle page re-opens its statement and price list when the stamp moves, and a Sheet, a field or a half-typed line holds it (R1, 19 Oct 2026)");
+await (async () => {
+  await (await import("./counter-stamp-follow.mjs")).run({ ok, pageWork });
 })();
 
 section("Failures on brand: Home says Not updated since the last read in place of its figure when a read fails, and the next good read clears it (12 Oct 2026)");
