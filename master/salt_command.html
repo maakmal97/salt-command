@@ -21855,10 +21855,11 @@ function renderNow(late){recompute();
   const el=document.getElementById('sec-'+V.id); if(!el)return;
   const gen=++LATE_GEN;   /* F3: this render owns the later work from here; an earlier render's is cancelled. Taken after the guards: a render that draws nothing cancels nothing */
   const part=partOf(V.id), all=[V.lead].concat(V.parts), at=Math.max(0,all.indexOf(part)), sig=all.join(' ');
-  const was=el.querySelector('.vnav'), from=was&&was.dataset.sig===sig?(was.style.getPropertyValue('--i')||String(at)):String(at);
-  el.innerHTML=(all.length>1?`<div class="vnav salt-segment" role="tablist" data-sig="${sig}" style="--n:${all.length};--i:${from}">${all.map(p=>`<button class="vpill salt-segment__opt${p===part?' on':''}" role="tab" aria-selected="${p===part}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('')}</div>`:'')
+  const was=el.querySelector('.vnav'), from=was&&was.dataset.sig===sig?(was.style.getPropertyValue('--i').trim()||String(at)):String(at);
+  el.innerHTML=(all.length>1?`<div class="vnav salt-segment" role="tablist" data-sig="${sig}">${all.map(p=>`<button class="vpill salt-segment__opt${p===part?' on':''}" role="tab" aria-selected="${p===part}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('')}</div>`:'')
     +`<div class="vpart" data-tab="${part}"></div>`;
-  const nav=el.querySelector('.vnav'); if(nav&&from!==String(at)){void nav.offsetWidth;nav.style.setProperty('--i',String(at));}   /* the thumb slides from the part that was open */
+  /* the thumb slides from the part that was open; set through the style object every time, so every render writes the same markup */
+  const nav=el.querySelector('.vnav'); if(nav){nav.style.setProperty('--n',String(all.length));if(from!==String(at)){nav.style.setProperty('--i',from);void nav.offsetWidth;}nav.style.setProperty('--i',String(at));}
   el.querySelectorAll('.vpill').forEach(b=>{b.onclick=()=>switchTab(b.dataset.s);});
   const vp=el.querySelector('.vpart');
   renderPart(part,vp,late);
