@@ -468,6 +468,28 @@ await (async () => {
       "the service token alone, a wrong Book key or the push key does not load the Book");
     ok(await gateSaid(await bookPost({ ...ciGood, common_name: "another-client.access" }, { "X-Book-Key": "book-key-under-test" })) === "not authenticated",
       "a token that is not the CI client is refused at the gate on POST /book/load");
+    /* S2c: the recovery test's two routes, the same two locks; the restore always names the TEST object, the window the live one */
+    const asked = [];
+    const pitrNs = { idFromName: (n) => n, get: (n) => ({ fetch: async (req) => {
+      asked.push(n + " " + new URL(req.url).pathname);
+      const verb = req.method === "POST" ? JSON.parse(await req.text()).verb : "";
+      if (verb === "restart") throw new Error("the object was aborted");
+      return Response.json({ ok: true });
+    } }) };
+    const pitrEnv = { ...ciEnv, SALT_BOOK_KEY: "book-key-under-test", BOOK: pitrNs };
+    const bk = { "X-Book-Key": "book-key-under-test" };
+    const pitr = (verb, headers = bk, claims = ciGood) => ci("/book/pitr", claims, { method: "POST", body: JSON.stringify({ verb }), headers }, pitrEnv);
+    const okLoad = await pitr("load"), okRestart = await pitr("restart"), okWin = await ci("/book/window", ciGood, { headers: bk }, pitrEnv);
+    ok(okLoad.status === 200 && okRestart.status === 200 && (await okRestart.json()).restarted === true && okWin.status === 200
+      && asked.join() === "book-pitr-test /pitr,book-pitr-test /pitr,book /window",
+      "the service token with the Book's key reaches the TEST object for a recovery verb and the live one only to read its window: " + asked.join());
+    asked.length = 0;
+    ok((await pitr("load", {})).status === 401 && (await pitr("load", { "X-Push-Key": "push-key-under-test" })).status === 401
+      && (await ci("/book/window", ciGood, {}, pitrEnv)).status === 401
+      && await gateSaid(await pitr("load", bk, { ...ciGood, common_name: "another-client.access" })) === "not authenticated"
+      && (await ci("/book/pitr", ciGood, { headers: bk }, pitrEnv)).status === 401 && (await ci("/book/window", ciGood, { method: "POST", headers: bk }, pitrEnv)).status === 401
+      && !asked.length,
+      "no key, the push key, another client or another method reaches neither recovery route");
     /* THE VAULT IS THE OWNER'S (his decision, 3 Oct 2026): a leaked CI secret with the write key must not
        read the pair or write names or places. Each route refused at the gate, the write key offered. */
     const vaultKeyed = { "X-Salt-Key": "write-key-under-test", "content-type": "application/json" };
@@ -51276,11 +51298,21 @@ await (async () => {
   ok(W.Book === Book && cfg.durable_objects.bindings.some((x) => x.name === "BOOK" && x.class_name === "Book")
     && cfg.migrations.length === 1 && cfg.migrations[0].tag === "book-v1" && (cfg.migrations[0].new_sqlite_classes || []).join() === "Book",
     "the Desk Worker exports Book and binds it as BOOK under one SQLite migration tag");
-  const readers = [];
-  for (const f of readdirSync(join(REPO, "src")).filter((x) => x.endsWith(".js")))
-    readFileSync(join(REPO, "src", f), "utf8").split("\n").forEach((l, i) => { if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)) readers.push(f + ":" + (i + 1)); });
-  ok(readers.length === 2 && readers.every((x) => x.startsWith("worker.js")),
-    "only the load route touches the BOOK binding: no reader, the drafter and orders included (" + readers.join(" ") + ")");
+  /* S2c: the recovery routes (handleBookPitr) and the object's own allowlist (isTest) are the only other places that name it */
+  const readers = [], strays = [];
+  for (const f of readdirSync(join(REPO, "src")).filter((x) => x.endsWith(".js"))) {
+    let fn = "";
+    readFileSync(join(REPO, "src", f), "utf8").split("\n").forEach((l, i) => {
+      const head = /^(?:async )?function (\w+)|^  (?:async )?(\w+)\([^)]*\) \{$/.exec(l);
+      if (head) fn = head[1] || head[2];
+      if (/env\.BOOK\b/.test(l) && !/^\s*(\/\/|\*|\/\*)/.test(l)) {
+        readers.push(f + ":" + (i + 1));
+        if (!(f === "worker.js" && (fn === "handleBookLoad" || fn === "handleBookPitr")) && !(f === "book.js" && fn === "isTest")) strays.push(f + ":" + (i + 1) + " in " + fn);
+      }
+    });
+  }
+  ok(readers.length >= 2 && !strays.length,
+    "only the load and recovery routes and the object's own allowlist touch the BOOK binding: no reader, the drafter and orders included (" + strays.join(" ") + ")");
 
   /* the load tool and the chain step */
   const body = BL.payload(FROZEN_BOOK, join(REPO, "ledger", "ledger.json"), "abc"); /* book-read-ok: the derived PRICING is the extract's, only its shape is read */
@@ -51395,6 +51427,136 @@ await (async () => {
     && /parity: the Book agrees with git over \d+ rows in \d+ collections and \d+ documents/.test(good)
     && /parity FAILED: sales \(git \d+ rows, Book \d+\)/.test(bad) && /parity NOT CHECKED/.test(BL.line(r1, null)),
     "the step is green only on a load whose read-back agrees, and its line names what differs");
+})();
+
+section("Book S2c: the Book restores to an earlier fold and agrees with git there, on the test object alone (20 Oct 2026)");
+await (async () => {
+  /* Each assertion is proved red by its own mutation (test/book-s2c.mutations.json). The platform's recovery has no local support,
+     so the harness keeps it by hand: a bookmark is a copy of every table, an armed bookmark is put back on the next start, and
+     deleteAll drops every table. The real class answers over it, and git's side is book-load's own hand. */
+  const { Book, PITR_NAME, BOOK_NAME } = await import("../src/book.js");
+  const H = await import("../test/orderbook-harness.mjs");
+  const BP = await import("../tools/book-pitr.mjs");
+  const frozen = JSON.parse(readFileSync(FROZEN_BOOK, "utf8"));
+  const pricing = { v: "vS2c", floors: { salt: { 1: 60 } }, sizes: [0.5, 1] };
+  const later = structuredClone(frozen);
+  later.sales.push({ ...structuredClone(frozen.sales[0]), rid: "s9999" });
+  const A = { sha: "a".repeat(40), book: frozen, pricing }, B = { sha: "b".repeat(40), book: later, pricing: { ...pricing, v: "vS2c+" } };
+  const idOf = (name) => ({ name, equals: (o) => !!o && o.name === name });
+  const env = { BOOK: { idFromName: idOf } };
+  /* one object of the namespace, as the platform keeps it: its storage, its history, its sessions */
+  const object = (name) => {
+    const os = H.objectState();
+    const tables = () => os.db.prepare("SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all();
+    const copy = () => tables().map((t) => ({ ...t, rows: os.db.prepare(`SELECT * FROM "${t.name}"`).all() }));
+    const drop = () => { for (const t of tables()) os.db.exec(`DROP TABLE "${t.name}"`); };
+    const history = new Map();
+    let n = 0, armed = null, synced = 0, aborts = 0, live = true;
+    os.id = idOf(name);
+    os.storage.sync = async () => { synced++; };
+    os.storage.getCurrentBookmark = async () => { const bm = "0000" + String(++n).padStart(4, "0") + "-0000b26e-00001538-pitrtest"; history.set(bm, copy()); return bm; };
+    os.storage.getBookmarkForTime = async () => "00000000-0000b26e-00001538-pitrtest";
+    os.storage.onNextSessionRestoreBookmark = async (bm) => { if (!history.has(bm)) throw new Error("no such bookmark"); armed = bm; return os.storage.getCurrentBookmark(); };
+    os.storage.deleteAll = async () => drop();
+    os.abort = () => { aborts++; live = false; throw new Error("the object was aborted"); };
+    let book = new Book(os, env);
+    const start = () => {
+      if (live) return;
+      if (armed) { drop(); for (const t of history.get(armed)) { os.db.exec(t.sql); for (const r of t.rows) { const ks = Object.keys(r); os.db.prepare(`INSERT INTO "${t.name}" (${ks.join(", ")}) VALUES (${ks.map(() => "?").join(", ")})`).run(...ks.map((k) => r[k])); } } }
+      armed = null; live = true; book = new Book(os, env);
+    };
+    const fetchIt = async (req) => { start(); return book.fetch(req); };
+    return { os, fetch: fetchIt, synced: () => synced, aborts: () => aborts };
+  };
+  /* the Worker's side of a verb: the restart's lost answer is the expected one */
+  const callOf = (o) => async (body) => {
+    try { return await (await o.fetch(new Request("https://book/pitr", { method: "POST", body: JSON.stringify(body) }))).json(); }
+    catch (e) { return body.verb === "restart" ? { ok: true, restarted: true } : { ok: false, error: String(e.message) }; }
+  };
+  const windowOf = (o) => async () => (await o.fetch(new Request("https://book/window"))).json();
+  const quick = { tries: 3, sleep: async () => {} };
+
+  const T = object(PITR_NAME), L = object(BOOK_NAME);
+  await L.fetch(new Request("https://book/load", { method: "POST", body: JSON.stringify({ rev: "r", book: frozen, pricing }) }));
+  const r = await BP.recover({ call: callOf(T), window: windowOf(L), A, B, ...quick });
+  ok(r.ok && r.rows === Object.values(frozen).filter(Array.isArray).reduce((s, v) => s + v.length, 0)
+    && r.live && r.live.reachable && r.live.loads === 1 && T.aborts() === 3,
+    "the test object, loaded at A then B, restores to A and agrees with git there, then forward to B; the live Book's history is in reach (" + (r.error || "") + ")");
+  ok(BP.line(r).startsWith("Book recovery: the test Book restored from bbbbbbbb back to aaaaaaaa agrees with git there over ")
+    && !BP.line(r).includes("pitrtest") && !BP.line(r).includes(frozen.sales[0].rid),
+    "the line names short shas, counts and a verdict, never a bookmark or a row");
+  const left = await callOf(T)({ verb: "readback" });
+  ok(left.ok && left.loads === 0 && !Object.keys(left.readback.rows).length && !Object.keys(left.readback.state).length,
+    "the test object is cleared after, so no second copy of the ledger is left standing");
+
+  /* the live Book never answers a recovery verb, and a third name neither */
+  const said = [];
+  for (const o of [L, object("book-other")]) for (const verb of ["clear", "load", "arm", "restart", "readback"])
+    said.push(await o.fetch(new Request("https://book/pitr", { method: "POST", body: JSON.stringify({ verb, bookmark: "00000001-0000b26e-00001538-pitrtest", book: frozen, pricing }) })).then((x) => x.status, () => "aborted"));
+  const lr = await (await L.fetch(new Request("https://book/pitr", { method: "POST", body: JSON.stringify({ verb: "readback" }) }))).json();
+  ok(said.every((s) => s === 403) && L.aborts() === 0 && /never the live Book/.test(lr.error),
+    "the live Book and any other name refuse every recovery verb: the test object is an allowlist of one");
+  const noNs = object(PITR_NAME);
+  ok((await noNs.fetch(new Request("https://book/pitr", { method: "POST", body: JSON.stringify({ verb: "readback" }) }))).status === 200
+    && (await new Book(noNs.os, {}).fetch(new Request("https://book/pitr", { method: "POST", body: JSON.stringify({ verb: "readback" }) }))).status === 403,
+    "with no namespace to hand the object cannot know it is the test one, and refuses");
+  ok((await L.fetch(new Request("https://book/window", { method: "POST" }))).status === 404 && (await L.fetch(new Request("https://book/pitr"))).status === 404,
+    "the live Book answers POST /load and GET /window and nothing else");
+
+  /* the bookmark is taken after the load is durable, so the restore lands on the load and not before it */
+  const S = object(PITR_NAME);
+  const before = S.synced();
+  const ls = await callOf(S)({ verb: "load", rev: "x", book: frozen, pricing });
+  ok(typeof ls.bookmark === "string" && S.synced() === before + 1, "a load syncs before it takes its bookmark");
+  const lv = await (await L.fetch(new Request("https://book/load", { method: "POST", body: JSON.stringify({ rev: "r2", book: frozen, pricing }) }))).json();
+  ok(typeof lv.bookmark === "string" && lv.bookmark.length > 16, "the live load answers its exact bookmark, so the fold's log keeps a restore point for every fold");
+  const BL = await import("../tools/book-load.mjs");
+  ok(BL.line({ ...lv, ok: true }, { ok: true, rows: 1, colls: 1, docs: 1 }).endsWith("; restore point " + lv.bookmark)
+    && !BL.line({ ...lv, ok: true, bookmark: "x'; rm" }, null).includes("restore point"),
+    "the fold's load line ends with the live Book's restore point, and only a bookmark's shape is printed");
+
+  /* clear drops the tables, and the object still loads in the same session */
+  const C = object(PITR_NAME);
+  await callOf(C)({ verb: "load", rev: "x", book: frozen, pricing });
+  const cc = await callOf(C)({ verb: "clear" });
+  const cl = await callOf(C)({ verb: "load", rev: "y", book: frozen, pricing });
+  ok(cc.ok && cl.ok && cl.added === cl.rows + cl.docs, "a cleared test object takes a load at once: clear puts the tables back");
+
+  /* the verdicts: a restore that does not land, or lands on B, is red */
+  const stuck = object(PITR_NAME);
+  const noRestore = async (body) => body.verb === "arm" ? { ok: true, undo: "00000099-0000b26e-00001538-pitrtest" } : callOf(stuck)(body);
+  const rs = await BP.recover({ call: noRestore, window: windowOf(L), A, B, ...quick });
+  ok(!rs.ok && /the restore to A did not land: loads 2/.test(rs.error) && /^Book recovery FAILED \(bbbbbbbb back to aaaaaaaa\)/.test(BP.line(rs)),
+    "a restore that never lands is red, with the loads on record: " + rs.error);
+  const half = object(PITR_NAME);
+  let arms = 0;
+  const noUndo = async (body) => body.verb === "arm" && ++arms === 2 ? { ok: true } : callOf(half)(body);
+  const ru = await BP.recover({ call: noUndo, window: windowOf(L), A, B, ...quick });
+  ok(!ru.ok && /the undo to B did not land: loads 1/.test(ru.error), "an undo that never lands is red too: " + ru.error);
+  const verbs = [], seen = object(PITR_NAME);
+  await BP.recover({ call: async (body) => { verbs.push(body.verb); return callOf(seen)(body); }, window: windowOf(L), A, B, ...quick });
+  ok(verbs.slice(0, 3).join() === "restart,readback,clear" && verbs[verbs.length - 1] === "clear",
+    "a run restarts the test object first, so an arm a dead run left standing lands before the test and not inside it: " + verbs.join());
+  const old = BP.line({ ...r, live: { loads: 40, first: "2026-08-01T00:00:00.000Z", from: "2026-09-21T00:00:00.000Z", reachable: true } });
+  ok(BP.line(r).includes("in reach from its first load (") && old.includes("from 2026-09-21T00:00:00.000Z, 29 days back") && !old.includes("first load ("),
+    "once the Book is older than the platform's reach, the line says how far back it goes, not that its first load is in reach");
+  const odd = object(BOOK_NAME);
+  odd.os.db.prepare("INSERT INTO loads (at, digest, added, revised, gone, returned, rows) VALUES ('not a time', 'd', 0, 0, 0, 0, 0)").run();
+  const ow = await odd.fetch(new Request("https://book/window")).then((x) => x.json(), () => null);
+  ok(ow && ow.ok && ow.reachable === false, "a load time the window cannot read answers out of reach, never a fault");
+  const same = await BP.recover({ call: callOf(object(PITR_NAME)), window: windowOf(L), A, B: { ...A, sha: B.sha }, ...quick });
+  ok(!same.ok && /prove nothing/.test(same.error), "two books that are the same are refused, since the restore would prove nothing");
+  const blind = await BP.recover({ call: callOf(object(PITR_NAME)), window: async () => ({ ok: true, loads: 3, reachable: false }), A, B, ...quick });
+  ok(!blind.ok && /not in reach/.test(blind.error), "a live Book whose history is out of reach is red");
+  const tooLate = object(PITR_NAME);
+  await callOf(tooLate)({ verb: "load", rev: "x", book: frozen, pricing });
+  ok((await callOf(tooLate)({ verb: "arm", bookmark: "x; DROP" })).error === "not a bookmark" && (await callOf(tooLate)({ verb: "arm" })).error === "not a bookmark",
+    "an arm with anything but a bookmark's shape is refused");
+
+  /* the chain does not run it; a dispatch does */
+  const wf = readFileSync(".github/workflows/book-pitr.yml", "utf8");
+  ok(/^on:\n  workflow_dispatch:/m.test(wf) && !/^\s+(push|schedule|pull_request):/m.test(wf) && /node tools\/book-pitr\.mjs/.test(wf),
+    "the recovery test runs on a hand dispatch only, never on a push or a clock");
 })();
 
 section("18 Oct 2026: the lean Desk: six views, the three parts gone, alerts in the rail, spots on Coverage, Noticed under To do");

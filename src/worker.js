@@ -32,7 +32,7 @@ import { reservedInputs, admitInputs, admitInput, withdrawInputAdmission, finish
 import { ciAccess, ownerAccess } from "./access.js";
 /* S2a (18 Oct 2026): the shadow Book is a Durable Object exported from the main module, where the BOOK binding looks for its class */
 export { Book } from "./book.js";
-import { BOOK_NAME, MAX_LOAD_BYTES } from "./book.js";
+import { BOOK_NAME, PITR_NAME, MAX_LOAD_BYTES } from "./book.js";
 import { maintenance } from "./maintenance.js";
 import { readVaultPair, commitVaultPair, consumeVaultOutbox } from "./vault-pair.js";
 import { officialVaultPoint } from "./vault-locality.js";
@@ -103,7 +103,7 @@ async function accessOk(request, env, p, m) {
 }
 /* 19 Oct 2026: the pushes that INFORM the Desk (POST /push/send tags), each kept as KV inform:last for the banner */
 const INFORM_TAGS = new Set(["folded", "fold-refused", "suite-red", "stock"]);
-const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load"]);
+const CI_ROUTES = new Set(["GET /rev", "POST /push/send", "POST /book/load", "POST /book/pitr", "GET /book/window"]);
 
 /* THE WRITE GATE (12 Aug 2026). Reads stay open, by the owner's standing decision; writes
  * do not have to. A caller must present X-Salt-Key matching the SALT_WRITE_KEY secret, and
@@ -180,12 +180,36 @@ function pushKeyOk(request, env) {
   return diff === 0;
 }
 
+/* the Book's own key, or the owner's write key; each only when its secret is set */
+function bookKeyOk(request, env) {
+  const wk = String(env.SALT_WRITE_KEY || ""), bk = String(env.SALT_BOOK_KEY || "");
+  return !!((wk && secretMatches(String(request.headers.get("X-Salt-Key") || ""), wk))
+    || (bk && secretMatches(String(request.headers.get("X-Book-Key") || ""), bk)));
+}
+
+/* S2c: THE RECOVERY TEST. POST /book/pitr reaches the TEST object (PITR_NAME) and no other: the name is fixed here, and the object
+   refuses a recovery verb unless its own id is that name's. GET /book/window READS the live Book: whether its history is in reach.
+   `restart` aborts the test object, which kills its own answer, so that one verb's lost answer is the expected one. */
+async function handleBookPitr(request, env, m, p) {
+  const want = p === "/book/pitr" ? "POST" : "GET";
+  if (m !== want) return json({ ok: false, error: "method not allowed" }, 405);
+  if (!bookKeyOk(request, env)) return needsKey();
+  if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
+  if (p === "/book/window") return env.BOOK.get(env.BOOK.idFromName(BOOK_NAME)).fetch(new Request("https://book/window"));
+  const text = await request.text();
+  if (text.length > MAX_LOAD_BYTES) return json({ ok: false, error: "the load is too large" }, 413);
+  let verb = "";
+  try { verb = String(JSON.parse(text).verb || ""); } catch (e) { return json({ ok: false, error: "not JSON" }, 400); }
+  try { return await env.BOOK.get(env.BOOK.idFromName(PITR_NAME)).fetch(new Request("https://book/pitr", { method: "POST", body: text })); }
+  catch (e) {
+    if (verb === "restart") return json({ ok: true, restarted: true });
+    return json({ ok: false, error: "the test object did not answer" }, 502);
+  }
+}
+
 async function handleBookLoad(request, env, m) {
   if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
-  const wk = String(env.SALT_WRITE_KEY || ""), bk = String(env.SALT_BOOK_KEY || "");
-  const good = (wk && secretMatches(String(request.headers.get("X-Salt-Key") || ""), wk))
-    || (bk && secretMatches(String(request.headers.get("X-Book-Key") || ""), bk));
-  if (!good) return needsKey();
+  if (!bookKeyOk(request, env)) return needsKey();
   if (!env.BOOK) return json({ ok: false, error: "the Book is not bound" }, 503);
   const text = await request.text();
   if (text.length > MAX_LOAD_BYTES) return json({ ok: false, error: "the load is too large" }, 413);
@@ -2482,7 +2506,7 @@ export default {
     if (!await accessOk(request, env, p, m)) {
       if (p === "/queue" || /^\/queue\/[^/]+\/withdraw$/.test(p) || p === "/queue/ping" || p === "/vault" || p === "/bio" || p === "/bye"
         || p === "/vault/addr" || p === "/vault/pair" || p === "/vault/maintenance" || p === "/vault/key" || p === "/geo/expand" || p.startsWith("/slips/") || p.startsWith("/pins/")
-        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load"
+        || p === "/rev" || p === "/ledger" || p.startsWith("/ledger/") || p === "/book/load" || p === "/book/pitr" || p === "/book/window"
         || p === "/drafts" || p.startsWith("/drafts/"))
         return json({ ok: false, error: "not authenticated" }, 401);
       return locked();
@@ -2527,6 +2551,7 @@ export default {
        when its secret is set, so an unset secret opens nothing; the dormant write-key branch of writeOk is NOT used here.
        The answer carries counts and a digest, never a row. Nothing reads the Book. */
     if (p === "/book/load") return handleBookLoad(request, env, m);
+    if (p === "/book/pitr" || p === "/book/window") return handleBookPitr(request, env, m, p);   /* S2c: the recovery test, the same two locks */
 
     // --- the desk's HTTP contract -------------------------------------------------
     if (p === "/queue/ping") {

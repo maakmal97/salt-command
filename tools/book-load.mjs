@@ -82,9 +82,11 @@ export function compare(want, got) {
 export function line(r, par) {
   if (!r.ok) return "Book NOT loaded: " + r.error;
   const head = `Book loaded: ${r.rows} rows and ${r.docs} documents; ${r.added} booked, ${r.revised} revised, ${r.gone} gone, ${r.returned} returned, digest ${String(r.digest).slice(0, 12)}`;
-  if (!par) return head + "; parity NOT CHECKED: the Book answered no read-back";
-  return par.ok ? head + `; parity: the Book agrees with git over ${par.rows} rows in ${par.colls} collections and ${par.docs} documents`
-    : head + "; parity FAILED: " + par.differ.join(", ");
+  /* S2c: the live Book's exact bookmark after this load, so a restore by hand (docs/DESK.md) lands on a fold and not near one */
+  const at = typeof r.bookmark === "string" && /^[0-9a-zA-Z-]{16,128}$/.test(r.bookmark) ? "; restore point " + r.bookmark : "";
+  if (!par) return head + "; parity NOT CHECKED: the Book answered no read-back" + at;
+  return (par.ok ? head + `; parity: the Book agrees with git over ${par.rows} rows in ${par.colls} collections and ${par.docs} documents`
+    : head + "; parity FAILED: " + par.differ.join(", ")) + at;
 }
 
 /* the step's verdict: green only on a load whose read-back agrees */
