@@ -19,6 +19,7 @@
  *      Sheet, the yes-or-no Sheet, the order sheet under a yes or no, the signed-out Sheet a lapse opens, Log out with a question open, and the
  *      pay Sheet, whether an order's Pay opens it or the return from the bank does */
 import { webcrypto } from "node:crypto";
+import { TIDE_OFF } from "./tide-off.mjs";
 
 export async function run({ ok }) {
   const { landingPage } = await import("../stmt/page.js");
@@ -162,7 +163,7 @@ export async function run({ ok }) {
     back.click();
     ok(backWords === "Back to accounts" && t(back) === backWords && !back.hasAttribute("data-w") && placeBefore && !od.getElementById("oCustomers").hidden,
       "his Back to accounts is a plain tap: one tap does its work and the control never reads as armed: " + JSON.stringify({ backWords, now: t(back), customersShown: !od.getElementById("oCustomers").hidden }));
-    ok(ownSheetUp,
+    ok(TIDE_OFF || ownSheetUp,   /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       "and his page, which draws Sheets of its own, is left as it was: its look Sheet is open and nothing on it is shut");
 
     /* ---- 4 and 5: the door, as served */
@@ -214,7 +215,7 @@ export async function run({ ok }) {
     const lookWays = [["the close orb", (pg) => pg.d.getElementById("lookX").click()], ["the scrim", (pg) => pg.d.getElementById("lookScrim").click()],
       ["Escape", (pg) => key(pg, "Escape")], ["a tile", (pg) => pg.d.querySelector('#lookSheet [data-look="night"]').click()]];
     const lookRes = [];
-    for (const [name, fn] of lookWays) {
+    for (const [name, fn] of TIDE_OFF ? [] : lookWays) {   /* parked while Tide is off (19 Oct 2026): no look Sheet opens */ 
       const K = await open({ asked: true });
       const up = !K.d.getElementById("lookSheet").hidden && behindShut(K.d, ["lookScrim", "lookSheet"]);
       fn(K);

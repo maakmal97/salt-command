@@ -1252,8 +1252,8 @@ function lookRow(owner) {
   return '<div id="lookRow" class="salt-ledger salt-ledger--plain"><div class="salt-ledger__row"><div class="salt-ledger__line">'
     + wt("span", 'class="salt-ledger__label" id="lookH"', "look.h")
     + '<span class="salt-ledger__value lookset" role="group" aria-labelledby="lookH">'
-    + wt("button", 'type="button" class="salt-ghost" data-look="night" aria-pressed="false"' + act("look.night"), "look.night")
-    + wt("button", 'type="button" class="salt-ghost" data-look="tide" aria-pressed="true"' + act("look.tide"), "look.tide")
+    + wt("button", 'type="button" class="salt-ghost" data-look="night" aria-pressed="true"' + act("look.night"), "look.night")
+    + wt("button", 'type="button" class="salt-ghost" data-look="tide" aria-pressed="false" disabled' + act("look.tide"), "look.tide")
     + "</span></div></div></div>";
 }
 /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct): THE ONE UNLOCK of Salt Account, owner only. Shop > This device holds its state and its Unlock or Lock; the Sheet is
@@ -1452,7 +1452,7 @@ export function notFoundPage(nonce) { return onePage("nf", nonce); }
 const GROUND = { night: "#05080a", tide: "#03141a" };
 export const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('meta[name=\"theme-color\"]');"
   + "document.documentElement.setAttribute('data-theme',t);if(m)m.setAttribute('content',t==='night'?'" + GROUND.night + "':'" + GROUND.tide + "');return t;}"
-  + "(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();"
+  + "(function(){saltLook('night');})();"   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
   /* the iPhone's saved app marks the root before first paint (navigator.standalone is that app's alone; Android's installed pages have a viewport the screen is not) and
      gives it the screen's height, the longer side of the screen upright and the shorter lying down; --app-h feeds the body's min-height under 1080px */
   + "(function(){try{if(navigator.standalone===true){var r=document.documentElement,f=function(){var a=Math.max(screen.width,screen.height),b=Math.min(screen.width,screen.height);"
@@ -1460,9 +1460,9 @@ export const LOOK_HEAD = "function saltLook(t){var m=document.querySelector('met
 /* 18 Oct 2026: THE LIGHT, the system's Aurora as the Desk draws it (tools/stmt-style.mjs carries the recipe), the first thing in the body of the Counter and Salt Account. Not on guestPage (the guest board, the shut page and the 404): their source names no brand, and every salt- class would be one */
 const AURORA = '<div class="salt-aurora salt-aurora--page salt-aurora--fixed" aria-hidden="true"><div class="salt-aurora__blob salt-aurora__blob--copper"></div>'
   + '<div class="salt-aurora__blob salt-aurora__blob--brass"></div></div>';
-export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="tide"><head><meta charset="utf-8">'
+export const DOC_OPEN = '<!DOCTYPE html>\n<html lang="en" translate="no" data-theme="night"><head><meta charset="utf-8">'
   + '<meta name="google" content="notranslate">'
-  + '<meta name="theme-color" content="' + GROUND.tide + '">';
+  + '<meta name="theme-color" content="' + GROUND.night + '">';
 function guestPage(inner, nonce, title) {
   return DOC_OPEN
     + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
@@ -3246,7 +3246,7 @@ const CLIENT_JS = `
     [].forEach.call(lookRow.querySelectorAll('[data-look]'),function(b){ b.setAttribute('aria-pressed',String(b.getAttribute('data-look')===lookNow())); });
   }
   function lookSet(t){
-    if(t!=='night'&&t!=='tide') return;
+    if(t!=='night') return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
     if(typeof saltLook==='function') saltLook(t); else document.documentElement.setAttribute('data-theme',t);
     try{ localStorage.setItem(LOOK_KEY,t); }catch(e){ /* for this visit only */ }
     lookMark();
@@ -3257,6 +3257,7 @@ const CLIENT_JS = `
     focusBack(lookBack);
   }
   function lookAsk(b, own){
+    return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
     if((OWNER&&!own)||view||lookAsked||!lookSheetEl) return;
     var kept=lookStore();
     if(kept===null||(kept!==''&&!(b&&b.look==='asked'))) return;

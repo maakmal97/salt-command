@@ -12,7 +12,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#03141a">
+<meta name="theme-color" content="#05080a">
 <script>
 /* TWO THEMES, NIGHT AND TIDE, CHOSEN ON EACH DEVICE (his word of 11 Oct 2026). This runs before the stylesheet, so the first paint is
    the right one: it sets data-theme on <html> from localStorage salt-look and the browser bar's colour to that theme's ground.
@@ -20,7 +20,8 @@
    page's own script calls it. No clock, no fade. */
 function saltLook(t){var m=document.querySelector('meta[name="theme-color"]');
   document.documentElement.setAttribute('data-theme',t);if(m)m.setAttribute('content',t==='night'?'#05080a':'#03141a');return t;}
-(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();
+/* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
+(function(){saltLook('night');})();
 </script>
 <title>Salt Command</title>
 <!-- BEGIN cloud/PWA: injected by tools/build.mjs; do NOT hand-edit this built file -->
@@ -86,7 +87,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="0bd585f1e036adde";
+var SALT_BUILD_ID="a1a09f21b93f1568";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -4857,8 +4858,8 @@ body.dbstuck .deskbar{box-shadow:0 -24px 0 0 var(--salt-obsidian),0 -48px 0 0 va
     </div>
     <!-- 11 Oct 2026: the theme, kept on this device (lookSet). Two ghosts, the held one aria-pressed; Tide until one is chosen. -->
     <div class="look-switch" role="group" aria-label="Theme">
-      <button type="button" class="salt-ghost" data-look="night" aria-pressed="false">Night</button>
-      <button type="button" class="salt-ghost" data-look="tide" aria-pressed="true">Tide</button>
+      <button type="button" class="salt-ghost" data-look="night" aria-pressed="true">Night</button>
+      <button type="button" class="salt-ghost" data-look="tide" aria-pressed="false" disabled>Tide</button>
     </div>
     <!-- 18 Oct 2026, his word: this device's alerts left Site orders for the rail, beside the theme (ordAlertDraw). -->
     <div class="rail-alert" id="ordAlert" role="group" aria-label="Alerts"></div>
@@ -21736,7 +21737,7 @@ function lookRedraw(){
   catch(e){try{console.error('lookRedraw threw',e);}catch(_){}}
 }
 function lookSet(t){
-  if(t!=='night'&&t!=='tide')return;
+  if(t!=='night')return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
   saltLook(t);
   try{localStorage.setItem(LOOK_KEY,t);}catch(e){}
   lookMark();lookRedraw();
@@ -22139,6 +22140,7 @@ window.addEventListener('hashchange',()=>{
   var sw=document.querySelector('.look-switch');
   if(sw)sw.addEventListener('click',function(e){var b=e.target.closest('[data-look]');if(b)lookSet(b.getAttribute('data-look'));});
   lookMark();
+  return;   /* 19 Oct 2026, his word: Tide is off for now, every device opens Night; the store and Tide's tokens are kept */
   if(lookStore()!=='')return;
   var back=document.activeElement,bd=document.createElement('div'),sh=document.createElement('div');
   var tile=function(k,name,what){return '<div class="salt-option"><button type="button" class="salt-option__face salt-option__face--tap look-tile" data-look="'+k+'">'

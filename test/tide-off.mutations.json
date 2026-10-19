@@ -1,0 +1,12 @@
+[
+ {"name":"the Desk reads the stored Tide again","find":"(function(){saltLook('night');})();","replace":"(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();"},
+ {"name":"the Desk's bar starts at Tide","find":"<meta name=\"theme-color\" content=\"#05080a\">","replace":"<meta name=\"theme-color\" content=\"#03141a\">\n<meta name=\"x\" content=\"\">"},
+ {"name":"the Desk asks again","find":"  lookMark();\n  return;   /* 19 Oct","replace":"  lookMark();\n  /* 19 Oct"},
+ {"name":"the Desk's Tide button is live","find":"aria-pressed=\"false\" disabled>Tide</button>","replace":"aria-pressed=\"false\">Tide</button>"},
+ {"name":"the Desk's switch takes Tide","find":"function lookSet(t){\n  if(t!=='night')return;","replace":"function lookSet(t){\n  if(t!=='night'&&t!=='tide')return;"},
+ {"name":"the Counter reads the stored Tide again","file":"stmt/page.js","find":"(function(){saltLook('night');})();\"","replace":"(function(){var t='tide';try{var s=localStorage.getItem('salt-look');if(s==='night'||s==='tide')t=s;}catch(e){}saltLook(t);})();\""},
+ {"name":"the Counter is served Tide","file":"stmt/page.js","find":"data-theme=\"night\"><head><meta charset=\"utf-8\">'","replace":"data-theme=\"tide\"><head><meta charset=\"utf-8\">'"},
+ {"name":"the Counter asks again","file":"stmt/page.js","find":"  function lookAsk(b, own){\n    return;","replace":"  function lookAsk(b, own){\n"},
+ {"name":"the Counter's Tide button is live","file":"stmt/page.js","find":"aria-pressed=\"false\" disabled' + act(\"look.tide\")","replace":"aria-pressed=\"false\"' + act(\"look.tide\")"},
+ {"name":"the Counter's switch takes Tide","file":"stmt/page.js","find":"  function lookSet(t){\n    if(t!=='night') return;","replace":"  function lookSet(t){\n    if(t!=='night'&&t!=='tide') return;"}
+]
