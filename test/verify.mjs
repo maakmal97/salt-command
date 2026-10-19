@@ -45022,7 +45022,9 @@ await (async () => {
   /* the note at section() says why: a bare block at the top level keeps its desk window to the end of the run */
   const lines = readFileSync(join(REPO, "test", "verify.mjs"), "utf8").split("\n");   /* the suite, not a shard of it (tools/suite-split.mjs) */
   const heads = lines.map((l, i) => [l, i]).filter(([l]) => l.startsWith("section("));
-  const bare = heads.filter(([, i]) => (lines.slice(i + 1).find((l) => l.trim() !== "") || "") !== "await (async () => {").map(([l]) => l.slice(9, 70));
+  const bare = heads.filter(([, i]) => (lines.slice(i + 1).find((l) => l.trim() !== "") || "") !== "await (async () => {"
+    /* 19 Oct 2026: a section parked while Tide is off is still its own async function, behind its guard */
+    && !(lines.slice(i + 1).find((l) => l.trim() !== "") || "").startsWith('if (!(await import("./tide-off.mjs")).TIDE_OFF) await (async () => {')).map(([l]) => l.slice(9, 70));
   ok(heads.length >= 186 && bare.length === 0 && !lines.some((l) => l === "{"),
     "every section runs in its own async function, so a closed window can be freed: " + heads.length + " sections, bare: " + JSON.stringify(bare));
   const { openMaster: omW } = await import("../tools/payload.mjs");
