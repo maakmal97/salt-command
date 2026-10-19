@@ -181,6 +181,8 @@ async function bookMove(env, op, a) {
 }
 export const fixtureThreadMove = (env, a) => bookMove(env, "fixture-thread", a);
 export const fixtureAccountMove = (env, a) => bookMove(env, "fixture-account", a);
+/* the test surface's Reset: a test account's two fixture rows dropped, or the fresh one's started empty (stmt/orderbook.js) */
+export const fixtureReset = (env, a) => bookMove(env, "fixture-reset", a);
 /** Whether Counter Admin's move under `rid` is on this order already, and the request it was made with. */
 export const deskSeen = (env, u, id, rid) => onBook(env) ? bookMove(env, "deskseen", { u, id, rid })
   : Promise.resolve({ ok: false, error: "A move with a request id needs the order book.", status: 503 });
@@ -1567,14 +1569,24 @@ function acceptOfferEv(order, f, at) {
 const NEXT = { acknowledged: ["placed"], ready: ["acknowledged", "placed"], done: ["ready", "acknowledged"],
   declined: OPEN_STATES, cancelled: OPEN_STATES };
 
-/** The owner's moves, from the phone through the desk's Worker. Every change wakes the customer. */
-export async function deskMove(env, u, id, body, pointAt) {
+/** A desk move's body as the order book takes it: an acknowledgement's window and an offer's, each with its span cut to the Counter's
+ *  hours (ackSlot). One road for a real order (deskMove) and an example one (the test surface, stmt/maker.js). Returns { body } or
+ *  { error, status }. */
+export async function deskBody(env, body) {
   if (body && body.status === "acknowledged" && body.slot !== undefined) body = await ackSlot(env, body);
   if (body && body.offer && body.offer.kind === "accept" && body.offer.slot) {
     const s = await ackSlot(env, { slot: body.offer.slot });
     if (!s.slot) return { error: "that window has passed: choose another", status: 400 };
     body = Object.assign({}, body, { offer: Object.assign({}, body.offer, { slot: s.slot, slotSpan: s.slotSpan }) });
   }
+  return { body };
+}
+
+/** The owner's moves, from the phone through the desk's Worker. Every change wakes the customer. */
+export async function deskMove(env, u, id, body, pointAt) {
+  const shaped = await deskBody(env, body);
+  if (shaped.error) return shaped;
+  body = shaped.body;
   if (onBook(env)) {
     /* the point's place rides beside the body, never in it: the request kept under the id is the body, and a retry is
        answered from it before the place is looked at (Counter Batch A) */

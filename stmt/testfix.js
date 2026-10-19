@@ -23,7 +23,7 @@
  * binding exists, on either store road; no real events, marks or write-behind read that table. A new publication
  * resets its generation. Binding-less legacy customer fixtures remain in KV; new owner replies refuse there.
  */
-import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove, joinLive, poolUnits, POOL_ON_KV } from "./orders.js";
+import { decideCustomer, decideReplace, decideAccountClaim, decideThread, applyEvent, customerView, claimView, ordersOf, ridOf, fixtureThreadMove, fixtureAccountMove, fixtureReset, joinLive, poolUnits, POOL_ON_KV } from "./orders.js";
 import { refusal } from "./words.js";
 import { numbersOf } from "./paynum.js";
 import { hoursConfig } from "./hours.js";
@@ -79,6 +79,17 @@ export async function exampleAccount(env, u, move = {}) {
     actor: "read", ...move
   });
   return { ...result, generation, orders: result.account?.orders || [], prepared: !!fix.makerBook };
+}
+
+/** THE TEST SURFACE'S RESET: the account's fixture rows go, and its next read seeds them from the publication; Start empty, the fresh
+ *  account's alone, writes one with nothing in it under the publication it stands on. Links stay in the KV fixture until the next
+ *  publish (his answer of 18 Oct 2026, Ask 8). */
+export async function exampleReset(env, u, empty = false) {
+  if (!isTest(u)) return { ok: false, error: "Only a test account is reset.", status: 400 };
+  if (!env.ORDERBOOK) return { ok: false, error: "Acceptance storage is unavailable.", status: 503 };
+  const fix = empty ? await fixNow(env, u) : null;
+  if (empty && !fix) return Object.assign({ ok: false }, soon());
+  return fixtureReset(env, { u, empty: empty === true, ...(fix ? { generation: JSON.stringify([fix.salt, fix.at || "", fix.env?.iv || ""]) } : {}) });
 }
 
 /** An example order's id: shown by a test account alone. */

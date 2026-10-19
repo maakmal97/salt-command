@@ -329,8 +329,10 @@ export async function run({ ok }) {
     const exRefused = await Promise.all(shapes.map(([body]) => move(exId, body)));
     ok(exRefused.every((r) => r.status === 400) && (await exRefused[0].json()).error === "Send the action's immutable request id.", "The Counter refuses every malformed move on an acceptance order itself, where the Desk never sees it: "
       + shapes.map(([, name], i) => name + "=" + exRefused[i].status).join(", "));
+    /* the test surface (19 Oct 2026): an example order's Accept is its own road, in the fixture (test/test-surface-moves.mjs); one with no preview's hash is refused there */
     const exAction = await owner("/all/maker/orders/" + exId + "/accept", {});
-    ok(exAction.status === 409, "An acceptance order still cannot use the real stage routes.");
+    ok(exAction.status === 400 && !bridge.some((p) => p === "/_internal/maker/orders/" + exId + "/accept"),
+      "An acceptance order never reaches the Desk's real stage routes: its Accept with no preview's hash is refused on its own road.");
     const realViaDesk = await desk.fetch(new Request("https://desk.fixture.test/_internal/maker/orders/" + exId + "/move", {
       method: "POST", headers: { "X-Counter-Maker-Key": env.COUNTER_MAKER_KEY, "content-type": "application/json" },
       body: JSON.stringify({ status: "ready", mode: "collect", point: "Z9", rid: rid(49) }) }), deskEnv, {});

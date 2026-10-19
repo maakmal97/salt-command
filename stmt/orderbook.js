@@ -67,7 +67,7 @@
 import { BOOK_NAME, OPEN_STATES, LAST_PLACED, LAST_TOUCHED, LAST_SAID, LAST_THEIRS, FROZEN, ROAD_KEY, decidePlace, decideReplace, decideCustomer, decideDesk,
   applyEvent, marksOf, wakes, isClaimId, decideAccountClaim, decideClaimDesk, rateAskable, THREAD_ID, isThreadId, decideThread, RID_RE,
   isPoolId, decidePoolOpen, decidePoolJoin, decidePoolClose, joinLive, poolUnits, POOL_SHOWN_DAYS, claimWaits, isAdvance, graceOver } from "./orders.js";
-import { TEST_USERS } from "./testusers.js";
+import { TEST_USERS, TEST_FRESH } from "./testusers.js";
 
 export { BOOK_NAME };
 const MARKS = { last: LAST_PLACED, touched: LAST_TOUCHED, said: LAST_SAID, theirs: LAST_THEIRS };
@@ -120,11 +120,11 @@ export class OrderBook {
     const op = new URL(request.url).pathname.slice(1);
     let a = null;
     try { a = await request.json(); } catch (e) { a = null; }
-    if (op !== "drop" && op !== "fixture-thread" && op !== "fixture-account") await this.moveIn(true);
+    if (op !== "drop" && op !== "fixture-thread" && op !== "fixture-account" && op !== "fixture-reset") await this.moveIn(true);
     if (op === "check") return Response.json(await this.check());
     if (op === "compare") return Response.json(await this.compare());
     const out = this.run(op, a && typeof a === "object" ? a : {});
-    if (op !== "fixture-account" && out.ok && out.order && !out.again && !out.none && !isPoolId(out.order.id) && this.writesKv()) await this.arm();
+    if (op !== "fixture-account" && op !== "fixture-reset" && out.ok && out.order && !out.again && !out.none && !isPoolId(out.order.id) && this.writesKv()) await this.arm();
     return Response.json(out);
   }
   /* the end of the minute, with or without a request to notice it; once moved in, the writes behind */
@@ -342,7 +342,7 @@ export class OrderBook {
     const at = new Date().toISOString();
     if (op === "fixture-account") {
       if (!TEST_USERS.includes(a.u) || typeof a.generation !== "string"
-        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "order", "replace", "deskorder", "pjoin", "place"].includes(a.actor))
+        || a.generation.length > 1024 || !["read", "customer", "desk", "receipt", "orderreceipt", "order", "replace", "deskorder", "pjoin", "place"].includes(a.actor))
         return { ok: false, error: "An acceptance account needs its publication.", status: 400 };
       return this.state.storage.transactionSync(() => {
         const sql = this.state.storage.sql;
@@ -356,7 +356,8 @@ export class OrderBook {
         if (a.actor !== "read") {
           if (typeof a.rid !== "string" || !RID_RE.test(a.rid))
             return { ok: false, error: "An acceptance move needs its immutable request id.", status: 400 };
-          const key = (a.actor === "receipt" ? "desk" : a.actor) + ":" + a.rid, request = JSON.stringify(a.request);
+          /* a receipt look-up names the actor whose receipt it reads: "receipt" a claim answer's, "orderreceipt" an example order's move */
+          const key = (a.actor === "receipt" ? "desk" : a.actor === "orderreceipt" ? "deskorder" : a.actor) + ":" + a.rid, request = JSON.stringify(a.request);
           if (!request || request.length > 4096)
             return { ok: false, error: "The acceptance request is too large.", status: 400 };
           if (Object.hasOwn(receipts, key)) {
@@ -366,7 +367,7 @@ export class OrderBook {
             return { ok: true, account: doc, claim: doc.claims.find((c) => c.id === receipt.id),
               order: doc.orders.find((o) => o.id === receipt.id), again: true, found: true };
           }
-          if (a.actor === "receipt") return { ok: true, found: false, account: doc };
+          if (a.actor === "receipt" || a.actor === "orderreceipt") return { ok: true, found: false, account: doc };
           if (Object.keys(receipts).length >= 400)
             return { ok: false, error: "Publish fresh acceptance cases before more claims.", status: 409 };
           let claim;
@@ -449,6 +450,23 @@ export class OrderBook {
             a.u, a.generation, JSON.stringify(doc), JSON.stringify(receipts));
         return { ok: true, account: doc };
       });
+    }
+    /* THE TEST SURFACE'S RESET (his answers of 18 Oct 2026): a test account's two fixture rows dropped, so the next read seeds them
+       afresh from the published fixture, revision 0 and no receipts; nothing is sealed again. A request id from before a Reset finds no
+       receipt and replays as a new move. `empty` starts the fresh account with no orders, claims, sales or pools, under the publication
+       it names, and is the fresh account's alone. It never stirs the real book: no moveIn, no arm, no event, no mark. */
+    if (op === "fixture-reset") {
+      if (!TEST_USERS.includes(a.u)) return { ok: false, error: "Only a test account is reset.", status: 400 };
+      if (a.empty === true && (a.u !== TEST_FRESH || typeof a.generation !== "string" || a.generation.length > 1024))
+        return { ok: false, error: "Start empty is the fresh account's alone, under its publication.", status: 400 };
+      this.state.storage.transactionSync(() => {
+        const sql = this.state.storage.sql;
+        sql.exec("DELETE FROM fixture_account WHERE u = ?", a.u);
+        sql.exec("DELETE FROM fixture_thread WHERE u = ?", a.u);
+        if (a.empty === true) sql.exec("INSERT INTO fixture_account (u,generation,doc,receipts) VALUES (?,?,?,?)", a.u, a.generation,
+          JSON.stringify({ claims: [], sales: [], orders: [], pools: [], revision: 0 }), "{}");
+      });
+      return { ok: true, reset: a.u, empty: a.empty === true };
     }
     if (op === "fixture-thread") {
       if (!TEST_USERS.includes(a.u) || typeof a.generation !== "string"

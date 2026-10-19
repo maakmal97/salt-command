@@ -48048,6 +48048,11 @@ await (async () => {
   await (await import("./test-surface-place.mjs")).run({ ok });
 })();
 
+section("Counter test surface P4: every Admin move on an example order, composed as the Desk's and run in the fixture alone, with Pay first and Reset (19 Oct 2026)");
+await (async () => {
+  await (await import("./test-surface-moves.mjs")).run({ ok });
+})();
+
 section("Counter maker cancels a paid order: the approver is told, the fold opens one refund");
 await (async () => {
   await (await import("./maker-paid-cancel.mjs")).run({ ok });

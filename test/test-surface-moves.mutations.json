@@ -1,0 +1,13 @@
+[
+ {"name":"Pay first is not carried","file":"stmt/maker.js","find":"move = Object.assign({ status: \"acknowledged\", delivery, prepay: terms.prepay }","replace":"move = Object.assign({ status: \"acknowledged\", delivery, prepay: false }"},
+ {"name":"a raise is agreed without their yes","file":"stmt/maker.js","find":"      if (check.yes) return json({ ok: false, needsYes: true,","replace":"      if (false) return json({ ok: false, needsYes: true,"},
+ {"name":"an Accept's window is not cut to its span","file":"stmt/orders.js","find":"export async function deskBody(env, body) {\n  if (body && body.status === \"acknowledged\" && body.slot !== undefined) body = await ackSlot(env, body);\n","replace":"export async function deskBody(env, body) {\n"},
+ {"name":"a close works its goods out itself","file":"stmt/maker.js","find":"close: true, total: (await fixtureCheck(env, o, { close: body.qty })).close }","replace":"close: true, total: +(o.total * body.qty / o.qty).toFixed(1) }"},
+ {"name":"Cash records another figure","file":"stmt/maker.js","find":"if (action === \"cash\") move = { cash: { amount: body.amount } };","replace":"if (action === \"cash\") move = { cash: { amount: body.amount * 2 } };"},
+ {"name":"Received files the claim not found","file":"stmt/maker.js","find":"move = { verdict: { kind: \"received\", claim: p.at, amount: p.amount } };","replace":"move = { verdict: { kind: \"notfound\", claim: p.at, amount: p.amount } };"},
+ {"name":"a tap already held is read again","file":"stmt/maker.js","find":"return r.found ? json({ ok: true, order: r.order, test: true, again: true }) : null;","replace":"return null;"},
+ {"name":"any order id takes the example road","file":"stmt/maker.js","find":"if (EXAMPLE_ID.test(op.id)) return await exampleAction(env, op.id, op.action, parsed.body);","replace":"if (/^[0-9]{14}-/.test(op.id)) return await exampleAction(env, op.id, op.action, parsed.body);"},
+ {"name":"Reset keeps the account's row","file":"stmt/orderbook.js","find":"        sql.exec(\"DELETE FROM fixture_account WHERE u = ?\", a.u);\n        sql.exec(\"DELETE FROM fixture_thread WHERE u = ?\", a.u);\n        if (a.empty","replace":"        sql.exec(\"DELETE FROM fixture_thread WHERE u = ?\", a.u);\n        if (a.empty"},
+ {"name":"Start empty is anybody's","file":"stmt/orderbook.js","find":"if (a.empty === true && (a.u !== TEST_FRESH ||","replace":"if (a.empty === true && (false ||"},
+ {"name":"Reset moves the book in","file":"stmt/orderbook.js","find":" && op !== \"fixture-reset\") await this.moveIn(true);","replace":") await this.moveIn(true);"}
+]

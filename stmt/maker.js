@@ -1,4 +1,4 @@
-import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose } from "./orders.js";
+import { allOrders, deskSeen, placeOrder, customerView, RID_RE, onBook, allPools, poolOpen, poolClose, deskBody } from "./orders.js";
 import { accountRecord, exampleAccount, examplePlace, isTest, isExample, EXAMPLE_ID, TEST_USERS, EXAMPLE_POINTS } from "./testfix.js";
 import { POINTS_KEY, readPoints, validatePoints, resolvePoint, isPointCode } from "./points.js";
 import { hoursStatus, validateManualHours, validateWeeklyHours, HOURS_KEY, windowHours } from "./hours.js";
@@ -110,6 +110,9 @@ async function deskCall(env, path, method, body) {
   }));
   let result;
   try { result = await response.json(); } catch (e) { throw new Error("The Desk maker route returned an unreadable response."); }
+  /* the test surface's two Desk reads on a Desk that has not shipped them: said plainly, never a 404 of the Counter's own */
+  if (response.status === 404 && result && result.error === "not found" && /^\/_internal\/maker\/fixture-(check|claims)/.test(path))
+    throw Object.assign(new Error("The Desk is not updated yet."), { status: 503 });
   if (!response.ok || !result || result.ok !== true)
     throw Object.assign(new Error(result && result.error || "The Desk maker operation failed."),
       { status: response.ok ? 502 : response.status, state: result && result.state,
@@ -207,6 +210,104 @@ async function makerPoints(request, env, method) {
   if (next.error) return json({ ok: false, error: next.error }, 400);
   await env.STMT.put(POINTS_KEY, JSON.stringify(next));
   return json({ ok: true, points: next, examples: EXAMPLE_POINTS });
+}
+
+/* ---- THE TEST SURFACE: EVERY MOVE ON AN EXAMPLE ORDER (his answers of 18 Oct 2026, Asks 2, 6 and 7) ----------------------------------
+ * One road for example orders, on /all and /all/test alike. Each tap composes the body the Desk would send and runs it through the order
+ * book's own decideDesk in the account's fixture alone (actor deskorder), so every rule a real order keeps holds here, and nothing is
+ * queued, drafted, approved or folded. Three rules live only on the Desk, and the one stateless read, fixture-check, answers them: the
+ * word check, what needs their yes at Accept and a close's goods. Nothing prices: the fixture's prices are invented, so no floor is
+ * asked for. Pay first is his switch here, since paid in advance is read off the real book. A retry under an id lands once. */
+async function exampleFind(env, id) {
+  for (const u of TEST_USERS) {
+    const fixture = await exampleAccount(env, u);
+    if (!fixture.ok) {
+      if (fixture.status === 409) continue;
+      return { response: json(fixture, fixture.status || 503) };
+    }
+    const found = fixture.orders.find((o) => o.id === id);
+    if (found && isExample(u, id)) return { u, found };
+  }
+  return { response: json({ ok: false, error: "order not found" }, 404) };
+}
+const fixtureTerms = (o) => ({ total: +o.total || 0, qty: +o.qty, mode: o.mode, slot: o.slot || null, wantBy: o.wantBy || null });
+const fixtureCheck = (env, o, move) => deskCall(env, "/_internal/maker/fixture-check", "POST", { order: fixtureTerms(o), move });
+async function digestOf(value) {
+  const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value))));
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+const EXAMPLE_FIELDS = { preview: ["delivery", "total", "slot", "prepay"], accept: ["delivery", "total", "slot", "prepay", "hash", "rid"],
+  offer: ["delivery", "total", "slot", "hash", "rid"], withdraw: ["rid"], handed: ["qty", "close", "rid"], cash: ["amount", "rid"], received: ["amount", "claim", "rid"] };
+const OFFER_MS = 48 * 3600e3;
+async function exampleAction(env, id, action, body) {
+  if (action === "again") return json({ ok: false, error: "An example order has no rejected row to offer again." }, 409);
+  const fields = EXAMPLE_FIELDS[action];
+  if (!fields || Object.keys(body).some((key) => !fields.includes(key))) return json({ ok: false, error: "Unsupported order action fields." }, 400);
+  for (const key of ["delivery", "total", "qty", "amount"])
+    if (body[key] !== undefined && (typeof body[key] !== "number" || !Number.isFinite(body[key]) || body[key] < 0 || body[key] > 1000000))
+      return json({ ok: false, error: "Order figures must be finite, non-negative numbers." }, 400);
+  if (body.prepay !== undefined && typeof body.prepay !== "boolean" || body.close !== undefined && typeof body.close !== "boolean"
+    || body.slot !== undefined && body.slot !== "" && typeof body.slot !== "string" || body.hash !== undefined && typeof body.hash !== "string")
+    return json({ ok: false, error: "Unsupported order action fields." }, 400);
+  const f = await exampleFind(env, id);
+  if (f.response) return f.response;
+  const { u, found: o } = f;
+  let rid = body.rid, move = null;
+  if (["preview", "accept", "offer"].includes(action)) {
+    const delivery = o.mode === "deliver" ? (typeof body.delivery === "number" ? +body.delivery.toFixed(2) : null) : 0;
+    if (delivery == null) return json({ ok: false, error: "choose the delivery charge first" }, 400);
+    const total = typeof body.total === "number" && body.total > 0 ? +body.total.toFixed(2) : +o.total;
+    const check = await fixtureCheck(env, o, Object.assign({ total }, body.slot ? { slot: body.slot } : {}));
+    const terms = { id, status: o.status, step: (o.history || []).length, total, delivery, slot: check.slot || null, prepay: body.prepay === true };
+    const hash = await digestOf(terms);
+    if (action === "preview") return json({ ok: true, test: true, hash, offerHash: hash, quote: total, delivery, slot: check.slot || null,
+      needsYes: check.yes === true, prepay: terms.prepay, chargeChosen: true, flags: [] });
+    /* Accept carries no id of its own on his page: it is named by the figures he agreed (the hash he was shown), so a retry after the
+       order has moved on is still the same tap */
+    rid = rid || (action === "accept" && /^[0-9a-f]{64}$/.test(String(body.hash || "")) ? "acc" + body.hash.slice(0, 40) : rid);
+    const seen = await exampleSeen(env, u, id, action, body, rid);
+    if (seen) return seen;
+    if (body.hash !== hash) return json({ ok: false, differs: true, error: "The figures changed since the card drew them. Read them again." }, 409);
+    const until = new Date(Date.now() + OFFER_MS).toISOString();
+    if (action === "accept") {
+      if (check.yes) return json({ ok: false, needsYes: true, error: "this raises their price or changes their window: send it to them for their yes" }, 409);
+      move = Object.assign({ status: "acknowledged", delivery, prepay: terms.prepay }, Math.abs(total - (+o.total || 0)) > 0.004 ? { total } : {},
+        check.slot ? { slot: check.slot } : {});
+    } else if (o.price && o.price.from !== "accept" && ["asked", "offered"].includes(o.price.state)) move = { offer: { id: String(rid || ""), total, until } };
+    else {
+      if (!check.yes) return json({ ok: false, error: "nothing here needs their yes: Accept it" }, 409);
+      move = { offer: { id: String(rid || ""), kind: "accept", total, delivery, slot: check.slot || null, until } };
+    }
+  } else {
+    const seen = await exampleSeen(env, u, id, action, body, rid);
+    if (seen) return seen;
+    if (action === "withdraw") move = { withdraw: true };
+    if (action === "cash") move = { cash: { amount: body.amount } };
+    if (action === "handed") {
+      if (typeof body.qty !== "number") return json({ ok: false, error: "Say how many units were handed over." }, 400);
+      const closing = body.close === true && body.qty < +o.qty - 0.004;
+      if (!closing && Math.abs(body.qty - (+o.moved || 0)) < 0.0004) return json({ ok: false, error: "that is what the order already says was handed over" }, 409);
+      move = { handover: Object.assign({ units: body.qty, mode: o.mode }, closing ? { close: true, total: (await fixtureCheck(env, o, { close: body.qty })).close } : {}) };
+    }
+    if (action === "received") {
+      const waiting = (o.payments || []).filter((p) => p && p.claim === "waiting");
+      const p = body.claim ? waiting.find((x) => x.at === body.claim) : waiting[0];
+      if (!p) return json({ ok: false, error: "nothing they recorded is waiting to be received here" }, 409);
+      if (typeof body.amount !== "number" || Math.abs(p.amount - body.amount) > 0.004) return json({ ok: false, error: "That claim amount has changed." }, 409);
+      move = { verdict: { kind: "received", claim: p.at, amount: p.amount } };
+    }
+  }
+  const shaped = await deskBody(env, move);
+  if (shaped.error) return json({ ok: false, error: shaped.error }, shaped.status || 400);
+  const result = await exampleAccount(env, u, { actor: "deskorder", id, rid, request: { id, action, body }, body: shaped.body });
+  return json(result.ok ? { ok: true, order: result.order, test: true, ...(result.again ? { again: true } : {}) } : result, result.ok ? 200 : result.status || 503);
+}
+/* a tap the order book already holds under its id is answered from it, before anything is read again; other content under it is refused */
+async function exampleSeen(env, u, id, action, body, rid) {
+  if (!RID_RE.test(String(rid || ""))) return json({ ok: false, error: "Send the action's immutable request id." }, 400);
+  const r = await exampleAccount(env, u, { actor: "orderreceipt", rid, request: { id, action, body } });
+  if (!r.ok) return json(r, r.status || 503);
+  return r.found ? json({ ok: true, order: r.order, test: true, again: true }) : null;
 }
 
 function internalOperation(path) {
@@ -514,8 +615,8 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);
-      if (EXAMPLE_ID.test(op.id))
-        return json({ ok: false, error: "Not available on an example order." }, 409);
+      /* the test surface: an example order's every move, in its fixture alone (exampleAction) */
+      if (EXAMPLE_ID.test(op.id)) return await exampleAction(env, op.id, op.action, parsed.body);
       return json(await deskCall(env, "/_internal/maker/orders/" + op.id + "/" + op.action, "POST", parsed.body));
     }
     if (op.kind === "order-move") {
@@ -539,8 +640,9 @@ export async function handleMaker(request, env, pathname, verifiedIdentity) {
           if (found) { u = t; break; }
         }
         if (!found || !isExample(u, op.id)) return json({ ok: false, error: "order not found" }, 404);
+        /* the words through the Desk's one stateless read for example orders (the test surface), as every other move of theirs */
         const texts = [rest.message, rest.note].filter((text) => typeof text === "string");
-        if (texts.length) await deskCall(env, "/_internal/maker/words", "POST", { texts });
+        if (texts.length) await fixtureCheck(env, found, { texts });
         let move = rest;
         if (rest.status) move = { ...rest, maker: true };   /* the same rules as a real order's, held by the order book */
         if (op.action === "restate") move = { restate: { qty: rest.qty !== undefined ? rest.qty : found.qty, total: rest.total !== undefined ? rest.total : found.total, delivery: rest.delivery !== undefined ? rest.delivery : +(found.delivery || 0) } };
