@@ -48178,6 +48178,11 @@ await (async () => {
   await (await import("./counter-b-way.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Batch B: Collect and Deliver on Home, each opening the sheet with its way, the limit step at five open, none under the gate (P2)");
+await (async () => {
+  await (await import("./counter-b-start.mjs")).run({ ok, pageWork });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });

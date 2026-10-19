@@ -1830,7 +1830,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
     /* HOME: what they owe, what needs them and what they order again; the notice first (S7 7.5). What they owe is
        stage 6's To pay now (S6 6.2), its one filled Pay opening the pay sheet. Two columns from 1080px (S7 7.2) */
     + '<div id="pHome" class="home"><div class="hcol">' + noticeCard(bulletin)
-    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div></div>'
+    + '<div id="payHead" class="payhead" hidden></div><div id="hNeeds"></div><div id="hRate"></div><div id="hThread"></div><div id="hStart"></div></div>'
     + '<div class="hcol"><div id="hPool"></div><div id="hComing"></div><div id="hAgain"></div><div id="hReward"></div><div id="hYear"></div></div>'
     /* Counter Batch A: their latest open order, a pill over the App bar and the pay foot on a phone and a banner under To pay now from
        1080px: one element, so the two are never both shown */
@@ -6115,7 +6115,7 @@ const CLIENT_JS = `
      where it reads differently, so a poll moves nothing that has not changed. A row opens its order in Orders. */
   function drawHome(){
     /* V5 (his answer of 29 Sep 2026): a locked account still sees Home, greyed out; only To pay now is live */
-    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain(),
+    var parts={hNeeds:homeNeeds(), hRate:homeRate(), hThread:homeThread(), hStart:homeStart(), hPool:homePool(), hComing:homeComing(), hAgain:homeAgain(),
       hReward:homeReward(), hYear:homeYear(), hLive:homeLive()};
     Object.keys(parts).forEach(function(id){ var was=document.getElementById(id), n=parts[id]; n.id=id; grey(n,locked); if(was.outerHTML!==n.outerHTML) was.replaceWith(n); });
     thDraw();
@@ -6233,6 +6233,21 @@ const CLIENT_JS = `
     if(assoc) draft.forFriend=a.forFriend;
     sheetOpen(a.product,a.q,tile);
     if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
+  }
+  /* COUNTER BATCH B (his answers of 18 Oct 2026): A NEW ORDER FROM HOME BY HOW IT REACHES THEM. Two tiles, I will collect and Deliver to me,
+     each opening the sheet with that way chosen (at the limit, the limit step, as every sheet does). Nothing is drawn where nothing can be
+     ordered from here: his read-only view, the overdue gate, a list with nothing priced */
+  function homeStart(){
+    var box=el('div'); if(!bundle||view||hold||!sold().length) return box;
+    box.appendChild(hHead(tw('sh.new')));
+    var g=el('div','salt-options__grid salt-options__grid--2'), w=wayNow();
+    [['collect','sh.collect','hs.coll'],['deliver','sh.deliver',w&&w.place.trim()?'hs.delivLast':'hs.delivNew']].forEach(function(x){
+      var b=el('button','salt-option__face salt-option__face--tap hstart'), t=el('span','salt-option__text'); b.type='button'; b.setAttribute('data-start',x[0]);
+      t.appendChild(el('span','salt-option__label',tw(x[1]))); t.appendChild(el('span','salt-option__detail',tw(x[2]))); b.appendChild(t);
+      b.addEventListener('click',function(){ draft.mode=x[0]; sheetOpen(null,null,b); });
+      g.appendChild(b);
+    });
+    box.appendChild(g); return box;
   }
   function homeAgain(){
     var box=el('div'); if(!bundle||view||hold||!sold().length) return box;

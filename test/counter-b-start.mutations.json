@@ -1,0 +1,8 @@
+[
+ {"name":"the tile chooses no way","file":"stmt/page.js","find":"      b.addEventListener('click',function(){ draft.mode=x[0]; sheetOpen(null,null,b); });","replace":"      b.addEventListener('click',function(){ sheetOpen(null,null,b); });"},
+ {"name":"the tile names no last place","file":"stmt/page.js","find":"w&&w.place.trim()?'hs.delivLast':'hs.delivNew'","replace":"'hs.delivNew'"},
+ {"name":"the tile skips the limit","file":"stmt/page.js","find":"      b.addEventListener('click',function(){ draft.mode=x[0]; sheetOpen(null,null,b); });","replace":"      b.addEventListener('click',function(){ draft.mode=x[0]; sheetOpen(null,null,b); draft.step='form'; sheetDraw(); });"},
+ {"name":"tiles under the gate","file":"stmt/page.js","find":"    var box=el('div'); if(!bundle||view||hold||!sold().length) return box;\n    box.appendChild(hHead(tw('sh.new')));","replace":"    var box=el('div'); if(!bundle||view||!sold().length) return box;\n    box.appendChild(hHead(tw('sh.new')));"},
+ {"name":"tiles with nothing priced","file":"stmt/page.js","find":"    var box=el('div'); if(!bundle||view||hold||!sold().length) return box;\n    box.appendChild(hHead(tw('sh.new')));","replace":"    var box=el('div'); if(!bundle||view||hold) return box;\n    box.appendChild(hHead(tw('sh.new')));"},
+ {"name":"the part is never greyed","file":"stmt/page.js","find":"n.id=id; grey(n,locked);","replace":"n.id=id; grey(n,locked&&id!=='hStart');"}
+]
