@@ -51481,7 +51481,7 @@ await (async () => {
   const r = await BP.recover({ call: callOf(T), window: windowOf(L), A, B, ...quick });
   ok(r.ok && r.rows === Object.values(frozen).filter(Array.isArray).reduce((s, v) => s + v.length, 0)
     && r.live && r.live.reachable && r.live.loads === 1 && T.aborts() === 3,
-    "the test object, loaded at A then B, restores to A and agrees with git there, then forward to B; the live Book's history is in reach (" + (r.error || "") + ")");
+    "the test object, loaded at A then B, restores to A and agrees with git there, then forward to B; the live Book's history is in reach (" + (r.error || "") + " rows " + r.rows + " live " + JSON.stringify(r.live) + " aborts " + T.aborts() + ")");
   ok(BP.line(r).startsWith("Book recovery: the test Book restored from bbbbbbbb back to aaaaaaaa agrees with git there over ")
     && !BP.line(r).includes("pitrtest") && !BP.line(r).includes(frozen.sales[0].rid),
     "the line names short shas, counts and a verdict, never a bookmark or a row");
