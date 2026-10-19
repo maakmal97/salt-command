@@ -10489,7 +10489,8 @@ await (async () => {
         "each card ships a drawn QR matrix, so the code is the image the Share sheet carries");
       /* the same laws the statements live by: no seller's vocabulary, and no other party's code */
       const words = send.replace(/<style>[\s\S]*?<\/style>/g, " ");
-      ok(!/\b(cost|margin|tier|floor|shrink|profit)/i.test(words.replace(/[\s\S]*?var ROWS/, "")),
+      /* 19 Oct 2026: the sheet's script is read too, so Math.floor is the language's, never the seller's word */
+      ok(!/(?<!Math\.)\b(cost|margin|tier|floor|shrink|profit)/i.test(words.replace(/[\s\S]*?var ROWS/, "")),
         "and the sheet speaks none of the seller's vocabulary");
       ok(!existsSync(join(root, "2026-08", "_send_2026-08-01.html")),
         "an archive issue gets no send sheet, having no password and no link to send");
