@@ -7,7 +7,7 @@
   {"name":"an empty sales or purchases load is accepted","file":"src/book.js","find":"if (!Array.isArray(book.sales) || !book.sales.length || !Array.isArray(book.purchases) || !book.purchases.length)","replace":"if (false)"},
   {"name":"a duplicate rid-less row is dropped","file":"src/book.js","find":"for (let n = 2; seen.has(key); n++) key = base + \"#\" + n;","replace":"if (seen.has(key)) continue;"},
   {"name":"PRICING is not carried","file":"src/book.js","find":"if (pricing !== undefined && pricing !== null) {","replace":"if (false) {"},
-  {"name":"the answer carries a row","file":"src/book.js","find":"return Response.json(this.load(p, body.rev));","replace":"return Response.json({ ...this.load(p, body.rev), first: p.rows[0] && p.rows[0].doc + \"cost\" });"},
+  {"name":"the answer carries a row","file":"src/book.js","find":"return { ...r, readback: await this.readback() };","replace":"return { ...r, readback: await this.readback(), first: p.rows[0] && p.rows[0].doc + \"cost\" };"},
   {"name":"the load route is open to any caller","file":"src/worker.js","find":"  if (!good) return needsKey();\n  if (!env.BOOK)","replace":"  if (false) return needsKey();\n  if (!env.BOOK)"},
   {"name":"a drafter-side reader of the Book appears","file":"src/worker.js","find":"return json({ ok: true, cloud: true, writes: [\"queue\"] });","replace":"{ await env.BOOK?.get(1); return json({ ok: true, cloud: true, writes: [\"queue\"] }); }"},
   {"name":"the binding is renamed","file":"wrangler.jsonc","find":"{ \"name\": \"BOOK\", \"class_name\": \"Book\" }","replace":"{ \"name\": \"BOOKX\", \"class_name\": \"Book\" }"},
