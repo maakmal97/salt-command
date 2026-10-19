@@ -26,7 +26,7 @@ export async function run({ ok }) {
   ok(!none.error && none.entry.payload.tiers === null, "a registration with no starting tier is unchanged");
   /* 19 Oct 2026: a starting % travels with its unit; a page cached from before the % lift sends none, and it is refused here by unit, not by time */
   const unitless = add({ unit: undefined }), oldUnit = add({ unit: "drift" });
-  ok(/Reload (Salt|Counter) Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && add().entry.payload.unit === "pct" && !add({ tiers: null, unit: undefined }).error && add({ tiers: null }).entry.payload.unit === undefined,
+  ok(/Reload Salt Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && add().entry.payload.unit === "pct" && !add({ tiers: null, unit: undefined }).error && add({ tiers: null }).entry.payload.unit === undefined,
     "a starting % with no unit pct is refused with a message to reload Salt Admin, a registration with none needs no unit, and a starting % carries unit pct in the entry: " + JSON.stringify([unitless.error, oldUnit.error]));
   ok(!!add({ tiers: { oil: 0.5 } }).error && !!add({ tiers: { salt: 0.5, oil: 0.5 } }).error,
     "a starting tier on a fixed book is refused, alone or beside a tiered one");

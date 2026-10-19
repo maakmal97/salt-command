@@ -64,7 +64,7 @@ export async function run({ ok } = {}) {
   "out-of-range (a negative, or past 2), nonnumeric, level, missing and fixed-book inputs are refused");
   /* 19 Oct 2026: the unit is the gate. A Salt Admin page cached from before the % lift sends the old field's 0.3 with no unit, and it is refused here by unit, not by time. */
   const unitless = makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: 0.3 }, mirror), oldUnit = set(0.3, "drift");
-  check(/Reload (Salt|Counter) Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && !oldUnit.entry && !set(null, undefined).error
+  check(/Reload Salt Admin/.test(unitless.error || "") && !unitless.entry && !!oldUnit.error && !oldUnit.entry && !set(null, undefined).error
     && !makerTierSet({ at, code: "CX2-ZED", product: "salt", tier: null }, mirror).error
     && set(0.3).entry.payload.unit === "pct" && set(null).entry.payload.unit === undefined,
   "a salt figure with no unit pct is refused with a plain message to reload Salt Admin, a clear needs no unit, and a figure sent with it carries unit pct in the entry: " + JSON.stringify([unitless.error, oldUnit.error]));

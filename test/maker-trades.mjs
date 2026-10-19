@@ -383,7 +383,7 @@ export async function run({ ok, pageWork }) {
         : scenario.field === "Which associate" ? request.body.assoc : request.body.party) === "CZ9-ZED"
         && refusedWorld.calls.includes("/_internal/maker/inputs/" + scenario.direction)
         && page.section.querySelector('[role="status"]').firstChild.textContent === scenario.plain
-        && page.section.querySelector('[role="status"] .rraw').textContent.replace("Counter Admin", "Salt Admin") === scenario.error
+        && page.section.querySelector('[role="status"] .rraw').textContent === scenario.error
         && counts.every((n) => n === 0) && refusedWorld.puts.length === 0,
         "trade unknown " + scenario.name + ": forged generated-owner input reaches the real bridge/Worker, shows precise Add ID guidance and writes no queue, draft or admission " +
           JSON.stringify({ request, calls: refusedWorld.calls, counts, answer: page.section.querySelector('[role="status"]').textContent }));

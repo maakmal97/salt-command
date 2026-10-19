@@ -233,7 +233,7 @@ async function banners() {
   const placed = s.placed || 0;
   if (placed) {
     list.push({ title: placed === 1 ? "New order" : placed + " new orders",
-      body: withTail(placed === 1 ? "Acknowledge it on Counter Admin." : "Acknowledge them on Counter Admin.", t), tag: "salt", url: "./desk#orders/newest" });
+      body: withTail(placed === 1 ? "Acknowledge it on Salt Admin." : "Acknowledge them on Salt Admin.", t), tag: "salt", url: "./desk#orders/newest" });
     return { list: list.concat(informed), newest, inform: inf ? inf.at : null };
   }
   if (t) list.push({ title: "Waiting on you", body: t, tag: "salt", url: (s.orders || 0) > 0 ? "./desk#orders" : undefined });
