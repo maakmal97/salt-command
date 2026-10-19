@@ -451,7 +451,10 @@ export const EN = {
   "bk.in": "In your order: {q}",
   "bk.inTaps": "In your order: {q} ({t})",
   "bk.noPrice": "No price for this amount. Take one off.",
+  "bk.over": "Over {m} units has no list price. Take some off.",
   "bk.remove": "Remove",
+  "bk.lines1": "1 in the basket",
+  "bk.linesN": "{n} in the basket",
   /* F4, HIS DECISION OF 05 OCT 2026: THE LIGHT ON A BOOK'S MARK, a coloured border, said aloud by these and never a figure or
      the word for what is held. Green while what is on the shelf covers what is promised, yellow when it does not, red when
      the shelf is out; yellow and red carry the day he expects the next lot, once he sets one. Ordering is never refused. */

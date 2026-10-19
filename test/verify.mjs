@@ -42433,17 +42433,21 @@ await (async () => {
     ok(sheetIds.size === 1 && /^[A-Za-z0-9_-]{16,64}$/.test(posted[0].sheet) && posted[1].rid !== posted[2].rid && posted[2].total === 99 && posted.slice(1).every((x) => x.digest === "d2"),
       "every line goes under the one sheet id, each its own request id, at the list Place answered with: " + JSON.stringify(posted.map((x) => [x.product, x.sheet, x.total, x.digest])));
     ok(!!d.querySelector("#osheet .osent"), "and a retry the Worker says is on the sheet already is placed, and the sheet answers Order placed");
-    /* the next sheet keeps what they picked, and is a sheet of its own, each line under its own request id */
+    /* COUNTER BATCH B (his answer 3 of 18 Oct 2026, reversing V4b's keep): the next sheet forgets the sizes just placed, so it opens on one
+       size as a first sheet does; a second picked there makes a sheet of its own, each line under its own request id */
     d.querySelector('#osheet [data-k="close"]').click();
     d.getElementById("oNew").click();
+    const carried = [...d.querySelectorAll('#osheet input[type="radio"]:checked')];
+    [...d.querySelectorAll('#osheet input[type="radio"]')].find((r) => r.name !== carried[0].name).click();
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     await until(() => posted.length === 6 && !!d.querySelector("#osheet .osent"));
-    ok(posted.length === 6 && posted[4].rid !== posted[5].rid && posted[4].sheet === posted[5].sheet && posted[4].sheet !== posted[0].sheet
+    ok(carried.length === 1 && posted.length === 6 && posted[4].rid !== posted[5].rid && posted[4].sheet === posted[5].sheet && posted[4].sheet !== posted[0].sheet
       && posted.slice(4).map((x) => x.product).join() === "salt,oil",
-      "the next sheet keeps their picks, goes under a sheet id of its own, and each line its own request id: " + JSON.stringify(posted.slice(4).map((x) => [x.product, x.sheet, x.rid])));
-    /* Change after one line placed: the placed product is off the form, and the rest go on under the same sheet */
+      "the next sheet carries none of the sizes just placed, and a sheet of two picked afresh goes under a sheet id of its own, each line its own request id: " + JSON.stringify([carried.length, posted.slice(4).map((x) => [x.product, x.sheet, x.rid])]));
+    /* Change after one line placed: the placed product is off the form, and the rest go on under the same sheet (two picked afresh, Batch B) */
     d.querySelector('#osheet [data-k="close"]').click();
     d.getElementById("oNew").click();
+    d.querySelector('#osheet input[data-k="size1:10"]').click();
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     await until(() => posted.length === 8 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     d.getElementById("oBack").click();
@@ -42457,7 +42461,7 @@ await (async () => {
     /* closed after one line placed: reopened, the placed product is not offered again */
     d.querySelector('#osheet [data-k="close"]').click();
     d.getElementById("oNew").click();
-    radio("size:2").click();
+    radio("size:2").click(); d.querySelector('#osheet input[data-k="size1:10"]').click();
     d.getElementById("oGo").click(); d.getElementById("oPlace").click();
     await until(() => posted.length === 11 && d.getElementById("oPlace") && !d.getElementById("oPlace").disabled);
     d.querySelector('#osheet [data-k="close"]').click();
@@ -48191,6 +48195,11 @@ await (async () => {
 section("Counter Batch B: the basket's + and minus on Prices, taps on one mark summed at the sum's own figure, greyed past a price or at five open (P4)");
 await (async () => {
   await (await import("./counter-b-plus.mjs")).run({ ok, pageWork });
+})();
+
+section("Counter Batch B: the basket's bar, Review into the check, Remove, and Sent forgetting what was placed (P5)");
+await (async () => {
+  await (await import("./counter-b-bar.mjs")).run({ ok, pageWork });
 })();
 
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");

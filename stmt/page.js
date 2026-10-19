@@ -331,6 +331,17 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .bkline[hidden]{display:none}
 .bkline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:10px}
 .bkline__t{font-size:var(--salt-text-md);color:var(--salt-salt)}
+.bkrm{margin-top:6px}
+/* the bar: the pay foot's pattern under 1080px, sticking above the App bar on the bar's own slate; from 1080px, where the bar is the rail,
+   a card that sticks to the foot of the list's column */
+.bkbar[hidden]{display:none}
+.bkbar{z-index:10;position:sticky;margin-top:24px;bottom:calc(var(--salt-bar-h) + env(safe-area-inset-bottom,0px) - 1px);
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:12px 0 13px;background:var(--salt-slate);border-top:1px solid var(--salt-line)}
+.bkbar .salt-kpi{flex:1 1 8.5rem;padding:9px 14px 8px 18px}
+.bkbar .salt-pill{flex:1 1 auto;padding-left:18px;padding-right:18px;min-height:var(--salt-tap)}
+@media (min-width:1080px){
+  .bkbar{bottom:0;padding:12px 16px;border:1px solid var(--salt-line);border-radius:var(--salt-radius-lg)}
+}
 /* Counter Batch B: the way on Prices, its words and Change on one line while they fit */
 .pway[hidden]{display:none}
 .pway{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:-6px 0 18px}
@@ -3696,13 +3707,45 @@ const CLIENT_JS = `
       var p=B.P.product, a=bsOf(p), t=bsTapsOf(p), N=B.node; N.textContent=''; N.hidden=!(a>0)||!bsOn(); if(N.hidden) return;
       var parts=t?Object.keys(t).sort(function(x,y){ return +y-(+x); }).reduce(function(s,q){ for(var i=0;i<t[q];i++) s.push(String(+q)); return s; },[]):[];
       N.appendChild(el('span','bkline__t',parts.length>1?tw('bk.inTaps',{q:unitsOf(a,B.P.unit), t:parts.join(' + ')}):tw('bk.in',{q:unitsOf(a,B.P.unit)})));
-      if(priceAt(B.P,a)==null){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g?tw('e.offStep',{s:g.step, n:g.min}):tw('bk.noPrice'))); }
+      if(priceAt(B.P,a)==null){ var g=gridOf(B.P); N.appendChild(el('span','salt-field__hint',g&&a>g.max?tw('bk.over',{m:g.max}):g?tw('e.offStep',{s:g.step, n:g.min}):tw('bk.noPrice'))); }
       var rb=el('button','salt-ghost bkline__out',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-bkout','');
       rb.appendChild(el('span','sr',' '+pshape(p)));
       rb.addEventListener('click',function(){ bsDrop(p); bsPatch(); var f=bsRows.filter(function(R){ return R.P.product===p; })[0]; if(f) try{ f.plus.focus({preventScroll:true}); }catch(e){} });
       N.appendChild(rb);
     });
-    if(typeof bsBarDraw==='function') bsBarDraw();
+    bsBarDraw();
+  }
+  /* THE BAR: how many lines, the goods at the list's figures added as the sheet's foot adds them, delivery left to his confirmation, and
+     Review. Under 1080px a foot sticking above the App bar (the pay foot's pattern), from 1080px a card at the foot of the list's column.
+     Review is grey while a line has no price; it copies the priced lines into the sheet and opens its check */
+  function bsLines(){ var out=[]; sold().forEach(function(P){ var a=bsOf(P.product); if(a>0) out.push({P:P, a:a, t:priceAt(P,a)}); }); return out; }
+  function bsBarDraw(){
+    var bar=document.getElementById('bkBar');
+    if(!bar){ if(!pPrices.querySelector('.pgrid')) return; bar=el('div','bkbar'); bar.id='bkBar'; pPrices.appendChild(bar); }
+    var ls=bsOn()?bsLines():[], fo=document.activeElement, had=!!fo&&bar.contains(fo);
+    bar.textContent=''; bar.hidden=!ls.length; if(!ls.length) return;
+    var sum=0, open=ls.some(function(x){ return x.t==null; }); ls.forEach(function(x){ if(x.t!=null) sum+=x.t; });
+    var w=wayNow();
+    bar.appendChild(kpiTile('brass',tw(ls.length===1?'bk.lines1':'bk.linesN',{n:ls.length}),rm(+sum.toFixed(2)),tw(w&&w.mode==='deliver'?'sh.plusDeliv':'sh.toCollect')));
+    var go=el('button','salt-pill salt-pill--md',tw('sh.review')); go.type='button'; go.id='bkGo'; go.disabled=open;
+    go.addEventListener('click',function(){ bsReview(go); });
+    bar.appendChild(go);
+    if(had) try{ go.focus({preventScroll:true}); }catch(e){}
+  }
+  function bsReview(go){
+    var ls=bsLines(); if(!ls.length||ls.some(function(x){ return x.t==null; })) return;
+    draft.pick={}; ls.forEach(function(x){ draft.pick[x.P.product]=String(x.a); });
+    draft.src='basket'; draft.sheetKeep=''; draft.amend=''; draft.pool='';
+    sheetOpen(null,null,go);
+    if(osh&&draft.step==='form'&&!formWhy()) reviewSheet();
+  }
+  /* the sheet opened from the basket writes what changes in it back, so the two never differ; a tally that no longer adds up is dropped */
+  function bsFromPick(){
+    if(draft.src!=='basket') return;
+    var nb={}; Object.keys(draft.pick||{}).forEach(function(k){ nb[k]=String(draft.pick[k]); });
+    Object.keys(draft.bk||{}).forEach(function(k){ if(!(k in nb)) bsDrop(k); });
+    Object.keys(nb).forEach(function(k){ bsSet(k,+nb[k]); });
+    bsPatch();
   }
   /* ---- ORDER: the form, then every order and where it stands ---- */
   /* S1 1.4, 24 SEP 2026: A DROPPED REQUEST ANSWERS LIKE A REFUSAL, IN WORDS. It threw, so Place stayed
@@ -3882,7 +3925,7 @@ const CLIENT_JS = `
     var c=draft.check; if(!keep) draft.sheetKeep='';
     if(!c||!c.lines) return;
     var any=false;
-    c.lines.forEach(function(l){ if(l.placed){ any=true; if(draft.pick) delete draft.pick[l.product]; } });
+    c.lines.forEach(function(l){ if(l.placed){ any=true; if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });
     if(any&&keep) draft.sheetKeep=c.sheet||'';
     /* the line they typed went with the first order placed */
     if(any) draft.say='';
@@ -3890,7 +3933,7 @@ const CLIENT_JS = `
   function sheetClose(){
     if(!osh) return;
     dropPlaced(false);
-    var s=osh; osh=null; draft.step=''; draft.check=null; draft.amend=''; draft.pool='';
+    var s=osh; osh=null; draft.step=''; draft.check=null; draft.amend=''; draft.pool=''; draft.src='';
     s.wrap.parentNode.removeChild(s.wrap);
     behind();
     bkDrop('o');
@@ -4328,6 +4371,7 @@ const CLIENT_JS = `
   }
   /* the foot alone, so typing a place never redraws the field under the thumb */
   function formFoot(){
+    bsFromPick();
     var F=osh.foot; F.textContent='';
     var qs=quotes(), why=formWhy(), t=el('div','ototal'), sum=0;
     qs.forEach(function(x){ sum+=x.total; });
@@ -4465,7 +4509,14 @@ const CLIENT_JS = `
     if(one) row(tw('sh.price'),a.over?tw('sh.askOnly'):rm(a.total),a.over?'':tw('sh.perUnit',{rm:rm(a.rate)}));
     else {
       /* V4b: each line its size and mark, its price, and whether it is paid in advance or already sent; then the total */
-      c.lines.forEach(function(l){ row(withMark(l.product,unitsOf(l.q,l.unit)+' ',20),rm(l.total),l.placed?tw('sh.lineSent'):lk?tw('sh.inAdvance'):''); });
+      var rmOk=draft.src==='basket'&&!c.amend&&!c.pool&&!draft.busy&&!c.lines.some(function(l){ return l.placed; });
+      c.lines.forEach(function(l){ row(withMark(l.product,unitsOf(l.q,l.unit)+' ',20),rm(l.total),l.placed?tw('sh.lineSent'):lk?tw('sh.inAdvance'):'');
+        if(rmOk){ var rb=el('button','salt-ghost bkrm',tw('bk.remove')); rb.type='button'; rb.setAttribute('data-k','rm:'+c.lines.indexOf(l));
+          rb.appendChild(el('span','sr',' '+pshape(l.product)+' '+unitsOf(l.q,l.unit)));
+          rb.addEventListener('click',function(){ if(draft.busy||c.lines.some(function(x){ return x.placed; })) return;
+            if(draft.pick) delete draft.pick[l.product]; bsDrop(l.product); draft.sheetKeep=''; bsPatch();
+            if(picked()&&!formWhy()) reviewSheet(); else toForm(); });
+          L.lastChild.appendChild(rb); } });
       row(tw('sh.total'),rm(sheetSum(c)));
     }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
@@ -4573,6 +4624,10 @@ const CLIENT_JS = `
       l.placed=(r.body.order&&r.body.order.id)||'placed';
     }
     draft.busy=false;
+    /* COUNTER BATCH B (his answer 3 of 18 Oct 2026): A SIZE PLACED IS FORGOTTEN, by what is picked on every road and by the basket when the
+       sheet came from it, before the check that names them is let go, so nothing placed is offered or placed again */
+    c.lines.forEach(function(l){ if(l.placed){ if(draft.pick) delete draft.pick[l.product]; if(draft.src==='basket') bsDrop(l.product); } });
+    bsPatch();
     /* S4 4.5: Sent answers in the sheet; the Order tab behind it is drawn again with the order in it */
     draft.asked=!!ask; draft.sent=c.lines[0].placed==='placed'?'':c.lines[0].placed; draft.sheetKeep=''; draft.step='sent'; draft.check=null; draft.say=''; draft.noteOpen=false; draft.pushNote=''; draft.forFriend=null; draft.when=''; draft.wantBy='';
     sheetDraw();
