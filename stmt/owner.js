@@ -43,6 +43,9 @@ export const OWNER_JS = `
      brings in, and the address. The place is read on entering it, a part on entering the part, and what neither shows is never read:
      entering Shop reads no order and entering Orders reads no form. Nothing changes below the screen: every route, request body, id
      and retained send is as it was. Re-entering a place reads again, as it always did. */
+  /* the test surface (his answers of 18 Oct 2026): true on Counter Admin under /all/test alone, where it reads the example orders, their
+     payments and chats, and nothing else (no account list, links, inputs, notice or book) */
+  var TESTING=/*__TESTING__*/false;
   var placeNow='needs', partNow='', PARTS={}, fOpen=null;
   [].forEach.call(document.querySelectorAll('.aparts'), function(strip){
     /* a place may draw its parts as two strips (Orders: the stages, then the rest): PARTS is both, in the order they are drawn */
@@ -125,7 +128,7 @@ export const OWNER_JS = `
     /* so is the claim opened, and the line of the last answer: the claims are drawn again, every card shut, so a part left shows as it will be found */
     if(!inClaims()&&(makerClaimOpen||makerClaimSaid)){ makerClaimOpen=null; makerClaimSaid=''; drawMakerClaims(); }
     [].forEach.call(document.querySelectorAll('.place[data-m]'), function(b){
-      if(b.getAttribute('data-m')===placeNow) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+      if(b.getAttribute('data-m')===placeNow&&(!b.getAttribute('data-p')||b.getAttribute('data-p')===partNow)) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     [].forEach.call(document.querySelectorAll('.aparts button[data-part]'), function(b){
       var on=b.parentNode.getAttribute('data-place')===placeNow&&b.getAttribute('data-part')===partNow;
       b.setAttribute('aria-selected', on?'true':'false');
@@ -1761,6 +1764,9 @@ export const OWNER_JS = `
   }
   /* the placed-order preview's own native comparison, mirroring ordPvBlock on the Desk: their card today, margin,
      floor and their usual, read off the preview the server drafted (src/orders.js previewAck), never raw row JSON */
+  /* AN EXAMPLE ORDER'S PAY FIRST (his Ask 6 of 18 Oct 2026): the Desk decides pay-first off the real book, which a fixture is not, so an
+     example order's Accept carries his switch, and both ways can be walked */
+  var makerPayFirst={};
   function makerPlacedReading(parent, result){
     var note=function(text){ return el('span',null,text); };
     var tiles=el('div','maker-fields'), card=typeof result.card==='number'?result.card:null,
@@ -4077,11 +4083,13 @@ export const OWNER_JS = `
         function makerPlacedWin(){ return order.mode==='deliver'?((follower?(makerWin[group[0].id]||{}).value:win.value)||''):''; }
         function makerPlacedKey(){
           var d=makerPlacedDelivery();
-          return d==null?'':JSON.stringify([{total:Number(total.value),delivery:d},makerPlacedWin()]);
+          return d==null?'':JSON.stringify([{total:Number(total.value),delivery:d},makerPlacedWin()].concat(order.test?[(makerPayFirst[order.id]||{}).on===true]:[]));
         }
         function makerPlacedShow(q){
           qsay.className='salt-insight'; qsay.textContent='Figures read. Check them before you agree.';
-          qfigs.textContent=''; makerPlacedReading(qfigs,q.result);
+          qfigs.textContent='';
+          if(q.result.test) qfigs.appendChild(el('p','salt-insight','A practice order: nothing is priced or checked, and '+(q.result.prepay?'they pay first.':'it goes on credit.')));
+          else makerPlacedReading(qfigs,q.result);
           var old=card.querySelector('[data-accept]'); if(old) old.remove();
           var wait=lead.querySelector('[data-accept-wait]'); if(wait) wait.remove();
           termsDraw();
@@ -4093,6 +4101,7 @@ export const OWNER_JS = `
             if(yes){ var ob={total:s.total,delivery:s.delivery,hash:s.offerHash}; if(order.mode==='deliver'&&wv) ob.slot=wv;
               makerTap(order,'offer',ob,'Sent to them for their yes.'); return; }
             var body={total:s.total,delivery:s.delivery,hash:s.hash};
+            if(order.test) body.prepay=s.prepay===true;
             if(order.mode==='deliver'&&!order.slot&&!order.wantBy&&wv) body.slot=wv;
             makerAction('/all/maker/orders/'+encodeURIComponent(order.id)+'/accept',body,'Agreed and sent to the Desk.',order.id);
           },true); accept.setAttribute('data-accept',''); lead.insertBefore(accept,lead.firstChild);
@@ -4115,6 +4124,7 @@ export const OWNER_JS = `
           var delivery=makerPlacedDelivery();
           if(delivery==null){ previewTurn++; makerPlacedSay('Choose the delivery charge, and the figures read themselves.'); return; }
           var payload={total:Number(total.value),delivery:delivery}, key=makerPlacedKey(), turn=++previewTurn;
+          if(order.test) payload.prepay=(makerPayFirst[order.id]||{}).on===true;
           /* an in-flight preview is not yet usable: clear any existing quote/Accept at once, not only on success */
           delete makerQuotes[order.id];
           makerPlacedSay('Reading the figures.');
@@ -4123,7 +4133,7 @@ export const OWNER_JS = `
           pv.p.then(function(result){
             if(makerPv[order.id]===pv) delete makerPv[order.id];
             if(turn!==previewTurn||!card.isConnected) return;
-            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,hash:result.hash,offerHash:result.offerHash,result:result,key:key,sig:sig};
+            makerQuotes[order.id]={total:payload.total,delivery:payload.delivery,prepay:payload.prepay,hash:result.hash,offerHash:result.offerHash,result:result,key:key,sig:sig};
             chip.kept={value:chip.value,other:chip.other}; win.kept=win.value;
             makerPlacedShow(makerQuotes[order.id]);
           }).catch(function(error){
@@ -4167,6 +4177,17 @@ export const OWNER_JS = `
         /* 13 Oct 2026 (stress, Medium): THE FIGURES STAND UNDER THE CHARGE, above the time. They were drawn after the whole Delivery time fieldset, 1,270px down a phone's
            card, so a charge pressed there had its answer a screen away (the status line of a read, its figures, its failure). The time still re-reads them, and is a
            fieldset's height below them. */
+        if(order.test){
+          var pay=makerPayFirst[order.id]||(makerPayFirst[order.id]={on:false}), pset=el('fieldset','salt-options'), pgrid=el('div','salt-options__grid salt-options__grid--2');
+          pset.appendChild(el('legend','salt-options__legend','Payment'));
+          [[false,'On credit'],[true,'Pay first']].forEach(function(opt){
+            var label=el('label','salt-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face'), text=el('span','salt-option__label',opt[1]);
+            radio.type='radio'; radio.name='makerPay-'+order.id; radio.value=opt[0]?'first':'credit'; radio.checked=pay.on===opt[0]; actOn(radio,'order.pay-'+radio.value);
+            radio.addEventListener('change',function(){ pay.on=opt[0]; makerPlacedInvalidate(); makerPlacedRead(); });
+            face.appendChild(text); label.appendChild(radio); label.appendChild(face); pgrid.appendChild(label);
+          });
+          pset.appendChild(pgrid); tf.body.appendChild(pset);
+        }
         tf.body.appendChild(qsay); tf.body.appendChild(qfigs);
         /* 10 Oct 2026 (his Q3): a delivery that asked for no time may be answered with a window, sent with Accept; theirs stands */
         var win=makerWin[order.id]||(makerWin[order.id]={value:'',day:''});
@@ -4228,7 +4249,7 @@ export const OWNER_JS = `
            has one, and fewer units than ordered show two tiles under it: More to come (the default, a part handover, as Handed over sent it) or That is all
            (a close at these units, asked on the Sheet, as Finish at fewer units sent it). The button says which. Each body is the one its old button sent. */
         var qty=makerField(lead,['Units handed over','order.handed-units'],'number',order.qty), rest=null;
-        if(!order.test){ rest=makerTilesIn(lead,['The rest','order.handed-rest'],[{value:'more',label:'More to come'},{value:'all',label:'That is all'}]); rest.setAttribute('data-close',''); }
+        { rest=makerTilesIn(lead,['The rest','order.handed-rest'],[{value:'more',label:'More to come'},{value:'all',label:'That is all'}]); rest.setAttribute('data-close',''); }
         var handedPart=function(){ var n=Number(qty.value); return !!rest&&n>0&&n<Number(order.qty); };
         var handedEnds=function(){ return handedPart()&&rest.value==='all'; };
         var handed=makerButton(lead,['Handed over, '+units(order.qty),'order.handed'],function(){
@@ -5687,7 +5708,7 @@ export const OWNER_JS = `
     if(needsReading) return;
     if(!force&&needsAt&&Date.now()-needsAt<NEED_MS) return;
     needsReading=true;
-    var jobs=[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop(), loadOwed()];
+    var jobs=TESTING?[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true)]:[loadMaker(true), loadMakerClaims(true), loadMakerThreads(true), readShop(), loadOwed()];
     /* the sheet and the links are read again once read, or once their read has failed, so a Retry reaches every read that did */
     if((sheet||nSrc.sheet)&&!sheetBusy) jobs.push(loadSheet(true));
     if((linksRead||nSrc.links)&&!linksBusy) jobs.push(loadLinks(true));
@@ -5849,7 +5870,7 @@ export const OWNER_JS = `
   roster.addEventListener('click', function(ev){
     var bk=ev.target.closest('button[data-back]');
     if(bk){ var way=bk.getAttribute('data-back'); if(way==='accounts') openCard(null); else if(way==='orders') closeOrder(); else if(way==='form') closeForm(); return; }
-    var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); showPlace(mm, mm===placeNow?partNow:'', {fresh:true,push:true}); return; }
+    var b=ev.target.closest('button[data-m]'); if(b){ var mm=b.getAttribute('data-m'); showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }
     var k=ev.target.closest('button[data-chip]');
     if(k){ nKind=k.getAttribute('data-chip'); [].forEach.call(document.querySelectorAll('.nchips button'), function(x){ x.setAttribute('aria-selected', x===k?'true':'false'); }); drawNeeds(); return; }
     var t=ev.target.closest('button[data-part]'); if(t) showPlace(t.parentNode.getAttribute('data-place'), t.getAttribute('data-part'), {push:true});
@@ -5863,7 +5884,7 @@ export const OWNER_JS = `
   rq.addEventListener('input', drawRoster);
   showPlace('needs','',{fresh:true});
   /* the home itself needs the account list and the links: Needs you is read off both (S9 9.1) */
-  loadSheet(); loadLinks();
+  if(!TESTING){ loadSheet(); loadLinks(); }
   /* an address he opened the page on (#orders, #customers/links, the old #maker): the place it names, over the home */
   if(location.hash){
     var first=addrOf(location.hash);

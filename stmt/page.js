@@ -37,7 +37,7 @@ import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
 import { slotSpan, slotNext, WINDOWS } from "./window.js";
-import { TEST_USERS } from "./testfix.js";
+import { TEST_USERS, TEST_PASS } from "./testfix.js";
 import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
 
 /* v692: THE THREE-MINUTE LOCK IS GONE (his instruction, 18 Sep 2026). It was a privacy lock for a
@@ -47,6 +47,8 @@ export const POLL_MS = 10000;
 /* Step 7: the account's thread is read this often while its Sheet is open and the page is showing, and never otherwise
    (his "live enough to the second", met by a fast read rather than a socket) */
 export const THREAD_POLL_MS = 2000;
+/* THE TEST SURFACE (his answers of 18 Oct 2026): a practice view re-reads every 2 seconds, so a tap in one pane shows in the other at once */
+export const TEST_POLL_MS = 2000;
 
 const PAGE_CSS = `
 /* hidden wins over every display rule below: the tab strip and the issue strip are flex */
@@ -1502,6 +1504,13 @@ function noticeCard(b) {
 /* 11 OCT 2026, HIS DECISION: FIVE PLACES, Needs you, Orders, Customers, Record and Shop. "Maker" is retired on screen. A place but Needs you has
    its parts, each [the id its address and its sections carry, its word], drawn as the system's tab strip; the first opens with the place. */
 const ADMIN_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["customers", "Customers"], ["record", "Record"], ["shop", "Shop"]];
+/* THE TEST SURFACE (his answers of 18 Oct 2026): Counter Admin on the practice accounts draws four places, Needs you, Orders, Payments and
+   Chat; the last two open a part (the third field), and Record, Shop, the account list, the links, Approve, Group and Ledger are not drawn */
+const TEST_PLACES = [["needs", "Needs you"], ["orders", "Orders"], ["orders", "Payments", "payments"], ["customers", "Chat", "messages"]];
+const TEST_PARTS = { orders: ["placed", "confirmed", "ready", "paid", "done", "ended", "payments"], customers: ["messages"] };
+/* a place's rail button: data-p names the part a test place opens */
+const placeBtn = (cls, inner) => ([m, w, p]) => '<button type="button" class="' + cls + ' place" data-m="' + m + '"' + (p ? ' data-p="' + p + '"' : "")
+  + ' data-act="nav.' + (p || m) + '">' + inner(m, w, p) + "</button>";
 const ADMIN_PARTS = {
   orders: [["placed", "Received"], ["confirmed", "Agreed"], ["ready", "Ready"], ["paid", "Delivered or paid"], ["done", "Completed"], ["ended", "Ended"], ["approve", "Approve"], ["payments", "Payments"], ["group", "Group"], ["ledger", "Ledger"]],
   customers: [["accounts", "Accounts"], ["messages", "Messages"], ["links", "Links"], ["associates", "Associates"]],
@@ -1516,10 +1525,11 @@ const adminStrip = (p, list, cls, label) => '<div class="salt-tabs aparts' + cls
    with each stage's count, since the Steps recipe is a drawing and not a row of controls); Approve, Payments, Group and Ledger stand apart beneath, smaller. Every part keeps
    its id, its act and its address, and PARTS is both strips together (stmt/owner.js), so only the drawing is split. */
 const ADMIN_ORDER_STAGES = ["placed", "confirmed", "ready", "paid", "done", "ended"];
-const adminParts = (p) => p === "orders"
+const adminParts = (p, test) => test && !TEST_PARTS[p] ? ""
+  : p === "orders"
   ? adminStrip(p, ADMIN_PARTS[p].filter(([k]) => ADMIN_ORDER_STAGES.includes(k)), " salt-tabs--arrows aparts--stages", "Order stages")
-    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k)), " aparts--minor", "Other orders")
-  : adminStrip(p, ADMIN_PARTS[p], "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
+    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), " aparts--minor", "Other orders")
+  : adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !test || TEST_PARTS[p].includes(k)), "", ADMIN_PLACES.filter((x) => x[0] === p)[0][1]);
 /* PHASE 1b: Needs you's kind chips. They filter the one list and read nothing; each is a control with an act of its own, need.kind.<kind> */
 const ADMIN_KINDS = [["all", "All"], ["orders", "Orders"], ["payments", "Payments"], ["messages", "Messages"], ["rows", "Rows"], ["accounts", "Accounts"]];
 const ADMIN_FILTERS = [["all", "All"], ["unsent", "Not sent"], ["unopened", "Not opened"], ["owes", "They owe"], ["locked", "Locked out"], ["none", "No account yet"]];
@@ -1566,7 +1576,11 @@ function placesBar() {
     + '<span class="salt-appbar__icon">' + aico(t) + "</span>" + wt("span", 'class="salt-appbar__label"', "place." + t)
     + '<span class="salt-appbar__count" data-n="' + t + '"></span></button>').join("") + "</nav>";
 }
-export function landingPage(user, nonce, owner, bulletin) {
+/* THE TEST SURFACE (his answers of 18 Oct 2026). `test` is null on every real page, which is then the page it always was; under /all/test
+   it is {base, u}: the page's every request goes under the base, its storage under salt-test:, and it registers no service worker, manifest,
+   push or passkey (TEST_SHIM, spliced into the script's own scope, so every fetch, localStorage, sessionStorage and navigator in it is the
+   shim's). The customer view signs in on its own as `u` with the published test password. */
+export function landingPage(user, nonce, owner, bulletin, test) {
   const u = esc(user || "");
   return DOC_OPEN
     + '<script nonce="' + nonce + '">' + LOOK_HEAD + "</script>"
@@ -1583,7 +1597,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     /* 24 SEP 2026: A MANIFEST IS FETCHED WITHOUT COOKIES unless the link asks for them, so behind
        Access his own came back refused and the phone saved a page with no name. use-credentials on
        his route alone; the customer's manifest is public and its link is left as it was. */
-    + (owner ? '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">'
+    + (test ? "" : owner ? '<link rel="manifest" href="/all/manifest.webmanifest" crossorigin="use-credentials">'
       : '<link rel="manifest" href="/manifest.webmanifest">')
     + '<link rel="apple-touch-icon" href="' + (owner ? "/icon-key.png" : "/icon.png") + '">'
     + '<meta name="apple-mobile-web-app-capable" content="yes">'
@@ -1599,9 +1613,9 @@ export function landingPage(user, nonce, owner, bulletin) {
            system's own switch): Needs you, Orders, Customers, Record and Shop (his decision of 11 Oct 2026). A count beside a
            place is what waits there. */
         + '<nav class="salt-rail salt-appbar__rail" aria-label="Salt Account">'
-        + '<div class="salt-rail__group">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-rail__tab salt-rail__tab--solo place" data-m="' + m + '" data-act="nav.' + m + '">'
-          + '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(m) + "</span><span>" + w + "</span></span>"
-          + '<span class="salt-rail__count" data-count="' + m + '"></span></button>').join("") + "</div>"
+        + '<div class="salt-rail__group">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-rail__tab salt-rail__tab--solo", (m, w, p) =>
+          '<span class="salt-appbar__place"><span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + "</span><span>" + w + "</span></span>"
+          + (p ? "" : '<span class="salt-rail__count" data-count="' + m + '"></span>'))).join("") + "</div>"
         + '<div class="salt-rail__foot" id="mFoot"></div></nav>'
         + '<div class="amain">'
         /* 18 OCT 2026, HIS WORD: THE DESK'S SHELL. The system's Desk bar heads every place, as it heads the Desk: the ring and the name, the clock
@@ -1632,7 +1646,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="oOrders" class="aplace" data-in="orders" hidden>'
         + "<h1>Orders</h1>"
         + '<p class="lead">Orders from the Counter, by stage. The Desk checks each answer before it reaches the book.</p>'
-        + adminParts("orders")
+        + adminParts("orders", test)
         + '<div class="abody">'
         + '<section id="makerFor" hidden aria-label="Order for a customer"></section>'
         + '<section id="oSplit" data-in="orders.placed orders.confirmed orders.ready orders.paid orders.done orders.ended" aria-label="Orders">'
@@ -1660,7 +1674,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="oCustomers" class="aplace" data-in="customers" hidden>'
         + "<h1>Customers</h1>"
         + '<p class="lead">The people on the site: their accounts, their messages, guest links and associates.</p>'
-        + adminParts("customers")
+        + adminParts("customers", test)
         + '<div class="abody">'
         + '<div id="oAccts" data-in="customers.accounts">'
         + '<p class="lead" id="scount"></p>'
@@ -1700,7 +1714,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="oRecord" class="aplace" data-in="record" hidden>'
         + "<h1>Record</h1>"
         + '<p class="lead">Your own entries. Each waits for your approval under Orders &gt; Approve.</p>'
-        + adminParts("record")
+        + adminParts("record", test)
         + '<div class="abody">'
         + '<section id="makerInputs" data-in="record.entry record.customers record.pricing" aria-label="Record"></section>'
         + "</div></div>"
@@ -1708,7 +1722,7 @@ export function landingPage(user, nonce, owner, bulletin) {
         + '<div id="oShop" class="aplace" data-in="shop" hidden>'
         + "<h1>Shop</h1>"
         + '<p class="lead">The counter itself: its hours, the notice, the practice accounts and how this device looks.</p>'
-        + adminParts("shop")
+        + adminParts("shop", test)
         + '<div class="abody">'
         + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Shop hours</h2>'
         + '<p class="lead" id="makerHoursStatus">Reading.</p>'
@@ -1727,11 +1741,11 @@ export function landingPage(user, nonce, owner, bulletin) {
         + lookRow(true) + vaultRow() + "</section>"
         + "</div></div>"
         + '<p class="msg" id="rmsg" role="status" aria-live="polite"></p></div>'
-        + '<nav class="salt-appbar" aria-label="Salt Account">' + ADMIN_PLACES.map(([m, w]) => '<button type="button" class="salt-appbar__item place" data-m="' + m + '" data-act="nav.' + m + '">'
-          + '<span class="salt-appbar__icon">' + aico(m) + '</span><span class="salt-appbar__label">' + w + "</span>"
-          + '<span class="salt-appbar__count" data-count="' + m + '"></span></button>').join("") + "</nav>"
-        /* PHASE 1c: one + orb, on every place but Record, opens Record's menu of entries (it is shown and hidden by the owner's script) */
-        + '<button type="button" class="salt-orb salt-orb--raised" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + aico("add") + "</button>"
+        + '<nav class="salt-appbar" aria-label="Salt Account">' + (test ? TEST_PLACES : ADMIN_PLACES).map(placeBtn("salt-appbar__item", (m, w, p) =>
+          '<span class="salt-appbar__icon">' + aico(p === "messages" ? "customers" : m) + '</span><span class="salt-appbar__label">' + w + "</span>"
+          + (p ? "" : '<span class="salt-appbar__count" data-count="' + m + '"></span>'))).join("") + "</nav>"
+        /* PHASE 1c: one + orb, on every place but Record, opens Record's menu of entries (it is shown and hidden by the owner's script); none on the test surface */
+        + (test ? "" : '<button type="button" class="salt-orb salt-orb--raised" id="oAdd" data-act="nav.add" aria-label="Record an entry">' + aico("add") + "</button>")
         + "</div>"
         /* S9 9.7, his D13: what his page becomes when the Access session behind it has ended */
         + '<div id="aEnded" class="gate" hidden><h1>Your sign-in has ended</h1>'
@@ -1818,7 +1832,7 @@ export function landingPage(user, nonce, owner, bulletin) {
     + '<div id="pCard" class="panel" hidden></div>'
     + "</div>" + placesBar() + "</div>"
     + '<script nonce="' + nonce + '">'
-    + CLIENT_JS.replace(/__POLL__/g, String(POLL_MS)).replace(/__THPOLL__/g, String(THREAD_POLL_MS))
+    + CLIENT_JS.replace(/__POLL__/g, String(test ? TEST_POLL_MS : POLL_MS)).replace(/__THPOLL__/g, String(THREAD_POLL_MS))
       /* the notice as the page was served, so the card is drawn with no request; the poll reads it again. A function
          replacement, as every splice carrying typed words: a $' or $` in the notice was read as a pattern and pasted the
          page into the script, which then did not run (S7-R2 of the stage 7 review) */
@@ -1851,14 +1865,84 @@ export function landingPage(user, nonce, owner, bulletin) {
       /* v687: the owner's script travels only on his route. A function replacement, so nothing in
          it is read as a $ pattern. */
       .replace("/*__OWNER_JS__*/", () => (owner ? OWNER_JS : ""))
+      /* the test surface: the shim at the head of the script's scope, the door that signs itself in, and Counter Admin's practice mode;
+         on a real page each marker is taken out, leaving the script it always was */
+      .replace("/*__TS__*/", () => (test ? TEST_SHIM.replace("__TCFG__", JSON.stringify({ base: String(test.base || ""), owner: !!owner, u: test.u || "", pw: TEST_PASS })) : ""))
+      .replace("/*__TS_DOOR__*/", () => (test ? TEST_DOOR : ""))
+      .replace("/*__TESTING__*/false", () => (test ? "true" : "false"))
     + "</script>"
     + "</body></html>";
 }
 
+/* THE TEST SURFACE'S SHIM (his answers of 18 Oct 2026), spliced at the head of the script's scope on a page under /all/test alone. Its
+   names shadow the browser's for everything in the script: fetch puts a request under the base (Counter Admin's /all/maker/ under
+   /all/test/maker/), refuses any other /all road or a full address, and after a write that went through tells the other pane on the
+   channel salt-test, which re-reads at once; localStorage and sessionStorage keep their keys under salt-test:, so a sign-in here never
+   clears a real phone's memory (the look is read through from the real key when this pane has none of its own); navigator has no
+   service worker and no credentials, so no worker, push or passkey is ever registered. No backtick and no lone backslash: it is
+   spliced into the page's script as it is. */
+const TEST_SHIM = `
+  var TCFG=__TCFG__;
+  var TS=(function(){
+    var real=window.fetch.bind(window), P='salt-test:', hooks=[], ch=null;
+    try{ ch=new BroadcastChannel('salt-test'); ch.onmessage=function(){ hooks.forEach(function(f){ try{ f(); }catch(e){} }); }; }catch(e){ ch=null; }
+    function under(p){
+      if(typeof p!=='string'||p.charAt(0)!=='/'||p.charAt(1)==='/') return null;
+      if(p.indexOf('/all/maker/')===0) return TCFG.owner?'/all/test/maker/'+p.slice(11):null;
+      if(TCFG.owner||p==='/all'||p.indexOf('/all/')===0) return null;
+      return TCFG.base+p;
+    }
+    async function tfetch(p, o){
+      /* this phone's own things (devices, a remembered phone, passkeys, push, hand-overs, slips) are answered here, never sent */
+      if(!TCFG.owner&&typeof p==='string'&&/^[/](devices|remember|passkey|push|handover|slip|open-link)([/]|$)/.test(p))
+        return new Response(JSON.stringify({ok:false, error:'Not on the test surface.'}), {status:404, headers:{'content-type':'application/json'}});
+      var to=under(p);
+      if(to==null) throw new TypeError('Not on the test surface.');
+      var r=await real(to, o), m=String((o&&o.method)||'GET').toUpperCase();
+      if(r.ok&&m!=='GET'&&ch){ try{ ch.postMessage({at:Date.now()}); }catch(e){} }
+      return r;
+    }
+    function store(name){
+      var s=null; try{ s=window[name]; }catch(e){ s=null; }
+      function keys(){ var out=[]; for(var i=0;i<s.length;i++){ var k=s.key(i); if(k&&k.indexOf(P)===0) out.push(k.slice(P.length)); } return out; }
+      var api={
+        getItem:function(k){ var v=s.getItem(P+k); if(v==null&&k==='salt-look') v=s.getItem(k); return v; },
+        setItem:function(k,v){ s.setItem(P+k,String(v)); },
+        removeItem:function(k){ s.removeItem(P+k); },
+        key:function(i){ var a=keys(); return i<a.length?a[i]:null; },
+        clear:function(){ keys().forEach(function(k){ s.removeItem(P+k); }); }
+      };
+      return new Proxy(api,{
+        ownKeys:function(){ return keys(); },
+        getOwnPropertyDescriptor:function(t,k){ return keys().indexOf(k)>=0?{value:api.getItem(k),enumerable:true,configurable:true,writable:true}:undefined; },
+        get:function(t,k){ if(k==='length') return keys().length; if(Object.prototype.hasOwnProperty.call(api,k)) return api[k]; return typeof k==='string'?api.getItem(k):undefined; }
+      });
+    }
+    var nav=new Proxy(window.navigator,{
+      has:function(t,k){ return k==='serviceWorker'||k==='credentials'?false:(k in t); },
+      get:function(t,k){ if(k==='serviceWorker'||k==='credentials') return undefined; var v=t[k]; return typeof v==='function'?v.bind(t):v; }
+    });
+    return {fetch:tfetch, local:store('localStorage'), session:store('sessionStorage'), nav:nav, on:function(f){ hooks.push(f); }};
+  })();
+  var fetch=TS.fetch, localStorage=TS.local, sessionStorage=TS.session, navigator=TS.nav;
+  TS.on(function(){
+    if(OWNER){ loadMaker(true); loadMakerClaims(true); loadMakerThreads(true); }
+    else if(session) refresh();
+  });
+`;
+/* the customer view on the test surface: the door is filled with the account the shell names and the published test password, and sent;
+   the remembered phone, the link, the hand-over and the saved app's code never run */
+const TEST_DOOR = `
+    gate.hidden=false;
+    var remBox=document.getElementById('rem'); if(remBox) remBox.checked=false;
+    if(TCFG.u){ un.value=TCFG.u; pw.value=TCFG.pw; document.getElementById('f').dispatchEvent(new Event('submit',{cancelable:true})); }
+    return;
+`;
+
 /* Kept as one string rather than a file so the whole page is a single Worker response with a
    single nonce, and so nothing about a statement is ever a fetchable asset. */
 const CLIENT_JS = `
-(function(){
+(function(){/*__TS__*/
   /* THE TICKET INVALIDATES A FLOW THAT IS NO LONGER WANTED (04 Sep 2026 audit). A submit takes
      about a second in PBKDF2, and go.disabled does not stop the Enter key submitting a form at
      all, so a reader who pressed Enter twice had two flows in the air. Measured: he taps Lock now,
@@ -2151,10 +2235,10 @@ const CLIENT_JS = `
   pwShow.addEventListener('click', function(){ showPw(pw.type==='password'); try{ pw.focus(); }catch(e){} });
   /* what this phone can say about a value before it is sent: that one of the right length holds a symbol the
      alphabet never uses, which is a typing slip and never a fact about an account. Anything else goes to the site
-     and its one answer. The test accounts' zeros, and the second's one, are their own (v689). */
+     and its one answer. The test accounts' zeros, the second's one and the third's two, are their own (v689; 0000-0002 on 19 Oct 2026). */
   function unfit(v, n, what){
     var raw=clean(v);
-    return raw.length===n&&!/^0+1?$/.test(raw)&&ALPHA.test(raw)?tw(what==='username'?'door.unfitUn':'door.unfitPw'):'';
+    return raw.length===n&&!/^0+[0-2]?$/.test(raw)&&ALPHA.test(raw)?tw(what==='username'?'door.unfitUn':'door.unfitPw'):'';
   }
 
   function el(tag,cls,text){ var e=document.createElement(tag); if(cls)e.className=cls; if(text!=null)e.textContent=text; return e; }
@@ -6820,7 +6904,7 @@ const CLIENT_JS = `
      and a customer's page carries none of it: stmt/owner.js. */
   /*__OWNER_JS__*/
 
-  if(!OWNER){
+  if(!OWNER){/*__TS_DOOR__*/
     /* the cursor lands at once, and a remembered device opens over the top of it: a reader with no
        memory on this phone must never wait on a request to be able to type */
     try{ (un.value?pw:un).focus(); }catch(e){}

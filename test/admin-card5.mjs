@@ -104,6 +104,6 @@ export async function run({ ok, pageWork }) {
     ok(tiles.length === 4 && tiles.every((r) => r.type === "radio" && r.classList.contains("salt-option__input") && r.closest("label.salt-option") && r.closest("fieldset.salt-options")),
       "C7: every tile is the system's Option recipe, a radio over its 44px face");
     await tapRow("ord-r3");
-    ok(!cardOf("ord-r3").querySelector('[data-act="order.handed-rest"]') && !!byAct(cardOf("ord-r3"), "order.handed"), "C8: a test order is offered no close, the handover alone");
+    ok(!!cardOf("ord-r3").querySelector('[data-act="order.handed-rest"]') && !!byAct(cardOf("ord-r3"), "order.handed"), "C8: a test order is offered the close too, which the fixture runs at the Desk's own goods (the test surface, P4)");
   } catch (e) { ok(false, "a section stopped on an error: " + (e && e.message)); } finally { p.w.close(); }
 }

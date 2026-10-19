@@ -1697,6 +1697,13 @@ const worker = {
          Admin's moves on the example orders, the customer's own routes on a test account's session, and Reset. */
       if (p.startsWith("/all/test/maker/")) return handleMaker(request, env, "/all/maker/" + p.slice("/all/test/maker/".length), who, { test: true });
       if (p.startsWith("/all/test/c/")) return testCustomer(request, env, ctx, url, p.slice("/all/test/c".length), m);
+      /* the two views, one landingPage each, under their base: the customer's signed in as the test account named, and Counter Admin's
+         carrying no master and no account list */
+      if (m === "GET" && p === "/all/test/c") {
+        const tu = normUser(url.searchParams.get("u"));
+        return pageResponse(isTest(tu) ? tu : "", null, { base: "/all/test/c", u: isTest(tu) ? tu : "" });
+      }
+      if (m === "GET" && p === "/all/test/admin") return pageResponse("", { master: "", accounts: [] }, { base: "/all/test" });
       if (p === "/all/test/reset") {
         if (m !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
         const b = await readJson(request);

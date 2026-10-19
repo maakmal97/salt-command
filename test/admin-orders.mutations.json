@@ -674,7 +674,7 @@
  {
   "name": "the stages have no strip of their own",
   "file": "stmt/page.js",
-  "find": "    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k)), \" aparts--minor\", \"Other orders\")",
+  "find": "    + adminStrip(p, ADMIN_PARTS[p].filter(([k]) => !ADMIN_ORDER_STAGES.includes(k) && (!test || TEST_PARTS[p].includes(k))), \" aparts--minor\", \"Other orders\")",
   "replace": "    + \"\""
  },
  {

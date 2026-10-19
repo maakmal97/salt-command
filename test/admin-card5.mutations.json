@@ -16,6 +16,6 @@
   {"name":"a part handover says it closes","file":"stmt/owner.js","find":"makerTap(order,'handed',{qty:Number(qty.value)},'Handover sent to the Desk.'); return; }","replace":"makerTap(order,'handed',{qty:Number(qty.value),close:false},'Handover sent to the Desk.'); return; }"},
   {"name":"the close goes without the Sheet","file":"stmt/owner.js","find":"          makerAsk(order,handed,'close',{title:","replace":"          makerTap(order,'handed',{qty:n,close:true},'x'); return; makerAsk(order,handed,'close',{title:"},
   {"name":"the button does not say the finish","file":"stmt/owner.js","find":"handed.textContent=handedEnds()?'Finish at '+Number(qty.value)+' of '+units(order.qty):","replace":"handed.textContent="},
-  {"name":"a test order is offered the close","file":"stmt/owner.js","find":"        if(!order.test){ rest=makerTilesIn(","replace":"        if(true){ rest=makerTilesIn("},
+  {"name":"a test order is offered no close","file":"stmt/owner.js","find":"        { rest=makerTilesIn(","replace":"        if(!order.test){ rest=makerTilesIn("},
   {"name":"the tiles are not the Option recipe","file":"stmt/owner.js","find":"        var lab=el('label','salt-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face');","replace":"        var lab=el('label','maker-option'), radio=el('input','salt-option__input'), face=el('span','salt-option__face');"}
 ]

@@ -356,8 +356,8 @@
  {
   "name": "tapping the place he is in goes back to its first stage",
   "file": "stmt/owner.js",
-  "find": "showPlace(mm, mm===placeNow?partNow:'', {fresh:true,push:true}); return; }",
-  "replace": "showPlace(mm,'',{fresh:true,push:true}); return; }"
+  "find": "showPlace(mm, b.getAttribute('data-p')||(mm===placeNow?partNow:''), {fresh:true,push:true}); return; }",
+  "replace": "showPlace(mm, b.getAttribute('data-p')||'', {fresh:true,push:true}); return; }"
  },
  {
   "name": "the old #record/approve address lands on Entry",
