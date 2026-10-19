@@ -15531,7 +15531,8 @@ await (async () => {
     const one = d.querySelector('#osheet input[name="osize"][value="1"]');
     one.checked = true; one.dispatchEvent(new w.Event("change", { bubbles: true }));
     ok(/^RM 110/.test(d.querySelector("#osheet .salt-sheet__foot").textContent), "a tap on another size moves the total with it");
-    ok(!/salt|oil|Gold/i.test(d.getElementById("osheet").outerHTML.replace(/salt-[a-z_-]+/g, "")),
+    /* 19 Oct 2026: whole words, so toilet or Golden, or a random id, is not a product or a level */
+    ok(!/\b(salt|oil|gold)\b/i.test(d.getElementById("osheet").outerHTML.replace(/salt-[a-z_-]+/g, "")),
       "and the sheet carries no product word and no level's name, in its text or its attributes");
     d.querySelector("#osheet .salt-sheet").dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     ok(!d.getElementById("osheet"), "Escape closes it");
