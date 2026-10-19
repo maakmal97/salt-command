@@ -59,6 +59,12 @@ export async function run({ ok }) {
     const live = [M.d, S.d].flatMap((d) => [...d.querySelectorAll("#today, #today *")].filter((e) => e.hasAttribute("aria-live") || /^(status|alert|log|marquee|timer)$/.test(e.getAttribute("role") || "")));
     ok(live.length === 0 && !!M.d.querySelector("#pHome #today #bull") && !!M.d.querySelector("#today [data-clock]"),
       "the card is Home's first, holds the clock and the notice, and nothing in it is a live region: " + live.length);
+    /* the render pass of 19 Oct 2026: the card wears the system's padding, and on Home the header does not say the time twice */
+    /* read off the served sheet: jsdom's parser drops part of this stylesheet, which a browser applies */
+    const css = [...P.landingPage("", "ntd3", null, null).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join("\n");
+    const once = css.match(/\.cshell\[data-place=home\] \.chead \.cclock\{([^}]*)\}/g) || [];
+    ok(M.d.getElementById("today").classList.contains("salt-glass-card--pad-sm") && once.length === 1 && /display:none/.test(once[0]),
+      "the card is padded by the system's own modifier, and on Home the header's clock gives way to the card's: " + JSON.stringify(once));
 
     /* ---- 4: open or closed, off /hours ---- */
     const u = "abcd-efgh", pass = "fixture-pass-p8", ck = await C.contentKey("test-secret", u);

@@ -54,7 +54,9 @@ const PAGE_CSS = `
 /* S7 7.5 (his D14 of 24 Sep 2026): the notice is a still card on Home, the system's insight, a line a paragraph */
 /* Counter Batch A: the Today card, and the notice in it */
 .today{display:flex;flex-direction:column;gap:12px}
-.today__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:var(--salt-tap);margin:-12px 0 -4px}
+/* Home's Today card holds the clock, so the header does not say the time twice there */
+.cshell[data-place=home] .chead .cclock{display:none}
+.today__head{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:var(--salt-tap);margin:-8px 0 -4px}
 .today__clock{margin-left:auto;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);font-weight:500;font-variant-numeric:tabular-nums;color:var(--salt-mist-bright)}
 .today__line{margin:0;font-size:var(--salt-text-md);line-height:1.45;color:var(--salt-salt)}
 .today__when{color:var(--salt-brass)}
@@ -347,8 +349,10 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .devout{width:100%;margin-top:14px}
 @media (min-width:1080px){
   .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;row-gap:28px;align-items:start}
-  #aGlance,#aThread,.acct__main{grid-column:1}
-  .devcard{grid-column:2;grid-row:1 / span 2}
+  /* Counter Batch A: the glance runs across both columns, This device beside Messages and the statement under it */
+  #aGlance{grid-column:1 / -1}
+  #aThread,.acct__main{grid-column:1}
+  .devcard{grid-column:2;grid-row:2 / span 2}
 }
 /* S6 6.2: To pay now, Home's first answer since S7 7.1, its parts on the plain Ledger list */
 .payhead[hidden]{display:none}
@@ -1483,7 +1487,7 @@ function guestPage(inner, nonce, title) {
    that changes is never read out unasked. Drawn at first paint with the notice's lines; the open or closed line waits for /hours. */
 function noticeCard(b) {
   const lines = (b && Array.isArray(b.lines)) ? b.lines : [];
-  return '<section id="today" class="today salt-glass-card salt-glass-card--radius-lg"' + wl("today.aria") + ">"
+  return '<section id="today" class="today salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm"' + wl("today.aria") + ">"
     + '<div class="today__head"><span id="todayOpen" class="today__open" hidden></span><span class="today__clock" data-clock></span></div>'
     + '<p id="todayLine" class="today__line" hidden></p>'
     + '<div id="bull" class="salt-notice hnote"' + (lines.length ? "" : " hidden") + ">"
@@ -6156,7 +6160,7 @@ const CLIENT_JS = `
     if(!p) return box;
     var rw=p.reward, pc=Math.round(rw.next*100);
     box.appendChild(hHead(tw('hr.h')));
-    var b=el('button','hreward salt-glass-card salt-glass-card--radius-lg salt-glass-card--link'); b.type='button';
+    var b=el('button','hreward salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm salt-glass-card--link'); b.type='button';
     var top=el('span','hreward__top'), sr=el('span','sr',pshape(p.product)); top.appendChild(sr); top.appendChild(psym(p.product,28));
     top.appendChild(el('span','hreward__left',tw(rw.left>0?(rw.held?'rew.held':'rew.ask'):'rew.nextAria',{left:Uq(rw.left,p.unit), p:pc})));
     b.appendChild(top);
@@ -6194,7 +6198,7 @@ const CLIENT_JS = `
     var box=el('div'); if(!bundle||view) return box;
     var rows=yearRows(); if(!rows||!rows.length) return box;
     box.appendChild(hHead(tw('hy.h')));
-    var c=el('div','hyear salt-glass-card salt-glass-card--radius-lg'), top=el('div','hyear__top');
+    var c=el('div','hyear salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm'), top=el('div','hyear__top');
     top.appendChild(el('span','hyear__n',tw(rows.length===1?'hy.order1':'hy.orderN',{n:rows.length})));
     var by={}, ps=[]; rows.forEach(function(r){ if(!(r.p in by)){ by[r.p]=0; ps.push(r.p); } by[r.p]+=r.q; });
     var ts=el('span','hyear__units'); ps.forEach(function(p){ ts.appendChild(mtile(p,+by[p].toFixed(2),'unit',24)); }); top.appendChild(ts);

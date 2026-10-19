@@ -8,10 +8,12 @@
  {"name":"Pause never says it is pressed","file":"stmt/page.js","find":"bullHeld=!bullHeld; pz.setAttribute('aria-pressed',bullHeld?'true':'false');","replace":"bullHeld=!bullHeld;"},
  {"name":"reduced motion still turns","file":"stmt/page.js","find":"turns=lines.length>1&&!still;","replace":"turns=lines.length>1;"},
  {"name":"a single line turns with a Pause","file":"stmt/page.js","find":"turns=lines.length>1&&!still;","replace":"turns=lines.length>0&&!still;"},
- {"name":"the card is a live region","file":"stmt/page.js","find":"'<section id=\"today\" class=\"today salt-glass-card salt-glass-card--radius-lg\"' + wl(\"today.aria\") + \">\"","replace":"'<section id=\"today\" aria-live=\"polite\" class=\"today salt-glass-card salt-glass-card--radius-lg\"' + wl(\"today.aria\") + \">\""},
+ {"name":"the card is a live region","file":"stmt/page.js","find":"'<section id=\"today\" class=\"today salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm\"' + wl(\"today.aria\") + \">\"","replace":"'<section id=\"today\" aria-live=\"polite\" class=\"today salt-glass-card salt-glass-card--radius-lg salt-glass-card--pad-sm\"' + wl(\"today.aria\") + \">\""},
  {"name":"the clock leaves the card","file":"stmt/page.js","find":"<span class=\"today__clock\" data-clock></span>","replace":""},
  {"name":"open reads Closed","file":"stmt/page.js","find":"chip.textContent=tw(h.open?'today.open':'today.closed');","replace":"chip.textContent=tw('today.closed');"},
  {"name":"the hours are never drawn","file":"stmt/page.js","find":"    if(before!==JSON.stringify([counterHours,hoursError])) todayDraw();\n","replace":""},
  {"name":"unread hours still show","file":"stmt/page.js","find":"    chip.hidden=!known; line.hidden=!known;","replace":"    chip.hidden=false; line.hidden=false;"},
- {"name":"closed says nothing of when it opens","file":"stmt/page.js","find":"tw(sameDay(at)?'today.opens':'today.opensOn',{t:hhmm(at), d:stamp(at)})","replace":"''"}
+ {"name":"closed says nothing of when it opens","file":"stmt/page.js","find":"tw(sameDay(at)?'today.opens':'today.opensOn',{t:hhmm(at), d:stamp(at)})","replace":"''"},
+ {"name":"the card has no padding","file":"stmt/page.js","find":"salt-glass-card--radius-lg salt-glass-card--pad-sm\"' + wl(\"today.aria\")","replace":"salt-glass-card--radius-lg\"' + wl(\"today.aria\")"},
+ {"name":"Home says the time twice","file":"stmt/page.js","find":".cshell[data-place=home] .chead .cclock{display:none}","replace":".cshell[data-place=home] .chead .cclock{}"}
 ]

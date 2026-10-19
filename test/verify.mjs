@@ -40660,8 +40660,8 @@ await (async () => {
     "the page's own sheet is read, with its 1080px blocks; resolved at a width no @media is left, and the block for print is dropped");
   const wide = [1080, 1280].map(shape), narrow = [1079, 390, 320].map(shape);
   /* 11 Oct 2026 (Phase 7d part 2): the device comes first in the reading order, Messages, This device, then the statement, and the grid still puts Messages and the statement in the first column and This device in the second */
-  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div#aGlance div#aThread section#thisDevice div.acct__main" && s.placed === "1/0 1/0 2/0 1/0"),
-    "from 1080px Account is a grid of two columns, the glance, Messages and the statement placed in the first and This device placed by the grid into the second, beside them: " + JSON.stringify(wide));
+  ok(wide.every((s) => s.display === "grid" && s.tracks === 2 && s.kids === "div#aGlance div#aThread section#thisDevice div.acct__main" && s.placed === "1 / -1/0 1/0 2/0 1/0"),
+    "from 1080px Account is a grid of two columns, the glance across both, Messages and the statement placed in the first and This device placed by the grid into the second, beside them: " + JSON.stringify(wide));
   ok(narrow.every((s) => s.display === "flex" && s.dir === "column" && s.kids === "div#aGlance div#aThread section#thisDevice div.acct__main"),
     "below 1080px it is one column in reading order, the glance, Messages, then This device, then the statement: " + JSON.stringify(narrow));
 })();
