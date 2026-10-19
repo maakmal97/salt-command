@@ -10238,7 +10238,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1181","d":"20 Oct 2026","t":"THREE STOCK COUNTS ON 20 OCT: OIL, CANDY AND RICE ALL SHORT","n":["<b>THREE COUNTS FOLDED, ALL SHORT.</b> Oil was counted at 45 unit against 50 on the book (-5), candy at 6 against 11 (-5) and rice at 15 against 24 (-9). Each was decided by Counter Admin. The dossier gives no reason for any gap, and none is offered here.","<b>WHAT THE INVENTORY DID.</b> Each count wins over the ledger, so the stated stock for oil, candy and rice is reset to the counted figure and COUNT_ON for each moves to 20 Oct 2026. The gaps book as shrinkage across every unit sold. Salt was not counted and stays as it was."]}];
+const evolution=[{"v":"v1182","d":"20 Oct 2026","t":"THE COUNTER, BATCH C: SAVED SPOTS, THE CONFIRM TIME, HELP, BOLDER LABELS AND THE SLIDER","n":["<b>SAVED SPOTS ON THE PHONE.</b> A delivery's Where to is up to three spots kept on the customer's phone, none picked when the sheet opens; Review waits until one is. Log out keeps them; Remove drops one.","<b>THE SEAL CARRIES THE SPOT'S NAME AND UNIT.</b> Sealed to the slip key beside the point, or a unit alone. The Desk names them after the one unlock; a unit alone is never filed or measured.","<b>THE CONFIRM TIME, MEASURED.</b> The median of the last 30 Accepts made in Counter hours, up to the quarter hour, filed hourly; a placed order says it while the Counter is open, and when it opens while closed.","<b>HELP UNDER ACCOUNT.</b> Four answers, each closed until tapped.","<b>LABELS AT 600 AND THE SLIDER.</b> salt-ds 1.9.0 to 1.9.2: section and field labels bolder on the Desk, the Counter and QR Command; strips of two to six options slide, the rest stay pills."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10386,7 +10386,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='20 Oct 2026, 04:00 KL';
+const LAST_UPDATED='20 Oct 2026, 04:23 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
