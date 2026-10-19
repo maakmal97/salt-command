@@ -24296,14 +24296,14 @@ await (async () => {
     ok(P55.readRefs === undefined, "the publish no longer reads the guest links, since every link reads the one board");
 
     /* ---- the whole publish, driven through main against the stub ---- */
-    const run55 = async (argv, run, key, sleep) => {
+    const run55 = async (argv, run, key, sleep, more) => {
       const was = { SALT_STATEMENTS_DIR: process.env.SALT_STATEMENTS_DIR, STMT_KEY: process.env.STMT_KEY };
       const log = console.log, err = console.error, exit = process.exit, said = [];
       process.env.SALT_STATEMENTS_DIR = root55;
       if (key) process.env.STMT_KEY = key; else delete process.env.STMT_KEY;
       console.log = console.error = (...m) => said.push(m.join(" "));
       process.exit = (c) => { throw new Error("exit " + c); };
-      try { await P55.main(["node", "stmt-publish.mjs", ...argv], { run, out: out55, sleep }); said.push("returned"); }
+      try { await P55.main(["node", "stmt-publish.mjs", ...argv], Object.assign({ run, out: out55, sleep }, more)); said.push("returned"); }
       catch (e) { said.push("threw " + e.message); }
       finally {
         console.log = log; console.error = err; process.exit = exit;
@@ -24330,8 +24330,8 @@ await (async () => {
     ok(saidP.includes("returned") && boards.join() === "guestboard" && gb && gb.products.length > 0 && !("introducer" in gb) && !("levels" in gb),
       "the priced hourly run writes the one guest board and no board per link, per level or per introducer, and no level names: "
       + boards.join() + " " + saidP.slice(-1));
-    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 0 && cP.length === 11 && cP.includes("kv key get expected") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001") && cP.includes("kv key get u:0000-0002"),
-      "in eleven spawns, the restock dates among them: one bulk read for account verification, no read of the links at all, no list, and each test account's record read for its fixture: " + cP.join());
+    ok(cP.filter((c) => c === "kv bulk get").length === 1 && gets(cP) === 0 && lists(cP) === 0 && cP.length === 12 && cP.includes("kv key get expected") && cP.includes("kv key get stocklights") && cP.includes("kv key get u:0000-0000") && cP.includes("kv key get u:0000-0001") && cP.includes("kv key get u:0000-0002"),
+      "in twelve spawns, the restock dates and the last stock lights among them: one bulk read for account verification, no read of the links at all, no list, and each test account's record read for its fixture: " + cP.join());
 
     /* ---- 03 Oct 2026, run 37122717841: the account read-back meets KV's eventual consistency ----
        The store answers the account records' bulk read with what it held BEFORE the put for the first `lag` reads (or
@@ -24428,6 +24428,9 @@ await (async () => {
       && saidN.includes("returned") && gone(sN) && saidL.includes("returned") && gone(sL) && cL.filter((c) => c === "kv key get issue").length === 2,
       "a deploy's publish whose read of the store's issue fails publishes and retires as ever but clears no attempt counter or older tick, and says so in wrangler's words, where it took the failure for a fresh store and cleared them; wrangler's 404, a fresh store, and a lapsed login run once more still clear them for a new issue: "
       + [saidF, saidN, saidL].map((s) => s.slice(-1)).join(" | "));
+
+    /* ---- 19 Oct 2026: a stock light turning wakes the Desk once (test/stock-light-wake.mjs) ---- */
+    await (await import("./stock-light-wake.mjs")).wiring({ ok, run55, wr55, site0, K55 });
   } finally { rmSync(root55, { recursive: true, force: true }); }
 })();
 section("v700: a customer holding an unpaid advance is chased until it is paid, at its slots since S12 12.3");
@@ -51033,6 +51036,11 @@ await (async () => {
 section("Notifications: Salt Admin acts, Salt Desk informs (19 Oct 2026)");
 await (async () => {
   await (await import("./desk-informs.mjs")).run({ ok });
+})();
+
+section("Notifications: a stock light turning yellow or red wakes the Desk once (19 Oct 2026)");
+await (async () => {
+  await (await import("./stock-light-wake.mjs")).run({ ok });
 })();
 
 section("designsync --drift: design/ against the design system's checkout (his word of 18 Oct 2026)");
