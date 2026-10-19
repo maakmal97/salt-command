@@ -44519,7 +44519,7 @@ await (async () => {
       var ft=PRICING_ENGINE.fiveTierAt,cq=window.cardQuote,per={},n;
       PRICING_ENGINE.fiveTierAt=function(){n.tierAt++;return ft.apply(this,arguments);};
       window.cardQuote=function(){n.quotes++;return cq.apply(this,arguments);};
-      try{['today','concentration'].forEach(function(p){n={tierAt:0,quotes:0};switchTab(p);per[p]=n;});}
+      try{['today','concentration'].forEach(function(p){n={tierAt:0,quotes:0};SESSION_MEMO=null;switchTab(p);per[p]=n;});}   /* F1: the kept answers dropped, so the render does the walk this counts */
       finally{PRICING_ENGINE.fiveTierAt=ft;window.cardQuote=cq;}
       var parts=[];VIEWS.forEach(function(V){[V.lead].concat(V.parts).forEach(function(p){parts.push(p);});});
       var draw=function(){var o={};parts.forEach(function(p){switchTab(p);o[p]=document.getElementById('sec-'+curTab).innerHTML;});return o;};
@@ -44623,7 +44623,7 @@ await (async () => {
         parts.forEach(function(p){switchTab(p);if(rail('today')!==freshToday()||rail('money')!==freshOpen())bad.push(p);});
         made=0;
         parts.forEach(function(p){switchTab(p);});
-        var second=made-1;   /* the Today part draws its own list through the same walk, once */
+        var second=made;   /* F1: the kept answers serve Today's own list too, so a second pass makes no walk at all */
         parts.forEach(function(p){switchTab(p);if(rail('today')!==freshToday()||rail('money')!==freshOpen())bad.push(p);});
         out.every={bad:bad,second:second};
         /* one input at a time: the key moves, the rail is the fresh figure, the walk is made once and the next draw reuses it */
@@ -44681,13 +44681,14 @@ await (async () => {
       var res={moved:k1!==window.__lk0,same:n===f};ORD_OPEN=window.__keepOpen;switchTab('inventory');return res;})())`));
     ok(lp.moved && lp.same, "an offer that lapses with the data untouched moves the badge key, and the rail reads the fresh figure: " + JSON.stringify(lp));
     ok(v.parts === 13 && v.every.bad.length === 0 && v.every.second === 0,
-      "on the live book every part of every view draws the rail's Today and Money counts a fresh walk gives, and a second pass makes the walk only for Today's own list: " + JSON.stringify(v.every));
+      "on the live book every part of every view draws the rail's Today and Money counts a fresh walk gives, and a second pass makes no walk: " + JSON.stringify(v.every));
     for (const k of ["row", "refund", "order", "date", "hush", "draft", "queue", "expected", "book", "override", "roster", "orderEdit"]) {
       const s = v[k];
       ok(s && s.moved && s.after[0] === s.fresh[0] && s.after[1] === s.fresh[1] && s.again[0] === s.fresh[0] && s.again[1] === s.fresh[1]
         && s.back[0] === s.before[0] && s.back[1] === s.before[1],
         "a changed " + k + " moves the badge key, and the rail reads the fresh figures at once, again on the next part, and the old ones when put back: " + JSON.stringify(s));
-      ok(s && s.made === 1 && s.madeAgain === 0, "and the walk is made once for it, and not again on the next draw: " + JSON.stringify({ made: s && s.made, again: s && s.madeAgain }));
+      /* F1: the walk answers every book whatever is in view, so a product switch moves the rail's figures (the open count) and needs no walk */
+      ok(s && s.made === (k === "book" ? 0 : 1) && s.madeAgain === 0, "and the walk is made once for it (none for a product switch), and not again on the next draw: " + JSON.stringify({ made: s && s.made, again: s && s.madeAgain }));
     }
     ok(v.row.after[0] > v.row.before[0] && v.refund.after[0] === v.refund.before[0] + 1 && v.order.after[0] === v.order.before[0] + 1,
       "a new unpaid sale raises the Today count, and an open refund and a placed order each by one: " + JSON.stringify({ row: [v.row.before, v.row.after], refund: [v.refund.before, v.refund.after], order: [v.order.before, v.order.after] }));
@@ -44701,14 +44702,15 @@ await (async () => {
       var oa=allActionsNow,ok=navCounts,made=0,nav=0;
       allActionsNow=function(){made++;return oa.apply(this,arguments);};
       navCounts=function(){var s=performance.now();try{return ok.apply(this,arguments);}finally{nav+=performance.now()-s;}};
-      var rc=railCounts;
+      var rc=railCounts,sm=sessionMemo;
       var pass=function(){parts.forEach(function(p){switchTab(p);});};
       try{
         pass();made=0;nav=0;pass();pass();var kept={made:made,nav:nav};
         railCounts=function(){return {open:0,today:allActions().filter(function(x){return x.sev==='now';}).length};};
+        sessionMemo=function(n,f){return f();};   /* F1: and the answers kept between renders off, so every draw walks as before */
         made=0;nav=0;pass();pass();var fresh={made:made,nav:nav};
         return {parts:parts.length,kept:kept,fresh:fresh};
-      }finally{allActionsNow=oa;navCounts=ok;railCounts=rc;}})())`));
+      }finally{allActionsNow=oa;navCounts=ok;railCounts=rc;sessionMemo=sm;}})())`));
     ok(m.fresh.made >= 2 * m.parts && m.kept.made <= 2 && m.kept.nav * 3 < m.fresh.nav,
       "two passes over every part make the walk twice or less kept (Today's own list), once a draw fresh, and spend under a third of the time in the rail's counts: " + JSON.stringify(m));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
@@ -44746,7 +44748,7 @@ await (async () => {
     }
     if (cur) body[cur] += l + "\n";
   }
-  const seen = new Set(), queue = ["actions", "allActionsNow", "ordActs", "boundaryScan", "txStat"], reached = new Set(), reachedC = new Set();
+  const seen = new Set(), queue = ["actions", "allActionsNow", "ordActs", "boundaryScan", "txStat", "bookBand", "approachSplitNow"], reached = new Set(), reachedC = new Set();   /* F1: bookBand and the approach list are kept against the same key */
   while (queue.length) {
     const n = queue.shift();
     if (seen.has(n)) continue;
@@ -44762,8 +44764,9 @@ await (async () => {
     PRICE_TIERS: "rebuilt by recompute() from keyed inputs",
     stockCounted: "set by recompute() from the walk of keyed inputs",
     RENDER_MEMO: "the render's own memo, closed when it returns; holds only reads of keyed inputs",
-    vaultNames: "titles only; the cached figures are numbers", revealed: "titles only; the cached figures are numbers",
-    newIds: "titles only; the cached figures are numbers", newLocs: "titles only; the cached figures are numbers",
+    /* F1 (19 Oct 2026): the kept list carries ID() text, so the vault and the re-keys (vaultNames, revealed, newIds) are terms of the key now */
+    SESSION_MEMO: "the kept answers themselves: made against badgeKey and dropped the moment a term of it moves",
+    newLocs: "titles only; the cached figures are numbers",
   };
   const missing = [...reached].filter((n) => !new RegExp("\\b" + n + "\\b").test(keyText) && !(n in ALLOWED)).sort();
   ok(seen.size > 100 && reached.size >= 8 && keyText.length > 100,
@@ -51250,6 +51253,11 @@ await (async () => {
     ok(timers.length === 0 && rd("typeof apTimer") === "undefined" && rd("typeof ordTimer") === "undefined" && rd("typeof CARD_POLL") === "undefined",
       "apLoad and ordLoad read once and set no interval, and the pollers they had are gone: " + JSON.stringify({ timers, apTimer: rd("typeof apTimer"), ordTimer: rd("typeof ordTimer") }));
   } finally { try { w.close(); } catch (e) { /* best effort */ } }
+})();
+
+section("19 Oct 2026: the Desk opens once, taps light, and a chip loads itself when the desk goes idle (F1, F2, R2)");
+await (async () => {
+  await (await import("./desk-wave1.mjs")).run({ ok });
 })();
 
 console.log(`\n${pass} passed, ${fail} failed, across ${sections} sections`);

@@ -296,10 +296,14 @@ Each of these stayed green, or read clean, through a real fault.
   class="obsec">`; a fact beside a chart goes on the chart.
 - **`perProduct` draws one book** since the one-product rule: a test that uses it as an iterator
   checks only the book in view. Loop `PROD_IDS` with `PROD=p; recompute()`.
-- **Inside `render()`, `allActions` and `approachSplit` answer from `RENDER_MEMO`**, made once a
-  render (`approachSplit` once a book in view) and dropped in a `finally`. A probe that changes
-  state from inside a builder and reads either again gets the first answer; read outside a render.
-  Count the work by wrapping `allActionsNow` and `approachSplitNow`, since a memo hit is a call.
+- **`allActions`, `bookBand` and `approachSplit` answer from `sessionMemo`** (F1, 19 Oct 2026), kept BETWEEN renders
+  against `badgeKey(true)` (every input, the book in view left out; `DATA_STAMP`, which `applyOverlay` moves, stands
+  for the ledger lists) and the readers' identities; inside a render they also read `RENDER_MEMO` (`allActions` once a
+  render, `approachSplit` once a book in view), dropped in a `finally`. A test that edits a ledger row in place must go
+  through `applyOverlay()` (or push onto a list, which moves its length) or the kept answer stands; one that must see a
+  fresh walk sets `SESSION_MEMO=null`. A probe that changes state from inside a builder and reads either again gets the
+  first answer; read outside a render. Count the work by wrapping `allActionsNow` and `approachSplitNow`, since a memo
+  hit is a call, and expect none on a warm desk.
 - **`evolution` sits in the middle of the master**, not at the end: `slice(0,
   indexOf("const evolution=["))` searches only the first third. Use `slice(0, evAt) +
   slice(stampAt)`.

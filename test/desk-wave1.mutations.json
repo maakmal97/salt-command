@@ -1,0 +1,15 @@
+[
+ {"name":"the key drops the book's stamp","find":"DATA_STAMP,sales.length,purchases.length,","replace":"sales.length,purchases.length,"},
+ {"name":"the key drops the site's orders","find":"PRICE_SET,pxOver,queue,AP_DRAFTS,ORD_OPEN,lapsed,roster,","replace":"PRICE_SET,pxOver,queue,AP_DRAFTS,roster,"},
+ {"name":"the key drops the date","find":"JSON.stringify([noProd?0:PROD,TODAY.getTime(),","replace":"JSON.stringify([noProd?0:PROD,"},
+ {"name":"the key drops the vault","find":"PLACED,\n      revealed,revealed?vaultNames:0,newIds]);","replace":"PLACED]);"},
+ {"name":"the approach list is kept under one name for every book","find":"sessionMemo('split|'+PROD,approachSplitNow)","replace":"sessionMemo('split',approachSplitNow)"},
+ {"name":"the list is not kept between renders","find":"function allActions(){return renderMemo('all',()=>sessionMemo('all',allActionsNow));}","replace":"function allActions(){return renderMemo('all',allActionsNow);}"},
+ {"name":"the band is not kept between renders","find":"return sessionMemo('band',()=>eachBook(()=>{const f=forecast()","replace":"return ((k,f)=>f())('band',()=>eachBook(()=>{const f=forecast()"},
+ {"name":"the band and the list share a name","find":"return sessionMemo('band',()=>eachBook(","replace":"return sessionMemo('all',()=>eachBook("},
+ {"name":"eachBook always walks the book in view again","find":"finally{PROD=keep;if(!walked)recompute();}","replace":"finally{PROD=keep;recompute();}"},
+ {"name":"eachBook never walks it again","find":"finally{PROD=keep;if(!walked)recompute();}","replace":"finally{PROD=keep;}"},
+ {"name":"eachBook walks the books in their own order","find":"order=live.indexOf(keep)<0?live:live.filter(p=>p!==keep).concat([keep])","replace":"order=live"},
+ {"name":"the fade reads and writes a table at a time","find":"const read=list.map(w=>({w,sw:w.scrollWidth,cw:w.clientWidth,sl:w.scrollLeft}));","replace":"const read=list.map(w=>({w,get sw(){return w.scrollWidth;},get cw(){return w.clientWidth;},get sl(){return w.scrollLeft;}}));"},
+ {"name":"the library arriving renders the part again","find":"const done=ok=>{if(ok)chartTheme();const q=chartWait;","replace":"const done=ok=>{if(ok){chartTheme();render();}const q=chartWait;"}
+]

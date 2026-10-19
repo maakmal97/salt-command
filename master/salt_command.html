@@ -10436,6 +10436,11 @@ let statedStockBy={},provCount=0,provNotes=[],provRM=0;
    holds but the Worker has not confirmed (qIsUnsent) would fold into every figure and be marked Unsent. B5 of #62 set it false
    because the Desk's write controls are gone: such an entry moves no figure and waits in the recovery panel to be sent or discarded. */
 let OVERLAY_UNSENT=false;
+/* F1 (19 Oct 2026): THE BOOK'S STAMP. applyOverlay is the one place the ledger arrays are rebuilt (the six lists, the board, the
+   refunds, the loans), so it moves this number each pass, and badgeKey reads it where it used to stringify every row of them on
+   every render. A list edited in place anywhere else would not move it, so badgeKey keeps each list's length beside it as a net
+   and the suite's structural check refuses a new writer outside the overlay. */
+let DATA_STAMP=0;
 let provUnsent=0,unsentAts=new Set();
 /* the count that applies to a product: a queued one first, then its declared opening
    figure, then the salt roll for salt. Null means nobody has counted this book. */
@@ -10464,6 +10469,7 @@ function ovRefund(row,date){
   if(stale)provNotes.push('STALE refund on '+row.rid+': '+fmt0(stale)+' of its open refunds is no longer owed; remove it in ledger/book.json');
 }
 function applyOverlay(){
+  DATA_STAMP++;   /* F1: the rows below are rebuilt, so whatever was derived from them is old (badgeKey, sessionMemo) */
   stockCostFor._c=null;   // 26 Sep 2026: the rows are rebuilt, so no book's inventory rate stands
   purchases.length=0;JSON.parse(JSON.stringify(BASE_PURCHASES)).forEach(p=>purchases.push(p));
   sales.length=0;JSON.parse(JSON.stringify(BASE_SALES)).forEach(s=>sales.push(s));
@@ -10518,6 +10524,7 @@ function applyOverlay(){
       if(qIsUnsent(q)){provUnsent++;unsentAts.add(q.at);}
     }catch(e){provNotes.push('could not apply: '+(q.raw||'entry'));}
   });
+  DATA_STAMP++;   /* and again once the pass is whole, so nothing read part way through stands */
 }
 function ovNew(p,q){
   const who=p.party||p.newId||'NEW party';   // a new party arrives as a provisional code, never a name
@@ -12410,18 +12417,43 @@ function tabOverview(){
    book's tag. Nothing is summed across books in units, because a unit of salt and a unit of oil are not the same thing. */
 /* a book with no lot and no sale has nothing to say: it would only report itself under its own trigger (spare, 23 Sep) */
 function liveBooks(){return PROD_IDS.filter(p=>pSales(p).length||pPurch(p).length);}
-function eachBook(fn){const keep=PROD,out={};try{liveBooks().forEach(p=>{PROD=p;recompute();out[p]=fn(p);});}finally{PROD=keep;recompute();}return out;}
+/* F1 (19 Oct 2026): the book in view is walked LAST, so its walk is already the one the page needs when the loop ends and the old
+   closing recompute() (a second walk of that book, every call) is skipped; the answer keeps the books' order. If the loop
+   throws, or the view's book is not live, the closing walk is made as before. */
+function eachBook(fn){const keep=PROD,live=liveBooks(),order=live.indexOf(keep)<0?live:live.filter(p=>p!==keep).concat([keep]),got={};
+  let walked=false;
+  try{order.forEach(p=>{PROD=p;recompute();walked=(p===keep);got[p]=fn(p);});}
+  finally{PROD=keep;if(!walked)recompute();}
+  const out={};live.forEach(p=>{out[p]=got[p];});return out;}
 /* THE RENDER'S MEMO (fold 4.1, 26 Sep 2026). One Today render ran allActions twice (tabToday, then navCounts for the
    badge) and approachSplit twenty times across four books: 2 and 20 calls, about 170 of its 230 ms, measured in jsdom.
    render() opens RENDER_MEMO and closes it in a finally, so a read inside one render is made once and reused, and a
    read outside a render (a tap, apLoad's or ordLoad's continuation, a chart drawn after the script loads, the suite, a
    tool) computes fresh. Nothing inside a render changes the book, the vault, a filter or storage, and render() is
-   synchronous, so there is nothing to invalidate. NOTHING SURVIVES THE RENDER, because actions() carries ID() text:
-   names while the vault is open, and the lock is lockVault(); render(). A reader whose answer moves with the book in
+   synchronous, so there is nothing to invalidate. NOTHING IN RENDER_MEMO SURVIVES THE RENDER, because actions() carries ID() text:
+   names while the vault is open, and the lock is lockVault(); render(). (From F1, 19 Oct 2026, the To do list, the band and each book's approach
+   list ALSO live in sessionMemo, below, against the whole of badgeKey including the vault, so a lock still never serves a name.) A reader whose answer moves with the book in
    view keys by PROD, as approachSplit does; allActions walks every book and puts PROD back, so it needs no key. */
 let RENDER_MEMO=null;
 function renderMemo(k,f){if(!RENDER_MEMO)return f();return (k in RENDER_MEMO)?RENDER_MEMO[k]:(RENDER_MEMO[k]=f());}
-function allActions(){return renderMemo('all',allActionsNow);}
+/* F1 (19 Oct 2026): OPEN ONCE. The render's memo dies with the render, so a chart drawn after the library loads, a second open of
+   the same part and the rail all walked every book again for the same answer. sessionMemo keeps a derived read between renders
+   against the whole of badgeKey (without the book in view, which each read names itself), and drops all of it the moment one
+   input moves. The vault is one of those inputs (badgeKey names revealed, the names and the re-keys), because actions() carries
+   ID() text and a lock must never serve a remembered name. The test seam is held too: a reader swapped for another is no data,
+   so the readers' identities sit beside the key, as in railCounts. A key that cannot be built keeps nothing. */
+let SESSION_MEMO=null;
+function inputKey(){return RENDER_MEMO?(('bk' in RENDER_MEMO)?RENDER_MEMO.bk:(RENDER_MEMO.bk=badgeKey(true))):badgeKey(true);}
+function sessionMemo(name,f){
+  const k=inputKey();
+  if(k===null)return f();
+  const fns=[actions,boundaryScan,ordActs,forecast,restockFor,networkStats,approachSplit];
+  let M=SESSION_MEMO;
+  if(!M||M.k!==k||!M.fns.every((x,i)=>x===fns[i]))M=SESSION_MEMO={k,fns,v:Object.create(null)};
+  if(name in M.v)return M.v[name];
+  return M.v[name]=f();
+}
+function allActions(){return renderMemo('all',()=>sessionMemo('all',allActionsNow));}
 function allActionsNow(){
   const per=eachBook(()=>actions()),ids=Object.keys(per),seen={},list=[];
   ids.forEach(p=>per[p].forEach(x=>{const k=[x.sev,x.kind,x.title,x.rm,x.why].join('|');
@@ -12438,12 +12470,15 @@ function allActionsNow(){
    and the cost overrides (PROD, pxOver), the roster Add ID extends, and the two clocks: TODAY, and the wall clock ordPriceAct
    reads against an offer's end. The constants (RULES, TIER_OF, PRODUCTS, PEOPLE, PLACED) are keyed too, since the cost is nil.
    A key that cannot be built (a read before the desk has loaded) caches nothing. The key is the text itself, never a hash. */
-function badgeKey(){
+function badgeKey(noProd){
   try{
     const lapsed=(Array.isArray(ORD_OPEN)?ORD_OPEN:[]).map(o=>o&&o.price&&o.price.offer?(new Date().toISOString()>String(o.price.offer.until)?1:0):'-').join('');
-    return JSON.stringify([PROD,TODAY.getTime(),cloudMode(),EXPECTED_READ,EXPECTED,HUSH_READ,HUSH,sales,purchases,customerRefunds,loans,
-      cashAdjust,selfUseLog,lostDemand,contacts,supplierReceivable,statedStockBy,PRICE_SET,pxOver,queue,AP_DRAFTS,ORD_OPEN,lapsed,
-      roster,associates,partners,addedParties,PB_MONDAY,RULES,TIER_OF,PRODUCTS,PEOPLE,PLACED]);
+    /* F1: the six ledger lists, the refunds and the loans are read through DATA_STAMP (applyOverlay, the one place they are rebuilt)
+       and their lengths, not stringified row by row on every render; the rest is small and stays whole */
+    return JSON.stringify([noProd?0:PROD,TODAY.getTime(),cloudMode(),EXPECTED_READ,EXPECTED,HUSH_READ,HUSH,DATA_STAMP,sales.length,purchases.length,
+      customerRefunds.length,loans.length,cashAdjust.length,selfUseLog.length,lostDemand.length,contacts.length,supplierReceivable,statedStockBy,
+      PRICE_SET,pxOver,queue,AP_DRAFTS,ORD_OPEN,lapsed,roster,associates,partners,addedParties,PB_MONDAY,RULES,TIER_OF,PRODUCTS,PEOPLE,PLACED,
+      revealed,revealed?vaultNames:0,newIds]);
   }catch(e){return null;}
 }
 function railCounts(){
@@ -12463,9 +12498,9 @@ function railCounts(){
 }
 /* each live book's position, for the band under the list */
 function bookBand(){
-  return eachBook(()=>{const f=forecast(),cv=coverStats();
+  return sessionMemo('band',()=>eachBook(()=>{const f=forecast(),cv=coverStats();
     return {held:currentStock,prom:f.commitUnits,short:f.shortUnits,days:cv.days,below:cv.below,trig:cv.reorderAt,rate:cv.rate,
-      dry:f.dry,owed:arGross};});
+      dry:f.dry,owed:arGross};}));
 }
 function tabToday(){
   const a=allActions(),B=bookBand(),live=Object.keys(B);
@@ -18263,7 +18298,7 @@ function sortConc(k){if(concSort.key===k)concSort.dir*=-1;else{concSort.key=k;co
    is added to its owner's. A party written off, banned or departed is not approached. The RM sums are made here once, so
    no reader adds its own. */
 /* read once per book in view inside a render (RENDER_MEMO), since it reads arList and outstandingOf, which recompute() sets per PROD */
-function approachSplit(){return renderMemo('split|'+PROD,approachSplitNow);}
+function approachSplit(){return renderMemo('split|'+PROD,()=>sessionMemo('split|'+PROD,approachSplitNow));}
 function approachSplitNow(){
   const MS=86400000, iso=d=>d.toISOString().slice(0,10), plus=(s,n)=>new Date(new Date(s).getTime()+n*MS);
   const gS=new Date(TODAY.getTime()-((TODAY.getUTCDay()+6)%7)*MS), gE=new Date(gS.getTime()+34*MS);
@@ -21689,20 +21724,26 @@ function wrapTables(){
      touch screen says nothing about either */
   /* a table in a closed card is measured when the card opens: reading its width shut makes the browser lay out
      the hidden card on its own, about 1 ms a table, 41 ms on Network's 39 */
-  document.querySelectorAll('.sec.on .tscroll').forEach(w=>{if(!w.closest('details:not([open])'))tscrollFade(w);});
+  tscrollFadeAll([...document.querySelectorAll('.sec.on .tscroll')].filter(w=>!w.closest('details:not([open])')));
 }
-function tscrollFade(w){
-  const upd=()=>{
-    w.classList.toggle('more',w.scrollLeft+w.clientWidth<w.scrollWidth-2);
-    w.classList.toggle('morel',w.scrollLeft>2);
-  };
-  w.classList.toggle('more',w.scrollWidth>w.clientWidth+2);
-  w.classList.toggle('morel',w.scrollLeft>2);
-  if(w.scrollWidth>w.clientWidth+2&&!w.dataset.wired){w.dataset.wired='1';
-    w.addEventListener('scroll',upd,{passive:true});}
+/* F1 (19 Oct 2026): EVERY WIDTH IS READ BEFORE ANY CLASS IS WRITTEN. The fade was read and written one table at a time, so each
+   table's class change made the next table's width read lay the whole page out again: 1.1 s of the open on the phone profile,
+   Network's 39 tables 560 ms a tap. One pass reads all of them (one layout), the next writes. */
+function tscrollFadeAll(list){
+  const read=list.map(w=>({w,sw:w.scrollWidth,cw:w.clientWidth,sl:w.scrollLeft}));
+  read.forEach(({w,sw,cw,sl})=>{
+    w.classList.toggle('more',sw>cw+2);
+    w.classList.toggle('morel',sl>2);
+    if(sw>cw+2&&!w.dataset.wired){w.dataset.wired='1';
+      w.addEventListener('scroll',()=>{
+        w.classList.toggle('more',w.scrollLeft+w.clientWidth<w.scrollWidth-2);
+        w.classList.toggle('morel',w.scrollLeft>2);
+      },{passive:true});}
+  });
 }
+function tscrollFade(w){tscrollFadeAll([w]);}
 document.addEventListener('toggle',e=>{const d=e.target;
-  if(d.tagName==='DETAILS'&&d.open)d.querySelectorAll('.tscroll').forEach(w=>{if(!w.closest('details:not([open])'))tscrollFade(w);});},true);
+  if(d.tagName==='DETAILS'&&d.open)tscrollFadeAll([...d.querySelectorAll('.tscroll')].filter(w=>!w.closest('details:not([open])')));},true);
 /* on a phone the rail is one scrolling row, so the tab you just chose can sit off-screen */
 function railIntoView(){
   const on=document.querySelector('.rail .tab.on'); if(!on)return;
