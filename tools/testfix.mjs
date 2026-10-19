@@ -497,6 +497,8 @@ export const FEATURES = [
   ["the look: the choice Sheet asked at every sign-in, and the setting under Account (11 Oct 2026)", (f) => f.look === "asked"],
   ["the bank account number beside the reference on the pay sheet (Phase 7b)", (f) => !!f.paynum && Object.values(f.paynum).some((a) => /^0{10,15}$/.test(a && a.number))],
   ["a book priced soon", (f) => !!(f.prices && f.prices.soon && f.prices.soon.length)],
+  /* Counter Batch C: drawn on every customer's Account, the test accounts' included, from no data of theirs */
+  ["Help under Account, four answers (Counter Batch C)", () => true],
   ["the statement, live", (f) => !!(f.live && f.live.body)]
 ];
 /* THE STAGE THE PAGE DRAWS (stmt/page.js stageNow): nothing while a claim of theirs waits or nothing is overdue, else by

@@ -1,0 +1,11 @@
+[
+ {"name":"no Help card","file":"stmt/page.js","find":"    + (owner ? \"\" : thisDevice() + helpCard())","replace":"    + (owner ? \"\" : thisDevice())"},
+ {"name":"Help before This device","file":"stmt/page.js","find":"    + (owner ? \"\" : thisDevice() + helpCard())","replace":"    + (owner ? \"\" : helpCard() + thisDevice())"},
+ {"name":"Help on his page too","file":"stmt/page.js","find":"    + (owner ? \"\" : thisDevice() + helpCard())","replace":"    + (owner ? helpCard() : thisDevice() + helpCard())"},
+ {"name":"a question dropped","file":"stmt/page.js","find":"    + [\"pay\", \"deliv\", \"coll\", \"change\"].map(row).join(\"\") + \"</section>\";","replace":"    + [\"pay\", \"deliv\", \"coll\"].map(row).join(\"\") + \"</section>\";"},
+ {"name":"an answer reworded","file":"stmt/words.js","find":"It counts once we confirm it arrived.\"","replace":"It counts once it arrives.\""},
+ {"name":"an em dash in an answer","file":"stmt/words.js","find":"\"We tell you when it is ready and where to collect it. Pay","replace":"\"We tell you when it is ready and where to collect it \u2014 pay"},
+ {"name":"a row open from the start","file":"stmt/page.js","find":"  const row = (k) => '<details class=\"ahelp__q\"><summary","replace":"  const row = (k) => '<details class=\"ahelp__q\" open><summary"},
+ {"name":"the summary under 44px","file":"stmt/page.js","find":".ahelp__sum{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:var(--salt-tap);","replace":".ahelp__sum{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:32px;"},
+ {"name":"no chevron","file":"stmt/page.js","find":"wt(\"span\", 'class=\"ahelp__t\"', \"help.\" + k) + glyphSvg(\"next\", 18) + \"</summary>\"","replace":"wt(\"span\", 'class=\"ahelp__t\"', \"help.\" + k) + \"</summary>\""}
+]

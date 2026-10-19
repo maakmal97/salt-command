@@ -374,12 +374,22 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .devcard .salt-ledger__label{flex:1 1 auto}
 .devcard .salt-ledger__flag .glyph{vertical-align:-0.3em;margin:0 3px}
 .devout{width:100%;margin-top:14px}
+.ahelp{margin:0}
+.ahelp__q{border-top:1px solid var(--salt-line-faint)}
+.ahelp__q:first-of-type{margin-top:6px}
+.ahelp__sum{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:var(--salt-tap);cursor:pointer;list-style:none}
+.ahelp__sum::-webkit-details-marker{display:none}
+.ahelp__sum .glyph{flex:0 0 auto;color:var(--salt-prose);transition:transform .2s}
+.ahelp__q[open] .ahelp__sum .glyph{transform:rotate(90deg)}
+.ahelp__a{margin:0 0 14px;color:var(--salt-prose)}
+@media (prefers-reduced-motion:reduce){.ahelp__sum .glyph{transition:none}}
 @media (min-width:1080px){
   .acct{max-width:1060px;display:grid;grid-template-columns:minmax(0,620px) minmax(300px,1fr);column-gap:40px;row-gap:28px;align-items:start}
   /* Counter Batch A: the glance runs across both columns, This device beside Messages and the statement under it */
   #aGlance{grid-column:1 / -1}
   #aThread,.acct__main{grid-column:1}
   .devcard{grid-column:2;grid-row:2 / span 2}
+  .ahelp{grid-column:2}
 }
 /* S6 6.2: To pay now, Home's first answer since S7 7.1, its parts on the plain Ledger list */
 .payhead[hidden]{display:none}
@@ -1193,6 +1203,8 @@ const GLYPH = {
   /* Step 1b: the bell in the saved app's header */
   bell: "M12 4.2 A5.4 5.4 0 0 1 17.4 9.6 V13.8 L19.2 17 H4.8 L6.6 13.8 V9.6 A5.4 5.4 0 0 1 12 4.2 Z M10 19.2 A2 2 0 0 0 14 19.2",
   star: "M12 3.6 L14.5 9 L20.3 9.6 L15.9 13.5 L17.2 19.3 L12 16.3 L6.8 19.3 L8.1 13.5 L3.7 9.6 L9.5 9 Z",
+  /* Counter Batch C: a Help row's chevron, turned down while it is open */
+  next: "M9 5.5 L15.5 12 L9 18.5",
 };
 const FILLED = { dots: true, vdots: true };
 /* S13 13.3: the mark as markup from the marks it is given, so the page's script draws a mark in a sentence it re-words
@@ -1271,6 +1283,16 @@ function keepPage() {
    Sign out other devices in #devSlot (S9 9.9, drawDev) and the optional Home Screen install guide. 11 Oct 2026 (Phase 7d part 2):
    the card sits above the statement, so what a device is asked for is first and Sign out is within a thumb of the top; every
    control keeps its id, request and behaviour. Sign out is a tap and a tap again (the page's script, lockEl). */
+/* COUNTER BATCH C (20 Oct 2026, item 17): HELP under Account, after This device, four questions each a native details row on
+   the order's own fold pattern, its summary 44px with the chevron, closed until tapped; the answers as he approved them. On every
+   customer's Account, the test accounts' included; never on Salt Admin's. */
+function helpCard() {
+  const row = (k) => '<details class="ahelp__q"><summary class="ahelp__sum">' + wt("span", 'class="ahelp__t"', "help." + k) + glyphSvg("next", 18) + "</summary>"
+    + wt("p", 'class="ahelp__a"', "help." + k + "A") + "</details>";
+  return '<section id="aHelp" class="ahelp salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="helpH">'
+    + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="helpH"', "help.h")
+    + ["pay", "deliv", "coll", "change"].map(row).join("") + "</section>";
+}
 function thisDevice() {
   return '<section id="thisDevice" class="devcard salt-glass-card salt-glass-card--radius-md salt-glass-card--pad-sm" aria-labelledby="devH" hidden>'
     + wt("h2", 'class="salt-eyebrow salt-eyebrow--copper" id="devH"', "dev.h")
@@ -1871,7 +1893,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
        statement (its one month filter placed beside the list it filters and nothing after it) under a gap of its
        own; This device stands beside them from 1080px */
     + '<div id="pStmt" hidden><div id="acct" class="acct"><div id="aGlance"></div><div id="aThread"></div>'
-    + (owner ? "" : thisDevice())
+    + (owner ? "" : thisDevice() + helpCard())
     + '<div class="acct__main">'
     + '<div id="mfil" class="salt-tabs mfil" role="group"' + wl("acct.months") + ' hidden></div><p class="mfnote" id="mfnote" role="status"></p>'
     + '<div id="out"></div>'

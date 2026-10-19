@@ -225,6 +225,16 @@ export const EN = {
   "code.hint": "Eight letters and numbers, as Safari showed them.",
   "code.door": "Sign in with username and password",
   "code.help": "No code? Open your sign-in link in **Safari**, and copy the code shown there.",
+  /* ---- HELP, in Account (Counter Batch C, item 17; the four answers as he approved them on 18 Oct 2026) ---- */
+  "help.h": "Help",
+  "help.pay": "Paying",
+  "help.payA": "Pay by transfer or scan the code under To pay, with your username as the reference. Then tell us you sent it. It counts once we confirm it arrived.",
+  "help.deliv": "Delivery",
+  "help.delivA": "Choose as soon as it can, or a four-hour window. We confirm the time when we accept. If we need another time, we ask you first.",
+  "help.coll": "Collecting",
+  "help.collA": "We tell you when it is ready and where to collect it. Pay before you come, or in cash when you collect where your order offers it.",
+  "help.change": "Changing an order",
+  "help.changeA": "Until we confirm it, open the order and tap Change order. After that, send us a message on the order and we change it for you.",
   /* ---- THIS DEVICE, in Account ---- */
   "dev.h": "This device",
   /* ---- THE LOOK (11 Oct 2026, his word): Night or Tide, kept on this device, asked once in a Sheet and changed under Account ---- */

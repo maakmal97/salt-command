@@ -2,14 +2,14 @@
  {
   "name": "This device is drawn after the statement",
   "file": "stmt/page.js",
-  "find": "+ (owner ? \"\" : thisDevice())\n    + '<div class=\"acct__main\">'\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '</div>'",
-  "replace": "+ '<div class=\"acct__main\">'\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '</div>'\n    + (owner ? \"\" : thisDevice())"
+  "find": "+ (owner ? \"\" : thisDevice() + helpCard())\n    + '<div class=\"acct__main\">'\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '</div>'",
+  "replace": "+ '<div class=\"acct__main\">'\n    + '<div id=\"mfil\" class=\"salt-tabs mfil\" role=\"group\"' + wl(\"acct.months\") + ' hidden></div><p class=\"mfnote\" id=\"mfnote\" role=\"status\"></p>'\n    + '<div id=\"out\"></div>'\n    + '</div>'\n    + (owner ? \"\" : thisDevice() + helpCard())"
  },
  {
   "name": "Messages falls under This device",
   "file": "stmt/page.js",
-  "find": "<div id=\"aGlance\"></div><div id=\"aThread\"></div>'\n    + (owner ? \"\" : thisDevice())",
-  "replace": "<div id=\"aGlance\"></div>'\n    + (owner ? \"\" : thisDevice())\n    + '<div id=\"aThread\"></div>'"
+  "find": "<div id=\"aGlance\"></div><div id=\"aThread\"></div>'\n    + (owner ? \"\" : thisDevice() + helpCard())",
+  "replace": "<div id=\"aGlance\"></div>'\n    + (owner ? \"\" : thisDevice() + helpCard())\n    + '<div id=\"aThread\"></div>'"
  },
  {
   "name": "Sign out falls to the foot of the card",
