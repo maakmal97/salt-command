@@ -216,7 +216,7 @@ export async function run({ ok, KV, assets }) {
     const bA = await acceptOf(A), bB = await acceptOf(B), bT = await acceptOf(T);
     ok(bA.slot === first[0] && bB.slot === first[0] && !("slot" in bT) && bA.delivery === 10 && bB.delivery === 0,
       "Salt Admin's Accept sends the window he picked, its sheet's other line the same, and an order with its own time none: " + JSON.stringify([bA, bB, bT]));
-    ok(/They shared a pin[.] Open it on the Desk/.test(acard(PN).textContent) && !/They shared a pin/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),
+    ok(/They shared a spot or unit[.] Open it on the Desk/.test(acard(PN).textContent) && !/They shared a spot/.test(acard(T).textContent) && !/abababab/.test(acard(PN).textContent),
       "Salt Admin says a spot was shared, never its id, and opens nothing: " + acard(PN).textContent.slice(0, 200));
   } finally { browser.window.close(); }
 }

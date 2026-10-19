@@ -4382,6 +4382,15 @@ const CLIENT_JS = `
       spotPick(s); draft.spotEdit=null; draft.step='form'; sheetDraw(); });
     F.appendChild(go); F.hidden=false;
   }
+  /* Counter Batch C (20 Oct 2026): what is sealed for a delivery. The exact point as read, with the picked spot's name and its
+     floor or unit beside it; a unit with no point is sealed on its own (src 'unit'); a spot with neither seals nothing. Both were
+     cut at the spot's step (spotFoot), one-off spots too, so a long unit is never refused after the sheet said yes. The name and the unit never leave the phone unsealed. */
+  function pinOf(){
+    var s=draft.spot, label=s&&s.label||'', unit=s&&s.unit||'', p=null;
+    if(draft.pin){ p=Object.assign({},draft.pin); if(label) p.label=label; if(unit) p.unit=unit; }
+    else if(unit){ p={unit:unit, src:'unit'}; if(label) p.label=label; }
+    return p;
+  }
   function pinSeal(p){ return slipSeal(SLIPKEY,new TextEncoder().encode(JSON.stringify(Object.assign({v:1, at:new Date().toISOString()},p))),'salt-pin v1'); }
   function whereHint(){
     return tw(draft.placeWas&&String(draft.place||'').trim()===draft.placeWas?'sh.whereSame':'sh.where');
@@ -4433,7 +4442,7 @@ const CLIENT_JS = `
       function(v){ draft.mode=v; sheetDraw(); }));
     /* v694: a delivery says roughly where it is going, in his words a general location; never an address */
     var SL=draft.mode==='deliver'&&!draft.pool&&!draft.amend?spotsRead():null;
-    if(SL) B.appendChild(spotList(SL));
+    if(SL){ slipKeyLoad(); B.appendChild(spotList(SL)); }   /* a saved spot's point or unit is sealed at Place, so the key is asked for here too */
     else if(draft.mode==='deliver'){
       var wf=el('div','salt-field'), wl=el('label','salt-field__label',tw('sh.whereTo')); wl.htmlFor='oWhere';
       var wi=el('input','salt-field__input'); wi.id='oWhere'; wi.type='text'; wi.maxLength=60; wi.value=draft.place||''; wi.autocomplete='off';
@@ -4534,7 +4543,7 @@ const CLIENT_JS = `
       /* 10 Oct 2026: a delivery's window, with the span it was offered at, for the check to say */
       slot:draft.mode==='deliver'&&!draft.pool?draft.slot||'':'', span:'',
       /* the exact spot as read, sealed at Place; an amendment's is the order's own, kept by the Worker */
-      pin:draft.mode==='deliver'&&!draft.pool&&!draft.amend?draft.pin:null, pinKept:draft.mode==='deliver'&&!!draft.amend&&!!draft.pinKept, pinSealed:null,
+      pin:draft.mode==='deliver'&&!draft.pool&&!draft.amend?pinOf():null, pinKept:draft.mode==='deliver'&&!!draft.amend&&!!draft.pinKept, pinSealed:null,
       /* S4 4.4: the stamp of the list these prices were read from */
       digest:(prices&&prices.digest)||''};
     /* from the list the form drew: the open windows, and an amendment's own window kept while it is still to end */
@@ -4656,7 +4665,7 @@ const CLIENT_JS = `
       row(tw('sh.total'),rm(sheetSum(c)));
     }
     row(tw('sh.how'),c.mode==='deliver'?tw('sh.deliveredTo',{p:c.place}):tw('sh.youCollect'));
-    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(tw('sh.pinRow'),tw('sh.pinShared'));
+    if(c.mode==='deliver'&&(c.pin||c.pinKept)) row(tw(c.pin&&c.pin.src==='unit'?'od.sealed':'sh.pinRow'),tw('sh.pinShared'));
     if(c.mode==='deliver') row(tw('sh.delivery'),tw('sh.setOnConfirm'));
     if(!c.pool&&c.mode==='deliver') row(tw('sh.winRow'),c.slot&&c.span?tw('sh.winCheck',{d:ymdDay(winDay(c.slot)), a:winPart(c.span,0), b:winPart(c.span,1)}):tw('sh.soon'));
     else if(!c.pool) row(tw('sh.wantBy'),c.wantBy?ymdDay(c.wantBy):tw('sh.soon'));
@@ -5379,6 +5388,7 @@ const CLIENT_JS = `
     L.appendChild(lrow(tw('od.at'),stamp(o.at)));
     L.appendChild(lrow(tw('od.way'),tw(o.mode==='deliver'?'od.deliver':'od.collect')));
     if(o.slot&&o.slotSpan) L.appendChild(lrow(tw('od.window'),tw('od.windowAt',{d:function(L){ return ymdDay(winDay(o.slot),L); }, a:winPart(o.slotSpan,0), b:winPart(o.slotSpan,1)})));
+    if(o.pinned&&o.mode==='deliver') L.appendChild(lrow(tw('od.sealed'),tw('od.sealedV')));
     if(o.point) L.appendChild(lrow(tw('od.point'),tw(movedAll(o)||o.status==='done'?'pt.atDone':'pt.code',{c:o.point})));
     var rr=lrow(tw('od.ref'),orderRef(o.id)); L.appendChild(rr);
     f.appendChild(L); w.appendChild(f);

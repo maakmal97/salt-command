@@ -754,6 +754,9 @@ export const EN = {
   "od.window": "Window",
   "od.windowAt": "{d}, {a} to {b}",
   "od.point": "Point",
+  /* Counter Batch C: the Worker cannot tell a point from a unit, so the row is neutral */
+  "od.sealed": "Spot or unit",
+  "od.sealedV": "Sealed",
   "od.ref": "Reference",
   "ow.refunded": "The {rm} you paid is refunded.",
   "ow.nothingOwed": "Nothing is owed.",

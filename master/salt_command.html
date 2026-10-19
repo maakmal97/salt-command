@@ -19431,19 +19431,25 @@ async function ordTell(){
    read through the desk Worker's keyed relay (/pins) and opened here with the key the one unlock holds. The point lives in
    memory alone (ORD_PIN), dropped by lockVault; it is the order's point for the fee, ahead of the places vault and the
    locality, and may be filed as their place, encrypted on this device by the vault's own road. A short Google link they
-   shared is opened as Add ID opens one (/geo/expand, nothing kept). The card names the spot, never its figures. */
+   shared is opened as Add ID opens one (/geo/expand, nothing kept). The card names the spot, never its figures.
+   COUNTER BATCH C (20 Oct 2026): the seal may carry the spot's name and a floor or unit beside the point, or a unit with no
+   point at all (src 'unit'); both are read after the one unlock and shown on the card, kept in ORD_PIN with the point and
+   dropped with it. A unit alone measures no fee and files nothing: the fee falls back to the filed place. */
 let ORD_PIN={};
+const pinWords=p=>({label:p&&typeof p.label==='string'?p.label.slice(0,24):'',unit:p&&typeof p.unit==='string'?p.unit.slice(0,40):''});
 async function ordPinPoint(o){
   if(!o||!o.pin||o.mode!=='deliver'||!feeOpen()||!vaultSlipKey)return null;
   const k=o.id;if(ORD_PIN[k])return ORD_PIN[k].pt||null;
   const mine={st:'looking'};ORD_PIN[k]=mine;
-  let st='err',msg='',pt=null;
+  let st='err',msg='',pt=null,words={label:'',unit:''};
   try{const r=await fetch('pins/'+encodeURIComponent(o.u)+'/'+encodeURIComponent(o.pin),{cache:'no-store',headers:qHeaders()});
     let j=null;try{j=await r.json();}catch(e){}
     if(r.status===404)msg='The spot they shared is no longer kept, so the fee is measured to their filed place.';
     else if(!r.ok||!j||!j.ok)msg=r.status===401?'The write key was refused.':((j&&j.error)||'The server answered http '+r.status+'.');
     else{const b=await slipOpen(j.pin,'salt-pin v1');let p=null;try{p=b?JSON.parse(new TextDecoder().decode(b)):null;}catch(e){p=null;}
+      if(p)words=pinWords(p);
       if(!p)msg='The spot they shared would not open with this key.';
+      else if(p.src==='unit'&&words.unit)st='unit';
       else if(feePt(p))pt=feePt(p);
       else if(typeof p.link==='string'){const L=mapsLink(p.link);
         if(L&&L.short){try{const x=await fetch('geo/expand',{method:'POST',headers:qHeaders(),body:JSON.stringify({url:L.short})});
@@ -19454,7 +19460,7 @@ async function ordPinPoint(o){
       if(pt)st='ok';}
   }catch(e){msg='No connection.';}
   if(ORD_PIN[k]!==mine)return null;   /* locked meanwhile */
-  ORD_PIN[k]={st,pt,msg};
+  ORD_PIN[k]=Object.assign({st,pt,msg},words);
   return pt;
 }
 function ordPinLine(o){
@@ -19465,10 +19471,12 @@ function ordPinLine(o){
   /* an agreed order's card reads no fee, so its spot is opened here, once, when the card is drawn unlocked */
   if(!v){setTimeout(()=>{ordPinPoint(o).then(()=>pinDraw());},0);return '<p class="ordline ordpin">Opening the spot they shared.</p>';}
   if(v.st==='looking')return '<p class="ordline ordpin">Opening the spot they shared.</p>';
-  if(v.st!=='ok')return `<p class="ordline ordpin" role="status">${esc(v.msg)}</p>`;
+  const named=v.label||v.unit?`<p class="ordline ordpin ordpinname">${esc([v.label,v.unit].filter(Boolean).join(' \u00b7 '))}</p>`:'';
+  if(v.st==='unit')return named+'<p class="ordline ordpin">A unit, no exact spot: the fee is measured to their filed place.</p>';
+  if(v.st!=='ok')return named+`<p class="ordline ordpin" role="status">${esc(v.msg)}</p>`;
   const had=feePt(vaultPlaces&&vaultPlaces[o.code]),same=!!had&&haversineKm(had,v.pt)<0.05;
   const can=!same&&pinFileable(o);
-  return `<p class="ordline ordpin">The spot they shared is open on this device${same?', the place filed for them':''}.</p>`
+  return named+`<p class="ordline ordpin">The spot they shared is open on this device${same?', the place filed for them':''}.</p>`
     +(v.filed?'<p class="ordline ordpin" role="status">Filed as their place.</p>':can?`<button type="button" class="salt-ghost" data-pinfile="${esc(o.id)}">File as their place</button>`:'')
     +(v.fileMsg?`<p class="ordline ordpin" role="status">${esc(v.fileMsg)}</p>`:'');
 }

@@ -1,0 +1,10 @@
+[
+ {"name":"the words never kept","file":"master/salt_command.html","find":"  ORD_PIN[k]=Object.assign({st,pt,msg},words);","replace":"  ORD_PIN[k]={st,pt,msg};"},
+ {"name":"the name after the line","file":"master/salt_command.html","find":"  return named+`<p class=\"ordline ordpin\">The spot they shared is open","replace":"  return `<p class=\"ordline ordpin\">The spot they shared is open"},
+ {"name":"a unit alone read as no point","file":"master/salt_command.html","find":"      else if(p.src==='unit'&&words.unit)st='unit';\n","replace":""},
+ {"name":"a unit alone not named","file":"master/salt_command.html","find":"  if(v.st==='unit')return named+'<p","replace":"  if(v.st==='unit')return '<p"},
+ {"name":"File all takes a unit alone","file":"master/salt_command.html","find":"    if(!v||v.st!=='ok'||!pinFileable(o)||feePt(","replace":"    if(!v||(v.st!=='ok'&&v.st!=='unit')||!pinFileable(o)||feePt("},
+ {"name":"filing carries the words","file":"master/salt_command.html","find":"const code=o.code,pt=v.pt,entry=placeEntry({lat:pt.lat,lng:pt.lng,src:'pin'});","replace":"const code=o.code,pt=v.pt,entry=Object.assign(placeEntry({lat:pt.lat,lng:pt.lng,src:'pin'}),{label:v.label,unit:v.unit});"},
+ {"name":"a slip's seal named","file":"master/salt_command.html","find":"      if(p)words=pinWords(p);\n","replace":"      if(b===null)words={label:'Shop',unit:'Level 2'};else if(p)words=pinWords(p);\n"},
+ {"name":"the name cut short","file":"master/salt_command.html","find":"label:p&&typeof p.label==='string'?p.label.slice(0,24):''","replace":"label:p&&typeof p.label==='string'?p.label.slice(0,2):''"}
+]

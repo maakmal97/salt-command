@@ -1,0 +1,16 @@
+[
+ {"name":"the point sealed bare","file":"stmt/page.js","find":"if(draft.pin){ p=Object.assign({},draft.pin); if(label) p.label=label; if(unit) p.unit=unit; }","replace":"if(draft.pin){ p=Object.assign({},draft.pin); }"},
+ {"name":"a unit alone sealed nothing","file":"stmt/page.js","find":"    else if(unit){ p={unit:unit, src:'unit'}; if(label) p.label=label; }\n","replace":""},
+ {"name":"a unit alone marked a point","file":"stmt/page.js","find":"p={unit:unit, src:'unit'};","replace":"p={unit:unit, src:'gps'};"},
+ {"name":"a name alone sealed","file":"stmt/page.js","find":"    return p;\n  }\n  function pinSeal","replace":"    return p||(label?{label:label}:null);\n  }\n  function pinSeal"},
+ {"name":"the unit not cut","file":"stmt/page.js","find":"unit:spotCut(E.unit,40), pt:","replace":"unit:String(E.unit||'').trim(), pt:"},
+ {"name":"the check calls a unit an exact spot","file":"stmt/page.js","find":"row(tw(c.pin&&c.pin.src==='unit'?'od.sealed':'sh.pinRow'),","replace":"row(tw('sh.pinRow'),"},
+ {"name":"a late key waits for a tap","file":"stmt/page.js","find":"if(osh&&(draft.step==='form'||draft.step==='spot')) sheetDraw();","replace":"if(osh&&draft.step==='form') sheetDraw();"},
+ {"name":"a unit stands in for the area","file":"stmt/page.js","find":"spotCut(E.place,60).length<2?tw('sh.whyWhere')","replace":"spotCut(E.place,60).length<2&&!String(E.unit||'').trim()?tw('sh.whyWhere')"},
+ {"name":"the spot in the clear","file":"stmt/page.js","find":"      if(c.pinSealed) body.pin=c.pinSealed;\n","replace":"      if(c.pinSealed){ body.pin=c.pinSealed; body.spot=c.pin; }\n"},
+ {"name":"no Details row","file":"stmt/page.js","find":"    if(o.pinned&&o.mode==='deliver') L.appendChild(lrow(tw('od.sealed'),tw('od.sealedV')));\n","replace":""},
+ {"name":"the seal held too small","file":"stmt/pin.js","find":"export const PIN_MAX = 4096;","replace":"export const PIN_MAX = 300;"},
+ {"name":"an amendment may name a spot","file":"stmt/maker.js","find":"const fields = [\"product\", \"qty\", \"mode\", \"place\", \"forFriend\", \"rid\", \"week\", \"digest\", \"wantBy\", \"slot\"];","replace":"const fields = [\"product\", \"qty\", \"mode\", \"place\", \"forFriend\", \"rid\", \"week\", \"digest\", \"wantBy\", \"slot\", \"pin\"];"},
+ {"name":"the list asks for no key","file":"stmt/page.js","find":"    if(SL){ slipKeyLoad(); B.appendChild(spotList(SL)); }","replace":"    if(SL){ B.appendChild(spotList(SL)); }"},
+ {"name":"a stored spot not cut","file":"stmt/page.js","find":"label:spotCut(s.label,24), place:spotCut(s.place,60), unit:spotCut(s.unit,40), pt:","replace":"label:s.label, place:s.place, unit:typeof s.unit==='string'?s.unit:'', pt:"}
+]

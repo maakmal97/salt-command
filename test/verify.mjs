@@ -48267,6 +48267,16 @@ await (async () => {
   await (await import("./counter-c-spots.mjs")).run({ ok, pageWork });
 })();
 
+section("Counter Batch C: the seal carries the spot's name and unit, a unit alone sealed as its own shape, nothing in the clear (P6)");
+await (async () => {
+  await (await import("./counter-c-pin-seal.mjs")).run({ ok });
+})();
+
+section("Counter Batch C: the Desk reads the spot's name and unit after the unlock, a unit alone never filed (P7)");
+await (async () => {
+  await (await import("./counter-c-desk-spot.mjs")).run({ ok });
+})();
+
 section("Counter maker Accept again: a rejected pending row offered again against a fresh preview, nothing priced sent");
 await (async () => {
   await (await import("./maker-accept-again.mjs")).run({ ok });

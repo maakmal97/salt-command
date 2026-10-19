@@ -4032,7 +4032,7 @@ export const OWNER_JS = `
       if(order.mode==='deliver'&&order.slot&&order.slotSpan&&!((+order.moved||0)>=(+order.qty||0)-0.004))
         card.appendChild(el('p','maker-facts','Wanted '+String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10))+'.'));
       /* 10 Oct 2026: their exact spot is sealed to his key: the Desk opens it, this page only says it was shared */
-      if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','They shared a pin. Open it on the Desk to price the delivery.'));
+      if(order.mode==='deliver'&&order.pin) card.appendChild(el('p','maker-facts','They shared a spot or unit. Open it on the Desk.'));
       var againAck=makerAgainAck(order), quoteStart=null, lead=el('div','ordlead');
       /* his decision of 06 Oct 2026: the size, the goods' price and the delivery charge stay amendable after Accept, one Correction for approval.
          16 Oct 2026 (plan 5, part 2): Change the order stands under the head, where the figures it changes are read, in place of below the money; it opens
