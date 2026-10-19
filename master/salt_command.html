@@ -21784,10 +21784,10 @@ function lookSet(t){
   lookMark();lookRedraw();
 }
 function renderNow(late){recompute();
-  const gen=++LATE_GEN;   /* F3: this render owns the later work from here; an earlier render's is cancelled */
   late=late&&lateOn();
   const V=VIEWS.find(v=>v.id===curTab); if(!V)return;
   const el=document.getElementById('sec-'+V.id); if(!el)return;
+  const gen=++LATE_GEN;   /* F3: this render owns the later work from here; an earlier render's is cancelled. Taken after the guards: a render that draws nothing cancels nothing */
   const part=partOf(V.id), all=[V.lead].concat(V.parts);
   el.innerHTML=(all.length>1?`<div class="vnav" role="tablist">${all.map(p=>`<button class="vpill salt-tabs__pill${p===part?' on':''}" role="tab" aria-selected="${p===part}" data-s="${p}" title="${esc(PART_Q[p]||'')}">${esc(TAB_LABEL[p]||p)}</button>`).join('')}</div>`:'')
     +`<div class="vpart" data-tab="${part}"></div>`;
@@ -21799,7 +21799,8 @@ function renderNow(late){recompute();
   try{wrapTables(late);}catch(e){}
   /* the ledger's columns, once measured, are set now, on the markup the draw pass will see (tables wrapped; a cheap read of what was kept), so they do not move after the paint */
   if(late&&part==='ledger'){try{ledFit(true);}catch(e){}}
-  if(late)lateRun(gen,[()=>{if(vp.isConnected)drawPass(part,vp);},()=>wrapTables(),()=>navCounts()]);}   /* the charts, then the fades, then the rail's count */
+  if(late)lateRun(gen,[()=>{if(vp.isConnected){RENDER_MEMO={};try{drawPass(part,vp);}finally{RENDER_MEMO=null;}}},   /* the draw pass shares a memo of its own, as it did inside the render */
+    ()=>wrapTables(),()=>navCounts()]);}   /* the charts, then the fades, then the rail's count */
 /* ============ KEY MESSAGE vs DATABASE (v210) ============
    The desk had grown to 52% prose. Not one word of it was wasted when it was written,
    and almost all of it was in the way on the ninety-ninth reading. This demotes rather

@@ -161,6 +161,14 @@ const PWA_BLOCK = [
      holding only buttons has no field to hold the focus and was reloaded under him in two to four seconds */
   "    var d=document.querySelectorAll('[role=\"dialog\"],[role=\"alertdialog\"],dialog[open]');",
   "    for(var i=0;i<d.length;i++){var e=d[i];if(e.hidden||(e.closest&&e.closest('[hidden]')))continue;var s=window.getComputedStyle(e);if(s.display!=='none'&&s.visibility!=='hidden')return false;}",
+  /* 19 Oct 2026 (Fable's review of the merged wave 1): a field he typed into and left (Done on the keyboard, a tap beside it) holds no
+     focus, so the reload would take what he typed before he pressed Set; a shown field whose value, tick or choice is not the one it was
+     drawn with is unsent work. A field set by script reads as typed too, and then the chip waits for a tap, as before R2. */
+  "    var f=document.querySelectorAll('input,textarea,select');",
+  "    for(var j=0;j<f.length;j++){var x=f[j];if(x.disabled||/^(hidden|button|submit|reset)$/.test(x.type)||!x.getClientRects().length)continue;",
+  "      if(x.tagName==='SELECT'){var di=0;for(var k=0;k<x.options.length;k++)if(x.options[k].defaultSelected){di=k;break;}if(x.options.length&&x.selectedIndex!==di)return false;}",
+  "      else if(x.type==='checkbox'||x.type==='radio'){if(x.checked!==x.defaultChecked)return false;}",
+  "      else if(x.value!==x.defaultValue)return false;}",
   '    return true;',
   '  }catch(e){return false;}}',
   '  function offer(v,words){',

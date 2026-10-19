@@ -397,6 +397,20 @@ export async function run({ ok }) {
       const fl = seen();
       ok(fl.tabs.length === 1 && fl.counts === 1, "lateFlush runs the draw pass, the fades and the count that a tap left, once: " + JSON.stringify(fl));
 
+      /* 5b. a render that draws nothing (no part to draw into) cancels nothing: the tap's charts, fades and count still follow */
+      v.eval("__zero();switchTab('pricing');window.__ct=curTab;curTab='zz-none';render();curTab=window.__ct;__frame();__drain();");
+      const bail = seen();
+      ok(bail.tabs.length === 1 && bail.tabs[0] === "pricing" && bail.counts === 1 && bail.fades >= 1,
+        "a render that bails before drawing leaves the last tap's charts, fades and count to follow: " + JSON.stringify(bail));
+
+      /* 5c. the late draw pass keeps a memo of its own, as it had inside the render: the inputs' key is read once across a part's charts */
+      const memo = vr(`(function(){var n=0,o=badgeKey,charts=0,of=freshChart;badgeKey=function(x){if(x===true)n++;return o.apply(this,arguments);};
+        freshChart=function(){charts++;return of.apply(this,arguments);};
+        try{__zero();switchTab('pricing');__frame();var before=n;charts=0;__task();return {keys:n-before,charts:charts,memoAfter:RENDER_MEMO===null};}
+        finally{badgeKey=o;freshChart=of;__drain();}})()`);
+      ok(memo.charts >= 2 && memo.keys <= 1 && memo.memoAfter,
+        "the late draw pass reads the inputs' key at most once across the part's charts, and closes its memo after: " + JSON.stringify(memo));
+
       /* 6. the ledger sets its kept columns on the tap's own paint, so they do not move after it */
       const col = vr(`(function(){
         var sigOf=function(){var w=document.querySelector('.sec.on .ledwrap'),html=w.innerHTML,fonts=(document.fonts&&document.fonts.status)||'loaded',h=0;
@@ -465,10 +479,10 @@ export async function run({ ok }) {
   if (tickSrc) {
     const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
     const rig = () => {
-      const t = { fresh: 0, intervals: [], timeouts: [], listeners: {}, vis: "visible", active: null, sheets: [], navopen: false, chips: 0, onLoad: null };
+      const t = { fresh: 0, intervals: [], timeouts: [], listeners: {}, vis: "visible", active: null, sheets: [], fields: [], navopen: false, chips: 0, onLoad: null };
       const doc = {
         get visibilityState() { return t.vis; }, get activeElement() { return t.active; },
-        querySelectorAll: (s) => t.sheets.filter((e) => s.includes(e.kind === "native" ? "dialog[open]" : "[role=\"dialog\"]")),
+        querySelectorAll: (s) => s.includes("textarea") ? t.fields : t.sheets.filter((e) => s.includes(e.kind === "native" ? "dialog[open]" : "[role=\"dialog\"]")),
         addEventListener: (type, fn) => { (t.listeners[type] = t.listeners[type] || []).push(fn); },
         createElement: () => { t.chips++; return { setAttribute() { }, set onclick(f) { } }; },
         body: { appendChild() { }, classList: { contains: (c) => c === "navopen" && t.navopen } },
@@ -529,6 +543,28 @@ export async function run({ ok }) {
       const hidden = t.fresh;
       t.vis = "visible"; t.twoSeconds(); t.twoSeconds();
       ok(hidden === 0 && t.fresh === 1, "a page that is not on screen is never reloaded; it is once it shows and is idle: " + JSON.stringify({ hidden, fresh: t.fresh }));
+    }
+    /* a field typed into and left holds no focus, but what is in it is unsent: it holds the reload until it is back to what was drawn */
+    const shown = () => [{}], none = () => [];
+    const FIELD = (o) => ({ tagName: "INPUT", type: "text", disabled: false, value: "", defaultValue: "", checked: false, defaultChecked: false, getClientRects: shown, ...o });
+    const opts = (sel, def) => [0, 1, 2].map((i) => ({ selected: i === sel, defaultSelected: i === def }));
+    for (const [what, field, back] of [
+      ["a text field typed into and left", FIELD({ value: "21 Oct" }), (x) => { x.value = ""; }],
+      ["a restock day typed over the one drawn", FIELD({ type: "date", value: "2026-10-21", defaultValue: "2026-10-20" }), (x) => { x.value = "2026-10-20"; }],
+      ["a box ticked", FIELD({ type: "checkbox", checked: true }), (x) => { x.checked = false; }],
+      ["a choice changed from the one drawn", { ...FIELD({ tagName: "SELECT", type: "select-one" }), options: opts(2, 1), selectedIndex: 2 }, (x) => { x.selectedIndex = 1; }],
+      ["a choice changed where none was drawn as chosen", { ...FIELD({ tagName: "SELECT", type: "select-one" }), options: opts(1, -1), selectedIndex: 1 }, (x) => { x.selectedIndex = 0; }]]) {
+      const t = rig(); t.fields = [field]; await t.start();
+      t.fire("focusout"); t.drain(); for (let i = 0; i < 4; i++) t.twoSeconds();
+      const held = t.fresh, chips = t.chips;
+      back(field); t.twoSeconds(); const first = t.fresh; t.twoSeconds();
+      ok(held === 0 && chips === 1 && first === 0 && t.fresh === 1, what + " holds the reload with no focus on it, and once it is back to what was drawn the build loads on the second idle look: " + JSON.stringify({ held, chips, first, fresh: t.fresh }));
+    }
+    for (const [what, field] of [["a typed field that is not shown", FIELD({ value: "x", getClientRects: none })], ["a disabled field", FIELD({ value: "x", disabled: true })],
+      ["a hidden input", FIELD({ type: "hidden", value: "x" })], ["an untouched field, a choice at the one drawn and one where none was drawn as chosen",
+        [FIELD({ value: "a", defaultValue: "a" }), { ...FIELD({ tagName: "SELECT", type: "select-one" }), options: opts(1, 1), selectedIndex: 1 }, { ...FIELD({ tagName: "SELECT", type: "select-one" }), options: opts(0, -1), selectedIndex: 0 }]]]) {
+      const t = rig(); t.fields = [].concat(field); await t.start();
+      ok(t.fresh === 1 && t.chips === 0, what + " does not hold the reload: " + JSON.stringify({ chips: t.chips, fresh: t.fresh }));
     }
     {
       const t = rig(); await t.start();

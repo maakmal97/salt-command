@@ -69,5 +69,16 @@
  {"name": "the key drops the queue", "find": "PRICE_SET,pxOver,queue,AP_DRAFTS,", "replace": "PRICE_SET,pxOver,AP_DRAFTS,"},
  {"name": "the key drops the cost overrides", "find": "PRICE_SET,pxOver,queue,AP_DRAFTS,", "replace": "PRICE_SET,queue,AP_DRAFTS,"},
  {"name": "the key drops the hushes", "find": "EXPECTED,HUSH_READ,HUSH,DATA_STAMP", "replace": "EXPECTED,HUSH_READ,DATA_STAMP"},
- {"name": "the key drops the restock dates", "find": "EXPECTED_READ,EXPECTED,HUSH_READ", "replace": "EXPECTED_READ,HUSH_READ"}
+ {"name": "the key drops the restock dates", "find": "EXPECTED_READ,EXPECTED,HUSH_READ", "replace": "EXPECTED_READ,HUSH_READ"},
+ {"name":"a typed field left unfocused is not unsent work","file":"tools/build.mjs","find":"\"    var f=document.querySelectorAll('input,textarea,select');\",","replace":"\"    var f=[];\","},
+ {"name":"a typed text field is not read","file":"tools/build.mjs","find":"\"      else if(x.value!==x.defaultValue)return false;}\",","replace":"\"      }\","},
+ {"name":"a ticked box is not read","file":"tools/build.mjs","find":"if(x.checked!==x.defaultChecked)return false;}","replace":"}"},
+ {"name":"a changed choice is not read","file":"tools/build.mjs","find":"if(x.options.length&&x.selectedIndex!==di)return false;}","replace":"}"},
+ {"name":"a choice with none drawn as chosen reads as changed","file":"tools/build.mjs","find":"var di=0;for(","replace":"var di=-1;for("},
+ {"name":"a field not shown holds the reload","file":"tools/build.mjs","find":"||!x.getClientRects().length)continue;","replace":")continue;"},
+ {"name":"a disabled field holds the reload","file":"tools/build.mjs","find":"if(x.disabled||/^(hidden|","replace":"if(/^(hidden|"},
+ {"name":"a hidden input holds the reload","file":"tools/build.mjs","find":"/^(hidden|button|submit|reset)$/","replace":"/^(button|submit|reset)$/"},
+ {"name":"a render that bails cancels the tap's work","find":"function renderNow(late){recompute();\n  late=late&&lateOn();","replace":"function renderNow(late){recompute();++LATE_GEN;\n  late=late&&lateOn();"},
+ {"name":"the late draw pass has no memo","find":"if(vp.isConnected){RENDER_MEMO={};try{drawPass(part,vp);}finally{RENDER_MEMO=null;}}","replace":"if(vp.isConnected){drawPass(part,vp);}"},
+ {"name":"the late draw pass leaves its memo open","find":"if(vp.isConnected){RENDER_MEMO={};try{drawPass(part,vp);}finally{RENDER_MEMO=null;}}","replace":"if(vp.isConnected){RENDER_MEMO={};drawPass(part,vp);}"}
 ]
