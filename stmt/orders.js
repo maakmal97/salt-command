@@ -1708,7 +1708,7 @@ export async function claimAccount(env, u, body) {
   return { claim };
 }
 
-const klDay = (iso) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
+export const klDay = (iso) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Kuala_Lumpur" });
 
 /* ---- F4: THE RESTOCK DATE (his decision of 05 Oct 2026) ------------------------------------------------------------
  * KV `expected`, {<book>: "YYYY-MM-DD"}: the day he expects each book's next lot, set from the desk's Enter. It holds no
