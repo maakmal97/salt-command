@@ -113,8 +113,8 @@ async function deskCall(env, path, method, body) {
   }));
   let result;
   try { result = await response.json(); } catch (e) { throw new Error("The Desk maker route returned an unreadable response."); }
-  /* the test surface's two Desk reads on a Desk that has not shipped them: said plainly, never a 404 of the Counter's own */
-  if (response.status === 404 && result && result.error === "not found" && /^\/_internal\/maker\/fixture-(check|claims)/.test(path))
+  /* the test surface's two Desk reads, and the glance's stock (20 Oct 2026), on a Desk that has not shipped them: said plainly, never a 404 of the Counter's own */
+  if (response.status === 404 && result && result.error === "not found" && /^\/_internal\/maker\/(fixture-(check|claims)|stock$)/.test(path))
     throw Object.assign(new Error("The Desk is not updated yet."), { status: 503 });
   if (!response.ok || !result || result.ok !== true)
     throw Object.assign(new Error(result && result.error || "The Desk maker operation failed."),
@@ -375,7 +375,7 @@ const EXAMPLE_STOCK = { ok: true, today: null, books: { salt: { shelf: 12, free:
 function stockWithDates(desk, expected, test) {
   const today = klDay(new Date().toISOString()), books = {}, by = {};
   for (const [p, b] of Object.entries(desk && desk.books && typeof desk.books === "object" ? desk.books : {})) {
-    books[p] = b;
+    books[p] = { shelf: b && b.shelf, free: b && b.free, commit: b && b.commit, coverDays: b && b.coverDays, transit: b && b.transit };   /* the five figures and nothing else, on this side too */
     const v = expected && typeof expected === "object" ? expected[p] : null;
     by[p] = typeof v === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(v) && v >= today ? v : null;
   }

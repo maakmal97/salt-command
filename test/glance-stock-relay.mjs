@@ -3,7 +3,8 @@
  *   1  /all/maker/stock asks the Desk's stock by GET over the bridge and carries its figures as they came
  *   2  beside each book, the day he expects its next lot from this site's KV `expected`, today or later in Kuala Lumpur; a passed day, a
  *      malformed one or an unread store is no day, and the figures stand
- *   3  only the verified owner, by GET; under /all/test a fixed example answers and no Desk is called */
+ *   3  only the verified owner, by GET; under /all/test a fixed example answers and no Desk is called
+ *   4  a Desk that has not shipped the route is said plainly (503, not updated), never a 404 of the Counter's own; a book carries its five figures alone */
 import { handleMaker } from "../stmt/maker.js";
 
 class Store {
@@ -41,4 +42,11 @@ export async function run({ ok }) {
   const t = await call(envOf(store), {}, owner, { test: true }), tb = await t.json();
   ok(t.status === 200 && tb.test === true && tb.books.salt.shelf === 12 && tb.books.salt.transit === 20 && tb.by.salt === kl(3 * 864e5) && hops.length === n,
     "under /all/test a fixed example answers, its day three days on, and no Desk is called: " + JSON.stringify(tb));
+  /* 4 */
+  const old = { ...envOf(store), DESK_MAKER: { fetch: async () => new Response(JSON.stringify({ ok: false, error: "not found" }), { status: 404 }) } };
+  const o = await call(old), ob = await o.json();
+  ok(o.status === 503 && /not updated/.test(ob.error || ""), "a Desk that has not shipped the route is said plainly, 503 and not updated: " + o.status + " " + JSON.stringify(ob));
+  const extra = { ...envOf(store), DESK_MAKER: { fetch: async () => new Response(JSON.stringify({ ok: true, today: null, books: { salt: { ...books.salt, lot: "pX1", supplier: "SZ9-AAA" } } })) } };
+  const eb = await (await call(extra)).json();
+  ok(JSON.stringify(eb.books.salt) === JSON.stringify(books.salt), "a book carries its five figures alone, whatever else came: " + JSON.stringify(eb.books.salt));
 }
