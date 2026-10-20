@@ -2904,6 +2904,16 @@ Price (goods) and Delivery as they stand, its one action Send the change and the
 only the figures changed, the goods' price with a new size, under the request id that route minted until it lands; nothing changed says *Change a figure first.* on the card. What was typed is kept
 while the change has not landed (`amendMemo`, forgotten once it has), so a lost reply is opened again as he left it and retried as the same request. `test/maker-amend.mjs`.
 
+### The associate reward on an order (20 Oct 2026)
+
+An order carries one word of the reward, `rwd` in `CUSTOMER_FIELDS`: "cross" from his Accept (the order takes them over to their next reward;
+`decideDesk` takes it on the acknowledgement only), "given" from the book's mark on the return leg (terminal), and a mark of null clears a cross.
+The page adds "This order brings you over to the next reward. Pay now to receive them together with your reward." (`ow.rwdCross`) beside pay now
+while an acknowledged order is still to pay, and on a given order a line "Reward · 1 unit", "No charge", with the product's mark and no amount
+(`om.rwd`, `om.rwdFree`). No figure of it, `rwdStep`, `listRM` or `listQty`, travels. Salt Admin's order card draws the Associate reward card under
+the Bill (`stmt/owner.js` `rewardCard`): placed off the preview's `reward`, agreed off `GET /all/maker/reward/<ledgerKey>`. The practice accounts
+show both (`FIX_VERSION` 13: ex48 crossing, ex05 given).
+
 ## Before committing
 
 **Statements carry desk CODES and never a real name.** That is checked, not assumed: the

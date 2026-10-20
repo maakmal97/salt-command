@@ -100,6 +100,15 @@ a Cloudflare Access login, his decision of 05 Oct 2026, and the Worker's own che
      `quoteGrid` with `d` of `'partner'`; the drafter's `floorFor(q).floor` and the snapshot's `floors[q]` are the same
      figure. A partner has no % to set: the Their % card names them and sets nothing, and a test that
      walks every customer leaves them out. A partner is an associate: set from the card's Make partner (a name-free `partner` entry, drafted as a `roster` row with `partner`, so no migration), which the fold files in `partners` and, if they are none yet, appoints on R2 with their -R account; `docs/DESK.md`.
+   - **AN ASSOCIATE'S REWARD STEPS WITH LANDED COST** (his rules of 20 Oct 2026, salt only): one unit per `times` (10) units' COGS of
+     margin on their own buying and resale, counted once an order is PAID IN FULL (the engine's `rewardWalk`), over the stated openings of the
+     switch (`REWARD_OPEN` in the book, written once by `tools/reward-open.mjs`; `REWARD.stated.salt.associate.since`), so nothing they held moved;
+     the step is the crossing day's, or the lesser promised at Accept (`rwdStep`). **The fold raises the unit** as its own row at that day's landed
+     cost (goodwill and rebate, `rewardOf` the order that crossed, counted cancelled or not), handed over with that order or their next salt
+     handover, its unit in the roll; a payment undone flags it STALE, never withdrawn. A customer reads one word on an order (`rwd`: "cross",
+     "given"), never a figure; the ringgit, net of what he gave under their price (`listRM`, the drafter's stamp), is his alone on Salt Admin
+     (`rewardReading`). **From the switch a customer redeems nothing** (`inputResource`, the one refusal) and what they hold stands; no basis is
+     built (his answer to the loyalty plan's Ask 4, reversing Ask 7's basis). Nothing prices from any of it. Detail: `docs/DESK.md`.
 6. **The look is the Salt design system applied as a layer.** **A design change he gives goes to `Code\salt-ds` first, then to the Desk, the
    Counter and QR Command in the same piece of work, unasked** (his word of 18 Oct 2026): salt-ds's
    `npm run propagate` and its `CLAUDE.md`; `node tools/designsync.mjs --drift` says whether `design/` is
