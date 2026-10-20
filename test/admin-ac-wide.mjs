@@ -47,6 +47,10 @@ export async function run({ ok, pageWork }) {
       && card.lastElementChild.classList.contains("maker-foot") && /\.adm \.ordcols--3\{grid-template-columns:minmax\(0,1\.15fr\) minmax\(0,1fr\) minmax\(0,0\.9fr\)\}/.test(css)
       && /\.adm \.ordcols\{display:grid;gap:20px;/.test(css),
       "at 1440 the card is three columns, decision, record and insight, at 1.15, 1 and 0.9, gap 20px, the foot under them: " + J(map3));
+    /* 3b: the render pass of 21 Oct 2026 at 1440 found the row of three and the band too wide for a column */
+    ok(/\.adm \.ordcol \.ordrow3\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/.test(css) && /\.adm \.ordcol \.ordrow3>:first-child\{grid-column:1\/-1\}/.test(css)
+      && /\.adm \.ordcols--3 \.ogoods\{flex-wrap:wrap\}/.test(css) && /\.adm \.ordcols--3 \.ogoods__sum\{flex:1 1 100%;/.test(css),
+      "in a column Agree stands on its own line over Change terms and Decline, and three across the band's total stands under the units");
     /* 4 */
     const field = card.querySelector('[data-sect="money"]') && card.querySelector("label.maker-field input");
     if (field) field.value = "37";

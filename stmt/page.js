@@ -842,6 +842,11 @@ body.ended>*:not(#aEnded){display:none}
 .adm .ordcols--2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .adm .ordcols--3{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) minmax(0,0.9fr)}
 .adm .ordcol{display:flex;flex-direction:column;gap:12px;min-width:0}
+/* in a column the row of three is Agree on its own line over Change terms and Decline, and three columns across, the band's goods total stands under the units */
+.adm .ordcol .ordrow3{grid-template-columns:repeat(2,minmax(0,1fr))}
+.adm .ordcol .ordrow3>:first-child{grid-column:1/-1}
+.adm .ordcols--3 .ogoods{flex-wrap:wrap}
+.adm .ordcols--3 .ogoods__sum{flex:1 1 100%;align-items:flex-start}
 @media (min-width:860px) and (max-width:1079.98px){
   /* the App bar stays fixed along the foot until 1080px, so the sticky card's foot is kept above it (it was 40px under it at 1024x768) */
   .adm #makerReview{max-height:calc(100vh - 48px - var(--salt-bar-h) - env(safe-area-inset-bottom,0px))}

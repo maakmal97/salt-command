@@ -11,5 +11,8 @@
  {"name":"a change of width moves nothing","file":"stmt/owner.js","find":"var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', ordLayout);","replace":"var m=window.matchMedia(q);"},
  {"name":"a change of width draws the card again","file":"stmt/owner.js","find":"var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', ordLayout);","replace":"var m=window.matchMedia(q); if(m&&m.addEventListener) m.addEventListener('change', drawOrderPane);"},
  {"name":"the parts come back out of order","file":"stmt/owner.js","find":"back.sort(function(a,b){ return (+a.getAttribute('data-ord'))-(+b.getAttribute('data-ord')); }).forEach(","replace":"back.forEach("},
- {"name":"the rail Orders keeps it open","file":"stmt/owner.js","find":"if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; }","replace":"if(false){ closeOrder(); return; }"}
+ {"name":"the rail Orders keeps it open","file":"stmt/owner.js","find":"if(mm==='orders'&&placeNow==='orders'&&ordOpened){ closeOrder(); return; }","replace":"if(false){ closeOrder(); return; }"},
+ {"name":"the row of three kept three across in a column","file":"stmt/page.js","find":".adm .ordcol .ordrow3{grid-template-columns:repeat(2,minmax(0,1fr))}\n","replace":""},
+ {"name":"Agree shares its line","file":"stmt/page.js","find":".adm .ordcol .ordrow3>:first-child{grid-column:1/-1}\n","replace":""},
+ {"name":"the band total kept beside the units","file":"stmt/page.js","find":".adm .ordcols--3 .ogoods{flex-wrap:wrap}\n","replace":""}
 ]
