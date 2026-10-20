@@ -88,8 +88,6 @@ export async function run({ ok }) {
         expect: (e) => e.payload.mode === "amend" && e.payload.kind === "Correction" && e.payload.rid === "rs2" },
       { code: "CS6-PER", at: "2026-10-06T01:01:00.000Z", what: "an associate owing nothing: every held unit is redeemed",
         expect: (e) => e.payload.mode === "redeem" && e.payload.qty > 1 },
-      { code: "CK4-SEN", at: "2026-10-06T01:02:00.000Z", what: "a customer owing nothing: one whole unit is redeemed",
-        expect: (e) => e.payload.mode === "redeem" && e.payload.qty === 1 }
     ];
     for (const c of cases) {
       const res = await call("/all/maker/inputs/redeem", { at: c.at, code: c.code, date: today });
@@ -112,6 +110,11 @@ export async function run({ ok }) {
         "and the fold books it: " + (folded.ok ? JSON.stringify(target) : folded.problems.join("; ")));
     }
 
+    /* 20 Oct 2026 (his answers to Ask 7 and the loyalty plan's Ask 4): from the switch a customer's reward is not redeemed, and nothing is drafted */
+    const cust = await call("/all/maker/inputs/redeem", { at: "2026-10-06T01:02:00.000Z", code: "CK4-SEN", date: today });
+    const custBody = await cust.json();
+    ok(cust.status >= 400 && /not redeemed: only an associate/.test(custBody.error || "") && !draftOf("2026-10-06T01:02:00.000Z"),
+      "a customer's redemption is refused from the switch, and nothing is drafted: " + cust.status + " " + JSON.stringify(custBody));
     /* once spent and waiting, the same reward is not spent again; a retry of the same request is answered from its receipt */
     const count = drafts().length;
     const retry = await call("/all/maker/inputs/redeem", { at: cases[1].at, code: "CS6-PER", date: today });

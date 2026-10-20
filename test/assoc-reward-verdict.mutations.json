@@ -1,0 +1,22 @@
+[
+ {"name":"the verdict ignores this order's margin","file":"engine/stages.mjs","find":"  const reaches = !paid && before + margin >= step - 0.005;","replace":"  const reaches = !paid && before >= step - 0.005;"},
+ {"name":"a cross that no longer holds is kept","file":"engine/stages.mjs","find":"  return r.order && r.order.reaches ? undefined : null;\n}","replace":"  return undefined;\n}"},
+ {"name":"a dearer lot breaks the promise","file":"engine/stages.mjs","find":"step = row && +row.rwdStep > 0 ? Math.min(+row.rwdStep, walk.step) : walk.step;","replace":"step = walk.step;"},
+ {"name":"a lagging book takes given back","file":"engine/stages.mjs","find":"  if (now !== \"cross\") return undefined;\n  if (POSITION_ENGINE.txDates(row).fullPaid) return null;","replace":"  if (now !== \"cross\") return null;\n  if (POSITION_ENGINE.txDates(row).fullPaid) return null;"},
+ {"name":"any word changes the digest","file":"src/drafter.js","find":"      entry && entry.rwd === \"cross\" ? { rwd: \"cross\" } : {})   /* 20 Oct 2026","replace":"      entry && entry.rwd ? { rwd: entry.rwd } : {})   /* 20 Oct 2026"},
+ {"name":"the offer digest drops the word","file":"src/drafter.js","find":"entry && entry.rwd === \"cross\" ? { rwd: \"cross\" } : {})));","replace":"{})));"},
+ {"name":"the promise is stamped without cross","file":"src/drafter.js","find":"  if (entry && entry.rwd === \"cross\" && +entry.rwdStep > 0 && dir === \"SELL\")","replace":"  if (entry && +entry.rwdStep > 0 && dir === \"SELL\")"},
+ {"name":"the book's mark is dropped","file":"stmt/orders.js","find":"    if (m.rwd === \"given\" || m.rwd === null) c.rwd = m.rwd;\n","replace":""},
+ {"name":"given is cleared","file":"stmt/orders.js","find":"else if (m.rwd === null && order.rwd === \"cross\") delete order.rwd;","replace":"else if (m.rwd === null) delete order.rwd;"},
+ {"name":"the word stays on the desk","file":"stmt/orders.js","find":"  \"slot\", \"slotSpan\", \"point\", \"rwd\"];","replace":"  \"slot\", \"slotSpan\", \"point\"];"},
+ {"name":"the return leg never says","file":"src/orders.js","find":"    const want = sole ? rwdOf(book, row, o.rwd) : undefined;","replace":"    const want = undefined;"},
+ {"name":"Accept stamps no step","file":"src/orders.js","find":"entry.rwdStep = rc.step; entry.rwdRate = rc.rate;","replace":"entry.rwdRate = rc.rate;"},
+ {"name":"Accept stamps no rate","file":"src/orders.js","find":"entry.rwdStep = rc.step; entry.rwdRate = rc.rate;","replace":"entry.rwdStep = rc.step;"},
+ {"name":"the preview hides the verdict","file":"src/orders.js","find":"rwd: rc.cross ? \"cross\" : null,","replace":"rwd: null,"},
+ {"name":"the preview hides his reading","file":"src/orders.js","find":"    reward: product === \"salt\" ? rewardReading(book, code, { qty, goods, unitCost: priced0.cost }) : null,","replace":"    reward: null,"},
+ {"name":"the approval drops the word","file":"src/orders.js","find":"      entry.rwd === \"cross\" ? { rwd: \"cross\" } : {},   /* 20 Oct 2026: the reward word his yes covered */","replace":"      {},"},
+ {"name":"the reading has no route","file":"src/worker.js","find":"  if (rwdAt) {","replace":"  if (false) {"},
+ {"name":"the reading forgets the promised rate","file":"engine/stages.mjs","find":"promised = row && +row.rwdRate > 0 ? +row.rwdRate : null;","replace":"promised = null;"},
+ {"name":"a raised unit clears the word","file":"engine/stages.mjs","find":"  if (units.length) return undefined;   /* raised and waiting for its handover: the word stands */\n","replace":""},
+ {"name":"given before the handover","file":"engine/stages.mjs","find":"if (units.some((s) => +s.deliveredQty > 0.009)) return now === \"given\"","replace":"if (units.length) return now === \"given\""}
+]

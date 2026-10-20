@@ -1,0 +1,12 @@
+[
+ {"name":"a customer's spend is admitted","file":"engine/position.mjs","find":"  if(!reward.error&&reward.redeemable===false)return {error:\"A customer's reward is not redeemed: only an associate's is.\"};\n","replace":""},
+ {"name":"every account is redeemable","file":"engine/position.mjs","find":"redeemable:associate||!switched,","replace":"redeemable:true,"},
+ {"name":"the reservation check reads the balance alone","file":"engine/position.mjs","find":"    const claim=inputResource(entry,book);   /* 20 Oct 2026: the one refusal, so a customer's spend is refused here as at admission */\n    if(claim&&claim.error)return claim.error;\n","replace":""},
+ {"name":"the drafter drafts a customer's redemption","file":"src/drafter.js","find":"    if (POSITION_ENGINE.rewardAccount(book, POSITION_ENGINE.ownerCode(party), prod).redeemable === false)\n      return { skip:","replace":"    if (false)\n      return { skip:"},
+ {"name":"the drafter drafts a customer's cover","file":"src/drafter.js","find":"    if (POSITION_ENGINE.rewardAccount(book, POSITION_ENGINE.ownerCode(party), product).redeemable === false)\n      return { skip:","replace":"    if (false)\n      return { skip:"},
+ {"name":"Salt Admin offers a customer Redeem","file":"src/maker-inputs.js","find":"const free = reward.redeemable === false ? 0 : reward.associate ?","replace":"const free = reward.associate ?"},
+ {"name":"Salt Admin plans a customer's cover","file":"src/maker-inputs.js","find":"  if (reward.error || reward.associate || reward.redeemable === false ||","replace":"  if (reward.error || reward.associate ||"},
+ {"name":"a customer keeps earning","file":"engine/position.mjs","find":"sales:cut==null?sales:sales.filter(s=>rewardRid(s.rid)<=cut)","replace":"sales:sales"},
+ {"name":"the Desk plans a customer's cover","file":"master/salt_command.html","find":"  if(rewardWalkOf(null))return null;   /* 20 Oct 2026: from the switch a customer's reward covers nothing","replace":"  if(false)return null;   /* 20 Oct 2026: from the switch a customer's reward covers nothing"},
+ {"name":"the Desk calls a customer's units free","file":"master/salt_command.html","find":"<td>${r.free>0.009?(rewardWalkOf(null)?`${units(r.free)} held`","replace":"<td>${r.free>0.009?(false?`${units(r.free)} held`"}
+]

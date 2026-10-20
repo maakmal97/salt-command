@@ -1196,6 +1196,71 @@
     ],
     "PRODUCTS": [
       "v781, 22 Sep 2026: WHO EARNS IS A FIELD ON THE BOOK NOW. The reward scheme was salt-only by five bare string comparisons in the master and two in the drafter, so no book opened after salt could ever earn without a code edit, whatever the book said about itself. reward is true on salt and false on every other book, which is exactly what those comparisons meant, so nothing moves today. Whether candy or rice ever earn is his decision and a data one."
+    ],
+    "REWARD_OPEN": [
+      "THE SWITCH TO THE STEP AT LANDED COST, 2026-10-20 (his rules of 20 Oct 2026, his answer to Ask 3). Each associate opens on the units the count before the switch had earned and the share of the next one, so nothing they hold or see moves; from here a unit is 10 units' landed cost of margin on their own buying and resale, counted once paid in full. Written once by tools/reward-open.mjs; the fold adds one the day a customer becomes an associate."
     ]
+  },
+  "REWARD_OPEN": {
+    "CA6-CYB": {
+      "earned": 0,
+      "share": 0.4723,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CE4-AD": {
+      "earned": 1,
+      "share": 0.2358,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CE5-SA": {
+      "earned": 0,
+      "share": 0.5957,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CI4-OKR": {
+      "earned": 2,
+      "share": 0.4362,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CJ4-OKR": {
+      "earned": 8,
+      "share": 0.1258,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CM4-TO": {
+      "earned": 1,
+      "share": 0.439,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CN3-WM": {
+      "earned": 2,
+      "share": 0.2877,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CR3-DAM": {
+      "earned": 2,
+      "share": 0.116,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CS6-BS": {
+      "earned": 7,
+      "share": 0.2741,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    },
+    "CS6-PER": {
+      "earned": 3,
+      "share": 0.9826,
+      "upTo": "s276",
+      "on": "2026-10-20"
+    }
   }
 }

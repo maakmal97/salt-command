@@ -93,6 +93,7 @@ async function deskCall(env, path, method, body) {
     || TEST_USERS.includes(path.split("/")[4]) && /^\/_internal\/maker\/fixture-claims\/[0-9]{4}-[0-9]{4}\/a[0-9]{14}-[a-z0-9]{1,8}\/preview$/.test(path) && method === "POST"
     || /^\/_internal\/maker\/threads\/[a-z0-9]{4}-[a-z0-9]{4}$/.test(path) && method === "POST"
     || path === "/_internal/maker/offsets" && method === "GET"
+    || /^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(path) && method === "GET"
     || path === "/_internal/maker/ledger" && ["GET", "POST"].includes(method)
     || path === "/_internal/maker/inputs/offset" && method === "POST"
     || path === "/_internal/maker/inputs/stock-count" && method === "POST"
@@ -243,7 +244,7 @@ async function digestOf(value) {
   const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value))));
   return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-const EXAMPLE_FIELDS = { preview: ["delivery", "total", "slot", "prepay"], accept: ["delivery", "total", "slot", "prepay", "hash", "rid"],
+const EXAMPLE_FIELDS = { preview: ["delivery", "total", "slot", "prepay"], accept: ["delivery", "total", "slot", "prepay", "rwd", "hash", "rid"],
   offer: ["delivery", "total", "slot", "hash", "rid"], withdraw: ["rid"], handed: ["qty", "close", "rid"], cash: ["amount", "rid"], received: ["amount", "claim", "rid"] };
 const OFFER_MS = 48 * 3600e3;
 async function exampleAction(env, id, action, body) {
@@ -349,6 +350,8 @@ function internalOperation(path) {
   const thread = /^\/all\/maker\/threads\/([a-z0-9]{4}-[a-z0-9]{4})$/.exec(path);
   if (thread) return { kind: "thread", u: thread[1] };
   if (path === "/all/maker/offsets") return { kind: "offsets" };
+  const rwd = /^\/all\/maker\/reward\/([A-Za-z0-9%._-]{3,160})$/.exec(path);
+  if (rwd) return { kind: "reward", key: rwd[1] };
   if (path === "/all/maker/ledger") return { kind: "ledger" };
   if (path === "/all/maker/inputs/offset") return { kind: "input", input: "offset" };
   if (path === "/all/maker/inputs/stock-count") return { kind: "stock-count" };
@@ -585,6 +588,10 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
     if (op.kind === "ledger") {
       if (method !== "GET" && method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       return json(await deskCall(env, "/_internal/maker/ledger", method, method === "POST" ? {} : undefined));
+    }
+    if (op.kind === "reward") {
+      if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
+      return json(await deskCall(env, "/_internal/maker/reward/" + op.key, "GET"));
     }
     if (op.kind === "offsets") {
       if (method !== "GET") return json({ ok: false, error: "method not allowed" }, 405);

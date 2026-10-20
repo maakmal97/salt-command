@@ -5676,7 +5676,94 @@ function rewardUnits(total,unit){
   const earned=Math.max(0,Math.floor(total/unit));
   return {earned,toNext:+((earned+1)*unit-total).toFixed(2)};
 }
-function rewardAccount(book,id,product='salt'){
+/* THE ASSOCIATE REWARD STEPS WITH LANDED COST (his rules of 20 Oct 2026, salt only). From the switch, REWARD.stated.salt.associate
+   carries times (10) and since; an associate opens on a STATED position at the switch, REWARD_OPEN in the book (his answer to Ask 3:
+   nothing they hold or see moves), {earned, share, upTo, on, pend}: the units the old count had earned, the share of the next one,
+   the last sales rid the old count could read, the day it was taken, and any row of theirs that was Pending then (the old count
+   read none of those, so they count here once paid). From there a row counts when it is PAID IN FULL by any road (txDates.fullPaid,
+   on its pOn), in pOn then rid order, its margin the goods less its units at the row's own cost, the paid part of a row the reward
+   part settled; a gift's cost comes off on the day it is handed over in full; a redemption, a reward row and a written-off row count
+   nothing; the party's own code and -R account only (Ask 1: an introduction no longer counts). Each time progress reaches the step,
+   times the latestCogs rate ON THAT DAY, one unit is earned and the step comes off; a row stamped rwdStep at Accept is measured at
+   the lesser of that and the day's, so a lot landing after Accept never breaks the promise. With COGS fallen and nothing paid, next
+   holds at 1 and the next paid row earns. given is what their own price (listRM, the drafter's stamp) came to over the goods since
+   the last crossing: his information, never a price. null when the scheme states no step. */
+function rewardRid(rid){const m=/(\d+)/.exec(String(rid==null?'':rid));return m?+m[1]:-1;}
+function rewardScheme(book,product='salt'){
+  const R=(book&&book.state||{}).REWARD,S=R&&R.stated&&R.stated[product],A=S&&S.associate||{};
+  return +A.times>0&&typeof A.since==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(A.since)?{times:+A.times,since:A.since}:null;
+}
+function rewardStep(purchases,day,times){
+  const lc=latestCogs(purchases,day||undefined);
+  return lc&&lc.rate>0?{rate:+lc.rate,step:+(lc.rate*times).toFixed(2)}:null;
+}
+/* the switch's rid: the newest the count read when the openings were taken (the least upTo of them, a later opening being a party who became an
+   associate since); null before the switch */
+function rewardCut(book){
+  const ups=Object.values((book&&book.state||{}).REWARD_OPEN||{}).map(o=>o&&typeof o.upTo==='string'?rewardRid(o.upTo):null).filter(n=>n!=null&&n>=0);
+  return ups.length?Math.min(...ups):null;
+}
+function rewardWalk(book,id,today){
+  const product='salt',state=book&&book.state||{},scheme=rewardScheme(book,product);
+  if(!scheme)return null;
+  const open=(state.REWARD_OPEN||{})[id];
+  if(!open||!Number.isFinite(+open.earned)||!Number.isFinite(+open.share)||typeof open.upTo!=='string')
+    return {error:'This associate has no reward opening on the book.'};
+  const purchases=(book.purchases||[]).filter(p=>(p.product||'salt')===product);
+  const opening=state.PROD_OPENING&&state.PROD_OPENING[product]||{qty:0,costPerKg:null};
+  const lots=purchases.filter(p=>!p.defaulted&&poRecvUnits(p)>0.0001);
+  const buyUnits=lots.reduce((n,p)=>n+poRecvUnits(p),0),buyRM=lots.reduce((n,p)=>n+poRecvUnits(p)*poRate(p),0);
+  const openUnits=opening.costPerKg!=null?(+opening.qty||0):0;
+  const averageCost=buyUnits+openUnits>0?(buyRM+openUnits*(+opening.costPerKg||0))/(buyUnits+openUnits):0;
+  const upTo=rewardRid(open.upTo),pend=new Set(Array.isArray(open.pend)?open.pend:[]),on=open.on||scheme.since;
+  const rows=[];
+  (book.sales||[]).forEach(s=>{
+    if(!s||(s.product||'salt')!==product||ownerCode(s.customer)!==id||s.rewardOf||s.loyal)return;
+    if(!(rewardRid(s.rid)>upTo||pend.has(s.rid))||s.cancelled||s.defaulted)return;
+    const d=txDates(s);let day,margin;
+    if(s.goodwill){
+      if(s.rebate||!d.full||!d.dOn)return;
+      day=d.dOn;margin=-(+s.qty||0)*txUnitCost(s,averageCost);
+    }else{
+      if(!d.fullPaid||!d.pOn)return;
+      let rm=+s.total||0,q=+s.qty||0;
+      if(s.rebate){rm=Math.max(0,rm-(+s.settledRM||0));q=Math.max(0,q-(s.rebateKg!=null?+s.rebateKg:q));if(rm<0.009&&q<1e-9)return;}
+      const uc=txUnitCost(s,averageCost),held=+s.rwdRate>0&&+s.rwdRate<uc?+s.rwdRate:uc;   /* the Accept-day rate a promise was made at (rwdRate) */
+      day=d.pOn;margin=rm-q*held;
+    }
+    rows.push({rid:s.rid,day,margin:+margin.toFixed(2),rwdStep:+s.rwdStep>0?+s.rwdStep:null,
+      given:s.listRM!=null&&!s.goodwill?Math.max(0,+(+s.listRM-(+s.total||0)).toFixed(2)):0});
+  });
+  rows.sort((a,b)=>a.day<b.day?-1:a.day>b.day?1:rewardRid(a.rid)-rewardRid(b.rid));
+  const first=rewardStep(purchases,on,scheme.times);
+  const openRM=+((+open.share)*(first?first.step:0)).toFixed(2);
+  let progress=openRM,given=0,counted=0;const crossings=[];
+  rows.forEach(r=>{
+    progress=+(progress+r.margin).toFixed(2);given=+(given+r.given).toFixed(2);counted=+(counted+r.margin).toFixed(2);
+    const at=rewardStep(purchases,r.day,scheme.times);if(!at)return;
+    const step=r.rwdStep!=null&&r.rwdStep<at.step?r.rwdStep:at.step;
+    while(step>0&&progress>=step-0.005){progress=+(progress-step).toFixed(2);crossings.push({rid:r.rid,day:r.day,step,rate:at.rate,given});given=0;}
+  });
+  const now=rewardStep(purchases,today,scheme.times);
+  return {earned:+open.earned+crossings.length,open:{earned:+open.earned,share:+open.share,upTo:open.upTo,on,rm:openRM},
+    rows:rows.length,counted,progress,times:scheme.times,step:now?now.step:null,rate:now?now.rate:null,
+    next:now&&now.step>0?Math.max(0,Math.min(1,+(progress/now.step).toFixed(4))):null,crossings,given};
+}
+/* THE STATED OPENING (20 Oct 2026, his answer to Ask 3): what the count before the switch reads for a party, taken once and written
+   into REWARD_OPEN by tools/reward-open.mjs at the switch, and by the fold the day a customer becomes an associate. earned is the old
+   count's units (never what they hold: every unit taken stays netted at the reader), share its part of the next unit, never under
+   nought; upTo the newest sales rid the count read, on the day, and pend the party's salt rows Pending then, which the old count
+   read none of. */
+function rewardOpening(book,id,on){
+  const a=rewardAccount(book,id,'salt',{old:true});
+  if(a.error&&!a.departed)return {error:a.error};
+  const toNext=(a.earned+1)*a.hurdle-a.margin;
+  const top=Math.max(0,...(book.sales||[]).map(s=>rewardRid(s&&s.rid)));
+  const pend=(book.sales||[]).filter(s=>s&&s.rid&&(s.product||'salt')==='salt'&&ownerCode(s.customer)===id&&!s.cancelled&&!s.rewardOf
+    &&txStat(s).order==='Pending').map(s=>s.rid);
+  return {earned:a.earned,share:Math.max(0,Math.min(1,+(1-toNext/a.hurdle).toFixed(4))),upTo:'s'+top,on,...(pend.length?{pend}:{})};
+}
+function rewardAccount(book,id,product='salt',opts={}){
   const state=book.state||{},scheme=state.REWARD&&state.REWARD.stated&&state.REWARD.stated[product];
   const products=state.PRODUCTS||{},stated=Object.values(products).some(p=>p&&typeof p.reward==='boolean');
   if(stated&&!(products[product]||{}).reward||!scheme||!Number.isFinite(+scheme.margin)||+scheme.margin<=0)
@@ -5697,13 +5784,23 @@ function rewardAccount(book,id,product='salt'){
   const buyUnits=lots.reduce((n,p)=>n+poRecvUnits(p),0),buyRM=lots.reduce((n,p)=>n+poRecvUnits(p)*poRate(p),0);
   const openUnits=opening.costPerKg!=null?(+opening.qty||0):0;
   const averageCost=buyUnits+openUnits>0?(buyRM+openUnits*(+opening.costPerKg||0))/(buyUnits+openUnits):0;
-  const margin=rewardMargin({id,refs:[...refs],sales,averageCost});
+  /* 20 Oct 2026 (his answer to the loyalty plan's Ask 4): from the switch a customer's count stands where it stood, read on the rows it read then */
+  const cut=!associate&&product==='salt'&&!opts.old&&rewardScheme(book,product)?rewardCut(book):null;
+  const margin=rewardMargin({id,refs:[...refs],sales:cut==null?sales:sales.filter(s=>rewardRid(s.rid)<=cut),averageCost});
   const hurdle=associate?(+((scheme.associate||{}).margin)||+scheme.margin):+scheme.margin;
-  const pooled=+(associate?margin.mine.margin+margin.intro.margin/(+((scheme.associate||{}).r3Hurdle)||1):margin.mine.margin).toFixed(2);
-  const {earned}=rewardUnits(pooled,hurdle);
+  let pooled=+(associate?margin.mine.margin+margin.intro.margin/(+((scheme.associate||{}).r3Hurdle)||1):margin.mine.margin).toFixed(2);
+  let {earned}=rewardUnits(pooled,hurdle);
+  /* 20 Oct 2026: from the switch an associate's units are the walk's, and a customer redeems nothing (his answer to Ask 7, kept by
+     his answer to the loyalty plan's Ask 4): what they hold stays as it stands, read by no spend */
+  const switched=product==='salt'&&!!rewardScheme(book,product)&&!opts.old;
+  if(switched&&associate){
+    const walk=rewardWalk(book,id);
+    if(walk&&walk.error)return {error:walk.error};
+    if(walk){earned=walk.earned;pooled=walk.progress;}
+  }
   const applied=+sales.reduce((n,s)=>ownerCode(s.customer)===id
     ?n+(s.rebate?(s.rebateKg!=null?+s.rebateKg:(+s.qty||0)):0)+Math.max(0,+s.coverUnits||0):n,0).toFixed(2);
-  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled};
+  const balance={earned,applied,held:+(earned-applied).toFixed(2),associate,margin:pooled,redeemable:associate||!switched,...(opts.old?{hurdle}:{})};
   return ((state.PEOPLE||{}).departed||[]).some(p=>p&&p.id===id)
     ?{...balance,departed:true,error:"A departed party's reward waits until they return."}:balance;
 }
@@ -5751,6 +5848,8 @@ function entryReservationFault(entry,pending,book){
   }
   const spend=rewardReservation(entry,book);
   if(spend){
+    const claim=inputResource(entry,book);   /* 20 Oct 2026: the one refusal, so a customer's spend is refused here as at admission */
+    if(claim&&claim.error)return claim.error;
     const balance=rewardAccount(book,spend.party,spend.product);
     if(balance.error)return balance.error;
     const reserved=entries.reduce((n,e)=>{
@@ -5781,6 +5880,9 @@ function inputResource(entry,book){
   const spend=rewardReservation(entry,book);
   if(!spend)return null;
   const reward=rewardAccount(book,spend.party,spend.product);
+  /* 20 Oct 2026 (his answer to Ask 7, kept by the loyalty plan's Ask 4): from the switch a customer redeems nothing, on every road: a redemption,
+     a cover, an offset and a Correction putting reward on their row are all refused here, the one place admission and the reservation read */
+  if(!reward.error&&reward.redeemable===false)return {error:"A customer's reward is not redeemed: only an associate's is."};
   return reward.error?reward:{resource:'reward:'+spend.product+':'+spend.party,amount:spend.units,available:reward.held};
 }
 function tradeEntry({at,product,direction,party,date,qty,total,cash,movedUnits,delivery=0,freight=0,
@@ -7183,7 +7285,7 @@ function renameInBook(book,pairs){
   walk(book);return n;
 }
 
-return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
+return {coverPlan:coverPlan,TIP_ID:TIP_ID,offsetFor:offsetFor,ledgerAmendmentEntry:ledgerAmendmentEntry,inputConsumesResource:inputConsumesResource,inputResource:inputResource,rewardAccount:rewardAccount,rewardWalk:rewardWalk,rewardOpening:rewardOpening,rewardCut:rewardCut,rewardStep:rewardStep,rewardScheme:rewardScheme,rewardRid:rewardRid,entryReservationFault:entryReservationFault,rewardMargin:rewardMargin,rewardUnits:rewardUnits,stockCountEntry:stockCountEntry,tradeEntry:tradeEntry,tierSetEntry:tierSetEntry,loanEntry:loanEntry,repaymentEntry:repaymentEntry,giftEntry:giftEntry,redeemEntry:redeemEntry,rebateOffsetEntry:rebateOffsetEntry,addIdEntry:addIdEntry,partnerEntry:partnerEntry,renameEntry:renameEntry,placeEntry:placeEntry,txPrice:txPrice,txOwed:txOwed,txPaid:txPaid,txCost:txCost,txUnitCost:txUnitCost,txDeliv:txDeliv,txPhys:txPhys,txEffDeliv:txEffDeliv,txAdvance:txAdvance,txWrittenOff:txWrittenOff,txUnpaidSince:txUnpaidSince,txHandSteps:txHandSteps,payDelays:payDelays,lateOffer:lateOffer,
         txDeferUnits:txDeferUnits,txPendUnits:txPendUnits,txPendUnitsRaw:txPendUnitsRaw,txPendRM:txPendRM,txStat:txStat,txDates:txDates,txGoods:txGoods,closeGoods:closeGoods,
         poRecvUnits:poRecvUnits,poCash:poCash,poLive:poLive,poOwed:poOwed,poRate:poRate,poOpenUnits:poOpenUnits,poStat:poStat,provRate:provRate,saleProvRate:saleProvRate,saleLadder:saleLadder,saleProvSince:saleProvSince,SALE_FULL_DAYS:SALE_FULL_DAYS,
         daysBetween:daysBetween,dayAge:dayAge,walk:walk,lotAlloc:lotAlloc,stockBasis:stockBasis,latestCogs:latestCogs,coverStats:coverStats,restockPlan:restockPlan,commitments:commitments,restockLight:restockLight,restockSupply:restockSupply,
@@ -7888,7 +7990,32 @@ function board(sizes,C,P){
           timePerOrder:+(P.timePerOrder||0).toFixed(2)};
 }
 
-return {costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
+/* THEIR CARD AT A SIZE, READ OFF THE PRICING SNAPSHOT (tools/book.mjs pricingSnapshot): the desk's own cardQuote, carried and never
+   worked out; a size off the board is quoteAt on the snapshot's own inputs and their lift, which their sealed grid was struck from.
+   Moved here from src/orders.js on 20 Oct 2026 so the drafter's stamp of their price (listRM) and the fold's re-stamp on an amendment
+   read the one copy the Worker reads. */
+function cardAt(pricing,code,product,qty){
+  const snap=pricing&&pricing.byProduct&&pricing.byProduct[product];
+  if(!snap||!snap.cards)return {card:null,cardNote:"the pricing snapshot carries no cards yet: the next re-seed brings them"};
+  const fixed=(snap.ladder||[]).some(r=>r&&r.fixed);
+  const hit=(snap.cards[code]||[]).find(x=>Math.abs(x[0]-qty)<0.009);
+  if(hit)return {card:hit[1],cardNote:fixed?"the board, one price for everybody":"their card at "+qty+" unit"};
+  if(!snap.cards[code])return {card:null,cardNote:"no tier is held or proposed for them on "+product+", so there is no card"};
+  const at=quoteOff(snap,code,qty);
+  if(at!=null)return {card:at,cardNote:(fixed?"the board, one price for everybody":"their card")+" at "+qty+" unit"};
+  return {card:null,cardNote:qty+" unit is not a size on their board, so there is no card at it"};
+}
+function quoteOff(snap,code,qty){
+  const I=snap&&snap.inputs;
+  if(!I||!I.cost||!I.policy||!(qty>0))return null;
+  const R=I.policy.tierRule||null;
+  const d=(snap.partners||[]).includes(code)?"partner":R&&R.drift?(snap.lift&&typeof snap.lift[code]==="number"?snap.lift[code]:null):0;
+  if(d==null)return null;
+  try{const v=quoteAt(qty,costStack(I.cost),I.policy,d);return v!=null&&isFinite(v)&&v>0?v:null;}
+  catch(e){return null;}
+}
+
+return {cardAt:cardAt,costStack:costStack,buyTaper:buyTaper,ladderMarkup:ladderMarkup,ladderMargin:ladderMargin,ladderCogs:ladderCogs,
         ladderRound:ladderRound,ladderWalk:ladderWalk,ladderAsk:ladderAsk,lotCost:lotCost,
         floorTotal:floorTotal,costTotal:costTotal,priceLadder:priceLadder,ladderRow:ladderRow,board:board,fiveTiers:fiveTiers,fiveTierAt:fiveTierAt,cardPrice:cardPrice,
         setMultiple:setMultiple,driftOk:driftOk,driftWalk:driftWalk,driftAt:driftAt,autoDrift:autoDrift,suggestPct:suggestPct,suggestWhy:suggestWhy,
@@ -7988,8 +8115,9 @@ function priceLockState(C,p){
   const same=(cur.date===L.lot.date&&Math.abs(cur.rate-L.lot.rate)<0.005&&Math.abs(cur.qty-L.lot.qty)<0.005);
   return {state:same?'locked':'stale',lock:L,cur:cur,days:dAge(C,L.lockedOn),sinceLot:dAge(C,L.lot.date)};
 }
+/* 20 Oct 2026: a reward unit (rewardOf) rides its order's drop, so it is not a delivery: it is out of the share and the mean size */
 function delShare(C,p){
-  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);
+  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&!s.rewardOf&&POSITION_ENGINE.txPhys(s)>0.009);
   const said=rows.filter(s=>s.handover==='delivered'||s.handover==='collected');
   const del=said.filter(s=>s.handover==='delivered');
   return said.length
@@ -7997,7 +8125,7 @@ function delShare(C,p){
     : {v:C.R.COST_BASIS.deliveredShare.v,delivered:0,said:0,of:rows.length,measured:false};
 }
 function avgDelivery(C,p){
-  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);
+  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&!s.rewardOf&&POSITION_ENGINE.txPhys(s)>0.009);
   const unitsSum=rows.reduce((a,s)=>a+POSITION_ENGINE.txPhys(s),0);
   return rows.length?{n:rows.length,kg:+unitsSum.toFixed(2),mean:+(unitsSum/rows.length).toFixed(4)}:{n:0,kg:0,mean:null};
 }
@@ -8150,7 +8278,8 @@ function suggestOf(C,p,code){
 }
 function tierCustomers(C){
   const rev={};
-  C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
+  /* 20 Oct 2026: a reward unit (rewardOf) is not revenue, so it moves no customer up the list the cards are drawn in */
+  C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||s.rewardOf||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
   const rest=C.B.roster.map(ownerOf).filter((id,i,a)=>a.indexOf(id)===i&&isPerson(id)&&!id.startsWith('S')&&!(id in rev));
   return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
 }
@@ -9302,6 +9431,69 @@ const COST_RULE={
     "note": "His settled rule of 05 Oct 2026, every book alike: COGS a unit is the latest purchase entry's quote plus its trip freight, over its units (the position engine's latestCogs; no freight typed counts as nought). The floor is that times the size and nothing else: no leak, no delivery, no time. The leak is still measured and reported, and the stack's after-leak figure is printed beside the floor as information only."
   }
 };
+/* THE SWITCH TO THE STEP AT LANDED COST, 2026-10-20 (his rules of 20 Oct 2026, his answer to Ask 3). Each associate opens on the units the count before the switch had earned and the share of the next one, so nothing they hold or see moves; from here a unit is 10 units' landed cost of margin on their own buying and resale, counted once paid in full. Written once by tools/reward-open.mjs; the fold adds one the day a customer becomes an associate. */
+const REWARD_OPEN={
+  "CA6-CYB": {
+    "earned": 0,
+    "share": 0.4723,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CE4-AD": {
+    "earned": 1,
+    "share": 0.2358,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CE5-SA": {
+    "earned": 0,
+    "share": 0.5957,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CI4-OKR": {
+    "earned": 2,
+    "share": 0.4362,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CJ4-OKR": {
+    "earned": 8,
+    "share": 0.1258,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CM4-TO": {
+    "earned": 1,
+    "share": 0.439,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CN3-WM": {
+    "earned": 2,
+    "share": 0.2877,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CR3-DAM": {
+    "earned": 2,
+    "share": 0.116,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CS6-BS": {
+    "earned": 7,
+    "share": 0.2741,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  },
+  "CS6-PER": {
+    "earned": 3,
+    "share": 0.9826,
+    "upTo": "s276",
+    "on": "2026-10-20"
+  }
+};
 /* ==== END BOOK ==== */
 
 /* purchases: declared in the BOOK block near the top of this script, generated from ledger/book.json (v339). */
@@ -10260,7 +10452,7 @@ const quoteFor=p=>QUOTES[p||PROD]||null;
    carried 479 entries for one. master/changelog.json holds every entry ever written and is the record.
    A bump REPLACES this entry (tools/fold.mjs does), the one it replaces being in the changelog
    already, because the gate refuses a master whose version the changelog lacks. */
-const evolution=[{"v":"v1186","d":"20 Oct 2026","t":"SALT ADMIN A TO C: THE DISTANCE ON THE BILL AND THE WAITED METER IN COUNTER HOURS","n":["<b>One distance.</b> The great-circle distance moves into engine/geo.mjs, inlined here as an engine block in place of the desk's own copy, and carried to the statements site as stmt/geo.js by tools/geosite.mjs; the gate checks both are the module. Nothing on the desk prices off it: it serves the same-point check on a filed spot.","<b>The road factor travels, never a point.</b> The Desk's read for Salt Admin carries RULES.delivery.roadFactor, and Salt Admin says a delivery's road distance under Delivery cost on its Bill, measured in his browser after the one unlock from his base to their sealed spot, else their filed point, else their locality, and nothing without both points.","<b>Waited in Counter hours.</b> stmt/hours.js openMinutes counts the weekly hours open between two moments, and the Counter's review read sets each real placed order's minutes waited on it, so an order placed while closed counts from opening.","<b>Salt Admin A to C.</b> This version also carries the order card in four lines, the Bill with its cost under Goods, the delivery address opened on Salt Admin, the five steps with Paid on both sites, the sheet group, the hours chip and the shell, which went out as statements pushes. The associate reward card is not built: its own piece of work."]}];
+const evolution=[{"v":"v1187","d":"20 Oct 2026","t":"THE ASSOCIATE REWARD STEPS WITH LANDED COST, ARRIVES WITH THE ORDER, AND A CUSTOMER REDEEMS NOTHING","n":["<b>A UNIT PER 10 UNITS' LANDED COST.</b> His rules of 20 Oct 2026, salt only: an associate earns one free unit for every 10 units of COGS (the latest purchase, RM 580 at RM 58 today) of margin on their own buying and resale, counted once an order is paid in full, at the step of the day it crosses. Introductions no longer count.","<b>THE SWITCH MOVES NOTHING.</b> Each of the ten associates opens on a stated position (REWARD_OPEN, written once by tools/reward-open.mjs): what they hold and the whole % of their next unit are the same either side.","<b>THE FOLD BOOKS THE UNIT.</b> Once a crossing order is paid, the fold raises 1 unit as its own row at that day's landed cost, settled by the reward, and hands it over with that order's delivery, or with their next salt handover where it has gone; the unit leaves the shelf in the roll. A payment undone flags it STALE and withdraws nothing.","<b>THEIR PRICE ON EVERY SALT SALE.</b> The drafter stamps each salt sale with their own card for its size, read and never priced, so Salt Admin can say what was given under their Set Price. An offer or acknowledgement outstanding at the deploy may wait under Approve, marked, as its row gains the stamp.","<b>ACCEPT SAYS SO, IN ONE WORD.</b> An order that takes them over is told, with no figure, to pay now to receive the reward with it; the promise holds the step and the rate it was made at. Once the unit is handed over the order shows Reward, 1 unit, no charge.","<b>SALT ADMIN SHOWS THE RINGGIT.</b> The order card's Associate reward card: whether the order reaches the next reward or how far short, the meter, and the unit at cost less what was given, net. Behind Access only.","<b>A CUSTOMER REDEEMS NOTHING.</b> From the switch a customer's reward is not redeemed, covered or offset on any road, and what the six customers hold stands as it is; the loyalty unit is to be theirs. Nothing prices from any of it: the Floor, the Set Price grid, the Ceiling and every card are unchanged."]}];
 /* The version is a LITERAL here, deliberately. deskctl.py finds it by matching
    v:'vNNN' in the source, so writing it as a variable made `stamp` record a version
    of None and broke the one command that proves which copy is current. Bump this
@@ -10408,7 +10600,7 @@ function wavgFor(pr){
   return _wavgMemo[P]=(kg>0?rm/kg:0);
 }
 /* Stamp of the last push, for version control. Update on every push. */
-const LAST_UPDATED='20 Oct 2026, 14:13 KL';
+const LAST_UPDATED='20 Oct 2026, 16:40 KL';
 /* Everything queued at or before this instant has been committed to the ledger above.
    The desk drops those entries on load, so the queue empties itself once this file is
    refreshed and nothing can be booked twice. Set on every commit. */
@@ -18307,8 +18499,12 @@ const REWARD={
      so R3 counts against a hurdle 1.2 times the associate's figure, and the associate's figure is RM 470.
      Both are stated. 1.2 is the average number of rewards a unit of salt bought was counted into on the
      day (1.19); RM 470 is the round figure that left CS6-BS within RM 50 of their next reward and CN6-WM
-     about RM 50 from theirs, the two he named. A customer stays at RM 500. */
-  stated:{salt:{margin:500, associate:{margin:470, r3Hurdle:1.2}}}
+     about RM 50 from theirs, the two he named. A customer stays at RM 500.
+     HIS RULES OF 20 OCT 2026: AN ASSOCIATE'S UNIT STEPS WITH LANDED COST. From since, one unit per times (10) units' COGS (the
+     engine's latestCogs: RM 580 at RM 58) of margin on their own buying and resale, counted once an order is PAID IN FULL, over the
+     opening stated in REWARD_OPEN (the engine's rewardWalk); margin and r3Hurdle stay as history and as the count the openings were
+     taken from. A customer's figure stays as it stands and is never redeemed. */
+  stated:{salt:{margin:500, associate:{margin:470, r3Hurdle:1.2, times:10, since:'2026-10-20'}}}
 };
 /* ============ THE REWARD, v616 FOR ASSOCIATES AND v618 FOR CUSTOMERS ============
      what counts   every priced order on the party's own code and -R account, R1 and R2 together because
@@ -18325,7 +18521,24 @@ const REWARD={
    REWARD, which is oil; every reader guards on it rather than lending one book another's figure. */
 function rewardUnitMargin(prod,who){const S=REWARD.stated[prod];if(!S||S.margin==null)return null;return (who==='associate'&&S.associate)?S.associate.margin:S.margin;}
 function rewardR3Hurdle(prod){const S=REWARD.stated[prod];return (S&&S.associate&&S.associate.r3Hurdle)||1;}
-function rewardRuleTxt(prod,who){const m=rewardUnitMargin(prod,who);return m==null?'no reward on this book':'a free unit per '+fmt0(m)+' of margin';}
+function rewardRuleTxt(prod,who){
+  const w=who==='associate'?rewardWalkOf(null):null;
+  if(w&&w.step!=null)return 'a free unit per '+w.times+' units\u2019 landed cost ('+fmt0(w.step)+' today), paid in full';
+  const m=rewardUnitMargin(prod,who);if(m==null)return 'no reward on this book';
+  if(who!=='associate'&&rewardWalkOf(null))return 'held as it stood on '+rewardWalkOf(null).since+', not redeemed';   /* 20 Oct 2026 */
+  return 'a free unit per '+fmt0(m)+' of margin';}
+/* 20 OCT 2026: THE WALK, read through the engine on the desk's own rows. null off salt or before the switch; with id null, the scheme
+   and today's step alone (no opening read). The book the engine reads is the live one, as networkStats always read the live rows. */
+function rewardBookView(){
+  return {sales,purchases,state:{REWARD,REWARD_OPEN:typeof REWARD_OPEN!=='undefined'?REWARD_OPEN:{},PRODUCTS,PROD_OPENING,
+    associates:typeof associates!=='undefined'?associates:[],INTRODUCTIONS,PEOPLE,R0_NETWORK:typeof R0_NETWORK!=='undefined'?R0_NETWORK:null}};
+}
+function rewardWalkOf(id){
+  if(!rewards(PROD)||!REWARD.stated[PROD]||!REWARD.stated[PROD].associate)return null;   /* the walk is salt's, gated on the book's own field (v781) */
+  const b=rewardBookView(),sch=POSITION_ENGINE.rewardScheme(b,'salt');if(!sch)return null;
+  if(id==null){const st=POSITION_ENGINE.rewardStep(b.purchases.filter(p=>(p.product||'salt')==='salt'),null,sch.times);return {times:sch.times,since:sch.since,step:st?st.step:null};}
+  return POSITION_ENGINE.rewardWalk(b,id);
+}
 function rewardMargin(id,refs){
   /* HIS DECISION OF 27 SEP 2026: A REBATE ROW COUNTS ITS PAID PART. Until then every rebate-stamped row
      was skipped whole, so where one unit of an order came from the reward and the rest was paid for, the
@@ -18421,8 +18634,15 @@ function networkStats(){
        unit, and null where the book has no reward, because `x % null` prints as "RM NaN". AWARDS
        stays on the book as history and is read by nothing: every grant in it was a real unit, and
        the recount already counts that unit where it was taken. */
-    const unit=rewardUnitMargin(PROD,'associate'), r3x=rewardR3Hurdle(PROD), bm=rewardMargin(id,refs);
-    const pooled=+(bm.mine.margin+bm.intro.margin/r3x).toFixed(2), {earned,toNext}=rewardUnits(pooled,unit);   // v623: R3 against a hurdle r3x times higher
+    let unit=rewardUnitMargin(PROD,'associate');const r3x=rewardR3Hurdle(PROD), bm=rewardMargin(id,refs);
+    let pooled=+(bm.mine.margin+bm.intro.margin/r3x).toFixed(2), {earned,toNext}=rewardUnits(pooled,unit);   // v623: R3 against a hurdle r3x times higher
+    /* 20 OCT 2026: from the switch the walk's: units from the opening, the step at today's landed cost, the margin paid since. An
+       associate the walk cannot read (no opening yet, a queued appointment) shows no figure rather than the old count's. */
+    const walk=rewardWalkOf(id);
+    if(walk){
+      if(walk.error||walk.step==null){earned=null;toNext=null;unit=null;}
+      else{earned=walk.earned;unit=walk.step;pooled=walk.progress;toNext=+Math.max(0,walk.step-walk.progress).toFixed(2);}
+    }
     const share=revTotal>0?(indirect+r3)/revTotal*100:0;
     const starN=share>=50?3:share>=30?2:share>=10?1:0;
     /* connections shown on the node badge: end customers sold to (R2) PLUS customers
@@ -18431,7 +18651,8 @@ function networkStats(){
     const conns=isR0?refs.length:(ds.size+refs.length);
     return {id,kind:isR0?'R0':'R2',direct,indirect,r3,referrals:refs,dsN:conns,connKind:isR0?'referred':(ds.size&&refs.length?'linked':refs.length?'referred':'end cust'),
       dsResell:resellN,total:direct+indirect,share,starN,
-      earned,toNext,unit,marginMine:bm.mine.margin,nMine:bm.mine.n,marginIntro:bm.intro.margin,nIntro:bm.intro.n,r3x,marginTotal:pooled};
+      earned,toNext,unit,marginMine:bm.mine.margin,nMine:bm.mine.n,marginIntro:bm.intro.margin,nIntro:bm.intro.n,r3x,marginTotal:pooled,
+      walk:walk&&!walk.error?{openRM:walk.open.rm,on:walk.open.on,rows:walk.rows,counted:walk.counted}:null};
   });
   // R0 first, then by total made-you
   out.sort((a,b)=>{if(a.kind==='R0'&&b.kind!=='R0')return -1;if(b.kind==='R0'&&a.kind!=='R0')return 1;return b.total-a.total;});
@@ -18654,8 +18875,11 @@ function customerRewards(){
   const assoc=new Set(associateIds()), ids=new Set();
   const add=s=>{const o=ownerOf(s.customer);if(!assoc.has(o)&&!isResellAcct(s.customer))ids.add(o);};
   pricedSales.forEach(add); sales.forEach(s=>{if(s.rebate)add(s);});
+  /* 20 Oct 2026: from the switch a customer's count stands where it stood, read on the rows it read then (the engine's rewardCut) */
+  const cut=rewardWalkOf(null)?POSITION_ENGINE.rewardCut(rewardBookView()):null;
   return [...ids].map(id=>{
-    const m=rewardMargin(id,[]).mine, u=rewardUnits(m.margin,unit), taken=rebateApplied(id);
+    const m=cut==null?rewardMargin(id,[]).mine:POSITION_ENGINE.rewardMargin({id,refs:[],sales:pSales(PROD).filter(s=>POSITION_ENGINE.rewardRid(s.rid)<=cut),averageCost:wavgBuy}).mine,
+      u=rewardUnits(m.margin,unit), taken=rebateApplied(id);
     return {id,n:m.n,margin:m.margin,earned:u.earned,toNext:u.toNext,taken,free:+(u.earned-taken).toFixed(2)};
   }).filter(r=>r.n>0||r.taken>0).sort((a,b)=>b.margin-a.margin);
 }
@@ -18666,6 +18890,7 @@ function customerRewards(){
    the book is not salt, the buyer holds nothing, or the sale is not under the ask. */
 function coverPlan(party,qty,goods){
   if(!rewards(PROD)||!party||!(qty>0))return null;
+  if(rewardWalkOf(null))return null;   /* 20 Oct 2026: from the switch a customer's reward covers nothing (his answers to Ask 7 and the loyalty plan's Ask 4) */
   const r=customerRewards().find(x=>x.id===party); if(!r||!(r.free>0.009))return null;
   const ask=cardQuote(party,qty);   /* v652, his decision of 16 Sep 2026: the gap is to their own card price, not the board's ask */
   const plan=POSITION_ENGINE.coverPlan({qty,free:r.free,ask,goods,cost:stockCostFor('salt')});
@@ -18742,7 +18967,7 @@ function tabConcentration(){
      against them, what is left, and the margin still to go to the next unit: the same five fields
      an associate's card carries, because it is the same rule. */
   const cr=customerRewards(), crReady=cr.filter(r=>r.free>0.009);
-  const crBody=cr.length?cr.map(r=>`<tr><td class="l salt-table__label mono">${ID(r.id)}</td><td>${fmt0(r.margin)}</td><td>${units(r.earned)}</td><td>${units(r.taken)}</td><td>${r.free>0.009?`<b style="color:var(--gold)">${units(r.free)} free</b>`:r.free<-0.009?`${units(-r.free)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
+  const crBody=cr.length?cr.map(r=>`<tr><td class="l salt-table__label mono">${ID(r.id)}</td><td>${fmt0(r.margin)}</td><td>${units(r.earned)}</td><td>${units(r.taken)}</td><td>${r.free>0.009?(rewardWalkOf(null)?`${units(r.free)} held`:`<b style="color:var(--gold)">${units(r.free)} free</b>`):r.free<-0.009?`${units(-r.free)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
     :`<tr><td class="l salt-table__label" colspan="6" style="color:var(--dim)">${rewardUnitMargin(PROD)==null?'No reward on this book.':'No customer has a priced order yet.'}</td></tr>`;
   /* v401: the sub lost "the band sets the units", which the Band pays column states per row
      and in units. NOT for width: this header measures 332px inside a 325px box at 375px, and
@@ -18751,7 +18976,7 @@ function tabConcentration(){
      every card header with a sub, so it is not fixed from this view. */
   const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}, whole ledger</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
     <table class="salt-table"><thead><tr><th class="l salt-table__label">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table>
-    ${cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</p>':''}</div>`;
+    ${rewardWalkOf(null)?'<p class="dsc" style="margin-top:9px">From the switch a customer redeems nothing: what they hold stands, and only an associate\u2019s reward is redeemed.</p>':cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</p>':''}</div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the
@@ -19014,7 +19239,15 @@ function resellerCard(r){
      v616: ONE POOLED COUNT, SO THE TABLE IS THE COUNT. Two rows of margin that add to the total a
      unit is earned on, then the units: earned, taken, and what is left, with the margin still to
      go to the next one. The bands, the unit minimum and the opening went with the old rule. */
-  const rewardTbl=r.unit==null?'':`<table class="salt-table" style="margin-top:10px"><thead><tr><th class="l salt-table__label">Margin brought, whole ledger</th><th>Orders</th><th>Margin</th></tr></thead><tbody>
+  /* 20 Oct 2026: from the switch the count is the walk's, the share carried at the switch and the orders paid in full since */
+  const rewardTbl=r.unit==null?'':r.walk?`<table class="salt-table" style="margin-top:10px"><thead><tr><th class="l salt-table__label">Margin toward the next unit</th><th>Orders</th><th>Margin</th></tr></thead><tbody>
+    <tr><td class="l salt-table__label">Carried at the switch <span style="color:var(--dim)">${esc(r.walk.on)}</span></td><td></td><td>${fmt0(r.walk.openRM)}</td></tr>
+    <tr><td class="l salt-table__label">Own buying and resale, paid in full since <span style="color:var(--dim)">R1 + R2</span></td><td>${r.walk.rows}</td><td>${fmt0(r.walk.counted)}</td></tr>
+    <tr class="tot"><td class="l salt-table__label">Toward the next, ${rewardRuleTxt(PROD,'associate')}</td><td>${r.walk.rows}</td><td>${fmt0(r.marginTotal)}</td></tr>
+  </tbody></table>
+  <table class="salt-table" style="margin-top:8px"><thead><tr><th class="l salt-table__label">Units</th><th>Earned</th><th>Taken</th><th>Left</th><th>To the next</th></tr></thead><tbody>
+    <tr class="tot"><td class="l salt-table__label">Balance</td><td>${units(r.earned)}</td><td>${units(applied)}</td><td>${freeUnits>0.009&&held?`${units(freeUnits)} held`:freeUnits>0.009?`<b style="color:var(--gold)">${units(freeUnits)} free</b>`:freeUnits<-0.009?`${units(-freeUnits)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>
+  </tbody></table>`:`<table class="salt-table" style="margin-top:10px"><thead><tr><th class="l salt-table__label">Margin brought, whole ledger</th><th>Orders</th><th>Margin</th></tr></thead><tbody>
     <tr><td class="l salt-table__label">Own buying and resale <span style="color:var(--dim)">R1 + R2</span></td><td>${r.nMine}</td><td>${fmt0(r.marginMine)}</td></tr>
     <tr><td class="l salt-table__label">Every order of customers introduced <span style="color:var(--dim)">R3, at a ${r.r3x} times hurdle</span></td><td>${r.nIntro}</td><td>${fmt0(r.marginIntro)}${r.r3x!==1?` <span style="color:var(--dim)">counts ${fmt0(r.marginIntro/r.r3x)}</span>`:''}</td></tr>
     <tr class="tot"><td class="l salt-table__label">Total, ${rewardRuleTxt(PROD,'associate')}</td><td>${r.nMine+r.nIntro}</td><td>${fmt0(r.marginTotal)}</td></tr>

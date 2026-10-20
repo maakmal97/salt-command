@@ -128,6 +128,30 @@
   within the window after that turns it on again, and then it takes `RULES.lateResetRepeat` (3) on time in a row. It
   feeds the Their % card's suggestion (paid late, paid very late, written off), which he takes or not; it prices nothing. The Counter says it in words off the sealed
   `pay.term`, `lock` and `window`: a line under To pay now, the whole rule on the pay sheet. Prepay also reads this walk (V5b2c): any delay in all history puts an order in advance until three payments on time in a row.
+## The associate reward (his rules of 20 Oct 2026)
+
+- **The walk** (`engine/position.mjs` `rewardWalk`, read by `rewardAccount` for an associate once `REWARD.stated.salt.associate` names `times` and
+  `since`): from each associate's stated opening in `REWARD_OPEN` (`{earned, share, upTo, on, pend}`: the old count's units and share, the newest
+  rid it read, the day, their rows Pending then), their own and `-R` salt rows count once paid in full (`txDates.fullPaid`, on `pOn`, then rid), each
+  its goods less its units at the row's own cost; a gift's cost comes off on its delivery day; a redemption, a reward row and a written-off row count
+  nothing; an introduction no longer counts (Ask 1). A unit is earned each time progress reaches `times` x the crossing day's `latestCogs` (the
+  lesser of that and the row's `rwdStep`). `given` sums `listRM` less the goods since the last crossing. The Desk's Network card and rule text read it.
+- **The openings**: `node tools/reward-open.mjs --since YYYY-MM-DD` writes them once, refusing a book that has them and refusing if anyone's held or
+  whole % would move; the frozen fixture carries its own. A party who becomes an associate after the switch is opened by the fold that day.
+- **The fold's unit** (`engine/apply.mjs` `rewardFold`, after every entry, needing `ctx.reward` from the extract): due is the walk's crossings less
+  every `rewardOf` row of theirs, cancelled included; each due unit is a row `{qty: 1, total: cost, settledRM: cost, rebate, rebateKg: 1, goodwill,
+  rewardOf, auto, given}` at the crossing day's rate. The entry that hands salt to them delivers each unit whose order is handed over in full, and
+  its unit joins the roll (`unitMoves`). STALE is said, never withdrawn: remove the row in `ledger/book.json`. A reward row is out of the delivery
+  share, the mean delivery and the card list's order, so the pricing snapshot does not move.
+- **Their price** (`src/drafter.js` `listStamp`): from the switch every salt sale carries `listRM` and `listQty` off PRICING (`PRICING_ENGINE.cardAt`);
+  the fold stamps a restated size again off the extract's PRICING.
+- **The verdict and his reading** (`engine/stages.mjs` `rewardReading`, `rewardCrossOf`, `rwdOf`): Accept stamps `entry.rwd` "cross" and
+  `rwdStep` when the order's margin on the walk's PAID progress reaches today's step; both digests name the word only when set. The return leg
+  (`tellSite`) marks "given" once a reward row names the order's row, terminal, and clears a cross another order or an undone payment took away,
+  never on a lot. His figures: `GET /all/maker/reward/<ledgerKey>` (the Desk's `/_internal/maker/reward/<key>`, bridge key), a read.
+- **Customers** (P8): `rewardAccount` reads `redeemable` false for a non-associate from the switch and `inputResource` refuses every spend; their
+  count stands on the rows it read at the switch (`rewardCut`). No basis (the loyalty plan's Ask 4).
+
 ## The desk
 
 - **Counter maker bridge**: the owner works in Salt Admin's Orders, Customers, Record and Shop places (one Maker place until 11 Oct 2026). `/all/maker/*` is

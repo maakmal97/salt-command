@@ -372,6 +372,18 @@ export function costFor(book, product) {
  * purchase and a sale of one batch are honoured in order. No leakage, no shrink, no delivery share, no trailing
  * average. `basis` names the lot so the note can state it; a book with no landed lot falls back to costFor, said so.
  * Gifts and a reward's cover stay on costFor, the desk's own shelf figure, which is what the desk values them at. */
+/* THEIR PRICE ON THE ROW (the associate reward, 20 Oct 2026, his rule 4): from the reward's switch, every salt sale carries what their own
+   card says for its size (listRM) and that size (listQty), read off the PRICING snapshot (the engine's cardAt, the figure the Accept preview
+   showed unless a % or a lot moved between the two) and never a figure carried on the entry. It prices nothing: the walk reads it as the
+   discount he gave under their price, his information only. A partner's card is the Floor. No card, no stamp. */
+export function listStamp(row, book) {
+  if (!row || (row.product || "salt") !== "salt" || !(+row.qty > 0)) return row;
+  const sch = POSITION_ENGINE.rewardScheme({ state: (book && book.state) || {} });
+  if (!sch || !row.date || row.date < sch.since) return row;
+  const card = PRICING_ENGINE.cardAt(book && book.pricing, POSITION_ENGINE.ownerCode(row.customer), "salt", +row.qty).card;
+  if (card != null && isFinite(card) && card > 0) { row.listRM = +(+card).toFixed(2); row.listQty = +row.qty; }
+  return row;
+}
 export function cogsFor(book, product, onOrBefore) {
   const p = product || "salt";
   const lots = (book.purchases || []).concat(book.draftLots || []).filter((x) => prodOf(x) === p);
@@ -1439,6 +1451,8 @@ export function draftRow(entry, book) {
     const party = pay.party || null;
     if (!party) return { skip: "a redemption names the party it is for" };
     if (isDepartedIn(book, party)) return { skip: `${party} has departed: they keep earning, but nothing is redeemed until they return, on his ruling of 13 Sep 2026` };
+    if (POSITION_ENGINE.rewardAccount(book, POSITION_ENGINE.ownerCode(party), prod).redeemable === false)
+      return { skip: `${party} is a customer, and from the switch of 20 Oct 2026 a customer's reward is not redeemed: only an associate's is` };
     const q = isNum(pay.qty) ? +pay.qty : null;
     if (q == null || !(q > 0)) return { skip: "a redemption needs the units handed over" };
     const when = pay.date || null;
@@ -1642,6 +1656,8 @@ export function draftRow(entry, book) {
     if (!(row.coverUnits > 0) || !(row.coverRM > 0)) return { skip: "a cover carries both the units of reward and the ringgit they cover" };
     if (((book.state && book.state.associates) || []).includes(POSITION_ENGINE.ownerCode(party)))
       return { skip: `${party} is an associate, whose reward is redeemed or offset on their own card rather than spent covering a sale` };
+    if (POSITION_ENGINE.rewardAccount(book, POSITION_ENGINE.ownerCode(party), product).redeemable === false)
+      return { skip: `from the switch of 20 Oct 2026 a customer's reward covers nothing: only an associate's reward is redeemed` };
     if (shelf.cost != null && Math.abs(row.coverRM - round(row.coverUnits * shelf.cost)) > 0.05)
       coverFlags.push(`The cover says RM ${round(row.coverRM)} for ${round(row.coverUnits)} unit, where the book's cost of RM ${round(shelf.cost)}/unit makes it RM ${round(row.coverUnits * shelf.cost)}.`);
     coverFlags.push(`${isNum(pay.coverFree) ? `The desk says ${party} held ${round(pay.coverFree)} unit of reward` : `The desk did not state what reward ${party} held`}, and ${round(row.coverUnits)} unit of it covers RM ${round(row.coverRM)} of this sale. Rewards are worked out on the desk, so that balance is its word.`);
@@ -1721,6 +1737,12 @@ export function draftRow(entry, book) {
   }
 
   if (pay.note) row.note = String(pay.note);
+  listStamp(row, book);
+  /* 20 Oct 2026: the step his Accept promised the reward at, on the Pending row of an order that takes them over (rewardCrossOf) */
+  if (entry && entry.rwd === "cross" && +entry.rwdStep > 0 && dir === "SELL") {
+    row.rwdStep = +(+entry.rwdStep).toFixed(2);
+    if (+entry.rwdRate > 0) row.rwdRate = +(+entry.rwdRate).toFixed(4);   /* and the rate it was measured at (Fable's review) */
+  }
 
   /* v606: THE RATE AND THE MARGIN ARE BOTH STRUCK ON THE GOODS, on his ruling of 12 Sep 2026
      that the delivery charge is a pass-through at cost, neither more nor less. It is revenue
@@ -1903,7 +1925,8 @@ export async function stageDigest(stage, entry, d, pricing) {
   const pay = (entry && entry.payload) || {};
   const shown = stage === "ack"
     ? Object.assign({ stage, collection: d.collection, row: d.row, flags: d.flags || [], pricing: pricing || null },
-      entry && entry.prepay === true ? { prepay: true } : {})   /* V5b2: paid in advance is his to see; absent, the digest is as it was */
+      entry && entry.prepay === true ? { prepay: true } : {},   /* V5b2: paid in advance is his to see; absent, the digest is as it was */
+      entry && entry.rwd === "cross" ? { rwd: "cross" } : {})   /* 20 Oct 2026: the reward word, likewise only when set */
     : { stage: stage === "cash" ? "pay" : stage, kind: pay.kind || null, party: pay.party || null, orderKey: pay.orderKey || null,
         date: pay.date || null, cash: isNum(pay.cash) ? pay.cash : null, kg: isNum(pay.kg) ? pay.kg : null, fields: pay.fields || null,
         amendKind: d.amendKind || null, flags: d.flags || [] };
@@ -1920,7 +1943,7 @@ export async function offerDigest(entry, d) {
   const row = (d && d.row) || {}, figures = {};
   for (const k of Object.keys(row)) if (!OFFER_SKIP(k)) figures[k] = row[k];
   return sha(canon(Object.assign({ stage: "offer", collection: (d && d.collection) || null, row: figures, flags: (d && d.flags) || [] },
-    entry && entry.prepay === true ? { prepay: true } : {})));
+    entry && entry.prepay === true ? { prepay: true } : {}, entry && entry.rwd === "cross" ? { rwd: "cross" } : {})));
 }
 /* A LATER STAGE BEFORE ITS ROW HAS LANDED (S11 11.12) is previewed against the book as it will stand when it does:
    the pending row appended, and the open-order snapshot carrying it in the engine's own ledgerRow shape, which is
