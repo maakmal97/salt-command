@@ -2918,7 +2918,7 @@ await (async () => {
   ok(/ok\s+the master's BOOK block is ledger\/book\.json/.test(chk), "tools/booksync.mjs --check: the master's book block is the file");
   const book = JSON.parse(readFileSync(LIVE_BOOK, "utf8"));   /* live: the extract must equal the file as it stands */
   const keys = Object.keys(book).filter((k) => k !== "NOTES");
-  ok(keys.length === 29, "the book holds the twenty-nine ledger keys");   // v1029 added partners; v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING; v776 collapsed supplierQuote and oilQuote into QUOTES
+  ok(keys.length === 30, "the book holds the thirty ledger keys");   // 20 Oct 2026 added REWARD_OPEN; v1029 added partners; v643 added TIER_OF; v633 added PLACED; v353 added PRICE_SET; v504 added COUNTS; v549 retired SOURCING_PLAN; v553 added COST_RULE; v615 added INTRODUCTIONS; v616 retired REWARD_OPENING; v618 retired CUSTOMER_REWARD_OPENING; v776 collapsed supplierQuote and oilQuote into QUOTES
   ok(Array.isArray(book.sales) && book.sales.length > 100 && Array.isArray(book.purchases), "with the rows as records");
   ok(typeof book.QUEUE_COMMITTED === "string" && typeof book.STATED_STOCK === "number", "and the singletons as values");
   ok(book.NOTES && Array.isArray(book.NOTES.STATED_STOCK) && book.NOTES.STATED_STOCK.length > 0, "the stated stock's roll history survived as NOTES");
@@ -14136,7 +14136,8 @@ await (async () => {
   const { w: w16 } = await om16();
   const rd16 = (e) => JSON.parse(String(w16.eval("JSON.stringify(" + e + ")")));
   try {
-    w16.eval("setProd('salt');");
+    /* 20 Oct 2026: the count these rulings set is the one the switch's openings were taken from; it is measured with the switch off */
+    w16.eval("setProd('salt');delete REWARD.stated.salt.associate.since;");
     /* v623: an associate's figure is RM 470 and their R3 counts at 1/1.2; the figures below follow it */
     ok(rd16("rewardUnitMargin('salt','associate')") === 470 && rd16("rewardUnitMargin('oil','associate')") === null
       && rd16("rewardRuleTxt('salt','associate')") === "a free unit per " + rd16("fmt0(470)") + " of margin" && rd16("rewardRuleTxt('oil','associate')") === "no reward on this book",
@@ -14217,7 +14218,8 @@ await (async () => {
     /* v633: AND AN ASSOCIATE STILL HERE, WITH A FREE UNIT AND AN ADVANCE OF THEIR OWN, because the live book had one at v631
        and the automatic offset rightly offered it, which turned this section red on the cloud: the queue is read for the
        departed party alone, and the other's offer shows the offset really ran */
-    w17.eval("setProd('salt');PEOPLE.departed.push(" + JSON.stringify(gone17[0]) + ");associates.push('CZ9-GONE','CZ9-LIVE');"
+    /* 20 Oct 2026: the count these rulings set is the one the switch's openings were taken from; it is measured with the switch off */
+    w17.eval("setProd('salt');delete REWARD.stated.salt.associate.since;PEOPLE.departed.push(" + JSON.stringify(gone17[0]) + ");associates.push('CZ9-GONE','CZ9-LIVE');"
       + "sales.push(" + JSON.stringify({ rid: "z617a", customer: "CZ9-GONE", date: "2026-09-01", qty: 1, total: 600, cost: 0, cash: 600, deliveredQty: 1, product: "salt" }) + "," + JSON.stringify(adv17)
       + "," + JSON.stringify({ rid: "z617l", customer: "CZ9-LIVE", date: "2026-09-01", qty: 1, total: 600, cost: 0, cash: 600, deliveredQty: 1, product: "salt" })
       + "," + JSON.stringify(Object.assign({}, adv17, { rid: "a617l", customer: "CZ9-LIVE" })) + ");recompute();"
@@ -14246,7 +14248,8 @@ await (async () => {
   const { w: w18 } = await om18();
   const rd18 = (e) => JSON.parse(String(w18.eval("JSON.stringify(" + e + ")")));
   try {
-    w18.eval("setProd('salt');");
+    /* 20 Oct 2026: the count these rulings set is the one the switch's openings were taken from; it is measured with the switch off */
+    w18.eval("setProd('salt');delete REWARD.stated.salt.associate.since;");
     ok(rd18("rewardUnitMargin('salt')") === 500 && rd18("rewardUnitMargin('oil')") === null && rd18("rewardRuleTxt('oil')") === "no reward on this book"
       && JSON.stringify(rd18("rewardUnits(1000,null)")) === '{"earned":0,"toNext":null}' && JSON.stringify(rd18("Object.keys(REWARD)")) === '["stated"]',
       "one figure is all the scheme states: RM 500 of margin on salt, nothing on oil, and no window, band or hurdle beside it");
@@ -14398,7 +14401,8 @@ await (async () => {
   const { w: w23 } = await om23();
   const rd23 = (e) => JSON.parse(String(w23.eval("JSON.stringify(" + e + ")")));
   try {
-    w23.eval("setProd('salt');");
+    /* 20 Oct 2026: the count these rulings set is the one the switch's openings were taken from; it is measured with the switch off */
+    w23.eval("setProd('salt');delete REWARD.stated.salt.associate.since;");
     ok(rd23("[rewardUnitMargin('salt','associate'),rewardR3Hurdle('salt'),rewardUnitMargin('salt'),rewardR3Hurdle('oil')].join(' ')") === "470 1.2 500 1",
       "the stated figures: RM 470 and a 1.2 times R3 hurdle for an associate, RM 500 for a customer, and no R3 weighing on oil");
     const row23 = (o) => JSON.stringify(Object.assign({ product: "salt" }, o));

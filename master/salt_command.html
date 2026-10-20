@@ -18518,7 +18518,7 @@ function rewardBookView(){
     associates:typeof associates!=='undefined'?associates:[],INTRODUCTIONS,PEOPLE,R0_NETWORK:typeof R0_NETWORK!=='undefined'?R0_NETWORK:null}};
 }
 function rewardWalkOf(id){
-  if(PROD!=='salt')return null;
+  if(!rewards(PROD)||!REWARD.stated[PROD]||!REWARD.stated[PROD].associate)return null;   /* the walk is salt's, gated on the book's own field (v781) */
   const b=rewardBookView(),sch=POSITION_ENGINE.rewardScheme(b,'salt');if(!sch)return null;
   if(id==null){const st=POSITION_ENGINE.rewardStep(b.purchases.filter(p=>(p.product||'salt')==='salt'),null,sch.times);return {times:sch.times,since:sch.since,step:st?st.step:null};}
   return POSITION_ENGINE.rewardWalk(b,id);

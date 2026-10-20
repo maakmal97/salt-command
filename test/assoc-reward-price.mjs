@@ -7,7 +7,9 @@
  *   5  the fold stamps a restated size again, for the new size, off the same snapshot; a row with no stamp stays without
  *   6  the Worker's cardAt is the engine's: the one copy the drafter, the fold and every quote read
  *   7  and the fold tool itself carries the extract's pricing snapshot to the re-stamp */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { readBook } from "../tools/book.mjs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { draftRow, listStamp } from "../src/drafter.js";
@@ -18,7 +20,9 @@ import E from "../engine/position.mjs";
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 export async function run({ ok }) {
-  const L = JSON.parse(readFileSync(join(REPO, "ledger", "ledger.json"), "utf8")).ledger;
+  /* the extract as the desk reads it, off the master window, never the repo's file */
+  const desk = await readBook(), L = JSON.parse(JSON.stringify(desk.ledger));
+  desk.dom.window.close();
   const book = { version: L.PRICING.v, state: L, sales: L.sales, purchases: L.purchases, pricing: L.PRICING };
   const since = L.REWARD.stated.salt.associate.since, assoc = Object.keys(L.REWARD_OPEN)[0];
   const partner = (L.partners || [])[0];
@@ -58,9 +62,11 @@ export async function run({ ok }) {
   const a = res.ok && res.book.sales.find((s) => s.rid === "s9001"), b = res.ok && res.book.sales.find((s) => s.rid === "s9002");
   ok(res.ok && a.qty === 2 && a.listRM === +(+card(assoc, 2)).toFixed(2) && a.listQty === 2 && b.listRM === undefined,
     "the fold stamps a restated size again, and leaves an unstamped row unstamped: " + JSON.stringify(res.ok ? [a.listRM, a.listQty, b.listRM, card(assoc, 2)] : res.problems));
-  /* 7: the fold reads the extract beside the book it folds (--ledger); the suite's book is the frozen fixture, so name the live extract */
+  /* 7: the fold reads the extract beside the book it folds (--ledger); the suite's book is the frozen fixture, so the window's is written to a temp file */
+  const dir = mkdtempSync(join(tmpdir(), "assoc-price-")), extract = join(dir, "ledger.json");
+  writeFileSync(extract, JSON.stringify({ ledger: { REWARD: L.REWARD, PRICING: L.PRICING } }));
   const argv = process.argv.slice();
-  process.argv.push("--ledger", join(REPO, "ledger", "ledger.json"));
+  process.argv.push("--ledger", extract);
   const FOLD2 = await import(pathToFileURL(join(REPO, "tools", "fold.mjs")).href + "?assocprice-ledger");
   process.argv.splice(0, process.argv.length, ...argv);
   const fb2 = frozenBook();

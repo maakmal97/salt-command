@@ -879,10 +879,10 @@ function stockCostOf(book) {
    - a reward row the walk no longer earns (an undone payment) is flagged STALE in the moves, never withdrawn: he removes it in
      ledger/book.json, never cancels it, since a cancelled reward row still counts;
    - when this entry hands salt over to them, each reward row waiting whose own order is now handed over in full goes with it
-     (deliveredQty 1, its day and handover), and its unit leaves the shelf through kgMoves, which applyEntry adds to the roll: a
+     (deliveredQty 1, its day and handover), and its unit leaves the shelf through unitMoves, which applyEntry adds to the roll: a
      reward raised after its order went out rides on their next salt handover (Ask 4). */
 function rewardEngineBook(book, scheme) { return { sales: book.sales || [], purchases: book.purchases || [], state: { ...book, REWARD: scheme } }; }
-function rewardFold(book, it, c, kgMoves) {
+function rewardFold(book, it, c, unitMoves) {
   const scheme = c.reward;
   if (!scheme || !book.REWARD_OPEN) return;
   const eb = rewardEngineBook(book, scheme);
@@ -924,7 +924,7 @@ function rewardFold(book, it, c, kgMoves) {
       if (!of || E.txDeliv(of) < (+of.qty || 0) - 0.009) continue;
       s.deliveredQty = 1; s.deliveredOn = day;
       if (touched.handover) s.handover = touched.handover;
-      kgMoves.push({ product: "salt", kg: -1, who: code, when: day });
+      unitMoves.push({ product: "salt", kg: -1, who: code, when: day });
       c.moves.push(`reward unit ${s.rid} handed over to ${code} with ${touched.rid || "this order"}`);
     }
 }
@@ -1057,12 +1057,12 @@ function bookItem(book, it, c) {
    The order of the entries decides: a count and a move on one product give 10.5 for a sale then a count of 10.5, and 8.5 for the count then a sale of 2. */
 export function applyEntry(book, it, ctx) {
   const src = ctx.staged.approved.find((x) => x.id === it.id), n = (ctx.notes.rows && ctx.notes.rows[it.id]) || {};
-  const moves = [], renames = [], kgMoves = [];
+  const moves = [], renames = [], unitMoves = [];
   const c = { src, n, notes: ctx.notes, stockCost: stockCostOf(book), nextRid: ctx.nextRid, moves, renames,
     reward: ctx.reward || null, today: ctx.today || null, pricing: ctx.pricing || null, entryMoves: ctx.moves || [] };
   bookItem(book, it, c);
-  rewardFold(book, it, c, kgMoves);   /* 20 Oct 2026: the associate reward's unit, and its unit off the shelf with the handover */
-  const entryMoves = (ctx.moves || []).concat(kgMoves), rolls = [];
+  rewardFold(book, it, c, unitMoves);   /* 20 Oct 2026: the associate reward's unit, and its unit off the shelf with the handover */
+  const entryMoves = (ctx.moves || []).concat(unitMoves), rolls = [];
   for (const prod of [...new Set(entryMoves.map((m) => m.product))]) {
     const ms = entryMoves.filter((m) => m.product === prod);
     const out = ms.filter((m) => m.kg < 0).reduce((a, m) => a - m.kg, 0), inn = ms.filter((m) => m.kg > 0).reduce((a, m) => a + m.kg, 0);

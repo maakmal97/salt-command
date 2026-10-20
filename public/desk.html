@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="65eeeee92b3a4547";
+var SALT_BUILD_ID="5707881021917c31";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -18670,7 +18670,7 @@ function rewardBookView(){
     associates:typeof associates!=='undefined'?associates:[],INTRODUCTIONS,PEOPLE,R0_NETWORK:typeof R0_NETWORK!=='undefined'?R0_NETWORK:null}};
 }
 function rewardWalkOf(id){
-  if(PROD!=='salt')return null;
+  if(!rewards(PROD)||!REWARD.stated[PROD]||!REWARD.stated[PROD].associate)return null;   /* the walk is salt's, gated on the book's own field (v781) */
   const b=rewardBookView(),sch=POSITION_ENGINE.rewardScheme(b,'salt');if(!sch)return null;
   if(id==null){const st=POSITION_ENGINE.rewardStep(b.purchases.filter(p=>(p.product||'salt')==='salt'),null,sch.times);return {times:sch.times,since:sch.since,step:st?st.step:null};}
   return POSITION_ENGINE.rewardWalk(b,id);

@@ -7,15 +7,15 @@
  *   5  an associate with no opening shows no figure on the Desk (no unit, no next), never nought
  *   6  the rule says the step: times units' landed cost at today's lot
  *   7  the extract carries REWARD_OPEN to the mirror, so every Worker road reads the same openings */
-import { readBookFile } from "../tools/booksync.mjs";
 import { readBook } from "../tools/book.mjs";
 import { openings, associatesOf } from "../tools/reward-open.mjs";
 import E from "../engine/position.mjs";
 
 export async function run({ ok }) {
-  const book = readBookFile();
   const desk = await readBook(), w = desk.w;
   try {
+    /* the window's own book (its BOOK block, read through the LEDGER map), so the openings and the window read one book */
+    const book = JSON.parse(JSON.stringify(desk.ledger)), declared = String(w.eval("JSON.stringify(typeof REWARD_OPEN==='undefined'?null:REWARD_OPEN)"));
     const stated = desk.ledger.REWARD.stated, since = stated.salt.associate.since, extracted = JSON.stringify(desk.ledger.REWARD_OPEN || null);
     /* 1 */
     const { open, table } = openings(book, stated, since);
@@ -62,7 +62,7 @@ export async function run({ ok }) {
     ok(txt.includes(stated.salt.associate.times + " units’ landed cost") && txt.includes(w.eval("fmt0(" + step + ")")),
       "the rule says the step at today's lot: " + txt);
     /* 7 */
-    ok(extracted === JSON.stringify(book.REWARD_OPEN) && Object.keys(book.REWARD_OPEN || {}).length >= 5,
+    ok(extracted === declared && Object.keys(JSON.parse(declared) || {}).length >= 5,
       "the extract carries REWARD_OPEN to the mirror: " + extracted.slice(0, 60));
   } finally { desk.dom.window.close(); }
 }

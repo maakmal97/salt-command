@@ -15,7 +15,8 @@
  *   11 the pricing snapshot (every Floor, the grid, the Ceilings, every card, the delivery the cost stack reads) is byte for byte the same with a
  *      delivered reward row; only the leak's shrink rate, information beside the Floor, reads the unit that left the shelf
  *   12 and the fold tool itself (tools/fold.mjs apply) raises it, reading the scheme from the extract */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -122,9 +123,12 @@ export async function run({ ok }) {
     && flip.moves.some((m) => typeof m === "string" && m.startsWith("reward opening: CX1-ZED")),
     "a customer who becomes an associate by a ref opens that day at their %, and no unit is raised: " + JSON.stringify([o, flip.ok && rewards(flip.book, "CX1-ZED").length]));
   /* 12 */
-  /* the fold reads its scheme from the extract beside the book it folds (--ledger); the suite's book is the frozen fixture, so name the live extract */
+  /* the fold reads its scheme from the extract beside the book it folds (--ledger); the suite's book is the frozen fixture, so an
+     extract carrying the desk's own scheme is written to a temp file for it */
+  const dir = mkdtempSync(join(tmpdir(), "assoc-reward-")), extract = join(dir, "ledger.json");
+  writeFileSync(extract, JSON.stringify({ ledger: { REWARD: { stated: reward.stated } } }));
   const argv = process.argv.slice();
-  process.argv.push("--ledger", join(REPO, "ledger", "ledger.json"));
+  process.argv.push("--ledger", extract);
   const FOLD2 = await import(pathToFileURL(join(REPO, "tools", "fold.mjs")).href + "?assocreward-ledger");
   process.argv.splice(0, process.argv.length, ...argv);
   const viaFold = mk([order("s9001")]);
