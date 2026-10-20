@@ -37,6 +37,7 @@ import { PAY_SITE, PAY_ACCOUNTS, payHref } from "./pay.js";
 import { OWNER_JS } from "./owner.js";
 import { MAX_OPEN, OPEN_STATES, WANT_DAYS } from "./orders.js";
 import { slotSpan, slotNext, WINDOWS } from "./window.js";
+import { openParts } from "./hours.js";
 import GEO_ENGINE from "./geo.js";
 import { TEST_USERS, TEST_PASS } from "./testfix.js";
 import { EN, WORDS, fill, fillHtml, unitsIn } from "./words.js";
@@ -708,25 +709,29 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .adm .ledgrp .salt-table td.l,.adm .ledgrp .salt-table th.l{text-align:left}
 .adm .ledgrp small{display:block;color:var(--salt-mist)}
 .adm .ledgrp .rnone{margin:0}
-/* 12 OCT 2026 (PHASE 4a, 5): THE WEEKLY HOURS ARE THE SYSTEM'S TABLE (salt-table, the day's cell its label cell). Its head names the three columns (the day with its tick, when it
-   opens, when it closes) and the rows keep the 44px of the tick and of each time. The columns share the width, so the head stands over them at 375px as at 1280. The cells hold
-   controls and not figures, so they stand left, and their gutters stay the 4px the times were fitted in. */
-.adm .maker-hours{table-layout:fixed;margin:8px 0}
-.adm .maker-hours th,.adm .maker-hours td{text-align:left;padding:2px 4px;vertical-align:middle}
-.adm .maker-hours th:first-child{width:38%}
-.adm .maker-hours td input[type=time]{width:100%;min-width:0;padding-inline:8px}
-.adm .maker-day-pick{display:flex;align-items:center;gap:4px;min-height:44px}
-.adm .maker-day input[type=checkbox]{flex:none;width:44px;height:44px;margin:0}
-.adm .maker-day-name{font-size:var(--salt-text-sm);min-width:0;overflow-wrap:anywhere}
-/* 12 OCT 2026 (PHASE 6, his decision 9 of 11 Oct): THE WEEKLY HOURS FIT A PHONE OF 320 TO 371px. The statement's stylesheet holds every bare table at 340px (on the statement a table sits in a box that scrolls),
-   so this one, in a column of 288px at 320, was 52px wider than its place and the page scrolled sideways. Here it takes the column's width; the day's tick stands over its name, so the day's column
-   needs the longest name's width and not the tick's and the name's together, and the two time fields keep the room their own content needs. */
-@media (max-width:371.98px){
-  .adm .maker-hours{min-width:0}
-  .adm .maker-hours th:first-child{width:28%}
-  .adm .maker-hours td input[type=time]{padding-inline:4px}
-  .adm .maker-day-pick{flex-direction:column;align-items:flex-start;gap:0}
-}
+/* 20 OCT 2026 (his word, canvas V63): THE WEEK CHART. A row a day, 44px, the name, a 00 to 24 track and the times; the open span a brass bar,
+   a span past midnight's tail hatched at the start of the next day's row. A tapped day opens below its row on slate: Opens and Closes, then
+   its quick buttons, every one 44px. */
+.adm .maker-week{display:flex;flex-direction:column;gap:2px;margin:8px 0}
+.adm .maker-week-scale,.adm .maker-day{display:grid;grid-template-columns:40px minmax(0,1fr) 136px;align-items:center;gap:12px;padding:0 8px}
+.adm .maker-week-scale>span:nth-child(2){display:flex;justify-content:space-between;font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .maker-day{min-height:44px;width:100%;border:0;border-radius:var(--salt-radius-md);background:none;color:var(--salt-salt);font:inherit;text-align:left;cursor:pointer}
+.adm .maker-day[aria-expanded=true]{background:var(--salt-glass)}
+.adm .maker-track{position:relative;display:block;height:10px;border-radius:4px;background:var(--salt-well)}
+.adm .maker-bar,.adm .maker-tail{position:absolute;top:0;bottom:0;border-radius:4px}
+.adm .maker-bar{background:var(--salt-brass)}
+.adm .maker-tail{background:repeating-linear-gradient(135deg,var(--salt-brass) 0 4px,transparent 4px 7px)}
+.adm .maker-day-times{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adm .maker-day-times.off{color:var(--salt-mist-bright)}
+.adm .maker-day-times sup,.adm .maker-plus1{color:var(--salt-brass);font-family:var(--salt-font-mono)}
+.adm .maker-dayedit{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:var(--salt-radius-md);background:var(--salt-slate);border:1px solid var(--salt-line)}
+.adm .maker-dayedit-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.adm .maker-dayedit-times{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.adm .maker-dayedit-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.adm .maker-dayedit-pick{display:flex;align-items:center;gap:8px}
+.adm .maker-dayedit select{min-height:44px;width:100%;min-width:0}
+.adm .maker-dayedit-acts{display:flex;flex-wrap:wrap;gap:8px}
+.adm .maker-dayedit-acts button{min-height:44px;min-width:44px}
 .adm .maker-facts{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm)}
 .adm .maker-row{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--salt-text-sm)}
 .adm #makerBulletinCurrent{overflow-wrap:anywhere}
@@ -1992,7 +1997,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
       .replace("/*__PAYHREF__*/", () => payHref.toString())
       /* 10 Oct 2026: a delivery's time window, the Worker's own rule carried as it is (stmt/window.js), so the sheet offers
          exactly the windows the Worker takes */
-      .replace("/*__WINDOW__*/", () => [slotSpan, slotNext].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
+      .replace("/*__WINDOW__*/", () => [slotSpan, slotNext, openParts].map(String).join("\n")).replace("__WINDOWS__", JSON.stringify(WINDOWS))
       /* S4 4.6: the open-order limit the Worker refuses at, so the page can say it before the form */
       .replace("__MAX_OPEN__", String(MAX_OPEN)).replace("__WANT_DAYS__", String(WANT_DAYS)).replace("__OPEN_STATES__", JSON.stringify(OPEN_STATES)).replace("__TEST_USERS__", JSON.stringify(TEST_USERS))
       /* S7 7.1: the places, so the script names them as the markup does */

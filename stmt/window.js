@@ -8,9 +8,16 @@
  * A window is written `YYYY-MM-DDTHH` (the Kuala Lumpur day and its first hour), its span `HH:MM-HH:MM`: two strings, so
  * every whitelist and every equality the order already passes through takes them as they are.
  *
- * slotSpan and slotNext are ES5 and call nothing outside themselves (slotNext calls slotSpan, carried beside it): the
- * Counter's page carries their source as it carries payHref, so the sheet offers exactly what the Worker takes. No
- * backslash, no backtick, no arrow function, let or const in either; the suite reads them for those. */
+ * slotSpan and slotNext are ES5 and call nothing outside themselves but each other and stmt/hours.js openParts, the one rule
+ * of the weekly hours, carried beside them: the Counter's page carries their source as it carries payHref, so the sheet
+ * offers exactly what the Worker takes. No backslash, no backtick, no arrow function, let or const in any; the suite reads
+ * them for those.
+ *
+ * 20 Oct 2026 (his word): a span past midnight opens the next day's early windows (Fri 09:00 to 02:00 opens Sat 00-04 as
+ * 00:00-02:00). A window holding two open stretches is said from the first's start to the last's end (his answer), as the
+ * manual override already was. A page cached before this offers fewer windows than the Worker takes, never more; where it
+ * offered one, the Worker writes its own span, which may be the wider. */
+import { openParts } from "./hours.js";
 export const WINDOWS = [0, 4, 8, 12, 16, 20];
 export const SLOT_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T(00|04|08|12|16|20)$/;
 export const SPAN_RE = /^([01][0-9]|2[0-4]):[0-5][0-9]-([01][0-9]|2[0-4]):[0-5][0-9]$/;
@@ -25,21 +32,15 @@ export function slotSpan(slot, cfg, at) {
   var H = 3600000, base = Date.parse(m[1] + "T00:00:00Z") - 8 * H;
   if (!(base === base)) return null;
   var a = base + (+m[2]) * H, b = a + 4 * H, parts = [];
-  function spanMin(t) { var x = /^([0-9]{2}):([0-9]{2})$/.exec(String(t || "")); return x ? (+x[1]) * 60 + (+x[2]) : null; }
   function spanTake(lo, hi) { if (lo < a) lo = a; if (hi > b) hi = b; if (hi > lo) parts.push([lo, hi]); }
-  var days = cfg && cfg.schedule && cfg.schedule.days, s0 = base, s1 = base + 24 * H;
-  if (days && days.length === 7) {
-    var d = days[new Date(base + 8 * H).getUTCDay()], o = d ? spanMin(d.open) : null, c = d ? spanMin(d.close) : null;
-    if (o === null || c === null || c <= o) { s0 = base; s1 = base; }
-    else { s0 = base + o * 60000; s1 = base + c * 60000; }
-  }
+  var days = cfg && cfg.schedule && cfg.schedule.days, open = days && days.length === 7 ? openParts(days, a, b) : [[a, b]];
   var man = cfg && cfg.manual, until = man && typeof man.open === "boolean" ? Date.parse(man.until) : NaN;
   var cut = a;
   if (until === until && until > at) {
     if (man.open) spanTake(a, until);
     cut = until > a ? until : a;
   }
-  spanTake(cut > s0 ? cut : s0, s1);
+  for (var j = 0; j < open.length; j++) spanTake(cut > open[j][0] ? cut : open[j][0], open[j][1]);
   if (!parts.length) return null;
   var lo = parts[0][0], hi = parts[0][1];
   for (var i = 1; i < parts.length; i++) { if (parts[i][0] < lo) lo = parts[i][0]; if (parts[i][1] > hi) hi = parts[i][1]; }

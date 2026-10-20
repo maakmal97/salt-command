@@ -473,6 +473,9 @@ export async function auditStates({ pageWork }) {
     await pt.work.quiet();
     await pt.click(byAct(pt.d, "nav.shop")); await pt.click(byAct(pt.d, "part.shop.hours")); await pt.work.quiet();
     states.push(["his collection points", actAudit(pt.d)]);
+    /* 20 Oct 2026 (canvas V63): a day of the week chart opened, its pickers and quick buttons */
+    await pt.click(byAct(pt.d, "hours.day", "Monday")); await pt.work.quiet();
+    states.push(["a day of the hours opened", actAudit(pt.d)]);
     await pt.click(byAct(pt.d, "nav.orders"));
     await pt.click(byAct(pt.card("ord-a1"), "order.ready-collect")); await pt.work.quiet();
     states.push(["Ready to collect asking which point", actAudit(pt.d)]);

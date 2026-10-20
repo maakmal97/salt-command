@@ -1917,9 +1917,10 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   **The printed sizes are a grid of tiles** (Phase 4a, `test/admin-sizes-hours.mjs`, its mutations in `test/admin-sizes-hours.mutations.json`): a size is a tile of the
   same recipe, a checkbox in `salt-option` with its face saying the size in words, in a fieldset (`maker-sizes`, legend "Sizes to print") whose grid runs in as many
   columns of 88px or more as the pane holds, ticked while the size is printed. Each tick keeps `record.house.size`, keyed by the size, and the body is as it was: the
-  book and the sizes left unticked as numbers (`hide`). **The weekly hours are a table** (Shop, Hours): its head names three columns, Day (the tick, its label the day's
-  name), Opens and Closes, a row for each weekday in order, each control named for its day and its column, a closed day's times shut, the columns sharing the width so
-  the head stands over them at 375px as at 1280. The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
+  book and the sizes left unticked as numbers (`hide`). **The weekly hours are a week chart** (Shop, Hours; 20 Oct 2026, canvas V63, replacing the table of 12 Oct): a 44px row a day,
+  Monday first, a 00 to 24 track with the open span a brass bar, a span past midnight said "+1" and its tail hatched at the start of the next day's row; a tap
+  opens the day below its row: Opens and Closes as quarter-hour pickers (a time filed off the quarter hour kept as its own choice), Closed or Open, Same as the day
+  before, Copy to the rest of its group (Monday to Friday, or Saturday and Sunday) and Done, which sends the whole week (`test/admin-hours-week.mjs`). The override that holds the shop for now is two tiles, Closed and Open (`hours.override-state`, keyed `false` and
   `true`), over a field that says **Closed until**, or Open until when Open is chosen, in Kuala Lumpur time. What is sent is what it was: `{schedule: {days}}`, then
   `{manual: {open, until}}` or `{clearManual: true}`. `tools/maker-forms-geometry.mjs` measures the pane, every form's tiles, the size grid and the hours table in a
   real browser at 1280 and 375px, and proves a 20px tile red.
@@ -1928,7 +1929,7 @@ Moved from `CLAUDE.md` on 16 Sep 2026; the rules themselves stay there.
   (`#roster`), and no rule of the page frames it, the shell, the body and the root carrying no transform, filter, perspective, containment, will-change or container.
   What moves it is not a rule of its own: **a fixed bar is laid out against the layout viewport and drawn on the visible one, and a phone's layout viewport grows to hold
   anything wider than the phone**, so the bar then stands off the foot (measured: a 1200px section at 375px puts it 1,822px below the screen). The weekly hours table
-  is such a thing on a phone narrower than 356px (its columns need 340px, and the page's gutter is 16px); Record's menu and its seventeen forms are not, down to 260px.
+  was such a thing on a phone narrower than 356px until the week chart replaced it (20 Oct 2026); Record's menu and its seventeen forms are not, down to 260px.
   **In the iPhone's saved app a short document lifts it** (his screenshots, 12 Oct 2026, 393x852 pt, each page at its top, Safari never): Orders, a long page, had the bar on the
   screen's foot; Record with one short card had it 20pt above; Needs you ("Nothing here.") 55pt above, the page ground showing under it. The shorter the page, the higher the bar,
   so the fixed bar's frame there ends at the larger of the document and a layout viewport short of the screen. **So the document is the screen tall at least in the saved
@@ -2232,6 +2233,15 @@ publishes only the open/closed status and timing; it contains no account data. A
 still accepts customer orders, while the order form says acknowledgement may be delayed. Manual
 overrides expire within 14 days and may be cleared to resume the weekly schedule.
 
+**Hours past midnight** (his word of 20 Oct 2026, canvas V63): a day's close earlier than its open is the next day's (Fri
+09:00 to 02:00 is open until Sat 02:00), with no toggle and no new field, so every stored week keeps its meaning. One rule reads
+it, `stmt/hours.js` `openParts(days, lo, hi)`: the open stretches between two moments, walking from the day before `lo`, touching
+or overlapping spans merged so no minute counts twice. `openAt`, the next open and the next change (`hoursStatus`, so Salt Admin's
+bar and the Counter's Today line), `openMinutes` (the confirm time and the waited meter) and `slotSpan` (the delivery windows) all
+read it; it is ES5 and the page carries its source beside `slotSpan`. `validateWeeklyHours` refuses the same time to open and
+close (never read as all day) and a day opening before the day before closes, Saturday into Sunday too (his answers 1 and 2);
+touching is one stretch. A window holding two stretches is said from the first's start to the last's end (his answer 5).
+
 Accounts > Order for them opens that customer's sealed current list on his device under the
 existing master wrap. It sends one priced size with the list digest and a request id to
 `POST /all/maker/customers/<username>/orders`. The server requires an existing account and the
@@ -2525,14 +2535,17 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `draft.approve` | Desk row card (key: data-maker-card, draft:<id>) | Approves the row, or every row of the trip. |
 | `draft.reject` | Same card | Rejects it, or the trip. |
 | `ended.sign-in` | Shown when the Access session has ended | Loads /all again, which is the Access login. |
-| `hours.day-from` | Same row | The hour it opens. |
-| `hours.day-open` | Operating hours, one a weekday (key: the weekday) | Whether that day is open. |
-| `hours.day-to` | Same row | The hour it closes. |
+| `hours.day` | Operating hours' week chart, a row a weekday (key: the weekday) | Opens or shuts that day's Opens and Closes below its row. |
+| `hours.day-closed` | The opened day (key: the weekday) | Closes the day, or opens a closed one at 09:00 to 17:00. |
+| `hours.day-copy` | The opened day (key: the weekday) | Copies its hours to the rest of its group: Monday to Friday, or Saturday and Sunday. |
+| `hours.day-from` | The opened day (key: the weekday) | The quarter hour it opens. |
+| `hours.day-same` | The opened day (key: the weekday) | Takes the day before's hours. |
+| `hours.day-to` | The opened day (key: the weekday) | The quarter hour it closes; earlier than the open is the next day. |
 | `hours.override-clear` | Operating hours | Clears it. |
 | `hours.override-set` | Operating hours | Sets the temporary override. |
 | `hours.override-state` | Operating hours (key: `false` for Closed, `true` for Open) | Whether the override holds the shop open or closed. |
 | `hours.override-until` | Operating hours | When the override ends, Kuala Lumpur time. |
-| `hours.save` | Operating hours | Saves the weekly hours. |
+| `hours.save` | The opened day, Done (key: the weekday) | Saves the whole week and shuts the day. |
 | `link.approve` | Link card of an associate's link | Approves it, which opens it. |
 | `link.open` | Link row (key: the link id) | Opens or shuts the row: its address, QR and moves. |
 | `link.copy` | Link card (key: data-link, the link id) | Copies the link. |

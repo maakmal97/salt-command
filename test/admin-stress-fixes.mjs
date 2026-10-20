@@ -112,17 +112,18 @@ export async function run({ ok, pageWork }) {
   p = await open();
   try {
     hook(p); enter(p.d, "shop", "hours"); await p.work.quiet();
-    const root = at(p, "makerSchedule"), save = () => byAct(root, "hours.save");
+    /* 20 Oct 2026 (canvas V63): Done stands in an opened day and closes it, so its answer stands on the line right under the week chart */
+    const root = at(p, "makerSchedule"), save = () => { byAct(root, "hours.day", "Monday").click(); return byAct(root, "hours.save", "Monday"); };
     save().click(); await p.work.quiet();
-    let said = beside(save());
+    let said = beside(root.querySelector(".maker-week"));
     ok(!!said && said.id === "makerHoursSaved" && said.getAttribute("role") === "status" && root.contains(said) && said.textContent === "Weekly hours saved." && at(p, "makerHoursMessage").textContent === "",
-      "Save answers on a line right under itself, inside the hours, and the line below the shop-for-now controls stays empty: " + JSON.stringify([said && said.id, said && said.textContent]));
+      "Done answers on the line right under the week chart, inside the hours, and the line below the shop-for-now controls stays empty: " + JSON.stringify([said && said.id, said && said.textContent]));
     ok(p.scrolled.includes(said), "and the answer is brought into reach");
     p.fail.add("/all/maker/hours");
     save().click(); await p.work.quiet();
-    said = beside(save());
+    said = beside(root.querySelector(".maker-week"));
     ok(!!said && said.id === "makerHoursSaved" && /Not sent/.test(said.textContent) && at(p, "makerHoursMessage").textContent === "",
-      "a Save that cannot be made says so on the same line, under Save: " + JSON.stringify(said && said.textContent));
+      "a Done that cannot be sent says so on the same line, under the week chart: " + JSON.stringify(said && said.textContent));
     p.fail.delete("/all/maker/hours");
     byAct(root, "hours.override-set").click(); await p.work.quiet();
     ok(/Choose an end time/.test(at(p, "makerHoursMessage").textContent) && beside(root) === at(p, "makerHoursMessage") && at(p, "makerHoursSaved").textContent === "",

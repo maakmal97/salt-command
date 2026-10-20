@@ -48366,6 +48366,11 @@ section("10 Oct 2026: a delivery's time window, as soon as it can or four hours 
 await (async () => {
   await (await import("./delivery-window.mjs")).run({ ok });
 })();
+
+section("Opening hours past midnight: one rule (openParts) for the status, the open minutes, the check of the week and the delivery windows (20 Oct 2026)");
+await (async () => {
+  await (await import("./hours-overnight.mjs")).run({ ok });
+})();
 section("10 Oct 2026: a delivery's exact spot, sealed on their phone to his key, ciphertext alone on the Counter");
 await (async () => {
   await (await import("./delivery-pin.mjs")).run({ ok });
@@ -50160,6 +50165,11 @@ await (async () => {
 section("Salt Admin: the printed sizes are a grid of tiles, and the weekly hours a table with labelled columns and a Closed until field");
 await (async () => {
   await (await import("./admin-sizes-hours.mjs")).run({ ok, pageWork });
+})();
+
+section("Salt Admin's week chart of the hours: a row a day, a span past midnight said +1 with its tail on the next day, quarter hours and the quick buttons (20 Oct 2026)");
+await (async () => {
+  await (await import("./admin-hours-week.mjs")).run({ ok, pageWork });
 })();
 
 section("Salt Admin: the stress run's findings: a charge that did not save is not shown as chosen, an answer stands beside its control, and For a friend is a 44px target (13 Oct 2026)");

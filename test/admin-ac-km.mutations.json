@@ -1,7 +1,7 @@
 [
  {"name":"the distance on a flat earth","file":"engine/geo.mjs","find":"return 2*6371.0088*Math.asin(Math.min(1,Math.sqrt(h)));}","replace":"return 2*6371.0088*Math.sqrt(h);}"},
- {"name":"open minutes count the wall clock","file":"stmt/hours.js","find":"  if (!parsed.days) return (to - from) / 60000;\n  let open = 0;","replace":"  return (to - from) / 60000;\n  let open = 0;"},
- {"name":"open minutes count a closed day","file":"stmt/hours.js","find":"    if (!h) continue;\n    const a = Math.max(from, s + h.start * 60000)","replace":"    if (!h) { open += Math.min(to, s + DAY_MS) - Math.max(from, s); continue; }\n    const a = Math.max(from, s + h.start * 60000)"},
+ {"name":"open minutes count the wall clock","file":"stmt/hours.js","find":"  if (!parsed.days) return (to - from) / 60000;\n  return openParts(","replace":"  return (to - from) / 60000;\n  return openParts("},
+ {"name":"open minutes count a closed day","file":"stmt/hours.js","find":"if (o === null || c === null || c === o) continue;","replace":"if (o === null || c === null || c === o) { if (!d) parts.push([s < lo ? lo : s, s + D > hi ? hi : s + D]); continue; }"},
  {"name":"the waited figure on a practice order","file":"stmt/maker.js","find":"  for (const o of orders || []) if (o && o.status === \"placed\" && !o.test) {","replace":"  for (const o of orders || []) if (o && o.status === \"placed\") {"},
  {"name":"the waited figure on every stage","file":"stmt/maker.js","find":"  for (const o of orders || []) if (o && o.status === \"placed\" && !o.test) {","replace":"  for (const o of orders || []) if (o && !o.test) {"},
  {"name":"the distance before the unlock","file":"stmt/owner.js","find":"    if(order.mode!=='deliver'||!v||!(typeof f==='number'&&f>0)) return null;","replace":"    if(order.mode!=='deliver'||!(typeof f==='number'&&f>0)) return null; v=v||{_base:{lat:3.1,lng:101.6},'CX1-ZED':{lat:3.1,lng:101.7}};"},

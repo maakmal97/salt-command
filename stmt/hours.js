@@ -1,5 +1,4 @@
 const DAY_MS = 86400000;
-const KL_OFFSET_MS = 8 * 60 * 60 * 1000;
 const CLOCK_RE = /^([01][0-9]|2[0-3]):([0-5][0-9])$/;
 
 const toMinutes = (value) => {
@@ -7,43 +6,50 @@ const toMinutes = (value) => {
   return match ? Number(match[1]) * 60 + Number(match[2]) : null;
 };
 
-const klStart = (at) => {
-  const local = new Date(at + KL_OFFSET_MS);
-  return Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) - KL_OFFSET_MS;
-};
 
-const localDay = (start, offset) => new Date(start + offset * DAY_MS + KL_OFFSET_MS).getUTCDay();
+/** 20 Oct 2026 (his word, canvas V63): THE ONE RULE OF THE WEEKLY HOURS. A day's span runs from its open to its close, and a close
+ *  earlier than the open is the next day's (Fri 09:00 to 02:00 is open until Sat 02:00). The open stretches between lo and hi, in
+ *  ms, as [from, to] pairs in order, touching or overlapping spans merged into one, so nothing counts a minute twice. `days` is
+ *  seven of {open, close} as "HH:MM" strings or null, Sunday first, Kuala Lumpur time. openAt, the next open and the next change,
+ *  openMinutes and the delivery windows (stmt/window.js slotSpan) all read it. ES5 and calls nothing outside itself: the Counter's
+ *  page carries its source beside slotSpan, so no backslash, backtick, arrow function, let or const. */
+export function openParts(days, lo, hi) {
+  var H = 3600000, D = 24 * H, parts = [], out = [];
+  if (!days || days.length !== 7 || !(hi > lo)) return out;
+  function partMin(t) { var x = /^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(String(t || "")); return x ? (+x[1]) * 60 + (+x[2]) : null; }
+  var l = new Date(lo + 8 * H), s = Date.UTC(l.getUTCFullYear(), l.getUTCMonth(), l.getUTCDate()) - 8 * H - D;
+  for (var n = 0; s < hi && n < 401; s += D, n++) {
+    var d = days[new Date(s + 8 * H).getUTCDay()], o = d ? partMin(d.open) : null, c = d ? partMin(d.close) : null;
+    if (o === null || c === null || c === o) continue;
+    var a = s + o * 60000, b = s + (c < o ? c + 1440 : c) * 60000;
+    if (a < lo) a = lo;
+    if (b > hi) b = hi;
+    if (b > a) parts.push([a, b]);
+  }
+  parts.sort(function (p, q) { return p[0] - q[0]; });
+  for (var i = 0; i < parts.length; i++) {
+    var last = out.length ? out[out.length - 1] : null;
+    if (last && parts[i][0] <= last[1]) { if (parts[i][1] > last[1]) last[1] = parts[i][1]; }
+    else out.push([parts[i][0], parts[i][1]]);
+  }
+  return out;
+}
 
 function openAt(schedule, at) {
   if (!schedule) return true;
-  const local = new Date(at + KL_OFFSET_MS);
-  const day = schedule.days[local.getUTCDay()];
-  if (!day) return false;
-  const minute = local.getUTCHours() * 60 + local.getUTCMinutes();
-  return minute >= day.start && minute < day.end;
+  return openParts(schedule.days, at, at + 1).length > 0;
 }
 
 function nextScheduleOpen(schedule, at) {
   if (!schedule) return null;
-  const start = klStart(at);
-  for (let offset = 0; offset < 15; offset++) {
-    const hours = schedule.days[localDay(start, offset)];
-    if (!hours) continue;
-    const open = start + offset * DAY_MS + hours.start * 60000;
-    if (open > at) return new Date(open).toISOString();
-  }
-  return null;
+  const part = openParts(schedule.days, at, at + 15 * DAY_MS).find((p) => p[0] > at);
+  return part ? new Date(part[0]).toISOString() : null;
 }
 
 function nextScheduleChange(schedule, at) {
   if (!schedule) return null;
-  const start = klStart(at);
   const times = [];
-  for (let offset = 0; offset < 8; offset++) {
-    const hours = schedule.days[localDay(start, offset)];
-    if (!hours) continue;
-    const open = start + offset * DAY_MS + hours.start * 60000;
-    const close = start + offset * DAY_MS + hours.end * 60000;
+  for (const [open, close] of openParts(schedule.days, at, at + 8 * DAY_MS)) {
     if (open > at) times.push(open);
     if (close > at) times.push(close);
   }
@@ -62,9 +68,16 @@ export function validateWeeklyHours(value) {
     if (!day || typeof day !== "object" || Array.isArray(day) || Object.keys(day).some((key) => !["open", "close"].includes(key)))
       return { error: "Each day must be closed or have opening and closing times." };
     const start = toMinutes(day.open), end = toMinutes(day.close);
-    if (start === null || end === null || start >= end)
-      return { error: "Use valid 24-hour times, with closing later than opening on the same day." };
+    if (start === null || end === null) return { error: "Use valid 24-hour times." };
+    /* 20 Oct 2026 (his word): a close earlier than the open is the next day's; the same time is refused, never read as all day */
+    if (start === end) return { error: "A day cannot open and close at the same time." };
     days.push({ open: String(day.open), close: String(day.close), start, end });
+  }
+  /* a span past midnight ends before the next day opens (Saturday's into Sunday too); touching is one open stretch */
+  for (let i = 0; i < 7; i++) {
+    const d = days[i], next = days[(i + 1) % 7];
+    if (d && next && d.end < d.start && next.start < d.end)
+      return { error: "A day cannot open before the day before it closes." };
   }
   return { days };
 }
@@ -107,14 +120,7 @@ export function openMinutes(config, from, to) {
   const parsed = !config || config.schedule == null ? { days: null } : validateWeeklyHours(config.schedule);
   if (parsed.error) throw new TypeError(parsed.error);
   if (!parsed.days) return (to - from) / 60000;
-  let open = 0;
-  for (let s = klStart(from), n = 0; s < to && n < 400; s += DAY_MS, n++) {
-    const h = parsed.days[new Date(s + KL_OFFSET_MS).getUTCDay()];
-    if (!h) continue;
-    const a = Math.max(from, s + h.start * 60000), b = Math.min(to, s + h.end * 60000);
-    if (b > a) open += b - a;
-  }
-  return open / 60000;
+  return openParts(parsed.days, from, to).reduce((sum, [a, b]) => sum + b - a, 0) / 60000;
 }
 
 export function hoursStatus(config, at = Date.now()) {
