@@ -432,6 +432,13 @@ export async function handleMaker(request, env, pathname, verifiedIdentity, opts
       return json(await deskCall(env, "/_internal/maker/trade-cover", "POST", parsed.body));
     }
     if (op.kind === "trade-reading") {
+      /* 20 Oct 2026: and as a GET, the Bill's read of what an order's goods cost, a read that sends nothing: its query is the same body,
+         the four fields and a day, nothing else carried */
+      if (method === "GET") {
+        const q = new URL(request.url).searchParams, body = { direction: q.get("direction") || "", product: q.get("product") || "", qty: Number(q.get("qty")), total: Number(q.get("total")) };
+        if (q.get("date")) body.date = q.get("date");
+        return json(await deskCall(env, "/_internal/maker/trade-reading", "POST", body));
+      }
       if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
       const parsed = await bodyOf(request);
       if (parsed.error) return json({ ok: false, error: parsed.error }, parsed.status);

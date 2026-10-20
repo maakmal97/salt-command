@@ -4095,7 +4095,7 @@ export const OWNER_JS = `
   /* 20 Oct 2026 (canvas V22, V27, his rule: a figure that does not add up has no line of its own): WHAT THE GOODS COST, under Goods, "Cost RM 36,
      incl. freight": the Desk's trade reading (the engine's latestCogs, the latest purchase's quote and trip freight over its units, through the
      hop the trade form reads) a unit, times the order's units. Read once an order, held by its id; nothing when the book has no cost, or the
-     read fails. His page only: owner.js travels behind /all. */
+     read fails. A GET, so it sends nothing. His page only: owner.js travels behind /all. */
   var billCosts={};
   function billCostWords(order){
     var c=billCosts[order.id], cost=c&&c.rate!=null&&isFinite(c.rate)?'cost '+rm(c.rate*(+order.qty||0))+', incl. freight':'';
@@ -4106,11 +4106,15 @@ export const OWNER_JS = `
     node.textContent=billCostWords(order);
     if(billCosts[order.id]||!order.product||!(+order.qty>0)) return;
     billCosts[order.id]={rate:null, reading:true};
-    refs('/all/maker/trade-reading',{direction:'sale',product:order.product,qty:+order.qty,total:+order.total||0}).then(function(j){
+    /* Fable's review: an agreed order is costed at the lot of the day it was agreed (Kuala Lumpur), the day its row is booked on, as the
+       engine costs a sale; a placed one at today's */
+    var ask={direction:'sale',product:order.product,qty:+order.qty,total:+order.total||0}, ackAt=firstAt(order,'acknowledged');
+    if(order.status!=='placed'&&ackAt){ try{ var kb=klBits(ackAt); ask.date=kb.year+'-'+('0'+kb.month).slice(-2)+'-'+('0'+kb.day).slice(-2); }catch(e){} }
+    refs('/all/maker/trade-reading?'+Object.keys(ask).map(function(k){ return k+'='+encodeURIComponent(ask[k]); }).join('&')).then(function(j){
       var r=j&&j.reading&&j.reading.cogs&&j.reading.cogs.rate;
       billCosts[order.id]={rate:typeof r==='number'&&isFinite(r)?r:null};
     },function(){ billCosts[order.id]={rate:null}; }).then(function(){
-      var n=document.querySelector('[data-cost="'+order.id+'"]'); if(n) n.textContent=billCostWords(order);
+      [].forEach.call(document.querySelectorAll('[data-cost="'+order.id+'"]'),function(n){ n.textContent=billCostWords(order); });
     });
   }
   /* Salt Admin A to C (20 Oct 2026), P3: HIS USUAL, the figure a customer reads (stmt/confirm.js confirmView: ten or more measured, the

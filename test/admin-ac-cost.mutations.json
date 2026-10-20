@@ -2,9 +2,14 @@
  {"name":"no cost read","file":"stmt/owner.js","find":"    if(billCosts[order.id]||!order.product||!(+order.qty>0)) return;","replace":"    return;"},
  {"name":"the cost a unit, not times the units","file":"stmt/owner.js","find":"'cost '+rm(c.rate*(+order.qty||0))+', incl. freight'","replace":"'cost '+rm(c.rate)+', incl. freight'"},
  {"name":"a placed order's cost unsaid","file":"stmt/owner.js","find":"if(order.status==='placed') return 'At the list price'+(cost?' · '+cost:'');","replace":"if(order.status==='placed') return 'At the list price';"},
- {"name":"asked as a buy","file":"stmt/owner.js","find":"refs('/all/maker/trade-reading',{direction:'sale',product:order.product,","replace":"refs('/all/maker/trade-reading',{direction:'buy',product:order.product,"},
+ {"name":"asked as a buy","file":"stmt/owner.js","find":"var ask={direction:'sale',product:order.product,","replace":"var ask={direction:'buy',product:order.product,"},
  {"name":"asked on every redraw","file":"stmt/owner.js","find":"    billCosts[order.id]={rate:null, reading:true};","replace":"    void 0;"},
- {"name":"the answer never drawn","file":"stmt/owner.js","find":"      var n=document.querySelector('[data-cost=\"'+order.id+'\"]'); if(n) n.textContent=billCostWords(order);","replace":"      void 0;"},
+ {"name":"the answer never drawn","file":"stmt/owner.js","find":"      [].forEach.call(document.querySelectorAll('[data-cost=\"'+order.id+'\"]'),function(n){ n.textContent=billCostWords(order); });","replace":"      void 0;"},
  {"name":"no cost read as nought","file":"stmt/owner.js","find":"billCosts[order.id]={rate:typeof r==='number'&&isFinite(r)?r:null};","replace":"billCosts[order.id]={rate:typeof r==='number'&&isFinite(r)?r:0};"},
- {"name":"a failed read keeps a figure","file":"stmt/owner.js","find":"},function(){ billCosts[order.id]={rate:null}; }).then(function(){","replace":"},function(){ billCosts[order.id]={rate:1}; }).then(function(){"}
+ {"name":"a failed read keeps a figure","file":"stmt/owner.js","find":"},function(){ billCosts[order.id]={rate:null}; }).then(function(){","replace":"},function(){ billCosts[order.id]={rate:1}; }).then(function(){"},
+ {"name":"an agreed order costed at today's lot","file":"stmt/owner.js","find":"if(order.status!=='placed'&&ackAt){","replace":"if(false){"},
+ {"name":"the read is a send","file":"stmt/owner.js","find":"    refs('/all/maker/trade-reading?'+Object.keys(ask).map(function(k){ return k+'='+encodeURIComponent(ask[k]); }).join('&')).then(function(j){","replace":"    refs('/all/maker/trade-reading?'+Object.keys(ask).map(function(k){ return k+'='+encodeURIComponent(ask[k]); }).join('&'),ask).then(function(j){"},
+ {"name":"the GET carries anything it is sent","file":"stmt/maker.js","find":"        if (q.get(\"date\")) body.date = q.get(\"date\");","replace":"        for (const [k, v] of q) if (!(k in body)) body[k] = v;"},
+ {"name":"the GET is refused","file":"stmt/maker.js","find":"      if (method === \"GET\") {\n        const q = new URL(request.url).searchParams,","replace":"      if (false) {\n        const q = new URL(request.url).searchParams,"},
+ {"name":"the size goes as text","file":"stmt/maker.js","find":"qty: Number(q.get(\"qty\")), total: Number(q.get(\"total\")) };","replace":"qty: q.get(\"qty\"), total: Number(q.get(\"total\")) };"}
 ]
