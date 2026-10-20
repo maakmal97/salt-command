@@ -518,7 +518,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   name and floor or unit beside the point, or a unit alone (`src: 'unit'`), which the Desk shows and never files or measures. The point is filed as their place only on his tap: the card's, or File all for every customer with no point (his choice of 13 Oct 2026),
   one passphrase for the batch; never filed without one.
 - **The confirm time is measured, never promised** (Counter Batch C, his answer of 20 Oct 2026): the median of his last 30 Accepts made in
-  Counter hours, up to the quarter hour (`stmt/confirm.js`, KV `confirm:within` filed hourly), said on a placed order only while open and
+  Counter hours, the time counted in open minutes only (his answer of 20 Oct 2026, `openMinutes`), up to the quarter hour (`stmt/confirm.js`, KV `confirm:within` filed hourly), said on a placed order only while open and
   with 10 or more measured; closed, when it opens.
 - **A collection point** (Counter Batch A, his decisions of 18 Oct 2026): his points are Counter KV `maker:points`
   (`{v:1, list:[{code, lat, lng}]}`, a code one capital and one or two digits, so never a roster code's shape), kept on Salt

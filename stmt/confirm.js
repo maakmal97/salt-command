@@ -6,11 +6,12 @@
  * old (stmt/maker.js publicHours), so a stuck cron shows nothing rather than an old figure. It names nobody and prices nothing.
  *
  * In Counter hours: both moments inside the weekly hours as they stand now (hoursStatus with no manual override, which would
- * recolour past moments), each moment passed as a number. Left out: any order with a price (an ask haggled before Accept, or an
+ * recolour past moments), each moment passed as a number, and from 20 Oct 2026 (his answer) the time between them counted in open minutes
+ * alone (stmt/hours.js openMinutes), the measure Salt Admin's waited meter uses. Left out: any order with a price (an ask haggled before Accept, or an
  * Accept sent to them as an offer), a group order, the test accounts, and an order never accepted. A replacement is measured
  * from the root of its chain, walked back over every order and falling back to its own placing on a missing link or a loop.
  * With no weekly hours filed the Counter reads as open at every moment, so every Accept counts, overnight ones included. */
-import { hoursStatus } from "./hours.js";
+import { hoursStatus, openMinutes } from "./hours.js";
 import { isTest } from "./testusers.js";
 
 export const CONFIRM_KEY = "confirm:within";
@@ -56,7 +57,9 @@ export function confirmWithin(orders, cfg) {
     const acc = acceptedAt(o), placed = placedAt(o, byId);
     if (acc === null || placed === null || acc < placed) continue;
     if (!inHours(placed) || !inHours(acc)) continue;
-    taken.push({ acc, mins: (acc - placed) / 60000 });
+    /* 20 Oct 2026 (his answer): the minutes the Counter was open between them, as Salt Admin's waited meter counts, so a night closed
+       between a late Place and a morning Accept is not counted */
+    taken.push({ acc, mins: openMinutes({ schedule: sched.schedule }, placed, acc) });
   }
   if (taken.length < CONFIRM_MIN) return null;
   const last = taken.sort((a, b) => b.acc - a.acc).slice(0, CONFIRM_LAST);

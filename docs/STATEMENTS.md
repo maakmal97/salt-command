@@ -763,7 +763,9 @@ The suite section "Account leads with this device, and the door names the app" (
   look never keeps a finished delivery's spot past its 30 days; the opened part carries `data-maker-pin` and the lock takes it off. A
   practice order's spot is never filed, so it offers nothing. Filing it as their place stays on the Desk.
 - **The confirm time** (item 19, P3 and P4). `stmt/confirm.js` `confirmWithin`: the median, Place to his first Accept, of his last 30
-  confirmations made in Counter hours (the weekly hours as they stand, the manual switch left out), up to the next quarter hour, 15 minutes
+  confirmations made in Counter hours (the weekly hours as they stand, the manual switch left out), the time between counted in open minutes
+  alone from 20 Oct 2026 (his answer; `stmt/hours.js` `openMinutes`, so a closed night between a late Place and a morning Accept is not
+  counted, and Salt Admin's waited meter counts the same way), up to the next quarter hour, 15 minutes
   at least; an order sent as an offer, with a price, a group order or a test account's is left out, and a replacement is measured from the
   root of its chain. Filed hourly at KV `confirm:within` (`{mins, n, at}`) by the site's cron and carried on `GET /hours` as `confirm`
   while under three hours old. A placed order with no price says "Usually confirmed within **45 min**. Measured from our last 30 orders, not
