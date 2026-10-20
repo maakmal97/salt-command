@@ -102,7 +102,7 @@ document.addEventListener('visibilitychange',function(){
    whenever the queue held anything, so an acknowledged, refused or stuck entry went every ten
    seconds while the desk was on screen, each post a drafter run over the whole book. A desk that
    cannot answer the question still posts, because a post is idempotent. */
-var SALT_BUILD_ID="29e062b89d4e0215";
+var SALT_BUILD_ID="446d60ec968a6163";
 var SALT_REV_MS=10000;
 /* THE WAKE. sw.js posts {salt:'wake'} to every desk it controls when a push lands, and this page decides what to read.
    One refresh a burst: a tick's pushes (the customer's act, then its drafted row) land within about three seconds, so
@@ -8228,8 +8228,9 @@ function priceLockState(C,p){
   const same=(cur.date===L.lot.date&&Math.abs(cur.rate-L.lot.rate)<0.005&&Math.abs(cur.qty-L.lot.qty)<0.005);
   return {state:same?'locked':'stale',lock:L,cur:cur,days:dAge(C,L.lockedOn),sinceLot:dAge(C,L.lot.date)};
 }
+/* 20 Oct 2026: a reward unit (rewardOf) rides its order's drop, so it is not a delivery: it is out of the share and the mean size */
 function delShare(C,p){
-  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);
+  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&!s.rewardOf&&POSITION_ENGINE.txPhys(s)>0.009);
   const said=rows.filter(s=>s.handover==='delivered'||s.handover==='collected');
   const del=said.filter(s=>s.handover==='delivered');
   return said.length
@@ -8237,7 +8238,7 @@ function delShare(C,p){
     : {v:C.R.COST_BASIS.deliveredShare.v,delivered:0,said:0,of:rows.length,measured:false};
 }
 function avgDelivery(C,p){
-  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&POSITION_ENGINE.txPhys(s)>0.009);
+  const rows=pSales(C.B,p).filter(s=>!s.cancelled&&!s.rewardOf&&POSITION_ENGINE.txPhys(s)>0.009);
   const unitsSum=rows.reduce((a,s)=>a+POSITION_ENGINE.txPhys(s),0);
   return rows.length?{n:rows.length,kg:+unitsSum.toFixed(2),mean:+(unitsSum/rows.length).toFixed(4)}:{n:0,kg:0,mean:null};
 }
@@ -8390,7 +8391,8 @@ function suggestOf(C,p,code){
 }
 function tierCustomers(C){
   const rev={};
-  C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
+  /* 20 Oct 2026: a reward unit (rewardOf) is not revenue, so it moves no customer up the list the cards are drawn in */
+  C.B.sales.forEach(s=>{const o=ownerOf(s.customer);if(!o||!isPerson(o)||s.rewardOf||!(s.total>0)||POSITION_ENGINE.txStat(s).order==='Cancelled')return;rev[o]=(rev[o]||0)+s.total;});
   const rest=C.B.roster.map(ownerOf).filter((id,i,a)=>a.indexOf(id)===i&&isPerson(id)&&!id.startsWith('S')&&!(id in rev));
   return Object.keys(rev).sort((a,b)=>rev[b]-rev[a]).concat(rest);
 }

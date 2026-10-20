@@ -234,7 +234,7 @@ export function apply(book, staged, notes, masterText) {
 
   /* the row core (the cost stamp, the rows, the rids, the counts, the renames, the roll) is the engine's, run on the caller's book in
      place as it always was (the suite holds rows by identity); a caller that wants the book left alone uses applyBatch */
-  const r = ENGINE_APPLY.applyInto(book, p, staged, notes, { nextRid, sortBook });
+  const r = ENGINE_APPLY.applyInto(book, p, staged, notes, { nextRid, sortBook, reward: planCtx.reward, today: TODAY });
   const { folded, newest, moves, renames } = r;
 
   /* the master: the book, the version entry and the stamp; the cost basis is derived from the book (26 Sep 2026) */

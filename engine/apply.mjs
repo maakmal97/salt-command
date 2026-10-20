@@ -868,6 +868,66 @@ function stockCostOf(book) {
   const saltCount = saltOpening && saltOpening.stated != null ? saltOpening.stated : book.STATED_STOCK;
   return saltCount != null ? E.stockBasis((book.purchases || []).filter((r) => prodOf(r) === "salt"), +saltCount, saltOpening).rate : null;
 }
+/* THE ASSOCIATE REWARD UNIT, RAISED BY THE FOLD (his rules of 20 Oct 2026). Once the switch is taken (REWARD names times and since, and
+   the book states REWARD_OPEN), after every entry:
+   - a party the engine now reads as an associate with no opening (an appointment, a ref or an R2 on a sale, an introduction) opens
+     that day on what the count before the switch reads for them, so no lump is raised on their next payment;
+   - for the party a salt sale entry touched, due is the walk's crossings less every reward row already on the book for them
+     (rewardOf, cancelled ones included, so a re-run adds nothing and a row he cancels is not raised again), and each due unit is
+     appended as its own row, at the crossing day's landed cost (Ask 9): goodwill and rebate, settled by the reward, so no price
+     reader counts it. rewardOf is the row that crossed, never recomputed. A departed associate gets none until they return;
+   - a reward row the walk no longer earns (an undone payment) is flagged STALE in the moves, never withdrawn: he removes it in
+     ledger/book.json, never cancels it, since a cancelled reward row still counts;
+   - when this entry hands salt over to them, each reward row waiting whose own order is now handed over in full goes with it
+     (deliveredQty 1, its day and handover), and its unit leaves the shelf through kgMoves, which applyEntry adds to the roll: a
+     reward raised after its order went out rides on their next salt handover (Ask 4). */
+function rewardEngineBook(book, scheme) { return { sales: book.sales || [], purchases: book.purchases || [], state: { ...book, REWARD: scheme } }; }
+function rewardFold(book, it, c, kgMoves) {
+  const scheme = c.reward;
+  if (!scheme || !book.REWARD_OPEN) return;
+  const eb = rewardEngineBook(book, scheme);
+  if (!E.rewardScheme(eb)) return;
+  const day = (it.pay && it.pay.date) || (c.appended && c.appended.date) || (c.src && c.src.row && c.src.row.date) || c.today || null;
+  for (const code of [...new Set((book.roster || []).filter((x) => typeof x === "string" && !E.isBucket(x)))]) {
+    if (book.REWARD_OPEN[code] || !E.rewardAccount(eb, code, "salt", { old: true }).associate) continue;
+    const o = E.rewardOpening(eb, code, day);
+    if (o.error) continue;
+    book.REWARD_OPEN[code] = o;
+    c.moves.push(`reward opening: ${code} opens on ${o.earned} unit earned and ${Math.round(o.share * 100)}% of the next, ${day}`);
+  }
+  const touched = it.target && it.dir !== "BUY" ? it.target : it.append === "sales" ? c.appended : null;
+  if (!touched || prodOf(touched) !== "salt") return;
+  const code = E.ownerCode(touched.customer), acc = E.rewardAccount(eb, code);
+  if (acc.error || !acc.associate) return;
+  const walk = E.rewardWalk(eb, code);
+  if (!walk || walk.error) return;
+  const mine = (s) => !!(s && s.rewardOf && !s.loyal && E.ownerCode(s.customer) === code);
+  for (let k = book.sales.filter(mine).length; k < walk.crossings.length; k++) {
+    const cr = walk.crossings[k], cost = +(+cr.rate).toFixed(2);
+    const row = { customer: code, product: "salt", qty: 1, total: cost, cost, cash: 0, settledRM: cost, rebate: true, rebateKg: 1, goodwill: true,
+      deliveredQty: 0, date: day, rewardOf: cr.rid, auto: true, given: cr.given,
+      note: `<b>REWARD UNIT: 1 UNIT OF SALT TO ${code} AT COST, NO CHARGE.</b> Their margin on their own buying and resale reached the step of RM ${cr.step} (${walk.times} units at RM ${cr.rate} landed on ${cr.day}) with ${cr.rid}, paid in full. Raised by the fold at RM ${cost} and settled by the reward, so it is cost and not revenue; it goes with ${cr.rid}'s delivery, or with their next salt order where that has gone. RM ${cr.given} was given under their own price since the last reward (his information only).` };
+    row.rid = c.nextRid(book.sales, "s")(1);
+    book.sales.push(row);
+    c.moves.push(`reward unit: ${row.rid}, 1 unit to ${code} at RM ${cost}, for ${cr.rid}`);
+  }
+  const live = book.sales.filter((s) => mine(s) && !s.cancelled);
+  if (live.length > walk.crossings.length) {
+    const crossed = new Set(walk.crossings.map((x) => x.rid));
+    const gone = live.filter((s) => !crossed.has(s.rewardOf));
+    for (const s of (gone.length ? gone : live).slice(-(live.length - walk.crossings.length)))
+      c.moves.push(`STALE reward on ${s.rid}: the walk no longer earns it (its payment was undone); remove the row in ledger/book.json, never cancel it`);
+  }
+  if ((c.entryMoves || []).some((m) => m && m.product === "salt" && +m.kg < 0 && E.ownerCode(m.who) === code))
+    for (const s of book.sales.filter((x) => mine(x) && !x.cancelled && !(+x.deliveredQty > 0.009))) {
+      const of = book.sales.find((x) => x && x.rid === s.rewardOf);
+      if (!of || E.txDeliv(of) < (+of.qty || 0) - 0.009) continue;
+      s.deliveredQty = 1; s.deliveredOn = day;
+      if (touched.handover) s.handover = touched.handover;
+      kgMoves.push({ product: "salt", kg: -1, who: code, when: day });
+      c.moves.push(`reward unit ${s.rid} handed over to ${code} with ${touched.rid || "this order"}`);
+    }
+}
 /* ONE PLANNED ITEM BOOKED INTO THE BOOK: the body of the fold's loop, shared by applyInto (a batch) and applyEntry (one entry). c = { src, n, notes, stockCost, nextRid, moves, renames }:
    the staged item, its notes row, the batch notes, the salt fallback rate, the rid minter, and the two lists it adds to (refund words; renames, applied last by the caller). */
 function bookItem(book, it, c) {
@@ -924,6 +984,7 @@ function bookItem(book, it, c) {
          disagree about the shape, and never reused: it reads the highest already on the book. */
       row.rid = nextRid(book[it.append] || [], it.append === "sales" ? "s" : "p")(1);
       book[it.append].push(row);
+      c.appended = row;
     } else if (it.count) {
       const c = it.count;
       if (c.product === "salt") book.STATED_STOCK = c.qty;
@@ -988,9 +1049,12 @@ function bookItem(book, it, c) {
    The order of the entries decides: a count and a move on one product give 10.5 for a sale then a count of 10.5, and 8.5 for the count then a sale of 2. */
 export function applyEntry(book, it, ctx) {
   const src = ctx.staged.approved.find((x) => x.id === it.id), n = (ctx.notes.rows && ctx.notes.rows[it.id]) || {};
-  const moves = [], renames = [];
-  bookItem(book, it, { src, n, notes: ctx.notes, stockCost: stockCostOf(book), nextRid: ctx.nextRid, moves, renames });
-  const entryMoves = ctx.moves || [], rolls = [];
+  const moves = [], renames = [], kgMoves = [];
+  const c = { src, n, notes: ctx.notes, stockCost: stockCostOf(book), nextRid: ctx.nextRid, moves, renames,
+    reward: ctx.reward || null, today: ctx.today || null, entryMoves: ctx.moves || [] };
+  bookItem(book, it, c);
+  rewardFold(book, it, c, kgMoves);   /* 20 Oct 2026: the associate reward's unit, and its unit off the shelf with the handover */
+  const entryMoves = (ctx.moves || []).concat(kgMoves), rolls = [];
   for (const prod of [...new Set(entryMoves.map((m) => m.product))]) {
     const ms = entryMoves.filter((m) => m.product === prod);
     const out = ms.filter((m) => m.kg < 0).reduce((a, m) => a - m.kg, 0), inn = ms.filter((m) => m.kg > 0).reduce((a, m) => a + m.kg, 0);
@@ -1013,7 +1077,7 @@ export function applyInto(book, p, staged, notes, ctx) {
   let newest = book.QUEUE_COMMITTED || "";
   const folded = [], renames = [];
   for (const it of p.items) {
-    const r = applyEntry(book, it, { nextRid, staged, notes, moves: movesOf(p, it) });
+    const r = applyEntry(book, it, { nextRid, staged, notes, moves: movesOf(p, it), reward: ctx.reward || null, today: ctx.today || null });
     moves.push(...r.moves);   /* refund words, in entry order */
     rolls.push(...r.rolls); entryMoves.push(...r.entryMoves);
     for (const rn of renames) E.renameInBook(book, rn.pairs);   /* a rename already applied carries a row booked after it under the old code, as the fold's last-of-all rename always did */
