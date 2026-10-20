@@ -239,13 +239,18 @@ function rewardFree(book, code, product, pending) {
   return { ...account, free: +Math.max(0, (account.held || 0) - reserved).toFixed(2) };
 }
 
-/** 20 Oct 2026: the associate reward's figures for Salt Admin (engine/stages.mjs rewardReading), a read that writes nothing, for one party
-    and, by rid, one order of theirs; behind Access and the bridge key, never on a customer road. */
-export function makerRewardReading(book, code, rid) {
+/** 20 Oct 2026: the associate reward's figures for Salt Admin (engine/stages.mjs rewardReading), a read that writes nothing, for one order's
+    row named by its ledgerKey (the order's own, as the book keys it, ovKey); behind Access and the bridge key, never on a customer road.
+    A key two rows share names neither, as the return leg reads it. */
+export function makerRewardReading(book, key) {
   if (!ready(book)) return { error: "The Desk mirror is being seeded." };
-  if (!realCode(code, book.state.roster || []) || POSITION_ENGINE.isBucket(code)) return { error: "Choose a party on the roster." };
-  if (rid != null && !(book.sales || []).some((s) => s && s.rid === rid)) return { error: "No row on the book has that rid." };
-  return rewardReading(book, code, { rid });
+  const parts = typeof key === "string" ? key.split("|") : [];
+  if (parts.length < 3 || parts.length > 4 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[1])) return { error: "Name the order's row by its key." };
+  const owner = POSITION_ENGINE.ownerCode(parts[0]);
+  if (!realCode(owner, book.state.roster || [])) return { error: "Choose a party on the roster." };
+  const hits = (book.sales || []).filter((s) => s && s.rid && POSITION_ENGINE.ovKey(s) === key);
+  if (hits.length > 1) return { error: "Two rows share that key, so it names neither." };
+  return rewardReading(book, owner, { rid: hits.length ? hits[0].rid : null });
 }
 export function makerCoverPlan(body, book, pending = []) {
   if (body.product !== "salt" || body.stream === "R2" || !(body.qty > 0)

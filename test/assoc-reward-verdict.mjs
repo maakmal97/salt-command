@@ -126,9 +126,10 @@ export async function run({ ok }) {
     "his preview carries the verdict, his reading and the promised step; a customer's none: " + JSON.stringify([qx, va.ok ? [va.rwd, va.row.rwdStep, vr.order] : va.error, vc.ok ? [vc.rwd, vc.reward] : vc.error]));
   /* 11 */
   const { handleMaker } = await import("../stmt/maker.js"), desk2 = (await import("../src/worker.js")).default;
-  const r403 = await handleMaker(new Request("https://counter.test/all/maker/reward/" + assoc + "/-"), {}, "/all/maker/reward/" + assoc + "/-", null);
-  const r404 = await desk2.fetch(new Request("https://desk.test/_internal/maker/reward/" + assoc + "/-"), { COUNTER_MAKER_KEY: "k".repeat(40), SALT_LEDGER: denv.SALT_LEDGER }, { waitUntil() {} });
-  const r200 = await desk2.fetch(new Request("https://desk.test/_internal/maker/reward/" + assoc + "/-", { headers: { "X-Counter-Maker-Key": "k".repeat(40) } }),
+  const rk = encodeURIComponent(assoc + "|2031-01-02|100");
+  const r403 = await handleMaker(new Request("https://counter.test/all/maker/reward/" + rk), {}, "/all/maker/reward/" + rk, null);
+  const r404 = await desk2.fetch(new Request("https://desk.test/_internal/maker/reward/" + rk), { COUNTER_MAKER_KEY: "k".repeat(40), SALT_LEDGER: denv.SALT_LEDGER }, { waitUntil() {} });
+  const r200 = await desk2.fetch(new Request("https://desk.test/_internal/maker/reward/" + rk, { headers: { "X-Counter-Maker-Key": "k".repeat(40) } }),
     { COUNTER_MAKER_KEY: "k".repeat(40), SALT_LEDGER: denv.SALT_LEDGER }, { waitUntil() {} });
   const j200 = r200.status === 200 ? await r200.json() : null;
   ok(r403.status === 403 && r404.status === 404 && j200 && j200.reading.associate === true && j200.reading.step > 0,

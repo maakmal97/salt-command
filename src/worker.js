@@ -562,7 +562,7 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     && !/^\/_internal\/maker\/queue\/[^/]+\/withdraw$/.test(p)
     && p !== "/_internal/maker/order-again" && p !== "/_internal/maker/words" && p !== "/_internal/maker/fixture-check"
     && p !== "/_internal/maker/offsets" && p !== "/_internal/maker/inputs/offset" && p !== "/_internal/maker/ledger"
-    && !/^\/_internal\/maker\/reward\/[A-Z][A-Z0-9-]{1,15}\/(s[0-9]{1,6}|-)$/.test(p)
+    && !/^\/_internal\/maker\/reward\/[A-Za-z0-9%._-]{3,160}$/.test(p)
     && !/^\/_internal\/maker\/orders\/[0-9]{14}-[a-z0-9]{1,8}\/(preview|accept|handed|cash|received|again|amend|notfound|move|restate|take)$/.test(p))
     return json({ ok: false, error: "not found" }, 404);
   if (!env.COUNTER_MAKER_KEY) return json({ ok: false, error: "Counter maker bridge is not configured" }, 503);
@@ -745,14 +745,16 @@ async function handleInternalMaker(request, env, ctx, p, m, gateHeld = false, of
     const reading = makerTradeReading(body, await withDraftLots(env.SALT_LEDGER, book));
     return reading.error ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
   }
-  const rwdAt = /^\/_internal\/maker\/reward\/([A-Z][A-Z0-9-]{1,15})\/(s[0-9]{1,6}|-)$/.exec(p);
+  const rwdAt = /^\/_internal\/maker\/reward\/([A-Za-z0-9%._-]{3,160})$/.exec(p);
   if (rwdAt) {
     /* 20 Oct 2026: his reading of the associate reward, for Salt Admin's order card: a read that writes nothing */
     if (m !== "GET") return json({ ok: false, error: "method not allowed" }, 405);
     if (!env.SALT_LEDGER) return json({ ok: false, error: "The Desk mirror is required." }, 503);
     const book = await readBook(env.SALT_LEDGER);
     if (!book.version) return json({ ok: false, error: "The mirror is being seeded." }, 503);
-    const reading = makerRewardReading(book, rwdAt[1], rwdAt[2] === "-" ? null : rwdAt[2]);
+    let key = null;
+    try { key = decodeURIComponent(rwdAt[1]); } catch (e) { return json({ ok: false, error: "Name the order's row by its key." }, 400); }
+    const reading = makerRewardReading(book, key);
     return reading.error && reading.associate === undefined ? json({ ok: false, error: reading.error }, 400) : json({ ok: true, reading });
   }
   if (p === "/_internal/maker/offsets") {
