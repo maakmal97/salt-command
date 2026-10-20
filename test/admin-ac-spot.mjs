@@ -4,7 +4,8 @@
  *      spot not kept is a 404
  *   2  on a delivery that carries one, the card says Their spot, Sealed, with Unlock, and reads nothing until the one unlock
  *   3  unlocked, it opens the seal under 'salt-pin v1' with the slip key and draws the spot's name, its floor or unit, and Maps at the point
- *   4  the lock takes the opened spot off the page and seals the card again
+ *   4  the lock takes the opened spot off the page and seals the card again; a tap that closes a claim's slip leaves it, and a redraw of the
+ *      card neither fetches it nor opens it again (Fable's review)
  *   5  a unit sealed alone draws no Maps; a practice order's spot, never filed, offers no Unlock
  * The real ECDH, HKDF and AES-GCM run in the page (the harness's webcrypto). Drawn by the maker harness (test/maker-act.mjs). */
 import { webcrypto } from "node:crypto";
@@ -53,15 +54,21 @@ export async function run({ ok, pageWork }) {
     const open = async (id) => { await click(byAct(d, "order.open", id)); return p.card(id); };
     /* 2 */
     let C = await open("ord-sp"), gate = C && C.querySelector("[data-pin-gate]");
-    ok(!!gate && /^Their spot/.test(t(gate)) && /Sealed/.test(t(gate)) && !!byAct(gate, "vault.unlock") && !gate.querySelector("[data-maker-pin]") && pinReads() === 0,
+    ok(!!gate && /^Delivery address/.test(t(gate)) && /Sealed/.test(t(gate)) && !!byAct(gate, "vault.unlock") && !gate.querySelector("[data-maker-pin]") && pinReads() === 0,
       "a delivery with a spot says Their spot, Sealed, with Unlock, and reads nothing yet: " + t(gate));
     /* 3 */
     await unlock(gate);
     gate = gateOf("ord-sp");
     const opened = gate && gate.querySelector("[data-maker-pin]"), maps = opened && opened.querySelector("a[data-spot-maps]");
-    ok(!!opened && /Spot\s*Back door/.test(t(opened)) && /Floor or unit\s*Unit 12, floor 3/.test(t(opened)) && !!maps && /3\.15,101\.71/.test(maps.getAttribute("href")) && pinReads() === 1,
+    ok(!!opened && /Address\s*Back door/.test(t(opened)) && /Floor or unit\s*Unit 12, floor 3/.test(t(opened)) && !!maps && /3\.15,101\.71/.test(maps.getAttribute("href")) && pinReads() === 1,
       "unlocked, the card opens their spot: its name, its floor or unit and Maps at the point: " + t(opened) + " " + (maps && maps.getAttribute("href")));
     /* 4 */
+    await click(byAct(d, "nav.orders"));
+    const kept = gateOf("ord-sp") && gateOf("ord-sp").querySelector("[data-maker-pin]");
+    ok(!!kept && /Back door/.test(t(kept)), "a tap on the place he is in leaves the opened address standing");
+    await click(byAct(d, "order.open", "ord-sp")); await click(byAct(d, "order.open", "ord-sp"));
+    ok(pinReads() === 1 && !!(gateOf("ord-sp") && gateOf("ord-sp").querySelector("[data-maker-pin]")), "and a redraw of the card neither fetches nor opens it again: " + pinReads());
+    gate = gateOf("ord-sp");
     await click(gate && byAct(gate, "vault.lock"));
     gate = gateOf("ord-sp");
     ok(!!gate && !d.querySelector("[data-maker-pin]") && /Sealed/.test(t(gate)) && !/Back door/.test(d.body.textContent),

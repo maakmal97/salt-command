@@ -1079,7 +1079,7 @@ export const OWNER_JS = `
   function makerSlipClose(){
     makerSlipGeneration++;
     makerSlipUrls.forEach(function(url){ URL.revokeObjectURL(url); }); makerSlipUrls=[];
-    document.querySelectorAll('[data-maker-slip],[data-maker-pin]').forEach(function(node){ node.remove(); });
+    document.querySelectorAll('[data-maker-slip]').forEach(function(node){ node.remove(); });
   }
   /* 12 Oct 2026 (PHASE 4b, his decision 3 of 11 Oct 2026): THE ONE UNLOCK. One password, typed once on the Sheet below, opens the names, the places and the slip
      key, and every place that asked for its own password (Add ID, Amend ID, Place on the map, an unsent entry, a claim's slip) reads this instead; locked, each says
@@ -1102,6 +1102,7 @@ export const OWNER_JS = `
   }
   function makerVaultLock(){
     makerVaultTurn++; makerVault=null;
+    makerSpotGen++; makerSpotOpened={}; document.querySelectorAll('[data-maker-pin]').forEach(function(node){ node.remove(); });
     pairDrafts.forEach(function(d){ d.clear(); });
     makerSlipClose(); vaultShut(true);
     makerVaultNotify(); if(makerSlipDraw) makerSlipDraw();
@@ -1394,57 +1395,62 @@ export const OWNER_JS = `
     if(/Android/.test(ua)) return 'geo:'+ll+'?q='+ll+'(Their%20spot)';
     return 'https://www.google.com/maps/search/?api=1&query='+ll;
   }
+  /* Fable's review of P4: the spot keeps its own generation, bumped by the lock alone (a tap that closes a claim's slip leaves it be), and the spot
+     opened once is held here until the lock, so a redraw of the card (each poll) neither fetches nor opens it again */
+  var makerSpotGen=0, makerSpotOpened={};
   function makerSpotControl(parent,order){
-    var box=el('section','salt-glass-card salt-glass-card--radius-lg ospot'), top=el('div','ospot__top'), note=el('p','msg'), key=order.id;
-    box.setAttribute('aria-label','Their spot'); box.setAttribute('data-pin-gate','');
-    note.setAttribute('role','status');
+    var box=el('section','salt-glass-card salt-glass-card--radius-lg adspot'), top=el('div','adspot__top'), note=el('p','msg adspot__note'), key=order.id;
+    box.setAttribute('aria-label','Delivery address'); box.setAttribute('data-pin-gate','');
+    note.setAttribute('aria-live','polite');
     parent.appendChild(box);
     function head(sealed){
       box.textContent=''; top.textContent='';
-      top.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Their spot'));
+      top.appendChild(el('h4','salt-eyebrow salt-eyebrow--copper','Delivery address'));
       if(sealed) top.appendChild(chip('mist','Sealed'));
       box.appendChild(top);
     }
     function sealedDraw(){
-      head(true); note.textContent='They shared a spot or a unit with this delivery. Unlock to read it; it is read on this phone only.'; box.appendChild(note);
+      head(true);
       var b=ghost(['Unlock','vault.unlock','spot:'+key]); b.addEventListener('click',function(){ vaultAsk(b); }); box.appendChild(b);
     }
     function said(text){ head(false); note.textContent=text; box.appendChild(note); }
-    function paint(p){
+    function adSpotPaint(p){
       head(false);
-      var part=el('div','ospot__open'), led=el('div','salt-ledger salt-ledger--plain'), label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'';
+      var part=el('div','adspot__open'), led=el('div','salt-ledger salt-ledger--plain'), label=typeof p.label==='string'?p.label.slice(0,24):'', unit=typeof p.unit==='string'?p.unit.slice(0,40):'';
       part.setAttribute('data-maker-pin','');
-      if(label) led.appendChild(ordLine('Spot',label));
+      if(label) led.appendChild(ordLine('Address',label));
       if(unit) led.appendChild(ordLine('Floor or unit',unit));
       if(led.firstChild) part.appendChild(led);
-      var row=el('div','ospot__acts');
+      var row=el('div','adspot__acts');
       if(p.src!=='unit'&&isFinite(p.lat)&&isFinite(p.lng)&&Math.abs(+p.lat)<=90&&Math.abs(+p.lng)<=180){
-        var a=el('a','salt-ghost ospot__maps'); a.href=spotHref(+p.lat,+p.lng); a.setAttribute('data-spot-maps','');
+        var a=el('a','salt-ghost adspot__maps'); a.href=spotHref(+p.lat,+p.lng); a.setAttribute('data-spot-maps','');
         if(/^https:/.test(a.getAttribute('href'))){ a.target='_blank'; a.rel='noopener'; }
         a.appendChild(pinSvg()); a.appendChild(document.createTextNode('Maps')); row.appendChild(a);
       }else if(p.src!=='unit') part.appendChild(el('p','msg','They shared a link, not a point: open it on the Desk, which follows it.'));
       var lk=ghost(['Lock','vault.lock','spot:'+key]); lk.addEventListener('click',function(){ makerVaultLock(); }); row.appendChild(lk);
       part.appendChild(row);
-      part.appendChild(el('p','msg','Filing it as their place stays on the Desk.'));
+      part.appendChild(el('p','msg','File it as their place on the Desk.'));
       box.appendChild(part);
     }
-    async function open(){
-      var generation=makerSlipGeneration;
-      said('Opening their spot.');
+    async function adSpotOpen(){
+      var generation=makerSpotGen, held=makerSpotOpened[order.u+'/'+order.pin];
+      if(held){ adSpotPaint(held); return; }
+      said('Opening the address.');
       try{
         if(!makerVault.slip) throw new Error('No slip key is filed.');
         var j=await refs('/all/maker/pins/'+order.u+'/'+order.pin);
-        if(generation!==makerSlipGeneration||!makerVault) return;
+        if(generation!==makerSpotGen||!makerVault) return;
         var b=await makerSealedOpen(makerVault.slip,j.pin,'salt-pin v1');
-        if(generation!==makerSlipGeneration||!makerVault||!box.isConnected||document.hidden) return;
+        if(generation!==makerSpotGen||!makerVault||document.hidden) return;
         var p=null; try{ p=JSON.parse(new TextDecoder().decode(b)); }catch(e){ p=null; }
         if(!p||typeof p!=='object') throw new Error('It holds nothing this page reads.');
-        paint(p);
+        makerSpotOpened[order.u+'/'+order.pin]=p;
+        if(box.isConnected) adSpotPaint(p);
       }catch(error){
-        if(generation===makerSlipGeneration) said(/not kept/.test(String(error&&error.message))?'The spot they shared is no longer kept.':'Their spot could not be opened: '+(error&&error.message||error));
+        if(generation===makerSpotGen) said(/not kept/.test(String(error&&error.message))?'The address they shared is no longer kept.':'The address could not be opened: '+(error&&error.message||error));
       }
     }
-    box._draw=function(){ if(!box.isConnected) return; if(!makerVault) sealedDraw(); else open(); };
+    box._draw=function(){ if(!box.isConnected) return; if(!makerVault) sealedDraw(); else adSpotOpen(); };
     box._draw();
   }
   /* THE SLIP of a claim: sealed until the page holds the slip key (the one unlock, above), a thumbnail once it does, and the thumbnail is the control that enlarges

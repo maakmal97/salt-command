@@ -758,7 +758,7 @@ The suite section "Account leads with this device, and the door names the app" (
   and the order's Details read **Spot or unit: Sealed**, since the Worker cannot tell a point from a unit. The Desk opens it after the one
   unlock: the card names "Shop · Unit 12A" before the point's line; a unit alone says so, measures no fee and is never filed (File all leaves
   it out); filing writes the point alone. Salt Admin opens it too (his answer of 20 Oct 2026, reversing "Open it on the Desk"): the order
-  card's **Their spot**, Sealed with Unlock until the one unlock, then the spot's name, its floor or unit and Maps at the point (a unit alone
+  card's **Delivery address**, a Sealed chip and Unlock until the one unlock, then the Address (the spot's name), its floor or unit and Maps at the point (a unit alone
   has none), read through `GET /all/maker/pins/<username>/<id>` off the Counter's own store with `readPin(..., keep = false)`, so his
   look never keeps a finished delivery's spot past its 30 days; the opened part carries `data-maker-pin` and the lock takes it off. A
   practice order's spot is never filed, so it offers nothing. Filing it as their place stays on the Desk.
