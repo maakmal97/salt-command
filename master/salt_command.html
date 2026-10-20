@@ -18677,8 +18677,11 @@ function rewardRuleTxt(prod,who){
   const w=who==='associate'?rewardWalkOf(null):null;
   if(w&&w.step!=null)return 'a free unit per '+w.times+' units\u2019 landed cost ('+fmt0(w.step)+' today), paid in full';
   const m=rewardUnitMargin(prod,who);if(m==null)return 'no reward on this book';
+  if(who!=='associate'&&prod==='salt'&&loyalRuleTxt())return loyalRuleTxt();   /* 21 Oct 2026: the loyalty unit is a customer's reward */
   if(who!=='associate'&&rewardWalkOf(null))return 'held as it stood on '+rewardWalkOf(null).since+', not redeemed';   /* 20 Oct 2026 */
   return 'a free unit per '+fmt0(m)+' of margin';}
+/* 21 OCT 2026: WHAT COUNTS FOR A CUSTOMER, in his words; null before the loyalty unit's switch */
+function loyalRuleTxt(){const s=REWARD.stated.salt&&REWARD.stated.salt.loyal;return s?'a unit at cost per '+s.every+' units at their price, paused by a late payment or a write-off':null;}
 /* 20 OCT 2026: THE WALK, read through the engine on the desk's own rows. null off salt or before the switch; with id null, the scheme
    and today's step alone (no opening read). The book the engine reads is the live one, as networkStats always read the live rows. */
 function rewardBookView(){
@@ -19041,8 +19044,10 @@ function customerRewards(){
   return [...ids].map(id=>{
     const m=cut==null?rewardMargin(id,[]).mine:POSITION_ENGINE.rewardMargin({id,refs:[],sales:pSales(PROD).filter(s=>POSITION_ENGINE.rewardRid(s.rid)<=cut),averageCost:wavgBuy}).mine,
       u=rewardUnits(m.margin,unit), taken=rebateApplied(id);
-    return {id,n:m.n,margin:m.margin,earned:u.earned,toNext:u.toNext,taken,free:+(u.earned-taken).toFixed(2)};
-  }).filter(r=>r.n>0||r.taken>0).sort((a,b)=>b.margin-a.margin);
+    /* 21 Oct 2026: and their loyalty walk beside what they held, a customer with only that listed too */
+    const loyal=PROD==='salt'?loyalWalkOf(id):null;
+    return {id,n:m.n,margin:m.margin,earned:u.earned,toNext:u.toNext,taken,free:+(u.earned-taken).toFixed(2),loyal:loyal&&loyal.walks?loyal:null};
+  }).filter(r=>r.n>0||r.taken>0||r.loyal&&(r.loyal.units>0||r.loyal.earned>0)).sort((a,b)=>b.margin-a.margin);
 }
 /* v620, HIS RULINGS OF 14 SEP 2026: A CUSTOMER'S REWARD IS SPENT MOSTLY ON COVERING A LOWER MARGIN, on a sale
    he marks at entry, and a unit is worth the salt's cost. The gap is the board's ask for the size less the
@@ -19128,16 +19133,16 @@ function tabConcentration(){
      against them, what is left, and the margin still to go to the next unit: the same five fields
      an associate's card carries, because it is the same rule. */
   const cr=customerRewards(), crReady=cr.filter(r=>r.free>0.009);
-  const crBody=cr.length?cr.map(r=>`<tr><td class="l salt-table__label mono">${ID(r.id)}</td><td>${fmt0(r.margin)}</td><td>${units(r.earned)}</td><td>${units(r.taken)}</td><td>${r.free>0.009?(rewardWalkOf(null)?`${units(r.free)} held`:`<b style="color:var(--gold)">${units(r.free)} free</b>`):r.free<-0.009?`${units(-r.free)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td></tr>`).join('')
-    :`<tr><td class="l salt-table__label" colspan="6" style="color:var(--dim)">${rewardUnitMargin(PROD)==null?'No reward on this book.':'No customer has a priced order yet.'}</td></tr>`;
+  const crBody=cr.length?cr.map(r=>`<tr><td class="l salt-table__label mono">${ID(r.id)}</td><td>${fmt0(r.margin)}</td><td>${units(r.earned)}</td><td>${units(r.taken)}</td><td>${r.free>0.009?(rewardWalkOf(null)?`${units(r.free)} held`:`<b style="color:var(--gold)">${units(r.free)} free</b>`):r.free<-0.009?`${units(-r.free)} drawn ahead`:'none'}</td><td class="mono" style="color:var(--dim)">${fmt0(r.toNext)}</td><td class="mono">${r.loyal?(r.loyal.paused?'paused at ':'')+(+r.loyal.units)+' of '+r.loyal.every+(r.loyal.earned?' \u00b7 '+r.loyal.earned+' given':''):''}</td></tr>`).join('')
+    :`<tr><td class="l salt-table__label" colspan="7" style="color:var(--dim)">${rewardUnitMargin(PROD)==null?'No reward on this book.':'No customer has a priced order yet.'}</td></tr>`;
   /* v401: the sub lost "the band sets the units", which the Band pays column states per row
      and in units. NOT for width: this header measures 332px inside a 325px box at 375px, and
      the 7px is the .sub rule at :438, a full-width BUTTON style that lands on this span by
      cascade (width:100% plus the 7px margin-left .cardh .sub adds). That is desk-wide, on
      every card header with a sub, so it is not fixed from this view. */
-  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}, whole ledger</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
-    <table class="salt-table"><thead><tr><th class="l salt-table__label">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th></tr></thead><tbody>${crBody}</tbody></table>
-    ${rewardWalkOf(null)?'<p class="dsc" style="margin-top:9px">From the switch a customer redeems nothing: what they hold stands, and only an associate\u2019s reward is redeemed.</p>':cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</p>':''}</div>`;
+  const crCard=`<div class="card"><div class="cardh">&#127873; Customer rewards <span class="sub">${rewardRuleTxt(PROD)}${PROD==='salt'&&loyalRuleTxt()?'':', whole ledger'}</span>${crReady.length?`<span class="sub" style="color:var(--gold)">${crReady.map(r=>ID(r.id)).join(', ')} holding</span>`:''}</div>
+    <table class="salt-table"><thead><tr><th class="l salt-table__label">Customer</th><th>Margin</th><th>Earned</th><th>Taken</th><th>Left</th><th>To next</th><th>Loyalty</th></tr></thead><tbody>${crBody}</tbody></table>
+    ${rewardWalkOf(null)?'<p class="dsc" style="margin-top:9px">From the switch a customer redeems nothing: what they hold stands, and only an associate\u2019s reward is redeemed.'+(PROD==='salt'&&loyalRuleTxt()?' Their reward is the loyalty unit: '+loyalRuleTxt()+'. The fold gives it with the order that reaches it; they see a share only.':'')+'</p>':cr.some(r=>r.free>=1-1e-9)?'<p class="dsc" style="margin-top:9px">Redeem or offset on Salt Admin.</p>':''}</div>`;
   /* ============ v385: DO, THEN WATCH, THEN STUDY ============
      The order was rewards, tiles, read, two charts, the approach calendar, turned-away, the
      database. The calendar is the only thing on this part that asks for an ACTION, and the

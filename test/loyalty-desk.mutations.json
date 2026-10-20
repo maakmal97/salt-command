@@ -1,0 +1,8 @@
+[
+ {"name":"a customer's rule stays the held count","file":"master/salt_command.html","find":"  if(who!=='associate'&&prod==='salt'&&loyalRuleTxt())return loyalRuleTxt();   /* 21 Oct 2026: the loyalty unit is a customer's reward */\n","replace":""},
+ {"name":"no walk beside a customer","file":"master/salt_command.html","find":"    const loyal=PROD==='salt'?loyalWalkOf(id):null;","replace":"    const loyal=null;"},
+ {"name":"a customer with only a walk is not listed","file":"master/salt_command.html","find":".filter(r=>r.n>0||r.taken>0||r.loyal&&(r.loyal.units>0||r.loyal.earned>0))","replace":".filter(r=>r.n>0||r.taken>0)"},
+ {"name":"the pause not said","file":"master/salt_command.html","find":"(r.loyal.paused?'paused at ':'')","replace":"''"},
+ {"name":"the heading keeps the whole ledger","file":"master/salt_command.html","find":"${PROD==='salt'&&loyalRuleTxt()?'':', whole ledger'}","replace":", whole ledger"},
+ {"name":"the note says nothing of the loyalty unit","file":"master/salt_command.html","find":"+(PROD==='salt'&&loyalRuleTxt()?' Their reward is the loyalty unit: '+loyalRuleTxt()+'. The fold gives it with the order that reaches it; they see a share only.':'')","replace":""}
+]
