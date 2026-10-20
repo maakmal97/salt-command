@@ -551,7 +551,7 @@ h3.pmark,.pmark{margin:0 0 4px;line-height:1}
 .ocol__n{color:var(--salt-mist-bright)}
 .ocol__pay{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:0.12em;text-transform:uppercase;color:var(--salt-ember);white-space:nowrap}
 .oback{margin:0 0 12px}
-.adm .ohead{margin:0 0 16px}
+.adm .ohead{margin:0 0 16px;gap:18px;padding:20px}
 .adm .ohead h3{margin:0;font-family:var(--salt-font-display);font-size:var(--salt-text-xl);letter-spacing:0;line-height:1.15}
 .adm .ohead .sub2{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .adm .ohead .oband__what{flex:1;min-width:0;font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);color:var(--salt-mist-bright)}
@@ -955,15 +955,23 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
 .adm .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .nnote:empty{display:none}
-/* 20 Oct 2026: the minutes a placed order has waited, beside the usual; past it the edge is copper and the figure ember */
-.adm .oclock{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;margin:4px 0 0;border-radius:16px;background:var(--salt-slate);border:1px solid var(--salt-line)}
-.adm .oclock svg{flex:none;width:22px;height:22px;margin-top:2px;stroke:var(--salt-brass)}
-.adm .oclock__txt{display:flex;flex-direction:column;gap:2px;min-width:0}
-.adm .oclock__min{font-family:var(--salt-font-mono);font-weight:500;color:var(--salt-brass)}
-.adm .oclock__usual{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
-.adm .oclock--late{border-color:var(--salt-copper)}
-.adm .oclock--late svg{stroke:var(--salt-ember)}
-.adm .oclock--late .oclock__min,.adm .need-clock--late .oclock__min{color:var(--salt-ember)}
+/* 20 Oct 2026: the order's band in four lines (the action, the goods, the way and moment, the minutes waited), the placed card's copper edge */
+.adm .ohead--placed{box-shadow:inset 3px 0 0 var(--salt-copper)}
+.adm .ogoods{display:flex;align-items:center;gap:14px}
+.adm .ogoods__tile{width:52px;height:52px;flex:none;border-radius:14px;background:var(--salt-slate);border:1px solid var(--salt-line);display:flex;align-items:center;justify-content:center}
+.adm .ogoods__what{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.adm .ohead .ogoods__what h3{font-size:1.75rem;line-height:1.05}
+.adm .ogoods__who{font-family:var(--salt-font-mono);font-size:var(--salt-text-sm);color:var(--salt-mist-bright)}
+.adm .ogoods__sum{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.adm .ogoods__total{font-family:var(--salt-font-mono);font-size:1.75rem;line-height:1.05;white-space:nowrap}
+.adm .ogoods__label{font-family:var(--salt-font-mono);font-size:var(--salt-text-xs);letter-spacing:0.1em;text-transform:uppercase;color:var(--salt-mist-bright)}
+.adm .obandrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;padding-top:14px;border-top:1px solid var(--salt-line);font-size:var(--salt-text-sm);color:var(--salt-prose)}
+.adm .oway,.adm .omoment{display:inline-flex;align-items:center;gap:8px}
+.adm .omoment{font-family:var(--salt-font-mono)}
+.adm .oband__icon{width:16px;height:16px;flex:none;fill:none;stroke:var(--salt-brass);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.adm .oway--link{min-height:44px;color:var(--salt-brass);text-decoration:underline;text-underline-offset:3px}
+.adm .oclock__track{display:block}
+.adm .need-clock--late .oclock__min{color:var(--salt-ember)}
 .adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm #makerConfirm{margin:16px 0 0}
 .adm .cfig{margin:0;display:flex;align-items:baseline;gap:8px;font-family:var(--salt-font-mono)}

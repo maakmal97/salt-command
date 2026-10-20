@@ -9,12 +9,14 @@
  {"name":"under ten says nothing","file":"stmt/owner.js","find":"band.appendChild(el('p','cfig','Under 10 measured'));","replace":"band.appendChild(el('p','cfig',''));"},
  {"name":"no clock on the card","file":"stmt/owner.js","find":"var clock=orderClock(order); if(clock) head.appendChild(clock);","replace":"var clock=null;"},
  {"name":"never late","file":"stmt/owner.js","find":"return {waited:w, usual:u, late:u!=null&&w>u};","replace":"return {waited:w, usual:u, late:false};"},
- {"name":"always late","file":"stmt/owner.js","find":"box=el('div','oclock'+(k.late?' oclock--late':''))","replace":"box=el('div','oclock oclock--late')"},
+ {"name":"always late","file":"stmt/owner.js","find":"box=el('div','salt-meter oclock'+(k.late?' salt-meter--ember oclock--late':''))","replace":"box=el('div','salt-meter oclock salt-meter--ember oclock--late')"},
  {"name":"the waited minutes wrong","file":"stmt/owner.js","find":"var w=Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();","replace":"var w=Math.max(0,Math.floor((Date.now()-t)/600000)), u=confirmUsual();"},
- {"name":"the usual not said","file":"stmt/owner.js","find":":(k.late?'Past your usual '+k.usual+' min. They see that figure.':'You usually agree within '+k.usual+' min. They see that figure.')));","replace":":(k.late?'Past your usual min.':'You usually agree.')));"},
+ {"name":"the usual not said","file":"stmt/owner.js","find":"if(k.usual!=null) b.appendChild(el('b',null,k.usual+' min'));","replace":"void b;"},
  {"name":"a practice order has a clock","file":"stmt/owner.js","find":"if(!order||order.status!=='placed'||order.test||order.price||order.pool) return null;","replace":"if(!order||order.status!=='placed'||order.price||order.pool) return null;"},
  {"name":"a priced order has a clock","file":"stmt/owner.js","find":"if(!order||order.status!=='placed'||order.test||order.price||order.pool) return null;","replace":"if(!order||order.status!=='placed'||order.test||order.pool) return null;"},
  {"name":"no clock on the Needs card","file":"stmt/owner.js","find":"          c._body.appendChild(nc); }","replace":"          }"},
  {"name":"the Needs card says no usual","file":"stmt/owner.js","find":"' waiting'+(k.usual!=null?', usually '+k.usual:'')","replace":"' waiting'"},
- {"name":"the Needs card never late","file":"stmt/owner.js","find":"var nc=el('p','need-clock'+(k.late?' need-clock--late':''));","replace":"var nc=el('p','need-clock');"}
+ {"name":"the Needs card never late","file":"stmt/owner.js","find":"var nc=el('p','need-clock'+(k.late?' need-clock--late':''));","replace":"var nc=el('p','need-clock');"},
+ {"name":"no copper edge on a placed card","file":"stmt/owner.js","find":"(order.status==='placed'&&!order.writtenOff?' ohead--placed':'')","replace":"('')"},
+ {"name":"the moment says no time","file":"stmt/owner.js","find":"return w+hm(at)+', '+dayMon(at).replace(/ [0-9]{4}$/,'');","replace":"return w+dayMon(at);"}
 ]

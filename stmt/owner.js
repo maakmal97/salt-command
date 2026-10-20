@@ -4082,51 +4082,74 @@ export const OWNER_JS = `
     var w=Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();
     return {waited:w, usual:u, late:u!=null&&w>u};
   }
+  /* 20 Oct 2026 (canvas V11): the minutes waited as the system's meter against his usual, ember past it; with no usual yet, an empty track */
   function orderClock(order){
     var k=clockOf(order); if(!k) return null;
-    var box=el('div','oclock'+(k.late?' oclock--late':'')), txt=el('span','oclock__txt'), line=el('span','oclock__line');
+    var box=el('div','salt-meter oclock'+(k.late?' salt-meter--ember oclock--late':'')), line=el('div','salt-meter__line'), a=el('span',null,'Waited '), b=el('span',null,k.usual==null?'No usual yet':'Usually ');
     box.setAttribute('data-clock','');
-    box.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M12 7.5 V12 L15 14"></path></svg>';
-    line.appendChild(el('span','oclock__min',k.waited+' min')); line.appendChild(document.createTextNode(' waited'));
-    txt.appendChild(line);
-    txt.appendChild(el('span','oclock__usual',k.usual==null?'No usual time yet: customers see one once 10 are measured.'
-      :(k.late?'Past your usual '+k.usual+' min. They see that figure.':'You usually agree within '+k.usual+' min. They see that figure.')));
-    box.appendChild(txt);
+    a.appendChild(el('b',null,k.waited+' min')); if(k.usual!=null) b.appendChild(el('b',null,k.usual+' min'));
+    line.appendChild(a); line.appendChild(b); box.appendChild(line);
+    var track=el('div','salt-meter__track oclock__track'); track.appendChild(el('div','salt-meter__fill')); box.appendChild(track);
+    box.style.setProperty('--salt-fill',String(k.usual?Math.min(100,Math.round(k.waited/k.usual*100)):0));
     return box;
   }
-  /* Salt Admin A to C, P1: his state, said as a heading, and how the goods go, said as the customer reads it */
-  function ordHeading(order){
-    if(order.writtenOff) return 'Written off';
-    var s=order.status, dl=order.mode==='deliver';
-    if(s==='placed') return makerAccHeld(order)?'Waiting for their yes':'Waiting on your Agree';
-    if(s==='acknowledged') return 'Agreed, to make ready';
-    if(s==='ready') return dl?'Ready to go out':'Ready to collect';
-    if(s==='done') return dl?'Delivered':'Collected';
-    return {declined:'Declined',cancelled:'Cancelled'}[s]||String(s||'');
-  }
+  /* Salt Admin A to C, P1, and the band of 20 Oct 2026: how the goods go, in a glance */
   function ordWay(order){
-    if(order.mode==='deliver') return 'Delivery to '+(order.place||'their place')+', '
-      +(order.slot&&order.slotSpan?String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10)):'ASAP');
-    return order.point?'Collect at Point '+order.point:'Collection';
+    if(order.mode==='deliver') return (order.place||'Their place')+' · '
+      +(order.slot&&order.slotSpan?String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10)):'ASAP')
+      +(+order.delivery>0?' · +'+rm(order.delivery)+' delivery':'');
+    return order.point?'Collect at '+order.point:'Collection';
   }
+  /* 20 Oct 2026 (canvas V11): the band's action chip, said by stage, and the moment of the stage it stands at, "10:14, 18 Oct" */
+  function ordAction(order){
+    var s=order.status, dl=order.mode==='deliver';
+    if(order.writtenOff) return ['mist','Written off','cross'];
+    if(s==='placed') return makerAccHeld(order)?['brass','Their yes','dot']:['copper','To agree','dot'];
+    if(s==='acknowledged') return ['brass','To make ready','tick'];
+    if(s==='ready') return ['brass',dl?'To deliver':'To hand over','tick'];
+    if(s==='done') return ['verdigris',dl?'Delivered':'Collected','ticks'];
+    return ['mist',{declined:'Declined',cancelled:'Cancelled'}[s]||String(s||''),'cross'];
+  }
+  function ordMoment(order){
+    var h=(order.history||[]).filter(function(x){ return x&&x.status===order.status&&x.at; }).pop(), at=order.status==='placed'||!h?order.at:h.at;
+    var w={acknowledged:'Agreed ',ready:'Ready ',done:'Done ',declined:'Declined ',cancelled:'Cancelled '}[order.status]||'';
+    return w+hm(at)+', '+dayMon(at).replace(/ [0-9]{4}$/,'');
+  }
+  function bandIcon(d){
+    var s=svgEl('svg',{viewBox:'0 0 24 24','class':'oband__icon','aria-hidden':'true',focusable:'false'}); s.appendChild(svgEl('path',{d:d})); return s;
+  }
+  var BAND_PIN='M12 21 C12 21 5 14.6 5 9.6 A7 7 0 0 1 19 9.6 C19 14.6 12 21 12 21 Z M12 7.4 A2.2 2.2 0 1 0 12 11.8 A2.2 2.2 0 1 0 12 7.4',
+      BAND_CLOCK='M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M12 7.5 V12 L15 14';
   function orderHead(card,order){
-    var st=order.writtenOff?['mist','Written off','cross']:ORD_STAGE[order.status]||['mist',String(order.status||'')];
     /* Salt Admin A to C (20 Oct 2026), P1: THE HEAD IS THE COUNTER'S BAND. The buyer's code and the short reference the customer sees on top,
        his state as the heading, when it was placed with its stage chip, then a foot with the mark, how it goes and, while it waits at one of his
        points, the point's pin to the maps app (the Counter's own pinLink, read off the order's snapshot pointAt) */
-    var head=el('div','ohead lead salt-band'), top=el('div','salt-band__head'), eb=el('span','salt-eyebrow salt-eyebrow--copper','Order · ');
-    eb.appendChild(whoTag(el('span',null,codeByUser(order.u)),codeOfUser(order.u))); top.appendChild(eb);
+    /* 20 Oct 2026 (canvas V11 and V31, his comments "actionable in a glance"): FOUR LINES, NO SENTENCES. The action as a chip with the short
+       reference; the goods, the mark in its tile, the units as the heading over the buyer's code, the goods' total on the right; under a hairline
+       the way and the moment, the way itself the link to the maps app while a collection waits at his point; and on a placed order the meter of
+       the minutes waited against his usual. A placed card carries the copper edge. */
+    var act=ordAction(order), head=el('div','ohead lead salt-band'+(order.status==='placed'&&!order.writtenOff?' ohead--placed':'')), top=el('div','salt-band__head');
+    top.appendChild(stageChip(act));
     /* Counter Batch A: the reference the customer sees on their order, so one they quote finds it here */
     var oref=el('span','salt-band__ref oref',orderRef(order.id)); oref.setAttribute('data-ref',''); top.appendChild(oref);
     head.appendChild(top);
-    head.appendChild(el('h3','ostate',ordHeading(order)));
-    var sub=el('p','sub2 salt-band__when'); sub.appendChild(stageChip(st)); sub.appendChild(document.createTextNode(' Placed '+fmtWhen(order.at)+'.')); head.appendChild(sub);
+    var goods=el('div','ogoods'), tile=el('span','ogoods__tile'), what=el('span','ogoods__what'), sum=el('span','ogoods__sum');
+    tile.appendChild(bookMark(order.product,28)); goods.appendChild(tile);
+    what.appendChild(el('h3','ostate salt-title',units(order.qty)));
+    what.appendChild(whoTag(el('span','ogoods__who',codeByUser(order.u)),codeOfUser(order.u))); goods.appendChild(what);
+    sum.appendChild(el('span','ogoods__total',rm(order.total))); sum.appendChild(el('span','ogoods__label','Goods')); goods.appendChild(sum);
+    head.appendChild(goods);
+    var row=el('div','obandrow'), wayNode, waits=order.point&&order.status==='ready'&&order.mode==='collect'&&(+order.moved||0)<(+order.qty||0)-0.0004;
+    if(waits&&order.pointAt&&isFinite(order.pointAt.lat)&&isFinite(order.pointAt.lng)){
+      wayNode=el('a','oway oway--link'); wayNode.href=pointHref(order.point,order.pointAt.lat,order.pointAt.lng);
+      if(/^https:/.test(wayNode.getAttribute('href'))){ wayNode.target='_blank'; wayNode.rel='noopener'; }
+      wayNode.setAttribute('aria-label','Point '+order.point+' in maps');
+    }else wayNode=el('span','oway');
+    wayNode.appendChild(bandIcon(BAND_PIN)); wayNode.appendChild(el('span','oway__text',ordWay(order))); row.appendChild(wayNode);
+    var mo=el('span','omoment'); mo.appendChild(bandIcon(BAND_CLOCK)); mo.appendChild(el('span',null,ordMoment(order))); row.appendChild(mo);
+    head.appendChild(row);
     var clock=orderClock(order); if(clock) head.appendChild(clock);
-    var foot=el('div','salt-band__foot'), col=el('span','oband__what');
-    foot.appendChild(mtile(order.product,order.qty)); col.appendChild(el('span','oway',ordWay(order))); foot.appendChild(col);
-    var waits=order.point&&order.status==='ready'&&order.mode==='collect'&&(+order.moved||0)<(+order.qty||0)-0.0004;
-    if(waits&&order.pointAt&&isFinite(order.pointAt.lat)&&isFinite(order.pointAt.lng)) foot.appendChild(pinLink(order));
-    head.appendChild(foot); card.appendChild(head);
+    card.appendChild(head);
     var agreed=['acknowledged','ready','done'].indexOf(order.status)>=0, moved=Math.round((+order.moved||0)*100)/100;
     if(!order.writtenOff&&order.status!=='declined'&&order.status!=='cancelled') card.appendChild(ordSteps(order));
     var L=el('div','ordmoney salt-ledger salt-ledger--plain'), paid=+order.paid||0, owed=Math.max(0,Number(order.total||0)+Number(order.delivery||0)-paid);

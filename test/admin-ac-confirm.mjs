@@ -43,10 +43,13 @@ export async function run({ ok, pageWork }) {
     await click("nav.orders"); await click("part.orders.placed");
     const open = async (id) => { await click("order.open", id); return p.card(id); };
     const L = (await open("ord-late")).querySelector(".ohead [data-clock]");
-    ok(!!L && /^5[23] min waited/.test(t(L)) && /Past your usual 45 min/.test(t(L)) && L.classList.contains("oclock--late"),
+    ok(!!L && /^Waited 5[23] min/.test(t(L)) && /Usually 45 min/.test(t(L)) && L.classList.contains("salt-meter--ember") && L.style.getPropertyValue("--salt-fill") === "100",
       "a placed order past his usual says how long it has waited and that it is past his usual: " + t(L));
+    const H = p.card("ord-late").querySelector(".ohead"), mo = t(H && H.querySelector(".omoment"));
+    ok(!!H && H.classList.contains("ohead--placed") && /^[0-9]{2}:[0-9]{2}, [0-9]{1,2} [A-Z][a-z]{2}$/.test(mo),
+      "a placed card carries the copper edge, and its band says when it was placed, the time and the day: " + mo);
     const S = (await open("ord-soon")).querySelector(".ohead [data-clock]");
-    ok(!!S && /^2[01] min waited/.test(t(S)) && /You usually agree within 45 min/.test(t(S)) && !S.classList.contains("oclock--late"),
+    ok(!!S && /^Waited 2[01] min/.test(t(S)) && /Usually 45 min/.test(t(S)) && !S.classList.contains("salt-meter--ember") && /^4[4-7]$/.test(S.style.getPropertyValue("--salt-fill")),
       "one inside his usual says his usual and is not marked late: " + t(S));
     /* 4 */
     const P = await open("ord-prac"), Q = await open("ord-priced");
