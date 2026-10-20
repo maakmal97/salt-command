@@ -4030,7 +4030,7 @@ export const OWNER_JS = `
   }
   function ordWay(order){
     if(order.mode==='deliver') return 'Delivery to '+(order.place||'their place')+', '
-      +(order.slot&&order.slotSpan?String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10)):'as soon as it can');
+      +(order.slot&&order.slotSpan?String(order.slotSpan).replace('-',' to ')+' on '+fmtWhen(String(order.slot).slice(0,10)):'ASAP');
     return order.point?'Collect at Point '+order.point:'Collection';
   }
   function orderHead(card,order){
@@ -4150,7 +4150,7 @@ export const OWNER_JS = `
           else if(d==null) terms.textContent='Choose the delivery charge';
           else{
             if(w) at=mwDayLabel(w.slice(0,10))+', '+mwPad(+w.slice(11,13))+':00 to '+mwPad(+w.slice(11,13)+4)+':00';
-            else at=order.slot&&order.slotSpan?'their '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(String(order.slot).slice(0,10)):'as soon as it can';
+            else at=order.slot&&order.slotSpan?'their '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(String(order.slot).slice(0,10)):'ASAP';
             terms.textContent='Delivery '+rm(d)+' · '+at;
           }
         }
@@ -4294,7 +4294,7 @@ export const OWNER_JS = `
           dl.appendChild(el('span','salt-field__label','Day')); ds.setAttribute('data-winday',''); actOn(ds,'order.window-day');
           days.forEach(function(d){ var op=el('option','',mwDayLabel(d)); op.value=d; op.selected=d===win.day; ds.appendChild(op); });
           dl.appendChild(ds); wset.appendChild(dl);
-          var own=order.slot&&order.slotSpan?'Theirs, '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(theirs):'As soon as it can';
+          var own=order.slot&&order.slotSpan?'Theirs, '+String(order.slotSpan).replace('-',' to ')+' on '+mwDayLabel(theirs):'ASAP';
           function makerWinDraw(){
             wgrid.textContent='';
             [['',own]].concat(makerWinOn(win.day,Date.now()).filter(function(x){ return x[0]!==order.slot; })).forEach(function(opt){
@@ -4310,7 +4310,7 @@ export const OWNER_JS = `
           makerWinDraw(); winDraw=function(){ if(win.value) win.day=win.value.slice(0,10); ds.value=win.day; makerWinDraw(); };
           wset.appendChild(wgrid);
           wset.appendChild(el('p','salt-insight',order.slot?'They chose '+String(order.slotSpan||'').replace('-',' to ')+'. Choose another and they will be asked.'
-            :'They want it as soon as it can; choose a window and it goes with Agree.'));
+            :'They want it ASAP; choose a window and it goes with Agree.'));
           tf.body.appendChild(wset);
         }
         function makerPlacedDelivery(){

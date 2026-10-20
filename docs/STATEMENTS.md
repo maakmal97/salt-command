@@ -1009,8 +1009,8 @@ dated at the acknowledgement under the same key, its note carrying ", wanted by 
 (`pendingEntry`, never their text), and the term and the chase count from the handover, so nothing that prices or chases
 reads it. The desk's card says it and how far off (`ordWantLine`) while goods are still to go.
 
-**A DELIVERY ASKS AS SOON AS IT CAN, OR A FOUR-HOUR WINDOW** (his decisions of 10 Oct 2026): a delivery's When is As soon
-as it can or one of six windows, 00-04 to 20-24 Kuala Lumpur, each its next occurrence within `SLOT_DAYS` (7) whose start
+**A DELIVERY ASKS ASAP, OR A FOUR-HOUR WINDOW** (his decisions of 10 Oct 2026; the word ASAP his of 20 Oct 2026, for "as soon as it
+can", on Salt Counter and Salt Admin): a delivery's When is ASAP or one of six windows, 00-04 to 20-24 Kuala Lumpur, each its next occurrence within `SLOT_DAYS` (7) whose start
 is ahead (`slotNext`), and never a day. One rule on page and Worker (`stmt/window.js`, its ES5 carried into the page as
 text): a window the Counter's weekly Hours leave none of is not offered, and one they leave part of says "Delivery will be
 between x and y", the part inside (`slotSpan`, manual override included). The hours are Salt Admin's own (`maker:hours`,
@@ -1520,7 +1520,7 @@ exists the page says notifications are not switched on.
   `pay`). Their view of it is `priceView`: {state, total, delivery: null, until}. The accepted price stays on that order.
 - **His Accept, for their yes** (version 2, his decisions of 10 Oct 2026). `needsYes` decides it: goods above what they
   placed it at (to the sen), or a window other than the one they chose. Never his first delivery charge, never a window on an
-  order asked for as soon as it can, never a lower price. Accept with either is refused (409, `needsYes`), and the card, or
+  order asked for ASAP, never a lower price. Accept with either is refused (409, `needsYes`), and the card, or
   Salt Admin's button, sends it instead as an offer of the whole order as he would agree it (`POST /orders/<id>/offer`
   with `slot`, the preview's `offerHash`): `{id, kind: "accept", total, delivery, slot, until}`, `until` from `acceptUntil`
   (48 hours, or the window's start when that is an hour or more ahead and sooner, else its end), the window cut to the hours
@@ -2643,7 +2643,7 @@ change; its act does not. A button, an input that is not hidden, a select, a tex
 | `order.total` | Order card (key: the order id), placed | The order total, in RM; finishing a change reads the figures again. |
 | `order.window-<hh>` | Same card, one for each window ahead (named by its starting hour) | Offers that four-hour window. |
 | `order.window-day` | Order card (key: the order id), placed for delivery with no time asked | The day of the delivery window he offers. |
-| `order.window-own` | Same card | Keeps their window, or as soon as it can. |
+| `order.window-own` | Same card | Keeps their window, or ASAP. |
 | `order.withdraw-offer` | Order card (key: the order id), with an offer out | Withdraws the offer. |
 | `orderfor.friend` | Order for a customer, an associate's | Whether it is for a friend. |
 | `orderfor.mode` | Order for a customer | Collected or delivered. |

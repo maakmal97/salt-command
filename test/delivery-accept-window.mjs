@@ -205,7 +205,7 @@ export async function run({ ok, KV, assets }) {
     const t0 = Date.now(), dayN = (i) => new Date(t0 + 8 * HR + i * 864e5).toISOString().slice(0, 10), dayName = (d) => (+d.slice(8)) + " " + MON[+d.slice(5, 7) - 1];
     const winsOn = (day) => Wn.WINDOWS.filter((h) => Date.parse(day + "T00:00:00Z") + (h - 8) * HR > t0).map((h) => [day + "T" + p2(h), p2(h) + ":00 to " + p2(h + 4) + ":00"]);
     const days = [0, 1, 2, 3, 4, 5, 6, 7].map(dayN).filter((d) => winsOn(d).length), tDay = s12w().slice(0, 10);
-    ok(Wn.WINDOWS.length === 6 && days.length >= 7 && JSON.stringify(wins(A)) === JSON.stringify(["As soon as it can"].concat(winsOn(days[0]).map((x) => x[1])))
+    ok(Wn.WINDOWS.length === 6 && days.length >= 7 && JSON.stringify(wins(A)) === JSON.stringify(["ASAP"].concat(winsOn(days[0]).map((x) => x[1])))
       && JSON.stringify(dayOpts(A)) === JSON.stringify(days) && wins(B).length === 0
       && JSON.stringify(wins(T)) === JSON.stringify(["Theirs, 12:00 to 16:00 on " + dayName(tDay)].concat(winsOn(tDay).filter((x) => x[0] !== s12w()).map((x) => x[1]))),
       "Salt Admin offers the coming week's days and a day's windows still to start, none on a sheet's other lines, and theirs first on an order with its own: "

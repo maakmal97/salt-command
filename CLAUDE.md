@@ -505,7 +505,7 @@ and the send sheet in `tools/stmt-send.mjs` ship inside template literals: no lo
   reason at Decline or Cancel as the body, both checked by `siteWords` before they leave the desk. The acknowledgement is
   pay-now on an order paid in advance (`prepay`), else on credit. A record with no keys gets the payload-free wake
   and the fixed words. A tap opens that order (`#o=<id>`), and a page already open re-reads first.
-- **A delivery's window and exact spot** (his decisions of 10 Oct 2026): As soon as it can or one of six four-hour windows,
+- **A delivery's window and exact spot** (his decisions of 10 Oct 2026): ASAP (his word of 20 Oct 2026) or one of six four-hour windows,
   one rule on page and Worker (`stmt/window.js`) over Salt Admin's weekly Hours, its span the part inside; his Accept may
   answer an as-soon-as delivery with a window, and reminds them to pay now in words only. **A raise or another window than
   theirs is never his Accept's alone** (`needsYes`): it goes to them as an offer of the whole order, their Yes the take, their

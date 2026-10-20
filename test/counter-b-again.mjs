@@ -66,7 +66,7 @@ export async function run({ ok, pageWork }) {
     const sayDay = txt(S.d.getElementById("osheet"));
     S.d.getElementById("oPlace").click(); await S.settle();
     const sb = S.st.posts[0] || {};
-    ok(S.st.posts.length === 1 && !("wantBy" in sb) && sb.total === 100 && /As soon as it can/.test(sayDay) && !sb.note,
+    ok(S.st.posts.length === 1 && !("wantBy" in sb) && sb.total === 100 && /ASAP/.test(sayDay) && !sb.note,
       "a day wanted in an earlier sheet does not ride into Order again, nor the line on the old order: " + JSON.stringify(sb));
 
     /* ---- 4 ---- */

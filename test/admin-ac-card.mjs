@@ -1,7 +1,7 @@
 /* test/admin-ac-card.mjs: SALT ADMIN A TO C, P1 AND P2 (20 Oct 2026; docs/plan-counter-admin-ac.html). His order card in the Counter's language.
  * What is proved here, each check red under its own mutation (test/admin-ac-card.mutations.json):
  *   1  the head is the Counter's band: the buyer's code in the eyebrow, the short reference at its top right, his state as the heading, and
- *      the way said as the customer reads it ("Delivery to <place>, as soon as it can" or "Collect at Point <code>")
+ *      the way said as the customer reads it ("Delivery to <place>, ASAP" or "Collect at Point <code>")
  *   2  a collection waiting at one of his points carries the point's pin to the maps app, read off the order's own snapshot, and no pin once
  *      the goods are all handed over
  *   3  the receipt: each payment received with its way and its day where they add up to what is paid; Owed stands in the due row only while
@@ -49,7 +49,7 @@ export async function run({ ok, pageWork }) {
     ok(!!Y && !Y.querySelector(".ohead a.salt-pin"), "all handed over, the pin goes");
     await go("confirmed");
     const A = await tap("ord-ad"), due = A && A.querySelector(".ordmoney .salt-ledger__row--due");
-    ok(!!due && /^Owed/.test(t(due)) && /RM 70/.test(t(due)) && t(A.querySelector(".ohead .oway")) === "Delivery to Lirau, as soon as it can"
+    ok(!!due && /^Owed/.test(t(due)) && /RM 70/.test(t(due)) && t(A.querySelector(".ohead .oway")) === "Delivery to Lirau, ASAP"
       && t(A.querySelector(".ohead h3.ostate")) === "Agreed, to make ready",
       "something owed stands in the due row, and a delivery says where to and when, as the customer reads it: " + t(due) + " / " + t(A && A.querySelector(".oway")));
     /* 4 */

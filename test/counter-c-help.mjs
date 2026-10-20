@@ -13,7 +13,7 @@ import { open, txt } from "./counter-b-kit.mjs";
 
 const ANSWERS = [
   ["Paying", "Pay by transfer or scan the code under To pay, with your username as the reference. Then tell us you sent it. It counts once we confirm it arrived."],
-  ["Delivery", "Choose as soon as it can, or a four-hour window. We confirm the time when we accept. If we need another time, we ask you first."],
+  ["Delivery", "Choose ASAP, or a four-hour window. We confirm the time when we accept. If we need another time, we ask you first."],
   ["Collecting", "We tell you when it is ready and where to collect it. Pay before you come, or in cash when you collect where your order offers it."],
   ["Changing an order", "Until we confirm it, open the order and tap Change order. After that, send us a message on the order and we change it for you."],
 ];
