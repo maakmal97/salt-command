@@ -942,6 +942,19 @@ body.ended>*:not(#aEnded){display:none}
 @media (min-width:861px){.adm .need--act .salt-action__go{grid-column:2 / -1}}
 .adm .nnote{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
 .adm .nnote:empty{display:none}
+/* Salt Admin A to C, P3: the minutes a placed order has waited, beside his usual; past it the edge is copper and the figure ember */
+.adm .oclock{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;margin:4px 0 0;border-radius:16px;background:var(--salt-slate);border:1px solid var(--salt-line)}
+.adm .oclock svg{flex:none;width:22px;height:22px;margin-top:2px;stroke:var(--salt-brass)}
+.adm .oclock__txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adm .oclock__min{font-family:var(--salt-font-mono);font-weight:600;color:var(--salt-brass)}
+.adm .oclock__usual{font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.adm .oclock--late{border-color:var(--salt-copper)}
+.adm .oclock--late svg{stroke:var(--salt-ember)}
+.adm .oclock--late .oclock__min,.adm .need-clock--late .oclock__min{color:var(--salt-ember)}
+.adm .need-clock{margin:0;font-size:var(--salt-text-sm);color:var(--salt-text-muted)}
+.adm #makerConfirm .salt-band{margin:16px 0 0}
+.adm .cfig{margin:0;display:flex;align-items:baseline;gap:8px;font-family:var(--salt-font-mono)}
+.adm .cfig b{font-size:2.25rem;font-weight:600;line-height:1}
 .adm .nnote.bad{color:var(--salt-ember)}
 /* THE ASSOCIATES REPORT CARD (v691): three figures across, then what they have earned in units
    with a bar for the part-unit. The bar is the only chart on this site and it is a rule and a
@@ -1809,7 +1822,7 @@ export function landingPage(user, nonce, owner, bulletin, test) {
         + '<div class="abody">'
         + '<section data-in="shop.hours" aria-labelledby="makerHoursTitle"><h2 id="makerHoursTitle">Shop hours</h2>'
         + '<p class="lead" id="makerHoursStatus">Reading.</p>'
-        + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p></section>'
+        + '<div id="makerSchedule"></div><p id="makerHoursMessage" class="msg" role="status" aria-live="polite"></p><div id="makerConfirm"></div></section>'
         + '<section data-in="shop.hours" aria-labelledby="makerPointsTitle"><h2 id="makerPointsTitle">Collection points</h2>'
         + '<p class="lead" id="makerPointsStatus">Reading.</p>'
         + '<div id="makerPoints"></div><p id="makerPointsMessage" class="msg" role="status" aria-live="polite"></p></section>'

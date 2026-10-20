@@ -3992,6 +3992,32 @@ export const OWNER_JS = `
     r.appendChild(l); if(flag) r.appendChild(el('span','salt-ledger__flag',flag));
     return r;
   }
+  /* Salt Admin A to C (20 Oct 2026), P3: HIS USUAL, the figure a customer reads (stmt/confirm.js confirmView: ten or more measured, the
+     cron's figure under three hours old), and the minutes a placed order has waited. No clock on a practice order, one with a price or a
+     group order, which the measure leaves out. */
+  function confirmUsual(){
+    var c=makerHours&&makerHours.confirm, at=c&&Date.parse(c.at);
+    if(!c||!(at>0)||Date.now()-at>3*3600e3||!(c.n>=10)||!(c.mins>=15)) return null;
+    return c.mins;
+  }
+  function clockOf(order){
+    if(!order||order.status!=='placed'||order.test||order.price||order.pool) return null;
+    var t=Date.parse(order.at); if(!(t>0)) return null;
+    var w=Math.max(0,Math.floor((Date.now()-t)/60000)), u=confirmUsual();
+    return {waited:w, usual:u, late:u!=null&&w>u};
+  }
+  function orderClock(order){
+    var k=clockOf(order); if(!k) return null;
+    var box=el('div','oclock'+(k.late?' oclock--late':'')), txt=el('span','oclock__txt'), line=el('span','oclock__line');
+    box.setAttribute('data-clock','');
+    box.innerHTML='<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 A8.5 8.5 0 1 0 12 20.5 A8.5 8.5 0 1 0 12 3.5 M12 7.5 V12 L15 14"></path></svg>';
+    line.appendChild(el('span','oclock__min',k.waited+' min')); line.appendChild(document.createTextNode(' waited'));
+    txt.appendChild(line);
+    txt.appendChild(el('span','oclock__usual',k.usual==null?'No usual time yet: customers see one once 10 are measured.'
+      :(k.late?'Past your usual '+k.usual+' min. They see that figure.':'You usually agree within '+k.usual+' min. They see that figure.')));
+    box.appendChild(txt);
+    return box;
+  }
   /* Salt Admin A to C, P1: his state, said as a heading, and how the goods go, said as the customer reads it */
   function ordHeading(order){
     if(order.writtenOff) return 'Written off';
@@ -4019,6 +4045,7 @@ export const OWNER_JS = `
     head.appendChild(top);
     head.appendChild(el('h3','ostate',ordHeading(order)));
     var sub=el('p','sub2 salt-band__when'); sub.appendChild(stageChip(st)); sub.appendChild(document.createTextNode(' Placed '+fmtWhen(order.at)+'.')); head.appendChild(sub);
+    var clock=orderClock(order); if(clock) head.appendChild(clock);
     var foot=el('div','salt-band__foot'), col=el('span','oband__what');
     foot.appendChild(mtile(order.product,order.qty)); col.appendChild(el('span','oway',ordWay(order))); foot.appendChild(col);
     var waits=order.point&&order.status==='ready'&&order.mode==='collect'&&(+order.moved||0)<(+order.qty||0)-0.0004;
@@ -4999,6 +5026,7 @@ export const OWNER_JS = `
     status.textContent=(state.open?'Open now':'Closed now. Customers can still order; you answer when you open.')
       +(state.source==='default'?' · No weekly hours set.':'');
     var names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    drawConfirm();
     var days=(makerHours.config&&makerHours.config.schedule&&makerHours.config.schedule.days)||[];
     /* 12 Oct 2026 (PHASE 4a): the week is a table whose head names its three columns, the day with its tick, when it opens and when it closes; the same ticks, times, acts and body as the rows of bare controls were */
     var schedule=el('table','maker-hours salt-table'), head=el('tr'), weekdays=el('tbody');
@@ -5040,6 +5068,30 @@ export const OWNER_JS = `
       return refs('/all/maker/hours',{clearManual:true}).then(function(value){ makerHours=value; drawMakerHours(); hoursSaid('now','Back on the weekly hours.'); })
         .catch(function(error){ hoursSaid('now',null,error); });
     },false);
+  }
+  /* Salt Admin A to C (20 Oct 2026), P3: THE CONFIRM TIME, as the hourly cron filed it: the figure and what customers read, or how far it is
+     from the ten it needs, or that none is filed yet. Old (over three hours) is said, since customers then see nothing. */
+  function drawConfirm(){
+    var root=document.getElementById('makerConfirm'); if(!root) return;
+    root.textContent='';
+    var c=makerHours&&makerHours.confirm, u=confirmUsual(), at=c&&Date.parse(c.at);
+    var band=el('section','salt-band'), top=el('div','salt-band__head');
+    band.setAttribute('aria-label','Confirm time');
+    top.appendChild(el('h3','salt-eyebrow salt-eyebrow--copper','Confirm time'));
+    var open=makerHours&&makerHours.status&&makerHours.status.open;
+    top.appendChild(chip(open?'verdigris':'mist',open?'Open now':'Closed now'));
+    band.appendChild(top);
+    if(u!=null){
+      var fig=el('p','cfig'); fig.setAttribute('data-confirm',String(u)); fig.appendChild(el('b',null,String(u))); fig.appendChild(el('span',null,'minutes')); band.appendChild(fig);
+      band.appendChild(el('p','salt-band__when','Customers read "Usually confirmed within '+u+' minutes" on a placed order while you are open; closed, nothing until you open.'));
+      band.appendChild(el('div','salt-band__foot',c.n+' measured. The median from Place to Agree over your last '+c.n+' agrees made in Counter hours, up to the quarter hour. Refreshed hourly.'));
+    }else if(c&&at>0&&Date.now()-at>3*3600e3){
+      band.appendChild(el('p','salt-band__when','The last figure was filed '+fmtWhen(c.at)+', over three hours ago, so customers see none until the hourly measure runs again.'));
+    }else if(c&&at>0){
+      band.appendChild(el('p','cfig','Under 10 measured'));
+      band.appendChild(el('p','salt-band__when','Customers see a figure once 10 agrees made in Counter hours are measured, and only while you are open.'));
+    }else band.appendChild(el('p','salt-band__when','Not measured yet. The hourly measure files it.'));
+    root.appendChild(band);
   }
   /* an answer on Shop's hours stands under the control that asked: the weekly save under Save, the shop held for now under Set it and Back to the weekly
      hours (#makerHoursMessage, which sits right below them); the other line is cleared, so one answer is on screen, and it is scrolled into reach */
@@ -5656,6 +5708,10 @@ export const OWNER_JS = `
       var who=codeByUser(o.u), t=!!o.test, to=orderOpener(o.id), pays=ordPays(o);
       if(o.status==='placed') L.push(item('now','orders','Order','o:'+o.id, o.at, {who:who, head:'Agree ', rest:"'s order", mark:o.product, what:orderWhat(o), practice:t, open:to}, function(c){
         /* Agree needs the delivery charge and the window, which the full card asks for, so the button opens it */
+        var k=clockOf(o);
+        if(k){ var nc=el('p','need-clock'+(k.late?' need-clock--late':'')); nc.setAttribute('data-clock','');
+          nc.appendChild(el('strong','oclock__min',k.waited+' min')); nc.appendChild(document.createTextNode(' waiting'+(k.usual!=null?', usually '+k.usual:'')));
+          c._body.appendChild(nc); }
         mainButton(c,'Agree','need.agree','o:'+o.id, to);
       }));
       /* a question of theirs on the order that he has not answered (the Worker's awaitingAnswer), as an account's thread is Now when asked */

@@ -151,21 +151,26 @@ export async function takeNudge(env, id) {
   return response.ok;
 }
 
+/* Salt Admin A to C (20 Oct 2026), P3: and the confirm figure as the cron filed it ({mins, n, at}, {n: 0, at} under ten, or null), raw,
+   so his page says how many are measured and how old it is; it names nobody. Spread on the GET and on every POST answer, so a save keeps it. */
+async function rawConfirm(env) {
+  try { return (await env.STMT.get(CONFIRM_KEY, "json")) || null; } catch (e) { return null; }
+}
 async function readHours(env) {
-  const value = await env.STMT.get(HOURS_KEY, "json");
-  if (!value) return { config: null, status: hoursStatus(null) };
+  const value = await env.STMT.get(HOURS_KEY, "json"), confirm = await rawConfirm(env);
+  if (!value) return { config: null, status: hoursStatus(null), confirm };
   if (value.schedule != null) {
     const schedule = validateWeeklyHours(value.schedule);
     if (schedule.error) throw new TypeError("Stored operating hours are invalid: " + schedule.error);
   }
-  return { config: value, status: hoursStatus(value) };
+  return { config: value, status: hoursStatus(value), confirm };
 }
 
 async function makerHours(request, env, method) {
   if (!env.STMT) return json({ ok: false, error: "no Counter store" }, 503);
   if (method === "GET") {
     const result = await readHours(env);
-    return json({ ok: true, config: result.config, status: result.status });
+    return json({ ok: true, config: result.config, status: result.status, confirm: result.confirm });
   }
   if (method !== "POST") return json({ ok: false, error: "method not allowed" }, 405);
   const parsed = await bodyOf(request);
@@ -176,14 +181,14 @@ async function makerHours(request, env, method) {
     const next = Object.assign({}, current.config || {});
     delete next.manual;
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
-    return json({ ok: true, config: next, status: hoursStatus(next) });
+    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
   }
   if (Object.keys(body).length === 1 && body.manual && typeof body.manual === "object") {
     const manual = validateManualHours(body.manual);
     if (manual.error) return json({ ok: false, error: manual.error }, 400);
     const next = Object.assign({}, current.config || {}, { manual });
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
-    return json({ ok: true, config: next, status: hoursStatus(next) });
+    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
   }
   if (Object.keys(body).length === 1 && body.schedule) {
     const schedule = validateWeeklyHours(body.schedule);
@@ -192,7 +197,7 @@ async function makerHours(request, env, method) {
       schedule: { days: schedule.days.map((day) => day && { open: day.open, close: day.close }) }
     });
     await env.STMT.put(HOURS_KEY, JSON.stringify(next));
-    return json({ ok: true, config: next, status: hoursStatus(next) });
+    return json({ ok: true, config: next, status: hoursStatus(next), confirm: current.confirm });
   }
   return json({ ok: false, error: "Set a weekly schedule, a temporary open/closed override, or clear the override." }, 400);
 }
