@@ -126,6 +126,8 @@ function fresh(now, u) {
       [T(11, 45), "customer", Object.assign({ action: "pay", amount: 78 }, rail)], [T(11, 50), "desk", { verdict: { kind: "received", claim: T(11, 45), amount: 78 } }]]),
     order(oid(3, "f6"), list, T(3), { product: "rice", qty: 1, mode: "collect" }, [[T(3, 20), "customer", { action: "cancel" }]]),
     order(oid(4, "f7"), list, T(4), { product: "oil", qty: 1, mode: "collect" }, [[T(4, 30), "desk", { status: "declined", note: "None of this size this week." }]])];
+  /* 20 Oct 2026, P6: the placed salt order was placed again from the done one, as Place keeps the tag (set after the moves, as the book would) */
+  if (O[2].status === "done") O[0].againOf = O[2].id;
   const sales = [];
   for (const o of O) {
     if (!ROWED.includes(o.status)) continue;
@@ -405,6 +407,7 @@ export const FEATURES = [
     && +o.paid < (+o.total || 0) + (+o.delivery || 0) - 0.004)],
   ["the Paid step done before the goods go, paid first (20 Oct 2026)", (f) => has(f, (o) => ["acknowledged", "ready"].includes(o.status)
     && (+o.total || 0) + (+o.delivery || 0) > 0 && +o.paid >= (+o.total || 0) + (+o.delivery || 0) - 0.004 && !(+o.moved > 0))],
+  ["an order placed again, naming the done one it came from (20 Oct 2026)", (f) => has(f, (o) => typeof o.againOf === "string" && has(f, (x) => x.id === o.againOf && x.status === "done"))],
   ["a group order open, joined (Pool)", (f) => (f.pools || []).some((p) => p.state === "open" && p.joins.some((j) => has(f, (o) => o.id === j.oid && o.pool === p.id))
     && p.closesOn >= klDay(new Date(f.at)))],
   ["a group order closed, its order confirmed (Pool)", (f) => (f.pools || []).some((p) => p.state === "closed"
