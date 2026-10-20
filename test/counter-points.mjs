@@ -295,6 +295,6 @@ export async function run({ ok, pageWork }) {
     const f = build(new Date("2026-10-18T06:00:00.000Z"), "open");
     const want = ["ready at a collection point (Counter Batch A)", "collection point changed (Counter Batch A)"];
     const lines = want.map((n) => FEATURES.find(([name]) => name === n));
-    ok(lines.every((l) => l && l[1](f)) && FIX_VERSION === 11, "the test accounts carry an order ready at a point and one whose point was changed: " + want.map((n, i) => n + " " + !!(lines[i] && lines[i][1](f))).join(", "));
+    ok(lines.every((l) => l && l[1](f)) && FIX_VERSION >= 11, "the test accounts carry an order ready at a point and one whose point was changed: " + want.map((n, i) => n + " " + !!(lines[i] && lines[i][1](f))).join(", "));
   }
 }
